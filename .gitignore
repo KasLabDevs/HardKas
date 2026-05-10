@@ -1,0 +1,25 @@
+node_modules
+dist
+.turbo
+.env
+.env.*
+coverage
+.DS_Store
+*.log
+# HardKAS Local-only
+.hardkas/
+scratch/
+temp-artifacts/
+test-artifacts/
+test-audit/
+runs/
+*.local.json
+*.plan.local.json
+*.signed.local.json
+*.backup
+*.tmp
+pnpm-lock.yaml.*
+.env
+.env.local
+.env.*
+*.tgz

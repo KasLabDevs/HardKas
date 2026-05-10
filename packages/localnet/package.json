@@ -1,0 +1,43 @@
+{
+  "name": "@hardkas/localnet",
+  "version": "0.1.0",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": "./dist/index.js"
+  },
+  "scripts": {
+    "build": "tsup src/index.ts --format esm --dts --clean --external kaspa",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint ."
+  },
+  "dependencies": {
+    "@hardkas/artifacts": "workspace:*",
+    "@hardkas/core": "workspace:*",
+    "@hardkas/query": "workspace:*",
+    "@hardkas/tx-builder": "workspace:*"
+  },
+  "devDependencies": {
+    "tsup": "^8.3.5",
+    "typescript": "^5.7.2",
+    "vitest": "^2.1.8"
+  },
+  "license": "MIT",
+  "author": "Javier Rodriguez",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jrodrg92/Hardkas.git",
+    "directory": "packages/localnet"
+  },
+  "bugs": {
+    "url": "https://github.com/jrodrg92/Hardkas/issues"
+  },
+  "homepage": "https://github.com/jrodrg92/Hardkas/tree/main/packages/localnet#readme",
+  "files": [
+    "dist",
+    "LICENSE",
+    "README.md"
+  ]
+}

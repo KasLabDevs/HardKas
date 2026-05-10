@@ -1,0 +1,42 @@
+{
+  "name": "@hardkas/query-store",
+  "version": "0.1.0",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": "./dist/index.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "test": "node --import tsx --test test/*.test.ts",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint ."
+  },
+  "dependencies": {
+    "@hardkas/artifacts": "workspace:*",
+    "@hardkas/core": "workspace:*"
+  },
+  "devDependencies": {
+    "tsup": "^8.3.5",
+    "typescript": "^5.7.2",
+    "vitest": "^2.1.8",
+    "@types/node": "^22.10.0"
+  },
+  "license": "MIT",
+  "author": "Javier Rodriguez",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jrodrg92/Hardkas.git",
+    "directory": "packages/query-store"
+  },
+  "bugs": {
+    "url": "https://github.com/jrodrg92/Hardkas/issues"
+  },
+  "homepage": "https://github.com/jrodrg92/Hardkas/tree/main/packages/query-store#readme",
+  "files": [
+    "dist",
+    "LICENSE",
+    "README.md"
+  ]
+}

@@ -1,0 +1,16 @@
+{
+  "name": "@examples/bridge-assumptions",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "tsx src/index.ts"
+  },
+  "dependencies": {
+    "@hardkas/sdk": "workspace:*",
+    "@hardkas/l2": "workspace:*",
+    "@hardkas/artifacts": "workspace:*",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.2"
+  }
+}

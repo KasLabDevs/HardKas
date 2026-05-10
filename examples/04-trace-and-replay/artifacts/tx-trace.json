@@ -1,0 +1,70 @@
+{
+  "schema": "hardkas.txTrace.v2",
+  "hardkasVersion": "0.1.0-dev",
+  "networkId": "simnet",
+  "mode": "simulated",
+  "createdAt": "2026-05-08T10:14:37.783Z",
+  "txId": "simulated-1qxierk8",
+  "steps": [
+    {
+      "phase": "resolve-utxos",
+      "status": "start",
+      "timestamp": "2026-05-08T10:14:37.781Z"
+    },
+    {
+      "phase": "resolve-utxos",
+      "status": "completed",
+      "timestamp": "2026-05-08T10:14:37.782Z",
+      "details": {
+        "count": 1,
+        "totalSompi": "10000000000"
+      }
+    },
+    {
+      "phase": "build-plan",
+      "status": "start",
+      "timestamp": "2026-05-08T10:14:37.782Z"
+    },
+    {
+      "phase": "build-plan",
+      "status": "completed",
+      "timestamp": "2026-05-08T10:14:37.783Z",
+      "details": {
+        "planId": "plan-1778235277782-rbyz3"
+      }
+    },
+    {
+      "phase": "estimate",
+      "status": "start",
+      "timestamp": "2026-05-08T10:14:37.783Z"
+    },
+    {
+      "phase": "estimate",
+      "status": "completed",
+      "timestamp": "2026-05-08T10:14:37.783Z"
+    },
+    {
+      "phase": "sign",
+      "status": "start",
+      "timestamp": "2026-05-08T10:14:37.783Z"
+    },
+    {
+      "phase": "sign",
+      "status": "completed",
+      "timestamp": "2026-05-08T10:14:37.783Z",
+      "details": {
+        "signedId": "signed-1778235277783"
+      }
+    },
+    {
+      "phase": "finalize",
+      "status": "start",
+      "timestamp": "2026-05-08T10:14:37.783Z"
+    },
+    {
+      "phase": "finalize",
+      "status": "completed",
+      "timestamp": "2026-05-08T10:14:37.783Z"
+    }
+  ]
+}

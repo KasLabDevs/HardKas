@@ -1,0 +1,11 @@
+{
+  "name": "@hardkas-examples/hello-kaspa",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "tsx main.ts"
+  },
+  "dependencies": {
+    "@hardkas/sdk": "workspace:*"
+  }
+}

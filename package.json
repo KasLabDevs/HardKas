@@ -1,0 +1,50 @@
+{
+  "name": "hardkas-monorepo",
+  "private": true,
+  "license": "MIT",
+  "author": "Javier Rodriguez",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jrodrg92/Hardkas.git"
+  },
+  "homepage": "https://github.com/jrodrg92/Hardkas#readme",
+  "bugs": {
+    "url": "https://github.com/jrodrg92/Hardkas/issues"
+  },
+  "packageManager": "pnpm@9.15.4",
+  "scripts": {
+    "build": "turbo build",
+    "dev": "turbo dev",
+    "test": "turbo test",
+    "typecheck": "turbo typecheck",
+    "lint": "turbo lint",
+    "format": "prettier --write .",
+    "hardkas": "pnpm --filter @hardkas/cli run dev",
+    "cli": "pnpm --filter @hardkas/cli run dev",
+    "check": "pnpm typecheck && pnpm build && pnpm test",
+    "check:artifacts": "pnpm artifact:fixtures",
+    "artifact:fixtures": "pnpm hardkas artifact verify ../artifacts/test/fixtures/valid --recursive --strict",
+    "artifact:corruption": "pnpm hardkas artifact verify ../artifacts/test/fixtures/corrupted --recursive --strict",
+    "example:hello": "tsx examples/01-hello-kaspa/main.ts",
+    "example:transfer": "tsx examples/02-basic-transfer/main.ts",
+    "example:localnet": "tsx examples/03-localnet-demo/main.ts",
+    "example:trace": "pnpm --filter @examples/trace-and-replay start",
+    "example:snapshot": "pnpm --filter @examples/snapshot-restore start",
+    "example:rpc-health": "pnpm --filter @examples/rpc-node-health start",
+    "example:failure": "pnpm --filter @examples/failure-debugging start",
+    "example:igra-readonly": "pnpm --filter @examples/igra-l2-readonly start",
+    "example:bridge-assumptions": "pnpm --filter @examples/bridge-assumptions start",
+    "example:ci": "pnpm --filter @examples/ci-workflow start",
+    "example:dag-reorg": "pnpm --filter @examples/dag-reorg-simulation start"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.2",
+    "eslint": "^9.17.0",
+    "prettier": "^3.4.2",
+    "tsup": "^8.3.5",
+    "tsx": "^4.19.2",
+    "turbo": "^2.3.3",
+    "typescript": "^5.7.2",
+    "vitest": "^2.1.8"
+  }
+}

@@ -1,0 +1,63 @@
+{
+  "schema": "hardkas.signedTx",
+  "version": 1,
+  "status": "signed",
+  "createdAt": "2026-05-07T12:11:50.620Z",
+  "source": {
+    "schema": "hardkas.txPlan",
+    "version": 1,
+    "planHash": "8b8b6666cc48d0de17fde236abe26e0d84b9ad33a071f9f7e5511aa5f71414b2"
+  },
+  "network": "simnet",
+  "mode": "simulated",
+  "from": {
+    "input": "alice",
+    "address": "kaspa:sim_alice"
+  },
+  "to": {
+    "input": "bob",
+    "address": "kaspa:sim_bob"
+  },
+  "amountSompi": "100000000",
+  "amount": "1.00000000 KAS",
+  "selectedUtxos": [
+    {
+      "id": "mock-kaspa:sim_alice-0:0",
+      "address": "kaspa:sim_alice",
+      "amountSompi": "100000000000",
+      "amount": "1000.00000000 KAS",
+      "txId": "mock-kaspa:sim_alice-0",
+      "outputIndex": 0,
+      "scriptPublicKey": "mock-script"
+    }
+  ],
+  "outputs": [
+    {
+      "kind": "payment",
+      "address": "kaspa:sim_bob",
+      "amountSompi": "100000000",
+      "amount": "1.00000000 KAS"
+    },
+    {
+      "kind": "change",
+      "address": "kaspa:sim_alice",
+      "amountSompi": "99899999650",
+      "amount": "998.99999650 KAS"
+    }
+  ],
+  "estimatedMass": "350",
+  "estimatedFeeSompi": "350",
+  "estimatedFee": "0.00000350 KAS",
+  "changeSompi": "99899999650",
+  "change": "998.99999650 KAS",
+  "signature": {
+    "kind": "simulated",
+    "account": "alice",
+    "signerAddress": "kaspa:sim_alice",
+    "value": "simulated:alice:8b8b6666cc48d0de17fde236abe26e0d84b9ad33a071f9f7e5511aa5f71414b2"
+  },
+  "signedTransaction": {
+    "encoding": "simulated",
+    "value": "simulated-signed-tx:8b8b6666cc48d0de17fde236abe26e0d84b9ad33a071f9f7e5511aa5f71414b2"
+  }
+}

@@ -1,0 +1,26 @@
+[
+  {
+    "id": "hello",
+    "name": "Hello Kaspa",
+    "level": "beginner",
+    "requires": ["sdk", "rpc"],
+    "script": "pnpm example:hello",
+    "description": "Simple diagnostic and connection check."
+  },
+  {
+    "id": "transfer",
+    "name": "Basic Transfer",
+    "level": "beginner",
+    "requires": ["sdk", "accounts", "tx"],
+    "script": "pnpm example:transfer",
+    "description": "Explicit plan-sign-send-confirm workflow."
+  },
+  {
+    "id": "localnet",
+    "name": "Localnet Demo",
+    "level": "intermediate",
+    "requires": ["localnet", "accounts", "tx"],
+    "script": "pnpm example:localnet",
+    "description": "Full development cycle on a local environment."
+  }
+]

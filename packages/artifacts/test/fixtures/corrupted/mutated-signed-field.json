@@ -1,0 +1,23 @@
+{
+  "schema": "hardkas.signedTx",
+  "hardkasVersion": "0.2.0-alpha",
+  "version": "1.0.0-alpha",
+  "createdAt": "2026-05-08T22:21:40Z",
+  "networkId": "simnet-1",
+  "mode": "simulated",
+  "signedId": "s1",
+  "sourcePlanId": "p1",
+  "amountSompi": "1000000",
+  "signedTransaction": {
+    "format": "simulated",
+    "payload": "MUTATED-PAYLOAD"
+  },
+  "contentHash": "5e001eec361ca9a8098fb0266419bee20116585c03746ecc8d1e0ec1cc567f13",
+  "lineage": {
+    "artifactId": "5e001eec361ca9a8098fb0266419bee20116585c03746ecc8d1e0ec1cc567f13",
+    "lineageId": "flow-1",
+    "parentArtifactId": "9b3b51f88adaec104835d60b3275fad12ff1851eeb5b88590a9889a880a267b1",
+    "rootArtifactId": "a4bf569a1559b4d1832552b588e8c92c7d95081ab11feb08ad2de7bc0f451665"
+  }
+}
+

@@ -1,0 +1,82 @@
+name: HardKAS CI
+
+on:
+  push:
+    branches: [ main, master, develop, 'feature/*' ]
+  pull_request:
+    branches: [ main, master, develop ]
+
+jobs:
+  build-and-test:
+    name: Build & Test (Node LTS)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js (LTS)
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v3
+        with:
+          version: 9
+          run_install: false
+
+      - name: Get pnpm store directory
+        shell: bash
+        run: |
+          echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
+
+      - name: Cache pnpm dependencies
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.STORE_PATH }}
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-store-
+
+      - name: Verify No Merge Markers
+        shell: bash
+        run: |
+          # We check everything except pnpm-lock.yaml (handled by --frozen-lockfile)
+          if grep -rE "<<<<<<<|=======|>>>>>>>" . --exclude-dir=node_modules --exclude-dir=.git --exclude=pnpm-lock.yaml; then
+            echo "Error: Conflict markers found in the codebase!"
+            grep -rE "<<<<<<<|=======|>>>>>>>" . --exclude-dir=node_modules --exclude-dir=.git --exclude=pnpm-lock.yaml
+            exit 1
+          fi
+
+      - name: Install Dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Full Monorepo Check
+        run: pnpm check
+
+      - name: Verify Artifact Golden Fixtures
+        run: pnpm hardkas artifact verify packages/artifacts/test/fixtures/golden --recursive --strict
+
+      - name: Verify Artifact Corruption Rejection
+        run: |
+          if pnpm hardkas artifact verify packages/artifacts/test/fixtures/corrupted --recursive --strict; then
+            echo "Error: Corruption fixtures should have failed verification"
+            exit 1
+          else
+            echo "Correctly rejected corrupted fixtures"
+          fi
+
+      - name: Run CI Workflow Example
+        run: pnpm example:ci
+
+      - name: Run DAG Reorg Simulation Example
+        run: pnpm example:dag-reorg
+
+      - name: Verify Package Pack Integrity
+        run: |
+          pnpm --filter @hardkas/cli pack
+          pnpm --filter @hardkas/sdk pack
+          pnpm --filter @hardkas/artifacts pack
+          pnpm --filter @hardkas/tx-builder pack
+          pnpm --filter @hardkas/accounts pack

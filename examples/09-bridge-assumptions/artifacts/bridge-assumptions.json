@@ -1,0 +1,19 @@
+{
+  "schema": "hardkas.l2BridgeAssumptions.v1",
+  "hardkasVersion": "0.1.0-dev",
+  "l2Network": "igra",
+  "bridgePhase": "pre-zk",
+  "trustlessExit": false,
+  "custodyModel": "Phase-dependent bridge custody; verify current bridge implementation before use.",
+  "validatorModel": "Phase-dependent",
+  "exitModel": "Trustless exit is available only in the ZK phase.",
+  "riskProfile": "high",
+  "notes": [
+    "Bridge security is phase-dependent: pre-ZK -> MPC -> ZK.",
+    "pre-ZK implies stronger trust assumptions.",
+    "MPC implies threshold committee trust assumptions.",
+    "ZK phase enables validity-proof based trustless exit.",
+    "HardKAS does not perform bridge operations in v0.2-alpha."
+  ],
+  "updatedAt": "2026-05-07T00:00:00Z"
+}

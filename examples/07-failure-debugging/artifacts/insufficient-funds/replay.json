@@ -1,0 +1,5 @@
+{
+  "schema": "hardkas.replay.v1",
+  "scenario": "Insufficient Funds",
+  "instructions": "Run 'pnpm example:failure' to reproduce this exact failure state."
+}

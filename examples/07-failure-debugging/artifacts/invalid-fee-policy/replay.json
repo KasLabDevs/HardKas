@@ -1,0 +1,5 @@
+{
+  "schema": "hardkas.replay.v1",
+  "scenario": "Invalid Fee Policy",
+  "instructions": "Run 'pnpm example:failure' to reproduce this exact failure state."
+}

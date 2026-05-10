@@ -1,0 +1,19 @@
+{
+  "schema": "hardkas.txPlan",
+  "hardkasVersion": "0.2.0-alpha",
+  "version": "1.0.0-alpha",
+  "createdAt": "2026-05-08T22:21:40Z",
+  "networkId": "simnet",
+  "mode": "simulated",
+  "planId": "p-dust",
+  "from": { "address": "kaspa:123" },
+  "to": { "address": "kaspa:456" },
+  "amountSompi": "100",
+  "estimatedFeeSompi": "1000",
+  "estimatedMass": "1000",
+  "inputs": [],
+  "outputs": [
+    { "address": "kaspa:456", "amountSompi": "100" }
+  ]
+}
+

@@ -1,0 +1,23 @@
+{
+  "schema": "hardkas.txReceipt.v2",
+  "hardkasVersion": "0.1.0-dev",
+  "networkId": "simnet",
+  "mode": "simulated",
+  "status": "accepted",
+  "createdAt": "2026-05-08T10:14:37.783Z",
+  "submittedAt": "2026-05-08T10:14:37.783Z",
+  "confirmedAt": "2026-05-08T10:14:37.783Z",
+  "txId": "simulated-1qxierk8",
+  "sourceSignedId": "signed-1778235277783",
+  "from": {
+    "address": "kaspa:sim_alice",
+    "accountName": "alice"
+  },
+  "to": {
+    "address": "kaspa:sim_bob"
+  },
+  "amountSompi": "1000000000",
+  "amount": "10.00000000 KAS",
+  "feeSompi": "350",
+  "rpcUrl": "simulated"
+}

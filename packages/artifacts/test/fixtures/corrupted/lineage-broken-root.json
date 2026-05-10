@@ -1,0 +1,33 @@
+{
+  "schema": "hardkas.txPlan",
+  "hardkasVersion": "0.2.0-alpha",
+  "version": "1.0.0-alpha",
+  "createdAt": "2026-05-08T22:21:40Z",
+  "networkId": "simnet-1",
+  "mode": "simulated",
+  "planId": "p1",
+  "from": {
+    "address": "kaspa:123"
+  },
+  "to": {
+    "address": "kaspa:456"
+  },
+  "amountSompi": "1000000",
+  "estimatedFeeSompi": "250",
+  "estimatedMass": "250",
+  "inputs": [],
+  "outputs": [
+    {
+      "address": "kaspa:456",
+      "amountSompi": "1000000"
+    }
+  ],
+  "contentHash": "ae3e94b9f6fcacf5a09fe787e82b7c9ee7a524669adfad0645a6b7a8eaac770e",
+  "lineage": {
+    "artifactId": "ae3e94b9f6fcacf5a09fe787e82b7c9ee7a524669adfad0645a6b7a8eaac770e",
+    "lineageId": "flow-1",
+    "parentArtifactId": "46751ba9f75d0126faf0d425fd4eb1767527d2ff254646d99f7b057e665c1726",
+    "rootArtifactId": "wrong-root-id"
+  }
+}
+

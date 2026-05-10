@@ -1,0 +1,20 @@
+{
+  "schema": "hardkas.snapshot",
+  "hardkasVersion": "0.2.0-alpha",
+  "version": "1.0.0-alpha",
+  "networkId": "simnet",
+  "mode": "simulated",
+  "workflowId": "test-workflow",
+  "assumptionLevel": "pessimistic",
+  "executionMode": "isolated",
+  "createdAt": "2026-05-10T17:36:52.647Z",
+  "daaScore": "1000",
+  "accounts": [],
+  "utxos": [],
+  "lineage": {
+    "artifactId": "4b93f7419dca1a25d1bc5d77ad86b8d6705f45fa53e2024f1793af9d4a5b0aca",
+    "lineageId": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "rootArtifactId": "4b93f7419dca1a25d1bc5d77ad86b8d6705f45fa53e2024f1793af9d4a5b0aca"
+  },
+  "contentHash": "4b93f7419dca1a25d1bc5d77ad86b8d6705f45fa53e2024f1793af9d4a5b0aca"
+}

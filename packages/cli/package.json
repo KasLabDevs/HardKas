@@ -1,0 +1,58 @@
+{
+  "name": "@hardkas/cli",
+  "version": "0.1.0",
+  "type": "module",
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "bin": {
+    "hardkas": "./dist/index.js"
+  },
+  "scripts": {
+    "build": "tsup src/index.ts --format esm --clean",
+    "dev": "tsx src/index.ts",
+    "hardkas": "tsx src/index.ts",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "lint": "eslint ."
+  },
+  "dependencies": {
+    "@hardkas/accounts": "workspace:*",
+    "@hardkas/artifacts": "workspace:*",
+    "@hardkas/config": "workspace:*",
+    "@hardkas/core": "workspace:*",
+    "@hardkas/kaspa-rpc": "workspace:*",
+    "@hardkas/query": "workspace:*",
+    "@hardkas/l2": "workspace:*",
+    "@hardkas/localnet": "workspace:*",
+    "@hardkas/node-orchestrator": "workspace:*",
+    "@hardkas/node-runner": "workspace:*",
+    "@hardkas/query-store": "workspace:*",
+    "@hardkas/sdk": "workspace:*",
+    "@hardkas/simulator": "workspace:*",
+    "@hardkas/tx-builder": "workspace:*",
+    "commander": "^12.1.0",
+    "enquirer": "^2.4.1",
+    "picocolors": "^1.1.1",
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "tsup": "^8.3.5",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.2",
+    "vitest": "^2.1.8"
+  },
+  "license": "MIT",
+  "author": "Javier Rodriguez",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jrodrg92/Hardkas.git",
+    "directory": "packages/cli"
+  },
+  "bugs": {
+    "url": "https://github.com/jrodrg92/Hardkas/issues"
+  },
+  "homepage": "https://github.com/jrodrg92/Hardkas/tree/main/packages/cli#readme"
+}

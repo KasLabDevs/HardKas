@@ -1,0 +1,40 @@
+{
+  "name": "@hardkas/l2",
+  "version": "0.1.0",
+  "type": "module",
+  "exports": {
+    ".": "./dist/index.js"
+  },
+  "types": "./dist/index.d.ts",
+  "scripts": {
+    "build": "tsup src/index.ts --format esm --dts --clean",
+    "dev": "tsup src/index.ts --format esm --watch --dts",
+    "test": "vitest run",
+    "lint": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@hardkas/artifacts": "workspace:*",
+    "viem": "^2.48.8"
+  },
+  "devDependencies": {
+    "tsup": "^8.3.5",
+    "typescript": "^5.6.3",
+    "vitest": "^2.1.4"
+  },
+  "license": "MIT",
+  "author": "Javier Rodriguez",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jrodrg92/Hardkas.git",
+    "directory": "packages/l2"
+  },
+  "bugs": {
+    "url": "https://github.com/jrodrg92/Hardkas/issues"
+  },
+  "homepage": "https://github.com/jrodrg92/Hardkas/tree/main/packages/l2#readme",
+  "files": [
+    "dist",
+    "LICENSE",
+    "README.md"
+  ]
+}

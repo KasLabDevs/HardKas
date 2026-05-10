@@ -1,0 +1,23 @@
+{
+  "schema": "hardkas.txTrace.v1",
+  "hardkasVersion": "0.1.0-dev",
+  "networkId": "simnet",
+  "mode": "simulated",
+  "createdAt": "2026-05-08T09:39:20.610Z",
+  "txId": "failure-1778233160610",
+  "steps": [
+    {
+      "phase": "resolve-utxos",
+      "status": "start",
+      "timestamp": "2026-05-08T09:38:30.546Z"
+    },
+    {
+      "phase": "finalize",
+      "status": "failed",
+      "timestamp": "2026-05-08T09:39:20.609Z",
+      "details": {
+        "error": "RPC request timed out after 10000ms"
+      }
+    }
+  ]
+}
