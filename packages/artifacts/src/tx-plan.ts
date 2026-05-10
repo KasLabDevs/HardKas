@@ -33,7 +33,6 @@ export function createTxPlanArtifact(options: CreateTxPlanArtifactOptions): TxPl
     createdAt: new Date().toISOString(),
     networkId: options.networkId,
     mode: options.mode,
-    planId: `plan-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
     from: {
       address: options.from.address,
       accountName: options.from.accountName,
@@ -67,6 +66,9 @@ export function createTxPlanArtifact(options: CreateTxPlanArtifactOptions): TxPl
      };
   }
 
-  artifact.contentHash = calculateContentHash(artifact);
+  const hash = calculateContentHash(artifact);
+  artifact.planId = `plan-${hash.slice(0, 16)}`;
+  artifact.contentHash = hash;
+  
   return artifact as TxPlan;
 }

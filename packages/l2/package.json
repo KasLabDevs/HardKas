@@ -1,6 +1,6 @@
 {
   "name": "@hardkas/l2",
-  "version": "0.1.0",
+  "version": "0.2.2-alpha.1",
   "type": "module",
   "exports": {
     ".": "./dist/index.js"
@@ -25,13 +25,13 @@
   "author": "Javier Rodriguez",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/jrodrg92/Hardkas.git",
+    "url": "git+https://github.com/KasLabDevs/HardKas.git",
     "directory": "packages/l2"
   },
   "bugs": {
-    "url": "https://github.com/jrodrg92/Hardkas/issues"
+    "url": "https://github.com/KasLabDevs/HardKas/issues"
   },
-  "homepage": "https://github.com/jrodrg92/Hardkas/tree/main/packages/l2#readme",
+  "homepage": "https://github.com/KasLabDevs/HardKas/tree/main/packages/l2#readme",
   "files": [
     "dist",
     "LICENSE",

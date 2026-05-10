@@ -24,5 +24,6 @@ export type {
   SignedTxArtifact,
   TxReceiptArtifact,
   SnapshotArtifact,
+  TxTraceArtifact,
   DagContext 
 } from "./types.js";

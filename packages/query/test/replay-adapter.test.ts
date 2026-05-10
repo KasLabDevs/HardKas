@@ -105,9 +105,9 @@ describe("ReplayQueryAdapter", () => {
 
   it("divergences — should produce explain chains", async () => {
     const result = await engine.execute(createQueryRequest({ domain: "replay", op: "divergences", explain: "brief" }));
-    if (result.total > 0 && result.explain) {
-      expect(result.explain.length).toBeGreaterThan(0);
-      expect(result.explain[0]!.model).toBe("replay-invariants");
+    if (result.total > 0 && result.why) {
+      expect(result.why.length).toBeGreaterThan(0);
+      expect(result.why[0]!.model).toBe("replay-analysis");
     }
   });
 

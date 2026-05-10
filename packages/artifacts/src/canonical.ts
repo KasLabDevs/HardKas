@@ -18,11 +18,25 @@ export function canonicalStringify(obj: any): string {
     return "[" + obj.map(item => canonicalStringify(item)).join(",") + "]";
   }
 
+  const SEMANTIC_EXCLUSIONS = new Set([
+    "contentHash",
+    "artifactId",
+    "planId",
+    "lineage",
+    "createdAt",
+    "rpcUrl",
+    "indexedAt",
+    "file_path",
+    "file_mtime_ms",
+    "hardkasVersion",
+    "version",
+    "parentArtifactId",
+    "signedId"
+  ]);
+
   const sortedKeys = Object.keys(obj)
     .filter(key =>
-      key !== "contentHash" &&
-      key !== "artifactId" &&
-      key !== "lineage" &&
+      !SEMANTIC_EXCLUSIONS.has(key) &&
       obj[key] !== undefined
     )
     .sort();

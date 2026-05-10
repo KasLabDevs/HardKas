@@ -1,6 +1,6 @@
 {
   "name": "@hardkas/localnet",
-  "version": "0.1.0",
+  "version": "0.2.2-alpha.1",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -28,13 +28,13 @@
   "author": "Javier Rodriguez",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/jrodrg92/Hardkas.git",
+    "url": "git+https://github.com/KasLabDevs/HardKas.git",
     "directory": "packages/localnet"
   },
   "bugs": {
-    "url": "https://github.com/jrodrg92/Hardkas/issues"
+    "url": "https://github.com/KasLabDevs/HardKas/issues"
   },
-  "homepage": "https://github.com/jrodrg92/Hardkas/tree/main/packages/localnet#readme",
+  "homepage": "https://github.com/KasLabDevs/HardKas/tree/main/packages/localnet#readme",
   "files": [
     "dist",
     "LICENSE",

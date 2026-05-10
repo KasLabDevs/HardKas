@@ -65,7 +65,7 @@ describe("Query Store Schema (Phase 3)", () => {
     storeV2.connect(); // Should trigger migration logic (drop and recreate)
     
     const version = storeV2.getDatabase().prepare("SELECT value FROM metadata WHERE key = 'version'").get() as { value: string };
-    assert.strictEqual(version.value, "2");
+    assert.strictEqual(version.value, "3");
     
     storeV2.disconnect();
   });

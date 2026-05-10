@@ -1,20 +1,36 @@
 # HardKAS
 
+[![NPM Version](https://img.shields.io/npm/v/@hardkas/sdk?color=red&label=sdk)](https://www.npmjs.com/package/@hardkas/sdk)
+[![NPM Version](https://img.shields.io/npm/v/@hardkas/cli?color=red&label=cli)](https://www.npmjs.com/package/@hardkas/cli)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
 **HardKAS** is a Kaspa-native developer operating environment and deterministic workflow environment. It provides a local-first, deterministic environment for planning, verifying, and debugging transactions and protocol-level integrations on the Kaspa BlockDAG.
 
+---
+
+## Published Packages
+
+| Package | Version | Description |
+|:---|:---|:---|
+| [`@hardkas/sdk`](https://www.npmjs.com/package/@hardkas/sdk) | [![npm](https://img.shields.io/npm/v/@hardkas/sdk)](https://www.npmjs.com/package/@hardkas/sdk) | Full developer SDK for Kaspa |
+| [`@hardkas/cli`](https://www.npmjs.com/package/@hardkas/cli) | [![npm](https://img.shields.io/npm/v/@hardkas/cli)](https://www.npmjs.com/package/@hardkas/cli) | Command-line interface for BlockDAG operations |
+| [`@hardkas/core`](https://www.npmjs.com/package/@hardkas/core) | [![npm](https://img.shields.io/npm/v/@hardkas/core)](https://www.npmjs.com/package/@hardkas/core) | Core primitives and types |
+
+---
+
 > [!IMPORTANT]
-> **Status: 0.1.0 / Developer Preview**
+> **Status: 0.2.2-alpha / Developer Preview**
 > HardKAS is currently in Developer Preview. Features, APIs, and artifact formats are subject to evolution.
 
 > [!CAUTION]
 > **Not Production Custody Software.**
-> HardKAS is a developer infrastructure tool. It is NOT intended for high-value mainnet custody. Always use dedicated, hardware-backed core wallets for production assets.
+> HardKAS is a developer infrastructure tool. It is NOT intended for high-value mainnet custody. Always use dedicated, hardware-backed core wallets for production assets. See the [Security Model](docs/security-model.md) for details.
 
 ---
 
 ## Project Status
 
-HardKAS is currently in Developer Preview (0.1.0).
+HardKAS is currently in Developer Preview (0.2.2-alpha).
 
 The architecture is stabilizing, but users should be aware:
 - **APIs may change**: Commands and SDK interfaces are not yet finalized.
@@ -67,9 +83,7 @@ HardKAS maintains strict boundaries between different architectural layers:
 
 ---
 
-## Current Capabilities
-
-### Stable (Alpha)
+### stable
 - **Deterministic Artifacts**: Canonical schemas for Plans, SignedTx, and Receipts.
 - **Replay Invariants**: Reproducible simulated transaction outcomes.
 - **Snapshot Hashing**: Verifiable state snapshots for localnet persistence.
@@ -77,11 +91,14 @@ HardKAS maintains strict boundaries between different architectural layers:
 - **Encrypted Dev Keystore**: Argon2id/AES-256 protected local keys.
 - **RPC Resilience**: Automated retries, health scoring, and diagnostics.
 
-### Experimental
+### preview
 - **Igra L2 Integration**: Early contract deployment preflights.
 - **Bridge Modeling**: Modeling cross-chain state transitions.
-- **DAG Light-Model**: High-level simulation of reorgs and conflict handling.
 - **Lineage Extensions**: Advanced provenance tracking across complex flows.
+
+### research
+- **DAG Light-Model**: High-level simulation of reorgs and conflict handling.
+- **Anomalies Engine**: Deep DAG state introspection.
 
 ### Planned
 - **Multi-node Localnet**: Orchestrating local clusters for networking tests.
@@ -106,12 +123,54 @@ HardKAS maintains strict boundaries between different architectural layers:
 
 ## Quickstart
 
-Clone, build, and run your first verified transaction in under 5 minutes.
+Get started with HardKAS in seconds.
 
-### 1. Install
+### 1. Install the CLI globally
 
 ```bash
-git clone https://github.com/jrodrg92/Hardkas.git
+npm install -g @hardkas/cli
+```
+
+### 2. Initialize your project
+
+```bash
+hardkas init
+```
+
+### 3. Start the local node
+
+```bash
+hardkas node start
+```
+
+### 4. Manage Accounts
+
+```bash
+hardkas accounts list
+```
+
+### 5. Send a Transaction (Simulated)
+
+```bash
+hardkas tx send --from alice --to bob --amount 10
+```
+
+### 6. Run Tests
+
+```bash
+hardkas test
+```
+
+---
+
+## Local Development (Monorepo)
+
+If you want to contribute to HardKAS or run the examples from source:
+
+### 1. Clone & Build
+
+```bash
+git clone https://github.com/KasLabDevs/HardKas.git
 cd Hardkas
 pnpm install
 pnpm build
@@ -120,53 +179,54 @@ pnpm build
 ### 2. Initialize a project
 
 ```bash
-pnpm hardkas init my-kaspa-project
-cd my-kaspa-project
+hardkas init
 ```
 
-### 3. Plan a simulated transaction
+### 3. Start the node
 
 ```bash
-pnpm hardkas tx plan --from alice --to bob --amount 10 --network simnet
+hardkas node start
 ```
 
-This creates a deterministic `TxPlan` artifact in `.hardkas/artifacts/`.
-
-### 4. Sign the transaction
+### 4. Manage Accounts
 
 ```bash
-pnpm hardkas tx sign .hardkas/artifacts/tx-plan-latest.json
+hardkas accounts list
 ```
 
-### 5. Send (simulated)
+### 5. Send a Transaction (Simulated)
 
 ```bash
-pnpm hardkas tx send .hardkas/artifacts/signed-tx-latest.json
+hardkas tx send --from alice --to bob --amount 10
 ```
 
-### 6. Verify the full artifact chain
+### 6. Run Tests
 
 ```bash
-pnpm hardkas artifact verify .hardkas/artifacts/ --recursive --strict
+hardkas test
 ```
 
-If all artifacts pass, you've completed a deterministic, auditable transaction lifecycle — entirely local.
+### 7. Verify Artifacts
+
+```bash
+hardkas artifact verify .hardkas/artifacts/ --recursive
+```
 
 ### Run examples
 
 ```bash
 pnpm example:ci              # CI workflow demo
 pnpm example:dag-reorg        # DAG reorg simulation
-pnpm hardkas example list     # See all available examples
+hardkas example list     # See all available examples
 ```
 
 ### CLI Reference
 
 ```bash
-pnpm hardkas --help           # All command groups
-pnpm hardkas tx --help        # Transaction commands
-pnpm hardkas artifact --help  # Artifact verification
-pnpm hardkas rpc --help       # RPC diagnostics
+hardkas --help           # All command groups
+hardkas tx --help        # Transaction commands
+hardkas artifact --help  # Artifact verification
+hardkas rpc --help       # RPC diagnostics
 ```
 
 

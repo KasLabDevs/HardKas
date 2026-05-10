@@ -7,7 +7,7 @@ This example demonstrates the foundational step for any HardKAS application: con
 Ensure your local development network (simnet) is running:
 
 ```bash
-pnpm hardkas up
+hardkas up
 ```
 
 ## Running the example

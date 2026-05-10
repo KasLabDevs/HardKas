@@ -68,6 +68,31 @@ export class HardkasError extends Error {
   }
 }
 
+export type InvariantDomain = 
+  | "semantic"
+  | "replay"
+  | "provenance"
+  | "structural"
+  | "operational";
+
+export type InvariantSeverity = "warning" | "error" | "fatal";
+
+export class InvariantViolationError extends HardkasError {
+  readonly domain: InvariantDomain;
+  readonly severity: InvariantSeverity;
+
+  constructor(
+    domain: InvariantDomain, 
+    message: string, 
+    options?: { severity?: InvariantSeverity, cause?: unknown }
+  ) {
+    super(`INVARIANT_VIOLATION_${domain.toUpperCase()}`, message, { cause: options?.cause });
+    this.name = "InvariantViolationError";
+    this.domain = domain;
+    this.severity = options?.severity || "fatal";
+  }
+}
+
 export function parseHardkasConfig(input: unknown): HardkasConfig {
   const result = hardkasConfigSchema.safeParse(input);
 
@@ -110,3 +135,4 @@ export function formatSompi(amountSompi: bigint): string {
 export * from "./events.js";
 export * from "./domain-types.js";
 export * from "./branded.js";
+export { maskSecrets, redactSecret } from "./security.js";

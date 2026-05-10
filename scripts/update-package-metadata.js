@@ -32,7 +32,7 @@ for (const pkgName of packages) {
       directory: `packages/${pkgName}`
     };
     pkg.bugs = commonMetadata.bugs;
-    pkg.homepage = `https://github.com/jrodrg92/Hardkas/tree/main/packages/${pkgName}#readme`;
+    pkg.homepage = `https://github.com/KasLabDevs/HardKas/tree/main/packages/${pkgName}#readme`;
     
     // Ensure files include LICENSE and README.md
     if (!pkg.files) pkg.files = ["dist"];

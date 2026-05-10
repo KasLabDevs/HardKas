@@ -8,6 +8,15 @@ export interface IndexerOptions {
   cwd?: string;
 }
 
+export interface DoctorReport {
+  ok: boolean;
+  staleArtifacts: number;
+  zombieArtifacts: number;
+  corruptedFiles: string[];
+  orphanEdges: number;
+  lastIndexedAt: string | null;
+}
+
 export class HardkasIndexer {
   private db: DatabaseSync;
   private hardkasDir: string;
@@ -25,6 +34,12 @@ export class HardkasIndexer {
       this.syncArtifacts();
       this.syncEvents();
       this.syncTraces();
+      this.cleanupZombies();
+      
+      // Mark last sync
+      this.db.prepare("INSERT OR REPLACE INTO metadata (key, value) VALUES (?, ?)")
+        .run("last_indexed_at", new Date().toISOString());
+        
       this.db.exec("COMMIT;");
     } catch (e) {
       this.db.exec("ROLLBACK;");
@@ -32,40 +47,107 @@ export class HardkasIndexer {
     }
   }
 
-  private syncArtifacts() {
-    const walk = (dir: string): string[] => {
-      let results: string[] = [];
-      if (!fs.existsSync(dir)) return results;
-      const list = fs.readdirSync(dir);
-      for (const file of list) {
-        const filePath = path.join(dir, file);
-        const stat = fs.statSync(filePath);
-        if (stat.isDirectory()) {
-          results = results.concat(walk(filePath));
-        } else if (file.endsWith(".json") && !file.endsWith("events.jsonl") && file !== "state.json") {
-          results.push(filePath);
-        }
-      }
-      return results;
+  /**
+   * Complete wipe and rebuild of the index.
+   */
+  public rebuild() {
+    this.db.exec("BEGIN TRANSACTION;");
+    try {
+      this.db.exec("DELETE FROM artifacts;");
+      this.db.exec("DELETE FROM lineage_edges;");
+      this.db.exec("DELETE FROM events;");
+      this.db.exec("DELETE FROM traces;");
+      this.db.exec("DELETE FROM metadata WHERE key = 'last_indexed_at';");
+      this.db.exec("COMMIT;");
+      this.sync();
+    } catch (e) {
+      this.db.exec("ROLLBACK;");
+      throw e;
+    }
+  }
+
+  /**
+   * Diagnostic check of the index integrity and freshness.
+   */
+  public doctor(): DoctorReport {
+    const report: DoctorReport = {
+      ok: true,
+      staleArtifacts: 0,
+      zombieArtifacts: 0,
+      corruptedFiles: [],
+      orphanEdges: 0,
+      lastIndexedAt: null
     };
 
-    const files = walk(this.hardkasDir);
+    // 1. Check last indexed
+    const lastIdx = this.db.prepare("SELECT value FROM metadata WHERE key = 'last_indexed_at'").get() as { value: string } | undefined;
+    report.lastIndexedAt = lastIdx?.value || null;
 
-    const insertArtifact = this.db.prepare(`
-      INSERT OR IGNORE INTO artifacts 
-      (artifact_id, content_hash, schema, version, kind, network_id, tx_id, created_at, raw_json)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+    // 2. Check for zombie rows (rows with no file or mismatched mtime)
+    const rows = this.db.prepare("SELECT artifact_id, file_path, file_mtime_ms FROM artifacts").all() as any[];
+    for (const row of rows) {
+      if (!row.file_path || !fs.existsSync(row.file_path)) {
+        report.zombieArtifacts++;
+      } else {
+        const stat = fs.statSync(row.file_path);
+        if (stat.mtimeMs !== row.file_mtime_ms) {
+          report.staleArtifacts++;
+        }
+      }
+    }
+
+    // 3. Check for orphan edges
+    const orphans = this.db.prepare(`
+      SELECT COUNT(*) as count FROM lineage_edges 
+      WHERE parent_artifact_id NOT IN (SELECT artifact_id FROM artifacts)
+      OR child_artifact_id NOT IN (SELECT artifact_id FROM artifacts)
+    `).get() as { count: number };
+    report.orphanEdges = orphans.count;
+
+    report.ok = report.staleArtifacts === 0 && report.zombieArtifacts === 0 && report.orphanEdges === 0;
+    return report;
+  }
+
+  private syncArtifacts() {
+    const files = this.walk(this.hardkasDir);
+    const indexedAt = new Date().toISOString();
+
+    const upsertArtifact = this.db.prepare(`
+      INSERT INTO artifacts 
+      (artifact_id, content_hash, schema, version, kind, network_id, tx_id, created_at, raw_json, file_path, file_mtime_ms, indexed_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      ON CONFLICT(artifact_id) DO UPDATE SET
+        content_hash = excluded.content_hash,
+        schema = excluded.schema,
+        version = excluded.version,
+        kind = excluded.kind,
+        network_id = excluded.network_id,
+        tx_id = excluded.tx_id,
+        created_at = excluded.created_at,
+        raw_json = excluded.raw_json,
+        file_path = excluded.file_path,
+        file_mtime_ms = excluded.file_mtime_ms,
+        indexed_at = excluded.indexed_at
     `);
 
     const insertEdge = this.db.prepare(`
-      INSERT OR IGNORE INTO lineage_edges (lineage_id, parent_artifact_id, child_artifact_id, edge_kind, created_at)
+      INSERT OR REPLACE INTO lineage_edges (lineage_id, parent_artifact_id, child_artifact_id, edge_kind, created_at)
       VALUES (?, ?, ?, ?, ?)
     `);
 
-    const artifactsWithLineage: any[] = [];
+    const mtimeStmt = this.db.prepare("SELECT file_mtime_ms FROM artifacts WHERE artifact_id = ?");
 
-    // Pass 1: Index Artifacts
+    const artifactsToLink: any[] = [];
+
     for (const file of files) {
+      const stat = fs.statSync(file);
+      const existing = this.db.prepare("SELECT artifact_id, file_mtime_ms FROM artifacts WHERE file_path = ?").get(file) as any;
+      
+      if (existing && existing.file_mtime_ms === stat.mtimeMs) {
+        // Still need to track for lineage if we want to be safe, or assume it's already there
+        // For simplicity in sync, we'll re-parse lineage for all files or use a more complex cache
+      }
+
       const content = fs.readFileSync(file, "utf-8");
       try {
         const parsed = JSON.parse(content);
@@ -73,7 +155,7 @@ export class HardkasIndexer {
 
         const hash = parsed.contentHash || calculateContentHash(parsed);
 
-        insertArtifact.run(
+        upsertArtifact.run(
           parsed.artifactId,
           hash,
           parsed.schema,
@@ -82,31 +164,29 @@ export class HardkasIndexer {
           parsed.networkId || "unknown",
           parsed.txId || null,
           parsed.createdAt || null,
-          content
+          content,
+          file,
+          stat.mtimeMs,
+          indexedAt
         );
 
         if (parsed.lineage && parsed.lineage.parentArtifactId) {
-          artifactsWithLineage.push(parsed);
+          artifactsToLink.push(parsed);
         }
-
       } catch (e) {
         // Skip invalid JSON
       }
     }
 
-    // Pass 2: Index Lineage Edges (after artifacts are present)
-    for (const parsed of artifactsWithLineage) {
-      try {
-        insertEdge.run(
-          parsed.lineage.lineageId || "legacy-lineage",
-          parsed.lineage.parentArtifactId,
-          parsed.artifactId,
-          "derived",
-          parsed.createdAt || null
-        );
-      } catch (e) {
-        // Ignore edge errors (e.g. FK violation if parent missing from disk)
-      }
+    // Pass 2: Lineage Edges (Now all artifact IDs exist)
+    for (const parsed of artifactsToLink) {
+      insertEdge.run(
+        parsed.lineage.lineageId || "legacy-lineage",
+        parsed.lineage.parentArtifactId,
+        parsed.artifactId,
+        "derived",
+        parsed.createdAt || null
+      );
     }
   }
 
@@ -114,29 +194,44 @@ export class HardkasIndexer {
     const eventsPath = path.join(this.hardkasDir, "events.jsonl");
     if (!fs.existsSync(eventsPath)) return;
 
+    const stat = fs.statSync(eventsPath);
+    const indexedAt = new Date().toISOString();
+
+    // Check if events file changed
+    const existing = this.db.prepare("SELECT file_mtime_ms FROM events WHERE file_path = ? LIMIT 1").get(eventsPath) as any;
+    if (existing && existing.file_mtime_ms === stat.mtimeMs) {
+      return;
+    }
+
     const content = fs.readFileSync(eventsPath, "utf-8");
     const lines = content.split("\n").filter(l => l.trim() !== "");
 
-    const stmt = this.db.prepare("SELECT COUNT(*) as count FROM events");
-    const result = stmt.get() as { count: number };
-    const existingCount = result.count;
-
-    if (lines.length <= existingCount) return;
-
-    const newLines = lines.slice(existingCount);
-
-    const insertEvent = this.db.prepare(`
-      INSERT OR IGNORE INTO events 
-      (event_id, kind, domain, timestamp, workflow_id, correlation_id, causation_id, tx_id, artifact_id, network_id, raw_json)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    const upsertEvent = this.db.prepare(`
+      INSERT INTO events 
+      (event_id, kind, domain, timestamp, workflow_id, correlation_id, causation_id, tx_id, artifact_id, network_id, raw_json, file_path, file_mtime_ms, indexed_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      ON CONFLICT(event_id) DO UPDATE SET
+        kind = excluded.kind,
+        domain = excluded.domain,
+        timestamp = excluded.timestamp,
+        workflow_id = excluded.workflow_id,
+        correlation_id = excluded.correlation_id,
+        causation_id = excluded.causation_id,
+        tx_id = excluded.tx_id,
+        artifact_id = excluded.artifact_id,
+        network_id = excluded.network_id,
+        raw_json = excluded.raw_json,
+        file_path = excluded.file_path,
+        file_mtime_ms = excluded.file_mtime_ms,
+        indexed_at = excluded.indexed_at
     `);
 
-    for (const line of newLines) {
+    for (const line of lines) {
       try {
         const parsed = JSON.parse(line) as EventEnvelope;
         if (!validateEventEnvelope(parsed)) continue;
 
-        insertEvent.run(
+        upsertEvent.run(
           parsed.eventId,
           parsed.kind,
           parsed.domain,
@@ -147,7 +242,10 @@ export class HardkasIndexer {
           parsed.txId || null,
           parsed.artifactId || null,
           parsed.networkId,
-          line
+          line,
+          eventsPath,
+          stat.mtimeMs,
+          indexedAt
         );
       } catch (e) {
         // Skip invalid line
@@ -188,5 +286,39 @@ export class HardkasIndexer {
     `);
 
     upsertTrace.run();
+  }
+
+  private cleanupZombies() {
+    const rows = this.db.prepare("SELECT artifact_id, file_path FROM artifacts").all() as any[];
+    const deleteArtifact = this.db.prepare("DELETE FROM artifacts WHERE artifact_id = ?");
+
+    for (const row of rows) {
+      if (!row.file_path || !fs.existsSync(row.file_path)) {
+        deleteArtifact.run(row.artifact_id);
+      }
+    }
+
+    // Events cleanup (if file gone, all events gone)
+    const eventsPath = path.join(this.hardkasDir, "events.jsonl");
+    if (!fs.existsSync(eventsPath)) {
+      this.db.exec("DELETE FROM events;");
+    }
+  }
+
+  private walk(dir: string): string[] {
+    let results: string[] = [];
+    if (!fs.existsSync(dir)) return results;
+    const list = fs.readdirSync(dir);
+    for (const file of list) {
+      const filePath = path.join(dir, file);
+      const stat = fs.statSync(filePath);
+      if (stat.isDirectory()) {
+        if (file === "node_modules" || file === ".git") continue;
+        results = results.concat(this.walk(filePath));
+      } else if (file.endsWith(".json") && !file.endsWith("events.jsonl") && file !== "state.json") {
+        results.push(filePath);
+      }
+    }
+    return results;
   }
 }

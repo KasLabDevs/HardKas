@@ -1,14 +1,14 @@
 {
   "name": "@examples/snapshot-restore",
-  "version": "0.1.0",
+  "version": "0.2.2-alpha",
   "private": true,
   "type": "module",
   "scripts": {
     "start": "tsx src/index.ts"
   },
   "dependencies": {
-    "@hardkas/sdk": "workspace:*",
-    "@hardkas/localnet": "workspace:*",
+    "@hardkas/sdk": "0.2.2-alpha",
+    "@hardkas/localnet": "0.2.2-alpha",
     "tsx": "^4.19.2",
     "typescript": "^5.7.2"
   }

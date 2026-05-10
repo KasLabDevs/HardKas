@@ -1,5 +1,5 @@
 import { Command } from "commander";
-import { handleError } from "../ui.js";
+import { handleError, UI } from "../ui.js";
 
 export function registerQueryCommands(program: Command) {
   const queryCmd = program.command("query").description("Query and introspect HardKAS artifacts, lineage, and workflows");
@@ -8,7 +8,55 @@ export function registerQueryCommands(program: Command) {
   // hardkas query artifacts
   // =========================================================================
 
-  const artifactsCmd = queryCmd.command("artifacts").description("Query artifact store");
+  const artifactsCmd = queryCmd.command("artifacts").description(`Query artifact store ${UI.maturity("stable")}`);
+
+  // =========================================================================
+  // hardkas query store
+  // =========================================================================
+
+  const storeCmd = queryCmd.command("store").description(`Manage query store index ${UI.maturity("alpha")}`);
+
+  storeCmd
+    .command("doctor")
+    .description("Integrity and freshness check of the query store index")
+    .action(async () => {
+      try {
+        const engine = await getQueryEngine();
+        const report = await engine.backend.doctor();
+        
+        console.log("\n  ═══ Query Store Doctor ═══\n");
+        console.log(`  Backend:      ${engine.backend.kind()}`);
+        console.log(`  Overall:      ${report.ok ? "✓ HEALTHY" : "✗ STALE / ISSUES"}`);
+        console.log(`  Last Indexed: ${report.lastIndexedAt || "never"}`);
+        console.log(`  Stale Rows:   ${report.staleArtifacts || 0}`);
+        console.log(`  Zombie Rows:  ${report.zombieArtifacts || 0}`);
+        console.log(`  Orphan Edges: ${report.orphanEdges || 0}`);
+        
+        if (report.corruptedFiles?.length > 0) {
+          console.log("\n  Corrupted Files:");
+          for (const f of report.corruptedFiles) console.log(`    ✗ ${f}`);
+        }
+        
+        if (!report.ok) {
+          console.log("\n  Recommendation: Run 'hardkas query store rebuild' to fix issues.\n");
+        } else {
+          console.log("\n  Everything looks good.\n");
+        }
+      } catch (e) { handleError(e); process.exitCode = 1; }
+    });
+
+  storeCmd
+    .command("rebuild")
+    .description("Force a complete rebuild of the query store index")
+    .action(async () => {
+      try {
+        console.log("\n  Rebuilding query store index...");
+        const engine = await getQueryEngine();
+        const start = Date.now();
+        await engine.backend.rebuild();
+        console.log(`  ✓ Index rebuilt successfully in ${Date.now() - start}ms.\n`);
+      } catch (e) { handleError(e); process.exitCode = 1; }
+    });
 
   artifactsCmd
     .command("list")
@@ -24,8 +72,8 @@ export function registerQueryCommands(program: Command) {
     .option("--explain [level]", "Attach explain chains (brief|full)")
     .action(async (options) => {
       try {
-        const { QueryEngine, createQueryRequest } = await import("@hardkas/query");
-        const engine = new QueryEngine({ artifactDir: process.cwd() });
+        const { createQueryRequest } = await import("@hardkas/query");
+        const engine = await getQueryEngine();
 
         const filters: Array<{ field: string; op: "eq"; value: string }> = [];
         if (options.schema) filters.push({ field: "schema", op: "eq", value: `hardkas.${options.schema}` });
@@ -70,8 +118,8 @@ export function registerQueryCommands(program: Command) {
     .option("--explain [level]", "Attach explain chains (brief|full)")
     .action(async (target, options) => {
       try {
-        const { QueryEngine, createQueryRequest } = await import("@hardkas/query");
-        const engine = new QueryEngine({ artifactDir: process.cwd() });
+        const { createQueryRequest } = await import("@hardkas/query");
+        const engine = await getQueryEngine();
 
         const request = createQueryRequest({
           domain: "artifacts",
@@ -100,8 +148,8 @@ export function registerQueryCommands(program: Command) {
     .option("--json", "Output as JSON", false)
     .action(async (left, right, options) => {
       try {
-        const { QueryEngine, createQueryRequest } = await import("@hardkas/query");
-        const engine = new QueryEngine({ artifactDir: process.cwd() });
+        const { createQueryRequest } = await import("@hardkas/query");
+        const engine = await getQueryEngine();
 
         const request = createQueryRequest({
           domain: "artifacts",
@@ -127,7 +175,7 @@ export function registerQueryCommands(program: Command) {
   // hardkas query lineage
   // =========================================================================
 
-  const lineageCmd = queryCmd.command("lineage").description("Traverse artifact lineage");
+  const lineageCmd = queryCmd.command("lineage").description(`Traverse artifact lineage ${UI.maturity("preview")}`);
 
   lineageCmd
     .command("chain <anchor>")
@@ -138,8 +186,8 @@ export function registerQueryCommands(program: Command) {
     .option("--why", "Shorthand for --explain full")
     .action(async (anchor, options) => {
       try {
-        const { QueryEngine, createQueryRequest } = await import("@hardkas/query");
-        const engine = new QueryEngine({ artifactDir: process.cwd() });
+        const { createQueryRequest } = await import("@hardkas/query");
+        const engine = await getQueryEngine();
 
         const explain = options.why ? "full" as const
           : options.explain === true ? "brief" as const
@@ -175,8 +223,8 @@ export function registerQueryCommands(program: Command) {
     .option("--why", "Shorthand for --explain full")
     .action(async (options) => {
       try {
-        const { QueryEngine, createQueryRequest } = await import("@hardkas/query");
-        const engine = new QueryEngine({ artifactDir: process.cwd() });
+        const { createQueryRequest } = await import("@hardkas/query");
+        const engine = await getQueryEngine();
 
         const explain = options.why ? "full" as const
           : options.explain === true ? "brief" as const
@@ -210,8 +258,8 @@ export function registerQueryCommands(program: Command) {
     .option("--explain [level]", "Attach explain chains (brief|full)")
     .action(async (options) => {
       try {
-        const { QueryEngine, createQueryRequest } = await import("@hardkas/query");
-        const engine = new QueryEngine({ artifactDir: process.cwd() });
+        const { createQueryRequest } = await import("@hardkas/query");
+        const engine = await getQueryEngine();
 
         const request = createQueryRequest({
           domain: "lineage",
@@ -236,7 +284,7 @@ export function registerQueryCommands(program: Command) {
   // hardkas query replay
   // =========================================================================
 
-  const replayCmd = queryCmd.command("replay").description("Inspect replay history and divergence");
+  const replayCmd = queryCmd.command("replay").description(`Inspect replay history and divergence ${UI.maturity("preview")}`);
 
   replayCmd
     .command("list")
@@ -246,8 +294,8 @@ export function registerQueryCommands(program: Command) {
     .option("--limit <n>", "Max results", "100")
     .action(async (options) => {
       try {
-        const { QueryEngine, createQueryRequest } = await import("@hardkas/query");
-        const engine = new QueryEngine({ artifactDir: process.cwd() });
+        const { createQueryRequest } = await import("@hardkas/query");
+        const engine = await getQueryEngine();
         const filters: Array<{ field: string; op: "eq"; value: string }> = [];
         if (options.status) filters.push({ field: "status", op: "eq", value: options.status });
 
@@ -269,8 +317,8 @@ export function registerQueryCommands(program: Command) {
     .option("--json", "Output as JSON", false)
     .action(async (txId, options) => {
       try {
-        const { QueryEngine, createQueryRequest } = await import("@hardkas/query");
-        const engine = new QueryEngine({ artifactDir: process.cwd() });
+        const { createQueryRequest } = await import("@hardkas/query");
+        const engine = await getQueryEngine();
 
         const request = createQueryRequest({ domain: "replay", op: "summary", params: { txId } });
         const result = await engine.execute(request);
@@ -291,8 +339,8 @@ export function registerQueryCommands(program: Command) {
     .option("--explain [level]", "Attach explain chains (brief|full)")
     .action(async (options) => {
       try {
-        const { QueryEngine, createQueryRequest } = await import("@hardkas/query");
-        const engine = new QueryEngine({ artifactDir: process.cwd() });
+        const { createQueryRequest } = await import("@hardkas/query");
+        const engine = await getQueryEngine();
 
         const request = createQueryRequest({
           domain: "replay", op: "divergences",
@@ -316,8 +364,8 @@ export function registerQueryCommands(program: Command) {
     .option("--explain [level]", "Attach explain chains (brief|full)")
     .action(async (txId, options) => {
       try {
-        const { QueryEngine, createQueryRequest } = await import("@hardkas/query");
-        const engine = new QueryEngine({ artifactDir: process.cwd() });
+        const { createQueryRequest } = await import("@hardkas/query");
+        const engine = await getQueryEngine();
 
         const request = createQueryRequest({
           domain: "replay", op: "invariants", params: { txId },
@@ -338,7 +386,7 @@ export function registerQueryCommands(program: Command) {
   // hardkas query dag
   // =========================================================================
 
-  const dagCmd = queryCmd.command("dag").description("Query simulated DAG state (deterministic-light-model, NOT GHOSTDAG)");
+  const dagCmd = queryCmd.command("dag").description(`Query simulated DAG state ${UI.maturity("research")}`);
 
   dagCmd
     .command("conflicts")
@@ -348,8 +396,8 @@ export function registerQueryCommands(program: Command) {
     .option("--why", "Shorthand for --explain full")
     .action(async (options) => {
       try {
-        const { QueryEngine, createQueryRequest } = await import("@hardkas/query");
-        const engine = new QueryEngine({ artifactDir: process.cwd() });
+        const { createQueryRequest } = await import("@hardkas/query");
+        const engine = await getQueryEngine();
         const explain = options.why ? "full" as const : options.explain === true ? "brief" as const : (options.explain || false);
         const request = createQueryRequest({ domain: "dag", op: "conflicts", explain });
         const result = await engine.execute(request);
@@ -367,8 +415,8 @@ export function registerQueryCommands(program: Command) {
     .option("--explain [level]", "Attach explain chains (brief|full)")
     .action(async (options) => {
       try {
-        const { QueryEngine, createQueryRequest } = await import("@hardkas/query");
-        const engine = new QueryEngine({ artifactDir: process.cwd() });
+        const { createQueryRequest } = await import("@hardkas/query");
+        const engine = await getQueryEngine();
         const explain = options.explain === true ? "brief" as const : (options.explain || false);
         const request = createQueryRequest({ domain: "dag", op: "displaced", explain });
         const result = await engine.execute(request);
@@ -387,8 +435,8 @@ export function registerQueryCommands(program: Command) {
     .option("--why", "Shorthand for --explain full")
     .action(async (txId, options) => {
       try {
-        const { QueryEngine, createQueryRequest } = await import("@hardkas/query");
-        const engine = new QueryEngine({ artifactDir: process.cwd() });
+        const { createQueryRequest } = await import("@hardkas/query");
+        const engine = await getQueryEngine();
         const explain = options.why ? "full" as const : options.explain === true ? "brief" as const : (options.explain || false);
         const request = createQueryRequest({ domain: "dag", op: "history", params: { txId }, explain });
         const result = await engine.execute(request);
@@ -405,8 +453,8 @@ export function registerQueryCommands(program: Command) {
     .option("--json", "Output as JSON", false)
     .action(async (options) => {
       try {
-        const { QueryEngine, createQueryRequest } = await import("@hardkas/query");
-        const engine = new QueryEngine({ artifactDir: process.cwd() });
+        const { createQueryRequest } = await import("@hardkas/query");
+        const engine = await getQueryEngine();
         const request = createQueryRequest({ domain: "dag", op: "sink-path" });
         const result = await engine.execute(request);
         if (options.json) {
@@ -423,8 +471,8 @@ export function registerQueryCommands(program: Command) {
     .option("--explain [level]", "Attach explain chains (brief|full)")
     .action(async (options) => {
       try {
-        const { QueryEngine, createQueryRequest } = await import("@hardkas/query");
-        const engine = new QueryEngine({ artifactDir: process.cwd() });
+        const { createQueryRequest } = await import("@hardkas/query");
+        const engine = await getQueryEngine();
         const explain = options.explain === true ? "brief" as const : (options.explain || false);
         const request = createQueryRequest({ domain: "dag", op: "anomalies", explain });
         const result = await engine.execute(request);
@@ -451,8 +499,8 @@ export function registerQueryCommands(program: Command) {
     .option("--explain [level]", "Attach explain metadata (brief|full)")
     .action(async (options) => {
       try {
-        const { QueryEngine, createQueryRequest } = await import("@hardkas/query");
-        const engine = new QueryEngine({ artifactDir: process.cwd() });
+        const { createQueryRequest } = await import("@hardkas/query");
+        const engine = await getQueryEngine();
 
         const filters: Array<{ field: string; op: "eq"; value: string }> = [];
         if (options.domain) filters.push({ field: "domain", op: "eq", value: options.domain });
@@ -488,13 +536,13 @@ export function registerQueryCommands(program: Command) {
 
   queryCmd
     .command("tx <txId>")
-    .description("Aggregate all data for a transaction")
+    .description(`Aggregate all data for a transaction ${UI.maturity("stable")}`)
     .option("--json", "Output as deterministic JSON", false)
     .option("--explain [level]", "Attach explain metadata (brief|full)")
     .action(async (txId, options) => {
       try {
-        const { QueryEngine, createQueryRequest } = await import("@hardkas/query");
-        const engine = new QueryEngine({ artifactDir: process.cwd() });
+        const { createQueryRequest } = await import("@hardkas/query");
+        const engine = await getQueryEngine();
 
         const request = createQueryRequest({
           domain: "tx",
@@ -527,8 +575,11 @@ function printArtifactList(result: any): void {
     console.log(`  ${item.schema.padEnd(24)} ${item.networkId.padEnd(10)} ${item.mode.padEnd(12)} ${hash}${from}`);
   }
   console.log(`\n  queryHash: ${result.queryHash.slice(0, 16)}...`);
-  console.log(`  ${result.annotations.executionMs}ms | ${result.annotations.filesScanned ?? 0} files scanned\n`);
-  if (result.explain) printExplainChains(result.explain);
+  const backend = result.annotations.backendUsed || "unknown";
+  const freshness = result.annotations.freshness ? ` | ${result.annotations.freshness}` : "";
+  console.log(`  ${result.annotations.executionMs}ms | backend:${backend}${freshness} | ${result.annotations.filesScanned ?? 0} files scanned\n`);
+  printExplain(result.explain);
+  printWhy(result.why);
 }
 
 function printInspectResult(result: any): void {
@@ -546,7 +597,8 @@ function printInspectResult(result: any): void {
   if (item.economics) console.log(`  Economics:  ${item.economics.ok ? "✓" : "✗"} mass=${item.economics.massReported} fee=${item.economics.feeReported}`);
   if (item.integrity.errors.length > 0) { console.log(`\n  Issues:`); for (const err of item.integrity.errors) console.log(`    ✗ ${err}`); }
   console.log("");
-  if (result.explain) printExplainChains(result.explain);
+  printExplain(result.explain);
+  printWhy(result.why);
 }
 
 function printDiffResult(result: any): void {
@@ -577,7 +629,8 @@ function printLineageChain(result: any): void {
     console.log(`${prefix} ${node.schema} [${node.contentHash.slice(0, 12)}...] ${node.networkId}/${node.mode}`);
   }
   console.log("");
-  if (result.explain) printExplainChains(result.explain);
+  printExplain(result.explain);
+  printWhy(result.why);
 }
 
 function printTransitions(result: any): void {
@@ -587,7 +640,8 @@ function printTransitions(result: any): void {
     console.log(`  ${marker} ${t.from.schema} → ${t.to.schema}  [${t.rule}]`);
   }
   console.log("");
-  if (result.explain) printExplainChains(result.explain);
+  printExplain(result.explain);
+  printWhy(result.why);
 }
 
 function printOrphans(result: any): void {
@@ -598,7 +652,8 @@ function printOrphans(result: any): void {
     console.log(`    Missing parent: ${o.missingParentId.slice(0, 16)}...`);
     console.log(`    Reason: ${o.reason}\n`);
   }
-  if (result.explain) printExplainChains(result.explain);
+  printExplain(result.explain);
+  printWhy(result.why);
 }
 
 function printReplayList(result: any): void {
@@ -636,7 +691,8 @@ function printDivergences(result: any): void {
     console.log(`    Expected: ${d.expected.slice(0, 60)}`);
     console.log(`    Actual:   ${d.actual.slice(0, 60)}\n`);
   }
-  if (result.explain) printExplainChains(result.explain);
+  printExplain(result.explain);
+  printWhy(result.why);
 }
 
 function printInvariants(result: any): void {
@@ -651,7 +707,8 @@ function printInvariants(result: any): void {
   console.log(`  Overall:            ${allOk ? "✓ ALL PASS" : "✗ VIOLATIONS FOUND"}`);
   if (inv.issues.length > 0) { console.log(`\n  Issues:`); for (const i of inv.issues) console.log(`    ✗ ${i}`); }
   console.log("");
-  if (result.explain) printExplainChains(result.explain);
+  printExplain(result.explain);
+  printWhy(result.why);
 }
 
 function printDagConflicts(result: any): void {
@@ -664,7 +721,8 @@ function printDagConflicts(result: any): void {
     for (const l of c.loserTxIds) console.log(`    └─ LOSER:  ${l.slice(0, 24)}...`);
     console.log("");
   }
-  if (result.explain) printExplainChains(result.explain);
+  printExplain(result.explain);
+  printWhy(result.why);
 }
 
 function printDagDisplaced(result: any): void {
@@ -676,7 +734,8 @@ function printDagDisplaced(result: any): void {
     console.log(`  ✗ ${d.txId.slice(0, 24)}... [${status}]`);
     console.log(`    ${d.reason}\n`);
   }
-  if (result.explain) printExplainChains(result.explain);
+  printExplain(result.explain);
+  printWhy(result.why);
 }
 
 function printDagHistory(result: any): void {
@@ -689,7 +748,8 @@ function printDagHistory(result: any): void {
     console.log(`  ${status.padEnd(10)} block:${e.blockId.slice(0, 12)}... daa:${e.daaScore} ${sinkPath}`);
   }
   console.log("");
-  if (result.explain) printExplainChains(result.explain);
+  printExplain(result.explain);
+  printWhy(result.why);
 }
 
 function printSinkPath(result: any): void {
@@ -714,19 +774,41 @@ function printDagAnomalies(result: any): void {
   for (const a of result.items) {
     console.log(`  ✗ [${a.kind}] ${a.description}\n`);
   }
-  if (result.explain) printExplainChains(result.explain);
+  if (result.explain) printExplain(result.explain);
 }
 
-function printExplainChains(chains: any[]): void {
-  console.log("  ─── Explain ───\n");
-  for (const chain of chains) {
-    console.log(`  Q: ${chain.question}`);
-    for (const step of chain.steps) {
+function printExplain(explain: any): void {
+  if (!explain) return;
+  console.log("  ─── Explain: Technical Diagnostics ───\n");
+  console.log(`  Backend:      ${explain.backend}`);
+  console.log(`  Freshness:    ${explain.freshness}`);
+  console.log(`  Rows Read:    ${explain.rowsRead}`);
+  console.log(`  Files Scan:   ${explain.scannedFiles}`);
+  if (explain.executionPlan && explain.executionPlan.length > 0) {
+    console.log(`  Plan:         ${explain.executionPlan.join(" → ")}`);
+  }
+  if (explain.warnings && explain.warnings.length > 0) {
+    console.log(`  Warnings:`);
+    for (const w of explain.warnings) console.log(`    ⚠ ${w}`);
+  }
+  console.log("");
+}
+
+function printWhy(why: any[]): void {
+  if (!why || why.length === 0) return;
+  console.log("  ─── Why: Causal Analysis ───\n");
+  for (const block of why) {
+    console.log(`  Q: ${block.question}`);
+    console.log(`  A: ${block.answer}`);
+    for (const step of block.causalChain) {
       console.log(`    ${step.order}. ${step.assertion}`);
-      if (step.rule) console.log(`       Rule: ${step.rule}`);
+      console.log(`       Evidence: ${step.evidence}`);
+      if (step.rule) console.log(`       Rule:     ${step.rule}`);
     }
-    console.log(`  → ${chain.conclusion}`);
-    console.log(`  [model: ${chain.model}, confidence: ${chain.confidence}]\n`);
+    if (block.evidence && block.evidence.length > 0) {
+      console.log(`  Evidence Refs: ${block.evidence.map((e: any) => `${e.type}:${e.value.slice(0, 12)}...`).join(", ")}`);
+    }
+    console.log("");
   }
 }
 
@@ -738,7 +820,8 @@ function printEventList(result: any): void {
   }
   console.log(`\n  queryHash: ${result.queryHash.slice(0, 16)}...`);
   console.log(`  ${result.annotations.executionMs}ms\n`);
-  if (result.explain) printExplainChains(result.explain);
+  printExplain(result.explain);
+  printWhy(result.why);
 }
 
 function printTxAggregate(result: any): void {
@@ -771,5 +854,15 @@ function printTxAggregate(result: any): void {
   }
 
   console.log("");
-  if (result.explain) printExplainChains(result.explain);
+  if (result.explain) printExplain(result.explain);
+}
+
+/**
+ * Shared helper to initialize the QueryEngine with the best available backend.
+ */
+async function getQueryEngine() {
+  const { QueryEngine } = await import("@hardkas/query");
+  return QueryEngine.create({
+    artifactDir: process.cwd()
+  });
 }

@@ -16,8 +16,9 @@ import type {
   LineageChainResult,
   LineageTransition,
   LineageOrphan,
-  ExplainChain
+  WhyBlock
 } from "../types.js";
+import type { QueryBackend } from "../backend.js";
 
 // Valid transitions from @hardkas/artifacts lineage.ts
 const VALID_TRANSITIONS: Record<string, readonly string[]> = {
@@ -33,9 +34,11 @@ const VALID_TRANSITIONS: Record<string, readonly string[]> = {
 export class LineageQueryAdapter implements QueryAdapter {
   readonly domain = "lineage" as const;
   private readonly rootDir: string;
+  private readonly backend: QueryBackend;
 
-  constructor(rootDir: string) {
+  constructor(rootDir: string, backend: QueryBackend) {
     this.rootDir = rootDir;
+    this.backend = backend;
   }
 
   supportedOps() {
@@ -96,9 +99,9 @@ export class LineageQueryAdapter implements QueryAdapter {
       complete
     };
 
-    let explain: ExplainChain[] | undefined;
+    let why: WhyBlock[] | undefined;
     if (request.explain) {
-      explain = transitions.map(t => explainTransition(t));
+      why = transitions.map(t => explainTransition(t));
     }
 
     return {
@@ -109,7 +112,7 @@ export class LineageQueryAdapter implements QueryAdapter {
       truncated: false,
       deterministic: true,
       queryHash: computeQueryHash([result]),
-      explain,
+      why,
       annotations: {
         executedAt: new Date().toISOString(),
         executionMs: Date.now() - start,
@@ -159,9 +162,9 @@ export class LineageQueryAdapter implements QueryAdapter {
 
     const paged = transitions.slice(request.offset, request.offset + request.limit);
 
-    let explain: ExplainChain[] | undefined;
+    let why: WhyBlock[] | undefined;
     if (request.explain) {
-      explain = paged.map(t => explainTransition(t));
+      why = paged.map(t => explainTransition(t));
     }
 
     return {
@@ -172,7 +175,7 @@ export class LineageQueryAdapter implements QueryAdapter {
       truncated: transitions.length > request.offset + request.limit,
       deterministic: true,
       queryHash: computeQueryHash(paged),
-      explain,
+      why,
       annotations: {
         executedAt: new Date().toISOString(),
         executionMs: Date.now() - start,
@@ -208,9 +211,9 @@ export class LineageQueryAdapter implements QueryAdapter {
 
     const paged = orphans.slice(request.offset, request.offset + request.limit);
 
-    let explain: ExplainChain[] | undefined;
+    let why: WhyBlock[] | undefined;
     if (request.explain) {
-      explain = paged.map(o => explainOrphan(o.node, o.missingParentId));
+      why = paged.map(o => explainOrphan(o.node, o.missingParentId));
     }
 
     return {
@@ -221,7 +224,7 @@ export class LineageQueryAdapter implements QueryAdapter {
       truncated: orphans.length > request.offset + request.limit,
       deterministic: true,
       queryHash: computeQueryHash(paged),
-      explain,
+      why,
       annotations: {
         executedAt: new Date().toISOString(),
         executionMs: Date.now() - start,
@@ -240,24 +243,24 @@ export class LineageQueryAdapter implements QueryAdapter {
     const byContentHash = new Map<string, LineageNode>();
     const children = new Map<string, LineageNode[]>(); // parentId -> children
 
-    const files = await this.scanJsonFiles();
+    const docs = await this.backend.findArtifacts();
 
-    for (const filePath of files) {
-      const raw = await this.readJsonSafe(filePath);
+    for (const doc of docs) {
+      const raw = doc.payload;
       if (!raw?.schema || !raw.lineage) continue;
 
       const node: LineageNode = {
-        contentHash: raw.contentHash || "",
-        schema: raw.schema,
+        contentHash: doc.contentHash as any,
+        schema: doc.schema,
         artifactId: raw.lineage.artifactId || "",
         parentArtifactId: raw.lineage.parentArtifactId,
         rootArtifactId: raw.lineage.rootArtifactId || "",
         lineageId: raw.lineage.lineageId || "",
         sequence: raw.lineage.sequence,
-        filePath,
-        networkId: raw.networkId || "unknown",
-        mode: raw.mode || "unknown",
-        createdAt: raw.createdAt || ""
+        filePath: doc.path,
+        networkId: doc.networkId,
+        mode: doc.mode,
+        createdAt: doc.createdAt || ""
       };
 
       nodes.push(node);
@@ -271,7 +274,7 @@ export class LineageQueryAdapter implements QueryAdapter {
       }
     }
 
-    return { nodes, byArtifactId, byContentHash, children, totalFiles: files.length };
+    return { nodes, byArtifactId, byContentHash, children, totalFiles: docs.length };
   }
 
   // -------------------------------------------------------------------------

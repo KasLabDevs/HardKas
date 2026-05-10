@@ -16,8 +16,19 @@ import { registerMiscCommands } from "./commands/misc.js";
 import { registerQueryCommands } from "./commands/query.js";
 import { registerTestCommands } from "./commands/test.js";
 import { registerDoctorCommand } from "./commands/doctor.js";
+import { registerFaucetCommand } from "./commands/faucet.js";
 
-const HARDKAS_VERSION = "0.2.0-alpha";
+import { readFileSync } from "node:fs";
+import { fileURLToPath } from "node:url";
+import path from "node:path";
+
+const packageJsonPath = path.resolve(
+  path.dirname(fileURLToPath(import.meta.url)),
+  "../package.json"
+);
+
+const { version: HARDKAS_VERSION } = JSON.parse(readFileSync(packageJsonPath, "utf8"));
+
 
 async function main() {
   const program = new Command();
@@ -43,16 +54,22 @@ async function main() {
   registerQueryCommands(program);
   registerTestCommands(program);
   registerDoctorCommand(program);
+  registerFaucetCommand(program);
 
   try {
     await program.parseAsync(process.argv);
   } catch (err: any) {
-    console.error(`\nError: ${err.message}`);
+    const { maskSecrets } = await import("@hardkas/core");
+    console.error(`\nError: ${maskSecrets(err.message || String(err))}`);
     process.exit(1);
   }
 }
 
-main().catch(err => {
-  console.error("Fatal error:", err);
+main().catch(async (err) => {
+  const { maskSecrets } = await import("@hardkas/core");
+  console.error("Fatal error:", maskSecrets(err.message || String(err)));
+  if (err.stack) {
+    console.error(maskSecrets(err.stack));
+  }
   process.exit(1);
 });

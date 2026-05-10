@@ -1,9 +1,9 @@
 {
-  "schema": "hardkas.txReceipt.v2",
-  "hardkasVersion": "0.2.0-alpha",
-  "version": "2.0.0",
-  "createdAt": "2026-05-09T00:46:25.360Z",
-  "txId": "simtx_1_1778287585360_131",
+  "schema": "hardkas.txReceipt",
+  "hardkasVersion": "0.2.2-alpha",
+  "version": "1.0.0-alpha",
+  "createdAt": "2026-05-10T20:17:14.692Z",
+  "txId": "simtx_b59f2b649fe0f217d055e33c9a953284",
   "status": "accepted",
   "mode": "simulated",
   "networkId": "simnet",
@@ -20,13 +20,13 @@
     "genesis:alice:0"
   ],
   "createdUtxoIds": [
-    "simtx_1_1778287585360_131:0",
-    "simtx_1_1778287585360_131:1"
+    "simtx_b59f2b649fe0f217d055e33c9a953284:0",
+    "simtx_b59f2b649fe0f217d055e33c9a953284:1"
   ],
   "daaScore": "1",
-  "contentHash": "72a6849e6fb9f40d8f3fc1c23bfd74fd10d359eec749058e24d26b2ffc8c1216",
+  "contentHash": "ae86d55814dcb1b3b97e6ce322aacf691062a7c875a280443019ef3bd7f6b98a",
   "preStateHash": "228c1676ec0ef450a92c875d7deb25434e93e3cb03db526f263db7aece89c759",
-  "postStateHash": "a64a9ab20e537c06864a68d844bbea79eeabdca8791534f566150321a27c5e6a",
+  "postStateHash": "173538960a06c053d78e381502a4c6d8ed2f97afaace8e3bb6f953f9c8086740",
   "dagContext": {
     "mode": "linear",
     "sink": "linear-pseudo-sink"

@@ -24,8 +24,9 @@ describe("receipts store", () => {
 
   const mockReceipt: any = {
     schema: ARTIFACT_SCHEMAS.TX_RECEIPT,
-    hardkasVersion: "0.2.0-alpha",
+    hardkasVersion: "0.2.2-alpha.1",
     version: "1.0.0-alpha",
+    hashVersion: 1,
     txId: "simtx_test_123",
     mode: "simulated",
     networkId: "simnet",

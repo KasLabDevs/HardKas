@@ -9,7 +9,8 @@ import path from "node:path";
 import { validateEventEnvelope } from "@hardkas/core";
 import { evaluateFilters } from "../filter.js";
 import { computeQueryHash } from "../serialize.js";
-import type { QueryAdapter, QueryRequest, QueryResult, QueryFilter } from "../types.js";
+import type { QueryAdapter, QueryRequest, QueryResult, QueryFilter, WhyBlock } from "../types.js";
+import type { QueryBackend } from "../backend.js";
 
 interface EventItem {
   readonly eventId: string;
@@ -18,9 +19,9 @@ interface EventItem {
   readonly timestamp: string;
   readonly workflowId: string;
   readonly correlationId: string;
-  readonly causationId?: string;
-  readonly txId?: string;
-  readonly artifactId?: string;
+  readonly causationId?: string | undefined;
+  readonly txId?: string | undefined;
+  readonly artifactId?: string | undefined;
   readonly networkId: string;
   readonly payload: Record<string, unknown>;
 }
@@ -28,9 +29,11 @@ interface EventItem {
 export class EventsQueryAdapter implements QueryAdapter {
   readonly domain = "events" as const;
   private readonly rootDir: string;
+  private readonly backend: QueryBackend;
 
-  constructor(rootDir: string) {
+  constructor(rootDir: string, backend: QueryBackend) {
     this.rootDir = rootDir;
+    this.backend = backend;
   }
 
   supportedOps() {
@@ -53,7 +56,7 @@ export class EventsQueryAdapter implements QueryAdapter {
   private async executeList(request: QueryRequest): Promise<QueryResult<EventItem>> {
     const start = Date.now();
     const events = await this.loadEvents();
-    const backendUsed = "filesystem";
+    const backendUsed = this.backend.kind();
     const eventsPath = path.join(this.rootDir, ".hardkas", "events.jsonl");
 
     // Apply filters
@@ -93,57 +96,41 @@ export class EventsQueryAdapter implements QueryAdapter {
       annotations: {
         executedAt: new Date().toISOString(),
         executionMs: Date.now() - start,
-        filesScanned: 1
+        filesScanned: backendUsed === "sqlite" ? 0 : 1
       },
-      ...(request.explain ? {
-        explain: [{
-          question: "How were events loaded?",
-          conclusion: `Loaded ${events.length} events from ${backendUsed}. Applied ${effectiveFilters.length} filter(s). Returned ${paged.length}/${total} results sorted by timestamp+eventId.`,
-          steps: [
-            { order: 1, assertion: `Backend: ${backendUsed} (events.jsonl)`, evidence: eventsPath, rule: "Filesystem fallback" },
-            { order: 2, assertion: `Filters applied: ${effectiveFilters.length}`, evidence: effectiveFilters.map(f => `${f.field} ${f.op} ${f.value}`).join(", ") || "none" },
-            { order: 3, assertion: `Ordering: timestamp ASC + eventId tiebreaker`, evidence: "Deterministic" }
-          ],
-          model: "events-query",
-          confidence: "definitive" as const,
-          references: []
-        }]
-      } : {})
+      why: request.explain ? [{
+        question: "How were events loaded and linked?",
+        answer: `Loaded ${total} events matching filters. Causal links (correlation/causation) available in payload.`,
+        evidence: [],
+        causalChain: [
+          { order: 1, assertion: `Source: ${backendUsed}`, evidence: "Event stream processed" },
+          { order: 2, assertion: `Filters: ${effectiveFilters.length} applied`, evidence: effectiveFilters.map(f => `${f.field} ${f.op} ${f.value}`).join(", ") || "none" },
+          { order: 3, assertion: "Ordering: timestamp ASC", evidence: "Deterministic stream sorting" }
+        ],
+        model: "events-causality",
+        confidence: "definitive"
+      }] : undefined
     };
   }
 
   private async loadEvents(): Promise<EventItem[]> {
-    const eventsPath = path.join(this.rootDir, ".hardkas", "events.jsonl");
-    let content: string;
-    try {
-      content = await fs.readFile(eventsPath, "utf-8");
-    } catch {
-      return [];
-    }
-
-    const lines = content.split("\n").filter(l => l.trim() !== "");
+    const docs = await this.backend.getEvents();
     const events: EventItem[] = [];
 
-    for (const line of lines) {
-      try {
-        const parsed = JSON.parse(line);
-        if (!validateEventEnvelope(parsed)) continue;
-        events.push({
-          eventId: parsed.eventId,
-          kind: parsed.kind,
-          domain: parsed.domain,
-          timestamp: parsed.timestamp || "",
-          workflowId: parsed.workflowId,
-          correlationId: parsed.correlationId,
-          causationId: parsed.causationId,
-          txId: parsed.txId,
-          artifactId: parsed.artifactId,
-          networkId: parsed.networkId,
-          payload: parsed.payload
-        });
-      } catch {
-        // Skip invalid lines
-      }
+    for (const doc of docs) {
+      events.push({
+        eventId: doc.eventId,
+        kind: doc.kind,
+        domain: doc.domain,
+        timestamp: doc.timestamp || "",
+        workflowId: doc.workflowId,
+        correlationId: doc.correlationId,
+        causationId: doc.causationId || undefined,
+        txId: doc.txId || undefined,
+        artifactId: doc.artifactId || undefined,
+        networkId: doc.networkId,
+        payload: doc.payload as Record<string, unknown>
+      });
     }
 
     return events;

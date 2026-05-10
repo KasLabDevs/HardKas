@@ -1,11 +1,14 @@
 {
   "name": "@hardkas/query-store",
-  "version": "0.1.0",
+  "version": "0.2.2-alpha.1",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "exports": {
-    ".": "./dist/index.js"
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
   },
   "scripts": {
     "build": "tsc",
@@ -19,6 +22,7 @@
   },
   "devDependencies": {
     "tsup": "^8.3.5",
+    "tsx": "^4.19.2",
     "typescript": "^5.7.2",
     "vitest": "^2.1.8",
     "@types/node": "^22.10.0"
@@ -27,13 +31,13 @@
   "author": "Javier Rodriguez",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/jrodrg92/Hardkas.git",
+    "url": "git+https://github.com/KasLabDevs/HardKas.git",
     "directory": "packages/query-store"
   },
   "bugs": {
-    "url": "https://github.com/jrodrg92/Hardkas/issues"
+    "url": "https://github.com/KasLabDevs/HardKas/issues"
   },
-  "homepage": "https://github.com/jrodrg92/Hardkas/tree/main/packages/query-store#readme",
+  "homepage": "https://github.com/KasLabDevs/HardKas/tree/main/packages/query-store#readme",
   "files": [
     "dist",
     "LICENSE",

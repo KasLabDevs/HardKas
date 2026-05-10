@@ -85,7 +85,7 @@ describe("Corruption Corpus (Fase 4 Hardening)", () => {
       schema: "hardkas.txPlan", 
       mode: "real", 
       networkId: "mainnet",
-      hardkasVersion: "0.2.0-alpha",
+      hardkasVersion: "0.2.2-alpha",
       version: "1.0.0-alpha",
       createdAt: new Date().toISOString(),
       amountSompi: "1000"

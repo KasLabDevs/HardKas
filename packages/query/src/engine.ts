@@ -5,6 +5,8 @@
  *
  * All execution is deterministic over the input artifact store.
  */
+import { FilesystemQueryBackend } from "./backend-fs.js";
+import type { QueryBackend } from "./backend.js";
 import { ArtifactQueryAdapter } from "./adapters/artifact-adapter.js";
 import { LineageQueryAdapter } from "./adapters/lineage-adapter.js";
 import { ReplayQueryAdapter } from "./adapters/replay-adapter.js";
@@ -12,23 +14,64 @@ import { DagQueryAdapter } from "./adapters/dag-adapter.js";
 import { EventsQueryAdapter } from "./adapters/events-adapter.js";
 import { TxQueryAdapter } from "./adapters/tx-adapter.js";
 import type { QueryAdapter, QueryDomain, QueryRequest, QueryResult } from "./types.js";
+import fs from "node:fs";
+import path from "node:path";
 
 export interface QueryEngineOptions {
   /** Root directory for artifact/lineage scanning (typically .hardkas/ or project root). */
   readonly artifactDir: string;
+  /** Primary data backend. If not provided, defaults to auto-discovery (SQLite > Filesystem). */
+  readonly backend?: QueryBackend;
 }
 
 export class QueryEngine {
   private readonly adapters: Map<QueryDomain, QueryAdapter>;
+  public readonly backend: QueryBackend;
+
+  /**
+   * Primary entry point for creating a QueryEngine with auto-discovery.
+   */
+  static async create(options: QueryEngineOptions): Promise<QueryEngine> {
+    let backend = options.backend;
+
+    if (!backend) {
+      // Auto-discovery: SQLite > FS Fallback
+      const dbPath = path.join(options.artifactDir, ".hardkas", "store.db");
+      if (fs.existsSync(dbPath)) {
+        try {
+          const { HardkasStore, SqliteQueryBackend, HardkasIndexer } = await import("@hardkas/query-store");
+          const store = new HardkasStore({ dbPath });
+          store.connect();
+          
+          // Auto-sync if possible to maintain freshness
+          const indexer = new HardkasIndexer(store.getDatabase());
+          await indexer.sync();
+
+          backend = new SqliteQueryBackend(store);
+        } catch (e) {
+          backend = new FilesystemQueryBackend(options.artifactDir);
+        }
+      } else {
+        backend = new FilesystemQueryBackend(options.artifactDir);
+      }
+    }
+
+    return new QueryEngine({ 
+      artifactDir: options.artifactDir,
+      backend: backend! 
+    });
+  }
 
   constructor(options: QueryEngineOptions) {
+    this.backend = options.backend || new FilesystemQueryBackend(options.artifactDir);
+    
     this.adapters = new Map();
-    this.adapters.set("artifacts", new ArtifactQueryAdapter(options.artifactDir));
-    this.adapters.set("lineage", new LineageQueryAdapter(options.artifactDir));
-    this.adapters.set("replay", new ReplayQueryAdapter(options.artifactDir));
-    this.adapters.set("dag", new DagQueryAdapter(options.artifactDir));
-    this.adapters.set("events", new EventsQueryAdapter(options.artifactDir));
-    this.adapters.set("tx", new TxQueryAdapter(options.artifactDir));
+    this.adapters.set("artifacts", new ArtifactQueryAdapter(options.artifactDir, this.backend));
+    this.adapters.set("lineage", new LineageQueryAdapter(options.artifactDir, this.backend));
+    this.adapters.set("replay", new ReplayQueryAdapter(options.artifactDir, this.backend));
+    this.adapters.set("dag", new DagQueryAdapter(options.artifactDir, this.backend));
+    this.adapters.set("events", new EventsQueryAdapter(options.artifactDir, this.backend));
+    this.adapters.set("tx", new TxQueryAdapter(options.artifactDir, this.backend));
   }
 
   /**
@@ -47,7 +90,35 @@ export class QueryEngine {
       );
     }
 
-    return adapter.execute(request) as Promise<QueryResult<T>>;
+    const result = await adapter.execute(request);
+    
+    // Inject freshness and backend info into annotations
+    const freshness = (await this.backend.getStoreStatus()) as any;
+    const backendUsed = this.backend.kind();
+    
+    let explain: any = undefined;
+    if (request.explain) {
+      explain = {
+        backend: backendUsed,
+        executionPlan: ["Discovery", "Filter", "Sort", "Paginate"],
+        indexesUsed: backendUsed === "sqlite" ? ["PRIMARY", "idx_artifacts_schema"] : [],
+        filtersApplied: request.filters.map(f => `${f.field} ${f.op} ${f.value}`),
+        rowsRead: result.items.length,
+        scannedFiles: result.annotations.filesScanned || 0,
+        freshness,
+        warnings: freshness === "stale" ? ["Index is STALE. mtime mismatch detected. Run 'hardkas query store rebuild'."] : []
+      };
+    }
+    
+    return {
+      ...result,
+      explain,
+      annotations: {
+        ...result.annotations,
+        backendUsed,
+        freshness
+      }
+    } as QueryResult<T>;
   }
 
   /**

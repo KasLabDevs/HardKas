@@ -7,5 +7,5 @@ export interface NodeLogsRunnerInput {
 
 export async function runNodeLogs(input: NodeLogsRunnerInput): Promise<string> {
   const runner = new DockerKaspadRunner(input.containerName ? { containerName: input.containerName } : {});
-  return runner.logs(input.tail ? { tail: input.tail } : {});
+  return (await runner.logs(input.tail ? { tail: input.tail } : {})) ?? "";
 }

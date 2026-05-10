@@ -20,7 +20,7 @@ export function registerArtifactQueryCommands(queryCmd: Command) {
     .action(async (options) => {
       try {
         const { QueryEngine, createQueryRequest } = await import("@hardkas/query");
-        const engine = new QueryEngine({ artifactDir: process.cwd() });
+        const engine = await QueryEngine.create({ artifactDir: process.cwd() });
 
         const filters: Array<{ field: string; op: "eq"; value: string }> = [];
         if (options.schema) filters.push({ field: "schema", op: "eq", value: `hardkas.${options.schema}` });
@@ -66,7 +66,7 @@ export function registerArtifactQueryCommands(queryCmd: Command) {
     .action(async (target, options) => {
       try {
         const { QueryEngine, createQueryRequest } = await import("@hardkas/query");
-        const engine = new QueryEngine({ artifactDir: process.cwd() });
+        const engine = await QueryEngine.create({ artifactDir: process.cwd() });
 
         const request = createQueryRequest({
           domain: "artifacts",
@@ -96,7 +96,7 @@ export function registerArtifactQueryCommands(queryCmd: Command) {
     .action(async (left, right, options) => {
       try {
         const { QueryEngine, createQueryRequest } = await import("@hardkas/query");
-        const engine = new QueryEngine({ artifactDir: process.cwd() });
+        const engine = await QueryEngine.create({ artifactDir: process.cwd() });
 
         const request = createQueryRequest({
           domain: "artifacts",
@@ -126,7 +126,7 @@ export function registerArtifactQueryCommands(queryCmd: Command) {
     .action(async (target, options) => {
       try {
         const { QueryEngine, createQueryRequest } = await import("@hardkas/query");
-        const engine = new QueryEngine({ artifactDir: process.cwd() });
+        const engine = await QueryEngine.create({ artifactDir: process.cwd() });
 
         const request = createQueryRequest({
           domain: "artifacts",

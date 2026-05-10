@@ -1,6 +1,6 @@
 {
   "schema": "hardkas.error.v1",
-  "hardkasVersion": "0.1.0-dev",
+  "hardkasVersion": "0.2.2-alpha",
   "scenario": "Insufficient Funds",
   "message": "RPC request timed out after 10000ms",
   "stack": "Error: RPC request timed out after 10000ms\n    at Timeout.<anonymous> (D:\\Users\\javier\\aplicaciones kaspa\\workspace\\Hardkas\\packages\\kaspa-rpc\\dist\\index.js:337:16)\n    at listOnTimeout (node:internal/timers:605:17)\n    at process.processTimers (node:internal/timers:541:7)",

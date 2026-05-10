@@ -56,7 +56,7 @@ async function runDoctor() {
     const rpc = new JsonWrpcKaspaClient({ rpcUrl });
     const info = await rpc.getInfo();
     
-    UI.success(`RPC Alive: ${pc.bold(info.networkId)}`);
+    UI.success(`RPC Alive: ${pc.bold(info.networkId || "active")}`);
     UI.field("Synced", info.isSynced ? pc.green("YES") : pc.yellow("NO"));
     if (info.serverVersion) UI.field("Version", info.serverVersion);
   } catch (e: any) {
@@ -89,7 +89,7 @@ async function runDoctor() {
 
   // 5. Query Store (SQLite)
   UI.header("Query Store (SQLite) Status");
-  const dbPath = path.join(hardkasDir, "query.db");
+  const dbPath = path.join(hardkasDir, "store.db");
   try {
     const store = new HardkasStore({ dbPath });
     store.connect();
@@ -98,17 +98,17 @@ async function runDoctor() {
     const artCount = (db.prepare("SELECT COUNT(*) as count FROM artifacts").get() as any).count;
     const eventCount = (db.prepare("SELECT COUNT(*) as count FROM events").get() as any).count;
     
-    UI.success("Relational index (query.db) is healthy");
+    UI.success("Relational index (store.db) is healthy");
     UI.field("Indexed Artifacts", artCount);
     UI.field("Indexed Events", eventCount);
     
     if (artCount === 0 && eventCount === 0) {
-      UI.warning("Database is empty. Run 'hardkas query store index' to populate.");
+      UI.warning("Database is empty. Run 'hardkas query store rebuild' to populate.");
     }
     
     store.disconnect();
   } catch (e: any) {
-    UI.error("Query Store Issues", "The SQLite database might be corrupt or inaccessible.");
+    UI.error("Query Store Issues", "The SQLite database might be corrupt or inaccessible. Run 'hardkas query store rebuild' to repair.");
   }
 
   UI.footer("Use 'hardkas query' for deep operational introspection.");

@@ -10,13 +10,32 @@ HardKAS is a monorepo managed with **pnpm** and **Turbo**.
 - Node.js (v20+)
 - pnpm (v9+)
 
-### Setup
+## Getting Started
+
+### For Users
+If you just want to use HardKAS in your project, install it via npm:
 ```bash
-git clone https://github.com/jrodrg92/Hardkas.git
-cd Hardkas
-pnpm install
-pnpm build
+# Install the SDK
+npm install @hardkas/sdk
+
+# Use the CLI globally
+npm install -g @hardkas/cli
 ```
+
+### For Contributors (Core Development)
+If you want to contribute to the core or run examples from source:
+
+1. **Clone the repository**
+   ```bash
+   git clone https://github.com/KasLabDevs/HardKas.git
+   cd Hardkas
+   ```
+
+2. **Install & Build**
+   ```bash
+   pnpm install
+   pnpm build
+   ```
 
 ### Testing
 ```bash

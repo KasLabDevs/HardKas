@@ -1,15 +1,15 @@
 {
   "name": "@examples/trace-and-replay",
-  "version": "0.1.0",
+  "version": "0.2.2-alpha",
   "private": true,
   "type": "module",
   "scripts": {
     "start": "tsx src/index.ts"
   },
   "dependencies": {
-    "@hardkas/sdk": "workspace:*",
-    "@hardkas/artifacts": "workspace:*",
-    "@hardkas/config": "workspace:*",
+    "@hardkas/sdk": "0.2.2-alpha",
+    "@hardkas/artifacts": "0.2.2-alpha",
+    "@hardkas/config": "0.2.2-alpha",
     "tsx": "^4.19.2",
     "typescript": "^5.7.2"
   }

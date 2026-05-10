@@ -87,31 +87,52 @@ export interface QueryResult<T = unknown> {
   readonly truncated: boolean;
   readonly deterministic: boolean;
   readonly queryHash: string;
-  readonly explain?: readonly ExplainChain[] | undefined;
   readonly annotations: QueryAnnotations;
+  readonly explain?: ExplainBlock | undefined;
+  readonly why?: readonly WhyBlock[] | undefined;
 }
+
+export type QueryStoreStatus = "fresh" | "stale" | "rebuilding" | "unknown";
 
 /** Non-deterministic metadata, always isolated from deterministic fields. */
 export interface QueryAnnotations {
   readonly executedAt: string;
   readonly executionMs: number;
   readonly filesScanned?: number | undefined;
+  readonly backendUsed?: string | undefined;
+  readonly freshness?: QueryStoreStatus | undefined;
 }
 
 // ---------------------------------------------------------------------------
-// Explain Engine Types
+// Explain & Why Engine Types
 // ---------------------------------------------------------------------------
 
-export interface ExplainChain {
+export interface ExplainBlock {
+  readonly backend: string;
+  readonly executionPlan: readonly string[];
+  readonly indexesUsed: readonly string[];
+  readonly filtersApplied: readonly string[];
+  readonly rowsRead: number;
+  readonly scannedFiles: number;
+  readonly freshness: QueryStoreStatus;
+  readonly warnings: readonly string[];
+}
+
+export interface WhyBlock {
   readonly question: string;
-  readonly conclusion: string;
-  readonly steps: readonly ReasoningStep[];
-  readonly model: string;
-  readonly confidence: "definitive" | "probable";
-  readonly references: readonly string[];
+  readonly answer: string;
+  readonly evidence: readonly EvidenceRef[];
+  readonly causalChain: readonly CausalStep[];
+  readonly model?: string;
+  readonly confidence?: "definitive" | "probable";
 }
 
-export interface ReasoningStep {
+export interface EvidenceRef {
+  readonly type: "artifactId" | "contentHash" | "txId" | "traceId" | "eventId" | "blockId" | "filePath";
+  readonly value: string;
+}
+
+export interface CausalStep {
   readonly order: number;
   readonly assertion: string;
   readonly evidence: string;
@@ -139,7 +160,8 @@ export interface ArtifactQueryItem {
   readonly version: string;
   readonly networkId: NetworkId;
   readonly mode: string;
-  readonly createdAt: string;
+  readonly createdAt: string | null;
+  readonly payload: any;
   readonly contentHash?: ContentHash | undefined;
   readonly from?: { readonly address: KaspaAddress } | undefined;
   readonly to?: { readonly address: KaspaAddress } | undefined;
@@ -217,7 +239,7 @@ export interface LineageNode {
   readonly filePath: string;
   readonly networkId: NetworkId;
   readonly mode: string;
-  readonly createdAt: string;
+  readonly createdAt: string | null;
 }
 
 export interface LineageTransition {

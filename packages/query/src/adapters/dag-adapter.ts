@@ -23,9 +23,10 @@ import type {
   DagSinkPath,
   DagSinkPathNode,
   DagAnomaly,
-  ExplainChain,
-  ReasoningStep
+  WhyBlock,
+  CausalStep
 } from "../types.js";
+import type { QueryBackend } from "../backend.js";
 
 /** Trust warning attached to every DAG query result. */
 const DAG_MODEL_WARNING =
@@ -58,9 +59,11 @@ interface SimBlock {
 export class DagQueryAdapter implements QueryAdapter {
   readonly domain = "dag" as const;
   private readonly rootDir: string;
+  private readonly backend: QueryBackend;
 
-  constructor(rootDir: string) {
+  constructor(rootDir: string, backend: QueryBackend) {
     this.rootDir = rootDir;
+    this.backend = backend;
   }
 
   supportedOps() {
@@ -109,9 +112,9 @@ export class DagQueryAdapter implements QueryAdapter {
     items.sort((a, b) => a.outpoint.localeCompare(b.outpoint));
     const paged = items.slice(request.offset, request.offset + request.limit);
 
-    let explain: ExplainChain[] | undefined;
+    let why: WhyBlock[] | undefined;
     if (request.explain) {
-      explain = paged.map(c => explainConflict(c, dag));
+      why = paged.map(c => explainConflict(c, dag));
     }
 
     return {
@@ -122,7 +125,7 @@ export class DagQueryAdapter implements QueryAdapter {
       truncated: items.length > request.offset + request.limit,
       deterministic: true,
       queryHash: computeQueryHash(paged),
-      explain,
+      why,
       annotations: { executedAt: new Date().toISOString(), executionMs: Date.now() - start }
     };
   }
@@ -156,9 +159,9 @@ export class DagQueryAdapter implements QueryAdapter {
     items.sort((a, b) => a.txId.localeCompare(b.txId));
     const paged = items.slice(request.offset, request.offset + request.limit);
 
-    let explain: ExplainChain[] | undefined;
+    let why: WhyBlock[] | undefined;
     if (request.explain) {
-      explain = paged.map(d => explainDisplacement(d, dag));
+      why = paged.map(d => explainDisplacement(d, dag));
     }
 
     return {
@@ -169,7 +172,7 @@ export class DagQueryAdapter implements QueryAdapter {
       truncated: items.length > request.offset + request.limit,
       deterministic: true,
       queryHash: computeQueryHash(paged),
-      explain,
+      why,
       annotations: { executedAt: new Date().toISOString(), executionMs: Date.now() - start }
     };
   }
@@ -218,9 +221,9 @@ export class DagQueryAdapter implements QueryAdapter {
 
     entries.sort((a, b) => a.daaScore.localeCompare(b.daaScore));
 
-    let explain: ExplainChain[] | undefined;
+    let why: WhyBlock[] | undefined;
     if (request.explain) {
-      explain = entries.map(e => explainTxHistory(e, dag));
+      why = entries.map(e => explainTxHistory(e, dag));
     }
 
     return {
@@ -231,7 +234,7 @@ export class DagQueryAdapter implements QueryAdapter {
       truncated: false,
       deterministic: true,
       queryHash: computeQueryHash(entries),
-      explain,
+      why,
       annotations: { executedAt: new Date().toISOString(), executionMs: Date.now() - start }
     };
   }
@@ -338,9 +341,9 @@ export class DagQueryAdapter implements QueryAdapter {
     anomalies.sort((a, b) => a.kind.localeCompare(b.kind));
     const paged = anomalies.slice(request.offset, request.offset + request.limit);
 
-    let explain: ExplainChain[] | undefined;
+    let why: WhyBlock[] | undefined;
     if (request.explain) {
-      explain = paged.map(a => explainAnomaly(a, dag));
+      why = paged.map(a => explainAnomaly(a, dag));
     }
 
     return {
@@ -351,7 +354,7 @@ export class DagQueryAdapter implements QueryAdapter {
       truncated: anomalies.length > request.offset + request.limit,
       deterministic: true,
       queryHash: computeQueryHash(paged),
-      explain,
+      why,
       annotations: { executedAt: new Date().toISOString(), executionMs: Date.now() - start }
     };
   }
@@ -393,8 +396,8 @@ function emptyDagResult(op: string, start: number): QueryResult {
 // Explain — DAG
 // ---------------------------------------------------------------------------
 
-function explainConflict(conflict: DagConflict, dag: SimDag): ExplainChain {
-  const steps: ReasoningStep[] = [];
+function explainConflict(conflict: DagConflict, dag: SimDag): WhyBlock {
+  const causalChain: CausalStep[] = [];
   let order = 1;
 
   // Find the winner's block
@@ -410,88 +413,80 @@ function explainConflict(conflict: DagConflict, dag: SimDag): ExplainChain {
     }
   }
 
-  steps.push({
+  causalChain.push({
     order: order++,
-    assertion: `Outpoint ${conflict.outpoint} was spent by multiple transactions`,
+    assertion: `Outpoint ${conflict.outpoint} spent by multiple txs`,
     evidence: `Winner: ${conflict.winnerTxId}, Losers: ${conflict.loserTxIds.join(", ")}`,
-    rule: "UTXO double-spend detection (dag.ts:moveSink)"
+    rule: "UTXO double-spend detection"
   });
 
   if (winnerBlockId) {
-    steps.push({
+    causalChain.push({
       order: order++,
-      assertion: `Winner tx is in block ${winnerBlockId} (daaScore: ${winnerDaaScore})`,
-      evidence: `Block ${winnerBlockId} contains tx ${conflict.winnerTxId}`,
-      rule: "Block tx membership"
-    });
-
-    steps.push({
-      order: order++,
-      assertion: winnerInSinkPath
-        ? `Block ${winnerBlockId} IS in the sink path — has priority`
-        : `Block ${winnerBlockId} is NOT in the sink path`,
-      evidence: `selectedPathToSink.includes("${winnerBlockId}") = ${winnerInSinkPath}`,
-      rule: "Sink-ancestry priority (dag.ts:resolveConflictsDeterministically)"
+      assertion: `Winner in block ${winnerBlockId} (daaScore: ${winnerDaaScore})`,
+      evidence: `In sink path: ${winnerInSinkPath}`,
+      rule: "Sink-ancestry priority"
     });
   }
 
-  steps.push({
-    order: order++,
-    assertion: `Conflict resolved: ${conflict.winnerTxId.slice(0, 16)}... accepted, ${conflict.loserTxIds.length} tx(s) displaced`,
-    evidence: `Resolution based on: 1) sink-path priority, 2) daaScore ordering, 3) blockId tie-break`,
-    rule: "Deterministic conflict resolution (dag.ts:187-248)"
-  });
-
   return {
-    question: `Why did ${conflict.winnerTxId.slice(0, 16)}... win the conflict on outpoint ${conflict.outpoint}?`,
-    conclusion: `Winner has ${winnerInSinkPath ? "sink-path priority" : "block ordering priority"}. ${conflict.loserTxIds.length} tx(s) displaced. Model: deterministic-light-model (NOT GHOSTDAG).`,
-    steps,
+    question: `Why winner ${conflict.winnerTxId.slice(0, 8)} on outpoint ${conflict.outpoint}?`,
+    answer: `Winner has ${winnerInSinkPath ? "sink-path priority" : "block ordering priority"}.`,
+    evidence: [
+      { type: "txId", value: conflict.winnerTxId },
+      ...conflict.loserTxIds.map(id => ({ type: "txId" as const, value: id }))
+    ],
+    causalChain,
     model: "deterministic-light-model",
-    confidence: "definitive",
-    references: [conflict.winnerTxId, ...conflict.loserTxIds]
+    confidence: "definitive"
   };
 }
 
-function explainDisplacement(d: DagDisplacement, _dag: SimDag): ExplainChain {
+function explainDisplacement(d: DagDisplacement, _dag: SimDag): WhyBlock {
   return {
-    question: `Why was tx ${d.txId.slice(0, 16)}... displaced?`,
-    conclusion: `${d.reason}. Currently accepted: ${d.currentlyAccepted}. Model: deterministic-light-model (NOT GHOSTDAG).`,
-    steps: [
-      { order: 1, assertion: `Transaction ${d.txId.slice(0, 16)}... is in displacedTxIds`, evidence: `dag.displacedTxIds includes "${d.txId}"`, rule: "DAG sink movement (dag.ts:moveSink)" },
-      { order: 2, assertion: d.reason, evidence: d.reason, rule: "Conflict resolution or DAG reorganization" }
+    question: `Why displaced tx ${d.txId.slice(0, 8)}?`,
+    answer: d.reason,
+    evidence: [{ type: "txId", value: d.txId }],
+    causalChain: [
+      { order: 1, assertion: "Tx in displaced set", evidence: "dag.displacedTxIds includes txId", rule: "DAG reorganization" },
+      { order: 2, assertion: "Status: displaced", evidence: d.reason }
     ],
     model: "deterministic-light-model",
-    confidence: "definitive",
-    references: [d.txId]
+    confidence: "definitive"
   };
 }
 
-function explainTxHistory(entry: DagTxHistory, _dag: SimDag): ExplainChain {
+function explainTxHistory(entry: DagTxHistory, _dag: SimDag): WhyBlock {
   const status = entry.accepted ? "ACCEPTED" : entry.displaced ? "DISPLACED" : "UNKNOWN";
   return {
-    question: `What is the DAG lifecycle status of tx ${entry.txId.slice(0, 16)}...?`,
-    conclusion: `Status: ${status}. Block: ${entry.blockId} (daaScore: ${entry.daaScore}). In sink path: ${entry.inSinkPath}. Model: deterministic-light-model (NOT GHOSTDAG).`,
-    steps: [
-      { order: 1, assertion: `Transaction is in block ${entry.blockId}`, evidence: `block.acceptedTxIds includes "${entry.txId}"`, rule: "Block membership scan" },
-      { order: 2, assertion: `Block daaScore = ${entry.daaScore}`, evidence: `dag.blocks["${entry.blockId}"].daaScore = "${entry.daaScore}"` },
-      { order: 3, assertion: entry.inSinkPath ? "Block IS in selected path to sink" : "Block is NOT in selected path to sink", evidence: `selectedPathToSink.includes("${entry.blockId}") = ${entry.inSinkPath}`, rule: "Sink path computation (dag.ts:calculateSelectedPath)" },
-      { order: 4, assertion: `Current status: ${status}`, evidence: `accepted=${entry.accepted}, displaced=${entry.displaced}`, rule: "DAG accepted/displaced set membership" }
+    question: `Causal history of tx ${entry.txId.slice(0, 8)}?`,
+    answer: `Status is ${status} in block ${entry.blockId}.`,
+    evidence: [
+      { type: "txId", value: entry.txId },
+      { type: "blockId", value: entry.blockId }
+    ],
+    causalChain: [
+      { order: 1, assertion: `In block ${entry.blockId}`, evidence: `daaScore=${entry.daaScore}` },
+      { order: 2, assertion: entry.inSinkPath ? "In selected sink path" : "Not in sink path", evidence: `selectedPathToSink.includes("${entry.blockId}")` }
     ],
     model: "deterministic-light-model",
-    confidence: "definitive",
-    references: [entry.txId]
+    confidence: "definitive"
   };
 }
 
-function explainAnomaly(a: DagAnomaly, _dag: SimDag): ExplainChain {
+function explainAnomaly(a: DagAnomaly, _dag: SimDag): WhyBlock {
+  const evidence: any[] = [];
+  if (a.txId) evidence.push({ type: "txId", value: a.txId });
+  if (a.blockId) evidence.push({ type: "blockId", value: a.blockId });
+
   return {
-    question: `Why is this a DAG anomaly?`,
-    conclusion: `${a.description}. Model: deterministic-light-model (NOT GHOSTDAG).`,
-    steps: [
-      { order: 1, assertion: a.description, evidence: `Anomaly kind: ${a.kind}`, rule: "DAG invariant check (query/dag-adapter.ts)" }
+    question: `Why anomaly: ${a.kind}?`,
+    answer: a.description,
+    evidence,
+    causalChain: [
+      { order: 1, assertion: a.description, evidence: `Anomaly: ${a.kind}`, rule: "DAG invariant check" }
     ],
     model: "deterministic-light-model",
-    confidence: "definitive",
-    references: [a.txId ?? a.blockId ?? ""]
+    confidence: "definitive"
   };
 }

@@ -15,9 +15,21 @@ import {
   DagTxHistory, 
   DagSinkPath, 
   DagAnomaly,
-  ExplainChain,
-  ReasoningStep
 } from "@hardkas/query";
+
+export interface ReasoningStep {
+  order: number;
+  assertion: string;
+  rule?: string;
+}
+
+export interface ExplainChain {
+  question: string;
+  steps: ReasoningStep[];
+  conclusion: string;
+  model: string;
+  confidence: string;
+}
 
 export function printArtifactList(result: QueryResult<ArtifactQueryItem>): void {
   console.log(pc.bold(`\n  Artifacts: ${pc.cyan(result.total)} found (showing ${result.items.length})\n`));

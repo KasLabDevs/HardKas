@@ -1,0 +1,21 @@
+{
+  "schema": "hardkas.igraTxPlan.v1",
+  "hardkasVersion": "0.2.2-alpha",
+  "networkId": "igra",
+  "mode": "l2-rpc",
+  "createdAt": "2026-05-13T13:27:37.192Z",
+  "planId": "igra-plan-1778678857192-382",
+  "l2Network": "igra",
+  "chainId": 12345,
+  "request": {
+    "to": "0x0000000000000000000000000000000000000000",
+    "data": "0x",
+    "valueWei": "0",
+    "gasLimit": "30000",
+    "gasPriceWei": "2000000000",
+    "nonce": "10"
+  },
+  "estimatedGas": "30000",
+  "estimatedFeeWei": "60000000000000",
+  "status": "built"
+}

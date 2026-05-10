@@ -1,12 +1,12 @@
 {
   "name": "@hardkas/example-02-basic-transfer",
-  "version": "0.1.0",
+  "version": "0.2.2-alpha",
   "private": true,
   "type": "module",
   "scripts": {
     "start": "tsx main.ts"
   },
   "dependencies": {
-    "@hardkas/sdk": "workspace:*"
+    "@hardkas/sdk": "0.2.2-alpha"
   }
 }

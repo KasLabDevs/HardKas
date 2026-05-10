@@ -1,6 +1,6 @@
 {
   "schema": "hardkas.igraTxPlan.v1",
-  "hardkasVersion": "0.1.0-dev",
+  "hardkasVersion": "0.2.2-alpha",
   "networkId": "igra",
   "mode": "l2-rpc",
   "createdAt": "2026-05-07T21:22:56.777Z",
