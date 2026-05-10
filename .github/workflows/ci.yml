@@ -2,9 +2,9 @@ name: HardKAS CI
 
 on:
   push:
-    branches: [ main, master, develop, 'feature/*' ]
+    branches: [ main ]
   pull_request:
-    branches: [ main, master, develop ]
+    branches: [ main ]
 
 jobs:
   build-and-test:
@@ -18,7 +18,7 @@ jobs:
       - name: Setup Node.js (LTS)
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
 
       - name: Install pnpm
         uses: pnpm/action-setup@v3
@@ -43,9 +43,9 @@ jobs:
         shell: bash
         run: |
           # We check everything except pnpm-lock.yaml (handled by --frozen-lockfile)
-          if grep -rE "<<<<<<<|=======|>>>>>>>" . --exclude-dir=node_modules --exclude-dir=.git --exclude=pnpm-lock.yaml; then
+          if grep -rE "^<<<<<<<|^=======|^>>>>>>>" . --exclude-dir=node_modules --exclude-dir=.git --exclude=pnpm-lock.yaml; then
             echo "Error: Conflict markers found in the codebase!"
-            grep -rE "<<<<<<<|=======|>>>>>>>" . --exclude-dir=node_modules --exclude-dir=.git --exclude=pnpm-lock.yaml
+            grep -rE "^<<<<<<<|^=======|^>>>>>>>" . --exclude-dir=node_modules --exclude-dir=.git --exclude=pnpm-lock.yaml
             exit 1
           fi
 
@@ -56,11 +56,11 @@ jobs:
         run: pnpm check
 
       - name: Verify Artifact Golden Fixtures
-        run: pnpm hardkas artifact verify packages/artifacts/test/fixtures/golden --recursive --strict
+        run: pnpm hardkas artifact verify ../artifacts/test/fixtures/golden --recursive --strict
 
       - name: Verify Artifact Corruption Rejection
         run: |
-          if pnpm hardkas artifact verify packages/artifacts/test/fixtures/corrupted --recursive --strict; then
+          if pnpm hardkas artifact verify ../artifacts/test/fixtures/corrupted --recursive --strict; then
             echo "Error: Corruption fixtures should have failed verification"
             exit 1
           else
@@ -75,8 +75,8 @@ jobs:
 
       - name: Verify Package Pack Integrity
         run: |
-          pnpm --filter @hardkas/cli pack
-          pnpm --filter @hardkas/sdk pack
-          pnpm --filter @hardkas/artifacts pack
-          pnpm --filter @hardkas/tx-builder pack
-          pnpm --filter @hardkas/accounts pack
+          cd packages/cli && npm pack && cd ../..
+          cd packages/sdk && npm pack && cd ../..
+          cd packages/artifacts && npm pack && cd ../..
+          cd packages/tx-builder && npm pack && cd ../..
+          cd packages/accounts && npm pack && cd ../..

@@ -257,5 +257,16 @@ export interface SnapshotArtifact extends BaseArtifact<"snapshot"> {
   }>;
 }
 
+export interface TxTraceArtifact extends BaseArtifact<"txTrace"> {
+  txId: TxId;
+  steps: Array<{
+    phase: string;
+    status: string;
+    timestamp: string;
+    details?: any;
+  }>;
+  dagContext?: DagContext | undefined;
+}
+
 // Igra L2 Artifacts (Imported from igra-artifacts.ts)
 export * from "./igra-artifacts.js";

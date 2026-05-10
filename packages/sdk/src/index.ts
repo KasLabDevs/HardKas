@@ -14,6 +14,18 @@ export { HardkasL2 } from "./l2.js";
 export { HardkasQuery } from "./query.js";
 export { HardkasLocalnet } from "./localnet.js";
 export { defineTask, type TaskContext, type TaskArgs } from "./tasks.js";
+export { buildPaymentPlan } from "@hardkas/tx-builder";
+export { signTxPlanArtifact } from "@hardkas/accounts";
+export { 
+  writeArtifact, 
+  createTxPlanArtifact, 
+  ARTIFACT_SCHEMAS,
+  HARDKAS_VERSION,
+  type TxPlanArtifact,
+  type SignedTxArtifact,
+  type TxReceiptArtifact,
+  type TxTraceArtifact
+} from "@hardkas/artifacts";
 
 export { 
   SOMPI_PER_KAS, 
@@ -80,6 +92,13 @@ export class Hardkas {
     const options = typeof dirOrOptions === "string" ? { cwd: dirOrOptions } : dirOrOptions;
     const loaded = await loadConfig(options);
     return new Hardkas(loaded);
+  }
+
+  /**
+   * Alias for open(). Used in most examples.
+   */
+  static async create(dirOrOptions: string | HardkasOptions = "."): Promise<Hardkas> {
+    return this.open(dirOrOptions);
   }
 
   /**
