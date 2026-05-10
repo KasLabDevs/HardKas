@@ -75,8 +75,16 @@ jobs:
 
       - name: Verify Package Pack Integrity
         run: |
-          cd packages/cli && npm pack && cd ../..
-          cd packages/sdk && npm pack && cd ../..
-          cd packages/artifacts && npm pack && cd ../..
-          cd packages/tx-builder && npm pack && cd ../..
-          cd packages/accounts && npm pack && cd ../..
+          mkdir -p dist-packages
+          cd packages/cli && npm pack && mv *.tgz ../../dist-packages/ && cd ../..
+          cd packages/sdk && npm pack && mv *.tgz ../../dist-packages/ && cd ../..
+          cd packages/artifacts && npm pack && mv *.tgz ../../dist-packages/ && cd ../..
+          cd packages/tx-builder && npm pack && mv *.tgz ../../dist-packages/ && cd ../..
+          cd packages/accounts && npm pack && mv *.tgz ../../dist-packages/ && cd ../..
+
+      - name: Upload NPM Packages as Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: hardkas-packages-v0.2.0-alpha
+          path: dist-packages/*.tgz
+          retention-days: 7
