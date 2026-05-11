@@ -25,13 +25,13 @@
   "author": "Javier Rodriguez",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/jrodrg92/Hardkas.git",
+    "url": "git+https://github.com/KasLabDevs/HardKas.git",
     "directory": "packages/simulator"
   },
   "bugs": {
-    "url": "https://github.com/jrodrg92/Hardkas/issues"
+    "url": "https://github.com/KasLabDevs/HardKas/issues"
   },
-  "homepage": "https://github.com/jrodrg92/Hardkas/tree/main/packages/simulator#readme",
+  "homepage": "https://github.com/KasLabDevs/HardKas/tree/main/packages/simulator#readme",
   "files": [
     "dist",
     "LICENSE",

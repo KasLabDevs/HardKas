@@ -23,13 +23,13 @@
   "author": "Javier Rodriguez",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/jrodrg92/Hardkas.git",
+    "url": "git+https://github.com/KasLabDevs/HardKas.git",
     "directory": "packages/node-runner"
   },
   "bugs": {
-    "url": "https://github.com/jrodrg92/Hardkas/issues"
+    "url": "https://github.com/KasLabDevs/HardKas/issues"
   },
-  "homepage": "https://github.com/jrodrg92/Hardkas/tree/main/packages/node-runner#readme",
+  "homepage": "https://github.com/KasLabDevs/HardKas/tree/main/packages/node-runner#readme",
   "files": [
     "dist",
     "LICENSE",

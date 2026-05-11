@@ -106,12 +106,35 @@ HardKAS maintains strict boundaries between different architectural layers:
 
 ## Quickstart
 
-Clone, build, and run your first verified transaction in under 5 minutes.
+### 1. Install via NPM
 
-### 1. Install
+You can now install the HardKAS SDK and CLI directly from npm:
 
 ```bash
-git clone https://github.com/jrodrg92/Hardkas.git
+# Install the SDK in your project
+npm install @hardkas/sdk
+
+# Install the CLI globally
+npm install -g @hardkas/cli
+```
+
+### 2. Initialize a project
+
+```bash
+hardkas init my-kaspa-project
+cd my-kaspa-project
+```
+
+---
+
+## Local Development (Monorepo)
+
+If you want to contribute to HardKAS or run the examples from source:
+
+### 1. Clone & Build
+
+```bash
+git clone https://github.com/KasLabDevs/HardKas.git
 cd Hardkas
 pnpm install
 pnpm build
@@ -120,14 +143,14 @@ pnpm build
 ### 2. Initialize a project
 
 ```bash
-pnpm hardkas init my-kaspa-project
+hardkas init my-kaspa-project
 cd my-kaspa-project
 ```
 
 ### 3. Plan a simulated transaction
 
 ```bash
-pnpm hardkas tx plan --from alice --to bob --amount 10 --network simnet
+hardkas tx plan --from alice --to bob --amount 10 --network simnet
 ```
 
 This creates a deterministic `TxPlan` artifact in `.hardkas/artifacts/`.
@@ -135,19 +158,19 @@ This creates a deterministic `TxPlan` artifact in `.hardkas/artifacts/`.
 ### 4. Sign the transaction
 
 ```bash
-pnpm hardkas tx sign .hardkas/artifacts/tx-plan-latest.json
+hardkas tx sign .hardkas/artifacts/tx-plan-latest.json
 ```
 
 ### 5. Send (simulated)
 
 ```bash
-pnpm hardkas tx send .hardkas/artifacts/signed-tx-latest.json
+hardkas tx send .hardkas/artifacts/signed-tx-latest.json
 ```
 
 ### 6. Verify the full artifact chain
 
 ```bash
-pnpm hardkas artifact verify .hardkas/artifacts/ --recursive --strict
+hardkas artifact verify .hardkas/artifacts/ --recursive --strict
 ```
 
 If all artifacts pass, you've completed a deterministic, auditable transaction lifecycle — entirely local.
@@ -157,16 +180,16 @@ If all artifacts pass, you've completed a deterministic, auditable transaction l
 ```bash
 pnpm example:ci              # CI workflow demo
 pnpm example:dag-reorg        # DAG reorg simulation
-pnpm hardkas example list     # See all available examples
+hardkas example list     # See all available examples
 ```
 
 ### CLI Reference
 
 ```bash
-pnpm hardkas --help           # All command groups
-pnpm hardkas tx --help        # Transaction commands
-pnpm hardkas artifact --help  # Artifact verification
-pnpm hardkas rpc --help       # RPC diagnostics
+hardkas --help           # All command groups
+hardkas tx --help        # Transaction commands
+hardkas artifact --help  # Artifact verification
+hardkas rpc --help       # RPC diagnostics
 ```
 
 

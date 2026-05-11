@@ -14,7 +14,7 @@ This example showcases the full HardKAS developer experience on a local developm
 
 1.  Ensure your environment is ready:
     ```bash
-    pnpm hardkas up
+    hardkas up
     ```
 
 2.  Run the demo:

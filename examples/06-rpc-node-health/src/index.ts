@@ -43,7 +43,7 @@ async function main() {
     console.error(`  Error: ${error instanceof Error ? error.message : String(error)}\n`);
     console.log("Troubleshooting:");
     console.log("1. Ensure Docker is running.");
-    console.log("2. Start the node with: pnpm hardkas node start");
+    console.log("2. Start the node with: hardkas node start");
     console.log("3. Verify the port 18210 is accessible.");
     process.exit(1);
   }
