@@ -56,7 +56,7 @@ async function runDoctor() {
     const rpc = new JsonWrpcKaspaClient({ rpcUrl });
     const info = await rpc.getInfo();
     
-    UI.success(`RPC Alive: ${pc.bold(info.networkId)}`);
+    UI.success(`RPC Alive: ${pc.bold(info.networkId || "active")}`);
     UI.field("Synced", info.isSynced ? pc.green("YES") : pc.yellow("NO"));
     if (info.serverVersion) UI.field("Version", info.serverVersion);
   } catch (e: any) {

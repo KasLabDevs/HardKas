@@ -22,4 +22,11 @@ pnpm-lock.yaml.*
 .env
 .env.local
 .env.*
+# HardKAS Artifacts
+plan.json
+signed.json
+tx-plan.json
+tx-signed.json
+tx-receipt.json
+
 *.tgz

@@ -1,4 +1,4 @@
-import { loadHardkasConfig as loadConfig, LoadedHardkasConfig as LoadedConfig } from "@hardkas/config";
+import { loadHardkasConfig as loadConfig, LoadedHardkasConfig as LoadedConfig, defineHardkasConfig } from "@hardkas/config";
 import { JsonWrpcKaspaClient, KaspaRpcClient } from "@hardkas/kaspa-rpc";
 import { NetworkId } from "@hardkas/core";
 import { HardkasAccounts } from "./accounts.js";
@@ -13,6 +13,7 @@ export { HardkasTx } from "./tx.js";
 export { HardkasL2 } from "./l2.js";
 export { HardkasQuery } from "./query.js";
 export { HardkasLocalnet } from "./localnet.js";
+export { defineHardkasConfig } from "@hardkas/config";
 export { defineTask, type TaskContext, type TaskArgs } from "./tasks.js";
 export { buildPaymentPlan } from "@hardkas/tx-builder";
 export { signTxPlanArtifact } from "@hardkas/accounts";

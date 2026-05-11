@@ -186,7 +186,7 @@ hardkas tx send .hardkas/artifacts/signed-tx-latest.json
 ### 6. Verify the full artifact chain
 
 ```bash
-hardkas artifact verify .hardkas/artifacts/ --recursive --strict
+hardkas artifact verify .hardkas/artifacts/ --recursive
 ```
 
 If all artifacts pass, you've completed a deterministic, auditable transaction lifecycle — entirely local.
