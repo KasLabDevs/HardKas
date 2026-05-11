@@ -19,7 +19,7 @@
 ---
 
 > [!IMPORTANT]
-> **Status: 0.1.0 / Developer Preview**
+> **Status: 0.2.1-alpha / Developer Preview**
 > HardKAS is currently in Developer Preview. Features, APIs, and artifact formats are subject to evolution.
 
 > [!CAUTION]
@@ -30,7 +30,7 @@
 
 ## Project Status
 
-HardKAS is currently in Developer Preview (0.1.0).
+HardKAS is currently in Developer Preview (0.2.1-alpha).
 
 The architecture is stabilizing, but users should be aware:
 - **APIs may change**: Commands and SDK interfaces are not yet finalized.

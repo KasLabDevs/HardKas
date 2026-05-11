@@ -1,6 +1,6 @@
 {
   "name": "@examples/trace-and-replay",
-  "version": "0.1.0",
+  "version": "0.2.1-alpha",
   "private": true,
   "type": "module",
   "scripts": {
