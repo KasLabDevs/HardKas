@@ -128,7 +128,7 @@ Get started with HardKAS in seconds.
 ### 1. Install the CLI globally
 
 ```bash
-npm install -g @hardkas/cli
+pnpm install -g @hardkas/cli
 ```
 
 ### 2. Initialize your project
