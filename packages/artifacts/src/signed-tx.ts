@@ -6,28 +6,31 @@ import { HARDKAS_VERSION } from "./constants.js";
  * Creates a canonical simulated signed transaction artifact.
  */
 export function createSimulatedSignedTxArtifact(plan: TxPlan, payload: string): SignedTx {
-  const artifact: SignedTx = {
+  const artifact: any = {
     schema: "hardkas.signedTx",
     hardkasVersion: HARDKAS_VERSION,
     version: ARTIFACT_VERSION,
+    hashVersion: 1,
     createdAt: new Date().toISOString(),
     status: "signed",
-    signedId: `signed-${Date.now()}`,
     sourcePlanId: plan.planId,
     networkId: plan.networkId,
     mode: plan.mode,
     from: { address: plan.from.address },
     to: { address: plan.to.address },
     amountSompi: plan.amountSompi,
-    txId: `simulated-${plan.planId}-${Date.now()}`,
     signedTransaction: {
       format: "simulated",
       payload
     }
   };
 
-  artifact.contentHash = calculateContentHash(artifact);
-  return artifact;
+  const hash = calculateContentHash(artifact);
+  artifact.signedId = `signed-${hash.slice(0, 16)}`;
+  artifact.txId = `simulated-${plan.planId}-${hash.slice(0, 8)}`;
+  artifact.contentHash = hash;
+
+  return artifact as SignedTx;
 }
 
 /**
@@ -42,10 +45,11 @@ export function createSimulatedTxReceipt(
     daaScore?: string 
   }
 ): TxReceipt {
-  const artifact: TxReceipt = {
+  const artifact: any = {
     schema: "hardkas.txReceipt",
     hardkasVersion: HARDKAS_VERSION,
     version: ARTIFACT_VERSION,
+    hashVersion: 1,
     createdAt: new Date().toISOString(),
     txId,
     status: "accepted",
@@ -61,8 +65,10 @@ export function createSimulatedTxReceipt(
     daaScore: extra?.daaScore
   };
 
-  artifact.contentHash = calculateContentHash(artifact);
-  return artifact;
+  const hash = calculateContentHash(artifact);
+  artifact.contentHash = hash;
+
+  return artifact as TxReceipt;
 }
 
 /**

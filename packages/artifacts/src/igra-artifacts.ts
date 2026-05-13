@@ -187,14 +187,14 @@ export function assertEvmTxHash(value: any, field: string, errors: string[]): vo
   }
 }
 
-export function createIgraPlanId(): string {
-  return `igra-plan-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+export function createIgraPlanId(hash: string): string {
+  return `igra-plan-${hash.slice(0, 16)}`;
 }
 
-export function createIgraSignedId(): string {
-  return `igra-signed-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+export function createIgraSignedId(hash: string): string {
+  return `igra-signed-${hash.slice(0, 16)}`;
 }
 
-export function createIgraDeployPlanId(): string {
-  return `igradeploy_${Date.now()}_${Math.floor(Math.random() * 1000)}`;
+export function createIgraDeployPlanId(hash: string): string {
+  return `igradeploy_${hash.slice(0, 16)}`;
 }

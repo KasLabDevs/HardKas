@@ -15,6 +15,7 @@ export const BaseArtifactSchema = z.object({
   schema: z.string(),
   hardkasVersion: z.string(),
   version: z.literal(ARTIFACT_VERSION),
+  hashVersion: z.union([z.number(), z.string()]).optional(),
   networkId: kaspaNetworkIdSchema,
   mode: executionModeSchema,
   contentHash: z.string().optional(),

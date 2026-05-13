@@ -1,72 +1,64 @@
-import type { NetworkId } from "@hardkas/core";
-import { MockKaspaRpcClient } from "@hardkas/kaspa-rpc";
-import { createDeterministicAccounts } from "@hardkas/localnet";
-import { createMockUtxo } from "@hardkas/tx-builder";
+import { Hardkas } from "@hardkas/sdk";
+import { NetworkId } from "@hardkas/core";
+import { beforeAll, afterAll, beforeEach } from "vitest";
 
-export interface TestWallet {
-  readonly name: string;
-  readonly address: string;
+/**
+ * HardKAS Testing Runtime
+ */
+export interface HardkasTestRuntime {
+  readonly hardkas: Hardkas;
+  readonly network: NetworkId;
+  readonly accounts: Hardkas["accounts"];
+  readonly tx: Hardkas["tx"];
+  readonly localnet: Hardkas["localnet"];
+  readonly query: Hardkas["query"];
 }
 
-export interface HardkasTestContext {
-  readonly wallets: {
-    readonly alice: TestWallet;
-    readonly bob: TestWallet;
-    readonly carol: TestWallet;
-    readonly faucet: TestWallet;
-  };
-  readonly rpc: MockKaspaRpcClient;
-  readonly faucet: {
-    fund(address: string, amountSompi: bigint): Promise<void>;
-  };
-  reset(): Promise<void>;
+export interface HardkasTestOptions {
+  cwd?: string;
+  network?: NetworkId;
+  autoStartLocalnet?: boolean;
+  resetBetweenTests?: boolean;
 }
 
-export async function createHardkasTestContext(): Promise<HardkasTestContext> {
-  const rpc = new MockKaspaRpcClient("simnet" as NetworkId);
+/**
+ * The main helper for HardKAS tests.
+ * Injects hooks for Vitest and provides access to the SDK.
+ */
+export function hardkasTest(options: HardkasTestOptions = {}): HardkasTestRuntime {
+  const cwd = options.cwd || process.env.HARDKAS_CWD || ".";
+  const network = options.network || (process.env.HARDKAS_NETWORK as NetworkId) || "simnet";
+  const autoStart = options.autoStartLocalnet ?? true;
+  const autoReset = options.resetBetweenTests ?? true;
 
-  const accounts = createDeterministicAccounts({
-    count: 4,
-    initialBalanceSompi: 0n
+  let sdk: Hardkas;
+
+  // Hooks
+  beforeAll(async () => {
+    sdk = await Hardkas.open(cwd);
+    
+    if (autoStart && network === "simnet") {
+      await sdk.localnet.start();
+    }
   });
 
-  const alice = accounts[0];
-  const bob = accounts[1];
-  const carol = accounts[2];
-
-  if (!alice || !bob || !carol) {
-    throw new Error("Failed to create deterministic test accounts.");
-  }
-
-  const wallets = {
-    alice: { name: alice.name, address: alice.address },
-    bob: { name: bob.name, address: bob.address },
-    carol: { name: carol.name, address: carol.address },
-    faucet: { name: "faucet", address: "kaspa:sim_faucet" }
-  } as const;
-
-  return {
-    wallets,
-    rpc,
-    faucet: {
-      async fund(address: string, amountSompi: bigint): Promise<void> {
-        rpc.setUtxos(address, [
-          createMockUtxo({
-            address,
-            amountSompi,
-            index: 0
-          })
-        ]);
-      }
-    },
-    async reset(): Promise<void> {
-      rpc.setUtxos(wallets.alice.address, []);
-      rpc.setUtxos(wallets.bob.address, []);
-      rpc.setUtxos(wallets.carol.address, []);
+  beforeEach(async () => {
+    if (autoReset && network === "simnet") {
+      await (sdk.localnet as any).reset();
     }
+  });
+
+  // We return a proxy because the SDK is initialized in beforeAll
+  return {
+    get hardkas() { return sdk; },
+    get network() { return network; },
+    get accounts() { return sdk.accounts; },
+    get tx() { return sdk.tx; },
+    get localnet() { return sdk.localnet; },
+    get query() { return sdk.query; }
   };
 }
 
-export const hardkas = {
-  localnet: createHardkasTestContext
-};
+// Backward compatibility or legacy mocks
+export * from "./invariants.js";
+export * from "./utxo-fuzzer.js";

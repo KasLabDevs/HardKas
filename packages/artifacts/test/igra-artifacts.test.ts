@@ -23,7 +23,7 @@ describe("Igra Artifacts", () => {
       const artifact = {
         schema: ARTIFACT_SCHEMAS.IGRA_TX_PLAN,
         ...common,
-        planId: createIgraPlanId(),
+        planId: createIgraPlanId("0".repeat(64)),
         status: "built",
         request: {
           to: "0x0000000000000000000000000000000000000000",
@@ -39,7 +39,7 @@ describe("Igra Artifacts", () => {
       const artifact = {
         schema: ARTIFACT_SCHEMAS.IGRA_TX_PLAN,
         ...common,
-        planId: createIgraPlanId(),
+        planId: createIgraPlanId("0".repeat(64)),
         status: "built",
         request: {
           to: "invalid",
@@ -56,7 +56,7 @@ describe("Igra Artifacts", () => {
       const artifact = {
         schema: ARTIFACT_SCHEMAS.IGRA_TX_PLAN,
         ...common,
-        planId: createIgraPlanId(),
+        planId: createIgraPlanId("0".repeat(64)),
         status: "built",
         request: {
           to: "0x0000000000000000000000000000000000000000",
@@ -75,7 +75,7 @@ describe("Igra Artifacts", () => {
       const artifact = {
         schema: ARTIFACT_SCHEMAS.IGRA_SIGNED_TX,
         ...common,
-        signedId: createIgraSignedId(),
+        signedId: createIgraSignedId("0".repeat(64)),
         sourcePlanId: "plan-123",
         status: "signed",
         rawTransaction: "0x1234"
@@ -88,7 +88,7 @@ describe("Igra Artifacts", () => {
       const artifact = {
         schema: ARTIFACT_SCHEMAS.IGRA_SIGNED_TX,
         ...common,
-        signedId: createIgraSignedId(),
+        signedId: createIgraSignedId("0".repeat(64)),
         sourcePlanId: "plan-123",
         status: "signed",
         rawTransaction: "0x123" // Odd length

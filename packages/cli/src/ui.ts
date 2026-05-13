@@ -1,9 +1,10 @@
 import pc from "picocolors";
-import { formatSompi } from "@hardkas/core";
+import { formatSompi, maskSecrets } from "@hardkas/core";
 
 export const UI = {
   header(text: string) {
-    console.log(pc.bold(pc.magenta(`\n  ═══ ${text} ═══`)));
+    const masked = maskSecrets(text);
+    console.log(pc.bold(pc.magenta(`\n  ═══ ${masked} ═══`)));
   },
   
   divider() {
@@ -30,26 +31,49 @@ export const UI = {
   },
 
   warning(text: string) {
+    const masked = maskSecrets(text);
     console.log(pc.yellow(`\n  ⚠️  WARNING:`));
-    console.log(pc.yellow(`     ${text}`));
+    console.log(pc.yellow(`     ${masked}`));
   },
 
   error(msg: string, suggestion?: string) {
+    const maskedMsg = maskSecrets(msg);
+    const maskedSuggestion = suggestion ? maskSecrets(suggestion) : undefined;
     console.error(pc.red(`\n  ✗ Error:`));
-    console.error(pc.red(`    ${msg}`));
-    if (suggestion) {
+    console.error(pc.red(`    ${maskedMsg}`));
+    if (maskedSuggestion) {
       console.error(pc.cyan(`\n  💡 Suggestion:`));
-      console.error(pc.cyan(`    ${suggestion}`));
+      console.error(pc.cyan(`    ${maskedSuggestion}`));
     }
   },
 
   field(label: string, value: string | number | boolean | undefined | null) {
-    const val = value === undefined || value === null ? pc.dim("none") : String(value);
+    const val = value === undefined || value === null ? pc.dim("none") : maskSecrets(String(value));
     console.log(`  ${pc.dim(label.padEnd(16))} ${pc.white(val)}`);
   },
 
   kas(label: string, sompi: bigint | string) {
     this.field(label, pc.cyan(formatSompi(BigInt(sompi))));
+  },
+
+  maturity(label: string) {
+    const colors: Record<string, any> = {
+      stable: pc.green,
+      preview: pc.blue,
+      experimental: pc.yellow,
+      research: pc.magenta,
+      internal: pc.dim
+    };
+    const color = colors[label.toLowerCase()] || pc.white;
+    return color(label.toLowerCase());
+  },
+
+  async confirm(message: string): Promise<boolean> {
+    const readline = await import("node:readline/promises");
+    const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
+    const answer = await rl.question(pc.yellow(`  ⚠️  ${message} (y/N): `));
+    rl.close();
+    return answer.toLowerCase() === "y";
   },
 
   footer(hint?: string) {
@@ -61,11 +85,12 @@ export const UI = {
 };
 
 export function handleError(e: unknown, context?: string) {
-  const msg = e instanceof Error ? e.message : String(e);
+  const rawMsg = e instanceof Error ? e.message : String(e);
+  const msg = maskSecrets ? maskSecrets(rawMsg) : rawMsg;
   const errorObj = e as any;
   
-  let reason = errorObj.reason;
-  let suggestion = errorObj.suggestion;
+  let reason = maskSecrets ? maskSecrets(errorObj.reason) : errorObj.reason;
+  let suggestion = maskSecrets ? maskSecrets(errorObj.suggestion) : errorObj.suggestion;
 
   if (msg === "Real transaction signing is not available") {
     console.error(`\n${msg}`);

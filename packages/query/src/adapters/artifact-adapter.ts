@@ -25,8 +25,10 @@ import type {
   ArtifactInspectResult,
   ArtifactDiffResult,
   ArtifactDiffEntry,
-  ExplainChain
+  ExplainBlock,
+  WhyBlock
 } from "../types.js";
+import type { QueryBackend } from "../backend.js";
 
 const KNOWN_SCHEMAS = new Set(Object.values(ARTIFACT_SCHEMAS));
 
@@ -37,9 +39,11 @@ const KNOWN_SCHEMAS = new Set(Object.values(ARTIFACT_SCHEMAS));
 export class ArtifactQueryAdapter implements QueryAdapter {
   readonly domain = "artifacts" as const;
   private readonly rootDir: string;
+  private readonly backend: QueryBackend;
 
-  constructor(rootDir: string) {
+  constructor(rootDir: string, backend: QueryBackend) {
     this.rootDir = rootDir;
+    this.backend = backend;
   }
 
   supportedOps() {
@@ -71,14 +75,29 @@ export class ArtifactQueryAdapter implements QueryAdapter {
 
   private async executeList(request: QueryRequest): Promise<QueryResult<ArtifactQueryItem>> {
     const start = Date.now();
-    const files = await this.scanArtifactFiles();
+    
+    // Use backend for primary discovery
+    const docs = await this.backend.findArtifacts();
     const items: ArtifactQueryItem[] = [];
 
-    for (const filePath of files) {
-      const raw = await this.readJsonSafe(filePath);
-      if (!raw || !raw.schema) continue;
+    for (const doc of docs) {
+      const item: ArtifactQueryItem = {
+        filePath: doc.path,
+        schema: doc.schema,
+        version: doc.version,
+        networkId: doc.networkId,
+        mode: doc.mode,
+        createdAt: doc.createdAt,
+        contentHash: doc.contentHash as any,
+        payload: doc.payload,
+        // Optional mapping for common fields
+        status: doc.payload.status,
+        from: doc.payload.from,
+        to: doc.payload.to,
+        amountSompi: doc.payload.amountSompi,
+        lineage: doc.payload.lineage
+      };
 
-      const item = toArtifactQueryItem(raw, filePath);
       if (evaluateFilters(item, request.filters)) {
         items.push(item);
       }
@@ -91,10 +110,10 @@ export class ArtifactQueryAdapter implements QueryAdapter {
     const total = sorted.length;
     const paged = sorted.slice(request.offset, request.offset + request.limit);
 
-    // Explain
-    let explain: ExplainChain[] | undefined;
+    // Why (Causal Analysis)
+    let why: WhyBlock[] | undefined;
     if (request.explain) {
-      explain = paged.map(item => explainIntegrity(item, {
+      why = paged.map(item => explainIntegrity(item, {
         ok: true,
         hashMatch: true,
         schemaValid: KNOWN_SCHEMAS.has(item.schema as any),
@@ -110,11 +129,11 @@ export class ArtifactQueryAdapter implements QueryAdapter {
       truncated: total > request.offset + request.limit,
       deterministic: true,
       queryHash: computeQueryHash(paged),
-      explain,
+      why,
       annotations: {
         executedAt: new Date().toISOString(),
         executionMs: Date.now() - start,
-        filesScanned: files.length
+        filesScanned: docs.length
       }
     };
   }
@@ -184,9 +203,9 @@ export class ArtifactQueryAdapter implements QueryAdapter {
       lineageStatus
     };
 
-    let explain: ExplainChain[] | undefined;
+    let why: WhyBlock[] | undefined;
     if (request.explain) {
-      explain = [explainIntegrity(item, inspectResult.integrity)];
+      why = [explainIntegrity(item, inspectResult.integrity)];
     }
 
     return {
@@ -197,7 +216,7 @@ export class ArtifactQueryAdapter implements QueryAdapter {
       truncated: false,
       deterministic: true,
       queryHash: computeQueryHash([inspectResult]),
-      explain,
+      why,
       annotations: {
         executedAt: new Date().toISOString(),
         executionMs: Date.now() - start,
@@ -350,7 +369,7 @@ export class ArtifactQueryAdapter implements QueryAdapter {
     } else {
       // Default: sort by createdAt desc, tie-break by schema
       sorted.sort((a, b) => {
-        const cmp = b.createdAt.localeCompare(a.createdAt);
+        const cmp = (b.createdAt ?? "").localeCompare(a.createdAt ?? "");
         return cmp !== 0 ? cmp : a.schema.localeCompare(b.schema);
       });
     }
@@ -372,7 +391,8 @@ function toArtifactQueryItem(raw: any, filePath: string): ArtifactQueryItem {
     networkId: raw.networkId || "unknown",
     mode: raw.mode || "unknown",
     createdAt: raw.createdAt || "",
-    contentHash: raw.contentHash,
+    contentHash: raw.contentHash as any,
+    payload: raw,
     from: raw.from,
     to: raw.to,
     amountSompi: raw.amountSompi,

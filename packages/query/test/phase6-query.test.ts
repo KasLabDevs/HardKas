@@ -130,9 +130,9 @@ describe("EventsQueryAdapter", () => {
     });
     const result = await engine.execute(req);
 
-    expect(result.explain).toBeDefined();
-    expect(result.explain!.length).toBeGreaterThan(0);
-    expect(result.explain![0].conclusion).toContain("events");
+    expect(result.why).toBeDefined();
+    expect(result.why!.length).toBeGreaterThan(0);
+    expect(result.why![0].answer).toContain("events");
   });
 });
 
@@ -182,8 +182,8 @@ describe("TxQueryAdapter", () => {
     });
     const result = await engine.execute(req);
 
-    expect(result.explain).toBeDefined();
-    expect(result.explain![0].steps.length).toBeGreaterThanOrEqual(3);
+    expect(result.why).toBeDefined();
+    expect(result.why![0].causalChain.length).toBeGreaterThanOrEqual(1);
   });
 });
 

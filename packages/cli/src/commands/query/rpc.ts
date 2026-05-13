@@ -14,7 +14,7 @@ export function registerRpcQueryCommands(queryCmd: Command) {
     .action(async (options) => {
       try {
         const { QueryEngine, createQueryRequest } = await import("@hardkas/query");
-        const engine = new QueryEngine({ artifactDir: process.cwd() });
+        const engine = await QueryEngine.create({ artifactDir: process.cwd() });
         const limit = parseInt(options.limit, 10) || 100;
         const request = createQueryRequest({ domain: "rpc" as any, op: "health-timeline", params: { since: options.since }, limit });
         const result = await engine.execute(request);
@@ -34,7 +34,7 @@ export function registerRpcQueryCommands(queryCmd: Command) {
     .action(async (options) => {
       try {
         const { QueryEngine, createQueryRequest } = await import("@hardkas/query");
-        const engine = new QueryEngine({ artifactDir: process.cwd() });
+        const engine = await QueryEngine.create({ artifactDir: process.cwd() });
         const limit = parseInt(options.limit, 10) || 100;
         const request = createQueryRequest({ domain: "rpc" as any, op: "degradations", params: { since: options.since }, limit });
         const result = await engine.execute(request);
@@ -53,7 +53,7 @@ export function registerRpcQueryCommands(queryCmd: Command) {
     .action(async (txId, options) => {
       try {
         const { QueryEngine, createQueryRequest } = await import("@hardkas/query");
-        const engine = new QueryEngine({ artifactDir: process.cwd() });
+        const engine = await QueryEngine.create({ artifactDir: process.cwd() });
         const explain = options.explain === true ? "brief" as const : (options.explain || false);
         const request = createQueryRequest({ domain: "rpc" as any, op: "correlate", params: { txId }, explain });
         const result = await engine.execute(request);

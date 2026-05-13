@@ -24,7 +24,8 @@ import {
   IgraTxReceiptArtifact,
   assertValidIgraTxReceiptArtifact,
   listIgraTxReceiptArtifacts,
-  loadIgraTxReceiptArtifact
+  loadIgraTxReceiptArtifact,
+  calculateContentHash
 } from "@hardkas/artifacts";
 import { 
   loadRealAccountStore, 
@@ -99,16 +100,14 @@ export async function runL2TxBuild(options: L2TxBuildOptions): Promise<void> {
 
   const estimatedFeeWei = (BigInt(gasLimit) * BigInt(gasPrice)).toString();
 
-  // 3. Build Artifact
-  const planId = createIgraPlanId();
-  
-  const artifact: IgraTxPlanArtifact = {
+  // 3. Build Artifact (Phase 1: Payload)
+  const artifact: any = {
     schema: ARTIFACT_SCHEMAS.IGRA_TX_PLAN,
     hardkasVersion: HARDKAS_VERSION,
     networkId: profile.name,
     mode: "l2-rpc",
     createdAt: new Date().toISOString(),
-    planId,
+    planId: "", // Placeholder
     l2Network: profile.name,
     chainId,
     request: {
@@ -124,6 +123,12 @@ export async function runL2TxBuild(options: L2TxBuildOptions): Promise<void> {
     estimatedFeeWei,
     status: "built"
   };
+
+  // Phase 2: Deterministic ID and Hash
+  const hash = calculateContentHash(artifact);
+  const planId = createIgraPlanId(hash);
+  artifact.planId = planId;
+  artifact.contentHash = hash;
 
   // 4. Validate and Save
   assertValidIgraTxPlanArtifact(artifact);
@@ -245,15 +250,14 @@ export async function runL2TxSign(options: L2TxSignOptions): Promise<void> {
     throw e;
   }
 
-  // 4. Create Artifact
-  const signedId = createIgraSignedId();
-  const artifact: IgraSignedTxArtifact = {
+  // 4. Create Artifact (Phase 1: Payload)
+  const artifact: any = {
     schema: ARTIFACT_SCHEMAS.IGRA_SIGNED_TX,
     hardkasVersion: HARDKAS_VERSION,
     networkId: plan.networkId,
     mode: "l2-rpc",
     createdAt: new Date().toISOString(),
-    signedId,
+    signedId: "", // Placeholder
     sourcePlanId: plan.planId,
     sourcePlanPath: options.planPath,
     l2Network: plan.l2Network,
@@ -262,6 +266,12 @@ export async function runL2TxSign(options: L2TxSignOptions): Promise<void> {
     txHash: result.txHash || "unknown",
     status: "signed"
   };
+
+  // Phase 2: Deterministic ID and Hash
+  const hash = calculateContentHash(artifact);
+  const signedId = createIgraSignedId(hash);
+  artifact.signedId = signedId;
+  artifact.contentHash = hash;
 
   assertValidIgraSignedTxArtifact(artifact);
 

@@ -6,7 +6,7 @@ export function registerInitCommands(program: Command) {
   // --- Init Command ---
   program
     .command("init")
-    .description("Initialize a new HardKAS project")
+    .description(`Initialize a new HardKAS project ${UI.maturity("stable")}`)
     .argument("[name]", "Project name or directory")
     .option("--force", "Overwrite existing hardkas.config.ts", false)
     .action(async (name: string | undefined, options: { force: boolean }) => {
@@ -47,7 +47,7 @@ export function registerInitCommands(program: Command) {
         const template = `import { defineHardkasConfig } from "@hardkas/sdk";
 
 export default defineHardkasConfig({
-  // HardKAS v0.2-alpha Configuration
+  // HardKAS v0.2.2-alpha Configuration
   defaultNetwork: "simnet",
 
   networks: {
@@ -76,6 +76,21 @@ export default defineHardkasConfig({
 `;
 
         fs.writeFileSync(configFile, template, "utf-8");
+        
+        // Hardened .gitignore
+        const gitIgnoreFile = path.join(targetDir, ".gitignore");
+        const gitIgnoreEntry = "\n# HardKAS local storage\n.hardkas/\n";
+        if (!fs.existsSync(gitIgnoreFile)) {
+          fs.writeFileSync(gitIgnoreFile, gitIgnoreEntry, "utf-8");
+          UI.info("Created: .gitignore");
+        } else {
+          const content = fs.readFileSync(gitIgnoreFile, "utf-8");
+          if (!content.includes(".hardkas/")) {
+            fs.appendFileSync(gitIgnoreFile, gitIgnoreEntry, "utf-8");
+            UI.info("Updated: .gitignore (added .hardkas/)");
+          }
+        }
+
         UI.success(`HardKAS project '${name || "current"}' initialized successfully.`);
         if (name) UI.info(`Project folder: ${targetDir}`);
         UI.info(`Created: hardkas.config.ts (v0.2-alpha)`);
@@ -89,7 +104,7 @@ export default defineHardkasConfig({
   // --- Up Command ---
   program
     .command("up")
-    .description("Boot or validate the HardKAS developer runtime environment")
+    .description(`Boot or validate the HardKAS developer runtime environment ${UI.maturity("stable")}`)
     .action(async () => {
       try {
         await runUp();

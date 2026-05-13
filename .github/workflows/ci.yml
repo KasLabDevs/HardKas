@@ -85,6 +85,6 @@ jobs:
       - name: Upload NPM Packages as Artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: hardkas-packages-v0.2.0-alpha
+          name: hardkas-packages-v0.2.2-alpha
           path: dist-packages/*.tgz
           retention-days: 7

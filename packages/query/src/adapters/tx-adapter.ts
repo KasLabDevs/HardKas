@@ -8,7 +8,8 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import { validateEventEnvelope } from "@hardkas/core";
 import { computeQueryHash } from "../serialize.js";
-import type { QueryAdapter, QueryRequest, QueryResult, ExplainChain } from "../types.js";
+import type { QueryAdapter, QueryRequest, QueryResult, WhyBlock } from "../types.js";
+import type { QueryBackend } from "../backend.js";
 
 interface TxAggregation {
   readonly txId: string;
@@ -34,9 +35,11 @@ interface TxEventRef {
 export class TxQueryAdapter implements QueryAdapter {
   readonly domain = "tx" as const;
   private readonly rootDir: string;
+  private readonly backend: QueryBackend;
 
-  constructor(rootDir: string) {
+  constructor(rootDir: string, backend: QueryBackend) {
     this.rootDir = rootDir;
+    this.backend = backend;
   }
 
   supportedOps() {
@@ -84,22 +87,21 @@ export class TxQueryAdapter implements QueryAdapter {
       complete
     };
 
-    let explain: ExplainChain[] | undefined;
+    let why: WhyBlock[] | undefined;
     if (request.explain) {
-      explain = [{
-        question: `What data exists for transaction ${txId}?`,
-        conclusion: complete
-          ? `Found ${artifacts.length} artifact(s) and ${events.length} event(s). Workflow appears complete.`
-          : `Found ${artifacts.length} artifact(s) and ${events.length} event(s). ${warnings.join(". ")}.`,
-        steps: [
-          { order: 1, assertion: `Backend: filesystem`, evidence: path.join(this.rootDir, ".hardkas"), rule: "Filesystem scan" },
-          { order: 2, assertion: `Artifacts found: ${artifacts.length}`, evidence: artifacts.map(a => `${a.schema} (${a.role})`).join(", ") || "none" },
-          { order: 3, assertion: `Events found: ${events.length}`, evidence: events.map(e => e.kind).join(", ") || "none" },
-          { order: 4, assertion: `Completeness: ${complete ? "yes" : "no"}`, evidence: warnings.join("; ") || "all artifacts present" }
+      why = [{
+        question: `Causal aggregation for transaction ${txId}?`,
+        answer: complete
+          ? `Found ${artifacts.length} artifact(s) and ${events.length} event(s). Workflow is consistent.`
+          : `Aggregation incomplete: ${warnings.join(". ")}.`,
+        evidence: [{ type: "txId", value: txId }],
+        causalChain: [
+          { order: 1, assertion: `Artifacts linked: ${artifacts.length}`, evidence: artifacts.map(a => a.role).join(", ") },
+          { order: 2, assertion: `Events linked: ${events.length}`, evidence: "Events found in stream" },
+          { order: 3, assertion: `Completeness check: ${complete}`, evidence: warnings.join("; ") || "all required roles found" }
         ],
-        model: "tx-aggregation",
-        confidence: "definitive" as const,
-        references: [txId]
+        model: "tx-causality",
+        confidence: "definitive"
       }];
     }
 
@@ -111,7 +113,7 @@ export class TxQueryAdapter implements QueryAdapter {
       truncated: false,
       deterministic: true,
       queryHash: computeQueryHash([result]),
-      explain,
+      why,
       annotations: {
         executedAt: new Date().toISOString(),
         executionMs: Date.now() - start
@@ -120,95 +122,47 @@ export class TxQueryAdapter implements QueryAdapter {
   }
 
   private async findArtifactsByTxId(txId: string): Promise<TxArtifactRef[]> {
+    const docs = await this.backend.findArtifacts();
     const results: TxArtifactRef[] = [];
-    const files = await this.scanJsonFiles();
 
-    for (const filePath of files) {
-      try {
-        const content = await fs.readFile(filePath, "utf-8");
-        const parsed = JSON.parse(content);
-        if (!parsed.schema) continue;
+    for (const doc of docs) {
+      const parsed = doc.payload;
+      // Check if artifact references this txId
+      const matchesTx = parsed.txId === txId ||
+        parsed.transaction?.id === txId ||
+        (parsed.lineage?.artifactId === txId);
 
-        // Check if artifact references this txId
-        const matchesTx = parsed.txId === txId ||
-          parsed.transaction?.id === txId ||
-          (parsed.lineage?.artifactId && parsed.txId === txId);
+      if (!matchesTx) continue;
 
-        if (!matchesTx) continue;
+      const schema = String(doc.schema);
+      let role = "unknown";
+      if (schema.includes("txPlan")) role = "plan";
+      else if (schema.includes("signedTx")) role = "signed";
+      else if (schema.includes("txReceipt")) role = "receipt";
 
-        const schema = String(parsed.schema);
-        let role = "unknown";
-        if (schema.includes("txPlan")) role = "plan";
-        else if (schema.includes("signedTx")) role = "signed";
-        else if (schema.includes("txReceipt")) role = "receipt";
-
-        results.push({
-          filePath,
-          schema,
-          contentHash: parsed.contentHash,
-          role
-        });
-      } catch {
-        // Skip invalid files
-      }
+      results.push({
+        filePath: doc.path,
+        schema,
+        contentHash: doc.contentHash,
+        role
+      });
     }
 
     return results.sort((a, b) => a.filePath.localeCompare(b.filePath));
   }
 
   private async findEventsByTxId(txId: string): Promise<TxEventRef[]> {
-    const eventsPath = path.join(this.rootDir, ".hardkas", "events.jsonl");
-    let content: string;
-    try {
-      content = await fs.readFile(eventsPath, "utf-8");
-    } catch {
-      return [];
-    }
-
-    const lines = content.split("\n").filter(l => l.trim() !== "");
+    const docs = await this.backend.getEvents({ txId });
     const results: TxEventRef[] = [];
 
-    for (const line of lines) {
-      try {
-        const parsed = JSON.parse(line);
-        if (!validateEventEnvelope(parsed)) continue;
-        if (parsed.txId !== txId) continue;
-
-        results.push({
-          eventId: parsed.eventId,
-          kind: parsed.kind,
-          timestamp: parsed.timestamp || ""
-        });
-      } catch {
-        // Skip
-      }
+    for (const doc of docs) {
+      results.push({
+        eventId: doc.eventId,
+        kind: doc.kind,
+        timestamp: doc.timestamp || ""
+      });
     }
 
     return results;
-  }
-
-  private async scanJsonFiles(): Promise<string[]> {
-    const files: string[] = [];
-    const hardkasDir = path.join(this.rootDir, ".hardkas");
-    await this.walkDir(hardkasDir, files);
-    return files.sort();
-  }
-
-  private async walkDir(dir: string, out: string[]): Promise<void> {
-    let entries;
-    try {
-      entries = await fs.readdir(dir, { withFileTypes: true });
-    } catch {
-      return;
-    }
-    for (const entry of entries) {
-      const full = path.join(dir, entry.name);
-      if (entry.isDirectory()) {
-        if (entry.name === "node_modules" || entry.name === ".git") continue;
-        await this.walkDir(full, out);
-      } else if (entry.name.endsWith(".json") && !entry.name.endsWith(".enc.json") && entry.name !== "events.jsonl") {
-        out.push(full);
-      }
-    }
   }
 }

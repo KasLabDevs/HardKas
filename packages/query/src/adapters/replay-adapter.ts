@@ -20,9 +20,10 @@ import type {
   ReplayDivergence,
   ReplayInvariantsResult,
   DivergenceKind,
-  ExplainChain,
-  ReasoningStep
+  WhyBlock,
+  CausalStep
 } from "../types.js";
+import type { QueryBackend } from "../backend.js";
 
 // ---------------------------------------------------------------------------
 // Adapter
@@ -31,9 +32,11 @@ import type {
 export class ReplayQueryAdapter implements QueryAdapter {
   readonly domain = "replay" as const;
   private readonly rootDir: string;
+  private readonly backend: QueryBackend;
 
-  constructor(rootDir: string) {
+  constructor(rootDir: string, backend: QueryBackend) {
     this.rootDir = rootDir;
+    this.backend = backend;
   }
 
   supportedOps() {
@@ -65,15 +68,17 @@ export class ReplayQueryAdapter implements QueryAdapter {
 
   private async executeList(request: QueryRequest): Promise<QueryResult> {
     const start = Date.now();
-    const receipts = await this.loadAllReceipts();
-    const traces = await this.loadAllTraces();
-    const traceMap = new Map(traces.map(t => [t.txId, t]));
+    const receipts = await this.backend.findReceipts({
+      status: request.filters.find(f => f.field === "status")?.value as string
+    });
+    const traces = await this.backend.findTraces();
+    const traceMap = new Map(traces.map(t => [t.txId!, t]));
 
     const items: ReplaySummaryResult[] = [];
 
     for (const r of receipts) {
-      const trace = traceMap.get(r.txId);
-      const item = toSummary(r, trace);
+      const trace = traceMap.get(r.txId!);
+      const item = toSummary(r.payload, trace?.payload);
       if (evaluateFilters(item, request.filters)) {
         items.push(item);
       }
@@ -113,11 +118,12 @@ export class ReplayQueryAdapter implements QueryAdapter {
     const txId = request.params["txId"];
     if (!txId) throw new Error("summary requires params.txId");
 
-    const receipt = await this.loadReceipt(txId);
-    if (!receipt) throw new Error(`Receipt not found for txId: ${txId}`);
+    const receipt = await this.backend.getArtifact(txId);
+    if (!receipt || receipt.schema !== "hardkas.txReceipt") throw new Error(`Receipt not found for txId: ${txId}`);
 
-    const trace = await this.loadTrace(txId);
-    const item = toSummary(receipt, trace);
+    const traces = await this.backend.findTraces({ txId });
+    const trace = traces[0];
+    const item = toSummary(receipt.payload, trace?.payload);
 
     return {
       domain: "replay",
@@ -141,10 +147,11 @@ export class ReplayQueryAdapter implements QueryAdapter {
 
   private async executeDivergences(request: QueryRequest): Promise<QueryResult> {
     const start = Date.now();
-    const receipts = await this.loadAllReceipts();
+    const receipts = await this.backend.findReceipts();
     const divergences: ReplayDivergence[] = [];
 
-    for (const receipt of receipts) {
+    for (const doc of receipts) {
+      const receipt = doc.payload;
       // Check for internal consistency issues that indicate divergence
       // 1. ContentHash mismatch (if present)
       if (receipt.contentHash) {
@@ -214,9 +221,9 @@ export class ReplayQueryAdapter implements QueryAdapter {
     divergences.sort((a, b) => a.txId.localeCompare(b.txId));
     const paged = divergences.slice(request.offset, request.offset + request.limit);
 
-    let explain: ExplainChain[] | undefined;
+    let why: WhyBlock[] | undefined;
     if (request.explain) {
-      explain = paged.map(d => explainDivergence(d));
+      why = paged.map(d => explainDivergence(d));
     }
 
     return {
@@ -227,7 +234,7 @@ export class ReplayQueryAdapter implements QueryAdapter {
       truncated: divergences.length > request.offset + request.limit,
       deterministic: true,
       queryHash: computeQueryHash(paged),
-      explain,
+      why,
       annotations: {
         executedAt: new Date().toISOString(),
         executionMs: Date.now() - start,
@@ -245,8 +252,9 @@ export class ReplayQueryAdapter implements QueryAdapter {
     const txId = request.params["txId"];
     if (!txId) throw new Error("invariants requires params.txId");
 
-    const receipt = await this.loadReceipt(txId);
-    if (!receipt) throw new Error(`Receipt not found for txId: ${txId}`);
+    const doc = await this.backend.getArtifact(txId);
+    if (!doc || doc.schema !== "hardkas.txReceipt") throw new Error(`Receipt not found for txId: ${txId}`);
+    const receipt = doc.payload;
 
     const issues: string[] = [];
 
@@ -302,9 +310,9 @@ export class ReplayQueryAdapter implements QueryAdapter {
       issues
     };
 
-    let explain: ExplainChain[] | undefined;
+    let why: WhyBlock[] | undefined;
     if (request.explain) {
-      explain = [explainInvariants(result)];
+      why = [explainInvariants(result)];
     }
 
     return {
@@ -315,55 +323,13 @@ export class ReplayQueryAdapter implements QueryAdapter {
       truncated: false,
       deterministic: true,
       queryHash: computeQueryHash([result]),
-      explain,
+      why,
       annotations: {
         executedAt: new Date().toISOString(),
         executionMs: Date.now() - start,
         filesScanned: 1
       }
     };
-  }
-
-  // -------------------------------------------------------------------------
-  // Filesystem
-  // -------------------------------------------------------------------------
-
-  private async loadAllReceipts(): Promise<any[]> {
-    const dir = path.join(this.rootDir, ".hardkas", "receipts");
-    return this.loadJsonDir(dir);
-  }
-
-  private async loadAllTraces(): Promise<any[]> {
-    const dir = path.join(this.rootDir, ".hardkas", "traces");
-    return this.loadJsonDir(dir);
-  }
-
-  private async loadReceipt(txId: string): Promise<any | null> {
-    const filePath = path.join(this.rootDir, ".hardkas", "receipts", `${txId}.json`);
-    return this.readJsonSafe(filePath);
-  }
-
-  private async loadTrace(txId: string): Promise<any | null> {
-    const filePath = path.join(this.rootDir, ".hardkas", "traces", `${txId}.trace.json`);
-    return this.readJsonSafe(filePath);
-  }
-
-  private async loadJsonDir(dir: string): Promise<any[]> {
-    const results: any[] = [];
-    let entries;
-    try {
-      entries = await fs.readdir(dir);
-    } catch {
-      return results;
-    }
-
-    for (const file of entries.sort()) {
-      if (!file.endsWith(".json")) continue;
-      const raw = await this.readJsonSafe(path.join(dir, file));
-      if (raw) results.push(raw);
-    }
-
-    return results;
   }
 
   private async readJsonSafe(filePath: string): Promise<any | null> {
@@ -421,37 +387,47 @@ const DIVERGENCE_RULES: Record<DivergenceKind, string> = {
   "ordering-divergence": "UTXO selection order must be deterministic. Non-deterministic ordering breaks replay invariants."
 };
 
-function explainDivergence(d: ReplayDivergence): ExplainChain {
+function explainDivergence(d: ReplayDivergence): WhyBlock {
   return {
-    question: `Why is tx ${d.txId.slice(0, 16)}... flagged as divergent?`,
-    conclusion: `Divergence type: ${d.kind}. Field "${d.field}" expected ${d.expected.slice(0, 40)}${d.expected.length > 40 ? "..." : ""}, got ${d.actual.slice(0, 40)}${d.actual.length > 40 ? "..." : ""}.`,
-    steps: [
-      { order: 1, assertion: `Field "${d.field}" does not match expected value`, evidence: `expected: ${d.expected}, actual: ${d.actual}`, rule: DIVERGENCE_RULES[d.kind] },
-      { order: 2, assertion: `Classified as ${d.kind}`, evidence: `Divergence category based on field and semantic context`, rule: "Replay divergence classification (query/replay-adapter.ts)" }
+    question: `Why is tx ${d.txId.slice(0, 16)}... divergent?`,
+    answer: `Field "${d.field}" shows unexpected non-deterministic behavior (${d.kind}).`,
+    evidence: [{ type: "txId", value: d.txId }],
+    causalChain: [
+      { 
+        order: 1, 
+        assertion: `Value mismatch in "${d.field}"`, 
+        evidence: `Expected: ${d.expected.slice(0, 40)}, Actual: ${d.actual.slice(0, 40)}`,
+        rule: DIVERGENCE_RULES[d.kind] 
+      },
+      { 
+        order: 2, 
+        assertion: "Divergence detected in replay comparison", 
+        evidence: "Verification engine mismatch",
+        rule: "Invariant validation policy" 
+      }
     ],
-    model: "replay-invariants",
-    confidence: "definitive",
-    references: [d.txId]
+    model: "replay-analysis",
+    confidence: "definitive"
   };
 }
 
-function explainInvariants(result: ReplayInvariantsResult): ExplainChain {
-  const steps: ReasoningStep[] = [];
+function explainInvariants(result: ReplayInvariantsResult): WhyBlock {
+  const causalChain: CausalStep[] = [];
   let order = 1;
 
-  steps.push({ order: order++, assertion: result.planIntegrity ? "Plan contentHash is stable" : "Plan contentHash MISMATCH", evidence: `planIntegrity=${result.planIntegrity}`, rule: "canonicalStringify + SHA-256 determinism" });
-  steps.push({ order: order++, assertion: result.receiptReproducible ? "Receipt has pre/post state hashes for comparison" : "Receipt missing state hashes — replay comparison not possible", evidence: `receiptReproducible=${result.receiptReproducible}`, rule: "preStateHash + postStateHash required for replay verification" });
-  steps.push({ order: order++, assertion: result.stateTransitionValid ? "State transition is consistent with status" : "State transition INCONSISTENT with status", evidence: `stateTransitionValid=${result.stateTransitionValid}`, rule: "Confirmed tx must change state. Failed tx must not." });
-  steps.push({ order: order++, assertion: result.utxoConservation ? "UTXO conservation holds" : "UTXO conservation VIOLATION", evidence: `utxoConservation=${result.utxoConservation}`, rule: "Confirmed tx must consume and produce UTXOs" });
+  causalChain.push({ order: order++, assertion: result.planIntegrity ? "Plan integrity is OK" : "Plan integrity FAILED", evidence: `planIntegrity=${result.planIntegrity}`, rule: "SHA-256 canonical consistency" });
+  causalChain.push({ order: order++, assertion: result.receiptReproducible ? "Receipt is reproducible" : "Receipt is NOT reproducible", evidence: `receiptReproducible=${result.receiptReproducible}`, rule: "Replay evidence requirements" });
+  causalChain.push({ order: order++, assertion: result.stateTransitionValid ? "State transition is valid" : "State transition INVALID", evidence: `stateTransitionValid=${result.stateTransitionValid}`, rule: "Status/State alignment" });
+  causalChain.push({ order: order++, assertion: result.utxoConservation ? "UTXO conservation holds" : "UTXO conservation VIOLATED", evidence: `utxoConservation=${result.utxoConservation}`, rule: "Value conservation policy" });
 
   const allOk = result.planIntegrity && result.receiptReproducible && result.stateTransitionValid && result.utxoConservation;
 
   return {
     question: `Are replay invariants satisfied for tx ${result.txId.slice(0, 16)}...?`,
-    conclusion: allOk ? "All replay invariants satisfied." : `Invariant violations: ${result.issues.join("; ")}`,
-    steps,
+    answer: allOk ? "All replay invariants satisfied." : `Violations found: ${result.issues.join("; ")}`,
+    evidence: [{ type: "txId", value: result.txId }],
+    causalChain,
     model: "replay-invariants",
-    confidence: "definitive",
-    references: [result.txId]
+    confidence: "definitive"
   };
 }

@@ -22,6 +22,22 @@ vi.mock("@hardkas/l2", async (importOriginal) => {
   };
 });
 
+vi.mock("@hardkas/artifacts", async (importOriginal) => {
+  const actual = await importOriginal() as any;
+  return {
+    ...actual,
+    writeArtifact: vi.fn().mockResolvedValue(undefined),
+    readArtifact: vi.fn().mockResolvedValue({}),
+    createIgraPlanId: vi.fn().mockReturnValue("p1"),
+    createIgraSignedId: vi.fn().mockReturnValue("s1")
+  };
+});
+
+import { 
+  writeArtifact,
+  readArtifact
+} from "@hardkas/artifacts";
+
 vi.mock("@hardkas/accounts", async (importOriginal) => {
   const actual = await importOriginal() as any;
   return {
@@ -67,10 +83,9 @@ describe("L2 Tx Build Runner", () => {
     expect(mockClient.estimateGas).toHaveBeenCalled();
     
     expect(fs.mkdir).toHaveBeenCalledWith("test-plans", expect.any(Object));
-    expect(fs.writeFile).toHaveBeenCalledWith(
+    expect(writeArtifact).toHaveBeenCalledWith(
       expect.stringContaining("test-plans"),
-      expect.stringContaining('"schema": "hardkas.igraTxPlan.v1"'),
-      "utf-8"
+      expect.objectContaining({ schema: "hardkas.igraTxPlan.v1" })
     );
 
     expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining("L2 transaction plan built"));
@@ -92,15 +107,14 @@ describe("L2 Tx Build Runner", () => {
     expect(mockClient.getGasPriceWei).not.toHaveBeenCalled();
     expect(mockClient.estimateGas).not.toHaveBeenCalled();
     
-    expect(fs.writeFile).toHaveBeenCalledWith(
+    expect(writeArtifact).toHaveBeenCalledWith(
       expect.any(String),
-      expect.stringContaining('"nonce": "10"'),
-      "utf-8"
-    );
-    expect(fs.writeFile).toHaveBeenCalledWith(
-      expect.any(String),
-      expect.stringContaining('"gasLimit": "30000"'),
-      "utf-8"
+      expect.objectContaining({
+        request: expect.objectContaining({
+          nonce: "10",
+          gasLimit: "30000"
+        })
+      })
     );
   });
 });
@@ -129,7 +143,7 @@ describe("L2 Tx Sign Runner", () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    (fs.readFile as any).mockResolvedValue(JSON.stringify(validPlan));
+    (readArtifact as any).mockResolvedValue(validPlan);
   });
 
   it("should sign a plan with a mock signer", async () => {
@@ -148,10 +162,9 @@ describe("L2 Tx Sign Runner", () => {
     });
 
     expect(mockSigner.sign).toHaveBeenCalled();
-    expect(fs.writeFile).toHaveBeenCalledWith(
+    expect(writeArtifact).toHaveBeenCalledWith(
       expect.stringContaining("signed"),
-      expect.stringContaining('"schema": "hardkas.igraSignedTx.v1"'),
-      "utf-8"
+      expect.objectContaining({ schema: "hardkas.igraSignedTx.v1" })
     );
     expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining("Igra L2 transaction signed"));
   });
@@ -167,7 +180,7 @@ describe("L2 Tx Sign Runner", () => {
 
     expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining("Igra L2 signing is not available"));
     expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining("pnpm add viem"));
-    expect(fs.writeFile).not.toHaveBeenCalled();
+    expect(writeArtifact).not.toHaveBeenCalled();
   });
 
   it("should reject address mismatch", async () => {
@@ -178,7 +191,7 @@ describe("L2 Tx Sign Runner", () => {
         from: "0x0000000000000000000000000000000000000000"
       }
     };
-    (fs.readFile as any).mockResolvedValue(JSON.stringify(mismatchedPlan));
+    (readArtifact as any).mockResolvedValue(mismatchedPlan);
 
     await expect(runL2TxSign({
       planPath: "plan.json",

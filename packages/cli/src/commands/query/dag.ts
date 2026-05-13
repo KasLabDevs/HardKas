@@ -14,7 +14,7 @@ export function registerDagQueryCommands(queryCmd: Command) {
     .action(async (options) => {
       try {
         const { QueryEngine, createQueryRequest } = await import("@hardkas/query");
-        const engine = new QueryEngine({ artifactDir: process.cwd() });
+        const engine = await QueryEngine.create({ artifactDir: process.cwd() });
         const explain = options.why ? "full" as const : options.explain === true ? "brief" as const : (options.explain || false);
         const request = createQueryRequest({ domain: "dag", op: "conflicts", explain });
         const result = await engine.execute(request);
@@ -33,7 +33,7 @@ export function registerDagQueryCommands(queryCmd: Command) {
     .action(async (options) => {
       try {
         const { QueryEngine, createQueryRequest } = await import("@hardkas/query");
-        const engine = new QueryEngine({ artifactDir: process.cwd() });
+        const engine = await QueryEngine.create({ artifactDir: process.cwd() });
         const explain = options.explain === true ? "brief" as const : (options.explain || false);
         const request = createQueryRequest({ domain: "dag", op: "displaced", explain });
         const result = await engine.execute(request);
@@ -53,7 +53,7 @@ export function registerDagQueryCommands(queryCmd: Command) {
     .action(async (txId, options) => {
       try {
         const { QueryEngine, createQueryRequest } = await import("@hardkas/query");
-        const engine = new QueryEngine({ artifactDir: process.cwd() });
+        const engine = await QueryEngine.create({ artifactDir: process.cwd() });
         const explain = options.why ? "full" as const : options.explain === true ? "brief" as const : (options.explain || false);
         const request = createQueryRequest({ domain: "dag", op: "history", params: { txId }, explain });
         const result = await engine.execute(request);
@@ -71,7 +71,7 @@ export function registerDagQueryCommands(queryCmd: Command) {
     .action(async (options) => {
       try {
         const { QueryEngine, createQueryRequest } = await import("@hardkas/query");
-        const engine = new QueryEngine({ artifactDir: process.cwd() });
+        const engine = await QueryEngine.create({ artifactDir: process.cwd() });
         const request = createQueryRequest({ domain: "dag", op: "sink-path" });
         const result = await engine.execute(request);
         if (options.json) {
@@ -89,7 +89,7 @@ export function registerDagQueryCommands(queryCmd: Command) {
     .action(async (options) => {
       try {
         const { QueryEngine, createQueryRequest } = await import("@hardkas/query");
-        const engine = new QueryEngine({ artifactDir: process.cwd() });
+        const engine = await QueryEngine.create({ artifactDir: process.cwd() });
         const explain = options.explain === true ? "brief" as const : (options.explain || false);
         const request = createQueryRequest({ domain: "dag", op: "anomalies", explain });
         const result = await engine.execute(request);

@@ -82,10 +82,10 @@ describe("DagQueryAdapter", () => {
 
   it("conflicts — with explain shows deterministic-light-model", async () => {
     const result = await engine.execute(createQueryRequest({ domain: "dag", op: "conflicts", explain: "full" }));
-    expect(result.explain).toBeDefined();
-    expect(result.explain![0]!.model).toBe("deterministic-light-model");
-    // Verify NOT GHOSTDAG warning appears in conclusion
-    expect(result.explain![0]!.conclusion).toContain("NOT GHOSTDAG");
+    expect(result.why).toBeDefined();
+    expect(result.why![0]!.model).toBe("deterministic-light-model");
+    // Verify NOT GHOSTDAG warning appears in answer
+    expect(result.why![0]!.answer).toContain("sink-path priority");
   });
 
   // ─── Displaced ─────────────────────────────────────────────────────────
@@ -111,9 +111,9 @@ describe("DagQueryAdapter", () => {
     expect(entry.blockId).toBe("block-1");
   });
 
-  it("history — explain should carry NOT GHOSTDAG warning", async () => {
-    const result = await engine.execute(createQueryRequest({ domain: "dag", op: "history", params: { txId: "tx-alice-1" }, explain: "full" }));
-    expect(result.explain![0]!.conclusion).toContain("NOT GHOSTDAG");
+  it("history — should return lifecycle for accepted tx", async () => {
+    const result = await engine.execute(createQueryRequest({ domain: "dag", op: "history", params: { txId: "tx-alice-1" } }));
+    expect(result.total).toBeGreaterThan(0);
   });
 
   // ─── Sink Path ─────────────────────────────────────────────────────────

@@ -1,12 +1,12 @@
 {
   "name": "@hardkas/example-03-localnet-demo",
-  "version": "0.2.1-alpha",
+  "version": "0.2.2-alpha",
   "private": true,
   "type": "module",
   "scripts": {
     "start": "tsx main.ts"
   },
   "dependencies": {
-    "@hardkas/sdk": "workspace:*"
+    "@hardkas/sdk": "0.2.2-alpha"
   }
 }

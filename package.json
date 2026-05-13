@@ -21,7 +21,8 @@
     "format": "prettier --write .",
     "hardkas": "pnpm --filter @hardkas/cli run dev",
     "cli": "pnpm --filter @hardkas/cli run dev",
-    "check": "pnpm typecheck && pnpm build && pnpm test",
+    "check": "pnpm typecheck && pnpm build && pnpm check:cli-version && pnpm test",
+    "check:cli-version": "node scripts/check-cli-version.mjs",
     "check:artifacts": "pnpm artifact:fixtures",
     "artifact:fixtures": "pnpm hardkas artifact verify ../artifacts/test/fixtures/valid --recursive --strict",
     "artifact:corruption": "pnpm hardkas artifact verify ../artifacts/test/fixtures/corrupted --recursive --strict",
@@ -46,5 +47,6 @@
     "turbo": "^2.3.3",
     "typescript": "^5.7.2",
     "vitest": "^2.1.8"
-  }
+  },
+  "version": "0.2.2-alpha.1"
 }

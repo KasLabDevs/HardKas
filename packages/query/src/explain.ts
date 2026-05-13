@@ -1,14 +1,23 @@
 /**
- * Explainability engine.
+ * Explainability & Causal Analysis engine.
  *
- * Generates structured, rule-driven ExplainChains for query results.
- * Every explanation is based on explicit rules, deterministic evidence,
- * and actual execution state. No speculative reasoning.
+ * Generates structured, technical ExplainBlocks and causal WhyBlocks.
+ * Every analysis is based on explicit rules, deterministic evidence,
+ * and actual execution state.
  */
-import type { ExplainChain, ReasoningStep, ArtifactQueryItem, LineageNode, LineageTransition } from "./types.js";
+import type { 
+  ExplainBlock, 
+  WhyBlock, 
+  EvidenceRef, 
+  CausalStep, 
+  ArtifactQueryItem, 
+  LineageNode, 
+  LineageTransition,
+  QueryStoreStatus
+} from "./types.js";
 
 // ---------------------------------------------------------------------------
-// Valid lineage transitions (from lineage.ts in @hardkas/artifacts)
+// Valid lineage transitions
 // ---------------------------------------------------------------------------
 
 const VALID_TRANSITIONS: Record<string, readonly string[]> = {
@@ -18,18 +27,53 @@ const VALID_TRANSITIONS: Record<string, readonly string[]> = {
 };
 
 // ---------------------------------------------------------------------------
-// Explain: Artifact Integrity
+// Explain: Technical Diagnostics
 // ---------------------------------------------------------------------------
 
+export function createExplainBlock(options: {
+  backend: string;
+  executionPlan: string[];
+  indexesUsed?: string[];
+  filtersApplied?: string[];
+  rowsRead: number;
+  scannedFiles: number;
+  freshness: QueryStoreStatus;
+  warnings?: string[];
+}): ExplainBlock {
+  return {
+    backend: options.backend,
+    executionPlan: options.executionPlan,
+    indexesUsed: options.indexesUsed || [],
+    filtersApplied: options.filtersApplied || [],
+    rowsRead: options.rowsRead,
+    scannedFiles: options.scannedFiles,
+    freshness: options.freshness,
+    warnings: options.warnings || []
+  };
+}
+
+// ---------------------------------------------------------------------------
+// Why: Causal Analysis
+// ---------------------------------------------------------------------------
+
+/**
+ * Why is this artifact valid or invalid?
+ */
 export function explainIntegrity(
   artifact: ArtifactQueryItem,
   integrity: { ok: boolean; hashMatch: boolean; schemaValid: boolean; errors: readonly string[] }
-): ExplainChain {
-  const steps: ReasoningStep[] = [];
+): WhyBlock {
+  const causalChain: CausalStep[] = [];
+  const evidence: EvidenceRef[] = [];
   let order = 1;
 
+  if (artifact.contentHash) {
+    evidence.push({ type: "contentHash", value: artifact.contentHash });
+  }
+  evidence.push({ type: "filePath", value: artifact.filePath });
+
   // Step 1: Schema check
-  steps.push({
+  causalChain.push({
     order: order++,
     assertion: integrity.schemaValid
       ? `Schema "${artifact.schema}" is a recognized HardKAS artifact schema`
@@ -40,185 +84,156 @@ export function explainIntegrity(
 
   // Step 2: Content hash
   if (artifact.contentHash) {
-    steps.push({
+    causalChain.push({
       order: order++,
       assertion: integrity.hashMatch
         ? "Content hash matches recomputed hash"
-        : "Content hash does NOT match recomputed hash — possible corruption",
-      evidence: `artifact.contentHash = "${artifact.contentHash}"`,
+        : "Content hash does NOT match recomputed hash",
+      evidence: `hash(payload) === "${artifact.contentHash}"`,
       rule: "canonicalStringify + SHA-256 (artifacts/canonical.ts)"
-    });
-  } else {
-    steps.push({
-      order: order++,
-      assertion: "Artifact has no contentHash field (pre-verification artifact)",
-      evidence: "artifact.contentHash is undefined",
-      rule: "contentHash is optional but recommended"
     });
   }
 
-  // Step 3: Overall verdict
+  // Step 3: Semantic errors
   if (integrity.errors.length > 0) {
     for (const err of integrity.errors) {
-      steps.push({
+      causalChain.push({
         order: order++,
-        assertion: `Integrity issue: ${err}`,
-        evidence: err,
-        rule: "verifyArtifactIntegrity (artifacts/verify.ts)"
+        assertion: `Semantic violation detected: ${err}`,
+        evidence: "Verification engine failure",
+        rule: "verifyArtifactSemantics (artifacts/verify.ts)"
       });
     }
   }
 
   return {
-    question: `Why is artifact "${artifact.schema}" at ${artifact.filePath} ${integrity.ok ? "valid" : "invalid"}?`,
-    conclusion: integrity.ok
-      ? "All integrity checks passed. Schema is valid and content hash matches."
-      : `Integrity check failed: ${integrity.errors.join("; ")}`,
-    steps,
-    model: "artifact-verification",
-    confidence: "definitive",
-    references: artifact.contentHash ? [artifact.contentHash] : []
+    question: `Why is artifact "${artifact.schema}" ${integrity.ok ? "valid" : "invalid"}?`,
+    answer: integrity.ok
+      ? "All deterministic checks (schema, hash, semantics) passed successfully."
+      : `Verification failed: ${integrity.errors.join("; ")}`,
+    evidence,
+    causalChain,
+    model: "integrity-verifier",
+    confidence: "definitive"
   };
 }
 
-// ---------------------------------------------------------------------------
-// Explain: Lineage Transition
-// ---------------------------------------------------------------------------
-
-export function explainTransition(transition: LineageTransition): ExplainChain {
-  const steps: ReasoningStep[] = [];
+/**
+ * Why is this transition valid or invalid?
+ */
+export function explainTransition(transition: LineageTransition): WhyBlock {
+  const causalChain: CausalStep[] = [];
+  const evidence: EvidenceRef[] = [
+    { type: "contentHash", value: transition.from.contentHash },
+    { type: "contentHash", value: transition.to.contentHash }
+  ];
   let order = 1;
 
   const allowed = VALID_TRANSITIONS[transition.from.schema] ?? [];
 
-  // Step 1: Transition rule lookup
-  steps.push({
-    order: order++,
-    assertion: allowed.length > 0
-      ? `Schema "${transition.from.schema}" allows transitions to: ${allowed.join(", ")}`
-      : `Schema "${transition.from.schema}" has no defined transitions`,
-    evidence: `VALID_TRANSITIONS["${transition.from.schema}"] = [${allowed.map(s => `"${s}"`).join(", ")}]`,
-    rule: "Lineage transition table (artifacts/lineage.ts)"
-  });
-
-  // Step 2: Check if this transition is in the allowed set
-  steps.push({
+  // Step 1: Transition rule
+  causalChain.push({
     order: order++,
     assertion: transition.valid
-      ? `Transition "${transition.from.schema}" → "${transition.to.schema}" is VALID`
-      : `Transition "${transition.from.schema}" → "${transition.to.schema}" is NOT in the allowed set`,
-    evidence: `target schema = "${transition.to.schema}", allowed = [${allowed.map(s => `"${s}"`).join(", ")}]`,
-    rule: "Lineage transition table (artifacts/lineage.ts)"
+      ? `Transition "${transition.from.schema}" → "${transition.to.schema}" is allowed`
+      : `Transition "${transition.from.schema}" → "${transition.to.schema}" is NOT allowed`,
+    evidence: `allowed_from_${transition.from.schema} = [${allowed.join(", ")}]`,
+    rule: "Lineage transition table"
   });
 
-  // Step 3: Network consistency
-  const networkMatch = transition.from.networkId === transition.to.networkId;
-  steps.push({
+  // Step 2: Context consistency
+  const contextMatch = transition.from.networkId === transition.to.networkId && 
+                       transition.from.mode === transition.to.mode;
+  
+  causalChain.push({
     order: order++,
-    assertion: networkMatch
-      ? `Network is consistent: both "${transition.from.networkId}"`
-      : `NETWORK CONTAMINATION: "${transition.from.networkId}" → "${transition.to.networkId}"`,
-    evidence: `parent.networkId = "${transition.from.networkId}", child.networkId = "${transition.to.networkId}"`,
-    rule: "NETWORK_CONTAMINATION check (artifacts/lineage.ts)"
+    assertion: contextMatch
+      ? "Execution context (network, mode) is consistent"
+      : "EXECUTION CONTEXT MISMATCH detected",
+    evidence: `from: ${transition.from.networkId}/${transition.from.mode}, to: ${transition.to.networkId}/${transition.to.mode}`,
+    rule: "Context isolation policy"
   });
-
-  // Step 4: Mode consistency
-  const modeMatch = transition.from.mode === transition.to.mode;
-  steps.push({
-    order: order++,
-    assertion: modeMatch
-      ? `Mode is consistent: both "${transition.from.mode}"`
-      : `MODE CONTAMINATION: "${transition.from.mode}" → "${transition.to.mode}"`,
-    evidence: `parent.mode = "${transition.from.mode}", child.mode = "${transition.to.mode}"`,
-    rule: "MODE_CONTAMINATION check (artifacts/lineage.ts)"
-  });
-
-  // Step 5: Lineage ID continuity
-  const lineageMatch = transition.from.lineageId === transition.to.lineageId;
-  steps.push({
-    order: order++,
-    assertion: lineageMatch
-      ? "Lineage ID is continuous"
-      : "LINEAGE ID MISMATCH — artifacts belong to different lineage chains",
-    evidence: `parent.lineageId = "${transition.from.lineageId}", child.lineageId = "${transition.to.lineageId}"`,
-    rule: "LINEAGE_ID_MISMATCH check (artifacts/lineage.ts)"
-  });
-
-  const allValid = transition.valid && networkMatch && modeMatch && lineageMatch;
 
   return {
-    question: `Why is the transition "${transition.from.schema}" → "${transition.to.schema}" ${allValid ? "valid" : "invalid"}?`,
-    conclusion: allValid
-      ? `Valid transition. Rule: ${transition.from.schema} → ${transition.to.schema}. Network, mode, and lineage ID are all consistent.`
-      : `Invalid transition. ${!transition.valid ? "Schema transition not allowed. " : ""}${!networkMatch ? "Network mismatch. " : ""}${!modeMatch ? "Mode mismatch. " : ""}${!lineageMatch ? "Lineage ID mismatch." : ""}`,
-    steps,
-    model: "lineage-rules",
-    confidence: "definitive",
-    references: [transition.from.contentHash, transition.to.contentHash]
+    question: `Why transition ${transition.from.schema} → ${transition.to.schema}?`,
+    answer: transition.valid && contextMatch 
+      ? "Causal chain is consistent with HardKAS state transition rules."
+      : "Workflow violation: invalid schema transition or context contamination.",
+    evidence,
+    causalChain,
+    model: "causal-lineage",
+    confidence: "definitive"
   };
 }
 
-// ---------------------------------------------------------------------------
-// Explain: Orphan
-// ---------------------------------------------------------------------------
-
+/**
+ * Why is this artifact an orphan?
+ */
 export function explainOrphan(
   node: LineageNode,
   missingParentId: string
-): ExplainChain {
+): WhyBlock {
   return {
-    question: `Why is artifact "${node.schema}" (${node.contentHash.slice(0, 12)}...) an orphan?`,
-    conclusion: `Parent artifact with ID "${missingParentId.slice(0, 12)}..." is not found in the artifact store. This artifact is disconnected from its workflow context.`,
-    steps: [
+    question: `Why is artifact "${node.artifactId.slice(0, 8)}" an orphan?`,
+    answer: "The parent artifact referenced in the lineage metadata is missing from the indexed store.",
+    evidence: [
+      { type: "artifactId", value: node.artifactId },
+      { type: "artifactId", value: missingParentId }
+    ],
+    causalChain: [
       {
         order: 1,
-        assertion: `Artifact declares parentArtifactId = "${missingParentId}"`,
-        evidence: `artifact.lineage.parentArtifactId = "${missingParentId}"`,
-        rule: "Lineage parent resolution"
+        assertion: "Artifact defines a parent dependency",
+        evidence: `parentArtifactId = "${missingParentId}"`,
+        rule: "Lineage metadata requirement"
       },
       {
         order: 2,
-        assertion: "No artifact in the store has a matching lineage.artifactId",
-        evidence: "Full store scan found 0 artifacts with this artifactId",
-        rule: "Lineage graph construction (query/lineage-adapter.ts)"
-      },
-      {
-        order: 3,
-        assertion: "Artifact is classified as an orphan",
-        evidence: "Missing parent means the lineage chain is broken",
-        rule: "Orphan detection: parentArtifactId exists but not resolvable"
+        assertion: "Parent artifact lookup failed",
+        evidence: "Index scan for artifactId returned 0 results",
+        rule: "Store integrity policy"
       }
     ],
-    model: "lineage-rules",
-    confidence: "definitive",
-    references: [node.contentHash, missingParentId]
+    model: "orphan-analysis",
+    confidence: "definitive"
   };
 }
 
 // ---------------------------------------------------------------------------
-// Formatting
+// Formatting Helpers
 // ---------------------------------------------------------------------------
 
-export function formatExplainBrief(chain: ExplainChain): string {
-  return `${chain.conclusion} [model: ${chain.model}, confidence: ${chain.confidence}]`;
+export function formatExplainBlock(block: ExplainBlock): string {
+  const lines: string[] = [];
+  lines.push(`  [Explain: Technical Diagnostics]`);
+  lines.push(`  Backend:      ${block.backend}`);
+  lines.push(`  Freshness:    ${block.freshness}`);
+  lines.push(`  Rows Read:    ${block.rowsRead}`);
+  lines.push(`  Files Scan:   ${block.scannedFiles}`);
+  if (block.executionPlan.length > 0) {
+    lines.push(`  Plan:         ${block.executionPlan.join(" → ")}`);
+  }
+  if (block.warnings.length > 0) {
+    lines.push(`  Warnings:`);
+    for (const w of block.warnings) lines.push(`    ⚠ ${w}`);
+  }
+  return lines.join("\n");
 }
 
-export function formatExplainFull(chain: ExplainChain): string {
+export function formatWhyBlock(block: WhyBlock): string {
   const lines: string[] = [];
-  lines.push(`Q: ${chain.question}`);
+  lines.push(`  [Why: Causal Analysis]`);
+  lines.push(`  Q: ${block.question}`);
+  lines.push(`  A: ${block.answer}`);
   lines.push("");
-  for (const step of chain.steps) {
-    lines.push(`  ${step.order}. ${step.assertion}`);
-    lines.push(`     Evidence: ${step.evidence}`);
-    if (step.rule) {
-      lines.push(`     Rule: ${step.rule}`);
-    }
+  for (const step of block.causalChain) {
+    lines.push(`    ${step.order}. ${step.assertion}`);
+    lines.push(`       Evidence: ${step.evidence}`);
+    if (step.rule) lines.push(`       Rule:     ${step.rule}`);
   }
-  lines.push("");
-  lines.push(`Conclusion: ${chain.conclusion}`);
-  lines.push(`Model: ${chain.model} | Confidence: ${chain.confidence}`);
-  if (chain.references.length > 0) {
-    lines.push(`References: ${chain.references.map(r => r.slice(0, 16) + "...").join(", ")}`);
+  if (block.evidence.length > 0) {
+    lines.push("");
+    lines.push(`  Evidence Refs: ${block.evidence.map(e => `${e.type}:${e.value.slice(0, 12)}...`).join(", ")}`);
   }
   return lines.join("\n");
 }

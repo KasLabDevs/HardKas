@@ -1,6 +1,6 @@
 {
   "schema": "hardkas.snapshot",
-  "hardkasVersion": "0.2.0-alpha",
+  "hardkasVersion": "0.2.2-alpha",
   "version": "1.0.0-alpha",
   "networkId": "simnet",
   "mode": "simulated",
@@ -12,9 +12,12 @@
   "accounts": [],
   "utxos": [],
   "lineage": {
-    "artifactId": "4b93f7419dca1a25d1bc5d77ad86b8d6705f45fa53e2024f1793af9d4a5b0aca",
-    "lineageId": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
-    "rootArtifactId": "4b93f7419dca1a25d1bc5d77ad86b8d6705f45fa53e2024f1793af9d4a5b0aca"
+    "artifactId": "40115a7004b9e9a2310617d285130382ca59fc44f071d57f408e35237d7f41cc",
+    "lineageId": "40115a7004b9e9a2310617d285130382ca59fc44f071d57f408e35237d7f41cc",
+    "rootArtifactId": "40115a7004b9e9a2310617d285130382ca59fc44f071d57f408e35237d7f41cc",
+    "parentArtifactId": ""
   },
-  "contentHash": "4b93f7419dca1a25d1bc5d77ad86b8d6705f45fa53e2024f1793af9d4a5b0aca"
+  "contentHash": "40115a7004b9e9a2310617d285130382ca59fc44f071d57f408e35237d7f41cc",
+  "artifactId": "40115a7004b9e9a2310617d285130382ca59fc44f071d57f408e35237d7f41cc",
+  "parentArtifactId": null
 }

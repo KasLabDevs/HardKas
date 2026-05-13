@@ -1,5 +1,5 @@
 import { Command } from "commander";
-import { handleError } from "../ui.js";
+import { handleError, UI } from "../ui.js";
 import { bigIntReplacer } from "@hardkas/artifacts";
 import { runTxProfile } from "../runners/tx-profile-runner.js";
 import { runTxPlan } from "../runners/tx-plan-runner.js";
@@ -23,7 +23,7 @@ export function registerTxCommands(program: Command) {
     });
 
   tx.command("plan")
-    .description("Build a transaction plan artifact")
+    .description(`Build a transaction plan artifact ${UI.maturity("stable")}`)
     .option("--from <accountOrAddress>", "Sender account name or address")
     .option("--to <address>", "Recipient address")
     .option("--amount <kas>", "Amount in KAS")
@@ -70,7 +70,7 @@ export function registerTxCommands(program: Command) {
     });
 
   tx.command("sign <planPath>")
-    .description("Sign a transaction plan artifact")
+    .description(`Sign a transaction plan artifact ${UI.maturity("stable")}`)
     .option("--account <name>", "Account name to sign with")
     .option("--out <path>", "Save signed artifact JSON")
     .option("--allow-mainnet-signing", "Allow signing for mainnet", false)
@@ -108,7 +108,7 @@ export function registerTxCommands(program: Command) {
     });
 
   tx.command("send [signedPath]")
-    .description("Broadcast a signed transaction or send directly (simulated)")
+    .description(`Broadcast a signed transaction or send directly ${UI.maturity("stable")}`)
     .option("--from <accountOrAddress>", "Sender (shortcut mode)")
     .option("--to <address>", "Recipient (shortcut mode)")
     .option("--amount <kas>", "Amount in KAS (shortcut mode)")
@@ -186,7 +186,7 @@ export function registerTxCommands(program: Command) {
     });
 
   tx.command("verify <path>")
-    .description("Perform deep semantic verification of a transaction plan")
+    .description(`Perform deep semantic verification of a transaction plan ${UI.maturity("preview")}`)
     .option("--json", "Output as JSON", false)
     .action(async (path, options) => {
       const { runTxVerify } = await import("../runners/tx-verify-runner.js");
@@ -194,7 +194,7 @@ export function registerTxCommands(program: Command) {
     });
 
   tx.command("trace <txId>")
-    .description("Reconstruct the full operational trace of a transaction")
+    .description(`Reconstruct the full operational trace of a transaction ${UI.maturity("research")}`)
     .action(async (txId: string) => {
       const { UI } = await import("../ui.js");
       UI.error("Tracing is temporarily disabled while the query API stabilizes.");

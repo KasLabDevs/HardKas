@@ -1,6 +1,6 @@
 {
   "schema": "hardkas.txReceipt",
-  "hardkasVersion": "0.2.0-alpha",
+  "hardkasVersion": "0.2.2-alpha",
   "version": "1.0.0-alpha",
   "createdAt": "2026-05-10T20:17:14.692Z",
   "txId": "simtx_b59f2b649fe0f217d055e33c9a953284",

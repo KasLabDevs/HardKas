@@ -1,6 +1,6 @@
 {
   "name": "@hardkas/cli",
-  "version": "0.2.1-alpha",
+  "version": "0.2.2-alpha.1",
   "type": "module",
   "files": [
     "dist",
@@ -11,7 +11,7 @@
     "hardkas": "./dist/index.js"
   },
   "scripts": {
-    "build": "tsup src/index.ts --format esm --clean",
+    "build": "tsup src/index.ts --format esm --clean --external vitest",
     "dev": "tsx src/index.ts",
     "hardkas": "tsx src/index.ts",
     "typecheck": "tsc --noEmit",

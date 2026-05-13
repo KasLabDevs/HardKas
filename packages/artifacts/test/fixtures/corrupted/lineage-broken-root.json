@@ -1,6 +1,6 @@
 {
   "schema": "hardkas.txPlan",
-  "hardkasVersion": "0.2.0-alpha",
+  "hardkasVersion": "0.2.2-alpha",
   "version": "1.0.0-alpha",
   "createdAt": "2026-05-08T22:21:40Z",
   "networkId": "simnet-1",

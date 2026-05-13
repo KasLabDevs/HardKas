@@ -3,9 +3,9 @@ import {
   listHardkasAccounts, 
   resolveHardkasAccount, 
   resolveHardkasAccountAddress, 
-  describeAccount,
-  redactSecret
+  describeAccount
 } from "../src";
+import { maskSecrets } from "@hardkas/core";
 
 describe("accounts", () => {
   it("listHardkasAccounts should return deterministic accounts by default", () => {
@@ -61,8 +61,8 @@ describe("accounts", () => {
     expect(desc).not.toHaveProperty("privateKey");
   });
 
-  it("redactSecret should mask strings", () => {
-    expect(redactSecret("123456789012345")).toBe("123456...2345");
-    expect(redactSecret("short")).toBe("***");
+  it("maskSecrets should mask private keys", () => {
+    const pk = "1".repeat(64);
+    expect(maskSecrets(pk)).toBe("111111...1111 [REDACTED]");
   });
 });

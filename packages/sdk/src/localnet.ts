@@ -25,4 +25,11 @@ export class HardkasLocalnet {
     console.log("Localnet control via SDK is not yet implemented.");
     console.log("Please use 'hardkas localnet' CLI command.");
   }
+
+  /**
+   * Resets the localnet state (simulated or node).
+   */
+  async reset(): Promise<void> {
+    console.log("Localnet reset via SDK is not yet implemented.");
+  }
 }

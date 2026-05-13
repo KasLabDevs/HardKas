@@ -135,14 +135,40 @@ export class DockerKaspadRunner {
     }
   }
 
-  async logs(options?: { tail?: number }): Promise<string> {
+  async restart(): Promise<KaspadNodeStatus> {
+    await this.stop();
+    return this.start();
+  }
+
+  async reset(options: { removeData?: boolean } = { removeData: true }): Promise<KaspadNodeStatus> {
+    await this.stop();
+    if (options.removeData) {
+      const absoluteDataDir = path.isAbsolute(this.options.dataDir) 
+        ? this.options.dataDir 
+        : path.resolve(this.options.cwd, this.options.dataDir);
+      
+      if (existsSync(absoluteDataDir)) {
+        await fs.rm(absoluteDataDir, { recursive: true, force: true });
+      }
+    }
+    return this.status();
+  }
+
+  async logs(options?: { tail?: number; follow?: boolean }): Promise<string | void> {
     try {
       const tail = options?.tail || 100;
-      const { stdout } = await execa("docker", [
-        "logs", 
-        "--tail", tail.toString(), 
-        this.options.containerName
-      ]);
+      const args = ["logs", "--tail", tail.toString()];
+      
+      if (options?.follow) {
+        args.push("-f");
+        await execa("docker", [...args, this.options.containerName], { 
+          stdout: "inherit", 
+          stderr: "inherit" 
+        });
+        return;
+      }
+
+      const { stdout } = await execa("docker", [...args, this.options.containerName]);
       return stdout;
     } catch (e) {
       throw new Error(`Could not get logs for container ${this.options.containerName}. Is it running?`);

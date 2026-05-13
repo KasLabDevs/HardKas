@@ -18,6 +18,7 @@ export interface HardkasArtifactBase {
   schema: HardkasArtifactSchema;
   hardkasVersion: string;
   version: string;
+  hashVersion?: number | string;
   networkId: NetworkId;
   mode: ExecutionMode;
   createdAt: string;
@@ -27,6 +28,7 @@ export interface BaseArtifact<T extends ArtifactType> {
   schema: `hardkas.${T}`;
   hardkasVersion: string;
   version: string; // usually "1.0.0-alpha" or "1.0.0"
+  hashVersion?: number | string;
   networkId: NetworkId;
   mode: ExecutionMode;
   createdAt: string;

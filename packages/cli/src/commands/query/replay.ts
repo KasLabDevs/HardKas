@@ -14,7 +14,7 @@ export function registerReplayQueryCommands(queryCmd: Command) {
     .action(async (options) => {
       try {
         const { QueryEngine, createQueryRequest } = await import("@hardkas/query");
-        const engine = new QueryEngine({ artifactDir: process.cwd() });
+        const engine = await QueryEngine.create({ artifactDir: process.cwd() });
         const filters: Array<{ field: string; op: "eq"; value: string }> = [];
         if (options.status) filters.push({ field: "status", op: "eq", value: options.status });
 
@@ -37,7 +37,7 @@ export function registerReplayQueryCommands(queryCmd: Command) {
     .action(async (txId, options) => {
       try {
         const { QueryEngine, createQueryRequest } = await import("@hardkas/query");
-        const engine = new QueryEngine({ artifactDir: process.cwd() });
+        const engine = await QueryEngine.create({ artifactDir: process.cwd() });
 
         const request = createQueryRequest({ domain: "replay", op: "summary", params: { txId } });
         const result = await engine.execute(request);
@@ -59,7 +59,7 @@ export function registerReplayQueryCommands(queryCmd: Command) {
     .action(async (options) => {
       try {
         const { QueryEngine, createQueryRequest } = await import("@hardkas/query");
-        const engine = new QueryEngine({ artifactDir: process.cwd() });
+        const engine = await QueryEngine.create({ artifactDir: process.cwd() });
 
         const request = createQueryRequest({
           domain: "replay", op: "divergences",
@@ -84,7 +84,7 @@ export function registerReplayQueryCommands(queryCmd: Command) {
     .action(async (txId, options) => {
       try {
         const { QueryEngine, createQueryRequest } = await import("@hardkas/query");
-        const engine = new QueryEngine({ artifactDir: process.cwd() });
+        const engine = await QueryEngine.create({ artifactDir: process.cwd() });
 
         const request = createQueryRequest({
           domain: "replay", op: "invariants", params: { txId },

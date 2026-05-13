@@ -1,44 +1,60 @@
-# HardKAS Security Model
+# HardKAS Security & Safety Model
 
-HardKAS is designed as a **Kaspa-native developer operating environment**. It prioritizes developer speed, operational explainability, and deterministic workflows.
+## Overview
 
-## 1. Operational Guardrails
+HardKAS is a developer-centric operating environment for the Kaspa BlockDAG. Its security model is optimized for **developer velocity** and **local simulation**, rather than high-value production custody.
 
-### Simulation vs. Real Isolation
-HardKAS enforces a strict logical boundary between **Simulated** and **Real** environments.
-- **Simulated artifacts** cannot be signed with real mainnet/testnet keys.
-- **Real artifacts** cannot be injected into simulation flows without explicit conversion.
-- Lineage verification detects **Mode Contamination** (e.g., trying to use a simulated snapshot as a parent for a mainnet transaction).
+> [!WARNING]
+> HardKAS is **NOT** production custody software. High-value mainnet assets should always be managed using hardware-backed core wallets.
 
-### Mainnet Opt-in
-Signing for `mainnet` requires the explicit flag `--allow-mainnet-signing`. This prevents accidental broadcast of transactions built in a developer context.
+## Local Development Safety
 
-## 2. Key Management
+### 1. Network-Aware Constraints
+To prevent accidental mainnet loss, certain destructive or state-modifying operations are strictly restricted by network type:
 
-### Encrypted Keystore
-HardKAS provides a local, password-protected keystore (`hardkas accounts real init`).
-- Private keys are encrypted using **AES-256-GCM**.
-- Plaintext keys are only held in memory during the signing operation and are never persisted.
-- **WARNING**: HardKAS is NOT a production custody solution. For high-value operations, always use a dedicated hardware wallet or air-gapped system.
+| Command | simnet/localnet/dev | testnet-1x | mainnet |
+|:---|:---:|:---:|:---:|
+| `hardkas faucet` | ✅ Allowed | ❌ Refused | ❌ Refused |
+| `hardkas accounts fund` | ✅ Allowed | ❌ Refused | ❌ Refused |
+| `hardkas node reset` | ✅ Allowed | ✅ Allowed | ✅ Allowed (Local Data) |
+| `hardkas tx sign` | ✅ Allowed | ✅ Allowed | ⚠️ Requires --allow-mainnet-signing |
 
-## 3. Artifact Integrity
+### 2. The Funding Guard
+The `hardkas faucet` and `hardkas accounts fund` commands are hard-coded to only operate on local/simulated networks. They will explicitly refuse to execute if the configured network is `mainnet` or any public `testnet`.
 
-### Content Hashing
-Every artifact (Snapshot, TxPlan, SignedTx, Receipt) is cryptographically bound by a **Content Hash**.
-- Canonical serialization ensures that identical operational states produce identical hashes.
-- Tampering with any field (e.g., amount, recipient, fee) invalidates the hash.
+### 3. Mainnet Signing Guard
+By default, `hardkas tx sign` will refuse to sign transactions targeting `mainnet` unless the explicit flag `--allow-mainnet-signing` is provided. This acts as a manual circuit breaker for developers.
 
-### Lineage Proofs
-Lineage IDs and Parent IDs create an audit trail from the initial state (Snapshot) to the final confirmation (Receipt).
-- **Strict Verification** ensures that every step in a transaction flow is cryptographically linked to its predecessor.
-- **Provenance Audit**: You can verify exactly which snapshot a transaction was built against.
+## Key Management
 
-## 4. RPC & Network Confidence
+### Local Encrypted Keystore
+HardKAS includes a local encrypted keystore for developer convenience:
+- **Encryption**: Argon2id for key derivation and AES-256-GCM for storage.
+- **Scope**: Designed for storing local developer keys and testnet keys used during development.
+- **Risk**: While encrypted, the keys reside on your local filesystem. This is appropriate for development but not for production-grade security.
 
-### RPC Resilience
-HardKAS includes a resilience layer that tracks endpoint health, latency, and synchronization (DAA Score).
-- **Confidence Scoring**: Each endpoint is assigned a score. Low-confidence endpoints (stale or slow) are automatically deprioritized.
-- **Circuit Breakers**: Repeated failures trigger a circuit breaker to prevent system-wide stalls.
+### Private Key Exposure
+HardKAS runners and CLI commands are designed to minimize the time private keys are held in memory. However, users should be aware that standard OS-level memory protections apply.
 
-## 5. Non-Custodial Principles
-HardKAS is non-custodial. You control your keys and your artifacts. The tool only facilitates the construction and auditing of the operational flow.
+## Node Management (Docker)
+
+HardKAS manages local `kaspad` instances via Docker:
+- **Isolation**: Nodes run in isolated containers.
+- **Data Persistence**: Chain data is stored in local volumes (typically `.hardkas/data`).
+- **Reset Logic**: `hardkas node reset` performs a graceful shutdown and total data wipe to ensure a clean state for testing.
+
+## Artifact Integrity
+
+All HardKAS artifacts (Plans, SignedTx, Receipts) include:
+- **Content Hashing**: Deterministic hashing of all operational fields.
+- **Schema Versioning**: Mandatory versioning to prevent cross-version incompatibilities.
+- **Integrity Checks**: `hardkas artifact verify` performs structural and cryptographic validation.
+
+---
+
+## Safety Recommendations
+
+1. **Use Separate Accounts**: Never use your primary mainnet seed phrase with HardKAS.
+2. **Audit Before Signing**: Always use `hardkas tx profile` and `hardkas artifact verify` to audit transaction plans before signing them for mainnet.
+3. **Keep Docker Updated**: Ensure your Docker engine is patched to the latest version.
+4. **Report Vulnerabilities**: If you discover a security issue, please report it via the [HardKAS Security Policy](https://github.com/KasLabDevs/HardKas/security/policy).

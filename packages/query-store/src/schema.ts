@@ -1,4 +1,4 @@
-export const SCHEMA_VERSION = 2;
+export const SCHEMA_VERSION = 3;
 
 export const DDL = `
 CREATE TABLE IF NOT EXISTS metadata (
@@ -15,7 +15,10 @@ CREATE TABLE IF NOT EXISTS artifacts (
   network_id TEXT NOT NULL,
   tx_id TEXT,
   created_at TEXT,
-  raw_json TEXT NOT NULL
+  raw_json TEXT NOT NULL,
+  file_path TEXT,
+  file_mtime_ms INTEGER,
+  indexed_at TEXT
 );
 
 CREATE INDEX IF NOT EXISTS idx_artifacts_content_hash ON artifacts(content_hash);
@@ -24,6 +27,7 @@ CREATE INDEX IF NOT EXISTS idx_artifacts_kind ON artifacts(kind);
 CREATE INDEX IF NOT EXISTS idx_artifacts_network_id ON artifacts(network_id);
 CREATE INDEX IF NOT EXISTS idx_artifacts_tx_id ON artifacts(tx_id);
 CREATE INDEX IF NOT EXISTS idx_artifacts_created_at ON artifacts(created_at);
+CREATE INDEX IF NOT EXISTS idx_artifacts_file_path ON artifacts(file_path);
 
 CREATE TABLE IF NOT EXISTS lineage_edges (
   lineage_id TEXT NOT NULL,
@@ -32,8 +36,8 @@ CREATE TABLE IF NOT EXISTS lineage_edges (
   edge_kind TEXT NOT NULL,
   created_at TEXT,
   PRIMARY KEY (parent_artifact_id, child_artifact_id),
-  FOREIGN KEY (parent_artifact_id) REFERENCES artifacts(artifact_id),
-  FOREIGN KEY (child_artifact_id) REFERENCES artifacts(artifact_id)
+  FOREIGN KEY (parent_artifact_id) REFERENCES artifacts(artifact_id) ON DELETE CASCADE,
+  FOREIGN KEY (child_artifact_id) REFERENCES artifacts(artifact_id) ON DELETE CASCADE
 );
 
 CREATE INDEX IF NOT EXISTS idx_lineage_parent ON lineage_edges(parent_artifact_id);
@@ -51,7 +55,10 @@ CREATE TABLE IF NOT EXISTS events (
   tx_id TEXT,
   artifact_id TEXT,
   network_id TEXT NOT NULL,
-  raw_json TEXT NOT NULL
+  raw_json TEXT NOT NULL,
+  file_path TEXT,
+  file_mtime_ms INTEGER,
+  indexed_at TEXT
 );
 
 CREATE INDEX IF NOT EXISTS idx_events_kind ON events(kind);
@@ -63,6 +70,7 @@ CREATE INDEX IF NOT EXISTS idx_events_tx_id ON events(tx_id);
 CREATE INDEX IF NOT EXISTS idx_events_artifact_id ON events(artifact_id);
 CREATE INDEX IF NOT EXISTS idx_events_network_id ON events(network_id);
 CREATE INDEX IF NOT EXISTS idx_events_timestamp ON events(timestamp);
+CREATE INDEX IF NOT EXISTS idx_events_file_path ON events(file_path);
 
 CREATE TABLE IF NOT EXISTS traces (
   trace_id TEXT PRIMARY KEY,
@@ -71,7 +79,7 @@ CREATE TABLE IF NOT EXISTS traces (
   status TEXT NOT NULL,
   started_at TEXT,
   ended_at TEXT,
-  FOREIGN KEY (root_event_id) REFERENCES events(event_id)
+  FOREIGN KEY (root_event_id) REFERENCES events(event_id) ON DELETE SET NULL
 );
 
 CREATE INDEX IF NOT EXISTS idx_traces_workflow_id ON traces(workflow_id);

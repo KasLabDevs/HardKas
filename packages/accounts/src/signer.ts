@@ -84,7 +84,7 @@ export async function signTxPlanArtifact(input: {
     return createSimulatedSignedTxArtifact(
       planArtifact as any,
       `simulated-signed-tx:${planArtifact.planId}`
-    ) as SignedTxArtifact;
+    ) as unknown as SignedTxArtifact;
   }
 
   if (account.kind === "kaspa-private-key") {

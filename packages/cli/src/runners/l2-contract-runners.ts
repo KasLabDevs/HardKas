@@ -13,7 +13,8 @@ import {
   writeArtifact,
   HARDKAS_VERSION,
   ARTIFACT_SCHEMAS,
-  createIgraDeployPlanId
+  createIgraDeployPlanId,
+  calculateContentHash
 } from "@hardkas/artifacts";
 
 export interface L2ContractDeployPlanOptions {
@@ -89,16 +90,14 @@ export async function runL2ContractDeployPlan(options: L2ContractDeployPlanOptio
 
   const estimatedFeeWei = (BigInt(gasLimit) * BigInt(gasPrice)).toString();
 
-  // 4. Build Artifact
-  const planId = createIgraDeployPlanId();
-  
-  const artifact: IgraTxPlanArtifact = {
+  // 4. Build Artifact (Phase 1: Payload)
+  const artifact: any = {
     schema: ARTIFACT_SCHEMAS.IGRA_TX_PLAN,
     hardkasVersion: HARDKAS_VERSION,
     networkId: profile.name,
     mode: "l2-rpc",
     createdAt: new Date().toISOString(),
-    planId,
+    planId: "", // Placeholder
     l2Network: profile.name,
     chainId,
     txType: "contract-deploy",
@@ -114,6 +113,12 @@ export async function runL2ContractDeployPlan(options: L2ContractDeployPlanOptio
     estimatedFeeWei,
     status: "built"
   };
+
+  // Phase 2: Deterministic ID and Hash
+  const hash = calculateContentHash(artifact);
+  const planId = createIgraDeployPlanId(hash);
+  artifact.planId = planId;
+  artifact.contentHash = hash;
 
   // 5. Validate and Save
   assertValidIgraTxPlanArtifact(artifact);

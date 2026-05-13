@@ -1,7 +1,9 @@
 import { Command } from "commander";
-import { handleError } from "../ui.js";
+import { UI, handleError } from "../ui.js";
 import { runAccountsRealInit } from "../runners/accounts-real-init-runner.js";
 import { runAccountsRealGenerate } from "../runners/accounts-real-generate-runner.js";
+import { runAccountsBalance } from "../runners/accounts-balance-runner.js";
+import { runAccountsFund } from "../runners/accounts-fund-runner.js";
 
 export function registerAccountsCommands(program: Command) {
   const accountsCmd = program.command("accounts").description("Manage HardKAS accounts");
@@ -72,11 +74,13 @@ export function registerAccountsCommands(program: Command) {
     });
 
   realAccountsCmd.command("unlock <name>")
-    .description("Verify password for an encrypted account")
+    .description(`Verify keystore access ${UI.maturity("internal")}`)
     .action(async (name: string) => {
       try {
         const { runAccountsKeystoreUnlock } = await import("../runners/accounts-keystore-runners.js");
         await runAccountsKeystoreUnlock({ name });
+        console.log(`\n  ✓ Access to account '${name}' verified.`);
+        console.log(`  (Note: HardKAS CLI is stateless. Password will be required again for signing operations.)\n`);
       } catch (e) {
         handleError(e);
         process.exitCode = 1;
@@ -84,14 +88,10 @@ export function registerAccountsCommands(program: Command) {
     });
 
   realAccountsCmd.command("lock <name>")
-    .description("Lock an account (clear session)")
+    .description(`[DEPRECATED] Lock an account ${UI.maturity("internal")}`)
     .action(async (name: string) => {
-      try {
-        console.log(`Account '${name}' is now locked. (Session cleared)`);
-      } catch (e) {
-        handleError(e);
-        process.exitCode = 1;
-      }
+      console.log(`\n  ℹ Account '${name}' session clear (redundant).`);
+      console.log(`    The CLI is already stateless. No secrets are stored in memory between commands.\n`);
     });
 
   realAccountsCmd.command("change-password <name>")
@@ -121,6 +121,43 @@ export function registerAccountsCommands(program: Command) {
         });
         if (options.json) console.log(JSON.stringify(result.accounts, null, 2));
         else console.log(result.formatted);
+      } catch (e) {
+        handleError(e);
+        process.exitCode = 1;
+      }
+    });
+
+  accountsCmd.command("balance <identifier>")
+    .description("Show account balance")
+    .option("--network <name>", "Network name (simnet, localnet, etc.)")
+    .option("--url <rpc-url>", "Explicit RPC URL")
+    .option("--json", "Output as JSON", false)
+    .action(async (identifier: string, options: { network?: string, url?: string, json: boolean }) => {
+      try {
+        const result = await runAccountsBalance({ identifier, network: options.network ?? "simnet", url: options.url ?? "" });
+        if (options.json) {
+          console.log(JSON.stringify(result, null, 2));
+        } else {
+          console.log(`\nAccount:  ${result.name}`);
+          console.log(`Address:  ${result.address}`);
+          console.log(`Balance:  ${Number(result.balanceSompi) / 100_000_000} KAS`);
+          console.log(`UTXOs:    ${result.utxoCount}`);
+          console.log(`Network:  ${result.network}`);
+        }
+      } catch (e) {
+        handleError(e);
+        process.exitCode = 1;
+      }
+    });
+
+  accountsCmd.command("fund <identifier>")
+    .description("Fund an account (Faucet)")
+    .option("--amount <kas>", "Amount in KAS to fund", "1000")
+    .action(async (identifier: string, options: { amount: string }) => {
+      try {
+        const amountSompi = BigInt(parseFloat(options.amount) * 100_000_000);
+        const result = await runAccountsFund({ identifier, amountSompi });
+        console.log(result.formatted);
       } catch (e) {
         handleError(e);
         process.exitCode = 1;

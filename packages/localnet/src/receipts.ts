@@ -7,6 +7,7 @@ import { NetworkId, ExecutionMode } from "@hardkas/core";
 export interface StoredSimulatedTxReceipt extends HardkasArtifactBase {
   schema: typeof ARTIFACT_SCHEMAS.TX_RECEIPT;
   version: "1.0.0-alpha";
+  hashVersion?: number | string;
   txId: string;
   status: "confirmed" | "failed";
   mode: ExecutionMode;
