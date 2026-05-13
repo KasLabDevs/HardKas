@@ -1,88 +1,87 @@
 # RFC: HardKas Test Runner v1
 
 ## 1. Problem Statement
-El comando `hardkas test` actualmente es un **mock con salida hardcodeada**. Esto representa un riesgo crítico para el ecosistema ya que:
-- Genera una **falsa sensación de confianza** en el desarrollador.
-- Rompe la **postura de auditoría** del framework al no ejecutar pruebas reales.
-- Bloquea la adopción real del framework para pipelines de CI/CD.
-- No existe integración entre la lógica de las pruebas y el runtime de HardKas (Localnet, Artifacts).
+The `hardkas test` command is currently a **mock with hardcoded output**. This represents a critical risk for the ecosystem as it:
+- Generates a **false sense of confidence** in the developer.
+- Breaks the **auditing posture** of the framework by not executing real tests.
+- Blocks real adoption of the framework for CI/CD pipelines.
+- Lacks integration between test logic and the HardKas runtime (Localnet, Artifacts).
 
-**Mandato Crítico:** `hardkas test` nunca debe imprimir tests pasando a menos que se hayan ejecutado archivos de prueba reales.
+**Critical Mandate:** `hardkas test` must never print passing tests unless real test files have been executed.
 
 ## 2. Goals
-- Ejecutar archivos de prueba reales (TypeScript).
-- Integrar **Vitest** como motor interno de ejecución de pruebas.
-- Inyectar el **Runtime de HardKas** (`hardkas`, `accounts`, `localnet`, `artifacts`) automáticamente en el contexto de las pruebas.
-- Exponer un sistema de **Fixtures** para cargar estados predefinidos.
-- Soportar **Snapshots** (textuales de Vitest y de artefactos de HardKas).
-- Soportar **Hooks de Localnet** (start/reset/stop automático entre pruebas).
-- Producir **Exit Codes** correctos (0 para éxito, 1 para fallos de test, 2 para errores de entorno).
-- Mantener compatibilidad con el output **JSON** para integración con herramientas externas.
-- Ser totalmente usable en entornos de **CI**.
+- Execute real test files (TypeScript).
+- Integrate **Vitest** as the internal test execution engine.
+- Automatically inject the **HardKas Runtime** (`hardkas`, `accounts`, `localnet`, `artifacts`) into the test context.
+- Expose a **Fixture system** to load predefined states.
+- Support **Snapshots** (Vitest textual and HardKas artifact snapshots).
+- Support **Localnet Hooks** (automatic start/reset/stop between tests).
+- Produce correct **Exit Codes** (0 for success, 1 for test failures, 2 for environment errors).
+- Maintain **JSON** output compatibility for integration with external tools.
+- Be fully usable in **CI** environments.
 
 ## 3. Non-Goals
-- Reemplazar Vitest por completo o crear un framework de assertions propio.
-- Ejecutar tests en redes de producción (Mainnet) por defecto.
-- Resolver la custodia de llaves reales dentro del entorno de test.
-- Implementar técnicas de Fuzzing avanzado en esta versión v1.
-- Implementar un dashboard web o interfaz gráfica de resultados.
+- Completely replace Vitest or create a custom assertion framework.
+- Execute tests on production networks (Mainnet) by default.
+- Resolve real key custody within the test environment.
+- Implement advanced Fuzzing techniques in this v1 version.
+- Implement a web dashboard or graphical results interface.
 
 ## 4. Current State Audit
 
 | Area | Current behavior | Risk |
 | :--- | :--- | :--- |
-| **Execution** | Hardcoded `console.log` | **CRITICAL**: Falsa confianza, el código del usuario no se prueba. |
-| **Discovery** | Mock glob pattern `test/**/*.test.ts` | No busca archivos reales ni valida su existencia. |
-| **Runtime** | `Hardkas.open(".")` inicializado pero no usado | Ineficiencia, el estado no se inyecta en ninguna parte. |
-| **Output** | `✅ 2 passing` fijo | No refleja la realidad del proyecto. |
-| **Cleanliness** | `localnet.start()` se llama pero no hay hooks de limpieza | El estado puede quedar sucio entre ejecuciones. |
+| **Execution** | Hardcoded `console.log` | **CRITICAL**: False confidence, user code is not tested. |
+| **Discovery** | Mock glob pattern `test/**/*.test.ts` | Does not search for real files or validate their existence. |
+| **Runtime** | `Hardkas.open(".")` initialized but not used | Inefficiency, state is not injected anywhere. |
+| **Output** | Fixed `✅ 2 passing` | Does not reflect project reality. |
+| **Cleanliness** | `localnet.start()` called but no cleanup hooks | State may remain dirty between runs. |
 
 ## 5. Runner Choice
 
 | Option | Pros | Cons | Recommendation |
 | :--- | :--- | :--- | :--- |
-| **Vitest** | Native TS, Fast, Snapshots, Programmatic API | Superficie de dependencias | **Recommended** |
-| **Mocha** | Maduro, Simple | Setup de TS y Snapshots manual | Not preferred |
-| **Custom** | Control total | Muy costoso y propenso a bugs | No |
+| **Vitest** | Native TS, Fast, Snapshots, Programmatic API | Dependency surface | **Recommended** |
+| **Mocha** | Mature, Simple | Manual TS and Snapshots setup | Not preferred |
+| **Custom** | Total control | Very costly and bug-prone | No |
 
-**Recomendación:** Usar **Vitest** como motor interno. Su API programática permite envolverlo en el comando `hardkas test` manteniendo una UX coherente con el resto del CLI.
+**Recommendation:** Use **Vitest** as the internal engine. Its programmatic API allows wrapping it in the `hardkas test` command while maintaining a consistent UX with the rest of the CLI.
 
 ## 6. CLI Interface v1
 
 | Flag | Purpose | Default |
 | :--- | :--- | :--- |
-| `[files...]` | Archivos o globs específicos a ejecutar | `test/**/*.test.ts` |
-| `--network` | Red de destino (simnet, localnet) | `simnet` |
-| `--watch` | Modo observador | `false` |
-| `--json` | Output estructurado para máquinas | `false` |
-| `--reporter` | Formato del reporte (default, dot, junit) | `default` |
-| `--update-snapshots`| Actualizar snapshots de artefactos | `false` |
+| `[files...]` | Specific files or globs to execute | `test/**/*.test.ts` |
+| `--network` | Target network (simnet, localnet) | `simnet` |
+| `--watch` | Watch mode | `false` |
+| `--json` | Structured output for machines | `false` |
+| `--reporter` | Report format (default, dot, junit) | `default` |
+| `--update-snapshots`| Update artifact snapshots | `false` |
 
 ## 7. Test File Discovery
-1. Si se pasan archivos como argumentos, usar esos.
-2. Si no, buscar por defecto:
+1. If files are passed as arguments, use those.
+2. Otherwise, search by default:
    - `test/**/*.test.ts`
    - `tests/**/*.test.ts`
    - `**/*.hardkas.test.ts`
-3. Ignorar siempre: `node_modules`, `dist`, `.hardkas`, `.git`.
-4. Soporte nativo para TypeScript vía Vitest.
+3. Always ignore: `node_modules`, `dist`, `.hardkas`, `.git`.
+4. Native TypeScript support via Vitest.
 
 ## 8. Runtime Injection
-
-Se propone el paquete `@hardkas/testing` para exponer el runtime.
+The `@hardkas/testing` package is proposed to expose the runtime.
 
 ```typescript
 import { describe, it, expect } from "vitest";
 import { hardkasTest } from "@hardkas/testing";
 
 describe("Payment Workflow", () => {
-  // Inyecta el runtime y configura hooks de localnet automáticos
+  // Injects runtime and configures automatic localnet hooks
   const h = hardkasTest({
     mode: "simulated"
   });
 
   it("should create and sign a payment plan", async () => {
-    // h.tx, h.accounts, h.artifacts están disponibles
+    // h.tx, h.accounts, h.artifacts are available
     const plan = await h.tx.plan({
       from: "alice",
       to: "bob",
@@ -96,7 +95,7 @@ describe("Payment Workflow", () => {
 ```
 
 ## 9. Fixture System
-El sistema de fixtures permitirá cargar estados del DAG y saldos de cuentas de forma determinista.
+The fixture system will allow loading DAG states and account balances deterministically.
 
 ```typescript
 it("should use a named fixture", async () => {
@@ -106,38 +105,38 @@ it("should use a named fixture", async () => {
 });
 ```
 
-API Propuesta:
-- `h.fixtures.load(name)`: Carga un set de datos.
-- `h.fixtures.reset()`: Limpia el estado de la localnet.
-- `h.fixtures.snapshot(name)` / `h.fixtures.restore(name)`: Puntos de guardado rápidos en memoria.
+Proposed API:
+- `h.fixtures.load(name)`: Loads a dataset.
+- `h.fixtures.reset()`: Clears localnet state.
+- `h.fixtures.snapshot(name)` / `h.fixtures.restore(name)`: Fast in-memory save points.
 
 ## 10. Snapshot Support
-Diferenciamos tres tipos de snapshots:
+Three types of snapshots are differentiated:
 1. **Vitest Textual Snapshots**: `expect(data).toMatchSnapshot()`.
 2. **HardKas Artifact Snapshots**: `expectArtifact(plan).toMatchArtifactSnapshot()`.
 3. **Localnet State Snapshots**: `await h.localnet.saveSnapshot("checkpoint-1")`.
 
-**Regla de Seguridad:** Las snapshots de artefactos deben normalizar metadatos temporales (timestamps) y **NUNCA** guardar secretos (private keys).
+**Security Rule:** Artifact snapshots must normalize temporal metadata (timestamps) and **NEVER** save secrets (private keys).
 
 ## 11. Localnet Hooks
-El runner gestionará automáticamente el ciclo de vida:
-- `beforeAll`: Iniciar Localnet si no está activa.
-- `beforeEach`: Resetear estado a la fixture base o estado vacío.
-- `afterAll`: Limpiar procesos (Docker node) si fueron levantados por el test.
-- `timeout`: Gestión de timeouts de RPC (default 10s).
+The runner will automatically manage the lifecycle:
+- `beforeAll`: Start Localnet if not active.
+- `beforeEach`: Reset state to base fixture or empty state.
+- `afterAll`: Clean up processes (Docker node) if started by the test.
+- `timeout`: RPC timeout management (default 10s).
 
 ## 12. Security / Safety
-- **Mainnet Block**: El comando `hardkas test` debe fallar si la red detectada es `mainnet` a menos que se use un flag de escape explícito (no recomendado).
-- **Secret Redaction**: Si un test imprime accidentalmente un objeto que contiene una llave privada, el logger debe aplicar una máscara.
-- **Isolation**: Los artefactos generados durante los tests se guardan en `.hardkas/test/artifacts` para no ensuciar el workspace productivo.
+- **Mainnet Block**: The `hardkas test` command must fail if the detected network is `mainnet` unless an explicit escape flag is used (not recommended).
+- **Secret Redaction**: If a test accidentally prints an object containing a private key, the logger must apply a mask.
+- **Isolation**: Artifacts generated during tests are saved in `.hardkas/test/artifacts` to avoid cluttering the productive workspace.
 
 ## 13. Artifact Integration
-- Los tests generan linaje de artefactos real.
-- El `QueryEngine` del runtime de test debe estar aislado.
-- Posibilidad de verificar la validez de un artefacto contra su esquema Zod automáticamente.
+- Tests generate real artifact lineage.
+- The test runtime `QueryEngine` must be isolated.
+- Ability to automatically verify artifact validity against its Zod schema.
 
 ## 14. JSON Output / CI
-El reporter JSON debe ser compatible con herramientas de reporte de CI:
+The JSON reporter must be compatible with CI reporting tools:
 ```json
 {
   "ok": true,
@@ -149,64 +148,64 @@ El reporter JSON debe ser compatible con herramientas de reporte de CI:
 ## 15. Implementation Plan
 
 ### Phase 1 — Remove Mock
-- Eliminar los `console.log` hardcodeados en `packages/cli/src/commands/test.ts`.
-- Implementar descubrimiento dinámico de archivos.
-- Si no hay archivos, salir con advertencia (0) o error (1) según configuración.
-- Cablear la API programática de Vitest.
+- Remove hardcoded `console.log` in `packages/cli/src/commands/test.ts`.
+- Implement dynamic file discovery.
+- If no files are found, exit with a warning (0) or error (1) based on configuration.
+- Wire Vitest programmatic API.
 
 ### Phase 2 — Testing Package
-- Crear `@hardkas/testing`.
-- Definir el `hardkasTest` helper.
-- Implementar la inyección de contexto de Vitest.
+- Create `@hardkas/testing`.
+- Define `hardkasTest` helper.
+- Implement Vitest context injection.
 
 ### Phase 3 — Localnet Fixtures
-- Integrar `localnet.reset()` y `localnet.restore()` en los hooks de Vitest.
-- Implementar sistema de carga de fixtures JSON.
+- Integrate `localnet.reset()` and `localnet.restore()` into Vitest hooks.
+- Implement JSON fixture loading system.
 
 ### Phase 4 — Hardening
-- Implementar reporter JSON estructurado.
-- Documentación completa y ejemplos reales.
+- Implement structured JSON reporter.
+- Full documentation and real examples.
 
 ## 16. Files To Change
 
 | File | Change |
 | :--- | :--- |
-| `packages/cli/src/commands/test.ts` | Reemplazar mock por llamada al runner real. |
-| `packages/cli/src/runners/test-runner.ts` | [NEW] Implementar wrapper de Vitest. |
-| `packages/testing/*` | [NEW] Paquete de utilidades para el usuario final. |
-| `examples/basic/test/payment.test.ts` | [NEW] Ejemplo de test real funcional. |
+| `packages/cli/src/commands/test.ts` | Replace mock with real runner call. |
+| `packages/cli/src/runners/test-runner.ts` | [NEW] Implement Vitest wrapper. |
+| `packages/testing/*` | [NEW] Utility package for the end user. |
+| `examples/basic/test/payment.test.ts` | [NEW] Functional real test example. |
 
 ## 17. Acceptance Criteria
-1. `hardkas test` falla si no hay archivos o si los tests fallan.
-2. Se inyecta una instancia funcional del SDK en el test.
-3. El estado de la localnet se resetea entre tests.
-4. Las snapshots de artefactos no incluyen claves privadas.
-5. El exit code es `0` solo si todos los tests reales pasaron.
+1. `hardkas test` fails if there are no files or if tests fail.
+2. A functional SDK instance is injected into the test.
+3. Localnet state is reset between tests.
+4. Artifact snapshots do not include private keys.
+5. Exit code is `0` only if all real tests passed.
 
-## 18. Tests Recommended
-- `no-files-found`: Verificar comportamiento sin archivos `.test.ts`.
-- `passing-test`: Ejecución exitosa de un test real.
-- `failing-test`: El CLI devuelve exit code 1 cuando un test falla.
-- `network-injection`: Verificar que el flag `--network` cambia el runtime del test.
-- `mainnet-rejection`: Bloqueo de seguridad al intentar testear contra mainnet.
+## 18. Recommended Tests
+- `no-files-found`: Verify behavior without `.test.ts` files.
+- `passing-test`: Successful execution of a real test.
+- `failing-test`: CLI returns exit code 1 when a test fails.
+- `network-injection`: Verify that the `--network` flag changes the test runtime.
+- `mainnet-rejection`: Security block when attempting to test against mainnet.
 
 ## 19. Risks
 
 | Risk | Mitigation |
 | :--- | :--- |
-| **API de Vitest inestable** | Fijar versión exacta en `package.json`. |
-| **Lentitud de arranque** | Usar carga perezosa (*lazy import*) del motor de Vitest. |
-| **Estado de Localnet sucio** | `resetEachTest: true` por defecto en el runtime de testing. |
-| **Fuga de secretos** | Aplicar máscaras de redacción en los reporters de test. |
+| **Unstable Vitest API** | Pin exact version in `package.json`. |
+| **Startup slowness** | Use lazy import for the Vitest engine. |
+| **Dirty Localnet state** | `resetEachTest: true` by default in the testing runtime. |
+| **Secret leakage** | Apply redaction masks in test reporters. |
 
 ## 20. Final Recommendation
-Este cambio es de prioridad **CRÍTICA (P0)**. Mantener un mock en el comando de test socava la integridad del framework. El primer objetivo debe ser la **honestidad**: preferimos que `hardkas test` diga "0 archivos encontrados" a que mienta con "2 passing".
+This change is a **CRITICAL (P0)** priority. Maintaining a mock in the test command undermines framework integrity. The first goal must be **honesty**: we prefer `hardkas test` to say "0 files found" than to lie with "2 passing".
 
 ## 21. Checklist
-- [x] Ejecutar archivos reales.
-- [x] Integrar Vitest.
+- [x] Execute real files.
+- [x] Integrate Vitest.
 - [x] Runtime injection.
 - [x] Fixture system.
 - [x] Snapshot support.
 - [x] Localnet hooks.
-- [x] No modificar lógica productiva fuera del testing.
+- [x] No modifications to productive logic outside of testing.

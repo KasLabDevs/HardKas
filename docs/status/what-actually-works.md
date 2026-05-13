@@ -1,56 +1,56 @@
-# HardKAS: Lo que realmente funciona
+# HardKAS: What Actually Works
 
-Este documento resume las capacidades operativas reales de HardKAS v0.2.2-alpha, separando la visión a largo plazo de la funcionalidad disponible hoy.
+This document summarizes the actual operational capabilities of HardKAS v0.2.2-alpha, separating the long-term vision from the functionality available today.
 
-## Funcionalidad Core (100% Operativa)
+## Core Functionality (100% Operational)
 
-### 1. Ciclo de Vida de Transacciones L1
-- **Planificación**: `hardkas tx plan` genera artefactos JSON deterministas.
-- **Firma**: Integración con el keystore para firmar planes.
-- **Envío**: Broadcast robusto a través de RPC.
-- **Recibos**: Seguimiento de estado y almacenamiento de `txReceipt`.
+### 1. L1 Transaction Lifecycle
+- **Planning**: `hardkas tx plan` generates deterministic JSON artifacts.
+- **Signing**: Integration with the keystore to sign plans.
+- **Sending**: Robust broadcast via RPC.
+- **Receipts**: Status tracking and `txReceipt` storage.
 
-### 2. Gestión de Cuentas y Keystore
-- Generación de cuentas compatibles con Kaspa.
-- Almacenamiento cifrado local (`.hardkas/keystore`).
-- Faucet automatizado para entornos `simnet`.
+### 2. Account Management and Keystore
+- Generation of Kaspa-compatible accounts.
+- Local encrypted storage (`.hardkas/keystore`).
+- Automated faucet for `simnet` environments.
 
-### 3. Entorno de Desarrollo Local
-- Orquestación Docker de `kaspad`.
-- Reset y logs integrados en el CLI.
-- Diagnóstico de salud vía `hardkas doctor`.
+### 3. Local Development Environment
+- Docker orchestration of `kaspad`.
+- Reset and logs integrated into the CLI.
+- Health diagnostics via `hardkas doctor`.
 
-### 4. Integración L2 (Igra)
-- Soporte para transacciones EVM.
-- Despliegue de contratos (planificación).
-- Consulta de saldos y nonces en L2.
-
----
-
-## Funcionalidad Avanzada (En Preview/Experimental)
-
-### 1. Motor de Consultas (Query Engine)
-- Búsqueda relacional de artefactos por schema/emisor/receptor.
-- Seguimiento de linaje de transacciones.
-- Detección de divergencias en replay.
-- **Limitación**: Las consultas de "Correlation" y el comando `store index` no están activos en esta versión.
-
-### 2. Simulación de DAG
-- Monitoreo básico de estatus.
-- Simulación de reorgs controlados en localnet.
+### 4. L2 Integration (Igra)
+- Support for EVM transactions.
+- Contract deployment (planning).
+- Querying balances and nonces on L2.
 
 ---
 
-## Lo que NO funciona todavía (Roadmap)
+## Advanced Functionality (In Preview/Experimental)
+
+### 1. Query Engine
+- Relational search of artifacts by schema/sender/receiver.
+- Transaction lineage tracking.
+- Divergence detection in replay.
+- **Limitation**: "Correlation" queries and the `store index` command are not active in this version.
+
+### 2. DAG Simulation
+- Basic status monitoring.
+- Controlled reorg simulation in localnet.
+
+---
+
+## What DOES NOT work yet (Roadmap)
 
 ### 1. Test Runner (`hardkas test`)
-- **Estado Actual**: Mock. Imprime un resultado estático.
-- **Objetivo**: Integrar Vitest/Mocha para ejecutar pruebas reales contra el SDK.
+- **Current Status**: Mock. Prints a static result.
+- **Goal**: Integrate Vitest/Mocha to run real tests against the SDK.
 
-### 2. Rastreo de Transacciones (`hardkas tx trace`)
-- **Estado Actual**: Deshabilitado.
-- **Objetivo**: Implementar visualización de flujo de fondos basada en el motor Query.
+### 2. Transaction Tracing (`hardkas tx trace`)
+- **Current Status**: Disabled.
+- **Goal**: Implement fund flow visualization based on the Query engine.
 
-### 3. Persistencia de Sesión (`accounts lock/unlock`)
-- **Estado Actual**: El "bloqueo" es puramente informativo.
-- **Objetivo**: Implementar un daemon de sesión o scoping de variables de entorno para invalidar llaves en memoria.
+### 3. Session Persistence (`accounts lock/unlock`)
+- **Current Status**: "Locking" is purely informational.
+- **Goal**: Implement a session daemon or environment variable scoping to invalidate keys in memory.

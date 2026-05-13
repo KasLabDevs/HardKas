@@ -1,31 +1,31 @@
 # HardKas Query CLI Audit
 
 ## 1. Scope
-Esta auditoría inspecciona la capa de interfaz de línea de comandos (CLI) del Query Engine de HardKas. Se evalúa:
-- Cobertura de comandos registrados bajo `hardkas query`.
-- Consistencia en el uso del pipeline `QueryRequest` → `execute()` → `serializeQueryResult()`.
-- Integración real con los adaptadores y el backend de persistencia (SQLite/FS).
-- Calidad y legibilidad de los visualizadores de terminal.
-- Gestión de modos de salida (JSON, Explain, Why).
-- Riesgos de seguridad y rendimiento desde el punto de vista de la entrada del usuario.
+This audit inspects the command-line interface (CLI) layer of the HardKas Query Engine. It evaluates:
+- Coverage of commands registered under `hardkas query`.
+- Consistency in the use of the `QueryRequest` → `execute()` → `serializeQueryResult()` pipeline.
+- Real integration with adapters and the persistence backend (SQLite/FS).
+- Quality and readability of terminal visualizers.
+- Management of output modes (JSON, Explain, Why).
+- Security and performance risks from a user input perspective.
 
 ## 2. Executive Summary
-El CLI de HardKas Query presenta una arquitectura de comandos muy madura y consistente, siguiendo un patrón estricto de desacoplamiento entre la UI y el motor de ejecución. Sin embargo, se han detectado errores críticos de "ghost code" (referencias a funciones inexistentes) y omisiones en la exposición de capacidades del motor.
+The HardKas Query CLI presents a very mature and consistent command architecture, following a strict decoupling pattern between the UI and the execution engine. However, critical "ghost code" errors (references to non-existent functions) and omissions in exposing engine capabilities have been detected.
 
-**Estado por Dominio:**
-- **Artifacts**: **STABLE**. Gran cobertura, aunque falta exponer `verify` en el CLI.
-- **Lineage**: **PARTIAL**. Wiring completo, visualización de grafos básica pero efectiva.
-- **Replay**: **PARTIAL**. Sistema de divergencias funcional, pero limitado a inspección manual.
-- **DAG**: **EXPERIMENTAL**. Modelo ligero claramente señalizado como "not-consensus".
-- **Events**: **STABLE**. Filtrado determinista sobre logs persistentes.
-- **TX Aggregation**: **STABLE**. La joya de la corona de la introspección operativa.
+**Status by Domain:**
+- **Artifacts**: **STABLE**. Great coverage, though CLI exposition of `verify` is missing.
+- **Lineage**: **PARTIAL**. Full wiring, basic but effective graph visualization.
+- **Replay**: **PARTIAL**. Functional divergence system, but limited to manual inspection.
+- **DAG**: **EXPERIMENTAL**. Light model clearly flagged as "not-consensus".
+- **Events**: **STABLE**. Deterministic filtering over persistent logs.
+- **TX Aggregation**: **STABLE**. The crown jewel of operational introspection.
 
 | Factor | Status | Notes |
 | :--- | :--- | :--- |
-| Command Coverage | **PARTIAL** | Falta `artifacts verify` y `store sync`. |
-| Wiring Consistency | **GOOD** | Uso uniforme de `createQueryRequest` y `execute`. |
-| Error Handling | **WEAK** | Presencia de bugs de referencia en visualizadores de diagnósticos. |
-| User Experience | **GOOD** | Feedback visual rico y señalización de madurez (stable/preview/research). |
+| Command Coverage | **PARTIAL** | `artifacts verify` and `store sync` missing. |
+| Wiring Consistency | **GOOD** | Uniform use of `createQueryRequest` and `execute`. |
+| Error Handling | **WEAK** | Presence of reference bugs in diagnostic visualizers. |
+| User Experience | **GOOD** | Rich visual feedback and maturity signaling (stable/preview/research). |
 
 ## 3. Query Command Inventory
 
@@ -48,106 +48,106 @@ El CLI de HardKas Query presenta una arquitectura de comandos muy madura y consi
 | `query store rebuild` | **STABLE** | alpha | FULL |
 
 ## 4. CLI Wiring
-El wiring sigue un patrón de inyección de dependencias diferido mediante `getQueryEngine()`.
+Wiring follows a deferred dependency injection pattern via `getQueryEngine()`.
 
-- **Factory Pattern**: `getQueryEngine` (línea 863) intenta conectar con SQLite y realiza un `indexer.sync()` automático. Si falla, cae al `FilesystemQueryBackend`.
-- **Request Builder**: Uso sistemático de `createQueryRequest` de `@hardkas/query`.
-- **Execution**: Llamadas asíncronas a `engine.execute(request)`.
-- **Output selection**: Bifurcación clara entre `serializeQueryResult(result)` (JSON) y funciones de impresión específicas (`printX`).
+- **Factory Pattern**: `getQueryEngine` (line 863) attempts to connect to SQLite and performs an automatic `indexer.sync()`. If it fails, it falls back to the `FilesystemQueryBackend`.
+- **Request Builder**: Systematic use of `createQueryRequest` from `@hardkas/query`.
+- **Execution**: Asynchronous calls to `engine.execute(request)`.
+- **Output selection**: Clear bifurcation between `serializeQueryResult(result)` (JSON) and specific printing functions (`printX`).
 
 ## 5. Artifacts Query Audit
-- **Findings**: El comando `list` soporta una amplia gama de filtros (`--schema`, `--network`, `--mode`, etc.).
-- **Missing**: El adaptador soporta la operación `verify` (integridad + semántica), pero el CLI no la expone.
-- **Explain Gap**: A diferencia de otros dominios, `artifacts` no soporta el shorthand `--why`.
+- **Findings**: The `list` command supports a wide range of filters (`--schema`, `--network`, `--mode`, etc.).
+- **Missing**: The adapter supports the `verify` operation (integrity + semantics), but the CLI does not expose it.
+- **Explain Gap**: Unlike other domains, `artifacts` does not support the `--why` shorthand.
 
 ## 6. Lineage Query Audit
-- **Findings**: Excelente soporte para navegación de grafos (`chain` con `--direction`).
-- **Orphans**: Muy útil para detectar desincronizaciones en el filesystem.
-- **Visualization**: El visualizador `printLineageChain` usa caracteres ASCII para representar la jerarquía.
+- **Findings**: Excellent graph navigation support (`chain` with `--direction`).
+- **Orphans**: Very useful for detecting file system desynchronizations.
+- **Visualization**: The `printLineageChain` visualizer uses ASCII characters to represent hierarchy.
 
 ## 7. Replay Query Audit
-- **Findings**: Integra recibos (`receipts`) y trazas (`traces`).
-- **Divergences**: Detecta discrepancias de estado. 
-- **Wiring**: Correctamente conectado con el adaptador de replay.
+- **Findings**: Integrates receipts (`receipts`) and traces (`traces`).
+- **Divergences**: Detects state discrepancies.
+- **Wiring**: Correctly connected with the replay adapter.
 
 ## 8. DAG Query Audit
-- **Warning Compliance**: Todos los comandos DAG imprimen correctamente el aviso: `⚠ DAG model: deterministic-light-model (NOT GHOSTDAG)`.
-- **Operations**: Cobertura total de las capacidades del simulador (conflicts, displaced, sink-path, anomalies).
+- **Warning Compliance**: All DAG commands correctly print the warning: `⚠ DAG model: deterministic-light-model (NOT GHOSTDAG)`.
+- **Operations**: Full coverage of simulator capabilities (conflicts, displaced, sink-path, anomalies).
 
 ## 9. Events Query Audit
-- **Findings**: Filtrado flexible por dominio, tipo y workflow.
-- **Consistency**: Usa el mismo motor de renderizado que el resto de listas.
+- **Findings**: Flexible filtering by domain, type, and workflow.
+- **Consistency**: Uses the same rendering engine as other lists.
 
 ## 10. TX Aggregation Audit
-- **Findings**: Agrega artefactos y eventos bajo una misma vista causal.
-- **Integrity**: El campo `complete` permite saber si el ciclo de vida (plan -> signed -> receipt) está cerrado.
+- **Findings**: Aggregates artifacts and events under a single causal view.
+- **Integrity**: The `complete` field indicates whether the life cycle (plan -> signed -> receipt) is closed.
 
 ## 11. Output Modes
-- **--json**: Implementado en todos los comandos usando `serializeQueryResult`. Determinado y consistente.
-- **--explain**: Expone metadatos de ejecución (backend, tiempo, filas leídas).
-- **--why**: Shorthand para `--explain full`, inyecta el `WhyBlock` (análisis causal).
+- **--json**: Implemented in all commands using `serializeQueryResult`. Deterministic and consistent.
+- **--explain**: Exposes execution metadata (backend, time, rows read).
+- **--why**: Shorthand for `--explain full`, injects the `WhyBlock` (causal analysis).
 
 ## 12. Backend / Store Integration
-- **Auto-Sync**: Un acierto arquitectónico. `getQueryEngine` sincroniza el Store SQLite en cada consulta, manteniendo la "frescura" sin intervención del usuario.
-- **Fallback**: Si la base de datos está corrupta o bloqueada, el CLI retrocede graciosamente a escaneos de filesystem.
+- **Auto-Sync**: An architectural success. `getQueryEngine` synchronizes the SQLite Store on every query, maintaining "freshness" without user intervention.
+- **Fallback**: If the database is corrupt or locked, the CLI gracefully falls back to file system scans.
 
 ## 13. Performance Review
-- **Bottleneck**: Los adaptadores están filtrando en memoria tras solicitar todos los datos al backend. Para miles de artefactos, el CLI experimentará latencia significativa.
-- **Index Usage**: El CLI reporta `indexesUsed` en el bloque de `explain`, pero actualmente es información declarativa más que diagnóstica real del motor SQL.
+- **Bottleneck**: Adapters are filtering in memory after requesting all data from the backend. For thousands of artifacts, the CLI will experience significant latency.
+- **Index Usage**: The CLI reports `indexesUsed` in the `explain` block, but it is currently declarative rather than real SQL engine diagnostic information.
 
 ## 14. Security Review
-- **Path Traversal**: Las rutas de artefactos se limpian y validan antes de la lectura.
-- **SQL Injection**: No hay exposición de SQL crudo al usuario. Todos los parámetros viajan vía `QueryRequest` y son saneados por el backend.
-- **Secret Leakage**: El bloque `explain` y el volcado JSON podrían filtrar paths absolutos del sistema del desarrollador (`filePath`).
+- **Path Traversal**: Artifact paths are cleaned and validated before reading.
+- **SQL Injection**: No exposure of raw SQL to the user. All parameters travel via `QueryRequest` and are sanitized by the backend.
+- **Secret Leakage**: The `explain` block and JSON dump could leak absolute paths from the developer's system (`filePath`).
 
 ## 15. Findings
 
 ### CRITICAL: Ghost Code / Runtime Error
-En las funciones `printTxAggregate` (línea 857) y `printDagAnomalies` (línea 777), se llama a `printExplainChains(result.explain)`. Esta función **NO EXISTE** en el archivo. La función correcta es `printExplain`. 
+In the functions `printTxAggregate` (line 857) and `printDagAnomalies` (line 777), `printExplainChains(result.explain)` is called. This function **DOES NOT EXIST** in the file. The correct function is `printExplain`.
 > [!CAUTION]
-> Ejecutar estos comandos con `--explain` provocará un crash del CLI (`ReferenceError: printExplainChains is not defined`).
+> Running these commands with `--explain` will cause a CLI crash (`ReferenceError: printExplainChains is not defined`).
 
 ### MISSING: Store Index/Sync
-El comando `doctor` sugiere ejecutar `hardkas query store index` para poblar la DB, pero dicho comando no está registrado en `storeCmd`. Solo existen `doctor` y `rebuild`.
+The `doctor` command suggests running `hardkas query store index` to populate the DB, but that command is not registered in `storeCmd`. Only `doctor` and `rebuild` exist.
 
 ### INCONSISTENCY: Artifacts --why
-El subcomando `artifacts` es el único que no ha adoptado el shorthand `--why`, requiriendo `--explain full`.
+The `artifacts` subcommand is the only one that hasn't adopted the `--why` shorthand, requiring `--explain full`.
 
 ## 16. Recommendations
 
 ### P0 — Fix Reference Errors
-- Corregir las llamadas a `printExplainChains` por `printExplain` para evitar crashes en producción.
+- Correct the calls to `printExplainChains` to `printExplain` to avoid production crashes.
 
 ### P1 — UI Consistency
-- Añadir el subcomando `artifacts verify` al CLI.
-- Añadir el shorthand `--why` al comando `artifacts`.
-- Registrar `query store sync` como alias de un proceso de sincronización manual.
+- Add the `artifacts verify` subcommand to the CLI.
+- Add the `--why` shorthand to the `artifacts` command.
+- Register `query store sync` as an alias for a manual synchronization process.
 
 ### P2 — Performance Hardening
-- Implementar "Push-down filtering": pasar los filtros del CLI al backend SQLite para evitar transferencias masivas de datos entre procesos.
+- Implement "Push-down filtering": pass CLI filters to the SQLite backend to avoid massive data transfers between processes.
 
 ## 17. Tests Recommended
-- **CLI Integration Test**: Ejecutar cada subcomando con `--explain` para asegurar que no hay más referencias huérfanas.
-- **JSON Consistency Test**: Validar que la salida de `--json` es idéntica ejecutando la consulta contra el backend SQLite y el filesystem fallback.
-- **Path Escape Test**: Intentar acceder a archivos fuera de `.hardkas` mediante `inspect`.
+- **CLI Integration Test**: Run every subcommand with `--explain` to ensure no more orphaned references.
+- **JSON Consistency Test**: Validate that `--json` output is identical when running the query against the SQLite backend and the filesystem fallback.
+- **Path Escape Test**: Attempt to access files outside `.hardkas` via `inspect`.
 
 ## 18. Final Assessment
-El CLI es **ROBUSTO** en su concepción pero **FRAGMENTADO** en su pulido final. La arquitectura de "QueryEngine as a Service" es brillante y facilita la extensibilidad, pero los errores de referencia en los visualizadores y la falta de algunos comandos clave indican que la integración final fue apresurada. Una vez corregidos los errores de referencia (P0), el sistema estará listo para un uso intensivo por desarrolladores.
+The CLI is **ROBUST** in its conception but **FRAGMENTED** in its final polish. The "QueryEngine as a Service" architecture is brilliant and facilitates extensibility, but reference errors in visualizers and the lack of some key commands indicate the final integration was rushed. Once the reference errors (P0) are corrected, the system will be ready for intensive developer use.
 
 ## 19. Checklist
-- [x] artifacts list auditaodo
-- [x] artifacts inspect auditado
-- [x] lineage chain auditado
-- [x] replay divergences auditado
-- [x] dag conflicts auditado
-- [x] events auditado
-- [x] tx aggregation auditado
-- [x] No se modificó lógica runtime.
-- [x] No se modificaron comandos CLI.
+- [x] artifacts list audited
+- [x] artifacts inspect audited
+- [x] lineage chain audited
+- [x] replay divergences audited
+- [x] dag conflicts audited
+- [x] events audited
+- [x] tx aggregation audited
+- [x] No modifications to runtime logic.
+- [x] No modifications to CLI commands.
 
 ## 20. Guardrails
-- No se modificó lógica runtime.
-- No se modificó QueryStore.
-- No se modificó QueryEngine.
-- No se modificaron schemas.
-- Esta auditoría es puramente documental y técnica.
+- Runtime logic was not modified.
+- QueryStore was not modified.
+- QueryEngine was not modified.
+- Schemas were not modified.
+- This audit is purely documentary and technical.

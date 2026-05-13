@@ -1,90 +1,90 @@
 # HardKAS CLI Reference
 
-Guía de referencia completa para los comandos del CLI de HardKAS.
+Complete reference guide for HardKAS CLI commands.
 
-## Resumen Global
+## Global Summary
 
-| Comando Base | Descripción | Madurez |
+| Base Command | Description | Maturity |
 | :--- | :--- | :--- |
-| `hardkas init` | Inicializa un nuevo proyecto HardKAS | `🟢 STABLE` |
-| `hardkas tx` | Gestión y envío de transacciones L1 | `🟢 STABLE` |
-| `hardkas accounts` | Gestión de cuentas y keystore | `🟢 STABLE` |
-| `hardkas query` | Motor de búsqueda relacional de artefactos | `🧪 PREVIEW` |
-| `hardkas node` | Orquestación de nodos locales (Docker) | `🟢 STABLE` |
-| `hardkas l2` | Integración con Igra L2 (EVM) | `🟢 STABLE` |
-| `hardkas test` | Runner de pruebas deterministas | `🟠 MOCK` |
+| `hardkas init` | Initializes a new HardKAS project | `🟢 STABLE` |
+| `hardkas tx` | Management and sending of L1 transactions | `🟢 STABLE` |
+| `hardkas accounts` | Account and keystore management | `🟢 STABLE` |
+| `hardkas query` | Relational artifact search engine | `🧪 PREVIEW` |
+| `hardkas node` | Local node orchestration (Docker) | `🟢 STABLE` |
+| `hardkas l2` | Igra L2 (EVM) integration | `🟢 STABLE` |
+| `hardkas test` | Deterministic test runner | `🟠 MOCK` |
 
 ---
 
-## Comandos de Inicialización
+## Initialization Commands
 
 ### `hardkas init [name]`
-Crea una estructura de proyecto HardKAS en el directorio actual.
+Creates a HardKAS project structure in the current directory.
 - **Flags**:
-  - `--force`: Sobrescribe archivos existentes.
+  - `--force`: Overwrites existing files.
 
 ### `hardkas up`
-Verifica el entorno y levanta los servicios básicos configurados.
+Verifies the environment and starts the configured basic services.
 
 ---
 
-## Gestión de Transacciones (L1)
+## Transaction Management (L1)
 
 ### `hardkas tx plan`
-Crea un plan de transacción basado en la configuración actual.
-- **Opciones**: `--from`, `--to`, `--amount`, `--network`.
+Creates a transaction plan based on the current configuration.
+- **Options**: `--from`, `--to`, `--amount`, `--network`.
 
 ### `hardkas tx sign <path>`
-Firma un archivo de plan de transacción.
-- **Opciones**: `--account <name>`.
+Signs a transaction plan file.
+- **Options**: `--account <name>`.
 
 ### `hardkas tx send [path]`
-Emite una transacción firmada a la red Kaspa.
-- **Modo Shortcut**: `hardkas tx send --from alice --to bob --amount 10`
+Broadcasts a signed transaction to the Kaspa network.
+- **Shortcut Mode**: `hardkas tx send --from alice --to bob --amount 10`
 
 ---
 
-## Motor de Consultas (Query Engine)
+## Query Engine
 
-El motor de consultas permite introspección profunda de la historia de transacciones y artefactos.
+The query engine allows deep introspection of transaction history and artifacts.
 
 ### `hardkas query artifacts list`
-Busca artefactos en el store local.
+Searches for artifacts in the local store.
 
 ### `hardkas query lineage chain <id>`
-Reconstruye la cadena de procedencia de un artefacto.
+Reconstructs an artifact's provenance chain.
 
 ### `hardkas query dag conflicts`
-Busca posibles conflictos de doble gasto en el DAG local.
+Searches for potential double-spend conflicts in the local DAG.
 
 ---
 
-## Orquestación de Nodo
+## Node Orchestration
 
 ### `hardkas node start`
-Inicia un contenedor Docker con `kaspad`.
+Starts a `kaspad` Docker container.
 
 ### `hardkas node logs`
-Muestra los logs en tiempo real del nodo.
+Shows real-time node logs.
 
 ### `hardkas node reset`
-Borra los datos de la cadena y reinicia el nodo desde el genesis.
+Clears chain data and restarts the node from genesis.
 
 ---
 
 ## Igra L2 (EVM)
 
-Comandos para interactuar con la capa 2 de Kaspa compatible con EVM.
+Commands for interacting with the EVM-compatible Kaspa layer 2.
 
 ### `hardkas l2 tx build`
-Crea una transacción EVM para Igra.
+Creates an EVM transaction for Igra.
 
 ### `hardkas l2 balance <address>`
-Consulta el saldo de una dirección en la red L2.
+Queries the balance of an address on the L2 network.
 
 ---
 
-## Diagnóstico
+## Diagnostics
 
 ### `hardkas doctor`
-Realiza un chequeo completo del sistema (Node.js, Docker, RPC, Keystore, Query Engine).
+Performs a full system check (Node.js, Docker, RPC, Keystore, Query Engine).

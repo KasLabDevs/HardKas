@@ -1,12 +1,12 @@
 # What Actually Works in HardKas
 
 ## 1. Philosophy
-HardKas se encuentra actualmente en etapa **v0.2-alpha (Developer Preview)**. El objetivo primordial de este documento es la **honestidad técnica**: evitar la "falsa completitud" y proporcionar a los desarrolladores y contribuidores una visión clara de qué pueden esperar del framework hoy.
+HardKas is currently in the **v0.2.2-alpha (Developer Preview)** stage. The primary goal of this document is **technical honesty**: avoiding "fake completeness" and providing developers and contributors with a clear vision of what they can expect from the framework today.
 
-En HardKas, seguimos estas premisas:
+In HardKas, we follow these premises:
 - "Implemented" != "Production-ready".
 - "CLI command exists" != "Feature works end-to-end".
-- La honestidad arquitectónica es preferible al marketing.
+- Architectural honesty is preferred over marketing.
 
 ```text
 This document intentionally separates:
@@ -21,113 +21,113 @@ This document intentionally separates:
 
 | Status | Meaning |
 | :--- | :--- |
-| **STABLE** | Funciona de forma reproducible, es determinista y está integrado en el flujo principal. |
-| **PARTIAL** | La lógica core es funcional, pero faltan integraciones críticas (config, persistencia) o tiene limitaciones de DX. |
-| **EXPERIMENTAL** | Herramientas de investigación o simulación ligera que no pretenden validar consenso real (GHOSTDAG) sino ayudar al debug. |
-| **PLACEHOLDER** | "UX Theater": Imprime salida estática o existe solo para definir la forma futura de la interfaz. |
-| **BROKEN / UNWIRED** | Código de alta calidad que existe en el repositorio pero NO es invocado por el motor principal (código muerto/desconectado). |
+| **STABLE** | Works reproducibly, is deterministic, and is integrated into the main flow. |
+| **PARTIAL** | Core logic is functional, but critical integrations (config, persistence) are missing or it has DX limitations. |
+| **EXPERIMENTAL** | Research or light simulation tools that do not aim to validate real consensus (GHOSTDAG) but rather assist in debugging. |
+| **PLACEHOLDER** | "UX Theater": Prints static output or exists only to define the future shape of the interface. |
+| **BROKEN / UNWIRED** | High-quality code that exists in the repository but is NOT invoked by the main engine (dead/disconnected code). |
 
 ## 3. What Actually Works (Stable)
 
 | Area | Status | Notes |
 | :--- | :--- | :--- |
-| **TX Plan (L1)** | STABLE | Genera planes de transacciones UTXO deterministas. Valida saldos y estructura correctamente el JSON. |
-| **TX Sign (L1)** | STABLE | Firma planes usando `kaspa` WASM SDK. Soporta cuentas reales y simuladas. |
-| **TX Send (Simnet)** | STABLE | Envía transacciones firmadas a nodos locales. Funciona end-to-end en entornos de desarrollo. |
-| **Artifact Serialization** | STABLE | El motor de artefactos serializa correctamente planes, firmas y recibos en `.hardkas/`. |
-| **Canonical Hashing** | STABLE | Implementa hashing de contenido para verificar la integridad de los artefactos (Lineage). |
-| **Docker Node Runner** | STABLE | Levanta y detiene contenedores `kaspad` de forma fiable e idempotente. |
-| **Localnet Orchestration** | STABLE | Orquesta el ciclo de vida del entorno local (`hardkas up`, `hardkas node start`). |
-| **Mainnet Guards** | STABLE | Protecciones duras que bloquean firmas y broadcasts accidentales a la red principal. |
-| **Query Store (SQLite)** | STABLE | El `QueryEngine` usa SQLite por defecto, reduciendo escaneos filesystem O(n). |
-| **Artifact Determinism** | STABLE | Hashes reproducibles para equivalencia semántica (Whitelist), ignorando metadatos variables. |
-| **Secret Redaction** | STABLE | Redacción recursiva automática de secretos en logs y errores del CLI. |
-| **Gitignore Hardening** | STABLE | `hardkas init` añade automáticamente `.hardkas/` al `.gitignore`. |
+| **TX Plan (L1)** | STABLE | Generates deterministic UTXO transaction plans. Validates balances and correctly structures the JSON. |
+| **TX Sign (L1)** | STABLE | Signs plans using `kaspa` WASM SDK. Supports real and simulated accounts. |
+| **TX Send (Simnet)** | STABLE | Sends signed transactions to local nodes. Works end-to-end in development environments. |
+| **Artifact Serialization** | STABLE | The artifact engine correctly serializes plans, signatures, and receipts in `.hardkas/`. |
+| **Canonical Hashing** | STABLE | Implements content hashing to verify artifact integrity (Lineage). |
+| **Docker Node Runner** | STABLE | Starts and stops `kaspad` containers reliably and idempotently. |
+| **Localnet Orchestration** | STABLE | Orchestrates the local environment lifecycle (`hardkas up`, `hardkas node start`). |
+| **Mainnet Guards** | STABLE | Hard protections that block accidental signatures and broadcasts to the main network. |
+| **Query Store (SQLite)** | STABLE | The `QueryEngine` uses SQLite by default, reducing O(n) filesystem scans. |
+| **Artifact Determinism** | STABLE | Reproducible hashes for semantic equivalence (Whitelist), ignoring variable metadata. |
+| **Secret Redaction** | STABLE | Automatic recursive redaction of secrets in CLI logs and errors. |
+| **Gitignore Hardening** | STABLE | `hardkas init` automatically adds `.hardkas/` to `.gitignore`. |
 
 ## 4. Partial Systems
 
 | Area | Why Partial | Missing |
 | :--- | :--- | :--- |
-| **Keystore Integration** | El keystore es robusto pero su uso es opcional y manual. | Integración automática en el flujo de `tx sign` sin requerir flags extra. |
-| **L2 Deploy-plan** | Empaqueta bytecode y args. | No predice la dirección del contrato (CREATE/CREATE2 address prediction). |
-| **Config Integration** | El CLI no consume todas las opciones de `hardkas.config.ts`. | Consistencia total entre flags y archivo de configuración. |
-| **Snapshot Normalization** | Los snapshots de localnet funcionan pero son pesados. | Normalización de datos para que los snapshots de estado sean comparables entre máquinas. |
+| **Keystore Integration** | The keystore is robust but its use is optional and manual. | Automatic integration into the `tx sign` flow without requiring extra flags. |
+| **L2 Deploy-plan** | Packages bytecode and args. | Does not predict the contract address (CREATE/CREATE2 address prediction). |
+| **Config Integration** | The CLI does not consume all options from `hardkas.config.ts`. | Total consistency between flags and configuration file. |
+| **Snapshot Normalization** | Localnet snapshots work but are heavy. | Data normalization so that state snapshots are comparable across machines. |
 
 ## 5. Experimental / Research Systems
 
 | Area | Why Experimental | Reality |
 | :--- | :--- | :--- |
-| **DAG Tooling** | Simulación ligera de grafos. | **No es GHOSTDAG**. Es una herramienta educativa para visualizar conflictos y reorgs, no valida consenso real. |
-| **Conflict Analysis** | Basado en modelos simplificados. | Útil para detectar doble gasto evidente, pero no emula la lógica de "Blue Score" real de Kaspa. |
-| **L2 Bridge Assumptions** | Basado en el modelo de fases Igra. | Documenta asunciones de seguridad (pre-zk, mpc, zk) pero no valida las pruebas criptográficas del puente. |
+| **DAG Tooling** | Light graph simulation. | **It is not GHOSTDAG**. It is an educational tool to visualize conflicts and reorgs, not for validating real consensus. |
+| **Conflict Analysis** | Based on simplified models. | Useful for detecting obvious double spending, but does not emulate real Kaspa "Blue Score" logic. |
+| **L2 Bridge Assumptions** | Based on the Igra phase model. | Documents security assumptions (pre-zk, mpc, zk) but does not validate the bridge's cryptographic proofs. |
 
 ## 6. Placeholder / Mock Systems
 
 | Area | Current State | Risk |
 | :--- | :--- | :--- |
-| **CLI Hints** | `Next: hardkas l2 tx send` (cuando no estaba implementado). | **BAJO**: Confusión de usuario. Muchos hints sugieren comandos que apenas están en desarrollo. |
-| **Session Lock/Unlock** | El comando existe pero no limpia memoria real. | **MEDIO**: "Security Theater". Da una falsa sensación de que la llave ha sido "borrada" de la sesión. |
-| **Profile Loading** | Los perfiles L2 están hardcodeados en el binario. | **MEDIO**: Impide que el usuario defina sus propias redes Igra en el config. |
+| **CLI Hints** | `Next: hardkas l2 tx send` (when it wasn't implemented). | **LOW**: User confusion. Many hints suggest commands that are barely in development. |
+| **Session Lock/Unlock** | The command exists but does not clear real memory. | **MEDIUM**: "Security Theater". Gives a false sense that the key has been "deleted" from the session. |
+| **Profile Loading** | L2 profiles are hardcoded in the binary. | **MEDIUM**: Prevents users from defining their own Igra networks in the config. |
 
 ## 7. Broken / Unwired Systems
 
-Estos son los "Wiring Gaps" más críticos del proyecto. El código está escrito y testeado, pero el CLI/SDK no lo llama.
+These are the project's most critical "Wiring Gaps". The code is written and tested, but the CLI/SDK does not call it.
 
 | Area | Problem | Impact |
 | :--- | :--- | :--- |
-| **L2 User Networks** | `registry.ts` ignora las redes L2 del config. | **MEDIO**: El usuario solo puede usar el perfil "igra" built-in. |
-| **Standard Lineage** | No todos los artefactos verifican su `sourceId`. | **BAJO**: Rompe la cadena de procedencia formal en algunos flujos de L2. |
+| **L2 User Networks** | `registry.ts` ignores L2 networks from the config. | **MEDIUM**: The user can only use the built-in "igra" profile. |
+| **Standard Lineage** | Not all artifacts verify their `sourceId`. | **LOW**: Breaks the formal provenance chain in some L2 flows. |
 
 ## 8. Security Reality
-HardKas **prioriza la seguridad del desarrollador contra errores accidentales**, NO la custodia de activos de grado institucional.
+HardKas **prioritizes developer security against accidental errors**, NOT institutional-grade asset custody.
 
-- **NO es una wallet custodial.**
-- **NO usa HSM ni enclaves de memoria segura.**
-- **Cuentas en texto plano** (`accounts.real.json`): Existen para desarrollo rápido (Hardhat style).
-- **.gitignore automatizado**: `hardkas init` protege la carpeta `.hardkas/` por defecto.
-- **Mainnet está protegido** por guardas de red y banderas explícitas.
+- **NOT a custodial wallet.**
+- **Does NOT use HSM or secure memory enclaves.**
+- **Plain text accounts** (`accounts.real.json`): Exist for rapid development (Hardhat style).
+- **Automated .gitignore**: `hardkas init` protects the `.hardkas/` folder by default.
+- **Mainnet is protected** by network guards and explicit flags.
 
 ## 9. Testing Reality
-Tras la reciente eliminación del mock:
-- **Testing es REAL**: Ejecuta archivos `.test.ts` reales usando **Vitest**.
-- **Runtime inyectado**: El SDK está disponible dentro de los tests.
-- **Estado determinista**: Se intenta resetear Localnet entre tests, pero el costo de performance es alto.
-- **Limitación**: Todavía es inmaduro y falta documentación detallada de los helpers de aserción.
+Following the recent mock removal:
+- **Testing is REAL**: Executes real `.test.ts` files using **Vitest**.
+- **Injected Runtime**: The SDK is available within the tests.
+- **Deterministic State**: Efforts are made to reset Localnet between tests, but the performance cost is high.
+- **Limitation**: Still immature and lacks detailed documentation of assertion helpers.
 
 ## 10. L2 / Igra Reality
-- **Separación total**: El Tooling entiende que L1 != L2.
-- **Igra Tx Pipeline**: Build, Sign y Send funcionan (vía RPC).
-- **Bridge Honesty**: No afirma que el puente sea trustless hoy (advierte fase `pre-zk`).
-- **Gaps**: Falta conectar el sistema de perfiles a la configuración del usuario.
+- **Total Separation**: The Tooling understands that L1 != L2.
+- **Igra Tx Pipeline**: Build, Sign, and Send work (via RPC).
+- **Bridge Honesty**: Does not claim the bridge is trustless today (warns of `pre-zk` phase).
+- **Gaps**: Missing connection between the profile system and user configuration.
 
 ## 11. Performance Reality
-- **Indexación eficiente**: Gracias a SQLite, el rendimiento mejora significativamente al evitar escaneos O(n); el rendimiento final depende de la query e índices.
-- **JSON Overhead**: Gran parte de la comunicación interna es JSON pesado; aceptable para desarrollo pero ineficiente para indexación masiva.
+- **Efficient Indexing**: Thanks to SQLite, performance significantly improves by avoiding O(n) scans; final performance depends on the query and indices.
+- **JSON Overhead**: Much of the internal communication is heavy JSON; acceptable for development but inefficient for massive indexing.
 
 ## 12. What Is Production-Ready?
 
 | Ready For | Status |
 | :--- | :--- |
 | **Local Developer Workflows** | YES |
-| **CI/CD Experimentation** | YES (con equivalencia semántica) |
+| **CI/CD Experimentation** | YES (with semantic equivalence) |
 | **Educational Tooling** | YES (Excellent architecture) |
 | **Production Custody** | **NO** |
 | **Mainnet Automation** | **NO** |
 | **Large-scale Indexing** | **NO** |
 
 ## 13. What Needs Immediate Hardening (P0)
-1. **Estabilización de Invariantes**: Validar formalmente los contratos de replay en escenarios complejos.
-2. **Normalización de Snapshots**: Lograr que los estados de red sean comparables bit-a-bit.
+1. **Invariant Stabilization**: Formally validate replay contracts in complex scenarios.
+2. **Snapshot Normalization**: Achieve network states that are comparable bit-by-bit.
 
 ## 14. What Is Surprisingly Good
-- **Arquitectura de Artefactos**: El modelo de datos es escalable y muy limpio.
-- **Serialización Canónica**: Garantiza que el mismo objeto produzca el mismo JSON.
-- **Honestidad del Bridge**: No sobre-vende la seguridad de la L2.
-- **Postura ante Mainnet**: Muy conservadora y segura para el desarrollador.
+- **Artifact Architecture**: The data model is scalable and very clean.
+- **Canonical Serialization**: Guarantees that the same object produces the same JSON.
+- **Bridge Honesty**: Does not oversell L2 security.
+- **Mainnet Stance**: Very conservative and safe for the developer.
 
 ## 15. Final Assessment
 
-HardKas es actualmente:
-**Un laboratorio de flujos de trabajo transaccionales deterministas para desarrolladores Kaspa, NO una plataforma de blockchain para producción.**
+HardKas is currently:
+**A laboratory for deterministic transactional workflows for Kaspa developers, NOT a production blockchain platform.**
 
-La mayor virtud del proyecto hoy no es su completitud, sino su **honestidad arquitectónica**. Las piezas están en su lugar; ahora solo falta conectarlas.
+The greatest virtue of the project today is not its completeness, but its **architectural honesty**. The pieces are in place; now they just need to be connected.

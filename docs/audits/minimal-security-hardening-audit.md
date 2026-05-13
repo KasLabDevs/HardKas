@@ -1,23 +1,23 @@
 # HardKAS Architectural & Determinism Audit
 
 ## Executive Summary
-Esta auditoría identifica fallos críticos en la infraestructura de determinismo y seguridad de HardKAS. El hallazgo más grave (P0) es la **incapacidad de producir artefactos reproducibles** debido a la inclusión de timestamps y aleatoriedad en el cálculo de hashes canónicos. Esto invalida el pilar de "Deterministic-by-Design" del framework. Asimismo, se han detectado riesgos de "Security Theater" en la gestión de sesiones y deuda técnica en el motor de indexación que compromete la escalabilidad del CLI.
+This audit identifies critical failures in HardKAS's determinism and security infrastructure. The most serious finding (P0) is the **inability to produce reproducible artifacts** due to the inclusion of timestamps and randomness in the calculation of canonical hashes. This invalidates the framework's "Deterministic-by-Design" pillar. Furthermore, "Security Theater" risks have been detected in session management, and technical debt in the indexing engine compromises CLI scalability.
 
 ---
 
 ## 1. Determinism
 
 ### [P0] Non-Deterministic Artifact Hashing & IDs
-- **Problem**: Los hashes de contenido (`contentHash`) incluyen el campo `createdAt`, y los identificadores de planes (`planId`) utilizan `Math.random()` y `Date.now()`.
-- **Why it matters**: Dos ejecuciones idénticas de `hardkas tx plan` producen artefactos con diferentes hashes e IDs. Esto rompe la reproducibilidad en CI/CD, el rastreo de linaje estable y la capacidad de verificar si una transacción es idéntica a una previa.
-- **Minimal fix**: Excluir `createdAt` y `planId` del `canonicalStringify` en `artifacts/src/canonical.ts`. Derivar `planId` del hash de los inputs deterministas (from, to, amount, inputs, outputs).
+- **Problem**: Content hashes (`contentHash`) include the `createdAt` field, and plan identifiers (`planId`) use `Math.random()` and `Date.now()`.
+- **Why it matters**: Two identical executions of `hardkas tx plan` produce artifacts with different hashes and IDs. This breaks reproducibility in CI/CD, stable lineage tracking, and the ability to verify if a transaction is identical to a previous one.
+- **Minimal fix**: Exclude `createdAt` and `planId` from `canonicalStringify` in `artifacts/src/canonical.ts`. Derive `planId` from the hash of deterministic inputs (from, to, amount, inputs, outputs).
 - **Complexity**: Small
 - **Category**: Architectural debt / Code problem
 
 ### [P1] Silent Non-Determinism in Query Indexer
-- **Problem**: El indexador (`query-store/src/indexer.ts`) recalcula hashes si faltan, pero el proceso de cálculo depende de la versión del SDK instalada, no del estado del artefacto original.
-- **Why it matters**: Si el algoritmo de hashing cambia, el índice SQLite se vuelve inconsistente con el sistema de archivos de forma silenciosa.
-- **Minimal fix**: El indexador debe tratar el `contentHash` del JSON como la única fuente de verdad y marcar como `corrupted` cualquier archivo donde el hash recalculado no coincida con el declarado.
+- **Problem**: The indexer (`query-store/src/indexer.ts`) recalculates hashes if missing, but the calculation process depends on the installed SDK version, not the original artifact state.
+- **Why it matters**: If the hashing algorithm changes, the SQLite index silently becomes inconsistent with the file system.
+- **Minimal fix**: The indexer should treat the JSON `contentHash` as the sole source of truth and mark any file where the recalculated hash does not match the declared one as `corrupted`.
 - **Complexity**: Trivial
 - **Category**: Architectural debt
 
@@ -26,16 +26,16 @@ Esta auditoría identifica fallos críticos en la infraestructura de determinism
 ## 2. Security & Runtime
 
 ### [P1] Security Theater: Fake Session Locking
-- **Problem**: El comando `hardkas accounts real lock` solo imprime un mensaje de consola (`Account locked`). No existe un daemon o proceso persistente que mantenga llaves en memoria, por lo que el "bloqueo" es puramente cosmético.
-- **Why it matters**: Da una falsa sensación de seguridad al desarrollador, quien podría creer que su clave privada ha sido eliminada de un contexto de ejecución activo cuando nunca estuvo "viva" fuera del comando invocado.
-- **Minimal fix**: O bien implementar un `HardkasSignerDaemon` real, o bien cambiar el mensaje para aclarar que no hay sesiones activas en el CLI (`No active session to lock`).
-- **Complexity**: Trivial (Fix mensaje) / Large (Daemon)
+- **Problem**: The `hardkas accounts real lock` command only prints a console message (`Account locked`). No daemon or persistent process exists to keep keys in memory, so the "lock" is purely cosmetic.
+- **Why it matters**: It gives a false sense of security to the developer, who might believe their private key has been removed from an active execution context when it was never "live" outside the invoked command.
+- **Minimal fix**: Either implement a real `HardkasSignerDaemon` or change the message to clarify that there are no active sessions in the CLI (`No active session to lock`).
+- **Complexity**: Trivial (Message fix) / Large (Daemon)
 - **Category**: Security risk / DX issue
 
 ### [P1] Secret Redaction Gap in Error Handlers
-- **Problem**: `handleError` en `cli/src/ui.ts` imprime el mensaje de error completo. Si un error de nivel inferior (ej. del SDK de Kaspa o de un provider) incluye fragmentos de llaves privadas o mnemonics, estos se exponen en rojo en la terminal.
-- **Why it matters**: Riesgo de filtración de secretos en logs, capturas de pantalla o terminales compartidas.
-- **Minimal fix**: Implementar un middleware de redacción en `handleError` que use regex para detectar y enmascarar patrones de llaves privadas (64 hex chars) y mnemonics conocidos.
+- **Problem**: `handleError` in `cli/src/ui.ts` prints the full error message. If a lower-level error (e.g., from the Kaspa SDK or a provider) includes private key fragments or mnemonics, these are exposed in red in the terminal.
+- **Why it matters**: Risk of secret leakage in logs, screenshots, or shared terminals.
+- **Minimal fix**: Implement a redaction middleware in `handleError` that uses regex to detect and mask patterns of private keys (64 hex chars) and known mnemonics.
 - **Complexity**: Small
 - **Category**: Security risk
 
@@ -44,16 +44,16 @@ Esta auditoría identifica fallos críticos en la infraestructura de determinism
 ## 3. Query Layer & Observability
 
 ### [P2] Hardcoded Explain Logic
-- **Problem**: El motor de consulta (`query/src/engine.ts`) devuelve un `executionPlan` hardcodeado (`["Discovery", "Filter", "Sort", "Paginate"]`) para todos los adaptadores.
-- **Why it matters**: Invalida la feature de introspección profunda. El usuario cree que está viendo el plan de ejecución real cuando es un stub estático.
-- **Minimal fix**: Permitir que cada `QueryAdapter` devuelva su propio plan de pasos durante la ejecución.
+- **Problem**: The query engine (`query/src/engine.ts`) returns a hardcoded `executionPlan` (`["Discovery", "Filter", "Sort", "Paginate"]`) for all adapters.
+- **Why it matters**: It invalidates the deep introspection feature. The user believes they are seeing the real execution plan when it is a static stub.
+- **Minimal fix**: Allow each `QueryAdapter` to return its own plan of steps during execution.
 - **Complexity**: Small
 - **Category**: DX issue
 
 ### [P2] Destructive Schema Migrations
-- **Problem**: `query-store/src/db.ts` utiliza una estrategia de "Drop and Recreate" ante cualquier mismatch de versión del esquema.
-- **Why it matters**: Los desarrolladores pierden todo su historial operativo (`events.jsonl` indexado, traces de workflows pasados) simplemente al actualizar el CLI.
-- **Minimal fix**: Implementar un sistema de migraciones incremental (ej. `UP/DOWN` scripts) o, al menos, forzar un `rebuild` automático sin borrar metadatos de usuario si es posible.
+- **Problem**: `query-store/src/db.ts` uses a "Drop and Recreate" strategy upon any schema version mismatch.
+- **Why it matters**: Developers lose all their operational history (indexed `events.jsonl`, traces of past workflows) simply by updating the CLI.
+- **Minimal fix**: Implement an incremental migration system (e.g., `UP/DOWN` scripts) or, at least, force an automatic `rebuild` without deleting user metadata if possible.
 - **Complexity**: Medium
 - **Category**: Architectural debt
 
@@ -62,16 +62,16 @@ Esta auditoría identifica fallos críticos en la infraestructura de determinism
 ## 4. Documentation & CLI Coherence
 
 ### [P2] Outdated "What Actually Works" Document
-- **Problem**: `docs/what-actually-works.md` lista el `Query Store (SQLite)` como **BROKEN / UNWIRED**, pero el código ya lo tiene conectado por defecto.
-- **Why it matters**: Los usuarios nuevos ignorarán las capacidades de introspección del framework creyendo que no son funcionales.
-- **Minimal fix**: Sincronizar el documento con el estado real del PR #102 (Store wiring).
+- **Problem**: `docs/what-actually-works.md` lists `Query Store (SQLite)` as **BROKEN / UNWIRED**, but the code already has it connected by default.
+- **Why it matters**: New users will ignore the framework's introspection capabilities, believing they are non-functional.
+- **Minimal fix**: Synchronize the document with the real state of PR #102 (Store wiring).
 - **Complexity**: Trivial
 - **Category**: Documentation problem
 
 ### [P3] Zombie Command Suggestion in Doctor
-- **Problem**: `hardkas doctor` sugiere ejecutar `hardkas query store index`, pero el comando real es `rebuild`.
-- **Why it matters**: Fricción innecesaria y sensación de falta de pulido en la herramienta de "salud".
-- **Minimal fix**: Cambiar el string de sugerencia en `packages/cli/src/commands/doctor.ts`.
+- **Problem**: `hardkas doctor` suggests running `hardkas query store index`, but the real command is `rebuild`.
+- **Why it matters**: Unnecessary friction and a sense of lack of polish in the "health" tool.
+- **Minimal fix**: Change the suggestion string in `packages/cli/src/commands/doctor.ts`.
 - **Complexity**: Trivial
 - **Category**: DX issue
 
@@ -79,9 +79,9 @@ Esta auditoría identifica fallos críticos en la infraestructura de determinism
 
 ## 5. Summary of Findings
 
-| Estado | Count | Severidad P0/P1 |
+| Status | Count | P0/P1 Severity |
 | :--- | :--- | :--- |
-| **P0 (Critical)** | 1 | Determinismo de Artefactos |
+| **P0 (Critical)** | 1 | Artifact Determinism |
 | **P1 (High)** | 3 | Secret Redaction, Fake Locking, Indexer Integrity |
 | **P2 (Medium)** | 3 | Explain stubs, Schema migrations, Outdated docs |
 | **P3 (Low)** | 1 | Doctor suggestions |
@@ -91,18 +91,17 @@ Esta auditoría identifica fallos críticos en la infraestructura de determinism
 ## 6. Recommendations
 
 ### Immediate (Next 24h)
-1. **Fix Hashing (P0)**: Excluir metadatos variables del hash canónico para habilitar CI/CD estable.
-2. **Fix Doctor (P3)**: Alinear nombres de comandos para evitar el error de "Unknown command".
+1. **Fix Hashing (P0)**: Exclude variable metadata from the canonical hash to enable stable CI/CD.
+2. **Fix Doctor (P3)**: Align command names to avoid "Unknown command" errors.
 
-### Hardening (Sprint actual)
-1. **RedactSecrets (P1)**: Añadir el filtro de seguridad al `handleError`.
-2. **Wired Docs (P2)**: Declarar el Query Engine como funcional para incentivar el testing de la comunidad.
+### Hardening (Current Sprint)
+1. **RedactSecrets (P1)**: Add the security filter to `handleError`.
+2. **Wired Docs (P2)**: Declare the Query Engine as functional to incentivize community testing.
 
 ---
 
 ## 7. Guardrails
-
-- No se modificó lógica runtime.
-- No se modificaron runners.
-- No se modificaron packages internos.
-- El diagnóstico se basa en la inspección de código fuente y cumplimiento de la arquitectura "Deterministic-by-Design".
+- Runtime logic was not modified.
+- Runners were not modified.
+- Internal packages were not modified.
+- The diagnosis is based on source code inspection and compliance with the "Deterministic-by-Design" architecture.

@@ -1,41 +1,39 @@
 # HardKas CLI Execution Flow
 
 ## 1. Executive Summary
-El CLI de HardKAS está construido sobre la librería **Commander.js**. El flujo de ejecución comienza en un punto de entrada binario (`index.ts`) que registra múltiples grupos de comandos modulares. Cada grupo reside en un archivo de comando dedicado que define la interfaz (argumentos y flags) y delega la ejecución pesada a un **Runner**. Los Runners actúan como orquestadores de los paquetes internos (`@hardkas/*`), gestionando la carga de configuración, la interacción con RPC/Localnet y la producción de **Artifacts** deterministas. La salida está parcialmente centralizada en UI helpers, aunque persiste lógica de formateo inline en diversos módulos.
+The HardKAS CLI is built upon the **Commander.js** library. The execution flow begins at a binary entry point (`index.ts`) that registers multiple modular command groups. Each group resides in a dedicated command file that defines the interface (arguments and flags) and delegates heavy execution to a **Runner**. Runners act as orchestrators for internal packages (`@hardkas/*`), managing configuration loading, interaction with RPC/Localnet, and the production of deterministic **Artifacts**. Output is partially centralized in UI helpers, although inline formatting logic persists in various modules.
 
 ## 2. Entrypoint
+Analyzed: `packages/cli/src/index.ts`.
 
-Analizado: `packages/cli/src/index.ts`.
+The entrypoint is a Node.js executable binary that serves as the central dispatcher for all framework functionalities.
 
-El entrypoint es un binario ejecutable de Node.js que sirve como despachador central para todas las funcionalidades del framework.
-
-| Elemento | Valor | Archivo | Nota |
+| Element | Value | File | Note |
 | :--- | :--- | :--- | :--- |
-| **CLI Package Version** | `0.2.2-alpha` | `package.json` | Versión declarada en el manifiesto del paquete |
-| **CLI Runtime Version** | `0.2.2-alpha` | `index.ts` | Constante `HARDKAS_VERSION` en el código fuente |
-| **Shebang** | `#!/usr/bin/env node` | `index.ts` | Permite ejecución directa en Unix/Linux/macOS |
-| **Binario** | `hardkas` | `package.json` | Mapeado en la sección `bin` del paquete CLI |
-| **Registro** | Estático | `index.ts` | Llama a 16 funciones `registerXCommands` |
-| **Parseo** | `parseAsync` | `index.ts` | Soporta flujos asíncronos en todos los comandos |
+| **CLI Package Version** | `0.2.2-alpha` | `package.json` | Version declared in the CLI package manifest |
+| **CLI Runtime Version** | `0.2.2-alpha` | `index.ts` | `HARDKAS_VERSION` constant in source code |
+| **Shebang** | `#!/usr/bin/env node` | `index.ts` | Allows direct execution on Unix/Linux/macOS |
+| **Binary** | `hardkas` | `package.json` | Mapped in the `bin` section of the CLI package |
+| **Registration** | Static | `index.ts` | Calls 16 `registerXCommands` functions |
+| **Parsing** | `parseAsync` | `index.ts` | Supports asynchronous flows in all commands |
 
 ## 3. Bootstrap Sequence
+Detailed flow from invocation to exit:
 
-Flujo detallado desde la invocación hasta la salida:
+1.  **Invocation**: The user executes `hardkas <cmd> [args]`.
+2.  **Binary Loading**: Node loads `@hardkas/cli/dist/index.js`.
+3.  **Command Registration**: `index.ts` statically imports modules in `src/commands/`.
+    - **Startup Impact**: If a command module statically imports runners, they enter the initial load graph.
+    - *Exception*: Commands like `query.ts` use dynamic `import()` for heavy components like the `QueryEngine`.
+4.  **Interface Definition**: Each `registerXCommands` adds subcommands to the Commander instance.
+5.  **Matching**: Commander identifies the requested command and validates arguments.
+6.  **Action Dispatch**: The `.action(...)` callback is executed.
+7.  **Runner Execution**: The action delegates to a Runner (e.g., `runTxPlan`) passing the parsed options.
+8.  **Internal Integration**: The Runner loads the state (Config, Keystore, Localnet) and calls `@hardkas/*` packages.
+9.  **Result Production**: A result object is generated (frequently an Artifact).
+10. **Output**: The command module produces the output (UI Table or JSON).
 
-1.  **Invocación**: El usuario ejecuta `hardkas <cmd> [args]`.
-2.  **Carga de Binario**: Node carga `@hardkas/cli/dist/index.js`.
-3.  **Registro de Comandos**: `index.ts` importa estáticamente los módulos en `src/commands/`.
-    - **Impacto en Startup**: Si un módulo de comando importa runners de forma estática, estos entran en el grafo inicial de carga.
-    - *Excepción*: Comandos como `query.ts` utilizan `import()` dinámico para componentes pesados como el `QueryEngine`.
-4.  **Definición de Interfaz**: Cada `registerXCommands` añade subcomandos a la instancia de Commander.
-5.  **Matching**: Commander identifica el comando solicitado y valida los argumentos.
-6.  **Action Dispatch**: Se ejecuta el callback `.action(...)`.
-7.  **Runner Execution**: El action delega en un Runner (ej. `runTxPlan`) pasando las opciones parseadas.
-8.  **Internal Integration**: El Runner carga el estado (Config, Keystore, Localnet) y llama a paquetes `@hardkas/*`.
-9.  **Producción de Resultado**: Se genera un objeto de resultado (frecuentemente un Artifact).
-10. **Output**: El módulo de comando produce la salida (UI Table o JSON).
-
-### Diagrama de Flujo Conceptual (Ejemplo: `hardkas tx plan`)
+### Conceptual Flow Diagram (Example: `hardkas tx plan`)
 
 ```text
 hardkas tx plan
@@ -65,7 +63,7 @@ Output logic (UI helpers or inline formatting)
 
 ## 4. Command Registration Map
 
-| Grupo | Función registradora | Archivo | Tipo | Estado |
+| Group | Registration function | File | Type | Status |
 | :--- | :--- | :--- | :--- | :--- |
 | **init** | `registerInitCommands` | `init.ts` | Root | `🟢 VERIFIED` |
 | **tx** | `registerTxCommands` | `tx.ts` | Grouped | `🟢 VERIFIED` |
@@ -85,121 +83,112 @@ Output logic (UI helpers or inline formatting)
 | **faucet** | `registerFaucetCommand` | `faucet.ts` | Alias | `🟢 VERIFIED` |
 
 ## 5. Command Module Anatomy
+A command module (e.g., `tx.ts`) defines the public interface and delegates execution.
 
-Un módulo de comando (ej. `tx.ts`) define la interfaz pública y delega la ejecución.
-
-### Estructura típica:
-1.  **Imports de Runners**: Habitualmente estáticos, lo que afecta al grafo de carga inicial.
-2.  **Registro**: Función que recibe la instancia `program`.
-3.  **Acción**: Callback asíncrono que puede usar `await import()` para dependencias pesadas.
+### Typical structure:
+1.  **Runner Imports**: Usually static, affecting the initial load graph.
+2.  **Registration**: Function receiving the `program` instance.
+3.  **Action**: Asynchronous callback that can use dynamic `import()` for heavy dependencies.
 
 ## 6. Runner Layer
+The Runner layer is the operational brain decoupled from the Commander interface.
 
-La capa de Runners es el cerebro operativo desacoplado de la interfaz de Commander.
-
-| Runner | Usado por comando | Package interno | Responsabilidad | Output |
+| Runner | Used by command | Internal package | Responsibility | Output |
 | :--- | :--- | :--- | :--- | :--- |
-| `runTxPlan` | `tx plan` | `@hardkas/tx-builder` | Cálculo de masa y selección UTXO | `TxPlanArtifact` |
-| `runTxSign` | `tx sign` | `@hardkas/artifacts` | Firma criptográfica Kaspa | `SignedTxArtifact` |
-| `runTxSend` | `tx send` | `@hardkas/kaspa-rpc` | Broadcast de transacción firmada | TX ID |
-| `runTxFlow` | `tx send --from...` | Varios | Orquestación completa Plan-Sign-Send | Transaction Result |
-| `runAccountsRealGenerate` | `accounts real generate`| `@hardkas/sdk` | Creación de llaves Kaspa | Keystore Item |
-| `runRpcHealth` | `rpc health` | `@hardkas/kaspa-rpc`| Latencia y sincronización de nodo | Health Report |
-| `runNodeStart` | `node start` | `@hardkas/node-runner`| Gestión de ciclo de vida Docker | Docker Status |
-| `runDoctor` | `doctor` | Varios | Auditoría de integridad del sistema | Diagnosis Report |
-| `runReplayVerify` | `replay verify` | `@hardkas/artifacts` | Validación de invariantes históricos | Audit Report |
-| `runSnapshotRestore` | `snapshot restore`| `@hardkas/localnet` | Restauración de estado de simulador | Success/Fail |
-| `runArtifactVerify`| `artifact verify` | `@hardkas/artifacts` | Validación de esquema Zod | Reporte de integridad |
-| `runL2TxBuild` | `l2 tx build` | `@hardkas/l2` | Planificación EVM | `IgraTxPlanArtifact` |
+| `runTxPlan` | `tx plan` | `@hardkas/tx-builder` | Mass calculation and UTXO selection | `TxPlanArtifact` |
+| `runTxSign` | `tx sign` | `@hardkas/artifacts` | Kaspa cryptographic signing | `SignedTxArtifact` |
+| `runTxSend` | `tx send` | `@hardkas/kaspa-rpc` | Signed transaction broadcast | TX ID |
+| `runTxFlow` | `tx send --from...` | Various | Full Plan-Sign-Send orchestration | Transaction Result |
+| `runAccountsRealGenerate` | `accounts real generate`| `@hardkas/sdk` | Kaspa key creation | Keystore Item |
+| `runRpcHealth` | `rpc health` | `@hardkas/kaspa-rpc`| Node latency and sync | Health Report |
+| `runNodeStart` | `node start` | `@hardkas/node-runner`| Docker lifecycle management | Docker Status |
+| `runDoctor` | `doctor` | Various | System integrity audit | Diagnosis Report |
+| `runReplayVerify` | `replay verify` | `@hardkas/artifacts` | Historical invariants validation | Audit Report |
+| `runSnapshotRestore` | `snapshot restore`| `@hardkas/localnet` | Simulator state restoration | Success/Fail |
+| `runArtifactVerify`| `artifact verify` | `@hardkas/artifacts` | Zod schema validation | Integrity report |
+| `runL2TxBuild` | `l2 tx build` | `@hardkas/l2` | EVM planning | `IgraTxPlanArtifact` |
 
-## 7. Package Boundary Map (Conceptual)
+## 7. Internal Package Boundary Map
 
-| Package interno | Usado desde | Responsabilidad en flujo CLI | Observaciones |
+| Internal Package | Used from | Responsibility in CLI flow | Observations |
 | :--- | :--- | :--- | :--- |
-| `@hardkas/config` | Commands/Runners | Carga y resolución de configuración | — |
-| `@hardkas/artifacts` | Runners/UI | Modelos de datos y validación | — |
-| `@hardkas/accounts` | Runners | Direcciones y Keystore | — |
-| `@hardkas/tx-builder`| Runners | Lógica de construcción de TXs | Pura computación |
+| `@hardkas/config` | Commands/Runners | Config loading and resolution | — |
+| `@hardkas/artifacts` | Runners/UI | Data models and validation | — |
+| `@hardkas/accounts` | Runners | Addresses and Keystore | — |
+| `@hardkas/tx-builder`| Runners | TX construction logic | Pure computation |
 
 ## 8. Config Loading Flow
+Configuration loading is lazy per command and usually delegated in actions.
 
-La carga de configuración es lazy por comando y delegada habitualmente en las acciones.
-
-| Comando | Carga config | Dónde | Usa `--config` | Qué ocurre si falta |
+| Command | Loads config | Where | Uses `--config` | What happens if missing |
 | :--- | :--- | :--- | :--- | :--- |
-| `tx plan` | Sí | Action | Sí | Error controlado |
-| `accounts list` | Sí | Action | Sí | Intenta cargar y puede usar defaults según loader |
-| `doctor` | Sí | Runner | No | Reporta aviso en diagnóstico |
+| `tx plan` | Yes | Action | Yes | Controlled error |
+| `accounts list` | Yes | Action | Yes | Attempts to load and can use defaults per loader |
+| `doctor` | Yes | Runner | No | Reports warning in diagnosis |
 
 ## 9. Artifact Flow
-
-HardKAS basa su arquitectura en el paso de mensajes (Artifacts) entre comandos.
+HardKAS bases its architecture on message passing (Artifacts) between commands.
 
 ```text
 tx plan → txPlan.json → tx sign → signedTx.json → tx send → txReceipt
 ```
 
 ## 10. JSON Output Flow
+JSON output consistency is partial.
+- **Formatting**: Some commands use unified helpers while others perform inline formatting.
+- **Errors**: JSON errors are **not currently standardized**.
+- **Mixing**: Some commands mix informational text in `stdout` with the JSON object, making direct piping difficult.
 
-La consistencia del output JSON es parcial.
-- **Formateo**: Algunos comandos usan helpers unificados mientras otros realizan el formateo inline.
-- **Errores**: Los errores JSON **no están estandarizados** actualmente.
-- **Mezcla**: Algunos comandos mezclan texto informativo en `stdout` con el objeto JSON, dificultando el pipe directo.
-
-| Comando | Tiene `--json` | Output shape | Consistente | Nota |
+| Command | Has `--json` | Output shape | Consistent | Note |
 | :--- | :--- | :--- | :--- | :--- |
-| `tx plan` | Sí | Full Artifact | Sí | — |
-| `accounts list` | Sí | Array of accounts | Sí | — |
-| `query *` | Sí | `QueryResult` | Sí | — |
+| `tx plan` | Yes | Full Artifact | Yes | — |
+| `accounts list` | Yes | Array of accounts | Yes | — |
+| `query *` | Yes | `QueryResult` | Yes | — |
 
 ## 11. Help System & Functional State
-
-- **Limitación Arquitectónica**: El sistema de ayuda actual describe la forma y los flags, pero **no comunica el estado funcional** real (MOCK, DISABLED, PARTIAL, EXPERIMENTAL).
+- **Architectural Limitation**: The current help system describes shape and flags but **does not communicate the actual functional state** (MOCK, DISABLED, PARTIAL, EXPERIMENTAL).
 
 ## 12. Lazy Loading / Startup Cost
+- **Precise Formulation**: Command modules are statically imported from `index.ts`. If these modules statically import runners, those runners enter the initial load graph.
+- **Optimization**: `query.ts` consistently employs dynamic imports.
 
-- **Formulación Precisa**: Los módulos de comando se importan estáticamente desde `index.ts`. Si estos módulos a su vez importan runners de forma estática, dichos runners entran en el grafo de carga inicial.
-- **Optimización**: `query.ts` emplea importaciones dinámicas de forma consistente.
-
-## 13. CLI Flow Examples (Compact)
+## 13. CLI Flow Examples
 
 ### Example A: `hardkas tx plan`
 - **Command Path**: `tx.ts` → `runTxPlan`.
-- **Config Load**: En la acción del comando.
-- **Internal**: Usa `@hardkas/tx-builder` para lógica de masa/comisión.
-- **Output**: `txPlan.json` en disco o representación tabular en consola.
+- **Config Load**: In the command action.
+- **Internal**: Uses `@hardkas/tx-builder` for mass/fee logic.
+- **Output**: `txPlan.json` on disk or tabular representation in console.
 
 ### Example B: `hardkas accounts real generate`
-- **Context**: Keystore local (`.hardkas/keystore`).
-- **Internal**: Utiliza el SDK de Kaspa para derivar llaves.
-- **Output**: Entrada cifrada en archivo JSON local y confirmación en texto.
+- **Context**: Local Keystore (`.hardkas/keystore`).
+- **Internal**: Uses Kaspa SDK to derive keys.
+- **Output**: Encrypted entry in local JSON file and text confirmation.
 
 ### Example C: `hardkas query dag conflicts`
-- **Registration**: Registro bajo el grupo `query`.
-- **Engine**: Llama al `QueryEngine` (@hardkas/query) con modo `research`.
-- **Logic**: Analiza el store relacional buscando UTXOs compartidos.
+- **Registration**: Registered under the `query` group.
+- **Engine**: Calls `QueryEngine` (@hardkas/query) with `research` mode.
+- **Logic**: Analyzes relational store looking for shared UTXOs.
 
 ### Example D: `hardkas l2 tx send`
-- **L2 Profile**: Carga perfil desde la configuración de red L2.
-- **Runner**: `runL2TxSend` utiliza un cliente RPC EVM.
-- **Outcome**: Broadcast a la capa 2 y obtención de hash/receipt L2.
+- **L2 Profile**: Loads profile from L2 network configuration.
+- **Runner**: `runL2TxSend` uses an EVM RPC client.
+- **Outcome**: Broadcast to layer 2 and retrieval of L2 hash/receipt.
 
 ### Example E: `hardkas test`
-- **Flow**: Action inline directa en `test.ts`.
-- **Mock**: No invoca runners ni paquetes de testing; imprime un string hardcodeado.
-- **DX Risk**: Proporciona una señal de éxito falsa si no se lee con atención.
+- **Flow**: Direct inline action in `test.ts`.
+- **Mock**: Does not invoke runners or testing packages; prints a hardcoded string.
+- **DX Risk**: Provides a false success signal if not read carefully.
 
 ## 14. Architectural Problems Found
-
-1.  **Startup Latency**: Debido al grafo de importación estática.
-2.  **Mock de `test`**: Comando documentado como real pero con implementación estática.
-3.  **Invisibilidad de Estado en Ayuda**: El `--help` no indica estados de madurez real.
+1.  **Startup Latency**: Due to the static import graph.
+2.  **`test` Mock**: Command documented as real but with static implementation.
+3.  **State Invisibility in Help**: `--help` does not indicate actual maturity states.
 
 ## 15. Proposed CLI Architecture v1
+The v1 architecture proposes a typed **Command Manifest** acting as a single source of truth for registration, help, and lazy loading.
 
-La arquitectura v1 propone un **Command Manifest** tipado que actúe como fuente única de verdad para el registro, la ayuda y el lazy loading.
-
-### Pseudocódigo de Manifest:
+### Manifest Pseudocode:
 
 ```typescript
 // Proposed Registry Structure
@@ -223,15 +212,14 @@ export const CLI_MANIFEST = {
 };
 ```
 
-### Beneficios:
-- **Zero-cost startup**: No se carga código de runners hasta el matching.
-- **Help automatizado**: Los estados `MOCK` o `DISABLED` se inyectan automáticamente en la descripción.
-- **Validation**: Posibilidad de generar esquemas de validación de argumentos a partir del manifest.
+### Benefits:
+- **Zero-cost startup**: No runner code loaded until matching.
+- **Automated Help**: `MOCK` or `DISABLED` states are automatically injected into the description.
+- **Validation**: Ability to generate argument validation schemas from the manifest.
 
 ## Guardrails
-
-- No se modificó lógica runtime.
-- No se modificaron comandos.
-- No se modificaron runners.
-- No se modificaron paquetes internos.
-- Este documento es una auditoría arquitectónica, no una refactorización.
+- Runtime logic was not modified.
+- Commands were not modified.
+- Runners were not modified.
+- Internal packages were not modified.
+- This document is an architectural audit, not a refactoring.
