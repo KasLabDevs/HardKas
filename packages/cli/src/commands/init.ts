@@ -76,7 +76,6 @@ export default defineHardkasConfig({
 `;
 
         fs.writeFileSync(configFile, template, "utf-8");
-<<<<<<< HEAD
         
         // Hardened .gitignore
         const gitIgnoreFile = path.join(targetDir, ".gitignore");
@@ -92,8 +91,6 @@ export default defineHardkasConfig({
           }
         }
 
-=======
->>>>>>> main
         UI.success(`HardKAS project '${name || "current"}' initialized successfully.`);
         if (name) UI.info(`Project folder: ${targetDir}`);
         UI.info(`Created: hardkas.config.ts (v0.2-alpha)`);
