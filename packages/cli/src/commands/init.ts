@@ -65,17 +65,18 @@ export default defineHardkasConfig({
   accounts: {
     alice: {
       kind: "simulated",
-      address: "kaspa:sim_alice"
+      address: "kaspasim:sim_alice"
     },
     bob: {
       kind: "simulated",
-      address: "kaspa:sim_bob"
+      address: "kaspasim:sim_bob"
     }
   }
 });
 `;
 
         fs.writeFileSync(configFile, template, "utf-8");
+<<<<<<< HEAD
         
         // Hardened .gitignore
         const gitIgnoreFile = path.join(targetDir, ".gitignore");
@@ -91,6 +92,8 @@ export default defineHardkasConfig({
           }
         }
 
+=======
+>>>>>>> main
         UI.success(`HardKAS project '${name || "current"}' initialized successfully.`);
         if (name) UI.info(`Project folder: ${targetDir}`);
         UI.info(`Created: hardkas.config.ts (v0.2-alpha)`);
