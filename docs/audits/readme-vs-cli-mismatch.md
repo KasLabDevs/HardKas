@@ -1,40 +1,40 @@
 # HardKas README vs CLI Mismatch Audit
 
 ## Scope
-Esta auditoría compara la documentación pública y técnica de HardKas con el registro real de comandos en Commander.
-Fuentes analizadas:
-- `README.md` (Raíz)
-- `docs/cli.md` (Guía de usuario avanzado)
+This audit compares HardKas's public and technical documentation with the actual command registration in Commander.
+Sources analyzed:
+- `README.md` (Root)
+- `docs/cli.md` (Advanced user guide)
 - `docs/query-layer.md`
-- `docs/what-actually-works.md` (Estado de estabilidad)
-- `packages/cli/src/commands/*` (Código fuente real)
-- `packages/cli/src/index.ts` (Punto de entrada del CLI)
+- `docs/what-actually-works.md` (Stability status)
+- `packages/cli/src/commands/*` (Real source code)
+- `packages/cli/src/index.ts` (CLI entry point)
 
 ## Method
-1. Se extrajeron todos los comandos mencionados en la documentación.
-2. Se compararon con el registro real en `index.ts` y sus respectivos archivos de comando.
-3. Se verificaron flags, argumentos y estados funcionales (Verified, Partial, Mock, etc.).
-4. Se identificaron sugerencias internas en el código que apuntan a comandos inexistentes.
+1. All commands mentioned in the documentation were extracted.
+2. They were compared with the actual registration in `index.ts` and their respective command files.
+3. Flags, arguments, and functional states (Verified, Partial, Mock, etc.) were verified.
+4. Internal suggestions in the code pointing to non-existent commands were identified.
 
 ## 1. Documented Commands Inventory
 
-| Fuente | Comando documentado | Contexto | Flags documentadas | Estado en CLI real | Nota |
+| Source | Documented Command | Context | Documented Flags | Status in real CLI | Note |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| README.md | `hardkas init` | Quickstart | — | **EXISTS** | Soporta `[name]` opcional en código. |
-| README.md | `hardkas node start` | Quickstart | — | **EXISTS** | Soporta `--image` en código. |
-| README.md | `hardkas accounts list` | Quickstart | — | **EXISTS** | Soporta `--json`, `--config`. |
-| README.md | `hardkas tx send` | Quickstart | `--from, --to, --amount` | **EXISTS** | Soporta muchos más flags (url, network, etc). |
-| README.md | `hardkas test` | Quickstart | — | **EXISTS** | Recientemente migrado de Mock a Vitest real. |
-| README.md | `hardkas artifact verify` | Quickstart | `--recursive` | **EXISTS** | Soporta `--json`, `--strict`. |
-| README.md | `hardkas example list` | Quickstart | — | **EXISTS** | Registrado en `misc.ts`. |
-| docs/cli.md | `hardkas doctor` | Diagnostics | — | **EXISTS** | Comando real y funcional. |
-| docs/cli.md | `hardkas query store index` | Store Sync | — | **NOT_REGISTERED** | Sugerencia fantasma. El comando real es `rebuild`. |
-| docs/cli.md | `hardkas query store sql` | Raw Query | — | **NOT_REGISTERED** | Comando aspiracional no implementado. |
-| docs/cli.md | `hardkas tx trace` | Tracing | `<txId>` | **DISABLED** | Registrado pero bloqueado intencionalmente. |
+| README.md | `hardkas init` | Quickstart | — | **EXISTS** | Supports optional `[name]` in code. |
+| README.md | `hardkas node start` | Quickstart | — | **EXISTS** | Supports `--image` in code. |
+| README.md | `hardkas accounts list` | Quickstart | — | **EXISTS** | Supports `--json`, `--config`. |
+| README.md | `hardkas tx send` | Quickstart | `--from, --to, --amount` | **EXISTS** | Supports many more flags (url, network, etc). |
+| README.md | `hardkas test` | Quickstart | — | **EXISTS** | Recently migrated from Mock to real Vitest. |
+| README.md | `hardkas artifact verify` | Quickstart | `--recursive` | **EXISTS** | Supports `--json`, `--strict`. |
+| README.md | `hardkas example list` | Quickstart | — | **EXISTS** | Registered in `misc.ts`. |
+| docs/cli.md | `hardkas doctor` | Diagnostics | — | **EXISTS** | Real and functional command. |
+| docs/cli.md | `hardkas query store index` | Store Sync | — | **NOT_REGISTERED** | Ghost suggestion. Real command is `rebuild`. |
+| docs/cli.md | `hardkas query store sql` | Raw Query | — | **NOT_REGISTERED** | Aspirational command not implemented. |
+| docs/cli.md | `hardkas tx trace` | Tracing | `<txId>` | **DISABLED** | Registered but intentionally blocked. |
 
 ## 2. Real CLI Commands Missing From Docs
 
-| Grupo | Comando real | Estado funcional | Archivo fuente | Debe documentarse en | Prioridad |
+| Group | Real command | Functional status | Source file | Should be documented in | Priority |
 | :--- | :--- | :--- | :--- | :--- | :--- |
 | query | `hardkas query store rebuild` | 🟢 VERIFIED | `query.ts` | `docs/cli.md` | **HIGH** |
 | query | `hardkas query events` | 🟢 VERIFIED | `query.ts` | `docs/query-layer.md` | **HIGH** |
@@ -47,81 +47,78 @@ Fuentes analizadas:
 
 ## 3. Documented But Not Registered
 
-| Comando documentado | Fuente | Por qué es problema | Acción recomendada |
+| Documented command | Source | Why it is a problem | Recommended action |
 | :--- | :--- | :--- | :--- |
-| `hardkas query store index` | `docs/cli.md`, `doctor.ts` | El usuario recibe un error de "Unknown command". | Renombrar a `rebuild` en docs y código de doctor. |
-| `hardkas query store sql` | `docs/cli.md` | Promesa de funcionalidad no cumplida. | Eliminar de docs o marcar como Roadmap. |
-| `pnpm example:ci` | `README.md` | No verificado si el script de `package.json` existe. | Validar scripts en `packages/cli/package.json`. |
+| `hardkas query store index` | `docs/cli.md`, `doctor.ts` | User receives an "Unknown command" error. | Rename to `rebuild` in docs and doctor code. |
+| `hardkas query store sql` | `docs/cli.md` | Unfulfilled promise of functionality. | Remove from docs or mark as Roadmap. |
+| `pnpm example:ci` | `README.md` | Not verified if `package.json` script exists. | Validate scripts in `packages/cli/package.json`. |
 
 ## 4. Registered But Incorrectly Documented
 
-| Comando | Docs dicen | Código dice | Diferencia | Acción recomendada |
+| Command | Docs say | Code says | Difference | Recommended action |
 | :--- | :--- | :--- | :--- | :--- |
-| `hardkas init` | `hardkas init` | `hardkas init [name]` | Soporta nombre de proyecto. | Actualizar README. |
-| `hardkas tx send` | Flags básicos | Flags extensos | Faltan `--network`, `--url`, `--yes`. | Actualizar README o referenciar `--help`. |
-| `hardkas test` | — | `--network, --watch, --json` | No se mencionan capacidades de red. | Documentar que usa Vitest. |
+| `hardkas init` | `hardkas init` | `hardkas init [name]` | Supports project name. | Update README. |
+| `hardkas tx send` | Basic flags | Extensive flags | Missing `--network`, `--url`, `--yes`. | Update README or reference `--help`. |
+| `hardkas test` | — | `--network, --watch, --json` | Network capabilities not mentioned. | Document that it uses Vitest. |
 
 ## 5. Status Mismatch
 
-| Comando | Estado real | Cómo aparece en docs | Riesgo | Acción recomendada |
+| Command | Real status | How it appears in docs | Risk | Recommended action |
 | :--- | :--- | :--- | :--- | :--- |
-| `hardkas tx trace` | ⚫ DISABLED | Como feature "estrella" | **ALTO** (Decepción) | Marcar como "Coming Soon" o deshabilitar mención. |
-| `hardkas accounts real lock`| 🟠 MOCK | Como feature de seguridad | **MEDIO** (Falsa seguridad) | Advertir que es una simulación de sesión. |
-| `hardkas test` | 🟢 VERIFIED | Sin estatus claro | **BAJO** | Indicar que ahora es real y usa Vitest. |
-| `Query Store (SQLite)` | 🟢 VERIFIED | "BROKEN / UNWIRED" | **MEDIO** (Desinformación) | Actualizar `what-actually-works.md` (Ya está conectado). |
+| `hardkas tx trace` | ⚫ DISABLED | As "star" feature | **HIGH** (Disappointment) | Mark as "Coming Soon" or disable mention. |
+| `hardkas accounts real lock`| 🟠 MOCK | As security feature | **MEDIUM** (False security) | Warn that it is a session simulation. |
+| `hardkas test` | 🟢 VERIFIED | Without clear status | **LOW** | Indicate that it is now real and uses Vitest. |
+| `Query Store (SQLite)` | 🟢 VERIFIED | "BROKEN / UNWIRED" | **MEDIUM** (Misinformation) | Update `what-actually-works.md` (It is already connected). |
 
 ## 6. README Gaps
+- **Lack of clarity on installation**: Does not mention that Docker is required for `hardkas node start`.
+- **Lack of Scopes explanation**: Does not explain the difference between `@hardkas/sdk` and `@hardkas/cli`.
+- **Lack of Status Badges**: Commands do not have `stable/preview/research` tags in the README.
+- **Lack of Query documentation**: The README does not mention the SQLite introspection engine.
+- **Lack of Mainnet warning**: `Mainnet Guards` protection should be more prominent.
 
-- **Falta claridad en instalación**: No menciona que se requiere Docker para `hardkas node start`.
-- **Falta explicación de Scopes**: No explica la diferencia entre `@hardkas/sdk` y `@hardkas/cli`.
-- **Falta Badges de Estatus**: Los comandos no tienen tags de `stable/preview/research` en el README.
-- **Falta documentación de Query**: El README no menciona el motor de introspección SQLite.
-- **Falta advertencia de Mainnet**: La protección de `Mainnet Guards` debería ser más prominente.
-
-## 7. Diff Conceptual
+## 7. Conceptual Diff
 
 ### Add to docs
-- `hardkas query store rebuild` (Reemplaza a `index`).
-- `hardkas query events` (Poderosa herramienta de debug).
-- `hardkas faucet` (Esencial para dev workflow).
-- `hardkas config show` (Útil para debug de entorno).
+- `hardkas query store rebuild` (Replaces `index`).
+- `hardkas query events` (Powerful debug tool).
+- `hardkas faucet` (Essential for dev workflow).
+- `hardkas config show` (Useful for environment debug).
 
 ### Remove or mark as roadmap
-- `hardkas query store sql` (Remover de guía de usuario actual).
-- `hardkas tx trace` (Marcar como deshabilitado temporalmente).
+- `hardkas query store sql` (Remove from current user guide).
+- `hardkas tx trace` (Mark as temporarily disabled).
 
 ### Correct
-- Referencias a `query store index` -> `query store rebuild`.
-- Argumentos de `hardkas init [name]`.
+- `query store index` references -> `query store rebuild`.
+- `hardkas init [name]` arguments.
 
 ### Warn
-- `hardkas accounts real lock` es solo cosmético.
-- `hardkas l2` es experimental.
+- `hardkas accounts real lock` is only cosmetic.
+- `hardkas l2` is experimental.
 
 ## 8. Recommendations
 
 ### Critical
-1. **Sincronizar `index` -> `rebuild`**: Es el mismatch más visible que causa errores directos al usuario.
-2. **Actualizar `what-actually-works.md`**: El Query Store YA está conectado. Mantenerlo como "Broken" desincentiva el uso de una de las mejores features del repo.
+1. **Sync `index` -> `rebuild`**: This is the most visible mismatch causing direct user errors.
+2. **Update `what-actually-works.md`**: The Query Store IS already connected. Keeping it as "Broken" discourages the use of one of the best features in the repo.
 
 ### High
-1. **Generar CLI Reference**: Automatizar la generación de docs desde el Commander registry para evitar desincronización futura.
-2. **Badge Status en README**: Copiar los badges de `cli-command-status.md` a la sección de Quickstart.
+1. **Generate CLI Reference**: Automate documentation generation from the Commander registry to avoid future desynchronization.
+2. **Badge Status in README**: Copy badges from `cli-command-status.md` to the Quickstart section.
 
 ## Checklist
-
-- [x] Extraer comandos README
-- [x] Comparar con Commander registry
-- [x] Detectar comandos documentados inexistentes
-- [x] Detectar comandos reales no documentados
-- [x] Generar diff final
-- [x] No modificar lógica runtime
-- [x] No modificar código fuente
+- [x] Extract README commands
+- [x] Compare with Commander registry
+- [x] Detect non-existent documented commands
+- [x] Detect undocumented real commands
+- [x] Generate final diff
+- [x] No modifications to runtime logic
+- [x] No modifications to source code
 
 ## Guardrails
-
-- No se modificó lógica runtime.
-- No se modificaron comandos.
-- No se modificaron runners.
-- No se modificaron packages internos.
-- La comparación se hizo contra el command registry real y auditorías previas.
+- No modifications to runtime logic.
+- No modifications to commands.
+- No modifications to runners.
+- No modifications to internal packages.
+- Comparison was made against the actual command registry and previous audits.

@@ -1,86 +1,86 @@
 # HardKas Transaction Pipeline Audit (tx plan)
 
 ## 1. Scope
-Esta auditoría analiza el pipeline de planificación de transacciones de HardKas, centrado en el comando `hardkas tx plan` y el paquete `@hardkas/tx-builder`. Se evalúan los procesos de:
-- Resolución de cuentas y redes.
-- Obtención y selección de UTXOs.
-- Cálculo de masa y comisiones (fees).
-- Generación de artefactos `txPlan`.
-- Determinismo y reproducibilidad del pipeline.
+This audit analyzes the HardKas transaction planning pipeline, focusing on the `hardkas tx plan` command and the `@hardkas/tx-builder` package. The processes evaluated include:
+- Account and network resolution.
+- UTXO retrieval and selection.
+- Mass and fee calculation.
+- Generation of `txPlan` artifacts.
+- Determinism and reproducibility of the pipeline.
 
 ## 2. Executive Summary
-El pipeline de `tx plan` implementa una arquitectura desacoplada y basada en artefactos, lo cual es excelente para auditoría y workflows de CI/CD. La lógica de cálculo de masa es consciente del protocolo (P2PK/Schnorr), y la selección de monedas sigue una estrategia de acumulación simple. El objetivo central de HardKas no es ser un motor de billetera comercial, sino un **"developer-safe deterministic planner"**. Sin embargo, el sistema presenta debilidades en la **reproducibilidad determinista** (falta ordenamiento canónico en empates), lo que impacta directamente la estabilidad de los hashes de los artefactos.
+The `tx plan` pipeline implements a decoupled, artifact-based architecture, which is excellent for auditing and CI/CD workflows. The mass calculation logic is protocol-aware (P2PK/Schnorr), and coin selection follows a simple accumulation strategy. HardKas's central goal is not to be a commercial wallet engine, but a **"developer-safe deterministic planner"**. However, the system has weaknesses in **deterministic reproducibility** (lack of canonical ordering in ties), which directly impacts the stability of artifact hashes.
 
-**Estado General: SOLID ARCHITECTURE / NEEDS DETERMINISTIC HARDENING**
+**General Status: SOLID ARCHITECTURE / NEEDS DETERMINISTIC HARDENING**
 
 ## 3. Pipeline Flow
-El flujo de ejecución observado es:
+The observed execution flow is:
 `runTxPlan()` 
-  → `resolveHardkasAccountAddress` (Resolución de emisor/receptor)
-  → `RPC: getUtxosByAddress` (Obtención de balance real)
-  → `buildPaymentPlan` (Selección de UTXOs y cálculo de masa)
-  → `createTxPlanArtifact` (Generación de JSON firmado por hash)
+  → `resolveHardkasAccountAddress` (Sender/receiver resolution)
+  → `RPC: getUtxosByAddress` (Real balance retrieval)
+  → `buildPaymentPlan` (UTXO selection and mass calculation)
+  → `createTxPlanArtifact` (JSON generation signed by hash)
 
 ## 4. Fee Rate Review
-- **Configurabilidad**: Soportado vía CLI y config.
-- **Dinámica**: **NO**. El fee-rate es estático; no consulta el estado de congestión de la red (mempool).
-- **Cálculo**: `masa * feeRate`. Correcto según el protocolo Kaspa.
-- **Riesgo**: En Mainnet, un fee-rate estático desactualizado puede causar transacciones atascadas o sobrepagos innecesarios.
+- **Configurability**: Supported via CLI and config.
+- **Dynamic**: **NO**. The fee-rate is static; it does not consult the network congestion state (mempool).
+- **Calculation**: `mass * feeRate`. Correct according to the Kaspa protocol.
+- **Risk**: On Mainnet, an outdated static fee-rate can cause stuck transactions or unnecessary overpayments.
 
 ## 5. Mass Calculation Review
-- **Implementación**: Localizada en `@hardkas/tx-builder/mass.ts`.
-- **Precisión**: Utiliza constantes para P2PK/Schnorr (Base: 100, Input: 150, Output: 50).
-- **Asunciones**: Documenta explícitamente que asume firmas Schnorr.
-- **Riesgo**: `estimated mass != final signed mass`. Si la firma real excede la predicción por variaciones de tamaño de DER (aunque Schnorr es fijo, el script de firma podría variar), la transacción podría ser rechazada por comisión insuficiente.
+- **Implementation**: Located in `@hardkas/tx-builder/mass.ts`.
+- **Accuracy**: Uses constants for P2PK/Schnorr (Base: 100, Input: 150, Output: 50).
+- **Assumptions**: Explicitly documents that it assumes Schnorr signatures.
+- **Risk**: `estimated mass != final signed mass`. If the real signature exceeds the prediction due to DER size variations (although Schnorr is fixed, the signature script could vary), the transaction could be rejected for insufficient fee.
 
 ## 6. UTXO Selection Review
-- **Estrategia**: **Smallest-First Accumulation**. Ordena los UTXOs de menor a mayor cantidad y acumula hasta cubrir el objetivo + fee.
-- **Optimización**: No existe lógica de consolidación ni de minimización de masa.
-- **Fragmentación**: Esta estrategia tiende a limpiar "dust" (pequeños UTXOs) pero puede generar transacciones con muchos inputs si el balance está muy fragmentado, aumentando la comisión total.
+- **Strategy**: **Smallest-First Accumulation**. Sorts UTXOs from smallest to largest amount and accumulates until the target + fee is covered.
+- **Optimization**: There is no consolidation or mass minimization logic.
+- **Fragmentation**: This strategy tends to clear "dust" (small UTXOs) but can generate transactions with many inputs if the balance is highly fragmented, increasing the total fee.
 
 ## 7. Output Construction Review
-- **Cambio (Change)**: Implementado correctamente. Se genera un output de cambio si sobra cantidad tras restar el pago y la comisión.
-- **Dust Limit**: No se observa una política explícita de "dust avoidance" para el output de cambio. Si el cambio es minúsculo, debería quemarse como fee adicional en lugar de crear un UTXO económicamente inútil.
+- **Change**: Correctly implemented. A change output is generated if there is an amount left over after subtracting the payment and the fee.
+- **Dust Limit**: No explicit "dust avoidance" policy is observed for the change output. If the change is minuscule, it should be burned as an additional fee instead of creating an economically useless UTXO.
 
 ## 8. Deterministic Ordering Audit
-**Hallazgo Crítico: REPRODUCIBILIDAD DÉBIL**
-- **Inputs**: `buildPaymentPlan` ordena los UTXOs por `amountSompi` (ascendente).
-- **Tie-breaking**: Si hay múltiples UTXOs con la misma cantidad, el orden depende del array devuelto por el RPC. El RPC no garantiza orden determinista.
-- **Outputs**: Se mantienen en el orden de entrada; no hay ordenamiento canónico (BIP69-style).
+**Critical Finding: WEAK REPRODUCIBILITY**
+- **Inputs**: `buildPaymentPlan` sorts UTXOs by `amountSompi` (ascending).
+- **Tie-breaking**: If there are multiple UTXOs with the same amount, the order depends on the array returned by the RPC. The RPC does not guarantee deterministic order.
+- **Outputs**: Maintained in input order; there is no canonical ordering (BIP69-style).
 
-**Riesgo**: Dos llamadas idénticas a `tx plan` pueden producir dos artefactos con diferentes `planId` (hashes) si el RPC altera el orden de los UTXOs con montos idénticos.
+**Risk**: Two identical `tx plan` calls can produce two artifacts with different `planId` (hashes) if the RPC alters the order of UTXOs with identical amounts.
 
 ## 9. Artifact Integrity
-- **Schemas**: Tipados y versionados correctamente (`hardkas.txPlan`).
-- **BigInt**: Manejado correctamente mediante strings en JSON para evitar pérdida de precisión.
-- **Auditoría**: El artefacto contiene toda la información necesaria para el signing (`inputs`, `outputs`, `amount`, `network`).
+- **Schemas**: Correctly typed and versioned (`hardkas.txPlan`).
+- **BigInt**: Correctly handled via strings in JSON to avoid loss of precision.
+- **Audit**: The artifact contains all the information necessary for signing (`inputs`, `outputs`, `amount`, `network`).
 
 ## 10. Side Effects Audit
-- **Pipeline**: Es puramente de lectura y cálculo local. 
-- **Broadcast**: No ocurre en esta fase.
-- **Seguridad**: No requiere claves privadas para esta fase.
+- **Pipeline**: Purely local read and calculation. 
+- **Broadcast**: Does not occur in this phase.
+- **Security**: Does not require private keys for this phase.
 
 ## 11. Determinism Risk Matrix
 
 | Area | Deterministic | Notes |
 | :--- | :--- | :--- |
-| Fee formula | YES | Fórmula pura. |
-| Artifact schema | YES | Estable y tipado. |
-| UTXO retrieval | **NO** | Depende del orden de respuesta del RPC. |
-| Coin selection | **PARTIAL** | Falta tie-breaking canónico (ej. por txid:index). |
-| Output ordering | **NO** | No hay sorting canónico. |
-| Final hash | **PARTIAL** | Inestable ante cambios de orden de inputs iguales. |
+| Fee formula | YES | Pure formula. |
+| Artifact schema | YES | Stable and typed. |
+| UTXO retrieval | **NO** | Depends on RPC response order. |
+| Coin selection | **PARTIAL** | Lacks canonical tie-breaking (e.g., by txid:index). |
+| Output ordering | **NO** | No canonical sorting. |
+| Final hash | **PARTIAL** | Unstable with input order changes for identical amounts. |
 
 ## 12. Architectural Findings
 
 ### GOOD
-- **Desacoplamiento**: La separación `plan -> sign -> send` es impecable.
-- **Transparencia**: El cálculo de masa desglosado permite depurar problemas de fees.
+- **Decoupling**: The `plan -> sign -> send` separation is impeccable.
+- **Transparency**: Itemized mass calculation allows debugging fee issues.
 
 ### WEAKNESSES
-- **Reproducibilidad**: Inconsistencias potenciales en hashes de artefactos.
-- **Optimización**: Estrategia de selección básica.
-- **Dust Policy**: Falta de protección contra creación de micro-UTXOs.
+- **Reproducibility**: Potential inconsistencies in artifact hashes.
+- **Optimization**: Basic selection strategy.
+- **Dust Policy**: Lack of protection against micro-UTXO creation.
 
 ## 13. Recommended Stability Classification
 - **tx plan architecture**: SOLID
@@ -92,20 +92,20 @@ El flujo de ejecución observado es:
 
 ## 14. Recommendations
 
-### P0 — Reproducibilidad (Prioridad Máxima)
-- **Tie-break Determinista**: Implementar un ordenamiento secundario por `txid` (lexicográfico) e `index` (ascendente) para inputs de igual monto. Esto garantiza un `planId` idéntico ante cualquier respuesta del RPC.
-- **Estrategia en Artifact**: Persistir explícitamente la `selectionStrategy` usada dentro del artifact para auditoría de reconstrucción.
+### P0 — Reproducibility (Maximum Priority)
+- **Deterministic Tie-break**: Implement secondary sorting by `txid` (lexicographical) and `index` (ascending) for inputs of equal amount. This guarantees an identical `planId` for any RPC response.
+- **Selection Strategy in Artifact**: Explicitly persist the `selectionStrategy` used within the artifact for reconstruction auditing.
 
-### P1 — Robustez
-- **Dust Threshold**: Formalizar un límite mínimo para crear outputs de cambio para evitar micro-fragmentación inútil.
+### P1 — Robustness
+- **Dust Threshold**: Formalize a minimum limit for creating change outputs to avoid useless micro-fragmentation.
 
-### P2 — Flexibilidad Dev
-- **Selection Strategies**: Implementar modos opcionales (ej. `consolidate`, `minimize-mass`) para facilitar pruebas de límites de masa.
+### P2 — Dev Flexibility
+- **Selection Strategies**: Implement optional modes (e.g., `consolidate`, `minimize-mass`) to facilitate mass limit testing.
 
-### P3 — Dinamismo
-- **Dynamic Fees**: Permitir consulta de fee-rate al RPC (prioridad baja para entornos locales).
+### P3 — Dynamism
+- **Dynamic Fees**: Allow RPC fee-rate consultation (low priority for local environments).
 
-## 15. Proposed Pipeline v1 (Endurecido)
+## 15. Proposed Pipeline v1 (Hardened)
 1. Resolve Accounts
 2. Fetch UTXOs from RPC
 3. **Canonical Pre-Sort (txid:index)**
@@ -117,22 +117,22 @@ El flujo de ejecución observado es:
 9. Emit Stable txPlan Artifact
 
 ## 16. Final Assessment
-HardKas `tx plan` es un planificador robusto y muy bien estructurado. Su mayor reto actual no es de optimización financiera, sino de **determinismo técnico** para asegurar que el pipeline de artefactos sea 100% reproducible y confiable en entornos de CI/CD.
+HardKas `tx plan` is a robust and very well-structured planner. Its greatest current challenge is not financial optimization, but **technical determinism** to ensure the artifact pipeline is 100% reproducible and reliable in CI/CD environments.
 
 ## 17. Checklist
-- [x] Revisar fee-rate
-- [x] Revisar mass calculation
-- [x] Revisar UTXO selection
-- [x] Revisar outputs
-- [x] Revisar deterministic ordering
-- [x] No modificar lógica runtime
-- [x] No modificar tx-builder
-- [x] No modificar runners
-- [x] Auditoría documental únicamente
+- [x] Review fee-rate
+- [x] Review mass calculation
+- [x] Review UTXO selection
+- [x] Review outputs
+- [x] Review deterministic ordering
+- [x] No modifications to runtime logic
+- [x] No modifications to tx-builder
+- [x] No modifications to runners
+- [x] Document audit only
 
 ## Guardrails
-No se modificó lógica runtime.
-No se modificó tx-builder.
-No se modificaron runners.
-No se modificaron comandos.
-Esta auditoría es documental.
+No modifications to runtime logic.
+No modifications to tx-builder.
+No modifications to runners.
+No modifications to commands.
+This is a documentary audit.

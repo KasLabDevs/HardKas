@@ -1,28 +1,28 @@
 # HardKas Transaction Pipeline Audit (`tx sign`)
 
 ## 1. Scope
-Esta auditoría analiza el proceso de firma de transacciones en HardKas, centrado en:
-- comando `hardkas tx sign <planPath>`
-- runner `runTxSign`
-- función de firma central `signTxPlanArtifact`
+This audit analyzes the transaction signing process in HardKas, focusing on:
+- `hardkas tx sign <planPath>` command
+- `runTxSign` runner
+- core signing function `signTxPlanArtifact`
 - signer abstraction (`HardkasTxPlanSigner`)
-- keystore integration (o la falta de ella en este flujo)
+- keystore integration (or the lack thereof in this flow)
 - mainnet guards
-- artifact lineage y trazabilidad
-- determinismo y reproducibilidad del artifact firmado (`signedTx`)
+- artifact lineage and traceability
+- determinism and reproducibility of the signed artifact (`signedTx`)
 
 ## 2. Executive Summary
-El comando `tx sign` consume un artefacto `txPlan` y produce un artefacto `signedTx`. La arquitectura está bien diseñada como un pipeline de transformación, separando conceptualmente la identidad (signer) de la lógica de red. Soporta backends de firma simulada y llaves privadas vía WASM (KASPA).
-Sin embargo, el proceso operativo bypasséa el keystore cifrado (solo funciona con cuentas de texto plano o variables de entorno), y los artefactos firmados no son reproducibles bit-a-bit debido a la inclusión de timestamps y la falta de validación del hash original del plan. 
+The `tx sign` command consumes a `txPlan` artifact and produces a `signedTx` artifact. The architecture is well-designed as a transformation pipeline, conceptually separating identity (signer) from network logic. It supports simulated signing backends and private keys via WASM (KASPA).
+However, the operational process bypasses the encrypted keystore (only working with plaintext accounts or environment variables), and signed artifacts are not bit-by-bit reproducible due to the inclusion of timestamps and the lack of original plan hash validation.
 
-Clasificación del sistema actual:
+Current system classification:
 - Signer abstraction: GOOD
-- Keystore integration: PARTIAL (Desconectado del flujo)
+- Keystore integration: PARTIAL (Disconnected from the flow)
 - Mainnet protections: GOOD
 - Artifact lineage: PARTIAL
 - Deterministic reproducibility: NEEDS HARDENING
 
-Importante: Se enfoca el análisis como developer tooling, asumiendo que la conveniencia para entornos locales es prioritaria, pero el determinismo es obligatorio, NO como wallet production-grade.
+Important: The analysis focuses on developer tooling, assuming convenience for local environments is a priority, but determinism is mandatory, NOT as production-grade wallet software.
 
 ## 3. Command Interface
 
@@ -35,11 +35,11 @@ Importante: Se enfoca el análisis como developer tooling, asumiendo que la conv
 | Input artifact | `txPlan` |
 | Output artifact | `signedTx` |
 
-**Comportamientos observados:**
-- **Falta `--account`**: Intenta inferir el signer usando `txPlan.from.accountName` o la dirección.
-- **Falta `--out`**: No escribe a disco, solo imprime el resultado formateado o JSON a stdout.
-- **Falta private key**: Falla a nivel de resolución de cuenta o en la capa del WASM signer.
-- **Se usa mainnet sin flag**: El comando bloquea explícitamente la ejecución a menos que se use `--allow-mainnet-signing`.
+**Observed behaviors:**
+- **Missing `--account`**: Attempts to infer the signer using `txPlan.from.accountName` or the address.
+- **Missing `--out`**: Does not write to disk, only prints the formatted result or JSON to stdout.
+- **Missing private key**: Fails at the account resolution level or in the WASM signer layer.
+- **Mainnet used without flag**: The command explicitly blocks execution unless `--allow-mainnet-signing` is used.
 
 ## 4. Signing Flow
 
@@ -67,7 +67,7 @@ hardkas tx sign tx-plan.json
 | artifactId verification | **NO** | Missing | **HIGH** |
 | Tamper detection | **NO** | Missing | **HIGH** |
 
-**Punto clave**: `tx sign` NO verifica el `contentHash` del `txPlan`. Si un usuario o proceso altera el JSON del plan antes de firmarlo, el comando lo firmará sin alertar sobre la manipulación, lo que compromete la integridad del determinismo.
+**Key point**: `tx sign` DOES NOT verify the `contentHash` of the `txPlan`. If a user or process alters the plan JSON before signing it, the command will sign it without alerting to the manipulation, compromising the integrity of the determinism.
 
 ## 6. Signer Abstraction
 
@@ -81,7 +81,7 @@ hardkas tx sign tx-plan.json
 | Hardware wallet | NO | N/A | N/A | FUTURE |
 
 ## 7. Keystore Integration
-El comando `tx sign` **NO** puede usar el keystore cifrado V2 (`.hardkas/keystore/*.json`) actualmente. No existe mecanismo de prompt interactivo para la contraseña durante el flujo de firma, ni utiliza la sesión generada por `accounts real unlock` (que es puramente de verificación). El sistema depende de texto plano o ENV.
+The `tx sign` command **CANNOT** currently use the V2 encrypted keystore (`.hardkas/keystore/*.json`). There is no interactive prompt mechanism for the password during the signing flow, nor does it use the session generated by `accounts real unlock` (which is purely for verification). The system relies on plaintext or ENV.
 
 | Keystore feature | Present in tx sign | Evidence | Risk |
 | :--- | :--- | :--- | :--- |
@@ -89,7 +89,7 @@ El comando `tx sign` **NO** puede usar el keystore cifrado V2 (`.hardkas/keystor
 | Password prompt | NO | CLI flags missing | HIGH |
 | Session unlock | NO | No state preserved | MEDIUM |
 
-*Enfoque:* Tratar esta desconexión como “identity backend inconsistency” para una herramienta de desarrolladores, más que un “custody failure” catastrófico de wallet de producción.
+*Approach:* Treat this disconnection as “identity backend inconsistency” for a developer tool, rather than a catastrophic “custody failure” of a production wallet.
 
 ## 8. Plaintext / ENV Key Handling
 
@@ -112,58 +112,58 @@ El comando `tx sign` **NO** puede usar el keystore cifrado V2 (`.hardkas/keystor
 | shortcut flow via `tx send` | YES | `tx.ts` | LOW | Require `--yes` |
 | config network mismatch | YES | CLI Runner | LOW | Validate against defaultNetwork |
 
-Para developer tooling, requerir `--allow-mainnet-signing` es una protección razonable y suficiente por defecto.
+For developer tooling, requiring `--allow-mainnet-signing` is a reasonable and sufficient default protection.
 
 ## 10. Signing Correctness
 
 | Correctness check | Present | Risk if missing |
 | :--- | :--- | :--- |
-| firma todos los inputs | YES (WASM SDK) | Transacción rechazada por la red |
-| cuenta corresponde a `from` | YES | Firma incorrecta / Robo |
-| network prefix | YES | Tx inválida en destino |
-| change address | YES (in plan) | Pérdida de fondos |
-| signed tx matches plan | YES | Envío a destino erróneo |
-| mass/fee mismatch post-sign | NO | Falla en broadcast (slippage) |
-| no mutation of original plan | YES | Inconsistencia de artefactos |
+| signs all inputs | YES (WASM SDK) | Transaction rejected by network |
+| account corresponds to `from` | YES | Incorrect signature / Theft |
+| network prefix | YES | Invalid tx at destination |
+| change address | YES (in plan) | Loss of funds |
+| signed tx matches plan | YES | Sending to wrong destination |
+| mass/fee mismatch post-sign | NO | Broadcast failure (slippage) |
+| no mutation of original plan | YES | Artifact inconsistency |
 
 ## 11. Artifact Output
 
 | Field | Present | Sensitive | Deterministic | Notes |
 | :--- | :--- | :--- | :--- | :--- |
 | `schema` | YES | NO | YES | `hardkas.signedTx` |
-| `signedId` | YES | NO | **NO** | Usa `Date.now()` temporal |
-| `sourcePlanId` | YES | NO | YES | Referencia al plan |
-| `artifactId` | NO | NO | - | Ausente en el output |
-| `contentHash` | YES | NO | **NO** | Afectado por `createdAt`/`signedId` |
-| `parentArtifactId` | NO | NO | - | Usa `sourcePlanId` en su lugar |
-| `lineage` | NO | NO | - | Bloque formal no implementado |
-| `txId` | YES | NO | YES | Hash de la transacción |
-| `signedTransaction` | YES | NO | YES | Payload hexadecimal de firma |
+| `signedId` | YES | NO | **NO** | Uses temporal `Date.now()` |
+| `sourcePlanId` | YES | NO | YES | Plan reference |
+| `artifactId` | NO | NO | - | Absent in output |
+| `contentHash` | YES | NO | **NO** | Affected by `createdAt`/`signedId` |
+| `parentArtifactId` | NO | NO | - | Uses `sourcePlanId` instead |
+| `lineage` | NO | NO | - | Formal block not implemented |
+| `txId` | YES | NO | YES | Transaction hash |
+| `signedTransaction` | YES | NO | YES | Hexadecimal signature payload |
 | `createdAt` | YES | NO | **NO** | `new Date().toISOString()` |
-| `signer metadata` | NO | NO | - | Podría añadir valor (ej. `backend`) |
-| `privateKey` | NO | YES | - | Excluido correctamente |
-| `password` | NO | YES | - | Excluido correctamente |
+| `signer metadata` | NO | NO | - | Could add value (e.g., `backend`) |
+| `privateKey` | NO | YES | - | Correctly excluded |
+| `password` | NO | YES | - | Correctly excluded |
 
 ## 12. Artifact Lineage
 
 | Lineage feature | Present | Risk | Recommendation |
 | :--- | :--- | :--- | :--- |
-| `sourcePlanId` | YES | LOW | Mantiene trazabilidad básica |
-| `parentArtifactId` | NO | MEDIUM | Unificar con V2 standard |
-| `lineage` block | NO | HIGH | Incluir grafo de transformación formal |
-| transformation metadata | NO | MEDIUM | Registrar signer backend/version |
-| deterministic parent link | YES | LOW | `sourcePlanId` es hash |
-| reconstruct chain | PARTIAL | MEDIUM | Faltan metadatos formales |
+| `sourcePlanId` | YES | LOW | Maintains basic traceability |
+| `parentArtifactId` | NO | MEDIUM | Unify with V2 standard |
+| `lineage` block | NO | HIGH | Include formal transformation graph |
+| transformation metadata | NO | MEDIUM | Record signer backend/version |
+| deterministic parent link | YES | LOW | `sourcePlanId` is hash |
+| reconstruct chain | PARTIAL | MEDIUM | Missing formal metadata |
 
-La cadena `txPlan → signedTx → txReceipt` es rastreable mediante IDs ad-hoc (`sourcePlanId`), pero carece del estándar de trazabilidad que facilitaría visualizaciones o auditorías formales automáticas.
+The `txPlan → signedTx → txReceipt` chain is traceable via ad-hoc IDs (`sourcePlanId`), but lacks the traceability standard that would facilitate formal automatic audits or visualizations.
 
 ## 13. Determinism Review
 
-Análisis: **same txPlan + same signer + same inputs = same signed artifact?** -> **NO**.
+Analysis: **same txPlan + same signer + same inputs = same signed artifact?** -> **NO**.
 
-- **Payload determinism**: Sí. Las firmas Schnorr y la serialización del payload en el SDK son deterministas.
-- **Metadata determinism**: No. El uso de `Date.now().toString(36)` y `new Date().toISOString()` hace que cada invocación genere campos diferentes.
-- **Artifact identity determinism**: No. Dado que `contentHash` se calcula incluyendo todos los campos del artefacto (incluyendo `createdAt` y `signedId`), el hash resultante de identidad nunca será el mismo en dos ejecuciones. Esto rompe esquemas de caching en CI.
+- **Payload determinism**: Yes. Schnorr signatures and payload serialization in the SDK are deterministic.
+- **Metadata determinism**: No. The use of `Date.now().toString(36)` and `new Date().toISOString()` causes each invocation to generate different fields.
+- **Artifact identity determinism**: No. Since `contentHash` is calculated including all artifact fields (including `createdAt` and `signedId`), the resulting identity hash will never be the same in two runs. This breaks caching schemes in CI.
 
 ## 14. Error Handling
 
@@ -174,60 +174,60 @@ Análisis: **same txPlan + same signer + same inputs = same signed artifact?** -
 | missing account | Fails in resolution | Good | Suggest `accounts real generate` |
 | missing private key | Fails internally | Fair | Clarify backend issue |
 | unsupported keystore | Fails/Bypassed | Poor | Implement prompt integration |
-| mainnet blocked | Explict Error | Good | Suggest flag |
+| mainnet blocked | Explicit Error | Good | Suggest flag |
 | signing failure | Throws WASM error | Fair | Catch and format SDK errors |
 | output write failure | Throws FS error | Good | None |
 
 ## 15. Findings
 
 ### GOOD
-- Pipeline desacoplado: plan → sign → send.
-- Signer abstraction permite extensiones futuras.
-- Mainnet guardrails previenen errores catastróficos por defecto.
-- No hay filtración de llaves privadas (`privateKey`) ni contraseñas en el artefacto de salida JSON.
+- Decoupled pipeline: plan → sign → send.
+- Signer abstraction allows for future extensions.
+- Mainnet guardrails prevent catastrophic errors by default.
+- No leakage of private keys (`privateKey`) or passwords in the JSON output artifact.
 
 ### NEEDS HARDENING
-- `contentHash` del input no se verifica antes de firmar (posibilidad de tampering silencioso).
-- Timestamp metadata (`createdAt`, `signedId` basado en `Date.now()`) rompe totalmente la reproducibilidad del artefacto.
-- Lineage no formalizado en un bloque estándar (solo uso ad-hoc de `sourcePlanId`).
-- Keystore V2 no está integrado en el flujo de firma, obligando a los desarrolladores a depender de texto plano o variables de entorno.
-- El almacén de cuentas local en plaintext representa un riesgo de seguridad heredado.
+- `contentHash` of the input is not verified before signing (possibility of silent tampering).
+- Timestamp metadata (`createdAt`, `signedId` based on `Date.now()`) completely breaks artifact reproducibility.
+- Lineage not formalized in a standard block (only ad-hoc use of `sourcePlanId`).
+- Keystore V2 is not integrated into the signing flow, forcing developers to rely on plaintext or environment variables.
+- The local plaintext account store represents a legacy security risk.
 
 ## 16. Recommendations
 
 ### P0 — Deterministic Artifact Hardening
-- **Verificar `contentHash`**: Recalcular y validar el hash del `txPlan` antes de proceder a la firma.
-- **Separar Metadata**: Excluir campos puramente temporales (como `createdAt`) del cálculo de la identidad o reemplazar `signedId` por un hash canónico basado solo en inputs deterministas (ej. txPlan hash + signer pubkey).
-- **Linaje Formal**: Usar un bloque `lineage` estricto que apunte invariablemente a los artefactos padre.
-- **Stable Identity**: Asegurar que `same txPlan + same signer = exact same artifact hash`.
+- **Verify `contentHash`**: Recalculate and validate the `txPlan` hash before proceeding to sign.
+- **Separate Metadata**: Exclude purely temporal fields (like `createdAt`) from the identity calculation or replace `signedId` with a canonical hash based only on deterministic inputs (e.g., txPlan hash + signer pubkey).
+- **Formal Lineage**: Use a strict `lineage` block that invariably points to parent artifacts.
+- **Stable Identity**: Ensure that `same txPlan + same signer = exact same artifact hash`.
 
 ### P1 — DX Consistency
-- **Ephemeral Keystore Prompt**: Añadir lógica para detectar si el account resuelto reside en el keystore V2 cifrado, y de ser así, solicitar interactivamente la contraseña.
-- **Unified Signer Abstraction**: Integrar plenamente el backend Keystore como una opción válida dentro de `HardkasTxPlanSigner`.
-- **Logs redactados**: Garantizar que bajo ninguna circunstancia se impriman claves por stdout en modo verbose.
+- **Ephemeral Keystore Prompt**: Add logic to detect if the resolved account resides in the encrypted Keystore V2, and if so, interactively request the password.
+- **Unified Signer Abstraction**: Fully integrate the Keystore backend as a valid option within `HardkasTxPlanSigner`.
+- **Redacted Logs**: Ensure that under no circumstances are keys printed to stdout in verbose mode.
 
 ### P2 — Optional Guards
-- **Mainnet Interactive**: Proveer advertencia interactiva para mainnet si la terminal es TTY, incluso sin el flag (opcional de DX).
-- **Mejores mensajes de error**: Clarificar exactamente qué backend de firma se está intentando usar si la cuenta no es soportada.
+- **Mainnet Interactive**: Provide interactive warning for mainnet if the terminal is a TTY, even without the flag (optional DX).
+- **Better Error Messages**: Clarify exactly which signing backend is being attempted if the account is not supported.
 
 ## 17. Proposed `tx sign` v1 Flow
 
-El flujo ideal para la versión estable (v1) debería ser:
+The ideal flow for the stable version (v1) should be:
 
-1. **Load txPlan**: Cargar archivo JSON.
-2. **Validate schema**: Comprobar estructura `hardkas.txPlan`.
-3. **Verify contentHash**: Comprobar que el archivo no fue alterado post-planificación.
-4. **Resolve signer backend**: Determinar si se usa ENV, simnet o Keystore.
-5. **If keystore**: Pedir (prompt) la contraseña temporalmente.
-6. **Check account**: Validar que la llave corresponde a `from` address.
-7. **Mainnet guard**: Bloquear o advertir.
-8. **Sign deterministic payload**: Llamada al WASM SDK.
-9. **Zeroize secrets**: Limpiar Buffers en memoria (best effort).
-10. **Create signedTx artifact**: Construir con linaje formal y hash determinista puro (sin Date.now).
-11. **Write atomically**: Guardar el resultado.
-12. **Print redacted summary**: Confirmar al usuario.
+1. **Load txPlan**: Load JSON file.
+2. **Validate schema**: Check `hardkas.txPlan` structure.
+3. **Verify contentHash**: Check that the file was not altered post-planning.
+4. **Resolve signer backend**: Determine whether to use ENV, simnet, or Keystore.
+5. **If keystore**: Request (prompt) the password temporarily.
+6. **Check account**: Validate that the key corresponds to the `from` address.
+7. **Mainnet guard**: Block or warn.
+8. **Sign deterministic payload**: Call to WASM SDK.
+9. **Zeroize secrets**: Clear Buffers in memory (best effort).
+10. **Create signedTx artifact**: Construct with formal lineage and pure deterministic hash (without Date.now).
+11. **Write atomically**: Save the result.
+12. **Print redacted summary**: Confirm to user.
 
-*Nota:* No es necesaria una sesión persistente, el sistema debe ser seguro localmente por defecto sin emular infraestructura de wallet de producción.
+*Note:* A persistent session is not necessary; the system must be secure locally by default without emulating production wallet infrastructure.
 
 ## 18. Tests Recommended
 - Sign valid `txPlan`.
@@ -235,38 +235,38 @@ El flujo ideal para la versión estable (v1) debería ser:
 - Reject tampered `txPlan` hash.
 - Reject mainnet unless allow flag.
 - Sign with env key.
-- Sign with plaintext legacy key (si sigue soportado temporalmente).
-- Sign with keystore prompt (cuando se implemente).
+- Sign with plaintext legacy key (if still temporarily supported).
+- Sign with keystore prompt (when implemented).
 - Wrong keystore password fails.
 - `signedTx` contains no private key.
 - Source/parent lineage points to `txPlan`.
-- Same plan + same signer gives stable payload (Determinismo puro).
+- Same plan + same signer gives stable payload (Pure determinism).
 - Metadata excluded from identity hash.
 - Output write failure does not corrupt previous artifact.
 
 ## 19. Documentation Updates Required
-- Referencia del comando `tx sign`.
-- Estado de los signer backends.
-- Estado de soporte del Keystore V2 y sus limitaciones actuales.
-- Warning sobre el uso de plaintext (`accounts.real.json`).
-- Warning sobre protección Mainnet.
-- Documentación sobre Artifact lineage.
-- Documentación sobre Deterministic artifact reproducibility.
+- `tx sign` command reference.
+- Status of signer backends.
+- Support status of Keystore V2 and its current limitations.
+- Warning on plaintext usage (`accounts.real.json`).
+- Warning on Mainnet protection.
+- Documentation on Artifact lineage.
+- Documentation on Deterministic artifact reproducibility.
 
 ## 20. Checklist
-- [x] Revisar signer abstraction
-- [x] Revisar keystore integration
-- [x] Revisar mainnet protections
-- [x] Revisar artifact lineage
-- [x] Revisar determinismo
-- [x] No modificar lógica runtime
-- [x] No modificar crypto
-- [x] No modificar runners
-- [x] No modificar comandos
+- [x] Review signer abstraction
+- [x] Review keystore integration
+- [x] Review mainnet protections
+- [x] Review artifact lineage
+- [x] Review determinism
+- [x] No modifications to runtime logic
+- [x] No modifications to crypto
+- [x] No modifications to runners
+- [x] No modifications to commands
 
 ## Guardrails
-- No se modificó lógica runtime.
-- No se modificó criptografía.
-- No se modificaron runners.
-- No se modificaron comandos.
-- Esta auditoría es documental.
+- No modifications to runtime logic.
+- No modifications to cryptography.
+- No modifications to runners.
+- No modifications to commands.
+- This is a documentary audit.

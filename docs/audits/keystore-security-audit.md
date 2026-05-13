@@ -1,132 +1,135 @@
 # HardKas Keystore Security Audit
 
 ## 1. Scope
-Esta auditoría analiza exhaustivamente el sistema de gestión de cuentas reales y almacenamiento persistente de HardKas, cubriendo:
-- Almacenamiento local en el sistema de archivos (`.hardkas/`).
-- Esquema de cifrado y derivación de claves (KDF).
-- Flujos de generación, importación y cambio de contraseña.
-- Modelo de sesión (Unlock/Lock).
-- Gestión de secretos en memoria y prevención de fugas.
-- Integración con el proceso de firma de transacciones L1 y L2.
+This audit comprehensively analyzes the management system for real accounts and persistent storage in HardKas, covering:
+- Local storage in the file system (`.hardkas/`).
+- Encryption and Key Derivation Function (KDF) scheme.
+- Generation, import, and password change flows.
+- Session model (Unlock/Lock).
+- In-memory secret management and leak prevention.
+- Integration with L1 and L2 transaction signing processes.
 
 ## 2. Executive Summary
-HardKas implementa actualmente dos sistemas paralelos para cuentas reales: un almacén en texto plano (`accounts.real.json`) para desarrollo rápido y un sistema de keystore cifrado basado en archivos JSON individuales. El sistema cifrado utiliza estándares modernos (**Argon2id** y **AES-256-GCM**), lo cual es positivo. Sin embargo, existe una **brecha arquitectónica crítica**: el motor de firma de transacciones solo soporta cuentas basadas en variables de entorno o texto plano, dejando el sistema cifrado como una funcionalidad de "solo verificación" sin utilidad práctica para el signing real.
+HardKas currently implements two parallel systems for real accounts: a plaintext store (`accounts.real.json`) for rapid development and an encrypted keystore system based on individual JSON files. The encrypted system uses modern standards (**Argon2id** and **AES-256-GCM**), which is positive. However, there is a **critical architectural gap**: the transaction signing engine only supports accounts based on environment variables or plaintext, leaving the encrypted system as a "verification-only" feature with no practical utility for real signing.
 
-**Conclusión Técnica**: HardKas posee capacidades reales de signing y networking, pero el flujo operativo principal **bypasséa** el sistema de seguridad. El camino de menor resistencia para el desarrollador (`accounts real generate`) es el más inseguro. El sistema es robusto como herramienta de tooling/RPC, pero se encuentra en estado **Alpha** en cuanto a infraestructura de wallet y manejo de secretos.
+**Technical Conclusion**: HardKas possesses real signing and networking capabilities, but the main operational flow **bypasses** the security system. The path of least resistance for the developer (`accounts real generate`) is the most insecure. The system is robust as a tooling/RPC tool, but it is in an **Alpha** state regarding wallet infrastructure and secret handling.
 
-**Estado General: CRITICAL DX SECURITY FAILURE / HIGH RISK**
+**General Status: CRITICAL DX SECURITY FAILURE / HIGH RISK**
 
 ## 3. Commands Covered
 
 | Command | Runner / Handler | Uses keystore | Risk | Notes |
 | :--- | :--- | :--- | :--- | :--- |
-| `accounts real init` | `accounts-real-init-runner` | No | LOW | Inicializa el almacén (actualmente texto plano). |
-| `accounts real generate`| `accounts-real-generate-runner`| No | **HIGH** | Genera llaves y las guarda en texto plano. |
-| `accounts real import` | `accounts-keystore-runners` | Sí (opcional)| MEDIUM | Soporta importación cifrada (Keystore V2). |
-| `accounts real unlock` | `accounts-keystore-runners` | Sí | LOW | Solo verifica la contraseña; no crea sesión. |
-| `accounts real lock` | `accounts.ts` (inline) | No | LOW | Comando superficial; no limpia memoria/disco. |
-| `accounts real change-password`| `accounts-keystore-runners`| Sí | MEDIUM | Recifra el payload atómicamente. |
-| `tx sign` | `tx-sign-runner` | No | **HIGH** | Solo firma desde ENV o texto plano. |
-| `l2 tx sign` | `l2-tx-runners` | No | **HIGH** | No integrado con el keystore cifrado. |
-| `accounts list` | `accounts.ts` | Sí | LOW | Lee metadatos (address) sin desencriptar. |
-| `faucet` | `accounts-fund-runner` | No | LOW | Usa direcciones públicas. |
+| `accounts real init` | `accounts-real-init-runner` | No | LOW | Initializes the store (currently plaintext). |
+| `accounts real generate`| `accounts-real-generate-runner`| No | **HIGH** | Generates keys and saves them in plaintext. |
+| `accounts real import` | `accounts-keystore-runners` | Yes (optional)| MEDIUM | Supports encrypted import (Keystore V2). |
+| `accounts real unlock` | `accounts-keystore-runners` | Yes | LOW | Only verifies the password; does not create a session. |
+| `accounts real lock` | `accounts.ts` (inline) | No | LOW | Surface-level command; does not clear memory/disk. |
+| `accounts real change-password`| `accounts-keystore-runners`| Yes | MEDIUM | Re-encrypts the payload atomically. |
+| `tx sign` | `tx-sign-runner` | No | **HIGH** | Only signs from ENV or plaintext. |
+| `l2 tx sign` | `l2-tx-runners` | No | **HIGH** | Not integrated with the encrypted keystore. |
+| `accounts list` | `accounts.ts` | Yes | LOW | Reads metadata (address) without decrypting. |
+| `faucet` | `accounts-fund-runner` | No | LOW | Uses public addresses. |
 
-## 4. Storage Local
+## 4. Local Storage
 
 | Item | Path / Location | Contains secrets | Encrypted | Risk | Notes |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| Plaintext Store | `.hardkas/accounts.real.json` | **YES** | **NO** | **CRITICAL** | Almacena llaves privadas en JSON plano. |
-| Encrypted Keystore| `.hardkas/keystore/*.json` | YES | YES | LOW | Formato Keystore V2 (AES-GCM). |
-| Project Config | `hardkas.config.ts` | No | N/A | LOW | Solo referencia nombres de variables ENV. |
-| Environment | `.env` | YES | NO | MEDIUM | Práctica estándar, pero riesgo de fuga. |
+| Plaintext Store | `.hardkas/accounts.real.json` | **YES** | **NO** | **CRITICAL** | Stores private keys in plain JSON. |
+| Encrypted Keystore| `.hardkas/keystore/*.json` | YES | YES | LOW | Keystore V2 format (AES-GCM). |
+| Project Config | `hardkas.config.ts` | No | N/A | LOW | Only references ENV variable names. |
+| Environment | `.env` | YES | NO | MEDIUM | Standard practice, but leak risk exists. |
 
 > [!CAUTION]
-> HardKas no genera un archivo `.gitignore` por defecto. Esto significa que tanto el almacén en texto plano como el keystore cifrado son propensos a ser subidos a repositorios públicos accidentalmente.
+> HardKas does not generate a `.gitignore` file by default. This means both the plaintext store and the encrypted keystore are prone to being accidentally uploaded to public repositories.
 
 ## 5. Keystore File Format (V2)
 
 | Field | Meaning | Sensitive | Encrypted | Notes |
 | :--- | :--- | :--- | :--- | :--- |
-| `version` | Formato del contenedor | No | No | `2.0.0` |
-| `type` | Identificador de tipo | No | No | `hardkas.encryptedKeystore.v2` |
-| `kdf` | Parámetros de derivación | No | No | Algoritmo, salt, iteraciones, memoria. |
-| `cipher` | Parámetros de cifrado | No | No | Algoritmo, nonce, auth tag. |
-| `encryptedPayload` | Datos sensibles | **YES** | **YES** | Contiene `privateKey` y `address`. |
-| `metadata` | Información pública | No | No | Label, network, address (duplicado para listado). |
+| `version` | Container format | No | No | `2.0.0` |
+| `type` | Type identifier | No | No | `hardkas.encryptedKeystore.v2` |
+| `kdf` | Derivation parameters | No | No | Algorithm, salt, iterations, memory. |
+| `cipher` | Encryption parameters | No | No | Algorithm, nonce, auth tag. |
+| `encryptedPayload` | Sensitive data | **YES** | **YES** | Contains `privateKey` and `address`. |
+| `metadata` | Public information | No | No | Label, network, address (duplicated for listing). |
 
 ## 6. Encryption Review
 
 | Component | Implementation | Strength | Risk | Recommendation |
 | :--- | :--- | :--- | :--- | :--- |
-| KDF | Argon2id | **HIGH** | LOW | Parámetros por defecto (64MB) son adecuados para dev. |
-| Cipher | AES-256-GCM | **HIGH** | LOW | Cifrado autenticado estándar en la industria. |
-| Nonce/IV | `crypto.randomBytes(12)` | **HIGH** | LOW | Unicidad garantizada por ejecución. |
-| Salt | `crypto.randomBytes(16)` | **HIGH** | LOW | Salt aleatorio por cada entrada. |
-| Integrity | GCM Auth Tag | **HIGH** | LOW | Previene manipulación del archivo cifrado. |
+| KDF | Argon2id | **HIGH** | LOW | Default parameters (64MB) are suitable for dev. |
+| Cipher | AES-256-GCM | **HIGH** | LOW | Industry-standard authenticated encryption. |
+| Nonce/IV | `crypto.randomBytes(12)` | **HIGH** | LOW | Uniqueness guaranteed per execution. |
+| Salt | `crypto.randomBytes(16)` | **HIGH** | LOW | Random salt for each entry. |
+| Integrity | GCM Auth Tag | **HIGH** | LOW | Prevents manipulation of the encrypted file. |
 
 ## 7. Password Prompt Flow
 
 | Flow | Prompt hidden | Confirmation | Empty allowed | Strength check | Risk |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| `import` | Sí (Enquirer) | Sí | No | Mínimo 8 caracteres | LOW |
-| `generate` | N/A | N/A | N/A | N/A | **HIGH** (Solo texto plano) |
-| `unlock` | Sí | No | No | No | LOW |
-| `change-password` | Sí | Sí | No | Mínimo 8 caracteres | LOW |
-| `tx sign` | **NO** | No | N/A | N/A | **HIGH** (Falla si no está en ENV) |
+| `import` | Yes (Enquirer) | Yes | No | Minimum 8 characters | LOW |
+| `generate` | N/A | N/A | N/A | N/A | **HIGH** (Plaintext only) |
+| `unlock` | Yes | No | No | No | LOW |
+| `change-password` | Yes | Yes | No | Minimum 8 characters | LOW |
+| `tx sign` | **NO** | No | N/A | N/A | **HIGH** (Fails if not in ENV) |
 
 ## 8. Unlock Flow
-El comando `accounts real unlock` actualmente funciona como un **verificador de integridad**:
-1. Carga el archivo JSON.
-2. Pide la contraseña.
-3. Deriva la clave y desencripta el payload.
-4. Si tiene éxito, informa al usuario.
-**Persistencia**: Ninguna. La llave desencriptada se limpia de memoria inmediatamente. No se crea ningún archivo de sesión ni token temporal.
+The `accounts real unlock` command currently functions as an **integrity verifier**:
+1. Loads the JSON file.
+2. Prompts for the password.
+3. Derives the key and decrypts the payload.
+4. If successful, informs the user.
+**Persistence**: None. The decrypted key is cleared from memory immediately. No session file or temporary token is created.
 
 ## 9. Lock Flow
-Clasificación: **SUPERFICIAL / NO-OP**
-El comando `lock` simplemente imprime un mensaje indicando que la sesión ha sido cerrada. Dado que no existe un modelo de sesión persistente ni un agente en memoria (daemon), el comando no realiza ninguna acción técnica real.
+Classification: **SURFACE-LEVEL / NO-OP**
+The `lock` command simply prints a message indicating that the session has been closed. Since there is no persistent session model or in-memory agent (daemon), the command performs no real technical action.
 
 ## 10. Session Model
+
 | Aspect | Current behavior | Risk | Recommendation |
 | :--- | :--- | :--- | :--- |
-| Persistence | None | LOW | No hay riesgo de robo de token de sesión (no existe). |
-| User Experience| Mala | MEDIUM | Obliga a ingresar contraseña en cada firma (si se implementara). |
-| Implementation | Stateless | LOW | Cada operación de descifrado es independiente. |
+| Persistence | None | LOW | No risk of session token theft (none exists). |
+| User Experience| Poor | MEDIUM | Forces entering password for every signature (if implemented). |
+| Implementation | Stateless | LOW | Each decryption operation is independent. |
 
 ## 11. Memory Leak / Secret Lifetime Review
+
 | Secret | Representation | Lifetime | Zeroized | Risk |
 | :--- | :--- | :--- | :--- | :--- |
-| Derived Key | `Buffer` | Corto (ms) | **YES** (`fill(0)`) | LOW |
-| Private Key | `string` | Corto (ms) | **NO** | MEDIUM (Garbage Collection) |
-| Password | `string` | Corto (ms) | **NO** | MEDIUM (Garbage Collection) |
+| Derived Key | `Buffer` | Short (ms) | **YES** (`fill(0)`) | LOW |
+| Private Key | `string` | Short (ms) | **NO** | MEDIUM (Garbage Collection) |
+| Password | `string` | Short (ms) | **NO** | MEDIUM (Garbage Collection) |
 
 > [!WARNING]
-> Aunque se utiliza `Buffer.fill(0)` para la clave derivada, las llaves privadas y contraseñas circulan como strings de JavaScript, lo que dificulta su borrado total de la memoria RAM debido a cómo funciona el motor V8.
+> Although `Buffer.fill(0)` is used for the derived key, private keys and passwords circulate as JavaScript strings, making their total removal from RAM difficult due to how the V8 engine works.
 
 ## 12. Import / Generate Review
-- **Entropy**: Usa `crypto.randomBytes` y el generador interno de Kaspa SDK. Correcto.
-- **Validation**: Valida el prefijo de la dirección (`kaspa:`, etc.).
-- **Bypass de Seguridad**: El runner de generación **solo guarda en texto plano**. Esto incentiva al usuario a permanecer en el flujo inseguro, convirtiendo al Keystore V2 en una característica decorativa para la mayoría de los casos de uso iniciales.
+- **Entropy**: Uses `crypto.randomBytes` and the Kaspa SDK's internal generator. Correct.
+- **Validation**: Validates the address prefix (`kaspa:`, etc.).
+- **Security Bypass**: The generation runner **only saves in plaintext**. This incentivizes the user to remain in the insecure flow, turning Keystore V2 into a decorative feature for most initial use cases.
 
-## 13. Fragmentación Arquitectónica (Hallazgo Clave)
-Se ha identificado una separación peligrosa entre dos mundos desconectados:
+## 13. Architectural Fragmentation (Key Finding)
+A dangerous separation has been identified between two disconnected worlds:
 
-1.  **Flujo Operativo (Inseguro)**: `generate` -> `.hardkas/accounts.real.json` (Texto Plano) -> `tx sign`.
-2.  **Flujo de Seguridad (Incompleto)**: `import --encrypted` -> `.hardkas/keystore/*.json` -> `unlock` (Solo verificación).
+1.  **Operational Flow (Insecure)**: `generate` -> `.hardkas/accounts.real.json` (Plaintext) -> `tx sign`.
+2.  **Security Flow (Incomplete)**: `import --encrypted` -> `.hardkas/keystore/*.json` -> `unlock` (Verification only).
 
-**El problema real es que el Flujo Operativo no tiene forma de consumir el Flujo de Seguridad.** Keystore V2 no es actualmente el "Source of Truth" criptográfico para las operaciones de red.
+**The real problem is that the Operational Flow has no way to consume the Security Flow.** Keystore V2 is currently not the cryptographic "Source of Truth" for network operations.
 
 ## 13. Change Password Review
-- **Atomicidad**: No es atómico. Si el proceso falla durante `saveEncryptedKeystore`, el archivo original se sobrescribe.
-- **Seguridad**: Correcto. Desencripta el payload antiguo y crea un nuevo contenedor V2 con nuevos salts y nonces.
+- **Atomicity**: Not atomic. If the process fails during `saveEncryptedKeystore`, the original file is overwritten.
+- **Security**: Correct. Decrypts the old payload and creates a new V2 container with new salts and nonces.
 
 ## 14. Integration With Signing
+
 | Sign flow | Reads keystore | Prompts password | Output artifact contains secret | Mainnet guard | Risk |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| `tx sign` | No | No | No | Sí | **HIGH** |
+| `tx sign` | No | No | No | Yes | **HIGH** |
 | `l2 tx sign` | No | No | No | N/A | **HIGH** |
 
-**Hallazgo Crítico**: Los procesos de firma **no consultan el Keystore cifrado**. Solo buscan llaves en variables de entorno (`process.env`) o en el almacén de texto plano. Esto obliga al usuario a elegir entre "Seguridad sin firma" (Keystore) o "Firma sin seguridad" (Texto plano/ENV).
+**Critical Finding**: Signing processes **do not consult the encrypted Keystore**. They only look for keys in environment variables (`process.env`) or in the plaintext store. This forces the user to choose between "Security without signing" (Keystore) or "Signing without security" (Plaintext/ENV).
 
 ## 15. Maturity Level Assessment
 
@@ -142,31 +145,31 @@ Se ha identificado una separación peligrosa entre dos mundos desconectados:
 ## 16. Security Findings
 
 ### Critical
-- **Architectural Bypass**: El sistema de seguridad existe, pero el flujo operativo principal (Signing) lo ignora.
-- **Texto Plano por Defecto**: `accounts.real.json` almacena llaves privadas sin cifrar. Es el sistema usado por `generate` por defecto.
+- **Architectural Bypass**: The security system exists, but the main operational flow (Signing) ignores it.
+- **Plaintext by Default**: `accounts.real.json` stores private keys unencrypted. It is the system used by `generate` by default.
 
 ### High
-- **Ausencia de .gitignore**: El comando `init` no protege la carpeta `.hardkas/`, aumentando el riesgo de fuga masiva de llaves.
-- **Lock Superficial**: El comando `lock` genera una falsa sensación de seguridad al no tener un estado de sesión que cerrar.
+- **Absence of .gitignore**: The `init` command does not protect the `.hardkas/` folder, increasing the risk of massive key leakage.
+- **Surface-level Lock**: The `lock` command gives a false sense of security by having no session state to close.
 
 ### Medium
-- **Falta de Atomicidad**: La escritura de archivos JSON puede corromperse si el proceso se interrumpe, perdiendo el acceso a la llave.
-- **Fuga en Memoria**: Uso extensivo de strings para material sensible en lugar de Uint8Arrays/Buffers con zeroization estricta.
+- **Lack of Atomicity**: JSON file writing can be corrupted if the process is interrupted, losing access to the key.
+- **Memory Leak**: Extensive use of strings for sensitive material instead of Uint8Arrays/Buffers with strict zeroization.
 
 ## 16. Recommendations
 
 ### Critical
-- **Eliminar Texto Plano**: Migrar `accounts real generate` para que use el sistema de Keystore cifrado de forma obligatoria o por defecto.
-- **Integrar Signing + Keystore**: Modificar `signTxPlanArtifact` para que pida la contraseña si detecta una cuenta de tipo Keystore.
+- **Eliminate Plaintext**: Migrate `accounts real generate` to use the encrypted Keystore system by default or mandatorily.
+- **Integrate Signing + Keystore**: Modify `signTxPlanArtifact` to prompt for the password if it detects a Keystore-type account.
 
 ### High
-- **Generar .gitignore**: `hardkas init` DEBE crear un `.gitignore` que excluya `.hardkas/`.
-- **Atomic Writes**: Usar archivos temporales + rename para guardar el keystore y evitar corrupciones.
-- **Documentar Trust Boundary**: Aclarar que el Keystore es para desarrollo local y no para custodia de fondos de producción.
+- **Generate .gitignore**: `hardkas init` MUST create a `.gitignore` that excludes `.hardkas/`.
+- **Atomic Writes**: Use temporary files + rename to save the keystore and avoid corruption.
+- **Document Trust Boundary**: Clarify that the Keystore is for local development and not for production fund custody.
 
 ### Medium
-- **Implementar Sesión (Opcional)**: Considerar un agente en memoria con TTL para evitar prompts repetitivos de contraseña.
-- **Zeroization**: Migrar el manejo de llaves a `Uint8Array` para permitir limpieza manual de memoria.
+- **Implement Session (Optional)**: Consider an in-memory agent with TTL to avoid repetitive password prompts.
+- **Zeroization**: Migrate key handling to `Uint8Array` to allow manual memory clearing.
 
 ## 17. Proposed Keystore v1 Hardening
 
@@ -198,32 +201,32 @@ type KeystoreEntryV1 = {
 ```
 
 ## 18. Tests Recommended
-- `generate` crea entrada cifrada por defecto.
-- `sign` pide contraseña si la cuenta es del keystore.
-- `.gitignore` se crea con los patrones correctos.
-- Fallo de escritura atómica no corrompe el archivo original.
-- El artifact firmado no contiene la llave privada en ningún campo oculto.
+- `generate` creates encrypted entry by default.
+- `sign` prompts for password if the account is from the keystore.
+- `.gitignore` is created with the correct patterns.
+- Atomic write failure does not corrupt the original file.
+- The signed artifact contains no private key in any hidden field.
 
 ## 19. Documentation Updates Required
-- Guía de seguridad: "Cómo proteger tus llaves en HardKas".
-- Explicación de por qué `lock/unlock` son stateless por ahora.
-- Advertencia sobre el uso de variables de entorno en sistemas compartidos (history, logs).
+- Security guide: "How to protect your keys in HardKas".
+- Explanation of why `lock/unlock` are stateless for now.
+- Warning on the use of environment variables on shared systems (history, logs).
 
 ## 20. Checklist
-- [x] Revisar storage local
-- [x] Revisar encryption
-- [x] Revisar unlock flow
-- [x] Revisar password prompts
-- [x] Revisar memory leaks
-- [x] Revisar session model
-- [x] No modificar lógica runtime
-- [x] No modificar crypto
-- [x] No modificar keystore
-- [x] No modificar comandos
+- [x] Review local storage
+- [x] Review encryption
+- [x] Review unlock flow
+- [x] Review password prompts
+- [x] Review memory leaks
+- [x] Review session model
+- [x] No modifications to runtime logic
+- [x] No modifications to crypto
+- [x] No modifications to keystore
+- [x] No modifications to commands
 
 ## Guardrails
-No se modificó lógica runtime.
-No se modificó criptografía.
-No se modificó keystore.
-No se modificaron comandos.
-Esta auditoría es documental.
+- No modifications to runtime logic.
+- No modifications to cryptography.
+- No modifications to keystore.
+- No modifications to commands.
+- This is a documentary audit.

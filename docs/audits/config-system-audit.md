@@ -1,186 +1,180 @@
 # HardKas Config System Audit
 
 ## 1. Scope
-Esta auditoría analiza el sistema de configuración integral de HardKas, cubriendo:
-- La definición de usuario en `hardkas.config.ts`.
-- El paquete `@hardkas/config` (loader, tipos, resolución y valores por defecto).
-- La validación (o falta de ella) en tiempo de ejecución.
-- La integración con el CLI y el SDK.
-- La gestión de redes (L1 y L2) y cuentas.
+This audit analyzes the HardKas comprehensive configuration system, covering:
+- User definition in `hardkas.config.ts`.
+- The `@hardkas/config` package (loader, types, resolution, and default values).
+- Runtime validation (or lack thereof).
+- Integration with the CLI and SDK.
+- Management of networks (L1 and L2) and accounts.
 
 ## 2. Executive Summary
-HardKas utiliza un sistema de configuración basado en TypeScript, cargado dinámicamente mediante **jiti**. Esto permite una experiencia de desarrollador (DX) fluida con autocompletado nativo. El esquema está definido mediante interfaces de TypeScript en `@hardkas/config`, pero **carece de validación en tiempo de ejecución basada en esquemas**. Soporta arquitecturas multi-red (L1 Kaspa y L2 Igra) y una resolución de cuentas multi-capa. Los riesgos principales detectados son la ejecución de código arbitrario durante la carga y la ausencia de una validación estructural que prevenga errores de ejecución crípticos.
+HardKas uses a TypeScript-based configuration system, dynamically loaded via **jiti**. This allows for a smooth Developer Experience (DX) with native autocompletion. The schema is defined using TypeScript interfaces in `@hardkas/config`, but **lacks schema-based runtime validation**. It supports multi-network architectures (L1 Kaspa and L2 Igra) and multi-layer account resolution. The primary risks detected are the execution of arbitrary code during loading and the absence of structural validation to prevent cryptic runtime errors.
 
 ## 3. Config Entry Points
 
-| Entry point | Archivo | Responsabilidad | Observaciones |
+| Entry point | File | Responsibility | Observations |
 | :--- | :--- | :--- | :--- |
-| `defineHardkasConfig` | `config/src/define.ts` | Ayudante de tipado para el usuario | No realiza validación lógica, solo inferencia de tipos TS. |
-| `loadHardkasConfig` | `config/src/load.ts` | Localización y carga del archivo | Usa `jiti` e importa dinámicamente el archivo TS/JS. |
-| `resolveNetworkTarget`| `config/src/resolve.ts` | Mapeo de nombre a configuración real | Gestiona el fallback hacia `defaultNetwork` o `simnet`. |
-| `Hardkas.open()` | `sdk/src/index.ts` | Inicialización del SDK con config | Punto de entrada principal para herramientas programáticas. |
-| `hardkas config show` | `cli/src/commands/config.ts`| Inspección visual de config | Muestra el estado cargado pero no valida integridad profunda. |
-| `hardkas init` | `cli/src/commands/init.ts` | Generación de proyecto base | Crea el archivo `hardkas.config.ts` inicial. |
+| `defineHardkasConfig` | `config/src/define.ts` | Typing helper for the user | No logical validation, only TS type inference. |
+| `loadHardkasConfig` | `config/src/load.ts` | File localization and loading | Uses `jiti` and dynamically imports the TS/JS file. |
+| `resolveNetworkTarget`| `config/src/resolve.ts` | Mapping name to real configuration | Manages fallback to `defaultNetwork` or `simnet`. |
+| `Hardkas.open()` | `sdk/src/index.ts` | SDK initialization with config | Main entry point for programmatic tools. |
+| `hardkas config show` | `cli/src/commands/config.ts`| Visual config inspection | Shows loaded status but does not validate deep integrity. |
+| `hardkas init` | `cli/src/commands/init.ts` | Base project generation | Creates the initial `hardkas.config.ts` file. |
 
 ## 4. Config Schema
 
-| Campo | Tipo | Requerido | Default | Validación | Notas |
+| Field | Type | Required | Default | Validation | Notes |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| `defaultNetwork` | `string` | No | `"simnet"` | Ninguna | Define la red activa por defecto. |
-| `networks` | `Record<string, NetworkTarget>`| No | Built-ins | Ninguna | Mapa de perfiles de red (L1/L2). |
-| `accounts` | `Record<string, AccountConfig>`| No | Deterministic | Ninguna | Mapa de identidades y signers. |
-| `paths` | `NOT_PRESENT` | — | — | — | Actualmente los paths están hardcoded en runners/core. |
-| `l2` | `NOT_PRESENT` | — | — | — | La configuración L2 vive dentro de `networks`. |
+| `defaultNetwork` | `string` | No | `"simnet"` | None | Defines the default active network. |
+| `networks` | `Record<string, NetworkTarget>`| No | Built-ins | None | Map of network profiles (L1/L2). |
+| `accounts` | `Record<string, AccountConfig>`| No | Deterministic | None | Map of identities and signers. |
+| `paths` | `NOT_PRESENT` | — | — | — | Paths are currently hardcoded in runners/core. |
+| `l2` | `NOT_PRESENT` | — | — | — | L2 configuration lives within `networks`. |
 
 ## 5. Network Kinds
 
-| kind | Tipo de red | Campos requeridos | Campos opcionales | Usado por | Estado |
+| kind | Network type | Required fields | Optional fields | Used by | Status |
 | :--- | :--- | :--- | :--- | :--- | :--- |
 | `simulated` | L1 In-memory | `kind` | None | Localnet | SUPPORTED |
-| `kaspa-node` | Nodo local (Docker)| `kind`, `network` | `rpcUrl`, `dataDir`, `binaryPath` | Node Runner | SUPPORTED |
-| `kaspa-rpc` | Nodo remoto (RPC) | `kind`, `network`, `rpcUrl` | None | CLI / SDK | SUPPORTED |
-| `igra` | L2 (EVM based) | `kind`, `chainId`, `rpcUrl`| `currencySymbol` | L2 Runners | PARTIAL (Revisar integración con perfiles) |
+| `kaspa-node` | Local node (Docker)| `kind`, `network` | `rpcUrl`, `dataDir`, `binaryPath` | Node Runner | SUPPORTED |
+| `kaspa-rpc` | Remote node (RPC) | `kind`, `network`, `rpcUrl` | None | CLI / SDK | SUPPORTED |
+| `igra` | L2 (EVM based) | `kind`, `chainId`, `rpcUrl`| `currencySymbol` | L2 Runners | PARTIAL (Review profile integration) |
 
 ## 6. Accounts Schema
 
-| Account kind | Campos | Uso | Estado | Riesgo |
+| Account kind | Fields | Use | Status | Risk |
 | :--- | :--- | :--- | :--- | :--- |
-| `simulated` | `address` | Dev workflows / Localnet | SUPPORTED | LOW (Fondos ficticios) |
-| `kaspa-private-key` | `privateKeyEnv`, `address` | Firma L1 real | SUPPORTED | MEDIUM (Requiere .env seguro) |
-| `evm-private-key` | `privateKeyEnv`, `address` | Firma L2 real | SUPPORTED | MEDIUM (Requiere .env seguro) |
-| `external-wallet` | `walletId`, `address` | Referencia externa | SUPPORTED | LOW (Solo lectura/workflow) |
+| `simulated` | `address` | Dev workflows / Localnet | SUPPORTED | LOW (Fictional funds) |
+| `kaspa-private-key` | `privateKeyEnv`, `address` | Real L1 signing | SUPPORTED | MEDIUM (Requires secure .env) |
+| `evm-private-key` | `privateKeyEnv`, `address` | Real L2 signing | SUPPORTED | MEDIUM (Requires secure .env) |
+| `external-wallet` | `walletId`, `address` | External reference | SUPPORTED | LOW (Read-only/workflow) |
 
-## 7. Loader TypeScript
+## 7. TypeScript Loader
 
-| Aspecto | Implementación real | Riesgo | Recomendación |
+| Aspect | Real implementation | Risk | Recommendation |
 | :--- | :--- | :--- | :--- |
-| Engine | `jiti` | LOW | Mantener. Es estándar y rápido. |
-| Resolución | Búsqueda hacia arriba (Upward search) | MEDIUM | Limitar a la raíz del proyecto para evitar confusiones. |
-| Extensiones | `.ts`, `.mts`, `.js`, `.mjs` | LOW | Excelente soporte multi-formato. |
-| Seguridad | Ejecución de código arbitrario | HIGH | Destacar el **Trust Boundary**. |
-| CLI Flag | Soporta `--config <path>` | LOW | Implementado consistentemente en la mayoría de comandos. |
+| Engine | `jiti` | LOW | Maintain. It is standard and fast. |
+| Resolution | Upward search | MEDIUM | Limit to project root to avoid confusion. |
+| Extensions | `.ts`, `.mts`, `.js`, `.mjs` | LOW | Excellent multi-format support. |
+| Security | Arbitrary code execution | HIGH | Highlight the **Trust Boundary**. |
+| CLI Flag | Supports `--config <path>` | LOW | Consistently implemented in most commands. |
 
 > [!IMPORTANT]
 > **Trust Boundary**: `hardkas.config.ts` is trusted code. HardKas executes this file during startup. Do not run HardKas inside untrusted repositories.
 
 ## 8. Validation Flow
+The current flow is purely reactive:
+1. `loadHardkasConfig()` localizes the file.
+2. `jiti.import()` executes the code.
+3. The exported object is obtained.
+4. **Type Guard**: TypeScript validates at compile time (if `defineHardkasConfig` is used).
+5. **Runtime**: No structural validation.
 
-El flujo actual es puramente reactivo:
-1. `loadHardkasConfig()` localiza el archivo.
-2. `jiti.import()` ejecuta el código.
-3. Se obtiene el objeto exportado.
-4. **Gualda de tipos**: TypeScript valida en tiempo de compilación (si se usa `defineHardkasConfig`).
-5. **Runtime**: No hay validación estructural.
-
-**Propuesta v1**:
-Añadir validación de esquema en tiempo de ejecución (ej. con **Zod**) para proporcionar mensajes de error unificados y descriptivos antes de que los runners fallen por campos indefinidos.
+**v1 Proposal**:
+Add runtime schema validation (e.g., with **Zod**) to provide unified and descriptive error messages before runners fail due to undefined fields.
 
 ## 9. Defaults
 
-| Default | Valor | Dónde se define | Motivo | Riesgo |
+| Default | Value | Where defined | Reason | Risk |
 | :--- | :--- | :--- | :--- | :--- |
-| `defaultNetwork` | `"simnet"` | `config/defaults.ts` | Simplicidad "out of the box" | LOW |
+| `defaultNetwork` | `"simnet"` | `config/defaults.ts` | "Out of the box" simplicity | LOW |
 | `simnet` | `{ kind: "simulated" }` | `config/defaults.ts` | Core testing environment | LOW |
-| `accounts (Runtime)`| `alice`, `bob`, `carol` | `resolve.ts` / `localnet` | Determinismo en tests y localnet | LOW |
-| `rpcUrl` (Node) | `ws://127.0.0.1:18210` | `cli/runners` / `sdk` | Puerto estándar kaspad | MEDIUM (Si colisiona) |
+| `accounts (Runtime)`| `alice`, `bob`, `carol` | `resolve.ts` / `localnet` | Determinism in tests and localnet | LOW |
+| `rpcUrl` (Node) | `ws://127.0.0.1:18210` | `cli/runners` / `sdk` | Standard kaspad port | MEDIUM (If colliding) |
 
 ## 10. `hardkas init` Template
 
-| Archivo generado | Contenido | Riesgo | Recomendación |
+| Generated file | Content | Risk | Recommendation |
 | :--- | :--- | :--- | :--- |
-| `hardkas.config.ts` | Template: `alice`, `bob` | LOW | Añadir más comentarios explicativos. |
-| `package.json` | Dependencia `@hardkas/sdk` | LOW | Incluir scripts útiles (up, test). |
-| `.gitignore` | `NOT_PRESENT` | **HIGH** | Generar por defecto para excluir `.hardkas/` y `.env`. |
+| `hardkas.config.ts` | Template: `alice`, `bob` | LOW | Add more explanatory comments. |
+| `package.json` | `@hardkas/sdk` dependency | LOW | Include useful scripts (up, test). |
+| `.gitignore` | `NOT_PRESENT` | **HIGH** | Generate by default to exclude `.hardkas/` and `.env`. |
 
 ## 11. CLI Usage of Config
 
-| Comando | Carga config | Acepta `--config` | Usa `defaultNetwork` | Usa accounts | Usa networks | Notas |
+| Command | Loads config | Accepts `--config` | Uses `defaultNetwork` | Uses accounts | Uses networks | Notes |
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
-| `config show` | Sí | Sí | Sí | Sí | Sí | Punto de inspección. |
-| `accounts list` | Sí | Sí | No | Sí | No | Mezcla config + keystore. |
-| `tx plan` | Sí | Sí | Sí | Sí | Sí | Crucial para resolución. |
-| `tx sign` | Sí | Sí | No | Sí | No | Requiere acceso a keys. |
-| `node start` | Sí | Sí | No | No | Sí | Valida el target node. |
-| `doctor` | Sí | No | Sí | No | No | Debería aceptar `--config`. |
+| `config show` | Yes | Yes | Yes | Yes | Yes | Inspection point. |
+| `accounts list` | Yes | Yes | No | Yes | No | Mixes config + keystore. |
+| `tx plan` | Yes | Yes | Yes | Yes | Yes | Crucial for resolution. |
+| `tx sign` | Yes | Yes | No | Yes | No | Requires access to keys. |
+| `node start` | Yes | Yes | No | No | Yes | Validates target node. |
+| `doctor` | Yes | No | Yes | No | No | Should accept `--config`. |
 
 ## 12. Error Messages
 
-| Error case | Mensaje actual | Bueno/Malo | Problema | Recomendación |
+| Error case | Current message | Good/Bad | Problem | Recommendation |
 | :--- | :--- | :--- | :--- | :--- |
-| Archivo no encontrado | `HardKAS config file not found at ...` | Bueno | Claro y preciso. | Ninguna. |
-| Red desconocida | `Unknown HardKAS network 'X'. Available: ...` | Bueno | Lista las opciones disponibles. | Ninguna. |
-| Error sintaxis TS | `Failed to load HardKAS config at ...: [jiti error]` | Malo | El error de jiti puede ser críptico. | Ayuda contextual. |
-| Campo faltante | `Cannot read property 'kind' of undefined` | Malo | Fallo en tiempo de ejecución. | Esquema de validación. |
+| File not found | `HardKAS config file not found at ...` | Good | Clear and precise. | None. |
+| Unknown network | `Unknown HardKAS network 'X'. Available: ...` | Good | Lists available options. | None. |
+| TS syntax error | `Failed to load HardKAS config at ...: [jiti error]` | Bad | jiti error can be cryptic. | Contextual help. |
+| Missing field | `Cannot read property 'kind' of undefined` | Bad | Runtime failure. | Validation schema. |
 
 ## 13. Security Review
-
-- **Arbitrary Code Execution**: **HIGH**. El archivo de configuración puede ejecutar procesos. HardKas asume que el usuario confía en el repositorio donde ejecuta la herramienta.
-- **Secrets in Config**: **MEDIUM**. Aunque se promueve `privateKeyEnv`, existe riesgo de hardcoding.
-- **Exposure Risk**: **HIGH**. La ausencia de un `.gitignore` generado por defecto es un riesgo de fuga de datos.
+- **Arbitrary Code Execution**: **HIGH**. The configuration file can execute processes. HardKas assumes the user trusts the repository where the tool is run.
+- **Secrets in Config**: **MEDIUM**. Although `privateKeyEnv` is promoted, there is a risk of hardcoding.
+- **Exposure Risk**: **HIGH**. The absence of a default generated `.gitignore` is a data leakage risk.
 
 ## 14. Type Safety Review
-
-- **Define Helper**: Útil para autocompletado, pero no obliga al usuario a usarlo.
-- **Discriminated Unions**: Presentes en TypeScript, pero no se aprovechan en runtime.
+- **Define Helper**: Useful for autocompletion, but does not force the user to use it.
+- **Discriminated Unions**: Present in TypeScript, but not utilized at runtime.
 
 ## 15. Comparison With Hardhat Config
 
-| Aspecto | HardKas | Hardhat | Observación |
+| Aspect | HardKas | Hardhat | Observation |
 | :--- | :--- | :--- | :--- |
-| TS Execution | Jiti | ts-node | HardKas es más ligero en dependencias. |
-| Network Defs | Basado en `kind` | Basado en URL | HardKas separa L1 de L2. |
+| TS Execution | Jiti | ts-node | HardKas is lighter on dependencies. |
+| Network Defs | Based on `kind` | Based on URL | HardKas separates L1 from L2. |
 
 ## 16. Problems Found
-
-1. **Falta de Validación Runtime**: El sistema confía ciegamente en el tipado estático de TS.
-2. **Integración L2**: Los perfiles L2 parecen depender parcialmente de built-ins; revisar la integración completa con `networks.kind = "igra"`.
-3. **Paths Hardcoded**: No se pueden configurar las rutas de `.hardkas/artifacts` desde el config.
-4. **Ausencia de .gitignore**: Riesgo de seguridad por fuga accidental de secretos.
+1. **Lack of Runtime Validation**: The system blindly trusts TS static typing.
+2. **L2 Integration**: L2 profiles seem to partially rely on built-ins; review full integration with `networks.kind = "igra"`.
+3. **Hardcoded Paths**: The `.hardkas/artifacts` paths cannot be configured from the config.
+4. **Absence of .gitignore**: Security risk due to accidental secret leakage.
 
 ## 17. Conclusion: Status
-
 **Config System Status: FUNCTIONAL BUT UNDER-VALIDATED**
 
 ### Strengths:
-- TS config nativo.
-- `defineHardkasConfig` DX (Autocompletado).
-- Tipos de red (`kind`) explícitos.
-- Excelente onboarding inicial con `simnet` por defecto.
+- Native TS config.
+- `defineHardkasConfig` DX (Autocompletion).
+- Explicit network types (`kind`).
+- Excellent initial onboarding with `simnet` by default.
 
 ### Risks:
-- No hay validación de esquema en tiempo de ejecución (runtime schema validation).
-- El config TS ejecuta código arbitrario (Trust Boundary).
-- Falta generación de `.gitignore` por defecto.
-- Rutas (`paths`) grabadas en el código (hardcoded).
-- Soporte inconsistente de `--config` en algunos comandos diagnósticos.
-- La integración de perfiles L2 personalizados requiere verificación.
+- No runtime schema validation.
+- TS config executes arbitrary code (Trust Boundary).
+- Lack of default `.gitignore` generation.
+- Hardcoded paths.
+- Inconsistent `--config` support in some diagnostic commands.
+- Custom L2 profile integration requires verification.
 
 ## 18. Recommendations
 
 ### Critical
-- **Generar .gitignore**: El comando `hardkas init` debe crear un `.gitignore`.
-- **Validación Estructural**: Añadir validación de esquema (ej. Zod) para dar errores descriptivos.
+- **Generate .gitignore**: The `hardkas init` command must create a `.gitignore`.
+- **Structural Validation**: Add schema validation (e.g., Zod) to provide descriptive errors.
 
 ### High
-- **Unificar L2 Profiles**: Asegurar que perfiles L2 del config funcionen en todo el toolchain.
-- **Configurabilidad de Paths**: Añadir el campo `paths` al esquema.
+- **Unify L2 Profiles**: Ensure config L2 profiles work throughout the toolchain.
+- **Path Configurability**: Add `paths` field to schema.
 
 ## 19. Checklist
-
-- [x] Revisar schema
-- [x] Revisar loader TS
-- [x] Revisar validation
-- [x] Revisar network kinds
-- [x] Revisar defaults
-- [x] Revisar error messages
-- [x] No modificar lógica runtime
-- [x] No modificar loader
-- [x] No modificar schema
-- [x] No modificar comandos
+- [x] Review schema
+- [x] Review TS loader
+- [x] Review validation
+- [x] Review network kinds
+- [x] Review defaults
+- [x] Review error messages
+- [x] No modifications to runtime logic
+- [x] No modifications to loader
+- [x] No modifications to schema
+- [x] No modifications to commands
 
 ## Guardrails
-No se modificó lógica runtime.
-No se modificó el loader.
-No se modificó el schema.
-No se modificaron comandos.
-Esta auditoría es documental.
+- Runtime logic was not modified.
+- The loader was not modified.
+- The schema was not modified.
+- Commands were not modified.
+- This is a documentary audit.

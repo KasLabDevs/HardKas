@@ -1,36 +1,36 @@
 # HardKas CLI Runners Audit
 
 ## 1. Scope
-Este documento presenta una auditoría exhaustiva de todos los runners implementados en el paquete `@hardkas/cli`. Se han analizado 53 archivos bajo la ruta `packages/cli/src/runners/*`, evaluando su lógica interna, dependencias de red/IO, producción de artefactos y nivel de estabilidad funcional.
+This document presents an exhaustive audit of all runners implemented in the `@hardkas/cli` package. 53 files under the `packages/cli/src/runners/*` path have been analyzed, evaluating their internal logic, network/IO dependencies, artifact production, and functional stability level.
 
 ## 2. Method
-1. **Enumeración**: Identificación de todos los archivos `.ts` en la carpeta de runners.
-2. **Análisis de Código**: Revisión de importaciones para detectar dependencias de paquetes internos (`@hardkas/*`) y externos.
-3. **Mapeo**: Relación entre runners y los comandos CLI que los invocan.
-4. **Side Effects**: Identificación de escrituras en disco, llamadas RPC, interacción con Docker y acceso al Keystore.
-5. **Clasificación**: Aplicación de la taxonomía (REAL, WRAPPER, PARTIAL, MOCK, EXPERIMENTAL).
+1. **Enumeration**: Identification of all `.ts` files in the runners folder.
+2. **Code Analysis**: Review of imports to detect internal (`@hardkas/*`) and external package dependencies.
+3. **Mapping**: Relationship between runners and the CLI commands that invoke them.
+4. **Side Effects**: Identification of disk writes, RPC calls, Docker interaction, and Keystore access.
+5. **Classification**: Application of taxonomy (REAL, WRAPPER, PARTIAL, MOCK, EXPERIMENTAL).
 
 ## 3. Runner Inventory
 
 | Runner file | Export(s) | Commands using it | Internal packages | Stability | Notes |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| `up-runner.ts` | `runUp` | `hardkas up` | `@hardkas/config` | `REAL` | Valida entorno y conectividad RPC |
-| `tx-plan-runner.ts` | `runTxPlan` | `hardkas tx plan` | `tx-builder`, `artifacts` | `REAL` | Orquesta obtención de UTXOs y construcción de plan |
-| `tx-profile-runner.ts` | `runTxProfile` | `hardkas tx profile` | `tx-builder`, `artifacts` | `REAL` | Análisis de costos y masa |
-| `tx-sign-runner.ts` | `runTxSign` | `hardkas tx sign` | `accounts`, `artifacts` | `WRAPPER` | Delega firma a `@hardkas/accounts` |
-| `tx-send-runner.ts` | `runTxSend` | `hardkas tx send` | `kaspa-rpc`, `localnet` | `REAL` | Broadcast real a red/simulador |
-| `tx-receipt-runner.ts` | `runTxReceipt` | `hardkas tx receipt` | `kaspa-rpc` | `REAL` | Consulta RPC de TX ID |
-| `tx-flow.ts` | `runTxFlow` | `hardkas tx send` (shortcut) | Varios | `REAL` | Orquestador de flujo completo Plan-Sign-Send |
-| `accounts-keystore-runners.ts` | `runAccountsKeystore*`| `hardkas accounts real *` | `accounts` | `REAL` | Gestión de Argon2id/AES |
-| `accounts-real-init-runner.ts` | `runAccountsRealInit` | `hardkas accounts real init` | `accounts` | `REAL` | Inicializa el store físico del Keystore |
-| `accounts-real-generate-runner.ts`| `runAccountsRealGenerate`| `accounts real generate` | `sdk` | `REAL` | Generación de llaves Kaspa deterministas |
-| `l2-tx-runners.ts` | `runL2Tx*` | `hardkas l2 tx *` | `l2` | `REAL` | Funcional para build/sign/send/status; conserva mensajes desfasados |
-| `node-start-runner.ts` | `runNodeStart` | `hardkas node start` | `node-runner` | `REAL` | Orquestación Docker de nodos |
-| `dag-runners.ts` | `runDag*` | `hardkas dag *` | `localnet` | `PARTIAL` | Basado en light-model simulado |
-| `artifact-verify-runner.ts` | `runArtifactVerify` | `hardkas artifact verify` | `artifacts` | `REAL` | Validación Zod de integridad de esquemas |
-| `artifact-explain-runner.ts` | `runArtifactExplain` | `hardkas artifact explain` | `artifacts` | `EXPERIMENTAL` | Análisis semántico de artefactos |
-| `trace-runner.ts` | `runTrace` | `hardkas tx trace` (unused) | `localnet` | `PARTIAL` | **UNUSED**: Comando asociado deshabilitado |
-| `test.ts` (inline) | — | `hardkas test` | — | `MOCK` | Sin runner, output hardcodeado estático |
+| `up-runner.ts` | `runUp` | `hardkas up` | `@hardkas/config` | `REAL` | Validates environment and RPC connectivity |
+| `tx-plan-runner.ts` | `runTxPlan` | `hardkas tx plan` | `tx-builder`, `artifacts` | `REAL` | Orchestrates UTXO retrieval and plan construction |
+| `tx-profile-runner.ts` | `runTxProfile` | `hardkas tx profile` | `tx-builder`, `artifacts` | `REAL` | Cost and mass analysis |
+| `tx-sign-runner.ts` | `runTxSign` | `hardkas tx sign` | `accounts`, `artifacts` | `WRAPPER` | Delegates signing to `@hardkas/accounts` |
+| `tx-send-runner.ts` | `runTxSend` | `hardkas tx send` | `kaspa-rpc`, `localnet` | `REAL` | Real broadcast to network/simulator |
+| `tx-receipt-runner.ts` | `runTxReceipt` | `hardkas tx receipt` | `kaspa-rpc` | `REAL` | RPC query for TX ID |
+| `tx-flow.ts` | `runTxFlow` | `hardkas tx send` (shortcut) | Various | `REAL` | Full Plan-Sign-Send flow orchestrator |
+| `accounts-keystore-runners.ts` | `runAccountsKeystore*`| `hardkas accounts real *` | `accounts` | `REAL` | Argon2id/AES management |
+| `accounts-real-init-runner.ts` | `runAccountsRealInit` | `hardkas accounts real init` | `accounts` | `REAL` | Initializes physical Keystore store |
+| `accounts-real-generate-runner.ts`| `runAccountsRealGenerate`| `accounts real generate` | `sdk` | `REAL` | Deterministic Kaspa key generation |
+| `l2-tx-runners.ts` | `runL2Tx*` | `hardkas l2 tx *` | `l2` | `REAL` | Functional for build/sign/send/status; retains outdated messages |
+| `node-start-runner.ts` | `runNodeStart` | `hardkas node start` | `node-runner` | `REAL` | Docker node orchestration |
+| `dag-runners.ts` | `runDag*` | `hardkas dag *` | `localnet` | `PARTIAL` | Based on simulated light-model |
+| `artifact-verify-runner.ts` | `runArtifactVerify` | `hardkas artifact verify` | `artifacts` | `REAL` | Zod schema integrity validation |
+| `artifact-explain-runner.ts` | `runArtifactExplain` | `hardkas artifact explain` | `artifacts` | `EXPERIMENTAL` | Semantic artifact analysis |
+| `trace-runner.ts` | `runTrace` | `hardkas tx trace` (unused) | `localnet` | `PARTIAL` | **UNUSED**: Associated command disabled |
+| `test.ts` (inline) | — | `hardkas test` | — | `MOCK` | No runner, static hardcoded output |
 
 ## 4. Runner → Command Map
 
@@ -61,21 +61,21 @@ Este documento presenta una auditoría exhaustiva de todos los runners implement
 
 | Runner | Produces | Consumes | Schema / Type | Deterministic | Notes |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| `runTxPlan` | `txPlan` | None | `hardkas.txPlan` | Yes | Orquestación de selección de UTXOs |
-| `runTxSign` | `signedTx` | `txPlan` | `hardkas.signedTx` | Yes | Criptografía Kaspa |
-| `runTxSend` | `txReceipt` | `signedTx` | `hardkas.txReceipt` | No | Contiene txId y timestamp real |
-| `runL2TxBuild` | `l2TxPlan` | None | `hardkas.l2TxPlan` | Yes | Planificación EVM |
-| `runSnapshotRestore`| None | `snapshot` | `hardkas.snapshot` | Yes | Restauración determinista de estado |
+| `runTxPlan` | `txPlan` | None | `hardkas.txPlan` | Yes | UTXO selection orchestration |
+| `runTxSign` | `signedTx` | `txPlan` | `hardkas.signedTx` | Yes | Kaspa cryptography |
+| `runTxSend` | `txReceipt` | `signedTx` | `hardkas.txReceipt` | No | Contains real txId and timestamp |
+| `runL2TxBuild` | `l2TxPlan` | None | `hardkas.l2TxPlan` | Yes | EVM planning |
+| `runSnapshotRestore`| None | `snapshot` | `hardkas.snapshot` | Yes | Deterministic state restoration |
 
 ## 7. Mock / Partial / Unused Detection
 
-| Runner | Evidence | Classification | Action recommended |
+| Runner | Evidence | Classification | Recommended action |
 | :--- | :--- | :--- | :--- |
-| (Command) | `hardkas test` (inline) | `MOCK` | Implementar runner real con Vitest. |
-| `dag-runners.ts` | `"Minimal v0.2-alpha implementation"` | `PARTIAL` | Expandir lógica de GHOSTDAG simulado. |
-| `accounts.ts` | Lock/Session model | `PARTIAL` | Implementar gestión de sesión real. |
-| `l2-tx-runners.ts` | Mensaje de next step desfasado | **REAL with stale UX hint** | Corregir mensaje; el soporte send ya existe. |
-| `trace-runner.ts` | Comando asociado deshabilitado | **UNUSED** | Integrar con Query Engine o eliminar. |
+| (Command) | `hardkas test` (inline) | `MOCK` | Implement real runner with Vitest. |
+| `dag-runners.ts` | `"Minimal v0.2-alpha implementation"` | `PARTIAL` | Expand simulated GHOSTDAG logic. |
+| `accounts.ts` | Lock/Session model | `PARTIAL` | Implement real session management. |
+| `l2-tx-runners.ts` | Outdated next step message | **REAL with stale UX hint** | Correct message; send support already exists. |
+| `trace-runner.ts` | Associated command disabled | **UNUSED** | Integrate with Query Engine or remove. |
 
 ## 8. Stability Classification Summary
 
@@ -88,23 +88,22 @@ Este documento presenta una auditoría exhaustiva de todos los runners implement
 | `MOCK` | 1 | test (inline command) |
 
 ## 9. Architecture Issues Found
-
-- **Responsibility Mixing**: Los runners actuales mezclan orquestación, formateo de salida (`formatted` strings), persistencia de artefactos y, en ocasiones, lógica de negocio profunda.
-- **Lógica de Negocio Atrapada**: `runTxPlan` y `runTxFlow` contienen lógica de planificación que debería residir exclusivamente en `@hardkas/tx-builder` o `@hardkas/sdk`.
-- **Startup Latency**: Las dependencias pesadas se importan estáticamente en la mayoría de los archivos de runner.
+- **Responsibility Mixing**: Current runners mix orchestration, output formatting (`formatted` strings), artifact persistence, and occasionally deep business logic.
+- **Trapped Business Logic**: `runTxPlan` and `runTxFlow` contain planning logic that should reside exclusively in `@hardkas/tx-builder` or `@hardkas/sdk`.
+- **Startup Latency**: Heavy dependencies are statically imported in most runner files.
 
 ## 10. Recommendations
 
 ### Critical
-- **Real Test Runner**: Sustituir el mock de `hardkas test` por un runner real basado en Vitest.
-- **Confirmation Guards**: Implementar validaciones de seguridad en runners destructivos o de broadcast (`node reset`, `tx send`, `l2 tx send`, `accounts real import`).
+- **Real Test Runner**: Replace the `hardkas test` mock with a real runner based on Vitest.
+- **Confirmation Guards**: Implement security validations in destructive or broadcast runners (`node reset`, `tx send`, `l2 tx send`, `accounts real import`).
 
 ### High
-- **Orchestration-Only Runners (v1)**: Rediseñar los runners para que se limiten a orquestar servicios de paquetes internos:
-    - La lógica de negocio va a los **Packages**.
-    - La persistencia de artefactos va a un **Artifact Service**.
-    - El formateo de salida va a un **Output Adapter**.
-- **SDK Migration**: Asegurar que la lógica de selección y obtención de UTXOs sea 100% accesible desde el SDK.
+- **Orchestration-Only Runners (v1)**: Redesign runners to limit them to orchestrating internal package services:
+    - Business logic goes to **Packages**.
+    - Artifact persistence goes to an **Artifact Service**.
+    - Output formatting goes to an **Output Adapter**.
+- **SDK Migration**: Ensure UTXO selection and retrieval logic is 100% accessible from the SDK.
 
 ## 11. Proposed Runner Architecture v1
 
@@ -126,19 +125,17 @@ export async function runTxPlan(ctx: RunnerContext, input: TxPlanInput): Promise
 ```
 
 ## 12. Checklist
-
-- [x] Detectar mocks
-- [x] Clasificar estabilidad real/partial
-- [x] Detectar side effects críticos
-- [x] Proponer arquitectura v1
-- [x] No modificar lógica runtime
-- [x] No modificar runners
-- [x] No modificar packages internos
+- [x] Detect mocks
+- [x] Classify real/partial stability
+- [x] Detect critical side effects
+- [x] Propose v1 architecture
+- [x] No modifications to runtime logic
+- [x] No modifications to runners
+- [x] No modifications to internal packages
 
 ## Guardrails
-
-- No se modificó lógica runtime.
-- No se modificaron runners.
-- No se modificaron comandos.
-- No se modificaron packages internos.
-- Esta auditoría es documental.
+- No modifications to runtime logic.
+- No modifications to runners.
+- No modifications to commands.
+- No modifications to internal packages.
+- This audit is documentary.

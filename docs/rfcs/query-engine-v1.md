@@ -1,52 +1,52 @@
 # RFC: HardKas Query Engine v1
 
 ## 1. Problem Statement
-El sistema de consultas de HardKas sufre actualmente de una **fractura arquitectónica**. Mientras que el CLI tiene una cobertura de comandos aceptable y el `QueryStore` (basado en SQLite) está bien diseñado, ambos mundos están desconectados.
-- El **Query Engine** opera mayormente mediante escaneos recursivos del sistema de archivos, lo que degrada el rendimiento a medida que el workspace crece.
-- El **Lineage formal** de artefactos existe pero se consume de forma inconsistente entre los diferentes runners.
-- Las herramientas de **DAG y Replay** operan como islas aisladas (light-model/research) sin una interfaz de datos común.
-- Falta una **API estable** que permita construir una Web UI o herramientas de auditoría externas.
-- No existe un **envelope JSON único** que proporcione metadatos de ejecución (Explain/Why) junto con los resultados.
+The HardKas query system currently suffers from an **architectural fracture**. While the CLI has acceptable command coverage and the `QueryStore` (based on SQLite) is well-designed, the two worlds are disconnected.
+- The **Query Engine** operates mostly through recursive file system scans, which degrades performance as the workspace grows.
+- Formal artifact **Lineage** exists but is consumed inconsistently across different runners.
+- **DAG and Replay** tools operate as isolated islands (light-model/research) without a common data interface.
+- There is a lack of a **stable API** to build a Web UI or external auditing tools.
+- There is no **single JSON envelope** providing execution metadata (Explain/Why) alongside results.
 
-**Mandato Crítico:** El objetivo de Query Engine v1 no es "añadir más comandos", sino consolidar una **capa de introspección coherente** que sirva como columna vertebral de observabilidad para HardKas.
+**Critical Mandate:** The goal of Query Engine v1 is not to "add more commands", but to consolidate a **coherent introspection layer** that serves as the observability backbone for HardKas.
 
 ## 2. Goals
-- **Store-first Architecture**: Utilizar `QueryStore` (SQLite) como backend primario para todas las consultas.
-- **Explain Mode**: Proporcionar transparencia total sobre cómo se resolvió una consulta (índices, filtros, backend).
-- **Why Mode (Causalidad)**: Responder a la pregunta de *por qué* un objeto está en cierto estado basándose en evidencias y lineage.
-- **DAG Graph API**: Exponer el grafo de simulación DAG mediante una API estructurada (marcada explícitamente como *research model*).
-- **Replay Graph**: Unificar el flujo de `txPlan -> signedTx -> receipt -> trace` en un grafo de ejecución consultable.
-- **Event Sourcing**: Modelar los cambios de estado como un log de eventos local indexado.
-- **Web UI API**: Proveer una interfaz de datos estable (Read-only) para futuras herramientas visuales.
-- **Unified JSON Envelope**: Garantizar una estructura de respuesta consistente para CLI y API.
+- **Store-first Architecture**: Use `QueryStore` (SQLite) as the primary backend for all queries.
+- **Explain Mode**: Provide full transparency on how a query was resolved (indexes, filters, backend).
+- **Why Mode (Causality)**: Answer *why* an object is in a certain state based on evidence and lineage.
+- **DAG Graph API**: Expose the DAG simulation graph through a structured API (explicitly marked as *research model*).
+- **Replay Graph**: Unify the `txPlan -> signedTx -> receipt -> trace` flow into a searchable execution graph.
+- **Event Sourcing**: Model state changes as a local indexed event log.
+- **Web UI API**: Provide a stable data interface (Read-only) for future visual tools.
+- **Unified JSON Envelope**: Guarantee a consistent response structure for CLI and API.
 
 ## 3. Non-Goals
-- No implementar validación de consenso GHOSTDAG real (HardKas no es un nodo de red).
-- No reemplazar las llamadas RPC directas de `kaspad` para estados de red en vivo.
-- No ser un block explorer de propósito general para Mainnet.
-- No exponer SQL crudo (RAW SQL) como API pública mutable.
-- No garantizar seguridad de grado institucional para la custodia de datos de consulta.
-- No optimizar para escalas de "Mainnet Indexer" (objetivo: local workstation scale).
+- Do not implement real GHOSTDAG consensus validation (HardKas is not a network node).
+- Do not replace direct `kaspad` RPC calls for live network states.
+- Do not be a general-purpose block explorer for Mainnet.
+- Do not expose raw SQL (RAW SQL) as a mutable public API.
+- Do not guarantee institutional-grade security for query data custody.
+- Do not optimize for "Mainnet Indexer" scales (goal: local workstation scale).
 
 ## 4. Current State Summary
 
 | Area | Current State | Gap |
 | :--- | :--- | :--- |
-| **CLI Commands** | Amplia superficie de comandos | Inconsistencia en el backend; mezcla lógica de negocio con escaneo de archivos. |
-| **QueryStore** | Esquema SQLite de alta calidad | **Desconectado**; el motor no lo usa para búsquedas calientes. |
-| **Artifacts** | Esquemas Zod canónicos | El determinismo de identidad es parcial (afectado por `createdAt`). |
-| **Lineage** | Modelo formal de padres/hijos | Muchos runners siguen usando campos legacy como `sourcePlanId`. |
-| **DAG** | Modelo ligero de simulación | Necesita una frontera clara entre "simulación de debug" y "realidad de red". |
-| **Events** | Sistema de logs básico | Falta un envelope de *Event Sourcing* para reconstruir timelines. |
-| **Web UI** | Inexistente | No hay una API estable para que una UI consuma datos de forma eficiente. |
+| **CLI Commands** | Broad command surface | Backend inconsistency; mixes business logic with file scanning. |
+| **QueryStore** | High-quality SQLite schema | **Disconnected**; the engine does not use it for hot searches. |
+| **Artifacts** | Canonical Zod schemas | Identity determinism is partial (affected by `createdAt`). |
+| **Lineage** | Formal parent/child model | Many runners still use legacy fields like `sourcePlanId`. |
+| **DAG** | Light simulation model | Needs a clear boundary between "debug simulation" and "network reality". |
+| **Events** | Basic logging system | Lacks an *Event Sourcing* envelope to reconstruct timelines. |
+| **Web UI** | Non-existent | No stable API for a UI to consume data efficiently. |
 
 ## 5. Architecture Principles
-1. **Store-first, scan fallback**: Las consultas siempre intentan usar el índice de SQLite; solo se recurre al disco si el índice está ausente o corrupto.
-2. **Explain everything**: Cada respuesta debe poder explicar su procedencia y el costo de ejecución.
-3. **Causalidad (Why)**: "Why" significa rastrear el camino causal de eventos y lineage, no solo mostrar texto de debug.
-4. **Graphs as first-class**: El linaje, el DAG y el replay se tratan como grafos (nodos y aristas), no solo como listas de archivos.
-5. **Stable JSON Envelope**: La estructura de la respuesta es sagrada y debe ser idéntica para el CLI y la API.
-6. **Redaction by default**: La capa de consulta debe filtrar secretos antes de cualquier salida.
+1. **Store-first, scan fallback**: Queries always attempt to use the SQLite index; disk is only used if the index is missing or corrupt.
+2. **Explain everything**: Every response must be able to explain its origin and execution cost.
+3. **Causality (Why)**: "Why" means tracing the causal path of events and lineage, not just showing debug text.
+4. **Graphs as first-class**: Lineage, DAG, and replay are treated as graphs (nodes and edges), not just file lists.
+5. **Stable JSON Envelope**: Response structure is sacred and must be identical for CLI and API.
+6. **Redaction by default**: The query layer must filter secrets before any output.
 
 ## 6. Query Engine v1 Architecture
 
@@ -66,10 +66,10 @@ Output Adapters
   [CLI Text] [JSON Envelope] [Web UI API]
 ```
 
-El **Indexer** debe ser un proceso explícito y verificable. El motor de consultas debe informar siempre sobre la "frescura" del índice (Freshness).
+The **Indexer** must be an explicit and verifiable process. The query engine must always report on index "Freshness".
 
-## 7. JSON Result Envelope v1
-Todas las consultas devolverán una estructura unificada:
+## 7. Unified JSON Result Envelope v1
+All queries will return a unified structure:
 
 ```typescript
 type QueryResult<T> = {
@@ -82,7 +82,7 @@ type QueryResult<T> = {
     mode: "default" | "explain" | "why";
   };
   data: T;
-  graph?: QueryGraph; // Opcional, para respuestas con topología
+  graph?: QueryGraph; // Optional, for responses with topology
   explain?: ExplainBlock;
   why?: WhyBlock;
   warnings: QueryWarning[];
@@ -97,14 +97,14 @@ type QueryResult<T> = {
 ```
 
 ## 8. Explain Mode
-El modo `explain` debe responder:
-- ¿Qué backend se utilizó realmente (SQLite vs Disco)?
-- ¿Qué filtros se aplicaron a nivel de base de datos?
-- ¿Cuántos registros se leyeron y cuántos archivos se escanearon?
-- Sugerencias de optimización (ej: "Run 'hardkas query store rebuild' for better performance").
+The `explain` mode must answer:
+- Which backend was actually used (SQLite vs Disk)?
+- Which filters were applied at the database level?
+- How many records were read and how many files were scanned?
+- Optimization suggestions (e.g., "Run 'hardkas query store rebuild' for better performance").
 
-## 9. Why Mode (Causalidad)
-Proporciona una cadena de evidencias que explican un estado.
+## 9. Why Mode (Causality)
+Provides a chain of evidence explaining a state.
 ```typescript
 type WhyBlock = {
   question: string;
@@ -112,7 +112,7 @@ type WhyBlock = {
   evidence: {
     type: "artifact" | "event" | "block" | "code";
     id: string;
-    ref: string; // Link al archivo o registro
+    ref: string; // Link to file or record
   }[];
   causalChain: {
     step: string;
@@ -121,31 +121,31 @@ type WhyBlock = {
   }[];
 };
 ```
-*Ejemplo: "¿Por qué este artefacto es huérfano?" -> Answer: "No se encuentra el padre con hash X; la cadena causal muestra un checkout de rama que eliminó el archivo original."*
+*Example: "Why is this artifact an orphan?" -> Answer: "Parent with hash X not found; causal chain shows a branch checkout that deleted the original file."*
 
 ## 10. Artifact Query v1
-- **Discovery**: Búsqueda por `txId`, `contentHash`, `schema` o `network`.
-- **Lineage**: Navegación bidireccional (padres y descendientes).
-- **Diff**: Comparación estructural entre dos estados de un artefacto.
+- **Discovery**: Search by `txId`, `contentHash`, `schema`, or `network`.
+- **Lineage**: Bi-directional navigation (parents and descendants).
+- **Diff**: Structural comparison between two artifact states.
 
 ## 11. Lineage Graph v1
-El linaje se expone como un grafo formal:
-- **Nodes**: Artefactos.
-- **Edges**: Relaciones `parentArtifactId` (formales) o `sourcePlanId` (legacy).
-- **Annotations**: Detección de ciclos, huérfanos y ramas rotas.
+Lineage is exposed as a formal graph:
+- **Nodes**: Artifacts.
+- **Edges**: `parentArtifactId` (formal) or `sourcePlanId` (legacy) relationships.
+- **Annotations**: Detection of cycles, orphans, and broken branches.
 
 ## 12. Replay Graph v1
-Une el ciclo de vida de una transacción:
+Joins a transaction's lifecycle:
 `txPlan` → `signedTx` → `txReceipt` → `replayTrace` → `DAG Context`.
-Permite visualizar dónde ocurrió una divergencia (ej: "Divergence found at Step 3: Local state != Node state").
+Allows visualization of where a divergence occurred (e.g., "Divergence found at Step 3: Local state != Node state").
 
 ## 13. DAG Graph API v1 (Research Model)
-- **Status**: Explícitamente marcado como `light-model`.
-- **Data**: Bloques simulados, inclusiones de transacciones y aristas de conflicto.
-- **Warnings**: Debe incluir `consensusLimitations` explicando que es una simulación de debug y no de consenso real.
+- **Status**: Explicitly marked as `light-model`.
+- **Data**: Simulated blocks, transaction inclusions, and conflict edges.
+- **Warnings**: Must include `consensusLimitations` explaining it is a debug simulation and not real consensus.
 
 ## 14. Event Sourcing Model v1
-HardKas generará un log de eventos persistente para reconstruir el timeline del desarrollador:
+HardKas will generate a persistent event log to reconstruct the developer timeline:
 - `artifact.created`
 - `tx.sent`
 - `replay.diverged`
@@ -153,47 +153,47 @@ HardKas generará un log de eventos persistente para reconstruir el timeline del
 - `l2.tx.built`
 - `bridge.assumption.reported`
 
-## 15. TX Aggregation v1 (Vista 360)
-El comando `hardkas query tx <txId>` se convierte en la vista definitiva que agrega:
-1. Todos los artefactos relacionados.
-2. Timeline de eventos.
-3. Grafo de replay.
-4. Anotaciones de posición en el DAG.
-5. Avisos de seguridad (Mainnet, Replay risks).
+## 15. TX Aggregation v1 (360 View)
+The `hardkas query tx <txId>` command becomes the definitive view aggregating:
+1. All related artifacts.
+2. Event timeline.
+3. Replay graph.
+4. DAG position annotations.
+5. Security warnings (Mainnet, Replay risks).
 
 ## 16. Web UI API v1
-Contrato conceptual (Read-only):
-- `GET /api/query/artifacts`: Listado paginado con filtros.
-- `GET /api/query/tx/:txId`: Vista 360 de la transacción.
-- `GET /api/query/lineage/:id`: Grafo de linaje.
-- `GET /api/query/events`: Stream de eventos del workspace.
+Conceptual contract (Read-only):
+- `GET /api/query/artifacts`: Paginated listing with filters.
+- `GET /api/query/tx/:txId`: 360 view of the transaction.
+- `GET /api/query/lineage/:id`: Lineage graph.
+- `GET /api/query/events`: Workspace event stream.
 
 ## 17. Store Freshness & Indexing
-- **Auto-Sync**: El motor intenta sincronizar archivos nuevos al detectar cambios de mtime en el directorio `.hardkas/`.
-- **Doctor**: Comando para detectar inconsistencias entre SQLite y el sistema de archivos.
-- **Zombie Cleanup**: Eliminación de registros que apuntan a archivos borrados.
+- **Auto-Sync**: The engine attempts to sync new files upon detecting mtime changes in the `.hardkas/` directory.
+- **Doctor**: Command to detect inconsistencies between SQLite and the file system.
+- **Zombie Cleanup**: Removal of records pointing to deleted files.
 
 ## 18. Security & Safety
-- **Read-only by default**: La API de consulta no permite mutaciones de datos.
-- **Path Traversal Protection**: Validación estricta de rutas de archivos.
-- **Secret Redaction**: Filtro automático de campos `privateKey` y `mnemonic` antes de la serialización JSON.
+- **Read-only by default**: Query API does not allow data mutations.
+- **Path Traversal Protection**: Strict file path validation.
+- **Secret Redaction**: Automatic filtering of `privateKey` and `mnemonic` fields before JSON serialization.
 
 ## 19. Migration Plan
-1. **Fase 1 (Wiring)**: Conectar `QueryEngine` con `SqliteQueryBackend`. Mantener el escaneo de disco como fallback.
-2. **Fase 2 (Unified Envelope)**: Implementar el `QueryResult` JSON en todos los comandos del CLI.
-3. **Fase 3 (Graph APIs)**: Implementar los adaptadores de dominio para Lineage y Replay.
-4. **Fase 4 (Explain/Why)**: Añadir la lógica de inferencia y reporte de evidencias.
-5. **Fase 5 (API/Web)**: Exponer la capa de servicios para herramientas externas.
+1. **Phase 1 (Wiring)**: Connect `QueryEngine` with `SqliteQueryBackend`. Maintain disk scan as fallback.
+2. **Phase 2 (Unified Envelope)**: Implement the `QueryResult` JSON in all CLI commands.
+3. **Phase 3 (Graph APIs)**: Implement domain adapters for Lineage and Replay.
+4. **Phase 4 (Explain/Why)**: Add inference and evidence reporting logic.
+5. **Phase 5 (API/Web)**: Expose service layer for external tools.
 
 ## 20. Final Recommendation
-El **Query Engine v1** debe ser tratado como la **columna vertebral de observabilidad** de HardKas. No es una funcionalidad secundaria; es lo que convierte una colección de archivos JSON en un sistema auditable, reproducible y profesional para el desarrollo en Kaspa.
+The **Query Engine v1** should be treated as the **observability backbone** of HardKas. It is not a secondary feature; it is what turns a collection of JSON files into an auditable, reproducible, and professional system for Kaspa development.
 
 ---
-### Checklist de Diseño
-- [x] Explain mode definido.
-- [x] Why mode (causalidad) diseñado.
-- [x] DAG Graph API (Research) aclarado.
-- [x] Replay Graph integrado.
-- [x] Event Sourcing local modelado.
-- [x] Web UI API conceptualizada.
-- [x] Sin implementación de código (RFC documental).
+### Design Checklist
+- [x] Explain mode defined.
+- [x] Why mode (causality) designed.
+- [x] DAG Graph API (Research) clarified.
+- [x] Replay graph integrated.
+- [x] Local Event Sourcing modeled.
+- [x] Web UI API conceptualized.
+- [x] No code implementation (documentary RFC).

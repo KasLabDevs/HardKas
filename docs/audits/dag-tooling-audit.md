@@ -1,170 +1,167 @@
 # HardKas DAG Tooling Audit
 
 ## 1. Scope
-Esta auditoría evalúa el **DAG simulator** y las herramientas relacionadas en HardKas (incluyendo los comandos `query dag ...` y el modelo de estado local en `packages/localnet`). El enfoque incluye:
-- El modelo determinista del DAG local.
-- Lógica de simulación de reorgs, path al sink y desplazamientos (displacement).
-- Detección de conflictos de doble gasto (double-spend) y anomalías.
-- Interacción entre el motor de Replay y el DAG.
-- Precisión y relación del modelo de HardKas frente a los conceptos de consenso reales de Kaspa (GHOSTDAG / DAGKnight).
+This audit evaluates the **DAG simulator** and related tools in HardKas (including the `query dag ...` commands and the local state model in `packages/localnet`). The focus includes:
+- The deterministic model of the local DAG.
+- Reorg simulation logic, sink pathing, and displacement.
+- Detection of double-spend conflicts and anomalies.
+- Interaction between the Replay engine and the DAG.
+- Accuracy and relationship of the HardKas model compared to real Kaspa consensus concepts (GHOSTDAG / DAGKnight).
 
 ## 2. Executive Summary
-El "DAG Tooling" de HardKas **NO ES UN SIMULADOR DE CONSENSO KASPA REAL. NO ES GHOSTDAG, NI DAGKNIGHT, NI SPECTRE.** 
+The HardKas "DAG Tooling" **IS NOT A REAL KASPA CONSENSUS SIMULATOR. IT IS NOT GHOSTDAG, NOR DAGKNIGHT, NOR SPECTRE.**
 
-Se trata de un **modelo determinista ligero (deterministic-light-model)** diseñado puramente para **developer debugging, visualización de conflictos y testing de replay**. Su propósito es enseñar a los desarrolladores los *conceptos* de reorgs y desplazamientos de forma predecible en CI/CD, pero utiliza heurísticas extremadamente simples (como tomar el primer padre) en lugar de la matemática real de conjuntos de mezcla (merge sets) de PHANTOM/GHOSTDAG.
+It is a **deterministic-light-model** designed purely for **developer debugging, conflict visualization, and replay testing**. Its purpose is to teach developers the *concepts* of reorgs and displacements in a predictable way in CI/CD, but it uses extremely simple heuristics (such as taking the first parent) instead of the real merge set mathematics of PHANTOM/GHOSTDAG.
 
-**Clasificación del sistema:**
+**System Classification:**
 - DAG tooling maturity: **EXPERIMENTAL / RESEARCH**
-- Consensus accuracy: **WEAK** (Intencionalmente heurístico)
+- Consensus accuracy: **WEAK** (Intentionally heuristic)
 - Deterministic replay support: **GOOD**
-- Conflict analysis: **GOOD** (Basado en UTXOs)
-- Reorg simulation: **PARTIAL** (Simulación manual orientada a tests)
-- Research maturity: **GOOD** (Provee introspección profunda)
+- Conflict analysis: **GOOD** (UTXO-based)
+- Reorg simulation: **PARTIAL** (Manual test-oriented simulation)
+- Research maturity: **GOOD** (Provides deep introspection)
 
 ## 3. DAG Command Inventory
 
 | Command | Purpose | Source | Maturity | Notes |
 | :--- | :--- | :--- | :--- | :--- |
-| `query dag conflicts` | Muestra ganadores y perdedores de un doble gasto | `query/dag-adapter.ts` | RESEARCH | Basado en el `conflictSet` del DAG local |
-| `query dag displaced` | Lista txs que perdieron su lugar en el consenso | `query/dag-adapter.ts` | RESEARCH | Compara sets aceptados vs desplazados |
-| `query dag history` | Historial de una Tx en el DAG | `query/dag-adapter.ts` | RESEARCH | Escanea bloques para trazar el ciclo de vida |
-| `query dag sink-path` | Recorrido desde el sink hasta el genesis | `query/dag-adapter.ts` | RESEARCH | Heurística simple de parents[0] |
-| `query dag anomalies` | Detecta violaciones de invariantes lógicos | `query/dag-adapter.ts` | RESEARCH | Verifica txs huerfanas o bloques inalcanzables |
-| `dag status` | Muestra estado del DAG local | `dag-runners.ts` | PARTIAL | - |
-| `dag simulate-reorg`| Crea un fork artificial y mueve el sink | `dag-runners.ts` | PARTIAL | Solo localnet |
+| `query dag conflicts` | Shows winners and losers of a double-spend | `query/dag-adapter.ts` | RESEARCH | Based on the local DAG's `conflictSet` |
+| `query dag displaced` | Lists txs that lost their place in consensus | `query/dag-adapter.ts` | RESEARCH | Compares accepted vs displaced sets |
+| `query dag history` | Tx history in the DAG | `query/dag-adapter.ts` | RESEARCH | Scans blocks to trace the life cycle |
+| `query dag sink-path` | Traversal from sink to genesis | `query/dag-adapter.ts` | RESEARCH | Simple heuristic of parents[0] |
+| `query dag anomalies` | Detects logical invariant violations | `query/dag-adapter.ts` | RESEARCH | Verifies orphan txs or unreachable blocks |
+| `dag status` | Shows local DAG status | `dag-runners.ts` | PARTIAL | - |
+| `dag simulate-reorg`| Creates an artificial fork and moves the sink | `dag-runners.ts` | PARTIAL | Localnet only |
 
 ## 4. DAG Model Architecture
 
 | DAG Area | Current behavior | Risk | Notes |
 | :--- | :--- | :--- | :--- |
-| Representación de Nodos | `SimBlock` con `id`, `parents[]`, `daaScore` y `acceptedTxIds`. | LOW | Estructura simplificada persistida en JSON |
-| Representación de Edges | Cadenas de IDs de bloques padres. | LOW | DAG básico |
-| Selected Parent | Siempre asume `parents[0]`. | HIGH | Altamente heurístico. No usa blue work. |
-| Persistencia | Persistido en `state.json` (`localnet/state.ts`) | LOW | Ideal para testing determinista |
+| Node Representation | `SimBlock` with `id`, `parents[]`, `daaScore`, and `acceptedTxIds`. | LOW | Simplified structure persisted in JSON |
+| Edge Representation | Chains of parent block IDs. | LOW | Basic DAG |
+| Selected Parent | Always assumes `parents[0]`. | HIGH | Highly heuristic. Does not use blue work. |
+| Persistence | Persisted in `state.json` (`localnet/state.ts`) | LOW | Ideal for deterministic testing |
 
 ## 5. Reorg Simulation Audit
 
 | Feature | Present | Deterministic | Accuracy | Risk |
 | :--- | :--- | :--- | :--- | :--- |
-| Detección de desplazamientos | SÍ | SÍ | Heurística | LOW |
-| Disparador de reorg | SÍ (vía comando manual) | SÍ | Baja | LOW |
-| Evaluación de conjuntos | NO | N/A | Falla | HIGH |
+| Displacement detection | YES | YES | Heuristic | LOW |
+| Reorg trigger | YES (via manual command) | YES | Low | LOW |
+| Set evaluation | NO | N/A | Fails | HIGH |
 
-El comando `simulate-reorg` crea un bloque lateral (side-block) y ejecuta la función `moveSink()`. La lógica entonces re-calcula las transacciones aceptadas iterando en orden topológico desde el nuevo sink hacia atrás. **Es determinista pero no exacto cripto-económicamente**.
+The `simulate-reorg` command creates a side-block and executes the `moveSink()` function. The logic then re-calculates accepted transactions by iterating in topological order from the new sink backward. **It is deterministic but not cryptoeconomically exact**.
 
 ## 6. Sink Path Logic Audit
 
 | Area | Implementation | Deterministic | GHOSTDAG accuracy | Notes |
 | :--- | :--- | :--- | :--- | :--- |
-| Definición de Sink | Puntero manual en el estado (`dag.sink`) | SÍ | Pobre | En Kaspa el virtual sink se calcula por consenso |
-| Cálculo de Sink Path | `calculateSelectedPath` itera usando `parents[0]` | SÍ | Pobre | No implementa K-clusters ni coloración blue/red |
-| Estabilidad topológica | SÍ. Usa `daaScore` + Lexicográfico | SÍ | Media | Asegura ordenación reproducible en tests |
+| Sink Definition | Manual pointer in state (`dag.sink`) | YES | Poor | In Kaspa, the virtual sink is calculated by consensus |
+| Sink Path Calculation | `calculateSelectedPath` iterates using `parents[0]` | YES | Poor | Does not implement K-clusters or blue/red coloring |
+| Topological Stability | YES. Uses `daaScore` + Lexicographical | YES | Medium | Ensures reproducible ordering in tests |
 
 ## 7. Displacement Logic Audit
 
 | Displacement feature | Present | Model | Risk |
 | :--- | :--- | :--- | :--- |
-| Transacciones desplazadas | SÍ | Arrays `acceptedTxIds` vs `displacedTxIds` | LOW |
-| Resolución de conflictos | SÍ | Prioridad: 1) sink-path, 2) daaScore, 3) txId lexicográfico | LOW |
-| Impacto en replay | SÍ | `correlate.ts` advierte cuando una Tx en el plan fue desplazada | LOW |
+| Displaced transactions | YES | `acceptedTxIds` vs `displacedTxIds` arrays | LOW |
+| Conflict resolution | YES | Priority: 1) sink-path, 2) daaScore, 3) lexicographical txId | LOW |
+| Replay impact | YES | `correlate.ts` warns when a Tx in the plan was displaced | LOW |
 
 ## 8. Conflict Model Audit
-
-El análisis de conflictos (Double-spend) es puramente local y se fundamenta en los UTXOs.
+Double-spend conflict analysis is purely local and based on UTXOs.
 
 | Conflict type | Supported | Accuracy | Deterministic | Notes |
 | :--- | :--- | :--- | :--- | :--- |
-| UTXO Double-spend | SÍ | Alta | SÍ | Si dos txs usan la misma outpoint, una pierde |
-| Paralelismo sin conflicto| SÍ | Alta | SÍ | Ambas txs entran en el bloque |
-| Conflicto de ordenación| SÍ | Media| SÍ | Depende del lexicográfico en empates de daaScore |
+| UTXO Double-spend | YES | High | YES | If two txs use the same outpoint, one loses |
+| Parallelism without conflict| YES | High | YES | Both txs enter the block |
+| Ordering conflict| YES | Medium| YES | Depends on lexicographical tie-break for daaScore ties |
 
 ## 9. Anomaly Detection Audit
-
-Las anomalías se calculan en `executeAnomalies` escaneando invariantes del simulador:
+Anomalies are calculated in `executeAnomalies` by scanning simulator invariants:
 
 | Anomaly | Detection | Deterministic | Reliability |
 | :--- | :--- | :--- | :--- |
-| `displaced-never-reaccepted` | Txs perdidas para siempre | SÍ | Alta (en el marco local) |
-| `unreachable-block` | Nodos desconectados del sink | SÍ | Alta |
-| `invariant-violation` | Tx en ambos arrays a la vez | SÍ | Alta |
+| `displaced-never-reaccepted` | Txs lost forever | YES | High (in local context) |
+| `unreachable-block` | Nodes disconnected from the sink | YES | High |
+| `invariant-violation` | Tx in both arrays at once | YES | High |
 
 ## 10. Replay Integration Audit
 
 | Replay feature | DAG integration | Risk |
 | :--- | :--- | :--- |
-| Inyección de Contexto | `applySimulatedPayment` incrusta `dagContext` en el `txReceipt` | LOW |
-| Cross-domain Correlate| `correlate.ts` enlaza Lineage + DAG status + Replay Invariants | LOW |
+| Context Injection | `applySimulatedPayment` embeds `dagContext` in the `txReceipt` | LOW |
+| Cross-domain Correlate| `correlate.ts` links Lineage + DAG status + Replay Invariants | LOW |
 
-La integración es pasiva: el Replay lee el estado del DAG local y anota en su recibo qué modo existía en ese momento.
+Integration is passive: Replay reads the local DAG state and notes the mode existing at that moment in its receipt.
 
 ## 11. Determinism Review
 
-**¿Mismos artefactos + mismo replay = mismo DAG analysis?**  
+**Same artifacts + same replay = same DAG analysis?**  
 👉 **YES.**
 
-El simulador ha sido endurecido matemáticamente para el determinismo de tests:
-1. Las transacciones generan hashes idénticos (`generateDeterministicTxId`) dados el mismo plan y `daaScore`.
-2. `resolveConflictsDeterministically` desempata siempre usando el orden lexicográfico del `txId`.
-3. No hay dependencia temporal en el ensamblado de los grafos.
+The simulator has been mathematically hardened for test determinism:
+1. Transactions generate identical hashes (`generateDeterministicTxId`) given the same plan and `daaScore`.
+2. `resolveConflictsDeterministically` always breaks ties using the lexicographical order of `txId`.
+3. There is no temporal dependency in graph assembly.
 
 ## 12. Consensus Accuracy Review
-
-Comparativa estricta con el protocolo Kaspa real:
+Strict comparison with the real Kaspa protocol:
 
 | Consensus Feature | HardKas DAG Tooling | Real Kaspa Consensus |
 | :--- | :--- | :--- |
-| **Blue Score / Red Score** | NO (Solo un contador incremental base) | SÍ (Basado en K-clusters y merge sets) |
-| **Selected Parent** | Heurística ingenua (`parents[0]`) | Cálculo GHOSTDAG ponderado por peso de red |
-| **Merge Sets** | NO | Central para la resolución de orden |
-| **Determinismo** | SÍ (Absoluto para testing offline) | SÍ (Eventual / Estocástico por red) |
+| **Blue Score / Red Score** | NO (Only an incremental base counter) | YES (Based on K-clusters and merge sets) |
+| **Selected Parent** | Naive heuristic (`parents[0]`) | GHOSTDAG calculation weighted by network weight |
+| **Merge Sets** | NO | Central to ordering resolution |
+| **Determinism** | YES (Absolute for offline testing) | YES (Eventual / Stochastic by network) |
 
 ## 13. Performance Review
-- **Complejidad:** El traversal topológico asume BFS en memoria (`identifyReachableBlocks`).
-- **Escala:** Es óptimo para los cientos de bloques de un test local, pero colapsaría bajo memoria O(N) para tamaños de mainnet. Esto es intencional y correcto para un "Localnet tooling".
+- **Complexity:** Topological traversal assumes in-memory BFS (`identifyReachableBlocks`).
+- **Scale:** Optimal for hundreds of blocks in a local test, but would collapse under O(N) memory for mainnet sizes. This is intentional and correct for "Localnet tooling".
 
 ## 14. Findings
 
 ### GOOD
-- **Determinismo Estricto:** Es una herramienta excelente para CI/CD y testing de resiliencia de wallets ante reorgs forzados.
-- **Transparencia en el Tooling:** El comando `correlate` ofrece una vista impresionante de 360 grados uniendo DAG, Lineage y Replays.
-- **Análisis de UTXO:** La resolución de conflictos de doble gasto está implementada de manera robusta a nivel semántico.
+- **Strict Determinism:** Excellent tool for CI/CD and wallet resilience testing against forced reorgs.
+- **Tooling Transparency:** The `correlate` command offers an impressive 360-degree view joining DAG, Lineage, and Replays.
+- **UTXO Analysis:** Double-spend conflict resolution is robustly implemented at the semantic level.
 
 ### NEEDS HARDENING
-- **Ambigüedad en la Terminología:** El CLI expone comandos "DAG" de forma destacada, lo que podría confundir a un desarrollador novato creyendo que HardKas verifica el consenso criptográfico de Kaspa.
-- **Falta de Merge Sets Reales:** Al no calcular merge-sets, la simulación de reorgs no ilustra la belleza de la confirmación paralela de GHOSTDAG, comportándose más como un blockchain lineal con side-branches tontos.
+- **Terminology Ambiguity:** The CLI prominently exposes "DAG" commands, which could confuse a novice developer into believing HardKas verifies Kaspa's cryptographic consensus.
+- **Lack of Real Merge Sets:** By not calculating merge sets, reorg simulation does not illustrate the beauty of GHOSTDAG's parallel confirmation, behaving more like a linear blockchain with simple side branches.
 
 ## 15. Recommendations
 
 ### P0 — Clarify Research Status
-- Añadir banners (como el actual `DAG_MODEL_WARNING`) no solo a los queries, sino a la documentación principal. Marcar explícitamente como `LIGHT-MODEL / NOT CONSENSUS`.
+- Add banners (like the current `DAG_MODEL_WARNING`) not only to queries but also to the main documentation. Explicitly mark as `LIGHT-MODEL / NOT CONSENSUS`.
 
 ### P1 — Deterministic DAG Core
-- Formalizar las reglas de `resolveConflictsDeterministically` en la documentación para que los desarrolladores entiendan cómo desempata (sink-path > daaScore > txId).
+- Formalize `resolveConflictsDeterministically` rules in the documentation so developers understand how ties are broken (sink-path > daaScore > txId).
 
 ### P2 — Better Replay Integration
-- Guardar *Snapshots del DAG* (no solo el string `dagContext`) adjuntos a los replays fallidos para poder inspeccionar el grafo exacto en el momento de una divergencia.
+- Save *DAG Snapshots* (not just the `dagContext` string) attached to failed replays to inspect the exact graph at the time of a divergence.
 
 ### P3 — Advanced Research
-- Implementar una aproximación matemática ligera pero real a los **Merge Sets** para que `displaced` se comporte de forma más educativa sobre el algoritmo SPECTRE/PHANTOM.
+- Implement a light but real mathematical approximation of **Merge Sets** so that `displaced` behaves in a more educational way regarding the SPECTRE/PHANTOM algorithm.
 
 ## 16. Proposed DAG Tooling v1
-El objetivo en v1 es no pretender ser un nodo Kaspa.
-- El CLI debería presentar estos comandos agrupados bajo `hardkas query local-dag` o mantener el tag `[RESEARCH: LIGHT-MODEL]` de forma ultra visible.
-- Re-diseñar el `SimBlock` para incluir un campo `mergeSet: string[]` simulado, mejorando la comprensión visual del desarrollador.
+The goal in v1 is not to pretend to be a Kaspa node.
+- The CLI should present these commands grouped under `hardkas query local-dag` or keep the `[RESEARCH: LIGHT-MODEL]` tag ultra-visible.
+- Redesign `SimBlock` to include a simulated `mergeSet: string[]` field, improving developer visual understanding.
 
 ## 17. Tests Recommended
-- `deterministic sink path`: test de invariante lexicográfico.
-- `displaced tx detection`: forzar reorg de profundidad N y validar arrays.
-- `double-spend conflict`: validar que el txId ganador coincide con la especificación lexicográfica.
-- `same artifacts => same DAG analysis`: Integración CI/CD.
-- `lineage+DAG consistency`: Correlacionar un artifact padre-hijo bajo reorg.
+- `deterministic sink path`: lexicographical invariant test.
+- `displaced tx detection`: force depth N reorg and validate arrays.
+- `double-spend conflict`: validate that the winning txId matches the lexicographical specification.
+- `same artifacts => same DAG analysis`: CI/CD integration.
+- `lineage+DAG consistency`: Correlate a parent-child artifact under reorg.
 
 ## 18. Final Assessment
-**¿Qué es realmente el DAG tooling hoy?**
-Es un emulador determinista de reorgs y doble-gastos para desarrolladores que escriben pipelines de transacciones (planners). 
+**What is DAG tooling really today?**
+It is a deterministic emulator of reorgs and double-spends for developers writing transaction pipelines (planners).
 
-**¿Qué NO es?**
-No es un validador de bloques, ni una implementación del paper de GHOSTDAG, ni sirve para evaluar ataques reales del protocolo Kaspa. Sirve maravillosamente como herramienta de *mocking* complejo para aplicaciones que necesitan probar su tolerancia a fallos lógicos en la red sin depender de un Kaspa Testnet node.
+**What is it NOT?**
+It is not a block validator, nor an implementation of the GHOSTDAG paper, nor does it serve to evaluate real Kaspa protocol attacks. It serves wonderfully as a complex *mocking* tool for applications that need to test their tolerance for logical network failures without depending on a Kaspa Testnet node.
 
 ## 19. Checklist
 - [x] Reorg simulation
@@ -172,14 +169,14 @@ No es un validador de bloques, ni una implementación del paper de GHOSTDAG, ni 
 - [x] Displacement logic
 - [x] Conflict model
 - [x] Anomaly detection
-- [x] No modificar lógica runtime
-- [x] No modificar DAG engine
-- [x] No modificar query engine
-- [x] Auditoría documental únicamente
+- [x] No modifications to runtime logic
+- [x] No modifications to DAG engine
+- [x] No modifications to query engine
+- [x] Documentary audit only
 
 ## Guardrails
-- No se modificó lógica runtime.
-- No se modificó DAG tooling.
-- No se modificó QueryEngine.
-- No se modificó Localnet.
-- Esta auditoría es puramente documental, analizando la precisión frente a los papers y su implementación actual en el código.
+- Runtime logic was not modified.
+- DAG tooling was not modified.
+- QueryEngine was not modified.
+- Localnet was not modified.
+- This audit is purely documentary, analyzing accuracy against papers and its current implementation in code.
