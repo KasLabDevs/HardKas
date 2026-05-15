@@ -8,7 +8,9 @@ import {
   SignedTxSchema,
   ARTIFACT_VERSION
 } from "./schemas.js";
-import { NetworkId } from "@hardkas/core";
+import { NetworkId, type CorruptionCode, type CorruptionSeverity } from "@hardkas/core";
+import { verifyFeeSemantics } from "./feeVerify.js";
+import { verifyLineage } from "./lineage.js";
 
 export interface Clock {
   now(): number;
@@ -25,13 +27,14 @@ export interface VerificationContext {
   parent?: unknown;
 }
 
-export type VerificationSeverity = "info" | "warning" | "error" | "critical";
+export type VerificationSeverity = CorruptionSeverity | "info" | "critical";
 
 export type VerificationIssue = {
-  code: string;
+  code: CorruptionCode | string;
   severity: VerificationSeverity;
   message: string;
   path?: string | undefined;
+  pathStr?: string | undefined; // For compatibility
   artifactId?: string | undefined;
 };
 
@@ -94,7 +97,7 @@ export async function verifyArtifactIntegrity(artifactOrPath: unknown): Promise<
 
     // 2. Basic Version & Schema Check
     if (!v.version || !v.schema) {
-      addError("MISSING_METADATA", "Missing version or schema (Artifact might be v1 or legacy)");
+      addError("ARTIFACT_SCHEMA_MISSING", "Missing version or schema (Artifact might be v1 or legacy)");
       return result;
     }
 
@@ -102,18 +105,19 @@ export async function verifyArtifactIntegrity(artifactOrPath: unknown): Promise<
     const [currentMajor] = ARTIFACT_VERSION.split(".");
     const [artifactMajor] = (v.version as string).split(".");
     if (currentMajor !== artifactMajor) {
-      addError("INCOMPATIBLE_VERSION", `Incompatible version: current system is v${currentMajor}, artifact is v${artifactMajor}`);
+      addError("ARTIFACT_SCHEMA_INVALID", `Incompatible version: current system is v${currentMajor}, artifact is v${artifactMajor}`);
       return result;
     }
 
     // 3. Hash Verification
-    const actualHash = calculateContentHash(v);
+    const hashVersion = (v.hashVersion as number) || 1;
+    const actualHash = calculateContentHash(v, hashVersion);
     result.actualHash = actualHash;
 
     if (!v.contentHash) {
-      addError("MISSING_HASH", "Missing contentHash field");
+      addError("ARTIFACT_HASH_MISMATCH", "Missing contentHash field");
     } else if (actualHash !== v.contentHash) {
-      addError("HASH_MISMATCH", `Hash mismatch: expected ${v.contentHash}, got ${actualHash}`);
+      addError("ARTIFACT_HASH_MISMATCH", `Hash mismatch: expected ${v.contentHash}, got ${actualHash}`);
     }
 
     // 4. Zod Schema Validation
@@ -131,18 +135,22 @@ export async function verifyArtifactIntegrity(artifactOrPath: unknown): Promise<
       if (!validation.success) {
         validation.error.issues.forEach((e: any) => {
           const pathStr = e.path.join(".");
-          addError("SCHEMA_VALIDATION_ERROR", `${pathStr}: ${e.message}`, pathStr);
+          addError("ARTIFACT_SCHEMA_INVALID", `${pathStr}: ${e.message}`, pathStr);
         });
       }
     } else {
-      addError("UNSUPPORTED_SCHEMA", `Unsupported or unknown artifact schema: ${v.schema}`);
+      addError("ARTIFACT_SCHEMA_INVALID", `Unsupported or unknown artifact schema: ${v.schema}`);
     }
 
     result.ok = result.issues.every(i => i.severity !== "error" && i.severity !== "critical");
     return result;
 
   } catch (e: any) {
-    addError("UNEXPECTED_ERROR", `Integrity verification error: ${e.message}`);
+    if (e instanceof SyntaxError) {
+      addError("ARTIFACT_JSON_INVALID", `Invalid JSON: ${e.message}`);
+    } else {
+      addError("ARTIFACT_ID_INVALID", `Unexpected verification error: ${e.message}`);
+    }
     return result;
   }
 }
@@ -201,31 +209,15 @@ export function verifyArtifactSemantics(artifact: unknown, context: Verification
     }
   }
 
-  // 3. Mode Integrity
-  if (v.schema === "hardkas.signedTx" && v.mode === "simulated") {
-    // A simulated artifact should not have real signatures (placeholder check)
-  }
-
-  // 4. Lineage Audit
-  const lineageAudit = verifyLineage(v, context.parent);
+  // 3. Lineage Audit (Harden and Harmonize)
+  const lineageAudit = verifyLineage(v, context.parent, { strict });
   if (!lineageAudit.ok || (strict && !v.lineage)) {
-    if (!v.lineage && strict) {
-      addIssue({
-        code: "MISSING_LINEAGE",
-        severity: "error",
-        message: "Strict mode requires formal lineage metadata."
-      });
-    }
-    
     lineageAudit.issues.forEach(issue => {
-      addIssue({
-        ...issue,
-        severity: strict ? "error" : "warning"
-      });
+      addIssue(issue);
     });
   }
 
-  // 5. Hardening Fields (Phase 4)
+  // 4. Hardening Fields
   if (strict) {
     if (!v.workflowId) addIssue({ code: "MISSING_WORKFLOW_ID", severity: "error", message: "Strict mode requires workflowId" });
     if (!v.assumptionLevel) addIssue({ code: "MISSING_ASSUMPTION_LEVEL", severity: "error", message: "Strict mode requires assumptionLevel" });
@@ -236,7 +228,7 @@ export function verifyArtifactSemantics(artifact: unknown, context: Verification
     if (!v.executionMode) addIssue({ code: "MISSING_EXECUTION_MODE", severity: "warning", message: "Missing executionMode" });
   }
 
-  // 6. Network vs Address prefix check
+  // 5. Network vs Address prefix check
   const networkId = context.networkId || (v.networkId as NetworkId);
   const networkIdStr = networkId as string;
   
@@ -256,45 +248,22 @@ export function verifyArtifactSemantics(artifact: unknown, context: Verification
     }
   }
 
-  // 7. Advanced Lineage Consistency
-  const lineage = v.lineage as any;
-  if (lineage) {
-    const { artifactId, parentArtifactId, rootArtifactId } = lineage;
-    
-    if (artifactId === parentArtifactId) {
-      addIssue({
-        code: "LINEAGE_INCONSISTENCY",
-        severity: "error",
-        message: "Artifact cannot be its own parent."
-      });
-    }
-
-    if (!parentArtifactId && artifactId !== rootArtifactId) {
-       addIssue({
-         code: "LINEAGE_INCONSISTENCY",
-         severity: "error",
-         message: "Root artifactId must match artifactId when no parent exists."
-       });
-    }
-  }
-
   return result;
 }
 
-import { verifyFeeSemantics } from "./feeVerify.js";
-import { verifyLineage } from "./lineage.js";
-
 /**
  * Verifies an artifact's replay consistency.
- * Contract/Stub for Phase 4.
+ * Honest implementation: reports as unsupported or not implemented.
  */
-export async function verifyArtifactReplay(artifact: unknown, context: VerificationContext = {}): Promise<ArtifactVerificationResult> {
-  // TODO: Implement actual replay validation logic
-  // For now, it's a stub that does not fake success.
+export async function verifyArtifactReplay(artifact: unknown, _context: VerificationContext = {}): Promise<ArtifactVerificationResult> {
   return {
-    ok: true,
-    issues: [],
-    errors: []
+    ok: false,
+    issues: [{
+      code: "REPLAY_UNSUPPORTED_CHECK",
+      severity: "warning",
+      message: "Replay verification (full consensus simulation) is currently unsupported in this build."
+    }],
+    errors: ["Replay verification (consensus) unsupported"]
   };
 }
 

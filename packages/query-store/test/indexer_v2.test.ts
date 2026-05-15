@@ -1,13 +1,12 @@
-import { describe, it, beforeEach, afterEach } from "node:test";
-import assert from "node:assert";
+import { describe, it, beforeEach, afterEach, expect } from "vitest";
 import { HardkasStore } from "../src/db.js";
 import { HardkasIndexer } from "../src/indexer.js";
 import fs from "node:fs";
 import path from "node:path";
 import os from "node:os";
-import { createEventEnvelope, asWorkflowId, asCorrelationId, asNetworkId, asEventId } from "@hardkas/core";
+import { createEventEnvelope, asWorkflowId, asCorrelationId, asNetworkId } from "@hardkas/core";
 
-describe("HardkasIndexer V2 (Phase 3)", () => {
+describe("HardkasIndexer Integrity", () => {
   let tmpDir: string;
   let dbPath: string;
 
@@ -21,7 +20,7 @@ describe("HardkasIndexer V2 (Phase 3)", () => {
     if (fs.existsSync(tmpDir)) fs.rmSync(tmpDir, { recursive: true, force: true });
   });
 
-  it("should index events idempotently (no duplicates)", () => {
+  it("should index events idempotently (no duplicates)", async () => {
     const store = new HardkasStore({ dbPath });
     store.connect();
     const indexer = new HardkasIndexer(store.getDatabase(), { cwd: tmpDir });
@@ -39,19 +38,19 @@ describe("HardkasIndexer V2 (Phase 3)", () => {
     fs.appendFileSync(eventsPath, JSON.stringify(event) + "\n");
 
     // First sync
-    indexer.sync();
+    await indexer.sync();
     let count = store.getDatabase().prepare("SELECT COUNT(*) as count FROM events").get() as { count: number };
-    assert.strictEqual(count.count, 1);
+    expect(count.count).toBe(1);
 
     // Second sync (same file, same content)
-    indexer.sync();
+    await indexer.sync();
     count = store.getDatabase().prepare("SELECT COUNT(*) as count FROM events").get() as { count: number };
-    assert.strictEqual(count.count, 1); // Should still be 1
+    expect(count.count).toBe(1); // Should still be 1
 
     store.disconnect();
   });
 
-  it("raw_json should store the full EventEnvelope", () => {
+  it("raw_json should store the full EventEnvelope", async () => {
     const store = new HardkasStore({ dbPath });
     store.connect();
     const indexer = new HardkasIndexer(store.getDatabase(), { cwd: tmpDir });
@@ -68,16 +67,16 @@ describe("HardkasIndexer V2 (Phase 3)", () => {
     const eventsPath = path.join(tmpDir, ".hardkas", "events.jsonl");
     fs.appendFileSync(eventsPath, JSON.stringify(event) + "\n");
 
-    indexer.sync();
+    await indexer.sync();
     const row = store.getDatabase().prepare("SELECT raw_json FROM events LIMIT 1").get() as { raw_json: string };
     const parsed = JSON.parse(row.raw_json);
-    assert.strictEqual(parsed.schema, "hardkas.event");
-    assert.strictEqual(parsed.eventId, event.eventId);
+    expect(parsed.schema).toBe("hardkas.event");
+    expect(parsed.eventId).toBe(event.eventId);
 
     store.disconnect();
   });
 
-  it("should derive traces from workflow events", () => {
+  it("should derive traces from workflow events", async () => {
     const store = new HardkasStore({ dbPath });
     store.connect();
     const indexer = new HardkasIndexer(store.getDatabase(), { cwd: tmpDir });
@@ -95,10 +94,10 @@ describe("HardkasIndexer V2 (Phase 3)", () => {
     const eventsPath = path.join(tmpDir, ".hardkas", "events.jsonl");
     fs.appendFileSync(eventsPath, JSON.stringify(e1) + "\n");
 
-    indexer.sync();
+    await indexer.sync();
     let trace = store.getDatabase().prepare("SELECT * FROM traces WHERE workflow_id = ?").get(wfId) as any;
-    assert.ok(trace);
-    assert.strictEqual(trace.status, "running");
+    expect(trace).toBeTruthy();
+    expect(trace.status).toBe("running");
 
     // Add completion event
     const e2 = createEventEnvelope({
@@ -111,10 +110,10 @@ describe("HardkasIndexer V2 (Phase 3)", () => {
     });
     fs.appendFileSync(eventsPath, JSON.stringify(e2) + "\n");
 
-    indexer.sync();
+    await indexer.sync();
     trace = store.getDatabase().prepare("SELECT * FROM traces WHERE workflow_id = ?").get(wfId) as any;
-    assert.strictEqual(trace.status, "completed");
-    assert.strictEqual(trace.ended_at, e2.timestamp);
+    expect(trace.status).toBe("completed");
+    expect(trace.ended_at).toBe(e2.timestamp);
 
     store.disconnect();
   });

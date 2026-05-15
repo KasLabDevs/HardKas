@@ -1,5 +1,6 @@
 import { Command } from "commander";
 import { handleError, UI } from "../ui.js";
+import pc from "picocolors";
 
 export function registerQueryCommands(program: Command) {
   const queryCmd = program.command("query").description("Query and introspect HardKAS artifacts, lineage, and workflows");
@@ -19,42 +20,247 @@ export function registerQueryCommands(program: Command) {
   storeCmd
     .command("doctor")
     .description("Integrity and freshness check of the query store index")
-    .action(async () => {
+    .option("--migrate", "Apply pending migrations if found", false)
+    .option("--wait-lock", "Wait for workspace lock if held", false)
+    .option("--lock-timeout <ms>", "Lock wait timeout in ms", "30000")
+    .action(async (options) => {
+      const { withLock } = await import("@hardkas/core");
+      const { handleLockError } = await import("../ui.js");
       try {
-        const engine = await getQueryEngine();
-        const report = await engine.backend.doctor();
-        
-        console.log("\n  ═══ Query Store Doctor ═══\n");
-        console.log(`  Backend:      ${engine.backend.kind()}`);
-        console.log(`  Overall:      ${report.ok ? "✓ HEALTHY" : "✗ STALE / ISSUES"}`);
-        console.log(`  Last Indexed: ${report.lastIndexedAt || "never"}`);
-        console.log(`  Stale Rows:   ${report.staleArtifacts || 0}`);
-        console.log(`  Zombie Rows:  ${report.zombieArtifacts || 0}`);
-        console.log(`  Orphan Edges: ${report.orphanEdges || 0}`);
-        
-        if (report.corruptedFiles?.length > 0) {
-          console.log("\n  Corrupted Files:");
-          for (const f of report.corruptedFiles) console.log(`    ✗ ${f}`);
-        }
-        
-        if (!report.ok) {
-          console.log("\n  Recommendation: Run 'hardkas query store rebuild' to fix issues.\n");
+        const action = async () => {
+          const engine = await getQueryEngine();
+          
+          if (options.migrate) {
+             console.log("\n  Checking and applying migrations...");
+             await engine.backend.migrate();
+          }
+
+          const report = await engine.backend.doctor();
+          
+          console.log("\n  ═══ Query Store Doctor ═══\n");
+          console.log(`  Backend:      ${engine.backend.kind()}`);
+          console.log(`  Overall:      ${report.ok ? pc.green("✓ HEALTHY") : pc.red("✗ STALE / ISSUES")}`);
+          console.log(`  Last Indexed: ${report.lastIndexedAt || "never"}`);
+          
+          if (report.storeIssues && report.storeIssues.length > 0) {
+            console.log("\n  Store Issues:");
+            for (const issue of report.storeIssues) {
+              const icon = issue.severity === "error" ? pc.red("✗") : pc.yellow("⚠");
+              console.log(`    ${icon} [${issue.code}] ${issue.message}`);
+              if (issue.suggestion) console.log(`      Suggestion: ${issue.suggestion}`);
+            }
+          }
+          
+          if (report.corruptedFiles?.length > 0) {
+            console.log("\n  Corrupted Files:");
+            for (const f of report.corruptedFiles) console.log(`    ${pc.red("✗")} ${f}`);
+          }
+          
+          if (!report.ok) {
+            const cmd = report.storeIssues?.some((i: any) => i.code.includes("MIGRATION")) ? "migrate" : "rebuild";
+            console.log(`\n  ${UI.warning("Recommendation:")} Run 'hardkas query store ${cmd}' to fix issues.\n`);
+            process.exitCode = 1;
+          } else {
+            console.log("\n  ✓ Everything looks good.\n");
+          }
+        };
+
+        if (options.migrate) {
+          await withLock({
+            rootDir: process.cwd(),
+            name: "query-store",
+            command: "hardkas query store doctor --migrate",
+            wait: options.waitLock,
+            timeoutMs: parseInt(options.lockTimeout)
+          }, action);
         } else {
-          console.log("\n  Everything looks good.\n");
+          await action();
         }
-      } catch (e) { handleError(e); process.exitCode = 1; }
+      } catch (e) { handleLockError(e); process.exitCode = 1; }
+    });
+
+  storeCmd
+    .command("migrate")
+    .description("Apply pending schema migrations to the query store")
+    .option("--wait-lock", "Wait for workspace lock if held", false)
+    .option("--lock-timeout <ms>", "Lock wait timeout in ms", "30000")
+    .action(async (options) => {
+      const { withLock } = await import("@hardkas/core");
+      const { handleLockError } = await import("../ui.js");
+      try {
+        await withLock({
+          rootDir: process.cwd(),
+          name: "query-store",
+          command: "hardkas query store migrate",
+          wait: options.waitLock,
+          timeoutMs: parseInt(options.lockTimeout)
+        }, async () => {
+          console.log("\n  Checking for pending migrations...");
+          const engine = await getQueryEngine();
+          const result = await engine.backend.migrate();
+          
+          if (result.applied > 0) {
+            UI.success(`Applied ${result.applied} migration(s). Store is up to date.`);
+          } else {
+            UI.info("No pending migrations found. Store is already up to date.");
+          }
+          console.log("");
+        });
+      } catch (e) { handleLockError(e); process.exitCode = 1; }
+    });
+
+  storeCmd
+    .command("sync")
+    .alias("index")
+    .description("Synchronize the filesystem artifacts with the query store index")
+    .option("--strict", "Fail on any corrupted data", false)
+    .option("--wait-lock", "Wait for workspace lock if held", false)
+    .option("--lock-timeout <ms>", "Lock wait timeout in ms", "30000")
+    .option("--json", "Output as JSON", false)
+    .action(async (options) => {
+      const { withLock } = await import("@hardkas/core");
+      const { handleLockError } = await import("../ui.js");
+      try {
+        await withLock({
+          rootDir: process.cwd(),
+          name: "query-store",
+          command: "hardkas query store sync",
+          wait: options.waitLock,
+          timeoutMs: parseInt(options.lockTimeout)
+        }, async () => {
+          if (!options.json) console.log("\n  Synchronizing query store index...");
+          const engine = await getQueryEngine();
+          const start = Date.now();
+          const result = await engine.backend.sync({ strict: options.strict });
+          
+          if (options.json) {
+            console.log(JSON.stringify(result, null, 2));
+          } else {
+            const elapsed = Date.now() - start;
+            console.log(`  ✓ Index synchronized in ${elapsed}ms.`);
+            console.log(`\n  Artifacts: ${result.artifacts.indexed}/${result.artifacts.scanned} indexed (${result.artifacts.corrupted} corrupted)`);
+            console.log(`  Events:    ${result.events.indexed}/${result.events.scanned} indexed (${result.events.corrupted} corrupted)`);
+            
+            if (result.issues && result.issues.length > 0) {
+              console.log("\n  Issues Found:");
+              for (const issue of result.issues.slice(0, 10)) {
+                console.log(`    ${issue.severity === "error" ? pc.red("✗") : pc.yellow("⚠")} [${issue.code}] ${issue.message}`);
+                if (issue.path) console.log(`      At: ${issue.path}${issue.lineNumber ? ":" + issue.lineNumber : ""}`);
+              }
+              if (result.issues.length > 10) console.log(`    ... and ${result.issues.length - 10} more.`);
+            }
+
+            if (!result.ok) {
+               console.log(`\n  ${UI.error("Synchronization encountered corruption.")} Use --strict for fail-fast behavior.`);
+               process.exitCode = 1;
+            }
+            console.log("");
+          }
+        });
+      } catch (e) { handleLockError(e); process.exitCode = 1; }
     });
 
   storeCmd
     .command("rebuild")
     .description("Force a complete rebuild of the query store index")
-    .action(async () => {
+    .option("--strict", "Fail on any corrupted data", false)
+    .option("--wait-lock", "Wait for workspace lock if held", false)
+    .option("--lock-timeout <ms>", "Lock wait timeout in ms", "30000")
+    .option("--json", "Output as JSON", false)
+    .action(async (options) => {
+      const { withLock } = await import("@hardkas/core");
+      const { handleLockError } = await import("../ui.js");
       try {
-        console.log("\n  Rebuilding query store index...");
+        await withLock({
+          rootDir: process.cwd(),
+          name: "query-store",
+          command: "hardkas query store rebuild",
+          wait: options.waitLock,
+          timeoutMs: parseInt(options.lockTimeout)
+        }, async () => {
+          if (!options.json) console.log("\n  Rebuilding query store index...");
+          const engine = await getQueryEngine();
+          const start = Date.now();
+          const result = await engine.backend.rebuild({ strict: options.strict });
+          
+          if (options.json) {
+            console.log(JSON.stringify(result, null, 2));
+          } else {
+            const elapsed = Date.now() - start;
+            console.log(`  ✓ Index rebuilt successfully in ${elapsed}ms.`);
+            console.log(`\n  Artifacts: ${result.artifacts.indexed}/${result.artifacts.scanned} indexed (${result.artifacts.corrupted} corrupted)`);
+            console.log(`  Events:    ${result.events.indexed}/${result.events.scanned} indexed (${result.events.corrupted} corrupted)`);
+            
+            if (result.issues && result.issues.length > 0) {
+              console.log("\n  Corruption Issues:");
+              for (const issue of result.issues.slice(0, 10)) {
+                console.log(`    ${issue.severity === "error" ? pc.red("✗") : pc.yellow("⚠")} [${issue.code}] ${issue.message}`);
+                if (issue.path) console.log(`      At: ${issue.path}${issue.lineNumber ? ":" + issue.lineNumber : ""}`);
+              }
+              if (result.issues.length > 10) console.log(`    ... and ${result.issues.length - 10} more.`);
+            }
+            
+            if (!result.ok) {
+              console.log(`\n  ${UI.error("Rebuild failed or encountered corruption.")} Use --strict for fail-fast behavior.`);
+              process.exitCode = 1;
+            }
+            console.log("");
+          }
+        });
+      } catch (e) { handleLockError(e); process.exitCode = 1; }
+    });
+
+  storeCmd
+    .command("sql <query>")
+    .description("Run a raw SQL query against the query store")
+    .option("--json", "Output as JSON", false)
+    .action(async (query: string, options) => {
+      try {
         const engine = await getQueryEngine();
-        const start = Date.now();
-        await engine.backend.rebuild();
-        console.log(`  ✓ Index rebuilt successfully in ${Date.now() - start}ms.\n`);
+        // This requires the backend to expose raw SQL execution, 
+        // but for now we'll assume it can or we'll add it.
+        if (typeof (engine.backend as any).executeRawSql !== "function") {
+           throw new Error("Raw SQL execution not supported by current backend");
+        }
+        const result = await (engine.backend as any).executeRawSql(query);
+        
+        if (options.json) {
+          console.log(JSON.stringify(result, null, 2));
+        } else {
+          if (result.length === 0) {
+            console.log("\n  No results.\n");
+          } else {
+            console.table(result);
+          }
+        }
+      } catch (e) { handleError(e); process.exitCode = 1; }
+    });
+
+  storeCmd
+    .command("export")
+    .description("Export logical store state to JSON")
+    .option("--output <path>", "Output file path")
+    .action(async (options) => {
+      try {
+        const { HardkasStore } = await import("@hardkas/query-store");
+        const store = new HardkasStore();
+        store.connect({ autoMigrate: true });
+        const db = store.getDatabase();
+        
+        const artifacts = db.prepare("SELECT * FROM artifacts ORDER BY artifact_id ASC").all();
+        const events = db.prepare("SELECT * FROM events ORDER BY event_id ASC").all();
+        
+        const dump = { artifacts, events };
+        const json = JSON.stringify(dump, null, 2);
+        
+        if (options.output) {
+          const fs = await import("node:fs");
+          fs.writeFileSync(options.output, json);
+          UI.success(`Store exported to ${options.output}`);
+        } else {
+          console.log(json);
+        }
+        store.disconnect();
       } catch (e) { handleError(e); process.exitCode = 1; }
     });
 

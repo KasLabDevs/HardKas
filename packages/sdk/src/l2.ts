@@ -20,6 +20,6 @@ export class HardkasL2 {
    * Gets a specific L2 network profile by name.
    */
   getProfile(name: string): L2NetworkProfile | null {
-    return getL2Profile(name);
+    return getL2Profile(name) || null;
   }
 }

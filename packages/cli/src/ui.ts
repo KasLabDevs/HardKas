@@ -36,6 +36,16 @@ export const UI = {
     console.log(pc.yellow(`     ${masked}`));
   },
 
+  securityWarning(code: string, message: string, suggestion?: string) {
+    console.log(pc.yellow(`\n  ⚠️  SECURITY WARNING [${code}]:`));
+    console.log(pc.yellow(`     ${message}`));
+    if (suggestion) {
+      console.log(pc.cyan(`\n  💡 Suggestion:`));
+      console.log(pc.cyan(`     ${suggestion}`));
+    }
+    console.log("");
+  },
+
   error(msg: string, suggestion?: string) {
     const maskedMsg = maskSecrets(msg);
     const maskedSuggestion = suggestion ? maskSecrets(suggestion) : undefined;
@@ -118,4 +128,44 @@ export function handleError(e: unknown, context?: string) {
   }
 
   UI.error(context ? `${context}: ${msg}` : msg, suggestion);
+}
+
+/**
+ * Specialized error handler for lock-related errors.
+ */
+export function handleLockError(e: any) {
+  const code = e.code || "UNKNOWN_ERROR";
+  const meta = e.cause as any;
+
+  if (code === "LOCK_HELD" || code === "LOCK_TIMEOUT" || code === "STALE_LOCK") {
+    const title = code === "STALE_LOCK" 
+      ? "Stale Workspace Lock Detected" 
+      : "Workspace is locked by another HardKAS process";
+    
+    console.error(pc.red(`\n  ✗ ${pc.bold(title)}`));
+    console.error(pc.red(`  ${"─".repeat(title.length + 4)}`));
+    
+    if (meta) {
+      console.error(`  ${pc.dim("Lock:")}    ${pc.white(meta.name)}`);
+      console.error(`  ${pc.dim("PID:")}     ${pc.white(meta.pid)}`);
+      console.error(`  ${pc.dim("Command:")} ${pc.white(meta.command)}`);
+      console.error(`  ${pc.dim("Created:")} ${pc.white(meta.createdAt)}`);
+      if (meta.path) console.error(`  ${pc.dim("Path:")}    ${pc.white(meta.path)}`);
+    }
+
+    console.error(pc.cyan(`\n  💡 Suggestion:`));
+    if (code === "STALE_LOCK") {
+      console.error(`    The process (PID ${meta?.pid}) appears to be dead.`);
+      console.error(`    Run 'hardkas lock clear ${meta?.name} --if-dead' to release it safely.`);
+    } else {
+      console.error(`    Wait for the process to finish, or run:`);
+      console.error(`    hardkas lock doctor`);
+      console.error(`\n    If you believe the process is dead:`);
+      console.error(`    hardkas lock clear ${meta?.name} --if-dead`);
+    }
+    console.error("");
+    return;
+  }
+
+  handleError(e);
 }

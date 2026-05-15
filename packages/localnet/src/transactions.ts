@@ -6,9 +6,39 @@ import { getSpendableUtxos } from "./balance.js";
 import { 
   createTxPlanArtifact, 
   createSimulatedTxReceipt,
-  calculateContentHash
+  calculateContentHash,
+  HARDKAS_VERSION,
+  ARTIFACT_VERSION
 } from "@hardkas/artifacts";
+import type { DagContext, TxReceipt } from "@hardkas/artifacts";
 import { calculateStateHash } from "./snapshot.js";
+
+/**
+ * Builds a typed DagContext from localnet DAG state.
+ */
+function buildDagContextFromState(state: LocalnetState): DagContext {
+  if (state.dag) {
+    return {
+      mode: "dag-light",
+      sink: state.dag.sink,
+      acceptedTxIds: state.dag.acceptedTxIds,
+      displacedTxIds: state.dag.displacedTxIds,
+      conflictSet: state.dag.conflictSet
+    };
+  }
+  return { mode: "linear", sink: "linear-pseudo-sink" };
+}
+
+/**
+ * Generates a deterministic failed transaction ID from error context.
+ * No Date.now() or Math.random() — same failure = same ID.
+ */
+function generateDeterministicFailedTxId(preStateHash: string, errorMessage: string, daaScore: string): string {
+  const normalized = errorMessage.replace(/[^a-zA-Z0-9_:. -]/g, "");
+  const input = `failed:${preStateHash}:${normalized}:${daaScore}`;
+  const hash = createHash("sha256").update(input).digest("hex").slice(0, 32);
+  return `simtx_failed_${hash}`;
+}
 
 /**
  * Generates a deterministic simulated transaction ID from plan and state.
@@ -160,24 +190,11 @@ export function applySimulatedPayment(
     const receipt = createSimulatedTxReceipt(planArtifact, txId, {
       spentUtxoIds,
       createdUtxoIds,
-      daaScore: nextDaaScore
+      daaScore: nextDaaScore,
+      preStateHash,
+      postStateHash,
+      dagContext: buildDagContextFromState(state)
     });
-
-    // Add state hashes to receipt
-    (receipt as any).preStateHash = preStateHash;
-    (receipt as any).postStateHash = postStateHash;
-
-    if (state.dag) {
-      (receipt as any).dagContext = {
-        mode: "dag-light",
-        sink: state.dag.sink,
-        acceptedTxIds: state.dag.acceptedTxIds,
-        displacedTxIds: state.dag.displacedTxIds,
-        conflictSet: state.dag.conflictSet
-      };
-    } else {
-      (receipt as any).dagContext = { mode: "linear", sink: "linear-pseudo-sink" };
-    }
 
     return {
       ok: true,
@@ -189,16 +206,19 @@ export function applySimulatedPayment(
 
   } catch (error: any) {
     // 7. Atomic Rollback (return original state)
-    const txId = "failed-" + Date.now();
-    const receipt = {
-      schema: "hardkas.txReceipt",
-      status: "failed",
-      mode: "simulated",
+    // Deterministic failed tx ID — no Date.now() or Math.random()
+    const daaScore = state.daaScore || "0";
+    const txId = generateDeterministicFailedTxId(preStateHash, error.message, daaScore);
+    const receipt: any = {
+      schema: "hardkas.txReceipt" as const,
+      status: "failed" as const,
+      mode: "simulated" as const,
       txId,
-      createdAt: new Date().toISOString(),
+      createdAt: "1970-01-01T00:00:00.000Z",
       errors: [error.message],
       preStateHash,
-      postStateHash: preStateHash
+      postStateHash: preStateHash,
+      dagContext: buildDagContextFromState(state)
     };
 
     return {
@@ -274,36 +294,28 @@ export function applySimulatedPlan(
     const receipt = createSimulatedTxReceipt(planArtifact, txId, {
       spentUtxoIds,
       createdUtxoIds,
-      daaScore: nextDaaScore
+      daaScore: nextDaaScore,
+      preStateHash,
+      postStateHash,
+      dagContext: buildDagContextFromState(state)
     });
-
-    (receipt as any).preStateHash = preStateHash;
-    (receipt as any).postStateHash = postStateHash;
-
-    if (state.dag) {
-      (receipt as any).dagContext = {
-        mode: "dag-light",
-        sink: state.dag.sink,
-        acceptedTxIds: state.dag.acceptedTxIds,
-        displacedTxIds: state.dag.displacedTxIds,
-        conflictSet: state.dag.conflictSet
-      };
-    } else {
-      (receipt as any).dagContext = { mode: "linear", sink: "linear-pseudo-sink" };
-    }
 
     return { ok: true, state: nextState, receipt, planArtifact, errors };
 
   } catch (error: any) {
-    const receipt = {
-      schema: "hardkas.txReceipt",
-      status: "failed",
-      mode: "simulated",
-      txId: "failed-replay",
-      createdAt: new Date().toISOString(),
+    // Deterministic failed replay ID — no Date.now()
+    const daaScore = state.daaScore || "0";
+    const txId = generateDeterministicFailedTxId(preStateHash, error.message, daaScore);
+    const receipt: any = {
+      schema: "hardkas.txReceipt" as const,
+      status: "failed" as const,
+      mode: "simulated" as const,
+      txId,
+      createdAt: "1970-01-01T00:00:00.000Z",
       errors: [error.message],
       preStateHash,
-      postStateHash: preStateHash
+      postStateHash: preStateHash,
+      dagContext: buildDagContextFromState(state)
     };
 
     return { ok: false, state: state, receipt, errors: [error.message] };

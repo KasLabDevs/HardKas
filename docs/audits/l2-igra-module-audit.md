@@ -1,7 +1,7 @@
 # HardKas L2 / Igra Module Audit
 
 ## 1. Scope
-This audit evaluates the HardKas L2 module exposed through the `hardkas l2 ...` command-line interface. The following have been analyzed:
+This audit evaluates the HardKas L2 module exposed through the `hardkas l2 [command]` command-line interface. The following have been analyzed:
 - CLI coverage and wiring.
 - Management of L2 network profiles and their integration with configuration.
 - EVM transactional lifecycle (build, sign, send, receipt, status).

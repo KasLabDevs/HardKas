@@ -1,4 +1,4 @@
-import { verifyArtifactIntegrity, verifyArtifactSemantics } from "@hardkas/artifacts";
+import { verifyArtifactIntegrity, verifyArtifactSemantics, verifyArtifactReplay } from "@hardkas/artifacts";
 import { UI } from "../ui.js";
 import path from "node:path";
 import fs from "node:fs";
@@ -38,10 +38,21 @@ export async function runArtifactVerify(options: ArtifactVerifyOptions) {
   const artifact = JSON.parse(fs.readFileSync(absolutePath, "utf-8"));
   const semanticResult = verifyArtifactSemantics(artifact, { strict: options.strict ?? false });
   
-  // Merge semantic issues into result
+  // 3. Replay Audit (Honesty Check)
+  const replayResult = await verifyArtifactReplay(artifact, { strict: options.strict ?? false });
+  
+  // Merge issues
   result.issues.push(...semanticResult.issues);
+  result.issues.push(...replayResult.issues);
+  
   result.errors.push(...semanticResult.errors);
+  result.errors.push(...replayResult.errors);
+  
   result.ok = result.ok && semanticResult.ok;
+  // Note: we don't necessarily make the whole thing fail just because replay is not implemented,
+  // unless strict mode is on and replay was specifically requested?
+  // For now, we follow the user request: result.ok is true only if integrity and semantics are ok.
+  // Replay issues will show as warnings/errors.
 
   if (options.json) {
     console.log(JSON.stringify(result, null, 2));
@@ -58,11 +69,22 @@ export async function runArtifactVerify(options: ArtifactVerifyOptions) {
     
     if (options.strict) {
       console.log(`\nOperational Audit (STRICT):`);
-      const feeAudit = verifyArtifactSemantics(artifact, { strict: true });
-      if (feeAudit.ok) {
-        UI.success("  ✓ Economic invariants verified.");
+      if (semanticResult.ok) {
+        UI.success("  ✓ Economic & Lineage invariants verified.");
       } else {
-        UI.error("  ✗ Economic invariants VIOLATED.");
+        UI.error("  ✗ Semantic invariants VIOLATED.");
+      }
+    }
+
+    console.log(`\nReplay Verification:`);
+    if (replayResult.ok) {
+      UI.success("  ✓ Replay verified.");
+    } else {
+      const replayIssue = replayResult.issues.find(i => i.code === "REPLAY_UNSUPPORTED_CHECK");
+      if (replayIssue) {
+        UI.warning("  ⚠ REPLAY UNSUPPORTED (Consensus simulation skipped)");
+      } else {
+        UI.error("  ✗ Replay verification FAILED.");
       }
     }
   } else {

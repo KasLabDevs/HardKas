@@ -14,8 +14,8 @@ describe("Artifact Hardening (Phase 4)", () => {
     };
     
     const hash = calculateContentHash(artifact);
-    // Fixed hash for this specific object structure (excludes createdAt)
-    expect(hash).toBe("41522b28c732a66e909ad7bd2fed71785a3e791efb8dad7a0b096665f7ee7f9d");
+    // Fixed hash for this specific object structure (now includes version)
+    expect(hash).toBe("34c358ac44d0ff9f4cf6e11c57f54d3828de4f783815665926bf1cd51d36225f");
   });
 
   it("should use injected clock for semantic validation", () => {

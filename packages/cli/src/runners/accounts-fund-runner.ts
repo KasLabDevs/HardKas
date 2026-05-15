@@ -17,14 +17,18 @@ export async function runAccountsFund(options: AccountsFundOptions) {
   
   // 1. Safety Check: Determine current network
   const networkId = loadedConfig.config.defaultNetwork || "simnet";
+  const networkConfig = loadedConfig.config.networks?.[networkId];
+  
+  const isSimulated = networkId === "simulated" || networkId === "localnet" || networkConfig?.kind === "simulated";
+  
   const allowedNetworks = ["simnet", "localnet", "dev", "simulated"];
   
-  if (!allowedNetworks.includes(networkId)) {
+  if (!allowedNetworks.includes(networkId) && !isSimulated) {
     throw new Error(`Faucet/Funding is only allowed on development networks (${allowedNetworks.join(", ")}). Current network is: ${networkId}`);
   }
 
   // 2. Handle Simulated Environment
-  if (networkId === "simulated" || networkId === "localnet") {
+  if (isSimulated) {
     const state = await loadOrCreateLocalnetState();
     const amount = options.amountSompi || 1000n * 100_000_000n; // Default 1000 KAS
     const newState = fundAddress(state, { address, amountSompi: amount });

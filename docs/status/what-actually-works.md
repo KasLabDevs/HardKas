@@ -31,11 +31,15 @@ This document summarizes the actual operational capabilities of HardKAS v0.2.2-a
 
 ### 1. Query Engine
 - Relational search of artifacts by schema/sender/receiver.
-- Transaction lineage tracking.
-- Divergence detection in replay.
-- **Limitation**: "Correlation" queries and the `store index` command are not active in this version.
+- Transaction lineage tracking and 360-degree view.
+- Divergence detection in replay with state hash verification.
+- **Improved**: Full transactional store indexing with schema migrations.
 
-### 2. DAG Simulation
+### 2. Workspace Lock Safety
+- Prevents concurrent mutation of store and node state.
+- Supports `--wait-lock` and timeouts for CI/CD safety.
+
+### 3. DAG Simulation
 - Basic status monitoring.
 - Controlled reorg simulation in localnet.
 
@@ -48,8 +52,8 @@ This document summarizes the actual operational capabilities of HardKAS v0.2.2-a
 - **Goal**: Integrate Vitest/Mocha to run real tests against the SDK.
 
 ### 2. Transaction Tracing (`hardkas tx trace`)
-- **Current Status**: Disabled.
-- **Goal**: Implement fund flow visualization based on the Query engine.
+- **Current Status**: Operational via query store.
+- **Goal**: Add multi-hop graph visualization.
 
 ### 3. Session Persistence (`accounts lock/unlock`)
 - **Current Status**: "Locking" is purely informational.

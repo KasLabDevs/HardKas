@@ -14,6 +14,7 @@ import { DagQueryAdapter } from "./adapters/dag-adapter.js";
 import { EventsQueryAdapter } from "./adapters/events-adapter.js";
 import { TxQueryAdapter } from "./adapters/tx-adapter.js";
 import type { QueryAdapter, QueryDomain, QueryRequest, QueryResult } from "./types.js";
+import { withLock } from "@hardkas/core";
 import fs from "node:fs";
 import path from "node:path";
 
@@ -22,6 +23,10 @@ export interface QueryEngineOptions {
   readonly artifactDir: string;
   /** Primary data backend. If not provided, defaults to auto-discovery (SQLite > Filesystem). */
   readonly backend?: QueryBackend;
+  /** Automatically synchronize the store before queries. Requires 'query-store' lock. */
+  readonly autoSync?: boolean;
+  /** Whether to wait for the lock if held. */
+  readonly waitLock?: boolean;
 }
 
 export class QueryEngine {
@@ -37,16 +42,31 @@ export class QueryEngine {
     if (!backend) {
       // Auto-discovery: SQLite > FS Fallback
       const dbPath = path.join(options.artifactDir, ".hardkas", "store.db");
+      
       if (fs.existsSync(dbPath)) {
         try {
           const { HardkasStore, SqliteQueryBackend, HardkasIndexer } = await import("@hardkas/query-store");
           const store = new HardkasStore({ dbPath });
-          store.connect();
-          
-          // Auto-sync if possible to maintain freshness
-          const indexer = new HardkasIndexer(store.getDatabase());
-          await indexer.sync();
 
+          if (options.autoSync) {
+            // MUTATION PATH: Must be protected by lock
+            await withLock({
+              rootDir: options.artifactDir,
+              name: "query-store",
+              command: "query-engine-auto-sync",
+              wait: options.waitLock ?? false,
+              timeoutMs: 5000 // Short timeout for auto-sync
+            }, async () => {
+              store.connect({ autoMigrate: true });
+              const indexer = new HardkasIndexer(store.getDatabase());
+              await indexer.sync();
+            });
+          } else {
+            // READ-ONLY PATH: Connect but don't sync
+            // NOTE: store.connect() now defaults to autoMigrate: false
+            store.connect();
+          }
+          
           backend = new SqliteQueryBackend(store);
         } catch (e) {
           backend = new FilesystemQueryBackend(options.artifactDir);

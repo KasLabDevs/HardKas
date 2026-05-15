@@ -14,7 +14,8 @@ import path from "node:path";
 import { 
   coreEvents, 
   type EventEnvelope as ObsEvent,
-  type EventKind as ObsEventKind
+  type EventKind as ObsEventKind,
+  writeFileAtomic
 } from "@hardkas/core";
 
 // Specific event interfaces are now in @hardkas/core
@@ -169,6 +170,14 @@ export async function pruneEvents(olderThan: string, options?: { cwd?: string })
     }
   }
 
-  await fsp.writeFile(filePath, kept.join("\n") + (kept.length > 0 ? "\n" : ""), "utf-8");
+  const { withLock } = await import("@hardkas/core");
+  await withLock({
+    rootDir: options?.cwd || process.cwd(),
+    name: "events",
+    command: "hardkas query events prune"
+  }, async () => {
+    await writeFileAtomic(filePath, kept.join("\n") + (kept.length > 0 ? "\n" : ""), { encoding: "utf-8" });
+  });
+
   return pruned;
 }

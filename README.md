@@ -39,6 +39,11 @@ The architecture is stabilizing, but users should be aware:
 - **Encrypted Keystore**: Intended for developer workflows and local simulation only.
 - **RPC Integrations**: Health and diagnostic features are still hardening.
 
+### Functional Verification
+HardKAS has a deterministic end-to-end local artifact workflow proof covering simulated L1 execution, replay invariants, query rebuilds, state reset equivalence, and negative mutation detection. 
+
+Additionally, the **DX Acceptance Suite** verifies that every documented command (init, doctor, accounts, tx, query) works exactly as shown in a sandboxed environment, ensuring a reliable developer experience.
+
 ---
 
 ## What HardKAS IS vs. IS NOT

@@ -6,6 +6,8 @@ import { resolveRuntimeConfig } from "./paths";
 import { getNodeStatus } from "./status";
 import type { KaspaNodeConfig, KaspaNodeHandle, KaspaNodeStatus } from "./types";
 
+import { writeFileAtomic } from "@hardkas/core";
+
 export async function startKaspaNode(config: KaspaNodeConfig): Promise<KaspaNodeHandle> {
   const runtime = resolveRuntimeConfig(config);
   const args = buildKaspadArgs(config, runtime);
@@ -50,8 +52,8 @@ export async function startKaspaNode(config: KaspaNodeConfig): Promise<KaspaNode
     throw new Error(`Failed to start kaspad. Provide --binary /path/to/kaspad or ensure kaspad is in PATH.`);
   }
 
-  await fs.writeFile(runtime.pidFile, child.pid.toString());
-  await fs.writeFile(runtime.configFile, JSON.stringify(runtime, null, 2));
+  await writeFileAtomic(runtime.pidFile, child.pid.toString());
+  await writeFileAtomic(runtime.configFile, JSON.stringify(runtime, null, 2));
 
   child.unref();
 

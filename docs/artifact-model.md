@@ -2,7 +2,39 @@
 
 The HardKAS Artifact Model is the core data layer for deterministic Kaspa operations. It transforms raw JSON files into a verifiable, linked operational history.
 
-## 1. The Lineage Chain
+## 1. The Artifact Trust Boundary
+
+Artifact verification in HardKAS is designed to prove **internal consistency** and **provenance**, but it does not replace network-level consensus.
+
+### What Verification Proves:
+- **Integrity**: The bytes are intact and the `contentHash` matches the semantic data.
+- **Identity**: The artifact represents a specific state and schema version.
+- **Lineage**: The artifact belongs to a valid chain of operations (e.g., this Receipt came from that SignedTx).
+- **Contamination**: No mixing of networks (Mainnet/Testnet) or modes (Real/Simulated) has occurred.
+
+### What Verification Does NOT Prove:
+- **Consensus Validity**: Does not prove the transaction is valid under Kaspa consensus rules (unless Replay is verified).
+- **Finality**: Does not prove the transaction has reached sufficient confirmation depth.
+- **Network State**: Does not prove that the referenced UTXOs are still unspent on the live network.
+
+## 2. Deterministic Identity
+
+### Canonical Hashing
+HardKAS uses a deterministic serialization algorithm (`canonicalStringify`) to ensure that hashes are stable across different platforms (Node.js versions, OS, CI).
+
+#### Rules:
+- **Recursive Sorting**: All object keys are sorted alphabetically.
+- **BigInt Handling**: BigInts are serialized as **JSON strings** (e.g., `"100"`) to preserve precision and distinguish them from Number types.
+- **Exclusion List**: Non-semantic metadata is excluded from the hash:
+  - `contentHash`, `artifactId` (The result of hashing).
+  - `lineage` block (Provenance metadata).
+  - `createdAt`, `rpcUrl`, `hardkasVersion`, `file_path`.
+- **Semantic Inclusion**: The `version` field (schema version) **is included** in the hash. A change in artifact schema version is a semantic identity change.
+
+### Hash Evolution
+The `contentHash` semantics are tied to the `hashVersion` field. If the canonicalization rules evolve, the `hashVersion` will be incremented to prevent silent hash collisions or mismatches with historical artifacts.
+
+## 3. The Lineage Chain
 
 HardKAS operations follow a structured lifecycle, where each step produces an artifact that points to its parent.
 
@@ -13,46 +45,24 @@ graph TD
     ST -->|send| R[Receipt]
 ```
 
-### Core Identity Fields
-- **artifactId**: A unique identifier for the artifact (often matching the `contentHash`).
-- **lineageId**: A stable UUID representing the entire operational flow.
-- **rootArtifactId**: The ID of the initial artifact (usually the Snapshot) that started the flow.
-- **parentArtifactId**: The ID of the immediate predecessor.
+### Lineage Invariants
+- **Consistency**: `lineageId` and `rootArtifactId` must remain constant across the entire flow.
+- **Continuity**: `parentArtifactId` must match the `artifactId` of the previous step.
+- **Monotonicity**: The `sequence` number should ideally increase with each step (warnings are issued for non-monotonic jumps in branches/merges).
+- **Isolation**: Network and Mode must match between parent and child.
 
-## 2. Deterministic Integrity
+## 4. Semantic Verification
 
-### Canonical Hashing
-Every artifact is serialized using a **Canonical JSON Stringify** algorithm before hashing.
-- Object keys are sorted alphabetically.
-- Circular identity fields (`artifactId`, `contentHash`) are excluded during hashing.
-- This ensures that two developers producing the same operational state will generate identical hashes.
-
-### Semantic Verification
 Beyond structural integrity, HardKAS performs **Semantic Audits**:
 - **Economic Invariants**: Total Inputs >= Total Outputs + Fee.
 - **Mass Recomputation**: Re-calculating transaction mass to ensure fee compliance.
 - **Network Alignment**: Ensuring a `testnet` plan isn't being signed by a `mainnet` key.
 
-## 3. Artifact Types
-
-| Type | Schema | Purpose |
-| :--- | :--- | :--- |
-| **Snapshot** | `hardkas.snapshot.v2` | Captures DAA score, account balances, and UTXO sets. |
-| **Tx-Plan** | `hardkas.txPlan.v2` | A non-signed proposal for a transaction, including UTXO selection. |
-| **Signed-Tx** | `hardkas.signedTx.v2` | A fully signed transaction ready for broadcast. |
-| **Receipt** | `hardkas.txReceipt.v2` | Proof of submission and confirmation on the blockDAG. |
-
-## 4. Operational Invariants
-
-### Replay Protection
-Lineage IDs and sequences prevent the accidental reuse of old transaction plans.
-
-### Mode Isolation
-Artifacts are explicitly marked as `simulated` or `real`. The system strictly prohibits "Mode Contamination"—mixing simulated state with real network operations.
-
 ## 5. Audit Workflow
+
 Use the CLI to introspect any artifact:
 ```bash
+hardkas artifact verify <file> --strict
 hardkas artifact explain <file>
 ```
-This command performs a deep dive into the artifact's identity, economics, and security status.
+These commands perform a deep dive into the artifact's identity, economics, and security status.

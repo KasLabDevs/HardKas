@@ -16,21 +16,22 @@ This document presents an exhaustive audit of all runners implemented in the `@h
 | :--- | :--- | :--- | :--- | :--- | :--- |
 | `up-runner.ts` | `runUp` | `hardkas up` | `@hardkas/config` | `REAL` | Validates environment and RPC connectivity |
 | `tx-plan-runner.ts` | `runTxPlan` | `hardkas tx plan` | `tx-builder`, `artifacts` | `REAL` | Orchestrates UTXO retrieval and plan construction |
-| `tx-profile-runner.ts` | `runTxProfile` | `hardkas tx profile` | `tx-builder`, `artifacts` | `REAL` | Cost and mass analysis |
+| `tx-profile-runner.ts` | `runTxProfile` | `hardkas tx profile` | `tx-builder`, `artifacts` | `REAL` | Cost and mass analysis (integrated with snapshots) [UPDATED] |
 | `tx-sign-runner.ts` | `runTxSign` | `hardkas tx sign` | `accounts`, `artifacts` | `WRAPPER` | Delegates signing to `@hardkas/accounts` |
 | `tx-send-runner.ts` | `runTxSend` | `hardkas tx send` | `kaspa-rpc`, `localnet` | `REAL` | Real broadcast to network/simulator |
 | `tx-receipt-runner.ts` | `runTxReceipt` | `hardkas tx receipt` | `kaspa-rpc` | `REAL` | RPC query for TX ID |
 | `tx-flow.ts` | `runTxFlow` | `hardkas tx send` (shortcut) | Various | `REAL` | Full Plan-Sign-Send flow orchestrator |
-| `accounts-keystore-runners.ts` | `runAccountsKeystore*`| `hardkas accounts real *` | `accounts` | `REAL` | Argon2id/AES management |
+| `accounts-keystore-runners.ts` | `runAccountsKeystore*`| `hardkas accounts real [command]` | `accounts` | `REAL` | Argon2id/AES management |
 | `accounts-real-init-runner.ts` | `runAccountsRealInit` | `hardkas accounts real init` | `accounts` | `REAL` | Initializes physical Keystore store |
 | `accounts-real-generate-runner.ts`| `runAccountsRealGenerate`| `accounts real generate` | `sdk` | `REAL` | Deterministic Kaspa key generation |
-| `l2-tx-runners.ts` | `runL2Tx*` | `hardkas l2 tx *` | `l2` | `REAL` | Functional for build/sign/send/status; retains outdated messages |
+| `l2-tx-runners.ts` | `runL2Tx*` | `hardkas l2 tx [command]` | `l2` | `REAL` | Functional for build/sign/send/status; retains outdated messages |
 | `node-start-runner.ts` | `runNodeStart` | `hardkas node start` | `node-runner` | `REAL` | Docker node orchestration |
-| `dag-runners.ts` | `runDag*` | `hardkas dag *` | `localnet` | `PARTIAL` | Based on simulated light-model |
+| `script-runner.ts` | `runScript` | `hardkas run` | `testing` | `REAL` | TS execution with harness injection [NEW] |
+| `dag-runners.ts` | `runDag*` | `hardkas dag [command]` | `localnet` | `REAL` | GHOSTDAG approximate engine [UPDATED] |
 | `artifact-verify-runner.ts` | `runArtifactVerify` | `hardkas artifact verify` | `artifacts` | `REAL` | Zod schema integrity validation |
 | `artifact-explain-runner.ts` | `runArtifactExplain` | `hardkas artifact explain` | `artifacts` | `EXPERIMENTAL` | Semantic artifact analysis |
 | `trace-runner.ts` | `runTrace` | `hardkas tx trace` (unused) | `localnet` | `PARTIAL` | **UNUSED**: Associated command disabled |
-| `test.ts` (inline) | — | `hardkas test` | — | `MOCK` | No runner, static hardcoded output |
+| `test-runner.ts` | `runTest` | `hardkas test` | `testing` | `REAL` | Vitest programmatic runner [UPDATED] |
 
 ## 4. Runner → Command Map
 
@@ -74,7 +75,7 @@ This document presents an exhaustive audit of all runners implemented in the `@h
 | (Command) | `hardkas test` (inline) | `MOCK` | Implement real runner with Vitest. |
 | `dag-runners.ts` | `"Minimal v0.2-alpha implementation"` | `PARTIAL` | Expand simulated GHOSTDAG logic. |
 | `accounts.ts` | Lock/Session model | `PARTIAL` | Implement real session management. |
-| `l2-tx-runners.ts` | Outdated next step message | **REAL with stale UX hint** | Correct message; send support already exists. |
+| `l2-tx-runners.ts` | Outdated next step message | **REAL with stale UX hint** | Correct message; send support already exists. [STILL VALID] |
 | `trace-runner.ts` | Associated command disabled | **UNUSED** | Integrate with Query Engine or remove. |
 
 ## 8. Stability Classification Summary

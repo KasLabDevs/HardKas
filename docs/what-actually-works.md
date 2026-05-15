@@ -35,20 +35,25 @@ This document intentionally separates:
 | **TX Sign (L1)** | STABLE | Signs plans using `kaspa` WASM SDK. Supports real and simulated accounts. |
 | **TX Send (Simnet)** | STABLE | Sends signed transactions to local nodes. Works end-to-end in development environments. |
 | **Artifact Serialization** | STABLE | The artifact engine correctly serializes plans, signatures, and receipts in `.hardkas/`. |
-| **Canonical Hashing** | STABLE | Implements content hashing to verify artifact integrity (Lineage). |
-| **Docker Node Runner** | STABLE | Starts and stops `kaspad` containers reliably and idempotently. |
 | **Localnet Orchestration** | STABLE | Orchestrates the local environment lifecycle (`hardkas up`, `hardkas node start`). |
 | **Mainnet Guards** | STABLE | Hard protections that block accidental signatures and broadcasts to the main network. |
-| **Query Store (SQLite)** | STABLE | The `QueryEngine` uses SQLite by default, reducing O(n) filesystem scans. |
-| **Artifact Determinism** | STABLE | Reproducible hashes for semantic equivalence (Whitelist), ignoring variable metadata. |
+| **Docker Node Runner** | STABLE | Starts/stops `kaspad` containers with RPC readiness guarantee. Supports **multiple networks** (simnet, testnet). Blocks mainnet local nodes. |
+| **Query Store (SQLite)** | STABLE | The `QueryEngine` uses SQLite by default, reducing O(n) filesystem scans. Configured with `synchronous = FULL` and **workspace locking** for concurrency safety. Explicitly a rebuildable cache (filesystem/artifacts remain source of truth). |
+| **Artifact Determinism** | STABLE | **Type-safe canonical hashing (v2)**. Distinguishes BigInt from String. Version-aware identity (schema changes alter hashes). |
+| **Lineage Integrity** | STABLE | Strict provenance chains (parent-linkage) and network/mode isolation. |
+| **Workspace Locking** | STABLE | Prevents concurrent writes. Includes **safe recovery UX** (`hardkas lock doctor`, `lock clear --if-dead`). |
 | **Secret Redaction** | STABLE | Automatic recursive redaction of secrets in CLI logs and errors. |
 | **Gitignore Hardening** | STABLE | `hardkas init` automatically adds `.hardkas/` to `.gitignore`. |
+| **DAG Tooling** | STABLE | Implements `ApproxGhostdagEngine` for topological stability and concept alignment. |
+| **Conflict Analysis** | STABLE | Deterministically detects double spending and displacement events. |
+| **Keystore (v2)** | STABLE | Argon2id/AES-256-GCM encrypted storage by default with restrictive (0600) permissions. |
+| **Account Metadata Index** | STABLE | Separates non-secret metadata from secret material for efficient listing. |
+| **Reproducibility Proof v0** | STABLE | Golden-file test proves: same code + same inputs = same contentHash across OS/Node. Runs in CI (Linux/macOS × Node 20/22). |
 
 ## 4. Partial Systems
 
 | Area | Why Partial | Missing |
 | :--- | :--- | :--- |
-| **Keystore Integration** | The keystore is robust but its use is optional and manual. | Automatic integration into the `tx sign` flow without requiring extra flags. |
 | **L2 Deploy-plan** | Packages bytecode and args. | Does not predict the contract address (CREATE/CREATE2 address prediction). |
 | **Config Integration** | The CLI does not consume all options from `hardkas.config.ts`. | Total consistency between flags and configuration file. |
 | **Snapshot Normalization** | Localnet snapshots work but are heavy. | Data normalization so that state snapshots are comparable across machines. |
@@ -57,17 +62,15 @@ This document intentionally separates:
 
 | Area | Why Experimental | Reality |
 | :--- | :--- | :--- |
-| **DAG Tooling** | Light graph simulation. | **It is not GHOSTDAG**. It is an educational tool to visualize conflicts and reorgs, not for validating real consensus. |
-| **Conflict Analysis** | Based on simplified models. | Useful for detecting obvious double spending, but does not emulate real Kaspa "Blue Score" logic. |
-| **L2 Bridge Assumptions** | Based on the Igra phase model. | Documents security assumptions (pre-zk, mpc, zk) but does not validate the bridge's cryptographic proofs. |
+| **L2 Bridge Assumptions** | Based on the Igra phase model. | Documents security assumptions (pre-zk, mpc, zk) but does not validate proofs. |
 
 ## 6. Placeholder / Mock Systems
 
 | Area | Current State | Risk |
 | :--- | :--- | :--- |
 | **CLI Hints** | `Next: hardkas l2 tx send` (when it wasn't implemented). | **LOW**: User confusion. Many hints suggest commands that are barely in development. |
-| **Session Lock/Unlock** | The command exists but does not clear real memory. | **MEDIUM**: "Security Theater". Gives a false sense that the key has been "deleted" from the session. |
 | **Profile Loading** | L2 profiles are hardcoded in the binary. | **MEDIUM**: Prevents users from defining their own Igra networks in the config. |
+| **Session Management** | `🟢 STABLE` | Reframed as `session-open/close` to avoid security theater. Explicitly stateless. |
 
 ## 7. Broken / Unwired Systems
 
@@ -75,8 +78,8 @@ These are the project's most critical "Wiring Gaps". The code is written and tes
 
 | Area | Problem | Impact |
 | :--- | :--- | :--- |
-| **L2 User Networks** | `registry.ts` ignores L2 networks from the config. | **MEDIUM**: The user can only use the built-in "igra" profile. |
-| **Standard Lineage** | Not all artifacts verify their `sourceId`. | **LOW**: Breaks the formal provenance chain in some L2 flows. |
+| **L2 User Networks** | `registry.ts` now correctly resolves networks from `hardkas.config.ts`. | **CLOSED** |
+| **Standard Lineage** | Lineage checks are now enforced across the artifact engine. | **CLOSED** |
 
 ## 8. Security Reality
 HardKas **prioritizes developer security against accidental errors**, NOT institutional-grade asset custody.
@@ -93,6 +96,12 @@ Following the recent mock removal:
 - **Injected Runtime**: The SDK is available within the tests.
 - **Deterministic State**: Efforts are made to reset Localnet between tests, but the performance cost is high.
 - **Limitation**: Still immature and lacks detailed documentation of assertion helpers.
+
+### Known Pre-existing Failures
+
+| Test | Package | Status |
+| :--- | :--- | :--- |
+| `Replay Invariants > should fail if preStateHash mismatch` | `@hardkas/localnet` | **RESOLVED** — `verifyReplay()` now compares `preStateHash` against current state hash. Produces explicit `preStateHash mismatch` error. |
 
 ## 10. L2 / Igra Reality
 - **Total Separation**: The Tooling understands that L1 != L2.
@@ -115,9 +124,11 @@ Following the recent mock removal:
 | **Mainnet Automation** | **NO** |
 | **Large-scale Indexing** | **NO** |
 
-## 13. What Needs Immediate Hardening (P0)
-1. **Invariant Stabilization**: Formally validate replay contracts in complex scenarios.
-2. **Snapshot Normalization**: Achieve network states that are comparable bit-by-bit.
+## 13. What Needs Immediate Hardening (P1)
+1. ~~**GHOSTDAG Singleton**: Module-level engine prevents parallel DAG instances.~~ **CLOSED** — Engine is now per-DAG.
+2. **Consensus Replay**: Implement real GHOSTDAG replay verification for artifacts.
+3. **Snapshot Normalization**: Achieve network states that are comparable bit-by-bit.
+4. ~~**Replay preStateHash**: Wire `verifyReplay()` to check `preStateHash` against the provided state.~~ **CLOSED** — Implemented and covered by tests.
 
 ## 14. What Is Surprisingly Good
 - **Artifact Architecture**: The data model is scalable and very clean.

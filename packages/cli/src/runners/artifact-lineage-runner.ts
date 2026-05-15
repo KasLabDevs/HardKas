@@ -61,7 +61,11 @@ export async function runArtifactLineage(options: ArtifactLineageOptions) {
   const result = verifyLineage(artifact);
   if (!result.ok) {
     console.log("\nLineage Violations:");
-    result.issues.forEach(i => console.log(`  ✗ [${i.code}] ${i.message}`));
+    result.issues.forEach(i => {
+      const prefix = i.severity === "error" ? "✗" : "⚠";
+      console.log(`  ${prefix} [${i.code}] ${i.message}`);
+    });
+    process.exitCode = 1;
   } else {
     console.log("\n✓ Internal lineage structure is consistent.");
   }

@@ -52,3 +52,13 @@ This document formalizes the responsibilities and boundaries of each package in 
 3.  **Honest States**: Artifacts should always report their state honestly (e.g., `simulated` vs `rpc`).
 4.  **Facade Integrity**: The SDK should be the primary way external examples interact with the system.
 5.  **Environment Agnosticism**: Core logic (Tx-Builder, Simulator) should be decoupled from the Node.js filesystem where possible.
+
+## Resilience & Persistence
+
+HardKAS prioritizes developer workflow integrity through a disciplined approach to local storage:
+
+1.  **Atomic Local Writes**: All critical state (keystores, localnet state, artifacts) is written using an atomic pattern (write temp -> fsync -> rename). This ensures that files are either fully written or the previous version survives intact.
+2.  **Parent Directory Durability**: On non-Windows platforms, HardKAS optionally calls `fsync` on the parent directory to ensure metadata entry durability, though this is a best-effort hardening.
+3.  **Filesystem-Level Atomicity**: These guarantees are made at the filesystem operation level where supported by the OS.
+4.  **Non-Production Scope**: HardKAS provides **atomic local persistence**, not "crash-proof storage." It does not guarantee durability across OS crashes or power loss. It is designed for resilient developer tooling, not high-availability consensus infrastructure.
+5.  **Deterministic Failure**: In concurrent scenarios, HardKAS prefers a deterministic "Locked" error or failure over undefined behavior or state corruption.

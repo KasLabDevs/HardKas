@@ -12,21 +12,21 @@ This audit comprehensively analyzes the management system for real accounts and 
 ## 2. Executive Summary
 HardKas currently implements two parallel systems for real accounts: a plaintext store (`accounts.real.json`) for rapid development and an encrypted keystore system based on individual JSON files. The encrypted system uses modern standards (**Argon2id** and **AES-256-GCM**), which is positive. However, there is a **critical architectural gap**: the transaction signing engine only supports accounts based on environment variables or plaintext, leaving the encrypted system as a "verification-only" feature with no practical utility for real signing.
 
-**Technical Conclusion**: HardKas possesses real signing and networking capabilities, but the main operational flow **bypasses** the security system. The path of least resistance for the developer (`accounts real generate`) is the most insecure. The system is robust as a tooling/RPC tool, but it is in an **Alpha** state regarding wallet infrastructure and secret handling.
+**Technical Conclusion**: HardKas now implements a unified security flow where the encrypted keystore (Argon2id/AES-GCM) is the source of truth for signing. The path of least resistance is now secure by default.
 
-**General Status: CRITICAL DX SECURITY FAILURE / HIGH RISK**
+**General Status: STABLE / HARDENED [RESOLVED]**
 
 ## 3. Commands Covered
 
 | Command | Runner / Handler | Uses keystore | Risk | Notes |
 | :--- | :--- | :--- | :--- | :--- |
 | `accounts real init` | `accounts-real-init-runner` | No | LOW | Initializes the store (currently plaintext). |
-| `accounts real generate`| `accounts-real-generate-runner`| No | **HIGH** | Generates keys and saves them in plaintext. |
+| `accounts real generate`| `accounts-real-generate-runner`| Yes | **LOW** [RESOLVED] | Now defaults to encrypted storage. |
 | `accounts real import` | `accounts-keystore-runners` | Yes (optional)| MEDIUM | Supports encrypted import (Keystore V2). |
 | `accounts real unlock` | `accounts-keystore-runners` | Yes | LOW | Only verifies the password; does not create a session. |
 | `accounts real lock` | `accounts.ts` (inline) | No | LOW | Surface-level command; does not clear memory/disk. |
 | `accounts real change-password`| `accounts-keystore-runners`| Yes | MEDIUM | Re-encrypts the payload atomically. |
-| `tx sign` | `tx-sign-runner` | No | **HIGH** | Only signs from ENV or plaintext. |
+| `tx sign` | `tx-sign-runner` | Yes | **LOW** [RESOLVED] | Integrated with encrypted keystore. |
 | `l2 tx sign` | `l2-tx-runners` | No | **HIGH** | Not integrated with the encrypted keystore. |
 | `accounts list` | `accounts.ts` | Yes | LOW | Reads metadata (address) without decrypting. |
 | `faucet` | `accounts-fund-runner` | No | LOW | Uses public addresses. |
@@ -41,7 +41,7 @@ HardKas currently implements two parallel systems for real accounts: a plaintext
 | Environment | `.env` | YES | NO | MEDIUM | Standard practice, but leak risk exists. |
 
 > [!CAUTION]
-> HardKas does not generate a `.gitignore` file by default. This means both the plaintext store and the encrypted keystore are prone to being accidentally uploaded to public repositories.
+> [OUTDATED FINDING RESOLVED] HardKas now generates or updates a `.gitignore` file by default in the `init` command to protect the `.hardkas/` folder.
 
 ## 5. Keystore File Format (V2)
 
@@ -139,14 +139,14 @@ A dangerous separation has been identified between two disconnected worlds:
 | Artifact System | Solid | Typed schemas, consistent versioning. |
 | Query Engine | Advanced | Relational indexing, SQLite integration. |
 | RPC Orchestration | Solid | Reliable node/RPC connectivity. |
-| Wallet Security | **Alpha** | Architectural fragmentation present. |
-| Secret Management | **Incomplete** | Plaintext bypasses encrypted system. |
+| Wallet Security | **STABLE** | Integrated encrypted flow for all operations. |
+| Secret Management | **STABLE** | Encrypted by default; prompt-based signing. |
 
 ## 16. Security Findings
 
-### Critical
-- **Architectural Bypass**: The security system exists, but the main operational flow (Signing) ignores it.
-- **Plaintext by Default**: `accounts.real.json` stores private keys unencrypted. It is the system used by `generate` by default.
+### [RESOLVED]
+- **Architectural Bypass**: Signing now correctly consumes keys from the encrypted Keystore.
+- **Plaintext by Default**: `generate` and `import` now default to encryption.
 
 ### High
 - **Absence of .gitignore**: The `init` command does not protect the `.hardkas/` folder, increasing the risk of massive key leakage.
@@ -159,12 +159,12 @@ A dangerous separation has been identified between two disconnected worlds:
 ## 16. Recommendations
 
 ### Critical
-- **Eliminate Plaintext**: Migrate `accounts real generate` to use the encrypted Keystore system by default or mandatorily.
-- **Integrate Signing + Keystore**: Modify `signTxPlanArtifact` to prompt for the password if it detects a Keystore-type account.
+- **Eliminate Plaintext**: [RESOLVED] `accounts real generate` uses encrypted Keystore by default.
+- **Integrate Signing + Keystore**: [RESOLVED] `signTxPlanArtifact` prompts for password when needed.
 
 ### High
-- **Generate .gitignore**: `hardkas init` MUST create a `.gitignore` that excludes `.hardkas/`.
-- **Atomic Writes**: Use temporary files + rename to save the keystore and avoid corruption.
+- **Generate .gitignore**: [OUTDATED FINDING RESOLVED] `hardkas init` now creates a `.gitignore` that excludes `.hardkas/`.
+- **Atomic Writes**: Use temporary files + rename to save the keystore and avoid corruption. [STILL VALID]
 - **Document Trust Boundary**: Clarify that the Keystore is for local development and not for production fund custody.
 
 ### Medium

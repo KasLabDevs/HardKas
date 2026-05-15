@@ -1,60 +1,9 @@
 #!/usr/bin/env node
 
-import { Command } from "commander";
-import { registerInitCommands } from "./commands/init.js";
-import { registerTxCommands } from "./commands/tx.js";
-import { registerArtifactCommands } from "./commands/artifact.js";
-import { registerReplayCommands } from "./commands/replay.js";
-import { registerSnapshotCommands } from "./commands/snapshot.js";
-import { registerRpcCommands } from "./commands/rpc.js";
-import { registerDagCommands } from "./commands/dag.js";
-import { registerAccountsCommands } from "./commands/accounts.js";
-import { registerL2Commands } from "./commands/l2.js";
-import { registerNodeCommands } from "./commands/node.js";
-import { registerConfigCommands } from "./commands/config.js";
-import { registerMiscCommands } from "./commands/misc.js";
-import { registerQueryCommands } from "./commands/query.js";
-import { registerTestCommands } from "./commands/test.js";
-import { registerDoctorCommand } from "./commands/doctor.js";
-import { registerFaucetCommand } from "./commands/faucet.js";
-
-import { readFileSync } from "node:fs";
-import { fileURLToPath } from "node:url";
-import path from "node:path";
-
-const packageJsonPath = path.resolve(
-  path.dirname(fileURLToPath(import.meta.url)),
-  "../package.json"
-);
-
-const { version: HARDKAS_VERSION } = JSON.parse(readFileSync(packageJsonPath, "utf8"));
-
+import { buildHardkasProgram } from "./program.js";
 
 async function main() {
-  const program = new Command();
-
-  program
-    .name("hardkas")
-    .description("HardKAS: Kaspa-native developer operating environment")
-    .version(HARDKAS_VERSION);
-
-  // Register modular command groups
-  registerInitCommands(program);
-  registerTxCommands(program);
-  registerArtifactCommands(program);
-  registerReplayCommands(program);
-  registerSnapshotCommands(program);
-  registerRpcCommands(program);
-  registerDagCommands(program);
-  registerAccountsCommands(program);
-  registerL2Commands(program);
-  registerNodeCommands(program);
-  registerConfigCommands(program);
-  registerMiscCommands(program);
-  registerQueryCommands(program);
-  registerTestCommands(program);
-  registerDoctorCommand(program);
-  registerFaucetCommand(program);
+  const program = buildHardkasProgram();
 
   try {
     await program.parseAsync(process.argv);

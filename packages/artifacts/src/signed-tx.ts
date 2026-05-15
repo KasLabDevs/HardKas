@@ -1,5 +1,5 @@
-import { TxPlan, TxReceipt, SignedTx, ARTIFACT_VERSION } from "./schemas.js";
-import { calculateContentHash } from "./canonical.js";
+import { TxPlan, TxReceipt, SignedTx, ARTIFACT_VERSION, DagContext } from "./schemas.js";
+import { calculateContentHash, CURRENT_HASH_VERSION } from "./canonical.js";
 import { HARDKAS_VERSION } from "./constants.js";
 
 /**
@@ -10,7 +10,7 @@ export function createSimulatedSignedTxArtifact(plan: TxPlan, payload: string): 
     schema: "hardkas.signedTx",
     hardkasVersion: HARDKAS_VERSION,
     version: ARTIFACT_VERSION,
-    hashVersion: 1,
+    hashVersion: CURRENT_HASH_VERSION,
     createdAt: new Date().toISOString(),
     status: "signed",
     sourcePlanId: plan.planId,
@@ -25,7 +25,7 @@ export function createSimulatedSignedTxArtifact(plan: TxPlan, payload: string): 
     }
   };
 
-  const hash = calculateContentHash(artifact);
+  const hash = calculateContentHash(artifact, CURRENT_HASH_VERSION);
   artifact.signedId = `signed-${hash.slice(0, 16)}`;
   artifact.txId = `simulated-${plan.planId}-${hash.slice(0, 8)}`;
   artifact.contentHash = hash;
@@ -42,14 +42,17 @@ export function createSimulatedTxReceipt(
   extra?: { 
     spentUtxoIds?: string[], 
     createdUtxoIds?: string[], 
-    daaScore?: string 
+    daaScore?: string,
+    preStateHash?: string,
+    postStateHash?: string,
+    dagContext?: DagContext
   }
 ): TxReceipt {
   const artifact: any = {
     schema: "hardkas.txReceipt",
     hardkasVersion: HARDKAS_VERSION,
     version: ARTIFACT_VERSION,
-    hashVersion: 1,
+    hashVersion: CURRENT_HASH_VERSION,
     createdAt: new Date().toISOString(),
     txId,
     status: "accepted",
@@ -62,10 +65,13 @@ export function createSimulatedTxReceipt(
     changeSompi: (plan as any).change?.amountSompi,
     spentUtxoIds: extra?.spentUtxoIds,
     createdUtxoIds: extra?.createdUtxoIds,
-    daaScore: extra?.daaScore
+    daaScore: extra?.daaScore,
+    preStateHash: extra?.preStateHash,
+    postStateHash: extra?.postStateHash,
+    dagContext: extra?.dagContext
   };
 
-  const hash = calculateContentHash(artifact);
+  const hash = calculateContentHash(artifact, CURRENT_HASH_VERSION);
   artifact.contentHash = hash;
 
   return artifact as TxReceipt;

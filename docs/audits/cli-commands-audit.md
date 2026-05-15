@@ -4,9 +4,9 @@
 This audit details all the commands registered in the HardKas CLI (`packages/cli/src/commands/*`). 11 command definition files (including redirections in `misc.ts`) have been analyzed to validate the existence of real handlers and the use of internal packages.
 
 **Quick Stats:**
-- **Total Commands Found**: 68
-- **VERIFIED Status**: 52
-- **PARTIAL Status**: 15 (Mainly in the L2/Igra module and DAG Simulation)
+- **Total Commands Found**: 69
+- **VERIFIED Status**: 54
+- **PARTIAL Status**: 14 (Mainly in the L2/Igra module)
 - **DISABLED Status**: 1 (`tx trace`)
 - **PLACEHOLDER Status**: 0 (Mocks detected in previous phases have been replaced by real logic).
 
@@ -16,7 +16,7 @@ This audit details all the commands registered in the HardKas CLI (`packages/cli
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
 | init | `hardkas init` | `[name]` | `--force` | inline action | `@hardkas/sdk` | **VERIFIED** | `init.ts` | Creates config and package.json |
 | init | `hardkas up` | — | — | `runUp` | — | **VERIFIED** | `init.ts` | Validates runtime env |
-| tx | `hardkas tx profile` | `<path>` | — | `runTxProfile` | — | **VERIFIED** | `tx.ts` | Mass/fee breakdown |
+| tx | `hardkas tx profile` | `<path>` | — | `runTxProfile` | — | **VERIFIED** | `tx.ts` | Mass/fee breakdown & snapshots [UPDATED] |
 | tx | `hardkas tx plan` | — | `--from, --to, --amount, --network, --fee-rate, --url, --out, --json` | inline / `runTxPlan` | `@hardkas/config`, `@hardkas/artifacts` | **VERIFIED** | `tx.ts` | Constructs plan artifact |
 | tx | `hardkas tx sign` | `<planPath>` | `--account, --out, --allow-mainnet-signing, --json` | inline / `runTxSign` | `@hardkas/artifacts`, `@hardkas/config` | **VERIFIED** | `tx.ts` | Signs plan artifact |
 | tx | `hardkas tx send` | `[signedPath]` | `--from, --to, --amount, --network, --url, --yes, --json` | inline / `runTxSend` | `@hardkas/config`, `@hardkas/artifacts` | **VERIFIED** | `tx.ts` | Broadcast or shortcut flow |
@@ -38,8 +38,8 @@ This audit details all the commands registered in the HardKas CLI (`packages/cli
 | rpc | `hardkas rpc dag` | — | — | `runRpcDag` | — | **VERIFIED** | `rpc.ts` | Network DAG info |
 | rpc | `hardkas rpc utxos` | `<address>` | — | `runRpcUtxos` | — | **VERIFIED** | `rpc.ts` | Network UTXOs |
 | rpc | `hardkas rpc mempool` | `[txId]` | — | `runRpcMempool` | — | **VERIFIED** | `rpc.ts` | Network mempool |
-| dag | `hardkas dag status` | — | — | `runDagStatus` | — | **PARTIAL** | `dag.ts` | Localnet simulation only |
-| dag | `hardkas dag simulate-reorg` | — | `--depth` | `runDagSimulateReorg` | — | **PARTIAL** | `dag.ts` | Localnet simulation only |
+| dag | `hardkas dag status` | — | — | `runDagStatus` | — | **VERIFIED** | `dag.ts` | GHOSTDAG approximation [UPDATED] |
+| dag | `hardkas dag simulate-reorg` | — | `--depth` | `runDagSimulateReorg` | — | **VERIFIED** | `dag.ts` | GHOSTDAG approximation [UPDATED] |
 | artifact | `hardkas artifact verify` | `<path>` | `--json, --recursive, --strict` | `runArtifactVerify` | — | **VERIFIED** | `artifact.ts` | Integrity/Schema |
 | artifact | `hardkas artifact explain` | `<path>` | — | `runArtifactExplain` | — | **VERIFIED** | `artifact.ts` | Readable summary |
 | artifact | `hardkas artifact lineage` | `<path>` | — | `runArtifactLineage` | — | **VERIFIED** | `artifact.ts` | Operational history |
@@ -85,6 +85,7 @@ This audit details all the commands registered in the HardKas CLI (`packages/cli
 | test | `hardkas test` | `[files...]` | `--network, --watch, --json, --reporter` | `runTest` | `@hardkas/sdk` | **VERIFIED** | `test.ts` | Vitest programmatic runner |
 | example | `hardkas example list` | — | — | `runExampleList` | — | **VERIFIED** | `misc.ts` | Lists examples (registry.json) |
 | example | `hardkas example run` | `<id>` | — | `runExampleRun` | — | **VERIFIED** | `misc.ts` | Executes example |
+| run | `hardkas run` | `<script>` | `--network, --accounts, --balance, --no-harness` | `runScript` | `@hardkas/testing` | **VERIFIED** | `run.ts` | Executes TS scripts with SDK [NEW] |
 
 ## 3. Commands NOT found
 The following commands do not exist as definition files in `packages/cli/src/commands/` but some are integrated into other files or are simply aspirational/documentary:

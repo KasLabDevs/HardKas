@@ -4,10 +4,12 @@ Welcome to the HardKAS developer infrastructure documentation. HardKAS is a Kasp
 
 ## 🧠 Concepts
 Understand the core principles that drive HardKAS.
-- [Deterministic Artifacts](./concepts/artifacts.md)
+- [Artifact Model](./artifact-model.md)
 - [Replay Invariants](./concepts/replay.md)
 - [DAG Simulation (Light-Model)](./concepts/dag-simulation.md)
 - [L1 (Kaspa) vs L2 (Igra)](./concepts/l1-vs-l2.md)
+- [Security Model](./security-model.md)
+- [Current Status (What Actually Works)](./what-actually-works.md)
 
 ## 🏗️ Architecture
 Deep dives into the technical boundaries and lifecycles.
@@ -26,6 +28,16 @@ Learn what to avoid to build secure and scalable infrastructure.
 ## 📚 Reference
 Technical specifications and data models.
 - [Artifact Schemas](./reference/artifact-schemas.md)
+- [CLI Reference](./reference/cli.md)
+
+## 🛠️ Developer Tooling
+
+The CLI documentation is auto-generated from the command tree definition to prevent drift.
+
+- **Generate docs**: `pnpm docs:generate-cli`
+- **Verify integrity**: `pnpm docs:check-cli`
+
+*Narrative docs can be written by humans or AI, but CLI flags must come from code.*
 
 ---
 

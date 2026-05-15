@@ -210,7 +210,7 @@ The use of **Zod** is proposed for:
 - Human error messages (e.g., "networks.testnet.rpcUrl is missing").
 - Error aggregation (show all config problems at once).
 - **Redaction**: Ensure loaded secrets are not printed in errors.
-- `hardkas config validate` and `hardkas config doctor` commands.
+- `hardkas rpc doctor` and `hardkas query store doctor` commands.
 
 ## 13. Typed Config Inference
 Exact literal inference (e.g., so that `keyof Config["l1"]` returns the actual network names) is preserved using **const type parameters** in the `defineHardkasConfig` function. This prevents TypeScript from "widening" key types to generic `string`.
@@ -224,13 +224,11 @@ export function defineHardkasConfig<const T extends HardkasConfig>(config: T): T
 ## 14. Migration From Current Config
 **Migration path**:
 - **v0.2 Adapter**: The loader will detect if the `version: 1` field is missing and apply a compatibility adapter.
-- **Deprecation**: A warning will be emitted in the CLI suggesting to run `hardkas config migrate`.
-- **Automated Migration**: The `config migrate` command will rewrite the file (via `jiti` and AST manipulation) to the new format.
+- **Deprecation**: A warning will be emitted in the CLI suggesting to update the configuration file.
 
 ## 15. CLI Changes Required
 - `--profile <name>`: Global flag.
-- `hardkas config validate`: New command.
-- `hardkas config doctor`: Extended to validate each profile's connectivity.
+- `hardkas rpc doctor`: Extended to validate each profile's connectivity.
 - Execution commands (`tx`, `node`, `l2`): Must be "profile-aware".
 
 ## 16. SDK Changes Required

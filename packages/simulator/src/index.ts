@@ -1,94 +1,83 @@
-export type TxLifecyclePhase =
-  | "build"
-  | "resolve-account"
-  | "resolve-utxos"
-  | "select-utxos"
-  | "estimate-mass"
-  | "estimate-fee"
-  | "sign"
-  | "validate-local"
-  | "submit"
-  | "mempool"
-  | "included"
-  | "confirmed"
-  | "finalized";
+// SAFETY_LEVEL: RESEARCH_EXPERIMENTAL
+//
+// @hardkas/simulator — GHOSTDAG approximate simulation engine.
+//
+// This module provides a structural approximation of GHOSTDAG
+// for use in HardKAS localnet simulation. It is NOT consensus-canonical.
+// No semantic equivalence with rusty-kaspa is claimed.
+//
+// Translated from kaspa-sim (Rust) — github.com/KasLabDevs/kaspa-sim
 
-export type TxTraceEvent =
-  | {
-      readonly type: "phase.started";
-      readonly phase: TxLifecyclePhase;
-      readonly timestamp: number;
-    }
-  | {
-      readonly type: "phase.completed";
-      readonly phase: TxLifecyclePhase;
-      readonly timestamp: number;
-    }
-  | {
-      readonly type: "tx.failed";
-      readonly phase: TxLifecyclePhase;
-      readonly reason: string;
-      readonly timestamp: number;
-    }
-  | {
-      readonly type: "note";
-      readonly message: string;
-      readonly timestamp: number;
-    };
+// ── Existing exports (TxSimulator, lifecycle phases) ─────────────────────────
+export type {
+  TxLifecyclePhase,
+  TxTraceEvent,
+  SimulationResult,
+} from "./tx-simulator.js";
+export { TxSimulator, createTraceId } from "./tx-simulator.js";
 
-export interface SimulationResult {
-  readonly ok: boolean;
-  readonly events: readonly TxTraceEvent[];
-}
+// ── GHOSTDAG Types ───────────────────────────────────────────────────────────
+export type {
+  BlockHash,
+  BlueWorkType,
+  GhostdagData,
+  CompactGhostdagData,
+  SimBlockHeader,
+  SimBlock,
+} from "./ghostdag-types.js";
 
-export class TxSimulator {
-  async simulate(
-    phases: readonly TxLifecyclePhase[],
-    run?: (phase: TxLifecyclePhase) => Promise<void>
-  ): Promise<SimulationResult> {
-    const events: TxTraceEvent[] = [];
+export {
+  GENESIS_HASH,
+  blockHash,
+  blockParents,
+  blockBlueWork,
+  blockBlueScore,
+  headerWork,
+  compactFromFull,
+} from "./ghostdag-types.js";
 
-    for (const phase of phases) {
-      events.push({
-        type: "phase.started",
-        phase,
-        timestamp: Date.now()
-      });
+// ── GHOSTDAG Ordering ────────────────────────────────────────────────────────
+export type { SortableBlock } from "./ordering.js";
+export { compareSortableBlocks, sortBlocks, findSelectedParent } from "./ordering.js";
 
-      try {
-        if (run) {
-          await run(phase);
-        }
-      } catch (error) {
-        events.push({
-          type: "tx.failed",
-          phase,
-          reason: error instanceof Error ? error.message : "Unknown error",
-          timestamp: Date.now()
-        });
+// ── GHOSTDAG Store ───────────────────────────────────────────────────────────
+export { GhostdagStore, genesisGhostdagData } from "./ghostdag-store.js";
 
-        return {
-          ok: false,
-          events
-        };
-      }
+// ── Reachability & Mergeset ──────────────────────────────────────────────────
+export {
+  pastSet,
+  isDagAncestorOf,
+  unorderedMergesetWithoutSelectedParent,
+  orderedMergesetWithoutSelectedParent,
+} from "./reachability.js";
 
-      events.push({
-        type: "phase.completed",
-        phase,
-        timestamp: Date.now()
-      });
-    }
+// ── Approximate GHOSTDAG Engine ──────────────────────────────────────────────
+export type { CandidateColor } from "./ghostdag-engine.js";
+export { ApproxGhostdagEngine, DEFAULT_K } from "./ghostdag-engine.js";
 
-    return {
-      ok: true,
-      events
-    };
-  }
-}
+// ── Metrics ──────────────────────────────────────────────────────────────────
+export type { DagMetrics } from "./metrics.js";
+export { computeDagMetrics } from "./metrics.js";
 
-export function createTraceId(prefix = "trace"): string {
-  return `${prefix}_${Date.now().toString(36)}_${Math.random()
-    .toString(36)
-    .slice(2, 8)}`;
-}
+// ── Scenarios ────────────────────────────────────────────────────────────────
+export type { ScenarioConfig, ScenarioResult } from "./scenarios.js";
+export {
+  runLinearChain,
+  runWideDag,
+  runForkResolution,
+  runDiamondDag,
+  runAllScenarios,
+} from "./scenarios.js";
+
+// ── Report ───────────────────────────────────────────────────────────────────
+export { formatScenarioReport } from "./report.js";
+
+// ── Mass Profiling ───────────────────────────────────────────────────────────
+export type { MassBreakdown, MassComparison } from "./mass-profile.js";
+export { profileMass, compareMassProfiles, formatMassProfile, formatMassComparison } from "./mass-profile.js";
+
+// ── Mass Snapshots ──────────────────────────────────────────────────────────
+export type { MassSnapshot, MassSnapshotStore } from "./mass-snapshot.js";
+export { saveMassSnapshot, loadMassSnapshot, profileAndCompare } from "./mass-snapshot.js";
+
+

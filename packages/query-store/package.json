@@ -12,7 +12,7 @@
   },
   "scripts": {
     "build": "tsc",
-    "test": "node --import tsx --test test/*.test.ts",
+    "test": "vitest run",
     "typecheck": "tsc --noEmit",
     "lint": "eslint ."
   },

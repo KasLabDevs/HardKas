@@ -7,19 +7,19 @@ This audit analyzes versioning discrepancies between the package manifest (`pack
 
 | Source | Detected value | File | Status |
 | :--- | :--- | :--- | :--- |
-| **CLI Manifest** | `0.2.2-alpha` | `packages/cli/package.json` | `MATCH` |
-| **CLI Runtime** | `0.2.2-alpha` | `packages/cli/src/index.ts` | `MATCH` |
-| **Artifact Metadata**| `0.2.2-alpha` | `packages/artifacts/src/constants.ts` | `MATCH` |
-| **CLI Output** | `0.2.2-alpha` | `hardkas --version` | `MATCH` |
+| **CLI Manifest** | `0.2.2-alpha.1` | `packages/cli/package.json` | `MATCH` |
+| **CLI Runtime** | `0.2.2-alpha.1` | `packages/cli/src/index.ts` | `MATCH` |
+| **Artifact Metadata**| `0.2.2-alpha.1` | `packages/artifacts/src/constants.ts` | `MATCH` |
+| **CLI Output** | `0.2.2-alpha.1` | `hardkas --version` | `MATCH` |
 
 ## 3. Hardcoded Version References
 
 | File | Reference | Type | Action |
 | :--- | :--- | :--- | :--- |
 | `packages/cli/src/index.ts` | `const { version: HARDKAS_VERSION } = ...` | runtime dynamic | **FIXED** |
-| `packages/artifacts/src/constants.ts` | `export const HARDKAS_VERSION = "0.2.2-alpha";` | package hardcode | Validated by sync script |
-| `packages/cli/package.json` | `"version": "0.2.2-alpha"` | manifest | **Source of Truth** |
-| `packages/artifacts/package.json` | `"version": "0.2.2-alpha"` | manifest | Validated by sync script |
+| `packages/artifacts/src/constants.ts` | `export const HARDKAS_VERSION = "0.2.2-alpha.1";` | package hardcode | Validated by sync script |
+| `packages/cli/package.json` | `"version": "0.2.2-alpha.1"` | manifest | **Source of Truth** |
+| `packages/artifacts/package.json` | `"version": "0.2.2-alpha.1"` | manifest | Validated by sync script |
 
 ## 4. Problem Statement
 There are at least two duplicated string constants for the version in the source code. If a developer updates `package.json` but forgets to update the constants, generated artifacts and CLI output will report incorrect versions.

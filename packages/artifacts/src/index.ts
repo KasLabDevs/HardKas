@@ -18,6 +18,7 @@ export * from "./igra-artifacts.js";
 export * from "./igra-io.js";
 export * from "./feeVerify.js";
 export * from "./lineage.js";
+export * from "./diff.js";
 
 export type { 
   TxPlanArtifact,

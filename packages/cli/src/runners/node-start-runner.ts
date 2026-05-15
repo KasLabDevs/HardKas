@@ -14,20 +14,19 @@ export async function runNodeStart(input: NodeStartRunnerInput): Promise<NodeSta
   const status = await runner.start();
 
   const lines = [
-    "Kaspa node started",
+    "Kaspa node started successfully",
     "",
-    "Backend:   Docker",
+    `Backend:   Docker`,
     `Image:     ${status.image}`,
     `Container: ${status.containerName}`,
-    `Network:   ${status.network}`,
-    `Status:    ${status.running ? "running" : "stopped"}`,
+    `Status:    ✓ running`,
     "",
-    "RPC:",
-    `  gRPC:     127.0.0.1:${status.ports.rpc}`,
-    `  Borsh:    127.0.0.1:${status.ports.borshRpc}`,
-    `  JSON RPC: 127.0.0.1:${status.ports.jsonRpc}`,
+    "RPC Readiness:",
+    `  gRPC:     ${status.transports.grpc.ready ? "✓ ready" : "✗ not ready"} (port ${status.ports.rpc})`,
+    `  Borsh:    ${status.transports.borsh.ready ? "✓ ready" : "✗ not ready"} (port ${status.ports.borshRpc})`,
+    `  JSON RPC: ${status.transports.json.ready ? "✓ ready" : "✗ not ready"} (port ${status.ports.jsonRpc})`,
     "",
-    "Data:",
+    "Data Directory:",
     `  ${status.dataDir}`
   ];
 

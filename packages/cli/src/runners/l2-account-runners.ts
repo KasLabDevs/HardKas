@@ -1,35 +1,39 @@
-import { getL2Profile, EvmJsonRpcClient, formatWeiAsEtherLike } from "@hardkas/l2";
+import { resolveL2Profile, EvmJsonRpcClient, formatWeiAsEtherLike, L2NetworkProfile } from "@hardkas/l2";
+import { loadHardkasConfig } from "@hardkas/config";
 
 export interface L2AccountOptions {
   network?: string;
   url?: string;
+  chainId?: string | number;
   block?: "latest" | "pending";
   json?: boolean;
 }
 
 async function getClient(options: L2AccountOptions) {
-  const networkName = options.network ?? "igra";
-  const profile = getL2Profile(networkName);
+  const loaded = await loadHardkasConfig();
+  const profile = resolveL2Profile({
+    name: options.network,
+    userProfiles: loaded.config.l2?.networks,
+    cliOverrides: {
+      ...(options.url !== undefined ? { url: options.url } : {}),
+      ...(options.chainId !== undefined ? { chainId: options.chainId } : {})
+    }
+  });
 
-  if (!profile) {
-    throw new Error(`L2 profile '${networkName}' not found.`);
-  }
-
-  const rpcUrl = options.url ?? profile.rpcUrl;
+  const rpcUrl = profile.rpcUrl;
 
   if (!rpcUrl) {
-    throw new Error(`No L2 RPC URL configured for network '${networkName}'. Pass --url <rpcUrl>.`);
+    throw new Error(`No L2 RPC URL configured for network '${profile.name}'. Pass --url <rpcUrl>.`);
   }
 
   return {
     client: new EvmJsonRpcClient({ url: rpcUrl }),
-    profile,
-    networkName
+    profile
   };
 }
 
 export async function runL2Balance(address: string, options: L2AccountOptions): Promise<void> {
-  const { client, profile, networkName } = await getClient(options);
+  const { client, profile } = await getClient(options);
   const blockTag = options.block ?? "latest";
   
   const balanceWei = await client.getBalanceWei(address, blockTag);
@@ -38,9 +42,10 @@ export async function runL2Balance(address: string, options: L2AccountOptions): 
   if (options.json) {
     console.log(JSON.stringify({
       networkId: profile.name,
-      l2Network: networkName,
+      l2Network: profile.name,
       chainId: profile.chainId,
       rpcUrl: profile.rpcUrl,
+      source: profile.source,
       address,
       block: blockTag,
       balanceWei: balanceWei.toString(),
@@ -50,9 +55,9 @@ export async function runL2Balance(address: string, options: L2AccountOptions): 
     return;
   }
 
-  console.log(`${profile.displayName} L2 balance`);
+  console.log(`${profile.displayName} L2 balance (${profile.source})`);
   console.log("");
-  console.log(`Network:  ${networkName}`);
+  console.log(`Network:  ${profile.name}`);
   console.log(`Address:  ${address}`);
   console.log(`Block:    ${blockTag}`);
   console.log(`Balance:  ${balanceFormatted}`);
@@ -63,7 +68,7 @@ export async function runL2Balance(address: string, options: L2AccountOptions): 
 }
 
 export async function runL2Nonce(address: string, options: L2AccountOptions): Promise<void> {
-  const { client, profile, networkName } = await getClient(options);
+  const { client, profile } = await getClient(options);
   const blockTag = options.block ?? "latest";
   
   const nonce = await client.getTransactionCount(address, blockTag);
@@ -71,9 +76,10 @@ export async function runL2Nonce(address: string, options: L2AccountOptions): Pr
   if (options.json) {
     console.log(JSON.stringify({
       networkId: profile.name,
-      l2Network: networkName,
+      l2Network: profile.name,
       chainId: profile.chainId,
       rpcUrl: profile.rpcUrl,
+      source: profile.source,
       address,
       block: blockTag,
       nonce: nonce.toString()
@@ -81,9 +87,9 @@ export async function runL2Nonce(address: string, options: L2AccountOptions): Pr
     return;
   }
 
-  console.log(`${profile.displayName} L2 nonce`);
+  console.log(`${profile.displayName} L2 nonce (${profile.source})`);
   console.log("");
-  console.log(`Network:  ${networkName}`);
+  console.log(`Network:  ${profile.name}`);
   console.log(`Address:  ${address}`);
   console.log(`Block:    ${blockTag}`);
   console.log(`Nonce:    ${nonce}`);

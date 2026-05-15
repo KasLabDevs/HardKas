@@ -82,7 +82,8 @@ export async function runArtifactExplain(options: ArtifactExplainOptions) {
   if (explanation.security.strictOk) {
     UI.success("  ✓ No critical integrity violations detected.");
   } else {
-    UI.error("  ✗ SECUIRTY WARNINGS DETECTED.");
+    UI.error("  ✗ SECURITY WARNINGS DETECTED.");
+    process.exitCode = 1;
   }
 
   if (explanation.security.issues.length > 0) {

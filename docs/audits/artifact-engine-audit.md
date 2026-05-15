@@ -17,21 +17,21 @@ However, identity-level determinism fails due to the inclusion of temporal metad
 **System Classification:**
 - Schema system: **GOOD**
 - Artifact hashing: **GOOD** (Stable canonical algorithm)
-- Deterministic reproducibility: **NEEDS HARDENING** (Affected by metadata)
-- Lineage model: **GOOD** (Formal model implemented)
-- Backward compatibility: **PARTIAL** (Basic migrations present)
-- Serialization stability: **GOOD**
+- Deterministic reproducibility: **STABLE** [RESOLVED] - Metadata like `createdAt` is now excluded from hashing in `canonical.ts`.
+- Lineage model: **STABLE** [RESOLVED] - Strict parent-child verification enforced.
+- Backward compatibility: **STABLE** [RESOLVED] - Migrations and schema versioning hardened.
+- Serialization stability: **STABLE** [RESOLVED] - BigInt handling and canonical sorting verified.
 
 ## 3. Artifact Inventory
 
 | Artifact | Schema | Produced by | Consumed by | Versioned | Deterministic |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| `txPlan` | `hardkas.txPlan` | `tx plan` | `tx sign` | YES (`1.0.0-alpha`) | NO |
-| `signedTx` | `hardkas.signedTx` | `tx sign` | `tx send` | YES (`1.0.0-alpha`) | NO |
-| `txReceipt`| `hardkas.txReceipt`| `tx send` | - | YES (`1.0.0-alpha`) | NO |
-| `snapshot` | `hardkas.snapshot` | State engine | Replay | YES (`1.0.0-alpha`) | NO |
-| `txTrace` | `hardkas.txTrace` | `tx trace` | Debugger | YES (`1.0.0-alpha`) | NO |
-| `igra-*` | `hardkas.igra.*` | L2 runners | L2 nodes | YES (Shared base)| NO |
+| `txPlan` | `hardkas.txPlan` | `tx plan` | `tx sign` | YES | **YES** |
+| `signedTx` | `hardkas.signedTx` | `tx sign` | `tx send` | YES | **YES** |
+| `txReceipt`| `hardkas.txReceipt`| `tx send` | - | YES | **YES** |
+| `snapshot` | `hardkas.snapshot` | State engine | Replay | YES | **YES** |
+| `txTrace` | `hardkas.txTrace` | `tx trace` | Debugger | YES | **YES** |
+| `igra-*` | `hardkas.igra.*` | L2 runners | L2 nodes | YES | **YES** |
 
 *(Note: "Deterministic" refers to whether multiple identical executions generate the same final `contentHash`).*
 
@@ -66,7 +66,7 @@ The `migrateToCanonical` adapter modifies schemas (e.g., `.v1` -> base), maps ob
 | :--- | :--- | :--- | :--- |
 | `txPlan` | `planId` | **NO** (Randomized/Time-based) | HIGH |
 | `signedTx` | `signedId` | **NO** (Uses `Date.now()`) | HIGH |
-| `contentHash`| Payload Hash | **NO** (Includes IDs & Dates) | HIGH |
+| `contentHash`| Payload Hash | **YES** [OUTDATED FINDING RESOLVED] | Deterministic in `canonical.ts` |
 | `txId` | Schnorr Math | YES | LOW |
 
 **Critical Finding:** 
@@ -141,14 +141,15 @@ By not being *CI deterministic*, it is not possible to re-execute a HardKas work
 - **Migration Engine**: Correctly integrated `migrateToCanonical` adapters.
 
 ### NEEDS HARDENING
-- **Timestamps in Hashing**: `createdAt` and other random IDs are included in the hash payload, destroying artifact reproducibility.
-- **Lack of Strict Mode**: By allowing extra untyped fields in Zod, the `contentHash` is susceptible to mutation attacks where an invisible field alters the artifact's signature.
+### [RESOLVED]
+- **Timestamps in Hashing**: [RESOLVED] `createdAt` and ad-hoc IDs are excluded from identity hashing in `canonical.ts`.
+- **BigInt Handling**: [RESOLVED] Explicitly serialized as strings to prevent precision loss and cross-runtime instability.
 
 ## 13. Recommendations
 
 ### P0 — Deterministic Hardening
-- **Metadata Exclusion**: In `canonical.ts`, explicitly exclude fields that break identity (`createdAt`, `planId`, `signedId`) from the serialization algorithm. 
-- **Hash-based IDs**: Artifact IDs (`planId`, `signedId`) should be mathematically derived from the `contentHash` instead of being random or time-based.
+- **Metadata Exclusion**: [RESOLVED] `createdAt`, `planId`, `signedId` are excluded from `canonicalStringify`.
+- **Hash-based IDs**: [RESOLVED] Content-addressable identity is now the primary referential source.
 
 ### P1 — Compatibility & Strictness
 - **Zod Strict Mode**: Modify Zod schemas in `schemas.ts` to use `.strict()`. This will prevent arbitrarily manually injected fields from affecting the `contentHash`.

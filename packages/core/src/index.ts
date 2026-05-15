@@ -136,3 +136,6 @@ export * from "./events.js";
 export * from "./domain-types.js";
 export * from "./branded.js";
 export { maskSecrets, redactSecret } from "./security.js";
+export * from "./fs.js";
+export * from "./corruption.js";
+export * from "./lock.js";

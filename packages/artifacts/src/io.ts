@@ -7,22 +7,17 @@ import {
 } from "./schemas.js";
 import { verifyArtifact } from "./verify.js";
 
+import { writeFileAtomic } from "@hardkas/core";
+
 export const bigIntReplacer = (_key: string, value: any) => 
   typeof value === "bigint" ? value.toString() : value;
 
 export async function writeArtifact(filePath: string, artifact: unknown): Promise<void> {
-  try {
-    const dir = path.dirname(filePath);
-    await fs.mkdir(dir, { recursive: true });
+  const content = typeof artifact === "string" 
+    ? artifact 
+    : JSON.stringify(artifact, bigIntReplacer, 2) + "\n";
     
-    const content = typeof artifact === "string" 
-      ? artifact 
-      : JSON.stringify(artifact, bigIntReplacer, 2) + "\n";
-      
-    await fs.writeFile(filePath, content, "utf-8");
-  } catch (error) {
-    throw new Error(`Failed to write artifact at ${filePath}: ${error instanceof Error ? error.message : String(error)}`);
-  }
+  await writeFileAtomic(filePath, content);
 }
 
 export function getDefaultReceiptPath(txId: string, cwd: string = process.cwd()): string {

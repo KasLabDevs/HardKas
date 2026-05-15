@@ -33,6 +33,12 @@ export interface SimulatedBlock {
   daaScore: string;
   acceptedTxIds: string[];
   isGenesis?: boolean;
+  /** GHOSTDAG blue_work for this block (computed by ApproxGhostdagEngine). */
+  blueWork?: string;
+  /** True if GHOSTDAG colored this block blue, false if red. */
+  isBlue?: boolean;
+  /** Full GHOSTDAG data if computed. */
+  ghostdagData?: import("@hardkas/simulator").GhostdagData;
 }
 
 export interface SimulatedDag {
@@ -46,6 +52,10 @@ export interface SimulatedDag {
     winnerTxId: string;
     loserTxIds: string[];
   }>;
+  /** Internal GHOSTDAG store for this DAG session. */
+  ghostdagStore?: import("@hardkas/simulator").GhostdagStore;
+  /** Internal GHOSTDAG engine for this DAG session. */
+  ghostdagEngine?: import("@hardkas/simulator").ApproxGhostdagEngine;
 }
 
 export interface StateTransition {
@@ -57,8 +67,8 @@ export interface StateTransition {
 export interface SimulationResult {
   ok: boolean;
   state: LocalnetState;
-  receipt: any; // TxReceiptV2
-  planArtifact?: any; // TxPlanArtifact
+  receipt: import("@hardkas/artifacts").TxReceipt;
+  planArtifact?: import("@hardkas/artifacts").TxPlan;
   errors: string[];
 }
 
@@ -68,9 +78,28 @@ export interface ReplayInvariantResult {
 }
 
 export interface ReplayVerificationReport {
+  schema: "hardkas.replayReport.v1";
+  txId: string;
   planOk: boolean;
   receiptOk: boolean;
   invariantsOk: boolean;
+  
+  /** Honest check status to avoid overclaiming. */
+  checks: {
+    /** Whether the internal HardKAS workflow (Plan -> Receipt) was reproduced. */
+    workflowDeterministic: "reproduced" | "diverged" | "skipped";
+    /** HardKAS DOES NOT currently validate full Kaspa consensus (GHOSTDAG, etc). */
+    consensusValidation: "unimplemented" | "partial" | "skipped";
+    /** HardKAS DOES NOT currently validate L2 bridge logic. */
+    l2BridgeCorrectness: "unimplemented" | "partial" | "skipped";
+  };
+
+  divergences: Array<{
+    path: string;
+    expected: any;
+    actual: any;
+  }>;
+
   errors: string[];
 }
 

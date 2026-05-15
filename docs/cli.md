@@ -12,7 +12,7 @@ The ultimate health check. Run this whenever things feel "off." It verifies:
 - Artifact store integrity.
 - Query store (SQLite) health.
 
-**Premium Tip:** If `doctor` reports an empty Query Store, run `hardkas query store index` to restore relational awareness.
+**Premium Tip:** If `doctor` reports an empty Query Store, run `hardkas query store sync` (or `rebuild`) to restore relational awareness.
 
 ---
 
@@ -20,10 +20,13 @@ The ultimate health check. Run this whenever things feel "off." It verifies:
 
 HardKAS indexes all your artifacts and events into a high-performance SQLite database.
 
-### `hardkas query store index`
+### `hardkas query store sync`
 Synchronizes your `.hardkas/` directory (JSON artifacts + `.jsonl` event logs) into the local relational index.
 - **When to use:** After running a batch of transactions or manually moving artifacts.
 - **DX:** Provides sub-millisecond query performance once indexed.
+
+### `hardkas query store rebuild`
+Completely wipes and reconstructs the index from scratch. Useful if the database file is corrupted or inconsistent.
 
 ### `hardkas query store sql "<query>"`
 For the ultimate power user. Run raw SQL against your operational data.

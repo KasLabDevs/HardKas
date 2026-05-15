@@ -14,8 +14,8 @@ However, the system presents reproducibility risks due to the use of unpinned im
 
 **System Classification:**
 - **Docker orchestration:** GOOD (Simple and effective via `execa`).
-- **Image management:** WEAK (Use of `latest` by default).
-- **Health checks:** WEAK (Only verifies container state, not RPC availability).
+- **Image management:** STABLE [RESOLVED] - Uses `v1.1.0` by default.
+- **Health checks:** STABLE [RESOLVED] - Now verifies RPC availability before returning.
 - **Logs UX:** GOOD (Supports `tail` and `follow`).
 - **Cleanup safety:** GOOD (Protected by CLI confirmation).
 - **Config integration:** PARTIAL (Most values are internal runner defaults).
@@ -46,7 +46,7 @@ The runner manages the `rusty-kaspad` image.
 
 | Feature | Present | Risk | Recommendation |
 | :--- | :--- | :--- | :--- |
-| Default Image | `kaspanet/rusty-kaspad:latest` | **HIGH** | The `latest` tag is mutable. Use a specific version (e.g., `v0.1.0`) or a SHA digest to ensure determinism. |
+| Default Image | `kaspanet/rusty-kaspad:v1.1.0` | **STABLE** [RESOLVED] | Pinned version ensures determinism across developer machines. |
 | Image Override | YES (`--image`) | LOW | Allows the user to test experimental versions. |
 | Auto-pull | YES (via `docker run`) | LOW | Standard Docker behavior. |
 
@@ -86,7 +86,7 @@ This is one of the weakest areas of the current implementation.
 | Health check | Present | Source | Risk | Recommendation |
 | :--- | :--- | :--- | :--- | :--- |
 | Container state | YES | `docker inspect` | MEDIUM | A container can be "running" but the `kaspad` process may be in panic or initializing the DB. |
-| RPC Probe | NO | - | **HIGH** | The CLI may report the node as "ready" before the RPC port accepts connections. Implement a post-start `getinfo` ping. |
+| RPC Probe | YES | gRPC / JSON | **STABLE** [RESOLVED] | The CLI now waits for RPC readiness (retry loop) before returning success. |
 
 ## 10. Logs UX
 Solid and functional implementation.
@@ -142,15 +142,15 @@ Error handling is proactive.
 - **Integrated Logs**: No need to jump to the Docker terminal to see what's happening.
 
 ### NEEDS HARDENING
-- **`latest` Instability**: Risk of an image update breaking the local development environment without notice.
-- **Lack of health check (Ready check)**: The `start` command finishes before the node is actually available to receive transactions.
+- **`latest` Instability**: [RESOLVED] Default is now pinned to a verified version.
+- **Lack of health check (Ready check)**: [RESOLVED] `start` now includes an RPC wait-loop.
 - **Config Disconnection**: Node profiles should be defined in `hardkas.config.ts`.
 
 ## 17. Recommendations
 
 ### P0 — Safety & Determinism
-- **Image Pinning**: Change `latest` to a specific version (e.g., `rusty-kaspad:v0.1.0`).
-- **RPC Readiness Check**: Implement a retry loop (max 5s) that attempts to connect to the gRPC port after `docker run` to ensure the node is ready before returning control to the user.
+- **Image Pinning**: [RESOLVED] Default is `rusty-kaspad:v1.1.0`.
+- **RPC Readiness Check**: [RESOLVED] Implemented a robust retry loop for gRPC/JSON ports.
 
 ### P1 — UX & Config
 - **Config Integration**: Allow `dataDir` and `image` to be read from `hardkas.config.ts`.

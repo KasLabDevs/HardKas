@@ -120,8 +120,16 @@ export class FilesystemQueryBackend implements QueryBackend {
     return { ok: true, backend: "filesystem" };
   }
 
-  async rebuild(): Promise<void> {
-    // No-op for filesystem
+  async rebuild(options?: { strict?: boolean }): Promise<any> {
+    // No-op for filesystem, but return a valid schema
+    return {
+      schema: "hardkas.queryRebuild.v1",
+      ok: true,
+      artifacts: { scanned: 0, indexed: 0, duplicates: 0, corrupted: 0 },
+      events: { scanned: 0, indexed: 0, duplicates: 0, corrupted: 0 },
+      warnings: ["Filesystem backend does not support indexing"],
+      errors: []
+    };
   }
 
   async findReceipts(filters?: { status?: string; networkId?: string }): Promise<ArtifactDocument[]> {
@@ -134,6 +142,14 @@ export class FilesystemQueryBackend implements QueryBackend {
       return artifacts.filter(a => a.payload.txId === filters.txId);
     }
     return artifacts;
+  }
+
+  async sync(): Promise<any> {
+    return this.rebuild();
+  }
+
+  async executeRawSql(_sql: string): Promise<any[]> {
+    throw new Error("Raw SQL execution not supported by Filesystem backend. Use SQLite backend.");
   }
 
   private async scanFiles(dir: string): Promise<string[]> {

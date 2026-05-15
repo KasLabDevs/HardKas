@@ -4,6 +4,8 @@ import { existsSync } from "node:fs";
 import { HardkasArtifactBase, HARDKAS_VERSION, ARTIFACT_SCHEMAS } from "@hardkas/artifacts";
 import { NetworkId, ExecutionMode } from "@hardkas/core";
 
+import { writeFileAtomic } from "@hardkas/core";
+
 export type StoredTraceEvent =
   | {
       readonly type: "phase.started";
@@ -63,7 +65,7 @@ export async function saveSimulatedTrace(
   }
 
   const filePath = getTracePath(trace.txId, options?.cwd);
-  await fs.writeFile(filePath, JSON.stringify(trace, null, 2), "utf-8");
+  await writeFileAtomic(filePath, JSON.stringify(trace, null, 2), { encoding: "utf-8" });
   return filePath;
 }
 

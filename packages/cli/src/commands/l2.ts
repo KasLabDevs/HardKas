@@ -18,21 +18,27 @@ export function registerL2Commands(program: Command) {
     .action(async (options) => { await runL2Networks(options); });
 
   const l2Profile = l2.command("profile").description("L2 profile management");
-  l2Profile.command("show <name>")
+  l2Profile.command("show [name]")
     .description("Show L2 profile details")
+    .option("--network <name>", "L2 network name")
+    .option("--url <url>", "RPC URL override")
+    .option("--chain-id <id>", "Chain ID override")
     .option("--json", "Output results in JSON format")
     .action(async (name, options) => { await runL2ProfileShow({ name, ...options }); });
 
-  l2Profile.command("validate <name>")
+  l2Profile.command("validate [name]")
     .description("Validate L2 profile")
+    .option("--network <name>", "L2 network name")
+    .option("--url <url>", "Override RPC URL for validation")
     .option("--json", "Output results in JSON format")
     .action(async (name, options) => { await runL2ProfileValidate({ name, ...options }); });
 
   const l2tx = l2.command("tx").description("Igra transaction management");
   l2tx.command("build")
     .description("Build L2 transaction plan")
-    .option("--network <name>", "L2 network name", "igra")
-    .option("--url <url>", "RPC URL")
+    .option("--network <name>", "L2 network name")
+    .option("--url <url>", "RPC URL override")
+    .option("--chain-id <id>", "Chain ID override")
     .option("--from <address>", "From address")
     .option("--to <address>", "To address")
     .option("--value <wei>", "Value in wei", "0")
@@ -65,7 +71,9 @@ export function registerL2Commands(program: Command) {
   const l2contract = l2.command("contract").description("Igra contract management");
   l2contract.command("deploy-plan")
     .description("Build L2 contract deployment plan")
-    .option("--network <name>", "L2 network name", "igra")
+    .option("--network <name>", "L2 network name")
+    .option("--url <url>", "RPC URL override")
+    .option("--chain-id <id>", "Chain ID override")
     .option("--bytecode <hex>", "Contract bytecode")
     .option("--constructor <sig>", "Constructor signature")
     .option("--args <csv>", "Constructor arguments")
@@ -75,6 +83,8 @@ export function registerL2Commands(program: Command) {
   const l2bridge = l2.command("bridge").description("Igra bridge awareness");
   l2bridge.command("status")
     .description("Show bridge security status")
+    .option("--network <name>", "L2 network name")
+    .option("--url <url>", "RPC URL override")
     .option("--json", "Output as JSON")
     .action(async (options) => { try { await runL2BridgeStatus(options); } catch (e) { handleError(e); } });
 
@@ -86,16 +96,24 @@ export function registerL2Commands(program: Command) {
   const l2rpc = l2.command("rpc").description("Igra RPC diagnostics");
   l2rpc.command("health")
     .description("Check L2 RPC health")
+    .option("--network <name>", "L2 network name")
+    .option("--url <url>", "RPC URL override")
     .option("--json", "Output as JSON")
     .action(async (options) => { try { await runL2RpcHealth(options); } catch (e) { handleError(e); } });
 
   l2.command("balance <address>")
     .description("Check Igra L2 balance")
+    .option("--network <name>", "L2 network name")
+    .option("--url <url>", "RPC URL override")
+    .option("--chain-id <id>", "Chain ID override")
     .option("--json", "Output as JSON")
     .action(async (address, options) => { try { await runL2Balance(address, options); } catch (e) { handleError(e); } });
 
   l2.command("nonce <address>")
     .description("Check Igra L2 nonce")
+    .option("--network <name>", "L2 network name")
+    .option("--url <url>", "RPC URL override")
+    .option("--chain-id <id>", "Chain ID override")
     .option("--json", "Output as JSON")
     .action(async (address, options) => { try { await runL2Nonce(address, options); } catch (e) { handleError(e); } });
 }

@@ -26,29 +26,40 @@ The `hardkas faucet` and `hardkas accounts fund` commands are hard-coded to only
 By default, `hardkas tx sign` will refuse to sign transactions targeting `mainnet` unless the explicit flag `--allow-mainnet-signing` is provided. This acts as a manual circuit breaker for developers.
 
 ## Key Management
+ 
+### 1. Default Encrypted Keystore
+HardKAS enforces encrypted storage by default for all "real" persistent accounts:
+- **Encryption**: Uses Argon2id for key derivation and AES-256-GCM for authenticated encryption.
+- **File Permissions**: All keystore and account index files are stored with restrictive `0600` permissions.
+- **Metadata Indexing**: Account metadata (names, addresses) is stored in `accounts.real.json` for listing, while secret material is isolated in individual files under `.hardkas/keystore/`.
 
-### Local Encrypted Keystore
-HardKAS includes a local encrypted keystore for developer convenience:
-- **Encryption**: Argon2id for key derivation and AES-256-GCM for storage.
-- **Scope**: Designed for storing local developer keys and testnet keys used during development.
-- **Risk**: While encrypted, the keys reside on your local filesystem. This is appropriate for development but not for production-grade security.
+### 2. Safer Key Import Patterns
+To prevent secrets from leaking into shell history:
+- **Environment Variables**: Use `--private-key-env` and `--password-env`.
+- **Standard Input**: Use `--private-key-stdin` and `--password-stdin`.
+- **Plaintext Opt-in**: Storing keys in plaintext requires the explicit `--unsafe-plaintext` flag.
 
-### Private Key Exposure
-HardKAS runners and CLI commands are designed to minimize the time private keys are held in memory. However, users should be aware that standard OS-level memory protections apply.
+### 3. Session Semantics (Stateless)
+HardKAS is a stateless CLI, not a long-running daemon. Password access is required for each signing operation unless using environment variables.
 
-## Node Management (Docker)
+## Artifact Integrity & Trust Boundary
 
-HardKAS manages local `kaspad` instances via Docker:
-- **Isolation**: Nodes run in isolated containers.
-- **Data Persistence**: Chain data is stored in local volumes (typically `.hardkas/data`).
-- **Reset Logic**: `hardkas node reset` performs a graceful shutdown and total data wipe to ensure a clean state for testing.
+HardKAS uses a formal **Artifact Model** to ensure that operational state is verifiable and reproducible.
 
-## Artifact Integrity
+### 1. The Trust Boundary
+Artifact verification (`hardkas artifact verify`) provides a strong guarantee of **structural and internal consistency**, but does not prove **network finality** or **consensus validity** unless explicitly stated.
 
-All HardKAS artifacts (Plans, SignedTx, Receipts) include:
-- **Content Hashing**: Deterministic hashing of all operational fields.
-- **Schema Versioning**: Mandatory versioning to prevent cross-version incompatibilities.
-- **Integrity Checks**: `hardkas artifact verify` performs structural and cryptographic validation.
+- **Content Hashing**: Uses deterministic canonicalization (BigInt-safe) to ensure hashes are stable across platforms.
+- **Lineage Strictness**: Verification requires child artifacts to explicitly link to their parents, enforcing a verifiable provenance chain.
+- **Honest Verification**: If a verification step (like consensus replay) is not implemented or skipped, the system will report it as a **warning**, never as a false "success".
+
+### 2. Mode & Network Isolation
+The system strictly prohibits "Contamination"—the mixing of data or modes:
+- **Network Contamination**: Prevents signing a Testnet plan with a Mainnet key or vice versa.
+- **Mode Contamination**: Prevents mixing simulated snapshots with real network transactions.
+
+### 3. Auditability
+Developers are encouraged to use `hardkas artifact explain` and `hardkas artifact verify --strict` to audit the economic and structural integrity of any transaction before it leaves the local environment.
 
 ---
 

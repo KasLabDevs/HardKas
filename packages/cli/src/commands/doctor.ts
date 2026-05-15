@@ -7,6 +7,8 @@ import { handleError, UI } from "../ui.js";
 import { loadHardkasConfig } from "@hardkas/config";
 import { JsonWrpcKaspaClient } from "@hardkas/kaspa-rpc";
 import { HardkasStore } from "@hardkas/query-store";
+import { DockerKaspadRunner } from "@hardkas/node-runner";
+import { execa } from "execa";
 
 export function registerDoctorCommand(program: Command) {
   program
@@ -42,27 +44,58 @@ async function runDoctor() {
   }
   UI.divider();
 
-  // 3. RPC Connectivity
-  UI.header("RPC Connectivity & Health");
+  // 3. Docker & Local Node Health
+  UI.header("Docker & Local Node Health");
+  let dockerCliOk = false;
   try {
-    const loaded = await loadHardkasConfig({ cwd: process.cwd() });
-    const networkId = loaded.config.defaultNetwork || "simnet";
-    const target = loaded.config.networks?.[networkId];
-    
-    let rpcUrl = "ws://127.0.0.1:18210"; 
-    if ((target as any)?.rpcUrl) rpcUrl = (target as any).rpcUrl;
+    await execa("docker", ["version"]);
+    UI.success("Docker CLI is available");
+    dockerCliOk = true;
+  } catch {
+    UI.error("Docker CLI missing", "Please install Docker to manage local nodes.");
+    UI.info("Skipping further Docker-dependent checks.");
+  }
 
-    UI.info(`Connecting to ${pc.cyan(rpcUrl)}...`);
-    const rpc = new JsonWrpcKaspaClient({ rpcUrl });
-    const info = await rpc.getInfo();
-    
-    UI.success(`RPC Alive: ${pc.bold(info.networkId || "active")}`);
-    UI.field("Synced", info.isSynced ? pc.green("YES") : pc.yellow("NO"));
-    if (info.serverVersion) UI.field("Version", info.serverVersion);
-  } catch (e: any) {
-    UI.error("RPC Connection Failed", "Is the localnet or node running? Check your network config.");
+  if (dockerCliOk) {
+    let daemonOk = false;
+    try {
+      await execa("docker", ["info"]);
+      UI.success("Docker daemon is reachable");
+      daemonOk = true;
+    } catch {
+      UI.error("Docker daemon unreachable", "Ensure Docker Desktop or the docker daemon is running.");
+      UI.info("Skipping image and container checks.");
+    }
+
+    if (daemonOk) {
+      const runner = new DockerKaspadRunner();
+      const status = await runner.status();
+
+      UI.field("Configured Image", status.image);
+      if (status.image.endsWith(":latest")) {
+        UI.warning("Using :latest image. Reproducibilidad is reduced.");
+      } else {
+        UI.success("Using pinned image tag");
+      }
+
+      UI.field("Container", `${status.containerName} (${status.statusText})`);
+      
+      if (status.running) {
+        UI.success("Local node container is running");
+        UI.field("RPC Status", status.rpcReady ? pc.green("READY") : pc.red("NOT READY"));
+        if (!status.rpcReady && status.lastError) {
+          UI.error("RPC Error", status.lastError);
+          UI.info("Try checking logs: hardkas node logs --tail 200");
+        }
+      } else {
+        UI.info("Local node container is not running.");
+      }
+    }
   }
   UI.divider();
+
+  // 4. Custom RPC Connectivity
+  UI.header("Custom RPC Connectivity");
 
   // 4. Artifact Store
   UI.header("Artifact Store Integrity");

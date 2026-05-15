@@ -10,6 +10,8 @@
     "dev": "tsup src/index.ts --format esm --watch"
   },
   "dependencies": {
+    "@hardkas/core": "workspace:*",
+    "@hardkas/kaspa-rpc": "workspace:*",
     "execa": "^9.5.2"
   },
   "devDependencies": {
