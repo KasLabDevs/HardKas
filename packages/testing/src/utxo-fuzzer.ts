@@ -11,6 +11,9 @@ export interface FuzzResult {
 /**
  * Custom Scenario Fuzzer for UTXO Invariants.
  * Verifies that sum(inputs) == sum(outputs) + fee across random transaction sequences.
+ * 
+ * Intentionally non-deterministic as it uses Math.random() to simulate 
+ * adversarial or random usage patterns.
  */
 export async function runUtxoFuzzer(iterations = 50): Promise<FuzzResult> {
   let state = createInitialLocalnetState({ accounts: 5, initialBalanceSompi: 1000n * SOMPI_PER_KAS });

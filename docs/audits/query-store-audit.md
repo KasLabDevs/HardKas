@@ -19,7 +19,11 @@ HardKas uses SQLite as a high-performance relational cache to index JSON artifac
 - **Index Strategy**: Basic indices are present, but current adapters do not fully exploit them by performing in-memory filtering.
 - **Scan Behavior**: **Moderate risk**. Adapters tend to request "all records" from the backend and filter via JS, which penalizes large artifact stores (>10k files).
 - **Schema Evolution**: Currently destructive. The store is cleared and recreated upon version changes.
-- **Stale Index**: Very well managed via `mtime` tracking and auto-sync in the CLI.
+- **Stale Index**: Very well managed via `mtime` tracking and auto-sync in the CLI. [STILL VALID]
+- **Determinism**: [RESOLVED] Indexing order is now stable through sorted file walking.
+- **Strict Mode**: [RESOLVED] Indexing now supports a `--strict` mode that fails on corrupted artifacts or events.
+- **Detailed Stats**: [RESOLVED] Rebuild/Sync now returns structured stats (scanned, indexed, corrupted).
+- **Dual Backend**: The system now correctly supports auto-discovery between SQLite and Filesystem fallback. [UPDATED]
 
 | Area | Status |
 | :--- | :--- |
@@ -190,13 +194,15 @@ graph TD
 ## 18. Recommendations
 
 ### P0 — Store Correctness & Performance
-- **Push-down Filters**: Modify `SqliteQueryBackend` to accept complex filtering objects and generate dynamic SQL.
-- **SQL Pagination**: Add `LIMIT` and `OFFSET` to backend queries to avoid loading thousands of rows into memory.
-- **Sync CLI**: Officially register `hardkas query store sync`.
+- **Push-down Filters**: [RESOLVED] SqliteQueryBackend now implements dynamic SQL generation for filters.
+- **Deterministic Rebuild**: [RESOLVED] Indexer now uses sorted file walking and returns detailed sync stats.
+- **Strict Corruption Handling**: [RESOLVED] Implemented '--strict' mode for indexer to fail on invalid data.
+- **SQL Pagination**: Add `LIMIT` and `OFFSET` to backend queries to avoid loading thousands of rows into memory. [STILL VALID]
+- **Sync CLI**: Officially register `hardkas query store sync`. [STILL VALID]
 
 ### P1 — Schema Robustness
-- **Migration System**: Create a `migrations` table and `.sql` scripts for schema changes.
-- **Partial Event Sync**: Implement tracking of the last processed offset in `events.jsonl`.
+- **Migration System**: Create a `migrations` table and `.sql` scripts for schema changes. [STILL VALID]
+- **Partial Event Sync**: Implement tracking of the last processed offset in `events.jsonl`. [STILL VALID]
 
 ## 19. Final Assessment
 The current `QueryStore` is **EXCELLENT for local Developer Experience**, providing response speeds that the raw filesystem cannot match. However, its current "fetch all and filter in JS" architecture is a technical debt that will limit HardKas's use in projects with thousands of artifacts or intensive CI.

@@ -1,11 +1,36 @@
 import fs from "node:fs";
 import path from "node:path";
-import { DatabaseSync } from "node:sqlite";
-import { calculateContentHash } from "@hardkas/artifacts";
-import { validateEventEnvelope, type EventEnvelope } from "@hardkas/core";
+import { createRequire } from "node:module";
+const require = createRequire(import.meta.url);
+const { DatabaseSync } = require("node:sqlite");
+import { calculateContentHash, verifyArtifactIntegrity } from "@hardkas/artifacts";
+import { 
+  validateEventEnvelope, 
+  type EventEnvelope, 
+  type CorruptionIssue, 
+  formatCorruptionIssue 
+} from "@hardkas/core";
 
 export interface IndexerOptions {
   cwd?: string;
+  strict?: boolean;
+}
+
+export interface SyncStats {
+  scanned: number;
+  indexed: number;
+  duplicates: number;
+  corrupted: number;
+}
+
+export interface SyncResult {
+  schema: "hardkas.queryRebuild.v1";
+  ok: boolean;
+  artifacts: SyncStats;
+  events: SyncStats;
+  warnings: string[];
+  errors: string[];
+  issues: CorruptionIssue[];
 }
 
 export interface DoctorReport {
@@ -18,52 +43,110 @@ export interface DoctorReport {
 }
 
 export class HardkasIndexer {
-  private db: DatabaseSync;
+  private db: any;
   private hardkasDir: string;
+  private strict: boolean;
 
-  constructor(db: DatabaseSync, options: IndexerOptions = {}) {
+  constructor(db: any, options: IndexerOptions = {}) {
     this.db = db;
     this.hardkasDir = path.join(options.cwd || process.cwd(), ".hardkas");
+    this.strict = options.strict || false;
   }
 
-  public sync() {
-    if (!fs.existsSync(this.hardkasDir)) return;
+  /**
+   * Performs an incremental sync of the index.
+   * Transactional.
+   */
+  public async sync(): Promise<SyncResult> {
+    const result: SyncResult = {
+      schema: "hardkas.queryRebuild.v1",
+      ok: true,
+      artifacts: { scanned: 0, indexed: 0, duplicates: 0, corrupted: 0 },
+      events: { scanned: 0, indexed: 0, duplicates: 0, corrupted: 0 },
+      warnings: [],
+      errors: [],
+      issues: []
+    };
 
+    if (!fs.existsSync(this.hardkasDir)) {
+      return result;
+    }
+
+    // HardKAS Policy: Do not nest transactions.
+    // Sync handles its own transaction.
     this.db.exec("BEGIN TRANSACTION;");
     try {
-      this.syncArtifacts();
-      this.syncEvents();
-      this.syncTraces();
-      this.cleanupZombies();
-      
-      // Mark last sync
-      this.db.prepare("INSERT OR REPLACE INTO metadata (key, value) VALUES (?, ?)")
-        .run("last_indexed_at", new Date().toISOString());
-        
+      await this._syncInternal(result);
       this.db.exec("COMMIT;");
-    } catch (e) {
+    } catch (e: any) {
       this.db.exec("ROLLBACK;");
-      throw e;
+      result.ok = false;
+      result.errors.push(`Sync failed: ${e.message}`);
+      if (this.strict) throw e;
     }
+
+    return result;
+  }
+
+  /**
+   * Internal indexing logic without transaction management.
+   */
+  private async _syncInternal(result: SyncResult): Promise<void> {
+    await this.syncArtifacts(result);
+    this.syncEvents(result);
+    this.syncTraces();
+    this.cleanupZombies();
+    
+    // Mark last sync
+    this.db.prepare("INSERT OR REPLACE INTO metadata (key, value) VALUES (?, ?)")
+      .run("last_indexed_at", new Date().toISOString());
   }
 
   /**
    * Complete wipe and rebuild of the index.
    */
-  public rebuild() {
+  /**
+   * Complete wipe and rebuild of the index.
+   * Atomic across wipe and first sync.
+   */
+  public async rebuild(): Promise<SyncResult> {
+    const result: SyncResult = {
+      schema: "hardkas.queryRebuild.v1",
+      ok: true,
+      artifacts: { scanned: 0, indexed: 0, duplicates: 0, corrupted: 0 },
+      events: { scanned: 0, indexed: 0, duplicates: 0, corrupted: 0 },
+      warnings: [],
+      errors: [],
+      issues: []
+    };
+
     this.db.exec("BEGIN TRANSACTION;");
     try {
-      this.db.exec("DELETE FROM artifacts;");
-      this.db.exec("DELETE FROM lineage_edges;");
-      this.db.exec("DELETE FROM events;");
-      this.db.exec("DELETE FROM traces;");
-      this.db.exec("DELETE FROM metadata WHERE key = 'last_indexed_at';");
+      // 1. Wipe
+      this._wipeInternal();
+      
+      // 2. Full Sync (using internal logic to avoid nested transaction)
+      if (fs.existsSync(this.hardkasDir)) {
+        await this._syncInternal(result);
+      }
+      
       this.db.exec("COMMIT;");
-      this.sync();
-    } catch (e) {
+    } catch (e: any) {
       this.db.exec("ROLLBACK;");
-      throw e;
+      result.ok = false;
+      result.errors.push(`Rebuild failed: ${e.message}`);
+      if (this.strict) throw e;
     }
+
+    return result;
+  }
+
+  private _wipeInternal(): void {
+    this.db.exec("DELETE FROM traces;");
+    this.db.exec("DELETE FROM events;");
+    this.db.exec("DELETE FROM lineage_edges;");
+    this.db.exec("DELETE FROM artifacts;");
+    this.db.exec("DELETE FROM metadata WHERE key = 'last_indexed_at';");
   }
 
   /**
@@ -108,19 +191,21 @@ export class HardkasIndexer {
     return report;
   }
 
-  private syncArtifacts() {
-    const files = this.walk(this.hardkasDir);
+  private async syncArtifacts(result: SyncResult) {
+    // Sort files to ensure deterministic indexing order
+    const files = this.walk(this.hardkasDir).sort();
     const indexedAt = new Date().toISOString();
 
     const upsertArtifact = this.db.prepare(`
       INSERT INTO artifacts 
-      (artifact_id, content_hash, schema, version, kind, network_id, tx_id, created_at, raw_json, file_path, file_mtime_ms, indexed_at)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      (artifact_id, content_hash, schema, version, kind, mode, network_id, tx_id, created_at, raw_json, file_path, file_mtime_ms, indexed_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       ON CONFLICT(artifact_id) DO UPDATE SET
         content_hash = excluded.content_hash,
         schema = excluded.schema,
         version = excluded.version,
         kind = excluded.kind,
+        mode = excluded.mode,
         network_id = excluded.network_id,
         tx_id = excluded.tx_id,
         created_at = excluded.created_at,
@@ -135,32 +220,47 @@ export class HardkasIndexer {
       VALUES (?, ?, ?, ?, ?)
     `);
 
-    const mtimeStmt = this.db.prepare("SELECT file_mtime_ms FROM artifacts WHERE artifact_id = ?");
-
     const artifactsToLink: any[] = [];
 
     for (const file of files) {
+      result.artifacts.scanned++;
       const stat = fs.statSync(file);
-      const existing = this.db.prepare("SELECT artifact_id, file_mtime_ms FROM artifacts WHERE file_path = ?").get(file) as any;
       
-      if (existing && existing.file_mtime_ms === stat.mtimeMs) {
-        // Still need to track for lineage if we want to be safe, or assume it's already there
-        // For simplicity in sync, we'll re-parse lineage for all files or use a more complex cache
-      }
-
-      const content = fs.readFileSync(file, "utf-8");
       try {
-        const parsed = JSON.parse(content);
-        if (!parsed.schema || !parsed.version || !parsed.artifactId) continue;
+        const verification = await verifyArtifactIntegrity(file);
+        if (!verification.ok) {
+          result.artifacts.corrupted++;
+          verification.issues.forEach(issue => {
+            const corruptionIssue: CorruptionIssue = {
+              code: issue.code as any,
+              severity: issue.severity === "warning" ? "warning" : "error",
+              message: issue.message,
+              path: file
+            };
+            result.issues.push(corruptionIssue);
+            result.warnings.push(formatCorruptionIssue(corruptionIssue));
+          });
+          
+          if (this.strict) {
+            throw new Error(`Strict mode: corrupted artifact in ${file}`);
+          }
+          continue; // Skip corrupted artifact
+        }
 
+        const content = fs.readFileSync(file, "utf-8");
+        const parsed = JSON.parse(content);
+        
+        // Artifact ID is required for indexing
+        const artifactId = parsed.artifactId || parsed.contentHash || calculateContentHash(parsed);
         const hash = parsed.contentHash || calculateContentHash(parsed);
 
         upsertArtifact.run(
-          parsed.artifactId,
+          artifactId,
           hash,
           parsed.schema,
           parsed.version,
           parsed.kind || parsed.schema,
+          parsed.mode || "unknown",
           parsed.networkId || "unknown",
           parsed.txId || null,
           parsed.createdAt || null,
@@ -170,41 +270,51 @@ export class HardkasIndexer {
           indexedAt
         );
 
+        result.artifacts.indexed++;
+
         if (parsed.lineage && parsed.lineage.parentArtifactId) {
           artifactsToLink.push(parsed);
         }
-      } catch (e) {
-        // Skip invalid JSON
+      } catch (e: any) {
+        result.artifacts.corrupted++;
+        const code = e instanceof SyntaxError ? "ARTIFACT_JSON_INVALID" : "ARTIFACT_ID_INVALID";
+        const corruptionIssue: CorruptionIssue = {
+          code: code as any,
+          severity: "error",
+          message: e.message,
+          path: file
+        };
+        result.issues.push(corruptionIssue);
+        if (this.strict) throw e;
+        result.warnings.push(formatCorruptionIssue(corruptionIssue));
       }
     }
 
     // Pass 2: Lineage Edges (Now all artifact IDs exist)
     for (const parsed of artifactsToLink) {
-      insertEdge.run(
-        parsed.lineage.lineageId || "legacy-lineage",
-        parsed.lineage.parentArtifactId,
-        parsed.artifactId,
-        "derived",
-        parsed.createdAt || null
-      );
+      try {
+        insertEdge.run(
+          parsed.lineage.lineageId || "legacy-lineage",
+          parsed.lineage.parentArtifactId,
+          parsed.artifactId || parsed.contentHash,
+          "derived",
+          parsed.createdAt || null
+        );
+      } catch (e: any) {
+        result.warnings.push(`Failed to link lineage for ${parsed.artifactId}: ${e.message}`);
+      }
     }
   }
 
-  private syncEvents() {
+  private syncEvents(result: SyncResult) {
     const eventsPath = path.join(this.hardkasDir, "events.jsonl");
     if (!fs.existsSync(eventsPath)) return;
 
     const stat = fs.statSync(eventsPath);
     const indexedAt = new Date().toISOString();
 
-    // Check if events file changed
-    const existing = this.db.prepare("SELECT file_mtime_ms FROM events WHERE file_path = ? LIMIT 1").get(eventsPath) as any;
-    if (existing && existing.file_mtime_ms === stat.mtimeMs) {
-      return;
-    }
-
     const content = fs.readFileSync(eventsPath, "utf-8");
-    const lines = content.split("\n").filter(l => l.trim() !== "");
+    const lines = content.split("\n");
 
     const upsertEvent = this.db.prepare(`
       INSERT INTO events 
@@ -226,10 +336,29 @@ export class HardkasIndexer {
         indexed_at = excluded.indexed_at
     `);
 
-    for (const line of lines) {
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i]!.trim();
+      if (line === "") continue;
+
+      result.events.scanned++;
+      const lineNum = i + 1;
+
       try {
         const parsed = JSON.parse(line) as EventEnvelope;
-        if (!validateEventEnvelope(parsed)) continue;
+        if (!validateEventEnvelope(parsed)) {
+          const issue: CorruptionIssue = {
+            code: "EVENT_SCHEMA_INVALID",
+            severity: "error",
+            message: "Invalid event envelope structure",
+            path: eventsPath,
+            lineNumber: lineNum
+          };
+          result.issues.push(issue);
+          result.events.corrupted++;
+          if (this.strict) throw new Error(formatCorruptionIssue(issue));
+          result.warnings.push(formatCorruptionIssue(issue));
+          continue;
+        }
 
         upsertEvent.run(
           parsed.eventId,
@@ -247,8 +376,21 @@ export class HardkasIndexer {
           stat.mtimeMs,
           indexedAt
         );
-      } catch (e) {
-        // Skip invalid line
+        result.events.indexed++;
+      } catch (e: any) {
+        result.events.corrupted++;
+        const issue: CorruptionIssue = {
+          code: e instanceof SyntaxError ? "EVENT_JSON_INVALID" : "EVENT_LINE_CORRUPT",
+          severity: "error",
+          message: e.message,
+          path: eventsPath,
+          lineNumber: lineNum
+        };
+        result.issues.push(issue);
+        if (this.strict) {
+          throw new Error(formatCorruptionIssue(issue));
+        }
+        result.warnings.push(formatCorruptionIssue(issue));
       }
     }
   }

@@ -1,6 +1,6 @@
 {
   "name": "@hardkas/example-02-basic-transfer",
-  "version": "0.2.2-alpha",
+  "version": "0.3.0-alpha",
   "private": true,
   "type": "module",
   "scripts": {

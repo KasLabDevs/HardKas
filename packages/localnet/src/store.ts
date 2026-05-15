@@ -1,7 +1,8 @@
 import fs from "node:fs/promises";
 import path from "node:path";
-import type { LocalnetState } from "./types";
-import { createInitialLocalnetState } from "./state";
+import type { LocalnetState } from "./types.js";
+import { createInitialLocalnetState } from "./state.js";
+import { writeFileAtomic } from "@hardkas/core";
 
 export function getDefaultLocalnetDir(cwd: string = process.cwd()): string {
   return path.join(cwd, ".hardkas");
@@ -19,7 +20,7 @@ export async function saveLocalnetState(
   const dir = path.dirname(targetPath);
 
   await fs.mkdir(dir, { recursive: true });
-  await fs.writeFile(targetPath, JSON.stringify(state, null, 2), "utf-8");
+  await writeFileAtomic(targetPath, JSON.stringify(state, null, 2), { encoding: "utf-8" });
 }
 
 export async function loadLocalnetState(

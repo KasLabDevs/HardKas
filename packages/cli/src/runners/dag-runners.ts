@@ -66,7 +66,7 @@ export async function runDagSimulateReorg(options: { depth: number }) {
   const forkPoint = state.dag.blocks[forkPointId];
   if (!forkPoint) throw new Error(`Fork point block ${forkPointId} not found in state.`);
 
-  const sideBlockId = `reorg_side_${Date.now().toString(36)}`;
+  const sideBlockId = `reorg_side_${forkPointId}_0`;
   state.dag.blocks[sideBlockId] = {
     id: sideBlockId,
     parents: [forkPointId],

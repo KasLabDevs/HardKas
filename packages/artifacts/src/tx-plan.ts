@@ -1,7 +1,7 @@
 import { TxPlan as TxPlanType } from "@hardkas/tx-builder";
 import { TxPlan, ARTIFACT_VERSION } from "./schemas.js";
 import { NetworkId, ExecutionMode } from "@hardkas/core";
-import { calculateContentHash } from "./canonical.js";
+import { calculateContentHash, CURRENT_HASH_VERSION } from "./canonical.js";
 import { HARDKAS_VERSION } from "./constants.js";
 import { formatSompi } from "@hardkas/core";
 
@@ -30,6 +30,7 @@ export function createTxPlanArtifact(options: CreateTxPlanArtifactOptions): TxPl
     schema: "hardkas.txPlan",
     hardkasVersion: HARDKAS_VERSION,
     version: ARTIFACT_VERSION,
+    hashVersion: CURRENT_HASH_VERSION,
     createdAt: new Date().toISOString(),
     networkId: options.networkId,
     mode: options.mode,
@@ -66,7 +67,7 @@ export function createTxPlanArtifact(options: CreateTxPlanArtifactOptions): TxPl
      };
   }
 
-  const hash = calculateContentHash(artifact);
+  const hash = calculateContentHash(artifact, CURRENT_HASH_VERSION);
   artifact.planId = `plan-${hash.slice(0, 16)}`;
   artifact.contentHash = hash;
   

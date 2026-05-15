@@ -1,11 +1,13 @@
 import { 
   TxPlan, 
   TxReceipt, 
-  calculateContentHash 
+  calculateContentHash,
+  diffArtifacts
 } from "@hardkas/artifacts";
 import { applySimulatedPlan } from "./transactions.js";
 import { LocalnetState, ReplayVerificationReport } from "./types.js";
 import { StoredSimulatedTxTrace } from "./traces.js";
+import { calculateStateHash } from "./snapshot.js";
 import { coreEvents } from "@hardkas/core";
 
 export interface SimulatedReplaySummary {
@@ -23,6 +25,8 @@ export interface SimulatedReplaySummary {
 
 /**
  * Verifies that a transaction replay matches the original artifacts.
+ * Implements an honest replay model that differentiates between 
+ * reproduced results and unimplemented consensus/bridge features.
  */
 export function verifyReplay(
   state: LocalnetState,
@@ -30,58 +34,94 @@ export function verifyReplay(
   originalReceipt: TxReceipt
 ): ReplayVerificationReport {
   const errors: string[] = [];
+  const reportDivergences: any[] = [];
   
-  // 1. Plan Integrity
+  // 1. Plan Integrity (Deterministic self-check)
   const currentPlanHash = calculateContentHash(originalPlan);
+  let planOk = true;
   if (originalPlan.contentHash && currentPlanHash !== originalPlan.contentHash) {
+    planOk = false;
     const errorMsg = `TxPlan contentHash mismatch: expected ${originalPlan.contentHash}, got ${currentPlanHash}`;
     errors.push(errorMsg);
-    coreEvents.normalizeAndEmit({
-      kind: "replay.divergence",
-      txId: originalReceipt.txId,
-      field: "planHash",
-      expected: originalPlan.contentHash,
-      actual: currentPlanHash
+    reportDivergences.push({ path: "plan.contentHash", expected: originalPlan.contentHash, actual: currentPlanHash });
+  }
+
+  // 2. PreStateHash Verification
+  //    If the original receipt recorded a preStateHash, the current state
+  //    must match it before replay is valid.
+  const originalPreState = originalReceipt.preStateHash;
+  if (originalPreState) {
+    const currentStateHash = calculateStateHash(state);
+    if (currentStateHash !== originalPreState) {
+      const errorMsg = `preStateHash mismatch: expected ${originalPreState}, got ${currentStateHash}`;
+      errors.push(errorMsg);
+      reportDivergences.push({
+        path: "preStateHash",
+        expected: originalPreState,
+        actual: currentStateHash
+      });
+    }
+  } else {
+    // preStateHash missing from original receipt — warn but allow in non-strict
+    reportDivergences.push({
+      path: "preStateHash",
+      expected: "present",
+      actual: "missing",
+      severity: "warning"
     });
   }
 
-  // 2. Execute Replay (Dry-run by default as we don't return the new state)
+  // 3. Execute Replay in simulated environment
   const result = applySimulatedPlan(state, originalPlan, { txId: originalReceipt.txId });
   const replayReceipt = result.receipt;
 
-  const checks = [
-    { field: "status", expected: originalReceipt.status, actual: replayReceipt.status },
-    { field: "mass", expected: String(originalReceipt.mass), actual: String(replayReceipt.mass) },
-    { field: "feeSompi", expected: String(originalReceipt.feeSompi), actual: String(replayReceipt.feeSompi) },
-    { field: "preStateHash", expected: String(originalReceipt.preStateHash), actual: String(replayReceipt.preStateHash) },
-    { field: "postStateHash", expected: String(originalReceipt.postStateHash), actual: String(replayReceipt.postStateHash) },
-    { field: "spentUtxos", expected: String(originalReceipt.spentUtxoIds?.length), actual: String(replayReceipt.spentUtxoIds?.length) }
-  ];
-
-  for (const check of checks) {
-    if (check.expected !== check.actual) {
-      errors.push(`${check.field} mismatch: expected ${check.expected}, got ${check.actual}`);
-      coreEvents.normalizeAndEmit({
-        kind: "replay.divergence",
-        txId: originalReceipt.txId,
-        field: check.field,
-        expected: check.expected,
-        actual: check.actual
+  // 3. Semantic Diffing (Divergence detection)
+  const diff = diffArtifacts(originalReceipt, replayReceipt);
+  
+  if (!diff.identical) {
+    for (const entry of diff.entries) {
+      reportDivergences.push({
+        path: `receipt.${entry.path}`,
+        expected: entry.left,
+        actual: entry.right
       });
+      errors.push(`Receipt divergence at ${entry.path}: expected ${JSON.stringify(entry.left)}, got ${JSON.stringify(entry.right)}`);
     }
   }
 
-  if (errors.length === 0) {
+  // 4. Emit Events for Divergence Tracking
+  for (const div of reportDivergences) {
+    coreEvents.normalizeAndEmit({
+      kind: "replay.divergence",
+      txId: originalReceipt.txId,
+      field: div.path,
+      expected: String(div.expected),
+      actual: String(div.actual)
+    });
+  }
+
+  const invariantsOk = errors.length === 0;
+
+  if (invariantsOk) {
     coreEvents.normalizeAndEmit({
       kind: "replay.verified",
       txId: originalReceipt.txId
     });
   }
 
+  // Construct Honest Report
   return {
-    planOk: !errors.some(e => e.includes("TxPlan")),
-    receiptOk: !errors.some(e => e.includes("Status") || e.includes("Hash")),
-    invariantsOk: errors.length === 0,
+    schema: "hardkas.replayReport.v1",
+    txId: originalReceipt.txId,
+    planOk,
+    receiptOk: !diff.entries.some(e => !e.path.startsWith("plan")),
+    invariantsOk,
+    checks: {
+      workflowDeterministic: invariantsOk ? "reproduced" : "diverged",
+      consensusValidation: "unimplemented", // Explicit trust boundary
+      l2BridgeCorrectness: "unimplemented" // Explicit trust boundary
+    },
+    divergences: reportDivergences,
     errors
   };
 }

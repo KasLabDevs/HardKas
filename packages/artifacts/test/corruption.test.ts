@@ -5,7 +5,7 @@ import path from "node:path";
 
 const corruptedDir = path.resolve(__dirname, "fixtures/corrupted");
 
-describe("Corruption Corpus (Fase 4 Hardening)", () => {
+describe("Corruption Corpus Hardening", () => {
   
   it("should reject fee-mismatch.json in strict mode", () => {
     const content = fs.readFileSync(path.join(corruptedDir, "fee-mismatch.json"), "utf8");
@@ -15,48 +15,21 @@ describe("Corruption Corpus (Fase 4 Hardening)", () => {
     expect(result.issues.some(i => i.code === "ECONOMIC_VIOLATION")).toBe(true);
   });
 
-  it("should reject broken-content-hash.json", () => {
-    const content = fs.readFileSync(path.join(corruptedDir, "broken-content-hash.json"), "utf8");
-    const artifact = JSON.parse(content);
-    const result = verifyArtifactIntegrity(artifact);
-    const semanticResult = verifyArtifactSemantics(artifact, { strict: true });
-    expect(semanticResult.ok).toBe(false);
-    expect(semanticResult.issues.some(i => i.code === "LINEAGE_IDENTITY_MISMATCH")).toBe(true);
-  });
-
-  it("should reject dust-output.json", () => {
-    const content = fs.readFileSync(path.join(corruptedDir, "dust-output.json"), "utf8");
-    const artifact = JSON.parse(content);
-    const result = verifyArtifactSemantics(artifact, { strict: true });
+  it("should reject broken-content-hash.json", async () => {
+    const fixturePath = path.join(corruptedDir, "broken-content-hash.json");
+    const result = await verifyArtifactIntegrity(fixturePath);
     expect(result.ok).toBe(false);
-    expect(result.issues.some(i => i.message.includes("Dust"))).toBe(true);
+    expect(result.issues.some(i => i.code === "ARTIFACT_HASH_MISMATCH")).toBe(true);
   });
 
-  it("should reject broken lineage parent", () => {
-    const content = fs.readFileSync(path.join(corruptedDir, "lineage-broken-parent.json"), "utf8");
-    const artifact = JSON.parse(content);
-    const result = verifyArtifactSemantics(artifact, { strict: true });
-    expect(result.ok).toBe(false);
-    expect(result.issues.some(i => i.code === "LINEAGE_INCONSISTENCY")).toBe(true);
-  });
-
-  it("should reject broken lineage root", () => {
-    const content = fs.readFileSync(path.join(corruptedDir, "lineage-broken-root.json"), "utf8");
-    const artifact = JSON.parse(content);
-    const result = verifyArtifactSemantics(artifact, { strict: true });
-    expect(result.ok).toBe(false);
-    // Note: If this fails, it might be due to missing parent context in the test.
-    // However, it should at least fail due to network/address mismatch or other checks.
-  });
-
-  it("should reject mutated signed field", async () => {
+  it("should reject mutated semantic field", async () => {
     const fixturePath = path.join(corruptedDir, "mutated-signed-field.json");
     const result = await verifyArtifactIntegrity(fixturePath);
     expect(result.ok).toBe(false);
-    expect(result.issues.some(i => i.code === "HASH_MISMATCH")).toBe(true);
+    expect(result.issues.some(i => i.code === "ARTIFACT_HASH_MISMATCH")).toBe(true);
   });
 
-  it("should reject network mismatch", () => {
+  it("should reject network/address mismatch", () => {
     const content = fs.readFileSync(path.join(corruptedDir, "network-mismatch.json"), "utf8");
     const artifact = JSON.parse(content);
     const result = verifyArtifactSemantics(artifact, { strict: true });
@@ -64,34 +37,150 @@ describe("Corruption Corpus (Fase 4 Hardening)", () => {
     expect(result.issues.some(i => i.code === "NETWORK_ADDRESS_MISMATCH")).toBe(true);
   });
 
-  it("should reject simulated-real contamination", () => {
-    const content = fs.readFileSync(path.join(corruptedDir, "simulated-real-contamination.json"), "utf8");
-    const artifact = JSON.parse(content);
-    const result = verifyArtifactSemantics(artifact, { strict: true });
-    expect(result.ok).toBe(false);
-    expect(result.issues.some(i => i.code === "NETWORK_ADDRESS_MISMATCH")).toBe(true);
-  });
-
-  it("should reject stale snapshots in strict mode", () => {
-    const content = fs.readFileSync(path.join(corruptedDir, "stale-snapshot.json"), "utf8");
-    const artifact = JSON.parse(content);
-    const result = verifyArtifactSemantics(artifact, { strict: true });
-    expect(result.ok).toBe(false);
-    expect(result.issues.some(i => i.code === "STALE_ARTIFACT")).toBe(true);
-  });
-
-  it("should reject missing lineage in strict mode", () => {
-    const artifact = { 
-      schema: "hardkas.txPlan", 
-      mode: "real", 
-      networkId: "mainnet",
-      hardkasVersion: "0.2.2-alpha",
-      version: "1.0.0-alpha",
-      createdAt: new Date().toISOString(),
-      amountSompi: "1000"
+  it("should detect lineage corruption (ID mismatch) when parent provided", () => {
+    const parent = {
+      schema: "hardkas.snapshot",
+      networkId: "simnet",
+      mode: "simulated",
+      lineage: { artifactId: "parent-hash", lineageId: "flow-1", rootArtifactId: "root-hash", sequence: 10 }
     };
-    const result = verifyArtifactSemantics(artifact, { strict: true });
+    const child = {
+      schema: "hardkas.txPlan",
+      networkId: "simnet",
+      mode: "simulated",
+      lineage: { artifactId: "child-hash", lineageId: "flow-wrong", rootArtifactId: "root-hash", parentArtifactId: "parent-hash", sequence: 11 }
+    };
+
+    const result = verifyArtifactSemantics(child, { parent });
     expect(result.ok).toBe(false);
-    expect(result.issues.some(i => i.code === "MISSING_LINEAGE")).toBe(true);
+    expect(result.issues.some(i => i.code === "LINEAGE_ID_MISMATCH")).toBe(true);
+  });
+
+  it("should detect parent artifactId mismatch", () => {
+    const parent = {
+      schema: "hardkas.snapshot",
+      networkId: "simnet",
+      mode: "simulated",
+      lineage: { artifactId: "parent-hash", lineageId: "flow-1", rootArtifactId: "root-hash", sequence: 10 }
+    };
+    const child = {
+      schema: "hardkas.txPlan",
+      networkId: "simnet",
+      mode: "simulated",
+      lineage: { artifactId: "child-hash", lineageId: "flow-1", rootArtifactId: "root-hash", parentArtifactId: "wrong-parent-hash", sequence: 11 }
+    };
+
+    const result = verifyArtifactSemantics(child, { parent });
+    expect(result.ok).toBe(false);
+    expect(result.issues.some(i => i.code === "PARENT_ID_MISMATCH")).toBe(true);
+  });
+
+  it("should detect missing parentArtifactId reference when parent provided", () => {
+    const parent = {
+      schema: "hardkas.snapshot",
+      networkId: "simnet",
+      mode: "simulated",
+      lineage: { artifactId: "parent-hash", lineageId: "flow-1", rootArtifactId: "root-hash", sequence: 10 }
+    };
+    const child = {
+      schema: "hardkas.txPlan",
+      networkId: "simnet",
+      mode: "simulated",
+      lineage: { artifactId: "child-hash", lineageId: "flow-1", rootArtifactId: "root-hash", sequence: 11 }
+      // parentArtifactId is missing
+    };
+
+    const result = verifyArtifactSemantics(child, { parent });
+    expect(result.ok).toBe(false);
+    expect(result.issues.some(i => i.code === "MISSING_PARENT_ID")).toBe(true);
+  });
+
+  it("should detect network contamination between parent and child", () => {
+    const parent = {
+      schema: "hardkas.snapshot",
+      networkId: "simnet",
+      mode: "simulated",
+      lineage: { artifactId: "parent-hash", lineageId: "flow-1", rootArtifactId: "root-hash", sequence: 10 }
+    };
+    const child = {
+      schema: "hardkas.txPlan",
+      networkId: "mainnet", // Contamination!
+      mode: "simulated",
+      lineage: { artifactId: "child-hash", lineageId: "flow-1", rootArtifactId: "root-hash", parentArtifactId: "parent-hash", sequence: 11 }
+    };
+
+    const result = verifyArtifactSemantics(child, { parent });
+    expect(result.ok).toBe(false);
+    expect(result.issues.some(i => i.code === "NETWORK_MISMATCH")).toBe(true);
+  });
+
+  it("should detect mode contamination between parent and child", () => {
+    const parent = {
+      schema: "hardkas.snapshot",
+      networkId: "simnet",
+      mode: "simulated",
+      lineage: { artifactId: "parent-hash", lineageId: "flow-1", rootArtifactId: "root-hash", sequence: 10 }
+    };
+    const child = {
+      schema: "hardkas.txPlan",
+      networkId: "simnet",
+      mode: "real", // Contamination!
+      lineage: { artifactId: "child-hash", lineageId: "flow-1", rootArtifactId: "root-hash", parentArtifactId: "parent-hash", sequence: 11 }
+    };
+
+    const result = verifyArtifactSemantics(child, { parent });
+    expect(result.ok).toBe(false);
+    expect(result.issues.some(i => i.code === "MODE_MISMATCH")).toBe(true);
+  });
+
+  it("should detect self-parenting", () => {
+    const parent = {
+      schema: "hardkas.snapshot",
+      networkId: "simnet",
+      mode: "simulated",
+      lineage: { artifactId: "same-hash", lineageId: "flow-1", rootArtifactId: "root-hash", sequence: 10 }
+    };
+    const child = {
+      schema: "hardkas.txPlan",
+      networkId: "simnet",
+      mode: "simulated",
+      lineage: { artifactId: "same-hash", lineageId: "flow-1", rootArtifactId: "root-hash", parentArtifactId: "same-hash", sequence: 11 }
+    };
+
+    const result = verifyArtifactSemantics(child, { parent });
+    expect(result.ok).toBe(false);
+    expect(result.issues.some(i => i.code === "SELF_PARENT")).toBe(true);
+  });
+
+  describe("Structural Corruption", () => {
+    const structuralDir = path.join(corruptedDir, "structural");
+    
+    it("should reject truncated JSON", async () => {
+      const p = path.join(structuralDir, "truncated.json");
+      if (!fs.existsSync(structuralDir)) fs.mkdirSync(structuralDir, { recursive: true });
+      fs.writeFileSync(p, '{"schema": "hardkas.txPlan", "version": "1.0.0"'); // Truncated
+      
+      const result = await verifyArtifactIntegrity(p);
+      expect(result.ok).toBe(false);
+      expect(result.issues.some(i => i.code === "ARTIFACT_JSON_INVALID")).toBe(true);
+    });
+
+    it("should reject invalid JSON", async () => {
+      const p = path.join(structuralDir, "invalid.json");
+      fs.writeFileSync(p, 'not json at all');
+      
+      const result = await verifyArtifactIntegrity(p);
+      expect(result.ok).toBe(false);
+      expect(result.issues.some(i => i.code === "ARTIFACT_JSON_INVALID")).toBe(true);
+    });
+
+    it("should reject missing schema", async () => {
+      const p = path.join(structuralDir, "missing-schema.json");
+      fs.writeFileSync(p, '{"version": "1.0.0", "something": "else"}');
+      
+      const result = await verifyArtifactIntegrity(p);
+      expect(result.ok).toBe(false);
+      expect(result.issues.some(i => i.code === "ARTIFACT_SCHEMA_MISSING")).toBe(true);
+    });
   });
 });

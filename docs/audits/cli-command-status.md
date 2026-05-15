@@ -61,8 +61,8 @@ Status not determined due to lack of technical evidence in the handler or delega
 | 🟢 VERIFIED | accounts | `hardkas accounts fund` | `runAccountsFund()` | Sends real funds (faucet) | `accounts.ts` | `runAccountsFund` | LOW |
 | 🟢 VERIFIED | rpc | `hardkas rpc info` | `await runRpcInfo()` | Live network diagnostics | `rpc.ts` | `runRpcInfo` | LOW |
 | 🟢 VERIFIED | rpc | `hardkas rpc doctor` | `await runRpcDoctor()` | Real endpoints audit | `rpc.ts` | `runRpcDoctor` | LOW |
-| 🟡 PARTIAL | dag | `hardkas dag status` | `uses localnet simulator` | Only applies to local environment | `dag.ts` | `runDagStatus` | MEDIUM |
-| 🟡 PARTIAL | dag | `hardkas dag simulate-reorg` | `runDagSimulateReorg()` | Only applies to local environment | `dag.ts` | `runDagSimulateReorg` | MEDIUM |
+| 🟢 VERIFIED | dag | `hardkas dag status` | `uses ApproxGhostdagEngine` | Real GHOSTDAG approximate engine [UPDATED] | `dag.ts` | `runDagStatus` | LOW |
+| 🟢 VERIFIED | dag | `hardkas dag simulate-reorg` | `runDagSimulateReorg()` | Real GHOSTDAG approximate engine [UPDATED] | `dag.ts` | `runDagSimulateReorg` | LOW |
 | 🟢 VERIFIED | artifact | `hardkas artifact verify` | `runArtifactVerify()` | Real integrity validation | `artifact.ts` | `runArtifactVerify` | LOW |
 | 🟢 VERIFIED | artifact | `hardkas artifact explain` | `runArtifactExplain()` | Real semantic analysis | `artifact.ts` | `runArtifactExplain` | LOW |
 | 🟢 VERIFIED | query | `hardkas query store doctor` | `engine.backend.doctor()` | Real database audit | `query.ts` | inline action | LOW |
@@ -76,6 +76,7 @@ Status not determined due to lack of technical evidence in the handler or delega
 | 🧪 EXPERIMENTAL | l2 | `hardkas l2 bridge status` | `trust assumptions focus` | Theoretical security model | `l2.ts` | `runL2BridgeStatus` | HIGH |
 | 🟢 VERIFIED | test | `hardkas test` | `import("vitest/node")` | Real integration with Vitest | `test.ts` | `runTest` | LOW |
 | 🟢 VERIFIED | example | `hardkas example list` | `reads registry.json` | Lists real examples from repo | `misc.ts` | `runExampleList` | LOW |
+| 🟢 VERIFIED | run | `hardkas run` | `await runScript()` | Real TS script execution with harness [NEW] | `run.ts` | `runScript` | LOW |
 
 ---
 
@@ -85,7 +86,7 @@ Commands suggested in documentation or logs but not registered in Commander.
 
 | Command | Reason | Source where it appears | Recommended Action |
 | :--- | :--- | :--- | :--- |
-| `hardkas query store index` | Command not registered | `doctor.ts` message (line 106) | Register or change message to `rebuild`. |
+| `hardkas query store sync` | Command not registered | [OUTDATED FINDING RESOLVED] | Resolved. Suggested as `sync` or `rebuild` everywhere. |
 | `hardkas node logs --follow` | Flag exists but does not implement real streaming in all environments | `node logs` help | Validate streaming implementation in Docker runner. |
 | `example.ts` (File) | File does not exist | Reference in previous plans | Commands are in `misc.ts`. Not a critical error but an organizational one. |
 
@@ -96,7 +97,7 @@ Commands suggested in documentation or logs but not registered in Commander.
 | Command | Evidence | Recommended Status | Recommended Action |
 | :--- | :--- | :--- | :--- |
 | `hardkas accounts real lock` | `console.log("Account '...' is now locked.")` | 🟠 MOCK | Implement temporary keystore clearing if real security is desired. |
-| `hardkas dag anomalies` | `printDagAnomalies` calls `printExplainChains` (which is a reference bug) | 🔴 BROKEN | Correct reference to `printExplain`. |
+| `hardkas query dag anomalies` | `printDagAnomalies` calls `printExplain` | 🟢 VERIFIED | Corrected reference to `printExplain`. |
 
 ---
 
@@ -104,12 +105,12 @@ Commands suggested in documentation or logs but not registered in Commander.
 
 | Status | Count | Commands (Examples) |
 | :--- | :--- | :--- |
-| 🟢 VERIFIED | 48 | `init`, `up`, `tx plan/sign/send`, `query artifacts`, `test` |
-| 🟡 PARTIAL | 8 | `dag status`, `l2 tx`, `snapshot` |
+| 🟢 VERIFIED | 52 | `init`, `up`, `tx plan/sign/send`, `query artifacts`, `dag`, `test`, `run` |
+| 🟡 PARTIAL | 6 | `l2 tx`, `snapshot` |
 | 🧪 EXPERIMENTAL | 10 | `query lineage`, `query dag`, `l2 bridge` |
 | 🟠 MOCK | 1 | `accounts real lock` |
 | ⚫ DISABLED | 1 | `tx trace` |
-| 🔴 BROKEN | 1 | `query dag anomalies` (due to reference bug) |
+| 🔴 BROKEN | 0 | [OUTDATED FINDING RESOLVED] No broken reference errors found. |
 
 ---
 

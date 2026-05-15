@@ -4,7 +4,7 @@
 [![NPM Version](https://img.shields.io/npm/v/@hardkas/cli?color=red&label=cli)](https://www.npmjs.com/package/@hardkas/cli)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-**HardKAS** is a Kaspa-native developer operating environment and deterministic workflow environment. It provides a local-first, deterministic environment for planning, verifying, and debugging transactions and protocol-level integrations on the Kaspa BlockDAG.
+**HardKAS** is local-first deterministic Kaspa developer tooling. It provides a hardened, deterministic environment for planning, verifying, and auditing transaction workflows and protocol-level integrations on the Kaspa BlockDAG.
 
 ---
 
@@ -19,18 +19,16 @@
 ---
 
 > [!IMPORTANT]
-> **Status: 0.2.2-alpha / Developer Preview**
-> HardKAS is currently in Developer Preview. Features, APIs, and artifact formats are subject to evolution.
+> **Status: 0.3.0-alpha / HARDENED ALPHA**
+> HardKAS is currently in **HARDENED ALPHA**. This means core determinism, cross-platform hashing, and adversarial resilience are stable and verified. It is moving toward Beta Candidate status through architectural convergence and documentation hardening.
 
 > [!CAUTION]
 > **Not Production Custody Software.**
-> HardKAS is a developer infrastructure tool. It is NOT intended for high-value mainnet custody. Always use dedicated, hardware-backed core wallets for production assets. See the [Security Model](docs/security-model.md) for details.
+> HardKAS is a local developer infrastructure tool. It does NOT validate Kaspa consensus, prove bridge correctness, or provide production-grade security for high-value mainnet assets. Always use hardware-backed wallets for production.
 
 ---
 
-## Project Status
-
-HardKAS is currently in Developer Preview (0.2.2-alpha).
+HardKAS is currently in **HARDENED ALPHA** (0.3.0-alpha).
 
 The architecture is stabilizing, but users should be aware:
 - **APIs may change**: Commands and SDK interfaces are not yet finalized.
@@ -38,6 +36,15 @@ The architecture is stabilizing, but users should be aware:
 - **Simulation is a light-model**: The localnet uses a deterministic light-model of the BlockDAG, not a full consensus implementation.
 - **Encrypted Keystore**: Intended for developer workflows and local simulation only.
 - **RPC Integrations**: Health and diagnostic features are still hardening.
+
+### Functional Verification
+HardKAS has a deterministic end-to-end local artifact workflow proof covering simulated L1 execution, replay invariants, query rebuilds, state reset equivalence, and negative mutation detection. 
+
+### Trust Boundaries
+- **Simulation**: Localnet is a **research-experimental** light-model, not a consensus validator.
+- **Replay**: Replay verification ensures **local workflow consistency**, not L1 finality.
+- **Artifacts**: contentHash guarantees **internal integrity**, not on-chain confirmation.
+- **L2 Bridge**: Igra integration assumes **pre-ZK multisig/MPC assumptions**.
 
 ---
 
@@ -55,11 +62,15 @@ The architecture is stabilizing, but users should be aware:
 
 ### HardKAS IS NOT:
 - **Production Custody**: Not a secure wallet for large-scale assets.
-- **Full Node Implementation**: HardKAS orchestrates nodes but is not one itself.
-- **Consensus Implementation**: Does not replace the official kaspad consensus logic.
-- **Full GHOSTDAG/DAGKnight Parity**: The light-model simulates effects, not the full consensus protocol.
-- **Trustless Bridge System**: Pre-ZK bridge integrations rely on multisig/MPC assumptions.
+- **Consensus Software**: Does not replace or replicate the official kaspad consensus logic.
+- **Full Node Implementation**: Orchestrates node runners but is not a consensus node.
+- **Bridge Correctness Proof**: Does not prove the validity of cross-chain bridges or Igra exits.
+- **SilverScript/Covenant Runtime**: Does not provide a live execution environment for Kaspa L1 covenants.
+- **Kaspa Finality Proof**: Simulation finality is local-only; it does not represent L1 finality.
+- **Full GHOSTDAG/DAGKnight Parity**: The light-model simulates structural effects, not the full bit-for-bit consensus protocol.
+- **Trustless Bridge System**: Current bridge modeling assumes MPC/Multisig trust boundaries.
 - **EVM on L1**: There is no EVM execution on the Kaspa L1 layer.
+- **Kaspa L1 Auditor**: It audits developer workflows, not the Kaspa L1 protocol itself.
 
 ---
 
@@ -215,18 +226,18 @@ hardkas artifact verify .hardkas/artifacts/ --recursive
 ### Run examples
 
 ```bash
-pnpm example:ci              # CI workflow demo
-pnpm example:dag-reorg        # DAG reorg simulation
-hardkas example list     # See all available examples
+pnpm example:ci
+pnpm example:dag-reorg
+hardkas example list
 ```
 
 ### CLI Reference
 
 ```bash
-hardkas --help           # All command groups
-hardkas tx --help        # Transaction commands
-hardkas artifact --help  # Artifact verification
-hardkas rpc --help       # RPC diagnostics
+hardkas --help
+hardkas tx --help
+hardkas artifact --help
+hardkas rpc --help
 ```
 
 

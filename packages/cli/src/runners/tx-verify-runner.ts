@@ -1,4 +1,4 @@
-import { readTxPlanArtifact } from "@hardkas/artifacts";
+import { readTxPlanArtifact, verifyArtifactIntegrity } from "@hardkas/artifacts";
 import { verifyTxPlanSemantics, SemanticVerificationIssue } from "@hardkas/tx-builder";
 import { UI } from "../ui.js";
 import { formatSompi } from "@hardkas/core";
@@ -17,7 +17,18 @@ export async function runTxVerify(options: TxVerifyOptions) {
   try {
     const artifact = await readTxPlanArtifact(absolutePath);
     
-    // Perform semantic verification
+    // 1. Integrity Check (Hardening)
+    const integrityResult = await verifyArtifactIntegrity(absolutePath);
+    if (!integrityResult.ok) {
+      UI.error("INTEGRITY VERIFICATION FAILED");
+      integrityResult.issues.forEach(issue => {
+        console.log(`  [!] [${issue.code}] ${issue.message}`);
+      });
+      process.exitCode = 1;
+      return;
+    }
+
+    // 2. Perform semantic verification
     const result = verifyTxPlanSemantics(artifact as any);
 
     if (options.json) {

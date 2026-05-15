@@ -19,10 +19,14 @@
     "typecheck": "turbo typecheck",
     "lint": "turbo lint",
     "format": "prettier --write .",
+    "docs:generate-cli": "pnpm --filter @hardkas/cli docs:generate-cli",
+    "docs:check-cli": "pnpm --filter @hardkas/cli docs:check-cli",
     "hardkas": "pnpm --filter @hardkas/cli run dev",
     "cli": "pnpm --filter @hardkas/cli run dev",
-    "check": "pnpm typecheck && pnpm build && pnpm check:cli-version && pnpm test",
+    "check": "pnpm typecheck && pnpm build && pnpm check:cli-version && pnpm docs:check-cli && pnpm check:docs && pnpm test",
+    "test:repro": "pnpm --filter @hardkas/testing test",
     "check:cli-version": "node scripts/check-cli-version.mjs",
+    "check:docs": "pnpm --filter @hardkas/cli test:docs",
     "check:artifacts": "pnpm artifact:fixtures",
     "artifact:fixtures": "pnpm hardkas artifact verify ../artifacts/test/fixtures/valid --recursive --strict",
     "artifact:corruption": "pnpm hardkas artifact verify ../artifacts/test/fixtures/corrupted --recursive --strict",
@@ -41,6 +45,7 @@
   "devDependencies": {
     "@types/node": "^22.10.2",
     "eslint": "^9.17.0",
+    "fast-check": "^4.8.0",
     "prettier": "^3.4.2",
     "tsup": "^8.3.5",
     "tsx": "^4.19.2",
@@ -48,5 +53,5 @@
     "typescript": "^5.7.2",
     "vitest": "^2.1.8"
   },
-  "version": "0.2.2-alpha.1"
+  "version": "0.3.0-alpha"
 }

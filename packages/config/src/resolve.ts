@@ -17,9 +17,10 @@ export function resolveNetworkTarget(
   const { config, network } = options;
   const name = network || config.defaultNetwork || "simnet";
   
-  const networks = config.networks && Object.keys(config.networks).length > 0 
-    ? config.networks 
-    : DEFAULT_HARDKAS_CONFIG.networks!;
+  const networks = {
+    ...DEFAULT_HARDKAS_CONFIG.networks,
+    ...(config.networks || {})
+  };
 
   const target = networks[name];
 

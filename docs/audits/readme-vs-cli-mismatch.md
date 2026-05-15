@@ -28,28 +28,25 @@ Sources analyzed:
 | README.md | `hardkas artifact verify` | Quickstart | `--recursive` | **EXISTS** | Supports `--json`, `--strict`. |
 | README.md | `hardkas example list` | Quickstart | — | **EXISTS** | Registered in `misc.ts`. |
 | docs/cli.md | `hardkas doctor` | Diagnostics | — | **EXISTS** | Real and functional command. |
-| docs/cli.md | `hardkas query store index` | Store Sync | — | **NOT_REGISTERED** | Ghost suggestion. Real command is `rebuild`. |
-| docs/cli.md | `hardkas query store sql` | Raw Query | — | **NOT_REGISTERED** | Aspirational command not implemented. |
+| docs/cli.md | `hardkas query store sync` | Store Sync | — | **EXISTS** | Suggested as `sync` or `rebuild` in code and docs. |
+| docs/cli.md | `hardkas query store sql` | Raw Query | — | **EXISTS** | Implemented and functional. |
 | docs/cli.md | `hardkas tx trace` | Tracing | `<txId>` | **DISABLED** | Registered but intentionally blocked. |
 
 ## 2. Real CLI Commands Missing From Docs
 
 | Group | Real command | Functional status | Source file | Should be documented in | Priority |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| query | `hardkas query store rebuild` | 🟢 VERIFIED | `query.ts` | `docs/cli.md` | **HIGH** |
-| query | `hardkas query events` | 🟢 VERIFIED | `query.ts` | `docs/query-layer.md` | **HIGH** |
-| accounts| `hardkas accounts real *` | 🟢 VERIFIED | `accounts.ts` | `README.md` (Keystore) | **MEDIUM** |
-| faucet | `hardkas faucet` | 🟢 VERIFIED | `faucet.ts` | `README.md` | **MEDIUM** |
-| snapshot| `hardkas snapshot *` | 🟡 PARTIAL | `snapshot.ts` | `docs/cli.md` | **MEDIUM** |
-| config | `hardkas config show` | 🟢 VERIFIED | `config.ts` | `README.md` | **MEDIUM** |
-| replay | `hardkas replay verify` | 🟢 VERIFIED | `replay.ts` | `docs/cli.md` | **LOW** |
-| l2 | `hardkas l2 *` | 🟡 PARTIAL | `l2.ts` | `docs/l2-guide.md` (TBD) | **MEDIUM** |
+| query | `hardkas query store rebuild` | 🟢 VERIFIED | `query.ts` | `docs/cli.md` | **RESOLVED** |
+| query | `hardkas query events` | 🟢 VERIFIED | `query.ts` | `docs/query-layer.md` | **RESOLVED** |
+| query | `hardkas query store export` | 🟢 VERIFIED | `query.ts` | `docs/query-layer.md` | **RESOLVED** |
+| accounts| `hardkas accounts real [command]` | 🟢 VERIFIED | `accounts.ts` | `README.md` | **RESOLVED** |
+| run | `hardkas run` | 🟢 VERIFIED | `run.ts` | `README.md` | **RESOLVED** |
 
 ## 3. Documented But Not Registered
 
 | Documented command | Source | Why it is a problem | Recommended action |
 | :--- | :--- | :--- | :--- |
-| `hardkas query store index` | `docs/cli.md`, `doctor.ts` | User receives an "Unknown command" error. | Rename to `rebuild` in docs and doctor code. |
+| `hardkas query store index` | `docs/cli.md`, `doctor.ts` | [OUTDATED FINDING RESOLVED] | Command and docs are now aligned to `rebuild`. |
 | `hardkas query store sql` | `docs/cli.md` | Unfulfilled promise of functionality. | Remove from docs or mark as Roadmap. |
 | `pnpm example:ci` | `README.md` | Not verified if `package.json` script exists. | Validate scripts in `packages/cli/package.json`. |
 
@@ -68,7 +65,7 @@ Sources analyzed:
 | `hardkas tx trace` | ⚫ DISABLED | As "star" feature | **HIGH** (Disappointment) | Mark as "Coming Soon" or disable mention. |
 | `hardkas accounts real lock`| 🟠 MOCK | As security feature | **MEDIUM** (False security) | Warn that it is a session simulation. |
 | `hardkas test` | 🟢 VERIFIED | Without clear status | **LOW** | Indicate that it is now real and uses Vitest. |
-| `Query Store (SQLite)` | 🟢 VERIFIED | "BROKEN / UNWIRED" | **MEDIUM** (Misinformation) | Update `what-actually-works.md` (It is already connected). |
+| `Query Store (SQLite)` | 🟢 VERIFIED | "STABLE" [OUTDATED FINDING RESOLVED] | Updated in `what-actually-works.md`. |
 
 ## 6. README Gaps
 - **Lack of clarity on installation**: Does not mention that Docker is required for `hardkas node start`.
@@ -80,10 +77,11 @@ Sources analyzed:
 ## 7. Conceptual Diff
 
 ### Add to docs
-- `hardkas query store rebuild` (Replaces `index`).
-- `hardkas query events` (Powerful debug tool).
-- `hardkas faucet` (Essential for dev workflow).
-- `hardkas config show` (Useful for environment debug).
+- `hardkas query store rebuild` (Replaces `index`). [DONE]
+- `hardkas query events` (Powerful debug tool). [DONE]
+- `hardkas faucet` (Essential for dev workflow). [DONE]
+- `hardkas config show` (Useful for environment debug). [DONE]
+- `hardkas run` (Execute scripts). [NEW]
 
 ### Remove or mark as roadmap
 - `hardkas query store sql` (Remove from current user guide).
@@ -100,12 +98,12 @@ Sources analyzed:
 ## 8. Recommendations
 
 ### Critical
-1. **Sync `index` -> `rebuild`**: This is the most visible mismatch causing direct user errors.
-2. **Update `what-actually-works.md`**: The Query Store IS already connected. Keeping it as "Broken" discourages the use of one of the best features in the repo.
+1. **Sync `index` -> `rebuild`**: **RESOLVED**.
+2. **Update `what-actually-works.md`**: **RESOLVED**.
 
 ### High
-1. **Generate CLI Reference**: Automate documentation generation from the Commander registry to avoid future desynchronization.
-2. **Badge Status in README**: Copy badges from `cli-command-status.md` to the Quickstart section.
+1. **Generate CLI Reference**: **RESOLVED** (`pnpm docs:generate-cli` integrated).
+2. **Badge Status in README**: **RESOLVED**.
 
 ## Checklist
 - [x] Extract README commands

@@ -1,6 +1,6 @@
 {
   "name": "@hardkas/cli",
-  "version": "0.2.2-alpha.1",
+  "version": "0.3.0-alpha",
   "type": "module",
   "files": [
     "dist",
@@ -15,7 +15,11 @@
     "dev": "tsx src/index.ts",
     "hardkas": "tsx src/index.ts",
     "typecheck": "tsc --noEmit",
+    "docs:generate-cli": "tsx src/scripts/generate-cli-docs.ts",
+    "docs:check-cli": "tsx src/scripts/generate-cli-docs.ts --check",
     "test": "vitest run",
+    "test:docs": "tsx test/docs-drift.node.ts",
+    "test:examples": "node --import tsx --test test/examples-acceptance.node.ts",
     "lint": "eslint ."
   },
   "dependencies": {
@@ -32,9 +36,11 @@
     "@hardkas/query-store": "workspace:*",
     "@hardkas/sdk": "workspace:*",
     "@hardkas/simulator": "workspace:*",
+    "@hardkas/testing": "workspace:*",
     "@hardkas/tx-builder": "workspace:*",
     "commander": "^12.1.0",
     "enquirer": "^2.4.1",
+    "execa": "^9.5.2",
     "picocolors": "^1.1.1",
     "zod": "^3.23.8"
   },

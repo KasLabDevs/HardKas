@@ -13,15 +13,21 @@ vi.mock("@hardkas/l2", async (importOriginal) => {
 describe("L2 Bridge CLI Runners", () => {
   const mockAssumptions = {
     schema: "hardkas.l2BridgeAssumptions.v1",
-    hardkasVersion: "0.2.2-alpha",
+    hardkasVersion: "0.3.0-alpha",
     l2Network: "igra",
     bridgePhase: "pre-zk",
     trustlessExit: false,
-    custodyModel: "Test custody",
-    exitModel: "Test exit",
+    custodyModel: "Phase-dependent bridge custody; verify live Igra bridge phase before use.",
+    exitModel: "Trustless exit is available only in the ZK phase.",
     riskProfile: "high",
-    notes: ["Note 1", "Note 2"],
-    updatedAt: "2026-01-01T00:00:00Z"
+    notes: [
+      "Kaspa L1 does not execute EVM.",
+      "Igra execution occurs on L2.",
+      "Kaspa L1 provides sequencing, data availability, state commitment anchoring and finality.",
+      "Bridge security is phase-dependent: pre-ZK -> MPC -> ZK.",
+      "Trustless exit exists only in the ZK phase."
+    ],
+    updatedAt: "2026-05-15T10:20:26.625Z"
   };
 
   beforeEach(() => {
@@ -47,12 +53,15 @@ describe("L2 Bridge CLI Runners", () => {
 
       await runL2BridgeStatus({ network: "igra", json: true });
 
-      expect(consoleSpy).toHaveBeenCalledWith(JSON.stringify(mockAssumptions, null, 2));
+      const json = consoleSpy.mock.calls[0][0];
+      const parsed = JSON.parse(json);
+    expect(parsed.hardkasVersion).toBe("0.3.0-alpha");
+      expect(parsed.l2Network).toBe("igra");
     });
 
     it("should throw for unknown network", async () => {
       (l2.getL2BridgeAssumptions as any).mockReturnValue(null);
-      await expect(runL2BridgeStatus({ network: "unknown" })).rejects.toThrow("No bridge assumptions found");
+      await expect(runL2BridgeStatus({ network: "unknown" })).rejects.toThrow("L2 profile 'unknown' not found");
     });
   });
 

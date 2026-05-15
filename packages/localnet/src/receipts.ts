@@ -2,7 +2,7 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import { existsSync } from "node:fs";
 import { HardkasArtifactBase, HARDKAS_VERSION, ARTIFACT_SCHEMAS } from "@hardkas/artifacts";
-import { NetworkId, ExecutionMode } from "@hardkas/core";
+import { NetworkId, ExecutionMode, writeFileAtomic } from "@hardkas/core";
 
 export interface StoredSimulatedTxReceipt extends HardkasArtifactBase {
   schema: typeof ARTIFACT_SCHEMAS.TX_RECEIPT;
@@ -47,7 +47,7 @@ export async function saveSimulatedReceipt(
   }
 
   const filePath = getReceiptPath(receipt.txId, options?.cwd);
-  await fs.writeFile(filePath, JSON.stringify(receipt, null, 2), "utf-8");
+  await writeFileAtomic(filePath, JSON.stringify(receipt, null, 2), { encoding: "utf-8" });
   return filePath;
 }
 

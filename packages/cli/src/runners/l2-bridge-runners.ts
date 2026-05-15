@@ -1,24 +1,31 @@
-import { getL2BridgeAssumptions } from "@hardkas/l2";
+import { resolveL2Profile, L2BridgeAssumptions, L2NetworkProfile } from "@hardkas/l2";
+import { HARDKAS_VERSION } from "@hardkas/artifacts";
+import { loadHardkasConfig } from "@hardkas/config";
 
 export interface L2BridgeOptions {
   network?: string;
+  url?: string;
   json?: boolean;
 }
 
 export async function runL2BridgeStatus(options: L2BridgeOptions): Promise<void> {
-  const networkName = options.network ?? "igra";
-  const assumptions = getL2BridgeAssumptions(networkName);
+  const loaded = await loadHardkasConfig();
+  const profile = resolveL2Profile({
+    name: options.network,
+    userProfiles: loaded.config.l2?.networks,
+    cliOverrides: {
+      ...(options.url !== undefined ? { url: options.url } : {})
+    }
+  });
 
-  if (!assumptions) {
-    throw new Error(`No bridge assumptions found for network '${networkName}'.`);
-  }
+  const assumptions = mapProfileToAssumptions(profile);
 
   if (options.json) {
     console.log(JSON.stringify(assumptions, null, 2));
     return;
   }
 
-  console.log(`${capitalize(networkName)} bridge status`);
+  console.log(`${capitalize(profile.name)} bridge status (${profile.source})`);
   console.log("");
   console.log(`Network:        ${assumptions.l2Network}`);
   console.log(`Bridge phase:   ${assumptions.bridgePhase}`);
@@ -38,19 +45,23 @@ export async function runL2BridgeStatus(options: L2BridgeOptions): Promise<void>
 }
 
 export async function runL2BridgeAssumptions(options: L2BridgeOptions): Promise<void> {
-  const networkName = options.network ?? "igra";
-  const assumptions = getL2BridgeAssumptions(networkName);
+  const loaded = await loadHardkasConfig();
+  const profile = resolveL2Profile({
+    name: options.network,
+    userProfiles: loaded.config.l2?.networks,
+    cliOverrides: {
+      ...(options.url !== undefined ? { url: options.url } : {})
+    }
+  });
 
-  if (!assumptions) {
-    throw new Error(`No bridge assumptions found for network '${networkName}'.`);
-  }
+  const assumptions = mapProfileToAssumptions(profile);
 
   if (options.json) {
     console.log(JSON.stringify(assumptions, null, 2));
     return;
   }
 
-  console.log(`${capitalize(networkName)} bridge assumptions`);
+  console.log(`${capitalize(profile.name)} bridge assumptions (${profile.source})`);
   console.log("");
   console.log("Bridge security phases:");
   console.log("  pre-ZK: stronger trust assumptions / non-trustless exit");
@@ -62,6 +73,23 @@ export async function runL2BridgeAssumptions(options: L2BridgeOptions): Promise<
   console.log("");
   console.log("Trustless exit:");
   console.log(`  ${assumptions.trustlessExit ? "yes" : "no"}`);
+}
+
+function mapProfileToAssumptions(profile: L2NetworkProfile): L2BridgeAssumptions {
+  return {
+    schema: "hardkas.l2BridgeAssumptions.v1",
+    hardkasVersion: HARDKAS_VERSION,
+    l2Network: profile.name,
+    bridgePhase: profile.security.bridgePhase,
+    trustlessExit: profile.security.trustlessExit,
+    custodyModel: profile.security.custodyModel,
+    exitModel: profile.security.bridgePhase === "zk" 
+      ? "Trustless exit is available via ZK proofs." 
+      : "Trustless exit is available only in the ZK phase.",
+    riskProfile: profile.security.riskProfile,
+    notes: profile.security.notes,
+    updatedAt: new Date().toISOString()
+  };
 }
 
 function capitalize(s: string): string {

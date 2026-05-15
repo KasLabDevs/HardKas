@@ -5,10 +5,14 @@ export interface LineageValidationResult {
   issues: VerificationIssue[];
 }
 
+export interface LineageOptions {
+  strict?: boolean;
+}
+
 /**
  * Validates the lineage relationship between an artifact and its parent.
  */
-export function verifyLineage(artifact: any, parent?: any): LineageValidationResult {
+export function verifyLineage(artifact: any, parent?: any, options: LineageOptions = {}): LineageValidationResult {
   const issues: VerificationIssue[] = [];
 
   const addIssue = (code: string, message: string, severity: "error" | "warning" = "error") => {
@@ -19,7 +23,8 @@ export function verifyLineage(artifact: any, parent?: any): LineageValidationRes
 
   // 1. Structural Checks
   if (!lineage) {
-    addIssue("MISSING_LINEAGE", "Artifact has no lineage metadata", "warning");
+    const severity = options.strict ? "error" : "warning";
+    addIssue("MISSING_LINEAGE", "Artifact has no lineage metadata", severity);
     return { 
       ok: issues.every(i => i.severity !== "error"), 
       issues 
@@ -51,36 +56,43 @@ export function verifyLineage(artifact: any, parent?: any): LineageValidationRes
     if (!parentLineage) {
       addIssue("PARENT_MISSING_LINEAGE", "Parent artifact has no lineage metadata");
     } else {
+      // Parent Reference Check
+      if (!lineage.parentArtifactId) {
+        addIssue("MISSING_PARENT_ID", "Artifact is missing parentArtifactId reference, but parent was provided for verification.");
+      } else if (lineage.parentArtifactId !== parentLineage.artifactId) {
+        addIssue("PARENT_ID_MISMATCH", `Parent Artifact ID mismatch: expected ${parentLineage.artifactId}, got ${lineage.parentArtifactId}`);
+      }
+
       // Lineage Stability
       if (lineage.lineageId !== parentLineage.lineageId) {
         addIssue("LINEAGE_ID_MISMATCH", `Lineage ID mismatch: expected ${parentLineage.lineageId}, got ${lineage.lineageId}`);
       }
 
       if (lineage.rootArtifactId !== parentLineage.rootArtifactId) {
-        addIssue("ROOT_ID_MISMATCH", `Root Artifact ID mismatch: expected ${parentLineage.rootArtifactId}, got ${lineage.rootArtifactId}`);
-      }
-
-      // Hash Continuity
-      if (lineage.parentArtifactId && lineage.parentArtifactId !== parentLineage.artifactId) {
-        addIssue("PARENT_ID_MISMATCH", `Parent Artifact ID mismatch: expected ${parentLineage.artifactId}, got ${lineage.parentArtifactId}`);
+        addIssue("ROOT_ARTIFACT_ID_MISMATCH", `Root Artifact ID mismatch: expected ${parentLineage.rootArtifactId}, got ${lineage.rootArtifactId}`);
       }
 
       // Sequence check
       if (lineage.sequence !== undefined && parentLineage.sequence !== undefined) {
         if (lineage.sequence <= parentLineage.sequence) {
-          addIssue("INVALID_SEQUENCE", `Invalid sequence: current (${lineage.sequence}) must be greater than parent (${parentLineage.sequence})`);
+          const severity = options.strict ? "error" : "warning";
+          addIssue("NON_MONOTONIC_SEQUENCE", `Non-monotonic sequence: current (${lineage.sequence}) <= parent (${parentLineage.sequence}).`, severity);
         }
       }
     }
 
     // Network & Mode Consistency
     if (artifact.networkId !== parent.networkId) {
-      addIssue("NETWORK_CONTAMINATION", `Network mismatch: parent is ${parent.networkId}, current is ${artifact.networkId}`);
+      addIssue("NETWORK_MISMATCH", `Network mismatch: parent is ${parent.networkId}, current is ${artifact.networkId}`);
     }
 
     if (artifact.mode !== parent.mode) {
-      // Special exception for real -> simulated in specific tests/fixtures could be added here
-      addIssue("MODE_CONTAMINATION", `Mode mismatch: parent is ${parent.mode}, current is ${artifact.mode}`);
+      addIssue("MODE_MISMATCH", `Mode mismatch: parent is ${parent.mode}, current is ${artifact.mode}`);
+    }
+
+    // Self-parent check
+    if (lineage.artifactId === lineage.parentArtifactId) {
+      addIssue("SELF_PARENT", "Artifact cannot be its own parent.");
     }
   }
 

@@ -1,6 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import type { NetworkId } from "@hardkas/core";
+import { writeFileAtomicSync } from "@hardkas/core";
 import { HardkasArtifactBase, HARDKAS_VERSION, ARTIFACT_SCHEMAS, ARTIFACT_VERSION } from "@hardkas/artifacts";
 
 export interface RealAccountStore extends HardkasArtifactBase {
@@ -16,7 +17,10 @@ export interface RealDevAccount {
   readonly name: string;
   readonly address: string;
   readonly publicKey?: string;
+  /** @deprecated Use keystoreRef for encrypted storage. Plaintext keys in this field are considered legacy/unsafe. */
   readonly privateKey?: string;
+  /** Reference to the encrypted keystore file in .hardkas/keystore/ */
+  readonly keystoreRef?: string;
   readonly createdAt: string;
 }
 
@@ -33,7 +37,7 @@ export function createEmptyRealAccountStore(): RealAccountStore {
     networkId: "simnet" as NetworkId,
     mode: "real",
     connectionMode: "node",
-    warning: "Development keys only. Do not use on mainnet. Private keys are stored in plaintext.",
+    warning: "HardKAS: Development account store. Encrypted storage is default. Unsafe plaintext storage is legacy.",
     accounts: []
   };
 }
@@ -50,7 +54,18 @@ export function loadRealAccountStoreSync(options?: {
 
   try {
     const data = fs.readFileSync(filePath, "utf-8");
-    return JSON.parse(data) as RealAccountStore;
+    const store = JSON.parse(data) as RealAccountStore;
+
+    // Check for plaintext keys
+    const plaintextAccounts = store.accounts.filter(a => a.privateKey);
+    if (plaintextAccounts.length > 0) {
+      const names = plaintextAccounts.map(a => a.name).join(", ");
+      console.warn(`\n  ⚠️  [SECURITY WARNING] Plaintext private keys detected in legacy account store for: ${names}`);
+      console.warn(`     Location: ${filePath}`);
+      console.warn(`     Recommendation: Re-import these accounts using encrypted keystores.\n`);
+    }
+
+    return store;
   } catch (e) {
     throw new Error(`Failed to load real account store at ${filePath}: ${e instanceof Error ? e.message : String(e)}`);
   }
@@ -83,14 +98,13 @@ export async function saveRealAccountStore(
   }
 ): Promise<void> {
   const filePath = options?.path || getDefaultRealAccountsPath(options?.cwd);
-  const dir = path.dirname(filePath);
-
-  if (!fs.existsSync(dir)) {
-    fs.mkdirSync(dir, { recursive: true });
-  }
 
   try {
-    fs.writeFileSync(filePath, JSON.stringify(store, null, 2), "utf-8");
+    // Enforce restrictive permissions (0600) via atomic write
+    writeFileAtomicSync(filePath, JSON.stringify(store, null, 2), {
+      encoding: "utf-8",
+      mode: 0o600
+    });
   } catch (e) {
     throw new Error(`Failed to save real account store at ${filePath}: ${e instanceof Error ? e.message : String(e)}`);
   }

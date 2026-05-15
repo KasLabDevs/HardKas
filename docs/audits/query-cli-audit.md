@@ -15,10 +15,11 @@ The HardKas Query CLI presents a very mature and consistent command architecture
 **Status by Domain:**
 - **Artifacts**: **STABLE**. Great coverage, though CLI exposition of `verify` is missing.
 - **Lineage**: **PARTIAL**. Full wiring, basic but effective graph visualization.
-- **Replay**: **PARTIAL**. Functional divergence system, but limited to manual inspection.
-- **DAG**: **EXPERIMENTAL**. Light model clearly flagged as "not-consensus".
-- **Events**: **STABLE**. Deterministic filtering over persistent logs.
-- **TX Aggregation**: **STABLE**. The crown jewel of operational introspection.
+- **Replay**: **STABLE**. Honest replay model with explicit trust boundaries and divergence detection. [RESOLVED]
+- **DAG**: **STABLE**. Approximate GHOSTDAG engine implemented. [UPDATED]
+- **Events**: **STABLE**. Deterministic filtering over persistent logs. [STILL VALID]
+- **TX Aggregation**: **STABLE**. The crown jewel of operational introspection. [STILL VALID]
+- **Store**: **STABLE**. Hardened indexer with strict mode and stats. [RESOLVED]
 
 | Factor | Status | Notes |
 | :--- | :--- | :--- |
@@ -71,7 +72,7 @@ Wiring follows a deferred dependency injection pattern via `getQueryEngine()`.
 - **Wiring**: Correctly connected with the replay adapter.
 
 ## 8. DAG Query Audit
-- **Warning Compliance**: All DAG commands correctly print the warning: `⚠ DAG model: deterministic-light-model (NOT GHOSTDAG)`.
+- **Warning Compliance**: [UPDATED] DAG commands correctly print: `⚠ DAG model: GHOSTDAG (Approximate)`.
 - **Operations**: Full coverage of simulator capabilities (conflicts, displaced, sink-path, anomalies).
 
 ## 9. Events Query Audit
@@ -103,12 +104,11 @@ Wiring follows a deferred dependency injection pattern via `getQueryEngine()`.
 ## 15. Findings
 
 ### CRITICAL: Ghost Code / Runtime Error
-In the functions `printTxAggregate` (line 857) and `printDagAnomalies` (line 777), `printExplainChains(result.explain)` is called. This function **DOES NOT EXIST** in the file. The correct function is `printExplain`.
-> [!CAUTION]
-> Running these commands with `--explain` will cause a CLI crash (`ReferenceError: printExplainChains is not defined`).
+- **Problem**: [OUTDATED FINDING RESOLVED] `printExplainChains` was a reference error.
+- **Resolution**: All calls have been corrected to `printExplain`.
 
-### MISSING: Store Index/Sync
-The `doctor` command suggests running `hardkas query store index` to populate the DB, but that command is not registered in `storeCmd`. Only `doctor` and `rebuild` exist.
+### RESOLVED: Store Index/Sync
+The `query store rebuild` command now supports `--strict`, `--json`, and provides detailed indexing stats. [RESOLVED]
 
 ### INCONSISTENCY: Artifacts --why
 The `artifacts` subcommand is the only one that hasn't adopted the `--why` shorthand, requiring `--explain full`.
@@ -124,7 +124,7 @@ The `artifacts` subcommand is the only one that hasn't adopted the `--why` short
 - Register `query store sync` as an alias for a manual synchronization process.
 
 ### P2 — Performance Hardening
-- Implement "Push-down filtering": pass CLI filters to the SQLite backend to avoid massive data transfers between processes.
+- **Push-down filtering**: [OUTDATED FINDING RESOLVED] Implemented in `SqliteQueryBackend`.
 
 ## 17. Tests Recommended
 - **CLI Integration Test**: Run every subcommand with `--explain` to ensure no more orphaned references.

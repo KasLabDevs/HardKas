@@ -29,9 +29,13 @@ The `@hardkas/query` layer subscribes to the event bus and appends every event t
 JSON files representing the state transitions of the system (TxPlans, SignedTxs, Receipts, Snapshots). These are stored in `.hardkas/` and form the "evidence" for reasoning.
 
 ### 4. Query Store (@hardkas/query-store)
-A SQLite-based indexing layer. It scans both the `events.jsonl` and the artifact JSON files to build a relational model. This enables complex queries like:
-- "Show me all RPC errors that happened within 50ms of this transaction submission."
-- "Find the parent artifact of this receipt even if it was moved between directories."
+A SQLite-based indexing layer. It scans both the `events.jsonl` and the artifact JSON files to build a relational model. 
+
+**Operational Rules:**
+- **Rebuildable Cache**: The SQLite database (`store.db`) is a read-model. It can be safely deleted and recreated using `hardkas query store rebuild`.
+- **Atomic Migrations**: Automatically applies schema migrations on startup to ensure data consistency.
+- **Deterministic Export**: Supports `hardkas query store export --json` for creating portable, cross-platform state snapshots.
+- **Workspace Locking**: Uses a `store.db.lock` to prevent concurrent write access across multiple CLI or SDK instances.
 
 ### 5. Query Engine (@hardkas/query)
 The orchestrator that provides:

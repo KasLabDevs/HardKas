@@ -2,7 +2,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { calculateContentHash } from "../src/canonical.js";
 
-const fixturesDir = "packages/artifacts/test/fixtures";
+const fixturesDir = new URL("./fixtures", import.meta.url).pathname.substring(1); // Handle Windows path leading slash
 
 function writeFixture(dir, name, artifact) {
   const fullDir = path.join(fixturesDir, dir);
@@ -23,7 +23,7 @@ function writeFixture(dir, name, artifact) {
 
 const rootHash = writeFixture("valid", "snapshot.valid.json", {
   schema: "hardkas.snapshot",
-  hardkasVersion: "0.2.2-alpha",
+  hardkasVersion: "0.3.0-alpha",
   version: "1.0.0-alpha",
   networkId: "simnet",
   mode: "simulated",
@@ -49,7 +49,7 @@ fs.writeFileSync(path.join(fixturesDir, "valid", "snapshot.valid.json"), JSON.st
 
 const planHash = writeFixture("valid", "tx-plan.valid.json", {
   schema: "hardkas.txPlan",
-  hardkasVersion: "0.2.2-alpha",
+  hardkasVersion: "0.3.0-alpha",
   version: "1.0.0-alpha",
   createdAt: new Date().toISOString(),
   networkId: "simnet",
@@ -78,7 +78,7 @@ const planHash = writeFixture("valid", "tx-plan.valid.json", {
 
 writeFixture("valid", "signed-tx.valid.json", {
   schema: "hardkas.signedTx",
-  hardkasVersion: "0.2.2-alpha",
+  hardkasVersion: "0.3.0-alpha",
   version: "1.0.0-alpha",
   createdAt: new Date().toISOString(),
   status: "signed",

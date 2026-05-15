@@ -8,9 +8,8 @@ This audit identifies critical failures in HardKAS's determinism and security in
 ## 1. Determinism
 
 ### [P0] Non-Deterministic Artifact Hashing & IDs
-- **Problem**: Content hashes (`contentHash`) include the `createdAt` field, and plan identifiers (`planId`) use `Math.random()` and `Date.now()`.
-- **Why it matters**: Two identical executions of `hardkas tx plan` produce artifacts with different hashes and IDs. This breaks reproducibility in CI/CD, stable lineage tracking, and the ability to verify if a transaction is identical to a previous one.
-- **Minimal fix**: Exclude `createdAt` and `planId` from `canonicalStringify` in `artifacts/src/canonical.ts`. Derive `planId` from the hash of deterministic inputs (from, to, amount, inputs, outputs).
+- **Problem**: [OUTDATED FINDING RESOLVED] Content hashes (`contentHash`) were including variable metadata.
+- **Resolution**: `createdAt` and `planId` are now excluded from the canonical hash in `artifact/src/canonical.ts`.
 - **Complexity**: Small
 - **Category**: Architectural debt / Code problem
 
@@ -33,9 +32,8 @@ This audit identifies critical failures in HardKAS's determinism and security in
 - **Category**: Security risk / DX issue
 
 ### [P1] Secret Redaction Gap in Error Handlers
-- **Problem**: `handleError` in `cli/src/ui.ts` prints the full error message. If a lower-level error (e.g., from the Kaspa SDK or a provider) includes private key fragments or mnemonics, these are exposed in red in the terminal.
-- **Why it matters**: Risk of secret leakage in logs, screenshots, or shared terminals.
-- **Minimal fix**: Implement a redaction middleware in `handleError` that uses regex to detect and mask patterns of private keys (64 hex chars) and known mnemonics.
+- **Problem**: [OUTDATED FINDING RESOLVED] full error messages were exposed.
+- **Resolution**: `maskSecrets` is now integrated into `handleError` and all `UI` methods.
 - **Complexity**: Small
 - **Category**: Security risk
 
@@ -69,9 +67,8 @@ This audit identifies critical failures in HardKAS's determinism and security in
 - **Category**: Documentation problem
 
 ### [P3] Zombie Command Suggestion in Doctor
-- **Problem**: `hardkas doctor` suggests running `hardkas query store index`, but the real command is `rebuild`.
-- **Why it matters**: Unnecessary friction and a sense of lack of polish in the "health" tool.
-- **Minimal fix**: Change the suggestion string in `packages/cli/src/commands/doctor.ts`.
+- **Problem**: [OUTDATED FINDING RESOLVED] `hardkas doctor` was suggesting a non-existent command.
+- **Resolution**: Command names have been aligned to `hardkas query store rebuild`.
 - **Complexity**: Trivial
 - **Category**: DX issue
 

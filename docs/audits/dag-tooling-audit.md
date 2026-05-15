@@ -11,7 +11,7 @@ This audit evaluates the **DAG simulator** and related tools in HardKas (includi
 ## 2. Executive Summary
 The HardKas "DAG Tooling" **IS NOT A REAL KASPA CONSENSUS SIMULATOR. IT IS NOT GHOSTDAG, NOR DAGKNIGHT, NOR SPECTRE.**
 
-It is a **deterministic-light-model** designed purely for **developer debugging, conflict visualization, and replay testing**. Its purpose is to teach developers the *concepts* of reorgs and displacements in a predictable way in CI/CD, but it uses extremely simple heuristics (such as taking the first parent) instead of the real merge set mathematics of PHANTOM/GHOSTDAG.
+It is a **deterministic-light-model** designed purely for **developer debugging, conflict visualization, and replay testing**. [UPDATED] It now implements a functional approximation of GHOSTDAG (ApproxGhostdagEngine) for topological ordering and selected parent calculation.
 
 **System Classification:**
 - DAG tooling maturity: **EXPERIMENTAL / RESEARCH**
@@ -39,7 +39,7 @@ It is a **deterministic-light-model** designed purely for **developer debugging,
 | :--- | :--- | :--- | :--- |
 | Node Representation | `SimBlock` with `id`, `parents[]`, `daaScore`, and `acceptedTxIds`. | LOW | Simplified structure persisted in JSON |
 | Edge Representation | Chains of parent block IDs. | LOW | Basic DAG |
-| Selected Parent | Always assumes `parents[0]`. | HIGH | Highly heuristic. Does not use blue work. |
+| Selected Parent | [OUTDATED FINDING RESOLVED] Now uses GHOSTDAG blue work calculation via `ApproxGhostdagEngine`. | LOW | - |
 | Persistence | Persisted in `state.json` (`localnet/state.ts`) | LOW | Ideal for deterministic testing |
 
 ## 5. Reorg Simulation Audit
@@ -142,11 +142,11 @@ Strict comparison with the real Kaspa protocol:
 - Save *DAG Snapshots* (not just the `dagContext` string) attached to failed replays to inspect the exact graph at the time of a divergence.
 
 ### P3 — Advanced Research
-- Implement a light but real mathematical approximation of **Merge Sets** so that `displaced` behaves in a more educational way regarding the SPECTRE/PHANTOM algorithm.
+- **GHOSTDAG Approximation**: [OUTDATED FINDING RESOLVED] Implemented `ApproxGhostdagEngine` to provide better topological stability and concept alignment with real Kaspa.
 
 ## 16. Proposed DAG Tooling v1
 The goal in v1 is not to pretend to be a Kaspa node.
-- The CLI should present these commands grouped under `hardkas query local-dag` or keep the `[RESEARCH: LIGHT-MODEL]` tag ultra-visible.
+- The CLI should present these commands grouped under `hardkas query dag` or keep the `[RESEARCH: LIGHT-MODEL]` tag ultra-visible.
 - Redesign `SimBlock` to include a simulated `mergeSet: string[]` field, improving developer visual understanding.
 
 ## 17. Tests Recommended

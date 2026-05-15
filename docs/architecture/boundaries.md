@@ -52,3 +52,19 @@ This document formalizes the responsibilities and boundaries of each package in 
 3.  **Honest States**: Artifacts should always report their state honestly (e.g., `simulated` vs `rpc`).
 4.  **Facade Integrity**: The SDK should be the primary way external examples interact with the system.
 5.  **Environment Agnosticism**: Core logic (Tx-Builder, Simulator) should be decoupled from the Node.js filesystem where possible.
+
+## Truth & Persistence Boundaries
+
+HardKAS prioritizes developer workflow integrity through a disciplined approach to local storage:
+
+1.  **Artifacts as Truth**: The `.hardkas/artifacts/` and `events.jsonl` files are the **Local Canonical Source**. All system state is derived from these files.
+2.  **SQLite as Read Model**: The query store (SQLite) is explicitly a **rebuildable cache**. It is optimized for search and diagnostics, but it is NOT the canonical truth. It can be wiped and rebuilt at any time from the artifacts.
+3.  **Atomic Local Writes**: All critical state is written using an atomic pattern (write temp -> fsync -> rename) to prevent partial writes.
+4.  **Replay != Consensus**: Replay verification proves **workflow reproducibility** (same plan -> same receipt). It does NOT prove Kaspa L1 consensus validity.
+5.  **GHOSTDAG Simulation**: The `@hardkas/simulator` is a **research/experimental structural model**. It simulates topological effects (mergeset, blue score) but does NOT provide bit-for-bit parity with `rusty-kaspa` consensus.
+
+## Execution Boundaries (L1 vs L2)
+
+1.  **Kaspa L1 (BlockDAG)**: A UTXO-based Sequencing and Data Availability layer. **Kaspa L1 DOES NOT execute EVM or programmable account-based state.**
+2.  **Igra L2 (EVM)**: A separate execution environment. L2 transactions and state transitions are decoupled from L1 consensus logic.
+3.  **Bridge Trust Boundaries**: Current bridge modeling assumes MPC/Multisig committee trust. **Trustless bridge exits are only possible in the future ZK-bridge phase.**

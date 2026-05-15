@@ -1,0 +1,9 @@
+{
+  "examplesVersion": "cli-examples-v0",
+  "commandsRun": 14,
+  "successfulCommands": 10,
+  "expectedFailures": 3,
+  "artifactCount": 2,
+  "sdkPresent": false,
+  "summaryHash": "c668f61818685628bddd5fc3d1b47af3703c4083e88cd53986b5419a78c262c8"
+}

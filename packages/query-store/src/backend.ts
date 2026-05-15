@@ -51,7 +51,10 @@ export interface QueryBackend {
   getLineageEdges(filters?: { parentHash?: string; childHash?: string }): Promise<LineageEdgeDocument[]>;
   getStoreStatus(): Promise<string>;
   doctor(): Promise<any>;
-  rebuild(): Promise<void>;
+  migrate(): Promise<{ applied: number }>;
+  sync(options?: { strict?: boolean }): Promise<any>;
+  rebuild(options?: { strict?: boolean }): Promise<any>;
+  executeRawSql(sql: string): Promise<any[]>;
   findReceipts(filters?: { status?: string; networkId?: string }): Promise<ArtifactDocument[]>;
   findTraces(filters?: { txId?: string }): Promise<ArtifactDocument[]>;
 }
@@ -82,7 +85,7 @@ export class SqliteQueryBackend implements QueryBackend {
       params.push(filters.schema);
     }
     if (filters?.mode) {
-      query += " AND kind = ?"; // Note: kind stores mode info in simple schemas
+      query += " AND mode = ?";
       params.push(filters.mode);
     }
     if (filters?.networkId) {
@@ -96,7 +99,7 @@ export class SqliteQueryBackend implements QueryBackend {
       schema: r.schema,
       version: r.version,
       kind: r.kind,
-      mode: r.kind as ExecutionMode, // Match mode to kind for now
+      mode: (r.mode || "unknown") as ExecutionMode,
       networkId: r.network_id as NetworkId,
       createdAt: r.created_at,
       txId: r.tx_id,
@@ -118,7 +121,7 @@ export class SqliteQueryBackend implements QueryBackend {
       schema: row.schema,
       version: row.version,
       kind: row.kind,
-      mode: row.kind as ExecutionMode,
+      mode: (row.mode || "unknown") as ExecutionMode,
       networkId: row.network_id as NetworkId,
       createdAt: row.created_at,
       txId: row.tx_id,
@@ -204,7 +207,7 @@ export class SqliteQueryBackend implements QueryBackend {
       schema: r.schema,
       version: r.version,
       kind: r.kind,
-      mode: r.kind as ExecutionMode,
+      mode: (r.mode || "unknown") as ExecutionMode,
       networkId: r.network_id as NetworkId,
       createdAt: r.created_at,
       txId: r.tx_id,
@@ -224,12 +227,40 @@ export class SqliteQueryBackend implements QueryBackend {
   async doctor(): Promise<any> {
     const { HardkasIndexer } = await import("./indexer.js");
     const indexer = new HardkasIndexer(this.store.getDatabase());
-    return indexer.doctor();
+    const indexerReport = indexer.doctor();
+    const storeHealth = this.store.checkHealth();
+    
+    return {
+      ...indexerReport,
+      ok: indexerReport.ok && storeHealth.ok,
+      storeIssues: storeHealth.issues
+    };
   }
 
-  async rebuild(): Promise<void> {
+  async migrate(): Promise<{ applied: number }> {
+    return this.store.migrate();
+  }
+
+  async rebuild(options?: { strict?: boolean }): Promise<any> {
+    // Ensure schema is up to date before rebuild
+    this.store.migrate();
+    
     const { HardkasIndexer } = await import("./indexer.js");
-    const indexer = new HardkasIndexer(this.store.getDatabase());
-    indexer.rebuild();
+    const indexer = new HardkasIndexer(this.store.getDatabase(), options);
+    return indexer.rebuild();
+  }
+
+  async sync(options?: { strict?: boolean }): Promise<any> {
+    // Ensure schema is up to date before sync
+    this.store.migrate();
+
+    const { HardkasIndexer } = await import("./indexer.js");
+    const indexer = new HardkasIndexer(this.store.getDatabase(), options);
+    return indexer.sync();
+  }
+
+  async executeRawSql(sql: string): Promise<any[]> {
+    const db = this.store.getDatabase();
+    return db.prepare(sql).all() as any[];
   }
 }

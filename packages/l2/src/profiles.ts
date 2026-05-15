@@ -14,9 +14,28 @@ export interface L2SecurityAssumptions {
   readonly notes: readonly string[];
 }
 
+export type L2ProfileSource = "built-in" | "user-config";
+
+export interface L2UserNetworkConfig {
+  readonly kind?: "igra" | string;
+  readonly chainId: number;
+  readonly rpcUrl: string;
+  readonly explorerUrl?: string;
+  readonly bridgePhase?: L2BridgePhase;
+  readonly trustlessExit?: boolean;
+  readonly nativeCurrency?: {
+    readonly name?: string;
+    readonly symbol?: string;
+    readonly decimals?: number;
+  };
+  readonly contracts?: Record<string, string>;
+  readonly metadata?: Record<string, unknown>;
+}
+
 export interface L2NetworkProfile {
   readonly schema: "hardkas.l2Profile.v1";
   readonly hardkasVersion: string;
+  readonly source: L2ProfileSource;
   readonly name: string;
   readonly displayName: string;
   readonly type: L2NetworkType;
@@ -34,6 +53,7 @@ export const BUILTIN_L2_PROFILES: readonly L2NetworkProfile[] = [
   {
     schema: "hardkas.l2Profile.v1",
     hardkasVersion: HARDKAS_VERSION,
+    source: "built-in",
     name: "igra",
     displayName: "Igra",
     type: "evm-based-rollup",

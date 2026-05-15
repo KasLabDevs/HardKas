@@ -24,7 +24,7 @@ describe("Replay Invariants", () => {
       amountSompi: parseKasToSompi("10")
     });
 
-    const report = verifyReplay(state, result.planArtifact, result.receipt);
+    const report = verifyReplay(state, result.planArtifact!, result.receipt);
     if (!report.invariantsOk) console.log(report.errors);
     expect(report.invariantsOk).toBe(true);
   });
@@ -55,7 +55,7 @@ describe("Replay Invariants", () => {
       amountSompi: 100n
     });
 
-    const report = verifyReplay(state2, result.planArtifact, result.receipt);
+    const report = verifyReplay(state2, result.planArtifact!, result.receipt);
     expect(report.invariantsOk).toBe(false);
     expect(report.errors.some(e => e.includes("preStateHash mismatch"))).toBe(true);
   });

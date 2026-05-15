@@ -66,7 +66,16 @@ export interface QueryBackend {
   doctor(): Promise<any>;
 
   /** Atomic wipe and rebuild. */
-  rebuild(): Promise<void>;
+  rebuild(options?: { strict?: boolean }): Promise<any>;
+
+  /** Incremental index update. */
+  sync(options?: { strict?: boolean }): Promise<any>;
+
+  /** Apply pending schema migrations. */
+  migrate(): Promise<{ applied: number }>;
+
+  /** Execute raw SQL (if supported). */
+  executeRawSql(sql: string): Promise<any[]>;
 
   /** Find all transaction receipts (for replay analysis). */
   findReceipts(filters?: { status?: string; networkId?: string }): Promise<ArtifactDocument[]>;

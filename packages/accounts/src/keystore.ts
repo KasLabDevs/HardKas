@@ -8,6 +8,8 @@ import {
   KeystoreUnlockResult 
 } from "./types.js";
 
+import { writeFileAtomic } from "@hardkas/core";
+
 /**
  * HardKAS Keystore V2 Implementation
  * 
@@ -200,7 +202,11 @@ export class KeystoreManager {
       if (!fs.existsSync(dir)) {
         await fs.promises.mkdir(dir, { recursive: true });
       }
-      await fs.promises.writeFile(filePath, JSON.stringify(keystore, null, 2), "utf-8");
+      // Enforce restrictive permissions (0600) via atomic write
+      await writeFileAtomic(filePath, JSON.stringify(keystore, null, 2), {
+        encoding: "utf-8",
+        mode: 0o600
+      });
     } catch (e) {
       throw new Error(`Failed to save keystore at ${filePath}: ${e instanceof Error ? e.message : String(e)}`);
     }

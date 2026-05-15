@@ -14,6 +14,7 @@ export interface DockerKaspadOptions {
   readonly ports?: Partial<KaspadPorts>;
   readonly dataDir?: string;
   readonly detach?: boolean;
+  readonly allowFloatingImage?: boolean;
 }
 
 export interface KaspadNodeStatus {
@@ -24,4 +25,12 @@ export interface KaspadNodeStatus {
   readonly statusText?: string;
   readonly ports: KaspadPorts;
   readonly dataDir: string;
+  readonly rpcUrl: string;
+  readonly rpcReady: boolean;
+  readonly transports: {
+    readonly grpc: { readonly port: number; readonly ready: boolean };
+    readonly borsh: { readonly port: number; readonly ready: boolean };
+    readonly json: { readonly port: number; readonly ready: boolean; readonly url: string };
+  };
+  readonly lastError?: string | null;
 }

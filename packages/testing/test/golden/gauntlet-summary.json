@@ -1,0 +1,11 @@
+{
+  "gauntletVersion": "gauntlet-v0",
+  "scenarioHash": "806cef1542439ae025fadb5cd8a61c28e937edfc928fc9082050a224772a2e2d",
+  "artifactCount": 185,
+  "acceptedTxCount": 85,
+  "rejectedTxCount": 15,
+  "finalStateHash": "cfb98f1da9fc13b201038ceefcbedc93c59032b202309c5d367b88c454859b40",
+  "queryResultHash": "fcba574a1f12bc5b0f14ac644f08eea90764d3ba08b85ec76aac305474624429",
+  "dagMetricsHash": "877fd3e9752536ab945b888e035af4534834c5a4e24b06e1e8bbaf72ce375dcc",
+  "massProfileHash": "7d7b88052db5842345a786085d98465e98b95d2a2aa6f7dc65353a0241f80393"
+}

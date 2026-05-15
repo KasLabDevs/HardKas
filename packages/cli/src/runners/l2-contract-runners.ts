@@ -1,12 +1,13 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import { 
-  getL2Profile, 
+  resolveL2Profile, 
   EvmJsonRpcClient, 
   toHexQuantity,
   EvmCallRequest,
   encodeConstructorArgs
 } from "@hardkas/l2";
+import { loadHardkasConfig } from "@hardkas/config";
 import { 
   IgraTxPlanArtifact,
   assertValidIgraTxPlanArtifact,
@@ -33,16 +34,18 @@ export interface L2ContractDeployPlanOptions {
 }
 
 export async function runL2ContractDeployPlan(options: L2ContractDeployPlanOptions): Promise<void> {
-  const networkName = options.network ?? "igra";
-  const profile = getL2Profile(networkName);
+  const loaded = await loadHardkasConfig();
+  const profile = resolveL2Profile({
+    name: options.network,
+    userProfiles: loaded.config.l2?.networks,
+    cliOverrides: {
+      ...(options.url !== undefined ? { url: options.url } : {})
+    }
+  });
 
-  if (!profile) {
-    throw new Error(`L2 profile '${networkName}' not found.`);
-  }
-
-  const rpcUrl = options.url ?? profile.rpcUrl;
+  const rpcUrl = profile.rpcUrl;
   if (!rpcUrl) {
-    throw new Error(`No L2 RPC URL configured for network '${networkName}'. Pass --url <rpcUrl>.`);
+    throw new Error(`No L2 RPC URL configured for network '${profile.name}'. Pass --url <rpcUrl>.`);
   }
 
   const client = new EvmJsonRpcClient({ url: rpcUrl });
@@ -134,8 +137,8 @@ export async function runL2ContractDeployPlan(options: L2ContractDeployPlanOptio
   if (options.json) {
     console.log(JSON.stringify({
       networkId: profile.name,
-      l2Network: networkName,
-      chainId,
+      l2Network: profile.name,
+      chainId: profile.chainId,
       planId,
       artifactPath,
       artifact
@@ -143,11 +146,11 @@ export async function runL2ContractDeployPlan(options: L2ContractDeployPlanOptio
     return;
   }
 
-  console.log(`Igra L2 contract deploy plan built`);
+  console.log(`Igra L2 contract deploy plan built (${profile.source})`);
   console.log("");
   console.log(`Plan ID:    ${planId}`);
-  console.log(`Network:    ${networkName}`);
-  console.log(`Chain ID:   ${chainId}`);
+  console.log(`Network:    ${profile.name}`);
+  console.log(`Chain ID:   ${profile.chainId}`);
   console.log(`Mode:       l2-rpc`);
   console.log(`From:       ${options.from}`);
   console.log(`Type:       contract-deploy`);

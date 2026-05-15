@@ -1,0 +1,33 @@
+{
+  "schema": "hardkas.signedTx",
+  "hardkasVersion": "0.2.2-alpha",
+  "version": "1.0.0-alpha",
+  "createdAt": "2026-05-15T19:12:53.776Z",
+  "status": "signed",
+  "signedId": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+  "sourcePlanId": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+  "networkId": "simnet",
+  "mode": "simulated",
+  "workflowId": "test-workflow",
+  "assumptionLevel": "pessimistic",
+  "executionMode": "isolated",
+  "from": {
+    "address": "kaspasim:123"
+  },
+  "to": {
+    "address": "kaspasim:456"
+  },
+  "amountSompi": "1000000",
+  "signedTransaction": {
+    "format": "hex",
+    "payload": "00"
+  },
+  "lineage": {
+    "artifactId": "e8e257f3729e75c40b0b07a9d1625aa308a5607be834920a408491ea462d08ef",
+    "lineageId": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "parentArtifactId": "2641e1f17e4dd7e4d4a6e095ce8d8b63263087cd98efa63d8b75cb9b73890a12",
+    "rootArtifactId": "2b4baed6aab94827f47c19195591a9f619be50882de2c564ca9fa1bd09d57fb5",
+    "sequence": 2
+  },
+  "contentHash": "e8e257f3729e75c40b0b07a9d1625aa308a5607be834920a408491ea462d08ef"
+}

@@ -47,6 +47,9 @@ export interface HardkasConfig {
   defaultNetwork?: HardkasNetworkName;
   networks?: Record<HardkasNetworkName, HardkasNetworkTarget>;
   accounts?: Record<string, HardkasAccountConfig>;
+  l2?: {
+    networks?: Record<string, any>; // Will be refined in @hardkas/l2
+  };
 }
 
 export interface LoadedHardkasConfig {

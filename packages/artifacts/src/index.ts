@@ -18,6 +18,9 @@ export * from "./igra-artifacts.js";
 export * from "./igra-io.js";
 export * from "./feeVerify.js";
 export * from "./lineage.js";
+export * from "./diff.js";
+export * from "./deployment.js";
+export * from "./deployment-store.js";
 
 export type { 
   TxPlanArtifact,
@@ -25,5 +28,8 @@ export type {
   TxReceiptArtifact,
   SnapshotArtifact,
   TxTraceArtifact,
+  DeploymentRecord,
+  DeploymentIndex,
+  DeploymentSummary,
   DagContext 
 } from "./types.js";
