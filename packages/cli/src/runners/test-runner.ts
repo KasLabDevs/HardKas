@@ -9,6 +9,9 @@ export interface TestRunnerOptions {
   watch?: boolean;
   json?: boolean;
   reporter?: string;
+  massReport?: boolean;
+  massSnapshot?: string;
+  massCompare?: string;
 }
 
 /**

@@ -7,8 +7,8 @@ import { runTxSign } from "../src/runners/tx-sign-runner";
 import { loadRealAccountStoreSync } from "@hardkas/accounts";
 
 describe("Account Hardening & Security Guards", () => {
+  const accountsFile = path.join(process.cwd(), ".hardkas", "accounts.real.json");
   const keystoreDir = path.join(process.cwd(), ".hardkas", "keystore");
-  const accountsFile = path.join(process.cwd(), "accounts.real.json");
 
   beforeEach(() => {
     if (fs.existsSync(accountsFile)) fs.unlinkSync(accountsFile);

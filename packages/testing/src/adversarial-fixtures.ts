@@ -123,6 +123,7 @@ export const AdversarialFixtures = {
 
   /**
    * Artifact with a future timestamp (anomaly).
+   * Intentionally uses Date.now() to generate a timestamp far in the future.
    */
   futureTimestamp() {
     const farFuture = new Date(Date.now() + 1000 * 60 * 60 * 24 * 365 * 10).toISOString();

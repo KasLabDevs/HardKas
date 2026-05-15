@@ -23,7 +23,7 @@
     "docs:check-cli": "pnpm --filter @hardkas/cli docs:check-cli",
     "hardkas": "pnpm --filter @hardkas/cli run dev",
     "cli": "pnpm --filter @hardkas/cli run dev",
-    "check": "pnpm typecheck && pnpm build && pnpm check:cli-version && pnpm check:docs && pnpm test",
+    "check": "pnpm typecheck && pnpm build && pnpm check:cli-version && pnpm docs:check-cli && pnpm check:docs && pnpm test",
     "test:repro": "pnpm --filter @hardkas/testing test",
     "check:cli-version": "node scripts/check-cli-version.mjs",
     "check:docs": "pnpm --filter @hardkas/cli test:docs",
@@ -53,5 +53,5 @@
     "typescript": "^5.7.2",
     "vitest": "^2.1.8"
   },
-  "version": "0.2.2-alpha.1"
+  "version": "0.3.0-alpha"
 }

@@ -9,7 +9,7 @@ export function registerLockCommands(program: Command) {
   const lockCmd = program.command("lock").description("Manage HardKAS workspace locks");
 
   lockCmd.command("list")
-    .description("List all active workspace locks")
+    .description(`List all active workspace locks ${UI.maturity("stable")}`)
     .option("--json", "Output as JSON", false)
     .action(async (options) => {
       try {
@@ -36,7 +36,7 @@ export function registerLockCommands(program: Command) {
     });
 
   lockCmd.command("status [name]")
-    .description("Show status of one or all locks")
+    .description(`Show status of one or all locks ${UI.maturity("stable")}`)
     .action(async (name) => {
       try {
         const locks = listLocks(process.cwd());
@@ -66,7 +66,7 @@ export function registerLockCommands(program: Command) {
     });
 
   lockCmd.command("doctor")
-    .description("Analyze locks and identify stale or corrupted ones")
+    .description(`Analyze locks and identify stale or corrupted ones ${UI.maturity("stable")}`)
     .action(async () => {
       try {
         const locks = listLocks(process.cwd());
@@ -93,7 +93,7 @@ export function registerLockCommands(program: Command) {
     });
 
   lockCmd.command("clear <name>")
-    .description("Safely or forcibly clear a lock")
+    .description(`Safely or forcibly clear a lock ${UI.maturity("stable")}`)
     .option("--if-dead", "Only clear if the process is no longer running", false)
     .option("--force", "Forcibly clear the lock even if the process is alive", false)
     .option("--yes", "Confirm clearing without prompt", false)

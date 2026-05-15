@@ -109,7 +109,7 @@ export function computeDagMetrics(
       // We need to count total blocks in past(sink).
       const past = identifyReachableBlocks(allBlocks, sink);
       const totalInPast = past.size - 1; // excluding genesis
-      blueBlocks = sinkData.blueScore; 
+      blueBlocks = sinkData.blueScore + 1; 
       // If genesis is blueScore 0, then blueBlocks is count of non-genesis blues.
       redBlocks = Math.max(0, totalInPast - blueBlocks);
   }

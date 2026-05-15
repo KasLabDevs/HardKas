@@ -20,8 +20,8 @@ describe("E2E Simulated Happy Path", () => {
       simulated: { kind: "simulated" }
     },
     accounts: {
-      alice: { kind: "simulated", address: "kaspa:sim_alice" },
-      bob: { kind: "simulated", address: "kaspa:sim_bob" }
+      alice: { kind: "simulated", address: "kaspasim:alice" },
+      bob: { kind: "simulated", address: "kaspasim:bob" }
     }
   };
 

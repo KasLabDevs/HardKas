@@ -11,9 +11,10 @@ export const SEMANTIC_EXCLUSIONS = new Set([
   "file_path",
   "file_mtime_ms",
   "hardkasVersion",
-  "hashVersion", // Exclude version itself from hash to avoid circularity if stored
+  "hashVersion", // Exclude hash version from hash
   "parentArtifactId",
-  "signedId"
+  "signedId",
+  "deployedAt"
 ]);
 
 /**

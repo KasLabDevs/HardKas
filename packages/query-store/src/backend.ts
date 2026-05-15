@@ -51,8 +51,8 @@ export interface QueryBackend {
   getLineageEdges(filters?: { parentHash?: string; childHash?: string }): Promise<LineageEdgeDocument[]>;
   getStoreStatus(): Promise<string>;
   doctor(): Promise<any>;
-  migrate(): Promise<any>;
-  sync(): Promise<any>;
+  migrate(): Promise<{ applied: number }>;
+  sync(options?: { strict?: boolean }): Promise<any>;
   rebuild(options?: { strict?: boolean }): Promise<any>;
   executeRawSql(sql: string): Promise<any[]>;
   findReceipts(filters?: { status?: string; networkId?: string }): Promise<ArtifactDocument[]>;
@@ -237,7 +237,7 @@ export class SqliteQueryBackend implements QueryBackend {
     };
   }
 
-  async migrate(): Promise<any> {
+  async migrate(): Promise<{ applied: number }> {
     return this.store.migrate();
   }
 

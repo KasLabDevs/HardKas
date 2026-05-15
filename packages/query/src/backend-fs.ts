@@ -144,8 +144,12 @@ export class FilesystemQueryBackend implements QueryBackend {
     return artifacts;
   }
 
-  async sync(): Promise<any> {
-    return this.rebuild();
+  async sync(options?: { strict?: boolean }): Promise<any> {
+    return this.rebuild(options);
+  }
+
+  async migrate(): Promise<{ applied: number }> {
+    return { applied: 0 };
   }
 
   async executeRawSql(_sql: string): Promise<any[]> {

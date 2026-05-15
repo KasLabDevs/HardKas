@@ -23,10 +23,11 @@ export function registerArtifactCommands(program: Command) {
 
   artifactCmd
     .command("explain <path>")
-    .description(`Provide a human-readable operational summary of an artifact ${UI.maturity("preview")}`)
-    .action(async (path: string) => {
+    .description(`Provide a human-readable operational summary of an artifact ${UI.maturity("stable")}`)
+    .option("--json", "Output as JSON", false)
+    .action(async (path: string, options: { json: boolean }) => {
       try {
-        await runArtifactExplain({ path });
+        await runArtifactExplain({ path, ...options });
       } catch (e) {
         handleError(e);
         process.exitCode = 1;
@@ -35,8 +36,9 @@ export function registerArtifactCommands(program: Command) {
 
   artifactCmd
     .command("lineage <path>")
-    .description(`Show the provenance and operational history of an artifact ${UI.maturity("preview")}`)
-    .action(async (path: string) => {
+    .description(`Show the provenance and operational history of an artifact ${UI.maturity("stable")}`)
+    .option("--json", "Output as JSON", false)
+    .action(async (path: string, options: { json: boolean }) => {
       try {
         const { runArtifactLineage } = await import("../runners/artifact-lineage-runner.js");
         await runArtifactLineage({ path });

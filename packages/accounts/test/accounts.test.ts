@@ -18,29 +18,29 @@ describe("accounts", () => {
   it("resolveHardkasAccount should resolve 'alice'", () => {
     const acc = resolveHardkasAccount({ nameOrAddress: "alice" });
     expect(acc.name).toBe("alice");
-    expect(acc.address).toBe("kaspa:sim_alice");
+    expect(acc.address).toBe("kaspasim:alice");
   });
 
   it("resolveHardkasAccount should resolve direct addresses", () => {
-    const acc = resolveHardkasAccount({ nameOrAddress: "kaspa:sim_custom" });
-    expect(acc.name).toBe("kaspa:sim_custom");
+    const acc = resolveHardkasAccount({ nameOrAddress: "kaspasim:custom" });
+    expect(acc.name).toBe("kaspasim:custom");
     expect(acc.kind).toBe("external-wallet");
-    expect(acc.address).toBe("kaspa:sim_custom");
+    expect(acc.address).toBe("kaspasim:custom");
   });
 
   it("resolveHardkasAccountAddress should return address for known account", () => {
     const addr = resolveHardkasAccountAddress("bob");
-    expect(addr).toBe("kaspa:sim_bob");
+    expect(addr).toBe("kaspasim:bob");
   });
 
   it("resolveHardkasAccountAddress should use config if provided", () => {
     const config = {
       accounts: {
-        treasury: { kind: "simulated" as const, address: "kaspa:sim_treasury" }
+        treasury: { kind: "simulated" as const, address: "kaspasim:treasury" }
       }
     };
     const addr = resolveHardkasAccountAddress("treasury", config);
-    expect(addr).toBe("kaspa:sim_treasury");
+    expect(addr).toBe("kaspasim:treasury");
   });
 
   it("resolveHardkasAccount should throw for unknown account", () => {

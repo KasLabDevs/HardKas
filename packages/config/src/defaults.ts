@@ -11,10 +11,20 @@ export const DEFAULT_HARDKAS_CONFIG: HardkasConfig = {
       network: "devnet",
       rpcUrl: "ws://127.0.0.1:18310"
     },
-    testnet10: {
+    "testnet-10": {
       kind: "kaspa-rpc",
       network: "testnet-10",
-      rpcUrl: "ws://127.0.0.1:18210"
+      rpcUrl: "wss://tn10.kaspa.stream:443"
+    },
+    "testnet-11": {
+      kind: "kaspa-rpc",
+      network: "testnet-11",
+      rpcUrl: "wss://tn11.kaspa.stream:443"
+    },
+    "mainnet": {
+      kind: "kaspa-rpc",
+      network: "mainnet",
+      rpcUrl: "wss://kaspa.stream:443"
     }
   },
   accounts: {

@@ -1,6 +1,6 @@
 # Security Policy
 
-## HardKAS 0.2.2-alpha Security Posture
+## HardKAS 0.3.0-alpha Security Posture
 
 HardKAS is a development tool designed for the Kaspa BlockDAG ecosystem. It is currently in **Alpha / Pre-release** staging.
 
@@ -14,20 +14,15 @@ HardKAS is optimized for developer velocity and local simulation. It includes fe
 
 ### 3. Encrypted Keystore Limitations
 Real development accounts are stored in `.hardkas/keystore/`, encrypted using **Argon2id** and **AES-256-GCM**.
-- While robust, this is a "hot wallet" implementation on your local machine.
-- Your security is only as strong as your local machine's security and your keystore password.
+- **Restrictive Permissions**: HardKAS enforces **0600 (owner-only)** filesystem permissions on all keystore writes.
+- **Hot Wallet Risk**: While robust, this is a "hot wallet" implementation. Your security is only as strong as your local machine's security and your keystore password.
 - **NEVER** commit the `.hardkas/` directory to version control.
 
-### 4. CLI Secret Exposure Risk
-HardKAS CLI commands that accept secrets (private keys, passwords) via command-line arguments are **unsafe**.
+### 4. CLI Secret Exposure Risk & Redaction
+HardKAS CLI commands that accept secrets (private keys, passwords) via command-line arguments are **deprecated** for safety.
 - **Shell History**: Arguments are often stored in plain text in `~/.bash_history` or `~/.zsh_history`.
-- **Process Lists**: Other users on the same machine may see secrets via `ps` or similar tools.
-- **CI Logs**: secrets passed as flags may be logged in CI/CD telemetry.
-
-**Policy**:
-- Direct `--private-key <hex>` usage is **deprecated**.
-- Always prefer `--private-key-stdin` or `--private-key-env`.
-- For passwords, use `--password-stdin` or `--password-env`.
+- **Policy**: Always prefer `--private-key-stdin` or `--password-env`.
+- **Automated Redaction**: HardKAS implements **Recursive Secret Redaction**. Known secrets (like private keys or passwords) are automatically masked (e.g., `[REDACTED]`) in all CLI logs, error messages, and telemetry to prevent accidental exposure in CI logs.
 
 ### 5. Mainnet Signing Warning
 Mainnet signing and broadcasting are disabled by default. 

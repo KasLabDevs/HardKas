@@ -40,7 +40,12 @@ To prevent secrets from leaking into shell history:
 - **Plaintext Opt-in**: Storing keys in plaintext requires the explicit `--unsafe-plaintext` flag.
 
 ### 3. Session Semantics (Stateless)
-HardKAS is a stateless CLI, not a long-running daemon. Password access is required for each signing operation unless using environment variables.
+HardKAS is a stateless CLI. Password access is required for each signing operation unless using environment variables. Recursive secret redaction is enforced across all logs to prevent accidental leaks.
+
+### 4. Workspace Lock Safety
+HardKAS implements a conservative multi-process locking mechanism to prevent concurrent mutation of critical state:
+- **Lock Enforcement**: Prevents race conditions between CLI, SDK, and background runners.
+- **Recovery UX**: `hardkas lock doctor` and `lock clear --if-dead` provide safe recovery paths from process crashes without risking state corruption.
 
 ## Artifact Integrity & Trust Boundary
 
@@ -49,8 +54,8 @@ HardKAS uses a formal **Artifact Model** to ensure that operational state is ver
 ### 1. The Trust Boundary
 Artifact verification (`hardkas artifact verify`) provides a strong guarantee of **structural and internal consistency**, but does not prove **network finality** or **consensus validity** unless explicitly stated.
 
-- **Content Hashing**: Uses deterministic canonicalization (BigInt-safe) to ensure hashes are stable across platforms.
-- **Lineage Strictness**: Verification requires child artifacts to explicitly link to their parents, enforcing a verifiable provenance chain.
+- **Content Hashing (v3)**: Uses deterministic canonicalization with **NFC Unicode normalization** and **LF line-ending normalization**. This ensures bit-for-bit hash stability across Windows, Linux, and macOS.
+- **Lineage Strictness**: Enforces a verifiable provenance chain. Adversarial checks prevent cycles and cross-network parentage.
 - **Honest Verification**: If a verification step (like consensus replay) is not implemented or skipped, the system will report it as a **warning**, never as a false "success".
 
 ### 2. Mode & Network Isolation

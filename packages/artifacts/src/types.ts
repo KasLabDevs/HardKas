@@ -272,3 +272,49 @@ export interface TxTraceArtifact extends BaseArtifact<"txTrace"> {
 
 // Igra L2 Artifacts (Imported from igra-artifacts.ts)
 export * from "./igra-artifacts.js";
+
+export interface DeploymentRecord extends HardkasArtifactBase {
+  schema: "hardkas.deployment.v1";
+  /** Human-readable label (e.g., "initial-funding", "vault-covenant-v1") */
+  label: string;
+  /** Network where this was deployed */
+  networkId: NetworkId;
+  /** Deployment status */
+  status: "planned" | "sent" | "confirmed" | "failed" | "unknown";
+  /** The transaction ID (if sent) */
+  txId?: TxId;
+  /** Reference to the plan artifact that produced this deployment */
+  planArtifactId?: ArtifactId;
+  /** Reference to the receipt artifact (if confirmed) */
+  receiptArtifactId?: ArtifactId;
+  /** Deployed addresses or outputs (for covenant/contract deployments) */
+  deployedAddresses?: string[];
+  /** Deployment metadata */
+  deployer?: string;
+  /** Content hash of the deployed payload (bytecode, script, or tx content) */
+  payloadHash?: string;
+  /** Timestamp of deployment */
+  deployedAt: string;
+  /** HardKAS version used */
+  hardkasVersion: string;
+  /** Canonical content hash of this record */
+  contentHash?: ContentHash;
+  /** Notes */
+  notes?: string;
+}
+
+export interface DeploymentIndex extends HardkasArtifactBase {
+  schema: "hardkas.deploymentIndex.v1";
+  networkId: NetworkId;
+  deployments: DeploymentSummary[];
+  lastUpdated: string;
+}
+
+export interface DeploymentSummary {
+  label: string;
+  networkId: NetworkId;
+  status: string;
+  txId?: string;
+  deployedAt: string;
+  contentHash: string;
+}

@@ -23,7 +23,7 @@ describe("Query Store Rebuild Equivalence", () => {
     const dbPath = path.join(hkDir, "store.db");
     
     store = new HardkasStore({ dbPath });
-    store.connect();
+    store.connect({ autoMigrate: true });
     db = store.getDatabase();
   });
 

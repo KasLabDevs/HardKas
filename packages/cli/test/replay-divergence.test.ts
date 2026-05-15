@@ -13,6 +13,9 @@ const cliPath = path.resolve(rootDir, "packages/cli/src/index.ts");
 const tsxPath = path.resolve(rootDir, "node_modules/.bin/tsx");
 
 describe("Adversarial Validation (Corpus Stress)", () => {
+  // Use a longer timeout for CLI executions
+  const TEST_TIMEOUT = 30000;
+
   async function runVerify(targetDir: string) {
     try {
       // Use artifact verify which is more robust for individual artifact checks
@@ -32,7 +35,7 @@ describe("Adversarial Validation (Corpus Stress)", () => {
     expect(result.stderr + result.stdout).toContain("HASH_MISMATCH");
     
     fs.rmSync(tempDir, { recursive: true, force: true });
-  });
+  }, TEST_TIMEOUT);
 
   it("should detect circular lineage", async () => {
     const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), "hardkas-adversarial-circular-"));
@@ -47,7 +50,7 @@ describe("Adversarial Validation (Corpus Stress)", () => {
     expect(result.stdout).toContain("FAIL");
     
     fs.rmSync(tempDir, { recursive: true, force: true });
-  });
+  }, TEST_TIMEOUT);
 
   it("should detect cross-network parentage", async () => {
     const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), "hardkas-adversarial-cross-network-"));
@@ -60,7 +63,7 @@ describe("Adversarial Validation (Corpus Stress)", () => {
     expect(result.stdout).toMatch(/NETWORK_MISMATCH|FAIL/);
 
     fs.rmSync(tempDir, { recursive: true, force: true });
-  });
+  }, TEST_TIMEOUT);
 
   it("should handle malformed JSONL gracefully", async () => {
     const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), "hardkas-adversarial-malformed-"));
@@ -73,5 +76,5 @@ describe("Adversarial Validation (Corpus Stress)", () => {
     expect(result.exitCode).toBeDefined();
     
     fs.rmSync(tempDir, { recursive: true, force: true });
-  });
+  }, TEST_TIMEOUT);
 });

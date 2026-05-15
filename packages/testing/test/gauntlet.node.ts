@@ -89,47 +89,48 @@ async function runCanonicalScenario(sandboxDir: string) {
   // 4. File-Backed SQLite Initialization & Total Re-indexing
   const dbPath = path.join(sandboxDir, "store.db");
   const store = new HardkasStore({ dbPath });
-  store.connect();
+  store.connect({ autoMigrate: true });
 
-  const indexer = new HardkasIndexer(store.getDatabase(), { cwd: sandboxDir });
-  indexer.sync();
+  try {
+    const indexer = new HardkasIndexer(store.getDatabase(), { cwd: sandboxDir });
+    await indexer.sync();
 
-  // Validate zero stale or zombie entries
-  const doctorReport = indexer.doctor();
-  assert.strictEqual(doctorReport.staleArtifacts, 0);
-  assert.strictEqual(doctorReport.zombieArtifacts, 0);
+    // Validate zero stale or zombie entries
+    const doctorReport = indexer.doctor();
+    assert.strictEqual(doctorReport.staleArtifacts, 0);
+    assert.strictEqual(doctorReport.zombieArtifacts, 0);
 
-  const backend = new SqliteQueryBackend(store);
-  const queriedArtifacts = await backend.findArtifacts();
-  const queriedHashes = queriedArtifacts.map(a => a.contentHash).sort();
+    const backend = new SqliteQueryBackend(store);
+    const queriedArtifacts = await backend.findArtifacts();
+    const queriedHashes = queriedArtifacts.map(a => a.contentHash).sort();
 
-  store.disconnect();
+    const summary = {
+      gauntletVersion: "gauntlet-v0",
+      scenarioHash: calculateContentHash({ accounts: 10, totalIters: 100 }),
+      artifactCount,
+      acceptedTxCount,
+      rejectedTxCount,
+      finalStateHash: calculateStateHash(harness.state),
+      queryResultHash: calculateContentHash(queriedHashes),
+      dagMetricsHash: calculateContentHash({
+        linearBlocks: linearRes.metrics.totalBlocks,
+        wideBlocks: wideRes.metrics.totalBlocks
+      }),
+      massProfileHash: calculateContentHash({
+        totalMass: massRes.totalMass.toString(),
+        fee: massRes.estimatedFeeSompi.toString()
+      })
+    };
 
-  // 5. Generate High-Signal Golden Summary Object
-  const summary = {
-    gauntletVersion: "gauntlet-v0",
-    scenarioHash: calculateContentHash({ accounts: 10, totalIters: 100 }),
-    artifactCount,
-    acceptedTxCount,
-    rejectedTxCount,
-    finalStateHash: calculateStateHash(harness.state),
-    queryResultHash: calculateContentHash(queriedHashes),
-    dagMetricsHash: calculateContentHash({
-      linearBlocks: linearRes.metrics.totalBlocks,
-      wideBlocks: wideRes.metrics.totalBlocks
-    }),
-    massProfileHash: calculateContentHash({
-      totalMass: massRes.totalMass.toString(),
-      fee: massRes.estimatedFeeSompi.toString()
-    })
-  };
-
-  return {
-    summary,
-    summaryHash: calculateContentHash(summary),
-    emittedArtifactHashes: emittedArtifactHashes.sort(),
-    queryResultHash: summary.queryResultHash
-  };
+    return {
+      summary,
+      summaryHash: calculateContentHash(summary),
+      emittedArtifactHashes: emittedArtifactHashes.sort(),
+      queryResultHash: summary.queryResultHash
+    };
+  } finally {
+    store.disconnect();
+  }
 }
 
 describe("positive deterministic replay", () => {

@@ -21,7 +21,7 @@ describe("HardkasIndexer Corruption Diagnostics", () => {
     
     const dbPath = path.join(tempDir, "test.db");
     store = new HardkasStore({ dbPath });
-    store.connect();
+    store.connect({ autoMigrate: true });
     db = store.getDatabase();
   });
 

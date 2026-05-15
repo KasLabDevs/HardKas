@@ -1,14 +1,14 @@
 {
   "proofVersion": "repro-v0",
-  "hardkasVersion": "0.2.2-alpha.1",
+  "hardkasVersion": "0.3.0-alpha",
   "artifacts": {
     "l1Plan": "35c7e8377ce183957eded425952f02a67806475f077c6bfe2ffe6364484a4c3d",
     "l1Signed": "a24ad0cae110f0ba62f63c6cf25bc5d8b04276fcd577925044525acbc44ba275",
     "igraPlan": "ddfd80013770f6eb4a7d183ba3cbf24416e9e0b940e11877b6775d36f993a6b2",
-    "dagLinearScenario": "10e7d3f738838f32cc85d839e0a63cdce09891db0f956dcbdb1c969911357b74",
-    "dagWideScenario": "9d78ebd84282043b9417e2eda836b20e72ff24adc7090ee4c5dc64afa4e6a9e2",
+    "dagLinearScenario": "c79594bea61442d05676614949c8c1b1459cfbba38f32145550302611e3aa61a",
+    "dagWideScenario": "57e15373723cea2506edf7b19dfe2bb2862657e668e0446e75edf0ceb939f0e1",
     "massProfile": "f048389e3220043b7632cd29f49601dcdfc7389b3c59848a31f89b8b4461185f",
-    "canonicalNested": "c47e22212866308af94593713e259f0353efbcde9674e9ad389c50b6ff66e822",
-    "simulatedTxReceipt": "ea3493e7623b3eceb2730f68f0c2e232fb9c32a14031a7a96e2feba0bd253815"
+    "canonicalNested": "c4961b52af8f4c79fbe4795a36cdb4525ebb28cf6aa6acf549a4892d9b24e088",
+    "simulatedTxReceipt": "b1990764cbdbe0c553175bc3322a6dc861614987e0d4081d95f850f6e2a55ad9"
   }
 }

@@ -1,5 +1,6 @@
 import { Command } from "commander";
 import pc from "picocolors";
+import fs from "node:fs";
 import { handleError, UI } from "../../ui.js";
 
 export function registerStoreQueryCommands(queryCmd: Command) {

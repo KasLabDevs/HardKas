@@ -1,8 +1,8 @@
 {
   "schema": "hardkas.txPlan",
-  "hardkasVersion": "0.2.2-alpha",
+  "hardkasVersion": "0.3.0-alpha",
   "version": "1.0.0-alpha",
-  "createdAt": "2026-05-10T17:36:52.657Z",
+  "createdAt": "2026-05-15T19:13:40.714Z",
   "networkId": "simnet",
   "mode": "simulated",
   "workflowId": "test-workflow",
@@ -26,13 +26,11 @@
     }
   ],
   "lineage": {
-    "artifactId": "d237bc661457375d4a0abce94ea4c697b9ac0639ae9746433cf964df06ef7fa7",
-    "lineageId": "d237bc661457375d4a0abce94ea4c697b9ac0639ae9746433cf964df06ef7fa7",
-    "parentArtifactId": "",
-    "rootArtifactId": "d237bc661457375d4a0abce94ea4c697b9ac0639ae9746433cf964df06ef7fa7",
+    "artifactId": "2641e1f17e4dd7e4d4a6e095ce8d8b63263087cd98efa63d8b75cb9b73890a12",
+    "lineageId": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "parentArtifactId": "2b4baed6aab94827f47c19195591a9f619be50882de2c564ca9fa1bd09d57fb5",
+    "rootArtifactId": "2b4baed6aab94827f47c19195591a9f619be50882de2c564ca9fa1bd09d57fb5",
     "sequence": 1
   },
-  "contentHash": "d237bc661457375d4a0abce94ea4c697b9ac0639ae9746433cf964df06ef7fa7",
-  "artifactId": "d237bc661457375d4a0abce94ea4c697b9ac0639ae9746433cf964df06ef7fa7",
-  "parentArtifactId": null
+  "contentHash": "2641e1f17e4dd7e4d4a6e095ce8d8b63263087cd98efa63d8b75cb9b73890a12"
 }

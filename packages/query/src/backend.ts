@@ -69,7 +69,10 @@ export interface QueryBackend {
   rebuild(options?: { strict?: boolean }): Promise<any>;
 
   /** Incremental index update. */
-  sync(): Promise<any>;
+  sync(options?: { strict?: boolean }): Promise<any>;
+
+  /** Apply pending schema migrations. */
+  migrate(): Promise<{ applied: number }>;
 
   /** Execute raw SQL (if supported). */
   executeRawSql(sql: string): Promise<any[]>;

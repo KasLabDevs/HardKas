@@ -40,6 +40,25 @@ export interface SendResult {
   postBalance: { from: bigint; to: bigint };
 }
 
+export interface MassRecord {
+  testName?: string;
+  txId: string;
+  inputCount: number;
+  outputCount: number;
+  estimatedMass: bigint;
+  estimatedFeeSompi: bigint;
+  timestamp: number;
+}
+
+// Module-level collector (opt-in)
+let massRecords: MassRecord[] = [];
+let massTrackingEnabled = false;
+
+export function enableMassTracking(): void { massTrackingEnabled = true; }
+export function disableMassTracking(): void { massTrackingEnabled = false; }
+export function getMassRecords(): MassRecord[] { return [...massRecords]; }
+export function clearMassRecords(): void { massRecords = []; }
+
 export function createTestHarness(config?: HarnessConfig): TestHarness {
   const accountCount = config?.accounts ?? 3;
   const initialBalanceSompi = config?.initialBalance ?? 100_000_000_000n;
@@ -77,6 +96,17 @@ export function createTestHarness(config?: HarnessConfig): TestHarness {
         from: getAccountBalanceSompi(currentState, opts.from),
         to: getAccountBalanceSompi(currentState, opts.to)
       };
+
+      if (result.ok && massTrackingEnabled && result.planArtifact) {
+        massRecords.push({
+          txId: result.receipt.txId,
+          inputCount: result.planArtifact.inputs.length,
+          outputCount: result.planArtifact.outputs.length,
+          estimatedMass: BigInt(result.planArtifact.estimatedMass),
+          estimatedFeeSompi: BigInt(result.planArtifact.estimatedFeeSompi),
+          timestamp: Date.now()
+        });
+      }
 
       return {
         ok: result.ok,

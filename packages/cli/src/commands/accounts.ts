@@ -9,7 +9,7 @@ export function registerAccountsCommands(program: Command) {
   const accountsCmd = program.command("accounts").description("Manage HardKAS accounts");
 
   accountsCmd.command("list")
-    .description("List available HardKAS accounts")
+    .description(`List available HardKAS accounts ${UI.maturity("stable")}`)
     .option("--config <path>", "Path to config file")
     .option("--json", "Output as JSON", false)
     .action(async (options: { config?: string, json: boolean }) => {
@@ -40,7 +40,7 @@ export function registerAccountsCommands(program: Command) {
   const realAccountsCmd = accountsCmd.command("real").description("Persistent dev account store (L1)");
 
   realAccountsCmd.command("init")
-    .description("Initialize real dev account store")
+    .description(`Initialize real dev account store ${UI.maturity("stable")}`)
     .option("--force", "Overwrite existing store", false)
     .option("--wait-lock", "Wait for workspace lock if held", false)
     .option("--lock-timeout <ms>", "Lock wait timeout in ms", "30000")
@@ -64,7 +64,7 @@ export function registerAccountsCommands(program: Command) {
     });
 
   realAccountsCmd.command("import")
-    .description("Import an account into the persistent store")
+    .description(`Import an account into the persistent store ${UI.maturity("stable")}`)
     .option("--name <name>", "Account name")
     .option("--address <address>", "Kaspa address")
     .option("--private-key <hex>", "Deprecated. Unsafe: may leak through shell history. Prefer --private-key-stdin or --private-key-env.")
@@ -129,7 +129,7 @@ export function registerAccountsCommands(program: Command) {
     });
 
   realAccountsCmd.command("change-password <name>")
-    .description("Change password for an encrypted account")
+    .description(`Change password for an encrypted account ${UI.maturity("stable")}`)
     .option("--wait-lock", "Wait for workspace lock if held", false)
     .option("--lock-timeout <ms>", "Lock wait timeout in ms", "30000")
     .action(async (name: string, options: any) => {
@@ -150,7 +150,7 @@ export function registerAccountsCommands(program: Command) {
     });
 
   realAccountsCmd.command("generate")
-    .description("Generate new real dev account(s) using Kaspa SDK")
+    .description(`Generate new real dev account(s) using Kaspa SDK ${UI.maturity("stable")}`)
     .option("--name <name>", "Base name for account(s)")
     .option("--count <number>", "Number of accounts to generate", "1")
     .option("--network <network>", "Kaspa network (simnet, testnet-10, mainnet)", "simnet")
@@ -185,7 +185,7 @@ export function registerAccountsCommands(program: Command) {
     });
 
   accountsCmd.command("balance <identifier>")
-    .description("Show account balance")
+    .description(`Show account balance ${UI.maturity("stable")}`)
     .option("--network <name>", "Network name (simnet, localnet, etc.)")
     .option("--url <rpc-url>", "Explicit RPC URL")
     .option("--json", "Output as JSON", false)

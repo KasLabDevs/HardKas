@@ -19,14 +19,14 @@ describe("Corruption Corpus Hardening", () => {
     const fixturePath = path.join(corruptedDir, "broken-content-hash.json");
     const result = await verifyArtifactIntegrity(fixturePath);
     expect(result.ok).toBe(false);
-    expect(result.issues.some(i => i.code === "HASH_MISMATCH")).toBe(true);
+    expect(result.issues.some(i => i.code === "ARTIFACT_HASH_MISMATCH")).toBe(true);
   });
 
   it("should reject mutated semantic field", async () => {
     const fixturePath = path.join(corruptedDir, "mutated-signed-field.json");
     const result = await verifyArtifactIntegrity(fixturePath);
     expect(result.ok).toBe(false);
-    expect(result.issues.some(i => i.code === "HASH_MISMATCH")).toBe(true);
+    expect(result.issues.some(i => i.code === "ARTIFACT_HASH_MISMATCH")).toBe(true);
   });
 
   it("should reject network/address mismatch", () => {
@@ -162,7 +162,7 @@ describe("Corruption Corpus Hardening", () => {
       
       const result = await verifyArtifactIntegrity(p);
       expect(result.ok).toBe(false);
-      expect(result.issues.some(i => i.code === "PARSE_ERROR")).toBe(true);
+      expect(result.issues.some(i => i.code === "ARTIFACT_JSON_INVALID")).toBe(true);
     });
 
     it("should reject invalid JSON", async () => {
@@ -171,7 +171,7 @@ describe("Corruption Corpus Hardening", () => {
       
       const result = await verifyArtifactIntegrity(p);
       expect(result.ok).toBe(false);
-      expect(result.issues.some(i => i.code === "PARSE_ERROR")).toBe(true);
+      expect(result.issues.some(i => i.code === "ARTIFACT_JSON_INVALID")).toBe(true);
     });
 
     it("should reject missing schema", async () => {
@@ -180,7 +180,7 @@ describe("Corruption Corpus Hardening", () => {
       
       const result = await verifyArtifactIntegrity(p);
       expect(result.ok).toBe(false);
-      expect(result.issues.some(i => i.code === "SCHEMA_MISMATCH" || i.code === "INVALID_STRUCTURE")).toBe(true);
+      expect(result.issues.some(i => i.code === "ARTIFACT_SCHEMA_MISSING")).toBe(true);
     });
   });
 });

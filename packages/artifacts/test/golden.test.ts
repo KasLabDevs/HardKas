@@ -33,9 +33,9 @@ describe("Artifact Golden Fixtures (Cross-Runtime)", () => {
     const canonBigInt = canonicalStringify(objBigInt);
     const canonNumber = canonicalStringify(objNumber);
 
-    // BigInt => "100" (JSON string)
+    // BigInt => "n:100" (v2+ behavior)
     // Number => 100 (JSON number)
-    expect(canonBigInt).toBe('{"amount":"100"}');
+    expect(canonBigInt).toBe('{"amount":"n:100"}');
     expect(canonNumber).toBe('{"amount":100}');
 
     expect(calculateContentHash(objBigInt)).not.toBe(calculateContentHash(objNumber));

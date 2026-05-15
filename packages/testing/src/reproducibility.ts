@@ -119,7 +119,7 @@ export function generateReproducibilityReport(): ReproducibilityReport {
 
   return {
     proofVersion: "repro-v0",
-    hardkasVersion: "0.2.2-alpha.1",
+    hardkasVersion: "0.3.0-alpha",
     artifacts: {
       l1Plan: calculateContentHash(l1Plan),
       l1Signed: calculateContentHash(l1Signed),

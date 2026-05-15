@@ -15,7 +15,7 @@ export function registerQueryCommands(program: Command) {
   // hardkas query store
   // =========================================================================
 
-  const storeCmd = queryCmd.command("store").description(`Manage query store index ${UI.maturity("alpha")}`);
+  const storeCmd = queryCmd.command("store").description(`Manage query store index ${UI.maturity("stable")}`);
 
   storeCmd
     .command("doctor")
@@ -381,7 +381,7 @@ export function registerQueryCommands(program: Command) {
   // hardkas query lineage
   // =========================================================================
 
-  const lineageCmd = queryCmd.command("lineage").description(`Traverse artifact lineage ${UI.maturity("preview")}`);
+  const lineageCmd = queryCmd.command("lineage").description(`Traverse artifact lineage ${UI.maturity("stable")}`);
 
   lineageCmd
     .command("chain <anchor>")
@@ -490,7 +490,7 @@ export function registerQueryCommands(program: Command) {
   // hardkas query replay
   // =========================================================================
 
-  const replayCmd = queryCmd.command("replay").description(`Inspect replay history and divergence ${UI.maturity("preview")}`);
+  const replayCmd = queryCmd.command("replay").description(`Inspect replay history and divergence ${UI.maturity("stable")}`);
 
   replayCmd
     .command("list")

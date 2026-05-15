@@ -1,7 +1,7 @@
 # What Actually Works in HardKas
 
 ## 1. Philosophy
-HardKas is currently in the **v0.2.2-alpha (Developer Preview)** stage. The primary goal of this document is **technical honesty**: avoiding "fake completeness" and providing developers and contributors with a clear vision of what they can expect from the framework today.
+HardKas is currently in the **v0.2.2-alpha (HARDENED ALPHA)** stage. The primary goal of this document is **technical honesty**: avoiding "fake completeness" and providing developers and contributors with a clear vision of what they can expect from the framework today.
 
 In HardKas, we follow these premises:
 - "Implemented" != "Production-ready".
@@ -38,17 +38,23 @@ This document intentionally separates:
 | **Localnet Orchestration** | STABLE | Orchestrates the local environment lifecycle (`hardkas up`, `hardkas node start`). |
 | **Mainnet Guards** | STABLE | Hard protections that block accidental signatures and broadcasts to the main network. |
 | **Docker Node Runner** | STABLE | Starts/stops `kaspad` containers with RPC readiness guarantee. Supports **multiple networks** (simnet, testnet). Blocks mainnet local nodes. |
-| **Query Store (SQLite)** | STABLE | The `QueryEngine` uses SQLite by default, reducing O(n) filesystem scans. Configured with `synchronous = FULL` and **workspace locking** for concurrency safety. Explicitly a rebuildable cache (filesystem/artifacts remain source of truth). |
-| **Artifact Determinism** | STABLE | **Type-safe canonical hashing (v2)**. Distinguishes BigInt from String. Version-aware identity (schema changes alter hashes). |
-| **Lineage Integrity** | STABLE | Strict provenance chains (parent-linkage) and network/mode isolation. |
-| **Workspace Locking** | STABLE | Prevents concurrent writes. Includes **safe recovery UX** (`hardkas lock doctor`, `lock clear --if-dead`). |
+| **Query Store (SQLite)** | STABLE | The `QueryEngine` uses SQLite by default. Configured with `synchronous = FULL` and **workspace locking**. Supports **atomic migrations**, **rebuild**, and **deterministic JSON export**. Explicitly a rebuildable cache (artifacts remain source of truth). |
+| **Artifact Determinism** | STABLE | **Type-safe canonical hashing (v3)**. Includes NFC Unicode normalization and CRLF/LF normalization. Version-aware identity (schema changes alter hashes). |
+| **Lineage Integrity** | STABLE | Strict provenance chains (parent-linkage) and network/mode isolation. Verified through **Adversarial Verification** tests (cycles, cross-network). |
+| **Workspace Locking** | STABLE | Prevents concurrent writes. Includes **robust recovery UX** (`hardkas lock doctor`, `lock clear --if-dead`) verified against process crashes (SIGKILL). |
 | **Secret Redaction** | STABLE | Automatic recursive redaction of secrets in CLI logs and errors. |
 | **Gitignore Hardening** | STABLE | `hardkas init` automatically adds `.hardkas/` to `.gitignore`. |
-| **DAG Tooling** | STABLE | Implements `ApproxGhostdagEngine` for topological stability and concept alignment. |
+| **DAG Tooling** | EXPERIMENTAL | Implements `ApproxGhostdagEngine`. It is a structural research model for topological concept alignment, NOT bit-for-bit consensus parity. |
 | **Conflict Analysis** | STABLE | Deterministically detects double spending and displacement events. |
 | **Keystore (v2)** | STABLE | Argon2id/AES-256-GCM encrypted storage by default with restrictive (0600) permissions. |
 | **Account Metadata Index** | STABLE | Separates non-secret metadata from secret material for efficient listing. |
-| **Reproducibility Proof v0** | STABLE | Golden-file test proves: same code + same inputs = same contentHash across OS/Node. Runs in CI (Linux/macOS × Node 20/22). |
+| **Reproducibility Proof v1** | STABLE | Cross-platform proof: same code + same inputs = same contentHash across Linux, macOS, and Windows. Verified in CI. |
+| **Adversarial Verification** | STABLE | Automated tests for malicious artifact detection (hash mismatches, lineage loops, cross-network parentage). |
+| **Property Testing** | STABLE | High-coverage state and artifact property tests using `fast-check`. |
+| **Release Hygiene** | STABLE | `pack-release.ts` enforces clean state (no .hardkas, no env, no node_modules) for release artifacts. |
+| **Deployment Tracking** | STABLE | Local workflow tracking in `.hardkas/deployments/`. Supports labels, status verification, and lineage linking. |
+| **Console / REPL** | STABLE | Interactive Node.js REPL with HardKAS SDK and test harness pre-injected as `h`. |
+| **Capabilities API** | STABLE | Machine-readable self-description via `hardkas capabilities --json`. |
 
 ## 4. Partial Systems
 
@@ -138,7 +144,7 @@ Following the recent mock removal:
 
 ## 15. Final Assessment
 
-HardKas is currently:
-**A laboratory for deterministic transactional workflows for Kaspa developers, NOT a production blockchain platform.**
+HardKAS is currently:
+**A hardened laboratory for deterministic transactional workflows for Kaspa developers, moving toward Beta Candidate status.**
 
-The greatest virtue of the project today is not its completeness, but its **architectural honesty**. The pieces are in place; now they just need to be connected.
+The project has achieved **HARDENED ALPHA** through rigorous testing and architectural honesty. The transition to Beta will focus on API stabilization and documentation convergence.

@@ -23,14 +23,16 @@ import { compactFromFull, GENESIS_HASH } from "./ghostdag-types.js";
 export class GhostdagStore {
   private readonly full = new Map<BlockHash, GhostdagData>();
   private readonly compact = new Map<BlockHash, CompactGhostdagData>();
+  private readonly parents = new Map<BlockHash, BlockHash[]>();
 
   /**
    * Insert full + compact entries atomically.
    * Source: ghostdag.rs insert_batch() / update_batch() write both.
    */
-  insert(hash: BlockHash, data: GhostdagData): void {
+  insert(hash: BlockHash, data: GhostdagData, parents: BlockHash[] = []): void {
     this.compact.set(hash, compactFromFull(data));
     this.full.set(hash, data);
+    this.parents.set(hash, parents);
   }
 
   getData(hash: BlockHash): GhostdagData | undefined {
@@ -51,6 +53,10 @@ export class GhostdagStore {
 
   has(hash: BlockHash): boolean {
     return this.compact.has(hash);
+  }
+
+  getParents(hash: BlockHash): BlockHash[] | undefined {
+    return this.parents.get(hash);
   }
 
   get size(): number {

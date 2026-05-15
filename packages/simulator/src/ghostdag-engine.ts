@@ -53,6 +53,9 @@ export class ApproxGhostdagEngine {
 
   /**
    * Compute GhostdagData for `block`.
+   * 
+   * Intentionally non-deterministic for TEMP_INDEXING_HASH as it uses Date.now() 
+   * for dummy block headers.
    *
    * Source: protocol.rs lines 126-166 ghostdag()
    *
@@ -64,6 +67,49 @@ export class ApproxGhostdagEngine {
    *   5. blueWork = sp.blueWork + Σ work(blues)
    *
    * All steps are [RESEARCH_EXPERIMENTAL].
+   */
+  public ghostdag(parents: BlockHash[], gdStore: GhostdagStore): GhostdagData {
+    // 1. Create a dummy block for this GHOSTDAG computation
+    const block: SimBlock = {
+      header: {
+        hash: "TEMP_INDEXING_HASH", // Not used for internal GHOSTDAG logic
+        parents,
+        timestampUs: Date.now() * 1000,
+        minerId: 0,
+        bits: 1, // Minimum work contribution
+        nonce: 0,
+      }
+    };
+
+    // 2. Map store to a read-only view for the internal engine
+    // Since this is for simulation, we can be flexible with the Map interface
+    const allBlocksProxy = {
+      get: (hash: string) => {
+        const data = gdStore.getData(hash);
+        if (data) {
+          const parents = gdStore.getParents(hash) || [];
+          return {
+            header: {
+              hash,
+              parents,
+              timestampUs: 0,
+              minerId: 0,
+              bits: 1000,
+              nonce: 0,
+            },
+            ghostdag: data,
+          };
+        }
+        return undefined;
+      },
+      has: (hash: string) => gdStore.has(hash),
+    } as unknown as ReadonlyMap<BlockHash, SimBlock>;
+
+    return this.computeGhostdag(block, allBlocksProxy as any, gdStore);
+  }
+
+  /**
+   * Compute GhostdagData for `block`.
    */
   computeGhostdag(
     block: SimBlock,
@@ -105,9 +151,15 @@ export class ApproxGhostdagEngine {
     );
 
     // ── Step 3: coloring ─────────────────────────────────────────────────
-    const mergesetBlues: BlockHash[] = [selectedParent];
-    const bluesAnticoneSizes: number[] = [0];
+    // ── Step 3: coloring ─────────────────────────────────────────────────
+    const mergesetBlues: BlockHash[] = [];
+    const bluesAnticoneSizes: number[] = [];
     const mergesetReds: BlockHash[] = [];
+
+    // Context for coloring: the blue set of the selected parent's past
+    // plus the selected parent itself.
+    const coloringContext = [selectedParent];
+    const contextAnticoneSizes = [0];
 
     for (const candidate of orderedMerge) {
       if (mergesetBlues.length > this.k) {
@@ -118,13 +170,15 @@ export class ApproxGhostdagEngine {
       const color = checkBlueCandidateApprox(
         candidate.hash,
         this.k,
-        mergesetBlues,
-        bluesAnticoneSizes,
+        coloringContext,
+        contextAnticoneSizes,
         allBlocks
       );
 
       if (color === "blue") {
         mergesetBlues.push(candidate.hash);
+        coloringContext.push(candidate.hash);
+        contextAnticoneSizes.push(0);
       } else {
         mergesetReds.push(candidate.hash);
       }
@@ -132,11 +186,12 @@ export class ApproxGhostdagEngine {
 
     // ── Step 4: blueScore ────────────────────────────────────────────────
     const spBlueScore = gdStore.getBlueScore(selectedParent) ?? 0;
-    const blueScore = spBlueScore + mergesetBlues.length;
+    // Score = SP score + 1 (for SP itself) + new blues
+    const blueScore = spBlueScore + 1 + mergesetBlues.length;
 
     // ── Step 5: blueWork ─────────────────────────────────────────────────
     const spBlueWork = gdStore.getBlueWork(selectedParent) ?? 0n;
-    let addedBlueWork = 0n;
+    let addedBlueWork = headerWork(allBlocks.get(selectedParent)!.header);
     for (const h of mergesetBlues) {
       const b = allBlocks.get(h);
       if (b) addedBlueWork += headerWork(b.header);
@@ -147,9 +202,9 @@ export class ApproxGhostdagEngine {
       blueScore,
       blueWork,
       selectedParent,
-      mergesetBlues,
+      mergesetBlues: [selectedParent, ...mergesetBlues],
       mergesetReds,
-      bluesAnticoneSizes,
+      bluesAnticoneSizes: [0, ...bluesAnticoneSizes],
     };
   }
 }

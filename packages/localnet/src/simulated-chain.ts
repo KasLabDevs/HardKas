@@ -53,7 +53,7 @@ export class SimulatedKaspaChain {
     }
 
     const utxo: SimulatedUtxo = {
-      id: `faucet:${Date.now().toString(36)}:${Math.random().toString(36).slice(2)}`,
+      id: `faucet:${address.slice(-8)}:${this.daaScore}:${this.utxos.length}`,
       address,
       amountSompi,
       spent: false
@@ -65,6 +65,11 @@ export class SimulatedKaspaChain {
     return utxo;
   }
 
+  /**
+   * Creates a snapshot of the current chain state.
+   * Snapshot IDs use Date.now() and are intended for session-based 
+   * debugging and restore points, not for canonical identity.
+   */
   snapshot(): Snapshot {
     return {
       id: `snapshot:${Date.now().toString(36)}`,

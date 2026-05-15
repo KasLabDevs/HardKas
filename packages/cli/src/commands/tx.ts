@@ -12,10 +12,11 @@ export function registerTxCommands(program: Command) {
   const tx = program.command("tx").description("L1 Transaction commands");
 
   tx.command("profile <path>")
-    .description("Show detailed mass and fee breakdown for a transaction plan")
-    .action(async (path: string) => {
+    .description(`Show detailed mass and fee breakdown for a transaction plan ${UI.maturity("stable")}`)
+    .option("--json", "Output as JSON", false)
+    .action(async (path: string, options: { json: boolean }) => {
       try {
-        await runTxProfile({ path });
+        await runTxProfile({ path, ...options });
       } catch (e) {
         handleError(e);
         process.exitCode = 1;
@@ -140,6 +141,7 @@ export function registerTxCommands(program: Command) {
     .option("--wait-lock", "Wait for workspace lock if held", false)
     .option("--lock-timeout <ms>", "Lock wait timeout in ms", "30000")
     .option("--json", "Output as JSON", false)
+    .option("--track <label>", "Auto-track deployment with this label")
     .action(async (signedPath: string | undefined, options: {
       from?: string;
       to?: string;
@@ -150,6 +152,7 @@ export function registerTxCommands(program: Command) {
       waitLock: boolean;
       lockTimeout: string;
       json: boolean;
+      track?: string;
     }) => {
       const { withLock } = await import("@hardkas/core");
       const { handleLockError } = await import("../ui.js");
@@ -183,6 +186,17 @@ export function registerTxCommands(program: Command) {
 
             if (options.json) console.log(JSON.stringify(result, bigIntReplacer, 2));
             else console.log(result.formatted);
+
+            if (options.track && result.accepted) {
+              const { trackDeployment } = await import("../runners/deployment-runners.js");
+              await trackDeployment({
+                label: options.track,
+                network: result.networkName,
+                txId: result.txId,
+                plan: signedArtifact.sourcePlanId,
+                status: result.receipt.status === "confirmed" ? "confirmed" : "sent"
+              });
+            }
           } else if (options.from && options.to && options.amount) {
             const result = await runTxFlow({
               ...options,
@@ -205,7 +219,7 @@ export function registerTxCommands(program: Command) {
     });
 
   tx.command("receipt <txId>")
-    .description("Show transaction receipt")
+    .description(`Show transaction receipt ${UI.maturity("stable")}`)
     .option("--json", "Output as JSON", false)
     .action(async (txId, options) => {
       try {

@@ -113,7 +113,7 @@ export async function runL2TxBuild(options: L2TxBuildOptions): Promise<void> {
     createdAt: new Date().toISOString(),
     planId: "", // Placeholder
     l2Network: profile.name,
-    chainId: profile.chainId,
+    chainId,
     request: {
       ...(options.from ? { from: options.from } : {}),
       to: options.to,
@@ -353,6 +353,11 @@ export async function runL2TxSend(options: L2TxSendOptions): Promise<void> {
     throw new Error("L2 mainnet broadcast is disabled in HardKAS v0.2-alpha.");
   }
 
+  if (!options.yes) {
+    console.log("\n  L2 broadcast cancelled: --yes flag is required for this phase.");
+    process.exit(0);
+  }
+
   const rpcUrl = options.url ?? profile.rpcUrl;
   if (!rpcUrl) {
     throw new Error(`No L2 RPC URL configured for network '${profile.name}'. Pass --url <rpcUrl>.`);
@@ -362,7 +367,7 @@ export async function runL2TxSend(options: L2TxSendOptions): Promise<void> {
   const client = new EvmJsonRpcClient({ url: rpcUrl });
   const remoteChainId = await client.getChainId();
 
-  if (String(remoteChainId) !== String(profile.chainId || 0)) {
+  if (profile.chainId !== undefined && String(remoteChainId) !== String(profile.chainId)) {
     console.log("");
     console.log("Refusing to submit Igra L2 transaction: profile chainId does not match RPC endpoint.");
     console.log("");

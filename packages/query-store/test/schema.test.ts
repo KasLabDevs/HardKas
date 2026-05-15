@@ -15,15 +15,18 @@ describe("Query Store Schema Integrity", () => {
   beforeEach(async () => {
     tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "hardkas-schema-test-"));
     dbPath = path.join(tmpDir, "store.db");
+    store = new HardkasStore({ dbPath });
   });
 
+  let store: HardkasStore;
+
   afterEach(async () => {
+    if (store) store.disconnect();
     if (fs.existsSync(tmpDir)) fs.rmSync(tmpDir, { recursive: true, force: true });
   });
 
   it("should create all required tables and migration history", () => {
-    const store = new HardkasStore({ dbPath });
-    store.connect();
+    store.connect({ autoMigrate: true });
     const db = store.getDatabase();
 
     const tables = db.prepare("SELECT name FROM sqlite_master WHERE type='table'").all() as { name: string }[];
@@ -43,8 +46,7 @@ describe("Query Store Schema Integrity", () => {
   });
 
   it("should create expected indexes", () => {
-    const store = new HardkasStore({ dbPath });
-    store.connect();
+    store.connect({ autoMigrate: true });
     const db = store.getDatabase();
 
     const indexes = db.prepare("SELECT name FROM sqlite_master WHERE type='index'").all() as { name: string }[];

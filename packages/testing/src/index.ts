@@ -4,7 +4,13 @@
 
 // ── Test Harness ─────────────────────────────────────────────────────────────
 export type { HarnessConfig, TestHarness, SendResult } from "./harness.js";
-export { createTestHarness } from "./harness.js";
+export { 
+  createTestHarness, 
+  enableMassTracking, 
+  disableMassTracking, 
+  getMassRecords, 
+  clearMassRecords 
+} from "./harness.js";
 
 // ── Fixtures ─────────────────────────────────────────────────────────────────
 export type { FixtureDefinition } from "./fixtures.js";

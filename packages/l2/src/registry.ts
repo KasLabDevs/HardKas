@@ -20,8 +20,8 @@ export function listL2Profiles(userProfiles?: Record<string, L2UserNetworkConfig
   return profiles;
 }
 
-export function getL2Profile(name: string, userProfiles?: Record<string, L2UserNetworkConfig>): L2NetworkProfile | undefined {
-  return listL2Profiles(userProfiles).find(p => p.name === name);
+export function getL2Profile(name: string, userProfiles?: Record<string, L2UserNetworkConfig>): L2NetworkProfile | null {
+  return listL2Profiles(userProfiles).find(p => p.name === name) || null;
 }
 
 export function resolveL2Profile(args: {

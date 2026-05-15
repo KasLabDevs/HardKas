@@ -9,21 +9,25 @@ import { createEventEnvelope, asWorkflowId, asCorrelationId, asNetworkId } from 
 describe("HardkasIndexer Integrity", () => {
   let tmpDir: string;
   let dbPath: string;
+  let store: HardkasStore;
+  let db: any;
 
   beforeEach(async () => {
     tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "hardkas-indexer-test-v2-"));
     dbPath = path.join(tmpDir, "store.db");
     fs.mkdirSync(path.join(tmpDir, ".hardkas"), { recursive: true });
+    store = new HardkasStore({ dbPath });
+    store.connect({ autoMigrate: true });
+    db = store.getDatabase();
   });
 
   afterEach(async () => {
+    if (store) store.disconnect();
     if (fs.existsSync(tmpDir)) fs.rmSync(tmpDir, { recursive: true, force: true });
   });
 
   it("should index events idempotently (no duplicates)", async () => {
-    const store = new HardkasStore({ dbPath });
-    store.connect();
-    const indexer = new HardkasIndexer(store.getDatabase(), { cwd: tmpDir });
+    const indexer = new HardkasIndexer(db, { cwd: tmpDir });
 
     const event = createEventEnvelope({
       kind: "workflow.started",
@@ -51,9 +55,7 @@ describe("HardkasIndexer Integrity", () => {
   });
 
   it("raw_json should store the full EventEnvelope", async () => {
-    const store = new HardkasStore({ dbPath });
-    store.connect();
-    const indexer = new HardkasIndexer(store.getDatabase(), { cwd: tmpDir });
+    const indexer = new HardkasIndexer(db, { cwd: tmpDir });
 
     const event = createEventEnvelope({
       kind: "workflow.started",
@@ -77,9 +79,7 @@ describe("HardkasIndexer Integrity", () => {
   });
 
   it("should derive traces from workflow events", async () => {
-    const store = new HardkasStore({ dbPath });
-    store.connect();
-    const indexer = new HardkasIndexer(store.getDatabase(), { cwd: tmpDir });
+    const indexer = new HardkasIndexer(db, { cwd: tmpDir });
 
     const wfId = asWorkflowId("wf-trace-1");
     const e1 = createEventEnvelope({

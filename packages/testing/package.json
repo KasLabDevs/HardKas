@@ -1,6 +1,6 @@
 {
   "name": "@hardkas/testing",
-  "version": "0.2.2-alpha.1",
+  "version": "0.3.0-alpha",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -8,10 +8,11 @@
     ".": "./dist/index.js",
     "./harness": "./dist/harness.js",
     "./setup": "./dist/setup.js",
-    "./adversarial-fixtures": "./dist/adversarial-fixtures.js"
+    "./adversarial-fixtures": "./dist/adversarial-fixtures.js",
+    "./mass-setup": "./dist/mass-setup.js"
   },
   "scripts": {
-    "build": "tsup src/index.ts src/harness.ts src/setup.ts src/reproducibility.ts src/adversarial-fixtures.ts --format esm --dts --clean --external vitest",
+    "build": "tsup src/index.ts src/harness.ts src/setup.ts src/reproducibility.ts src/adversarial-fixtures.ts src/mass-setup.ts --format esm --dts --clean --external vitest",
     "test": "vitest run && pnpm test:gauntlet",
     "test:gauntlet": "node --import tsx --test test/gauntlet.node.ts",
     "typecheck": "tsc --noEmit",

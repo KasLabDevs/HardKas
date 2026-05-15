@@ -110,7 +110,6 @@ export async function signTxPlanArtifact(input: {
       version: "1.0.0-alpha",
       status: "signed",
       createdAt: new Date().toISOString(),
-      signedId: `signed_${planArtifact.planId}_${Date.now().toString(36)}`,
       txId: result.txId || "", // Ensure txId is present
       sourcePlanId: planArtifact.planId,
       networkId: planArtifact.networkId as any,
@@ -124,7 +123,10 @@ export async function signTxPlanArtifact(input: {
       }
     };
 
-    artifact.contentHash = calculateContentHash(artifact);
+    const contentHash = calculateContentHash(artifact);
+    artifact.signedId = `signed-${contentHash.slice(0, 16)}`;
+    artifact.contentHash = contentHash;
+
     return artifact;
   }
 

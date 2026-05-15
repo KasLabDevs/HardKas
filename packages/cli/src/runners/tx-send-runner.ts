@@ -75,7 +75,7 @@ export async function runTxSend(input: TxSendRunnerInput): Promise<TxSendRunnerR
     events.push({ type: "phase.completed", phase: "send", timestamp: Date.now() });
 
     await saveLocalnetState(simResult.state);
-    const receiptPath = await saveSimulatedReceipt(simResult.receipt);
+    const receiptPath = await saveSimulatedReceipt(simResult.receipt as any);
 
     // Create unified receipt
     const receipt: TxReceiptArtifact = {
@@ -87,13 +87,13 @@ export async function runTxSend(input: TxSendRunnerInput): Promise<TxSendRunnerR
       mode: "simulated",
       createdAt: new Date().toISOString(),
       status: "confirmed",
-      txId: simResult.receipt.txId,
+      txId: simResult.receipt.txId as any,
       sourceSignedId: signedArtifact.signedId,
       from: { address: signedArtifact.from.address },
       to: { address: signedArtifact.to.address },
       amountSompi: signedArtifact.amountSompi,
       feeSompi: simResult.receipt.feeSompi,
-      daaScore: simResult.receipt.daaScore.toString(),
+      daaScore: simResult.receipt.daaScore?.toString() || "0",
       submittedAt: simResult.receipt.createdAt,
       confirmedAt: simResult.receipt.createdAt,
       rpcUrl: "simulated://local"
@@ -162,7 +162,7 @@ export async function runTxSend(input: TxSendRunnerInput): Promise<TxSendRunnerR
       amountSompi: signedArtifact.amountSompi,
       feeSompi: signedArtifact.metadata?.estimatedFeeSompi || "0",
       submittedAt: new Date().toISOString(),
-      rpcUrl
+      ...(rpcUrl ? { rpcUrl } : {})
     };
 
     return {

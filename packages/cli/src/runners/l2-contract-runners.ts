@@ -102,7 +102,7 @@ export async function runL2ContractDeployPlan(options: L2ContractDeployPlanOptio
     createdAt: new Date().toISOString(),
     planId: "", // Placeholder
     l2Network: profile.name,
-    chainId: profile.chainId,
+    chainId,
     txType: "contract-deploy",
     request: {
       from: options.from,

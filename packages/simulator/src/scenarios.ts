@@ -33,6 +33,11 @@ function scenarioBlockHash(scenario: string, index: number): string {
   return createHash("sha256").update(`${scenario}:${index}`).digest("hex");
 }
 
+/**
+ * Creates a block for simulation.
+ * Intentionally uses Date.now() for timestampUs as this is a research-grade
+ * approximation and doesn't affect canonical hashing of simulated artifacts.
+ */
 function createBlock(hash: BlockHash, parents: BlockHash[], bits: number): SimBlock {
   return {
     header: {

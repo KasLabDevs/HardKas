@@ -24,6 +24,13 @@ export interface LocalnetState extends HardkasArtifactBase {
   utxos: LocalnetUtxo[];
   snapshots?: Snapshot[];
   dag?: SimulatedDag;
+  forkSource?: {
+    network: string;
+    rpcUrl: string;
+    daaScore: string;
+    forkedAt: string;
+    addresses: string[];
+  };
 }
 
 export interface SimulatedBlock {

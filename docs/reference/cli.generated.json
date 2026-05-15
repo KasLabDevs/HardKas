@@ -15,7 +15,7 @@
           "path": "hardkas accounts balance",
           "name": "balance",
           "aliases": [],
-          "description": "Show account balance",
+          "description": "Show account balance stable",
           "usage": "hardkas accounts balance [options] <identifier>",
           "arguments": [
             {
@@ -75,7 +75,7 @@
           "path": "hardkas accounts list",
           "name": "list",
           "aliases": [],
-          "description": "List available HardKAS accounts",
+          "description": "List available HardKAS accounts stable",
           "usage": "hardkas accounts list [options]",
           "arguments": [],
           "options": [
@@ -109,7 +109,7 @@
               "path": "hardkas accounts real change-password",
               "name": "change-password",
               "aliases": [],
-              "description": "Change password for an encrypted account",
+              "description": "Change password for an encrypted account stable",
               "usage": "hardkas accounts real change-password [options] <name>",
               "arguments": [
                 {
@@ -139,7 +139,7 @@
               "path": "hardkas accounts real generate",
               "name": "generate",
               "aliases": [],
-              "description": "Generate new real dev account(s) using Kaspa SDK",
+              "description": "Generate new real dev account(s) using Kaspa SDK stable",
               "usage": "hardkas accounts real generate [options]",
               "arguments": [],
               "options": [
@@ -220,7 +220,7 @@
               "path": "hardkas accounts real import",
               "name": "import",
               "aliases": [],
-              "description": "Import an account into the persistent store",
+              "description": "Import an account into the persistent store stable",
               "usage": "hardkas accounts real import [options]",
               "arguments": [],
               "options": [
@@ -315,7 +315,7 @@
               "path": "hardkas accounts real init",
               "name": "init",
               "aliases": [],
-              "description": "Initialize real dev account store",
+              "description": "Initialize real dev account store stable",
               "usage": "hardkas accounts real init [options]",
               "arguments": [],
               "options": [
@@ -430,7 +430,7 @@
           "path": "hardkas artifact explain",
           "name": "explain",
           "aliases": [],
-          "description": "Provide a human-readable operational summary of an artifact preview",
+          "description": "Provide a human-readable operational summary of an artifact stable",
           "usage": "hardkas artifact explain [options] <path>",
           "arguments": [
             {
@@ -438,14 +438,22 @@
               "description": ""
             }
           ],
-          "options": [],
+          "options": [
+            {
+              "flags": "--json",
+              "description": "Output as JSON",
+              "default": false,
+              "required": false,
+              "mandatory": false
+            }
+          ],
           "subcommands": []
         },
         {
           "path": "hardkas artifact lineage",
           "name": "lineage",
           "aliases": [],
-          "description": "Show the provenance and operational history of an artifact preview",
+          "description": "Show the provenance and operational history of an artifact stable",
           "usage": "hardkas artifact lineage [options] <path>",
           "arguments": [
             {
@@ -453,7 +461,15 @@
               "description": ""
             }
           ],
-          "options": [],
+          "options": [
+            {
+              "flags": "--json",
+              "description": "Output as JSON",
+              "default": false,
+              "required": false,
+              "mandatory": false
+            }
+          ],
           "subcommands": []
         },
         {
@@ -496,6 +512,24 @@
       ]
     },
     {
+      "path": "hardkas capabilities",
+      "name": "capabilities",
+      "aliases": [],
+      "description": "Show HardKAS capabilities and maturity level",
+      "usage": "hardkas capabilities [options]",
+      "arguments": [],
+      "options": [
+        {
+          "flags": "--json",
+          "description": "Output as stable JSON schema",
+          "default": false,
+          "required": false,
+          "mandatory": false
+        }
+      ],
+      "subcommands": []
+    },
+    {
       "path": "hardkas config",
       "name": "config",
       "aliases": [],
@@ -530,6 +564,38 @@
           "subcommands": []
         }
       ]
+    },
+    {
+      "path": "hardkas console",
+      "name": "console",
+      "aliases": [],
+      "description": "Open an interactive REPL with HardKAS SDK pre-loaded stable",
+      "usage": "hardkas console [options]",
+      "arguments": [],
+      "options": [
+        {
+          "flags": "--network <name>",
+          "description": "Network name",
+          "default": "simnet",
+          "required": true,
+          "mandatory": false
+        },
+        {
+          "flags": "--accounts <n>",
+          "description": "Number of simulated accounts",
+          "default": "3",
+          "required": true,
+          "mandatory": false
+        },
+        {
+          "flags": "--balance <sompi>",
+          "description": "Initial balance per account in sompi",
+          "default": "100000000000",
+          "required": true,
+          "mandatory": false
+        }
+      ],
+      "subcommands": []
     },
     {
       "path": "hardkas dag",
@@ -571,6 +637,199 @@
       ]
     },
     {
+      "path": "hardkas deploy",
+      "name": "deploy",
+      "aliases": [],
+      "description": "Track and manage deployments",
+      "usage": "hardkas deploy [options] [command]",
+      "arguments": [],
+      "options": [],
+      "subcommands": [
+        {
+          "path": "hardkas deploy history",
+          "name": "history",
+          "aliases": [],
+          "description": "Show deployment history across all networks stable",
+          "usage": "hardkas deploy history [options]",
+          "arguments": [],
+          "options": [
+            {
+              "flags": "--json",
+              "description": "Output as JSON",
+              "default": false,
+              "required": false,
+              "mandatory": false
+            }
+          ],
+          "subcommands": []
+        },
+        {
+          "path": "hardkas deploy inspect",
+          "name": "inspect",
+          "aliases": [],
+          "description": "Show full details of a deployment stable",
+          "usage": "hardkas deploy inspect [options] <label>",
+          "arguments": [
+            {
+              "name": "label",
+              "description": ""
+            }
+          ],
+          "options": [
+            {
+              "flags": "--network <name>",
+              "description": "Network",
+              "default": null,
+              "required": true,
+              "mandatory": true
+            },
+            {
+              "flags": "--json",
+              "description": "Output as JSON",
+              "default": false,
+              "required": false,
+              "mandatory": false
+            }
+          ],
+          "subcommands": []
+        },
+        {
+          "path": "hardkas deploy list",
+          "name": "list",
+          "aliases": [],
+          "description": "List all tracked deployments stable",
+          "usage": "hardkas deploy list [options]",
+          "arguments": [],
+          "options": [
+            {
+              "flags": "--network <name>",
+              "description": "Filter by network",
+              "default": null,
+              "required": true,
+              "mandatory": false
+            },
+            {
+              "flags": "--status <status>",
+              "description": "Filter by status",
+              "default": null,
+              "required": true,
+              "mandatory": false
+            },
+            {
+              "flags": "--json",
+              "description": "Output as JSON",
+              "default": false,
+              "required": false,
+              "mandatory": false
+            }
+          ],
+          "subcommands": []
+        },
+        {
+          "path": "hardkas deploy status",
+          "name": "status",
+          "aliases": [],
+          "description": "Check deployment status (query RPC if available) stable",
+          "usage": "hardkas deploy status [options] <label>",
+          "arguments": [
+            {
+              "name": "label",
+              "description": ""
+            }
+          ],
+          "options": [
+            {
+              "flags": "--network <name>",
+              "description": "Network",
+              "default": null,
+              "required": true,
+              "mandatory": true
+            },
+            {
+              "flags": "--verify",
+              "description": "Verify against RPC node",
+              "default": false,
+              "required": false,
+              "mandatory": false
+            },
+            {
+              "flags": "--json",
+              "description": "Output as JSON",
+              "default": false,
+              "required": false,
+              "mandatory": false
+            }
+          ],
+          "subcommands": []
+        },
+        {
+          "path": "hardkas deploy track",
+          "name": "track",
+          "aliases": [],
+          "description": "Create a deployment record for a transaction stable",
+          "usage": "hardkas deploy track [options] <label>",
+          "arguments": [
+            {
+              "name": "label",
+              "description": ""
+            }
+          ],
+          "options": [
+            {
+              "flags": "--network <name>",
+              "description": "Network where deployed",
+              "default": null,
+              "required": true,
+              "mandatory": true
+            },
+            {
+              "flags": "--tx-id <txId>",
+              "description": "Transaction ID",
+              "default": null,
+              "required": true,
+              "mandatory": false
+            },
+            {
+              "flags": "--plan <artifactId>",
+              "description": "Reference to plan artifact",
+              "default": null,
+              "required": true,
+              "mandatory": false
+            },
+            {
+              "flags": "--receipt <artifactId>",
+              "description": "Reference to receipt artifact",
+              "default": null,
+              "required": true,
+              "mandatory": false
+            },
+            {
+              "flags": "--status <status>",
+              "description": "Deployment status",
+              "default": "sent",
+              "required": true,
+              "mandatory": false
+            },
+            {
+              "flags": "--notes <text>",
+              "description": "Notes about this deployment",
+              "default": null,
+              "required": true,
+              "mandatory": false
+            },
+            {
+              "flags": "--json",
+              "description": "Output as JSON",
+              "default": false,
+              "required": false,
+              "mandatory": false
+            }
+          ],
+          "subcommands": []
+        }
+      ]
+    },
+    {
       "path": "hardkas dev",
       "name": "dev",
       "aliases": [],
@@ -592,10 +851,18 @@
       "path": "hardkas doctor",
       "name": "doctor",
       "aliases": [],
-      "description": "Perform a full system diagnostic and health report",
+      "description": "Perform a full system diagnostic and health report stable",
       "usage": "hardkas doctor [options]",
       "arguments": [],
-      "options": [],
+      "options": [
+        {
+          "flags": "--json",
+          "description": "Output results as stable JSON schema",
+          "default": false,
+          "required": false,
+          "mandatory": false
+        }
+      ],
       "subcommands": []
     },
     {
@@ -1249,6 +1516,63 @@
       ]
     },
     {
+      "path": "hardkas localnet",
+      "name": "localnet",
+      "aliases": [],
+      "description": "Manage localnet state and snapshots",
+      "usage": "hardkas localnet [options] [command]",
+      "arguments": [],
+      "options": [],
+      "subcommands": [
+        {
+          "path": "hardkas localnet fork",
+          "name": "fork",
+          "aliases": [],
+          "description": "Fork state from a real Kaspa network for local simulation preview",
+          "usage": "hardkas localnet fork [options]",
+          "arguments": [],
+          "options": [
+            {
+              "flags": "--network <name>",
+              "description": "Network to fork from",
+              "default": null,
+              "required": true,
+              "mandatory": true
+            },
+            {
+              "flags": "--addresses <addrs...>",
+              "description": "Only fetch UTXOs for these addresses",
+              "default": null,
+              "required": true,
+              "mandatory": false
+            },
+            {
+              "flags": "--at-daa-score <score>",
+              "description": "Fork at specific DAA score (default: latest)",
+              "default": null,
+              "required": true,
+              "mandatory": false
+            },
+            {
+              "flags": "--output <path>",
+              "description": "Save fork snapshot to file",
+              "default": null,
+              "required": true,
+              "mandatory": false
+            },
+            {
+              "flags": "--json",
+              "description": "Output as JSON",
+              "default": false,
+              "required": false,
+              "mandatory": false
+            }
+          ],
+          "subcommands": []
+        }
+      ]
+    },
+    {
       "path": "hardkas lock",
       "name": "lock",
       "aliases": [],
@@ -1261,7 +1585,7 @@
           "path": "hardkas lock clear",
           "name": "clear",
           "aliases": [],
-          "description": "Explicitly clear a lock (use with caution)",
+          "description": "Safely or forcibly clear a lock stable",
           "usage": "hardkas lock clear [options] <name>",
           "arguments": [
             {
@@ -1271,8 +1595,22 @@
           ],
           "options": [
             {
+              "flags": "--if-dead",
+              "description": "Only clear if the process is no longer running",
+              "default": false,
+              "required": false,
+              "mandatory": false
+            },
+            {
+              "flags": "--force",
+              "description": "Forcibly clear the lock even if the process is alive",
+              "default": false,
+              "required": false,
+              "mandatory": false
+            },
+            {
               "flags": "--yes",
-              "description": "Confirm clearing the lock without prompt",
+              "description": "Confirm clearing without prompt",
               "default": false,
               "required": false,
               "mandatory": false
@@ -1281,10 +1619,20 @@
           "subcommands": []
         },
         {
+          "path": "hardkas lock doctor",
+          "name": "doctor",
+          "aliases": [],
+          "description": "Analyze locks and identify stale or corrupted ones stable",
+          "usage": "hardkas lock doctor [options]",
+          "arguments": [],
+          "options": [],
+          "subcommands": []
+        },
+        {
           "path": "hardkas lock list",
           "name": "list",
           "aliases": [],
-          "description": "List all active workspace locks",
+          "description": "List all active workspace locks stable",
           "usage": "hardkas lock list [options]",
           "arguments": [],
           "options": [
@@ -1302,7 +1650,7 @@
           "path": "hardkas lock status",
           "name": "status",
           "aliases": [],
-          "description": "Show status of one or all locks",
+          "description": "Show status of one or all locks stable",
           "usage": "hardkas lock status [options] [name]",
           "arguments": [
             {
@@ -1314,6 +1662,68 @@
           "subcommands": []
         }
       ]
+    },
+    {
+      "path": "hardkas networks",
+      "name": "networks",
+      "aliases": [],
+      "description": "List configured networks stable",
+      "usage": "hardkas networks [options]",
+      "arguments": [],
+      "options": [
+        {
+          "flags": "--json",
+          "description": "Output as JSON",
+          "default": false,
+          "required": false,
+          "mandatory": false
+        }
+      ],
+      "subcommands": []
+    },
+    {
+      "path": "hardkas new",
+      "name": "new",
+      "aliases": [],
+      "description": "Create a new HardKAS project stable",
+      "usage": "hardkas new [options] <name>",
+      "arguments": [
+        {
+          "name": "name",
+          "description": ""
+        }
+      ],
+      "options": [
+        {
+          "flags": "--template <type>",
+          "description": "Project template",
+          "default": "basic",
+          "required": true,
+          "mandatory": false
+        },
+        {
+          "flags": "--network <name>",
+          "description": "Default network",
+          "default": "simnet",
+          "required": true,
+          "mandatory": false
+        },
+        {
+          "flags": "--accounts <n>",
+          "description": "Number of simulated accounts",
+          "default": "3",
+          "required": true,
+          "mandatory": false
+        },
+        {
+          "flags": "--skip-install",
+          "description": "Skip pnpm install",
+          "default": false,
+          "required": false,
+          "mandatory": false
+        }
+      ],
+      "subcommands": []
     },
     {
       "path": "hardkas node",
@@ -1860,7 +2270,7 @@
           "path": "hardkas query lineage",
           "name": "lineage",
           "aliases": [],
-          "description": "Traverse artifact lineage preview",
+          "description": "Traverse artifact lineage stable",
           "usage": "hardkas query lineage [options] [command]",
           "arguments": [],
           "options": [],
@@ -1979,7 +2389,7 @@
           "path": "hardkas query replay",
           "name": "replay",
           "aliases": [],
-          "description": "Inspect replay history and divergence preview",
+          "description": "Inspect replay history and divergence stable",
           "usage": "hardkas query replay [options] [command]",
           "arguments": [],
           "options": [],
@@ -2100,7 +2510,7 @@
           "path": "hardkas query store",
           "name": "store",
           "aliases": [],
-          "description": "Manage query store index alpha",
+          "description": "Manage query store index stable",
           "usage": "hardkas query store [options] [command]",
           "arguments": [],
           "options": [],
@@ -2131,6 +2541,24 @@
                   "flags": "--lock-timeout <ms>",
                   "description": "Lock wait timeout in ms",
                   "default": "30000",
+                  "required": true,
+                  "mandatory": false
+                }
+              ],
+              "subcommands": []
+            },
+            {
+              "path": "hardkas query store export",
+              "name": "export",
+              "aliases": [],
+              "description": "Export logical store state to JSON",
+              "usage": "hardkas query store export [options]",
+              "arguments": [],
+              "options": [
+                {
+                  "flags": "--output <path>",
+                  "description": "Output file path",
+                  "default": null,
                   "required": true,
                   "mandatory": false
                 }
@@ -2312,7 +2740,7 @@
           "path": "hardkas replay verify",
           "name": "verify",
           "aliases": [],
-          "description": "Verify replay invariants for a directory of artifacts",
+          "description": "Verify replay invariants for a directory of artifacts stable",
           "usage": "hardkas replay verify [options] <path>",
           "arguments": [
             {
@@ -2320,7 +2748,15 @@
               "description": ""
             }
           ],
-          "options": [],
+          "options": [
+            {
+              "flags": "--json",
+              "description": "Output as JSON",
+              "default": false,
+              "required": false,
+              "mandatory": false
+            }
+          ],
           "subcommands": []
         }
       ]
@@ -2418,7 +2854,7 @@
       "path": "hardkas run",
       "name": "run",
       "aliases": [],
-      "description": "Execute a TypeScript or JavaScript file with HardKAS SDK injected",
+      "description": "Execute a TypeScript or JavaScript file with HardKAS SDK injected stable",
       "usage": "hardkas run [options] <script>",
       "arguments": [
         {
@@ -2471,7 +2907,7 @@
           "path": "hardkas snapshot restore",
           "name": "restore",
           "aliases": [],
-          "description": "Restore localnet state from a snapshot",
+          "description": "Restore localnet state from a snapshot preview",
           "usage": "hardkas snapshot restore [options] <idOrName>",
           "arguments": [
             {
@@ -2479,14 +2915,22 @@
               "description": ""
             }
           ],
-          "options": [],
+          "options": [
+            {
+              "flags": "--json",
+              "description": "Output as JSON",
+              "default": false,
+              "required": false,
+              "mandatory": false
+            }
+          ],
           "subcommands": []
         },
         {
           "path": "hardkas snapshot verify",
           "name": "verify",
           "aliases": [],
-          "description": "Verify the integrity of a snapshot",
+          "description": "Verify the integrity of a snapshot preview",
           "usage": "hardkas snapshot verify [options] <idOrName>",
           "arguments": [
             {
@@ -2494,7 +2938,15 @@
               "description": ""
             }
           ],
-          "options": [],
+          "options": [
+            {
+              "flags": "--json",
+              "description": "Output as JSON",
+              "default": false,
+              "required": false,
+              "mandatory": false
+            }
+          ],
           "subcommands": []
         }
       ]
@@ -2534,9 +2986,23 @@
           "mandatory": false
         },
         {
-          "flags": "--reporter <reporter>",
-          "description": "Reporter to use",
-          "default": "default",
+          "flags": "--mass-report",
+          "description": "Show mass/fee report after test run",
+          "default": false,
+          "required": false,
+          "mandatory": false
+        },
+        {
+          "flags": "--mass-snapshot <label>",
+          "description": "Save mass snapshot for regression detection",
+          "default": null,
+          "required": true,
+          "mandatory": false
+        },
+        {
+          "flags": "--mass-compare <label>",
+          "description": "Compare against saved mass snapshot",
+          "default": null,
           "required": true,
           "mandatory": false
         }
@@ -2637,7 +3103,7 @@
           "path": "hardkas tx profile",
           "name": "profile",
           "aliases": [],
-          "description": "Show detailed mass and fee breakdown for a transaction plan",
+          "description": "Show detailed mass and fee breakdown for a transaction plan stable",
           "usage": "hardkas tx profile [options] <path>",
           "arguments": [
             {
@@ -2645,14 +3111,22 @@
               "description": ""
             }
           ],
-          "options": [],
+          "options": [
+            {
+              "flags": "--json",
+              "description": "Output as JSON",
+              "default": false,
+              "required": false,
+              "mandatory": false
+            }
+          ],
           "subcommands": []
         },
         {
           "path": "hardkas tx receipt",
           "name": "receipt",
           "aliases": [],
-          "description": "Show transaction receipt",
+          "description": "Show transaction receipt stable",
           "usage": "hardkas tx receipt [options] <txId>",
           "arguments": [
             {
@@ -2745,6 +3219,13 @@
               "description": "Output as JSON",
               "default": false,
               "required": false,
+              "mandatory": false
+            },
+            {
+              "flags": "--track <label>",
+              "description": "Auto-track deployment with this label",
+              "default": null,
+              "required": true,
               "mandatory": false
             }
           ],

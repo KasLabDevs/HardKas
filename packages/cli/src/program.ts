@@ -16,6 +16,12 @@ import { registerTestCommands } from "./commands/test.js";
 import { registerDoctorCommand } from "./commands/doctor.js";
 import { registerFaucetCommand } from "./commands/faucet.js";
 import { registerRunCommand } from "./commands/run.js";
+import { registerCapabilitiesCommand } from "./commands/capabilities.js";
+import { registerNewCommand } from "./commands/new.js";
+import { registerConsoleCommand } from "./commands/console.js";
+import { registerNetworksCommand } from "./commands/networks.js";
+import { registerLocalnetCommands } from "./commands/localnet.js";
+import { registerDeployCommands } from "./commands/deploy.js";
 
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
@@ -61,6 +67,12 @@ export function buildHardkasProgram(options?: { forDocs?: boolean }): Command {
   registerFaucetCommand(program);
   registerRunCommand(program);
   registerLockCommands(program);
+  registerCapabilitiesCommand(program);
+  registerNewCommand(program);
+  registerConsoleCommand(program);
+  registerNetworksCommand(program);
+  registerLocalnetCommands(program);
+  registerDeployCommands(program);
 
   // Optional: Add a docs command if we want to expose it via CLI
   // We only do this if requested and if it has no side effects.

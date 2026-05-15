@@ -19,20 +19,24 @@ Artifact verification in HardKAS is designed to prove **internal consistency** a
 
 ## 2. Deterministic Identity
 
-### Canonical Hashing
-HardKAS uses a deterministic serialization algorithm (`canonicalStringify`) to ensure that hashes are stable across different platforms (Node.js versions, OS, CI).
+### Canonical Hashing (v3)
+HardKAS uses a deterministic serialization algorithm (`canonicalStringify`) to ensure that hashes are stable across all platforms (Windows, Linux, macOS) and environments (CI, local, docker).
 
 #### Rules:
 - **Recursive Sorting**: All object keys are sorted alphabetically.
-- **BigInt Handling**: BigInts are serialized as **JSON strings** (e.g., `"100"`) to preserve precision and distinguish them from Number types.
+- **Unicode Normalization (NFC)**: All strings are normalized to **NFC** (Normalization Form Canonical Composition) before hashing. This ensures that characters like `é` (U+00E9) are treated identically regardless of whether the OS uses decomposed or composed forms.
+- **Line-Ending Normalization (LF)**: All strings containing newlines are normalized to use **LF** (`\n`). This prevents hash divergence between Windows (`\r\n`) and Unix (`\n`) environments.
+- **BigInt Type-Safety**: BigInts are serialized with a distinct marker or as strings (depending on `hashVersion`) to preserve precision and distinguish them from Number types.
 - **Exclusion List**: Non-semantic metadata is excluded from the hash:
-  - `contentHash`, `artifactId` (The result of hashing).
+  - `contentHash`, `artifactId`, `signature` (Results of hashing/signing).
   - `lineage` block (Provenance metadata).
-  - `createdAt`, `rpcUrl`, `hardkasVersion`, `file_path`.
-- **Semantic Inclusion**: The `version` field (schema version) **is included** in the hash. A change in artifact schema version is a semantic identity change.
+  - `createdAt`, `rpcUrl`, `hardkasVersion`, `file_path`, `networkId` (When acting as ambient context).
+- **Semantic Inclusion**: The `version` (schema) and `hashVersion` (algorithm) are included to ensure identity stability.
 
 ### Hash Evolution
-The `contentHash` semantics are tied to the `hashVersion` field. If the canonicalization rules evolve, the `hashVersion` will be incremented to prevent silent hash collisions or mismatches with historical artifacts.
+- **v1**: Basic sorting, no BigInt type markers.
+- **v2**: BigInt type markers, primitive sorting.
+- **v3 (Current)**: **NFC Normalization** + **Newline Normalization**. This is the standard for **HARDENED ALPHA** cross-platform reproducibility.
 
 ## 3. The Lineage Chain
 
@@ -48,8 +52,12 @@ graph TD
 ### Lineage Invariants
 - **Consistency**: `lineageId` and `rootArtifactId` must remain constant across the entire flow.
 - **Continuity**: `parentArtifactId` must match the `artifactId` of the previous step.
-- **Monotonicity**: The `sequence` number should ideally increase with each step (warnings are issued for non-monotonic jumps in branches/merges).
+- **Monotonicity**: The `sequence` number must strictly increase.
 - **Isolation**: Network and Mode must match between parent and child.
+- **Adversarial Hardening**:
+  - **No Cycles**: Lineage cannot form a directed cycle.
+  - **No Cross-Network Parentage**: A `mainnet` artifact cannot have a `simnet` parent.
+  - **Strict Hash-Linkage**: Hash mismatches in the parent link are treated as fatal corruption.
 
 ## 4. Semantic Verification
 

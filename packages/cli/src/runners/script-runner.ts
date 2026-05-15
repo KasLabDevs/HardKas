@@ -3,6 +3,7 @@
 import { resolve, dirname } from "node:path";
 import { existsSync, unlinkSync } from "node:fs";
 import { execSync } from "node:child_process";
+import { loadHardkasConfig } from "@hardkas/config";
 import { tmpdir } from "node:os";
 
 export async function runScript(script: string, opts: {
@@ -18,19 +19,43 @@ export async function runScript(script: string, opts: {
     process.exit(1);
   }
 
-  // Build a wrapper that creates the harness and injects it as global
-  const wrapperCode = `
+  const { config } = await loadHardkasConfig();
+  const netConfig = config.networks?.[opts.network] || { kind: "simulated" };
+  const isSimulated = netConfig.kind === "simulated";
+
+  // Build a wrapper that creates the harness or RPC client and injects it as global
+  let injectionCode = "";
+  if (opts.harness) {
+    if (isSimulated) {
+      injectionCode = `
 import { createTestHarness } from "@hardkas/testing/harness";
+const hardkas = createTestHarness({
+  accounts: ${parseInt(opts.accounts)},
+  initialBalance: ${opts.balance}n,
+  networkId: "${opts.network}",
+});
+(globalThis as any).hardkas = hardkas;
+`;
+    } else {
+      const rpcUrl = (netConfig as any).rpcUrl;
+      const networkId = (netConfig as any).network || opts.network;
+      injectionCode = `
+import { KaspaRpcClient } from "@hardkas/kaspa-rpc";
+const rpc = new KaspaRpcClient({ url: "${rpcUrl}" });
+(globalThis as any).hardkas = {
+  network: "${opts.network}",
+  networkId: "${networkId}",
+  rpcUrl: "${rpcUrl}",
+  rpc: rpc
+};
+`;
+    }
+  }
+
+  const wrapperCode = `
+${injectionCode}
 (async () => {
   try {
-    ${opts.harness ? `
-    const hardkas = createTestHarness({
-      accounts: ${parseInt(opts.accounts)},
-      initialBalance: ${opts.balance}n,
-      networkId: "${opts.network}",
-    });
-    (globalThis as any).hardkas = hardkas;
-    ` : ""}
     await import("file://${scriptPath.replace(/\\/g, "/")}");
   } catch (err) {
     console.error(err);

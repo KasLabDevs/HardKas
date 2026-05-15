@@ -29,22 +29,18 @@ Sources analyzed:
 | README.md | `hardkas example list` | Quickstart | — | **EXISTS** | Registered in `misc.ts`. |
 | docs/cli.md | `hardkas doctor` | Diagnostics | — | **EXISTS** | Real and functional command. |
 | docs/cli.md | `hardkas query store sync` | Store Sync | — | **EXISTS** | Suggested as `sync` or `rebuild` in code and docs. |
-| docs/cli.md | `hardkas query store sql` | Raw Query | — | **EXISTS** | Recently implemented raw SQL query. |
+| docs/cli.md | `hardkas query store sql` | Raw Query | — | **EXISTS** | Implemented and functional. |
 | docs/cli.md | `hardkas tx trace` | Tracing | `<txId>` | **DISABLED** | Registered but intentionally blocked. |
 
 ## 2. Real CLI Commands Missing From Docs
 
 | Group | Real command | Functional status | Source file | Should be documented in | Priority |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| query | `hardkas query store rebuild` | 🟢 VERIFIED | `query.ts` | `docs/cli.md` | **HIGH** |
-| query | `hardkas query events` | 🟢 VERIFIED | `query.ts` | `docs/query-layer.md` | **HIGH** |
-| accounts| `hardkas accounts real [command]` | 🟢 VERIFIED | `accounts.ts` | `README.md` (Keystore) | **MEDIUM** |
-| faucet | `hardkas faucet` | 🟢 VERIFIED | `faucet.ts` | `README.md` | **MEDIUM** |
-| snapshot| `hardkas snapshot [command]` | 🟡 PARTIAL | `snapshot.ts` | `docs/cli.md` | **MEDIUM** |
-| config | `hardkas config show` | 🟢 VERIFIED | `config.ts` | `README.md` | **MEDIUM** |
-| replay | `hardkas replay verify` | 🟢 VERIFIED | `replay.ts` | `docs/cli.md` | **LOW** |
-| l2 | `hardkas l2 [command]` | 🟡 PARTIAL | `l2.ts` | `docs/l2-guide.md` (TBD) | **MEDIUM** |
-| run | `hardkas run` | 🟢 VERIFIED | `run.ts` | `README.md` | **HIGH** [NEW] |
+| query | `hardkas query store rebuild` | 🟢 VERIFIED | `query.ts` | `docs/cli.md` | **RESOLVED** |
+| query | `hardkas query events` | 🟢 VERIFIED | `query.ts` | `docs/query-layer.md` | **RESOLVED** |
+| query | `hardkas query store export` | 🟢 VERIFIED | `query.ts` | `docs/query-layer.md` | **RESOLVED** |
+| accounts| `hardkas accounts real [command]` | 🟢 VERIFIED | `accounts.ts` | `README.md` | **RESOLVED** |
+| run | `hardkas run` | 🟢 VERIFIED | `run.ts` | `README.md` | **RESOLVED** |
 
 ## 3. Documented But Not Registered
 
@@ -102,12 +98,12 @@ Sources analyzed:
 ## 8. Recommendations
 
 ### Critical
-1. **Sync `index` -> `rebuild`**: This is the most visible mismatch causing direct user errors.
-2. **Update `what-actually-works.md`**: The Query Store IS already connected. Keeping it as "Broken" discourages the use of one of the best features in the repo.
+1. **Sync `index` -> `rebuild`**: **RESOLVED**.
+2. **Update `what-actually-works.md`**: **RESOLVED**.
 
 ### High
-1. **Generate CLI Reference**: Automate documentation generation from the Commander registry to avoid future desynchronization.
-2. **Badge Status in README**: Copy badges from `cli-command-status.md` to the Quickstart section.
+1. **Generate CLI Reference**: **RESOLVED** (`pnpm docs:generate-cli` integrated).
+2. **Badge Status in README**: **RESOLVED**.
 
 ## Checklist
 - [x] Extract README commands

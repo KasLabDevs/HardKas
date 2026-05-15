@@ -393,6 +393,9 @@ importers:
       '@hardkas/core':
         specifier: workspace:*
         version: link:../core
+      '@hardkas/kaspa-rpc':
+        specifier: workspace:*
+        version: link:../kaspa-rpc
       '@hardkas/query':
         specifier: workspace:*
         version: link:../query

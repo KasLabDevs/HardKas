@@ -75,6 +75,12 @@ export class TxSimulator {
   }
 }
 
+/**
+ * Creates a non-deterministic trace ID for debug purposes.
+ * Intentionally uses Date.now() + Math.random().
+ * Trace IDs are debug metadata only — they do NOT enter
+ * canonical hashing or artifact identity.
+ */
 export function createTraceId(prefix = "trace"): string {
   return `${prefix}_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
 }

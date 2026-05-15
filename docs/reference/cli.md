@@ -37,7 +37,7 @@ No arguments.
 
 ## hardkas accounts balance
 
-Show account balance
+Show account balance stable
 
 ### Usage
 
@@ -87,7 +87,7 @@ hardkas accounts fund [options] <identifier>
 
 ## hardkas accounts list
 
-List available HardKAS accounts
+List available HardKAS accounts stable
 
 ### Usage
 
@@ -139,7 +139,7 @@ No arguments.
 
 ## hardkas accounts real change-password
 
-Change password for an encrypted account
+Change password for an encrypted account stable
 
 ### Usage
 
@@ -164,7 +164,7 @@ hardkas accounts real change-password [options] <name>
 
 ## hardkas accounts real generate
 
-Generate new real dev account(s) using Kaspa SDK
+Generate new real dev account(s) using Kaspa SDK stable
 
 ### Usage
 
@@ -195,7 +195,7 @@ No arguments.
 
 ## hardkas accounts real import
 
-Import an account into the persistent store
+Import an account into the persistent store stable
 
 ### Usage
 
@@ -228,7 +228,7 @@ No arguments.
 
 ## hardkas accounts real init
 
-Initialize real dev account store
+Initialize real dev account store stable
 
 ### Usage
 
@@ -332,7 +332,7 @@ No arguments.
 
 ## hardkas artifact explain
 
-Provide a human-readable operational summary of an artifact preview
+Provide a human-readable operational summary of an artifact stable
 
 ### Usage
 
@@ -342,7 +342,9 @@ hardkas artifact explain [options] <path>
 
 ### Options
 
-No options.
+| Flag | Description | Default |
+| :--- | :--- | :--- |
+| `--json` | Output as JSON | false |
 
 ### Arguments
 
@@ -354,7 +356,7 @@ No options.
 
 ## hardkas artifact lineage
 
-Show the provenance and operational history of an artifact preview
+Show the provenance and operational history of an artifact stable
 
 ### Usage
 
@@ -364,7 +366,9 @@ hardkas artifact lineage [options] <path>
 
 ### Options
 
-No options.
+| Flag | Description | Default |
+| :--- | :--- | :--- |
+| `--json` | Output as JSON | false |
 
 ### Arguments
 
@@ -397,6 +401,28 @@ hardkas artifact verify [options] <path>
 | Argument | Description |
 | :--- | :--- |
 | `path` |  |
+
+---
+
+## hardkas capabilities
+
+Show HardKAS capabilities and maturity level
+
+### Usage
+
+```bash
+hardkas capabilities [options]
+```
+
+### Options
+
+| Flag | Description | Default |
+| :--- | :--- | :--- |
+| `--json` | Output as stable JSON schema | false |
+
+### Arguments
+
+No arguments.
 
 ---
 
@@ -440,6 +466,30 @@ hardkas config show [options]
 | :--- | :--- | :--- |
 | `--config <path>` | Path to config file |  |
 | `--json` | Output as JSON | false |
+
+### Arguments
+
+No arguments.
+
+---
+
+## hardkas console
+
+Open an interactive REPL with HardKAS SDK pre-loaded stable
+
+### Usage
+
+```bash
+hardkas console [options]
+```
+
+### Options
+
+| Flag | Description | Default |
+| :--- | :--- | :--- |
+| `--network <name>` | Network name | simnet |
+| `--accounts <n>` | Number of simulated accounts | 3 |
+| `--balance <sompi>` | Initial balance per account in sompi | 100000000000 |
 
 ### Arguments
 
@@ -514,6 +564,161 @@ No arguments.
 
 ---
 
+## hardkas deploy
+
+Track and manage deployments
+
+### Usage
+
+```bash
+hardkas deploy [options] [command]
+```
+
+### Options
+
+No options.
+
+### Arguments
+
+No arguments.
+
+### Subcommands
+
+- [hardkas deploy history](#hardkas-deploy-history)
+- [hardkas deploy inspect](#hardkas-deploy-inspect)
+- [hardkas deploy list](#hardkas-deploy-list)
+- [hardkas deploy status](#hardkas-deploy-status)
+- [hardkas deploy track](#hardkas-deploy-track)
+
+---
+
+## hardkas deploy history
+
+Show deployment history across all networks stable
+
+### Usage
+
+```bash
+hardkas deploy history [options]
+```
+
+### Options
+
+| Flag | Description | Default |
+| :--- | :--- | :--- |
+| `--json` | Output as JSON | false |
+
+### Arguments
+
+No arguments.
+
+---
+
+## hardkas deploy inspect
+
+Show full details of a deployment stable
+
+### Usage
+
+```bash
+hardkas deploy inspect [options] <label>
+```
+
+### Options
+
+| Flag | Description | Default |
+| :--- | :--- | :--- |
+| `--network <name>` | Network |  |
+| `--json` | Output as JSON | false |
+
+### Arguments
+
+| Argument | Description |
+| :--- | :--- |
+| `label` |  |
+
+---
+
+## hardkas deploy list
+
+List all tracked deployments stable
+
+### Usage
+
+```bash
+hardkas deploy list [options]
+```
+
+### Options
+
+| Flag | Description | Default |
+| :--- | :--- | :--- |
+| `--network <name>` | Filter by network |  |
+| `--status <status>` | Filter by status |  |
+| `--json` | Output as JSON | false |
+
+### Arguments
+
+No arguments.
+
+---
+
+## hardkas deploy status
+
+Check deployment status (query RPC if available) stable
+
+### Usage
+
+```bash
+hardkas deploy status [options] <label>
+```
+
+### Options
+
+| Flag | Description | Default |
+| :--- | :--- | :--- |
+| `--network <name>` | Network |  |
+| `--verify` | Verify against RPC node | false |
+| `--json` | Output as JSON | false |
+
+### Arguments
+
+| Argument | Description |
+| :--- | :--- |
+| `label` |  |
+
+---
+
+## hardkas deploy track
+
+Create a deployment record for a transaction stable
+
+### Usage
+
+```bash
+hardkas deploy track [options] <label>
+```
+
+### Options
+
+| Flag | Description | Default |
+| :--- | :--- | :--- |
+| `--network <name>` | Network where deployed |  |
+| `--tx-id <txId>` | Transaction ID |  |
+| `--plan <artifactId>` | Reference to plan artifact |  |
+| `--receipt <artifactId>` | Reference to receipt artifact |  |
+| `--status <status>` | Deployment status | sent |
+| `--notes <text>` | Notes about this deployment |  |
+| `--json` | Output as JSON | false |
+
+### Arguments
+
+| Argument | Description |
+| :--- | :--- |
+| `label` |  |
+
+---
+
 ## hardkas dev
 
 Start development environment
@@ -538,7 +743,7 @@ No arguments.
 
 ## hardkas doctor
 
-Perform a full system diagnostic and health report
+Perform a full system diagnostic and health report stable
 
 ### Usage
 
@@ -548,7 +753,9 @@ hardkas doctor [options]
 
 ### Options
 
-No options.
+| Flag | Description | Default |
+| :--- | :--- | :--- |
+| `--json` | Output results as stable JSON schema | false |
 
 ### Arguments
 
@@ -1182,6 +1389,56 @@ hardkas l2 tx status [options] <txHash>
 
 ---
 
+## hardkas localnet
+
+Manage localnet state and snapshots
+
+### Usage
+
+```bash
+hardkas localnet [options] [command]
+```
+
+### Options
+
+No options.
+
+### Arguments
+
+No arguments.
+
+### Subcommands
+
+- [hardkas localnet fork](#hardkas-localnet-fork)
+
+---
+
+## hardkas localnet fork
+
+Fork state from a real Kaspa network for local simulation preview
+
+### Usage
+
+```bash
+hardkas localnet fork [options]
+```
+
+### Options
+
+| Flag | Description | Default |
+| :--- | :--- | :--- |
+| `--network <name>` | Network to fork from |  |
+| `--addresses <addrs...>` | Only fetch UTXOs for these addresses |  |
+| `--at-daa-score <score>` | Fork at specific DAA score (default: latest) |  |
+| `--output <path>` | Save fork snapshot to file |  |
+| `--json` | Output as JSON | false |
+
+### Arguments
+
+No arguments.
+
+---
+
 ## hardkas lock
 
 Manage HardKAS workspace locks
@@ -1203,6 +1460,7 @@ No arguments.
 ### Subcommands
 
 - [hardkas lock clear](#hardkas-lock-clear)
+- [hardkas lock doctor](#hardkas-lock-doctor)
 - [hardkas lock list](#hardkas-lock-list)
 - [hardkas lock status](#hardkas-lock-status)
 
@@ -1210,7 +1468,7 @@ No arguments.
 
 ## hardkas lock clear
 
-Explicitly clear a lock (use with caution)
+Safely or forcibly clear a lock stable
 
 ### Usage
 
@@ -1222,7 +1480,9 @@ hardkas lock clear [options] <name>
 
 | Flag | Description | Default |
 | :--- | :--- | :--- |
-| `--yes` | Confirm clearing the lock without prompt | false |
+| `--if-dead` | Only clear if the process is no longer running | false |
+| `--force` | Forcibly clear the lock even if the process is alive | false |
+| `--yes` | Confirm clearing without prompt | false |
 
 ### Arguments
 
@@ -1232,9 +1492,29 @@ hardkas lock clear [options] <name>
 
 ---
 
+## hardkas lock doctor
+
+Analyze locks and identify stale or corrupted ones stable
+
+### Usage
+
+```bash
+hardkas lock doctor [options]
+```
+
+### Options
+
+No options.
+
+### Arguments
+
+No arguments.
+
+---
+
 ## hardkas lock list
 
-List all active workspace locks
+List all active workspace locks stable
 
 ### Usage
 
@@ -1256,7 +1536,7 @@ No arguments.
 
 ## hardkas lock status
 
-Show status of one or all locks
+Show status of one or all locks stable
 
 ### Usage
 
@@ -1267,6 +1547,55 @@ hardkas lock status [options] [name]
 ### Options
 
 No options.
+
+### Arguments
+
+| Argument | Description |
+| :--- | :--- |
+| `name` |  |
+
+---
+
+## hardkas networks
+
+List configured networks stable
+
+### Usage
+
+```bash
+hardkas networks [options]
+```
+
+### Options
+
+| Flag | Description | Default |
+| :--- | :--- | :--- |
+| `--json` | Output as JSON | false |
+
+### Arguments
+
+No arguments.
+
+---
+
+## hardkas new
+
+Create a new HardKAS project stable
+
+### Usage
+
+```bash
+hardkas new [options] <name>
+```
+
+### Options
+
+| Flag | Description | Default |
+| :--- | :--- | :--- |
+| `--template <type>` | Project template | basic |
+| `--network <name>` | Default network | simnet |
+| `--accounts <n>` | Number of simulated accounts | 3 |
+| `--skip-install` | Skip pnpm install | false |
 
 ### Arguments
 
@@ -1758,7 +2087,7 @@ No arguments.
 
 ## hardkas query lineage
 
-Traverse artifact lineage preview
+Traverse artifact lineage stable
 
 ### Usage
 
@@ -1859,7 +2188,7 @@ No arguments.
 
 ## hardkas query replay
 
-Inspect replay history and divergence preview
+Inspect replay history and divergence stable
 
 ### Usage
 
@@ -1982,7 +2311,7 @@ hardkas query replay summary [options] <txId>
 
 ## hardkas query store
 
-Manage query store index alpha
+Manage query store index stable
 
 ### Usage
 
@@ -2001,6 +2330,7 @@ No arguments.
 ### Subcommands
 
 - [hardkas query store doctor](#hardkas-query-store-doctor)
+- [hardkas query store export](#hardkas-query-store-export)
 - [hardkas query store migrate](#hardkas-query-store-migrate)
 - [hardkas query store rebuild](#hardkas-query-store-rebuild)
 - [hardkas query store sql](#hardkas-query-store-sql)
@@ -2025,6 +2355,28 @@ hardkas query store doctor [options]
 | `--migrate` | Apply pending migrations if found | false |
 | `--wait-lock` | Wait for workspace lock if held | false |
 | `--lock-timeout <ms>` | Lock wait timeout in ms | 30000 |
+
+### Arguments
+
+No arguments.
+
+---
+
+## hardkas query store export
+
+Export logical store state to JSON
+
+### Usage
+
+```bash
+hardkas query store export [options]
+```
+
+### Options
+
+| Flag | Description | Default |
+| :--- | :--- | :--- |
+| `--output <path>` | Output file path |  |
 
 ### Arguments
 
@@ -2182,7 +2534,7 @@ No arguments.
 
 ## hardkas replay verify
 
-Verify replay invariants for a directory of artifacts
+Verify replay invariants for a directory of artifacts stable
 
 ### Usage
 
@@ -2192,7 +2544,9 @@ hardkas replay verify [options] <path>
 
 ### Options
 
-No options.
+| Flag | Description | Default |
+| :--- | :--- | :--- |
+| `--json` | Output as JSON | false |
 
 ### Arguments
 
@@ -2359,7 +2713,7 @@ No options.
 
 ## hardkas run
 
-Execute a TypeScript or JavaScript file with HardKAS SDK injected
+Execute a TypeScript or JavaScript file with HardKAS SDK injected stable
 
 ### Usage
 
@@ -2411,7 +2765,7 @@ No arguments.
 
 ## hardkas snapshot restore
 
-Restore localnet state from a snapshot
+Restore localnet state from a snapshot preview
 
 ### Usage
 
@@ -2421,7 +2775,9 @@ hardkas snapshot restore [options] <idOrName>
 
 ### Options
 
-No options.
+| Flag | Description | Default |
+| :--- | :--- | :--- |
+| `--json` | Output as JSON | false |
 
 ### Arguments
 
@@ -2433,7 +2789,7 @@ No options.
 
 ## hardkas snapshot verify
 
-Verify the integrity of a snapshot
+Verify the integrity of a snapshot preview
 
 ### Usage
 
@@ -2443,7 +2799,9 @@ hardkas snapshot verify [options] <idOrName>
 
 ### Options
 
-No options.
+| Flag | Description | Default |
+| :--- | :--- | :--- |
+| `--json` | Output as JSON | false |
 
 ### Arguments
 
@@ -2470,7 +2828,9 @@ hardkas test [options] [files...]
 | `--network <network>` | Network to test against | simnet |
 | `--watch` | Watch for changes | false |
 | `--json` | Output results as JSON | false |
-| `--reporter <reporter>` | Reporter to use | default |
+| `--mass-report` | Show mass/fee report after test run | false |
+| `--mass-snapshot <label>` | Save mass snapshot for regression detection |  |
+| `--mass-compare <label>` | Compare against saved mass snapshot |  |
 
 ### Arguments
 
@@ -2543,7 +2903,7 @@ No arguments.
 
 ## hardkas tx profile
 
-Show detailed mass and fee breakdown for a transaction plan
+Show detailed mass and fee breakdown for a transaction plan stable
 
 ### Usage
 
@@ -2553,7 +2913,9 @@ hardkas tx profile [options] <path>
 
 ### Options
 
-No options.
+| Flag | Description | Default |
+| :--- | :--- | :--- |
+| `--json` | Output as JSON | false |
 
 ### Arguments
 
@@ -2565,7 +2927,7 @@ No options.
 
 ## hardkas tx receipt
 
-Show transaction receipt
+Show transaction receipt stable
 
 ### Usage
 
@@ -2610,6 +2972,7 @@ hardkas tx send [options] [signedPath]
 | `--wait-lock` | Wait for workspace lock if held | false |
 | `--lock-timeout <ms>` | Lock wait timeout in ms | 30000 |
 | `--json` | Output as JSON | false |
+| `--track <label>` | Auto-track deployment with this label |  |
 
 ### Arguments
 
