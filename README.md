@@ -226,18 +226,18 @@ hardkas artifact verify .hardkas/artifacts/ --recursive
 ### Run examples
 
 ```bash
-pnpm example:ci              # CI workflow demo
-pnpm example:dag-reorg        # DAG reorg simulation
-hardkas example list     # See all available examples
+pnpm example:ci
+pnpm example:dag-reorg
+hardkas example list
 ```
 
 ### CLI Reference
 
 ```bash
-hardkas --help           # All command groups
-hardkas tx --help        # Transaction commands
-hardkas artifact --help  # Artifact verification
-hardkas rpc --help       # RPC diagnostics
+hardkas --help
+hardkas tx --help
+hardkas artifact --help
+hardkas rpc --help
 ```
 
 

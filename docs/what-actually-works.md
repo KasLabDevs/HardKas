@@ -41,7 +41,7 @@ This document intentionally separates:
 | **Query Store (SQLite)** | STABLE | The `QueryEngine` uses SQLite by default. Configured with `synchronous = FULL` and **workspace locking**. Supports **atomic migrations**, **rebuild**, and **deterministic JSON export**. Explicitly a rebuildable cache (artifacts remain source of truth). |
 | **Artifact Determinism** | STABLE | **Type-safe canonical hashing (v3)**. Includes NFC Unicode normalization and CRLF/LF normalization. Version-aware identity (schema changes alter hashes). |
 | **Lineage Integrity** | STABLE | Strict provenance chains (parent-linkage) and network/mode isolation. Verified through **Adversarial Verification** tests (cycles, cross-network). |
-| **Workspace Locking** | STABLE | Prevents concurrent writes. Includes **robust recovery UX** (`hardkas lock doctor`, `lock clear --if-dead`) verified against process crashes (SIGKILL). |
+| **Workspace Locking** | STABLE | Prevents concurrent writes. Includes **robust recovery UX** (`hardkas lock doctor`, `hardkas lock clear --if-dead`) verified against process crashes (SIGKILL). |
 | **Secret Redaction** | STABLE | Automatic recursive redaction of secrets in CLI logs and errors. |
 | **Gitignore Hardening** | STABLE | `hardkas init` automatically adds `.hardkas/` to `.gitignore`. |
 | **DAG Tooling** | EXPERIMENTAL | Implements `ApproxGhostdagEngine`. It is a structural research model for topological concept alignment, NOT bit-for-bit consensus parity. |

@@ -11,7 +11,7 @@ Systems that are implemented, tested, and relied upon.
 
 ### Core Infrastructure
 - **Atomic persistence**: All canonical writes use writeFileAtomic (temp+rename+fsync). Zero direct writes to canonical state.
-- **Workspace locks**: O_EXCL atomic acquisition, PID liveness checks, stale detection (throws, doesn't auto-break), deterministic ordering. CLI: `hardkas lock list/status/clear`.
+- **Workspace locks**: O_EXCL atomic acquisition, PID liveness checks, stale detection (throws, doesn't auto-break), deterministic ordering. CLI: `hardkas lock list`, `hardkas lock status`, `hardkas lock clear`.
 - **Corruption detection**: 27 machine-readable CorruptionCode values with severity, path, and line numbers.
 - **Secret redaction**: `maskSecrets()` applied in all CLI error paths including stack traces.
 - **Mainnet guards**: Hard refusal for signing/faucet/fund without explicit `--allow-mainnet-signing`.
@@ -36,7 +36,7 @@ Systems that are implemented, tested, and relied upon.
 - **`hardkas run script.ts`**: Script runner with harness injection via tsx.
 - **`hardkas test --mass-report`**: Transaction mass/fee reporting integrated in test runner.
 - **`hardkas networks`**: Network registry with hierarchical resolution (CLI > config > built-in).
-- **`hardkas deploy track/list/inspect/status/history`**: Local deployment tracking with content-addressed records.
+- **Deployments**: `hardkas deploy track`, `hardkas deploy list`, `hardkas deploy inspect`, `hardkas deploy status`, `hardkas deploy history`. Local deployment tracking with content-addressed records.
 
 ### Query & Storage
 - **SQLite query store**: Auto-discovery, migrations with checksums, transactional, rebuildable read model.
