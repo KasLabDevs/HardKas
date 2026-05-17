@@ -1,6 +1,6 @@
 {
   "proofVersion": "repro-v0",
-  "hardkasVersion": "0.3.0-alpha",
+  "hardkasVersion": "0.4.0-alpha",
   "artifacts": {
     "l1Plan": "35c7e8377ce183957eded425952f02a67806475f077c6bfe2ffe6364484a4c3d",
     "l1Signed": "a24ad0cae110f0ba62f63c6cf25bc5d8b04276fcd577925044525acbc44ba275",

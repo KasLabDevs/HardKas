@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
-import { loadSessionStore, createSession, setActiveSession, getActiveSession } from "../src/store.js";
+import { loadSessionStore, loadSessionStoreStrict, createSession, setActiveSession, getActiveSession } from "../src/store.js";
 import fs from "node:fs";
 import path from "node:path";
 import os from "node:os";
@@ -91,5 +91,33 @@ describe("Session Store", () => {
     sessions.forEach(s => {
       expect(store.sessions[s.name]).toBeDefined();
     });
+  });
+
+  it("loadSessionStoreStrict throws an error on corrupted session store data", () => {
+    const sessionFile = path.join(tempDir, ".hardkas", "sessions.json");
+    fs.mkdirSync(path.dirname(sessionFile), { recursive: true });
+    fs.writeFileSync(sessionFile, "not-json");
+    
+    expect(() => loadSessionStoreStrict(tempDir)).toThrow("Invalid session store");
+  });
+
+  it("mutating operations refuse to overwrite a corrupted sessions file and throw a validation error", async () => {
+    const sessionFile = path.join(tempDir, ".hardkas", "sessions.json");
+    fs.mkdirSync(path.dirname(sessionFile), { recursive: true });
+    fs.writeFileSync(sessionFile, "not-json");
+
+    const newSession = {
+      name: "new-session",
+      schema: "hardkas.session.v1" as const,
+      l1: { wallet: "w" },
+      l2: { account: "a" },
+      bridge: { mode: "local-simulated" as const },
+      createdAt: "t"
+    };
+
+    await expect(createSession(newSession, tempDir)).rejects.toThrow("Invalid session store");
+    // Verify file was NOT overwritten with empty store containing the new session
+    const fileContent = fs.readFileSync(sessionFile, "utf-8");
+    expect(fileContent).toBe("not-json");
   });
 });

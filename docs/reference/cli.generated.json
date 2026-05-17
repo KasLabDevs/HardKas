@@ -512,6 +512,150 @@
       ]
     },
     {
+      "path": "hardkas bridge",
+      "name": "bridge",
+      "aliases": [],
+      "description": "Kaspa -> Igra bridge developer tools",
+      "usage": "hardkas bridge [options] [command]",
+      "arguments": [],
+      "options": [],
+      "subcommands": [
+        {
+          "path": "hardkas bridge local",
+          "name": "local",
+          "aliases": [],
+          "description": "Local bridge entry simulation (deterministic)",
+          "usage": "hardkas bridge local [options] [command]",
+          "arguments": [],
+          "options": [],
+          "subcommands": [
+            {
+              "path": "hardkas bridge local inspect",
+              "name": "inspect",
+              "aliases": [],
+              "description": "Inspect a local bridge transaction artifact stable",
+              "usage": "hardkas bridge local inspect [options] <txid>",
+              "arguments": [
+                {
+                  "name": "txid",
+                  "description": ""
+                }
+              ],
+              "options": [
+                {
+                  "flags": "--json",
+                  "description": "Output as JSON",
+                  "default": false,
+                  "required": false,
+                  "mandatory": false
+                }
+              ],
+              "subcommands": []
+            },
+            {
+              "path": "hardkas bridge local plan",
+              "name": "plan",
+              "aliases": [],
+              "description": "Plan a local bridge entry transaction stable",
+              "usage": "hardkas bridge local plan [options]",
+              "arguments": [],
+              "options": [
+                {
+                  "flags": "--session <name>",
+                  "description": "Link to a specific developer session",
+                  "default": null,
+                  "required": true,
+                  "mandatory": false
+                },
+                {
+                  "flags": "--from <name>",
+                  "description": "Source Kaspa wallet name (overrides session)",
+                  "default": null,
+                  "required": true,
+                  "mandatory": false
+                },
+                {
+                  "flags": "--to-igra <address>",
+                  "description": "Target Igra EVM address (overrides session)",
+                  "default": null,
+                  "required": true,
+                  "mandatory": false
+                },
+                {
+                  "flags": "--amount <kas>",
+                  "description": "Amount in KAS to bridge",
+                  "default": null,
+                  "required": true,
+                  "mandatory": true
+                },
+                {
+                  "flags": "--json",
+                  "description": "Output as JSON",
+                  "default": false,
+                  "required": false,
+                  "mandatory": false
+                }
+              ],
+              "subcommands": []
+            },
+            {
+              "path": "hardkas bridge local simulate",
+              "name": "simulate",
+              "aliases": [],
+              "description": "Simulate a bridge entry with prefix mining stable",
+              "usage": "hardkas bridge local simulate [options]",
+              "arguments": [],
+              "options": [
+                {
+                  "flags": "--session <name>",
+                  "description": "Link to a specific developer session",
+                  "default": null,
+                  "required": true,
+                  "mandatory": false
+                },
+                {
+                  "flags": "--from <name>",
+                  "description": "Source Kaspa wallet name (overrides session)",
+                  "default": null,
+                  "required": true,
+                  "mandatory": false
+                },
+                {
+                  "flags": "--to-igra <address>",
+                  "description": "Target Igra EVM address (overrides session)",
+                  "default": null,
+                  "required": true,
+                  "mandatory": false
+                },
+                {
+                  "flags": "--amount <kas>",
+                  "description": "Amount in KAS to bridge",
+                  "default": null,
+                  "required": true,
+                  "mandatory": true
+                },
+                {
+                  "flags": "--prefix <hex>",
+                  "description": "Prefix to mine for",
+                  "default": "abc",
+                  "required": true,
+                  "mandatory": false
+                },
+                {
+                  "flags": "--json",
+                  "description": "Output as JSON",
+                  "default": false,
+                  "required": false,
+                  "mandatory": false
+                }
+              ],
+              "subcommands": []
+            }
+          ]
+        }
+      ]
+    },
+    {
       "path": "hardkas capabilities",
       "name": "capabilities",
       "aliases": [],
@@ -635,6 +779,31 @@
           "subcommands": []
         }
       ]
+    },
+    {
+      "path": "hardkas dashboard",
+      "name": "dashboard",
+      "aliases": [],
+      "description": "Open the HardKas Local Dashboard stable",
+      "usage": "hardkas dashboard [options]",
+      "arguments": [],
+      "options": [
+        {
+          "flags": "--port <number>",
+          "description": "Port to bind to",
+          "default": "7420",
+          "required": true,
+          "mandatory": false
+        },
+        {
+          "flags": "--start-server",
+          "description": "Start the dev server if not running",
+          "default": false,
+          "required": false,
+          "mandatory": false
+        }
+      ],
+      "subcommands": []
     },
     {
       "path": "hardkas deploy",
@@ -833,19 +1002,104 @@
       "path": "hardkas dev",
       "name": "dev",
       "aliases": [],
-      "description": "Start development environment",
-      "usage": "hardkas dev [options]",
+      "description": "Local development and Igra-native environment tools",
+      "usage": "hardkas dev [options] [command]",
       "arguments": [],
-      "options": [
+      "options": [],
+      "subcommands": [
         {
-          "flags": "--mode <mode>",
-          "description": "simulated or node",
-          "default": "simulated",
-          "required": true,
-          "mandatory": false
+          "path": "hardkas dev doctor",
+          "name": "doctor",
+          "aliases": [],
+          "description": "Validate local dev environment readiness stable",
+          "usage": "hardkas dev doctor [options]",
+          "arguments": [],
+          "options": [
+            {
+              "flags": "--profile <name>",
+              "description": "L2 network profile name",
+              "default": "igra",
+              "required": true,
+              "mandatory": false
+            },
+            {
+              "flags": "--rpc-url <url>",
+              "description": "Explicit Igra RPC URL to check",
+              "default": null,
+              "required": true,
+              "mandatory": false
+            },
+            {
+              "flags": "--account <name>",
+              "description": "Local EVM account name to verify balance",
+              "default": null,
+              "required": true,
+              "mandatory": false
+            },
+            {
+              "flags": "--timeout <ms>",
+              "description": "RPC timeout in milliseconds",
+              "default": "3000",
+              "required": true,
+              "mandatory": false
+            },
+            {
+              "flags": "--json",
+              "description": "Output as JSON",
+              "default": false,
+              "required": false,
+              "mandatory": false
+            }
+          ],
+          "subcommands": []
+        },
+        {
+          "path": "hardkas dev server",
+          "name": "server",
+          "aliases": [],
+          "description": "Start the local HardKas Dev Server stable",
+          "usage": "hardkas dev server [options]",
+          "arguments": [],
+          "options": [
+            {
+              "flags": "--port <number>",
+              "description": "Port to bind to",
+              "default": "7420",
+              "required": true,
+              "mandatory": false
+            },
+            {
+              "flags": "--host <string>",
+              "description": "Host to bind to",
+              "default": "localhost",
+              "required": true,
+              "mandatory": false
+            },
+            {
+              "flags": "--open",
+              "description": "Open dashboard in browser automatically",
+              "default": false,
+              "required": false,
+              "mandatory": false
+            },
+            {
+              "flags": "--unsafe-external",
+              "description": "Allow external access (binds to 0.0.0.0 if host not specified)",
+              "default": false,
+              "required": false,
+              "mandatory": false
+            },
+            {
+              "flags": "--json",
+              "description": "Output status as JSON",
+              "default": false,
+              "required": false,
+              "mandatory": false
+            }
+          ],
+          "subcommands": []
         }
-      ],
-      "subcommands": []
+      ]
     },
     {
       "path": "hardkas doctor",
@@ -946,6 +1200,180 @@
         }
       ],
       "subcommands": []
+    },
+    {
+      "path": "hardkas kaspa",
+      "name": "kaspa",
+      "aliases": [],
+      "description": "Kaspa L1 native developer tools",
+      "usage": "hardkas kaspa [options] [command]",
+      "arguments": [],
+      "options": [],
+      "subcommands": [
+        {
+          "path": "hardkas kaspa doctor",
+          "name": "doctor",
+          "aliases": [],
+          "description": "Verify local Kaspa L1 environment readiness stable",
+          "usage": "hardkas kaspa doctor [options]",
+          "arguments": [],
+          "options": [
+            {
+              "flags": "--rpc-url <url>",
+              "description": "Kaspa RPC URL",
+              "default": "http://127.0.0.1:16110",
+              "required": true,
+              "mandatory": false
+            },
+            {
+              "flags": "--json",
+              "description": "Output as JSON",
+              "default": false,
+              "required": false,
+              "mandatory": false
+            }
+          ],
+          "subcommands": []
+        },
+        {
+          "path": "hardkas kaspa wallet",
+          "name": "wallet",
+          "aliases": [],
+          "description": "Manage local Kaspa L1 wallets",
+          "usage": "hardkas kaspa wallet [options] [command]",
+          "arguments": [],
+          "options": [],
+          "subcommands": [
+            {
+              "path": "hardkas kaspa wallet address",
+              "name": "address",
+              "aliases": [],
+              "description": "Show address of a local Kaspa wallet stable",
+              "usage": "hardkas kaspa wallet address [options] <name>",
+              "arguments": [
+                {
+                  "name": "name",
+                  "description": ""
+                }
+              ],
+              "options": [],
+              "subcommands": []
+            },
+            {
+              "path": "hardkas kaspa wallet balance",
+              "name": "balance",
+              "aliases": [],
+              "description": "Show balance of a local Kaspa wallet stable",
+              "usage": "hardkas kaspa wallet balance [options] <name>",
+              "arguments": [
+                {
+                  "name": "name",
+                  "description": ""
+                }
+              ],
+              "options": [
+                {
+                  "flags": "--rpc-url <url>",
+                  "description": "Kaspa RPC URL",
+                  "default": "http://127.0.0.1:16110",
+                  "required": true,
+                  "mandatory": false
+                },
+                {
+                  "flags": "--json",
+                  "description": "Output as JSON",
+                  "default": false,
+                  "required": false,
+                  "mandatory": false
+                }
+              ],
+              "subcommands": []
+            },
+            {
+              "path": "hardkas kaspa wallet create",
+              "name": "create",
+              "aliases": [],
+              "description": "Create a new local Kaspa wallet stable",
+              "usage": "hardkas kaspa wallet create [options] <name>",
+              "arguments": [
+                {
+                  "name": "name",
+                  "description": ""
+                }
+              ],
+              "options": [
+                {
+                  "flags": "--network <id>",
+                  "description": "Kaspa network ID",
+                  "default": "simnet",
+                  "required": true,
+                  "mandatory": false
+                }
+              ],
+              "subcommands": []
+            },
+            {
+              "path": "hardkas kaspa wallet list",
+              "name": "list",
+              "aliases": [],
+              "description": "List local Kaspa wallets stable",
+              "usage": "hardkas kaspa wallet list [options]",
+              "arguments": [],
+              "options": [
+                {
+                  "flags": "--json",
+                  "description": "Output as JSON",
+                  "default": false,
+                  "required": false,
+                  "mandatory": false
+                }
+              ],
+              "subcommands": []
+            },
+            {
+              "path": "hardkas kaspa wallet send",
+              "name": "send",
+              "aliases": [],
+              "description": "Send Kaspa between local wallets stable",
+              "usage": "hardkas kaspa wallet send [options] <from> <to>",
+              "arguments": [
+                {
+                  "name": "from",
+                  "description": ""
+                },
+                {
+                  "name": "to",
+                  "description": ""
+                }
+              ],
+              "options": [
+                {
+                  "flags": "--amount <kas>",
+                  "description": "Amount in KAS to send",
+                  "default": null,
+                  "required": true,
+                  "mandatory": false
+                },
+                {
+                  "flags": "--dry-run",
+                  "description": "Plan but do not sign or broadcast",
+                  "default": false,
+                  "required": false,
+                  "mandatory": false
+                },
+                {
+                  "flags": "--rpc-url <url>",
+                  "description": "Kaspa RPC URL",
+                  "default": "http://127.0.0.1:16110",
+                  "required": true,
+                  "mandatory": false
+                }
+              ],
+              "subcommands": []
+            }
+          ]
+        }
+      ]
     },
     {
       "path": "hardkas l2",
@@ -1516,6 +1944,56 @@
       ]
     },
     {
+      "path": "hardkas local",
+      "name": "local",
+      "aliases": [],
+      "description": "Local development and environment lifecycle tools",
+      "usage": "hardkas local [options] [command]",
+      "arguments": [],
+      "options": [],
+      "subcommands": [
+        {
+          "path": "hardkas local wizard",
+          "name": "wizard",
+          "aliases": [],
+          "description": "Guided setup for local development stable",
+          "usage": "hardkas local wizard [options]",
+          "arguments": [],
+          "options": [
+            {
+              "flags": "--profile <name>",
+              "description": "L2 network profile name",
+              "default": "igra",
+              "required": true,
+              "mandatory": false
+            },
+            {
+              "flags": "--account <name>",
+              "description": "New or existing EVM account name",
+              "default": "dev_alice",
+              "required": true,
+              "mandatory": false
+            },
+            {
+              "flags": "--non-interactive",
+              "description": "Skip interactive prompts (will fail if input required)",
+              "default": false,
+              "required": false,
+              "mandatory": false
+            },
+            {
+              "flags": "--json",
+              "description": "Output as JSON",
+              "default": false,
+              "required": false,
+              "mandatory": false
+            }
+          ],
+          "subcommands": []
+        }
+      ]
+    },
+    {
       "path": "hardkas localnet",
       "name": "localnet",
       "aliases": [],
@@ -1659,6 +2137,97 @@
             }
           ],
           "options": [],
+          "subcommands": []
+        }
+      ]
+    },
+    {
+      "path": "hardkas metamask",
+      "name": "metamask",
+      "aliases": [],
+      "description": "MetaMask onboarding and account export (local-dev only)",
+      "usage": "hardkas metamask [options] [command]",
+      "arguments": [],
+      "options": [],
+      "subcommands": [
+        {
+          "path": "hardkas metamask account",
+          "name": "account",
+          "aliases": [],
+          "description": "Export a local EVM account for MetaMask import stable",
+          "usage": "hardkas metamask account [options] <name>",
+          "arguments": [
+            {
+              "name": "name",
+              "description": ""
+            }
+          ],
+          "options": [
+            {
+              "flags": "--show-private-key",
+              "description": "Reveal the private key (LOCAL DEV ONLY)",
+              "default": false,
+              "required": false,
+              "mandatory": false
+            },
+            {
+              "flags": "--json",
+              "description": "Output as JSON",
+              "default": false,
+              "required": false,
+              "mandatory": false
+            },
+            {
+              "flags": "--include-secret",
+              "description": "Include secret in JSON output (UNSAFE)",
+              "default": false,
+              "required": false,
+              "mandatory": false
+            }
+          ],
+          "subcommands": []
+        },
+        {
+          "path": "hardkas metamask network",
+          "name": "network",
+          "aliases": [],
+          "description": "Show local Igra network parameters for MetaMask stable",
+          "usage": "hardkas metamask network [options]",
+          "arguments": [],
+          "options": [
+            {
+              "flags": "--profile <name>",
+              "description": "L2 network profile name",
+              "default": "igra",
+              "required": true,
+              "mandatory": false
+            },
+            {
+              "flags": "--json",
+              "description": "Output as JSON",
+              "default": false,
+              "required": false,
+              "mandatory": false
+            }
+          ],
+          "subcommands": []
+        },
+        {
+          "path": "hardkas metamask snippet",
+          "name": "snippet",
+          "aliases": [],
+          "description": "Generate JS snippet to add local network to MetaMask stable",
+          "usage": "hardkas metamask snippet [options]",
+          "arguments": [],
+          "options": [
+            {
+              "flags": "--profile <name>",
+              "description": "L2 network profile name",
+              "default": "igra",
+              "required": true,
+              "mandatory": false
+            }
+          ],
           "subcommands": []
         }
       ]
@@ -2893,6 +3462,82 @@
         }
       ],
       "subcommands": []
+    },
+    {
+      "path": "hardkas session",
+      "name": "session",
+      "aliases": [],
+      "description": "L1/L2 developer identity linkage and sessions",
+      "usage": "hardkas session [options] [command]",
+      "arguments": [],
+      "options": [],
+      "subcommands": [
+        {
+          "path": "hardkas session create",
+          "name": "create",
+          "aliases": [],
+          "description": "Create a new L1/L2 session linkage alpha",
+          "usage": "hardkas session create [options] <name>",
+          "arguments": [
+            {
+              "name": "name",
+              "description": ""
+            }
+          ],
+          "options": [
+            {
+              "flags": "--l1 <wallet>",
+              "description": "Name of the Kaspa L1 wallet",
+              "default": null,
+              "required": true,
+              "mandatory": true
+            },
+            {
+              "flags": "--l2 <account>",
+              "description": "Name of the Igra L2 account",
+              "default": null,
+              "required": true,
+              "mandatory": true
+            }
+          ],
+          "subcommands": []
+        },
+        {
+          "path": "hardkas session list",
+          "name": "list",
+          "aliases": [],
+          "description": "List all configured sessions alpha",
+          "usage": "hardkas session list [options]",
+          "arguments": [],
+          "options": [],
+          "subcommands": []
+        },
+        {
+          "path": "hardkas session status",
+          "name": "status",
+          "aliases": [],
+          "description": "Show active session linkage alpha",
+          "usage": "hardkas session status [options]",
+          "arguments": [],
+          "options": [],
+          "subcommands": []
+        },
+        {
+          "path": "hardkas session use",
+          "name": "use",
+          "aliases": [],
+          "description": "Set the active session alpha",
+          "usage": "hardkas session use [options] <name>",
+          "arguments": [
+            {
+              "name": "name",
+              "description": ""
+            }
+          ],
+          "options": [],
+          "subcommands": []
+        }
+      ]
     },
     {
       "path": "hardkas snapshot",

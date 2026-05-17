@@ -23,7 +23,7 @@ function writeFixture(dir, name, artifact) {
 
 const rootHash = writeFixture("valid", "snapshot.valid.json", {
   schema: "hardkas.snapshot",
-  hardkasVersion: "0.3.0-alpha",
+  hardkasVersion: "0.4.0-alpha",
   version: "1.0.0-alpha",
   networkId: "simnet",
   mode: "simulated",
@@ -49,7 +49,7 @@ fs.writeFileSync(path.join(fixturesDir, "valid", "snapshot.valid.json"), JSON.st
 
 const planHash = writeFixture("valid", "tx-plan.valid.json", {
   schema: "hardkas.txPlan",
-  hardkasVersion: "0.3.0-alpha",
+  hardkasVersion: "0.4.0-alpha",
   version: "1.0.0-alpha",
   createdAt: new Date().toISOString(),
   networkId: "simnet",
@@ -78,7 +78,7 @@ const planHash = writeFixture("valid", "tx-plan.valid.json", {
 
 writeFixture("valid", "signed-tx.valid.json", {
   schema: "hardkas.signedTx",
-  hardkasVersion: "0.3.0-alpha",
+  hardkasVersion: "0.4.0-alpha",
   version: "1.0.0-alpha",
   createdAt: new Date().toISOString(),
   status: "signed",

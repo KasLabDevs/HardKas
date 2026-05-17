@@ -106,7 +106,7 @@ function DashboardContent() {
           <Box size={40} color="#6366f1" />
           <h1>HardKAS Cockpit</h1>
         </div>
-        <p className="dim">Deterministic Local Runtime • v0.3.0-alpha</p>
+        <p className="dim">Deterministic Local Runtime • v0.4.0-alpha</p>
         <div className="flex items-center justify-center gap-2 mt-2">
           <span className={`text-[8px] uppercase font-bold px-2 py-0.5 rounded border ${
             sseStatus === "connected" ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20" : 

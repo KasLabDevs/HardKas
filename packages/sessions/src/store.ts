@@ -10,6 +10,14 @@ export function loadSessionStore(cwd: string = process.cwd()): SessionStore {
   return store;
 }
 
+export function loadSessionStoreStrict(cwd: string = process.cwd()): SessionStore {
+  const { store, diagnostics } = loadSessionStoreWithDiagnostics(cwd);
+  if (diagnostics.length > 0) {
+    throw new Error(`Invalid session store: ${diagnostics.join("; ")}`);
+  }
+  return store;
+}
+
 export function loadSessionStoreWithDiagnostics(cwd: string = process.cwd()): { store: SessionStore; diagnostics: string[] } {
   const path = join(cwd, SESSION_FILE);
   if (!existsSync(path)) {
@@ -67,12 +75,14 @@ export async function saveSessionStore(store: SessionStore, cwd: string = proces
   if (!existsSync(dir)) {
     mkdirSync(dir, { recursive: true });
   }
-  await writeFileAtomic(path, JSON.stringify(store, null, 2));
+  await writeFileAtomic(path, JSON.stringify(store, null, 2), {
+    fsyncParent: true
+  });
 }
 
 export async function createSession(session: HardkasSession, cwd: string = process.cwd()) {
   await withLock({ rootDir: cwd, name: "workspace", wait: true, timeoutMs: 5000 }, async () => {
-    const store = loadSessionStore(cwd);
+    const store = loadSessionStoreStrict(cwd);
     const newStore = {
       ...store,
       sessions: {
@@ -87,7 +97,7 @@ export async function createSession(session: HardkasSession, cwd: string = proce
 
 export async function setActiveSession(name: string, cwd: string = process.cwd()) {
   await withLock({ rootDir: cwd, name: "workspace", wait: true, timeoutMs: 5000 }, async () => {
-    const store = loadSessionStore(cwd);
+    const store = loadSessionStoreStrict(cwd);
     if (!store.sessions[name]) {
       throw new Error(`Session "${name}" not found.`);
     }

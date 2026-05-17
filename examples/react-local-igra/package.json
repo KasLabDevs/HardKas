@@ -1,7 +1,7 @@
 {
   "name": "example-react-local-igra",
   "private": true,
-  "version": "0.1.0",
+  "version": "0.4.0-alpha",
   "type": "module",
   "scripts": {
     "dev": "vite",

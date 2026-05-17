@@ -1,3 +1,16 @@
+/**
+ * WARNING: ALPHA-ONLY LOCAL-RUNTIME COUPLING
+ * 
+ * This file directly imports `@hardkas/bridge-local` to perform local bridge simulation.
+ * This puts local simulation logic and heavy CPU simulation directly into the React package,
+ * meaning it is NOT browser-production safe without polyfills or is intended exclusively
+ * for the local developer preview context.
+ * 
+ * TODO: In a future release, decouple this simulation code from the core `@hardkas/react` library.
+ * The hooks should ideally make dev-server REST/SSE HTTP calls, or be extracted into a separate
+ * package `@hardkas/react-local` to maintain clean, production-safe boundaries.
+ */
+
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { planBridgeEntry, simulatePrefixMining } from "@hardkas/bridge-local";
 import { useHardKas } from "../provider.js";

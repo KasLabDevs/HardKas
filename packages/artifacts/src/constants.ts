@@ -1,4 +1,4 @@
-export const HARDKAS_VERSION = "0.3.0-alpha";
+export const HARDKAS_VERSION = "0.4.0-alpha";
 
 export const ARTIFACT_SCHEMAS = {
   LOCALNET_STATE: "hardkas.localnetState.v1",

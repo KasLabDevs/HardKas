@@ -22,7 +22,7 @@ It provides a hardened, unified runtime for building, simulating, and auditing f
 ---
 
 > [!IMPORTANT]
-> **Status: 0.3.0-alpha / HARDENED ALPHA**
+> **Status: 0.4.0-alpha / HARDENED ALPHA**
 > HardKAS is currently in **HARDENED ALPHA**. This means core determinism, cross-platform hashing, and adversarial resilience are stable and verified. It is moving toward Beta Candidate status through architectural convergence and documentation hardening.
 
 > [!CAUTION]
@@ -31,7 +31,7 @@ It provides a hardened, unified runtime for building, simulating, and auditing f
 
 ---
 
-HardKAS is currently in **HARDENED ALPHA** (0.3.0-alpha).
+HardKAS is currently in **HARDENED ALPHA** (0.4.0-alpha).
 
 The architecture is stabilizing, but users should be aware:
 - **APIs may change**: Commands and SDK interfaces are not yet finalized.

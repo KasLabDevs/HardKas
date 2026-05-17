@@ -22,17 +22,24 @@ export interface DevServerConfig {
   open?: boolean;
 }
 
+export function resolveCorsOrigin(origin: string | undefined, unsafeExternal: boolean): string | null | undefined {
+  if (!origin) return origin;
+  if (
+    origin.includes("localhost") ||
+    origin.includes("127.0.0.1") ||
+    origin.includes("[::1]")
+  ) {
+    return origin;
+  }
+  return unsafeExternal ? origin : null;
+}
+
 export function createDevServer(config: DevServerConfig) {
   const app = new Hono();
 
   app.use("*", logger());
   app.use("*", cors({
-    origin: (origin) => {
-      if (origin.includes("localhost") || origin.includes("127.0.0.1") || !origin) {
-        return origin;
-      }
-      return config.unsafeExternal ? origin : null;
-    }
+    origin: (origin) => resolveCorsOrigin(origin, !!config.unsafeExternal) ?? null
   }));
 
   // Local-only guard
@@ -48,7 +55,7 @@ export function createDevServer(config: DevServerConfig) {
 
   app.get("/", (c) => c.json({ 
     name: "HardKas Dev Server", 
-    version: "0.3.0-alpha",
+    version: "0.4.0-alpha",
     status: "running" 
   }));
 

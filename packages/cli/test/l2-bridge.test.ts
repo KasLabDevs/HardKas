@@ -13,7 +13,7 @@ vi.mock("@hardkas/l2", async (importOriginal) => {
 describe("L2 Bridge CLI Runners", () => {
   const mockAssumptions = {
     schema: "hardkas.l2BridgeAssumptions.v1",
-    hardkasVersion: "0.3.0-alpha",
+    hardkasVersion: "0.4.0-alpha",
     l2Network: "igra",
     bridgePhase: "pre-zk",
     trustlessExit: false,
@@ -55,7 +55,7 @@ describe("L2 Bridge CLI Runners", () => {
 
       const json = consoleSpy.mock.calls[0][0];
       const parsed = JSON.parse(json);
-    expect(parsed.hardkasVersion).toBe("0.3.0-alpha");
+    expect(parsed.hardkasVersion).toBe("0.4.0-alpha");
       expect(parsed.l2Network).toBe("igra");
     });
 
