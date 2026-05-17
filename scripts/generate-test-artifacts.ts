@@ -3,7 +3,7 @@ import fs from "node:fs";
 
 const artifact = {
   schema: "hardkas.txPlan.v2",
-  hardkasVersion: "0.2.0",
+  hardkasVersion: "0.4.0-alpha",
   version: "2.0.0",
   createdAt: new Date().toISOString(),
   networkId: "simnet",

@@ -58,6 +58,26 @@ The "star" command for operational visibility. It performs a **Cross-Domain Corr
 
 ---
 
+## 🤝 L1/L2 Sessions & Bridge
+
+### `hardkas session create`
+Links a Kaspa L1 wallet with an Igra L2 account.
+- **Why:** Eliminates the need to copy-paste addresses between layers.
+- **DX:** Context-aware commands like `bridge local plan` use these sessions automatically.
+
+### `hardkas bridge local simulate`
+The "bridge laboratory". It simulates the entire entry lifecycle:
+- **L1 Planning:** UTXO selection and tx construction.
+- **Prefix Mining:** Simulates the structural proof required for bridge entry.
+- **Deterministic Output:** Generates a payload hash that is verifiable on the L2 side.
+
+### `hardkas kaspa wallet`
+Native L1 management without leaving the terminal.
+- **Secure:** Uses the same encrypted keystore as L2 accounts.
+- **Deterministic:** Wallet generation and transaction planning are fully reproducible.
+
+---
+
 ## 🎨 Design Philosophy: Polish & DX
 
 - **Actionable Errors:** Every error includes a "💡 Suggestion" to get you back on track.

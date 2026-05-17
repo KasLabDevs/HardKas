@@ -44,7 +44,7 @@ describe("Igra L2 Transaction Runners", () => {
     signedId: "s1",
     sourcePlanId: "p1",
     l2Network: "igra",
-    chainId: 12345,
+    chainId: 19416,
     rawTransaction: "0x1234",
     status: "signed"
   };
@@ -57,7 +57,7 @@ describe("Igra L2 Transaction Runners", () => {
     createdAt: new Date().toISOString(),
     txHash: mockHash,
     l2Network: "igra",
-    chainId: 12345,
+    chainId: 19416,
     rpcUrl: "http://localhost:8545",
     status: "submitted"
   };
@@ -67,7 +67,7 @@ describe("Igra L2 Transaction Runners", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockClient = {
-      getChainId: vi.fn().mockResolvedValue(12345),
+      getChainId: vi.fn().mockResolvedValue(19416),
       sendRawTransaction: vi.fn().mockResolvedValue(mockHash),
       getTransactionReceipt: vi.fn().mockResolvedValue(null)
     };

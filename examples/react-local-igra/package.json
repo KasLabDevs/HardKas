@@ -1,0 +1,25 @@
+{
+  "name": "example-react-local-igra",
+  "private": true,
+  "version": "0.4.0-alpha",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@hardkas/react": "workspace:*",
+    "@tanstack/react-query": "^5.61.5",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "viem": "^2.21.51"
+  },
+  "devDependencies": {
+    "@types/react": "^18.3.12",
+    "@types/react-dom": "^18.3.1",
+    "@vitejs/plugin-react": "^4.2.1",
+    "typescript": "^5.7.2",
+    "vite": "^5.4.11"
+  }
+}

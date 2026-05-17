@@ -22,6 +22,13 @@ import { registerConsoleCommand } from "./commands/console.js";
 import { registerNetworksCommand } from "./commands/networks.js";
 import { registerLocalnetCommands } from "./commands/localnet.js";
 import { registerDeployCommands } from "./commands/deploy.js";
+import { registerMetamaskCommands } from "./commands/metamask.js";
+import { registerDevCommands } from "./commands/dev.js";
+import { registerLocalCommands } from "./commands/local.js";
+import { registerKaspaCommands } from "./commands/kaspa.js";
+import { registerBridgeCommands } from "./commands/bridge.js";
+import { registerSessionCommands } from "./commands/session.js";
+import { registerDashboardCommand } from "./commands/dashboard.js";
 
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
@@ -73,6 +80,13 @@ export function buildHardkasProgram(options?: { forDocs?: boolean }): Command {
   registerNetworksCommand(program);
   registerLocalnetCommands(program);
   registerDeployCommands(program);
+  registerMetamaskCommands(program);
+  registerDevCommands(program);
+  registerLocalCommands(program);
+  registerKaspaCommands(program);
+  registerBridgeCommands(program);
+  registerSessionCommands(program);
+  registerDashboardCommand(program);
 
   // Optional: Add a docs command if we want to expose it via CLI
   // We only do this if requested and if it has no side effects.

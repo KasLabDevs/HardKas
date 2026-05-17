@@ -17,9 +17,9 @@ describe("Invariant System (Phase 5)", () => {
       payload: "hello"
     };
 
-    const violations = await invar.check({ artifact });
+    const violations = await invar.check({ artifact: artifact as any });
     expect(violations.length).toBe(1);
-    expect(violations[0].code).toBe("INVAR_HASH_MATCH");
+    expect(violations[0]!.code).toBe("INVAR_HASH_MATCH");
   });
 
   it("SchemaInvariant should detect unsupported schema", async () => {
@@ -29,20 +29,20 @@ describe("Invariant System (Phase 5)", () => {
       version: "1.0.0"
     };
 
-    const violations = await invar.check({ artifact });
+    const violations = await invar.check({ artifact: artifact as any });
     expect(violations.length).toBe(1);
-    expect(violations[0].code).toBe("INVAR_SCHEMA_SUPPORT");
+    expect(violations[0]!.code).toBe("INVAR_SCHEMA_SUPPORT");
   });
 
   it("BasicCorrelationInvariant should detect missing IDs", async () => {
     const invar = new BasicCorrelationInvariant();
     const event = createEventEnvelope({
-      kind: "test.event",
-      domain: "dag",
+      kind: "workflow.started",
+      domain: "workflow",
       workflowId: "" as any, // Missing
       correlationId: "" as any,
       networkId: asNetworkId("simnet"),
-      payload: {}
+      payload: { workflowId: "" as any, network: asNetworkId("simnet") }
     });
 
     const violations = await invar.check({ event });
@@ -75,14 +75,15 @@ describe("Invariant System (Phase 5)", () => {
     
     // Trigger an event that violates HashInvariant
     const sourceEvent = createEventEnvelope({
-      kind: "artifact.created",
+      kind: "workflow.plan.created",
       domain: "workflow",
       workflowId: asWorkflowId("wf-1"),
       correlationId: asCorrelationId("corr-1"),
       networkId: asNetworkId("simnet"),
       payload: { 
-        artifactId: "art-1",
-        artifact: { contentHash: "bad", payload: "data" } // This would normally be handled by context
+        planId: "art-1" as any,
+        network: asNetworkId("simnet"),
+        amountSompi: 100n
       }
     });
 
@@ -132,12 +133,12 @@ describe("Invariant System (Phase 5)", () => {
     watcher.start();
 
     const integrityEvent = createEventEnvelope({
-      kind: "integrity.violation.test",
+      kind: "integrity.violation",
       domain: "integrity",
       workflowId: asWorkflowId("wf-1"),
       correlationId: asCorrelationId("corr-1"),
       networkId: asNetworkId("simnet"),
-      payload: {}
+      payload: { violationCode: "TEST", severity: "error", message: "skip" }
     });
 
     await registeredCb(integrityEvent);

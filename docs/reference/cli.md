@@ -404,6 +404,133 @@ hardkas artifact verify [options] <path>
 
 ---
 
+## hardkas bridge
+
+Kaspa -> Igra bridge developer tools
+
+### Usage
+
+```bash
+hardkas bridge [options] [command]
+```
+
+### Options
+
+No options.
+
+### Arguments
+
+No arguments.
+
+### Subcommands
+
+- [hardkas bridge local](#hardkas-bridge-local)
+
+---
+
+## hardkas bridge local
+
+Local bridge entry simulation (deterministic)
+
+### Usage
+
+```bash
+hardkas bridge local [options] [command]
+```
+
+### Options
+
+No options.
+
+### Arguments
+
+No arguments.
+
+### Subcommands
+
+- [hardkas bridge local inspect](#hardkas-bridge-local-inspect)
+- [hardkas bridge local plan](#hardkas-bridge-local-plan)
+- [hardkas bridge local simulate](#hardkas-bridge-local-simulate)
+
+---
+
+## hardkas bridge local inspect
+
+Inspect a local bridge transaction artifact stable
+
+### Usage
+
+```bash
+hardkas bridge local inspect [options] <txid>
+```
+
+### Options
+
+| Flag | Description | Default |
+| :--- | :--- | :--- |
+| `--json` | Output as JSON | false |
+
+### Arguments
+
+| Argument | Description |
+| :--- | :--- |
+| `txid` |  |
+
+---
+
+## hardkas bridge local plan
+
+Plan a local bridge entry transaction stable
+
+### Usage
+
+```bash
+hardkas bridge local plan [options]
+```
+
+### Options
+
+| Flag | Description | Default |
+| :--- | :--- | :--- |
+| `--session <name>` | Link to a specific developer session |  |
+| `--from <name>` | Source Kaspa wallet name (overrides session) |  |
+| `--to-igra <address>` | Target Igra EVM address (overrides session) |  |
+| `--amount <kas>` | Amount in KAS to bridge |  |
+| `--json` | Output as JSON | false |
+
+### Arguments
+
+No arguments.
+
+---
+
+## hardkas bridge local simulate
+
+Simulate a bridge entry with prefix mining stable
+
+### Usage
+
+```bash
+hardkas bridge local simulate [options]
+```
+
+### Options
+
+| Flag | Description | Default |
+| :--- | :--- | :--- |
+| `--session <name>` | Link to a specific developer session |  |
+| `--from <name>` | Source Kaspa wallet name (overrides session) |  |
+| `--to-igra <address>` | Target Igra EVM address (overrides session) |  |
+| `--amount <kas>` | Amount in KAS to bridge |  |
+| `--prefix <hex>` | Prefix to mine for | abc |
+| `--json` | Output as JSON | false |
+
+### Arguments
+
+No arguments.
+
+---
+
 ## hardkas capabilities
 
 Show HardKAS capabilities and maturity level
@@ -557,6 +684,29 @@ hardkas dag status [options]
 ### Options
 
 No options.
+
+### Arguments
+
+No arguments.
+
+---
+
+## hardkas dashboard
+
+Open the HardKas Local Dashboard stable
+
+### Usage
+
+```bash
+hardkas dashboard [options]
+```
+
+### Options
+
+| Flag | Description | Default |
+| :--- | :--- | :--- |
+| `--port <number>` | Port to bind to | 7420 |
+| `--start-server` | Start the dev server if not running | false |
 
 ### Arguments
 
@@ -721,19 +871,74 @@ hardkas deploy track [options] <label>
 
 ## hardkas dev
 
-Start development environment
+Local development and Igra-native environment tools
 
 ### Usage
 
 ```bash
-hardkas dev [options]
+hardkas dev [options] [command]
+```
+
+### Options
+
+No options.
+
+### Arguments
+
+No arguments.
+
+### Subcommands
+
+- [hardkas dev doctor](#hardkas-dev-doctor)
+- [hardkas dev server](#hardkas-dev-server)
+
+---
+
+## hardkas dev doctor
+
+Validate local dev environment readiness stable
+
+### Usage
+
+```bash
+hardkas dev doctor [options]
 ```
 
 ### Options
 
 | Flag | Description | Default |
 | :--- | :--- | :--- |
-| `--mode <mode>` | simulated or node | simulated |
+| `--profile <name>` | L2 network profile name | igra |
+| `--rpc-url <url>` | Explicit Igra RPC URL to check |  |
+| `--account <name>` | Local EVM account name to verify balance |  |
+| `--timeout <ms>` | RPC timeout in milliseconds | 3000 |
+| `--json` | Output as JSON | false |
+
+### Arguments
+
+No arguments.
+
+---
+
+## hardkas dev server
+
+Start the local HardKas Dev Server stable
+
+### Usage
+
+```bash
+hardkas dev server [options]
+```
+
+### Options
+
+| Flag | Description | Default |
+| :--- | :--- | :--- |
+| `--port <number>` | Port to bind to | 7420 |
+| `--host <string>` | Host to bind to | localhost |
+| `--open` | Open dashboard in browser automatically | false |
+| `--unsafe-external` | Allow external access (binds to 0.0.0.0 if host not specified) | false |
+| `--json` | Output status as JSON | false |
 
 ### Arguments
 
@@ -875,6 +1080,202 @@ hardkas init [options] [name]
 | Argument | Description |
 | :--- | :--- |
 | `name` | Project name or directory |
+
+---
+
+## hardkas kaspa
+
+Kaspa L1 native developer tools
+
+### Usage
+
+```bash
+hardkas kaspa [options] [command]
+```
+
+### Options
+
+No options.
+
+### Arguments
+
+No arguments.
+
+### Subcommands
+
+- [hardkas kaspa doctor](#hardkas-kaspa-doctor)
+- [hardkas kaspa wallet](#hardkas-kaspa-wallet)
+
+---
+
+## hardkas kaspa doctor
+
+Verify local Kaspa L1 environment readiness stable
+
+### Usage
+
+```bash
+hardkas kaspa doctor [options]
+```
+
+### Options
+
+| Flag | Description | Default |
+| :--- | :--- | :--- |
+| `--rpc-url <url>` | Kaspa RPC URL | http://127.0.0.1:16110 |
+| `--json` | Output as JSON | false |
+
+### Arguments
+
+No arguments.
+
+---
+
+## hardkas kaspa wallet
+
+Manage local Kaspa L1 wallets
+
+### Usage
+
+```bash
+hardkas kaspa wallet [options] [command]
+```
+
+### Options
+
+No options.
+
+### Arguments
+
+No arguments.
+
+### Subcommands
+
+- [hardkas kaspa wallet address](#hardkas-kaspa-wallet-address)
+- [hardkas kaspa wallet balance](#hardkas-kaspa-wallet-balance)
+- [hardkas kaspa wallet create](#hardkas-kaspa-wallet-create)
+- [hardkas kaspa wallet list](#hardkas-kaspa-wallet-list)
+- [hardkas kaspa wallet send](#hardkas-kaspa-wallet-send)
+
+---
+
+## hardkas kaspa wallet address
+
+Show address of a local Kaspa wallet stable
+
+### Usage
+
+```bash
+hardkas kaspa wallet address [options] <name>
+```
+
+### Options
+
+No options.
+
+### Arguments
+
+| Argument | Description |
+| :--- | :--- |
+| `name` |  |
+
+---
+
+## hardkas kaspa wallet balance
+
+Show balance of a local Kaspa wallet stable
+
+### Usage
+
+```bash
+hardkas kaspa wallet balance [options] <name>
+```
+
+### Options
+
+| Flag | Description | Default |
+| :--- | :--- | :--- |
+| `--rpc-url <url>` | Kaspa RPC URL | http://127.0.0.1:16110 |
+| `--json` | Output as JSON | false |
+
+### Arguments
+
+| Argument | Description |
+| :--- | :--- |
+| `name` |  |
+
+---
+
+## hardkas kaspa wallet create
+
+Create a new local Kaspa wallet stable
+
+### Usage
+
+```bash
+hardkas kaspa wallet create [options] <name>
+```
+
+### Options
+
+| Flag | Description | Default |
+| :--- | :--- | :--- |
+| `--network <id>` | Kaspa network ID | simnet |
+
+### Arguments
+
+| Argument | Description |
+| :--- | :--- |
+| `name` |  |
+
+---
+
+## hardkas kaspa wallet list
+
+List local Kaspa wallets stable
+
+### Usage
+
+```bash
+hardkas kaspa wallet list [options]
+```
+
+### Options
+
+| Flag | Description | Default |
+| :--- | :--- | :--- |
+| `--json` | Output as JSON | false |
+
+### Arguments
+
+No arguments.
+
+---
+
+## hardkas kaspa wallet send
+
+Send Kaspa between local wallets stable
+
+### Usage
+
+```bash
+hardkas kaspa wallet send [options] <from> <to>
+```
+
+### Options
+
+| Flag | Description | Default |
+| :--- | :--- | :--- |
+| `--amount <kas>` | Amount in KAS to send |  |
+| `--dry-run` | Plan but do not sign or broadcast | false |
+| `--rpc-url <url>` | Kaspa RPC URL | http://127.0.0.1:16110 |
+
+### Arguments
+
+| Argument | Description |
+| :--- | :--- |
+| `from` |  |
+| `to` |  |
 
 ---
 
@@ -1389,6 +1790,55 @@ hardkas l2 tx status [options] <txHash>
 
 ---
 
+## hardkas local
+
+Local development and environment lifecycle tools
+
+### Usage
+
+```bash
+hardkas local [options] [command]
+```
+
+### Options
+
+No options.
+
+### Arguments
+
+No arguments.
+
+### Subcommands
+
+- [hardkas local wizard](#hardkas-local-wizard)
+
+---
+
+## hardkas local wizard
+
+Guided setup for local development stable
+
+### Usage
+
+```bash
+hardkas local wizard [options]
+```
+
+### Options
+
+| Flag | Description | Default |
+| :--- | :--- | :--- |
+| `--profile <name>` | L2 network profile name | igra |
+| `--account <name>` | New or existing EVM account name | dev_alice |
+| `--non-interactive` | Skip interactive prompts (will fail if input required) | false |
+| `--json` | Output as JSON | false |
+
+### Arguments
+
+No arguments.
+
+---
+
 ## hardkas localnet
 
 Manage localnet state and snapshots
@@ -1553,6 +2003,103 @@ No options.
 | Argument | Description |
 | :--- | :--- |
 | `name` |  |
+
+---
+
+## hardkas metamask
+
+MetaMask onboarding and account export (local-dev only)
+
+### Usage
+
+```bash
+hardkas metamask [options] [command]
+```
+
+### Options
+
+No options.
+
+### Arguments
+
+No arguments.
+
+### Subcommands
+
+- [hardkas metamask account](#hardkas-metamask-account)
+- [hardkas metamask network](#hardkas-metamask-network)
+- [hardkas metamask snippet](#hardkas-metamask-snippet)
+
+---
+
+## hardkas metamask account
+
+Export a local EVM account for MetaMask import stable
+
+### Usage
+
+```bash
+hardkas metamask account [options] <name>
+```
+
+### Options
+
+| Flag | Description | Default |
+| :--- | :--- | :--- |
+| `--show-private-key` | Reveal the private key (LOCAL DEV ONLY) | false |
+| `--json` | Output as JSON | false |
+| `--include-secret` | Include secret in JSON output (UNSAFE) | false |
+
+### Arguments
+
+| Argument | Description |
+| :--- | :--- |
+| `name` |  |
+
+---
+
+## hardkas metamask network
+
+Show local Igra network parameters for MetaMask stable
+
+### Usage
+
+```bash
+hardkas metamask network [options]
+```
+
+### Options
+
+| Flag | Description | Default |
+| :--- | :--- | :--- |
+| `--profile <name>` | L2 network profile name | igra |
+| `--json` | Output as JSON | false |
+
+### Arguments
+
+No arguments.
+
+---
+
+## hardkas metamask snippet
+
+Generate JS snippet to add local network to MetaMask stable
+
+### Usage
+
+```bash
+hardkas metamask snippet [options]
+```
+
+### Options
+
+| Flag | Description | Default |
+| :--- | :--- | :--- |
+| `--profile <name>` | L2 network profile name | igra |
+
+### Arguments
+
+No arguments.
 
 ---
 
@@ -2735,6 +3282,120 @@ hardkas run [options] <script>
 | Argument | Description |
 | :--- | :--- |
 | `script` |  |
+
+---
+
+## hardkas session
+
+L1/L2 developer identity linkage and sessions
+
+### Usage
+
+```bash
+hardkas session [options] [command]
+```
+
+### Options
+
+No options.
+
+### Arguments
+
+No arguments.
+
+### Subcommands
+
+- [hardkas session create](#hardkas-session-create)
+- [hardkas session list](#hardkas-session-list)
+- [hardkas session status](#hardkas-session-status)
+- [hardkas session use](#hardkas-session-use)
+
+---
+
+## hardkas session create
+
+Create a new L1/L2 session linkage alpha
+
+### Usage
+
+```bash
+hardkas session create [options] <name>
+```
+
+### Options
+
+| Flag | Description | Default |
+| :--- | :--- | :--- |
+| `--l1 <wallet>` | Name of the Kaspa L1 wallet |  |
+| `--l2 <account>` | Name of the Igra L2 account |  |
+
+### Arguments
+
+| Argument | Description |
+| :--- | :--- |
+| `name` |  |
+
+---
+
+## hardkas session list
+
+List all configured sessions alpha
+
+### Usage
+
+```bash
+hardkas session list [options]
+```
+
+### Options
+
+No options.
+
+### Arguments
+
+No arguments.
+
+---
+
+## hardkas session status
+
+Show active session linkage alpha
+
+### Usage
+
+```bash
+hardkas session status [options]
+```
+
+### Options
+
+No options.
+
+### Arguments
+
+No arguments.
+
+---
+
+## hardkas session use
+
+Set the active session alpha
+
+### Usage
+
+```bash
+hardkas session use [options] <name>
+```
+
+### Options
+
+No options.
+
+### Arguments
+
+| Argument | Description |
+| :--- | :--- |
+| `name` |  |
 
 ---
 

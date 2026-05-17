@@ -1,4 +1,4 @@
-# HardKAS 0.3.0-alpha: What Actually Works
+# HardKAS 0.4.0-alpha: What Actually Works
 
 Last verified: 2026-05-15
 
@@ -60,6 +60,7 @@ Systems that exist but have gaps or external dependencies.
 - **L2/Igra transaction lifecycle**: Build, sign, send. Depends on Igra RPC availability.
 - **Docker node orchestration**: start, stop, reset, logs, status. Depends on Docker being installed.
 - **L2 bridge assumptions**: Profile registry with phase awareness. No remote chainId validation.
+- **Shared SSE & Cockpit Dashboard**: Centralized EventSource stream with exponential backoff cap at 10s. SSE supports reconnect/backoff, but does not yet provide durable replay cursors or monotonic event IDs. Visual cockpit dashboard is hooked to Hono health endpoints with SSE-based invalidation.
 
 ## NOT IMPLEMENTED
 

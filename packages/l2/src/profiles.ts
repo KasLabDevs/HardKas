@@ -61,6 +61,8 @@ export const BUILTIN_L2_PROFILES: readonly L2NetworkProfile[] = [
     executionLayer: "evm",
     gasToken: "iKAS",
     nativeTokenDecimals: 18,
+    chainId: 19416,
+    rpcUrl: "http://127.0.0.1:8545",
     security: {
       bridgePhase: "pre-zk",
       trustlessExit: false,

@@ -55,29 +55,73 @@ function extractCommands(content: string): string[] {
   return matches;
 }
 
-function verifyCommand(fullCmd: string): { ok: boolean; error?: string } {
-  // Remove flags for base command check
-  const parts = fullCmd.split(/\s+/).filter(p => !p.startsWith("-"));
-  if (parts.length === 0) return { ok: true }; // just 'hardkas'
-
-  let current: Command | undefined = program;
-  for (const part of parts) {
-    // Some parts might be arguments <path>, so we stop if we can't find a sub-command
-    const sub = current.commands.find(c => c.name() === part || c.aliases().includes(part));
-    if (!sub) {
-      // If not a subcommand, check if it's an argument placeholder
-      if (part.startsWith("<") || part.startsWith("[")) break;
-      // It might be a parameter value (e.g. 'alice' in 'accounts fund alice')
-      // We heuristic: if current command has arguments, assume it's one
-      if ((current as any)._args && (current as any)._args.length > 0) break;
-      
-      return { ok: false, error: `Command part "${part}" not found in "${current.name()}" hierarchy` };
-    }
-    current = sub;
+function findOption(cmd: Command, name: string): any {
+  let c: Command | null = cmd;
+  while (c) {
+    const opt = c.options.find(o => o.short === name || o.long === name);
+    if (opt) return opt;
+    c = c.parent;
   }
-  
+  return null;
+}
+
+function verifyCommand(fullCmd: string): { ok: boolean; error?: string } {
+  const tokens = fullCmd.split(/\s+/).filter(t => t.length > 0);
+  if (tokens.length === 0) return { ok: true };
+
+  let current: Command = program;
+  let i = 0;
+
+  while (i < tokens.length) {
+    const token = tokens[i]!;
+
+    // 1. If it starts with "-", it is an option/flag
+    if (token.startsWith("-")) {
+      const optionName = token.split("=")[0]!;
+      const opt = findOption(current, optionName);
+      if (opt) {
+        if (opt.required || opt.optional) {
+          if (!token.includes("=") && i + 1 < tokens.length && !tokens[i + 1]!.startsWith("-")) {
+            i++; // skip option value
+          }
+        }
+      } else {
+        // Fallback: if not registered but next token looks like a value, skip it
+        if (i + 1 < tokens.length && !tokens[i + 1]!.startsWith("-")) {
+          i++;
+        }
+      }
+      i++;
+      continue;
+    }
+
+    // 2. If it's a subcommand of the current command
+    const sub = current.commands.find(c => c.name() === token || c.aliases().includes(token));
+    if (sub) {
+      current = sub;
+      i++;
+      continue;
+    }
+
+    // 3. If it's an argument placeholder (like <name> or [path])
+    if (token.startsWith("<") || token.startsWith("[")) {
+      i++;
+      continue;
+    }
+
+    // 4. If current command accepts positional arguments, consume it
+    if ((current as any)._args && (current as any)._args.length > 0) {
+      i++;
+      continue;
+    }
+
+    // 5. Otherwise, it is an unrecognized part / drift
+    return { ok: false, error: `Command part "${token}" not found in "${current.name()}" hierarchy` };
+  }
+
   return { ok: true };
 }
+
 
 const WORKSPACE_ROOT = path.resolve(__dirname, "../../..");
 

@@ -5,6 +5,7 @@ import {
   recomputeMass
 } from "../src/index.js";
 import { createTxPlanArtifact } from "../src/tx-plan.js";
+import { asNetworkId } from "@hardkas/core";
 
 describe("Fee Correctness (Fase 1 Hardening)", () => {
   const basePlan = {
@@ -22,7 +23,7 @@ describe("Fee Correctness (Fase 1 Hardening)", () => {
 
   it("should recompute correct mass for a standard plan", () => {
     const artifact = createTxPlanArtifact({
-      networkId: "simnet",
+      networkId: asNetworkId("simnet") as any,
       mode: "simulated",
       from: { input: "alice", address: "kaspa:qalice" },
       to: { input: "bob", address: "kaspa:qbob" },
@@ -36,7 +37,7 @@ describe("Fee Correctness (Fase 1 Hardening)", () => {
 
   it("should pass verification for a valid fee artifact", () => {
     const artifact = createTxPlanArtifact({
-      networkId: "simnet",
+      networkId: asNetworkId("simnet") as any,
       mode: "simulated",
       from: { input: "alice", address: "kaspa:qalice" },
       to: { input: "bob", address: "kaspa:qbob" },
@@ -51,7 +52,7 @@ describe("Fee Correctness (Fase 1 Hardening)", () => {
 
   it("should fail when mass is mutated", () => {
     const artifact = createTxPlanArtifact({
-      networkId: "simnet",
+      networkId: asNetworkId("simnet") as any,
       mode: "simulated",
       from: { input: "alice", address: "kaspa:qalice" },
       to: { input: "bob", address: "kaspa:qbob" },
@@ -66,7 +67,7 @@ describe("Fee Correctness (Fase 1 Hardening)", () => {
 
   it("should fail on negative fee", () => {
     const artifact = createTxPlanArtifact({
-      networkId: "simnet",
+      networkId: asNetworkId("simnet") as any,
       mode: "simulated",
       from: { input: "alice", address: "kaspa:qalice" },
       to: { input: "bob", address: "kaspa:qbob" },
@@ -82,7 +83,7 @@ describe("Fee Correctness (Fase 1 Hardening)", () => {
   it("should fail on input/output imbalance", () => {
     // Inputs (10000) < Outputs (5000) + Change (6000) + Fee (350) = 11350
     const artifact = createTxPlanArtifact({
-      networkId: "simnet",
+      networkId: asNetworkId("simnet") as any,
       mode: "simulated",
       from: { input: "alice", address: "kaspa:qalice" },
       to: { input: "bob", address: "kaspa:qbob" },
@@ -97,7 +98,7 @@ describe("Fee Correctness (Fase 1 Hardening)", () => {
 
   it("should fail on dust outputs", () => {
     const artifact = createTxPlanArtifact({
-      networkId: "simnet",
+      networkId: asNetworkId("simnet") as any,
       mode: "simulated",
       from: { input: "alice", address: "kaspa:qalice" },
       to: { input: "bob", address: "kaspa:qbob" },

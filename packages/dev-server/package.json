@@ -1,0 +1,35 @@
+{
+  "name": "@hardkas/dev-server",
+  "version": "0.4.0-alpha",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": "./dist/index.js"
+  },
+  "scripts": {
+    "build": "tsup src/index.ts --format esm --dts --clean",
+    "test": "vitest run --passWithNoTests",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@hardkas/bridge-local": "workspace:*",
+    "@hardkas/core": "workspace:*",
+    "@hardkas/kaspa-rpc": "workspace:*",
+    "@hardkas/sessions": "workspace:*",
+    "@hono/node-server": "^1.13.7",
+    "hono": "^4.6.12",
+    "open": "^11.0.0"
+  },
+  "devDependencies": {
+    "tsup": "^8.3.5",
+    "typescript": "^5.9.3",
+    "vitest": "^2.1.8"
+  },
+  "license": "MIT",
+  "author": "Javier Rodriguez",
+  "files": [
+    "dist",
+    "README.md"
+  ]
+}

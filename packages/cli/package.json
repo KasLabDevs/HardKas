@@ -1,6 +1,6 @@
 {
   "name": "@hardkas/cli",
-  "version": "0.3.0-alpha",
+  "version": "0.4.0-alpha",
   "type": "module",
   "files": [
     "dist",
@@ -25,8 +25,10 @@
   "dependencies": {
     "@hardkas/accounts": "workspace:*",
     "@hardkas/artifacts": "workspace:*",
+    "@hardkas/bridge-local": "workspace:*",
     "@hardkas/config": "workspace:*",
     "@hardkas/core": "workspace:*",
+    "@hardkas/dev-server": "workspace:*",
     "@hardkas/kaspa-rpc": "workspace:*",
     "@hardkas/query": "workspace:*",
     "@hardkas/l2": "workspace:*",
@@ -35,13 +37,16 @@
     "@hardkas/node-runner": "workspace:*",
     "@hardkas/query-store": "workspace:*",
     "@hardkas/sdk": "workspace:*",
+    "@hardkas/sessions": "workspace:*",
     "@hardkas/simulator": "workspace:*",
     "@hardkas/testing": "workspace:*",
     "@hardkas/tx-builder": "workspace:*",
     "commander": "^12.1.0",
     "enquirer": "^2.4.1",
     "execa": "^9.5.2",
+    "open": "^10.1.0",
     "picocolors": "^1.1.1",
+    "viem": "^2.21.32",
     "zod": "^3.23.8"
   },
   "devDependencies": {

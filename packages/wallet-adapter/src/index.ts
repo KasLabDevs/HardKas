@@ -86,7 +86,13 @@ export async function connectKaspaWallet(options: {
     throw new Error(`Wallet provider not found: ${options.preferredWalletId}`);
   }
 
-  await selected.connect({ networkId: options.networkId });
+  const account = await selected.connect({ networkId: options.networkId });
+
+  if (options.networkId && account.networkId !== options.networkId) {
+    throw new Error(
+      `Wallet connected to ${account.networkId}, expected ${options.networkId}`
+    );
+  }
 
   return selected;
 }
