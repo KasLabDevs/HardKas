@@ -10,6 +10,10 @@ Understand the core principles that drive HardKAS.
 - [L1 (Kaspa) vs L2 (Igra)](./concepts/l1-vs-l2.md)
 - [Security Model](./security-model.md)
 - [Current Status (What Actually Works)](./what-actually-works.md)
+- [Local Igra Onboarding](./onboarding-local-igra.md)
+- [React Integration](./react-local-integration.md)
+- [Getting Started (Local Golden Path)](./getting-started-local.md)
+- [HardKas Dev Server (Local)](./dev-server-local.md)
 
 ## 🏗️ Architecture
 Deep dives into the technical boundaries and lifecycles.
@@ -41,5 +45,5 @@ The CLI documentation is auto-generated from the command tree definition to prev
 
 ---
 
-HardKAS is currently in **v0.2-alpha**. APIs and schemas are evolving.
+HardKAS is currently in **v0.3.0-alpha (HARDENED ALPHA)**. APIs and schemas are evolving.
 For getting started instructions, see the main [README.md](../README.md).

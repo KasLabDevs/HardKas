@@ -56,9 +56,9 @@ describe("Artifacts - Determinism and Verification", () => {
     ];
 
     const sorted = sortUtxosByOutpoint(utxos);
-    expect(sorted[0].id).toBe("tx1:0");
-    expect(sorted[1].id).toBe("tx1:1");
-    expect(sorted[2].id).toBe("tx2:0");
+    expect(sorted[0]!.id).toBe("tx1:0");
+    expect(sorted[1]!.id).toBe("tx1:1");
+    expect(sorted[2]!.id).toBe("tx2:0");
   });
 
   it("should verify a valid canonical artifact", async () => {

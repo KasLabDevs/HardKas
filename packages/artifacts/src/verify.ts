@@ -51,7 +51,7 @@ export type ArtifactVerificationResult = {
 /**
  * Sorts UTXOs deterministically by outpoint (transactionId:index).
  */
-export function sortUtxosByOutpoint(utxos: unknown[]): unknown[] {
+export function sortUtxosByOutpoint<T>(utxos: T[]): T[] {
   return [...utxos].sort((a: any, b: any) => {
     const aId = a.id || (a.outpoint ? `${a.outpoint.transactionId}:${a.outpoint.index}` : "");
     const bId = b.id || (b.outpoint ? `${b.outpoint.transactionId}:${b.outpoint.index}` : "");

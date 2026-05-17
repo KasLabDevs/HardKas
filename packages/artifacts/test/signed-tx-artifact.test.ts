@@ -7,7 +7,8 @@ import {
   HARDKAS_VERSION,
   ARTIFACT_SCHEMAS,
   ARTIFACT_VERSION
-} from "../src";
+} from "../src/index.js";
+import { asNetworkId } from "@hardkas/core";
 
 describe("SignedTxArtifact", () => {
   const mockPlan: any = {
@@ -15,7 +16,7 @@ describe("SignedTxArtifact", () => {
     hardkasVersion: HARDKAS_VERSION,
     version: ARTIFACT_VERSION,
     createdAt: new Date().toISOString(),
-    networkId: "simnet",
+    networkId: asNetworkId("simnet"),
     mode: "simulated",
     planId: "p123",
     from: { address: "addr1" },

@@ -1,0 +1,15 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "outDir": "dist",
+    "paths": {
+      "@hardkas/config": ["../config/src/index.ts"],
+      "@hardkas/sessions": ["../sessions/src/index.ts"],
+      "@hardkas/accounts": ["../accounts/src/index.ts"],
+      "@hardkas/core": ["../core/src/index.ts"],
+      "@hardkas/artifacts": ["../artifacts/src/index.ts"],
+      "@hardkas/tx-builder": ["../tx-builder/src/index.ts"]
+    }
+  },
+  "include": ["src/**/*.ts", "test/**/*.ts"]
+}

@@ -1,6 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { createTxPlanArtifact } from "../src/tx-plan.js";
 import { ARTIFACT_VERSION } from "../src/schemas.js";
+import { asNetworkId } from "@hardkas/core";
 
 describe("TxPlanArtifact", () => {
   it("should create a valid artifact from a plan", () => {
@@ -18,7 +19,7 @@ describe("TxPlanArtifact", () => {
     };
 
     const artifact = createTxPlanArtifact({
-      networkId: "simnet",
+      networkId: asNetworkId("simnet") as any,
       mode: "simulated",
       from: { input: "alice", address: "addr1", accountName: "Alice" },
       to: { input: "addr2", address: "addr2" },
@@ -30,7 +31,7 @@ describe("TxPlanArtifact", () => {
     expect(artifact.version).toBe(ARTIFACT_VERSION);
     expect(artifact.amountSompi).toBe("500");
     expect(artifact.inputs).toHaveLength(1);
-    expect(artifact.inputs[0].amountSompi).toBe("1000");
+    expect(artifact.inputs[0]!.amountSompi).toBe("1000");
     expect(artifact.estimatedFeeSompi).toBe("10");
     expect(artifact.contentHash).toBeDefined();
   });

@@ -19,7 +19,7 @@ vi.mock("@hardkas/l2", async (importOriginal) => {
   return {
     ...actual,
     EvmJsonRpcClient: vi.fn().mockImplementation(() => ({
-      getChainId: vi.fn().mockResolvedValue(12345),
+      getChainId: vi.fn().mockResolvedValue(19416),
       getBlockNumber: vi.fn().mockResolvedValue(100n),
       getGasPriceWei: vi.fn().mockResolvedValue(1000000000n),
       getBalanceWei: vi.fn().mockResolvedValue(1000000000000000000n),
@@ -71,7 +71,7 @@ vi.mock("@hardkas/artifacts", async (importOriginal) => {
          mode: "l2-rpc",
          planId: "test-plan",
          l2Network: "igra",
-         chainId: 12345,
+         chainId: 19416,
          request: { from: "0x1234567890123456789012345678901234567890", to: "0x1234567890123456789012345678901234567890", data: "0x", valueWei: "0" },
          status: "built"
        };
@@ -82,7 +82,7 @@ vi.mock("@hardkas/artifacts", async (importOriginal) => {
          mode: "l2-rpc",
          signedId: "test-signed",
          l2Network: "igra",
-         chainId: 12345,
+         chainId: 19416,
          rawTransaction: "0xraw",
          txHash: "0x0000000000000000000000000000000000000000000000000000000000000001",
          status: "signed"
@@ -130,7 +130,7 @@ describe("Igra L2 Smoke Tests (Mocked)", () => {
 
     it("l2 rpc chain-id", async () => {
       await runL2RpcChainId({ network: "igra", url: "http://localhost:8545" });
-      expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining("12345"));
+      expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining("19416"));
     });
 
     it("l2 rpc gas-price", async () => {

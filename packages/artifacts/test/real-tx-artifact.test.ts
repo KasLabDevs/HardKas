@@ -4,13 +4,13 @@ import {
   utxoFromArtifact, 
   txOutputToArtifact, 
   txOutputFromArtifact,
-  txOutputFromArtifact,
   validateTxPlanArtifact,
   HARDKAS_VERSION,
   ARTIFACT_SCHEMAS,
   ARTIFACT_VERSION
 } from "../src/index.js";
 import { Utxo, TxOutput } from "@hardkas/tx-builder";
+import { asTxId, asKaspaAddress } from "@hardkas/core";
 
 describe("Real Transaction Artifacts", () => {
   describe("Conversions", () => {
@@ -47,8 +47,8 @@ describe("Real Transaction Artifacts", () => {
 
     it("should throw on invalid BigInt string", () => {
       expect(() => utxoFromArtifact({
-        outpoint: { transactionId: "a", index: 0 },
-        address: "addr",
+        outpoint: { transactionId: asTxId("a"), index: 0 },
+        address: asKaspaAddress("addr"),
         amountSompi: "invalid",
         scriptPublicKey: "s"
       })).toThrow(/Invalid BigInt string/);

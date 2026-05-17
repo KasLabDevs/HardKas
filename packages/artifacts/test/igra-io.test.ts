@@ -59,8 +59,8 @@ describe("Igra L2 IO Helpers", () => {
 
     const result = await listIgraTxReceiptArtifacts();
     expect(result).toHaveLength(2);
-    expect(result[0].txHash).toBe(r2.txHash); // 2026-01-02 comes first
-    expect(result[1].txHash).toBe(r1.txHash);
+    expect(result[0]!.txHash).toBe(r2.txHash); // 2026-01-02 comes first
+    expect(result[1]!.txHash).toBe(r1.txHash);
   });
 
   it("should return empty list if directory missing", async () => {

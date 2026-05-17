@@ -30,18 +30,4 @@ export function registerMiscCommands(program: Command) {
       }
     });
 
-  // --- Dev Command ---
-  program.command("dev")
-    .description("Start development environment")
-    .option("--mode <mode>", "simulated or node", "simulated")
-    .action(async (options: { mode: string }) => {
-      if (options.mode === "simulated") {
-        const state = await loadOrCreateLocalnetState();
-        UI.success("Local HardKAS devnet (simulated) is ready.");
-        UI.info(`Network: ${state.networkId}`);
-        UI.info(`Accounts: ${state.accounts.length}`);
-      } else {
-        UI.info("Node mode requires 'hardkas node start'.");
-      }
-    });
 }

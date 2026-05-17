@@ -1,6 +1,57 @@
 import { describe, it, expect } from "vitest";
 import { verifyArtifactIntegrity, verifyArtifactSemantics } from "../src/verify.js";
-import { AdversarialFixtures } from "../../testing/src/adversarial-fixtures.js";
+import { ARTIFACT_VERSION, CURRENT_HASH_VERSION } from "../src/index.js";
+import { calculateContentHash } from "../src/canonical.js";
+
+const AdversarialFixtures = {
+  hashMismatch() {
+    const artifact: any = {
+      schema: "hardkas.txPlan",
+      version: ARTIFACT_VERSION,
+      networkId: "simnet",
+      mode: "simulated",
+      amountSompi: "1000",
+      estimatedFeeSompi: "1",
+      estimatedMass: "1",
+      from: { address: "kaspasim:qz0s9xrz5y5e8dq5azmpg756aeepm6fesq82ye7wv" },
+      to: { address: "kaspasim:qq0d6h0prjm5mpdld5pncst3adu0yam6xch9fkr6eg" },
+      inputs: [],
+      outputs: [],
+      hashVersion: CURRENT_HASH_VERSION
+    };
+    const realHash = calculateContentHash(artifact, CURRENT_HASH_VERSION);
+    artifact.contentHash = "f" + realHash.slice(1); // Tampered
+    artifact.artifactId = `plan-${artifact.contentHash.slice(0, 16)}`;
+    artifact.planId = artifact.artifactId;
+    return artifact;
+  },
+
+  crossNetworkLineage() {
+    const parent: any = {
+      schema: "hardkas.txPlan",
+      version: ARTIFACT_VERSION,
+      artifactId: "parent-mainnet",
+      contentHash: "hash-mainnet",
+      networkId: "mainnet",
+      mode: "l1-rpc"
+    };
+    const child: any = {
+      schema: "hardkas.signedTx",
+      version: ARTIFACT_VERSION,
+      artifactId: "child-simnet",
+      contentHash: "hash-simnet",
+      networkId: "simnet",
+      mode: "simulated",
+      lineage: { 
+        artifactId: "hash-simnet",
+        parentArtifactId: "parent-mainnet",
+        lineageId: "b".repeat(64),
+        rootArtifactId: "c".repeat(64)
+      }
+    };
+    return { parent, child };
+  }
+};
 
 describe("PR 7: Adversarial Integrity Validation", () => {
   it("should detect hash mismatch in tampered artifacts", async () => {

@@ -1,0 +1,49 @@
+{
+  "name": "@hardkas/react",
+  "version": "0.3.0-alpha",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": "./dist/index.js"
+  },
+  "scripts": {
+    "build": "tsup src/index.ts --format esm --dts --clean",
+    "test": "vitest run --passWithNoTests",
+    "typecheck": "tsc --noEmit"
+  },
+  "peerDependencies": {
+    "react": ">=18",
+    "react-dom": ">=18"
+  },
+  "dependencies": {
+    "@hardkas/bridge-local": "workspace:*",
+    "@hardkas/core": "workspace:*",
+    "@hardkas/kaspa-rpc": "workspace:*",
+    "@hardkas/l2": "workspace:*",
+    "@hardkas/sessions": "workspace:*",
+    "@tanstack/react-query": "^5.61.5",
+    "viem": "^2.21.51"
+  },
+  "devDependencies": {
+    "@testing-library/dom": "^10.4.1",
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/react": "^16.3.2",
+    "@types/react": "^18.3.12",
+    "@types/react-dom": "^18.3.1",
+    "@vitejs/plugin-react": "^4.7.0",
+    "jsdom": "^29.1.1",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "tsup": "^8.3.5",
+    "typescript": "^5.7.2",
+    "vite": "^5.0.0",
+    "vitest": "^2.1.8"
+  },
+  "license": "MIT",
+  "author": "Javier Rodriguez",
+  "files": [
+    "dist",
+    "README.md"
+  ]
+}

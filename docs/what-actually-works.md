@@ -53,6 +53,10 @@ This document intentionally separates:
 | **Property Testing** | STABLE | High-coverage state and artifact property tests using `fast-check`. |
 | **Release Hygiene** | STABLE | `pack-release.ts` enforces clean state (no .hardkas, no env, no node_modules) for release artifacts. |
 | **Deployment Tracking** | STABLE | Local workflow tracking in `.hardkas/deployments/`. Supports labels, status verification, and lineage linking. |
+| **Session Management** | STABLE | L1/L2 identity linkage and context resolution. Prevents cache collisions with session-aware query keys. |
+| **Bridge Local (Sim)** | STABLE | Deterministic bridge-entry simulation (Kaspa -> Igra). Includes prefix mining simulation. |
+| **Kaspa L1 Wallet** | STABLE | Native CLI wallet management for development (create, list, balance, send). |
+| **React Hooks** | STABLE | Local-first React integration layer (`@hardkas/react`) with session-aware hooks. |
 | **Console / REPL** | STABLE | Interactive Node.js REPL with HardKAS SDK and test harness pre-injected as `h`. |
 | **Capabilities API** | STABLE | Machine-readable self-description via `hardkas capabilities --json`. |
 
@@ -74,9 +78,8 @@ This document intentionally separates:
 
 | Area | Current State | Risk |
 | :--- | :--- | :--- |
-| **CLI Hints** | `Next: hardkas l2 tx send` (when it wasn't implemented). | **LOW**: User confusion. Many hints suggest commands that are barely in development. |
+| **CLI Hints** | `Next: hardkas metamask ...` | **LOW**: User confusion. Most hints are now aligned with v0.3.0 commands. |
 | **Profile Loading** | L2 profiles are hardcoded in the binary. | **MEDIUM**: Prevents users from defining their own Igra networks in the config. |
-| **Session Management** | `🟢 STABLE` | Reframed as `session-open/close` to avoid security theater. Explicitly stateless. |
 
 ## 7. Broken / Unwired Systems
 

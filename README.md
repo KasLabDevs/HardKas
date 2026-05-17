@@ -4,17 +4,20 @@
 [![NPM Version](https://img.shields.io/npm/v/@hardkas/cli?color=red&label=cli)](https://www.npmjs.com/package/@hardkas/cli)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-**HardKAS** is local-first deterministic Kaspa developer tooling. It provides a hardened, deterministic environment for planning, verifying, and auditing transaction workflows and protocol-level integrations on the Kaspa BlockDAG.
+**HardKAS** is the **Deterministic Local Development Operating System** for Kaspa and Igra (L2). 
+
+It provides a hardened, unified runtime for building, simulating, and auditing full-stack applications across Kaspa's BlockDAG and Igra's EVM execution layers, serving as the persistent developer cockpit for the entire BlockDAG ecosystem.
 
 ---
 
 ## Published Packages
 
-| Package | Version | Description |
-|:---|:---|:---|
 | [`@hardkas/sdk`](https://www.npmjs.com/package/@hardkas/sdk) | [![npm](https://img.shields.io/npm/v/@hardkas/sdk)](https://www.npmjs.com/package/@hardkas/sdk) | Full developer SDK for Kaspa |
 | [`@hardkas/cli`](https://www.npmjs.com/package/@hardkas/cli) | [![npm](https://img.shields.io/npm/v/@hardkas/cli)](https://www.npmjs.com/package/@hardkas/cli) | Command-line interface for BlockDAG operations |
 | [`@hardkas/core`](https://www.npmjs.com/package/@hardkas/core) | [![npm](https://img.shields.io/npm/v/@hardkas/core)](https://www.npmjs.com/package/@hardkas/core) | Core primitives and types |
+| [`@hardkas/react`](https://www.npmjs.com/package/@hardkas/react) | [![npm](https://img.shields.io/npm/v/@hardkas/react)](https://www.npmjs.com/package/@hardkas/react) | Local-first React integration layer |
+| [`@hardkas/sessions`](https://www.npmjs.com/package/@hardkas/sessions) | [![npm](https://img.shields.io/npm/v/@hardkas/sessions)](https://www.npmjs.com/package/@hardkas/sessions) | L1/L2 Identity & Context Management |
+| [`@hardkas/bridge-local`](https://www.npmjs.com/package/@hardkas/bridge-local) | [![npm](https://img.shields.io/npm/v/@hardkas/bridge-local)](https://www.npmjs.com/package/@hardkas/bridge-local) | Local bridge entry simulation engine |
 
 ---
 
@@ -58,6 +61,10 @@ HardKAS has a deterministic end-to-end local artifact workflow proof covering si
 - **Artifact Verification**: Strict auditing of transaction integrity and semantics.
 - **Localnet Orchestration**: Simplifies managing kaspad nodes and simulated states.
 - **RPC Diagnostics**: Comprehensive network and node health tools.
+- **L1/L2 Identity Management**: Session-aware developer context resolution.
+- **Bridge-Entry Simulation**: Deterministic simulation of Kaspa -> Igra entries.
+- **Native Kaspa Wallet (Local)**: Deterministic L1 wallet management for devs.
+- **React Integration**: Local-first hooks for full-stack prototyping.
 - **Early L2 Integration**: Foundational support for Igra EVM integration workflows.
 
 ### HardKAS IS NOT:
@@ -71,6 +78,7 @@ HardKAS has a deterministic end-to-end local artifact workflow proof covering si
 - **Trustless Bridge System**: Current bridge modeling assumes MPC/Multisig trust boundaries.
 - **EVM on L1**: There is no EVM execution on the Kaspa L1 layer.
 - **Kaspa L1 Auditor**: It audits developer workflows, not the Kaspa L1 protocol itself.
+- **"Hardhat for Kaspa"**: HardKAS is a multi-layer BlockDAG infrastructure platform. While it provides similar developer comfort, its architecture is built for the unique deterministic and structural requirements of Kaspa and ZK-ready L2s.
 
 ---
 
@@ -98,6 +106,23 @@ HardKAS maintains strict boundaries between different architectural layers:
 - **Deterministic Artifacts**: Canonical schemas for Plans, SignedTx, and Receipts.
 - **Replay Invariants**: Reproducible simulated transaction outcomes.
 - **Snapshot Hashing**: Verifiable state snapshots for localnet persistence.
+
+---
+
+## Local Igra Onboarding
+
+HardKAS provides a dedicated flow for local Igra (Kaspa L2) development:
+
+1. **Diagnose**: `hardkas dev doctor` — Check environment health.
+2. **Setup**: `hardkas local wizard` — Guided account creation and funding.
+3. **Identity**: `hardkas session create` — Link L1 and L2 identities.
+4. **Runtime**: `hardkas dashboard` — Launch the visual developer cockpit.
+5. **Connect**: MetaMask & KasWare Local Adapters — Sync browser wallets to the local session.
+6. **Bridge**: `hardkas bridge local plan` — Simulate cross-layer entry.
+7. **Prototyping**: `@hardkas/react` — Full-stack hooks for local apps.
+
+> [!CAUTION]
+> **Developer Only**: These tools are strictly for local development and simulation. Never export production secrets or use these tools for mainnet assets.
 - **Semantic Verification**: Deep auditing of fee correctness and lineage.
 - **Encrypted Dev Keystore**: Argon2id/AES-256 protected local keys.
 - **RPC Resilience**: Automated retries, health scoring, and diagnostics.
@@ -236,6 +261,9 @@ hardkas example list
 ```bash
 hardkas --help
 hardkas tx --help
+hardkas kaspa --help
+hardkas bridge --help
+hardkas session --help
 hardkas artifact --help
 hardkas rpc --help
 ```

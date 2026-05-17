@@ -1,4 +1,6 @@
 export * from "./profiles.js";
+export * from "./metamask.js";
+export { resolveL2Profile as getL2NetworkProfile } from "./registry.js";
 export * from "./registry.js";
 export * from "./evm-rpc-client.js";
 export * from "./evm-rpc-health.js";
