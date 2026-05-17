@@ -33,4 +33,4 @@ This checklist must be completed and verified before any public or private Relea
 ## 6. Documentation
 - [x] `README.md` version matches `package.json`.
 - [x] `SECURITY.md` is present.
-- [x] `v0.3.0-alpha` banners are updated in CLI output.
+- [x] `v0.4.0-alpha` banners are updated in CLI output.
