@@ -46,7 +46,7 @@ export async function runSessionList() {
 
     if (sessions.length === 0) {
       console.log(`\nNo sessions found. Create one with:`);
-      console.log(`hardkas session create dev-alice --l1 alice --l2 dev_alice\n`);
+      console.log(`hardkas session create dev --l1 alice --l2 bob\n`);
       return;
     }
 

@@ -1,6 +1,6 @@
 {
   "name": "@hardkas/dev-server",
-  "version": "0.5.0-alpha",
+  "version": "0.5.1-alpha",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -8,11 +8,13 @@
     ".": "./dist/index.js"
   },
   "scripts": {
-    "build": "tsup src/index.ts --format esm --dts --clean",
+    "build": "tsup src/index.ts --format esm --dts --clean && pnpm build:dashboard",
+    "build:dashboard": "node scripts/copy-dashboard.js",
     "test": "vitest run --passWithNoTests",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@hardkas/artifacts": "workspace:*",
     "@hardkas/bridge-local": "workspace:*",
     "@hardkas/core": "workspace:*",
     "@hardkas/kaspa-rpc": "workspace:*",
@@ -30,6 +32,7 @@
   "author": "Javier Rodriguez",
   "files": [
     "dist",
+    "dashboard",
     "README.md"
   ]
 }

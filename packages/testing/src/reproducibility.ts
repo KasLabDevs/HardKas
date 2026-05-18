@@ -8,7 +8,7 @@
 // SQLite WAL durability, or consensus replay validity.
 // It proves ONLY: same code + same inputs = same contentHash everywhere.
 
-import { calculateContentHash } from "@hardkas/artifacts";
+import { calculateContentHash, HARDKAS_VERSION } from "@hardkas/artifacts";
 import { createTestHarness } from "./harness.js";
 import { runLinearChain, runWideDag, profileMass } from "@hardkas/simulator";
 
@@ -119,7 +119,7 @@ export function generateReproducibilityReport(): ReproducibilityReport {
 
   return {
     proofVersion: "repro-v0",
-    hardkasVersion: "0.5.0-alpha",
+    hardkasVersion: HARDKAS_VERSION,
     artifacts: {
       l1Plan: calculateContentHash(l1Plan),
       l1Signed: calculateContentHash(l1Signed),

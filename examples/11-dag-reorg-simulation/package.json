@@ -1,13 +1,13 @@
 {
   "name": "@examples/dag-reorg-simulation",
-  "version": "0.5.0-alpha",
+  "version": "0.5.1-alpha",
   "type": "module",
   "scripts": {
     "start": "tsx main.ts"
   },
   "dependencies": {
-    "@hardkas/sdk": "0.2.2-alpha",
-    "@hardkas/localnet": "0.2.2-alpha"
+    "@hardkas/sdk": "workspace:*",
+    "@hardkas/localnet": "workspace:*"
   },
   "private": true
 }

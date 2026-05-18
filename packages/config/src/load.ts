@@ -2,7 +2,7 @@ import path from "node:path";
 import fs from "node:fs";
 import { createJiti } from "jiti";
 import { DEFAULT_HARDKAS_CONFIG } from "./defaults";
-import type { LoadedHardkasConfig } from "./types";
+import type { LoadedHardkasConfig, HardkasConfig } from "./types";
 
 export interface LoadHardkasConfigOptions {
   cwd?: string;
@@ -54,12 +54,30 @@ async function loadConfigFile(filePath: string, cwd: string): Promise<LoadedHard
   try {
     const jiti = createJiti(import.meta.url);
     const module = await jiti.import(filePath) as any;
-    const config = module.default || module.config || module;
+    const userConfig = module.default || module.config || module;
+
+    // Deep merge: defaults fill missing fields, user config overrides
+    const mergedConfig: HardkasConfig = {
+      ...DEFAULT_HARDKAS_CONFIG,
+      ...userConfig,
+      // Merge networks: built-ins + user custom networks
+      networks: {
+        ...DEFAULT_HARDKAS_CONFIG.networks,
+        ...(userConfig.networks && typeof userConfig.networks === "object" ? userConfig.networks : {}),
+      },
+      // Merge accounts: only if user provides an object (not a number)
+      accounts: {
+        ...DEFAULT_HARDKAS_CONFIG.accounts,
+        ...(userConfig.accounts && typeof userConfig.accounts === "object" && !Array.isArray(userConfig.accounts)
+          ? userConfig.accounts
+          : {}),
+      },
+    };
 
     return {
       path: filePath,
       cwd: cwd,
-      config: config
+      config: mergedConfig,
     };
   } catch (error) {
     throw new Error(`Failed to load HardKAS config at ${filePath}: ${error instanceof Error ? error.message : String(error)}`);

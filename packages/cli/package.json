@@ -1,6 +1,6 @@
 {
   "name": "@hardkas/cli",
-  "version": "0.5.0-alpha",
+  "version": "0.5.1-alpha",
   "type": "module",
   "main": "./dist/public.js",
   "types": "./dist/public.d.ts",

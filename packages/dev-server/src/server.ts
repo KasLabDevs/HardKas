@@ -11,9 +11,11 @@ import { sandboxRoutes } from "./routes/sandbox.js";
 import { streamRoutes } from "./stream.js";
 import { serveStatic } from "@hono/node-server/serve-static";
 import path from "node:path";
+import fs from "node:fs";
 import { fileURLToPath } from "node:url";
 import open from "open";
 import { loadSessionStoreWithDiagnostics } from "@hardkas/sessions";
+import { HARDKAS_VERSION } from "@hardkas/artifacts";
 
 export interface DevServerConfig {
   port: number;
@@ -55,7 +57,7 @@ export function createDevServer(config: DevServerConfig) {
 
   app.get("/", (c) => c.json({ 
     name: "HardKas Dev Server", 
-    version: "0.5.0-alpha",
+    version: HARDKAS_VERSION,
     status: "running" 
   }));
 
@@ -67,14 +69,35 @@ export function createDevServer(config: DevServerConfig) {
   app.route("/api/walletconnect/sandbox", sandboxRoutes);
   app.route("/api/stream", streamRoutes);
 
-  // Serve Dashboard
-  const __dirname = path.dirname(fileURLToPath(import.meta.url));
-  const dashboardDist = path.resolve(__dirname, "../../../apps/dashboard/dist");
+  // Try to find dashboard dist in multiple locations
+  function findDashboardDist(): string | null {
+    const __dirname = path.dirname(fileURLToPath(import.meta.url));
+    const candidates = [
+      path.resolve(__dirname, "../../../apps/dashboard/dist"),   // monorepo dev
+      path.resolve(__dirname, "../dashboard"),                    // bundled in package
+      path.resolve(process.cwd(), "node_modules/@hardkas/dev-server/dashboard"), // npm install
+    ];
+    for (const c of candidates) {
+      try { if (fs.existsSync(c)) return c; } catch {}
+    }
+    return null;
+  }
 
-  app.use("/*", serveStatic({ 
-    root: dashboardDist,
-    rewriteRequestPath: (p) => p === "/" ? "/index.html" : p
-  }));
+  const dashboardDist = findDashboardDist();
+  if (dashboardDist) {
+    app.use("/*", serveStatic({
+      root: dashboardDist,
+      rewriteRequestPath: (p) => p === "/" ? "/index.html" : p
+    }));
+  } else {
+    app.get("/", (c) => c.json({
+      name: "HardKas Dev Server",
+      version: HARDKAS_VERSION,
+      status: "running",
+      dashboard: "not-found",
+      message: "Dashboard not built. API available at /api/*. Run 'pnpm build' in apps/dashboard to enable the UI."
+    }));
+  }
 
   return {
     app,
