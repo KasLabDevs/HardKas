@@ -269,6 +269,24 @@ importers:
         specifier: ^5.4.11
         version: 5.4.21(@types/node@22.19.17)
 
+  examples/test-final:
+    devDependencies:
+      '@hardkas/artifacts':
+        specifier: workspace:*
+        version: link:../../packages/artifacts
+      '@hardkas/cli':
+        specifier: workspace:*
+        version: link:../../packages/cli
+      '@hardkas/core':
+        specifier: workspace:*
+        version: link:../../packages/core
+      '@hardkas/testing':
+        specifier: workspace:*
+        version: link:../../packages/testing
+      vitest:
+        specifier: ^2.0.0
+        version: 2.1.9(@types/node@22.19.17)(jsdom@29.1.1(@noble/hashes@1.8.0))
+
   packages/accounts:
     dependencies:
       '@hardkas/artifacts':
@@ -481,6 +499,9 @@ importers:
 
   packages/dev-server:
     dependencies:
+      '@hardkas/artifacts':
+        specifier: workspace:*
+        version: link:../artifacts
       '@hardkas/bridge-local':
         specifier: workspace:*
         version: link:../bridge-local

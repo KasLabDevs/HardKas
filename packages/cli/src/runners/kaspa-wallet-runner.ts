@@ -104,7 +104,7 @@ export async function runKaspaWalletSend(from: string, to: string, options: { am
     const { JsonWrpcKaspaClient } = await import("@hardkas/kaspa-rpc");
     const { buildPaymentPlan } = await import("@hardkas/tx-builder");
     const { signTxPlanArtifact } = await import("@hardkas/accounts");
-    const { HARDKAS_VERSION } = await import("@hardkas/artifacts");
+    const { HARDKAS_VERSION, calculateContentHash } = await import("@hardkas/artifacts");
 
     const sender = resolveHardkasAccount({ nameOrAddress: from, config: config.config });
     const targetAddress = resolveHardkasAccountAddress(to, config.config);
@@ -152,7 +152,7 @@ export async function runKaspaWalletSend(from: string, to: string, options: { am
     // Map internal plan to Artifact format for the signer
     const planArtifact: any = {
       schema: "hardkas.txPlan",
-      planId: `plan-${Date.now()}`,
+      planId: `plan-${calculateContentHash({ from: sender.address, to: targetAddress, amount: amountSompi.toString() }).slice(0, 16)}`,
       hardkasVersion: HARDKAS_VERSION,
       version: "1.0.0-alpha",
       networkId: (config.config as any).networkId || config.config.defaultNetwork || "simnet",

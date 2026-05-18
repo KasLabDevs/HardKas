@@ -2,6 +2,10 @@ import { describe, it, expect } from "vitest";
 import { defineHardkasConfig } from "../src/define";
 import { resolveNetworkTarget } from "../src/resolve";
 import { DEFAULT_HARDKAS_CONFIG } from "../src/defaults";
+import { loadHardkasConfig } from "../src/load";
+import fs from "node:fs";
+import path from "node:path";
+import os from "node:os";
 
 describe("config", () => {
   it("defineHardkasConfig should return the config object", () => {
@@ -30,5 +34,38 @@ describe("config", () => {
   it("resolveNetworkTarget should throw for unknown network", () => {
     expect(() => resolveNetworkTarget({ config: {}, network: "non-existent" }))
       .toThrow(/Unknown HardKAS network 'non-existent'/);
+  });
+
+  it("loadHardkasConfig should deep merge custom config with default config", async () => {
+    const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), "hardkas-config-test-"));
+    const configPath = path.join(tempDir, "hardkas.config.ts");
+    
+    fs.writeFileSync(configPath, `
+export default {
+  defaultNetwork: "custom-net",
+  networks: {
+    "custom-net": { kind: "simulated" }
+  },
+  accounts: {
+    alice: { kind: "simulated", address: "kaspa:custom_alice" }
+  }
+};
+    `);
+
+    try {
+      const loaded = await loadHardkasConfig({ cwd: tempDir, configPath: "hardkas.config.ts" });
+      
+      // Verify custom values are preserved/overridden
+      expect(loaded.config.defaultNetwork).toBe("custom-net");
+      expect(loaded.config.networks?.["custom-net"]).toBeDefined();
+      expect(loaded.config.accounts?.alice?.address).toBe("kaspa:custom_alice");
+      
+      // Verify default values are merged
+      expect(loaded.config.networks?.simnet).toBeDefined();
+      expect(loaded.config.networks?.mainnet).toBeDefined();
+      expect(loaded.config.accounts?.bob).toBeDefined();
+    } finally {
+      fs.rmSync(tempDir, { recursive: true, force: true });
+    }
   });
 });

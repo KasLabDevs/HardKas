@@ -26,9 +26,7 @@ export function generateBasicTemplate(config: {
     "hardkas.config.ts": `import { defineConfig } from "@hardkas/cli";
 
 export default defineConfig({
-  network: "${config.network}",
-  accounts: ${config.accounts},
-  initialBalance: "1000",  // KAS
+  defaultNetwork: "${config.network}",
 });
 `,
 

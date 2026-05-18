@@ -9,6 +9,7 @@ import { JsonWrpcKaspaClient } from "@hardkas/kaspa-rpc";
 import { HardkasStore } from "@hardkas/query-store";
 import { DockerKaspadRunner } from "@hardkas/node-runner";
 import { execa } from "execa";
+import { HARDKAS_VERSION } from "@hardkas/artifacts";
 
 export function registerDoctorCommand(program: Command) {
   program
@@ -47,7 +48,7 @@ interface DoctorCheck {
 
 async function runDoctor(opts: { json?: boolean }) {
   const report: DoctorReport = {
-    version: "0.2.2-alpha.1", // In real world, get this from constants
+    version: HARDKAS_VERSION,
     timestamp: new Date().toISOString(),
     checks: [],
     summary: { total: 0, passed: 0, failed: 0, warnings: 0, skipped: 0 }
