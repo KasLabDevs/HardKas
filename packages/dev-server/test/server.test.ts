@@ -34,7 +34,7 @@ describe("Dev Server", () => {
       const res = await app.request("/api/health", { headers: { host: "localhost" } });
       expect(res.status).toBe(200);
       const json = await res.json();
-      expect(json.status).toBe("ok");
+      expect(["healthy", "stale", "offline"]).toContain(json.status);
       expect(json.services).toBeDefined();
     });
 

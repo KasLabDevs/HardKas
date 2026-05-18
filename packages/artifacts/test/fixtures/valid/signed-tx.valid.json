@@ -1,8 +1,8 @@
 {
   "schema": "hardkas.signedTx",
-  "hardkasVersion": "0.4.0-alpha",
+  "hardkasVersion": "0.5.0-alpha",
   "version": "1.0.0-alpha",
-  "createdAt": "2026-05-17T16:19:17.699Z",
+  "createdAt": "2026-05-18T19:45:05.001Z",
   "status": "signed",
   "signedId": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
   "sourcePlanId": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",

@@ -1,7 +1,13 @@
 {
   "name": "@hardkas/cli",
-  "version": "0.4.0-alpha",
+  "version": "0.5.0-alpha",
   "type": "module",
+  "main": "./dist/public.js",
+  "types": "./dist/public.d.ts",
+  "exports": {
+    ".": "./dist/public.js",
+    "./bin": "./dist/index.js"
+  },
   "files": [
     "dist",
     "README.md",
@@ -11,7 +17,7 @@
     "hardkas": "./dist/index.js"
   },
   "scripts": {
-    "build": "tsup src/index.ts --format esm --clean --external vitest",
+    "build": "tsup src/index.ts src/public.ts --format esm --dts --clean --external vitest",
     "dev": "tsx src/index.ts",
     "hardkas": "tsx src/index.ts",
     "typecheck": "tsc --noEmit",
