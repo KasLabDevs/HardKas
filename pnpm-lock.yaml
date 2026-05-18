@@ -97,32 +97,32 @@ importers:
   examples/01-hello-kaspa:
     dependencies:
       '@hardkas/sdk':
-        specifier: 0.2.2-alpha
-        version: 0.2.2-alpha(typescript@5.9.3)(zod@3.25.76)
+        specifier: workspace:*
+        version: link:../../packages/sdk
 
   examples/02-basic-transfer:
     dependencies:
       '@hardkas/sdk':
-        specifier: 0.2.2-alpha
-        version: 0.2.2-alpha(typescript@5.9.3)(zod@3.25.76)
+        specifier: workspace:*
+        version: link:../../packages/sdk
 
   examples/03-localnet-demo:
     dependencies:
       '@hardkas/sdk':
-        specifier: 0.2.2-alpha
-        version: 0.2.2-alpha(typescript@5.9.3)(zod@3.25.76)
+        specifier: workspace:*
+        version: link:../../packages/sdk
 
   examples/04-trace-and-replay:
     dependencies:
       '@hardkas/artifacts':
-        specifier: 0.2.2-alpha
-        version: 0.2.2-alpha
+        specifier: workspace:*
+        version: link:../../packages/artifacts
       '@hardkas/config':
-        specifier: 0.2.2-alpha
-        version: 0.2.2-alpha
+        specifier: workspace:*
+        version: link:../../packages/config
       '@hardkas/sdk':
-        specifier: 0.2.2-alpha
-        version: 0.2.2-alpha(typescript@5.9.3)(zod@3.25.76)
+        specifier: workspace:*
+        version: link:../../packages/sdk
       tsx:
         specifier: ^4.19.2
         version: 4.21.0
@@ -133,11 +133,11 @@ importers:
   examples/05-snapshot-restore:
     dependencies:
       '@hardkas/localnet':
-        specifier: 0.2.2-alpha
-        version: 0.2.2-alpha
+        specifier: workspace:*
+        version: link:../../packages/localnet
       '@hardkas/sdk':
-        specifier: 0.2.2-alpha
-        version: 0.2.2-alpha(typescript@5.9.3)(zod@3.25.76)
+        specifier: workspace:*
+        version: link:../../packages/sdk
       tsx:
         specifier: ^4.19.2
         version: 4.21.0
@@ -148,8 +148,8 @@ importers:
   examples/06-rpc-node-health:
     dependencies:
       '@hardkas/sdk':
-        specifier: 0.2.2-alpha
-        version: 0.2.2-alpha(typescript@5.9.3)(zod@3.25.76)
+        specifier: workspace:*
+        version: link:../../packages/sdk
       tsx:
         specifier: ^4.19.2
         version: 4.21.0
@@ -160,14 +160,14 @@ importers:
   examples/07-failure-debugging:
     dependencies:
       '@hardkas/artifacts':
-        specifier: 0.2.2-alpha
-        version: 0.2.2-alpha
+        specifier: workspace:*
+        version: link:../../packages/artifacts
       '@hardkas/core':
-        specifier: 0.2.2-alpha
-        version: 0.2.2-alpha
+        specifier: workspace:*
+        version: link:../../packages/core
       '@hardkas/sdk':
-        specifier: 0.2.2-alpha
-        version: 0.2.2-alpha(typescript@5.9.3)(zod@3.25.76)
+        specifier: workspace:*
+        version: link:../../packages/sdk
       tsx:
         specifier: ^4.19.2
         version: 4.21.0
@@ -178,11 +178,11 @@ importers:
   examples/08-igra-l2-readonly:
     dependencies:
       '@hardkas/l2':
-        specifier: 0.2.2-alpha
-        version: 0.2.2-alpha(typescript@5.9.3)(zod@3.25.76)
+        specifier: workspace:*
+        version: link:../../packages/l2
       '@hardkas/sdk':
-        specifier: 0.2.2-alpha
-        version: 0.2.2-alpha(typescript@5.9.3)(zod@3.25.76)
+        specifier: workspace:*
+        version: link:../../packages/sdk
       tsx:
         specifier: ^4.19.2
         version: 4.21.0
@@ -193,14 +193,14 @@ importers:
   examples/09-bridge-assumptions:
     dependencies:
       '@hardkas/artifacts':
-        specifier: 0.2.2-alpha
-        version: 0.2.2-alpha
+        specifier: workspace:*
+        version: link:../../packages/artifacts
       '@hardkas/l2':
-        specifier: 0.2.2-alpha
-        version: 0.2.2-alpha(typescript@5.9.3)(zod@3.25.76)
+        specifier: workspace:*
+        version: link:../../packages/l2
       '@hardkas/sdk':
-        specifier: 0.2.2-alpha
-        version: 0.2.2-alpha(typescript@5.9.3)(zod@3.25.76)
+        specifier: workspace:*
+        version: link:../../packages/sdk
       tsx:
         specifier: ^4.19.2
         version: 4.21.0
@@ -211,14 +211,14 @@ importers:
   examples/10-ci-workflow:
     dependencies:
       '@hardkas/artifacts':
-        specifier: 0.2.2-alpha
-        version: 0.2.2-alpha
+        specifier: workspace:*
+        version: link:../../packages/artifacts
       '@hardkas/localnet':
-        specifier: 0.2.2-alpha
-        version: 0.2.2-alpha
+        specifier: workspace:*
+        version: link:../../packages/localnet
       '@hardkas/sdk':
-        specifier: 0.2.2-alpha
-        version: 0.2.2-alpha(typescript@5.9.3)(zod@3.25.76)
+        specifier: workspace:*
+        version: link:../../packages/sdk
       tsx:
         specifier: ^4.19.2
         version: 4.21.0
@@ -229,11 +229,11 @@ importers:
   examples/11-dag-reorg-simulation:
     dependencies:
       '@hardkas/localnet':
-        specifier: 0.2.2-alpha
-        version: 0.2.2-alpha
+        specifier: workspace:*
+        version: link:../../packages/localnet
       '@hardkas/sdk':
-        specifier: 0.2.2-alpha
-        version: 0.2.2-alpha(typescript@5.9.3)(zod@3.25.76)
+        specifier: workspace:*
+        version: link:../../packages/sdk
 
   examples/react-local-igra:
     dependencies:
@@ -268,24 +268,6 @@ importers:
       vite:
         specifier: ^5.4.11
         version: 5.4.21(@types/node@22.19.17)
-
-  examples/test-final:
-    devDependencies:
-      '@hardkas/artifacts':
-        specifier: workspace:*
-        version: link:../../packages/artifacts
-      '@hardkas/cli':
-        specifier: workspace:*
-        version: link:../../packages/cli
-      '@hardkas/core':
-        specifier: workspace:*
-        version: link:../../packages/core
-      '@hardkas/testing':
-        specifier: workspace:*
-        version: link:../../packages/testing
-      vitest:
-        specifier: ^2.0.0
-        version: 2.1.9(@types/node@22.19.17)(jsdom@29.1.1(@noble/hashes@1.8.0))
 
   packages/accounts:
     dependencies:
@@ -1572,42 +1554,6 @@ packages:
     peerDependenciesMeta:
       '@noble/hashes':
         optional: true
-
-  '@hardkas/accounts@0.2.2-alpha':
-    resolution: {integrity: sha512-6g8PJ4jChGcZZ+5DImqT3pzfHgi8Xr6JTxVMvrcB5aNzZW+1U+hd/B8msRmdh5KdVZtk06dzwUN5OGZhURwglQ==}
-
-  '@hardkas/artifacts@0.2.2-alpha':
-    resolution: {integrity: sha512-I3QyM83aLTO7FxuBJbpUxeu2dFAr/mwdES/AWN/pZyrjoEKDcA1/fiXuZR5uxaLaH9O1rXGI3dmIAH8ArZ4swA==}
-
-  '@hardkas/config@0.2.2-alpha':
-    resolution: {integrity: sha512-KN6mee1xNFTrzN3jMrfD1z4VaLOEmrqJtJja7AIW1EZx5IzDMJfWknjJsTD1v4d/ivec+fYCXUZpCol3ySZ4Fw==}
-
-  '@hardkas/core@0.2.2-alpha':
-    resolution: {integrity: sha512-/bP7BMmG3CK1b9G5FuLIdSy6L9m2Hq7kTzgY3p5kw8NPsbyDbHyYwxYyNqKKYXLPy90v4EUBn4VXEIiObjdNWA==}
-
-  '@hardkas/kaspa-rpc@0.2.2-alpha':
-    resolution: {integrity: sha512-UAbouto95fP/avm5En8XHTz78/ukjCQH9XzS9l5b8KaxIgviRt5+Oo5JUZFtrpoAhv6QBfrIZZBGSaCoz7UjqQ==}
-
-  '@hardkas/l2@0.2.2-alpha':
-    resolution: {integrity: sha512-VWKTeyf9nFaWZXiwHd4DQMipBMDKbakIAAtVkIRLnxPFG5Fp9J+GT6ApqBMid0MIDIdWZbpNeRUTvZwaYfWthg==}
-
-  '@hardkas/localnet@0.2.2-alpha':
-    resolution: {integrity: sha512-5LMt91gZCt/O5y1fHEyKkx8LDypOs7OzDziZR1udQ99suonqXBayxTjo/ojgli244RksxgSge4i/gT1uvdbbhA==}
-
-  '@hardkas/query@0.2.2-alpha':
-    resolution: {integrity: sha512-oBhgnseQT/RkEZ0MqvVr5Sonp7Dh4kaILvjg0XSqfXqGH0HGGBjb2uEv0TZ3/cbl2rEWvFSO3OGLxuboHnSk6Q==}
-
-  '@hardkas/sdk@0.2.2-alpha':
-    resolution: {integrity: sha512-zSBMWzNUPWe2omM9jDIlBpq0vvFHKg1cR2Y6ruNk+Nyv6nV3fhzsCAv3ZCesFQP8kiwASmn5BzlvranXiNYM0Q==}
-
-  '@hardkas/simulator@0.2.2-alpha':
-    resolution: {integrity: sha512-eI4k5NQkGrGOvOX2kQMYYUfjfyIRHjPoCKKZUHxJe3fZXk3gzpNgsgHm7qkRAvv1wtqjkGVknqvYlWdzt22Bvg==}
-
-  '@hardkas/tx-builder@0.2.2-alpha':
-    resolution: {integrity: sha512-h3ySl22LUsssidhCmXNfwzf8n5xlfPM93Eme4qluFdqC6PDBicHdcU9mEhQVqkO5WsNBqOhUTQ0S1cQ2QZrRpA==}
-
-  '@hardkas/wallet-adapter@0.2.2-alpha':
-    resolution: {integrity: sha512-TYJmfM0kTiRY9WMttcuQaafb0vYPghvuWuN9Kji+QMgvzAYNtU+M0SeO++f/P7E36YzK0fYdquSRUGjOgG499g==}
 
   '@hono/node-server@1.19.14':
     resolution: {integrity: sha512-GwtvgtXxnWsucXvbQXkRgqksiH2Qed37H9xHZocE5sA3N8O8O8/8FA3uclQXxXVzc9XBZuEOMK7+r02FmSpHtw==}
@@ -4169,93 +4115,6 @@ snapshots:
   '@exodus/bytes@1.15.0(@noble/hashes@1.8.0)':
     optionalDependencies:
       '@noble/hashes': 1.8.0
-
-  '@hardkas/accounts@0.2.2-alpha':
-    dependencies:
-      '@hardkas/artifacts': 0.2.2-alpha
-      '@hardkas/config': 0.2.2-alpha
-      '@hardkas/core': 0.2.2-alpha
-      '@hardkas/localnet': 0.2.2-alpha
-      hash-wasm: 4.12.0
-
-  '@hardkas/artifacts@0.2.2-alpha':
-    dependencies:
-      '@hardkas/core': 0.2.2-alpha
-      '@hardkas/tx-builder': 0.2.2-alpha
-      zod: 3.25.76
-
-  '@hardkas/config@0.2.2-alpha':
-    dependencies:
-      '@hardkas/core': 0.2.2-alpha
-      jiti: 2.7.0
-
-  '@hardkas/core@0.2.2-alpha':
-    dependencies:
-      pino: 9.14.0
-      zod: 3.25.76
-
-  '@hardkas/kaspa-rpc@0.2.2-alpha':
-    dependencies:
-      '@hardkas/core': 0.2.2-alpha
-      '@hardkas/tx-builder': 0.2.2-alpha
-      ws: 8.20.0
-    transitivePeerDependencies:
-      - bufferutil
-      - utf-8-validate
-
-  '@hardkas/l2@0.2.2-alpha(typescript@5.9.3)(zod@3.25.76)':
-    dependencies:
-      '@hardkas/artifacts': 0.2.2-alpha
-      viem: 2.48.8(typescript@5.9.3)(zod@3.25.76)
-    transitivePeerDependencies:
-      - bufferutil
-      - typescript
-      - utf-8-validate
-      - zod
-
-  '@hardkas/localnet@0.2.2-alpha':
-    dependencies:
-      '@hardkas/artifacts': 0.2.2-alpha
-      '@hardkas/core': 0.2.2-alpha
-      '@hardkas/query': 0.2.2-alpha
-      '@hardkas/tx-builder': 0.2.2-alpha
-
-  '@hardkas/query@0.2.2-alpha':
-    dependencies:
-      '@hardkas/artifacts': 0.2.2-alpha
-      '@hardkas/core': 0.2.2-alpha
-      picocolors: 1.1.1
-
-  '@hardkas/sdk@0.2.2-alpha(typescript@5.9.3)(zod@3.25.76)':
-    dependencies:
-      '@hardkas/accounts': 0.2.2-alpha
-      '@hardkas/artifacts': 0.2.2-alpha
-      '@hardkas/config': 0.2.2-alpha
-      '@hardkas/core': 0.2.2-alpha
-      '@hardkas/kaspa-rpc': 0.2.2-alpha
-      '@hardkas/l2': 0.2.2-alpha(typescript@5.9.3)(zod@3.25.76)
-      '@hardkas/localnet': 0.2.2-alpha
-      '@hardkas/query': 0.2.2-alpha
-      '@hardkas/simulator': 0.2.2-alpha
-      '@hardkas/tx-builder': 0.2.2-alpha
-      '@hardkas/wallet-adapter': 0.2.2-alpha
-    transitivePeerDependencies:
-      - bufferutil
-      - typescript
-      - utf-8-validate
-      - zod
-
-  '@hardkas/simulator@0.2.2-alpha':
-    dependencies:
-      '@hardkas/tx-builder': 0.2.2-alpha
-
-  '@hardkas/tx-builder@0.2.2-alpha':
-    dependencies:
-      '@hardkas/core': 0.2.2-alpha
-
-  '@hardkas/wallet-adapter@0.2.2-alpha':
-    dependencies:
-      '@hardkas/core': 0.2.2-alpha
 
   '@hono/node-server@1.19.14(hono@4.12.18)':
     dependencies:
