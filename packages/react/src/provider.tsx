@@ -2,6 +2,22 @@ import React, { createContext, useContext, useMemo } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { createPublicClient, http, PublicClient } from "viem";
 
+export interface EIP6963ProviderInfo {
+  uuid: string;
+  name: string;
+  icon: string;
+  rdns: string;
+}
+
+export interface EIP6963ProviderDetail {
+  info: EIP6963ProviderInfo;
+  provider: any;
+}
+
+export interface EIP6963AnnounceProviderEvent extends Event {
+  detail: EIP6963ProviderDetail;
+}
+
 export interface HardKasReactConfig {
   readonly kaspaRpcUrl?: string;
   readonly igraRpcUrl?: string;
@@ -28,6 +44,13 @@ export interface HardKasContextValue {
   readonly sseStatus: SSEStatus;
   readonly lastEvent: RuntimeEvent | null;
   readonly subscribe: (callback: EventCallback) => () => void;
+  readonly providers: EIP6963ProviderDetail[];
+  readonly activeProvider: EIP6963ProviderDetail | null;
+  readonly walletAddress: string | null;
+  readonly walletChainId: number | null;
+  readonly connectWallet: (detail: EIP6963ProviderDetail) => Promise<void>;
+  readonly disconnectWallet: () => void;
+  readonly switchChain: (chainId: number) => Promise<void>;
 }
 
 const HardKasContext = createContext<HardKasContextValue | undefined>(undefined);
@@ -46,6 +69,12 @@ export function HardKasProvider({ config, children, queryClient: externalQueryCl
   const eventSource = React.useRef<EventSource | null>(null);
   const reconnectTimer = React.useRef<any>(null);
   const backoffMs = React.useRef(500);
+
+  // EIP-6963 Multi-wallet states
+  const [providers, setProviders] = React.useState<EIP6963ProviderDetail[]>([]);
+  const [activeProvider, setActiveProvider] = React.useState<EIP6963ProviderDetail | null>(null);
+  const [walletAddress, setWalletAddress] = React.useState<string | null>(null);
+  const [walletChainId, setWalletChainId] = React.useState<number | null>(null);
 
   const subscribe = React.useCallback((callback: EventCallback) => {
     listeners.current.add(callback);
@@ -137,6 +166,159 @@ export function HardKasProvider({ config, children, queryClient: externalQueryCl
     };
   }, [connect]);
 
+  // EIP-6963 Discovery Loop
+  React.useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const handleAnnounce = (event: Event) => {
+      const detail = (event as any).detail as EIP6963ProviderDetail;
+      if (!detail || !detail.info || !detail.provider) return;
+      
+      setProviders(prev => {
+        if (prev.some(p => p.info.rdns === detail.info.rdns)) return prev;
+        return [...prev, detail];
+      });
+    };
+
+    window.addEventListener("eip6963:announceProvider", handleAnnounce as any);
+    window.dispatchEvent(new Event("eip6963:requestProvider"));
+
+    return () => {
+      window.removeEventListener("eip6963:announceProvider", handleAnnounce as any);
+    };
+  }, []);
+
+  // Wallet Actions
+  const connectWallet = React.useCallback(async (detail: EIP6963ProviderDetail) => {
+    try {
+      const accounts = await detail.provider.request({ method: "eth_requestAccounts" });
+      const chainIdHex = await detail.provider.request({ method: "eth_chainId" });
+      const chainId = typeof chainIdHex === "string" ? parseInt(chainIdHex, 16) : Number(chainIdHex);
+
+      setActiveProvider(detail);
+      if (accounts && accounts[0]) {
+        setWalletAddress(accounts[0]);
+      }
+      setWalletChainId(chainId);
+      
+      if (typeof window !== "undefined") {
+        window.localStorage.setItem("hardkas:active-wallet", detail.info.rdns);
+      }
+    } catch (err) {
+      console.error("Failed to connect wallet:", err);
+      throw err;
+    }
+  }, []);
+
+  const disconnectWallet = React.useCallback(() => {
+    setActiveProvider(null);
+    setWalletAddress(null);
+    setWalletChainId(null);
+    if (typeof window !== "undefined") {
+      window.localStorage.removeItem("hardkas:active-wallet");
+    }
+  }, []);
+
+  const switchChain = React.useCallback(async (targetChainId: number) => {
+    if (!activeProvider) {
+      throw new Error("No active wallet connected");
+    }
+    const hexChainId = `0x${targetChainId.toString(16)}`;
+    try {
+      await activeProvider.provider.request({
+        method: "wallet_switchEthereumChain",
+        params: [{ chainId: hexChainId }],
+      });
+      setWalletChainId(targetChainId);
+    } catch (err: any) {
+      // 4902 is the error code for unrecognized chain
+      if (err.code === 4902) {
+        if (targetChainId === 19416) {
+          // Add Igra Local Default
+          await activeProvider.provider.request({
+            method: "wallet_addEthereumChain",
+            params: [{
+              chainId: hexChainId,
+              chainName: "Igra Local",
+              nativeCurrency: { name: "Igra Kaspa", symbol: "iKAS", decimals: 18 },
+              rpcUrls: [config.igraRpcUrl || "http://127.0.0.1:8545"],
+            }],
+          });
+          setWalletChainId(targetChainId);
+        } else {
+          throw err;
+        }
+      } else {
+        throw err;
+      }
+    }
+  }, [activeProvider, config.igraRpcUrl]);
+
+  // SSR hydration-safe auto-reconnect logic
+  React.useEffect(() => {
+    if (typeof window === "undefined" || providers.length === 0 || activeProvider) return;
+    const savedRdns = window.localStorage.getItem("hardkas:active-wallet");
+    if (savedRdns) {
+      const match = providers.find(p => p.info.rdns === savedRdns);
+      if (match) {
+        connectWallet(match).catch(() => {});
+      }
+    }
+  }, [providers, activeProvider, connectWallet]);
+
+  // Handle active provider account or chain changes
+  React.useEffect(() => {
+    if (!activeProvider) {
+      setWalletAddress(null);
+      setWalletChainId(null);
+      return;
+    }
+
+    const provider = activeProvider.provider;
+
+    const handleAccountsChanged = (accounts: string[]) => {
+      if (accounts && accounts[0]) {
+        setWalletAddress(accounts[0]);
+      } else {
+        // User disconnected their account manually
+        setActiveProvider(null);
+        setWalletAddress(null);
+        setWalletChainId(null);
+        if (typeof window !== "undefined") {
+          window.localStorage.removeItem("hardkas:active-wallet");
+        }
+      }
+    };
+
+    const handleChainChanged = (chainIdHex: string) => {
+      const chainId = typeof chainIdHex === "string" ? parseInt(chainIdHex, 16) : Number(chainIdHex);
+      setWalletChainId(chainId);
+    };
+
+    const handleDisconnect = () => {
+      setActiveProvider(null);
+      setWalletAddress(null);
+      setWalletChainId(null);
+      if (typeof window !== "undefined") {
+        window.localStorage.removeItem("hardkas:active-wallet");
+      }
+    };
+
+    if (provider.on) {
+      provider.on("accountsChanged", handleAccountsChanged);
+      provider.on("chainChanged", handleChainChanged);
+      provider.on("disconnect", handleDisconnect);
+    }
+
+    return () => {
+      if (provider.removeListener) {
+        provider.removeListener("accountsChanged", handleAccountsChanged);
+        provider.removeListener("chainChanged", handleChainChanged);
+        provider.removeListener("disconnect", handleDisconnect);
+      }
+    };
+  }, [activeProvider]);
+
   const igraClient = useMemo(() => {
     return createPublicClient({
       chain: {
@@ -160,8 +342,29 @@ export function HardKasProvider({ config, children, queryClient: externalQueryCl
     queryClient,
     sseStatus,
     lastEvent,
-    subscribe
-  }), [config, igraClient, queryClient, sseStatus, lastEvent, subscribe]);
+    subscribe,
+    providers,
+    activeProvider,
+    walletAddress,
+    walletChainId,
+    connectWallet,
+    disconnectWallet,
+    switchChain
+  }), [
+    config,
+    igraClient,
+    queryClient,
+    sseStatus,
+    lastEvent,
+    subscribe,
+    providers,
+    activeProvider,
+    walletAddress,
+    walletChainId,
+    connectWallet,
+    disconnectWallet,
+    switchChain
+  ]);
 
   return (
     <HardKasContext.Provider value={value}>

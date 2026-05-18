@@ -55,7 +55,7 @@ export function createDevServer(config: DevServerConfig) {
 
   app.get("/", (c) => c.json({ 
     name: "HardKas Dev Server", 
-    version: "0.4.0-alpha",
+    version: "0.5.0-alpha",
     status: "running" 
   }));
 
@@ -95,11 +95,27 @@ export function createDevServer(config: DevServerConfig) {
       if (config.open) {
         open(url);
       }
-      return serve({
-        fetch: app.fetch,
-        port: config.port,
-        hostname: config.host
-      });
+      try {
+        const server = serve({
+          fetch: app.fetch,
+          port: config.port,
+          hostname: config.host
+        });
+        server.on("error", (err: any) => {
+          if (err.code === "EADDRINUSE") {
+            console.error(`\nPort ${config.port} is already in use. Try: hardkas dev server --port ${config.port + 1}\n`);
+            process.exit(1);
+          }
+          throw err;
+        });
+        return server;
+      } catch (err: any) {
+        if (err.code === "EADDRINUSE") {
+          console.error(`\nPort ${config.port} is already in use. Try: hardkas dev server --port ${config.port + 1}\n`);
+          process.exit(1);
+        }
+        throw err;
+      }
     }
   };
 }

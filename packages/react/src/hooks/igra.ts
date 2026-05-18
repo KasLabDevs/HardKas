@@ -4,10 +4,38 @@ import { useHardKasSession } from "./session.js";
 
 export function useIgraAccount() {
   const { data: session } = useHardKasSession();
+  const { walletAddress } = useHardKas();
+
+  const address = (walletAddress || session?.l2.address) as `0x${string}` | undefined;
+
   return {
-    name: session?.l2.account,
-    address: session?.l2.address as `0x${string}` | undefined,
-    isLoading: !session
+    name: walletAddress ? "Browser Wallet" : session?.l2.account,
+    address,
+    isWallet: !!walletAddress,
+    isLoading: !session && !walletAddress
+  };
+}
+
+export function useIgraWallet() {
+  const {
+    providers,
+    activeProvider,
+    walletAddress,
+    walletChainId,
+    connectWallet,
+    disconnectWallet,
+    switchChain
+  } = useHardKas();
+
+  return {
+    providers,
+    activeProvider,
+    walletAddress,
+    walletChainId,
+    connectWallet,
+    disconnectWallet,
+    switchChain,
+    isConnected: !!walletAddress
   };
 }
 
