@@ -45,5 +45,5 @@ The CLI documentation is auto-generated from the command tree definition to prev
 
 ---
 
-HardKAS is currently in **v0.5.2-alpha (HARDENED ALPHA)**. APIs and schemas are evolving.
+HardKAS is currently in **v0.5.3-alpha (HARDENED ALPHA)**. APIs and schemas are evolving.
 For getting started instructions, see the main [README.md](../README.md).

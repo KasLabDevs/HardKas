@@ -1,6 +1,6 @@
 {
   "schema": "hardkas.l2BridgeAssumptions.v1",
-  "hardkasVersion": "0.5.2-alpha",
+  "hardkasVersion": "0.5.3-alpha",
   "l2Network": "igra",
   "bridgePhase": "pre-zk",
   "trustlessExit": false,

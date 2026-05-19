@@ -30,18 +30,8 @@ import { registerBridgeCommands } from "./commands/bridge.js";
 import { registerSessionCommands } from "./commands/session.js";
 import { registerDashboardCommand } from "./commands/dashboard.js";
 
-import { readFileSync } from "node:fs";
-import { fileURLToPath } from "node:url";
-import path from "node:path";
-
 import { registerLockCommands } from "./commands/lock.js";
-
-const packageJsonPath = path.resolve(
-  path.dirname(fileURLToPath(import.meta.url)),
-  "../package.json"
-);
-
-const { version: HARDKAS_VERSION } = JSON.parse(readFileSync(packageJsonPath, "utf8"));
+import { HARDKAS_VERSION } from "@hardkas/artifacts";
 
 /**
  * Builds the HardKAS Commander program tree.
