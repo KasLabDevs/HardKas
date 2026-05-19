@@ -230,7 +230,7 @@ export class HardkasIndexer {
         const verification = await verifyArtifactIntegrity(file);
         if (!verification.ok) {
           result.artifacts.corrupted++;
-          verification.issues.forEach(issue => {
+          verification.issues.forEach((issue: any) => {
             const corruptionIssue: CorruptionIssue = {
               code: issue.code as any,
               severity: issue.severity === "warning" ? "warning" : "error",

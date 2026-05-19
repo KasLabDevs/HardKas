@@ -15,7 +15,16 @@ export function registerRpcCommands(program: Command) {
 
   rpcCmd.command("health")
     .description("Check RPC health")
-    .action(async () => { try { await runRpcHealth({}); } catch (e) { handleError(e); } });
+    .option("--wait", "Wait until healthy")
+    .option("--timeout <ms>", "Wait timeout in ms", "60000")
+    .action(async (options: { wait?: boolean, timeout?: string }) => { 
+      try { 
+        await runRpcHealth({ 
+          wait: options.wait ?? false, 
+          timeout: options.timeout ? parseInt(options.timeout, 10) / 1000 : 60 
+        }); 
+      } catch (e) { handleError(e); } 
+    });
 
   rpcCmd.command("doctor")
     .description("Run comprehensive RPC diagnostics")

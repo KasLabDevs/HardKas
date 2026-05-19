@@ -188,8 +188,8 @@ export function registerTxCommands(program: Command) {
             else console.log(result.formatted);
 
             if (options.track && result.accepted) {
-              const { trackDeployment } = await import("../runners/deployment-runners.js");
-              await trackDeployment({
+              const { trackDeploymentInternal } = await import("../runners/deployment-runners.js");
+              await trackDeploymentInternal(process.cwd(), {
                 label: options.track,
                 network: result.networkName,
                 txId: result.txId,

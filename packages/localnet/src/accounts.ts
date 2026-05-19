@@ -19,7 +19,7 @@ export function createDeterministicAccounts(input?: {
 
     return {
       name,
-      address: `kaspasim:${name}`,
+      address: `kaspa:sim_${name}`,
       balanceSompi: initialBalanceSompi
     };
   });
@@ -30,11 +30,11 @@ export function resolveAccountAddress(input: string): string {
   }
 
   const aliases: Record<string, string> = {
-    alice: "kaspasim:alice",
-    bob: "kaspasim:bob",
-    carol: "kaspasim:carol",
-    dave: "kaspasim:dave",
-    erin: "kaspasim:erin"
+    alice: "kaspa:sim_alice",
+    bob: "kaspa:sim_bob",
+    carol: "kaspa:sim_carol",
+    dave: "kaspa:sim_dave",
+    erin: "kaspa:sim_erin"
   };
 
   const resolved = aliases[input.toLowerCase()];

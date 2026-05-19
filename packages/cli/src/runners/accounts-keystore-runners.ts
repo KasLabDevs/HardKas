@@ -90,12 +90,12 @@ export async function runAccountsKeystoreImport(options: {
       {
         address,
         privateKey: finalKey,
-        network: address.startsWith("kaspa:") ? "mainnet" : "devnet"
+        network: (address.startsWith("kaspa:") && !address.startsWith("kaspa:sim_")) ? "mainnet" : "devnet"
       },
       password,
       {
         label: name,
-        network: address.startsWith("kaspa:") ? "mainnet" : "devnet"
+        network: (address.startsWith("kaspa:") && !address.startsWith("kaspa:sim_")) ? "mainnet" : "devnet"
       }
     );
 

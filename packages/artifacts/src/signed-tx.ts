@@ -19,6 +19,7 @@ export function createSimulatedSignedTxArtifact(plan: TxPlan, payload: string): 
     from: { address: plan.from.address },
     to: { address: plan.to.address },
     amountSompi: plan.amountSompi,
+    txId: `simulated-${plan.planId}-tx`,
     signedTransaction: {
       format: "simulated",
       payload
@@ -27,7 +28,6 @@ export function createSimulatedSignedTxArtifact(plan: TxPlan, payload: string): 
 
   const hash = calculateContentHash(artifact, CURRENT_HASH_VERSION);
   artifact.signedId = `signed-${hash.slice(0, 16)}`;
-  artifact.txId = `simulated-${plan.planId}-${hash.slice(0, 8)}`;
   artifact.contentHash = hash;
 
   return artifact as SignedTx;

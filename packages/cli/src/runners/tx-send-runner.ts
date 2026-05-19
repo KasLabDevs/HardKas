@@ -52,7 +52,7 @@ export async function runTxSend(input: TxSendRunnerInput): Promise<TxSendRunnerR
   const { name: resolvedName, target } = resolveNetworkTarget({ network: networkName, config });
 
   // 1. Simulated Mode
-  if (target.kind === "simulated") {
+  if (target.kind === "simulated" || signedArtifact.mode === "simulated") {
     const state = await loadOrCreateLocalnetState();
     
     const startTime = Date.now();

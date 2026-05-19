@@ -6,19 +6,19 @@ import { RealDevAccount } from "../src/real-accounts.js";
 describe("KaspaSdkRealTxSigner", () => {
   const mockPlan: any = {
     schema: "hardkas.txPlan",
-    hardkasVersion: "0.5.3-alpha",
+    hardkasVersion: "0.5.4-alpha",
     version: "1.0.0-alpha",
     createdAt: new Date().toISOString(),
     planId: "plan123",
     networkId: "simnet",
     mode: "simulated",
-    from: { address: "kaspasim:alice123" },
-    to: { address: "kaspasim:bob456" },
+    from: { address: "kaspa:sim_alice123" },
+    to: { address: "kaspa:sim_bob456" },
     amountSompi: "100000000",
     inputs: [
       {
         outpoint: { transactionId: "tx1", index: 0 },
-        address: "kaspasim:alice123",
+        address: "kaspa:sim_alice123",
         amountSompi: "200000000",
         scriptPublicKey: "script123"
       }
@@ -30,7 +30,7 @@ describe("KaspaSdkRealTxSigner", () => {
 
   const mockAccount: RealDevAccount = {
     name: "alice",
-    address: "kaspasim:alice123",
+    address: "kaspa:sim_alice123",
     privateKey: "privkey123",
     createdAt: new Date().toISOString()
   };

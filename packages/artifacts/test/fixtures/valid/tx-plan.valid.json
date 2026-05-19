@@ -1,6 +1,6 @@
 {
   "schema": "hardkas.txPlan",
-  "hardkasVersion": "0.5.3-alpha",
+  "hardkasVersion": "0.5.4-alpha",
   "version": "1.0.0-alpha",
   "createdAt": "2026-05-18T19:45:05.001Z",
   "networkId": "simnet",
@@ -10,10 +10,10 @@
   "executionMode": "isolated",
   "planId": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
   "from": {
-    "address": "kaspasim:123"
+    "address": "kaspa:sim_123"
   },
   "to": {
-    "address": "kaspasim:456"
+    "address": "kaspa:sim_456"
   },
   "amountSompi": "1000000",
   "estimatedFeeSompi": "250",
@@ -21,7 +21,7 @@
   "inputs": [],
   "outputs": [
     {
-      "address": "kaspasim:456",
+      "address": "kaspa:sim_456",
       "amountSompi": "1000000"
     }
   ],

@@ -23,7 +23,7 @@ function writeFixture(dir, name, artifact) {
 
 const rootHash = writeFixture("valid", "snapshot.valid.json", {
   schema: "hardkas.snapshot",
-  hardkasVersion: "0.5.3-alpha",
+  hardkasVersion: "0.5.4-alpha",
   version: "1.0.0-alpha",
   networkId: "simnet",
   mode: "simulated",
@@ -49,7 +49,7 @@ fs.writeFileSync(path.join(fixturesDir, "valid", "snapshot.valid.json"), JSON.st
 
 const planHash = writeFixture("valid", "tx-plan.valid.json", {
   schema: "hardkas.txPlan",
-  hardkasVersion: "0.5.3-alpha",
+  hardkasVersion: "0.5.4-alpha",
   version: "1.0.0-alpha",
   createdAt: new Date().toISOString(),
   networkId: "simnet",
@@ -58,14 +58,14 @@ const planHash = writeFixture("valid", "tx-plan.valid.json", {
   assumptionLevel: "pessimistic",
   executionMode: "isolated",
   planId: "b".repeat(64),
-  from: { address: "kaspasim:123" },
-  to: { address: "kaspasim:456" },
+  from: { address: "kaspa:sim_123" },
+  to: { address: "kaspa:sim_456" },
   amountSompi: "1000000",
   estimatedFeeSompi: "250",
   estimatedMass: "250",
   inputs: [],
   outputs: [
-    { address: "kaspasim:456", amountSompi: "1000000" }
+    { address: "kaspa:sim_456", amountSompi: "1000000" }
   ],
   lineage: {
     artifactId: "0".repeat(64),
@@ -78,7 +78,7 @@ const planHash = writeFixture("valid", "tx-plan.valid.json", {
 
 writeFixture("valid", "signed-tx.valid.json", {
   schema: "hardkas.signedTx",
-  hardkasVersion: "0.5.3-alpha",
+  hardkasVersion: "0.5.4-alpha",
   version: "1.0.0-alpha",
   createdAt: new Date().toISOString(),
   status: "signed",
@@ -89,8 +89,8 @@ writeFixture("valid", "signed-tx.valid.json", {
   workflowId: "test-workflow",
   assumptionLevel: "pessimistic",
   executionMode: "isolated",
-  from: { address: "kaspasim:123" },
-  to: { address: "kaspasim:456" },
+  from: { address: "kaspa:sim_123" },
+  to: { address: "kaspa:sim_456" },
   amountSompi: "1000000",
   signedTransaction: { format: "hex", payload: "00" },
   lineage: {

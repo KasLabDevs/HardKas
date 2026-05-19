@@ -236,15 +236,23 @@ export function verifyArtifactSemantics(artifact: unknown, context: Verification
     const from = v.from as Record<string, unknown>;
     const to = v.to as Record<string, unknown>;
     const addr = from?.address || to?.address;
-    const expectedPrefix = networkIdStr === "mainnet" ? "kaspa:" : 
-                           networkIdStr.startsWith("testnet") ? "kaspatest:" : "kaspasim:";
-    
-    if (addr && typeof addr === "string" && !addr.startsWith(expectedPrefix)) {
-       addIssue({
-         code: "NETWORK_ADDRESS_MISMATCH",
-         severity: "error",
-         message: `Network/Address mismatch: network is ${networkId} but address is ${addr}`
-       });
+    if (addr && typeof addr === "string") {
+      let mismatch = false;
+      if (networkIdStr === "mainnet") {
+        mismatch = !addr.startsWith("kaspa:") || addr.startsWith("kaspa:sim_");
+      } else if (networkIdStr.startsWith("testnet")) {
+        mismatch = !addr.startsWith("kaspatest:");
+      } else {
+        mismatch = !addr.startsWith("kaspa:sim_");
+      }
+
+      if (mismatch) {
+        addIssue({
+          code: "NETWORK_ADDRESS_MISMATCH",
+          severity: "error",
+          message: `Network/Address mismatch: network is ${networkId} but address is ${addr}`
+        });
+      }
     }
   }
 

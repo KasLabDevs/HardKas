@@ -41,8 +41,8 @@ export const AdversarialFixtures = {
       amountSompi: "1000",
       estimatedFeeSompi: "1",
       estimatedMass: "1",
-      from: { address: "kaspasim:qz0s9xrz5y5e8dq5azmpg756aeepm6fesq82ye7wv" },
-      to: { address: "kaspasim:qq0d6h0prjm5mpdld5pncst3adu0yam6xch9fkr6eg" },
+      from: { address: "kaspa:sim_qz0s9xrz5y5e8dq5azmpg756aeepm6fesq82ye7wv" },
+      to: { address: "kaspa:sim_qq0d6h0prjm5mpdld5pncst3adu0yam6xch9fkr6eg" },
       inputs: [],
       outputs: [],
       hashVersion: CURRENT_HASH_VERSION

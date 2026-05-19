@@ -2,6 +2,7 @@ import { readTxPlanArtifact, readTxReceiptArtifact } from "@hardkas/artifacts";
 import { loadOrCreateLocalnetState, verifyReplay } from "@hardkas/localnet";
 import { UI } from "../ui.js";
 import path from "node:path";
+import fs from "node:fs";
 import pc from "picocolors";
 
 export interface ReplayVerifyOptions {
@@ -10,6 +11,10 @@ export interface ReplayVerifyOptions {
 
 export async function runReplayVerify(options: ReplayVerifyOptions) {
   const artifactDir = path.resolve(process.cwd(), options.path);
+  
+  if (!fs.existsSync(path.join(artifactDir, "hardkas.config.ts"))) {
+    throw new Error("WORKSPACE_NOT_FOUND: Directory is not a HardKAS workspace.");
+  }
   
   // Try to load tx-plan.json and tx-receipt.json from the dir
   const planPath = path.join(artifactDir, "tx-plan.json");

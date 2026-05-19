@@ -15,6 +15,7 @@ export interface RpcReadinessWaitOptions extends RpcHealthCheckOptions {
 
 export interface RpcHealthResult {
   readonly endpoint: string;
+  readonly protocol: string;
   readonly status: RpcHealthState;
   readonly ready: boolean; 
   readonly checkedAt: string;
@@ -48,6 +49,7 @@ export async function checkKaspaRpcHealth(options?: RpcHealthCheckOptions): Prom
 
       return {
         endpoint: url,
+        protocol: url.startsWith("ws") ? "WebSocket" : "JSON-RPC",
         status: "healthy",
         ready: true,
         checkedAt,
@@ -63,6 +65,7 @@ export async function checkKaspaRpcHealth(options?: RpcHealthCheckOptions): Prom
       client.disconnect();
       return {
         endpoint: url,
+        protocol: url.startsWith("ws") ? "WebSocket" : "JSON-RPC",
         status: "unreachable",
         ready: false,
         checkedAt,
@@ -79,6 +82,7 @@ export async function checkKaspaRpcHealth(options?: RpcHealthCheckOptions): Prom
 
     return {
       endpoint: url,
+      protocol: "JSON-RPC",
       status: health.status,
       ready: health.status === "healthy" || health.status === "degraded",
       checkedAt,
@@ -95,6 +99,7 @@ export async function checkKaspaRpcHealth(options?: RpcHealthCheckOptions): Prom
   } catch (e: any) {
     return {
       endpoint: url,
+      protocol: "JSON-RPC",
       status: "unreachable",
       ready: false,
       checkedAt,
@@ -105,7 +110,8 @@ export async function checkKaspaRpcHealth(options?: RpcHealthCheckOptions): Prom
 }
 
 export async function waitForKaspaRpcReady(options?: RpcReadinessWaitOptions): Promise<RpcHealthResult> {
-  const intervalMs = options?.intervalMs || 1000;
+  let currentIntervalMs = options?.intervalMs || 250;
+  const maxIntervalMs = 2000;
   const maxWaitMs = options?.maxWaitMs || 60000;
   const start = Date.now();
 
@@ -121,11 +127,13 @@ export async function waitForKaspaRpcReady(options?: RpcReadinessWaitOptions): P
       return lastResult;
     }
 
-    await new Promise(resolve => setTimeout(resolve, intervalMs));
+    await new Promise(resolve => setTimeout(resolve, currentIntervalMs));
+    currentIntervalMs = Math.min(currentIntervalMs * 2, maxIntervalMs);
   }
 
   return lastResult || {
     endpoint: options?.url || "ws://127.0.0.1:18210",
+    protocol: (options?.url || "ws://127.0.0.1:18210").startsWith("ws") ? "WebSocket" : "JSON-RPC",
     status: "unreachable",
     ready: false,
     checkedAt: new Date().toISOString(),
