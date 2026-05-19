@@ -1,6 +1,6 @@
 {
   "schema": "hardkas.txPlan",
-  "hardkasVersion": "0.5.2-alpha",
+  "hardkasVersion": "0.5.3-alpha",
   "version": "1.0.0-alpha",
   "createdAt": "2026-05-08T22:21:40Z",
   "networkId": "mainnet",
