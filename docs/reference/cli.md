@@ -2140,7 +2140,7 @@ hardkas new [options] <name>
 | Flag | Description | Default |
 | :--- | :--- | :--- |
 | `--template <type>` | Project template | basic |
-| `--network <name>` | Default network | simnet |
+| `--network <name>` | Default network | simulated |
 | `--accounts <n>` | Number of simulated accounts | 3 |
 | `--skip-install` | Skip pnpm install | false |
 

@@ -26,7 +26,7 @@ describe("hardkas run", () => {
 
     try {
       // Execute CLI run command via tsx
-      execSync(`${actualTsx} ${cliPath} run ${testScript}`, {
+      execSync(`${actualTsx} ${cliPath} run ${testScript} --network simulated`, {
         stdio: "inherit",
         env: { ...process.env, NODE_OPTIONS: "--no-warnings" }
       });

@@ -177,7 +177,7 @@ describe("negative mutation detection", () => {
   it("detects mutated amountSompi via contentHash mismatch", () => {
     const basePlan = {
       schema: "hardkas.txPlan",
-      hardkasVersion: "0.5.1-alpha",
+      hardkasVersion: "0.5.2-alpha",
       networkId: "simnet",
       mode: "simulated",
       createdAt: "2026-05-14T00:00:00Z",
@@ -204,7 +204,7 @@ describe("negative mutation detection", () => {
 
     const basePlan = {
       schema: "hardkas.txPlan" as const,
-      hardkasVersion: "0.5.1-alpha",
+      hardkasVersion: "0.5.2-alpha",
       contentHash: "",
       networkId: "simnet",
       mode: "simulated" as const,
@@ -220,7 +220,7 @@ describe("negative mutation detection", () => {
 
     const mutatedReceipt = {
       schema: "hardkas.txReceipt" as const,
-      hardkasVersion: "0.5.1-alpha",
+      hardkasVersion: "0.5.2-alpha",
       networkId: "simnet",
       mode: "simulated" as const,
       createdAt: "2026-05-14T00:00:00Z",
@@ -253,7 +253,7 @@ describe("negative mutation detection", () => {
   it("detects invalid artifact schema when payload properties are truncated", () => {
     const truncatedReceipt = {
       schema: "hardkas.txReceipt",
-      hardkasVersion: "0.5.1-alpha",
+      hardkasVersion: "0.5.2-alpha",
       networkId: "simnet",
       mode: "simulated",
       createdAt: "2026-05-14T00:00:00Z",

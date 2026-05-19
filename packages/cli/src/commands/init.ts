@@ -57,18 +57,20 @@ export function registerInitCommands(program: Command) {
           const template = `import { defineHardkasConfig } from "@hardkas/sdk";
 
 export default defineHardkasConfig({
-  // HardKAS v0.5.1-alpha Configuration
-  defaultNetwork: "simnet",
+  // HardKAS v0.5.2-alpha Configuration
+  defaultNetwork: "simulated",
 
   networks: {
-    simnet: {
-      kind: "simulated"
+    simulated: {
+      kind: "simulated",
+      description: "Pure local simulation — no Docker, no RPC, no node"
     },
 
-    node: {
+    simnet: {
       kind: "kaspa-node",
       network: "simnet",
-      rpcUrl: "ws://127.0.0.1:18210"
+      rpcUrl: "ws://127.0.0.1:18210",
+      description: "Local Docker kaspad on simnet — requires hardkas node start"
     }
   },
 

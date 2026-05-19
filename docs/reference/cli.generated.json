@@ -2273,7 +2273,7 @@
         {
           "flags": "--network <name>",
           "description": "Default network",
-          "default": "simnet",
+          "default": "simulated",
           "required": true,
           "mandatory": false
         },

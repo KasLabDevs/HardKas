@@ -52,6 +52,16 @@ export function useMetaMaskLocal() {
     }
   }, []);
 
+  const connect = useCallback(async () => {
+    if (typeof window === "undefined" || !window.ethereum) return;
+    try {
+      await window.ethereum.request({ method: "eth_requestAccounts" });
+      await checkStatus();
+    } catch (e: any) {
+      setState(s => ({ ...s, errors: [...s.errors, e.message] }));
+    }
+  }, [checkStatus]);
+
   useEffect(() => {
     if (typeof window === "undefined" || !window.ethereum) return;
     
@@ -73,7 +83,7 @@ export function useMetaMaskLocal() {
     };
   }, [checkStatus]);
 
-  return { state, refresh: checkStatus };
+  return { state, refresh: checkStatus, connect };
 }
 
 export function useSwitchToLocalIgra() {

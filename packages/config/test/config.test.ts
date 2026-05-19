@@ -28,6 +28,12 @@ describe("config", () => {
   it("resolveNetworkTarget should use simnet as default fallback", () => {
     const resolved = resolveNetworkTarget({ config: {} });
     expect(resolved.name).toBe("simnet");
+    expect(resolved.target.kind).toBe("kaspa-node");
+  });
+
+  it("resolveNetworkTarget should support simulated network explicitly", () => {
+    const resolved = resolveNetworkTarget({ config: {}, network: "simulated" });
+    expect(resolved.name).toBe("simulated");
     expect(resolved.target.kind).toBe("simulated");
   });
 

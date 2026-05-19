@@ -1,6 +1,6 @@
 {
   "name": "@hardkas/dev-server",
-  "version": "0.5.1-alpha",
+  "version": "0.5.2-alpha",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -16,6 +16,7 @@
   "dependencies": {
     "@hardkas/artifacts": "workspace:*",
     "@hardkas/bridge-local": "workspace:*",
+    "@hardkas/config": "workspace:*",
     "@hardkas/core": "workspace:*",
     "@hardkas/kaspa-rpc": "workspace:*",
     "@hardkas/sessions": "workspace:*",

@@ -1,4 +1,6 @@
 import { KaspaJsonRpcClient } from "./json-rpc-client.js";
+import { KaspaWrpcClient } from "./wrpc-client.js";
+import { RpcHealthState } from "./resilience.js";
 
 export interface RpcHealthCheckOptions {
   readonly url?: string | undefined;
@@ -28,13 +30,50 @@ export interface RpcHealthResult {
   readonly stale?: boolean | undefined;
 }
 
-import { RpcHealthState } from "./resilience.js";
-
 export async function checkKaspaRpcHealth(options?: RpcHealthCheckOptions): Promise<RpcHealthResult> {
-  const url = options?.url || "http://127.0.0.1:18210";
-  const client = new KaspaJsonRpcClient({ url, timeoutMs: options?.timeoutMs });
+  const url = options?.url || "ws://127.0.0.1:18210";
   const checkedAt = new Date().toISOString();
+  const timeoutMs = options?.timeoutMs || 2000;
 
+  // wRPC (WebSocket) branch
+  if (url.startsWith("ws://") || url.startsWith("wss://") || url.includes("18210") || url.includes("18110")) {
+    const client = new KaspaWrpcClient(url);
+    const start = Date.now();
+    try {
+      await client.connect(timeoutMs);
+      const info = await client.getServerInfo() as any;
+      const dagInfo = await client.getBlockDagInfo() as any;
+      const latencyMs = Date.now() - start;
+      client.disconnect();
+
+      return {
+        endpoint: url,
+        status: "healthy",
+        ready: true,
+        checkedAt,
+        latencyMs,
+        networkId: dagInfo?.networkId || "simnet",
+        virtualDaaScore: dagInfo?.virtualDaaScore?.toString() || "0",
+        serverVersion: info?.serverVersion || "unknown",
+        isSynced: info?.isSynced ?? true,
+        lastError: null,
+        stale: !(info?.isSynced ?? true)
+      };
+    } catch (e: any) {
+      client.disconnect();
+      return {
+        endpoint: url,
+        status: "unreachable",
+        ready: false,
+        checkedAt,
+        error: e.message,
+        lastError: e.message
+      };
+    }
+  }
+
+  // HTTP fallback branch (e.g. L2)
+  const client = new KaspaJsonRpcClient({ url, timeoutMs });
   try {
     const health = await client.healthCheck();
 
@@ -86,7 +125,7 @@ export async function waitForKaspaRpcReady(options?: RpcReadinessWaitOptions): P
   }
 
   return lastResult || {
-    endpoint: options?.url || "http://127.0.0.1:18210",
+    endpoint: options?.url || "ws://127.0.0.1:18210",
     status: "unreachable",
     ready: false,
     checkedAt: new Date().toISOString(),

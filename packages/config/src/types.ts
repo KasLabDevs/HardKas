@@ -8,20 +8,23 @@ export type HardkasNetworkName = string;
 
 export interface HardkasSimulatedTarget {
   kind: "simulated";
+  description?: string;
 }
 
 export interface HardkasKaspaNodeTarget {
   kind: "kaspa-node";
-  network: "mainnet" | "testnet-10" | "testnet-11" | "testnet-12" | "devnet";
+  network: "mainnet" | "testnet-10" | "testnet-11" | "testnet-12" | "devnet" | "simnet";
   rpcUrl?: string;
   dataDir?: string;
   binaryPath?: string;
+  description?: string;
 }
 
 export interface HardkasKaspaRpcTarget {
   kind: "kaspa-rpc";
-  network: "mainnet" | "testnet-10" | "testnet-11" | "testnet-12" | "devnet";
+  network: "mainnet" | "testnet-10" | "testnet-11" | "testnet-12" | "devnet" | "simnet";
   rpcUrl: string;
+  description?: string;
 }
 
 export interface HardkasIgraTarget {
@@ -29,6 +32,7 @@ export interface HardkasIgraTarget {
   chainId: number;
   rpcUrl: string;
   currencySymbol?: "iKAS";
+  description?: string;
 }
 
 export type HardkasNetworkTarget =
