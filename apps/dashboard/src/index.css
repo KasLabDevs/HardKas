@@ -86,6 +86,10 @@ body {
   padding: 1rem 0;
 }
 
+.col-span-full {
+  grid-column: 1 / -1;
+}
+
 .header {
   margin-top: 2rem;
   margin-bottom: 4rem;

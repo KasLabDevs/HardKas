@@ -40,8 +40,8 @@ const hardkas = createTestHarness({
       const rpcUrl = (netConfig as any).rpcUrl;
       const networkId = (netConfig as any).network || opts.network;
       injectionCode = `
-import { KaspaRpcClient } from "@hardkas/kaspa-rpc";
-const rpc = new KaspaRpcClient({ url: "${rpcUrl}" });
+import { JsonWrpcKaspaClient } from "@hardkas/kaspa-rpc";
+const rpc = new JsonWrpcKaspaClient({ rpcUrl: "${rpcUrl}" });
 (globalThis as any).hardkas = {
   network: "${opts.network}",
   networkId: "${networkId}",

@@ -58,13 +58,13 @@ describe("Artifact Golden Fixtures (Cross-Runtime)", () => {
       version: ARTIFACT_VERSION,
       data: "semantic",
       createdAt: "2024-01-01T00:00:00Z",
-      hardkasVersion: "0.5.1-alpha"
+      hardkasVersion: "0.5.2-alpha"
     };
 
     const mutatedMetadata = {
       ...base,
       createdAt: "2025-12-31T23:59:59Z",
-      hardkasVersion: "0.5.1-alpha",
+      hardkasVersion: "0.5.2-alpha",
       rpcUrl: "http://another-node:16110"
     };
 

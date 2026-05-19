@@ -489,3 +489,4 @@ export * from "./health.js";
 export * from "./errors.js";
 export * from "./provider.js";
 export * from "./resilience.js";
+export * from "./wrpc-client.js";

@@ -3,8 +3,15 @@ import type { HardkasConfig } from "./types";
 export const DEFAULT_HARDKAS_CONFIG: HardkasConfig = {
   defaultNetwork: "simnet",
   networks: {
+    simulated: {
+      kind: "simulated",
+      description: "Pure local simulation — no Docker, no RPC, no node"
+    },
     simnet: {
-      kind: "simulated"
+      kind: "kaspa-node",
+      network: "simnet",
+      rpcUrl: "ws://127.0.0.1:18210",
+      description: "Local Docker kaspad on simnet — requires hardkas node start"
     },
     devnet: {
       kind: "kaspa-node",

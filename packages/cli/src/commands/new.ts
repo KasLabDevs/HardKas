@@ -11,7 +11,7 @@ export function registerNewCommand(program: Command) {
     .command("new <name>")
     .description(`Create a new HardKAS project ${UI.maturity("stable")}`)
     .option("--template <type>", "Project template", "basic")
-    .option("--network <name>", "Default network", "simnet")
+    .option("--network <name>", "Default network", "simulated")
     .option("--accounts <n>", "Number of simulated accounts", "3")
     .option("--skip-install", "Skip pnpm install", false)
     .action(async (name: string, opts: any) => {

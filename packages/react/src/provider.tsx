@@ -138,7 +138,9 @@ export function HardKasProvider({ config, children, queryClient: externalQueryCl
       "sandbox-session-created",
       "sandbox-session-paired",
       "sandbox-session-expired",
-      "sandbox-session-disconnected"
+      "sandbox-session-disconnected",
+      "ping",
+      "heartbeat"
     ];
     namedEvents.forEach(type => {
       es.addEventListener(type, (e: any) => {
@@ -329,7 +331,7 @@ export function HardKasProvider({ config, children, queryClient: externalQueryCl
           default: { http: [config.igraRpcUrl || "http://127.0.0.1:8545"] },
         },
       },
-      transport: http(config.igraRpcUrl || "http://127.0.0.1:8545"),
+      transport: http(config.igraRpcUrl || "http://127.0.0.1:8545", { retryCount: 0 }),
     });
   }, [config.igraRpcUrl]);
 
