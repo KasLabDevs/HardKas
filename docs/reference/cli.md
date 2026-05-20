@@ -3086,7 +3086,7 @@ Verify replay invariants for a directory of artifacts stable
 ### Usage
 
 ```bash
-hardkas replay verify [options] <path>
+hardkas replay verify [options] [path]
 ```
 
 ### Options
@@ -3186,7 +3186,10 @@ hardkas rpc health [options]
 
 ### Options
 
-No options.
+| Flag | Description | Default |
+| :--- | :--- | :--- |
+| `--wait` | Wait until healthy |  |
+| `--timeout <ms>` | Wait timeout in ms | 60000 |
 
 ### Arguments
 

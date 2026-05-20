@@ -84,7 +84,10 @@ export async function verifyArtifactIntegrity(artifactOrPath: unknown): Promise<
         addError("FILE_NOT_FOUND", `File not found: ${artifactOrPath}`);
         return result;
       }
-      const content = fs.readFileSync(artifactOrPath, "utf-8");
+      let content = fs.readFileSync(artifactOrPath, "utf-8");
+      if (content.charCodeAt(0) === 0xFEFF) {
+        content = content.slice(1);
+      }
       artifact = JSON.parse(content);
     } else {
       artifact = artifactOrPath;

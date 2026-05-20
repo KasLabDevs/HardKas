@@ -100,7 +100,7 @@ hardkas deploy inspect lifecycle-demo --network simnet
 
 # 11. Receipt + Trace
 $receiptOutput = hardkas tx receipt $txid --json
-$receiptOutput | Out-File -Encoding utf8 tx-receipt.json
+[System.IO.File]::WriteAllText((Join-Path (Get-Location) "tx-receipt.json"), ($receiptOutput -join "`r`n"))
 hardkas tx receipt $txid
 # hardkas tx trace $txid
 

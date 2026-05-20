@@ -3310,7 +3310,7 @@
           "name": "verify",
           "aliases": [],
           "description": "Verify replay invariants for a directory of artifacts stable",
-          "usage": "hardkas replay verify [options] <path>",
+          "usage": "hardkas replay verify [options] [path]",
           "arguments": [
             {
               "name": "path",
@@ -3374,7 +3374,22 @@
           "description": "Check RPC health",
           "usage": "hardkas rpc health [options]",
           "arguments": [],
-          "options": [],
+          "options": [
+            {
+              "flags": "--wait",
+              "description": "Wait until healthy",
+              "default": null,
+              "required": false,
+              "mandatory": false
+            },
+            {
+              "flags": "--timeout <ms>",
+              "description": "Wait timeout in ms",
+              "default": "60000",
+              "required": true,
+              "mandatory": false
+            }
+          ],
           "subcommands": []
         },
         {
