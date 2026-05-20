@@ -39,36 +39,47 @@ export async function runTxPlan(input: TxPlanRunnerInput): Promise<TxPlanArtifac
   const amountSompi = parseKasToSompi(amount);
   const feeRateSompiPerMass = BigInt(feeRate);
 
+  const { target, name } = resolveNetworkTarget({ config, network: networkId });
+  const resolvedNetwork = name;
+
+  const isSimulatedSender = fromAddress.startsWith("kaspa:sim_") || fromAddress.startsWith("kaspasim:");
+  const isSimulatedTarget = target.kind === "simulated" || resolvedNetwork === "simnet";
+
+  if (isSimulatedSender && !isSimulatedTarget) {
+    throw new Error("NETWORK_ACCOUNT_MISMATCH: Cannot use a simulated account on a real network.");
+  }
+
+  const backend: "simulated" | "rpc" = (isSimulatedTarget || isSimulatedSender) ? "simulated" : "rpc";
+
   let availableUtxos: any[] = [];
   let mode: "simulated" | "kaspa-node" | "kaspa-rpc" = "simulated";
   let rpcUrl: string | undefined;
-  let resolvedNetwork = networkId;
 
-  try {
-    const { target, name } = resolveNetworkTarget({ config, network: networkId });
-    resolvedNetwork = name;
-
-    if (target.kind === "simulated") {
-      const { loadOrCreateLocalnetState, getSpendableUtxos } = await import("@hardkas/localnet");
-      const localState = await loadOrCreateLocalnetState();
-      const unspent = getSpendableUtxos(localState, fromAddress);
-      
-      availableUtxos = unspent.map(u => ({
-        outpoint: {
-          transactionId: u.id.split(":")[0],
-          index: Number(u.id.split(":")[2]) || 0
-        },
+  if (backend === "simulated") {
+    const { loadOrCreateLocalnetState, getSpendableUtxos } = await import("@hardkas/localnet");
+    const localState = await loadOrCreateLocalnetState();
+    const unspent = getSpendableUtxos(localState, fromAddress);
+    
+    availableUtxos = unspent.map(u => {
+      const parts = u.id.split(":");
+      const index = Number(parts[parts.length - 1]);
+      const transactionId = parts.slice(0, -1).join(":");
+      return {
+        outpoint: { transactionId, index },
         address: u.address,
         amountSompi: BigInt(u.amountSompi),
         scriptPublicKey: "mock-script"
-      }));
+      };
+    });
 
-      mode = "simulated";
-    } else if (target.kind === "kaspa-node" || target.kind === "kaspa-rpc") {
+    mode = "simulated";
+    rpcUrl = "simulated://local";
+  } else {
+    try {
       const { JsonWrpcKaspaClient } = await import("@hardkas/kaspa-rpc");
       const { resolveRuntimeConfig } = await import("@hardkas/node-orchestrator");
       
-      rpcUrl = url || target.rpcUrl;
+      rpcUrl = url || (target as any).rpcUrl;
       if (!rpcUrl && target.kind === "kaspa-node") {
         rpcUrl = resolveRuntimeConfig({ 
           network: target.network as any, 
@@ -88,29 +99,17 @@ export async function runTxPlan(input: TxPlanRunnerInput): Promise<TxPlanArtifac
         amountSompi: u.amountSompi,
         scriptPublicKey: u.scriptPublicKey || "unresolved"
       }));
-      mode = target.kind;
-    }
-  } catch (e) {
-    if (url || networkId !== "simnet") {
-      const { JsonWrpcKaspaClient } = await import("@hardkas/kaspa-rpc");
-      const { resolveRuntimeConfig } = await import("@hardkas/node-orchestrator");
-      rpcUrl = url;
-      if (!rpcUrl) {
-        rpcUrl = resolveRuntimeConfig({ network: networkId as any }).rpcUrl;
-      }
-      const client = new JsonWrpcKaspaClient({ rpcUrl });
-      const rpcUtxos = await client.getUtxosByAddress(fromAddress);
-      await client.close();
-      
-      availableUtxos = rpcUtxos.map(u => ({
-        outpoint: u.outpoint,
-        address: u.address,
-        amountSompi: u.amountSompi,
-        scriptPublicKey: u.scriptPublicKey || "unresolved"
-      }));
-      mode = "kaspa-rpc";
-    } else {
-      throw e;
+      mode = target.kind === "kaspa-node" ? "kaspa-node" : "kaspa-rpc";
+    } catch (e: any) {
+      const protocol = rpcUrl?.startsWith("ws") ? "WebSocket" : "JSON-RPC";
+      const { RpcConnectionError, classifyRpcError } = await import("../cli-errors.js");
+      throw new RpcConnectionError({
+        endpoint: rpcUrl || "unknown",
+        network: resolvedNetwork,
+        protocol,
+        errorCode: classifyRpcError(e),
+        rawError: e.message
+      });
     }
   }
 

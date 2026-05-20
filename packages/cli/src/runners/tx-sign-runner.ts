@@ -60,9 +60,9 @@ export async function runTxSign(input: TxSignRunnerInput): Promise<SignedTxArtif
   return signedArtifact;
 }
 
-function getNetworkFromAddress(address: string): string {
+export function getNetworkFromAddress(address: string): string {
+  if (address.startsWith("kaspa:sim_") || address.startsWith("kaspasim:")) return "simnet";
   if (address.startsWith("kaspa:")) return "mainnet";
   if (address.startsWith("kaspatest:")) return "testnet-10";
-  if (address.startsWith("kaspasim:")) return "simnet";
   return "unknown";
 }

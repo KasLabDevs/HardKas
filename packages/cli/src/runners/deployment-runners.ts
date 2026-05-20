@@ -29,24 +29,39 @@ export async function trackDeployment(opts: {
   const rootDir = process.cwd();
   
   await withLock({ rootDir, name: "artifacts", command: "hardkas deploy track" }, async () => {
-    const existing = await loadDeployment(rootDir, opts.network, opts.label);
-    if (existing) {
-      throw new Error(`Deployment '${opts.label}' already exists on network '${opts.network}'.`);
-    }
-
-    const record = createDeploymentRecord({
-      label: opts.label,
-      networkId: opts.network as NetworkId,
-      ...(opts.txId ? { txId: opts.txId as TxId } : {}),
-      ...(opts.plan ? { planArtifactId: opts.plan as ArtifactId } : {}),
-      ...(opts.receipt ? { receiptArtifactId: opts.receipt as ArtifactId } : {}),
-      status: (opts.status || "sent") as any,
-      ...(opts.notes ? { notes: opts.notes } : {})
-    });
-
-    await saveDeployment(rootDir, record);
-    UI.success(`Tracked deployment: ${opts.label} (${opts.network})`);
+    await trackDeploymentInternal(rootDir, opts);
   });
+}
+
+export async function trackDeploymentInternal(rootDir: string, opts: {
+  label: string;
+  network: string;
+  txId?: string;
+  plan?: string;
+  receipt?: string;
+  status?: string;
+  notes?: string;
+  silent?: boolean;
+}): Promise<void> {
+  const existing = await loadDeployment(rootDir, opts.network, opts.label);
+  if (existing) {
+    throw new Error(`Deployment '${opts.label}' already exists on network '${opts.network}'.`);
+  }
+
+  const record = createDeploymentRecord({
+    label: opts.label,
+    networkId: opts.network as NetworkId,
+    ...(opts.txId ? { txId: opts.txId as TxId } : {}),
+    ...(opts.plan ? { planArtifactId: opts.plan as ArtifactId } : {}),
+    ...(opts.receipt ? { receiptArtifactId: opts.receipt as ArtifactId } : {}),
+    status: (opts.status || "sent") as any,
+    ...(opts.notes ? { notes: opts.notes } : {})
+  });
+
+  await saveDeployment(rootDir, record);
+  if (!opts.silent) {
+    UI.success(`Tracked deployment: ${opts.label} (${opts.network})`);
+  }
 }
 
 export async function listAllDeployments(opts: { 

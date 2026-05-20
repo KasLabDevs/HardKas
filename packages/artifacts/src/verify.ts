@@ -84,7 +84,10 @@ export async function verifyArtifactIntegrity(artifactOrPath: unknown): Promise<
         addError("FILE_NOT_FOUND", `File not found: ${artifactOrPath}`);
         return result;
       }
-      const content = fs.readFileSync(artifactOrPath, "utf-8");
+      let content = fs.readFileSync(artifactOrPath, "utf-8");
+      if (content.charCodeAt(0) === 0xFEFF) {
+        content = content.slice(1);
+      }
       artifact = JSON.parse(content);
     } else {
       artifact = artifactOrPath;
@@ -236,15 +239,23 @@ export function verifyArtifactSemantics(artifact: unknown, context: Verification
     const from = v.from as Record<string, unknown>;
     const to = v.to as Record<string, unknown>;
     const addr = from?.address || to?.address;
-    const expectedPrefix = networkIdStr === "mainnet" ? "kaspa:" : 
-                           networkIdStr.startsWith("testnet") ? "kaspatest:" : "kaspasim:";
-    
-    if (addr && typeof addr === "string" && !addr.startsWith(expectedPrefix)) {
-       addIssue({
-         code: "NETWORK_ADDRESS_MISMATCH",
-         severity: "error",
-         message: `Network/Address mismatch: network is ${networkId} but address is ${addr}`
-       });
+    if (addr && typeof addr === "string") {
+      let mismatch = false;
+      if (networkIdStr === "mainnet") {
+        mismatch = !addr.startsWith("kaspa:") || addr.startsWith("kaspa:sim_");
+      } else if (networkIdStr.startsWith("testnet")) {
+        mismatch = !addr.startsWith("kaspatest:");
+      } else {
+        mismatch = !addr.startsWith("kaspa:sim_");
+      }
+
+      if (mismatch) {
+        addIssue({
+          code: "NETWORK_ADDRESS_MISMATCH",
+          severity: "error",
+          message: `Network/Address mismatch: network is ${networkId} but address is ${addr}`
+        });
+      }
     }
   }
 

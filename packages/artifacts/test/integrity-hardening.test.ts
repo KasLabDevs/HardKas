@@ -21,19 +21,19 @@ describe("Artifact Integrity Hardening (P1.1)", () => {
 
   const createValidArtifact = () => ({
     schema: "hardkas.txPlan",
-    hardkasVersion: "0.5.3-alpha",
+    hardkasVersion: "0.5.5-alpha",
     version: ARTIFACT_VERSION,
     createdAt: new Date().toISOString(),
     networkId: "simnet",
     mode: "simulated",
     planId: "test-123",
-    from: { address: "kaspasim:alice" },
-    to: { address: "kaspasim:bob" },
+    from: { address: "kaspa:sim_alice" },
+    to: { address: "kaspa:sim_bob" },
     amountSompi: "1000",
     estimatedFeeSompi: "1",
     estimatedMass: "100",
     inputs: [],
-    outputs: [{ address: "kaspasim:bob", amountSompi: "1000" }]
+    outputs: [{ address: "kaspa:sim_bob", amountSompi: "1000" }]
   });
 
   it("should verify a valid artifact object", async () => {

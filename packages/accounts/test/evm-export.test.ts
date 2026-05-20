@@ -12,7 +12,7 @@ describe("EVM Account Export Security Gates", () => {
   const kaspaAccount: HardkasAccount = {
     name: "alice-kaspa",
     kind: "kaspa-private-key",
-    address: "kaspasim:qz..."
+    address: "kaspa:sim_qz..."
   };
 
   it("should fail if network is mainnet", async () => {

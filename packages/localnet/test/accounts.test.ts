@@ -5,15 +5,15 @@ import { SOMPI_PER_KAS } from "@hardkas/core";
 describe("localnet accounts", () => {
   describe("resolveAccountAddress", () => {
     it("should resolve alice alias", () => {
-      expect(resolveAccountAddress("alice")).toBe("kaspasim:alice");
+      expect(resolveAccountAddress("alice")).toBe("kaspa:sim_alice");
     });
 
     it("should resolve bob alias case-insensitive", () => {
-      expect(resolveAccountAddress("BOB")).toBe("kaspasim:bob");
+      expect(resolveAccountAddress("BOB")).toBe("kaspa:sim_bob");
     });
 
-    it("should return direct kaspasim: addresses as-is", () => {
-      expect(resolveAccountAddress("kaspasim:test")).toBe("kaspasim:test");
+    it("should return direct kaspa:sim_ addresses as-is", () => {
+      expect(resolveAccountAddress("kaspa:sim_test")).toBe("kaspa:sim_test");
     });
 
     it("should throw for unknown aliases", () => {

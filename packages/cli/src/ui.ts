@@ -95,6 +95,26 @@ export const UI = {
 };
 
 export function handleError(e: unknown, context?: string) {
+  if (e instanceof Error && (e as any).code === "REPLAY_DIVERGED") {
+    const report = (e as any).report;
+    UI.error("Replay Verification Failed", "Check the transaction plan/receipt invariants for unexpected state modifications.");
+    if (report && report.divergences && report.divergences.length > 0) {
+      console.log(pc.bold("\n  Divergences found:"));
+      for (const div of report.divergences) {
+        console.log(`    ${pc.cyan(div.path)}:`);
+        console.log(`      Expected: ${pc.green(JSON.stringify(div.expected))}`);
+        console.log(`      Actual:   ${pc.red(JSON.stringify(div.actual))}`);
+      }
+    }
+    if (report && report.errors && report.errors.length > 0) {
+      console.log(pc.bold("\n  Errors:"));
+      for (const err of report.errors) {
+        console.log(`    ${pc.red(err)}`);
+      }
+    }
+    return;
+  }
+
   const rawMsg = e instanceof Error ? e.message : String(e);
   const msg = maskSecrets ? maskSecrets(rawMsg) : rawMsg;
   const errorObj = e as any;
@@ -128,6 +148,14 @@ export function handleError(e: unknown, context?: string) {
   }
 
   UI.error(context ? `${context}: ${msg}` : msg, suggestion);
+
+  if (e instanceof Error && (e as any).code && (e as any).context) {
+    const ctx = (e as any).context;
+    console.error(`  ${pc.dim("Code:")}     ${pc.white((e as any).code)}`);
+    if (ctx.endpoint) console.error(`  ${pc.dim("Endpoint:")} ${pc.white(ctx.endpoint)}`);
+    if (ctx.network)  console.error(`  ${pc.dim("Network:")}  ${pc.white(ctx.network)}`);
+    if (ctx.protocol) console.error(`  ${pc.dim("Protocol:")} ${pc.white(ctx.protocol)}`);
+  }
 }
 
 /**

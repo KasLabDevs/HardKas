@@ -57,7 +57,7 @@ export function registerInitCommands(program: Command) {
           const template = `import { defineHardkasConfig } from "@hardkas/sdk";
 
 export default defineHardkasConfig({
-  // HardKAS v0.5.3-alpha Configuration
+  // HardKAS v0.5.5-alpha Configuration
   defaultNetwork: "simulated",
 
   networks: {
@@ -77,11 +77,11 @@ export default defineHardkasConfig({
   accounts: {
     alice: {
       kind: "simulated",
-      address: "kaspasim:sim_alice"
+      address: "kaspa:sim_sim_alice"
     },
     bob: {
       kind: "simulated",
-      address: "kaspasim:sim_bob"
+      address: "kaspa:sim_sim_bob"
     }
   }
 });

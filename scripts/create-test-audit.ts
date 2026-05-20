@@ -7,7 +7,7 @@ if (!fs.existsSync(testDir)) fs.mkdirSync(testDir);
 
 const createArtifact = (planId: string) => ({
   schema: "hardkas.txPlan.v2",
-  hardkasVersion: "0.5.3-alpha",
+  hardkasVersion: "0.5.4-alpha",
   version: ARTIFACT_V2_VERSION,
   createdAt: new Date().toISOString(),
   networkId: "simnet",

@@ -1,6 +1,6 @@
 {
   "schema": "hardkas.txPlan",
-  "hardkasVersion": "0.5.3-alpha",
+  "hardkasVersion": "0.5.5-alpha",
   "version": "1.0.0-alpha",
   "createdAt": "2026-05-18T19:45:05.001Z",
   "networkId": "simnet",
@@ -10,27 +10,27 @@
   "executionMode": "isolated",
   "planId": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
   "from": {
-    "address": "kaspasim:123"
+    "address": "kaspa:sim_123"
   },
   "to": {
-    "address": "kaspasim:456"
+    "address": "kaspa:sim_456"
   },
   "amountSompi": "1000000",
-  "estimatedFeeSompi": "250",
-  "estimatedMass": "250",
+  "estimatedFeeSompi": "150",
+  "estimatedMass": "150",
   "inputs": [],
   "outputs": [
     {
-      "address": "kaspasim:456",
+      "address": "kaspa:sim_456",
       "amountSompi": "1000000"
     }
   ],
   "lineage": {
-    "artifactId": "2641e1f17e4dd7e4d4a6e095ce8d8b63263087cd98efa63d8b75cb9b73890a12",
+    "artifactId": "317b9f7fa35befa2d0406b3e2d0929e8dcb1d945813d0a82677a78e65fa7ffe2",
     "lineageId": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
     "parentArtifactId": "2b4baed6aab94827f47c19195591a9f619be50882de2c564ca9fa1bd09d57fb5",
     "rootArtifactId": "2b4baed6aab94827f47c19195591a9f619be50882de2c564ca9fa1bd09d57fb5",
     "sequence": 1
   },
-  "contentHash": "2641e1f17e4dd7e4d4a6e095ce8d8b63263087cd98efa63d8b75cb9b73890a12"
+  "contentHash": "317b9f7fa35befa2d0406b3e2d0929e8dcb1d945813d0a82677a78e65fa7ffe2"
 }

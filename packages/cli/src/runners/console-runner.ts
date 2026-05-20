@@ -1,7 +1,7 @@
 import repl from "node:repl";
 import fs from "node:fs";
 import path from "node:path";
-import { createTestHarness } from "@hardkas/testing/harness";
+import { createTestHarness } from "@hardkas/testing";
 import { calculateContentHash, canonicalStringify } from "@hardkas/artifacts";
 import { maskSecrets, formatSompi, parseKasToSompi } from "@hardkas/core";
 

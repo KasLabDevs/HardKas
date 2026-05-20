@@ -26,7 +26,10 @@ export function getDefaultReceiptPath(txId: string, cwd: string = process.cwd())
 
 export async function readArtifact(filePath: string): Promise<any> {
   try {
-    const content = await fs.readFile(filePath, "utf-8");
+    let content = await fs.readFile(filePath, "utf-8");
+    if (content.charCodeAt(0) === 0xFEFF) {
+      content = content.slice(1);
+    }
     return JSON.parse(content);
   } catch (error) {
     if ((error as any).code === "ENOENT") {

@@ -21,7 +21,9 @@ export type { HardKasMatchers } from "./matchers.js";
 export { hardKasMatchers } from "./matchers.js";
 
 // ── Setup (side-effect import) ──────────────────────────────────────────────
-export {} from "./setup.js";
+// Avoid auto-importing setup.js in index.ts because it pulls in vitest and causes
+// "Vitest failed to access its internal state" when executed by the CLI in non-test runs.
+// Test runners should import "@hardkas/testing/setup" explicitly instead.
 
 // ── Reproducibility Proof ───────────────────────────────────────────────────
 export type { ReproducibilityReport } from "./reproducibility.js";

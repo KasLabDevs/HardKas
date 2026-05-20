@@ -38,7 +38,7 @@ describe("Real Account Queries (Balance & UTXOs)", () => {
     accounts: [
       {
         name: "alice",
-        address: "kaspasim:alice123",
+        address: "kaspa:sim_alice123",
         createdAt: new Date().toISOString()
       }
     ]
@@ -51,16 +51,16 @@ describe("Real Account Queries (Balance & UTXOs)", () => {
     vi.mocked(accounts.loadRealAccountStore).mockResolvedValue(mockStore);
     
     // Setup Mock RPC behaviors
-    mockRpc.setUtxos("kaspasim:alice123", [
+    mockRpc.setUtxos("kaspa:sim_alice123", [
       {
         outpoint: { transactionId: "tx1", index: 0 },
-        address: "kaspasim:alice123",
+        address: "kaspa:sim_alice123",
         amountSompi: 100000000n, // 1 KAS
         blockDaaScore: 100n
       },
       {
         outpoint: { transactionId: "tx2", index: 1 },
-        address: "kaspasim:alice123",
+        address: "kaspa:sim_alice123",
         amountSompi: 50000000n, // 0.5 KAS
         blockDaaScore: 101n
       }

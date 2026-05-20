@@ -50,7 +50,7 @@ export function resolveHardkasAccount(
 
   // 4. Fallback to deterministic accounts
   const detAccounts = createDeterministicAccounts();
-  const det = detAccounts.find(a => a.name === nameOrAddress);
+  const det = detAccounts.find((a: any) => a.name === nameOrAddress);
   if (det) {
     return {
       name: det.name,

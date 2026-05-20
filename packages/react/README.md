@@ -4,7 +4,7 @@ React hooks and provider context for integrating with the HardKAS deterministic 
 
 ## ⚠️ Alpha-Only Local-Runtime Coupling Warning
 
-Please note that in the `v0.5.3-alpha` release, this package has direct dependencies on the **`@hardkas/bridge-local`** package to facilitate local bridge payload planning and prefix-mining simulations directly within hooks like `useBridgeLocalPlan` and `useBridgeLocalSimulation`.
+Please note that in the `v0.5.4-alpha` release, this package has direct dependencies on the **`@hardkas/bridge-local`** package to facilitate local bridge payload planning and prefix-mining simulations directly within hooks like `useBridgeLocalPlan` and `useBridgeLocalSimulation`.
 
 ### 🛡️ Production & Browser Safety
 
