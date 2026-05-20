@@ -1,8 +1,30 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, beforeAll, afterAll } from "vitest";
 import { runTxPlan } from "../src/runners/tx-plan-runner.js";
 import { loadHardkasConfig } from "@hardkas/config";
+import path from "node:path";
+import fs from "node:fs";
 
 describe("Simulated Isolation", () => {
+  const originalCwd = process.cwd();
+  const tempDir = path.resolve(originalCwd, ".tmp/simulated-isolation-test");
+
+  beforeAll(() => {
+    if (fs.existsSync(tempDir)) {
+      fs.rmSync(tempDir, { recursive: true, force: true });
+    }
+    fs.mkdirSync(tempDir, { recursive: true });
+    process.chdir(tempDir);
+  });
+
+  afterAll(() => {
+    process.chdir(originalCwd);
+    if (fs.existsSync(tempDir)) {
+      try {
+        fs.rmSync(tempDir, { recursive: true, force: true });
+      } catch (e) {}
+    }
+  });
+
   it("must succeed even if an unreachable RPC URL is provided", async () => {
     const { config } = await loadHardkasConfig();
     

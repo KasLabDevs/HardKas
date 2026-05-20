@@ -23,11 +23,11 @@
     "payload": "00"
   },
   "lineage": {
-    "artifactId": "e8e257f3729e75c40b0b07a9d1625aa308a5607be834920a408491ea462d08ef",
+    "artifactId": "c1433f1813e94c71992950572d71e81c32ef32a7db9e74cd36148570f49000bf",
     "lineageId": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
-    "parentArtifactId": "2641e1f17e4dd7e4d4a6e095ce8d8b63263087cd98efa63d8b75cb9b73890a12",
+    "parentArtifactId": "317b9f7fa35befa2d0406b3e2d0929e8dcb1d945813d0a82677a78e65fa7ffe2",
     "rootArtifactId": "2b4baed6aab94827f47c19195591a9f619be50882de2c564ca9fa1bd09d57fb5",
     "sequence": 2
   },
-  "contentHash": "e8e257f3729e75c40b0b07a9d1625aa308a5607be834920a408491ea462d08ef"
+  "contentHash": "c1433f1813e94c71992950572d71e81c32ef32a7db9e74cd36148570f49000bf"
 }

@@ -41,6 +41,7 @@ export async function trackDeploymentInternal(rootDir: string, opts: {
   receipt?: string;
   status?: string;
   notes?: string;
+  silent?: boolean;
 }): Promise<void> {
   const existing = await loadDeployment(rootDir, opts.network, opts.label);
   if (existing) {
@@ -58,7 +59,9 @@ export async function trackDeploymentInternal(rootDir: string, opts: {
   });
 
   await saveDeployment(rootDir, record);
-  UI.success(`Tracked deployment: ${opts.label} (${opts.network})`);
+  if (!opts.silent) {
+    UI.success(`Tracked deployment: ${opts.label} (${opts.network})`);
+  }
 }
 
 export async function listAllDeployments(opts: { 

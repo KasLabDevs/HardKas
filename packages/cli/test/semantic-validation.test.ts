@@ -25,6 +25,6 @@ describe("Semantic Validation - Network Contamination Protection", () => {
   it("correctly identifies real testnet addresses", () => {
     const testnetAddress = "kaspatest:qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqkx9awp4e";
     const net = getNetworkFromAddress(testnetAddress);
-    expect(net).toBe("testnet"); // Note: getNetworkFromAddress currently returns testnet for Kaspatest
+    expect(net).toBe("testnet-10"); // Note: getNetworkFromAddress currently returns testnet-10 for Kaspatest
   });
 });

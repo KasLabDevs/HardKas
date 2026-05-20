@@ -99,8 +99,10 @@ hardkas deploy list
 hardkas deploy inspect lifecycle-demo --network simnet
 
 # 11. Receipt + Trace
+$receiptOutput = hardkas tx receipt $txid --json
+$receiptOutput | Out-File -Encoding utf8 tx-receipt.json
 hardkas tx receipt $txid
-hardkas tx trace $txid
+# hardkas tx trace $txid
 
 # 12. Query store
 hardkas query store sync

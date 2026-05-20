@@ -95,6 +95,7 @@ hardkas deploy list
 hardkas deploy inspect lifecycle-demo --network simnet
 
 # 11. Receipt + Trace
+hardkas tx receipt "$TXID" --json > tx-receipt.json
 hardkas tx receipt "$TXID"
 # hardkas tx trace $txid  # Trace disabled while query API stabilizes
 

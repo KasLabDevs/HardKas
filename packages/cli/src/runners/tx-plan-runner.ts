@@ -71,6 +71,7 @@ export async function runTxPlan(input: TxPlanRunnerInput): Promise<TxPlanArtifac
     }));
 
     mode = "simulated";
+    rpcUrl = "simulated://local";
   } else {
     try {
       const { JsonWrpcKaspaClient } = await import("@hardkas/kaspa-rpc");

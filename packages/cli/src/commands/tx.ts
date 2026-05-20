@@ -194,7 +194,8 @@ export function registerTxCommands(program: Command) {
                 network: result.networkName,
                 txId: result.txId,
                 plan: signedArtifact.sourcePlanId,
-                status: result.receipt.status === "confirmed" ? "confirmed" : "sent"
+                status: result.receipt.status === "confirmed" ? "confirmed" : "sent",
+                silent: options.json
               });
             }
           } else if (options.from && options.to && options.amount) {
