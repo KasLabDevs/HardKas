@@ -3,6 +3,7 @@ import {
   waitForKaspaRpcReady, 
   RpcHealthResult 
 } from "@hardkas/kaspa-rpc";
+import { classifyRpcError, humanReadableRpcError } from "../cli-errors.js";
 
 export interface RpcHealthRunnerOptions {
   url?: string;
@@ -53,11 +54,9 @@ export async function runRpcHealth(options: RpcHealthRunnerOptions): Promise<{
       formatted += `RPC not ready after ${options.timeout || 60}s\n\n`;
     }
     
-    // Clean up the error message
-    let cleanError = (result.error || "Unknown error").split('\n')[0] || "Unknown error";
-    if (cleanError.includes("fetch failed") || cleanError.includes("ECONNREFUSED")) {
-      cleanError = "Connection refused";
-    }
+    // Classify the error into a typed RPC error code
+    const errorCode = classifyRpcError(result.error || "Unknown error");
+    const cleanError = humanReadableRpcError(errorCode);
 
     formatted += [
       "RPC Health",
@@ -65,6 +64,7 @@ export async function runRpcHealth(options: RpcHealthRunnerOptions): Promise<{
       `  Protocol: ${result.protocol}`,
       `  Network:  ${result.networkId || "unknown"}`,
       `  Status:   unreachable`,
+      `  Code:     ${errorCode}`,
       `  Error:    ${cleanError}`,
       "",
       "Suggestion:",

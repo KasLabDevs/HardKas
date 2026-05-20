@@ -57,7 +57,7 @@ export function registerInitCommands(program: Command) {
           const template = `import { defineHardkasConfig } from "@hardkas/sdk";
 
 export default defineHardkasConfig({
-  // HardKAS v0.5.4-alpha Configuration
+  // HardKAS v0.5.5-alpha Configuration
   defaultNetwork: "simulated",
 
   networks: {

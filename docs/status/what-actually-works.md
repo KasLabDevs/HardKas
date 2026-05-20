@@ -1,4 +1,4 @@
-# HardKAS 0.5.4-alpha: What Actually Works
+# HardKAS 0.5.5-alpha: What Actually Works
 
 Last verified: 2026-05-15
 

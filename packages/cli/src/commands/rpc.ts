@@ -19,11 +19,18 @@ export function registerRpcCommands(program: Command) {
     .option("--timeout <ms>", "Wait timeout in ms", "60000")
     .action(async (options: { wait?: boolean, timeout?: string }) => { 
       try { 
-        await runRpcHealth({ 
+        const res = await runRpcHealth({ 
           wait: options.wait ?? false, 
           timeout: options.timeout ? parseInt(options.timeout, 10) / 1000 : 60 
         }); 
-      } catch (e) { handleError(e); } 
+        console.log(res.formatted);
+        if (!res.result.ready) {
+          process.exitCode = 1;
+        }
+      } catch (e) { 
+        handleError(e); 
+        process.exitCode = 1;
+      } 
     });
 
   rpcCmd.command("doctor")

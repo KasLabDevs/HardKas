@@ -46,4 +46,31 @@ describe("Simulated Isolation", () => {
     expect(artifact.from.address).toContain("kaspa:sim_");
     expect(artifact.rpcUrl).toBe("simulated://local"); // It ignores the provided URL
   });
+
+  it("simulated mode never performs network fetches and sets rpcUrl to simulated://local", async () => {
+    const { config } = await loadHardkasConfig();
+    const artifact = await runTxPlan({
+      from: "alice",
+      to: "bob",
+      amount: "10",
+      networkId: "simnet",
+      feeRate: "1",
+      config
+    });
+    expect(artifact.rpcUrl).toBe("simulated://local");
+  });
+
+  it("NETWORK_ACCOUNT_MISMATCH triggers correctly for simulated account and real network", async () => {
+    const { config } = await loadHardkasConfig();
+    await expect(
+      runTxPlan({
+        from: "alice",
+        to: "bob",
+        amount: "10",
+        networkId: "testnet-11",
+        feeRate: "1",
+        config
+      })
+    ).rejects.toThrow(/NETWORK_ACCOUNT_MISMATCH/);
+  });
 });

@@ -102,7 +102,14 @@ export async function runTxPlan(input: TxPlanRunnerInput): Promise<TxPlanArtifac
       mode = target.kind === "kaspa-node" ? "kaspa-node" : "kaspa-rpc";
     } catch (e: any) {
       const protocol = rpcUrl?.startsWith("ws") ? "WebSocket" : "JSON-RPC";
-      throw new Error(`RPC unavailable:\nendpoint=${rpcUrl || "unknown"}\nnetwork=${resolvedNetwork}\nprotocol=${protocol}\nerror=${e.message}`);
+      const { RpcConnectionError, classifyRpcError } = await import("../cli-errors.js");
+      throw new RpcConnectionError({
+        endpoint: rpcUrl || "unknown",
+        network: resolvedNetwork,
+        protocol,
+        errorCode: classifyRpcError(e),
+        rawError: e.message
+      });
     }
   }
 

@@ -33,7 +33,7 @@ Every v2 artifact shares a common header:
 ```json
 {
   "schema": "hardkas.txPlan.v2",
-  "hardkasVersion": "0.5.4-alpha",
+  "hardkasVersion": "0.5.5-alpha",
   "version": "2.0.0",
   "networkId": "simnet",
   "mode": "simulated",

@@ -10,8 +10,8 @@ The entrypoint is a Node.js executable binary that serves as the central dispatc
 
 | Element | Value | File | Note |
 | :--- | :--- | :--- | :--- |
-| **CLI Package Version** | `0.5.4-alpha` | `package.json` | Version declared in the CLI package manifest |
-| **CLI Runtime Version** | `0.5.4-alpha` | `index.ts` | `HARDKAS_VERSION` constant in source code |
+| **CLI Package Version** | `0.5.5-alpha` | `package.json` | Version declared in the CLI package manifest |
+| **CLI Runtime Version** | `0.5.5-alpha` | `index.ts` | `HARDKAS_VERSION` constant in source code |
 | **Shebang** | `#!/usr/bin/env node` | `index.ts` | Allows direct execution on Unix/Linux/macOS |
 | **Binary** | `hardkas` | `package.json` | Mapped in the `bin` section of the CLI package |
 | **Registration** | Static | `index.ts` | Calls 16 `registerXCommands` functions |
