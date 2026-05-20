@@ -60,15 +60,17 @@ export async function runTxPlan(input: TxPlanRunnerInput): Promise<TxPlanArtifac
     const localState = await loadOrCreateLocalnetState();
     const unspent = getSpendableUtxos(localState, fromAddress);
     
-    availableUtxos = unspent.map(u => ({
-      outpoint: {
-        transactionId: u.id.split(":")[0],
-        index: Number(u.id.split(":")[2]) || 0
-      },
-      address: u.address,
-      amountSompi: BigInt(u.amountSompi),
-      scriptPublicKey: "mock-script"
-    }));
+    availableUtxos = unspent.map(u => {
+      const parts = u.id.split(":");
+      const index = Number(parts[parts.length - 1]);
+      const transactionId = parts.slice(0, -1).join(":");
+      return {
+        outpoint: { transactionId, index },
+        address: u.address,
+        amountSompi: BigInt(u.amountSompi),
+        scriptPublicKey: "mock-script"
+      };
+    });
 
     mode = "simulated";
     rpcUrl = "simulated://local";

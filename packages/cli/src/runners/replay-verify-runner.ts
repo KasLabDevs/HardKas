@@ -27,7 +27,32 @@ export async function runReplayVerify(options: ReplayVerifyOptions) {
     const receipt = await readTxReceiptArtifact(receiptPath);
     
     // For replay verification, we need a base state.
-    const state = await loadOrCreateLocalnetState();
+    let state = await loadOrCreateLocalnetState();
+
+    // Reconstruct pre-state if we are running in simulated mode and have a receipt DAA score
+    if (receipt.mode === "simulated" && receipt.daaScore) {
+      const receiptDaa = BigInt(receipt.daaScore);
+      const targetDaa = receiptDaa - 1n;
+      
+      const reconstructedUtxos = state.utxos
+        .filter(u => BigInt(u.createdAtDaaScore || "0") <= targetDaa)
+        .map(u => {
+          if (u.spent && u.spentAtDaaScore && BigInt(u.spentAtDaaScore) >= receiptDaa) {
+            return {
+              ...u,
+              spent: false,
+              spentAtDaaScore: undefined
+            };
+          }
+          return u;
+        });
+
+      state = {
+        ...state,
+        daaScore: targetDaa.toString(),
+        utxos: reconstructedUtxos
+      };
+    }
 
     const report = verifyReplay(state, plan, receipt);
 
