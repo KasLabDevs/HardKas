@@ -1,0 +1,35 @@
+{
+  "schema": "hardkas.txReceipt",
+  "hardkasVersion": "0.5.5-alpha",
+  "version": "1.0.0-alpha",
+  "hashVersion": 3,
+  "createdAt": "2026-05-21T23:11:03.065Z",
+  "txId": "simtx_a4a5da9ed60f61c7c58ba89eb9805bef",
+  "status": "accepted",
+  "mode": "simulated",
+  "networkId": "simnet",
+  "from": {
+    "address": "kaspa:sim_alice"
+  },
+  "to": {
+    "address": "kaspa:sim_bob"
+  },
+  "amountSompi": "5000000000",
+  "feeSompi": "350",
+  "changeSompi": "94999999650",
+  "spentUtxoIds": [
+    "genesis:alice:0"
+  ],
+  "createdUtxoIds": [
+    "simtx_a4a5da9ed60f61c7c58ba89eb9805bef:0",
+    "simtx_a4a5da9ed60f61c7c58ba89eb9805bef:1"
+  ],
+  "daaScore": "1",
+  "preStateHash": "7a386414ebb84f73ce7016e10439011fa02250db6a1437d369bd6ab809566520",
+  "postStateHash": "d64cf84f8f2634b2c0742f5954bd173db2f906a39151c6901d84ac4531b4ec1f",
+  "dagContext": {
+    "mode": "linear",
+    "sink": "linear-pseudo-sink"
+  },
+  "contentHash": "4f38aec2ead91779565cd33f7fa41defb2b6c04daf27f649a73f4e73ec8ebc7d"
+}

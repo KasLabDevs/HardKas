@@ -539,9 +539,9 @@ export class HardkasIndexer {
       const filePath = path.join(dir, file);
       const stat = fs.statSync(filePath);
       if (stat.isDirectory()) {
-        if (file === "node_modules" || file === ".git") continue;
+        if (file === "node_modules" || file === ".git" || file === "keystore" || file === "snapshots") continue;
         results = results.concat(this.walk(filePath));
-      } else if (file.endsWith(".json") && !file.endsWith("events.jsonl") && file !== "state.json") {
+      } else if (file.endsWith(".json") && !file.endsWith("events.jsonl") && file !== "state.json" && !file.endsWith("localnet.json") && !file.endsWith("accounts.real.json") && !file.endsWith("sessions.json")) {
         results.push(filePath);
       }
     }

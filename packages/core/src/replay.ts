@@ -51,19 +51,30 @@ export function diffReplays(replayA: any, replayB: any): LayeredReplayDiff {
   }
 
   // 2. Deterministic Diff (Deep diff ignoring observational noise)
-  if (replayA.stateRoot !== replayB.stateRoot) {
+  const stateA = replayA.stateRoot || replayA.postStateHash;
+  const stateB = replayB.stateRoot || replayB.postStateHash;
+  if (stateA !== stateB) {
     diff.deterministic.stateRootDiverged = true;
     diff.deterministic.differences.push({
       path: "stateRoot",
-      a: replayA.stateRoot,
-      b: replayB.stateRoot
+      a: stateA,
+      b: stateB
+    });
+  }
+  if (replayA.amountSompi !== undefined && replayB.amountSompi !== undefined && replayA.amountSompi !== replayB.amountSompi) {
+    diff.deterministic.differences.push({
+      path: "amountSompi",
+      a: replayA.amountSompi,
+      b: replayB.amountSompi
     });
   }
 
   // 3. Observational Diff
-  if (replayA.timestamp && replayB.timestamp) {
-    const timeA = new Date(replayA.timestamp).getTime();
-    const timeB = new Date(replayB.timestamp).getTime();
+  const tsA = replayA.timestamp || replayA.createdAt;
+  const tsB = replayB.timestamp || replayB.createdAt;
+  if (tsA && tsB) {
+    const timeA = new Date(tsA).getTime();
+    const timeB = new Date(tsB).getTime();
     if (timeA !== timeB) {
       diff.observational.timestampShifts.push({ path: "timestamp", shiftMs: Math.abs(timeA - timeB) });
     }

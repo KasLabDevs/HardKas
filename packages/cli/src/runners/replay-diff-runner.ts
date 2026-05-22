@@ -11,7 +11,7 @@ export interface ReplayDiffOptions {
 }
 
 export async function runReplayDiff(options: ReplayDiffOptions) {
-  const artifactDir = path.resolve(process.cwd(), ".hardkas", "receipts");
+  const artifactDir = path.resolve(process.cwd(), ".hardkas", "artifacts");
   
   const pathA = path.join(artifactDir, `${options.idA}.json`);
   const pathB = path.join(artifactDir, `${options.idB}.json`);

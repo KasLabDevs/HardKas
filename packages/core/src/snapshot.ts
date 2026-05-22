@@ -35,7 +35,7 @@ export async function createSnapshot(options: CreateSnapshotOptions): Promise<Sn
   let corrupted = 0;
 
   // 1. Copy artifacts (authority)
-  const artifactsDir = path.join(hardkasDir, "receipts");
+  const artifactsDir = path.join(hardkasDir, "artifacts");
   try {
     const list = await fs.readdir(artifactsDir);
     for (const f of list) {

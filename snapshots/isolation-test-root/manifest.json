@@ -1,0 +1,12 @@
+{
+  "snapshotVersion": 1,
+  "createdAt": "2026-05-22T15:36:59.315Z",
+  "hardkasVersion": "0.5.5-alpha",
+  "stateAuthority": "filesystem",
+  "projectionAuthority": "sqlite",
+  "deterministicScope": "local-only",
+  "consensusValidated": false,
+  "includedArtifacts": 4,
+  "excludedArtifacts": 0,
+  "corruptedArtifacts": 0
+}
