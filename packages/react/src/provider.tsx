@@ -139,6 +139,7 @@ export function HardKasProvider({ config, children, queryClient: externalQueryCl
       "sandbox-session-paired",
       "sandbox-session-expired",
       "sandbox-session-disconnected",
+      "query-synced",
       "ping",
       "heartbeat"
     ];
@@ -151,9 +152,14 @@ export function HardKasProvider({ config, children, queryClient: externalQueryCl
         };
         setLastEvent(event);
         listeners.current.forEach(l => l(event));
+        
+        // P2: Event model único - Refetch automatically when indexer commits
+        if (type === "query-synced") {
+          queryClient.invalidateQueries();
+        }
       });
     });
-  }, [config.devServerUrl]);
+  }, [config.devServerUrl, queryClient]);
 
   React.useEffect(() => {
     connect();

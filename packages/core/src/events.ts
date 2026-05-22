@@ -50,7 +50,21 @@ export type EventKind =
   | "localnet.started"
   | "localnet.stopped"
   | "l2.deposit.planned"
-  | "l2.withdrawal.planned";
+  | "l2.withdrawal.planned"
+  | "artifact.written"
+  | "artifact.indexed"
+  | "artifact.corrupted"
+  | "sqlite.commit"
+  | "replay.invalidated"
+  | "replay.completed"
+  | "replay.excluded"
+  | "sse.emitted"
+  | "dashboard.cache_invalidated"
+  | "dashboard.refetch_started"
+  | "dashboard.refetch_completed"
+  | "query_store.sync_started"
+  | "query_store.sync_completed"
+  | "lineage.verification_failed";
 
 /**
  * Payload mapping for each event kind.
@@ -91,6 +105,25 @@ export interface EventPayloadByKind {
 
   "l2.deposit.planned": { asset: string; amount: bigint; to: string };
   "l2.withdrawal.planned": { asset: string; amount: bigint; from: string };
+
+  "artifact.written": { artifactId: ArtifactId; path: string };
+  "artifact.indexed": { artifactId: ArtifactId; schema: string };
+  "artifact.corrupted": { artifactId: ArtifactId; path: string; issue: string };
+  "sqlite.commit": { transactionId: string; rowCount: number };
+  
+  "replay.invalidated": { artifactId: ArtifactId; reason: string };
+  "replay.completed": { targetArtifactId: ArtifactId; success: boolean };
+  "replay.excluded": { artifactId: ArtifactId; reason: string };
+  
+  "sse.emitted": { eventId: EventId; channel: string };
+  
+  "dashboard.cache_invalidated": { key: string };
+  "dashboard.refetch_started": { key: string };
+  "dashboard.refetch_completed": { key: string; success: boolean };
+  
+  "query_store.sync_started": { syncId: string };
+  "query_store.sync_completed": { syncId: string; stats: Record<string, number> };
+  "lineage.verification_failed": { artifactId: ArtifactId; missingParentId: ArtifactId };
 }
 
 /**
@@ -106,8 +139,11 @@ export interface EventEnvelope<K extends EventKind = EventKind> {
   domain: EventDomain;
   kind: K;
 
-  timestamp: string;
-  sequence?: EventSequence | undefined;
+  timestamp: string; // Deprecated conceptually, use emittedAt
+  emittedAt: string;
+  sequenceNumber: EventSequence;
+  globalOffset?: number;
+  sourceSubsystem: string;
 
   workflowId: WorkflowId;
   correlationId: CorrelationId;
@@ -193,15 +229,20 @@ export function createEventEnvelope<K extends EventKind>(params: {
   artifactId?: ArtifactId;
   txId?: TxId;
   eventId?: EventId;
-  sequence?: EventSequence;
+  sequenceNumber: EventSequence;
+  globalOffset?: number;
+  sourceSubsystem: string;
 }): EventEnvelope<K> {
+  const timestamp = new Date().toISOString();
   return {
     schema: "hardkas.event",
     version: "1.0.0",
     eventId: params.eventId || (crypto.randomUUID() as EventId),
     domain: params.domain,
     kind: params.kind,
-    timestamp: new Date().toISOString(),
+    timestamp: timestamp,
+    emittedAt: timestamp,
+    sourceSubsystem: params.sourceSubsystem,
     workflowId: params.workflowId,
     correlationId: params.correlationId,
     causationId: params.causationId,
@@ -209,7 +250,8 @@ export function createEventEnvelope<K extends EventKind>(params: {
     txId: params.txId,
     networkId: params.networkId,
     payload: params.payload,
-    ...(params.sequence !== undefined ? { sequence: params.sequence } : {})
+    sequenceNumber: params.sequenceNumber,
+    globalOffset: params.globalOffset
   } as EventEnvelope<K>;
 }
 

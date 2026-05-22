@@ -1,4 +1,5 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useEffect } from "react";
 import { useHardKas } from "../provider.js";
 import { useHardKasSession } from "./session.js";
 import { useHardKasHealth } from "./health.js";
@@ -41,11 +42,20 @@ export function useIgraWallet() {
 }
 
 export function useIgraBalance(options: { refetchInterval?: number } = {}) {
-  const { igraClient } = useHardKas();
+  const { igraClient, config, subscribe } = useHardKas();
+  const queryClient = useQueryClient();
   const { address } = useIgraAccount();
 
+  useEffect(() => {
+    const sync = () => queryClient.invalidateQueries({ queryKey: ["igra", "balance"] });
+    return subscribe((event) => {
+      if (["query-synced", "session-changed"].includes(event.type)) {
+        sync();
+      }
+    });
+  }, [queryClient, subscribe]);
+
   const { data: session } = useHardKasSession();
-  const { config } = useHardKas();
   const { data: health } = useHardKasHealth();
 
   const l2Status = (health as any)?.igra?.status || health?.l2?.status;
@@ -61,7 +71,25 @@ export function useIgraBalance(options: { refetchInterval?: number } = {}) {
       if (!address) return 0n;
 
       if (address.startsWith("0xsim_") || !address.startsWith("0x") || l2Status === "simulated-mode") {
-        return 500000000000000000000n; // 500 iKAS
+        try {
+          const baseUrl = config.devServerUrl || "";
+          const fetchUrl = baseUrl ? (baseUrl.endsWith("/") ? `${baseUrl}api/accounts` : `${baseUrl}/api/accounts`) : "/api/accounts";
+          const res = await fetch(fetchUrl);
+          if (res.ok) {
+            const data = await res.json();
+            // Try matching either address or name
+            const match = (data.accounts || []).find((a: any) => 
+              a.address.toLowerCase() === address.toLowerCase() || 
+              a.name.toLowerCase() === address.toLowerCase()
+            );
+            if (match) {
+              return BigInt(match.balanceSompi || match.balance || "0");
+            }
+          }
+        } catch (e) {
+          console.warn("Failed to fetch derived simulated L2 balance, falling back to 0:", e);
+        }
+        return 0n;
       }
 
       try {

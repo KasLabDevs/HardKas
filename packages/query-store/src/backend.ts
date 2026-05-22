@@ -77,12 +77,17 @@ export class SqliteQueryBackend implements QueryBackend {
   async findArtifacts(filters?: { schema?: string; mode?: string; networkId?: string }): Promise<ArtifactDocument[]> {
     const db = this.store.getDatabase();
     
+    // Force SQLite to flush WAL entries to visibility for this read connection
+    try {
+      db.pragma("wal_checkpoint(PASSIVE)");
+    } catch (e) {}
+    
     let query = "SELECT * FROM artifacts WHERE 1=1";
     const params: any[] = [];
     
     if (filters?.schema) {
-      query += " AND schema = ?";
-      params.push(filters.schema);
+      query += " AND schema LIKE ?";
+      params.push(`${filters.schema}%`);
     }
     if (filters?.mode) {
       query += " AND mode = ?";

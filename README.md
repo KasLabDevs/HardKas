@@ -161,6 +161,15 @@ HardKAS provides a dedicated flow for local Igra (Kaspa L2) development:
 
 Get started with HardKAS in seconds.
 
+> [!WARNING]
+> **Simulated vs Simnet: The Mental Model**
+> HardKAS has two distinct execution layers: **Simulated** (offline, deterministic mock state) and **Simnet** (real Docker Kaspa node).
+> 
+> The default accounts like `alice` (`kaspa:sim_alice`) are **local dev aliases** meant ONLY for the Simulated mode. Do NOT attempt to use them for real L1 transactions against the Docker node, or the node will reject them.
+> 
+> Read the complete guide to understand the two environments, how to generate real L1 accounts, and how UTXO planning works:
+> 👉 **[Localnet & Accounts Mental Model](./docs/localnet-and-accounts.md)**
+
 ### 1. Install the CLI globally
 
 ```bash
@@ -173,28 +182,79 @@ pnpm install -g @hardkas/cli
 hardkas init
 ```
 
-### 3. Start the local node
+### 3. Start the local node (Optional for simulated mode)
 
 ```bash
 hardkas node start
 ```
 
-### 4. Manage Accounts
+### 4. Test a Transaction
 
+**Offline Simulated Execution** (No real node needed):
 ```bash
-hardkas accounts list
+hardkas tx send --from alice --to bob --amount 10 --network simulated --yes
 ```
 
-### 5. Send a Transaction (Simulated)
-
+**Real Simnet Execution** (Requires real Kaspa SDK & Docker Node):
 ```bash
-hardkas tx send --from alice --to bob --amount 10
+pnpm add kaspa
+hardkas accounts real generate
+hardkas tx send --from kaspa:q... --to kaspa:q... --amount 10 --network simnet --yes
 ```
 
-### 6. Run Tests
+## Account Import Formats
+
+HardKAS can import development signing keys from several input formats:
 
 ```bash
-hardkas test
+hardkas accounts real import --private-key-stdin
+hardkas accounts real import --private-key-env HARDKAS_PRIVATE_KEY
+hardkas accounts real import --keypair ./wallet.json
+```
+
+Supported JSON keypair formats:
+
+```json
+[12, 44, 98, ...]
+```
+
+or:
+
+```json
+{
+  "secretKey": [12, 44, 98, ...]
+}
+```
+
+- **32 bytes** = raw private key.
+- **64 bytes** = private key + public key style; HardKAS uses the first 32 bytes.
+
+If unsure, prefer a 32-byte private key format.
+
+Imported keys are encrypted into the local HardKAS keystore.
+HardKAS does not print private keys during import.
+
+## Local Development Accounts
+
+HardKAS provides local development aliases such as:
+
+```text
+alice
+bob
+carol
+```
+
+These are convenience identities for local testing.
+
+- They are not production wallets.
+- They are not mainnet accounts.
+- They exist to make local workflows fast and repeatable.
+
+You can use either aliases or raw addresses where supported:
+
+```bash
+hardkas tx plan --from alice --to bob --amount 10
+hardkas tx plan --from alice --to kaspa:qr... --amount 10
 ```
 
 ---

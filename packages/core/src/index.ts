@@ -138,4 +138,7 @@ export * from "./branded.js";
 export { maskSecrets, redactSecret } from "./security.js";
 export * from "./fs.js";
 export * from "./corruption.js";
+export * from "./provenance.js";
 export * from "./lock.js";
+export * from "./replay.js";
+export * from "./snapshot.js";

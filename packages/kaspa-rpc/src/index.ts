@@ -103,13 +103,13 @@ export class JsonWrpcKaspaClient implements KaspaRpcClient {
   }
 
   async getInfo(): Promise<KaspaNodeInfo> {
-    const response = await this.safeRequest(["GetInfo", "getInfo", "get_info", "getInfoRequest"]);
+    const response = await this.safeRequest(["getInfo", "getInfoRequest", "GetInfo", "get_info"]);
     const info = mapKaspaNodeInfo(response);
     
     // Try to supplement with DAG info if virtualDaaScore is missing
     if (info.virtualDaaScore === undefined) {
       try {
-        const dagResponse = await this.safeRequest(["GetBlockDagInfo", "getBlockDagInfo", "get_block_dag_info"]);
+        const dagResponse = await this.safeRequest(["getBlockDagInfo", "getBlockDagInfoRequest", "GetBlockDagInfo", "get_block_dag_info"]);
         const dagData = (dagResponse as any)?.params || (dagResponse as any);
         if (dagData?.virtualDaaScore !== undefined) {
           info.virtualDaaScore = BigInt(dagData.virtualDaaScore);
@@ -142,7 +142,7 @@ export class JsonWrpcKaspaClient implements KaspaRpcClient {
 
   async getBalanceByAddress(address: string): Promise<KaspaAddressBalance> {
     const response = await this.safeRequest(
-      ["GetBalancesByAddresses", "getBalancesByAddresses", "get_balances_by_addresses", "GetBalanceByAddress", "getBalanceByAddress", "get_balance_by_address"],
+      ["getBalancesByAddresses", "getBalancesByAddressesRequest", "getBalanceByAddressRequest", "GetBalancesByAddresses", "get_balances_by_addresses", "GetBalanceByAddress", "getBalanceByAddress", "get_balance_by_address"],
       { addresses: [address], address }
     );
     return mapKaspaAddressBalance(response, address);
@@ -150,7 +150,7 @@ export class JsonWrpcKaspaClient implements KaspaRpcClient {
 
   async getUtxosByAddress(address: string): Promise<KaspaRpcUtxo[]> {
     const response = await this.safeRequest(
-      ["GetUtxosByAddresses", "getUtxosByAddresses", "get_utxos_by_addresses", "GetUtxosByAddress", "getUtxosByAddress", "get_utxos_by_address"],
+      ["getUtxosByAddresses", "getUtxosByAddressesRequest", "getUtxosByAddressRequest", "GetUtxosByAddresses", "get_utxos_by_addresses", "GetUtxosByAddress", "getUtxosByAddress", "get_utxos_by_address"],
       { addresses: [address], address }
     );
     return mapKaspaRpcUtxos(response, address);
@@ -158,7 +158,7 @@ export class JsonWrpcKaspaClient implements KaspaRpcClient {
 
   async submitTransaction(rawTransaction: string): Promise<KaspaSubmitTransactionResult> {
     const response = await this.safeRequest(
-      ["SubmitTransaction", "submitTransaction", "submit_transaction"],
+      ["submitTransaction", "submitTransactionRequest", "SubmitTransaction", "submit_transaction"],
       { transaction: rawTransaction, transactionHex: rawTransaction, rawTransaction }
     );
     return mapKaspaSubmitTransactionResult(response);
@@ -263,20 +263,25 @@ export class JsonWrpcKaspaClient implements KaspaRpcClient {
     const ws = await this.connect();
     const id = this.requestId++;
     const payload = JSON.stringify({
+      jsonrpc: "2.0",
       id,
       method,
       params
     });
 
+    console.log(`[wRPC Debug] Sending payload: ${payload}`);
+
     return new Promise((resolve, reject) => {
       const timeout = setTimeout(() => {
         cleanup();
+        console.log(`[wRPC Debug] Timeout for method: ${method}`);
         reject(new Error(`RPC request timed out after ${this.timeoutMs}ms`));
       }, this.timeoutMs);
 
       const onMessage = (data: any) => {
         try {
           const raw = data.toString();
+          console.log(`[wRPC Debug] Received for ${method}: ${raw}`);
           const response = JSON.parse(raw);
           if (String(response.id) === String(id)) {
             cleanup();

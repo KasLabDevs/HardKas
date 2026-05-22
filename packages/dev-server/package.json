@@ -14,11 +14,15 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@hardkas/accounts": "workspace:*",
     "@hardkas/artifacts": "workspace:*",
     "@hardkas/bridge-local": "workspace:*",
     "@hardkas/config": "workspace:*",
     "@hardkas/core": "workspace:*",
     "@hardkas/kaspa-rpc": "workspace:*",
+    "@hardkas/localnet": "workspace:*",
+    "@hardkas/query": "workspace:*",
+    "@hardkas/query-store": "workspace:*",
     "@hardkas/sessions": "workspace:*",
     "@hono/node-server": "^1.13.7",
     "hono": "^4.6.12",

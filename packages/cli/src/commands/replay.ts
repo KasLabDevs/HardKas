@@ -17,4 +17,16 @@ export function registerReplayCommands(program: Command) {
         process.exitCode = 1;
       }
     });
+  replayCmd.command("diff <idA> <idB>")
+    .description(`Compare two replay artifacts for deterministic divergence ${UI.maturity("alpha")}`)
+    .option("--json", "Output as JSON", false)
+    .action(async (idA: string, idB: string, options: { json: boolean }) => {
+      try {
+        const { runReplayDiff } = await import("../runners/replay-diff-runner.js");
+        await runReplayDiff({ idA, idB, ...options });
+      } catch (e: any) {
+        handleError(e);
+        process.exitCode = 1;
+      }
+    });
 }

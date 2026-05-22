@@ -24,9 +24,11 @@
     "docs:check-cli": "pnpm --filter @hardkas/cli docs:check-cli",
     "hardkas": "pnpm --filter @hardkas/cli run dev",
     "cli": "pnpm --filter @hardkas/cli run dev",
-    "check": "pnpm typecheck && pnpm build && pnpm check:cli-version && pnpm docs:check-cli && pnpm check:docs && pnpm test",
+    "check": "pnpm typecheck && pnpm build && pnpm version:check && pnpm docs:check-cli && pnpm check:docs && pnpm test",
     "test:repro": "pnpm --filter @hardkas/testing test",
-    "check:cli-version": "node scripts/check-cli-version.mjs",
+    "version:check": "node scripts/check-versions.mjs",
+    "release:dry-run": "pnpm version:check && pnpm build && pnpm test && pnpm changeset status",
+    "release": "pnpm version:check && pnpm build && pnpm test && pnpm changeset publish",
     "check:docs": "pnpm --filter @hardkas/cli test:docs",
     "check:artifacts": "pnpm artifact:fixtures",
     "artifact:fixtures": "pnpm hardkas artifact verify ../artifacts/test/fixtures/valid --recursive --strict",
@@ -44,6 +46,7 @@
     "example:dag-reorg": "pnpm --filter @examples/dag-reorg-simulation start"
   },
   "devDependencies": {
+    "@changesets/cli": "^2.31.0",
     "@eslint/js": "^10.0.1",
     "@types/node": "^22.10.2",
     "eslint": "^9.17.0",

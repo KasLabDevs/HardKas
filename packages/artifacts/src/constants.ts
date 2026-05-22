@@ -1,4 +1,5 @@
-export const HARDKAS_VERSION = "0.5.5-alpha";
+import pkg from "../package.json" with { type: "json" };
+export const HARDKAS_VERSION = pkg.version;
 
 export const ARTIFACT_SCHEMAS = {
   LOCALNET_STATE: "hardkas.localnetState.v1",

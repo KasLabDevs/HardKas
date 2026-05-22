@@ -8,6 +8,9 @@ import { bridgeRoutes } from "./routes/bridge.js";
 import { metamaskRoutes } from "./routes/metamask.js";
 import { kaswareRoutes } from "./routes/kasware.js";
 import { sandboxRoutes } from "./routes/sandbox.js";
+import { eventsRoutes } from "./routes/events.js";
+import { accountsRoutes } from "./routes/accounts.js";
+import { transactionsRoutes } from "./routes/transactions.js";
 import { streamRoutes } from "./stream.js";
 import { serveStatic } from "@hono/node-server/serve-static";
 import path from "node:path";
@@ -67,6 +70,9 @@ export function createDevServer(config: DevServerConfig) {
   app.route("/api/metamask", metamaskRoutes);
   app.route("/api/kasware", kaswareRoutes);
   app.route("/api/walletconnect/sandbox", sandboxRoutes);
+  app.route("/api/events", eventsRoutes);
+  app.route("/api/accounts", accountsRoutes);
+  app.route("/api/transactions", transactionsRoutes);
   app.route("/api/stream", streamRoutes);
 
   // Try to find dashboard dist in multiple locations

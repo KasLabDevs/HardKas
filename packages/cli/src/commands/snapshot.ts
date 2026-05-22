@@ -12,11 +12,20 @@ export function registerSnapshotCommands(program: Command) {
       await runSnapshotVerify({ idOrName, ...options });
     });
 
-  snapshotCmd.command("restore <idOrName>")
-    .description(`Restore localnet state from a snapshot ${UI.maturity("preview")}`)
+  snapshotCmd.command("create <name>")
+    .description(`Create a deterministic snapshot of current localnet state ${UI.maturity("alpha")}`)
+    .option("--consensus-validated", "Mark snapshot as validated by consensus (strict)", false)
     .option("--json", "Output as JSON", false)
-    .action(async (idOrName: string, options: { json: boolean }) => {
-      const { runSnapshotRestore } = await import("../runners/snapshot-restore-runner.js");
-      await runSnapshotRestore({ idOrName, ...options });
+    .action(async (name: string, options: { consensusValidated: boolean; json: boolean }) => {
+      const { runSnapshotCreate } = await import("../runners/snapshot-create-runner.js");
+      await runSnapshotCreate({ name, ...options });
+    });
+
+  snapshotCmd.command("replay <name>")
+    .description(`Replay and rebuild deterministic state from a snapshot ${UI.maturity("alpha")}`)
+    .option("--json", "Output as JSON", false)
+    .action(async (name: string, options: { json: boolean }) => {
+      const { runSnapshotReplay } = await import("../runners/snapshot-replay-runner.js");
+      await runSnapshotReplay({ name, ...options });
     });
 }

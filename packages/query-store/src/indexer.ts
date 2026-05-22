@@ -39,6 +39,10 @@ export interface DoctorReport {
   zombieArtifacts: number;
   corruptedFiles: string[];
   orphanEdges: number;
+  duplicateProjections: number;
+  brokenReplayDependencies: number;
+  duplicateEventSequences: number;
+  orphanEvents: number;
   lastIndexedAt: string | null;
 }
 
@@ -159,6 +163,10 @@ export class HardkasIndexer {
       zombieArtifacts: 0,
       corruptedFiles: [],
       orphanEdges: 0,
+      duplicateProjections: 0,
+      brokenReplayDependencies: 0,
+      duplicateEventSequences: 0,
+      orphanEvents: 0,
       lastIndexedAt: null
     };
 
@@ -187,7 +195,54 @@ export class HardkasIndexer {
     `).get() as { count: number };
     report.orphanEdges = orphans.count;
 
-    report.ok = report.staleArtifacts === 0 && report.zombieArtifacts === 0 && report.orphanEdges === 0;
+    // 4. Duplicate projections (tx_id should be unique for specific schemas like receipts)
+    const duplicateProjections = this.db.prepare(`
+      SELECT COUNT(*) as count FROM (
+        SELECT tx_id FROM artifacts WHERE tx_id IS NOT NULL AND schema LIKE '%txReceipt%' GROUP BY tx_id HAVING COUNT(*) > 1
+      )
+    `).get() as { count: number };
+    report.duplicateProjections = duplicateProjections.count;
+
+    // 5. Broken replay dependencies
+    const brokenReplayDeps = this.db.prepare(`
+      SELECT COUNT(*) as count FROM artifacts a
+      LEFT JOIN artifacts target ON target.tx_id = json_extract(a.raw_json, '$.payload.txId')
+      WHERE a.schema = 'hardkas.replayReport.v1'
+      AND target.artifact_id IS NULL
+    `).get() as { count: number };
+    report.brokenReplayDependencies = brokenReplayDeps.count;
+
+    // Also check for corrupted artifacts in the database
+    const corruptedRows = this.db.prepare("SELECT file_path FROM artifacts WHERE kind = 'CORRUPTED'").all() as any[];
+    report.corruptedFiles = corruptedRows.map(r => r.file_path);
+
+    // 6. Duplicate Event Sequences (should be prevented by DB constraints, but good to verify)
+    const duplicateSequences = this.db.prepare(`
+      SELECT COUNT(*) as count FROM (
+        SELECT correlation_id, sequence_number, kind FROM events 
+        GROUP BY correlation_id, sequence_number, kind HAVING COUNT(*) > 1
+      )
+    `).get() as { count: number };
+    report.duplicateEventSequences = duplicateSequences.count;
+
+    // 7. Orphan Events (events causing actions but missing root causation/workflow if required)
+    const orphanEvents = this.db.prepare(`
+      SELECT COUNT(*) as count FROM events e
+      WHERE e.causation_id IS NOT NULL AND e.causation_id NOT IN (SELECT event_id FROM events)
+    `).get() as { count: number };
+    report.orphanEvents = orphanEvents.count;
+
+    // Strict ok evaluation
+    report.ok = 
+      report.staleArtifacts === 0 && 
+      report.zombieArtifacts === 0 && 
+      report.orphanEdges === 0 &&
+      report.duplicateProjections === 0 &&
+      report.brokenReplayDependencies === 0 &&
+      report.duplicateEventSequences === 0 &&
+      report.orphanEvents === 0 &&
+      report.corruptedFiles.length === 0;
+
     return report;
   }
 
@@ -228,7 +283,9 @@ export class HardkasIndexer {
       
       try {
         const verification = await verifyArtifactIntegrity(file);
-        if (!verification.ok) {
+        const isCorrupt = !verification.ok;
+        
+        if (isCorrupt) {
           result.artifacts.corrupted++;
           verification.issues.forEach((issue: any) => {
             const corruptionIssue: CorruptionIssue = {
@@ -244,22 +301,43 @@ export class HardkasIndexer {
           if (this.strict) {
             throw new Error(`Strict mode: corrupted artifact in ${file}`);
           }
-          continue; // Skip corrupted artifact
         }
 
         const content = fs.readFileSync(file, "utf-8");
-        const parsed = JSON.parse(content);
+        let parsed: any;
+        try {
+          parsed = JSON.parse(content);
+        } catch (err) {
+          // completely invalid JSON
+          const artifactId = path.basename(file, ".json");
+          upsertArtifact.run(
+            artifactId,
+            "INVALID_JSON",
+            "unknown",
+            0,
+            "CORRUPTED",
+            "unknown",
+            "unknown",
+            null,
+            null,
+            content,
+            file,
+            stat.mtimeMs,
+            indexedAt
+          );
+          continue;
+        }
         
         // Artifact ID is required for indexing
         const artifactId = parsed.artifactId || parsed.contentHash || calculateContentHash(parsed);
-        const hash = parsed.contentHash || calculateContentHash(parsed);
+        const hash = isCorrupt ? "MISMATCH" : (parsed.contentHash || calculateContentHash(parsed));
 
         upsertArtifact.run(
           artifactId,
           hash,
-          parsed.schema,
-          parsed.version,
-          parsed.kind || parsed.schema,
+          parsed.schema || "unknown",
+          parsed.version || 0,
+          isCorrupt ? "CORRUPTED" : (parsed.kind || parsed.schema),
           parsed.mode || "unknown",
           parsed.networkId || "unknown",
           parsed.txId || null,
@@ -272,7 +350,7 @@ export class HardkasIndexer {
 
         result.artifacts.indexed++;
 
-        if (parsed.lineage && parsed.lineage.parentArtifactId) {
+        if (!isCorrupt && parsed.lineage && parsed.lineage.parentArtifactId) {
           artifactsToLink.push(parsed);
         }
       } catch (e: any) {
@@ -318,18 +396,20 @@ export class HardkasIndexer {
 
     const upsertEvent = this.db.prepare(`
       INSERT INTO events 
-      (event_id, kind, domain, timestamp, workflow_id, correlation_id, causation_id, tx_id, artifact_id, network_id, raw_json, file_path, file_mtime_ms, indexed_at)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-      ON CONFLICT(event_id) DO UPDATE SET
-        kind = excluded.kind,
+      (event_id, kind, domain, timestamp, emitted_at, workflow_id, correlation_id, causation_id, tx_id, artifact_id, network_id, sequence_number, global_offset, source_subsystem, raw_json, file_path, file_mtime_ms, indexed_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      ON CONFLICT(correlation_id, sequence_number, kind) DO UPDATE SET
+        event_id = excluded.event_id,
         domain = excluded.domain,
         timestamp = excluded.timestamp,
+        emitted_at = excluded.emitted_at,
         workflow_id = excluded.workflow_id,
-        correlation_id = excluded.correlation_id,
         causation_id = excluded.causation_id,
         tx_id = excluded.tx_id,
         artifact_id = excluded.artifact_id,
         network_id = excluded.network_id,
+        global_offset = excluded.global_offset,
+        source_subsystem = excluded.source_subsystem,
         raw_json = excluded.raw_json,
         file_path = excluded.file_path,
         file_mtime_ms = excluded.file_mtime_ms,
@@ -365,12 +445,16 @@ export class HardkasIndexer {
           parsed.kind,
           parsed.domain,
           parsed.timestamp || null,
+          parsed.emittedAt || parsed.timestamp || null,
           parsed.workflowId,
           parsed.correlationId,
           parsed.causationId || null,
           parsed.txId || null,
           parsed.artifactId || null,
           parsed.networkId,
+          parsed.sequenceNumber ?? 0,
+          parsed.globalOffset ?? lineNum,
+          parsed.sourceSubsystem || 'unknown',
           line,
           eventsPath,
           stat.mtimeMs,

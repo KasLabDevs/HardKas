@@ -221,5 +221,59 @@ export const MIGRATIONS: Migration[] = [
         CREATE INDEX IF NOT EXISTS idx_traces_status ON traces(status);
       `);
     }
+  },
+  {
+    version: 2,
+    name: "event_persistence_guarantees",
+    checksum: "hardkas_v2_events",
+    up: (db) => {
+      db.exec(`
+        CREATE TABLE IF NOT EXISTS events_v2 (
+          event_id TEXT PRIMARY KEY,
+          kind TEXT NOT NULL,
+          domain TEXT NOT NULL,
+          timestamp TEXT,
+          emitted_at TEXT,
+          workflow_id TEXT NOT NULL,
+          correlation_id TEXT NOT NULL,
+          causation_id TEXT,
+          tx_id TEXT,
+          artifact_id TEXT,
+          network_id TEXT NOT NULL,
+          sequence_number INTEGER NOT NULL DEFAULT 0,
+          global_offset INTEGER,
+          source_subsystem TEXT NOT NULL DEFAULT 'unknown',
+          raw_json TEXT NOT NULL,
+          file_path TEXT,
+          file_mtime_ms INTEGER,
+          indexed_at TEXT,
+          UNIQUE(correlation_id, sequence_number, kind)
+        );
+
+        INSERT INTO events_v2 (
+          event_id, kind, domain, timestamp, emitted_at, workflow_id, correlation_id, causation_id,
+          tx_id, artifact_id, network_id, sequence_number, source_subsystem, raw_json, file_path, file_mtime_ms, indexed_at
+        )
+        SELECT 
+          event_id, kind, domain, timestamp, timestamp, workflow_id, correlation_id, causation_id,
+          tx_id, artifact_id, network_id, 0, 'legacy', raw_json, file_path, file_mtime_ms, indexed_at
+        FROM events;
+
+        DROP TABLE events;
+        ALTER TABLE events_v2 RENAME TO events;
+
+        CREATE INDEX IF NOT EXISTS idx_events_kind ON events(kind);
+        CREATE INDEX IF NOT EXISTS idx_events_domain ON events(domain);
+        CREATE INDEX IF NOT EXISTS idx_events_workflow_id ON events(workflow_id);
+        CREATE INDEX IF NOT EXISTS idx_events_correlation_id ON events(correlation_id);
+        CREATE INDEX IF NOT EXISTS idx_events_causation_id ON events(causation_id);
+        CREATE INDEX IF NOT EXISTS idx_events_tx_id ON events(tx_id);
+        CREATE INDEX IF NOT EXISTS idx_events_artifact_id ON events(artifact_id);
+        CREATE INDEX IF NOT EXISTS idx_events_network_id ON events(network_id);
+        CREATE INDEX IF NOT EXISTS idx_events_timestamp ON events(timestamp);
+        CREATE INDEX IF NOT EXISTS idx_events_file_path ON events(file_path);
+        CREATE INDEX IF NOT EXISTS idx_events_global_offset ON events(global_offset);
+      `);
+    }
   }
 ];

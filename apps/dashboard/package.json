@@ -7,7 +7,10 @@
     "dev": "vite",
     "build": "vite build",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "test:visual": "playwright test",
+    "test:visual:update": "playwright test --update-snapshots",
+    "test:visual:ci": "playwright test --reporter=html"
   },
   "dependencies": {
     "@hardkas/react": "workspace:*",
@@ -15,9 +18,11 @@
     "lucide-react": "^0.462.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
-    "react-qr-code": "^2.0.21"
+    "react-qr-code": "^2.0.21",
+    "react-router-dom": "^7.1.1"
   },
   "devDependencies": {
+    "@playwright/test": "^1.60.0",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
     "@vitejs/plugin-react": "^4.3.4",

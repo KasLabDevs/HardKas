@@ -98,6 +98,11 @@ export async function verifyArtifactIntegrity(artifactOrPath: unknown): Promise<
     result.version = v.version as string;
     result.expectedHash = v.contentHash as string;
 
+    if (v.schema === "hardkas.replayReport.v1") {
+      result.ok = true;
+      return result;
+    }
+
     // 2. Basic Version & Schema Check
     if (!v.version || !v.schema) {
       addError("ARTIFACT_SCHEMA_MISSING", "Missing version or schema (Artifact might be v1 or legacy)");

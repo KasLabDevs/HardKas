@@ -108,8 +108,8 @@ describe("Simnet Transaction Backend Mismatch Regression", () => {
     if (parsed.mode !== "simulated") {
       throw new Error(`Expected artifact mode to be 'simulated', got '${parsed.mode}'`);
     }
-    if (parsed.networkId !== "simnet") {
-      throw new Error(`Expected artifact networkId to be 'simnet', got '${parsed.networkId}'`);
+    if (parsed.networkId !== "simulated") {
+      throw new Error(`Expected artifact networkId to be 'simulated', got '${parsed.networkId}'`);
     }
   }, 30000);
 });

@@ -1,7 +1,7 @@
 import type { HardkasConfig } from "./types";
 
 export const DEFAULT_HARDKAS_CONFIG: HardkasConfig = {
-  defaultNetwork: "simnet",
+  defaultNetwork: "simulated",
   networks: {
     simulated: {
       kind: "simulated",

@@ -2,7 +2,7 @@ import fs from "node:fs";
 import path from "node:path";
 import type { HardkasConfig } from "@hardkas/config";
 import { createDeterministicAccounts } from "@hardkas/localnet";
-import type { HardkasAccount } from "./types.js";
+import type { HardkasAccount, HardkasSimulatedAccount } from "./types.js";
 import { 
   loadRealAccountStoreSync, 
   getRealDevAccount, 
@@ -55,7 +55,8 @@ export function resolveHardkasAccount(
     return {
       name: det.name,
       kind: "simulated",
-      address: det.address
+      address: det.address,
+      evmAddress: det.evmAddress
     };
   }
 
@@ -73,7 +74,8 @@ export function listHardkasAccounts(config?: HardkasConfig): HardkasAccount[] {
     accounts.set(det.name, {
       name: det.name,
       kind: "simulated",
-      address: det.address
+      address: det.address,
+      evmAddress: det.evmAddress
     });
   }
 
@@ -128,13 +130,30 @@ export function listHardkasAccounts(config?: HardkasConfig): HardkasAccount[] {
 
 export function resolveHardkasAccountAddress(
   accountOrAddress: string,
-  config?: HardkasConfig
+  config?: HardkasConfig,
+  context: "L1" | "L2" = "L1"
 ): string {
   if (accountOrAddress.startsWith("kaspa:") || accountOrAddress.startsWith("kaspatest:") || accountOrAddress.startsWith("kaspasim:")) {
+    if (context === "L2") {
+      throw new Error(`Invalid L2 address provided: ${accountOrAddress}. Expected EVM address or account alias.`);
+    }
+    return accountOrAddress;
+  }
+  
+  if (accountOrAddress.startsWith("0x") && accountOrAddress.length === 42) {
     return accountOrAddress;
   }
 
   const account = resolveHardkasAccount({ nameOrAddress: accountOrAddress, config });
+  
+  if (context === "L2") {
+    const evmAddress = (account as HardkasSimulatedAccount).evmAddress;
+    if (!evmAddress) {
+      throw new Error(`Account '${account.name}' does not have an EVM address configured for L2.`);
+    }
+    return evmAddress;
+  }
+
   if (!account.address) {
     throw new Error(`Account '${account.name}' does not have a resolved address yet.`);
   }

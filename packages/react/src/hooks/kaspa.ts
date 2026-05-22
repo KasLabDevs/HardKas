@@ -1,4 +1,5 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useEffect } from "react";
 import { useHardKas } from "../provider.js";
 import { useHardKasSession } from "./session.js";
 import { useHardKasHealth } from "./health.js";
@@ -13,9 +14,19 @@ export function useKaspaWallet() {
 }
 
 export function useKaspaBalance(options: { refetchInterval?: number } = {}) {
-  const { config } = useHardKas();
+  const { config, subscribe } = useHardKas();
+  const queryClient = useQueryClient();
   const { address, name } = useKaspaWallet();
   const { data: health } = useHardKasHealth();
+
+  useEffect(() => {
+    const sync = () => queryClient.invalidateQueries({ queryKey: ["kaspa", "balance"] });
+    return subscribe((event) => {
+      if (["query-synced", "session-changed"].includes(event.type)) {
+        sync();
+      }
+    });
+  }, [queryClient, subscribe]);
 
   const l1Status = (health as any)?.kaspa?.status || health?.l1?.status;
   const isL1Online = l1Status === "healthy" ||
@@ -31,7 +42,21 @@ export function useKaspaBalance(options: { refetchInterval?: number } = {}) {
       if (!address) return 0n;
 
       if (address.startsWith("kaspa:sim_") || l1Status === "simulated-mode") {
-        return 100000000000n; // 1000 KAS
+        try {
+          const baseUrl = config.devServerUrl || "";
+          const fetchUrl = baseUrl ? (baseUrl.endsWith("/") ? `${baseUrl}api/accounts` : `${baseUrl}/api/accounts`) : "/api/accounts";
+          const res = await fetch(fetchUrl);
+          if (res.ok) {
+            const data = await res.json();
+            const match = (data.accounts || []).find((a: any) => a.address === address);
+            if (match) {
+              return BigInt(match.balanceSompi || match.balance || "0");
+            }
+          }
+        } catch (e) {
+          console.warn("Failed to fetch derived simulated balance, falling back to 0:", e);
+        }
+        return 0n;
       }
       
       let url = config.kaspaRpcUrl || "http://127.0.0.1:16110";
