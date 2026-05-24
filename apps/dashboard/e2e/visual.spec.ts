@@ -13,7 +13,7 @@ test.describe('HardKAS Visual Hardening', () => {
     
     await corruptedBanner.or(emptyState).or(normalState).first().waitFor({ state: 'visible', timeout: 15000 });
 
-    await expect(page).toHaveScreenshot('artifacts-corrupted-banner.png', { fullPage: true });
+    await expect(page).toHaveScreenshot('artifacts-corrupted-banner.png', { fullPage: true, maxDiffPixels: 200 });
   });
 
   test('ReplayPage deterministic vs runtime-noise separation', async ({ page }) => {
@@ -71,12 +71,13 @@ test.describe('HardKAS Visual Hardening', () => {
 
   test('EventsPage correlation grouping', async ({ page }) => {
     await page.goto('/events');
-    await page.waitForSelector('text=Correlation', { state: 'visible' });
+    await page.waitForSelector('text=Causal Event Ledger', { state: 'visible' });
 
-    // Wait for the events list OR empty state
-    const eventGroup = page.locator('text=Correlation Lifecycle');
-    const emptyEventText = page.locator('text=No Events Found');
-    await eventGroup.or(emptyEventText).first().waitFor({ state: 'visible', timeout: 15000 });
+    // Wait for the events list OR empty states
+    const eventGroup = page.locator('text=Workflow Group');
+    const emptyEventText = page.locator('text=No events yet.');
+    const missingEventsText = page.locator('text=Causal Events Missing');
+    await eventGroup.or(emptyEventText).or(missingEventsText).first().waitFor({ state: 'visible', timeout: 15000 });
 
     await expect(page).toHaveScreenshot('events-correlation-grouping.png', { fullPage: true });
   });

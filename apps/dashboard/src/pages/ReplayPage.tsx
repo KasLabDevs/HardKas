@@ -1,18 +1,23 @@
 import React, { useState } from "react";
-import { useReplayStatus } from "@hardkas/react";
-import { RotateCw, CheckCircle2, AlertOctagon, Info, ChevronRight, Terminal, ArrowRight } from "lucide-react";
+import { useReplayStatus, useOverview } from "@hardkas/react";
+import { RotateCw, CheckCircle2, AlertOctagon, Info, ChevronRight, Terminal, ArrowRight, Package } from "lucide-react";
 import { Link } from "react-router-dom";
 import { EmptyState } from "../components/EmptyState";
 import { ReplayBadge } from "../components/ReplayBadge";
 
 export function ReplayPage() {
-  const { data: replays, isLoading } = useReplayStatus();
+  const { data, isLoading } = useReplayStatus();
+  const { data: overview } = useOverview();
+  const replays = data?.replays || [];
+  const pendingReplaysList = data?.pendingReplays || [];
+  const hasPending = data?.pendingReplay || false;
+  
   const [selectedTxId, setSelectedTxId] = useState<string | null>(null);
 
-  const totalReplays = replays?.length ?? 0;
-  const passedReplays = replays?.filter((r: any) => r.status?.toUpperCase() === "PASS" || r.status?.toUpperCase() === "SUCCESS").length ?? 0;
+  const totalReplays = replays.length;
+  const passedReplays = replays.filter((r: any) => r.ok || r.status?.toUpperCase() === "PASS" || r.status?.toUpperCase() === "SUCCESS").length;
   const failedReplays = totalReplays - passedReplays;
-  const isWorkspaceFullyVerified = totalReplays > 0 && failedReplays === 0;
+  const isWorkspaceFullyVerified = totalReplays > 0 && failedReplays === 0 && !hasPending;
 
   const truncate = (str: string, len: number = 8) => {
     if (!str) return "—";
@@ -101,6 +106,11 @@ export function ReplayPage() {
               </div>
               <div className="w-px h-8 bg-zinc-800" />
               <div className="text-left">
+                <span className="text-[9px] uppercase tracking-widest text-zinc-500">Pending</span>
+                <div className="text-xl font-black text-amber-400">{pendingReplaysList.length}</div>
+              </div>
+              <div className="w-px h-8 bg-zinc-800" />
+              <div className="text-left">
                 <span className="text-[9px] uppercase tracking-widest text-zinc-500">Total Runs</span>
                 <div className="text-xl font-black text-zinc-300">{totalReplays}</div>
               </div>
@@ -109,7 +119,42 @@ export function ReplayPage() {
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             {/* Left: Replays table list */}
-            <div className="lg:col-span-2 space-y-4">
+            <div className="lg:col-span-2 space-y-6">
+              {pendingReplaysList.length > 0 && (
+                <div className="bg-amber-950/10 border border-amber-500/20 rounded-2xl overflow-hidden backdrop-blur-md">
+                  <div className="px-6 py-4 bg-amber-900/20 border-b border-amber-500/20 flex justify-between items-center">
+                    <h4 className="text-xs font-bold uppercase tracking-wider text-amber-400 font-sans flex items-center gap-2">
+                      <AlertOctagon size={14} /> Pending Replays
+                    </h4>
+                    <span className="text-[10px] font-mono text-amber-400/80 bg-amber-500/10 px-2 py-0.5 rounded border border-amber-500/20">
+                      Run `hardkas replay verify`
+                    </span>
+                  </div>
+                  
+                  <div className="divide-y divide-amber-900/30">
+                    {pendingReplaysList.map((rep: any, i: number) => (
+                      <div key={i} className="p-4 flex items-center justify-between gap-4">
+                        <div className="space-y-1 truncate text-left">
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs font-mono font-bold text-zinc-200">
+                              Tx: {truncate(rep.txId || rep.payload?.txId || "", 6)}
+                            </span>
+                            <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-mono font-bold border uppercase tracking-wider bg-amber-500/10 text-amber-400 border-amber-500/20">
+                              PENDING
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-3 text-[10px] text-zinc-500 font-mono select-none">
+                            <span>Receipt: {truncate(rep.artifactId || "", 5)}</span>
+                            <span>•</span>
+                            <span>{formatRelativeTime(rep.createdAt || rep.timestamp)}</span>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
               <div className="bg-zinc-900/20 border border-zinc-800/80 rounded-2xl overflow-hidden">
                 <div className="px-6 py-4 bg-zinc-950/10 border-b border-zinc-800/80">
                   <h4 className="text-xs font-bold uppercase tracking-wider text-zinc-300 font-sans">
@@ -306,12 +351,43 @@ export function ReplayPage() {
           </div>
         </>
       ) : (
-        <EmptyState
-          title="No Replays Verified"
-          description="It looks like deterministic replay validation has not run yet. Verify offline plans vs receipts to execute."
-          command="hardkas replay verify"
-          icon={<RotateCw size={32} />}
-        />
+        <div className="pt-4">
+          {overview?.counts && overview.counts.artifacts > 0 ? (
+            <div className="bg-amber-950/20 border border-amber-900/50 rounded-2xl p-8 max-w-2xl mx-auto text-center space-y-4">
+              <RotateCw size={48} className="mx-auto text-amber-500/50 mb-4" />
+              <h3 className="text-xl font-bold text-amber-400">Replay Pending</h3>
+              <p className="text-sm text-amber-400/80">
+                Artifacts detected (e.g. tx plan, signed tx).<br/>
+                Missing: replay verification report.
+              </p>
+              
+              <div className="bg-black/40 border border-white/5 p-4 rounded-xl mt-6 inline-block text-left">
+                <div className="text-[10px] text-zinc-500 font-bold uppercase tracking-wider mb-2">Run this to verify</div>
+                <code className="text-xs font-mono text-zinc-300">hardkas replay verify</code>
+              </div>
+              
+              {overview?.guarantees && (
+                <div className="grid grid-cols-2 gap-4 mt-6 pt-6 border-t border-amber-900/30 text-left">
+                  <div>
+                    <div className="text-[9px] uppercase tracking-wider text-amber-500/60">Artifact Integrity</div>
+                    <div className="text-xs font-mono font-bold text-emerald-400">{overview.guarantees.artifactIntegrity}</div>
+                  </div>
+                  <div>
+                    <div className="text-[9px] uppercase tracking-wider text-amber-500/60">Local Replay Reproducibility</div>
+                    <div className="text-xs font-mono font-bold text-amber-400">{overview.guarantees.localReplay}</div>
+                  </div>
+                </div>
+              )}
+            </div>
+          ) : (
+            <EmptyState
+              title="No replay candidates yet."
+              description="Your workspace is empty. Run a transaction first to generate causality artifacts that can be verified."
+              command="hardkas tx send --from alice --to bob --amount 10 --yes"
+              icon={<Package size={32} />}
+            />
+          )}
+        </div>
       )}
     </div>
   );

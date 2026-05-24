@@ -14,6 +14,23 @@ function TestComponent({ onEvent }: { onEvent?: any }) {
   return <div data-testid="status">{sseStatus}</div>;
 }
 
+function ProjectionTestComponent({ onEvent }: { onEvent?: any }) {
+  const { sseStatus, projectionStatus, generationId, apiFetch, subscribe } = useHardKas();
+  
+  React.useEffect(() => {
+    if (onEvent) return subscribe(onEvent);
+  }, [subscribe, onEvent]);
+
+  return (
+    <div>
+      <div data-testid="status">{sseStatus}</div>
+      <div data-testid="projection">{projectionStatus}</div>
+      <div data-testid="generation">{generationId || "null"}</div>
+      <button data-testid="fetch-btn" onClick={() => apiFetch("http://localhost:7420/api/health")}>Fetch</button>
+    </div>
+  );
+}
+
 describe("HardKas SSE & Reconnect", () => {
   let MockEventSource: any;
 
@@ -139,5 +156,64 @@ describe("HardKas SSE & Reconnect", () => {
     const esInstance = MockEventSource.mock.instances[0] as any;
     unmount();
     expect(esInstance.close).toHaveBeenCalled();
+  });
+
+  it("handles projection-stale and projection-synced SSE events", async () => {
+    render(
+      <HardKasProvider config={{ localOnly: true, devServerUrl: "http://localhost:7420" }}>
+        <ProjectionTestComponent />
+      </HardKasProvider>
+    );
+
+    // Initial state
+    expect(screen.getByTestId("projection").textContent).toBe("synced");
+
+    // Advance to connected
+    await act(async () => {
+      vi.advanceTimersByTime(20);
+    });
+
+    const esInstance = MockEventSource.mock.instances[0] as any;
+    
+    // Emit projection-stale
+    await act(async () => {
+      esInstance.emit("projection-stale", { timestamp: Date.now() });
+    });
+    
+    expect(screen.getByTestId("projection").textContent).toBe("stale");
+
+    // Emit projection-synced
+    await act(async () => {
+      esInstance.emit("projection-synced", { timestamp: Date.now(), generationId: "gen-123" });
+    });
+    
+    expect(screen.getByTestId("projection").textContent).toBe("synced");
+    expect(screen.getByTestId("generation").textContent).toBe("gen-123");
+  });
+
+  it("updates generationId on apiFetch with newer X-Hardkas-Generation", async () => {
+    vi.useRealTimers();
+    const globalFetch = vi.fn().mockResolvedValue({
+      headers: {
+        get: (key: string) => key === "X-Hardkas-Generation" ? "gen-999" : null
+      }
+    });
+    vi.stubGlobal("fetch", globalFetch);
+
+    render(
+      <HardKasProvider config={{ localOnly: true, devServerUrl: "http://localhost:7420" }}>
+        <ProjectionTestComponent />
+      </HardKasProvider>
+    );
+
+    expect(screen.getByTestId("generation").textContent).toBe("null");
+
+    await act(async () => {
+      screen.getByTestId("fetch-btn").click();
+    });
+
+    await waitFor(() => {
+      expect(screen.getByTestId("generation").textContent).toBe("gen-999");
+    });
   });
 });

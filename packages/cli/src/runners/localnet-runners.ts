@@ -34,7 +34,7 @@ export async function runLocalnetFork(opts: {
   const client = new JsonWrpcKaspaClient({ rpcUrl });
   try {
     await withLock({
-      rootDir: process.cwd(),
+      rootDir: opts.workspaceRoot,
       name: "workspace",
       command: "hardkas localnet fork",
     }, async () => {
@@ -47,9 +47,9 @@ export async function runLocalnetFork(opts: {
 
       const outputPath = opts.outputPath 
         ? resolve(opts.outputPath)
-        : resolve(process.cwd(), ".hardkas", "localnet-state.json");
+        : resolve(opts.workspaceRoot, ".hardkas", "localnet-state.json");
 
-      await saveLocalnetState(state);
+      await saveLocalnetState(state, outputPath);
       
       UI.success(`Forked state saved to: ${outputPath}`);
       UI.info(`DAA Score: ${state.daaScore}`);

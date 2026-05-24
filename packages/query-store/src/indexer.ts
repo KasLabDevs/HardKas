@@ -31,6 +31,7 @@ export interface SyncResult {
   warnings: string[];
   errors: string[];
   issues: CorruptionIssue[];
+  generationId?: string;
 }
 
 export interface DoctorReport {
@@ -95,8 +96,8 @@ export class HardkasIndexer {
   /**
    * Internal indexing logic without transaction management.
    */
-  private async _syncInternal(result: SyncResult): Promise<void> {
-    await this.syncArtifacts(result);
+  private async _syncInternal(result: SyncResult, specificPaths?: string[]): Promise<void> {
+    await this.syncArtifacts(result, specificPaths);
     this.syncEvents(result);
     this.syncTraces();
     this.cleanupZombies();
@@ -104,6 +105,50 @@ export class HardkasIndexer {
     // Mark last sync
     this.db.prepare("INSERT OR REPLACE INTO metadata (key, value) VALUES (?, ?)")
       .run("last_indexed_at", new Date().toISOString());
+      
+    if (result.artifacts.indexed > 0 || result.events.indexed > 0 || result.artifacts.corrupted > 0) {
+      const crypto = require("node:crypto");
+      const genId = crypto.randomUUID();
+      this.db.prepare("INSERT OR REPLACE INTO metadata (key, value) VALUES (?, ?)")
+        .run("generation_id", genId);
+      result.generationId = genId;
+    } else {
+      const row = this.db.prepare("SELECT value FROM metadata WHERE key = 'generation_id'").get();
+      result.generationId = row ? row.value : null;
+    }
+  }
+
+  /**
+   * Performs an incremental sync of only specific paths (Targeted Reindex).
+   * Transactional.
+   */
+  public async syncPaths(paths: string[]): Promise<SyncResult> {
+    const result: SyncResult = {
+      schema: "hardkas.queryRebuild.v1",
+      ok: true,
+      artifacts: { scanned: 0, indexed: 0, duplicates: 0, corrupted: 0 },
+      events: { scanned: 0, indexed: 0, duplicates: 0, corrupted: 0 },
+      warnings: [],
+      errors: [],
+      issues: []
+    };
+
+    if (!fs.existsSync(this.hardkasDir)) {
+      return result;
+    }
+
+    this.db.exec("BEGIN TRANSACTION;");
+    try {
+      await this._syncInternal(result, paths);
+      this.db.exec("COMMIT;");
+    } catch (e: any) {
+      this.db.exec("ROLLBACK;");
+      result.ok = false;
+      result.errors.push(`Targeted Sync failed: ${e.message}`);
+      if (this.strict) throw e;
+    }
+
+    return result;
   }
 
   /**
@@ -246,9 +291,12 @@ export class HardkasIndexer {
     return report;
   }
 
-  private async syncArtifacts(result: SyncResult) {
+  private async syncArtifacts(result: SyncResult, specificPaths?: string[]) {
     // Sort files to ensure deterministic indexing order
-    const files = this.walk(this.hardkasDir).sort();
+    const files = specificPaths 
+      ? specificPaths.filter(p => fs.existsSync(p) && p.endsWith(".json") && !p.endsWith("events.jsonl")).sort() 
+      : this.walk(this.hardkasDir).sort();
+      
     const indexedAt = new Date().toISOString();
 
     const upsertArtifact = this.db.prepare(`

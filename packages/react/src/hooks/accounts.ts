@@ -24,7 +24,7 @@ export interface HardKasAccountsResponse {
 }
 
 export function useAccounts() {
-  const { config, subscribe } = useHardKas();
+  const { config, subscribe , apiFetch } = useHardKas();
   const queryClient = useQueryClient();
 
   useEffect(() => {
@@ -43,7 +43,7 @@ export function useAccounts() {
       try {
         const baseUrl = config.devServerUrl || "";
         const url = baseUrl ? (baseUrl.endsWith("/") ? `${baseUrl}api/accounts` : `${baseUrl}/api/accounts`) : "/api/accounts";
-        const response = await fetch(url);
+        const response = await apiFetch(url);
         if (!response.ok) return { accounts: [] };
         const data = await response.json();
         return data || { accounts: [] };

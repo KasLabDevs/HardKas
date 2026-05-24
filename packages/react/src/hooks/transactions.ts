@@ -45,7 +45,7 @@ export interface TransactionDetail {
 }
 
 export function useTransactions() {
-  const { config, subscribe } = useHardKas();
+  const { config, subscribe , apiFetch } = useHardKas();
   const queryClient = useQueryClient();
 
   useEffect(() => {
@@ -64,7 +64,7 @@ export function useTransactions() {
       try {
         const baseUrl = config.devServerUrl || "";
         const url = baseUrl ? (baseUrl.endsWith("/") ? `${baseUrl}api/transactions` : `${baseUrl}/api/transactions`) : "/api/transactions";
-        const response = await fetch(url);
+        const response = await apiFetch(url);
         if (!response.ok) return [];
         const data = await response.json();
         return data.transactions || [];
@@ -78,7 +78,7 @@ export function useTransactions() {
 }
 
 export function useTransaction(id: string) {
-  const { config, subscribe } = useHardKas();
+  const { config, subscribe , apiFetch } = useHardKas();
   const queryClient = useQueryClient();
 
   useEffect(() => {
@@ -98,7 +98,7 @@ export function useTransaction(id: string) {
       try {
         const baseUrl = config.devServerUrl || "";
         const url = baseUrl ? (baseUrl.endsWith("/") ? `${baseUrl}api/transactions/${id}` : `${baseUrl}/api/transactions/${id}`) : `/api/transactions/${id}`;
-        const response = await fetch(url);
+        const response = await apiFetch(url);
         if (!response.ok) return null;
         return await response.json();
       } catch (e) {

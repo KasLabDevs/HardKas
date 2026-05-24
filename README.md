@@ -1,345 +1,113 @@
-# HardKAS
+# HardKAS: Deterministic Local Development Runtime
 
 [![NPM Version](https://img.shields.io/npm/v/@hardkas/sdk?color=red&label=sdk)](https://www.npmjs.com/package/@hardkas/sdk)
 [![NPM Version](https://img.shields.io/npm/v/@hardkas/cli?color=red&label=cli)](https://www.npmjs.com/package/@hardkas/cli)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-**HardKAS** is the **Deterministic Local Development Operating System** for Kaspa and Igra (L2). 
+**HardKAS** is a **deterministic, local-first transaction planning and execution runtime** designed for high-confidence simulation, reproducible offline replays, and verifiable audit trails. 
 
-It provides a hardened, unified runtime for building, simulating, and auditing full-stack applications across Kaspa's BlockDAG and Igra's EVM execution layers, serving as the persistent developer cockpit for the entire BlockDAG ecosystem.
-
----
-
-## Published Packages
-
-| [`@hardkas/sdk`](https://www.npmjs.com/package/@hardkas/sdk) | [![npm](https://img.shields.io/npm/v/@hardkas/sdk)](https://www.npmjs.com/package/@hardkas/sdk) | Full developer SDK for Kaspa |
-| [`@hardkas/cli`](https://www.npmjs.com/package/@hardkas/cli) | [![npm](https://img.shields.io/npm/v/@hardkas/cli)](https://www.npmjs.com/package/@hardkas/cli) | Command-line interface for BlockDAG operations |
-| [`@hardkas/core`](https://www.npmjs.com/package/@hardkas/core) | [![npm](https://img.shields.io/npm/v/@hardkas/core)](https://www.npmjs.com/package/@hardkas/core) | Core primitives and types |
-| [`@hardkas/react`](https://www.npmjs.com/package/@hardkas/react) | [![npm](https://img.shields.io/npm/v/@hardkas/react)](https://www.npmjs.com/package/@hardkas/react) | Local-first React integration layer |
-| [`@hardkas/sessions`](https://www.npmjs.com/package/@hardkas/sessions) | [![npm](https://img.shields.io/npm/v/@hardkas/sessions)](https://www.npmjs.com/package/@hardkas/sessions) | L1/L2 Identity & Context Management |
-| [`@hardkas/bridge-local`](https://www.npmjs.com/package/@hardkas/bridge-local) | [![npm](https://img.shields.io/npm/v/@hardkas/bridge-local)](https://www.npmjs.com/package/@hardkas/bridge-local) | Local bridge entry simulation engine |
+Serving as a local developer cockpit, HardKAS provides developers and automated agents with an isolated sandbox environment to build, test, and audit transaction lineages with 100% mathematical reproducibility.
 
 ---
 
 > [!IMPORTANT]
-> **Status: 0.5.5-alpha / HARDENED ALPHA**
-> HardKAS is currently in **HARDENED ALPHA**. This means core determinism, cross-platform hashing, and adversarial resilience are stable and verified. It is moving toward Beta Candidate status through architectural convergence and documentation hardening.
-
-> [!CAUTION]
-> **Not Production Custody Software.**
-> HardKAS is a local developer infrastructure tool. It does NOT validate Kaspa consensus, prove bridge correctness, or provide production-grade security for high-value mainnet assets. Always use hardware-backed wallets for production.
+> **Status: 0.6.0-alpha (HARDENED ALPHA / P1.12 Complete)**
+> HardKAS is in **Hardened Alpha**. All core transaction planning, candidate UTXO sorting, post-selection input ordering, and workstation security invariants are fully implemented, verified, and E2E-tested.
 
 ---
 
-HardKAS is currently in **HARDENED ALPHA** (0.5.5-alpha).
+## 🚀 1. Quickstart (Local Simulated Mode)
 
-The architecture is stabilizing, but users should be aware:
-- **APIs may change**: Commands and SDK interfaces are not yet finalized.
-- **Artifact formats may evolve**: Schema stability is a goal but not guaranteed.
-- **Simulation is a light-model**: The localnet uses a deterministic light-model of the BlockDAG, not a full consensus implementation.
-- **Encrypted Keystore**: Intended for developer workflows and local simulation only.
-- **RPC Integrations**: Health and diagnostic features are still hardening.
+HardKAS is fully optimized to run **completely offline** in a pure simulated mode with zero network or external RPC dependencies.
 
-### Functional Verification
-HardKAS has a deterministic end-to-end local artifact workflow proof covering simulated L1 execution, replay invariants, query rebuilds, state reset equivalence, and negative mutation detection. 
-
-### Trust Boundaries
-- **Simulation**: Localnet is a **research-experimental** light-model, not a consensus validator.
-- **Replay**: Replay verification ensures **local workflow consistency**, not L1 finality.
-- **Artifacts**: contentHash guarantees **internal integrity**, not on-chain confirmation.
-- **L2 Bridge**: Igra integration assumes **pre-ZK multisig/MPC assumptions**.
-
----
-
-## What HardKAS IS vs. IS NOT
-
-### HardKAS IS:
-- **Developer Tooling**: Built for high-velocity local iteration.
-- **Deterministic Simulation**: Provides reproducible transaction and state models.
-- **Transaction Planning**: Formalizes the lifecycle of a transaction from plan to receipt.
-- **Replay/Debugging**: Enables deterministic tracing of past simulated events.
-- **Artifact Verification**: Strict auditing of transaction integrity and semantics.
-- **Localnet Orchestration**: Simplifies managing kaspad nodes and simulated states.
-- **RPC Diagnostics**: Comprehensive network and node health tools.
-- **L1/L2 Identity Management**: Session-aware developer context resolution.
-- **Bridge-Entry Simulation**: Deterministic simulation of Kaspa -> Igra entries.
-- **Native Kaspa Wallet (Local)**: Deterministic L1 wallet management for devs.
-- **React Integration**: Local-first hooks for full-stack prototyping.
-- **Early L2 Integration**: Foundational support for Igra EVM integration workflows.
-
-### HardKAS IS NOT:
-- **Production Custody**: Not a secure wallet for large-scale assets.
-- **Consensus Software**: Does not replace or replicate the official kaspad consensus logic.
-- **Full Node Implementation**: Orchestrates node runners but is not a consensus node.
-- **Bridge Correctness Proof**: Does not prove the validity of cross-chain bridges or Igra exits.
-- **SilverScript/Covenant Runtime**: Does not provide a live execution environment for Kaspa L1 covenants.
-- **Kaspa Finality Proof**: Simulation finality is local-only; it does not represent L1 finality.
-- **Full GHOSTDAG/DAGKnight Parity**: The light-model simulates structural effects, not the full bit-for-bit consensus protocol.
-- **Trustless Bridge System**: Current bridge modeling assumes MPC/Multisig trust boundaries.
-- **EVM on L1**: There is no EVM execution on the Kaspa L1 layer.
-- **Kaspa L1 Auditor**: It audits developer workflows, not the Kaspa L1 protocol itself.
-- **"Hardhat for Kaspa"**: HardKAS is a multi-layer BlockDAG infrastructure platform. While it provides similar developer comfort, its architecture is built for the unique deterministic and structural requirements of Kaspa and ZK-ready L2s.
-
----
-
-## Architecture Honesty
-
-HardKAS maintains strict boundaries between different architectural layers:
-
-### Kaspa L1 (BlockDAG)
-- **Model**: UTXO-based BlockDAG.
-- **Responsibility**: Sequencing and Data Availability.
-- **Execution**: No EVM or programmable account-based state on L1.
-
-### Igra L2 (Execution)
-- **Model**: EVM-compatible, account-based state.
-- **Status**: Separate execution environment for programmable logic.
-- **Support**: HardKAS provides early integration preflights for Igra deployments.
-
-### Bridge Realities
-- **Pre-ZK**: Bridge modeling assumes trusted multisig or committee-based MPC assumptions.
-- **Target**: Move toward ZK-based trustless models as the protocol matures.
-
----
-
-### stable
-- **Deterministic Artifacts**: Canonical schemas for Plans, SignedTx, and Receipts.
-- **Replay Invariants**: Reproducible simulated transaction outcomes.
-- **Snapshot Hashing**: Verifiable state snapshots for localnet persistence.
-
----
-
-## Local Igra Onboarding
-
-HardKAS provides a dedicated flow for local Igra (Kaspa L2) development:
-
-1. **Diagnose**: `hardkas dev doctor` — Check environment health.
-2. **Setup**: `hardkas local wizard` — Guided account creation and funding.
-3. **Identity**: `hardkas session create` — Link L1 and L2 identities.
-4. **Runtime**: `hardkas dashboard` — Launch the visual developer cockpit.
-5. **Connect**: MetaMask & KasWare Local Adapters — Sync browser wallets to the local session.
-6. **Bridge**: `hardkas bridge local plan` — Simulate cross-layer entry.
-7. **Prototyping**: `@hardkas/react` — Full-stack hooks for local apps.
-
-> [!CAUTION]
-> **Developer Only**: These tools are strictly for local development and simulation. Never export production secrets or use these tools for mainnet assets.
-- **Semantic Verification**: Deep auditing of fee correctness and lineage.
-- **Encrypted Dev Keystore**: Argon2id/AES-256 protected local keys.
-- **RPC Resilience**: Automated retries, health scoring, and diagnostics.
-
-### preview
-- **Igra L2 Integration**: Early contract deployment preflights.
-- **Bridge Modeling**: Modeling cross-chain state transitions.
-- **Lineage Extensions**: Advanced provenance tracking across complex flows.
-
-### research
-- **DAG Light-Model**: High-level simulation of reorgs and conflict handling.
-- **Anomalies Engine**: Deep DAG state introspection.
-
-### Planned
-- **Multi-node Localnet**: Orchestrating local clusters for networking tests.
-- **Visual Trace Explorer**: Browser-based visualization of BlockDAG traces.
-- **SilverScript Tooling**: Native support for advanced Kaspa script auditing.
-- **vProg Tooling**: Verified protocol-aware programming utilities.
-- **Fuzzing Infrastructure**: Automated mutation testing for artifact resilience.
-
----
-
-## Design Philosophy
-
-- **Local-First**: High-fidelity development should not require an internet connection.
-- **Simulation-First**: Validate logic in a deterministic environment before touching the wire.
-- **Deterministic by Default**: Avoid ambient state; all operations should be reproducible.
-- **Explicit over Implicit**: Clear artifact boundaries and visible metadata.
-- **Replay-Safe**: All transaction logic must be audit-ready and replay-verifiable.
-- **Artifact-First**: Comprehensive observability and diagnostic discipline.
-- **No Protocol Inflation**: No claims of protocol features (like L1 smart contracts) that do not exist.
-
----
-
-## Quickstart
-
-Get started with HardKAS in seconds.
-
-> [!WARNING]
-> **Simulated vs Simnet: The Mental Model**
-> HardKAS has two distinct execution layers: **Simulated** (offline, deterministic mock state) and **Simnet** (real Docker Kaspa node).
-> 
-> The default accounts like `alice` (`kaspa:sim_alice`) are **local dev aliases** meant ONLY for the Simulated mode. Do NOT attempt to use them for real L1 transactions against the Docker node, or the node will reject them.
-> 
-> Read the complete guide to understand the two environments, how to generate real L1 accounts, and how UTXO planning works:
-> 👉 **[Localnet & Accounts Mental Model](./docs/localnet-and-accounts.md)**
-
-### 1. Install the CLI globally
-
+### Installation
 ```bash
-pnpm install -g @hardkas/cli
+# Install the CLI globally
+npm install -g @hardkas/cli
 ```
 
-### 2. Initialize your project
-
+### Scaffold Workspace
 ```bash
-hardkas init
+# Initialize a fresh workspace in the target directory
+hardkas init demo
+cd demo
 ```
 
-### 3. Start the local node (Optional for simulated mode)
-
+### Fund simulated accounts
 ```bash
-hardkas node start
+# Allocate virtual test balances to your local aliases
+hardkas accounts fund alice --amount 1000
 ```
 
-### 4. Test a Transaction
-
-**Offline Simulated Execution** (No real node needed):
+### Plan and execute offline transactions
 ```bash
-hardkas tx send --from alice --to bob --amount 10 --network simulated --yes
+# Plan and execute a transaction deterministically
+hardkas tx send \
+  --network simulated \
+  --from alice \
+  --to bob \
+  --amount 10 \
+  --yes
 ```
+This generates a deterministic plan (`txPlan`) and execution receipt (`txReceipt`) under strict sorting invariants, written directly to `.hardkas/`.
 
-**Real Simnet Execution** (Requires real Kaspa SDK & Docker Node):
+### Replay & Verify Workspace
 ```bash
-pnpm add kaspa
-hardkas accounts real generate
-hardkas tx send --from kaspa:q... --to kaspa:q... --amount 10 --network simnet --yes
+# Verify the mathematical and causal lineage of the workspace
+hardkas replay verify .
 ```
-
-## Account Import Formats
-
-HardKAS can import development signing keys from several input formats:
-
-```bash
-hardkas accounts real import --private-key-stdin
-hardkas accounts real import --private-key-env HARDKAS_PRIVATE_KEY
-hardkas accounts real import --keypair ./wallet.json
-```
-
-Supported JSON keypair formats:
-
-```json
-[12, 44, 98, ...]
-```
-
-or:
-
-```json
-{
-  "secretKey": [12, 44, 98, ...]
-}
-```
-
-- **32 bytes** = raw private key.
-- **64 bytes** = private key + public key style; HardKAS uses the first 32 bytes.
-
-If unsure, prefer a 32-byte private key format.
-
-Imported keys are encrypted into the local HardKAS keystore.
-HardKAS does not print private keys during import.
-
-## Local Development Accounts
-
-HardKAS provides local development aliases such as:
-
-```text
-alice
-bob
-carol
-```
-
-These are convenience identities for local testing.
-
-- They are not production wallets.
-- They are not mainnet accounts.
-- They exist to make local workflows fast and repeatable.
-
-You can use either aliases or raw addresses where supported:
-
-```bash
-hardkas tx plan --from alice --to bob --amount 10
-hardkas tx plan --from alice --to kaspa:qr... --amount 10
-```
+Returns a clean `VERIFIED` report if all cryptographic hashes and invariants align.
 
 ---
 
-## Local Development (Monorepo)
+## 🏛️ 2. Architectural & System Documentation Map
 
-If you want to contribute to HardKAS or run the examples from source:
+Every core axiom, security boundary, and operator playbook is organized strictly under the canonical directory structure:
 
-### 1. Clone & Build
+### [HardKAS System Status Report (HARDKAS_STATUS.md)](./HARDKAS_STATUS.md)
+The principal-engineer-level repository assessment, component maturity audit, and risk analysis.
 
+### Canonical Specifications (`docs/canonical/`)
+*   **[Runtime Invariants Spec](./docs/canonical/architecture.md)**: Filesystem authority axioms, SQLite caching boundaries, and local simulation limits.
+*   **[Deterministic Replay Spec](./docs/canonical/replay.md)**: Causal pre-state time-travel rollback math and isolated sandbox executions.
+*   **[Deterministic Guarantees Spec](./docs/canonical/deterministic-guarantees.md)**: Exact plan identities, sorting rules, and critical non-guarantees (consensus bounds, RPC limits).
+*   **[Workstation Security Model](./docs/canonical/workstation-model.md)**: CSRF isolation, Host header whitelists, CORS limits, and DNS rebinding mitigations.
+*   **[Semantic Vocabulary Canon](./docs/canonical/semantic-vocabulary.md)**: The single, authoritative glossary for core terms (Artifact, Projection, Replay, Snapshot, Stale).
+
+### Operator Playbooks (`docs/guides/`)
+*   **[Operator Getting Started](./docs/guides/getting-started.md)**: Scaffolding, funding simulated accounts, and planning offline transactions.
+*   **[Sandboxed Workflows Guide](./docs/guides/workflows.md)**: Running orchestrations, sandbox policies, and causal diff audit trails.
+*   **[State Snapshot Management](./docs/guides/snapshots.md)**: Capturing virtual state, snapshot invariants, and time-travel replay triggers.
+*   **[Replay Debugging & Diagnostics](./docs/guides/replay-debugging.md)**: Handling `preStateHash` mismatches, fee deviations, and dynamic causal inspection.
+*   **[Dashboard & Dev-Server Operations](./docs/guides/dashboard.md)**: Local background processes, REST endpoint tokens, and SSE reactive projections.
+
+---
+
+## 🛠️ 3. Monorepo Contribution & Development
+
+If you want to contribute to HardKAS or build the packages from source:
+
+### Clone & Build
 ```bash
 git clone https://github.com/KasLabDevs/HardKas.git
-cd Hardkas
+cd HardKas
 pnpm install
 pnpm build
 ```
 
-### 2. Initialize a project
-
+### Run Tests
 ```bash
-hardkas init
+# Run planners unit & determinism tests
+pnpm --filter @hardkas/tx-builder test
+
+# Run adversarial workflow corpus regression
+pnpm test:workflows
+
+# Run Playwright E2E visual dashboard test
+pnpm --filter @hardkas/dashboard test:visual
 ```
-
-### 3. Start the node
-
-```bash
-hardkas node start
-```
-
-### 4. Manage Accounts
-
-```bash
-hardkas accounts list
-```
-
-### 5. Send a Transaction (Simulated)
-
-```bash
-hardkas tx send --from alice --to bob --amount 10
-```
-
-### 6. Run Tests
-
-```bash
-hardkas test
-```
-
-### 7. Verify Artifacts
-
-```bash
-hardkas artifact verify .hardkas/artifacts/ --recursive
-```
-
-### Run examples
-
-```bash
-pnpm example:ci
-pnpm example:dag-reorg
-hardkas example list
-```
-
-### CLI Reference
-
-```bash
-hardkas --help
-hardkas tx --help
-hardkas kaspa --help
-hardkas bridge --help
-hardkas session --help
-hardkas artifact --help
-hardkas rpc --help
-```
-
 
 ---
 
+## 📝 4. License
 HardKAS is released under the **MIT License**. See the [LICENSE](LICENSE) file for the full text.
-
-### Alpha Disclaimer
-
-The project is provided as developer infrastructure tooling in active alpha development **WITHOUT WARRANTY** of any kind, express or implied. 
-
-- **Developer Tooling**: HardKAS is intended for local-first simulation and developer workflows.
-- **Not for Production Custody**: It is NOT production-grade custody software.
-- **Key Handling**: Users are solely responsible for the handling and security of their mainnet private keys. 
-- **Encrypted Keystore**: The local encrypted keystore is designed for developer convenience in simulation environments, not for high-value asset protection.
-
-By using HardKAS, you acknowledge that you understand the risks associated with alpha-stage infrastructure tooling.

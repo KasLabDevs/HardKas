@@ -1,6 +1,6 @@
 {
   "schema": "hardkas.txReceipt",
-  "hardkasVersion": "0.5.5-alpha",
+  "hardkasVersion": "0.6.0-alpha",
   "version": "1.0.0-alpha",
   "hashVersion": 3,
   "createdAt": "2026-05-21T23:11:03.065Z",

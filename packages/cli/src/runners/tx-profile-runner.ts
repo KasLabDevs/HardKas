@@ -6,10 +6,13 @@ import path from "node:path";
 
 export interface TxProfileOptions {
   path: string;
+  workspaceRoot: string;
 }
 
 export async function runTxProfile(options: TxProfileOptions) {
-  const absolutePath = path.resolve(process.cwd(), options.path);
+  const { Hardkas } = await import("@hardkas/sdk");
+  const sdk = await Hardkas.open({ cwd: options.workspaceRoot });
+  const absolutePath = sdk.workspace.resolvePath(options.path);
   const plan = await readArtifact(absolutePath) as TxPlanArtifact;
 
   if (plan.schema !== "hardkas.txPlan" && (plan as any).schema !== "hardkas.txPlan.v1") {

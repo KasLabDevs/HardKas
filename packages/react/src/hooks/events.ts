@@ -17,8 +17,14 @@ export interface HardKasEventInfo {
   payload: any;
 }
 
+export interface UseEventsResponse {
+  events: HardKasEventInfo[];
+  observabilityDrift?: boolean;
+  reason?: string;
+}
+
 export function useEvents(kind?: string, txId?: string) {
-  const { config, subscribe } = useHardKas();
+  const { config, subscribe , apiFetch } = useHardKas();
   const queryClient = useQueryClient();
   const queryKey = ["hardkas", "events", kind, txId];
 
@@ -31,7 +37,7 @@ export function useEvents(kind?: string, txId?: string) {
 
   return useQuery({
     queryKey,
-    queryFn: async (): Promise<HardKasEventInfo[]> => {
+    queryFn: async (): Promise<UseEventsResponse> => {
       try {
         const baseUrl = config.devServerUrl || "";
         const queryParams = new URLSearchParams();
@@ -43,13 +49,17 @@ export function useEvents(kind?: string, txId?: string) {
           ? (baseUrl.endsWith("/") ? `${baseUrl}api/events${queryStr}` : `${baseUrl}/api/events${queryStr}`) 
           : `/api/events${queryStr}`;
           
-        const response = await fetch(url);
-        if (!response.ok) return [];
+        const response = await apiFetch(url);
+        if (!response.ok) return { events: [] };
         const data = await response.json();
-        return data.events || [];
+        return {
+          events: data.events || [],
+          observabilityDrift: data.observabilityDrift,
+          reason: data.reason
+        };
       } catch (e) {
         console.error("Failed to fetch events from dev server:", e);
-        return [];
+        return { events: [] };
       }
     },
     staleTime: 5000,

@@ -15,7 +15,7 @@ export interface DeploymentSummary {
 }
 
 export function useDeployments() {
-  const { config, subscribe } = useHardKas();
+  const { config, subscribe , apiFetch } = useHardKas();
   const queryClient = useQueryClient();
 
   useEffect(() => {
@@ -34,7 +34,7 @@ export function useDeployments() {
       try {
         const baseUrl = config.devServerUrl || "";
         const url = baseUrl ? (baseUrl.endsWith("/") ? `${baseUrl}api/deployments` : `${baseUrl}/api/deployments`) : "/api/deployments";
-        const response = await fetch(url);
+        const response = await apiFetch(url);
         if (!response.ok) return [];
         const data = await response.json();
         return data.deployments || [];

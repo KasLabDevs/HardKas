@@ -29,14 +29,14 @@ if ($LASTEXITCODE -ne 0) {
 $installedVersion = npx hardkas --version
 Write-Host "Installed HardKAS CLI version: $installedVersion"
 
-if ($installedVersion -ne "0.5.5-alpha") {
-    throw "Expected version 0.5.5-alpha, but got $installedVersion"
+if ($installedVersion -ne "0.6.0-alpha") {
+    throw "Expected version 0.6.0-alpha, but got $installedVersion"
 }
 
 # 3. Scaffold a new workspace
 Write-Host ""
 Write-Host "Step 3: Scaffolding a new workspace..."
-npx hardkas new my-demo
+npx hardkas init my-demo
 $DemoDir = Join-Path $TestDir "my-demo"
 Set-Location $DemoDir
 

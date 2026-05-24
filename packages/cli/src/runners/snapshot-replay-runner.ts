@@ -11,7 +11,9 @@ export interface SnapshotReplayOptions {
 
 export async function runSnapshotReplay(options: SnapshotReplayOptions) {
   try {
-    const snapshotDir = path.resolve(process.cwd(), "snapshots", options.name);
+    const { Hardkas } = await import("@hardkas/sdk");
+    const sdk = await Hardkas.open({ cwd: options.workspaceRoot });
+    const snapshotDir = sdk.workspace.resolvePath("snapshots", options.name);
 
     // 1. Read Manifest
     let manifest;
@@ -31,7 +33,7 @@ export async function runSnapshotReplay(options: SnapshotReplayOptions) {
     }
 
     // 2. Wipe current workspace artifacts
-    const hardkasDir = path.join(process.cwd(), ".hardkas");
+    const hardkasDir = sdk.workspace.hardkasDir;
     const wsArtifactsDir = path.join(hardkasDir, "artifacts");
     const fs = await import("node:fs/promises");
     
@@ -57,7 +59,7 @@ export async function runSnapshotReplay(options: SnapshotReplayOptions) {
     const store = new HardkasStore({ dbPath: path.join(hardkasDir, "store.db") });
     store.connect({ autoMigrate: true });
     
-    const indexer = new HardkasIndexer(store.getDatabase(), { cwd: process.cwd(), strict: true });
+    const indexer = new HardkasIndexer(store.getDatabase(), { cwd: options.workspaceRoot, strict: true });
     const result = await indexer.rebuild();
     
     if (!result.ok) {
@@ -65,9 +67,23 @@ export async function runSnapshotReplay(options: SnapshotReplayOptions) {
     }
 
     if (!options.json) {
-      UI.success(`Successfully replayed snapshot state.`);
-      console.log(`  Indexed Artifacts: ${result.artifacts.indexed}`);
-      console.log(`  Indexed Events:    ${result.events.indexed}`);
+      UI.causality(
+        `Snapshot Replay: ${options.name}`,
+        {
+          "Execution Scope": manifest.deterministicScope,
+          "Workspace": options.workspaceRoot,
+          "Source Authority": "restored from snapshot",
+          "Projection Layer": "SQLite query-store (rebuilt)",
+          "Indexed Artifacts": String(result.artifacts.indexed),
+          "Indexed Events": String(result.events.indexed),
+          "Consensus Validated": manifest.deterministicScope === "consensus-validated" ? "YES" : "NO",
+          "Notice": "Workspace state has been deterministically overwritten"
+        },
+        [
+          "hardkas doctor --strict",
+          "hardkas dashboard"
+        ]
+      );
     }
 
   } catch (err: any) {

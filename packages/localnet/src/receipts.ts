@@ -23,7 +23,7 @@ export interface StoredSimulatedTxReceipt extends HardkasArtifactBase {
 }
 
 export function getDefaultReceiptsDir(cwd: string = process.cwd()): string {
-  return path.join(cwd, ".hardkas", "receipts");
+  return path.join(cwd, ".hardkas", "artifacts");
 }
 
 export function getReceiptPath(txId: string, cwd?: string): string {

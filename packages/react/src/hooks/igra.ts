@@ -6,7 +6,7 @@ import { useHardKasHealth } from "./health.js";
 
 export function useIgraAccount() {
   const { data: session } = useHardKasSession();
-  const { walletAddress } = useHardKas();
+  const { walletAddress , apiFetch } = useHardKas();
 
   const address = (walletAddress || session?.l2.address) as `0x${string}` | undefined;
 
@@ -27,7 +27,7 @@ export function useIgraWallet() {
     connectWallet,
     disconnectWallet,
     switchChain
-  } = useHardKas();
+  , apiFetch } = useHardKas();
 
   return {
     providers,
@@ -42,7 +42,7 @@ export function useIgraWallet() {
 }
 
 export function useIgraBalance(options: { refetchInterval?: number } = {}) {
-  const { igraClient, config, subscribe } = useHardKas();
+  const { igraClient, config, subscribe , apiFetch } = useHardKas();
   const queryClient = useQueryClient();
   const { address } = useIgraAccount();
 
@@ -74,7 +74,7 @@ export function useIgraBalance(options: { refetchInterval?: number } = {}) {
         try {
           const baseUrl = config.devServerUrl || "";
           const fetchUrl = baseUrl ? (baseUrl.endsWith("/") ? `${baseUrl}api/accounts` : `${baseUrl}/api/accounts`) : "/api/accounts";
-          const res = await fetch(fetchUrl);
+          const res = await apiFetch(fetchUrl);
           if (res.ok) {
             const data = await res.json();
             // Try matching either address or name

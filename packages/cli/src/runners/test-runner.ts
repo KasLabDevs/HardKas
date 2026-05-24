@@ -60,7 +60,7 @@ export async function runTest(options: TestRunnerOptions): Promise<void> {
       // Injected environment variables for tests to consume
       env: {
         HARDKAS_NETWORK: network,
-        HARDKAS_CWD: process.cwd()
+        HARDKAS_CWD: options.workspaceRoot || process.cwd()
       }
     };
 

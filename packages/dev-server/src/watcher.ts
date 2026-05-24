@@ -4,6 +4,8 @@ import { getQueryBackend } from "./db.js";
 import { devServerEmitter } from "./stream.js";
 
 let debounceTimer: NodeJS.Timeout | null = null;
+const bufferedPaths = new Set<string>();
+let isStale = false;
 
 export function startHardkasWatcher() {
   const rootDir = process.env.HARDKAS_ROOT || process.cwd();
@@ -34,23 +36,37 @@ export function startHardkasWatcher() {
         return;
       }
 
+      const absolutePath = path.join(hardkasPath, filename);
+      bufferedPaths.add(absolutePath);
+
+      if (!isStale) {
+        isStale = true;
+        devServerEmitter.emit("projection-stale", { timestamp: Date.now() });
+      }
+
       if (debounceTimer) clearTimeout(debounceTimer);
 
       debounceTimer = setTimeout(async () => {
+        const pathsToSync = Array.from(bufferedPaths);
+        bufferedPaths.clear();
+        isStale = false;
+
         try {
           const backend = getQueryBackend();
-          const syncResult = await backend.sync();
+          
+          // Use Targeted Reindex if we have specific paths, otherwise fallback to global sync
+          const syncResult = await backend.syncPaths(pathsToSync);
           
           if (syncResult.artifacts.indexed > 0 || syncResult.events.indexed > 0) {
             console.log(
-              `🔄 [Watcher] Changes detected: ${filename}. Auto-synced query-store. (Artifacts: ${syncResult.artifacts.indexed}, Events: ${syncResult.events.indexed})`
+              `🔄 [Watcher] Targeted Sync completed for ${pathsToSync.length} paths. (Generation: ${syncResult.generationId || 'unknown'})`
             );
           }
 
           // Emit real-time synchronization updates to the dashboard via SSE
-          devServerEmitter.emit("query-synced", {
+          devServerEmitter.emit("projection-synced", {
             timestamp: Date.now(),
-            filename,
+            generationId: syncResult.generationId,
             stats: syncResult
           });
         } catch (err: any) {

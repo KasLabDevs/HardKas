@@ -61,8 +61,8 @@ const planHash = writeFixture("valid", "tx-plan.valid.json", {
   from: { address: "kaspa:sim_123" },
   to: { address: "kaspa:sim_456" },
   amountSompi: "1000000",
-  estimatedFeeSompi: "250",
-  estimatedMass: "250",
+  estimatedFeeSompi: "150",
+  estimatedMass: "150",
   inputs: [],
   outputs: [
     { address: "kaspa:sim_456", amountSompi: "1000000" }

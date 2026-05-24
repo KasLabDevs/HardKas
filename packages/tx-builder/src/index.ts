@@ -46,7 +46,16 @@ export function buildPaymentPlan(request: TxBuildRequest): TxPlan {
     throw new Error("At least one transaction output is required.");
   }
 
-  const target = request.outputs.reduce(
+  // 1. Canonical Output Sorting (recipients only; change is kept separate and appended last)
+  const sortedOutputs = [...request.outputs].sort((a, b) => {
+    if (a.amountSompi < b.amountSompi) return -1;
+    if (a.amountSompi > b.amountSompi) return 1;
+    if (a.address < b.address) return -1;
+    if (a.address > b.address) return 1;
+    return 0;
+  });
+
+  const target = sortedOutputs.reduce(
     (sum, output) => sum + output.amountSompi,
     0n
   );
@@ -55,9 +64,22 @@ export function buildPaymentPlan(request: TxBuildRequest): TxPlan {
     throw new Error("Transaction amount must be positive.");
   }
 
-  const sortedUtxos = [...request.availableUtxos].sort((a, b) =>
-    a.amountSompi < b.amountSompi ? -1 : a.amountSompi > b.amountSompi ? 1 : 0
-  );
+  // 2. Canonical Candidate UTXO Input Sorting (Pre-Selection)
+  const sortedUtxos = [...request.availableUtxos].sort((a, b) => {
+    // a.amountSompi ASC
+    if (a.amountSompi < b.amountSompi) return -1;
+    if (a.amountSompi > b.amountSompi) return 1;
+    
+    // b.transactionId ASC (tie-breaker 1)
+    if (a.outpoint.transactionId < b.outpoint.transactionId) return -1;
+    if (a.outpoint.transactionId > b.outpoint.transactionId) return 1;
+    
+    // c.index ASC (tie-breaker 2)
+    if (a.outpoint.index < b.outpoint.index) return -1;
+    if (a.outpoint.index > b.outpoint.index) return 1;
+    
+    return 0;
+  });
 
   const selected: Utxo[] = [];
   let selectedAmount = 0n;
@@ -72,7 +94,7 @@ export function buildPaymentPlan(request: TxBuildRequest): TxPlan {
     // Estimate mass with change output assumed
     const result = estimateTransactionMass({
       inputCount: selected.length,
-      outputs: request.outputs,
+      outputs: sortedOutputs,
       payloadBytes: request.payloadBytes ?? 0,
       hasChange: true // Optimistic assumption for the loop
     });
@@ -91,7 +113,7 @@ export function buildPaymentPlan(request: TxBuildRequest): TxPlan {
       if (!hasActualChange) {
         const noChangeResult = estimateTransactionMass({
           inputCount: selected.length,
-          outputs: request.outputs,
+          outputs: sortedOutputs,
           payloadBytes: request.payloadBytes ?? 0,
           hasChange: false
         });
@@ -102,9 +124,20 @@ export function buildPaymentPlan(request: TxBuildRequest): TxPlan {
         if (selectedAmount < target + finalFee) continue;
       }
 
+      // 3. Canonical Selected Input Sorting (Post-Selection)
+      const canonicalSelected = [...selected].sort((a, b) => {
+        if (a.amountSompi < b.amountSompi) return -1;
+        if (a.amountSompi > b.amountSompi) return 1;
+        if (a.outpoint.transactionId < b.outpoint.transactionId) return -1;
+        if (a.outpoint.transactionId > b.outpoint.transactionId) return 1;
+        if (a.outpoint.index < b.outpoint.index) return -1;
+        if (a.outpoint.index > b.outpoint.index) return 1;
+        return 0;
+      });
+
       return {
-        inputs: selected,
-        outputs: request.outputs,
+        inputs: canonicalSelected,
+        outputs: sortedOutputs,
         change: hasActualChange
             ? {
                 address: request.changeAddress ?? request.fromAddress,

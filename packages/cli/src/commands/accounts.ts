@@ -89,7 +89,7 @@ export function registerAccountsCommands(program: Command) {
           timeoutMs: parseInt(options.lockTimeout)
         }, async () => {
           const { runAccountsKeystoreImport } = await import("../runners/accounts-keystore-runners.js");
-          const result = await runAccountsKeystoreImport(options);
+          const result = await runAccountsKeystoreImport({ ...options, workspaceRoot: process.cwd() });
           if (options.json) console.log(JSON.stringify(result, null, 2));
           else console.log(result.formatted);
         });
@@ -115,7 +115,7 @@ export function registerAccountsCommands(program: Command) {
           timeoutMs: parseInt(options.lockTimeout)
         }, async () => {
           const { runAccountsSessionOpen } = await import("../runners/accounts-keystore-runners.js");
-          await runAccountsSessionOpen({ name, ...options });
+          await runAccountsSessionOpen({ name, ...options, workspaceRoot: process.cwd() });
         });
       } catch (e) { handleLockError(e); process.exitCode = 1; }
     });
@@ -144,7 +144,7 @@ export function registerAccountsCommands(program: Command) {
           timeoutMs: parseInt(options.lockTimeout)
         }, async () => {
           const { runAccountsKeystoreChangePassword } = await import("../runners/accounts-keystore-runners.js");
-          await runAccountsKeystoreChangePassword({ name });
+          await runAccountsKeystoreChangePassword({ name, workspaceRoot: process.cwd() });
         });
       } catch (e) { handleLockError(e); process.exitCode = 1; }
     });
@@ -176,7 +176,8 @@ export function registerAccountsCommands(program: Command) {
             ...(options.name ? { name: options.name } : {}),
             count: parseInt(options.count, 10),
             networkId: options.network as any,
-            ...options
+            ...options,
+            workspaceRoot: process.cwd()
           });
           if (options.json) console.log(JSON.stringify(result.accounts, null, 2));
           else console.log(result.formatted);

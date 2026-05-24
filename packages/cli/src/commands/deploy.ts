@@ -22,7 +22,7 @@ export function registerDeployCommands(program: Command) {
     .option("--json", "Output as JSON", false)
     .action(async (label, opts) => {
       const { UI } = await import("../ui.js");
-      await trackDeployment({ label, ...opts });
+      await trackDeployment({ label, ...opts, workspaceRoot: process.cwd() });
     });
 
   deployCmd.command("list")
@@ -31,7 +31,7 @@ export function registerDeployCommands(program: Command) {
     .option("--status <status>", "Filter by status")
     .option("--json", "Output as JSON", false)
     .action(async (opts) => {
-      await listAllDeployments(opts);
+      await listAllDeployments({ ...opts, workspaceRoot: process.cwd() });
     });
 
   deployCmd.command("inspect <label>")
@@ -39,7 +39,7 @@ export function registerDeployCommands(program: Command) {
     .requiredOption("--network <name>", "Network")
     .option("--json", "Output as JSON", false)
     .action(async (label, opts) => {
-      await inspectDeployment({ label, ...opts });
+      await inspectDeployment({ label, ...opts, workspaceRoot: process.cwd() });
     });
 
   deployCmd.command("status <label>")
@@ -48,13 +48,13 @@ export function registerDeployCommands(program: Command) {
     .option("--verify", "Verify against RPC node", false)
     .option("--json", "Output as JSON", false)
     .action(async (label, opts) => {
-      await verifyDeploymentStatus({ label, ...opts });
+      await verifyDeploymentStatus({ label, ...opts, workspaceRoot: process.cwd() });
     });
 
   deployCmd.command("history")
     .description(`Show deployment history across all networks ${UI.maturity("stable")}`)
     .option("--json", "Output as JSON", false)
     .action(async (opts) => {
-      await showDeploymentHistory(opts);
+      await showDeploymentHistory({ ...opts, workspaceRoot: process.cwd() });
     });
 }

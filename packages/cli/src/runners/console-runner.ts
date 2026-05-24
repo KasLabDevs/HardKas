@@ -24,6 +24,7 @@ export async function startConsole(opts: {
   console.log("    canonical(obj) — canonicalStringify");
   console.log("    kas(str)       — parseKasToSompi ('1.5' → 150000000n)");
   console.log("    sompi(n)       — formatSompi (150000000n → '1.5 KAS')");
+  console.log("    workspaceRoot  — current workspace root");
   console.log("");
   console.log("  Quick start:");
   console.log("    h.accountNames()");
@@ -32,7 +33,7 @@ export async function startConsole(opts: {
   console.log("");
 
   // Ensure history directory
-  const historyDir = path.join(process.cwd(), ".hardkas");
+  const historyDir = path.join(opts.workspaceRoot, ".hardkas");
   const historyPath = path.join(historyDir, "console-history");
   if (!fs.existsSync(historyDir)) fs.mkdirSync(historyDir, { recursive: true });
 

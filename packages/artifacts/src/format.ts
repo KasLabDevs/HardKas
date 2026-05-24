@@ -24,6 +24,17 @@ export function formatTxPlanArtifact(artifact: any): string {
   lines.push(`Outputs:      ${artifact.outputs.length}`);
   lines.push(`Fee:          ${formatSompi(BigInt(artifact.estimatedFeeSompi))}`);
   lines.push(`Mass:         ${artifact.estimatedMass}`);
+  lines.push("");
+  lines.push("Deterministic Planning Specifications:");
+  lines.push("  Coin Selection:");
+  lines.push("    deterministic canonical ordering enabled");
+  lines.push("  Input Ordering:");
+  lines.push("    amountSompi ASC");
+  lines.push("    txid ASC");
+  lines.push("    index ASC");
+  lines.push("  Output Ordering:");
+  lines.push("    amountSompi ASC");
+  lines.push("    address ASC");
 
   return lines.join("\n");
 }

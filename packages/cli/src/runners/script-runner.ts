@@ -11,6 +11,7 @@ export async function runScript(script: string, opts: {
   accounts: string;
   balance: string;
   harness: boolean;
+  workspaceRoot?: string;
 }): Promise<void> {
   const scriptPath = resolve(script);
 
@@ -65,7 +66,7 @@ ${injectionCode}
 `;
 
   // Write to a temp file inside .hardkas to allow workspace resolution
-  const dotHardkas = resolve(process.cwd(), ".hardkas");
+  const dotHardkas = resolve(opts.workspaceRoot || process.cwd(), ".hardkas");
   if (!existsSync(dotHardkas)) {
     const { mkdirSync } = await import("node:fs");
     mkdirSync(dotHardkas, { recursive: true });
@@ -83,7 +84,7 @@ ${injectionCode}
 
     execSync(`${actualTsx} ${tempWrapper}`, {
       stdio: "inherit",
-      cwd: process.cwd(),
+      cwd: opts.workspaceRoot || process.cwd(),
       env: {
         ...process.env,
         HARDKAS_NETWORK: opts.network,

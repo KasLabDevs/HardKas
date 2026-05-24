@@ -119,17 +119,14 @@ describe("HardKas React Wallet Integration (EIP-6963)", () => {
   });
 
   it("should fall back to local dev session L2 account when no browser wallet is connected", async () => {
-    const mockSession = {
-      name: "test-session",
-      l1: { wallet: "alice", address: "addr1" },
-      l2: { account: "alice-l2", address: "0xLocalDevAddress" },
-      bridge: { mode: "local-simulated" }
-    };
-
-    global.fetch = vi.fn().mockResolvedValue({
-      ok: true,
-      json: async () => ({ active: mockSession })
-    });
+    global.fetch = vi.fn().mockResolvedValue(new Response(JSON.stringify({
+      active: {
+        name: "test-session",
+        l1: { wallet: "alice", address: "addr1" },
+        l2: { account: "alice-l2", address: "0xLocalDevAddress" },
+        bridge: { mode: "local-simulated" }
+      }
+    })));
 
     const { result } = renderHook(() => useIgraAccount(), {
       wrapper: ({ children }) => (

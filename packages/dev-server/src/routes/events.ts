@@ -22,7 +22,19 @@ eventsRoutes.get("/", async (c) => {
       return timeB - timeA;
     });
 
-    return c.json({ events: sorted });
+    let observabilityDrift = false;
+    if (sorted.length === 0 && !kind && !txId) {
+      const allArtifacts = await queryBackend.findArtifacts();
+      if (allArtifacts.length > 0) {
+        observabilityDrift = true;
+      }
+    }
+
+    return c.json({ 
+      events: sorted,
+      observabilityDrift,
+      reason: observabilityDrift ? "artifacts_exist_without_events" : undefined
+    });
   } catch (e: any) {
     console.error("Failed to fetch events:", e);
     return c.json({ error: e.message }, 500);

@@ -171,9 +171,9 @@ export function registerTxCommands(program: Command) {
             const { readSignedTxArtifact } = await import("@hardkas/artifacts");
             const signedArtifact = await readSignedTxArtifact(signedPath);
 
-            if (!options.yes && signedArtifact.networkId !== "simnet") {
-              console.log(`Transaction is for network: ${signedArtifact.networkId}`);
-              console.log("Run with --yes to broadcast.");
+            if (!options.yes && signedArtifact.networkId !== "simulated" && signedArtifact.networkId !== "simnet") {
+              const { UI } = await import("../ui.js");
+              UI.dryRun();
               return;
             }
 
@@ -184,8 +184,31 @@ export function registerTxCommands(program: Command) {
               ...(options.url ? { url: options.url } : {})
             });
 
-            if (options.json) console.log(JSON.stringify(result, bigIntReplacer, 2));
-            else console.log(result.formatted);
+            if (options.json) {
+              console.log(JSON.stringify(result, bigIntReplacer, 2));
+            } else {
+              const { UI } = await import("../ui.js");
+              const isSimulated = result.networkName === "simulated" || result.networkName === "simnet";
+              
+              UI.causality(
+                isSimulated ? "Transaction simulated successfully" : "Transaction broadcast successfully",
+                {
+                  "Execution ID": result.executionId,
+                  "Artifact ID": result.txId,
+                  "Replay ID": result.replayId,
+                  "Network": result.networkName,
+                  "Execution Scope": isSimulated ? "local deterministic replay" : "network broadcast",
+                  "Artifact Written": result.receiptPath || ".hardkas/artifacts/...",
+                  "Projection Updated": "SQLite query-store",
+                  "Replay Status": isSimulated ? "deterministic reproducible" : "network state dependent",
+                  "Consensus Validated": isSimulated ? "NO" : "YES"
+                },
+                [
+                  "hardkas dashboard",
+                  `hardkas explain ${result.txId}`
+                ]
+              );
+            }
 
             if (options.track && result.accepted) {
               const { trackDeploymentInternal } = await import("../runners/deployment-runners.js");
@@ -199,6 +222,12 @@ export function registerTxCommands(program: Command) {
               });
             }
           } else if (options.from && options.to && options.amount) {
+            if (!options.yes && options.network !== "simulated" && options.network !== "simnet") {
+              const { UI } = await import("../ui.js");
+              UI.dryRun();
+              return;
+            }
+
             const result = await runTxFlow({
               ...options,
               amount: options.amount!,
@@ -209,8 +238,33 @@ export function registerTxCommands(program: Command) {
               config: loaded.config,
               ...(options.url ? { url: options.url } : {})
             });
-            if (options.json) console.log(JSON.stringify(result, bigIntReplacer, 2));
-            else console.log(result.steps.send.artifact?.formatted || "Flow completed");
+
+            if (options.json) {
+              console.log(JSON.stringify(result, bigIntReplacer, 2));
+            } else {
+              const { UI } = await import("../ui.js");
+              const sendResult = result.steps.send;
+              const isSimulated = options.network === "simulated" || options.network === "simnet";
+              
+              UI.causality(
+                isSimulated ? "Transaction simulated successfully" : "Transaction broadcast successfully",
+                {
+                  "Execution ID": `exec_${Date.now().toString(36)}`,
+                  "Artifact ID": sendResult?.artifact?.receipt?.artifactId || sendResult?.artifact?.txId || "unknown",
+                  "Replay ID": `replay_${(sendResult?.artifact?.txId || "unknown").substring(0,8)}`,
+                  "Network": options.network || "simulated",
+                  "Execution Scope": isSimulated ? "local deterministic replay" : "network broadcast",
+                  "Artifact Written": sendResult?.artifact?.receiptPath || ".hardkas/artifacts/...",
+                  "Projection Updated": "SQLite query-store",
+                  "Replay Status": isSimulated ? "deterministic reproducible" : "network state dependent",
+                  "Consensus Validated": isSimulated ? "NO" : "YES"
+                },
+                [
+                  "hardkas dashboard",
+                  `hardkas explain ${sendResult?.artifact?.txId || "unknown"}`
+                ]
+              );
+            }
           } else {
             console.error("Provide a path to a signed artifact or use --from, --to, --amount.");
             process.exitCode = 1;
@@ -237,8 +291,13 @@ export function registerTxCommands(program: Command) {
     .description(`Perform deep semantic verification of a transaction plan ${UI.maturity("preview")}`)
     .option("--json", "Output as JSON", false)
     .action(async (path, options) => {
-      const { runTxVerify } = await import("../runners/tx-verify-runner.js");
-      await runTxVerify({ path, ...options });
+      try {
+        const { runTxVerify } = await import("../runners/tx-verify-runner.js");
+        await runTxVerify({ path, json: options.json, workspaceRoot: process.cwd() });
+      } catch (e) {
+        handleError(e);
+        process.exitCode = 1;
+      }
     });
 
   tx.command("trace <txId>")

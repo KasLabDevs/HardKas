@@ -14,9 +14,12 @@ import {
   ArrowLeftRight, 
   Package, 
   RotateCw,
-  Box,
-  TrendingUp,
-  Cpu
+  Cpu,
+  Database,
+  FolderTree,
+  AlertTriangle,
+  CheckCircle2,
+  ListOrdered
 } from "lucide-react";
 import { StatusBadge } from "../components/StatusBadge";
 import { Link } from "react-router-dom";
@@ -52,10 +55,10 @@ export function OverviewPage() {
 
   const statCards = [
     {
-      label: "Simulated Accounts",
-      value: overview?.counts?.accounts ?? "0",
-      icon: <Users size={20} className="text-indigo-400" />,
-      path: "/accounts"
+      label: "Causal Events",
+      value: overview?.counts?.events ?? "0",
+      icon: <ListOrdered size={20} className="text-indigo-400" />,
+      path: "/events"
     },
     {
       label: "Total Transactions",
@@ -70,8 +73,8 @@ export function OverviewPage() {
       path: "/artifacts"
     },
     {
-      label: "Deterministic Replays",
-      value: overview?.counts?.replays ?? "0",
+      label: "Pending Replays",
+      value: overview?.counts?.pendingReplays ?? "0",
       icon: <RotateCw size={20} className="text-emerald-400" />,
       path: "/replay"
     }
@@ -79,24 +82,106 @@ export function OverviewPage() {
 
   return (
     <div className="space-y-8 animate-fade-in">
-      {/* Intro Hero */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 p-6 bg-gradient-to-r from-zinc-900/60 to-indigo-950/20 border border-zinc-800/80 rounded-2xl">
-        <div>
-          <h1 className="text-2xl font-black text-zinc-100 flex items-center gap-2 tracking-tight">
-            Deterministic Local Cockpit
-          </h1>
-          <p className="text-sm text-zinc-400 mt-1 leading-relaxed max-w-xl">
-            Deterministic local transaction lifecycle, replay verification, artifact lineage, and MetaMask / KasWare sandboxing.
-          </p>
+      {/* Workspace Runtime Summary */}
+      <div className="bg-zinc-900/60 border border-zinc-800/80 rounded-2xl overflow-hidden shadow-md">
+        <div className="px-6 py-4 border-b border-zinc-800/60 bg-zinc-950/40 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <Cpu size={20} className="text-indigo-400" />
+            <h1 className="text-lg font-black text-zinc-100 tracking-tight">Workspace Runtime Summary</h1>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="text-[10px] font-mono font-bold px-2 py-1 bg-zinc-800/50 border border-zinc-700 rounded-md text-zinc-400 uppercase">
+              Local Deterministic Runtime
+            </span>
+            <span className="text-[10px] font-mono font-bold px-2 py-1 bg-red-500/10 border border-red-500/20 text-red-400 rounded-md uppercase tracking-wider">
+              Consensus Validation: NO
+            </span>
+          </div>
         </div>
-        <div className="flex items-center gap-3">
-          <div className="p-3 bg-zinc-900/80 border border-zinc-800 rounded-xl flex items-center gap-3 shadow-md">
-            <Cpu size={24} className="text-emerald-400 animate-pulse" />
-            <div className="flex flex-col font-mono text-left">
-              <span className="text-[9px] uppercase tracking-widest text-zinc-500">Replay Status</span>
-              <span className={`text-xs font-bold ${overview?.replayVerification === "PASS" ? "text-emerald-400" : "text-amber-400"}`}>
-                {overview?.replayVerification ?? "UNVERIFIED"}
-              </span>
+        
+        <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="space-y-4">
+            <h3 className="text-[10px] uppercase font-bold tracking-widest text-zinc-500">State Architecture</h3>
+            
+            <div className="flex flex-col gap-3">
+              <div className="bg-zinc-950/50 border border-zinc-800 rounded-xl p-3 flex items-start gap-3">
+                <FolderTree className="text-emerald-400 mt-0.5" size={16} />
+                <div>
+                  <div className="text-xs font-bold text-zinc-200">State Authority</div>
+                  <div className="text-[10px] font-mono text-zinc-500 mt-0.5 truncate max-w-[250px]" title={overview?.workspaceRoot}>
+                    {overview?.artifactDir || ".hardkas/artifacts"}
+                  </div>
+                </div>
+              </div>
+              
+              <div className="bg-zinc-950/50 border border-zinc-800 rounded-xl p-3 flex items-start gap-3">
+                <Database className="text-amber-400 mt-0.5" size={16} />
+                <div>
+                  <div className="text-xs font-bold text-zinc-200">Projection Cache</div>
+                  <div className="text-[10px] font-mono text-zinc-500 mt-0.5">
+                    {overview?.queryStorePath || ".hardkas/store.db"}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <div className="space-y-4">
+            <h3 className="text-[10px] uppercase font-bold tracking-widest text-zinc-500">Semantic Runtime State</h3>
+            
+            <div className={`border rounded-xl p-4 flex flex-col h-[calc(100%-28px)] justify-between ${
+              overview?.runtimeState === "EMPTY" ? "bg-zinc-950/50 border-zinc-800" :
+              overview?.runtimeState === "ACTIVE" ? "bg-blue-950/20 border-blue-900/50" :
+              overview?.runtimeState === "PENDING" ? "bg-amber-950/20 border-amber-900/50" :
+              overview?.runtimeState === "DEGRADED" ? "bg-orange-950/20 border-orange-900/50" :
+              overview?.runtimeState === "CORRUPTED" ? "bg-red-950/20 border-red-900/50" :
+              overview?.runtimeState === "VERIFIED" ? "bg-emerald-950/20 border-emerald-900/50" :
+              "bg-zinc-950/50 border-zinc-800"
+            }`}>
+              <div className="flex items-start gap-3">
+                <div className={`mt-0.5 ${
+                  overview?.runtimeState === "EMPTY" ? "text-zinc-400" :
+                  overview?.runtimeState === "ACTIVE" ? "text-blue-400" :
+                  overview?.runtimeState === "PENDING" ? "text-amber-400" :
+                  overview?.runtimeState === "DEGRADED" ? "text-orange-400" :
+                  overview?.runtimeState === "CORRUPTED" ? "text-red-400" :
+                  overview?.runtimeState === "VERIFIED" ? "text-emerald-400" :
+                  "text-zinc-400"
+                }`}>
+                  {overview?.runtimeState === "VERIFIED" ? <CheckCircle2 size={20} /> :
+                   overview?.runtimeState === "CORRUPTED" ? <AlertTriangle size={20} /> :
+                   overview?.runtimeState === "EMPTY" ? <Package size={20} /> :
+                   <Activity size={20} />}
+                </div>
+                <div>
+                  <div className="text-sm font-bold tracking-wide">
+                    {overview?.runtimeState === "PENDING" ? "PENDING VERIFICATION" : overview?.runtimeState || "UNKNOWN"}
+                  </div>
+                  <div className="text-xs text-zinc-400 mt-1 leading-relaxed">
+                    {overview?.runtimeReason || "Loading..."}
+                  </div>
+                </div>
+              </div>
+
+              {overview?.guarantees && (
+                <div className="mt-4 grid grid-cols-2 gap-2 pt-4 border-t border-zinc-800/50">
+                  <div>
+                    <div className="text-[9px] uppercase tracking-wider text-zinc-500">Artifact Integrity</div>
+                    <div className={`text-xs font-mono font-bold ${overview.guarantees.artifactIntegrity === "available" ? "text-emerald-400" : overview.guarantees.artifactIntegrity === "failed" ? "text-red-400" : "text-zinc-400"}`}>{overview.guarantees.artifactIntegrity}</div>
+                  </div>
+                  <div>
+                    <div className="text-[9px] uppercase tracking-wider text-zinc-500">Local Replay</div>
+                    <div className={`text-xs font-mono font-bold ${overview.guarantees.localReplay === "verified" ? "text-emerald-400" : overview.guarantees.localReplay === "failed" ? "text-red-400" : "text-zinc-400"}`}>{overview.guarantees.localReplay}</div>
+                  </div>
+                </div>
+              )}
+
+              {overview?.recommendedAction && (
+                <div className="mt-4 bg-black/40 rounded p-2 border border-white/5">
+                  <div className="text-[9px] uppercase tracking-wider text-zinc-500 mb-1">Recommended Next Step</div>
+                  <code className="text-xs font-mono text-zinc-300 select-all">{overview.recommendedAction}</code>
+                </div>
+              )}
             </div>
           </div>
         </div>

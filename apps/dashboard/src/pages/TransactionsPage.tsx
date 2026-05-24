@@ -1,7 +1,7 @@
 import React, { useState } from "react";
-import { useTransactions } from "@hardkas/react";
+import { useTransactions, useOverview } from "@hardkas/react";
 import { Link } from "react-router-dom";
-import { ArrowLeftRight, Clock, Box, Eye, Check, Search } from "lucide-react";
+import { ArrowLeftRight, Clock, Box, Eye, Check, Search, AlertTriangle, RotateCw } from "lucide-react";
 import { ReplayBadge } from "../components/ReplayBadge";
 import { EmptyState } from "../components/EmptyState";
 
@@ -38,6 +38,7 @@ function safeBigInt(val: any): bigint {
 
 export function TransactionsPage() {
   const { data: transactions, isLoading } = useTransactions();
+  const { data: overview } = useOverview();
   const [searchTerm, setSearchTerm] = useState("");
 
   const filteredTransactions = (transactions || []).filter((tx: any) => {
@@ -133,13 +134,22 @@ export function TransactionsPage() {
                         </span>
                       </td>
 
-                      {/* Transaction ID */}
+                      {/* Transaction ID with DEGRADED check */}
                       <td className="px-6 py-4 font-mono font-bold text-zinc-200">
-                        {tx.txId ? (
-                          <span title={tx.txId}>{truncate(tx.txId, 6)}</span>
-                        ) : (
-                          <span className="text-zinc-500 italic text-[10px]">Unsubmitted Plan</span>
-                        )}
+                        <div className="flex flex-col gap-1">
+                          {tx.txId ? (
+                            <span className="text-xs font-bold text-zinc-200 tracking-wide select-all" title={tx.txId}>
+                              {truncate(tx.txId, 6)}
+                            </span>
+                          ) : (
+                            <span className="text-zinc-500 italic text-[10px]">Unsubmitted Plan</span>
+                          )}
+                          {!tx.artifactId && (
+                            <span className="text-[9px] font-mono font-bold px-1.5 py-0.5 rounded border uppercase tracking-wider bg-orange-500/10 text-orange-400 border-orange-500/20 max-w-max">
+                              DEGRADED PROJECTION
+                            </span>
+                          )}
+                        </div>
                       </td>
 
                       {/* Sender -> Recipient */}
@@ -168,13 +178,28 @@ export function TransactionsPage() {
 
                       {/* Actions */}
                       <td className="px-6 py-4 text-right">
-                        <Link 
-                          to={`/transactions/${tx.id}`}
-                          className="inline-flex items-center gap-1.5 px-3 py-1 bg-zinc-900 border border-zinc-800 hover:border-zinc-700 hover:bg-zinc-850 text-zinc-300 font-sans font-semibold rounded-lg text-[10px] transition-all group-hover:border-zinc-600"
-                        >
-                          <Eye size={12} />
-                          Details
-                        </Link>
+                        <div className="flex items-center justify-end gap-2">
+                          <Link 
+                            to={`/artifacts/${tx.artifactId}`}
+                            title="Inspect Truth Artifact"
+                            className="inline-flex items-center justify-center w-7 h-7 bg-zinc-900 border border-zinc-800 hover:border-zinc-700 hover:bg-zinc-800 text-zinc-400 hover:text-cyan-400 rounded-lg transition-all"
+                          >
+                            <Box size={14} />
+                          </Link>
+                          <Link 
+                            to={`/replay`}
+                            title="Verify Replay"
+                            className="inline-flex items-center justify-center w-7 h-7 bg-zinc-900 border border-zinc-800 hover:border-zinc-700 hover:bg-zinc-800 text-zinc-400 hover:text-emerald-400 rounded-lg transition-all"
+                          >
+                            <RotateCw size={14} />
+                          </Link>
+                          <Link 
+                            to={`/transactions/${tx.id}`}
+                            className="inline-flex items-center gap-1.5 px-3 py-1 bg-zinc-900 border border-zinc-800 hover:border-zinc-700 hover:bg-zinc-850 text-zinc-300 font-sans font-semibold rounded-lg text-[10px] transition-all group-hover:border-zinc-600"
+                          >
+                            Explain
+                          </Link>
+                        </div>
                       </td>
                     </tr>
                   );
@@ -183,11 +208,25 @@ export function TransactionsPage() {
             </table>
           </div>
         </div>
+      ) : overview?.counts && overview.counts.artifacts > 0 ? (
+        <div className="bg-amber-950/20 border border-amber-900/50 rounded-2xl p-8 flex flex-col items-center justify-center text-center">
+          <div className="w-16 h-16 bg-amber-500/10 rounded-full flex items-center justify-center mb-4">
+            <Box size={32} className="text-amber-400" />
+          </div>
+          <h2 className="text-lg font-black text-amber-100 mb-2 tracking-tight">No Transaction Receipts Indexed</h2>
+          <p className="text-sm text-amber-400/80 max-w-md mb-6 leading-relaxed">
+            Runtime artifacts exist, but none of them are transaction receipts. The existing artifacts are likely just plans or unsigned envelopes.
+          </p>
+          <div className="bg-zinc-950 border border-zinc-900 rounded-lg p-3 w-full max-w-md flex flex-col gap-2 font-mono text-xs">
+            <span className="text-zinc-500 uppercase tracking-wider text-[9px] font-sans font-bold">Run to produce a receipt:</span>
+            <span className="text-amber-300 select-all">hardkas tx send --yes</span>
+          </div>
+        </div>
       ) : (
         <EmptyState
           title="No Transactions Found"
           description="It looks like you haven't sent any local transactions yet. Send a transaction using the HardKAS CLI to trigger the auto-indexer."
-          command="hardkas tx send --direct --from alice --to bob --amount 1500"
+          command="hardkas tx send --from alice --to bob --amount 10 --yes"
           icon={<ArrowLeftRight size={32} />}
         />
       )}

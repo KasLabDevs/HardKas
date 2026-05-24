@@ -66,8 +66,25 @@ export async function runUp() {
     }
     console.log("");
 
-    UI.info("\x1b[32m✓\x1b[0m \x1b[1mHardKAS is UP and ready for development.\x1b[0m");
-    UI.footer("Try running: pnpm example:localnet");
+    const port = "7420";
+    console.log(pc.green(`\n✔ HardKAS Runtime Started\n`));
+    console.log(`  ${pc.dim("Dashboard:")}`);
+    console.log(`    ${pc.white("http://localhost:" + port)}\n`);
+    console.log(`  ${pc.dim("Runtime:")}`);
+    console.log(`    ${pc.white("local deterministic execution environment")}\n`);
+    console.log(`  ${pc.dim("State Authority:")}`);
+    console.log(`    ${pc.white("filesystem artifacts")}\n`);
+    console.log(`  ${pc.dim("Projection Layer:")}`);
+    console.log(`    ${pc.white("SQLite query-store")}\n`);
+    console.log(`  ${pc.dim("Open the dashboard to inspect:")}`);
+    console.log(`    - ${pc.white("event timeline")}`);
+    console.log(`    - ${pc.white("provenance graph")}`);
+    console.log(`    - ${pc.white("replay state")}`);
+    console.log(`    - ${pc.white("stale diagnostics")}\n`);
+
+    const { runDevServer } = await import("./dev-server-runner.js");
+    await runDevServer({ port, open: true, host: "localhost", unsafeExternal: false, json: false });
+
   } catch (error) {
     throw error;
   }

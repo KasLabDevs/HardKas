@@ -8,10 +8,13 @@ export interface ArtifactVerifyOptions {
   json?: boolean;
   recursive?: boolean;
   strict?: boolean;
+  workspaceRoot: string;
 }
 
 export async function runArtifactVerify(options: ArtifactVerifyOptions) {
-  const absolutePath = path.resolve(process.cwd(), options.path);
+  const { Hardkas } = await import("@hardkas/sdk");
+  const sdk = await Hardkas.open({ cwd: options.workspaceRoot });
+  const absolutePath = sdk.workspace.resolvePath(options.path);
   
   if (!fs.existsSync(absolutePath)) {
     UI.error(`Path not found: ${options.path}`);

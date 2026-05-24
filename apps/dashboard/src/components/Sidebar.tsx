@@ -9,7 +9,8 @@ import {
   Wallet,
   Activity,
   Box,
-  ListTree
+  ListTree,
+  GitBranch
 } from "lucide-react";
 import { useOverview } from "@hardkas/react";
 
@@ -40,6 +41,12 @@ export function Sidebar() {
       label: "Artifacts",
       icon: <Package size={18} />,
       badge: overview?.counts?.artifacts ?? null
+    },
+    {
+      to: "/workflows",
+      label: "Workflows",
+      icon: <GitBranch size={18} />,
+      badge: null
     },
     {
       to: "/replay",
@@ -94,7 +101,7 @@ export function Sidebar() {
       <div className="p-4 border-t border-[var(--border-muted)] bg-zinc-950/20">
         <div className="flex items-center gap-2 text-[10px] text-zinc-500 font-mono">
           <Activity size={12} className="text-zinc-500 animate-pulse" />
-          <span>v0.5.5-alpha</span>
+          <span>v0.6.0-alpha</span>
         </div>
       </div>
     </aside>

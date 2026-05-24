@@ -15,7 +15,7 @@ export interface ActivityEvent {
 }
 
 export function useActivity() {
-  const { config, subscribe } = useHardKas();
+  const { config, subscribe , apiFetch } = useHardKas();
   const queryClient = useQueryClient();
 
   useEffect(() => {
@@ -35,7 +35,7 @@ export function useActivity() {
       try {
         const baseUrl = config.devServerUrl || "";
         const url = baseUrl ? (baseUrl.endsWith("/") ? `${baseUrl}api/activity` : `${baseUrl}/api/activity`) : "/api/activity";
-        const response = await fetch(url);
+        const response = await apiFetch(url);
         if (!response.ok) return [];
         const data = await response.json();
         return data.activity || [];

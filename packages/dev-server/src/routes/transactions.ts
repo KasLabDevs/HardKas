@@ -8,6 +8,11 @@ interface UnifiedTransaction {
   txId?: string;
   planId?: string;
   signedId?: string;
+  receiptId?: string;
+  artifactId: string;
+  artifactPath: string;
+  artifactKind: string;
+  integrityStatus: string;
   status: string;
   from: string;
   to: string;
@@ -47,6 +52,11 @@ transactionsRoutes.get("/", async (c) => {
         id: txId,
         txId,
         signedId: r.payload.sourceSignedId,
+        receiptId: r.artifactId,
+        artifactId: r.artifactId,
+        artifactPath: r.path,
+        artifactKind: r.schema,
+        integrityStatus: r.kind === "CORRUPTED" ? "CORRUPTED" : "OK",
         status: r.payload.status || "confirmed",
         from: r.payload.from?.address || r.payload.from || "unknown",
         to: r.payload.to?.address || r.payload.to || "unknown",
@@ -69,7 +79,7 @@ transactionsRoutes.get("/", async (c) => {
       if (txId && unifiedMap.has(txId)) {
         const existing = unifiedMap.get(txId)!;
         existing.signedId = signedId;
-        existing.planId = s.payload.sourcePlanId;
+        if (!existing.planId) existing.planId = s.payload.sourcePlanId;
         continue;
       }
 
@@ -81,6 +91,10 @@ transactionsRoutes.get("/", async (c) => {
         txId,
         signedId,
         planId: s.payload.sourcePlanId,
+        artifactId: s.artifactId,
+        artifactPath: s.path,
+        artifactKind: s.schema,
+        integrityStatus: s.kind === "CORRUPTED" ? "CORRUPTED" : "OK",
         status: "signed",
         from: s.payload.from?.address || s.payload.from || "unknown",
         to: s.payload.to?.address || s.payload.to || "unknown",
@@ -112,6 +126,10 @@ transactionsRoutes.get("/", async (c) => {
       unifiedMap.set(planId, {
         id: planId,
         planId,
+        artifactId: p.artifactId,
+        artifactPath: p.path,
+        artifactKind: p.schema,
+        integrityStatus: p.kind === "CORRUPTED" ? "CORRUPTED" : "OK",
         status: p.payload.status || "built",
         from: p.payload.from?.address || p.payload.from || "unknown",
         to: p.payload.to?.address || p.payload.to || "unknown",
@@ -135,7 +153,7 @@ transactionsRoutes.get("/", async (c) => {
         utx.sourceTimestamp = utx.timestamp;
         
         if (replay) {
-          utx.lastReplayTimestamp = replay.createdAt || replay.timestamp;
+          utx.lastReplayTimestamp = replay.createdAt || replay.timestamp || replay.payload?.createdAt;
           
           const planOk = replay.payload.planOk !== false;
           const receiptOk = replay.payload.receiptOk !== false;

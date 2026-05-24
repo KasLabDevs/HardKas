@@ -14,7 +14,7 @@ export function useKaspaWallet() {
 }
 
 export function useKaspaBalance(options: { refetchInterval?: number } = {}) {
-  const { config, subscribe } = useHardKas();
+  const { config, subscribe , apiFetch } = useHardKas();
   const queryClient = useQueryClient();
   const { address, name } = useKaspaWallet();
   const { data: health } = useHardKasHealth();
@@ -45,7 +45,7 @@ export function useKaspaBalance(options: { refetchInterval?: number } = {}) {
         try {
           const baseUrl = config.devServerUrl || "";
           const fetchUrl = baseUrl ? (baseUrl.endsWith("/") ? `${baseUrl}api/accounts` : `${baseUrl}/api/accounts`) : "/api/accounts";
-          const res = await fetch(fetchUrl);
+          const res = await apiFetch(fetchUrl);
           if (res.ok) {
             const data = await res.json();
             const match = (data.accounts || []).find((a: any) => a.address === address);
@@ -115,7 +115,7 @@ export function useKaspaBalance(options: { refetchInterval?: number } = {}) {
       }
 
       try {
-        const response = await fetch(url, {
+        const response = await apiFetch(url, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({

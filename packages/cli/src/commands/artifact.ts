@@ -14,7 +14,7 @@ export function registerArtifactCommands(program: Command) {
     .option("--strict", "Perform deep semantic and operational safety verification", false)
     .action(async (path: string, options: any) => {
       try {
-        await runArtifactVerify({ path, ...options });
+        await runArtifactVerify({ path, ...options, workspaceRoot: process.cwd() });
       } catch (e) {
         handleError(e);
         process.exitCode = 1;
@@ -27,7 +27,7 @@ export function registerArtifactCommands(program: Command) {
     .option("--json", "Output as JSON", false)
     .action(async (path: string, options: { json: boolean }) => {
       try {
-        await runArtifactExplain({ path, ...options });
+        await runArtifactExplain({ path, ...options, workspaceRoot: process.cwd() });
       } catch (e) {
         handleError(e);
         process.exitCode = 1;
@@ -41,7 +41,7 @@ export function registerArtifactCommands(program: Command) {
     .action(async (path: string, options: { json: boolean }) => {
       try {
         const { runArtifactLineage } = await import("../runners/artifact-lineage-runner.js");
-        await runArtifactLineage({ path });
+        await runArtifactLineage({ path, workspaceRoot: process.cwd(), ...options });
       } catch (e) {
         handleError(e);
         process.exitCode = 1;

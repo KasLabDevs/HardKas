@@ -53,6 +53,7 @@ export interface QueryBackend {
   doctor(): Promise<any>;
   migrate(): Promise<{ applied: number }>;
   sync(options?: { strict?: boolean }): Promise<any>;
+  syncPaths(paths: string[], options?: { strict?: boolean }): Promise<any>;
   rebuild(options?: { strict?: boolean }): Promise<any>;
   executeRawSql(sql: string): Promise<any[]>;
   findReceipts(filters?: { status?: string; networkId?: string }): Promise<ArtifactDocument[]>;
@@ -262,6 +263,13 @@ export class SqliteQueryBackend implements QueryBackend {
     const { HardkasIndexer } = await import("./indexer.js");
     const indexer = new HardkasIndexer(this.store.getDatabase(), options);
     return indexer.sync();
+  }
+
+  async syncPaths(paths: string[], options?: { strict?: boolean }): Promise<any> {
+    this.store.migrate();
+    const { HardkasIndexer } = await import("./indexer.js");
+    const indexer = new HardkasIndexer(this.store.getDatabase(), options);
+    return indexer.syncPaths(paths);
   }
 
   async executeRawSql(sql: string): Promise<any[]> {

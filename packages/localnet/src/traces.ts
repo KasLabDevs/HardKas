@@ -41,7 +41,7 @@ export interface StoredSimulatedTxTrace extends HardkasArtifactBase {
 }
 
 export function getDefaultTracesDir(cwd: string = process.cwd()): string {
-  return path.join(cwd, ".hardkas", "traces");
+  return path.join(cwd, ".hardkas", "artifacts");
 }
 
 export function getTracePath(txId: string, cwd?: string): string {

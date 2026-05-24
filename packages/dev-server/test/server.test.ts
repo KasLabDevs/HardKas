@@ -27,11 +27,17 @@ describe("Dev Server", () => {
   });
 
   describe("API Endpoints", () => {
-    const server = createDevServer({ port: 0, host: "localhost" });
+    const server = createDevServer({ port: 7420, host: "localhost" });
     const app = server.app;
+    const token = (server as any).token;
 
     it("returns health status", async () => {
-      const res = await app.request("/api/health", { headers: { host: "localhost" } });
+      const res = await app.request("/api/health", { 
+        headers: { 
+          host: "localhost:7420",
+          Authorization: `Bearer ${token}`
+        } 
+      });
       expect(res.status).toBe(200);
       const json = await res.json();
       expect(["healthy", "stale", "offline"]).toContain(json.status);
@@ -39,7 +45,12 @@ describe("Dev Server", () => {
     });
 
     it("returns active session (null if none)", async () => {
-      const res = await app.request("/api/session", { headers: { host: "localhost" } });
+      const res = await app.request("/api/session", { 
+        headers: { 
+          host: "localhost:7420",
+          Authorization: `Bearer ${token}`
+        } 
+      });
       expect(res.status).toBe(200);
       const json = await res.json();
       // Should be null if no session file exists in current cwd
@@ -47,7 +58,12 @@ describe("Dev Server", () => {
     });
 
     it("does not expose secrets in health response", async () => {
-      const res = await app.request("/api/health", { headers: { host: "localhost" } });
+      const res = await app.request("/api/health", { 
+        headers: { 
+          host: "localhost:7420",
+          Authorization: `Bearer ${token}`
+        } 
+      });
       const text = await res.text();
       expect(text).not.toContain("privateKey");
       expect(text).not.toContain("mnemonic");
@@ -57,28 +73,32 @@ describe("Dev Server", () => {
 
   describe("CORS Origin Helper", () => {
     it("handles undefined origin safely", () => {
-      expect(resolveCorsOrigin(undefined, false)).toBeUndefined();
-      expect(resolveCorsOrigin(undefined, true)).toBeUndefined();
+      expect(resolveCorsOrigin(undefined, { unsafeExternal: false, port: 7420 })).toBeUndefined();
+      expect(resolveCorsOrigin(undefined, { unsafeExternal: true, port: 7420 })).toBeUndefined();
     });
 
-    it("allows localhost origins", () => {
-      expect(resolveCorsOrigin("http://localhost:5173", false)).toBe("http://localhost:5173");
+    it("allows localhost origins on configured port", () => {
+      expect(resolveCorsOrigin("http://localhost:7420", { unsafeExternal: false, port: 7420 })).toBe("http://localhost:7420");
     });
 
-    it("allows 127.0.0.1 origins", () => {
-      expect(resolveCorsOrigin("http://127.0.0.1:5173", false)).toBe("http://127.0.0.1:5173");
+    it("allows Vite dashboard development localhost origin", () => {
+      expect(resolveCorsOrigin("http://localhost:5173", { unsafeExternal: false, port: 7420 })).toBe("http://localhost:5173");
     });
 
-    it("allows IPv6 loopback origins", () => {
-      expect(resolveCorsOrigin("http://[::1]:5173", false)).toBe("http://[::1]:5173");
+    it("allows Vite dashboard development 127.0.0.1 origin", () => {
+      expect(resolveCorsOrigin("http://127.0.0.1:5173", { unsafeExternal: false, port: 7420 })).toBe("http://127.0.0.1:5173");
+    });
+
+    it("allows Vite dashboard development IPv6 loopback origin", () => {
+      expect(resolveCorsOrigin("http://[::1]:5173", { unsafeExternal: false, port: 7420 })).toBe("http://[::1]:5173");
     });
 
     it("rejects unauthorized remote origins by default", () => {
-      expect(resolveCorsOrigin("http://malicious.com", false)).toBeNull();
+      expect(resolveCorsOrigin("http://malicious.com", { unsafeExternal: false, port: 7420 })).toBeNull();
     });
 
     it("allows unauthorized remote origins when unsafeExternal is enabled", () => {
-      expect(resolveCorsOrigin("http://external-host.com", true)).toBe("http://external-host.com");
+      expect(resolveCorsOrigin("http://external-host.com", { unsafeExternal: true, port: 7420 })).toBe("http://external-host.com");
     });
   });
 });

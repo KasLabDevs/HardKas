@@ -16,7 +16,7 @@ export interface ArtifactSummary {
 }
 
 export function useArtifacts(schemaFilter?: string) {
-  const { config, subscribe } = useHardKas();
+  const { config, subscribe , apiFetch } = useHardKas();
   const queryClient = useQueryClient();
 
   useEffect(() => {
@@ -36,7 +36,7 @@ export function useArtifacts(schemaFilter?: string) {
         const baseUrl = config.devServerUrl || "";
         const queryParams = schemaFilter ? `?schema=${schemaFilter}` : "";
         const url = baseUrl ? (baseUrl.endsWith("/") ? `${baseUrl}api/artifacts${queryParams}` : `${baseUrl}/api/artifacts${queryParams}`) : `/api/artifacts${queryParams}`;
-        const response = await fetch(url);
+        const response = await apiFetch(url);
         if (!response.ok) return [];
         const data = await response.json();
         return data.artifacts || [];
@@ -50,7 +50,7 @@ export function useArtifacts(schemaFilter?: string) {
 }
 
 export function useArtifact(id: string) {
-  const { config, subscribe } = useHardKas();
+  const { config, subscribe , apiFetch } = useHardKas();
   const queryClient = useQueryClient();
 
   useEffect(() => {
@@ -70,7 +70,7 @@ export function useArtifact(id: string) {
       try {
         const baseUrl = config.devServerUrl || "";
         const url = baseUrl ? (baseUrl.endsWith("/") ? `${baseUrl}api/artifacts/${id}` : `${baseUrl}/api/artifacts/${id}`) : `/api/artifacts/${id}`;
-        const response = await fetch(url);
+        const response = await apiFetch(url);
         if (!response.ok) return null;
         const data = await response.json();
         return data.artifact || null;

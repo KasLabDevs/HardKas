@@ -8,10 +8,14 @@ export interface ReplayDiffOptions {
   idA: string;
   idB: string;
   json?: boolean;
+  network: string;
+  workspaceRoot: string;
 }
 
 export async function runReplayDiff(options: ReplayDiffOptions) {
-  const artifactDir = path.resolve(process.cwd(), ".hardkas", "artifacts");
+  const { Hardkas } = await import("@hardkas/sdk");
+  const sdk = await Hardkas.open({ cwd: options.workspaceRoot });
+  const artifactDir = sdk.workspace.artifactsDir;
   
   const pathA = path.join(artifactDir, `${options.idA}.json`);
   const pathB = path.join(artifactDir, `${options.idB}.json`);

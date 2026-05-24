@@ -18,7 +18,7 @@ export function calculateUtxoSetHash(utxos: LocalnetUtxo[]): string {
  * Calculates hash of the account set (sorted by address).
  */
 export function calculateAccountsHash(accounts: LocalnetAccount[]): string {
-  const sorted = [...accounts].sort((a, b) => a.address.localeCompare(b.address));
+  const sorted = [...(accounts || [])].sort((a, b) => a.address.localeCompare(b.address));
   return calculateContentHash(sorted);
 }
 

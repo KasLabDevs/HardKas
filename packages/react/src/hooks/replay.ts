@@ -19,8 +19,15 @@ export interface ReplaySummary {
   createdAt: string;
 }
 
+export interface UseReplayStatusResponse {
+  replays: ReplaySummary[];
+  pendingReplays: any[];
+  pendingReplay: boolean;
+  reason?: string;
+}
+
 export function useReplayStatus() {
-  const { config, subscribe } = useHardKas();
+  const { config, subscribe , apiFetch } = useHardKas();
   const queryClient = useQueryClient();
 
   useEffect(() => {
@@ -35,17 +42,42 @@ export function useReplayStatus() {
 
   return useQuery({
     queryKey: ["hardkas", "replay"],
-    queryFn: async (): Promise<ReplaySummary[]> => {
+    queryFn: async (): Promise<UseReplayStatusResponse> => {
       try {
         const baseUrl = config.devServerUrl || "";
         const url = baseUrl ? (baseUrl.endsWith("/") ? `${baseUrl}api/replay` : `${baseUrl}/api/replay`) : "/api/replay";
-        const response = await fetch(url);
-        if (!response.ok) return [];
+        const response = await apiFetch(url);
+        if (!response.ok) return { replays: [], pendingReplays: [], pendingReplay: false };
         const data = await response.json();
-        return data.replays || [];
+        
+        const formatReplay = (r: any): ReplaySummary => {
+          return {
+            artifactId: r.artifactId,
+            txId: r.payload?.txId || r.txId,
+            planOk: r.payload?.planOk ?? false,
+            receiptOk: r.payload?.receiptOk ?? false,
+            invariantsOk: r.payload?.invariantsOk ?? false,
+            ok: (r.payload?.planOk && r.payload?.receiptOk && r.payload?.invariantsOk) ? true : false,
+            checks: r.payload?.checks || {
+              workflowDeterministic: "unknown",
+              consensusValidation: "unknown",
+              l2BridgeCorrectness: "unknown"
+            },
+            errors: r.payload?.errors || [],
+            divergencesCount: r.payload?.divergencesCount || 0,
+            createdAt: r.createdAt || r.timestamp || new Date().toISOString()
+          };
+        };
+        
+        return {
+          replays: (data.replays || []).map(formatReplay),
+          pendingReplays: data.pendingReplays || [],
+          pendingReplay: data.pendingReplay || false,
+          reason: data.reason
+        };
       } catch (e) {
         console.error("Failed to fetch replay status from dev server:", e);
-        return [];
+        return { replays: [], pendingReplays: [], pendingReplay: false };
       }
     },
     staleTime: 30000,
@@ -53,7 +85,7 @@ export function useReplayStatus() {
 }
 
 export function useReplayDetail(txId: string) {
-  const { config, subscribe } = useHardKas();
+  const { config, subscribe , apiFetch } = useHardKas();
   const queryClient = useQueryClient();
 
   useEffect(() => {
@@ -73,7 +105,7 @@ export function useReplayDetail(txId: string) {
       try {
         const baseUrl = config.devServerUrl || "";
         const url = baseUrl ? (baseUrl.endsWith("/") ? `${baseUrl}api/replay/${txId}` : `${baseUrl}/api/replay/${txId}`) : `/api/replay/${txId}`;
-        const response = await fetch(url);
+        const response = await apiFetch(url);
         if (!response.ok) return null;
         const data = await response.json();
         return data.replay || null;

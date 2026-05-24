@@ -53,10 +53,7 @@ describe("useHardKasHealth", () => {
       l2: { status: "ok", chainId: 19416, blockHeight: 500, rpcUrl: "rpc2" }
     };
 
-    globalFetch.mockResolvedValueOnce({
-      ok: true,
-      json: async () => mockHealth
-    });
+    globalFetch.mockResolvedValueOnce(new Response(JSON.stringify(mockHealth)));
 
     const { result } = renderHook(() => useHardKasHealth(), { wrapper });
 

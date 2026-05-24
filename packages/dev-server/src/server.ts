@@ -2,6 +2,7 @@ import { Hono } from "hono";
 import { serve } from "@hono/node-server";
 import { logger } from "hono/logger";
 import { cors } from "hono/cors";
+import crypto from "node:crypto";
 import { sessionRoutes } from "./routes/session.js";
 import { healthRoutes } from "./routes/health.js";
 import { bridgeRoutes } from "./routes/bridge.js";
@@ -11,7 +12,10 @@ import { sandboxRoutes } from "./routes/sandbox.js";
 import { eventsRoutes } from "./routes/events.js";
 import { accountsRoutes } from "./routes/accounts.js";
 import { transactionsRoutes } from "./routes/transactions.js";
+import { artifactsRoutes } from "./routes/artifacts.js";
 import { streamRoutes } from "./stream.js";
+import { overviewRoutes } from "./routes/overview.js";
+import { replayRoutes } from "./routes/replay.js";
 import { serveStatic } from "@hono/node-server/serve-static";
 import path from "node:path";
 import fs from "node:fs";
@@ -20,6 +24,8 @@ import open from "open";
 import { loadSessionStoreWithDiagnostics } from "@hardkas/sessions";
 import { HARDKAS_VERSION } from "@hardkas/artifacts";
 
+import { startHardkasWatcher } from "./watcher.js";
+
 export interface DevServerConfig {
   port: number;
   host: string;
@@ -27,43 +33,106 @@ export interface DevServerConfig {
   open?: boolean;
 }
 
-export function resolveCorsOrigin(origin: string | undefined, unsafeExternal: boolean): string | null | undefined {
+export function resolveCorsOrigin(
+  origin: string | undefined,
+  config: { unsafeExternal: boolean; port: number }
+): string | null | undefined {
   if (!origin) return origin;
-  if (
-    origin.includes("localhost") ||
-    origin.includes("127.0.0.1") ||
-    origin.includes("[::1]")
-  ) {
+
+  const allowedLocalPrefixes = [
+    `http://localhost:${config.port}`,
+    `http://127.0.0.1:${config.port}`,
+    `http://[::1]:${config.port}`,
+    `http://localhost:5173`,
+    `http://127.0.0.1:5173`,
+    `http://[::1]:5173`
+  ];
+
+  if (allowedLocalPrefixes.some(prefix => origin === prefix || origin.startsWith(prefix + "/"))) {
     return origin;
   }
-  return unsafeExternal ? origin : null;
+
+  if (config.unsafeExternal) {
+    return origin;
+  }
+
+  return null;
 }
 
 export function createDevServer(config: DevServerConfig) {
   const app = new Hono();
+  
+  // Generate cryptographically secure session token on server boot or reuse persistent env token
+  const devServerToken = process.env.HARDKAS_DEV_TOKEN || crypto.randomBytes(32).toString("hex");
 
   app.use("*", logger());
-  app.use("*", cors({
-    origin: (origin) => resolveCorsOrigin(origin, !!config.unsafeExternal) ?? null
-  }));
 
-  // Local-only guard
+  // 1. Host Header Validation (DNS Rebinding Defense)
   app.use("*", async (c, next) => {
-    const host = c.req.header("host") || "";
-    const isLocal = host.includes("localhost") || host.includes("127.0.0.1") || host.includes("::1");
-    
-    if (!isLocal && !config.unsafeExternal) {
-      return c.json({ error: "Access denied: HardKas Dev Server is restricted to localhost by default. Use --unsafe-external to allow remote access." }, 403);
+    if (!config.unsafeExternal) {
+      const host = c.req.header("Host") || c.req.header("host") || "";
+      const allowedHosts = [
+        `localhost:${config.port}`,
+        `127.0.0.1:${config.port}`,
+        `[::1]:${config.port}`
+      ];
+      if (!allowedHosts.includes(host)) {
+        return c.json({ error: `Forbidden: Host '${host}' is not allowed for this server session.` }, 403);
+      }
     }
     await next();
   });
 
-  app.get("/", (c) => c.json({ 
-    name: "HardKas Dev Server", 
-    version: HARDKAS_VERSION,
-    status: "running" 
+  // 2. Strict CORS Configuration
+  app.use("*", cors({
+    origin: (origin) => resolveCorsOrigin(origin, { unsafeExternal: !!config.unsafeExternal, port: config.port }) ?? null
   }));
 
+  // 3. Bearer Token Authentication Middleware
+  app.use("/api/*", async (c, next) => {
+    const authHeader = c.req.header("Authorization");
+    const queryToken = c.req.query("token");
+    let token = "";
+    
+    if (authHeader && authHeader.startsWith("Bearer ")) {
+      token = authHeader.substring(7);
+    } else if (queryToken) {
+      token = queryToken;
+    }
+
+    if (token !== devServerToken) {
+      return c.json({ error: "Unauthorized: Invalid or missing bearer token." }, 401);
+    }
+    await next();
+  });
+
+  // 4. Custom CSRF Mutation Header Middleware
+  app.use("/api/*", async (c, next) => {
+    const method = c.req.method.toUpperCase();
+    if (["POST", "PUT", "PATCH", "DELETE"].includes(method)) {
+      const csrfHeader = c.req.header("X-Hardkas-Request");
+      if (csrfHeader !== "true") {
+        return c.json({ error: "Forbidden: Missing required CSRF protection header X-Hardkas-Request: true" }, 403);
+      }
+    }
+    await next();
+  });
+
+  // Inject Generation ID to all API responses
+  app.use("/api/*", async (c, next) => {
+    await next();
+    try {
+      const { getQueryBackend } = await import("./db.js");
+      const backend = getQueryBackend();
+      if (backend.isReady()) {
+        const rows = await backend.executeRawSql("SELECT value FROM metadata WHERE key = 'generation_id'");
+        if (rows && rows.length > 0) {
+          c.header("X-Hardkas-Generation", rows[0].value);
+        }
+      }
+    } catch(e) {}
+  });
+  
   app.route("/api/session", sessionRoutes);
   app.route("/api/health", healthRoutes);
   app.route("/api/bridge", bridgeRoutes);
@@ -73,6 +142,9 @@ export function createDevServer(config: DevServerConfig) {
   app.route("/api/events", eventsRoutes);
   app.route("/api/accounts", accountsRoutes);
   app.route("/api/transactions", transactionsRoutes);
+  app.route("/api/artifacts", artifactsRoutes);
+  app.route("/api/overview", overviewRoutes);
+  app.route("/api/replay", replayRoutes);
   app.route("/api/stream", streamRoutes);
 
   // Try to find dashboard dist in multiple locations
@@ -91,10 +163,24 @@ export function createDevServer(config: DevServerConfig) {
 
   const dashboardDist = findDashboardDist();
   if (dashboardDist) {
-    app.use("/*", serveStatic({
+    app.use("/assets/*", serveStatic({
       root: dashboardDist,
-      rewriteRequestPath: (p) => p === "/" ? "/index.html" : p
+      rewriteRequestPath: (p) => p
     }));
+    app.get("/*", async (c) => {
+      const htmlPath = path.join(dashboardDist, "index.html");
+      let html = await fs.promises.readFile(htmlPath, "utf-8");
+      
+      // Inject global script payload for secure dashboard API client bootstrapping
+      const scriptTag = `
+<script>
+  window.__HARDKAS_DEV_TOKEN__ = "${devServerToken}";
+</script>
+`;
+      html = html.replace("<head>", `<head>${scriptTag}`);
+      
+      return c.html(html);
+    });
   } else {
     app.get("/", (c) => c.json({
       name: "HardKas Dev Server",
@@ -107,6 +193,7 @@ export function createDevServer(config: DevServerConfig) {
 
   return {
     app,
+    token: devServerToken,
     start: () => {
       const { diagnostics } = loadSessionStoreWithDiagnostics();
       if (diagnostics.length > 0) {
@@ -114,6 +201,9 @@ export function createDevServer(config: DevServerConfig) {
         diagnostics.forEach(d => console.warn(`   - ${d}`));
         console.warn("");
       }
+
+      // Boot directory watcher to auto-refresh and targeted reindex on disk changes
+      startHardkasWatcher();
 
       console.log(`\n🚀 HardKas Dev Server running at http://${config.host}:${config.port}`);
       console.log(`📡 SSE Stream: http://${config.host}:${config.port}/api/stream\n`);

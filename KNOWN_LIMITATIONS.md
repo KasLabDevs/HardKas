@@ -11,7 +11,7 @@ HardKAS is designed as a deterministic runtime for causal debugging and executio
 - **External Filesystem Mutations:** Modifying artifact JSON files directly on disk bypasses the deterministic event sequencer. While `hardkas doctor --strict` will catch these corruptions as `[ARTIFACT_HASH_MISMATCH]`, HardKAS will refuse to project them. You must repair them via HardKAS workflows or discard them.
 
 ## Snapshots
-- **Scope of Snapshots:** A snapshot (`hardkas snapshot create`) creates a deterministic ZIP capture of your local `.hardkas/artifacts` tree. It is a local workflow debugging tool. It is **not** a global chain proof and carries no consensus-validated weight outside of your HardKAS environment.
+- **Scope of Snapshots:** A snapshot (`hardkas localnet snapshot create`) creates a deterministic ZIP capture of your local `.hardkas/artifacts` tree. It is a local workflow debugging tool. It is **not** a global chain proof and carries no consensus-validated weight outside of your HardKAS environment.
 
 ## Visual Diagnostics & Telemetry
 - **Visual Tests are Mock-Bound:** The Playwright visual regression tests (`pnpm test:visual:ci`) are built upon committed deterministic fixtures. They validate the UI state transitions (like Corrupted Banners or Provenance Trees), but they do not hit live blockchains or external RPC endpoints.
@@ -20,5 +20,8 @@ HardKAS is designed as a deterministic runtime for causal debugging and executio
 ## Integrations
 - **Wallet Connectivity:** The wallet integrations (e.g. Kaspa Wallet plugin) are designed purely for development and testing ergonomics within localnet/simulated environments. They do not employ production custody security measures and plaintext paths may be utilized in legacy keystores.
 - **L2 / Igra:** L2 testing is strictly experimental.
+
+## Local Workstation Containment
+- **Loopback Boundaries (CORS / Host Validation):** The local dev-server is locked down strictly to localhost. You cannot hit the API from external browser origins, and custom Host headers are rejected (preventing DNS rebinding). In order to expose the server for remote access, the explicit `--unsafe-external` flag must be set. Note that API Token authentication remains strictly active and required under all execution configurations.
 
 These limitations are actively maintained. If your use case violates these constraints, consider restructuring your workflow to treat HardKAS as a deterministic build artifact pipeline rather than a live node consensus tracker.

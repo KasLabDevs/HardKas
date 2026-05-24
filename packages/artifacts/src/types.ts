@@ -273,6 +273,42 @@ export interface TxTraceArtifact extends BaseArtifact<"txTrace"> {
 // Igra L2 Artifacts (Imported from igra-artifacts.ts)
 export * from "./igra-artifacts.js";
 
+export interface WorkflowArtifact extends BaseArtifact<"workflow.v1"> {
+  workflowId: WorkflowId;
+  status: "pending" | "running" | "completed" | "failed";
+  inputs?: Record<string, any>;
+  steps: Array<{
+    type: string;
+    status: "pending" | "success" | "failed" | "skipped";
+    startedAt?: string;
+    completedAt?: string;
+    producedArtifactId?: string;
+    error?: string;
+  }>;
+  parentArtifacts?: string[];
+  producedArtifacts: string[];
+  generationRange?: {
+    start?: string;
+    end?: string;
+  };
+  policy?: {
+    allowNetwork: boolean;
+    allowMainnet: boolean;
+    allowExternalWallet: boolean;
+    requireDryRun: boolean;
+  };
+  generationId?: string;
+  replayResult?: {
+    verified: boolean;
+    stateHash?: string;
+  };
+  errorEnvelope?: {
+    code: string;
+    message: string;
+    redacted: boolean;
+  };
+}
+
 export interface DeploymentRecord extends HardkasArtifactBase {
   schema: "hardkas.deployment.v1";
   /** Human-readable label (e.g., "initial-funding", "vault-covenant-v1") */

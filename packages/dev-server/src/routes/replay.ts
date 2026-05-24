@@ -8,44 +8,27 @@ replayRoutes.get("/", async (c) => {
 
   try {
     const replays = await queryBackend.findArtifacts({ schema: "hardkas.replayReport.v1" });
-    const formatted = replays.map(r => ({
-      artifactId: r.artifactId,
-      txId: r.payload.txId || r.txId,
-      planOk: r.payload.planOk,
-      receiptOk: r.payload.receiptOk,
-      invariantsOk: r.payload.invariantsOk,
-      ok: r.payload.planOk && r.payload.receiptOk && r.payload.invariantsOk,
-      status: (r.payload.planOk && r.payload.receiptOk && r.payload.invariantsOk) ? "PASS" : "FAIL",
-      checks: r.payload.checks,
-      errors: r.payload.errors || [],
-      divergencesCount: (r.payload.divergences || []).length,
-      mismatches: r.payload.divergences || [],
-      deterministic: r.payload.invariantsOk,
-      createdAt: r.createdAt
-    })).sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
+    const receipts = await queryBackend.findArtifacts({ schema: "hardkas.txReceipt.v1" });
+    const igraReceipts = await queryBackend.findArtifacts({ schema: "hardkas.igraTxReceipt.v1" });
 
-    return c.json({ replays: formatted });
-  } catch (e: any) {
-    console.error("Failed to list replay reports:", e);
-    return c.json({ error: e.message }, 500);
-  }
-});
-
-replayRoutes.get("/:txId", async (c) => {
-  const txId = c.req.param("txId");
-  const queryBackend = getQueryBackend();
-
-  try {
-    const replays = await queryBackend.findArtifacts({ schema: "hardkas.replayReport.v1" });
-    const report = replays.find(r => r.payload.txId === txId || r.txId === txId || r.artifactId === txId);
+    const allReceipts = [...receipts, ...igraReceipts];
+    const replayTxIds = new Set(replays.map(r => r.payload.txId));
     
-    if (!report) {
-      return c.json({ error: `Replay report for transaction '${txId}' not found` }, 404);
-    }
-    
-    return c.json({ replay: report });
+    const pendingReceipts = allReceipts.filter(r => 
+      (r.payload.status === "confirmed" || r.payload.status === "accepted") && 
+      !replayTxIds.has(r.payload.txId)
+    );
+
+    const pendingReplay = pendingReceipts.length > 0;
+
+    return c.json({
+      replays,
+      pendingReplays: pendingReceipts,
+      pendingReplay,
+      reason: pendingReplay ? "receipt_artifact_without_replay_report" : undefined
+    });
   } catch (e: any) {
-    console.error(`Failed to get replay report for '${txId}':`, e);
+    console.error("Failed to fetch replays:", e);
     return c.json({ error: e.message }, 500);
   }
 });

@@ -26,6 +26,7 @@ export function registerDevCommands(program: Command) {
     .option("--host <string>", "Host to bind to", "localhost")
     .option("--open", "Open dashboard in browser automatically", false)
     .option("--unsafe-external", "Allow external access (binds to 0.0.0.0 if host not specified)", false)
+    .option("--show-token", "Show the generated API session token for manual script integration", false)
     .option("--json", "Output status as JSON", false)
     .action(async (options: any) => {
       const { runDevServer } = await import("../runners/dev-server-runner.js");

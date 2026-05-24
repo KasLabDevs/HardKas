@@ -51,10 +51,7 @@ describe("HardKas React", () => {
       bridge: { mode: "local-simulated" }
     };
 
-    (global.fetch as any).mockResolvedValue({
-      ok: true,
-      json: async () => ({ active: mockSession })
-    });
+    (global.fetch as any).mockResolvedValue(new Response(JSON.stringify({ active: mockSession })));
 
     const queryClient = new QueryClient();
     const { result } = renderHook(() => useHardKasSession(), {
@@ -80,10 +77,7 @@ describe("HardKas React", () => {
       privateKey: "SECRET_KEY" 
     };
 
-    (global.fetch as any).mockResolvedValue({
-      ok: true,
-      json: async () => ({ active: mockSession })
-    });
+    (global.fetch as any).mockResolvedValue(new Response(JSON.stringify({ active: mockSession })));
 
     const queryClient = new QueryClient();
     const { result } = renderHook(() => useHardKasSession(), {

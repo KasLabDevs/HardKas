@@ -5,18 +5,31 @@ import { useHardKas } from "../provider.js";
 export interface OverviewStats {
   projectName: string;
   network: string;
-  replayStatus: "PASS" | "FAIL" | "NONE";
+  workspaceRoot: string;
+  artifactDir: string;
+  queryStorePath: string;
+  runtimeState: "EMPTY" | "ACTIVE" | "PENDING" | "DEGRADED" | "CORRUPTED" | "VERIFIED";
+  runtimeReason: string;
+  recommendedAction: string;
+  guarantees: {
+    artifactIntegrity: "available" | "failed" | "not_checked";
+    localReplay: "verified" | "failed" | "not_checked";
+    consensusValidated: boolean;
+    networkFinality: boolean;
+  };
   counts: {
-    transactions: number;
     artifacts: number;
-    deployments: number;
-    accounts: number;
+    transactions: number;
+    events: number;
     replays: number;
+    pendingReplays: number;
+    corruptedArtifacts: number;
+    degradedProjections: number;
   };
 }
 
 export function useOverview() {
-  const { config, subscribe } = useHardKas();
+  const { config, subscribe , apiFetch } = useHardKas();
   const queryClient = useQueryClient();
 
   useEffect(() => {
@@ -35,7 +48,7 @@ export function useOverview() {
       try {
         const baseUrl = config.devServerUrl || "";
         const url = baseUrl ? (baseUrl.endsWith("/") ? `${baseUrl}api/overview` : `${baseUrl}/api/overview`) : "/api/overview";
-        const response = await fetch(url);
+        const response = await apiFetch(url);
         if (!response.ok) return null;
         return await response.json();
       } catch (e) {

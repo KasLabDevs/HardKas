@@ -7,6 +7,8 @@ export const SEMANTIC_EXCLUSIONS = new Set([
   "lineage",
   "createdAt",
   "rpcUrl",
+  "rpcHost",
+  "latencyMs",
   "indexedAt",
   "file_path",
   "file_mtime_ms",
@@ -14,7 +16,15 @@ export const SEMANTIC_EXCLUSIONS = new Set([
   "hashVersion", // Exclude hash version from hash
   "parentArtifactId",
   "signedId",
-  "deployedAt"
+  "deployedAt",
+  "tracePath",
+  "receiptPath",
+  "events",
+  "status",
+  "sourceSignedId",
+  "submittedAt",
+  "confirmedAt",
+  "dagContext"
 ]);
 
 /**

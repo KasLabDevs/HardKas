@@ -12,18 +12,31 @@ artifactsRoutes.get("/", async (c) => {
     const artifacts = await queryBackend.findArtifacts(filters);
     
     // Format list for UI consumption
-    const list = artifacts.map(a => ({
-      artifactId: a.artifactId,
-      contentHash: a.contentHash,
-      schema: a.schema,
-      version: a.version,
-      kind: a.kind,
-      mode: a.mode,
-      networkId: a.networkId,
-      txId: a.txId,
-      createdAt: a.createdAt,
-      path: a.path
-    })).sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
+    const list = artifacts.map(a => {
+      const parentArtifactId = 
+        a.payload.sourceSignedId || 
+        a.payload.sourcePlanId || 
+        a.payload.parentArtifactId || 
+        undefined;
+        
+      const flowId = a.txId || parentArtifactId || a.artifactId;
+
+      return {
+        artifactId: a.artifactId,
+        contentHash: a.contentHash,
+        schema: a.schema,
+        version: a.version,
+        kind: a.kind,
+        mode: a.mode,
+        networkId: a.networkId,
+        txId: a.txId,
+        createdAt: a.createdAt,
+        path: a.path,
+        integrityStatus: a.kind === "CORRUPTED" ? "CORRUPTED" : "OK",
+        parentArtifactId,
+        flowId
+      };
+    }).sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
 
     return c.json({ artifacts: list });
   } catch (e: any) {

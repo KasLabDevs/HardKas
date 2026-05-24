@@ -62,6 +62,24 @@ export function AccountsPage() {
         />
       )}
 
+      {!isLoading && accounts.length > 0 && accounts.every((acc: any) => {
+        const bal = acc.balanceKas !== undefined ? acc.balanceKas : (acc.balance !== undefined ? acc.balance.toString() : "0");
+        return bal === "0" || bal === "0.00000000";
+      }) && (
+        <div className="bg-amber-950/20 border border-amber-900/50 rounded-xl p-4 flex items-start gap-3">
+          <Terminal size={16} className="text-amber-400 mt-0.5" />
+          <div>
+            <div className="text-sm font-bold text-amber-400">Unfunded Accounts</div>
+            <div className="text-xs text-amber-400/80 mt-1">
+              Developer aliases are initialized, but no spendable UTXOs are indexed.
+            </div>
+            <div className="mt-3 bg-black/40 rounded p-2 border border-white/5 inline-block">
+              <code className="text-xs font-mono text-zinc-300 select-all">hardkas localnet seed</code>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Main Grid Layout */}
       {isLoading ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">

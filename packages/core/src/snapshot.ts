@@ -81,7 +81,7 @@ export async function createSnapshot(options: CreateSnapshotOptions): Promise<Sn
   const manifest: SnapshotManifest = {
     snapshotVersion: 1,
     createdAt: new Date().toISOString(),
-    hardkasVersion: "0.5.5-alpha",
+    hardkasVersion: "0.6.0-alpha",
     stateAuthority: "filesystem",
     projectionAuthority: "sqlite",
     deterministicScope,

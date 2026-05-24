@@ -8,15 +8,19 @@ export function registerInitCommands(program: Command) {
     .command("init")
     .description(`Initialize a new HardKAS project ${UI.maturity("stable")}`)
     .argument("[name]", "Project name or directory")
-    .option("--force", "Overwrite existing hardkas.config.ts", false)
-    .action(async (name: string | undefined, options: { force: boolean }) => {
+    .option("--force", "Overwrite existing hardkas.config.ts (in-place only)", false)
+    .option("--template <type>", "Project template for new projects", "basic")
+    .option("--network <name>", "Default network for new projects", "simulated")
+    .option("--accounts <n>", "Number of simulated accounts for new projects", "3")
+    .option("--skip-install", "Skip pnpm install for new projects", false)
+    .action(async (name: string | undefined, options: any) => {
       let targetDir = process.cwd();
       const path = await import("node:path");
       const { withLock } = await import("@hardkas/core");
       const { handleLockError } = await import("../ui.js");
 
       if (name) {
-        targetDir = path.join(process.cwd(), name);
+        targetDir = path.resolve(process.cwd(), name);
       }
 
       try {
@@ -57,7 +61,7 @@ export function registerInitCommands(program: Command) {
           const template = `import { defineHardkasConfig } from "@hardkas/sdk";
 
 export default defineHardkasConfig({
-  // HardKAS v0.5.5-alpha Configuration
+  // HardKAS v0.6.0-alpha Configuration
   defaultNetwork: "simulated",
 
   networks: {

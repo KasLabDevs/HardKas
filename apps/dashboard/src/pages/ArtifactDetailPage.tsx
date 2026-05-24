@@ -12,7 +12,8 @@ import {
   ArrowRight,
   AlertTriangle 
 } from "lucide-react";
-import { ProvenanceGraph, ProvenanceNode } from "../components/ProvenanceGraph";
+import { ProvenanceGraph } from "../components/ProvenanceGraph";
+import type { ProvenanceNode } from "../components/ProvenanceGraph";
 
 export function ArtifactDetailPage() {
   const { id } = useParams<{ id: string }>();
