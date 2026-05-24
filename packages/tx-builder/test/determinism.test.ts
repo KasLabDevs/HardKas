@@ -81,7 +81,9 @@ function shuffle<T>(array: T[]): T[] {
   const arr = [...array];
   for (let i = arr.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
-    [arr[i], arr[j]] = [arr[j], arr[i]];
+    const temp = arr[i] as T;
+    arr[i] = arr[j] as T;
+    arr[j] = temp;
   }
   return arr;
 }
@@ -146,8 +148,8 @@ describe("P1.12 Deterministic Transaction Canonicalization", () => {
 
       // Verify selected inputs are canonically sorted: amountSompi ASC, txid ASC, index ASC
       for (let j = 0; j < plan.inputs.length - 1; j++) {
-        const current = plan.inputs[j];
-        const next = plan.inputs[j + 1];
+        const current = plan.inputs[j]!;
+        const next = plan.inputs[j + 1]!;
         if (current.amountSompi === next.amountSompi) {
           if (current.outpoint.transactionId === next.outpoint.transactionId) {
             expect(current.outpoint.index).toBeLessThan(next.outpoint.index);
@@ -161,8 +163,8 @@ describe("P1.12 Deterministic Transaction Canonicalization", () => {
 
       // Verify recipient outputs are canonically sorted: amountSompi ASC, address ASC
       for (let j = 0; j < plan.outputs.length - 1; j++) {
-        const current = plan.outputs[j];
-        const next = plan.outputs[j + 1];
+        const current = plan.outputs[j]!;
+        const next = plan.outputs[j + 1]!;
         if (current.amountSompi === next.amountSompi) {
           expect(current.address < next.address).toBe(true);
         } else {
@@ -358,14 +360,14 @@ describe("P1.12 Deterministic Transaction Canonicalization", () => {
     // First, txA:0 (sorted by txid ASC, then index ASC)
     // Second, txA:1
     // Third, txB:0
-    expect(plan.inputs[0].outpoint.transactionId).toBe("txA");
-    expect(plan.inputs[0].outpoint.index).toBe(0);
+    expect(plan.inputs[0]!.outpoint.transactionId).toBe("txA");
+    expect(plan.inputs[0]!.outpoint.index).toBe(0);
 
-    expect(plan.inputs[1].outpoint.transactionId).toBe("txA");
-    expect(plan.inputs[1].outpoint.index).toBe(1);
+    expect(plan.inputs[1]!.outpoint.transactionId).toBe("txA");
+    expect(plan.inputs[1]!.outpoint.index).toBe(1);
 
-    expect(plan.inputs[2].outpoint.transactionId).toBe("txB");
-    expect(plan.inputs[2].outpoint.index).toBe(0);
+    expect(plan.inputs[2]!.outpoint.transactionId).toBe("txB");
+    expect(plan.inputs[2]!.outpoint.index).toBe(0);
   });
 
   it("Test F: Output Canonicalization + Change Separate Field", () => {
@@ -393,14 +395,14 @@ describe("P1.12 Deterministic Transaction Canonicalization", () => {
     // Index 0: kaspa:bob (1000n)
     // Index 1: kaspa:alice (2000n)
     // Index 2: kaspa:charlie (2000n)
-    expect(plan.outputs[0].amountSompi).toBe(1000n);
-    expect(plan.outputs[0].address).toBe("kaspa:bob");
+    expect(plan.outputs[0]!.amountSompi).toBe(1000n);
+    expect(plan.outputs[0]!.address).toBe("kaspa:bob");
 
-    expect(plan.outputs[1].amountSompi).toBe(2000n);
-    expect(plan.outputs[1].address).toBe("kaspa:alice");
+    expect(plan.outputs[1]!.amountSompi).toBe(2000n);
+    expect(plan.outputs[1]!.address).toBe("kaspa:alice");
 
-    expect(plan.outputs[2].amountSompi).toBe(2000n);
-    expect(plan.outputs[2].address).toBe("kaspa:charlie");
+    expect(plan.outputs[2]!.amountSompi).toBe(2000n);
+    expect(plan.outputs[2]!.address).toBe("kaspa:charlie");
 
     // The plan.change should be defined and separate
     expect(plan.change).toBeDefined();
