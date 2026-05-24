@@ -153,7 +153,7 @@ transactionsRoutes.get("/", async (c) => {
         utx.sourceTimestamp = utx.timestamp;
         
         if (replay) {
-          utx.lastReplayTimestamp = replay.createdAt || replay.timestamp || replay.payload?.createdAt;
+          utx.lastReplayTimestamp = replay.createdAt || (replay as any).timestamp || replay.payload?.createdAt;
           
           const planOk = replay.payload.planOk !== false;
           const receiptOk = replay.payload.receiptOk !== false;

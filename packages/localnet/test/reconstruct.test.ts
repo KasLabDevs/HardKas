@@ -2,6 +2,7 @@ import { describe, it, expect } from "vitest";
 import { reconstructStateAtDaa } from "../src/state.js";
 import { LocalnetState } from "../src/types.js";
 import { ARTIFACT_SCHEMAS, HARDKAS_VERSION } from "@hardkas/artifacts";
+import { asNetworkId } from "@hardkas/core";
 
 describe("State Reconstruction (Time Travel)", () => {
   it("mathematically reconstructs UTXO state to a previous DAA score", () => {
@@ -12,7 +13,7 @@ describe("State Reconstruction (Time Travel)", () => {
       version: "1.0",
       createdAt: new Date().toISOString(),
       mode: "simulated",
-      networkId: "simulated",
+      networkId: asNetworkId("simulated"),
       daaScore: "100",
       accounts: [],
       snapshots: [],
