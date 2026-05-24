@@ -12,7 +12,7 @@ describe("State Reconstruction (Time Travel)", () => {
       version: "1.0",
       createdAt: new Date().toISOString(),
       mode: "simulated",
-      networkId: "simnet",
+      networkId: "simulated",
       daaScore: "100",
       accounts: [],
       snapshots: [],

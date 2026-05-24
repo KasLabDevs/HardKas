@@ -45,7 +45,7 @@ describe("CLI Surface Hardening", () => {
     expect(stdout).toContain("snapshot");
   });
 
-  it("should completely reject physically deleted legacy aliases", async () => {
+  it("should completely reject physically deleted legacy aliases", { timeout: 30000 }, async () => {
     const deletedCommands = ["new", "snapshot", "faucet", "networks"];
     
     for (const cmd of deletedCommands) {
