@@ -76,12 +76,27 @@ export function calculateContentHash(obj: any, version: number = CURRENT_HASH_VE
   return createHash("sha256").update(canonical).digest("hex");
 }
 
+function must<T>(value: T | undefined, label: string): T {
+  if (value === undefined) {
+    throw new Error(`Missing test fixture value: ${label}`);
+  }
+  return value;
+}
+
 // Helper to shuffle array
-function shuffle<T>(array: T[]): T[] {
-  const arr = [...array];
+function shuffle<T>(items: readonly T[]): T[] {
+  const arr = [...items];
   for (let i = arr.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
-    [arr[i], arr[j]] = [arr[j], arr[i]];
+    const current = arr[i];
+    const target = arr[j];
+
+    if (current === undefined || target === undefined) {
+      throw new Error("shuffle invariant failed");
+    }
+
+    arr[i] = target;
+    arr[j] = current;
   }
   return arr;
 }
@@ -146,8 +161,8 @@ describe("P1.12 Deterministic Transaction Canonicalization", () => {
 
       // Verify selected inputs are canonically sorted: amountSompi ASC, txid ASC, index ASC
       for (let j = 0; j < plan.inputs.length - 1; j++) {
-        const current = plan.inputs[j];
-        const next = plan.inputs[j + 1];
+        const current = must(plan.inputs[j], `plan.inputs[${j}]`);
+        const next = must(plan.inputs[j + 1], `plan.inputs[${j + 1}]`);
         if (current.amountSompi === next.amountSompi) {
           if (current.outpoint.transactionId === next.outpoint.transactionId) {
             expect(current.outpoint.index).toBeLessThan(next.outpoint.index);
@@ -161,8 +176,8 @@ describe("P1.12 Deterministic Transaction Canonicalization", () => {
 
       // Verify recipient outputs are canonically sorted: amountSompi ASC, address ASC
       for (let j = 0; j < plan.outputs.length - 1; j++) {
-        const current = plan.outputs[j];
-        const next = plan.outputs[j + 1];
+        const current = must(plan.outputs[j], `plan.outputs[${j}]`);
+        const next = must(plan.outputs[j + 1], `plan.outputs[${j + 1}]`);
         if (current.amountSompi === next.amountSompi) {
           expect(current.address < next.address).toBe(true);
         } else {
@@ -358,14 +373,17 @@ describe("P1.12 Deterministic Transaction Canonicalization", () => {
     // First, txA:0 (sorted by txid ASC, then index ASC)
     // Second, txA:1
     // Third, txB:0
-    expect(plan.inputs[0].outpoint.transactionId).toBe("txA");
-    expect(plan.inputs[0].outpoint.index).toBe(0);
+    const input0 = must(plan.inputs[0], "plan.inputs[0]");
+    expect(input0.outpoint.transactionId).toBe("txA");
+    expect(input0.outpoint.index).toBe(0);
 
-    expect(plan.inputs[1].outpoint.transactionId).toBe("txA");
-    expect(plan.inputs[1].outpoint.index).toBe(1);
+    const input1 = must(plan.inputs[1], "plan.inputs[1]");
+    expect(input1.outpoint.transactionId).toBe("txA");
+    expect(input1.outpoint.index).toBe(1);
 
-    expect(plan.inputs[2].outpoint.transactionId).toBe("txB");
-    expect(plan.inputs[2].outpoint.index).toBe(0);
+    const input2 = must(plan.inputs[2], "plan.inputs[2]");
+    expect(input2.outpoint.transactionId).toBe("txB");
+    expect(input2.outpoint.index).toBe(0);
   });
 
   it("Test F: Output Canonicalization + Change Separate Field", () => {
@@ -393,14 +411,17 @@ describe("P1.12 Deterministic Transaction Canonicalization", () => {
     // Index 0: kaspa:bob (1000n)
     // Index 1: kaspa:alice (2000n)
     // Index 2: kaspa:charlie (2000n)
-    expect(plan.outputs[0].amountSompi).toBe(1000n);
-    expect(plan.outputs[0].address).toBe("kaspa:bob");
+    const output0 = must(plan.outputs[0], "plan.outputs[0]");
+    expect(output0.amountSompi).toBe(1000n);
+    expect(output0.address).toBe("kaspa:bob");
 
-    expect(plan.outputs[1].amountSompi).toBe(2000n);
-    expect(plan.outputs[1].address).toBe("kaspa:alice");
+    const output1 = must(plan.outputs[1], "plan.outputs[1]");
+    expect(output1.amountSompi).toBe(2000n);
+    expect(output1.address).toBe("kaspa:alice");
 
-    expect(plan.outputs[2].amountSompi).toBe(2000n);
-    expect(plan.outputs[2].address).toBe("kaspa:charlie");
+    const output2 = must(plan.outputs[2], "plan.outputs[2]");
+    expect(output2.amountSompi).toBe(2000n);
+    expect(output2.address).toBe("kaspa:charlie");
 
     // The plan.change should be defined and separate
     expect(plan.change).toBeDefined();
