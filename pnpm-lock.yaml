@@ -900,9 +900,6 @@ importers:
         specifier: workspace:*
         version: link:../core
     devDependencies:
-      '@hardkas/artifacts':
-        specifier: workspace:*
-        version: link:../artifacts
       tsup:
         specifier: ^8.3.5
         version: 8.5.1(jiti@2.7.0)(postcss@8.5.14)(tsx@4.21.0)(typescript@5.9.3)
