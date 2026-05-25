@@ -2,9 +2,11 @@ import {
   HARDKAS_VERSION, 
   ARTIFACT_VERSION,
   calculateContentHash,
-  sortUtxosByOutpoint
+  sortUtxosByOutpoint,
+  type Snapshot
 } from "@hardkas/artifacts";
 import type { LocalnetState, LocalnetAccount, LocalnetUtxo, SnapshotVerificationResult } from "./types.js";
+import { deterministicCompare } from "@hardkas/core";
 
 /**
  * Calculates hash of the UTXO set (sorted by outpoint).
@@ -18,7 +20,7 @@ export function calculateUtxoSetHash(utxos: LocalnetUtxo[]): string {
  * Calculates hash of the account set (sorted by address).
  */
 export function calculateAccountsHash(accounts: LocalnetAccount[]): string {
-  const sorted = [...(accounts || [])].sort((a, b) => a.address.localeCompare(b.address));
+  const sorted = [...(accounts || [])].sort((a, b) => deterministicCompare(a.address, b.address));
   return calculateContentHash(sorted);
 }
 
@@ -47,7 +49,7 @@ export function createLocalnetSnapshot(
   const utxoSetHash = calculateUtxoSetHash(state.utxos);
   const stateHash = calculateStateHash(state);
 
-  const snapshot: any = {
+  const snapshotDraft: Omit<Snapshot, 'contentHash'> = {
     schema: "hardkas.snapshot",
     hardkasVersion: HARDKAS_VERSION,
     version: ARTIFACT_VERSION,
@@ -58,10 +60,15 @@ export function createLocalnetSnapshot(
     utxoSetHash,
     stateHash,
     accounts: JSON.parse(JSON.stringify(state.accounts)),
-    utxos: JSON.parse(JSON.stringify(sortUtxosByOutpoint(state.utxos)))
+    utxos: JSON.parse(JSON.stringify(sortUtxosByOutpoint(state.utxos))),
+    networkId: state.networkId,
+    mode: state.mode
   };
 
-  snapshot.contentHash = calculateContentHash(snapshot);
+  const snapshot: Snapshot = {
+    ...snapshotDraft,
+    contentHash: calculateContentHash(snapshotDraft)
+  };
 
   return {
     ...state,
@@ -72,7 +79,7 @@ export function createLocalnetSnapshot(
 /**
  * Verifies the integrity of a snapshot.
  */
-export function verifySnapshot(snapshot: any): SnapshotVerificationResult {
+export function verifySnapshot(snapshot: Snapshot): SnapshotVerificationResult {
   const errors: string[] = [];
   
   // 1. Content Hash Verification
@@ -119,7 +126,7 @@ export function restoreLocalnetSnapshot(
   snapshotIdOrName: string
 ): LocalnetState {
   const snapshot = state.snapshots?.find(
-    (s: any) => s.id === snapshotIdOrName || s.name === snapshotIdOrName || s.contentHash === snapshotIdOrName
+    (s: Snapshot & { id?: string }) => s.id === snapshotIdOrName || s.name === snapshotIdOrName || s.contentHash === snapshotIdOrName
   );
 
   if (!snapshot) {

@@ -1,3 +1,4 @@
+import { systemRuntimeContext } from "@hardkas/core";
 import { Hardkas } from "./index.js";
 import { 
   buildPaymentPlan, 
@@ -83,7 +84,8 @@ export class HardkasTx {
         address: toAccount.address
       },
       amountSompi,
-      plan: builderPlan
+      plan: builderPlan,
+      ctx: systemRuntimeContext
     }) as unknown as TxPlanArtifact;
   }
 
@@ -133,7 +135,7 @@ export class HardkasTx {
       from: signedArtifact.from.input || signedArtifact.from.address,
       to: signedArtifact.to.input || signedArtifact.to.address,
       amountSompi: BigInt(signedArtifact.amountSompi),
-    });
+    }, systemRuntimeContext);
 
     coreEvents.normalizeAndEmit({
       kind: "workflow.submitted",

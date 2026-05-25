@@ -1,3 +1,4 @@
+import { systemRuntimeContext } from '@hardkas/core';
 import { describe, it, expect } from "vitest";
 import { createTestHarness } from "../src/index.js";
 import { verifyReplay } from "@hardkas/localnet";
@@ -23,7 +24,7 @@ describe("Deterministic Replay Verification", () => {
     expect(result.plan).toBeDefined();
 
     // 3. Replay transaction and verify it yields the same results deterministically
-    const report = verifyReplay(preState, result.plan, result.receipt);
+    const report = verifyReplay(preState, result.plan!, result.receipt!, systemRuntimeContext);
 
     // 4. Assert invariants
     expect(report.invariantsOk).toBe(true);
@@ -54,7 +55,7 @@ describe("Deterministic Replay Verification", () => {
       badPreState.utxos[0].amountSompi = (BigInt(badPreState.utxos[0].amountSompi) + 1n).toString();
     }
 
-    const report = verifyReplay(badPreState, result.plan, result.receipt);
+    const report = verifyReplay(badPreState, result.plan!, result.receipt!, systemRuntimeContext);
 
     expect(report.invariantsOk).toBe(false);
     expect(report.checks.workflowDeterministic).toBe("diverged");
@@ -80,7 +81,7 @@ describe("Deterministic Replay Verification", () => {
     const badPlan = structuredClone(result.plan);
     badPlan.amountSompi = "99999999999";
 
-    const report = verifyReplay(preState, badPlan, result.receipt);
+    const report = verifyReplay(preState, badPlan, result.receipt!, systemRuntimeContext);
 
     expect(report.invariantsOk).toBe(false);
     expect(report.planOk).toBe(false);
@@ -105,7 +106,7 @@ describe("Deterministic Replay Verification", () => {
     const badReceipt = structuredClone(result.receipt);
     badReceipt.feeSompi = (BigInt(badReceipt.feeSompi || "0") + 100n).toString();
 
-    const report = verifyReplay(preState, result.plan, badReceipt);
+    const report = verifyReplay(preState, result.plan!, badReceipt, systemRuntimeContext);
 
     expect(report.invariantsOk).toBe(false);
     expect(report.receiptOk).toBe(false);

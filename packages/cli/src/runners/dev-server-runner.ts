@@ -27,7 +27,8 @@ export async function runDevServer(options: {
       open: options.open
     });
 
-    const token = (server as any).token;
+    const serverObj = server as Record<string, unknown>;
+    const token = typeof serverObj.token === "string" ? serverObj.token : undefined;
 
     if (options.json) {
       console.log(JSON.stringify({

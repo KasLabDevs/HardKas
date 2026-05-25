@@ -12,6 +12,7 @@ import fsp from "node:fs/promises";
 import path from "node:path";
 
 import { 
+import { deterministicCompare } from "@hardkas/core";
   coreEvents, 
   type EventEnvelope as ObsEvent,
   type EventKind as ObsEventKind,
@@ -76,7 +77,7 @@ export function startEventLogging(options?: { cwd?: string }): void {
 
   coreEvents.on((event) => {
     // Re-emit to the local log
-    emitEvent(event as any, options);
+    emitEvent(event, options);
   });
 }
 
@@ -128,7 +129,7 @@ export async function readEvents(options?: EventReadOptions): Promise<ObsEvent[]
   }
 
   // Newest first
-  events.sort((a, b) => b.timestamp.localeCompare(a.timestamp));
+  events.sort((a, b) => deterministicCompare(b.timestamp, a.timestamp));
 
   // Apply limit
   if (options?.limit && events.length > options.limit) {

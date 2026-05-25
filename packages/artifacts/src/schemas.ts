@@ -3,6 +3,9 @@ import { kaspaNetworkIdSchema, executionModeSchema, artifactTypeSchema } from "@
 
 export const ARTIFACT_VERSION = "1.0.0-alpha";
 
+export type DraftArtifact<TFinal, THashFields extends keyof TFinal> = 
+  Omit<TFinal, THashFields> & Partial<Pick<TFinal, THashFields>>;
+
 export const ArtifactLineageSchema = z.object({
   artifactId: z.string(),
   lineageId: z.string(),
@@ -117,6 +120,7 @@ export const TxReceiptSchema = BaseArtifactSchema.extend({
   tracePath: z.string().optional(),
   rpcUrl: z.string().optional(),
   sourceSignedId: z.string().optional(),
+  errors: z.array(z.string()).optional(),
   metadata: z.any().optional()
 });
 

@@ -27,6 +27,7 @@ import type {
   CausalStep
 } from "../types.js";
 import type { QueryBackend } from "../backend.js";
+import { deterministicCompare } from "@hardkas/core";
 
 /** Trust warning attached to every DAG query result. */
 const DAG_MODEL_WARNING =
@@ -109,7 +110,7 @@ export class DagQueryAdapter implements QueryAdapter {
       loserTxIds: c.loserTxIds as TxId[]
     }));
 
-    items.sort((a, b) => a.outpoint.localeCompare(b.outpoint));
+    items.sort((a, b) => deterministicCompare(a.outpoint, b.outpoint));
     const paged = items.slice(request.offset, request.offset + request.limit);
 
     let why: WhyBlock[] | undefined;
@@ -156,7 +157,7 @@ export class DagQueryAdapter implements QueryAdapter {
       };
     });
 
-    items.sort((a, b) => a.txId.localeCompare(b.txId));
+    items.sort((a, b) => deterministicCompare(a.txId, b.txId));
     const paged = items.slice(request.offset, request.offset + request.limit);
 
     let why: WhyBlock[] | undefined;
@@ -219,7 +220,7 @@ export class DagQueryAdapter implements QueryAdapter {
       }
     }
 
-    entries.sort((a, b) => a.daaScore.localeCompare(b.daaScore));
+    entries.sort((a, b) => deterministicCompare(a.daaScore, b.daaScore));
 
     let why: WhyBlock[] | undefined;
     if (request.explain) {
@@ -338,7 +339,7 @@ export class DagQueryAdapter implements QueryAdapter {
       }
     }
 
-    anomalies.sort((a, b) => a.kind.localeCompare(b.kind));
+    anomalies.sort((a, b) => deterministicCompare(a.kind, b.kind));
     const paged = anomalies.slice(request.offset, request.offset + request.limit);
 
     let why: WhyBlock[] | undefined;

@@ -16,7 +16,7 @@ export function registerTxCommands(program: Command) {
     .option("--json", "Output as JSON", false)
     .action(async (path: string, options: { json: boolean }) => {
       try {
-        await runTxProfile({ path, ...options });
+        await runTxProfile({ path, ...options, workspaceRoot: process.cwd() });
       } catch (e) {
         handleError(e);
         process.exitCode = 1;
@@ -250,7 +250,7 @@ export function registerTxCommands(program: Command) {
                 isSimulated ? "Transaction simulated successfully" : "Transaction broadcast successfully",
                 {
                   "Execution ID": `exec_${Date.now().toString(36)}`,
-                  "Artifact ID": sendResult?.artifact?.receipt?.artifactId || sendResult?.artifact?.txId || "unknown",
+                  "Artifact ID": sendResult?.artifact?.receipt?.lineage?.artifactId || sendResult?.artifact?.txId || "unknown",
                   "Replay ID": `replay_${(sendResult?.artifact?.txId || "unknown").substring(0,8)}`,
                   "Network": options.network || "simulated",
                   "Execution Scope": isSimulated ? "local deterministic replay" : "network broadcast",

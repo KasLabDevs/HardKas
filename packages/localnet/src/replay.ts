@@ -9,6 +9,7 @@ import { LocalnetState, ReplayVerificationReport } from "./types.js";
 import { StoredSimulatedTxTrace } from "./traces.js";
 import { calculateStateHash } from "./snapshot.js";
 import { coreEvents } from "@hardkas/core";
+import type { RuntimeContext } from "@hardkas/core";
 
 export interface SimulatedReplaySummary {
   receipt: TxReceipt;
@@ -31,7 +32,8 @@ export interface SimulatedReplaySummary {
 export function verifyReplay(
   state: LocalnetState,
   originalPlan: TxPlan,
-  originalReceipt: TxReceipt
+  originalReceipt: TxReceipt,
+  ctx: RuntimeContext
 ): ReplayVerificationReport {
   const errors: string[] = [];
   const reportDivergences: any[] = [];
@@ -72,7 +74,7 @@ export function verifyReplay(
   }
 
   // 3. Execute Replay in simulated environment
-  const result = applySimulatedPlan(state, originalPlan, { txId: originalReceipt.txId });
+  const result = applySimulatedPlan(state, originalPlan, ctx, { txId: originalReceipt.txId });
   const replayReceipt = result.receipt;
 
   // 3. Semantic Diffing (Divergence detection)

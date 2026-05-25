@@ -1,9 +1,10 @@
-import { Hardkas } from "@hardkas/sdk";
+import { Hardkas, HardkasOptions } from "@hardkas/sdk";
 import fs from "node:fs";
 import path from "node:path";
 import { UI, handleError } from "../ui.js";
+import type { WorkflowArtifact } from "@hardkas/artifacts";
 
-export async function runWorkflowRun(file: string, options: any) {
+export async function runWorkflowRun(file: string, options: { workspaceRoot?: string; dryRun?: boolean; json?: boolean }) {
   try {
     const fullPath = path.resolve(process.cwd(), file);
     if (!fs.existsSync(fullPath)) {
@@ -21,20 +22,20 @@ export async function runWorkflowRun(file: string, options: any) {
     
     // We instantiate HardKAS explicitly in agent mode to sandbox the execution.
     const sdk = await Hardkas.open({ 
-      cwd: options.workspaceRoot,
+      ...(options.workspaceRoot ? { cwd: options.workspaceRoot } : {}),
       mode: "agent",
       policy: {
         requireDryRun: options.dryRun || false,
         allowNetwork: def.allowNetwork || false,
         allowMainnet: false, // Never allow mainnet via CLI workflows for now
       }
-    });
+    } as HardkasOptions);
 
     UI.info(`Running ${def.steps.length} workflow steps...`);
     
     const result = await sdk.workflow.run({
       steps: def.steps,
-      dryRun: options.dryRun
+      ...(options.dryRun !== undefined && { dryRun: options.dryRun })
     });
 
     if (result.status === "failed") {
@@ -42,7 +43,7 @@ export async function runWorkflowRun(file: string, options: any) {
       if (options.json) {
         console.log(JSON.stringify(result, null, 2));
       } else {
-        UI.warn(`Artifact generated but marked as failed: ${result.workflowId}`);
+        UI.warning(`Artifact generated but marked as failed: ${result.workflowId}`);
       }
       process.exitCode = 1;
       return;
@@ -110,14 +111,16 @@ export async function runWorkflowReplay(id: string, options: any) {
   }
 }
 
-export async function runWorkflowDiff(idA: string, idB: string, options: any) {
+export async function runWorkflowDiff(idA: string, idB: string, options: { workspaceRoot?: string }) {
   try {
-    const sdk = await Hardkas.open({ cwd: options.workspaceRoot });
+    const sdk = await Hardkas.open({ 
+      ...(options.workspaceRoot ? { cwd: options.workspaceRoot } : {})
+    } as HardkasOptions);
     
     UI.info(`Comparing Workflow A (${idA}) against Workflow B (${idB})...`);
     
-    const wfA = await sdk.artifacts.read(idA) as any;
-    const wfB = await sdk.artifacts.read(idB) as any;
+    const wfA = await sdk.artifacts.read(idA) as WorkflowArtifact;
+    const wfB = await sdk.artifacts.read(idB) as WorkflowArtifact;
     
     if (wfA.schema !== "hardkas.workflow.v1" || wfB.schema !== "hardkas.workflow.v1") {
       throw new Error("Both artifacts must be workflows");

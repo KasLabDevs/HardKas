@@ -1,8 +1,9 @@
 import { TxPlan as TxPlanType } from "@hardkas/tx-builder";
-import { TxPlan, ARTIFACT_VERSION } from "./schemas.js";
+import { TxPlan, ARTIFACT_VERSION, DraftArtifact } from "./schemas.js";
 import { NetworkId, ExecutionMode } from "@hardkas/core";
 import { calculateContentHash, CURRENT_HASH_VERSION } from "./canonical.js";
 import { HARDKAS_VERSION } from "./constants.js";
+import type { RuntimeContext } from "@hardkas/core";
 import { formatSompi } from "@hardkas/core";
 
 export interface CreateTxPlanArtifactOptions {
@@ -20,18 +21,19 @@ export interface CreateTxPlanArtifactOptions {
   amountSompi: bigint;
   plan: TxPlanType;
   rpcUrl?: string;
+  ctx: RuntimeContext;
 }
 
 /**
  * Creates a canonical TxPlan artifact from a TxBuilder plan.
  */
 export function createTxPlanArtifact(options: CreateTxPlanArtifactOptions): TxPlan {
-  const artifact: any = {
+  const artifact: DraftArtifact<TxPlan, "planId" | "contentHash"> = {
     schema: "hardkas.txPlan",
     hardkasVersion: HARDKAS_VERSION,
     version: ARTIFACT_VERSION,
     hashVersion: CURRENT_HASH_VERSION,
-    createdAt: new Date().toISOString(),
+    createdAt: new Date(options.ctx.clock.now()).toISOString(),
     networkId: options.networkId,
     mode: options.mode,
     from: {
@@ -61,7 +63,7 @@ export function createTxPlanArtifact(options: CreateTxPlanArtifactOptions): TxPl
   };
 
   if (options.plan.change) {
-     (artifact as any).change = {
+     artifact.change = {
        address: options.plan.change.address,
        amountSompi: options.plan.change.amountSompi.toString()
      };

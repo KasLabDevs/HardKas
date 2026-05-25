@@ -5,48 +5,34 @@ import type { UtxoArtifact, TxOutputArtifact } from "./types.js";
  * Converts a domain Utxo to a UtxoArtifact for persistence.
  */
 export function utxoToArtifact(utxo: Utxo): UtxoArtifact {
-  const artifact: any = {
+  return {
     outpoint: {
-      transactionId: utxo.outpoint.transactionId,
+      transactionId: utxo.outpoint.transactionId as import("@hardkas/core").TxId,
       index: utxo.outpoint.index
     },
-    address: utxo.address,
+    address: utxo.address as import("@hardkas/core").KaspaAddress,
     amountSompi: utxo.amountSompi.toString(),
-    scriptPublicKey: utxo.scriptPublicKey
+    scriptPublicKey: utxo.scriptPublicKey,
+    ...(utxo.blockDaaScore !== undefined ? { blockDaaScore: utxo.blockDaaScore.toString() } : {}),
+    ...(utxo.isCoinbase !== undefined ? { isCoinbase: utxo.isCoinbase } : {})
   };
-
-  if (utxo.blockDaaScore !== undefined) {
-    artifact.blockDaaScore = utxo.blockDaaScore.toString();
-  }
-  if (utxo.isCoinbase !== undefined) {
-    artifact.isCoinbase = utxo.isCoinbase;
-  }
-
-  return artifact as UtxoArtifact;
 }
 
 /**
  * Converts a UtxoArtifact back to a domain Utxo.
  */
 export function utxoFromArtifact(artifact: UtxoArtifact): Utxo {
-  const utxo: any = {
+  return {
     outpoint: {
       transactionId: artifact.outpoint.transactionId,
       index: artifact.outpoint.index
     },
     address: artifact.address,
     amountSompi: safeParseBigInt(artifact.amountSompi, "UtxoArtifact.amountSompi"),
-    scriptPublicKey: artifact.scriptPublicKey
+    scriptPublicKey: artifact.scriptPublicKey,
+    ...(artifact.blockDaaScore !== undefined ? { blockDaaScore: safeParseBigInt(artifact.blockDaaScore, "UtxoArtifact.blockDaaScore") } : {}),
+    ...(artifact.isCoinbase !== undefined ? { isCoinbase: artifact.isCoinbase } : {})
   };
-
-  if (artifact.blockDaaScore !== undefined) {
-    utxo.blockDaaScore = safeParseBigInt(artifact.blockDaaScore, "UtxoArtifact.blockDaaScore");
-  }
-  if (artifact.isCoinbase !== undefined) {
-    utxo.isCoinbase = artifact.isCoinbase;
-  }
-
-  return utxo as Utxo;
 }
 
 /**

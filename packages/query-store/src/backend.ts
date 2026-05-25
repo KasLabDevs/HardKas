@@ -2,6 +2,55 @@ import { HardkasStore } from "./db.js";
 import { ExecutionMode, NetworkId } from "@hardkas/core";
 
 // ---------------------------------------------------------------------------
+// Database Row definitions for typed SQLite mapping.
+// ---------------------------------------------------------------------------
+
+export interface DbArtifactRow {
+  readonly artifact_id: string;
+  readonly content_hash: string;
+  readonly schema: string;
+  readonly version: string;
+  readonly kind: string;
+  readonly mode: string;
+  readonly network_id: string;
+  readonly tx_id: string | null;
+  readonly created_at: string | null;
+  readonly raw_json: string;
+  readonly file_path: string | null;
+  readonly file_mtime_ms: number | null;
+  readonly indexed_at: string | null;
+}
+
+export interface DbEventRow {
+  readonly event_id: string;
+  readonly kind: string;
+  readonly domain: string;
+  readonly timestamp: string | null;
+  readonly emitted_at: string | null;
+  readonly workflow_id: string;
+  readonly correlation_id: string;
+  readonly causation_id: string | null;
+  readonly tx_id: string | null;
+  readonly artifact_id: string | null;
+  readonly network_id: string;
+  readonly sequence_number: number;
+  readonly global_offset: number | null;
+  readonly source_subsystem: string;
+  readonly raw_json: string;
+  readonly file_path: string | null;
+  readonly file_mtime_ms: number | null;
+  readonly indexed_at: string | null;
+}
+
+export interface DbLineageEdgeRow {
+  readonly lineage_id: string;
+  readonly parent_artifact_id: string;
+  readonly child_artifact_id: string;
+  readonly edge_kind: string;
+  readonly created_at: string | null;
+}
+
+// ---------------------------------------------------------------------------
 // Backend DTO types — local definitions to avoid circular dependency.
 // These are persistence DTOs owned by the store layer.
 // ---------------------------------------------------------------------------
@@ -55,6 +104,11 @@ export interface QueryBackend {
   sync(options?: { strict?: boolean }): Promise<any>;
   syncPaths(paths: string[], options?: { strict?: boolean }): Promise<any>;
   rebuild(options?: { strict?: boolean }): Promise<any>;
+  /** 
+   * @deprecated BOUNDARY DINÁMICO: Este es el ÚNICO boundary dinámico aceptado en el sistema
+   * que puede retornar `any[]` de forma intencional (SQLite devuelve filas genéricas).
+   * Todos los llamadores DEBEN validar el output estrictamente en runtime mediante guards.
+   */
   executeRawSql(sql: string): Promise<any[]>;
   findReceipts(filters?: { status?: string; networkId?: string }): Promise<ArtifactDocument[]>;
   findTraces(filters?: { txId?: string }): Promise<ArtifactDocument[]>;
@@ -99,7 +153,7 @@ export class SqliteQueryBackend implements QueryBackend {
       params.push(filters.networkId);
     }
     
-    const rows = db.prepare(query).all(...params) as any[];
+    const rows = db.prepare(query).all(...params) as DbArtifactRow[];
     return rows.map(r => ({
       contentHash: r.content_hash,
       schema: r.schema,
@@ -118,7 +172,7 @@ export class SqliteQueryBackend implements QueryBackend {
   async getArtifact(idOrHash: string): Promise<ArtifactDocument | null> {
     const db = this.store.getDatabase();
     
-    const row = db.prepare("SELECT * FROM artifacts WHERE artifact_id = ? OR content_hash = ? OR tx_id = ?").get(idOrHash, idOrHash, idOrHash) as any;
+    const row = db.prepare("SELECT * FROM artifacts WHERE artifact_id = ? OR content_hash = ? OR tx_id = ?").get(idOrHash, idOrHash, idOrHash) as DbArtifactRow | undefined;
     
     if (!row) return null;
     
@@ -152,7 +206,7 @@ export class SqliteQueryBackend implements QueryBackend {
       params.push(filters.txId);
     }
     
-    const rows = db.prepare(query).all(...params) as any[];
+    const rows = db.prepare(query).all(...params) as DbEventRow[];
     return rows.map(r => ({
       eventId: r.event_id,
       kind: r.kind,
@@ -183,7 +237,7 @@ export class SqliteQueryBackend implements QueryBackend {
       params.push(filters.childHash);
     }
     
-    const rows = db.prepare(query).all(...params) as any[];
+    const rows = db.prepare(query).all(...params) as DbLineageEdgeRow[];
     return rows.map(r => ({
       parentArtifactId: r.parent_artifact_id,
       childArtifactId: r.child_artifact_id,
@@ -207,7 +261,7 @@ export class SqliteQueryBackend implements QueryBackend {
       params.push(filters.txId);
     }
     
-    const rows = db.prepare(query).all(...params) as any[];
+    const rows = db.prepare(query).all(...params) as DbArtifactRow[];
     return rows.map(r => ({
       contentHash: r.content_hash,
       schema: r.schema,

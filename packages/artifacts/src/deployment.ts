@@ -20,7 +20,7 @@ export function createDeploymentRecord(opts: {
   payloadHash?: string;
   notes?: string;
 }): DeploymentRecord {
-  const record: any = {
+  const recordDraft: Omit<DeploymentRecord, 'contentHash'> = {
     schema: "hardkas.deployment.v1",
     label: opts.label,
     networkId: opts.networkId,
@@ -29,20 +29,21 @@ export function createDeploymentRecord(opts: {
     hardkasVersion: HARDKAS_VERSION,
     version: ARTIFACT_VERSION,
     createdAt: new Date().toISOString(),
-    mode: "real"
+    mode: "real",
+    ...(opts.txId ? { txId: opts.txId } : {}),
+    ...(opts.planArtifactId ? { planArtifactId: opts.planArtifactId } : {}),
+    ...(opts.receiptArtifactId ? { receiptArtifactId: opts.receiptArtifactId } : {}),
+    ...(opts.deployedAddresses ? { deployedAddresses: opts.deployedAddresses } : {}),
+    ...(opts.deployer ? { deployer: opts.deployer } : {}),
+    ...(opts.payloadHash ? { payloadHash: opts.payloadHash } : {}),
+    ...(opts.notes ? { notes: opts.notes } : {})
   };
 
-  if (opts.txId) record.txId = opts.txId;
-  if (opts.planArtifactId) record.planArtifactId = opts.planArtifactId;
-  if (opts.receiptArtifactId) record.receiptArtifactId = opts.receiptArtifactId;
-  if (opts.deployedAddresses) record.deployedAddresses = opts.deployedAddresses;
-  if (opts.deployer) record.deployer = opts.deployer;
-  if (opts.payloadHash) record.payloadHash = opts.payloadHash;
-  if (opts.notes) record.notes = opts.notes;
-
-  // Canonical content hash
-  record.contentHash = calculateContentHash(record, CURRENT_HASH_VERSION) as unknown as ContentHash;
-  return record as DeploymentRecord;
+  const contentHash = calculateContentHash(recordDraft, CURRENT_HASH_VERSION) as unknown as ContentHash;
+  return {
+    ...recordDraft,
+    contentHash
+  };
 }
 
 export function updateDeploymentStatus(
@@ -50,15 +51,16 @@ export function updateDeploymentStatus(
   newStatus: DeploymentRecord["status"],
   txId?: TxId
 ): DeploymentRecord {
-  const updated: any = {
+  const updatedDraft: Omit<DeploymentRecord, 'contentHash'> = {
     ...record,
     status: newStatus,
-    deployedAt: new Date().toISOString()
+    deployedAt: new Date().toISOString(),
+    ...(txId ? { txId } : {})
   };
   
-  if (txId) updated.txId = txId;
-  
-  delete updated.contentHash;
-  updated.contentHash = calculateContentHash(updated, CURRENT_HASH_VERSION) as unknown as ContentHash;
-  return updated as DeploymentRecord;
+  const contentHash = calculateContentHash(updatedDraft, CURRENT_HASH_VERSION) as unknown as ContentHash;
+  return {
+    ...updatedDraft,
+    contentHash
+  };
 }

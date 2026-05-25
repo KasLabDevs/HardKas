@@ -113,7 +113,7 @@ export class QueryEngine {
     const result = await adapter.execute(request);
     
     // Inject freshness and backend info into annotations
-    const freshness = (await this.backend.getStoreStatus()) as any;
+    const freshness = (await this.backend.getStoreStatus());
     const backendUsed = this.backend.kind();
     
     let explain: any = undefined;

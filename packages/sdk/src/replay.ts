@@ -170,6 +170,7 @@ export class HardkasReplay {
       if (!verifyErrorMsg && plan && receipt) {
         try {
           const { loadOrCreateLocalnetState, reconstructStateAtDaa, verifyReplay } = await import("@hardkas/localnet");
+          const { systemRuntimeContext } = await import("@hardkas/core");
           
           let state = await loadOrCreateLocalnetState();
 
@@ -180,7 +181,7 @@ export class HardkasReplay {
             state = reconstructStateAtDaa(state, targetDaa);
           }
 
-          report = verifyReplay(state, plan, receipt);
+          report = verifyReplay(state, plan, receipt, systemRuntimeContext);
           
           // Write replay report artifact to disk for query-store indexing and dashboard visibility
           const reportFilename = `${new Date().toISOString().replace(/:/g, "-")}-${receipt.txId}.replay.json`;

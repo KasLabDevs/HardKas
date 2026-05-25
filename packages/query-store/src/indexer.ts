@@ -8,7 +8,8 @@ import {
   validateEventEnvelope, 
   type EventEnvelope, 
   type CorruptionIssue, 
-  formatCorruptionIssue 
+  formatCorruptionIssue,
+  type CorruptionCode
 } from "@hardkas/core";
 
 export interface IndexerOptions {
@@ -45,6 +46,12 @@ export interface DoctorReport {
   duplicateEventSequences: number;
   orphanEvents: number;
   lastIndexedAt: string | null;
+}
+
+interface IndexerArtifactRow {
+  readonly artifact_id: string;
+  readonly file_path: string | null;
+  readonly file_mtime_ms: number | null;
 }
 
 export class HardkasIndexer {
@@ -220,7 +227,7 @@ export class HardkasIndexer {
     report.lastIndexedAt = lastIdx?.value || null;
 
     // 2. Check for zombie rows (rows with no file or mismatched mtime)
-    const rows = this.db.prepare("SELECT artifact_id, file_path, file_mtime_ms FROM artifacts").all() as any[];
+    const rows = this.db.prepare("SELECT artifact_id, file_path, file_mtime_ms FROM artifacts").all() as IndexerArtifactRow[];
     for (const row of rows) {
       if (!row.file_path || !fs.existsSync(row.file_path)) {
         report.zombieArtifacts++;
@@ -258,7 +265,7 @@ export class HardkasIndexer {
     report.brokenReplayDependencies = brokenReplayDeps.count;
 
     // Also check for corrupted artifacts in the database
-    const corruptedRows = this.db.prepare("SELECT file_path FROM artifacts WHERE kind = 'CORRUPTED'").all() as any[];
+    const corruptedRows = this.db.prepare("SELECT file_path FROM artifacts WHERE kind = 'CORRUPTED'").all() as { file_path: string }[];
     report.corruptedFiles = corruptedRows.map(r => r.file_path);
 
     // 6. Duplicate Event Sequences (should be prevented by DB constraints, but good to verify)
@@ -335,9 +342,9 @@ export class HardkasIndexer {
         
         if (isCorrupt) {
           result.artifacts.corrupted++;
-          verification.issues.forEach((issue: any) => {
+          verification.issues.forEach(issue => {
             const corruptionIssue: CorruptionIssue = {
-              code: issue.code as any,
+              code: issue.code as CorruptionCode,
               severity: issue.severity === "warning" ? "warning" : "error",
               message: issue.message,
               path: file
@@ -403,9 +410,9 @@ export class HardkasIndexer {
         }
       } catch (e: any) {
         result.artifacts.corrupted++;
-        const code = e instanceof SyntaxError ? "ARTIFACT_JSON_INVALID" : "ARTIFACT_ID_INVALID";
+        const code: CorruptionCode = e instanceof SyntaxError ? "ARTIFACT_JSON_INVALID" : "ARTIFACT_ID_INVALID";
         const corruptionIssue: CorruptionIssue = {
-          code: code as any,
+          code,
           severity: "error",
           message: e.message,
           path: file
@@ -563,7 +570,7 @@ export class HardkasIndexer {
   }
 
   private cleanupZombies() {
-    const rows = this.db.prepare("SELECT artifact_id, file_path FROM artifacts").all() as any[];
+    const rows = this.db.prepare("SELECT artifact_id, file_path FROM artifacts").all() as { artifact_id: string; file_path: string | null }[];
     const deleteArtifact = this.db.prepare("DELETE FROM artifacts WHERE artifact_id = ?");
 
     for (const row of rows) {

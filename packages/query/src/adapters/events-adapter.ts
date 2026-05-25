@@ -11,6 +11,7 @@ import { evaluateFilters } from "../filter.js";
 import { computeQueryHash } from "../serialize.js";
 import type { QueryAdapter, QueryRequest, QueryResult, QueryFilter, WhyBlock } from "../types.js";
 import type { QueryBackend } from "../backend.js";
+import { deterministicCompare } from "@hardkas/core";
 
 interface EventItem {
   readonly eventId: string;
@@ -76,9 +77,9 @@ export class EventsQueryAdapter implements QueryAdapter {
 
     // Deterministic sort: timestamp asc, then eventId lexical tiebreaker
     const sorted = [...filtered].sort((a, b) => {
-      const cmp = a.timestamp.localeCompare(b.timestamp);
+      const cmp = deterministicCompare(a.timestamp, b.timestamp);
       if (cmp !== 0) return cmp;
-      return a.eventId.localeCompare(b.eventId);
+      return deterministicCompare(a.eventId, b.eventId);
     });
 
     // Paginate

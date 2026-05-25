@@ -15,7 +15,8 @@ export async function runTxProfile(options: TxProfileOptions) {
   const absolutePath = sdk.workspace.resolvePath(options.path);
   const plan = await readArtifact(absolutePath) as TxPlanArtifact;
 
-  if (plan.schema !== "hardkas.txPlan" && (plan as any).schema !== "hardkas.txPlan.v1") {
+  const planObj = plan as unknown as Record<string, unknown>;
+  if (plan.schema !== "hardkas.txPlan" && planObj.schema !== "hardkas.txPlan.v1") {
     throw new Error(`Artifact at ${options.path} is not a valid transaction plan.`);
   }
 

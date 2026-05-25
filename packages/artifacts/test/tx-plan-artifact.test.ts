@@ -1,3 +1,4 @@
+import { systemRuntimeContext } from "@hardkas/core";
 import { describe, it, expect } from "vitest";
 import { createTxPlanArtifact } from "../src/tx-plan.js";
 import { ARTIFACT_VERSION } from "../src/schemas.js";
@@ -18,7 +19,7 @@ describe("TxPlanArtifact", () => {
       estimatedMass: 100n
     };
 
-    const artifact = createTxPlanArtifact({
+    const artifact = createTxPlanArtifact({ ctx: systemRuntimeContext, 
       networkId: asNetworkId("simnet") as any,
       mode: "simulated",
       from: { input: "alice", address: "addr1", accountName: "Alice" },

@@ -11,7 +11,7 @@ export function registerReplayCommands(program: Command) {
       if (!path) path = ".";
       try {
         const { runReplayVerify } = await import("../runners/replay-verify-runner.js");
-        await runReplayVerify({ path, ...options });
+        await runReplayVerify({ path, ...options, workspaceRoot: process.cwd() });
       } catch (e: any) {
         handleError(e);
         process.exitCode = 1;
@@ -23,7 +23,7 @@ export function registerReplayCommands(program: Command) {
     .action(async (idA: string, idB: string, options: { json: boolean }) => {
       try {
         const { runReplayDiff } = await import("../runners/replay-diff-runner.js");
-        await runReplayDiff({ idA, idB, ...options });
+        await runReplayDiff({ idA, idB, ...options, network: "simnet", workspaceRoot: process.cwd() });
       } catch (e: any) {
         handleError(e);
         process.exitCode = 1;

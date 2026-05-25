@@ -1,3 +1,4 @@
+import { systemRuntimeContext } from "@hardkas/core";
 import { describe, it, expect } from "vitest";
 import { createSimulatedDag, addSimulatedBlock, moveSink } from "../src/dag.js";
 

@@ -7,7 +7,6 @@ export type { HealthInfo } from "./hooks/health.js";
 export * from "./hooks/kaspa.js";
 export * from "./hooks/igra.js";
 export * from "./hooks/events.js";
-export * from "./hooks/bridge.js";
 export * from "./hooks/metamask.js";
 export * from "./hooks/kasware.js";
 export * from "./hooks/sandbox.js";

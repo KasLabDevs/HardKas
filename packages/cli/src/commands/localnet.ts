@@ -20,7 +20,8 @@ export function registerLocalnetCommands(program: Command): void {
         network: opts.network,
         addresses: opts.addresses || [],
         atDaaScore: opts.atDaaScore,
-        outputPath: opts.output
+        outputPath: opts.output,
+        workspaceRoot: process.cwd()
       });
     });
 

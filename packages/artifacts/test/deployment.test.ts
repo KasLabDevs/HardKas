@@ -1,3 +1,4 @@
+import { systemRuntimeContext } from "@hardkas/core";
 import { describe, it, expect } from "vitest";
 import { createDeploymentRecord, updateDeploymentStatus } from "../src/deployment.js";
 import { CURRENT_HASH_VERSION } from "../src/canonical.js";

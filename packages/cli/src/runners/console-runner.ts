@@ -5,10 +5,15 @@ import { createTestHarness } from "@hardkas/testing";
 import { calculateContentHash, canonicalStringify } from "@hardkas/artifacts";
 import { maskSecrets, formatSompi, parseKasToSompi } from "@hardkas/core";
 
+interface REPLServerWithHistory extends repl.REPLServer {
+  history?: string[];
+}
+
 export async function startConsole(opts: {
   network: string;
   accounts: number;
   balance: bigint;
+  workspaceRoot: string;
 }): Promise<void> {
   const harness = createTestHarness({
     accounts: opts.accounts,
@@ -40,7 +45,7 @@ export async function startConsole(opts: {
   const r = repl.start({
     prompt: "hardkas> ",
     useGlobal: false,
-  });
+  }) as REPLServerWithHistory;
 
   // Inject globals
   r.context.h = harness;
@@ -54,10 +59,9 @@ export async function startConsole(opts: {
   try {
     if (fs.existsSync(historyPath)) {
       const history = fs.readFileSync(historyPath, "utf-8").split("\n").filter(Boolean).reverse();
-      // @ts-ignore - history is not explicitly on the type but it's there at runtime for node repl
-      if ((r as any).history) {
+      if (r.history) {
         for (const line of history) {
-          (r as any).history.push(line);
+          r.history.push(line);
         }
       }
     }
@@ -65,8 +69,7 @@ export async function startConsole(opts: {
 
   r.on("exit", () => {
     try {
-      // @ts-ignore
-      const lines = ((r as any).history || []).slice(0, 500).reverse().join("\n");
+      const lines = (r.history || []).slice(0, 500).reverse().join("\n");
       fs.writeFileSync(historyPath, lines);
     } catch {}
     console.log("\nBye!");

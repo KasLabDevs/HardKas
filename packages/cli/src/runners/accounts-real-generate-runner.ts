@@ -7,6 +7,7 @@ import {
   KeystoreManager
 } from "@hardkas/accounts";
 import path from "node:path";
+import fs from "node:fs";
 import { acquirePassword } from "./secrets.js";
 import { UI } from "../ui.js";
 

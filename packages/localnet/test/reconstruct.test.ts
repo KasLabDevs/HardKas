@@ -1,3 +1,4 @@
+import { systemRuntimeContext } from "@hardkas/core";
 import { describe, it, expect } from "vitest";
 import { reconstructStateAtDaa } from "../src/state.js";
 import { LocalnetState } from "../src/types.js";

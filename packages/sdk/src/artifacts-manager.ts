@@ -96,4 +96,34 @@ export class HardkasArtifactsManager {
       contentHash: hash
     };
   }
+
+  /**
+   * Reads an artifact by path or ID/hash from the workspace.
+   */
+  async read(id: string): Promise<any> {
+    const { readArtifact } = await import("@hardkas/artifacts");
+    let filePath = id;
+    
+    if (!fs.existsSync(filePath)) {
+      // 1. Try in workspace artifacts directory
+      filePath = path.join(this.workspace.artifactsDir, `${id}.json`);
+      if (!fs.existsSync(filePath)) {
+        // 2. Try prefix search in workspace artifacts directory
+        if (fs.existsSync(this.workspace.artifactsDir)) {
+          const files = fs.readdirSync(this.workspace.artifactsDir);
+          const found = files.find(f => f.includes(id) || f.endsWith(`${id}.json`));
+          if (found) {
+            filePath = path.join(this.workspace.artifactsDir, found);
+          } else {
+            throw new Error(`Artifact ${id} not found in workspace.`);
+          }
+        } else {
+          throw new Error(`Artifact ${id} not found in workspace.`);
+        }
+      }
+    }
+    
+    return readArtifact(filePath);
+  }
 }
+

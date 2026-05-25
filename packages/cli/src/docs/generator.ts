@@ -1,4 +1,5 @@
 import { Command } from "commander";
+import { deterministicCompare } from "@hardkas/core";
 
 export interface CliOptionReference {
   flags: string;
@@ -32,7 +33,7 @@ export function extractCliReference(program: Command, options?: { deterministic?
   return {
     schema: "hardkas.cliReference.v1",
     generatedAt: options?.deterministic ? "deterministic" : new Date().toISOString(),
-    commands: program.commands.map(cmd => extractCommand(cmd, program.name())).sort((a, b) => a.path.localeCompare(b.path))
+    commands: program.commands.map(cmd => extractCommand(cmd, program.name())).sort((a, b) => deterministicCompare(a.path, b.path))
   };
 }
 
@@ -66,7 +67,7 @@ function extractCommand(cmd: any, parentPath: string): CliCommandReference {
       required: opt.required || false,
       mandatory: opt.mandatory || false
     })),
-    subcommands: cmd.commands.map((sub: any) => extractCommand(sub, currentPath)).sort((a: any, b: any) => a.path.localeCompare(b.path))
+    subcommands: cmd.commands.map((sub: any) => extractCommand(sub, currentPath)).sort((a: any, b: any) => deterministicCompare(a.path, b.path))
   };
 }
 

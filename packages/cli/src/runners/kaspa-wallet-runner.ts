@@ -1,6 +1,8 @@
 import pc from "picocolors";
 import { UI, handleError } from "../ui.js";
 import { loadHardkasConfig } from "@hardkas/config";
+import type { NetworkId, KaspaAddress, ContentHash } from "@hardkas/core";
+import type { TxPlanArtifact } from "@hardkas/artifacts";
 
 export async function runKaspaWalletCreate(name: string, options: { network: string }) {
   try {
@@ -10,7 +12,7 @@ export async function runKaspaWalletCreate(name: string, options: { network: str
     console.log(pc.bold(`HardKAS • Kaspa Wallet Creation`));
     console.log(pc.bold("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"));
 
-    const wallet = await createLocalKaspaWallet({ networkId: options.network as any });
+    const wallet = await createLocalKaspaWallet({ networkId: options.network as "mainnet" | "testnet-10" | "simnet" });
     
     console.log(`  ${pc.green("✓")} New Kaspa L1 wallet generated:`);
     console.log(`    Name:    ${pc.white(name)}`);
@@ -124,7 +126,7 @@ export async function runKaspaWalletSend(from: string, to: string, options: { am
         scriptPublicKey: u.scriptPublicKey || ""
       })),
       feeRateSompiPerMass: 1n, // Default 1 sompi/mass
-      changeAddress: sender.address as any
+      changeAddress: sender.address!
     });
 
     console.log(pc.bold("\nTransaction Plan"));
@@ -150,20 +152,39 @@ export async function runKaspaWalletSend(from: string, to: string, options: { am
 
     // 2. Sign
     // Map internal plan to Artifact format for the signer
-    const planArtifact: any = {
+    const configObj = config.config as Record<string, unknown>;
+    const networkId = typeof configObj.networkId === "string" ? (configObj.networkId as NetworkId) : (config.config.defaultNetwork || "simnet");
+    const planArtifact: TxPlanArtifact = {
       schema: "hardkas.txPlan",
       planId: `plan-${calculateContentHash({ from: sender.address, to: targetAddress, amount: amountSompi.toString() }).slice(0, 16)}`,
       hardkasVersion: HARDKAS_VERSION,
       version: "1.0.0-alpha",
-      networkId: (config.config as any).networkId || config.config.defaultNetwork || "simnet",
+      createdAt: new Date().toISOString(),
+      networkId: networkId as NetworkId,
       mode: sender.kind === "simulated" ? "simulated" : "real",
-      from: { address: sender.address! },
-      to: { address: targetAddress },
-      amountSompi: amountSompi,
-      inputs: plan.inputs,
-      outputs: plan.outputs,
-      change: plan.change,
-      estimatedFeeSompi: plan.estimatedFeeSompi
+      from: { address: sender.address as KaspaAddress },
+      to: { address: targetAddress as KaspaAddress },
+      amountSompi: amountSompi.toString(),
+      inputs: plan.inputs.map(i => ({
+        outpoint: {
+          transactionId: i.outpoint.transactionId,
+          index: i.outpoint.index
+        },
+        amountSompi: i.amountSompi.toString()
+      })),
+      outputs: plan.outputs.map(o => ({
+        address: o.address as KaspaAddress,
+        amountSompi: o.amountSompi.toString()
+      })),
+      estimatedFeeSompi: plan.estimatedFeeSompi.toString(),
+      estimatedMass: plan.estimatedMass.toString(),
+      ...(plan.change ? {
+        change: {
+          address: plan.change.address as KaspaAddress,
+          amountSompi: plan.change.amountSompi.toString()
+        }
+      } : {}),
+      contentHash: "synthetic-plan-hash" as ContentHash
     };
 
     const signedArtifact = await signTxPlanArtifact({

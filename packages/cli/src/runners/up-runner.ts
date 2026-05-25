@@ -4,6 +4,7 @@ import { JsonWrpcKaspaClient } from "@hardkas/kaspa-rpc";
 import { listHardkasAccounts } from "@hardkas/accounts";
 import fs from "node:fs/promises";
 import path from "node:path";
+import pc from "picocolors";
 
 export async function runUp() {
   UI.box("HardKAS", "Environment Bootstrapper");
@@ -83,7 +84,7 @@ export async function runUp() {
     console.log(`    - ${pc.white("stale diagnostics")}\n`);
 
     const { runDevServer } = await import("./dev-server-runner.js");
-    await runDevServer({ port, open: true, host: "localhost", unsafeExternal: false, json: false });
+    await runDevServer({ port, open: true, host: "localhost", unsafeExternal: false, json: false, showToken: false });
 
   } catch (error) {
     throw error;

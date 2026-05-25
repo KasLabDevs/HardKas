@@ -1,3 +1,4 @@
+import { systemRuntimeContext } from "@hardkas/core";
 import { describe, it, expect } from "vitest";
 import { getBroadcastableSignedTransaction } from "../src/signed-tx.js";
 import type { SignedTxArtifact } from "../src/types.js";

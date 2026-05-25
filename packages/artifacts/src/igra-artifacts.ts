@@ -68,7 +68,7 @@ export function isIgraTxPlanArtifact(value: unknown): value is IgraTxPlanArtifac
 export function validateIgraTxPlanArtifact(value: unknown): ArtifactValidationResult {
   const errors: string[] = [];
   if (typeof value !== "object" || value === null) return { ok: false, errors: ["Artifact must be an object"] };
-  const v = value as any;
+  const v = value as Record<string, unknown>;
 
   if (v.schema !== ARTIFACT_SCHEMAS.IGRA_TX_PLAN) errors.push(`Invalid schema: expected '${ARTIFACT_SCHEMAS.IGRA_TX_PLAN}'`);
   validateCommon(v, errors);
@@ -79,7 +79,7 @@ export function validateIgraTxPlanArtifact(value: unknown): ArtifactValidationRe
   if (!v.request || typeof v.request !== "object") {
     errors.push("Missing or invalid request object");
   } else {
-    const r = v.request;
+    const r = v.request as Record<string, unknown>;
     if (r.from) assertEvmAddress(r.from, "request.from", errors);
     if (v.txType === "contract-deploy") {
       if (r.to !== undefined && r.to !== null) {
@@ -111,7 +111,7 @@ export function assertValidIgraTxPlanArtifact(value: unknown): asserts value is 
 export function validateIgraSignedTxArtifact(value: unknown): ArtifactValidationResult {
   const errors: string[] = [];
   if (typeof value !== "object" || value === null) return { ok: false, errors: ["Artifact must be an object"] };
-  const v = value as any;
+  const v = value as Record<string, unknown>;
 
   if (v.schema !== ARTIFACT_SCHEMAS.IGRA_SIGNED_TX) errors.push(`Invalid schema: expected '${ARTIFACT_SCHEMAS.IGRA_SIGNED_TX}'`);
   validateCommon(v, errors);
@@ -134,11 +134,11 @@ export function assertValidIgraSignedTxArtifact(value: unknown): asserts value i
 export function validateIgraTxReceiptArtifact(value: unknown): ArtifactValidationResult {
   const errors: string[] = [];
   if (typeof value !== "object" || value === null) return { ok: false, errors: ["Artifact must be an object"] };
-  const v = value as any;
+  const v = value as Record<string, unknown>;
 
   if (v.schema !== ARTIFACT_SCHEMAS.IGRA_TX_RECEIPT) errors.push(`Invalid schema: expected '${ARTIFACT_SCHEMAS.IGRA_TX_RECEIPT}'`);
   validateCommon(v, errors);
-  if (!["submitted", "confirmed", "failed"].includes(v.status)) errors.push("Invalid status");
+  if (!["submitted", "confirmed", "failed"].includes(v.status as string)) errors.push("Invalid status");
   assertEvmTxHash(v.txHash, "txHash", errors);
   if (typeof v.rpcUrl !== "string" || !v.rpcUrl) errors.push("Missing rpcUrl");
   if (v.blockNumber) assertDecimalBigIntString(v.blockNumber, "blockNumber", errors);
@@ -153,7 +153,7 @@ export function assertValidIgraTxReceiptArtifact(value: unknown): asserts value 
   }
 }
 
-function validateCommon(v: any, errors: string[]): void {
+function validateCommon(v: Record<string, unknown>, errors: string[]): void {
   if (!v.hardkasVersion) errors.push("Missing hardkasVersion");
   if (typeof v.networkId !== "string" || !v.networkId) errors.push("Missing networkId");
   if (v.mode !== "l2-rpc") errors.push("Invalid mode: expected 'l2-rpc'");
@@ -163,25 +163,25 @@ function validateCommon(v: any, errors: string[]): void {
 
 // Helpers
 
-export function assertDecimalBigIntString(value: any, field: string, errors: string[]): void {
+export function assertDecimalBigIntString(value: unknown, field: string, errors: string[]): void {
   if (typeof value !== "string" || !/^\d+$/.test(value)) {
     errors.push(`Invalid ${field}: must be a decimal bigint string`);
   }
 }
 
-export function assertHexData(value: any, field: string, errors: string[]): void {
+export function assertHexData(value: unknown, field: string, errors: string[]): void {
   if (typeof value !== "string" || !/^0x([a-fA-F0-9]{2})*$/.test(value)) {
     errors.push(`Invalid ${field}: must be a 0x-prefixed hex string`);
   }
 }
 
-export function assertEvmAddress(value: any, field: string, errors: string[]): void {
+export function assertEvmAddress(value: unknown, field: string, errors: string[]): void {
   if (typeof value !== "string" || !/^0x[a-fA-F0-9]{40}$/.test(value)) {
     errors.push(`Invalid ${field}: must be a 0x-prefixed 40-character EVM address`);
   }
 }
 
-export function assertEvmTxHash(value: any, field: string, errors: string[]): void {
+export function assertEvmTxHash(value: unknown, field: string, errors: string[]): void {
   if (typeof value !== "string" || !/^0x[a-fA-F0-9]{64}$/.test(value)) {
     errors.push(`Invalid ${field}: must be a 0x-prefixed 64-character EVM transaction hash`);
   }

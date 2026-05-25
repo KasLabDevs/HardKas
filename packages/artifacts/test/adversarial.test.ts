@@ -1,3 +1,4 @@
+import { systemRuntimeContext } from "@hardkas/core";
 import { describe, it, expect } from "vitest";
 import { verifyArtifactIntegrity, verifyArtifactSemantics } from "../src/verify.js";
 import { ARTIFACT_VERSION, CURRENT_HASH_VERSION } from "../src/index.js";

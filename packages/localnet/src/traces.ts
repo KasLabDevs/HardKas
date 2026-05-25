@@ -5,6 +5,7 @@ import { HardkasArtifactBase, HARDKAS_VERSION, ARTIFACT_SCHEMAS } from "@hardkas
 import { NetworkId, ExecutionMode } from "@hardkas/core";
 
 import { writeFileAtomic } from "@hardkas/core";
+import { deterministicCompare } from "@hardkas/core";
 
 export type StoredTraceEvent =
   | {
@@ -105,5 +106,5 @@ export async function listSimulatedTraces(
     }
   }
 
-  return traces.sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+  return traces.sort((a, b) => deterministicCompare(b.createdAt, a.createdAt));
 }

@@ -17,9 +17,9 @@ export async function runBridgeLocalPlan(options: {
     // Resolve context
     const ctx = await resolveBridgeLocalContext({
       config,
-      sessionName: options.session as any,
-      from: options.from as any,
-      toIgra: options.toIgra as any
+      ...(options.session !== undefined && { sessionName: options.session }),
+      ...(options.from !== undefined && { from: options.from }),
+      ...(options.toIgra !== undefined && { toIgra: options.toIgra })
     });
 
     const amountSompi = BigInt(Math.floor(parseFloat(options.amount) * 1e8));
@@ -39,8 +39,8 @@ export async function runBridgeLocalPlan(options: {
       fromAddress: ctx.l1.address,
       targetEvmAddress: ctx.l2.address,
       amountSompi,
-      networkId: (config.config as any).networkId || config.config.defaultNetwork || "simnet",
-      availableUtxos: utxos.map(u => ({ ...u, scriptPublicKey: "", blockDaaScore: u.blockDaaScore ? BigInt(u.blockDaaScore) : undefined })) as any
+      networkId: ((config.config as Record<string, unknown>).networkId as import("@hardkas/core").NetworkId) || (config.config.defaultNetwork as import("@hardkas/core").NetworkId) || "simnet",
+      availableUtxos: utxos.map(u => ({ ...u, scriptPublicKey: "", blockDaaScore: u.blockDaaScore ? BigInt(u.blockDaaScore) : undefined })) as import("@hardkas/tx-builder").Utxo[]
     });
 
     if (options.json) {
@@ -95,12 +95,14 @@ export async function runBridgeLocalSimulate(options: {
     const { MockKaspaRpcClient } = await import("@hardkas/kaspa-rpc");
 
     // Resolve context
-    const ctx = await resolveBridgeLocalContext({
+    const bridgeOpts = {
       config,
-      sessionName: options.session as any,
-      from: options.from as any,
-      toIgra: options.toIgra as any
-    });
+      ...(options.session !== undefined ? { sessionName: options.session } : {}),
+      ...(options.from !== undefined ? { from: options.from } : {}),
+      ...(options.toIgra !== undefined ? { toIgra: options.toIgra } : {})
+    };
+
+    const ctx = await resolveBridgeLocalContext(bridgeOpts);
 
     const amountSompi = BigInt(Math.floor(parseFloat(options.amount) * 1e8));
 
@@ -119,8 +121,8 @@ export async function runBridgeLocalSimulate(options: {
       fromAddress: ctx.l1.address,
       targetEvmAddress: ctx.l2.address,
       amountSompi,
-      networkId: (config.config as any).networkId || config.config.defaultNetwork || "simnet",
-      availableUtxos: utxos.map(u => ({ ...u, scriptPublicKey: "", blockDaaScore: u.blockDaaScore ? BigInt(u.blockDaaScore) : undefined })) as any
+      networkId: ((config.config as Record<string, unknown>).networkId as import("@hardkas/core").NetworkId) || (config.config.defaultNetwork as import("@hardkas/core").NetworkId) || "simnet",
+      availableUtxos: utxos.map(u => ({ ...u, scriptPublicKey: "", blockDaaScore: u.blockDaaScore ? BigInt(u.blockDaaScore) : undefined })) as import("@hardkas/tx-builder").Utxo[]
     });
 
     if (!options.json) {

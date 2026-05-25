@@ -1,3 +1,4 @@
+import { systemRuntimeContext } from "@hardkas/core";
 import { SOMPI_PER_KAS } from "@hardkas/core";
 import { buildPaymentPlan } from "@hardkas/tx-builder";
 import { applySimulatedPayment, LocalnetState, createInitialLocalnetState } from "@hardkas/localnet";
@@ -63,7 +64,7 @@ export async function runUtxoFuzzer(iterations = 50): Promise<FuzzResult> {
         from: fromAccount.name,
         to: toAccount.name,
         amountSompi
-      });
+      }, systemRuntimeContext);
 
       state = result.state;
 

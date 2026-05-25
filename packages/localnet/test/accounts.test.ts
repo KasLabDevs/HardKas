@@ -1,3 +1,4 @@
+import { systemRuntimeContext } from "@hardkas/core";
 import { describe, it, expect } from "vitest";
 import { resolveAccountAddress, createDeterministicAccounts } from "../src/accounts";
 import { SOMPI_PER_KAS } from "@hardkas/core";

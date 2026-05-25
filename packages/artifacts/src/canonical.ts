@@ -1,5 +1,5 @@
 import { createHash } from "node:crypto";
-
+import { deterministicCompare } from "@hardkas/core";
 export const SEMANTIC_EXCLUSIONS = new Set([
   "contentHash",
   "artifactId",
@@ -41,7 +41,7 @@ export const CURRENT_HASH_VERSION = 3;
  * Excludes fields in SEMANTIC_EXCLUSIONS during serialization.
  * Skips keys with undefined values (matching JSON.stringify behavior).
  */
-export function canonicalStringify(obj: any, version: number = CURRENT_HASH_VERSION): string {
+export function canonicalStringify(obj: unknown, version: number = CURRENT_HASH_VERSION): string {
   if (obj === null || typeof obj !== "object") {
     if (typeof obj === "bigint") {
       // v2+ adds a type marker to distinguish BigInt from String.
@@ -65,16 +65,31 @@ export function canonicalStringify(obj: any, version: number = CURRENT_HASH_VERS
     return "[" + obj.map(item => canonicalStringify(item, version)).join(",") + "]";
   }
 
+  if (obj instanceof Map) {
+    throw new Error("Map is not canonicalizable. Use a plain object.");
+  }
+  if (obj instanceof Set) {
+    throw new Error("Set is not canonicalizable. Use an array.");
+  }
+  if (obj instanceof Date) {
+    throw new Error("Date must be serialized explicitly.");
+  }
+
+  const proto = Object.getPrototypeOf(obj);
+  if (proto !== Object.prototype && proto !== null) {
+    throw new Error("Non-plain object encountered in canonicalizer.");
+  }
+
   const sortedKeys = Object.keys(obj)
     .filter(key =>
       !SEMANTIC_EXCLUSIONS.has(key) &&
-      obj[key] !== undefined
+      (obj as Record<string, unknown>)[key] !== undefined
     )
-    .sort();
+    .sort(deterministicCompare);
 
   const result = sortedKeys
     .map(key => {
-      const value = obj[key];
+      const value = (obj as Record<string, unknown>)[key];
       return JSON.stringify(key) + ":" + canonicalStringify(value, version);
     })
     .join(",");
@@ -86,7 +101,7 @@ export function canonicalStringify(obj: any, version: number = CURRENT_HASH_VERS
  * Calculates a SHA-256 hash of the canonical JSON representation.
  * Always excludes fields in SEMANTIC_EXCLUSIONS from the calculation.
  */
-export function calculateContentHash(obj: any, version: number = CURRENT_HASH_VERSION): string {
+export function calculateContentHash(obj: unknown, version: number = CURRENT_HASH_VERSION): string {
   const canonical = canonicalStringify(obj, version);
   return createHash("sha256").update(canonical).digest("hex");
 }

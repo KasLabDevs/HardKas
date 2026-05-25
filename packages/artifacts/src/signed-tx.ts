@@ -1,17 +1,18 @@
-import { TxPlan, TxReceipt, SignedTx, ARTIFACT_VERSION, DagContext } from "./schemas.js";
+import { TxPlan, TxReceipt, SignedTx, ARTIFACT_VERSION, DagContext, DraftArtifact } from "./schemas.js";
 import { calculateContentHash, CURRENT_HASH_VERSION } from "./canonical.js";
 import { HARDKAS_VERSION } from "./constants.js";
+import type { RuntimeContext } from "@hardkas/core";
 
 /**
  * Creates a canonical simulated signed transaction artifact.
  */
-export function createSimulatedSignedTxArtifact(plan: TxPlan, payload: string): SignedTx {
-  const artifact: any = {
+export function createSimulatedSignedTxArtifact(plan: TxPlan, payload: string, ctx: RuntimeContext): SignedTx {
+  const artifact: DraftArtifact<SignedTx, "signedId" | "contentHash"> = {
     schema: "hardkas.signedTx",
     hardkasVersion: HARDKAS_VERSION,
     version: ARTIFACT_VERSION,
     hashVersion: CURRENT_HASH_VERSION,
-    createdAt: new Date().toISOString(),
+    createdAt: new Date(ctx.clock.now()).toISOString(),
     status: "signed",
     sourcePlanId: plan.planId,
     networkId: plan.networkId,
@@ -39,6 +40,7 @@ export function createSimulatedSignedTxArtifact(plan: TxPlan, payload: string): 
 export function createSimulatedTxReceipt(
   plan: TxPlan, 
   txId: string, 
+  ctx: RuntimeContext,
   extra?: { 
     spentUtxoIds?: string[], 
     createdUtxoIds?: string[], 
@@ -48,12 +50,12 @@ export function createSimulatedTxReceipt(
     dagContext?: DagContext
   }
 ): TxReceipt {
-  const artifact: any = {
+  const artifact: DraftArtifact<TxReceipt, "contentHash"> = {
     schema: "hardkas.txReceipt",
     hardkasVersion: HARDKAS_VERSION,
     version: ARTIFACT_VERSION,
     hashVersion: CURRENT_HASH_VERSION,
-    createdAt: new Date().toISOString(),
+    createdAt: new Date(ctx.clock.now()).toISOString(),
     txId,
     status: "accepted",
     mode: "simulated",
@@ -62,7 +64,7 @@ export function createSimulatedTxReceipt(
     to: { address: plan.to.address },
     amountSompi: plan.amountSompi,
     feeSompi: plan.estimatedFeeSompi,
-    changeSompi: (plan as any).change?.amountSompi,
+    changeSompi: plan.change?.amountSompi,
     spentUtxoIds: extra?.spentUtxoIds,
     createdUtxoIds: extra?.createdUtxoIds,
     daaScore: extra?.daaScore,

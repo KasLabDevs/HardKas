@@ -14,6 +14,7 @@ import { HardkasStore, HardkasIndexer, SqliteQueryBackend } from "@hardkas/query
 import { calculateContentHash, assertValidTxReceiptArtifact } from "@hardkas/artifacts";
 import { runLinearChain, runWideDag, profileMass } from "@hardkas/simulator";
 import { verifyReplay, calculateStateHash } from "@hardkas/localnet";
+import { systemRuntimeContext } from "@hardkas/core";
 import goldenSummary from "./golden/gauntlet-summary.json";
 
 const __filename = fileURLToPath(import.meta.url);
@@ -231,7 +232,7 @@ describe("negative mutation detection", () => {
       preStateHash: originalPreState
     };
 
-    const report = verifyReplay(harness.state, basePlan as any, mutatedReceipt as any);
+    const report = verifyReplay(harness.state, basePlan as any, mutatedReceipt as any, systemRuntimeContext);
     assert.strictEqual(report.invariantsOk, false);
     assert.strictEqual(report.errors.some(e => e.includes("preStateHash mismatch")), true);
   });

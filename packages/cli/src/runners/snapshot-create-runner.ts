@@ -37,7 +37,7 @@ export async function runSnapshotCreate(options: SnapshotCreateOptions) {
         "Snapshot Path": outputDir,
         "State Authority": manifest.stateAuthority || "filesystem artifacts",
         "Projection Layer": manifest.projectionAuthority || "local cache",
-        "Snapshot Version": manifest.snapshotVersion,
+        "Snapshot Version": String(manifest.snapshotVersion),
         "Included Artifacts": String(manifest.includedArtifacts),
         "Excluded/Corrupted": `${manifest.excludedArtifacts} / ${manifest.corruptedArtifacts}`,
         "Consensus Validated": options.consensusValidated ? "YES" : "NO",

@@ -349,7 +349,7 @@ async function runDoctor(opts: { json?: boolean; consistency?: boolean; strict?:
       store.connect({ autoMigrate: true });
       
       const { HardkasIndexer } = await import("@hardkas/query-store");
-      const indexer = new HardkasIndexer(store.getDatabase(), { cwd: process.cwd(), strict: opts.strict });
+      const indexer = new HardkasIndexer(store.getDatabase(), { cwd: process.cwd(), strict: opts.strict ? true : false });
       const idxReport = indexer.doctor();
 
       if (idxReport.corruptedFiles.length > 0) {

@@ -89,18 +89,14 @@ export function ActivityFeed() {
       case "account.updated":
         return `Account balance updated: ${payload.alias || payload.address ? (payload.alias || payload.address.slice(0, 10)) : ""}`;
       default:
-        return `${event.type}: ${typeof payload === "string" ? payload : JSON.stringify(payload)}`;
+        return `${event.type}: ${typeof payload === "string" ? payload : "[Event Payload]"}`;
     }
   };
 
   const formatRelativeTime = (timestamp: any): string => {
     const timeMs = typeof timestamp === "string" ? new Date(timestamp).getTime() : Number(timestamp);
     if (isNaN(timeMs)) return "—";
-    const seconds = Math.floor((Date.now() - timeMs) / 1000);
-    if (seconds < 5) return "just now";
-    if (seconds < 60) return `${seconds}s ago`;
-    if (seconds < 3600) return `${Math.floor(seconds / 60)}m ago`;
-    return `${Math.floor(seconds / 3600)}h ago`;
+    return new Date(timeMs).toISOString();
   };
 
   const filteredEvents = (events || []).filter(

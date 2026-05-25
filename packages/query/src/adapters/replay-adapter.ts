@@ -24,6 +24,7 @@ import type {
   CausalStep
 } from "../types.js";
 import type { QueryBackend } from "../backend.js";
+import { deterministicCompare } from "@hardkas/core";
 
 // ---------------------------------------------------------------------------
 // Adapter
@@ -86,8 +87,8 @@ export class ReplayQueryAdapter implements QueryAdapter {
 
     // Sort by daaScore desc, tie-break by txId
     items.sort((a, b) => {
-      const cmp = b.daaScore.localeCompare(a.daaScore);
-      return cmp !== 0 ? cmp : a.txId.localeCompare(b.txId);
+      const cmp = deterministicCompare(b.daaScore, a.daaScore);
+      return cmp !== 0 ? cmp : deterministicCompare(a.txId, b.txId);
     });
 
     const total = items.length;
@@ -218,7 +219,7 @@ export class ReplayQueryAdapter implements QueryAdapter {
       }
     }
 
-    divergences.sort((a, b) => a.txId.localeCompare(b.txId));
+    divergences.sort((a, b) => deterministicCompare(a.txId, b.txId));
     const paged = divergences.slice(request.offset, request.offset + request.limit);
 
     let why: WhyBlock[] | undefined;

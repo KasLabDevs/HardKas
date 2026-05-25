@@ -144,3 +144,5 @@ export * from "./provenance.js";
 export * from "./lock.js";
 export * from "./replay.js";
 export * from "./snapshot.js";
+export * from "./deterministic.js";
+export * from "./runtime-context.js";

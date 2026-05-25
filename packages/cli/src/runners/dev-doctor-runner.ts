@@ -2,6 +2,8 @@ import pc from "picocolors";
 import { UI, handleError } from "../ui.js";
 import { loadHardkasConfig } from "@hardkas/config";
 
+import type { NetworkId } from "@hardkas/core";
+
 export interface DevDoctorCheck {
   name: string;
   status: "success" | "warning" | "error";
@@ -28,7 +30,8 @@ export async function runDevDoctor(options: {
 
   try {
     const config = await loadHardkasConfig();
-    const networkId = (config.config as any).networkId || config.config.defaultNetwork || "simnet";
+    const configObj = config.config as Record<string, unknown>;
+    const networkId = typeof configObj.networkId === "string" ? (configObj.networkId as NetworkId) : (config.config.defaultNetwork || "simnet");
     const { getL2NetworkProfile, EvmJsonRpcClient, generateAddEthereumChainPayload } = await import("@hardkas/l2");
     const { listHardkasAccounts } = await import("@hardkas/accounts");
 

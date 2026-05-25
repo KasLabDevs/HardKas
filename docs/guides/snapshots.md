@@ -10,7 +10,7 @@ To freeze the current state of virtual account balances and BlockDAG allocations
 
 ```bash
 # Capture current state as a snapshot named checkpoint-1
-hardkas snapshot create checkpoint-1
+hardkas localnet snapshot create checkpoint-1
 ```
 
 This generates a `hardkas.snapshot` artifact inside `.hardkas/`, sealing the UTXO matrix and state hashes.
@@ -23,10 +23,10 @@ You can restore or verify a snapshot at any time:
 
 ```bash
 # Verify snapshot mathematical invariants
-hardkas snapshot verify checkpoint-1
+hardkas localnet snapshot verify checkpoint-1
 
 # Reconstruct timeline state
-hardkas snapshot replay checkpoint-1
+hardkas localnet snapshot replay checkpoint-1
 ```
 
 ---

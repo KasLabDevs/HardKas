@@ -19,7 +19,8 @@ export async function runLocalWizard(options: {
 }) {
   try {
     const config = await loadHardkasConfig();
-    const networkId = (config.config as any).networkId || config.config.defaultNetwork || "simnet";
+    const configRecord = config.config as Record<string, unknown>;
+    const networkId = (typeof configRecord["networkId"] === "string" ? configRecord["networkId"] : config.config.defaultNetwork) || "simnet";
     const { getL2NetworkProfile, EvmJsonRpcClient } = await import("@hardkas/l2");
     const { listHardkasAccounts } = await import("@hardkas/accounts");
     
@@ -125,7 +126,7 @@ export async function runLocalWizard(options: {
     result.step = "balance";
     if (!options.json) console.log(`\n${pc.cyan(pc.bold("3. Checking Balance"))}`);
     const client = new EvmJsonRpcClient({ url: profile.rpcUrl! });
-    const balance = await client.getBalanceWei(targetAccount.address as any);
+    const balance = await client.getBalanceWei(targetAccount.address!);
     const kasBalance = Number(balance) / 1e18;
 
     if (kasBalance === 0) {
@@ -140,7 +141,7 @@ export async function runLocalWizard(options: {
     }
 
     // 4. Final Success
-    result.status = (kasBalance > 0 ? "success" : "failed") as any;
+    result.status = kasBalance > 0 ? "success" : "failed";
     
     if (options.json) {
       console.log(JSON.stringify(result, null, 2));

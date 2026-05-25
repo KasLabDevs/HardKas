@@ -7,12 +7,13 @@ import { runReplayVerify } from "./replay-verify-runner.js";
 export interface SnapshotReplayOptions {
   name: string;
   json?: boolean;
+  workspaceRoot?: string;
 }
 
 export async function runSnapshotReplay(options: SnapshotReplayOptions) {
   try {
     const { Hardkas } = await import("@hardkas/sdk");
-    const sdk = await Hardkas.open({ cwd: options.workspaceRoot });
+    const sdk = await Hardkas.open(options.workspaceRoot ? { cwd: options.workspaceRoot } : {});
     const snapshotDir = sdk.workspace.resolvePath("snapshots", options.name);
 
     // 1. Read Manifest
@@ -59,7 +60,7 @@ export async function runSnapshotReplay(options: SnapshotReplayOptions) {
     const store = new HardkasStore({ dbPath: path.join(hardkasDir, "store.db") });
     store.connect({ autoMigrate: true });
     
-    const indexer = new HardkasIndexer(store.getDatabase(), { cwd: options.workspaceRoot, strict: true });
+    const indexer = new HardkasIndexer(store.getDatabase(), options.workspaceRoot ? { cwd: options.workspaceRoot, strict: true } : { strict: true });
     const result = await indexer.rebuild();
     
     if (!result.ok) {

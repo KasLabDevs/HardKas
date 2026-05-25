@@ -35,8 +35,9 @@ export interface ArtifactExplanation {
 /**
  * Generates a deep operational explanation of a HardKAS artifact.
  */
-export async function explainArtifact(artifact: any): Promise<ArtifactExplanation> {
-  const schema = artifact.schema || "unknown";
+export async function explainArtifact(artifactUnknown: unknown): Promise<ArtifactExplanation> {
+  const artifact = artifactUnknown as Record<string, unknown>;
+  const schema = (artifact.schema as string) || "unknown";
   const type = schema.split(".")[1] || "unknown";
   
   // 1. Integrity & Semantic Audit
@@ -49,28 +50,28 @@ export async function explainArtifact(artifact: any): Promise<ArtifactExplanatio
   const explanation: ArtifactExplanation = {
     summary: {
       type: type.toUpperCase(),
-      version: artifact.version || "0.0.0",
-      network: artifact.networkId || "unknown",
-      mode: (artifact.mode as any) || "simulated",
-      createdAt: artifact.createdAt || "unknown",
-      status: status as any
+      version: (artifact.version as string) || "0.0.0",
+      network: (artifact.networkId as string) || "unknown",
+      mode: (artifact.mode as ExecutionMode) || "simulated",
+      createdAt: (artifact.createdAt as string) || "unknown",
+      status: status as "valid" | "invalid" | "legacy" | "corrupted"
     },
     identity: {
-      artifactId: artifact.lineage?.artifactId || "orphan",
-      contentHash: artifact.contentHash || "missing",
-      lineageId: artifact.lineage?.lineageId,
-      rootArtifactId: artifact.lineage?.rootArtifactId,
-      parentArtifactId: artifact.lineage?.parentArtifactId
+      artifactId: ((artifact.lineage as Record<string, unknown>)?.artifactId as string) || "orphan",
+      contentHash: (artifact.contentHash as string) || "missing",
+      lineageId: (artifact.lineage as Record<string, unknown>)?.lineageId as string,
+      rootArtifactId: (artifact.lineage as Record<string, unknown>)?.rootArtifactId as string,
+      parentArtifactId: (artifact.lineage as Record<string, unknown>)?.parentArtifactId as string
     },
     security: {
       strictOk: status === "valid",
       issues: [
-        ...integrity.issues.map(i => ({ ...i, severity: i.severity as any })),
-        ...semantic.issues.map(i => ({ ...i, severity: i.severity as any })),
-        ...lineage.issues.map(i => ({ ...i, severity: i.severity as any }))
+        ...integrity.issues.map(i => ({ ...i, severity: i.severity as "warning" | "error" | "critical" })),
+        ...semantic.issues.map(i => ({ ...i, severity: i.severity as "warning" | "error" | "critical" })),
+        ...lineage.issues.map(i => ({ ...i, severity: i.severity as "warning" | "error" | "critical" }))
       ]
     },
-    metadata: artifact.metadata || {}
+    metadata: (artifact.metadata as Record<string, unknown>) || {}
   };
 
   // 2. Economic Audit (for transactions)
@@ -83,9 +84,9 @@ export async function explainArtifact(artifact: any): Promise<ArtifactExplanatio
 
     if (type === "txPlan") {
       const plan = artifact;
-      inputTotal = (plan.inputs || []).reduce((sum: bigint, i: any) => sum + BigInt(i.amountSompi || 0), 0n);
-      outputTotal = (plan.outputs || []).reduce((sum: bigint, o: any) => sum + BigInt(o.amountSompi || 0), 0n);
-      changeAmount = plan.change ? BigInt(plan.change.amountSompi || 0) : 0n;
+      inputTotal = ((plan.inputs as Array<{ amountSompi?: string }>) || []).reduce((sum: bigint, i) => sum + BigInt(i.amountSompi || 0), 0n);
+      outputTotal = ((plan.outputs as Array<{ amountSompi?: string }>) || []).reduce((sum: bigint, o) => sum + BigInt(o.amountSompi || 0), 0n);
+      changeAmount = (plan.change as Record<string, unknown>) ? BigInt(((plan.change as Record<string, unknown>).amountSompi as string | number) || 0) : 0n;
     }
 
     explanation.economics = {

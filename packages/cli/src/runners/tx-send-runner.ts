@@ -8,6 +8,7 @@ export interface TxSendRunnerInput {
   network?: string;
   config: HardkasConfig;
   url?: string;
+  workspaceRoot?: string;
 }
 
 export interface TxSendRunnerResult {
@@ -32,9 +33,8 @@ export async function runTxSend(input: TxSendRunnerInput): Promise<TxSendRunnerR
   const { name: resolvedName, target } = resolveNetworkTarget({ network: networkName, config });
 
   // Initialize the SDK
-  const loadedConfig = { cwd: input.workspaceRoot || process.cwd(), path: "", config };
-  loadedConfig.config.defaultNetwork = resolvedName;
-  const sdk = new (Hardkas as any)(loadedConfig);
+  const sdk = await Hardkas.open({ cwd: input.workspaceRoot || process.cwd() });
+  sdk.config.config.defaultNetwork = resolvedName;
 
   // 1. Simulated Mode
   if (target.kind === "simulated" || signedArtifact.mode === "simulated") {
@@ -58,7 +58,9 @@ export async function runTxSend(input: TxSendRunnerInput): Promise<TxSendRunnerR
     selectedNetwork: networkName
   });
 
-  const rpcUrl = url || (target as any).rpcUrl;
+  const targetRecord = target as unknown as Record<string, unknown>;
+  const targetRpcUrl = typeof targetRecord["rpcUrl"] === "string" ? targetRecord["rpcUrl"] : undefined;
+  const rpcUrl = url || targetRpcUrl;
   if (!rpcUrl) throw new Error(`No RPC URL found for network '${networkName}'.`);
 
   const { receipt, receiptPath } = await sdk.tx.send(signedArtifact, rpcUrl);

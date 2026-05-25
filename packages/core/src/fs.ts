@@ -1,5 +1,6 @@
 import fs from "node:fs";
 import path from "node:path";
+import crypto from "node:crypto";
 import { HardkasError } from "./index.js";
 
 /**
@@ -32,7 +33,7 @@ export async function writeFileAtomic(
 ): Promise<void> {
   const dir = path.dirname(targetPath);
   const base = path.basename(targetPath);
-  const tempPath = path.join(dir, `.tmp.${base}.${Math.random().toString(36).slice(2)}`);
+  const tempPath = path.join(dir, `.tmp.${base}.${crypto.randomUUID()}`);
 
   let fd: number | null = null;
   
@@ -117,7 +118,7 @@ export function writeFileAtomicSync(
 ): void {
   const dir = path.dirname(targetPath);
   const base = path.basename(targetPath);
-  const tempPath = path.join(dir, `.tmp.${base}.${Math.random().toString(36).slice(2)}`);
+  const tempPath = path.join(dir, `.tmp.${base}.${crypto.randomUUID()}`);
 
   let fd: number | null = null;
   

@@ -24,13 +24,7 @@ import {
 import { StatusBadge } from "../components/StatusBadge";
 import { Link } from "react-router-dom";
 
-function formatSompi(amountSompi: bigint): string {
-  const sign = amountSompi < 0n ? "-" : "";
-  const absolute = amountSompi < 0n ? -amountSompi : amountSompi;
-  const whole = absolute / 100_000_000n;
-  const fractional = absolute % 100_000_000n;
-  return `${sign}${whole}.${fractional.toString().padStart(8, "0")}`;
-}
+import { formatSompi } from "@hardkas/core";
 
 function formatIgraBalance(amount: bigint | undefined, address: string | undefined): string {
   if (amount === undefined) return "0.00000000";

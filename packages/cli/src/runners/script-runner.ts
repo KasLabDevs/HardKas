@@ -35,20 +35,22 @@ const hardkas = createTestHarness({
   initialBalance: ${opts.balance}n,
   networkId: "${opts.network}",
 });
-(globalThis as any).hardkas = hardkas;
+Object.assign(globalThis, { hardkas });
 `;
     } else {
-      const rpcUrl = (netConfig as any).rpcUrl;
-      const networkId = (netConfig as any).network || opts.network;
+      const netConfigObj = netConfig as unknown as Record<string, unknown>;
+      const rpcUrl = typeof netConfigObj.rpcUrl === "string" ? netConfigObj.rpcUrl : "";
+      const networkId = typeof netConfigObj.network === "string" ? netConfigObj.network : opts.network;
       injectionCode = `
 import { JsonWrpcKaspaClient } from "@hardkas/kaspa-rpc";
 const rpc = new JsonWrpcKaspaClient({ rpcUrl: "${rpcUrl}" });
-(globalThis as any).hardkas = {
+const hardkas = {
   network: "${opts.network}",
   networkId: "${networkId}",
   rpcUrl: "${rpcUrl}",
   rpc: rpc
 };
+Object.assign(globalThis, { hardkas });
 `;
     }
   }

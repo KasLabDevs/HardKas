@@ -209,17 +209,18 @@ export async function runL2TxSign(options: L2TxSignOptions): Promise<void> {
   let accountInfo: IgraTxSigningInput["account"] | undefined;
   if (options.account) {
     const store = await loadRealAccountStore();
-    const accountData = resolveRealAccountOrAddress(store, options.account) as any;
+    const accountData = resolveRealAccountOrAddress(store, options.account) as Record<string, unknown>;
     
     // Safety check: address mismatch
-    if (plan.request.from && plan.request.from.toLowerCase() !== accountData.address.toLowerCase()) {
-      throw new Error(`Account address mismatch: plan specifies '${plan.request.from}' but resolved account '${accountData.name ?? accountData.address}' is '${accountData.address}'`);
+    const accountAddress = typeof accountData.address === "string" ? accountData.address : "";
+    if (plan.request.from && plan.request.from.toLowerCase() !== accountAddress.toLowerCase()) {
+      throw new Error(`Account address mismatch: plan specifies '${plan.request.from}' but resolved account '${String(accountData.name ?? accountAddress)}' is '${accountAddress}'`);
     }
 
     accountInfo = {
-      name: accountData.name ?? undefined,
-      address: accountData.address,
-      privateKey: accountData.privateKey ?? undefined
+      address: accountAddress,
+      ...(typeof accountData.name === "string" ? { name: accountData.name } : {}),
+      ...(typeof accountData.privateKey === "string" ? { privateKey: accountData.privateKey } : {})
     };
   }
 

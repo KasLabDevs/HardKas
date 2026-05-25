@@ -51,17 +51,17 @@ export function registerExplainCommand(program: Command) {
         }
 
         const { readArtifact } = await import("@hardkas/artifacts");
-        const artifact = await readArtifact(artifactPath);
+        const artifact = (await readArtifact(artifactPath)) as Record<string, unknown>;
 
         const isSimulated = artifact.mode === "simulated" || artifact.networkId === "simulated";
-        const schema = artifact.schema || "unknown";
+        const schema = (artifact.schema as string) || "unknown";
 
         console.log(`\n  ${pc.magenta("═════")} ${pc.bold("Deterministic Explanation")} ${pc.magenta("═════")}\n`);
 
         console.log(pc.white(`  This artifact represents a ${pc.cyan(schema)} generated during a ${isSimulated ? "local deterministic replay" : "network interaction"}.\n`));
 
         UI.causality("Execution Trace", {
-          "Artifact ID": artifact.txId || artifact.signedId || artifact.planId || "unknown",
+          "Artifact ID": (artifact.txId as string) || (artifact.signedId as string) || (artifact.planId as string) || "unknown",
           "Source Authority": "filesystem artifact",
           "File Path": artifactPath,
           "Projection Layer": "Indexed into SQLite query-store (if dashboard is running)",

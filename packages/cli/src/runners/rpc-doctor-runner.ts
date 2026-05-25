@@ -31,6 +31,14 @@ async function checkTcpReachable(host: string, port: number, timeoutMs = 2000): 
   });
 }
 
+interface KaspaRpcInfo {
+  networkId?: string;
+  network?: string;
+  virtualDaaScore?: number;
+  serverVersion?: string;
+  server_version?: string;
+}
+
 async function checkKaspaEndpoint(rpcUrl: string): Promise<LayeredHealthResult> {
   // Parse host:port from URL
   let host = "127.0.0.1";
@@ -65,8 +73,8 @@ async function checkKaspaEndpoint(rpcUrl: string): Promise<LayeredHealthResult> 
 
   // Layer 3: RPC method call
   try {
-    const info = await client.getServerInfo() as any;
-    const dagInfo = await client.getBlockDagInfo() as any;
+    const info = await client.getServerInfo() as KaspaRpcInfo;
+    const dagInfo = await client.getBlockDagInfo() as KaspaRpcInfo;
     const latencyMs = Date.now() - start;
     client.disconnect();
     return {
@@ -101,14 +109,14 @@ async function checkHttpJsonRpcEndpoint(url: string): Promise<LayeredHealthResul
     });
     const latencyMs = Date.now() - start;
     if (res.ok) {
-      const data = await res.json() as any;
+      const data = await res.json() as Record<string, unknown>;
       return {
         tcpReachable: true,
         protocolReachable: true,
         rpcReachable: true,
         status: "ready",
         latencyMs,
-        network: data.result || "evm-chain",
+        network: typeof data.result === "string" ? data.result : "evm-chain",
         daaScore: 0,
         version: "L2 Endpoint"
       };
@@ -134,17 +142,18 @@ async function checkHttpJsonRpcEndpoint(url: string): Promise<LayeredHealthResul
 
 export async function runRpcDoctor(options: RpcDoctorOptions) {
   let endpoints = options.endpoints || [];
-  let loadedNetworks: Record<string, any> = {};
+  let loadedNetworks: Record<string, unknown> = {};
 
   const loaded = await loadHardkasConfig(options.config ? { configPath: options.config } : {});
-  loadedNetworks = loaded.config.networks || {};
+  loadedNetworks = (loaded.config.networks || {}) as Record<string, unknown>;
 
   if (endpoints.length === 0) {
     const defaultNetwork = loaded.config.defaultNetwork || "simnet";
     const network = loadedNetworks[defaultNetwork];
+    const networkObj = typeof network === "object" && network !== null ? network as Record<string, unknown> : undefined;
 
-    if (network?.rpcUrl) {
-      endpoints = [network.rpcUrl];
+    if (networkObj && typeof networkObj.rpcUrl === "string") {
+      endpoints = [networkObj.rpcUrl];
     } else {
       endpoints = ["ws://127.0.0.1:18210"];
     }
@@ -158,8 +167,8 @@ export async function runRpcDoctor(options: RpcDoctorOptions) {
   for (const url of endpoints) {
     // Resolve kind for the url
     let kind = "kaspa-rpc"; // default to Kaspa L1
-    const foundNetwork = Object.values(loadedNetworks).find((n: any) => n.rpcUrl === url) as any;
-    if (foundNetwork && foundNetwork.kind) {
+    const foundNetwork = Object.values(loadedNetworks).find((n) => typeof n === "object" && n !== null && (n as Record<string, unknown>).rpcUrl === url) as Record<string, unknown> | undefined;
+    if (foundNetwork && typeof foundNetwork.kind === "string") {
       kind = foundNetwork.kind;
     } else if (url.startsWith("http://") && !url.includes("18210")) {
       kind = "igra-rpc";

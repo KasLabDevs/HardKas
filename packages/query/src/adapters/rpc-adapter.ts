@@ -9,6 +9,7 @@
 import { readEvents } from "../events.js";
 import { computeQueryHash } from "../serialize.js";
 import type {
+import { deterministicCompare } from "@hardkas/core";
   QueryAdapter,
   QueryRequest,
   QueryResult,
@@ -104,7 +105,7 @@ export class RpcQueryAdapter implements QueryAdapter {
     });
 
     // Walk through events oldest-first looking for degradation windows
-    const sortedEvents = [...events].sort((a, b) => a.ts.localeCompare(b.ts));
+    const sortedEvents = [...events].sort((a, b) => deterministicCompare(a.ts, b.ts));
     const degradations: RpcDegradation[] = [];
     let currentDeg: {
       startTs: string;
@@ -155,7 +156,7 @@ export class RpcQueryAdapter implements QueryAdapter {
       });
     }
 
-    degradations.sort((a, b) => b.startTs.localeCompare(a.startTs)); // newest first
+    degradations.sort((a, b) => deterministicCompare(b.startTs, a.startTs)); // newest first
     const paged = degradations.slice(request.offset, request.offset + request.limit);
 
     return {
@@ -209,7 +210,7 @@ export class RpcQueryAdapter implements QueryAdapter {
     // Find the closest health event before submission
     const beforeSubmission = nearbyHealth
       .filter(e => e.ts <= submittedAt)
-      .sort((a, b) => b.ts.localeCompare(a.ts));
+      .sort((a, b) => deterministicCompare(b.ts, a.ts));
 
     const closestHealth = beforeSubmission[0];
     const scoreAtSubmission = closestHealth ? Number(closestHealth["score"] || 0) : -1;

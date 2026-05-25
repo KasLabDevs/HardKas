@@ -11,7 +11,9 @@ export async function runLocalnetFork(opts: {
   addresses: string[];
   atDaaScore?: string;
   outputPath?: string;
+  workspaceRoot?: string;
 }): Promise<void> {
+  const wsRoot = opts.workspaceRoot || process.cwd();
   UI.header(`HardKAS Localnet Fork`);
   
   const { config } = await loadHardkasConfig();
@@ -21,7 +23,8 @@ export async function runLocalnetFork(opts: {
     throw new Error("Cannot fork from a simulated network.");
   }
 
-  const rpcUrl = (target as any).rpcUrl;
+  const targetObj = target as unknown as Record<string, unknown>;
+  const rpcUrl = typeof targetObj.rpcUrl === "string" ? targetObj.rpcUrl : undefined;
   if (!rpcUrl) throw new Error(`No RPC URL configured for network '${opts.network}'.`);
 
   UI.info(`Forking from: ${opts.network} (${rpcUrl})`);
@@ -34,7 +37,7 @@ export async function runLocalnetFork(opts: {
   const client = new JsonWrpcKaspaClient({ rpcUrl });
   try {
     await withLock({
-      rootDir: opts.workspaceRoot,
+      rootDir: wsRoot,
       name: "workspace",
       command: "hardkas localnet fork",
     }, async () => {
@@ -47,7 +50,7 @@ export async function runLocalnetFork(opts: {
 
       const outputPath = opts.outputPath 
         ? resolve(opts.outputPath)
-        : resolve(opts.workspaceRoot, ".hardkas", "localnet-state.json");
+        : resolve(wsRoot, ".hardkas", "localnet-state.json");
 
       await saveLocalnetState(state, outputPath);
       

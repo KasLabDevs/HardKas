@@ -5,6 +5,7 @@ import {
   assertValidIgraTxReceiptArtifact 
 } from "./igra-artifacts.js";
 import { writeArtifact, readArtifact } from "./io.js";
+import { deterministicCompare } from "@hardkas/core";
 
 export function getDefaultL2ReceiptsDir(cwd: string = process.cwd()): string {
   return path.join(cwd, ".hardkas", "l2-receipts");
@@ -49,7 +50,7 @@ export async function listIgraTxReceiptArtifacts(
     for (const file of receiptFiles) {
       try {
         const data = await readArtifact(path.join(dir, file));
-        if (data && typeof data === "object" && (data as any).schema === "hardkas.igraTxReceipt.v1") {
+        if (data && typeof data === "object" && (data as Record<string, unknown>).schema === "hardkas.igraTxReceipt.v1") {
           receipts.push(data as IgraTxReceiptArtifact);
         }
       } catch (e) {
@@ -57,9 +58,9 @@ export async function listIgraTxReceiptArtifacts(
       }
     }
     
-    return receipts.sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+    return receipts.sort((a, b) => deterministicCompare(b.createdAt, a.createdAt));
   } catch (e) {
-    if ((e as any).code === "ENOENT") return [];
+    if ((e as NodeJS.ErrnoException).code === "ENOENT") return [];
     throw e;
   }
 }
