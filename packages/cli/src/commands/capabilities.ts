@@ -57,9 +57,17 @@ export interface HardKasCapabilities {
 }
 
 export function registerCapabilitiesCommand(program: Command) {
-  program
-    .command("capabilities")
-    .description("Show HardKAS capabilities and maturity level")
+  const capsCmd = program
+    .command("capabilities", { hidden: true })
+    .description("Show HardKAS capabilities and maturity level");
+
+  capsCmd.hook("preAction", () => {
+    if (!process.env.HARDKAS_EXPERIMENTAL) {
+      console.warn("\n⚠️  WARNING: 'capabilities' command is internal/experimental. Set HARDKAS_EXPERIMENTAL=1 to acknowledge.\n");
+    }
+  });
+
+  capsCmd
     .option("--json", "Output as stable JSON schema", false)
     .action(async (opts) => {
       const caps: HardKasCapabilities = {

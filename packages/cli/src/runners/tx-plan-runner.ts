@@ -1,5 +1,7 @@
 import { 
-  parseKasToSompi 
+  parseKasToSompi,
+  systemRuntimeContext,
+  NetworkId
 } from "@hardkas/core";
 import {
   resolveHardkasAccountAddress
@@ -79,10 +81,11 @@ export async function runTxPlan(input: TxPlanRunnerInput): Promise<TxPlanArtifac
       const { JsonWrpcKaspaClient } = await import("@hardkas/kaspa-rpc");
       const { resolveRuntimeConfig } = await import("@hardkas/node-orchestrator");
       
-      rpcUrl = url || (target as any).rpcUrl;
+      const targetObj = target as unknown as Record<string, unknown>;
+      rpcUrl = url || (typeof targetObj.rpcUrl === "string" ? targetObj.rpcUrl : undefined);
       if (!rpcUrl && target.kind === "kaspa-node") {
         rpcUrl = resolveRuntimeConfig({ 
-          network: target.network as any, 
+          network: typeof targetObj.network === "string" ? (targetObj.network as "mainnet" | "testnet-10" | "simnet") : "simnet", 
           ...(target.dataDir ? { dataDir: target.dataDir } : {}) 
         }).rpcUrl;
       }
@@ -125,13 +128,14 @@ export async function runTxPlan(input: TxPlanRunnerInput): Promise<TxPlanArtifac
   });
 
   const artifact = createTxPlanArtifact({
-    networkId: resolvedNetwork as any,
+    networkId: resolvedNetwork as NetworkId,
     mode: mode === "simulated" ? "simulated" : "real",
     ...(rpcUrl ? { rpcUrl } : {}),
     from: { input: from, address: fromAddress },
     to: { input: to, address: toAddress },
     amountSompi,
-    plan
+    plan,
+    ctx: systemRuntimeContext
   }) as unknown as TxPlanArtifact;
 
   coreEvents.normalizeAndEmit({

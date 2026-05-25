@@ -29,6 +29,7 @@ import type {
   WhyBlock
 } from "../types.js";
 import type { QueryBackend } from "../backend.js";
+import { type ContentHash } from "@hardkas/core";
 
 const KNOWN_SCHEMAS = new Set(Object.values(ARTIFACT_SCHEMAS));
 
@@ -88,7 +89,7 @@ export class ArtifactQueryAdapter implements QueryAdapter {
         networkId: doc.networkId,
         mode: doc.mode,
         createdAt: doc.createdAt,
-        contentHash: doc.contentHash as any,
+        contentHash: doc.contentHash as ContentHash,
         payload: doc.payload,
         // Optional mapping for common fields
         status: doc.payload.status,
@@ -116,7 +117,7 @@ export class ArtifactQueryAdapter implements QueryAdapter {
       why = paged.map(item => explainIntegrity(item, {
         ok: true,
         hashMatch: true,
-        schemaValid: KNOWN_SCHEMAS.has(item.schema as any),
+        schemaValid: KNOWN_SCHEMAS.has(item.schema as typeof ARTIFACT_SCHEMAS[keyof typeof ARTIFACT_SCHEMAS]),
         errors: []
       }));
     }
@@ -195,7 +196,7 @@ export class ArtifactQueryAdapter implements QueryAdapter {
       integrity: {
         ok: integrityResult.ok && hashMatch,
         hashMatch,
-        schemaValid: KNOWN_SCHEMAS.has(item.schema as any),
+        schemaValid: KNOWN_SCHEMAS.has(item.schema as typeof ARTIFACT_SCHEMAS[keyof typeof ARTIFACT_SCHEMAS]),
         errors: [...integrityResult.issues.map(i => i.message), ...semanticResult.issues.map(i => i.message)]
       },
       economics,
@@ -211,7 +212,7 @@ export class ArtifactQueryAdapter implements QueryAdapter {
     return {
       domain: "artifacts",
       op: "inspect",
-      items: [inspectResult] as any,
+      items: [inspectResult],
       total: 1,
       truncated: false,
       deterministic: true,
@@ -277,7 +278,7 @@ export class ArtifactQueryAdapter implements QueryAdapter {
     return {
       domain: "artifacts",
       op: "diff",
-      items: [result] as any,
+      items: [result],
       total: 1,
       truncated: false,
       deterministic: true,
@@ -361,16 +362,19 @@ export class ArtifactQueryAdapter implements QueryAdapter {
 
     if (sort) {
       sorted.sort((a, b) => {
-        const aVal = String((a as any)[sort.field] ?? "");
-        const bVal = String((b as any)[sort.field] ?? "");
-        const cmp = aVal.localeCompare(bVal);
+        const aVal = String((a as unknown as Record<string, unknown>)[sort.field] ?? "");
+        const bVal = String((b as unknown as Record<string, unknown>)[sort.field] ?? "");
+        const cmp = aVal < bVal ? -1 : aVal > bVal ? 1 : 0;
         return sort.direction === "desc" ? -cmp : cmp;
       });
     } else {
       // Default: sort by createdAt desc, tie-break by schema
       sorted.sort((a, b) => {
-        const cmp = (b.createdAt ?? "").localeCompare(a.createdAt ?? "");
-        return cmp !== 0 ? cmp : a.schema.localeCompare(b.schema);
+        const dateA = b.createdAt ?? "";
+        const dateB = a.createdAt ?? "";
+        const cmp = dateA < dateB ? -1 : dateA > dateB ? 1 : 0;
+        if (cmp !== 0) return cmp;
+        return a.schema < b.schema ? -1 : a.schema > b.schema ? 1 : 0;
       });
     }
 
@@ -391,7 +395,7 @@ function toArtifactQueryItem(raw: any, filePath: string): ArtifactQueryItem {
     networkId: raw.networkId || "unknown",
     mode: raw.mode || "unknown",
     createdAt: raw.createdAt || "",
-    contentHash: raw.contentHash as any,
+    contentHash: raw.contentHash as ContentHash,
     payload: raw,
     from: raw.from,
     to: raw.to,

@@ -4,7 +4,7 @@ import { HardkasIndexer } from "../src/indexer.js";
 import fs from "node:fs";
 import path from "node:path";
 import os from "node:os";
-import { createEventEnvelope, asWorkflowId, asCorrelationId, asNetworkId } from "@hardkas/core";
+import { createEventEnvelope, asWorkflowId, asCorrelationId, asNetworkId, asEventSequence } from "@hardkas/core";
 
 describe("HardkasIndexer Integrity", () => {
   let tmpDir: string;
@@ -35,6 +35,8 @@ describe("HardkasIndexer Integrity", () => {
       workflowId: asWorkflowId("wf-1"),
       correlationId: asCorrelationId("corr-1"),
       networkId: asNetworkId("testnet-10"),
+      sequenceNumber: asEventSequence(1),
+      sourceSubsystem: "test",
       payload: { workflowId: asWorkflowId("wf-1"), network: asNetworkId("testnet-10") }
     });
 
@@ -63,6 +65,8 @@ describe("HardkasIndexer Integrity", () => {
       workflowId: asWorkflowId("wf-1"),
       correlationId: asCorrelationId("corr-1"),
       networkId: asNetworkId("testnet-10"),
+      sequenceNumber: asEventSequence(1),
+      sourceSubsystem: "test",
       payload: { workflowId: asWorkflowId("wf-1"), network: asNetworkId("testnet-10") }
     });
 
@@ -88,6 +92,8 @@ describe("HardkasIndexer Integrity", () => {
       workflowId: wfId,
       correlationId: asCorrelationId("corr-1"),
       networkId: asNetworkId("testnet-10"),
+      sequenceNumber: asEventSequence(1),
+      sourceSubsystem: "test",
       payload: { workflowId: wfId, network: asNetworkId("testnet-10") }
     });
 
@@ -106,6 +112,8 @@ describe("HardkasIndexer Integrity", () => {
       workflowId: wfId,
       correlationId: asCorrelationId("corr-1"),
       networkId: asNetworkId("testnet-10"),
+      sequenceNumber: asEventSequence(2),
+      sourceSubsystem: "test",
       payload: { workflowId: wfId }
     });
     fs.appendFileSync(eventsPath, JSON.stringify(e2) + "\n");

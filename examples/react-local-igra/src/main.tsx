@@ -4,9 +4,9 @@ import {
   HardKasProvider, 
   useHardKasSession, 
   useKaspaBalance, 
-  useIgraBalance,
-  useBridgeLocalPlan
+  useIgraBalance
 } from "@hardkas/react";
+import { useBridgeLocalPlan } from "@hardkas/simulator-adapters";
 
 function App() {
   const { data: session, isLoading: sessionLoading } = useHardKasSession();

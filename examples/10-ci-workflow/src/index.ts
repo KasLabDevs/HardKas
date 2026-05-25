@@ -6,6 +6,7 @@ import {
   createTxPlanArtifact,
   buildPaymentPlan
 } from "@hardkas/sdk";
+import { systemRuntimeContext } from "@hardkas/core";
 import { 
   createInitialLocalnetState, 
   createLocalnetSnapshot, 
@@ -59,7 +60,7 @@ async function main() {
     from: alice,
     to: bob,
     amountSompi: amount
-  });
+  }, systemRuntimeContext);
   state = result.state;
   
   // Verify state change
@@ -87,7 +88,9 @@ async function main() {
   if (replayedPlan.estimatedFeeSompi.toString() === result.receipt.feeSompi) {
     console.log("✓ Replay Match: Fee and Mass are deterministic.\n");
   } else {
-    console.error("✗ Replay Mismatch: Determinism failure detected.");
+    console.error(`✗ Replay Mismatch: Determinism failure detected.`);
+    console.error(`  Expected (from replayed plan): ${replayedPlan.estimatedFeeSompi.toString()}`);
+    console.error(`  Actual (from receipt): ${result.receipt.feeSompi}`);
     process.exit(1);
   }
 

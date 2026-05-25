@@ -1,8 +1,10 @@
 #!/usr/bin/env node
 
 import { buildHardkasProgram } from "./program.js";
+import { attachLedgerAppender } from "@hardkas/query-store";
 
 async function main() {
+  attachLedgerAppender();
   const program = buildHardkasProgram();
 
   try {

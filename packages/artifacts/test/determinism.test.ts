@@ -1,4 +1,5 @@
 import { describe, it, expect } from "vitest";
+import { systemRuntimeContext } from "@hardkas/core";
 import { canonicalStringify, calculateContentHash } from "../src/canonical.js";
 import { createTxPlanArtifact } from "../src/tx-plan.js";
 
@@ -36,10 +37,10 @@ describe("Artifact Determinism", () => {
       }
     };
 
-    const artifact1 = createTxPlanArtifact(options);
+    const artifact1 = createTxPlanArtifact({ ...options, ctx: systemRuntimeContext });
     
     // Simulate a time delay
-    const artifact2 = createTxPlanArtifact(options);
+    const artifact2 = createTxPlanArtifact({ ...options, ctx: systemRuntimeContext });
 
     expect(artifact1.planId).toBe(artifact2.planId);
     expect(artifact1.contentHash).toBe(artifact2.contentHash);

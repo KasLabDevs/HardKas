@@ -42,4 +42,32 @@ export function registerConfigCommands(program: Command) {
         process.exitCode = 1;
       }
     });
+
+  configCmd.command("networks")
+    .description("List configured networks")
+    .option("--json", "Output as JSON", false)
+    .action(async (opts: { json: boolean }) => {
+      const { loadHardkasConfig } = await import("@hardkas/config");
+      const { UI } = await import("../ui.js");
+      const { config } = await loadHardkasConfig();
+      const networks = config.networks || {};
+
+      if (opts.json) {
+        console.log(JSON.stringify(networks, null, 2));
+        return;
+      }
+
+      UI.header("HardKAS Networks");
+      
+      const header = "  Network        RPC                              Kind";
+      console.log(header);
+      console.log("  " + "─".repeat(header.length - 2));
+
+      for (const [name, net] of Object.entries(networks)) {
+        const rpc = (net as any).rpcUrl || "simulated";
+        const kind = (net as any).kind || "unknown";
+        console.log(`  ${name.padEnd(14)} ${rpc.padEnd(32)} ${kind}`);
+      }
+      console.log("");
+    });
 }

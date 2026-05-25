@@ -23,7 +23,7 @@ export interface SessionInfo {
 }
 
 export function useHardKasSession(name?: string) {
-  const { config, subscribe } = useHardKas();
+  const { config, subscribe , apiFetch } = useHardKas();
   const queryClient = useQueryClient();
   const sessionToResolve = name || config.sessionName;
 
@@ -44,7 +44,7 @@ export function useHardKasSession(name?: string) {
       try {
         const baseUrl = config.devServerUrl || "";
         const url = baseUrl ? (baseUrl.endsWith("/") ? `${baseUrl}api/session` : `${baseUrl}/api/session`) : "/api/session";
-        const response = await fetch(url);
+        const response = await apiFetch(url);
         const json = await response.json();
         const active = json.active;
         if (!active) return null;

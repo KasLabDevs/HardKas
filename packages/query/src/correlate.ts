@@ -19,6 +19,7 @@ import type { LineageChainResult, LineageNode } from "./types.js";
 import type { DagTxHistory, DagConflict } from "./types.js";
 import type { ReplaySummaryResult, ReplayInvariantsResult } from "./types.js";
 import type { RpcCorrelation } from "./types.js";
+import { deterministicCompare } from "@hardkas/core";
 
 // ---------------------------------------------------------------------------
 // Correlation Types
@@ -219,7 +220,7 @@ export async function correlate(
   }
 
   // Sort timeline chronologically
-  timeline.sort((a, b) => a.ts.localeCompare(b.ts));
+  timeline.sort((a, b) => deterministicCompare(a.ts, b.ts));
 
   const bundle: CorrelationBundle = {
     txId,
@@ -236,7 +237,7 @@ export async function correlate(
   }
 
   return {
-    domain: "artifacts" as any, // correlation is cross-domain
+    domain: "artifacts", // correlation is cross-domain
     op: "correlate",
     items: [bundle],
     total: 1,

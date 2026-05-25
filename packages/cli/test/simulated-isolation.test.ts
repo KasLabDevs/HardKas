@@ -41,7 +41,7 @@ describe("Simulated Isolation", () => {
     });
 
     expect(artifact).toBeDefined();
-    expect(artifact.networkId).toBe("simnet");
+    expect(artifact.networkId).toBe("simulated");
     expect(artifact.mode).toBe("simulated");
     expect(artifact.from.address).toContain("kaspa:sim_");
     expect(artifact.rpcUrl).toBe("simulated://local"); // It ignores the provided URL

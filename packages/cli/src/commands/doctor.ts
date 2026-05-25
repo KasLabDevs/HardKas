@@ -16,6 +16,8 @@ export function registerDoctorCommand(program: Command) {
     .command("doctor")
     .description(`Perform a full system diagnostic and health report ${UI.maturity("stable")}`)
     .option("--json", "Output results as stable JSON schema", false)
+    .option("--consistency", "Run advanced deterministic consistency checks", false)
+    .option("--strict", "Fail strictly (exit 1) if invariants or consistency checks fail", false)
     .action(async (opts) => {
       try {
         await runDoctor(opts);
@@ -40,13 +42,13 @@ interface DoctorReport {
 
 interface DoctorCheck {
   name: string;
-  category: "runtime" | "persistence" | "network" | "security" | "docker";
+  category: "runtime" | "persistence" | "network" | "security" | "docker" | "consistency";
   status: "pass" | "fail" | "warn" | "skip";
   message: string;
   suggestion?: string | undefined;
 }
 
-async function runDoctor(opts: { json?: boolean }) {
+async function runDoctor(opts: { json?: boolean; consistency?: boolean; strict?: boolean }) {
   const report: DoctorReport = {
     version: HARDKAS_VERSION,
     timestamp: new Date().toISOString(),
@@ -338,6 +340,171 @@ async function runDoctor(opts: { json?: boolean }) {
     }
   }
 
+  // --- 5. Consistency Checks ---
+  if (opts.consistency && dirExists) {
+    try {
+      const { HardkasStore } = await import("@hardkas/query-store");
+      const path = await import("node:path");
+      const store = new HardkasStore({ dbPath: path.join(process.cwd(), ".hardkas", "store.db") });
+      store.connect({ autoMigrate: true });
+      
+      const { HardkasIndexer } = await import("@hardkas/query-store");
+      const indexer = new HardkasIndexer(store.getDatabase(), { cwd: process.cwd(), strict: opts.strict ? true : false });
+      const idxReport = indexer.doctor();
+
+      if (idxReport.corruptedFiles.length > 0) {
+        addCheck({
+          name: "Artifact Integrity",
+          category: "consistency",
+          status: "fail",
+          message: `${idxReport.corruptedFiles.length} corrupted artifact(s) found`,
+          suggestion: "Use 'hardkas artifact verify' to identify corrupted files."
+        });
+      } else {
+        addCheck({
+          name: "Artifact Integrity",
+          category: "consistency",
+          status: "pass",
+          message: "All indexed artifacts are structurally sound"
+        });
+      }
+
+      if (idxReport.orphanEdges > 0) {
+        addCheck({
+          name: "Lineage Continuity",
+          category: "consistency",
+          status: "fail",
+          message: `${idxReport.orphanEdges} orphan lineage edge(s) found`,
+          suggestion: "Lineage graph is broken. Re-index or fix dependencies."
+        });
+      } else {
+        addCheck({
+          name: "Lineage Continuity",
+          category: "consistency",
+          status: "pass",
+          message: "Lineage graph is fully connected"
+        });
+      }
+
+      if (idxReport.duplicateProjections > 0) {
+        addCheck({
+          name: "Projection Uniqueness",
+          category: "consistency",
+          status: "fail",
+          message: `${idxReport.duplicateProjections} duplicate projection(s) detected`,
+          suggestion: "Multiple artifacts claim the same tx_id. Indexer rebuild required."
+        });
+      } else {
+        addCheck({
+          name: "Projection Uniqueness",
+          category: "consistency",
+          status: "pass",
+          message: "All state projections are unique"
+        });
+      }
+
+      if (idxReport.brokenReplayDependencies > 0) {
+        addCheck({
+          name: "Replay Dependencies",
+          category: "consistency",
+          status: "fail",
+          message: `${idxReport.brokenReplayDependencies} broken replay dependency(s)`,
+          suggestion: "Replay reports exist for missing target artifacts."
+        });
+      } else {
+        addCheck({
+          name: "Replay Dependencies",
+          category: "consistency",
+          status: "pass",
+          message: "All replay reports reference valid artifacts"
+        });
+      }
+      
+      if (idxReport.duplicateEventSequences > 0) {
+        addCheck({
+          name: "Event Deduplication",
+          category: "consistency",
+          status: "fail",
+          message: `${idxReport.duplicateEventSequences} duplicate event sequence(s)`,
+          suggestion: "Duplicate sequence numbers within a correlation ID. Indexer rebuild required."
+        });
+      } else {
+        addCheck({
+          name: "Event Deduplication",
+          category: "consistency",
+          status: "pass",
+          message: "All event sequences are unique"
+        });
+      }
+
+      if (idxReport.orphanEvents > 0) {
+        addCheck({
+          name: "Event Causality",
+          category: "consistency",
+          status: "fail",
+          message: `${idxReport.orphanEvents} orphan event(s) found`,
+          suggestion: "Events reference missing causation IDs. Check event log integrity."
+        });
+      } else {
+        addCheck({
+          name: "Event Causality",
+          category: "consistency",
+          status: "pass",
+          message: "Event causality graph is fully connected"
+        });
+      }
+      
+    } catch (err: any) {
+      addCheck({
+        name: "Consistency Engine",
+        category: "consistency",
+        status: "fail",
+        message: `Failed to run consistency checks: ${err.message}`
+      });
+    }
+
+    // 6. Snapshot Integrity Checks
+    const snapshotsDir = path.join(process.cwd(), "snapshots");
+    try {
+      const { readSnapshotManifest } = await import("@hardkas/core");
+      const fs = await import("node:fs/promises");
+      const stats = await fs.stat(snapshotsDir);
+      
+      if (stats.isDirectory()) {
+        const snapshots = await fs.readdir(snapshotsDir);
+        let brokenSnapshots = 0;
+        
+        for (const snap of snapshots) {
+          try {
+            const manifest = await readSnapshotManifest(path.join(snapshotsDir, snap));
+            if (!manifest || !manifest.snapshotVersion) brokenSnapshots++;
+          } catch {
+            brokenSnapshots++;
+          }
+        }
+        
+        if (brokenSnapshots > 0) {
+          addCheck({
+            name: "Snapshot Integrity",
+            category: "persistence",
+            status: "fail",
+            message: `${brokenSnapshots} invalid snapshot(s) found`,
+            suggestion: "Remove broken snapshots from the snapshots/ directory."
+          });
+        } else {
+          addCheck({
+            name: "Snapshot Integrity",
+            category: "persistence",
+            status: "pass",
+            message: `${snapshots.length} snapshot(s) verified`
+          });
+        }
+      }
+    } catch {
+      // Snapshots dir doesn't exist, which is fine
+    }
+  }
+
   if (opts.json) {
     console.log(JSON.stringify(report, null, 2));
   } else {
@@ -345,4 +512,9 @@ async function runDoctor(opts: { json?: boolean }) {
     console.log(`  Summary: ${report.summary.passed} passed, ${report.summary.failed} failed, ${report.summary.warnings} warning, ${report.summary.skipped} skipped`);
     UI.footer("Use 'hardkas capabilities' to see supported features.");
   }
+
+  if (opts.strict && report.summary.failed > 0) {
+    process.exit(1);
+  }
 }
+

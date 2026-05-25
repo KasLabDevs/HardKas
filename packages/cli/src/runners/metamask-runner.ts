@@ -5,7 +5,7 @@ import { loadHardkasConfig } from "@hardkas/config";
 export async function runMetamaskNetwork(options: { profile: string; json: boolean }) {
   try {
     const config = await loadHardkasConfig();
-    const networkId = (config.config as any).networkId || config.config.defaultNetwork || "simnet";
+    const networkId = (config.config as Record<string, unknown>).networkId as string | undefined || config.config.defaultNetwork || "simnet";
 
     // Security Gate: No metamask commands on mainnet/testnet
     if (networkId === "mainnet" || networkId.startsWith("testnet")) {
@@ -58,7 +58,7 @@ export async function runMetamaskNetwork(options: { profile: string; json: boole
 export async function runMetamaskSnippet(options: { profile: string }) {
   try {
     const config = await loadHardkasConfig();
-    const networkId = (config.config as any).networkId || config.config.defaultNetwork || "simnet";
+    const networkId = (config.config as Record<string, unknown>).networkId as string | undefined || config.config.defaultNetwork || "simnet";
 
     // Security Gate
     if (networkId === "mainnet" || networkId.startsWith("testnet")) {
@@ -97,7 +97,7 @@ export async function runMetamaskAccount(name: string, options: { showPrivateKey
     const { resolveHardkasAccount, prepareEvmAccountExport } = await import("@hardkas/accounts");
     
     const account = resolveHardkasAccount({ nameOrAddress: name, config: config.config });
-    const networkId = (config.config as any).networkId || config.config.defaultNetwork || "simnet";
+    const networkId = (config.config as Record<string, unknown>).networkId as string | undefined || config.config.defaultNetwork || "simnet";
 
     // Master Security Gate: Require BOTH flags for JSON secret output for maximum hardening
     const includeSecretRequested = options.json ? (options.includeSecret && options.showPrivateKey) : options.showPrivateKey;

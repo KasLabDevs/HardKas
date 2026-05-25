@@ -10,8 +10,9 @@ import {
   HARDKAS_VERSION,
   ARTIFACT_VERSION
 } from "@hardkas/artifacts";
-import type { DagContext, TxReceipt } from "@hardkas/artifacts";
+import type { DagContext, TxReceipt, TxPlan } from "@hardkas/artifacts";
 import { calculateStateHash } from "./snapshot.js";
+import type { RuntimeContext, TxId, KaspaAddress, NetworkId } from "@hardkas/core";
 
 /**
  * Builds a typed DagContext from localnet DAG state.
@@ -44,7 +45,7 @@ function generateDeterministicFailedTxId(preStateHash: string, errorMessage: str
  * Generates a deterministic simulated transaction ID from plan and state.
  * Ensures replay invariants: same plan + same state = same txId.
  */
-function generateDeterministicTxId(planArtifact: any, preStateHash: string, daaScore: string): string {
+function generateDeterministicTxId(planArtifact: TxPlan, preStateHash: string, daaScore: string): string {
   const planHash = planArtifact.contentHash || calculateContentHash(planArtifact);
   const input = `${planHash}:${preStateHash}:${daaScore}`;
   const hash = createHash("sha256").update(input).digest("hex").slice(0, 32);
@@ -68,14 +69,21 @@ export const DUST_LIMIT_SOMPI = 600n;
  */
 export function applySimulatedPayment(
   state: LocalnetState,
-  input: SimulatedPaymentInput
+  input: SimulatedPaymentInput,
+  ctx: RuntimeContext
 ): SimulationResult {
   const errors: string[] = [];
   const preStateHash = calculateStateHash(state);
 
   try {
     const fromAddress = resolveAccountAddressFromState(state, input.from);
+    if (!fromAddress) {
+      throw new Error(`Sender account/address not found: ${input.from}`);
+    }
     const toAddress = resolveAccountAddressFromState(state, input.to);
+    if (!toAddress) {
+      throw new Error(`Recipient account/address not found: ${input.to}`);
+    }
     const amountSompi = input.amountSompi;
     const feeRateSompiPerMass = input.feeRateSompiPerMass ?? 1n;
 
@@ -129,12 +137,13 @@ export function applySimulatedPayment(
 
     // 5. Create Artifacts
     const planArtifact = createTxPlanArtifact({
-      networkId: state.networkId || "simnet",
+      networkId: (state.networkId || "simnet") as NetworkId,
       mode: "simulated",
       from: { input: input.from, address: fromAddress },
       to: { input: input.to, address: toAddress },
       amountSompi,
-      plan
+      plan,
+      ctx
     });
 
     // 6. State Transition
@@ -187,7 +196,7 @@ export function applySimulatedPayment(
 
     const postStateHash = calculateStateHash(nextState);
 
-    const receipt = createSimulatedTxReceipt(planArtifact, txId, {
+    const receipt = createSimulatedTxReceipt(planArtifact, txId, ctx, {
       spentUtxoIds,
       createdUtxoIds,
       daaScore: nextDaaScore,
@@ -204,28 +213,36 @@ export function applySimulatedPayment(
       errors
     };
 
-  } catch (error: any) {
+  } catch (error) {
     // 7. Atomic Rollback (return original state)
     // Deterministic failed tx ID — no Date.now() or Math.random()
+    const errorMessage = error instanceof Error ? error.message : String(error);
     const daaScore = state.daaScore || "0";
-    const txId = generateDeterministicFailedTxId(preStateHash, error.message, daaScore);
-    const receipt: any = {
-      schema: "hardkas.txReceipt" as const,
-      status: "failed" as const,
-      mode: "simulated" as const,
-      txId,
+    const txId = generateDeterministicFailedTxId(preStateHash, errorMessage, daaScore);
+    const receipt: TxReceipt = {
+      schema: "hardkas.txReceipt",
+      hardkasVersion: HARDKAS_VERSION,
+      version: ARTIFACT_VERSION,
+      status: "failed",
+      mode: "simulated",
+      networkId: state.networkId,
+      txId: txId as TxId,
       createdAt: "1970-01-01T00:00:00.000Z",
-      errors: [error.message],
+      errors: [errorMessage],
       preStateHash,
       postStateHash: preStateHash,
-      dagContext: buildDagContextFromState(state)
+      dagContext: buildDagContextFromState(state),
+      from: { address: "" as KaspaAddress },
+      to: { address: "" as KaspaAddress },
+      amountSompi: "0",
+      feeSompi: "0"
     };
 
     return {
       ok: false,
       state: state, // No mutation
       receipt,
-      errors: [error.message]
+      errors: [errorMessage]
     };
   }
 }
@@ -234,7 +251,8 @@ export function applySimulatedPayment(
  */
 export function applySimulatedPlan(
   state: LocalnetState,
-  planArtifact: any, // TxPlanArtifact
+  planArtifact: TxPlan,
+  ctx: RuntimeContext,
   options?: { txId?: string }
 ): SimulationResult {
   const errors: string[] = [];
@@ -291,7 +309,7 @@ export function applySimulatedPlan(
     const nextState: LocalnetState = { ...state, daaScore: nextDaaScore, utxos: nextUtxos };
     const postStateHash = calculateStateHash(nextState);
 
-    const receipt = createSimulatedTxReceipt(planArtifact, txId, {
+    const receipt = createSimulatedTxReceipt(planArtifact, txId, ctx, {
       spentUtxoIds,
       createdUtxoIds,
       daaScore: nextDaaScore,
@@ -302,22 +320,30 @@ export function applySimulatedPlan(
 
     return { ok: true, state: nextState, receipt, planArtifact, errors };
 
-  } catch (error: any) {
+  } catch (error) {
     // Deterministic failed replay ID — no Date.now()
+    const errorMessage = error instanceof Error ? error.message : String(error);
     const daaScore = state.daaScore || "0";
-    const txId = generateDeterministicFailedTxId(preStateHash, error.message, daaScore);
-    const receipt: any = {
-      schema: "hardkas.txReceipt" as const,
-      status: "failed" as const,
-      mode: "simulated" as const,
-      txId,
+    const txId = generateDeterministicFailedTxId(preStateHash, errorMessage, daaScore);
+    const receipt: TxReceipt = {
+      schema: "hardkas.txReceipt",
+      hardkasVersion: HARDKAS_VERSION,
+      version: ARTIFACT_VERSION,
+      status: "failed",
+      mode: "simulated",
+      networkId: state.networkId,
+      txId: txId as TxId,
       createdAt: "1970-01-01T00:00:00.000Z",
-      errors: [error.message],
+      errors: [errorMessage],
       preStateHash,
       postStateHash: preStateHash,
-      dagContext: buildDagContextFromState(state)
+      dagContext: buildDagContextFromState(state),
+      from: { address: "" as KaspaAddress },
+      to: { address: "" as KaspaAddress },
+      amountSompi: "0",
+      feeSompi: "0"
     };
 
-    return { ok: false, state: state, receipt, errors: [error.message] };
+    return { ok: false, state: state, receipt, errors: [errorMessage] };
   }
 }

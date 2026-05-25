@@ -1,0 +1,19 @@
+{
+  "schema": "hardkas.replayReport.v1",
+  "txId": "simtx_798de8b9f11c40b08482203911d00172",
+  "planOk": true,
+  "receiptOk": true,
+  "invariantsOk": true,
+  "checks": {
+    "workflowDeterministic": "reproduced",
+    "consensusValidation": "unimplemented",
+    "l2BridgeCorrectness": "unimplemented"
+  },
+  "divergences": [],
+  "errors": [],
+  "hardkasVersion": "1.0.0",
+  "version": "1.0.0-alpha",
+  "networkId": "simnet",
+  "mode": "simulated",
+  "createdAt": "2026-05-22T10:16:44.639Z"
+}

@@ -31,5 +31,6 @@ export type {
   DeploymentRecord,
   DeploymentIndex,
   DeploymentSummary,
-  DagContext 
+  DagContext,
+  WorkflowArtifact
 } from "./types.js";

@@ -6,6 +6,7 @@ import {
   HARDKAS_VERSION,
   ARTIFACT_SCHEMAS
 } from "@hardkas/artifacts";
+import { systemRuntimeContext } from "@hardkas/core";
 import { HardkasAccount, HardkasTxPlanSigner, SignTxPlanInput, SignTxPlanResult, HardkasSignerKind, HardkasKaspaPrivateKeyAccount } from "./types.js";
 import { HardkasConfig } from "@hardkas/config";
 import { getKaspaSigningBackendStatus } from "./signer-backend.js";
@@ -83,7 +84,8 @@ export async function signTxPlanArtifact(input: {
   if (account.kind === "simulated") {
     return createSimulatedSignedTxArtifact(
       planArtifact as any,
-      `simulated-signed-tx:${planArtifact.planId}`
+      `simulated-signed-tx:${planArtifact.planId}`,
+      systemRuntimeContext
     ) as unknown as SignedTxArtifact;
   }
 

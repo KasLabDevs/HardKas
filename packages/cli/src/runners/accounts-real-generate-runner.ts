@@ -7,6 +7,7 @@ import {
   KeystoreManager
 } from "@hardkas/accounts";
 import path from "node:path";
+import fs from "node:fs";
 import { acquirePassword } from "./secrets.js";
 import { UI } from "../ui.js";
 
@@ -18,9 +19,10 @@ export interface AccountsRealGenerateOptions {
   passwordStdin?: boolean;
   passwordEnv?: string;
   yes?: boolean;
+  workspaceRoot: string;
 }
 
-export async function runAccountsRealGenerate(options: AccountsRealGenerateOptions = {}): Promise<{
+export async function runAccountsRealGenerate(options: AccountsRealGenerateOptions): Promise<{
   accounts: RealDevAccount[];
   formatted: string;
 }> {
@@ -68,8 +70,12 @@ export async function runAccountsRealGenerate(options: AccountsRealGenerateOptio
         }
       );
 
-      const keystoreDir = path.join(process.cwd(), ".hardkas", "keystore");
-      const filePath = path.join(keystoreDir, `${name}.json`);
+      const { Hardkas } = await import("@hardkas/sdk");
+      const sdk = await Hardkas.open({ cwd: options.workspaceRoot });
+      const keystoreDir = sdk.workspace.keystoreDir;
+      if (!fs.existsSync(keystoreDir)) fs.mkdirSync(keystoreDir, { recursive: true });
+
+      const filePath = sdk.workspace.resolvePath(".hardkas", "keystore", `${name}.json`);
       await KeystoreManager.saveEncryptedKeystore(filePath, keystore);
       keystoreRef = `.hardkas/keystore/${name}.json`;
     }

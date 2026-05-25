@@ -1,3 +1,4 @@
+import { systemRuntimeContext } from "@hardkas/core";
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import fs from "node:fs/promises";
 import path from "node:path";
@@ -29,7 +30,7 @@ describe("Simulated Transactions", () => {
       from: "alice",
       to: "bob",
       amountSompi: 100n
-    });
+    }, systemRuntimeContext);
 
     // Verify DAA score increment
     expect(state.daaScore).toBe("1");
@@ -65,7 +66,7 @@ describe("Simulated Transactions", () => {
       from: "alice",
       to: "bob",
       amountSompi: 200n
-    });
+    }, systemRuntimeContext);
     
     expect(result.ok).toBe(false);
     expect(result.errors[0]).toMatch(/Insufficient funds/i);
@@ -78,7 +79,7 @@ describe("Simulated Transactions", () => {
       from: "alice",
       to: "bob",
       amountSompi: 0n
-    });
+    }, systemRuntimeContext);
 
     expect(result.ok).toBe(false);
     expect(result.errors[0]).toMatch(/Amount must be greater than 0/);
@@ -92,7 +93,7 @@ describe("Simulated Transactions", () => {
       from: "alice",
       to: bobAddr,
       amountSompi: 100n
-    });
+    }, systemRuntimeContext);
 
     expect(getAddressBalanceSompi(nextState, bobAddr)).toBe(1100n);
   });

@@ -91,25 +91,61 @@ export const UI = {
       console.log(pc.dim(`\n  Hint: ${hint}`));
     }
     console.log("");
+  },
+
+  causality(title: string, details: Record<string, string | undefined>, nextSteps?: string[]) {
+    console.log(`\n  ${pc.green("✔")} ${pc.bold(title)}\n`);
+    for (const [key, value] of Object.entries(details)) {
+      if (value) {
+        console.log(`  ${pc.dim(key)}`);
+        console.log(`    ${pc.white(value)}\n`);
+      }
+    }
+    if (nextSteps && nextSteps.length > 0) {
+      console.log(`  ${pc.dim("Next Steps")}`);
+      for (const step of nextSteps) {
+        console.log(`    - ${pc.white(step)}`);
+      }
+      console.log("");
+    }
+  },
+
+  semanticError(title: string, cause: string, invariant: string, consequence: string, remediation: string) {
+    console.error(pc.red(`\n  ✗ ${title}\n`));
+    console.error(`  ${pc.dim("Cause:")}`);
+    console.error(`    ${pc.white(cause)}\n`);
+    console.error(`  ${pc.dim("Invariant Violated:")}`);
+    console.error(`    ${pc.yellow(invariant)}\n`);
+    console.error(`  ${pc.dim("Consequence:")}`);
+    console.error(`    ${pc.white(consequence)}\n`);
+    console.error(`  ${pc.dim("Remediation:")}`);
+    console.error(`    ${pc.cyan(remediation)}\n`);
+  },
+
+  dryRun(message?: string) {
+    console.log(pc.yellow(`\n  [DRY RUN]`));
+    console.log(pc.white(`  No persistent artifacts were written.`));
+    console.log(pc.dim(`\n  Use:\n    ${pc.white("--yes")}\n  to persist deterministic artifacts.\n`));
   }
 };
 
 export function handleError(e: unknown, context?: string) {
   if (e instanceof Error && (e as any).code === "REPLAY_DIVERGED") {
     const report = (e as any).report;
-    UI.error("Replay Verification Failed", "Check the transaction plan/receipt invariants for unexpected state modifications.");
+    UI.semanticError(
+      "Replay Verification Failed",
+      report?.errors?.[0] || "State modifications detected during deterministic replay",
+      "deterministic execution integrity",
+      "replay artifact is corrupted and excluded from deterministic validation",
+      "restore the original artifact or regenerate the replay lineage"
+    );
+
     if (report && report.divergences && report.divergences.length > 0) {
       console.log(pc.bold("\n  Divergences found:"));
       for (const div of report.divergences) {
         console.log(`    ${pc.cyan(div.path)}:`);
         console.log(`      Expected: ${pc.green(JSON.stringify(div.expected))}`);
         console.log(`      Actual:   ${pc.red(JSON.stringify(div.actual))}`);
-      }
-    }
-    if (report && report.errors && report.errors.length > 0) {
-      console.log(pc.bold("\n  Errors:"));
-      for (const err of report.errors) {
-        console.log(`    ${pc.red(err)}`);
       }
     }
     return;

@@ -573,7 +573,30 @@ No arguments.
 
 ### Subcommands
 
+- [hardkas config networks](#hardkas-config-networks)
 - [hardkas config show](#hardkas-config-show)
+
+---
+
+## hardkas config networks
+
+List configured networks
+
+### Usage
+
+```bash
+hardkas config networks [options]
+```
+
+### Options
+
+| Flag | Description | Default |
+| :--- | :--- | :--- |
+| `--json` | Output as JSON | false |
+
+### Arguments
+
+No arguments.
 
 ---
 
@@ -707,6 +730,7 @@ hardkas dashboard [options]
 | :--- | :--- | :--- |
 | `--port <number>` | Port to bind to | 7420 |
 | `--start-server` | Start the dev server if not running | false |
+| `--show-token` | Show the generated API session token if starting the dev server | false |
 
 ### Arguments
 
@@ -938,6 +962,7 @@ hardkas dev server [options]
 | `--host <string>` | Host to bind to | localhost |
 | `--open` | Open dashboard in browser automatically | false |
 | `--unsafe-external` | Allow external access (binds to 0.0.0.0 if host not specified) | false |
+| `--show-token` | Show the generated API session token for manual script integration | false |
 | `--json` | Output status as JSON | false |
 
 ### Arguments
@@ -961,6 +986,8 @@ hardkas doctor [options]
 | Flag | Description | Default |
 | :--- | :--- | :--- |
 | `--json` | Output results as stable JSON schema | false |
+| `--consistency` | Run advanced deterministic consistency checks | false |
+| `--strict` | Fail strictly (exit 1) if invariants or consistency checks fail | false |
 
 ### Arguments
 
@@ -968,59 +995,14 @@ No arguments.
 
 ---
 
-## hardkas example
+## hardkas explain
 
-Manage HardKAS examples
-
-### Usage
-
-```bash
-hardkas example [options] [command]
-```
-
-### Options
-
-No options.
-
-### Arguments
-
-No arguments.
-
-### Subcommands
-
-- [hardkas example list](#hardkas-example-list)
-- [hardkas example run](#hardkas-example-run)
-
----
-
-## hardkas example list
-
-List available HardKAS examples
+Provide a narrative causal explanation of a deterministic artifact, transaction, or replay stable
 
 ### Usage
 
 ```bash
-hardkas example list [options]
-```
-
-### Options
-
-No options.
-
-### Arguments
-
-No arguments.
-
----
-
-## hardkas example run
-
-Run a HardKAS example
-
-### Usage
-
-```bash
-hardkas example run [options] <id>
+hardkas explain [options] <id_or_path>
 ```
 
 ### Options
@@ -1031,31 +1013,7 @@ No options.
 
 | Argument | Description |
 | :--- | :--- |
-| `id` |  |
-
----
-
-## hardkas faucet
-
-Fund an account with KAS (Local only) stable
-
-### Usage
-
-```bash
-hardkas faucet [options] <identifier>
-```
-
-### Options
-
-| Flag | Description | Default |
-| :--- | :--- | :--- |
-| `--amount <kas>` | Amount in KAS to fund | 1000 |
-
-### Arguments
-
-| Argument | Description |
-| :--- | :--- |
-| `identifier` |  |
+| `id_or_path` |  |
 
 ---
 
@@ -1073,7 +1031,11 @@ hardkas init [options] [name]
 
 | Flag | Description | Default |
 | :--- | :--- | :--- |
-| `--force` | Overwrite existing hardkas.config.ts | false |
+| `--force` | Overwrite existing hardkas.config.ts (in-place only) | false |
+| `--template <type>` | Project template for new projects | basic |
+| `--network <name>` | Default network for new projects | simulated |
+| `--accounts <n>` | Number of simulated accounts for new projects | 3 |
+| `--skip-install` | Skip pnpm install for new projects | false |
 
 ### Arguments
 
@@ -1860,6 +1822,7 @@ No arguments.
 ### Subcommands
 
 - [hardkas localnet fork](#hardkas-localnet-fork)
+- [hardkas localnet snapshot](#hardkas-localnet-snapshot)
 
 ---
 
@@ -1886,6 +1849,105 @@ hardkas localnet fork [options]
 ### Arguments
 
 No arguments.
+
+---
+
+## hardkas localnet snapshot
+
+Manage HardKAS localnet snapshots
+
+### Usage
+
+```bash
+hardkas localnet snapshot [options] [command]
+```
+
+### Options
+
+No options.
+
+### Arguments
+
+No arguments.
+
+### Subcommands
+
+- [hardkas localnet snapshot create](#hardkas-localnet-snapshot-create)
+- [hardkas localnet snapshot replay](#hardkas-localnet-snapshot-replay)
+- [hardkas localnet snapshot verify](#hardkas-localnet-snapshot-verify)
+
+---
+
+## hardkas localnet snapshot create
+
+Create a deterministic snapshot of current localnet state alpha
+
+### Usage
+
+```bash
+hardkas localnet snapshot create [options] <name>
+```
+
+### Options
+
+| Flag | Description | Default |
+| :--- | :--- | :--- |
+| `--consensus-validated` | Mark snapshot as validated by consensus (strict) | false |
+| `--json` | Output as JSON | false |
+
+### Arguments
+
+| Argument | Description |
+| :--- | :--- |
+| `name` |  |
+
+---
+
+## hardkas localnet snapshot replay
+
+Replay and rebuild deterministic state from a snapshot alpha
+
+### Usage
+
+```bash
+hardkas localnet snapshot replay [options] <name>
+```
+
+### Options
+
+| Flag | Description | Default |
+| :--- | :--- | :--- |
+| `--json` | Output as JSON | false |
+
+### Arguments
+
+| Argument | Description |
+| :--- | :--- |
+| `name` |  |
+
+---
+
+## hardkas localnet snapshot verify
+
+Verify the integrity of a snapshot preview
+
+### Usage
+
+```bash
+hardkas localnet snapshot verify [options] <idOrName>
+```
+
+### Options
+
+| Flag | Description | Default |
+| :--- | :--- | :--- |
+| `--json` | Output as JSON | false |
+
+### Arguments
+
+| Argument | Description |
+| :--- | :--- |
+| `idOrName` |  |
 
 ---
 
@@ -2100,55 +2162,6 @@ hardkas metamask snippet [options]
 ### Arguments
 
 No arguments.
-
----
-
-## hardkas networks
-
-List configured networks stable
-
-### Usage
-
-```bash
-hardkas networks [options]
-```
-
-### Options
-
-| Flag | Description | Default |
-| :--- | :--- | :--- |
-| `--json` | Output as JSON | false |
-
-### Arguments
-
-No arguments.
-
----
-
-## hardkas new
-
-Create a new HardKAS project stable
-
-### Usage
-
-```bash
-hardkas new [options] <name>
-```
-
-### Options
-
-| Flag | Description | Default |
-| :--- | :--- | :--- |
-| `--template <type>` | Project template | basic |
-| `--network <name>` | Default network | simulated |
-| `--accounts <n>` | Number of simulated accounts | 3 |
-| `--skip-install` | Skip pnpm install | false |
-
-### Arguments
-
-| Argument | Description |
-| :--- | :--- |
-| `name` |  |
 
 ---
 
@@ -3075,7 +3088,33 @@ No arguments.
 
 ### Subcommands
 
+- [hardkas replay diff](#hardkas-replay-diff)
 - [hardkas replay verify](#hardkas-replay-verify)
+
+---
+
+## hardkas replay diff
+
+Compare two replay artifacts for deterministic divergence alpha
+
+### Usage
+
+```bash
+hardkas replay diff [options] <idA> <idB>
+```
+
+### Options
+
+| Flag | Description | Default |
+| :--- | :--- | :--- |
+| `--json` | Output as JSON | false |
+
+### Arguments
+
+| Argument | Description |
+| :--- | :--- |
+| `idA` |  |
+| `idB` |  |
 
 ---
 
@@ -3402,79 +3441,6 @@ No options.
 
 ---
 
-## hardkas snapshot
-
-Manage HardKAS localnet snapshots
-
-### Usage
-
-```bash
-hardkas snapshot [options] [command]
-```
-
-### Options
-
-No options.
-
-### Arguments
-
-No arguments.
-
-### Subcommands
-
-- [hardkas snapshot restore](#hardkas-snapshot-restore)
-- [hardkas snapshot verify](#hardkas-snapshot-verify)
-
----
-
-## hardkas snapshot restore
-
-Restore localnet state from a snapshot preview
-
-### Usage
-
-```bash
-hardkas snapshot restore [options] <idOrName>
-```
-
-### Options
-
-| Flag | Description | Default |
-| :--- | :--- | :--- |
-| `--json` | Output as JSON | false |
-
-### Arguments
-
-| Argument | Description |
-| :--- | :--- |
-| `idOrName` |  |
-
----
-
-## hardkas snapshot verify
-
-Verify the integrity of a snapshot preview
-
-### Usage
-
-```bash
-hardkas snapshot verify [options] <idOrName>
-```
-
-### Options
-
-| Flag | Description | Default |
-| :--- | :--- | :--- |
-| `--json` | Output as JSON | false |
-
-### Arguments
-
-| Argument | Description |
-| :--- | :--- |
-| `idOrName` |  |
-
----
-
 ## hardkas test
 
 Run HardKAS tests against localnet stable
@@ -3738,4 +3704,125 @@ No options.
 ### Arguments
 
 No arguments.
+
+---
+
+## hardkas workflow
+
+Programmable deterministic workflows and agent orchestration alpha
+
+### Usage
+
+```bash
+hardkas workflow [options] [command]
+```
+
+### Options
+
+No options.
+
+### Arguments
+
+No arguments.
+
+### Subcommands
+
+- [hardkas workflow diff](#hardkas-workflow-diff)
+- [hardkas workflow inspect](#hardkas-workflow-inspect)
+- [hardkas workflow replay](#hardkas-workflow-replay)
+- [hardkas workflow run](#hardkas-workflow-run)
+
+---
+
+## hardkas workflow diff
+
+Compare two workflow artifacts structurally
+
+### Usage
+
+```bash
+hardkas workflow diff [options] <a> <b>
+```
+
+### Options
+
+No options.
+
+### Arguments
+
+| Argument | Description |
+| :--- | :--- |
+| `a` |  |
+| `b` |  |
+
+---
+
+## hardkas workflow inspect
+
+Inspect a completed workflow artifact
+
+### Usage
+
+```bash
+hardkas workflow inspect [options] <id>
+```
+
+### Options
+
+| Flag | Description | Default |
+| :--- | :--- | :--- |
+| `--json` | Output full artifact as JSON | false |
+
+### Arguments
+
+| Argument | Description |
+| :--- | :--- |
+| `id` |  |
+
+---
+
+## hardkas workflow replay
+
+Deterministically replay and verify a workflow's lineage
+
+### Usage
+
+```bash
+hardkas workflow replay [options] <id>
+```
+
+### Options
+
+No options.
+
+### Arguments
+
+| Argument | Description |
+| :--- | :--- |
+| `id` |  |
+
+---
+
+## hardkas workflow run
+
+Execute a workflow JSON definition in Agent mode
+
+### Usage
+
+```bash
+hardkas workflow run [options] <file>
+```
+
+### Options
+
+| Flag | Description | Default |
+| :--- | :--- | :--- |
+| `--dry-run` | Simulate the workflow without mutating the filesystem | false |
+| `--json` | Output the final workflow artifact as JSON | false |
+
+### Arguments
+
+| Argument | Description |
+| :--- | :--- |
+| `file` |  |
 

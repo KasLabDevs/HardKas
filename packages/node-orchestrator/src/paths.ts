@@ -64,6 +64,7 @@ function getDefaultRpcListen(network: KaspaRealNetwork): string {
   switch (network) {
     case "mainnet":
       return "127.0.0.1:18110";
+    case "simnet":
     case "testnet-10":
     case "testnet-11":
     case "testnet-12":

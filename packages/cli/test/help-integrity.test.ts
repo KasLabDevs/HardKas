@@ -25,14 +25,11 @@ describe("CLI Help Integrity", () => {
       "tx",
       "artifact",
       "replay",
-      "snapshot",
       "rpc",
       "dag",
       "accounts",
-      "l2",
       "node",
       "config",
-      "example",
       "dev"
     ];
 

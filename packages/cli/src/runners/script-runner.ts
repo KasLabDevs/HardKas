@@ -11,6 +11,7 @@ export async function runScript(script: string, opts: {
   accounts: string;
   balance: string;
   harness: boolean;
+  workspaceRoot?: string;
 }): Promise<void> {
   const scriptPath = resolve(script);
 
@@ -34,20 +35,22 @@ const hardkas = createTestHarness({
   initialBalance: ${opts.balance}n,
   networkId: "${opts.network}",
 });
-(globalThis as any).hardkas = hardkas;
+Object.assign(globalThis, { hardkas });
 `;
     } else {
-      const rpcUrl = (netConfig as any).rpcUrl;
-      const networkId = (netConfig as any).network || opts.network;
+      const netConfigObj = netConfig as unknown as Record<string, unknown>;
+      const rpcUrl = typeof netConfigObj.rpcUrl === "string" ? netConfigObj.rpcUrl : "";
+      const networkId = typeof netConfigObj.network === "string" ? netConfigObj.network : opts.network;
       injectionCode = `
 import { JsonWrpcKaspaClient } from "@hardkas/kaspa-rpc";
 const rpc = new JsonWrpcKaspaClient({ rpcUrl: "${rpcUrl}" });
-(globalThis as any).hardkas = {
+const hardkas = {
   network: "${opts.network}",
   networkId: "${networkId}",
   rpcUrl: "${rpcUrl}",
   rpc: rpc
 };
+Object.assign(globalThis, { hardkas });
 `;
     }
   }
@@ -65,7 +68,7 @@ ${injectionCode}
 `;
 
   // Write to a temp file inside .hardkas to allow workspace resolution
-  const dotHardkas = resolve(process.cwd(), ".hardkas");
+  const dotHardkas = resolve(opts.workspaceRoot || process.cwd(), ".hardkas");
   if (!existsSync(dotHardkas)) {
     const { mkdirSync } = await import("node:fs");
     mkdirSync(dotHardkas, { recursive: true });
@@ -83,7 +86,7 @@ ${injectionCode}
 
     execSync(`${actualTsx} ${tempWrapper}`, {
       stdio: "inherit",
-      cwd: process.cwd(),
+      cwd: opts.workspaceRoot || process.cwd(),
       env: {
         ...process.env,
         HARDKAS_NETWORK: opts.network,

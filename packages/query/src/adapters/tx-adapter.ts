@@ -10,6 +10,7 @@ import { validateEventEnvelope } from "@hardkas/core";
 import { computeQueryHash } from "../serialize.js";
 import type { QueryAdapter, QueryRequest, QueryResult, WhyBlock } from "../types.js";
 import type { QueryBackend } from "../backend.js";
+import { deterministicCompare } from "@hardkas/core";
 
 interface TxAggregation {
   readonly txId: string;
@@ -82,7 +83,7 @@ export class TxQueryAdapter implements QueryAdapter {
     const result: TxAggregation = {
       txId,
       artifacts,
-      events: events.sort((a, b) => a.timestamp.localeCompare(b.timestamp) || a.eventId.localeCompare(b.eventId)),
+      events: events.sort((a, b) => deterministicCompare(a.timestamp, b.timestamp) || deterministicCompare(a.eventId, b.eventId)),
       warnings,
       complete
     };
@@ -148,7 +149,7 @@ export class TxQueryAdapter implements QueryAdapter {
       });
     }
 
-    return results.sort((a, b) => a.filePath.localeCompare(b.filePath));
+    return results.sort((a, b) => deterministicCompare(a.filePath, b.filePath));
   }
 
   private async findEventsByTxId(txId: string): Promise<TxEventRef[]> {

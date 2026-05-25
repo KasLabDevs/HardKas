@@ -1,14 +1,14 @@
 {
   "schema": "hardkas.txReceipt",
-  "hardkasVersion": "0.2.2-alpha",
-  "networkId": "simnet",
+  "hardkasVersion": "0.6.0-alpha",
+  "networkId": "simulated",
   "mode": "simulated",
   "status": "accepted",
-  "createdAt": "2026-05-10T20:17:17.676Z",
-  "submittedAt": "2026-05-10T20:17:17.676Z",
-  "confirmedAt": "2026-05-10T20:17:17.676Z",
-  "txId": "simulated-plan-1778444237675-zcxbd-1778444237676",
-  "sourceSignedId": "signed-1778444237676",
+  "createdAt": "2026-05-25T13:40:53.360Z",
+  "submittedAt": "2026-05-25T13:40:53.360Z",
+  "confirmedAt": "2026-05-25T13:40:53.360Z",
+  "txId": "simulated-plan-b5856ae64f92a53d-tx",
+  "sourceSignedId": "signed-7c6a7b235056e431",
   "from": {
     "address": "kaspa:sim_alice",
     "accountName": "alice"

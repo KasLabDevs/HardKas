@@ -27,7 +27,8 @@ describe("Account Hardening & Security Guards", () => {
       name: "alice",
       address: "kaspatest:qrh60m5zv98m5l855l855l855l855l855l855l855l855l85sxtunx",
       privateKeyEnv: "HARDKAS_TEST_PK",
-      passwordEnv: "HARDKAS_TEST_PW"
+      passwordEnv: "HARDKAS_TEST_PW",
+      workspaceRoot: process.cwd()
     } as any);
 
     const keystorePath = path.join(keystoreDir, "alice.json");
@@ -53,7 +54,8 @@ describe("Account Hardening & Security Guards", () => {
       address: "kaspatest:qrh60m5zv98m5l855l855l855l855l855l855l855l855l85sxtunx",
       privateKeyEnv: "HARDKAS_TEST_PK",
       unsafePlaintext: true,
-      yes: true
+      yes: true,
+      workspaceRoot: process.cwd()
     } as any);
 
     const store = loadRealAccountStoreSync();

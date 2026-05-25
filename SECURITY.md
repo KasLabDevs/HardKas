@@ -1,6 +1,6 @@
 # Security Policy
 
-## HardKAS 0.5.5-alpha Security Posture
+## HardKAS 0.6.0-alpha Security Posture
 
 HardKAS is a development tool designed for the Kaspa BlockDAG ecosystem. It is currently in **Alpha / Pre-release** staging.
 
@@ -36,11 +36,18 @@ HardKAS uses a conservative filesystem locking mechanism to prevent concurrent w
 - **Manual Intervention**: If a process crashes and leaves a stale lock, use `hardkas lock doctor` to identify it and `hardkas lock clear <name> --if-dead` to release it.
 - **Risk**: Clearing a lock while another process is active can lead to **permanent data corruption** in the query store or artifact registry.
 
-### 7. Responsible Disclosure
+### 7. Dev-Server Workstation Containment
+The local dev-server is secured against malicious external websites trying to exploit the local loopback through the following measures:
+- **Per-Session Security Tokens:** A cryptographically secure 256-bit token is generated on boot and is required on all `/api/*` endpoints.
+- **CSRF Mutation Defense:** All mutating methods (POST, PUT, PATCH, DELETE) require the custom header `X-Hardkas-Request: true`.
+- **DNS Rebinding Defense:** Host headers are strictly verified against loopback endpoints. Custom malicious hosts are rejected with a `403 Forbidden` response.
+- **Strict CORS Loops:** Cross-Origin requests are locked down strictly to same-origin configurations matching the dev-server and Vite development environments.
+
+### 8. Responsible Disclosure
 If you discover a security vulnerability within HardKAS, please do not open a public issue. Instead, report it responsibly:
 
 - **Contact**: security@hardkas.org
 - Please provide a detailed description of the vulnerability and steps to reproduce.
 
-### 8. External Dependencies
+### 9. External Dependencies
 HardKAS relies on official Kaspa WASM/gRPC libraries for consensus-critical logic. Vulnerabilities in underlying Kaspa core libraries should be reported to the official Kaspa security team.

@@ -74,7 +74,12 @@ export interface QueryBackend {
   /** Apply pending schema migrations. */
   migrate(): Promise<{ applied: number }>;
 
-  /** Execute raw SQL (if supported). */
+  /** 
+   * Execute raw SQL (if supported).
+   * @deprecated BOUNDARY DINÁMICO: Este es el ÚNICO boundary dinámico aceptado en el sistema
+   * que puede retornar `any[]` de forma intencional (SQLite devuelve filas genéricas).
+   * Todos los llamadores DEBEN validar el output estrictamente en runtime mediante guards.
+   */
   executeRawSql(sql: string): Promise<any[]>;
 
   /** Find all transaction receipts (for replay analysis). */

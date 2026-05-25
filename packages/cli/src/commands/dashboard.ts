@@ -8,6 +8,7 @@ export function registerDashboardCommand(program: Command) {
     .description(`Open the HardKas Local Dashboard ${UI.maturity("stable")}`)
     .option("--port <number>", "Port to bind to", "7420")
     .option("--start-server", "Start the dev server if not running", false)
+    .option("--show-token", "Show the generated API session token if starting the dev server", false)
     .action(async (options: any) => {
       try {
         // Check if server is running

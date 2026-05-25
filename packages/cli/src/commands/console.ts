@@ -13,7 +13,8 @@ export function registerConsoleCommand(program: Command): void {
       await startConsole({
         network: opts.network,
         accounts: parseInt(opts.accounts, 10),
-        balance: BigInt(opts.balance)
+        balance: BigInt(opts.balance),
+        workspaceRoot: process.cwd()
       });
     });
 }

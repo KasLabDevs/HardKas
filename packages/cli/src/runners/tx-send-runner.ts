@@ -1,34 +1,14 @@
-import { 
-  getBroadcastableSignedTransaction, 
-  SignedTxArtifact,
-  TxReceiptArtifact,
-  HARDKAS_VERSION,
-  ARTIFACT_SCHEMAS,
-  ARTIFACT_VERSION
-} from "@hardkas/artifacts";
-import { coreEvents } from "@hardkas/core";
-import { 
-  resolveNetworkTarget, 
-  HardkasConfig 
-} from "@hardkas/config";
-import { 
-  JsonWrpcKaspaClient
-} from "@hardkas/kaspa-rpc";
-import { 
-  loadOrCreateLocalnetState, 
-  saveLocalnetState, 
-  applySimulatedPayment,
-  saveSimulatedReceipt,
-  saveSimulatedTrace,
-  StoredTraceEvent
-} from "@hardkas/localnet";
+import { SignedTxArtifact, TxReceiptArtifact } from "@hardkas/artifacts";
+import { resolveNetworkTarget, HardkasConfig } from "@hardkas/config";
 import { assertBroadcastNetworkAllowed } from "../broadcast-guard.js";
+import { Hardkas } from "@hardkas/sdk";
 
 export interface TxSendRunnerInput {
   signedArtifact: SignedTxArtifact;
   network?: string;
   config: HardkasConfig;
   url?: string;
+  workspaceRoot?: string;
 }
 
 export interface TxSendRunnerResult {
@@ -38,81 +18,27 @@ export interface TxSendRunnerResult {
   networkName: string;
   receipt: TxReceiptArtifact;
   receiptPath?: string;
-  formatted: string;
+  executionId?: string;
+  replayId?: string;
 }
 
 /**
- * Reusable logic for transaction broadcasting (Unified L1).
+ * CLI Runner for transaction broadcasting.
+ * Delegates core logic to the HardKAS SDK.
  */
 export async function runTxSend(input: TxSendRunnerInput): Promise<TxSendRunnerResult> {
   const { signedArtifact, network, config, url } = input;
   
-  const broadcastable = getBroadcastableSignedTransaction(signedArtifact);
   const networkName = network || signedArtifact.networkId;
   const { name: resolvedName, target } = resolveNetworkTarget({ network: networkName, config });
 
+  // Initialize the SDK
+  const sdk = await Hardkas.open({ cwd: input.workspaceRoot || process.cwd() });
+  sdk.config.config.defaultNetwork = resolvedName;
+
   // 1. Simulated Mode
   if (target.kind === "simulated" || signedArtifact.mode === "simulated") {
-    const state = await loadOrCreateLocalnetState();
-    
-    const startTime = Date.now();
-    const events: StoredTraceEvent[] = [
-      { type: "phase.started", phase: "send", timestamp: startTime },
-    ];
-
-    const simResult = applySimulatedPayment(state, {
-      from: signedArtifact.from.input || signedArtifact.from.address,
-      to: signedArtifact.to.input || signedArtifact.to.address,
-      amountSompi: BigInt(signedArtifact.amountSompi),
-    });
-
-    coreEvents.normalizeAndEmit({
-      kind: "workflow.submitted",
-      txId: simResult.receipt.txId,
-      endpoint: "simulated://local"
-    } as any);
-
-    events.push({ type: "phase.completed", phase: "send", timestamp: Date.now() });
-
-    await saveLocalnetState(simResult.state);
-    const receiptPath = await saveSimulatedReceipt(simResult.receipt as any);
-
-    // Create unified receipt
-    const receipt: TxReceiptArtifact = {
-      schema: ARTIFACT_SCHEMAS.TX_RECEIPT,
-      hardkasVersion: HARDKAS_VERSION,
-      version: ARTIFACT_VERSION,
-      hashVersion: "sha256-canonical",
-      networkId: resolvedName,
-      mode: "simulated",
-      createdAt: new Date().toISOString(),
-      status: "confirmed",
-      txId: simResult.receipt.txId as any,
-      sourceSignedId: signedArtifact.signedId,
-      from: { address: signedArtifact.from.address },
-      to: { address: signedArtifact.to.address },
-      amountSompi: signedArtifact.amountSompi,
-      feeSompi: simResult.receipt.feeSompi,
-      daaScore: simResult.receipt.daaScore?.toString() || "0",
-      submittedAt: simResult.receipt.createdAt,
-      confirmedAt: simResult.receipt.createdAt,
-      rpcUrl: "simulated://local"
-    };
-
-    const tracePath = await saveSimulatedTrace({
-      schema: ARTIFACT_SCHEMAS.TX_TRACE,
-      hardkasVersion: HARDKAS_VERSION,
-      version: ARTIFACT_VERSION,
-      hashVersion: "sha256-canonical",
-      createdAt: receipt.createdAt,
-      txId: receipt.txId,
-      mode: "simulated",
-      networkId: resolvedName,
-      events,
-      receiptPath
-    });
-
-    receipt.tracePath = tracePath;
+    const { receipt, receiptPath } = await sdk.tx.simulate(signedArtifact);
 
     return {
       accepted: true,
@@ -121,7 +47,8 @@ export async function runTxSend(input: TxSendRunnerInput): Promise<TxSendRunnerR
       networkName: resolvedName,
       receipt,
       receiptPath,
-      formatted: `Transaction sent in simulated localnet\nTx ID: ${receipt.txId}\nReceipt: ${receiptPath}`
+      executionId: `exec_${Date.now().toString(36)}`,
+      replayId: `replay_${receipt.txId.substring(0,8)}`
     };
   }
 
@@ -131,51 +58,21 @@ export async function runTxSend(input: TxSendRunnerInput): Promise<TxSendRunnerR
     selectedNetwork: networkName
   });
 
-  const rpcUrl = url || (target as any).rpcUrl;
+  const targetRecord = target as unknown as Record<string, unknown>;
+  const targetRpcUrl = typeof targetRecord["rpcUrl"] === "string" ? targetRecord["rpcUrl"] : undefined;
+  const rpcUrl = url || targetRpcUrl;
   if (!rpcUrl) throw new Error(`No RPC URL found for network '${networkName}'.`);
 
-  const client = new JsonWrpcKaspaClient({ rpcUrl });
-  try {
-    const txId = (broadcastable.rawTransaction as any)?.id || "unknown";
-    
-    coreEvents.normalizeAndEmit({
-      kind: "workflow.submitted",
-      txId,
-      endpoint: rpcUrl
-    } as any);
+  const { receipt, receiptPath } = await sdk.tx.send(signedArtifact, rpcUrl);
 
-    const result = await client.submitTransaction(broadcastable.rawTransaction);
-    
-    const receipt: TxReceiptArtifact = {
-      schema: ARTIFACT_SCHEMAS.TX_RECEIPT,
-      hardkasVersion: HARDKAS_VERSION,
-      version: ARTIFACT_VERSION,
-      hashVersion: "sha256-canonical",
-      networkId: resolvedName,
-      mode: "real",
-      createdAt: new Date().toISOString(),
-      status: result.accepted ? "submitted" : "failed",
-      txId: (result.transactionId || "failed") as any,
-      sourceSignedId: signedArtifact.signedId,
-      from: { address: signedArtifact.from.address },
-      to: { address: signedArtifact.to.address },
-      amountSompi: signedArtifact.amountSompi,
-      feeSompi: signedArtifact.metadata?.estimatedFeeSompi || "0",
-      submittedAt: new Date().toISOString(),
-      ...(rpcUrl ? { rpcUrl } : {})
-    };
-
-    return {
-      accepted: !!result.accepted,
-      txId: receipt.txId,
-      rpcUrl,
-      networkName: resolvedName,
-      receipt,
-      formatted: result.accepted 
-        ? `Kaspa transaction broadcast\nNetwork: ${resolvedName}\nTx ID:   ${receipt.txId}`
-        : `Transaction failed: ${JSON.stringify(result.raw)}`
-    };
-  } finally {
-    await client.close();
-  }
+  return {
+    accepted: receipt.status === "submitted" || receipt.status === "confirmed",
+    txId: receipt.txId,
+    rpcUrl,
+    networkName: resolvedName,
+    receipt,
+    receiptPath,
+    executionId: `exec_${Date.now().toString(36)}`,
+    replayId: `replay_${receipt.txId.substring(0,8)}`
+  };
 }

@@ -6,10 +6,13 @@ import { formatSompi } from "@hardkas/core";
 
 export interface ArtifactExplainOptions {
   path: string;
+  workspaceRoot: string;
 }
 
-export async function runArtifactExplain(options: ArtifactExplainOptions) {
-  const absolutePath = path.resolve(process.cwd(), options.path);
+export async function runArtifactExplain(options: { path: string, workspaceRoot: string }) {
+  const { Hardkas } = await import("@hardkas/sdk");
+  const sdk = await Hardkas.open({ cwd: options.workspaceRoot });
+  const absolutePath = sdk.workspace.resolvePath(options.path);
   
   if (!fs.existsSync(absolutePath)) {
     UI.error(`File not found: ${options.path}`);

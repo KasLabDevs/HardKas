@@ -3,6 +3,9 @@ import { kaspaNetworkIdSchema, executionModeSchema, artifactTypeSchema } from "@
 
 export const ARTIFACT_VERSION = "1.0.0-alpha";
 
+export type DraftArtifact<TFinal, THashFields extends keyof TFinal> = 
+  Omit<TFinal, THashFields> & Partial<Pick<TFinal, THashFields>>;
+
 export const ArtifactLineageSchema = z.object({
   artifactId: z.string(),
   lineageId: z.string(),
@@ -117,6 +120,7 @@ export const TxReceiptSchema = BaseArtifactSchema.extend({
   tracePath: z.string().optional(),
   rpcUrl: z.string().optional(),
   sourceSignedId: z.string().optional(),
+  errors: z.array(z.string()).optional(),
   metadata: z.any().optional()
 });
 
@@ -152,9 +156,47 @@ export const TxTraceSchema = BaseArtifactSchema.extend({
   dagContext: DagContextSchema.optional()
 });
 
+export const WorkflowSchema = BaseArtifactSchema.extend({
+  schema: z.literal("hardkas.workflow.v1"),
+  workflowId: z.string(),
+  status: z.enum(["pending", "running", "completed", "failed"]),
+  inputs: z.record(z.any()).optional(),
+  steps: z.array(z.object({
+    type: z.string(),
+    status: z.enum(["pending", "success", "failed", "skipped"]),
+    startedAt: z.string().datetime().optional(),
+    completedAt: z.string().datetime().optional(),
+    producedArtifactId: z.string().optional(),
+    error: z.string().optional()
+  })),
+  parentArtifacts: z.array(z.string()).optional(),
+  producedArtifacts: z.array(z.string()),
+  generationRange: z.object({
+    start: z.string().optional(),
+    end: z.string().optional()
+  }).optional(),
+  policy: z.object({
+    allowNetwork: z.boolean(),
+    allowMainnet: z.boolean(),
+    allowExternalWallet: z.boolean(),
+    requireDryRun: z.boolean()
+  }).optional(),
+  generationId: z.string().optional(),
+  replayResult: z.object({
+    verified: z.boolean(),
+    stateHash: z.string().optional()
+  }).optional(),
+  errorEnvelope: z.object({
+    code: z.string(),
+    message: z.string(),
+    redacted: z.boolean()
+  }).optional()
+});
+
 export type TxPlan = z.infer<typeof TxPlanSchema>;
 export type Snapshot = z.infer<typeof SnapshotSchema>;
 export type TxReceipt = z.infer<typeof TxReceiptSchema>;
 export type SignedTx = z.infer<typeof SignedTxSchema>;
 export type TxTrace = z.infer<typeof TxTraceSchema>;
 export type DagContext = z.infer<typeof DagContextSchema>;
+export type Workflow = z.infer<typeof WorkflowSchema>;

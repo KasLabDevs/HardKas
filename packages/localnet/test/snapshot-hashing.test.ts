@@ -46,7 +46,7 @@ describe("Snapshot Hashing", () => {
   it("should verify a valid snapshot", () => {
     const state = createInitialLocalnetState({ accounts: 2 });
     const stateWithSnapshot = createLocalnetSnapshot(state, "test");
-    const snapshot = stateWithSnapshot.snapshots![0];
+    const snapshot = stateWithSnapshot.snapshots![0]!;
 
     const result = verifySnapshot(snapshot);
     expect(result.ok).toBe(true);
@@ -55,7 +55,7 @@ describe("Snapshot Hashing", () => {
   it("should detect tampering (contentHash mismatch)", () => {
     const state = createInitialLocalnetState({ accounts: 2 });
     const stateWithSnapshot = createLocalnetSnapshot(state, "test");
-    const snapshot = JSON.parse(JSON.stringify(stateWithSnapshot.snapshots![0]));
+    const snapshot = JSON.parse(JSON.stringify(stateWithSnapshot.snapshots![0]!));
 
     snapshot.daaScore = "99999"; // Tamper
     
@@ -67,7 +67,7 @@ describe("Snapshot Hashing", () => {
   it("should detect deep tampering (stateHash mismatch)", () => {
     const state = createInitialLocalnetState({ accounts: 2 });
     const stateWithSnapshot = createLocalnetSnapshot(state, "test");
-    const snapshot = JSON.parse(JSON.stringify(stateWithSnapshot.snapshots![0]));
+    const snapshot = JSON.parse(JSON.stringify(stateWithSnapshot.snapshots![0]!));
 
     // Change a balance but keep the same contentHash (faking it)
     snapshot.accounts[0].name = "hacker";

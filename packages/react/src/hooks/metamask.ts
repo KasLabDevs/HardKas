@@ -17,6 +17,17 @@ export type MetaMaskLocalState = {
   errors: string[];
 };
 
+// Helper to isolate MetaMask from other aggressive injected wallets (like Kasware)
+const getMetaMaskProvider = () => {
+  if (typeof window === "undefined" || !window.ethereum) return null;
+  if (window.ethereum.providers) {
+    return window.ethereum.providers.find((p: any) => p.isMetaMask) || window.ethereum;
+  }
+  // Even if not in providers array, we return window.ethereum. 
+  // It might be MetaMask, or it might be another wallet if isMetaMask is false.
+  return window.ethereum;
+};
+
 export function useMetaMaskLocal() {
   const [state, setState] = useState<MetaMaskLocalState>({
     installed: false,
@@ -27,13 +38,13 @@ export function useMetaMaskLocal() {
   });
 
   const checkStatus = useCallback(async () => {
-    if (typeof window === "undefined" || !window.ethereum) {
+    const provider = getMetaMaskProvider();
+    if (!provider) {
       setState(s => ({ ...s, installed: false }));
       return;
     }
 
     try {
-      const provider = window.ethereum;
       const chainIdHex = await provider.request({ method: "eth_chainId" });
       const chainId = parseInt(chainIdHex as string, 16);
       const accounts = await provider.request({ method: "eth_accounts" }) as `0x${string}`[];
@@ -53,9 +64,10 @@ export function useMetaMaskLocal() {
   }, []);
 
   const connect = useCallback(async () => {
-    if (typeof window === "undefined" || !window.ethereum) return;
+    const provider = getMetaMaskProvider();
+    if (!provider) return;
     try {
-      await window.ethereum.request({ method: "eth_requestAccounts" });
+      await provider.request({ method: "eth_requestAccounts" });
       await checkStatus();
     } catch (e: any) {
       setState(s => ({ ...s, errors: [...s.errors, e.message] }));
@@ -63,9 +75,9 @@ export function useMetaMaskLocal() {
   }, [checkStatus]);
 
   useEffect(() => {
-    if (typeof window === "undefined" || !window.ethereum) return;
+    const provider = getMetaMaskProvider();
+    if (!provider) return;
     
-    const provider = window.ethereum;
     checkStatus();
 
     const handleChange = () => checkStatus();
@@ -88,17 +100,18 @@ export function useMetaMaskLocal() {
 
 export function useSwitchToLocalIgra() {
   const switchChain = async () => {
-    if (typeof window === "undefined" || !window.ethereum) return;
+    const provider = getMetaMaskProvider();
+    if (!provider) return;
     
     try {
-      await window.ethereum.request({
+      await provider.request({
         method: "wallet_switchEthereumChain",
         params: [{ chainId: "0x4bd8" }] // 19416
       });
     } catch (e: any) {
       if (e.code === 4902) {
         // Add chain
-        await window.ethereum.request({
+        await provider.request({
           method: "wallet_addEthereumChain",
           params: [{
             chainId: "0x4bd8",
@@ -130,10 +143,11 @@ export function useLocalIgraWalletClient() {
   const { state } = useMetaMaskLocal();
 
   const getClient = useCallback(() => {
-    if (!state.connected || !window.ethereum) return null;
+    const provider = getMetaMaskProvider();
+    if (!state.connected || !provider) return null;
     return createWalletClient({
       account: state.account,
-      transport: custom(window.ethereum)
+      transport: custom(provider)
     });
   }, [state.connected, state.account]);
 

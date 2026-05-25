@@ -12,6 +12,7 @@ export interface TestRunnerOptions {
   massReport?: boolean;
   massSnapshot?: string;
   massCompare?: string;
+  workspaceRoot?: string;
 }
 
 /**
@@ -60,7 +61,7 @@ export async function runTest(options: TestRunnerOptions): Promise<void> {
       // Injected environment variables for tests to consume
       env: {
         HARDKAS_NETWORK: network,
-        HARDKAS_CWD: process.cwd()
+        HARDKAS_CWD: options.workspaceRoot || process.cwd()
       }
     };
 
@@ -73,13 +74,15 @@ export async function runTest(options: TestRunnerOptions): Promise<void> {
     // Vitest process will handle its own output and exit codes if run as a process,
     // but here we are using the programmatic API.
   } catch (e) {
-    const error = e as any;
-    if (error.code === "ERR_MODULE_NOT_FOUND" || error.message?.includes("vitest")) {
-      UI.warning("Vitest is not installed in this project.");
-      UI.info("Run 'pnpm add -D vitest' to enable real test execution.");
-      UI.divider();
-      UI.info("Fallback: No real tests were executed because the engine is missing.");
-      process.exit(1);
+    if (e instanceof Error) {
+      const errCode = (e as unknown as Record<string, unknown>).code;
+      if (errCode === "ERR_MODULE_NOT_FOUND" || e.message.includes("vitest")) {
+        UI.warning("Vitest is not installed in this project.");
+        UI.info("Run 'pnpm add -D vitest' to enable real test execution.");
+        UI.divider();
+        UI.info("Fallback: No real tests were executed because the engine is missing.");
+        process.exit(1);
+      }
     }
     throw e;
   }

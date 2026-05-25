@@ -1,8 +1,8 @@
 {
   "schema": "hardkas.signedTx",
-  "hardkasVersion": "0.5.5-alpha",
+  "hardkasVersion": "0.5.4-alpha",
   "version": "1.0.0-alpha",
-  "createdAt": "2026-05-18T19:45:05.001Z",
+  "createdAt": "2026-05-24T13:09:23.580Z",
   "status": "signed",
   "signedId": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
   "sourcePlanId": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
@@ -23,11 +23,11 @@
     "payload": "00"
   },
   "lineage": {
-    "artifactId": "c1433f1813e94c71992950572d71e81c32ef32a7db9e74cd36148570f49000bf",
+    "artifactId": "b8d0b16ddbf47945847cb4a07538a765aa5510ecb38fd46274ada9c0e33adf72",
     "lineageId": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
     "parentArtifactId": "317b9f7fa35befa2d0406b3e2d0929e8dcb1d945813d0a82677a78e65fa7ffe2",
     "rootArtifactId": "2b4baed6aab94827f47c19195591a9f619be50882de2c564ca9fa1bd09d57fb5",
     "sequence": 2
   },
-  "contentHash": "c1433f1813e94c71992950572d71e81c32ef32a7db9e74cd36148570f49000bf"
+  "contentHash": "b8d0b16ddbf47945847cb4a07538a765aa5510ecb38fd46274ada9c0e33adf72"
 }

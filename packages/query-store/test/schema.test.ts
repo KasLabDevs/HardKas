@@ -40,7 +40,7 @@ describe("Query Store Schema Integrity", () => {
     expect(tableNames).toContain("hardkas_migrations");
 
     const migrations = db.prepare("SELECT * FROM hardkas_migrations").all();
-    expect(migrations).toHaveLength(1);
+    expect(migrations).toHaveLength(2);
 
     store.disconnect();
   });

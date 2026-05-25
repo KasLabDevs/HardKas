@@ -19,6 +19,7 @@ import type {
   WhyBlock
 } from "../types.js";
 import type { QueryBackend } from "../backend.js";
+import type { ContentHash } from "@hardkas/core";
 
 // Valid transitions from @hardkas/artifacts lineage.ts
 const VALID_TRANSITIONS: Record<string, readonly string[]> = {
@@ -107,7 +108,7 @@ export class LineageQueryAdapter implements QueryAdapter {
     return {
       domain: "lineage",
       op: "chain",
-      items: [result] as any,
+      items: [result],
       total: 1,
       truncated: false,
       deterministic: true,
@@ -250,7 +251,7 @@ export class LineageQueryAdapter implements QueryAdapter {
       if (!raw?.schema || !raw.lineage) continue;
 
       const node: LineageNode = {
-        contentHash: doc.contentHash as any,
+        contentHash: doc.contentHash as ContentHash,
         schema: doc.schema,
         artifactId: raw.lineage.artifactId || "",
         parentArtifactId: raw.lineage.parentArtifactId,

@@ -3,8 +3,14 @@ import { UI } from "../ui.js";
 
 export function registerMetamaskCommands(program: Command) {
   const metamaskCmd = program
-    .command("metamask")
+    .command("metamask", { hidden: true })
     .description("MetaMask onboarding and account export (local-dev only)");
+
+  metamaskCmd.hook("preAction", () => {
+    if (!process.env.HARDKAS_EXPERIMENTAL) {
+      console.warn("\n⚠️  WARNING: 'metamask' commands are highly experimental and unsupported. Set HARDKAS_EXPERIMENTAL=1 to acknowledge.\n");
+    }
+  });
 
   metamaskCmd
     .command("network")

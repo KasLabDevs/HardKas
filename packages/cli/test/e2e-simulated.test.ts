@@ -53,6 +53,12 @@ describe("E2E Simulated Happy Path", () => {
       network: "simulated"
     });
 
+    if (!result.ok) {
+      console.error("E2E Failed in plan:", result.steps.plan.error);
+      console.error("E2E Failed in sign:", result.steps.sign.error);
+      console.error("E2E Failed in send:", result.steps.send.error);
+    }
+    
     expect(result.ok).toBe(true);
     expect(result.result).toBe("broadcast");
     expect(result.steps.send.status).toBe("ok");
@@ -69,9 +75,9 @@ describe("E2E Simulated Happy Path", () => {
 
     // 4. Verify receipt exists
     const receipts = await listSimulatedReceipts();
-    expect(receipts.length).toBe(1);
-    expect(receipts[0].txId).toBe(txId);
-    expect(receipts[0].schema).toBe(artifacts.ARTIFACT_SCHEMAS.TX_RECEIPT);
+    const myReceipt = receipts.find((r: any) => r.txId === txId);
+    expect(myReceipt).toBeDefined();
+    expect(myReceipt.schema).toBe(artifacts.ARTIFACT_SCHEMAS.TX_RECEIPT);
   });
 
   it("should fail if insufficient funds", async () => {

@@ -1,16 +1,19 @@
 import { readTxPlanArtifact, verifyArtifactIntegrity } from "@hardkas/artifacts";
-import { verifyTxPlanSemantics, SemanticVerificationIssue } from "@hardkas/tx-builder";
+import { verifyTxPlanSemantics, SemanticVerificationIssue, TxPlan } from "@hardkas/tx-builder";
 import { UI } from "../ui.js";
 import { formatSompi } from "@hardkas/core";
 import path from "node:path";
 
 export interface TxVerifyOptions {
   path: string;
+  workspaceRoot: string;
   json?: boolean;
 }
 
 export async function runTxVerify(options: TxVerifyOptions) {
-  const absolutePath = path.resolve(process.cwd(), options.path);
+  const { Hardkas } = await import("@hardkas/sdk");
+  const sdk = await Hardkas.open({ cwd: options.workspaceRoot });
+  const absolutePath = sdk.workspace.resolvePath(options.path);
   
   UI.header(`Transaction Verification: ${path.basename(options.path)}`);
 
@@ -29,7 +32,11 @@ export async function runTxVerify(options: TxVerifyOptions) {
     }
 
     // 2. Perform semantic verification
-    const result = verifyTxPlanSemantics(artifact as any);
+    const artifactRecord = artifact as Record<string, unknown>;
+    if (!artifactRecord["inputs"] || !Array.isArray(artifactRecord["inputs"]) || !artifactRecord["outputs"] || !Array.isArray(artifactRecord["outputs"])) {
+      throw new Error("Invalid artifact: missing or invalid inputs/outputs arrays");
+    }
+    const result = verifyTxPlanSemantics(artifact as unknown as TxPlan);
 
     if (options.json) {
       console.log(JSON.stringify(result, (key, value) => 

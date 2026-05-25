@@ -59,6 +59,7 @@ export interface HardkasBaseAccount {
 export interface HardkasSimulatedAccount extends HardkasBaseAccount {
   kind: "simulated";
   address: string;
+  evmAddress?: string;
 }
 
 export interface HardkasKaspaPrivateKeyAccount extends HardkasBaseAccount {

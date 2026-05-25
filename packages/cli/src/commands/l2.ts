@@ -10,7 +10,13 @@ import { runL2RpcHealth } from "../runners/l2-rpc-health-runner.js";
 import { runL2Balance, runL2Nonce } from "../runners/l2-account-runners.js";
 
 export function registerL2Commands(program: Command) {
-  const l2 = program.command("l2").description("Layer 2 (Igra) management");
+  const l2 = program.command("l2", { hidden: true }).description("Layer 2 (Igra) management");
+
+  l2.hook("preAction", () => {
+    if (!process.env.HARDKAS_EXPERIMENTAL) {
+      console.warn("\n⚠️  WARNING: 'l2' commands are highly experimental and unsupported. Set HARDKAS_EXPERIMENTAL=1 to acknowledge.\n");
+    }
+  });
 
   l2.command("networks")
     .description("List available L2 network profiles")

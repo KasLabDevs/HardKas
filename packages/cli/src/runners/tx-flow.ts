@@ -14,6 +14,17 @@ import {
   writeArtifact 
 } from "@hardkas/artifacts";
 import { HardkasConfig } from "@hardkas/config";
+import { 
+  coreEvents, 
+  createEventEnvelope,
+  asEventSequence,
+  asArtifactId,
+  asWorkflowId,
+  asCorrelationId,
+  asNetworkId,
+  asTxId
+} from "@hardkas/core";
+import crypto from "node:crypto";
 import path from "path";
 import fs from "fs";
 
@@ -35,6 +46,7 @@ export interface TxFlowInput {
   name?: string;
   
   allowMainnetSigning?: boolean;
+  workspaceRoot?: string;
 }
 
 export interface TxFlowStepResult<T> {
@@ -65,8 +77,16 @@ export async function runTxFlow(input: TxFlowInput): Promise<TxFlowResult> {
     from, to, amount, network, config, url, feeRate,
     planOnly, sign, send, yes,
     outDir, name,
-    allowMainnetSigning
+    allowMainnetSigning,
+    workspaceRoot
   } = input;
+
+  const { Hardkas } = await import("@hardkas/sdk");
+  const sdk = await Hardkas.open({ cwd: workspaceRoot || process.cwd() });
+  const actualOutDir = outDir || sdk.workspace.artifactsDir;
+  if (!fs.existsSync(actualOutDir)) {
+    fs.mkdirSync(actualOutDir, { recursive: true });
+  }
 
   // Validation
   if (planOnly && (sign || send)) {
@@ -75,6 +95,23 @@ export async function runTxFlow(input: TxFlowInput): Promise<TxFlowResult> {
 
   const shouldSign = sign || send;
   const shouldSend = send;
+
+  const workflowId = asWorkflowId(crypto.randomUUID());
+  let globalOffset = 0;
+
+  const netId = asNetworkId(network || config.defaultNetwork || "simnet");
+
+  coreEvents.emit(createEventEnvelope({
+    kind: "workflow.started",
+    domain: "workflow",
+    workflowId,
+    correlationId: asCorrelationId(workflowId),
+    networkId: netId,
+    payload: { workflowId, network: netId },
+    sequenceNumber: asEventSequence(1),
+    globalOffset: globalOffset++,
+    sourceSubsystem: "cli:tx-flow"
+  }));
 
   const flowResult: TxFlowResult = {
     ok: true,
@@ -101,13 +138,53 @@ export async function runTxFlow(input: TxFlowInput): Promise<TxFlowResult> {
     flowResult.networkId = planArtifact.networkId;
     flowResult.steps.plan = { status: "ok", artifact: planArtifact };
 
-    if (outDir) {
-      const planPath = await saveArtifact(planArtifact, outDir, name, "plan", from, to, amount);
+    const planId = asArtifactId(planArtifact.planId);
+    const planNetId = asNetworkId(planArtifact.networkId);
+
+    coreEvents.emit(createEventEnvelope({
+      kind: "workflow.plan.created",
+      domain: "workflow",
+      workflowId,
+      correlationId: asCorrelationId(workflowId),
+      networkId: planNetId,
+      payload: { planId, network: planNetId, amountSompi: BigInt(planArtifact.amountSompi) },
+      sequenceNumber: asEventSequence(2),
+      globalOffset: globalOffset++,
+      sourceSubsystem: "cli:tx-flow",
+      artifactId: planId
+    }));
+
+    if (actualOutDir) {
+      const planPath = await saveArtifact(planArtifact, actualOutDir, name, "plan", from, to, amount);
       flowResult.steps.plan.artifactPath = planPath;
+
+      coreEvents.emit(createEventEnvelope({
+        kind: "artifact.written",
+        domain: "workflow",
+        workflowId,
+        correlationId: asCorrelationId(workflowId),
+        networkId: planNetId,
+        payload: { artifactId: planId, path: planPath },
+        sequenceNumber: asEventSequence(3),
+        globalOffset: globalOffset++,
+        sourceSubsystem: "cli:tx-flow",
+        artifactId: planId
+      }));
     }
 
     if (planOnly) {
       flowResult.result = "planned-only";
+      coreEvents.emit(createEventEnvelope({
+        kind: "workflow.completed",
+        domain: "workflow",
+        workflowId,
+        correlationId: asCorrelationId(workflowId),
+        networkId: asNetworkId(flowResult.networkId),
+        payload: { workflowId },
+        sequenceNumber: asEventSequence(8),
+        globalOffset: globalOffset++,
+        sourceSubsystem: "cli:tx-flow"
+      }));
       return flowResult;
     }
 
@@ -134,9 +211,38 @@ export async function runTxFlow(input: TxFlowInput): Promise<TxFlowResult> {
       flowResult.steps.sign = { status: "ok", artifact: signedArtifact };
       flowResult.result = "signed";
 
-      if (outDir) {
-        const signedPath = await saveArtifact(signedArtifact, outDir, name, "signed", from, to, amount);
+      const signedId = asArtifactId(signedArtifact.signedId);
+      const signedNetId = asNetworkId(signedArtifact.networkId);
+
+      coreEvents.emit(createEventEnvelope({
+        kind: "workflow.signed",
+        domain: "workflow",
+        workflowId,
+        correlationId: asCorrelationId(workflowId),
+        networkId: signedNetId,
+        payload: { signedId, planId: planId },
+        sequenceNumber: asEventSequence(4),
+        globalOffset: globalOffset++,
+        sourceSubsystem: "cli:tx-flow",
+        artifactId: signedId
+      }));
+
+      if (actualOutDir) {
+        const signedPath = await saveArtifact(signedArtifact, actualOutDir, name, "signed", from, to, amount);
         flowResult.steps.sign.artifactPath = signedPath;
+        
+        coreEvents.emit(createEventEnvelope({
+          kind: "artifact.written",
+          domain: "workflow",
+          workflowId,
+          correlationId: asCorrelationId(workflowId),
+          networkId: signedNetId,
+          payload: { artifactId: signedId, path: signedPath },
+          sequenceNumber: asEventSequence(5),
+          globalOffset: globalOffset++,
+          sourceSubsystem: "cli:tx-flow",
+          artifactId: signedId
+        }));
       }
 
       // 3. Send
@@ -151,6 +257,49 @@ export async function runTxFlow(input: TxFlowInput): Promise<TxFlowResult> {
             config,
             ...(url ? { url } : {})
           });
+          
+          if (actualOutDir && sendResult.receipt) {
+            const receiptPath = await saveArtifact(sendResult.receipt, actualOutDir, name, "receipt", from, to, amount);
+            sendResult.receiptPath = receiptPath;
+
+            const receiptId = asArtifactId(sendResult.receipt.txId);
+            const receiptNetId = asNetworkId(sendResult.receipt.networkId);
+            
+            const statusMap: Record<string, "accepted" | "finalized" | "failed"> = { 
+              pending: "accepted", 
+              submitted: "accepted", 
+              accepted: "accepted", 
+              confirmed: "finalized", 
+              failed: "failed" 
+            };
+
+            coreEvents.emit(createEventEnvelope({
+              kind: "workflow.receipt",
+              domain: "workflow",
+              workflowId,
+              correlationId: asCorrelationId(workflowId),
+              networkId: receiptNetId,
+              payload: { txId: asTxId(sendResult.receipt.txId), status: statusMap[sendResult.receipt.status] || "failed" },
+              sequenceNumber: asEventSequence(6),
+              globalOffset: globalOffset++,
+              sourceSubsystem: "cli:tx-flow",
+              artifactId: receiptId
+            }));
+            
+            coreEvents.emit(createEventEnvelope({
+              kind: "artifact.written",
+              domain: "workflow",
+              workflowId,
+              correlationId: asCorrelationId(workflowId),
+              networkId: receiptNetId,
+              payload: { artifactId: receiptId, path: receiptPath },
+              sequenceNumber: asEventSequence(7),
+              globalOffset: globalOffset++,
+              sourceSubsystem: "cli:tx-flow",
+              artifactId: receiptId
+            }));
+          }
+          
           flowResult.steps.send = { status: "ok", artifact: sendResult };
           flowResult.result = "broadcast";
         }

@@ -6,7 +6,7 @@ import {
   getRealDevAccount 
 } from "@hardkas/accounts";
 import { JsonWrpcKaspaClient } from "@hardkas/kaspa-rpc";
-import { formatSompi } from "@hardkas/core";
+import { formatSompi, type NetworkId } from "@hardkas/core";
 import { resolveRuntimeConfig } from "@hardkas/node-orchestrator";
 
 export interface AccountBalanceResult {
@@ -49,7 +49,7 @@ export async function runAccountsBalance(options: AccountsBalanceOptions): Promi
   const network = options.network ?? loadedConfig.config.defaultNetwork ?? "simnet";
   let rpcUrl = options.url;
   if (!rpcUrl) {
-    rpcUrl = resolveRuntimeConfig({ network: network as any }).rpcUrl;
+    rpcUrl = resolveRuntimeConfig({ network: network as "mainnet" | "testnet-10" | "simnet" }).rpcUrl;
   }
 
   const client = new JsonWrpcKaspaClient({ rpcUrl });

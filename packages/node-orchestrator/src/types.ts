@@ -1,5 +1,6 @@
 export type KaspaRealNetwork =
   | "mainnet"
+  | "simnet"
   | "testnet-10"
   | "testnet-11"
   | "testnet-12"

@@ -13,6 +13,6 @@ export function registerRunCommand(program: Command): void {
     .option("--balance <sompi>", "Initial balance per account in sompi", "100000000000")
     .option("--no-harness", "Skip automatic harness creation")
     .action(async (script: string, opts: any) => {
-      await runScript(script, opts);
+      await runScript(script, { ...opts, workspaceRoot: process.cwd() });
     });
 }

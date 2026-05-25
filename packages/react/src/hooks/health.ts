@@ -21,7 +21,7 @@ export interface HealthInfo {
 }
 
 export function useHardKasHealth() {
-  const { config, subscribe } = useHardKas();
+  const { config, subscribe , apiFetch } = useHardKas();
   const queryClient = useQueryClient();
 
   useEffect(() => {
@@ -40,7 +40,7 @@ export function useHardKasHealth() {
       try {
         const baseUrl = config.devServerUrl || "";
         const url = baseUrl ? (baseUrl.endsWith("/") ? `${baseUrl}api/health` : `${baseUrl}/api/health`) : "/api/health";
-        const res = await fetch(url);
+        const res = await apiFetch(url);
         if (!res || !res.ok) {
           throw new Error("Failed to fetch health from dev server");
         }

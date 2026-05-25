@@ -1,3 +1,4 @@
+import { systemRuntimeContext } from "@hardkas/core";
 import { describe, it, expect } from "vitest";
 import { 
   createInitialLocalnetState, 
@@ -19,7 +20,7 @@ describe("Simulation Correctness", () => {
       from: "alice",
       to: "bob",
       amountSompi: parseKasToSompi("10")
-    });
+    }, systemRuntimeContext);
 
     expect(result.ok).toBe(true);
     expect(result.state.daaScore).toBe("1");
@@ -40,7 +41,7 @@ describe("Simulation Correctness", () => {
       from: "alice",
       to: "bob",
       amountSompi: parseKasToSompi("100") // More than balance
-    });
+    }, systemRuntimeContext);
 
     expect(result.ok).toBe(false);
     expect(result.state).toBe(initialState); // Identity equality check
@@ -59,7 +60,7 @@ describe("Simulation Correctness", () => {
       from: "alice",
       to: "bob",
       amountSompi: parseKasToSompi("90")
-    });
+    }, systemRuntimeContext);
     expect(result1.ok).toBe(true);
 
     // Alice tries to spend again using old state (should be fine if state is separate)
@@ -68,7 +69,7 @@ describe("Simulation Correctness", () => {
       from: "alice",
       to: "bob",
       amountSompi: parseKasToSompi("20")
-    });
+    }, systemRuntimeContext);
 
     expect(result2.ok).toBe(false);
     expect(result2.errors[0]).toContain("Insufficient funds");
@@ -85,13 +86,13 @@ describe("Simulation Correctness", () => {
         from: "alice",
         to: "bob",
         amountSompi: parseKasToSompi("10")
-      }).state;
+      }, systemRuntimeContext).state;
 
       state = applySimulatedPayment(state, {
         from: "bob",
         to: "alice",
         amountSompi: parseKasToSompi("5")
-      }).state;
+      }, systemRuntimeContext).state;
 
       return calculateStateHash(state);
     };
@@ -118,7 +119,7 @@ describe("Simulation Correctness", () => {
       from: "alice",
       to: "bob",
       amountSompi: 100n // Below dust limit
-    });
+    }, systemRuntimeContext);
 
     expect(result.ok).toBe(true);
     expect(result.errors.length).toBeGreaterThan(0);

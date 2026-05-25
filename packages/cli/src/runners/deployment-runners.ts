@@ -17,16 +17,24 @@ import { JsonWrpcKaspaClient } from "@hardkas/kaspa-rpc";
 
 // SAFETY_LEVEL: SIMULATION_ONLY
 
+export async function runDeploymentInspect(options: { label: string, network?: string, json?: boolean, workspaceRoot: string }) {
+  const { Hardkas } = await import("@hardkas/sdk");
+  const sdk = await Hardkas.open({ cwd: options.workspaceRoot });
+  const rootDir = sdk.workspace.root;
+  
+  await withLock({ rootDir, name: "artifacts", command: "hardkas deploy track" }, async () => {
+    await trackDeploymentInternal(rootDir, { label: options.label, network: options.network || "simnet", silent: !!options.json });
+  });
+}
+
 export async function trackDeployment(opts: {
   label: string;
   network: string;
   txId?: string;
-  plan?: string;
-  receipt?: string;
-  status?: string;
-  notes?: string;
-}): Promise<void> {
-  const rootDir = process.cwd();
+  script?: string;
+  workspaceRoot?: string;
+}) {
+  const rootDir = opts.workspaceRoot || process.cwd();
   
   await withLock({ rootDir, name: "artifacts", command: "hardkas deploy track" }, async () => {
     await trackDeploymentInternal(rootDir, opts);
@@ -54,7 +62,7 @@ export async function trackDeploymentInternal(rootDir: string, opts: {
     ...(opts.txId ? { txId: opts.txId as TxId } : {}),
     ...(opts.plan ? { planArtifactId: opts.plan as ArtifactId } : {}),
     ...(opts.receipt ? { receiptArtifactId: opts.receipt as ArtifactId } : {}),
-    status: (opts.status || "sent") as any,
+    status: (opts.status || "sent") as DeploymentRecord["status"],
     ...(opts.notes ? { notes: opts.notes } : {})
   });
 
@@ -64,12 +72,58 @@ export async function trackDeploymentInternal(rootDir: string, opts: {
   }
 }
 
+export async function runDeploymentList(options: { json?: boolean, workspaceRoot: string, network?: string, status?: string }) {
+  const { Hardkas } = await import("@hardkas/sdk");
+  const sdk = await Hardkas.open({ cwd: options.workspaceRoot });
+  const rootDir = sdk.workspace.root;
+  const deployments = await listDeployments(rootDir, options.network);
+  
+  const filtered = options.status 
+    ? deployments.filter(d => d.status === options.status)
+    : deployments;
+
+  if (options.json) {
+    console.log(JSON.stringify(filtered, null, 2));
+    return;
+  }
+
+  if (filtered.length === 0) {
+    UI.info("No deployments found.");
+    return;
+  }
+
+  UI.header("Deployments");
+  
+  // Group by network
+  const byNetwork: Record<string, DeploymentSummary[]> = {};
+  for (const d of filtered) {
+    const net = d.networkId || "unknown";
+    if (!byNetwork[net]) byNetwork[net] = [];
+    byNetwork[net].push(d);
+  }
+
+  let total = 0;
+  for (const [net, items] of Object.entries(byNetwork)) {
+    console.log(`\n  ${net}`);
+    for (const d of items) {
+      const statusIcon = d.status === "confirmed" ? "✅" : d.status === "failed" ? "❌" : "⏳";
+      const txIdShort = d.txId ? d.txId.slice(0, 12) + "..." : "(none)";
+      const ago = formatAgo(d.deployedAt);
+      console.log(`    ${statusIcon} ${d.label.padEnd(20)} ${d.status.padEnd(10)} ${txIdShort.padEnd(16)} ${ago}`);
+      total++;
+    }
+  }
+
+  console.log(`\n  Total: ${total} deployments across ${Object.keys(byNetwork).length} networks`);
+}
+
 export async function listAllDeployments(opts: { 
   network?: string; 
   status?: string; 
-  json?: boolean 
+  json?: boolean;
+  workspaceRoot: string;
 }): Promise<void> {
-  const rootDir = process.cwd();
+  const rootDir = opts.workspaceRoot;
   const deployments = await listDeployments(rootDir, opts.network);
   
   const filtered = opts.status 
@@ -115,8 +169,9 @@ export async function inspectDeployment(opts: {
   label: string;
   network: string;
   json?: boolean;
+  workspaceRoot: string;
 }): Promise<void> {
-  const rootDir = process.cwd();
+  const rootDir = opts.workspaceRoot;
   const record = await loadDeployment(rootDir, opts.network, opts.label);
   
   if (!record) {
@@ -144,8 +199,9 @@ export async function verifyDeploymentStatus(opts: {
   network: string;
   verify?: boolean;
   json?: boolean;
+  workspaceRoot: string;
 }): Promise<void> {
-  const rootDir = process.cwd();
+  const rootDir = opts.workspaceRoot;
   const record = await loadDeployment(rootDir, opts.network, opts.label);
   
   if (!record) {
@@ -165,7 +221,8 @@ export async function verifyDeploymentStatus(opts: {
   UI.info(`Checking ${record.label} on ${record.networkId}...`);
   const { config } = await loadHardkasConfig();
   const netTarget = resolveNetworkTarget({ config, network: record.networkId });
-  const rpcUrl = (netTarget.target as any).rpcUrl;
+  const netTargetObj = netTarget.target as unknown as Record<string, unknown>;
+  const rpcUrl = typeof netTargetObj.rpcUrl === "string" ? netTargetObj.rpcUrl : undefined;
   console.log(`  RPC: ${rpcUrl || "simulated"}`);
   console.log(`  TxId: ${record.txId}`);
 
@@ -176,12 +233,12 @@ export async function verifyDeploymentStatus(opts: {
   } else {
     try {
       const client = new JsonWrpcKaspaClient({ rpcUrl: rpcUrl });
-      const tx = await client.getTransaction(record.txId) as any;
+      const tx = await client.getTransaction(record.txId) as Record<string, unknown> | null;
       
       let newStatus: DeploymentRecord["status"] = record.status;
       if (tx) {
-        // Basic confirmation check: if we found it in a block or it's accepted
-        const isAccepted = tx.isAccepted || (tx.transaction && tx.transaction.block_hash);
+        const txTransaction = typeof tx.transaction === "object" && tx.transaction !== null ? tx.transaction as Record<string, unknown> : undefined;
+        const isAccepted = tx.isAccepted === true || (txTransaction && typeof txTransaction.block_hash === "string");
         if (isAccepted) newStatus = "confirmed";
       } else {
         // If not found, maybe it's still pending or failed.
@@ -205,9 +262,10 @@ export async function verifyDeploymentStatus(opts: {
   }
 }
 
-export async function showDeploymentHistory(opts: { json?: boolean }): Promise<void> {
+export async function showDeploymentHistory(opts: { json?: boolean, workspaceRoot: string }): Promise<void> {
   const options = {
-    ...(opts.json !== undefined ? { json: opts.json } : {})
+    ...(opts.json !== undefined ? { json: opts.json } : {}),
+    workspaceRoot: opts.workspaceRoot
   };
   await listAllDeployments(options);
 }

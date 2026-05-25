@@ -12,7 +12,7 @@ export interface LoadHardkasConfigOptions {
 export async function loadHardkasConfig(
   options: LoadHardkasConfigOptions = {}
 ): Promise<LoadedHardkasConfig> {
-  const cwd = options.cwd ?? process.cwd();
+  const cwd = options.cwd ?? process.env.INIT_CWD ?? process.cwd();
   
   if (options.configPath) {
     const absolutePath = path.resolve(cwd, options.configPath);

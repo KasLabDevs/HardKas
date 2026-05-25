@@ -1,7 +1,7 @@
 import enquirer from "enquirer";
 import fs from "node:fs";
 
-const { Password } = enquirer as any;
+const { Password } = enquirer as unknown as { Password: new (options: Record<string, unknown>) => { run(): Promise<string> } };
 
 export interface SecretAcquisitionOptions {
   stdin?: boolean | undefined;

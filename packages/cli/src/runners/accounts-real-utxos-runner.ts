@@ -3,8 +3,8 @@ import {
   getRealDevAccount 
 } from "@hardkas/accounts";
 import { JsonWrpcKaspaClient } from "@hardkas/kaspa-rpc";
-import { formatSompi } from "@hardkas/core";
-import { resolveRuntimeConfig } from "@hardkas/node-orchestrator";
+import { formatSompi, type NetworkId } from "@hardkas/core";
+import { resolveRuntimeConfig, type KaspaRealNetwork } from "@hardkas/node-orchestrator";
 
 export interface AccountsRealUtxosOptions {
   name: string;
@@ -24,7 +24,7 @@ export async function runAccountsRealUtxos(options: AccountsRealUtxosOptions): P
 
   let rpcUrl = options.url;
   if (!rpcUrl) {
-    rpcUrl = resolveRuntimeConfig({ network: options.network as any || "simnet" }).rpcUrl;
+    rpcUrl = resolveRuntimeConfig({ network: (options.network ?? "simnet") as KaspaRealNetwork }).rpcUrl;
   }
 
   const client = new JsonWrpcKaspaClient({ rpcUrl });

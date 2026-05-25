@@ -3,8 +3,14 @@ import { UI } from "../ui.js";
 
 export function registerBridgeCommands(program: Command) {
   const bridgeCmd = program
-    .command("bridge")
+    .command("bridge", { hidden: true })
     .description("Kaspa -> Igra bridge developer tools");
+
+  bridgeCmd.hook("preAction", () => {
+    if (!process.env.HARDKAS_EXPERIMENTAL) {
+      console.warn("\n⚠️  WARNING: 'bridge' commands are highly experimental and unsupported. Set HARDKAS_EXPERIMENTAL=1 to acknowledge.\n");
+    }
+  });
 
   const localCmd = bridgeCmd
     .command("local")

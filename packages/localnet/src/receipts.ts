@@ -3,6 +3,7 @@ import path from "node:path";
 import { existsSync } from "node:fs";
 import { HardkasArtifactBase, HARDKAS_VERSION, ARTIFACT_SCHEMAS } from "@hardkas/artifacts";
 import { NetworkId, ExecutionMode, writeFileAtomic } from "@hardkas/core";
+import { deterministicCompare } from "@hardkas/core";
 
 export interface StoredSimulatedTxReceipt extends HardkasArtifactBase {
   schema: typeof ARTIFACT_SCHEMAS.TX_RECEIPT;
@@ -23,7 +24,7 @@ export interface StoredSimulatedTxReceipt extends HardkasArtifactBase {
 }
 
 export function getDefaultReceiptsDir(cwd: string = process.cwd()): string {
-  return path.join(cwd, ".hardkas", "receipts");
+  return path.join(cwd, ".hardkas", "artifacts");
 }
 
 export function getReceiptPath(txId: string, cwd?: string): string {
@@ -87,5 +88,5 @@ export async function listSimulatedReceipts(
     }
   }
 
-  return receipts.sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+  return receipts.sort((a, b) => deterministicCompare(b.createdAt, a.createdAt));
 }

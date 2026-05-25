@@ -1,3 +1,4 @@
+import { systemRuntimeContext } from "@hardkas/core";
 import { describe, it, expect } from "vitest";
 import { createDeploymentRecord, updateDeploymentStatus } from "../src/deployment.js";
 import { CURRENT_HASH_VERSION } from "../src/canonical.js";
@@ -19,10 +20,10 @@ describe("Deployment artifacts", () => {
     expect(r1.contentHash).toBe(r2.contentHash);
   });
 
-  it("different status produces different hash", () => {
+  it("different status produces same hash (status is semantically excluded)", () => {
     const r1 = createDeploymentRecord({ label: "test", networkId: "simnet" as any, status: "sent", txId: "simtx_abc" as any });
     const r2 = createDeploymentRecord({ label: "test", networkId: "simnet" as any, status: "confirmed", txId: "simtx_abc" as any });
-    expect(r1.contentHash).not.toBe(r2.contentHash);
+    expect(r1.contentHash).toBe(r2.contentHash);
   });
 
   it("deployedAt is excluded from hash (deterministic)", async () => {

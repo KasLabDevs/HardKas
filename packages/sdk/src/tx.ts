@@ -1,3 +1,4 @@
+import { systemRuntimeContext } from "@hardkas/core";
 import { Hardkas } from "./index.js";
 import { 
   buildPaymentPlan, 
@@ -8,6 +9,9 @@ import {
   SignedTxArtifact, 
   TxReceiptArtifact, 
   HARDKAS_VERSION,
+  ARTIFACT_SCHEMAS,
+  ARTIFACT_VERSION,
+  CURRENT_HASH_VERSION,
   getBroadcastableSignedTransaction,
   writeArtifact,
   getDefaultReceiptPath,
@@ -15,6 +19,7 @@ import {
   readTxReceiptArtifact,
   calculateContentHash
 } from "@hardkas/artifacts";
+import { coreEvents } from "@hardkas/core";
 import { HardkasAccount, signTxPlanArtifact } from "@hardkas/accounts";
 import { parseKasToSompi, type NetworkId } from "@hardkas/core";
 
@@ -40,7 +45,9 @@ export class HardkasTx {
     if (!fromAccount.address) throw new Error(`From account ${fromAccount.name} has no address.`);
     if (!toAccount.address) throw new Error(`To account ${toAccount.name} has no address.`);
 
-    const amountSompi = typeof options.amount === "string" ? parseKasToSompi(options.amount) : options.amount;
+    const amountSompi = typeof options.amount === "string" 
+      ? parseKasToSompi(options.amount) 
+      : (typeof options.amount === "number" ? BigInt(options.amount) : options.amount);
 
     // Fetch UTXOs
     const rpcUtxos = await this.sdk.rpc.getUtxosByAddress(fromAccount.address);
@@ -77,7 +84,8 @@ export class HardkasTx {
         address: toAccount.address
       },
       amountSompi,
-      plan: builderPlan
+      plan: builderPlan,
+      ctx: systemRuntimeContext
     }) as unknown as TxPlanArtifact;
   }
 
@@ -103,43 +111,151 @@ export class HardkasTx {
   }
 
   /**
-   * Sends a signed transaction.
+   * Simulates a transaction on the local state without broadcasting to a real Kaspa node.
+   * Modifies the local deterministic state and outputs receipt/trace artifacts.
    */
-  async send(signed: SignedTxArtifact): Promise<TxReceiptArtifact> {
-    const broadcastable = getBroadcastableSignedTransaction(signed);
+  async simulate(signedArtifact: SignedTxArtifact): Promise<{ receipt: TxReceiptArtifact; receiptPath: string; tracePath: string }> {
+    const { 
+      loadOrCreateLocalnetState, 
+      saveLocalnetState, 
+      applySimulatedPayment,
+      saveSimulatedReceipt,
+      saveSimulatedTrace
+    } = await import("@hardkas/localnet");
+    const path = await import("node:path");
+
+    const state = await loadOrCreateLocalnetState();
+    
+    const startTime = Date.now();
+    const events: any[] = [
+      { type: "phase.started", phase: "send", timestamp: startTime },
+    ];
+
+    const simResult = applySimulatedPayment(state, {
+      from: signedArtifact.from.input || signedArtifact.from.address,
+      to: signedArtifact.to.input || signedArtifact.to.address,
+      amountSompi: BigInt(signedArtifact.amountSompi),
+    }, systemRuntimeContext);
+
+    coreEvents.normalizeAndEmit({
+      kind: "workflow.submitted",
+      txId: simResult.receipt.txId,
+      endpoint: "simulated://local"
+    } as any);
+
+    events.push({ type: "phase.completed", phase: "send", timestamp: Date.now() });
+
+    await saveLocalnetState(simResult.state);
+    const receiptPath = await saveSimulatedReceipt(simResult.receipt as any);
+
+    // Create unified receipt
+    const receiptBase: any = {
+      schema: ARTIFACT_SCHEMAS.TX_RECEIPT,
+      hardkasVersion: HARDKAS_VERSION,
+      version: ARTIFACT_VERSION,
+      hashVersion: CURRENT_HASH_VERSION,
+      networkId: this.sdk.network,
+      mode: "simulated",
+      createdAt: new Date().toISOString(),
+      status: "confirmed",
+      txId: simResult.receipt.txId as any,
+      sourceSignedId: signedArtifact.signedId,
+      from: { address: signedArtifact.from.address },
+      to: { address: signedArtifact.to.address },
+      amountSompi: signedArtifact.amountSompi,
+      feeSompi: simResult.receipt.feeSompi?.toString() || "0",
+      changeSompi: simResult.receipt.changeSompi?.toString() || "0",
+      spentUtxoIds: simResult.receipt.spentUtxoIds,
+      createdUtxoIds: simResult.receipt.createdUtxoIds,
+      daaScore: simResult.receipt.daaScore?.toString() || "0",
+      preStateHash: simResult.receipt.preStateHash,
+      postStateHash: simResult.receipt.postStateHash,
+      submittedAt: simResult.receipt.createdAt,
+      confirmedAt: simResult.receipt.createdAt,
+      rpcUrl: "simulated://local"
+    };
+    receiptBase.contentHash = calculateContentHash(receiptBase, CURRENT_HASH_VERSION);
+    const receipt: TxReceiptArtifact = receiptBase;
+
+    // Convert events to steps
+    const traceSteps = events.map(ev => ({
+      phase: ev.phase || (ev as any).message || "unknown",
+      status: ev.type.includes("completed") ? "completed" : ev.type.includes("failed") ? "failed" : "started",
+      timestamp: new Date(ev.timestamp).toISOString(),
+      details: ev.type === "note" ? { message: (ev as any).message } : undefined
+    }));
+
+    const traceBase: any = {
+      schema: ARTIFACT_SCHEMAS.TX_TRACE,
+      hardkasVersion: HARDKAS_VERSION,
+      version: ARTIFACT_VERSION,
+      hashVersion: CURRENT_HASH_VERSION,
+      createdAt: receipt.createdAt,
+      txId: receipt.txId,
+      mode: "simulated",
+      networkId: this.sdk.network,
+      steps: traceSteps,
+    };
+    traceBase.contentHash = calculateContentHash(traceBase, CURRENT_HASH_VERSION);
+
+    const tracePath = await saveSimulatedTrace({
+      ...traceBase,
+      events, 
+      receiptPath
+    });
+
+    receipt.tracePath = tracePath;
+
+    return {
+      receipt,
+      receiptPath,
+      tracePath
+    };
+  }
+
+  /**
+   * Sends a signed transaction to the real RPC network.
+   */
+  async send(signedArtifact: SignedTxArtifact, url?: string): Promise<{ receipt: TxReceiptArtifact; receiptPath: string }> {
+    const broadcastable = getBroadcastableSignedTransaction(signedArtifact);
+    
+    // Attempt broadcast
+    const txId = (broadcastable.rawTransaction as any)?.id || "unknown";
+    coreEvents.normalizeAndEmit({
+      kind: "workflow.submitted",
+      txId,
+      endpoint: url || "real"
+    } as any);
+
     const result = await this.sdk.rpc.submitTransaction(broadcastable.rawTransaction);
     
-    const txId = result.transactionId;
-    if (!txId) throw new Error("Broadcast failed: RPC returned no transaction ID.");
-
-    const receipt: any = {
-      schema: "hardkas.txReceipt",
+    const realReceiptBase: any = {
+      schema: ARTIFACT_SCHEMAS.TX_RECEIPT,
       hardkasVersion: HARDKAS_VERSION,
-      version: "1.0.0-alpha",
-      networkId: signed.networkId,
-      mode: signed.mode,
-      status: "accepted",
+      version: ARTIFACT_VERSION,
+      hashVersion: CURRENT_HASH_VERSION,
+      networkId: this.sdk.network,
+      mode: "real",
       createdAt: new Date().toISOString(),
-      txId,
-      from: {
-        address: signed.from.address
-      },
-      to: {
-        address: signed.to.address
-      },
-      amountSompi: String(signed.amountSompi),
-      feeSompi: String((signed as any).estimatedFeeSompi || "0")
+      status: result.accepted ? "submitted" : "failed",
+      txId: (result.transactionId || "failed") as any,
+      sourceSignedId: signedArtifact.signedId,
+      from: { address: signedArtifact.from.address },
+      to: { address: signedArtifact.to.address },
+      amountSompi: signedArtifact.amountSompi,
+      feeSompi: signedArtifact.metadata?.estimatedFeeSompi || "0",
+      submittedAt: new Date().toISOString(),
+      ...(url ? { rpcUrl: url } : {})
     };
+    realReceiptBase.contentHash = calculateContentHash(realReceiptBase, CURRENT_HASH_VERSION);
+    const receipt: TxReceiptArtifact = realReceiptBase;
 
-    receipt.contentHash = calculateContentHash(receipt);
-
-    // Auto-save receipt
-    const receiptPath = getDefaultReceiptPath(txId, this.sdk.config.cwd);
+    const receiptPath = getDefaultReceiptPath(receipt.txId, this.sdk.config.cwd);
     await writeArtifact(receiptPath, receipt);
 
     return {
-      ...receipt,
+      receipt,
       receiptPath
-    } as any;
+    };
   }
 }

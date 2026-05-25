@@ -1,3 +1,4 @@
+import { systemRuntimeContext } from "@hardkas/core";
 import { describe, it, expect } from "vitest";
 import { 
   HashInvariant, 
@@ -6,7 +7,7 @@ import {
   BasicLineageInvariant,
   InvariantWatcher
 } from "../src/index.js";
-import { createEventEnvelope, asWorkflowId, asCorrelationId, asNetworkId } from "@hardkas/core";
+import { createEventEnvelope, asWorkflowId, asCorrelationId, asNetworkId, asEventSequence } from "@hardkas/core";
 
 describe("Invariant System (Phase 5)", () => {
   it("HashInvariant should detect mismatch", async () => {
@@ -41,6 +42,8 @@ describe("Invariant System (Phase 5)", () => {
       domain: "workflow",
       workflowId: "" as any, // Missing
       correlationId: "" as any,
+      sequenceNumber: asEventSequence(1),
+      sourceSubsystem: "test",
       networkId: asNetworkId("simnet"),
       payload: { workflowId: "" as any, network: asNetworkId("simnet") }
     });
@@ -79,6 +82,8 @@ describe("Invariant System (Phase 5)", () => {
       domain: "workflow",
       workflowId: asWorkflowId("wf-1"),
       correlationId: asCorrelationId("corr-1"),
+      sequenceNumber: asEventSequence(1),
+      sourceSubsystem: "test",
       networkId: asNetworkId("simnet"),
       payload: { 
         planId: "art-1" as any,
@@ -108,7 +113,7 @@ describe("Invariant System (Phase 5)", () => {
     expect(emitted.length).toBe(1);
     expect(emitted[0].domain).toBe("integrity");
     expect(emitted[0].kind).toBe("integrity.violation");
-    expect(emitted[0].workflowId).toBe("wf-1");
+    expect(emitted[0].workflowId).toBe("system-watcher");
 
     watcher2.stop();
     expect(registeredCb).toBeNull();
@@ -137,6 +142,8 @@ describe("Invariant System (Phase 5)", () => {
       domain: "integrity",
       workflowId: asWorkflowId("wf-1"),
       correlationId: asCorrelationId("corr-1"),
+      sequenceNumber: asEventSequence(1),
+      sourceSubsystem: "test",
       networkId: asNetworkId("simnet"),
       payload: { violationCode: "TEST", severity: "error", message: "skip" }
     });

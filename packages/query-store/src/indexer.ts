@@ -8,7 +8,8 @@ import {
   validateEventEnvelope, 
   type EventEnvelope, 
   type CorruptionIssue, 
-  formatCorruptionIssue 
+  formatCorruptionIssue,
+  type CorruptionCode
 } from "@hardkas/core";
 
 export interface IndexerOptions {
@@ -31,6 +32,7 @@ export interface SyncResult {
   warnings: string[];
   errors: string[];
   issues: CorruptionIssue[];
+  generationId?: string;
 }
 
 export interface DoctorReport {
@@ -39,7 +41,17 @@ export interface DoctorReport {
   zombieArtifacts: number;
   corruptedFiles: string[];
   orphanEdges: number;
+  duplicateProjections: number;
+  brokenReplayDependencies: number;
+  duplicateEventSequences: number;
+  orphanEvents: number;
   lastIndexedAt: string | null;
+}
+
+interface IndexerArtifactRow {
+  readonly artifact_id: string;
+  readonly file_path: string | null;
+  readonly file_mtime_ms: number | null;
 }
 
 export class HardkasIndexer {
@@ -91,8 +103,8 @@ export class HardkasIndexer {
   /**
    * Internal indexing logic without transaction management.
    */
-  private async _syncInternal(result: SyncResult): Promise<void> {
-    await this.syncArtifacts(result);
+  private async _syncInternal(result: SyncResult, specificPaths?: string[]): Promise<void> {
+    await this.syncArtifacts(result, specificPaths);
     this.syncEvents(result);
     this.syncTraces();
     this.cleanupZombies();
@@ -100,6 +112,50 @@ export class HardkasIndexer {
     // Mark last sync
     this.db.prepare("INSERT OR REPLACE INTO metadata (key, value) VALUES (?, ?)")
       .run("last_indexed_at", new Date().toISOString());
+      
+    if (result.artifacts.indexed > 0 || result.events.indexed > 0 || result.artifacts.corrupted > 0) {
+      const crypto = require("node:crypto");
+      const genId = crypto.randomUUID();
+      this.db.prepare("INSERT OR REPLACE INTO metadata (key, value) VALUES (?, ?)")
+        .run("generation_id", genId);
+      result.generationId = genId;
+    } else {
+      const row = this.db.prepare("SELECT value FROM metadata WHERE key = 'generation_id'").get();
+      result.generationId = row ? row.value : null;
+    }
+  }
+
+  /**
+   * Performs an incremental sync of only specific paths (Targeted Reindex).
+   * Transactional.
+   */
+  public async syncPaths(paths: string[]): Promise<SyncResult> {
+    const result: SyncResult = {
+      schema: "hardkas.queryRebuild.v1",
+      ok: true,
+      artifacts: { scanned: 0, indexed: 0, duplicates: 0, corrupted: 0 },
+      events: { scanned: 0, indexed: 0, duplicates: 0, corrupted: 0 },
+      warnings: [],
+      errors: [],
+      issues: []
+    };
+
+    if (!fs.existsSync(this.hardkasDir)) {
+      return result;
+    }
+
+    this.db.exec("BEGIN TRANSACTION;");
+    try {
+      await this._syncInternal(result, paths);
+      this.db.exec("COMMIT;");
+    } catch (e: any) {
+      this.db.exec("ROLLBACK;");
+      result.ok = false;
+      result.errors.push(`Targeted Sync failed: ${e.message}`);
+      if (this.strict) throw e;
+    }
+
+    return result;
   }
 
   /**
@@ -159,6 +215,10 @@ export class HardkasIndexer {
       zombieArtifacts: 0,
       corruptedFiles: [],
       orphanEdges: 0,
+      duplicateProjections: 0,
+      brokenReplayDependencies: 0,
+      duplicateEventSequences: 0,
+      orphanEvents: 0,
       lastIndexedAt: null
     };
 
@@ -167,7 +227,7 @@ export class HardkasIndexer {
     report.lastIndexedAt = lastIdx?.value || null;
 
     // 2. Check for zombie rows (rows with no file or mismatched mtime)
-    const rows = this.db.prepare("SELECT artifact_id, file_path, file_mtime_ms FROM artifacts").all() as any[];
+    const rows = this.db.prepare("SELECT artifact_id, file_path, file_mtime_ms FROM artifacts").all() as IndexerArtifactRow[];
     for (const row of rows) {
       if (!row.file_path || !fs.existsSync(row.file_path)) {
         report.zombieArtifacts++;
@@ -187,13 +247,63 @@ export class HardkasIndexer {
     `).get() as { count: number };
     report.orphanEdges = orphans.count;
 
-    report.ok = report.staleArtifacts === 0 && report.zombieArtifacts === 0 && report.orphanEdges === 0;
+    // 4. Duplicate projections (tx_id should be unique for specific schemas like receipts)
+    const duplicateProjections = this.db.prepare(`
+      SELECT COUNT(*) as count FROM (
+        SELECT tx_id FROM artifacts WHERE tx_id IS NOT NULL AND schema LIKE '%txReceipt%' GROUP BY tx_id HAVING COUNT(*) > 1
+      )
+    `).get() as { count: number };
+    report.duplicateProjections = duplicateProjections.count;
+
+    // 5. Broken replay dependencies
+    const brokenReplayDeps = this.db.prepare(`
+      SELECT COUNT(*) as count FROM artifacts a
+      LEFT JOIN artifacts target ON target.tx_id = json_extract(a.raw_json, '$.payload.txId')
+      WHERE a.schema = 'hardkas.replayReport.v1'
+      AND target.artifact_id IS NULL
+    `).get() as { count: number };
+    report.brokenReplayDependencies = brokenReplayDeps.count;
+
+    // Also check for corrupted artifacts in the database
+    const corruptedRows = this.db.prepare("SELECT file_path FROM artifacts WHERE kind = 'CORRUPTED'").all() as { file_path: string }[];
+    report.corruptedFiles = corruptedRows.map(r => r.file_path);
+
+    // 6. Duplicate Event Sequences (should be prevented by DB constraints, but good to verify)
+    const duplicateSequences = this.db.prepare(`
+      SELECT COUNT(*) as count FROM (
+        SELECT correlation_id, sequence_number, kind FROM events 
+        GROUP BY correlation_id, sequence_number, kind HAVING COUNT(*) > 1
+      )
+    `).get() as { count: number };
+    report.duplicateEventSequences = duplicateSequences.count;
+
+    // 7. Orphan Events (events causing actions but missing root causation/workflow if required)
+    const orphanEvents = this.db.prepare(`
+      SELECT COUNT(*) as count FROM events e
+      WHERE e.causation_id IS NOT NULL AND e.causation_id NOT IN (SELECT event_id FROM events)
+    `).get() as { count: number };
+    report.orphanEvents = orphanEvents.count;
+
+    // Strict ok evaluation
+    report.ok = 
+      report.staleArtifacts === 0 && 
+      report.zombieArtifacts === 0 && 
+      report.orphanEdges === 0 &&
+      report.duplicateProjections === 0 &&
+      report.brokenReplayDependencies === 0 &&
+      report.duplicateEventSequences === 0 &&
+      report.orphanEvents === 0 &&
+      report.corruptedFiles.length === 0;
+
     return report;
   }
 
-  private async syncArtifacts(result: SyncResult) {
+  private async syncArtifacts(result: SyncResult, specificPaths?: string[]) {
     // Sort files to ensure deterministic indexing order
-    const files = this.walk(this.hardkasDir).sort();
+    const files = specificPaths 
+      ? specificPaths.filter(p => fs.existsSync(p) && p.endsWith(".json") && !p.endsWith("events.jsonl")).sort() 
+      : this.walk(this.hardkasDir).sort();
+      
     const indexedAt = new Date().toISOString();
 
     const upsertArtifact = this.db.prepare(`
@@ -228,11 +338,13 @@ export class HardkasIndexer {
       
       try {
         const verification = await verifyArtifactIntegrity(file);
-        if (!verification.ok) {
+        const isCorrupt = !verification.ok;
+        
+        if (isCorrupt) {
           result.artifacts.corrupted++;
-          verification.issues.forEach((issue: any) => {
+          verification.issues.forEach(issue => {
             const corruptionIssue: CorruptionIssue = {
-              code: issue.code as any,
+              code: issue.code as CorruptionCode,
               severity: issue.severity === "warning" ? "warning" : "error",
               message: issue.message,
               path: file
@@ -244,22 +356,43 @@ export class HardkasIndexer {
           if (this.strict) {
             throw new Error(`Strict mode: corrupted artifact in ${file}`);
           }
-          continue; // Skip corrupted artifact
         }
 
         const content = fs.readFileSync(file, "utf-8");
-        const parsed = JSON.parse(content);
+        let parsed: any;
+        try {
+          parsed = JSON.parse(content);
+        } catch (err) {
+          // completely invalid JSON
+          const artifactId = path.basename(file, ".json");
+          upsertArtifact.run(
+            artifactId,
+            "INVALID_JSON",
+            "unknown",
+            0,
+            "CORRUPTED",
+            "unknown",
+            "unknown",
+            null,
+            null,
+            content,
+            file,
+            stat.mtimeMs,
+            indexedAt
+          );
+          continue;
+        }
         
         // Artifact ID is required for indexing
         const artifactId = parsed.artifactId || parsed.contentHash || calculateContentHash(parsed);
-        const hash = parsed.contentHash || calculateContentHash(parsed);
+        const hash = isCorrupt ? "MISMATCH" : (parsed.contentHash || calculateContentHash(parsed));
 
         upsertArtifact.run(
           artifactId,
           hash,
-          parsed.schema,
-          parsed.version,
-          parsed.kind || parsed.schema,
+          parsed.schema || "unknown",
+          parsed.version || 0,
+          isCorrupt ? "CORRUPTED" : (parsed.kind || parsed.schema),
           parsed.mode || "unknown",
           parsed.networkId || "unknown",
           parsed.txId || null,
@@ -272,14 +405,14 @@ export class HardkasIndexer {
 
         result.artifacts.indexed++;
 
-        if (parsed.lineage && parsed.lineage.parentArtifactId) {
+        if (!isCorrupt && parsed.lineage && parsed.lineage.parentArtifactId) {
           artifactsToLink.push(parsed);
         }
       } catch (e: any) {
         result.artifacts.corrupted++;
-        const code = e instanceof SyntaxError ? "ARTIFACT_JSON_INVALID" : "ARTIFACT_ID_INVALID";
+        const code: CorruptionCode = e instanceof SyntaxError ? "ARTIFACT_JSON_INVALID" : "ARTIFACT_ID_INVALID";
         const corruptionIssue: CorruptionIssue = {
-          code: code as any,
+          code,
           severity: "error",
           message: e.message,
           path: file
@@ -318,18 +451,20 @@ export class HardkasIndexer {
 
     const upsertEvent = this.db.prepare(`
       INSERT INTO events 
-      (event_id, kind, domain, timestamp, workflow_id, correlation_id, causation_id, tx_id, artifact_id, network_id, raw_json, file_path, file_mtime_ms, indexed_at)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-      ON CONFLICT(event_id) DO UPDATE SET
-        kind = excluded.kind,
+      (event_id, kind, domain, timestamp, emitted_at, workflow_id, correlation_id, causation_id, tx_id, artifact_id, network_id, sequence_number, global_offset, source_subsystem, raw_json, file_path, file_mtime_ms, indexed_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      ON CONFLICT(correlation_id, sequence_number, kind) DO UPDATE SET
+        event_id = excluded.event_id,
         domain = excluded.domain,
         timestamp = excluded.timestamp,
+        emitted_at = excluded.emitted_at,
         workflow_id = excluded.workflow_id,
-        correlation_id = excluded.correlation_id,
         causation_id = excluded.causation_id,
         tx_id = excluded.tx_id,
         artifact_id = excluded.artifact_id,
         network_id = excluded.network_id,
+        global_offset = excluded.global_offset,
+        source_subsystem = excluded.source_subsystem,
         raw_json = excluded.raw_json,
         file_path = excluded.file_path,
         file_mtime_ms = excluded.file_mtime_ms,
@@ -365,12 +500,16 @@ export class HardkasIndexer {
           parsed.kind,
           parsed.domain,
           parsed.timestamp || null,
+          parsed.emittedAt || parsed.timestamp || null,
           parsed.workflowId,
           parsed.correlationId,
           parsed.causationId || null,
           parsed.txId || null,
           parsed.artifactId || null,
           parsed.networkId,
+          parsed.sequenceNumber ?? 0,
+          parsed.globalOffset ?? lineNum,
+          parsed.sourceSubsystem || 'unknown',
           line,
           eventsPath,
           stat.mtimeMs,
@@ -431,7 +570,7 @@ export class HardkasIndexer {
   }
 
   private cleanupZombies() {
-    const rows = this.db.prepare("SELECT artifact_id, file_path FROM artifacts").all() as any[];
+    const rows = this.db.prepare("SELECT artifact_id, file_path FROM artifacts").all() as { artifact_id: string; file_path: string | null }[];
     const deleteArtifact = this.db.prepare("DELETE FROM artifacts WHERE artifact_id = ?");
 
     for (const row of rows) {
@@ -455,9 +594,9 @@ export class HardkasIndexer {
       const filePath = path.join(dir, file);
       const stat = fs.statSync(filePath);
       if (stat.isDirectory()) {
-        if (file === "node_modules" || file === ".git") continue;
+        if (file === "node_modules" || file === ".git" || file === "keystore" || file === "snapshots") continue;
         results = results.concat(this.walk(filePath));
-      } else if (file.endsWith(".json") && !file.endsWith("events.jsonl") && file !== "state.json") {
+      } else if (file.endsWith(".json") && !file.endsWith("events.jsonl") && file !== "state.json" && !file.endsWith("localnet.json") && !file.endsWith("accounts.real.json") && !file.endsWith("sessions.json")) {
         results.push(filePath);
       }
     }

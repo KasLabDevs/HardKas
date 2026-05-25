@@ -3,9 +3,9 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import { spawn } from "node:child_process";
 
-export async function runExampleRun(id: string) {
+export async function runExampleRun(id: string, options: { workspaceRoot: string }) {
   try {
-    let currentDir = process.cwd();
+    let currentDir = options.workspaceRoot;
     let registryPath = path.join(currentDir, "examples", "registry.json");
     
     for (let i = 0; i < 3; i++) {

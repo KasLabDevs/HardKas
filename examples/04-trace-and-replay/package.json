@@ -1,6 +1,6 @@
 {
   "name": "@examples/trace-and-replay",
-  "version": "0.5.5-alpha",
+  "version": "0.6.0-alpha",
   "private": true,
   "type": "module",
   "scripts": {
@@ -10,6 +10,7 @@
     "@hardkas/sdk": "workspace:*",
     "@hardkas/artifacts": "workspace:*",
     "@hardkas/config": "workspace:*",
+    "@hardkas/core": "workspace:*",
     "tsx": "^4.19.2",
     "typescript": "^5.7.2"
   }

@@ -7,6 +7,7 @@ import {
   GENESIS_HASH as SIM_GENESIS_HASH,
 } from "@hardkas/simulator";
 import type { SimBlock as GhostdagSimBlock, BlockHash } from "@hardkas/simulator";
+import { deterministicCompare } from "@hardkas/core";
 
 // Per-DAG state containers (WeakMap-keyed by DAG reference)
 const dagIdMaps = new WeakMap<SimulatedDag, Map<string, BlockHash>>();
@@ -198,7 +199,7 @@ export function moveSink(
     const daaA = BigInt(a.daaScore);
     const daaB = BigInt(b.daaScore);
     if (daaA !== daaB) return daaA < daaB ? -1 : 1;
-    return a.id.localeCompare(b.id);
+    return deterministicCompare(a.id, b.id);
   });
 
   // 4. Resolve conflicts and build accepted set
@@ -339,7 +340,7 @@ export function resolveConflictsDeterministically(
     const blockB = dag.blocks[b.blockId];
 
     if (!blockA || !blockB) {
-      if (!blockA && !blockB) return a.txId.localeCompare(b.txId);
+      if (!blockA && !blockB) return deterministicCompare(a.txId, b.txId);
       return !blockA ? 1 : -1;
     }
 
@@ -363,10 +364,10 @@ export function resolveConflictsDeterministically(
     const daaA = BigInt(blockA.daaScore);
     const daaB = BigInt(blockB.daaScore);
     if (daaA !== daaB) return daaA < daaB ? -1 : 1;
-    if (a.blockId !== b.blockId) return a.blockId.localeCompare(b.blockId);
+    if (a.blockId !== b.blockId) return deterministicCompare(a.blockId, b.blockId);
 
     // 4. TxId lexicographic tie-break
-    return a.txId.localeCompare(b.txId);
+    return deterministicCompare(a.txId, b.txId);
   });
 
   const accepted: string[] = [];

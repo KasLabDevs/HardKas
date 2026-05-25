@@ -59,3 +59,37 @@ export function resolveAccountAddressFromState(
 
   return nameOrAddress;
 }
+
+/**
+ * Mathematically reconstructs the deterministc localnet state at a specific past DAA score.
+ * Annoys UTXOs created after the target DAA and revives UTXOs spent after the target DAA.
+ * 
+ * @param state The current localnet state
+ * @param targetDaa The block DAG score to revert to
+ * @returns A new immutable localnet state representing the exact state at the target DAA
+ */
+export function reconstructStateAtDaa(
+  state: LocalnetState,
+  targetDaa: bigint | string
+): LocalnetState {
+  const target = typeof targetDaa === "string" ? BigInt(targetDaa) : targetDaa;
+  
+  const reconstructedUtxos = state.utxos
+    // 1. Filter out UTXOs that were created *after* the target DAA
+    .filter(u => BigInt(u.createdAtDaaScore || "0") <= target)
+    // 2. Revive UTXOs that were spent *after* the target DAA
+    .map(u => {
+      if (u.spent && u.spentAtDaaScore && BigInt(u.spentAtDaaScore) > target) {
+        // We drop the spentAtDaaScore entirely in the revived UTXO
+        const { spentAtDaaScore: _, ...rest } = u;
+        return { ...rest, spent: false };
+      }
+      return u;
+    });
+
+  return {
+    ...state,
+    daaScore: target.toString(),
+    utxos: reconstructedUtxos
+  };
+}

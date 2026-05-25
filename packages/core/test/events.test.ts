@@ -9,7 +9,8 @@ import {
   asCorrelationId, 
   asNetworkId, 
   asArtifactId,
-  asEventId
+  asEventId,
+  asEventSequence
 } from "../src/domain-types.js";
 
 describe("Event Envelope (Phase 2)", () => {
@@ -24,6 +25,8 @@ describe("Event Envelope (Phase 2)", () => {
       workflowId: mockWorkflowId,
       correlationId: mockCorrelationId,
       networkId: mockNetworkId,
+      sequenceNumber: asEventSequence(1),
+      sourceSubsystem: "test",
       payload: { workflowId: mockWorkflowId, network: mockNetworkId }
     });
 
@@ -47,6 +50,8 @@ describe("Event Envelope (Phase 2)", () => {
       workflowId: mockWorkflowId,
       correlationId: mockCorrelationId,
       networkId: mockNetworkId,
+      sequenceNumber: asEventSequence(2),
+      sourceSubsystem: "test",
       payload: { workflowId: mockWorkflowId },
       causationId: eventId1
     });
@@ -61,6 +66,8 @@ describe("Event Envelope (Phase 2)", () => {
       workflowId: mockWorkflowId,
       correlationId: mockCorrelationId,
       networkId: mockNetworkId,
+      sequenceNumber: asEventSequence(1),
+      sourceSubsystem: "test",
       payload: { workflowId: mockWorkflowId }
     });
 
@@ -76,6 +83,8 @@ describe("Event Envelope (Phase 2)", () => {
       workflowId: mockWorkflowId,
       correlationId: mockCorrelationId,
       networkId: mockNetworkId,
+      sequenceNumber: asEventSequence(1),
+      sourceSubsystem: "test",
       payload: { workflowId: mockWorkflowId }
     });
 
@@ -97,6 +106,8 @@ describe("Event Envelope (Phase 2)", () => {
       workflowId: mockWorkflowId,
       correlationId: mockCorrelationId,
       networkId: mockNetworkId,
+      sequenceNumber: asEventSequence(1),
+      sourceSubsystem: "test",
       payload: { workflowId: mockWorkflowId }
     });
 
@@ -114,6 +125,8 @@ describe("Event Envelope (Phase 2)", () => {
       workflowId: mockWorkflowId,
       correlationId: mockCorrelationId,
       networkId: mockNetworkId,
+      sequenceNumber: asEventSequence(1),
+      sourceSubsystem: "test",
       payload: { workflowId: mockWorkflowId, network: mockNetworkId }
     });
 
@@ -123,6 +136,8 @@ describe("Event Envelope (Phase 2)", () => {
       workflowId: mockWorkflowId,
       correlationId: mockCorrelationId,
       networkId: mockNetworkId,
+      sequenceNumber: asEventSequence(2),
+      sourceSubsystem: "test",
       payload: { workflowId: mockWorkflowId },
       causationId: e1.eventId
     });

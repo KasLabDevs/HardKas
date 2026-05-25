@@ -1,5 +1,5 @@
 import { Invariant, InvariantContext, InvariantViolation, ArtifactLookup } from "./types.js";
-import { EventEnvelope, createEventEnvelope } from "@hardkas/core";
+import { EventEnvelope, createEventEnvelope, asWorkflowId, asCorrelationId, asNetworkId, asEventSequence } from "@hardkas/core";
 
 export interface WatcherOptions {
   invariants: Invariant[];
@@ -80,9 +80,11 @@ export class InvariantWatcher {
     const integrityEvent = createEventEnvelope({
       kind: "integrity.violation",
       domain: "integrity",
-      workflowId: sourceEvent.workflowId,
-      correlationId: sourceEvent.correlationId,
-      networkId: sourceEvent.networkId,
+      workflowId: asWorkflowId("system-watcher"),
+      correlationId: asCorrelationId(sourceEvent.correlationId),
+      networkId: asNetworkId(sourceEvent.networkId),
+      sequenceNumber: asEventSequence(0), // Root event for watcher
+      sourceSubsystem: "artifact_watcher",
       payload: {
         violationCode: violation.code,
         severity: violation.severity,

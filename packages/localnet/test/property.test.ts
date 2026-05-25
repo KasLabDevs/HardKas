@@ -1,3 +1,4 @@
+import { systemRuntimeContext } from "@hardkas/core";
 import { describe, it, expect } from "vitest";
 import * as fc from "fast-check";
 import { createInitialLocalnetState } from "../src/state.js";
@@ -34,7 +35,7 @@ describe("Localnet Property Tests (fast-check)", () => {
               to,
               amountSompi: amount,
               feeRateSompiPerMass: 1n
-            });
+            }, systemRuntimeContext);
 
             if (result.ok) {
               state = result.state;
@@ -74,7 +75,7 @@ describe("Localnet Property Tests (fast-check)", () => {
                 from: "alice",
                 to: "bob",
                 amountSompi: 10n * SOMPI_PER_KAS
-              });
+              }, systemRuntimeContext);
               if (result.ok) state = result.state;
             }
             return calculateStateHash(state);
@@ -100,7 +101,7 @@ describe("Localnet Property Tests (fast-check)", () => {
             from: "alice",
             to: "bob",
             amountSompi: insaneAmount
-          });
+          }, systemRuntimeContext);
 
           expect(result.ok).toBe(false);
           expect(calculateStateHash(result.state)).toBe(initialHash);
@@ -120,7 +121,7 @@ describe("Localnet Property Tests (fast-check)", () => {
       from: "alice",
       to: "bob",
       amountSompi: 90n * SOMPI_PER_KAS
-    });
+    }, systemRuntimeContext);
     expect(res1.ok).toBe(true);
 
     // Try to spend again from the same account. 
@@ -129,7 +130,7 @@ describe("Localnet Property Tests (fast-check)", () => {
       from: "alice",
       to: "bob",
       amountSompi: 90n * SOMPI_PER_KAS
-    });
+    }, systemRuntimeContext);
     
     expect(res2.ok).toBe(false);
     expect(res2.errors[0]).toContain("Insufficient funds");

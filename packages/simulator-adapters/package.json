@@ -1,0 +1,30 @@
+{
+  "name": "@hardkas/simulator-adapters",
+  "version": "0.6.0-alpha",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "scripts": {
+    "build": "tsc",
+    "clean": "rimraf dist tsconfig.tsbuildinfo",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@hardkas/bridge-local": "workspace:0.6.0-alpha",
+    "@hardkas/core": "workspace:*",
+    "@hardkas/react": "workspace:0.6.0-alpha",
+    "@hardkas/sdk": "workspace:*",
+    "@tanstack/react-query": "^5.100.14",
+    "react": "^19.2.6"
+  },
+  "devDependencies": {
+    "rimraf": "^6.0.1",
+    "typescript": "^5.7.2"
+  }
+}

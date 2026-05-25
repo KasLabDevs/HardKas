@@ -3,12 +3,12 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
-export async function runExampleList() {
+export async function runExampleList(options: { workspaceRoot: string }) {
   UI.box("HardKAS", "Example Registry");
   
   try {
-    // Find workspace root by looking for examples/registry.json starting from cwd
-    let currentDir = process.cwd();
+    // Find workspace root by looking for examples/registry.json starting from workspaceRoot
+    let currentDir = options.workspaceRoot;
     let registryPath = path.join(currentDir, "examples", "registry.json");
     
     // Simple traversal up to 3 levels

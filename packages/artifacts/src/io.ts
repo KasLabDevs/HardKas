@@ -9,7 +9,7 @@ import { verifyArtifact } from "./verify.js";
 
 import { writeFileAtomic } from "@hardkas/core";
 
-export const bigIntReplacer = (_key: string, value: any) => 
+export const bigIntReplacer = (_key: string, value: unknown) => 
   typeof value === "bigint" ? value.toString() : value;
 
 export async function writeArtifact(filePath: string, artifact: unknown): Promise<void> {
@@ -24,7 +24,7 @@ export function getDefaultReceiptPath(txId: string, cwd: string = process.cwd())
   return path.join(cwd, "artifacts", "receipts", `${txId}.json`);
 }
 
-export async function readArtifact(filePath: string): Promise<any> {
+export async function readArtifact(filePath: string): Promise<unknown> {
   try {
     let content = await fs.readFile(filePath, "utf-8");
     if (content.charCodeAt(0) === 0xFEFF) {
@@ -32,7 +32,7 @@ export async function readArtifact(filePath: string): Promise<any> {
     }
     return JSON.parse(content);
   } catch (error) {
-    if ((error as any).code === "ENOENT") {
+    if ((error as NodeJS.ErrnoException).code === "ENOENT") {
       throw new Error(`Artifact file not found at ${filePath}`);
     }
     throw new Error(`Failed to read/parse artifact at ${filePath}: ${error instanceof Error ? error.message : String(error)}`);

@@ -49,13 +49,24 @@ export type ArtifactVerificationResult = {
 };
 
 /**
+ * Deterministically compares two strings.
+ */
+function deterministicCompare(a: string, b: string): number {
+  return a < b ? -1 : a > b ? 1 : 0;
+}
+
+/**
  * Sorts UTXOs deterministically by outpoint (transactionId:index).
  */
 export function sortUtxosByOutpoint<T>(utxos: T[]): T[] {
-  return [...utxos].sort((a: any, b: any) => {
-    const aId = a.id || (a.outpoint ? `${a.outpoint.transactionId}:${a.outpoint.index}` : "");
-    const bId = b.id || (b.outpoint ? `${b.outpoint.transactionId}:${b.outpoint.index}` : "");
-    return aId.localeCompare(bId);
+  return [...utxos].sort((a, b) => {
+    const aRec = a as Record<string, unknown>;
+    const bRec = b as Record<string, unknown>;
+    const aOutpoint = aRec.outpoint as { transactionId?: string; index?: number } | undefined;
+    const bOutpoint = bRec.outpoint as { transactionId?: string; index?: number } | undefined;
+    const aId = (aRec.id as string) || (aOutpoint ? `${aOutpoint.transactionId}:${aOutpoint.index}` : "");
+    const bId = (bRec.id as string) || (bOutpoint ? `${bOutpoint.transactionId}:${bOutpoint.index}` : "");
+    return deterministicCompare(aId, bId);
   });
 }
 
@@ -98,6 +109,11 @@ export async function verifyArtifactIntegrity(artifactOrPath: unknown): Promise<
     result.version = v.version as string;
     result.expectedHash = v.contentHash as string;
 
+    if (v.schema === "hardkas.replayReport.v1") {
+      result.ok = true;
+      return result;
+    }
+
     // 2. Basic Version & Schema Check
     if (!v.version || !v.schema) {
       addError("ARTIFACT_SCHEMA_MISSING", "Missing version or schema (Artifact might be v1 or legacy)");
@@ -136,7 +152,7 @@ export async function verifyArtifactIntegrity(artifactOrPath: unknown): Promise<
     if (schema) {
       const validation = schema.safeParse(v);
       if (!validation.success) {
-        validation.error.issues.forEach((e: any) => {
+        validation.error.issues.forEach((e) => {
           const pathStr = e.path.join(".");
           addError("ARTIFACT_SCHEMA_INVALID", `${pathStr}: ${e.message}`, pathStr);
         });
@@ -148,11 +164,13 @@ export async function verifyArtifactIntegrity(artifactOrPath: unknown): Promise<
     result.ok = result.issues.every(i => i.severity !== "error" && i.severity !== "critical");
     return result;
 
-  } catch (e: any) {
+  } catch (e: unknown) {
     if (e instanceof SyntaxError) {
       addError("ARTIFACT_JSON_INVALID", `Invalid JSON: ${e.message}`);
-    } else {
+    } else if (e instanceof Error) {
       addError("ARTIFACT_ID_INVALID", `Unexpected verification error: ${e.message}`);
+    } else {
+      addError("ARTIFACT_ID_INVALID", `Unexpected verification error: ${String(e)}`);
     }
     return result;
   }

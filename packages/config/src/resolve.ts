@@ -15,7 +15,13 @@ export function resolveNetworkTarget(
   target: HardkasNetworkTarget;
 } {
   const { config, network } = options;
-  const name = network || config.defaultNetwork || "simnet";
+  let name = network || config.defaultNetwork || "simulated";
+  
+  // P1: simnet deprecation and alias
+  if (name === "simnet") {
+    console.warn("\x1b[33m%s\x1b[0m", "WARNING: The 'simnet' network alias is deprecated. It will be removed in the next breaking release. Resolving to 'simulated'.");
+    name = "simulated";
+  }
   
   const networks = {
     ...DEFAULT_HARDKAS_CONFIG.networks,

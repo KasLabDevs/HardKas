@@ -1,8 +1,8 @@
 {
   "schema": "hardkas.txPlan",
-  "hardkasVersion": "0.5.5-alpha",
+  "hardkasVersion": "0.5.4-alpha",
   "version": "1.0.0-alpha",
-  "createdAt": "2026-05-18T19:45:05.001Z",
+  "createdAt": "2026-05-24T13:09:23.579Z",
   "networkId": "simnet",
   "mode": "simulated",
   "workflowId": "test-workflow",

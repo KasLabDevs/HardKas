@@ -24,6 +24,7 @@ export function registerTestCommands(program: Command) {
       try {
         await runTest({
           files,
+          workspaceRoot: process.cwd(),
           network: options.network,
           watch: options.watch,
           json: options.json,

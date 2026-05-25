@@ -1,6 +1,6 @@
 {
   "name": "@hardkas/dev-server",
-  "version": "0.5.5-alpha",
+  "version": "0.6.0-alpha",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -14,13 +14,18 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@hardkas/accounts": "workspace:*",
     "@hardkas/artifacts": "workspace:*",
     "@hardkas/bridge-local": "workspace:*",
     "@hardkas/config": "workspace:*",
     "@hardkas/core": "workspace:*",
     "@hardkas/kaspa-rpc": "workspace:*",
+    "@hardkas/localnet": "workspace:*",
+    "@hardkas/query": "workspace:*",
+    "@hardkas/query-store": "workspace:*",
     "@hardkas/sessions": "workspace:*",
     "@hono/node-server": "^1.13.7",
+    "chokidar": "^3.5.3",
     "hono": "^4.6.12",
     "open": "^11.0.0"
   },

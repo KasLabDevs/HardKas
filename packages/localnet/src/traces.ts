@@ -5,6 +5,7 @@ import { HardkasArtifactBase, HARDKAS_VERSION, ARTIFACT_SCHEMAS } from "@hardkas
 import { NetworkId, ExecutionMode } from "@hardkas/core";
 
 import { writeFileAtomic } from "@hardkas/core";
+import { deterministicCompare } from "@hardkas/core";
 
 export type StoredTraceEvent =
   | {
@@ -41,7 +42,7 @@ export interface StoredSimulatedTxTrace extends HardkasArtifactBase {
 }
 
 export function getDefaultTracesDir(cwd: string = process.cwd()): string {
-  return path.join(cwd, ".hardkas", "traces");
+  return path.join(cwd, ".hardkas", "artifacts");
 }
 
 export function getTracePath(txId: string, cwd?: string): string {
@@ -105,5 +106,5 @@ export async function listSimulatedTraces(
     }
   }
 
-  return traces.sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+  return traces.sort((a, b) => deterministicCompare(b.createdAt, a.createdAt));
 }

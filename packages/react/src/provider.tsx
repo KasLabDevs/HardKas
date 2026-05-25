@@ -28,6 +28,7 @@ export interface HardKasReactConfig {
 }
 
 export type SSEStatus = "connecting" | "connected" | "disconnected" | "reconnecting" | "failed";
+export type ProjectionStatus = "synced" | "stale" | "syncing";
 
 export interface RuntimeEvent {
   type: string;
@@ -42,6 +43,10 @@ export interface HardKasContextValue {
   readonly igraClient: PublicClient;
   readonly queryClient: QueryClient;
   readonly sseStatus: SSEStatus;
+  readonly projectionStatus: ProjectionStatus;
+  readonly generationId: string | null;
+  readonly lastSyncedAt: string | null;
+  readonly apiFetch: (input: RequestInfo | URL, init?: RequestInit) => Promise<Response>;
   readonly lastEvent: RuntimeEvent | null;
   readonly subscribe: (callback: EventCallback) => () => void;
   readonly providers: EIP6963ProviderDetail[];
@@ -64,6 +69,9 @@ export interface HardKasProviderProps {
 export function HardKasProvider({ config, children, queryClient: externalQueryClient }: HardKasProviderProps) {
   const queryClient = useMemo(() => externalQueryClient ?? new QueryClient(), [externalQueryClient]);
   const [sseStatus, setSseStatus] = React.useState<SSEStatus>("disconnected");
+  const [projectionStatus, setProjectionStatus] = React.useState<ProjectionStatus>("synced");
+  const [generationId, setGenerationId] = React.useState<string | null>(null);
+  const [lastSyncedAt, setLastSyncedAt] = React.useState<string | null>(null);
   const [lastEvent, setLastEvent] = React.useState<RuntimeEvent | null>(null);
   const listeners = React.useRef<Set<EventCallback>>(new Set());
   const eventSource = React.useRef<EventSource | null>(null);
@@ -76,10 +84,67 @@ export function HardKasProvider({ config, children, queryClient: externalQueryCl
   const [walletAddress, setWalletAddress] = React.useState<string | null>(null);
   const [walletChainId, setWalletChainId] = React.useState<number | null>(null);
 
+  // Retrieve auth token globally
+  const devToken = React.useMemo(() => {
+    if (typeof window !== "undefined") {
+      if ((window as any).__HARDKAS_DEV_TOKEN__) {
+        return (window as any).__HARDKAS_DEV_TOKEN__;
+      }
+      const params = new URLSearchParams(window.location.search);
+      return params.get("token") || "";
+    }
+    return "";
+  }, []);
+
+  const [tokenMissing, setTokenMissing] = React.useState(false);
+
+  React.useEffect(() => {
+    if (typeof window !== "undefined") {
+      const isTest = typeof (globalThis as any).vi !== "undefined" || (window as any).__MOCK_SSE__ || process.env.NODE_ENV === "test";
+      const isDashboard = window.location.pathname.startsWith("/") || window.location.port === "7420" || window.location.port === "5173";
+      
+      if (isDashboard && !isTest && !devToken) {
+        setTokenMissing(true);
+      }
+    }
+  }, [devToken]);
+
   const subscribe = React.useCallback((callback: EventCallback) => {
     listeners.current.add(callback);
     return () => listeners.current.delete(callback);
   }, []);
+
+  const apiFetch = React.useCallback(async (input: RequestInfo | URL, init?: RequestInit) => {
+    const headers = new Headers(init?.headers || {});
+    if (devToken) {
+      headers.set("Authorization", `Bearer ${devToken}`);
+    }
+
+    const method = init?.method?.toUpperCase() || "GET";
+    if (["POST", "PUT", "PATCH", "DELETE"].includes(method)) {
+      headers.set("X-Hardkas-Request", "true");
+    }
+
+    const mergedInit: RequestInit = {
+      ...init,
+      headers
+    };
+
+    const response = await fetch(input, mergedInit);
+    const genHeader = response.headers?.get?.("X-Hardkas-Generation");
+    if (genHeader) {
+      setGenerationId(prev => {
+        if (prev !== genHeader) {
+          setTimeout(() => {
+            if (queryClient) queryClient.invalidateQueries();
+          }, 0);
+          return genHeader;
+        }
+        return prev;
+      });
+    }
+    return response;
+  }, [queryClient, devToken]);
 
   const connect = React.useCallback(() => {
     if (typeof window === "undefined") return;
@@ -97,9 +162,21 @@ export function HardKasProvider({ config, children, queryClient: externalQueryCl
 
     setSseStatus("connecting");
     const baseUrl = config.devServerUrl;
-    const url = baseUrl.endsWith("/") ? `${baseUrl}api/stream` : `${baseUrl}/api/stream`;
+    let url = baseUrl.endsWith("/") ? `${baseUrl}api/stream` : `${baseUrl}/api/stream`;
+    if (devToken) {
+      url += (url.includes("?") ? "&" : "?") + `token=${encodeURIComponent(devToken)}`;
+    }
     const es = new EventSource(url);
     eventSource.current = es;
+
+    if (typeof window !== "undefined") {
+      (window as any).__MOCK_SSE_CLOSE__ = () => {
+        es.close();
+        if (es.onerror) {
+          es.onerror.call(es, new Event("error"));
+        }
+      };
+    }
 
     es.onopen = () => {
       setSseStatus("connected");
@@ -139,6 +216,9 @@ export function HardKasProvider({ config, children, queryClient: externalQueryCl
       "sandbox-session-paired",
       "sandbox-session-expired",
       "sandbox-session-disconnected",
+      "projection-stale",
+      "projection-synced",
+      "query-synced",
       "ping",
       "heartbeat"
     ];
@@ -151,9 +231,22 @@ export function HardKasProvider({ config, children, queryClient: externalQueryCl
         };
         setLastEvent(event);
         listeners.current.forEach(l => l(event));
+        
+        if (type === "projection-stale") {
+          setProjectionStatus("stale");
+        }
+        
+        if (type === "projection-synced" || type === "query-synced") {
+          setProjectionStatus("synced");
+          setLastSyncedAt(new Date().toISOString());
+          if (event.payload?.generationId) {
+            setGenerationId(event.payload.generationId);
+          }
+          queryClient.invalidateQueries();
+        }
       });
     });
-  }, [config.devServerUrl]);
+  }, [config.devServerUrl, queryClient, devToken]);
 
   React.useEffect(() => {
     connect();
@@ -233,10 +326,8 @@ export function HardKasProvider({ config, children, queryClient: externalQueryCl
       });
       setWalletChainId(targetChainId);
     } catch (err: any) {
-      // 4902 is the error code for unrecognized chain
       if (err.code === 4902) {
         if (targetChainId === 19416) {
-          // Add Igra Local Default
           await activeProvider.provider.request({
             method: "wallet_addEthereumChain",
             params: [{
@@ -282,7 +373,6 @@ export function HardKasProvider({ config, children, queryClient: externalQueryCl
       if (accounts && accounts[0]) {
         setWalletAddress(accounts[0]);
       } else {
-        // User disconnected their account manually
         setActiveProvider(null);
         setWalletAddress(null);
         setWalletChainId(null);
@@ -343,6 +433,10 @@ export function HardKasProvider({ config, children, queryClient: externalQueryCl
     igraClient,
     queryClient,
     sseStatus,
+    projectionStatus,
+    generationId,
+    lastSyncedAt,
+    apiFetch,
     lastEvent,
     subscribe,
     providers,
@@ -357,6 +451,10 @@ export function HardKasProvider({ config, children, queryClient: externalQueryCl
     igraClient,
     queryClient,
     sseStatus,
+    projectionStatus,
+    generationId,
+    lastSyncedAt,
+    apiFetch,
     lastEvent,
     subscribe,
     providers,
@@ -371,7 +469,38 @@ export function HardKasProvider({ config, children, queryClient: externalQueryCl
   return (
     <HardKasContext.Provider value={value}>
       <QueryClientProvider client={queryClient}>
-        {children}
+        {tokenMissing ? (
+          <div style={{
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            justifyContent: "center",
+            height: "100vh",
+            width: "100vw",
+            backgroundColor: "#1a1a1a",
+            color: "#f87171",
+            fontFamily: "sans-serif",
+            textAlign: "center",
+            padding: "20px"
+          }}>
+            <div style={{
+              backgroundColor: "#2d2d2d",
+              border: "2px solid #ef4444",
+              borderRadius: "8px",
+              padding: "30px",
+              maxWidth: "450px",
+              boxShadow: "0 10px 15px -3px rgba(0, 0, 0, 0.5)"
+            }}>
+              <h2 style={{ color: "#ef4444", marginTop: 0 }}>Dashboard authentication token missing.</h2>
+              <p style={{ color: "#d1d5db", lineHeight: "1.5" }}>
+                The dev-server is secured against local workstation CSRF and DNS rebinding attacks.
+              </p>
+              <p style={{ color: "#9ca3af", fontWeight: "bold" }}>
+                Restart hardkas dashboard.
+              </p>
+            </div>
+          </div>
+        ) : children}
       </QueryClientProvider>
     </HardKasContext.Provider>
   );

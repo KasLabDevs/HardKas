@@ -14,7 +14,7 @@ export type SandboxConnection = {
 };
 
 export function useSandboxSessions() {
-  const { config, subscribe } = useHardKas();
+  const { config, subscribe , apiFetch } = useHardKas();
   const queryClient = useQueryClient();
 
   // SSE Sync via Shared Provider
@@ -38,7 +38,7 @@ export function useSandboxSessions() {
     queryFn: async () => {
       const baseUrl = config.devServerUrl || "";
       const url = baseUrl ? (baseUrl.endsWith("/") ? `${baseUrl}api/walletconnect/sandbox/sessions` : `${baseUrl}/api/walletconnect/sandbox/sessions`) : "/api/walletconnect/sandbox/sessions";
-      const res = await fetch(url);
+      const res = await apiFetch(url);
       const json = await res.json();
       return json.sessions as SandboxConnection[];
     }
@@ -46,13 +46,13 @@ export function useSandboxSessions() {
 }
 
 export function useCreateSandboxSession() {
-  const { config } = useHardKas();
+  const { config , apiFetch } = useHardKas();
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async () => {
       const baseUrl = config.devServerUrl || "";
       const url = baseUrl ? (baseUrl.endsWith("/") ? `${baseUrl}api/walletconnect/sandbox/create` : `${baseUrl}/api/walletconnect/sandbox/create`) : "/api/walletconnect/sandbox/create";
-      const res = await fetch(url, { method: "POST" });
+      const res = await apiFetch(url, { method: "POST" });
       return await res.json() as SandboxConnection;
     },
     onSuccess: () => {
@@ -62,13 +62,13 @@ export function useCreateSandboxSession() {
 }
 
 export function usePairSandboxSession() {
-  const { config } = useHardKas();
+  const { config , apiFetch } = useHardKas();
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (id: string) => {
       const baseUrl = config.devServerUrl || "";
       const url = baseUrl ? (baseUrl.endsWith("/") ? `${baseUrl}api/walletconnect/sandbox/pair` : `${baseUrl}/api/walletconnect/sandbox/pair`) : "/api/walletconnect/sandbox/pair";
-      const res = await fetch(url, {
+      const res = await apiFetch(url, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ id })
@@ -82,13 +82,13 @@ export function usePairSandboxSession() {
 }
 
 export function useDisconnectSandboxSession() {
-  const { config } = useHardKas();
+  const { config , apiFetch } = useHardKas();
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (id: string) => {
       const baseUrl = config.devServerUrl || "";
       const url = baseUrl ? (baseUrl.endsWith("/") ? `${baseUrl}api/walletconnect/sandbox/disconnect` : `${baseUrl}/api/walletconnect/sandbox/disconnect`) : "/api/walletconnect/sandbox/disconnect";
-      const res = await fetch(url, {
+      const res = await apiFetch(url, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ id })

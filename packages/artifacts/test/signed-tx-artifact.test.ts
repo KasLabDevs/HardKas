@@ -1,3 +1,4 @@
+import { systemRuntimeContext } from "@hardkas/core";
 import { describe, it, expect } from "vitest";
 import { 
   calculateContentHash, 
@@ -44,9 +45,8 @@ describe("SignedTxArtifact", () => {
 
   it("should create a simulated signed artifact", () => {
     const signed = createSimulatedSignedTxArtifact(
-      mockPlan as any,
-      "simulated-payload"
-    );
+      mockPlan as any, "simulated-payload"
+    , systemRuntimeContext);
 
     expect(signed.schema).toBe(ARTIFACT_SCHEMAS.SIGNED_TX);
     expect(signed.status).toBe("signed");
@@ -56,9 +56,8 @@ describe("SignedTxArtifact", () => {
 
   it("should validate a correct signed artifact", () => {
     const signed = createSimulatedSignedTxArtifact(
-      mockPlan as any,
-      "simulated-payload"
-    );
+      mockPlan as any, "simulated-payload"
+    , systemRuntimeContext);
 
     const result = validateSignedTxArtifact(signed);
     expect(result.ok).toBe(true);

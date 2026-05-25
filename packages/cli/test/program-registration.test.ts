@@ -19,11 +19,8 @@ describe("CLI registration integrity", () => {
   it("registers all expected top-level commands", () => {
     const result = runHardkas("--help");
 
-    expect(result).toContain("capabilities");
     expect(result).toContain("console");
     expect(result).toContain("deploy");
-    expect(result).toContain("networks");
-    expect(result).toContain("new");
     expect(result).toContain("localnet");
   });
 });

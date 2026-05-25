@@ -683,6 +683,24 @@
       "options": [],
       "subcommands": [
         {
+          "path": "hardkas config networks",
+          "name": "networks",
+          "aliases": [],
+          "description": "List configured networks",
+          "usage": "hardkas config networks [options]",
+          "arguments": [],
+          "options": [
+            {
+              "flags": "--json",
+              "description": "Output as JSON",
+              "default": false,
+              "required": false,
+              "mandatory": false
+            }
+          ],
+          "subcommands": []
+        },
+        {
           "path": "hardkas config show",
           "name": "show",
           "aliases": [],
@@ -798,6 +816,13 @@
         {
           "flags": "--start-server",
           "description": "Start the dev server if not running",
+          "default": false,
+          "required": false,
+          "mandatory": false
+        },
+        {
+          "flags": "--show-token",
+          "description": "Show the generated API session token if starting the dev server",
           "default": false,
           "required": false,
           "mandatory": false
@@ -1090,6 +1115,13 @@
               "mandatory": false
             },
             {
+              "flags": "--show-token",
+              "description": "Show the generated API session token for manual script integration",
+              "default": false,
+              "required": false,
+              "mandatory": false
+            },
+            {
               "flags": "--json",
               "description": "Output status as JSON",
               "default": false,
@@ -1115,67 +1147,37 @@
           "default": false,
           "required": false,
           "mandatory": false
+        },
+        {
+          "flags": "--consistency",
+          "description": "Run advanced deterministic consistency checks",
+          "default": false,
+          "required": false,
+          "mandatory": false
+        },
+        {
+          "flags": "--strict",
+          "description": "Fail strictly (exit 1) if invariants or consistency checks fail",
+          "default": false,
+          "required": false,
+          "mandatory": false
         }
       ],
       "subcommands": []
     },
     {
-      "path": "hardkas example",
-      "name": "example",
+      "path": "hardkas explain",
+      "name": "explain",
       "aliases": [],
-      "description": "Manage HardKAS examples",
-      "usage": "hardkas example [options] [command]",
-      "arguments": [],
-      "options": [],
-      "subcommands": [
-        {
-          "path": "hardkas example list",
-          "name": "list",
-          "aliases": [],
-          "description": "List available HardKAS examples",
-          "usage": "hardkas example list [options]",
-          "arguments": [],
-          "options": [],
-          "subcommands": []
-        },
-        {
-          "path": "hardkas example run",
-          "name": "run",
-          "aliases": [],
-          "description": "Run a HardKAS example",
-          "usage": "hardkas example run [options] <id>",
-          "arguments": [
-            {
-              "name": "id",
-              "description": ""
-            }
-          ],
-          "options": [],
-          "subcommands": []
-        }
-      ]
-    },
-    {
-      "path": "hardkas faucet",
-      "name": "faucet",
-      "aliases": [],
-      "description": "Fund an account with KAS (Local only) stable",
-      "usage": "hardkas faucet [options] <identifier>",
+      "description": "Provide a narrative causal explanation of a deterministic artifact, transaction, or replay stable",
+      "usage": "hardkas explain [options] <id_or_path>",
       "arguments": [
         {
-          "name": "identifier",
+          "name": "id_or_path",
           "description": ""
         }
       ],
-      "options": [
-        {
-          "flags": "--amount <kas>",
-          "description": "Amount in KAS to fund",
-          "default": "1000",
-          "required": true,
-          "mandatory": false
-        }
-      ],
+      "options": [],
       "subcommands": []
     },
     {
@@ -1193,7 +1195,35 @@
       "options": [
         {
           "flags": "--force",
-          "description": "Overwrite existing hardkas.config.ts",
+          "description": "Overwrite existing hardkas.config.ts (in-place only)",
+          "default": false,
+          "required": false,
+          "mandatory": false
+        },
+        {
+          "flags": "--template <type>",
+          "description": "Project template for new projects",
+          "default": "basic",
+          "required": true,
+          "mandatory": false
+        },
+        {
+          "flags": "--network <name>",
+          "description": "Default network for new projects",
+          "default": "simulated",
+          "required": true,
+          "mandatory": false
+        },
+        {
+          "flags": "--accounts <n>",
+          "description": "Number of simulated accounts for new projects",
+          "default": "3",
+          "required": true,
+          "mandatory": false
+        },
+        {
+          "flags": "--skip-install",
+          "description": "Skip pnpm install for new projects",
           "default": false,
           "required": false,
           "mandatory": false
@@ -2047,6 +2077,93 @@
             }
           ],
           "subcommands": []
+        },
+        {
+          "path": "hardkas localnet snapshot",
+          "name": "snapshot",
+          "aliases": [],
+          "description": "Manage HardKAS localnet snapshots",
+          "usage": "hardkas localnet snapshot [options] [command]",
+          "arguments": [],
+          "options": [],
+          "subcommands": [
+            {
+              "path": "hardkas localnet snapshot create",
+              "name": "create",
+              "aliases": [],
+              "description": "Create a deterministic snapshot of current localnet state alpha",
+              "usage": "hardkas localnet snapshot create [options] <name>",
+              "arguments": [
+                {
+                  "name": "name",
+                  "description": ""
+                }
+              ],
+              "options": [
+                {
+                  "flags": "--consensus-validated",
+                  "description": "Mark snapshot as validated by consensus (strict)",
+                  "default": false,
+                  "required": false,
+                  "mandatory": false
+                },
+                {
+                  "flags": "--json",
+                  "description": "Output as JSON",
+                  "default": false,
+                  "required": false,
+                  "mandatory": false
+                }
+              ],
+              "subcommands": []
+            },
+            {
+              "path": "hardkas localnet snapshot replay",
+              "name": "replay",
+              "aliases": [],
+              "description": "Replay and rebuild deterministic state from a snapshot alpha",
+              "usage": "hardkas localnet snapshot replay [options] <name>",
+              "arguments": [
+                {
+                  "name": "name",
+                  "description": ""
+                }
+              ],
+              "options": [
+                {
+                  "flags": "--json",
+                  "description": "Output as JSON",
+                  "default": false,
+                  "required": false,
+                  "mandatory": false
+                }
+              ],
+              "subcommands": []
+            },
+            {
+              "path": "hardkas localnet snapshot verify",
+              "name": "verify",
+              "aliases": [],
+              "description": "Verify the integrity of a snapshot preview",
+              "usage": "hardkas localnet snapshot verify [options] <idOrName>",
+              "arguments": [
+                {
+                  "name": "idOrName",
+                  "description": ""
+                }
+              ],
+              "options": [
+                {
+                  "flags": "--json",
+                  "description": "Output as JSON",
+                  "default": false,
+                  "required": false,
+                  "mandatory": false
+                }
+              ],
+              "subcommands": []
+            }
+          ]
         }
       ]
     },
@@ -2231,68 +2348,6 @@
           "subcommands": []
         }
       ]
-    },
-    {
-      "path": "hardkas networks",
-      "name": "networks",
-      "aliases": [],
-      "description": "List configured networks stable",
-      "usage": "hardkas networks [options]",
-      "arguments": [],
-      "options": [
-        {
-          "flags": "--json",
-          "description": "Output as JSON",
-          "default": false,
-          "required": false,
-          "mandatory": false
-        }
-      ],
-      "subcommands": []
-    },
-    {
-      "path": "hardkas new",
-      "name": "new",
-      "aliases": [],
-      "description": "Create a new HardKAS project stable",
-      "usage": "hardkas new [options] <name>",
-      "arguments": [
-        {
-          "name": "name",
-          "description": ""
-        }
-      ],
-      "options": [
-        {
-          "flags": "--template <type>",
-          "description": "Project template",
-          "default": "basic",
-          "required": true,
-          "mandatory": false
-        },
-        {
-          "flags": "--network <name>",
-          "description": "Default network",
-          "default": "simulated",
-          "required": true,
-          "mandatory": false
-        },
-        {
-          "flags": "--accounts <n>",
-          "description": "Number of simulated accounts",
-          "default": "3",
-          "required": true,
-          "mandatory": false
-        },
-        {
-          "flags": "--skip-install",
-          "description": "Skip pnpm install",
-          "default": false,
-          "required": false,
-          "mandatory": false
-        }
-      ],
-      "subcommands": []
     },
     {
       "path": "hardkas node",
@@ -3306,6 +3361,33 @@
       "options": [],
       "subcommands": [
         {
+          "path": "hardkas replay diff",
+          "name": "diff",
+          "aliases": [],
+          "description": "Compare two replay artifacts for deterministic divergence alpha",
+          "usage": "hardkas replay diff [options] <idA> <idB>",
+          "arguments": [
+            {
+              "name": "idA",
+              "description": ""
+            },
+            {
+              "name": "idB",
+              "description": ""
+            }
+          ],
+          "options": [
+            {
+              "flags": "--json",
+              "description": "Output as JSON",
+              "default": false,
+              "required": false,
+              "mandatory": false
+            }
+          ],
+          "subcommands": []
+        },
+        {
           "path": "hardkas replay verify",
           "name": "verify",
           "aliases": [],
@@ -3550,63 +3632,6 @@
             }
           ],
           "options": [],
-          "subcommands": []
-        }
-      ]
-    },
-    {
-      "path": "hardkas snapshot",
-      "name": "snapshot",
-      "aliases": [],
-      "description": "Manage HardKAS localnet snapshots",
-      "usage": "hardkas snapshot [options] [command]",
-      "arguments": [],
-      "options": [],
-      "subcommands": [
-        {
-          "path": "hardkas snapshot restore",
-          "name": "restore",
-          "aliases": [],
-          "description": "Restore localnet state from a snapshot preview",
-          "usage": "hardkas snapshot restore [options] <idOrName>",
-          "arguments": [
-            {
-              "name": "idOrName",
-              "description": ""
-            }
-          ],
-          "options": [
-            {
-              "flags": "--json",
-              "description": "Output as JSON",
-              "default": false,
-              "required": false,
-              "mandatory": false
-            }
-          ],
-          "subcommands": []
-        },
-        {
-          "path": "hardkas snapshot verify",
-          "name": "verify",
-          "aliases": [],
-          "description": "Verify the integrity of a snapshot preview",
-          "usage": "hardkas snapshot verify [options] <idOrName>",
-          "arguments": [
-            {
-              "name": "idOrName",
-              "description": ""
-            }
-          ],
-          "options": [
-            {
-              "flags": "--json",
-              "description": "Output as JSON",
-              "default": false,
-              "required": false,
-              "mandatory": false
-            }
-          ],
           "subcommands": []
         }
       ]
@@ -3998,6 +4023,104 @@
       "arguments": [],
       "options": [],
       "subcommands": []
+    },
+    {
+      "path": "hardkas workflow",
+      "name": "workflow",
+      "aliases": [],
+      "description": "Programmable deterministic workflows and agent orchestration alpha",
+      "usage": "hardkas workflow [options] [command]",
+      "arguments": [],
+      "options": [],
+      "subcommands": [
+        {
+          "path": "hardkas workflow diff",
+          "name": "diff",
+          "aliases": [],
+          "description": "Compare two workflow artifacts structurally",
+          "usage": "hardkas workflow diff [options] <a> <b>",
+          "arguments": [
+            {
+              "name": "a",
+              "description": ""
+            },
+            {
+              "name": "b",
+              "description": ""
+            }
+          ],
+          "options": [],
+          "subcommands": []
+        },
+        {
+          "path": "hardkas workflow inspect",
+          "name": "inspect",
+          "aliases": [],
+          "description": "Inspect a completed workflow artifact",
+          "usage": "hardkas workflow inspect [options] <id>",
+          "arguments": [
+            {
+              "name": "id",
+              "description": ""
+            }
+          ],
+          "options": [
+            {
+              "flags": "--json",
+              "description": "Output full artifact as JSON",
+              "default": false,
+              "required": false,
+              "mandatory": false
+            }
+          ],
+          "subcommands": []
+        },
+        {
+          "path": "hardkas workflow replay",
+          "name": "replay",
+          "aliases": [],
+          "description": "Deterministically replay and verify a workflow's lineage",
+          "usage": "hardkas workflow replay [options] <id>",
+          "arguments": [
+            {
+              "name": "id",
+              "description": ""
+            }
+          ],
+          "options": [],
+          "subcommands": []
+        },
+        {
+          "path": "hardkas workflow run",
+          "name": "run",
+          "aliases": [],
+          "description": "Execute a workflow JSON definition in Agent mode",
+          "usage": "hardkas workflow run [options] <file>",
+          "arguments": [
+            {
+              "name": "file",
+              "description": ""
+            }
+          ],
+          "options": [
+            {
+              "flags": "--dry-run",
+              "description": "Simulate the workflow without mutating the filesystem",
+              "default": false,
+              "required": false,
+              "mandatory": false
+            },
+            {
+              "flags": "--json",
+              "description": "Output the final workflow artifact as JSON",
+              "default": false,
+              "required": false,
+              "mandatory": false
+            }
+          ],
+          "subcommands": []
+        }
+      ]
     }
   ]
 }
