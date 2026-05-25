@@ -9,7 +9,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 describe("Reproducibility Corpus", () => {
   it("should generate the exact expected hash across all platforms", async () => {
-    const fixturePath = path.join(__dirname, "corpus", "tx-plan.json");
+    const fixturePath = path.join(__dirname, "corpus", "tx-plan.fixture.json");
     const content = await fs.readFile(fixturePath, "utf-8");
     const parsed = JSON.parse(content);
     
@@ -26,7 +26,7 @@ describe("Reproducibility Corpus", () => {
   });
 
   it("should generate deterministic workflowId", async () => {
-    const fixturePath = path.join(__dirname, "corpus", "tx-plan.json");
+    const fixturePath = path.join(__dirname, "corpus", "tx-plan.fixture.json");
     const content = await fs.readFile(fixturePath, "utf-8");
     const parsed = JSON.parse(content);
     
