@@ -228,6 +228,9 @@ importers:
       '@hardkas/artifacts':
         specifier: workspace:*
         version: link:../../packages/artifacts
+      '@hardkas/core':
+        specifier: workspace:*
+        version: link:../../packages/core
       '@hardkas/localnet':
         specifier: workspace:*
         version: link:../../packages/localnet
