@@ -9,19 +9,29 @@
 // Base error
 // ---------------------------------------------------------------------------
 
+export enum HardkasExitCode {
+  SUCCESS = 0,
+  RUNTIME_FAILURE = 1,
+  USAGE_ERROR = 2,
+  POLICY_DENIED = 3,
+  CORRUPTION_DETECTED = 4,
+}
+
 export class HardkasCliError extends Error {
   readonly code: string;
+  readonly exitCode: HardkasExitCode;
   readonly suggestion?: string | undefined;
   readonly context?: Record<string, string> | undefined;
 
   constructor(
     code: string,
     message: string,
-    options?: { suggestion?: string; context?: Record<string, string> },
+    options?: { exitCode?: HardkasExitCode; suggestion?: string; context?: Record<string, string> },
   ) {
     super(message);
     this.name = "HardkasCliError";
     this.code = code;
+    this.exitCode = options?.exitCode ?? HardkasExitCode.RUNTIME_FAILURE;
     this.suggestion = options?.suggestion;
     this.context = options?.context;
   }

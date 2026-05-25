@@ -1,49 +1,89 @@
 import pc from "picocolors";
 import { formatSompi, maskSecrets } from "@hardkas/core";
 
+let jsonMode = false;
+
 export const UI = {
+  setJsonMode(enabled: boolean) {
+    jsonMode = enabled;
+  },
+
+  isJsonMode() {
+    return jsonMode;
+  },
+
+  logHuman(msg: string) {
+    // In JSON mode, all human-readable text MUST go to stderr to prevent stdout corruption
+    if (jsonMode) {
+      console.error(msg);
+    } else {
+      console.log(msg);
+    }
+  },
+
+  writeJson(data: any) {
+    // Only ever written to stdout
+    console.log(JSON.stringify(data, null, 2));
+  },
+
   header(text: string) {
     const masked = maskSecrets(text);
-    console.log(pc.bold(pc.magenta(`\n  ═══ ${masked} ═══`)));
+    this.logHuman(pc.bold(pc.magenta(`\n  ═══ ${masked} ═══`)));
   },
   
   divider() {
-    console.log(pc.dim("  " + "─".repeat(50)));
+    this.logHuman(pc.dim("  " + "─".repeat(50)));
+  },
+
+  bullet(text: string) {
+    this.logHuman(`  • ${text}`);
+  },
+  
+  step(num: number, text: string) {
+    this.logHuman(`  ${pc.dim(num.toString() + ".")} ${text}`);
+  },
+
+  raw(text: string) {
+    this.logHuman(text);
+  },
+
+  emptyLine() {
+    this.logHuman("");
   },
 
   info(text: string) {
-    console.log(`  ${pc.blue("ℹ")} ${text}`);
+    this.logHuman(`  ${pc.blue("ℹ")} ${text}`);
   },
 
   success(text: string) {
-    console.log(`  ${pc.green("✔")} ${text}`);
+    this.logHuman(`  ${pc.green("✔")} ${text}`);
   },
 
   box(title: string, subtitle?: string) {
     const width = 40;
-    console.log(pc.magenta(`  ╔${"═".repeat(width - 2)}╗`));
-    console.log(pc.magenta(`  ║${pc.bold(pc.white(title.padStart((width - 2 + title.length) / 2).padEnd(width - 2)))}║`));
+    this.logHuman(pc.magenta(`  ╔${"═".repeat(width - 2)}╗`));
+    this.logHuman(pc.magenta(`  ║${pc.bold(pc.white(title.padStart((width - 2 + title.length) / 2).padEnd(width - 2)))}║`));
     if (subtitle) {
-      console.log(pc.magenta(`  ║${pc.italic(pc.dim(subtitle.padStart((width - 2 + subtitle.length) / 2).padEnd(width - 2)))}║`));
+      this.logHuman(pc.magenta(`  ║${pc.italic(pc.dim(subtitle.padStart((width - 2 + subtitle.length) / 2).padEnd(width - 2)))}║`));
     }
-    console.log(pc.magenta(`  ╚${"═".repeat(width - 2)}╝`));
-    console.log("");
+    this.logHuman(pc.magenta(`  ╚${"═".repeat(width - 2)}╝`));
+    this.logHuman("");
   },
 
   warning(text: string) {
     const masked = maskSecrets(text);
-    console.log(pc.yellow(`\n  ⚠️  WARNING:`));
-    console.log(pc.yellow(`     ${masked}`));
+    console.error(pc.yellow(`\n  ⚠️  WARNING:`));
+    console.error(pc.yellow(`     ${masked}`));
   },
 
   securityWarning(code: string, message: string, suggestion?: string) {
-    console.log(pc.yellow(`\n  ⚠️  SECURITY WARNING [${code}]:`));
-    console.log(pc.yellow(`     ${message}`));
+    console.error(pc.yellow(`\n  ⚠️  SECURITY WARNING [${code}]:`));
+    console.error(pc.yellow(`     ${message}`));
     if (suggestion) {
-      console.log(pc.cyan(`\n  💡 Suggestion:`));
-      console.log(pc.cyan(`     ${suggestion}`));
+      console.error(pc.cyan(`\n  💡 Suggestion:`));
+      console.error(pc.cyan(`     ${suggestion}`));
     }
-    console.log("");
+    console.error("");
   },
 
   error(msg: string, suggestion?: string) {
@@ -59,7 +99,7 @@ export const UI = {
 
   field(label: string, value: string | number | boolean | undefined | null) {
     const val = value === undefined || value === null ? pc.dim("none") : maskSecrets(String(value));
-    console.log(`  ${pc.dim(label.padEnd(16))} ${pc.white(val)}`);
+    this.logHuman(`  ${pc.dim(label.padEnd(16))} ${pc.white(val)}`);
   },
 
   kas(label: string, sompi: bigint | string) {
@@ -88,25 +128,25 @@ export const UI = {
 
   footer(hint?: string) {
     if (hint) {
-      console.log(pc.dim(`\n  Hint: ${hint}`));
+      this.logHuman(pc.dim(`\n  Hint: ${hint}`));
     }
-    console.log("");
+    this.logHuman("");
   },
 
   causality(title: string, details: Record<string, string | undefined>, nextSteps?: string[]) {
-    console.log(`\n  ${pc.green("✔")} ${pc.bold(title)}\n`);
+    this.logHuman(`\n  ${pc.green("✔")} ${pc.bold(title)}\n`);
     for (const [key, value] of Object.entries(details)) {
       if (value) {
-        console.log(`  ${pc.dim(key)}`);
-        console.log(`    ${pc.white(value)}\n`);
+        this.logHuman(`  ${pc.dim(key)}`);
+        this.logHuman(`    ${pc.white(value)}\n`);
       }
     }
     if (nextSteps && nextSteps.length > 0) {
-      console.log(`  ${pc.dim("Next Steps")}`);
+      this.logHuman(`  ${pc.dim("Next Steps")}`);
       for (const step of nextSteps) {
-        console.log(`    - ${pc.white(step)}`);
+        this.logHuman(`    - ${pc.white(step)}`);
       }
-      console.log("");
+      this.logHuman("");
     }
   },
 

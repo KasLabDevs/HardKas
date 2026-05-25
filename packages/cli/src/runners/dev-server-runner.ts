@@ -8,6 +8,7 @@ export async function runDevServer(options: {
   showToken: boolean;
   open: boolean;
   json: boolean;
+  once?: boolean;
   workspaceRoot?: string;
 }) {
   try {
@@ -18,6 +19,15 @@ export async function runDevServer(options: {
 
     if (options.unsafeExternal && options.host === "localhost") {
       host = "0.0.0.0";
+    }
+
+    if (options.once) {
+      if (options.json) {
+        console.log(JSON.stringify({ status: "initialized", headless: true }));
+      } else {
+        console.log("HardKAS dev environment initialized.");
+      }
+      return;
     }
 
     const server = createDevServer({

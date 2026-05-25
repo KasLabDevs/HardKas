@@ -4,7 +4,15 @@ import { UI } from "../ui.js";
 export function registerDevCommands(program: Command) {
   const devCmd = program
     .command("dev")
-    .description("Local development and Igra-native environment tools");
+    .description("Local development and Igra-native environment tools")
+    .option("--once", "Initialize dev environment, run health checks, and exit (headless)", false)
+    .option("--headless", "Run headlessly (no UI open)", false)
+    .option("--json", "Output status as JSON", false)
+    .action(async (options: any) => {
+      // Default to starting the server or running once
+      const { runDevServer } = await import("../runners/dev-server-runner.js");
+      await runDevServer({ ...options, open: !options.headless });
+    });
 
   devCmd
     .command("doctor")

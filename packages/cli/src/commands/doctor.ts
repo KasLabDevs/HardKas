@@ -49,6 +49,8 @@ interface DoctorCheck {
 }
 
 async function runDoctor(opts: { json?: boolean; consistency?: boolean; strict?: boolean }) {
+  if (opts.json) UI.setJsonMode(true);
+
   const report: DoctorReport = {
     version: HARDKAS_VERSION,
     timestamp: new Date().toISOString(),
@@ -74,9 +76,9 @@ async function runDoctor(opts: { json?: boolean; consistency?: boolean; strict?:
       if (check.status === "warn") icon = pc.yellow("⚠️");
       if (check.status === "skip") icon = pc.gray("⏭️");
       
-      console.log(`  ${icon} ${pc.bold(check.name)}: ${check.message}`);
+      UI.logHuman(`  ${icon} ${pc.bold(check.name)}: ${check.message}`);
       if (check.suggestion && check.status !== "pass") {
-        console.log(`     ${pc.dim("Suggestion: " + check.suggestion)}`);
+        UI.logHuman(`     ${pc.dim("Suggestion: " + check.suggestion)}`);
       }
     }
   };
@@ -506,10 +508,10 @@ async function runDoctor(opts: { json?: boolean; consistency?: boolean; strict?:
   }
 
   if (opts.json) {
-    console.log(JSON.stringify(report, null, 2));
+    UI.writeJson(report);
   } else {
     UI.divider();
-    console.log(`  Summary: ${report.summary.passed} passed, ${report.summary.failed} failed, ${report.summary.warnings} warning, ${report.summary.skipped} skipped`);
+    UI.logHuman(`  Summary: ${report.summary.passed} passed, ${report.summary.failed} failed, ${report.summary.warnings} warning, ${report.summary.skipped} skipped`);
     UI.footer("Use 'hardkas capabilities' to see supported features.");
   }
 

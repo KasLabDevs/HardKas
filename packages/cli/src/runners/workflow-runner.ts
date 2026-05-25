@@ -6,7 +6,26 @@ import type { WorkflowArtifact } from "@hardkas/artifacts";
 
 export async function runWorkflowRun(file: string, options: { workspaceRoot?: string; dryRun?: boolean; json?: boolean }) {
   try {
-    const fullPath = path.resolve(process.cwd(), file);
+    if (options.json) UI.setJsonMode(true);
+    
+    let fullPath = path.resolve(process.cwd(), file);
+    
+    // Implicit resolution logic
+    if (!fs.existsSync(fullPath) && !file.endsWith(".json")) {
+      const explicitExt = `${file}.json`;
+      const candidates = [
+        path.resolve(process.cwd(), ".hardkas/workflows", explicitExt),
+        path.resolve(process.cwd(), "examples/workflows", explicitExt)
+      ];
+      
+      const found = candidates.filter(c => fs.existsSync(c));
+      if (found.length > 1) {
+        throw new Error(`Ambiguous workflow name '${file}'. Found multiple matches:\n- ${found.join("\n- ")}`);
+      } else if (found.length === 1) {
+        fullPath = found[0];
+      }
+    }
+
     if (!fs.existsSync(fullPath)) {
       throw new Error(`Workflow definition not found: ${file}`);
     }
@@ -41,7 +60,7 @@ export async function runWorkflowRun(file: string, options: { workspaceRoot?: st
     if (result.status === "failed") {
       UI.error(`Workflow failed: ${result.errorEnvelope?.message}`);
       if (options.json) {
-        console.log(JSON.stringify(result, null, 2));
+        UI.writeJson(result);
       } else {
         UI.warning(`Artifact generated but marked as failed: ${result.workflowId}`);
       }
@@ -50,7 +69,7 @@ export async function runWorkflowRun(file: string, options: { workspaceRoot?: st
     }
 
     if (options.json) {
-      console.log(JSON.stringify(result, null, 2));
+      UI.writeJson(result);
     } else {
       UI.success(`Workflow completed successfully: ${result.workflowId}`);
       if (result.producedArtifacts.length > 0) {
@@ -64,23 +83,30 @@ export async function runWorkflowRun(file: string, options: { workspaceRoot?: st
   }
 }
 
-export async function runWorkflowInspect(id: string, options: any) {
+export async function runWorkflowInspect(id: string, options: { workspaceRoot?: string; json?: boolean }) {
   try {
-    const sdk = await Hardkas.open({ cwd: options.workspaceRoot });
-    const artifact = await sdk.artifacts.read(id);
+    if (options.json) UI.setJsonMode(true);
+    const sdk = await Hardkas.open({ 
+      ...(options.workspaceRoot ? { cwd: options.workspaceRoot } : {}),
+      mode: "agent" 
+    });
+
+    const artifact = await sdk.artifacts.read(id) as WorkflowArtifact;
     
     if (artifact.schema !== "hardkas.workflow.v1") {
-      throw new Error(`Artifact ${id} is not a workflow artifact. Found: ${artifact.schema}`);
+      throw new Error(`Artifact ${id} is not a valid workflow artifact`);
     }
 
     if (options.json) {
-      console.log(JSON.stringify(artifact, null, 2));
-    } else {
-      UI.success(`Workflow Artifact: ${id}`);
-      console.log(`  Status: ${artifact.status}`);
-      console.log(`  Steps executed: ${artifact.steps.length}`);
-      console.log(`  Produced artifacts: ${artifact.producedArtifacts.length}`);
-    }
+      UI.writeJson(artifact);
+      return;
+    } 
+    
+    UI.success(`Workflow Artifact: ${id}`);
+    console.log(`  Status: ${artifact.status}`);
+    console.log(`  Steps executed: ${artifact.steps.length}`);
+    console.log(`  Produced artifacts: ${artifact.producedArtifacts.length}`);
+    
   } catch (e) {
     handleError(e);
     process.exitCode = 1;

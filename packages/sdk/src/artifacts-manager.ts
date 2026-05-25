@@ -45,10 +45,13 @@ export class HardkasArtifactsManager {
    * Writes a valid artifact to disk (canonical or custom path).
    */
   async write(artifact: HardkasArtifactBase, options: WriteArtifactOptions = {}): Promise<WriteArtifactResult> {
+    const record = artifact as unknown as Record<string, string>;
+    const hash = record.contentHash || "unknown";
+    
     if (options.dryRun) {
       return { 
         dryRun: true, 
-        contentHash: (artifact as any).contentHash || "unknown" 
+        contentHash: hash 
       };
     }
 
@@ -58,8 +61,7 @@ export class HardkasArtifactsManager {
       fs.mkdirSync(outputDir, { recursive: true });
     }
 
-    const hash = (artifact as any).contentHash || "unknown";
-    const schema = (artifact as any).schema || "artifact";
+    const schema = record.schema || "artifact";
     const shortSchema = schema.replace("hardkas.", "");
     
     const fileName = options.fileName || `${shortSchema}-${hash}.json`;
@@ -70,24 +72,25 @@ export class HardkasArtifactsManager {
     
     // Emit the event so localnet and query-store can index it.
     const { coreEvents, createEventEnvelope } = await import("@hardkas/core");
-    const { randomUUID } = await import("node:crypto");
-    
-    const wId = options.workflowId || randomUUID();
+    // If no workflowId is provided, this artifact is standalone.
+    // "wf_unknown_standalone" is a sentinel value for tracking provenance of loose artifacts.
+    // It is NOT a replayable causal workflow identity.
+    const wId = options.workflowId || "wf_unknown_standalone";
     const cId = options.correlationId || wId;
-    const netId = options.networkId || (artifact as any).networkId || "unknown";
-    const artifactId = (artifact as any).artifactId || hash;
+    const netId = options.networkId || record.networkId || "unknown";
+    const artifactId = record.artifactId || hash;
 
     coreEvents.emit(createEventEnvelope({
       kind: "artifact.written",
       domain: "integrity",
-      workflowId: wId as any,
-      correlationId: cId as any,
-      networkId: netId as any,
-      payload: { artifactId: artifactId as any, path: absolutePath },
-      sequenceNumber: 1 as any,
+      workflowId: wId as unknown as any,
+      correlationId: cId as unknown as any,
+      networkId: netId as unknown as any,
+      payload: { artifactId: artifactId as unknown as any, path: absolutePath },
+      sequenceNumber: 1 as unknown as any,
       globalOffset: 0,
       sourceSubsystem: "sdk:artifacts-manager",
-      artifactId: artifactId as any
+      artifactId: artifactId as unknown as any
     }));
     
     return {

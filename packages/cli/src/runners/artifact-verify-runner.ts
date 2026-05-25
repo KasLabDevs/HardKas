@@ -101,11 +101,14 @@ export async function runArtifactVerify(options: ArtifactVerifyOptions) {
 
 async function runRecursiveVerify(dir: string, options: ArtifactVerifyOptions) {
   const files = getAllJsonFiles(dir);
-  UI.header(`Recursive Verification: ${path.basename(dir)}`);
-  console.log(`Auditing ${files.length} artifact(s)...\n`);
+  if (!options.json) {
+    UI.header(`Recursive Verification: ${path.basename(dir)}`);
+    console.log(`Auditing ${files.length} artifact(s)...\n`);
+  }
 
   let successCount = 0;
   let failCount = 0;
+  const jsonResults: any[] = [];
 
   for (const file of files) {
     const relativePath = path.relative(dir, file);
@@ -122,17 +125,36 @@ async function runRecursiveVerify(dir: string, options: ArtifactVerifyOptions) {
     result.errors.push(...semanticResult.errors);
     result.ok = result.ok && semanticResult.ok;
 
+    if (options.json) {
+      jsonResults.push({ file: relativePath, result });
+    }
+
     if (result.ok) {
-      console.log(`  ✓ ${relativePath.padEnd(40)} [MATCH]`);
+      if (!options.json) console.log(`  ✓ ${relativePath.padEnd(40)} [MATCH]`);
       successCount++;
     } else {
-      console.log(`  ✗ ${relativePath.padEnd(40)} [FAIL]`);
-      result.issues.forEach(issue => {
-        const prefix = issue.severity === "critical" ? "[!!!]" : issue.severity === "error" ? "[!]" : "[?]";
-        console.log(`      ${prefix} [${issue.code}] ${issue.message}`);
-      });
+      if (!options.json) {
+        console.log(`  ✗ ${relativePath.padEnd(40)} [FAIL]`);
+        result.issues.forEach(issue => {
+          const prefix = issue.severity === "critical" ? "[!!!]" : issue.severity === "error" ? "[!]" : "[?]";
+          console.log(`      ${prefix} [${issue.code}] ${issue.message}`);
+        });
+      }
       failCount++;
     }
+  }
+
+  if (options.json) {
+    if (failCount > 0) process.exitCode = 1;
+    console.log(JSON.stringify({
+      schema: "hardkas.queryVerify.v1",
+      ok: failCount === 0,
+      scanned: files.length,
+      successCount,
+      failCount,
+      results: jsonResults
+    }, null, 2));
+    return;
   }
 
   console.log("\n" + "═".repeat(50));

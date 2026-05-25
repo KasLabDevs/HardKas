@@ -50,6 +50,7 @@ export function registerTxCommands(program: Command) {
       const { withLock } = await import("@hardkas/core");
       const { handleLockError } = await import("../ui.js");
       try {
+        if (options.json) UI.setJsonMode(true);
         await withLock({
           rootDir: process.cwd(),
           name: "artifacts",
@@ -72,8 +73,9 @@ export function registerTxCommands(program: Command) {
           });
 
           if (options.out) await writeArtifact(options.out, artifact);
-          if (options.json) console.log(JSON.stringify(artifact, bigIntReplacer, 2));
-          else {
+          if (options.json) {
+            UI.writeJson(artifact);
+          } else {
             console.log(formatTxPlanArtifact(artifact));
             if (options.out) console.log(`\nArtifact saved to: ${options.out}`);
           }
@@ -100,6 +102,7 @@ export function registerTxCommands(program: Command) {
       const { withLock } = await import("@hardkas/core");
       const { handleLockError } = await import("../ui.js");
       try {
+        if (options.json) UI.setJsonMode(true);
         await withLock({
           rootDir: process.cwd(),
           name: "artifacts",
@@ -121,8 +124,9 @@ export function registerTxCommands(program: Command) {
           });
 
           if (options.out) await writeArtifact(options.out, signedArtifact);
-          if (options.json) console.log(JSON.stringify(signedArtifact, bigIntReplacer, 2));
-          else {
+          if (options.json) {
+            UI.writeJson(signedArtifact);
+          } else {
             console.log(formatSignedTxArtifact(signedArtifact));
             if (options.out) console.log(`\nSigned artifact saved to: ${options.out}`);
           }
@@ -157,6 +161,7 @@ export function registerTxCommands(program: Command) {
       const { withLock } = await import("@hardkas/core");
       const { handleLockError } = await import("../ui.js");
       try {
+        if (options.json) UI.setJsonMode(true);
         await withLock({
           rootDir: process.cwd(),
           name: "artifacts",
@@ -185,7 +190,7 @@ export function registerTxCommands(program: Command) {
             });
 
             if (options.json) {
-              console.log(JSON.stringify(result, bigIntReplacer, 2));
+              UI.writeJson(result);
             } else {
               const { UI } = await import("../ui.js");
               const isSimulated = result.networkName === "simulated" || result.networkName === "simnet";
@@ -240,7 +245,7 @@ export function registerTxCommands(program: Command) {
             });
 
             if (options.json) {
-              console.log(JSON.stringify(result, bigIntReplacer, 2));
+              UI.writeJson(result);
             } else {
               const { UI } = await import("../ui.js");
               const sendResult = result.steps.send;

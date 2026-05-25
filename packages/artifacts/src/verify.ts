@@ -6,6 +6,7 @@ import {
   TxReceiptSchema, 
   TxTraceSchema,
   SignedTxSchema,
+  WorkflowSchema,
   ARTIFACT_VERSION
 } from "./schemas.js";
 import { NetworkId, type CorruptionCode, type CorruptionSeverity } from "@hardkas/core";
@@ -147,6 +148,7 @@ export async function verifyArtifactIntegrity(artifactOrPath: unknown): Promise<
       case "hardkas.txReceipt": schema = TxReceiptSchema; break;
       case "hardkas.txTrace": schema = TxTraceSchema; break;
       case "hardkas.signedTx": schema = SignedTxSchema; break;
+      case "hardkas.workflow.v1": schema = WorkflowSchema; break;
     }
 
     if (schema) {
@@ -232,7 +234,7 @@ export function verifyArtifactSemantics(artifact: unknown, context: Verification
 
   // 3. Lineage Audit (Harden and Harmonize)
   const lineageAudit = verifyLineage(v, context.parent, { strict });
-  if (!lineageAudit.ok || (strict && !v.lineage)) {
+  if (!lineageAudit.ok || (strict && !v.lineage && v.schema !== "hardkas.workflow.v1")) {
     lineageAudit.issues.forEach(issue => {
       addIssue(issue);
     });
@@ -241,12 +243,12 @@ export function verifyArtifactSemantics(artifact: unknown, context: Verification
   // 4. Hardening Fields
   if (strict) {
     if (!v.workflowId) addIssue({ code: "MISSING_WORKFLOW_ID", severity: "error", message: "Strict mode requires workflowId" });
-    if (!v.assumptionLevel) addIssue({ code: "MISSING_ASSUMPTION_LEVEL", severity: "error", message: "Strict mode requires assumptionLevel" });
-    if (!v.executionMode) addIssue({ code: "MISSING_EXECUTION_MODE", severity: "error", message: "Strict mode requires executionMode" });
+    if (!v.assumptionLevel && v.schema !== "hardkas.workflow.v1") addIssue({ code: "MISSING_ASSUMPTION_LEVEL", severity: "error", message: "Strict mode requires assumptionLevel" });
+    if (!v.executionMode && !v.mode) addIssue({ code: "MISSING_EXECUTION_MODE", severity: "error", message: "Strict mode requires executionMode" });
   } else {
     if (!v.workflowId) addIssue({ code: "MISSING_WORKFLOW_ID", severity: "warning", message: "Missing workflowId" });
-    if (!v.assumptionLevel) addIssue({ code: "MISSING_ASSUMPTION_LEVEL", severity: "warning", message: "Missing assumptionLevel" });
-    if (!v.executionMode) addIssue({ code: "MISSING_EXECUTION_MODE", severity: "warning", message: "Missing executionMode" });
+    if (!v.assumptionLevel && v.schema !== "hardkas.workflow.v1") addIssue({ code: "MISSING_ASSUMPTION_LEVEL", severity: "warning", message: "Missing assumptionLevel" });
+    if (!v.executionMode && !v.mode) addIssue({ code: "MISSING_EXECUTION_MODE", severity: "warning", message: "Missing executionMode" });
   }
 
   // 5. Network vs Address prefix check

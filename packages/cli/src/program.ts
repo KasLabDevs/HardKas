@@ -12,7 +12,10 @@ import { registerConfigCommands } from "./commands/config.js";
 import { registerQueryCommands } from "./commands/query.js";
 import { registerTestCommands } from "./commands/test.js";
 import { registerDoctorCommand } from "./commands/doctor.js";
+import { registerVerifyCommand } from "./commands/verify.js";
+import { registerRebuildCommand } from "./commands/rebuild.js";
 import { registerRunCommand } from "./commands/run.js";
+import { registerLockCommands } from "./commands/lock.js";
 import { registerCapabilitiesCommand } from "./commands/capabilities.js";
 import { registerWorkflowCommands } from "./commands/workflow.js";
 import { registerConsoleCommand } from "./commands/console.js";
@@ -27,7 +30,6 @@ import { registerSessionCommands } from "./commands/session.js";
 import { registerDashboardCommand } from "./commands/dashboard.js";
 import { registerExplainCommand } from "./commands/explain.js";
 
-import { registerLockCommands } from "./commands/lock.js";
 import { HARDKAS_VERSION } from "@hardkas/artifacts";
 
 /**
@@ -56,6 +58,8 @@ export function buildHardkasProgram(options?: { forDocs?: boolean }): Command {
   registerQueryCommands(program);
   registerTestCommands(program);
   registerDoctorCommand(program);
+  registerVerifyCommand(program);
+  registerRebuildCommand(program);
   registerRunCommand(program);
   registerLockCommands(program);
   registerCapabilitiesCommand(program);

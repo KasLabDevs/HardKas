@@ -120,19 +120,19 @@ export class HardkasReplay {
         if (!wfArtifactPath) throw new Error("Workflow artifact not found");
         
         const wfArtifactStr = fs.readFileSync(path.join(this.sdk.workspace.artifactsDir, wfArtifactPath), "utf-8");
-        const wfArtifact = JSON.parse(wfArtifactStr) as any;
+        const wfArtifact = JSON.parse(wfArtifactStr) as Record<string, unknown>;
         
         if (wfArtifact.schema !== "hardkas.workflow.v1") {
           throw new Error(`Artifact ${options.workflowId} is not a workflow artifact`);
         }
 
-        const childArtifacts = wfArtifact.producedArtifacts || [];
+        const childArtifacts = (wfArtifact.producedArtifacts as string[]) || [];
         for (const childId of childArtifacts) {
           const childFile = fs.readdirSync(this.sdk.workspace.artifactsDir)
-            .find(f => f.includes(childId) && f.endsWith(".json"));
+            .find(f => f.includes(childId as string) && f.endsWith(".json"));
           if (!childFile) throw new Error(`Child artifact ${childId} not found`);
           const childStr = fs.readFileSync(path.join(this.sdk.workspace.artifactsDir, childFile), "utf-8");
-          const child = JSON.parse(childStr) as any;
+          const child = JSON.parse(childStr) as Record<string, unknown>;
           const integrity = await verifyArtifactIntegrity(child);
           if (!integrity.ok) {
             determinismOk = false;
