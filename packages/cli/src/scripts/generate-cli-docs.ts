@@ -25,7 +25,8 @@ async function main() {
       const existingMd = await fs.readFile(mdPath, "utf-8");
       const existingJson = await fs.readFile(jsonPath, "utf-8");
 
-      if (existingMd !== markdown || existingJson !== json) {
+      const normalize = (s: string) => s.replace(/\r\n/g, "\n");
+      if (normalize(existingMd) !== normalize(markdown) || normalize(existingJson) !== normalize(json)) {
         console.error("\n[!] CLI documentation is OUT OF DATE.");
         console.error("    Run 'pnpm docs:generate-cli' to update them.");
         process.exit(1);
