@@ -16,12 +16,12 @@ export function registerRpcQueryCommands(queryCmd: Command) {
         const { QueryEngine, createQueryRequest } = await import("@hardkas/query");
         const engine = await QueryEngine.create({ artifactDir: process.cwd() });
         const limit = parseInt(options.limit, 10) || 100;
-        const request = createQueryRequest({ domain: "rpc" as any, op: "health-timeline", params: { since: options.since }, limit });
+        const request = createQueryRequest({ domain: "rpc" as unknown as any, op: "health-timeline", params: { since: options.since }, limit });
         const result = await engine.execute(request);
         if (options.json) {
           const { serializeQueryResult } = await import("@hardkas/query");
           console.log(serializeQueryResult(result));
-        } else { printRpcHealthTimeline(result as any); }
+        } else { printRpcHealthTimeline(result as unknown as Parameters<typeof printRpcHealthTimeline>[0]); }
       } catch (e) { handleError(e); process.exitCode = 1; }
     });
 
@@ -36,12 +36,12 @@ export function registerRpcQueryCommands(queryCmd: Command) {
         const { QueryEngine, createQueryRequest } = await import("@hardkas/query");
         const engine = await QueryEngine.create({ artifactDir: process.cwd() });
         const limit = parseInt(options.limit, 10) || 100;
-        const request = createQueryRequest({ domain: "rpc" as any, op: "degradations", params: { since: options.since }, limit });
+        const request = createQueryRequest({ domain: "rpc" as unknown as any, op: "degradations", params: { since: options.since }, limit });
         const result = await engine.execute(request);
         if (options.json) {
           const { serializeQueryResult } = await import("@hardkas/query");
           console.log(serializeQueryResult(result));
-        } else { printRpcDegradations(result as any); }
+        } else { printRpcDegradations(result as unknown as Parameters<typeof printRpcDegradations>[0]); }
       } catch (e) { handleError(e); process.exitCode = 1; }
     });
 
@@ -55,12 +55,12 @@ export function registerRpcQueryCommands(queryCmd: Command) {
         const { QueryEngine, createQueryRequest } = await import("@hardkas/query");
         const engine = await QueryEngine.create({ artifactDir: process.cwd() });
         const explain = options.explain === true ? "brief" as const : (options.explain || false);
-        const request = createQueryRequest({ domain: "rpc" as any, op: "correlate", params: { txId }, explain });
+        const request = createQueryRequest({ domain: "rpc" as unknown as any, op: "correlate", params: { txId }, explain });
         const result = await engine.execute(request);
         if (options.json) {
           const { serializeQueryResult } = await import("@hardkas/query");
           console.log(serializeQueryResult(result));
-        } else { printRpcCorrelation(result as any); }
+        } else { printRpcCorrelation(result as unknown as Parameters<typeof printRpcCorrelation>[0]); }
       } catch (e) { handleError(e); process.exitCode = 1; }
     });
 }

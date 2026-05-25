@@ -1,0 +1,8 @@
+{
+  "name": "hardkas-project",
+  "version": "1.0.0",
+  "type": "module",
+  "dependencies": {
+    "@hardkas/sdk": "latest"
+  }
+}

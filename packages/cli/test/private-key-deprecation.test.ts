@@ -8,19 +8,19 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const cliPath = path.resolve(__dirname, "../src/index.ts");
 const tsx = path.resolve(__dirname, "../../../node_modules/.bin/tsx");
 
-function runCommand(args: string) {
-  try {
-    const lockPath = path.resolve(__dirname, "../.hardkas/locks/accounts.lock");
-    if (fs.existsSync(lockPath)) fs.unlinkSync(lockPath);
-  } catch (e) {}
+import { spawnSync } from "node:child_process";
 
-  let res = "";
-  try {
-    res = execSync(`"${tsx}" "${cliPath}" ${args}`, { encoding: "utf8", stdio: "pipe" });
-  } catch (e: any) {
-    res = (e.stdout || "") + (e.stderr || "");
+import os from "node:os";
+
+let tmpDir = "";
+
+function runCommand(args: string) {
+  if (!tmpDir) {
+    tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "hardkas-deprec-"));
+    fs.writeFileSync(path.join(tmpDir, "hardkas.config.ts"), "export default {};");
   }
-  return res;
+  const result = spawnSync(`"${tsx}"`, [`"${cliPath}"`, ...args.split(" ")], { shell: true, encoding: "utf8", cwd: tmpDir });
+  return (result.stdout || "") + (result.stderr || "");
 }
 
 describe("Private Key Deprecation", () => {

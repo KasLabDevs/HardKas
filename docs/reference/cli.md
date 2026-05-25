@@ -905,7 +905,11 @@ hardkas dev [options] [command]
 
 ### Options
 
-No options.
+| Flag | Description | Default |
+| :--- | :--- | :--- |
+| `--once` | Initialize dev environment, run health checks, and exit (headless) | false |
+| `--headless` | Run headlessly (no UI open) | false |
+| `--json` | Output status as JSON | false |
 
 ### Arguments
 
@@ -3068,6 +3072,29 @@ hardkas query tx [options] <txId>
 
 ---
 
+## hardkas rebuild
+
+Reconstruct projections from committed canonical artifacts stable
+
+### Usage
+
+```bash
+hardkas rebuild [options]
+```
+
+### Options
+
+| Flag | Description | Default |
+| :--- | :--- | :--- |
+| `--from-artifacts` | Rebuild the query-store and localnet projection from artifacts | false |
+| `--json` | Output machine-readable JSON | false |
+
+### Arguments
+
+No arguments.
+
+---
+
 ## hardkas replay
 
 Manage HardKAS transaction replays
@@ -3700,6 +3727,29 @@ hardkas up [options]
 ### Options
 
 No options.
+
+### Arguments
+
+No arguments.
+
+---
+
+## hardkas verify
+
+Verify artifact integrity and lineage continuity across the workspace stable
+
+### Usage
+
+```bash
+hardkas verify [options]
+```
+
+### Options
+
+| Flag | Description | Default |
+| :--- | :--- | :--- |
+| `--deep` | Perform a deep validation of signatures and causality | false |
+| `--json` | Output machine-readable JSON | false |
 
 ### Arguments
 

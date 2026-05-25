@@ -11,6 +11,7 @@ export interface TxVerifyOptions {
 }
 
 export async function runTxVerify(options: TxVerifyOptions) {
+  if (options.json) UI.setJsonMode(true);
   const { Hardkas } = await import("@hardkas/sdk");
   const sdk = await Hardkas.open({ cwd: options.workspaceRoot });
   const absolutePath = sdk.workspace.resolvePath(options.path);
@@ -39,8 +40,7 @@ export async function runTxVerify(options: TxVerifyOptions) {
     const result = verifyTxPlanSemantics(artifact as unknown as TxPlan);
 
     if (options.json) {
-      console.log(JSON.stringify(result, (key, value) => 
-        typeof value === 'bigint' ? value.toString() : value, 2));
+      UI.writeJson(result);
       return result;
     }
 

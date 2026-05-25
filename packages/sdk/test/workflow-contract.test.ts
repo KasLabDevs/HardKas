@@ -74,6 +74,25 @@ describe("Workflow Runtime Contract", () => {
     expect(artifact.errorEnvelope?.code).toBe("MOCKED_FAIL");
   });
 
+  it("should reject simulate-failure unconditionally in agent mode", async () => {
+    const sdk = await Hardkas.open({ cwd: tmpDir, mode: "agent" });
+
+    const artifact = await sdk.workflow.run({
+      steps: [
+        { type: "simulate-failure" }
+      ],
+      dryRun: true
+    });
+
+    expect(artifact.status).toBe("failed");
+    expect(artifact.steps).toHaveLength(1);
+    expect(artifact.steps[0].type).toBe("simulate-failure");
+    expect(artifact.steps[0].status).toBe("failed");
+    expect(artifact.errorEnvelope).toBeDefined();
+    expect(artifact.errorEnvelope?.code).toBe("POLICY_DENIED");
+    expect(artifact.errorEnvelope?.message).toMatch(/strictly prohibited in agent mode/);
+  });
+
   it("should enforce mutation policy (requireDryRun) when writing artifacts", async () => {
     const sdk = await Hardkas.open({ 
       cwd: tmpDir, 

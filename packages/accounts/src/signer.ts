@@ -59,10 +59,11 @@ export async function signTxPlanArtifact(input: {
 
   // Security guardrails
   // In alpha, status might be missing if schema is used as the state marker
+  const planRecord = planArtifact as unknown as Record<string, string>;
   if (planArtifact.schema === "hardkas.txPlan") {
     // Valid for signing
-  } else if ((planArtifact as any).status !== "built" && (planArtifact as any).status !== "unsigned") {
-    throw new Error(`Cannot sign artifact with status: ${(planArtifact as any).status}`);
+  } else if (planRecord.status !== "built" && planRecord.status !== "unsigned") {
+    throw new Error(`Cannot sign artifact with status: ${planRecord.status}`);
   }
 
   // Account and plan mode matching
@@ -83,7 +84,7 @@ export async function signTxPlanArtifact(input: {
 
   if (account.kind === "simulated") {
     return createSimulatedSignedTxArtifact(
-      planArtifact as any,
+      planArtifact as unknown as any,
       `simulated-signed-tx:${planArtifact.planId}`,
       systemRuntimeContext
     ) as unknown as SignedTxArtifact;
@@ -114,7 +115,7 @@ export async function signTxPlanArtifact(input: {
       createdAt: new Date().toISOString(),
       txId: result.txId || "", // Ensure txId is present
       sourcePlanId: planArtifact.planId,
-      networkId: planArtifact.networkId as any,
+      networkId: planArtifact.networkId,
       mode: planArtifact.mode,
       from: { address: planArtifact.from.address },
       to: { address: planArtifact.to.address },
@@ -140,5 +141,6 @@ export async function signTxPlanArtifact(input: {
     throw new Error("EVM accounts are reserved for future Igra support and cannot sign Kaspa L1 transactions.");
   }
 
-  throw new Error(`Unsupported account kind for signing: ${(account as any).kind}`);
+  const accountRecord = account as unknown as Record<string, string>;
+  throw new Error(`Unsupported account kind for signing: ${accountRecord.kind}`);
 }

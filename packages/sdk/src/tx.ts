@@ -141,12 +141,12 @@ export class HardkasTx {
       kind: "workflow.submitted",
       txId: simResult.receipt.txId,
       endpoint: "simulated://local"
-    } as any);
+    } as unknown as Parameters<typeof coreEvents.normalizeAndEmit>[0]);
 
     events.push({ type: "phase.completed", phase: "send", timestamp: Date.now() });
 
     await saveLocalnetState(simResult.state);
-    const receiptPath = await saveSimulatedReceipt(simResult.receipt as any);
+    const receiptPath = await saveSimulatedReceipt(simResult.receipt as unknown as any);
 
     // Create unified receipt
     const receiptBase: any = {
@@ -158,7 +158,7 @@ export class HardkasTx {
       mode: "simulated",
       createdAt: new Date().toISOString(),
       status: "confirmed",
-      txId: simResult.receipt.txId as any,
+      txId: simResult.receipt.txId,
       sourceSignedId: signedArtifact.signedId,
       from: { address: signedArtifact.from.address },
       to: { address: signedArtifact.to.address },
@@ -179,10 +179,10 @@ export class HardkasTx {
 
     // Convert events to steps
     const traceSteps = events.map(ev => ({
-      phase: ev.phase || (ev as any).message || "unknown",
+      phase: ev.phase || (ev as Record<string, unknown>).message as string || "unknown",
       status: ev.type.includes("completed") ? "completed" : ev.type.includes("failed") ? "failed" : "started",
       timestamp: new Date(ev.timestamp).toISOString(),
-      details: ev.type === "note" ? { message: (ev as any).message } : undefined
+      details: ev.type === "note" ? { message: (ev as Record<string, unknown>).message as string } : undefined
     }));
 
     const traceBase: any = {
@@ -220,12 +220,13 @@ export class HardkasTx {
     const broadcastable = getBroadcastableSignedTransaction(signedArtifact);
     
     // Attempt broadcast
-    const txId = (broadcastable.rawTransaction as any)?.id || "unknown";
+    const broadcastRecord = broadcastable.rawTransaction as unknown as Record<string, unknown>;
+    const txId = (broadcastRecord.id as string) || "unknown";
     coreEvents.normalizeAndEmit({
       kind: "workflow.submitted",
       txId,
       endpoint: url || "real"
-    } as any);
+    } as unknown as Parameters<typeof coreEvents.normalizeAndEmit>[0]);
 
     const result = await this.sdk.rpc.submitTransaction(broadcastable.rawTransaction);
     
@@ -238,7 +239,7 @@ export class HardkasTx {
       mode: "real",
       createdAt: new Date().toISOString(),
       status: result.accepted ? "submitted" : "failed",
-      txId: (result.transactionId || "failed") as any,
+      txId: (result.transactionId || "failed"),
       sourceSignedId: signedArtifact.signedId,
       from: { address: signedArtifact.from.address },
       to: { address: signedArtifact.to.address },

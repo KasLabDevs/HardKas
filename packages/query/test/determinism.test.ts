@@ -41,3 +41,17 @@ describe("deterministic serialization", () => {
     expect(hash).toMatch(/^[a-f0-9]{64}$/);
   });
 });
+
+import { deterministicCompare } from "@hardkas/core";
+
+describe("deterministic sorting", () => {
+  it("should sort artifacts deterministically regardless of locale", () => {
+    // These characters sort differently in some locales vs raw bytes
+    const a = "a_Z";
+    const b = "a_a";
+    // In raw bytes: 'Z' is 90, 'a' is 97. So "a_Z" < "a_a" -> returns -1
+    expect(deterministicCompare(a, b)).toBe(-1);
+    expect(deterministicCompare(b, a)).toBe(1);
+    expect(deterministicCompare(a, a)).toBe(0);
+  });
+});

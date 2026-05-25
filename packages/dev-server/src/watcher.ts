@@ -23,8 +23,12 @@ export function startHardkasWatcher() {
 
   console.log(`📡 [Watcher] Monitoring ${hardkasPath} for changes...`);
 
-  try {
-    const watcher = chokidar.watch(hardkasPath, {
+  // Watchers are strictly optimization hints in HardKAS, never correctness primitives.
+  // Missing events are safely recovered via periodic generation scans or targeted syncs.
+  const usePollingOverride = process.env.HARDKAS_WATCH_POLLING === "1";
+  
+  const startChokidar = (polling: boolean) => {
+    const opts: chokidar.WatchOptions = {
       ignored: [
         /store\.db/,
         /\.db-journal/,
@@ -33,8 +37,25 @@ export function startHardkasWatcher() {
         /tmp/
       ],
       persistent: true,
-      ignoreInitial: true
-    });
+      ignoreInitial: true,
+      usePolling: polling
+    };
+    if (polling) opts.interval = 1000;
+    return chokidar.watch(hardkasPath, opts);
+  };
+
+  try {
+    let watcher: chokidar.FSWatcher;
+    try {
+      watcher = startChokidar(usePollingOverride);
+    } catch (err: any) {
+      if (!usePollingOverride && (err.code === 'ENOSPC' || err.code === 'ENOTSUP')) {
+        console.warn(`[Watcher] Native watch failed (${err.code}). Falling back to polling...`);
+        watcher = startChokidar(true);
+      } else {
+        throw err;
+      }
+    }
 
     const handleChange = (absolutePath: string) => {
       bufferedPaths.add(absolutePath);
@@ -73,7 +94,25 @@ export function startHardkasWatcher() {
       }, 200);
     };
 
-    watcher.on('add', handleChange).on('change', handleChange).on('unlink', handleChange);
+    const setupEventHandlers = (w: chokidar.FSWatcher) => {
+      w.on('add', handleChange).on('change', handleChange).on('unlink', handleChange);
+    };
+
+    watcher.on('error', (err: any) => {
+      // In chokidar, errors might be emitted via the 'error' event rather than thrown during setup
+      if (!usePollingOverride && (err.code === 'ENOSPC' || err.code === 'ENOTSUP')) {
+        console.warn(`[Watcher] Native watch error (${err.code}). Restarting with polling...`);
+        watcher.close().then(() => {
+          watcher = startChokidar(true);
+          setupEventHandlers(watcher);
+        });
+      } else {
+        console.error(`[Watcher] Error: ${err.message}`);
+      }
+    });
+
+    setupEventHandlers(watcher);
+
   } catch (err: any) {
     console.warn(`⚠️  [Watcher] Failed to start chokidar: ${err.message}. Auto-refresh on changes might be disabled.`);
   }

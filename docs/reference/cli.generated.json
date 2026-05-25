@@ -1030,7 +1030,29 @@
       "description": "Local development and Igra-native environment tools",
       "usage": "hardkas dev [options] [command]",
       "arguments": [],
-      "options": [],
+      "options": [
+        {
+          "flags": "--once",
+          "description": "Initialize dev environment, run health checks, and exit (headless)",
+          "default": false,
+          "required": false,
+          "mandatory": false
+        },
+        {
+          "flags": "--headless",
+          "description": "Run headlessly (no UI open)",
+          "default": false,
+          "required": false,
+          "mandatory": false
+        },
+        {
+          "flags": "--json",
+          "description": "Output status as JSON",
+          "default": false,
+          "required": false,
+          "mandatory": false
+        }
+      ],
       "subcommands": [
         {
           "path": "hardkas dev doctor",
@@ -3352,6 +3374,31 @@
       ]
     },
     {
+      "path": "hardkas rebuild",
+      "name": "rebuild",
+      "aliases": [],
+      "description": "Reconstruct projections from committed canonical artifacts stable",
+      "usage": "hardkas rebuild [options]",
+      "arguments": [],
+      "options": [
+        {
+          "flags": "--from-artifacts",
+          "description": "Rebuild the query-store and localnet projection from artifacts",
+          "default": false,
+          "required": false,
+          "mandatory": false
+        },
+        {
+          "flags": "--json",
+          "description": "Output machine-readable JSON",
+          "default": false,
+          "required": false,
+          "mandatory": false
+        }
+      ],
+      "subcommands": []
+    },
+    {
       "path": "hardkas replay",
       "name": "replay",
       "aliases": [],
@@ -4022,6 +4069,31 @@
       "usage": "hardkas up [options]",
       "arguments": [],
       "options": [],
+      "subcommands": []
+    },
+    {
+      "path": "hardkas verify",
+      "name": "verify",
+      "aliases": [],
+      "description": "Verify artifact integrity and lineage continuity across the workspace stable",
+      "usage": "hardkas verify [options]",
+      "arguments": [],
+      "options": [
+        {
+          "flags": "--deep",
+          "description": "Perform a deep validation of signatures and causality",
+          "default": false,
+          "required": false,
+          "mandatory": false
+        },
+        {
+          "flags": "--json",
+          "description": "Output machine-readable JSON",
+          "default": false,
+          "required": false,
+          "mandatory": false
+        }
+      ],
       "subcommands": []
     },
     {

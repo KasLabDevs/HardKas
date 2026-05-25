@@ -17,7 +17,31 @@ export class HardkasWorkflow {
    * Executes a sequence of declarative steps and returns a definitive WorkflowArtifact.
    */
   public async run(options: WorkflowRunOptions): Promise<WorkflowArtifact> {
-    const workflowId = `wf_${Date.now()}_${Math.random().toString(36).substring(2, 9)}` as any;
+    const { calculateContentHash } = await import("@hardkas/artifacts");
+
+    const intentPayload = {
+      type: "hardkas.workflow.intent",
+      schemaVersion: "v1",
+      workflowSpec: options.steps,
+      normalizedInputs: {},
+      parentArtifacts: [], // In v1, workflows do not accept explicit parent inputs yet
+      policySnapshot: {
+        allowNetwork: this.sdk.policy.allowNetwork,
+        allowMainnet: this.sdk.policy.allowMainnet,
+        allowExternalWallet: this.sdk.policy.allowExternalWallet,
+        requireDryRun: this.sdk.policy.requireDryRun
+      },
+      capabilitySnapshot: {
+        mode: this.sdk.mode,
+        network: this.sdk.network
+      },
+      runtimeVersion: HARDKAS_VERSION,
+      workspaceSchemaVersion: "hardkas.workflow.v1"
+    };
+
+    const intentHash = calculateContentHash(intentPayload);
+    const workflowId = `wf_${intentHash.slice(0, 16)}`;
+
     const artifactSteps: WorkflowArtifact["steps"] = [];
     const producedArtifacts: string[] = [];
     const parentArtifacts: string[] = [];
@@ -36,6 +60,9 @@ export class HardkasWorkflow {
       const startedAt = new Date().toISOString();
       try {
         if (step.type === "simulate-failure") {
+          if (this.sdk.mode === "agent") {
+            throw new HardkasError("POLICY_DENIED", "simulate-failure is strictly prohibited in agent mode");
+          }
           throw new HardkasError("MOCKED_FAIL", "Simulated failure for contract tests");
         }
 
@@ -56,7 +83,8 @@ export class HardkasWorkflow {
           if (!options.dryRun) {
             await this.sdk.artifacts.write(lastPlan);
           }
-          producedArtifactId = lastPlan.artifactId || (lastPlan as any).contentHash;
+          const planRecord = lastPlan as unknown as Record<string, string>;
+          producedArtifactId = lastPlan.artifactId || planRecord.contentHash;
           if (producedArtifactId) producedArtifacts.push(producedArtifactId);
         } else if (step.type === "tx.simulate" || step.type === "tx.send") {
           if (!lastPlan) throw new Error("Cannot sign or send without a prior tx.plan step");
@@ -69,18 +97,21 @@ export class HardkasWorkflow {
           if (!options.dryRun) {
             await this.sdk.artifacts.write(lastSigned);
           }
-          const signedId = lastSigned.artifactId || (lastSigned as any).contentHash;
+          const signedRecord = lastSigned as unknown as Record<string, string>;
+          const signedId = lastSigned.artifactId || signedRecord.contentHash;
           if (signedId) producedArtifacts.push(signedId);
 
           if (step.type === "tx.simulate") {
             const { receipt } = await this.sdk.tx.simulate(lastSigned);
             if (!options.dryRun) await this.sdk.artifacts.write(receipt);
-            producedArtifactId = (receipt as any).artifactId || (receipt as any).contentHash;
+            const receiptRecord = receipt as unknown as Record<string, string>;
+            producedArtifactId = receiptRecord.artifactId || receiptRecord.contentHash;
             if (producedArtifactId) producedArtifacts.push(producedArtifactId);
           } else {
             const { receipt } = await this.sdk.tx.send(lastSigned);
             if (!options.dryRun) await this.sdk.artifacts.write(receipt);
-            producedArtifactId = (receipt as any).artifactId || (receipt as any).contentHash;
+            const receiptRecord = receipt as unknown as Record<string, string>;
+            producedArtifactId = receiptRecord.artifactId || receiptRecord.contentHash;
             if (producedArtifactId) producedArtifacts.push(producedArtifactId);
           }
         }
@@ -142,6 +173,8 @@ export class HardkasWorkflow {
     if (errorEnvelope) {
       artifact.errorEnvelope = errorEnvelope;
     }
+
+    artifact.contentHash = calculateContentHash(artifact, 1);
 
     if (!options.dryRun) {
       this.sdk.enforcePolicy("mutation", "Workflow Runtime saving artifact");

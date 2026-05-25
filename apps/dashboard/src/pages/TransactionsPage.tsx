@@ -48,6 +48,7 @@ export function TransactionsPage() {
   const formatRelativeTime = (timestamp: any): string => {
     const timeMs = typeof timestamp === "string" ? new Date(timestamp).getTime() : Number(timestamp);
     if (isNaN(timeMs)) return "—";
+    // eslint-disable-next-line react-hooks/purity
     const seconds = Math.floor((Date.now() - timeMs) / 1000);
     if (seconds < 5) return "just now";
     if (seconds < 60) return `${seconds}s ago`;

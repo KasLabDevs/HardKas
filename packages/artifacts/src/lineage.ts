@@ -23,8 +23,11 @@ export function verifyLineage(artifact: any, parent?: any, options: LineageOptio
 
   // 1. Structural Checks
   if (!lineage) {
-    const severity = options.strict ? "error" : "warning";
-    addIssue("MISSING_LINEAGE", "Artifact has no lineage metadata", severity);
+    const isWorkflow = artifact.schema === "hardkas.workflow.v1";
+    const severity = (options.strict && !isWorkflow) ? "error" : "warning";
+    if (!isWorkflow || options.strict) {
+       addIssue("MISSING_LINEAGE", "Artifact has no lineage metadata", severity);
+    }
     return { 
       ok: issues.every(i => i.severity !== "error"), 
       issues 

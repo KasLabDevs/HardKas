@@ -168,6 +168,7 @@ export function registerQueryCommands(program: Command) {
     .option("--lock-timeout <ms>", "Lock wait timeout in ms", "30000")
     .option("--json", "Output as JSON", false)
     .action(async (options) => {
+      if (options.json) UI.setJsonMode(true);
       const { withLock } = await import("@hardkas/core");
       const { handleLockError } = await import("../ui.js");
       try {
@@ -178,33 +179,33 @@ export function registerQueryCommands(program: Command) {
           wait: options.waitLock,
           timeoutMs: parseInt(options.lockTimeout)
         }, async () => {
-          if (!options.json) console.log("\n  Rebuilding query store index...");
+          if (!options.json) UI.logHuman("\n  Rebuilding query store index...");
           const engine = await getQueryEngine();
           const start = Date.now();
           const result = await engine.backend.rebuild({ strict: options.strict });
           
           if (options.json) {
-            console.log(JSON.stringify(result, null, 2));
+            UI.writeJson(result);
           } else {
             const elapsed = Date.now() - start;
-            console.log(`  ✓ Index rebuilt successfully in ${elapsed}ms.`);
-            console.log(`\n  Artifacts: ${result.artifacts.indexed}/${result.artifacts.scanned} indexed (${result.artifacts.corrupted} corrupted)`);
-            console.log(`  Events:    ${result.events.indexed}/${result.events.scanned} indexed (${result.events.corrupted} corrupted)`);
+            UI.logHuman(`  ✓ Index rebuilt successfully in ${elapsed}ms.`);
+            UI.logHuman(`\n  Artifacts: ${result.artifacts.indexed}/${result.artifacts.scanned} indexed (${result.artifacts.corrupted} corrupted)`);
+            UI.logHuman(`  Events:    ${result.events.indexed}/${result.events.scanned} indexed (${result.events.corrupted} corrupted)`);
             
             if (result.issues && result.issues.length > 0) {
-              console.log("\n  Corruption Issues:");
+              UI.logHuman("\n  Corruption Issues:");
               for (const issue of result.issues.slice(0, 10)) {
-                console.log(`    ${issue.severity === "error" ? pc.red("✗") : pc.yellow("⚠")} [${issue.code}] ${issue.message}`);
-                if (issue.path) console.log(`      At: ${issue.path}${issue.lineNumber ? ":" + issue.lineNumber : ""}`);
+                UI.logHuman(`    ${issue.severity === "error" ? pc.red("✗") : pc.yellow("⚠")} [${issue.code}] ${issue.message}`);
+                if (issue.path) UI.logHuman(`      At: ${issue.path}${issue.lineNumber ? ":" + issue.lineNumber : ""}`);
               }
-              if (result.issues.length > 10) console.log(`    ... and ${result.issues.length - 10} more.`);
+              if (result.issues.length > 10) UI.logHuman(`    ... and ${result.issues.length - 10} more.`);
             }
             
             if (!result.ok) {
-              console.log(`\n  ${UI.error("Rebuild failed or encountered corruption.")} Use --strict for fail-fast behavior.`);
+              UI.logHuman(`\n  ${UI.error("Rebuild failed or encountered corruption.")} Use --strict for fail-fast behavior.`);
               process.exitCode = 1;
             }
-            console.log("");
+            UI.logHuman("");
           }
         });
       } catch (e) { handleLockError(e); process.exitCode = 1; }

@@ -13,7 +13,11 @@ describe("Simnet Transaction Backend Mismatch Regression", () => {
 
   beforeAll(() => {
     if (fs.existsSync(SANDBOX_DIR)) {
-      fs.rmSync(SANDBOX_DIR, { recursive: true, force: true });
+      try {
+        fs.rmSync(SANDBOX_DIR, { recursive: true, force: true });
+      } catch (e) {
+        console.warn("Could not clean up sandbox directory in beforeAll:", e);
+      }
     }
     fs.mkdirSync(SANDBOX_DIR, { recursive: true });
   });

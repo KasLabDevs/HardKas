@@ -8,6 +8,7 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import { computeQueryHash } from "../serialize.js";
 import { explainTransition, explainOrphan } from "../explain.js";
+import { deterministicCompare } from "@hardkas/core";
 import type {
   QueryAdapter,
   QueryRequest,
@@ -158,7 +159,7 @@ export class LineageQueryAdapter implements QueryAdapter {
       const seqA = a.from.sequence ?? 0;
       const seqB = b.from.sequence ?? 0;
       if (seqA !== seqB) return seqA - seqB;
-      return a.from.contentHash.localeCompare(b.from.contentHash);
+      return deterministicCompare(a.from.contentHash, b.from.contentHash);
     });
 
     const paged = transitions.slice(request.offset, request.offset + request.limit);
@@ -208,7 +209,7 @@ export class LineageQueryAdapter implements QueryAdapter {
     }
 
     // Sort by contentHash for determinism
-    orphans.sort((a, b) => a.node.contentHash.localeCompare(b.node.contentHash));
+    orphans.sort((a, b) => deterministicCompare(a.node.contentHash, b.node.contentHash));
 
     const paged = orphans.slice(request.offset, request.offset + request.limit);
 

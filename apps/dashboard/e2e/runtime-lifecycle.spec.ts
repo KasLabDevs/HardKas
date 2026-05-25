@@ -75,8 +75,9 @@ test.describe('HardKAS P1.11 - Semantic Runtime States', () => {
       if (process.platform === 'win32') {
         try {
           execSync(`taskkill /pid ${devServerProcess.pid} /t /f`, { stdio: 'ignore' });
-        } catch (e) {}
-      } else {
+        } catch (e) {
+          /* ignore */
+        }
         devServerProcess.kill();
       }
     }
@@ -164,7 +165,9 @@ test.describe('HardKAS P1.11 - Semantic Runtime States', () => {
     // Force a query store rebuild so cache aligns with the corruption (ignores expected non-zero exit code)
     try {
       execSync('npx tsx ' + CLI_PATH + ' query store rebuild', { cwd: workspaceRoot, stdio: 'ignore' });
-    } catch (e) {}
+    } catch (e) {
+      /* ignore */
+    }
 
     // Open dashboard
     await page.goto(baseUrl + '/');
@@ -194,7 +197,9 @@ test.describe('HardKAS P1.11 - Semantic Runtime States', () => {
     if (process.platform === 'win32') {
       try {
         execSync(`taskkill /pid ${devServerProcess.pid} /t /f`, { stdio: 'ignore' });
-      } catch (e) {}
+      } catch (e) {
+        /* ignore */
+      }
     } else {
       devServerProcess.kill();
     }
@@ -250,7 +255,9 @@ test.describe('HardKAS P1.11 - Semantic Runtime States', () => {
     if (process.platform === 'win32') {
       try {
         execSync(`taskkill /pid ${devServerProcess.pid} /t /f`, { stdio: 'ignore' });
-      } catch (e) {}
+      } catch (e) {
+        /* ignore */
+      }
     } else {
       devServerProcess.kill();
     }
