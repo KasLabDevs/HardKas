@@ -13,6 +13,7 @@ import {
   buildPaymentPlan,
   signTxPlanArtifact
 } from "@hardkas/sdk";
+import { systemRuntimeContext } from "@hardkas/core";
 import fs from "node:fs";
 import path from "node:path";
 
@@ -93,7 +94,8 @@ async function main() {
       address: bob.address!
     },
     amountSompi: amount,
-    plan: builderPlan
+    plan: builderPlan,
+    ctx: systemRuntimeContext
   });
   addTrace("build-plan", "completed", { planId: planArtifact.planId });
 

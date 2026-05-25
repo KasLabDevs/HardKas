@@ -1,11 +1,11 @@
 {
   "schema": "hardkas.txPlan",
-  "hardkasVersion": "0.2.2-alpha",
+  "hardkasVersion": "0.6.0-alpha",
   "version": "1.0.0-alpha",
-  "createdAt": "2026-05-10T20:17:17.675Z",
-  "networkId": "simnet",
+  "hashVersion": 3,
+  "createdAt": "2026-05-25T13:40:53.359Z",
+  "networkId": "simulated",
   "mode": "simulated",
-  "planId": "plan-1778444237675-zcxbd",
   "from": {
     "address": "kaspa:sim_alice",
     "accountName": "alice",
@@ -37,5 +37,6 @@
     "address": "kaspa:sim_alice",
     "amountSompi": "8999999650"
   },
-  "contentHash": "dbbd16ddad4fbea7f86cebc5761a26b83203b00ddb53c64e847237e5a1bf71b0"
+  "planId": "plan-b5856ae64f92a53d",
+  "contentHash": "b5856ae64f92a53da7d13463e2256f16d86845dfe07c82915f303561dcc8176f"
 }

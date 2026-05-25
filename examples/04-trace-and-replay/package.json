@@ -10,6 +10,7 @@
     "@hardkas/sdk": "workspace:*",
     "@hardkas/artifacts": "workspace:*",
     "@hardkas/config": "workspace:*",
+    "@hardkas/core": "workspace:*",
     "tsx": "^4.19.2",
     "typescript": "^5.7.2"
   }

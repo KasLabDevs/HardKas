@@ -135,6 +135,9 @@ importers:
       '@hardkas/config':
         specifier: workspace:*
         version: link:../../packages/config
+      '@hardkas/core':
+        specifier: workspace:*
+        version: link:../../packages/core
       '@hardkas/sdk':
         specifier: workspace:*
         version: link:../../packages/sdk

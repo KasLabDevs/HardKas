@@ -1,20 +1,20 @@
 {
   "schema": "hardkas.txTrace",
   "hardkasVersion": "0.6.0-alpha",
-  "networkId": "simnet",
+  "networkId": "simulated",
   "mode": "simulated",
-  "createdAt": "2026-05-10T20:17:17.676Z",
-  "txId": "simulated-plan-1778444237675-zcxbd-1778444237676",
+  "createdAt": "2026-05-25T13:40:53.360Z",
+  "txId": "simulated-plan-b5856ae64f92a53d-tx",
   "steps": [
     {
       "phase": "resolve-utxos",
       "status": "start",
-      "timestamp": "2026-05-10T20:17:17.674Z"
+      "timestamp": "2026-05-25T13:40:53.358Z"
     },
     {
       "phase": "resolve-utxos",
       "status": "completed",
-      "timestamp": "2026-05-10T20:17:17.675Z",
+      "timestamp": "2026-05-25T13:40:53.359Z",
       "details": {
         "count": 1,
         "totalSompi": "10000000000"
@@ -23,49 +23,49 @@
     {
       "phase": "build-plan",
       "status": "start",
-      "timestamp": "2026-05-10T20:17:17.675Z"
+      "timestamp": "2026-05-25T13:40:53.359Z"
     },
     {
       "phase": "build-plan",
       "status": "completed",
-      "timestamp": "2026-05-10T20:17:17.676Z",
+      "timestamp": "2026-05-25T13:40:53.360Z",
       "details": {
-        "planId": "plan-1778444237675-zcxbd"
+        "planId": "plan-b5856ae64f92a53d"
       }
     },
     {
       "phase": "estimate",
       "status": "start",
-      "timestamp": "2026-05-10T20:17:17.676Z"
+      "timestamp": "2026-05-25T13:40:53.360Z"
     },
     {
       "phase": "estimate",
       "status": "completed",
-      "timestamp": "2026-05-10T20:17:17.676Z"
+      "timestamp": "2026-05-25T13:40:53.360Z"
     },
     {
       "phase": "sign",
       "status": "start",
-      "timestamp": "2026-05-10T20:17:17.676Z"
+      "timestamp": "2026-05-25T13:40:53.360Z"
     },
     {
       "phase": "sign",
       "status": "completed",
-      "timestamp": "2026-05-10T20:17:17.676Z",
+      "timestamp": "2026-05-25T13:40:53.360Z",
       "details": {
-        "signedId": "signed-1778444237676",
-        "txId": "simulated-plan-1778444237675-zcxbd-1778444237676"
+        "signedId": "signed-7c6a7b235056e431",
+        "txId": "simulated-plan-b5856ae64f92a53d-tx"
       }
     },
     {
       "phase": "finalize",
       "status": "start",
-      "timestamp": "2026-05-10T20:17:17.676Z"
+      "timestamp": "2026-05-25T13:40:53.360Z"
     },
     {
       "phase": "finalize",
       "status": "completed",
-      "timestamp": "2026-05-10T20:17:17.676Z"
+      "timestamp": "2026-05-25T13:40:53.360Z"
     }
   ]
 }
