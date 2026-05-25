@@ -11,11 +11,12 @@ describe("CLI JSON Contract", () => {
     tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), "hardkas-json-"));
     const cmd = path.resolve(__dirname, "../src/index.ts");
     await execa("npx", ["tsx", cmd, "init"], { cwd: tmpDir });
-  });
+  }, 30000);
 
   afterEach(async () => {
-    await fs.rm(tmpDir, { recursive: true, force: true });
-  });
+    // maxRetries handles Windows EBUSY when tsx child process still holds a handle
+    await fs.rm(tmpDir, { recursive: true, force: true, maxRetries: 5, retryDelay: 200 });
+  }, 15000);
 
   const runCli = async (args: string[]) => {
     const cmd = path.resolve(__dirname, "../src/index.ts");
