@@ -23,8 +23,8 @@ node scripts/demo.mjs
 3. **Real Execution**: `hardkas workflow run demo-transfer --json`
    Executes the workflow, writes verifiable append-only JSON artifacts to `.hardkas/artifacts/`, and projects the results onto the SQLite read model.
 
-4. **Replay Verification**: `hardkas replay last --json`
-   Mathematically proves that the deterministic execution trace of the last workflow produces identical output states and signatures, guaranteeing causal continuity.
+4. **Replay Verification**: `hardkas replay verify --json`
+   Verifies that the deterministic execution traces of workflow artifacts produce identical output states and signatures, guaranteeing causal continuity.
 
 5. **Simulated Wipe**: `rm .hardkas/store.db`
    Simulates a catastrophic disk failure or data corruption by erasing the SQLite projection state.

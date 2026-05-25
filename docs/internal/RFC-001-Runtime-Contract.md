@@ -112,7 +112,7 @@ HardKAS enforces a strict separation between policies and capabilities:
 ## 10. Strict JSON/Stdout Contract
 
 All CLI commands intended for programmatic use must negotiate their schema version. Pipelines, CI, dashboards, and external tooling depend on this stability.
-- Example: `hardkas tx build --json --schema=v1`
+- Example: `hardkas tx send --json`
 
 ## 11. Compatibility Guarantees
 
