@@ -22,7 +22,7 @@ export async function runWorkflowRun(file: string, options: { workspaceRoot?: st
       if (found.length > 1) {
         throw new Error(`Ambiguous workflow name '${file}'. Found multiple matches:\n- ${found.join("\n- ")}`);
       } else if (found.length === 1) {
-        fullPath = found[0];
+        fullPath = found[0]!;
       }
     }
 

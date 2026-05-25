@@ -8,6 +8,7 @@ export interface ArtifactVerifyOptions {
   json?: boolean;
   recursive?: boolean;
   strict?: boolean;
+  deep?: boolean;
   workspaceRoot: string;
 }
 
