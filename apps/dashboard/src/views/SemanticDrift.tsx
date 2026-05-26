@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react';
-import { Activity, AlertTriangle, CheckCircle2 } from 'lucide-react';
+import { Activity, AlertTriangle, CheckCircle2, HelpCircle } from 'lucide-react';
+
+type DriftState = 'GREEN' | 'YELLOW' | 'RED' | 'GREY';
 
 interface DriftSource {
   name: string;
@@ -12,7 +14,7 @@ export function SemanticDrift() {
   const [bundleAvailable, setBundleAvailable] = useState(false);
   const [storeAvailable, setStoreAvailable] = useState(false);
   const [telemetryAvailable, setTelemetryAvailable] = useState(false);
-  const [driftDetected, setDriftDetected] = useState(false);
+  const [driftState, setDriftState] = useState<DriftState>('GREY');
   const [sources, setSources] = useState<DriftSource[]>([]);
   const [apiOffline, setApiOffline] = useState(false);
 
@@ -48,10 +50,17 @@ export function SemanticDrift() {
       setStoreAvailable(storeOk);
       setTelemetryAvailable(telOk);
 
-      // Drift is detected if we have sources that disagree.
-      // For now: if bundle exists but query-store doesn't, that's an asymmetry worth flagging.
+      // Derive drift state from truth source agreement
       const hasDrift = bundleOk && !storeOk;
-      setDriftDetected(hasDrift);
+      const hasPartialSources = [bundleOk, storeOk, telOk].some(Boolean) && ![bundleOk, storeOk, telOk].every(Boolean);
+
+      if (hasDrift) {
+        setDriftState('RED');
+      } else if (hasPartialSources) {
+        setDriftState('YELLOW');
+      } else {
+        setDriftState('GREEN');
+      }
 
       setSources([
         { name: 'Semantic Bundle', available: bundleOk, note: bundleOk ? bundle.source : 'Not found' },
@@ -64,6 +73,7 @@ export function SemanticDrift() {
     }).catch((err) => {
       console.error("Failed to connect to Hono dev-server observability API:", err);
       setApiOffline(true);
+      setDriftState('GREY');
       setLoading(false);
     });
   }, []);
@@ -91,7 +101,7 @@ export function SemanticDrift() {
         If there is any disagreement, semantic drift is detected.
       </p>
 
-      {driftDetected ? (
+      {driftState === 'RED' && (
         <div className="bg-red-500/10 border border-red-500/30 p-6 rounded-lg">
           <div className="flex items-center gap-3 text-red-400 mb-4">
             <AlertTriangle className="h-8 w-8" />
@@ -102,7 +112,22 @@ export function SemanticDrift() {
             HardKAS recommends reconciliation via replay or rebuild.
           </p>
         </div>
-      ) : (
+      )}
+
+      {driftState === 'YELLOW' && (
+        <div className="bg-amber-500/10 border border-amber-500/30 p-6 rounded-lg">
+          <div className="flex items-center gap-3 text-amber-400 mb-4">
+            <AlertTriangle className="h-8 w-8" />
+            <h3 className="text-2xl font-bold uppercase tracking-widest">Partial Source Coverage</h3>
+          </div>
+          <p className="text-amber-400/80">
+            Some truth sources are available but not all. Drift status is ambiguous — full verification
+            requires all sources to be present.
+          </p>
+        </div>
+      )}
+
+      {driftState === 'GREEN' && (
         <div className="bg-emerald-500/10 border border-emerald-500/30 p-6 rounded-lg">
           <div className="flex items-center gap-3 text-emerald-400 mb-4">
             <CheckCircle2 className="h-8 w-8" />
@@ -114,9 +139,25 @@ export function SemanticDrift() {
         </div>
       )}
 
+      {driftState === 'GREY' && (
+        <div className="bg-zinc-500/10 border border-zinc-500/30 p-6 rounded-lg">
+          <div className="flex items-center gap-3 text-zinc-400 mb-4">
+            <HelpCircle className="h-8 w-8" />
+            <h3 className="text-2xl font-bold uppercase tracking-widest">Drift Status Unknown</h3>
+          </div>
+          <p className="text-zinc-400/80">
+            Unable to determine drift status. The observability API is unreachable — no truth sources
+            can be verified until the server is online.
+          </p>
+        </div>
+      )}
+
       <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-5">
         <h3 className="text-sm font-semibold text-white mb-4 uppercase tracking-wider">Truth Sources</h3>
         <div className="space-y-3">
+          {sources.length === 0 && apiOffline && (
+            <div className="text-zinc-600 text-sm italic">No source data available — API offline</div>
+          )}
           {sources.map(s => (
             <div key={s.name} className="flex items-center justify-between text-sm">
               <div className="flex items-center gap-3">

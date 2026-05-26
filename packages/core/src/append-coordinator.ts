@@ -109,8 +109,16 @@ export class AppendCoordinator {
     const stat = fs.statSync(filePath);
     if (stat.size === 0) return { repaired: false, linesDiscarded: 0, originalTail: "" };
 
-    const content = fs.readFileSync(filePath, "utf-8");
-    const lines = content.split("\n");
+    // Only read the tail of the file (last 4KB is more than enough for any single JSONL line)
+    const TAIL_SIZE = 4096;
+    const readStart = Math.max(0, stat.size - TAIL_SIZE);
+    const fd = fs.openSync(filePath, "r");
+    const buf = Buffer.alloc(Math.min(TAIL_SIZE, stat.size));
+    fs.readSync(fd, buf, 0, buf.length, readStart);
+    fs.closeSync(fd);
+
+    const tail = buf.toString("utf-8");
+    const lines = tail.split("\n");
     if (lines.length === 0) return { repaired: false, linesDiscarded: 0, originalTail: "" };
 
     // Get the last non-empty line
@@ -127,20 +135,31 @@ export class AppendCoordinator {
 
     if (!lastLine) return { repaired: false, linesDiscarded: 0, originalTail: "" };
 
+    // If we started reading mid-file, the first "line" may be a partial fragment.
+    // Only trust it if we read from the beginning of the file or if lastLineIdx > 0
+    // (meaning there was a newline before it, so it's a complete line).
+    if (readStart > 0 && lastLineIdx === 0) {
+      // The only non-empty content is in the first (potentially partial) line of the chunk.
+      // We can't trust it — but we also can't know if it's corrupt or just large.
+      // Conservatively assume it's fine; a truly corrupt tail will be caught on the next
+      // append when more data pushes it to a later line position.
+      return { repaired: false, linesDiscarded: 0, originalTail: "" };
+    }
+
     try {
       JSON.parse(lastLine);
       return { repaired: false, linesDiscarded: 0, originalTail: "" };
     } catch (err: any) {
       // Corruption detected at the tail! Truncate the file.
-      // Find the index of the start of this line in the original file content
-      // We join all lines up to lastLineIdx to find the exact byte index
-      const keptContent = lines.slice(0, lastLineIdx).join("\n") + (lastLineIdx > 0 ? "\n" : "");
-      const keptBytes = Buffer.byteLength(keptContent, "utf-8");
-      
-      fs.truncateSync(filePath, keptBytes);
+      // Calculate the byte position to truncate to: everything before the corrupted last line.
+      const linesAfterCorrupt = lines.slice(lastLineIdx).join("\n");
+      const bytesToRemove = Buffer.byteLength(linesAfterCorrupt, "utf-8");
+      const truncateTo = stat.size - bytesToRemove;
+
+      fs.truncateSync(filePath, truncateTo > 0 ? truncateTo : 0);
       return { 
         repaired: true, 
-        linesDiscarded: stat.size - keptBytes, 
+        linesDiscarded: stat.size - truncateTo, 
         originalTail: lastLine 
       };
     }

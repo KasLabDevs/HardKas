@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { applySimulatedPayment } from "../src/transactions.js";
 import { createInitialLocalnetState } from "../src/state.js";
-import { RuntimeContext } from "@hardkas/core";
+import { RuntimeContext, globalTelemetry } from "@hardkas/core";
 
 describe("Deterministic Replay Injection", () => {
   let mockClock: number;
@@ -19,7 +19,8 @@ describe("Deterministic Replay Injection", () => {
     ids: {
       execution: () => `exec_${executionIdCount++}`,
       workflow: () => `wf_${workflowIdCount++}`
-    }
+    },
+    telemetry: globalTelemetry
   };
 
   beforeEach(() => {

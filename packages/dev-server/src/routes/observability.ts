@@ -211,7 +211,6 @@ observabilityRoutes.get("/lineage", async (c) => {
   // Priority 2: query-store
   if (queryBackend.isReady()) {
     try {
-      const db = queryBackend.store.getDatabase();
       const allArtifacts = await queryBackend.findArtifacts();
       const nodes = allArtifacts.map(a => ({
         id: a.artifactId,
@@ -219,7 +218,7 @@ observabilityRoutes.get("/lineage", async (c) => {
         position: { x: 0, y: 0 }
       }));
       
-      const dbEdges = db.prepare("SELECT parent_artifact_id as source, child_artifact_id as target FROM lineage_edges").all() as { source: string, target: string }[];
+      const dbEdges = await queryBackend.executeRawSql("SELECT parent_artifact_id as source, child_artifact_id as target FROM lineage_edges") as { source: string, target: string }[];
       const edges = dbEdges.map(e => ({
         id: `${e.source}->${e.target}`,
         source: e.source,
@@ -670,6 +669,11 @@ observabilityRoutes.get("/dashboard-health", async (c) => {
      }
   } catch {}
 
+  const warnings: string[] = [];
+  if (lockStatus !== "OK") warnings.push("Stale or ambiguous lock files detected in workspace.");
+  if (projectionDrift) warnings.push("Projection store.db drift detected or is not synced.");
+  if (jsonlCorrupt) warnings.push("Event stream logs are corrupt.");
+
   return c.json({
     state,
     lastReconciliationTime: now, // Simplification: we assume API time is reconciliation time if it's polling
@@ -679,6 +683,8 @@ observabilityRoutes.get("/dashboard-health", async (c) => {
     rotatedSegmentStatus: `${rotatedSegments} segments archived`,
     currentRuntimeContractMode: "STRICT_CANONICAL",
     anomalyCount,
-    apiConnected: true
+    apiConnected: true,
+    workspaceRoot: rootDir,
+    warnings
   });
 });

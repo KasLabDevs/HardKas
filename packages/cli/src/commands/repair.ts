@@ -124,7 +124,7 @@ async function runRepair(opts: { json?: boolean; force?: boolean }) {
        UI.logHuman(`${pc.yellow("⚠️")} SQLite projection is corrupt or stale.`);
        if (opts.force) {
           // Rebuild
-          store.close();
+          store.disconnect();
           await fs.unlink(dbPath);
           UI.logHuman(`${pc.green("✅")} Deleted corrupt SQLite projection. It will be rebuilt on next start.`);
           repairedCount++;
@@ -132,7 +132,7 @@ async function runRepair(opts: { json?: boolean; force?: boolean }) {
           UI.logHuman(`   Run with --force to rebuild SQLite projection.`);
        }
     } else {
-       store.close();
+       store.disconnect();
     }
   } catch {
     // DB missing or schema error, safe to ignore

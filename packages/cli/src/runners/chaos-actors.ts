@@ -35,7 +35,7 @@ export const LockHell: ChaosActor = async (ctx) => {
   let stdout = "";
   let stderr = "";
   try {
-     const cliPath = process.argv[1];
+     const cliPath = process.argv[1] || "";
      const res = await execa(process.execPath, [cliPath, "rebuild", "--from-artifacts"], { cwd: ctx.workspaceDir, reject: false });
      stdout = res.stdout;
      stderr = res.stderr;
@@ -64,7 +64,7 @@ export const RotBot: ChaosActor = async (ctx) => {
   await fs.appendFile(target, corruption);
 
   try {
-     const cliPath = process.argv[1];
+     const cliPath = process.argv[1] || "";
      const res = await execa(process.execPath, [cliPath, "doctor"], { cwd: ctx.workspaceDir, reject: false });
      stdout = res.stdout;
      stderr = res.stderr;
@@ -91,7 +91,7 @@ export const DriftHunter: ChaosActor = async (ctx) => {
   }
 
   try {
-     const cliPath = process.argv[1];
+     const cliPath = process.argv[1] || "";
      const res = await execa(process.execPath, [cliPath, "doctor"], { cwd: ctx.workspaceDir, reject: false });
      stdout = res.stdout;
      stderr = res.stderr;
@@ -111,7 +111,7 @@ export const HumanChaos: ChaosActor = async (ctx) => {
   let exitCode = 0;
 
   try {
-     const cliPath = process.argv[1];
+     const cliPath = process.argv[1] || "";
      const res = await execa(process.execPath, [cliPath, "this-does-not-exist"], { cwd: ctx.workspaceDir, reject: false });
      stdout = res.stdout;
      stderr = res.stderr;

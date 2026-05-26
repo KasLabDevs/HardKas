@@ -101,7 +101,7 @@ export function Sidebar() {
       <div className="p-4 border-t border-[var(--border-muted)] bg-zinc-950/20">
         <div className="flex items-center gap-2 text-[10px] text-zinc-500 font-mono">
           <Activity size={12} className="text-zinc-500 animate-pulse" />
-          <span>v0.6.0-alpha</span>
+          <span>v0.6.1-alpha</span>
         </div>
       </div>
     </aside>

@@ -34,14 +34,15 @@ const PROFILES: Record<string, { actor: string, weight: number }[]> = {
 };
 
 function selectActor(seed: number, profileName: string): string {
-  const profile = PROFILES[profileName] || PROFILES.smoke;
+  const profile = PROFILES[profileName] || PROFILES.smoke || [];
+  if (profile.length === 0) return "LockHell";
   const totalWeight = profile.reduce((acc, p) => acc + p.weight, 0);
   let r = seed % totalWeight;
   for (const p of profile) {
     if (r < p.weight) return p.actor;
     r -= p.weight;
   }
-  return profile[0].actor;
+  return profile[0]!.actor;
 }
 
 export async function runChaosEngine(options: any) {

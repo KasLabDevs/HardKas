@@ -10,7 +10,7 @@ describe("Multi-process Abuse Testing", () => {
   beforeAll(async () => {
     workspaceDir = path.join(process.cwd(), ".fuzz-workspace-" + Date.now());
     await fs.mkdir(workspaceDir, { recursive: true });
-    await fs.mkdir(path.join(workspaceDir, ".hardkas"), { recursive: true });
+    await fs.mkdir(path.join(workspaceDir, ".hardkas", "locks"), { recursive: true });
   });
 
   afterAll(async () => {
@@ -58,7 +58,7 @@ describe("Multi-process Abuse Testing", () => {
         const file = path.join(process.cwd(), "events.jsonl");
         for(let i=0; i<100; i++) {
            const id = process.argv[2] + "-" + i;
-           const payload = JSON.stringify({ event: "TEST", id }) + "\\n";
+           const payload = JSON.stringify({ event: "TEST", id }) + "\n";
            AppendCoordinator.appendAtomic(file, payload, process.cwd());
         }
      `;
@@ -80,12 +80,12 @@ describe("Multi-process Abuse Testing", () => {
      const jsWorker = `
        import fs from "node:fs";
        import path from "node:path";
-       const lockFile = path.join(process.cwd(), ".hardkas", "append.lock");
+       const lockFile = path.join(process.cwd(), ".hardkas", "locks", "append-events.jsonl.lock");
        const target = path.join(process.cwd(), "events.jsonl");
        for(let i=0; i<50; i++) {
           try {
              fs.writeFileSync(lockFile, process.pid.toString(), { flag: "wx" });
-             fs.appendFileSync(target, '{"id":' + i + '}\\n');
+             fs.appendFileSync(target, '{"id":' + i + '}\n');
              fs.unlinkSync(lockFile);
           } catch(e) {
              // locked
@@ -99,7 +99,7 @@ describe("Multi-process Abuse Testing", () => {
      const [res1, res2] = await Promise.all([p1, p2]);
      
      const events = await fs.readFile(path.join(workspaceDir, "events.jsonl"), "utf-8").catch(() => "");
-     const lines = events.trim().split("\\n").filter(Boolean);
+     const lines = events.trim().split("\n").filter(Boolean);
      
      // Ensure no interleaved lines (every line starts with { and ends with })
      for (const line of lines) {
@@ -112,11 +112,11 @@ describe("Multi-process Abuse Testing", () => {
   test("Kill during append simulates tail recovery", async () => {
       // Simulate corrupt tail
       const eventsPath = path.join(workspaceDir, "events.jsonl");
-      await fs.writeFile(eventsPath, '{"id": 1}\\n{"id": 2, "broken');
+      await fs.writeFile(eventsPath, '{"id": 1}\n{"id": 2, "broken');
       
       // Attempt append
       expect(() => {
-        AppendCoordinator.appendAtomic(eventsPath, '{"id": 3}\\n', workspaceDir);
+        AppendCoordinator.appendAtomic(eventsPath, '{"id": 3}\n', workspaceDir);
       }).not.toThrow();
       
       const recovered = await fs.readFile(eventsPath, "utf-8");

@@ -60,7 +60,7 @@ importers:
   apps/dashboard:
     dependencies:
       '@hardkas/core':
-        specifier: workspace:0.6.0-alpha
+        specifier: workspace:0.6.1-alpha
         version: link:../../packages/core
       '@hardkas/react':
         specifier: workspace:*
@@ -277,7 +277,7 @@ importers:
         specifier: workspace:*
         version: link:../../packages/react
       '@hardkas/simulator-adapters':
-        specifier: workspace:0.6.0-alpha
+        specifier: workspace:0.6.1-alpha
         version: link:../../packages/simulator-adapters
       '@tanstack/react-query':
         specifier: ^5.61.5
@@ -887,13 +887,13 @@ importers:
   packages/simulator-adapters:
     dependencies:
       '@hardkas/bridge-local':
-        specifier: workspace:0.6.0-alpha
+        specifier: workspace:0.6.1-alpha
         version: link:../bridge-local
       '@hardkas/core':
         specifier: workspace:*
         version: link:../core
       '@hardkas/react':
-        specifier: workspace:0.6.0-alpha
+        specifier: workspace:0.6.1-alpha
         version: link:../react
       '@hardkas/sdk':
         specifier: workspace:*
