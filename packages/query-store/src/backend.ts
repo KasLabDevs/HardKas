@@ -101,9 +101,9 @@ export interface QueryBackend {
   getStoreStatus(): Promise<string>;
   doctor(): Promise<any>;
   migrate(): Promise<{ applied: number }>;
-  sync(options?: { strict?: boolean }): Promise<any>;
-  syncPaths(paths: string[], options?: { strict?: boolean }): Promise<any>;
-  rebuild(options?: { strict?: boolean }): Promise<any>;
+  sync(options?: { strict?: boolean; cwd?: string }): Promise<any>;
+  syncPaths(paths: string[], options?: { strict?: boolean; cwd?: string }): Promise<any>;
+  rebuild(options?: { strict?: boolean; cwd?: string }): Promise<any>;
   /** 
    * @deprecated BOUNDARY DINÁMICO: Este es el ÚNICO boundary dinámico aceptado en el sistema
    * que puede retornar `any[]` de forma intencional (SQLite devuelve filas genéricas).
@@ -301,7 +301,7 @@ export class SqliteQueryBackend implements QueryBackend {
     return this.store.migrate();
   }
 
-  async rebuild(options?: { strict?: boolean }): Promise<any> {
+  async rebuild(options?: { strict?: boolean; cwd?: string }): Promise<any> {
     // Ensure schema is up to date before rebuild
     this.store.migrate();
     
@@ -310,7 +310,7 @@ export class SqliteQueryBackend implements QueryBackend {
     return indexer.rebuild();
   }
 
-  async sync(options?: { strict?: boolean }): Promise<any> {
+  async sync(options?: { strict?: boolean; cwd?: string }): Promise<any> {
     // Ensure schema is up to date before sync
     this.store.migrate();
 
@@ -319,7 +319,7 @@ export class SqliteQueryBackend implements QueryBackend {
     return indexer.sync();
   }
 
-  async syncPaths(paths: string[], options?: { strict?: boolean }): Promise<any> {
+  async syncPaths(paths: string[], options?: { strict?: boolean; cwd?: string }): Promise<any> {
     this.store.migrate();
     const { HardkasIndexer } = await import("./indexer.js");
     const indexer = new HardkasIndexer(this.store.getDatabase(), options);

@@ -82,7 +82,7 @@ export class MigrationRunner {
         m.up(this.db);
         
         const stmt = this.db.prepare("INSERT INTO hardkas_migrations (version, name, checksum, applied_at) VALUES (?, ?, ?, ?)");
-        stmt.run(m.version, m.name, m.checksum, new Date().toISOString());
+        stmt.run(m.version, m.name, m.checksum, new Date().toISOString()); // hardkas-determinism-allow: migrations applied_at metadata
         
         this.db.exec("COMMIT;");
         appliedCount++;
@@ -116,7 +116,7 @@ export class MigrationRunner {
     for (const m of migrations) {
       if (m.version <= knownVersion) {
         const stmt = this.db.prepare("INSERT INTO hardkas_migrations (version, name, checksum, applied_at) VALUES (?, ?, ?, ?)");
-        stmt.run(m.version, m.name, m.checksum, new Date().toISOString());
+        stmt.run(m.version, m.name, m.checksum, new Date().toISOString()); // hardkas-determinism-allow: legacy bootstrap metadata
       }
     }
     return true;
@@ -273,6 +273,55 @@ export const MIGRATIONS: Migration[] = [
         CREATE INDEX IF NOT EXISTS idx_events_timestamp ON events(timestamp);
         CREATE INDEX IF NOT EXISTS idx_events_file_path ON events(file_path);
         CREATE INDEX IF NOT EXISTS idx_events_global_offset ON events(global_offset);
+      `);
+    }
+  },
+  {
+    version: 3,
+    name: "lineage_closure_and_scale_indices",
+    checksum: "hardkas_v3_lineage_scale",
+    up: (db) => {
+      db.exec(`
+        -- Lineage closure table: transitive ancestor/descendant relationships
+        -- Enables O(1) "is X an ancestor of Y?" queries without recursive CTEs
+        CREATE TABLE IF NOT EXISTS lineage_closure (
+          ancestor_id TEXT NOT NULL,
+          descendant_id TEXT NOT NULL,
+          depth INTEGER NOT NULL DEFAULT 1,
+          path_hash TEXT,
+          created_at TEXT,
+          PRIMARY KEY (ancestor_id, descendant_id),
+          FOREIGN KEY (ancestor_id) REFERENCES artifacts(artifact_id) ON DELETE CASCADE,
+          FOREIGN KEY (descendant_id) REFERENCES artifacts(artifact_id) ON DELETE CASCADE
+        );
+
+        CREATE INDEX IF NOT EXISTS idx_closure_ancestor ON lineage_closure(ancestor_id);
+        CREATE INDEX IF NOT EXISTS idx_closure_descendant ON lineage_closure(descendant_id);
+        CREATE INDEX IF NOT EXISTS idx_closure_depth ON lineage_closure(depth);
+
+        -- Add depth column to lineage_edges for direct edge depth tracking
+        ALTER TABLE lineage_edges ADD COLUMN depth INTEGER NOT NULL DEFAULT 1;
+
+        -- File mtime index for incremental sync: skip unchanged files
+        CREATE INDEX IF NOT EXISTS idx_artifacts_file_mtime_ms ON artifacts(file_mtime_ms);
+
+        -- Lineage statistics metadata view for scale monitoring
+        CREATE TABLE IF NOT EXISTS lineage_stats (
+          stat_key TEXT PRIMARY KEY,
+          stat_value TEXT NOT NULL,
+          updated_at TEXT NOT NULL
+        );
+
+        -- Pruning history: track what was pruned and when
+        CREATE TABLE IF NOT EXISTS prune_history (
+          prune_id TEXT PRIMARY KEY,
+          pruned_at TEXT NOT NULL,
+          artifacts_pruned INTEGER NOT NULL DEFAULT 0,
+          traces_pruned INTEGER NOT NULL DEFAULT 0,
+          events_pruned INTEGER NOT NULL DEFAULT 0,
+          lineage_roots_preserved INTEGER NOT NULL DEFAULT 0,
+          total_bytes_freed INTEGER NOT NULL DEFAULT 0
+        );
       `);
     }
   }

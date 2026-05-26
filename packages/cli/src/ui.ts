@@ -163,9 +163,15 @@ export const UI = {
   },
 
   dryRun(message?: string) {
-    console.log(pc.yellow(`\n  [DRY RUN]`));
-    console.log(pc.white(`  No persistent artifacts were written.`));
-    console.log(pc.dim(`\n  Use:\n    ${pc.white("--yes")}\n  to persist deterministic artifacts.\n`));
+    // Always write to stderr — must not pollute stdout (which may carry JSON)
+    console.error(pc.yellow(`\n  [DRY RUN]`));
+    console.error(pc.white(`  No persistent artifacts were written.`));
+    console.error(pc.dim(`\n  Use:\n    ${pc.white("--yes")}\n  to persist deterministic artifacts.\n`));
+  },
+
+  writeError(msg: string) {
+    // Unconditionally writes to stderr — safe in both JSON and human mode
+    console.error(msg);
   }
 };
 
@@ -181,11 +187,12 @@ export function handleError(e: unknown, context?: string) {
     );
 
     if (report && report.divergences && report.divergences.length > 0) {
-      console.log(pc.bold("\n  Divergences found:"));
+      // Always use stderr — divergence output must not corrupt JSON stdout
+      console.error(pc.bold("\n  Divergences found:"));
       for (const div of report.divergences) {
-        console.log(`    ${pc.cyan(div.path)}:`);
-        console.log(`      Expected: ${pc.green(JSON.stringify(div.expected))}`);
-        console.log(`      Actual:   ${pc.red(JSON.stringify(div.actual))}`);
+        console.error(`    ${pc.cyan(div.path)}:`);
+        console.error(`      Expected: ${pc.green(JSON.stringify(div.expected))}`);
+        console.error(`      Actual:   ${pc.red(JSON.stringify(div.actual))}`);
       }
     }
     return;

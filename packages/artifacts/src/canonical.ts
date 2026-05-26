@@ -53,8 +53,11 @@ export function canonicalStringify(obj: unknown, version: number = CURRENT_HASH_
     }
 
     if (typeof obj === "string" && version >= 3) {
-      // v3+ normalizes newlines and UTF-8 for cross-platform determinism
-      const normalized = obj.normalize("NFC").replace(/\r\n/g, "\n");
+      // v3+ normalizes newlines, path separators, and UTF-8 for cross-platform determinism
+      // Convert Windows backslashes to POSIX forward slashes to prevent platform drift
+      const normalized = obj.normalize("NFC")
+        .replace(/\r\n/g, "\n")
+        .replace(/\\/g, "/");
       return JSON.stringify(normalized);
     }
 

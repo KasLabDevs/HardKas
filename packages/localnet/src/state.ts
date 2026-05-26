@@ -23,7 +23,7 @@ export function createInitialLocalnetState(
     schema: ARTIFACT_SCHEMAS.LOCALNET_STATE,
     hardkasVersion: HARDKAS_VERSION,
     version: "1.0.0-alpha",
-    createdAt: new Date().toISOString(),
+    createdAt: new Date().toISOString(), // hardkas-determinism-allow: initial state creation timestamp
     mode: "simulated" as ExecutionMode,
     networkId: "simnet" as NetworkId,
     daaScore: "0",

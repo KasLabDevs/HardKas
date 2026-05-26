@@ -24,7 +24,8 @@ import open from "open";
 import { loadSessionStoreWithDiagnostics } from "@hardkas/sessions";
 import { HARDKAS_VERSION } from "@hardkas/artifacts";
 
-import { startHardkasWatcher } from "./watcher.js";
+import { startHardkasWatcher, stopHardkasWatcher } from "./watcher.js";
+export { stopHardkasWatcher };
 
 export interface DevServerConfig {
   port: number;

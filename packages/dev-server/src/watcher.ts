@@ -7,6 +7,7 @@ import { devServerEmitter } from "./stream.js";
 let debounceTimer: NodeJS.Timeout | null = null;
 const bufferedPaths = new Set<string>();
 let isStale = false;
+let activeWatcher: chokidar.FSWatcher | null = null;
 
 export function startHardkasWatcher() {
   const rootDir = process.env.HARDKAS_ROOT || process.cwd();
@@ -56,6 +57,7 @@ export function startHardkasWatcher() {
         throw err;
       }
     }
+    activeWatcher = watcher;
 
     const handleChange = (absolutePath: string) => {
       bufferedPaths.add(absolutePath);
@@ -104,6 +106,7 @@ export function startHardkasWatcher() {
         console.warn(`[Watcher] Native watch error (${err.code}). Restarting with polling...`);
         watcher.close().then(() => {
           watcher = startChokidar(true);
+          activeWatcher = watcher;
           setupEventHandlers(watcher);
         });
       } else {
@@ -115,5 +118,16 @@ export function startHardkasWatcher() {
 
   } catch (err: any) {
     console.warn(`⚠️  [Watcher] Failed to start chokidar: ${err.message}. Auto-refresh on changes might be disabled.`);
+  }
+}
+
+export async function stopHardkasWatcher() {
+  if (activeWatcher) {
+    await activeWatcher.close();
+    activeWatcher = null;
+  }
+  if (debounceTimer) {
+    clearTimeout(debounceTimer);
+    debounceTimer = null;
   }
 }

@@ -18,10 +18,10 @@ describe("CLI JSON Contract", () => {
     await fs.rm(tmpDir, { recursive: true, force: true, maxRetries: 5, retryDelay: 200 });
   }, 15000);
 
-  const runCli = async (args: string[]) => {
+  const runCli = async (args: string[], options: any = {}) => {
     const cmd = path.resolve(__dirname, "../src/index.ts");
     // Run via tsx to avoid build steps in dev tests
-    return execa("npx", ["tsx", cmd, ...args], { cwd: tmpDir });
+    return execa("npx", ["tsx", cmd, ...args], { cwd: tmpDir, ...options });
   };
 
   it("tx plan --json produces strict parsable JSON with no stdout pollution", async () => {
@@ -65,4 +65,51 @@ describe("CLI JSON Contract", () => {
     expect(Array.isArray(parsed.checks)).toBe(true);
   }, 30000);
 
+  it("verify --json produces strict parsable JSON", async () => {
+    const goldenPlanPath = path.resolve(__dirname, "../../artifacts/test/fixtures/golden/tx-plan.valid.json");
+    const goldenContent = await fs.readFile(goldenPlanPath, "utf-8");
+    const destDir = path.join(tmpDir, ".hardkas", "artifacts");
+    await fs.mkdir(destDir, { recursive: true });
+    await fs.writeFile(path.join(destDir, "plan.json"), goldenContent, "utf-8");
+
+    const { stdout } = await runCli(["verify", "--json"]);
+    let parsed: any;
+    try {
+      parsed = JSON.parse(stdout);
+    } catch (err: any) {
+      throw new Error(`Failed to parse stdout as JSON: ${err.message}\nStdout was:\n${stdout}`);
+    }
+
+    expect(parsed.schema).toBe("hardkas.queryVerify.v1");
+    expect(parsed.ok).toBe(true);
+  }, 30000);
+
+  it("rebuild --json produces strict parsable JSON", async () => {
+    // Run rebuild with --from-artifacts
+    const { stdout } = await runCli(["rebuild", "--from-artifacts", "--json"]);
+    let parsed: any;
+    try {
+      parsed = JSON.parse(stdout);
+    } catch (err: any) {
+      throw new Error(`Failed to parse stdout as JSON: ${err.message}\nStdout was:\n${stdout}`);
+    }
+
+    expect(parsed.schema).toBe("hardkas.queryRebuild.v1");
+    expect(parsed.ok).toBe(true);
+  }, 30000);
+
+  it("capabilities --json produces strict parsable JSON", async () => {
+    const { stdout } = await runCli(["capabilities", "--json"], {
+      env: { ...process.env, HARDKAS_EXPERIMENTAL: "1" }
+    });
+    let parsed: any;
+    try {
+      parsed = JSON.parse(stdout);
+    } catch (err: any) {
+      throw new Error(`Failed to parse stdout as JSON: ${err.message}\nStdout was:\n${stdout}`);
+    }
+
+    expect(parsed.version).toBeDefined();
+    expect(parsed.capabilities).toBeDefined();
+  }, 30000);
 });
