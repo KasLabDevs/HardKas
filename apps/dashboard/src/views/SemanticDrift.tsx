@@ -19,9 +19,10 @@ export function SemanticDrift() {
   const [apiOffline, setApiOffline] = useState(false);
 
   useEffect(() => {
-    // Resolve the active API host dynamically so it works on both relative and hardcoded ports
+    // Resolve the active API host dynamically.
+    // The dev server API always runs on port 3333 locally.
     const apiHost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' 
-      ? `http://${window.location.hostname}:${window.location.port || '3333'}` 
+      ? `http://${window.location.hostname}:3333` 
       : 'http://localhost:3333';
 
     // Try relative endpoint first, fallback to hardcoded port if needed
