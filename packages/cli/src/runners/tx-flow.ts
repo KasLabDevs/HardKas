@@ -122,13 +122,13 @@ export async function runTxFlow(input: TxFlowInput): Promise<TxFlowResult> {
     },
     parentArtifacts: [],
     policySnapshot: {
-      allowNetwork: config.policy?.allowNetwork ?? true,
-      allowMainnet: config.policy?.allowMainnet ?? false,
-      allowExternalWallet: config.policy?.allowExternalWallet ?? false,
-      requireDryRun: config.policy?.requireDryRun ?? false
+      allowNetwork: (config as any).policy?.allowNetwork ?? true,
+      allowMainnet: (config as any).policy?.allowMainnet ?? false,
+      allowExternalWallet: (config as any).policy?.allowExternalWallet ?? false,
+      requireDryRun: (config as any).policy?.requireDryRun ?? false
     },
     capabilitySnapshot: {
-      mode: config.mode ?? "developer",
+      mode: (config as any).mode ?? "developer",
       network: network || config.defaultNetwork || "simnet"
     },
     runtimeVersion: HARDKAS_VERSION,

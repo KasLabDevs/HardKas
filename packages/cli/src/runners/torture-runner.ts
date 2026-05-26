@@ -16,6 +16,7 @@ export interface TortureMatrixOptions {
   iterations: number;
   seed: string | number;
   report?: string;
+  bucket?: string;
 }
 
 export interface TortureReplayOptions {
@@ -168,20 +169,20 @@ export async function runTortureMatrix(options: TortureMatrixOptions) {
       mutation,
       expectedInvariant,
       status,
-      failureReason,
-      failureCode,
-      severity,
       reproduceCommand,
-      artifactsBefore,
-      artifactsAfter,
-      environmentMode,
-      filesystemMode,
-      symlinkMode,
-      normalizedPathStrategy,
-      clockSkewDetected,
-      externalMutationDetected,
-      longPathSupportDetected,
-      sandboxSnapshotPath
+      ...(failureReason !== undefined ? { failureReason } : {}),
+      ...(failureCode !== undefined ? { failureCode } : {}),
+      ...(severity !== undefined ? { severity } : {}),
+      ...(artifactsBefore !== undefined ? { artifactsBefore } : {}),
+      ...(artifactsAfter !== undefined ? { artifactsAfter } : {}),
+      ...(environmentMode !== undefined ? { environmentMode } : {}),
+      ...(filesystemMode !== undefined ? { filesystemMode } : {}),
+      ...(symlinkMode !== undefined ? { symlinkMode } : {}),
+      ...(normalizedPathStrategy !== undefined ? { normalizedPathStrategy } : {}),
+      ...(clockSkewDetected !== undefined ? { clockSkewDetected } : {}),
+      ...(externalMutationDetected !== undefined ? { externalMutationDetected } : {}),
+      ...(longPathSupportDetected !== undefined ? { longPathSupportDetected } : {}),
+      ...(sandboxSnapshotPath !== undefined ? { sandboxSnapshotPath } : {}),
     };
 
     results.push(caseResult);
@@ -296,11 +297,12 @@ export async function runTortureMatrix(options: TortureMatrixOptions) {
     if (!bucketSummaries[r.bucket]) {
       bucketSummaries[r.bucket] = { passed: 0, failed: 0, total: 0 };
     }
-    bucketSummaries[r.bucket].total++;
+    const bSum = bucketSummaries[r.bucket]!;
+    bSum.total++;
     if (r.status === "pass") {
-      bucketSummaries[r.bucket].passed++;
+      bSum.passed++;
     } else {
-      bucketSummaries[r.bucket].failed++;
+      bSum.failed++;
     }
   }
 
