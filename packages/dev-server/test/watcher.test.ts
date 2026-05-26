@@ -51,27 +51,33 @@ describe("Watcher Fallback & Polling Contract", () => {
 
   it("should fall back gracefully to polling when watch setup throws ENOSPC / ENOTSUP", () => {
     delete process.env.HARDKAS_WATCH_POLLING;
+    const originalPlatform = process.platform;
+    Object.defineProperty(process, "platform", { value: "win32", configurable: true });
 
-    // First call throws ENOSPC, second call (polling fallback) succeeds
-    vi.mocked(chokidar.watch)
-      .mockImplementationOnce(() => {
-        const err: any = new Error("ENOSPC: System limit for number of file watchers reached");
-        err.code = "ENOSPC";
-        throw err;
-      })
-      .mockReturnValueOnce({
-        on: vi.fn().mockReturnThis(),
-        close: vi.fn().mockResolvedValue(undefined),
-      } as any);
+    try {
+      // First call throws ENOSPC, second call (polling fallback) succeeds
+      vi.mocked(chokidar.watch)
+        .mockImplementationOnce(() => {
+          const err: any = new Error("ENOSPC: System limit for number of file watchers reached");
+          err.code = "ENOSPC";
+          throw err;
+        })
+        .mockReturnValueOnce({
+          on: vi.fn().mockReturnThis(),
+          close: vi.fn().mockResolvedValue(undefined),
+        } as any);
 
-    startHardkasWatcher();
+      startHardkasWatcher();
 
-    // It should have called watch twice: once native (fail), once polling fallback (success)
-    expect(chokidar.watch).toHaveBeenCalledTimes(2);
-    const nativeOpts = (chokidar.watch as any).mock.calls[0][1];
-    const fallbackOpts = (chokidar.watch as any).mock.calls[1][1];
+      // It should have called watch twice: once native (fail), once polling fallback (success)
+      expect(chokidar.watch).toHaveBeenCalledTimes(2);
+      const nativeOpts = (chokidar.watch as any).mock.calls[0][1];
+      const fallbackOpts = (chokidar.watch as any).mock.calls[1][1];
 
-    expect(nativeOpts.usePolling).toBe(false);
-    expect(fallbackOpts.usePolling).toBe(true);
+      expect(nativeOpts.usePolling).toBe(false);
+      expect(fallbackOpts.usePolling).toBe(true);
+    } finally {
+      Object.defineProperty(process, "platform", { value: originalPlatform, configurable: true });
+    }
   });
 });
