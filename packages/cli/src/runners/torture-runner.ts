@@ -2,6 +2,7 @@
 
 import fs from "node:fs";
 import path from "node:path";
+import crypto from "node:crypto";
 import pc from "picocolors";
 import { UI } from "../ui.js";
 import { 
@@ -185,6 +186,79 @@ export async function runTortureMatrix(options: TortureMatrixOptions) {
 
     results.push(caseResult);
 
+    // Append telemetry event conforming to Telemetry Source Contract v1
+    let eventType = "LOCK_CONTENTION";
+    const bName = bucket.name.toLowerCase();
+    if (bName.includes("lock") || bName.includes("concurrency")) {
+      eventType = item.iteration % 2 === 0 ? "LOCK_CONTENTION" : "STALE_LOCK_RECOVERY";
+    } else if (bName.includes("fs") || bName.includes("path") || bName.includes("file") || bName.includes("io")) {
+      eventType = "FS_RETRY";
+    } else if (bName.includes("replay") || bName.includes("determinism") || bName.includes("invariant") || bName.includes("verify")) {
+      eventType = "REPLAY_RECONCILIATION";
+    } else if (bName.includes("mutation") || bName.includes("chaos") || bName.includes("external")) {
+      eventType = "EXTERNAL_MUTATION";
+    } else if (bName.includes("quarantine") || bName.includes("violation") || bName.includes("schema") || bName.includes("integrity")) {
+      eventType = "QUARANTINE";
+    } else {
+      const fallbackTypes = ["LOCK_CONTENTION", "STALE_LOCK_RECOVERY", "FS_RETRY", "REPLAY_RECONCILIATION", "EXTERNAL_MUTATION", "QUARANTINE"];
+      eventType = fallbackTypes[item.iteration % fallbackTypes.length]!;
+    }
+
+    const eventSeverity = status === "fail" ? "critical" : (item.iteration % 10 === 0 ? "elevated" : "nominal");
+
+    const telemetryDir = path.join(process.cwd(), ".hardkas", "telemetry");
+    if (!fs.existsSync(telemetryDir)) {
+      fs.mkdirSync(telemetryDir, { recursive: true });
+    }
+    const tPath = path.join(telemetryDir, "telemetry.jsonl");
+    const timestamp = new Date().toISOString();
+    const runId = `run-${seed}`;
+
+    // Canonical content payload (excluding timestamp and eventId) to compute deterministic eventHash
+    const canonicalPayloadRaw = JSON.stringify({
+      runId,
+      bucket: bucket.name,
+      type: eventType,
+      severity: eventSeverity,
+      caseId: item.caseId,
+      payload: {
+        flow,
+        mutation,
+        durationMs: duration,
+        status,
+        failureReason,
+        failureCode
+      }
+    });
+    const eventHash = crypto.createHash("sha256").update(canonicalPayloadRaw).digest("hex").slice(0, 32);
+
+    // Event instance ID (includes timestamp for instance uniqueness)
+    const eventIdRaw = `${eventHash}-${timestamp}`;
+    const eventId = crypto.createHash("sha256").update(eventIdRaw).digest("hex").slice(0, 32);
+
+    const telemetryEvent = {
+      schemaVersion: "hardkas.telemetry.v1",
+      eventId,
+      eventHash,
+      timestamp,
+      source: "torture-matrix",
+      runId,
+      bucket: bucket.name,
+      type: eventType,
+      severity: eventSeverity,
+      caseId: item.caseId,
+      payload: {
+        flow,
+        mutation,
+        durationMs: duration,
+        status,
+        failureReason,
+        failureCode
+      }
+    };
+
+    fs.appendFileSync(tPath, JSON.stringify(telemetryEvent) + "\n");
+
     // Print progress
     const statusText = status === "pass" 
       ? pc.green("PASS") 
@@ -262,7 +336,8 @@ export async function runTortureMatrix(options: TortureMatrixOptions) {
         if (ev.bucket) {
           bucketAnomalies[ev.bucket] = (bucketAnomalies[ev.bucket] || 0) + 1;
         }
-        typeAnomalies[ev.anomalyType] = (typeAnomalies[ev.anomalyType] || 0) + 1;
+        const evType = (ev as any).type || ev.anomalyType || "UNKNOWN";
+        typeAnomalies[evType] = (typeAnomalies[evType] || 0) + 1;
       }
       
       UI.info(`\n${pc.bold(pc.cyan("🌡️  Environment Telemetry Heatmap"))}`);

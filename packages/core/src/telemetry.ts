@@ -1,5 +1,6 @@
 import fs from "node:fs";
 import path from "node:path";
+import crypto from "node:crypto";
 
 export type TelemetrySubsystem = 
   | "lock" 
@@ -86,16 +87,49 @@ class TelemetryManager {
                    
     if (!logDir) return;
 
-    const event: AnomalyEvent = {
-      timestamp: new Date().toISOString(),
-      seed: this.currentContext.seed,
+    const nowStr = new Date().toISOString();
+    const runId = this.currentContext.seed ? `run-${this.currentContext.seed}` : "run-core";
+    const bucket = this.currentContext.bucket || "core";
+    
+    let mappedSeverity: "nominal" | "elevated" | "critical" = "nominal";
+    if (severity === "medium") mappedSeverity = "elevated";
+    else if (severity === "high" || severity === "critical") mappedSeverity = "critical";
+
+    // Canonical content payload (excluding timestamp and eventId) to compute deterministic eventHash
+    const canonicalPayloadRaw = JSON.stringify({
+      runId,
+      bucket,
+      type: anomalyType,
+      severity: mappedSeverity,
       caseId: this.currentContext.caseId,
-      bucket: this.currentContext.bucket,
-      anomalyType,
-      severity,
-      subsystem,
-      details,
-      sandbox: sandboxOverride
+      payload: {
+        subsystem,
+        details,
+        sandbox: sandboxOverride
+      }
+    });
+    const eventHash = crypto.createHash("sha256").update(canonicalPayloadRaw).digest("hex").slice(0, 32);
+
+    // Event instance ID (includes timestamp for instance uniqueness)
+    const eventIdRaw = `${eventHash}-${nowStr}`;
+    const eventId = crypto.createHash("sha256").update(eventIdRaw).digest("hex").slice(0, 32);
+
+    const event = {
+      schemaVersion: "hardkas.telemetry.v1",
+      eventId,
+      eventHash,
+      timestamp: nowStr,
+      source: "core-runtime",
+      runId,
+      bucket,
+      type: anomalyType,
+      severity: mappedSeverity,
+      caseId: this.currentContext.caseId,
+      payload: {
+        subsystem,
+        details,
+        sandbox: sandboxOverride
+      }
     };
 
     if (severity === "high" || severity === "critical" || anomalyType === "REPLAY_RECONCILIATION" || anomalyType === "NORMALIZATION_COLLISION") {

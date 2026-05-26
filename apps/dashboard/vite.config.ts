@@ -38,9 +38,11 @@ const virtualMocks = {
   }
 };
 
+import tailwindcss from '@tailwindcss/vite'
+
 // https://vite.dev/config/
 export default defineConfig({
-  plugins: [react(), virtualMocks],
+  plugins: [react(), virtualMocks, tailwindcss()],
   optimizeDeps: {
     exclude: ['@hardkas/react']
   }
