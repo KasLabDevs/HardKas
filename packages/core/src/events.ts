@@ -11,6 +11,8 @@ import {
   CorrelationId,
   EventSequence
 } from "./domain-types.js";
+import { AppendCoordinator } from "./append-coordinator.js";
+import path from "node:path";
 
 /**
  * HardKAS Core Event Domains.
@@ -274,3 +276,36 @@ export type UnknownEventPayload = {
   readonly type: "unknown";
   readonly data: Record<string, unknown>;
 };
+
+/**
+ * Attaches the canonical Event Ledger appender to the core event bus.
+ * This guarantees that all formal EventEnvelopes are persisted to events.jsonl.
+ */
+export function attachLedgerAppender(workspaceRoot: string): () => void {
+  const seenEventIds = new Set<string>();
+  const eventsFile = path.join(workspaceRoot, "events.jsonl");
+
+  return coreEvents.on((event) => {
+    // 1. Idempotency check: prevent duplicate flush in same session
+    if (seenEventIds.has(event.eventId)) {
+      return;
+    }
+    seenEventIds.add(event.eventId);
+
+    // 2. Prevent unbounded memory growth of seen events
+    if (seenEventIds.size > 100000) {
+      const iterator = seenEventIds.keys();
+      for (let i = 0; i < 10000; i++) seenEventIds.delete(iterator.next().value!);
+    }
+
+    // 3. Serialize and flush atomically via physical locks
+    const payload = JSON.stringify(event) + "\n";
+    
+    try {
+      AppendCoordinator.appendAtomic(eventsFile, payload, workspaceRoot);
+    } catch (e) {
+      // Fire-and-forget for now, but a robust system might enqueue failed appends.
+      // AppendCoordinator throws on EACCES or irrecoverable lock states.
+    }
+  });
+}

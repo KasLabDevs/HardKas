@@ -10,7 +10,7 @@ import {
   LcgPrng, 
   TortureCaseResult 
 } from "@hardkas/testing";
-import { EnvironmentTelemetry, AnomalyEvent } from "@hardkas/core";
+import { EnvironmentTelemetry, AnomalyEvent, AppendCoordinator } from "@hardkas/core";
 
 export interface TortureMatrixOptions {
   iterations: number;
@@ -258,7 +258,7 @@ export async function runTortureMatrix(options: TortureMatrixOptions) {
       }
     };
 
-    fs.appendFileSync(tPath, JSON.stringify(telemetryEvent) + "\n");
+    AppendCoordinator.appendAtomic(tPath, JSON.stringify(telemetryEvent), process.cwd());
 
     // Print progress
     const statusText = status === "pass" 

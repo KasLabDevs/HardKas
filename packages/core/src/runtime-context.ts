@@ -1,3 +1,5 @@
+import { TelemetryManager, globalTelemetry } from "./telemetry.js";
+
 export interface DeterministicClock {
   now(): number;
 }
@@ -15,6 +17,7 @@ export interface RuntimeContext {
   clock: DeterministicClock;
   random: DeterministicRandom;
   ids: IdProvider;
+  telemetry: TelemetryManager;
 }
 
 /**
@@ -31,5 +34,6 @@ export const systemRuntimeContext: RuntimeContext = {
   ids: {
     execution: () => `exec_${Date.now().toString(36)}`,
     workflow: () => `wf_${Date.now().toString(36)}`
-  }
+  },
+  telemetry: globalTelemetry
 };

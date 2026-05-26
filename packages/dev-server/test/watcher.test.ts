@@ -35,7 +35,7 @@ describe("Watcher Fallback & Polling Contract", () => {
     
     expect(chokidar.watch).toHaveBeenCalled();
     const opts = (chokidar.watch as any).mock.calls[0][1];
-    expect(opts.usePolling).toBe(false);
+    expect(opts.usePolling).toBe(process.platform === "linux");
   });
 
   it("should respect HARDKAS_WATCH_POLLING=1 and enable polling", () => {

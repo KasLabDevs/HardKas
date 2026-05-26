@@ -125,6 +125,9 @@ registerMigrationStep({
     if (!migrated.hardkasVersion) {
       migrated.hardkasVersion = HARDKAS_VERSION;
     }
+    if (!migrated.createdAt) {
+      migrated.createdAt = new Date().toISOString();
+    }
 
     // 6. Ensure hashVersion is set to current
     if (migrated.hashVersion === undefined || migrated.hashVersion === null) {

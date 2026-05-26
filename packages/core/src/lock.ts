@@ -105,11 +105,27 @@ export async function acquireLock(args: AcquireLockArgs): Promise<LockHandle> {
           existingMetadata = JSON.parse(fs.readFileSync(lockPath, "utf-8"));
         } catch (err) {
           // Corrupted lock file - attempt recovery
+          const LOCK_CREATION_GRACE_MS = 2000;
+          let stats: fs.Stats | null = null;
+          try {
+            stats = fs.statSync(lockPath);
+          } catch {
+            // Lock disappeared
+            continue;
+          }
+
+          const ageMs = Date.now() - stats.mtimeMs;
+          if (ageMs < LOCK_CREATION_GRACE_MS) {
+            // "In-flight" creation, not corrupt. Wait and retry.
+            await new Promise(resolve => setTimeout(resolve, pollMs));
+            continue;
+          }
+
           if (!staleRecoveryAttempted) {
             staleRecoveryAttempted = true;
             try {
               fs.unlinkSync(lockPath);
-              EnvironmentTelemetry.logAnomaly("STALE_LOCK_RECOVERY", "medium", "lock", `Recovered corrupted lock file at ${lockPath}`, args.rootDir);
+              EnvironmentTelemetry.logAnomaly("STALE_LOCK_RECOVERY", "medium", "lock", `Recovered corrupted lock file at ${lockPath} (Age: ${ageMs}ms)`, args.rootDir);
               continue; // Retry acquisition
             } catch {
               throw new HardkasError("LOCK_METADATA_INVALID", `Lock file at ${lockPath} is corrupted and cannot be recovered.`, { cause: err });
@@ -219,10 +235,13 @@ export function isProcessAlive(pid: number): boolean {
   try {
     // signal 0 does not kill the process but performs error checking
     process.kill(pid, 0);
-    return true;
+    return true; // 0 success -> alive
   } catch (e: any) {
-    // ESRCH means process not found
-    return e.code !== "ESRCH";
+    if (e.code === "EPERM") return true; // Permission denied -> alive
+    if (e.code === "ESRCH") return false; // Process not found -> dead
+    
+    // Windows might return other errors, treat as ambiguous (assume alive to prevent aggressive deletion)
+    return true;
   }
 }
 

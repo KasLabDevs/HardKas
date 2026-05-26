@@ -31,6 +31,10 @@ import { registerDashboardCommand } from "./commands/dashboard.js";
 import { registerExplainCommand } from "./commands/explain.js";
 import { registerTortureCommands } from "./commands/torture.js";
 import { registerTelemetryCommands } from "./commands/telemetry.js";
+import { registerRepairCommand } from "./commands/repair.js";
+import { registerRotateCommand } from "./commands/rotate.js";
+import { registerInspectCommand } from "./commands/inspect.js";
+import { registerChaosCommands } from "./commands/chaos.js";
 
 import { HARDKAS_VERSION } from "@hardkas/artifacts";
 
@@ -78,6 +82,10 @@ export function buildHardkasProgram(options?: { forDocs?: boolean }): Command {
   registerExplainCommand(program);
   registerTortureCommands(program);
   registerTelemetryCommands(program);
+  registerRepairCommand(program);
+  registerRotateCommand(program);
+  registerInspectCommand(program);
+  registerChaosCommands(program);
 
   // Programmable workflows & Agent Mode
   registerWorkflowCommands(program);

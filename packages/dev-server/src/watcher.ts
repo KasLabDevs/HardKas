@@ -8,6 +8,41 @@ let debounceTimer: NodeJS.Timeout | null = null;
 const bufferedPaths = new Set<string>();
 let isStale = false;
 let activeWatcher: chokidar.FSWatcher | null = null;
+let reconciliationTimer: NodeJS.Timeout | null = null;
+
+export function startWatcherReconciliationSweep(intervalMs: number = 10000) {
+  if (reconciliationTimer) {
+    clearInterval(reconciliationTimer);
+  }
+
+  reconciliationTimer = setInterval(async () => {
+    try {
+      const backend = getQueryBackend();
+      if (!backend.isReady()) return;
+
+      const status = await backend.doctor();
+      if (status.staleArtifacts > 0 || status.zombieArtifacts > 0) {
+        console.warn(`🔄 [Watcher] Reconciliation sweep detected ${status.staleArtifacts} stale and ${status.zombieArtifacts} zombie artifacts. Syncing...`);
+        const syncResult = await backend.sync();
+
+        devServerEmitter.emit("projection-synced", {
+          timestamp: Date.now(),
+          generationId: syncResult.generationId,
+          stats: syncResult
+        });
+      }
+    } catch (err: any) {
+      console.error("❌ [Watcher] Reconciliation sweep failed:", err.message);
+    }
+  }, intervalMs);
+}
+
+export function stopWatcherReconciliationSweep() {
+  if (reconciliationTimer) {
+    clearInterval(reconciliationTimer);
+    reconciliationTimer = null;
+  }
+}
 
 export function startHardkasWatcher() {
   const rootDir = process.env.HARDKAS_ROOT || process.cwd();
@@ -26,7 +61,9 @@ export function startHardkasWatcher() {
 
   // Watchers are strictly optimization hints in HardKAS, never correctness primitives.
   // Missing events are safely recovered via periodic generation scans or targeted syncs.
+  const isLinux = process.platform === "linux";
   const usePollingOverride = process.env.HARDKAS_WATCH_POLLING === "1";
+  const forcePolling = usePollingOverride || isLinux;
   
   const startChokidar = (polling: boolean) => {
     const opts: chokidar.WatchOptions = {
@@ -48,9 +85,9 @@ export function startHardkasWatcher() {
   try {
     let watcher: chokidar.FSWatcher;
     try {
-      watcher = startChokidar(usePollingOverride);
+      watcher = startChokidar(forcePolling);
     } catch (err: any) {
-      if (!usePollingOverride && (err.code === 'ENOSPC' || err.code === 'ENOTSUP')) {
+      if (!forcePolling && (err.code === 'ENOSPC' || err.code === 'ENOTSUP')) {
         console.warn(`[Watcher] Native watch failed (${err.code}). Falling back to polling...`);
         watcher = startChokidar(true);
       } else {
@@ -102,7 +139,7 @@ export function startHardkasWatcher() {
 
     watcher.on('error', (err: any) => {
       // In chokidar, errors might be emitted via the 'error' event rather than thrown during setup
-      if (!usePollingOverride && (err.code === 'ENOSPC' || err.code === 'ENOTSUP')) {
+      if (!forcePolling && (err.code === 'ENOSPC' || err.code === 'ENOTSUP')) {
         console.warn(`[Watcher] Native watch error (${err.code}). Restarting with polling...`);
         watcher.close().then(() => {
           watcher = startChokidar(true);
@@ -116,12 +153,16 @@ export function startHardkasWatcher() {
 
     setupEventHandlers(watcher);
 
+    // Start background reconciliation sweep for self-healing
+    startWatcherReconciliationSweep();
+
   } catch (err: any) {
     console.warn(`⚠️  [Watcher] Failed to start chokidar: ${err.message}. Auto-refresh on changes might be disabled.`);
   }
 }
 
 export async function stopHardkasWatcher() {
+  stopWatcherReconciliationSweep();
   if (activeWatcher) {
     await activeWatcher.close();
     activeWatcher = null;

@@ -14,11 +14,31 @@ export function SemanticDrift() {
   const [telemetryAvailable, setTelemetryAvailable] = useState(false);
   const [driftDetected, setDriftDetected] = useState(false);
   const [sources, setSources] = useState<DriftSource[]>([]);
+  const [apiOffline, setApiOffline] = useState(false);
 
   useEffect(() => {
+    // Resolve the active API host dynamically so it works on both relative and hardcoded ports
+    const apiHost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' 
+      ? `http://${window.location.hostname}:${window.location.port || '3333'}` 
+      : 'http://localhost:3333';
+
+    // Try relative endpoint first, fallback to hardcoded port if needed
+    const fetchWithFallback = async (path: string) => {
+      try {
+        const response = await fetch(path);
+        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+        return await response.json();
+      } catch (e) {
+        // Fallback to absolute local dev URL if served on a different origin in development
+        const response = await fetch(`${apiHost}${path}`);
+        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+        return await response.json();
+      }
+    };
+
     Promise.all([
-      fetch('http://localhost:3333/api/dashboard-health').then(r => r.json()),
-      fetch('http://localhost:3333/api/bundles').then(r => r.json()),
+      fetchWithFallback('/api/dashboard-health'),
+      fetchWithFallback('/api/bundles'),
     ]).then(([health, bundle]) => {
       const bundleOk = !!bundle.loaded;
       const storeOk = !!health.queryStoreExists;
@@ -39,14 +59,28 @@ export function SemanticDrift() {
         { name: 'Telemetry', available: telOk, note: telOk ? '.hardkas/telemetry/telemetry.jsonl' : 'Not found' },
         { name: 'Filesystem Artifacts', available: !!health.artifactsDirExists, note: health.artifactsDirExists ? '.hardkas/artifacts' : 'Not found' },
       ]);
+      setApiOffline(false);
       setLoading(false);
-    }).catch(() => setLoading(false));
+    }).catch((err) => {
+      console.error("Failed to connect to Hono dev-server observability API:", err);
+      setApiOffline(true);
+      setLoading(false);
+    });
   }, []);
 
   if (loading) return <div className="text-zinc-500">Analyzing environment semantics...</div>;
 
   return (
     <div className="space-y-6">
+      {apiOffline && (
+        <div className="bg-red-500/10 border border-red-500/30 px-6 py-3 flex items-center gap-2 text-sm text-red-400 shrink-0 rounded-lg">
+          <AlertTriangle size={16} />
+          <span>
+            <strong>Observability Server Offline:</strong> Could not connect to the HardKAS dev-server API.
+            Ensure the server is running by executing: <code className="font-mono bg-red-950/40 px-1.5 py-0.5 rounded text-red-300">pnpm --filter @hardkas/cli run dev dashboard</code>
+          </span>
+        </div>
+      )}
       <div className="flex items-center gap-2 text-white border-b border-zinc-800 pb-4">
         <Activity className="text-amber-400" />
         <h2 className="text-xl font-medium">Semantic Drift Viewer</h2>

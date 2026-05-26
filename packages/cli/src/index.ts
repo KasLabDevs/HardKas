@@ -1,12 +1,12 @@
 #!/usr/bin/env node
 
 import { buildHardkasProgram } from "./program.js";
-import { attachLedgerAppender } from "@hardkas/query-store";
+import { attachLedgerAppender } from "@hardkas/core";
 
 import { HardkasCliError, HardkasExitCode } from "./cli-errors.js";
 
 async function main() {
-  attachLedgerAppender();
+  attachLedgerAppender(process.cwd());
   const program = buildHardkasProgram();
 
   try {

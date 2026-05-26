@@ -16,7 +16,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, windows-latest]
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        node-version: [18, 20, 22]
     
     steps:
       - name: Checkout Repository
@@ -25,7 +26,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '22'
+          node-version: ${{ matrix.node-version }}
 
       - name: Install pnpm
         uses: pnpm/action-setup@v3
@@ -43,6 +44,14 @@ jobs:
 
       - name: Run Torture Matrix (Seed 999)
         run: pnpm hardkas torture matrix --iterations 300 --seed 999
+
+      - name: Run Abuse & Fault Injection Tests
+        run: pnpm vitest run abuse-multiprocess soak-longrun fault-injection
+
+      - name: Run Benchmarks
+        run: pnpm vitest run benchmark
+        env:
+          BENCHMARK_CI: true
 
       - name: Generate Global Semantic Hash
         id: verify

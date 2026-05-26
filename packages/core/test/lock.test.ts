@@ -72,7 +72,7 @@ describe("HardKAS Lock System", () => {
     await handle.release();
   });
 
-  it("should detect a stale lock (simulated)", async () => {
+  it("should auto-recover a stale lock successfully", async () => {
     const lockPath = path.join(lockDir, "stale.lock");
     fs.mkdirSync(lockDir, { recursive: true });
     
@@ -89,11 +89,47 @@ describe("HardKAS Lock System", () => {
     };
     fs.writeFileSync(lockPath, JSON.stringify(staleMeta));
 
+    const handle = await acquireLock({ rootDir: testRoot, name: "stale" });
+    expect(fs.existsSync(lockPath)).toBe(true);
+    expect(handle.metadata.pid).toBe(process.pid);
+    await handle.release();
+  });
+
+  it("should throw STALE_LOCK if stale lock recovery fails (e.g. unlink fails)", async () => {
+    const lockPath = path.join(lockDir, "stale-fail.lock");
+    fs.mkdirSync(lockDir, { recursive: true });
+    
+    // Create a lock with an impossible PID
+    const staleMeta = {
+      schema: "hardkas.lock.v1",
+      name: "stale-fail",
+      pid: 999999,
+      command: "old-command",
+      cwd: process.cwd(),
+      hostname: os.hostname(),
+      createdAt: new Date().toISOString(),
+      expiresAt: null
+    };
+    fs.writeFileSync(lockPath, JSON.stringify(staleMeta));
+
+    const originalUnlink = fs.unlinkSync;
+    fs.unlinkSync = (p: any) => {
+      if (typeof p === "string" && p.includes("stale-fail.lock")) {
+        throw new Error("Simulated unlink failure");
+      }
+      return originalUnlink(p);
+    };
+
     try {
-      await acquireLock({ rootDir: testRoot, name: "stale" });
+      await acquireLock({ rootDir: testRoot, name: "stale-fail" });
       assert.fail("Should have thrown STALE_LOCK");
     } catch (e: any) {
       expect(e.code).toBe("STALE_LOCK");
+    } finally {
+      fs.unlinkSync = originalUnlink;
+      if (fs.existsSync(lockPath)) {
+        originalUnlink(lockPath);
+      }
     }
   });
 

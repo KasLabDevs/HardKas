@@ -148,5 +148,8 @@ export * from "./replay.js";
 export * from "./snapshot.js";
 export * from "./deterministic.js";
 export * from "./telemetry.js";
+export { TelemetryRotator } from "./retention.js";
 export * from "./runtime-context.js";
 export * from "./semantics/index.js";
+export * from "./append-coordinator.js";
+export * from "./migrations.js";

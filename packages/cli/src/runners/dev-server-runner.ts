@@ -36,18 +36,6 @@ export async function runDevServer(options: {
       UI.info("Workspace verified. Localnet state bootstrapped deterministically.");
     }
 
-    // 3. SQLite Projection Rebuild: Atomically reconstruct index from filesystem artifacts
-    const { HardkasStore, SqliteQueryBackend } = await import("@hardkas/query-store");
-    const store = new HardkasStore({ dbPath: path.join(hardkasDir, "store.db") });
-    store.connect({ autoMigrate: true });
-    
-    const backend = new SqliteQueryBackend(store);
-    await backend.rebuild({ strict: true });
-
-    if (!options.json && !options.once) {
-      UI.success("Query-store projection indexes rebuilt atomically from filesystem artifacts.");
-    }
-
     const { createDevServer, stopHardkasWatcher } = await import("@hardkas/dev-server");
     
     const port = parseInt(options.port, 10);
@@ -55,6 +43,30 @@ export async function runDevServer(options: {
 
     if (options.unsafeExternal && options.host === "localhost") {
       host = "0.0.0.0";
+    }
+
+    // 3. Early Port Availability Check & Server Init (before mutating SQLite)
+    const server = createDevServer({
+      port,
+      host,
+      unsafeExternal: options.unsafeExternal,
+      open: options.open
+    });
+
+    // 4. SQLite Projection Rebuild: Atomically reconstruct index from filesystem artifacts
+    const { HardkasStore, SqliteQueryBackend } = await import("@hardkas/query-store");
+    const { withLock } = await import("@hardkas/core");
+    
+    const store = new HardkasStore({ dbPath: path.join(hardkasDir, "store.db") });
+    store.connect({ autoMigrate: true });
+    
+    await withLock({ rootDir: wsRoot, name: "query-store", timeoutMs: 30000, wait: true }, async () => {
+       const backend = new SqliteQueryBackend(store);
+       await backend.rebuild({ strict: true });
+    });
+
+    if (!options.json && !options.once) {
+      UI.success("Query-store projection indexes rebuilt atomically from filesystem artifacts.");
     }
 
     if (options.once) {
@@ -66,13 +78,6 @@ export async function runDevServer(options: {
       }
       return;
     }
-
-    const server = createDevServer({
-      port,
-      host,
-      unsafeExternal: options.unsafeExternal,
-      open: options.open
-    });
 
     const serverObj = server as Record<string, unknown>;
     const token = typeof serverObj.token === "string" ? serverObj.token : undefined;

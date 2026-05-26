@@ -1,6 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import crypto from "node:crypto";
+import { AppendCoordinator } from "./append-coordinator.js";
 
 export type TelemetrySubsystem = 
   | "lock" 
@@ -36,21 +37,17 @@ export interface AnomalyEvent {
   sandbox?: string | undefined;
 }
 
-class TelemetryManager {
-  private static instance: TelemetryManager;
+import { AsyncLocalStorage } from "node:async_hooks";
+
+export class TelemetryManager {
   private rootDir: string | null = null;
   private currentContext: { seed?: number, caseId?: string, bucket?: string } = {};
   
   // Track sandboxes that need to be preserved because they hit severe anomalies
   private preservedSandboxes = new Set<string>();
 
-  private constructor() {}
-
-  public static getInstance(): TelemetryManager {
-    if (!TelemetryManager.instance) {
-      TelemetryManager.instance = new TelemetryManager();
-    }
-    return TelemetryManager.instance;
+  constructor(rootDir?: string) {
+    if (rootDir) this.rootDir = rootDir;
   }
 
   public init(rootDir: string) {
@@ -76,12 +73,6 @@ class TelemetryManager {
     details: string,
     sandboxOverride?: string
   ) {
-    // If we have no root directory set, telemetry is a no-op unless explicitly writing to a sandbox.
-    // Actually, in HardKAS, we often use the SDK with a specific rootDir on every call.
-    // For telemetry aggregation across CLI runs, we want a centralized file.
-    // If rootDir is null, we try to find it from process.cwd() or just write to sandbox.
-    
-    // For test matrix, the CLI runner can initialize this with the workspace root.
     const logDir = this.rootDir ? path.join(this.rootDir, ".hardkas", "telemetry") : 
                    (sandboxOverride ? path.join(sandboxOverride, ".hardkas", "telemetry") : null);
                    
@@ -95,7 +86,6 @@ class TelemetryManager {
     if (severity === "medium") mappedSeverity = "elevated";
     else if (severity === "high" || severity === "critical") mappedSeverity = "critical";
 
-    // Canonical content payload (excluding timestamp and eventId) to compute deterministic eventHash
     const canonicalPayloadRaw = JSON.stringify({
       runId,
       bucket,
@@ -110,7 +100,6 @@ class TelemetryManager {
     });
     const eventHash = crypto.createHash("sha256").update(canonicalPayloadRaw).digest("hex").slice(0, 32);
 
-    // Event instance ID (includes timestamp for instance uniqueness)
     const eventIdRaw = `${eventHash}-${nowStr}`;
     const eventId = crypto.createHash("sha256").update(eventIdRaw).digest("hex").slice(0, 32);
 
@@ -139,10 +128,9 @@ class TelemetryManager {
     }
 
     try {
-      if (!fs.existsSync(logDir)) {
-        fs.mkdirSync(logDir, { recursive: true });
-      }
-      fs.appendFileSync(path.join(logDir, "telemetry.jsonl"), JSON.stringify(event) + "\n");
+      const logFile = path.join(logDir, "telemetry.jsonl");
+      const root = this.rootDir || sandboxOverride || process.cwd();
+      AppendCoordinator.appendAtomic(logFile, JSON.stringify(event), root);
     } catch (err) {
       // Ignore telemetry append failures to avoid crashing the runtime
     }
@@ -153,4 +141,38 @@ class TelemetryManager {
   }
 }
 
-export const EnvironmentTelemetry = TelemetryManager.getInstance();
+export const telemetryContextStorage = new AsyncLocalStorage<TelemetryManager>();
+export const globalTelemetry = new TelemetryManager();
+
+export function getTelemetry(): TelemetryManager {
+  return telemetryContextStorage.getStore() || globalTelemetry;
+}
+
+class TelemetryProxy {
+  logAnomaly(
+    anomalyType: AnomalyType, 
+    severity: Severity, 
+    subsystem: TelemetrySubsystem, 
+    details: string,
+    sandboxOverride?: string
+  ) {
+    return getTelemetry().logAnomaly(anomalyType, severity, subsystem, details, sandboxOverride);
+  }
+  init(rootDir: string) {
+    return getTelemetry().init(rootDir);
+  }
+  setContext(context: { seed?: number, caseId?: string, bucket?: string }) {
+    return getTelemetry().setContext(context);
+  }
+  clearContext() {
+    return getTelemetry().clearContext();
+  }
+  getContext() {
+    return getTelemetry().getContext();
+  }
+  shouldPreserveSandbox(sandboxDir: string): boolean {
+    return getTelemetry().shouldPreserveSandbox(sandboxDir);
+  }
+}
+
+export const EnvironmentTelemetry = new TelemetryProxy();

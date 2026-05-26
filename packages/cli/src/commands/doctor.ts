@@ -10,6 +10,8 @@ import { HardkasStore } from "@hardkas/query-store";
 import { DockerKaspadRunner } from "@hardkas/node-runner";
 import { execa } from "execa";
 import { HARDKAS_VERSION } from "@hardkas/artifacts";
+import readline from "node:readline";
+import fsSync from "node:fs";
 
 export function registerDoctorCommand(program: Command) {
   program
@@ -214,6 +216,70 @@ async function runDoctor(opts: { json?: boolean; consistency?: boolean; strict?:
     } catch {
        // skip
     }
+    // Streams (events.jsonl & telemetry.jsonl)
+    const checkStream = async (streamName: string, streamPath: string, schemaValidator: (parsed: any) => boolean) => {
+      try {
+        const stats = await fs.stat(streamPath);
+        if (stats.size === 0) {
+           addCheck({ name: `${streamName} Stream`, category: "persistence", status: "pass", message: "Stream is empty" });
+           return;
+        }
+
+        // Check missing newline at EOF
+        const fd = await fs.open(streamPath, 'r');
+        const buffer = Buffer.alloc(1);
+        await fd.read(buffer, 0, 1, stats.size - 1);
+        await fd.close();
+        if (buffer.toString() !== '\n') {
+           addCheck({
+             name: `${streamName} Stream`, category: "persistence", status: "fail",
+             message: "Missing trailing newline", suggestion: "Run 'hardkas repair' to truncate corrupted tail."
+           });
+           return;
+        }
+
+        // Scan line by line
+        const fileStream = fsSync.createReadStream(streamPath);
+        const rl = readline.createInterface({ input: fileStream, crlfDelay: Infinity });
+        let lineNumber = 0;
+        let corrupted = false;
+
+        for await (const line of rl) {
+          lineNumber++;
+          if (!line.trim()) continue;
+          try {
+            const parsed = JSON.parse(line);
+            if (!schemaValidator(parsed)) {
+              addCheck({
+                name: `${streamName} Stream`, category: "persistence", status: "fail",
+                message: `Line ${lineNumber} has valid JSON but violates schema`,
+                suggestion: "Run 'hardkas repair' or inspect the stream."
+              });
+              corrupted = true;
+              break;
+            }
+          } catch {
+            addCheck({
+                name: `${streamName} Stream`, category: "persistence", status: "fail",
+                message: `Corrupted JSON at line ${lineNumber}`,
+                suggestion: "Run 'hardkas repair' to fix stream."
+            });
+            corrupted = true;
+            break;
+          }
+        }
+        
+        if (!corrupted) {
+          addCheck({ name: `${streamName} Stream`, category: "persistence", status: "pass", message: `${lineNumber} events verified` });
+        }
+      } catch {
+        addCheck({ name: `${streamName} Stream`, category: "persistence", status: "skip", message: "Stream not found" });
+      }
+    };
+
+    await checkStream("Events Ledger", path.join(process.cwd(), "events.jsonl"), (p) => p && p.schema === "hardkas.event");
+    await checkStream("Telemetry", path.join(hardkasDir, "telemetry", "telemetry.jsonl"), (p) => p && p.timestamp && p.level);
+
   }
 
   // --- 3. Security Checks ---
