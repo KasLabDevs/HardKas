@@ -15,7 +15,7 @@ import { transactionsRoutes } from "./routes/transactions.js";
 import { artifactsRoutes } from "./routes/artifacts.js";
 import { streamRoutes } from "./stream.js";
 import { overviewRoutes } from "./routes/overview.js";
-import { replayRoutes } from "./routes/replay.js";
+import { observabilityRoutes } from "./routes/observability.js";
 import { serveStatic } from "@hono/node-server/serve-static";
 import path from "node:path";
 import fs from "node:fs";
@@ -24,7 +24,8 @@ import open from "open";
 import { loadSessionStoreWithDiagnostics } from "@hardkas/sessions";
 import { HARDKAS_VERSION } from "@hardkas/artifacts";
 
-import { startHardkasWatcher } from "./watcher.js";
+import { startHardkasWatcher, stopHardkasWatcher } from "./watcher.js";
+export { stopHardkasWatcher };
 
 export interface DevServerConfig {
   port: number;
@@ -144,8 +145,8 @@ export function createDevServer(config: DevServerConfig) {
   app.route("/api/transactions", transactionsRoutes);
   app.route("/api/artifacts", artifactsRoutes);
   app.route("/api/overview", overviewRoutes);
-  app.route("/api/replay", replayRoutes);
   app.route("/api/stream", streamRoutes);
+  app.route("/api", observabilityRoutes);
 
   // Try to find dashboard dist in multiple locations
   function findDashboardDist(): string | null {

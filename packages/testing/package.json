@@ -1,6 +1,6 @@
 {
   "name": "@hardkas/testing",
-  "version": "0.6.0-alpha",
+  "version": "0.6.1-alpha",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -12,7 +12,7 @@
     "./mass-setup": "./dist/mass-setup.js"
   },
   "scripts": {
-    "build": "tsup src/index.ts src/harness.ts src/setup.ts src/reproducibility.ts src/adversarial-fixtures.ts src/mass-setup.ts --format esm --dts --clean --external vitest",
+    "build": "tsup src/index.ts src/harness.ts src/setup.ts src/reproducibility.ts src/adversarial-fixtures.ts src/mass-setup.ts --format esm --dts --clean --external vitest --external kaspa",
     "test": "vitest run && pnpm test:gauntlet",
     "test:gauntlet": "node --import tsx --test test/gauntlet.node.ts",
     "typecheck": "tsc --noEmit",

@@ -3,3 +3,14 @@ packages:
   - "packages/*"
   - "examples/*"
   - "demo2"
+
+supportedArchitectures:
+  os:
+    - current
+    - linux
+    - darwin
+    - win32
+  cpu:
+    - current
+    - x64
+    - arm64

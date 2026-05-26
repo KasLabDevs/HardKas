@@ -12,11 +12,12 @@ import fsp from "node:fs/promises";
 import path from "node:path";
 
 import { 
-import { deterministicCompare } from "@hardkas/core";
   coreEvents, 
   type EventEnvelope as ObsEvent,
   type EventKind as ObsEventKind,
-  writeFileAtomic
+  writeFileAtomic,
+  deterministicCompare,
+  AppendCoordinator
 } from "@hardkas/core";
 
 // Specific event interfaces are now in @hardkas/core
@@ -36,13 +37,10 @@ export function getEventsPath(cwd: string = process.cwd()): string {
  */
 export function emitEvent(event: ObsEvent, options?: { cwd?: string }): void {
   const filePath = getEventsPath(options?.cwd);
-  const dir = path.dirname(filePath);
+  const root = options?.cwd || process.cwd();
 
   try {
-    if (!fs.existsSync(dir)) {
-      fs.mkdirSync(dir, { recursive: true });
-    }
-    fs.appendFileSync(filePath, JSON.stringify(event) + "\n", "utf-8");
+    AppendCoordinator.appendAtomic(filePath, JSON.stringify(event), root);
   } catch {
     // Fire-and-forget. Observability must not break the workflow.
   }
@@ -53,13 +51,10 @@ export function emitEvent(event: ObsEvent, options?: { cwd?: string }): void {
  */
 export async function emitEventAsync(event: ObsEvent, options?: { cwd?: string }): Promise<void> {
   const filePath = getEventsPath(options?.cwd);
-  const dir = path.dirname(filePath);
+  const root = options?.cwd || process.cwd();
 
   try {
-    if (!fs.existsSync(dir)) {
-      await fsp.mkdir(dir, { recursive: true });
-    }
-    await fsp.appendFile(filePath, JSON.stringify(event) + "\n", "utf-8");
+    AppendCoordinator.appendAtomic(filePath, JSON.stringify(event), root);
   } catch {
     // Observability must not break the workflow.
   }

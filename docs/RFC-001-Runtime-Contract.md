@@ -106,8 +106,8 @@ Transactions are not "mutated blobs". They progress through explicit, distinct a
 ## 9. Capability Model vs Policy Rules
 
 HardKAS enforces a strict separation between policies and capabilities:
-- **Capabilities (Authority Tokens):** Cryptographic or structural proofs of authority (e.g., permission to sign, permission to broadcast).
-- **Policies (Runtime Rules):** Declarative constraints evaluated by the engine (e.g., `requireDryRun`, `allowMainnet`).
+- **Capabilities (Authority Tokens):** Structural proofs of environmental readiness or L1 state (e.g., wallet mode, Consensus state).
+- **Policies (Runtime Rules):** Evaluated constraints on workflows (e.g., `allowNetwork`, `requireDryRun`, `allowMainnet`).
 
 ## 10. Strict JSON/Stdout Contract
 

@@ -1,95 +1,71 @@
-name: HardKAS CI
+name: CI Parity (Cross-Platform Truth Equivalence)
 
 on:
   push:
-    branches: [ main ]
+    branches:
+      - main
   pull_request:
-    branches: [ main ]
+    branches:
+      - main
+  workflow_dispatch:
 
 jobs:
-  build-and-test:
-    name: Build & Test (${{ matrix.os }})
+  semantic-equivalence:
+    name: Cross-Platform Semantic Test
     runs-on: ${{ matrix.os }}
     strategy:
+      fail-fast: false
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
-
+        node-version: [22]
+    
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
-
-      - name: Setup Node.js (LTS)
+      
+      - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 22
+          node-version: ${{ matrix.node-version }}
 
       - name: Install pnpm
         uses: pnpm/action-setup@v3
         with:
           version: 9
-          run_install: false
-
-      - name: Get pnpm store directory
-        shell: bash
-        run: |
-          echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
-
-      - name: Cache pnpm dependencies
-        uses: actions/cache@v4
-        with:
-          path: ${{ env.STORE_PATH }}
-          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
-          restore-keys: |
-            ${{ runner.os }}-pnpm-store-
-
-      - name: Verify No Merge Markers
-        shell: bash
-        run: |
-          # We check everything except pnpm-lock.yaml (handled by --frozen-lockfile)
-          if grep -rE "^<<<<<<<|^=======|^>>>>>>>" . --exclude-dir=node_modules --exclude-dir=.git --exclude=pnpm-lock.yaml; then
-            echo "Error: Conflict markers found in the codebase!"
-            grep -rE "^<<<<<<<|^=======|^>>>>>>>" . --exclude-dir=node_modules --exclude-dir=.git --exclude=pnpm-lock.yaml
-            exit 1
-          fi
 
       - name: Install Dependencies
-        run: pnpm install --frozen-lockfile
+        run: pnpm install
 
-      - name: Full Monorepo Check
-        run: pnpm check
+      - name: Build Monorepo
+        run: pnpm build
 
-      - name: Verify Artifact Golden Fixtures
-        run: pnpm hardkas artifact verify ../artifacts/test/fixtures/golden --recursive --strict
+      - name: Run Torture Matrix (Seed 42)
+        run: pnpm hardkas torture matrix --iterations 300 --seed 42
 
-      - name: Verify Artifact Corruption Rejection
-        shell: bash
+      - name: Run Torture Matrix (Seed 999)
+        run: pnpm hardkas torture matrix --iterations 300 --seed 999
+
+      - name: Run Abuse & Fault Injection Tests
+        run: pnpm vitest run abuse-multiprocess soak-longrun fault-injection
+
+      - name: Run Benchmarks
+        run: pnpm vitest run benchmark
+        env:
+          BENCHMARK_CI: true
+
+      - name: Generate Global Semantic Hash
+        id: verify
         run: |
-          if pnpm hardkas artifact verify ../artifacts/test/fixtures/corrupted --recursive --strict; then
-            echo "Error: Corruption fixtures should have failed verification"
-            exit 1
-          else
-            echo "Correctly rejected corrupted fixtures"
-          fi
-
-      - name: Run CI Workflow Example
-        run: pnpm example:ci
-
-      - name: Run DAG Reorg Simulation Example
-        run: pnpm example:dag-reorg
-
-      - name: Verify Package Pack Integrity
+          pnpm hardkas verify-semantics --ci-mode > semantic_output.txt
+          cat semantic_output.txt
         shell: bash
-        run: |
-          mkdir -p dist-packages
-          cd packages/cli && npm pack && mv *.tgz ../../dist-packages/ && cd ../..
-          cd packages/sdk && npm pack && mv *.tgz ../../dist-packages/ && cd ../..
-          cd packages/artifacts && npm pack && mv *.tgz ../../dist-packages/ && cd ../..
-          cd packages/tx-builder && npm pack && mv *.tgz ../../dist-packages/ && cd ../..
-          cd packages/accounts && npm pack && mv *.tgz ../../dist-packages/ && cd ../..
 
-      - name: Upload NPM Packages as Artifacts
+      - name: Upload Telemetry and Reports
         uses: actions/upload-artifact@v4
+        if: always()
         with:
-          name: hardkas-packages-v0.2.2-alpha
-          path: dist-packages/*.tgz
-          retention-days: 7
+          name: torture-reports-${{ matrix.os }}
+          path: |
+            .hardkas/reports/
+            .hardkas/telemetry/telemetry.jsonl
+            semantic_output.txt

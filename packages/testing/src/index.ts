@@ -31,3 +31,9 @@ export { generateReproducibilityReport } from "./reproducibility.js";
 
 // ── Adversarial Validation ──────────────────────────────────────────────────
 export { AdversarialFixtures } from "./adversarial-fixtures.js";
+
+// ── Torture Suite ────────────────────────────────────────────────────────────
+export type { TortureCaseResult, TortureBucketContext, TortureBucket } from "./torture/torture-engine.js";
+export { LcgPrng, getAllTortureBuckets, getTortureBucket, TortureInvariantError } from "./torture/torture-engine.js";
+import "./torture/buckets.js";
+

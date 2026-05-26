@@ -53,7 +53,7 @@ export function createLocalnetSnapshot(
     schema: "hardkas.snapshot",
     hardkasVersion: HARDKAS_VERSION,
     version: ARTIFACT_VERSION,
-    createdAt: new Date().toISOString(),
+    createdAt: new Date().toISOString(), // hardkas-determinism-allow: snapshot creation timestamp
     name,
     daaScore: state.daaScore,
     accountsHash,

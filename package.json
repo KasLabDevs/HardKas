@@ -9,6 +9,9 @@
     "url": "git+https://github.com/KasLabDevs/HardKas.git"
   },
   "homepage": "https://github.com/KasLabDevs/HardKas#readme",
+  "engines": {
+    "node": ">=22.5.0"
+  },
   "bugs": {
     "url": "https://github.com/KasLabDevs/HardKas/issues"
   },
@@ -64,5 +67,5 @@
     "typescript-eslint": "^8.59.3",
     "vitest": "^2.1.8"
   },
-  "version": "0.6.0-alpha"
+  "version": "0.6.1-alpha"
 }

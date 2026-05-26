@@ -13,8 +13,10 @@ export interface ForkOptions {
 export async function forkFromNetwork(rpc: KaspaRpcClient, opts: ForkOptions): Promise<LocalnetState> {
   const info = await rpc.getInfo();
   const networkId = (info.networkId as NetworkId) || opts.network as NetworkId;
-  const currentDaaScore = info.virtualDaaScore?.toString() || "0";
-  const targetDaaScore = opts.atDaaScore || currentDaaScore;
+  const targetDaaScore = opts.atDaaScore;
+  if (!targetDaaScore) {
+    throw new Error(`[CRITICAL SEMANTIC ERROR] Implicit 'latest' resolution forbidden. You must explicitly provide atDaaScore.`);
+  }
 
   const utxos: LocalnetUtxo[] = [];
   
@@ -37,7 +39,7 @@ export async function forkFromNetwork(rpc: KaspaRpcClient, opts: ForkOptions): P
     version: ARTIFACT_VERSION,
     hashVersion: "sha256-canonical",
     mode: "simulated" as ExecutionMode,
-    createdAt: new Date().toISOString(),
+    createdAt: new Date().toISOString(), // hardkas-determinism-allow: fork state creation timestamp
     networkId,
     daaScore: targetDaaScore,
     accounts: opts.addresses.map((addr, i) => ({
@@ -49,7 +51,7 @@ export async function forkFromNetwork(rpc: KaspaRpcClient, opts: ForkOptions): P
       network: opts.network,
       rpcUrl: opts.rpcUrl,
       daaScore: targetDaaScore,
-      forkedAt: new Date().toISOString(),
+      forkedAt: new Date().toISOString(), // hardkas-determinism-allow: fork source timestamp
       addresses: opts.addresses
     }
   };

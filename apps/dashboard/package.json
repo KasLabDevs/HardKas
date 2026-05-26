@@ -1,6 +1,6 @@
 {
   "name": "@hardkas/dashboard",
-  "version": "0.6.0-alpha",
+  "version": "0.6.1-alpha",
   "private": true,
   "type": "module",
   "scripts": {
@@ -13,14 +13,19 @@
     "test:visual:ci": "playwright test --reporter=html"
   },
   "dependencies": {
-    "@hardkas/core": "workspace:0.6.0-alpha",
+    "@hardkas/core": "workspace:0.6.1-alpha",
     "@hardkas/react": "workspace:*",
+    "@tailwindcss/vite": "^4.3.0",
     "@tanstack/react-query": "^5.61.3",
+    "@xyflow/react": "^12.10.2",
+    "clsx": "^2.1.1",
     "lucide-react": "^0.462.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "react-qr-code": "^2.0.21",
-    "react-router-dom": "^7.1.1"
+    "react-router-dom": "^7.15.1",
+    "tailwind-merge": "^3.6.0",
+    "tailwindcss": "^4.3.0"
   },
   "devDependencies": {
     "@playwright/test": "^1.60.0",

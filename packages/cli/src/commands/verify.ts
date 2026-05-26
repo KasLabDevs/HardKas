@@ -1,5 +1,6 @@
 import { Command } from "commander";
 import { runArtifactVerify } from "../runners/artifact-verify-runner.js";
+import { runSemanticVerify } from "../runners/semantic-verify-runner.js";
 import { UI, handleError } from "../ui.js";
 import { HardkasCliError, HardkasExitCode } from "../cli-errors.js";
 
@@ -46,6 +47,28 @@ export function registerVerifyCommand(program: Command) {
           handleError(err);
         }
         process.exit(err instanceof HardkasCliError ? err.exitCode : HardkasExitCode.RUNTIME_FAILURE);
+      }
+    });
+
+  program
+    .command("verify-semantics")
+    .description(`Verify semantic truth agreement across all HardKAS subsystems ${UI.maturity("alpha")}`)
+    .option("--json", "Output machine-readable JSON", false)
+    .option("--ci-mode", "Verify semantic truth equivalence across OS boundaries", false)
+    .action(async (opts) => {
+      try {
+        if (opts.json) UI.setJsonMode(true);
+        await runSemanticVerify({
+          json: opts.json,
+          ciMode: opts.ciMode
+        });
+      } catch (err: any) {
+        if (opts.json) {
+          UI.writeJson({ error: "SEMANTIC_DRIFT", message: err.message });
+        } else {
+          UI.error(err.message);
+        }
+        process.exit(1);
       }
     });
 }

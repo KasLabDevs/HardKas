@@ -47,7 +47,7 @@ export class HardkasWorkflow {
     const parentArtifacts: string[] = [];
     
     // generationId is mapped via time for now since it's the simplest universal clock we have without the dev-server
-    const generationStart = Date.now().toString();
+    const generationStart = Date.now().toString(); // hardkas-determinism-allow: ambient start generation clock
     
     let status: "completed" | "failed" = "completed";
     let errorEnvelope: WorkflowArtifact["errorEnvelope"] = undefined;
@@ -57,7 +57,7 @@ export class HardkasWorkflow {
 
     // Real Execution Routing
     for (const step of options.steps) {
-      const startedAt = new Date().toISOString();
+      const startedAt = new Date().toISOString(); // hardkas-determinism-allow: step start timestamp
       try {
         if (step.type === "simulate-failure") {
           if (this.sdk.mode === "agent") {
@@ -120,7 +120,7 @@ export class HardkasWorkflow {
           type: step.type,
           status: "success",
           startedAt,
-          completedAt: new Date().toISOString()
+          completedAt: new Date().toISOString() // hardkas-determinism-allow: step completion timestamp
         };
         if (producedArtifactId) stepRecord.producedArtifactId = producedArtifactId;
         artifactSteps.push(stepRecord);
@@ -136,7 +136,7 @@ export class HardkasWorkflow {
           type: step.type,
           status: "failed",
           startedAt,
-          completedAt: new Date().toISOString(),
+          completedAt: new Date().toISOString(), // hardkas-determinism-allow: step failed timestamp
           error: e.message
         });
         break; // Stop execution on first failure
@@ -151,7 +151,7 @@ export class HardkasWorkflow {
       hardkasVersion: HARDKAS_VERSION,
       networkId: this.sdk.network,
       mode: executionMode,
-      createdAt: new Date().toISOString(),
+      createdAt: new Date().toISOString(), // hardkas-determinism-allow: workflow artifact creation timestamp
       workflowId,
       artifactId: workflowId,
       status,
@@ -160,7 +160,7 @@ export class HardkasWorkflow {
       producedArtifacts,
       generationRange: {
         start: generationStart,
-        end: Date.now().toString()
+        end: Date.now().toString() // hardkas-determinism-allow: ambient end generation clock
       },
       policy: {
         allowNetwork: this.sdk.policy.allowNetwork,

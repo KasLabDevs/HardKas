@@ -16,7 +16,11 @@ export default defineConfig({
         'node:path',
         'node:crypto',
         'node:os',
-        'node:fs/promises'
+        'node:fs/promises',
+        'async_hooks',
+        'node:async_hooks',
+        'child_process',
+        'node:child_process'
       ]
     }
   }

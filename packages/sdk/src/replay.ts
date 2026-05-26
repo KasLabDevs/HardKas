@@ -184,7 +184,7 @@ export class HardkasReplay {
           report = verifyReplay(state, plan, receipt, systemRuntimeContext);
           
           // Write replay report artifact to disk for query-store indexing and dashboard visibility
-          const reportFilename = `${new Date().toISOString().replace(/:/g, "-")}-${receipt.txId}.replay.json`;
+          const reportFilename = `${new Date().toISOString().replace(/:/g, "-")}-${receipt.txId}.replay.json`; // hardkas-determinism-allow: timestamped report file naming
           const reportPath = path.join(this.sdk.workspace.artifactsDir, reportFilename);
           await writeArtifact(reportPath, report);
         } catch (err: any) {

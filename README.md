@@ -11,7 +11,7 @@ Serving as a local developer cockpit, HardKAS provides developers and automated 
 ---
 
 > [!IMPORTANT]
-> **Status: 0.6.0-alpha (HARDENED ALPHA / P1.12 Complete)**
+> **Status: 0.6.1-alpha (HARDENED ALPHA / P1.12 Complete)**
 > HardKAS is in **Hardened Alpha**. All core transaction planning, candidate UTXO sorting, post-selection input ordering, and workstation security invariants are fully implemented, verified, and E2E-tested.
 
 ---

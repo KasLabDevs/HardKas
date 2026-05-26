@@ -12,7 +12,7 @@ export function registerLocalnetCommands(program: Command): void {
     .description(`Fork state from a real Kaspa network for local simulation ${UI.maturity("preview")}`)
     .requiredOption("--network <name>", "Network to fork from")
     .option("--addresses <addrs...>", "Only fetch UTXOs for these addresses")
-    .option("--at-daa-score <score>", "Fork at specific DAA score (default: latest)")
+    .requiredOption("--at-daa-score <score>", "Fork at specific DAA score (implicit latest is forbidden)")
     .option("--output <path>", "Save fork snapshot to file")
     .option("--json", "Output as JSON", false)
     .action(async (opts) => {

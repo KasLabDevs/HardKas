@@ -19,7 +19,8 @@ describe("localnet fork engine", () => {
     const state = await forkFromNetwork(mockRpc, {
       network: "testnet-11",
       rpcUrl: "mock://local",
-      addresses: [address]
+      addresses: [address],
+      atDaaScore: "1000"
     });
 
     expect(state.networkId).toBe("testnet-11");
@@ -34,7 +35,8 @@ describe("localnet fork engine", () => {
     const state = await forkFromNetwork(mockRpc, {
       network: "simnet",
       rpcUrl: "mock://local",
-      addresses: ["addr1"]
+      addresses: ["addr1"],
+      atDaaScore: "2000"
     });
 
     expect(state.forkSource).toBeDefined();

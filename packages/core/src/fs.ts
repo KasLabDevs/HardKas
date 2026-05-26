@@ -2,6 +2,7 @@ import fs from "node:fs";
 import path from "node:path";
 import crypto from "node:crypto";
 import { HardkasError } from "./index.js";
+import { EnvironmentTelemetry } from "./telemetry.js";
 
 /**
  * Options for atomic file writing.
@@ -71,6 +72,7 @@ export async function writeFileAtomic(
         attempts++;
         if (attempts >= maxAttempts) throw e;
         if (e.code === "EPERM" || e.code === "EBUSY") {
+          EnvironmentTelemetry.logAnomaly("FS_RETRY", "low", "fs", `Retrying rename of ${targetPath} due to ${e.code}`);
           // Wait 10ms-50ms before retrying on Windows
           await new Promise(resolve => setTimeout(resolve, 10 * attempts));
           continue;
@@ -145,6 +147,7 @@ export function writeFileAtomicSync(
         attempts++;
         if (attempts >= maxAttempts) throw e;
         if (e.code === "EPERM" || e.code === "EBUSY") {
+          EnvironmentTelemetry.logAnomaly("FS_RETRY", "low", "fs", `Retrying rename sync of ${targetPath} due to ${e.code}`);
           // Sync sleep (spin-wait) on Windows is nasty but sometimes needed in sync paths
           // For now, just retry immediately or throw if it's too much.
           continue;

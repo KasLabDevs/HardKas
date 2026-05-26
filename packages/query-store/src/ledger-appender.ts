@@ -1,6 +1,6 @@
 import fs from "node:fs";
 import path from "node:path";
-import { coreEvents, type EventEnvelope } from "@hardkas/core";
+import { coreEvents, type EventEnvelope, AppendCoordinator } from "@hardkas/core";
 
 export interface LedgerAppenderOptions {
   cwd?: string;
@@ -29,8 +29,8 @@ export function attachLedgerAppender(options: LedgerAppenderOptions = {}): () =>
 
   const listener = (event: EventEnvelope) => {
     try {
-      const line = JSON.stringify(event) + "\n";
-      fs.appendFileSync(ledgerPath, line, "utf-8");
+      const line = JSON.stringify(event);
+      AppendCoordinator.appendAtomic(ledgerPath, line, cwd);
     } catch (e) {
       // Intentionally swallow errors so the appender doesn't crash the main process.
       // But in dev mode, we might want to log it.

@@ -9,7 +9,8 @@ import {
   type EventEnvelope, 
   type CorruptionIssue, 
   formatCorruptionIssue,
-  type CorruptionCode
+  type CorruptionCode,
+  EnvironmentTelemetry
 } from "@hardkas/core";
 
 export interface IndexerOptions {
@@ -111,11 +112,11 @@ export class HardkasIndexer {
     
     // Mark last sync
     this.db.prepare("INSERT OR REPLACE INTO metadata (key, value) VALUES (?, ?)")
-      .run("last_indexed_at", new Date().toISOString());
+      .run("last_indexed_at", new Date().toISOString()); // hardkas-determinism-allow: last sync ambient metadata
       
     if (result.artifacts.indexed > 0 || result.events.indexed > 0 || result.artifacts.corrupted > 0) {
       const crypto = require("node:crypto");
-      const genId = crypto.randomUUID();
+      const genId = crypto.randomUUID(); // hardkas-determinism-allow: random generation metadata ID
       this.db.prepare("INSERT OR REPLACE INTO metadata (key, value) VALUES (?, ?)")
         .run("generation_id", genId);
       result.generationId = genId;
@@ -180,6 +181,7 @@ export class HardkasIndexer {
     try {
       // 1. Wipe
       this._wipeInternal();
+      EnvironmentTelemetry.logAnomaly("REPLAY_RECONCILIATION", "medium", "replay", "Full query rebuild executed");
       
       // 2. Full Sync (using internal logic to avoid nested transaction)
       if (fs.existsSync(this.hardkasDir)) {
@@ -200,9 +202,11 @@ export class HardkasIndexer {
   private _wipeInternal(): void {
     this.db.exec("DELETE FROM traces;");
     this.db.exec("DELETE FROM events;");
+    try { this.db.exec("DELETE FROM lineage_closure;"); } catch {} // v3+ table
     this.db.exec("DELETE FROM lineage_edges;");
     this.db.exec("DELETE FROM artifacts;");
     this.db.exec("DELETE FROM metadata WHERE key = 'last_indexed_at';");
+    try { this.db.exec("DELETE FROM lineage_stats;"); } catch {} // v3+ table
   }
 
   /**
@@ -298,13 +302,30 @@ export class HardkasIndexer {
     return report;
   }
 
+  /**
+   * Checks if a file needs re-indexing based on mtime comparison.
+   * Returns true if the file has changed since last indexing.
+   */
+  private needsReindex(filePath: string, currentMtimeMs: number): boolean {
+    try {
+      const row = this.db.prepare(
+        "SELECT file_mtime_ms FROM artifacts WHERE file_path = ?"
+      ).get(filePath) as { file_mtime_ms: number | null } | undefined;
+      
+      if (!row || row.file_mtime_ms === null) return true;
+      return row.file_mtime_ms !== currentMtimeMs;
+    } catch {
+      return true;
+    }
+  }
+
   private async syncArtifacts(result: SyncResult, specificPaths?: string[]) {
     // Sort files to ensure deterministic indexing order
     const files = specificPaths 
       ? specificPaths.filter(p => fs.existsSync(p) && p.endsWith(".json") && !p.endsWith("events.jsonl")).sort() 
       : this.walk(this.hardkasDir).sort();
       
-    const indexedAt = new Date().toISOString();
+    const indexedAt = new Date().toISOString(); // hardkas-determinism-allow: index time metadata
 
     const upsertArtifact = this.db.prepare(`
       INSERT INTO artifacts 
@@ -331,10 +352,17 @@ export class HardkasIndexer {
     `);
 
     const artifactsToLink: any[] = [];
+    let skipped = 0;
 
     for (const file of files) {
       result.artifacts.scanned++;
       const stat = fs.statSync(file);
+      
+      // Incremental sync optimization: skip unchanged files
+      if (!specificPaths && !this.needsReindex(file, stat.mtimeMs)) {
+        skipped++;
+        continue;
+      }
       
       try {
         const verification = await verifyArtifactIntegrity(file);
@@ -354,6 +382,7 @@ export class HardkasIndexer {
           });
           
           if (this.strict) {
+            EnvironmentTelemetry.logAnomaly("EXTERNAL_MUTATION", "critical", "query-store", `Strict mode: corrupted artifact in ${file}`);
             throw new Error(`Strict mode: corrupted artifact in ${file}`);
           }
         }
@@ -437,6 +466,65 @@ export class HardkasIndexer {
         result.warnings.push(`Failed to link lineage for ${parsed.artifactId}: ${e.message}`);
       }
     }
+
+    // Pass 3: Build lineage closure (transitive ancestor/descendant relationships)
+    this.buildLineageClosure();
+  }
+
+  /**
+   * Builds the transitive closure of the lineage graph.
+   * For each edge (parent -> child), we also store (grandparent -> child), etc.
+   * This enables O(1) ancestor/descendant queries without recursive CTEs.
+   */
+  private buildLineageClosure(): void {
+    try {
+      // Wipe and rebuild closure from edges (idempotent)
+      this.db.exec("DELETE FROM lineage_closure;");
+
+      // Direct edges: depth 1
+      this.db.exec(`
+        INSERT OR IGNORE INTO lineage_closure (ancestor_id, descendant_id, depth, created_at)
+        SELECT parent_artifact_id, child_artifact_id, 1, created_at
+        FROM lineage_edges;
+      `);
+
+      // Transitive closure: iterate until no new rows are added
+      let added = 1;
+      let currentDepth = 1;
+      const maxDepth = 100; // Safety limit
+
+      while (added > 0 && currentDepth < maxDepth) {
+        currentDepth++;
+        const insertResult = this.db.prepare(`
+          INSERT OR IGNORE INTO lineage_closure (ancestor_id, descendant_id, depth, created_at)
+          SELECT c1.ancestor_id, c2.descendant_id, ? , c2.created_at
+          FROM lineage_closure c1
+          JOIN lineage_closure c2 ON c1.descendant_id = c2.ancestor_id
+          WHERE c1.depth = ? - 1
+          AND NOT EXISTS (
+            SELECT 1 FROM lineage_closure existing
+            WHERE existing.ancestor_id = c1.ancestor_id AND existing.descendant_id = c2.descendant_id
+          )
+        `).run(currentDepth, currentDepth);
+        added = insertResult.changes;
+      }
+
+      // Update lineage stats
+      const closureCount = (this.db.prepare("SELECT COUNT(*) as count FROM lineage_closure").get() as { count: number }).count;
+      const edgeCount = (this.db.prepare("SELECT COUNT(*) as count FROM lineage_edges").get() as { count: number }).count;
+      const maxLineageDepth = (this.db.prepare("SELECT COALESCE(MAX(depth), 0) as maxDepth FROM lineage_closure").get() as { maxDepth: number }).maxDepth;
+
+      const updateStat = this.db.prepare(
+        "INSERT OR REPLACE INTO lineage_stats (stat_key, stat_value, updated_at) VALUES (?, ?, ?)"
+      );
+      const now = new Date().toISOString(); // hardkas-determinism-allow: stats metadata timestamp
+      updateStat.run("closure_entries", String(closureCount), now);
+      updateStat.run("direct_edges", String(edgeCount), now);
+      updateStat.run("max_lineage_depth", String(maxLineageDepth), now);
+    } catch (e: any) {
+      // lineage_closure table might not exist yet (pre-v3 migration)
+      // Silently skip - this is non-critical
+    }
   }
 
   private syncEvents(result: SyncResult) {
@@ -444,7 +532,7 @@ export class HardkasIndexer {
     if (!fs.existsSync(eventsPath)) return;
 
     const stat = fs.statSync(eventsPath);
-    const indexedAt = new Date().toISOString();
+    const indexedAt = new Date().toISOString(); // hardkas-determinism-allow: index time metadata
 
     const content = fs.readFileSync(eventsPath, "utf-8");
     const lines = content.split("\n");
@@ -575,6 +663,7 @@ export class HardkasIndexer {
 
     for (const row of rows) {
       if (!row.file_path || !fs.existsSync(row.file_path)) {
+        EnvironmentTelemetry.logAnomaly("EXTERNAL_MUTATION", "high", "query-store", `Zombie artifact cleaned up: ${row.artifact_id}`);
         deleteArtifact.run(row.artifact_id);
       }
     }

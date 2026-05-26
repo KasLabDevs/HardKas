@@ -118,6 +118,7 @@ export function parseKasToSompi(input: string): bigint {
 
   const [whole, fractional = ""] = trimmed.split(".");
   if (whole === undefined) {
+
     throw new HardkasError("AMOUNT_INVALID", `Invalid KAS amount: ${input}`);
   }
 
@@ -134,6 +135,7 @@ export function formatSompi(amountSompi: bigint): string {
   return `${sign}${whole}.${fractional.toString().padStart(8, "0")} KAS`;
 }
 
+
 export * from "./events.js";
 export * from "./domain-types.js";
 export * from "./branded.js";
@@ -145,4 +147,9 @@ export * from "./lock.js";
 export * from "./replay.js";
 export * from "./snapshot.js";
 export * from "./deterministic.js";
+export * from "./telemetry.js";
+export { TelemetryRotator } from "./retention.js";
 export * from "./runtime-context.js";
+export * from "./semantics/index.js";
+export * from "./append-coordinator.js";
+export * from "./migrations.js";

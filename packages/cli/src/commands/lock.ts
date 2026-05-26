@@ -99,7 +99,7 @@ export function registerLockCommands(program: Command) {
     .option("--yes", "Confirm clearing without prompt", false)
     .action(async (name, options) => {
       try {
-        if (!options.yes && !options.ifDead) {
+        if (!options.yes && !options.force) {
           const confirmed = await UI.confirm(`Clearing an active lock may lead to data corruption if another process is writing to the workspace.\n  Are you sure you want to clear '${name}'?`);
           if (!confirmed) return;
         }

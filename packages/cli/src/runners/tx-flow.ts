@@ -11,7 +11,9 @@ import {
 import { 
   TxPlanArtifact, 
   SignedTxArtifact, 
-  writeArtifact 
+  writeArtifact,
+  calculateContentHash,
+  HARDKAS_VERSION
 } from "@hardkas/artifacts";
 import { HardkasConfig } from "@hardkas/config";
 import { 
@@ -96,7 +98,45 @@ export async function runTxFlow(input: TxFlowInput): Promise<TxFlowResult> {
   const shouldSign = sign || send;
   const shouldSend = send;
 
-  const workflowId = asWorkflowId(crypto.randomUUID());
+  const intentPayload = {
+    type: "hardkas.workflow.intent",
+    schemaVersion: "v1",
+    workflowSpec: [
+      {
+        type: "tx.flow",
+        from,
+        to,
+        amount,
+        network,
+        feeRate,
+        planOnly,
+        sign,
+        send
+      }
+    ],
+    normalizedInputs: {
+      from,
+      to,
+      amount,
+      feeRate
+    },
+    parentArtifacts: [],
+    policySnapshot: {
+      allowNetwork: (config as any).policy?.allowNetwork ?? true,
+      allowMainnet: (config as any).policy?.allowMainnet ?? false,
+      allowExternalWallet: (config as any).policy?.allowExternalWallet ?? false,
+      requireDryRun: (config as any).policy?.requireDryRun ?? false
+    },
+    capabilitySnapshot: {
+      mode: (config as any).mode ?? "developer",
+      network: network || config.defaultNetwork || "simnet"
+    },
+    runtimeVersion: HARDKAS_VERSION,
+    workspaceSchemaVersion: "hardkas.workflow.v1"
+  };
+
+  const intentHash = calculateContentHash(intentPayload);
+  const workflowId = asWorkflowId(`wf_${intentHash.slice(0, 16)}`);
   let globalOffset = 0;
 
   const netId = asNetworkId(network || config.defaultNetwork || "simnet");

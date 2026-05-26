@@ -71,7 +71,15 @@ export class HardkasArtifactsManager {
     await writeArtifact(absolutePath, artifact);
     
     // Emit the event so localnet and query-store can index it.
-    const { coreEvents, createEventEnvelope } = await import("@hardkas/core");
+    const { 
+      coreEvents, 
+      createEventEnvelope,
+      asWorkflowId,
+      asCorrelationId,
+      asNetworkId,
+      asArtifactId,
+      asEventSequence
+    } = await import("@hardkas/core");
     // If no workflowId is provided, this artifact is standalone.
     // "wf_unknown_standalone" is a sentinel value for tracking provenance of loose artifacts.
     // It is NOT a replayable causal workflow identity.
@@ -83,14 +91,14 @@ export class HardkasArtifactsManager {
     coreEvents.emit(createEventEnvelope({
       kind: "artifact.written",
       domain: "integrity",
-      workflowId: wId as unknown as any,
-      correlationId: cId as unknown as any,
-      networkId: netId as unknown as any,
-      payload: { artifactId: artifactId as unknown as any, path: absolutePath },
-      sequenceNumber: 1 as unknown as any,
+      workflowId: asWorkflowId(wId),
+      correlationId: asCorrelationId(cId),
+      networkId: asNetworkId(netId),
+      payload: { artifactId: asArtifactId(artifactId), path: absolutePath },
+      sequenceNumber: asEventSequence(1),
       globalOffset: 0,
       sourceSubsystem: "sdk:artifacts-manager",
-      artifactId: artifactId as unknown as any
+      artifactId: asArtifactId(artifactId)
     }));
     
     return {

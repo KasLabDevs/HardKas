@@ -18,7 +18,7 @@ export interface Clock {
 }
 
 export const defaultClock: Clock = {
-  now: () => Date.now()
+  now: () => Date.now() // hardkas-determinism-allow: default clock ambient source
 };
 
 export interface VerificationContext {
