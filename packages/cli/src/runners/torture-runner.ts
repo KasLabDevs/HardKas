@@ -15,8 +15,8 @@ import { EnvironmentTelemetry, AnomalyEvent } from "@hardkas/core";
 export interface TortureMatrixOptions {
   iterations: number;
   seed: string | number;
-  report?: string;
-  bucket?: string;
+  report?: string | undefined;
+  bucket?: string | undefined;
 }
 
 export interface TortureReplayOptions {

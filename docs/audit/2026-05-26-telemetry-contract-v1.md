@@ -35,12 +35,13 @@ The following file states and SHA-256 hashes represent the exact verified codeba
 | Component | Path | SHA-256 Hash |
 |---|---|---|
 | **Core Telemetry Manager** | `packages/core/src/telemetry.ts` | `4CACA1C465E654F431067ED6A0988D035719A649CB5C9E5E945C176E050AAFCB` |
-| **Torture Matrix Runner** | `packages/cli/src/runners/torture-runner.ts` | `75147A77D789B241C8625A59C7FCC03A74FA997F62F5B0B109AE99A089DBCD8D` |
+| **Torture Matrix Runner** | `packages/cli/src/runners/torture-runner.ts` | `E3271EC95F96B1557694175C24F920B1AC4DCD5AB12B3C7A825014FD180C177F` |
 | **Dashboard API Server** | `packages/cli/src/runners/dashboard-runner.ts` | `D901FD901CB471A472DEAF4FA58289F49F09CE133F1E251E9084BBE54C65E23F` |
 | **Dashboard Doctor CLI** | `packages/cli/src/runners/dashboard-doctor-runner.ts` | `7EB38B4751938C9A11D3EE066E9537A69884F1ECB7A869BE6C8E88CE98EEFE05` |
 | **Telemetry CLI Runner** | `packages/cli/src/runners/telemetry-runners.ts` | `2BF32333CC7751A972A49435E98BECFFC00E98B767319609F0BF29E4CCA460FA` |
 | **Dashboard Telemetry UI** | `apps/dashboard/src/views/Telemetry.tsx` | `8418A0AA30E75C847FB4EAFE2675B80E272A346CD08E70070A6C9897526619A1` |
 | **Dashboard Semantic Drift UI**| `apps/dashboard/src/views/SemanticDrift.tsx` | `52931B40C6A9608205BF50D46AEAFB1974ABBBB6BA826490A88251DF62C935E5` |
+| **Transaction Flow Runner**| `packages/cli/src/runners/tx-flow.ts` | `61F2F923455AE7491BB09C3F9A442BD4F04E3C9A8269EE3CC3BE2F486C595CD3` |
 
 ---
 
