@@ -148,8 +148,8 @@ function App() {
           <TxWorkflowDemo />
         </div>
         <div>
+          <SessionTimelineScrubber />
           <ArtifactViewer />
-          <IgraReadOnlyPanel />
         </div>
       </div>
     </div>
@@ -273,31 +273,40 @@ export default function TxWorkflowDemo() {
 }
 `);
 
-  writeFile("src/components/ArtifactViewer.tsx", `
-import React, { useState, useEffect } from 'react';
+  writeFile("src/components/SessionTimelineScrubber.tsx", `
+import React, { useState } from 'react';
 import { client } from '../hardkas/client';
 
-export default function ArtifactViewer() {
-  const [artifactId, setArtifactId] = useState("");
-  const [explanation, setExplanation] = useState<any>(null);
+export default function SessionTimelineScrubber() {
+  const [snapshotResult, setSnapshotResult] = useState<any>(null);
+  const [timeTravelView, setTimeTravelView] = useState<any>(null);
+  const [diffResult, setDiffResult] = useState<any>(null);
+  const [targetId, setTargetId] = useState("");
 
-  // Observational telemetry stream via HardKAS Dev Server
-  useEffect(() => {
-    let unsubscribe: () => void;
-    if (client) {
-      unsubscribe = client.artifacts.watch((event: any) => {
-        console.log("Telemetry Event:", event);
-      });
-    }
-    return () => {
-      if (unsubscribe) unsubscribe();
-    };
-  }, [client]);
-
-  const explain = async () => {
+  const handleSnapshot = async () => {
     try {
-      const res = await client.artifacts.explain(artifactId);
-      setExplanation(res.data);
+      const res = await client.session.snapshot();
+      setSnapshotResult(res.data);
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  const handleTimeTravel = async () => {
+    try {
+      // Time-travel creates a read-only historical view anchored at artifactId.
+      // It does NOT mutate the active canonical workspace.
+      const res = await client.session.timeTravel(targetId);
+      setTimeTravelView(res.data);
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  const handleDiff = async () => {
+    try {
+      const res = await client.session.diffReplay(targetId);
+      setDiffResult(res.data);
     } catch (e) {
       console.error(e);
     }
@@ -305,8 +314,107 @@ export default function ArtifactViewer() {
 
   return (
     <div className="card">
-      <h2>Artifact Explorer</h2>
-      <p>Artifacts are the canonical source of truth. Dev-server/SQLite are just projections.</p>
+      <h2>Session Timeline & Time-Travel</h2>
+      <p style={{ fontSize: '0.9em', color: '#666' }}>
+        Deterministic debugging allows rewinding state safely. Time-travel creates a <strong>read-only</strong> historical projection without mutating the canonical event ledger.
+      </p>
+      
+      <div style={{ display: 'flex', gap: '10px', marginBottom: '15px' }}>
+        <button onClick={handleSnapshot}>Create Session Snapshot</button>
+      </div>
+
+      {snapshotResult && (
+        <div style={{ background: '#e9ecef', padding: '10px', borderRadius: '4px', marginBottom: '15px' }}>
+          <strong>Snapshot Saved:</strong> {snapshotResult.snapshotId}
+        </div>
+      )}
+
+      <div style={{ padding: '10px', border: '1px solid #ccc', borderRadius: '4px' }}>
+        <h3 style={{ marginTop: 0 }}>Deterministic Debugging</h3>
+        <input 
+          type="text" 
+          placeholder="Artifact ID to anchor..." 
+          value={targetId}
+          onChange={e => setTargetId(e.target.value)}
+          style={{ padding: '8px', width: '200px', marginRight: '10px' }}
+        />
+        <button onClick={handleTimeTravel} style={{ marginRight: '5px' }}>Create Read-Only View</button>
+        <button onClick={handleDiff}>Diff Replay</button>
+
+        {timeTravelView && (
+          <div style={{ marginTop: '10px', padding: '10px', background: '#e3f2fd', color: '#0d47a1', borderRadius: '4px' }}>
+            <strong>View Active:</strong> {timeTravelView.viewId} <br/>
+            {timeTravelView.message}
+          </div>
+        )}
+
+        {diffResult && (
+          <div style={{ marginTop: '10px', padding: '10px', background: diffResult.status === 'diverged' ? '#ffebee' : '#e8f5e9', borderRadius: '4px' }}>
+            <strong>Diff Status:</strong> {diffResult.status.toUpperCase()}
+            <ul>
+              {diffResult.divergenceClassifications?.map((cls: string, i: number) => (
+                <li key={i}>{cls}</li>
+              ))}
+            </ul>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+`);
+
+  writeFile("src/components/ArtifactViewer.tsx", `
+import React, { useState, useEffect } from 'react';
+import { client } from '../hardkas/client';
+
+export default function ArtifactViewer() {
+  const [artifactId, setArtifactId] = useState("");
+  const [explanation, setExplanation] = useState<any>(null);
+  const [replayStatus, setReplayStatus] = useState<string | null>(null);
+  const [liveStream, setLiveStream] = useState<any[]>([]);
+
+  // Observational telemetry stream via HardKAS Dev Server (SSE)
+  useEffect(() => {
+    let unsubscribe: () => void;
+    if (client) {
+      unsubscribe = client.artifacts.watch((event: any) => {
+        if (event.type === "artifact") {
+           setLiveStream(prev => [event, ...prev].slice(0, 5));
+        }
+      }, { type: 'signed-tx' });
+    }
+    return () => {
+      if (unsubscribe) unsubscribe();
+    };
+  }, []);
+
+  const explainAndReplay = async () => {
+    try {
+      const res = await client.artifacts.explain(artifactId);
+      setExplanation(res.data);
+      
+      const repRes = await client.artifacts.replay(artifactId);
+      setReplayStatus(repRes.data?.status || 'unknown');
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  return (
+    <div className="card">
+      <h2>Artifact Inspector & Lineage</h2>
+      <p>Artifacts are the canonical source of truth. Explore the graph.</p>
+      
+      <div style={{ marginBottom: '15px' }}>
+        <strong>Live Stream (Latest 5):</strong>
+        <ul style={{ fontSize: '0.85em', background: '#f5f5f5', padding: '10px', borderRadius: '4px' }}>
+          {liveStream.length === 0 ? <li>No recent events</li> : liveStream.map((evt, i) => (
+             <li key={i}>[{evt.envelope?.type}] {evt.envelope?.artifactId}</li>
+          ))}
+        </ul>
+      </div>
+
       <input 
         type="text" 
         value={artifactId} 
@@ -314,9 +422,49 @@ export default function ArtifactViewer() {
         placeholder="Enter Artifact ID"
         style={{ padding: '8px', marginRight: '10px', width: '250px' }}
       />
-      <button onClick={explain}>Explain</button>
+      <button onClick={explainAndReplay}>Analyze Graph</button>
+      
       {explanation && (
-        <pre style={{ marginTop: '10px' }}>{JSON.stringify(explanation, null, 2)}</pre>
+        <div style={{ marginTop: '20px' }}>
+          <h3>Workflow Inspector</h3>
+          <div style={{ padding: '10px', border: '1px solid #ddd', borderRadius: '4px' }}>
+            <p><strong>Summary:</strong> {explanation.summary}</p>
+            <p>
+              <strong>Replay Status:</strong> 
+              <span style={{ 
+                color: replayStatus === 'passed' ? 'green' : 
+                       replayStatus === 'diverged' ? 'red' : 
+                       replayStatus === 'unsupported' ? 'gray' : 'orange',
+                fontWeight: 'bold', marginLeft: '5px' 
+              }}>
+                {replayStatus?.toUpperCase() || 'UNKNOWN'}
+              </span>
+            </p>
+            
+            <h4>Lineage (Parents):</h4>
+            <ul>
+              {explanation.artifactRefs?.length > 0 ? explanation.artifactRefs.map((ref: string) => (
+                <li key={ref}>{ref}</li>
+              )) : <li>No parents (Root artifact)</li>}
+            </ul>
+
+            <h4>Policy Checks & Warnings:</h4>
+            <ul>
+              {explanation.policyChecks?.map((p: any, i: number) => (
+                <li key={i}>{p.name}: {p.status === 'passed' ? '✅' : '❌'}</li>
+              ))}
+              {explanation.warnings?.map((w: string, i: number) => (
+                <li key={i} style={{ color: 'orange' }}>⚠️ {w}</li>
+              ))}
+            </ul>
+            
+            <h4>Script Metadata (Read-Only Capabilities):</h4>
+            <div style={{ display: 'flex', gap: '5px' }}>
+              <span style={{ background: '#eee', padding: '3px 8px', borderRadius: '12px', fontSize: '0.8em' }}>Tockata: None</span>
+              <span style={{ background: '#eee', padding: '3px 8px', borderRadius: '12px', fontSize: '0.8em' }}>SilverScript: None</span>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

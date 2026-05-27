@@ -58,7 +58,8 @@ export function createHardkasClient(options: HardkasClientOptions = {}) {
     },
     artifacts: {
       explain: (id: string) => fetchApi<any>(`/api/artifacts/${id}/explain`),
-      watch: (callback: (artifact: any) => void, options?: { transport?: "sse" | "poll", intervalMs?: number }) => {
+      replay: (id: string) => fetchApi<any>(`/api/artifacts/${id}/replay`, { method: "POST" }),
+      watch: (callback: (artifact: any) => void, options?: { type?: string; lineage?: boolean; replay?: boolean; transport?: "sse" | "poll", intervalMs?: number }) => {
         const transport = options?.transport || "sse";
         const intervalMs = options?.intervalMs || 2000;
         let active = true;
@@ -66,7 +67,14 @@ export function createHardkasClient(options: HardkasClientOptions = {}) {
 
         if (transport === "sse" && typeof EventSource !== "undefined") {
           try {
-            const es = new EventSource(`${baseUrl}/api/artifacts/stream`);
+            let queryParams = "";
+            const queryParts = [];
+            if (options?.type) queryParts.push(`type=${options.type}`);
+            if (options?.lineage) queryParts.push(`lineage=true`);
+            if (options?.replay) queryParts.push(`replay=true`);
+            if (queryParts.length > 0) queryParams = `?${queryParts.join("&")}`;
+
+            const es = new EventSource(`${baseUrl}/api/artifacts/stream${queryParams}`);
             es.onmessage = (e) => {
               try { callback(JSON.parse(e.data)); } catch (err) {}
             };
@@ -102,6 +110,15 @@ export function createHardkasClient(options: HardkasClientOptions = {}) {
     },
     dev: {
       status: () => fetchApi<any>("/api/dev/status"),
+    },
+    session: {
+      start: () => fetchApi<any>("/api/session/start", { method: "POST" }),
+      snapshot: () => fetchApi<any>("/api/session/snapshot", { method: "POST" }),
+      replay: (options?: { untilArtifact?: string; strict?: boolean }) => fetchApi<any>("/api/session/replay", { method: "POST", body: JSON.stringify(options || {}) }),
+      diffReplay: (artifactId: string) => fetchApi<any>(`/api/session/diff-replay/${artifactId}`, { method: "POST" }),
+      timeTravel: (artifactId: string) => fetchApi<any>("/api/session/time-travel", { method: "POST", body: JSON.stringify({ artifactId }) }),
+      export: () => fetchApi<any>("/api/session/export"),
+      import: (data: any, force?: boolean) => fetchApi<any>("/api/session/import", { method: "POST", body: JSON.stringify({ data, force }) })
     }
   };
 }
