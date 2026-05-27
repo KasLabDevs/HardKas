@@ -29,7 +29,18 @@ export function registerRebuildCommand(program: Command) {
           const path = await import("node:path");
           const { HardkasStore, SqliteQueryBackend } = await import("@hardkas/query-store");
           const store = new HardkasStore({ dbPath: path.join(process.cwd(), ".hardkas", "store.db") });
-          store.connect({ autoMigrate: true });
+          try {
+            store.connect({ autoMigrate: true });
+          } catch (connectErr: any) {
+            if (connectErr?.code === "PROJECTION_BUSY" || connectErr?.message === "PROJECTION_BUSY") {
+              throw new HardkasCliError(
+                "PROJECTION_REBUILD_BUSY",
+                "Projection database is busy. Another process may be using it. Retry later.",
+                { exitCode: HardkasExitCode.RUNTIME_FAILURE, suggestion: "Close other HardKAS processes or wait for them to finish, then retry." },
+              );
+            }
+            throw connectErr;
+          }
           
           const backend = new SqliteQueryBackend(store);
           const result = await backend.rebuild({ strict: true });

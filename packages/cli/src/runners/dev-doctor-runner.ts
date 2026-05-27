@@ -147,8 +147,46 @@ export async function runDevDoctor(options: {
            finalStatus = "failed";
         }
       } else {
-        checks.push({ name: "Artifact Folder", status: "warning", message: "Not found (will be created automatically)", code: "ARTIFACT_FOLDER_MISSING", suggestion: "Run a transaction or 'hardkas dev server' to generate the artifact folder." });
-        if (finalStatus === "ready") finalStatus = "warning";
+         checks.push({ name: "Artifact Folder", status: "warning", message: "Not found (will be created automatically)", code: "ARTIFACT_FOLDER_MISSING", suggestion: "Run a transaction or 'hardkas dev server' to generate the artifact folder." });
+         if (finalStatus === "ready") finalStatus = "warning";
+       }
+
+      // Projection Health (read-only SQLite check)
+      const storePath = path.join(config.cwd, ".hardkas", "store.db");
+      if (fs.existsSync(storePath)) {
+        let store: any = null;
+        try {
+          const { HardkasStore } = await import("@hardkas/query-store");
+          store = new HardkasStore({ dbPath: storePath });
+          store.connect({ readOnly: true });
+
+          const health = store.checkHealth();
+          if (health.ok) {
+            checks.push({ name: "Projection Health", status: "success", message: "Store is healthy" });
+          } else {
+            for (const issue of health.issues) {
+              checks.push({
+                name: "Projection Health",
+                status: issue.severity === "error" ? "warning" : "info",
+                message: issue.message,
+                code: issue.code,
+                suggestion: issue.suggestion,
+              });
+            }
+            if (finalStatus === "ready") finalStatus = "warning";
+          }
+        } catch (e: any) {
+          checks.push({
+            name: "Projection Health",
+            status: "warning",
+            message: `Projection database is unavailable: ${e.message || "unknown error"}`,
+            code: "PROJECTION_UNAVAILABLE",
+            suggestion: "Another process may be using the database. This is not critical — artifact checks passed.",
+          });
+          if (finalStatus === "ready") finalStatus = "warning";
+        } finally {
+          try { store?.disconnect(); } catch { /* ignore disconnect errors */ }
+        }
       }
 
       // 3. SDK Import Health

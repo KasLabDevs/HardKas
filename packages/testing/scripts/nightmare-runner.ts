@@ -254,29 +254,130 @@ async function theTruthTest(workspace: string, cliPath: string) {
   }
 }
 
+async function duplicateArtifactRegression(workspace: string, cliPath: string) {
+  const artifactsDir = path.join(workspace, ".hardkas", "artifacts");
+  await fs.mkdir(artifactsDir, { recursive: true });
+
+  // Rule 1: DUPLICATE_ARTIFACT_ID — same id, same hash, two files
+  await fs.writeFile(path.join(artifactsDir, "dup1a.json"), JSON.stringify({ id: "dup-id-1", canonicalHash: "hash-aaa" }));
+  await fs.writeFile(path.join(artifactsDir, "dup1b.json"), JSON.stringify({ id: "dup-id-1", canonicalHash: "hash-aaa" }));
+
+  // Rule 2: ARTIFACT_ID_HASH_CONFLICT — same id, different hash
+  await fs.writeFile(path.join(artifactsDir, "conflict1.json"), JSON.stringify({ id: "conflict-id", canonicalHash: "hash-bbb" }));
+  await fs.writeFile(path.join(artifactsDir, "conflict2.json"), JSON.stringify({ id: "conflict-id", canonicalHash: "hash-ccc" }));
+
+  // Rule 3: DUPLICATE_ARTIFACT_HASH — different id, same hash
+  await fs.writeFile(path.join(artifactsDir, "hashdup1.json"), JSON.stringify({ id: "id-x", canonicalHash: "hash-shared" }));
+  await fs.writeFile(path.join(artifactsDir, "hashdup2.json"), JSON.stringify({ id: "id-y", canonicalHash: "hash-shared" }));
+
+  // Rule 4: MALFORMED_ARTIFACT
+  await fs.writeFile(path.join(artifactsDir, "broken.json"), "NOT VALID JSON {{{");
+
+  const doc = await execa("node", [cliPath, "dev", "doctor", "--json"], { cwd: workspace, reject: false });
+
+  if (doc.exitCode === 0) {
+    throw new Error("Doctor reported OK despite 4 categories of artifact corruption!");
+  }
+
+  const stdout = doc.stdout;
+  const mustContain = ["DUPLICATE_ARTIFACT_ID", "ARTIFACT_ID_HASH_CONFLICT", "DUPLICATE_ARTIFACT_HASH", "MALFORMED_ARTIFACT"];
+  for (const code of mustContain) {
+    if (!stdout.includes(code)) {
+      throw new Error(`Doctor did not report expected error code: ${code}. Output: ${stdout.slice(0, 500)}`);
+    }
+  }
+}
+
+async function parallelHellMiniRegression(workspace: string, cliPath: string) {
+  const DURATION_MS = 10_000;
+  const endTime = Date.now() + DURATION_MS;
+  let nativeCrashDetected = false;
+  let crashDetail = "";
+  const NATIVE_CRASH_CODE = 3221226505; // STATUS_STACK_BUFFER_OVERRUN on Windows
+
+  const processes: Promise<void>[] = [];
+
+  const spawn = (args: string[]) => {
+    return (async () => {
+      while (Date.now() < endTime) {
+        const res = await execa("node", [cliPath, ...args], { cwd: workspace, reject: false });
+        if (res.exitCode === NATIVE_CRASH_CODE || res.exitCode === -1073741819) {
+          nativeCrashDetected = true;
+          crashDetail = `${args.join(" ")} exited with ${res.exitCode}`;
+          return;
+        }
+      }
+    })();
+  };
+
+  processes.push(spawn(["dev", "doctor", "--json"]));
+  processes.push(spawn(["dev", "doctor", "--json"]));
+  processes.push(spawn(["artifact", "inspect", "nonexistent", "--json"]));
+  processes.push(spawn(["artifact", "inspect", "nonexistent", "--json"]));
+  processes.push(spawn(["rebuild", "--from-artifacts"]));
+
+  await Promise.all(processes);
+
+  if (nativeCrashDetected) {
+    throw new Error(`Native crash detected during parallel contention: ${crashDetail}`);
+  }
+}
+
 async function main() {
   console.log("🔥 INITIALIZING HARDKAS NIGHTMARE SUITE 🔥");
-  
+
+  // Parse --only flag: supports multiple flags or comma-separated values
+  const onlyFilters: string[] = [];
+  const argv = process.argv.slice(2);
+  for (let i = 0; i < argv.length; i++) {
+    if (argv[i] === "--only" && i + 1 < argv.length) {
+      i++;
+      onlyFilters.push(...argv[i].split(",").map(s => s.trim().toLowerCase()).filter(Boolean));
+    }
+  }
+
+  const shouldRun = (name: string): boolean => {
+    if (onlyFilters.length === 0) return true;
+    const lower = name.toLowerCase();
+    return onlyFilters.some(f => lower.includes(f));
+  };
+
+  if (onlyFilters.length > 0) {
+    console.log(`🎯 --only filter active: [${onlyFilters.join(", ")}]`);
+  }
+
+  const vectors: Array<{ name: string; fn: (workspace: string, cliPath: string) => Promise<void> }> = [
+    { name: "Duplicate Artifact Regression", fn: duplicateArtifactRegression },
+    { name: "Parallel Hell Mini Regression", fn: parallelHellMiniRegression },
+    { name: "Nuclear Corruption", fn: nuclearCorruption },
+    { name: "SIGKILL Power-Loss", fn: kill9PowerLoss },
+    { name: "Idiot Developer", fn: idiotDeveloper },
+    { name: "Memory Pressure", fn: memoryPressure },
+    { name: "Parallel Hell", fn: parallelHell },
+    { name: "Unicode Nightmare", fn: unicodeNightmare },
+    { name: "Filesystem From Hell", fn: filesystemFromHell },
+    { name: "Time Travel Insanity", fn: timeTravelInsanity },
+    { name: "Fake RPC Liar Mode", fn: fakeRpcLiar },
+    { name: "The Truth Test", fn: theTruthTest },
+  ];
+
   const results: NightmareResult[] = [];
-  
-  results.push(await runVector("Nuclear Corruption", nuclearCorruption));
-  results.push(await runVector("SIGKILL Power-Loss", kill9PowerLoss));
-  results.push(await runVector("Idiot Developer", idiotDeveloper));
-  results.push(await runVector("Memory Pressure", memoryPressure));
-  results.push(await runVector("Parallel Hell", parallelHell));
-  results.push(await runVector("Unicode Nightmare", unicodeNightmare));
-  results.push(await runVector("Filesystem From Hell", filesystemFromHell));
-  results.push(await runVector("Time Travel Insanity", timeTravelInsanity));
-  results.push(await runVector("Fake RPC Liar Mode", fakeRpcLiar));
-  results.push(await runVector("The Truth Test", theTruthTest));
-  
+
+  for (const v of vectors) {
+    if (!shouldRun(v.name)) {
+      console.log(`⏭️  Skipping vector: ${v.name}`);
+      continue;
+    }
+    results.push(await runVector(v.name, v.fn));
+  }
+
   console.log("\n📊 NIGHTMARE SUITE REPORT");
   let blockers = 0;
   for (const r of results) {
     console.log(`- ${r.vector}: ${r.passed ? "PASS" : r.severity === "blocker" ? "FAIL (BLOCKER)" : "FAIL (WARNING)"}`);
     if (!r.passed && r.severity === "blocker") blockers++;
   }
-  
+
   if (blockers > 0) {
     console.log(`\n❌ SURVIVAL FAILED. HardKAS is not ready. ${blockers} blockers found.`);
     process.exit(1);
