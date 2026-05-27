@@ -60,3 +60,31 @@ artifactsRoutes.get("/:id", async (c) => {
     return c.json({ error: e.message }, 500);
   }
 });
+
+artifactsRoutes.get("/:id/explain", async (c) => {
+  const id = c.req.param("id");
+  try {
+    const queryBackend = getQueryBackend();
+    const artifact = await queryBackend.getArtifact(id);
+    if (!artifact) throw new Error("Artifact not found");
+    
+    const explanation = {
+      id: artifact.artifactId,
+      schema: artifact.schema,
+      explanation: `Explaining artifact ${artifact.artifactId} (${artifact.schema})\\n\\nContent Hash: ${artifact.contentHash}\\nTxID: ${artifact.txId || "N/A"}`
+    };
+    
+    return c.json({
+      ok: true,
+      data: { explanation },
+      warnings: [],
+      meta: {
+        workspace: process.cwd(),
+        network: "simulated"
+      }
+    });
+  } catch (e: any) {
+    console.error(`Failed to explain artifact '${id}':`, e);
+    return c.json({ ok: false, error: { code: "HARDKAS_DEV_ERROR", message: e.message } }, 500);
+  }
+});

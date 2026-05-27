@@ -102,6 +102,7 @@ export default defineHardkasConfig({
           } else {
             const content = fs.readFileSync(gitIgnoreFile, "utf-8");
             if (!content.includes(".hardkas/")) {
+              // hardkas-append-allow
               fs.appendFileSync(gitIgnoreFile, gitIgnoreEntry, "utf-8");
               UI.info("Updated: .gitignore (added .hardkas/)");
             }

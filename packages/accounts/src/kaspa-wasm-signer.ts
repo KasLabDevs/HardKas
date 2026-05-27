@@ -55,8 +55,10 @@ export class KaspaWasmPrivateKeySigner implements HardkasTxPlanSigner {
           throw new Error(`UTXO is missing transactionId or index. Re-run tx plan.`);
         }
         
-        // Note: scriptPublicKey is now optional in v2 or handled differently
-        const spk = (u as any).scriptPublicKey || "mock-script"; 
+        const spk = (u as { scriptPublicKey?: string }).scriptPublicKey; 
+        if (!spk) {
+          throw new Error("UTXO is missing scriptPublicKey. Real signing flows must never fabricate cryptographic state.");
+        }
         
         return new sdk.UtxoEntry(
           BigInt(u.amountSompi),
@@ -75,8 +77,8 @@ export class KaspaWasmPrivateKeySigner implements HardkasTxPlanSigner {
         );
       });
 
-      const changeAddress = (plan as any).change?.address 
-        ? new sdk.Address((plan as any).change.address)
+      const changeAddress = plan.change?.address 
+        ? new sdk.Address(plan.change.address)
         : undefined;
 
       const priorityFee = BigInt(plan.estimatedFeeSompi);

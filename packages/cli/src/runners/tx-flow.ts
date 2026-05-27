@@ -98,6 +98,8 @@ export async function runTxFlow(input: TxFlowInput): Promise<TxFlowResult> {
   const shouldSign = sign || send;
   const shouldSend = send;
 
+  const configExt = config as HardkasConfig & { policy?: { allowNetwork?: boolean; allowMainnet?: boolean; allowExternalWallet?: boolean; requireDryRun?: boolean }; mode?: string };
+
   const intentPayload = {
     type: "hardkas.workflow.intent",
     schemaVersion: "v1",
@@ -122,13 +124,13 @@ export async function runTxFlow(input: TxFlowInput): Promise<TxFlowResult> {
     },
     parentArtifacts: [],
     policySnapshot: {
-      allowNetwork: (config as any).policy?.allowNetwork ?? true,
-      allowMainnet: (config as any).policy?.allowMainnet ?? false,
-      allowExternalWallet: (config as any).policy?.allowExternalWallet ?? false,
-      requireDryRun: (config as any).policy?.requireDryRun ?? false
+      allowNetwork: configExt.policy?.allowNetwork ?? true,
+      allowMainnet: configExt.policy?.allowMainnet ?? false,
+      allowExternalWallet: configExt.policy?.allowExternalWallet ?? false,
+      requireDryRun: configExt.policy?.requireDryRun ?? false
     },
     capabilitySnapshot: {
-      mode: (config as any).mode ?? "developer",
+      mode: configExt.mode ?? "developer",
       network: network || config.defaultNetwork || "simnet"
     },
     runtimeVersion: HARDKAS_VERSION,

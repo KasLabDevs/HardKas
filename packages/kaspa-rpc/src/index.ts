@@ -110,9 +110,9 @@ export class JsonWrpcKaspaClient implements KaspaRpcClient {
     if (info.virtualDaaScore === undefined) {
       try {
         const dagResponse = await this.safeRequest(["getBlockDagInfo", "getBlockDagInfoRequest", "GetBlockDagInfo", "get_block_dag_info"]);
-        const dagData = (dagResponse as any)?.params || (dagResponse as any);
-        if (dagData?.virtualDaaScore !== undefined) {
-          info.virtualDaaScore = BigInt(dagData.virtualDaaScore);
+        const dagData = (dagResponse as Record<string, unknown>)?.params || (dagResponse as Record<string, unknown>);
+        if (dagData && typeof dagData === "object" && "virtualDaaScore" in dagData) {
+          info.virtualDaaScore = BigInt((dagData as Record<string, unknown>).virtualDaaScore as string | number);
         }
       } catch (e) {
         // Ignore errors supplementing info
@@ -171,9 +171,10 @@ export class JsonWrpcKaspaClient implements KaspaRpcClient {
         { txId, transactionId: txId }
       );
       if (!response) return null;
+      const resObj = response as Record<string, unknown>;
       return {
         txId,
-        acceptedAt: (response as any).acceptedAt || (response as any).accepted_at
+        acceptedAt: (resObj.acceptedAt || resObj.accepted_at) as string | undefined
       };
     } catch (e) {
       return null;
@@ -227,17 +228,18 @@ export class JsonWrpcKaspaClient implements KaspaRpcClient {
       try {
         let actualParams: any = params;
         const lowerMethod = method.toLowerCase();
+        const pObj = params as Record<string, unknown>;
         // Strict mapping based on method name
         if (lowerMethod.includes("addresses") || lowerMethod.endsWith("s")) {
-           if ((params as any).address && !(params as any).addresses) {
-             actualParams = { addresses: [(params as any).address] };
-           } else if ((params as any).addresses) {
-             actualParams = { addresses: (params as any).addresses };
+           if (pObj.address && !pObj.addresses) {
+             actualParams = { addresses: [pObj.address] };
+           } else if (pObj.addresses) {
+             actualParams = { addresses: pObj.addresses };
            }
-        } else if ((params as any).addresses && !(params as any).address) {
-           actualParams = { address: (params as any).addresses[0] };
-        } else if ((params as any).address) {
-           actualParams = { address: (params as any).address };
+        } else if (pObj.addresses && !pObj.address) {
+           actualParams = { address: (pObj.addresses as unknown[])[0] };
+        } else if (pObj.address) {
+           actualParams = { address: pObj.address };
         }
 
         // Try object params first
@@ -401,20 +403,21 @@ export function mapKaspaRpcUtxos(result: any, address: string): KaspaRpcUtxo[] {
   
   if (!Array.isArray(entries)) return [];
 
-  return (entries as any[]).map((entry: any) => {
-    const utxoEntry = entry.utxoEntry || entry.utxo_entry || entry.utxo || entry;
-    const outpoint = entry.outpoint || entry;
+  return (entries as unknown[]).map((entryRaw) => {
+    const entry = entryRaw as Record<string, any>;
+    const utxoEntry = (entry.utxoEntry || entry.utxo_entry || entry.utxo || entry) as Record<string, any>;
+    const outpoint = (entry.outpoint || entry) as Record<string, any>;
 
     return {
       outpoint: {
-        transactionId: outpoint.transactionId || outpoint.transaction_id || outpoint.txId || outpoint.tx_id || outpoint.transaction_hash || "",
+        transactionId: String(outpoint.transactionId || outpoint.transaction_id || outpoint.txId || outpoint.tx_id || outpoint.transaction_hash || ""),
         index: Number(outpoint.index !== undefined ? outpoint.index : (outpoint.outputIndex !== undefined ? outpoint.outputIndex : outpoint.output_index))
       },
       address: entry.address || address,
       amountSompi: BigInt(utxoEntry.amount || utxoEntry.amountSompi || utxoEntry.amount_sompi || 0),
-      scriptPublicKey: utxoEntry.scriptPublicKey || utxoEntry.script_public_key,
+      scriptPublicKey: String(utxoEntry.scriptPublicKey || utxoEntry.script_public_key || ""),
       blockDaaScore: utxoEntry.blockDaaScore || utxoEntry.block_daa_score,
-      isCoinbase: utxoEntry.isCoinbase || utxoEntry.is_coinbase,
+      isCoinbase: Boolean(utxoEntry.isCoinbase || utxoEntry.is_coinbase),
       raw: entry
     };
   });

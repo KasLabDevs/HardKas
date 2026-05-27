@@ -24,8 +24,9 @@ export interface RealDevAccount {
   readonly createdAt: string;
 }
 
-export function getDefaultRealAccountsPath(cwd: string = process.cwd()): string {
-  return path.join(cwd, ".hardkas", "accounts.real.json");
+export function getDefaultRealAccountsPath(cwd?: string): string {
+  const root = cwd ?? process.cwd();
+  return path.join(root, ".hardkas", "accounts.real.json");
 }
 
 export function createEmptyRealAccountStore(): RealAccountStore {
@@ -138,6 +139,7 @@ export function importRealDevAccount(
     readonly address: string;
     readonly publicKey?: string;
     readonly privateKey?: string;
+    readonly keystoreRef?: string;
   }
 ): RealAccountStore {
   validateAccountName(account.name);

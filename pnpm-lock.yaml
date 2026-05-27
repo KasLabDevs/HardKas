@@ -547,6 +547,9 @@ importers:
       '@hardkas/query-store':
         specifier: workspace:*
         version: link:../query-store
+      '@hardkas/sdk':
+        specifier: workspace:*
+        version: link:../sdk
       '@hardkas/sessions':
         specifier: workspace:*
         version: link:../sessions

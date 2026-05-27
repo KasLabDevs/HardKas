@@ -79,38 +79,39 @@ export async function runChaosEngine(options: any) {
       throw { message: `Unknown chaos actor: ${actorName}`, exitCode: ChaosExitCodes.INTERNAL_FAILURE };
     }
 
-    const { stdout, stderr, exitCode, action } = await actor({ workspaceDir, runId: i, runSeed });
+    const { stdout, stderr, exitCode, action, expectedExitCodes } = await actor({ workspaceDir, runId: i, runSeed });
 
     // Check for raw stack traces (fail condition even if exitCode is 0)
     // We look for \n    at  which is the classic Node.js stack trace frame format
     const combinedLog = stdout + "\n" + stderr;
     const hasRawStack = /\n\s+at .+\(.*\)/.test(combinedLog) || /\n\s+at .+[a-zA-Z0-9_\.]/.test(combinedLog) || /UnhandledPromiseRejectionWarning:/.test(combinedLog);
     
-    const isFailure = hasRawStack || exitCode !== 0; // if it exits non-zero and we didn't expect it? Wait, some actions might exit non-zero naturally.
-    // Actually, "El motor debe marcar FAIL si stdout/stderr contiene: Error: TypeError: ... Aunque exit code sea 0."
-    // If the CLI fails gracefully, it usually returns exitCode > 0 but we want to fail the CHAOS engine if there's a RAW stack trace.
-    // If it's a graceful error, it's fine. If it's a raw stack trace, it's a FAIL.
+    const isExitFailure = exitCode !== 0 && (!expectedExitCodes || !expectedExitCodes.includes(exitCode));
+    const isFailure = hasRawStack || isExitFailure;
+
     const runResult = {
       campaignSeed: globalSeed,
       runId: i,
       runSeed,
       actor: actorName,
       action,
-      failed: hasRawStack,
+      failed: isFailure,
       hasRawStack,
       exitCode,
+      expectedExitCodes,
       stdout,
       stderr
     };
 
     results.push(runResult);
 
-    if (hasRawStack) {
+    if (isFailure) {
       failedRuns++;
       const reproScript = `#!/bin/bash\n# Repro for Run ${i} (Seed: ${runSeed})\n# Actor: ${actorName}\n# Action: ${action}\npnpm hardkas chaos replay --run-seed ${runSeed} --isolate\n`;
       await fs.writeFile(path.join(reportsDir, "repro", `run-${String(i).padStart(4, "0")}.sh`), reproScript);
       
-      console.log(pc.red(`✖ Run ${i} FAILED (${actorName}) - Raw stack trace detected!`));
+      const failureReason = hasRawStack ? "Raw stack trace detected!" : `Unexpected exit code ${exitCode}!`;
+      console.log(pc.red(`✖ Run ${i} FAILED (${actorName}) - ${failureReason}`));
     } else {
       process.stdout.write(pc.green("."));
     }
@@ -137,7 +138,7 @@ ${results.filter(r => r.failed).map(r => `- Run ${r.runId} (${r.actor}): ${r.act
     UI.error(`Chaos campaign completed with ${failedRuns} failures. See ${reportsDir} for details.`);
     process.exit(ChaosExitCodes.INVARIANT_VIOLATION);
   } else {
-    UI.success(`Chaos campaign completed successfully. 0 raw stack traces detected across ${runs} runs.`);
+    UI.success(`Chaos campaign completed successfully. 0 failures detected across ${runs} runs.`);
     process.exit(ChaosExitCodes.NO_FINDINGS);
   }
 }
@@ -160,7 +161,7 @@ export async function replayChaosRun(options: any) {
   }
 
   UI.info(`Replaying chaos run with seed ${runSeed} via actor ${actorName}...`);
-  const { stdout, stderr, exitCode, action } = await actor({ workspaceDir, runId: 0, runSeed });
+  const { stdout, stderr, exitCode, action, expectedExitCodes } = await actor({ workspaceDir, runId: 0, runSeed });
 
   console.log(pc.cyan(`\n--- Action Executed ---`));
   console.log(action);
@@ -176,11 +177,15 @@ export async function replayChaosRun(options: any) {
   const combinedLog = stdout + "\n" + stderr;
   const hasRawStack = /\n\s+at .+\(.*\)/.test(combinedLog) || /\n\s+at .+[a-zA-Z0-9_\.]/.test(combinedLog) || /UnhandledPromiseRejectionWarning:/.test(combinedLog);
 
-  if (hasRawStack) {
-    UI.error("Raw stack trace detected during replay.");
+  const isExitFailure = exitCode !== 0 && (!expectedExitCodes || !expectedExitCodes.includes(exitCode));
+  const isFailure = hasRawStack || isExitFailure;
+
+  if (isFailure) {
+    const failureReason = hasRawStack ? "Raw stack trace detected." : `Unexpected exit code ${exitCode}.`;
+    UI.error(`Replay failed: ${failureReason}`);
     process.exit(ChaosExitCodes.INVARIANT_VIOLATION);
   } else {
-    UI.success("Replay completed cleanly (no raw stack traces).");
+    UI.success("Replay completed cleanly.");
     process.exit(ChaosExitCodes.NO_FINDINGS);
   }
 }

@@ -7,21 +7,23 @@ import {
 
 export interface AccountsRealInitOptions {
   force?: boolean;
+  workspaceRoot?: string;
 }
 
 export async function runAccountsRealInit(options: AccountsRealInitOptions = {}): Promise<{
   path: string;
   formatted: string;
 }> {
-  const filePath = getDefaultRealAccountsPath();
-  const existing = await loadRealAccountStore();
+  const cwd = options.workspaceRoot || process.cwd();
+  const filePath = getDefaultRealAccountsPath(cwd);
+  const existing = await loadRealAccountStore({ cwd });
 
   if (existing && !options.force) {
     throw new Error(`Real account store already exists at ${filePath}. Use --force to overwrite.`);
   }
 
   const store = createEmptyRealAccountStore();
-  await saveRealAccountStore(store);
+  await saveRealAccountStore(store, { cwd });
 
   const lines = [
     "Real dev account store initialized",

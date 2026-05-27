@@ -637,16 +637,18 @@ registerTortureBucket({
           fs.writeFileSync(badFile, Buffer.from([0x7b, 0x22, 0xc3, 0x28, 0x7d]));
           shouldSyncThrow = true;
           break;
-        case 3: // temp artifact orphan (ends with .json but starts with .tmp-)
+        case 3: { // temp artifact orphan (ends with .json but starts with .tmp-)
           const tempFile = path.join(artifactsDir, `.tmp-plan-${subCase}.json`);
           fs.writeFileSync(tempFile, JSON.stringify(validArtifact, null, 2));
           checkIgnored = true;
           break;
-        case 4: // content hash mismatch
+        }
+        case 4: { // content hash mismatch
           const hashMismatchArt = { ...validArtifact, amountSompi: "9999", artifactId: "plan-mismatch" };
           fs.writeFileSync(badFile, JSON.stringify(hashMismatchArt, null, 2));
           shouldSyncThrow = true;
           break;
+        }
         case 5: // metadata-only artifact
           fs.writeFileSync(badFile, JSON.stringify({ schema: "hardkas.txPlan", version: ARTIFACT_VERSION, contentHash: validHash, artifactId: "plan-meta-only" }, null, 2));
           shouldSyncThrow = true;
@@ -655,13 +657,14 @@ registerTortureBucket({
           fs.writeFileSync(badFile, JSON.stringify(payload, null, 2)); // missing artifactId / contentHash
           shouldSyncThrow = true;
           break;
-        case 7: // missing contentHash
+        case 7: { // missing contentHash
           const missingHashArt = { ...validArtifact };
           delete (missingHashArt as any).contentHash;
           fs.writeFileSync(badFile, JSON.stringify(missingHashArt, null, 2));
           shouldSyncThrow = true;
           break;
-        case 8: // missing parent artifact link (orphan receipt)
+        }
+        case 8: { // missing parent artifact link (orphan receipt)
           const orphanReceipt = {
             schema: "hardkas.txReceipt" as const,
             hardkasVersion: "0.6.1-alpha",
@@ -687,20 +690,23 @@ registerTortureBucket({
           fs.writeFileSync(path.join(artifactsDir, `${receiptId}.json`), JSON.stringify({ ...orphanReceipt, artifactId: receiptId, contentHash: receiptHash }, null, 2));
           // Does not throw under sync, but parent/child lineage must not return a link to the non-existent parent!
           break;
+        }
         case 9: // orphan child artifact
           // similar to case 8
           break;
-        case 10: // duplicate artifact ID
+        case 10: { // duplicate artifact ID
           const dupFile = path.join(artifactsDir, `dup-artifact-${subCase}.json`);
           const dupArt = { ...validArtifact, amountSompi: "500" }; // different payload, same ID
           fs.writeFileSync(dupFile, JSON.stringify(dupArt, null, 2));
           // Syncing might succeed, but the database must only contain a single canonical record for that ID (ON CONFLICT DO UPDATE)
           break;
-        case 11: // simulated crash before atomic rename
+        }
+        case 11: { // simulated crash before atomic rename
           const crashFile = path.join(artifactsDir, `.tmp-crash-${subCase}`);
           fs.writeFileSync(crashFile, JSON.stringify(validArtifact, null, 2));
           checkIgnored = true;
           break;
+        }
         case 12: // simulated crash after rename but before sync
           // Write a valid file, then partial reindex
           break;
@@ -1105,7 +1111,9 @@ registerTortureBucket({
         };
 
         // Simulate duplicate event log entries
+        // hardkas-append-allow
         fs.appendFileSync(eventsFile, JSON.stringify(evEnvelope) + "\n");
+        // hardkas-append-allow
         fs.appendFileSync(eventsFile, JSON.stringify(evEnvelope) + "\n");
       }
 

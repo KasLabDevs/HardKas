@@ -9,7 +9,13 @@ export interface ChaosContext {
   runSeed: number;
 }
 
-export type ChaosActor = (ctx: ChaosContext) => Promise<{ stdout: string, stderr: string, exitCode: number, action: string }>;
+export type ChaosActor = (ctx: ChaosContext) => Promise<{ 
+  stdout: string, 
+  stderr: string, 
+  exitCode: number, 
+  action: string,
+  expectedExitCodes?: number[] 
+}>;
 
 export const LockHell: ChaosActor = async (ctx) => {
   const locksDir = path.join(ctx.workspaceDir, ".hardkas", "locks");
@@ -45,7 +51,7 @@ export const LockHell: ChaosActor = async (ctx) => {
      exitCode = 1;
   }
   
-  return { stdout, stderr, exitCode, action };
+  return { stdout, stderr, exitCode, action, expectedExitCodes: [0, 1] };
 };
 
 export const RotBot: ChaosActor = async (ctx) => {
@@ -121,5 +127,5 @@ export const HumanChaos: ChaosActor = async (ctx) => {
      exitCode = 1;
   }
 
-  return { stdout, stderr, exitCode, action };
+  return { stdout, stderr, exitCode, action, expectedExitCodes: [1] };
 };

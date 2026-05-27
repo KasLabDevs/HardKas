@@ -9,12 +9,14 @@ export interface AccountsRealImportOptions {
   address: string;
   publicKey?: string;
   privateKey?: string;
+  workspaceRoot?: string;
 }
 
 export async function runAccountsRealImport(options: AccountsRealImportOptions): Promise<{
   formatted: string;
 }> {
-  let store = await loadOrCreateRealAccountStore();
+  const cwd = options.workspaceRoot || process.cwd();
+  let store = await loadOrCreateRealAccountStore({ cwd });
 
   store = importRealDevAccount(store, {
     name: options.name,
@@ -23,7 +25,7 @@ export async function runAccountsRealImport(options: AccountsRealImportOptions):
     ...(options.privateKey ? { privateKey: options.privateKey } : {})
   });
 
-  await saveRealAccountStore(store);
+  await saveRealAccountStore(store, { cwd });
 
   return { formatted: `Account '${options.name}' imported successfully.` };
 }

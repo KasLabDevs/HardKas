@@ -112,14 +112,14 @@ export async function runAccountsKeystoreImport(options: {
   }
 
   // Update Metadata Index (accounts.real.json)
-  let store = await loadOrCreateRealAccountStore();
+  let store = await loadOrCreateRealAccountStore({ cwd: options.workspaceRoot });
   store = importRealDevAccount(store, {
     name,
     address,
     ...(options.unsafePlaintext ? { privateKey: finalKey } : {}),
     ...(keystoreRef ? { keystoreRef } : {})
   });
-  await saveRealAccountStore(store);
+  await saveRealAccountStore(store, { cwd: options.workspaceRoot });
 
   const warnings = [];
   if (privateKeyUsedAsArg) {

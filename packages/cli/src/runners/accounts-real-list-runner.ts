@@ -6,13 +6,15 @@ import {
 
 export interface AccountsRealListOptions {
   // Add filters if needed
+  workspaceRoot?: string;
 }
 
 export async function runAccountsRealList(options: AccountsRealListOptions = {}): Promise<{
   accounts: readonly RealDevAccount[];
   formatted: string;
 }> {
-  const store = await loadRealAccountStore();
+  const cwd = options.workspaceRoot || process.cwd();
+  const store = await loadRealAccountStore({ cwd });
   if (!store) return { accounts: [], formatted: "Real account store not found (run 'hardkas accounts real init')." };
 
   const accounts = listRealDevAccounts(store);

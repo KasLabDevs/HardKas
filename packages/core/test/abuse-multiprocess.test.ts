@@ -18,11 +18,11 @@ describe("Multi-process Abuse Testing", () => {
   });
 
   // Spawn a worker process that appends to events.jsonl
-  const runWorker = (scriptContent: string, timeoutMs: number): Promise<{ stdout: string, stderr: string, exitCode: number | null }> => {
-    return new Promise(async (resolve) => {
-       const scriptPath = path.join(workspaceDir, `worker-${Date.now()}-${Math.random()}.mjs`);
-       await fs.writeFile(scriptPath, scriptContent);
-       
+  const runWorker = async (scriptContent: string, timeoutMs: number): Promise<{ stdout: string, stderr: string, exitCode: number | null }> => {
+    const scriptPath = path.join(workspaceDir, `worker-${Date.now()}-${Math.random()}.mjs`);
+    await fs.writeFile(scriptPath, scriptContent);
+
+    return new Promise((resolve) => {
        const child = spawn("node", [scriptPath], {
           cwd: workspaceDir,
           env: { ...process.env, HARDKAS_ROOT: workspaceDir }
@@ -85,6 +85,7 @@ describe("Multi-process Abuse Testing", () => {
        for(let i=0; i<50; i++) {
           try {
              fs.writeFileSync(lockFile, process.pid.toString(), { flag: "wx" });
+             // hardkas-append-allow
              fs.appendFileSync(target, '{"id":' + i + '}\n');
              fs.unlinkSync(lockFile);
           } catch(e) {

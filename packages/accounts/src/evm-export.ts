@@ -1,4 +1,4 @@
-import { HardkasAccount } from "./types.js";
+import { HardkasAccount, HardkasEvmPrivateKeyAccount } from "./types.js";
 
 export interface EvmExportResult {
   address: `0x${string}`;
@@ -60,7 +60,7 @@ export async function prepareEvmAccountExport(
         // In the future, this would fetch from the encrypted keystore.
         // For now, if it's not in an env var, we might not have it unless it's a raw account in config.
         // We check if the account object has a privateKey (legacy/config path)
-        privateKey = (account as any).privateKey;
+        privateKey = (account as HardkasEvmPrivateKeyAccount & { privateKey?: string }).privateKey;
       }
     }
 

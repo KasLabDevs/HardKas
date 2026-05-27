@@ -180,3 +180,5 @@ export class Hardkas {
     }
   }
 }
+
+export { createHardkasClient, type HardkasClientOptions, type ClientEnvelope } from "./client.js";

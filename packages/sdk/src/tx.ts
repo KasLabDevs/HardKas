@@ -2,7 +2,8 @@ import { systemRuntimeContext } from "@hardkas/core";
 import { Hardkas } from "./index.js";
 import { 
   buildPaymentPlan, 
-  Utxo as BuilderUtxo 
+  Utxo as BuilderUtxo,
+  verifySignedTxSemantics
 } from "@hardkas/tx-builder";
 import { 
   TxPlanArtifact, 
@@ -146,7 +147,10 @@ export class HardkasTx {
     events.push({ type: "phase.completed", phase: "send", timestamp: Date.now() });
 
     await saveLocalnetState(simResult.state);
-    const receiptPath = await saveSimulatedReceipt(simResult.receipt as unknown as any);
+    const receiptPath = await saveSimulatedReceipt(simResult.receipt as Parameters<typeof saveSimulatedReceipt>[0]);
+
+    // Pre-determine trace path for immutability and hermetic sealing (VULN-03)
+    const tracePath = receiptPath.replace(".json", ".trace.json");
 
     // Create unified receipt
     const receiptBase: any = {
@@ -172,10 +176,11 @@ export class HardkasTx {
       postStateHash: simResult.receipt.postStateHash,
       submittedAt: simResult.receipt.createdAt,
       confirmedAt: simResult.receipt.createdAt,
-      rpcUrl: "simulated://local"
+      rpcUrl: "simulated://local",
+      tracePath
     };
     receiptBase.contentHash = calculateContentHash(receiptBase, CURRENT_HASH_VERSION);
-    const receipt: TxReceiptArtifact = receiptBase;
+    const receipt: TxReceiptArtifact = Object.freeze(receiptBase);
 
     // Convert events to steps
     const traceSteps = events.map(ev => ({
@@ -198,13 +203,11 @@ export class HardkasTx {
     };
     traceBase.contentHash = calculateContentHash(traceBase, CURRENT_HASH_VERSION);
 
-    const tracePath = await saveSimulatedTrace({
+    await saveSimulatedTrace({
       ...traceBase,
       events, 
       receiptPath
     });
-
-    receipt.tracePath = tracePath;
 
     return {
       receipt,
@@ -217,6 +220,12 @@ export class HardkasTx {
    * Sends a signed transaction to the real RPC network.
    */
   async send(signedArtifact: SignedTxArtifact, url?: string): Promise<{ receipt: TxReceiptArtifact; receiptPath: string }> {
+    // Perform pre-broadcast semantic verification (VULN-05)
+    const verification = verifySignedTxSemantics(signedArtifact);
+    if (!verification.ok) {
+      throw new Error(`Pre-broadcast semantic verification failed: ${verification.issues.map(i => i.message).join(", ")}`);
+    }
+
     const broadcastable = getBroadcastableSignedTransaction(signedArtifact);
     
     // Attempt broadcast

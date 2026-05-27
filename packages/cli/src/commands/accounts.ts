@@ -56,7 +56,7 @@ export function registerAccountsCommands(program: Command) {
           wait: options.waitLock,
           timeoutMs: parseInt(options.lockTimeout)
         }, async () => {
-          const result = await runAccountsRealInit({ force: options.force });
+          const result = await runAccountsRealInit({ force: options.force , workspaceRoot: process.cwd() });
           if (options.json) console.log(JSON.stringify(result, null, 2));
           else console.log(result.formatted);
         });

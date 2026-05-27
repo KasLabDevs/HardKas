@@ -19,7 +19,7 @@ export interface AccountsRealGenerateOptions {
   passwordStdin?: boolean;
   passwordEnv?: string;
   yes?: boolean;
-  workspaceRoot: string;
+  workspaceRoot?: string;
 }
 
 export async function runAccountsRealGenerate(options: AccountsRealGenerateOptions): Promise<{
@@ -29,7 +29,8 @@ export async function runAccountsRealGenerate(options: AccountsRealGenerateOptio
   const generator = new KaspaSdkKeyGenerator(options.networkId ? { networkId: options.networkId } : {});
   const count = options.count || 1;
   
-  let store = await loadOrCreateRealAccountStore();
+  const cwd = options.workspaceRoot || process.cwd();
+  let store = await loadOrCreateRealAccountStore({ cwd });
   const generatedAccounts: RealDevAccount[] = [];
 
   let password = "";
@@ -71,7 +72,7 @@ export async function runAccountsRealGenerate(options: AccountsRealGenerateOptio
       );
 
       const { Hardkas } = await import("@hardkas/sdk");
-      const sdk = await Hardkas.open({ cwd: options.workspaceRoot });
+      const sdk = await Hardkas.open(options.workspaceRoot ? { cwd: options.workspaceRoot } : {});
       const keystoreDir = sdk.workspace.keystoreDir;
       if (!fs.existsSync(keystoreDir)) fs.mkdirSync(keystoreDir, { recursive: true });
 
@@ -94,7 +95,7 @@ export async function runAccountsRealGenerate(options: AccountsRealGenerateOptio
   await saveRealAccountStore(store);
 
   const lines = [
-    `Generated ${count} real dev account(s)`,
+    `Generated ${count} real dev account(s, { cwd })`,
     "",
     "WARNING: Development keys only. Do not use on mainnet.",
     ""

@@ -14,6 +14,23 @@ export const ArtifactLineageSchema = z.object({
   sequence: z.number().optional()
 });
 
+export const ScriptCapabilitySchema = z.enum([
+  "p2pk",
+  "multisig",
+  "timelock",
+  "covenant-experimental",
+  "silverscript-experimental",
+  "tockata-experimental"
+]);
+
+export const ScriptMetadataSchema = z.object({
+  language: z.enum(["native", "silverscript", "tockata"]).optional(),
+  version: z.string().optional(),
+  experimental: z.boolean(),
+  notes: z.array(z.string()).optional(),
+  consensusImpact: z.enum(["none", "experimental"]).optional()
+});
+
 export const BaseArtifactSchema = z.object({
   schema: z.string(),
   hardkasVersion: z.string(),
@@ -23,7 +40,10 @@ export const BaseArtifactSchema = z.object({
   mode: executionModeSchema,
   contentHash: z.string().optional(),
   createdAt: z.string().datetime(),
-  lineage: ArtifactLineageSchema.optional()
+  lineage: ArtifactLineageSchema.optional(),
+  scriptProfile: z.enum(["standard", "experimental"]).optional(),
+  scriptCapabilities: z.array(ScriptCapabilitySchema).optional(),
+  scriptMetadata: ScriptMetadataSchema.optional()
 });
 
 export const AccountRefSchema = z.object({
@@ -200,3 +220,4 @@ export type SignedTx = z.infer<typeof SignedTxSchema>;
 export type TxTrace = z.infer<typeof TxTraceSchema>;
 export type DagContext = z.infer<typeof DagContextSchema>;
 export type Workflow = z.infer<typeof WorkflowSchema>;
+export type ScriptCapability = z.infer<typeof ScriptCapabilitySchema>;

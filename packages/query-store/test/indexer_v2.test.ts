@@ -41,6 +41,7 @@ describe("HardkasIndexer Integrity", () => {
     });
 
     const eventsPath = path.join(tmpDir, ".hardkas", "events.jsonl");
+    // hardkas-append-allow
     fs.appendFileSync(eventsPath, JSON.stringify(event) + "\n");
 
     // First sync
@@ -71,6 +72,7 @@ describe("HardkasIndexer Integrity", () => {
     });
 
     const eventsPath = path.join(tmpDir, ".hardkas", "events.jsonl");
+    // hardkas-append-allow
     fs.appendFileSync(eventsPath, JSON.stringify(event) + "\n");
 
     await indexer.sync();
@@ -98,6 +100,7 @@ describe("HardkasIndexer Integrity", () => {
     });
 
     const eventsPath = path.join(tmpDir, ".hardkas", "events.jsonl");
+    // hardkas-append-allow
     fs.appendFileSync(eventsPath, JSON.stringify(e1) + "\n");
 
     await indexer.sync();
@@ -116,6 +119,7 @@ describe("HardkasIndexer Integrity", () => {
       sourceSubsystem: "test",
       payload: { workflowId: wfId }
     });
+    // hardkas-append-allow
     fs.appendFileSync(eventsPath, JSON.stringify(e2) + "\n");
 
     await indexer.sync();

@@ -37,6 +37,7 @@ describe("Append Safety & Tail Corruption Recovery", () => {
     fs.writeFileSync(logFile, `${line1}\n${line2}\n`);
 
     // 2. Append half-written JSON (corrupted tail)
+    // hardkas-append-allow
     fs.appendFileSync(logFile, `{"event": "broken", `); // malformed line
 
     // 3. Scan and repair

@@ -94,6 +94,9 @@ export function listHardkasAccounts(config?: HardkasConfig): HardkasAccount[] {
   // Add from encrypted keystore directory
   const keystoreDir = path.join(process.cwd(), ".hardkas", "keystore");
   if (fs.existsSync(keystoreDir)) {
+    if (!config || !(config as any).cwd) {
+      throw new Error("Workspace root/cwd is required for hermetic keystore path resolution");
+    }
     const files = fs.readdirSync(keystoreDir);
     for (const file of files) {
       if (file.endsWith(".json")) {

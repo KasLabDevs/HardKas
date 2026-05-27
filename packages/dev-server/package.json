@@ -23,6 +23,7 @@
     "@hardkas/localnet": "workspace:*",
     "@hardkas/query": "workspace:*",
     "@hardkas/query-store": "workspace:*",
+    "@hardkas/sdk": "workspace:*",
     "@hardkas/sessions": "workspace:*",
     "@hono/node-server": "^1.13.7",
     "chokidar": "^3.5.3",

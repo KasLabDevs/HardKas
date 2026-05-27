@@ -14,8 +14,15 @@ describe("CLI JSON Contract", () => {
   }, 30000);
 
   afterEach(async () => {
-    // maxRetries handles Windows EBUSY when tsx child process still holds a handle
-    await fs.rm(tmpDir, { recursive: true, force: true, maxRetries: 5, retryDelay: 200 });
+    // maxRetries handles Windows EBUSY when tsx child process still holds a handle.
+    // If it still fails, ignore it to prevent flakiness in tests.
+    try {
+      await fs.rm(tmpDir, { recursive: true, force: true, maxRetries: 5, retryDelay: 200 });
+    } catch (e: any) {
+      if (e.code !== "EBUSY" && e.code !== "ENOENT") {
+        throw e;
+      }
+    }
   }, 15000);
 
   const runCli = async (args: string[], options: any = {}) => {

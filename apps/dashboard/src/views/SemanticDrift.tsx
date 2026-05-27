@@ -34,7 +34,7 @@ export function SemanticDrift() {
       } catch (e) {
         // Fallback to absolute local dev URL if served on a different origin in development
         const response = await fetch(`${apiHost}${path}`);
-        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`, { cause: e });
         return await response.json();
       }
     };
