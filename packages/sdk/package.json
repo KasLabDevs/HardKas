@@ -1,6 +1,6 @@
 {
   "name": "@hardkas/sdk",
-  "version": "0.6.1-alpha",
+  "version": "0.7.0-alpha",
   "type": "module",
   "files": [
     "dist",
@@ -9,6 +9,7 @@
   ],
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
+  "sideEffects": false,
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",

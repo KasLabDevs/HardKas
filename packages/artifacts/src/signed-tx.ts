@@ -9,6 +9,7 @@ import type { RuntimeContext } from "@hardkas/core";
 export function createSimulatedSignedTxArtifact(plan: TxPlan, payload: string, ctx: RuntimeContext): SignedTx {
   const artifact: DraftArtifact<SignedTx, "signedId" | "contentHash"> = {
     schema: "hardkas.signedTx",
+    schemaVersion: "hardkas.artifact.v1",
     hardkasVersion: HARDKAS_VERSION,
     version: ARTIFACT_VERSION,
     hashVersion: CURRENT_HASH_VERSION,
@@ -52,6 +53,7 @@ export function createSimulatedTxReceipt(
 ): TxReceipt {
   const artifact: DraftArtifact<TxReceipt, "contentHash"> = {
     schema: "hardkas.txReceipt",
+    schemaVersion: "hardkas.receipt.v1",
     hardkasVersion: HARDKAS_VERSION,
     version: ARTIFACT_VERSION,
     hashVersion: CURRENT_HASH_VERSION,

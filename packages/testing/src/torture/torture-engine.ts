@@ -92,6 +92,7 @@ export type TortureBucketRunner = (ctx: TortureBucketContext) => Promise<{
 export interface TortureBucket {
   name: string;
   expectedInvariant: string;
+  profiles?: string[];
   run: TortureBucketRunner;
 }
 

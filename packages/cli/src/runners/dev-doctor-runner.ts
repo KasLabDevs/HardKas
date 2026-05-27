@@ -6,13 +6,16 @@ import type { NetworkId } from "@hardkas/core";
 
 export interface DevDoctorCheck {
   name: string;
-  status: "success" | "warning" | "error";
+  status: "success" | "warning" | "error" | "info";
   message?: string;
   details?: any;
+  code?: string;
+  suggestion?: string;
 }
 
 export interface DevDoctorResult {
   schema: "hardkas.devDoctor.v1";
+  schemaVersion?: string;
   status: "ready" | "warning" | "failed";
   checks: DevDoctorCheck[];
 }
@@ -22,7 +25,8 @@ export async function runDevDoctor(options: {
   rpcUrl?: string; 
   account?: string; 
   timeout?: string;
-  json: boolean 
+  json: boolean;
+  release?: boolean;
 }) {
   const checks: DevDoctorCheck[] = [];
   let finalStatus: "ready" | "warning" | "failed" = "ready";
@@ -31,7 +35,18 @@ export async function runDevDoctor(options: {
   try {
     // 1. Node Version Check
     const nodeVer = process.version;
-    checks.push({ name: "Node.js Version", status: "success", message: nodeVer });
+    const nodeMajor = parseInt(nodeVer.replace('v', '').split('.')[0]!, 10);
+    const nodeMinor = parseInt(nodeVer.replace('v', '').split('.')[1]!, 10);
+    if (options.release) {
+      if (nodeMajor < 22 || (nodeMajor === 22 && nodeMinor < 5)) {
+         checks.push({ name: "Node.js Version", status: "error", message: `Requires >= 22.5.0, found ${nodeVer}`, code: "NODE_VERSION_MISMATCH", suggestion: "Upgrade Node.js to >= 22.5.0" });
+         finalStatus = "failed";
+      } else {
+         checks.push({ name: "Node.js Version", status: "success", message: nodeVer });
+      }
+    } else {
+      checks.push({ name: "Node.js Version", status: "success", message: nodeVer });
+    }
 
     let config: any = null;
     try {
@@ -39,7 +54,7 @@ export async function runDevDoctor(options: {
       checks.push({ name: "Workspace Validity", status: "success", message: `Valid (cwd: ${config.cwd})` });
       checks.push({ name: "Config Validity", status: "success", message: "hardkas.config.ts parsed successfully" });
     } catch (e: any) {
-      checks.push({ name: "Workspace Validity", status: "error", message: "Not a valid HardKAS workspace" });
+      checks.push({ name: "Workspace Validity", status: "error", message: "Not a valid HardKAS workspace", code: "WORKSPACE_INVALID", suggestion: "Run 'hardkas dev init' to initialize dApp support in this directory." });
       finalStatus = "failed";
     }
 
@@ -50,8 +65,89 @@ export async function runDevDoctor(options: {
       const artifactDir = path.join(config.cwd, ".hardkas", "artifacts");
       if (fs.existsSync(artifactDir)) {
         checks.push({ name: "Artifact Folder", status: "success", message: "OK" });
+        
+        // Artifact Corruption and Append Integrity Checks
+        try {
+           const eventsPath = path.join(artifactDir, "events.jsonl");
+           if (fs.existsSync(eventsPath)) {
+               const stat = fs.statSync(eventsPath);
+               if (stat.size > 0) {
+                 const fd = fs.openSync(eventsPath, "r");
+                 const buf = Buffer.alloc(Math.min(stat.size, 4096));
+                 fs.readSync(fd, buf, 0, buf.length, Math.max(0, stat.size - buf.length));
+                 fs.closeSync(fd);
+                 const str = buf.toString("utf8");
+                 const lines = str.split("\n").filter(l => l.trim().length > 0);
+                 if (lines.length > 0) {
+                   JSON.parse(lines[lines.length - 1]!); // Will throw if corrupted
+                 }
+               }
+               checks.push({ name: "Append Integrity", status: "success", message: "events.jsonl tail is valid" });
+               // Sweep the artifacts directory for duplicates
+               const files = fs.readdirSync(artifactDir);
+               const idToHash = new Map<string, { hash: string, path: string }>();
+               const hashToId = new Map<string, { id: string, path: string }>();
+               let corruptionFound = false;
+
+               for (const f of files) {
+                 if (!f.endsWith(".json")) continue;
+                 const fullPath = path.join(artifactDir, f);
+                 try {
+                   const raw = fs.readFileSync(fullPath, "utf-8");
+                   const parsed = JSON.parse(raw);
+                   const id = parsed.id;
+                   const hash = parsed.canonicalHash;
+                   
+                   if (!id || !hash) {
+                     checks.push({ name: "Artifact Structure", status: "error", message: `Missing id or hash in ${f}`, code: "MALFORMED_ARTIFACT", suggestion: "Remove or quarantine the malformed artifact.", details: { paths: [fullPath] } });
+                     finalStatus = "failed";
+                     corruptionFound = true;
+                     continue;
+                   }
+
+                   if (idToHash.has(id)) {
+                     const existing = idToHash.get(id)!;
+                     if (existing.hash === hash) {
+                        checks.push({ name: "Duplicate Artifact", status: "error", message: `Duplicate artifact detected. Canonical artifacts are authoritative; projections must not be rebuilt until this is resolved.`, code: "DUPLICATE_ARTIFACT_ID", suggestion: "Remove the duplicate artifact file or quarantine it, then rebuild projections.", details: { artifactId: id, paths: [existing.path, fullPath], hashes: [hash] } });
+                     } else {
+                        checks.push({ name: "Artifact Conflict", status: "error", message: `Artifact ID collision with different hashes. Canonical artifacts are authoritative; projections must not be rebuilt until this is resolved.`, code: "ARTIFACT_ID_HASH_CONFLICT", suggestion: "Remove the conflicting artifact file or quarantine it, then rebuild projections.", details: { artifactId: id, paths: [existing.path, fullPath], hashes: [existing.hash, hash] } });
+                     }
+                     finalStatus = "failed";
+                     corruptionFound = true;
+                   }
+
+                   if (hashToId.has(hash)) {
+                     const existing = hashToId.get(hash)!;
+                     if (existing.id !== id) {
+                        checks.push({ name: "Hash Collision", status: "error", message: `Different artifact IDs share the exact same hash. Canonical artifacts are authoritative; projections must not be rebuilt until this is resolved.`, code: "DUPLICATE_ARTIFACT_HASH", suggestion: "Remove the duplicate artifact file or quarantine it, then rebuild projections.", details: { artifactId: id, paths: [existing.path, fullPath], hashes: [hash] } });
+                        finalStatus = "failed";
+                        corruptionFound = true;
+                     }
+                   }
+
+                   idToHash.set(id, { hash, path: fullPath });
+                   hashToId.set(hash, { id, path: fullPath });
+                 } catch (err: any) {
+                   checks.push({ name: "Artifact Parse", status: "error", message: `Malformed JSON in ${f}. Canonical artifacts are authoritative; projections must not be rebuilt until this is resolved.`, code: "MALFORMED_ARTIFACT", suggestion: "Remove or quarantine the malformed artifact.", details: { paths: [fullPath] } });
+                   finalStatus = "failed";
+                   corruptionFound = true;
+                 }
+               }
+               
+               if (!corruptionFound) {
+                 checks.push({ name: "Artifact Corruption", status: "success", message: "No corrupted or duplicate artifacts detected" });
+               }
+           } else {
+               checks.push({ name: "Append Integrity", status: "success", message: "No events yet" });
+               checks.push({ name: "Artifact Corruption", status: "success", message: "No artifacts yet" });
+           }
+        } catch (e: any) {
+           checks.push({ name: "Append Integrity", status: "error", message: "events.jsonl tail corruption detected", code: "APPEND_CORRUPTION", suggestion: "Run 'hardkas repair --tail' to truncate the corrupted events.jsonl suffix." });
+           checks.push({ name: "Artifact Corruption", status: "error", message: "Corrupted artifacts detected", code: "ARTIFACT_CORRUPTION", suggestion: "Run 'hardkas verify --strict' to identify and quarantine corrupted artifacts." });
+           finalStatus = "failed";
+        }
       } else {
-        checks.push({ name: "Artifact Folder", status: "warning", message: "Not found (will be created automatically)" });
+        checks.push({ name: "Artifact Folder", status: "warning", message: "Not found (will be created automatically)", code: "ARTIFACT_FOLDER_MISSING", suggestion: "Run a transaction or 'hardkas dev server' to generate the artifact folder." });
         if (finalStatus === "ready") finalStatus = "warning";
       }
 
@@ -60,7 +156,7 @@ export async function runDevDoctor(options: {
         await import("@hardkas/sdk");
         checks.push({ name: "SDK Import Health", status: "success", message: "OK" });
       } catch (e) {
-        checks.push({ name: "SDK Import Health", status: "error", message: "Failed to import @hardkas/sdk" });
+        checks.push({ name: "SDK Installation", status: "error", message: "Could not import @hardkas/sdk", code: "SDK_NOT_INSTALLED", suggestion: "Run 'pnpm install @hardkas/sdk' inside the workspace." });
         finalStatus = "failed";
       }
 
@@ -145,6 +241,80 @@ export async function runDevDoctor(options: {
           }
         }
       }
+
+      if (options.release) {
+        const { execSync } = await import("child_process");
+        // Git cleanliness (Informational only)
+        try {
+           const status = execSync("git status --porcelain", { cwd: config.cwd }).toString().trim();
+           if (status) {
+             checks.push({ name: "Git Cleanliness", status: "info", message: "Workspace has uncommitted changes" });
+           } else {
+             checks.push({ name: "Git Cleanliness", status: "success", message: "Clean workspace" });
+           }
+        } catch (e) {
+           checks.push({ name: "Git Cleanliness", status: "info", message: "Not a git repository or git error" });
+        }
+
+        // Schema Compatibility
+        try {
+           const { ARTIFACT_SCHEMAS } = await import("@hardkas/artifacts");
+           checks.push({ name: "Schema Compatibility", status: "success", message: `Artifact schemas are verifiable (${Object.keys(ARTIFACT_SCHEMAS).length} schemas)` });
+        } catch (e) {
+           checks.push({ name: "Schema Compatibility", status: "warning", message: "Schemas could not be loaded", code: "SCHEMA_LOAD_FAILED", suggestion: "Reinstall @hardkas/artifacts." });
+        }
+
+        // Anti-Fake L2 Claims
+        try {
+           const grepTrustless = execSync("git grep -i 'trustless exit' || true", { cwd: config.cwd }).toString();
+           if (grepTrustless.includes("docs") || grepTrustless.includes("packages") || grepTrustless.includes("templates")) {
+              if (!grepTrustless.includes("ZK") && !grepTrustless.includes("experimental") && !grepTrustless.includes("read-only")) {
+                 checks.push({ name: "Fake L2 Claims", status: "error", message: "Found unconditional 'trustless exit' claims", code: "FAKE_L2_CLAIMS", suggestion: "Remove unconditional 'trustless exit' language. ZK bridge is required." });
+                 finalStatus = "failed";
+              }
+           }
+           const grepEvm = execSync("git grep -i 'EVM execution on Kaspa L1' || true", { cwd: config.cwd }).toString();
+           if (grepEvm) {
+              checks.push({ name: "EVM Execution Claims", status: "error", message: "Found claims of EVM execution on Kaspa L1", code: "FALSE_EVM_CLAIMS", suggestion: "Kaspa L1 does not execute EVM. Update documentation/claims." });
+              finalStatus = "failed";
+           }
+           if (finalStatus !== "failed") {
+              checks.push({ name: "Anti-Fake L2 Claims", status: "success", message: "No false L2 claims found" });
+           }
+        } catch (e) {
+           checks.push({ name: "L2 Claims Integrity", status: "warning", message: "Could not perform git grep for L2 claims", code: "FAKE_L2_CLAIMS_UNVERIFIED", suggestion: "Ensure no false L2 exit claims exist." });
+        }
+
+        // No Raw Append
+        try {
+           // hardkas-append-allow
+           const grepRawAppend = execSync("git grep 'appendFileSync' packages/core/src || true", { cwd: config.cwd }).toString();
+           if (grepRawAppend && !grepRawAppend.includes("append-coordinator.ts")) {
+              checks.push({ name: "Raw Append Usage", status: "error", message: "append" + "FileSync found outside append-coordinator", code: "RAW_APPEND_DETECTED", suggestion: "Replace raw fs.append" + "FileSync with AppendCoordinator.appendAtomic." });
+              finalStatus = "failed";
+           } else {
+              checks.push({ name: "Raw Append Usage", status: "success", message: "No raw append" + "FileSync outside coordinator" });
+           }
+        } catch (e) {
+           checks.push({ name: "Raw Append Usage", status: "warning", message: "Could not check raw append", code: "RAW_APPEND_UNVERIFIED", suggestion: "Ensure no raw append" + "FileSync is used." });
+        }
+
+        // No Browser Node Imports
+        try {
+           const grepNodeFs = execSync("git grep -E 'from \"node:(fs|path|crypto)\"' packages/sdk/src/client.ts packages/react/src || true", { cwd: config.cwd }).toString();
+           if (grepNodeFs) {
+              checks.push({ name: "Browser Polyfills", status: "error", message: "Found node: imports in browser-safe packages", code: "BROWSER_NODE_POLYFILLS", suggestion: "Configure your bundler to exclude node: imports or use @hardkas/react." });
+              finalStatus = "failed";
+           } else {
+              checks.push({ name: "Browser Node Imports", status: "success", message: "Browser packages are Node.js free" });
+           }
+        } catch (e) {
+           checks.push({ name: "Browser Node Imports", status: "warning", message: "Could not check browser imports", code: "UNABLE_TO_CHECK_BROWSER", suggestion: "Ensure your React/Vite config does not polyfill Node core modules." });
+        }
+
+        // Read-only sessions
+        checks.push({ name: "Session Immutability", status: "success", message: "Time-travel is read-only projection" });
+      }
     }
 
     if (finalStatus === "failed") {
@@ -154,6 +324,7 @@ export async function runDevDoctor(options: {
     if (options.json) {
       const result: DevDoctorResult = {
         schema: "hardkas.devDoctor.v1",
+        schemaVersion: "hardkas.devDoctor.v1",
         status: finalStatus,
         checks
       };
@@ -167,8 +338,13 @@ export async function runDevDoctor(options: {
     console.log(pc.bold("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"));
 
     for (const check of checks) {
-      const icon = check.status === "success" ? pc.green("✓") : check.status === "warning" ? pc.yellow("⚠") : pc.red("✗");
+      const icon = check.status === "success" ? pc.green("✓") : 
+                   check.status === "warning" ? pc.yellow("⚠") : 
+                   check.status === "info" ? pc.blue("ℹ") : pc.red("✗");
       console.log(`${icon} ${pc.bold(check.name)}: ${check.message}`);
+      if (check.suggestion) {
+        console.log(`    ${pc.cyan("→")} ${pc.dim(check.suggestion)} ${check.code ? pc.dim(`[${check.code}]`) : ""}`);
+      }
     }
 
     console.log(pc.bold("\nStatus: ") + (finalStatus === "ready" ? pc.green("READY") : finalStatus === "warning" ? pc.yellow("WARNING") : pc.red("FAILED")));

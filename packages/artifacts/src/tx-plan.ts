@@ -31,6 +31,7 @@ export function createTxPlanArtifact(options: CreateTxPlanArtifactOptions): TxPl
   const artifact: DraftArtifact<TxPlan, "planId" | "contentHash"> = {
     schema: "hardkas.txPlan",
     hardkasVersion: HARDKAS_VERSION,
+    schemaVersion: "hardkas.artifact.v1",
     version: ARTIFACT_VERSION,
     hashVersion: CURRENT_HASH_VERSION,
     createdAt: new Date(options.ctx.clock.now()).toISOString(),

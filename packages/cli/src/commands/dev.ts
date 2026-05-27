@@ -7,7 +7,6 @@ export function registerDevCommands(program: Command) {
     .description("Local development and Igra-native environment tools")
     .option("--once", "Initialize dev environment, run health checks, and exit (headless)", false)
     .option("--headless", "Run headlessly (no UI open)", false)
-    .option("--json", "Output status as JSON", false)
     .action(async (options: any) => {
       try {
         const { runDevEnv } = await import("../runners/dev-env-runner.js");
@@ -51,9 +50,11 @@ export function registerDevCommands(program: Command) {
     .option("--rpc-url <url>", "Explicit Igra RPC URL to check")
     .option("--account <name>", "Local EVM account name to verify balance")
     .option("--timeout <ms>", "RPC timeout in milliseconds", "3000")
-    .option("--json", "Output as JSON", false)
+    .option("--json", "Output as JSON")
+    .option("--release", "Run strict release gate checks")
     .action(async (options: any) => {
       try {
+
         const { runDevDoctor } = await import("../runners/dev-doctor-runner.js");
         await runDevDoctor(options);
       } catch (e) {

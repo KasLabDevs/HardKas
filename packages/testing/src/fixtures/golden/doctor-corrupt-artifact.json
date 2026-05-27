@@ -1,0 +1,14 @@
+{
+  "schemaVersion": "hardkas.devDoctor.v1",
+  "status": "failed",
+  "checks": [
+    {
+      "name": "Artifact Integrity",
+      "status": "error",
+      "message": "Corrupt file",
+      "code": "ARTIFACT_CORRUPT",
+      "suggestion": "Delete it"
+    }
+  ],
+  "timestamp": "2026-05-27T00:00:00.000Z"
+}

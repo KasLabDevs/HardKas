@@ -9,8 +9,8 @@ describe("CLI JSON Contract", () => {
 
   beforeEach(async () => {
     tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), "hardkas-json-"));
-    const cmd = path.resolve(__dirname, "../src/index.ts");
-    await execa("npx", ["tsx", cmd, "init"], { cwd: tmpDir });
+    const bin = path.resolve(__dirname, "../dist/index.js");
+    await execa("node", [bin, "init"], { cwd: tmpDir });
   }, 30000);
 
   afterEach(async () => {
@@ -26,9 +26,8 @@ describe("CLI JSON Contract", () => {
   }, 15000);
 
   const runCli = async (args: string[], options: any = {}) => {
-    const cmd = path.resolve(__dirname, "../src/index.ts");
-    // Run via tsx to avoid build steps in dev tests
-    return execa("npx", ["tsx", cmd, ...args], { cwd: tmpDir, ...options });
+    const bin = path.resolve(__dirname, "../dist/index.js");
+    return execa("node", [bin, ...args], { cwd: tmpDir, ...options });
   };
 
   it("tx plan --json produces strict parsable JSON with no stdout pollution", async () => {

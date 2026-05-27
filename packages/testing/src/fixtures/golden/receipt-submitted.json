@@ -1,0 +1,30 @@
+{
+  "schema": "hardkas.txReceipt",
+  "hardkasVersion": "0.7.0-alpha",
+  "version": "1.0.0-alpha",
+  "hashVersion": 3,
+  "networkId": "simulated",
+  "mode": "simulated",
+  "createdAt": "2026-05-27T23:06:29.896Z",
+  "status": "confirmed",
+  "txId": "simtx_failed_f9318e050cdb72fc7cc6bcc5cb415548",
+  "sourceSignedId": "signed-117142f456a1707b",
+  "from": {
+    "address": "kaspa:sim_alice"
+  },
+  "to": {
+    "address": "kaspa:sim_bob"
+  },
+  "amountSompi": "10000000000",
+  "feeSompi": "0",
+  "changeSompi": "0",
+  "daaScore": "0",
+  "preStateHash": "a95695ddc4a6ccd7537cfc36e2154e5c99c3fbea100448df8f84f941928f049b",
+  "postStateHash": "a95695ddc4a6ccd7537cfc36e2154e5c99c3fbea100448df8f84f941928f049b",
+  "submittedAt": "1970-01-01T00:00:00.000Z",
+  "confirmedAt": "1970-01-01T00:00:00.000Z",
+  "rpcUrl": "simulated://local",
+  "tracePath": "C:\\Users\\jrodr\\Documents\\kaslabdevs\\GitHub\\HardKas-repo\\.hardkas\\artifacts\\simtx_failed_f9318e050cdb72fc7cc6bcc5cb415548.trace.json",
+  "contentHash": "b262b1e976d004a967f3e35d0aae30b57e62ddeecf944bf8469ef4ff00a4b40d",
+  "schemaVersion": "hardkas.receipt.v1"
+}

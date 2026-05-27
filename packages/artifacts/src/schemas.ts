@@ -33,6 +33,7 @@ export const ScriptMetadataSchema = z.object({
 
 export const BaseArtifactSchema = z.object({
   schema: z.string(),
+  schemaVersion: z.string().optional(),
   hardkasVersion: z.string(),
   version: z.literal(ARTIFACT_VERSION),
   hashVersion: z.union([z.number(), z.string()]).optional(),

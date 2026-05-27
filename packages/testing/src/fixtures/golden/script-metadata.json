@@ -1,0 +1,8 @@
+{
+  "schema": "hardkas.artifact.v1",
+  "type": "script-capability",
+  "artifactId": "art_golden_script_meta",
+  "createdAt": "2026-05-27T12:10:00Z",
+  "scriptVersion": 1,
+  "features": ["tockata-experimental"]
+}

@@ -1,7 +1,7 @@
 # HardKAS Beta Gate Report
 **Maturity Level:** BETA CANDIDATE
 **Date:** 2026-05-15
-**Version:** 0.6.1-alpha
+**Version:** 0.7.0-alpha
 
 ## 1. Executive Summary
 

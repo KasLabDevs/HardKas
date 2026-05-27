@@ -7,6 +7,20 @@ export function registerArtifactCommands(program: Command) {
   const artifactCmd = program.command("artifact").description("Manage HardKAS artifacts");
 
   artifactCmd
+    .command("inspect <id_or_path>")
+    .description(`Deep inspect an artifact by ID or path ${UI.maturity("stable")}`)
+    .option("--json", "Output results as JSON", false)
+    .action(async (idOrPath: string, options: any) => {
+      try {
+        const { runArtifactInspect } = await import("../runners/artifact-inspect-runner.js");
+        await runArtifactInspect({ idOrPath, ...options, workspaceRoot: process.cwd() });
+      } catch (e) {
+        handleError(e);
+        process.exitCode = 1;
+      }
+    });
+
+  artifactCmd
     .command("verify <path>")
     .description(`Verify an artifact's integrity and schema ${UI.maturity("stable")}`)
     .option("--json", "Output results as JSON", false)

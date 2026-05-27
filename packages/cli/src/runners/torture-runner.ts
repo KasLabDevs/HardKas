@@ -17,20 +17,25 @@ export interface TortureMatrixOptions {
   seed: string | number;
   report?: string | undefined;
   bucket?: string | undefined;
+  profile?: string | undefined;
 }
 
 export interface TortureReplayOptions {
   seed: number;
   caseId: string;
+  profile?: string;
 }
 
 /**
  * Deterministically generates the sequence of buckets and caseSeeds from the global seed.
  */
-function getTestCaseSchedule(globalSeed: number, totalIterations: number) {
-  const buckets = getAllTortureBuckets();
+function getTestCaseSchedule(globalSeed: number, totalIterations: number, profileFilter?: string) {
+  let buckets = getAllTortureBuckets();
+  if (profileFilter) {
+    buckets = buckets.filter(b => b.profiles?.includes(profileFilter));
+  }
   if (buckets.length === 0) {
-    throw new Error("No torture buckets registered!");
+    throw new Error(`No torture buckets registered for profile ${profileFilter || 'all'}!`);
   }
 
   const masterPrng = new LcgPrng(globalSeed);
@@ -78,10 +83,13 @@ export async function runTortureMatrix(options: TortureMatrixOptions) {
   UI.info(`  ${pc.dim("Iterations:")}   ${pc.yellow(iterations)}`);
   UI.info(`  ${pc.dim("Active Buckets:")} ${pc.green(getAllTortureBuckets().map(b => b.name).join(", "))}\n`);
 
-  let schedule = getTestCaseSchedule(seed, iterations);
+  let schedule = getTestCaseSchedule(seed, iterations, options.profile);
   if (options.bucket) {
     schedule = schedule.filter(item => item.bucketName === options.bucket);
     UI.info(`  ${pc.dim("Filtered Bucket:")} ${pc.yellow(options.bucket)} (Matched ${schedule.length} of ${iterations} iterations)\n`);
+  }
+  if (options.profile) {
+    UI.info(`  ${pc.dim("Active Profile:")} ${pc.magenta(options.profile)}\n`);
   }
 
   const results: TortureCaseResult[] = [];
@@ -159,7 +167,7 @@ export async function runTortureMatrix(options: TortureMatrixOptions) {
     }
 
     const duration = Date.now() - startTime;
-    const reproduceCommand = `pnpm hardkas torture replay --seed ${seed} --case ${item.caseId}`;
+    const reproduceCommand = `pnpm hardkas torture replay --seed ${seed} --case ${item.caseId}${options.profile ? ` --profile ${options.profile}` : ""}`;
 
     const caseResult: TortureCaseResult = {
       caseId: item.caseId,
@@ -370,9 +378,14 @@ export async function runTortureMatrix(options: TortureMatrixOptions) {
     }
     
     const finalReport = {
+      schemaVersion: "hardkas.tortureReport.v1",
       seed,
       iterations,
+      profile: options.profile || null,
       bucketFilter: options.bucket || null,
+      reproduceCommand: `pnpm hardkas torture matrix --seed ${seed} --iterations ${iterations}${options.profile ? ` --profile ${options.profile}` : ""}`,
+      failures: results.filter(r => r.status === "fail").length,
+      warnings: results.filter(r => r.severity === "warning").length,
       summary: {
         total: results.length,
         passed: passedCount,
@@ -402,7 +415,7 @@ export async function runTortureReplay(options: TortureReplayOptions) {
   UI.info(`  ${pc.dim("Target CaseId:")} ${pc.cyan(targetCaseId)}`);
 
   // We scan the first 10000 cases to find our target case ID
-  const schedule = getTestCaseSchedule(seed, 10000);
+  const schedule = getTestCaseSchedule(seed, 10000, options.profile);
   const target = schedule.find(item => item.caseId === targetCaseId);
   
   if (!target) {

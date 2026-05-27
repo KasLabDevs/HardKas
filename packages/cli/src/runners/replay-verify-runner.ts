@@ -20,14 +20,34 @@ export async function runReplayVerify(options: ReplayVerifyOptions) {
   // Delegate entirely to SDK Replay macro
   const result = await sdk.replay.verify({ path: "." });
 
+  // Map result to requested literal status
+  let finalStatus: "passed" | "diverged" | "unsupported" | "missing_dependency" | "non_deterministic" = "diverged";
+  
+  if (result.passed) {
+    finalStatus = "passed";
+  } else if (result.error?.includes("unsupported") || result.error?.includes("not a workflow artifact")) {
+    finalStatus = "unsupported";
+  } else if (result.lineage === "invalid" || result.error?.includes("not found") || result.error?.includes("missing")) {
+    finalStatus = "missing_dependency";
+  } else if (result.determinism === "failed") {
+    // If the cryptography/integrity failed
+    finalStatus = "non_deterministic";
+  } else {
+    // Standard semantic divergence
+    finalStatus = "diverged";
+  }
+
   if (options.json) {
     console.log(JSON.stringify({
+      schemaVersion: "hardkas.replayVerify.v1",
       workspace: options.path,
       artifacts: result.artifactsScanned,
       lineage: result.lineage,
       determinism: result.determinism,
       contamination: result.contamination,
-      result: result.passed ? "PASS" : "FAIL"
+      result: finalStatus,
+      targetTxId: (result.report?.txId as string) || "unknown",
+      deterministic: result.determinism === "verified"
     }, null, 2));
   } else {
     UI.causality(
@@ -39,6 +59,7 @@ export async function runReplayVerify(options: ReplayVerifyOptions) {
         "Lineage Integrity": result.lineage,
         "Deterministic Execution": result.determinism,
         "Network Contamination": result.contamination,
+        "Status": finalStatus,
         "Result": result.passed ? "PASS" : "FAIL"
       }
     );

@@ -13,7 +13,8 @@ export function registerTortureCommands(program: Command) {
     .option("--seed <seed>", "Seed value for deterministic inputs or 'random'", "random")
     .option("--report [path]", "Optional custom JSON output filepath for findings report")
     .option("--bucket <name>", "Optional target bucket name to execute exclusively")
-    .action(async (options: { iterations: string; seed: string; report?: string; bucket?: string }) => {
+    .option("--profile <name>", "Optional profile name to execute")
+    .action(async (options: { iterations: string; seed: string; report?: string; bucket?: string; profile?: string }) => {
       try {
         const { runTortureMatrix } = await import("../runners/torture-runner.js");
         const parsedIterations = parseInt(options.iterations, 10);
@@ -25,7 +26,8 @@ export function registerTortureCommands(program: Command) {
           iterations: parsedIterations,
           seed: options.seed,
           report: options.report,
-          bucket: options.bucket
+          bucket: options.bucket,
+          profile: options.profile
         });
       } catch (err: any) {
         handleError(err);
@@ -38,7 +40,8 @@ export function registerTortureCommands(program: Command) {
     .description(`Replay and debug a specific failed case from a torture run ${UI.maturity("alpha")}`)
     .requiredOption("--seed <number>", "Original global seed of the failed matrix run")
     .requiredOption("--case <caseId>", "Failed case ID, e.g. case-001")
-    .action(async (options: { seed: string; case: string }) => {
+    .option("--profile <name>", "Original profile filter of the failed matrix run")
+    .action(async (options: { seed: string; case: string; profile?: string }) => {
       try {
         const { runTortureReplay } = await import("../runners/torture-runner.js");
         const parsedSeed = parseInt(options.seed, 10);
@@ -48,7 +51,8 @@ export function registerTortureCommands(program: Command) {
 
         await runTortureReplay({
           seed: parsedSeed,
-          caseId: options.case
+          caseId: options.case,
+          ...(options.profile !== undefined ? { profile: options.profile } : {})
         });
       } catch (err: any) {
         handleError(err);

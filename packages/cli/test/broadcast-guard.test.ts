@@ -9,25 +9,25 @@ describe("assertBroadcastNetworkAllowed", () => {
     })).not.toThrow();
   });
 
-  it("should block mainnet (always rejected in v0.2-alpha)", () => {
+  it("should block mainnet (always rejected in 0.7.0-alpha)", () => {
     expect(() => assertBroadcastNetworkAllowed({
       artifactNetworkId: "mainnet",
       selectedNetwork: "mainnet"
-    })).toThrow(/Mainnet broadcast is disabled in HardKAS v0.2-alpha/);
+    })).toThrow(/Mainnet broadcast is disabled in HardKAS 0.7.0-alpha/);
   });
 
   it("should block mainnet even if only artifact is mainnet", () => {
     expect(() => assertBroadcastNetworkAllowed({
       artifactNetworkId: "kaspa",
       selectedNetwork: "devnet"
-    })).toThrow(/Mainnet broadcast is disabled in HardKAS v0.2-alpha/);
+    })).toThrow(/Mainnet broadcast is disabled in HardKAS 0.7.0-alpha/);
   });
 
   it("should block mainnet-like aliases", () => {
     expect(() => assertBroadcastNetworkAllowed({
       artifactNetworkId: "kaspa-mainnet",
       selectedNetwork: "kaspa-mainnet"
-    })).toThrow(/Mainnet broadcast is disabled in HardKAS v0.2-alpha/);
+    })).toThrow(/Mainnet broadcast is disabled in HardKAS 0.7.0-alpha/);
   });
 
   it("should fail on network mismatch", () => {
