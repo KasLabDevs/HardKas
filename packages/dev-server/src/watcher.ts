@@ -3,6 +3,7 @@ import fs from "node:fs";
 import chokidar from "chokidar";
 import { getQueryBackend } from "./db.js";
 import { devServerEmitter } from "./stream.js";
+import { coreEvents } from "@hardkas/core";
 
 let debounceTimer: NodeJS.Timeout | null = null;
 const bufferedPaths = new Set<string>();
@@ -98,6 +99,24 @@ export function startHardkasWatcher() {
 
     const handleChange = (absolutePath: string) => {
       bufferedPaths.add(absolutePath);
+
+      if (absolutePath.includes("artifacts") && absolutePath.endsWith(".json")) {
+        try {
+          const content = fs.readFileSync(absolutePath, "utf-8");
+          const parsed = JSON.parse(content);
+          
+          if (!parsed.artifactId) {
+            parsed.artifactId = parsed.planId || parsed.signedId || parsed.txId || path.basename(absolutePath, ".json");
+          }
+          
+          coreEvents.emit({
+            kind: "artifact.written",
+            payload: parsed
+          } as any);
+        } catch (e) {
+          console.error("[Watcher] Failed to emit synthetic event:", e);
+        }
+      }
 
       if (!isStale) {
         isStale = true;

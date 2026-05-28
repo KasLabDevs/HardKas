@@ -2,13 +2,13 @@
 
 All notable changes to HardKAS will be documented in this file.
 
-## [v0.7.0-alpha] - 2026-05-27
+## [v0.7.1-alpha] - 2026-05-27
 
 ### Stabilization & Refactor
-This release focuses on cleaning, consolidating, versioning, and stabilizing the local-first runtime to prepare HardKAS for `0.7.0-alpha`. No new product architectures or fake executions were added. The focus remains on being a local-first, artifact-driven, deterministic, and replayable developer environment.
+This release focuses on cleaning, consolidating, versioning, and stabilizing the local-first runtime to prepare HardKAS for `0.7.1-alpha`. No new product architectures or fake executions were added. The focus remains on being a local-first, artifact-driven, deterministic, and replayable developer environment.
 
 #### Version Alignment & Documentation
-- **0.7.0-alpha:** Unified all package versions and references to `0.7.0-alpha`. Removed stale `0.6.1-alpha` and `0.7.0-CFC` references.
+- **0.7.1-alpha:** Unified all package versions and references to `0.7.1-alpha`. Removed stale `0.6.1-alpha` and `0.7.0-CFC` references.
 - **Honest Documentation:** Aggressively purged unsupported claims (e.g., "production ready", "trustless exit without ZK", "Kaspa L1 executes EVM"). Re-centered the messaging strictly around HardKAS being a "local-first reproducible Kaspa developer runtime."
 
 #### Runtime Contract Freeze

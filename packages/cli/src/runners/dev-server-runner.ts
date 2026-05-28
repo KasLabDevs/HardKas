@@ -12,9 +12,15 @@ export async function runDevServer(options: {
   json: boolean;
   once?: boolean;
   workspaceRoot?: string;
+  sandboxMode?: boolean;
+  quietHeader?: boolean;
+  preventTeardown?: boolean;
 }) {
   const wsRoot = options.workspaceRoot || process.cwd();
   
+  // Set env var so dev-server watcher and other modules resolve to the correct root
+  process.env.HARDKAS_ROOT = wsRoot;
+
   try {
     // 1. Workspace Verification
     const hardkasDir = path.join(wsRoot, ".hardkas");
@@ -62,7 +68,7 @@ export async function runDevServer(options: {
     
     await withLock({ rootDir: wsRoot, name: "query-store", timeoutMs: 30000, wait: true }, async () => {
        const backend = new SqliteQueryBackend(store);
-       await backend.rebuild({ strict: true });
+       await backend.rebuild({ strict: true, cwd: wsRoot });
     });
 
     if (!options.json && !options.once) {
@@ -82,6 +88,11 @@ export async function runDevServer(options: {
     const serverObj = server as Record<string, unknown>;
     const token = typeof serverObj.token === "string" ? serverObj.token : undefined;
 
+    let isNodeRunning = false;
+    let miningAlias = "";
+    let miningAddress = "";
+    let devAccounts: any[] = [];
+    
     if (options.json) {
       UI.writeJson({
         schema: "hardkas.devServer.v1",
@@ -91,15 +102,11 @@ export async function runDevServer(options: {
         config: { port, host, unsafeExternal: options.unsafeExternal }
       });
     } else {
-      let isNodeRunning = false;
-      let miningAlias = "";
-      let miningAddress = "";
-      
       const { ensureDevAccounts, listDevAccountsSync } = await import("@hardkas/accounts");
       
       // Auto-ensure dev accounts (creates alice/bob if they don't exist in simnet)
       await ensureDevAccounts(wsRoot);
-      const devAccounts = listDevAccountsSync(wsRoot);
+      devAccounts = listDevAccountsSync(wsRoot);
 
       if ((options as any).withNode) {
         if (devAccounts.length > 0) {
@@ -118,6 +125,7 @@ export async function runDevServer(options: {
         isNodeRunning = true;
       }
 
+    if (!options.quietHeader && !options.json) {
       console.log(pc.bold("\nHardKAS Local Runtime"));
       console.log(pc.dim("━━━━━━━━━━━━━━━━━━━━━━\n"));
       
@@ -167,8 +175,13 @@ export async function runDevServer(options: {
       console.log(pc.red("Local simnet development accounts only."));
       console.log(pc.red("Never use on mainnet.\n"));
     }
+    } // Closes else block
 
     const nodeServer = server.start();
+
+    if (options.preventTeardown) {
+      return { store, nodeServer, stopHardkasWatcher, isNodeRunning, miningAlias, port, devAccounts };
+    }
 
     // 4. Safe Teardown on SIGINT/SIGTERM (Clean Exit, No background processes/threads left behind)
     let isStopping = false;

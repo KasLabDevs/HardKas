@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react';
 import { FileCheck, AlertTriangle } from 'lucide-react';
 import { ActivityTimelineCompact } from '../components/ActivityTimelineCompact';
+import { EmptyState } from '../components/EmptyState';
+import { LoadingState } from '../components/LoadingState';
 
 interface ArtifactStatus {
   artifactId: string;
@@ -41,7 +43,10 @@ export function TruthStatus() {
 
   useEffect(() => {
     Promise.all([
-      fetch(`${apiBase}/api/status`, { headers }).then(res => res.json()),
+      fetch(`${apiBase}/api/status`, { headers }).then(res => {
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        return res.json();
+      }),
       fetch(`${apiBase}/api/dev-accounts`, { headers }).then(res => res.json()).catch(() => null)
     ])
       .then(([statusRes, accountsRes]) => {
@@ -55,8 +60,17 @@ export function TruthStatus() {
       });
   }, []);
 
-  if (loading) return <div className="text-zinc-500">Loading truth lattice & cockpit...</div>;
-  if (error) return <div className="text-red-400">API Error: {error}</div>;
+  if (loading) return <LoadingState message="Connecting to local runtime..." minHeight="60vh" />;
+  if (error) {
+    return (
+      <EmptyState 
+        title="Connecting to local runtime..."
+        description="The dashboard API might be starting up or is unavailable."
+        command="hardkas sandbox --with-node --recipe transfer"
+        icon={<FileCheck size={24} />}
+      />
+    );
+  }
   if (!data) return null;
 
   const projectionDegraded = data.source === 'artifacts' && data.sourceNote?.toLowerCase().includes('degraded');
@@ -158,9 +172,12 @@ export function TruthStatus() {
       </p>
 
       {!data.loaded || data.artifacts.length === 0 ? (
-        <div className="bg-zinc-900 border border-zinc-800 p-8 rounded-lg text-center">
-          <p className="text-zinc-400 font-medium">{data.message || 'No canonical artifacts found in current workspace.'}</p>
-        </div>
+        <EmptyState 
+          title="No workflows have been executed yet"
+          description={data.message || 'Run a transaction workflow to generate the causal artifact chain.'}
+          command="hardkas sandbox --with-node --recipe transfer"
+          icon={<FileCheck size={24} />}
+        />
       ) : (
         <div className="bg-zinc-900 border border-zinc-800 rounded-lg overflow-hidden">
           <table className="w-full text-sm text-left">

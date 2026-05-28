@@ -1,6 +1,6 @@
 {
   "name": "@hardkas/localnet",
-  "version": "0.7.0-alpha",
+  "version": "0.7.1-alpha",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",

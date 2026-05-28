@@ -64,7 +64,11 @@ export function Telemetry() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    fetch('http://localhost:3333/api/telemetry')
+    const apiBase = process.env.NODE_ENV === 'development' ? 'http://localhost:7420' : '';
+    const token = (window as any).__HARDKAS_DEV_TOKEN__ || '';
+    const headers = token ? { 'Authorization': `Bearer ${token}` } : {};
+
+    fetch(`${apiBase}/api/telemetry`, { headers })
       .then(res => {
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         return res.json();
@@ -74,8 +78,19 @@ export function Telemetry() {
   }, []);
 
   if (loading) return <div className="text-zinc-500">Sampling runtime pressure...</div>;
-  if (error) return <div className="text-red-400">API Error: {error}</div>;
-  if (!data) return null;
+  if (error || !data) {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center gap-2 text-white border-b border-zinc-800 pb-4">
+          <Cpu className="text-blue-400" />
+          <h2 className="text-xl font-medium">Runtime Pressure</h2>
+        </div>
+        <div className="bg-zinc-900 border border-zinc-800 p-8 rounded-lg text-center">
+          <p className="text-zinc-400 font-medium">Connecting to local runtime or no telemetry available.</p>
+        </div>
+      </div>
+    );
+  }
 
   const gauges = buildGauges(data);
   const allNominal = gauges.every(g => g.status === 'nominal');

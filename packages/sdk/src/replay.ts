@@ -172,7 +172,7 @@ export class HardkasReplay {
           const { loadOrCreateLocalnetState, reconstructStateAtDaa, verifyReplay } = await import("@hardkas/localnet");
           const { systemRuntimeContext } = await import("@hardkas/core");
           
-          let state = await loadOrCreateLocalnetState();
+          let state = await loadOrCreateLocalnetState({ cwd: this.sdk.workspace.root });
 
           if (receipt.mode === "simulated" && receipt.daaScore) {
             const receiptDaa = BigInt(receipt.daaScore);

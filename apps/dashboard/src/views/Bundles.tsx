@@ -27,17 +27,27 @@ export function Bundles() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    fetch('http://localhost:3333/api/bundles')
-      .then(res => res.json())
+    const apiBase = process.env.NODE_ENV === 'development' ? 'http://localhost:7420' : '';
+    const token = (window as any).__HARDKAS_DEV_TOKEN__ || '';
+    const headers = token ? { 'Authorization': `Bearer ${token}` } : {};
+
+    fetch(`${apiBase}/api/bundles`, { headers })
+      .then(res => {
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        return res.json();
+      })
       .then(d => { setData(d); setLoading(false); })
-      .catch(err => { setError(String(err)); setLoading(false); });
+      .catch(err => { 
+        // A fetch error or 404 means no bundle yet or API starting. We treat it as empty.
+        setError(String(err)); 
+        setLoading(false); 
+      });
   }, []);
 
   if (loading) return <div className="text-zinc-500">Loading semantic bundle...</div>;
-  if (error) return <div className="text-red-400">API Error: {error}</div>;
-  if (!data) return null;
-
-  if (!data.loaded) {
+  
+  // If there's an error (like connection refused) or empty data, show the empty state
+  if (error || !data || !data.loaded) {
     return (
       <div className="space-y-6">
         <div className="flex items-center gap-2 text-white border-b border-zinc-800 pb-4">
@@ -45,12 +55,13 @@ export function Bundles() {
           <h2 className="text-xl font-medium">Semantic Bundle v1 Viewer</h2>
         </div>
         <div className="bg-zinc-900 border border-zinc-800 p-8 rounded-lg text-center">
-          <p className="text-zinc-400 font-medium">{data.message || 'No semantic bundle found.'}</p>
-          <p className="text-sm text-zinc-600 mt-2">Run: <code className="text-emerald-400">pnpm hardkas verify-semantics --ci-mode</code></p>
+          <p className="text-zinc-400 font-medium">No semantic bundle found for this workspace.</p>
+          <p className="text-sm text-zinc-600 mt-2">Run: <code className="text-emerald-400 bg-black/40 px-2 py-1 rounded select-all">hardkas verify-semantics --workspace &lt;sandbox&gt;</code></p>
         </div>
       </div>
     );
   }
+
 
   return (
     <div className="space-y-6">

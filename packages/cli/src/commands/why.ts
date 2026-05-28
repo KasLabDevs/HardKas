@@ -10,10 +10,14 @@ export function registerWhyCommand(program: Command) {
     .description("Explain the causal lineage of a given artifact ID")
     .argument("<artifactId>", "The full or partial ID of the artifact")
     .option("--json", "Output lineage graph in JSON format")
-    .action(async (artifactId: string, options: { json?: boolean }) => {
+    .option("--workspace <path>", "Override workspace root directory")
+    .action(async (artifactId: string, options: { json?: boolean, workspace?: string }) => {
       UI.setJsonMode(!!options.json);
       try {
-        const root = process.cwd();
+        const root = options.workspace ? path.resolve(options.workspace) : process.cwd();
+        if (options.workspace && !fs.existsSync(root)) {
+          throw new Error(`Invalid workspace: Directory '${root}' does not exist.`);
+        }
         const artifactsDir = path.join(root, ".hardkas", "artifacts");
 
         if (!fs.existsSync(artifactsDir)) {
@@ -48,10 +52,10 @@ export function registerWhyCommand(program: Command) {
           const artifact: any = await readArtifact(path.join(artifactsDir, currentFile));
           
           let role = "Unknown";
-          if (artifact.schema === "hardkas.txPlan.v1") role = "Transaction Plan";
-          if (artifact.schema === "hardkas.signedTx.v1") role = "Signed Transaction";
-          if (artifact.schema === "hardkas.txReceipt.v1") role = "Transaction Receipt";
-          if (artifact.schema === "hardkas.replay.v1") role = "Replay Verification";
+          if (artifact.schema?.startsWith("hardkas.txPlan")) role = "Transaction Plan";
+          if (artifact.schema?.startsWith("hardkas.signedTx")) role = "Signed Transaction";
+          if (artifact.schema?.startsWith("hardkas.txReceipt")) role = "Transaction Receipt";
+          if (artifact.schema?.startsWith("hardkas.replay")) role = "Replay Verification";
 
           const node: any = {
             id: currentFile.replace(".json", ""),
@@ -63,21 +67,29 @@ export function registerWhyCommand(program: Command) {
           };
 
           // Extract useful details based on schema
-          if (artifact.schema === "hardkas.signedTx.v1" && artifact.signatures) {
+          if (artifact.schema?.startsWith("hardkas.signedTx") && artifact.signatures) {
             node.details = `Signed by ${Object.keys(artifact.signatures).join(", ")}`;
-          } else if (artifact.schema === "hardkas.txReceipt.v1") {
+          } else if (artifact.schema?.startsWith("hardkas.txReceipt")) {
             node.details = `Included in block ${artifact.blockHash || "unknown"}`;
-          } else if (artifact.schema === "hardkas.txPlan.v1") {
+          } else if (artifact.schema?.startsWith("hardkas.txPlan")) {
             const outCount = artifact.transaction?.outputs?.length || 0;
             node.details = `Transfers to ${outCount} outputs`;
-          } else if (artifact.schema === "hardkas.replay.v1") {
+          } else if (artifact.schema?.startsWith("hardkas.replay")) {
             node.details = `Verified: ${artifact.status}`;
           }
 
           chain.push(node);
           
           // Move to parent
-          currentId = artifact.lineage?.parentArtifactId;
+          currentId = 
+            artifact.lineage?.parentArtifactId || 
+            (artifact.lineage?.parents ? artifact.lineage.parents[0] : undefined) ||
+            (artifact.parentArtifactIds ? artifact.parentArtifactIds[0] : undefined) ||
+            artifact.sourcePlanId || 
+            artifact.planId || 
+            artifact.sourceSignedTxId || 
+            artifact.signedTxId || 
+            artifact.receiptId;
         }
 
         if (options.json) {

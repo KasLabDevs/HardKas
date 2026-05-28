@@ -18,3 +18,11 @@ export function getQueryBackend(): SqliteQueryBackend {
   }
   return queryBackend;
 }
+
+export function disconnectQueryBackend(): void {
+  if (store) {
+    store.disconnect();
+    store = null;
+  }
+  queryBackend = null;
+}

@@ -29,7 +29,11 @@ export function Quarantine() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    fetch('http://localhost:3333/api/quarantine')
+    const apiBase = process.env.NODE_ENV === 'development' ? 'http://localhost:7420' : '';
+    const token = (window as any).__HARDKAS_DEV_TOKEN__ || '';
+    const headers = token ? { 'Authorization': `Bearer ${token}` } : {};
+
+    fetch(`${apiBase}/api/quarantine`, { headers })
       .then(res => {
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         return res.json();
@@ -39,8 +43,20 @@ export function Quarantine() {
   }, []);
 
   if (loading) return <div className="text-zinc-500">Loading quarantine zone...</div>;
-  if (error) return <div className="text-red-400">API Error: {error}</div>;
-  if (!data) return null;
+  
+  if (error || !data) {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center gap-2 text-white border-b border-zinc-800 pb-4">
+          <ShieldAlert className="text-red-400" />
+          <h2 className="text-xl font-medium">Quarantine Status</h2>
+        </div>
+        <div className="bg-zinc-900 border border-zinc-800 p-8 rounded-lg text-center">
+          <p className="text-zinc-400 font-medium">Connecting to local runtime or no quarantine data available.</p>
+        </div>
+      </div>
+    );
+  }
 
   const totalQ = data.totalQuarantined || 0;
   const isClean = totalQ === 0;

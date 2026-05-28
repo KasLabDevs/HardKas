@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react';
 import { GitMerge, ArrowRight, ShieldCheck, FileText, Activity } from 'lucide-react';
+import { EmptyState } from '../components/EmptyState';
+import { LoadingState } from '../components/LoadingState';
 
 interface LineageResponse {
   loaded: boolean;
@@ -150,8 +152,17 @@ export function WorkflowGraph() {
       .catch(err => { setError(String(err)); setLoading(false); });
   }, []);
 
-  if (loading) return <div className="text-zinc-500">Resolving workflows...</div>;
-  if (error) return <div className="text-red-400">API Error: {error}</div>;
+  if (loading) return <LoadingState message="Resolving workflows..." minHeight="60vh" />;
+  if (error) {
+    return (
+      <EmptyState 
+        title="Connecting to local runtime..."
+        description="The dashboard API might be starting up or is unavailable."
+        command="hardkas sandbox --with-node --recipe transfer"
+        icon={<GitMerge size={24} />}
+      />
+    );
+  }
   if (!data) return null;
 
   const chains = extractWorkflowChains(data.nodes || [], data.edges || []);
@@ -173,10 +184,12 @@ export function WorkflowGraph() {
       </p>
 
       {chains.length === 0 ? (
-        <div className="bg-zinc-900 border border-zinc-800 p-8 rounded-lg text-center">
-          <p className="text-zinc-400 font-medium">No complete workflows found.</p>
-          <p className="text-zinc-600 text-sm mt-2">Run a transaction workflow to generate the causal artifact chain.</p>
-        </div>
+        <EmptyState 
+          title="No workflows have been executed yet"
+          description="Run a transaction workflow to generate the causal artifact chain."
+          command="hardkas sandbox --with-node --recipe transfer"
+          icon={<GitMerge size={24} />}
+        />
       ) : (
         <div className="space-y-6">
           {chains.map((chain, idx) => (

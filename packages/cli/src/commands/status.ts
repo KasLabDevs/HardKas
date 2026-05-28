@@ -8,12 +8,16 @@ export function registerStatusCommands(program: Command) {
   program
     .command("status")
     .description("Display the current state of the local HardKAS runtime workspace")
-    .action(async () => {
+    .option("--workspace <path>", "Override workspace root directory")
+    .action(async (options: { workspace?: string }) => {
       try {
         UI.header("HardKAS Workspace Status");
 
         // 1. Workspace Info
-        const root = process.cwd();
+        const root = options.workspace ? path.resolve(options.workspace) : process.cwd();
+        if (options.workspace && !fs.existsSync(root)) {
+          throw new Error(`Invalid workspace: Directory '${root}' does not exist.`);
+        }
         const hardkasDir = path.join(root, ".hardkas");
         const artifactsDir = path.join(hardkasDir, "artifacts");
         const hasWorkspace = fs.existsSync(hardkasDir);
@@ -91,14 +95,16 @@ export function registerStatusCommands(program: Command) {
 
         // 6. Next Steps
         const nextSteps = [];
+        const wsSuffix = options.workspace ? ` --workspace ${options.workspace}` : "";
+        
         if (!serverOnline) {
-          nextSteps.push("hardkas dev --with-node");
+          nextSteps.push(`hardkas dev --with-node${wsSuffix}`);
         } else {
-          nextSteps.push("hardkas dev tx send --from alice --to bob --amount 1");
+          nextSteps.push(`hardkas dev tx send --from alice --to bob --amount 1${wsSuffix}`);
         }
         if (latestWorkflow !== "none") {
-          nextSteps.push(`hardkas why ${latestWorkflow}`);
-          nextSteps.push("hardkas dev last --replay");
+          nextSteps.push(`hardkas why ${latestWorkflow}${wsSuffix}`);
+          nextSteps.push(`hardkas dev last --replay${wsSuffix}`);
         }
 
         UI.printNextSteps(nextSteps);

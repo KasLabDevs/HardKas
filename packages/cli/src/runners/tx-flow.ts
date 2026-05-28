@@ -169,12 +169,15 @@ export async function runTxFlow(input: TxFlowInput): Promise<TxFlowResult> {
 
   try {
     // 1. Plan
-    const planArtifact = await runTxPlan({
+    const planInput: any = {
       from, to, amount, 
       networkId: flowResult.networkId, 
       feeRate, config, 
       ...(url ? { url } : {})
-    });
+    };
+    if (workspaceRoot) planInput.workspaceRoot = workspaceRoot;
+
+    const planArtifact = await runTxPlan(planInput);
     
     flowResult.mode = planArtifact.mode;
     flowResult.networkId = planArtifact.networkId;

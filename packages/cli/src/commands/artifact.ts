@@ -2,6 +2,7 @@ import { Command } from "commander";
 import { handleError, UI } from "../ui.js";
 import { runArtifactVerify } from "../runners/artifact-verify-runner.js";
 import { runArtifactExplain } from "../runners/artifact-explain-runner.js";
+import path from "node:path";
 
 export function registerArtifactCommands(program: Command) {
   const artifactCmd = program.command("artifact").description("Manage HardKAS artifacts");
@@ -10,10 +11,12 @@ export function registerArtifactCommands(program: Command) {
     .command("inspect <id_or_path>")
     .description(`Deep inspect an artifact by ID or path ${UI.maturity("stable")}`)
     .option("--json", "Output results as JSON", false)
+    .option("--workspace <path>", "Override workspace root directory")
     .action(async (idOrPath: string, options: any) => {
       try {
         const { runArtifactInspect } = await import("../runners/artifact-inspect-runner.js");
-        await runArtifactInspect({ idOrPath, ...options, workspaceRoot: process.cwd() });
+        const workspaceRoot = options.workspace ? path.resolve(options.workspace) : process.cwd();
+        await runArtifactInspect({ idOrPath, ...options, workspaceRoot });
       } catch (e) {
         handleError(e);
         process.exitCode = 1;
@@ -26,9 +29,11 @@ export function registerArtifactCommands(program: Command) {
     .option("--json", "Output results as JSON", false)
     .option("--recursive", "Recursively verify all artifacts in a directory", false)
     .option("--strict", "Perform deep semantic and operational safety verification", false)
+    .option("--workspace <path>", "Override workspace root directory")
     .action(async (path: string, options: any) => {
       try {
-        await runArtifactVerify({ path, ...options, workspaceRoot: process.cwd() });
+        const workspaceRoot = options.workspace ? path.resolve(options.workspace) : process.cwd();
+        await runArtifactVerify({ path, ...options, workspaceRoot });
       } catch (e) {
         handleError(e);
         process.exitCode = 1;
@@ -39,9 +44,11 @@ export function registerArtifactCommands(program: Command) {
     .command("explain <path>")
     .description(`Provide a human-readable operational summary of an artifact ${UI.maturity("stable")}`)
     .option("--json", "Output as JSON", false)
-    .action(async (path: string, options: { json: boolean }) => {
+    .option("--workspace <path>", "Override workspace root directory")
+    .action(async (path: string, options: any) => {
       try {
-        await runArtifactExplain({ path, ...options, workspaceRoot: process.cwd() });
+        const workspaceRoot = options.workspace ? path.resolve(options.workspace) : process.cwd();
+        await runArtifactExplain({ path, ...options, workspaceRoot });
       } catch (e) {
         handleError(e);
         process.exitCode = 1;
@@ -52,10 +59,12 @@ export function registerArtifactCommands(program: Command) {
     .command("lineage <path>")
     .description(`Show the provenance and operational history of an artifact ${UI.maturity("stable")}`)
     .option("--json", "Output as JSON", false)
-    .action(async (path: string, options: { json: boolean }) => {
+    .option("--workspace <path>", "Override workspace root directory")
+    .action(async (path: string, options: any) => {
       try {
         const { runArtifactLineage } = await import("../runners/artifact-lineage-runner.js");
-        await runArtifactLineage({ path, workspaceRoot: process.cwd(), ...options });
+        const workspaceRoot = options.workspace ? path.resolve(options.workspace) : process.cwd();
+        await runArtifactLineage({ path, workspaceRoot, ...options });
       } catch (e) {
         handleError(e);
         process.exitCode = 1;

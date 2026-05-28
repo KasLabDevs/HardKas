@@ -114,7 +114,9 @@ export function registerDevCommands(program: Command) {
     .option("--from <accountOrAddress>", "Sender alias")
     .option("--to <address>", "Recipient address")
     .option("--amount <kas>", "Amount in KAS")
+    .option("--workspace <path>", "Override workspace root directory")
     .action(async (options: any) => {
+      if (options.workspace) options.workspaceRoot = options.workspace;
       const { runDevTxSend } = await import("../runners/dev-tx-runners.js");
       await runDevTxSend(options);
     });
@@ -124,8 +126,10 @@ export function registerDevCommands(program: Command) {
     .option("--inspect", "Inspect the latest artifact", false)
     .option("--replay", "Replay the latest workflow", false)
     .option("--explain", "Explain the latest workflow", false)
+    .option("--workspace <path>", "Override workspace root directory")
     .action(async (options: any) => {
       try {
+        if (options.workspace) options.workspaceRoot = options.workspace;
         const { runDevLast } = await import("../runners/dev-last-runner.js");
         await runDevLast(options);
       } catch (e) {

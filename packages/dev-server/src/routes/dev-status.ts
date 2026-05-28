@@ -21,7 +21,7 @@ function envelope(c: any, ok: boolean, data?: any, error?: any) {
 
 devStatusRoutes.use("*", async (c, next) => {
   try {
-    const sdk = await Hardkas.create();
+    const sdk = await Hardkas.create({ cwd: process.env.HARDKAS_ROOT || process.cwd() });
     c.set("sdk", sdk);
     await next();
   } catch (e: any) {

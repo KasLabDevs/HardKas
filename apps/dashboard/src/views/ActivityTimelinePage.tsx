@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Activity, ShieldCheck, FileText, Cpu, AlertTriangle, Clock } from 'lucide-react';
+import { EmptyState } from '../components/EmptyState';
 
 interface StreamEvent {
   type: string;
@@ -86,10 +87,12 @@ export function ActivityTimelinePage() {
 
       <div className="bg-zinc-900 border border-zinc-800 rounded-lg overflow-hidden">
         {events.length === 0 ? (
-          <div className="p-8 text-center">
-            <p className="text-zinc-400 font-medium">Listening for artifact activity...</p>
-            <p className="text-zinc-600 text-sm mt-2">Execute a workflow to see events populate here.</p>
-          </div>
+          <EmptyState 
+            title="Listening for artifact activity..."
+            description="Execute a workflow to see events populate here in real-time."
+            command="hardkas sandbox --with-node --recipe transfer"
+            icon={<Clock size={24} />}
+          />
         ) : (
           <div className="divide-y divide-zinc-800">
             {events.map((ev, i) => (

@@ -146,12 +146,12 @@ export function createDevServer(config: DevServerConfig) {
   app.route("/api/events", eventsRoutes);
   app.route("/api/accounts", accountsRoutes);
   app.route("/api/transactions", transactionsRoutes);
+  app.route("/api", streamRoutes);
   app.route("/api/artifacts", artifactsRoutes);
   app.route("/api/overview", overviewRoutes);
   app.route("/api/tx", dappTxRoutes);
   app.route("/api/dev-accounts", devAccountsRoutes);
   app.route("/api", devStatusRoutes);
-  app.route("/api", streamRoutes);
   app.route("/api", observabilityRoutes);
 
   // Try to find dashboard dist in multiple locations

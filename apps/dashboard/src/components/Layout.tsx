@@ -73,9 +73,6 @@ export function Layout({ children }: LayoutProps) {
       <div className="main-layout flex flex-col min-h-screen">
         {/* Content Wrapper */}
         <main key={location.pathname} className="flex-1 p-8 overflow-y-auto w-full max-w-7xl mx-auto">
-          <div className="text-[10px] text-zinc-500 font-mono mb-4 border border-zinc-800/80 bg-zinc-900/30 p-2 rounded-lg inline-block">
-            🔍 [HARDKAS DEBUG] Route: {location.pathname} | Rendering children: {children ? "YES" : "NO"}
-          </div>
           {children}
         </main>
       </div>
