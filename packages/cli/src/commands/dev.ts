@@ -71,6 +71,7 @@ export function registerDevCommands(program: Command) {
     .option("--open", "Open dashboard in browser automatically", false)
     .option("--unsafe-external", "Allow external access (binds to 0.0.0.0 if host not specified)", false)
     .option("--show-token", "Show the generated API session token for manual script integration", false)
+    .option("--with-node", "Spawn the localnet node and auto-fund simnet accounts", false)
     .option("--json", "Output status as JSON", false)
     .action(async (options: any) => {
       try {
@@ -78,6 +79,61 @@ export function registerDevCommands(program: Command) {
         await runDevServer(options);
       } catch (e) {
         handleError(e, "Dev server failed");
+        process.exitCode = 1;
+      }
+    });
+
+  const accountsCmd = devCmd.command("accounts").description("Manage simnet dev accounts");
+  
+  accountsCmd.command("list")
+    .description("List dev accounts")
+    .action(async () => {
+      const { runDevAccountsList } = await import("../runners/dev-accounts-runners.js");
+      await runDevAccountsList();
+    });
+
+  accountsCmd.command("reveal <alias>")
+    .description("Reveal private key for a dev account (simnet only)")
+    .action(async (alias: string) => {
+      const { runDevAccountsReveal } = await import("../runners/dev-accounts-runners.js");
+      await runDevAccountsReveal(alias);
+    });
+
+  accountsCmd.command("export kasware")
+    .description("Export dev account in format suitable for Kasware manual import")
+    .option("--alias <alias>", "Alias to export", "alice")
+    .action(async (options: any) => {
+      const { runDevAccountsExport } = await import("../runners/dev-accounts-runners.js");
+      await runDevAccountsExport(options.alias);
+    });
+
+  const txCmd = devCmd.command("tx").description("Quick transaction flows for dev");
+
+  txCmd.command("send")
+    .description("Quick send transaction")
+    .option("--from <accountOrAddress>", "Sender alias")
+    .option("--to <address>", "Recipient address")
+    .option("--amount <kas>", "Amount in KAS")
+    .option("--workspace <path>", "Override workspace root directory")
+    .action(async (options: any) => {
+      if (options.workspace) options.workspaceRoot = options.workspace;
+      const { runDevTxSend } = await import("../runners/dev-tx-runners.js");
+      await runDevTxSend(options);
+    });
+
+  devCmd.command("last")
+    .description("Interact with the latest local workflow")
+    .option("--inspect", "Inspect the latest artifact", false)
+    .option("--replay", "Replay the latest workflow", false)
+    .option("--explain", "Explain the latest workflow", false)
+    .option("--workspace <path>", "Override workspace root directory")
+    .action(async (options: any) => {
+      try {
+        if (options.workspace) options.workspaceRoot = options.workspace;
+        const { runDevLast } = await import("../runners/dev-last-runner.js");
+        await runDevLast(options);
+      } catch (e) {
+        handleError(e, "Dev last failed");
         process.exitCode = 1;
       }
     });

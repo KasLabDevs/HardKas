@@ -28,13 +28,14 @@ export interface TxPlanRunnerInput {
   feeRate: string;
   config: HardkasConfig;
   url?: string;
+  workspaceRoot?: string;
 }
 
 /**
  * Reusable logic for transaction planning.
  */
 export async function runTxPlan(input: TxPlanRunnerInput): Promise<TxPlanArtifact> {
-  const { from, to, amount, networkId, feeRate, config, url } = input;
+  const { from, to, amount, networkId, feeRate, config, url, workspaceRoot } = input;
   
   const fromAddress = resolveHardkasAccountAddress(from, config);
   const toAddress = resolveHardkasAccountAddress(to, config);
@@ -59,7 +60,7 @@ export async function runTxPlan(input: TxPlanRunnerInput): Promise<TxPlanArtifac
 
   if (backend === "simulated") {
     const { loadOrCreateLocalnetState, getSpendableUtxos } = await import("@hardkas/localnet");
-    const localState = await loadOrCreateLocalnetState();
+    const localState = await loadOrCreateLocalnetState(workspaceRoot ? { cwd: workspaceRoot } : {});
     const unspent = getSpendableUtxos(localState, fromAddress);
     
     availableUtxos = unspent.map(u => {

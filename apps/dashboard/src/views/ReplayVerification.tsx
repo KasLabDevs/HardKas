@@ -24,15 +24,34 @@ export function ReplayVerification() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    fetch('http://localhost:3333/api/replay')
-      .then(res => res.json())
+    const apiBase = process.env.NODE_ENV === 'development' ? 'http://localhost:7420' : '';
+    const token = (window as any).__HARDKAS_DEV_TOKEN__ || '';
+    const headers = token ? { 'Authorization': `Bearer ${token}` } : {};
+
+    fetch(`${apiBase}/api/replay`, { headers })
+      .then(res => {
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        return res.json();
+      })
       .then(d => { setData(d); setLoading(false); })
       .catch(err => { setError(String(err)); setLoading(false); });
   }, []);
 
   if (loading) return <div className="text-zinc-500">Loading replay status...</div>;
-  if (error) return <div className="text-red-400">API Error: {error}</div>;
-  if (!data) return null;
+  if (error || !data) {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center gap-2 text-white border-b border-zinc-800 pb-4">
+          <History className="text-emerald-400" />
+          <h2 className="text-xl font-medium">Replay Verification Panel</h2>
+        </div>
+        <div className="bg-zinc-900 border border-zinc-800 p-8 rounded-lg text-center space-y-4">
+          <History className="h-12 w-12 opacity-20 mx-auto" />
+          <p className="text-zinc-400 font-medium">Connecting to local runtime or no replay data available.</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">

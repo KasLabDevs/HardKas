@@ -142,12 +142,17 @@ export const UI = {
       }
     }
     if (nextSteps && nextSteps.length > 0) {
-      this.logHuman(`  ${pc.dim("Next Steps")}`);
-      for (const step of nextSteps) {
-        this.logHuman(`    - ${pc.white(step)}`);
-      }
-      this.logHuman("");
+      this.printNextSteps(nextSteps);
     }
+  },
+
+  printNextSteps(steps: string[]) {
+    if (jsonMode) return;
+    this.logHuman(`\n  💡 ${pc.bold("Next Steps:")}`);
+    for (const step of steps) {
+      this.logHuman(`     > ${pc.blue(step)}`);
+    }
+    this.logHuman("");
   },
 
   semanticError(title: string, cause: string, invariant: string, consequence: string, remediation: string) {

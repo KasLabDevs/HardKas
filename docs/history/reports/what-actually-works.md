@@ -1,7 +1,7 @@
 # What Actually Works in HardKas
 
 ## 1. Philosophy
-HardKas is currently in the **v0.7.0-alpha (HARDENED ALPHA)** stage. The primary goal of this document is **technical honesty**: avoiding "fake completeness" and providing developers and contributors with a clear vision of what they can expect from the framework today.
+HardKas is currently in the **v0.7.1-alpha (HARDENED ALPHA)** stage. The primary goal of this document is **technical honesty**: avoiding "fake completeness" and providing developers and contributors with a clear vision of what they can expect from the framework today.
 
 In HardKas, we follow these premises:
 - "Implemented" != "Production-ready".

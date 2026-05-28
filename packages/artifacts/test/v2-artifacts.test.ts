@@ -68,7 +68,7 @@ describe("Artifacts - Determinism and Verification", () => {
 
     const artifact: any = {
       schema: "hardkas.txPlan",
-      hardkasVersion: "0.7.0-alpha",
+      hardkasVersion: "0.7.1-alpha",
       version: ARTIFACT_VERSION,
       createdAt: new Date().toISOString(),
       networkId: "simnet",
@@ -99,7 +99,7 @@ describe("Artifacts - Determinism and Verification", () => {
 
     const artifact: any = {
       schema: "hardkas.txPlan",
-      hardkasVersion: "0.7.0-alpha",
+      hardkasVersion: "0.7.1-alpha",
       version: ARTIFACT_VERSION,
       createdAt: new Date().toISOString(),
       networkId: "simnet",

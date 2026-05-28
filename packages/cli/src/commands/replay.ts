@@ -1,5 +1,6 @@
 import { Command } from "commander";
 import { UI, handleError } from "../ui.js";
+import path from "node:path";
 
 export function registerReplayCommands(program: Command) {
   const replayCmd = program.command("replay").description("Manage HardKAS transaction replays");
@@ -7,11 +8,13 @@ export function registerReplayCommands(program: Command) {
   replayCmd.command("verify [path]")
     .description(`Verify replay invariants for a directory of artifacts ${UI.maturity("stable")}`)
     .option("--json", "Output as JSON", false)
-    .action(async (path: string | undefined, options: { json: boolean }) => {
-      if (!path) path = ".";
+    .option("--workspace <path>", "Override workspace root directory")
+    .action(async (targetPath: string | undefined, options: any) => {
+      if (!targetPath) targetPath = ".";
       try {
         const { runReplayVerify } = await import("../runners/replay-verify-runner.js");
-        await runReplayVerify({ path, ...options, workspaceRoot: process.cwd() });
+        const workspaceRoot = options.workspace ? path.resolve(options.workspace) : process.cwd();
+        await runReplayVerify({ path: targetPath, ...options, workspaceRoot });
       } catch (e: any) {
         handleError(e);
         process.exitCode = 1;

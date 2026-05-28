@@ -325,6 +325,70 @@ async function parallelHellMiniRegression(workspace: string, cliPath: string) {
   }
 }
 
+async function sandboxNightmare(workspace: string, cliPath: string) {
+  // We use the workspace provided by the runner as a base dir for our concurrent sandbox runs
+  const DURATION_MS = parseInt(process.env.NIGHTMARE_DURATION_MIN || "2", 10) * 60 * 1000;
+  const endTime = Date.now() + DURATION_MS;
+  console.log(`    Running Sandbox Nightmare Suite for ${DURATION_MS / 1000} seconds...`);
+  
+  let failed = false;
+  let failDetail = "";
+
+  const runSandbox = async () => {
+    while (Date.now() < endTime && !failed) {
+      const sandboxTmp = path.join(workspace, `.sandbox-test-${randomUUID().slice(0, 8)}`);
+      try {
+        await fs.mkdir(sandboxTmp, { recursive: true });
+        await fs.writeFile(path.join(sandboxTmp, ".hardkas-sandbox-target"), "DO NOT REMOVE");
+
+        // 1. Rapid launch & kill
+        const child1 = execa("node", [cliPath, "sandbox", "--with-node", "--recipe", "transfer"], { cwd: sandboxTmp, reject: false });
+        await new Promise(r => setTimeout(r, 1000));
+        child1.kill("SIGINT");
+        await child1.catch(() => {});
+
+        // 2. Concurrent recipes
+        const p1 = execa("node", [cliPath, "sandbox", "--with-node", "--recipe", "transfer"], { cwd: sandboxTmp, reject: false });
+        const p2 = execa("node", [cliPath, "sandbox", "--with-node", "--recipe", "replay-failure"], { cwd: sandboxTmp, reject: false });
+        const p3 = execa("node", [cliPath, "sandbox", "--with-node", "--recipe", "projection-rebuild"], { cwd: sandboxTmp, reject: false });
+        
+        // 3. Tmp deletion race
+        setTimeout(() => {
+           fs.rm(sandboxTmp, { recursive: true, force: true }).catch(() => {});
+        }, 500);
+
+        await Promise.all([p1, p2, p3]);
+
+      } catch (e: any) {
+        if (!e.message.includes("ENOENT") && !e.message.includes("EBUSY") && !e.message.includes("EPERM")) {
+          failed = true;
+          failDetail = `Sandbox crashed unexpectedly: ${e.message}`;
+        }
+      } finally {
+        try {
+          if (await fs.stat(sandboxTmp).catch(() => null)) {
+            const markerPath = path.join(sandboxTmp, ".hardkas-sandbox-target");
+            if (await fs.stat(markerPath).catch(() => null)) {
+              await fs.rm(sandboxTmp, { recursive: true, force: true }).catch(() => {});
+            }
+          }
+        } catch {}
+      }
+    }
+  };
+
+  const tasks = [];
+  for (let i = 0; i < 5; i++) {
+    tasks.push(runSandbox());
+  }
+
+  await Promise.all(tasks);
+
+  if (failed) {
+    throw new Error(failDetail);
+  }
+}
+
 async function main() {
   console.log("🔥 INITIALIZING HARDKAS NIGHTMARE SUITE 🔥");
 
@@ -361,6 +425,7 @@ async function main() {
     { name: "Time Travel Insanity", fn: timeTravelInsanity },
     { name: "Fake RPC Liar Mode", fn: fakeRpcLiar },
     { name: "The Truth Test", fn: theTruthTest },
+    { name: "Sandbox Nightmare", fn: sandboxNightmare },
   ];
 
   const results: NightmareResult[] = [];

@@ -21,7 +21,11 @@ export function DashboardHealth() {
   const [error, setError] = useState(false);
 
   useEffect(() => {
-    fetch('http://localhost:3333/api/dashboard-health')
+    const apiBase = process.env.NODE_ENV === 'development' ? 'http://localhost:7420' : '';
+    const token = (window as any).__HARDKAS_DEV_TOKEN__ || '';
+    const headers = token ? { 'Authorization': `Bearer ${token}` } : {};
+
+    fetch(`${apiBase}/api/dashboard-health`, { headers })
       .then(r => {
         if (!r.ok) throw new Error(`HTTP ${r.status}`);
         return r.json();

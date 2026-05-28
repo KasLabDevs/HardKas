@@ -125,7 +125,7 @@ export class HardkasTx {
     } = await import("@hardkas/localnet");
     const path = await import("node:path");
 
-    const state = await loadOrCreateLocalnetState();
+    const state = await loadOrCreateLocalnetState({ cwd: this.sdk.workspace.root });
     
     const startTime = Date.now();
     const events: any[] = [

@@ -586,6 +586,10 @@ observabilityRoutes.get("/dashboard-health", async (c) => {
   const storeDb = path.join(hd, "store.db");
   const artifactsDir = path.join(hd, "artifacts");
 
+  const hardkasDirExists = fs.existsSync(hd);
+  const artifactsDirExists = fs.existsSync(artifactsDir);
+  const semanticBundleExists = fs.existsSync(bundlePath());
+
   const queryBackend = getQueryBackend();
 
   let state: "GREEN" | "YELLOW" | "RED" | "GREY" = "GREEN";
@@ -685,6 +689,9 @@ observabilityRoutes.get("/dashboard-health", async (c) => {
     anomalyCount,
     apiConnected: true,
     workspaceRoot: rootDir,
+    hardkasDirExists,
+    artifactsDirExists,
+    semanticBundleExists,
     warnings
   });
 });

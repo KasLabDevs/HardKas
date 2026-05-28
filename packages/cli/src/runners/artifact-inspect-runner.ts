@@ -57,11 +57,16 @@ export async function runArtifactInspect(options: ArtifactInspectOptions) {
     if (matches.length === 0) {
       throw new HardkasError("ARTIFACT_NOT_FOUND", `Could not resolve '${options.idOrPath}' as a file or artifact ID.`);
     } else if (matches.length > 1) {
-      throw new HardkasError("ARTIFACT_AMBIGUOUS", `Multiple artifacts match '${options.idOrPath}':\n${matches.join("\n")}`);
+      matches.sort((a, b) => fs.statSync(b).mtimeMs - fs.statSync(a).mtimeMs);
+      if (!options.json) {
+        console.warn(pc.yellow(`  ⚠️  Multiple artifacts matched ID '${options.idOrPath}'. Inspecting the most recent one.`));
+      }
+      targetPath = matches[0]!;
+      resolvedById = true;
+    } else {
+      targetPath = matches[0]!;
+      resolvedById = true;
     }
-    
-    targetPath = matches[0]!;
-    resolvedById = true;
   }
 
   const content = fs.readFileSync(targetPath, "utf-8");
@@ -116,5 +121,9 @@ export async function runArtifactInspect(options: ArtifactInspectOptions) {
     
     const repColor = replayability === "supported" ? pc.green : pc.yellow;
     console.log(`  ${pc.bold("Replayability:")} ${repColor(replayability)}\n`);
+
+    UI.printNextSteps([
+      `hardkas why ${id || path.basename(targetPath).replace(".json", "")}`
+    ]);
   }
 }

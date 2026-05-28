@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react';
 import { GitMerge, ChevronRight, ChevronDown, Circle } from 'lucide-react';
+import { EmptyState } from '../components/EmptyState';
+import { LoadingState } from '../components/LoadingState';
 
 interface LineageResponse {
   loaded: boolean;
@@ -191,7 +193,11 @@ export function LineageGraph() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    fetch('http://localhost:3333/api/lineage')
+    const apiBase = process.env.NODE_ENV === 'development' ? 'http://localhost:7420' : '';
+    const token = (window as any).__HARDKAS_DEV_TOKEN__ || '';
+    const headers = token ? { 'Authorization': `Bearer ${token}` } : {};
+
+    fetch(`${apiBase}/api/lineage`, { headers })
       .then(res => {
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         return res.json();
@@ -200,8 +206,17 @@ export function LineageGraph() {
       .catch(err => { setError(String(err)); setLoading(false); });
   }, []);
 
-  if (loading) return <div className="text-zinc-500">Resolving causal lineage...</div>;
-  if (error) return <div className="text-red-400">API Error: {error}</div>;
+  if (loading) return <LoadingState message="Resolving causal lineage..." minHeight="60vh" />;
+  if (error) {
+    return (
+      <EmptyState 
+        title="Connecting to local runtime..."
+        description="The dashboard API might be starting up or is unavailable."
+        command="hardkas sandbox --with-node --recipe transfer"
+        icon={<GitMerge size={24} />}
+      />
+    );
+  }
   if (!data) return null;
 
   if (!data.loaded || data.totalNodes === 0) {
@@ -211,10 +226,12 @@ export function LineageGraph() {
           <GitMerge className="text-blue-400" />
           <h2 className="text-xl font-medium">Causal Lineage</h2>
         </div>
-        <div className="bg-zinc-900 border border-zinc-800 p-8 rounded-lg text-center">
-          <p className="text-zinc-400 font-medium">{data.message || 'No lineage data available.'}</p>
-          <p className="text-zinc-600 text-sm mt-2">Run a workflow to generate causal artifact chains.</p>
-        </div>
+        <EmptyState 
+          title="No workflows have been executed yet"
+          description={data.message || "Run a workflow to generate causal artifact chains."}
+          command="hardkas sandbox --with-node --recipe transfer"
+          icon={<GitMerge size={24} />}
+        />
       </div>
     );
   }

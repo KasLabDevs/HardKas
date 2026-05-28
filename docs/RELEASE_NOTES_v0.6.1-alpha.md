@@ -1,7 +1,7 @@
-# HardKAS v0.7.0-alpha: The Operational Resilience Release
+# HardKAS v0.7.1-alpha: The Operational Resilience Release
 **Date**: May 26, 2026
 
-We are thrilled to announce HardKAS v0.7.0-alpha. This release marks a philosophical shift for the project: moving from standard developer tooling to a mathematically deterministic, event-sourced infrastructure runtime. 
+We are thrilled to announce HardKAS v0.7.1-alpha. This release marks a philosophical shift for the project: moving from standard developer tooling to a mathematically deterministic, event-sourced infrastructure runtime. 
 
 **HardKAS was built to bring deterministic operational tooling to the Kaspa ecosystem.** As the ecosystem scales, developers need infrastructure that assumes failure is inevitable and degrades gracefully instead of collapsing. 
 
@@ -32,4 +32,4 @@ The `hardkas doctor` command no longer just checks if files exist; it scans the 
 ## 📚 Documentation
 We have published the formal [RUNTIME_CONTRACT.md](./RUNTIME_CONTRACT.md) detailing our invariant guarantees, alongside a comprehensive [OPERATOR_GUIDE.md](./OPERATOR_GUIDE.md) for dealing with real-world infrastructure incidents.
 
-*With v0.7.0-alpha, HardKAS assumes the user, the filesystem, and the runtime environment will eventually fail—and it is ready to handle it.*
+*With v0.7.1-alpha, HardKAS assumes the user, the filesystem, and the runtime environment will eventually fail—and it is ready to handle it.*

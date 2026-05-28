@@ -19,24 +19,14 @@ export function SemanticDrift() {
   const [apiOffline, setApiOffline] = useState(false);
 
   useEffect(() => {
-    // Resolve the active API host dynamically.
-    // The dev server API always runs on port 3333 locally.
-    const apiHost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' 
-      ? `http://${window.location.hostname}:3333` 
-      : 'http://localhost:3333';
+    const apiBase = process.env.NODE_ENV === 'development' ? 'http://localhost:7420' : '';
+    const token = (window as any).__HARDKAS_DEV_TOKEN__ || '';
+    const headers = token ? { 'Authorization': `Bearer ${token}` } : {};
 
-    // Try relative endpoint first, fallback to hardcoded port if needed
     const fetchWithFallback = async (path: string) => {
-      try {
-        const response = await fetch(path);
-        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-        return await response.json();
-      } catch (e) {
-        // Fallback to absolute local dev URL if served on a different origin in development
-        const response = await fetch(`${apiHost}${path}`);
-        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`, { cause: e });
-        return await response.json();
-      }
+      const response = await fetch(`${apiBase}${path}`, { headers });
+      if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+      return await response.json();
     };
 
     Promise.all([

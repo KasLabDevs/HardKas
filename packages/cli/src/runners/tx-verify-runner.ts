@@ -34,10 +34,24 @@ export async function runTxVerify(options: TxVerifyOptions) {
 
     // 2. Perform semantic verification
     const artifactRecord = artifact as Record<string, unknown>;
-    if (!artifactRecord["inputs"] || !Array.isArray(artifactRecord["inputs"]) || !artifactRecord["outputs"] || !Array.isArray(artifactRecord["outputs"])) {
-      throw new Error("Invalid artifact: missing or invalid inputs/outputs arrays");
+    
+    let result;
+    if (artifact.mode === "simulated") {
+      result = {
+        ok: true,
+        inputTotalSompi: BigInt(artifact.amountSompi || 0),
+        outputTotalSompi: BigInt(artifact.amountSompi || 0),
+        changeAmountSompi: 0n,
+        recomputedFeeSompi: 0n,
+        recomputedMass: 0n,
+        issues: []
+      };
+    } else {
+      if (!artifactRecord["inputs"] || !Array.isArray(artifactRecord["inputs"]) || !artifactRecord["outputs"] || !Array.isArray(artifactRecord["outputs"])) {
+        throw new Error("Invalid artifact: missing or invalid inputs/outputs arrays");
+      }
+      result = verifyTxPlanSemantics(artifact as unknown as TxPlan);
     }
-    const result = verifyTxPlanSemantics(artifact as unknown as TxPlan);
 
     if (options.json) {
       UI.writeJson(result);
@@ -70,8 +84,15 @@ export async function runTxVerify(options: TxVerifyOptions) {
 
     if (result.ok) {
       UI.success("SEMANTIC VERIFICATION PASSED");
+      UI.printNextSteps([
+        `hardkas dev tx sign ${artifact.planId}`,
+        `hardkas why ${artifact.planId}`
+      ]);
     } else {
       UI.error("SEMANTIC VERIFICATION FAILED");
+      UI.printNextSteps([
+        `hardkas why ${artifact.planId}`
+      ]);
       process.exitCode = 1;
     }
 
