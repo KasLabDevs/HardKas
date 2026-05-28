@@ -116,5 +116,9 @@ export async function runArtifactInspect(options: ArtifactInspectOptions) {
     
     const repColor = replayability === "supported" ? pc.green : pc.yellow;
     console.log(`  ${pc.bold("Replayability:")} ${repColor(replayability)}\n`);
+
+    UI.printNextSteps([
+      `hardkas why ${id || path.basename(targetPath).replace(".json", "")}`
+    ]);
   }
 }

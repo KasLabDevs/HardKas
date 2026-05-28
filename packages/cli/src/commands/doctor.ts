@@ -22,7 +22,7 @@ export function registerDoctorCommand(program: Command) {
     .option("--strict", "Fail strictly (exit 1) if invariants or consistency checks fail", false)
     .action(async (opts) => {
       try {
-        await runDoctor(opts);
+        await runDoctorChecks(process.cwd(), opts);
       } catch (err) {
         handleError(err);
       }
@@ -50,7 +50,7 @@ interface DoctorCheck {
   suggestion?: string | undefined;
 }
 
-async function runDoctor(opts: { json?: boolean; consistency?: boolean; strict?: boolean }) {
+export async function runDoctorChecks(root: string, opts: { json?: boolean; consistency?: boolean; strict?: boolean; quiet?: boolean }): Promise<boolean> {
   if (opts.json) UI.setJsonMode(true);
 
   const report: DoctorReport = {
@@ -60,7 +60,7 @@ async function runDoctor(opts: { json?: boolean; consistency?: boolean; strict?:
     summary: { total: 0, passed: 0, failed: 0, warnings: 0, skipped: 0 }
   };
 
-  if (!opts.json) {
+  if (!opts.json && !opts.quiet) {
     UI.box("HardKAS System Doctor", "Operational Health Check");
   }
 
@@ -72,7 +72,7 @@ async function runDoctor(opts: { json?: boolean; consistency?: boolean; strict?:
     else if (check.status === "warn") report.summary.warnings++;
     else if (check.status === "skip") report.summary.skipped++;
 
-    if (!opts.json) {
+    if (!opts.json && !opts.quiet) {
       let icon = pc.green("✅");
       if (check.status === "fail") icon = pc.red("❌");
       if (check.status === "warn") icon = pc.yellow("⚠️");
@@ -575,7 +575,7 @@ async function runDoctor(opts: { json?: boolean; consistency?: boolean; strict?:
 
   if (opts.json) {
     UI.writeJson(report);
-  } else {
+  } else if (!opts.quiet) {
     UI.divider();
     UI.logHuman(`  Summary: ${report.summary.passed} passed, ${report.summary.failed} failed, ${report.summary.warnings} warning, ${report.summary.skipped} skipped`);
     UI.footer("Use 'hardkas capabilities' to see supported features.");
@@ -584,5 +584,7 @@ async function runDoctor(opts: { json?: boolean; consistency?: boolean; strict?:
   if (opts.strict && report.summary.failed > 0) {
     process.exit(1);
   }
+
+  return report.summary.failed === 0;
 }
 

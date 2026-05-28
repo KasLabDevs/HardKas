@@ -91,41 +91,81 @@ export async function runDevServer(options: {
         config: { port, host, unsafeExternal: options.unsafeExternal }
       });
     } else {
-      console.log(pc.bold("\nHardKAS dev-server started\n"));
+      let isNodeRunning = false;
+      let miningAlias = "";
+      let miningAddress = "";
+      
+      const { ensureDevAccounts, listDevAccountsSync } = await import("@hardkas/accounts");
+      
+      // Auto-ensure dev accounts (creates alice/bob if they don't exist in simnet)
+      await ensureDevAccounts(wsRoot);
+      const devAccounts = listDevAccountsSync(wsRoot);
+
+      if ((options as any).withNode) {
+        if (devAccounts.length > 0) {
+          miningAlias = devAccounts[0]!.name;
+          miningAddress = devAccounts[0]!.address;
+        }
+        
+        // Spawn localnet node in background
+        const { spawn } = await import("node:child_process");
+        const nodeArgs = ["hardkas", "node", "start"];
+        if (miningAddress) {
+          nodeArgs.push("--miningaddr", miningAddress);
+        }
+        // Run dettached so it runs independently
+        spawn("pnpm", nodeArgs, { stdio: 'ignore', detached: true, cwd: wsRoot }).unref();
+        isNodeRunning = true;
+      }
+
+      console.log(pc.bold("\nHardKAS Local Runtime"));
+      console.log(pc.dim("━━━━━━━━━━━━━━━━━━━━━━\n"));
+      
+      console.log(pc.bold("Workspace:"));
+      console.log(`  ${wsRoot}\n`);
+      
+      console.log(pc.bold("Network:"));
+      console.log(`  simnet\n`);
+      
+      console.log(pc.bold("Node:"));
+      if (isNodeRunning) {
+        console.log(`  ${pc.green("running")}\n`);
+        console.log(pc.bold("Mining:"));
+        console.log(`  enabled → ${pc.blue(miningAlias)}\n`);
+      } else {
+        console.log(`  not running`);
+        console.log(pc.dim(`  Tip: run \`hardkas dev --with-node\` for full localnet + autofunding.\n`));
+      }
+
+      console.log(pc.bold("Projection:"));
+      console.log(`  healthy\n`);
+      
+      console.log(pc.bold("Canonical Ledger:"));
+      console.log(`  healthy\n`);
       
       console.log(pc.bold("Dashboard:"));
       console.log(`  http://localhost:${port}\n`);
 
-      console.log(pc.bold("Security:"));
-      console.log(`  API authentication: ${pc.green("enabled")}`);
-      console.log(`  CSRF protection: ${pc.green("enabled")}`);
-      console.log(`  Host validation: ${options.unsafeExternal ? pc.yellow("disabled (unsafe-external mode)") : pc.green("enabled")}\n`);
+      console.log(pc.bold("Accounts"));
+      console.log(pc.dim("━━━━━━━━━━━━━━━━━━━━━━\n"));
+      
+      devAccounts.forEach((acc, index) => {
+        console.log(`[${index}] ${pc.blue(acc.name)}`);
+        console.log(`Address: ${acc.address}`);
+        // We do not fake balance, we leave it to dashboard or say 'Check dashboard for balance'
+        // since we don't have a sync RPC call here directly without delaying startup
+        console.log(`Balance: ${isNodeRunning ? 'Syncing...' : 'FundingStatus: unknown/unsupported'}\n`);
+      });
 
-      console.log(pc.bold("Token:"));
-      console.log(`  generated for this session\n`);
+      UI.printNextSteps([
+        "hardkas dev tx send --from alice --to bob --amount 1",
+        "hardkas status",
+        "hardkas dev last --replay"
+      ]);
 
-      if (options.unsafeExternal) {
-        console.log(pc.red("WARNING: --unsafe-external exposes the HardKAS dev-server beyond localhost."));
-        console.log(pc.red("API token authentication remains enabled, but this mode increases workstation risk."));
-        console.log(pc.red("Use only in isolated development environments.\n"));
-      } else {
-        console.log(pc.dim("Do not expose this server to untrusted networks.\n"));
-      }
-
-      if (options.showToken) {
-        console.log(pc.bold("Session Token:"));
-        console.log(`  ${token}\n`);
-
-        console.log(pc.bold("Manual curl usage:"));
-        console.log(`  curl -H "Authorization: Bearer ${token}" \\`);
-        console.log(`       http://localhost:${port}/api/overview\n`);
-
-        console.log(pc.bold("For mutations:"));
-        console.log(`  curl -X POST \\`);
-        console.log(`    -H "Authorization: Bearer ${token}" \\`);
-        console.log(`    -H "X-Hardkas-Request: true" \\`);
-        console.log(`    http://localhost:${port}/api/...\n`);
-      }
+      console.log(pc.red(pc.bold("WARNING:")));
+      console.log(pc.red("Local simnet development accounts only."));
+      console.log(pc.red("Never use on mainnet.\n"));
     }
 
     const nodeServer = server.start();

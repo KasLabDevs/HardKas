@@ -695,9 +695,13 @@ export class HardkasIndexer {
     }
 
     const isInside = (child: string, parent: string) => {
-      if (child === parent) return true;
-      const parentWithSep = parent.endsWith(path.sep) ? parent : parent + path.sep;
-      return child.startsWith(parentWithSep);
+      // Handle windows casing
+      const c = child.toLowerCase();
+      const p = parent.toLowerCase();
+      if (c === p) return true;
+      const parentWithSep = p.endsWith(path.sep) ? p : p + path.sep;
+      const result = c.startsWith(parentWithSep);
+      return result;
     };
 
     if (!isInside(realDir, realHardkasDir)) {

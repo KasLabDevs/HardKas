@@ -296,8 +296,9 @@ export function registerTxCommands(program: Command) {
                   "Consensus Validated": isSimulated ? "NO" : "YES"
                 },
                 [
-                  "hardkas dashboard",
-                  `hardkas explain ${sendResult?.artifact?.txId || "unknown"}`
+                  `hardkas why ${sendResult?.artifact?.receipt?.lineage?.artifactId || sendResult?.artifact?.txId || "unknown"}`,
+                  "hardkas dev last --replay",
+                  "hardkas status"
                 ]
               );
             }

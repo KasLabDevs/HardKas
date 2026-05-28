@@ -70,8 +70,15 @@ export async function runTxVerify(options: TxVerifyOptions) {
 
     if (result.ok) {
       UI.success("SEMANTIC VERIFICATION PASSED");
+      UI.printNextSteps([
+        `hardkas dev tx sign ${artifact.planId}`,
+        `hardkas why ${artifact.planId}`
+      ]);
     } else {
       UI.error("SEMANTIC VERIFICATION FAILED");
+      UI.printNextSteps([
+        `hardkas why ${artifact.planId}`
+      ]);
       process.exitCode = 1;
     }
 

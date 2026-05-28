@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
-import { FileCheck } from 'lucide-react';
+import { FileCheck, AlertTriangle } from 'lucide-react';
+import { ActivityTimelineCompact } from '../components/ActivityTimelineCompact';
 
 interface ArtifactStatus {
   artifactId: string;
@@ -30,22 +31,114 @@ const statusColors: Record<string, string> = {
 
 export function TruthStatus() {
   const [data, setData] = useState<StatusResponse | null>(null);
+  const [accountsData, setAccountsData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  const token = (window as any).__HARDKAS_DEV_TOKEN__ || '';
+  const headers = token ? { 'Authorization': `Bearer ${token}` } : {};
+  const apiBase = process.env.NODE_ENV === 'development' ? 'http://localhost:7420' : '';
+
   useEffect(() => {
-    fetch('http://localhost:3333/api/status')
-      .then(res => res.json())
-      .then(d => { setData(d); setLoading(false); })
-      .catch(err => { setError(String(err)); setLoading(false); });
+    Promise.all([
+      fetch(`${apiBase}/api/status`, { headers }).then(res => res.json()),
+      fetch(`${apiBase}/api/dev-accounts`, { headers }).then(res => res.json()).catch(() => null)
+    ])
+      .then(([statusRes, accountsRes]) => {
+        setData(statusRes);
+        setAccountsData(accountsRes);
+        setLoading(false);
+      })
+      .catch(err => { 
+        setError(String(err)); 
+        setLoading(false); 
+      });
   }, []);
 
-  if (loading) return <div className="text-zinc-500">Loading truth lattice...</div>;
+  if (loading) return <div className="text-zinc-500">Loading truth lattice & cockpit...</div>;
   if (error) return <div className="text-red-400">API Error: {error}</div>;
   if (!data) return null;
 
+  const projectionDegraded = data.source === 'artifacts' && data.sourceNote?.toLowerCase().includes('degraded');
+
   return (
     <div className="space-y-6">
+      {/* 🚀 New Cockpit Section */}
+      <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-6 mb-8">
+        <h2 className="text-xl font-medium text-white mb-4 flex items-center gap-2">
+          <span>🚀</span> Developer Cockpit
+        </h2>
+        <div className="grid grid-cols-3 gap-6">
+          <div className="space-y-2">
+            <h3 className="text-sm font-semibold text-zinc-400 uppercase tracking-wider">Environment</h3>
+            <div className="bg-zinc-950 p-3 rounded border border-zinc-800 font-mono text-sm">
+               <div className="flex justify-between">
+                 <span className="text-zinc-500">Network:</span>
+                 <span className="text-emerald-400">simnet</span>
+               </div>
+               <div className="flex justify-between mt-1">
+                 <span className="text-zinc-500">Projection:</span>
+                 <span className={projectionDegraded ? "text-amber-400" : "text-emerald-400"}>
+                   {projectionDegraded ? "degraded" : "healthy"}
+                 </span>
+               </div>
+            </div>
+            <div className="mt-4 space-y-2">
+              <h3 className="text-sm font-semibold text-zinc-400 uppercase tracking-wider">Quick Commands</h3>
+              <code className="block bg-zinc-950 p-2 rounded border border-zinc-800 text-xs text-blue-400 select-all">
+                hardkas dev tx send --from alice --to bob --amount 1
+              </code>
+              <code className="block bg-zinc-950 p-2 rounded border border-zinc-800 text-xs text-blue-400 select-all">
+                hardkas dev last --replay
+              </code>
+              <code className="block bg-zinc-950 p-2 rounded border border-zinc-800 text-xs text-blue-400 select-all">
+                hardkas artifact inspect &lt;id&gt;
+              </code>
+              <code className="block bg-zinc-950 p-2 rounded border border-zinc-800 text-xs text-blue-400 select-all">
+                hardkas rebuild
+              </code>
+            </div>
+          </div>
+          
+          <div className="space-y-2">
+            <h3 className="text-sm font-semibold text-zinc-400 uppercase tracking-wider">Dev Accounts</h3>
+            <div className="space-y-2">
+              {accountsData?.ok && accountsData.data?.length > 0 ? (
+                accountsData.data.map((acc: any) => (
+                  <div key={acc.name} className="bg-zinc-950 p-2 rounded border border-zinc-800 text-sm flex items-center justify-between">
+                    <span className="font-mono text-blue-400">{acc.name}</span>
+                    <span className="font-mono text-zinc-500 text-xs truncate max-w-[150px]" title={acc.address}>{acc.address}</span>
+                  </div>
+                ))
+              ) : (
+                <div className="text-zinc-500 text-sm italic">No dev accounts found.</div>
+              )}
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <ActivityTimelineCompact />
+          </div>
+        </div>
+      </div>
+
+      {projectionDegraded && (
+        <div className="bg-amber-500/10 border border-amber-500/20 rounded-lg p-6 mb-8 flex items-start gap-4">
+          <AlertTriangle className="text-amber-400 shrink-0 mt-1" />
+          <div>
+            <h3 className="text-amber-400 font-semibold text-lg">Projection Degraded.</h3>
+            <p className="text-zinc-300 mt-1 leading-relaxed">
+              Artifacts remain canonical local truth. You can verify, inspect, replay, or rebuild projections from them.
+            </p>
+            <div className="mt-3">
+              <code className="bg-black/40 px-2 py-1 rounded text-amber-200 text-xs font-mono border border-amber-500/20 select-all">
+                hardkas rebuild
+              </code>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="flex items-center justify-between border-b border-zinc-800 pb-4">
         <div className="flex items-center gap-2 text-white">
           <FileCheck className="text-emerald-400" />
@@ -61,7 +154,7 @@ export function TruthStatus() {
 
       <p className="text-zinc-500 max-w-2xl text-sm leading-relaxed">
         The dashboard never invents truth. All status transitions are exclusively determined by the central semantics layer.
-        {data.sourceNote && <span className="block mt-1 text-amber-400/80">{data.sourceNote}</span>}
+        {data.sourceNote && !projectionDegraded && <span className="block mt-1 text-amber-400/80">{data.sourceNote}</span>}
       </p>
 
       {!data.loaded || data.artifacts.length === 0 ? (

@@ -28,18 +28,42 @@ export function resolveHardkasAccount(
     };
   }
 
-  // 2. Check config.accounts
-  if (config?.accounts && config.accounts[nameOrAddress]) {
-    const accConfig = config.accounts[nameOrAddress];
+  // 1.5 Handle index aliases (0 -> alice, 1 -> bob)
+  let alias = nameOrAddress;
+  if (alias === "0") alias = "alice";
+  if (alias === "1") alias = "bob";
+
+  // 2. Check dev accounts first (simnet priority)
+  const workspaceRoot = (config as any)?.cwd || process.cwd();
+  const devAccountPath = path.join(workspaceRoot, ".hardkas", "dev-accounts", `${alias}.json`);
+  if (fs.existsSync(devAccountPath)) {
+    try {
+      const data = fs.readFileSync(devAccountPath, "utf-8");
+      const keystore = JSON.parse(data);
+      if (keystore.type === "hardkas.encryptedKeystore.v2") {
+        return {
+          name: alias,
+          kind: "kaspa-private-key",
+          address: keystore.metadata?.address
+        };
+      }
+    } catch (e) {
+      // Ignore read errors and fall through
+    }
+  }
+
+  // 3. Check config.accounts
+  if (config?.accounts && config.accounts[alias]) {
+    const accConfig = config.accounts[alias];
     return {
-      name: nameOrAddress,
+      name: alias,
       ...accConfig
     } as HardkasAccount;
   }
 
-  // 3. Check real account store
+  // 4. Check real account store
   const realStore = loadRealAccountStoreSync();
-  const realAcc = realStore ? getRealDevAccount(realStore, nameOrAddress) : null;
+  const realAcc = realStore ? getRealDevAccount(realStore, alias) : null;
   if (realAcc) {
     return {
       name: realAcc.name,
@@ -48,9 +72,9 @@ export function resolveHardkasAccount(
     };
   }
 
-  // 4. Fallback to deterministic accounts
+  // 5. Fallback to deterministic accounts
   const detAccounts = createDeterministicAccounts();
-  const det = detAccounts.find((a: any) => a.name === nameOrAddress);
+  const det = detAccounts.find((a: any) => a.name === alias);
   if (det) {
     return {
       name: det.name,
@@ -60,7 +84,7 @@ export function resolveHardkasAccount(
     };
   }
 
-  // 5. Not found
+  // 6. Not found
   const available = listHardkasAccounts(config).map(a => a.name).join(", ");
   throw new Error(`Unknown HardKAS account '${nameOrAddress}'. Available accounts: ${available}`);
 }
@@ -77,6 +101,31 @@ export function listHardkasAccounts(config?: HardkasConfig): HardkasAccount[] {
       address: det.address,
       evmAddress: det.evmAddress
     });
+  }
+
+  // Add dev-accounts (simnet deterministic)
+  const workspaceRoot = (config as any)?.cwd || process.cwd();
+  const devAccountsDir = path.join(workspaceRoot, ".hardkas", "dev-accounts");
+  if (fs.existsSync(devAccountsDir)) {
+    const files = fs.readdirSync(devAccountsDir);
+    for (const file of files) {
+      if (file.endsWith(".json")) {
+        try {
+          const name = path.basename(file, ".json");
+          const data = fs.readFileSync(path.join(devAccountsDir, file), "utf-8");
+          const keystore = JSON.parse(data);
+          if (keystore.type === "hardkas.encryptedKeystore.v2") {
+            accounts.set(name, {
+              name,
+              kind: "kaspa-private-key",
+              address: keystore.payload?.address || keystore.metadata?.address
+            });
+          }
+        } catch (e) {
+          // Ignore
+        }
+      }
+    }
   }
 
   // Add from real account store

@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react'
 import { BrowserRouter, Routes, Route, Link, useLocation } from 'react-router-dom'
-import { Activity, GitMerge, FileCheck, ShieldAlert, ShieldCheck, Cpu, Layers } from 'lucide-react'
+import { Activity, GitMerge, FileCheck, ShieldAlert, ShieldCheck, Cpu, Layers, Clock } from 'lucide-react'
 import { DashboardHealth } from './components/DashboardHealth'
 import { TruthStatus } from './views/TruthStatus'
 import { LineageGraph } from './views/LineageGraph'
@@ -8,6 +8,8 @@ import { SemanticDrift } from './views/SemanticDrift'
 import { Quarantine } from './views/Quarantine'
 import { ReplayVerification } from './views/ReplayVerification'
 import { Telemetry } from './views/Telemetry'
+import { ActivityTimelinePage } from './views/ActivityTimelinePage'
+import { WorkflowGraph } from './views/WorkflowGraph'
 import { Bundles } from './views/Bundles'
 
 // Layout wrapper
@@ -16,6 +18,8 @@ function Layout({ children }: { children: ReactNode }) {
   
   const navItems = [
     { path: '/', label: 'Truth Status', icon: FileCheck },
+    { path: '/activity', label: 'Activity Timeline', icon: Clock },
+    { path: '/workflow', label: 'Workflow Graph', icon: GitMerge },
     { path: '/lineage', label: 'Lineage Graph', icon: GitMerge },
     { path: '/drift', label: 'Semantic Drift', icon: Activity },
     { path: '/replay', label: 'Replay Verification', icon: ShieldCheck },
@@ -82,6 +86,8 @@ export default function App() {
       <Layout>
         <Routes>
           <Route path="/" element={<TruthStatus />} />
+          <Route path="/activity" element={<ActivityTimelinePage />} />
+          <Route path="/workflow" element={<WorkflowGraph />} />
           <Route path="/lineage" element={<LineageGraph />} />
           <Route path="/drift" element={<SemanticDrift />} />
           <Route path="/replay" element={<ReplayVerification />} />
