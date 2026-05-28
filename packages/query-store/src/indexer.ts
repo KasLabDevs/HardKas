@@ -675,16 +675,65 @@ export class HardkasIndexer {
     }
   }
 
-  private walk(dir: string): string[] {
+  private walk(dir: string, visited: Set<string> = new Set()): string[] {
     let results: string[] = [];
-    if (!fs.existsSync(dir)) return results;
-    const list = fs.readdirSync(dir);
+    let realDir: string;
+    try {
+      realDir = fs.realpathSync(dir);
+    } catch {
+      return results;
+    }
+
+    if (visited.has(realDir)) return results;
+    visited.add(realDir);
+
+    let realHardkasDir: string;
+    try {
+      realHardkasDir = fs.realpathSync(this.hardkasDir);
+    } catch {
+      return results;
+    }
+
+    const isInside = (child: string, parent: string) => {
+      if (child === parent) return true;
+      const parentWithSep = parent.endsWith(path.sep) ? parent : parent + path.sep;
+      return child.startsWith(parentWithSep);
+    };
+
+    if (!isInside(realDir, realHardkasDir)) {
+      return results;
+    }
+
+    let list: string[];
+    try {
+      list = fs.readdirSync(dir);
+    } catch {
+      return results;
+    }
+
     for (const file of list) {
       const filePath = path.join(dir, file);
-      const stat = fs.statSync(filePath);
-      if (stat.isDirectory()) {
+      let stat;
+      try {
+        stat = fs.lstatSync(filePath);
+      } catch { continue; }
+      
+      let isDir = stat.isDirectory();
+      if (stat.isSymbolicLink()) {
+        try {
+          const real = fs.realpathSync(filePath);
+          if (!isInside(real, realHardkasDir)) {
+            continue;
+          }
+          isDir = fs.statSync(real).isDirectory();
+        } catch {
+          continue;
+        }
+      }
+
+      if (isDir) {
         if (file === "node_modules" || file === ".git" || file === "keystore" || file === "snapshots") continue;
-        results = results.concat(this.walk(filePath));
+        results = results.concat(this.walk(filePath, visited));
       } else if (file.endsWith(".json") && !file.endsWith("events.jsonl") && file !== "state.json" && !file.endsWith("localnet.json") && !file.endsWith("accounts.real.json") && !file.endsWith("sessions.json")) {
         results.push(filePath);
       }
