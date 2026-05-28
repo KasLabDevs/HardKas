@@ -1,6 +1,6 @@
 {
   "name": "@hardkas/dashboard",
-  "version": "0.6.1-alpha",
+  "version": "0.7.0-alpha",
   "private": true,
   "type": "module",
   "scripts": {
@@ -13,7 +13,7 @@
     "test:visual:ci": "playwright test --reporter=html"
   },
   "dependencies": {
-    "@hardkas/core": "workspace:0.6.1-alpha",
+    "@hardkas/core": "workspace:0.7.0-alpha",
     "@hardkas/react": "workspace:*",
     "@tailwindcss/vite": "^4.3.0",
     "@tanstack/react-query": "^5.61.3",

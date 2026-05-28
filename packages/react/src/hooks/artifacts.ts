@@ -83,3 +83,31 @@ export function useArtifact(id: string) {
     staleTime: 30000,
   });
 }
+
+export function useExplain(id: string) {
+  const { config, apiFetch } = useHardKas();
+  return useQuery({
+    queryKey: ["hardkas", "explain", id],
+    queryFn: async (): Promise<any | null> => {
+      if (!id) return null;
+      try {
+        const baseUrl = config.devServerUrl || "";
+        const url = baseUrl ? (baseUrl.endsWith("/") ? `${baseUrl}api/artifacts/${id}/explain` : `${baseUrl}/api/artifacts/${id}/explain`) : `/api/artifacts/${id}/explain`;
+        const response = await apiFetch(url);
+        if (!response.ok) return null;
+        const data = await response.json();
+        return data.data || null;
+      } catch (e) {
+        console.error(`Failed to explain artifact '${id}':`, e);
+        return null;
+      }
+    },
+    enabled: !!id,
+    staleTime: Infinity,
+  });
+}
+
+export function useWorkflow(txId: string) {
+  // A workflow is just a specialized artifact view or aggregation of tx-plan, signed-tx, tx-receipt
+  return useArtifacts("all"); // To be fleshed out, mock for now
+}

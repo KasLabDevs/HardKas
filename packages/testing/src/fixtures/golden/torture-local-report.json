@@ -1,0 +1,19 @@
+{
+  "schemaVersion": "hardkas.tortureReport.v1",
+  "seed": 7001,
+  "iterations": 300,
+  "profile": "local",
+  "bucketFilter": null,
+  "summary": {
+    "total": 300,
+    "passed": 300,
+    "failed": 0,
+    "buckets": [
+      {
+        "name": "local-first-lifecycle",
+        "count": 300
+      }
+    ]
+  },
+  "cases": []
+}

@@ -69,8 +69,8 @@ export class KaspaSdkRealTxSigner implements RealTxSigner {
       ];
 
       // 4. Prepare Change
-      const changeAddress = (plan as any).change 
-        ? new sdk.Address((plan as any).change.address)
+      const changeAddress = plan.change 
+        ? new sdk.Address(plan.change.address)
         : undefined;
 
       // 5. Build and Sign

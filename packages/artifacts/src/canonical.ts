@@ -35,13 +35,25 @@ export const SEMANTIC_EXCLUSIONS = new Set([
  */
 export const CURRENT_HASH_VERSION = 3;
 
+export const STRICT_PATH_KEYS = new Set([
+  "file_path",
+  "sandboxSnapshotPath",
+  "receiptPath",
+  "tracePath",
+  "outputPath",
+  "artifactPath",
+  "workspacePath",
+  "relativePath",
+  "absolutePath"
+]);
+
 /**
  * Deterministically stringifies an object by sorting keys recursively.
  * Handles BigInt by converting to string with type marker.
  * Excludes fields in SEMANTIC_EXCLUSIONS during serialization.
  * Skips keys with undefined values (matching JSON.stringify behavior).
  */
-export function canonicalStringify(obj: unknown, version: number = CURRENT_HASH_VERSION): string {
+export function canonicalStringify(obj: unknown, version: number = CURRENT_HASH_VERSION, keyName?: string): string {
   if (obj === null || typeof obj !== "object") {
     if (typeof obj === "bigint") {
       // v2+ adds a type marker to distinguish BigInt from String.
@@ -53,11 +65,13 @@ export function canonicalStringify(obj: unknown, version: number = CURRENT_HASH_
     }
 
     if (typeof obj === "string" && version >= 3) {
-      // v3+ normalizes newlines, path separators, and UTF-8 for cross-platform determinism
-      // Convert Windows backslashes to POSIX forward slashes to prevent platform drift
-      const normalized = obj.normalize("NFC")
-        .replace(/\r\n/g, "\n")
-        .replace(/\\/g, "/");
+      // v3+ normalizes newlines and UTF-8 for cross-platform stability.
+      let normalized = obj.normalize("NFC").replace(/\r\n/g, "\n");
+      
+      // Convert Windows backslashes to POSIX forward slashes only for strict path-typed fields
+      if (keyName && STRICT_PATH_KEYS.has(keyName)) {
+        normalized = normalized.replace(/\\/g, "/");
+      }
       return JSON.stringify(normalized);
     }
 
@@ -65,7 +79,7 @@ export function canonicalStringify(obj: unknown, version: number = CURRENT_HASH_
   }
 
   if (Array.isArray(obj)) {
-    return "[" + obj.map(item => canonicalStringify(item, version)).join(",") + "]";
+    return "[" + obj.map(item => canonicalStringify(item, version, keyName)).join(",") + "]";
   }
 
   if (obj instanceof Map) {
@@ -93,7 +107,7 @@ export function canonicalStringify(obj: unknown, version: number = CURRENT_HASH_
   const result = sortedKeys
     .map(key => {
       const value = (obj as Record<string, unknown>)[key];
-      return JSON.stringify(key) + ":" + canonicalStringify(value, version);
+      return JSON.stringify(key) + ":" + canonicalStringify(value, version, key);
     })
     .join(",");
 

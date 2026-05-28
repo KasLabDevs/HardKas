@@ -42,7 +42,7 @@ describe("Account Hardening & Security Guards", () => {
         expect(stats.mode & 0o777).toBe(0o600);
     }
 
-    const store = loadRealAccountStoreSync();
+    const store = loadRealAccountStoreSync({ cwd: process.cwd() });
     const alice = store?.accounts.find(a => a.name === "alice");
     expect(alice?.privateKey).toBeUndefined();
     expect(alice?.keystoreRef).toBe(".hardkas/keystore/alice.json");
@@ -58,7 +58,7 @@ describe("Account Hardening & Security Guards", () => {
       workspaceRoot: process.cwd()
     } as any);
 
-    const store = loadRealAccountStoreSync();
+    const store = loadRealAccountStoreSync({ cwd: process.cwd() });
     const bob = store?.accounts.find(a => a.name === "bob");
     expect(bob?.privateKey).toBe(process.env.HARDKAS_TEST_PK);
     expect(bob?.keystoreRef).toBeUndefined();

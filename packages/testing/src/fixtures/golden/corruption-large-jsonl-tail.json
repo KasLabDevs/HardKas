@@ -1,0 +1,4 @@
+{
+  "note": "This file simulates a tail corruption. Since it's JSON, we just mock the payload that AppendCoordinator might read.",
+  "rawContent": "{\"type\":\"event\",\"data\":\"valid\"}\n{\"type\":\"event\",\"data\":\"incom"
+}

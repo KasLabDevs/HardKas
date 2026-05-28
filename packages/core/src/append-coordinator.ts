@@ -3,6 +3,7 @@ import path from "node:path";
 import { getTelemetry } from "./telemetry.js";
 
 export class AppendCoordinator {
+  private static _lastRecovery: any = null;
   /**
    * Safely appends a line to a JSONL log under process coordination locks.
    * Performs an immediate fsync to ensure data durability.
@@ -60,6 +61,7 @@ export class AppendCoordinator {
         repaired = true;
         linesDiscarded = recovery.linesDiscarded;
         originalTail = recovery.originalTail;
+        AppendCoordinator._lastRecovery = recovery; // Store recovery metrics on class for logging reference
       }
 
       // 3. Open target log file in append mode
@@ -86,12 +88,13 @@ export class AppendCoordinator {
     // 6. Log anomaly if recovery happened (outside of the append lock to avoid deadlocks/recursion)
     if (repaired) {
       try {
+        const recovery = AppendCoordinator._lastRecovery;
         const telemetry = getTelemetry();
         telemetry.logAnomaly(
           "EXTERNAL_MUTATION",
           "medium",
           "fs",
-          `Recovered corrupted trailing line in ${logBase}. Discarded ${linesDiscarded} malformed bytes. Original tail snippet: "${originalTail.slice(0, 60)}..."`,
+          `Recovered corrupted tail in ${logBase}. Original size: ${recovery.originalSize} bytes, Recovered size: ${recovery.recoveredSize} bytes, Truncated bytes: ${linesDiscarded}. Reason: ${recovery.reason}. Original tail snippet: "${originalTail.slice(0, 60)}..."`,
           rootDir
         );
       } catch {
@@ -102,66 +105,125 @@ export class AppendCoordinator {
 
   /**
    * Scans a JSONL stream for corruption, truncating malformed trailing lines.
+   * Utilizes a backward newline scanning logic with a rolling buffer,
+   * supporting lines of arbitrary size and only truncating the last complete
+   * valid JSONL boundary if a parse failure is detected.
    */
-  public static recoverCorruptedTail(filePath: string): { repaired: boolean; linesDiscarded: number; originalTail: string } {
-    if (!fs.existsSync(filePath)) return { repaired: false, linesDiscarded: 0, originalTail: "" };
+  public static recoverCorruptedTail(filePath: string): { 
+    repaired: boolean; 
+    linesDiscarded: number; 
+    originalTail: string;
+    originalSize: number;
+    recoveredSize: number;
+    reason: string;
+  } {
+    const defaultRes = {
+      repaired: false,
+      linesDiscarded: 0,
+      originalTail: "",
+      originalSize: 0,
+      recoveredSize: 0,
+      reason: ""
+    };
+
+    if (!fs.existsSync(filePath)) return defaultRes;
 
     const stat = fs.statSync(filePath);
-    if (stat.size === 0) return { repaired: false, linesDiscarded: 0, originalTail: "" };
+    defaultRes.originalSize = stat.size;
+    defaultRes.recoveredSize = stat.size;
+    if (stat.size === 0) return defaultRes;
 
-    // Only read the tail of the file (last 4KB is more than enough for any single JSONL line)
-    const TAIL_SIZE = 4096;
-    const readStart = Math.max(0, stat.size - TAIL_SIZE);
     const fd = fs.openSync(filePath, "r");
-    const buf = Buffer.alloc(Math.min(TAIL_SIZE, stat.size));
-    fs.readSync(fd, buf, 0, buf.length, readStart);
-    fs.closeSync(fd);
-
-    const tail = buf.toString("utf-8");
-    const lines = tail.split("\n");
-    if (lines.length === 0) return { repaired: false, linesDiscarded: 0, originalTail: "" };
-
-    // Get the last non-empty line
-    let lastLine = "";
-    let lastLineIdx = -1;
-    for (let i = lines.length - 1; i >= 0; i--) {
-      const l = lines[i]!.trim();
-      if (l) {
-        lastLine = l;
-        lastLineIdx = i;
-        break;
-      }
-    }
-
-    if (!lastLine) return { repaired: false, linesDiscarded: 0, originalTail: "" };
-
-    // If we started reading mid-file, the first "line" may be a partial fragment.
-    // Only trust it if we read from the beginning of the file or if lastLineIdx > 0
-    // (meaning there was a newline before it, so it's a complete line).
-    if (readStart > 0 && lastLineIdx === 0) {
-      // The only non-empty content is in the first (potentially partial) line of the chunk.
-      // We can't trust it — but we also can't know if it's corrupt or just large.
-      // Conservatively assume it's fine; a truly corrupt tail will be caught on the next
-      // append when more data pushes it to a later line position.
-      return { repaired: false, linesDiscarded: 0, originalTail: "" };
-    }
-
+    
     try {
-      JSON.parse(lastLine);
-      return { repaired: false, linesDiscarded: 0, originalTail: "" };
-    } catch (err: any) {
-      // Corruption detected at the tail! Truncate the file.
-      // Calculate the byte position to truncate to: everything before the corrupted last line.
-      const linesAfterCorrupt = lines.slice(lastLineIdx).join("\n");
-      const bytesToRemove = Buffer.byteLength(linesAfterCorrupt, "utf-8");
-      const truncateTo = stat.size - bytesToRemove;
-
-      fs.truncateSync(filePath, truncateTo > 0 ? truncateTo : 0);
-      return { 
-        repaired: true, 
-        linesDiscarded: stat.size - truncateTo, 
-        originalTail: lastLine 
-      };
+      let lastCharPos = -1;
+      let precedingNewlinePos = -1;
+      
+      const CHUNK_SIZE = 64 * 1024; // 64KB chunks
+      let position = stat.size;
+      const buffer = Buffer.alloc(CHUNK_SIZE);
+      
+      // Pass 1: Find the last non-whitespace/non-newline character from the end
+      outer1: while (position > 0) {
+        const readLength = Math.min(CHUNK_SIZE, position);
+        position -= readLength;
+        
+        fs.readSync(fd, buffer, 0, readLength, position);
+        
+        for (let i = readLength - 1; i >= 0; i--) {
+          const charCode = buffer[i];
+          // Skip space, tab, \n, \r
+          if (charCode !== 0x20 && charCode !== 0x09 && charCode !== 0x0a && charCode !== 0x0d) {
+            lastCharPos = position + i;
+            break outer1;
+          }
+        }
+      }
+      
+      // If the file only contains whitespace/newlines
+      if (lastCharPos === -1) {
+        fs.closeSync(fd);
+        fs.truncateSync(filePath, 0);
+        return {
+          repaired: true,
+          linesDiscarded: stat.size,
+          originalTail: "",
+          originalSize: stat.size,
+          recoveredSize: 0,
+          reason: "File only contained whitespaces or newlines"
+        };
+      }
+      
+      // Pass 2: Find the newline preceding lastCharPos
+      position = lastCharPos;
+      outer2: while (position > 0) {
+        const readLength = Math.min(CHUNK_SIZE, position);
+        position -= readLength;
+        
+        fs.readSync(fd, buffer, 0, readLength, position);
+        
+        for (let i = readLength - 1; i >= 0; i--) {
+          if (buffer[i] === 0x0a) { // \n
+            precedingNewlinePos = position + i;
+            break outer2;
+          }
+        }
+      }
+      
+      const lastLineStart = precedingNewlinePos === -1 ? 0 : precedingNewlinePos + 1;
+      const lastLineEnd = lastCharPos + 1;
+      
+      // Read the last line
+      const lastLineLength = lastLineEnd - lastLineStart;
+      const lastLineBuf = Buffer.alloc(lastLineLength);
+      fs.readSync(fd, lastLineBuf, 0, lastLineLength, lastLineStart);
+      fs.closeSync(fd);
+      
+      const lastLine = lastLineBuf.toString("utf-8");
+      
+      try {
+        JSON.parse(lastLine);
+        // Valid JSON! No corruption.
+        return defaultRes;
+      } catch (err: any) {
+        // Invalid JSON! Truncate the file to lastLineStart
+        const truncateTo = lastLineStart;
+        const discardedBytes = stat.size - truncateTo;
+        
+        fs.truncateSync(filePath, truncateTo);
+        
+        return {
+          repaired: true,
+          linesDiscarded: discardedBytes,
+          originalTail: lastLine,
+          originalSize: stat.size,
+          recoveredSize: truncateTo,
+          reason: err instanceof Error ? err.message : "Invalid JSON syntax"
+        };
+      }
+    } catch (e) {
+      try { fs.closeSync(fd); } catch {}
+      throw e;
     }
   }
 }

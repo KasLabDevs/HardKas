@@ -10,12 +10,14 @@ export interface AccountsRealUtxosOptions {
   name: string;
   network?: "simnet" | "testnet-10" | "mainnet";
   url?: string;
+  workspaceRoot?: string;
 }
 
 export async function runAccountsRealUtxos(options: AccountsRealUtxosOptions): Promise<{
   formatted: string;
 }> {
-  const store = await loadRealAccountStore();
+  const cwd = options.workspaceRoot || process.cwd();
+  const store = await loadRealAccountStore({ cwd });
   const account = store ? getRealDevAccount(store, options.name) : null;
   
   if (!account) {

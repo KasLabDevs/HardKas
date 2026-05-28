@@ -1,0 +1,10 @@
+{
+  "schemaVersion": "hardkas.replayReport.v1",
+  "workspace": "mock/path",
+  "artifacts": 5,
+  "lineage": "valid",
+  "determinism": "verified",
+  "contamination": "none",
+  "status": "passed",
+  "result": "PASS"
+}

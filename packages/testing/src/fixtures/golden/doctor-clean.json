@@ -1,0 +1,12 @@
+{
+  "schemaVersion": "hardkas.devDoctor.v1",
+  "status": "ready",
+  "checks": [
+    {
+      "name": "Workspace Structure",
+      "status": "success",
+      "message": "Valid"
+    }
+  ],
+  "timestamp": "2026-05-27T00:00:00.000Z"
+}

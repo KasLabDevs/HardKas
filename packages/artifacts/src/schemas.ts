@@ -14,8 +14,26 @@ export const ArtifactLineageSchema = z.object({
   sequence: z.number().optional()
 });
 
+export const ScriptCapabilitySchema = z.enum([
+  "p2pk",
+  "multisig",
+  "timelock",
+  "covenant-experimental",
+  "silverscript-experimental",
+  "tockata-experimental"
+]);
+
+export const ScriptMetadataSchema = z.object({
+  language: z.enum(["native", "silverscript", "tockata"]).optional(),
+  version: z.string().optional(),
+  experimental: z.boolean(),
+  notes: z.array(z.string()).optional(),
+  consensusImpact: z.enum(["none", "experimental"]).optional()
+});
+
 export const BaseArtifactSchema = z.object({
   schema: z.string(),
+  schemaVersion: z.string().optional(),
   hardkasVersion: z.string(),
   version: z.literal(ARTIFACT_VERSION),
   hashVersion: z.union([z.number(), z.string()]).optional(),
@@ -23,7 +41,13 @@ export const BaseArtifactSchema = z.object({
   mode: executionModeSchema,
   contentHash: z.string().optional(),
   createdAt: z.string().datetime(),
-  lineage: ArtifactLineageSchema.optional()
+  lineage: ArtifactLineageSchema.optional(),
+  parents: z.array(z.string()).optional(),
+  lineageDepth: z.number().optional(),
+  workflowId: z.string().optional(),
+  scriptProfile: z.enum(["standard", "experimental"]).optional(),
+  scriptCapabilities: z.array(ScriptCapabilitySchema).optional(),
+  scriptMetadata: ScriptMetadataSchema.optional()
 });
 
 export const AccountRefSchema = z.object({
@@ -200,3 +224,18 @@ export type SignedTx = z.infer<typeof SignedTxSchema>;
 export type TxTrace = z.infer<typeof TxTraceSchema>;
 export type DagContext = z.infer<typeof DagContextSchema>;
 export type Workflow = z.infer<typeof WorkflowSchema>;
+export type ScriptCapability = z.infer<typeof ScriptCapabilitySchema>;
+
+export const RuntimeSessionSchema = BaseArtifactSchema.extend({
+  sessionId: z.string(),
+  workflowIds: z.array(z.string()),
+  artifactIds: z.array(z.string()),
+  startedAt: z.string().datetime(),
+  network: z.string(),
+  deterministic: z.boolean(),
+  snapshotOf: z.string().optional(),
+  parentSessionId: z.string().optional(),
+  notes: z.string().optional()
+});
+
+export type RuntimeSession = z.infer<typeof RuntimeSessionSchema>;

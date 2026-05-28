@@ -118,3 +118,26 @@ export function useReplayDetail(txId: string) {
     staleTime: 30000,
   });
 }
+
+export function useReplay(id: string) {
+  const { config, apiFetch } = useHardKas();
+  return useQuery({
+    queryKey: ["hardkas", "replay-artifact", id],
+    queryFn: async (): Promise<any | null> => {
+      if (!id) return null;
+      try {
+        const baseUrl = config.devServerUrl || "";
+        const url = baseUrl ? (baseUrl.endsWith("/") ? `${baseUrl}api/artifacts/${id}/replay` : `${baseUrl}/api/artifacts/${id}/replay`) : `/api/artifacts/${id}/replay`;
+        const response = await apiFetch(url, { method: "POST" });
+        if (!response.ok) return null;
+        const data = await response.json();
+        return data.data || null;
+      } catch (e) {
+        console.error(`Failed to replay artifact '${id}':`, e);
+        return null;
+      }
+    },
+    enabled: !!id,
+    staleTime: Infinity,
+  });
+}

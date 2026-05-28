@@ -1,0 +1,43 @@
+{
+  "schema": "hardkas.txPlan",
+  "hardkasVersion": "0.7.0-alpha",
+  "schemaVersion": "hardkas.artifact.v1",
+  "version": "1.0.0-alpha",
+  "hashVersion": 3,
+  "createdAt": "2026-05-27T23:05:55.743Z",
+  "networkId": "simulated",
+  "mode": "simulated",
+  "from": {
+    "address": "kaspa:sim_alice",
+    "input": "alice"
+  },
+  "to": {
+    "address": "kaspa:sim_bob",
+    "input": "bob"
+  },
+  "amountSompi": "10000000000",
+  "estimatedFeeSompi": "350",
+  "estimatedMass": "350",
+  "inputs": [
+    {
+      "outpoint": {
+        "transactionId": "1234567890123456789012345678901234567890123456789012345678901234",
+        "index": 0
+      },
+      "amountSompi": "50000000000000"
+    }
+  ],
+  "outputs": [
+    {
+      "address": "kaspa:sim_bob",
+      "amountSompi": "10000000000"
+    }
+  ],
+  "rpcUrl": "simulated://local",
+  "change": {
+    "address": "kaspa:sim_alice",
+    "amountSompi": "49989999999650"
+  },
+  "planId": "plan-5ed6d8b9f4de644b",
+  "contentHash": "a2c8c0c8d21eeab7325f7720d4100a7e4da82dd7fba95727edf4b87ee8b4cbfd"
+}

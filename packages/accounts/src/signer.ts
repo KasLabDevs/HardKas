@@ -1,4 +1,6 @@
 import { 
+  TxPlan,
+  SignedTx,
   TxPlanArtifact, 
   SignedTxArtifact,
   createSimulatedSignedTxArtifact,
@@ -59,7 +61,7 @@ export async function signTxPlanArtifact(input: {
 
   // Security guardrails
   // In alpha, status might be missing if schema is used as the state marker
-  const planRecord = planArtifact as unknown as Record<string, string>;
+  const planRecord = planArtifact as Record<string, any>;
   if (planArtifact.schema === "hardkas.txPlan") {
     // Valid for signing
   } else if (planRecord.status !== "built" && planRecord.status !== "unsigned") {
@@ -84,10 +86,10 @@ export async function signTxPlanArtifact(input: {
 
   if (account.kind === "simulated") {
     return createSimulatedSignedTxArtifact(
-      planArtifact as unknown as any,
+      planArtifact as TxPlan,
       `simulated-signed-tx:${planArtifact.planId}`,
       systemRuntimeContext
-    ) as unknown as SignedTxArtifact;
+    ) as SignedTxArtifact;
   }
 
   if (account.kind === "kaspa-private-key") {

@@ -1,0 +1,27 @@
+{
+  "schemaVersion": "hardkas.tortureReport.v1",
+  "seed": 7001,
+  "iterations": 300,
+  "profile": "corruption",
+  "bucketFilter": null,
+  "summary": {
+    "total": 300,
+    "passed": 299,
+    "failed": 1,
+    "buckets": [
+      {
+        "name": "concurrent-append-tail-repair",
+        "count": 300
+      }
+    ]
+  },
+  "cases": [
+    {
+      "caseId": "case-042",
+      "bucket": "concurrent-append-tail-repair",
+      "passed": false,
+      "error": "Simulated mock failure",
+      "duration": 120
+    }
+  ]
+}

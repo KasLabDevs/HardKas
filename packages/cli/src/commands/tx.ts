@@ -190,7 +190,22 @@ export function registerTxCommands(program: Command) {
             });
 
             if (options.json) {
-              UI.writeJson(result);
+              UI.writeJson({
+                ok: true,
+                data: {
+                  plan: undefined,
+                  signed: signedArtifact,
+                  receipt: result.receipt,
+                  artifacts: [signedArtifact, result.receipt],
+                  warnings: [],
+                  explanation: { available: true, artifactId: result.receipt.txId }
+                },
+                meta: {
+                  network: result.networkName,
+                  workspace: process.cwd(),
+                  mode: "developer"
+                }
+              });
             } else {
               const { UI } = await import("../ui.js");
               const isSimulated = result.networkName === "simulated" || result.networkName === "simnet";
@@ -245,7 +260,23 @@ export function registerTxCommands(program: Command) {
             });
 
             if (options.json) {
-              UI.writeJson(result);
+              const sendResult = result.steps.send;
+              UI.writeJson({
+                ok: true,
+                data: {
+                  plan: result.steps.plan.artifact,
+                  signed: result.steps.sign.artifact,
+                  receipt: sendResult?.artifact?.receipt,
+                  artifacts: [result.steps.plan.artifact, result.steps.sign.artifact, sendResult?.artifact?.receipt].filter(Boolean),
+                  warnings: [],
+                  explanation: { available: true, artifactId: sendResult?.artifact?.receipt?.txId }
+                },
+                meta: {
+                  network: options.network || "simulated",
+                  workspace: process.cwd(),
+                  mode: "developer"
+                }
+              });
             } else {
               const { UI } = await import("../ui.js");
               const sendResult = result.steps.send;

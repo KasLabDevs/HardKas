@@ -1,6 +1,6 @@
 {
   "name": "@hardkas/testing",
-  "version": "0.6.1-alpha",
+  "version": "0.7.0-alpha",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -29,6 +29,7 @@
     "@hardkas/tx-builder": "workspace:*"
   },
   "devDependencies": {
+    "execa": "^9.5.2",
     "tsup": "^8.3.5",
     "typescript": "^5.7.2",
     "vitest": "^2.1.8"

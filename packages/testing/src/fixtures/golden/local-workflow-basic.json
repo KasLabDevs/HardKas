@@ -1,0 +1,21 @@
+{
+  "schema": "hardkas.workflow.v1",
+  "schemaVersion": "hardkas.artifact.v1",
+  "hardkasVersion": "1.0.0-alpha",
+  "version": "1.0.0-alpha",
+  "networkId": "simnet",
+  "mode": "simulated",
+  "workflowId": "wf-golden-basic",
+  "status": "completed",
+  "createdAt": "2026-05-27T00:00:00.000Z",
+  "contentHash": "c550d5aee7ad5affce4b992677239226a8d9b9a5114e7298e7f5da042ee591d7",
+  "steps": [
+    {
+      "type": "plan",
+      "status": "success"
+    }
+  ],
+  "producedArtifacts": [
+    "plan-golden"
+  ]
+}

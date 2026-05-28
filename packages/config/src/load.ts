@@ -7,12 +7,13 @@ import type { LoadedHardkasConfig, HardkasConfig } from "./types";
 export interface LoadHardkasConfigOptions {
   cwd?: string;
   configPath?: string;
+  ambientWorkspace?: boolean;
 }
 
 export async function loadHardkasConfig(
   options: LoadHardkasConfigOptions = {}
 ): Promise<LoadedHardkasConfig> {
-  const cwd = options.cwd ?? process.env.INIT_CWD ?? process.cwd();
+  const cwd = options.cwd ?? (options.ambientWorkspace ? process.env.INIT_CWD : undefined) ?? process.cwd();
   
   if (options.configPath) {
     const absolutePath = path.resolve(cwd, options.configPath);

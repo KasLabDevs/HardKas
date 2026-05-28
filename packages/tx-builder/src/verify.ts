@@ -1,6 +1,14 @@
 import { TxPlan, TxOutput } from "./index.js";
 import { estimateTransactionMass } from "./mass.js";
 
+interface ExtendedPlan extends TxPlan {
+  mode?: string;
+  networkId?: string;
+  planId?: string;
+  contentHash?: string;
+  amountSompi?: string;
+}
+
 export type SemanticVerificationSeverity = "info" | "warning" | "error" | "critical";
 
 export interface SemanticVerificationIssue {
@@ -44,8 +52,9 @@ export function verifyTxPlanSemantics(
   };
 
   // A. Simulation vs Real separation
-  if ((plan as any).mode === "simulated" && (plan as any).networkId !== "simnet") {
-    addIssue("ENV_CONSISTENCY_FAILURE", "error", `Environment mismatch: simulated plan must target 'simnet', but targets '${(plan as any).networkId}'`);
+  const ePlan = plan as ExtendedPlan;
+  if (ePlan.mode === "simulated" && ePlan.networkId !== "simnet") {
+    addIssue("ENV_CONSISTENCY_FAILURE", "error", `Environment mismatch: simulated plan must target 'simnet', but targets '${ePlan.networkId}'`);
   }
 
   // B. Address Integrity
@@ -164,17 +173,20 @@ export function verifySignedTxSemantics(
   };
 
   if (plan) {
-    if (signed.sourcePlanId !== (plan as any).planId && signed.sourcePlanId !== (plan as any).contentHash) {
-       // Note: planId might be contentHash in some versions
+    const ePlan = plan as ExtendedPlan;
+    if (signed.sourcePlanId !== ePlan.planId && signed.sourcePlanId !== ePlan.contentHash) {
+       addIssue("PLAN_ID_MISMATCH", "critical", `Security violation: sourcePlanId mismatch. Signed sourcePlanId is ${signed.sourcePlanId}, but plan is ${ePlan.planId}`);
     }
     
-    if (BigInt(signed.amountSompi) !== BigInt((plan as any).amountSompi)) {
-      addIssue("IMMUTABLE_FIELD_MUTATION", "critical", `Security violation: amountSompi changed from ${(plan as any).amountSompi} to ${signed.amountSompi} after signing`);
+    if (ePlan.amountSompi && BigInt(signed.amountSompi) !== BigInt(ePlan.amountSompi)) {
+      addIssue("IMMUTABLE_FIELD_MUTATION", "critical", `Security violation: amountSompi changed from ${ePlan.amountSompi} to ${signed.amountSompi} after signing`);
     }
     
-    if (signed.networkId !== (plan as any).networkId) {
-      addIssue("NETWORK_MISMATCH", "critical", `Security violation: networkId changed from ${(plan as any).networkId} to ${signed.networkId} after signing`);
+    if (signed.networkId !== ePlan.networkId) {
+      addIssue("NETWORK_MISMATCH", "critical", `Security violation: networkId changed from ${ePlan.networkId} to ${signed.networkId} after signing`);
     }
+  } else {
+    addIssue("PLAN_UNAVAILABLE_FOR_LINEAGE_CHECK", "warning", "Source plan is not available in the workspace; skipping lineage check");
   }
 
   if (!signed.signedTransaction?.payload) {

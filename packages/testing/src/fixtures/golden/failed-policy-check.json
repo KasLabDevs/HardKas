@@ -1,0 +1,14 @@
+{
+  "schema": "hardkas.artifact.v1",
+  "type": "workflow",
+  "artifactId": "art_golden_policy_fail",
+  "producedArtifacts": [],
+  "parentArtifacts": [],
+  "network": "simulated",
+  "createdAt": "2026-05-27T12:01:00Z",
+  "errorEnvelope": {
+    "code": "POLICY_VIOLATION",
+    "message": "Mutation restricted by policy 'requireDryRun'",
+    "redacted": false
+  }
+}

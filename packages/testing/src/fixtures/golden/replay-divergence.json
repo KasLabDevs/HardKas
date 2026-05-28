@@ -1,0 +1,13 @@
+{
+  "schema": "hardkas.artifact.v1",
+  "type": "workflow",
+  "artifactId": "art_golden_replay_div",
+  "producedArtifacts": [],
+  "parentArtifacts": ["art_plan_1"],
+  "network": "simulated",
+  "createdAt": "2026-05-27T12:02:00Z",
+  "replayResult": {
+    "verified": false,
+    "stateHash": "0x1234abcd"
+  }
+}

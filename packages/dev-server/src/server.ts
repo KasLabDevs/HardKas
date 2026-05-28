@@ -13,9 +13,11 @@ import { eventsRoutes } from "./routes/events.js";
 import { accountsRoutes } from "./routes/accounts.js";
 import { transactionsRoutes } from "./routes/transactions.js";
 import { artifactsRoutes } from "./routes/artifacts.js";
-import { streamRoutes } from "./stream.js";
 import { overviewRoutes } from "./routes/overview.js";
 import { observabilityRoutes } from "./routes/observability.js";
+import { dappTxRoutes } from "./routes/dapp-tx.js";
+import { devStatusRoutes } from "./routes/dev-status.js";
+import { streamRoutes } from "./routes/stream.js";
 import { serveStatic } from "@hono/node-server/serve-static";
 import path from "node:path";
 import fs from "node:fs";
@@ -145,7 +147,9 @@ export function createDevServer(config: DevServerConfig) {
   app.route("/api/transactions", transactionsRoutes);
   app.route("/api/artifacts", artifactsRoutes);
   app.route("/api/overview", overviewRoutes);
-  app.route("/api/stream", streamRoutes);
+  app.route("/api/tx", dappTxRoutes);
+  app.route("/api", devStatusRoutes);
+  app.route("/api", streamRoutes);
   app.route("/api", observabilityRoutes);
 
   // Try to find dashboard dist in multiple locations

@@ -19,7 +19,7 @@ export class HardkasStore {
     }
   }
 
-  public connect(options: { autoMigrate?: boolean } = { autoMigrate: false }) {
+  public connect(options: { autoMigrate?: boolean; readOnly?: boolean } = { autoMigrate: false }) {
     if (this.db) return;
 
     if (this.dbPath !== ":memory:") {
@@ -29,15 +29,20 @@ export class HardkasStore {
       }
     }
 
-    this.db = new DatabaseSync(this.dbPath);
-    this.db.exec("PRAGMA foreign_keys = ON;");
-    
-    // Core SQLite tuning
-    this.db.exec("PRAGMA journal_mode = WAL;");
-    this.db.exec("PRAGMA synchronous = FULL;");
-    this.db.exec("PRAGMA foreign_keys = ON;");
+    try {
+      this.db = new DatabaseSync(this.dbPath, { readOnly: options.readOnly });
+      this.db.exec("PRAGMA foreign_keys = ON;");
+      
+      // Core SQLite tuning
+      this.db.exec("PRAGMA journal_mode = WAL;");
+      this.db.exec("PRAGMA synchronous = FULL;");
+      this.db.exec("PRAGMA busy_timeout = 5000;"); // Prevent instant EBUSY crash
+    } catch (err: any) {
+      this.db = null;
+      throw new HardkasError(`Failed to open query projection: ${err.message}`, "PROJECTION_BUSY");
+    }
 
-    if (options.autoMigrate) {
+    if (options.autoMigrate && !options.readOnly) {
       this.initialize();
     }
   }

@@ -1,5 +1,5 @@
 import { Command } from "commander";
-import { UI } from "../ui.js";
+import { UI, handleError } from "../ui.js";
 
 export function registerDevCommands(program: Command) {
   const devCmd = program
@@ -7,11 +7,40 @@ export function registerDevCommands(program: Command) {
     .description("Local development and Igra-native environment tools")
     .option("--once", "Initialize dev environment, run health checks, and exit (headless)", false)
     .option("--headless", "Run headlessly (no UI open)", false)
-    .option("--json", "Output status as JSON", false)
     .action(async (options: any) => {
-      // Default to starting the server or running once
-      const { runDevServer } = await import("../runners/dev-server-runner.js");
-      await runDevServer({ ...options, open: !options.headless });
+      try {
+        const { runDevEnv } = await import("../runners/dev-env-runner.js");
+        await runDevEnv(options);
+      } catch (e) {
+        handleError(e, "Dev environment bootstrap failed");
+        process.exitCode = 1;
+      }
+    });
+
+  devCmd
+    .command("create <name>")
+    .description(`Create a new dApp project from a template ${UI.maturity("stable")}`)
+    .action(async (name: string) => {
+      try {
+        const { runDevCreate } = await import("../runners/dev-create-runner.js");
+        await runDevCreate(name);
+      } catch (e) {
+        handleError(e, "Dev create failed");
+        process.exitCode = 1;
+      }
+    });
+
+  devCmd
+    .command("init")
+    .description(`Initialize dApp support in the current workspace ${UI.maturity("stable")}`)
+    .action(async () => {
+      try {
+        const { runDevInit } = await import("../runners/dev-init-runner.js");
+        await runDevInit();
+      } catch (e) {
+        handleError(e, "Dev init failed");
+        process.exitCode = 1;
+      }
     });
 
   devCmd
@@ -21,10 +50,17 @@ export function registerDevCommands(program: Command) {
     .option("--rpc-url <url>", "Explicit Igra RPC URL to check")
     .option("--account <name>", "Local EVM account name to verify balance")
     .option("--timeout <ms>", "RPC timeout in milliseconds", "3000")
-    .option("--json", "Output as JSON", false)
+    .option("--json", "Output as JSON")
+    .option("--release", "Run strict release gate checks")
     .action(async (options: any) => {
-      const { runDevDoctor } = await import("../runners/dev-doctor-runner.js");
-      await runDevDoctor(options);
+      try {
+
+        const { runDevDoctor } = await import("../runners/dev-doctor-runner.js");
+        await runDevDoctor(options);
+      } catch (e) {
+        handleError(e, "Dev doctor failed");
+        process.exitCode = 1;
+      }
     });
 
   devCmd
@@ -37,7 +73,12 @@ export function registerDevCommands(program: Command) {
     .option("--show-token", "Show the generated API session token for manual script integration", false)
     .option("--json", "Output status as JSON", false)
     .action(async (options: any) => {
-      const { runDevServer } = await import("../runners/dev-server-runner.js");
-      await runDevServer(options);
+      try {
+        const { runDevServer } = await import("../runners/dev-server-runner.js");
+        await runDevServer(options);
+      } catch (e) {
+        handleError(e, "Dev server failed");
+        process.exitCode = 1;
+      }
     });
 }

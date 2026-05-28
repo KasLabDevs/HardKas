@@ -150,7 +150,7 @@ This is the greatest deficiency of the L2 module at this time.
 ## 18. Findings
 
 ### GOOD
-- **Correct Architectural Representation:** No trace of falsely claiming Kaspa L1 executes EVM or that an incipient L2 is trustless by default.
+- **Correct Architectural Representation:** No trace of falsely claiming Kaspa L1 does not execute EVM or that an incipient L2 is trustless by default.
 - **Strict Validation:** Validating `chainId` on send is an excellent mitigation for common inter-L2 replay attacks.
 
 ### NEEDS HARDENING

@@ -36,4 +36,6 @@ export { AdversarialFixtures } from "./adversarial-fixtures.js";
 export type { TortureCaseResult, TortureBucketContext, TortureBucket } from "./torture/torture-engine.js";
 export { LcgPrng, getAllTortureBuckets, getTortureBucket, TortureInvariantError } from "./torture/torture-engine.js";
 import "./torture/buckets.js";
+import "./torture/local-buckets.js";
+import "./torture/corruption-buckets.js";
 

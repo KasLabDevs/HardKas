@@ -7,12 +7,14 @@ import {
 export interface AccountsRealShowOptions {
   name: string;
   showPrivate?: boolean;
+  workspaceRoot?: string;
 }
 
 export async function runAccountsRealShow(options: AccountsRealShowOptions): Promise<{
   formatted: string;
 }> {
-  const store = await loadRealAccountStore();
+  const cwd = options.workspaceRoot || process.cwd();
+  const store = await loadRealAccountStore({ cwd });
   const account = store ? getRealDevAccount(store, options.name) : null;
   
   if (!account) {

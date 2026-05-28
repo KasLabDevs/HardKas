@@ -1,0 +1,35 @@
+{
+  "schema": "hardkas.txPlan",
+  "schemaVersion": "hardkas.artifact.v1",
+  "hardkasVersion": "1.0.0-alpha",
+  "version": "1.0.0-alpha",
+  "networkId": "simnet",
+  "mode": "simulated",
+  "planId": "plan-golden-explain",
+  "from": {
+    "address": "kaspatest:qqgolden1"
+  },
+  "to": {
+    "address": "kaspatest:qqgolden2"
+  },
+  "amountSompi": "50000000",
+  "estimatedFeeSompi": "5000",
+  "estimatedMass": "2000",
+  "inputs": [
+    {
+      "outpoint": {
+        "transactionId": "prev123",
+        "index": 0
+      },
+      "amountSompi": "50005000"
+    }
+  ],
+  "outputs": [
+    {
+      "address": "kaspatest:qqgolden2",
+      "amountSompi": "50000000"
+    }
+  ],
+  "createdAt": "2026-05-27T00:00:00.000Z",
+  "contentHash": "c550d5aee7ad5affce4b992677239226a8d9b9a5114e7298e7f5da042ee591d7"
+}

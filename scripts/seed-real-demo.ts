@@ -85,6 +85,7 @@ async function run() {
         timestamp: now,
         data
       };
+      // hardkas-append-allow
       fs.appendFileSync(ledgerPath, JSON.stringify(eventDoc) + "\n");
     };
 

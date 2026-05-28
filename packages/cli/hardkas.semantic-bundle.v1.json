@@ -1,14 +1,15 @@
 {
   "schemaVersion": "hardkas.semantic-bundle.v1",
-  "runtimeVersion": "0.6.1-alpha",
+  "runtimeVersion": "0.7.0-alpha",
   "hashVersion": "sha256",
   "invariantSummary": {
-    "totalChecks": 9940,
-    "passedChecks": 9940,
-    "failedChecks": 0
+    "totalChecks": 10562,
+    "passedChecks": 10545,
+    "failedChecks": 17
   },
   "statusSummary": {
-    "pass": 9940
+    "pass": 10545,
+    "fail": 17
   },
   "artifacts": [
     {
@@ -7648,5 +7649,5 @@
     "osLockTiming",
     "fsMtimes"
   ],
-  "globalSemanticHash": "8dd416c8aa40c69d414a3e3e3b81fc3c043924be763b15a2efe6a1617e4d989c"
+  "globalSemanticHash": "f63f3b8ef9d09867d340cabd9c7600a770fac9959538d958c24840d4c7ef6427"
 }

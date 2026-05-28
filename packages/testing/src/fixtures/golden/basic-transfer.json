@@ -1,0 +1,9 @@
+{
+  "schema": "hardkas.artifact.v1",
+  "type": "workflow",
+  "artifactId": "art_golden_transfer_123",
+  "producedArtifacts": ["art_plan_1", "art_signed_1", "art_receipt_1"],
+  "parentArtifacts": [],
+  "network": "simulated",
+  "createdAt": "2026-05-27T12:00:00Z"
+}

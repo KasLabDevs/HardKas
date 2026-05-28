@@ -1,0 +1,14 @@
+{
+  "schemaVersion": "hardkas.artifactInspect.v1",
+  "ok": true,
+  "artifact": {
+    "id": "plan-golden-explain",
+    "path": "mock/path/plan-golden-explain.json",
+    "type": "hardkas.txPlan",
+    "canonicalHash": "c550d5aee7ad5affce4b992677239226a8d9b9a5114e7298e7f5da042ee591d7",
+    "receiptRef": "undefined.receipt.json",
+    "replayability": "supported"
+  },
+  "warnings": [],
+  "errors": []
+}

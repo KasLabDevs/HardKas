@@ -8,6 +8,10 @@ coverage
 *.log
 # HardKAS Local-only
 .hardkas/
+.hardkas-*/
+.crash-workspace/
+demo-workspace/
+fix-*.js
 scratch/
 temp-artifacts/
 test-artifacts/

@@ -10,13 +10,15 @@ export interface AccountsRealBalanceOptions {
   name: string;
   network?: "simnet" | "testnet-10" | "mainnet";
   url?: string;
+  workspaceRoot?: string;
 }
 
 export async function runAccountsRealBalance(options: AccountsRealBalanceOptions): Promise<{
   balanceSompi: bigint;
   formatted: string;
 }> {
-  const store = await loadRealAccountStore();
+  const cwd = options.workspaceRoot || process.cwd();
+  const store = await loadRealAccountStore({ cwd });
   const account = store ? getRealDevAccount(store, options.name) : null;
   
   if (!account) {
