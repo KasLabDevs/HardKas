@@ -9,12 +9,12 @@ export function registerReplayCommands(program: Command) {
     .description(`Verify replay invariants for a directory of artifacts ${UI.maturity("stable")}`)
     .option("--json", "Output as JSON", false)
     .option("--workspace <path>", "Override workspace root directory")
-    .action(async (path: string | undefined, options: any) => {
-      if (!path) path = ".";
+    .action(async (targetPath: string | undefined, options: any) => {
+      if (!targetPath) targetPath = ".";
       try {
         const { runReplayVerify } = await import("../runners/replay-verify-runner.js");
         const workspaceRoot = options.workspace ? path.resolve(options.workspace) : process.cwd();
-        await runReplayVerify({ path, ...options, workspaceRoot });
+        await runReplayVerify({ path: targetPath, ...options, workspaceRoot });
       } catch (e: any) {
         handleError(e);
         process.exitCode = 1;

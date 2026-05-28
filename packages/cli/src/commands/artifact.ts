@@ -30,10 +30,10 @@ export function registerArtifactCommands(program: Command) {
     .option("--recursive", "Recursively verify all artifacts in a directory", false)
     .option("--strict", "Perform deep semantic and operational safety verification", false)
     .option("--workspace <path>", "Override workspace root directory")
-    .action(async (path: string, options: any) => {
+    .action(async (targetPath: string, options: any) => {
       try {
         const workspaceRoot = options.workspace ? path.resolve(options.workspace) : process.cwd();
-        await runArtifactVerify({ path, ...options, workspaceRoot });
+        await runArtifactVerify({ path: targetPath, ...options, workspaceRoot });
       } catch (e) {
         handleError(e);
         process.exitCode = 1;
@@ -45,10 +45,10 @@ export function registerArtifactCommands(program: Command) {
     .description(`Provide a human-readable operational summary of an artifact ${UI.maturity("stable")}`)
     .option("--json", "Output as JSON", false)
     .option("--workspace <path>", "Override workspace root directory")
-    .action(async (path: string, options: any) => {
+    .action(async (targetPath: string, options: any) => {
       try {
         const workspaceRoot = options.workspace ? path.resolve(options.workspace) : process.cwd();
-        await runArtifactExplain({ path, ...options, workspaceRoot });
+        await runArtifactExplain({ path: targetPath, ...options, workspaceRoot });
       } catch (e) {
         handleError(e);
         process.exitCode = 1;
@@ -60,11 +60,11 @@ export function registerArtifactCommands(program: Command) {
     .description(`Show the provenance and operational history of an artifact ${UI.maturity("stable")}`)
     .option("--json", "Output as JSON", false)
     .option("--workspace <path>", "Override workspace root directory")
-    .action(async (path: string, options: any) => {
+    .action(async (targetPath: string, options: any) => {
       try {
         const { runArtifactLineage } = await import("../runners/artifact-lineage-runner.js");
         const workspaceRoot = options.workspace ? path.resolve(options.workspace) : process.cwd();
-        await runArtifactLineage({ path, workspaceRoot, ...options });
+        await runArtifactLineage({ path: targetPath, workspaceRoot, ...options });
       } catch (e) {
         handleError(e);
         process.exitCode = 1;
