@@ -50,7 +50,7 @@ export async function getOrCreateDevAccount(
   let sdk;
   try {
     // @ts-ignore
-    sdk = await import("@kaspa/core-lib");
+    sdk = await import(/* @vite-ignore */ "@kaspa/core-lib");
   } catch (e) {
     console.warn(`\n[Warning] Kaspa SDK (@kaspa/core-lib) is not installed in the workspace.\nCould not generate dev account '${alias}'.`);
     return { address: "", privateKey: "", publicKey: "" };

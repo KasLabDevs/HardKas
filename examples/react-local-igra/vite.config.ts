@@ -12,6 +12,7 @@ export default defineConfig({
         'os',
         'fs/promises',
         'kaspa',
+        '@kaspa/core-lib',
         'node:fs',
         'node:path',
         'node:crypto',
