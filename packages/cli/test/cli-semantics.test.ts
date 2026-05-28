@@ -55,7 +55,7 @@ describe("CLI Semantic Constraints", () => {
     const wsDir = path.join(tmpDir, "my-workspace");
     fs.mkdirSync(wsDir);
     fs.writeFileSync(path.join(wsDir, "hardkas.config.js"), `
-      module.exports = { default: { network: "kaspa-testnet-10" } };
+      export default { defaultNetwork: "kaspa-testnet-10" };
     `);
 
     const res = run(["config", "show", "--config", "my-workspace/hardkas.config.js", "--json"]);
@@ -65,7 +65,7 @@ describe("CLI Semantic Constraints", () => {
   });
 
   it("errors in JSON mode go strictly to stderr", () => {
-    const res = run(["tx", "plan", "--json"]); // missing required args
+    const res = run(["tx", "receipt", "--json"]); // missing required <txId> arg
     expect(res.status).toBe(1);
     // stdout should be empty because we never got far enough to print JSON or it was killed
     expect(res.stdout.trim()).toBe("");

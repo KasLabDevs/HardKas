@@ -276,6 +276,8 @@ async function duplicateArtifactRegression(workspace: string, cliPath: string) {
   const doc = await execa("node", [cliPath, "dev", "doctor", "--json"], { cwd: workspace, reject: false });
 
   if (doc.exitCode === 0) {
+    console.error("DEV DOCTOR STDOUT:", doc.stdout);
+    console.error("DEV DOCTOR STDERR:", doc.stderr);
     throw new Error("Doctor reported OK despite 4 categories of artifact corruption!");
   }
 

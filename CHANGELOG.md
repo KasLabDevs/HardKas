@@ -2,6 +2,29 @@
 
 All notable changes to HardKAS will be documented in this file.
 
+## [v0.7.0-alpha] - 2026-05-27
+
+### Stabilization & Refactor
+This release focuses on cleaning, consolidating, versioning, and stabilizing the local-first runtime to prepare HardKAS for `0.7.0-alpha`. No new product architectures or fake executions were added. The focus remains on being a local-first, artifact-driven, deterministic, and replayable developer environment.
+
+#### Version Alignment & Documentation
+- **0.7.0-alpha:** Unified all package versions and references to `0.7.0-alpha`. Removed stale `0.6.1-alpha` and `0.7.0-CFC` references.
+- **Honest Documentation:** Aggressively purged unsupported claims (e.g., "production ready", "trustless exit without ZK", "Kaspa L1 executes EVM"). Re-centered the messaging strictly around HardKAS being a "local-first reproducible Kaspa developer runtime."
+
+#### Runtime Contract Freeze
+- **Schema Versions:** Injected `schemaVersion` fields into all core runtime contracts (`hardkas.artifact.v1`, `hardkas.receipt.v1`, `hardkas.txPlan.v1`, etc.) to establish a stable structural baseline.
+- **Backwards Compatibility:** Maintained compatibility for older workspaces without `schemaVersion`.
+
+#### CLI Semantics
+- **JSON Standardization:** Audited and tightened CLI commands in `--json` mode to guarantee pure, parsable JSON to `stdout` with no ANSI escapes.
+- **Error Routing:** Enforced strict routing of warnings and diagnostic errors to `stderr` in JSON mode.
+- **Exit Codes:** Ensured deterministic exit codes for invalid flags, missing arguments, and unsupported commands.
+
+#### Artifacts & Corpus
+- **Golden Corpus:** Populated `packages/testing/src/fixtures/golden/` with baseline JSON files representing minimum required fixtures to prevent semantic regressions.
+- **Output Standardization:** Adjusted `hardkas artifact inspect`, `hardkas replay verify`, and `hardkas torture matrix` string outputs to be fully deterministic (`passed`, `diverged`, `unsupported`).
+
+
 ## [v0.5.6-alpha-rc.1] - 2026-05-22
 
 ### Architecture (P0 & P1 Series)

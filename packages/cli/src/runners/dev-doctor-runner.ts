@@ -83,66 +83,77 @@ export async function runDevDoctor(options: {
                  }
                }
                checks.push({ name: "Append Integrity", status: "success", message: "events.jsonl tail is valid" });
-               // Sweep the artifacts directory for duplicates
-               const files = fs.readdirSync(artifactDir);
-               const idToHash = new Map<string, { hash: string, path: string }>();
-               const hashToId = new Map<string, { id: string, path: string }>();
-               let corruptionFound = false;
-
-               for (const f of files) {
-                 if (!f.endsWith(".json")) continue;
-                 const fullPath = path.join(artifactDir, f);
-                 try {
-                   const raw = fs.readFileSync(fullPath, "utf-8");
-                   const parsed = JSON.parse(raw);
-                   const id = parsed.id;
-                   const hash = parsed.canonicalHash;
-                   
-                   if (!id || !hash) {
-                     checks.push({ name: "Artifact Structure", status: "error", message: `Missing id or hash in ${f}`, code: "MALFORMED_ARTIFACT", suggestion: "Remove or quarantine the malformed artifact.", details: { paths: [fullPath] } });
-                     finalStatus = "failed";
-                     corruptionFound = true;
-                     continue;
-                   }
-
-                   if (idToHash.has(id)) {
-                     const existing = idToHash.get(id)!;
-                     if (existing.hash === hash) {
-                        checks.push({ name: "Duplicate Artifact", status: "error", message: `Duplicate artifact detected. Canonical artifacts are authoritative; projections must not be rebuilt until this is resolved.`, code: "DUPLICATE_ARTIFACT_ID", suggestion: "Remove the duplicate artifact file or quarantine it, then rebuild projections.", details: { artifactId: id, paths: [existing.path, fullPath], hashes: [hash] } });
-                     } else {
-                        checks.push({ name: "Artifact Conflict", status: "error", message: `Artifact ID collision with different hashes. Canonical artifacts are authoritative; projections must not be rebuilt until this is resolved.`, code: "ARTIFACT_ID_HASH_CONFLICT", suggestion: "Remove the conflicting artifact file or quarantine it, then rebuild projections.", details: { artifactId: id, paths: [existing.path, fullPath], hashes: [existing.hash, hash] } });
-                     }
-                     finalStatus = "failed";
-                     corruptionFound = true;
-                   }
-
-                   if (hashToId.has(hash)) {
-                     const existing = hashToId.get(hash)!;
-                     if (existing.id !== id) {
-                        checks.push({ name: "Hash Collision", status: "error", message: `Different artifact IDs share the exact same hash. Canonical artifacts are authoritative; projections must not be rebuilt until this is resolved.`, code: "DUPLICATE_ARTIFACT_HASH", suggestion: "Remove the duplicate artifact file or quarantine it, then rebuild projections.", details: { artifactId: id, paths: [existing.path, fullPath], hashes: [hash] } });
-                        finalStatus = "failed";
-                        corruptionFound = true;
-                     }
-                   }
-
-                   idToHash.set(id, { hash, path: fullPath });
-                   hashToId.set(hash, { id, path: fullPath });
-                 } catch (err: any) {
-                   checks.push({ name: "Artifact Parse", status: "error", message: `Malformed JSON in ${f}. Canonical artifacts are authoritative; projections must not be rebuilt until this is resolved.`, code: "MALFORMED_ARTIFACT", suggestion: "Remove or quarantine the malformed artifact.", details: { paths: [fullPath] } });
-                   finalStatus = "failed";
-                   corruptionFound = true;
-                 }
-               }
-               
-               if (!corruptionFound) {
-                 checks.push({ name: "Artifact Corruption", status: "success", message: "No corrupted or duplicate artifacts detected" });
-               }
            } else {
                checks.push({ name: "Append Integrity", status: "success", message: "No events yet" });
-               checks.push({ name: "Artifact Corruption", status: "success", message: "No artifacts yet" });
            }
         } catch (e: any) {
            checks.push({ name: "Append Integrity", status: "error", message: "events.jsonl tail corruption detected", code: "APPEND_CORRUPTION", suggestion: "Run 'hardkas repair --tail' to truncate the corrupted events.jsonl suffix." });
+           finalStatus = "failed";
+        }
+
+        // Sweep the artifacts directory for duplicates
+        try {
+           const files = fs.readdirSync(artifactDir);
+           const idToHash = new Map<string, { hash: string, path: string }>();
+           const hashToId = new Map<string, { id: string, path: string }>();
+           let corruptionFound = false;
+           let checkedFiles = 0;
+
+           for (const f of files) {
+             if (!f.endsWith(".json")) continue;
+             if (f === "events.jsonl") continue;
+             checkedFiles++;
+             const fullPath = path.join(artifactDir, f);
+             try {
+               const raw = fs.readFileSync(fullPath, "utf-8");
+               const parsed = JSON.parse(raw);
+               const id = parsed.id;
+               const hash = parsed.canonicalHash;
+               
+               if (!id || !hash) {
+                 checks.push({ name: "Artifact Structure", status: "error", message: `Missing id or hash in ${f}`, code: "MALFORMED_ARTIFACT", suggestion: "Remove or quarantine the malformed artifact.", details: { paths: [fullPath] } });
+                 finalStatus = "failed";
+                 corruptionFound = true;
+                 continue;
+               }
+
+               if (idToHash.has(id)) {
+                 const existing = idToHash.get(id)!;
+                 if (existing.hash === hash) {
+                    checks.push({ name: "Duplicate Artifact", status: "error", message: `Duplicate artifact detected. Canonical artifacts are authoritative; projections must not be rebuilt until this is resolved.`, code: "DUPLICATE_ARTIFACT_ID", suggestion: "Remove the duplicate artifact file or quarantine it, then rebuild projections.", details: { artifactId: id, paths: [existing.path, fullPath], hashes: [hash] } });
+                 } else {
+                    checks.push({ name: "Artifact Conflict", status: "error", message: `Artifact ID collision with different hashes. Canonical artifacts are authoritative; projections must not be rebuilt until this is resolved.`, code: "ARTIFACT_ID_HASH_CONFLICT", suggestion: "Remove the conflicting artifact file or quarantine it, then rebuild projections.", details: { artifactId: id, paths: [existing.path, fullPath], hashes: [existing.hash, hash] } });
+                 }
+                 finalStatus = "failed";
+                 corruptionFound = true;
+               }
+
+               if (hashToId.has(hash)) {
+                 const existing = hashToId.get(hash)!;
+                 if (existing.id !== id) {
+                    checks.push({ name: "Hash Collision", status: "error", message: `Different artifact IDs share the exact same hash. Canonical artifacts are authoritative; projections must not be rebuilt until this is resolved.`, code: "DUPLICATE_ARTIFACT_HASH", suggestion: "Remove the duplicate artifact file or quarantine it, then rebuild projections.", details: { artifactId: id, paths: [existing.path, fullPath], hashes: [hash] } });
+                    finalStatus = "failed";
+                    corruptionFound = true;
+                 }
+               }
+
+               idToHash.set(id, { hash, path: fullPath });
+               hashToId.set(hash, { id, path: fullPath });
+             } catch (err: any) {
+               checks.push({ name: "Artifact Parse", status: "error", message: `Malformed JSON in ${f}. Canonical artifacts are authoritative; projections must not be rebuilt until this is resolved.`, code: "MALFORMED_ARTIFACT", suggestion: "Remove or quarantine the malformed artifact.", details: { paths: [fullPath] } });
+               finalStatus = "failed";
+               corruptionFound = true;
+             }
+           }
+           
+           if (!corruptionFound) {
+             if (checkedFiles === 0) {
+                checks.push({ name: "Artifact Corruption", status: "success", message: "No artifacts yet" });
+             } else {
+                checks.push({ name: "Artifact Corruption", status: "success", message: "No corrupted or duplicate artifacts detected" });
+             }
+           }
+        } catch (e: any) {
            checks.push({ name: "Artifact Corruption", status: "error", message: "Corrupted artifacts detected", code: "ARTIFACT_CORRUPTION", suggestion: "Run 'hardkas verify --strict' to identify and quarantine corrupted artifacts." });
            finalStatus = "failed";
         }
