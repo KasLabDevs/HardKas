@@ -23,7 +23,7 @@ describe("Benchmark Suite", () => {
 
     const ITERATIONS = 500;
     for (let i = 0; i < ITERATIONS; i++) {
-      const payload = JSON.stringify({ benchId: i, time: Date.now() }) + "\\n";
+      const payload = JSON.stringify({ benchId: i, time: Date.now() }) + "\n";
       AppendCoordinator.appendAtomic(eventsFile, payload, workspaceDir);
     }
 
