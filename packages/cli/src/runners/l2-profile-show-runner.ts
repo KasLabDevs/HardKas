@@ -33,8 +33,12 @@ export async function runL2ProfileShow(options: L2ProfileShowOptions): Promise<v
   console.log(`Source:      ${profile.source}`);
   console.log(`Display:     ${profile.displayName}`);
   console.log(`Type:        ${profile.type}`);
-  console.log(`Settlement:  ${profile.settlementLayer === "kaspa" ? "Kaspa L1" : profile.settlementLayer}`);
-  console.log(`Execution:   ${profile.executionLayer === "evm" ? "EVM L2" : profile.executionLayer}`);
+  console.log(
+    `Settlement:  ${profile.settlementLayer === "kaspa" ? "Kaspa L1" : profile.settlementLayer}`
+  );
+  console.log(
+    `Execution:   ${profile.executionLayer === "evm" ? "EVM L2" : profile.executionLayer}`
+  );
   console.log(`Chain ID:    ${profile.chainId || "unknown"}`);
   console.log(`RPC URL:     ${profile.rpcUrl || "unknown"}`);
   console.log(`Gas token:   ${profile.gasToken}`);

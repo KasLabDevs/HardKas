@@ -1,11 +1,11 @@
 import React from "react";
 import { NavLink } from "react-router-dom";
-import { 
-  LayoutDashboard, 
-  Users, 
-  ArrowLeftRight, 
-  Package, 
-  RotateCw, 
+import {
+  LayoutDashboard,
+  Users,
+  ArrowLeftRight,
+  Package,
+  RotateCw,
   Wallet,
   Activity,
   Box,
@@ -77,17 +77,19 @@ export function Sidebar() {
             key={link.to}
             to={link.to}
             end={link.to === "/"}
-            className={({ isActive }) => 
+            className={({ isActive }) =>
               `flex items-center justify-between px-4 py-2.5 rounded-xl text-xs font-semibold transition-all duration-200 group border cursor-pointer nav-link ${
                 isActive ? "active" : ""
               }`
             }
           >
             <div className="flex items-center gap-3">
-              <span className="group-hover:scale-105 transition-transform">{link.icon}</span>
+              <span className="group-hover:scale-105 transition-transform">
+                {link.icon}
+              </span>
               <span>{link.label}</span>
             </div>
-            
+
             {link.badge !== null && (
               <span className="text-[10px] font-mono font-bold bg-zinc-800/80 border border-zinc-700/50 text-zinc-400 px-2 py-0.5 rounded-full shrink-0 group-hover:border-zinc-600 transition-colors">
                 {link.badge}
@@ -101,7 +103,7 @@ export function Sidebar() {
       <div className="p-4 border-t border-[var(--border-muted)] bg-zinc-950/20">
         <div className="flex items-center gap-2 text-[10px] text-zinc-500 font-mono">
           <Activity size={12} className="text-zinc-500 animate-pulse" />
-          <span>v0.7.3-alpha</span>
+          <span>v0.7.4-alpha</span>
         </div>
       </div>
     </aside>

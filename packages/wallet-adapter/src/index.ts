@@ -32,7 +32,9 @@ export interface KaspaWalletAdapter {
   readonly installed: boolean;
   readonly features: readonly WalletFeature[];
 
-  connect(options?: { networkId?: NetworkId | undefined } | undefined): Promise<KaspaWalletAccount>;
+  connect(
+    options?: { networkId?: NetworkId | undefined } | undefined
+  ): Promise<KaspaWalletAccount>;
   disconnect(): Promise<void>;
 
   getAccount(): Promise<KaspaWalletAccount | null>;
@@ -40,9 +42,7 @@ export interface KaspaWalletAdapter {
 
   signTransaction(tx: KaspaUnsignedTransaction): Promise<KaspaSignedTransaction>;
 
-  signAndSubmitTransaction?(
-    tx: KaspaUnsignedTransaction
-  ): Promise<{ txId: string }>;
+  signAndSubmitTransaction?(tx: KaspaUnsignedTransaction): Promise<{ txId: string }>;
 
   signMessage?(message: Uint8Array): Promise<{ signature: Uint8Array }>;
 

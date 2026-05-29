@@ -8,64 +8,87 @@ export async function dappReactTemplate(targetDir: string, projectName: string) 
     fs.writeFileSync(fullPath, content.trim() + "\n", "utf-8");
   };
 
-  writeFile("package.json", JSON.stringify({
-    name: projectName,
-    version: "0.1.0",
-    type: "module",
-    scripts: {
-      "dev": "vite",
-      "build": "tsc && vite build",
-      "preview": "vite preview"
-    },
-    dependencies: {
-      "react": "^18.2.0",
-      "react-dom": "^18.2.0",
-      "@hardkas/sdk": "workspace:*" // Placeholder, actual installation will resolve to latest
-    },
-    devDependencies: {
-      "@types/react": "^18.2.66",
-      "@types/react-dom": "^18.2.22",
-      "@vitejs/plugin-react": "^4.2.1",
-      "typescript": "^5.2.2",
-      "vite": "^5.2.0"
-    }
-  }, null, 2));
+  writeFile(
+    "package.json",
+    JSON.stringify(
+      {
+        name: projectName,
+        version: "0.1.0",
+        type: "module",
+        scripts: {
+          dev: "vite",
+          build: "tsc && vite build",
+          preview: "vite preview"
+        },
+        dependencies: {
+          react: "^18.2.0",
+          "react-dom": "^18.2.0",
+          "@hardkas/sdk": "workspace:*" // Placeholder, actual installation will resolve to latest
+        },
+        devDependencies: {
+          "@types/react": "^18.2.66",
+          "@types/react-dom": "^18.2.22",
+          "@vitejs/plugin-react": "^4.2.1",
+          typescript: "^5.2.2",
+          vite: "^5.2.0"
+        }
+      },
+      null,
+      2
+    )
+  );
 
-  writeFile("tsconfig.json", JSON.stringify({
-    compilerOptions: {
-      target: "ES2020",
-      useDefineForClassFields: true,
-      lib: ["ES2020", "DOM", "DOM.Iterable"],
-      module: "ESNext",
-      skipLibCheck: true,
-      moduleResolution: "bundler",
-      allowImportingTsExtensions: true,
-      resolveJsonModule: true,
-      isolatedModules: true,
-      noEmit: true,
-      jsx: "react-jsx",
-      strict: true,
-      noUnusedLocals: true,
-      noUnusedParameters: true,
-      noFallthroughCasesInSwitch: true
-    },
-    include: ["src"],
-    references: [{ path: "./tsconfig.node.json" }]
-  }, null, 2));
+  writeFile(
+    "tsconfig.json",
+    JSON.stringify(
+      {
+        compilerOptions: {
+          target: "ES2020",
+          useDefineForClassFields: true,
+          lib: ["ES2020", "DOM", "DOM.Iterable"],
+          module: "ESNext",
+          skipLibCheck: true,
+          moduleResolution: "bundler",
+          allowImportingTsExtensions: true,
+          resolveJsonModule: true,
+          isolatedModules: true,
+          noEmit: true,
+          jsx: "react-jsx",
+          strict: true,
+          noUnusedLocals: true,
+          noUnusedParameters: true,
+          noFallthroughCasesInSwitch: true
+        },
+        include: ["src"],
+        references: [{ path: "./tsconfig.node.json" }]
+      },
+      null,
+      2
+    )
+  );
 
-  writeFile("tsconfig.node.json", JSON.stringify({
-    compilerOptions: {
-      composite: true,
-      skipLibCheck: true,
-      module: "ESNext",
-      moduleResolution: "bundler",
-      allowSyntheticDefaultImports: true,
-      strict: true
-    },
-    include: ["vite.config.ts"]
-  }, null, 2));
+  writeFile(
+    "tsconfig.node.json",
+    JSON.stringify(
+      {
+        compilerOptions: {
+          composite: true,
+          skipLibCheck: true,
+          module: "ESNext",
+          moduleResolution: "bundler",
+          allowSyntheticDefaultImports: true,
+          strict: true
+        },
+        include: ["vite.config.ts"]
+      },
+      null,
+      2
+    )
+  );
 
-  writeFile("vite.config.ts", `
+  writeFile(
+    "vite.config.ts",
+    `
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 
@@ -83,9 +106,12 @@ export default defineConfig({
     }
   }
 })
-`);
+`
+  );
 
-  writeFile("index.html", `
+  writeFile(
+    "index.html",
+    `
 <!doctype html>
 <html lang="en">
   <head>
@@ -108,9 +134,12 @@ export default defineConfig({
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
-`);
+`
+  );
 
-  writeFile("src/main.tsx", `
+  writeFile(
+    "src/main.tsx",
+    `
 import React from 'react'
 import ReactDOM from 'react-dom/client'
 import App from './App.tsx'
@@ -120,9 +149,12 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
     <App />
   </React.StrictMode>,
 )
-`);
+`
+  );
 
-  writeFile("src/hardkas/client.ts", `
+  writeFile(
+    "src/hardkas/client.ts",
+    `
 import { createHardkasClient } from "@hardkas/sdk";
 
 // Initialize the local/dev facade targeting the HardKAS Dev Server
@@ -130,9 +162,12 @@ export const client = createHardkasClient({
   baseUrl: "http://localhost:7420",
   network: "simulated"
 });
-`);
+`
+  );
 
-  writeFile("src/App.tsx", `
+  writeFile(
+    "src/App.tsx",
+    `
 import React, { useState, useEffect } from 'react';
 import { client } from './hardkas/client';
 import LocalnetStatus from './components/LocalnetStatus';
@@ -167,9 +202,12 @@ function App() {
 }
 
 export default App;
-`);
+`
+  );
 
-  writeFile("src/components/LocalnetStatus.tsx", `
+  writeFile(
+    "src/components/LocalnetStatus.tsx",
+    `
 import React, { useState, useEffect } from 'react';
 import { client } from '../hardkas/client';
 
@@ -191,9 +229,12 @@ export default function LocalnetStatus() {
     </div>
   );
 }
-`);
+`
+  );
 
-  writeFile("src/components/AccountPanel.tsx", `
+  writeFile(
+    "src/components/AccountPanel.tsx",
+    `
 import React, { useState, useEffect } from 'react';
 import { client } from '../hardkas/client';
 
@@ -217,9 +258,12 @@ export default function AccountPanel() {
     </div>
   );
 }
-`);
+`
+  );
 
-  writeFile("src/components/TxWorkflowDemo.tsx", `
+  writeFile(
+    "src/components/TxWorkflowDemo.tsx",
+    `
 import React, { useState } from 'react';
 import { client } from '../hardkas/client';
 
@@ -281,9 +325,12 @@ export default function TxWorkflowDemo() {
     </div>
   );
 }
-`);
+`
+  );
 
-  writeFile("src/components/SessionTimelineScrubber.tsx", `
+  writeFile(
+    "src/components/SessionTimelineScrubber.tsx",
+    `
 import React, { useState } from 'react';
 import { client } from '../hardkas/client';
 
@@ -372,9 +419,12 @@ export default function SessionTimelineScrubber() {
     </div>
   );
 }
-`);
+`
+  );
 
-  writeFile("src/components/ArtifactViewer.tsx", `
+  writeFile(
+    "src/components/ArtifactViewer.tsx",
+    `
 import React, { useState, useEffect } from 'react';
 import { client } from '../hardkas/client';
 
@@ -479,9 +529,12 @@ export default function ArtifactViewer() {
     </div>
   );
 }
-`);
+`
+  );
 
-  writeFile("src/components/IgraReadOnlyPanel.tsx", `
+  writeFile(
+    "src/components/IgraReadOnlyPanel.tsx",
+    `
 import React from 'react';
 
 export default function IgraReadOnlyPanel() {
@@ -496,14 +549,20 @@ export default function IgraReadOnlyPanel() {
     </div>
   );
 }
-`);
+`
+  );
 
-  writeFile(".env.example", `
+  writeFile(
+    ".env.example",
+    `
 # Example environment variables
 VITE_HARDKAS_NETWORK=simulated
-`);
+`
+  );
 
-  writeFile("hardkas.config.ts", `
+  writeFile(
+    "hardkas.config.ts",
+    `
 import { defineHardkasConfig } from "@hardkas/sdk";
 
 export default defineHardkasConfig({
@@ -525,9 +584,12 @@ export default defineHardkasConfig({
     }
   }
 });
-`);
+`
+  );
 
-  writeFile("README.md", `
+  writeFile(
+    "README.md",
+    `
 # ${projectName}
 
 Bootstrapped with \`hardkas dev create\`.
@@ -554,6 +616,6 @@ Bootstrapped with \`hardkas dev create\`.
 - **L1 Boundary:** Kaspa L1 does not execute EVM.
 - **Source of Truth:** Artifacts on disk are the canonical source of truth. The dev-server and SQLite DB are projections.
 - **Igra L2:** Any L2 interaction is experimental/read-only. Trustless exit must not be assumed without ZK verifiers.
-`);
-
+`
+  );
 }

@@ -10,7 +10,9 @@ export interface NodeRestartRunnerResult {
   formatted: string;
 }
 
-export async function runNodeRestart(input: NodeRestartRunnerInput): Promise<NodeRestartRunnerResult> {
+export async function runNodeRestart(
+  input: NodeRestartRunnerInput
+): Promise<NodeRestartRunnerResult> {
   const runner = new DockerKaspadRunner({
     ...(input.containerName ? { containerName: input.containerName } : {}),
     ...(input.image ? { image: input.image } : {})

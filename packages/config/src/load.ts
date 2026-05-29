@@ -13,8 +13,11 @@ export interface LoadHardkasConfigOptions {
 export async function loadHardkasConfig(
   options: LoadHardkasConfigOptions = {}
 ): Promise<LoadedHardkasConfig> {
-  const cwd = options.cwd ?? (options.ambientWorkspace ? process.env.INIT_CWD : undefined) ?? process.cwd();
-  
+  const cwd =
+    options.cwd ??
+    (options.ambientWorkspace ? process.env.INIT_CWD : undefined) ??
+    process.cwd();
+
   if (options.configPath) {
     const absolutePath = path.resolve(cwd, options.configPath);
     if (!fs.existsSync(absolutePath)) {
@@ -45,16 +48,19 @@ export async function loadHardkasConfig(
     current = parent;
   }
 
-  return { 
+  return {
     cwd,
-    config: DEFAULT_HARDKAS_CONFIG 
+    config: DEFAULT_HARDKAS_CONFIG
   };
 }
 
-async function loadConfigFile(filePath: string, cwd: string): Promise<LoadedHardkasConfig> {
+async function loadConfigFile(
+  filePath: string,
+  cwd: string
+): Promise<LoadedHardkasConfig> {
   try {
     const jiti = createJiti(import.meta.url);
-    const module = await jiti.import(filePath) as any;
+    const module = (await jiti.import(filePath)) as any;
     const userConfig = module.default || module.config || module;
 
     // Deep merge: defaults fill missing fields, user config overrides
@@ -64,23 +70,29 @@ async function loadConfigFile(filePath: string, cwd: string): Promise<LoadedHard
       // Merge networks: built-ins + user custom networks
       networks: {
         ...DEFAULT_HARDKAS_CONFIG.networks,
-        ...(userConfig.networks && typeof userConfig.networks === "object" ? userConfig.networks : {}),
+        ...(userConfig.networks && typeof userConfig.networks === "object"
+          ? userConfig.networks
+          : {})
       },
       // Merge accounts: only if user provides an object (not a number)
       accounts: {
         ...DEFAULT_HARDKAS_CONFIG.accounts,
-        ...(userConfig.accounts && typeof userConfig.accounts === "object" && !Array.isArray(userConfig.accounts)
+        ...(userConfig.accounts &&
+        typeof userConfig.accounts === "object" &&
+        !Array.isArray(userConfig.accounts)
           ? userConfig.accounts
-          : {}),
-      },
+          : {})
+      }
     };
 
     return {
       path: filePath,
       cwd: cwd,
-      config: mergedConfig,
+      config: mergedConfig
     };
   } catch (error) {
-    throw new Error(`Failed to load HardKAS config at ${filePath}: ${error instanceof Error ? error.message : String(error)}`);
+    throw new Error(
+      `Failed to load HardKAS config at ${filePath}: ${error instanceof Error ? error.message : String(error)}`
+    );
   }
 }

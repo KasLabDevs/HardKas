@@ -21,12 +21,12 @@ export interface HealthInfo {
 }
 
 export function useHardKasHealth() {
-  const { config, subscribe , apiFetch } = useHardKas();
+  const { config, subscribe, apiFetch } = useHardKas();
   const queryClient = useQueryClient();
 
   useEffect(() => {
     const sync = () => queryClient.invalidateQueries({ queryKey: ["hardkas", "health"] });
-    
+
     return subscribe((event) => {
       if (["health-changed", "session-changed"].includes(event.type)) {
         sync();
@@ -39,7 +39,11 @@ export function useHardKasHealth() {
     queryFn: async (): Promise<HealthInfo | null> => {
       try {
         const baseUrl = config.devServerUrl || "";
-        const url = baseUrl ? (baseUrl.endsWith("/") ? `${baseUrl}api/health` : `${baseUrl}/api/health`) : "/api/health";
+        const url = baseUrl
+          ? baseUrl.endsWith("/")
+            ? `${baseUrl}api/health`
+            : `${baseUrl}/api/health`
+          : "/api/health";
         const res = await apiFetch(url);
         if (!res || !res.ok) {
           throw new Error("Failed to fetch health from dev server");

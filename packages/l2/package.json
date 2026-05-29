@@ -1,6 +1,6 @@
 {
   "name": "@hardkas/l2",
-  "version": "0.7.3-alpha",
+  "version": "0.7.4-alpha",
   "type": "module",
   "exports": {
     ".": "./dist/index.js"

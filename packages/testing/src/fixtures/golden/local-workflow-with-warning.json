@@ -15,9 +15,7 @@
       "status": "success"
     }
   ],
-  "producedArtifacts": [
-    "plan-golden"
-  ],
+  "producedArtifacts": ["plan-golden"],
   "errorEnvelope": {
     "code": "DUST_WARNING",
     "message": "Transaction contains dust outputs",

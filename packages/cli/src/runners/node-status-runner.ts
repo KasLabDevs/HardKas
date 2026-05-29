@@ -9,8 +9,12 @@ export interface NodeStatusRunnerResult {
   formatted: string;
 }
 
-export async function runNodeStatus(input: NodeStatusRunnerInput): Promise<NodeStatusRunnerResult> {
-  const runner = new DockerKaspadRunner(input.containerName ? { containerName: input.containerName } : {});
+export async function runNodeStatus(
+  input: NodeStatusRunnerInput
+): Promise<NodeStatusRunnerResult> {
+  const runner = new DockerKaspadRunner(
+    input.containerName ? { containerName: input.containerName } : {}
+  );
   const status = await runner.status();
 
   const lines = [

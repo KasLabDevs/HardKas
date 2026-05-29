@@ -6,7 +6,7 @@ import type { SignedTxArtifact } from "../src/types.js";
 describe("getBroadcastableSignedTransaction", () => {
   const baseArtifact: any = {
     schema: "hardkas.signedTx",
-    hardkasVersion: "0.7.3-alpha",
+    hardkasVersion: "0.7.4-alpha",
     version: "1.0.0-alpha",
     status: "signed",
     createdAt: new Date().toISOString(),
@@ -34,6 +34,8 @@ describe("getBroadcastableSignedTransaction", () => {
 
   it("should fail if payload is missing", () => {
     const invalid = { ...baseArtifact, signedTransaction: {} };
-    expect(() => getBroadcastableSignedTransaction(invalid)).toThrow(/missing the raw transaction payload/);
+    expect(() => getBroadcastableSignedTransaction(invalid)).toThrow(
+      /missing the raw transaction payload/
+    );
   });
 });

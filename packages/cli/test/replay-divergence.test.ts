@@ -19,62 +19,94 @@ describe("Adversarial Validation (Corpus Stress)", () => {
   async function runVerify(targetDir: string) {
     try {
       // Use artifact verify which is more robust for individual artifact checks
-      return await execa(tsxPath, [cliPath, "artifact", "verify", targetDir, "--recursive", "--strict"]);
+      return await execa(tsxPath, [
+        cliPath,
+        "artifact",
+        "verify",
+        targetDir,
+        "--recursive",
+        "--strict"
+      ]);
     } catch (e: any) {
       return e;
     }
   }
 
-  it("should detect hash mismatch in artifacts", async () => {
-    const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), "hardkas-adversarial-hash-"));
-    const badArtifact = AdversarialFixtures.hashMismatch();
-    fs.writeFileSync(path.join(tempDir, "bad-artifact.json"), JSON.stringify(badArtifact));
+  it(
+    "should detect hash mismatch in artifacts",
+    async () => {
+      const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), "hardkas-adversarial-hash-"));
+      const badArtifact = AdversarialFixtures.hashMismatch();
+      fs.writeFileSync(
+        path.join(tempDir, "bad-artifact.json"),
+        JSON.stringify(badArtifact)
+      );
 
-    const result = await runVerify(tempDir);
-    expect(result.exitCode).toBe(1);
-    expect(result.stderr + result.stdout).toContain("HASH_MISMATCH");
-    
-    fs.rmSync(tempDir, { recursive: true, force: true });
-  }, TEST_TIMEOUT);
+      const result = await runVerify(tempDir);
+      expect(result.exitCode).toBe(1);
+      expect(result.stderr + result.stdout).toContain("HASH_MISMATCH");
 
-  it("should detect circular lineage", async () => {
-    const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), "hardkas-adversarial-circular-"));
-    const { artifactA, artifactB } = AdversarialFixtures.circularLineage();
-    fs.writeFileSync(path.join(tempDir, "art-a.json"), JSON.stringify(artifactA));
-    fs.writeFileSync(path.join(tempDir, "art-b.json"), JSON.stringify(artifactB));
+      fs.rmSync(tempDir, { recursive: true, force: true });
+    },
+    TEST_TIMEOUT
+  );
 
-    const result = await runVerify(tempDir);
-    // Note: Circular lineage might be caught by verifyArtifactSemantics
-    expect(result.exitCode).toBe(1);
-    // We expect a failure, but maybe the specific code is LINEAGE_CYCLE or similar
-    expect(result.stdout).toContain("FAIL");
-    
-    fs.rmSync(tempDir, { recursive: true, force: true });
-  }, TEST_TIMEOUT);
+  it(
+    "should detect circular lineage",
+    async () => {
+      const tempDir = fs.mkdtempSync(
+        path.join(os.tmpdir(), "hardkas-adversarial-circular-")
+      );
+      const { artifactA, artifactB } = AdversarialFixtures.circularLineage();
+      fs.writeFileSync(path.join(tempDir, "art-a.json"), JSON.stringify(artifactA));
+      fs.writeFileSync(path.join(tempDir, "art-b.json"), JSON.stringify(artifactB));
 
-  it("should detect cross-network parentage", async () => {
-    const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), "hardkas-adversarial-cross-network-"));
-    const { parent, child } = AdversarialFixtures.crossNetworkLineage();
-    fs.writeFileSync(path.join(tempDir, "parent.json"), JSON.stringify(parent));
-    fs.writeFileSync(path.join(tempDir, "child.json"), JSON.stringify(child));
+      const result = await runVerify(tempDir);
+      // Note: Circular lineage might be caught by verifyArtifactSemantics
+      expect(result.exitCode).toBe(1);
+      // We expect a failure, but maybe the specific code is LINEAGE_CYCLE or similar
+      expect(result.stdout).toContain("FAIL");
 
-    const result = await runVerify(tempDir);
-    expect(result.exitCode).toBe(1);
-    expect(result.stdout).toMatch(/NETWORK_MISMATCH|FAIL/);
+      fs.rmSync(tempDir, { recursive: true, force: true });
+    },
+    TEST_TIMEOUT
+  );
 
-    fs.rmSync(tempDir, { recursive: true, force: true });
-  }, TEST_TIMEOUT);
+  it(
+    "should detect cross-network parentage",
+    async () => {
+      const tempDir = fs.mkdtempSync(
+        path.join(os.tmpdir(), "hardkas-adversarial-cross-network-")
+      );
+      const { parent, child } = AdversarialFixtures.crossNetworkLineage();
+      fs.writeFileSync(path.join(tempDir, "parent.json"), JSON.stringify(parent));
+      fs.writeFileSync(path.join(tempDir, "child.json"), JSON.stringify(child));
 
-  it("should handle malformed JSONL gracefully", async () => {
-    const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), "hardkas-adversarial-malformed-"));
-    const malformed = AdversarialFixtures.malformedJsonl();
-    fs.writeFileSync(path.join(tempDir, "events.jsonl"), malformed);
+      const result = await runVerify(tempDir);
+      expect(result.exitCode).toBe(1);
+      expect(result.stdout).toMatch(/NETWORK_MISMATCH|FAIL/);
 
-    // Replay verify might not check jsonl directly yet unless it's part of a trace
-    // But we expect it to fail if it tries to parse it.
-    const result = await runVerify(tempDir);
-    expect(result.exitCode).toBeDefined();
-    
-    fs.rmSync(tempDir, { recursive: true, force: true });
-  }, TEST_TIMEOUT);
+      fs.rmSync(tempDir, { recursive: true, force: true });
+    },
+    TEST_TIMEOUT
+  );
+
+  it(
+    "should handle malformed JSONL gracefully",
+    async () => {
+      const tempDir = fs.mkdtempSync(
+        path.join(os.tmpdir(), "hardkas-adversarial-malformed-")
+      );
+      const malformed = AdversarialFixtures.malformedJsonl();
+      fs.writeFileSync(path.join(tempDir, "events.jsonl"), malformed);
+
+      // Replay verify might not check jsonl directly yet unless it's part of a trace
+      // But we expect it to fail if it tries to parse it.
+      const result = await runVerify(tempDir);
+      expect(result.exitCode).toBeDefined();
+
+      fs.rmSync(tempDir, { recursive: true, force: true });
+    },
+    TEST_TIMEOUT
+  );
 });

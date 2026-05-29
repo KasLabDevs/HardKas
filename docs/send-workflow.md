@@ -31,6 +31,7 @@ All layers return the canonical send envelope:
 Use the simple path when you want HardKAS to automatically manage planning, signing, and broadcasting.
 
 ### SDK
+
 ```typescript
 const res = await client.tx.send({
   from: "kaspa:...",
@@ -41,6 +42,7 @@ const res = await client.tx.send({
 ```
 
 ### CLI
+
 ```bash
 hardkas tx send --from alice --to bob --amount 1 --json
 ```
@@ -53,21 +55,25 @@ hardkas tx send --from alice --to bob --amount 1 --json
 Use the advanced path to build modular transactions. This is required for Mainnet or multi-sig scenarios where planning, signing, and sending happen asynchronously across different agents or devices.
 
 ### Step 1: Plan
+
 ```bash
 hardkas tx plan --from alice --to bob --amount 1 --out plan.json
 ```
 
 ### Step 2: Sign
+
 ```bash
 hardkas tx sign plan.json --account alice --out signed.json
 ```
 
 ### Step 3: Send
+
 ```bash
 hardkas tx send signed.json --json
 ```
 
 ### SDK Equivalent
+
 ```typescript
 const planRes = await client.tx.plan({ from, to, amountSompi });
 const signRes = await client.tx.sign({ planId: planRes.data.artifactId, account: from });

@@ -26,11 +26,11 @@
     }
   ],
   "lineage": {
-    "artifactId": "317b9f7fa35befa2d0406b3e2d0929e8dcb1d945813d0a82677a78e65fa7ffe2",
+    "artifactId": "e859a2bf495b5410f5db743534cede6efc88f5df1f720850d1077dc9d8fa17b1",
     "lineageId": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
     "parentArtifactId": "2b4baed6aab94827f47c19195591a9f619be50882de2c564ca9fa1bd09d57fb5",
     "rootArtifactId": "2b4baed6aab94827f47c19195591a9f619be50882de2c564ca9fa1bd09d57fb5",
     "sequence": 1
   },
-  "contentHash": "317b9f7fa35befa2d0406b3e2d0929e8dcb1d945813d0a82677a78e65fa7ffe2"
+  "contentHash": "e859a2bf495b5410f5db743534cede6efc88f5df1f720850d1077dc9d8fa17b1"
 }

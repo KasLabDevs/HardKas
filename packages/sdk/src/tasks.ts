@@ -25,7 +25,11 @@ class TaskRegistry {
 
   defineTask(name: string, action: TaskAction): void;
   defineTask(name: string, description: string, action: TaskAction): void;
-  defineTask(name: string, descriptionOrAction: string | TaskAction, action?: TaskAction): void {
+  defineTask(
+    name: string,
+    descriptionOrAction: string | TaskAction,
+    action?: TaskAction
+  ): void {
     let description: string | undefined;
     let finalAction: TaskAction;
 

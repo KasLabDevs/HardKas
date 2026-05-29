@@ -103,16 +103,30 @@ export class JsonWrpcKaspaClient implements KaspaRpcClient {
   }
 
   async getInfo(): Promise<KaspaNodeInfo> {
-    const response = await this.safeRequest(["getInfo", "getInfoRequest", "GetInfo", "get_info"]);
+    const response = await this.safeRequest([
+      "getInfo",
+      "getInfoRequest",
+      "GetInfo",
+      "get_info"
+    ]);
     const info = mapKaspaNodeInfo(response);
-    
+
     // Try to supplement with DAG info if virtualDaaScore is missing
     if (info.virtualDaaScore === undefined) {
       try {
-        const dagResponse = await this.safeRequest(["getBlockDagInfo", "getBlockDagInfoRequest", "GetBlockDagInfo", "get_block_dag_info"]);
-        const dagData = (dagResponse as Record<string, unknown>)?.params || (dagResponse as Record<string, unknown>);
+        const dagResponse = await this.safeRequest([
+          "getBlockDagInfo",
+          "getBlockDagInfoRequest",
+          "GetBlockDagInfo",
+          "get_block_dag_info"
+        ]);
+        const dagData =
+          (dagResponse as Record<string, unknown>)?.params ||
+          (dagResponse as Record<string, unknown>);
         if (dagData && typeof dagData === "object" && "virtualDaaScore" in dagData) {
-          info.virtualDaaScore = BigInt((dagData as Record<string, unknown>).virtualDaaScore as string | number);
+          info.virtualDaaScore = BigInt(
+            (dagData as Record<string, unknown>).virtualDaaScore as string | number
+          );
         }
       } catch (e) {
         // Ignore errors supplementing info
@@ -124,11 +138,11 @@ export class JsonWrpcKaspaClient implements KaspaRpcClient {
   async healthCheck(): Promise<KaspaRpcHealth> {
     try {
       const info = await this.getInfo();
-      return { 
-        endpoint: this.rpcUrl, 
+      return {
+        endpoint: this.rpcUrl,
         status: "healthy",
         info,
-        reachable: true 
+        reachable: true
       };
     } catch (error) {
       return {
@@ -142,7 +156,16 @@ export class JsonWrpcKaspaClient implements KaspaRpcClient {
 
   async getBalanceByAddress(address: string): Promise<KaspaAddressBalance> {
     const response = await this.safeRequest(
-      ["getBalancesByAddresses", "getBalancesByAddressesRequest", "getBalanceByAddressRequest", "GetBalancesByAddresses", "get_balances_by_addresses", "GetBalanceByAddress", "getBalanceByAddress", "get_balance_by_address"],
+      [
+        "getBalancesByAddresses",
+        "getBalancesByAddressesRequest",
+        "getBalanceByAddressRequest",
+        "GetBalancesByAddresses",
+        "get_balances_by_addresses",
+        "GetBalanceByAddress",
+        "getBalanceByAddress",
+        "get_balance_by_address"
+      ],
       { addresses: [address], address }
     );
     return mapKaspaAddressBalance(response, address);
@@ -150,7 +173,16 @@ export class JsonWrpcKaspaClient implements KaspaRpcClient {
 
   async getUtxosByAddress(address: string): Promise<KaspaRpcUtxo[]> {
     const response = await this.safeRequest(
-      ["getUtxosByAddresses", "getUtxosByAddressesRequest", "getUtxosByAddressRequest", "GetUtxosByAddresses", "get_utxos_by_addresses", "GetUtxosByAddress", "getUtxosByAddress", "get_utxos_by_address"],
+      [
+        "getUtxosByAddresses",
+        "getUtxosByAddressesRequest",
+        "getUtxosByAddressRequest",
+        "GetUtxosByAddresses",
+        "get_utxos_by_addresses",
+        "GetUtxosByAddress",
+        "getUtxosByAddress",
+        "get_utxos_by_address"
+      ],
       { addresses: [address], address }
     );
     return mapKaspaRpcUtxos(response, address);
@@ -158,7 +190,12 @@ export class JsonWrpcKaspaClient implements KaspaRpcClient {
 
   async submitTransaction(rawTransaction: string): Promise<KaspaSubmitTransactionResult> {
     const response = await this.safeRequest(
-      ["submitTransaction", "submitTransactionRequest", "SubmitTransaction", "submit_transaction"],
+      [
+        "submitTransaction",
+        "submitTransactionRequest",
+        "SubmitTransaction",
+        "submit_transaction"
+      ],
       { transaction: rawTransaction, transactionHex: rawTransaction, rawTransaction }
     );
     return mapKaspaSubmitTransactionResult(response);
@@ -231,15 +268,15 @@ export class JsonWrpcKaspaClient implements KaspaRpcClient {
         const pObj = params as Record<string, unknown>;
         // Strict mapping based on method name
         if (lowerMethod.includes("addresses") || lowerMethod.endsWith("s")) {
-           if (pObj.address && !pObj.addresses) {
-             actualParams = { addresses: [pObj.address] };
-           } else if (pObj.addresses) {
-             actualParams = { addresses: pObj.addresses };
-           }
+          if (pObj.address && !pObj.addresses) {
+            actualParams = { addresses: [pObj.address] };
+          } else if (pObj.addresses) {
+            actualParams = { addresses: pObj.addresses };
+          }
         } else if (pObj.addresses && !pObj.address) {
-           actualParams = { address: (pObj.addresses as unknown[])[0] };
+          actualParams = { address: (pObj.addresses as unknown[])[0] };
         } else if (pObj.address) {
-           actualParams = { address: pObj.address };
+          actualParams = { address: pObj.address };
         }
 
         // Try object params first
@@ -289,7 +326,8 @@ export class JsonWrpcKaspaClient implements KaspaRpcClient {
             cleanup();
             if (response.error) {
               const err = response.error;
-              const msg = err.message || (typeof err === "string" ? err : JSON.stringify(err));
+              const msg =
+                err.message || (typeof err === "string" ? err : JSON.stringify(err));
               reject(new Error(msg));
             } else {
               resolve(response.result !== undefined ? response.result : response.params);
@@ -324,7 +362,11 @@ export class JsonWrpcKaspaClient implements KaspaRpcClient {
       const ws = new WebSocket(this.rpcUrl);
       const timeout = setTimeout(() => {
         ws.close();
-        reject(new Error(`Cannot connect to Kaspa RPC at ${this.rpcUrl}. Connection timed out.`));
+        reject(
+          new Error(
+            `Cannot connect to Kaspa RPC at ${this.rpcUrl}. Connection timed out.`
+          )
+        );
       }, this.timeoutMs);
 
       ws.on("open", () => {
@@ -337,7 +379,7 @@ export class JsonWrpcKaspaClient implements KaspaRpcClient {
         clearTimeout(timeout);
         let message = `Cannot connect to Kaspa RPC at ${this.rpcUrl}. Is kaspad running with --rpclisten-json?`;
         if (err.code === "ECONNREFUSED") {
-           message = `Connection refused at ${this.rpcUrl}. Ensure kaspad is running and --rpclisten-json is enabled.`;
+          message = `Connection refused at ${this.rpcUrl}. Ensure kaspad is running and --rpclisten-json is enabled.`;
         }
         reject(new Error(message));
       });
@@ -351,14 +393,21 @@ export function mapKaspaNodeInfo(result: any): KaspaNodeInfo {
   const info: any = {
     serverVersion: result.serverVersion || result.server_version,
     isSynced: result.isSynced !== undefined ? result.isSynced : result.is_synced,
-    isUtxoIndexed: result.isUtxoIndexed !== undefined ? result.isUtxoIndexed : result.is_utxo_indexed,
+    isUtxoIndexed:
+      result.isUtxoIndexed !== undefined ? result.isUtxoIndexed : result.is_utxo_indexed,
     p2pId: result.p2pId || result.p2p_id,
-    mempoolSize: result.mempoolSize !== undefined ? result.mempoolSize : result.mempool_size,
+    mempoolSize:
+      result.mempoolSize !== undefined ? result.mempoolSize : result.mempool_size,
     networkId: result.networkId || result.network_id,
     raw: result
   };
 
-  const score = result.virtualDaaScore !== undefined ? result.virtualDaaScore : (result.virtual_daa_score !== undefined ? result.virtual_daa_score : (result.params?.virtualDaaScore));
+  const score =
+    result.virtualDaaScore !== undefined
+      ? result.virtualDaaScore
+      : result.virtual_daa_score !== undefined
+        ? result.virtual_daa_score
+        : result.params?.virtualDaaScore;
   if (score !== undefined) {
     info.virtualDaaScore = BigInt(score);
   }
@@ -366,17 +415,31 @@ export function mapKaspaNodeInfo(result: any): KaspaNodeInfo {
   return info;
 }
 
-export function mapKaspaAddressBalance(result: any, address: string): KaspaAddressBalance {
+export function mapKaspaAddressBalance(
+  result: any,
+  address: string
+): KaspaAddressBalance {
   if (!result) return { address, balanceSompi: 0n, raw: result };
-  
+
   let entry = result;
   if (Array.isArray(result)) {
-    entry = result.find((e: any) => (e.address || e.addressString || e.address_string) === address) || result[0];
+    entry =
+      result.find(
+        (e: any) => (e.address || e.addressString || e.address_string) === address
+      ) || result[0];
   } else if (result.entries && Array.isArray(result.entries)) {
-    entry = result.entries.find((e: any) => (e.address || e.addressString || e.address_string) === address) || result.entries[0];
+    entry =
+      result.entries.find(
+        (e: any) => (e.address || e.addressString || e.address_string) === address
+      ) || result.entries[0];
   }
 
-  const balance = entry.balance !== undefined ? entry.balance : (entry.balanceSompi !== undefined ? entry.balanceSompi : entry.amount);
+  const balance =
+    entry.balance !== undefined
+      ? entry.balance
+      : entry.balanceSompi !== undefined
+        ? entry.balanceSompi
+        : entry.amount;
   const balanceSompi = balance !== undefined ? BigInt(balance) : 0n;
 
   return {
@@ -388,7 +451,7 @@ export function mapKaspaAddressBalance(result: any, address: string): KaspaAddre
 
 export function mapKaspaRpcUtxos(result: any, address: string): KaspaRpcUtxo[] {
   if (!result) return [];
-  
+
   let entries: any = null;
 
   if (Array.isArray(result)) {
@@ -400,22 +463,42 @@ export function mapKaspaRpcUtxos(result: any, address: string): KaspaRpcUtxo[] {
   } else {
     entries = result.entries || result.utxos || result;
   }
-  
+
   if (!Array.isArray(entries)) return [];
 
   return (entries as unknown[]).map((entryRaw) => {
     const entry = entryRaw as Record<string, any>;
-    const utxoEntry = (entry.utxoEntry || entry.utxo_entry || entry.utxo || entry) as Record<string, any>;
+    const utxoEntry = (entry.utxoEntry ||
+      entry.utxo_entry ||
+      entry.utxo ||
+      entry) as Record<string, any>;
     const outpoint = (entry.outpoint || entry) as Record<string, any>;
 
     return {
       outpoint: {
-        transactionId: String(outpoint.transactionId || outpoint.transaction_id || outpoint.txId || outpoint.tx_id || outpoint.transaction_hash || ""),
-        index: Number(outpoint.index !== undefined ? outpoint.index : (outpoint.outputIndex !== undefined ? outpoint.outputIndex : outpoint.output_index))
+        transactionId: String(
+          outpoint.transactionId ||
+            outpoint.transaction_id ||
+            outpoint.txId ||
+            outpoint.tx_id ||
+            outpoint.transaction_hash ||
+            ""
+        ),
+        index: Number(
+          outpoint.index !== undefined
+            ? outpoint.index
+            : outpoint.outputIndex !== undefined
+              ? outpoint.outputIndex
+              : outpoint.output_index
+        )
       },
       address: entry.address || address,
-      amountSompi: BigInt(utxoEntry.amount || utxoEntry.amountSompi || utxoEntry.amount_sompi || 0),
-      scriptPublicKey: String(utxoEntry.scriptPublicKey || utxoEntry.script_public_key || ""),
+      amountSompi: BigInt(
+        utxoEntry.amount || utxoEntry.amountSompi || utxoEntry.amount_sompi || 0
+      ),
+      scriptPublicKey: String(
+        utxoEntry.scriptPublicKey || utxoEntry.script_public_key || ""
+      ),
       blockDaaScore: utxoEntry.blockDaaScore || utxoEntry.block_daa_score,
       isCoinbase: Boolean(utxoEntry.isCoinbase || utxoEntry.is_coinbase),
       raw: entry
@@ -423,12 +506,18 @@ export function mapKaspaRpcUtxos(result: any, address: string): KaspaRpcUtxo[] {
   });
 }
 
-export function mapKaspaSubmitTransactionResult(result: any): KaspaSubmitTransactionResult {
+export function mapKaspaSubmitTransactionResult(
+  result: any
+): KaspaSubmitTransactionResult {
   if (!result) return { raw: result };
 
   return {
-    transactionId: result.transactionId || result.transaction_id || result.txId || result.tx_id,
-    accepted: result.accepted !== undefined ? result.accepted : (result.isAccepted || result.success),
+    transactionId:
+      result.transactionId || result.transaction_id || result.txId || result.tx_id,
+    accepted:
+      result.accepted !== undefined
+        ? result.accepted
+        : result.isAccepted || result.success,
     raw: result
   };
 }
@@ -439,15 +528,21 @@ export class MockKaspaRpcClient implements KaspaRpcClient {
   constructor(private readonly networkId: NetworkId = "simnet" as NetworkId) {}
 
   async getInfo(): Promise<KaspaNodeInfo> {
-    return { networkId: this.networkId, serverVersion: "mock", isSynced: true, virtualDaaScore: 0n, raw: {} };
+    return {
+      networkId: this.networkId,
+      serverVersion: "mock",
+      isSynced: true,
+      virtualDaaScore: 0n,
+      raw: {}
+    };
   }
 
   async healthCheck(): Promise<KaspaRpcHealth> {
-    return { 
-      endpoint: "mock://local", 
+    return {
+      endpoint: "mock://local",
       status: "healthy",
-      info: await this.getInfo(), 
-      reachable: true 
+      info: await this.getInfo(),
+      reachable: true
     };
   }
 
@@ -466,8 +561,8 @@ export class MockKaspaRpcClient implements KaspaRpcClient {
   }
 
   async submitTransaction(rawTransaction: string): Promise<KaspaSubmitTransactionResult> {
-    return { 
-      transactionId: "mock-txid", 
+    return {
+      transactionId: "mock-txid",
       accepted: true,
       raw: { rawTransaction }
     };

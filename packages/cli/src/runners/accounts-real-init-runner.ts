@@ -1,8 +1,8 @@
-import { 
-  loadRealAccountStore, 
-  saveRealAccountStore, 
+import {
+  loadRealAccountStore,
+  saveRealAccountStore,
   createEmptyRealAccountStore,
-  getDefaultRealAccountsPath 
+  getDefaultRealAccountsPath
 } from "@hardkas/accounts";
 
 export interface AccountsRealInitOptions {
@@ -10,7 +10,9 @@ export interface AccountsRealInitOptions {
   workspaceRoot?: string;
 }
 
-export async function runAccountsRealInit(options: AccountsRealInitOptions = {}): Promise<{
+export async function runAccountsRealInit(
+  options: AccountsRealInitOptions = {}
+): Promise<{
   path: string;
   formatted: string;
 }> {
@@ -19,7 +21,9 @@ export async function runAccountsRealInit(options: AccountsRealInitOptions = {})
   const existing = await loadRealAccountStore({ cwd });
 
   if (existing && !options.force) {
-    throw new Error(`Real account store already exists at ${filePath}. Use --force to overwrite.`);
+    throw new Error(
+      `Real account store already exists at ${filePath}. Use --force to overwrite.`
+    );
   }
 
   const store = createEmptyRealAccountStore();

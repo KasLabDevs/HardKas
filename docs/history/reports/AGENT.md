@@ -16,6 +16,7 @@ Parse both outputs. Only use capabilities that return `true`. Never assume a cap
 ## What You Can Do
 
 ### Project Setup
+
 ```bash
 hardkas new <project-name>                    # Scaffold a new project
 hardkas init                                   # Initialize .hardkas/ in existing project
@@ -23,6 +24,7 @@ hardkas doctor                                 # Check environment health
 ```
 
 ### Simulated Transactions (no real funds)
+
 ```bash
 hardkas console                                # Interactive REPL
 hardkas run scripts/transfer.ts                # Execute a script
@@ -32,12 +34,14 @@ hardkas accounts list                          # Show simulated accounts
 ```
 
 ### Testing
+
 ```bash
 hardkas test                                   # Run vitest tests
 hardkas test --mass-report                     # With mass/fee profiling
 ```
 
 ### Artifact Inspection
+
 ```bash
 hardkas artifact verify .hardkas/artifacts --recursive
 hardkas query artifacts list --json
@@ -45,6 +49,7 @@ hardkas query lineage chain --json
 ```
 
 ### Sessions (L1 + L2 dual identity)
+
 ```bash
 hardkas session create --name dev-session --l1-wallet alice --l2-account alice-l2
 hardkas session list
@@ -54,18 +59,21 @@ hardkas session diagnose
 ```
 
 ### Dev Server & Dashboard
+
 ```bash
 hardkas dev start                              # Launch dev server + dashboard
 hardkas dev doctor                             # Check dev environment
 ```
 
 ### Networks
+
 ```bash
 hardkas networks --json                        # List available networks
 hardkas run script.ts --network testnet-11     # Run against real network
 ```
 
 ### Deployments
+
 ```bash
 hardkas deploy track my-deploy --network simnet --tx-id simtx_abc
 hardkas deploy list --json
@@ -74,6 +82,7 @@ hardkas deploy status my-deploy --network simnet --verify
 ```
 
 ### Bridge Simulation (local only)
+
 ```bash
 hardkas bridge local-plan --amount 100 --to-igra 0x1234...
 hardkas bridge simulate --prefix 0000
@@ -81,12 +90,14 @@ hardkas bridge inspect
 ```
 
 ### GHOSTDAG Simulation (research-grade)
+
 ```bash
 hardkas dag status
 hardkas dag conflicts
 ```
 
 ### Lock Management
+
 ```bash
 hardkas lock list
 hardkas lock status
@@ -105,14 +116,14 @@ These capabilities are `false` — do not attempt them:
 
 ## Trust Boundaries — ALWAYS respect these
 
-| System | Boundary |
-|---|---|
-| Replay | Local workflow reproducibility ONLY — not consensus proof |
-| Artifacts | Internal integrity/identity ONLY — not on-chain finality proof |
-| Simulator | Research-grade approximation — not protocol equivalence |
-| Query store | Rebuildable read model — not canonical truth |
-| L2 bridge | Pre-ZK trust assumptions — not trustless |
-| Deployments | Local tracking records — not on-chain confirmation proof |
+| System      | Boundary                                                       |
+| ----------- | -------------------------------------------------------------- |
+| Replay      | Local workflow reproducibility ONLY — not consensus proof      |
+| Artifacts   | Internal integrity/identity ONLY — not on-chain finality proof |
+| Simulator   | Research-grade approximation — not protocol equivalence        |
+| Query store | Rebuildable read model — not canonical truth                   |
+| L2 bridge   | Pre-ZK trust assumptions — not trustless                       |
+| Deployments | Local tracking records — not on-chain confirmation proof       |
 
 ## Rules
 
@@ -128,6 +139,7 @@ These capabilities are `false` — do not attempt them:
 ## Error Handling
 
 If a command fails:
+
 1. Run `hardkas doctor --json` to check environment
 2. Run `hardkas lock list` to check for stale locks
 3. Check if the required capability is `true` in `hardkas capabilities --json`
@@ -158,6 +170,7 @@ All `--json` outputs follow stable schemas. Key patterns:
 ## Example Workflows
 
 ### "Help me test a transfer"
+
 ```bash
 hardkas capabilities --json          # Check what's available
 hardkas new my-test-project          # Scaffold project
@@ -167,6 +180,7 @@ hardkas console                      # Open REPL for interactive testing
 ```
 
 ### "Show me my project health"
+
 ```bash
 hardkas doctor --json
 hardkas session status
@@ -175,6 +189,7 @@ hardkas query artifacts list --json
 ```
 
 ### "Set up dual L1+L2 development"
+
 ```bash
 hardkas session create --name dev --l1-wallet alice --l2-account alice-l2
 hardkas session use dev

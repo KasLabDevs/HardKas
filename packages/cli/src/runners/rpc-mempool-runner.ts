@@ -11,11 +11,8 @@ export async function runRpcMempool(options: RpcMempoolOptions): Promise<{
 }> {
   const client = new KaspaJsonRpcClient({ url: options.url || "http://127.0.0.1:18210" });
   const entry = await client.getMempoolEntry(options.txId);
-  
-  const lines = [
-    `Kaspa Mempool status for ${options.txId}`,
-    ""
-  ];
+
+  const lines = [`Kaspa Mempool status for ${options.txId}`, ""];
 
   if (entry) {
     lines.push(`Status:   Found in mempool`);

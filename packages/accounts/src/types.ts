@@ -31,8 +31,8 @@ export interface KeystoreCipherParams {
  * This is intentionally separate from ARTIFACT_VERSION.
  */
 export interface EncryptedKeystoreV2 {
-  version: "2.0.0";  // Keystore format version, not ARTIFACT_VERSION
-  type: "hardkas.encryptedKeystore.v2";  // Keystore format type
+  version: "2.0.0"; // Keystore format version, not ARTIFACT_VERSION
+  type: "hardkas.encryptedKeystore.v2"; // Keystore format type
   kdf: KeystoreKdfParams;
   cipher: KeystoreCipherParams;
   encryptedPayload: string; // base64

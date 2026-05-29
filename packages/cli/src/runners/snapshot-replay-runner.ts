@@ -13,7 +13,9 @@ export interface SnapshotReplayOptions {
 export async function runSnapshotReplay(options: SnapshotReplayOptions) {
   try {
     const { Hardkas } = await import("@hardkas/sdk");
-    const sdk = await Hardkas.open(options.workspaceRoot ? { cwd: options.workspaceRoot } : {});
+    const sdk = await Hardkas.open(
+      options.workspaceRoot ? { cwd: options.workspaceRoot } : {}
+    );
     const snapshotDir = sdk.workspace.resolvePath("snapshots", options.name);
 
     // 1. Read Manifest
@@ -37,7 +39,7 @@ export async function runSnapshotReplay(options: SnapshotReplayOptions) {
     const hardkasDir = sdk.workspace.hardkasDir;
     const wsArtifactsDir = path.join(hardkasDir, "artifacts");
     const fs = await import("node:fs/promises");
-    
+
     if (!options.json) console.log(pc.yellow("  Restoring artifacts to workspace..."));
     try {
       await fs.rm(wsArtifactsDir, { recursive: true, force: true });
@@ -59,12 +61,19 @@ export async function runSnapshotReplay(options: SnapshotReplayOptions) {
     const { HardkasStore, HardkasIndexer } = await import("@hardkas/query-store");
     const store = new HardkasStore({ dbPath: path.join(hardkasDir, "store.db") });
     store.connect({ autoMigrate: true });
-    
-    const indexer = new HardkasIndexer(store.getDatabase(), options.workspaceRoot ? { cwd: options.workspaceRoot, strict: true } : { strict: true });
+
+    const indexer = new HardkasIndexer(
+      store.getDatabase(),
+      options.workspaceRoot
+        ? { cwd: options.workspaceRoot, strict: true }
+        : { strict: true }
+    );
     const result = await indexer.rebuild();
-    
+
     if (!result.ok) {
-      throw new Error(`Failed to rebuild SQLite projection from snapshot artifacts: ${result.errors.join(", ")}`);
+      throw new Error(
+        `Failed to rebuild SQLite projection from snapshot artifacts: ${result.errors.join(", ")}`
+      );
     }
 
     if (!options.json) {
@@ -72,21 +81,18 @@ export async function runSnapshotReplay(options: SnapshotReplayOptions) {
         `Snapshot Replay: ${options.name}`,
         {
           "Execution Scope": manifest.deterministicScope,
-          "Workspace": options.workspaceRoot,
+          Workspace: options.workspaceRoot,
           "Source Authority": "restored from snapshot",
           "Projection Layer": "SQLite query-store (rebuilt)",
           "Indexed Artifacts": String(result.artifacts.indexed),
           "Indexed Events": String(result.events.indexed),
-          "Consensus Validated": manifest.deterministicScope === "consensus-validated" ? "YES" : "NO",
-          "Notice": "Workspace state has been deterministically overwritten"
+          "Consensus Validated":
+            manifest.deterministicScope === "consensus-validated" ? "YES" : "NO",
+          Notice: "Workspace state has been deterministically overwritten"
         },
-        [
-          "hardkas doctor --strict",
-          "hardkas dashboard"
-        ]
+        ["hardkas doctor --strict", "hardkas dashboard"]
       );
     }
-
   } catch (err: any) {
     if (!options.json) handleError(err);
     process.exitCode = 1;

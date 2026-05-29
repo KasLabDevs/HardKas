@@ -1,6 +1,6 @@
 import { Hardkas } from "./index.js";
 import { WorkflowArtifact, HARDKAS_VERSION } from "@hardkas/artifacts";
-import { HardkasError } from "@hardkas/core";
+import { HardkasError, deterministicCompare } from "@hardkas/core";
 
 export interface WorkflowRunOptions {
   steps: Array<{
@@ -45,15 +45,17 @@ export class HardkasWorkflow {
     const artifactSteps: WorkflowArtifact["steps"] = [];
     const producedArtifacts: string[] = [];
     const parentArtifacts: string[] = [];
-    
+
     // generationId is mapped via time for now since it's the simplest universal clock we have without the dev-server
     const generationStart = Date.now().toString(); // hardkas-determinism-allow: ambient start generation clock
-    
+
     let status: "completed" | "failed" = "completed";
     let errorEnvelope: WorkflowArtifact["errorEnvelope"] = undefined;
 
     let lastPlan: any = null;
     let lastSigned: any = null;
+
+    const stepsResults: Record<string, any> = {};
 
     // Real Execution Routing
     for (const step of options.steps) {
@@ -61,36 +63,121 @@ export class HardkasWorkflow {
       try {
         if (step.type === "simulate-failure") {
           if (this.sdk.mode === "agent") {
-            throw new HardkasError("POLICY_DENIED", "simulate-failure is strictly prohibited in agent mode");
+            throw new HardkasError(
+              "POLICY_DENIED",
+              "simulate-failure is strictly prohibited in agent mode"
+            );
           }
           throw new HardkasError("MOCKED_FAIL", "Simulated failure for contract tests");
         }
 
         let producedArtifactId: string | undefined = undefined;
+        let result: any = undefined;
 
-        if (step.type === "network.switch") {
+        if (step.type === "script") {
+          const AsyncFunction = Object.getPrototypeOf(async function () {}).constructor;
+          const fn = new AsyncFunction("ctx", "steps", step.script);
+
+          const scriptCtx = {
+            tx: {
+              plan: async (opts: any) => {
+                if (this.sdk.network !== "simulated") {
+                  this.sdk.enforcePolicy(
+                    "network",
+                    "Workflow script requested transaction planning"
+                  );
+                }
+                const plan = await this.sdk.tx.plan({ ...opts, workflowId });
+                if (!options.dryRun) {
+                  await this.sdk.artifacts.write(plan);
+                }
+                const planRecord = plan as unknown as Record<string, string>;
+                const id = planRecord.contentHash || planRecord.artifactId || plan.planId;
+                if (id) producedArtifacts.push(id);
+                lastPlan = plan;
+                return plan;
+              },
+              sign: async (plan: any, account?: any) => {
+                const signed = await this.sdk.tx.sign(plan, account);
+                if (!options.dryRun) {
+                  await this.sdk.artifacts.write(signed);
+                }
+                const signedRecord = signed as unknown as Record<string, string>;
+                const id =
+                  signedRecord.contentHash || signedRecord.artifactId || signed.signedId;
+                if (id) producedArtifacts.push(id);
+                lastSigned = signed;
+                return signed;
+              },
+              send: async (signed: any) => {
+                this.sdk.enforcePolicy(
+                  "mutation",
+                  "Workflow script requested real broadcast"
+                );
+                const res =
+                  this.sdk.network === "simulated"
+                    ? await this.sdk.tx.simulate(signed)
+                    : await this.sdk.tx.send(signed);
+                if (!options.dryRun) await this.sdk.artifacts.write(res.receipt);
+                const receiptRecord = res.receipt as unknown as Record<string, string>;
+                const id =
+                  receiptRecord.contentHash ||
+                  receiptRecord.artifactId ||
+                  receiptRecord.txId;
+                if (id) producedArtifacts.push(id);
+                return res;
+              },
+              simulate: async (signed: any) => {
+                const res = await this.sdk.tx.simulate(signed);
+                if (!options.dryRun) await this.sdk.artifacts.write(res.receipt);
+                const receiptRecord = res.receipt as unknown as Record<string, string>;
+                const id =
+                  receiptRecord.contentHash ||
+                  receiptRecord.artifactId ||
+                  receiptRecord.txId;
+                if (id) producedArtifacts.push(id);
+                return res;
+              }
+            },
+            sdk: this.sdk
+          };
+
+          result = await fn(scriptCtx, stepsResults);
+        } else if (step.type === "network.switch") {
           const targetNetwork = step.args?.network || step.network;
           if (targetNetwork === "mainnet") {
-            this.sdk.enforcePolicy("mainnet", "Workflow requested network switch to mainnet");
+            this.sdk.enforcePolicy(
+              "mainnet",
+              "Workflow requested network switch to mainnet"
+            );
           }
         } else if (step.type === "tx.plan") {
-          this.sdk.enforcePolicy("network", "Workflow requested transaction planning");
+          if (this.sdk.network !== "simulated") {
+            this.sdk.enforcePolicy("network", "Workflow requested transaction planning");
+          }
           lastPlan = await this.sdk.tx.plan({
             from: step.args?.from || step.from,
             to: step.args?.to || step.to,
-            amount: step.args?.amount || step.amount
+            amount: step.args?.amount || step.amount,
+            workflowId
           });
           if (!options.dryRun) {
             await this.sdk.artifacts.write(lastPlan);
           }
           const planRecord = lastPlan as unknown as Record<string, string>;
-          producedArtifactId = lastPlan.artifactId || planRecord.contentHash;
+          producedArtifactId =
+            planRecord.contentHash || planRecord.artifactId || lastPlan.planId;
           if (producedArtifactId) producedArtifacts.push(producedArtifactId);
+          result = lastPlan;
         } else if (step.type === "tx.simulate" || step.type === "tx.send") {
-          if (!lastPlan) throw new Error("Cannot sign or send without a prior tx.plan step");
-          
+          if (!lastPlan)
+            throw new Error("Cannot sign or send without a prior tx.plan step");
+
           if (step.type === "tx.send") {
-            this.sdk.enforcePolicy("mutation", "Workflow requested real broadcast via tx.send");
+            this.sdk.enforcePolicy(
+              "mutation",
+              "Workflow requested real broadcast via tx.send"
+            );
           }
 
           lastSigned = await this.sdk.tx.sign(lastPlan);
@@ -98,22 +185,34 @@ export class HardkasWorkflow {
             await this.sdk.artifacts.write(lastSigned);
           }
           const signedRecord = lastSigned as unknown as Record<string, string>;
-          const signedId = lastSigned.artifactId || signedRecord.contentHash;
+          const signedId =
+            signedRecord.contentHash || signedRecord.artifactId || lastSigned.signedId;
           if (signedId) producedArtifacts.push(signedId);
 
           if (step.type === "tx.simulate") {
             const { receipt } = await this.sdk.tx.simulate(lastSigned);
             if (!options.dryRun) await this.sdk.artifacts.write(receipt);
             const receiptRecord = receipt as unknown as Record<string, string>;
-            producedArtifactId = receiptRecord.artifactId || receiptRecord.contentHash;
+            producedArtifactId =
+              receiptRecord.contentHash || receiptRecord.artifactId || receiptRecord.txId;
             if (producedArtifactId) producedArtifacts.push(producedArtifactId);
+            result = receipt;
           } else {
-            const { receipt } = await this.sdk.tx.send(lastSigned);
+            const { receipt } =
+              this.sdk.network === "simulated"
+                ? await this.sdk.tx.simulate(lastSigned)
+                : await this.sdk.tx.send(lastSigned);
             if (!options.dryRun) await this.sdk.artifacts.write(receipt);
             const receiptRecord = receipt as unknown as Record<string, string>;
-            producedArtifactId = receiptRecord.artifactId || receiptRecord.contentHash;
+            producedArtifactId =
+              receiptRecord.contentHash || receiptRecord.artifactId || receiptRecord.txId;
             if (producedArtifactId) producedArtifacts.push(producedArtifactId);
+            result = receipt;
           }
+        }
+
+        if (step.id) {
+          stepsResults[step.id] = { result };
         }
 
         const stepRecord: any = {
@@ -156,8 +255,10 @@ export class HardkasWorkflow {
       artifactId: workflowId,
       status,
       steps: artifactSteps,
-      parentArtifacts,
-      producedArtifacts,
+      parentArtifacts: parentArtifacts.sort(deterministicCompare),
+      producedArtifacts: Array.from(new Set(producedArtifacts)).sort(
+        deterministicCompare
+      ),
       generationRange: {
         start: generationStart,
         end: Date.now().toString() // hardkas-determinism-allow: ambient end generation clock
@@ -178,7 +279,9 @@ export class HardkasWorkflow {
 
     if (!options.dryRun) {
       this.sdk.enforcePolicy("mutation", "Workflow Runtime saving artifact");
-      await this.sdk.artifacts.write(artifact, { fileName: `workflow.v1-${workflowId}.json` });
+      await this.sdk.artifacts.write(artifact, {
+        fileName: `workflow.v1-${workflowId}.json`
+      });
     }
 
     return artifact as WorkflowArtifact;

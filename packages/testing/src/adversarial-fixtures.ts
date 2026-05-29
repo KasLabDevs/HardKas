@@ -1,4 +1,8 @@
-import { calculateContentHash, CURRENT_HASH_VERSION, ARTIFACT_VERSION } from "@hardkas/artifacts";
+import {
+  calculateContentHash,
+  CURRENT_HASH_VERSION,
+  ARTIFACT_VERSION
+} from "@hardkas/artifacts";
 
 /**
  * Generates artifacts with semantic or structural flaws for adversarial testing.
@@ -73,7 +77,7 @@ export const AdversarialFixtures = {
       contentHash: "hash-simnet",
       networkId: "simnet",
       mode: "simulated",
-      lineage: { 
+      lineage: {
         artifactId: "hash-simnet",
         parentArtifactId: "parent-mainnet",
         lineageId: "b".repeat(64),
@@ -115,9 +119,21 @@ export const AdversarialFixtures = {
       mode: "simulated"
     };
     return [
-      { ...common, artifactId: "art-1", lineage: { sequenceId: 1, contentHash: "hash-1" } },
-      { ...common, artifactId: "art-2", lineage: { sequenceId: 2, contentHash: "hash-2", parentArtifactId: "art-1" } },
-      { ...common, artifactId: "art-3", lineage: { sequenceId: 2, contentHash: "hash-3-BAD", parentArtifactId: "art-1" } } // Duplicate sequenceId 2
+      {
+        ...common,
+        artifactId: "art-1",
+        lineage: { sequenceId: 1, contentHash: "hash-1" }
+      },
+      {
+        ...common,
+        artifactId: "art-2",
+        lineage: { sequenceId: 2, contentHash: "hash-2", parentArtifactId: "art-1" }
+      },
+      {
+        ...common,
+        artifactId: "art-3",
+        lineage: { sequenceId: 2, contentHash: "hash-3-BAD", parentArtifactId: "art-1" }
+      } // Duplicate sequenceId 2
     ];
   },
 

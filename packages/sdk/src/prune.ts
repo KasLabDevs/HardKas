@@ -1,9 +1,9 @@
 /**
  * HardKAS Trace Pruning Module
- * 
+ *
  * Implements pruning semantics that strip old execution traces
  * while preserving canonical lineage roots and parent-child edges.
- * 
+ *
  * INVARIANT: lineage_roots_never_pruned
  * INVARIANT: pruning_never_breaks_ancestor_chain
  */
@@ -54,12 +54,12 @@ export interface PruneCandidate {
 
 /**
  * Identifies trace artifacts eligible for pruning.
- * 
+ *
  * A trace is eligible for pruning if:
  * 1. It is NOT a lineage root (no descendants depend on it as a root)
  * 2. It has no un-pruned descendants
  * 3. It exceeds the age or count threshold
- * 
+ *
  * Lineage roots are NEVER pruned.
  */
 export async function identifyPruneCandidates(
@@ -70,7 +70,9 @@ export async function identifyPruneCandidates(
   const cutoffDate = new Date(Date.now() - maxAgeMs).toISOString(); // hardkas-determinism-allow: prune cutoff calculation
 
   // Find all trace artifacts older than the cutoff
-  const candidates = db.prepare(`
+  const candidates = db
+    .prepare(
+      `
     SELECT 
       a.artifact_id,
       a.file_path,
@@ -87,7 +89,9 @@ export async function identifyPruneCandidates(
     WHERE a.schema LIKE 'hardkas.txTrace%'
     AND (a.created_at IS NULL OR a.created_at < ?)
     ORDER BY a.created_at ASC
-  `).all(cutoffDate) as Array<{
+  `
+    )
+    .all(cutoffDate) as Array<{
     artifact_id: string;
     file_path: string | null;
     schema: string;
@@ -103,9 +107,9 @@ export async function identifyPruneCandidates(
     // Count descendants using closure table if available
     let descendantCount = 0;
     try {
-      const closure = db.prepare(
-        "SELECT COUNT(*) as count FROM lineage_closure WHERE ancestor_id = ?"
-      ).get(row.artifact_id) as { count: number };
+      const closure = db
+        .prepare("SELECT COUNT(*) as count FROM lineage_closure WHERE ancestor_id = ?")
+        .get(row.artifact_id) as { count: number };
       descendantCount = closure.count;
     } catch {
       // lineage_closure table might not exist (pre-v3)
@@ -143,7 +147,7 @@ export async function identifyPruneCandidates(
 
 /**
  * Executes pruning of old trace artifacts.
- * 
+ *
  * This function:
  * 1. Identifies prunable trace candidates
  * 2. Verifies lineage root preservation
@@ -151,10 +155,7 @@ export async function identifyPruneCandidates(
  * 4. Cleans up corresponding DB records
  * 5. Records pruning history
  */
-export async function pruneTraces(
-  db: any,
-  options: PruneOptions
-): Promise<PruneResult> {
+export async function pruneTraces(db: any, options: PruneOptions): Promise<PruneResult> {
   const result: PruneResult = {
     schema: "hardkas.pruneReport.v1",
     ok: true,
@@ -173,32 +174,40 @@ export async function pruneTraces(
     const candidates = await identifyPruneCandidates(db, options);
 
     // Count preserved roots
-    const rootCount = db.prepare(`
+    const rootCount = db
+      .prepare(
+        `
       SELECT COUNT(*) as count FROM artifacts a
       WHERE NOT EXISTS (
         SELECT 1 FROM lineage_edges le WHERE le.child_artifact_id = a.artifact_id
       )
       AND a.schema NOT LIKE '%CORRUPTED%'
-    `).get() as { count: number };
+    `
+      )
+      .get() as { count: number };
     result.lineageRootsPreserved = rootCount.count;
 
     // Collect preserved root IDs for reporting
-    const roots = db.prepare(`
+    const roots = db
+      .prepare(
+        `
       SELECT artifact_id FROM artifacts a
       WHERE NOT EXISTS (
         SELECT 1 FROM lineage_edges le WHERE le.child_artifact_id = a.artifact_id
       )
       AND a.schema NOT LIKE '%CORRUPTED%'
       LIMIT 100
-    `).all() as Array<{ artifact_id: string }>;
-    result.preservedRootIds = roots.map(r => r.artifact_id);
+    `
+      )
+      .all() as Array<{ artifact_id: string }>;
+    result.preservedRootIds = roots.map((r) => r.artifact_id);
 
     if (options.dryRun) {
       // Dry run: just report what would be pruned
       result.artifactsPruned = candidates.length;
       result.tracesPruned = candidates.length;
       result.totalBytesFreed = candidates.reduce((sum, c) => sum + c.sizeBytes, 0);
-      result.prunedArtifactIds = candidates.map(c => c.artifactId);
+      result.prunedArtifactIds = candidates.map((c) => c.artifactId);
       return result;
     }
 
@@ -223,7 +232,9 @@ export async function pruneTraces(
 
         // Remove from DB
         deleteEdges.run(candidate.artifactId, candidate.artifactId);
-        try { deleteClosure.run(candidate.artifactId, candidate.artifactId); } catch {} // v3+ table
+        try {
+          deleteClosure.run(candidate.artifactId, candidate.artifactId);
+        } catch {} // v3+ table
         deleteArtifact.run(candidate.artifactId);
 
         result.artifactsPruned++;
@@ -235,10 +246,12 @@ export async function pruneTraces(
       try {
         const crypto = require("node:crypto");
         const pruneId = crypto.randomUUID(); // hardkas-determinism-allow: prune history ID
-        db.prepare(`
+        db.prepare(
+          `
           INSERT INTO prune_history (prune_id, pruned_at, artifacts_pruned, traces_pruned, events_pruned, lineage_roots_preserved, total_bytes_freed)
           VALUES (?, ?, ?, ?, ?, ?, ?)
-        `).run(
+        `
+        ).run(
           pruneId,
           new Date().toISOString(), // hardkas-determinism-allow: prune timestamp
           result.artifactsPruned,
@@ -267,7 +280,7 @@ export async function pruneTraces(
 
 /**
  * Verifies that pruning did not break any lineage invariants.
- * 
+ *
  * Checks:
  * 1. All lineage roots are still present
  * 2. No orphan edges exist
@@ -287,11 +300,15 @@ export function verifyPruneIntegrity(db: any): {
   };
 
   // Check for orphan edges
-  const orphans = db.prepare(`
+  const orphans = db
+    .prepare(
+      `
     SELECT COUNT(*) as count FROM lineage_edges 
     WHERE parent_artifact_id NOT IN (SELECT artifact_id FROM artifacts)
     OR child_artifact_id NOT IN (SELECT artifact_id FROM artifacts)
-  `).get() as { count: number };
+  `
+    )
+    .get() as { count: number };
   result.orphanEdges = orphans.count;
 
   if (result.orphanEdges > 0) {
@@ -300,14 +317,18 @@ export function verifyPruneIntegrity(db: any): {
 
   // Check closure table consistency
   try {
-    const edgesNotInClosure = db.prepare(`
+    const edgesNotInClosure = db
+      .prepare(
+        `
       SELECT COUNT(*) as count FROM lineage_edges le
       WHERE NOT EXISTS (
         SELECT 1 FROM lineage_closure lc
         WHERE lc.ancestor_id = le.parent_artifact_id
         AND lc.descendant_id = le.child_artifact_id
       )
-    `).get() as { count: number };
+    `
+      )
+      .get() as { count: number };
 
     if (edgesNotInClosure.count > 0) {
       result.closureConsistent = false;

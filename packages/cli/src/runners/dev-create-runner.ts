@@ -11,7 +11,9 @@ export async function runDevCreate(name: string) {
   if (fs.existsSync(targetDir)) {
     if (fs.readdirSync(targetDir).length > 0) {
       UI.error(`Directory '${name}' already exists and is not empty.`);
-      UI.info("To initialize an existing project, run 'hardkas dev init' inside the directory.");
+      UI.info(
+        "To initialize an existing project, run 'hardkas dev init' inside the directory."
+      );
       process.exitCode = 1;
       return;
     }
@@ -23,7 +25,7 @@ export async function runDevCreate(name: string) {
 
   try {
     await dappReactTemplate(targetDir, name);
-    
+
     UI.success("Project created successfully!");
     UI.info("\nNext steps:");
     console.log(`  cd ${name}`);

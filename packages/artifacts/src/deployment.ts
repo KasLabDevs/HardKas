@@ -20,7 +20,7 @@ export function createDeploymentRecord(opts: {
   payloadHash?: string;
   notes?: string;
 }): DeploymentRecord {
-  const recordDraft: Omit<DeploymentRecord, 'contentHash'> = {
+  const recordDraft: Omit<DeploymentRecord, "contentHash"> = {
     schema: "hardkas.deployment.v1",
     label: opts.label,
     networkId: opts.networkId,
@@ -39,7 +39,10 @@ export function createDeploymentRecord(opts: {
     ...(opts.notes ? { notes: opts.notes } : {})
   };
 
-  const contentHash = calculateContentHash(recordDraft, CURRENT_HASH_VERSION) as unknown as ContentHash;
+  const contentHash = calculateContentHash(
+    recordDraft,
+    CURRENT_HASH_VERSION
+  ) as unknown as ContentHash;
   return {
     ...recordDraft,
     contentHash
@@ -51,14 +54,17 @@ export function updateDeploymentStatus(
   newStatus: DeploymentRecord["status"],
   txId?: TxId
 ): DeploymentRecord {
-  const updatedDraft: Omit<DeploymentRecord, 'contentHash'> = {
+  const updatedDraft: Omit<DeploymentRecord, "contentHash"> = {
     ...record,
     status: newStatus,
     deployedAt: new Date().toISOString(),
     ...(txId ? { txId } : {})
   };
-  
-  const contentHash = calculateContentHash(updatedDraft, CURRENT_HASH_VERSION) as unknown as ContentHash;
+
+  const contentHash = calculateContentHash(
+    updatedDraft,
+    CURRENT_HASH_VERSION
+  ) as unknown as ContentHash;
   return {
     ...updatedDraft,
     contentHash

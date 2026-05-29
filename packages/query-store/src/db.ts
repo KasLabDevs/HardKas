@@ -11,7 +11,7 @@ export class HardkasStore {
   private db: any | null = null;
   private readonly dbPath: string;
 
-  constructor(options: { dbPath?: string, memory?: boolean } = {}) {
+  constructor(options: { dbPath?: string; memory?: boolean } = {}) {
     if (options.memory) {
       this.dbPath = ":memory:";
     } else {
@@ -19,7 +19,9 @@ export class HardkasStore {
     }
   }
 
-  public connect(options: { autoMigrate?: boolean; readOnly?: boolean } = { autoMigrate: false }) {
+  public connect(
+    options: { autoMigrate?: boolean; readOnly?: boolean } = { autoMigrate: false }
+  ) {
     if (this.db) return;
 
     if (this.dbPath !== ":memory:") {
@@ -32,14 +34,17 @@ export class HardkasStore {
     try {
       this.db = new DatabaseSync(this.dbPath, { readOnly: options.readOnly });
       this.db.exec("PRAGMA foreign_keys = ON;");
-      
+
       // Core SQLite tuning
       this.db.exec("PRAGMA journal_mode = WAL;");
       this.db.exec("PRAGMA synchronous = FULL;");
       this.db.exec("PRAGMA busy_timeout = 5000;"); // Prevent instant EBUSY crash
     } catch (err: any) {
       this.db = null;
-      throw new HardkasError(`Failed to open query projection: ${err.message}`, "PROJECTION_BUSY");
+      throw new HardkasError(
+        `Failed to open query projection: ${err.message}`,
+        "PROJECTION_BUSY"
+      );
     }
 
     if (options.autoMigrate && !options.readOnly) {
@@ -69,7 +74,7 @@ export class HardkasStore {
     if (!this.db) throw new Error("Database not connected");
 
     const runner = new MigrationRunner(this.db);
-    
+
     // 1. Handle legacy transition (version 1 baseline)
     runner.bootstrapLegacy(1, MIGRATIONS);
 
@@ -98,7 +103,7 @@ export class HardkasStore {
    */
   public checkHealth(): { ok: boolean; issues: CorruptionIssue[] } {
     const issues: CorruptionIssue[] = [];
-    
+
     if (this.dbPath === ":memory:") return { ok: true, issues: [] };
 
     if (!fs.existsSync(this.dbPath)) {
@@ -134,16 +139,17 @@ export class HardkasStore {
       try {
         const runner = new MigrationRunner(this.db);
         const applied = runner.getAppliedMigrations();
-        const appliedMap = new Map(applied.map(m => [m.version, m]));
+        const appliedMap = new Map(applied.map((m) => [m.version, m]));
 
         const pending = MIGRATIONS.filter((m: any) => !appliedMap.has(m.version));
-        
+
         if (pending.length > 0) {
           issues.push({
             code: "STORE_MIGRATION_REQUIRED",
             severity: "warning",
             message: `${pending.length} pending schema migration(s) detected.`,
-            suggestion: "Run 'hardkas query store migrate' or 'hardkas query store rebuild'."
+            suggestion:
+              "Run 'hardkas query store migrate' or 'hardkas query store rebuild'."
           });
         }
 
@@ -155,7 +161,8 @@ export class HardkasStore {
               code: "STORE_MIGRATION_CHECKSUM_MISMATCH",
               severity: "error",
               message: `Integrity violation: Migration ${m.version} checksum changed.`,
-              suggestion: "The database schema was modified externally or migrations were edited. A full rebuild is recommended."
+              suggestion:
+                "The database schema was modified externally or migrations were edited. A full rebuild is recommended."
             });
           }
         }

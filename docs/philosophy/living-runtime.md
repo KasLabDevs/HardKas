@@ -7,6 +7,7 @@ HardKAS refers to its core execution environment as a **Living Runtime**. This i
 In traditional environments, a local testnet is static. You start it, it waits for input, and if it crashes, it dies. The developer is completely responsible for feeding it state and keeping it alive.
 
 A **Living Runtime**, conversely, continuously interacts with its environment:
+
 - It actively watches your filesystem for new transaction artifacts.
 - It automatically projects new events into a queryable database.
 - It actively verifies the lineage of incoming data, ensuring causal integrity.

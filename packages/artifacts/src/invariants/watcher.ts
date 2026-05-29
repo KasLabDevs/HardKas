@@ -1,5 +1,17 @@
-import { Invariant, InvariantContext, InvariantViolation, ArtifactLookup } from "./types.js";
-import { EventEnvelope, createEventEnvelope, asWorkflowId, asCorrelationId, asNetworkId, asEventSequence } from "@hardkas/core";
+import {
+  Invariant,
+  InvariantContext,
+  InvariantViolation,
+  ArtifactLookup
+} from "./types.js";
+import {
+  EventEnvelope,
+  createEventEnvelope,
+  asWorkflowId,
+  asCorrelationId,
+  asNetworkId,
+  asEventSequence
+} from "@hardkas/core";
 
 export interface WatcherOptions {
   invariants: Invariant[];
@@ -32,7 +44,7 @@ export class InvariantWatcher {
    */
   public start(): void {
     if (this.unsubscribe) return;
-    
+
     this.unsubscribe = this.eventBus.subscribe(async (event: EventEnvelope) => {
       // 1. Avoid event loops: do not react to integrity events by default
       if (event.domain === "integrity") return;
@@ -40,7 +52,7 @@ export class InvariantWatcher {
       // 2. Prepare context
       const context: InvariantContext = {
         event,
-        artifactStore: this.artifactStore ?? undefined,
+        artifactStore: this.artifactStore ?? undefined
       };
 
       // 3. Run all registered invariants
@@ -93,7 +105,7 @@ export class InvariantWatcher {
         sourceEventId: sourceEvent.eventId as string
       }
     });
-    
+
     this.eventBus.emit(integrityEvent);
   }
 }

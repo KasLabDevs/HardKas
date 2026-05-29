@@ -23,4 +23,7 @@ const artifact = {
 fs.writeFileSync("test-artifacts/valid/plan.json", JSON.stringify(artifact, null, 2));
 
 const corrupted = { ...artifact, amountSompi: "2000" };
-fs.writeFileSync("test-artifacts/invalid/corrupted.json", JSON.stringify(corrupted, null, 2));
+fs.writeFileSync(
+  "test-artifacts/invalid/corrupted.json",
+  JSON.stringify(corrupted, null, 2)
+);

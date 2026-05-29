@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach } from "vitest";
-import { 
-  resetLocalnetState, 
+import {
+  resetLocalnetState,
   loadLocalnetState,
   getDefaultLocalnetStatePath,
   listSimulatedReceipts
@@ -13,7 +13,7 @@ import path from "node:path";
 
 describe("E2E Simulated Happy Path", () => {
   const tempDir = path.join(process.cwd(), ".hardkas-test-e2e");
-  
+
   const mockConfig: HardkasConfig = {
     defaultNetwork: "simulated",
     networks: {
@@ -31,7 +31,7 @@ describe("E2E Simulated Happy Path", () => {
     const tracesDir = path.join(process.cwd(), ".hardkas", "traces");
     if (fs.existsSync(receiptsDir)) fs.rmSync(receiptsDir, { recursive: true });
     if (fs.existsSync(tracesDir)) fs.rmSync(tracesDir, { recursive: true });
-    
+
     // For now, let's just use the real resetLocalnetState.
     await resetLocalnetState();
   });
@@ -58,11 +58,11 @@ describe("E2E Simulated Happy Path", () => {
       console.error("E2E Failed in sign:", result.steps.sign.error);
       console.error("E2E Failed in send:", result.steps.send.error);
     }
-    
+
     expect(result.ok).toBe(true);
     expect(result.result).toBe("broadcast");
     expect(result.steps.send.status).toBe("ok");
-    
+
     const txId = (result.steps.send.artifact as any)?.txId;
     expect(txId).toBeDefined();
 

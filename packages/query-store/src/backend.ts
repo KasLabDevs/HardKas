@@ -94,23 +94,33 @@ export interface LineageEdgeDocument {
 export interface QueryBackend {
   isReady(): boolean;
   kind(): "sqlite" | "filesystem";
-  findArtifacts(filters?: { schema?: string; mode?: string; networkId?: string }): Promise<ArtifactDocument[]>;
+  findArtifacts(filters?: {
+    schema?: string;
+    mode?: string;
+    networkId?: string;
+  }): Promise<ArtifactDocument[]>;
   getArtifact(idOrHash: string): Promise<ArtifactDocument | null>;
   getEvents(filters?: { kind?: string; txId?: string }): Promise<EventDocument[]>;
-  getLineageEdges(filters?: { parentHash?: string; childHash?: string }): Promise<LineageEdgeDocument[]>;
+  getLineageEdges(filters?: {
+    parentHash?: string;
+    childHash?: string;
+  }): Promise<LineageEdgeDocument[]>;
   getStoreStatus(): Promise<string>;
   doctor(): Promise<any>;
   migrate(): Promise<{ applied: number }>;
   sync(options?: { strict?: boolean; cwd?: string }): Promise<any>;
   syncPaths(paths: string[], options?: { strict?: boolean; cwd?: string }): Promise<any>;
   rebuild(options?: { strict?: boolean; cwd?: string }): Promise<any>;
-  /** 
+  /**
    * @deprecated BOUNDARY DINÁMICO: Este es el ÚNICO boundary dinámico aceptado en el sistema
    * que puede retornar `any[]` de forma intencional (SQLite devuelve filas genéricas).
    * Todos los llamadores DEBEN validar el output estrictamente en runtime mediante guards.
    */
   executeRawSql(sql: string): Promise<any[]>;
-  findReceipts(filters?: { status?: string; networkId?: string }): Promise<ArtifactDocument[]>;
+  findReceipts(filters?: {
+    status?: string;
+    networkId?: string;
+  }): Promise<ArtifactDocument[]>;
   findTraces(filters?: { txId?: string }): Promise<ArtifactDocument[]>;
 }
 
@@ -129,17 +139,21 @@ export class SqliteQueryBackend implements QueryBackend {
     return "sqlite";
   }
 
-  async findArtifacts(filters?: { schema?: string; mode?: string; networkId?: string }): Promise<ArtifactDocument[]> {
+  async findArtifacts(filters?: {
+    schema?: string;
+    mode?: string;
+    networkId?: string;
+  }): Promise<ArtifactDocument[]> {
     const db = this.store.getDatabase();
-    
+
     // Force SQLite to flush WAL entries to visibility for this read connection
     try {
       db.pragma("wal_checkpoint(PASSIVE)");
     } catch (e) {}
-    
+
     let query = "SELECT * FROM artifacts WHERE 1=1";
     const params: any[] = [];
-    
+
     if (filters?.schema) {
       query += " AND schema LIKE ?";
       params.push(`${filters.schema}%`);
@@ -152,9 +166,9 @@ export class SqliteQueryBackend implements QueryBackend {
       query += " AND network_id = ?";
       params.push(filters.networkId);
     }
-    
+
     const rows = db.prepare(query).all(...params) as DbArtifactRow[];
-    return rows.map(r => ({
+    return rows.map((r) => ({
       contentHash: r.content_hash,
       schema: r.schema,
       version: r.version,
@@ -171,11 +185,15 @@ export class SqliteQueryBackend implements QueryBackend {
 
   async getArtifact(idOrHash: string): Promise<ArtifactDocument | null> {
     const db = this.store.getDatabase();
-    
-    const row = db.prepare("SELECT * FROM artifacts WHERE artifact_id = ? OR content_hash = ? OR tx_id = ?").get(idOrHash, idOrHash, idOrHash) as DbArtifactRow | undefined;
-    
+
+    const row = db
+      .prepare(
+        "SELECT * FROM artifacts WHERE artifact_id = ? OR content_hash = ? OR tx_id = ?"
+      )
+      .get(idOrHash, idOrHash, idOrHash) as DbArtifactRow | undefined;
+
     if (!row) return null;
-    
+
     return {
       contentHash: row.content_hash,
       schema: row.schema,
@@ -193,10 +211,10 @@ export class SqliteQueryBackend implements QueryBackend {
 
   async getEvents(filters?: { kind?: string; txId?: string }): Promise<EventDocument[]> {
     const db = this.store.getDatabase();
-    
+
     let query = "SELECT * FROM events WHERE 1=1";
     const params: any[] = [];
-    
+
     if (filters?.kind) {
       query += " AND kind = ?";
       params.push(filters.kind);
@@ -205,9 +223,9 @@ export class SqliteQueryBackend implements QueryBackend {
       query += " AND tx_id = ?";
       params.push(filters.txId);
     }
-    
+
     const rows = db.prepare(query).all(...params) as DbEventRow[];
-    return rows.map(r => ({
+    return rows.map((r) => ({
       eventId: r.event_id,
       kind: r.kind,
       domain: r.domain,
@@ -222,12 +240,15 @@ export class SqliteQueryBackend implements QueryBackend {
     }));
   }
 
-  async getLineageEdges(filters?: { parentHash?: string; childHash?: string }): Promise<LineageEdgeDocument[]> {
+  async getLineageEdges(filters?: {
+    parentHash?: string;
+    childHash?: string;
+  }): Promise<LineageEdgeDocument[]> {
     const db = this.store.getDatabase();
-    
+
     let query = "SELECT * FROM lineage_edges WHERE 1=1";
     const params: any[] = [];
-    
+
     if (filters?.parentHash) {
       query += " AND parent_artifact_id = ?";
       params.push(filters.parentHash);
@@ -236,9 +257,9 @@ export class SqliteQueryBackend implements QueryBackend {
       query += " AND child_artifact_id = ?";
       params.push(filters.childHash);
     }
-    
+
     const rows = db.prepare(query).all(...params) as DbLineageEdgeRow[];
-    return rows.map(r => ({
+    return rows.map((r) => ({
       parentArtifactId: r.parent_artifact_id,
       childArtifactId: r.child_artifact_id,
       lineageId: r.lineage_id,
@@ -247,7 +268,10 @@ export class SqliteQueryBackend implements QueryBackend {
     }));
   }
 
-  async findReceipts(filters?: { status?: string; networkId?: string }): Promise<ArtifactDocument[]> {
+  async findReceipts(filters?: {
+    status?: string;
+    networkId?: string;
+  }): Promise<ArtifactDocument[]> {
     return this.findArtifacts({ schema: "hardkas.txReceipt", ...filters });
   }
 
@@ -255,14 +279,14 @@ export class SqliteQueryBackend implements QueryBackend {
     const db = this.store.getDatabase();
     let query = "SELECT * FROM artifacts WHERE schema = 'hardkas.txTrace'";
     const params: any[] = [];
-    
+
     if (filters?.txId) {
       query += " AND tx_id = ?";
       params.push(filters.txId);
     }
-    
+
     const rows = db.prepare(query).all(...params) as DbArtifactRow[];
-    return rows.map(r => ({
+    return rows.map((r) => ({
       contentHash: r.content_hash,
       schema: r.schema,
       version: r.version,
@@ -289,7 +313,7 @@ export class SqliteQueryBackend implements QueryBackend {
     const indexer = new HardkasIndexer(this.store.getDatabase());
     const indexerReport = indexer.doctor();
     const storeHealth = this.store.checkHealth();
-    
+
     return {
       ...indexerReport,
       ok: indexerReport.ok && storeHealth.ok,
@@ -304,7 +328,7 @@ export class SqliteQueryBackend implements QueryBackend {
   async rebuild(options?: { strict?: boolean; cwd?: string }): Promise<any> {
     // Ensure schema is up to date before rebuild
     this.store.migrate();
-    
+
     const { HardkasIndexer } = await import("./indexer.js");
     const indexer = new HardkasIndexer(this.store.getDatabase(), options);
     return indexer.rebuild();
@@ -319,7 +343,10 @@ export class SqliteQueryBackend implements QueryBackend {
     return indexer.sync();
   }
 
-  async syncPaths(paths: string[], options?: { strict?: boolean; cwd?: string }): Promise<any> {
+  async syncPaths(
+    paths: string[],
+    options?: { strict?: boolean; cwd?: string }
+  ): Promise<any> {
     this.store.migrate();
     const { HardkasIndexer } = await import("./indexer.js");
     const indexer = new HardkasIndexer(this.store.getDatabase(), options);

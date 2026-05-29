@@ -7,10 +7,12 @@ import path from "node:path";
 vi.mock("@hardkas/kaspa-rpc", async () => {
   const actual = await vi.importActual("@hardkas/kaspa-rpc");
   return {
-    ...actual as any,
+    ...(actual as any),
     JsonWrpcKaspaClient: vi.fn().mockImplementation(() => ({
       getInfo: vi.fn().mockResolvedValue({ networkId: "simnet", virtualDaaScore: 100n }),
-      healthCheck: vi.fn().mockResolvedValue({ status: "healthy", info: { networkId: "simnet" } }),
+      healthCheck: vi
+        .fn()
+        .mockResolvedValue({ status: "healthy", info: { networkId: "simnet" } }),
       getUtxosByAddress: vi.fn().mockResolvedValue([
         {
           outpoint: { transactionId: "a".repeat(64), index: 0 },
@@ -78,9 +80,7 @@ describe("Workflow Runtime Contract", () => {
     const sdk = await Hardkas.open({ cwd: tmpDir, mode: "agent" });
 
     const artifact = await sdk.workflow.run({
-      steps: [
-        { type: "simulate-failure" }
-      ],
+      steps: [{ type: "simulate-failure" }],
       dryRun: true
     });
 
@@ -94,16 +94,18 @@ describe("Workflow Runtime Contract", () => {
   });
 
   it("should enforce mutation policy (requireDryRun) when writing artifacts", async () => {
-    const sdk = await Hardkas.open({ 
-      cwd: tmpDir, 
+    const sdk = await Hardkas.open({
+      cwd: tmpDir,
       mode: "agent",
       policy: { requireDryRun: true }
     });
 
     // If we pass dryRun: false, it should throw because policy enforces dryRun: true
-    await expect(sdk.workflow.run({
-      steps: [{ type: "dummy" }],
-      dryRun: false
-    })).rejects.toThrow(/requireDryRun/);
+    await expect(
+      sdk.workflow.run({
+        steps: [{ type: "dummy" }],
+        dryRun: false
+      })
+    ).rejects.toThrow(/requireDryRun/);
   });
 });

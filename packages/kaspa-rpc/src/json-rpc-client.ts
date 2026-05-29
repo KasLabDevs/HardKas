@@ -1,6 +1,6 @@
-import { 
-  KaspaRpcClient, 
-  KaspaNodeInfo, 
+import {
+  KaspaRpcClient,
+  KaspaNodeInfo,
   KaspaRpcHealth,
   KaspaAddressBalance,
   KaspaRpcUtxo,
@@ -9,11 +9,11 @@ import {
   ServerInfo
 } from "./index.js";
 import { type NetworkId } from "@hardkas/core";
-import { 
-  RpcError, 
-  RpcTimeoutError, 
-  RpcUnavailableError, 
-  RpcCircuitOpenError, 
+import {
+  RpcError,
+  RpcTimeoutError,
+  RpcUnavailableError,
+  RpcCircuitOpenError,
   RpcRateLimitError,
   RpcValidationError
 } from "./errors.js";
@@ -85,16 +85,19 @@ export class KaspaJsonRpcClient implements KaspaRpcClient {
     try {
       const info = await this.getInfo();
       const latency = Date.now() - start;
-      
+
       // Stale Detection
       let stale = false;
       const now = Date.now();
       if (this.lastDaaScore !== null && info.virtualDaaScore !== undefined) {
-        if (info.virtualDaaScore <= this.lastDaaScore && now - this.lastDaaCheckTime > 30000) {
+        if (
+          info.virtualDaaScore <= this.lastDaaScore &&
+          now - this.lastDaaCheckTime > 30000
+        ) {
           stale = true;
         }
       }
-      
+
       if (info.virtualDaaScore !== undefined) {
         this.lastDaaScore = info.virtualDaaScore;
         this.lastDaaCheckTime = now;
@@ -167,19 +170,20 @@ export class KaspaJsonRpcClient implements KaspaRpcClient {
   }
 
   async getInfo(): Promise<KaspaNodeInfo> {
-    const data = await this.callRpc("getInfoRequest") as Record<string, unknown>;
+    const data = (await this.callRpc("getInfoRequest")) as Record<string, unknown>;
     const info: KaspaNodeInfo = {
       serverVersion: String(data.serverVersion),
       networkId: String(data.networkId),
       isSynced: Boolean(data.isSynced)
     };
-    if (data.virtualDaaScore !== undefined) info.virtualDaaScore = BigInt(data.virtualDaaScore as string | number);
+    if (data.virtualDaaScore !== undefined)
+      info.virtualDaaScore = BigInt(data.virtualDaaScore as string | number);
     if (data.mempoolSize !== undefined) info.mempoolSize = Number(data.mempoolSize);
     return info;
   }
 
   async getBlockDagInfo(): Promise<BlockDagInfo> {
-    const data = await this.callRpc("getBlockDagInfoRequest") as {
+    const data = (await this.callRpc("getBlockDagInfoRequest")) as {
       networkId: string;
       tipHashes: string[];
       virtualDaaScore?: string | number;
@@ -187,21 +191,30 @@ export class KaspaJsonRpcClient implements KaspaRpcClient {
     const dagInfo = {
       networkId: data.networkId as NetworkId,
       tipHashes: data.tipHashes,
-      ...(data.virtualDaaScore !== undefined ? { virtualDaaScore: BigInt(data.virtualDaaScore) } : {})
+      ...(data.virtualDaaScore !== undefined
+        ? { virtualDaaScore: BigInt(data.virtualDaaScore) }
+        : {})
     } satisfies BlockDagInfo;
     return dagInfo;
   }
 
   async getUtxosByAddress(address: string): Promise<KaspaRpcUtxo[]> {
-    const data = await this.callRpc("getUtxosByAddressesRequest", { addresses: [address] }) as {
+    const data = (await this.callRpc("getUtxosByAddressesRequest", {
+      addresses: [address]
+    })) as {
       entries?: Array<{
         address: string;
         outpoint: { transactionId: string; index: number };
-        utxoEntry: { amount: string | number; scriptPublicKey: string; blockDaaScore: string | number; isCoinbase: boolean };
+        utxoEntry: {
+          amount: string | number;
+          scriptPublicKey: string;
+          blockDaaScore: string | number;
+          isCoinbase: boolean;
+        };
       }>;
     };
     const entries = data.entries || [];
-    return entries.map(e => ({
+    return entries.map((e) => ({
       address: e.address,
       outpoint: {
         transactionId: e.outpoint.transactionId,
@@ -215,7 +228,10 @@ export class KaspaJsonRpcClient implements KaspaRpcClient {
   }
 
   async getBalanceByAddress(address: string): Promise<KaspaAddressBalance> {
-    const data = await this.callRpc("getBalanceByAddressRequest", { address }) as { address: string; balance: string | number };
+    const data = (await this.callRpc("getBalanceByAddressRequest", { address })) as {
+      address: string;
+      balance: string | number;
+    };
     return {
       address: data.address,
       balanceSompi: BigInt(data.balance)
@@ -224,7 +240,10 @@ export class KaspaJsonRpcClient implements KaspaRpcClient {
 
   async getMempoolEntry(txId: string): Promise<MempoolEntry | null> {
     try {
-      const result = await this.callRpc("getMempoolEntryRequest", { txId, includeOrphanPool: true }) as { entry: { acceptedAt: number } };
+      const result = (await this.callRpc("getMempoolEntryRequest", {
+        txId,
+        includeOrphanPool: true
+      })) as { entry: { acceptedAt: number } };
       return {
         txId,
         acceptedAt: String(result.entry.acceptedAt)
@@ -244,7 +263,9 @@ export class KaspaJsonRpcClient implements KaspaRpcClient {
   }
 
   async submitTransaction(rawTx: unknown): Promise<{ transactionId: string }> {
-    const result = await this.callRpc("submitTransactionRequest", { transaction: rawTx }) as { transactionId: string };
+    const result = (await this.callRpc("submitTransactionRequest", {
+      transaction: rawTx
+    })) as { transactionId: string };
     return { transactionId: result.transactionId };
   }
 
@@ -295,7 +316,7 @@ export class KaspaJsonRpcClient implements KaspaRpcClient {
 
         // Increment total retries count for health reporting
         if (attempt < this.retry.maxRetries && isRetriable) {
-           this.retriesCount++;
+          this.retriesCount++;
         }
 
         // Don't retry if it's a non-retriable error
@@ -315,7 +336,7 @@ export class KaspaJsonRpcClient implements KaspaRpcClient {
           this.retry.maxDelayMs
         );
         const jitter = Math.random() * 0.1 * delay;
-        await new Promise(resolve => setTimeout(resolve, delay + jitter));
+        await new Promise((resolve) => setTimeout(resolve, delay + jitter));
       }
     }
     throw lastErr;
@@ -379,7 +400,7 @@ export class KaspaJsonRpcClient implements KaspaRpcClient {
 
   private onFailure(e: any) {
     this.lastError = e.message;
-    
+
     // Only count as failure for circuit breaking if it's NOT a validation error
     if (e instanceof RpcValidationError || (e instanceof RpcError && !e.isRetriable)) {
       return;
@@ -406,7 +427,7 @@ export class KaspaJsonRpcClient implements KaspaRpcClient {
       "outpoint already spent",
       "method not found"
     ];
-    return deterministicMarkers.some(marker => msg.includes(marker));
+    return deterministicMarkers.some((marker) => msg.includes(marker));
   }
 
   private getSuccessRate(): number {

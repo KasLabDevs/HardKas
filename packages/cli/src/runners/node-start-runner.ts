@@ -1,4 +1,8 @@
-import { DockerKaspadRunner, DockerKaspadOptions, KaspadNodeStatus } from "@hardkas/node-runner";
+import {
+  DockerKaspadRunner,
+  DockerKaspadOptions,
+  KaspadNodeStatus
+} from "@hardkas/node-runner";
 
 export interface NodeStartRunnerInput extends DockerKaspadOptions {
   json?: boolean;
@@ -9,7 +13,9 @@ export interface NodeStartRunnerResult {
   formatted: string;
 }
 
-export async function runNodeStart(input: NodeStartRunnerInput): Promise<NodeStartRunnerResult> {
+export async function runNodeStart(
+  input: NodeStartRunnerInput
+): Promise<NodeStartRunnerResult> {
   const runner = new DockerKaspadRunner(input);
   const status = await runner.start();
 

@@ -26,7 +26,8 @@ import type { ContentHash } from "@hardkas/core";
 const VALID_TRANSITIONS: Record<string, readonly string[]> = {
   "hardkas.snapshot": ["hardkas.txPlan"],
   "hardkas.txPlan": ["hardkas.signedTx"],
-  "hardkas.signedTx": ["hardkas.txReceipt"]
+  "hardkas.signedTx": ["hardkas.signedTx", "hardkas.txReceipt"],
+  "hardkas.workflow.v1": ["hardkas.txPlan", "hardkas.signedTx", "hardkas.txReceipt"]
 };
 
 // ---------------------------------------------------------------------------
@@ -68,12 +69,41 @@ export class LineageQueryAdapter implements QueryAdapter {
   // Chain — walk ancestors or descendants from an anchor
   // -------------------------------------------------------------------------
 
-  private async executeChain(request: QueryRequest): Promise<QueryResult<LineageChainResult>> {
+  private async executeChain(
+    request: QueryRequest
+  ): Promise<QueryResult<LineageChainResult>> {
     const start = Date.now();
-    const anchor = request.params["anchor"];
-    if (!anchor) throw new Error("chain requires params.anchor (contentHash or artifactId)");
+    let anchor = request.params["anchor"];
+    if (!anchor)
+      throw new Error("chain requires params.anchor (contentHash or artifactId)");
 
-    const direction = (request.params["direction"] ?? "ancestors") as "ancestors" | "descendants";
+    // Auto-resolve file path to artifactId/contentHash
+    if (typeof anchor === "string") {
+      try {
+        const path = await import("node:path");
+        const fs = await import("node:fs");
+        const resolvedPath = path.resolve(this.rootDir, anchor);
+        if (fs.existsSync(resolvedPath) && fs.statSync(resolvedPath).isFile()) {
+          const content = fs.readFileSync(resolvedPath, "utf-8");
+          const json = JSON.parse(content);
+          if (json) {
+            anchor = (json.lineage?.artifactId ||
+              json.artifactId ||
+              json.planId ||
+              json.signedId ||
+              json.txId ||
+              json.contentHash ||
+              anchor) as string;
+          }
+        }
+      } catch (e) {
+        // Ignore resolution errors
+      }
+    }
+
+    const direction = (request.params["direction"] ?? "ancestors") as
+      | "ancestors"
+      | "descendants";
     const graph = await this.buildGraph();
 
     // Find anchor node
@@ -89,9 +119,8 @@ export class LineageQueryAdapter implements QueryAdapter {
       this.walkDescendants(anchorNode, graph, nodes, transitions);
     }
 
-    const complete = direction === "ancestors"
-      ? nodes.length > 0 && !nodes[0]!.parentArtifactId
-      : true; // descendants are always "complete" (we show what exists)
+    const complete =
+      direction === "ancestors" ? nodes.length > 0 && !nodes[0]!.parentArtifactId : true; // descendants are always "complete" (we show what exists)
 
     const result: LineageChainResult = {
       anchor,
@@ -103,7 +132,7 @@ export class LineageQueryAdapter implements QueryAdapter {
 
     let why: WhyBlock[] | undefined;
     if (request.explain) {
-      why = transitions.map(t => explainTransition(t));
+      why = transitions.map((t) => explainTransition(t));
     }
 
     return {
@@ -127,7 +156,9 @@ export class LineageQueryAdapter implements QueryAdapter {
   // Transitions — list all edges in a lineage tree
   // -------------------------------------------------------------------------
 
-  private async executeTransitions(request: QueryRequest): Promise<QueryResult<LineageTransition>> {
+  private async executeTransitions(
+    request: QueryRequest
+  ): Promise<QueryResult<LineageTransition>> {
     const start = Date.now();
     const graph = await this.buildGraph();
     const rootId = request.params["root"];
@@ -166,7 +197,7 @@ export class LineageQueryAdapter implements QueryAdapter {
 
     let why: WhyBlock[] | undefined;
     if (request.explain) {
-      why = paged.map(t => explainTransition(t));
+      why = paged.map((t) => explainTransition(t));
     }
 
     return {
@@ -190,7 +221,9 @@ export class LineageQueryAdapter implements QueryAdapter {
   // Orphans — artifacts with broken parent references
   // -------------------------------------------------------------------------
 
-  private async executeOrphans(request: QueryRequest): Promise<QueryResult<LineageOrphan>> {
+  private async executeOrphans(
+    request: QueryRequest
+  ): Promise<QueryResult<LineageOrphan>> {
     const start = Date.now();
     const graph = await this.buildGraph();
     const orphans: LineageOrphan[] = [];
@@ -215,7 +248,7 @@ export class LineageQueryAdapter implements QueryAdapter {
 
     let why: WhyBlock[] | undefined;
     if (request.explain) {
-      why = paged.map(o => explainOrphan(o.node, o.missingParentId));
+      why = paged.map((o) => explainOrphan(o.node, o.missingParentId));
     }
 
     return {
@@ -247,32 +280,65 @@ export class LineageQueryAdapter implements QueryAdapter {
 
     const docs = await this.backend.findArtifacts();
 
+    const VALID_SCHEMAS = [
+      "hardkas.txPlan",
+      "hardkas.signedTx",
+      "hardkas.txReceipt",
+      "hardkas.workflow.v1",
+      "hardkas.snapshot"
+    ];
+
     for (const doc of docs) {
       const raw = doc.payload;
-      if (!raw?.schema || !raw.lineage) continue;
+      if (!raw?.schema || !VALID_SCHEMAS.includes(raw.schema)) continue;
 
       const node: LineageNode = {
         contentHash: doc.contentHash as ContentHash,
         schema: doc.schema,
-        artifactId: raw.lineage.artifactId || "",
-        parentArtifactId: raw.lineage.parentArtifactId,
-        rootArtifactId: raw.lineage.rootArtifactId || "",
-        lineageId: raw.lineage.lineageId || "",
-        sequence: raw.lineage.sequence,
+        artifactId:
+          raw.lineage?.artifactId ||
+          raw.artifactId ||
+          raw.planId ||
+          raw.signedId ||
+          raw.txId ||
+          doc.contentHash ||
+          "",
+        parentArtifactId:
+          raw.lineage?.parentArtifactId || raw.sourcePlanId || raw.sourceSignedId,
+        rootArtifactId:
+          raw.lineage?.rootArtifactId ||
+          raw.rootArtifactId ||
+          raw.artifactId ||
+          raw.planId ||
+          raw.signedId ||
+          raw.txId ||
+          doc.contentHash ||
+          "",
+        lineageId: raw.lineage?.lineageId || "",
+        sequence: raw.lineage?.sequence,
         filePath: doc.path,
         networkId: doc.networkId,
         mode: doc.mode,
-        createdAt: doc.createdAt || ""
+        createdAt: doc.createdAt || "",
+        workflowId: raw.schema === "hardkas.workflow.v1" ? undefined : raw.workflowId
       };
 
       nodes.push(node);
       if (node.artifactId) byArtifactId.set(node.artifactId, node);
+      if (raw.planId) byArtifactId.set(raw.planId, node);
+      if (raw.signedId) byArtifactId.set(raw.signedId, node);
+      if (raw.txId) byArtifactId.set(raw.txId, node);
       if (node.contentHash) byContentHash.set(node.contentHash, node);
 
       if (node.parentArtifactId) {
         const existing = children.get(node.parentArtifactId) ?? [];
         existing.push(node);
         children.set(node.parentArtifactId, existing);
+      }
+      if (node.workflowId) {
+        const existing = children.get(node.workflowId) ?? [];
+        existing.push(node);
+        children.set(node.workflowId, existing);
       }
     }
 
@@ -289,32 +355,41 @@ export class LineageQueryAdapter implements QueryAdapter {
     nodes: LineageNode[],
     transitions: LineageTransition[]
   ): void {
-    // Walk from node toward root
-    const chain: LineageNode[] = [node];
-    let current = node;
+    // BFS from node toward roots
+    const queue: LineageNode[] = [node];
     const visited = new Set<string>();
+    const queued = new Set<string>([node.artifactId]);
+    nodes.push(node);
 
-    while (current.parentArtifactId && !visited.has(current.parentArtifactId)) {
-      visited.add(current.parentArtifactId);
-      const parent = graph.byArtifactId.get(current.parentArtifactId);
-      if (!parent) break;
+    while (queue.length > 0) {
+      const current = queue.shift()!;
+      visited.add(current.artifactId);
 
-      chain.unshift(parent);
+      const parentIds = [];
+      if (current.parentArtifactId) parentIds.push(current.parentArtifactId);
+      if (current.workflowId) parentIds.push(current.workflowId);
 
-      const allowed = VALID_TRANSITIONS[parent.schema] ?? [];
-      transitions.unshift({
-        from: parent,
-        to: current,
-        valid: allowed.includes(current.schema),
-        rule: allowed.includes(current.schema)
-          ? `${parent.schema} → ${current.schema} (valid)`
-          : `${parent.schema} → ${current.schema} (INVALID)`
-      });
+      for (const parentId of parentIds) {
+        const parent = graph.byArtifactId.get(parentId) ?? graph.byContentHash.get(parentId);
+        if (!parent) continue;
 
-      current = parent;
+        if (!queued.has(parent.artifactId)) {
+          queued.add(parent.artifactId);
+          nodes.unshift(parent);
+          queue.push(parent);
+
+          const allowed = VALID_TRANSITIONS[parent.schema] ?? [];
+          transitions.unshift({
+            from: parent,
+            to: current,
+            valid: allowed.includes(current.schema),
+            rule: allowed.includes(current.schema)
+              ? `${parent.schema} → ${current.schema} (valid)`
+              : `${parent.schema} → ${current.schema} (INVALID)`
+          });
+        }
+      }
     }
-
-    nodes.push(...chain);
   }
 
   private walkDescendants(
@@ -326,27 +401,33 @@ export class LineageQueryAdapter implements QueryAdapter {
     // BFS from node toward leaves
     const queue: LineageNode[] = [node];
     const visited = new Set<string>();
+    const queued = new Set<string>([node.artifactId]);
     nodes.push(node);
 
     while (queue.length > 0) {
       const current = queue.shift()!;
-      if (visited.has(current.artifactId)) continue;
       visited.add(current.artifactId);
 
-      const kids = graph.children.get(current.artifactId) ?? [];
+      const kids = [
+        ...(graph.children.get(current.artifactId) ?? []),
+        ...(current.contentHash ? (graph.children.get(current.contentHash) ?? []) : [])
+      ];
       for (const child of kids) {
-        nodes.push(child);
-        queue.push(child);
+        if (!queued.has(child.artifactId)) {
+          queued.add(child.artifactId);
+          nodes.push(child);
+          queue.push(child);
 
-        const allowed = VALID_TRANSITIONS[current.schema] ?? [];
-        transitions.push({
-          from: current,
-          to: child,
-          valid: allowed.includes(child.schema),
-          rule: allowed.includes(child.schema)
-            ? `${current.schema} → ${child.schema} (valid)`
-            : `${current.schema} → ${child.schema} (INVALID)`
-        });
+          const allowed = VALID_TRANSITIONS[current.schema] ?? [];
+          transitions.push({
+            from: current,
+            to: child,
+            valid: allowed.includes(child.schema),
+            rule: allowed.includes(child.schema)
+              ? `${current.schema} → ${child.schema} (valid)`
+              : `${current.schema} → ${child.schema} (INVALID)`
+          });
+        }
       }
     }
   }
@@ -372,7 +453,12 @@ export class LineageQueryAdapter implements QueryAdapter {
     for (const entry of entries) {
       const full = path.join(dir, entry.name);
       if (entry.isDirectory()) {
-        if (entry.name === "node_modules" || entry.name === ".git" || entry.name === "keystores") continue;
+        if (
+          entry.name === "node_modules" ||
+          entry.name === ".git" ||
+          entry.name === "keystores"
+        )
+          continue;
         await this.walkDir(full, out);
       } else if (entry.name.endsWith(".json") && !entry.name.endsWith(".enc.json")) {
         out.push(full);

@@ -9,7 +9,7 @@ const __dirname = path.dirname(__filename);
 
 /**
  * HardKAS Docs Drift Detector
- * 
+ *
  * Scans markdown files for `hardkas ...` command blocks and verifies
  * that the commands exist in the current CLI program.
  */
@@ -40,7 +40,7 @@ function extractCommands(content: string): string[] {
   while ((match = regex.exec(content)) !== null) {
     matches.push(match[1]!.trim());
   }
-  
+
   // Also check for bash/text code blocks
   const blockRegex = /```(?:bash|text|shell)\n([\s\S]+?)\n```/g;
   while ((match = blockRegex.exec(content)) !== null) {
@@ -51,14 +51,14 @@ function extractCommands(content: string): string[] {
       }
     }
   }
-  
+
   return matches;
 }
 
 function findOption(cmd: Command, name: string): any {
   let c: Command | null = cmd;
   while (c) {
-    const opt = c.options.find(o => o.short === name || o.long === name);
+    const opt = c.options.find((o) => o.short === name || o.long === name);
     if (opt) return opt;
     c = c.parent;
   }
@@ -66,7 +66,7 @@ function findOption(cmd: Command, name: string): any {
 }
 
 function verifyCommand(fullCmd: string): { ok: boolean; error?: string } {
-  const tokens = fullCmd.split(/\s+/).filter(t => t.length > 0);
+  const tokens = fullCmd.split(/\s+/).filter((t) => t.length > 0);
   if (tokens.length === 0) return { ok: true };
 
   let current: Command = program;
@@ -81,7 +81,11 @@ function verifyCommand(fullCmd: string): { ok: boolean; error?: string } {
       const opt = findOption(current, optionName);
       if (opt) {
         if (opt.required || opt.optional) {
-          if (!token.includes("=") && i + 1 < tokens.length && !tokens[i + 1]!.startsWith("-")) {
+          if (
+            !token.includes("=") &&
+            i + 1 < tokens.length &&
+            !tokens[i + 1]!.startsWith("-")
+          ) {
             i++; // skip option value
           }
         }
@@ -96,7 +100,9 @@ function verifyCommand(fullCmd: string): { ok: boolean; error?: string } {
     }
 
     // 2. If it's a subcommand of the current command
-    const sub = current.commands.find(c => c.name() === token || c.aliases().includes(token));
+    const sub = current.commands.find(
+      (c) => c.name() === token || c.aliases().includes(token)
+    );
     if (sub) {
       current = sub;
       i++;
@@ -116,19 +122,21 @@ function verifyCommand(fullCmd: string): { ok: boolean; error?: string } {
     }
 
     // 5. Otherwise, it is an unrecognized part / drift
-    return { ok: false, error: `Command part "${token}" not found in "${current.name()}" hierarchy` };
+    return {
+      ok: false,
+      error: `Command part "${token}" not found in "${current.name()}" hierarchy`
+    };
   }
 
   return { ok: true };
 }
-
 
 const WORKSPACE_ROOT = path.resolve(__dirname, "../../..");
 
 const docsFiles = [
   path.join(WORKSPACE_ROOT, "README.md"),
   ...getAllFiles(path.join(WORKSPACE_ROOT, "docs"), ".md")
-].filter(f => !f.includes("history"));
+].filter((f) => !f.includes("history"));
 
 let totalMatches = 0;
 let driftCount = 0;
@@ -138,7 +146,7 @@ console.log("--- HardKAS Docs Drift Detector ---");
 for (const file of docsFiles) {
   const content = fs.readFileSync(file, "utf8");
   const commands = extractCommands(content);
-  
+
   if (commands.length > 0) {
     console.log(`\n📄 ${file}:`);
     for (const cmd of commands) {

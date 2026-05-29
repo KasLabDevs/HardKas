@@ -1,8 +1,4 @@
-import { 
-  IgraTxSigner, 
-  IgraTxSigningInput, 
-  IgraTxSigningResult 
-} from "./igra-signer.js";
+import { IgraTxSigner, IgraTxSigningInput, IgraTxSigningResult } from "./igra-signer.js";
 
 export interface ViemIgraTxSignerOptions {
   /**
@@ -10,7 +6,7 @@ export interface ViemIgraTxSignerOptions {
    * Useful for testing without real viem dependency.
    */
   readonly viemLoader?: () => Promise<any>;
-  
+
   /**
    * Optional custom loader for viem/accounts package.
    */
@@ -40,10 +36,14 @@ export class ViemIgraTxSigner implements IgraTxSigner {
 
     // 1. Basic Schema & Status Validation
     if (plan.schema !== "hardkas.igraTxPlan.v1") {
-      throw new Error(`Invalid plan schema: ${plan.schema}. Expected hardkas.igraTxPlan.v1`);
+      throw new Error(
+        `Invalid plan schema: ${plan.schema}. Expected hardkas.igraTxPlan.v1`
+      );
     }
     if (plan.status !== "built") {
-      throw new Error(`Plan must be in 'built' status to be signed. Current: ${plan.status}`);
+      throw new Error(
+        `Plan must be in 'built' status to be signed. Current: ${plan.status}`
+      );
     }
 
     // 2. Account & Private Key Validation
@@ -51,7 +51,9 @@ export class ViemIgraTxSigner implements IgraTxSigner {
       throw new Error("Signer requires an account input.");
     }
     if (!account.privateKey) {
-      throw new Error(`Account '${account.name}' has no private key available for signing.`);
+      throw new Error(
+        `Account '${account.name}' has no private key available for signing.`
+      );
     }
 
     // 3. Address Guardrail
@@ -60,19 +62,30 @@ export class ViemIgraTxSigner implements IgraTxSigner {
     }
 
     // 4. Address Match Validation
-    if (plan.request.from && plan.request.from.toLowerCase() !== account.address.toLowerCase()) {
-      throw new Error(`Account address '${account.address}' does not match plan 'from' address '${plan.request.from}'.`);
+    if (
+      plan.request.from &&
+      plan.request.from.toLowerCase() !== account.address.toLowerCase()
+    ) {
+      throw new Error(
+        `Account address '${account.address}' does not match plan 'from' address '${plan.request.from}'.`
+      );
     }
 
     // 5. Plan Completeness Check (Gas & Nonce)
     if (plan.request.gasLimit === undefined || plan.request.gasLimit === null) {
-      throw new Error("Igra transaction plan is incomplete. Rebuild the plan with gas limit.");
+      throw new Error(
+        "Igra transaction plan is incomplete. Rebuild the plan with gas limit."
+      );
     }
     if (plan.request.gasPriceWei === undefined || plan.request.gasPriceWei === null) {
-      throw new Error("Igra transaction plan is incomplete. Rebuild the plan with gas price.");
+      throw new Error(
+        "Igra transaction plan is incomplete. Rebuild the plan with gas price."
+      );
     }
     if (plan.request.nonce === undefined || plan.request.nonce === null) {
-      throw new Error("Igra transaction plan is incomplete. Rebuild the plan with nonce.");
+      throw new Error(
+        "Igra transaction plan is incomplete. Rebuild the plan with nonce."
+      );
     }
 
     // 6. Private Key Normalization & Validation
@@ -94,13 +107,15 @@ export class ViemIgraTxSigner implements IgraTxSigner {
       viem = await this.viemLoader();
       accounts = await this.accountsLoader();
     } catch (e) {
-      throw new Error("EVM signing dependency (viem) is not installed. Install viem to enable Igra L2 signing.");
+      throw new Error(
+        "EVM signing dependency (viem) is not installed. Install viem to enable Igra L2 signing."
+      );
     }
 
     // 8. Perform Signing
     try {
       const viemAccount = accounts.privateKeyToAccount(normalizedPk);
-      
+
       const signed = await viemAccount.signTransaction({
         chainId: plan.chainId,
         to: plan.request.to as `0x${string}`,
@@ -119,7 +134,9 @@ export class ViemIgraTxSigner implements IgraTxSigner {
       };
     } catch (e) {
       // Re-throw without leaking private key
-      throw new Error(`Igra signing failed: ${e instanceof Error ? e.message : String(e)}`);
+      throw new Error(
+        `Igra signing failed: ${e instanceof Error ? e.message : String(e)}`
+      );
     }
   }
 }

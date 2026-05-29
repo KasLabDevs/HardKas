@@ -11,7 +11,11 @@ describe("TestHarness", () => {
   it("send returns accepted receipt", () => {
     const h = createTestHarness();
     const names = h.accountNames();
-    const result = h.send({ from: names[0]!, to: names[1]!, amountSompi: 10_000_000_000n });
+    const result = h.send({
+      from: names[0]!,
+      to: names[1]!,
+      amountSompi: 10_000_000_000n
+    });
     expect(result.ok).toBe(true);
     expect(result.receipt).toBeAccepted();
   });
@@ -28,7 +32,11 @@ describe("TestHarness", () => {
   it("receipt has valid txId", () => {
     const h = createTestHarness();
     const names = h.accountNames();
-    const result = h.send({ from: names[0]!, to: names[1]!, amountSompi: 1_000_000_000n });
+    const result = h.send({
+      from: names[0]!,
+      to: names[1]!,
+      amountSompi: 1_000_000_000n
+    });
     expect(result.receipt).toHaveValidTxId();
   });
 
@@ -46,9 +54,7 @@ describe("TestHarness", () => {
       name: "funded-bob",
       accounts: 3,
       initialBalance: 100_000_000_000n,
-      setup: [
-        { from: "alice", to: "bob", amountSompi: 30_000_000_000n }
-      ]
+      setup: [{ from: "alice", to: "bob", amountSompi: 30_000_000_000n }]
     });
     const bobBalance = f.balanceOf("bob");
     expect(bobBalance).toBeGreaterThan(100_000_000_000n);

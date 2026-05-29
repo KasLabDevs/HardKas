@@ -55,10 +55,7 @@ export function buildPaymentPlan(request: TxBuildRequest): TxPlan {
     return 0;
   });
 
-  const target = sortedOutputs.reduce(
-    (sum, output) => sum + output.amountSompi,
-    0n
-  );
+  const target = sortedOutputs.reduce((sum, output) => sum + output.amountSompi, 0n);
 
   if (target <= 0n) {
     throw new Error("Transaction amount must be positive.");
@@ -69,15 +66,15 @@ export function buildPaymentPlan(request: TxBuildRequest): TxPlan {
     // a.amountSompi ASC
     if (a.amountSompi < b.amountSompi) return -1;
     if (a.amountSompi > b.amountSompi) return 1;
-    
+
     // b.transactionId ASC (tie-breaker 1)
     if (a.outpoint.transactionId < b.outpoint.transactionId) return -1;
     if (a.outpoint.transactionId > b.outpoint.transactionId) return 1;
-    
+
     // c.index ASC (tie-breaker 2)
     if (a.outpoint.index < b.outpoint.index) return -1;
     if (a.outpoint.index > b.outpoint.index) return 1;
-    
+
     return 0;
   });
 
@@ -119,7 +116,7 @@ export function buildPaymentPlan(request: TxBuildRequest): TxPlan {
         });
         finalMass = noChangeResult.mass;
         finalFee = finalMass * request.feeRateSompiPerMass;
-        
+
         // Re-check if still enough after potential fee change
         if (selectedAmount < target + finalFee) continue;
       }
@@ -139,11 +136,11 @@ export function buildPaymentPlan(request: TxBuildRequest): TxPlan {
         inputs: canonicalSelected,
         outputs: sortedOutputs,
         change: hasActualChange
-            ? {
-                address: request.changeAddress ?? request.fromAddress,
-                amountSompi: changeAmount
-              }
-            : undefined,
+          ? {
+              address: request.changeAddress ?? request.fromAddress,
+              amountSompi: changeAmount
+            }
+          : undefined,
         estimatedMass: finalMass,
         estimatedFeeSompi: finalFee
       };

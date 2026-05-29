@@ -32,6 +32,7 @@ hardkas sandbox --recipe transfer
 ```
 
 This recipe will:
+
 1. Generate a deterministic transaction plan.
 2. Sign the transaction payload.
 3. Submit the transaction and record the receipt.
@@ -40,6 +41,7 @@ This recipe will:
 ## 4. The Observability Dashboard
 
 When the dashboard opens, you will see:
+
 - **Cockpit**: Your control center, displaying connected accounts and the real-time activity stream.
 - **Workflow Graph**: Visualizes the `Plan -> Signed -> Receipt -> Replay` causal chain.
 - **Truth Status**: Shows the canonical artifact lattice acting as the ground truth of your workspace.

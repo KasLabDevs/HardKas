@@ -21,7 +21,7 @@ describe("Query Store Rebuild Equivalence", () => {
     hkDir = path.join(tempDir, ".hardkas");
     fs.mkdirSync(hkDir);
     const dbPath = path.join(hkDir, "store.db");
-    
+
     store = new HardkasStore({ dbPath });
     store.connect({ autoMigrate: true });
     db = store.getDatabase();
@@ -36,7 +36,7 @@ describe("Query Store Rebuild Equivalence", () => {
     const artifact: any = {
       schema,
       version: "1.0.0-alpha",
-      hardkasVersion: "0.7.3-alpha",
+      hardkasVersion: "0.7.4-alpha",
       networkId: "simnet",
       mode: "real",
       artifactId: id,
@@ -50,15 +50,23 @@ describe("Query Store Rebuild Equivalence", () => {
       feeSompi: "100",
       payload: {}
     };
-    
+
     // In HardKAS, contentHash is calculated from the object excluding the contentHash field itself (or with it as empty)
     artifact.contentHash = calculateContentHash(artifact);
     return JSON.stringify(artifact);
   };
 
   const getIndexSnapshot = (db: DatabaseSync) => {
-    const artifacts = db.prepare("SELECT artifact_id, content_hash, schema FROM artifacts ORDER BY artifact_id").all();
-    const edges = db.prepare("SELECT parent_artifact_id, child_artifact_id FROM lineage_edges ORDER BY parent_artifact_id").all();
+    const artifacts = db
+      .prepare(
+        "SELECT artifact_id, content_hash, schema FROM artifacts ORDER BY artifact_id"
+      )
+      .all();
+    const edges = db
+      .prepare(
+        "SELECT parent_artifact_id, child_artifact_id FROM lineage_edges ORDER BY parent_artifact_id"
+      )
+      .all();
     const snapshot = JSON.stringify({ artifacts, edges });
     return createHash("sha256").update(snapshot).digest("hex");
   };
@@ -68,13 +76,13 @@ describe("Query Store Rebuild Equivalence", () => {
     fs.writeFileSync(artPath, createMockArtifact("art1"));
 
     const indexer = new HardkasIndexer(db, { cwd: tempDir });
-    
+
     await indexer.sync();
     const hash1 = getIndexSnapshot(db);
-    
+
     await indexer.sync();
     const hash2 = getIndexSnapshot(db);
-    
+
     expect(hash1).toBe(hash2);
   });
 
@@ -85,42 +93,46 @@ describe("Query Store Rebuild Equivalence", () => {
     }
 
     const indexer = new HardkasIndexer(db, { cwd: tempDir });
-    
+
     await indexer.sync();
     const hashOriginal = getIndexSnapshot(db);
-    
+
     // Wipe and Rebuild
     await indexer.rebuild();
     const hashRebuilt = getIndexSnapshot(db);
-    
+
     expect(hashOriginal).toBe(hashRebuilt);
   });
 
   it("should detect additions and deletions during sync", async () => {
     const indexer = new HardkasIndexer(db, { cwd: tempDir });
-    
+
     // 1. Initial
     fs.writeFileSync(path.join(hkDir, "a.json"), createMockArtifact("a"));
     await indexer.sync();
     expect(indexer.doctor().zombieArtifacts).toBe(0);
-    
+
     // 2. Add
     fs.writeFileSync(path.join(hkDir, "b.json"), createMockArtifact("b"));
     await indexer.sync();
-    const countAfterAdd = db.prepare("SELECT COUNT(*) as c FROM artifacts").get() as { c: number };
+    const countAfterAdd = db.prepare("SELECT COUNT(*) as c FROM artifacts").get() as {
+      c: number;
+    };
     expect(countAfterAdd.c).toBe(2);
- 
+
     // 3. Delete
     fs.unlinkSync(path.join(hkDir, "a.json"));
     await indexer.sync(); // Cleanup should happen here
-    const countAfterDel = db.prepare("SELECT COUNT(*) as c FROM artifacts").get() as { c: number };
+    const countAfterDel = db.prepare("SELECT COUNT(*) as c FROM artifacts").get() as {
+      c: number;
+    };
     expect(countAfterDel.c).toBe(1);
     expect(indexer.doctor().zombieArtifacts).toBe(0);
   });
 
   it("should support sequential migrate, rebuild, and doctor without transaction errors", async () => {
     const indexer = new HardkasIndexer(db, { cwd: tempDir });
-    
+
     // 1. Initial migrate (handled by connect already, but we can call again)
     const migrationResult = store.migrate();
     expect(migrationResult.status).toBe("ok");
@@ -128,7 +140,7 @@ describe("Query Store Rebuild Equivalence", () => {
     // 2. Add data
     fs.writeFileSync(path.join(hkDir, "seq1.json"), createMockArtifact("seq1"));
     await indexer.sync();
-    
+
     // 3. Rebuild
     const rebuildResult = await indexer.rebuild();
     expect(rebuildResult.ok).toBe(true);

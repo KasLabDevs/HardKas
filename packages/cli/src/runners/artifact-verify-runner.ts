@@ -1,4 +1,8 @@
-import { verifyArtifactIntegrity, verifyArtifactSemantics, verifyArtifactReplay } from "@hardkas/artifacts";
+import {
+  verifyArtifactIntegrity,
+  verifyArtifactSemantics,
+  verifyArtifactReplay
+} from "@hardkas/artifacts";
 import { UI } from "../ui.js";
 import path from "node:path";
 import fs from "node:fs";
@@ -16,7 +20,7 @@ export async function runArtifactVerify(options: ArtifactVerifyOptions) {
   const { Hardkas } = await import("@hardkas/sdk");
   const sdk = await Hardkas.open({ cwd: options.workspaceRoot });
   const absolutePath = sdk.workspace.resolvePath(options.path);
-  
+
   if (!fs.existsSync(absolutePath)) {
     UI.error(`Path not found: ${options.path}`);
     process.exitCode = 1;
@@ -30,7 +34,9 @@ export async function runArtifactVerify(options: ArtifactVerifyOptions) {
     if (options.recursive) {
       return runRecursiveVerify(absolutePath, options);
     } else {
-      UI.error(`${options.path} is a directory. Use --recursive to verify all artifacts within it.`);
+      UI.error(
+        `${options.path} is a directory. Use --recursive to verify all artifacts within it.`
+      );
       process.exitCode = 1;
       return;
     }
@@ -40,18 +46,22 @@ export async function runArtifactVerify(options: ArtifactVerifyOptions) {
   let result = await verifyArtifactIntegrity(absolutePath);
 
   const artifact = JSON.parse(fs.readFileSync(absolutePath, "utf-8"));
-  const semanticResult = verifyArtifactSemantics(artifact, { strict: options.strict ?? false });
-  
+  const semanticResult = verifyArtifactSemantics(artifact, {
+    strict: options.strict ?? false
+  });
+
   // 3. Replay Audit (Honesty Check)
-  const replayResult = await verifyArtifactReplay(artifact, { strict: options.strict ?? false });
-  
+  const replayResult = await verifyArtifactReplay(artifact, {
+    strict: options.strict ?? false
+  });
+
   // Merge issues
   result.issues.push(...semanticResult.issues);
   result.issues.push(...replayResult.issues);
-  
+
   result.errors.push(...semanticResult.errors);
   result.errors.push(...replayResult.errors);
-  
+
   result.ok = result.ok && semanticResult.ok;
   // Note: we don't necessarily make the whole thing fail just because replay is not implemented,
   // unless strict mode is on and replay was specifically requested?
@@ -64,13 +74,13 @@ export async function runArtifactVerify(options: ArtifactVerifyOptions) {
   }
 
   UI.header(`Artifact Verification: ${path.basename(options.path)}`);
-  
+
   if (result.ok) {
     UI.success("VERIFICATION SUCCESSFUL");
     console.log(`  Type:    ${result.artifactType}`);
     console.log(`  Version: ${result.version}`);
     console.log(`  Hash:    ${result.actualHash}`);
-    
+
     if (options.strict) {
       console.log(`\nOperational Audit (STRICT):`);
       if (semanticResult.ok) {
@@ -84,7 +94,9 @@ export async function runArtifactVerify(options: ArtifactVerifyOptions) {
     if (replayResult.ok) {
       UI.success("  ✓ Replay verified.");
     } else {
-      const replayIssue = replayResult.issues.find(i => i.code === "REPLAY_UNSUPPORTED_CHECK");
+      const replayIssue = replayResult.issues.find(
+        (i) => i.code === "REPLAY_UNSUPPORTED_CHECK"
+      );
       if (replayIssue) {
         UI.warning("  ⚠ REPLAY UNSUPPORTED (Consensus simulation skipped)");
       } else {
@@ -113,14 +125,16 @@ async function runRecursiveVerify(dir: string, options: ArtifactVerifyOptions) {
 
   for (const file of files) {
     const relativePath = path.relative(dir, file);
-    
+
     // 1. Integrity Check
     const result = await verifyArtifactIntegrity(file);
-    
+
     // 2. Semantic & Lineage Audit
     const artifact = JSON.parse(fs.readFileSync(file, "utf-8"));
-    const semanticResult = verifyArtifactSemantics(artifact, { strict: options.strict ?? false });
-    
+    const semanticResult = verifyArtifactSemantics(artifact, {
+      strict: options.strict ?? false
+    });
+
     // Merge results
     result.issues.push(...semanticResult.issues);
     result.errors.push(...semanticResult.errors);
@@ -136,8 +150,13 @@ async function runRecursiveVerify(dir: string, options: ArtifactVerifyOptions) {
     } else {
       if (!options.json) {
         console.log(`  ✗ ${relativePath.padEnd(40)} [FAIL]`);
-        result.issues.forEach(issue => {
-          const prefix = issue.severity === "critical" ? "[!!!]" : issue.severity === "error" ? "[!]" : "[?]";
+        result.issues.forEach((issue) => {
+          const prefix =
+            issue.severity === "critical"
+              ? "[!!!]"
+              : issue.severity === "error"
+                ? "[!]"
+                : "[?]";
           console.log(`      ${prefix} [${issue.code}] ${issue.message}`);
         });
       }
@@ -147,14 +166,20 @@ async function runRecursiveVerify(dir: string, options: ArtifactVerifyOptions) {
 
   if (options.json) {
     if (failCount > 0) process.exitCode = 1;
-    console.log(JSON.stringify({
-      schema: "hardkas.queryVerify.v1",
-      ok: failCount === 0,
-      scanned: files.length,
-      successCount,
-      failCount,
-      results: jsonResults
-    }, null, 2));
+    console.log(
+      JSON.stringify(
+        {
+          schema: "hardkas.queryVerify.v1",
+          ok: failCount === 0,
+          scanned: files.length,
+          successCount,
+          failCount,
+          results: jsonResults
+        },
+        null,
+        2
+      )
+    );
     return;
   }
 
@@ -170,7 +195,7 @@ async function runRecursiveVerify(dir: string, options: ArtifactVerifyOptions) {
 function getAllJsonFiles(dirPath: string, arrayOfFiles: string[] = []): string[] {
   const files = fs.readdirSync(dirPath);
 
-  files.forEach(file => {
+  files.forEach((file) => {
     const fullPath = path.join(dirPath, file);
     if (fs.statSync(fullPath).isDirectory()) {
       arrayOfFiles = getAllJsonFiles(fullPath, arrayOfFiles);
@@ -184,8 +209,8 @@ function getAllJsonFiles(dirPath: string, arrayOfFiles: string[] = []): string[]
 
 function renderErrors(result: any) {
   if (result.artifactType) console.log(`  Type:    ${result.artifactType}`);
-  if (result.version)      console.log(`  Version: ${result.version}`);
-  
+  if (result.version) console.log(`  Version: ${result.version}`);
+
   if (result.expectedHash || result.actualHash) {
     console.log(`  Expected Hash: ${result.expectedHash || "None"}`);
     console.log(`  Actual Hash:   ${result.actualHash || "N/A"}`);
@@ -193,7 +218,12 @@ function renderErrors(result: any) {
 
   console.log("\nIssues:");
   result.issues.forEach((issue: any) => {
-    const prefix = issue.severity === "critical" ? "CRITICAL: " : issue.severity === "error" ? "ERROR:    " : "WARNING:  ";
+    const prefix =
+      issue.severity === "critical"
+        ? "CRITICAL: "
+        : issue.severity === "error"
+          ? "ERROR:    "
+          : "WARNING:  ";
     console.log(`- ${prefix}[${issue.code}] ${issue.message}`);
   });
 }

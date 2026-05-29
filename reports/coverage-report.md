@@ -1,21 +1,25 @@
 # HardKAS CLI Coverage Report
 
 ## Top Level Metrics
+
 - **Total Commands Discovered**: 54
 - **Help Coverage**: 54/54 (100.0%) — ✅ PASSED (>95%)
 - **Invalid Smoke Coverage**: 54/54 (100.0%) — ✅ PASSED (>80%)
 - **Valid Smoke Coverage**: 8/54 (14.8%)
 
 ## API Matrix (Endpoints Touched)
+
 - `/api/dashboard-health`
 - `/api/status`
 - `/api/dev-accounts`
 - `/api/artifacts/stream`
 
 ## Dashboard Routes Visited
+
 - `/`
 
 ## Exclusions & Gaps
+
 - **hardkas**: Excluded from valid smoke (MISSING_REQUIRED_ARGS_OR_TIMEOUT)
 - **hardkas up**: Excluded from valid smoke (MISSING_REQUIRED_ARGS_OR_TIMEOUT)
 - **hardkas tx**: Excluded from valid smoke (REQUIRES_NETWORK)

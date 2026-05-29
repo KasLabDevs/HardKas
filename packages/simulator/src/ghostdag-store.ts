@@ -12,7 +12,7 @@ import type {
   BlockHash,
   BlueWorkType,
   CompactGhostdagData,
-  GhostdagData,
+  GhostdagData
 } from "./ghostdag-types.js";
 import { compactFromFull, GENESIS_HASH } from "./ghostdag-types.js";
 
@@ -75,6 +75,6 @@ export function genesisGhostdagData(genesisHash: BlockHash = GENESIS_HASH): Ghos
     selectedParent: genesisHash,
     mergesetBlues: [genesisHash],
     mergesetReds: [],
-    bluesAnticoneSizes: [0],
+    bluesAnticoneSizes: [0]
   };
 }

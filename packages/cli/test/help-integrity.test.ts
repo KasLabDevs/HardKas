@@ -18,7 +18,7 @@ function runHelp(args: string = "") {
 describe("CLI Help Integrity", () => {
   it("should list all expected top-level command groups", () => {
     const help = runHelp();
-    
+
     const expectedGroups = [
       "init",
       "up",
@@ -33,7 +33,7 @@ describe("CLI Help Integrity", () => {
       "dev"
     ];
 
-    expectedGroups.forEach(group => {
+    expectedGroups.forEach((group) => {
       expect(help).toContain(group);
     });
   });
@@ -41,30 +41,30 @@ describe("CLI Help Integrity", () => {
   it("should list expected subcommands for 'tx'", () => {
     const help = runHelp("tx");
     const expected = ["plan", "sign", "send", "receipt", "profile", "verify"];
-    expected.forEach(cmd => expect(help).toContain(cmd));
+    expected.forEach((cmd) => expect(help).toContain(cmd));
   });
 
   it("should list expected subcommands for 'artifact'", () => {
     const help = runHelp("artifact");
     const expected = ["verify", "explain", "lineage"];
-    expected.forEach(cmd => expect(help).toContain(cmd));
+    expected.forEach((cmd) => expect(help).toContain(cmd));
   });
 
   it("should list expected subcommands for 'rpc'", () => {
     const help = runHelp("rpc");
     const expected = ["info", "health", "doctor", "dag", "utxos", "mempool"];
-    expected.forEach(cmd => expect(help).toContain(cmd));
+    expected.forEach((cmd) => expect(help).toContain(cmd));
   });
 
   it("should list expected subcommands for 'dag'", () => {
     const help = runHelp("dag");
     const expected = ["status", "simulate-reorg"];
-    expected.forEach(cmd => expect(help).toContain(cmd));
+    expected.forEach((cmd) => expect(help).toContain(cmd));
   });
 
   it("should list expected subcommands for 'accounts'", () => {
     const help = runHelp("accounts");
     const expected = ["list", "real"];
-    expected.forEach(cmd => expect(help).toContain(cmd));
+    expected.forEach((cmd) => expect(help).toContain(cmd));
   });
 });

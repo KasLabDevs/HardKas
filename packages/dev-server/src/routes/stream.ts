@@ -15,7 +15,9 @@ streamRoutes.get("/artifacts/stream", async (c) => {
     // Send an initial connected event
     await stream.writeSSE({
       event: "connected",
-      data: JSON.stringify({ message: "Observational stream connected. Artifacts filesystem is canonical." }),
+      data: JSON.stringify({
+        message: "Observational stream connected. Artifacts filesystem is canonical."
+      })
     });
 
     const listener = async (eventEnv: any) => {
@@ -24,23 +26,31 @@ streamRoutes.get("/artifacts/stream", async (c) => {
         const payload = eventEnv.payload;
         if (!payload) return;
 
-        if (typeFilter && payload.schema !== typeFilter && payload.kind !== typeFilter) return;
+        if (typeFilter && payload.schema !== typeFilter && payload.kind !== typeFilter)
+          return;
         if (lineageFilter === "true" && !payload.lineage) return;
 
-        const parentArtifactIds = payload.parents || (payload.lineage?.parentArtifactId ? [payload.lineage.parentArtifactId] : []);
+        const parentArtifactIds =
+          payload.parents ||
+          (payload.lineage?.parentArtifactId ? [payload.lineage.parentArtifactId] : []);
         const stableEnvelope = {
           type: payload.schema || payload.kind || "artifact",
           artifactId: payload.artifactId || payload.txId || payload.id,
           parentArtifactIds,
           timestamp: payload.createdAt || new Date().toISOString(),
           status: "created",
-          meta: { network: "local", warnings: ["Missed stream events must be recovered by fetching from /api/artifacts"] },
+          meta: {
+            network: "local",
+            warnings: [
+              "Missed stream events must be recovered by fetching from /api/artifacts"
+            ]
+          },
           data: payload
         };
 
         await stream.writeSSE({
           event: "artifact",
-          data: JSON.stringify(stableEnvelope),
+          data: JSON.stringify(stableEnvelope)
         });
       }
     };
@@ -50,7 +60,7 @@ streamRoutes.get("/artifacts/stream", async (c) => {
 
     // Keep alive and handle disconnect
     while (active) {
-      await new Promise(r => setTimeout(r, 15000));
+      await new Promise((r) => setTimeout(r, 15000));
       try {
         await stream.writeSSE({ event: "ping", data: "ping" });
       } catch (e) {

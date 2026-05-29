@@ -1,7 +1,7 @@
-import { 
-  loadRealAccountStore, 
+import {
+  loadRealAccountStore,
   getRealDevAccount,
-  getDefaultRealAccountsPath 
+  getDefaultRealAccountsPath
 } from "@hardkas/accounts";
 
 export interface AccountsRealShowOptions {
@@ -16,7 +16,7 @@ export async function runAccountsRealShow(options: AccountsRealShowOptions): Pro
   const cwd = options.workspaceRoot || process.cwd();
   const store = await loadRealAccountStore({ cwd });
   const account = store ? getRealDevAccount(store, options.name) : null;
-  
+
   if (!account) {
     throw new Error(`Account '${options.name}' not found in real store.`);
   }

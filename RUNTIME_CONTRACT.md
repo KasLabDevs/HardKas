@@ -43,7 +43,7 @@ If the HardKAS runtime process is killed or crashes:
   - Stale lockfiles (detected via pid liveness or timeout, automatically cleared).
   - Incomplete atomic artifact writes (abandoned `.tmp` files are ignored).
 - **What requires operator action**:
-  - Unrecoverable JSONL corruption in the *middle* of the event ledger (requires `hardkas repair` to quarantine or manual intervention).
+  - Unrecoverable JSONL corruption in the _middle_ of the event ledger (requires `hardkas repair` to quarantine or manual intervention).
   - Semantic drift where artifacts do not match the event ledger.
 - **What emits anomaly**:
   - Any automatic recovery (stale lock cleared, tail truncated).

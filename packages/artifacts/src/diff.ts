@@ -20,7 +20,7 @@ export interface ArtifactDiff {
  */
 export function diffArtifacts(left: any, right: any): ArtifactDiff {
   const entries: DiffEntry[] = [];
-  
+
   // Redact secrets before diffing to ensure we don't leak them in reports
   const leftRedacted = maskSecrets(left);
   const rightRedacted = maskSecrets(right);
@@ -63,8 +63,8 @@ function compareRecursive(left: any, right: any, path: string, entries: DiffEntr
   }
 
   // Handle objects
-  const leftKeys = Object.keys(left).filter(k => !SEMANTIC_EXCLUSIONS.has(k));
-  const rightKeys = Object.keys(right).filter(k => !SEMANTIC_EXCLUSIONS.has(k));
+  const leftKeys = Object.keys(left).filter((k) => !SEMANTIC_EXCLUSIONS.has(k));
+  const rightKeys = Object.keys(right).filter((k) => !SEMANTIC_EXCLUSIONS.has(k));
   const allKeys = new Set([...leftKeys, ...rightKeys]);
 
   for (const key of allKeys) {

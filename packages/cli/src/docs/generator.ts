@@ -29,11 +29,16 @@ export interface CliReference {
 /**
  * Extracts metadata from a Commander command tree.
  */
-export function extractCliReference(program: Command, options?: { deterministic?: boolean }): CliReference {
+export function extractCliReference(
+  program: Command,
+  options?: { deterministic?: boolean }
+): CliReference {
   return {
     schema: "hardkas.cliReference.v1",
     generatedAt: options?.deterministic ? "deterministic" : new Date().toISOString(),
-    commands: program.commands.map(cmd => extractCommand(cmd, program.name())).sort((a, b) => deterministicCompare(a.path, b.path))
+    commands: program.commands
+      .map((cmd) => extractCommand(cmd, program.name()))
+      .sort((a, b) => deterministicCompare(a.path, b.path))
   };
 }
 
@@ -45,10 +50,12 @@ function stripAnsi(str: string): string {
 function extractCommand(cmd: any, parentPath: string): CliCommandReference {
   const name = cmd.name();
   const currentPath = `${parentPath} ${name}`;
-  
+
   // Commander internal structures are sometimes opaque, use public API as much as possible
   const usageStr = cmd.usage() || "[options]";
-  const fullUsage = usageStr.startsWith(currentPath) ? usageStr : `${currentPath} ${usageStr}`;
+  const fullUsage = usageStr.startsWith(currentPath)
+    ? usageStr
+    : `${currentPath} ${usageStr}`;
 
   return {
     path: currentPath,
@@ -67,7 +74,9 @@ function extractCommand(cmd: any, parentPath: string): CliCommandReference {
       required: opt.required || false,
       mandatory: opt.mandatory || false
     })),
-    subcommands: cmd.commands.map((sub: any) => extractCommand(sub, currentPath)).sort((a: any, b: any) => deterministicCompare(a.path, b.path))
+    subcommands: cmd.commands
+      .map((sub: any) => extractCommand(sub, currentPath))
+      .sort((a: any, b: any) => deterministicCompare(a.path, b.path))
   };
 }
 
@@ -91,7 +100,7 @@ export function generateCliMarkdown(ref: CliReference): string {
         cmdMd += `**Aliases:** ${cmd.aliases.join(", ")}\n\n`;
       }
       cmdMd += `${cmd.description}\n\n`;
-      
+
       cmdMd += "### Usage\n\n";
       cmdMd += "```bash\n";
       cmdMd += `${cmd.usage}\n`;
@@ -129,7 +138,7 @@ export function generateCliMarkdown(ref: CliReference): string {
         }
         cmdMd += "\n";
       }
-      
+
       commands.push(cmdMd);
       walk(cmd.subcommands);
     }

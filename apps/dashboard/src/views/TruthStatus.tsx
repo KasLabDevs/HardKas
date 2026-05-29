@@ -1,8 +1,8 @@
-import { useEffect, useState } from 'react';
-import { FileCheck, AlertTriangle } from 'lucide-react';
-import { ActivityTimelineCompact } from '../components/ActivityTimelineCompact';
-import { EmptyState } from '../components/EmptyState';
-import { LoadingState } from '../components/LoadingState';
+import { useEffect, useState } from "react";
+import { FileCheck, AlertTriangle } from "lucide-react";
+import { ActivityTimelineCompact } from "../components/ActivityTimelineCompact";
+import { EmptyState } from "../components/EmptyState";
+import { LoadingState } from "../components/LoadingState";
 
 interface ArtifactStatus {
   artifactId: string;
@@ -22,13 +22,13 @@ interface StatusResponse {
 }
 
 const statusColors: Record<string, string> = {
-  VERIFIED: 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20',
-  REPLAY_VERIFIED: 'bg-blue-500/10 text-blue-400 border border-blue-500/20',
-  PROJECTED: 'bg-amber-500/10 text-amber-400 border border-amber-500/20',
-  STALE: 'bg-zinc-500/10 text-zinc-400 border border-zinc-500/20',
-  CORRUPTED: 'bg-red-500/10 text-red-400 border border-red-500/20',
-  QUARANTINED: 'bg-red-500/10 text-red-400 border border-red-500/20',
-  UNKNOWN: 'bg-zinc-800 text-zinc-500 border border-zinc-700',
+  VERIFIED: "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20",
+  REPLAY_VERIFIED: "bg-blue-500/10 text-blue-400 border border-blue-500/20",
+  PROJECTED: "bg-amber-500/10 text-amber-400 border border-amber-500/20",
+  STALE: "bg-zinc-500/10 text-zinc-400 border border-zinc-500/20",
+  CORRUPTED: "bg-red-500/10 text-red-400 border border-red-500/20",
+  QUARANTINED: "bg-red-500/10 text-red-400 border border-red-500/20",
+  UNKNOWN: "bg-zinc-800 text-zinc-500 border border-zinc-700"
 };
 
 export function TruthStatus() {
@@ -37,33 +37,36 @@ export function TruthStatus() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const token = (window as any).__HARDKAS_DEV_TOKEN__ || '';
-  const headers = token ? { 'Authorization': `Bearer ${token}` } : {};
-  const apiBase = process.env.NODE_ENV === 'development' ? 'http://localhost:7420' : '';
+  const token = (window as any).__HARDKAS_DEV_TOKEN__ || "";
+  const headers = token ? { Authorization: `Bearer ${token}` } : {};
+  const apiBase = process.env.NODE_ENV === "development" ? "http://localhost:7420" : "";
 
   useEffect(() => {
     Promise.all([
-      fetch(`${apiBase}/api/status`, { headers }).then(res => {
+      fetch(`${apiBase}/api/status`, { headers }).then((res) => {
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         return res.json();
       }),
-      fetch(`${apiBase}/api/dev-accounts`, { headers }).then(res => res.json()).catch(() => null)
+      fetch(`${apiBase}/api/dev-accounts`, { headers })
+        .then((res) => res.json())
+        .catch(() => null)
     ])
       .then(([statusRes, accountsRes]) => {
         setData(statusRes);
         setAccountsData(accountsRes);
         setLoading(false);
       })
-      .catch(err => { 
-        setError(String(err)); 
-        setLoading(false); 
+      .catch((err) => {
+        setError(String(err));
+        setLoading(false);
       });
   }, []);
 
-  if (loading) return <LoadingState message="Connecting to local runtime..." minHeight="60vh" />;
+  if (loading)
+    return <LoadingState message="Connecting to local runtime..." minHeight="60vh" />;
   if (error) {
     return (
-      <EmptyState 
+      <EmptyState
         title="Connecting to local runtime..."
         description="The dashboard API might be starting up or is unavailable."
         command="hardkas sandbox --with-node --recipe transfer"
@@ -73,7 +76,8 @@ export function TruthStatus() {
   }
   if (!data) return null;
 
-  const projectionDegraded = data.source === 'artifacts' && data.sourceNote?.toLowerCase().includes('degraded');
+  const projectionDegraded =
+    data.source === "artifacts" && data.sourceNote?.toLowerCase().includes("degraded");
 
   return (
     <div className="space-y-6">
@@ -84,21 +88,27 @@ export function TruthStatus() {
         </h2>
         <div className="grid grid-cols-3 gap-6">
           <div className="space-y-2">
-            <h3 className="text-sm font-semibold text-zinc-400 uppercase tracking-wider">Environment</h3>
+            <h3 className="text-sm font-semibold text-zinc-400 uppercase tracking-wider">
+              Environment
+            </h3>
             <div className="bg-zinc-950 p-3 rounded border border-zinc-800 font-mono text-sm">
-               <div className="flex justify-between">
-                 <span className="text-zinc-500">Network:</span>
-                 <span className="text-emerald-400">simnet</span>
-               </div>
-               <div className="flex justify-between mt-1">
-                 <span className="text-zinc-500">Projection:</span>
-                 <span className={projectionDegraded ? "text-amber-400" : "text-emerald-400"}>
-                   {projectionDegraded ? "degraded" : "healthy"}
-                 </span>
-               </div>
+              <div className="flex justify-between">
+                <span className="text-zinc-500">Network:</span>
+                <span className="text-emerald-400">simnet</span>
+              </div>
+              <div className="flex justify-between mt-1">
+                <span className="text-zinc-500">Projection:</span>
+                <span
+                  className={projectionDegraded ? "text-amber-400" : "text-emerald-400"}
+                >
+                  {projectionDegraded ? "degraded" : "healthy"}
+                </span>
+              </div>
             </div>
             <div className="mt-4 space-y-2">
-              <h3 className="text-sm font-semibold text-zinc-400 uppercase tracking-wider">Quick Commands</h3>
+              <h3 className="text-sm font-semibold text-zinc-400 uppercase tracking-wider">
+                Quick Commands
+              </h3>
               <code className="block bg-zinc-950 p-2 rounded border border-zinc-800 text-xs text-blue-400 select-all">
                 hardkas dev tx send --from alice --to bob --amount 1
               </code>
@@ -113,15 +123,25 @@ export function TruthStatus() {
               </code>
             </div>
           </div>
-          
+
           <div className="space-y-2">
-            <h3 className="text-sm font-semibold text-zinc-400 uppercase tracking-wider">Dev Accounts</h3>
+            <h3 className="text-sm font-semibold text-zinc-400 uppercase tracking-wider">
+              Dev Accounts
+            </h3>
             <div className="space-y-2">
               {accountsData?.ok && accountsData.data?.length > 0 ? (
                 accountsData.data.map((acc: any) => (
-                  <div key={acc.name} className="bg-zinc-950 p-2 rounded border border-zinc-800 text-sm flex items-center justify-between">
+                  <div
+                    key={acc.name}
+                    className="bg-zinc-950 p-2 rounded border border-zinc-800 text-sm flex items-center justify-between"
+                  >
                     <span className="font-mono text-blue-400">{acc.name}</span>
-                    <span className="font-mono text-zinc-500 text-xs truncate max-w-[150px]" title={acc.address}>{acc.address}</span>
+                    <span
+                      className="font-mono text-zinc-500 text-xs truncate max-w-[150px]"
+                      title={acc.address}
+                    >
+                      {acc.address}
+                    </span>
                   </div>
                 ))
               ) : (
@@ -142,7 +162,8 @@ export function TruthStatus() {
           <div>
             <h3 className="text-amber-400 font-semibold text-lg">Projection Degraded.</h3>
             <p className="text-zinc-300 mt-1 leading-relaxed">
-              Artifacts remain canonical local truth. You can verify, inspect, replay, or rebuild projections from them.
+              Artifacts remain canonical local truth. You can verify, inspect, replay, or
+              rebuild projections from them.
             </p>
             <div className="mt-3">
               <code className="bg-black/40 px-2 py-1 rounded text-amber-200 text-xs font-mono border border-amber-500/20 select-all">
@@ -167,14 +188,20 @@ export function TruthStatus() {
       </div>
 
       <p className="text-zinc-500 max-w-2xl text-sm leading-relaxed">
-        The dashboard never invents truth. All status transitions are exclusively determined by the central semantics layer.
-        {data.sourceNote && !projectionDegraded && <span className="block mt-1 text-amber-400/80">{data.sourceNote}</span>}
+        The dashboard never invents truth. All status transitions are exclusively
+        determined by the central semantics layer.
+        {data.sourceNote && !projectionDegraded && (
+          <span className="block mt-1 text-amber-400/80">{data.sourceNote}</span>
+        )}
       </p>
 
       {!data.loaded || data.artifacts.length === 0 ? (
-        <EmptyState 
+        <EmptyState
           title="No workflows have been executed yet"
-          description={data.message || 'Run a transaction workflow to generate the causal artifact chain.'}
+          description={
+            data.message ||
+            "Run a transaction workflow to generate the causal artifact chain."
+          }
           command="hardkas sandbox --with-node --recipe transfer"
           icon={<FileCheck size={24} />}
         />
@@ -192,14 +219,18 @@ export function TruthStatus() {
             <tbody className="divide-y divide-zinc-800">
               {data.artifacts.map((a) => (
                 <tr key={a.artifactId} className="hover:bg-zinc-800/30 transition-colors">
-                  <td className="px-6 py-4 font-mono text-white text-xs">{a.artifactId}</td>
+                  <td className="px-6 py-4 font-mono text-white text-xs">
+                    {a.artifactId}
+                  </td>
                   <td className="px-6 py-4">
-                    <span className={`px-2 py-1 rounded text-xs font-bold ${statusColors[a.canonicalStatus] || statusColors.UNKNOWN}`}>
+                    <span
+                      className={`px-2 py-1 rounded text-xs font-bold ${statusColors[a.canonicalStatus] || statusColors.UNKNOWN}`}
+                    >
                       {a.canonicalStatus}
                     </span>
                   </td>
                   <td className="px-6 py-4 font-mono text-zinc-500 text-xs truncate max-w-[200px]">
-                    {a.semanticHash ? a.semanticHash.substring(0, 16) + '…' : '—'}
+                    {a.semanticHash ? a.semanticHash.substring(0, 16) + "…" : "—"}
                   </td>
                   <td className="px-6 py-4 text-zinc-500 text-xs">{a.source}</td>
                 </tr>

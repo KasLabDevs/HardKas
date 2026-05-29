@@ -38,7 +38,7 @@ You will see this immediately in the Dashboard's **Lineage Graph** and **Activit
 
 ## Recipe: Projection Rebuild
 
-HardKAS separates canonical truth (artifacts) from derived state (projections like the database). 
+HardKAS separates canonical truth (artifacts) from derived state (projections like the database).
 
 ```bash
 hardkas sandbox --recipe projection-rebuild

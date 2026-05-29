@@ -5,7 +5,7 @@ import { IgraTxPlanArtifact } from "@hardkas/artifacts";
 describe("ViemIgraTxSigner", () => {
   const mockPlan: IgraTxPlanArtifact = {
     schema: "hardkas.igraTxPlan.v1",
-    hardkasVersion: "0.7.3-alpha",
+    hardkasVersion: "0.7.4-alpha",
     networkId: "igra",
     mode: "l2-rpc",
     createdAt: new Date().toISOString(),
@@ -40,7 +40,13 @@ describe("ViemIgraTxSigner", () => {
     const viemLoader = async () => ({ keccak256 });
     const accountsLoader = async () => ({ privateKeyToAccount });
 
-    return { viemLoader, accountsLoader, signTransaction, privateKeyToAccount, keccak256 };
+    return {
+      viemLoader,
+      accountsLoader,
+      signTransaction,
+      privateKeyToAccount,
+      keccak256
+    };
   };
 
   it("signs correctly with valid input and 0x prefix private key", async () => {
@@ -83,10 +89,12 @@ describe("ViemIgraTxSigner", () => {
       accountsLoader: mocks.accountsLoader
     });
 
-    await expect(signer.sign({
-      plan: mockPlan,
-      account: { ...mockAccount, address: "kaspa:qpau7..." }
-    })).rejects.toThrow("Igra L2 signing requires an EVM 0x account address.");
+    await expect(
+      signer.sign({
+        plan: mockPlan,
+        account: { ...mockAccount, address: "kaspa:qpau7..." }
+      })
+    ).rejects.toThrow("Igra L2 signing requires an EVM 0x account address.");
   });
 
   it("rejects invalid hex private key format", async () => {
@@ -96,10 +104,12 @@ describe("ViemIgraTxSigner", () => {
       accountsLoader: mocks.accountsLoader
     });
 
-    await expect(signer.sign({
-      plan: mockPlan,
-      account: { ...mockAccount, privateKey: "short" }
-    })).rejects.toThrow("Invalid EVM private key format for account 'test-acc'.");
+    await expect(
+      signer.sign({
+        plan: mockPlan,
+        account: { ...mockAccount, privateKey: "short" }
+      })
+    ).rejects.toThrow("Invalid EVM private key format for account 'test-acc'.");
   });
 
   it("does not leak private key in error messages", async () => {
@@ -128,17 +138,26 @@ describe("ViemIgraTxSigner", () => {
       accountsLoader: mocks.accountsLoader
     });
 
-    const incompletePlan = { ...mockPlan, request: { ...mockPlan.request, gasLimit: undefined } };
-    await expect(signer.sign({
-      plan: incompletePlan as any,
-      account: mockAccount
-    })).rejects.toThrow("Igra transaction plan is incomplete. Rebuild the plan with gas limit.");
+    const incompletePlan = {
+      ...mockPlan,
+      request: { ...mockPlan.request, gasLimit: undefined }
+    };
+    await expect(
+      signer.sign({
+        plan: incompletePlan as any,
+        account: mockAccount
+      })
+    ).rejects.toThrow(
+      "Igra transaction plan is incomplete. Rebuild the plan with gas limit."
+    );
   });
 
   it("handles txHash as optional (viem without keccak256)", async () => {
     const viemLoader = async () => ({}); // no keccak256
     const signTransaction = vi.fn().mockResolvedValue("0xsignedtx");
-    const accountsLoader = async () => ({ privateKeyToAccount: () => ({ signTransaction }) });
+    const accountsLoader = async () => ({
+      privateKeyToAccount: () => ({ signTransaction })
+    });
 
     const signer = new ViemIgraTxSigner({ viemLoader, accountsLoader });
     const result = await signer.sign({ plan: mockPlan, account: mockAccount });

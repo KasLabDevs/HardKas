@@ -5,12 +5,12 @@ import { fileURLToPath } from "node:url";
 
 export async function runExampleList(options: { workspaceRoot: string }) {
   UI.box("HardKAS", "Example Registry");
-  
+
   try {
     // Find workspace root by looking for examples/registry.json starting from workspaceRoot
     let currentDir = options.workspaceRoot;
     let registryPath = path.join(currentDir, "examples", "registry.json");
-    
+
     // Simple traversal up to 3 levels
     for (let i = 0; i < 3; i++) {
       try {
@@ -21,13 +21,15 @@ export async function runExampleList(options: { workspaceRoot: string }) {
         registryPath = path.join(currentDir, "examples", "registry.json");
       }
     }
-    
+
     const data = await fs.readFile(registryPath, "utf-8");
     const examples = JSON.parse(data);
 
-    console.log(`\x1b[1mID\x1b[0m         \x1b[1mName\x1b[0m                \x1b[1mLevel\x1b[0m`);
+    console.log(
+      `\x1b[1mID\x1b[0m         \x1b[1mName\x1b[0m                \x1b[1mLevel\x1b[0m`
+    );
     console.log(`----------  --------------------  ------------`);
-    
+
     for (const ex of examples) {
       console.log(`${ex.id.padEnd(10)}  ${ex.name.padEnd(20)}  ${ex.level}`);
       console.log(`            \x1b[90m${ex.description}\x1b[0m`);
@@ -36,6 +38,8 @@ export async function runExampleList(options: { workspaceRoot: string }) {
 
     UI.footer("Run an example with: hardkas example run <id>");
   } catch (error) {
-    throw new Error(`Could not load example registry: ${error instanceof Error ? error.message : String(error)}`);
+    throw new Error(
+      `Could not load example registry: ${error instanceof Error ? error.message : String(error)}`
+    );
   }
 }

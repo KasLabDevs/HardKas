@@ -1,11 +1,11 @@
 import { HardkasArtifactSchema } from "./constants.js";
-import { 
-  NetworkId, 
-  ExecutionMode, 
-  ArtifactType, 
-  TxId, 
-  KaspaAddress, 
-  ArtifactId, 
+import {
+  NetworkId,
+  ExecutionMode,
+  ArtifactType,
+  TxId,
+  KaspaAddress,
+  ArtifactId,
   LineageId,
   ContentHash,
   EventSequence,
@@ -34,19 +34,21 @@ export interface BaseArtifact<T extends ArtifactType> {
   networkId: NetworkId;
   mode: ExecutionMode;
   createdAt: string;
-  
+
   contentHash?: ContentHash | undefined;
   workflowId?: WorkflowId | undefined;
   assumptionLevel?: AssumptionLevel | undefined;
   executionMode?: ExecutionMode | undefined; // Align with mode or specify deeper
-  
-  lineage?: {
-    artifactId: ArtifactId;
-    lineageId: LineageId;
-    parentArtifactId?: ArtifactId | undefined;
-    rootArtifactId: ArtifactId;
-    sequence?: EventSequence | number | undefined;
-  } | undefined;
+
+  lineage?:
+    | {
+        artifactId: ArtifactId;
+        lineageId: LineageId;
+        parentArtifactId?: ArtifactId | undefined;
+        rootArtifactId: ArtifactId;
+        sequence?: EventSequence | number | undefined;
+      }
+    | undefined;
 }
 
 export interface DagContext {
@@ -86,31 +88,31 @@ export interface TxOutputArtifact {
 export interface TxPlanArtifactV1 extends HardkasArtifactBase {
   readonly schema: "hardkas.txPlan.v1";
   readonly status: "built" | "unsigned";
-  
+
   readonly planId: string;
-  
+
   readonly from: {
     readonly input: string;
     readonly address: string;
     readonly accountName?: string | undefined;
   };
-  
+
   readonly to: {
     readonly input: string;
     readonly address: string;
   };
-  
+
   readonly amountSompi: string;
   readonly amount: string;
-  
+
   readonly selectedUtxos: readonly UtxoArtifact[];
   readonly outputs: readonly TxOutputArtifact[];
   readonly change?: TxOutputArtifact | undefined;
-  
+
   readonly estimatedMass: string;
   readonly estimatedFeeSompi: string;
   readonly estimatedFee: string;
-  
+
   readonly rpcUrl?: string | null | undefined;
   readonly metadata?: Record<string, any> | undefined;
 }
@@ -118,30 +120,30 @@ export interface TxPlanArtifactV1 extends HardkasArtifactBase {
 export interface SignedTxArtifactV1 extends HardkasArtifactBase {
   readonly schema: "hardkas.signedTx.v1";
   readonly status: "signed";
-  
+
   readonly signedId: string;
   readonly sourcePlanId: string;
   readonly sourcePlanPath?: string | undefined;
-  
+
   readonly from: {
     readonly input: string;
     readonly address: string;
     readonly accountName?: string | undefined;
   };
-  
+
   readonly to: {
     readonly input: string;
     readonly address: string;
   };
-  
+
   readonly amountSompi: string;
   readonly amount: string;
-  
+
   readonly signedTransaction: {
     readonly format: "kaspa-sdk" | "hex" | "simulated" | "unknown";
     readonly payload: string;
   };
-  
+
   readonly txId?: string | undefined; // Proposed TxID if deterministic
   readonly metadata?: Record<string, any> | undefined;
 }
@@ -149,34 +151,34 @@ export interface SignedTxArtifactV1 extends HardkasArtifactBase {
 export interface TxReceiptArtifactV1 extends HardkasArtifactBase {
   readonly schema: "hardkas.txReceipt.v1";
   readonly status: "submitted" | "accepted" | "confirmed" | "finalized" | "failed";
-  
+
   readonly txId: TxId;
   readonly sourceSignedId?: ArtifactId | undefined;
   readonly sourceSignedPath?: string | undefined;
-  
+
   readonly from: {
     readonly address: string;
     readonly accountName?: string | undefined;
   };
-  
+
   readonly to: {
     readonly address: string;
   };
-  
+
   readonly amountSompi: string;
   readonly amount: string;
   readonly feeSompi: string;
-  
+
   readonly daaScore?: string | undefined;
   readonly blueScore?: string | undefined;
-  
+
   readonly submittedAt: string;
   readonly confirmedAt?: string | undefined;
   readonly rpcUrl: string;
-  
+
   readonly receiptPath?: string | undefined; // Link to detailed receipt if applicable
-  readonly tracePath?: string | undefined;   // Link to trace artifact
-  
+  readonly tracePath?: string | undefined; // Link to trace artifact
+
   readonly metadata?: Record<string, any> | undefined;
 }
 
@@ -208,24 +210,53 @@ export interface TxPlanArtifact extends BaseArtifact<"txPlan"> {
     address: string;
     amountSompi: string;
   }>;
-  change?: {
-    address: string;
-    amountSompi: string;
-  } | undefined;
+  change?:
+    | {
+        address: string;
+        amountSompi: string;
+      }
+    | undefined;
 }
 
 export interface SignedTxArtifact extends BaseArtifact<"signedTx"> {
-  status: "signed";
+  status: "partially_signed" | "signed";
   signedId: ArtifactId;
   sourcePlanId: string;
-  from: { address: KaspaAddress; accountName?: string | undefined; input?: string | undefined };
-  to: { address: KaspaAddress; accountName?: string | undefined; input?: string | undefined };
-  amountSompi: string;
-  signedTransaction: {
-    format: string;
-    payload: string;
+  from: {
+    address: KaspaAddress;
+    accountName?: string | undefined;
+    input?: string | undefined;
   };
+  to: {
+    address: KaspaAddress;
+    accountName?: string | undefined;
+    input?: string | undefined;
+  };
+  amountSompi: string;
+  unsignedPayloadHash?: string | undefined;
+  signedTransaction?:
+    | {
+        format: string;
+        payload: string;
+      }
+    | undefined;
   txId?: TxId | undefined;
+  multisig?:
+    | {
+        threshold: number;
+        requiredSigners: string[];
+        signatures: Array<{
+          signer: string;
+          signature: string;
+        }>;
+      }
+    | undefined;
+  signatureMetadata?:
+    | Array<{
+        signer: string;
+        signedAt: string;
+      }>
+    | undefined;
   metadata?: any | undefined;
 }
 

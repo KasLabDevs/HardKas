@@ -3,9 +3,9 @@ import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import fs from "node:fs/promises";
 import path from "node:path";
 import os from "node:os";
-import { 
-  saveSimulatedReceipt, 
-  loadSimulatedReceipt, 
+import {
+  saveSimulatedReceipt,
+  loadSimulatedReceipt,
   listSimulatedReceipts,
   getReceiptPath,
   StoredSimulatedTxReceipt
@@ -25,7 +25,7 @@ describe("receipts store", () => {
 
   const mockReceipt: any = {
     schema: ARTIFACT_SCHEMAS.TX_RECEIPT,
-    hardkasVersion: "0.7.3-alpha",
+    hardkasVersion: "0.7.4-alpha",
     version: "1.0.0-alpha",
     hashVersion: 1,
     txId: "simtx_test_123",
@@ -52,10 +52,10 @@ describe("receipts store", () => {
   it("should list receipts sorted by date", async () => {
     const r1: any = { ...mockReceipt, txId: "tx1", createdAt: "2026-01-01T10:00:00Z" };
     const r2: any = { ...mockReceipt, txId: "tx2", createdAt: "2026-01-01T11:00:00Z" };
-    
+
     await saveSimulatedReceipt(r1, { cwd: tempDir });
     await saveSimulatedReceipt(r2, { cwd: tempDir });
-    
+
     const list = await listSimulatedReceipts({ cwd: tempDir });
     expect(list.length).toBe(2);
     expect(list[0]!.txId).toBe("tx2"); // Newest first
@@ -63,15 +63,18 @@ describe("receipts store", () => {
   });
 
   it("should throw error for invalid txId (path traversal)", async () => {
-    await expect(loadSimulatedReceipt("../etc/passwd", { cwd: tempDir }))
-      .rejects.toThrow("Invalid txId");
-    
-    await expect(saveSimulatedReceipt({ ...mockReceipt, txId: "subdir/tx" }, { cwd: tempDir }))
-      .rejects.toThrow("Invalid txId");
+    await expect(loadSimulatedReceipt("../etc/passwd", { cwd: tempDir })).rejects.toThrow(
+      "Invalid txId"
+    );
+
+    await expect(
+      saveSimulatedReceipt({ ...mockReceipt, txId: "subdir/tx" }, { cwd: tempDir })
+    ).rejects.toThrow("Invalid txId");
   });
 
   it("should throw error if receipt not found", async () => {
-    await expect(loadSimulatedReceipt("missing", { cwd: tempDir }))
-      .rejects.toThrow("Receipt not found");
+    await expect(loadSimulatedReceipt("missing", { cwd: tempDir })).rejects.toThrow(
+      "Receipt not found"
+    );
   });
 });

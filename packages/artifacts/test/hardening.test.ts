@@ -13,7 +13,7 @@ describe("Artifact Hardening (Phase 4)", () => {
       networkId: "simnet",
       createdAt: "2026-05-10T10:00:00Z"
     };
-    
+
     const hash = calculateContentHash(artifact);
     // Fixed hash for this specific object structure (now includes version)
     expect(hash).toBe("34c358ac44d0ff9f4cf6e11c57f54d3828de4f783815665926bf1cd51d36225f");
@@ -34,7 +34,7 @@ describe("Artifact Hardening (Phase 4)", () => {
 
     const result = verifyArtifactSemantics(artifact, { clock: mockClock });
     // Should not be stale (only 2 hours old)
-    const staleIssue = result.issues.find(i => i.code === "STALE_ARTIFACT");
+    const staleIssue = result.issues.find((i) => i.code === "STALE_ARTIFACT");
     expect(staleIssue).toBeUndefined();
 
     const oldClock: Clock = {
@@ -42,7 +42,7 @@ describe("Artifact Hardening (Phase 4)", () => {
     };
 
     const resultStale = verifyArtifactSemantics(artifact, { clock: oldClock });
-    const staleIssueFound = resultStale.issues.find(i => i.code === "STALE_ARTIFACT");
+    const staleIssueFound = resultStale.issues.find((i) => i.code === "STALE_ARTIFACT");
     expect(staleIssueFound).toBeDefined();
     expect(staleIssueFound?.severity).toBe("error");
   });
@@ -58,13 +58,17 @@ describe("Artifact Hardening (Phase 4)", () => {
 
     // Normal mode: should only warn
     const resultNormal = verifyArtifactSemantics(artifactMissing, { strict: false });
-    const workflowIdIssue = resultNormal.issues.find(i => i.code === "MISSING_WORKFLOW_ID");
+    const workflowIdIssue = resultNormal.issues.find(
+      (i) => i.code === "MISSING_WORKFLOW_ID"
+    );
     expect(workflowIdIssue?.severity).toBe("warning");
     expect(resultNormal.ok).toBe(true);
 
     // Strict mode: should fail
     const resultStrict = verifyArtifactSemantics(artifactMissing, { strict: true });
-    const workflowIdIssueStrict = resultStrict.issues.find(i => i.code === "MISSING_WORKFLOW_ID");
+    const workflowIdIssueStrict = resultStrict.issues.find(
+      (i) => i.code === "MISSING_WORKFLOW_ID"
+    );
     expect(workflowIdIssueStrict?.severity).toBe("error");
     expect(resultStrict.ok).toBe(false);
   });
@@ -80,7 +84,9 @@ describe("Artifact Hardening (Phase 4)", () => {
     };
 
     const result = verifyArtifactSemantics(artifact);
-    const mismatchIssue = result.issues.find(i => i.code === "NETWORK_ADDRESS_MISMATCH");
+    const mismatchIssue = result.issues.find(
+      (i) => i.code === "NETWORK_ADDRESS_MISMATCH"
+    );
     expect(mismatchIssue).toBeDefined();
     expect(mismatchIssue?.severity).toBe("error");
   });

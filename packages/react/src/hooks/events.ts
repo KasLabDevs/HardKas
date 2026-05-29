@@ -24,7 +24,7 @@ export interface UseEventsResponse {
 }
 
 export function useEvents(kind?: string, txId?: string) {
-  const { config, subscribe , apiFetch } = useHardKas();
+  const { config, subscribe, apiFetch } = useHardKas();
   const queryClient = useQueryClient();
   const queryKey = ["hardkas", "events", kind, txId];
 
@@ -44,11 +44,13 @@ export function useEvents(kind?: string, txId?: string) {
         if (kind) queryParams.append("kind", kind);
         if (txId) queryParams.append("txId", txId);
         const queryStr = queryParams.toString() ? `?${queryParams.toString()}` : "";
-        
-        const url = baseUrl 
-          ? (baseUrl.endsWith("/") ? `${baseUrl}api/events${queryStr}` : `${baseUrl}/api/events${queryStr}`) 
+
+        const url = baseUrl
+          ? baseUrl.endsWith("/")
+            ? `${baseUrl}api/events${queryStr}`
+            : `${baseUrl}/api/events${queryStr}`
           : `/api/events${queryStr}`;
-          
+
         const response = await apiFetch(url);
         if (!response.ok) return { events: [] };
         const data = await response.json();
@@ -62,6 +64,6 @@ export function useEvents(kind?: string, txId?: string) {
         return { events: [] };
       }
     },
-    staleTime: 5000,
+    staleTime: 5000
   });
 }

@@ -1,13 +1,13 @@
-import { 
-  createSimulatedDag, 
-  addSimulatedBlock, 
+import {
+  createSimulatedDag,
+  addSimulatedBlock,
   moveSink,
   resolveConflictsDeterministically
 } from "@hardkas/localnet";
 
 /**
  * Example 11: DAG Reorg Simulation
- * 
+ *
  * Demonstrates the lightweight blockDAG model for testing conflicts and reorgs.
  */
 async function main() {
@@ -48,9 +48,9 @@ async function main() {
 
   // 4. Define transactions (simplified outpoints for demonstration)
   const txs = {
-    "tx_A1": { inputs: ["outpoint_X"] },
-    "tx_A2": { inputs: ["outpoint_Y"] },
-    "tx_B1": { inputs: ["outpoint_X"] } // Conflict with tx_A1
+    tx_A1: { inputs: ["outpoint_X"] },
+    tx_A2: { inputs: ["outpoint_Y"] },
+    tx_B1: { inputs: ["outpoint_X"] } // Conflict with tx_A1
   };
 
   const txProvider = (txId: string) => txs[txId as keyof typeof txs];
@@ -58,7 +58,7 @@ async function main() {
   // 5. Move sink to Branch A
   console.log("\n--- Moving sink to Branch A (Block A2) ---");
   dag = moveSink(dag, "block_A2", txProvider);
-  
+
   console.log(`Current Sink: ${dag.sink}`);
   console.log(`Accepted Txs: ${dag.acceptedTxIds.join(", ")}`);
   console.log(`Displaced Txs: ${dag.displacedTxIds.join(", ")}`);
@@ -83,16 +83,18 @@ async function main() {
     daaScore: "3",
     acceptedTxIds: ["tx_M1"]
   });
-  
+
   txs["tx_M1" as keyof typeof txs] = { inputs: ["outpoint_Z"] };
-  
+
   dag = moveSink(dag, "merge_block", txProvider);
   console.log(`Current Sink: ${dag.sink}`);
   console.log(`Selected Path: ${dag.selectedPathToSink.join(" -> ")}`);
   console.log(`Accepted Txs: ${dag.acceptedTxIds.join(", ")}`);
   console.log(`Displaced Txs: ${dag.displacedTxIds.join(", ")}`);
-  
-  console.log("\nNote: tx_B1 is displaced because tx_A1 was accepted first in deterministic block order (lexicographic tie-break between A1 and B1 if daaScore is same).");
+
+  console.log(
+    "\nNote: tx_B1 is displaced because tx_A1 was accepted first in deterministic block order (lexicographic tie-break between A1 and B1 if daaScore is same)."
+  );
 
   console.log("\n=== Simulation Finished ===");
 }

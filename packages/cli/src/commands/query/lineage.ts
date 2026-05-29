@@ -8,7 +8,11 @@ export function registerLineageQueryCommands(queryCmd: Command) {
   lineageCmd
     .command("chain <anchor>")
     .description("Reconstruct lineage chain from an artifact (contentHash or artifactId)")
-    .option("--direction <dir>", "Traversal direction: ancestors or descendants", "ancestors")
+    .option(
+      "--direction <dir>",
+      "Traversal direction: ancestors or descendants",
+      "ancestors"
+    )
     .option("--json", "Output as JSON", false)
     .option("--explain [level]", "Attach explain chains (brief|full)")
     .option("--why", "Shorthand for --explain full")
@@ -17,9 +21,11 @@ export function registerLineageQueryCommands(queryCmd: Command) {
         const { QueryEngine, createQueryRequest } = await import("@hardkas/query");
         const engine = await QueryEngine.create({ artifactDir: process.cwd() });
 
-        const explain = options.why ? "full" as const
-          : options.explain === true ? "brief" as const
-          : (options.explain || false);
+        const explain = options.why
+          ? ("full" as const)
+          : options.explain === true
+            ? ("brief" as const)
+            : options.explain || false;
 
         const request = createQueryRequest({
           domain: "lineage",
@@ -54,9 +60,11 @@ export function registerLineageQueryCommands(queryCmd: Command) {
         const { QueryEngine, createQueryRequest } = await import("@hardkas/query");
         const engine = await QueryEngine.create({ artifactDir: process.cwd() });
 
-        const explain = options.why ? "full" as const
-          : options.explain === true ? "brief" as const
-          : (options.explain || false);
+        const explain = options.why
+          ? ("full" as const)
+          : options.explain === true
+            ? ("brief" as const)
+            : options.explain || false;
 
         const request = createQueryRequest({
           domain: "lineage",
@@ -92,7 +100,7 @@ export function registerLineageQueryCommands(queryCmd: Command) {
         const request = createQueryRequest({
           domain: "lineage",
           op: "orphans",
-          explain: options.explain === true ? "brief" : (options.explain || false)
+          explain: options.explain === true ? "brief" : options.explain || false
         });
 
         const result = await engine.execute(request);

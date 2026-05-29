@@ -27,7 +27,7 @@ async function runInspect(opts: { json?: boolean }) {
   }
 
   const rootDir = process.cwd();
-  
+
   const report: any = {
     streams: {},
     archives: []
@@ -75,7 +75,7 @@ async function runInspect(opts: { json?: boolean }) {
     UI.logHuman(`  Event Ledger: ${formatBytes(eventsSize)}`);
     UI.logHuman(`  Telemetry:    ${formatBytes(telemetrySize)}`);
     UI.divider();
-    
+
     UI.logHuman(`Archived Telemetry Segments: ${report.archives.length}`);
     for (const archive of report.archives) {
       UI.logHuman(`  - ${archive.file} (${formatBytes(archive.size)})`);

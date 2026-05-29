@@ -27,12 +27,12 @@ export interface UseReplayStatusResponse {
 }
 
 export function useReplayStatus() {
-  const { config, subscribe , apiFetch } = useHardKas();
+  const { config, subscribe, apiFetch } = useHardKas();
   const queryClient = useQueryClient();
 
   useEffect(() => {
     const sync = () => queryClient.invalidateQueries({ queryKey: ["hardkas", "replay"] });
-    
+
     return subscribe((event) => {
       if (["query-synced", "session-changed"].includes(event.type)) {
         sync();
@@ -45,11 +45,16 @@ export function useReplayStatus() {
     queryFn: async (): Promise<UseReplayStatusResponse> => {
       try {
         const baseUrl = config.devServerUrl || "";
-        const url = baseUrl ? (baseUrl.endsWith("/") ? `${baseUrl}api/replay` : `${baseUrl}/api/replay`) : "/api/replay";
+        const url = baseUrl
+          ? baseUrl.endsWith("/")
+            ? `${baseUrl}api/replay`
+            : `${baseUrl}/api/replay`
+          : "/api/replay";
         const response = await apiFetch(url);
-        if (!response.ok) return { replays: [], pendingReplays: [], pendingReplay: false };
+        if (!response.ok)
+          return { replays: [], pendingReplays: [], pendingReplay: false };
         const data = await response.json();
-        
+
         const formatReplay = (r: any): ReplaySummary => {
           return {
             artifactId: r.artifactId,
@@ -57,7 +62,10 @@ export function useReplayStatus() {
             planOk: r.payload?.planOk ?? false,
             receiptOk: r.payload?.receiptOk ?? false,
             invariantsOk: r.payload?.invariantsOk ?? false,
-            ok: (r.payload?.planOk && r.payload?.receiptOk && r.payload?.invariantsOk) ? true : false,
+            ok:
+              r.payload?.planOk && r.payload?.receiptOk && r.payload?.invariantsOk
+                ? true
+                : false,
             checks: r.payload?.checks || {
               workflowDeterministic: "unknown",
               consensusValidation: "unknown",
@@ -68,7 +76,7 @@ export function useReplayStatus() {
             createdAt: r.createdAt || r.timestamp || new Date().toISOString()
           };
         };
-        
+
         return {
           replays: (data.replays || []).map(formatReplay),
           pendingReplays: data.pendingReplays || [],
@@ -80,17 +88,18 @@ export function useReplayStatus() {
         return { replays: [], pendingReplays: [], pendingReplay: false };
       }
     },
-    staleTime: 30000,
+    staleTime: 30000
   });
 }
 
 export function useReplayDetail(txId: string) {
-  const { config, subscribe , apiFetch } = useHardKas();
+  const { config, subscribe, apiFetch } = useHardKas();
   const queryClient = useQueryClient();
 
   useEffect(() => {
-    const sync = () => queryClient.invalidateQueries({ queryKey: ["hardkas", "replay", txId] });
-    
+    const sync = () =>
+      queryClient.invalidateQueries({ queryKey: ["hardkas", "replay", txId] });
+
     return subscribe((event) => {
       if (["query-synced", "session-changed"].includes(event.type)) {
         sync();
@@ -104,7 +113,11 @@ export function useReplayDetail(txId: string) {
       if (!txId) return null;
       try {
         const baseUrl = config.devServerUrl || "";
-        const url = baseUrl ? (baseUrl.endsWith("/") ? `${baseUrl}api/replay/${txId}` : `${baseUrl}/api/replay/${txId}`) : `/api/replay/${txId}`;
+        const url = baseUrl
+          ? baseUrl.endsWith("/")
+            ? `${baseUrl}api/replay/${txId}`
+            : `${baseUrl}/api/replay/${txId}`
+          : `/api/replay/${txId}`;
         const response = await apiFetch(url);
         if (!response.ok) return null;
         const data = await response.json();
@@ -115,7 +128,7 @@ export function useReplayDetail(txId: string) {
       }
     },
     enabled: !!txId,
-    staleTime: 30000,
+    staleTime: 30000
   });
 }
 
@@ -127,7 +140,11 @@ export function useReplay(id: string) {
       if (!id) return null;
       try {
         const baseUrl = config.devServerUrl || "";
-        const url = baseUrl ? (baseUrl.endsWith("/") ? `${baseUrl}api/artifacts/${id}/replay` : `${baseUrl}/api/artifacts/${id}/replay`) : `/api/artifacts/${id}/replay`;
+        const url = baseUrl
+          ? baseUrl.endsWith("/")
+            ? `${baseUrl}api/artifacts/${id}/replay`
+            : `${baseUrl}/api/artifacts/${id}/replay`
+          : `/api/artifacts/${id}/replay`;
         const response = await apiFetch(url, { method: "POST" });
         if (!response.ok) return null;
         const data = await response.json();
@@ -138,6 +155,6 @@ export function useReplay(id: string) {
       }
     },
     enabled: !!id,
-    staleTime: Infinity,
+    staleTime: Infinity
   });
 }

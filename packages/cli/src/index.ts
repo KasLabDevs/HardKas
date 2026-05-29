@@ -14,7 +14,12 @@ async function main() {
   } catch (err: any) {
     const { maskSecrets } = await import("@hardkas/core");
     console.error(`\nError: ${maskSecrets(err.message || String(err))}`);
-    const exitCode = err instanceof HardkasCliError ? err.exitCode : (err.code === "POLICY_DENIED" ? HardkasExitCode.POLICY_DENIED : HardkasExitCode.RUNTIME_FAILURE);
+    const exitCode =
+      err instanceof HardkasCliError
+        ? err.exitCode
+        : err.code === "POLICY_DENIED"
+          ? HardkasExitCode.POLICY_DENIED
+          : HardkasExitCode.RUNTIME_FAILURE;
     process.exit(exitCode);
   }
 }
@@ -25,6 +30,11 @@ main().catch(async (err) => {
   if (err.stack) {
     console.error(maskSecrets(err.stack));
   }
-  const exitCode = err instanceof HardkasCliError ? err.exitCode : (err.code === "POLICY_DENIED" ? HardkasExitCode.POLICY_DENIED : HardkasExitCode.RUNTIME_FAILURE);
+  const exitCode =
+    err instanceof HardkasCliError
+      ? err.exitCode
+      : err.code === "POLICY_DENIED"
+        ? HardkasExitCode.POLICY_DENIED
+        : HardkasExitCode.RUNTIME_FAILURE;
   process.exit(exitCode);
 });

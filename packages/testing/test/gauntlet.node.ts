@@ -44,7 +44,7 @@ async function runCanonicalScenario(sandboxDir: string) {
     const toAcc = names[(i + 1) % 10]!;
 
     // Trigger controlled rejection via excessive balance requests every 7 iterations
-    const amountSompi = (i % 7 === 0) ? 1_000_000_000_000_000n : (100_000_000n + BigInt(i));
+    const amountSompi = i % 7 === 0 ? 1_000_000_000_000_000n : 100_000_000n + BigInt(i);
     const res = harness.send({ from: fromAcc, to: toAcc, amountSompi });
 
     if (res.ok) {
@@ -63,7 +63,7 @@ async function runCanonicalScenario(sandboxDir: string) {
       emittedArtifactHashes.push(planObj.contentHash);
       fs.writeFileSync(
         path.join(hardkasDir, `plan-${i}.json`),
-        JSON.stringify(planObj, (_, v) => typeof v === "bigint" ? v.toString() : v, 2)
+        JSON.stringify(planObj, (_, v) => (typeof v === "bigint" ? v.toString() : v), 2)
       );
     }
 
@@ -77,7 +77,11 @@ async function runCanonicalScenario(sandboxDir: string) {
       emittedArtifactHashes.push(receiptObj.contentHash);
       fs.writeFileSync(
         path.join(hardkasDir, `receipt-${i}.json`),
-        JSON.stringify(receiptObj, (_, v) => typeof v === "bigint" ? v.toString() : v, 2)
+        JSON.stringify(
+          receiptObj,
+          (_, v) => (typeof v === "bigint" ? v.toString() : v),
+          2
+        )
       );
     }
   }
@@ -85,7 +89,12 @@ async function runCanonicalScenario(sandboxDir: string) {
   // 3. Compute DAG Metrics & Mass Profiles to secure cross-package metrics tracking
   const linearRes = runLinearChain({ name: "gauntlet-linear", blockCount: 5 });
   const wideRes = runWideDag({ name: "gauntlet-wide", blockCount: 5, k: 18 });
-  const massRes = profileMass({ inputCount: 2, outputCount: 2, payloadBytes: 0, feeRate: 1n });
+  const massRes = profileMass({
+    inputCount: 2,
+    outputCount: 2,
+    payloadBytes: 0,
+    feeRate: 1n
+  });
 
   // 4. File-Backed SQLite Initialization & Total Re-indexing
   const dbPath = path.join(sandboxDir, "store.db");
@@ -103,7 +112,7 @@ async function runCanonicalScenario(sandboxDir: string) {
 
     const backend = new SqliteQueryBackend(store);
     const queriedArtifacts = await backend.findArtifacts();
-    const queriedHashes = queriedArtifacts.map(a => a.contentHash).sort();
+    const queriedHashes = queriedArtifacts.map((a) => a.contentHash).sort();
 
     const summary = {
       gauntletVersion: "gauntlet-v0",
@@ -156,7 +165,9 @@ describe("positive deterministic replay", () => {
 
     // If placeholder golden summary is loaded, we inform and expect structure equivalence
     if (goldenSummary.scenarioHash === "INITIAL_PLACEHOLDER") {
-      console.warn("\n[Gauntlet] Initial golden summary not populated yet. Deriving values for auto-update...\n");
+      console.warn(
+        "\n[Gauntlet] Initial golden summary not populated yet. Deriving values for auto-update...\n"
+      );
       // Overwrite file with golden-derived outputs to automatically seal the golden summary
       const goldenPath = path.resolve(__dirname, "./golden/gauntlet-summary.json");
       fs.writeFileSync(goldenPath, JSON.stringify(firstRun.summary, null, 2) + "\n");
@@ -169,7 +180,10 @@ describe("positive deterministic replay", () => {
 
     // Brutal assertions proving complete deterministic local-first resilience
     assert.strictEqual(secondRun.summaryHash, firstRun.summaryHash);
-    assert.deepStrictEqual(secondRun.emittedArtifactHashes, firstRun.emittedArtifactHashes);
+    assert.deepStrictEqual(
+      secondRun.emittedArtifactHashes,
+      firstRun.emittedArtifactHashes
+    );
     assert.strictEqual(secondRun.queryResultHash, firstRun.queryResultHash);
   });
 });
@@ -193,7 +207,10 @@ describe("negative mutation detection", () => {
     const mutatedPlan = { ...basePlan, amountSompi: "99999", contentHash: validHash };
 
     assert.throws(() => {
-      if (mutatedPlan.contentHash && mutatedPlan.contentHash !== calculateContentHash(mutatedPlan)) {
+      if (
+        mutatedPlan.contentHash &&
+        mutatedPlan.contentHash !== calculateContentHash(mutatedPlan)
+      ) {
         throw new Error("contentHash mismatch");
       }
     }, /contentHash mismatch/);
@@ -232,9 +249,17 @@ describe("negative mutation detection", () => {
       preStateHash: originalPreState
     };
 
-    const report = verifyReplay(harness.state, basePlan as any, mutatedReceipt as any, systemRuntimeContext);
+    const report = verifyReplay(
+      harness.state,
+      basePlan as any,
+      mutatedReceipt as any,
+      systemRuntimeContext
+    );
     assert.strictEqual(report.invariantsOk, false);
-    assert.strictEqual(report.errors.some(e => e.includes("preStateHash mismatch")), true);
+    assert.strictEqual(
+      report.errors.some((e) => e.includes("preStateHash mismatch")),
+      true
+    );
   });
 
   it("detects network mismatch", () => {
@@ -262,6 +287,9 @@ describe("negative mutation detection", () => {
       txId: "tx-mut-3"
       // Truncated amountSompi and feeSompi properties
     };
-    assert.throws(() => assertValidTxReceiptArtifact(truncatedReceipt), /Invalid tx receipt artifact/);
+    assert.throws(
+      () => assertValidTxReceiptArtifact(truncatedReceipt),
+      /Invalid tx receipt artifact/
+    );
   });
 });

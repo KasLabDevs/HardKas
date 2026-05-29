@@ -12,7 +12,9 @@ export function registerCiCommand(program: Command) {
 
   ciCmd
     .command("verify")
-    .description("Non-interactively verify workspace integrity, artifacts, and projections")
+    .description(
+      "Non-interactively verify workspace integrity, artifacts, and projections"
+    )
     .action(async () => {
       try {
         UI.header("CI Workspace Verification");
@@ -43,7 +45,7 @@ export function registerCiCommand(program: Command) {
         if (!fs.existsSync(artifactsDir)) {
           UI.warning("No artifacts directory found. Skipping lattice scan.");
         } else {
-          const files = fs.readdirSync(artifactsDir).filter(f => f.endsWith(".json"));
+          const files = fs.readdirSync(artifactsDir).filter((f) => f.endsWith(".json"));
           const ids = new Set<string>();
           let duplicates = 0;
           for (const f of files) {
@@ -80,7 +82,9 @@ export function registerCiCommand(program: Command) {
 
         UI.emptyLine();
         if (hasErrors) {
-          UI.error("CI Verification Failed. Workspace is corrupted or incorrectly configured.");
+          UI.error(
+            "CI Verification Failed. Workspace is corrupted or incorrectly configured."
+          );
           process.exit(1);
         } else {
           UI.success("CI Verification Passed. Workspace is pristine.");

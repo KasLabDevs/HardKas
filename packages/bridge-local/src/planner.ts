@@ -30,7 +30,7 @@ export function planBridgeEntry(request: BridgePlanRequest): BridgePlan {
     fromAddress: request.fromAddress,
     outputs: [
       // In a real bridge, this might be a specific bridge multisig or script
-      { address: request.fromAddress, amountSompi: request.amountSompi } 
+      { address: request.fromAddress, amountSompi: request.amountSompi }
     ],
     availableUtxos: request.availableUtxos,
     feeRateSompiPerMass: 1n,

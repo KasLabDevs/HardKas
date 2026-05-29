@@ -8,7 +8,9 @@ export function registerSessionCommands(program: Command) {
 
   sessionCmd.hook("preAction", () => {
     if (!process.env.HARDKAS_EXPERIMENTAL) {
-      console.warn("\n⚠️  WARNING: 'session' commands are highly experimental and unsupported. Set HARDKAS_EXPERIMENTAL=1 to acknowledge.\n");
+      console.warn(
+        "\n⚠️  WARNING: 'session' commands are highly experimental and unsupported. Set HARDKAS_EXPERIMENTAL=1 to acknowledge.\n"
+      );
     }
   });
 

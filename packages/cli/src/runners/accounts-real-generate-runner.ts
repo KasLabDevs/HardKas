@@ -1,4 +1,4 @@
-import { 
+import {
   loadOrCreateRealAccountStore,
   saveRealAccountStore,
   importRealDevAccount,
@@ -22,13 +22,17 @@ export interface AccountsRealGenerateOptions {
   workspaceRoot?: string;
 }
 
-export async function runAccountsRealGenerate(options: AccountsRealGenerateOptions): Promise<{
+export async function runAccountsRealGenerate(
+  options: AccountsRealGenerateOptions
+): Promise<{
   accounts: RealDevAccount[];
   formatted: string;
 }> {
-  const generator = new KaspaSdkKeyGenerator(options.networkId ? { networkId: options.networkId } : {});
+  const generator = new KaspaSdkKeyGenerator(
+    options.networkId ? { networkId: options.networkId } : {}
+  );
   const count = options.count || 1;
-  
+
   const cwd = options.workspaceRoot || process.cwd();
   let store = await loadOrCreateRealAccountStore({ cwd });
   const generatedAccounts: RealDevAccount[] = [];
@@ -44,17 +48,26 @@ export async function runAccountsRealGenerate(options: AccountsRealGenerateOptio
   } else {
     UI.warning("LEGACY MODE: Generating accounts in plaintext is unsafe.");
     if (!options.yes) {
-      const confirmed = await UI.confirm("Are you sure you want to store these keys in plaintext?");
+      const confirmed = await UI.confirm(
+        "Are you sure you want to store these keys in plaintext?"
+      );
       if (!confirmed) throw new Error("Generation cancelled.");
     }
   }
 
   for (let i = 0; i < count; i++) {
-    const name = (count === 1 && options.name) ? options.name : (options.name ? `${options.name}${i + 1}` : `account${i}`);
-    
+    const name =
+      count === 1 && options.name
+        ? options.name
+        : options.name
+          ? `${options.name}${i + 1}`
+          : `account${i}`;
+
     // Attempt generation
-    const generated = await generator.generateAccount(options.networkId ? { networkId: options.networkId } : {});
-    
+    const generated = await generator.generateAccount(
+      options.networkId ? { networkId: options.networkId } : {}
+    );
+
     let keystoreRef: string | undefined;
 
     if (!options.unsafePlaintext) {
@@ -72,7 +85,9 @@ export async function runAccountsRealGenerate(options: AccountsRealGenerateOptio
       );
 
       const { Hardkas } = await import("@hardkas/sdk");
-      const sdk = await Hardkas.open(options.workspaceRoot ? { cwd: options.workspaceRoot } : {});
+      const sdk = await Hardkas.open(
+        options.workspaceRoot ? { cwd: options.workspaceRoot } : {}
+      );
       const keystoreDir = sdk.workspace.keystoreDir;
       if (!fs.existsSync(keystoreDir)) fs.mkdirSync(keystoreDir, { recursive: true });
 
@@ -85,10 +100,12 @@ export async function runAccountsRealGenerate(options: AccountsRealGenerateOptio
       name,
       address: generated.address,
       ...(generated.publicKey ? { publicKey: generated.publicKey } : {}),
-      ...(options.unsafePlaintext && generated.privateKey ? { privateKey: generated.privateKey } : {}),
+      ...(options.unsafePlaintext && generated.privateKey
+        ? { privateKey: generated.privateKey }
+        : {}),
       ...(keystoreRef ? { keystoreRef } : {})
     });
-    
+
     generatedAccounts.push(store.accounts[store.accounts.length - 1]!);
   }
 
@@ -101,7 +118,7 @@ export async function runAccountsRealGenerate(options: AccountsRealGenerateOptio
     ""
   ];
 
-  generatedAccounts.forEach(a => {
+  generatedAccounts.forEach((a) => {
     lines.push(`Name:    ${a.name}`);
     lines.push(`Address: ${a.address}`);
     lines.push(`Private: yes (masked)`);

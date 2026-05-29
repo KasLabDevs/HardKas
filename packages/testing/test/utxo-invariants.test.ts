@@ -4,10 +4,10 @@ import { runUtxoFuzzer } from "../src/utxo-fuzzer.js";
 describe("Infrastructure Invariants: UTXO Stability", () => {
   it("should maintain sum(inputs) == sum(outputs) + fee over 100 random transactions", async () => {
     const result = await runUtxoFuzzer(100);
-    
+
     if (!result.ok) {
       console.error("UTXO Fuzzing Violations:");
-      result.violations.forEach(v => console.error(`  - ${v}`));
+      result.violations.forEach((v) => console.error(`  - ${v}`));
     }
 
     expect(result.ok).toBe(true);

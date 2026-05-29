@@ -14,6 +14,7 @@ cd my-dapp
 ## 2. Start the Dev Server
 
 Start the local `hardkas dev` environment. This runs:
+
 - A local simulated Kaspa network (localnet)
 - The HardKAS Dev-Server API on `http://127.0.0.1:7420`
 - The deterministic file-system artifact watcher
@@ -57,7 +58,7 @@ if (res.ok) {
 
 ## 5. Observe Artifacts
 
-Instead of polling REST endpoints for state, HardKAS emphasizes deterministic causality. Every transaction yields a verifiable artifact. 
+Instead of polling REST endpoints for state, HardKAS emphasizes deterministic causality. Every transaction yields a verifiable artifact.
 
 Listen to real-time artifact generation using SSE:
 
@@ -66,7 +67,7 @@ useEffect(() => {
   const unsubscribe = client.artifacts.watch((artifact) => {
     console.log("New artifact emitted:", artifact);
   });
-  
+
   return () => unsubscribe();
 }, []);
 ```

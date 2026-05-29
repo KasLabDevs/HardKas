@@ -10,16 +10,21 @@ export interface ForkOptions {
   atDaaScore?: string;
 }
 
-export async function forkFromNetwork(rpc: KaspaRpcClient, opts: ForkOptions): Promise<LocalnetState> {
+export async function forkFromNetwork(
+  rpc: KaspaRpcClient,
+  opts: ForkOptions
+): Promise<LocalnetState> {
   const info = await rpc.getInfo();
-  const networkId = (info.networkId as NetworkId) || opts.network as NetworkId;
+  const networkId = (info.networkId as NetworkId) || (opts.network as NetworkId);
   const targetDaaScore = opts.atDaaScore;
   if (!targetDaaScore) {
-    throw new Error(`[CRITICAL SEMANTIC ERROR] Implicit 'latest' resolution forbidden. You must explicitly provide atDaaScore.`);
+    throw new Error(
+      `[CRITICAL SEMANTIC ERROR] Implicit 'latest' resolution forbidden. You must explicitly provide atDaaScore.`
+    );
   }
 
   const utxos: LocalnetUtxo[] = [];
-  
+
   for (const address of opts.addresses) {
     const rpcUtxos = await rpc.getUtxosByAddress(address);
     for (const u of rpcUtxos) {

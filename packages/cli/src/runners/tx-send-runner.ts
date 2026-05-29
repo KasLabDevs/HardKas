@@ -28,9 +28,12 @@ export interface TxSendRunnerResult {
  */
 export async function runTxSend(input: TxSendRunnerInput): Promise<TxSendRunnerResult> {
   const { signedArtifact, network, config, url } = input;
-  
+
   const networkName = network || signedArtifact.networkId;
-  const { name: resolvedName, target } = resolveNetworkTarget({ network: networkName, config });
+  const { name: resolvedName, target } = resolveNetworkTarget({
+    network: networkName,
+    config
+  });
 
   // Initialize the SDK
   const sdk = await Hardkas.open({ cwd: input.workspaceRoot || process.cwd() });
@@ -48,7 +51,7 @@ export async function runTxSend(input: TxSendRunnerInput): Promise<TxSendRunnerR
       receipt,
       receiptPath,
       executionId: `exec_${Date.now().toString(36)}`,
-      replayId: `replay_${receipt.txId.substring(0,8)}`
+      replayId: `replay_${receipt.txId.substring(0, 8)}`
     };
   }
 
@@ -59,7 +62,8 @@ export async function runTxSend(input: TxSendRunnerInput): Promise<TxSendRunnerR
   });
 
   const targetRecord = target as unknown as Record<string, unknown>;
-  const targetRpcUrl = typeof targetRecord["rpcUrl"] === "string" ? targetRecord["rpcUrl"] : undefined;
+  const targetRpcUrl =
+    typeof targetRecord["rpcUrl"] === "string" ? targetRecord["rpcUrl"] : undefined;
   const rpcUrl = url || targetRpcUrl;
   if (!rpcUrl) throw new Error(`No RPC URL found for network '${networkName}'.`);
 
@@ -73,6 +77,6 @@ export async function runTxSend(input: TxSendRunnerInput): Promise<TxSendRunnerR
     receipt,
     receiptPath,
     executionId: `exec_${Date.now().toString(36)}`,
-    replayId: `replay_${receipt.txId.substring(0,8)}`
+    replayId: `replay_${receipt.txId.substring(0, 8)}`
   };
 }

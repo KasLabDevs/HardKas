@@ -17,7 +17,12 @@ describe("CLI JSON Contract", () => {
     // maxRetries handles Windows EBUSY when tsx child process still holds a handle.
     // If it still fails, ignore it to prevent flakiness in tests.
     try {
-      await fs.rm(tmpDir, { recursive: true, force: true, maxRetries: 5, retryDelay: 200 });
+      await fs.rm(tmpDir, {
+        recursive: true,
+        force: true,
+        maxRetries: 5,
+        retryDelay: 200
+      });
     } catch (e: any) {
       if (e.code !== "EBUSY" && e.code !== "ENOENT") {
         throw e;
@@ -33,11 +38,16 @@ describe("CLI JSON Contract", () => {
   it("tx plan --json produces strict parsable JSON with no stdout pollution", async () => {
     await runCli(["accounts", "fund", "alice", "--amount", "1000"]);
     const { stdout, stderr } = await runCli([
-      "tx", "plan",
-      "--from", "alice",
-      "--to", "bob",
-      "--amount", "10",
-      "--network", "simulated",
+      "tx",
+      "plan",
+      "--from",
+      "alice",
+      "--to",
+      "bob",
+      "--amount",
+      "10",
+      "--network",
+      "simulated",
       "--json"
     ]);
 
@@ -46,7 +56,9 @@ describe("CLI JSON Contract", () => {
     try {
       parsed = JSON.parse(stdout);
     } catch (err: any) {
-      throw new Error(`Failed to parse stdout as JSON: ${err.message}\nStdout was:\n${stdout}`);
+      throw new Error(
+        `Failed to parse stdout as JSON: ${err.message}\nStdout was:\n${stdout}`
+      );
     }
 
     expect(parsed.schema).toBe("hardkas.txPlan");
@@ -63,7 +75,9 @@ describe("CLI JSON Contract", () => {
     try {
       parsed = JSON.parse(stdout);
     } catch (err: any) {
-      throw new Error(`Failed to parse stdout as JSON: ${err.message}\nStdout was:\n${stdout}`);
+      throw new Error(
+        `Failed to parse stdout as JSON: ${err.message}\nStdout was:\n${stdout}`
+      );
     }
 
     expect(parsed.summary).toBeDefined();
@@ -72,7 +86,10 @@ describe("CLI JSON Contract", () => {
   }, 30000);
 
   it("verify --json produces strict parsable JSON", async () => {
-    const goldenPlanPath = path.resolve(__dirname, "../../artifacts/test/fixtures/golden/tx-plan.valid.json");
+    const goldenPlanPath = path.resolve(
+      __dirname,
+      "../../artifacts/test/fixtures/golden/tx-plan.valid.json"
+    );
     const goldenContent = await fs.readFile(goldenPlanPath, "utf-8");
     const destDir = path.join(tmpDir, ".hardkas", "artifacts");
     await fs.mkdir(destDir, { recursive: true });
@@ -83,7 +100,9 @@ describe("CLI JSON Contract", () => {
     try {
       parsed = JSON.parse(stdout);
     } catch (err: any) {
-      throw new Error(`Failed to parse stdout as JSON: ${err.message}\nStdout was:\n${stdout}`);
+      throw new Error(
+        `Failed to parse stdout as JSON: ${err.message}\nStdout was:\n${stdout}`
+      );
     }
 
     expect(parsed.schema).toBe("hardkas.queryVerify.v1");
@@ -97,7 +116,9 @@ describe("CLI JSON Contract", () => {
     try {
       parsed = JSON.parse(stdout);
     } catch (err: any) {
-      throw new Error(`Failed to parse stdout as JSON: ${err.message}\nStdout was:\n${stdout}`);
+      throw new Error(
+        `Failed to parse stdout as JSON: ${err.message}\nStdout was:\n${stdout}`
+      );
     }
 
     expect(parsed.schema).toBe("hardkas.queryRebuild.v1");
@@ -112,7 +133,9 @@ describe("CLI JSON Contract", () => {
     try {
       parsed = JSON.parse(stdout);
     } catch (err: any) {
-      throw new Error(`Failed to parse stdout as JSON: ${err.message}\nStdout was:\n${stdout}`);
+      throw new Error(
+        `Failed to parse stdout as JSON: ${err.message}\nStdout was:\n${stdout}`
+      );
     }
 
     expect(parsed.version).toBeDefined();

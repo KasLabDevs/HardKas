@@ -1,11 +1,11 @@
 import React, { useState, useMemo } from "react";
 import { useEvents, useOverview } from "@hardkas/react";
-import { 
-  Activity, 
-  Terminal, 
-  Database, 
-  FileCode, 
-  Wifi, 
+import {
+  Activity,
+  Terminal,
+  Database,
+  FileCode,
+  Wifi,
   Search,
   ChevronDown,
   ChevronUp,
@@ -18,17 +18,20 @@ export function EventsPage() {
   const { data, isLoading } = useEvents();
   const { data: overview } = useOverview();
   const events = data?.events;
-  const observabilityDrift = overview?.runtimeState === "DEGRADED" || overview?.runtimeState === "PENDING" || data?.observabilityDrift;
+  const observabilityDrift =
+    overview?.runtimeState === "DEGRADED" ||
+    overview?.runtimeState === "PENDING" ||
+    data?.observabilityDrift;
   const [searchTerm, setSearchTerm] = useState("");
   const [expandedCorrelation, setExpandedCorrelation] = useState<string | null>(null);
 
   // Group events by correlationId
   const groupedEvents = useMemo(() => {
     if (!events) return [];
-    
+
     const groups = new Map<string, any[]>();
-    
-    events.forEach(event => {
+
+    events.forEach((event) => {
       const cid = event.correlationId || "unknown";
       if (!groups.has(cid)) {
         groups.set(cid, []);
@@ -46,44 +49,64 @@ export function EventsPage() {
     }
 
     // Convert map to array and sort groups by the timestamp of their latest event (descending)
-    return Array.from(groups.entries()).map(([correlationId, groupEvents]) => {
-      const latestTime = Math.max(...groupEvents.map(e => e.timestamp ? new Date(e.timestamp).getTime() : 0));
-      return {
-        correlationId,
-        events: groupEvents,
-        latestTime
-      };
-    }).sort((a, b) => b.latestTime - a.latestTime);
+    return Array.from(groups.entries())
+      .map(([correlationId, groupEvents]) => {
+        const latestTime = Math.max(
+          ...groupEvents.map((e) => (e.timestamp ? new Date(e.timestamp).getTime() : 0))
+        );
+        return {
+          correlationId,
+          events: groupEvents,
+          latestTime
+        };
+      })
+      .sort((a, b) => b.latestTime - a.latestTime);
   }, [events]);
 
-  const filteredGroups = groupedEvents.filter(group => {
+  const filteredGroups = groupedEvents.filter((group) => {
     const term = searchTerm.toLowerCase();
     if (group.correlationId.toLowerCase().includes(term)) return true;
-    return group.events.some(e => 
-      e.kind.toLowerCase().includes(term) || 
-      (e.sourceSubsystem && e.sourceSubsystem.toLowerCase().includes(term))
+    return group.events.some(
+      (e) =>
+        e.kind.toLowerCase().includes(term) ||
+        (e.sourceSubsystem && e.sourceSubsystem.toLowerCase().includes(term))
     );
   });
 
   const getDomainIcon = (domain: string) => {
     switch (domain) {
-      case "workflow": return <Activity size={14} className="text-indigo-400" />;
-      case "integrity": return <Terminal size={14} className="text-red-400" />;
-      case "sqlite": return <Database size={14} className="text-emerald-400" />;
-      case "artifact": return <FileCode size={14} className="text-amber-400" />;
-      case "rpc": return <Wifi size={14} className="text-cyan-400" />;
-      default: return <Activity size={14} className="text-zinc-400" />;
+      case "workflow":
+        return <Activity size={14} className="text-indigo-400" />;
+      case "integrity":
+        return <Terminal size={14} className="text-red-400" />;
+      case "sqlite":
+        return <Database size={14} className="text-emerald-400" />;
+      case "artifact":
+        return <FileCode size={14} className="text-amber-400" />;
+      case "rpc":
+        return <Wifi size={14} className="text-cyan-400" />;
+      default:
+        return <Activity size={14} className="text-zinc-400" />;
     }
   };
 
   const getEventColor = (kind: string) => {
-    if (kind.includes("error") || kind.includes("fail") || kind.includes("corrupt") || kind.includes("mismatch")) {
+    if (
+      kind.includes("error") ||
+      kind.includes("fail") ||
+      kind.includes("corrupt") ||
+      kind.includes("mismatch")
+    ) {
       return "text-red-400 bg-red-500/10 border-red-500/20";
     }
     if (kind.includes("started") || kind.includes("sync")) {
       return "text-sky-400 bg-sky-500/10 border-sky-500/20";
     }
-    if (kind.includes("completed") || kind.includes("receipt") || kind.includes("verified")) {
+    if (
+      kind.includes("completed") ||
+      kind.includes("receipt") ||
+      kind.includes("verified")
+    ) {
       return "text-emerald-400 bg-emerald-500/10 border-emerald-500/20";
     }
     if (kind.includes("written") || kind.includes("indexed")) {
@@ -101,12 +124,16 @@ export function EventsPage() {
             Causal Event Ledger
           </h1>
           <p className="text-xs text-zinc-400 mt-1 leading-normal">
-            Low-level deterministic event sourcing stream across the entire HardKAS node architecture.
+            Low-level deterministic event sourcing stream across the entire HardKAS node
+            architecture.
           </p>
         </div>
 
         <div className="relative max-w-xs w-full">
-          <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500" />
+          <Search
+            size={14}
+            className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500"
+          />
           <input
             type="text"
             placeholder="Search events, subsystems, correlations..."
@@ -120,7 +147,10 @@ export function EventsPage() {
       {isLoading ? (
         <div className="space-y-4">
           {[1, 2, 3].map((n) => (
-            <div key={n} className="h-24 bg-zinc-900/30 border border-zinc-800 rounded-2xl animate-pulse" />
+            <div
+              key={n}
+              className="h-24 bg-zinc-900/30 border border-zinc-800 rounded-2xl animate-pulse"
+            />
           ))}
         </div>
       ) : filteredGroups.length > 0 ? (
@@ -128,16 +158,18 @@ export function EventsPage() {
           {filteredGroups.map((group) => {
             const isExpanded = expandedCorrelation === group.correlationId;
             const primaryDomain = group.events[0]?.domain || "unknown";
-            
+
             return (
-              <div 
+              <div
                 key={group.correlationId}
                 className="bg-zinc-900/40 border border-zinc-850 rounded-2xl overflow-hidden shadow-sm hover:border-zinc-700/80 transition-all duration-300"
               >
                 {/* Group Header */}
-                <div 
+                <div
                   className="px-6 py-4 flex items-center justify-between cursor-pointer hover:bg-zinc-800/30 transition-colors select-none"
-                  onClick={() => setExpandedCorrelation(isExpanded ? null : group.correlationId)}
+                  onClick={() =>
+                    setExpandedCorrelation(isExpanded ? null : group.correlationId)
+                  }
                 >
                   <div className="flex items-center gap-4">
                     <div className="p-2 bg-zinc-950 rounded-xl border border-zinc-800 shadow-inner">
@@ -153,17 +185,26 @@ export function EventsPage() {
                         </span>
                       </div>
                       <div className="text-[10px] font-mono text-zinc-500">
-                        Correlation ID: <span className="text-indigo-400">{group.correlationId}</span>
+                        Correlation ID:{" "}
+                        <span className="text-indigo-400">{group.correlationId}</span>
                       </div>
                     </div>
                   </div>
-                  
+
                   <div className="flex items-center gap-4">
                     <span className="text-xs font-mono text-zinc-500 flex items-center gap-1">
                       <Clock size={12} />
-                      {group.events[group.events.length - 1].timestamp ? new Date(group.events[group.events.length - 1].timestamp!).toLocaleTimeString() : '—'}
+                      {group.events[group.events.length - 1].timestamp
+                        ? new Date(
+                            group.events[group.events.length - 1].timestamp!
+                          ).toLocaleTimeString()
+                        : "—"}
                     </span>
-                    {isExpanded ? <ChevronUp size={16} className="text-zinc-400" /> : <ChevronDown size={16} className="text-zinc-400" />}
+                    {isExpanded ? (
+                      <ChevronUp size={16} className="text-zinc-400" />
+                    ) : (
+                      <ChevronDown size={16} className="text-zinc-400" />
+                    )}
                   </div>
                 </div>
 
@@ -175,37 +216,56 @@ export function EventsPage() {
                         <div key={event.eventId || i} className="relative">
                           {/* Timeline Dot */}
                           <div className="absolute -left-[31px] top-1.5 w-3 h-3 bg-zinc-900 border-2 border-indigo-500 rounded-full shadow-[0_0_8px_rgba(99,102,241,0.4)]" />
-                          
+
                           <div className="bg-zinc-900 border border-zinc-800/80 rounded-xl p-4 hover:border-zinc-700 transition-colors shadow-sm">
                             <div className="flex flex-wrap items-center justify-between gap-2 border-b border-zinc-800/60 pb-3">
                               <div className="flex items-center gap-2">
                                 {getDomainIcon(event.domain)}
-                                <span className="text-xs font-bold text-zinc-200 tracking-wide">{event.domain}</span>
-                                <span className={`text-[10px] font-mono px-2 py-0.5 rounded border uppercase tracking-wider ${getEventColor(event.kind)}`}>
+                                <span className="text-xs font-bold text-zinc-200 tracking-wide">
+                                  {event.domain}
+                                </span>
+                                <span
+                                  className={`text-[10px] font-mono px-2 py-0.5 rounded border uppercase tracking-wider ${getEventColor(event.kind)}`}
+                                >
                                   {event.kind}
                                 </span>
                               </div>
                               <span className="text-[10px] font-mono text-zinc-500 flex items-center gap-1">
                                 <Clock size={10} />
-                                {event.timestamp ? new Date(event.timestamp).toISOString().split('T')[1].replace('Z','') : '—'}
+                                {event.timestamp
+                                  ? new Date(event.timestamp)
+                                      .toISOString()
+                                      .split("T")[1]
+                                      .replace("Z", "")
+                                  : "—"}
                               </span>
                             </div>
-                            
+
                             <div className="space-y-1.5 mt-2 text-[10px] font-mono text-zinc-400">
                               {event.txId && (
                                 <div className="flex justify-between gap-2">
                                   <span className="text-zinc-600">txId</span>
-                                  <span className="text-zinc-300 truncate" title={event.txId}>{event.txId}</span>
+                                  <span
+                                    className="text-zinc-300 truncate"
+                                    title={event.txId}
+                                  >
+                                    {event.txId}
+                                  </span>
                                 </div>
                               )}
                               {event.artifactId && (
                                 <div className="flex justify-between gap-2">
                                   <span className="text-zinc-600">artifactId</span>
-                                  <span className="text-zinc-300 truncate" title={event.artifactId}>{event.artifactId}</span>
+                                  <span
+                                    className="text-zinc-300 truncate"
+                                    title={event.artifactId}
+                                  >
+                                    {event.artifactId}
+                                  </span>
                                 </div>
                               )}
                             </div>
-                            
+
                             {/* Payload inspect */}
                             {event.payload && Object.keys(event.payload).length > 0 && (
                               <details className="mt-3 group/payload">
@@ -234,12 +294,17 @@ export function EventsPage() {
           <div className="w-16 h-16 bg-amber-500/10 rounded-full flex items-center justify-center mb-4">
             <Activity size={32} className="text-amber-400" />
           </div>
-          <h2 className="text-lg font-black text-amber-100 mb-2 tracking-tight">Causal Events Missing</h2>
+          <h2 className="text-lg font-black text-amber-100 mb-2 tracking-tight">
+            Causal Events Missing
+          </h2>
           <p className="text-sm text-amber-400/80 max-w-md mb-6 leading-relaxed">
-            Runtime artifacts exist, but no causal events were found for them. This might be a legacy workspace, or the event ledger was disabled.
+            Runtime artifacts exist, but no causal events were found for them. This might
+            be a legacy workspace, or the event ledger was disabled.
           </p>
           <div className="bg-zinc-950 border border-zinc-900 rounded-lg p-3 w-full max-w-md flex flex-col gap-2 font-mono text-xs">
-            <span className="text-zinc-500 uppercase tracking-wider text-[9px] font-sans font-bold">Run to Rebuild:</span>
+            <span className="text-zinc-500 uppercase tracking-wider text-[9px] font-sans font-bold">
+              Run to Rebuild:
+            </span>
             <span className="text-amber-300">hardkas query store rebuild</span>
           </div>
         </div>

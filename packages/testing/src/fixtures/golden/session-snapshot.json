@@ -4,7 +4,12 @@
   "artifactId": "art_golden_session_snap",
   "sessionId": "sess_123",
   "workflowIds": ["art_golden_transfer_123"],
-  "artifactIds": ["art_golden_transfer_123", "art_plan_1", "art_signed_1", "art_receipt_1"],
+  "artifactIds": [
+    "art_golden_transfer_123",
+    "art_plan_1",
+    "art_signed_1",
+    "art_receipt_1"
+  ],
   "startedAt": "2026-05-27T11:00:00Z",
   "network": "simulated",
   "deterministic": true,

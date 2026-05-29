@@ -1,9 +1,16 @@
 import { Command } from "commander";
 import { handleError } from "../../ui.js";
-import { printReplayList, printReplaySummary, printDivergences, printInvariants } from "./ui-helpers.js";
+import {
+  printReplayList,
+  printReplaySummary,
+  printDivergences,
+  printInvariants
+} from "./ui-helpers.js";
 
 export function registerReplayQueryCommands(queryCmd: Command) {
-  const replayCmd = queryCmd.command("replay").description("Inspect replay history and divergence");
+  const replayCmd = queryCmd
+    .command("replay")
+    .description("Inspect replay history and divergence");
 
   replayCmd
     .command("list")
@@ -16,9 +23,15 @@ export function registerReplayQueryCommands(queryCmd: Command) {
         const { QueryEngine, createQueryRequest } = await import("@hardkas/query");
         const engine = await QueryEngine.create({ artifactDir: process.cwd() });
         const filters: Array<{ field: string; op: "eq"; value: string }> = [];
-        if (options.status) filters.push({ field: "status", op: "eq", value: options.status });
+        if (options.status)
+          filters.push({ field: "status", op: "eq", value: options.status });
 
-        const request = createQueryRequest({ domain: "replay", op: "list", filters, limit: parseInt(options.limit, 10) });
+        const request = createQueryRequest({
+          domain: "replay",
+          op: "list",
+          filters,
+          limit: parseInt(options.limit, 10)
+        });
         const result = await engine.execute(request);
 
         if (options.json) {
@@ -27,7 +40,10 @@ export function registerReplayQueryCommands(queryCmd: Command) {
         } else {
           printReplayList(result as any);
         }
-      } catch (e) { handleError(e); process.exitCode = 1; }
+      } catch (e) {
+        handleError(e);
+        process.exitCode = 1;
+      }
     });
 
   replayCmd
@@ -39,7 +55,11 @@ export function registerReplayQueryCommands(queryCmd: Command) {
         const { QueryEngine, createQueryRequest } = await import("@hardkas/query");
         const engine = await QueryEngine.create({ artifactDir: process.cwd() });
 
-        const request = createQueryRequest({ domain: "replay", op: "summary", params: { txId } });
+        const request = createQueryRequest({
+          domain: "replay",
+          op: "summary",
+          params: { txId }
+        });
         const result = await engine.execute(request);
 
         if (options.json) {
@@ -48,7 +68,10 @@ export function registerReplayQueryCommands(queryCmd: Command) {
         } else {
           printReplaySummary(result as any);
         }
-      } catch (e) { handleError(e); process.exitCode = 1; }
+      } catch (e) {
+        handleError(e);
+        process.exitCode = 1;
+      }
     });
 
   replayCmd
@@ -62,8 +85,9 @@ export function registerReplayQueryCommands(queryCmd: Command) {
         const engine = await QueryEngine.create({ artifactDir: process.cwd() });
 
         const request = createQueryRequest({
-          domain: "replay", op: "divergences",
-          explain: options.explain === true ? "brief" : (options.explain || false)
+          domain: "replay",
+          op: "divergences",
+          explain: options.explain === true ? "brief" : options.explain || false
         });
         const result = await engine.execute(request);
 
@@ -73,7 +97,10 @@ export function registerReplayQueryCommands(queryCmd: Command) {
         } else {
           printDivergences(result as any);
         }
-      } catch (e) { handleError(e); process.exitCode = 1; }
+      } catch (e) {
+        handleError(e);
+        process.exitCode = 1;
+      }
     });
 
   replayCmd
@@ -87,8 +114,10 @@ export function registerReplayQueryCommands(queryCmd: Command) {
         const engine = await QueryEngine.create({ artifactDir: process.cwd() });
 
         const request = createQueryRequest({
-          domain: "replay", op: "invariants", params: { txId },
-          explain: options.explain === true ? "brief" : (options.explain || false)
+          domain: "replay",
+          op: "invariants",
+          params: { txId },
+          explain: options.explain === true ? "brief" : options.explain || false
         });
         const result = await engine.execute(request);
 
@@ -98,6 +127,9 @@ export function registerReplayQueryCommands(queryCmd: Command) {
         } else {
           printInvariants(result as any);
         }
-      } catch (e) { handleError(e); process.exitCode = 1; }
+      } catch (e) {
+        handleError(e);
+        process.exitCode = 1;
+      }
     });
 }

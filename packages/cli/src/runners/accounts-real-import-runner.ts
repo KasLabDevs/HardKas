@@ -1,7 +1,7 @@
-import { 
-  loadOrCreateRealAccountStore, 
-  saveRealAccountStore, 
-  importRealDevAccount 
+import {
+  loadOrCreateRealAccountStore,
+  saveRealAccountStore,
+  importRealDevAccount
 } from "@hardkas/accounts";
 
 export interface AccountsRealImportOptions {

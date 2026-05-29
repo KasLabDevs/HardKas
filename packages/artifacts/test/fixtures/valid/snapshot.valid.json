@@ -12,9 +12,9 @@
   "accounts": [],
   "utxos": [],
   "lineage": {
-    "artifactId": "2b4baed6aab94827f47c19195591a9f619be50882de2c564ca9fa1bd09d57fb5",
+    "artifactId": "56d4612673f613a3efd5387fbbfc97164b04759b0ce2a9fab6a1d3bcceed88cd",
     "lineageId": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
     "rootArtifactId": "2b4baed6aab94827f47c19195591a9f619be50882de2c564ca9fa1bd09d57fb5"
   },
-  "contentHash": "2b4baed6aab94827f47c19195591a9f619be50882de2c564ca9fa1bd09d57fb5"
+  "contentHash": "56d4612673f613a3efd5387fbbfc97164b04759b0ce2a9fab6a1d3bcceed88cd"
 }

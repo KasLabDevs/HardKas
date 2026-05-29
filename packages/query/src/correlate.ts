@@ -8,12 +8,7 @@
  */
 import { readEvents } from "./events.js";
 import { computeQueryHash } from "./serialize.js";
-import type {
-  QueryRequest,
-  QueryResult,
-  ExplainChain,
-  ReasoningStep
-} from "./types.js";
+import type { QueryRequest, QueryResult, ExplainChain, ReasoningStep } from "./types.js";
 import type { QueryEngine } from "./engine.js";
 import type { LineageChainResult, LineageNode } from "./types.js";
 import type { DagTxHistory, DagConflict } from "./types.js";
@@ -34,31 +29,39 @@ export interface TimelineEvent {
 
 export interface CorrelationBundle {
   readonly txId: string;
-  readonly lineage?: {
-    readonly chain: readonly { schema: string; contentHash: string }[];
-    readonly transitionCount: number;
-    readonly complete: boolean;
-  } | undefined;
-  readonly dag?: {
-    readonly accepted: boolean;
-    readonly displaced: boolean;
-    readonly conflictCount: number;
-    readonly inSinkPath: boolean;
-    readonly blockId: string;
-  } | undefined;
-  readonly rpc?: {
-    readonly endpoint: string;
-    readonly scoreAtSubmission: number;
-    readonly stateAtSubmission: string;
-    readonly assessment: string;
-    readonly errorCount: number;
-  } | undefined;
-  readonly replay?: {
-    readonly found: boolean;
-    readonly status: string;
-    readonly invariantsOk: boolean;
-    readonly issueCount: number;
-  } | undefined;
+  readonly lineage?:
+    | {
+        readonly chain: readonly { schema: string; contentHash: string }[];
+        readonly transitionCount: number;
+        readonly complete: boolean;
+      }
+    | undefined;
+  readonly dag?:
+    | {
+        readonly accepted: boolean;
+        readonly displaced: boolean;
+        readonly conflictCount: number;
+        readonly inSinkPath: boolean;
+        readonly blockId: string;
+      }
+    | undefined;
+  readonly rpc?:
+    | {
+        readonly endpoint: string;
+        readonly scoreAtSubmission: number;
+        readonly stateAtSubmission: string;
+        readonly assessment: string;
+        readonly errorCount: number;
+      }
+    | undefined;
+  readonly replay?:
+    | {
+        readonly found: boolean;
+        readonly status: string;
+        readonly invariantsOk: boolean;
+        readonly issueCount: number;
+      }
+    | undefined;
   readonly timeline: readonly TimelineEvent[];
 }
 
@@ -87,15 +90,20 @@ export async function correlate(
   // --- Lineage ---
   if (options.include.includes("lineage")) {
     try {
-      const result = await engine.execute(createQueryRequest({
-        domain: "lineage",
-        op: "chain",
-        params: { anchor: txId, direction: "ancestors" }
-      }));
+      const result = await engine.execute(
+        createQueryRequest({
+          domain: "lineage",
+          op: "chain",
+          params: { anchor: txId, direction: "ancestors" }
+        })
+      );
       const chain = result.items[0] as LineageChainResult | undefined;
       if (chain) {
         lineage = {
-          chain: chain.nodes.map((n: LineageNode) => ({ schema: n.schema, contentHash: n.contentHash })),
+          chain: chain.nodes.map((n: LineageNode) => ({
+            schema: n.schema,
+            contentHash: n.contentHash
+          })),
           transitionCount: chain.transitions?.length ?? 0,
           complete: chain.complete
         };
@@ -108,17 +116,21 @@ export async function correlate(
           });
         }
       }
-    } catch { /* lineage not found */ }
+    } catch {
+      /* lineage not found */
+    }
   }
 
   // --- DAG ---
   if (options.include.includes("dag")) {
     try {
-      const result = await engine.execute(createQueryRequest({
-        domain: "dag",
-        op: "history",
-        params: { txId }
-      }));
+      const result = await engine.execute(
+        createQueryRequest({
+          domain: "dag",
+          op: "history",
+          params: { txId }
+        })
+      );
       if (result.total > 0) {
         const entry = result.items[0] as DagTxHistory;
         dag = {
@@ -137,24 +149,30 @@ export async function correlate(
       }
 
       // Check conflicts
-      const conflictResult = await engine.execute<DagConflict>(createQueryRequest({ domain: "dag", op: "conflicts" }));
+      const conflictResult = await engine.execute<DagConflict>(
+        createQueryRequest({ domain: "dag", op: "conflicts" })
+      );
       const relatedConflicts = conflictResult.items.filter(
-        c => c.winnerTxId === txId || c.loserTxIds?.includes(txId)
+        (c) => c.winnerTxId === txId || c.loserTxIds?.includes(txId)
       );
       if (dag && relatedConflicts.length > 0) {
         dag = { ...dag, conflictCount: relatedConflicts.length };
       }
-    } catch { /* dag not found */ }
+    } catch {
+      /* dag not found */
+    }
   }
 
   // --- Replay ---
   if (options.include.includes("replay")) {
     try {
-      const summaryResult = await engine.execute(createQueryRequest({
-        domain: "replay",
-        op: "summary",
-        params: { txId }
-      }));
+      const summaryResult = await engine.execute(
+        createQueryRequest({
+          domain: "replay",
+          op: "summary",
+          params: { txId }
+        })
+      );
       const s = summaryResult.items[0] as ReplaySummaryResult | undefined;
       if (s) {
         timeline.push({
@@ -168,17 +186,25 @@ export async function correlate(
         let invariantsOk = true;
         let issueCount = 0;
         try {
-          const invResult = await engine.execute(createQueryRequest({
-            domain: "replay",
-            op: "invariants",
-            params: { txId }
-          }));
+          const invResult = await engine.execute(
+            createQueryRequest({
+              domain: "replay",
+              op: "invariants",
+              params: { txId }
+            })
+          );
           const inv = invResult.items[0] as ReplayInvariantsResult | undefined;
           if (inv) {
-            invariantsOk = inv.planIntegrity && inv.receiptReproducible && inv.stateTransitionValid && inv.utxoConservation;
+            invariantsOk =
+              inv.planIntegrity &&
+              inv.receiptReproducible &&
+              inv.stateTransitionValid &&
+              inv.utxoConservation;
             issueCount = inv.issues.length;
           }
-        } catch { /* invariants check failed */ }
+        } catch {
+          /* invariants check failed */
+        }
 
         replay = {
           found: true,
@@ -195,11 +221,13 @@ export async function correlate(
   // --- RPC ---
   if (options.include.includes("rpc")) {
     try {
-      const result = await engine.execute(createQueryRequest({
-        domain: "rpc",
-        op: "correlate",
-        params: { txId }
-      }));
+      const result = await engine.execute(
+        createQueryRequest({
+          domain: "rpc",
+          op: "correlate",
+          params: { txId }
+        })
+      );
       const c = result.items[0] as RpcCorrelation | undefined;
       if (c) {
         rpc = {
@@ -216,7 +244,9 @@ export async function correlate(
           summary: `RPC: submitted via ${c.endpoint} (score:${c.scoreAtSubmission}, ${c.assessment})`
         });
       }
-    } catch { /* rpc not found */ }
+    } catch {
+      /* rpc not found */
+    }
   }
 
   // Sort timeline chronologically
@@ -264,7 +294,7 @@ function buildCorrelationExplain(bundle: CorrelationBundle): ExplainChain {
     steps.push({
       order: order++,
       assertion: `Lineage: ${bundle.lineage.chain.length} artifact(s) in chain, ${bundle.lineage.complete ? "complete" : "incomplete"}`,
-      evidence: bundle.lineage.chain.map(n => n.schema).join(" → "),
+      evidence: bundle.lineage.chain.map((n) => n.schema).join(" → "),
       rule: "Lineage chain traversal (lineage-adapter.ts)"
     });
   }
@@ -299,12 +329,14 @@ function buildCorrelationExplain(bundle: CorrelationBundle): ExplainChain {
   // Overall assessment
   const issues: string[] = [];
   if (bundle.dag?.displaced) issues.push("tx was DISPLACED in DAG");
-  if (bundle.replay && !bundle.replay.invariantsOk) issues.push(`${bundle.replay.issueCount} replay invariant violation(s)`);
+  if (bundle.replay && !bundle.replay.invariantsOk)
+    issues.push(`${bundle.replay.issueCount} replay invariant violation(s)`);
   if (bundle.rpc?.assessment === "risky") issues.push("RPC was RISKY at submission time");
 
-  const conclusion = issues.length === 0
-    ? `Transaction ${bundle.txId.slice(0, 16)}... appears healthy across all queried domains.`
-    : `Transaction ${bundle.txId.slice(0, 16)}... has ${issues.length} concern(s): ${issues.join("; ")}.`;
+  const conclusion =
+    issues.length === 0
+      ? `Transaction ${bundle.txId.slice(0, 16)}... appears healthy across all queried domains.`
+      : `Transaction ${bundle.txId.slice(0, 16)}... has ${issues.length} concern(s): ${issues.join("; ")}.`;
 
   return {
     question: `What is the full operational status of tx ${bundle.txId.slice(0, 16)}...?`,

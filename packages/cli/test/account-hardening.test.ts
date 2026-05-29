@@ -12,7 +12,8 @@ describe("Account Hardening & Security Guards", () => {
 
   beforeEach(() => {
     if (fs.existsSync(accountsFile)) fs.unlinkSync(accountsFile);
-    if (fs.existsSync(keystoreDir)) fs.rmSync(keystoreDir, { recursive: true, force: true });
+    if (fs.existsSync(keystoreDir))
+      fs.rmSync(keystoreDir, { recursive: true, force: true });
     process.env.HARDKAS_TEST_PW = "test-password";
     process.env.HARDKAS_TEST_PK = "0".repeat(64);
   });
@@ -33,17 +34,17 @@ describe("Account Hardening & Security Guards", () => {
 
     const keystorePath = path.join(keystoreDir, "alice.json");
     expect(fs.existsSync(keystorePath)).toBe(true);
-    
+
     const stats = fs.statSync(keystorePath);
     // On Windows, mode might not show 0600 exactly via fs.stat, but we check if it was at least attempted or works on unix-like envs.
     // In many environments (Node.js on Windows), mode returns 33206 (0o100666) or similar.
     // However, the tool is supposed to set it.
     if (process.platform !== "win32") {
-        expect(stats.mode & 0o777).toBe(0o600);
+      expect(stats.mode & 0o777).toBe(0o600);
     }
 
     const store = loadRealAccountStoreSync({ cwd: process.cwd() });
-    const alice = store?.accounts.find(a => a.name === "alice");
+    const alice = store?.accounts.find((a) => a.name === "alice");
     expect(alice?.privateKey).toBeUndefined();
     expect(alice?.keystoreRef).toBe(".hardkas/keystore/alice.json");
   });
@@ -59,7 +60,7 @@ describe("Account Hardening & Security Guards", () => {
     } as any);
 
     const store = loadRealAccountStoreSync({ cwd: process.cwd() });
-    const bob = store?.accounts.find(a => a.name === "bob");
+    const bob = store?.accounts.find((a) => a.name === "bob");
     expect(bob?.privateKey).toBe(process.env.HARDKAS_TEST_PK);
     expect(bob?.keystoreRef).toBeUndefined();
   });
@@ -75,16 +76,18 @@ describe("Account Hardening & Security Guards", () => {
     };
 
     const config: any = {
-        network: { id: "mainnet" },
-        accounts: {}
+      network: { id: "mainnet" },
+      accounts: {}
     };
 
-    await expect(runTxSign({
-      planArtifact,
-      accountName: planArtifact.from.address,
-      config,
-      allowMainnetSigning: false
-    })).rejects.toThrow("Mainnet signing is blocked");
+    await expect(
+      runTxSign({
+        planArtifact,
+        accountName: planArtifact.from.address,
+        config,
+        allowMainnetSigning: false
+      })
+    ).rejects.toThrow("Mainnet signing is blocked");
   });
 
   it("should refuse signing if artifact network and account network disagree", async () => {
@@ -92,21 +95,25 @@ describe("Account Hardening & Security Guards", () => {
       planId: "test-plan",
       networkId: "mainnet",
       mode: "real",
-      from: { address: "kaspatest:qrh60m5zv98m5l855l855l855l855l855l855l855l855l85sxtunx" }, // Testnet address
+      from: {
+        address: "kaspatest:qrh60m5zv98m5l855l855l855l855l855l855l855l855l85sxtunx"
+      }, // Testnet address
       to: { address: "kaspa:qrh60m5zv98m5l855l855l855l855l855l855l855l855l85sxtunx" },
       amountSompi: 100000000n
     };
 
     const config: any = {
-        network: { id: "mainnet" },
-        accounts: {}
+      network: { id: "mainnet" },
+      accounts: {}
     };
 
-    await expect(runTxSign({
-      planArtifact,
-      accountName: planArtifact.from.address,
-      config,
-      allowMainnetSigning: true
-    })).rejects.toThrow("Network mismatch");
+    await expect(
+      runTxSign({
+        planArtifact,
+        accountName: planArtifact.from.address,
+        config,
+        allowMainnetSigning: true
+      })
+    ).rejects.toThrow("Network mismatch");
   });
 });

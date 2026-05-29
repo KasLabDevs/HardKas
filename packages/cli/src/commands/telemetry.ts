@@ -4,7 +4,9 @@ import { handleError, UI } from "../ui.js";
 export function registerTelemetryCommands(program: Command) {
   const telemetryCmd = program
     .command("telemetry")
-    .description("Inspect, verify, and monitor the canonical runtime pressure telemetry stream");
+    .description(
+      "Inspect, verify, and monitor the canonical runtime pressure telemetry stream"
+    );
 
   telemetryCmd
     .command("inspect")
@@ -22,7 +24,9 @@ export function registerTelemetryCommands(program: Command) {
 
   telemetryCmd
     .command("verify")
-    .description(`Verify schema integrity conforming to Telemetry Source Contract v1 ${UI.maturity("stable")}`)
+    .description(
+      `Verify schema integrity conforming to Telemetry Source Contract v1 ${UI.maturity("stable")}`
+    )
     .action(async () => {
       try {
         const { runTelemetryVerify } = await import("../runners/telemetry-runners.js");

@@ -8,7 +8,9 @@ export function registerBridgeCommands(program: Command) {
 
   bridgeCmd.hook("preAction", () => {
     if (!process.env.HARDKAS_EXPERIMENTAL) {
-      console.warn("\n⚠️  WARNING: 'bridge' commands are highly experimental and unsupported. Set HARDKAS_EXPERIMENTAL=1 to acknowledge.\n");
+      console.warn(
+        "\n⚠️  WARNING: 'bridge' commands are highly experimental and unsupported. Set HARDKAS_EXPERIMENTAL=1 to acknowledge.\n"
+      );
     }
   });
 
@@ -39,7 +41,8 @@ export function registerBridgeCommands(program: Command) {
     .option("--prefix <hex>", "Prefix to mine for", "abc")
     .option("--json", "Output as JSON", false)
     .action(async (options: any) => {
-      const { runBridgeLocalSimulate } = await import("../runners/bridge-local-runner.js");
+      const { runBridgeLocalSimulate } =
+        await import("../runners/bridge-local-runner.js");
       await runBridgeLocalSimulate(options);
     });
 

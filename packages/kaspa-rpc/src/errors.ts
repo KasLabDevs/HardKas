@@ -1,7 +1,7 @@
 export class RpcError extends Error {
   constructor(
-    message: string, 
-    public readonly code?: number, 
+    message: string,
+    public readonly code?: number,
     public readonly data?: unknown,
     public readonly isRetriable: boolean = true
   ) {
@@ -32,7 +32,10 @@ export class RpcCircuitOpenError extends RpcError {
 }
 
 export class RpcRateLimitError extends RpcError {
-  constructor(message: string = "RPC rate limit exceeded", public readonly retryAfterMs?: number) {
+  constructor(
+    message: string = "RPC rate limit exceeded",
+    public readonly retryAfterMs?: number
+  ) {
     super(message, 429, undefined, true);
     this.name = "RpcRateLimitError";
   }

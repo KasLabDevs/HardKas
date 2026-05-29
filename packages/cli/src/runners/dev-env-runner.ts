@@ -21,10 +21,12 @@ export async function runDevEnv(options: any) {
 
   const network = config.defaultNetwork || "simulated";
   UI.info(`Active Network: ${network}`);
-  
+
   if (network === "simulated") {
     UI.warning("Running in SIMULATED mode. Transactions will not broadcast to Kaspa L1.");
-    UI.warning("Kaspa L1 does not execute EVM. Local simulation results do not imply mainnet finality.");
+    UI.warning(
+      "Kaspa L1 does not execute EVM. Local simulation results do not imply mainnet finality."
+    );
   }
 
   // Artifact & Store checks
@@ -34,11 +36,15 @@ export async function runDevEnv(options: any) {
   if (fs.existsSync(artifactDir)) {
     UI.success(`Artifact folder health: OK (${artifactDir})`);
   } else {
-    UI.info(`Artifact folder: Not found (will be created automatically on first transaction)`);
+    UI.info(
+      `Artifact folder: Not found (will be created automatically on first transaction)`
+    );
   }
 
   try {
-    const res = await fetch("http://127.0.0.1:7420/api/dev/status", { signal: AbortSignal.timeout(1000) });
+    const res = await fetch("http://127.0.0.1:7420/api/dev/status", {
+      signal: AbortSignal.timeout(1000)
+    });
     if (res.ok) {
       UI.success("Local store connection: OK");
     }

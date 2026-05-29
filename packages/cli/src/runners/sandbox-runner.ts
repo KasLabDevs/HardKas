@@ -27,7 +27,7 @@ export async function runSandbox(options: {
 
     // Load necessary runners dynamically to avoid circular issues
     const { runDevServer } = await import("./dev-server-runner.js");
-    
+
     // We start the dev server, suppressing its teardown handles and header
     const devCtx: any = await runDevServer({
       port,
@@ -49,16 +49,16 @@ export async function runSandbox(options: {
     // Main Sandbox Banner
     console.log(pc.bold("\nHardKAS Sandbox Runtime"));
     console.log(pc.dim("━━━━━━━━━━━━━━━━━━━━━━━\n"));
-    
+
     console.log(pc.bold("Workspace:"));
     console.log(`  ${sandboxRoot}\n`);
-    
+
     console.log(pc.bold("Network:"));
     console.log(`  simnet\n`);
-    
+
     console.log(pc.bold("Mode:"));
     console.log(`  ephemeral\n`);
-    
+
     console.log(pc.bold("Node:"));
     if (isNodeRunning) {
       console.log(`  ${pc.green("running")}\n`);
@@ -66,9 +66,13 @@ export async function runSandbox(options: {
       console.log(`  enabled → ${pc.blue(miningAlias)}\n`);
     } else {
       console.log(`  not running`);
-      console.log(pc.dim(`  Tip: run \`hardkas sandbox --with-node\` for full localnet + autofunding.\n`));
+      console.log(
+        pc.dim(
+          `  Tip: run \`hardkas sandbox --with-node\` for full localnet + autofunding.\n`
+        )
+      );
     }
-    
+
     console.log(pc.bold("Dashboard:"));
     console.log(`  http://${host}:${port}\n`);
 
@@ -77,7 +81,7 @@ export async function runSandbox(options: {
 
     console.log(pc.bold("Projection:"));
     console.log(`  healthy\n`);
-    
+
     console.log(pc.bold("Quick Start"));
     console.log(pc.dim("━━━━━━━━━━━━━━━━━━━━━━━\n"));
 
@@ -96,9 +100,9 @@ export async function runSandbox(options: {
     if (options.recipe) {
       console.log(pc.bold(`Recipe:`));
       console.log(`  ${pc.magenta(options.recipe)} executing...\n`);
-      
+
       const RECIPES: Record<string, (sandboxRoot: string) => Promise<void>> = {
-        "transfer": runTransferRecipe,
+        transfer: runTransferRecipe,
         "projection-rebuild": runProjectionRebuildRecipe,
         "replay-failure": runReplayFailureRecipe
       };
@@ -121,7 +125,7 @@ export async function runSandbox(options: {
       if (isStopping) return;
       isStopping = true;
       console.log(`\nStopping Sandbox (${signal})...`);
-      
+
       try {
         if (devCtx) {
           if (devCtx.nodeServer && typeof devCtx.nodeServer.close === "function") {
@@ -157,7 +161,6 @@ export async function runSandbox(options: {
 
     process.on("SIGINT", () => handleTeardown("SIGINT"));
     process.on("SIGTERM", () => handleTeardown("SIGTERM"));
-
   } catch (e) {
     handleError(e, "Sandbox initialization failed");
     process.exit(1);

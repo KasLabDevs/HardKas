@@ -60,7 +60,9 @@ export class TxQueryAdapter implements QueryAdapter {
     }
   }
 
-  private async executeAggregate(request: QueryRequest): Promise<QueryResult<TxAggregation>> {
+  private async executeAggregate(
+    request: QueryRequest
+  ): Promise<QueryResult<TxAggregation>> {
     const start = Date.now();
     const txId = request.params["txId"];
     if (!txId) throw new Error("tx aggregate requires params.txId");
@@ -73,37 +75,56 @@ export class TxQueryAdapter implements QueryAdapter {
     if (events.length === 0) warnings.push("No events found for this txId");
 
     // Check completeness: do we have plan -> signed -> receipt?
-    const roles = new Set(artifacts.map(a => a.role));
+    const roles = new Set(artifacts.map((a) => a.role));
     if (!roles.has("plan")) warnings.push("Missing tx plan artifact");
     if (!roles.has("signed")) warnings.push("Missing signed tx artifact");
-    if (!roles.has("receipt")) warnings.push("Missing tx receipt artifact (may not exist yet)");
+    if (!roles.has("receipt"))
+      warnings.push("Missing tx receipt artifact (may not exist yet)");
 
     const complete = roles.has("plan") && roles.has("signed");
 
     const result: TxAggregation = {
       txId,
       artifacts,
-      events: events.sort((a, b) => deterministicCompare(a.timestamp, b.timestamp) || deterministicCompare(a.eventId, b.eventId)),
+      events: events.sort(
+        (a, b) =>
+          deterministicCompare(a.timestamp, b.timestamp) ||
+          deterministicCompare(a.eventId, b.eventId)
+      ),
       warnings,
       complete
     };
 
     let why: WhyBlock[] | undefined;
     if (request.explain) {
-      why = [{
-        question: `Causal aggregation for transaction ${txId}?`,
-        answer: complete
-          ? `Found ${artifacts.length} artifact(s) and ${events.length} event(s). Workflow is consistent.`
-          : `Aggregation incomplete: ${warnings.join(". ")}.`,
-        evidence: [{ type: "txId", value: txId }],
-        causalChain: [
-          { order: 1, assertion: `Artifacts linked: ${artifacts.length}`, evidence: artifacts.map(a => a.role).join(", ") },
-          { order: 2, assertion: `Events linked: ${events.length}`, evidence: "Events found in stream" },
-          { order: 3, assertion: `Completeness check: ${complete}`, evidence: warnings.join("; ") || "all required roles found" }
-        ],
-        model: "tx-causality",
-        confidence: "definitive"
-      }];
+      why = [
+        {
+          question: `Causal aggregation for transaction ${txId}?`,
+          answer: complete
+            ? `Found ${artifacts.length} artifact(s) and ${events.length} event(s). Workflow is consistent.`
+            : `Aggregation incomplete: ${warnings.join(". ")}.`,
+          evidence: [{ type: "txId", value: txId }],
+          causalChain: [
+            {
+              order: 1,
+              assertion: `Artifacts linked: ${artifacts.length}`,
+              evidence: artifacts.map((a) => a.role).join(", ")
+            },
+            {
+              order: 2,
+              assertion: `Events linked: ${events.length}`,
+              evidence: "Events found in stream"
+            },
+            {
+              order: 3,
+              assertion: `Completeness check: ${complete}`,
+              evidence: warnings.join("; ") || "all required roles found"
+            }
+          ],
+          model: "tx-causality",
+          confidence: "definitive"
+        }
+      ];
     }
 
     return {
@@ -129,9 +150,10 @@ export class TxQueryAdapter implements QueryAdapter {
     for (const doc of docs) {
       const parsed = doc.payload;
       // Check if artifact references this txId
-      const matchesTx = parsed.txId === txId ||
+      const matchesTx =
+        parsed.txId === txId ||
         parsed.transaction?.id === txId ||
-        (parsed.lineage?.artifactId === txId);
+        parsed.lineage?.artifactId === txId;
 
       if (!matchesTx) continue;
 

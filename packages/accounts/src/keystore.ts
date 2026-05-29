@@ -2,17 +2,13 @@ import fs from "node:fs";
 import path from "node:path";
 import crypto from "node:crypto";
 import { argon2id } from "hash-wasm";
-import { 
-  EncryptedKeystoreV2, 
-  KeystorePayload, 
-  KeystoreUnlockResult 
-} from "./types.js";
+import { EncryptedKeystoreV2, KeystorePayload, KeystoreUnlockResult } from "./types.js";
 
 import { writeFileAtomic } from "@hardkas/core";
 
 /**
  * HardKAS Keystore V2 Implementation
- * 
+ *
  * Uses Argon2id for KDF and AES-256-GCM for encryption.
  * Designed for local developer workflows.
  */
@@ -39,7 +35,8 @@ export class KeystoreManager {
     }
   ): Promise<EncryptedKeystoreV2> {
     if (!password) throw new Error("Password cannot be empty.");
-    if (password.length < 8) throw new Error("Password must be at least 8 characters long.");
+    if (password.length < 8)
+      throw new Error("Password must be at least 8 characters long.");
 
     const salt = crypto.randomBytes(16);
     const nonce = crypto.randomBytes(12);
@@ -104,7 +101,10 @@ export class KeystoreManager {
     password: string
   ): Promise<KeystoreUnlockResult> {
     if (keystore.version !== this.KEYSTORE_FORMAT_VERSION) {
-      return { success: false, error: `Unsupported keystore version: ${keystore.version}` };
+      return {
+        success: false,
+        error: `Unsupported keystore version: ${keystore.version}`
+      };
     }
 
     try {
@@ -129,10 +129,7 @@ export class KeystoreManager {
       const decipher = crypto.createDecipheriv("aes-256-gcm", derivedKey, nonce);
       decipher.setAuthTag(tag);
 
-      const decrypted = Buffer.concat([
-        decipher.update(encryptedData),
-        decipher.final()
-      ]);
+      const decrypted = Buffer.concat([decipher.update(encryptedData), decipher.final()]);
 
       // Memory zeroization
       derivedKey.fill(0);
@@ -189,14 +186,19 @@ export class KeystoreManager {
       }
       return keystore as EncryptedKeystoreV2;
     } catch (e) {
-      throw new Error(`Failed to load keystore at ${filePath}: ${e instanceof Error ? e.message : String(e)}`);
+      throw new Error(
+        `Failed to load keystore at ${filePath}: ${e instanceof Error ? e.message : String(e)}`
+      );
     }
   }
 
   /**
    * Saves an encrypted keystore to the filesystem.
    */
-  static async saveEncryptedKeystore(filePath: string, keystore: EncryptedKeystoreV2): Promise<void> {
+  static async saveEncryptedKeystore(
+    filePath: string,
+    keystore: EncryptedKeystoreV2
+  ): Promise<void> {
     try {
       const dir = path.dirname(filePath);
       if (!fs.existsSync(dir)) {
@@ -208,7 +210,9 @@ export class KeystoreManager {
         mode: 0o600
       });
     } catch (e) {
-      throw new Error(`Failed to save keystore at ${filePath}: ${e instanceof Error ? e.message : String(e)}`);
+      throw new Error(
+        `Failed to save keystore at ${filePath}: ${e instanceof Error ? e.message : String(e)}`
+      );
     }
   }
 }

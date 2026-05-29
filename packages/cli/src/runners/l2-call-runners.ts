@@ -22,7 +22,9 @@ async function getClient(options: { network?: string; url?: string }) {
   const rpcUrl = options.url ?? profile.rpcUrl;
 
   if (!rpcUrl) {
-    throw new Error(`No L2 RPC URL configured for network '${networkName}'. Pass --url <rpcUrl>.`);
+    throw new Error(
+      `No L2 RPC URL configured for network '${networkName}'. Pass --url <rpcUrl>.`
+    );
   }
 
   return {
@@ -35,7 +37,7 @@ async function getClient(options: { network?: string; url?: string }) {
 
 export async function runL2Call(options: L2CallRunnerOptions): Promise<void> {
   const { client, profile, networkName, rpcUrl } = await getClient(options);
-  
+
   const request: EvmCallRequest = {
     ...(options.from ? { from: options.from } : {}),
     to: options.to,
@@ -47,15 +49,21 @@ export async function runL2Call(options: L2CallRunnerOptions): Promise<void> {
   const result = await client.call(request, blockTag);
 
   if (options.json) {
-    console.log(JSON.stringify({
-      networkId: profile.name,
-      l2Network: networkName,
-      chainId: profile.chainId,
-      rpcUrl,
-      block: blockTag,
-      request,
-      result
-    }, null, 2));
+    console.log(
+      JSON.stringify(
+        {
+          networkId: profile.name,
+          l2Network: networkName,
+          chainId: profile.chainId,
+          rpcUrl,
+          block: blockTag,
+          request,
+          result
+        },
+        null,
+        2
+      )
+    );
     return;
   }
 
@@ -77,7 +85,7 @@ export async function runL2Call(options: L2CallRunnerOptions): Promise<void> {
 
 export async function runL2EstimateGas(options: L2CallRunnerOptions): Promise<void> {
   const { client, profile, networkName, rpcUrl } = await getClient(options);
-  
+
   const request: EvmCallRequest = {
     ...(options.from ? { from: options.from } : {}),
     to: options.to,
@@ -89,15 +97,21 @@ export async function runL2EstimateGas(options: L2CallRunnerOptions): Promise<vo
   const gas = await client.estimateGas(request, blockTag);
 
   if (options.json) {
-    console.log(JSON.stringify({
-      networkId: profile.name,
-      l2Network: networkName,
-      chainId: profile.chainId,
-      rpcUrl,
-      block: blockTag,
-      request,
-      gas: gas.toString()
-    }, null, 2));
+    console.log(
+      JSON.stringify(
+        {
+          networkId: profile.name,
+          l2Network: networkName,
+          chainId: profile.chainId,
+          rpcUrl,
+          block: blockTag,
+          request,
+          gas: gas.toString()
+        },
+        null,
+        2
+      )
+    );
     return;
   }
 

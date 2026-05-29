@@ -9,7 +9,13 @@ import path from "node:path";
 import { validateEventEnvelope } from "@hardkas/core";
 import { evaluateFilters } from "../filter.js";
 import { computeQueryHash } from "../serialize.js";
-import type { QueryAdapter, QueryRequest, QueryResult, QueryFilter, WhyBlock } from "../types.js";
+import type {
+  QueryAdapter,
+  QueryRequest,
+  QueryResult,
+  QueryFilter,
+  WhyBlock
+} from "../types.js";
 import type { QueryBackend } from "../backend.js";
 import { deterministicCompare } from "@hardkas/core";
 
@@ -99,18 +105,37 @@ export class EventsQueryAdapter implements QueryAdapter {
         executionMs: Date.now() - start,
         filesScanned: backendUsed === "sqlite" ? 0 : 1
       },
-      why: request.explain ? [{
-        question: "How were events loaded and linked?",
-        answer: `Loaded ${total} events matching filters. Causal links (correlation/causation) available in payload.`,
-        evidence: [],
-        causalChain: [
-          { order: 1, assertion: `Source: ${backendUsed}`, evidence: "Event stream processed" },
-          { order: 2, assertion: `Filters: ${effectiveFilters.length} applied`, evidence: effectiveFilters.map(f => `${f.field} ${f.op} ${f.value}`).join(", ") || "none" },
-          { order: 3, assertion: "Ordering: timestamp ASC", evidence: "Deterministic stream sorting" }
-        ],
-        model: "events-causality",
-        confidence: "definitive"
-      }] : undefined
+      why: request.explain
+        ? [
+            {
+              question: "How were events loaded and linked?",
+              answer: `Loaded ${total} events matching filters. Causal links (correlation/causation) available in payload.`,
+              evidence: [],
+              causalChain: [
+                {
+                  order: 1,
+                  assertion: `Source: ${backendUsed}`,
+                  evidence: "Event stream processed"
+                },
+                {
+                  order: 2,
+                  assertion: `Filters: ${effectiveFilters.length} applied`,
+                  evidence:
+                    effectiveFilters
+                      .map((f) => `${f.field} ${f.op} ${f.value}`)
+                      .join(", ") || "none"
+                },
+                {
+                  order: 3,
+                  assertion: "Ordering: timestamp ASC",
+                  evidence: "Deterministic stream sorting"
+                }
+              ],
+              model: "events-causality",
+              confidence: "definitive"
+            }
+          ]
+        : undefined
     };
   }
 

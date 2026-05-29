@@ -7,11 +7,13 @@ As HardKAS expands to support both Kaspa (L1) and Igra (L2), a common pitfall is
 Assuming that because Igra is "built on Kaspa," it shares the same rules, address formats, or security guarantees.
 
 ### ❌ Pattern: "Protocol Parity" Assumption
+
 - Assuming `kaspa:address` works as an EVM `0xaddress`.
 - Assuming L1 UTXOs can be spent directly in L2 Smart Contracts.
 - Assuming L2 transactions have "BlockDAG" properties (like parallel inclusion).
 
 ### ❌ Pattern: "Security Model" Leakage
+
 - Assuming L2 transactions are "final" as soon as they are accepted by an Igra sequencer.
 - Assuming L1 is as programmable as L2.
 
@@ -19,11 +21,11 @@ Assuming that because Igra is "built on Kaspa," it shares the same rules, addres
 
 ## The Reality Check
 
-| Feature | Kaspa (L1) | Igra (L2) |
-| :--- | :--- | :--- |
-| **Model** | UTXO | Account-based |
-| **VM** | Script (Limited) | EVM (Full Solidity) |
-| **Address** | `kaspa:q...` | `0x...` |
+| Feature      | Kaspa (L1)               | Igra (L2)                       |
+| :----------- | :----------------------- | :------------------------------ |
+| **Model**    | UTXO                     | Account-based                   |
+| **VM**       | Script (Limited)         | EVM (Full Solidity)             |
+| **Address**  | `kaspa:q...`             | `0x...`                         |
 | **Finality** | GHOSTDAG (Probabilistic) | Sequencer Batch + L1 Settlement |
 
 ## How to Avoid Confusion

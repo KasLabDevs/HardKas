@@ -19,7 +19,7 @@ export interface WriteFileAtomicOptions {
 /**
  * Writes a file atomically using the temp-file-and-rename pattern.
  * Ensures that either the entire file is written or no changes are made.
- * 
+ *
  * Pattern:
  * 1. Write data to a temporary file in the same directory.
  * 2. fsync the temporary file to ensure data is on disk.
@@ -37,7 +37,7 @@ export async function writeFileAtomic(
   const tempPath = path.join(dir, `.tmp.${base}.${crypto.randomUUID()}`);
 
   let fd: number | null = null;
-  
+
   try {
     // 1. Write to temp file
     // Ensure dir exists
@@ -47,8 +47,9 @@ export async function writeFileAtomic(
 
     // Open temp file with exclusive write
     fd = fs.openSync(tempPath, "w", options.mode);
-    
-    const buffer = typeof data === "string" ? Buffer.from(data, options.encoding || "utf-8") : data;
+
+    const buffer =
+      typeof data === "string" ? Buffer.from(data, options.encoding || "utf-8") : data;
     fs.writeSync(fd, buffer, 0, buffer.length);
 
     // 2. fsync temp file
@@ -63,7 +64,7 @@ export async function writeFileAtomic(
     // We attempt a few retries on Windows for EPERM/EBUSY.
     let attempts = 0;
     const maxAttempts = process.platform === "win32" ? 5 : 1;
-    
+
     while (attempts < maxAttempts) {
       try {
         fs.renameSync(tempPath, targetPath);
@@ -72,9 +73,14 @@ export async function writeFileAtomic(
         attempts++;
         if (attempts >= maxAttempts) throw e;
         if (e.code === "EPERM" || e.code === "EBUSY") {
-          EnvironmentTelemetry.logAnomaly("FS_RETRY", "low", "fs", `Retrying rename of ${targetPath} due to ${e.code}`);
+          EnvironmentTelemetry.logAnomaly(
+            "FS_RETRY",
+            "low",
+            "fs",
+            `Retrying rename of ${targetPath} due to ${e.code}`
+          );
           // Wait 10ms-50ms before retrying on Windows
-          await new Promise(resolve => setTimeout(resolve, 10 * attempts));
+          await new Promise((resolve) => setTimeout(resolve, 10 * attempts));
           continue;
         }
         throw e;
@@ -94,18 +100,24 @@ export async function writeFileAtomic(
       }
     }
   } catch (err: any) {
-    throw new HardkasError(
-      "IO_ERROR",
-      `Failed to write file atomically: ${targetPath}`,
-      { cause: err }
-    );
+    throw new HardkasError("IO_ERROR", `Failed to write file atomically: ${targetPath}`, {
+      cause: err
+    });
   } finally {
     // Cleanup temp file in ALL cases (success or failure)
     if (fs.existsSync(tempPath)) {
-      try { fs.unlinkSync(tempPath); } catch (e) { /* ignore cleanup error */ }
+      try {
+        fs.unlinkSync(tempPath);
+      } catch (e) {
+        /* ignore cleanup error */
+      }
     }
     if (fd !== null) {
-      try { fs.closeSync(fd); } catch (e) { /* ignore */ }
+      try {
+        fs.closeSync(fd);
+      } catch (e) {
+        /* ignore */
+      }
     }
   }
 }
@@ -123,14 +135,15 @@ export function writeFileAtomicSync(
   const tempPath = path.join(dir, `.tmp.${base}.${crypto.randomUUID()}`);
 
   let fd: number | null = null;
-  
+
   try {
     if (!fs.existsSync(dir)) {
       fs.mkdirSync(dir, { recursive: true });
     }
 
     fd = fs.openSync(tempPath, "w", options.mode);
-    const buffer = typeof data === "string" ? Buffer.from(data, options.encoding || "utf-8") : data;
+    const buffer =
+      typeof data === "string" ? Buffer.from(data, options.encoding || "utf-8") : data;
     fs.writeSync(fd, buffer, 0, buffer.length);
     fs.fsyncSync(fd);
     fs.closeSync(fd);
@@ -147,7 +160,12 @@ export function writeFileAtomicSync(
         attempts++;
         if (attempts >= maxAttempts) throw e;
         if (e.code === "EPERM" || e.code === "EBUSY") {
-          EnvironmentTelemetry.logAnomaly("FS_RETRY", "low", "fs", `Retrying rename sync of ${targetPath} due to ${e.code}`);
+          EnvironmentTelemetry.logAnomaly(
+            "FS_RETRY",
+            "low",
+            "fs",
+            `Retrying rename sync of ${targetPath} due to ${e.code}`
+          );
           // Sync sleep (spin-wait) on Windows is nasty but sometimes needed in sync paths
           // For now, just retry immediately or throw if it's too much.
           continue;
@@ -175,10 +193,18 @@ export function writeFileAtomicSync(
     );
   } finally {
     if (fs.existsSync(tempPath)) {
-      try { fs.unlinkSync(tempPath); } catch (e) { /* ignore */ }
+      try {
+        fs.unlinkSync(tempPath);
+      } catch (e) {
+        /* ignore */
+      }
     }
     if (fd !== null) {
-      try { fs.closeSync(fd); } catch (e) { /* ignore */ }
+      try {
+        fs.closeSync(fd);
+      } catch (e) {
+        /* ignore */
+      }
     }
   }
 }

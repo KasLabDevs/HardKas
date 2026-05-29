@@ -10,7 +10,7 @@ import {
   DEFAULT_K,
   isDagAncestorOf,
   unorderedMergesetWithoutSelectedParent,
-  headerWork,
+  headerWork
 } from "../src/index.js";
 import type { BlockHash, SimBlock, SimBlockHeader, SortableBlock } from "../src/index.js";
 
@@ -28,8 +28,8 @@ function makeBlock(hash: BlockHash, parents: BlockHash[]): SimBlock {
       timestampUs: 0,
       minerId: 0,
       bits: 1000,
-      nonce: 0,
-    },
+      nonce: 0
+    }
   };
 }
 
@@ -49,7 +49,7 @@ function setupEngine(k: number = DEFAULT_K) {
 
 describe("GHOSTDAG Ordering", () => {
   it("higher blueWork is selected parent", () => {
-    const low  = { hash: makeHash(1), blueWork: 100n };
+    const low = { hash: makeHash(1), blueWork: 100n };
     const high = { hash: makeHash(2), blueWork: 200n };
     expect(findSelectedParent([low, high])).toBe(high.hash);
   });
@@ -64,7 +64,7 @@ describe("GHOSTDAG Ordering", () => {
     const blocks: SortableBlock[] = [
       { hash: makeHash(3), blueWork: 300n },
       { hash: makeHash(1), blueWork: 100n },
-      { hash: makeHash(2), blueWork: 200n },
+      { hash: makeHash(2), blueWork: 200n }
     ];
     const sorted = sortBlocks(blocks);
     expect(sorted[0]!.blueWork).toBe(100n);
@@ -75,14 +75,14 @@ describe("GHOSTDAG Ordering", () => {
   it("sort blocks hash tiebreak ascending", () => {
     const blocks: SortableBlock[] = [
       { hash: makeHash(0x02), blueWork: 100n },
-      { hash: makeHash(0x01), blueWork: 100n },
+      { hash: makeHash(0x01), blueWork: 100n }
     ];
     const sorted = sortBlocks(blocks);
     expect(sorted[0]!.hash).toBe(makeHash(0x01));
   });
 
   it("single parent always selected", () => {
-    const only = { hash: makeHash(0xAB), blueWork: 9999n };
+    const only = { hash: makeHash(0xab), blueWork: 9999n };
     expect(findSelectedParent([only])).toBe(only.hash);
   });
 
@@ -106,7 +106,7 @@ describe("GhostdagStore", () => {
 
   it("missing hash returns undefined", () => {
     const store = new GhostdagStore();
-    expect(store.getBlueScore(makeHash(0xFF))).toBeUndefined();
+    expect(store.getBlueScore(makeHash(0xff))).toBeUndefined();
   });
 
   it("compact and full agree", () => {
@@ -118,7 +118,7 @@ describe("GhostdagStore", () => {
       selectedParent: GENESIS_HASH,
       mergesetBlues: [GENESIS_HASH],
       mergesetReds: [],
-      bluesAnticoneSizes: [0],
+      bluesAnticoneSizes: [0]
     });
     const full = store.getData(sp)!;
     expect(full.blueWork).toBe(store.getBlueWork(sp));
@@ -237,7 +237,7 @@ describe("ApproxGhostdagEngine", () => {
       selectedParent: g,
       mergesetBlues: [g, c],
       mergesetReds: [],
-      bluesAnticoneSizes: [0, 0],
+      bluesAnticoneSizes: [0, 0]
     });
 
     blocks.set(d, makeBlock(d, [a, c]));
@@ -270,18 +270,16 @@ describe("ApproxGhostdagEngine", () => {
     const { blocks, store, engine } = setupEngine();
     const bad: SimBlock = {
       header: {
-        hash: makeHash(0xFF),
+        hash: makeHash(0xff),
         parents: [],
         timestampUs: 0,
         minerId: 0,
         bits: 1000,
-        nonce: 0,
-      },
+        nonce: 0
+      }
     };
     blocks.set(bad.header.hash, bad);
-    expect(() => engine.computeGhostdag(bad, blocks, store)).toThrow(
-      "has no parents"
-    );
+    expect(() => engine.computeGhostdag(bad, blocks, store)).toThrow("has no parents");
   });
 
   it("parallel blocks both become blue with K=18", () => {
@@ -349,7 +347,7 @@ describe("Work Calculation", () => {
       timestampUs: 0,
       minerId: 0,
       bits: 1000,
-      nonce: 0,
+      nonce: 0
     };
     const work = headerWork(header);
     expect(work).toBeGreaterThan(0n);
@@ -357,10 +355,20 @@ describe("Work Calculation", () => {
 
   it("lower bits = more work", () => {
     const easy: SimBlockHeader = {
-      hash: makeHash(1), parents: [], timestampUs: 0, minerId: 0, bits: 10000, nonce: 0,
+      hash: makeHash(1),
+      parents: [],
+      timestampUs: 0,
+      minerId: 0,
+      bits: 10000,
+      nonce: 0
     };
     const hard: SimBlockHeader = {
-      hash: makeHash(2), parents: [], timestampUs: 0, minerId: 0, bits: 100, nonce: 0,
+      hash: makeHash(2),
+      parents: [],
+      timestampUs: 0,
+      minerId: 0,
+      bits: 100,
+      nonce: 0
     };
     expect(headerWork(hard)).toBeGreaterThan(headerWork(easy));
   });

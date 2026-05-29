@@ -14,7 +14,7 @@ export function fundAddress(
   }
 
   const nextDaaScore = (BigInt(state.daaScore) + 1n).toString();
-  
+
   const newUtxo: LocalnetUtxo = {
     id: `faucet:${input.address.slice(-8)}:${nextDaaScore}:0`,
     address: input.address,

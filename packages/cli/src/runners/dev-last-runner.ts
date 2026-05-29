@@ -5,19 +5,27 @@ import fs from "node:fs";
 import path from "node:path";
 import { loadHardkasConfig } from "@hardkas/config";
 
-export async function runDevLast(options: { inspect: boolean; replay: boolean; explain: boolean; workspaceRoot?: string }) {
-  const loaded = await loadHardkasConfig(options.workspaceRoot ? { cwd: options.workspaceRoot } : {});
+export async function runDevLast(options: {
+  inspect: boolean;
+  replay: boolean;
+  explain: boolean;
+  workspaceRoot?: string;
+}) {
+  const loaded = await loadHardkasConfig(
+    options.workspaceRoot ? { cwd: options.workspaceRoot } : {}
+  );
   const artifactsDir = path.join(loaded.cwd, ".hardkas", "artifacts");
-  
+
   if (!fs.existsSync(artifactsDir)) {
     UI.error("No artifacts found in workspace.");
     return;
   }
 
   // Find latest receipt or txPlan by reading schemas
-  const files = fs.readdirSync(artifactsDir)
-    .filter(f => f.endsWith(".json"))
-    .map(f => {
+  const files = fs
+    .readdirSync(artifactsDir)
+    .filter((f) => f.endsWith(".json"))
+    .map((f) => {
       const fullPath = path.join(artifactsDir, f);
       const stat = fs.statSync(fullPath);
       let schema = "";
@@ -34,12 +42,23 @@ export async function runDevLast(options: { inspect: boolean; replay: boolean; e
     .sort((a, b) => b.time - a.time);
 
   // Preference order: replay > receipt > signedTx > txPlan
-  const latestReplay = files.find(f => f.schema.startsWith("hardkas.replay"));
-  const latestReceipt = files.find(f => f.schema.startsWith("hardkas.txReceipt") || f.name.startsWith("receipt_"));
-  const latestSigned = files.find(f => f.schema.startsWith("hardkas.signedTx") || f.name.includes(".signed"));
-  const latestPlan = files.find(f => f.schema.startsWith("hardkas.txPlan") || f.name.startsWith("txPlan_") || f.name.includes(".plan"));
-  
-  const target = options.replay ? (latestReceipt || latestSigned || latestPlan) : (latestReplay || latestReceipt || latestSigned || latestPlan);
+  const latestReplay = files.find((f) => f.schema.startsWith("hardkas.replay"));
+  const latestReceipt = files.find(
+    (f) => f.schema.startsWith("hardkas.txReceipt") || f.name.startsWith("receipt_")
+  );
+  const latestSigned = files.find(
+    (f) => f.schema.startsWith("hardkas.signedTx") || f.name.includes(".signed")
+  );
+  const latestPlan = files.find(
+    (f) =>
+      f.schema.startsWith("hardkas.txPlan") ||
+      f.name.startsWith("txPlan_") ||
+      f.name.includes(".plan")
+  );
+
+  const target = options.replay
+    ? latestReceipt || latestSigned || latestPlan
+    : latestReplay || latestReceipt || latestSigned || latestPlan;
 
   if (!target) {
     UI.error("No recent transaction artifacts found.");
@@ -69,7 +88,10 @@ export async function runDevLast(options: { inspect: boolean; replay: boolean; e
   }
 
   if (options.replay) {
-    if (target.schema.startsWith("hardkas.txReceipt") || target.name.startsWith("receipt_")) {
+    if (
+      target.schema.startsWith("hardkas.txReceipt") ||
+      target.name.startsWith("receipt_")
+    ) {
       // For receipt, we show it
       console.log("\nReplaying receipt...");
       const txId = target.name.replace("receipt_", "").replace(".json", "");
@@ -85,9 +107,7 @@ export async function runDevLast(options: { inspect: boolean; replay: boolean; e
       console.log(`\nReplaying transaction semantics for ${target.name}...`);
       try {
         await runTxVerify({ path: targetPath, json: false, workspaceRoot: loaded.cwd });
-        UI.printNextSteps([
-          `hardkas why ${target.name.replace(".json", "")}${wsSuffix}`
-        ]);
+        UI.printNextSteps([`hardkas why ${target.name.replace(".json", "")}${wsSuffix}`]);
       } catch (e) {
         UI.error("Replay verification failed: " + e);
       }
@@ -96,7 +116,7 @@ export async function runDevLast(options: { inspect: boolean; replay: boolean; e
   }
 
   // Default: just show the ID
-  UI.causality("Latest Workflow Resolved", { "Artifact": target.name }, [
+  UI.causality("Latest Workflow Resolved", { Artifact: target.name }, [
     `hardkas dev last --replay${wsSuffix}`,
     `hardkas dev last --inspect${wsSuffix}`,
     `hardkas why ${target.name.replace(".json", "")}${wsSuffix}`

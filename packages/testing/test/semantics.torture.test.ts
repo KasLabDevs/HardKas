@@ -1,13 +1,12 @@
 import { expect, test, describe } from "vitest";
-import { 
-  validateStatusTransition, 
+import {
+  validateStatusTransition,
   assertNoSemanticDrift,
   resolveCanonicalArtifact,
   SemanticIdentity
 } from "@hardkas/core";
 
 describe("HardKAS Semantic Integrity Torture Tests", () => {
-
   describe("Artifact Status Lattice", () => {
     test("allows legal transitions", () => {
       expect(() => validateStatusTransition("PROJECTED", "VERIFIED")).not.toThrow();
@@ -16,8 +15,12 @@ describe("HardKAS Semantic Integrity Torture Tests", () => {
     });
 
     test("fails loudly on illegal transitions", () => {
-      expect(() => validateStatusTransition("UNKNOWN", "REPLAY_VERIFIED")).toThrow(/CRITICAL SEMANTIC ERROR/);
-      expect(() => validateStatusTransition("CORRUPTED", "VERIFIED")).toThrow(/CRITICAL SEMANTIC ERROR/);
+      expect(() => validateStatusTransition("UNKNOWN", "REPLAY_VERIFIED")).toThrow(
+        /CRITICAL SEMANTIC ERROR/
+      );
+      expect(() => validateStatusTransition("CORRUPTED", "VERIFIED")).toThrow(
+        /CRITICAL SEMANTIC ERROR/
+      );
     });
   });
 
@@ -30,29 +33,30 @@ describe("HardKAS Semantic Integrity Torture Tests", () => {
     };
 
     test("passes when all subsystems agree", () => {
-      expect(() => assertNoSemanticDrift(baseIdentity, baseIdentity, baseIdentity, baseIdentity)).not.toThrow();
+      expect(() =>
+        assertNoSemanticDrift(baseIdentity, baseIdentity, baseIdentity, baseIdentity)
+      ).not.toThrow();
     });
 
     test("fails loudly when Dashboard hallucinates truth", () => {
       const hallucinatedDashboard = { ...baseIdentity, status: "VERIFIED" as const };
       const truthReplay = { ...baseIdentity, status: "STALE" as const };
-      
-      expect(() => assertNoSemanticDrift(
-        hallucinatedDashboard,
-        truthReplay,
-        truthReplay,
-        truthReplay
-      )).toThrow(/CRITICAL SEMANTIC DRIFT/);
+
+      expect(() =>
+        assertNoSemanticDrift(
+          hallucinatedDashboard,
+          truthReplay,
+          truthReplay,
+          truthReplay
+        )
+      ).toThrow(/CRITICAL SEMANTIC DRIFT/);
     });
 
     test("fails loudly on hash mismatch", () => {
       const corruptDashboard = { ...baseIdentity, semanticHash: "def" };
-      expect(() => assertNoSemanticDrift(
-        corruptDashboard,
-        baseIdentity,
-        baseIdentity,
-        baseIdentity
-      )).toThrow(/CRITICAL SEMANTIC DRIFT/);
+      expect(() =>
+        assertNoSemanticDrift(corruptDashboard, baseIdentity, baseIdentity, baseIdentity)
+      ).toThrow(/CRITICAL SEMANTIC DRIFT/);
     });
   });
 

@@ -4,15 +4,8 @@ import path from "node:path";
 import { existsSync } from "node:fs";
 import net from "node:net";
 // Using relative paths to avoid resolution issues in restricted environments
-import { 
-  checkKaspaRpcHealth, 
-  waitForKaspaRpcReady 
-} from "@hardkas/kaspa-rpc";
-import { 
-  DockerKaspadOptions, 
-  KaspadNodeStatus, 
-  KaspadPorts 
-} from "./types.js";
+import { checkKaspaRpcHealth, waitForKaspaRpcReady } from "@hardkas/kaspa-rpc";
+import { DockerKaspadOptions, KaspadNodeStatus, KaspadPorts } from "./types.js";
 
 export const DEFAULT_IMAGE = "kaspanet/rusty-kaspad:v1.1.0";
 export const DEFAULT_CONTAINER_NAME = "hardkas-kaspad-simnet";
@@ -23,7 +16,9 @@ export const DEFAULT_PORTS: KaspadPorts = {
   jsonRpc: 18210
 };
 
-interface InternalDockerKaspadOptions extends Required<Omit<DockerKaspadOptions, "ports">> {
+interface InternalDockerKaspadOptions extends Required<
+  Omit<DockerKaspadOptions, "ports">
+> {
   readonly ports: KaspadPorts;
 }
 
@@ -57,18 +52,22 @@ export class DockerKaspadRunner {
     try {
       await execa("docker", ["version"]);
     } catch (e) {
-      throw new Error("Docker is not available. Please install Docker to run a real Kaspa node.");
+      throw new Error(
+        "Docker is not available. Please install Docker to run a real Kaspa node."
+      );
     }
 
     // Floating tag warning
     if (this.options.image.endsWith(":latest") && !this.options.allowFloatingImage) {
-      console.warn("\n  ⚠️  WARNING: Using a floating Docker tag (:latest) reduces reproducibility.\n");
+      console.warn(
+        "\n  ⚠️  WARNING: Using a floating Docker tag (:latest) reduces reproducibility.\n"
+      );
     }
 
     // Network Flag Resolution - FAIL FAST
     const network = this.options.network;
     let networkFlag = "";
-    
+
     if (network === "simnet") {
       networkFlag = "--simnet";
     } else if ((network as string).startsWith("testnet")) {
@@ -78,7 +77,7 @@ export class DockerKaspadRunner {
     } else if (network === "mainnet") {
       throw new Error(
         "Local Docker node for 'mainnet' is currently unsupported by HardKAS.\n" +
-        "Please use a remote RPC provider or a manual kaspad setup for mainnet operations."
+          "Please use a remote RPC provider or a manual kaspad setup for mainnet operations."
       );
     } else {
       throw new Error(`Unsupported network for Docker runner: ${network}`);
@@ -88,10 +87,10 @@ export class DockerKaspadRunner {
     await this.ensurePortsAvailable();
 
     // Ensure data directory exists
-    const absoluteDataDir = path.isAbsolute(this.options.dataDir) 
-      ? this.options.dataDir 
+    const absoluteDataDir = path.isAbsolute(this.options.dataDir)
+      ? this.options.dataDir
       : path.resolve(this.options.cwd, this.options.dataDir);
-    
+
     if (!existsSync(absoluteDataDir)) {
       await fs.mkdir(absoluteDataDir, { recursive: true });
     }
@@ -106,11 +105,16 @@ export class DockerKaspadRunner {
     const args = [
       "run",
       "-d",
-      "--name", this.options.containerName,
-      "-p", `127.0.0.1:${this.options.ports.rpc}:${this.options.ports.rpc}`,
-      "-p", `127.0.0.1:${this.options.ports.borshRpc}:${this.options.ports.borshRpc}`,
-      "-p", `127.0.0.1:${this.options.ports.jsonRpc}:${this.options.ports.jsonRpc}`,
-      "-v", `${absoluteDataDir}:/app/data`,
+      "--name",
+      this.options.containerName,
+      "-p",
+      `127.0.0.1:${this.options.ports.rpc}:${this.options.ports.rpc}`,
+      "-p",
+      `127.0.0.1:${this.options.ports.borshRpc}:${this.options.ports.borshRpc}`,
+      "-p",
+      `127.0.0.1:${this.options.ports.jsonRpc}:${this.options.ports.jsonRpc}`,
+      "-v",
+      `${absoluteDataDir}:/app/data`,
       this.options.image,
       "kaspad",
       "--yes",
@@ -136,11 +140,11 @@ export class DockerKaspadRunner {
     if (!health.ready) {
       throw new Error(
         `Kaspad RPC failed to become ready within 60s.\n` +
-        `  Container: ${this.options.containerName}\n` +
-        `  Image: ${this.options.image}\n` +
-        `  RPC: ${rpcUrl}\n` +
-        `  Last Error: ${health.lastError || "Timeout"}\n\n` +
-        `  Try checking logs: hardkas node logs --tail 200`
+          `  Container: ${this.options.containerName}\n` +
+          `  Image: ${this.options.image}\n` +
+          `  RPC: ${rpcUrl}\n` +
+          `  Last Error: ${health.lastError || "Timeout"}\n\n` +
+          `  Try checking logs: hardkas node logs --tail 200`
       );
     }
 
@@ -148,15 +152,19 @@ export class DockerKaspadRunner {
   }
 
   private async ensurePortsAvailable(): Promise<void> {
-    const ports = [this.options.ports.rpc, this.options.ports.borshRpc, this.options.ports.jsonRpc];
+    const ports = [
+      this.options.ports.rpc,
+      this.options.ports.borshRpc,
+      this.options.ports.jsonRpc
+    ];
     for (const port of ports) {
       const available = await this.isPortAvailable(port);
       if (!available) {
         throw new Error(
           `Port ${port} is already in use on the host. Cannot start node.\n` +
-          `  - Stop any existing process using this port.\n` +
-          `  - Or change the port in hardkas.config.ts.\n` +
-          `  - Or run 'hardkas node reset --yes' if it's a stale container.`
+            `  - Stop any existing process using this port.\n` +
+            `  - Or change the port in hardkas.config.ts.\n` +
+            `  - Or run 'hardkas node reset --yes' if it's a stale container.`
         );
       }
     }
@@ -206,15 +214,16 @@ export class DockerKaspadRunner {
 
   async status(): Promise<KaspadNodeStatus> {
     const rpcUrl = `http://127.0.0.1:${this.options.ports.jsonRpc}`;
-    
+
     try {
       const { stdout } = await execa("docker", [
-        "inspect", 
-        "--format", "{{.State.Status}}", 
+        "inspect",
+        "--format",
+        "{{.State.Status}}",
         this.options.containerName
       ]);
       const running = stdout.trim() === "running";
-      
+
       let jsonReady = false;
       let grpcReady = false;
       let borshReady = false;
@@ -224,7 +233,7 @@ export class DockerKaspadRunner {
         const health = await checkKaspaRpcHealth({ url: rpcUrl, timeoutMs: 2000 });
         jsonReady = health.ready;
         lastError = health.lastError || null;
-        
+
         // Parallel check for binary transports
         [grpcReady, borshReady] = await Promise.all([
           this.checkTransportReady(this.options.ports.rpc),
@@ -275,13 +284,15 @@ export class DockerKaspadRunner {
     return this.start();
   }
 
-  async reset(options: { removeData?: boolean } = { removeData: true }): Promise<KaspadNodeStatus> {
+  async reset(
+    options: { removeData?: boolean } = { removeData: true }
+  ): Promise<KaspadNodeStatus> {
     await this.stop();
     if (options.removeData) {
-      const absoluteDataDir = path.isAbsolute(this.options.dataDir) 
-        ? this.options.dataDir 
+      const absoluteDataDir = path.isAbsolute(this.options.dataDir)
+        ? this.options.dataDir
         : path.resolve(this.options.cwd, this.options.dataDir);
-      
+
       if (existsSync(absoluteDataDir)) {
         await fs.rm(absoluteDataDir, { recursive: true, force: true });
       }
@@ -293,12 +304,12 @@ export class DockerKaspadRunner {
     try {
       const tail = options?.tail || 100;
       const args = ["logs", "--tail", tail.toString()];
-      
+
       if (options?.follow) {
         args.push("-f");
-        await execa("docker", [...args, this.options.containerName], { 
-          stdout: "inherit", 
-          stderr: "inherit" 
+        await execa("docker", [...args, this.options.containerName], {
+          stdout: "inherit",
+          stderr: "inherit"
         });
         return;
       }
@@ -306,7 +317,9 @@ export class DockerKaspadRunner {
       const { stdout } = await execa("docker", [...args, this.options.containerName]);
       return stdout;
     } catch (e) {
-      throw new Error(`Could not get logs for container ${this.options.containerName}. Is it running?`);
+      throw new Error(
+        `Could not get logs for container ${this.options.containerName}. Is it running?`
+      );
     }
   }
 }

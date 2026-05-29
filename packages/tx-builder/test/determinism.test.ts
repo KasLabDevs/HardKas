@@ -33,7 +33,10 @@ export const SEMANTIC_EXCLUSIONS = new Set([
   "dagContext"
 ]);
 
-export function canonicalStringify(obj: any, version: number = CURRENT_HASH_VERSION): string {
+export function canonicalStringify(
+  obj: any,
+  version: number = CURRENT_HASH_VERSION
+): string {
   if (obj === null || typeof obj !== "object") {
     if (typeof obj === "bigint") {
       if (version >= 2) {
@@ -51,18 +54,15 @@ export function canonicalStringify(obj: any, version: number = CURRENT_HASH_VERS
   }
 
   if (Array.isArray(obj)) {
-    return "[" + obj.map(item => canonicalStringify(item, version)).join(",") + "]";
+    return "[" + obj.map((item) => canonicalStringify(item, version)).join(",") + "]";
   }
 
   const sortedKeys = Object.keys(obj)
-    .filter(key =>
-      !SEMANTIC_EXCLUSIONS.has(key) &&
-      obj[key] !== undefined
-    )
+    .filter((key) => !SEMANTIC_EXCLUSIONS.has(key) && obj[key] !== undefined)
     .sort();
 
   const result = sortedKeys
-    .map(key => {
+    .map((key) => {
       const value = obj[key];
       return JSON.stringify(key) + ":" + canonicalStringify(value, version);
     })
@@ -71,7 +71,10 @@ export function canonicalStringify(obj: any, version: number = CURRENT_HASH_VERS
   return "{" + result + "}";
 }
 
-export function calculateContentHash(obj: any, version: number = CURRENT_HASH_VERSION): string {
+export function calculateContentHash(
+  obj: any,
+  version: number = CURRENT_HASH_VERSION
+): string {
   const canonical = canonicalStringify(obj, version);
   return createHash("sha256").update(canonical).digest("hex");
 }
@@ -109,31 +112,46 @@ describe("P1.12 Deterministic Transaction Canonicalization", () => {
   // Create a base set of available UTXOs with varying values, txIds, and indices
   const utxos: Utxo[] = [
     {
-      outpoint: { transactionId: "tx00000000000000000000000000000000000000000000000000000000000002", index: 1 },
+      outpoint: {
+        transactionId: "tx00000000000000000000000000000000000000000000000000000000000002",
+        index: 1
+      },
       address: mockFrom,
       amountSompi: 1000000n,
       scriptPublicKey: "mock-spk"
     },
     {
-      outpoint: { transactionId: "tx00000000000000000000000000000000000000000000000000000000000001", index: 0 },
+      outpoint: {
+        transactionId: "tx00000000000000000000000000000000000000000000000000000000000001",
+        index: 0
+      },
       address: mockFrom,
       amountSompi: 1000000n, // Equal value to test tie-breaker
       scriptPublicKey: "mock-spk"
     },
     {
-      outpoint: { transactionId: "tx00000000000000000000000000000000000000000000000000000000000002", index: 0 },
+      outpoint: {
+        transactionId: "tx00000000000000000000000000000000000000000000000000000000000002",
+        index: 0
+      },
       address: mockFrom,
       amountSompi: 1000000n, // Equal value, different index to test tie-breaker
       scriptPublicKey: "mock-spk"
     },
     {
-      outpoint: { transactionId: "tx00000000000000000000000000000000000000000000000000000000000003", index: 0 },
+      outpoint: {
+        transactionId: "tx00000000000000000000000000000000000000000000000000000000000003",
+        index: 0
+      },
       address: mockFrom,
       amountSompi: 5000000n, // Higher value
       scriptPublicKey: "mock-spk"
     },
     {
-      outpoint: { transactionId: "tx00000000000000000000000000000000000000000000000000000000000004", index: 0 },
+      outpoint: {
+        transactionId: "tx00000000000000000000000000000000000000000000000000000000000004",
+        index: 0
+      },
       address: mockFrom,
       amountSompi: 200000n, // Lower value
       scriptPublicKey: "mock-spk"
@@ -167,7 +185,9 @@ describe("P1.12 Deterministic Transaction Canonicalization", () => {
           if (current.outpoint.transactionId === next.outpoint.transactionId) {
             expect(current.outpoint.index).toBeLessThan(next.outpoint.index);
           } else {
-            expect(current.outpoint.transactionId < next.outpoint.transactionId).toBe(true);
+            expect(current.outpoint.transactionId < next.outpoint.transactionId).toBe(
+              true
+            );
           }
         } else {
           expect(current.amountSompi).toBeLessThan(next.amountSompi);
@@ -186,7 +206,9 @@ describe("P1.12 Deterministic Transaction Canonicalization", () => {
       }
 
       // Keep stringified representation to assert absolute identity across all 100 iterations
-      plans.push(JSON.stringify(plan, (_, v) => typeof v === "bigint" ? v.toString() : v));
+      plans.push(
+        JSON.stringify(plan, (_, v) => (typeof v === "bigint" ? v.toString() : v))
+      );
     }
 
     // Every plan must be 100% identical
@@ -209,7 +231,7 @@ describe("P1.12 Deterministic Transaction Canonicalization", () => {
     // Create an artifact-like structure
     const baseArtifact = {
       schema: "hardkas.txPlan" as const,
-      hardkasVersion: "0.7.3-alpha",
+      hardkasVersion: "0.7.4-alpha",
       version: ARTIFACT_VERSION,
       hashVersion: CURRENT_HASH_VERSION,
       networkId: "simnet" as const,
@@ -221,18 +243,20 @@ describe("P1.12 Deterministic Transaction Canonicalization", () => {
       amountSompi: "2600000",
       estimatedFeeSompi: plan.estimatedFeeSompi.toString(),
       estimatedMass: plan.estimatedMass.toString(),
-      inputs: plan.inputs.map(i => ({
+      inputs: plan.inputs.map((i) => ({
         outpoint: { transactionId: i.outpoint.transactionId, index: i.outpoint.index },
         amountSompi: i.amountSompi.toString()
       })),
-      outputs: plan.outputs.map(o => ({
+      outputs: plan.outputs.map((o) => ({
         address: o.address,
         amountSompi: o.amountSompi.toString()
       })),
-      change: plan.change ? {
-        address: plan.change.address,
-        amountSompi: plan.change.amountSompi.toString()
-      } : undefined
+      change: plan.change
+        ? {
+            address: plan.change.address,
+            amountSompi: plan.change.amountSompi.toString()
+          }
+        : undefined
     };
 
     // Calculate initial hash
@@ -288,7 +312,14 @@ describe("P1.12 Deterministic Transaction Canonicalization", () => {
       expect(SEMANTIC_EXCLUSIONS.has(key)).toBe(true);
     }
     // Double check no economic or value fields are excluded by accident
-    const economicFields = ["amountSompi", "estimatedFeeSompi", "estimatedMass", "inputs", "outputs", "change"];
+    const economicFields = [
+      "amountSompi",
+      "estimatedFeeSompi",
+      "estimatedMass",
+      "inputs",
+      "outputs",
+      "change"
+    ];
     for (const field of economicFields) {
       expect(SEMANTIC_EXCLUSIONS.has(field)).toBe(false);
     }
@@ -296,7 +327,7 @@ describe("P1.12 Deterministic Transaction Canonicalization", () => {
     // Hardcode an exact fixed test artifact
     const fixedArtifact = {
       schema: "hardkas.txPlan" as const,
-      hardkasVersion: "0.7.3-alpha",
+      hardkasVersion: "0.7.4-alpha",
       version: "1.0.0-alpha",
       hashVersion: 3,
       networkId: "simnet" as const,
@@ -310,18 +341,20 @@ describe("P1.12 Deterministic Transaction Canonicalization", () => {
       estimatedMass: "350",
       inputs: [
         {
-          outpoint: { transactionId: "tx00000000000000000000000000000000000000000000000000000000000000", index: 0 },
+          outpoint: {
+            transactionId:
+              "tx00000000000000000000000000000000000000000000000000000000000000",
+            index: 0
+          },
           amountSompi: "2000000"
         }
       ],
-      outputs: [
-        { address: "kaspa:bob", amountSompi: "1000000" }
-      ],
+      outputs: [{ address: "kaspa:bob", amountSompi: "1000000" }],
       change: { address: "kaspa:alice", amountSompi: "999650" }
     };
 
     const hash = calculateContentHash(fixedArtifact);
-    
+
     // We will print Node version and other environment details
     console.log(`[Test D Info] Node Version: ${process.version}`);
     console.log(`[Test D Info] OS Platform: ${process.platform}`);
@@ -329,11 +362,17 @@ describe("P1.12 Deterministic Transaction Canonicalization", () => {
     console.log(`[Test D Info] Calculated Canonical Hash: ${hash}`);
 
     // Let's assert against the true pre-calculated hash
-    const calculatedStringRepresentation = canonicalStringify(fixedArtifact, CURRENT_HASH_VERSION);
-    const expectedStringRepresentation = '{"amountSompi":"1000000","change":{"address":"kaspa:alice","amountSompi":"999650"},"estimatedFeeSompi":"350","estimatedMass":"350","from":{"address":"kaspa:alice"},"inputs":[{"amountSompi":"2000000","outpoint":{"index":0,"transactionId":"tx00000000000000000000000000000000000000000000000000000000000000"}}],"mode":"simulated","networkId":"simnet","outputs":[{"address":"kaspa:bob","amountSompi":"1000000"}],"schema":"hardkas.txPlan","to":{"address":"kaspa:bob"},"version":"1.0.0-alpha"}';
+    const calculatedStringRepresentation = canonicalStringify(
+      fixedArtifact,
+      CURRENT_HASH_VERSION
+    );
+    const expectedStringRepresentation =
+      '{"amountSompi":"1000000","change":{"address":"kaspa:alice","amountSompi":"999650"},"estimatedFeeSompi":"350","estimatedMass":"350","from":{"address":"kaspa:alice"},"inputs":[{"amountSompi":"2000000","outpoint":{"index":0,"transactionId":"tx00000000000000000000000000000000000000000000000000000000000000"}}],"mode":"simulated","networkId":"simnet","outputs":[{"address":"kaspa:bob","amountSompi":"1000000"}],"schema":"hardkas.txPlan","to":{"address":"kaspa:bob"},"version":"1.0.0-alpha"}';
     expect(calculatedStringRepresentation).toBe(expectedStringRepresentation);
 
-    const trueHash = createHash("sha256").update(expectedStringRepresentation).digest("hex");
+    const trueHash = createHash("sha256")
+      .update(expectedStringRepresentation)
+      .digest("hex");
     expect(hash).toBe(trueHash);
     expect(hash).toBe("1cd118fdefc3afefdd176f96ef6a6de85d58dabede91bff0189d4dfc6bdb6bf4");
   });
@@ -395,9 +434,7 @@ describe("P1.12 Deterministic Transaction Canonicalization", () => {
     ];
 
     // Candidate UTXOs
-    const availableUtxos = [
-      createMockUtxo({ address: mockFrom, amountSompi: 10000n })
-    ];
+    const availableUtxos = [createMockUtxo({ address: mockFrom, amountSompi: 10000n })];
 
     const plan = buildPaymentPlan({
       fromAddress: mockFrom,

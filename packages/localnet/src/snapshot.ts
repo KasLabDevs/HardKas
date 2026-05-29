@@ -1,11 +1,16 @@
-import { 
-  HARDKAS_VERSION, 
+import {
+  HARDKAS_VERSION,
   ARTIFACT_VERSION,
   calculateContentHash,
   sortUtxosByOutpoint,
   type Snapshot
 } from "@hardkas/artifacts";
-import type { LocalnetState, LocalnetAccount, LocalnetUtxo, SnapshotVerificationResult } from "./types.js";
+import type {
+  LocalnetState,
+  LocalnetAccount,
+  LocalnetUtxo,
+  SnapshotVerificationResult
+} from "./types.js";
 import { deterministicCompare } from "@hardkas/core";
 
 /**
@@ -20,7 +25,9 @@ export function calculateUtxoSetHash(utxos: LocalnetUtxo[]): string {
  * Calculates hash of the account set (sorted by address).
  */
 export function calculateAccountsHash(accounts: LocalnetAccount[]): string {
-  const sorted = [...(accounts || [])].sort((a, b) => deterministicCompare(a.address, b.address));
+  const sorted = [...(accounts || [])].sort((a, b) =>
+    deterministicCompare(a.address, b.address)
+  );
   return calculateContentHash(sorted);
 }
 
@@ -30,7 +37,7 @@ export function calculateAccountsHash(accounts: LocalnetAccount[]): string {
 export function calculateStateHash(state: LocalnetState): string {
   const accountsHash = calculateAccountsHash(state.accounts);
   const utxoSetHash = calculateUtxoSetHash(state.utxos);
-  
+
   return calculateContentHash({
     daaScore: state.daaScore,
     accountsHash,
@@ -49,7 +56,7 @@ export function createLocalnetSnapshot(
   const utxoSetHash = calculateUtxoSetHash(state.utxos);
   const stateHash = calculateStateHash(state);
 
-  const snapshotDraft: Omit<Snapshot, 'contentHash'> = {
+  const snapshotDraft: Omit<Snapshot, "contentHash"> = {
     schema: "hardkas.snapshot",
     hardkasVersion: HARDKAS_VERSION,
     version: ARTIFACT_VERSION,
@@ -81,21 +88,30 @@ export function createLocalnetSnapshot(
  */
 export function verifySnapshot(snapshot: Snapshot): SnapshotVerificationResult {
   const errors: string[] = [];
-  
+
   // 1. Content Hash Verification
   const currentContentHash = calculateContentHash(snapshot);
   const contentMatch = snapshot.contentHash === currentContentHash;
-  if (!contentMatch) errors.push(`Content hash mismatch: expected ${snapshot.contentHash}, got ${currentContentHash}`);
+  if (!contentMatch)
+    errors.push(
+      `Content hash mismatch: expected ${snapshot.contentHash}, got ${currentContentHash}`
+    );
 
   // 2. Accounts Hash Verification
   const currentAccountsHash = calculateAccountsHash(snapshot.accounts);
   const accountsMatch = snapshot.accountsHash === currentAccountsHash;
-  if (!accountsMatch) errors.push(`Accounts hash mismatch: expected ${snapshot.accountsHash}, got ${currentAccountsHash}`);
+  if (!accountsMatch)
+    errors.push(
+      `Accounts hash mismatch: expected ${snapshot.accountsHash}, got ${currentAccountsHash}`
+    );
 
   // 3. UTXO Set Hash Verification
   const currentUtxoSetHash = calculateUtxoSetHash(snapshot.utxos);
   const utxoSetMatch = snapshot.utxoSetHash === currentUtxoSetHash;
-  if (!utxoSetMatch) errors.push(`UTXO set hash mismatch: expected ${snapshot.utxoSetHash}, got ${currentUtxoSetHash}`);
+  if (!utxoSetMatch)
+    errors.push(
+      `UTXO set hash mismatch: expected ${snapshot.utxoSetHash}, got ${currentUtxoSetHash}`
+    );
 
   // 4. State Hash Verification
   const currentStateHash = calculateContentHash({
@@ -104,7 +120,10 @@ export function verifySnapshot(snapshot: Snapshot): SnapshotVerificationResult {
     utxoSetHash: currentUtxoSetHash
   });
   const stateMatch = snapshot.stateHash === currentStateHash;
-  if (!stateMatch) errors.push(`State hash mismatch: expected ${snapshot.stateHash}, got ${currentStateHash}`);
+  if (!stateMatch)
+    errors.push(
+      `State hash mismatch: expected ${snapshot.stateHash}, got ${currentStateHash}`
+    );
 
   return {
     ok: errors.length === 0,
@@ -126,7 +145,10 @@ export function restoreLocalnetSnapshot(
   snapshotIdOrName: string
 ): LocalnetState {
   const snapshot = state.snapshots?.find(
-    (s: Snapshot & { id?: string }) => s.id === snapshotIdOrName || s.name === snapshotIdOrName || s.contentHash === snapshotIdOrName
+    (s: Snapshot & { id?: string }) =>
+      s.id === snapshotIdOrName ||
+      s.name === snapshotIdOrName ||
+      s.contentHash === snapshotIdOrName
   );
 
   if (!snapshot) {

@@ -1,10 +1,10 @@
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
-import { 
-  createTestHarness, 
-  enableMassTracking, 
-  disableMassTracking, 
-  getMassRecords, 
-  clearMassRecords 
+import {
+  createTestHarness,
+  enableMassTracking,
+  disableMassTracking,
+  getMassRecords,
+  clearMassRecords
 } from "../src/index.js";
 
 describe("Mass tracking", () => {
@@ -21,7 +21,7 @@ describe("Mass tracking", () => {
     enableMassTracking();
     const h = createTestHarness();
     const names = h.accountNames();
-    
+
     h.send({ from: names[0]!, to: names[1]!, amountSompi: 1_000_000_000n });
 
     const records = getMassRecords();
@@ -34,9 +34,9 @@ describe("Mass tracking", () => {
     disableMassTracking();
     const h = createTestHarness();
     const names = h.accountNames();
-    
+
     h.send({ from: names[0]!, to: names[1]!, amountSompi: 1_000_000_000n });
-    
+
     expect(getMassRecords().length).toBe(0);
   });
 });

@@ -23,16 +23,20 @@ export function registerArtifactQueryCommands(queryCmd: Command) {
         const engine = await QueryEngine.create({ artifactDir: process.cwd() });
 
         const filters: Array<{ field: string; op: "eq"; value: string }> = [];
-        if (options.schema) filters.push({ field: "schema", op: "eq", value: `hardkas.${options.schema}` });
-        if (options.network) filters.push({ field: "networkId", op: "eq", value: options.network });
+        if (options.schema)
+          filters.push({ field: "schema", op: "eq", value: `hardkas.${options.schema}` });
+        if (options.network)
+          filters.push({ field: "networkId", op: "eq", value: options.network });
         if (options.mode) filters.push({ field: "mode", op: "eq", value: options.mode });
-        if (options.from) filters.push({ field: "from.address", op: "eq", value: options.from });
-        if (options.to) filters.push({ field: "to.address", op: "eq", value: options.to });
+        if (options.from)
+          filters.push({ field: "from.address", op: "eq", value: options.from });
+        if (options.to)
+          filters.push({ field: "to.address", op: "eq", value: options.to });
 
         let sort: { field: string; direction: "asc" | "desc" } | undefined;
         if (options.sort) {
           const [field, dir] = options.sort.split(":");
-          sort = { field: field!, direction: (dir === "asc" ? "asc" : "desc") };
+          sort = { field: field!, direction: dir === "asc" ? "asc" : "desc" };
         }
 
         const request = createQueryRequest({
@@ -41,7 +45,7 @@ export function registerArtifactQueryCommands(queryCmd: Command) {
           filters,
           sort,
           limit: parseInt(options.limit, 10),
-          explain: options.explain === true ? "brief" : (options.explain || false)
+          explain: options.explain === true ? "brief" : options.explain || false
         });
 
         const result = await engine.execute(request);
@@ -72,7 +76,7 @@ export function registerArtifactQueryCommands(queryCmd: Command) {
           domain: "artifacts",
           op: "inspect",
           params: { target },
-          explain: options.explain === true ? "brief" : (options.explain || false)
+          explain: options.explain === true ? "brief" : options.explain || false
         });
 
         const result = await engine.execute(request);
@@ -132,7 +136,7 @@ export function registerArtifactQueryCommands(queryCmd: Command) {
           domain: "artifacts",
           op: "verify",
           params: { target },
-          explain: options.explain === true ? "brief" : (options.explain || false)
+          explain: options.explain === true ? "brief" : options.explain || false
         });
 
         const result = await engine.execute(request);

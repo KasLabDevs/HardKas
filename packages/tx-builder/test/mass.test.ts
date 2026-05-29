@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
-import { 
-  estimateTransactionMass, 
+import {
+  estimateTransactionMass,
   KASPA_MASS_CONSTANTS,
   buildPaymentPlan,
   createMockUtxo
@@ -14,10 +14,11 @@ describe("Mass Estimation", () => {
       hasChange: false
     });
 
-    const expected = KASPA_MASS_CONSTANTS.BASE_TRANSACTION + 
-                     KASPA_MASS_CONSTANTS.INPUT_P2PK + 
-                     KASPA_MASS_CONSTANTS.OUTPUT_P2PK;
-    
+    const expected =
+      KASPA_MASS_CONSTANTS.BASE_TRANSACTION +
+      KASPA_MASS_CONSTANTS.INPUT_P2PK +
+      KASPA_MASS_CONSTANTS.OUTPUT_P2PK;
+
     expect(result.mass).toBe(expected);
   });
 
@@ -28,10 +29,11 @@ describe("Mass Estimation", () => {
       hasChange: true
     });
 
-    const expected = KASPA_MASS_CONSTANTS.BASE_TRANSACTION + 
-                     KASPA_MASS_CONSTANTS.INPUT_P2PK + 
-                     (KASPA_MASS_CONSTANTS.OUTPUT_P2PK * 2n);
-    
+    const expected =
+      KASPA_MASS_CONSTANTS.BASE_TRANSACTION +
+      KASPA_MASS_CONSTANTS.INPUT_P2PK +
+      KASPA_MASS_CONSTANTS.OUTPUT_P2PK * 2n;
+
     expect(result.mass).toBe(expected);
   });
 
@@ -42,10 +44,11 @@ describe("Mass Estimation", () => {
       hasChange: false
     });
 
-    const expected = KASPA_MASS_CONSTANTS.BASE_TRANSACTION + 
-                     KASPA_MASS_CONSTANTS.INPUT_P2PK + 
-                     KASPA_MASS_CONSTANTS.SCRIPT_FALLBACK;
-    
+    const expected =
+      KASPA_MASS_CONSTANTS.BASE_TRANSACTION +
+      KASPA_MASS_CONSTANTS.INPUT_P2PK +
+      KASPA_MASS_CONSTANTS.SCRIPT_FALLBACK;
+
     expect(result.mass).toBe(expected);
   });
 
@@ -64,9 +67,7 @@ describe("Mass Estimation", () => {
   });
 
   it("should maintain same mass after 1 sompi mutation if structure is unchanged", () => {
-    const utxos = [
-      createMockUtxo({ address: "kaspa:qalice", amountSompi: 5000n })
-    ];
+    const utxos = [createMockUtxo({ address: "kaspa:qalice", amountSompi: 5000n })];
 
     const plan1 = buildPaymentPlan({
       fromAddress: "kaspa:qalice",
@@ -94,6 +95,8 @@ describe("Mass Estimation", () => {
       hasChange: false
     });
 
-    expect(result.warnings).toContain("P2SH/Other script detected for address: kaspa:ppvkp8f.... Mass is estimated using placeholder script-size assumptions.");
+    expect(result.warnings).toContain(
+      "P2SH/Other script detected for address: kaspa:ppvkp8f.... Mass is estimated using placeholder script-size assumptions."
+    );
   });
 });

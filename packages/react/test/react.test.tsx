@@ -37,7 +37,9 @@ describe("HardKas React", () => {
 
   it("useHardKas hook returns context", () => {
     const { result } = renderHook(() => useHardKas(), {
-      wrapper: ({ children }) => <HardKasProvider config={config}>{children}</HardKasProvider>
+      wrapper: ({ children }) => (
+        <HardKasProvider config={config}>{children}</HardKasProvider>
+      )
     });
     expect(result.current.config.kaspaRpcUrl).toBe(config.kaspaRpcUrl);
     expect(result.current.igraClient).toBeDefined();
@@ -51,7 +53,9 @@ describe("HardKas React", () => {
       bridge: { mode: "local-simulated" }
     };
 
-    (global.fetch as any).mockResolvedValue(new Response(JSON.stringify({ active: mockSession })));
+    (global.fetch as any).mockResolvedValue(
+      new Response(JSON.stringify({ active: mockSession }))
+    );
 
     const queryClient = new QueryClient();
     const { result } = renderHook(() => useHardKasSession(), {
@@ -74,10 +78,12 @@ describe("HardKas React", () => {
       l2: { account: "alice-l2", address: "addr2" },
       bridge: { mode: "local-simulated" },
       // Even if the server accidentally returned a secret (which it shouldn't)
-      privateKey: "SECRET_KEY" 
+      privateKey: "SECRET_KEY"
     };
 
-    (global.fetch as any).mockResolvedValue(new Response(JSON.stringify({ active: mockSession })));
+    (global.fetch as any).mockResolvedValue(
+      new Response(JSON.stringify({ active: mockSession }))
+    );
 
     const queryClient = new QueryClient();
     const { result } = renderHook(() => useHardKasSession(), {

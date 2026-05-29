@@ -9,7 +9,7 @@ vi.mock("react-router-dom", () => ({
   BrowserRouter: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
   Routes: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
   Route: () => null,
-  Navigate: () => null,
+  Navigate: () => null
 }));
 
 // Create mutable mock values
@@ -19,7 +19,9 @@ let mockProjectionStatus = "synced";
 // Mock the entire hardkas react context hook package
 vi.mock("@hardkas/react", () => {
   return {
-    HardKasProvider: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
+    HardKasProvider: ({ children }: { children: React.ReactNode }) => (
+      <div>{children}</div>
+    ),
     useHardKasHealth: () => ({
       isError: mockHealthError,
       error: mockHealthError ? new Error("Mocked offline error") : null,
@@ -49,7 +51,9 @@ describe("Dashboard App E2E/Integration", () => {
 
     render(<App />);
 
-    expect(screen.getByText(/Projection updating — displayed data may be stale/i)).toBeInTheDocument();
+    expect(
+      screen.getByText(/Projection updating — displayed data may be stale/i)
+    ).toBeInTheDocument();
   });
 
   it("does not render the ProjectionBanner when projection is synced", () => {
@@ -58,6 +62,8 @@ describe("Dashboard App E2E/Integration", () => {
 
     render(<App />);
 
-    expect(screen.queryByText(/Projection updating — displayed data may be stale/i)).not.toBeInTheDocument();
+    expect(
+      screen.queryByText(/Projection updating — displayed data may be stale/i)
+    ).not.toBeInTheDocument();
   });
 });

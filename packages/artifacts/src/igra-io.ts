@@ -1,8 +1,8 @@
 import fs from "node:fs/promises";
 import path from "node:path";
-import { 
-  IgraTxReceiptArtifact, 
-  assertValidIgraTxReceiptArtifact 
+import {
+  IgraTxReceiptArtifact,
+  assertValidIgraTxReceiptArtifact
 } from "./igra-artifacts.js";
 import { writeArtifact, readArtifact } from "./io.js";
 import { deterministicCompare } from "@hardkas/core";
@@ -37,27 +37,31 @@ export async function loadIgraTxReceiptArtifact(
   return data;
 }
 
-export async function listIgraTxReceiptArtifacts(
-  options?: { cwd?: string }
-): Promise<readonly IgraTxReceiptArtifact[]> {
+export async function listIgraTxReceiptArtifacts(options?: {
+  cwd?: string;
+}): Promise<readonly IgraTxReceiptArtifact[]> {
   const dir = getDefaultL2ReceiptsDir(options?.cwd);
-  
+
   try {
     const files = await fs.readdir(dir);
-    const receiptFiles = files.filter(f => f.endsWith(".igra.receipt.json"));
-    
+    const receiptFiles = files.filter((f) => f.endsWith(".igra.receipt.json"));
+
     const receipts: IgraTxReceiptArtifact[] = [];
     for (const file of receiptFiles) {
       try {
         const data = await readArtifact(path.join(dir, file));
-        if (data && typeof data === "object" && (data as Record<string, unknown>).schema === "hardkas.igraTxReceipt.v1") {
+        if (
+          data &&
+          typeof data === "object" &&
+          (data as Record<string, unknown>).schema === "hardkas.igraTxReceipt.v1"
+        ) {
           receipts.push(data as IgraTxReceiptArtifact);
         }
       } catch (e) {
         // Skip invalid/unreadable files
       }
     }
-    
+
     return receipts.sort((a, b) => deterministicCompare(b.createdAt, a.createdAt));
   } catch (e) {
     if ((e as NodeJS.ErrnoException).code === "ENOENT") return [];
@@ -67,6 +71,8 @@ export async function listIgraTxReceiptArtifacts(
 
 function validateTxHash(txHash: string): void {
   if (!/^0x[a-fA-F0-9]{64}$/.test(txHash)) {
-    throw new Error(`Invalid EVM txHash: must be a 0x-prefixed 64-character hex string. Got: ${txHash}`);
+    throw new Error(
+      `Invalid EVM txHash: must be a 0x-prefixed 64-character hex string. Got: ${txHash}`
+    );
   }
 }

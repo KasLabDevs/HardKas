@@ -3,7 +3,7 @@ import { hardkasTest } from "@hardkas/testing";
 
 /**
  * Payment Workflow Test
- * 
+ *
  * Demonstrates the use of the real HardKAS test runner.
  * This test actually runs against the simulated localnet.
  */

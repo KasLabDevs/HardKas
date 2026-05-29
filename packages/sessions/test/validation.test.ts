@@ -9,7 +9,8 @@ describe("Session Schema Validation", () => {
 
   beforeEach(() => {
     if (!existsSync(tempDir)) mkdirSync(tempDir, { recursive: true });
-    if (!existsSync(join(tempDir, ".hardkas"))) mkdirSync(join(tempDir, ".hardkas"), { recursive: true });
+    if (!existsSync(join(tempDir, ".hardkas")))
+      mkdirSync(join(tempDir, ".hardkas"), { recursive: true });
   });
 
   afterEach(() => {

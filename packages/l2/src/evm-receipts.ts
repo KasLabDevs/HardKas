@@ -10,7 +10,9 @@ export interface EvmTransactionReceiptSummary {
   raw: any;
 }
 
-export function normalizeEvmTransactionReceipt(raw: any): EvmTransactionReceiptSummary | null {
+export function normalizeEvmTransactionReceipt(
+  raw: any
+): EvmTransactionReceiptSummary | null {
   if (!raw || typeof raw !== "object") return null;
 
   const txHash = raw.transactionHash;

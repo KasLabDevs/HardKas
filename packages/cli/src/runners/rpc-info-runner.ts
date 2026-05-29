@@ -11,11 +11,11 @@ export async function runRpcInfo(options: RpcInfoOptions = {}): Promise<{
 }> {
   const url = options.url || "http://127.0.0.1:18210";
   const protocol = url.startsWith("ws") ? "WebSocket" : "JSON-RPC";
-  
+
   try {
     const client = new KaspaJsonRpcClient({ url });
     const info = await client.getServerInfo();
-    
+
     const lines = [
       "Kaspa RPC info",
       "",

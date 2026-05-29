@@ -63,7 +63,7 @@ export class TxSimulator {
           type: "tx.failed",
           phase,
           reason: error instanceof Error ? error.message : "Unknown error",
-          timestamp: Date.now(),
+          timestamp: Date.now()
         });
         return { ok: false, events };
       }

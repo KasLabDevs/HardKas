@@ -17,7 +17,7 @@ export interface RpcHealthResult {
   readonly endpoint: string;
   readonly protocol: string;
   readonly status: RpcHealthState;
-  readonly ready: boolean; 
+  readonly ready: boolean;
   readonly checkedAt: string;
   readonly latencyMs?: number | undefined;
   readonly networkId?: string | undefined;
@@ -31,19 +31,26 @@ export interface RpcHealthResult {
   readonly stale?: boolean | undefined;
 }
 
-export async function checkKaspaRpcHealth(options?: RpcHealthCheckOptions): Promise<RpcHealthResult> {
+export async function checkKaspaRpcHealth(
+  options?: RpcHealthCheckOptions
+): Promise<RpcHealthResult> {
   const url = options?.url || "ws://127.0.0.1:18210";
   const checkedAt = new Date().toISOString();
   const timeoutMs = options?.timeoutMs || 2000;
 
   // wRPC (WebSocket) branch
-  if (url.startsWith("ws://") || url.startsWith("wss://") || url.includes("18210") || url.includes("18110")) {
+  if (
+    url.startsWith("ws://") ||
+    url.startsWith("wss://") ||
+    url.includes("18210") ||
+    url.includes("18110")
+  ) {
     const client = new KaspaWrpcClient(url);
     const start = Date.now();
     try {
       await client.connect(timeoutMs);
-      const info = await client.getServerInfo() as any;
-      const dagInfo = await client.getBlockDagInfo() as any;
+      const info = (await client.getServerInfo()) as any;
+      const dagInfo = (await client.getBlockDagInfo()) as any;
       const latencyMs = Date.now() - start;
       client.disconnect();
 
@@ -87,9 +94,15 @@ export async function checkKaspaRpcHealth(options?: RpcHealthCheckOptions): Prom
       ready: health.status === "healthy" || health.status === "degraded",
       checkedAt,
       ...(health.latencyMs !== undefined ? { latencyMs: health.latencyMs } : {}),
-      ...(health.info?.networkId !== undefined ? { networkId: health.info.networkId } : {}),
-      ...(health.info?.virtualDaaScore !== undefined ? { virtualDaaScore: health.info.virtualDaaScore.toString() } : {}),
-      ...(health.info?.serverVersion !== undefined ? { serverVersion: health.info.serverVersion } : {}),
+      ...(health.info?.networkId !== undefined
+        ? { networkId: health.info.networkId }
+        : {}),
+      ...(health.info?.virtualDaaScore !== undefined
+        ? { virtualDaaScore: health.info.virtualDaaScore.toString() }
+        : {}),
+      ...(health.info?.serverVersion !== undefined
+        ? { serverVersion: health.info.serverVersion }
+        : {}),
       ...(health.info?.isSynced !== undefined ? { isSynced: health.info.isSynced } : {}),
       lastError: health.lastError,
       ...(health.retries !== undefined ? { retries: health.retries } : {}),
@@ -109,7 +122,9 @@ export async function checkKaspaRpcHealth(options?: RpcHealthCheckOptions): Prom
   }
 }
 
-export async function waitForKaspaRpcReady(options?: RpcReadinessWaitOptions): Promise<RpcHealthResult> {
+export async function waitForKaspaRpcReady(
+  options?: RpcReadinessWaitOptions
+): Promise<RpcHealthResult> {
   let currentIntervalMs = options?.intervalMs || 250;
   const maxIntervalMs = 2000;
   const maxWaitMs = options?.maxWaitMs || 60000;
@@ -118,25 +133,29 @@ export async function waitForKaspaRpcReady(options?: RpcReadinessWaitOptions): P
   let lastResult: RpcHealthResult | undefined;
 
   while (Date.now() - start < maxWaitMs) {
-    lastResult = await checkKaspaRpcHealth({ 
-      url: options?.url, 
-      timeoutMs: options?.timeoutMs 
+    lastResult = await checkKaspaRpcHealth({
+      url: options?.url,
+      timeoutMs: options?.timeoutMs
     });
 
     if (lastResult.ready) {
       return lastResult;
     }
 
-    await new Promise(resolve => setTimeout(resolve, currentIntervalMs));
+    await new Promise((resolve) => setTimeout(resolve, currentIntervalMs));
     currentIntervalMs = Math.min(currentIntervalMs * 2, maxIntervalMs);
   }
 
-  return lastResult || {
-    endpoint: options?.url || "ws://127.0.0.1:18210",
-    protocol: (options?.url || "ws://127.0.0.1:18210").startsWith("ws") ? "WebSocket" : "JSON-RPC",
-    status: "unreachable",
-    ready: false,
-    checkedAt: new Date().toISOString(),
-    error: "Timed out waiting for RPC to be ready"
-  };
+  return (
+    lastResult || {
+      endpoint: options?.url || "ws://127.0.0.1:18210",
+      protocol: (options?.url || "ws://127.0.0.1:18210").startsWith("ws")
+        ? "WebSocket"
+        : "JSON-RPC",
+      status: "unreachable",
+      ready: false,
+      checkedAt: new Date().toISOString(),
+      error: "Timed out waiting for RPC to be ready"
+    }
+  );
 }

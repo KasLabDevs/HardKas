@@ -12,30 +12,35 @@ export function registerTestCommands(program: Command) {
     .option("--mass-report", "Show mass/fee report after test run", false)
     .option("--mass-snapshot <label>", "Save mass snapshot for regression detection")
     .option("--mass-compare <label>", "Compare against saved mass snapshot")
-    .action(async (files: string[], options: { 
-      network: string; 
-      watch: boolean; 
-      json: boolean; 
-      reporter: string;
-      massReport: boolean;
-      massSnapshot?: string;
-      massCompare?: string;
-    }) => {
-      try {
-        await runTest({
-          files,
-          workspaceRoot: process.cwd(),
-          network: options.network,
-          watch: options.watch,
-          json: options.json,
-          reporter: options.reporter,
-          massReport: options.massReport,
-          ...(options.massSnapshot ? { massSnapshot: options.massSnapshot } : {}),
-          ...(options.massCompare ? { massCompare: options.massCompare } : {})
-        });
-      } catch (e) {
-        handleError(e, "Test execution failed");
-        process.exit(1);
+    .action(
+      async (
+        files: string[],
+        options: {
+          network: string;
+          watch: boolean;
+          json: boolean;
+          reporter: string;
+          massReport: boolean;
+          massSnapshot?: string;
+          massCompare?: string;
+        }
+      ) => {
+        try {
+          await runTest({
+            files,
+            workspaceRoot: process.cwd(),
+            network: options.network,
+            watch: options.watch,
+            json: options.json,
+            reporter: options.reporter,
+            massReport: options.massReport,
+            ...(options.massSnapshot ? { massSnapshot: options.massSnapshot } : {}),
+            ...(options.massCompare ? { massCompare: options.massCompare } : {})
+          });
+        } catch (e) {
+          handleError(e, "Test execution failed");
+          process.exit(1);
+        }
       }
-    });
+    );
 }

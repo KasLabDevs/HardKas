@@ -1,14 +1,14 @@
 import fs from "node:fs/promises";
 import path from "node:path";
-import { 
-  resolveL2Profile, 
-  EvmJsonRpcClient, 
+import {
+  resolveL2Profile,
+  EvmJsonRpcClient,
   toHexQuantity,
   EvmCallRequest,
   encodeConstructorArgs
 } from "@hardkas/l2";
 import { loadHardkasConfig } from "@hardkas/config";
-import { 
+import {
   IgraTxPlanArtifact,
   assertValidIgraTxPlanArtifact,
   writeArtifact,
@@ -33,7 +33,9 @@ export interface L2ContractDeployPlanOptions {
   json?: boolean;
 }
 
-export async function runL2ContractDeployPlan(options: L2ContractDeployPlanOptions): Promise<void> {
+export async function runL2ContractDeployPlan(
+  options: L2ContractDeployPlanOptions
+): Promise<void> {
   const loaded = await loadHardkasConfig();
   const profile = resolveL2Profile({
     name: options.network,
@@ -45,7 +47,9 @@ export async function runL2ContractDeployPlan(options: L2ContractDeployPlanOptio
 
   const rpcUrl = profile.rpcUrl;
   if (!rpcUrl) {
-    throw new Error(`No L2 RPC URL configured for network '${profile.name}'. Pass --url <rpcUrl>.`);
+    throw new Error(
+      `No L2 RPC URL configured for network '${profile.name}'. Pass --url <rpcUrl>.`
+    );
   }
 
   const client = new EvmJsonRpcClient({ url: rpcUrl });
@@ -66,7 +70,7 @@ export async function runL2ContractDeployPlan(options: L2ContractDeployPlanOptio
 
   // 3. Fetch Network Info
   const chainId = await client.getChainId();
-  
+
   let nonce = options.nonce;
   if (!nonce) {
     const n = await client.getTransactionCount(options.from, "latest");
@@ -135,14 +139,20 @@ export async function runL2ContractDeployPlan(options: L2ContractDeployPlanOptio
 
   // 6. Output
   if (options.json) {
-    console.log(JSON.stringify({
-      networkId: profile.name,
-      l2Network: profile.name,
-      chainId: profile.chainId,
-      planId,
-      artifactPath,
-      artifact
-    }, null, 2));
+    console.log(
+      JSON.stringify(
+        {
+          networkId: profile.name,
+          l2Network: profile.name,
+          chainId: profile.chainId,
+          planId,
+          artifactPath,
+          artifact
+        },
+        null,
+        2
+      )
+    );
     return;
   }
 
@@ -169,17 +179,23 @@ export async function runL2ContractDeployPlan(options: L2ContractDeployPlanOptio
   console.log(`    hardkas l2 tx sign ${artifactPath} --account <account>`);
   console.log("");
   console.log("Warning:");
-  console.log("  This is an Igra L2 EVM contract deployment plan, not a Kaspa L1 transaction.");
+  console.log(
+    "  This is an Igra L2 EVM contract deployment plan, not a Kaspa L1 transaction."
+  );
 }
 
 function assertEvmAddress(address: string, field: string): void {
   if (!/^0x[a-fA-F0-9]{40}$/.test(address)) {
-    throw new Error(`Invalid EVM ${field}: must be a 0x-prefixed 40-character hex string.`);
+    throw new Error(
+      `Invalid EVM ${field}: must be a 0x-prefixed 40-character hex string.`
+    );
   }
 }
 
 function assertHexData(data: string, field: string): void {
   if (!/^0x([a-fA-F0-9]{2})*$/.test(data)) {
-    throw new Error(`Invalid hex ${field}: must be a 0x-prefixed even-length hex string.`);
+    throw new Error(
+      `Invalid hex ${field}: must be a 0x-prefixed even-length hex string.`
+    );
   }
 }

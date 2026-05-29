@@ -1,7 +1,13 @@
 import { describe, it, expect } from "vitest";
 import fs from "node:fs";
 import path from "node:path";
-import { WorkflowSchema, TxReceiptSchema, TxPlanSchema, SignedTxSchema, BaseArtifactSchema } from "@hardkas/artifacts";
+import {
+  WorkflowSchema,
+  TxReceiptSchema,
+  TxPlanSchema,
+  SignedTxSchema,
+  BaseArtifactSchema
+} from "@hardkas/artifacts";
 
 const goldenDir = path.resolve(__dirname, "../src/fixtures/golden");
 
@@ -10,7 +16,6 @@ function readFixture(name: string) {
 }
 
 describe("Golden Corpus Validation", () => {
-  
   it("validates local-workflow-basic.json against WorkflowSchema", () => {
     const data = readFixture("local-workflow-basic.json");
     expect(() => WorkflowSchema.parse(data)).not.toThrow();
@@ -78,7 +83,7 @@ describe("Golden Corpus Validation", () => {
     const passed = readFixture("replay-passed.json");
     const diverged = readFixture("replay-diverged.json");
     const unsupported = readFixture("replay-unsupported.json");
-    
+
     // We added schemaVersion to replay in the scripts but let's check it's present
     // wait, we didn't add it to passed/diverged in generate-golden.ts? Oh, we did for passed/diverged in previous sprint if we did.
     // Let's check them.
@@ -93,5 +98,4 @@ describe("Golden Corpus Validation", () => {
     expect(largeValid.rawContent).toContain("large-event");
     expect(largeValid.rawContent.length).toBeGreaterThan(70000);
   });
-
 });

@@ -1,27 +1,37 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { runL2TxSend, runL2TxReceipt, runL2TxReceipts, runL2TxStatus } from "../src/runners/l2-tx-runners.js";
+import {
+  runL2TxSend,
+  runL2TxReceipt,
+  runL2TxReceipts,
+  runL2TxStatus
+} from "../src/runners/l2-tx-runners.js";
 import { EvmJsonRpcClient } from "@hardkas/l2";
 import * as artifacts from "@hardkas/artifacts";
 
 vi.mock("@hardkas/l2", async (importOriginal) => {
-  const actual = await importOriginal() as any;
+  const actual = (await importOriginal()) as any;
   return {
     ...actual,
     EvmJsonRpcClient: vi.fn(),
     normalizeEvmTransactionReceipt: vi.fn((raw) => {
       if (!raw) return null;
-      return { 
+      return {
         txHash: raw.transactionHash || "0x" + "a".repeat(64),
-        status: raw.status === "0x1" ? "success" : (raw.status === "0x0" ? "reverted" : "unknown"), 
-        blockNumber: BigInt(raw.blockNumber || 0), 
-        gasUsed: BigInt(raw.gasUsed || 0) 
+        status:
+          raw.status === "0x1"
+            ? "success"
+            : raw.status === "0x0"
+              ? "reverted"
+              : "unknown",
+        blockNumber: BigInt(raw.blockNumber || 0),
+        gasUsed: BigInt(raw.gasUsed || 0)
       };
     })
   };
 });
 
 vi.mock("@hardkas/artifacts", async (importOriginal) => {
-  const actual = await importOriginal() as any;
+  const actual = (await importOriginal()) as any;
   return {
     ...actual,
     readArtifact: vi.fn(),
@@ -80,13 +90,21 @@ describe("Igra L2 Transaction Runners", () => {
   describe("runL2TxSend", () => {
     it("should fail without --yes", async () => {
       vi.spyOn(console, "log").mockImplementation(() => {});
-      const exitSpy = vi.spyOn(process, "exit").mockImplementation(() => { throw new Error("EXIT"); });
-      await expect(runL2TxSend({ signedPath: "signed.json", yes: false })).rejects.toThrow("EXIT");
+      const exitSpy = vi.spyOn(process, "exit").mockImplementation(() => {
+        throw new Error("EXIT");
+      });
+      await expect(
+        runL2TxSend({ signedPath: "signed.json", yes: false })
+      ).rejects.toThrow("EXIT");
     });
 
     it("should submit and write receipt on success", async () => {
       vi.spyOn(console, "log").mockImplementation(() => {});
-      await runL2TxSend({ signedPath: "signed.json", yes: true, url: "http://localhost:8545" });
+      await runL2TxSend({
+        signedPath: "signed.json",
+        yes: true,
+        url: "http://localhost:8545"
+      });
       expect(mockClient.sendRawTransaction).toHaveBeenCalledWith("0x1234");
       expect(artifacts.writeArtifact).toHaveBeenCalled();
     });
@@ -96,7 +114,9 @@ describe("Igra L2 Transaction Runners", () => {
     it("should show local receipt", async () => {
       const consoleSpy = vi.spyOn(console, "log").mockImplementation(() => {});
       await runL2TxReceipt({ txHash: mockHash });
-      expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining("Local:     found"));
+      expect(consoleSpy).toHaveBeenCalledWith(
+        expect.stringContaining("Local:     found")
+      );
     });
 
     it("should query remote status if URL provided", async () => {
@@ -107,7 +127,9 @@ describe("Igra L2 Transaction Runners", () => {
       });
       const consoleSpy = vi.spyOn(console, "log").mockImplementation(() => {});
       await runL2TxReceipt({ txHash: mockHash, url: "http://test" });
-      expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining("Status:    success"));
+      expect(consoleSpy).toHaveBeenCalledWith(
+        expect.stringContaining("Status:    success")
+      );
     });
   });
 
@@ -116,8 +138,12 @@ describe("Igra L2 Transaction Runners", () => {
       (artifacts.listIgraTxReceiptArtifacts as any).mockResolvedValue([mockReceipt]);
       const consoleSpy = vi.spyOn(console, "log").mockImplementation(() => {});
       await runL2TxReceipts({});
-      expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining("Igra L2 receipts"));
-      expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining(mockHash.substring(0, 10)));
+      expect(consoleSpy).toHaveBeenCalledWith(
+        expect.stringContaining("Igra L2 receipts")
+      );
+      expect(consoleSpy).toHaveBeenCalledWith(
+        expect.stringContaining(mockHash.substring(0, 10))
+      );
     });
   });
 
@@ -130,14 +156,18 @@ describe("Igra L2 Transaction Runners", () => {
       });
       const consoleSpy = vi.spyOn(console, "log").mockImplementation(() => {});
       await runL2TxStatus({ txHash: mockHash, url: "http://test" });
-      expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining("Status:    success"));
+      expect(consoleSpy).toHaveBeenCalledWith(
+        expect.stringContaining("Status:    success")
+      );
     });
 
     it("should return pending for missing receipt", async () => {
       mockClient.getTransactionReceipt.mockResolvedValue(null);
       const consoleSpy = vi.spyOn(console, "log").mockImplementation(() => {});
       await runL2TxStatus({ txHash: mockHash, url: "http://test" });
-      expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining("Status:    pending"));
+      expect(consoleSpy).toHaveBeenCalledWith(
+        expect.stringContaining("Status:    pending")
+      );
     });
   });
 });

@@ -13,7 +13,7 @@ vi.mock("@hardkas/sdk", () => {
           plan: vi.fn().mockResolvedValue({ id: "plan-123" }),
           sign: vi.fn().mockResolvedValue({ id: "signed-123" }),
           simulate: vi.fn().mockResolvedValue({ receipt: { txId: "tx-123" } }),
-          send: vi.fn().mockResolvedValue({ receipt: { txId: "tx-123" } }),
+          send: vi.fn().mockResolvedValue({ receipt: { txId: "tx-123" } })
         },
         artifacts: {
           list: vi.fn().mockResolvedValue([])
@@ -77,7 +77,12 @@ describe("Dev-Server dApp Endpoints Envelope", () => {
     const req = new Request("http://localhost/api/tx/send", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ from: "alice", to: "bob", amountSompi: "100", allowDevAutoSign: true })
+      body: JSON.stringify({
+        from: "alice",
+        to: "bob",
+        amountSompi: "100",
+        allowDevAutoSign: true
+      })
     });
     const res = await app.request(req);
     const json = await res.json();

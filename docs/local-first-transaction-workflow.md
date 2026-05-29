@@ -4,7 +4,7 @@ HardKAS operates on a strict **local-first, deterministic-first** philosophy. Th
 
 ## Architecture
 
-1. **Artifacts are Canonical:** 
+1. **Artifacts are Canonical:**
    The Dev-Server and SQLite databases are merely projections of the immutable `.json` artifacts stored in `.hardkas/artifacts/`.
 2. **Localnet != Mainnet:**
    Transactions executed on `simulated` networks execute deterministically in a local runner. A localnet `tx.send` execution does **not** imply finality on Kaspa Mainnet.
@@ -28,7 +28,7 @@ scriptMetadata?: {
 ```
 
 > [!IMPORTANT]
-> These fields are **metadata only**. 
+> These fields are **metadata only**.
 > Do not interpret `scriptCapabilities` as execution guarantees unless running an experimental Kaspa Node fork that supports them. The metadata explicitly includes `consensusImpact` to warn consumers.
 
 ## The Local Dev Loop

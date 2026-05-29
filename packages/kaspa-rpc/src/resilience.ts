@@ -1,15 +1,8 @@
 import { KaspaNodeInfo } from "./index.js";
 
-export type RpcHealthState =
-  | "healthy"
-  | "degraded"
-  | "stale"
-  | "unreachable";
+export type RpcHealthState = "healthy" | "degraded" | "stale" | "unreachable";
 
-export type RpcConfidence =
-  | "high"
-  | "medium"
-  | "low";
+export type RpcConfidence = "high" | "medium" | "low";
 
 export interface RpcTrace {
   endpoint: string;
@@ -42,7 +35,12 @@ export function calculateConfidence(metrics: {
   let score = 100;
 
   if (!metrics.reachable) {
-    return { state: "unreachable", confidence: "low", score: 0, issues: ["Endpoint is unreachable"] };
+    return {
+      state: "unreachable",
+      confidence: "low",
+      score: 0,
+      issues: ["Endpoint is unreachable"]
+    };
   }
 
   if (metrics.circuitOpen) {
@@ -77,11 +75,11 @@ export function calculateConfidence(metrics: {
 
   // Final Classification
   score = Math.max(0, Math.min(100, score));
-  
+
   let state: RpcHealthState = "healthy";
   if (metrics.stale) state = "stale";
   else if (score < 50) state = "degraded";
-  else if (score < 90) state = "degraded"; 
+  else if (score < 90) state = "degraded";
 
   let confidence: RpcConfidence = "high";
   if (score < 40) confidence = "low";
@@ -95,7 +93,7 @@ export function calculateConfidence(metrics: {
  */
 export function classifyRpcError(error: any): { retriable: boolean; category: string } {
   const msg = (error.message || String(error)).toLowerCase();
-  
+
   // Permanent / Deterministic
   const permanentMarkers = [
     "invalid address",
@@ -106,8 +104,8 @@ export function classifyRpcError(error: any): { retriable: boolean; category: st
     "invalid transaction",
     "schema validation"
   ];
-  
-  if (permanentMarkers.some(m => msg.includes(m))) {
+
+  if (permanentMarkers.some((m) => msg.includes(m))) {
     return { retriable: false, category: "validation" };
   }
 
@@ -124,7 +122,7 @@ export function classifyRpcError(error: any): { retriable: boolean; category: st
     "circuit open"
   ];
 
-  if (transientMarkers.some(m => msg.includes(m))) {
+  if (transientMarkers.some((m) => msg.includes(m))) {
     return { retriable: true, category: "network" };
   }
 

@@ -113,12 +113,15 @@ export function getAllTortureBuckets(): TortureBucket[] {
 export class TortureInvariantError extends Error {
   public code: string;
   public severity: "info" | "warning" | "critical" | "catastrophic";
-  
-  constructor(message: string, code: string, severity: "info" | "warning" | "critical" | "catastrophic" = "critical") {
+
+  constructor(
+    message: string,
+    code: string,
+    severity: "info" | "warning" | "critical" | "catastrophic" = "critical"
+  ) {
     super(message);
     this.name = "TortureInvariantError";
     this.code = code;
     this.severity = severity;
   }
 }
-

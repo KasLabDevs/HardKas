@@ -4,7 +4,6 @@ import * as fc from "fast-check";
 import { canonicalStringify, calculateContentHash } from "../src/canonical.js";
 
 describe("Artifact Property Tests (fast-check)", () => {
-  
   it("should be deterministic: same object always produces same canonical string", () => {
     fc.assert(
       fc.property(fc.string(), (str) => {
@@ -17,18 +16,24 @@ describe("Artifact Property Tests (fast-check)", () => {
 
   it("should be order-independent: key order in source doesn't affect output", () => {
     fc.assert(
-      fc.property(fc.dictionary(fc.string().filter(k => k !== "__proto__"), fc.anything()), (dict) => {
-        const keys = Object.keys(dict);
-        if (keys.length < 2) return;
+      fc.property(
+        fc.dictionary(
+          fc.string().filter((k) => k !== "__proto__"),
+          fc.anything()
+        ),
+        (dict) => {
+          const keys = Object.keys(dict);
+          if (keys.length < 2) return;
 
-        // Create a copy with reversed keys
-        const reversedDict: any = {};
-        for (const key of [...keys].reverse()) {
-          reversedDict[key] = dict[key];
+          // Create a copy with reversed keys
+          const reversedDict: any = {};
+          for (const key of [...keys].reverse()) {
+            reversedDict[key] = dict[key];
+          }
+
+          expect(canonicalStringify(dict)).toBe(canonicalStringify(reversedDict));
         }
-
-        expect(canonicalStringify(dict)).toBe(canonicalStringify(reversedDict));
-      })
+      )
     );
   });
 
@@ -75,11 +80,11 @@ describe("Artifact Property Tests (fast-check)", () => {
         }),
         (base) => {
           const hash1 = calculateContentHash(base);
-          
+
           // Mutate one field
           const mutated = { ...base, amountSompi: base.amountSompi + "1" };
           const hash2 = calculateContentHash(mutated);
-          
+
           expect(hash1).not.toBe(hash2);
         }
       )
@@ -96,14 +101,14 @@ describe("Artifact Property Tests (fast-check)", () => {
         }),
         (base) => {
           const hash1 = calculateContentHash(base);
-          
-          const withIgnored = { 
-            ...base, 
+
+          const withIgnored = {
+            ...base,
             contentHash: "something-else",
             artifactId: "another-id"
           };
           const hash2 = calculateContentHash(withIgnored);
-          
+
           expect(hash1).toBe(hash2);
         }
       )

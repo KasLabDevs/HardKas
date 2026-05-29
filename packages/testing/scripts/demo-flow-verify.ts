@@ -11,7 +11,10 @@ const ROOT_DIR = path.resolve(__dirname, "../../..");
 async function runDemoFlow() {
   console.log("🔥 INITIALIZING HARDKAS DEMO FLOW VERIFIER 🔥");
 
-  const sandboxTmp = path.join(ROOT_DIR, `.sandbox-demo-verify-${randomUUID().slice(0, 8)}`);
+  const sandboxTmp = path.join(
+    ROOT_DIR,
+    `.sandbox-demo-verify-${randomUUID().slice(0, 8)}`
+  );
   const cliPath = path.join(ROOT_DIR, "packages/cli/dist/index.js");
 
   try {
@@ -20,10 +23,17 @@ async function runDemoFlow() {
     await fs.writeFile(path.join(sandboxTmp, ".hardkas-sandbox-target"), "DO NOT REMOVE");
 
     console.log("\n🚀 Running transfer recipe...");
-    await execa("node", [cliPath, "sandbox", "--with-node", "--recipe", "transfer"], { cwd: sandboxTmp, stdio: "inherit" });
+    await execa("node", [cliPath, "sandbox", "--with-node", "--recipe", "transfer"], {
+      cwd: sandboxTmp,
+      stdio: "inherit"
+    });
 
     console.log("\n🔍 Running hardkas dev last (discovery)...");
-    const lastResult = await execa("node", [cliPath, "dev", "last", "--workspace", sandboxTmp, "--json"], { cwd: sandboxTmp });
+    const lastResult = await execa(
+      "node",
+      [cliPath, "dev", "last", "--workspace", sandboxTmp, "--json"],
+      { cwd: sandboxTmp }
+    );
     const lastJson = JSON.parse(lastResult.stdout);
     if (!lastJson.id) {
       throw new Error("Could not discover latest artifact!");
@@ -31,13 +41,23 @@ async function runDemoFlow() {
     console.log(`✅ Discovered latest artifact: ${lastJson.id}`);
 
     console.log(`\n🕵️ Running hardkas why ${lastJson.id}...`);
-    await execa("node", [cliPath, "why", lastJson.id, "--workspace", sandboxTmp], { cwd: sandboxTmp, stdio: "inherit" });
+    await execa("node", [cliPath, "why", lastJson.id, "--workspace", sandboxTmp], {
+      cwd: sandboxTmp,
+      stdio: "inherit"
+    });
 
     console.log("\n⏪ Running hardkas dev last --replay...");
-    await execa("node", [cliPath, "dev", "last", "--replay", "--workspace", sandboxTmp], { cwd: sandboxTmp, stdio: "inherit" });
+    await execa("node", [cliPath, "dev", "last", "--replay", "--workspace", sandboxTmp], {
+      cwd: sandboxTmp,
+      stdio: "inherit"
+    });
 
     console.log("\n🔧 Running projection-rebuild recipe...");
-    await execa("node", [cliPath, "sandbox", "--with-node", "--recipe", "projection-rebuild"], { cwd: sandboxTmp, stdio: "inherit" });
+    await execa(
+      "node",
+      [cliPath, "sandbox", "--with-node", "--recipe", "projection-rebuild"],
+      { cwd: sandboxTmp, stdio: "inherit" }
+    );
 
     console.log("\n✨ DEMO FLOW VERIFIED SUCCESSFULLY. The Wow Moment is ready.");
   } catch (error: any) {

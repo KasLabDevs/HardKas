@@ -72,7 +72,9 @@ describe("DagQueryAdapter", () => {
   // ─── Conflicts ─────────────────────────────────────────────────────────
 
   it("conflicts — should list double-spend conflicts", async () => {
-    const result = await engine.execute(createQueryRequest({ domain: "dag", op: "conflicts" }));
+    const result = await engine.execute(
+      createQueryRequest({ domain: "dag", op: "conflicts" })
+    );
     expect(result.total).toBe(1);
     const conflict: any = result.items[0];
     expect(conflict.outpoint).toBe("utxo:abc:0");
@@ -81,7 +83,9 @@ describe("DagQueryAdapter", () => {
   });
 
   it("conflicts — with explain shows deterministic-light-model", async () => {
-    const result = await engine.execute(createQueryRequest({ domain: "dag", op: "conflicts", explain: "full" }));
+    const result = await engine.execute(
+      createQueryRequest({ domain: "dag", op: "conflicts", explain: "full" })
+    );
     expect(result.why).toBeDefined();
     expect(result.why![0]!.model).toBe("deterministic-light-model");
     // Verify NOT GHOSTDAG warning appears in answer
@@ -91,7 +95,9 @@ describe("DagQueryAdapter", () => {
   // ─── Displaced ─────────────────────────────────────────────────────────
 
   it("displaced — should list displaced transactions", async () => {
-    const result = await engine.execute(createQueryRequest({ domain: "dag", op: "displaced" }));
+    const result = await engine.execute(
+      createQueryRequest({ domain: "dag", op: "displaced" })
+    );
     expect(result.total).toBe(1);
     const d: any = result.items[0];
     expect(d.txId).toBe("tx-bob-1");
@@ -102,7 +108,9 @@ describe("DagQueryAdapter", () => {
   // ─── History ───────────────────────────────────────────────────────────
 
   it("history — should return lifecycle for accepted tx", async () => {
-    const result = await engine.execute(createQueryRequest({ domain: "dag", op: "history", params: { txId: "tx-alice-1" } }));
+    const result = await engine.execute(
+      createQueryRequest({ domain: "dag", op: "history", params: { txId: "tx-alice-1" } })
+    );
     expect(result.total).toBeGreaterThan(0);
     const entry: any = result.items[0];
     expect(entry.accepted).toBe(true);
@@ -112,14 +120,18 @@ describe("DagQueryAdapter", () => {
   });
 
   it("history — should return lifecycle for accepted tx", async () => {
-    const result = await engine.execute(createQueryRequest({ domain: "dag", op: "history", params: { txId: "tx-alice-1" } }));
+    const result = await engine.execute(
+      createQueryRequest({ domain: "dag", op: "history", params: { txId: "tx-alice-1" } })
+    );
     expect(result.total).toBeGreaterThan(0);
   });
 
   // ─── Sink Path ─────────────────────────────────────────────────────────
 
   it("sink-path — should return genesis-to-sink path", async () => {
-    const result = await engine.execute(createQueryRequest({ domain: "dag", op: "sink-path" }));
+    const result = await engine.execute(
+      createQueryRequest({ domain: "dag", op: "sink-path" })
+    );
     const sp: any = result.items[0];
     expect(sp.sink).toBe("block-2");
     expect(sp.depth).toBe(3);
@@ -130,7 +142,9 @@ describe("DagQueryAdapter", () => {
   // ─── Anomalies ─────────────────────────────────────────────────────────
 
   it("anomalies — should detect displaced-never-reaccepted", async () => {
-    const result = await engine.execute(createQueryRequest({ domain: "dag", op: "anomalies" }));
+    const result = await engine.execute(
+      createQueryRequest({ domain: "dag", op: "anomalies" })
+    );
     const anomalies = result.items as any[];
     const displaced = anomalies.find((a: any) => a.kind === "displaced-never-reaccepted");
     expect(displaced).toBeDefined();
@@ -138,7 +152,9 @@ describe("DagQueryAdapter", () => {
   });
 
   it("anomalies — should detect unreachable blocks", async () => {
-    const result = await engine.execute(createQueryRequest({ domain: "dag", op: "anomalies" }));
+    const result = await engine.execute(
+      createQueryRequest({ domain: "dag", op: "anomalies" })
+    );
     const anomalies = result.items as any[];
     const unreachable = anomalies.find((a: any) => a.kind === "unreachable-block");
     expect(unreachable).toBeDefined();
@@ -148,8 +164,12 @@ describe("DagQueryAdapter", () => {
   // ─── Determinism ───────────────────────────────────────────────────────
 
   it("determinism — same query produces same hash", async () => {
-    const r1 = await engine.execute(createQueryRequest({ domain: "dag", op: "conflicts" }));
-    const r2 = await engine.execute(createQueryRequest({ domain: "dag", op: "conflicts" }));
+    const r1 = await engine.execute(
+      createQueryRequest({ domain: "dag", op: "conflicts" })
+    );
+    const r2 = await engine.execute(
+      createQueryRequest({ domain: "dag", op: "conflicts" })
+    );
     expect(r1.queryHash).toBe(r2.queryHash);
   });
 
@@ -157,7 +177,7 @@ describe("DagQueryAdapter", () => {
 
   it("engine lists all 4 domains", () => {
     const caps = engine.listCapabilities();
-    const domains = caps.map(c => c.domain);
+    const domains = caps.map((c) => c.domain);
     expect(domains).toContain("artifacts");
     expect(domains).toContain("lineage");
     expect(domains).toContain("replay");

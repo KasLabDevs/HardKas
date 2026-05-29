@@ -9,7 +9,7 @@ export interface ReplayBadgeProps {
 export function ReplayBadge({ status, className = "" }: ReplayBadgeProps) {
   if (!status) {
     return (
-      <span 
+      <span
         title="Unverified replay. No local deterministic execution found."
         className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-xs font-semibold bg-white/5 text-zinc-400 border border-white/5 cursor-help ${className}`}
       >
@@ -23,7 +23,7 @@ export function ReplayBadge({ status, className = "" }: ReplayBadgeProps) {
 
   if (s === "PASS" || s === "SUCCESS" || s === "PASSED" || s === "VERIFIED") {
     return (
-      <div 
+      <div
         title="Local deterministic: ✅ | Consensus validated: ❌ (not implemented) | Network finality: ❌ (not checked)"
         className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-xs font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 cursor-help ${className}`}
       >
@@ -34,7 +34,7 @@ export function ReplayBadge({ status, className = "" }: ReplayBadgeProps) {
   }
 
   return (
-    <span 
+    <span
       title="Local replay failed. The transaction execution is not deterministic."
       className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-xs font-semibold bg-red-500/10 text-red-400 border border-red-500/20 cursor-help ${className}`}
     >

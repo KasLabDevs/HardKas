@@ -2,28 +2,31 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { runL2TxBuild, runL2TxSign } from "../src/runners/l2-tx-runners.js";
 import fs from "node:fs/promises";
 import { EvmJsonRpcClient, ViemIgraTxSigner, UnsupportedIgraTxSigner } from "@hardkas/l2";
-import { 
-  ARTIFACT_SCHEMAS, 
-  HARDKAS_VERSION 
-} from "@hardkas/artifacts";
+import { ARTIFACT_SCHEMAS, HARDKAS_VERSION } from "@hardkas/artifacts";
 
 vi.mock("node:fs/promises");
 vi.mock("@hardkas/l2", async (importOriginal) => {
-  const actual = await importOriginal() as any;
+  const actual = (await importOriginal()) as any;
   return {
     ...actual,
     EvmJsonRpcClient: vi.fn(),
     ViemIgraTxSigner: vi.fn().mockImplementation(() => ({
-      sign: vi.fn().mockRejectedValue(new Error("EVM signing dependency (viem) is not installed."))
+      sign: vi
+        .fn()
+        .mockRejectedValue(new Error("EVM signing dependency (viem) is not installed."))
     })),
     UnsupportedIgraTxSigner: vi.fn().mockImplementation(() => ({
-      sign: vi.fn().mockRejectedValue(new Error("Igra L2 transaction signing is not configured yet."))
+      sign: vi
+        .fn()
+        .mockRejectedValue(
+          new Error("Igra L2 transaction signing is not configured yet.")
+        )
     }))
   };
 });
 
 vi.mock("@hardkas/artifacts", async (importOriginal) => {
-  const actual = await importOriginal() as any;
+  const actual = (await importOriginal()) as any;
   return {
     ...actual,
     writeArtifact: vi.fn().mockResolvedValue(undefined),
@@ -33,13 +36,10 @@ vi.mock("@hardkas/artifacts", async (importOriginal) => {
   };
 });
 
-import { 
-  writeArtifact,
-  readArtifact
-} from "@hardkas/artifacts";
+import { writeArtifact, readArtifact } from "@hardkas/artifacts";
 
 vi.mock("@hardkas/accounts", async (importOriginal) => {
-  const actual = await importOriginal() as any;
+  const actual = (await importOriginal()) as any;
   return {
     ...actual,
     loadRealAccountStore: vi.fn().mockResolvedValue({ accounts: [] }),
@@ -67,7 +67,7 @@ describe("L2 Tx Build Runner", () => {
 
   it("should build a transaction plan artifact", async () => {
     const consoleSpy = vi.spyOn(console, "log").mockImplementation(() => {});
-    
+
     await runL2TxBuild({
       network: "igra",
       url: "http://localhost:8545",
@@ -81,19 +81,21 @@ describe("L2 Tx Build Runner", () => {
     expect(mockClient.getTransactionCount).toHaveBeenCalled();
     expect(mockClient.getGasPriceWei).toHaveBeenCalled();
     expect(mockClient.estimateGas).toHaveBeenCalled();
-    
+
     expect(fs.mkdir).toHaveBeenCalledWith("test-plans", expect.any(Object));
     expect(writeArtifact).toHaveBeenCalledWith(
       expect.stringContaining("test-plans"),
       expect.objectContaining({ schema: "hardkas.igraTxPlan.v1" })
     );
 
-    expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining("L2 transaction plan built"));
+    expect(consoleSpy).toHaveBeenCalledWith(
+      expect.stringContaining("L2 transaction plan built")
+    );
   });
 
   it("should use provided overrides instead of fetching", async () => {
     vi.spyOn(console, "log").mockImplementation(() => {});
-    
+
     await runL2TxBuild({
       network: "igra",
       url: "http://localhost:8545",
@@ -106,7 +108,7 @@ describe("L2 Tx Build Runner", () => {
     expect(mockClient.getTransactionCount).not.toHaveBeenCalled();
     expect(mockClient.getGasPriceWei).not.toHaveBeenCalled();
     expect(mockClient.estimateGas).not.toHaveBeenCalled();
-    
+
     expect(writeArtifact).toHaveBeenCalledWith(
       expect.any(String),
       expect.objectContaining({
@@ -166,19 +168,27 @@ describe("L2 Tx Sign Runner", () => {
       expect.stringContaining("signed"),
       expect.objectContaining({ schema: "hardkas.igraSignedTx.v1" })
     );
-    expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining("Igra L2 transaction signed"));
+    expect(consoleSpy).toHaveBeenCalledWith(
+      expect.stringContaining("Igra L2 transaction signed")
+    );
   });
 
   it("should report missing viem clearly", async () => {
     const consoleSpy = vi.spyOn(console, "log").mockImplementation(() => {});
-    const exitSpy = vi.spyOn(process, "exit").mockImplementation(() => { throw new Error("EXIT"); });
+    const exitSpy = vi.spyOn(process, "exit").mockImplementation(() => {
+      throw new Error("EXIT");
+    });
 
-    await expect(runL2TxSign({
-      planPath: "plan.json",
-      account: "alice"
-    })).rejects.toThrow("EXIT");
+    await expect(
+      runL2TxSign({
+        planPath: "plan.json",
+        account: "alice"
+      })
+    ).rejects.toThrow("EXIT");
 
-    expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining("Igra L2 signing is not available"));
+    expect(consoleSpy).toHaveBeenCalledWith(
+      expect.stringContaining("Igra L2 signing is not available")
+    );
     expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining("pnpm add viem"));
     expect(writeArtifact).not.toHaveBeenCalled();
   });
@@ -193,9 +203,11 @@ describe("L2 Tx Sign Runner", () => {
     };
     (readArtifact as any).mockResolvedValue(mismatchedPlan);
 
-    await expect(runL2TxSign({
-      planPath: "plan.json",
-      account: "alice"
-    })).rejects.toThrow("Account address mismatch");
+    await expect(
+      runL2TxSign({
+        planPath: "plan.json",
+        account: "alice"
+      })
+    ).rejects.toThrow("Account address mismatch");
   });
 });

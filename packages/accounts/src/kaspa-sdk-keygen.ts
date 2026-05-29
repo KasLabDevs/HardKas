@@ -1,7 +1,4 @@
-import { 
-  KaspaKeyGenerator, 
-  GeneratedKaspaDevAccount 
-} from "./real-keygen.js";
+import { KaspaKeyGenerator, GeneratedKaspaDevAccount } from "./real-keygen.js";
 
 export interface KaspaSdkKeyGeneratorOptions {
   readonly networkId?: "simnet" | "testnet-10" | "mainnet";
@@ -18,10 +15,12 @@ export class KaspaSdkKeyGenerator implements KaspaKeyGenerator {
 
   constructor(options?: KaspaSdkKeyGeneratorOptions) {
     this.networkId = options?.networkId || "simnet";
-    const rawLoader = options?.sdkLoader || (async () => {
-      // @ts-ignore
-      return await import("kaspa");
-    });
+    const rawLoader =
+      options?.sdkLoader ||
+      (async () => {
+        // @ts-ignore
+        return await import("kaspa");
+      });
 
     this.sdkLoader = async () => {
       try {
@@ -29,8 +28,8 @@ export class KaspaSdkKeyGenerator implements KaspaKeyGenerator {
       } catch (e) {
         throw new Error(
           "Kaspa cryptography adapter missing. Real account generation requires WASM execution.\n" +
-          "Run: npm install @kaspa/wallet-wasm\n" +
-          "Use 'hardkas accounts real import' to add accounts manually for now."
+            "Run: npm install @kaspa/wallet-wasm\n" +
+            "Use 'hardkas accounts real import' to add accounts manually for now."
         );
       }
     };
@@ -56,10 +55,14 @@ export class KaspaSdkKeyGenerator implements KaspaKeyGenerator {
           privateKey: privateKeyStr
         };
       }
-      
-      throw new Error("Loaded Kaspa SDK does not expose expected PrivateKey constructor.");
+
+      throw new Error(
+        "Loaded Kaspa SDK does not expose expected PrivateKey constructor."
+      );
     } catch (e) {
-      throw new Error(`Failed to generate account using SDK: ${e instanceof Error ? e.message : String(e)}`);
+      throw new Error(
+        `Failed to generate account using SDK: ${e instanceof Error ? e.message : String(e)}`
+      );
     }
   }
 }

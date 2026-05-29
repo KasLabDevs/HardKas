@@ -1,5 +1,9 @@
 import { readTxPlanArtifact, verifyArtifactIntegrity } from "@hardkas/artifacts";
-import { verifyTxPlanSemantics, SemanticVerificationIssue, TxPlan } from "@hardkas/tx-builder";
+import {
+  verifyTxPlanSemantics,
+  SemanticVerificationIssue,
+  TxPlan
+} from "@hardkas/tx-builder";
 import { UI } from "../ui.js";
 import { formatSompi } from "@hardkas/core";
 import path from "node:path";
@@ -15,17 +19,17 @@ export async function runTxVerify(options: TxVerifyOptions) {
   const { Hardkas } = await import("@hardkas/sdk");
   const sdk = await Hardkas.open({ cwd: options.workspaceRoot });
   const absolutePath = sdk.workspace.resolvePath(options.path);
-  
+
   UI.header(`Transaction Verification: ${path.basename(options.path)}`);
 
   try {
     const artifact = await readTxPlanArtifact(absolutePath);
-    
+
     // 1. Integrity Check (Hardening)
     const integrityResult = await verifyArtifactIntegrity(absolutePath);
     if (!integrityResult.ok) {
       UI.error("INTEGRITY VERIFICATION FAILED");
-      integrityResult.issues.forEach(issue => {
+      integrityResult.issues.forEach((issue) => {
         console.log(`  [!] [${issue.code}] ${issue.message}`);
       });
       process.exitCode = 1;
@@ -34,7 +38,7 @@ export async function runTxVerify(options: TxVerifyOptions) {
 
     // 2. Perform semantic verification
     const artifactRecord = artifact as Record<string, unknown>;
-    
+
     let result;
     if (artifact.mode === "simulated") {
       result = {
@@ -47,7 +51,12 @@ export async function runTxVerify(options: TxVerifyOptions) {
         issues: []
       };
     } else {
-      if (!artifactRecord["inputs"] || !Array.isArray(artifactRecord["inputs"]) || !artifactRecord["outputs"] || !Array.isArray(artifactRecord["outputs"])) {
+      if (
+        !artifactRecord["inputs"] ||
+        !Array.isArray(artifactRecord["inputs"]) ||
+        !artifactRecord["outputs"] ||
+        !Array.isArray(artifactRecord["outputs"])
+      ) {
         throw new Error("Invalid artifact: missing or invalid inputs/outputs arrays");
       }
       result = verifyTxPlanSemantics(artifact as unknown as TxPlan);
@@ -63,7 +72,7 @@ export async function runTxVerify(options: TxVerifyOptions) {
     console.log(`Network:      ${artifact.networkId}`);
     console.log(`Mode:         ${artifact.mode}`);
     console.log("");
-    
+
     console.log("Economic Audit:");
     console.log(`  Inputs:     ${formatSompi(result.inputTotalSompi)}`);
     console.log(`  Outputs:    ${formatSompi(result.outputTotalSompi)}`);
@@ -74,7 +83,7 @@ export async function runTxVerify(options: TxVerifyOptions) {
 
     if (result.issues.length > 0) {
       console.log("Issues Found:");
-      result.issues.forEach(issue => {
+      result.issues.forEach((issue) => {
         const prefix = getSeverityPrefix(issue.severity);
         console.log(`  ${prefix} [${issue.code}] ${issue.message}`);
         if (issue.path) console.log(`      Path: ${issue.path}`);
@@ -90,9 +99,7 @@ export async function runTxVerify(options: TxVerifyOptions) {
       ]);
     } else {
       UI.error("SEMANTIC VERIFICATION FAILED");
-      UI.printNextSteps([
-        `hardkas why ${artifact.planId}`
-      ]);
+      UI.printNextSteps([`hardkas why ${artifact.planId}`]);
       process.exitCode = 1;
     }
 
@@ -105,9 +112,13 @@ export async function runTxVerify(options: TxVerifyOptions) {
 
 function getSeverityPrefix(severity: string): string {
   switch (severity) {
-    case "critical": return "[!!!]";
-    case "error":    return "[!]  ";
-    case "warning":  return "[?]  ";
-    default:         return "[i]  ";
+    case "critical":
+      return "[!!!]";
+    case "error":
+      return "[!]  ";
+    case "warning":
+      return "[?]  ";
+    default:
+      return "[i]  ";
   }
 }

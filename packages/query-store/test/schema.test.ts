@@ -29,8 +29,10 @@ describe("Query Store Schema Integrity", () => {
     store.connect({ autoMigrate: true });
     const db = store.getDatabase();
 
-    const tables = db.prepare("SELECT name FROM sqlite_master WHERE type='table'").all() as { name: string }[];
-    const tableNames = tables.map(t => t.name);
+    const tables = db
+      .prepare("SELECT name FROM sqlite_master WHERE type='table'")
+      .all() as { name: string }[];
+    const tableNames = tables.map((t) => t.name);
 
     expect(tableNames).toContain("artifacts");
     expect(tableNames).toContain("lineage_edges");
@@ -49,8 +51,10 @@ describe("Query Store Schema Integrity", () => {
     store.connect({ autoMigrate: true });
     const db = store.getDatabase();
 
-    const indexes = db.prepare("SELECT name FROM sqlite_master WHERE type='index'").all() as { name: string }[];
-    const indexNames = indexes.map(i => i.name);
+    const indexes = db
+      .prepare("SELECT name FROM sqlite_master WHERE type='index'")
+      .all() as { name: string }[];
+    const indexNames = indexes.map((i) => i.name);
 
     expect(indexNames).toContain("idx_artifacts_content_hash");
     expect(indexNames).toContain("idx_events_workflow_id");

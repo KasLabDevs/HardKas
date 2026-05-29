@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
-import { 
-  createInitialLocalnetState, 
+import {
+  createInitialLocalnetState,
   createLocalnetSnapshot,
   verifySnapshot,
   restoreLocalnetSnapshot,
@@ -58,7 +58,7 @@ describe("Snapshot Hashing", () => {
     const snapshot = JSON.parse(JSON.stringify(stateWithSnapshot.snapshots![0]!));
 
     snapshot.daaScore = "99999"; // Tamper
-    
+
     const result = verifySnapshot(snapshot);
     expect(result.ok).toBe(false);
     expect(result.errors[0]).toContain("Content hash mismatch");
@@ -79,20 +79,27 @@ describe("Snapshot Hashing", () => {
 
     const result = verifySnapshot(snapshot);
     expect(result.ok).toBe(false);
-    expect(result.errors.some((e: string) => e.includes("Accounts hash mismatch") || e.includes("State hash mismatch"))).toBe(true);
+    expect(
+      result.errors.some(
+        (e: string) =>
+          e.includes("Accounts hash mismatch") || e.includes("State hash mismatch")
+      )
+    ).toBe(true);
   });
 
   it("should fail restoration of corrupted snapshot without mutating state", () => {
     let state = createInitialLocalnetState({ accounts: 1, initialBalanceSompi: 100n });
     state = createLocalnetSnapshot(state, "original");
-    
+
     // Corrupt it
     state.snapshots![0]!.daaScore = "999";
-    
+
     const preHash = calculateStateHash(state);
-    
-    expect(() => restoreLocalnetSnapshot(state, "original")).toThrow(/Corrupted snapshot/);
-    
+
+    expect(() => restoreLocalnetSnapshot(state, "original")).toThrow(
+      /Corrupted snapshot/
+    );
+
     expect(calculateStateHash(state)).toBe(preHash); // State unchanged
   });
 });

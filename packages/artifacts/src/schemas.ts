@@ -1,10 +1,17 @@
 import { z } from "zod";
-import { kaspaNetworkIdSchema, executionModeSchema, artifactTypeSchema } from "@hardkas/core";
+import {
+  kaspaNetworkIdSchema,
+  executionModeSchema,
+  artifactTypeSchema
+} from "@hardkas/core";
 
 export const ARTIFACT_VERSION = "1.0.0-alpha";
 
-export type DraftArtifact<TFinal, THashFields extends keyof TFinal> = 
-  Omit<TFinal, THashFields> & Partial<Pick<TFinal, THashFields>>;
+export type DraftArtifact<TFinal, THashFields extends keyof TFinal> = Omit<
+  TFinal,
+  THashFields
+> &
+  Partial<Pick<TFinal, THashFields>>;
 
 export const ArtifactLineageSchema = z.object({
   artifactId: z.string(),
@@ -66,21 +73,27 @@ export const TxPlanSchema = BaseArtifactSchema.extend({
   amountSompi: z.string(),
   estimatedFeeSompi: z.string(),
   estimatedMass: z.string(),
-  inputs: z.array(z.object({
-    outpoint: z.object({
-      transactionId: z.string(),
-      index: z.number()
-    }),
-    amountSompi: z.string()
-  })),
-  outputs: z.array(z.object({
-    address: z.string(),
-    amountSompi: z.string()
-  })),
-  change: z.object({
-    address: z.string(),
-    amountSompi: z.string()
-  }).optional(),
+  inputs: z.array(
+    z.object({
+      outpoint: z.object({
+        transactionId: z.string(),
+        index: z.number()
+      }),
+      amountSompi: z.string()
+    })
+  ),
+  outputs: z.array(
+    z.object({
+      address: z.string(),
+      amountSompi: z.string()
+    })
+  ),
+  change: z
+    .object({
+      address: z.string(),
+      amountSompi: z.string()
+    })
+    .optional(),
   rpcUrl: z.string().optional()
 });
 
@@ -91,11 +104,15 @@ export const DagContextSchema = z.object({
   branchId: z.string().optional(),
   acceptedTxIds: z.array(z.string()).optional(),
   displacedTxIds: z.array(z.string()).optional(),
-  conflictSet: z.array(z.object({
-    outpoint: z.string(),
-    winnerTxId: z.string(),
-    loserTxIds: z.array(z.string())
-  })).optional(),
+  conflictSet: z
+    .array(
+      z.object({
+        outpoint: z.string(),
+        winnerTxId: z.string(),
+        loserTxIds: z.array(z.string())
+      })
+    )
+    .optional(),
   nonSelectedContext: z.boolean().optional()
 });
 
@@ -114,10 +131,12 @@ export const SnapshotSchema = BaseArtifactSchema.extend({
   accountsHash: z.string().optional(),
   utxoSetHash: z.string().optional(),
   stateHash: z.string().optional(),
-  accounts: z.array(z.object({
-    name: z.string(),
-    address: z.string()
-  })),
+  accounts: z.array(
+    z.object({
+      name: z.string(),
+      address: z.string()
+    })
+  ),
   utxos: z.array(LocalnetUtxoSchemaV2)
 });
 
@@ -148,9 +167,19 @@ export const TxReceiptSchema = BaseArtifactSchema.extend({
   metadata: z.any().optional()
 });
 
+export const SignatureEntrySchema = z.object({
+  signer: z.string(),
+  signature: z.string()
+});
+
+export const SignatureMetadataEntrySchema = z.object({
+  signer: z.string(),
+  signedAt: z.string().datetime()
+});
+
 export const SignedTxSchema = BaseArtifactSchema.extend({
   schema: z.literal("hardkas.signedTx"),
-  status: z.literal("signed"),
+  status: z.enum(["partially_signed", "signed"]),
   signedId: z.string(),
   sourcePlanId: z.string(),
   networkId: kaspaNetworkIdSchema,
@@ -158,11 +187,22 @@ export const SignedTxSchema = BaseArtifactSchema.extend({
   from: AccountRefSchema,
   to: AccountRefSchema,
   amountSompi: z.string(),
-  signedTransaction: z.object({
-    format: z.string(),
-    payload: z.string()
-  }),
+  unsignedPayloadHash: z.string().optional(),
+  signedTransaction: z
+    .object({
+      format: z.string(),
+      payload: z.string()
+    })
+    .optional(),
   txId: z.string().optional(),
+  multisig: z
+    .object({
+      threshold: z.number(),
+      requiredSigners: z.array(z.string()),
+      signatures: z.array(SignatureEntrySchema)
+    })
+    .optional(),
+  signatureMetadata: z.array(SignatureMetadataEntrySchema).optional(),
   metadata: z.any().optional()
 });
 
@@ -171,12 +211,14 @@ export const TxTraceSchema = BaseArtifactSchema.extend({
   txId: z.string(),
   networkId: kaspaNetworkIdSchema,
   mode: executionModeSchema,
-  steps: z.array(z.object({
-    phase: z.string(),
-    status: z.string(),
-    timestamp: z.string().datetime(),
-    details: z.any().optional()
-  })),
+  steps: z.array(
+    z.object({
+      phase: z.string(),
+      status: z.string(),
+      timestamp: z.string().datetime(),
+      details: z.any().optional()
+    })
+  ),
   dagContext: DagContextSchema.optional()
 });
 
@@ -185,36 +227,46 @@ export const WorkflowSchema = BaseArtifactSchema.extend({
   workflowId: z.string(),
   status: z.enum(["pending", "running", "completed", "failed"]),
   inputs: z.record(z.any()).optional(),
-  steps: z.array(z.object({
-    type: z.string(),
-    status: z.enum(["pending", "success", "failed", "skipped"]),
-    startedAt: z.string().datetime().optional(),
-    completedAt: z.string().datetime().optional(),
-    producedArtifactId: z.string().optional(),
-    error: z.string().optional()
-  })),
+  steps: z.array(
+    z.object({
+      type: z.string(),
+      status: z.enum(["pending", "success", "failed", "skipped"]),
+      startedAt: z.string().datetime().optional(),
+      completedAt: z.string().datetime().optional(),
+      producedArtifactId: z.string().optional(),
+      error: z.string().optional()
+    })
+  ),
   parentArtifacts: z.array(z.string()).optional(),
   producedArtifacts: z.array(z.string()),
-  generationRange: z.object({
-    start: z.string().optional(),
-    end: z.string().optional()
-  }).optional(),
-  policy: z.object({
-    allowNetwork: z.boolean(),
-    allowMainnet: z.boolean(),
-    allowExternalWallet: z.boolean(),
-    requireDryRun: z.boolean()
-  }).optional(),
+  generationRange: z
+    .object({
+      start: z.string().optional(),
+      end: z.string().optional()
+    })
+    .optional(),
+  policy: z
+    .object({
+      allowNetwork: z.boolean(),
+      allowMainnet: z.boolean(),
+      allowExternalWallet: z.boolean(),
+      requireDryRun: z.boolean()
+    })
+    .optional(),
   generationId: z.string().optional(),
-  replayResult: z.object({
-    verified: z.boolean(),
-    stateHash: z.string().optional()
-  }).optional(),
-  errorEnvelope: z.object({
-    code: z.string(),
-    message: z.string(),
-    redacted: z.boolean()
-  }).optional()
+  replayResult: z
+    .object({
+      verified: z.boolean(),
+      stateHash: z.string().optional()
+    })
+    .optional(),
+  errorEnvelope: z
+    .object({
+      code: z.string(),
+      message: z.string(),
+      redacted: z.boolean()
+    })
+    .optional()
 });
 
 export type TxPlan = z.infer<typeof TxPlanSchema>;

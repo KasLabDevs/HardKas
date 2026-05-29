@@ -1,12 +1,9 @@
-import { 
-  Hardkas, 
-  formatSompi
-} from "@hardkas/sdk";
+import { Hardkas, formatSompi } from "@hardkas/sdk";
 
 /**
  * Example 06: RPC Node Health
- * 
- * Demonstrates real Kaspa RPC/node observability and diagnostics 
+ *
+ * Demonstrates real Kaspa RPC/node observability and diagnostics
  * using the HardKAS toolchain.
  */
 async function main() {
@@ -57,12 +54,14 @@ async function main() {
     console.log(`  Difficulty:   ${dag.difficulty.toFixed(2)}`);
     console.log(`  Pruning Pt:   ${dag.pruningPointHash.slice(0, 16)}...`);
     console.log(`  Sink Tip:     ${dag.sink.slice(0, 16)}...`);
-    
+
     if (dag.blockCount === 0n || dag.blockCount === 0) {
       console.log(`  [NOTE] This is a fresh genesis state (0 blocks).`);
     }
   } catch (error) {
-    console.error(`✗ Failed to fetch BlockDAG info: ${error instanceof Error ? error.message : String(error)}`);
+    console.error(
+      `✗ Failed to fetch BlockDAG info: ${error instanceof Error ? error.message : String(error)}`
+    );
   }
 
   // 4. UTXO/Account Observability (simulated address)
@@ -70,28 +69,32 @@ async function main() {
   try {
     const alice = await hardkas.accounts.resolve("alice");
     console.log(`Account: Alice (${alice.address})`);
-    
+
     const balance = await hardkas.accounts.getBalance("alice");
     console.log(`  Balance: ${balance.formatted}`);
-    
+
     const utxos = await hardkas.rpc.getUtxosByAddress(alice.address!);
     console.log(`  UTXO Count: ${utxos.length}`);
-    
+
     if (utxos.length > 0) {
       console.log(`\n  Recent UTXOs:`);
       utxos.slice(0, 3).forEach((u, i) => {
-        console.log(`    [${i}] ${u.outpoint.transactionId.slice(0, 8)}...:${u.outpoint.index} (${formatSompi(u.amountSompi)})`);
+        console.log(
+          `    [${i}] ${u.outpoint.transactionId.slice(0, 8)}...:${u.outpoint.index} (${formatSompi(u.amountSompi)})`
+        );
       });
     }
   } catch (error) {
-    console.error(`✗ Error inspecting account: ${error instanceof Error ? error.message : String(error)}`);
+    console.error(
+      `✗ Error inspecting account: ${error instanceof Error ? error.message : String(error)}`
+    );
   }
 
   console.log("\n# Diagnostics Completed");
   console.log("Node is healthy and responding to HardKAS queries.");
 }
 
-main().catch(err => {
+main().catch((err) => {
   console.error("\n✖ Example failed");
   console.error(err);
   process.exit(1);

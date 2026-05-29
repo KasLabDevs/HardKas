@@ -1,8 +1,8 @@
 import { describe, it, expect } from "vitest";
-import { 
-  listHardkasAccounts, 
-  resolveHardkasAccount, 
-  resolveHardkasAccountAddress, 
+import {
+  listHardkasAccounts,
+  resolveHardkasAccount,
+  resolveHardkasAccountAddress,
   describeAccount
 } from "../src";
 import { maskSecrets } from "@hardkas/core";
@@ -11,8 +11,8 @@ describe("accounts", () => {
   it("listHardkasAccounts should return deterministic accounts by default", () => {
     const accounts = listHardkasAccounts();
     expect(accounts.length).toBeGreaterThanOrEqual(3);
-    expect(accounts.some(a => a.name === "alice")).toBe(true);
-    expect(accounts.some(a => a.name === "bob")).toBe(true);
+    expect(accounts.some((a) => a.name === "alice")).toBe(true);
+    expect(accounts.some((a) => a.name === "bob")).toBe(true);
   });
 
   it("resolveHardkasAccount should resolve 'alice'", () => {
@@ -44,8 +44,9 @@ describe("accounts", () => {
   });
 
   it("resolveHardkasAccount should throw for unknown account", () => {
-    expect(() => resolveHardkasAccount({ nameOrAddress: "non-existent" }))
-      .toThrow(/Unknown HardKAS account 'non-existent'/);
+    expect(() => resolveHardkasAccount({ nameOrAddress: "non-existent" })).toThrow(
+      /Unknown HardKAS account 'non-existent'/
+    );
   });
 
   it("describeAccount should not leak secrets", () => {

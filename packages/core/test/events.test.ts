@@ -1,13 +1,9 @@
 import { describe, it, expect, vi } from "vitest";
-import { 
-  createEventEnvelope, 
-  validateEventEnvelope, 
-  coreEvents 
-} from "../src/events.js";
-import { 
-  asWorkflowId, 
-  asCorrelationId, 
-  asNetworkId, 
+import { createEventEnvelope, validateEventEnvelope, coreEvents } from "../src/events.js";
+import {
+  asWorkflowId,
+  asCorrelationId,
+  asNetworkId,
   asArtifactId,
   asEventId,
   asEventSequence

@@ -11,8 +11,8 @@ import fs from "node:fs";
 import fsp from "node:fs/promises";
 import path from "node:path";
 
-import { 
-  coreEvents, 
+import {
+  coreEvents,
   type EventEnvelope as ObsEvent,
   type EventKind as ObsEventKind,
   writeFileAtomic,
@@ -49,7 +49,10 @@ export function emitEvent(event: ObsEvent, options?: { cwd?: string }): void {
 /**
  * Async variant for contexts where fire-and-forget would lose data.
  */
-export async function emitEventAsync(event: ObsEvent, options?: { cwd?: string }): Promise<void> {
+export async function emitEventAsync(
+  event: ObsEvent,
+  options?: { cwd?: string }
+): Promise<void> {
   const filePath = getEventsPath(options?.cwd);
   const root = options?.cwd || process.cwd();
 
@@ -59,7 +62,6 @@ export async function emitEventAsync(event: ObsEvent, options?: { cwd?: string }
     // Observability must not break the workflow.
   }
 }
-
 
 let isLoggingStarted = false;
 
@@ -82,7 +84,7 @@ export function startEventLogging(options?: { cwd?: string }): void {
 
 export interface EventReadOptions {
   cwd?: string | undefined;
-  since?: string | undefined;     // ISO 8601 timestamp
+  since?: string | undefined; // ISO 8601 timestamp
   kind?: ObsEventKind | ObsEventKind[] | undefined;
   limit?: number | undefined;
 }
@@ -138,7 +140,10 @@ export async function readEvents(options?: EventReadOptions): Promise<ObsEvent[]
  * Prune events older than the given timestamp.
  * Rewrites the file (safe: reads all, filters, writes back).
  */
-export async function pruneEvents(olderThan: string, options?: { cwd?: string }): Promise<number> {
+export async function pruneEvents(
+  olderThan: string,
+  options?: { cwd?: string }
+): Promise<number> {
   const filePath = getEventsPath(options?.cwd);
 
   let content: string;
@@ -167,13 +172,18 @@ export async function pruneEvents(olderThan: string, options?: { cwd?: string })
   }
 
   const { withLock } = await import("@hardkas/core");
-  await withLock({
-    rootDir: options?.cwd || process.cwd(),
-    name: "events",
-    command: "hardkas query events prune"
-  }, async () => {
-    await writeFileAtomic(filePath, kept.join("\n") + (kept.length > 0 ? "\n" : ""), { encoding: "utf-8" });
-  });
+  await withLock(
+    {
+      rootDir: options?.cwd || process.cwd(),
+      name: "events",
+      command: "hardkas query events prune"
+    },
+    async () => {
+      await writeFileAtomic(filePath, kept.join("\n") + (kept.length > 0 ? "\n" : ""), {
+        encoding: "utf-8"
+      });
+    }
+  );
 
   return pruned;
 }

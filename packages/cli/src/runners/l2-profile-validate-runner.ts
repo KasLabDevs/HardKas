@@ -8,7 +8,9 @@ export interface L2ProfileValidateOptions {
   json?: boolean;
 }
 
-export async function runL2ProfileValidate(options: L2ProfileValidateOptions): Promise<void> {
+export async function runL2ProfileValidate(
+  options: L2ProfileValidateOptions
+): Promise<void> {
   const loaded = await loadHardkasConfig();
   const name = options.name || options.network;
 
@@ -29,9 +31,11 @@ export async function runL2ProfileValidate(options: L2ProfileValidateOptions): P
     try {
       const client = new EvmJsonRpcClient({ url: profile.rpcUrl });
       const remoteChainId = await client.getChainId();
-      
+
       if (profile.chainId !== undefined && profile.chainId !== remoteChainId) {
-        errors.push(`Chain ID mismatch: Profile configured for ${profile.chainId} but RPC returned ${remoteChainId}`);
+        errors.push(
+          `Chain ID mismatch: Profile configured for ${profile.chainId} but RPC returned ${remoteChainId}`
+        );
       } else {
         rpcVerified = true;
       }
@@ -52,7 +56,9 @@ export async function runL2ProfileValidate(options: L2ProfileValidateOptions): P
     if (rpcVerified) {
       console.log(`  RPC connectivity verified for chainId ${profile.chainId}`);
     } else if (profile.rpcUrl) {
-      console.log(`  Note: RPC URL '${profile.rpcUrl}' is configured but currently unreachable.`);
+      console.log(
+        `  Note: RPC URL '${profile.rpcUrl}' is configured but currently unreachable.`
+      );
     }
   } else {
     console.log(`✗ L2 profile '${profile.name}' is INVALID:`);

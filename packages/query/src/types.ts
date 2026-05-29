@@ -4,12 +4,12 @@
  * All query operations are deterministic pure functions over immutable artifact data.
  * Non-deterministic metadata (timestamps, execution time) is isolated in `annotations`.
  */
-import { 
-  ArtifactId, 
-  TxId, 
-  KaspaAddress, 
-  LineageId, 
-  NetworkId, 
+import {
+  ArtifactId,
+  TxId,
+  KaspaAddress,
+  LineageId,
+  NetworkId,
   ContentHash,
   DaaScore
 } from "@hardkas/core";
@@ -43,10 +43,19 @@ export type TxOp = "aggregate";
 // Filter Model
 // ---------------------------------------------------------------------------
 
-export type FilterOp = "eq" | "neq" | "gt" | "lt" | "gte" | "lte" | "in" | "contains" | "exists";
+export type FilterOp =
+  | "eq"
+  | "neq"
+  | "gt"
+  | "lt"
+  | "gte"
+  | "lte"
+  | "in"
+  | "contains"
+  | "exists";
 
 export interface QueryFilter {
-  readonly field: string;   // dot-path: "from.address", "lineage.sequence"
+  readonly field: string; // dot-path: "from.address", "lineage.sequence"
   readonly op: FilterOp;
   readonly value: string | number | boolean | readonly string[];
 }
@@ -128,7 +137,14 @@ export interface WhyBlock {
 }
 
 export interface EvidenceRef {
-  readonly type: "artifactId" | "contentHash" | "txId" | "traceId" | "eventId" | "blockId" | "filePath";
+  readonly type:
+    | "artifactId"
+    | "contentHash"
+    | "txId"
+    | "traceId"
+    | "eventId"
+    | "blockId"
+    | "filePath";
   readonly value: string;
 }
 
@@ -167,13 +183,15 @@ export interface ArtifactQueryItem {
   readonly to?: { readonly address: KaspaAddress } | undefined;
   readonly amountSompi?: string | undefined;
   readonly status?: string | undefined;
-  readonly lineage?: {
-    readonly artifactId: ArtifactId;
-    readonly parentArtifactId?: ArtifactId | undefined;
-    readonly rootArtifactId: ArtifactId;
-    readonly lineageId: LineageId;
-    readonly sequence?: number | undefined;
-  } | undefined;
+  readonly lineage?:
+    | {
+        readonly artifactId: ArtifactId;
+        readonly parentArtifactId?: ArtifactId | undefined;
+        readonly rootArtifactId: ArtifactId;
+        readonly lineageId: LineageId;
+        readonly sequence?: number | undefined;
+      }
+    | undefined;
 }
 
 // ---------------------------------------------------------------------------
@@ -188,14 +206,16 @@ export interface ArtifactInspectResult {
     readonly schemaValid: boolean;
     readonly errors: readonly string[];
   };
-  readonly economics?: {
-    readonly ok: boolean;
-    readonly massReported: string;
-    readonly massRecomputed: string;
-    readonly feeReported: string;
-    readonly feeRecomputed: string;
-    readonly feeRate: string;
-  } | undefined;
+  readonly economics?:
+    | {
+        readonly ok: boolean;
+        readonly massReported: string;
+        readonly massRecomputed: string;
+        readonly feeReported: string;
+        readonly feeRecomputed: string;
+        readonly feeRate: string;
+      }
+    | undefined;
   readonly staleness: {
     readonly ageHours: number;
     readonly stale: boolean;
@@ -240,6 +260,7 @@ export interface LineageNode {
   readonly networkId: NetworkId;
   readonly mode: string;
   readonly createdAt: string | null;
+  readonly workflowId?: string | undefined;
 }
 
 export interface LineageTransition {
@@ -349,7 +370,10 @@ export interface DagSinkPathNode {
 }
 
 export interface DagAnomaly {
-  readonly kind: "displaced-never-reaccepted" | "unreachable-block" | "invariant-violation";
+  readonly kind:
+    | "displaced-never-reaccepted"
+    | "unreachable-block"
+    | "invariant-violation";
   readonly description: string;
   readonly txId?: string | undefined;
   readonly blockId?: string | undefined;

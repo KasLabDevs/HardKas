@@ -14,6 +14,8 @@ export const ARTIFACT_SCHEMAS = {
   IGRA_TX_RECEIPT: "hardkas.igraTxReceipt.v1"
 } as const;
 
-export type HardkasArtifactSchema = typeof ARTIFACT_SCHEMAS[keyof typeof ARTIFACT_SCHEMAS] | string;
+export type HardkasArtifactSchema =
+  | (typeof ARTIFACT_SCHEMAS)[keyof typeof ARTIFACT_SCHEMAS]
+  | string;
 
 export type HardkasArtifactMode = "simulated" | "node" | "rpc" | "l2-rpc" | "real";

@@ -85,7 +85,7 @@ describe("Deterministic Workflow Identity", () => {
       const w2 = await sdkDev.workflow.run(getSpec(10));
 
       expect(w1.workflowId).toBe(w2.workflowId);
-      
+
       // Even if Date.now or Math.random were called for OTHER things (like timestamps),
       // they did not affect the workflowId.
     } finally {
@@ -109,7 +109,7 @@ describe("Deterministic Workflow Identity", () => {
 
     // It should not have a workflowId embedded by default
     expect(parsed.workflowId).toBeUndefined();
-    
+
     // Core events would emit wf_unknown_standalone but the file itself is pristine
     // Let's verify we don't accidentally write 'wf_unknown_standalone' inside the file
     expect(JSON.stringify(parsed)).not.toContain("wf_unknown_standalone");

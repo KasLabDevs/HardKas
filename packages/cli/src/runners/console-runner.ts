@@ -18,13 +18,15 @@ export async function startConsole(opts: {
   const harness = createTestHarness({
     accounts: opts.accounts,
     initialBalance: opts.balance,
-    networkId: opts.network,
+    networkId: opts.network
   });
 
   console.log(`\nHardKAS Console — ${opts.network}`);
   console.log(`  ${opts.accounts} accounts, ${formatSompi(opts.balance)} each\n`);
   console.log("  Available globals:");
-  console.log("    h              — test harness (send, balanceOf, accountNames, reset, snapshot)");
+  console.log(
+    "    h              — test harness (send, balanceOf, accountNames, reset, snapshot)"
+  );
   console.log("    hash(obj)      — calculateContentHash");
   console.log("    canonical(obj) — canonicalStringify");
   console.log("    kas(str)       — parseKasToSompi ('1.5' → 150000000n)");
@@ -44,7 +46,7 @@ export async function startConsole(opts: {
 
   const r = repl.start({
     prompt: "hardkas> ",
-    useGlobal: false,
+    useGlobal: false
   }) as REPLServerWithHistory;
 
   // Inject globals
@@ -58,7 +60,11 @@ export async function startConsole(opts: {
   // Persistent history
   try {
     if (fs.existsSync(historyPath)) {
-      const history = fs.readFileSync(historyPath, "utf-8").split("\n").filter(Boolean).reverse();
+      const history = fs
+        .readFileSync(historyPath, "utf-8")
+        .split("\n")
+        .filter(Boolean)
+        .reverse();
       if (r.history) {
         for (const line of history) {
           r.history.push(line);

@@ -1,28 +1,28 @@
-import { defineConfig } from 'vite'
-import react from '@vitejs/plugin-react'
+import { defineConfig } from "vite";
+import react from "@vitejs/plugin-react";
 
 export default defineConfig({
   plugins: [react()],
   build: {
     rollupOptions: {
       external: [
-        'fs',
-        'path',
-        'crypto',
-        'os',
-        'fs/promises',
-        'kaspa',
-        '@kaspa/core-lib',
-        'node:fs',
-        'node:path',
-        'node:crypto',
-        'node:os',
-        'node:fs/promises',
-        'async_hooks',
-        'node:async_hooks',
-        'child_process',
-        'node:child_process'
+        "fs",
+        "path",
+        "crypto",
+        "os",
+        "fs/promises",
+        "kaspa",
+        "@kaspa/core-lib",
+        "node:fs",
+        "node:path",
+        "node:crypto",
+        "node:os",
+        "node:fs/promises",
+        "async_hooks",
+        "node:async_hooks",
+        "child_process",
+        "node:child_process"
       ]
     }
   }
-})
+});

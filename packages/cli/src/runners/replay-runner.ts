@@ -1,7 +1,4 @@
-import { 
-  getSimulatedReplaySummary, 
-  SimulatedReplaySummary 
-} from "@hardkas/localnet";
+import { getSimulatedReplaySummary, SimulatedReplaySummary } from "@hardkas/localnet";
 import { formatSompi } from "@hardkas/core";
 
 export interface ReplayRunnerInput {
@@ -16,10 +13,10 @@ export interface ReplayRunnerResult {
 
 export async function runReplay(input: ReplayRunnerInput): Promise<ReplayRunnerResult> {
   const { txId, cwd } = input;
-  
+
   const replay = await getSimulatedReplaySummary(txId, cwd ? { cwd } : undefined);
   const { receipt, trace, summary } = replay;
-  
+
   const lines = [
     "Replay summary",
     "",
@@ -35,7 +32,7 @@ export async function runReplay(input: ReplayRunnerInput): Promise<ReplayRunnerR
     "",
     "Trace:"
   ];
-  
+
   for (const event of trace.events) {
     if (event.type === "phase.completed") {
       lines.push(`✓ ${event.phase}`);
@@ -43,7 +40,7 @@ export async function runReplay(input: ReplayRunnerInput): Promise<ReplayRunnerR
       lines.push(`✗ ${event.phase}: ${event.reason}`);
     }
   }
-  
+
   return {
     replay,
     formatted: lines.join("\n")

@@ -1,7 +1,7 @@
-import { 
+import {
   TxPlan,
   SignedTx,
-  TxPlanArtifact, 
+  TxPlanArtifact,
   SignedTxArtifact,
   createSimulatedSignedTxArtifact,
   calculateContentHash,
@@ -9,7 +9,14 @@ import {
   ARTIFACT_SCHEMAS
 } from "@hardkas/artifacts";
 import { systemRuntimeContext } from "@hardkas/core";
-import { HardkasAccount, HardkasTxPlanSigner, SignTxPlanInput, SignTxPlanResult, HardkasSignerKind, HardkasKaspaPrivateKeyAccount } from "./types.js";
+import {
+  HardkasAccount,
+  HardkasTxPlanSigner,
+  SignTxPlanInput,
+  SignTxPlanResult,
+  HardkasSignerKind,
+  HardkasKaspaPrivateKeyAccount
+} from "./types.js";
 import { HardkasConfig } from "@hardkas/config";
 import { getKaspaSigningBackendStatus } from "./signer-backend.js";
 import { KaspaWasmPrivateKeySigner } from "./kaspa-wasm-signer.js";
@@ -43,7 +50,7 @@ export class UnsupportedRealKaspaSigner implements HardkasTxPlanSigner {
   async signTxPlan(_input: SignTxPlanInput): Promise<SignTxPlanResult> {
     throw new Error(
       "Real Kaspa signing requires an official Kaspa transaction signing library. " +
-      "No supported signer backend is configured."
+        "No supported signer backend is configured."
     );
   }
 }
@@ -71,17 +78,23 @@ export async function signTxPlanArtifact(input: {
   // Account and plan mode matching
   if (planArtifact.mode === "simulated") {
     if (account.kind !== "simulated") {
-      throw new Error(`Simulated plans must be signed with simulated accounts (account '${account.name}' is '${account.kind}').`);
+      throw new Error(
+        `Simulated plans must be signed with simulated accounts (account '${account.name}' is '${account.kind}').`
+      );
     }
   } else {
     if (account.kind === "simulated") {
-      throw new Error(`Real Kaspa transaction plans (mode: ${planArtifact.mode}) cannot be signed with simulated accounts.`);
+      throw new Error(
+        `Real Kaspa transaction plans (mode: ${planArtifact.mode}) cannot be signed with simulated accounts.`
+      );
     }
   }
 
   // Block mainnet by default for safety
   if (planArtifact.networkId === "mainnet" && !input.allowMainnet) {
-     throw new Error("Mainnet signing is disabled by default. Use --allow-mainnet-signing only if you understand the risks.");
+    throw new Error(
+      "Mainnet signing is disabled by default. Use --allow-mainnet-signing only if you understand the risks."
+    );
   }
 
   if (account.kind === "simulated") {
@@ -94,9 +107,11 @@ export async function signTxPlanArtifact(input: {
 
   if (account.kind === "kaspa-private-key") {
     const status = await getKaspaSigningBackendStatus();
-    
+
     if (!status.available) {
-      throw new Error(`Real Kaspa signing is not available: ${status.error || "Unknown error"}. Ensure 'kaspa' package is installed.`);
+      throw new Error(
+        `Real Kaspa signing is not available: ${status.error || "Unknown error"}. Ensure 'kaspa' package is installed.`
+      );
     }
 
     const signer = new KaspaWasmPrivateKeySigner({
@@ -125,7 +140,8 @@ export async function signTxPlanArtifact(input: {
       signedTransaction: {
         format: result.signedTransaction?.format === "hex" ? "hex" : "unknown",
         payload: result.signedTransaction?.payload || ""
-      }
+      },
+      ...(planArtifact.workflowId ? { workflowId: planArtifact.workflowId } : {})
     };
 
     const contentHash = calculateContentHash(artifact);
@@ -140,7 +156,9 @@ export async function signTxPlanArtifact(input: {
   }
 
   if (account.kind === "evm-private-key") {
-    throw new Error("EVM accounts are reserved for future Igra support and cannot sign Kaspa L1 transactions.");
+    throw new Error(
+      "EVM accounts are reserved for future Igra support and cannot sign Kaspa L1 transactions."
+    );
   }
 
   const accountRecord = account as unknown as Record<string, string>;

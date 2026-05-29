@@ -6,9 +6,7 @@
     "path": "mock/path/wf-golden-basic.json",
     "type": "hardkas.workflow.v1",
     "canonicalHash": "c550d5aee7ad5affce4b992677239226a8d9b9a5114e7298e7f5da042ee591d7",
-    "parents": [
-      "prev-workflow-123"
-    ],
+    "parents": ["prev-workflow-123"],
     "lineageId": "lin-456",
     "replayability": "supported"
   },

@@ -93,17 +93,20 @@ export function profileMass(opts: {
 /**
  * Compares two mass profiles and detects regressions.
  */
-export function compareMassProfiles(current: MassBreakdown, previous: MassBreakdown): MassComparison {
+export function compareMassProfiles(
+  current: MassBreakdown,
+  previous: MassBreakdown
+): MassComparison {
   const massDelta = current.totalMass - previous.totalMass;
   const feeDelta = current.estimatedFeeSompi - previous.estimatedFeeSompi;
 
-  const massChangePercent = previous.totalMass > 0n 
-    ? Number(massDelta * 10000n / previous.totalMass) / 100 
-    : 0;
-  
-  const feeChangePercent = previous.estimatedFeeSompi > 0n 
-    ? Number(feeDelta * 10000n / previous.estimatedFeeSompi) / 100 
-    : 0;
+  const massChangePercent =
+    previous.totalMass > 0n ? Number((massDelta * 10000n) / previous.totalMass) / 100 : 0;
+
+  const feeChangePercent =
+    previous.estimatedFeeSompi > 0n
+      ? Number((feeDelta * 10000n) / previous.estimatedFeeSompi) / 100
+      : 0;
 
   const isRegression = massDelta > 0n;
   let severity: "none" | "minor" | "major" = "none";
@@ -133,7 +136,7 @@ export function compareMassProfiles(current: MassBreakdown, previous: MassBreakd
  */
 export function formatMassProfile(breakdown: MassBreakdown): string {
   const kasAmount = Number(breakdown.estimatedFeeSompi) / 100_000_000;
-  
+
   return [
     "═══ Mass Profile ═══",
     `  Inputs     : ${breakdown.inputCount} inputs → ${formatBigInt(breakdown.inputMass)} mass`,
@@ -151,9 +154,11 @@ export function formatMassProfile(breakdown: MassBreakdown): string {
 export function formatMassComparison(comparison: MassComparison): string {
   const massSign = comparison.massDelta >= 0n ? "+" : "";
   const feeSign = comparison.feeDelta >= 0n ? "+" : "";
-  
-  const statusLine = comparison.isRegression 
-    ? (comparison.severity === "major" ? "⚠️ MAJOR REGRESSION (≥10% increase)" : "ℹ️ MINOR REGRESSION (<10% increase)")
+
+  const statusLine = comparison.isRegression
+    ? comparison.severity === "major"
+      ? "⚠️ MAJOR REGRESSION (≥10% increase)"
+      : "ℹ️ MINOR REGRESSION (<10% increase)"
     : "✅ NO REGRESSION";
 
   return [

@@ -67,7 +67,7 @@ export class SimulatedKaspaChain {
 
   /**
    * Creates a snapshot of the current chain state.
-   * Snapshot IDs use Date.now() and are intended for session-based 
+   * Snapshot IDs use Date.now() and are intended for session-based
    * debugging and restore points, not for canonical identity.
    */
   snapshot(): Snapshot {

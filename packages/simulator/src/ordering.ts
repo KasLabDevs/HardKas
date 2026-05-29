@@ -68,7 +68,10 @@ export function findSelectedParent(
   let best: SortableBlock = { hash: parents[0]!.hash, blueWork: parents[0]!.blueWork };
 
   for (let i = 1; i < parents.length; i++) {
-    const candidate: SortableBlock = { hash: parents[i]!.hash, blueWork: parents[i]!.blueWork };
+    const candidate: SortableBlock = {
+      hash: parents[i]!.hash,
+      blueWork: parents[i]!.blueWork
+    };
     if (compareSortableBlocks(candidate, best) > 0) {
       best = candidate;
     }

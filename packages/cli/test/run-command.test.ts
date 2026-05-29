@@ -12,7 +12,7 @@ describe("hardkas run", () => {
   it("executes a basic script and injects hardkas harness", () => {
     const markerFile = resolve(tmpdir(), `hardkas-test-marker-${Date.now()}.txt`);
     const testScript = resolve(tmpdir(), `hardkas-test-script-${Date.now()}.ts`);
-    
+
     const scriptContent = `
       const h = (globalThis as any).hardkas;
       if (h && typeof h.send === 'function') {
@@ -21,7 +21,7 @@ describe("hardkas run", () => {
         });
       }
     `;
-    
+
     writeFileSync(testScript, scriptContent);
 
     try {
@@ -53,8 +53,11 @@ describe("hardkas run", () => {
 
   it("respects --no-harness and does NOT inject global", () => {
     const markerFile = resolve(tmpdir(), `hardkas-test-noharness-${Date.now()}.txt`);
-    const testScript = resolve(tmpdir(), `hardkas-test-script-noharness-${Date.now()}.ts`);
-    
+    const testScript = resolve(
+      tmpdir(),
+      `hardkas-test-script-noharness-${Date.now()}.ts`
+    );
+
     const scriptContent = `
       const h = (globalThis as any).hardkas;
       if (h === undefined) {
@@ -63,7 +66,7 @@ describe("hardkas run", () => {
         });
       }
     `;
-    
+
     writeFileSync(testScript, scriptContent);
 
     try {

@@ -1,6 +1,11 @@
 import fs from "node:fs/promises";
 import path from "node:path";
-import type { QueryBackend, ArtifactDocument, EventDocument, LineageEdgeDocument } from "./backend.js";
+import type {
+  QueryBackend,
+  ArtifactDocument,
+  EventDocument,
+  LineageEdgeDocument
+} from "./backend.js";
 import { ExecutionMode, NetworkId } from "@hardkas/core";
 
 export class FilesystemQueryBackend implements QueryBackend {
@@ -18,7 +23,11 @@ export class FilesystemQueryBackend implements QueryBackend {
     return "filesystem";
   }
 
-  async findArtifacts(filters?: { schema?: string; mode?: string; networkId?: string }): Promise<ArtifactDocument[]> {
+  async findArtifacts(filters?: {
+    schema?: string;
+    mode?: string;
+    networkId?: string;
+  }): Promise<ArtifactDocument[]> {
     const files = await this.scanFiles(this.rootDir);
     const docs: ArtifactDocument[] = [];
 
@@ -50,12 +59,15 @@ export class FilesystemQueryBackend implements QueryBackend {
 
   async getArtifact(idOrHash: string): Promise<ArtifactDocument | null> {
     const artifacts = await this.findArtifacts();
-    return artifacts.find(a => 
-      a.contentHash === idOrHash || 
-      a.payload.lineage?.artifactId === idOrHash || 
-      a.payload.artifactId === idOrHash ||
-      a.payload.txId === idOrHash
-    ) || null;
+    return (
+      artifacts.find(
+        (a) =>
+          a.contentHash === idOrHash ||
+          a.payload.lineage?.artifactId === idOrHash ||
+          a.payload.artifactId === idOrHash ||
+          a.payload.txId === idOrHash
+      ) || null
+    );
   }
 
   async getEvents(filters?: { kind?: string; txId?: string }): Promise<EventDocument[]> {
@@ -63,13 +75,13 @@ export class FilesystemQueryBackend implements QueryBackend {
     const docs: EventDocument[] = [];
     try {
       const content = await fs.readFile(eventsPath, "utf-8");
-      const lines = content.split("\n").filter(l => l.trim() !== "");
+      const lines = content.split("\n").filter((l) => l.trim() !== "");
       for (const line of lines) {
         try {
           const parsed = JSON.parse(line);
           if (filters?.kind && parsed.kind !== filters.kind) continue;
           if (filters?.txId && parsed.txId !== filters.txId) continue;
-          
+
           docs.push({
             eventId: parsed.eventId,
             kind: parsed.kind,
@@ -83,13 +95,20 @@ export class FilesystemQueryBackend implements QueryBackend {
             networkId: parsed.networkId,
             payload: parsed.payload
           });
-        } catch { /* skip */ }
+        } catch {
+          /* skip */
+        }
       }
-    } catch { /* skip */ }
+    } catch {
+      /* skip */
+    }
     return docs;
   }
 
-  async getLineageEdges(filters?: { parentHash?: string; childHash?: string }): Promise<LineageEdgeDocument[]> {
+  async getLineageEdges(filters?: {
+    parentHash?: string;
+    childHash?: string;
+  }): Promise<LineageEdgeDocument[]> {
     const artifacts = await this.findArtifacts();
     const edges: LineageEdgeDocument[] = [];
 
@@ -105,7 +124,7 @@ export class FilesystemQueryBackend implements QueryBackend {
       }
     }
 
-    return edges.filter(e => {
+    return edges.filter((e) => {
       if (filters?.parentHash && e.parentArtifactId !== filters.parentHash) return false;
       if (filters?.childHash && e.childArtifactId !== filters.childHash) return false;
       return true;
@@ -132,14 +151,17 @@ export class FilesystemQueryBackend implements QueryBackend {
     };
   }
 
-  async findReceipts(filters?: { status?: string; networkId?: string }): Promise<ArtifactDocument[]> {
+  async findReceipts(filters?: {
+    status?: string;
+    networkId?: string;
+  }): Promise<ArtifactDocument[]> {
     return this.findArtifacts({ schema: "hardkas.txReceipt", ...filters });
   }
 
   async findTraces(filters?: { txId?: string }): Promise<ArtifactDocument[]> {
     const artifacts = await this.findArtifacts({ schema: "hardkas.txTrace" });
     if (filters?.txId) {
-      return artifacts.filter(a => a.payload.txId === filters.txId);
+      return artifacts.filter((a) => a.payload.txId === filters.txId);
     }
     return artifacts;
   }
@@ -153,7 +175,9 @@ export class FilesystemQueryBackend implements QueryBackend {
   }
 
   async executeRawSql(_sql: string): Promise<any[]> {
-    throw new Error("Raw SQL execution not supported by Filesystem backend. Use SQLite backend.");
+    throw new Error(
+      "Raw SQL execution not supported by Filesystem backend. Use SQLite backend."
+    );
   }
 
   private async scanFiles(dir: string): Promise<string[]> {
@@ -165,7 +189,11 @@ export class FilesystemQueryBackend implements QueryBackend {
         if (entry.isDirectory()) {
           if (entry.name === "node_modules" || entry.name === ".git") continue;
           results.push(...(await this.scanFiles(fullPath)));
-        } else if (entry.name.endsWith(".json") && !entry.name.endsWith(".enc.json") && entry.name !== "events.jsonl") {
+        } else if (
+          entry.name.endsWith(".json") &&
+          !entry.name.endsWith(".enc.json") &&
+          entry.name !== "events.jsonl"
+        ) {
           results.push(fullPath);
         }
       }

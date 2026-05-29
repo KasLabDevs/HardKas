@@ -20,13 +20,26 @@ interface LayeredHealthResult {
   error?: string;
 }
 
-async function checkTcpReachable(host: string, port: number, timeoutMs = 2000): Promise<boolean> {
+async function checkTcpReachable(
+  host: string,
+  port: number,
+  timeoutMs = 2000
+): Promise<boolean> {
   return new Promise((resolve) => {
     const socket = new net.Socket();
     socket.setTimeout(timeoutMs);
-    socket.on("connect", () => { socket.destroy(); resolve(true); });
-    socket.on("timeout", () => { socket.destroy(); resolve(false); });
-    socket.on("error", () => { socket.destroy(); resolve(false); });
+    socket.on("connect", () => {
+      socket.destroy();
+      resolve(true);
+    });
+    socket.on("timeout", () => {
+      socket.destroy();
+      resolve(false);
+    });
+    socket.on("error", () => {
+      socket.destroy();
+      resolve(false);
+    });
     socket.connect(port, host);
   });
 }
@@ -52,7 +65,12 @@ async function checkKaspaEndpoint(rpcUrl: string): Promise<LayeredHealthResult> 
   // Layer 1: TCP
   const tcpOk = await checkTcpReachable(host, port);
   if (!tcpOk) {
-    return { tcpReachable: false, protocolReachable: false, rpcReachable: false, status: "tcp_unreachable" };
+    return {
+      tcpReachable: false,
+      protocolReachable: false,
+      rpcReachable: false,
+      status: "tcp_unreachable"
+    };
   }
 
   // Layer 2: WebSocket protocol
@@ -73,8 +91,8 @@ async function checkKaspaEndpoint(rpcUrl: string): Promise<LayeredHealthResult> 
 
   // Layer 3: RPC method call
   try {
-    const info = await client.getServerInfo() as KaspaRpcInfo;
-    const dagInfo = await client.getBlockDagInfo() as KaspaRpcInfo;
+    const info = (await client.getServerInfo()) as KaspaRpcInfo;
+    const dagInfo = (await client.getBlockDagInfo()) as KaspaRpcInfo;
     const latencyMs = Date.now() - start;
     client.disconnect();
     return {
@@ -83,9 +101,14 @@ async function checkKaspaEndpoint(rpcUrl: string): Promise<LayeredHealthResult> 
       rpcReachable: true,
       status: "ready",
       latencyMs,
-      network: dagInfo?.networkId || dagInfo?.network || info?.networkId || info?.network || "unknown",
+      network:
+        dagInfo?.networkId ||
+        dagInfo?.network ||
+        info?.networkId ||
+        info?.network ||
+        "unknown",
       daaScore: dagInfo?.virtualDaaScore || info?.virtualDaaScore || 0,
-      version: info?.serverVersion || info?.server_version || "unknown",
+      version: info?.serverVersion || info?.server_version || "unknown"
     };
   } catch (err) {
     client.disconnect();
@@ -105,11 +128,11 @@ async function checkHttpJsonRpcEndpoint(url: string): Promise<LayeredHealthResul
     const res = await fetch(url, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ jsonrpc: "2.0", method: "eth_chainId", params: [], id: 1 }),
+      body: JSON.stringify({ jsonrpc: "2.0", method: "eth_chainId", params: [], id: 1 })
     });
     const latencyMs = Date.now() - start;
     if (res.ok) {
-      const data = await res.json() as Record<string, unknown>;
+      const data = (await res.json()) as Record<string, unknown>;
       return {
         tcpReachable: true,
         protocolReachable: true,
@@ -144,13 +167,18 @@ export async function runRpcDoctor(options: RpcDoctorOptions) {
   let endpoints = options.endpoints || [];
   let loadedNetworks: Record<string, unknown> = {};
 
-  const loaded = await loadHardkasConfig(options.config ? { configPath: options.config } : {});
+  const loaded = await loadHardkasConfig(
+    options.config ? { configPath: options.config } : {}
+  );
   loadedNetworks = (loaded.config.networks || {}) as Record<string, unknown>;
 
   if (endpoints.length === 0) {
     const defaultNetwork = loaded.config.defaultNetwork || "simnet";
     const network = loadedNetworks[defaultNetwork];
-    const networkObj = typeof network === "object" && network !== null ? network as Record<string, unknown> : undefined;
+    const networkObj =
+      typeof network === "object" && network !== null
+        ? (network as Record<string, unknown>)
+        : undefined;
 
     if (networkObj && typeof networkObj.rpcUrl === "string") {
       endpoints = [networkObj.rpcUrl];
@@ -167,7 +195,12 @@ export async function runRpcDoctor(options: RpcDoctorOptions) {
   for (const url of endpoints) {
     // Resolve kind for the url
     let kind = "kaspa-rpc"; // default to Kaspa L1
-    const foundNetwork = Object.values(loadedNetworks).find((n) => typeof n === "object" && n !== null && (n as Record<string, unknown>).rpcUrl === url) as Record<string, unknown> | undefined;
+    const foundNetwork = Object.values(loadedNetworks).find(
+      (n) =>
+        typeof n === "object" &&
+        n !== null &&
+        (n as Record<string, unknown>).rpcUrl === url
+    ) as Record<string, unknown> | undefined;
     if (foundNetwork && typeof foundNetwork.kind === "string") {
       kind = foundNetwork.kind;
     } else if (url.startsWith("http://") && !url.includes("18210")) {
@@ -185,16 +218,22 @@ export async function runRpcDoctor(options: RpcDoctorOptions) {
 
     console.log("┌── RPC HEALTH ────────────────────────────────────────────────");
     console.log(`│ ENDPOINT:   ${url.padEnd(48)} │`);
-    console.log(`│ TCP:        ${(result.tcpReachable ? "✅ reachable" : "❌ unreachable").padEnd(48)} │`);
-    
+    console.log(
+      `│ TCP:        ${(result.tcpReachable ? "✅ reachable" : "❌ unreachable").padEnd(48)} │`
+    );
+
     if (result.tcpReachable) {
-      console.log(`│ PROTOCOL:   ${(result.protocolReachable ? "✅ connected" : "❌ protocol_error (Port reachable, protocol adapter unsupported or protocol mismatch)").padEnd(48)} │`);
+      console.log(
+        `│ PROTOCOL:   ${(result.protocolReachable ? "✅ connected" : "❌ protocol_error (Port reachable, protocol adapter unsupported or protocol mismatch)").padEnd(48)} │`
+      );
     } else {
       console.log(`│ PROTOCOL:   ${"❌ skipped".padEnd(48)} │`);
     }
 
     if (result.protocolReachable) {
-      console.log(`│ RPC:        ${(result.rpcReachable ? "✅ ready" : "❌ rpc_error").padEnd(48)} │`);
+      console.log(
+        `│ RPC:        ${(result.rpcReachable ? "✅ ready" : "❌ rpc_error").padEnd(48)} │`
+      );
       if (!result.rpcReachable && result.error) {
         console.log(`│ ERROR:      ${result.error.slice(0, 45).padEnd(48)} │`);
       }

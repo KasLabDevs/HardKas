@@ -16,12 +16,15 @@ export interface ArtifactSummary {
 }
 
 export function useArtifacts(schemaFilter?: string) {
-  const { config, subscribe , apiFetch } = useHardKas();
+  const { config, subscribe, apiFetch } = useHardKas();
   const queryClient = useQueryClient();
 
   useEffect(() => {
-    const sync = () => queryClient.invalidateQueries({ queryKey: ["hardkas", "artifacts", schemaFilter || "all"] });
-    
+    const sync = () =>
+      queryClient.invalidateQueries({
+        queryKey: ["hardkas", "artifacts", schemaFilter || "all"]
+      });
+
     return subscribe((event) => {
       if (["query-synced", "session-changed"].includes(event.type)) {
         sync();
@@ -35,7 +38,11 @@ export function useArtifacts(schemaFilter?: string) {
       try {
         const baseUrl = config.devServerUrl || "";
         const queryParams = schemaFilter ? `?schema=${schemaFilter}` : "";
-        const url = baseUrl ? (baseUrl.endsWith("/") ? `${baseUrl}api/artifacts${queryParams}` : `${baseUrl}/api/artifacts${queryParams}`) : `/api/artifacts${queryParams}`;
+        const url = baseUrl
+          ? baseUrl.endsWith("/")
+            ? `${baseUrl}api/artifacts${queryParams}`
+            : `${baseUrl}/api/artifacts${queryParams}`
+          : `/api/artifacts${queryParams}`;
         const response = await apiFetch(url);
         if (!response.ok) return [];
         const data = await response.json();
@@ -45,17 +52,18 @@ export function useArtifacts(schemaFilter?: string) {
         return [];
       }
     },
-    staleTime: 30000,
+    staleTime: 30000
   });
 }
 
 export function useArtifact(id: string) {
-  const { config, subscribe , apiFetch } = useHardKas();
+  const { config, subscribe, apiFetch } = useHardKas();
   const queryClient = useQueryClient();
 
   useEffect(() => {
-    const sync = () => queryClient.invalidateQueries({ queryKey: ["hardkas", "artifact", id] });
-    
+    const sync = () =>
+      queryClient.invalidateQueries({ queryKey: ["hardkas", "artifact", id] });
+
     return subscribe((event) => {
       if (["query-synced", "session-changed"].includes(event.type)) {
         sync();
@@ -69,7 +77,11 @@ export function useArtifact(id: string) {
       if (!id) return null;
       try {
         const baseUrl = config.devServerUrl || "";
-        const url = baseUrl ? (baseUrl.endsWith("/") ? `${baseUrl}api/artifacts/${id}` : `${baseUrl}/api/artifacts/${id}`) : `/api/artifacts/${id}`;
+        const url = baseUrl
+          ? baseUrl.endsWith("/")
+            ? `${baseUrl}api/artifacts/${id}`
+            : `${baseUrl}/api/artifacts/${id}`
+          : `/api/artifacts/${id}`;
         const response = await apiFetch(url);
         if (!response.ok) return null;
         const data = await response.json();
@@ -80,7 +92,7 @@ export function useArtifact(id: string) {
       }
     },
     enabled: !!id,
-    staleTime: 30000,
+    staleTime: 30000
   });
 }
 
@@ -92,7 +104,11 @@ export function useExplain(id: string) {
       if (!id) return null;
       try {
         const baseUrl = config.devServerUrl || "";
-        const url = baseUrl ? (baseUrl.endsWith("/") ? `${baseUrl}api/artifacts/${id}/explain` : `${baseUrl}/api/artifacts/${id}/explain`) : `/api/artifacts/${id}/explain`;
+        const url = baseUrl
+          ? baseUrl.endsWith("/")
+            ? `${baseUrl}api/artifacts/${id}/explain`
+            : `${baseUrl}/api/artifacts/${id}/explain`
+          : `/api/artifacts/${id}/explain`;
         const response = await apiFetch(url);
         if (!response.ok) return null;
         const data = await response.json();
@@ -103,7 +119,7 @@ export function useExplain(id: string) {
       }
     },
     enabled: !!id,
-    staleTime: Infinity,
+    staleTime: Infinity
   });
 }
 

@@ -1,8 +1,4 @@
-import { 
-  listL2Profiles, 
-  getL2Profile, 
-  L2NetworkProfile 
-} from "@hardkas/l2";
+import { listL2Profiles, getL2Profile, L2NetworkProfile } from "@hardkas/l2";
 
 /**
  * HardKAS L2 Module

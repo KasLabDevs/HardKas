@@ -15,7 +15,5 @@
       "status": "success"
     }
   ],
-  "producedArtifacts": [
-    "plan-golden"
-  ]
+  "producedArtifacts": ["plan-golden"]
 }

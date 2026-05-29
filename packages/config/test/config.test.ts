@@ -14,7 +14,7 @@ describe("config", () => {
   });
 
   it("resolveNetworkTarget should use defaultNetwork if no network is passed", () => {
-    const config = { 
+    const config = {
       defaultNetwork: "devnet",
       networks: {
         devnet: { kind: "kaspa-node" as const, network: "devnet" as const }
@@ -38,15 +38,18 @@ describe("config", () => {
   });
 
   it("resolveNetworkTarget should throw for unknown network", () => {
-    expect(() => resolveNetworkTarget({ config: {}, network: "non-existent" }))
-      .toThrow(/Unknown HardKAS network 'non-existent'/);
+    expect(() => resolveNetworkTarget({ config: {}, network: "non-existent" })).toThrow(
+      /Unknown HardKAS network 'non-existent'/
+    );
   });
 
   it("loadHardkasConfig should deep merge custom config with default config", async () => {
     const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), "hardkas-config-test-"));
     const configPath = path.join(tempDir, "hardkas.config.ts");
-    
-    fs.writeFileSync(configPath, `
+
+    fs.writeFileSync(
+      configPath,
+      `
 export default {
   defaultNetwork: "custom-net",
   networks: {
@@ -56,16 +59,20 @@ export default {
     alice: { kind: "simulated", address: "kaspa:custom_alice" }
   }
 };
-    `);
+    `
+    );
 
     try {
-      const loaded = await loadHardkasConfig({ cwd: tempDir, configPath: "hardkas.config.ts" });
-      
+      const loaded = await loadHardkasConfig({
+        cwd: tempDir,
+        configPath: "hardkas.config.ts"
+      });
+
       // Verify custom values are preserved/overridden
       expect(loaded.config.defaultNetwork).toBe("custom-net");
       expect(loaded.config.networks?.["custom-net"]).toBeDefined();
       expect(loaded.config.accounts?.alice?.address).toBe("kaspa:custom_alice");
-      
+
       // Verify default values are merged
       expect(loaded.config.networks?.simnet).toBeDefined();
       expect(loaded.config.networks?.mainnet).toBeDefined();

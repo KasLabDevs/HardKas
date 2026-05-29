@@ -24,15 +24,17 @@ function tryReadJson(p: string): any | null {
   }
 }
 
-function tryReadJsonl(p: string): { events: any[]; errorLine?: number; parseError?: string } | null {
+function tryReadJsonl(
+  p: string
+): { events: any[]; errorLine?: number; parseError?: string } | null {
   try {
     if (!fs.existsSync(p)) return null;
     const raw = fs.readFileSync(p, "utf-8").trim();
     if (!raw) return { events: [] };
-    
+
     const lines = raw.split("\n");
     const events: any[] = [];
-    
+
     for (let i = 0; i < lines.length; i++) {
       const line = lines[i]!.trim();
       if (!line) continue;
@@ -46,7 +48,7 @@ function tryReadJsonl(p: string): { events: any[]; errorLine?: number; parseErro
         };
       }
     }
-    
+
     return { events };
   } catch (e: any) {
     return { events: [], parseError: e.message };
@@ -67,15 +69,17 @@ function handleStatus(_url: URL, res: http.ServerResponse) {
       canonicalStatus: "REPLAY_VERIFIED",
       semanticHash: a.semanticHash,
       lineageEdges: a.lineageEdges || [],
-      source: "semantic-bundle",
+      source: "semantic-bundle"
     }));
     res.writeHead(200);
-    res.end(JSON.stringify({
-      loaded: true,
-      source: "hardkas.semantic-bundle.v1.json",
-      loadedAt: now,
-      artifacts,
-    }));
+    res.end(
+      JSON.stringify({
+        loaded: true,
+        source: "hardkas.semantic-bundle.v1.json",
+        loadedAt: now,
+        artifacts
+      })
+    );
     return;
   }
 
@@ -84,50 +88,57 @@ function handleStatus(_url: URL, res: http.ServerResponse) {
   if (fs.existsSync(storePath)) {
     // We cannot query SQLite here without a dependency, so we report it exists
     res.writeHead(200);
-    res.end(JSON.stringify({
-      loaded: true,
-      source: "query-store/store.db",
-      sourceNote: "Query-store exists but direct SQLite reading is not available in the dashboard API. Use CLI verify-semantics for full projection.",
-      loadedAt: now,
-      artifacts: [],
-    }));
+    res.end(
+      JSON.stringify({
+        loaded: true,
+        source: "query-store/store.db",
+        sourceNote:
+          "Query-store exists but direct SQLite reading is not available in the dashboard API. Use CLI verify-semantics for full projection.",
+        loadedAt: now,
+        artifacts: []
+      })
+    );
     return;
   }
 
   // Priority 3: artifacts fallback – scan .hardkas/artifacts
   const artifactsDir = path.join(hardkasDir(), "artifacts");
   if (fs.existsSync(artifactsDir)) {
-    const files = fs.readdirSync(artifactsDir).filter(f => f.endsWith(".json"));
-    const artifacts = files.map(f => {
+    const files = fs.readdirSync(artifactsDir).filter((f) => f.endsWith(".json"));
+    const artifacts = files.map((f) => {
       const content = tryReadJson(path.join(artifactsDir, f));
       return {
         artifactId: f,
         canonicalStatus: "PROJECTED",
         semanticHash: content?.hash || null,
         source: "artifacts-fallback",
-        sourceNote: "Raw filesystem truth. Not replay-verified.",
+        sourceNote: "Raw filesystem truth. Not replay-verified."
       };
     });
     res.writeHead(200);
-    res.end(JSON.stringify({
-      loaded: true,
-      source: ".hardkas/artifacts (fallback)",
-      sourceNote: "PROJECTED / UNVERIFIED – no replay proof available.",
-      loadedAt: now,
-      artifacts,
-    }));
+    res.end(
+      JSON.stringify({
+        loaded: true,
+        source: ".hardkas/artifacts (fallback)",
+        sourceNote: "PROJECTED / UNVERIFIED – no replay proof available.",
+        loadedAt: now,
+        artifacts
+      })
+    );
     return;
   }
 
   // Nothing found
   res.writeHead(200);
-  res.end(JSON.stringify({
-    loaded: false,
-    source: "none",
-    loadedAt: now,
-    artifacts: [],
-    message: "No canonical artifacts found in current workspace.",
-  }));
+  res.end(
+    JSON.stringify({
+      loaded: false,
+      source: "none",
+      loadedAt: now,
+      artifacts: [],
+      message: "No canonical artifacts found in current workspace."
+    })
+  );
 }
 
 // ---------------------------------------------------------------------------
@@ -143,53 +154,62 @@ function handleTelemetry(_url: URL, res: http.ServerResponse) {
     const parsed = tryReadJsonl(telemetryFile);
     if (parsed === null) {
       res.writeHead(200);
-      res.end(JSON.stringify({
-        loaded: false,
-        source: ".hardkas/telemetry/telemetry.jsonl",
-        loadedAt: now,
-        message: "Telemetry file exists but could not be parsed.",
-        totalAnomalies: 0,
-        countsByType: {},
-        countsByBucket: {},
-        recentEvents: [],
-        recoveryAction: "Run a schema verification check to audit the telemetry event stream log:",
-        recoveryCommand: "pnpm hardkas telemetry verify",
-      }));
+      res.end(
+        JSON.stringify({
+          loaded: false,
+          source: ".hardkas/telemetry/telemetry.jsonl",
+          loadedAt: now,
+          message: "Telemetry file exists but could not be parsed.",
+          totalAnomalies: 0,
+          countsByType: {},
+          countsByBucket: {},
+          recentEvents: [],
+          recoveryAction:
+            "Run a schema verification check to audit the telemetry event stream log:",
+          recoveryCommand: "pnpm hardkas telemetry verify"
+        })
+      );
       return;
     }
 
     const { events, parseError, errorLine } = parsed as any;
     if (parseError) {
       res.writeHead(200);
-      res.end(JSON.stringify({
-        loaded: false,
-        source: ".hardkas/telemetry/telemetry.jsonl",
-        loadedAt: now,
-        message: `Telemetry schema or parse issue (line ${errorLine}: ${parseError}).`,
-        totalAnomalies: events.length,
-        countsByType: {},
-        countsByBucket: {},
-        recentEvents: [],
-        recoveryAction: "Examine and repair the stream schema violation utilizing telemetry verify command:",
-        recoveryCommand: "pnpm hardkas telemetry verify",
-      }));
+      res.end(
+        JSON.stringify({
+          loaded: false,
+          source: ".hardkas/telemetry/telemetry.jsonl",
+          loadedAt: now,
+          message: `Telemetry schema or parse issue (line ${errorLine}: ${parseError}).`,
+          totalAnomalies: events.length,
+          countsByType: {},
+          countsByBucket: {},
+          recentEvents: [],
+          recoveryAction:
+            "Examine and repair the stream schema violation utilizing telemetry verify command:",
+          recoveryCommand: "pnpm hardkas telemetry verify"
+        })
+      );
       return;
     }
 
     if (events.length === 0) {
       res.writeHead(200);
-      res.end(JSON.stringify({
-        loaded: true,
-        source: ".hardkas/telemetry/telemetry.jsonl",
-        loadedAt: now,
-        message: "Telemetry file exists but no events recorded.",
-        totalAnomalies: 0,
-        countsByType: {},
-        countsByBucket: {},
-        recentEvents: [],
-        recoveryAction: "stress-test locks, trigger concurrent executions, and track performance anomalies by running the chaos-matrix suite:",
-        recoveryCommand: "pnpm hardkas torture matrix",
-      }));
+      res.end(
+        JSON.stringify({
+          loaded: true,
+          source: ".hardkas/telemetry/telemetry.jsonl",
+          loadedAt: now,
+          message: "Telemetry file exists but no events recorded.",
+          totalAnomalies: 0,
+          countsByType: {},
+          countsByBucket: {},
+          recentEvents: [],
+          recoveryAction:
+            "stress-test locks, trigger concurrent executions, and track performance anomalies by running the chaos-matrix suite:",
+          recoveryCommand: "pnpm hardkas torture matrix"
+        })
+      );
       return;
     }
 
@@ -204,37 +224,42 @@ function handleTelemetry(_url: URL, res: http.ServerResponse) {
     }
 
     res.writeHead(200);
-    res.end(JSON.stringify({
-      loaded: true,
-      source: ".hardkas/telemetry/telemetry.jsonl",
-      loadedAt: now,
-      totalAnomalies: events.length,
-      countsByType,
-      countsByBucket,
-      recentEvents: events.slice(-50),
-    }));
+    res.end(
+      JSON.stringify({
+        loaded: true,
+        source: ".hardkas/telemetry/telemetry.jsonl",
+        loadedAt: now,
+        totalAnomalies: events.length,
+        countsByType,
+        countsByBucket,
+        recentEvents: events.slice(-50)
+      })
+    );
     return;
   }
 
   // No telemetry.jsonl – check if events.jsonl exists as fallback info
   const eventsExist = fs.existsSync(eventsFile);
   res.writeHead(200);
-  res.end(JSON.stringify({
-    loaded: false,
-    source: "none",
-    loadedAt: now,
-    message: "No telemetry stream found.",
-    eventsFallback: eventsExist,
-    eventsFallbackNote: eventsExist
-      ? "events.jsonl available as separate event log."
-      : undefined,
-    totalAnomalies: 0,
-    countsByType: {},
-    countsByBucket: {},
-    recentEvents: [],
-    recoveryAction: "stress-test locks, trigger concurrent executions, and track performance anomalies by running the chaos-matrix suite:",
-    recoveryCommand: "pnpm hardkas torture matrix",
-  }));
+  res.end(
+    JSON.stringify({
+      loaded: false,
+      source: "none",
+      loadedAt: now,
+      message: "No telemetry stream found.",
+      eventsFallback: eventsExist,
+      eventsFallbackNote: eventsExist
+        ? "events.jsonl available as separate event log."
+        : undefined,
+      totalAnomalies: 0,
+      countsByType: {},
+      countsByBucket: {},
+      recentEvents: [],
+      recoveryAction:
+        "stress-test locks, trigger concurrent executions, and track performance anomalies by running the chaos-matrix suite:",
+      recoveryCommand: "pnpm hardkas torture matrix"
+    })
+  );
 }
 
 // ---------------------------------------------------------------------------
@@ -248,54 +273,60 @@ function handleReplay(_url: URL, res: http.ServerResponse) {
 
   if (bundle) {
     res.writeHead(200);
-    res.end(JSON.stringify({
-      loaded: true,
-      source: "hardkas.semantic-bundle.v1.json",
-      loadedAt: now,
-      replayAvailable: true,
-      lastReplayStatus: bundle.invariantSummary?.failedChecks === 0 ? "PASS" : "FAIL",
-      totalInvariantChecks: bundle.invariantSummary?.totalChecks || 0,
-      passedInvariantChecks: bundle.invariantSummary?.passedChecks || 0,
-      failedInvariantChecks: bundle.invariantSummary?.failedChecks || 0,
-      globalSemanticHash: bundle.globalSemanticHash || null,
-      replayHash: bundle.globalSemanticHash || null,
-      statusSummary: bundle.statusSummary || {},
-    }));
+    res.end(
+      JSON.stringify({
+        loaded: true,
+        source: "hardkas.semantic-bundle.v1.json",
+        loadedAt: now,
+        replayAvailable: true,
+        lastReplayStatus: bundle.invariantSummary?.failedChecks === 0 ? "PASS" : "FAIL",
+        totalInvariantChecks: bundle.invariantSummary?.totalChecks || 0,
+        passedInvariantChecks: bundle.invariantSummary?.passedChecks || 0,
+        failedInvariantChecks: bundle.invariantSummary?.failedChecks || 0,
+        globalSemanticHash: bundle.globalSemanticHash || null,
+        replayHash: bundle.globalSemanticHash || null,
+        statusSummary: bundle.statusSummary || {}
+      })
+    );
     return;
   }
 
   if (reportsExist) {
-    const reportFiles = fs.readdirSync(reportsDir).filter(f => f.endsWith(".json"));
+    const reportFiles = fs.readdirSync(reportsDir).filter((f) => f.endsWith(".json"));
     res.writeHead(200);
-    res.end(JSON.stringify({
-      loaded: true,
-      source: ".hardkas/reports",
-      loadedAt: now,
-      replayAvailable: true,
-      lastReplayStatus: "UNVERIFIED",
-      totalInvariantChecks: null,
-      failedInvariantChecks: null,
-      globalSemanticHash: null,
-      replayHash: null,
-      reportFilesFound: reportFiles.length,
-      commandSuggestion: "pnpm hardkas verify-semantics --ci-mode",
-      recoveryAction: "To verify and compile your semantic replay proof:",
-      recoveryCommand: "pnpm hardkas verify-semantics --ci-mode"
-    }));
+    res.end(
+      JSON.stringify({
+        loaded: true,
+        source: ".hardkas/reports",
+        loadedAt: now,
+        replayAvailable: true,
+        lastReplayStatus: "UNVERIFIED",
+        totalInvariantChecks: null,
+        failedInvariantChecks: null,
+        globalSemanticHash: null,
+        replayHash: null,
+        reportFilesFound: reportFiles.length,
+        commandSuggestion: "pnpm hardkas verify-semantics --ci-mode",
+        recoveryAction: "To verify and compile your semantic replay proof:",
+        recoveryCommand: "pnpm hardkas verify-semantics --ci-mode"
+      })
+    );
     return;
   }
 
   res.writeHead(200);
-  res.end(JSON.stringify({
-    loaded: false,
-    source: "none",
-    loadedAt: now,
-    replayAvailable: false,
-    message: "No replay report found. Run pnpm hardkas verify-semantics --ci-mode.",
-    commandSuggestion: "pnpm hardkas verify-semantics --ci-mode",
-    recoveryAction: "To verify and compile your semantic replay proof:",
-    recoveryCommand: "pnpm hardkas verify-semantics --ci-mode"
-  }));
+  res.end(
+    JSON.stringify({
+      loaded: false,
+      source: "none",
+      loadedAt: now,
+      replayAvailable: false,
+      message: "No replay report found. Run pnpm hardkas verify-semantics --ci-mode.",
+      commandSuggestion: "pnpm hardkas verify-semantics --ci-mode",
+      recoveryAction: "To verify and compile your semantic replay proof:",
+      recoveryCommand: "pnpm hardkas verify-semantics --ci-mode"
+    })
+  );
 }
 
 // ---------------------------------------------------------------------------
@@ -317,7 +348,7 @@ function handleLineage(_url: URL, res: http.ServerResponse) {
         nodes.push({
           id: a.artifactId,
           data: { label: a.artifactId, semanticHash: a.semanticHash },
-          position: { x: 0, y: 0 }, // layout computed on frontend
+          position: { x: 0, y: 0 } // layout computed on frontend
         });
       }
       if (a.lineageEdges && Array.isArray(a.lineageEdges)) {
@@ -327,13 +358,13 @@ function handleLineage(_url: URL, res: http.ServerResponse) {
             nodes.push({
               id: target,
               data: { label: target },
-              position: { x: 0, y: 0 },
+              position: { x: 0, y: 0 }
             });
           }
           edges.push({
             id: `${a.artifactId}->${target}`,
             source: a.artifactId,
-            target,
+            target
           });
         }
       }
@@ -345,23 +376,25 @@ function handleLineage(_url: URL, res: http.ServerResponse) {
       connectedIds.add(e.source);
       connectedIds.add(e.target);
     }
-    const orphanNodes = nodes.filter(n => !connectedIds.has(n.id)).map(n => n.id);
+    const orphanNodes = nodes.filter((n) => !connectedIds.has(n.id)).map((n) => n.id);
 
     res.writeHead(200);
-    res.end(JSON.stringify({
-      loaded: true,
-      source: "hardkas.semantic-bundle.v1.json",
-      loadedAt: now,
-      totalNodes: nodes.length,
-      totalEdges: edges.length,
-      orphanNodes,
-      corruptedNodes: [],
-      quarantinedNodes: [],
-      nodes: nodes.slice(0, 200),
-      edges: edges.slice(0, 500),
-      truncated: nodes.length > 200,
-      hiddenNodes: Math.max(0, nodes.length - 200),
-    }));
+    res.end(
+      JSON.stringify({
+        loaded: true,
+        source: "hardkas.semantic-bundle.v1.json",
+        loadedAt: now,
+        totalNodes: nodes.length,
+        totalEdges: edges.length,
+        orphanNodes,
+        corruptedNodes: [],
+        quarantinedNodes: [],
+        nodes: nodes.slice(0, 200),
+        edges: edges.slice(0, 500),
+        truncated: nodes.length > 200,
+        hiddenNodes: Math.max(0, nodes.length - 200)
+      })
+    );
     return;
   }
 
@@ -369,53 +402,60 @@ function handleLineage(_url: URL, res: http.ServerResponse) {
   const storePath = path.join(hardkasDir(), "store.db");
   if (fs.existsSync(storePath)) {
     res.writeHead(200);
-    res.end(JSON.stringify({
-      loaded: true,
-      source: "query-store/store.db",
-      sourceNote: "Query-store exists. Use CLI for full lineage query.",
-      loadedAt: now,
-      totalNodes: 0,
-      totalEdges: 0,
-      nodes: [],
-      edges: [],
-    }));
+    res.end(
+      JSON.stringify({
+        loaded: true,
+        source: "query-store/store.db",
+        sourceNote: "Query-store exists. Use CLI for full lineage query.",
+        loadedAt: now,
+        totalNodes: 0,
+        totalEdges: 0,
+        nodes: [],
+        edges: []
+      })
+    );
     return;
   }
 
   // Priority 3: artifacts fallback
   const artifactsDir = path.join(hardkasDir(), "artifacts");
   if (fs.existsSync(artifactsDir)) {
-    const files = fs.readdirSync(artifactsDir).filter(f => f.endsWith(".json"));
+    const files = fs.readdirSync(artifactsDir).filter((f) => f.endsWith(".json"));
     const nodes = files.map((f, i) => ({
       id: f,
       data: { label: f },
-      position: { x: 0, y: i * 80 },
+      position: { x: 0, y: i * 80 }
     }));
     res.writeHead(200);
-    res.end(JSON.stringify({
-      loaded: true,
-      source: ".hardkas/artifacts (fallback)",
-      sourceNote: "PROJECTED / UNVERIFIED – raw filesystem scan, no lineage edges derived.",
-      loadedAt: now,
-      totalNodes: nodes.length,
-      totalEdges: 0,
-      orphanNodes: nodes.map(n => n.id),
-      nodes: nodes.slice(0, 200),
-      edges: [],
-      truncated: nodes.length > 200,
-    }));
+    res.end(
+      JSON.stringify({
+        loaded: true,
+        source: ".hardkas/artifacts (fallback)",
+        sourceNote:
+          "PROJECTED / UNVERIFIED – raw filesystem scan, no lineage edges derived.",
+        loadedAt: now,
+        totalNodes: nodes.length,
+        totalEdges: 0,
+        orphanNodes: nodes.map((n) => n.id),
+        nodes: nodes.slice(0, 200),
+        edges: [],
+        truncated: nodes.length > 200
+      })
+    );
     return;
   }
 
   res.writeHead(200);
-  res.end(JSON.stringify({
-    loaded: false,
-    source: "none",
-    loadedAt: now,
-    message: "No lineage data available.",
-    nodes: [],
-    edges: [],
-  }));
+  res.end(
+    JSON.stringify({
+      loaded: false,
+      source: "none",
+      loadedAt: now,
+      message: "No lineage data available.",
+      nodes: [],
+      edges: []
+    })
+  );
 }
 
 // ---------------------------------------------------------------------------
@@ -427,40 +467,51 @@ function handleQuarantine(_url: URL, res: http.ServerResponse) {
 
   if (!fs.existsSync(qPath)) {
     res.writeHead(200);
-    res.end(JSON.stringify({
-      loaded: true,
-      source: ".hardkas/quarantine",
-      loadedAt: now,
-      totalQuarantined: 0,
-      items: [],
-      message: "Quarantine directory does not exist.",
-      recoveryAction: "Run verification checks to audit active schemas:",
-      recoveryCommand: "pnpm hardkas artifact verify .hardkas/quarantine --recursive --strict"
-    }));
+    res.end(
+      JSON.stringify({
+        loaded: true,
+        source: ".hardkas/quarantine",
+        loadedAt: now,
+        totalQuarantined: 0,
+        items: [],
+        message: "Quarantine directory does not exist.",
+        recoveryAction: "Run verification checks to audit active schemas:",
+        recoveryCommand:
+          "pnpm hardkas artifact verify .hardkas/quarantine --recursive --strict"
+      })
+    );
     return;
   }
 
   const files = fs.readdirSync(qPath);
-  const items = files.map(f => {
+  const items = files.map((f) => {
     const stat = fs.statSync(path.join(qPath, f));
     return {
       filename: f,
       reason: "quarantined",
       detectedAt: stat.mtime.toISOString(),
-      originalPath: path.join(qPath, f),
+      originalPath: path.join(qPath, f)
     };
   });
 
   res.writeHead(200);
-  res.end(JSON.stringify({
-    loaded: true,
-    source: ".hardkas/quarantine",
-    loadedAt: now,
-    totalQuarantined: items.length,
-    items,
-    recoveryAction: items.length > 0 ? "To inspect and repair the isolated artifacts, execute a deep safety verification of the quarantine zone:" : undefined,
-    recoveryCommand: items.length > 0 ? "pnpm hardkas artifact verify .hardkas/quarantine --recursive --strict" : undefined
-  }));
+  res.end(
+    JSON.stringify({
+      loaded: true,
+      source: ".hardkas/quarantine",
+      loadedAt: now,
+      totalQuarantined: items.length,
+      items,
+      recoveryAction:
+        items.length > 0
+          ? "To inspect and repair the isolated artifacts, execute a deep safety verification of the quarantine zone:"
+          : undefined,
+      recoveryCommand:
+        items.length > 0
+          ? "pnpm hardkas artifact verify .hardkas/quarantine --recursive --strict"
+          : undefined
+    })
+  );
 }
 
 // ---------------------------------------------------------------------------
@@ -472,47 +523,53 @@ function handleBundles(_url: URL, res: http.ServerResponse) {
 
   if (!fs.existsSync(bp)) {
     res.writeHead(200);
-    res.end(JSON.stringify({
-      loaded: false,
-      source: "none",
-      loadedAt: now,
-      message: "No semantic bundle found. Run: pnpm hardkas verify-semantics --ci-mode",
-    }));
+    res.end(
+      JSON.stringify({
+        loaded: false,
+        source: "none",
+        loadedAt: now,
+        message: "No semantic bundle found. Run: pnpm hardkas verify-semantics --ci-mode"
+      })
+    );
     return;
   }
 
   const bundle = tryReadJson(bp);
   if (!bundle) {
     res.writeHead(200);
-    res.end(JSON.stringify({
-      loaded: false,
-      source: "hardkas.semantic-bundle.v1.json",
-      loadedAt: now,
-      message: "Semantic bundle exists but could not be parsed.",
-    }));
+    res.end(
+      JSON.stringify({
+        loaded: false,
+        source: "hardkas.semantic-bundle.v1.json",
+        loadedAt: now,
+        message: "Semantic bundle exists but could not be parsed."
+      })
+    );
     return;
   }
 
   const stat = fs.statSync(bp);
   res.writeHead(200);
-  res.end(JSON.stringify({
-    loaded: true,
-    source: "hardkas.semantic-bundle.v1.json",
-    bundlePath: bp,
-    bundleType: "local",
-    loadedAt: now,
-    generatedAt: stat.mtime.toISOString(),
-    schemaVersion: bundle.schemaVersion,
-    runtimeVersion: bundle.runtimeVersion,
-    hashVersion: bundle.hashVersion,
-    globalSemanticHash: bundle.globalSemanticHash,
-    totalInvariantChecks: bundle.invariantSummary?.totalChecks || 0,
-    passedChecks: bundle.invariantSummary?.passedChecks || 0,
-    failedChecks: bundle.invariantSummary?.failedChecks || 0,
-    uniqueArtifacts: bundle.artifacts?.length || 0,
-    excludedNoiseFields: bundle.excludedNoiseFields || [],
-    statusSummary: bundle.statusSummary || {},
-  }));
+  res.end(
+    JSON.stringify({
+      loaded: true,
+      source: "hardkas.semantic-bundle.v1.json",
+      bundlePath: bp,
+      bundleType: "local",
+      loadedAt: now,
+      generatedAt: stat.mtime.toISOString(),
+      schemaVersion: bundle.schemaVersion,
+      runtimeVersion: bundle.runtimeVersion,
+      hashVersion: bundle.hashVersion,
+      globalSemanticHash: bundle.globalSemanticHash,
+      totalInvariantChecks: bundle.invariantSummary?.totalChecks || 0,
+      passedChecks: bundle.invariantSummary?.passedChecks || 0,
+      failedChecks: bundle.invariantSummary?.failedChecks || 0,
+      uniqueArtifacts: bundle.artifacts?.length || 0,
+      excludedNoiseFields: bundle.excludedNoiseFields || [],
+      statusSummary: bundle.statusSummary || {}
+    })
+  );
 }
 
 // ---------------------------------------------------------------------------
@@ -534,12 +591,19 @@ function handleDashboardHealth(_url: URL, res: http.ServerResponse) {
     quarantineDirExists: fs.existsSync(path.join(hd, "quarantine")),
     reportsDirExists: fs.existsSync(path.join(hd, "reports")),
     loadedAt: now,
-    warnings: [] as string[],
+    warnings: [] as string[]
   };
 
-  if (!checks.hardkasDirExists) checks.warnings.push("No .hardkas directory found. Run hardkas init.");
-  if (!checks.semanticBundleExists) checks.warnings.push("No semantic bundle. Run: pnpm hardkas verify-semantics --ci-mode");
-  if (!checks.telemetryExists) checks.warnings.push("No telemetry/telemetry.jsonl found. Telemetry panel will show empty state.");
+  if (!checks.hardkasDirExists)
+    checks.warnings.push("No .hardkas directory found. Run hardkas init.");
+  if (!checks.semanticBundleExists)
+    checks.warnings.push(
+      "No semantic bundle. Run: pnpm hardkas verify-semantics --ci-mode"
+    );
+  if (!checks.telemetryExists)
+    checks.warnings.push(
+      "No telemetry/telemetry.jsonl found. Telemetry panel will show empty state."
+    );
   if (!checks.quarantineDirExists) checks.warnings.push("No quarantine directory found.");
 
   res.writeHead(200);
@@ -569,13 +633,20 @@ export async function runDashboard() {
       const url = new URL(req.url || "/", `http://localhost:${port}`);
 
       switch (url.pathname) {
-        case "/api/status": return handleStatus(url, res);
-        case "/api/telemetry": return handleTelemetry(url, res);
-        case "/api/replay": return handleReplay(url, res);
-        case "/api/lineage": return handleLineage(url, res);
-        case "/api/quarantine": return handleQuarantine(url, res);
-        case "/api/bundles": return handleBundles(url, res);
-        case "/api/dashboard-health": return handleDashboardHealth(url, res);
+        case "/api/status":
+          return handleStatus(url, res);
+        case "/api/telemetry":
+          return handleTelemetry(url, res);
+        case "/api/replay":
+          return handleReplay(url, res);
+        case "/api/lineage":
+          return handleLineage(url, res);
+        case "/api/quarantine":
+          return handleQuarantine(url, res);
+        case "/api/bundles":
+          return handleBundles(url, res);
+        case "/api/dashboard-health":
+          return handleDashboardHealth(url, res);
         default:
           if (url.pathname.startsWith("/api/")) {
             res.writeHead(404);
@@ -583,7 +654,9 @@ export async function runDashboard() {
             return;
           }
           res.writeHead(404);
-          res.end(JSON.stringify({ error: "Use Vite dev server for frontend during dev mode." }));
+          res.end(
+            JSON.stringify({ error: "Use Vite dev server for frontend during dev mode." })
+          );
       }
     } catch (err) {
       res.writeHead(500);

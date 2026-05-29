@@ -11,7 +11,7 @@ function generateInventory() {
 
   function walk(cmd, parentName = "") {
     const fullName = parentName ? `${parentName} ${cmd.name()}` : cmd.name();
-    
+
     // We only care about leaf commands or commands with logic
     if (cmd.commands.length === 0 || cmd._actionHandler) {
       // Strip ANSI codes for Markdown
@@ -20,7 +20,7 @@ function generateInventory() {
         command: fullName,
         description: desc,
         aliases: cmd.aliases(),
-        options: cmd.options.map(o => o.flags),
+        options: cmd.options.map((o) => o.flags)
       });
     }
 
@@ -37,7 +37,7 @@ function generateInventory() {
 
   for (const item of inventory) {
     if (item.command === "hardkas") continue;
-    md += `| \`${item.command}\` | ${item.description} | ${item.aliases.join(", ") || "-"} | ${item.options.map(o => `\`${o}\``).join("<br>") || "-"} |\n`;
+    md += `| \`${item.command}\` | ${item.description} | ${item.aliases.join(", ") || "-"} | ${item.options.map((o) => `\`${o}\``).join("<br>") || "-"} |\n`;
   }
 
   const outPath = path.resolve(__dirname, "../../../docs/generated/cli-inventory.md");

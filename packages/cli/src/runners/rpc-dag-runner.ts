@@ -10,7 +10,7 @@ export async function runRpcDag(options: RpcDagOptions = {}): Promise<{
 }> {
   const client = new KaspaJsonRpcClient({ url: options.url || "http://127.0.0.1:18210" });
   const dag = await client.getBlockDagInfo();
-  
+
   const lines = [
     "Kaspa DAG info",
     "",
@@ -22,7 +22,7 @@ export async function runRpcDag(options: RpcDagOptions = {}): Promise<{
   if (dag.tipHashes && dag.tipHashes.length > 0) {
     lines.push("");
     lines.push("Tips:");
-    dag.tipHashes.slice(0, 5).forEach(hash => lines.push(`  - ${hash}`));
+    dag.tipHashes.slice(0, 5).forEach((hash) => lines.push(`  - ${hash}`));
     if (dag.tipHashes.length > 5) {
       lines.push(`  ... and ${dag.tipHashes.length - 5} more`);
     }

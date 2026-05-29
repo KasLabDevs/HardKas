@@ -14,8 +14,8 @@ export interface MiningResult {
 export function simulatePrefixMining(
   payloadBase: Omit<BridgeEntryPayload, "nonce">,
   prefix: string,
-  options: { 
-    initialNonce?: number; 
+  options: {
+    initialNonce?: number;
     maxAttempts?: number;
     timeoutMs?: number;
   } = {}
@@ -35,9 +35,9 @@ export function simulatePrefixMining(
 
     const payload = { ...payloadBase, nonce };
     const serialized = serializeBridgePayload(payload);
-    
+
     const hash = calculateContentHash({ payload: serialized });
-    
+
     if (hash.startsWith(prefix)) {
       return { nonce, hash, attempts: attempts + 1 };
     }

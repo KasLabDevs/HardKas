@@ -7,12 +7,12 @@ export const streamRoutes = new Hono();
 export const devServerEmitter = {
   listeners: [] as Array<(data: any) => void>,
   emit(event: string, data: any) {
-    this.listeners.forEach(l => l({ event, data }));
+    this.listeners.forEach((l) => l({ event, data }));
   },
   subscribe(l: (data: any) => void) {
     this.listeners.push(l);
     return () => {
-      this.listeners = this.listeners.filter(i => i !== l);
+      this.listeners = this.listeners.filter((i) => i !== l);
     };
   }
 };
@@ -39,7 +39,7 @@ streamRoutes.get("/", async (c) => {
 
     // Keep alive loop
     while (!c.req.raw.signal.aborted) {
-      await new Promise(r => setTimeout(r, 30000));
+      await new Promise((r) => setTimeout(r, 30000));
       if (!c.req.raw.signal.aborted) {
         await stream.writeSSE({
           event: "ping",

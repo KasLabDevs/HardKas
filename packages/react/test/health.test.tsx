@@ -17,7 +17,7 @@ const MockES = vi.fn().mockImplementation(() => ({
   close: vi.fn(),
   onopen: null,
   onerror: null,
-  onmessage: null,
+  onmessage: null
 }));
 Object.defineProperty(window, "EventSource", {
   value: MockES,
@@ -33,15 +33,18 @@ describe("useHardKasHealth", () => {
       defaultOptions: {
         queries: {
           retry: false,
-          retryDelay: 0,
-        },
-      },
+          retryDelay: 0
+        }
+      }
     });
     vi.clearAllMocks();
   });
 
   const wrapper = ({ children }: { children: React.ReactNode }) => (
-    <HardKasProvider config={{ localOnly: true, devServerUrl: "http://localhost:7420" }} queryClient={queryClient}>
+    <HardKasProvider
+      config={{ localOnly: true, devServerUrl: "http://localhost:7420" }}
+      queryClient={queryClient}
+    >
       {children}
     </HardKasProvider>
   );

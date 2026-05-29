@@ -16,10 +16,16 @@ import fsSync from "node:fs";
 export function registerDoctorCommand(program: Command) {
   program
     .command("doctor")
-    .description(`Perform a full system diagnostic and health report ${UI.maturity("stable")}`)
+    .description(
+      `Perform a full system diagnostic and health report ${UI.maturity("stable")}`
+    )
     .option("--json", "Output results as stable JSON schema", false)
     .option("--consistency", "Run advanced deterministic consistency checks", false)
-    .option("--strict", "Fail strictly (exit 1) if invariants or consistency checks fail", false)
+    .option(
+      "--strict",
+      "Fail strictly (exit 1) if invariants or consistency checks fail",
+      false
+    )
     .action(async (opts) => {
       try {
         await runDoctorChecks(process.cwd(), opts);
@@ -50,7 +56,10 @@ interface DoctorCheck {
   suggestion?: string | undefined;
 }
 
-export async function runDoctorChecks(root: string, opts: { json?: boolean; consistency?: boolean; strict?: boolean; quiet?: boolean }): Promise<boolean> {
+export async function runDoctorChecks(
+  root: string,
+  opts: { json?: boolean; consistency?: boolean; strict?: boolean; quiet?: boolean }
+): Promise<boolean> {
   if (opts.json) UI.setJsonMode(true);
 
   const report: DoctorReport = {
@@ -77,7 +86,7 @@ export async function runDoctorChecks(root: string, opts: { json?: boolean; cons
       if (check.status === "fail") icon = pc.red("❌");
       if (check.status === "warn") icon = pc.yellow("⚠️");
       if (check.status === "skip") icon = pc.gray("⏭️");
-      
+
       UI.logHuman(`  ${icon} ${pc.bold(check.name)}: ${check.message}`);
       if (check.suggestion && check.status !== "pass") {
         UI.logHuman(`     ${pc.dim("Suggestion: " + check.suggestion)}`);
@@ -196,7 +205,7 @@ export async function runDoctorChecks(root: string, opts: { json?: boolean; cons
     // Locks
     try {
       const files = await fs.readdir(hardkasDir);
-      const locks = files.filter(f => f.endsWith(".lock"));
+      const locks = files.filter((f) => f.endsWith(".lock"));
       if (locks.length === 0) {
         addCheck({
           name: "Workspace locks",
@@ -214,28 +223,40 @@ export async function runDoctorChecks(root: string, opts: { json?: boolean; cons
         });
       }
     } catch {
-       // skip
+      // skip
     }
     // Streams (events.jsonl & telemetry.jsonl)
-    const checkStream = async (streamName: string, streamPath: string, schemaValidator: (parsed: any) => boolean) => {
+    const checkStream = async (
+      streamName: string,
+      streamPath: string,
+      schemaValidator: (parsed: any) => boolean
+    ) => {
       try {
         const stats = await fs.stat(streamPath);
         if (stats.size === 0) {
-           addCheck({ name: `${streamName} Stream`, category: "persistence", status: "pass", message: "Stream is empty" });
-           return;
+          addCheck({
+            name: `${streamName} Stream`,
+            category: "persistence",
+            status: "pass",
+            message: "Stream is empty"
+          });
+          return;
         }
 
         // Check missing newline at EOF
-        const fd = await fs.open(streamPath, 'r');
+        const fd = await fs.open(streamPath, "r");
         const buffer = Buffer.alloc(1);
         await fd.read(buffer, 0, 1, stats.size - 1);
         await fd.close();
-        if (buffer.toString() !== '\n') {
-           addCheck({
-             name: `${streamName} Stream`, category: "persistence", status: "fail",
-             message: "Missing trailing newline", suggestion: "Run 'hardkas repair' to truncate corrupted tail."
-           });
-           return;
+        if (buffer.toString() !== "\n") {
+          addCheck({
+            name: `${streamName} Stream`,
+            category: "persistence",
+            status: "fail",
+            message: "Missing trailing newline",
+            suggestion: "Run 'hardkas repair' to truncate corrupted tail."
+          });
+          return;
         }
 
         // Scan line by line
@@ -251,7 +272,9 @@ export async function runDoctorChecks(root: string, opts: { json?: boolean; cons
             const parsed = JSON.parse(line);
             if (!schemaValidator(parsed)) {
               addCheck({
-                name: `${streamName} Stream`, category: "persistence", status: "fail",
+                name: `${streamName} Stream`,
+                category: "persistence",
+                status: "fail",
                 message: `Line ${lineNumber} has valid JSON but violates schema`,
                 suggestion: "Run 'hardkas repair' or inspect the stream."
               });
@@ -260,26 +283,45 @@ export async function runDoctorChecks(root: string, opts: { json?: boolean; cons
             }
           } catch {
             addCheck({
-                name: `${streamName} Stream`, category: "persistence", status: "fail",
-                message: `Corrupted JSON at line ${lineNumber}`,
-                suggestion: "Run 'hardkas repair' to fix stream."
+              name: `${streamName} Stream`,
+              category: "persistence",
+              status: "fail",
+              message: `Corrupted JSON at line ${lineNumber}`,
+              suggestion: "Run 'hardkas repair' to fix stream."
             });
             corrupted = true;
             break;
           }
         }
-        
+
         if (!corrupted) {
-          addCheck({ name: `${streamName} Stream`, category: "persistence", status: "pass", message: `${lineNumber} events verified` });
+          addCheck({
+            name: `${streamName} Stream`,
+            category: "persistence",
+            status: "pass",
+            message: `${lineNumber} events verified`
+          });
         }
       } catch {
-        addCheck({ name: `${streamName} Stream`, category: "persistence", status: "skip", message: "Stream not found" });
+        addCheck({
+          name: `${streamName} Stream`,
+          category: "persistence",
+          status: "skip",
+          message: "Stream not found"
+        });
       }
     };
 
-    await checkStream("Events Ledger", path.join(process.cwd(), "events.jsonl"), (p) => p && p.schema === "hardkas.event");
-    await checkStream("Telemetry", path.join(hardkasDir, "telemetry", "telemetry.jsonl"), (p) => p && p.timestamp && p.level);
-
+    await checkStream(
+      "Events Ledger",
+      path.join(process.cwd(), "events.jsonl"),
+      (p) => p && p.schema === "hardkas.event"
+    );
+    await checkStream(
+      "Telemetry",
+      path.join(hardkasDir, "telemetry", "telemetry.jsonl"),
+      (p) => p && p.timestamp && p.level
+    );
   }
 
   // --- 3. Security Checks ---
@@ -298,7 +340,7 @@ export async function runDoctorChecks(root: string, opts: { json?: boolean; cons
           if (mode !== 0o600) allOk = false;
         }
       }
-      
+
       if (allOk) {
         addCheck({
           name: "Keystore permissions",
@@ -330,25 +372,27 @@ export async function runDoctorChecks(root: string, opts: { json?: boolean; cons
   if (dirExists) {
     try {
       const files = await fs.readdir(hardkasDir);
-      const accountsJson = files.find(f => f.includes("accounts") && f.endsWith(".json"));
+      const accountsJson = files.find(
+        (f) => f.includes("accounts") && f.endsWith(".json")
+      );
       if (accountsJson) {
-         const content = await fs.readFile(path.join(hardkasDir, accountsJson), "utf-8");
-         if (content.includes("privateKey") && !content.includes("encrypted")) {
-           addCheck({
-             name: "Plaintext keys check",
-             category: "security",
-             status: "fail",
-             message: "Plaintext private keys detected in artifacts!",
-             suggestion: "Use encrypted accounts and avoid --unsafe-plaintext."
-           });
-         } else {
-           addCheck({
-             name: "Plaintext keys check",
-             category: "security",
-             status: "pass",
-             message: "No plaintext keys found in account artifacts"
-           });
-         }
+        const content = await fs.readFile(path.join(hardkasDir, accountsJson), "utf-8");
+        if (content.includes("privateKey") && !content.includes("encrypted")) {
+          addCheck({
+            name: "Plaintext keys check",
+            category: "security",
+            status: "fail",
+            message: "Plaintext private keys detected in artifacts!",
+            suggestion: "Use encrypted accounts and avoid --unsafe-plaintext."
+          });
+        } else {
+          addCheck({
+            name: "Plaintext keys check",
+            category: "security",
+            status: "pass",
+            message: "No plaintext keys found in account artifacts"
+          });
+        }
       }
     } catch {
       // skip
@@ -413,11 +457,16 @@ export async function runDoctorChecks(root: string, opts: { json?: boolean; cons
     try {
       const { HardkasStore } = await import("@hardkas/query-store");
       const path = await import("node:path");
-      const store = new HardkasStore({ dbPath: path.join(process.cwd(), ".hardkas", "store.db") });
+      const store = new HardkasStore({
+        dbPath: path.join(process.cwd(), ".hardkas", "store.db")
+      });
       store.connect({ autoMigrate: true });
-      
+
       const { HardkasIndexer } = await import("@hardkas/query-store");
-      const indexer = new HardkasIndexer(store.getDatabase(), { cwd: process.cwd(), strict: opts.strict ? true : false });
+      const indexer = new HardkasIndexer(store.getDatabase(), {
+        cwd: process.cwd(),
+        strict: opts.strict ? true : false
+      });
       const idxReport = indexer.doctor();
 
       if (idxReport.corruptedFiles.length > 0) {
@@ -487,14 +536,15 @@ export async function runDoctorChecks(root: string, opts: { json?: boolean; cons
           message: "All replay reports reference valid artifacts"
         });
       }
-      
+
       if (idxReport.duplicateEventSequences > 0) {
         addCheck({
           name: "Event Deduplication",
           category: "consistency",
           status: "fail",
           message: `${idxReport.duplicateEventSequences} duplicate event sequence(s)`,
-          suggestion: "Duplicate sequence numbers within a correlation ID. Indexer rebuild required."
+          suggestion:
+            "Duplicate sequence numbers within a correlation ID. Indexer rebuild required."
         });
       } else {
         addCheck({
@@ -521,7 +571,6 @@ export async function runDoctorChecks(root: string, opts: { json?: boolean; cons
           message: "Event causality graph is fully connected"
         });
       }
-      
     } catch (err: any) {
       addCheck({
         name: "Consistency Engine",
@@ -537,11 +586,11 @@ export async function runDoctorChecks(root: string, opts: { json?: boolean; cons
       const { readSnapshotManifest } = await import("@hardkas/core");
       const fs = await import("node:fs/promises");
       const stats = await fs.stat(snapshotsDir);
-      
+
       if (stats.isDirectory()) {
         const snapshots = await fs.readdir(snapshotsDir);
         let brokenSnapshots = 0;
-        
+
         for (const snap of snapshots) {
           try {
             const manifest = await readSnapshotManifest(path.join(snapshotsDir, snap));
@@ -550,7 +599,7 @@ export async function runDoctorChecks(root: string, opts: { json?: boolean; cons
             brokenSnapshots++;
           }
         }
-        
+
         if (brokenSnapshots > 0) {
           addCheck({
             name: "Snapshot Integrity",
@@ -577,7 +626,9 @@ export async function runDoctorChecks(root: string, opts: { json?: boolean; cons
     UI.writeJson(report);
   } else if (!opts.quiet) {
     UI.divider();
-    UI.logHuman(`  Summary: ${report.summary.passed} passed, ${report.summary.failed} failed, ${report.summary.warnings} warning, ${report.summary.skipped} skipped`);
+    UI.logHuman(
+      `  Summary: ${report.summary.passed} passed, ${report.summary.failed} failed, ${report.summary.warnings} warning, ${report.summary.skipped} skipped`
+    );
     UI.footer("Use 'hardkas capabilities' to see supported features.");
   }
 
@@ -587,4 +638,3 @@ export async function runDoctorChecks(root: string, opts: { json?: boolean; cons
 
   return report.summary.failed === 0;
 }
-

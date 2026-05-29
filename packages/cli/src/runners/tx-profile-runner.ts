@@ -13,7 +13,7 @@ export async function runTxProfile(options: TxProfileOptions) {
   const { Hardkas } = await import("@hardkas/sdk");
   const sdk = await Hardkas.open({ cwd: options.workspaceRoot });
   const absolutePath = sdk.workspace.resolvePath(options.path);
-  const plan = await readArtifact(absolutePath) as TxPlanArtifact;
+  const plan = (await readArtifact(absolutePath)) as TxPlanArtifact;
 
   const planObj = plan as unknown as Record<string, unknown>;
   if (plan.schema !== "hardkas.txPlan" && planObj.schema !== "hardkas.txPlan.v1") {
@@ -27,42 +27,58 @@ export async function runTxProfile(options: TxProfileOptions) {
   });
 
   UI.header(`Transaction Profile: ${path.basename(options.path)}`);
-  
+
   console.log("Summary:");
   console.log(`  Plan ID:    ${plan.planId}`);
   console.log(`  Network:    ${plan.networkId}`);
-  console.log(`  Amount:     ${formatSompi(BigInt(plan.amountSompi))} (${plan.amountSompi} sompi)`);
+  console.log(
+    `  Amount:     ${formatSompi(BigInt(plan.amountSompi))} (${plan.amountSompi} sompi)`
+  );
   console.log(`  Total Mass: ${result.mass}`);
-  console.log(`  Est. Fee:   ${formatSompi(BigInt(plan.estimatedFeeSompi))} (${plan.estimatedFeeSompi} sompi)`);
-  
+  console.log(
+    `  Est. Fee:   ${formatSompi(BigInt(plan.estimatedFeeSompi))} (${plan.estimatedFeeSompi} sompi)`
+  );
+
   console.log("\nMass Breakdown:");
   console.log(`  Base Transaction:  ${result.breakdown.base.toString().padStart(5)}`);
-  console.log(`  Inputs (${plan.inputs.length}):       ${result.breakdown.inputs.toString().padStart(5)}`);
-  console.log(`  Outputs (${plan.outputs.length + (plan.change ? 1 : 0)}):      ${result.breakdown.outputs.toString().padStart(5)}`);
+  console.log(
+    `  Inputs (${plan.inputs.length}):       ${result.breakdown.inputs.toString().padStart(5)}`
+  );
+  console.log(
+    `  Outputs (${plan.outputs.length + (plan.change ? 1 : 0)}):      ${result.breakdown.outputs.toString().padStart(5)}`
+  );
   if (result.breakdown.payload > 0n) {
-    console.log(`  Payload:           ${result.breakdown.payload.toString().padStart(5)}`);
+    console.log(
+      `  Payload:           ${result.breakdown.payload.toString().padStart(5)}`
+    );
   }
   console.log(`  -----------------------`);
   console.log(`  Total:             ${result.mass.toString().padStart(5)}`);
 
   if (result.warnings.length > 0) {
     console.log("\x1b[33m\nWarnings:\x1b[0m");
-    result.warnings.forEach(w => console.log(`  [!] ${w}`));
+    result.warnings.forEach((w) => console.log(`  [!] ${w}`));
   }
 
   console.log("\nStructure:");
   console.log(`  Inputs:  ${plan.inputs.length}`);
   plan.inputs.forEach((i, idx) => {
-    console.log(`    [${idx}] ${i.outpoint.transactionId.substring(0, 8)}...:${i.outpoint.index} (${formatSompi(BigInt(i.amountSompi))})`);
+    console.log(
+      `    [${idx}] ${i.outpoint.transactionId.substring(0, 8)}...:${i.outpoint.index} (${formatSompi(BigInt(i.amountSompi))})`
+    );
   });
-  
+
   console.log(`  Outputs: ${plan.outputs.length + (plan.change ? 1 : 0)}`);
   plan.outputs.forEach((o, idx) => {
-    console.log(`    [${idx}] ${o.address.substring(0, 20)}... (${formatSompi(BigInt(o.amountSompi))})`);
+    console.log(
+      `    [${idx}] ${o.address.substring(0, 20)}... (${formatSompi(BigInt(o.amountSompi))})`
+    );
   });
   if (plan.change) {
-    console.log(`    [C] ${plan.change.address.substring(0, 20)}... (${formatSompi(BigInt(plan.change.amountSompi))}) [CHANGE]`);
+    console.log(
+      `    [C] ${plan.change.address.substring(0, 20)}... (${formatSompi(BigInt(plan.change.amountSompi))}) [CHANGE]`
+    );
   }
 
-  console.log("\nNote: Mass estimation is protocol-aware (0.7.3-alpha best-effort).");
+  console.log("\nNote: Mass estimation is protocol-aware (0.7.4-alpha best-effort).");
 }

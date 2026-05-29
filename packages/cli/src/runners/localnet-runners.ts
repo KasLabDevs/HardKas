@@ -15,7 +15,7 @@ export async function runLocalnetFork(opts: {
 }): Promise<void> {
   const wsRoot = opts.workspaceRoot || process.cwd();
   UI.header(`HardKAS Localnet Fork`);
-  
+
   const { config } = await loadHardkasConfig();
   const { target } = resolveNetworkTarget({ config, network: opts.network });
 
@@ -36,28 +36,31 @@ export async function runLocalnetFork(opts: {
 
   const client = new JsonWrpcKaspaClient({ rpcUrl });
   try {
-    await withLock({
-      rootDir: wsRoot,
-      name: "workspace",
-      command: "hardkas localnet fork",
-    }, async () => {
-      const state = await forkFromNetwork(client, {
-        network: opts.network,
-        rpcUrl,
-        addresses: opts.addresses,
-        ...(opts.atDaaScore ? { atDaaScore: opts.atDaaScore } : {})
-      });
+    await withLock(
+      {
+        rootDir: wsRoot,
+        name: "workspace",
+        command: "hardkas localnet fork"
+      },
+      async () => {
+        const state = await forkFromNetwork(client, {
+          network: opts.network,
+          rpcUrl,
+          addresses: opts.addresses,
+          ...(opts.atDaaScore ? { atDaaScore: opts.atDaaScore } : {})
+        });
 
-      const outputPath = opts.outputPath 
-        ? resolve(opts.outputPath)
-        : resolve(wsRoot, ".hardkas", "localnet-state.json");
+        const outputPath = opts.outputPath
+          ? resolve(opts.outputPath)
+          : resolve(wsRoot, ".hardkas", "localnet-state.json");
 
-      await saveLocalnetState(state, outputPath);
-      
-      UI.success(`Forked state saved to: ${outputPath}`);
-      UI.info(`DAA Score: ${state.daaScore}`);
-      UI.info(`UTXOs: ${state.utxos.length}`);
-    });
+        await saveLocalnetState(state, outputPath);
+
+        UI.success(`Forked state saved to: ${outputPath}`);
+        UI.info(`DAA Score: ${state.daaScore}`);
+        UI.info(`UTXOs: ${state.utxos.length}`);
+      }
+    );
   } catch (e) {
     handleError(e, "Forking failed");
     process.exit(1);

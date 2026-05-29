@@ -1,6 +1,6 @@
-import { 
-  Hardkas, 
-  formatSompi, 
+import {
+  Hardkas,
+  formatSompi,
   parseKasToSompi,
   TxPlanArtifact,
   SignedTxArtifact,
@@ -19,7 +19,7 @@ import path from "node:path";
 
 /**
  * Example 04: Trace and Replay
- * 
+ *
  * Demonstrates deterministic transaction simulation, artifact generation,
  * and replay verification in a Kaspa-native context.
  */
@@ -67,17 +67,22 @@ async function main() {
     amountSompi: parseKasToSompi("100"),
     scriptPublicKey: "20" + "b".repeat(64) + "ac"
   };
-  addTrace("resolve-utxos", "completed", { count: 1, totalSompi: mockUtxo.amountSompi.toString() });
+  addTrace("resolve-utxos", "completed", {
+    count: 1,
+    totalSompi: mockUtxo.amountSompi.toString()
+  });
 
   // 3. Phase: Build Transaction Plan
   addTrace("build-plan", "start");
   const builderPlan = buildPaymentPlan({
     fromAddress: alice.address!,
     availableUtxos: [mockUtxo],
-    outputs: [{
-      address: bob.address!,
-      amountSompi: amount
-    }],
+    outputs: [
+      {
+        address: bob.address!,
+        amountSompi: amount
+      }
+    ],
     feeRateSompiPerMass: 1n
   });
 
@@ -112,14 +117,18 @@ async function main() {
     account: alice,
     config: hardkas.config.config
   });
-  addTrace("sign", "completed", { signedId: signedArtifact.signedId, txId: signedArtifact.txId });
+  addTrace("sign", "completed", {
+    signedId: signedArtifact.signedId,
+    txId: signedArtifact.txId
+  });
 
   // 6. Phase: Generate Trace & Receipt
   addTrace("finalize", "start");
-  const txId = signedArtifact.txId || "simulated-" + Math.random().toString(36).slice(2, 10);
-  
+  const txId =
+    signedArtifact.txId || "simulated-" + Math.random().toString(36).slice(2, 10);
+
   const trace: TxTraceArtifact = {
-    schema: ARTIFACT_SCHEMAS.TX_TRACE || "hardkas.txTrace.v1" as any,
+    schema: ARTIFACT_SCHEMAS.TX_TRACE || ("hardkas.txTrace.v1" as any),
     hardkasVersion: HARDKAS_VERSION,
     networkId: hardkas.network,
     mode: "simulated",
@@ -154,11 +163,11 @@ async function main() {
   const planPath = path.join(artifactsDir, "tx-plan.json");
   const tracePath = path.join(artifactsDir, "tx-trace.json");
   const receiptPath = path.join(artifactsDir, "tx-receipt.json");
-  
+
   await writeArtifact(planPath, planArtifact);
   await writeArtifact(tracePath, trace);
   await writeArtifact(receiptPath, receipt);
-  
+
   console.log(`✓ tx-plan.json    -> ${path.basename(planPath)}`);
   console.log(`✓ tx-trace.json   -> ${path.basename(tracePath)}`);
   console.log(`✓ tx-receipt.json -> ${path.basename(receiptPath)}\n`);
@@ -167,15 +176,17 @@ async function main() {
   console.log("# Replay Verification");
   console.log("---------------------");
   addTrace("replay", "start");
-  
+
   // Rebuild the plan from the same mock data
   const replayedBuilderPlan = buildPaymentPlan({
     fromAddress: alice.address!,
     availableUtxos: [mockUtxo],
-    outputs: [{
-      address: bob.address!,
-      amountSompi: amount
-    }],
+    outputs: [
+      {
+        address: bob.address!,
+        amountSompi: amount
+      }
+    ],
     feeRateSompiPerMass: 1n
   });
 
@@ -190,11 +201,13 @@ async function main() {
   const matches = {
     fee: replayedFee === originalFee,
     mass: replayedMass === originalMass,
-    outputs: replayedBuilderPlan.outputs.length === planArtifact.outputs.length &&
-             replayedBuilderPlan.outputs.every((o, i) => 
-               o.address === planArtifact.outputs[i].address && 
-               o.amountSompi === BigInt(planArtifact.outputs[i].amountSompi)
-             )
+    outputs:
+      replayedBuilderPlan.outputs.length === planArtifact.outputs.length &&
+      replayedBuilderPlan.outputs.every(
+        (o, i) =>
+          o.address === planArtifact.outputs[i].address &&
+          o.amountSompi === BigInt(planArtifact.outputs[i].amountSompi)
+      )
   };
 
   console.log(`- Fee Determinism:  ${matches.fee ? "✓ MATCH" : "✗ MISMATCH"}`);
@@ -211,7 +224,7 @@ async function main() {
   }
 }
 
-main().catch(err => {
+main().catch((err) => {
   console.error("\n✖ Example failed");
   console.error(err);
   process.exit(1);

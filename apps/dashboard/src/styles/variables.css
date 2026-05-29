@@ -10,14 +10,14 @@
   --border-bright: rgba(255, 255, 255, 0.12);
 
   /* Accents */
-  --accent-primary: #6366f1;       /* Indigo L1 */
+  --accent-primary: #6366f1; /* Indigo L1 */
   --accent-primary-hover: #4f46e5;
-  --accent-secondary: #a855f7;     /* Purple L2 */
+  --accent-secondary: #a855f7; /* Purple L2 */
   --accent-secondary-hover: #9333ea;
-  --accent-success: #10b981;       /* Emerald / Confirmed */
-  --accent-warning: #f59e0b;       /* Amber / Built */
-  --accent-danger: #ef4444;        /* Red / Failed */
-  --accent-info: #0ea5e9;          /* Sky Blue / Session */
+  --accent-success: #10b981; /* Emerald / Confirmed */
+  --accent-warning: #f59e0b; /* Amber / Built */
+  --accent-danger: #ef4444; /* Red / Failed */
+  --accent-info: #0ea5e9; /* Sky Blue / Session */
 
   /* Text colors */
   --text-primary: #f4f4f5;
@@ -26,13 +26,13 @@
   --text-link: #818cf8;
 
   /* Typography */
-  --font-sans: 'Outfit', 'Inter', system-ui, -apple-system, sans-serif;
-  --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
+  --font-sans: "Outfit", "Inter", system-ui, -apple-system, sans-serif;
+  --font-mono: "JetBrains Mono", "Fira Code", monospace;
 
   /* Shadows & Glassmorphism */
   --glass-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
   --glass-blur: blur(12px);
-  
+
   /* Layout sizes */
   --sidebar-width: 260px;
   --header-height: 70px;

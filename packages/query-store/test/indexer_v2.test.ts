@@ -4,7 +4,13 @@ import { HardkasIndexer } from "../src/indexer.js";
 import fs from "node:fs";
 import path from "node:path";
 import os from "node:os";
-import { createEventEnvelope, asWorkflowId, asCorrelationId, asNetworkId, asEventSequence } from "@hardkas/core";
+import {
+  createEventEnvelope,
+  asWorkflowId,
+  asCorrelationId,
+  asNetworkId,
+  asEventSequence
+} from "@hardkas/core";
 
 describe("HardkasIndexer Integrity", () => {
   let tmpDir: string;
@@ -46,12 +52,17 @@ describe("HardkasIndexer Integrity", () => {
 
     // First sync
     await indexer.sync();
-    let count = store.getDatabase().prepare("SELECT COUNT(*) as count FROM events").get() as { count: number };
+    let count = store
+      .getDatabase()
+      .prepare("SELECT COUNT(*) as count FROM events")
+      .get() as { count: number };
     expect(count.count).toBe(1);
 
     // Second sync (same file, same content)
     await indexer.sync();
-    count = store.getDatabase().prepare("SELECT COUNT(*) as count FROM events").get() as { count: number };
+    count = store.getDatabase().prepare("SELECT COUNT(*) as count FROM events").get() as {
+      count: number;
+    };
     expect(count.count).toBe(1); // Should still be 1
 
     store.disconnect();
@@ -76,7 +87,10 @@ describe("HardkasIndexer Integrity", () => {
     fs.appendFileSync(eventsPath, JSON.stringify(event) + "\n");
 
     await indexer.sync();
-    const row = store.getDatabase().prepare("SELECT raw_json FROM events LIMIT 1").get() as { raw_json: string };
+    const row = store
+      .getDatabase()
+      .prepare("SELECT raw_json FROM events LIMIT 1")
+      .get() as { raw_json: string };
     const parsed = JSON.parse(row.raw_json);
     expect(parsed.schema).toBe("hardkas.event");
     expect(parsed.eventId).toBe(event.eventId);
@@ -104,7 +118,10 @@ describe("HardkasIndexer Integrity", () => {
     fs.appendFileSync(eventsPath, JSON.stringify(e1) + "\n");
 
     await indexer.sync();
-    let trace = store.getDatabase().prepare("SELECT * FROM traces WHERE workflow_id = ?").get(wfId) as any;
+    let trace = store
+      .getDatabase()
+      .prepare("SELECT * FROM traces WHERE workflow_id = ?")
+      .get(wfId) as any;
     expect(trace).toBeTruthy();
     expect(trace.status).toBe("running");
 
@@ -123,7 +140,10 @@ describe("HardkasIndexer Integrity", () => {
     fs.appendFileSync(eventsPath, JSON.stringify(e2) + "\n");
 
     await indexer.sync();
-    trace = store.getDatabase().prepare("SELECT * FROM traces WHERE workflow_id = ?").get(wfId) as any;
+    trace = store
+      .getDatabase()
+      .prepare("SELECT * FROM traces WHERE workflow_id = ?")
+      .get(wfId) as any;
     expect(trace.status).toBe("completed");
     expect(trace.ended_at).toBe(e2.timestamp);
 

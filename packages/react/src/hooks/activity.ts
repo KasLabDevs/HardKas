@@ -15,12 +15,13 @@ export interface ActivityEvent {
 }
 
 export function useActivity() {
-  const { config, subscribe , apiFetch } = useHardKas();
+  const { config, subscribe, apiFetch } = useHardKas();
   const queryClient = useQueryClient();
 
   useEffect(() => {
-    const sync = () => queryClient.invalidateQueries({ queryKey: ["hardkas", "activity"] });
-    
+    const sync = () =>
+      queryClient.invalidateQueries({ queryKey: ["hardkas", "activity"] });
+
     return subscribe((event) => {
       // Invalidate on any query-synced event so that the activity feed updates immediately
       if (["query-synced", "session-changed"].includes(event.type)) {
@@ -34,7 +35,11 @@ export function useActivity() {
     queryFn: async (): Promise<ActivityEvent[]> => {
       try {
         const baseUrl = config.devServerUrl || "";
-        const url = baseUrl ? (baseUrl.endsWith("/") ? `${baseUrl}api/activity` : `${baseUrl}/api/activity`) : "/api/activity";
+        const url = baseUrl
+          ? baseUrl.endsWith("/")
+            ? `${baseUrl}api/activity`
+            : `${baseUrl}/api/activity`
+          : "/api/activity";
         const response = await apiFetch(url);
         if (!response.ok) return [];
         const data = await response.json();
@@ -44,6 +49,6 @@ export function useActivity() {
         return [];
       }
     },
-    staleTime: 5000, // Frequent updates safe because it's local dev
+    staleTime: 5000 // Frequent updates safe because it's local dev
   });
 }

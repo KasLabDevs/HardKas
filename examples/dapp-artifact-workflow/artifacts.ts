@@ -1,6 +1,6 @@
 /**
  * HardKAS Example: Artifact Workflow
- * 
+ *
  * Demonstrates how to interact with the canonical artifacts
  * via the dev-server API.
  */
@@ -21,7 +21,7 @@ async function main() {
   if (data.artifacts && data.artifacts.length > 0) {
     const latest = data.artifacts[0];
     console.log(`\nFound artifact: ${latest.artifactId} (${latest.schema})`);
-    
+
     console.log(`Explaining artifact...`);
     const explanation = await client.artifacts.explain(latest.artifactId);
     console.log(explanation.data.explanation);

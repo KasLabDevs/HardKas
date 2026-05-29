@@ -73,14 +73,21 @@ export function formatSignedTxArtifact(artifact: any): string {
   lines.push("");
   lines.push(`Network:      ${artifact.networkId}`);
   lines.push(`Mode:         ${artifact.mode}`);
+  lines.push(`Status:       ${(artifact.status || "signed").toUpperCase()}`);
   lines.push("");
   lines.push(`From:         ${artifact.from.address}`);
   lines.push(`To:           ${artifact.to.address}`);
   lines.push(`Amount:       ${formatSompi(BigInt(artifact.amountSompi))}`);
   lines.push("");
-  lines.push(`Format:       ${artifact.signedTransaction.format}`);
-  lines.push(`Tx ID:        ${artifact.txId || "unknown (pending broadcast)"}`);
+
+  if (artifact.signedTransaction) {
+    lines.push(`Format:       ${artifact.signedTransaction.format}`);
+    lines.push(`Tx ID:        ${artifact.txId || "unknown (pending broadcast)"}`);
+  } else if (artifact.multisig) {
+    lines.push(
+      `Signatures:   ${artifact.multisig.signatures.length} of ${artifact.multisig.threshold} collected`
+    );
+  }
 
   return lines.join("\n");
 }
-

@@ -1,13 +1,19 @@
 import { systemRuntimeContext } from "@hardkas/core";
 import { describe, it, expect } from "vitest";
-import { 
-  HashInvariant, 
-  SchemaInvariant, 
-  BasicCorrelationInvariant, 
+import {
+  HashInvariant,
+  SchemaInvariant,
+  BasicCorrelationInvariant,
   BasicLineageInvariant,
   InvariantWatcher
 } from "../src/index.js";
-import { createEventEnvelope, asWorkflowId, asCorrelationId, asNetworkId, asEventSequence } from "@hardkas/core";
+import {
+  createEventEnvelope,
+  asWorkflowId,
+  asCorrelationId,
+  asNetworkId,
+  asEventSequence
+} from "@hardkas/core";
 
 describe("Invariant System (Phase 5)", () => {
   it("HashInvariant should detect mismatch", async () => {
@@ -59,14 +65,18 @@ describe("Invariant System (Phase 5)", () => {
         const handler = cb;
         return () => {}; // Mock unsubscribe
       },
-      emit: (ev: any) => { emitted.push(ev); }
+      emit: (ev: any) => {
+        emitted.push(ev);
+      }
     };
 
     // We'll manually trigger the callback for the test
     let registeredCb: any;
     eventBus.subscribe = (cb: any) => {
       registeredCb = cb;
-      return () => { registeredCb = null; };
+      return () => {
+        registeredCb = null;
+      };
     };
 
     const watcher = new InvariantWatcher({
@@ -75,7 +85,7 @@ describe("Invariant System (Phase 5)", () => {
     });
 
     watcher.start();
-    
+
     // Trigger an event that violates HashInvariant
     const sourceEvent = createEventEnvelope({
       kind: "workflow.plan.created",
@@ -85,7 +95,7 @@ describe("Invariant System (Phase 5)", () => {
       sequenceNumber: asEventSequence(1),
       sourceSubsystem: "test",
       networkId: asNetworkId("simnet"),
-      payload: { 
+      payload: {
         planId: "art-1" as any,
         network: asNetworkId("simnet"),
         amountSompi: 100n
@@ -95,11 +105,13 @@ describe("Invariant System (Phase 5)", () => {
     // Manually pass an artifact in context via a custom check logic if we want to test the full flow
     // In the real watcher, it uses event.payload or similar.
     // Let's mock a simpler invariant for the watcher test.
-    
+
     const mockInvar = {
       id: "MOCK_FAIL",
       description: "Always fails",
-      check: async () => [{ code: "MOCK_FAIL", severity: "error" as const, message: "Fail" }]
+      check: async () => [
+        { code: "MOCK_FAIL", severity: "error" as const, message: "Fail" }
+      ]
     };
 
     const watcher2 = new InvariantWatcher({
@@ -125,14 +137,25 @@ describe("Invariant System (Phase 5)", () => {
       subscribe: (cb: any) => {
         return () => {};
       },
-      emit: (ev: any) => { emitted.push(ev); }
+      emit: (ev: any) => {
+        emitted.push(ev);
+      }
     };
 
     let registeredCb: any;
-    eventBus.subscribe = (cb: any) => { registeredCb = cb; return () => {}; };
+    eventBus.subscribe = (cb: any) => {
+      registeredCb = cb;
+      return () => {};
+    };
 
     const watcher = new InvariantWatcher({
-      invariants: [{ id: "FAIL", description: "F", check: async () => [{ code: "F", severity: "error", message: "F" }] }],
+      invariants: [
+        {
+          id: "FAIL",
+          description: "F",
+          check: async () => [{ code: "F", severity: "error", message: "F" }]
+        }
+      ],
       eventBus
     });
     watcher.start();

@@ -25,9 +25,9 @@ describe("HardKas React Wallet Integration (EIP-6963)", () => {
     queryClient = new QueryClient({
       defaultOptions: {
         queries: {
-          retry: false,
-        },
-      },
+          retry: false
+        }
+      }
     });
     vi.clearAllMocks();
     if (typeof window !== "undefined") {
@@ -119,14 +119,18 @@ describe("HardKas React Wallet Integration (EIP-6963)", () => {
   });
 
   it("should fall back to local dev session L2 account when no browser wallet is connected", async () => {
-    global.fetch = vi.fn().mockResolvedValue(new Response(JSON.stringify({
-      active: {
-        name: "test-session",
-        l1: { wallet: "alice", address: "addr1" },
-        l2: { account: "alice-l2", address: "0xLocalDevAddress" },
-        bridge: { mode: "local-simulated" }
-      }
-    })));
+    global.fetch = vi.fn().mockResolvedValue(
+      new Response(
+        JSON.stringify({
+          active: {
+            name: "test-session",
+            l1: { wallet: "alice", address: "addr1" },
+            l2: { account: "alice-l2", address: "0xLocalDevAddress" },
+            bridge: { mode: "local-simulated" }
+          }
+        })
+      )
+    );
 
     const { result } = renderHook(() => useIgraAccount(), {
       wrapper: ({ children }) => (
@@ -167,11 +171,14 @@ describe("HardKas React Wallet Integration (EIP-6963)", () => {
     );
 
     // Using single renderHook to share context value
-    const { result } = renderHook(() => {
-      const wallet = useIgraWallet();
-      const write = useIgraWriteContract();
-      return { wallet, write };
-    }, { wrapper });
+    const { result } = renderHook(
+      () => {
+        const wallet = useIgraWallet();
+        const write = useIgraWriteContract();
+        return { wallet, write };
+      },
+      { wrapper }
+    );
 
     const providerDetail = {
       info: { uuid: "uid", name: "Meta", icon: "ico", rdns: "io.meta" },

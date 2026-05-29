@@ -27,8 +27,8 @@ async function runRotate(opts: { json?: boolean; force?: boolean }) {
   }
 
   const rootDir = process.cwd();
-  
-  const result = opts.force 
+
+  const result = opts.force
     ? TelemetryRotator.forceRotate(rootDir)
     : TelemetryRotator.rotateIfNeeded(rootDir);
 
@@ -44,9 +44,9 @@ async function runRotate(opts: { json?: boolean; force?: boolean }) {
       UI.logHuman(`   Reason: ${result.reason}`);
     }
     UI.divider();
-    
+
     const segments = TelemetryRotator.listArchivedSegments(rootDir);
     UI.logHuman(`Archived Segments: ${segments.length}`);
-    segments.forEach(s => UI.logHuman(` - ${s}`));
+    segments.forEach((s) => UI.logHuman(` - ${s}`));
   }
 }

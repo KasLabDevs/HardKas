@@ -4168,6 +4168,7 @@ No arguments.
 - [hardkas tx receipt](#hardkas-tx-receipt)
 - [hardkas tx send](#hardkas-tx-send)
 - [hardkas tx sign](#hardkas-tx-sign)
+- [hardkas tx status](#hardkas-tx-status)
 - [hardkas tx trace](#hardkas-tx-trace)
 - [hardkas tx verify](#hardkas-tx-verify)
 
@@ -4302,6 +4303,9 @@ hardkas tx sign [options] <planPath>
 | `--account <name>` | Account name to sign with |  |
 | `--out <path>` | Save signed artifact JSON |  |
 | `--allow-mainnet-signing` | Allow signing for mainnet | false |
+| `--threshold <number>` | Multisig threshold |  |
+| `--required-signers <list>` | Comma-separated list of required signers |  |
+| `--append` | Append signature to a partially signed transaction | false |
 | `--wait-lock` | Wait for workspace lock if held | false |
 | `--lock-timeout <ms>` | Lock wait timeout in ms | 30000 |
 | `--json` | Output as JSON | false |
@@ -4311,6 +4315,30 @@ hardkas tx sign [options] <planPath>
 | Argument | Description |
 | :--- | :--- |
 | `planPath` |  |
+
+---
+
+## hardkas tx status
+
+Show the signature coverage and status of a transaction artifact
+
+### Usage
+
+```bash
+hardkas tx status [options] <path>
+```
+
+### Options
+
+| Flag | Description | Default |
+| :--- | :--- | :--- |
+| `--json` | Output as JSON | false |
+
+### Arguments
+
+| Argument | Description |
+| :--- | :--- |
+| `path` |  |
 
 ---
 

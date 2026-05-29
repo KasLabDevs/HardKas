@@ -3,10 +3,10 @@ import path from "node:path";
 import type { HardkasConfig } from "@hardkas/config";
 import { createDeterministicAccounts } from "@hardkas/localnet";
 import type { HardkasAccount, HardkasSimulatedAccount } from "./types.js";
-import { 
-  loadRealAccountStoreSync, 
-  getRealDevAccount, 
-  listRealDevAccounts 
+import {
+  loadRealAccountStoreSync,
+  getRealDevAccount,
+  listRealDevAccounts
 } from "./real-accounts.js";
 
 export interface ResolveAccountOptions {
@@ -14,13 +14,15 @@ export interface ResolveAccountOptions {
   config?: HardkasConfig | undefined;
 }
 
-export function resolveHardkasAccount(
-  options: ResolveAccountOptions
-): HardkasAccount {
+export function resolveHardkasAccount(options: ResolveAccountOptions): HardkasAccount {
   const { nameOrAddress, config } = options;
 
   // 1. If it starts with "kaspa:", "kaspatest:", "kaspasim:", it's a direct address
-  if (nameOrAddress.startsWith("kaspa:") || nameOrAddress.startsWith("kaspatest:") || nameOrAddress.startsWith("kaspasim:")) {
+  if (
+    nameOrAddress.startsWith("kaspa:") ||
+    nameOrAddress.startsWith("kaspatest:") ||
+    nameOrAddress.startsWith("kaspasim:")
+  ) {
     return {
       name: nameOrAddress,
       kind: "external-wallet",
@@ -35,7 +37,12 @@ export function resolveHardkasAccount(
 
   // 2. Check dev accounts first (simnet priority)
   const workspaceRoot = (config as any)?.cwd || process.cwd();
-  const devAccountPath = path.join(workspaceRoot, ".hardkas", "dev-accounts", `${alias}.json`);
+  const devAccountPath = path.join(
+    workspaceRoot,
+    ".hardkas",
+    "dev-accounts",
+    `${alias}.json`
+  );
   if (fs.existsSync(devAccountPath)) {
     try {
       const data = fs.readFileSync(devAccountPath, "utf-8");
@@ -85,8 +92,12 @@ export function resolveHardkasAccount(
   }
 
   // 6. Not found
-  const available = listHardkasAccounts(config).map(a => a.name).join(", ");
-  throw new Error(`Unknown HardKAS account '${nameOrAddress}'. Available accounts: ${available}`);
+  const available = listHardkasAccounts(config)
+    .map((a) => a.name)
+    .join(", ");
+  throw new Error(
+    `Unknown HardKAS account '${nameOrAddress}'. Available accounts: ${available}`
+  );
 }
 
 export function listHardkasAccounts(config?: HardkasConfig): HardkasAccount[] {
@@ -144,7 +155,9 @@ export function listHardkasAccounts(config?: HardkasConfig): HardkasAccount[] {
   const keystoreDir = path.join(process.cwd(), ".hardkas", "keystore");
   if (fs.existsSync(keystoreDir)) {
     if (!config || !(config as any).cwd) {
-      throw new Error("Workspace root/cwd is required for hermetic keystore path resolution");
+      throw new Error(
+        "Workspace root/cwd is required for hermetic keystore path resolution"
+      );
     }
     const files = fs.readdirSync(keystoreDir);
     for (const file of files) {
@@ -185,23 +198,31 @@ export function resolveHardkasAccountAddress(
   config?: HardkasConfig,
   context: "L1" | "L2" = "L1"
 ): string {
-  if (accountOrAddress.startsWith("kaspa:") || accountOrAddress.startsWith("kaspatest:") || accountOrAddress.startsWith("kaspasim:")) {
+  if (
+    accountOrAddress.startsWith("kaspa:") ||
+    accountOrAddress.startsWith("kaspatest:") ||
+    accountOrAddress.startsWith("kaspasim:")
+  ) {
     if (context === "L2") {
-      throw new Error(`Invalid L2 address provided: ${accountOrAddress}. Expected EVM address or account alias.`);
+      throw new Error(
+        `Invalid L2 address provided: ${accountOrAddress}. Expected EVM address or account alias.`
+      );
     }
     return accountOrAddress;
   }
-  
+
   if (accountOrAddress.startsWith("0x") && accountOrAddress.length === 42) {
     return accountOrAddress;
   }
 
   const account = resolveHardkasAccount({ nameOrAddress: accountOrAddress, config });
-  
+
   if (context === "L2") {
     const evmAddress = (account as HardkasSimulatedAccount).evmAddress;
     if (!evmAddress) {
-      throw new Error(`Account '${account.name}' does not have an EVM address configured for L2.`);
+      throw new Error(
+        `Account '${account.name}' does not have an EVM address configured for L2.`
+      );
     }
     return evmAddress;
   }

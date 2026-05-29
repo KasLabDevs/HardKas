@@ -21,6 +21,7 @@ pnpm pack-release
 ```
 
 ### What this script does:
+
 1.  **Validation**: Ensures there are no uncommitted changes (optional but recommended).
 2.  **Exclusion**: Uses `git archive` or a disciplined exclusion list to ignore forbidden files.
 3.  **Audit Integrity**: Generates a SHA-256 manifest of all included files.
@@ -30,13 +31,15 @@ pnpm pack-release
 
 There is exactly ONE exception to the "No .hardkas" rule: **Audit Evidence Bundles**.
 
-If you are providing a ZIP to a security auditor or for diagnostic support, you may include a sanitized `.hardkas` directory. 
+If you are providing a ZIP to a security auditor or for diagnostic support, you may include a sanitized `.hardkas` directory.
+
 - **CRITICAL**: You MUST run `hardkas lock clear --all` before zipping to ensure no stale locks are included.
 - **CRITICAL**: You MUST NOT include the `keystore/` directory.
 
 ## 4. Release Checklist
 
 Before marking a release as stable:
+
 - [ ] `pnpm check` passes (Types, Lint, Docs).
 - [ ] `pnpm test` passes (100% coverage on core invariants).
 - [ ] `pnpm docs:check-cli` confirms no drift.

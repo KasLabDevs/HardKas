@@ -61,7 +61,11 @@ export function diffReplays(replayA: any, replayB: any): LayeredReplayDiff {
       b: stateB
     });
   }
-  if (replayA.amountSompi !== undefined && replayB.amountSompi !== undefined && replayA.amountSompi !== replayB.amountSompi) {
+  if (
+    replayA.amountSompi !== undefined &&
+    replayB.amountSompi !== undefined &&
+    replayA.amountSompi !== replayB.amountSompi
+  ) {
     diff.deterministic.differences.push({
       path: "amountSompi",
       a: replayA.amountSompi,
@@ -76,7 +80,10 @@ export function diffReplays(replayA: any, replayB: any): LayeredReplayDiff {
     const timeA = new Date(tsA).getTime();
     const timeB = new Date(tsB).getTime();
     if (timeA !== timeB) {
-      diff.observational.timestampShifts.push({ path: "timestamp", shiftMs: Math.abs(timeA - timeB) });
+      diff.observational.timestampShifts.push({
+        path: "timestamp",
+        shiftMs: Math.abs(timeA - timeB)
+      });
     }
   }
 

@@ -12,12 +12,15 @@ While convenient for simple scripts, **Implicit Send** is an anti-pattern for se
 ## Why it's Dangerous
 
 ### 1. Zero Audit Trail
+
 If the call fails or behaves unexpectedly (e.g., higher than expected fee), there is no record of what was attempted. You cannot "replay" an implicit call to debug a failure.
 
 ### 2. Lack of Pre-Sign Audit
+
 You are signing a transaction without inspecting the actual UTXOs being spent or the change address being used. This is a primary vector for "dusting" attacks or fee-draining bugs.
 
 ### 3. Non-Deterministic Outcomes
+
 Network state can change between the time you call the function and the time the transaction is built. An implicit send is a "black box" that depends on the exact moment of execution.
 
 ---
@@ -48,4 +51,4 @@ const receipt = await sdk.tx.send(signed);
 2. **Deterministic Replay**: You can take the `plan.json` and verify it in a local simulator to guarantee the mass and fee calculations are correct.
 3. **CI Confidence**: You can run your entire CI suite against the `plan` artifacts before ever touching a real network.
 
-**Rule of Thumb**: If you can't see the JSON of your transaction *before* you sign it, you are losing control of your infrastructure.
+**Rule of Thumb**: If you can't see the JSON of your transaction _before_ you sign it, you are losing control of your infrastructure.

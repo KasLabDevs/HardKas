@@ -1,8 +1,8 @@
 import { describe, it, expect } from "vitest";
-import { 
-  asTxId, 
-  asArtifactId, 
-  asKaspaAddress, 
+import {
+  asTxId,
+  asArtifactId,
+  asKaspaAddress,
   asDaaScore,
   asNetworkId
 } from "../src/domain-types.js";

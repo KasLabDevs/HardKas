@@ -5,10 +5,12 @@ import { JsonWrpcKaspaClient } from "@hardkas/kaspa-rpc";
 vi.mock("@hardkas/kaspa-rpc", async () => {
   const actual = await vi.importActual("@hardkas/kaspa-rpc");
   return {
-    ...actual as any,
+    ...(actual as any),
     JsonWrpcKaspaClient: vi.fn().mockImplementation(() => ({
       getInfo: vi.fn().mockResolvedValue({ networkId: "simnet", virtualDaaScore: 100n }),
-      healthCheck: vi.fn().mockResolvedValue({ status: "healthy", info: { networkId: "simnet" } })
+      healthCheck: vi
+        .fn()
+        .mockResolvedValue({ status: "healthy", info: { networkId: "simnet" } })
     }))
   };
 });
@@ -29,6 +31,4 @@ describe("Hardkas SDK", () => {
     expect(sdk.l2).toBeDefined();
     expect(sdk.rpc).toBeDefined();
   });
-
-
 });

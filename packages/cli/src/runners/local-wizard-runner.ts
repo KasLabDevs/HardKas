@@ -10,8 +10,8 @@ export interface LocalWizardResult {
   accountCreated?: boolean;
 }
 
-export async function runLocalWizard(options: { 
-  profile: string; 
+export async function runLocalWizard(options: {
+  profile: string;
   account: string;
   nonInteractive: boolean;
   json: boolean;
@@ -20,10 +20,13 @@ export async function runLocalWizard(options: {
   try {
     const config = await loadHardkasConfig();
     const configRecord = config.config as Record<string, unknown>;
-    const networkId = (typeof configRecord["networkId"] === "string" ? configRecord["networkId"] : config.config.defaultNetwork) || "simnet";
+    const networkId =
+      (typeof configRecord["networkId"] === "string"
+        ? configRecord["networkId"]
+        : config.config.defaultNetwork) || "simnet";
     const { getL2NetworkProfile, EvmJsonRpcClient } = await import("@hardkas/l2");
     const { listHardkasAccounts } = await import("@hardkas/accounts");
-    
+
     if (!options.json) {
       console.log(pc.bold("\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"));
       console.log(pc.bold(`HardKAS • Local Dev Wizard`));
@@ -44,13 +47,18 @@ export async function runLocalWizard(options: {
         name: options.profile,
         userProfiles: config.config.l2?.networks,
         cliOverrides: {
-          rpcUrl: options.rpcUrl || (networkId === "simnet" || networkId === "localnet" ? "http://127.0.0.1:8545" : undefined),
-          chainId: (networkId === "simnet" || networkId === "localnet" ? 19416 : undefined)
+          rpcUrl:
+            options.rpcUrl ||
+            (networkId === "simnet" || networkId === "localnet"
+              ? "http://127.0.0.1:8545"
+              : undefined),
+          chainId: networkId === "simnet" || networkId === "localnet" ? 19416 : undefined
         }
       });
       const client = new EvmJsonRpcClient({ url: profile.rpcUrl!, timeoutMs: 2000 });
       await client.getBlockNumber();
-      if (!options.json) console.log(`  ${pc.green("✓")} Igra RPC is reachable (${profile.rpcUrl})`);
+      if (!options.json)
+        console.log(`  ${pc.green("✓")} Igra RPC is reachable (${profile.rpcUrl})`);
     } catch (e) {
       if (!options.json) {
         console.log(`  ${pc.red("✗")} Igra RPC is unreachable.`);
@@ -66,7 +74,9 @@ export async function runLocalWizard(options: {
     result.step = "accounts";
     if (!options.json) console.log(`\n${pc.cyan(pc.bold("2. Checking Accounts"))}`);
     const accounts = listHardkasAccounts(config.config);
-    let targetAccount = accounts.find(a => a.name === options.account && a.kind === "evm-private-key");
+    let targetAccount = accounts.find(
+      (a) => a.name === options.account && a.kind === "evm-private-key"
+    );
 
     if (!targetAccount) {
       if (options.nonInteractive) {
@@ -77,23 +87,34 @@ export async function runLocalWizard(options: {
         return;
       }
 
-      if (!options.json) console.log(`  ${pc.yellow("⚠")} No EVM account named "${options.account}" found.`);
-      const confirm = await UI.confirm(`Would you like to generate a new local EVM account for "${options.account}"?`);
-      
+      if (!options.json)
+        console.log(
+          `  ${pc.yellow("⚠")} No EVM account named "${options.account}" found.`
+        );
+      const confirm = await UI.confirm(
+        `Would you like to generate a new local EVM account for "${options.account}"?`
+      );
+
       if (confirm) {
         const { generatePrivateKey, privateKeyToAccount } = await import("viem/accounts");
         const privKey = generatePrivateKey();
         const account = privateKeyToAccount(privKey);
-        
+
         if (!options.json) {
-          console.log(`\n  ${pc.bgYellow(pc.black(pc.bold(" SECURITY ACTION: PRIVATE KEY GENERATED ")))}`);
-          console.log(`  ${pc.yellow("This key is for LOCAL DEVELOPMENT ONLY. Never use it for real assets.")}\n`);
-          
+          console.log(
+            `\n  ${pc.bgYellow(pc.black(pc.bold(" SECURITY ACTION: PRIVATE KEY GENERATED ")))}`
+          );
+          console.log(
+            `  ${pc.yellow("This key is for LOCAL DEVELOPMENT ONLY. Never use it for real assets.")}\n`
+          );
+
           console.log(`  ${pc.green("✓")} New account generated:`);
           console.log(`    Name:    ${pc.white(options.account)}`);
           console.log(`    Address: ${pc.white(account.address)}`);
-          
-          console.log(`\n  ${pc.yellow("Action Required:")} Add this to your ${pc.white("hardkas.config.ts")}:`);
+
+          console.log(
+            `\n  ${pc.yellow("Action Required:")} Add this to your ${pc.white("hardkas.config.ts")}:`
+          );
           console.log(pc.gray("  ----------------------------------------"));
           console.log(pc.white(`  accounts: {`));
           console.log(pc.white(`    ${options.account}: {`));
@@ -103,10 +124,14 @@ export async function runLocalWizard(options: {
           console.log(pc.white(`    }`));
           console.log(pc.white(`  }`));
           console.log(pc.gray("  ----------------------------------------"));
-          console.log(`\n  ${pc.dim("HardKAS does not automatically write secrets to your config for safety.")}`);
-          console.log(`  ${pc.dim("Please update your config and run the wizard again to finish setup.")}`);
+          console.log(
+            `\n  ${pc.dim("HardKAS does not automatically write secrets to your config for safety.")}`
+          );
+          console.log(
+            `  ${pc.dim("Please update your config and run the wizard again to finish setup.")}`
+          );
         }
-        
+
         result.status = "pending";
         result.accountCreated = true;
         result.suggestion = "Update hardkas.config.ts with generated key";
@@ -119,7 +144,10 @@ export async function runLocalWizard(options: {
         return;
       }
     } else {
-      if (!options.json) console.log(`  ${pc.green("✓")} Account "${targetAccount.name}" found (${targetAccount.address})`);
+      if (!options.json)
+        console.log(
+          `  ${pc.green("✓")} Account "${targetAccount.name}" found (${targetAccount.address})`
+        );
     }
 
     // 3. Balance & Funding
@@ -132,7 +160,9 @@ export async function runLocalWizard(options: {
     if (kasBalance === 0) {
       if (!options.json) {
         console.log(`  ${pc.yellow("⚠")} Account has 0 iKAS.`);
-        console.log(`  ${pc.dim("Please fund your account manually or via local faucet.")}`);
+        console.log(
+          `  ${pc.dim("Please fund your account manually or via local faucet.")}`
+        );
       }
       result.status = "failed";
       result.suggestion = "Fund local account";
@@ -142,7 +172,7 @@ export async function runLocalWizard(options: {
 
     // 4. Final Success
     result.status = kasBalance > 0 ? "success" : "failed";
-    
+
     if (options.json) {
       console.log(JSON.stringify(result, null, 2));
       return;
@@ -152,12 +182,13 @@ export async function runLocalWizard(options: {
       console.log(`\n${pc.cyan(pc.bold("4. MetaMask Onboarding"))}`);
       console.log(`  ${pc.dim("To add this network to MetaMask, run:")}`);
       console.log(`  ${pc.white("hardkas metamask snippet")}`);
-      
+
       console.log(`\n${pc.bold(pc.green("READY!"))} Local environment is set up.`);
       console.log(`\n${pc.cyan("Final step:")} Import your account into MetaMask:`);
-      console.log(`  hardkas metamask account ${pc.white(options.account)} --show-private-key\n`);
+      console.log(
+        `  hardkas metamask account ${pc.white(options.account)} --show-private-key\n`
+      );
     }
-
   } catch (e) {
     handleError(e);
   }

@@ -1,5 +1,10 @@
 import { SOMPI_PER_KAS, NetworkId, ExecutionMode } from "@hardkas/core";
-import { HardkasArtifactBase, Snapshot, HARDKAS_VERSION, ARTIFACT_SCHEMAS } from "@hardkas/artifacts";
+import {
+  HardkasArtifactBase,
+  Snapshot,
+  HARDKAS_VERSION,
+  ARTIFACT_SCHEMAS
+} from "@hardkas/artifacts";
 import { createDeterministicAccounts } from "./accounts";
 import type { LocalnetState } from "./types";
 
@@ -27,11 +32,11 @@ export function createInitialLocalnetState(
     mode: "simulated" as ExecutionMode,
     networkId: "simnet" as NetworkId,
     daaScore: "0",
-    accounts: accounts.map(a => ({
+    accounts: accounts.map((a) => ({
       name: a.name,
       address: a.address
     })),
-    utxos: accounts.map(a => ({
+    utxos: accounts.map((a) => ({
       id: `genesis:${a.name}:0`,
       address: a.address,
       amountSompi: a.balanceSompi.toString(),
@@ -52,7 +57,7 @@ export function resolveAccountAddressFromState(
   }
 
   // Search in accounts
-  const account = state.accounts.find(a => a.name === nameOrAddress);
+  const account = state.accounts.find((a) => a.name === nameOrAddress);
   if (account) {
     return account.address;
   }
@@ -63,7 +68,7 @@ export function resolveAccountAddressFromState(
 /**
  * Mathematically reconstructs the deterministc localnet state at a specific past DAA score.
  * Annoys UTXOs created after the target DAA and revives UTXOs spent after the target DAA.
- * 
+ *
  * @param state The current localnet state
  * @param targetDaa The block DAG score to revert to
  * @returns A new immutable localnet state representing the exact state at the target DAA
@@ -73,12 +78,12 @@ export function reconstructStateAtDaa(
   targetDaa: bigint | string
 ): LocalnetState {
   const target = typeof targetDaa === "string" ? BigInt(targetDaa) : targetDaa;
-  
+
   const reconstructedUtxos = state.utxos
     // 1. Filter out UTXOs that were created *after* the target DAA
-    .filter(u => BigInt(u.createdAtDaaScore || "0") <= target)
+    .filter((u) => BigInt(u.createdAtDaaScore || "0") <= target)
     // 2. Revive UTXOs that were spent *after* the target DAA
-    .map(u => {
+    .map((u) => {
       if (u.spent && u.spentAtDaaScore && BigInt(u.spentAtDaaScore) > target) {
         // We drop the spentAtDaaScore entirely in the revived UTXO
         const { spentAtDaaScore: _, ...rest } = u;

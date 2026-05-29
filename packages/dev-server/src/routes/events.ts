@@ -14,7 +14,7 @@ eventsRoutes.get("/", async (c) => {
     if (txId) filters.txId = txId;
 
     const events = await queryBackend.getEvents(filters);
-    
+
     // Sort descending by timestamp
     const sorted = events.sort((a, b) => {
       const timeA = a.timestamp ? new Date(a.timestamp).getTime() : 0;
@@ -30,7 +30,7 @@ eventsRoutes.get("/", async (c) => {
       }
     }
 
-    return c.json({ 
+    return c.json({
       events: sorted,
       observabilityDrift,
       reason: observabilityDrift ? "artifacts_exist_without_events" : undefined

@@ -32,7 +32,9 @@ interface SemanticBundleV1 {
 
 export async function runSemanticVerify(options: SemanticVerifyOptions) {
   if (!options.ciMode) {
-    UI.error("verify-semantics currently only supports --ci-mode for cross-platform validation.");
+    UI.error(
+      "verify-semantics currently only supports --ci-mode for cross-platform validation."
+    );
     process.exitCode = 1;
     return;
   }
@@ -44,8 +46,10 @@ export async function runSemanticVerify(options: SemanticVerifyOptions) {
     return;
   }
 
-  const reportFiles = fs.readdirSync(reportsDir).filter(f => f.startsWith("torture-") && f.endsWith(".json"));
-  
+  const reportFiles = fs
+    .readdirSync(reportsDir)
+    .filter((f) => f.startsWith("torture-") && f.endsWith(".json"));
+
   if (reportFiles.length === 0) {
     UI.error("No torture report JSON files found.");
     process.exitCode = 1;
@@ -55,7 +59,7 @@ export async function runSemanticVerify(options: SemanticVerifyOptions) {
   let totalChecks = 0;
   let passedChecks = 0;
   let failedChecks = 0;
-  
+
   const statusSummary: Record<string, number> = {};
   const artifactMap = new Map<string, SemanticArtifact>();
 
@@ -74,16 +78,19 @@ export async function runSemanticVerify(options: SemanticVerifyOptions) {
         } else {
           failedChecks++;
         }
-        
+
         statusSummary[c.status] = (statusSummary[c.status] || 0) + 1;
 
         // Map before/after arrays into stable artifacts to simulate the final workspace state.
         // We mock the semanticHash as a deterministic derivative of the case and artifact id for the CI bundle.
         const mockEdges = c.artifactsAfter ? [...c.artifactsAfter].sort() : [];
-        
+
         if (c.artifactsBefore && Array.isArray(c.artifactsBefore)) {
           for (const a of c.artifactsBefore) {
-            const simulatedHash = crypto.createHash("sha256").update(`${c.seed}:${c.bucket}:${a}`).digest("hex");
+            const simulatedHash = crypto
+              .createHash("sha256")
+              .update(`${c.seed}:${c.bucket}:${a}`)
+              .digest("hex");
             if (!artifactMap.has(a)) {
               artifactMap.set(a, {
                 artifactId: a,
@@ -100,11 +107,13 @@ export async function runSemanticVerify(options: SemanticVerifyOptions) {
   }
 
   // Sort all artifacts deterministically
-  const artifacts = Array.from(artifactMap.values()).sort((a, b) => a.artifactId.localeCompare(b.artifactId));
+  const artifacts = Array.from(artifactMap.values()).sort((a, b) =>
+    a.artifactId.localeCompare(b.artifactId)
+  );
 
   const bundle: SemanticBundleV1 = {
     schemaVersion: "hardkas.semantic-bundle.v1",
-    runtimeVersion: "0.7.3-alpha",
+    runtimeVersion: "0.7.4-alpha",
     hashVersion: "sha256",
     invariantSummary: {
       totalChecks,
@@ -140,11 +149,13 @@ export async function runSemanticVerify(options: SemanticVerifyOptions) {
     UI.info(`  Total Reports Parsed: ${pc.yellow(reportFiles.length)}`);
     UI.info(`  Total Invariant Checks: ${pc.yellow(totalChecks)}`);
     UI.info(`  Unique Artifacts Bundled: ${pc.yellow(artifacts.length)}`);
-    
+
     UI.info(`\n${pc.bold(pc.green("✨ Semantic Bundle v1 Generated ✨"))}`);
     UI.info(`  File: ${pc.cyan("hardkas.semantic-bundle.v1.json")}`);
-    
+
     UI.info(`\n  ${pc.bold("GLOBAL_SEMANTIC_HASH:")} ${pc.magenta(semanticHash)}`);
-    UI.info(`\n  ${pc.dim("Use this bundle artifact to prove cross-platform equivalence.")}\n`);
+    UI.info(
+      `\n  ${pc.dim("Use this bundle artifact to prove cross-platform equivalence.")}\n`
+    );
   }
 }

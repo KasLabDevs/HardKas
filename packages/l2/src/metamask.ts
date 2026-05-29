@@ -15,7 +15,9 @@ export interface MetaMaskChainParams {
 /**
  * Generates the standard wallet_addEthereumChain payload for MetaMask.
  */
-export function generateAddEthereumChainPayload(profile: L2NetworkProfile): MetaMaskChainParams {
+export function generateAddEthereumChainPayload(
+  profile: L2NetworkProfile
+): MetaMaskChainParams {
   if (!profile.chainId) {
     throw new Error(`Profile "${profile.name}" is missing chainId`);
   }
@@ -29,10 +31,10 @@ export function generateAddEthereumChainPayload(profile: L2NetworkProfile): Meta
     nativeCurrency: {
       name: profile.gasToken || "iKAS",
       symbol: profile.gasToken || "iKAS",
-      decimals: profile.nativeTokenDecimals || 18,
+      decimals: profile.nativeTokenDecimals || 18
     },
     rpcUrls: [profile.rpcUrl],
-    blockExplorerUrls: profile.explorerUrl ? [profile.explorerUrl] : undefined,
+    blockExplorerUrls: profile.explorerUrl ? [profile.explorerUrl] : undefined
   };
 }
 
@@ -41,7 +43,7 @@ export function generateAddEthereumChainPayload(profile: L2NetworkProfile): Meta
  */
 export function generateMetaMaskSnippet(profile: L2NetworkProfile): string {
   const payload = generateAddEthereumChainPayload(profile);
-  
+
   return `await window.ethereum.request({
   method: "wallet_addEthereumChain",
   params: [

@@ -1,4 +1,7 @@
-import { calculateContentHash, ARTIFACT_V2_VERSION } from "../packages/artifacts/dist/index.js";
+import {
+  calculateContentHash,
+  ARTIFACT_V2_VERSION
+} from "../packages/artifacts/dist/index.js";
 import fs from "node:fs";
 import path from "node:path";
 
@@ -31,7 +34,10 @@ fs.writeFileSync(path.join(testDir, "valid.json"), JSON.stringify(valid, null, 2
 const manipulated: any = createArtifact("manipulated-1");
 manipulated.contentHash = calculateContentHash(manipulated);
 manipulated.amountSompi = "2000"; // Manipulate after hashing
-fs.writeFileSync(path.join(testDir, "manipulated.json"), JSON.stringify(manipulated, null, 2));
+fs.writeFileSync(
+  path.join(testDir, "manipulated.json"),
+  JSON.stringify(manipulated, null, 2)
+);
 
 // 3. Subdirectory with valid artifact
 const subDir = path.join(testDir, "subdir");

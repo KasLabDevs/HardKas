@@ -27,7 +27,12 @@ export interface HardKasReactConfig {
   readonly devServerUrl?: string;
 }
 
-export type SSEStatus = "connecting" | "connected" | "disconnected" | "reconnecting" | "failed";
+export type SSEStatus =
+  | "connecting"
+  | "connected"
+  | "disconnected"
+  | "reconnecting"
+  | "failed";
 export type ProjectionStatus = "synced" | "stale" | "syncing";
 
 export interface RuntimeEvent {
@@ -66,10 +71,18 @@ export interface HardKasProviderProps {
   readonly queryClient?: QueryClient;
 }
 
-export function HardKasProvider({ config, children, queryClient: externalQueryClient }: HardKasProviderProps) {
-  const queryClient = useMemo(() => externalQueryClient ?? new QueryClient(), [externalQueryClient]);
+export function HardKasProvider({
+  config,
+  children,
+  queryClient: externalQueryClient
+}: HardKasProviderProps) {
+  const queryClient = useMemo(
+    () => externalQueryClient ?? new QueryClient(),
+    [externalQueryClient]
+  );
   const [sseStatus, setSseStatus] = React.useState<SSEStatus>("disconnected");
-  const [projectionStatus, setProjectionStatus] = React.useState<ProjectionStatus>("synced");
+  const [projectionStatus, setProjectionStatus] =
+    React.useState<ProjectionStatus>("synced");
   const [generationId, setGenerationId] = React.useState<string | null>(null);
   const [lastSyncedAt, setLastSyncedAt] = React.useState<string | null>(null);
   const [lastEvent, setLastEvent] = React.useState<RuntimeEvent | null>(null);
@@ -80,7 +93,8 @@ export function HardKasProvider({ config, children, queryClient: externalQueryCl
 
   // EIP-6963 Multi-wallet states
   const [providers, setProviders] = React.useState<EIP6963ProviderDetail[]>([]);
-  const [activeProvider, setActiveProvider] = React.useState<EIP6963ProviderDetail | null>(null);
+  const [activeProvider, setActiveProvider] =
+    React.useState<EIP6963ProviderDetail | null>(null);
   const [walletAddress, setWalletAddress] = React.useState<string | null>(null);
   const [walletChainId, setWalletChainId] = React.useState<number | null>(null);
 
@@ -100,9 +114,15 @@ export function HardKasProvider({ config, children, queryClient: externalQueryCl
 
   React.useEffect(() => {
     if (typeof window !== "undefined") {
-      const isTest = typeof (globalThis as any).vi !== "undefined" || (window as any).__MOCK_SSE__ || process.env.NODE_ENV === "test";
-      const isDashboard = window.location.pathname.startsWith("/") || window.location.port === "7420" || window.location.port === "5173";
-      
+      const isTest =
+        typeof (globalThis as any).vi !== "undefined" ||
+        (window as any).__MOCK_SSE__ ||
+        process.env.NODE_ENV === "test";
+      const isDashboard =
+        window.location.pathname.startsWith("/") ||
+        window.location.port === "7420" ||
+        window.location.port === "5173";
+
       if (isDashboard && !isTest && !devToken) {
         setTokenMissing(true);
       }
@@ -114,37 +134,40 @@ export function HardKasProvider({ config, children, queryClient: externalQueryCl
     return () => listeners.current.delete(callback);
   }, []);
 
-  const apiFetch = React.useCallback(async (input: RequestInfo | URL, init?: RequestInit) => {
-    const headers = new Headers(init?.headers || {});
-    if (devToken) {
-      headers.set("Authorization", `Bearer ${devToken}`);
-    }
+  const apiFetch = React.useCallback(
+    async (input: RequestInfo | URL, init?: RequestInit) => {
+      const headers = new Headers(init?.headers || {});
+      if (devToken) {
+        headers.set("Authorization", `Bearer ${devToken}`);
+      }
 
-    const method = init?.method?.toUpperCase() || "GET";
-    if (["POST", "PUT", "PATCH", "DELETE"].includes(method)) {
-      headers.set("X-Hardkas-Request", "true");
-    }
+      const method = init?.method?.toUpperCase() || "GET";
+      if (["POST", "PUT", "PATCH", "DELETE"].includes(method)) {
+        headers.set("X-Hardkas-Request", "true");
+      }
 
-    const mergedInit: RequestInit = {
-      ...init,
-      headers
-    };
+      const mergedInit: RequestInit = {
+        ...init,
+        headers
+      };
 
-    const response = await fetch(input, mergedInit);
-    const genHeader = response.headers?.get?.("X-Hardkas-Generation");
-    if (genHeader) {
-      setGenerationId(prev => {
-        if (prev !== genHeader) {
-          setTimeout(() => {
-            if (queryClient) queryClient.invalidateQueries();
-          }, 0);
-          return genHeader;
-        }
-        return prev;
-      });
-    }
-    return response;
-  }, [queryClient, devToken]);
+      const response = await fetch(input, mergedInit);
+      const genHeader = response.headers?.get?.("X-Hardkas-Generation");
+      if (genHeader) {
+        setGenerationId((prev) => {
+          if (prev !== genHeader) {
+            setTimeout(() => {
+              if (queryClient) queryClient.invalidateQueries();
+            }, 0);
+            return genHeader;
+          }
+          return prev;
+        });
+      }
+      return response;
+    },
+    [queryClient, devToken]
+  );
 
   const connect = React.useCallback(() => {
     if (typeof window === "undefined") return;
@@ -187,10 +210,10 @@ export function HardKasProvider({ config, children, queryClient: externalQueryCl
       es.close();
       eventSource.current = null;
       setSseStatus("reconnecting");
-      
+
       const nextBackoff = Math.min(backoffMs.current * 2, 10000);
       backoffMs.current = nextBackoff;
-      
+
       reconnectTimer.current = setTimeout(() => {
         connect();
       }, nextBackoff);
@@ -203,7 +226,7 @@ export function HardKasProvider({ config, children, queryClient: externalQueryCl
         timestamp: new Date().toISOString()
       };
       setLastEvent(event);
-      listeners.current.forEach(l => l(event));
+      listeners.current.forEach((l) => l(event));
     };
 
     // Listen for named events if the server sends them
@@ -222,7 +245,7 @@ export function HardKasProvider({ config, children, queryClient: externalQueryCl
       "ping",
       "heartbeat"
     ];
-    namedEvents.forEach(type => {
+    namedEvents.forEach((type) => {
       es.addEventListener(type, (e: any) => {
         const event: RuntimeEvent = {
           type,
@@ -230,12 +253,12 @@ export function HardKasProvider({ config, children, queryClient: externalQueryCl
           timestamp: new Date().toISOString()
         };
         setLastEvent(event);
-        listeners.current.forEach(l => l(event));
-        
+        listeners.current.forEach((l) => l(event));
+
         if (type === "projection-stale") {
           setProjectionStatus("stale");
         }
-        
+
         if (type === "projection-synced" || type === "query-synced") {
           setProjectionStatus("synced");
           setLastSyncedAt(new Date().toISOString());
@@ -268,9 +291,9 @@ export function HardKasProvider({ config, children, queryClient: externalQueryCl
     const handleAnnounce = (event: Event) => {
       const detail = (event as any).detail as EIP6963ProviderDetail;
       if (!detail || !detail.info || !detail.provider) return;
-      
-      setProviders(prev => {
-        if (prev.some(p => p.info.rdns === detail.info.rdns)) return prev;
+
+      setProviders((prev) => {
+        if (prev.some((p) => p.info.rdns === detail.info.rdns)) return prev;
         return [...prev, detail];
       });
     };
@@ -288,14 +311,15 @@ export function HardKasProvider({ config, children, queryClient: externalQueryCl
     try {
       const accounts = await detail.provider.request({ method: "eth_requestAccounts" });
       const chainIdHex = await detail.provider.request({ method: "eth_chainId" });
-      const chainId = typeof chainIdHex === "string" ? parseInt(chainIdHex, 16) : Number(chainIdHex);
+      const chainId =
+        typeof chainIdHex === "string" ? parseInt(chainIdHex, 16) : Number(chainIdHex);
 
       setActiveProvider(detail);
       if (accounts && accounts[0]) {
         setWalletAddress(accounts[0]);
       }
       setWalletChainId(chainId);
-      
+
       if (typeof window !== "undefined") {
         window.localStorage.setItem("hardkas:active-wallet", detail.info.rdns);
       }
@@ -314,45 +338,50 @@ export function HardKasProvider({ config, children, queryClient: externalQueryCl
     }
   }, []);
 
-  const switchChain = React.useCallback(async (targetChainId: number) => {
-    if (!activeProvider) {
-      throw new Error("No active wallet connected");
-    }
-    const hexChainId = `0x${targetChainId.toString(16)}`;
-    try {
-      await activeProvider.provider.request({
-        method: "wallet_switchEthereumChain",
-        params: [{ chainId: hexChainId }],
-      });
-      setWalletChainId(targetChainId);
-    } catch (err: any) {
-      if (err.code === 4902) {
-        if (targetChainId === 19416) {
-          await activeProvider.provider.request({
-            method: "wallet_addEthereumChain",
-            params: [{
-              chainId: hexChainId,
-              chainName: "Igra Local",
-              nativeCurrency: { name: "Igra Kaspa", symbol: "iKAS", decimals: 18 },
-              rpcUrls: [config.igraRpcUrl || "http://127.0.0.1:8545"],
-            }],
-          });
-          setWalletChainId(targetChainId);
+  const switchChain = React.useCallback(
+    async (targetChainId: number) => {
+      if (!activeProvider) {
+        throw new Error("No active wallet connected");
+      }
+      const hexChainId = `0x${targetChainId.toString(16)}`;
+      try {
+        await activeProvider.provider.request({
+          method: "wallet_switchEthereumChain",
+          params: [{ chainId: hexChainId }]
+        });
+        setWalletChainId(targetChainId);
+      } catch (err: any) {
+        if (err.code === 4902) {
+          if (targetChainId === 19416) {
+            await activeProvider.provider.request({
+              method: "wallet_addEthereumChain",
+              params: [
+                {
+                  chainId: hexChainId,
+                  chainName: "Igra Local",
+                  nativeCurrency: { name: "Igra Kaspa", symbol: "iKAS", decimals: 18 },
+                  rpcUrls: [config.igraRpcUrl || "http://127.0.0.1:8545"]
+                }
+              ]
+            });
+            setWalletChainId(targetChainId);
+          } else {
+            throw err;
+          }
         } else {
           throw err;
         }
-      } else {
-        throw err;
       }
-    }
-  }, [activeProvider, config.igraRpcUrl]);
+    },
+    [activeProvider, config.igraRpcUrl]
+  );
 
   // SSR hydration-safe auto-reconnect logic
   React.useEffect(() => {
     if (typeof window === "undefined" || providers.length === 0 || activeProvider) return;
     const savedRdns = window.localStorage.getItem("hardkas:active-wallet");
     if (savedRdns) {
-      const match = providers.find(p => p.info.rdns === savedRdns);
+      const match = providers.find((p) => p.info.rdns === savedRdns);
       if (match) {
         connectWallet(match).catch(() => {});
       }
@@ -383,7 +412,8 @@ export function HardKasProvider({ config, children, queryClient: externalQueryCl
     };
 
     const handleChainChanged = (chainIdHex: string) => {
-      const chainId = typeof chainIdHex === "string" ? parseInt(chainIdHex, 16) : Number(chainIdHex);
+      const chainId =
+        typeof chainIdHex === "string" ? parseInt(chainIdHex, 16) : Number(chainIdHex);
       setWalletChainId(chainId);
     };
 
@@ -418,89 +448,101 @@ export function HardKasProvider({ config, children, queryClient: externalQueryCl
         name: "Igra Local",
         nativeCurrency: { name: "Igra Kaspa", symbol: "iKAS", decimals: 18 },
         rpcUrls: {
-          default: { http: [config.igraRpcUrl || "http://127.0.0.1:8545"] },
-        },
+          default: { http: [config.igraRpcUrl || "http://127.0.0.1:8545"] }
+        }
       },
-      transport: http(config.igraRpcUrl || "http://127.0.0.1:8545", { retryCount: 0 }),
+      transport: http(config.igraRpcUrl || "http://127.0.0.1:8545", { retryCount: 0 })
     });
   }, [config.igraRpcUrl]);
 
-  const value = useMemo(() => ({
-    config: {
-      ...config,
-      localOnly: config.localOnly ?? true
-    },
-    igraClient,
-    queryClient,
-    sseStatus,
-    projectionStatus,
-    generationId,
-    lastSyncedAt,
-    apiFetch,
-    lastEvent,
-    subscribe,
-    providers,
-    activeProvider,
-    walletAddress,
-    walletChainId,
-    connectWallet,
-    disconnectWallet,
-    switchChain
-  }), [
-    config,
-    igraClient,
-    queryClient,
-    sseStatus,
-    projectionStatus,
-    generationId,
-    lastSyncedAt,
-    apiFetch,
-    lastEvent,
-    subscribe,
-    providers,
-    activeProvider,
-    walletAddress,
-    walletChainId,
-    connectWallet,
-    disconnectWallet,
-    switchChain
-  ]);
+  const value = useMemo(
+    () => ({
+      config: {
+        ...config,
+        localOnly: config.localOnly ?? true
+      },
+      igraClient,
+      queryClient,
+      sseStatus,
+      projectionStatus,
+      generationId,
+      lastSyncedAt,
+      apiFetch,
+      lastEvent,
+      subscribe,
+      providers,
+      activeProvider,
+      walletAddress,
+      walletChainId,
+      connectWallet,
+      disconnectWallet,
+      switchChain
+    }),
+    [
+      config,
+      igraClient,
+      queryClient,
+      sseStatus,
+      projectionStatus,
+      generationId,
+      lastSyncedAt,
+      apiFetch,
+      lastEvent,
+      subscribe,
+      providers,
+      activeProvider,
+      walletAddress,
+      walletChainId,
+      connectWallet,
+      disconnectWallet,
+      switchChain
+    ]
+  );
 
   return (
     <HardKasContext.Provider value={value}>
       <QueryClientProvider client={queryClient}>
         {tokenMissing ? (
-          <div style={{
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-            justifyContent: "center",
-            height: "100vh",
-            width: "100vw",
-            backgroundColor: "#1a1a1a",
-            color: "#f87171",
-            fontFamily: "sans-serif",
-            textAlign: "center",
-            padding: "20px"
-          }}>
-            <div style={{
-              backgroundColor: "#2d2d2d",
-              border: "2px solid #ef4444",
-              borderRadius: "8px",
-              padding: "30px",
-              maxWidth: "450px",
-              boxShadow: "0 10px 15px -3px rgba(0, 0, 0, 0.5)"
-            }}>
-              <h2 style={{ color: "#ef4444", marginTop: 0 }}>Dashboard authentication token missing.</h2>
+          <div
+            style={{
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              justifyContent: "center",
+              height: "100vh",
+              width: "100vw",
+              backgroundColor: "#1a1a1a",
+              color: "#f87171",
+              fontFamily: "sans-serif",
+              textAlign: "center",
+              padding: "20px"
+            }}
+          >
+            <div
+              style={{
+                backgroundColor: "#2d2d2d",
+                border: "2px solid #ef4444",
+                borderRadius: "8px",
+                padding: "30px",
+                maxWidth: "450px",
+                boxShadow: "0 10px 15px -3px rgba(0, 0, 0, 0.5)"
+              }}
+            >
+              <h2 style={{ color: "#ef4444", marginTop: 0 }}>
+                Dashboard authentication token missing.
+              </h2>
               <p style={{ color: "#d1d5db", lineHeight: "1.5" }}>
-                The dev-server is secured against local workstation CSRF and DNS rebinding attacks.
+                The dev-server is secured against local workstation CSRF and DNS rebinding
+                attacks.
               </p>
               <p style={{ color: "#9ca3af", fontWeight: "bold" }}>
                 Restart hardkas dashboard.
               </p>
             </div>
           </div>
-        ) : children}
+        ) : (
+          children
+        )}
       </QueryClientProvider>
     </HardKasContext.Provider>
   );

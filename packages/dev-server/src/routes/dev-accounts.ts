@@ -7,7 +7,7 @@ devAccountsRoutes.get("/", async (c) => {
   try {
     const workspaceRoot = process.cwd();
     const accounts = listDevAccountsSync(workspaceRoot);
-    
+
     return c.json({
       ok: true,
       data: accounts

@@ -4,10 +4,10 @@ import { createRequire } from "node:module";
 const require = createRequire(import.meta.url);
 const { DatabaseSync } = require("node:sqlite");
 import { calculateContentHash, verifyArtifactIntegrity } from "@hardkas/artifacts";
-import { 
-  validateEventEnvelope, 
-  type EventEnvelope, 
-  type CorruptionIssue, 
+import {
+  validateEventEnvelope,
+  type EventEnvelope,
+  type CorruptionIssue,
   formatCorruptionIssue,
   type CorruptionCode,
   EnvironmentTelemetry
@@ -104,24 +104,35 @@ export class HardkasIndexer {
   /**
    * Internal indexing logic without transaction management.
    */
-  private async _syncInternal(result: SyncResult, specificPaths?: string[]): Promise<void> {
+  private async _syncInternal(
+    result: SyncResult,
+    specificPaths?: string[]
+  ): Promise<void> {
     await this.syncArtifacts(result, specificPaths);
     this.syncEvents(result);
     this.syncTraces();
     this.cleanupZombies();
-    
+
     // Mark last sync
-    this.db.prepare("INSERT OR REPLACE INTO metadata (key, value) VALUES (?, ?)")
+    this.db
+      .prepare("INSERT OR REPLACE INTO metadata (key, value) VALUES (?, ?)")
       .run("last_indexed_at", new Date().toISOString()); // hardkas-determinism-allow: last sync ambient metadata
-      
-    if (result.artifacts.indexed > 0 || result.events.indexed > 0 || result.artifacts.corrupted > 0) {
+
+    if (
+      result.artifacts.indexed > 0 ||
+      result.events.indexed > 0 ||
+      result.artifacts.corrupted > 0
+    ) {
       const crypto = require("node:crypto");
       const genId = crypto.randomUUID(); // hardkas-determinism-allow: random generation metadata ID
-      this.db.prepare("INSERT OR REPLACE INTO metadata (key, value) VALUES (?, ?)")
+      this.db
+        .prepare("INSERT OR REPLACE INTO metadata (key, value) VALUES (?, ?)")
         .run("generation_id", genId);
       result.generationId = genId;
     } else {
-      const row = this.db.prepare("SELECT value FROM metadata WHERE key = 'generation_id'").get();
+      const row = this.db
+        .prepare("SELECT value FROM metadata WHERE key = 'generation_id'")
+        .get();
       result.generationId = row ? row.value : null;
     }
   }
@@ -181,13 +192,18 @@ export class HardkasIndexer {
     try {
       // 1. Wipe
       this._wipeInternal();
-      EnvironmentTelemetry.logAnomaly("REPLAY_RECONCILIATION", "medium", "replay", "Full query rebuild executed");
-      
+      EnvironmentTelemetry.logAnomaly(
+        "REPLAY_RECONCILIATION",
+        "medium",
+        "replay",
+        "Full query rebuild executed"
+      );
+
       // 2. Full Sync (using internal logic to avoid nested transaction)
       if (fs.existsSync(this.hardkasDir)) {
         await this._syncInternal(result);
       }
-      
+
       this.db.exec("COMMIT;");
     } catch (e: any) {
       this.db.exec("ROLLBACK;");
@@ -202,11 +218,15 @@ export class HardkasIndexer {
   private _wipeInternal(): void {
     this.db.exec("DELETE FROM traces;");
     this.db.exec("DELETE FROM events;");
-    try { this.db.exec("DELETE FROM lineage_closure;"); } catch {} // v3+ table
+    try {
+      this.db.exec("DELETE FROM lineage_closure;");
+    } catch {} // v3+ table
     this.db.exec("DELETE FROM lineage_edges;");
     this.db.exec("DELETE FROM artifacts;");
     this.db.exec("DELETE FROM metadata WHERE key = 'last_indexed_at';");
-    try { this.db.exec("DELETE FROM lineage_stats;"); } catch {} // v3+ table
+    try {
+      this.db.exec("DELETE FROM lineage_stats;");
+    } catch {} // v3+ table
   }
 
   /**
@@ -227,11 +247,15 @@ export class HardkasIndexer {
     };
 
     // 1. Check last indexed
-    const lastIdx = this.db.prepare("SELECT value FROM metadata WHERE key = 'last_indexed_at'").get() as { value: string } | undefined;
+    const lastIdx = this.db
+      .prepare("SELECT value FROM metadata WHERE key = 'last_indexed_at'")
+      .get() as { value: string } | undefined;
     report.lastIndexedAt = lastIdx?.value || null;
 
     // 2. Check for zombie rows (rows with no file or mismatched mtime)
-    const rows = this.db.prepare("SELECT artifact_id, file_path, file_mtime_ms FROM artifacts").all() as IndexerArtifactRow[];
+    const rows = this.db
+      .prepare("SELECT artifact_id, file_path, file_mtime_ms FROM artifacts")
+      .all() as IndexerArtifactRow[];
     for (const row of rows) {
       if (!row.file_path || !fs.existsSync(row.file_path)) {
         report.zombieArtifacts++;
@@ -244,54 +268,76 @@ export class HardkasIndexer {
     }
 
     // 3. Check for orphan edges
-    const orphans = this.db.prepare(`
+    const orphans = this.db
+      .prepare(
+        `
       SELECT COUNT(*) as count FROM lineage_edges 
       WHERE parent_artifact_id NOT IN (SELECT artifact_id FROM artifacts)
       OR child_artifact_id NOT IN (SELECT artifact_id FROM artifacts)
-    `).get() as { count: number };
+    `
+      )
+      .get() as { count: number };
     report.orphanEdges = orphans.count;
 
     // 4. Duplicate projections (tx_id should be unique for specific schemas like receipts)
-    const duplicateProjections = this.db.prepare(`
+    const duplicateProjections = this.db
+      .prepare(
+        `
       SELECT COUNT(*) as count FROM (
         SELECT tx_id FROM artifacts WHERE tx_id IS NOT NULL AND schema LIKE '%txReceipt%' GROUP BY tx_id HAVING COUNT(*) > 1
       )
-    `).get() as { count: number };
+    `
+      )
+      .get() as { count: number };
     report.duplicateProjections = duplicateProjections.count;
 
     // 5. Broken replay dependencies
-    const brokenReplayDeps = this.db.prepare(`
+    const brokenReplayDeps = this.db
+      .prepare(
+        `
       SELECT COUNT(*) as count FROM artifacts a
       LEFT JOIN artifacts target ON target.tx_id = json_extract(a.raw_json, '$.payload.txId')
       WHERE a.schema = 'hardkas.replayReport.v1'
       AND target.artifact_id IS NULL
-    `).get() as { count: number };
+    `
+      )
+      .get() as { count: number };
     report.brokenReplayDependencies = brokenReplayDeps.count;
 
     // Also check for corrupted artifacts in the database
-    const corruptedRows = this.db.prepare("SELECT file_path FROM artifacts WHERE kind = 'CORRUPTED'").all() as { file_path: string }[];
-    report.corruptedFiles = corruptedRows.map(r => r.file_path);
+    const corruptedRows = this.db
+      .prepare("SELECT file_path FROM artifacts WHERE kind = 'CORRUPTED'")
+      .all() as { file_path: string }[];
+    report.corruptedFiles = corruptedRows.map((r) => r.file_path);
 
     // 6. Duplicate Event Sequences (should be prevented by DB constraints, but good to verify)
-    const duplicateSequences = this.db.prepare(`
+    const duplicateSequences = this.db
+      .prepare(
+        `
       SELECT COUNT(*) as count FROM (
         SELECT correlation_id, sequence_number, kind FROM events 
         GROUP BY correlation_id, sequence_number, kind HAVING COUNT(*) > 1
       )
-    `).get() as { count: number };
+    `
+      )
+      .get() as { count: number };
     report.duplicateEventSequences = duplicateSequences.count;
 
     // 7. Orphan Events (events causing actions but missing root causation/workflow if required)
-    const orphanEvents = this.db.prepare(`
+    const orphanEvents = this.db
+      .prepare(
+        `
       SELECT COUNT(*) as count FROM events e
       WHERE e.causation_id IS NOT NULL AND e.causation_id NOT IN (SELECT event_id FROM events)
-    `).get() as { count: number };
+    `
+      )
+      .get() as { count: number };
     report.orphanEvents = orphanEvents.count;
 
     // Strict ok evaluation
-    report.ok = 
-      report.staleArtifacts === 0 && 
-      report.zombieArtifacts === 0 && 
+    report.ok =
+      report.staleArtifacts === 0 &&
+      report.zombieArtifacts === 0 &&
       report.orphanEdges === 0 &&
       report.duplicateProjections === 0 &&
       report.brokenReplayDependencies === 0 &&
@@ -308,10 +354,10 @@ export class HardkasIndexer {
    */
   private needsReindex(filePath: string, currentMtimeMs: number): boolean {
     try {
-      const row = this.db.prepare(
-        "SELECT file_mtime_ms FROM artifacts WHERE file_path = ?"
-      ).get(filePath) as { file_mtime_ms: number | null } | undefined;
-      
+      const row = this.db
+        .prepare("SELECT file_mtime_ms FROM artifacts WHERE file_path = ?")
+        .get(filePath) as { file_mtime_ms: number | null } | undefined;
+
       if (!row || row.file_mtime_ms === null) return true;
       return row.file_mtime_ms !== currentMtimeMs;
     } catch {
@@ -321,10 +367,14 @@ export class HardkasIndexer {
 
   private async syncArtifacts(result: SyncResult, specificPaths?: string[]) {
     // Sort files to ensure deterministic indexing order
-    const files = specificPaths 
-      ? specificPaths.filter(p => fs.existsSync(p) && p.endsWith(".json") && !p.endsWith("events.jsonl")).sort() 
+    const files = specificPaths
+      ? specificPaths
+          .filter(
+            (p) => fs.existsSync(p) && p.endsWith(".json") && !p.endsWith("events.jsonl")
+          )
+          .sort()
       : this.walk(this.hardkasDir).sort();
-      
+
     const indexedAt = new Date().toISOString(); // hardkas-determinism-allow: index time metadata
 
     const upsertArtifact = this.db.prepare(`
@@ -357,20 +407,20 @@ export class HardkasIndexer {
     for (const file of files) {
       result.artifacts.scanned++;
       const stat = fs.statSync(file);
-      
+
       // Incremental sync optimization: skip unchanged files
       if (!specificPaths && !this.needsReindex(file, stat.mtimeMs)) {
         skipped++;
         continue;
       }
-      
+
       try {
         const verification = await verifyArtifactIntegrity(file);
         const isCorrupt = !verification.ok;
-        
+
         if (isCorrupt) {
           result.artifacts.corrupted++;
-          verification.issues.forEach(issue => {
+          verification.issues.forEach((issue) => {
             const corruptionIssue: CorruptionIssue = {
               code: issue.code as CorruptionCode,
               severity: issue.severity === "warning" ? "warning" : "error",
@@ -380,9 +430,14 @@ export class HardkasIndexer {
             result.issues.push(corruptionIssue);
             result.warnings.push(formatCorruptionIssue(corruptionIssue));
           });
-          
+
           if (this.strict) {
-            EnvironmentTelemetry.logAnomaly("EXTERNAL_MUTATION", "critical", "query-store", `Strict mode: corrupted artifact in ${file}`);
+            EnvironmentTelemetry.logAnomaly(
+              "EXTERNAL_MUTATION",
+              "critical",
+              "query-store",
+              `Strict mode: corrupted artifact in ${file}`
+            );
             throw new Error(`Strict mode: corrupted artifact in ${file}`);
           }
         }
@@ -411,17 +466,20 @@ export class HardkasIndexer {
           );
           continue;
         }
-        
+
         // Artifact ID is required for indexing
-        const artifactId = parsed.artifactId || parsed.contentHash || calculateContentHash(parsed);
-        const hash = isCorrupt ? "MISMATCH" : (parsed.contentHash || calculateContentHash(parsed));
+        const artifactId =
+          parsed.artifactId || parsed.contentHash || calculateContentHash(parsed);
+        const hash = isCorrupt
+          ? "MISMATCH"
+          : parsed.contentHash || calculateContentHash(parsed);
 
         upsertArtifact.run(
           artifactId,
           hash,
           parsed.schema || "unknown",
           parsed.version || 0,
-          isCorrupt ? "CORRUPTED" : (parsed.kind || parsed.schema),
+          isCorrupt ? "CORRUPTED" : parsed.kind || parsed.schema,
           parsed.mode || "unknown",
           parsed.networkId || "unknown",
           parsed.txId || null,
@@ -439,7 +497,8 @@ export class HardkasIndexer {
         }
       } catch (e: any) {
         result.artifacts.corrupted++;
-        const code: CorruptionCode = e instanceof SyntaxError ? "ARTIFACT_JSON_INVALID" : "ARTIFACT_ID_INVALID";
+        const code: CorruptionCode =
+          e instanceof SyntaxError ? "ARTIFACT_JSON_INVALID" : "ARTIFACT_ID_INVALID";
         const corruptionIssue: CorruptionIssue = {
           code,
           severity: "error",
@@ -463,7 +522,9 @@ export class HardkasIndexer {
           parsed.createdAt || null
         );
       } catch (e: any) {
-        result.warnings.push(`Failed to link lineage for ${parsed.artifactId}: ${e.message}`);
+        result.warnings.push(
+          `Failed to link lineage for ${parsed.artifactId}: ${e.message}`
+        );
       }
     }
 
@@ -495,7 +556,9 @@ export class HardkasIndexer {
 
       while (added > 0 && currentDepth < maxDepth) {
         currentDepth++;
-        const insertResult = this.db.prepare(`
+        const insertResult = this.db
+          .prepare(
+            `
           INSERT OR IGNORE INTO lineage_closure (ancestor_id, descendant_id, depth, created_at)
           SELECT c1.ancestor_id, c2.descendant_id, ? , c2.created_at
           FROM lineage_closure c1
@@ -505,14 +568,28 @@ export class HardkasIndexer {
             SELECT 1 FROM lineage_closure existing
             WHERE existing.ancestor_id = c1.ancestor_id AND existing.descendant_id = c2.descendant_id
           )
-        `).run(currentDepth, currentDepth);
+        `
+          )
+          .run(currentDepth, currentDepth);
         added = insertResult.changes;
       }
 
       // Update lineage stats
-      const closureCount = (this.db.prepare("SELECT COUNT(*) as count FROM lineage_closure").get() as { count: number }).count;
-      const edgeCount = (this.db.prepare("SELECT COUNT(*) as count FROM lineage_edges").get() as { count: number }).count;
-      const maxLineageDepth = (this.db.prepare("SELECT COALESCE(MAX(depth), 0) as maxDepth FROM lineage_closure").get() as { maxDepth: number }).maxDepth;
+      const closureCount = (
+        this.db.prepare("SELECT COUNT(*) as count FROM lineage_closure").get() as {
+          count: number;
+        }
+      ).count;
+      const edgeCount = (
+        this.db.prepare("SELECT COUNT(*) as count FROM lineage_edges").get() as {
+          count: number;
+        }
+      ).count;
+      const maxLineageDepth = (
+        this.db
+          .prepare("SELECT COALESCE(MAX(depth), 0) as maxDepth FROM lineage_closure")
+          .get() as { maxDepth: number }
+      ).maxDepth;
 
       const updateStat = this.db.prepare(
         "INSERT OR REPLACE INTO lineage_stats (stat_key, stat_value, updated_at) VALUES (?, ?, ?)"
@@ -597,7 +674,7 @@ export class HardkasIndexer {
           parsed.networkId,
           parsed.sequenceNumber ?? 0,
           parsed.globalOffset ?? lineNum,
-          parsed.sourceSubsystem || 'unknown',
+          parsed.sourceSubsystem || "unknown",
           line,
           eventsPath,
           stat.mtimeMs,
@@ -658,12 +735,19 @@ export class HardkasIndexer {
   }
 
   private cleanupZombies() {
-    const rows = this.db.prepare("SELECT artifact_id, file_path FROM artifacts").all() as { artifact_id: string; file_path: string | null }[];
+    const rows = this.db
+      .prepare("SELECT artifact_id, file_path FROM artifacts")
+      .all() as { artifact_id: string; file_path: string | null }[];
     const deleteArtifact = this.db.prepare("DELETE FROM artifacts WHERE artifact_id = ?");
 
     for (const row of rows) {
       if (!row.file_path || !fs.existsSync(row.file_path)) {
-        EnvironmentTelemetry.logAnomaly("EXTERNAL_MUTATION", "high", "query-store", `Zombie artifact cleaned up: ${row.artifact_id}`);
+        EnvironmentTelemetry.logAnomaly(
+          "EXTERNAL_MUTATION",
+          "high",
+          "query-store",
+          `Zombie artifact cleaned up: ${row.artifact_id}`
+        );
         deleteArtifact.run(row.artifact_id);
       }
     }
@@ -720,8 +804,10 @@ export class HardkasIndexer {
       let stat;
       try {
         stat = fs.lstatSync(filePath);
-      } catch { continue; }
-      
+      } catch {
+        continue;
+      }
+
       let isDir = stat.isDirectory();
       if (stat.isSymbolicLink()) {
         try {
@@ -736,9 +822,22 @@ export class HardkasIndexer {
       }
 
       if (isDir) {
-        if (file === "node_modules" || file === ".git" || file === "keystore" || file === "snapshots") continue;
+        if (
+          file === "node_modules" ||
+          file === ".git" ||
+          file === "keystore" ||
+          file === "snapshots"
+        )
+          continue;
         results = results.concat(this.walk(filePath, visited));
-      } else if (file.endsWith(".json") && !file.endsWith("events.jsonl") && file !== "state.json" && !file.endsWith("localnet.json") && !file.endsWith("accounts.real.json") && !file.endsWith("sessions.json")) {
+      } else if (
+        file.endsWith(".json") &&
+        !file.endsWith("events.jsonl") &&
+        file !== "state.json" &&
+        !file.endsWith("localnet.json") &&
+        !file.endsWith("accounts.real.json") &&
+        !file.endsWith("sessions.json")
+      ) {
         results.push(filePath);
       }
     }

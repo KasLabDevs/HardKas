@@ -51,7 +51,11 @@ function applyOp(resolved: unknown, op: FilterOp, target: QueryFilter["value"]):
   if (op === "eq") {
     if (resolved === target) return true;
     if (typeof resolved === "bigint" && typeof target === "string") {
-      try { return resolved === BigInt(target); } catch { return false; }
+      try {
+        return resolved === BigInt(target);
+      } catch {
+        return false;
+      }
     }
     return false;
   }
@@ -71,16 +75,20 @@ function applyOp(resolved: unknown, op: FilterOp, target: QueryFilter["value"]):
     if (rNum === null || tNum === null) return false;
 
     switch (op) {
-      case "gt": return rNum > tNum;
-      case "lt": return rNum < tNum;
-      case "gte": return rNum >= tNum;
-      case "lte": return rNum <= tNum;
+      case "gt":
+        return rNum > tNum;
+      case "lt":
+        return rNum < tNum;
+      case "gte":
+        return rNum >= tNum;
+      case "lte":
+        return rNum <= tNum;
     }
   }
 
   if (op === "in") {
     if (!Array.isArray(target)) return false;
-    return target.some(t => applyOp(resolved, "eq", t));
+    return target.some((t) => applyOp(resolved, "eq", t));
   }
 
   if (op === "contains") {

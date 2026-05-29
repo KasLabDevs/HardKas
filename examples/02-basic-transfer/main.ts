@@ -9,7 +9,7 @@ async function main() {
 
   try {
     const hardkas = await Hardkas.create();
-    
+
     // Resolve identities
     const alice = await hardkas.accounts.resolve("alice");
     const bob = await hardkas.accounts.resolve("bob");
@@ -50,15 +50,17 @@ async function main() {
     // [4/4] Confirming
     console.log("\x1b[1m[4/4] Confirming...\x1b[0m");
     process.stdout.write("  [░░░░░░░░░░] 0% (Submitted)");
-    
+
     // Poll for status
     const finalized = await hardkas.tx.confirm(receipt.txId, { timeout: 30000 });
-    
+
     process.stdout.write("\r  [\x1b[32m██████████\x1b[0m] 100% (Accepted by DAG)\n");
     console.log("");
 
     console.log("\x1b[32m✓\x1b[0m \x1b[1mTransfer complete!\x1b[0m");
-    console.log(`Receipt: \x1b[90m.hardkas/receipts/${receipt.txId.substring(0, 8)}...json\x1b[0m`);
+    console.log(
+      `Receipt: \x1b[90m.hardkas/receipts/${receipt.txId.substring(0, 8)}...json\x1b[0m`
+    );
     console.log("");
 
     const aliceNewBalance = await hardkas.accounts.getBalance("alice");

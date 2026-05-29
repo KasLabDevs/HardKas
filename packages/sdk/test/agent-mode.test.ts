@@ -17,10 +17,10 @@ describe("Agent-Safe Mode Policies", () => {
   });
 
   it("should block network actions if allowNetwork is false", async () => {
-    const sdk = await Hardkas.open({ 
-      cwd: tmpDir, 
-      mode: "agent", 
-      policy: { allowNetwork: false } 
+    const sdk = await Hardkas.open({
+      cwd: tmpDir,
+      mode: "agent",
+      policy: { allowNetwork: false }
     });
 
     expect(() => sdk.enforcePolicy("network")).toThrowError(HardkasError);
@@ -28,10 +28,10 @@ describe("Agent-Safe Mode Policies", () => {
   });
 
   it("should block mainnet actions if allowMainnet is false", async () => {
-    const sdk = await Hardkas.open({ 
-      cwd: tmpDir, 
-      mode: "agent", 
-      policy: { allowMainnet: false } 
+    const sdk = await Hardkas.open({
+      cwd: tmpDir,
+      mode: "agent",
+      policy: { allowMainnet: false }
     });
 
     expect(() => sdk.enforcePolicy("mainnet")).toThrowError(HardkasError);
@@ -39,20 +39,20 @@ describe("Agent-Safe Mode Policies", () => {
   });
 
   it("should allow mainnet actions if explicitly allowed by policy", async () => {
-    const sdk = await Hardkas.open({ 
-      cwd: tmpDir, 
-      mode: "agent", 
-      policy: { allowMainnet: true } 
+    const sdk = await Hardkas.open({
+      cwd: tmpDir,
+      mode: "agent",
+      policy: { allowMainnet: true }
     });
 
     expect(() => sdk.enforcePolicy("mainnet")).not.toThrow();
   });
 
   it("should block mutations if requireDryRun is true", async () => {
-    const sdk = await Hardkas.open({ 
-      cwd: tmpDir, 
-      mode: "agent", 
-      policy: { requireDryRun: true } 
+    const sdk = await Hardkas.open({
+      cwd: tmpDir,
+      mode: "agent",
+      policy: { requireDryRun: true }
     });
 
     expect(() => sdk.enforcePolicy("mutation")).toThrowError(HardkasError);
@@ -61,7 +61,7 @@ describe("Agent-Safe Mode Policies", () => {
 
   it("should default to developer mode without restrictions", async () => {
     const sdk = await Hardkas.open({ cwd: tmpDir, mode: "developer" });
-    
+
     expect(() => sdk.enforcePolicy("network")).not.toThrow();
     expect(() => sdk.enforcePolicy("mainnet")).not.toThrow();
     expect(() => sdk.enforcePolicy("mutation")).not.toThrow();

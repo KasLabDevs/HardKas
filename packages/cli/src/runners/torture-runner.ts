@@ -5,11 +5,7 @@ import path from "node:path";
 import crypto from "node:crypto";
 import pc from "picocolors";
 import { UI } from "../ui.js";
-import { 
-  getAllTortureBuckets, 
-  LcgPrng, 
-  TortureCaseResult 
-} from "@hardkas/testing";
+import { getAllTortureBuckets, LcgPrng, TortureCaseResult } from "@hardkas/testing";
 import { EnvironmentTelemetry, AnomalyEvent, AppendCoordinator } from "@hardkas/core";
 
 export interface TortureMatrixOptions {
@@ -29,13 +25,19 @@ export interface TortureReplayOptions {
 /**
  * Deterministically generates the sequence of buckets and caseSeeds from the global seed.
  */
-function getTestCaseSchedule(globalSeed: number, totalIterations: number, profileFilter?: string) {
+function getTestCaseSchedule(
+  globalSeed: number,
+  totalIterations: number,
+  profileFilter?: string
+) {
   let buckets = getAllTortureBuckets();
   if (profileFilter) {
-    buckets = buckets.filter(b => b.profiles?.includes(profileFilter));
+    buckets = buckets.filter((b) => b.profiles?.includes(profileFilter));
   }
   if (buckets.length === 0) {
-    throw new Error(`No torture buckets registered for profile ${profileFilter || 'all'}!`);
+    throw new Error(
+      `No torture buckets registered for profile ${profileFilter || "all"}!`
+    );
   }
 
   const masterPrng = new LcgPrng(globalSeed);
@@ -71,22 +73,37 @@ export async function runTortureMatrix(options: TortureMatrixOptions) {
   }
 
   const iterations = options.iterations || 300;
-  
+
   EnvironmentTelemetry.init(process.cwd());
-  const telemetryPath = path.join(process.cwd(), ".hardkas", "telemetry", "telemetry.jsonl");
+  const telemetryPath = path.join(
+    process.cwd(),
+    ".hardkas",
+    "telemetry",
+    "telemetry.jsonl"
+  );
   if (fs.existsSync(telemetryPath)) {
-    try { fs.unlinkSync(telemetryPath); } catch (e) {} // Clear before matrix
+    try {
+      fs.unlinkSync(telemetryPath);
+    } catch (e) {} // Clear before matrix
   }
-  
+
   UI.info(`\n${pc.bold(pc.cyan("⚡ HardKAS Torture Matrix OS ⚡"))}`);
   UI.info(`  ${pc.dim("Global Seed:")}  ${pc.yellow(seed)}`);
   UI.info(`  ${pc.dim("Iterations:")}   ${pc.yellow(iterations)}`);
-  UI.info(`  ${pc.dim("Active Buckets:")} ${pc.green(getAllTortureBuckets().map(b => b.name).join(", "))}\n`);
+  UI.info(
+    `  ${pc.dim("Active Buckets:")} ${pc.green(
+      getAllTortureBuckets()
+        .map((b) => b.name)
+        .join(", ")
+    )}\n`
+  );
 
   let schedule = getTestCaseSchedule(seed, iterations, options.profile);
   if (options.bucket) {
-    schedule = schedule.filter(item => item.bucketName === options.bucket);
-    UI.info(`  ${pc.dim("Filtered Bucket:")} ${pc.yellow(options.bucket)} (Matched ${schedule.length} of ${iterations} iterations)\n`);
+    schedule = schedule.filter((item) => item.bucketName === options.bucket);
+    UI.info(
+      `  ${pc.dim("Filtered Bucket:")} ${pc.yellow(options.bucket)} (Matched ${schedule.length} of ${iterations} iterations)\n`
+    );
   }
   if (options.profile) {
     UI.info(`  ${pc.dim("Active Profile:")} ${pc.magenta(options.profile)}\n`);
@@ -97,8 +114,8 @@ export async function runTortureMatrix(options: TortureMatrixOptions) {
   let failedCount = 0;
 
   for (const item of schedule) {
-    const bucket = getAllTortureBuckets().find(b => b.name === item.bucketName)!;
-    
+    const bucket = getAllTortureBuckets().find((b) => b.name === item.bucketName)!;
+
     // Initialise case PRNG
     const casePrng = new LcgPrng(item.caseSeed);
     const ctx = {
@@ -108,8 +125,12 @@ export async function runTortureMatrix(options: TortureMatrixOptions) {
       prng: casePrng,
       workspaceDir: process.cwd()
     };
-    
-    EnvironmentTelemetry.setContext({ seed, caseId: item.caseId, bucket: item.bucketName });
+
+    EnvironmentTelemetry.setContext({
+      seed,
+      caseId: item.caseId,
+      bucket: item.bucketName
+    });
 
     const startTime = Date.now();
     let status: "pass" | "fail" = "pass";
@@ -190,7 +211,7 @@ export async function runTortureMatrix(options: TortureMatrixOptions) {
       ...(clockSkewDetected !== undefined ? { clockSkewDetected } : {}),
       ...(externalMutationDetected !== undefined ? { externalMutationDetected } : {}),
       ...(longPathSupportDetected !== undefined ? { longPathSupportDetected } : {}),
-      ...(sandboxSnapshotPath !== undefined ? { sandboxSnapshotPath } : {}),
+      ...(sandboxSnapshotPath !== undefined ? { sandboxSnapshotPath } : {})
     };
 
     results.push(caseResult);
@@ -200,20 +221,47 @@ export async function runTortureMatrix(options: TortureMatrixOptions) {
     const bName = bucket.name.toLowerCase();
     if (bName.includes("lock") || bName.includes("concurrency")) {
       eventType = item.iteration % 2 === 0 ? "LOCK_CONTENTION" : "STALE_LOCK_RECOVERY";
-    } else if (bName.includes("fs") || bName.includes("path") || bName.includes("file") || bName.includes("io")) {
+    } else if (
+      bName.includes("fs") ||
+      bName.includes("path") ||
+      bName.includes("file") ||
+      bName.includes("io")
+    ) {
       eventType = "FS_RETRY";
-    } else if (bName.includes("replay") || bName.includes("determinism") || bName.includes("invariant") || bName.includes("verify")) {
+    } else if (
+      bName.includes("replay") ||
+      bName.includes("determinism") ||
+      bName.includes("invariant") ||
+      bName.includes("verify")
+    ) {
       eventType = "REPLAY_RECONCILIATION";
-    } else if (bName.includes("mutation") || bName.includes("chaos") || bName.includes("external")) {
+    } else if (
+      bName.includes("mutation") ||
+      bName.includes("chaos") ||
+      bName.includes("external")
+    ) {
       eventType = "EXTERNAL_MUTATION";
-    } else if (bName.includes("quarantine") || bName.includes("violation") || bName.includes("schema") || bName.includes("integrity")) {
+    } else if (
+      bName.includes("quarantine") ||
+      bName.includes("violation") ||
+      bName.includes("schema") ||
+      bName.includes("integrity")
+    ) {
       eventType = "QUARANTINE";
     } else {
-      const fallbackTypes = ["LOCK_CONTENTION", "STALE_LOCK_RECOVERY", "FS_RETRY", "REPLAY_RECONCILIATION", "EXTERNAL_MUTATION", "QUARANTINE"];
+      const fallbackTypes = [
+        "LOCK_CONTENTION",
+        "STALE_LOCK_RECOVERY",
+        "FS_RETRY",
+        "REPLAY_RECONCILIATION",
+        "EXTERNAL_MUTATION",
+        "QUARANTINE"
+      ];
       eventType = fallbackTypes[item.iteration % fallbackTypes.length]!;
     }
 
-    const eventSeverity = status === "fail" ? "critical" : (item.iteration % 10 === 0 ? "elevated" : "nominal");
+    const eventSeverity =
+      status === "fail" ? "critical" : item.iteration % 10 === 0 ? "elevated" : "nominal";
 
     const telemetryDir = path.join(process.cwd(), ".hardkas", "telemetry");
     if (!fs.existsSync(telemetryDir)) {
@@ -239,11 +287,19 @@ export async function runTortureMatrix(options: TortureMatrixOptions) {
         failureCode
       }
     });
-    const eventHash = crypto.createHash("sha256").update(canonicalPayloadRaw).digest("hex").slice(0, 32);
+    const eventHash = crypto
+      .createHash("sha256")
+      .update(canonicalPayloadRaw)
+      .digest("hex")
+      .slice(0, 32);
 
     // Event instance ID (includes timestamp for instance uniqueness)
     const eventIdRaw = `${eventHash}-${timestamp}`;
-    const eventId = crypto.createHash("sha256").update(eventIdRaw).digest("hex").slice(0, 32);
+    const eventId = crypto
+      .createHash("sha256")
+      .update(eventIdRaw)
+      .digest("hex")
+      .slice(0, 32);
 
     const telemetryEvent = {
       schemaVersion: "hardkas.telemetry.v1",
@@ -269,11 +325,9 @@ export async function runTortureMatrix(options: TortureMatrixOptions) {
     AppendCoordinator.appendAtomic(tPath, JSON.stringify(telemetryEvent), process.cwd());
 
     // Print progress
-    const statusText = status === "pass" 
-      ? pc.green("PASS") 
-      : pc.red("FAIL");
+    const statusText = status === "pass" ? pc.green("PASS") : pc.red("FAIL");
     const indicator = status === "pass" ? pc.green("✓") : pc.red("✗");
-    
+
     UI.info(
       `  ${indicator} [${pc.cyan(item.caseId)}] [${pc.blue(bucket.name.padEnd(28))}] -> ${statusText} ${pc.dim(`(${duration}ms)`)}`
     );
@@ -287,7 +341,9 @@ export async function runTortureMatrix(options: TortureMatrixOptions) {
         UI.info(`     ${pc.red("Snapshot:")}  ${pc.cyan(sandboxSnapshotPath)}`);
       }
       if (longPathSupportDetected !== undefined) {
-        UI.info(`     ${pc.red("LongPaths:")} ${pc.magenta(longPathSupportDetected ? "enabled" : "disabled")}`);
+        UI.info(
+          `     ${pc.red("LongPaths:")} ${pc.magenta(longPathSupportDetected ? "enabled" : "disabled")}`
+        );
       }
       UI.info(`     ${pc.red("Replay:")}    ${pc.cyan(reproduceCommand)}`);
       UI.info("");
@@ -300,7 +356,10 @@ export async function runTortureMatrix(options: TortureMatrixOptions) {
   UI.info(`  Passed:      ${pc.green(passedCount)}`);
   UI.info(`  Failed:      ${pc.red(failedCount)}`);
 
-  const bucketSummaries: Record<string, { passed: number; failed: number; total: number }> = {};
+  const bucketSummaries: Record<
+    string,
+    { passed: number; failed: number; total: number }
+  > = {};
   for (const r of results) {
     if (!bucketSummaries[r.bucket]) {
       bucketSummaries[r.bucket] = { passed: 0, failed: 0, total: 0 };
@@ -318,14 +377,18 @@ export async function runTortureMatrix(options: TortureMatrixOptions) {
   UI.info(`  ${pc.bold("Bucket breakdown:")}`);
   for (const [bName, summary] of Object.entries(bucketSummaries)) {
     const statusColor = summary.failed > 0 ? pc.red : pc.green;
-    UI.info(`    - ${pc.blue(bName.padEnd(28))}: Total ${pc.yellow(summary.total)} | Passed ${pc.green(summary.passed)} | Failed ${statusColor(summary.failed)}`);
+    UI.info(
+      `    - ${pc.blue(bName.padEnd(28))}: Total ${pc.yellow(summary.total)} | Passed ${pc.green(summary.passed)} | Failed ${statusColor(summary.failed)}`
+    );
   }
 
   if (failedCount > 0) {
     UI.info(`\n${pc.bold(pc.red("❌ Failed Cases & Replay Instructions:"))}`);
     for (const r of results) {
       if (r.status === "fail") {
-        UI.info(`  - ${pc.cyan(r.caseId)} [${pc.yellow(r.bucket)}] fails invariant: ${pc.red(r.expectedInvariant)} (Severity: ${pc.red(r.severity || "critical")})`);
+        UI.info(
+          `  - ${pc.cyan(r.caseId)} [${pc.yellow(r.bucket)}] fails invariant: ${pc.red(r.expectedInvariant)} (Severity: ${pc.red(r.severity || "critical")})`
+        );
         UI.info(`    ${pc.dim("Replay:")} ${pc.magenta(r.reproduceCommand)}`);
       }
     }
@@ -336,12 +399,15 @@ export async function runTortureMatrix(options: TortureMatrixOptions) {
   // 3. Output Telemetry Heatmap
   if (fs.existsSync(telemetryPath)) {
     try {
-      const lines = fs.readFileSync(telemetryPath, "utf-8").split("\n").filter(l => l.trim() !== "");
-      const events = lines.map(l => JSON.parse(l) as AnomalyEvent);
-      
+      const lines = fs
+        .readFileSync(telemetryPath, "utf-8")
+        .split("\n")
+        .filter((l) => l.trim() !== "");
+      const events = lines.map((l) => JSON.parse(l) as AnomalyEvent);
+
       const bucketAnomalies: Record<string, number> = {};
       const typeAnomalies: Record<string, number> = {};
-      
+
       for (const ev of events) {
         if (ev.bucket) {
           bucketAnomalies[ev.bucket] = (bucketAnomalies[ev.bucket] || 0) + 1;
@@ -349,16 +415,16 @@ export async function runTortureMatrix(options: TortureMatrixOptions) {
         const evType = (ev as any).type || ev.anomalyType || "UNKNOWN";
         typeAnomalies[evType] = (typeAnomalies[evType] || 0) + 1;
       }
-      
+
       UI.info(`\n${pc.bold(pc.cyan("🌡️  Environment Telemetry Heatmap"))}`);
       UI.info(`  Total Anomalies / Near Misses: ${pc.yellow(events.length)}`);
-      
+
       UI.info(`\n  ${pc.bold("Top Anomaly Types:")}`);
       const sortedTypes = Object.entries(typeAnomalies).sort((a, b) => b[1] - a[1]);
       for (const [type, count] of sortedTypes) {
         UI.info(`    - ${pc.magenta(type.padEnd(28))}: ${pc.yellow(count)}`);
       }
-      
+
       UI.info(`\n  ${pc.bold("Most Stressed Buckets:")}`);
       const sortedBuckets = Object.entries(bucketAnomalies).sort((a, b) => b[1] - a[1]);
       for (const [bName, count] of sortedBuckets) {
@@ -370,13 +436,15 @@ export async function runTortureMatrix(options: TortureMatrixOptions) {
   }
 
   // 4. Output Report JSON
-  const reportPath = options.report || path.join(process.cwd(), ".hardkas", "reports", `torture-${seed}.json`);
+  const reportPath =
+    options.report ||
+    path.join(process.cwd(), ".hardkas", "reports", `torture-${seed}.json`);
   try {
     const dir = path.dirname(reportPath);
     if (!fs.existsSync(dir)) {
       fs.mkdirSync(dir, { recursive: true });
     }
-    
+
     const finalReport = {
       schemaVersion: "hardkas.tortureReport.v1",
       seed,
@@ -384,8 +452,8 @@ export async function runTortureMatrix(options: TortureMatrixOptions) {
       profile: options.profile || null,
       bucketFilter: options.bucket || null,
       reproduceCommand: `pnpm hardkas torture matrix --seed ${seed} --iterations ${iterations}${options.profile ? ` --profile ${options.profile}` : ""}`,
-      failures: results.filter(r => r.status === "fail").length,
-      warnings: results.filter(r => r.severity === "warning").length,
+      failures: results.filter((r) => r.status === "fail").length,
+      warnings: results.filter((r) => r.severity === "warning").length,
       summary: {
         total: results.length,
         passed: passedCount,
@@ -416,16 +484,18 @@ export async function runTortureReplay(options: TortureReplayOptions) {
 
   // We scan the first 10000 cases to find our target case ID
   const schedule = getTestCaseSchedule(seed, 10000, options.profile);
-  const target = schedule.find(item => item.caseId === targetCaseId);
-  
+  const target = schedule.find((item) => item.caseId === targetCaseId);
+
   if (!target) {
-    throw new Error(`Could not find case ${targetCaseId} under global seed ${seed}. Ensure case ID format is e.g. case-001`);
+    throw new Error(
+      `Could not find case ${targetCaseId} under global seed ${seed}. Ensure case ID format is e.g. case-001`
+    );
   }
 
   UI.info(`  ${pc.dim("Selected Bucket:")} ${pc.yellow(target.bucketName)}`);
   UI.info(`  ${pc.dim("Case Seed:")}       ${pc.yellow(target.caseSeed)}\n`);
 
-  const bucket = getAllTortureBuckets().find(b => b.name === target.bucketName)!;
+  const bucket = getAllTortureBuckets().find((b) => b.name === target.bucketName)!;
   const casePrng = new LcgPrng(target.caseSeed);
   const ctx = {
     globalSeed: seed,
@@ -442,7 +512,9 @@ export async function runTortureReplay(options: TortureReplayOptions) {
     UI.info(`\n${pc.bold(pc.green("✓ CASE REPLAY SUCCESSFUL"))}`);
     UI.info(`  ${pc.dim("Flow:")}               ${pc.green(runResult.flow)}`);
     UI.info(`  ${pc.dim("Mutation:")}           ${pc.green(runResult.mutation)}`);
-    UI.info(`  ${pc.dim("Expected Invariant:")} ${pc.green(runResult.expectedInvariant)}`);
+    UI.info(
+      `  ${pc.dim("Expected Invariant:")} ${pc.green(runResult.expectedInvariant)}`
+    );
     UI.info(`  ${pc.dim("Duration:")}           ${duration}ms`);
   } catch (err: any) {
     const duration = Date.now() - startTime;

@@ -18,7 +18,7 @@ describe("findWorkspaceRoot", () => {
   });
 
   it("should fallback to process.cwd() if no root indicators are found", () => {
-    // This is hard to test deterministically without mocking fs, 
+    // This is hard to test deterministically without mocking fs,
     // but we can test it doesn't crash on a random temp dir.
     const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), "hardkas-test-empty-"));
     const root = findWorkspaceRoot(tempDir);

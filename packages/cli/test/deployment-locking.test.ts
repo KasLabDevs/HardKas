@@ -1,6 +1,9 @@
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import { withLock } from "@hardkas/core";
-import { trackDeployment, trackDeploymentInternal } from "../src/runners/deployment-runners.js";
+import {
+  trackDeployment,
+  trackDeploymentInternal
+} from "../src/runners/deployment-runners.js";
 import { loadDeployment, deleteDeployment } from "@hardkas/artifacts";
 import path from "node:path";
 import fs from "node:fs";
@@ -26,15 +29,18 @@ describe("Deployment Locking", () => {
 
   it("trackDeploymentInternal can be used safely inside an outer lock", async () => {
     // Acquire the artifacts lock first
-    await withLock({ rootDir, name: "artifacts", command: "test outer lock" }, async () => {
-      // While holding the lock, call the internal tracker
-      await trackDeploymentInternal(rootDir, {
-        label: testLabel,
-        network: testNetwork,
-        txId: "simtx_1234",
-        status: "sent"
-      });
-    });
+    await withLock(
+      { rootDir, name: "artifacts", command: "test outer lock" },
+      async () => {
+        // While holding the lock, call the internal tracker
+        await trackDeploymentInternal(rootDir, {
+          label: testLabel,
+          network: testNetwork,
+          txId: "simtx_1234",
+          status: "sent"
+        });
+      }
+    );
 
     // Verify it persisted
     const record = await loadDeployment(rootDir, testNetwork, testLabel);
@@ -55,16 +61,19 @@ describe("Deployment Locking", () => {
     expect(record).toBeDefined();
     expect(record?.txId).toBe("simtx_5678");
   });
-  
+
   it("trackDeployment fails with lock error if outer lock is already held", async () => {
     await expect(
-      withLock({ rootDir, name: "artifacts", command: "test outer lock", wait: false }, async () => {
-        // This should throw because trackDeployment tries to acquire the same lock without wait
-        await trackDeployment({
-          label: testLabel,
-          network: testNetwork,
-        });
-      })
+      withLock(
+        { rootDir, name: "artifacts", command: "test outer lock", wait: false },
+        async () => {
+          // This should throw because trackDeployment tries to acquire the same lock without wait
+          await trackDeployment({
+            label: testLabel,
+            network: testNetwork
+          });
+        }
+      )
     ).rejects.toThrow(/Workspace is locked/);
   });
 
@@ -87,22 +96,33 @@ describe("Deployment Locking", () => {
 
     // Verify the lock is released and we can immediately acquire it again
     let lockAcquired = false;
-    await withLock({ rootDir, name: "artifacts", command: "test release verification", wait: false }, async () => {
-      lockAcquired = true;
-    });
+    await withLock(
+      { rootDir, name: "artifacts", command: "test release verification", wait: false },
+      async () => {
+        lockAcquired = true;
+      }
+    );
     expect(lockAcquired).toBe(true);
   });
 
   it("lock ownership verification (correct lock name used)", async () => {
     // Acquire a lock with a different name
-    await withLock({ rootDir, name: "different-lock-name", command: "test different lock", wait: false }, async () => {
-      // trackDeployment uses the 'artifacts' lock, so it should succeed even if 'different-lock-name' is held!
-      await trackDeployment({
-        label: testLabel + "-other",
-        network: testNetwork,
-        txId: "simtx_other"
-      });
-    });
+    await withLock(
+      {
+        rootDir,
+        name: "different-lock-name",
+        command: "test different lock",
+        wait: false
+      },
+      async () => {
+        // trackDeployment uses the 'artifacts' lock, so it should succeed even if 'different-lock-name' is held!
+        await trackDeployment({
+          label: testLabel + "-other",
+          network: testNetwork,
+          txId: "simtx_other"
+        });
+      }
+    );
 
     const record = await loadDeployment(rootDir, testNetwork, testLabel + "-other");
     expect(record).toBeDefined();
@@ -124,9 +144,15 @@ describe("Deployment Locking", () => {
     expect(record?.status).toBe("confirmed");
 
     // Also verify file actually exists under .hardkas/deployments
-    const expectedFilePath = path.join(rootDir, ".hardkas", "deployments", testNetwork, `${label}.json`);
+    const expectedFilePath = path.join(
+      rootDir,
+      ".hardkas",
+      "deployments",
+      testNetwork,
+      `${label}.json`
+    );
     expect(fs.existsSync(expectedFilePath)).toBe(true);
-    
+
     // Check contents match
     const fileContent = JSON.parse(fs.readFileSync(expectedFilePath, "utf-8"));
     expect(fileContent.label).toBe(label);

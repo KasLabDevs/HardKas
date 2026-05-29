@@ -46,18 +46,25 @@ export interface QueryBackend {
 
   /** Backend identifier for diagnostics. */
   kind(): "sqlite" | "filesystem";
-  
+
   /** Find artifacts matching optional basic filters. */
-  findArtifacts(filters?: { schema?: string; mode?: string; networkId?: string }): Promise<ArtifactDocument[]>;
-  
+  findArtifacts(filters?: {
+    schema?: string;
+    mode?: string;
+    networkId?: string;
+  }): Promise<ArtifactDocument[]>;
+
   /** Get a specific artifact by content hash or artifact ID. */
   getArtifact(idOrHash: string): Promise<ArtifactDocument | null>;
-  
+
   /** Get events matching optional filters. */
   getEvents(filters?: { kind?: string; txId?: string }): Promise<EventDocument[]>;
-  
+
   /** Get lineage edges. */
-  getLineageEdges(filters?: { parentHash?: string; childHash?: string }): Promise<LineageEdgeDocument[]>;
+  getLineageEdges(filters?: {
+    parentHash?: string;
+    childHash?: string;
+  }): Promise<LineageEdgeDocument[]>;
 
   /** Get the current freshness/health status of the store. */
   getStoreStatus(): Promise<string>;
@@ -74,7 +81,7 @@ export interface QueryBackend {
   /** Apply pending schema migrations. */
   migrate(): Promise<{ applied: number }>;
 
-  /** 
+  /**
    * Execute raw SQL (if supported).
    * @deprecated BOUNDARY DINÁMICO: Este es el ÚNICO boundary dinámico aceptado en el sistema
    * que puede retornar `any[]` de forma intencional (SQLite devuelve filas genéricas).
@@ -83,8 +90,11 @@ export interface QueryBackend {
   executeRawSql(sql: string): Promise<any[]>;
 
   /** Find all transaction receipts (for replay analysis). */
-  findReceipts(filters?: { status?: string; networkId?: string }): Promise<ArtifactDocument[]>;
-  
+  findReceipts(filters?: {
+    status?: string;
+    networkId?: string;
+  }): Promise<ArtifactDocument[]>;
+
   /** Find all transaction traces. */
   findTraces(filters?: { txId?: string }): Promise<ArtifactDocument[]>;
 }

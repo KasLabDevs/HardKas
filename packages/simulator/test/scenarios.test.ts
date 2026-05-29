@@ -5,7 +5,7 @@ import {
   runForkResolution,
   runDiamondDag,
   runAllScenarios,
-  formatScenarioReport,
+  formatScenarioReport
 } from "../src/index.js";
 
 describe("Simulation Scenarios", () => {
@@ -41,7 +41,9 @@ describe("Simulation Scenarios", () => {
   describe("Fork Resolution", () => {
     it("selected chain follows one fork consistently", () => {
       const result = runForkResolution({
-        name: "test-fork", blockCount: 20, forkPoint: 10
+        name: "test-fork",
+        blockCount: 20,
+        forkPoint: 10
       });
       expect(result.metrics.selectedChainLength).toBeGreaterThan(10);
     });

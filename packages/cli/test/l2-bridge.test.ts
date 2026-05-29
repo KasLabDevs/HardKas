@@ -1,9 +1,12 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { runL2BridgeStatus, runL2BridgeAssumptions } from "../src/runners/l2-bridge-runners.js";
+import {
+  runL2BridgeStatus,
+  runL2BridgeAssumptions
+} from "../src/runners/l2-bridge-runners.js";
 import * as l2 from "@hardkas/l2";
 
 vi.mock("@hardkas/l2", async (importOriginal) => {
-  const actual = await importOriginal() as any;
+  const actual = (await importOriginal()) as any;
   return {
     ...actual,
     getL2BridgeAssumptions: vi.fn()
@@ -13,11 +16,12 @@ vi.mock("@hardkas/l2", async (importOriginal) => {
 describe("L2 Bridge CLI Runners", () => {
   const mockAssumptions = {
     schema: "hardkas.l2BridgeAssumptions.v1",
-    hardkasVersion: "0.7.3-alpha",
+    hardkasVersion: "0.7.4-alpha",
     l2Network: "igra",
     bridgePhase: "pre-zk",
     trustlessExit: false,
-    custodyModel: "Phase-dependent bridge custody; verify live Igra bridge phase before use.",
+    custodyModel:
+      "Phase-dependent bridge custody; verify live Igra bridge phase before use.",
     exitModel: "Trustless exit is available only in the ZK phase.",
     riskProfile: "high",
     notes: [
@@ -41,10 +45,18 @@ describe("L2 Bridge CLI Runners", () => {
 
       await runL2BridgeStatus({ network: "igra" });
 
-      expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining("Igra bridge status"));
-      expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining("Bridge phase:   pre-zk"));
-      expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining("Trustless exit: no"));
-      expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining("Risk:           high"));
+      expect(consoleSpy).toHaveBeenCalledWith(
+        expect.stringContaining("Igra bridge status")
+      );
+      expect(consoleSpy).toHaveBeenCalledWith(
+        expect.stringContaining("Bridge phase:   pre-zk")
+      );
+      expect(consoleSpy).toHaveBeenCalledWith(
+        expect.stringContaining("Trustless exit: no")
+      );
+      expect(consoleSpy).toHaveBeenCalledWith(
+        expect.stringContaining("Risk:           high")
+      );
     });
 
     it("should output JSON", async () => {
@@ -55,13 +67,15 @@ describe("L2 Bridge CLI Runners", () => {
 
       const json = consoleSpy.mock.calls[0][0];
       const parsed = JSON.parse(json);
-    expect(parsed.hardkasVersion).toBe("0.7.3-alpha");
+      expect(parsed.hardkasVersion).toBe("0.7.4-alpha");
       expect(parsed.l2Network).toBe("igra");
     });
 
     it("should throw for unknown network", async () => {
       (l2.getL2BridgeAssumptions as any).mockReturnValue(null);
-      await expect(runL2BridgeStatus({ network: "unknown" })).rejects.toThrow("L2 profile 'unknown' not found");
+      await expect(runL2BridgeStatus({ network: "unknown" })).rejects.toThrow(
+        "L2 profile 'unknown' not found"
+      );
     });
   });
 
@@ -72,8 +86,12 @@ describe("L2 Bridge CLI Runners", () => {
 
       await runL2BridgeAssumptions({ network: "igra" });
 
-      expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining("Igra bridge assumptions"));
-      expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining("pre-ZK: stronger trust assumptions"));
+      expect(consoleSpy).toHaveBeenCalledWith(
+        expect.stringContaining("Igra bridge assumptions")
+      );
+      expect(consoleSpy).toHaveBeenCalledWith(
+        expect.stringContaining("pre-ZK: stronger trust assumptions")
+      );
     });
   });
 });

@@ -21,6 +21,6 @@ If there is a single byte of divergence—if a timestamp was read incorrectly, i
 
 ## Quarantine
 
-HardKAS does not tolerate non-determinism. If a replay fails, the resulting artifact is immediately marked as `QUARANTINED`. 
+HardKAS does not tolerate non-determinism. If a replay fails, the resulting artifact is immediately marked as `QUARANTINED`.
 
 Quarantined artifacts are completely isolated. They will not be projected into the Query Store, and they will not be used as parents for future transactions. This strict quarantine ensures that a single non-deterministic bug cannot invisibly corrupt the rest of your local testing state.

@@ -25,11 +25,14 @@ export class KaspaWrpcClient {
   private url: string;
   private ws: WebSocket | null = null;
   private requestId = 0;
-  private pending = new Map<number, {
-    resolve: (value: WrpcResponse) => void;
-    reject: (error: Error) => void;
-    timer: ReturnType<typeof setTimeout>;
-  }>();
+  private pending = new Map<
+    number,
+    {
+      resolve: (value: WrpcResponse) => void;
+      reject: (error: Error) => void;
+      timer: ReturnType<typeof setTimeout>;
+    }
+  >();
 
   public onNotification?: (msg: WrpcResponse) => void;
   public debug = false;
@@ -47,13 +50,17 @@ export class KaspaWrpcClient {
     }
   }
 
-  getUrl(): string { return this.url; }
+  getUrl(): string {
+    return this.url;
+  }
 
   async connect(timeoutMs = 5000): Promise<void> {
     return new Promise((resolve, reject) => {
       const timer = setTimeout(() => {
         this.disconnect();
-        reject(new Error(`WebSocket connection timeout after ${timeoutMs}ms to ${this.url}`));
+        reject(
+          new Error(`WebSocket connection timeout after ${timeoutMs}ms to ${this.url}`)
+        );
       }, timeoutMs);
 
       try {
@@ -93,7 +100,10 @@ export class KaspaWrpcClient {
         } catch (parseErr) {
           // Non-JSON message — log in debug mode
           if (this.debug) {
-            console.debug("[wRPC] Non-JSON message received:", data.toString().slice(0, 200));
+            console.debug(
+              "[wRPC] Non-JSON message received:",
+              data.toString().slice(0, 200)
+            );
           }
         }
       });
@@ -108,7 +118,11 @@ export class KaspaWrpcClient {
     });
   }
 
-  async request(method: string, params?: Record<string, unknown>, timeoutMs = 5000): Promise<unknown> {
+  async request(
+    method: string,
+    params?: Record<string, unknown>,
+    timeoutMs = 5000
+  ): Promise<unknown> {
     if (!this.ws || this.ws.readyState !== WebSocket.OPEN) {
       throw new Error("WebSocket not connected. Call connect() first.");
     }
@@ -124,14 +138,16 @@ export class KaspaWrpcClient {
       this.pending.set(id, {
         resolve: (response) => {
           if (response.error) {
-            const errMsg = response.error.message || `wRPC error code ${response.error.code || "unknown"}`;
+            const errMsg =
+              response.error.message ||
+              `wRPC error code ${response.error.code || "unknown"}`;
             reject(new Error(errMsg));
           } else {
             resolve(response.result !== undefined ? response.result : response.params);
           }
         },
         reject,
-        timer,
+        timer
       });
 
       // Envelope format verified against rusty-kaspad v1.1.0
@@ -139,10 +155,18 @@ export class KaspaWrpcClient {
     });
   }
 
-  async getServerInfo(): Promise<unknown> { return this.request("getServerInfo"); }
-  async getBlockDagInfo(): Promise<unknown> { return this.request("getBlockDagInfo"); }
-  async getVirtualSelectedParentBlueScore(): Promise<unknown> { return this.request("getVirtualSelectedParentBlueScore"); }
-  async getUtxosByAddresses(addresses: string[]): Promise<unknown> { return this.request("getUtxosByAddresses", { addresses }); }
+  async getServerInfo(): Promise<unknown> {
+    return this.request("getServerInfo");
+  }
+  async getBlockDagInfo(): Promise<unknown> {
+    return this.request("getBlockDagInfo");
+  }
+  async getVirtualSelectedParentBlueScore(): Promise<unknown> {
+    return this.request("getVirtualSelectedParentBlueScore");
+  }
+  async getUtxosByAddresses(addresses: string[]): Promise<unknown> {
+    return this.request("getUtxosByAddresses", { addresses });
+  }
 
   async ping(): Promise<boolean> {
     try {
@@ -155,7 +179,9 @@ export class KaspaWrpcClient {
 
   disconnect(): void {
     if (this.ws) {
-      try { this.ws.close(); } catch {}
+      try {
+        this.ws.close();
+      } catch {}
       this.ws = null;
     }
     for (const [, pending] of this.pending) {

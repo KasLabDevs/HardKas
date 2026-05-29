@@ -18,7 +18,7 @@ describe("HardkasIndexer Corruption Diagnostics", () => {
     tempDir = fs.mkdtempSync(path.join(os.tmpdir(), "hardkas-corruption-test-"));
     hardkasDir = path.join(tempDir, ".hardkas");
     fs.mkdirSync(hardkasDir);
-    
+
     const dbPath = path.join(tempDir, "test.db");
     store = new HardkasStore({ dbPath });
     store.connect({ autoMigrate: true });
@@ -38,10 +38,12 @@ describe("HardkasIndexer Corruption Diagnostics", () => {
     const result = await indexer.sync();
 
     expect(result.artifacts.corrupted).toBe(1);
-    expect(result.issues).toContainEqual(expect.objectContaining({
-      code: "ARTIFACT_JSON_INVALID",
-      severity: "error"
-    }));
+    expect(result.issues).toContainEqual(
+      expect.objectContaining({
+        code: "ARTIFACT_JSON_INVALID",
+        severity: "error"
+      })
+    );
   });
 
   it("should detect and report artifact hash mismatch", async () => {
@@ -58,10 +60,12 @@ describe("HardkasIndexer Corruption Diagnostics", () => {
     const result = await indexer.sync();
 
     expect(result.artifacts.corrupted).toBe(1);
-    expect(result.issues).toContainEqual(expect.objectContaining({
-      code: "ARTIFACT_HASH_MISMATCH",
-      severity: "error"
-    }));
+    expect(result.issues).toContainEqual(
+      expect.objectContaining({
+        code: "ARTIFACT_HASH_MISMATCH",
+        severity: "error"
+      })
+    );
   });
 
   it("should detect and report line-specific event corruption", async () => {
@@ -78,9 +82,12 @@ describe("HardkasIndexer Corruption Diagnostics", () => {
       networkId: "simnet",
       payload: {}
     });
-    
+
     const invalidLine = "{ not json }";
-    const invalidEnvelope = JSON.stringify({ schema: "hardkas.event", eventId: "missing-fields" });
+    const invalidEnvelope = JSON.stringify({
+      schema: "hardkas.event",
+      eventId: "missing-fields"
+    });
 
     fs.writeFileSync(eventsPath, `${validEvent}\n${invalidLine}\n${invalidEnvelope}\n`);
 
@@ -89,18 +96,22 @@ describe("HardkasIndexer Corruption Diagnostics", () => {
 
     expect(result.events.indexed).toBe(1);
     expect(result.events.corrupted).toBe(2);
-    
+
     // Check line 2 (JSON invalid)
-    expect(result.issues).toContainEqual(expect.objectContaining({
-      code: "EVENT_JSON_INVALID",
-      lineNumber: 2
-    }));
+    expect(result.issues).toContainEqual(
+      expect.objectContaining({
+        code: "EVENT_JSON_INVALID",
+        lineNumber: 2
+      })
+    );
 
     // Check line 3 (Schema invalid)
-    expect(result.issues).toContainEqual(expect.objectContaining({
-      code: "EVENT_SCHEMA_INVALID",
-      lineNumber: 3
-    }));
+    expect(result.issues).toContainEqual(
+      expect.objectContaining({
+        code: "EVENT_SCHEMA_INVALID",
+        lineNumber: 3
+      })
+    );
   });
 
   it("should fail-fast in strict mode when corruption is found", async () => {
@@ -108,7 +119,7 @@ describe("HardkasIndexer Corruption Diagnostics", () => {
     fs.writeFileSync(filePath, "{ invalid json }");
 
     const indexer = new HardkasIndexer(db, { cwd: tempDir, strict: true });
-    
+
     await expect(indexer.sync()).rejects.toThrow();
   });
 
@@ -116,13 +127,15 @@ describe("HardkasIndexer Corruption Diagnostics", () => {
     // We already have 1 migration applied (initial_schema)
     // We can't easily add a new migration just for this test without modifying the registry.
     // But we can manually remove the history to trigger 'required'
-    
+
     db.exec("DELETE FROM hardkas_migrations");
-    
+
     const health = store.checkHealth();
     expect(health.ok).toBe(false);
-    expect(health.issues).toContainEqual(expect.objectContaining({
-      code: "STORE_MIGRATION_REQUIRED"
-    }));
+    expect(health.issues).toContainEqual(
+      expect.objectContaining({
+        code: "STORE_MIGRATION_REQUIRED"
+      })
+    );
   });
 });

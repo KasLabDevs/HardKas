@@ -3,8 +3,8 @@ import { buildPaymentPlan } from "@hardkas/tx-builder";
 import type { LocalnetState, LocalnetUtxo, SimulationResult } from "./types.js";
 import { resolveAccountAddressFromState } from "./state.js";
 import { getSpendableUtxos } from "./balance.js";
-import { 
-  createTxPlanArtifact, 
+import {
+  createTxPlanArtifact,
   createSimulatedTxReceipt,
   calculateContentHash,
   HARDKAS_VERSION,
@@ -34,7 +34,11 @@ function buildDagContextFromState(state: LocalnetState): DagContext {
  * Generates a deterministic failed transaction ID from error context.
  * No Date.now() or Math.random() — same failure = same ID.
  */
-function generateDeterministicFailedTxId(preStateHash: string, errorMessage: string, daaScore: string): string {
+function generateDeterministicFailedTxId(
+  preStateHash: string,
+  errorMessage: string,
+  daaScore: string
+): string {
   const normalized = errorMessage.replace(/[^a-zA-Z0-9_:. -]/g, "");
   const input = `failed:${preStateHash}:${normalized}:${daaScore}`;
   const hash = createHash("sha256").update(input).digest("hex").slice(0, 32);
@@ -45,7 +49,11 @@ function generateDeterministicFailedTxId(preStateHash: string, errorMessage: str
  * Generates a deterministic simulated transaction ID from plan and state.
  * Ensures replay invariants: same plan + same state = same txId.
  */
-function generateDeterministicTxId(planArtifact: TxPlan, preStateHash: string, daaScore: string): string {
+function generateDeterministicTxId(
+  planArtifact: TxPlan,
+  preStateHash: string,
+  daaScore: string
+): string {
   const planHash = planArtifact.contentHash || calculateContentHash(planArtifact);
   const input = `${planHash}:${preStateHash}:${daaScore}`;
   const hash = createHash("sha256").update(input).digest("hex").slice(0, 32);
@@ -91,9 +99,9 @@ export function applySimulatedPayment(
     if (amountSompi <= 0n) {
       throw new Error("Amount must be greater than 0");
     }
-    
+
     if (amountSompi < DUST_LIMIT_SOMPI) {
-       errors.push(`Amount ${amountSompi} is below dust limit (${DUST_LIMIT_SOMPI})`);
+      errors.push(`Amount ${amountSompi} is below dust limit (${DUST_LIMIT_SOMPI})`);
     }
 
     // 2. Resolve UTXOs
@@ -102,7 +110,7 @@ export function applySimulatedPayment(
       throw new Error(`Insufficient funds: no unspent UTXOs for ${fromAddress}`);
     }
 
-    const availableUtxos = unspent.map(u => {
+    const availableUtxos = unspent.map((u) => {
       const parts = u.id.split(":");
       const index = Number(parts[parts.length - 1]);
       const transactionId = parts.slice(0, -1).join(":");
@@ -123,14 +131,16 @@ export function applySimulatedPayment(
     });
 
     // 4. Double-Spend & Consistency Check
-    const spentUtxoIds = plan.inputs.map(i => `${i.outpoint.transactionId}:${i.outpoint.index}`);
+    const spentUtxoIds = plan.inputs.map(
+      (i) => `${i.outpoint.transactionId}:${i.outpoint.index}`
+    );
     const uniqueSpentIds = new Set(spentUtxoIds);
     if (uniqueSpentIds.size !== spentUtxoIds.length) {
       throw new Error("Duplicate inputs detected in transaction plan");
     }
 
     for (const id of spentUtxoIds) {
-      const utxo = state.utxos.find(u => u.id === id);
+      const utxo = state.utxos.find((u) => u.id === id);
       if (!utxo) throw new Error(`UTXO not found: ${id}`);
       if (utxo.spent) throw new Error(`UTXO already spent: ${id}`);
     }
@@ -149,9 +159,9 @@ export function applySimulatedPayment(
     // 6. State Transition
     const nextDaaScore = (BigInt(state.daaScore) + 1n).toString();
     const txId = generateDeterministicTxId(planArtifact, preStateHash, nextDaaScore);
-    
+
     // Mark inputs as spent
-    const nextUtxos: LocalnetUtxo[] = state.utxos.map(u => {
+    const nextUtxos: LocalnetUtxo[] = state.utxos.map((u) => {
       if (spentUtxoIds.includes(u.id)) {
         return {
           ...u,
@@ -212,7 +222,6 @@ export function applySimulatedPayment(
       planArtifact,
       errors
     };
-
   } catch (error) {
     // 7. Atomic Rollback (return original state)
     // Deterministic failed tx ID — no Date.now() or Math.random()
@@ -260,19 +269,23 @@ export function applySimulatedPlan(
   const preStateHash = calculateStateHash(state);
 
   try {
-    const spentUtxoIds = planArtifact.inputs.map((i: any) => `${i.outpoint.transactionId}:${i.outpoint.index}`);
-    
+    const spentUtxoIds = planArtifact.inputs.map(
+      (i: any) => `${i.outpoint.transactionId}:${i.outpoint.index}`
+    );
+
     // Validate inputs
     for (const id of spentUtxoIds) {
-      const utxo = state.utxos.find(u => u.id === id);
+      const utxo = state.utxos.find((u) => u.id === id);
       if (!utxo) throw new Error(`UTXO not found: ${id}`);
       if (utxo.spent) throw new Error(`UTXO already spent: ${id}`);
     }
 
     const nextDaaScore = (BigInt(state.daaScore) + 1n).toString();
-    const txId = options?.txId || generateDeterministicTxId(planArtifact, preStateHash, nextDaaScore);
+    const txId =
+      options?.txId ||
+      generateDeterministicTxId(planArtifact, preStateHash, nextDaaScore);
 
-    const nextUtxos: LocalnetUtxo[] = state.utxos.map(u => {
+    const nextUtxos: LocalnetUtxo[] = state.utxos.map((u) => {
       if (spentUtxoIds.includes(u.id)) {
         return { ...u, spent: true, spentAtDaaScore: nextDaaScore };
       }
@@ -280,7 +293,7 @@ export function applySimulatedPlan(
     });
 
     const createdUtxoIds: string[] = [];
-    
+
     // Create outputs
     planArtifact.outputs.forEach((o: any, idx: number) => {
       const utxo: LocalnetUtxo = {
@@ -307,7 +320,11 @@ export function applySimulatedPlan(
       createdUtxoIds.push(changeUtxo.id);
     }
 
-    const nextState: LocalnetState = { ...state, daaScore: nextDaaScore, utxos: nextUtxos };
+    const nextState: LocalnetState = {
+      ...state,
+      daaScore: nextDaaScore,
+      utxos: nextUtxos
+    };
     const postStateHash = calculateStateHash(nextState);
 
     const receipt = createSimulatedTxReceipt(planArtifact, txId, ctx, {
@@ -320,7 +337,6 @@ export function applySimulatedPlan(
     });
 
     return { ok: true, state: nextState, receipt, planArtifact, errors };
-
   } catch (error) {
     // Deterministic failed replay ID — no Date.now()
     const errorMessage = error instanceof Error ? error.message : String(error);

@@ -13,6 +13,7 @@ This example showcases the full HardKAS developer experience on a local developm
 ## How to run
 
 1.  Ensure your environment is ready:
+
     ```bash
     hardkas up
     ```

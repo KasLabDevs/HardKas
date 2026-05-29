@@ -1,7 +1,9 @@
 # HardKas Transaction Pipeline Audit (`tx sign`)
 
 ## 1. Scope
+
 This audit analyzes the transaction signing process in HardKas, focusing on:
+
 - `hardkas tx sign <planPath>` command
 - `runTxSign` runner
 - core signing function `signTxPlanArtifact`
@@ -12,10 +14,12 @@ This audit analyzes the transaction signing process in HardKas, focusing on:
 - determinism and reproducibility of the signed artifact (`signedTx`)
 
 ## 2. Executive Summary
+
 The `tx sign` command consumes a `txPlan` artifact and produces a `signedTx` artifact. The architecture is well-designed as a transformation pipeline, conceptually separating identity (signer) from network logic. It supports simulated signing backends and private keys via WASM (KASPA).
 However, the operational process bypasses the encrypted keystore (only working with plaintext accounts or environment variables), and signed artifacts are not bit-by-bit reproducible due to the inclusion of timestamps and the lack of original plan hash validation.
 
 Current system classification:
+
 - Signer abstraction: GOOD
 - Keystore integration: PARTIAL (Disconnected from the flow)
 - Mainnet protections: GOOD
@@ -26,16 +30,17 @@ Important: The analysis focuses on developer tooling, assuming convenience for l
 
 ## 3. Command Interface
 
-| Item | Value |
-| :--- | :--- |
-| Command | `hardkas tx sign <planPath>` |
-| Positional args | `<planPath>` |
-| Flags | `--account`, `--out`, `--allow-mainnet-signing`, `--json` |
-| Runner | `runTxSign` |
-| Input artifact | `txPlan` |
-| Output artifact | `signedTx` |
+| Item            | Value                                                     |
+| :-------------- | :-------------------------------------------------------- |
+| Command         | `hardkas tx sign <planPath>`                              |
+| Positional args | `<planPath>`                                              |
+| Flags           | `--account`, `--out`, `--allow-mainnet-signing`, `--json` |
+| Runner          | `runTxSign`                                               |
+| Input artifact  | `txPlan`                                                  |
+| Output artifact | `signedTx`                                                |
 
 **Observed behaviors:**
+
 - **Missing `--account`**: Attempts to infer the signer using `txPlan.from.accountName` or the address.
 - **Missing `--out`**: Does not write to disk, only prints the formatted result or JSON to stdout.
 - **Missing private key**: Fails at the account resolution level or in the WASM signer layer.
@@ -58,102 +63,103 @@ hardkas tx sign tx-plan.json
 
 ## 5. Input Artifact Validation
 
-| Validation | Present | Location | Risk |
-| :--- | :--- | :--- | :--- |
-| Schema validation | YES | `signTxPlanArtifact` | LOW |
-| Status validation | YES | `signTxPlanArtifact` | LOW |
-| Network validation | YES | `signTxPlanArtifact` | LOW |
-| contentHash verification | **NO** | Missing | **HIGH** |
-| artifactId verification | **NO** | Missing | **HIGH** |
-| Tamper detection | **NO** | Missing | **HIGH** |
+| Validation               | Present | Location             | Risk     |
+| :----------------------- | :------ | :------------------- | :------- |
+| Schema validation        | YES     | `signTxPlanArtifact` | LOW      |
+| Status validation        | YES     | `signTxPlanArtifact` | LOW      |
+| Network validation       | YES     | `signTxPlanArtifact` | LOW      |
+| contentHash verification | **NO**  | Missing              | **HIGH** |
+| artifactId verification  | **NO**  | Missing              | **HIGH** |
+| Tamper detection         | **NO**  | Missing              | **HIGH** |
 
 **Key point**: `tx sign` DOES NOT verify the `contentHash` of the `txPlan`. If a user or process alters the plan JSON before signing it, the command will sign it without alerting to the manipulation, compromising the integrity of the determinism.
 
 ## 6. Signer Abstraction
 
-| Signer backend | Supported by tx sign | Source | Secret handling | Status |
-| :--- | :--- | :--- | :--- | :--- |
-| Simulated signer | YES | Memory | N/A | SUPPORTED |
-| ENV private key | YES | Environment | Raw string | SUPPORTED |
-| Plaintext local store | YES | `.hardkas/accounts.real.json` | Raw string | LEGACY |
-| Encrypted keystore | **NO** | `.hardkas/keystore/*.json` | Needs decryption | NOT_SUPPORTED |
-| External wallet | NO | N/A | N/A | FUTURE |
-| Hardware wallet | NO | N/A | N/A | FUTURE |
+| Signer backend        | Supported by tx sign | Source                        | Secret handling  | Status        |
+| :-------------------- | :------------------- | :---------------------------- | :--------------- | :------------ |
+| Simulated signer      | YES                  | Memory                        | N/A              | SUPPORTED     |
+| ENV private key       | YES                  | Environment                   | Raw string       | SUPPORTED     |
+| Plaintext local store | YES                  | `.hardkas/accounts.real.json` | Raw string       | LEGACY        |
+| Encrypted keystore    | **NO**               | `.hardkas/keystore/*.json`    | Needs decryption | NOT_SUPPORTED |
+| External wallet       | NO                   | N/A                           | N/A              | FUTURE        |
+| Hardware wallet       | NO                   | N/A                           | N/A              | FUTURE        |
 
 ## 7. Keystore Integration
+
 The `tx sign` command **CANNOT** currently use the V2 encrypted keystore (`.hardkas/keystore/*.json`). There is no interactive prompt mechanism for the password during the signing flow, nor does it use the session generated by `accounts real unlock` (which is purely for verification). The system relies on plaintext or ENV.
 
-| Keystore feature | Present in tx sign | Evidence | Risk |
-| :--- | :--- | :--- | :--- |
-| File parsing | NO | Fallback to plaintext store | MEDIUM |
-| Password prompt | NO | CLI flags missing | HIGH |
-| Session unlock | NO | No state preserved | MEDIUM |
+| Keystore feature | Present in tx sign | Evidence                    | Risk   |
+| :--------------- | :----------------- | :-------------------------- | :----- |
+| File parsing     | NO                 | Fallback to plaintext store | MEDIUM |
+| Password prompt  | NO                 | CLI flags missing           | HIGH   |
+| Session unlock   | NO                 | No state preserved          | MEDIUM |
 
-*Approach:* Treat this disconnection as “identity backend inconsistency” for a developer tool, rather than a catastrophic “custody failure” of a production wallet.
+_Approach:_ Treat this disconnection as “identity backend inconsistency” for a developer tool, rather than a catastrophic “custody failure” of a production wallet.
 
 ## 8. Plaintext / ENV Key Handling
 
-| Source | Secret format | Redacted | Risk | Recommendation |
-| :--- | :--- | :--- | :--- | :--- |
-| `process.env` | String | NO (in memory) | MEDIUM | Standard for CI, warn local dev |
-| `.hardkas/accounts.real.json` | JSON plain | NO | HIGH | Deprecate in favor of Keystore |
-| logs / stdout | N/A | YES | LOW | Ensure no leaks in error traces |
-| JSON output | N/A | YES | LOW | Secret is excluded |
-| signed artifact fields | N/A | YES | LOW | Private key explicitly omitted |
+| Source                        | Secret format | Redacted       | Risk   | Recommendation                  |
+| :---------------------------- | :------------ | :------------- | :----- | :------------------------------ |
+| `process.env`                 | String        | NO (in memory) | MEDIUM | Standard for CI, warn local dev |
+| `.hardkas/accounts.real.json` | JSON plain    | NO             | HIGH   | Deprecate in favor of Keystore  |
+| logs / stdout                 | N/A           | YES            | LOW    | Ensure no leaks in error traces |
+| JSON output                   | N/A           | YES            | LOW    | Secret is excluded              |
+| signed artifact fields        | N/A           | YES            | LOW    | Private key explicitly omitted  |
 
 ## 9. Mainnet Protections
 
-| Protection | Present | Location | Risk | Recommendation |
-| :--- | :--- | :--- | :--- | :--- |
-| `--allow-mainnet-signing` | YES | CLI & Runner | LOW | Maintain as developer guard |
-| default block | YES | `signTxPlanArtifact` | LOW | None |
-| network detection | YES | `signTxPlanArtifact` | LOW | None |
-| interactive prompt | NO | N/A | MEDIUM | Optional for developer tooling |
-| shortcut flow via `tx send` | YES | `tx.ts` | LOW | Require `--yes` |
-| config network mismatch | YES | CLI Runner | LOW | Validate against defaultNetwork |
+| Protection                  | Present | Location             | Risk   | Recommendation                  |
+| :-------------------------- | :------ | :------------------- | :----- | :------------------------------ |
+| `--allow-mainnet-signing`   | YES     | CLI & Runner         | LOW    | Maintain as developer guard     |
+| default block               | YES     | `signTxPlanArtifact` | LOW    | None                            |
+| network detection           | YES     | `signTxPlanArtifact` | LOW    | None                            |
+| interactive prompt          | NO      | N/A                  | MEDIUM | Optional for developer tooling  |
+| shortcut flow via `tx send` | YES     | `tx.ts`              | LOW    | Require `--yes`                 |
+| config network mismatch     | YES     | CLI Runner           | LOW    | Validate against defaultNetwork |
 
 For developer tooling, requiring `--allow-mainnet-signing` is a reasonable and sufficient default protection.
 
 ## 10. Signing Correctness
 
-| Correctness check | Present | Risk if missing |
-| :--- | :--- | :--- |
-| signs all inputs | YES (WASM SDK) | Transaction rejected by network |
-| account corresponds to `from` | YES | Incorrect signature / Theft |
-| network prefix | YES | Invalid tx at destination |
-| change address | YES (in plan) | Loss of funds |
-| signed tx matches plan | YES | Sending to wrong destination |
-| mass/fee mismatch post-sign | NO | Broadcast failure (slippage) |
-| no mutation of original plan | YES | Artifact inconsistency |
+| Correctness check             | Present        | Risk if missing                 |
+| :---------------------------- | :------------- | :------------------------------ |
+| signs all inputs              | YES (WASM SDK) | Transaction rejected by network |
+| account corresponds to `from` | YES            | Incorrect signature / Theft     |
+| network prefix                | YES            | Invalid tx at destination       |
+| change address                | YES (in plan)  | Loss of funds                   |
+| signed tx matches plan        | YES            | Sending to wrong destination    |
+| mass/fee mismatch post-sign   | NO             | Broadcast failure (slippage)    |
+| no mutation of original plan  | YES            | Artifact inconsistency          |
 
 ## 11. Artifact Output
 
-| Field | Present | Sensitive | Deterministic | Notes |
-| :--- | :--- | :--- | :--- | :--- |
-| `schema` | YES | NO | YES | `hardkas.signedTx` |
-| `signedId` | YES | NO | **NO** | Uses temporal `Date.now()` |
-| `sourcePlanId` | YES | NO | YES | Plan reference |
-| `artifactId` | NO | NO | - | Absent in output |
-| `contentHash` | YES | NO | **NO** | Affected by `createdAt`/`signedId` |
-| `parentArtifactId` | NO | NO | - | Uses `sourcePlanId` instead |
-| `lineage` | NO | NO | - | Formal block not implemented |
-| `txId` | YES | NO | YES | Transaction hash |
-| `signedTransaction` | YES | NO | YES | Hexadecimal signature payload |
-| `createdAt` | YES | NO | **NO** | `new Date().toISOString()` |
-| `signer metadata` | NO | NO | - | Could add value (e.g., `backend`) |
-| `privateKey` | NO | YES | - | Correctly excluded |
-| `password` | NO | YES | - | Correctly excluded |
+| Field               | Present | Sensitive | Deterministic | Notes                              |
+| :------------------ | :------ | :-------- | :------------ | :--------------------------------- |
+| `schema`            | YES     | NO        | YES           | `hardkas.signedTx`                 |
+| `signedId`          | YES     | NO        | **NO**        | Uses temporal `Date.now()`         |
+| `sourcePlanId`      | YES     | NO        | YES           | Plan reference                     |
+| `artifactId`        | NO      | NO        | -             | Absent in output                   |
+| `contentHash`       | YES     | NO        | **NO**        | Affected by `createdAt`/`signedId` |
+| `parentArtifactId`  | NO      | NO        | -             | Uses `sourcePlanId` instead        |
+| `lineage`           | NO      | NO        | -             | Formal block not implemented       |
+| `txId`              | YES     | NO        | YES           | Transaction hash                   |
+| `signedTransaction` | YES     | NO        | YES           | Hexadecimal signature payload      |
+| `createdAt`         | YES     | NO        | **NO**        | `new Date().toISOString()`         |
+| `signer metadata`   | NO      | NO        | -             | Could add value (e.g., `backend`)  |
+| `privateKey`        | NO      | YES       | -             | Correctly excluded                 |
+| `password`          | NO      | YES       | -             | Correctly excluded                 |
 
 ## 12. Artifact Lineage
 
-| Lineage feature | Present | Risk | Recommendation |
-| :--- | :--- | :--- | :--- |
-| `sourcePlanId` | YES | LOW | Maintains basic traceability |
-| `parentArtifactId` | NO | MEDIUM | Unify with V2 standard |
-| `lineage` block | NO | HIGH | Include formal transformation graph |
-| transformation metadata | NO | MEDIUM | Record signer backend/version |
-| deterministic parent link | YES | LOW | `sourcePlanId` is hash |
-| reconstruct chain | PARTIAL | MEDIUM | Missing formal metadata |
+| Lineage feature           | Present | Risk   | Recommendation                      |
+| :------------------------ | :------ | :----- | :---------------------------------- |
+| `sourcePlanId`            | YES     | LOW    | Maintains basic traceability        |
+| `parentArtifactId`        | NO      | MEDIUM | Unify with V2 standard              |
+| `lineage` block           | NO      | HIGH   | Include formal transformation graph |
+| transformation metadata   | NO      | MEDIUM | Record signer backend/version       |
+| deterministic parent link | YES     | LOW    | `sourcePlanId` is hash              |
+| reconstruct chain         | PARTIAL | MEDIUM | Missing formal metadata             |
 
 The `txPlan → signedTx → txReceipt` chain is traceable via ad-hoc IDs (`sourcePlanId`), but lacks the traceability standard that would facilitate formal automatic audits or visualizations.
 
@@ -167,26 +173,28 @@ Analysis: **same txPlan + same signer + same inputs = same signed artifact?** ->
 
 ## 14. Error Handling
 
-| Error case | Current behavior | User clarity | Recommendation |
-| :--- | :--- | :--- | :--- |
-| invalid plan | Throws (schema validation) | Good | None |
-| tampered plan | **Passes silently** | Poor | Verify `contentHash` |
-| missing account | Fails in resolution | Good | Suggest `accounts real generate` |
-| missing private key | Fails internally | Fair | Clarify backend issue |
-| unsupported keystore | Fails/Bypassed | Poor | Implement prompt integration |
-| mainnet blocked | Explicit Error | Good | Suggest flag |
-| signing failure | Throws WASM error | Fair | Catch and format SDK errors |
-| output write failure | Throws FS error | Good | None |
+| Error case           | Current behavior           | User clarity | Recommendation                   |
+| :------------------- | :------------------------- | :----------- | :------------------------------- |
+| invalid plan         | Throws (schema validation) | Good         | None                             |
+| tampered plan        | **Passes silently**        | Poor         | Verify `contentHash`             |
+| missing account      | Fails in resolution        | Good         | Suggest `accounts real generate` |
+| missing private key  | Fails internally           | Fair         | Clarify backend issue            |
+| unsupported keystore | Fails/Bypassed             | Poor         | Implement prompt integration     |
+| mainnet blocked      | Explicit Error             | Good         | Suggest flag                     |
+| signing failure      | Throws WASM error          | Fair         | Catch and format SDK errors      |
+| output write failure | Throws FS error            | Good         | None                             |
 
 ## 15. Findings
 
 ### GOOD
+
 - Decoupled pipeline: plan → sign → send.
 - Signer abstraction allows for future extensions.
 - Mainnet guardrails prevent catastrophic errors by default.
 - No leakage of private keys (`privateKey`) or passwords in the JSON output artifact.
 
 ### NEEDS HARDENING
+
 - `contentHash` of the input is not verified before signing (possibility of silent tampering).
 - Timestamp metadata (`createdAt`, `signedId` based on `Date.now()`) completely breaks artifact reproducibility.
 - Lineage not formalized in a standard block (only ad-hoc use of `sourcePlanId`).
@@ -196,17 +204,20 @@ Analysis: **same txPlan + same signer + same inputs = same signed artifact?** ->
 ## 16. Recommendations
 
 ### P0 — Deterministic Artifact Hardening
+
 - **Verify `contentHash`**: Recalculate and validate the `txPlan` hash before proceeding to sign.
 - **Separate Metadata**: Exclude purely temporal fields (like `createdAt`) from the identity calculation or replace `signedId` with a canonical hash based only on deterministic inputs (e.g., txPlan hash + signer pubkey).
 - **Formal Lineage**: Use a strict `lineage` block that invariably points to parent artifacts.
 - **Stable Identity**: Ensure that `same txPlan + same signer = exact same artifact hash`.
 
 ### P1 — DX Consistency
+
 - **Ephemeral Keystore Prompt**: Add logic to detect if the resolved account resides in the encrypted Keystore V2, and if so, interactively request the password.
 - **Unified Signer Abstraction**: Fully integrate the Keystore backend as a valid option within `HardkasTxPlanSigner`.
 - **Redacted Logs**: Ensure that under no circumstances are keys printed to stdout in verbose mode.
 
 ### P2 — Optional Guards
+
 - **Mainnet Interactive**: Provide interactive warning for mainnet if the terminal is a TTY, even without the flag (optional DX).
 - **Better Error Messages**: Clarify exactly which signing backend is being attempted if the account is not supported.
 
@@ -227,9 +238,10 @@ The ideal flow for the stable version (v1) should be:
 11. **Write atomically**: Save the result.
 12. **Print redacted summary**: Confirm to user.
 
-*Note:* A persistent session is not necessary; the system must be secure locally by default without emulating production wallet infrastructure.
+_Note:_ A persistent session is not necessary; the system must be secure locally by default without emulating production wallet infrastructure.
 
 ## 18. Tests Recommended
+
 - Sign valid `txPlan`.
 - Reject malformed `txPlan`.
 - Reject tampered `txPlan` hash.
@@ -245,6 +257,7 @@ The ideal flow for the stable version (v1) should be:
 - Output write failure does not corrupt previous artifact.
 
 ## 19. Documentation Updates Required
+
 - `tx sign` command reference.
 - Status of signer backends.
 - Support status of Keystore V2 and its current limitations.
@@ -254,6 +267,7 @@ The ideal flow for the stable version (v1) should be:
 - Documentation on Deterministic artifact reproducibility.
 
 ## 20. Checklist
+
 - [x] Review signer abstraction
 - [x] Review keystore integration
 - [x] Review mainnet protections
@@ -265,6 +279,7 @@ The ideal flow for the stable version (v1) should be:
 - [x] No modifications to commands
 
 ## Guardrails
+
 - No modifications to runtime logic.
 - No modifications to cryptography.
 - No modifications to runners.

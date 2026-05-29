@@ -2,11 +2,19 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { runL2Networks } from "../src/runners/l2-networks-runner.js";
 import { runL2ProfileShow } from "../src/runners/l2-profile-show-runner.js";
 import { runL2ProfileValidate } from "../src/runners/l2-profile-validate-runner.js";
-import { runL2RpcChainId, runL2RpcGasPrice } from "../src/runners/l2-rpc-query-runners.js";
+import {
+  runL2RpcChainId,
+  runL2RpcGasPrice
+} from "../src/runners/l2-rpc-query-runners.js";
 import { runL2RpcHealth } from "../src/runners/l2-rpc-health-runner.js";
 import { runL2Balance, runL2Nonce } from "../src/runners/l2-account-runners.js";
 import { runL2Call, runL2EstimateGas } from "../src/runners/l2-call-runners.js";
-import { runL2TxBuild, runL2TxSign, runL2TxSend, runL2TxStatus } from "../src/runners/l2-tx-runners.js";
+import {
+  runL2TxBuild,
+  runL2TxSign,
+  runL2TxSend,
+  runL2TxStatus
+} from "../src/runners/l2-tx-runners.js";
 import { runL2ContractDeployPlan } from "../src/runners/l2-contract-runners.js";
 import { runL2BridgeStatus } from "../src/runners/l2-bridge-runners.js";
 import * as l2 from "@hardkas/l2";
@@ -15,7 +23,7 @@ import * as artifacts from "@hardkas/artifacts";
 
 // Mock @hardkas/l2
 vi.mock("@hardkas/l2", async (importOriginal) => {
-  const actual = await importOriginal() as any;
+  const actual = (await importOriginal()) as any;
   return {
     ...actual,
     EvmJsonRpcClient: vi.fn().mockImplementation(() => ({
@@ -26,9 +34,14 @@ vi.mock("@hardkas/l2", async (importOriginal) => {
       getTransactionCount: vi.fn().mockResolvedValue(5n),
       call: vi.fn().mockResolvedValue("0x1234"),
       estimateGas: vi.fn().mockResolvedValue(21000n),
-      sendRawTransaction: vi.fn().mockResolvedValue("0x0000000000000000000000000000000000000000000000000000000000000001"),
+      sendRawTransaction: vi
+        .fn()
+        .mockResolvedValue(
+          "0x0000000000000000000000000000000000000000000000000000000000000001"
+        ),
       getTransactionReceipt: vi.fn().mockResolvedValue({
-        transactionHash: "0x0000000000000000000000000000000000000000000000000000000000000001",
+        transactionHash:
+          "0x0000000000000000000000000000000000000000000000000000000000000001",
         status: "0x1",
         blockNumber: "0x64",
         gasUsed: "0x5208"
@@ -45,7 +58,7 @@ vi.mock("@hardkas/l2", async (importOriginal) => {
 
 // Mock @hardkas/accounts
 vi.mock("@hardkas/accounts", async (importOriginal) => {
-  const actual = await importOriginal() as any;
+  const actual = (await importOriginal()) as any;
   return {
     ...actual,
     loadRealAccountStore: vi.fn().mockResolvedValue({ accounts: [] }),
@@ -59,35 +72,42 @@ vi.mock("@hardkas/accounts", async (importOriginal) => {
 
 // Mock @hardkas/artifacts
 vi.mock("@hardkas/artifacts", async (importOriginal) => {
-  const actual = await importOriginal() as any;
+  const actual = (await importOriginal()) as any;
   return {
     ...actual,
     writeArtifact: vi.fn().mockResolvedValue(undefined),
     readArtifact: vi.fn().mockImplementation(async (p: string) => {
-       if (p.includes(".plan.json")) return {
-         schema: "hardkas.igraTxPlan.v1",
-         hardkasVersion: "0.7.3-alpha",
-         networkId: "igra",
-         mode: "l2-rpc",
-         planId: "test-plan",
-         l2Network: "igra",
-         chainId: 19416,
-         request: { from: "0x1234567890123456789012345678901234567890", to: "0x1234567890123456789012345678901234567890", data: "0x", valueWei: "0" },
-         status: "built"
-       };
-       if (p.includes(".signed.json")) return {
-         schema: "hardkas.igraSignedTx.v1",
-         hardkasVersion: "0.7.3-alpha",
-         networkId: "igra",
-         mode: "l2-rpc",
-         signedId: "test-signed",
-         l2Network: "igra",
-         chainId: 19416,
-         rawTransaction: "0xraw",
-         txHash: "0x0000000000000000000000000000000000000000000000000000000000000001",
-         status: "signed"
-       };
-       throw new Error(`Artifact not found: ${p}`);
+      if (p.includes(".plan.json"))
+        return {
+          schema: "hardkas.igraTxPlan.v1",
+          hardkasVersion: "0.7.4-alpha",
+          networkId: "igra",
+          mode: "l2-rpc",
+          planId: "test-plan",
+          l2Network: "igra",
+          chainId: 19416,
+          request: {
+            from: "0x1234567890123456789012345678901234567890",
+            to: "0x1234567890123456789012345678901234567890",
+            data: "0x",
+            valueWei: "0"
+          },
+          status: "built"
+        };
+      if (p.includes(".signed.json"))
+        return {
+          schema: "hardkas.igraSignedTx.v1",
+          hardkasVersion: "0.7.4-alpha",
+          networkId: "igra",
+          mode: "l2-rpc",
+          signedId: "test-signed",
+          l2Network: "igra",
+          chainId: 19416,
+          rawTransaction: "0xraw",
+          txHash: "0x0000000000000000000000000000000000000000000000000000000000000001",
+          status: "signed"
+        };
+      throw new Error(`Artifact not found: ${p}`);
     }),
     createIgraPlanId: vi.fn().mockReturnValue("test-plan"),
     createIgraSignedId: vi.fn().mockReturnValue("test-signed"),
@@ -113,7 +133,9 @@ describe("Igra L2 Smoke Tests (Mocked)", () => {
 
     it("l2 profile show igra", async () => {
       await runL2ProfileShow({ name: "igra" });
-      expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining("Name:        igra"));
+      expect(consoleSpy).toHaveBeenCalledWith(
+        expect.stringContaining("Name:        igra")
+      );
     });
 
     it("l2 profile validate igra", async () => {
@@ -141,24 +163,40 @@ describe("Igra L2 Smoke Tests (Mocked)", () => {
 
   describe("Account State", () => {
     it("l2 balance", async () => {
-      await runL2Balance("0x1234567890123456789012345678901234567890", { network: "igra", url: "http://localhost:8545" });
-      expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining("1.000000000000000000 iKAS"));
+      await runL2Balance("0x1234567890123456789012345678901234567890", {
+        network: "igra",
+        url: "http://localhost:8545"
+      });
+      expect(consoleSpy).toHaveBeenCalledWith(
+        expect.stringContaining("1.000000000000000000 iKAS")
+      );
     });
 
     it("l2 nonce", async () => {
-      await runL2Nonce("0x1234567890123456789012345678901234567890", { network: "igra", url: "http://localhost:8545" });
+      await runL2Nonce("0x1234567890123456789012345678901234567890", {
+        network: "igra",
+        url: "http://localhost:8545"
+      });
       expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining("5"));
     });
   });
 
   describe("EVM Calls", () => {
     it("l2 call", async () => {
-      await runL2Call({ to: "0x1234567890123456789012345678901234567890", network: "igra", url: "http://localhost:8545" });
+      await runL2Call({
+        to: "0x1234567890123456789012345678901234567890",
+        network: "igra",
+        url: "http://localhost:8545"
+      });
       expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining("0x1234"));
     });
 
     it("l2 estimate-gas", async () => {
-      await runL2EstimateGas({ to: "0x1234567890123456789012345678901234567890", network: "igra", url: "http://localhost:8545" });
+      await runL2EstimateGas({
+        to: "0x1234567890123456789012345678901234567890",
+        network: "igra",
+        url: "http://localhost:8545"
+      });
       expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining("21000"));
     });
   });
@@ -166,7 +204,11 @@ describe("Igra L2 Smoke Tests (Mocked)", () => {
   describe("Transaction Flow", () => {
     it("l2 tx build -> sign -> send -> status", async () => {
       // Build
-      await runL2TxBuild({ to: "0x1234567890123456789012345678901234567890", network: "igra", url: "http://localhost:8545" });
+      await runL2TxBuild({
+        to: "0x1234567890123456789012345678901234567890",
+        network: "igra",
+        url: "http://localhost:8545"
+      });
       expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining("plan built"));
 
       // Sign
@@ -174,29 +216,42 @@ describe("Igra L2 Smoke Tests (Mocked)", () => {
       expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining("signed"));
 
       // Send
-      await runL2TxSend({ signedPath: "signed/test.igra.signed.json", network: "igra", url: "http://localhost:8545", yes: true });
+      await runL2TxSend({
+        signedPath: "signed/test.igra.signed.json",
+        network: "igra",
+        url: "http://localhost:8545",
+        yes: true
+      });
       expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining("submitted"));
 
       // Status
-      await runL2TxStatus({ txHash: "0x0000000000000000000000000000000000000000000000000000000000000001", network: "igra", url: "http://localhost:8545" });
+      await runL2TxStatus({
+        txHash: "0x0000000000000000000000000000000000000000000000000000000000000001",
+        network: "igra",
+        url: "http://localhost:8545"
+      });
       expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining("success"));
     });
 
     it("l2 contract deploy-plan", async () => {
-      await runL2ContractDeployPlan({ 
-        from: "0x1234567890123456789012345678901234567890", 
+      await runL2ContractDeployPlan({
+        from: "0x1234567890123456789012345678901234567890",
         bytecode: "0x60006000",
-        network: "igra", 
-        url: "http://localhost:8545" 
+        network: "igra",
+        url: "http://localhost:8545"
       });
-      expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining("contract deploy plan built"));
+      expect(consoleSpy).toHaveBeenCalledWith(
+        expect.stringContaining("contract deploy plan built")
+      );
     });
   });
 
   describe("Bridge Awareness", () => {
     it("l2 bridge status", async () => {
       await runL2BridgeStatus({ network: "igra" });
-      expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining("Igra bridge status"));
+      expect(consoleSpy).toHaveBeenCalledWith(
+        expect.stringContaining("Igra bridge status")
+      );
       expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining("pre-zk"));
     });
   });
