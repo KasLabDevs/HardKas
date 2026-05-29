@@ -223,6 +223,7 @@ export async function runTxFlow(input: TxFlowInput): Promise<TxFlowResult> {
 
     if (actualOutDir) {
       const planPath = await saveArtifact(
+        sdk,
         planArtifact,
         actualOutDir,
         name,
@@ -310,6 +311,7 @@ export async function runTxFlow(input: TxFlowInput): Promise<TxFlowResult> {
 
       if (actualOutDir) {
         const signedPath = await saveArtifact(
+          sdk,
           signedArtifact,
           actualOutDir,
           name,
@@ -354,6 +356,7 @@ export async function runTxFlow(input: TxFlowInput): Promise<TxFlowResult> {
 
           if (actualOutDir && sendResult.receipt) {
             const receiptPath = await saveArtifact(
+              sdk,
               sendResult.receipt,
               actualOutDir,
               name,
@@ -440,6 +443,7 @@ export async function runTxFlow(input: TxFlowInput): Promise<TxFlowResult> {
 }
 
 async function saveArtifact(
+  sdk: any,
   artifact: any,
   outDir: string,
   baseName: string | undefined,
@@ -459,10 +463,11 @@ async function saveArtifact(
     const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
     const sanitizedFrom = from.replace(/[^a-z0-9]/gi, "_").substring(0, 10);
     const sanitizedTo = to.replace(/[^a-z0-9]/gi, "_").substring(0, 10);
-    fileName = `${timestamp}-${sanitizedFrom}-to-${sanitizedTo}-${amount}.${suffix}.json`;
+    const idPart = artifact.planId || artifact.signedId || artifact.txId || artifact.contentHash || "unknown";
+    fileName = `${timestamp}-${sanitizedFrom}-to-${sanitizedTo}-${amount}-${idPart}.${suffix}.json`;
   }
 
   const fullPath = path.join(outDir, fileName);
-  await writeArtifact(fullPath, artifact);
+  await sdk.artifacts.write(artifact, { outputDir: outDir, fileName });
   return fullPath;
 }

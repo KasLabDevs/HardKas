@@ -1,4 +1,4 @@
-# HardKAS v0.7.4-alpha — Release Summary
+# HardKAS v0.7.5-alpha — Release Summary
 
 ## Scope of Stabilization
 

@@ -325,10 +325,38 @@ No arguments.
 
 ### Subcommands
 
+- [hardkas artifact create](#hardkas-artifact-create)
 - [hardkas artifact explain](#hardkas-artifact-explain)
 - [hardkas artifact inspect](#hardkas-artifact-inspect)
 - [hardkas artifact lineage](#hardkas-artifact-lineage)
 - [hardkas artifact verify](#hardkas-artifact-verify)
+
+---
+
+## hardkas artifact create
+
+Create a new HardKAS artifact alpha
+
+### Usage
+
+```bash
+hardkas artifact create [options] <type>
+```
+
+### Options
+
+| Flag | Description | Default |
+| :--- | :--- | :--- |
+| `--input <path>` | Input JSON payload file |  |
+| `--out <path>` | Output artifact file path |  |
+| `--json` | Output results as JSON | false |
+| `--workspace <path>` | Override workspace root directory |  |
+
+### Arguments
+
+| Argument | Description |
+| :--- | :--- |
+| `type` |  |
 
 ---
 
@@ -703,8 +731,32 @@ No arguments.
 
 ### Subcommands
 
+- [hardkas config init](#hardkas-config-init)
 - [hardkas config networks](#hardkas-config-networks)
+- [hardkas config repair](#hardkas-config-repair)
 - [hardkas config show](#hardkas-config-show)
+
+---
+
+## hardkas config init
+
+Initialize a basic hardkas.config.ts in the current directory
+
+### Usage
+
+```bash
+hardkas config init [options]
+```
+
+### Options
+
+| Flag | Description | Default |
+| :--- | :--- | :--- |
+| `--force` | Overwrite existing config | false |
+
+### Arguments
+
+No arguments.
 
 ---
 
@@ -723,6 +775,26 @@ hardkas config networks [options]
 | Flag | Description | Default |
 | :--- | :--- | :--- |
 | `--json` | Output as JSON | false |
+
+### Arguments
+
+No arguments.
+
+---
+
+## hardkas config repair
+
+Repair an invalid or missing hardkas.config.ts
+
+### Usage
+
+```bash
+hardkas config repair [options]
+```
+
+### Options
+
+No options.
 
 ### Arguments
 
@@ -1069,6 +1141,7 @@ No arguments.
 - [hardkas dev accounts](#hardkas-dev-accounts)
 - [hardkas dev create](#hardkas-dev-create)
 - [hardkas dev doctor](#hardkas-dev-doctor)
+- [hardkas dev fixture](#hardkas-dev-fixture)
 - [hardkas dev init](#hardkas-dev-init)
 - [hardkas dev last](#hardkas-dev-last)
 - [hardkas dev server](#hardkas-dev-server)
@@ -1217,6 +1290,54 @@ No arguments.
 
 ---
 
+## hardkas dev fixture
+
+Manage dev mock fixtures
+
+### Usage
+
+```bash
+hardkas dev fixture [options] [command]
+```
+
+### Options
+
+No options.
+
+### Arguments
+
+No arguments.
+
+### Subcommands
+
+- [hardkas dev fixture generate](#hardkas-dev-fixture-generate)
+
+---
+
+## hardkas dev fixture generate
+
+Generate mock fixtures for testing stable
+
+### Usage
+
+```bash
+hardkas dev fixture generate [options]
+```
+
+### Options
+
+| Flag | Description | Default |
+| :--- | :--- | :--- |
+| `--type <type>` | Type of fixture (marketplace|dao|payroll|random) |  |
+| `--out <path>` | Save fixture as JSON to this file |  |
+| `--json` | Output as JSON | false |
+
+### Arguments
+
+No arguments.
+
+---
+
 ## hardkas dev init
 
 Initialize dApp support in the current workspace stable
@@ -1310,7 +1431,32 @@ No arguments.
 
 ### Subcommands
 
+- [hardkas dev tx generate](#hardkas-dev-tx-generate)
 - [hardkas dev tx send](#hardkas-dev-tx-send)
+
+---
+
+## hardkas dev tx generate
+
+Generate simulated load/batch transactions stable
+
+### Usage
+
+```bash
+hardkas dev tx generate [options]
+```
+
+### Options
+
+| Flag | Description | Default |
+| :--- | :--- | :--- |
+| `--count <number>` | Number of transactions to generate |  |
+| `--network <name>` | Network name | simulated |
+| `--json` | Output as JSON | false |
+
+### Arguments
+
+No arguments.
 
 ---
 
@@ -2211,8 +2357,57 @@ No arguments.
 
 ### Subcommands
 
+- [hardkas localnet account](#hardkas-localnet-account)
 - [hardkas localnet fork](#hardkas-localnet-fork)
 - [hardkas localnet snapshot](#hardkas-localnet-snapshot)
+
+---
+
+## hardkas localnet account
+
+Manage simulated localnet accounts
+
+### Usage
+
+```bash
+hardkas localnet account [options] [command]
+```
+
+### Options
+
+No options.
+
+### Arguments
+
+No arguments.
+
+### Subcommands
+
+- [hardkas localnet account create](#hardkas-localnet-account-create)
+
+---
+
+## hardkas localnet account create
+
+Create a simulated localnet account
+
+### Usage
+
+```bash
+hardkas localnet account create [options] <name>
+```
+
+### Options
+
+| Flag | Description | Default |
+| :--- | :--- | :--- |
+| `--json` | Output as JSON | false |
+
+### Arguments
+
+| Argument | Description |
+| :--- | :--- |
+| `name` |  |
 
 ---
 
@@ -4163,6 +4358,7 @@ No arguments.
 
 ### Subcommands
 
+- [hardkas tx batch](#hardkas-tx-batch)
 - [hardkas tx plan](#hardkas-tx-plan)
 - [hardkas tx profile](#hardkas-tx-profile)
 - [hardkas tx receipt](#hardkas-tx-receipt)
@@ -4171,6 +4367,30 @@ No arguments.
 - [hardkas tx status](#hardkas-tx-status)
 - [hardkas tx trace](#hardkas-tx-trace)
 - [hardkas tx verify](#hardkas-tx-verify)
+
+---
+
+## hardkas tx batch
+
+Process a batch of transactions sequentially stable
+
+### Usage
+
+```bash
+hardkas tx batch [options]
+```
+
+### Options
+
+| Flag | Description | Default |
+| :--- | :--- | :--- |
+| `--file <path>` | Path to JSON file containing batch payments |  |
+| `--network <name>` | Network name | simulated |
+| `--json` | Output as JSON | false |
+
+### Arguments
+
+No arguments.
 
 ---
 
@@ -4195,6 +4415,7 @@ hardkas tx plan [options]
 | `--fee-rate <sompiPerMass>` | Fee rate in sompi per mass | 1 |
 | `--url <url>` | RPC URL (optional override) |  |
 | `--out <path>` | Save plan as artifact JSON |  |
+| `--save <path>` | Alias for --out (Save plan as artifact JSON) |  |
 | `--wait-lock` | Wait for workspace lock if held | false |
 | `--lock-timeout <ms>` | Lock wait timeout in ms | 30000 |
 | `--json` | Output as JSON | false |
@@ -4499,10 +4720,38 @@ No arguments.
 
 ### Subcommands
 
+- [hardkas workflow create](#hardkas-workflow-create)
 - [hardkas workflow diff](#hardkas-workflow-diff)
 - [hardkas workflow inspect](#hardkas-workflow-inspect)
 - [hardkas workflow replay](#hardkas-workflow-replay)
 - [hardkas workflow run](#hardkas-workflow-run)
+
+---
+
+## hardkas workflow create
+
+Create a deterministic workflow from a template
+
+### Usage
+
+```bash
+hardkas workflow create [options] <name>
+```
+
+### Options
+
+| Flag | Description | Default |
+| :--- | :--- | :--- |
+| `--template <name>` | Embedded template name (basic, payroll, dao, escrow, marketplace) |  |
+| `--out <path>` | Output artifact file path |  |
+| `--json` | Output the final workflow artifact as JSON | false |
+| `--workspace <path>` | Override workspace root directory |  |
+
+### Arguments
+
+| Argument | Description |
+| :--- | :--- |
+| `name` |  |
 
 ---
 

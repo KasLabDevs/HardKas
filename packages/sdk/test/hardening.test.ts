@@ -117,12 +117,25 @@ describe("Core Hardening Sprint Regressions", () => {
 
     const signedArtifact = {
       signedId: "signed_123",
+      sourcePlanId: "plan_123",
       amountSompi: "1000",
       networkId: "simnet",
       from: { address: "kaspa:sim_alice" },
       to: { address: "kaspa:sim_bob" },
       signedTransaction: { payload: "signed-payload" }
     };
+
+    const mockPlan = {
+      planId: "plan_123",
+      networkId: "simnet",
+      mode: "simulated",
+      from: { address: "kaspa:sim_alice" },
+      to: { address: "kaspa:sim_bob" },
+      amountSompi: "1000",
+      inputs: [],
+      outputs: [{ address: "kaspa:sim_bob", amountSompi: "1000" }]
+    };
+    vi.spyOn(sdk.artifacts, "read").mockResolvedValue(mockPlan);
 
     const { receipt } = await sdk.tx.simulate(signedArtifact as any);
 

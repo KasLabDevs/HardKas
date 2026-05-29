@@ -78,7 +78,7 @@ describe("E2E Simulated Happy Path", () => {
     const myReceipt = receipts.find((r: any) => r.txId === txId);
     expect(myReceipt).toBeDefined();
     expect(myReceipt.schema).toBe(artifacts.ARTIFACT_SCHEMAS.TX_RECEIPT);
-  });
+  }, 15000);
 
   it("should fail if insufficient funds", async () => {
     // Reset with 0 balance

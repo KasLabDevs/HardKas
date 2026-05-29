@@ -88,9 +88,7 @@ export class HardkasWorkflow {
                   );
                 }
                 const plan = await this.sdk.tx.plan({ ...opts, workflowId });
-                if (!options.dryRun) {
-                  await this.sdk.artifacts.write(plan);
-                }
+                await this.sdk.artifacts.write(plan, { dryRun: options.dryRun ?? false });
                 const planRecord = plan as unknown as Record<string, string>;
                 const id = planRecord.contentHash || planRecord.artifactId || plan.planId;
                 if (id) producedArtifacts.push(id);
@@ -99,9 +97,7 @@ export class HardkasWorkflow {
               },
               sign: async (plan: any, account?: any) => {
                 const signed = await this.sdk.tx.sign(plan, account);
-                if (!options.dryRun) {
-                  await this.sdk.artifacts.write(signed);
-                }
+                await this.sdk.artifacts.write(signed, { dryRun: options.dryRun ?? false });
                 const signedRecord = signed as unknown as Record<string, string>;
                 const id =
                   signedRecord.contentHash || signedRecord.artifactId || signed.signedId;
@@ -118,7 +114,7 @@ export class HardkasWorkflow {
                   this.sdk.network === "simulated"
                     ? await this.sdk.tx.simulate(signed)
                     : await this.sdk.tx.send(signed);
-                if (!options.dryRun) await this.sdk.artifacts.write(res.receipt);
+                await this.sdk.artifacts.write(res.receipt, { dryRun: options.dryRun ?? false });
                 const receiptRecord = res.receipt as unknown as Record<string, string>;
                 const id =
                   receiptRecord.contentHash ||
@@ -129,7 +125,7 @@ export class HardkasWorkflow {
               },
               simulate: async (signed: any) => {
                 const res = await this.sdk.tx.simulate(signed);
-                if (!options.dryRun) await this.sdk.artifacts.write(res.receipt);
+                await this.sdk.artifacts.write(res.receipt, { dryRun: options.dryRun ?? false });
                 const receiptRecord = res.receipt as unknown as Record<string, string>;
                 const id =
                   receiptRecord.contentHash ||
@@ -161,9 +157,7 @@ export class HardkasWorkflow {
             amount: step.args?.amount || step.amount,
             workflowId
           });
-          if (!options.dryRun) {
-            await this.sdk.artifacts.write(lastPlan);
-          }
+          await this.sdk.artifacts.write(lastPlan, { dryRun: options.dryRun ?? false });
           const planRecord = lastPlan as unknown as Record<string, string>;
           producedArtifactId =
             planRecord.contentHash || planRecord.artifactId || lastPlan.planId;
@@ -181,9 +175,7 @@ export class HardkasWorkflow {
           }
 
           lastSigned = await this.sdk.tx.sign(lastPlan);
-          if (!options.dryRun) {
-            await this.sdk.artifacts.write(lastSigned);
-          }
+          await this.sdk.artifacts.write(lastSigned, { dryRun: options.dryRun ?? false });
           const signedRecord = lastSigned as unknown as Record<string, string>;
           const signedId =
             signedRecord.contentHash || signedRecord.artifactId || lastSigned.signedId;
@@ -191,7 +183,7 @@ export class HardkasWorkflow {
 
           if (step.type === "tx.simulate") {
             const { receipt } = await this.sdk.tx.simulate(lastSigned);
-            if (!options.dryRun) await this.sdk.artifacts.write(receipt);
+            await this.sdk.artifacts.write(receipt, { dryRun: options.dryRun ?? false });
             const receiptRecord = receipt as unknown as Record<string, string>;
             producedArtifactId =
               receiptRecord.contentHash || receiptRecord.artifactId || receiptRecord.txId;
@@ -202,7 +194,7 @@ export class HardkasWorkflow {
               this.sdk.network === "simulated"
                 ? await this.sdk.tx.simulate(lastSigned)
                 : await this.sdk.tx.send(lastSigned);
-            if (!options.dryRun) await this.sdk.artifacts.write(receipt);
+            await this.sdk.artifacts.write(receipt, { dryRun: options.dryRun ?? false });
             const receiptRecord = receipt as unknown as Record<string, string>;
             producedArtifactId =
               receiptRecord.contentHash || receiptRecord.artifactId || receiptRecord.txId;

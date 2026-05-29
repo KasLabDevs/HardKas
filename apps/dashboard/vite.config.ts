@@ -45,5 +45,9 @@ export default defineConfig({
   plugins: [react(), virtualMocks, tailwindcss()],
   optimizeDeps: {
     exclude: ["@hardkas/react"]
+  },
+  build: {
+    outDir: "../../packages/cli/dashboard-dist",
+    emptyOutDir: true
   }
 });

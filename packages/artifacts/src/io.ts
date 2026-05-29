@@ -9,12 +9,33 @@ export const bigIntReplacer = (_key: string, value: unknown) =>
   typeof value === "bigint" ? value.toString() : value;
 
 export async function writeArtifact(filePath: string, artifact: unknown): Promise<void> {
+  let targetPath = filePath;
+  try {
+    const stats = await fs.stat(filePath);
+    if (stats.isDirectory()) {
+      const artifactObj = typeof artifact === "string" ? JSON.parse(artifact) : (artifact as any);
+      const id = artifactObj.planId || artifactObj.signedId || artifactObj.txId || Date.now().toString(36);
+      const prefix = artifactObj.schema ? artifactObj.schema.split('.')[1] || 'artifact' : 'artifact';
+      targetPath = path.join(filePath, `${prefix}-${id}.json`);
+      console.log(`\nNote: Provided path is a directory. Auto-generating artifact filename: ${path.basename(targetPath)}`);
+    }
+  } catch (e) {
+    // Path does not exist, assume it's a file path unless it explicitly ends with a slash
+    if (filePath.endsWith('/') || filePath.endsWith('\\')) {
+      const artifactObj = typeof artifact === "string" ? JSON.parse(artifact) : (artifact as any);
+      const id = artifactObj.planId || artifactObj.signedId || artifactObj.txId || Date.now().toString(36);
+      const prefix = artifactObj.schema ? artifactObj.schema.split('.')[1] || 'artifact' : 'artifact';
+      targetPath = path.join(filePath, `${prefix}-${id}.json`);
+      console.log(`\nNote: Provided path is a directory. Auto-generating artifact filename: ${path.basename(targetPath)}`);
+    }
+  }
+
   const content =
     typeof artifact === "string"
       ? artifact
       : JSON.stringify(artifact, bigIntReplacer, 2) + "\n";
 
-  await writeFileAtomic(filePath, content);
+  await writeFileAtomic(targetPath, content);
 }
 
 export function getDefaultReceiptPath(txId: string, cwd: string = process.cwd()): string {

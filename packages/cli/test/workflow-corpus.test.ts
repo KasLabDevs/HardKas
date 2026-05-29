@@ -20,6 +20,17 @@ describe("Workflow Runtime & Adversarial Defense", () => {
     );
     fs.mkdirSync(path.join(tmpDir, ".hardkas", "artifacts"), { recursive: true });
 
+    // Seed localnet state to pass strict simulated validation
+    const mockState = {
+      networkId: "simnet",
+      daaScore: "1000",
+      utxos: [
+        { id: "mocktx:0", address: "kaspa:sim_alice", amountSompi: "900000000000000", spent: false, createdAtDaaScore: "100" },
+        { id: "mocktx:1", address: "kaspa:sim_carol", amountSompi: "900000000000000", spent: false, createdAtDaaScore: "100" }
+      ]
+    };
+    fs.writeFileSync(path.join(tmpDir, ".hardkas", "localnet.json"), JSON.stringify(mockState));
+
     // Create an agent SDK instance allowed to mutate for standard tests
     sdk = await Hardkas.open({
       cwd: tmpDir,

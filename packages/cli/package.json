@@ -1,6 +1,6 @@
 {
   "name": "@hardkas/cli",
-  "version": "0.7.4-alpha",
+  "version": "0.7.5-alpha",
   "type": "module",
   "main": "./dist/public.js",
   "types": "./dist/public.d.ts",
@@ -10,6 +10,7 @@
   },
   "files": [
     "dist",
+    "dashboard-dist",
     "README.md",
     "LICENSE"
   ],
@@ -36,11 +37,11 @@
     "@hardkas/core": "workspace:*",
     "@hardkas/dev-server": "workspace:*",
     "@hardkas/kaspa-rpc": "workspace:*",
-    "@hardkas/query": "workspace:*",
     "@hardkas/l2": "workspace:*",
     "@hardkas/localnet": "workspace:*",
     "@hardkas/node-orchestrator": "workspace:*",
     "@hardkas/node-runner": "workspace:*",
+    "@hardkas/query": "workspace:*",
     "@hardkas/query-store": "workspace:*",
     "@hardkas/sdk": "workspace:*",
     "@hardkas/sessions": "workspace:*",
@@ -50,12 +51,14 @@
     "commander": "^12.1.0",
     "enquirer": "^2.4.1",
     "execa": "^9.5.2",
+    "express": "^5.2.1",
     "open": "^10.1.0",
     "picocolors": "^1.1.1",
     "viem": "^2.21.32",
     "zod": "^3.23.8"
   },
   "devDependencies": {
+    "@types/express": "^5.0.6",
     "tsup": "^8.3.5",
     "tsx": "^4.19.2",
     "typescript": "^5.7.2",

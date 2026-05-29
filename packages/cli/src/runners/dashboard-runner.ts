@@ -618,57 +618,67 @@ export async function runDashboard() {
 
   const port = 3333;
 
-  const server = http.createServer(async (req, res) => {
+  // Use dynamic import for express and url to avoid overhead in other commands
+  const express = (await import("express")).default;
+  const { fileURLToPath } = await import("node:url");
+  const __filename = fileURLToPath(import.meta.url);
+  const __dirname = path.dirname(__filename);
+
+  const app = express();
+
+  app.use((req, res, next) => {
     res.setHeader("Access-Control-Allow-Origin", "*");
     res.setHeader("Access-Control-Allow-Methods", "GET, OPTIONS");
-    res.setHeader("Content-Type", "application/json");
-
     if (req.method === "OPTIONS") {
-      res.writeHead(204);
-      res.end();
+      res.sendStatus(204);
       return;
     }
+    next();
+  });
 
-    try {
-      const url = new URL(req.url || "/", `http://localhost:${port}`);
+  // API Routes
+  app.get("/api/status", (req, res) => handleStatus(new URL(req.url, `http://localhost:${port}`), res));
+  app.get("/api/telemetry", (req, res) => handleTelemetry(new URL(req.url, `http://localhost:${port}`), res));
+  app.get("/api/replay", (req, res) => handleReplay(new URL(req.url, `http://localhost:${port}`), res));
+  app.get("/api/lineage", (req, res) => handleLineage(new URL(req.url, `http://localhost:${port}`), res));
+  app.get("/api/quarantine", (req, res) => handleQuarantine(new URL(req.url, `http://localhost:${port}`), res));
+  app.get("/api/bundles", (req, res) => handleBundles(new URL(req.url, `http://localhost:${port}`), res));
+  app.get("/api/dashboard-health", (req, res) => handleDashboardHealth(new URL(req.url, `http://localhost:${port}`), res));
 
-      switch (url.pathname) {
-        case "/api/status":
-          return handleStatus(url, res);
-        case "/api/telemetry":
-          return handleTelemetry(url, res);
-        case "/api/replay":
-          return handleReplay(url, res);
-        case "/api/lineage":
-          return handleLineage(url, res);
-        case "/api/quarantine":
-          return handleQuarantine(url, res);
-        case "/api/bundles":
-          return handleBundles(url, res);
-        case "/api/dashboard-health":
-          return handleDashboardHealth(url, res);
-        default:
-          if (url.pathname.startsWith("/api/")) {
-            res.writeHead(404);
-            res.end(JSON.stringify({ error: "Not found" }));
-            return;
-          }
-          res.writeHead(404);
-          res.end(
-            JSON.stringify({ error: "Use Vite dev server for frontend during dev mode." })
-          );
+  // Serve static UI. In dev, __dirname is src/runners. In prod, __dirname is dist.
+  const isProd = __dirname.endsWith("dist");
+  const distPath = isProd 
+    ? path.join(__dirname, "..", "dashboard-dist") 
+    : path.join(__dirname, "..", "..", "dashboard-dist");
+  app.use(express.static(distPath));
+
+  app.use((req, res) => {
+    if (req.path.startsWith("/api/")) {
+      res.status(404).json({ error: "Not found" });
+    } else {
+      const indexPath = path.join(distPath, "index.html");
+      if (fs.existsSync(indexPath)) {
+        res.sendFile(indexPath);
+      } else {
+        res.status(404).send("Dashboard UI not built. Run 'pnpm build' in apps/dashboard.");
       }
-    } catch (err) {
-      res.writeHead(500);
-      res.end(JSON.stringify({ error: String(err) }));
     }
   });
 
-  return new Promise((resolve) => {
-    server.listen(port, () => {
-      UI.success(`Dashboard API running at http://localhost:${port}`);
-      UI.info(`\nTo view the UI, run the Vite frontend:`);
-      UI.info(`  cd apps/dashboard && pnpm dev\n`);
+  return new Promise((resolve, reject) => {
+    const server = app.listen(port, () => {
+      UI.success(`Dashboard API and UI running at http://localhost:${port}`);
+      resolve(null);
+    });
+    server.on('error', (err: any) => {
+      if (err.code === 'EADDRINUSE') {
+        UI.error(`Port ${port} is already in use.`);
+        UI.info(`Try freeing the port or specify another one (if supported).`);
+        process.exitCode = 1;
+        resolve(null);
+      } else {
+        reject(err);
+      }
     });
   });
 }

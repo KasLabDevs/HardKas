@@ -38,7 +38,7 @@ This bundle represents the **portable mathematical proof** of the system's state
 ```json
 {
   "schemaVersion": "hardkas.semantic-bundle.v1",
-  "runtimeVersion": "0.7.4-alpha",
+  "runtimeVersion": "0.7.5-alpha",
   "hashVersion": "sha256",
   "globalSemanticHash": "...",
   "invariantSummary": {

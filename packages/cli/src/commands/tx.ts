@@ -25,6 +25,22 @@ export function registerTxCommands(program: Command) {
       }
     });
 
+  tx.command("batch")
+    .description(`Process a batch of transactions sequentially ${UI.maturity("stable")}`)
+    .requiredOption("--file <path>", "Path to JSON file containing batch payments")
+    .option("--network <name>", "Network name", "simulated")
+    .option("--json", "Output as JSON", false)
+    .action(async (options: any) => {
+      try {
+        const { runTxBatch } = await import("../runners/tx-batch-runner.js");
+        if (options.json) UI.setJsonMode(true);
+        await runTxBatch(options);
+      } catch (e) {
+        handleError(e);
+        process.exitCode = 1;
+      }
+    });
+
   tx.command("plan")
     .description(`Build a transaction plan artifact ${UI.maturity("stable")}`)
     .option("--from <accountOrAddress>", "Sender account name or address")
@@ -34,6 +50,7 @@ export function registerTxCommands(program: Command) {
     .option("--fee-rate <sompiPerMass>", "Fee rate in sompi per mass", "1")
     .option("--url <url>", "RPC URL (optional override)")
     .option("--out <path>", "Save plan as artifact JSON")
+    .option("--save <path>", "Alias for --out (Save plan as artifact JSON)")
     .option("--wait-lock", "Wait for workspace lock if held", false)
     .option("--lock-timeout <ms>", "Lock wait timeout in ms", "30000")
     .option("--json", "Output as JSON", false)
@@ -46,6 +63,7 @@ export function registerTxCommands(program: Command) {
         feeRate: string;
         url?: string;
         out?: string;
+        save?: string;
         waitLock: boolean;
         lockTimeout: string;
         json: boolean;
@@ -78,12 +96,13 @@ export function registerTxCommands(program: Command) {
                 ...(options.url ? { url: options.url } : {})
               });
 
-              if (options.out) await writeArtifact(options.out, artifact);
+              const outPath = options.out || options.save;
+              if (outPath) await writeArtifact(outPath, artifact);
               if (options.json) {
                 UI.writeJson(artifact);
               } else {
                 console.log(formatTxPlanArtifact(artifact));
-                if (options.out) console.log(`\nArtifact saved to: ${options.out}`);
+                if (outPath) console.log(`\nArtifact saved to: ${outPath}`);
               }
             }
           );

@@ -1,4 +1,4 @@
-# HardKAS 0.7.4-alpha
+# HardKAS 0.7.5-alpha
 
 HardKAS is a local-first reproducible Kaspa developer runtime.
 
@@ -12,7 +12,7 @@ This release focuses entirely on operational resilience, artifact serialization,
 
 ## Explicit Limitations & Unsupported Features
 
-We explicitly reject the following capabilities in `0.7.4-alpha`. Do not attempt to use them:
+We explicitly reject the following capabilities in `0.7.5-alpha`. Do not attempt to use them:
 
 - **No Kaspa L1 EVM Execution:** Kaspa L1 does not execute EVM.
 - **No SilverScript / Tockata Execution:** Native script execution is not yet supported.
@@ -23,4 +23,4 @@ We explicitly reject the following capabilities in `0.7.4-alpha`. Do not attempt
 
 Validated under extended deterministic local torture and golden corpus checks.
 
-_Note: HardKAS 0.7.4-alpha is designed for developers building Kaspa integrations in isolated environments. It is not intended for mainnet deployment pipelines._
+_Note: HardKAS 0.7.5-alpha is designed for developers building Kaspa integrations in isolated environments. It is not intended for mainnet deployment pipelines._

@@ -107,7 +107,7 @@ export function applySimulatedPayment(
     // 2. Resolve UTXOs
     const unspent = getSpendableUtxos(state, fromAddress);
     if (unspent.length === 0) {
-      throw new Error(`Insufficient funds: no unspent UTXOs for ${fromAddress}`);
+      throw new Error("insufficient simulated funds");
     }
 
     const availableUtxos = unspent.map((u) => {
@@ -141,8 +141,8 @@ export function applySimulatedPayment(
 
     for (const id of spentUtxoIds) {
       const utxo = state.utxos.find((u) => u.id === id);
-      if (!utxo) throw new Error(`UTXO not found: ${id}`);
-      if (utxo.spent) throw new Error(`UTXO already spent: ${id}`);
+      if (!utxo) throw new Error("missing simulated UTXO");
+      if (utxo.spent) throw new Error("invalid simulated input");
     }
 
     // 5. Create Artifacts
@@ -276,8 +276,8 @@ export function applySimulatedPlan(
     // Validate inputs
     for (const id of spentUtxoIds) {
       const utxo = state.utxos.find((u) => u.id === id);
-      if (!utxo) throw new Error(`UTXO not found: ${id}`);
-      if (utxo.spent) throw new Error(`UTXO already spent: ${id}`);
+      if (!utxo) throw new Error("missing simulated UTXO");
+      if (utxo.spent) throw new Error("invalid simulated input");
     }
 
     const nextDaaScore = (BigInt(state.daaScore) + 1n).toString();

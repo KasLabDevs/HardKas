@@ -52,7 +52,9 @@ export function buildHardkasProgram(options?: { forDocs?: boolean }): Command {
   program
     .name("hardkas")
     .description("HardKAS: Kaspa-native developer operating environment")
-    .version(HARDKAS_VERSION);
+    .version(HARDKAS_VERSION)
+    .showHelpAfterError(true)
+    .showSuggestionAfterError(true);
 
   // Register modular command groups
   registerInitCommands(program);

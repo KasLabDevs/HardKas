@@ -400,7 +400,7 @@ export class HardkasTx {
     const {
       loadOrCreateLocalnetState,
       saveLocalnetState,
-      applySimulatedPayment,
+      applySimulatedPlan,
       saveSimulatedReceipt,
       saveSimulatedTrace
     } = await import("@hardkas/localnet");
@@ -413,15 +413,18 @@ export class HardkasTx {
       { type: "phase.started", phase: "send", timestamp: startTime }
     ];
 
-    const simResult = applySimulatedPayment(
+    const planArtifact = await this.sdk.artifacts.read(signedArtifact.sourcePlanId);
+    
+    const simResult = applySimulatedPlan(
       state,
-      {
-        from: signedArtifact.from.input || signedArtifact.from.address,
-        to: signedArtifact.to.input || signedArtifact.to.address,
-        amountSompi: BigInt(signedArtifact.amountSompi)
-      },
-      systemRuntimeContext
+      planArtifact as any,
+      systemRuntimeContext,
+      { txId: signedArtifact.txId || `simulated-${signedArtifact.sourcePlanId}-tx` }
     );
+
+    if (!simResult.ok) {
+      throw new Error(`Strict validation failed: ${simResult.errors?.join(", ")}`);
+    }
 
     coreEvents.normalizeAndEmit({
       kind: "workflow.submitted",

@@ -8,6 +8,26 @@ export function registerArtifactCommands(program: Command) {
   const artifactCmd = program.command("artifact").description("Manage HardKAS artifacts");
 
   artifactCmd
+    .command("create <type>")
+    .description(`Create a new HardKAS artifact ${UI.maturity("alpha")}`)
+    .requiredOption("--input <path>", "Input JSON payload file")
+    .option("--out <path>", "Output artifact file path")
+    .option("--json", "Output results as JSON", false)
+    .option("--workspace <path>", "Override workspace root directory")
+    .action(async (type: string, options: any) => {
+      try {
+        const { runArtifactCreate } = await import("../runners/artifact-create-runner.js");
+        const workspaceRoot = options.workspace
+          ? path.resolve(options.workspace)
+          : process.cwd();
+        await runArtifactCreate({ type, ...options, workspaceRoot });
+      } catch (e) {
+        handleError(e);
+        process.exitCode = 1;
+      }
+    });
+
+  artifactCmd
     .command("inspect <id_or_path>")
     .description(`Deep inspect an artifact by ID or path ${UI.maturity("stable")}`)
     .option("--json", "Output results as JSON", false)
