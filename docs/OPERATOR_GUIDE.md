@@ -19,10 +19,10 @@ hardkas doctor --consistency
 ```
 *Tip: Add `--strict` in your CI pipelines to fail the build if any anomaly is detected.*
 
-### `hardkas inspect <path>`
+### `hardkas query artifacts inspect <path>`
 If the doctor complains about a specific stream or artifact, inspect it directly without using `cat`. The inspector parses the schema natively and highlights exact byte-level corruption.
 ```bash
-hardkas inspect .hardkas/telemetry/telemetry.jsonl
+hardkas query artifacts inspect .hardkas/telemetry/telemetry.jsonl
 ```
 
 ## Common Scenarios & Recovery

@@ -32,7 +32,7 @@ describe("Semantic Validation - Network Contamination Protection", () => {
   it("simulated -> mainnet contamination detection (verifyArtifactSemantics fails)", () => {
     const plan = {
       schema: "hardkas.txPlan",
-      hardkasVersion: "0.7.1-alpha",
+      hardkasVersion: "0.7.3-alpha",
       version: "1.0.0-alpha",
       networkId: "mainnet",
       mode: "real",
@@ -55,7 +55,7 @@ describe("Semantic Validation - Network Contamination Protection", () => {
   it("simulated -> testnet contamination detection (verifyArtifactSemantics fails)", () => {
     const plan = {
       schema: "hardkas.txPlan",
-      hardkasVersion: "0.7.1-alpha",
+      hardkasVersion: "0.7.3-alpha",
       version: "1.0.0-alpha",
       networkId: "testnet-10",
       mode: "real",
@@ -78,7 +78,7 @@ describe("Semantic Validation - Network Contamination Protection", () => {
   it("mixed-network artifact lineage rejection (parent on simnet, child on testnet)", () => {
     const child = {
       schema: "hardkas.txPlan",
-      hardkasVersion: "0.7.1-alpha",
+      hardkasVersion: "0.7.3-alpha",
       version: "1.0.0-alpha",
       networkId: "testnet-10",
       mode: "real",
@@ -101,7 +101,7 @@ describe("Semantic Validation - Network Contamination Protection", () => {
 
     const parent = {
       schema: "hardkas.txPlan",
-      hardkasVersion: "0.7.1-alpha",
+      hardkasVersion: "0.7.3-alpha",
       version: "1.0.0-alpha",
       networkId: "simnet",
       mode: "simulated",

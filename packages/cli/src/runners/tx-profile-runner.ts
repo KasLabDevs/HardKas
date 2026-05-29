@@ -64,5 +64,5 @@ export async function runTxProfile(options: TxProfileOptions) {
     console.log(`    [C] ${plan.change.address.substring(0, 20)}... (${formatSompi(BigInt(plan.change.amountSompi))}) [CHANGE]`);
   }
 
-  console.log("\nNote: Mass estimation is protocol-aware (0.7.1-alpha best-effort).");
+  console.log("\nNote: Mass estimation is protocol-aware (0.7.3-alpha best-effort).");
 }

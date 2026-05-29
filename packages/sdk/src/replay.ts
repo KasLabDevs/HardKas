@@ -31,14 +31,32 @@ export class HardkasReplay {
    * against the mathematically reconstructed localnet state.
    */
   async verify(options: ReplayVerifyOptions): Promise<ReplayVerifyResult> {
-    const artifactDir = options.path ? path.resolve(this.sdk.config.cwd, options.path) : this.sdk.config.cwd;
-    
-    if (options.path && !fs.existsSync(path.join(artifactDir, "hardkas.config.ts"))) {
-      throw new Error(`Workspace not found at ${options.path}`);
+    let artifactDir = this.sdk.config.cwd;
+    let planPath = path.join(artifactDir, "tx-plan.json");
+    let receiptPath = path.join(artifactDir, "tx-receipt.json");
+
+    if (options.path) {
+      const fullPath = path.resolve(this.sdk.config.cwd, options.path);
+      if (fs.existsSync(fullPath)) {
+        if (fs.statSync(fullPath).isFile()) {
+          planPath = fullPath;
+          artifactDir = path.dirname(fullPath);
+          receiptPath = fullPath.replace("tx-plan", "tx-receipt");
+        } else {
+          artifactDir = fullPath;
+          planPath = path.join(artifactDir, "tx-plan.json");
+          receiptPath = path.join(artifactDir, "tx-receipt.json");
+        }
+      } else {
+        throw new Error(`Path not found: ${options.path}`);
+      }
     }
     
-    const planPath = path.join(artifactDir, "tx-plan.json");
-    const receiptPath = path.join(artifactDir, "tx-receipt.json");
+    // We only check hardkas.config.ts if they gave us a directory that isn't the CWD? 
+    // Actually we can skip that check or just check workspace.root.
+    if (!fs.existsSync(path.join(this.sdk.config.cwd, "hardkas.config.ts"))) {
+      throw new Error(`Workspace not found at ${this.sdk.config.cwd}`);
+    }
 
     // Collect files
     const canonicalDirs = [

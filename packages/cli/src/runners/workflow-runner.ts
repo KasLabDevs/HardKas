@@ -4,7 +4,7 @@ import path from "node:path";
 import { UI, handleError } from "../ui.js";
 import type { WorkflowArtifact } from "@hardkas/artifacts";
 
-export async function runWorkflowRun(file: string, options: { workspaceRoot?: string; dryRun?: boolean; json?: boolean }) {
+export async function runWorkflowRun(file: string, options: { workspaceRoot?: string; dryRun?: boolean; json?: boolean; network?: string; offline?: boolean; timeout?: string }) {
   try {
     if (options.json) UI.setJsonMode(true);
     
@@ -45,17 +45,34 @@ export async function runWorkflowRun(file: string, options: { workspaceRoot?: st
       mode: "agent",
       policy: {
         requireDryRun: options.dryRun || false,
-        allowNetwork: def.allowNetwork || false,
+        allowNetwork: options.offline ? false : (def.allowNetwork || false),
         allowMainnet: false, // Never allow mainnet via CLI workflows for now
       }
     } as HardkasOptions);
 
+    if (options.network) {
+      // Temporarily override the SDK's network just for this workflow instance
+      (sdk as any).config.config.defaultNetwork = options.network;
+    }
+
     UI.info(`Running ${def.steps.length} workflow steps...`);
     
-    const result = await sdk.workflow.run({
+    let resultPromise = sdk.workflow.run({
       steps: def.steps,
       ...(options.dryRun !== undefined && { dryRun: options.dryRun })
     });
+
+    if (options.timeout) {
+      const timeoutMs = parseInt(options.timeout, 10);
+      if (!isNaN(timeoutMs)) {
+        const timeoutPromise = new Promise<any>((_, reject) => {
+          setTimeout(() => reject(new Error(`Workflow execution timed out after ${timeoutMs}ms`)), timeoutMs);
+        });
+        resultPromise = Promise.race([resultPromise, timeoutPromise]);
+      }
+    }
+
+    const result = await resultPromise;
 
     if (result.status === "failed") {
       UI.error(`Workflow failed: ${result.errorEnvelope?.message}`);

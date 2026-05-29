@@ -21,6 +21,7 @@ export interface AccountsBalanceOptions {
   identifier: string; // name or address
   network?: string;
   url?: string;
+  local?: boolean;
 }
 
 export async function runAccountsBalance(options: AccountsBalanceOptions): Promise<AccountBalanceResult> {
@@ -45,27 +46,44 @@ export async function runAccountsBalance(options: AccountsBalanceOptions): Promi
     }
   }
 
-  // 2. Setup RPC Client
+  // 2. Setup RPC Client or Local Backend
   const network = options.network ?? loadedConfig.config.defaultNetwork ?? "simnet";
-  let rpcUrl = options.url;
-  if (!rpcUrl) {
-    rpcUrl = resolveRuntimeConfig({ network: network as "mainnet" | "testnet-10" | "simnet" }).rpcUrl;
-  }
+  const isSimulated = options.local || network === "simulated" || network === "simnet";
 
-  const client = new JsonWrpcKaspaClient({ rpcUrl });
-  
-  try {
-    const balance = await client.getBalanceByAddress(address);
-    const utxos = await client.getUtxosByAddress(address);
-    
+  if (isSimulated) {
+    const { loadOrCreateLocalnetState, getSpendableUtxos } = await import("@hardkas/localnet");
+    const localState = await loadOrCreateLocalnetState({ cwd: process.cwd() });
+    const utxos = getSpendableUtxos(localState, address);
+    const balanceSompi = utxos.reduce((acc, u) => acc + BigInt(u.amountSompi), 0n);
+
     return {
       name,
       address,
-      balanceSompi: balance.balanceSompi,
+      balanceSompi,
       utxoCount: utxos.length,
-      network
+      network: "simulated"
     };
-  } finally {
-    await client.close();
+  } else {
+    let rpcUrl = options.url;
+    if (!rpcUrl) {
+      rpcUrl = resolveRuntimeConfig({ network: network as "mainnet" | "testnet-10" | "simnet" }).rpcUrl;
+    }
+
+    const client = new JsonWrpcKaspaClient({ rpcUrl });
+    
+    try {
+      const balance = await client.getBalanceByAddress(address);
+      const utxos = await client.getUtxosByAddress(address);
+      
+      return {
+        name,
+        address,
+        balanceSompi: balance.balanceSompi,
+        utxoCount: utxos.length,
+        network
+      };
+    } finally {
+      await client.close();
+    }
   }
 }

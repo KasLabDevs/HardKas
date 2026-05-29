@@ -218,6 +218,11 @@ export function registerQueryCommands(program: Command) {
     .action(async (query: string, options) => {
       try {
         const engine = await getQueryEngine();
+        
+        if (engine.backend.kind() === "filesystem") {
+           throw new Error("Raw SQL execution is not supported by the Filesystem backend.\nPlease switch to SQLite by running: hardkas query store rebuild --backend sqlite");
+        }
+
         // This requires the backend to expose raw SQL execution, 
         // but for now we'll assume it can or we'll add it.
         if (typeof (engine.backend as any).executeRawSql !== "function") {

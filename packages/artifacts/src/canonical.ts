@@ -24,7 +24,8 @@ export const SEMANTIC_EXCLUSIONS = new Set([
   "sourceSignedId",
   "submittedAt",
   "confirmedAt",
-  "dagContext"
+  "dagContext",
+  "executionId"
 ]);
 
 /**
@@ -53,7 +54,20 @@ export const STRICT_PATH_KEYS = new Set([
  * Excludes fields in SEMANTIC_EXCLUSIONS during serialization.
  * Skips keys with undefined values (matching JSON.stringify behavior).
  */
-export function canonicalStringify(obj: unknown, version: number = CURRENT_HASH_VERSION, keyName?: string): string {
+export function canonicalStringify(obj: unknown, version: number = CURRENT_HASH_VERSION, keyName?: string, isRoot: boolean = true): string {
+  if (typeof obj === "symbol" || typeof obj === "function") {
+    throw new Error(`Type ${typeof obj} is not canonicalizable.`);
+  }
+
+  if (typeof obj === "undefined") {
+    if (isRoot) {
+      throw new Error(`Type undefined is not canonicalizable at the root.`);
+    }
+    // Inside arrays, JSON.stringify(undefined) becomes null.
+    // Object properties with undefined are filtered out before calling canonicalStringify.
+    return "null";
+  }
+
   if (obj === null || typeof obj !== "object") {
     if (typeof obj === "bigint") {
       // v2+ adds a type marker to distinguish BigInt from String.
@@ -79,7 +93,7 @@ export function canonicalStringify(obj: unknown, version: number = CURRENT_HASH_
   }
 
   if (Array.isArray(obj)) {
-    return "[" + obj.map(item => canonicalStringify(item, version, keyName)).join(",") + "]";
+    return "[" + obj.map(item => canonicalStringify(item, version, keyName, false)).join(",") + "]";
   }
 
   if (obj instanceof Map) {
@@ -107,7 +121,7 @@ export function canonicalStringify(obj: unknown, version: number = CURRENT_HASH_
   const result = sortedKeys
     .map(key => {
       const value = (obj as Record<string, unknown>)[key];
-      return JSON.stringify(key) + ":" + canonicalStringify(value, version, key);
+      return JSON.stringify(key) + ":" + canonicalStringify(value, version, key, false);
     })
     .join(",");
 

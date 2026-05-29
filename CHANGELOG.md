@@ -2,13 +2,31 @@
 
 All notable changes to HardKAS will be documented in this file.
 
-## [v0.7.1-alpha] - 2026-05-27
+## [v0.7.3-alpha] - 2026-05-29
+
+### Bug Bash & Canonicalization Hotfixes
+This release focuses on strict bug fixes discovered during the Agentic E2E Gauntlet and hardening canonicalization rules.
+
+#### Canonicalization (Strict Determinism)
+- **Root Undefined Error**: `canonicalStringify(undefined)` now strictly throws an error instead of producing invalid JSON strings, preventing ambiguity at the artifact root.
+- **Array Null Handling**: `undefined` values inside arrays are now safely converted to `null` to respect standard JSON serialization formats.
+- **Property Omission**: Preserved the semantic exclusion of `undefined` properties in objects for backwards compatibility and correct hash generation.
+
+#### Bug Bash Fixes
+- **Workflow Offline/Simulated**: `workflow run` now correctly processes simulated networks offline with a `--timeout` flag, preventing eternal hangs when RPC is missing.
+- **Replay Verify Paths**: `hardkas replay verify <path>` strictly respects arbitrary file or directory paths via `fs.statSync` rather than relying on relative magic resolution.
+- **Local Accounts Balance**: `hardkas accounts balance --local` now cleanly reads balances directly from `LocalnetState` without querying an RPC node.
+- **Dashboard Events**: Emitting `artifact.created` and `tx.confirmed` events during simulated transactions so the local Dashboard updates via SSE instantly.
+- **Query SQL Guard**: Enforced SQLite backend checking in `query sql`, emitting actionable migration errors if the default filesystem backend is active.
+- **WASM Keypair Errors**: Missing WASM core library (`@kaspa/core-lib`) in key generators now emits an explicit error instead of crashing silently.
+
+## [v0.7.2-alpha] - 2026-05-27
 
 ### Stabilization & Refactor
-This release focuses on cleaning, consolidating, versioning, and stabilizing the local-first runtime to prepare HardKAS for `0.7.1-alpha`. No new product architectures or fake executions were added. The focus remains on being a local-first, artifact-driven, deterministic, and replayable developer environment.
+This release focuses on cleaning, consolidating, versioning, and stabilizing the local-first runtime to prepare HardKAS for `0.7.2-alpha`. No new product architectures or fake executions were added. The focus remains on being a local-first, artifact-driven, deterministic, and replayable developer environment.
 
 #### Version Alignment & Documentation
-- **0.7.1-alpha:** Unified all package versions and references to `0.7.1-alpha`. Removed stale `0.6.1-alpha` and `0.7.0-CFC` references.
+- **0.7.2-alpha:** Unified all package versions and references to `0.7.2-alpha`. Removed stale `0.6.1-alpha` and `0.7.0-CFC` references.
 - **Honest Documentation:** Aggressively purged unsupported claims (e.g., "production ready", "trustless exit without ZK", "Kaspa L1 executes EVM"). Re-centered the messaging strictly around HardKAS being a "local-first reproducible Kaspa developer runtime."
 
 #### Runtime Contract Freeze

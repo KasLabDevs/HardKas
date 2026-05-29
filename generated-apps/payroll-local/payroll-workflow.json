@@ -1,0 +1,42 @@
+{
+  "name": "Payroll Workflow",
+  "version": "1.0",
+  "description": "Batch payment workflow for payroll",
+  "allowNetwork": true,
+  "steps": [
+    {
+      "type": "network.switch",
+      "args": {
+        "network": "simulated"
+      }
+    },
+    {
+      "type": "tx.plan",
+      "args": {
+        "from": "alice",
+        "to": "bob",
+        "amount": "10"
+      }
+    },
+    {
+      "type": "tx.simulate"
+    },
+    {
+      "type": "tx.send"
+    },
+    {
+      "type": "tx.plan",
+      "args": {
+        "from": "alice",
+        "to": "carol",
+        "amount": "10"
+      }
+    },
+    {
+      "type": "tx.simulate"
+    },
+    {
+      "type": "tx.send"
+    }
+  ]
+}
