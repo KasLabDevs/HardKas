@@ -1,9 +1,0 @@
-{
-  "name": "faucet-local-mock",
-  "version": "0.7.3-alpha",
-  "type": "module",
-  "dependencies": {
-    "@hardkas/sdk": "workspace:*",
-    "@kaspa/core-lib": "^1.6.5"
-  }
-}
