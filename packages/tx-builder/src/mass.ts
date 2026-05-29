@@ -21,13 +21,13 @@ export interface MassEstimateResult {
 export const KASPA_MASS_CONSTANTS = {
   /** Base transaction overhead (version, locktime, subnetwork id, gas, etc.) */
   BASE_TRANSACTION: 100n,
-  
+
   /** Mass per input (Outpoint + Sequence + SigScript + SigOpCount) */
   INPUT_P2PK: 150n,
-  
+
   /** Mass per output (Amount + ScriptPublicKey length prefix + ScriptPublicKey) */
   OUTPUT_P2PK: 50n,
-  
+
   /** Fallback mass for unknown script types (P2SH, etc.) */
   SCRIPT_FALLBACK: 150n,
 
@@ -37,8 +37,8 @@ export const KASPA_MASS_CONSTANTS = {
 
 /**
  * Estimates the mass of a transaction based on its structure and script types.
- * 
- * Note: alpha mass estimation is protocol-aware but still validated 
+ *
+ * Note: alpha mass estimation is protocol-aware but still validated
  * as best-effort until parity tests with kaspad/rusty-kaspa are complete.
  */
 export function estimateTransactionMass(input: {
@@ -51,23 +51,25 @@ export function estimateTransactionMass(input: {
   const warnings: string[] = [];
 
   const base = KASPA_MASS_CONSTANTS.BASE_TRANSACTION;
-  
+
   // All inputs are assumed P2PK/Schnorr for now in this version
   const inputs = BigInt(input.inputCount) * KASPA_MASS_CONSTANTS.INPUT_P2PK;
   assumptions.push(`Inputs assumed P2PK/Schnorr (${input.inputCount})`);
-  
+
   // Calculate output mass based on script types
   let outputs = 0n;
-  
+
   for (const out of input.outputs) {
     if (isP2PK(out.scriptPublicKey || out.address)) {
       outputs += KASPA_MASS_CONSTANTS.OUTPUT_P2PK;
     } else {
       outputs += KASPA_MASS_CONSTANTS.SCRIPT_FALLBACK;
-      warnings.push(`P2SH/Other script detected for address: ${out.address}. Mass is estimated using placeholder script-size assumptions.`);
+      warnings.push(
+        `P2SH/Other script detected for address: ${out.address}. Mass is estimated using placeholder script-size assumptions.`
+      );
     }
   }
-  
+
   // Add change output if applicable (assumed P2PK)
   if (input.hasChange) {
     outputs += KASPA_MASS_CONSTANTS.OUTPUT_P2PK;
@@ -101,14 +103,14 @@ function isP2PK(addressOrScript: string): boolean {
   if (/^[0-9a-fA-F]+$/.test(addressOrScript)) {
     return addressOrScript.length === 68; // 34 bytes * 2
   }
-  
+
   // If it's an address
   if (addressOrScript.includes(":")) {
     const parts = addressOrScript.split(":");
     const body = parts[1];
-    return !!body && (body.startsWith("q") || body.startsWith("sim_")); 
+    return !!body && (body.startsWith("q") || body.startsWith("sim_"));
   }
-  
+
   return true; // Default to P2PK for simplicity
 }
 

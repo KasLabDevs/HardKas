@@ -1,13 +1,10 @@
-import { 
-  TxPlanArtifact, 
-  calculateContentHash
-} from "@hardkas/artifacts";
-import { 
-  HardkasKaspaPrivateKeyAccount, 
-  HardkasTxPlanSigner, 
-  SignTxPlanInput, 
-  SignTxPlanResult, 
-  HardkasSignerKind 
+import { TxPlanArtifact, calculateContentHash } from "@hardkas/artifacts";
+import {
+  HardkasKaspaPrivateKeyAccount,
+  HardkasTxPlanSigner,
+  SignTxPlanInput,
+  SignTxPlanResult,
+  HardkasSignerKind
 } from "./types.js";
 import { NetworkId } from "@hardkas/core";
 import { loadKaspaWasm } from "./signer-backend.js";
@@ -41,7 +38,9 @@ export class KaspaWasmPrivateKeySigner implements HardkasTxPlanSigner {
     });
 
     // 3. Resolve Private Key
-    const pkValue = account.privateKeyEnv ? process.env[account.privateKeyEnv] : undefined;
+    const pkValue = account.privateKeyEnv
+      ? process.env[account.privateKeyEnv]
+      : undefined;
     if (!pkValue) {
       throw new Error(`Missing required private key for account '${account.name}'.`);
     }
@@ -49,17 +48,19 @@ export class KaspaWasmPrivateKeySigner implements HardkasTxPlanSigner {
     try {
       // 4. Map Artifact to SDK objects
       const privateKey = new sdk.PrivateKey(pkValue);
-      
-      const utxos = plan.inputs.map(u => {
+
+      const utxos = plan.inputs.map((u) => {
         if (!u.outpoint.transactionId || u.outpoint.index === undefined) {
           throw new Error(`UTXO is missing transactionId or index. Re-run tx plan.`);
         }
-        
-        const spk = (u as { scriptPublicKey?: string }).scriptPublicKey; 
+
+        const spk = (u as { scriptPublicKey?: string }).scriptPublicKey;
         if (!spk) {
-          throw new Error("UTXO is missing scriptPublicKey. Real signing flows must never fabricate cryptographic state.");
+          throw new Error(
+            "UTXO is missing scriptPublicKey. Real signing flows must never fabricate cryptographic state."
+          );
         }
-        
+
         return new sdk.UtxoEntry(
           BigInt(u.amountSompi),
           spk,
@@ -69,15 +70,12 @@ export class KaspaWasmPrivateKeySigner implements HardkasTxPlanSigner {
         );
       });
 
-      const outputs = plan.outputs.map(o => {
+      const outputs = plan.outputs.map((o) => {
         if (!o.address) throw new Error("Output is missing address.");
-        return new sdk.PaymentOutput(
-          new sdk.Address(o.address),
-          BigInt(o.amountSompi)
-        );
+        return new sdk.PaymentOutput(new sdk.Address(o.address), BigInt(o.amountSompi));
       });
 
-      const changeAddress = plan.change?.address 
+      const changeAddress = plan.change?.address
         ? new sdk.Address(plan.change.address)
         : undefined;
 
@@ -92,9 +90,11 @@ export class KaspaWasmPrivateKeySigner implements HardkasTxPlanSigner {
       );
 
       const signedTx = sdk.signTransaction(unsignedTx, [privateKey], true);
-      
+
       // 6. Serialize
-      const rawTx = signedTx.serialize ? signedTx.serialize() : JSON.stringify(signedTx.toRpcTransaction());
+      const rawTx = signedTx.serialize
+        ? signedTx.serialize()
+        : JSON.stringify(signedTx.toRpcTransaction());
 
       return {
         signatureKind: "kaspa-private-key",
@@ -109,10 +109,11 @@ export class KaspaWasmPrivateKeySigner implements HardkasTxPlanSigner {
           value: signedTx.id || calculateContentHash(plan)
         }
       };
-
     } catch (error) {
       // Never log the private key or pkValue
-      throw new Error(`Kaspa WASM signing failed: ${error instanceof Error ? error.message : String(error)}`);
+      throw new Error(
+        `Kaspa WASM signing failed: ${error instanceof Error ? error.message : String(error)}`
+      );
     }
   }
 }
@@ -126,11 +127,11 @@ export function assertSigningNetworkAllowed(input: {
   allowMainnet?: boolean | undefined;
 }): void {
   const isMainnet = input.network === "mainnet";
-  
+
   if (isMainnet && !input.allowMainnet) {
     throw new Error(
       "Mainnet signing is disabled by default. " +
-      "Use --allow-mainnet-signing only if you understand the risks."
+        "Use --allow-mainnet-signing only if you understand the risks."
     );
   }
 }

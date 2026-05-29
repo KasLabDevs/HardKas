@@ -30,7 +30,11 @@ export interface KaspadNodeStatus {
   readonly transports: {
     readonly grpc: { readonly port: number; readonly ready: boolean };
     readonly borsh: { readonly port: number; readonly ready: boolean };
-    readonly json: { readonly port: number; readonly ready: boolean; readonly url: string };
+    readonly json: {
+      readonly port: number;
+      readonly ready: boolean;
+      readonly url: string;
+    };
   };
   readonly lastError?: string | null;
 }

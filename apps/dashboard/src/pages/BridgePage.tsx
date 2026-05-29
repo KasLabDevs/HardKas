@@ -29,7 +29,10 @@ export function BridgePage() {
           Deterministic Bridging Flow
         </h4>
         <p className="text-xs text-zinc-500 leading-relaxed font-sans">
-          Bridging locks KAS on the L1 state network using a multi-sig script. The Igra L2 sequencer automatically indexes these lock receipts, mints iKAS (wrapped KAS on L2), and distributes it to the recipient's rollup address. All steps are reproducible and verified.
+          Bridging locks KAS on the L1 state network using a multi-sig script. The Igra L2
+          sequencer automatically indexes these lock receipts, mints iKAS (wrapped KAS on
+          L2), and distributes it to the recipient's rollup address. All steps are
+          reproducible and verified.
         </p>
       </div>
     </div>

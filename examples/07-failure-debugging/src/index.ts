@@ -1,6 +1,6 @@
-import { 
-  Hardkas, 
-  formatSompi, 
+import {
+  Hardkas,
+  formatSompi,
   parseKasToSompi,
   writeArtifact,
   HARDKAS_VERSION,
@@ -12,7 +12,7 @@ import path from "node:path";
 
 /**
  * Example 07: Failure Debugging
- * 
+ *
  * Demonstrates developer-grade transaction debugging and failure analysis
  * for Kaspa-native workflows by intentionally triggering and documenting failures.
  */
@@ -35,7 +35,7 @@ async function main() {
   async function runScenario(name: string, fn: () => Promise<void>) {
     console.log(`Scenario: ${name}`);
     console.log("-".repeat(name.length + 10));
-    
+
     const scenarioDir = path.join(artifactsDir, name.toLowerCase().replace(/\s+/g, "-"));
     if (!fs.existsSync(scenarioDir)) fs.mkdirSync(scenarioDir);
 
@@ -64,7 +64,7 @@ async function main() {
       };
 
       const traceArtifact: TxTraceArtifact = {
-        schema: ARTIFACT_SCHEMAS.TX_TRACE || "hardkas.txTrace.v1" as any,
+        schema: ARTIFACT_SCHEMAS.TX_TRACE || ("hardkas.txTrace.v1" as any),
         hardkasVersion: HARDKAS_VERSION,
         networkId: hardkas.network,
         mode: "simulated",
@@ -83,7 +83,9 @@ async function main() {
       await writeArtifact(path.join(scenarioDir, "trace.json"), traceArtifact);
       await writeArtifact(path.join(scenarioDir, "replay.json"), replayArtifact);
 
-      console.log(`\nArtifacts generated in: ${path.relative(process.cwd(), scenarioDir)}`);
+      console.log(
+        `\nArtifacts generated in: ${path.relative(process.cwd(), scenarioDir)}`
+      );
       console.log("- error.json");
       console.log("- trace.json");
       console.log("- replay.json\n");
@@ -126,7 +128,7 @@ async function main() {
   console.log("Failure debugging artifacts generated for all scenarios.");
 }
 
-main().catch(err => {
+main().catch((err) => {
   console.error("\n✖ Example failed");
   console.error(err);
   process.exit(1);

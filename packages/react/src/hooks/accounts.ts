@@ -24,12 +24,13 @@ export interface HardKasAccountsResponse {
 }
 
 export function useAccounts() {
-  const { config, subscribe , apiFetch } = useHardKas();
+  const { config, subscribe, apiFetch } = useHardKas();
   const queryClient = useQueryClient();
 
   useEffect(() => {
-    const sync = () => queryClient.invalidateQueries({ queryKey: ["hardkas", "accounts"] });
-    
+    const sync = () =>
+      queryClient.invalidateQueries({ queryKey: ["hardkas", "accounts"] });
+
     return subscribe((event) => {
       if (["query-synced", "session-changed"].includes(event.type)) {
         sync();
@@ -42,7 +43,11 @@ export function useAccounts() {
     queryFn: async (): Promise<HardKasAccountsResponse> => {
       try {
         const baseUrl = config.devServerUrl || "";
-        const url = baseUrl ? (baseUrl.endsWith("/") ? `${baseUrl}api/accounts` : `${baseUrl}/api/accounts`) : "/api/accounts";
+        const url = baseUrl
+          ? baseUrl.endsWith("/")
+            ? `${baseUrl}api/accounts`
+            : `${baseUrl}/api/accounts`
+          : "/api/accounts";
         const response = await apiFetch(url);
         if (!response.ok) return { accounts: [] };
         const data = await response.json();
@@ -52,6 +57,6 @@ export function useAccounts() {
         return { accounts: [] };
       }
     },
-    staleTime: 30000,
+    staleTime: 30000
   });
 }

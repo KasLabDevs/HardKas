@@ -28,7 +28,7 @@ export const DEFAULT_HARDKAS_CONFIG: HardkasConfig = {
       network: "testnet-11",
       rpcUrl: "wss://tn11.kaspa.stream:443"
     },
-    "mainnet": {
+    mainnet: {
       kind: "kaspa-rpc",
       network: "mainnet",
       rpcUrl: "wss://kaspa.stream:443"

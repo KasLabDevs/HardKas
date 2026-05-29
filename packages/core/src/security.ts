@@ -13,13 +13,16 @@ export function maskSecrets(data: any): any {
 
     // Mask mnemonics (rough approximation for BIP39 - long series of words)
     // This is a safety net, not a perfect detector.
-    redacted = redacted.replace(/\b([a-z]{3,10}\s+){11,23}[a-z]{3,10}\b/g, "[MNEMONIC REDACTED]");
+    redacted = redacted.replace(
+      /\b([a-z]{3,10}\s+){11,23}[a-z]{3,10}\b/g,
+      "[MNEMONIC REDACTED]"
+    );
 
     return redacted;
   }
 
   if (Array.isArray(data)) {
-    return data.map(item => maskSecrets(item));
+    return data.map((item) => maskSecrets(item));
   }
 
   if (typeof data === "object") {
@@ -27,10 +30,12 @@ export function maskSecrets(data: any): any {
     for (const key in data) {
       if (Object.prototype.hasOwnProperty.call(data, key)) {
         // Redact common sensitive keys immediately
-        if (key.toLowerCase().includes("secret") || 
-            key.toLowerCase().includes("privatekey") || 
-            key.toLowerCase().includes("mnemonic") ||
-            key.toLowerCase().includes("password")) {
+        if (
+          key.toLowerCase().includes("secret") ||
+          key.toLowerCase().includes("privatekey") ||
+          key.toLowerCase().includes("mnemonic") ||
+          key.toLowerCase().includes("password")
+        ) {
           redactedObj[key] = "[REDACTED]";
         } else {
           redactedObj[key] = maskSecrets(data[key]);

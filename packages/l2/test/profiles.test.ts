@@ -7,7 +7,7 @@ describe("L2 Profiles Registry", () => {
     const profile = getL2Profile("igra");
     expect(profile).not.toBeNull();
     expect(profile?.name).toBe("igra");
-    
+
     const result = validateL2Profile(profile);
     expect(result.ok).toBe(true);
     expect(result.errors).toHaveLength(0);
@@ -19,7 +19,7 @@ describe("L2 Profiles Registry", () => {
 
   it("should include igra in listL2Profiles", () => {
     const profiles = listL2Profiles();
-    expect(profiles.some(p => p.name === "igra")).toBe(true);
+    expect(profiles.some((p) => p.name === "igra")).toBe(true);
   });
 
   it("should reject profile with wrong schema", () => {
@@ -41,7 +41,7 @@ describe("L2 Profiles Registry", () => {
     };
     const result = validateL2Profile(invalid);
     expect(result.ok).toBe(false);
-    expect(result.errors.some(e => e.includes("Invalid schema"))).toBe(true);
+    expect(result.errors.some((e) => e.includes("Invalid schema"))).toBe(true);
   });
 
   it("should reject trustlessExit=true when bridgePhase is not zk", () => {
@@ -63,7 +63,9 @@ describe("L2 Profiles Registry", () => {
     };
     const result = validateL2Profile(invalid);
     expect(result.ok).toBe(false);
-    expect(result.errors.some(e => e.toLowerCase().includes("security invariant violation"))).toBe(true);
+    expect(
+      result.errors.some((e) => e.toLowerCase().includes("security invariant violation"))
+    ).toBe(true);
   });
 
   it("should allow trustlessExit=true when bridgePhase is zk", () => {

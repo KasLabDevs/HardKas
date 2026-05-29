@@ -10,7 +10,7 @@ export interface WriteArtifactOptions {
    * By default, it writes to sdk.workspace.artifactsDir.
    */
   outputDir?: string;
-  
+
   /**
    * Explicitly override the default filename.
    * By default, it generates `${schema}-${contentHash}.json`
@@ -44,35 +44,38 @@ export class HardkasArtifactsManager {
   /**
    * Writes a valid artifact to disk (canonical or custom path).
    */
-  async write(artifact: HardkasArtifactBase, options: WriteArtifactOptions = {}): Promise<WriteArtifactResult> {
+  async write(
+    artifact: HardkasArtifactBase,
+    options: WriteArtifactOptions = {}
+  ): Promise<WriteArtifactResult> {
     const record = artifact as unknown as Record<string, string>;
     const hash = record.contentHash || "unknown";
-    
+
     if (options.dryRun) {
-      return { 
-        dryRun: true, 
-        contentHash: hash 
+      return {
+        dryRun: true,
+        contentHash: hash
       };
     }
 
     const outputDir = options.outputDir || this.workspace.artifactsDir;
-    
+
     if (!fs.existsSync(outputDir)) {
       fs.mkdirSync(outputDir, { recursive: true });
     }
 
     const schema = record.schema || "artifact";
     const shortSchema = schema.replace("hardkas.", "");
-    
+
     const fileName = options.fileName || `${shortSchema}-${hash}.json`;
     const absolutePath = path.join(outputDir, fileName);
 
     const { writeArtifact } = await import("@hardkas/artifacts");
     await writeArtifact(absolutePath, artifact);
-    
+
     // Emit the event so localnet and query-store can index it.
-    const { 
-      coreEvents, 
+    const {
+      coreEvents,
       createEventEnvelope,
       asWorkflowId,
       asCorrelationId,
@@ -88,19 +91,21 @@ export class HardkasArtifactsManager {
     const netId = options.networkId || record.networkId || "unknown";
     const artifactId = record.artifactId || hash;
 
-    coreEvents.emit(createEventEnvelope({
-      kind: "artifact.written",
-      domain: "integrity",
-      workflowId: asWorkflowId(wId),
-      correlationId: asCorrelationId(cId),
-      networkId: asNetworkId(netId),
-      payload: { artifactId: asArtifactId(artifactId), path: absolutePath },
-      sequenceNumber: asEventSequence(1),
-      globalOffset: 0,
-      sourceSubsystem: "sdk:artifacts-manager",
-      artifactId: asArtifactId(artifactId)
-    }));
-    
+    coreEvents.emit(
+      createEventEnvelope({
+        kind: "artifact.written",
+        domain: "integrity",
+        workflowId: asWorkflowId(wId),
+        correlationId: asCorrelationId(cId),
+        networkId: asNetworkId(netId),
+        payload: { artifactId: asArtifactId(artifactId), path: absolutePath },
+        sequenceNumber: asEventSequence(1),
+        globalOffset: 0,
+        sourceSubsystem: "sdk:artifacts-manager",
+        artifactId: asArtifactId(artifactId)
+      })
+    );
+
     return {
       absolutePath,
       dryRun: false,
@@ -114,7 +119,7 @@ export class HardkasArtifactsManager {
   async read(id: string): Promise<any> {
     const { readArtifact } = await import("@hardkas/artifacts");
     let filePath = id;
-    
+
     if (!fs.existsSync(filePath)) {
       // 1. Try in workspace artifacts directory
       filePath = path.join(this.workspace.artifactsDir, `${id}.json`);
@@ -122,7 +127,7 @@ export class HardkasArtifactsManager {
         // 2. Try prefix search in workspace artifacts directory
         if (fs.existsSync(this.workspace.artifactsDir)) {
           const files = fs.readdirSync(this.workspace.artifactsDir);
-          const found = files.find(f => f.includes(id) || f.endsWith(`${id}.json`));
+          const found = files.find((f) => f.includes(id) || f.endsWith(`${id}.json`));
           if (found) {
             filePath = path.join(this.workspace.artifactsDir, found);
           } else {
@@ -133,8 +138,7 @@ export class HardkasArtifactsManager {
         }
       }
     }
-    
+
     return readArtifact(filePath);
   }
 }
-

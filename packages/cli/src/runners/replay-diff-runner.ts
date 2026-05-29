@@ -16,7 +16,7 @@ export async function runReplayDiff(options: ReplayDiffOptions) {
   const { Hardkas } = await import("@hardkas/sdk");
   const sdk = await Hardkas.open({ cwd: options.workspaceRoot });
   const artifactDir = sdk.workspace.artifactsDir;
-  
+
   const pathA = path.join(artifactDir, `${options.idA}.json`);
   const pathB = path.join(artifactDir, `${options.idB}.json`);
 
@@ -47,24 +47,42 @@ export async function runReplayDiff(options: ReplayDiffOptions) {
 
   // 1. Structural Diff
   console.log(`\n  ${pc.bold("1. Structural Diff (Layer 1)")}`);
-  if (diffResult.structural.missingArtifacts.length === 0 && diffResult.structural.excludedArtifacts.length === 0 && diffResult.structural.missingProjections.length === 0) {
+  if (
+    diffResult.structural.missingArtifacts.length === 0 &&
+    diffResult.structural.excludedArtifacts.length === 0 &&
+    diffResult.structural.missingProjections.length === 0
+  ) {
     console.log(`    ${pc.green("✓")} No structural differences`);
   } else {
-    diffResult.structural.missingArtifacts.forEach(a => console.log(`    ${pc.red("-")} Missing artifact: ${a}`));
-    diffResult.structural.missingProjections.forEach(p => console.log(`    ${pc.red("-")} Missing projection: ${p}`));
-    diffResult.structural.excludedArtifacts.forEach(e => console.log(`    ${pc.red("-")} Excluded artifact: ${e}`));
+    diffResult.structural.missingArtifacts.forEach((a) =>
+      console.log(`    ${pc.red("-")} Missing artifact: ${a}`)
+    );
+    diffResult.structural.missingProjections.forEach((p) =>
+      console.log(`    ${pc.red("-")} Missing projection: ${p}`)
+    );
+    diffResult.structural.excludedArtifacts.forEach((e) =>
+      console.log(`    ${pc.red("-")} Excluded artifact: ${e}`)
+    );
   }
 
   // 2. Deterministic Diff
   console.log(`\n  ${pc.bold("2. Deterministic Diff (Layer 2)")}`);
-  if (!diffResult.deterministic.stateRootDiverged && !diffResult.deterministic.lineageDiverged && !diffResult.deterministic.graphDiverged && diffResult.deterministic.differences.length === 0) {
+  if (
+    !diffResult.deterministic.stateRootDiverged &&
+    !diffResult.deterministic.lineageDiverged &&
+    !diffResult.deterministic.graphDiverged &&
+    diffResult.deterministic.differences.length === 0
+  ) {
     console.log(`    ${pc.green("✓")} No deterministic divergence`);
   } else {
-    if (diffResult.deterministic.stateRootDiverged) console.log(`    ${pc.red("✗")} State Root diverged`);
-    if (diffResult.deterministic.lineageDiverged) console.log(`    ${pc.red("✗")} Lineage diverged`);
-    if (diffResult.deterministic.graphDiverged) console.log(`    ${pc.red("✗")} Causality Graph diverged`);
-    
-    diffResult.deterministic.differences.forEach(d => {
+    if (diffResult.deterministic.stateRootDiverged)
+      console.log(`    ${pc.red("✗")} State Root diverged`);
+    if (diffResult.deterministic.lineageDiverged)
+      console.log(`    ${pc.red("✗")} Lineage diverged`);
+    if (diffResult.deterministic.graphDiverged)
+      console.log(`    ${pc.red("✗")} Causality Graph diverged`);
+
+    diffResult.deterministic.differences.forEach((d) => {
       console.log(`    ${pc.yellow("~")} Path: ${d.path}`);
       console.log(`      A: ${JSON.stringify(d.a)}`);
       console.log(`      B: ${JSON.stringify(d.b)}`);
@@ -73,12 +91,22 @@ export async function runReplayDiff(options: ReplayDiffOptions) {
 
   // 3. Observational Noise Diff
   console.log(`\n  ${pc.bold("3. Runtime Noise Diff (Layer 3)")}`);
-  if (diffResult.observational.timestampShifts.length === 0 && diffResult.observational.eventOrderingShifts.length === 0 && diffResult.observational.metadataDrift.length === 0) {
+  if (
+    diffResult.observational.timestampShifts.length === 0 &&
+    diffResult.observational.eventOrderingShifts.length === 0 &&
+    diffResult.observational.metadataDrift.length === 0
+  ) {
     console.log(`    ${pc.green("✓")} No observational shifts`);
   } else {
-    diffResult.observational.timestampShifts.forEach(t => console.log(`    ${pc.blue("~")} Timestamp shift in ${t.path}: ${t.shiftMs}ms`));
-    diffResult.observational.eventOrderingShifts.forEach(o => console.log(`    ${pc.blue("~")} Ordering shift: ${o}`));
-    diffResult.observational.metadataDrift.forEach(m => console.log(`    ${pc.blue("~")} Metadata drift: ${m}`));
+    diffResult.observational.timestampShifts.forEach((t) =>
+      console.log(`    ${pc.blue("~")} Timestamp shift in ${t.path}: ${t.shiftMs}ms`)
+    );
+    diffResult.observational.eventOrderingShifts.forEach((o) =>
+      console.log(`    ${pc.blue("~")} Ordering shift: ${o}`)
+    );
+    diffResult.observational.metadataDrift.forEach((m) =>
+      console.log(`    ${pc.blue("~")} Metadata drift: ${m}`)
+    );
   }
 
   console.log("");

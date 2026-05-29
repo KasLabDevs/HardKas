@@ -104,7 +104,7 @@ export class DagQueryAdapter implements QueryAdapter {
       return emptyDagResult("conflicts", start);
     }
 
-    const items: DagConflict[] = dag.conflictSet.map(c => ({
+    const items: DagConflict[] = dag.conflictSet.map((c) => ({
       outpoint: c.outpoint,
       winnerTxId: c.winnerTxId as TxId,
       loserTxIds: c.loserTxIds as TxId[]
@@ -115,7 +115,7 @@ export class DagQueryAdapter implements QueryAdapter {
 
     let why: WhyBlock[] | undefined;
     if (request.explain) {
-      why = paged.map(c => explainConflict(c, dag));
+      why = paged.map((c) => explainConflict(c, dag));
     }
 
     return {
@@ -127,7 +127,10 @@ export class DagQueryAdapter implements QueryAdapter {
       deterministic: true,
       queryHash: computeQueryHash(paged),
       why,
-      annotations: { executedAt: new Date().toISOString(), executionMs: Date.now() - start }
+      annotations: {
+        executedAt: new Date().toISOString(),
+        executionMs: Date.now() - start
+      }
     };
   }
 
@@ -143,9 +146,9 @@ export class DagQueryAdapter implements QueryAdapter {
       return emptyDagResult("displaced", start);
     }
 
-    const items: DagDisplacement[] = dag.displacedTxIds.map(txId => {
+    const items: DagDisplacement[] = dag.displacedTxIds.map((txId) => {
       // Check if this tx is in any conflict as a loser
-      const conflict = dag.conflictSet.find(c => c.loserTxIds.includes(txId));
+      const conflict = dag.conflictSet.find((c) => c.loserTxIds.includes(txId));
       const reason = conflict
         ? `Double-spend on outpoint ${conflict.outpoint}. Winner: ${conflict.winnerTxId}`
         : "Displaced by DAG reorganization";
@@ -162,7 +165,7 @@ export class DagQueryAdapter implements QueryAdapter {
 
     let why: WhyBlock[] | undefined;
     if (request.explain) {
-      why = paged.map(d => explainDisplacement(d, dag));
+      why = paged.map((d) => explainDisplacement(d, dag));
     }
 
     return {
@@ -174,7 +177,10 @@ export class DagQueryAdapter implements QueryAdapter {
       deterministic: true,
       queryHash: computeQueryHash(paged),
       why,
-      annotations: { executedAt: new Date().toISOString(), executionMs: Date.now() - start }
+      annotations: {
+        executedAt: new Date().toISOString(),
+        executionMs: Date.now() - start
+      }
     };
   }
 
@@ -224,7 +230,7 @@ export class DagQueryAdapter implements QueryAdapter {
 
     let why: WhyBlock[] | undefined;
     if (request.explain) {
-      why = entries.map(e => explainTxHistory(e, dag));
+      why = entries.map((e) => explainTxHistory(e, dag));
     }
 
     return {
@@ -236,7 +242,10 @@ export class DagQueryAdapter implements QueryAdapter {
       deterministic: true,
       queryHash: computeQueryHash(entries),
       why,
-      annotations: { executedAt: new Date().toISOString(), executionMs: Date.now() - start }
+      annotations: {
+        executedAt: new Date().toISOString(),
+        executionMs: Date.now() - start
+      }
     };
   }
 
@@ -252,7 +261,7 @@ export class DagQueryAdapter implements QueryAdapter {
       return emptyDagResult("sink-path", start);
     }
 
-    const nodes: DagSinkPathNode[] = dag.selectedPathToSink.map(blockId => {
+    const nodes: DagSinkPathNode[] = dag.selectedPathToSink.map((blockId) => {
       const block = dag.blocks[blockId];
       return {
         blockId,
@@ -276,7 +285,10 @@ export class DagQueryAdapter implements QueryAdapter {
       truncated: false,
       deterministic: true,
       queryHash: computeQueryHash([result]),
-      annotations: { executedAt: new Date().toISOString(), executionMs: Date.now() - start }
+      annotations: {
+        executedAt: new Date().toISOString(),
+        executionMs: Date.now() - start
+      }
     };
   }
 
@@ -344,7 +356,7 @@ export class DagQueryAdapter implements QueryAdapter {
 
     let why: WhyBlock[] | undefined;
     if (request.explain) {
-      why = paged.map(a => explainAnomaly(a, dag));
+      why = paged.map((a) => explainAnomaly(a, dag));
     }
 
     return {
@@ -356,7 +368,10 @@ export class DagQueryAdapter implements QueryAdapter {
       deterministic: true,
       queryHash: computeQueryHash(paged),
       why,
-      annotations: { executedAt: new Date().toISOString(), executionMs: Date.now() - start }
+      annotations: {
+        executedAt: new Date().toISOString(),
+        executionMs: Date.now() - start
+      }
     };
   }
 
@@ -435,7 +450,7 @@ function explainConflict(conflict: DagConflict, dag: SimDag): WhyBlock {
     answer: `Winner has ${winnerInSinkPath ? "sink-path priority" : "block ordering priority"}.`,
     evidence: [
       { type: "txId", value: conflict.winnerTxId },
-      ...conflict.loserTxIds.map(id => ({ type: "txId" as const, value: id }))
+      ...conflict.loserTxIds.map((id) => ({ type: "txId" as const, value: id }))
     ],
     causalChain,
     model: "deterministic-light-model",
@@ -449,7 +464,12 @@ function explainDisplacement(d: DagDisplacement, _dag: SimDag): WhyBlock {
     answer: d.reason,
     evidence: [{ type: "txId", value: d.txId }],
     causalChain: [
-      { order: 1, assertion: "Tx in displaced set", evidence: "dag.displacedTxIds includes txId", rule: "DAG reorganization" },
+      {
+        order: 1,
+        assertion: "Tx in displaced set",
+        evidence: "dag.displacedTxIds includes txId",
+        rule: "DAG reorganization"
+      },
       { order: 2, assertion: "Status: displaced", evidence: d.reason }
     ],
     model: "deterministic-light-model",
@@ -467,8 +487,16 @@ function explainTxHistory(entry: DagTxHistory, _dag: SimDag): WhyBlock {
       { type: "blockId", value: entry.blockId }
     ],
     causalChain: [
-      { order: 1, assertion: `In block ${entry.blockId}`, evidence: `daaScore=${entry.daaScore}` },
-      { order: 2, assertion: entry.inSinkPath ? "In selected sink path" : "Not in sink path", evidence: `selectedPathToSink.includes("${entry.blockId}")` }
+      {
+        order: 1,
+        assertion: `In block ${entry.blockId}`,
+        evidence: `daaScore=${entry.daaScore}`
+      },
+      {
+        order: 2,
+        assertion: entry.inSinkPath ? "In selected sink path" : "Not in sink path",
+        evidence: `selectedPathToSink.includes("${entry.blockId}")`
+      }
     ],
     model: "deterministic-light-model",
     confidence: "definitive"
@@ -485,7 +513,12 @@ function explainAnomaly(a: DagAnomaly, _dag: SimDag): WhyBlock {
     answer: a.description,
     evidence,
     causalChain: [
-      { order: 1, assertion: a.description, evidence: `Anomaly: ${a.kind}`, rule: "DAG invariant check" }
+      {
+        order: 1,
+        assertion: a.description,
+        evidence: `Anomaly: ${a.kind}`,
+        rule: "DAG invariant check"
+      }
     ],
     model: "deterministic-light-model",
     confidence: "definitive"

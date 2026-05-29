@@ -1,17 +1,18 @@
 import { Command } from "commander";
 import { UI } from "../ui.js";
-import { 
-  trackDeployment, 
-  listAllDeployments, 
-  inspectDeployment, 
-  verifyDeploymentStatus, 
-  showDeploymentHistory 
+import {
+  trackDeployment,
+  listAllDeployments,
+  inspectDeployment,
+  verifyDeploymentStatus,
+  showDeploymentHistory
 } from "../runners/deployment-runners.js";
 
 export function registerDeployCommands(program: Command) {
   const deployCmd = program.command("deploy").description("Track and manage deployments");
 
-  deployCmd.command("track <label>")
+  deployCmd
+    .command("track <label>")
     .description(`Create a deployment record for a transaction ${UI.maturity("stable")}`)
     .requiredOption("--network <name>", "Network where deployed")
     .option("--tx-id <txId>", "Transaction ID")
@@ -25,7 +26,8 @@ export function registerDeployCommands(program: Command) {
       await trackDeployment({ label, ...opts, workspaceRoot: process.cwd() });
     });
 
-  deployCmd.command("list")
+  deployCmd
+    .command("list")
     .description(`List all tracked deployments ${UI.maturity("stable")}`)
     .option("--network <name>", "Filter by network")
     .option("--status <status>", "Filter by status")
@@ -34,7 +36,8 @@ export function registerDeployCommands(program: Command) {
       await listAllDeployments({ ...opts, workspaceRoot: process.cwd() });
     });
 
-  deployCmd.command("inspect <label>")
+  deployCmd
+    .command("inspect <label>")
     .description(`Show full details of a deployment ${UI.maturity("stable")}`)
     .requiredOption("--network <name>", "Network")
     .option("--json", "Output as JSON", false)
@@ -42,8 +45,11 @@ export function registerDeployCommands(program: Command) {
       await inspectDeployment({ label, ...opts, workspaceRoot: process.cwd() });
     });
 
-  deployCmd.command("status <label>")
-    .description(`Check deployment status (query RPC if available) ${UI.maturity("stable")}`)
+  deployCmd
+    .command("status <label>")
+    .description(
+      `Check deployment status (query RPC if available) ${UI.maturity("stable")}`
+    )
     .requiredOption("--network <name>", "Network")
     .option("--verify", "Verify against RPC node", false)
     .option("--json", "Output as JSON", false)
@@ -51,7 +57,8 @@ export function registerDeployCommands(program: Command) {
       await verifyDeploymentStatus({ label, ...opts, workspaceRoot: process.cwd() });
     });
 
-  deployCmd.command("history")
+  deployCmd
+    .command("history")
     .description(`Show deployment history across all networks ${UI.maturity("stable")}`)
     .option("--json", "Output as JSON", false)
     .action(async (opts) => {

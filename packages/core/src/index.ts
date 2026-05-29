@@ -16,11 +16,7 @@ export const kaspaNetworkIdSchema = z.enum([
 
 export type NetworkId = Brand<z.infer<typeof kaspaNetworkIdSchema>, "NetworkId">;
 
-export const executionModeSchema = z.enum([
-  "simulated",
-  "real",
-  "readonly"
-]);
+export const executionModeSchema = z.enum(["simulated", "real", "readonly"]);
 
 export type ExecutionMode = z.infer<typeof executionModeSchema>;
 
@@ -70,7 +66,7 @@ export class HardkasError extends Error {
   }
 }
 
-export type InvariantDomain = 
+export type InvariantDomain =
   | "semantic"
   | "replay"
   | "provenance"
@@ -84,11 +80,13 @@ export class InvariantViolationError extends HardkasError {
   readonly severity: InvariantSeverity;
 
   constructor(
-    domain: InvariantDomain, 
-    message: string, 
-    options?: { severity?: InvariantSeverity, cause?: unknown }
+    domain: InvariantDomain,
+    message: string,
+    options?: { severity?: InvariantSeverity; cause?: unknown }
   ) {
-    super(`INVARIANT_VIOLATION_${domain.toUpperCase()}`, message, { cause: options?.cause });
+    super(`INVARIANT_VIOLATION_${domain.toUpperCase()}`, message, {
+      cause: options?.cause
+    });
     this.name = "InvariantViolationError";
     this.domain = domain;
     this.severity = options?.severity || "fatal";
@@ -118,7 +116,6 @@ export function parseKasToSompi(input: string): bigint {
 
   const [whole, fractional = ""] = trimmed.split(".");
   if (whole === undefined) {
-
     throw new HardkasError("AMOUNT_INVALID", `Invalid KAS amount: ${input}`);
   }
 
@@ -134,7 +131,6 @@ export function formatSompi(amountSompi: bigint): string {
 
   return `${sign}${whole}.${fractional.toString().padStart(8, "0")} KAS`;
 }
-
 
 export * from "./events.js";
 export * from "./domain-types.js";

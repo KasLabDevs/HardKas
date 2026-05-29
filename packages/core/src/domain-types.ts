@@ -1,6 +1,6 @@
 /**
  * Lightweight branded/nominal types for domain-critical strings/numbers.
- * 
+ *
  * These types prevent accidental misuse of raw primitives across the monorepo.
  * Branded types remain plain strings/numbers at runtime.
  */
@@ -81,7 +81,8 @@ export const asEventId = (id: string) => id as EventId;
 export const asCorrelationId = (id: string) => id as CorrelationId;
 export const asKaspaAddress = (addr: string) => addr as KaspaAddress;
 export const asRpcEndpointId = (id: string) => id as RpcEndpointId;
-export const asNetworkId = <T extends string>(id: T) => id as unknown as Brand<T, "NetworkId">;
+export const asNetworkId = <T extends string>(id: T) =>
+  id as unknown as Brand<T, "NetworkId">;
 export const asEventSequence = (seq: number) => seq as EventSequence;
 export const asDaaScore = (score: number | bigint) => score as DaaScore;
 

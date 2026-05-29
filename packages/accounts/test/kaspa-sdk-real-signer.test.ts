@@ -6,7 +6,7 @@ import { RealDevAccount } from "../src/real-accounts.js";
 describe("KaspaSdkRealTxSigner", () => {
   const mockPlan: any = {
     schema: "hardkas.txPlan",
-    hardkasVersion: "0.7.3-alpha",
+    hardkasVersion: "0.7.4-alpha",
     version: "1.0.0-alpha",
     createdAt: new Date().toISOString(),
     planId: "plan123",
@@ -37,11 +37,14 @@ describe("KaspaSdkRealTxSigner", () => {
 
   it("should fail clearly when SDK is missing", async () => {
     const signer = new KaspaSdkRealTxSigner({
-      sdkLoader: async () => { throw new Error("MODULE_NOT_FOUND"); }
+      sdkLoader: async () => {
+        throw new Error("MODULE_NOT_FOUND");
+      }
     });
 
-    await expect(signer.sign({ plan: mockPlan, account: mockAccount }))
-      .rejects.toThrow(/is not installed/);
+    await expect(signer.sign({ plan: mockPlan, account: mockAccount })).rejects.toThrow(
+      /is not installed/
+    );
   });
 
   it("should sign successfully with a mock SDK", async () => {
@@ -51,9 +54,9 @@ describe("KaspaSdkRealTxSigner", () => {
       Address: vi.fn().mockImplementation((a) => ({ addr: a })),
       PaymentOutput: vi.fn(),
       createTransaction: vi.fn().mockReturnValue({ id: "txid123" }),
-      signTransaction: vi.fn().mockReturnValue({ 
-        id: "txid123", 
-        serialize: () => "signed_payload_hex" 
+      signTransaction: vi.fn().mockReturnValue({
+        id: "txid123",
+        serialize: () => "signed_payload_hex"
       })
     };
 
@@ -76,13 +79,14 @@ describe("KaspaSdkRealTxSigner", () => {
     };
 
     const signer = new KaspaSdkRealTxSigner({
-      sdkLoader: async () => ({ 
+      sdkLoader: async () => ({
         PrivateKey: vi.fn(),
-        UtxoEntry: vi.fn() 
+        UtxoEntry: vi.fn()
       })
     });
 
-    await expect(signer.sign({ plan: planNoScript as any, account: mockAccount }))
-      .rejects.toThrow(/missing scriptPublicKey/);
+    await expect(
+      signer.sign({ plan: planNoScript as any, account: mockAccount })
+    ).rejects.toThrow(/missing scriptPublicKey/);
   });
 });

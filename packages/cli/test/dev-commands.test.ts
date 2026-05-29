@@ -12,7 +12,7 @@ describe("CLI dev namespace", () => {
     const targetDir = path.resolve(process.cwd(), "existing-dapp");
     vi.mocked(fs.existsSync).mockReturnValue(true);
     vi.mocked(fs.readdirSync).mockReturnValue(["some-file.txt"] as any);
-    
+
     // Reset exitCode
     process.exitCode = 0;
     await runDevCreate("existing-dapp");
@@ -24,9 +24,9 @@ describe("CLI dev namespace", () => {
     vi.mocked(fs.existsSync).mockReturnValue(true); // package.json exists
     vi.mocked(fs.existsSync).mockImplementation((p: any) => p.endsWith("package.json")); // everything else doesn't
     const writeMock = vi.mocked(fs.writeFileSync);
-    
+
     await runDevInit();
-    
+
     expect(writeMock).toHaveBeenCalledWith(
       expect.stringContaining("hardkas.config.ts"),
       expect.stringContaining("simulated"),
@@ -42,7 +42,7 @@ describe("CLI dev namespace", () => {
   it("dev doctor outputs stable JSON envelope when --json is passed", async () => {
     const logSpy = vi.spyOn(console, "log").mockImplementation(() => {});
     await runDevDoctor({ profile: "igra", json: true });
-    
+
     const output = logSpy.mock.calls[0][0];
     const parsed = JSON.parse(output);
     expect(parsed.schema).toBe("hardkas.devDoctor.v1");

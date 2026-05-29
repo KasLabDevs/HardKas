@@ -36,9 +36,15 @@ transactionsRoutes.get("/", async (c) => {
     const allArtifacts = await queryBackend.findArtifacts();
 
     // Group artifacts by their relationship
-    const plans = allArtifacts.filter(a => a.schema.includes("txPlan") || a.schema.includes("TxPlan"));
-    const signed = allArtifacts.filter(a => a.schema.includes("signedTx") || a.schema.includes("SignedTx"));
-    const receipts = allArtifacts.filter(a => a.schema.includes("txReceipt") || a.schema.includes("TxReceipt"));
+    const plans = allArtifacts.filter(
+      (a) => a.schema.includes("txPlan") || a.schema.includes("TxPlan")
+    );
+    const signed = allArtifacts.filter(
+      (a) => a.schema.includes("signedTx") || a.schema.includes("SignedTx")
+    );
+    const receipts = allArtifacts.filter(
+      (a) => a.schema.includes("txReceipt") || a.schema.includes("TxReceipt")
+    );
 
     const unifiedMap = new Map<string, UnifiedTransaction>();
 
@@ -61,7 +67,11 @@ transactionsRoutes.get("/", async (c) => {
         from: r.payload.from?.address || r.payload.from || "unknown",
         to: r.payload.to?.address || r.payload.to || "unknown",
         amountSompi: r.payload.amountSompi || "0",
-        amount: r.payload.amount || (r.payload.amountSompi ? (Number(r.payload.amountSompi) / 100_000_000).toString() : "0"),
+        amount:
+          r.payload.amount ||
+          (r.payload.amountSompi
+            ? (Number(r.payload.amountSompi) / 100_000_000).toString()
+            : "0"),
         feeSompi: r.payload.feeSompi,
         timestamp: r.payload.submittedAt || r.createdAt || new Date().toISOString(),
         mode: r.mode,
@@ -74,7 +84,7 @@ transactionsRoutes.get("/", async (c) => {
     for (const s of signed) {
       const txId = s.payload.txId;
       const signedId = s.artifactId;
-      
+
       // If we already have the transaction under txId, update the signedId
       if (txId && unifiedMap.has(txId)) {
         const existing = unifiedMap.get(txId)!;
@@ -85,7 +95,7 @@ transactionsRoutes.get("/", async (c) => {
 
       const layer = s.schema.includes("igra") ? "L2" : "L1";
       const id = txId || signedId;
-      
+
       unifiedMap.set(id, {
         id,
         txId,
@@ -99,7 +109,11 @@ transactionsRoutes.get("/", async (c) => {
         from: s.payload.from?.address || s.payload.from || "unknown",
         to: s.payload.to?.address || s.payload.to || "unknown",
         amountSompi: s.payload.amountSompi || "0",
-        amount: s.payload.amount || (s.payload.amountSompi ? (Number(s.payload.amountSompi) / 100_000_000).toString() : "0"),
+        amount:
+          s.payload.amount ||
+          (s.payload.amountSompi
+            ? (Number(s.payload.amountSompi) / 100_000_000).toString()
+            : "0"),
         timestamp: s.createdAt || new Date().toISOString(),
         mode: s.mode,
         networkId: s.networkId,
@@ -110,7 +124,7 @@ transactionsRoutes.get("/", async (c) => {
     // 3. Add plans not represented in signed or receipts
     for (const p of plans) {
       const planId = p.payload.planId || p.artifactId;
-      
+
       // Check if any existing unified tx has this planId as source
       let alreadyUnified = false;
       for (const utx of unifiedMap.values()) {
@@ -122,7 +136,7 @@ transactionsRoutes.get("/", async (c) => {
       if (alreadyUnified) continue;
 
       const layer = p.schema.includes("igra") ? "L2" : "L1";
-      
+
       unifiedMap.set(planId, {
         id: planId,
         planId,
@@ -134,7 +148,11 @@ transactionsRoutes.get("/", async (c) => {
         from: p.payload.from?.address || p.payload.from || "unknown",
         to: p.payload.to?.address || p.payload.to || "unknown",
         amountSompi: p.payload.amountSompi || "0",
-        amount: p.payload.amount || (p.payload.amountSompi ? (Number(p.payload.amountSompi) / 100_000_000).toString() : "0"),
+        amount:
+          p.payload.amount ||
+          (p.payload.amountSompi
+            ? (Number(p.payload.amountSompi) / 100_000_000).toString()
+            : "0"),
         timestamp: p.createdAt || new Date().toISOString(),
         mode: p.mode,
         networkId: p.networkId,
@@ -143,22 +161,30 @@ transactionsRoutes.get("/", async (c) => {
     }
 
     // Resolve replay status for all unified transactions
-    const replays = allArtifacts.filter(a => a.schema.includes("replayReport") || a.schema.includes("ReplayReport") || a.schema === "hardkas.replayReport.v1");
+    const replays = allArtifacts.filter(
+      (a) =>
+        a.schema.includes("replayReport") ||
+        a.schema.includes("ReplayReport") ||
+        a.schema === "hardkas.replayReport.v1"
+    );
     for (const utx of unifiedMap.values()) {
       utx.stalenessReasons = [];
       const txId = utx.txId || utx.planId || utx.signedId;
       if (txId) {
-        const replay = replays.find(r => r.payload.txId === txId || r.txId === txId || r.artifactId === txId);
-        
+        const replay = replays.find(
+          (r) => r.payload.txId === txId || r.txId === txId || r.artifactId === txId
+        );
+
         utx.sourceTimestamp = utx.timestamp;
-        
+
         if (replay) {
-          utx.lastReplayTimestamp = replay.createdAt || (replay as any).timestamp || replay.payload?.createdAt;
-          
+          utx.lastReplayTimestamp =
+            replay.createdAt || (replay as any).timestamp || replay.payload?.createdAt;
+
           const planOk = replay.payload.planOk !== false;
           const receiptOk = replay.payload.receiptOk !== false;
           const invariantsOk = replay.payload.invariantsOk !== false;
-          utx.replayStatus = (planOk && receiptOk && invariantsOk) ? "PASS" : "FAIL";
+          utx.replayStatus = planOk && receiptOk && invariantsOk ? "PASS" : "FAIL";
 
           const srcTime = new Date(utx.sourceTimestamp).getTime();
           const repTime = new Date(utx.lastReplayTimestamp!).getTime();
@@ -200,16 +226,26 @@ transactionsRoutes.get("/:id", async (c) => {
     // Search by artifact ID or internal fields
     for (const a of allArtifacts) {
       const payload = a.payload;
-      
+
       // Is it a receipt matching the ID?
       if (a.schema.includes("txReceipt") || a.schema.includes("TxReceipt")) {
-        if (a.artifactId === id || a.txId === id || payload.txId === id || payload.sourceSignedId === id) {
+        if (
+          a.artifactId === id ||
+          a.txId === id ||
+          payload.txId === id ||
+          payload.sourceSignedId === id
+        ) {
           receipt = a;
         }
       }
       // Is it a signed tx matching the ID?
       else if (a.schema.includes("signedTx") || a.schema.includes("SignedTx")) {
-        if (a.artifactId === id || payload.signedId === id || payload.txId === id || payload.sourcePlanId === id) {
+        if (
+          a.artifactId === id ||
+          payload.signedId === id ||
+          payload.txId === id ||
+          payload.sourcePlanId === id
+        ) {
           signed = a;
         }
       }
@@ -230,15 +266,19 @@ transactionsRoutes.get("/:id", async (c) => {
     // Correlate using lineage/references if not all found
     if (receipt && !signed) {
       const sourceSignedId = receipt.payload.sourceSignedId;
-      signed = allArtifacts.find(a => a.artifactId === sourceSignedId);
+      signed = allArtifacts.find((a) => a.artifactId === sourceSignedId);
     }
     if (signed && !plan) {
       const sourcePlanId = signed.payload.sourcePlanId;
-      plan = allArtifacts.find(a => a.artifactId === sourcePlanId);
+      plan = allArtifacts.find((a) => a.artifactId === sourcePlanId);
     }
     if (receipt && !trace) {
       const txId = receipt.txId || receipt.payload.txId;
-      trace = allArtifacts.find(a => (a.schema.includes("txTrace") || a.schema.includes("TxTrace")) && a.txId === txId);
+      trace = allArtifacts.find(
+        (a) =>
+          (a.schema.includes("txTrace") || a.schema.includes("TxTrace")) &&
+          a.txId === txId
+      );
     }
 
     // Lineage graph edges
@@ -263,13 +303,17 @@ transactionsRoutes.get("/:id", async (c) => {
     let replayStatus: string | undefined = undefined;
     const txId = receipt?.txId || receipt?.payload?.txId || signed?.payload?.txId;
     if (txId) {
-      const replays = await queryBackend.findArtifacts({ schema: "hardkas.replayReport.v1" });
-      replay = replays.find(r => r.payload.txId === txId || r.txId === txId || r.artifactId === txId);
+      const replays = await queryBackend.findArtifacts({
+        schema: "hardkas.replayReport.v1"
+      });
+      replay = replays.find(
+        (r) => r.payload.txId === txId || r.txId === txId || r.artifactId === txId
+      );
       if (replay) {
         const planOk = replay.payload.planOk !== false;
         const receiptOk = replay.payload.receiptOk !== false;
         const invariantsOk = replay.payload.invariantsOk !== false;
-        replayStatus = (planOk && receiptOk && invariantsOk) ? "PASS" : "FAIL";
+        replayStatus = planOk && receiptOk && invariantsOk ? "PASS" : "FAIL";
       }
     }
 
@@ -293,7 +337,8 @@ transactionsRoutes.get("/:id", async (c) => {
       networkId: p.networkId || "simulated",
       network: p.networkName || p.networkId || "simulated",
       mode: p.mode || "simulated",
-      timestamp: p.createdAt || p.submittedAt || target?.createdAt || new Date().toISOString(),
+      timestamp:
+        p.createdAt || p.submittedAt || target?.createdAt || new Date().toISOString(),
       amountSompi: p.amountSompi || "0",
       amount: p.amount || p.amountSompi || "0",
       feeSompi: p.feeSompi || "0",
@@ -307,11 +352,46 @@ transactionsRoutes.get("/:id", async (c) => {
       replayStatus,
 
       // Lineage & Graph fields (preserved)
-      plan: plan ? { artifactId: plan.artifactId, contentHash: plan.contentHash, payload: plan.payload, createdAt: plan.createdAt } : null,
-      signed: signed ? { artifactId: signed.artifactId, contentHash: signed.contentHash, payload: signed.payload, createdAt: signed.createdAt } : null,
-      receipt: receipt ? { artifactId: receipt.artifactId, contentHash: receipt.contentHash, payload: receipt.payload, createdAt: receipt.createdAt } : null,
-      trace: trace ? { artifactId: trace.artifactId, contentHash: trace.contentHash, payload: trace.payload, createdAt: trace.createdAt } : null,
-      replay: replay ? { artifactId: replay.artifactId, contentHash: replay.contentHash, payload: replay.payload, createdAt: replay.createdAt } : null,
+      plan: plan
+        ? {
+            artifactId: plan.artifactId,
+            contentHash: plan.contentHash,
+            payload: plan.payload,
+            createdAt: plan.createdAt
+          }
+        : null,
+      signed: signed
+        ? {
+            artifactId: signed.artifactId,
+            contentHash: signed.contentHash,
+            payload: signed.payload,
+            createdAt: signed.createdAt
+          }
+        : null,
+      receipt: receipt
+        ? {
+            artifactId: receipt.artifactId,
+            contentHash: receipt.contentHash,
+            payload: receipt.payload,
+            createdAt: receipt.createdAt
+          }
+        : null,
+      trace: trace
+        ? {
+            artifactId: trace.artifactId,
+            contentHash: trace.contentHash,
+            payload: trace.payload,
+            createdAt: trace.createdAt
+          }
+        : null,
+      replay: replay
+        ? {
+            artifactId: replay.artifactId,
+            contentHash: replay.contentHash,
+            payload: replay.payload,
+            createdAt: replay.createdAt
+          }
+        : null,
       lineage: {
         nodes: [
           plan && { id: plan.artifactId, label: "Plan", schema: plan.schema },

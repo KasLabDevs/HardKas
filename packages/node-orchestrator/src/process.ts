@@ -15,7 +15,9 @@ export async function startKaspaNode(config: KaspaNodeConfig): Promise<KaspaNode
 
   const currentStatus = await getNodeStatus(config);
   if (currentStatus.running) {
-    throw new Error(`Kaspa node is already running for network ${config.network} (PID: ${currentStatus.pid})`);
+    throw new Error(
+      `Kaspa node is already running for network ${config.network} (PID: ${currentStatus.pid})`
+    );
   }
 
   if (config.reset) {
@@ -25,7 +27,7 @@ export async function startKaspaNode(config: KaspaNodeConfig): Promise<KaspaNode
   await fs.mkdir(runtime.dataDir, { recursive: true });
 
   const logFile = await fs.open(runtime.logFile, "a");
-  
+
   const child = spawn(runtime.binaryPath, args, {
     detached: true,
     stdio: ["ignore", logFile.fd, logFile.fd]
@@ -34,14 +36,16 @@ export async function startKaspaNode(config: KaspaNodeConfig): Promise<KaspaNode
   child.on("error", (err) => {
     // This is often not reached if detached: true, but we try to handle it.
     if ((err as any).code === "ENOENT") {
-       throw new Error(`Failed to start kaspad. Provide --binary /path/to/kaspad or ensure kaspad is in PATH.`);
+      throw new Error(
+        `Failed to start kaspad. Provide --binary /path/to/kaspad or ensure kaspad is in PATH.`
+      );
     }
     throw err;
   });
 
   // Check if process is actually alive after a short delay
-  await new Promise(resolve => setTimeout(resolve, 500));
-  
+  await new Promise((resolve) => setTimeout(resolve, 500));
+
   if (child.pid === undefined) {
     throw new Error("Failed to start kaspad process.");
   }
@@ -49,7 +53,9 @@ export async function startKaspaNode(config: KaspaNodeConfig): Promise<KaspaNode
   try {
     process.kill(child.pid, 0);
   } catch (e) {
-    throw new Error(`Failed to start kaspad. Provide --binary /path/to/kaspad or ensure kaspad is in PATH.`);
+    throw new Error(
+      `Failed to start kaspad. Provide --binary /path/to/kaspad or ensure kaspad is in PATH.`
+    );
   }
 
   await writeFileAtomic(runtime.pidFile, child.pid.toString());
@@ -72,11 +78,11 @@ export async function startKaspaNode(config: KaspaNodeConfig): Promise<KaspaNode
 
 export async function stopKaspaNode(config: KaspaNodeConfig): Promise<void> {
   const runtime = resolveRuntimeConfig(config);
-  
+
   try {
     const pidStr = await fs.readFile(runtime.pidFile, "utf-8");
     const pid = parseInt(pidStr, 10);
-    
+
     if (!isNaN(pid)) {
       try {
         process.kill(pid, "SIGTERM");
@@ -84,7 +90,7 @@ export async function stopKaspaNode(config: KaspaNodeConfig): Promise<void> {
         // Process might already be dead
       }
     }
-    
+
     await fs.rm(runtime.pidFile, { force: true });
   } catch (e) {
     // No pid file, nothing to do
@@ -103,9 +109,11 @@ export async function readKaspaNodeLogs(config: KaspaNodeConfig): Promise<string
 export async function cleanKaspaNodeData(config: KaspaNodeConfig): Promise<void> {
   const runtime = resolveRuntimeConfig(config);
   const status = await getNodeStatus(config);
-  
+
   if (status.running) {
-    throw new Error(`Cannot clean node data while node is running. Stop it first with hardkas node stop --network ${config.network}.`);
+    throw new Error(
+      `Cannot clean node data while node is running. Stop it first with hardkas node stop --network ${config.network}.`
+    );
   }
 
   await fs.rm(runtime.dataDir, { recursive: true, force: true });

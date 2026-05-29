@@ -11,15 +11,21 @@ describe("Root Operational Commands", () => {
   beforeAll(() => {
     tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "hardkas-root-tests-"));
     // Write minimal config
-    fs.writeFileSync(path.join(tmpDir, "hardkas.config.js"), `
+    fs.writeFileSync(
+      path.join(tmpDir, "hardkas.config.js"),
+      `
       module.exports = { default: { network: "simulated" } };
-    `);
-    
+    `
+    );
+
     // Set up workflow
     fs.mkdirSync(path.join(tmpDir, "examples/workflows"), { recursive: true });
-    fs.writeFileSync(path.join(tmpDir, "examples/workflows/demo-transfer.json"), JSON.stringify({
-      steps: [{ type: "network.switch", args: { network: "simulated" } }]
-    }));
+    fs.writeFileSync(
+      path.join(tmpDir, "examples/workflows/demo-transfer.json"),
+      JSON.stringify({
+        steps: [{ type: "network.switch", args: { network: "simulated" } }]
+      })
+    );
 
     // Find the CLI binary
     bin = path.resolve(__dirname, "../dist/index.js");
@@ -42,7 +48,11 @@ describe("Root Operational Commands", () => {
       });
       return { stdout: output, stderr: "", status: 0 };
     } catch (e: any) {
-      return { stdout: e.stdout?.toString() || "", stderr: e.stderr?.toString() || "", status: e.status || 1 };
+      return {
+        stdout: e.stdout?.toString() || "",
+        stderr: e.stderr?.toString() || "",
+        status: e.status || 1
+      };
     }
   }
 

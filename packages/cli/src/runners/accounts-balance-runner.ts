@@ -1,10 +1,5 @@
-import { 
-  loadHardkasConfig 
-} from "@hardkas/config";
-import { 
-  loadRealAccountStore, 
-  getRealDevAccount 
-} from "@hardkas/accounts";
+import { loadHardkasConfig } from "@hardkas/config";
+import { loadRealAccountStore, getRealDevAccount } from "@hardkas/accounts";
 import { JsonWrpcKaspaClient } from "@hardkas/kaspa-rpc";
 import { formatSompi, type NetworkId } from "@hardkas/core";
 import { resolveRuntimeConfig } from "@hardkas/node-orchestrator";
@@ -24,7 +19,9 @@ export interface AccountsBalanceOptions {
   local?: boolean;
 }
 
-export async function runAccountsBalance(options: AccountsBalanceOptions): Promise<AccountBalanceResult> {
+export async function runAccountsBalance(
+  options: AccountsBalanceOptions
+): Promise<AccountBalanceResult> {
   // 1. Resolve Address
   let address = options.identifier;
   let name = "Unknown";
@@ -32,7 +29,7 @@ export async function runAccountsBalance(options: AccountsBalanceOptions): Promi
   // Try to find in project config
   const loadedConfig = await loadHardkasConfig({});
   const projectAccount = loadedConfig.config.accounts?.[options.identifier];
-  
+
   if (projectAccount) {
     address = projectAccount.address ?? "";
     name = options.identifier;
@@ -51,7 +48,8 @@ export async function runAccountsBalance(options: AccountsBalanceOptions): Promi
   const isSimulated = options.local || network === "simulated" || network === "simnet";
 
   if (isSimulated) {
-    const { loadOrCreateLocalnetState, getSpendableUtxos } = await import("@hardkas/localnet");
+    const { loadOrCreateLocalnetState, getSpendableUtxos } =
+      await import("@hardkas/localnet");
     const localState = await loadOrCreateLocalnetState({ cwd: process.cwd() });
     const utxos = getSpendableUtxos(localState, address);
     const balanceSompi = utxos.reduce((acc, u) => acc + BigInt(u.amountSompi), 0n);
@@ -66,15 +64,17 @@ export async function runAccountsBalance(options: AccountsBalanceOptions): Promi
   } else {
     let rpcUrl = options.url;
     if (!rpcUrl) {
-      rpcUrl = resolveRuntimeConfig({ network: network as "mainnet" | "testnet-10" | "simnet" }).rpcUrl;
+      rpcUrl = resolveRuntimeConfig({
+        network: network as "mainnet" | "testnet-10" | "simnet"
+      }).rpcUrl;
     }
 
     const client = new JsonWrpcKaspaClient({ rpcUrl });
-    
+
     try {
       const balance = await client.getBalanceByAddress(address);
       const utxos = await client.getUtxosByAddress(address);
-      
+
       return {
         name,
         address,

@@ -25,7 +25,9 @@ export const SEMANTIC_EXCLUSIONS = new Set([
   "submittedAt",
   "confirmedAt",
   "dagContext",
-  "executionId"
+  "executionId",
+  "workflowId",
+  "signatureMetadata"
 ]);
 
 /**
@@ -54,7 +56,12 @@ export const STRICT_PATH_KEYS = new Set([
  * Excludes fields in SEMANTIC_EXCLUSIONS during serialization.
  * Skips keys with undefined values (matching JSON.stringify behavior).
  */
-export function canonicalStringify(obj: unknown, version: number = CURRENT_HASH_VERSION, keyName?: string, isRoot: boolean = true): string {
+export function canonicalStringify(
+  obj: unknown,
+  version: number = CURRENT_HASH_VERSION,
+  keyName?: string,
+  isRoot: boolean = true
+): string {
   if (typeof obj === "symbol" || typeof obj === "function") {
     throw new Error(`Type ${typeof obj} is not canonicalizable.`);
   }
@@ -81,7 +88,7 @@ export function canonicalStringify(obj: unknown, version: number = CURRENT_HASH_
     if (typeof obj === "string" && version >= 3) {
       // v3+ normalizes newlines and UTF-8 for cross-platform stability.
       let normalized = obj.normalize("NFC").replace(/\r\n/g, "\n");
-      
+
       // Convert Windows backslashes to POSIX forward slashes only for strict path-typed fields
       if (keyName && STRICT_PATH_KEYS.has(keyName)) {
         normalized = normalized.replace(/\\/g, "/");
@@ -93,7 +100,11 @@ export function canonicalStringify(obj: unknown, version: number = CURRENT_HASH_
   }
 
   if (Array.isArray(obj)) {
-    return "[" + obj.map(item => canonicalStringify(item, version, keyName, false)).join(",") + "]";
+    return (
+      "[" +
+      obj.map((item) => canonicalStringify(item, version, keyName, false)).join(",") +
+      "]"
+    );
   }
 
   if (obj instanceof Map) {
@@ -112,14 +123,15 @@ export function canonicalStringify(obj: unknown, version: number = CURRENT_HASH_
   }
 
   const sortedKeys = Object.keys(obj)
-    .filter(key =>
-      !SEMANTIC_EXCLUSIONS.has(key) &&
-      (obj as Record<string, unknown>)[key] !== undefined
+    .filter(
+      (key) =>
+        !SEMANTIC_EXCLUSIONS.has(key) &&
+        (obj as Record<string, unknown>)[key] !== undefined
     )
     .sort(deterministicCompare);
 
   const result = sortedKeys
-    .map(key => {
+    .map((key) => {
       const value = (obj as Record<string, unknown>)[key];
       return JSON.stringify(key) + ":" + canonicalStringify(value, version, key, false);
     })
@@ -132,7 +144,10 @@ export function canonicalStringify(obj: unknown, version: number = CURRENT_HASH_
  * Calculates a SHA-256 hash of the canonical JSON representation.
  * Always excludes fields in SEMANTIC_EXCLUSIONS from the calculation.
  */
-export function calculateContentHash(obj: unknown, version: number = CURRENT_HASH_VERSION): string {
+export function calculateContentHash(
+  obj: unknown,
+  version: number = CURRENT_HASH_VERSION
+): string {
   const canonical = canonicalStringify(obj, version);
   return createHash("sha256").update(canonical).digest("hex");
 }

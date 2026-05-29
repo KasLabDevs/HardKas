@@ -1,14 +1,21 @@
-import { L2NetworkProfile, BUILTIN_L2_PROFILES, L2UserNetworkConfig, L2ProfileSource } from "./profiles.js";
+import {
+  L2NetworkProfile,
+  BUILTIN_L2_PROFILES,
+  L2UserNetworkConfig,
+  L2ProfileSource
+} from "./profiles.js";
 import { HARDKAS_VERSION } from "@hardkas/artifacts";
 
-export function listL2Profiles(userProfiles?: Record<string, L2UserNetworkConfig>): L2NetworkProfile[] {
+export function listL2Profiles(
+  userProfiles?: Record<string, L2UserNetworkConfig>
+): L2NetworkProfile[] {
   const profiles: L2NetworkProfile[] = [...BUILTIN_L2_PROFILES];
 
   if (userProfiles) {
     for (const [name, config] of Object.entries(userProfiles)) {
-      const existingIndex = profiles.findIndex(p => p.name === name);
+      const existingIndex = profiles.findIndex((p) => p.name === name);
       const profile = mapUserConfigToProfile(name, config);
-      
+
       if (existingIndex !== -1) {
         profiles[existingIndex] = profile;
       } else {
@@ -20,41 +27,53 @@ export function listL2Profiles(userProfiles?: Record<string, L2UserNetworkConfig
   return profiles;
 }
 
-export function getL2Profile(name: string, userProfiles?: Record<string, L2UserNetworkConfig>): L2NetworkProfile | null {
-  return listL2Profiles(userProfiles).find(p => p.name === name) || null;
+export function getL2Profile(
+  name: string,
+  userProfiles?: Record<string, L2UserNetworkConfig>
+): L2NetworkProfile | null {
+  return listL2Profiles(userProfiles).find((p) => p.name === name) || null;
 }
 
 export function resolveL2Profile(args: {
   name?: string | undefined;
   userProfiles?: Record<string, L2UserNetworkConfig> | undefined;
-  cliOverrides?: {
-    url?: string | undefined;
-    rpcUrl?: string | undefined;
-    chainId?: number | string | undefined;
-    [key: string]: unknown;
-  } | undefined;
+  cliOverrides?:
+    | {
+        url?: string | undefined;
+        rpcUrl?: string | undefined;
+        chainId?: number | string | undefined;
+        [key: string]: unknown;
+      }
+    | undefined;
 }): L2NetworkProfile {
   const name = args.name || "igra";
   const profile = getL2Profile(name, args.userProfiles);
 
   if (!profile) {
-    const available = listL2Profiles(args.userProfiles).map(p => `${p.name} (${p.source})`).join(", ");
+    const available = listL2Profiles(args.userProfiles)
+      .map((p) => `${p.name} (${p.source})`)
+      .join(", ");
     throw new Error(`L2 profile '${name}' not found. Available profiles: ${available}`);
   }
 
   // CLI Overrides
   let rpcUrl = args.cliOverrides?.rpcUrl || args.cliOverrides?.url || profile.rpcUrl;
-  
-  if (args.cliOverrides?.rpcUrl && args.cliOverrides?.url && args.cliOverrides.rpcUrl !== args.cliOverrides.url) {
+
+  if (
+    args.cliOverrides?.rpcUrl &&
+    args.cliOverrides?.url &&
+    args.cliOverrides.rpcUrl !== args.cliOverrides.url
+  ) {
     throw new Error("Conflict: Both --rpc-url and --url provided with different values.");
   }
 
   let chainId = profile.chainId;
   if (args.cliOverrides?.chainId !== undefined) {
-    chainId = typeof args.cliOverrides.chainId === "string" 
-      ? parseInt(args.cliOverrides.chainId, 10) 
-      : (args.cliOverrides.chainId as number);
-    
+    chainId =
+      typeof args.cliOverrides.chainId === "string"
+        ? parseInt(args.cliOverrides.chainId, 10)
+        : (args.cliOverrides.chainId as number);
+
     if (isNaN(chainId)) {
       throw new Error(`Invalid chainId: ${args.cliOverrides.chainId}`);
     }
@@ -69,7 +88,10 @@ export function resolveL2Profile(args: {
   return assertValidL2Profile(resolved);
 }
 
-function mapUserConfigToProfile(name: string, config: L2UserNetworkConfig): L2NetworkProfile {
+function mapUserConfigToProfile(
+  name: string,
+  config: L2UserNetworkConfig
+): L2NetworkProfile {
   const bridgePhase = config.bridgePhase || "pre-zk";
   const trustlessExit = config.trustlessExit ?? false;
 
@@ -82,7 +104,9 @@ function mapUserConfigToProfile(name: string, config: L2UserNetworkConfig): L2Ne
     type: "evm-based-rollup",
     settlementLayer: "kaspa",
     executionLayer: "evm",
-    gasToken: config.nativeCurrency?.symbol || (config.kind === "igra" || !config.kind ? "iKAS" : "ETH"),
+    gasToken:
+      config.nativeCurrency?.symbol ||
+      (config.kind === "igra" || !config.kind ? "iKAS" : "ETH"),
     nativeTokenDecimals: config.nativeCurrency?.decimals || 18,
     chainId: config.chainId,
     rpcUrl: config.rpcUrl,
@@ -105,12 +129,19 @@ export function validateL2Profile(profile: any): { ok: boolean; errors: string[]
   }
 
   if (profile.schema !== "hardkas.l2Profile.v1") {
-    errors.push(`Invalid schema: expected 'hardkas.l2Profile.v1', got '${profile.schema}'`);
+    errors.push(
+      `Invalid schema: expected 'hardkas.l2Profile.v1', got '${profile.schema}'`
+    );
   }
 
   if (profile.security) {
-    if (profile.security.bridgePhase !== "zk" && profile.security.trustlessExit === true) {
-      errors.push(`Security invariant violation: trustlessExit=true is only allowed when bridgePhase='zk'. Current phase: ${profile.security.bridgePhase}`);
+    if (
+      profile.security.bridgePhase !== "zk" &&
+      profile.security.trustlessExit === true
+    ) {
+      errors.push(
+        `Security invariant violation: trustlessExit=true is only allowed when bridgePhase='zk'. Current phase: ${profile.security.bridgePhase}`
+      );
     }
   }
 
@@ -123,7 +154,7 @@ export function validateL2Profile(profile: any): { ok: boolean; errors: string[]
 export function assertValidL2Profile(profile: any): L2NetworkProfile {
   const { ok, errors } = validateL2Profile(profile);
   if (!ok) {
-    throw new Error(`Invalid L2 profile:\n${errors.map(e => `  - ${e}`).join("\n")}`);
+    throw new Error(`Invalid L2 profile:\n${errors.map((e) => `  - ${e}`).join("\n")}`);
   }
   return profile as L2NetworkProfile;
 }

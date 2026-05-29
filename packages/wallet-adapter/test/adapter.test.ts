@@ -9,7 +9,11 @@ describe("Wallet Adapter", () => {
     networkId: "simnet"
   };
 
-  const createMockAdapter = (id: string, installed: boolean, networkId: NetworkId = "simnet"): KaspaWalletAdapter => ({
+  const createMockAdapter = (
+    id: string,
+    installed: boolean,
+    networkId: NetworkId = "simnet"
+  ): KaspaWalletAdapter => ({
     id,
     name: `${id} Wallet`,
     installed,
@@ -40,9 +44,9 @@ describe("Wallet Adapter", () => {
 
   describe("connectKaspaWallet", () => {
     it("throws if no adapters are installed", async () => {
-      await expect(
-        connectKaspaWallet({ adapters: [] })
-      ).rejects.toThrow("No compatible Kaspa wallet provider was detected.");
+      await expect(connectKaspaWallet({ adapters: [] })).rejects.toThrow(
+        "No compatible Kaspa wallet provider was detected."
+      );
     });
 
     it("connects to preferred wallet if found", async () => {

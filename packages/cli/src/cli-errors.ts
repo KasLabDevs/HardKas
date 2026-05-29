@@ -14,7 +14,7 @@ export enum HardkasExitCode {
   RUNTIME_FAILURE = 1,
   USAGE_ERROR = 2,
   POLICY_DENIED = 3,
-  CORRUPTION_DETECTED = 4,
+  CORRUPTION_DETECTED = 4
 }
 
 export class HardkasCliError extends Error {
@@ -26,7 +26,11 @@ export class HardkasCliError extends Error {
   constructor(
     code: string,
     message: string,
-    options?: { exitCode?: HardkasExitCode; suggestion?: string; context?: Record<string, string> },
+    options?: {
+      exitCode?: HardkasExitCode;
+      suggestion?: string;
+      context?: Record<string, string>;
+    }
   ) {
     super(message);
     this.name = "HardkasCliError";
@@ -46,7 +50,7 @@ export class WorkspaceNotFoundError extends HardkasCliError {
     super("WORKSPACE_NOT_FOUND", `Directory is not a HardKAS workspace: ${path}`, {
       suggestion:
         "Run 'hardkas new <name>' to create a workspace, or " +
-        "'hardkas replay verify <path>' from a workspace directory.",
+        "'hardkas replay verify <path>' from a workspace directory."
     });
     this.name = "WorkspaceNotFoundError";
   }
@@ -90,8 +94,8 @@ export class RpcConnectionError extends HardkasCliError {
       context: {
         endpoint: options.endpoint,
         network: options.network,
-        protocol: options.protocol,
-      },
+        protocol: options.protocol
+      }
     });
     this.name = "RpcConnectionError";
   }
@@ -134,7 +138,7 @@ export function humanReadableRpcError(code: RpcErrorCode): string {
     TIMEOUT: "Connection timed out",
     DNS_FAILURE: "DNS resolution failed",
     TLS_FAILURE: "TLS/SSL error",
-    UNKNOWN: "Unknown connection error",
+    UNKNOWN: "Unknown connection error"
   };
   return labels[code];
 }

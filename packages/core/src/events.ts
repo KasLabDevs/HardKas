@@ -1,7 +1,7 @@
-import { 
-  TxId, 
-  KaspaAddress, 
-  ArtifactId, 
+import {
+  TxId,
+  KaspaAddress,
+  ArtifactId,
   LineageId,
   NetworkId,
   RpcEndpointId,
@@ -72,33 +72,45 @@ export type EventKind =
  * Payload mapping for each event kind.
  */
 export interface EventPayloadByKind {
-  "workflow.plan.created": { planId: ArtifactId; network: NetworkId; amountSompi: bigint };
+  "workflow.plan.created": {
+    planId: ArtifactId;
+    network: NetworkId;
+    amountSompi: bigint;
+  };
   "workflow.signed": { signedId: ArtifactId; planId: ArtifactId; txId?: TxId };
   "workflow.submitted": { txId: TxId; rpcUrl: string };
-  "workflow.receipt": { txId: TxId; status: "accepted" | "finalized" | "failed"; daaScore?: DaaScore };
+  "workflow.receipt": {
+    txId: TxId;
+    status: "accepted" | "finalized" | "failed";
+    daaScore?: DaaScore;
+  };
   "workflow.started": { workflowId: WorkflowId; network: NetworkId };
   "workflow.completed": { workflowId: WorkflowId };
   "workflow.failed": { workflowId: WorkflowId; error: string };
-  
+
   "integrity.hash_mismatch": { artifactId: ArtifactId; expected: string; actual: string };
   "integrity.schema_violation": { artifactId: ArtifactId; details: string };
   "integrity.lineage_break": { lineageId: LineageId; artifactId: ArtifactId };
-  "integrity.violation": { 
-    violationCode: string; 
-    severity: string; 
-    message: string; 
+  "integrity.violation": {
+    violationCode: string;
+    severity: string;
+    message: string;
     metadata?: Record<string, unknown> | undefined;
     sourceEventId?: string | undefined;
   };
-  
+
   "dag.conflict": { outpoint: string; winner: TxId; losers: TxId[] };
   "dag.displacement": { txId: TxId; displacedBy: TxId };
   "dag.sink_moved": { oldSink: string; newSink: string; daaScore: DaaScore };
-  
+
   "rpc.health": { endpoint: RpcEndpointId; state: string; latencyMs: number };
   "rpc.error": { endpoint: RpcEndpointId; error: string; retriable: boolean };
-  "rpc.stale": { endpoint: RpcEndpointId; lastDaaScore: DaaScore; currentDaaScore: DaaScore };
-  
+  "rpc.stale": {
+    endpoint: RpcEndpointId;
+    lastDaaScore: DaaScore;
+    currentDaaScore: DaaScore;
+  };
+
   "replay.divergence": { txId: TxId; field: string; expected: string; actual: string };
   "replay.verified": { txId: TxId; lineageId: LineageId };
 
@@ -112,17 +124,17 @@ export interface EventPayloadByKind {
   "artifact.indexed": { artifactId: ArtifactId; schema: string };
   "artifact.corrupted": { artifactId: ArtifactId; path: string; issue: string };
   "sqlite.commit": { transactionId: string; rowCount: number };
-  
+
   "replay.invalidated": { artifactId: ArtifactId; reason: string };
   "replay.completed": { targetArtifactId: ArtifactId; success: boolean };
   "replay.excluded": { artifactId: ArtifactId; reason: string };
-  
+
   "sse.emitted": { eventId: EventId; channel: string };
-  
+
   "dashboard.cache_invalidated": { key: string };
   "dashboard.refetch_started": { key: string };
   "dashboard.refetch_completed": { key: string; success: boolean };
-  
+
   "query_store.sync_started": { syncId: string };
   "query_store.sync_completed": { syncId: string; stats: Record<string, number> };
   "lineage.verification_failed": { artifactId: ArtifactId; missingParentId: ArtifactId };
@@ -130,7 +142,7 @@ export interface EventPayloadByKind {
 
 /**
  * Formal Event Envelope (v1).
- * 
+ *
  * Standardizes how events are captured and tracked across the system.
  */
 export interface EventEnvelope<K extends EventKind = EventKind> {
@@ -180,7 +192,7 @@ class CoreEventBus {
   on(listener: CoreEventListener): () => void {
     this.listeners.push(listener);
     return () => {
-      this.listeners = this.listeners.filter(l => l !== listener);
+      this.listeners = this.listeners.filter((l) => l !== listener);
     };
   }
 
@@ -198,7 +210,7 @@ class CoreEventBus {
   }
 
   /**
-   * Normalizes and emits an event. 
+   * Normalizes and emits an event.
    * Useful for incremental migration from raw events.
    */
   normalizeAndEmit(event: any): void {
@@ -300,7 +312,7 @@ export function attachLedgerAppender(workspaceRoot: string): () => void {
 
     // 3. Serialize and flush atomically via physical locks
     const payload = JSON.stringify(event) + "\n";
-    
+
     try {
       AppendCoordinator.appendAtomic(eventsFile, payload, workspaceRoot);
     } catch (e) {

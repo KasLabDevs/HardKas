@@ -19,15 +19,12 @@ import type {
   BlockHash,
   BlueWorkType,
   GhostdagData,
-  SimBlock,
+  SimBlock
 } from "./ghostdag-types.js";
 import { GENESIS_HASH, headerWork } from "./ghostdag-types.js";
 import { findSelectedParent } from "./ordering.js";
 import { GhostdagStore, genesisGhostdagData } from "./ghostdag-store.js";
-import {
-  isDagAncestorOf,
-  orderedMergesetWithoutSelectedParent,
-} from "./reachability.js";
+import { isDagAncestorOf, orderedMergesetWithoutSelectedParent } from "./reachability.js";
 
 /** The GHOSTDAG K parameter. Post-Crescendo mainnet (10 BPS): K = 18. */
 export const DEFAULT_K = 18;
@@ -53,8 +50,8 @@ export class ApproxGhostdagEngine {
 
   /**
    * Compute GhostdagData for `block`.
-   * 
-   * Intentionally non-deterministic for TEMP_INDEXING_HASH as it uses Date.now() 
+   *
+   * Intentionally non-deterministic for TEMP_INDEXING_HASH as it uses Date.now()
    * for dummy block headers.
    *
    * Source: protocol.rs lines 126-166 ghostdag()
@@ -77,7 +74,7 @@ export class ApproxGhostdagEngine {
         timestampUs: Date.now() * 1000,
         minerId: 0,
         bits: 1, // Minimum work contribution
-        nonce: 0,
+        nonce: 0
       }
     };
 
@@ -95,14 +92,14 @@ export class ApproxGhostdagEngine {
               timestampUs: 0,
               minerId: 0,
               bits: 1000,
-              nonce: 0,
+              nonce: 0
             },
-            ghostdag: data,
+            ghostdag: data
           };
         }
         return undefined;
       },
-      has: (hash: string) => gdStore.has(hash),
+      has: (hash: string) => gdStore.has(hash)
     } as unknown as ReadonlyMap<BlockHash, SimBlock>;
 
     return this.computeGhostdag(block, allBlocksProxy as any, gdStore);
@@ -132,7 +129,7 @@ export class ApproxGhostdagEngine {
     // ── Step 1: selected_parent ──────────────────────────────────────────
     const parentBlueWorks = block.header.parents.map((p) => ({
       hash: p,
-      blueWork: gdStore.getBlueWork(p) ?? 0n,
+      blueWork: gdStore.getBlueWork(p) ?? 0n
     }));
 
     const selectedParent = findSelectedParent(parentBlueWorks);
@@ -204,7 +201,7 @@ export class ApproxGhostdagEngine {
       selectedParent,
       mergesetBlues: [selectedParent, ...mergesetBlues],
       mergesetReds,
-      bluesAnticoneSizes: [0, ...bluesAnticoneSizes],
+      bluesAnticoneSizes: [0, ...bluesAnticoneSizes]
     };
   }
 }

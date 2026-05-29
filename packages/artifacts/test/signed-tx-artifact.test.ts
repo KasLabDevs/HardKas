@@ -1,9 +1,9 @@
 import { systemRuntimeContext } from "@hardkas/core";
 import { describe, it, expect } from "vitest";
-import { 
-  calculateContentHash, 
-  createTxPlanArtifact, 
-  createSimulatedSignedTxArtifact, 
+import {
+  calculateContentHash,
+  createTxPlanArtifact,
+  createSimulatedSignedTxArtifact,
   validateSignedTxArtifact,
   HARDKAS_VERSION,
   ARTIFACT_SCHEMAS,
@@ -45,8 +45,10 @@ describe("SignedTxArtifact", () => {
 
   it("should create a simulated signed artifact", () => {
     const signed = createSimulatedSignedTxArtifact(
-      mockPlan as any, "simulated-payload"
-    , systemRuntimeContext);
+      mockPlan as any,
+      "simulated-payload",
+      systemRuntimeContext
+    );
 
     expect(signed.schema).toBe(ARTIFACT_SCHEMAS.SIGNED_TX);
     expect(signed.status).toBe("signed");
@@ -56,18 +58,20 @@ describe("SignedTxArtifact", () => {
 
   it("should validate a correct signed artifact", () => {
     const signed = createSimulatedSignedTxArtifact(
-      mockPlan as any, "simulated-payload"
-    , systemRuntimeContext);
+      mockPlan as any,
+      "simulated-payload",
+      systemRuntimeContext
+    );
 
     const result = validateSignedTxArtifact(signed);
     expect(result.ok).toBe(true);
   });
 
   it("should fail validation for invalid signed artifact", () => {
-    const invalid = { 
-      schema: ARTIFACT_SCHEMAS.SIGNED_TX, 
+    const invalid = {
+      schema: ARTIFACT_SCHEMAS.SIGNED_TX,
       hardkasVersion: HARDKAS_VERSION,
-      status: "unsigned" 
+      status: "unsigned"
     };
     const result = validateSignedTxArtifact(invalid);
     expect(result.ok).toBe(false);

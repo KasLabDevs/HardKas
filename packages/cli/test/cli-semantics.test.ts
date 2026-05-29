@@ -10,16 +10,19 @@ describe("CLI Semantic Constraints", () => {
 
   beforeAll(() => {
     tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "hardkas-semantic-"));
-    fs.writeFileSync(path.join(tmpDir, "hardkas.config.js"), `
+    fs.writeFileSync(
+      path.join(tmpDir, "hardkas.config.js"),
+      `
       module.exports = { default: { network: "simulated" } };
-    `);
+    `
+    );
     bin = path.resolve(__dirname, "../dist/index.js");
   });
 
   afterAll(() => {
     try {
       fs.rmSync(tmpDir, { recursive: true, force: true });
-    } catch { }
+    } catch {}
   });
 
   function run(args: string[]): { stdout: string; stderr: string; status: number } {
@@ -31,7 +34,11 @@ describe("CLI Semantic Constraints", () => {
       });
       return { stdout: output, stderr: "", status: 0 };
     } catch (e: any) {
-      return { stdout: e.stdout?.toString() || "", stderr: e.stderr?.toString() || "", status: e.status || 1 };
+      return {
+        stdout: e.stdout?.toString() || "",
+        stderr: e.stderr?.toString() || "",
+        status: e.status || 1
+      };
     }
   }
 
@@ -54,11 +61,20 @@ describe("CLI Semantic Constraints", () => {
   it("respects workspace flag independently of CWD", () => {
     const wsDir = path.join(tmpDir, "my-workspace");
     fs.mkdirSync(wsDir);
-    fs.writeFileSync(path.join(wsDir, "hardkas.config.js"), `
+    fs.writeFileSync(
+      path.join(wsDir, "hardkas.config.js"),
+      `
       export default { defaultNetwork: "kaspa-testnet-10" };
-    `);
+    `
+    );
 
-    const res = run(["config", "show", "--config", "my-workspace/hardkas.config.js", "--json"]);
+    const res = run([
+      "config",
+      "show",
+      "--config",
+      "my-workspace/hardkas.config.js",
+      "--json"
+    ]);
     expect(res.status).toBe(0);
     const parsed = JSON.parse(res.stdout);
     expect(parsed.config.defaultNetwork).toBe("kaspa-testnet-10");

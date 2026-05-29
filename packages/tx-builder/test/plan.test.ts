@@ -30,12 +30,12 @@ describe("tx-builder plan", () => {
     expect(plan.inputs[0]?.amountSompi).toBe(balanceSompi);
     expect(plan.outputs).toHaveLength(1);
     expect(plan.outputs[0]?.amountSompi).toBe(amountSompi);
-    
+
     // Estimated mass for 1 input, 2 outputs (1 recipient + 1 change) is 350
     // Base(100) + Input(1*150) + Output(2*50) = 350
     expect(plan.estimatedMass).toBe(350n);
     expect(plan.estimatedFeeSompi).toBe(350n);
-    
+
     // Change = 1000 - 1 - 0.00000350 = 998.99999650
     const expectedChange = balanceSompi - amountSompi - plan.estimatedFeeSompi;
     expect(plan.change?.amountSompi).toBe(expectedChange);

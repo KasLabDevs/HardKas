@@ -16,7 +16,10 @@ describe("checkEvmRpcHealth", () => {
       };
     });
 
-    const result = await checkEvmRpcHealth({ url: "http://localhost:8545", fetcher: mockFetcher as any });
+    const result = await checkEvmRpcHealth({
+      url: "http://localhost:8545",
+      fetcher: mockFetcher as any
+    });
 
     expect(result.ready).toBe(true);
     expect(result.chainId).toBe(12345);
@@ -31,7 +34,10 @@ describe("checkEvmRpcHealth", () => {
       statusText: "Not Found"
     });
 
-    const result = await checkEvmRpcHealth({ url: "http://localhost:8545", fetcher: mockFetcher as any });
+    const result = await checkEvmRpcHealth({
+      url: "http://localhost:8545",
+      fetcher: mockFetcher as any
+    });
 
     expect(result.ready).toBe(false);
     expect(result.error).toBeDefined();

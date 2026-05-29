@@ -17,7 +17,7 @@ export interface TestRunnerOptions {
 
 /**
  * HardKAS Test Runner (v1)
- * 
+ *
  * Replaces the previous mock with a real discovery and execution engine.
  * Currently uses a thin wrapper around Vitest if available.
  */
@@ -38,8 +38,9 @@ export async function runTest(options: TestRunnerOptions): Promise<void> {
   }
 
   // 2. File discovery
-  const searchPatterns = files.length > 0 ? files : ["test/**/*.test.ts", "tests/**/*.test.ts"];
-  
+  const searchPatterns =
+    files.length > 0 ? files : ["test/**/*.test.ts", "tests/**/*.test.ts"];
+
   if (!json) {
     UI.info(`Searching for tests: ${searchPatterns.join(", ")}`);
   }
@@ -53,7 +54,7 @@ export async function runTest(options: TestRunnerOptions): Promise<void> {
     const vitestOptions: any = {
       run: !watch,
       watch: !!watch,
-      reporter: json ? "json" : (reporter || "default"),
+      reporter: json ? "json" : reporter || "default",
       globals: true,
       environment: "node",
       include: searchPatterns,

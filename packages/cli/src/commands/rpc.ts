@@ -9,47 +9,81 @@ import { runRpcMempool } from "../runners/rpc-mempool-runner.js";
 export function registerRpcCommands(program: Command) {
   const rpcCmd = program.command("rpc").description("Kaspa RPC diagnostics and queries");
 
-  rpcCmd.command("info")
+  rpcCmd
+    .command("info")
     .description("Show RPC connection info")
-    .action(async () => { try { await runRpcInfo(); } catch (e) { handleError(e); } });
+    .action(async () => {
+      try {
+        await runRpcInfo();
+      } catch (e) {
+        handleError(e);
+      }
+    });
 
-  rpcCmd.command("health")
+  rpcCmd
+    .command("health")
     .description("Check RPC health")
     .option("--wait", "Wait until healthy")
     .option("--timeout <ms>", "Wait timeout in ms", "60000")
-    .action(async (options: { wait?: boolean, timeout?: string }) => { 
-      try { 
-        const res = await runRpcHealth({ 
-          wait: options.wait ?? false, 
-          timeout: options.timeout ? parseInt(options.timeout, 10) / 1000 : 60 
-        }); 
+    .action(async (options: { wait?: boolean; timeout?: string }) => {
+      try {
+        const res = await runRpcHealth({
+          wait: options.wait ?? false,
+          timeout: options.timeout ? parseInt(options.timeout, 10) / 1000 : 60
+        });
         console.log(res.formatted);
         if (!res.result.ready) {
           process.exitCode = 1;
         }
-      } catch (e) { 
-        handleError(e); 
+      } catch (e) {
+        handleError(e);
         process.exitCode = 1;
-      } 
+      }
     });
 
-  rpcCmd.command("doctor")
+  rpcCmd
+    .command("doctor")
     .description("Run comprehensive RPC diagnostics")
     .option("--endpoints <urls...>", "Specific endpoints to audit")
-    .action(async (options: { endpoints?: string[] }) => { 
+    .action(async (options: { endpoints?: string[] }) => {
       const { runRpcDoctor } = await import("../runners/rpc-doctor-runner.js");
-      try { await runRpcDoctor(options); } catch (e) { handleError(e); } 
+      try {
+        await runRpcDoctor(options);
+      } catch (e) {
+        handleError(e);
+      }
     });
 
-  rpcCmd.command("dag")
+  rpcCmd
+    .command("dag")
     .description("Show DAG information from node")
-    .action(async () => { try { await runRpcDag(); } catch (e) { handleError(e); } });
+    .action(async () => {
+      try {
+        await runRpcDag();
+      } catch (e) {
+        handleError(e);
+      }
+    });
 
-  rpcCmd.command("utxos <address>")
+  rpcCmd
+    .command("utxos <address>")
     .description("Show UTXOs for an address from node")
-    .action(async (address) => { try { await runRpcUtxos({ address }); } catch (e) { handleError(e); } });
+    .action(async (address) => {
+      try {
+        await runRpcUtxos({ address });
+      } catch (e) {
+        handleError(e);
+      }
+    });
 
-  rpcCmd.command("mempool [txId]")
+  rpcCmd
+    .command("mempool [txId]")
     .description("Show mempool status from node")
-    .action(async (txId) => { try { await runRpcMempool({ txId: txId || "all" }); } catch (e) { handleError(e); } });
+    .action(async (txId) => {
+      try {
+        await runRpcMempool({ txId: txId || "all" });
+      } catch (e) {
+        handleError(e);
+      }
+    });
 }

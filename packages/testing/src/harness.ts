@@ -4,18 +4,18 @@ import { systemRuntimeContext } from "@hardkas/core";
 // Test harness for HardKAS — provides fresh localnet per test.
 
 import type { LocalnetState } from "@hardkas/localnet";
-import { 
-  createInitialLocalnetState, 
+import {
+  createInitialLocalnetState,
   applySimulatedPayment,
   getAccountBalanceSompi,
   createLocalnetSnapshot
 } from "@hardkas/localnet";
 
 export interface HarnessConfig {
-  accounts?: number | undefined;          // default: 3
-  initialBalance?: bigint | undefined;    // default: 100_000_000_000n (1000 KAS)
-  networkId?: string | undefined;         // default: "simnet"
-  ghostdagK?: number | undefined;         // default: 18
+  accounts?: number | undefined; // default: 3
+  initialBalance?: bigint | undefined; // default: 100_000_000_000n (1000 KAS)
+  networkId?: string | undefined; // default: "simnet"
+  ghostdagK?: number | undefined; // default: 18
 }
 
 export interface TestHarness {
@@ -55,20 +55,28 @@ export interface MassRecord {
 let massRecords: MassRecord[] = [];
 let massTrackingEnabled = false;
 
-export function enableMassTracking(): void { massTrackingEnabled = true; }
-export function disableMassTracking(): void { massTrackingEnabled = false; }
-export function getMassRecords(): MassRecord[] { return [...massRecords]; }
-export function clearMassRecords(): void { massRecords = []; }
+export function enableMassTracking(): void {
+  massTrackingEnabled = true;
+}
+export function disableMassTracking(): void {
+  massTrackingEnabled = false;
+}
+export function getMassRecords(): MassRecord[] {
+  return [...massRecords];
+}
+export function clearMassRecords(): void {
+  massRecords = [];
+}
 
 export function createTestHarness(config?: HarnessConfig): TestHarness {
   const accountCount = config?.accounts ?? 3;
   const initialBalanceSompi = config?.initialBalance ?? 100_000_000_000n;
-  
+
   let currentState = createInitialLocalnetState({
     accounts: accountCount,
     initialBalanceSompi
   });
-  
+
   if (config?.networkId) {
     (currentState as any).networkId = config.networkId;
   }
@@ -88,7 +96,7 @@ export function createTestHarness(config?: HarnessConfig): TestHarness {
       };
 
       const result = applySimulatedPayment(currentState, opts, systemRuntimeContext);
-      
+
       if (result.ok) {
         currentState = result.state;
       }
@@ -123,7 +131,7 @@ export function createTestHarness(config?: HarnessConfig): TestHarness {
     },
 
     accountNames(): string[] {
-      return currentState.accounts.map(a => a.name);
+      return currentState.accounts.map((a) => a.name);
     },
 
     snapshot(): any {

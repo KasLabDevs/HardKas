@@ -32,5 +32,8 @@ test("Repository Hygiene: No forbidden scratch/runtime files tracked in git", ()
     }
   }
 
-  expect(violations, `Forbidden files are tracked in git:\n${violations.join("\n")}`).toEqual([]);
+  expect(
+    violations,
+    `Forbidden files are tracked in git:\n${violations.join("\n")}`
+  ).toEqual([]);
 });

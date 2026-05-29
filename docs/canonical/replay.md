@@ -29,15 +29,17 @@ graph TD
 ## 2. In-Memory Temporal Reconstruction (Time-Travel)
 
 To verify historic transactions without spinning up isolated nodes from scratch, `@hardkas/localnet` implements `reconstructStateAtDaa`:
-* **The Math**: Given a target Daa Score ($D_{target}$), the engine rolls back virtual balances mathematically:
-  * Resurrects (marks unspent) UTXOs that were spent *after* $D_{target}$.
-  * Prunes (deletes) UTXOs that were created *after* $D_{target}$.
-* **The Benefit**: Enables high-speed E2E verification of old transaction branches in milliseconds.
+
+- **The Math**: Given a target Daa Score ($D_{target}$), the engine rolls back virtual balances mathematically:
+  - Resurrects (marks unspent) UTXOs that were spent _after_ $D_{target}$.
+  - Prunes (deletes) UTXOs that were created _after_ $D_{target}$.
+- **The Benefit**: Enables high-speed E2E verification of old transaction branches in milliseconds.
 
 ---
 
 ## 3. Honest Model Limitations
 
 HardKAS operates under an **Honest Model** of local verification. It explicitly acknowledges what local replay cannot prove:
-* **Consensus Validation**: Local execution validates mathematics and policies. It does NOT validate consensus acceptances (which live nodes may reject due to dynamic network rules). Consensus reports are set to `unimplemented`.
-* **Bridge Correctness**: Mock bridge executions are simulated via projections, but cross-chain multi-sig security remains outside the cryptographic proof boundary of the local runtime.
+
+- **Consensus Validation**: Local execution validates mathematics and policies. It does NOT validate consensus acceptances (which live nodes may reject due to dynamic network rules). Consensus reports are set to `unimplemented`.
+- **Bridge Correctness**: Mock bridge executions are simulated via projections, but cross-chain multi-sig security remains outside the cryptographic proof boundary of the local runtime.

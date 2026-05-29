@@ -2,7 +2,7 @@
 
 This is a **2-minute reproducible demo** designed to prove the core runtime semantics and operational invariants of HardKAS in an isolated, headless CI/CD environment.
 
-This is *not* a marketing demo. It demonstrates deterministic recovery, crash-consistency, and append-only authority logic.
+This is _not_ a marketing demo. It demonstrates deterministic recovery, crash-consistency, and append-only authority logic.
 
 ## Execution
 

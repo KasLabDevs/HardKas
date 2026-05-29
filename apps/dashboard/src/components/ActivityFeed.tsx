@@ -23,7 +23,7 @@ export function ActivityFeed() {
     "bridge.plan.created": "📋",
     "bridge.simulation.started": "⚡",
     "bridge.simulation.completed": "✅",
-    "heartbeat": "💓",
+    heartbeat: "💓",
     "tx.created": "📝",
     "tx.confirmed": "💸",
     "receipt.created": "🧾",
@@ -32,7 +32,7 @@ export function ActivityFeed() {
     "replay.fail": "❌",
     "artifact.indexed": "📦",
     "query.synced": "🔄",
-    "account.updated": "👤",
+    "account.updated": "👤"
   };
 
   const getEventDescription = (event: any): string => {
@@ -87,14 +87,15 @@ export function ActivityFeed() {
       case "query.synced":
         return `Local files re-indexed and synchronized`;
       case "account.updated":
-        return `Account balance updated: ${payload.alias || payload.address ? (payload.alias || payload.address.slice(0, 10)) : ""}`;
+        return `Account balance updated: ${payload.alias || payload.address ? payload.alias || payload.address.slice(0, 10) : ""}`;
       default:
         return `${event.type}: ${typeof payload === "string" ? payload : "[Event Payload]"}`;
     }
   };
 
   const formatRelativeTime = (timestamp: any): string => {
-    const timeMs = typeof timestamp === "string" ? new Date(timestamp).getTime() : Number(timestamp);
+    const timeMs =
+      typeof timestamp === "string" ? new Date(timestamp).getTime() : Number(timestamp);
     if (isNaN(timeMs)) return "—";
     return new Date(timeMs).toISOString();
   };
@@ -113,11 +114,15 @@ export function ActivityFeed() {
           </h3>
         </div>
         <div className="flex items-center gap-3">
-          <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-[8px] font-bold uppercase font-mono border ${
-            sseStatus === "connected" ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20" : 
-            sseStatus === "reconnecting" ? "bg-orange-500/10 text-orange-400 border-orange-500/20" :
-            "bg-red-500/10 text-red-400 border-red-500/20"
-          }`}>
+          <span
+            className={`inline-flex items-center px-1.5 py-0.5 rounded text-[8px] font-bold uppercase font-mono border ${
+              sseStatus === "connected"
+                ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20"
+                : sseStatus === "reconnecting"
+                  ? "bg-orange-500/10 text-orange-400 border-orange-500/20"
+                  : "bg-red-500/10 text-red-400 border-red-500/20"
+            }`}
+          >
             sse: {sseStatus}
           </span>
 
@@ -140,8 +145,8 @@ export function ActivityFeed() {
           filteredEvents.map((event: any, i: number) => {
             const icon = eventIcons[event.type] || "🔹";
             return (
-              <div 
-                key={event.id || i} 
+              <div
+                key={event.id || i}
                 className="flex items-center justify-between text-[11px] border-l-2 border-indigo-500/20 pl-3 py-1.5 hover:bg-white/5 transition-all duration-200 animate-in slide-in-from-top-1"
               >
                 <div className="flex items-center gap-2 truncate">

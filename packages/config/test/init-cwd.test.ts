@@ -16,7 +16,7 @@ describe("loadHardkasConfig INIT_CWD safety", () => {
 
   it("should ignore process.env.INIT_CWD by default", async () => {
     const loadedDefault = await loadHardkasConfig();
-    
+
     // Compare with a control run where INIT_CWD is completely unset
     const saved = process.env.INIT_CWD;
     delete process.env.INIT_CWD;

@@ -20,14 +20,16 @@ export async function saveLocalnetState(
   const dir = path.dirname(targetPath);
 
   await fs.mkdir(dir, { recursive: true });
-  await writeFileAtomic(targetPath, JSON.stringify(state, null, 2), { encoding: "utf-8" });
+  await writeFileAtomic(targetPath, JSON.stringify(state, null, 2), {
+    encoding: "utf-8"
+  });
 }
 
 export async function loadLocalnetState(
   filePath?: string
 ): Promise<LocalnetState | null> {
   const targetPath = filePath ?? getDefaultLocalnetStatePath();
-  
+
   try {
     const content = await fs.readFile(targetPath, "utf-8");
     return JSON.parse(content) as LocalnetState;
@@ -36,11 +38,13 @@ export async function loadLocalnetState(
   }
 }
 
-export async function loadOrCreateLocalnetState(options: {
-  cwd?: string;
-  accounts?: number;
-  initialBalanceSompi?: bigint;
-} = {}): Promise<LocalnetState> {
+export async function loadOrCreateLocalnetState(
+  options: {
+    cwd?: string;
+    accounts?: number;
+    initialBalanceSompi?: bigint;
+  } = {}
+): Promise<LocalnetState> {
   const path = getDefaultLocalnetStatePath(options.cwd);
   let state = await loadLocalnetState(path);
 
@@ -55,11 +59,13 @@ export async function loadOrCreateLocalnetState(options: {
   return state;
 }
 
-export async function resetLocalnetState(options: {
-  cwd?: string;
-  accounts?: number;
-  initialBalanceSompi?: bigint;
-} = {}): Promise<LocalnetState> {
+export async function resetLocalnetState(
+  options: {
+    cwd?: string;
+    accounts?: number;
+    initialBalanceSompi?: bigint;
+  } = {}
+): Promise<LocalnetState> {
   const path = getDefaultLocalnetStatePath(options.cwd);
   const state = createInitialLocalnetState({
     accounts: options.accounts,

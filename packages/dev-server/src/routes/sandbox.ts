@@ -9,7 +9,9 @@ export const sandboxRoutes = new Hono();
 sandboxManager.on("created", (s) => devServerEmitter.emit("sandbox-session-created", s));
 sandboxManager.on("paired", (s) => devServerEmitter.emit("sandbox-session-paired", s));
 sandboxManager.on("expired", (s) => devServerEmitter.emit("sandbox-session-expired", s));
-sandboxManager.on("disconnected", (s) => devServerEmitter.emit("sandbox-session-disconnected", s));
+sandboxManager.on("disconnected", (s) =>
+  devServerEmitter.emit("sandbox-session-disconnected", s)
+);
 
 sandboxRoutes.get("/sessions", (c) => {
   return c.json({ sessions: sandboxManager.getSessions() });
@@ -23,14 +25,14 @@ sandboxRoutes.post("/create", (c) => {
 sandboxRoutes.post("/pair", async (c) => {
   const { id } = await c.req.json();
   const active = getActiveSession();
-  
+
   // Simulate mobile approval using active CLI session if available
   const paired = sandboxManager.pairSession(
-    id, 
-    active?.l1.address, 
+    id,
+    active?.l1.address,
     active?.l2.address as `0x${string}`
   );
-  
+
   if (!paired) return c.json({ error: "Session not found or already paired" }, 404);
   return c.json(paired);
 });

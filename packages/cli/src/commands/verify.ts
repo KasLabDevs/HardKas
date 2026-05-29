@@ -7,7 +7,9 @@ import { HardkasCliError, HardkasExitCode } from "../cli-errors.js";
 export function registerVerifyCommand(program: Command) {
   program
     .command("verify")
-    .description(`Verify artifact integrity and lineage continuity across the workspace ${UI.maturity("stable")}`)
+    .description(
+      `Verify artifact integrity and lineage continuity across the workspace ${UI.maturity("stable")}`
+    )
     .option("--deep", "Perform a deep validation of signatures and causality", false)
     .option("--json", "Output machine-readable JSON", false)
     .action(async (opts) => {
@@ -28,11 +30,11 @@ export function registerVerifyCommand(program: Command) {
           return;
         }
 
-        await runArtifactVerify({ 
-          path: ".hardkas/artifacts", 
-          recursive: true, 
-          strict: true, 
-          json: opts.json, 
+        await runArtifactVerify({
+          path: ".hardkas/artifacts",
+          recursive: true,
+          strict: true,
+          json: opts.json,
           deep: opts.deep,
           workspaceRoot: process.cwd()
         });
@@ -46,13 +48,17 @@ export function registerVerifyCommand(program: Command) {
         } else {
           handleError(err);
         }
-        process.exit(err instanceof HardkasCliError ? err.exitCode : HardkasExitCode.RUNTIME_FAILURE);
+        process.exit(
+          err instanceof HardkasCliError ? err.exitCode : HardkasExitCode.RUNTIME_FAILURE
+        );
       }
     });
 
   program
     .command("verify-semantics")
-    .description(`Verify semantic truth agreement across all HardKAS subsystems ${UI.maturity("alpha")}`)
+    .description(
+      `Verify semantic truth agreement across all HardKAS subsystems ${UI.maturity("alpha")}`
+    )
     .option("--json", "Output machine-readable JSON", false)
     .option("--ci-mode", "Verify semantic truth equivalence across OS boundaries", false)
     .action(async (opts) => {

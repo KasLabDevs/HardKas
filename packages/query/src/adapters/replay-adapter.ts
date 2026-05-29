@@ -45,7 +45,15 @@ export class ReplayQueryAdapter implements QueryAdapter {
   }
 
   supportedFilters() {
-    return ["txId", "status", "networkId", "mode", "daaScore", "from.address", "to.address"] as const;
+    return [
+      "txId",
+      "status",
+      "networkId",
+      "mode",
+      "daaScore",
+      "from.address",
+      "to.address"
+    ] as const;
   }
 
   async execute(request: QueryRequest): Promise<QueryResult> {
@@ -70,10 +78,10 @@ export class ReplayQueryAdapter implements QueryAdapter {
   private async executeList(request: QueryRequest): Promise<QueryResult> {
     const start = Date.now();
     const receipts = await this.backend.findReceipts({
-      status: request.filters.find(f => f.field === "status")?.value as string
+      status: request.filters.find((f) => f.field === "status")?.value as string
     });
     const traces = await this.backend.findTraces();
-    const traceMap = new Map(traces.map(t => [t.txId!, t]));
+    const traceMap = new Map(traces.map((t) => [t.txId!, t]));
 
     const items: ReplaySummaryResult[] = [];
 
@@ -120,7 +128,8 @@ export class ReplayQueryAdapter implements QueryAdapter {
     if (!txId) throw new Error("summary requires params.txId");
 
     const receipt = await this.backend.getArtifact(txId);
-    if (!receipt || receipt.schema !== "hardkas.txReceipt") throw new Error(`Receipt not found for txId: ${txId}`);
+    if (!receipt || receipt.schema !== "hardkas.txReceipt")
+      throw new Error(`Receipt not found for txId: ${txId}`);
 
     const traces = await this.backend.findTraces({ txId });
     const trace = traces[0];
@@ -169,7 +178,12 @@ export class ReplayQueryAdapter implements QueryAdapter {
       }
 
       // 2. Pre/post state hash consistency
-      if (receipt.preStateHash && receipt.postStateHash && receipt.preStateHash === receipt.postStateHash && receipt.status === "confirmed") {
+      if (
+        receipt.preStateHash &&
+        receipt.postStateHash &&
+        receipt.preStateHash === receipt.postStateHash &&
+        receipt.status === "confirmed"
+      ) {
         divergences.push({
           txId: receipt.txId,
           kind: "state-hash-mismatch",
@@ -208,7 +222,11 @@ export class ReplayQueryAdapter implements QueryAdapter {
       }
 
       // 5. Status/state consistency
-      if (receipt.status === "failed" && receipt.postStateHash && receipt.postStateHash !== receipt.preStateHash) {
+      if (
+        receipt.status === "failed" &&
+        receipt.postStateHash &&
+        receipt.postStateHash !== receipt.preStateHash
+      ) {
         divergences.push({
           txId: receipt.txId,
           kind: "status-mismatch",
@@ -224,7 +242,7 @@ export class ReplayQueryAdapter implements QueryAdapter {
 
     let why: WhyBlock[] | undefined;
     if (request.explain) {
-      why = paged.map(d => explainDivergence(d));
+      why = paged.map((d) => explainDivergence(d));
     }
 
     return {
@@ -254,7 +272,8 @@ export class ReplayQueryAdapter implements QueryAdapter {
     if (!txId) throw new Error("invariants requires params.txId");
 
     const doc = await this.backend.getArtifact(txId);
-    if (!doc || doc.schema !== "hardkas.txReceipt") throw new Error(`Receipt not found for txId: ${txId}`);
+    if (!doc || doc.schema !== "hardkas.txReceipt")
+      throw new Error(`Receipt not found for txId: ${txId}`);
     const receipt = doc.payload;
 
     const issues: string[] = [];
@@ -281,7 +300,11 @@ export class ReplayQueryAdapter implements QueryAdapter {
         issues.push("Confirmed tx did not change state (pre === post)");
       }
     } else if (receipt.status === "failed") {
-      if (receipt.preStateHash && receipt.postStateHash && receipt.preStateHash !== receipt.postStateHash) {
+      if (
+        receipt.preStateHash &&
+        receipt.postStateHash &&
+        receipt.preStateHash !== receipt.postStateHash
+      ) {
         stateTransitionValid = false;
         issues.push("Failed tx changed state (pre !== post)");
       }
@@ -380,12 +403,18 @@ function computeContentHashSafe(obj: any): string {
 // ---------------------------------------------------------------------------
 
 const DIVERGENCE_RULES: Record<DivergenceKind, string> = {
-  "state-hash-mismatch": "Deterministic replay invariant: identical plan + identical state = identical postStateHash",
-  "fee-mismatch": "Fee must be proportional to estimated mass. Disproportionate fees indicate estimation drift.",
-  "utxo-count-mismatch": "Confirmed transactions must spend at least 1 UTXO (inputs) and create at least 1 (outputs).",
-  "status-mismatch": "Failed transactions must not modify state. Confirmed transactions must modify state.",
-  "txid-mismatch": "Deterministic txId generation: same plan + same state + same daaScore = same txId.",
-  "ordering-divergence": "UTXO selection order must be deterministic. Non-deterministic ordering breaks replay invariants."
+  "state-hash-mismatch":
+    "Deterministic replay invariant: identical plan + identical state = identical postStateHash",
+  "fee-mismatch":
+    "Fee must be proportional to estimated mass. Disproportionate fees indicate estimation drift.",
+  "utxo-count-mismatch":
+    "Confirmed transactions must spend at least 1 UTXO (inputs) and create at least 1 (outputs).",
+  "status-mismatch":
+    "Failed transactions must not modify state. Confirmed transactions must modify state.",
+  "txid-mismatch":
+    "Deterministic txId generation: same plan + same state + same daaScore = same txId.",
+  "ordering-divergence":
+    "UTXO selection order must be deterministic. Non-deterministic ordering breaks replay invariants."
 };
 
 function explainDivergence(d: ReplayDivergence): WhyBlock {
@@ -394,17 +423,17 @@ function explainDivergence(d: ReplayDivergence): WhyBlock {
     answer: `Field "${d.field}" shows unexpected non-deterministic behavior (${d.kind}).`,
     evidence: [{ type: "txId", value: d.txId }],
     causalChain: [
-      { 
-        order: 1, 
-        assertion: `Value mismatch in "${d.field}"`, 
+      {
+        order: 1,
+        assertion: `Value mismatch in "${d.field}"`,
         evidence: `Expected: ${d.expected.slice(0, 40)}, Actual: ${d.actual.slice(0, 40)}`,
-        rule: DIVERGENCE_RULES[d.kind] 
+        rule: DIVERGENCE_RULES[d.kind]
       },
-      { 
-        order: 2, 
-        assertion: "Divergence detected in replay comparison", 
+      {
+        order: 2,
+        assertion: "Divergence detected in replay comparison",
         evidence: "Verification engine mismatch",
-        rule: "Invariant validation policy" 
+        rule: "Invariant validation policy"
       }
     ],
     model: "replay-analysis",
@@ -416,16 +445,48 @@ function explainInvariants(result: ReplayInvariantsResult): WhyBlock {
   const causalChain: CausalStep[] = [];
   let order = 1;
 
-  causalChain.push({ order: order++, assertion: result.planIntegrity ? "Plan integrity is OK" : "Plan integrity FAILED", evidence: `planIntegrity=${result.planIntegrity}`, rule: "SHA-256 canonical consistency" });
-  causalChain.push({ order: order++, assertion: result.receiptReproducible ? "Receipt is reproducible" : "Receipt is NOT reproducible", evidence: `receiptReproducible=${result.receiptReproducible}`, rule: "Replay evidence requirements" });
-  causalChain.push({ order: order++, assertion: result.stateTransitionValid ? "State transition is valid" : "State transition INVALID", evidence: `stateTransitionValid=${result.stateTransitionValid}`, rule: "Status/State alignment" });
-  causalChain.push({ order: order++, assertion: result.utxoConservation ? "UTXO conservation holds" : "UTXO conservation VIOLATED", evidence: `utxoConservation=${result.utxoConservation}`, rule: "Value conservation policy" });
+  causalChain.push({
+    order: order++,
+    assertion: result.planIntegrity ? "Plan integrity is OK" : "Plan integrity FAILED",
+    evidence: `planIntegrity=${result.planIntegrity}`,
+    rule: "SHA-256 canonical consistency"
+  });
+  causalChain.push({
+    order: order++,
+    assertion: result.receiptReproducible
+      ? "Receipt is reproducible"
+      : "Receipt is NOT reproducible",
+    evidence: `receiptReproducible=${result.receiptReproducible}`,
+    rule: "Replay evidence requirements"
+  });
+  causalChain.push({
+    order: order++,
+    assertion: result.stateTransitionValid
+      ? "State transition is valid"
+      : "State transition INVALID",
+    evidence: `stateTransitionValid=${result.stateTransitionValid}`,
+    rule: "Status/State alignment"
+  });
+  causalChain.push({
+    order: order++,
+    assertion: result.utxoConservation
+      ? "UTXO conservation holds"
+      : "UTXO conservation VIOLATED",
+    evidence: `utxoConservation=${result.utxoConservation}`,
+    rule: "Value conservation policy"
+  });
 
-  const allOk = result.planIntegrity && result.receiptReproducible && result.stateTransitionValid && result.utxoConservation;
+  const allOk =
+    result.planIntegrity &&
+    result.receiptReproducible &&
+    result.stateTransitionValid &&
+    result.utxoConservation;
 
   return {
     question: `Are replay invariants satisfied for tx ${result.txId.slice(0, 16)}...?`,
-    answer: allOk ? "All replay invariants satisfied." : `Violations found: ${result.issues.join("; ")}`,
+    answer: allOk
+      ? "All replay invariants satisfied."
+      : `Violations found: ${result.issues.join("; ")}`,
     evidence: [{ type: "txId", value: result.txId }],
     causalChain,
     model: "replay-invariants",

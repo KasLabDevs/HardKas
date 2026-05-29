@@ -1,7 +1,11 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import { existsSync } from "node:fs";
-import { HardkasArtifactBase, HARDKAS_VERSION, ARTIFACT_SCHEMAS } from "@hardkas/artifacts";
+import {
+  HardkasArtifactBase,
+  HARDKAS_VERSION,
+  ARTIFACT_SCHEMAS
+} from "@hardkas/artifacts";
 import { NetworkId, ExecutionMode } from "@hardkas/core";
 
 import { writeFileAtomic } from "@hardkas/core";
@@ -83,9 +87,9 @@ export async function loadSimulatedTrace(
   return JSON.parse(data);
 }
 
-export async function listSimulatedTraces(
-  options?: { cwd?: string }
-): Promise<StoredSimulatedTxTrace[]> {
+export async function listSimulatedTraces(options?: {
+  cwd?: string;
+}): Promise<StoredSimulatedTxTrace[]> {
   const dir = getDefaultTracesDir(options?.cwd);
   if (!existsSync(dir)) {
     return [];

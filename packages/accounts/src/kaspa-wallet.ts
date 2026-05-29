@@ -9,10 +9,12 @@ export interface CreateKaspaWalletOptions {
  * Generates a new Kaspa L1 developer wallet.
  * Strictly separate from EVM/L2 identities.
  */
-export async function createLocalKaspaWallet(options?: CreateKaspaWalletOptions): Promise<GeneratedKaspaDevAccount> {
+export async function createLocalKaspaWallet(
+  options?: CreateKaspaWalletOptions
+): Promise<GeneratedKaspaDevAccount> {
   const keygen = new KaspaSdkKeyGenerator({
     networkId: options?.networkId || "simnet"
   });
-  
+
   return await keygen.generateAccount();
 }

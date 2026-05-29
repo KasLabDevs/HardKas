@@ -43,7 +43,11 @@ export interface MigrationResult {
   /** The original content hash (before migration), preserved for lineage */
   originalContentHash: string | undefined;
   /** Ordered list of migration steps that were applied */
-  appliedSteps: ReadonlyArray<{ fromVersion: string; toVersion: string; description: string }>;
+  appliedSteps: ReadonlyArray<{
+    fromVersion: string;
+    toVersion: string;
+    description: string;
+  }>;
 }
 
 // ---------------------------------------------------------------------------
@@ -193,9 +197,7 @@ export function getMigrationPath(
     const current = queue.shift()!;
 
     // Find all steps FROM the current version
-    const outgoing = migrationRegistry.filter(
-      (s) => s.fromVersion === current.version
-    );
+    const outgoing = migrationRegistry.filter((s) => s.fromVersion === current.version);
 
     for (const step of outgoing) {
       const newPath = [...current.path, step];
@@ -281,7 +283,7 @@ export function migrateArtifactPayload(
     return {
       artifact,
       migrated: false,
-      originalContentHash: (artifact.contentHash as string | undefined),
+      originalContentHash: artifact.contentHash as string | undefined,
       appliedSteps: []
     };
   }
@@ -291,7 +293,7 @@ export function migrateArtifactPayload(
   if (path.length === 0) {
     throw new Error(
       `No migration path from version "${currentVersion}" to "${targetVersion}". ` +
-      `Registered steps: [${migrationRegistry.map((s) => `${s.fromVersion}→${s.toVersion}`).join(", ")}]`
+        `Registered steps: [${migrationRegistry.map((s) => `${s.fromVersion}→${s.toVersion}`).join(", ")}]`
     );
   }
 
@@ -301,7 +303,11 @@ export function migrateArtifactPayload(
 
   // Apply each migration step sequentially
   let current: ArtifactPayload = { ...artifact };
-  const appliedSteps: Array<{ fromVersion: string; toVersion: string; description: string }> = [];
+  const appliedSteps: Array<{
+    fromVersion: string;
+    toVersion: string;
+    description: string;
+  }> = [];
 
   for (const step of path) {
     current = step.transform(current);

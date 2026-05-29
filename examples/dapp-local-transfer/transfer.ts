@@ -1,6 +1,6 @@
 /**
  * HardKAS Example: Local Transfer Workflow
- * 
+ *
  * Demonstrates how to execute a transaction purely locally
  * using the high-level dApp client facade.
  */

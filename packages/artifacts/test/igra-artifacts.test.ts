@@ -1,8 +1,8 @@
 import { systemRuntimeContext } from "@hardkas/core";
 import { describe, it, expect } from "vitest";
-import { 
-  validateIgraTxPlanArtifact, 
-  validateIgraSignedTxArtifact, 
+import {
+  validateIgraTxPlanArtifact,
+  validateIgraSignedTxArtifact,
   validateIgraTxReceiptArtifact,
   createIgraPlanId,
   createIgraSignedId
@@ -50,7 +50,9 @@ describe("Igra Artifacts", () => {
       };
       const result = validateIgraTxPlanArtifact(artifact);
       expect(result.ok).toBe(false);
-      expect(result.errors).toContain("Invalid request.to: must be a 0x-prefixed 40-character EVM address");
+      expect(result.errors).toContain(
+        "Invalid request.to: must be a 0x-prefixed 40-character EVM address"
+      );
     });
 
     it("should reject invalid bigint string", () => {
@@ -67,7 +69,9 @@ describe("Igra Artifacts", () => {
       };
       const result = validateIgraTxPlanArtifact(artifact);
       expect(result.ok).toBe(false);
-      expect(result.errors).toContain("Invalid request.valueWei: must be a decimal bigint string");
+      expect(result.errors).toContain(
+        "Invalid request.valueWei: must be a decimal bigint string"
+      );
     });
   });
 

@@ -33,7 +33,7 @@ vi.mock("@hardkas/config", () => {
 
 describe("Dev Server Health Route", () => {
   it("does not accidentally select mainnet for health check", async () => {
-    const { _setMockConfig } = await import("@hardkas/config") as any;
+    const { _setMockConfig } = (await import("@hardkas/config")) as any;
     _setMockConfig({
       defaultNetwork: "simnet",
       networks: {
@@ -56,14 +56,14 @@ describe("Dev Server Health Route", () => {
     const res = await app.request("/api/health");
     expect(res.status).toBe(200);
     const json = await res.json();
-    
+
     // It should have selected simnet as default, and since port 18210 might be offline in tests,
     // it will return offline or stale depending on L2, but it should probe simnet, NOT mainnet url.
     expect(json.services.kaspa.url).toBe("ws://127.0.0.1:18210");
   });
 
   it("returns simulated-mode when defaultNetwork is simulated", async () => {
-    const { _setMockConfig } = await import("@hardkas/config") as any;
+    const { _setMockConfig } = (await import("@hardkas/config")) as any;
     _setMockConfig({
       defaultNetwork: "simulated",
       networks: {

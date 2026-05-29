@@ -1,11 +1,18 @@
 import { Command } from "commander";
 import { UI } from "../ui.js";
-import { runWorkflowRun, runWorkflowInspect, runWorkflowReplay, runWorkflowDiff } from "../runners/workflow-runner.js";
+import {
+  runWorkflowRun,
+  runWorkflowInspect,
+  runWorkflowReplay,
+  runWorkflowDiff
+} from "../runners/workflow-runner.js";
 
 export function registerWorkflowCommands(program: Command) {
   const workflowCmd = program
     .command("workflow")
-    .description(`Programmable deterministic workflows and agent orchestration ${UI.maturity("alpha")}`);
+    .description(
+      `Programmable deterministic workflows and agent orchestration ${UI.maturity("alpha")}`
+    );
 
   workflowCmd
     .command("run <file>")

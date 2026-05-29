@@ -4,12 +4,22 @@ import path from "node:path";
 import { UI, handleError } from "../ui.js";
 import type { WorkflowArtifact } from "@hardkas/artifacts";
 
-export async function runWorkflowRun(file: string, options: { workspaceRoot?: string; dryRun?: boolean; json?: boolean; network?: string; offline?: boolean; timeout?: string }) {
+export async function runWorkflowRun(
+  file: string,
+  options: {
+    workspaceRoot?: string;
+    dryRun?: boolean;
+    json?: boolean;
+    network?: string;
+    offline?: boolean;
+    timeout?: string;
+  }
+) {
   try {
     if (options.json) UI.setJsonMode(true);
-    
+
     let fullPath = path.resolve(process.cwd(), file);
-    
+
     // Implicit resolution logic
     if (!fs.existsSync(fullPath) && !file.endsWith(".json")) {
       const explicitExt = `${file}.json`;
@@ -17,10 +27,12 @@ export async function runWorkflowRun(file: string, options: { workspaceRoot?: st
         path.resolve(process.cwd(), ".hardkas/workflows", explicitExt),
         path.resolve(process.cwd(), "examples/workflows", explicitExt)
       ];
-      
-      const found = candidates.filter(c => fs.existsSync(c));
+
+      const found = candidates.filter((c) => fs.existsSync(c));
       if (found.length > 1) {
-        throw new Error(`Ambiguous workflow name '${file}'. Found multiple matches:\n- ${found.join("\n- ")}`);
+        throw new Error(
+          `Ambiguous workflow name '${file}'. Found multiple matches:\n- ${found.join("\n- ")}`
+        );
       } else if (found.length === 1) {
         fullPath = found[0]!;
       }
@@ -38,15 +50,15 @@ export async function runWorkflowRun(file: string, options: { workspaceRoot?: st
     }
 
     UI.info(`Initializing Workflow Runtime in Agent Mode...`);
-    
+
     // We instantiate HardKAS explicitly in agent mode to sandbox the execution.
-    const sdk = await Hardkas.open({ 
+    const sdk = await Hardkas.open({
       ...(options.workspaceRoot ? { cwd: options.workspaceRoot } : {}),
       mode: "agent",
       policy: {
         requireDryRun: options.dryRun || false,
-        allowNetwork: options.offline ? false : (def.allowNetwork || false),
-        allowMainnet: false, // Never allow mainnet via CLI workflows for now
+        allowNetwork: options.offline ? false : def.allowNetwork || false,
+        allowMainnet: false // Never allow mainnet via CLI workflows for now
       }
     } as HardkasOptions);
 
@@ -56,7 +68,7 @@ export async function runWorkflowRun(file: string, options: { workspaceRoot?: st
     }
 
     UI.info(`Running ${def.steps.length} workflow steps...`);
-    
+
     let resultPromise = sdk.workflow.run({
       steps: def.steps,
       ...(options.dryRun !== undefined && { dryRun: options.dryRun })
@@ -66,7 +78,10 @@ export async function runWorkflowRun(file: string, options: { workspaceRoot?: st
       const timeoutMs = parseInt(options.timeout, 10);
       if (!isNaN(timeoutMs)) {
         const timeoutPromise = new Promise<any>((_, reject) => {
-          setTimeout(() => reject(new Error(`Workflow execution timed out after ${timeoutMs}ms`)), timeoutMs);
+          setTimeout(
+            () => reject(new Error(`Workflow execution timed out after ${timeoutMs}ms`)),
+            timeoutMs
+          );
         });
         resultPromise = Promise.race([resultPromise, timeoutPromise]);
       }
@@ -93,23 +108,25 @@ export async function runWorkflowRun(file: string, options: { workspaceRoot?: st
         UI.info(`Produced ${result.producedArtifacts.length} child artifacts.`);
       }
     }
-
   } catch (e) {
     handleError(e);
     process.exitCode = 1;
   }
 }
 
-export async function runWorkflowInspect(id: string, options: { workspaceRoot?: string; json?: boolean }) {
+export async function runWorkflowInspect(
+  id: string,
+  options: { workspaceRoot?: string; json?: boolean }
+) {
   try {
     if (options.json) UI.setJsonMode(true);
-    const sdk = await Hardkas.open({ 
+    const sdk = await Hardkas.open({
       ...(options.workspaceRoot ? { cwd: options.workspaceRoot } : {}),
-      mode: "agent" 
+      mode: "agent"
     });
 
-    const artifact = await sdk.artifacts.read(id) as WorkflowArtifact;
-    
+    const artifact = (await sdk.artifacts.read(id)) as WorkflowArtifact;
+
     if (artifact.schema !== "hardkas.workflow.v1") {
       throw new Error(`Artifact ${id} is not a valid workflow artifact`);
     }
@@ -117,13 +134,12 @@ export async function runWorkflowInspect(id: string, options: { workspaceRoot?: 
     if (options.json) {
       UI.writeJson(artifact);
       return;
-    } 
-    
+    }
+
     UI.success(`Workflow Artifact: ${id}`);
     console.log(`  Status: ${artifact.status}`);
     console.log(`  Steps executed: ${artifact.steps.length}`);
     console.log(`  Produced artifacts: ${artifact.producedArtifacts.length}`);
-    
   } catch (e) {
     handleError(e);
     process.exitCode = 1;
@@ -134,53 +150,61 @@ export async function runWorkflowReplay(id: string, options: any) {
   try {
     const sdk = await Hardkas.open({ cwd: options.workspaceRoot });
     UI.info(`Replaying workflow lineage for ${id}...`);
-    
+
     const result = await sdk.replay.verify({ workflowId: id });
-    
+
     if (!result.passed) {
-      UI.error(`Workflow replay failed: ${result.error || "Integrity verification failed"}`);
+      UI.error(
+        `Workflow replay failed: ${result.error || "Integrity verification failed"}`
+      );
       process.exitCode = 1;
       return;
     }
-    
+
     UI.success("Workflow replay verification passed (cryptographically secured).");
     console.log(`  Artifacts scanned: ${result.artifactsScanned}`);
     console.log(`  Determinism: ${result.determinism}`);
     console.log(`  Contamination: ${result.contamination}`);
-    
   } catch (e) {
     handleError(e);
     process.exitCode = 1;
   }
 }
 
-export async function runWorkflowDiff(idA: string, idB: string, options: { workspaceRoot?: string }) {
+export async function runWorkflowDiff(
+  idA: string,
+  idB: string,
+  options: { workspaceRoot?: string }
+) {
   try {
-    const sdk = await Hardkas.open({ 
+    const sdk = await Hardkas.open({
       ...(options.workspaceRoot ? { cwd: options.workspaceRoot } : {})
     } as HardkasOptions);
-    
+
     UI.info(`Comparing Workflow A (${idA}) against Workflow B (${idB})...`);
-    
-    const wfA = await sdk.artifacts.read(idA) as WorkflowArtifact;
-    const wfB = await sdk.artifacts.read(idB) as WorkflowArtifact;
-    
+
+    const wfA = (await sdk.artifacts.read(idA)) as WorkflowArtifact;
+    const wfB = (await sdk.artifacts.read(idB)) as WorkflowArtifact;
+
     if (wfA.schema !== "hardkas.workflow.v1" || wfB.schema !== "hardkas.workflow.v1") {
       throw new Error("Both artifacts must be workflows");
     }
-    
+
     UI.info("\n=== Metadata Diff ===");
-    console.log(`Generation Range A: ${wfA.generationRange?.start || "none"} -> ${wfA.generationRange?.end || "none"}`);
-    console.log(`Generation Range B: ${wfB.generationRange?.start || "none"} -> ${wfB.generationRange?.end || "none"}`);
-    
+    console.log(
+      `Generation Range A: ${wfA.generationRange?.start || "none"} -> ${wfA.generationRange?.end || "none"}`
+    );
+    console.log(
+      `Generation Range B: ${wfB.generationRange?.start || "none"} -> ${wfB.generationRange?.end || "none"}`
+    );
+
     UI.info("\n=== Produced Artifacts Diff ===");
     console.log(`A: ${wfA.producedArtifacts?.length || 0} artifacts`);
     console.log(`B: ${wfB.producedArtifacts?.length || 0} artifacts`);
-    
+
     UI.info("\n=== Steps Diff ===");
     console.log(`A: ${wfA.steps?.length || 0} steps executed`);
     console.log(`B: ${wfB.steps?.length || 0} steps executed`);
-    
   } catch (e) {
     handleError(e);
     process.exitCode = 1;

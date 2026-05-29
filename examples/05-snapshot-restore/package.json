@@ -1,6 +1,6 @@
 {
   "name": "@examples/snapshot-restore",
-  "version": "0.7.3-alpha",
+  "version": "0.7.4-alpha",
   "private": true,
   "type": "module",
   "scripts": {

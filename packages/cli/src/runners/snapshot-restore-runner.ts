@@ -1,9 +1,9 @@
 import { UI } from "../ui.js";
-import { 
-  loadOrCreateLocalnetState, 
-  restoreLocalnetSnapshot, 
+import {
+  loadOrCreateLocalnetState,
+  restoreLocalnetSnapshot,
   saveLocalnetState,
-  calculateStateHash 
+  calculateStateHash
 } from "@hardkas/localnet";
 
 export interface SnapshotRestoreOptions {
@@ -26,7 +26,6 @@ export async function runSnapshotRestore(options: SnapshotRestoreOptions) {
     console.log(`  Previous State Hash: ${preHash.slice(0, 16)}...`);
     console.log(`  New State Hash:      ${postHash.slice(0, 16)}...`);
     console.log(`  DAA Score:           ${nextState.daaScore}`);
-
   } catch (e: any) {
     UI.error(`Restore failed: ${e.message}`);
     process.exitCode = 1;

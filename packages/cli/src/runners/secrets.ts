@@ -1,7 +1,9 @@
 import enquirer from "enquirer";
 import fs from "node:fs";
 
-const { Password } = enquirer as unknown as { Password: new (options: Record<string, unknown>) => { run(): Promise<string> } };
+const { Password } = enquirer as unknown as {
+  Password: new (options: Record<string, unknown>) => { run(): Promise<string> };
+};
 
 export interface SecretAcquisitionOptions {
   stdin?: boolean | undefined;
@@ -12,7 +14,9 @@ export interface SecretAcquisitionOptions {
 /**
  * Acquires a password from stdin, environment, or interactive prompt.
  */
-export async function acquirePassword(options: SecretAcquisitionOptions = {}): Promise<string> {
+export async function acquirePassword(
+  options: SecretAcquisitionOptions = {}
+): Promise<string> {
   // 1. Try Environment
   if (options.env && process.env[options.env]) {
     return process.env[options.env]!;
@@ -23,7 +27,7 @@ export async function acquirePassword(options: SecretAcquisitionOptions = {}): P
     return new Promise((resolve, reject) => {
       let data = "";
       process.stdin.setEncoding("utf8");
-      process.stdin.on("data", chunk => {
+      process.stdin.on("data", (chunk) => {
         data += chunk;
       });
       process.stdin.on("end", () => {
@@ -44,7 +48,9 @@ export async function acquirePassword(options: SecretAcquisitionOptions = {}): P
 /**
  * Acquires a private key from stdin, environment, or interactive prompt.
  */
-export async function acquirePrivateKey(options: SecretAcquisitionOptions = {}): Promise<string> {
+export async function acquirePrivateKey(
+  options: SecretAcquisitionOptions = {}
+): Promise<string> {
   // Same logic as password for now, but can be customized later if needed
   return acquirePassword({
     ...options,

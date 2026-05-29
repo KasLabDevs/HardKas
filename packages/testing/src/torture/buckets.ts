@@ -2,13 +2,17 @@
 
 import fs from "node:fs";
 import path from "node:path";
-import { 
-  registerTortureBucket, 
+import {
+  registerTortureBucket,
   TortureBucketContext,
   LcgPrng,
   TortureInvariantError
 } from "./torture-engine.js";
-import { calculateContentHash, ARTIFACT_VERSION, CURRENT_HASH_VERSION } from "@hardkas/artifacts";
+import {
+  calculateContentHash,
+  ARTIFACT_VERSION,
+  CURRENT_HASH_VERSION
+} from "@hardkas/artifacts";
 import { HardkasStore, SqliteQueryBackend } from "@hardkas/query-store";
 
 // Helper to create a sandbox .hardkas directory structure
@@ -18,7 +22,11 @@ function createSandbox(ctx: TortureBucketContext): {
   artifactsDir: string;
   dbPath: string;
 } {
-  const sandboxDir = path.join(ctx.workspaceDir, ".tmp", `torture-sandbox-${ctx.caseId}-${ctx.caseSeed}`);
+  const sandboxDir = path.join(
+    ctx.workspaceDir,
+    ".tmp",
+    `torture-sandbox-${ctx.caseId}-${ctx.caseSeed}`
+  );
   const hardkasDir = path.join(sandboxDir, ".hardkas");
   const artifactsDir = path.join(hardkasDir, "artifacts");
   const dbPath = path.join(hardkasDir, "store.db");
@@ -55,7 +63,7 @@ registerTortureBucket({
       for (let i = 0; i < artifactCount; i++) {
         const payload = {
           schema: "hardkas.txPlan" as const,
-          hardkasVersion: "0.7.3-alpha",
+          hardkasVersion: "0.7.4-alpha",
           version: ARTIFACT_VERSION,
           networkId: "simnet" as const,
           mode: "simulated" as const,
@@ -100,7 +108,9 @@ registerTortureBucket({
       await backend.sync({ strict: true, cwd: sandboxDir });
       const indexedBefore = await backend.findArtifacts();
       if (indexedBefore.length !== artifactCount) {
-        throw new Error(`Expected ${artifactCount} artifacts to be indexed, got ${indexedBefore.length}`);
+        throw new Error(
+          `Expected ${artifactCount} artifacts to be indexed, got ${indexedBefore.length}`
+        );
       }
 
       // 3. Mutation: Wipe store.db and events.jsonl
@@ -129,13 +139,17 @@ registerTortureBucket({
 
       // 5. Invariant Check: Verify database state was fully reconstructed
       if (indexedAfter.length !== artifactCount) {
-        throw new Error(`State authority failure. Rebuilt database has ${indexedAfter.length} artifacts, expected ${artifactCount}`);
+        throw new Error(
+          `State authority failure. Rebuilt database has ${indexedAfter.length} artifacts, expected ${artifactCount}`
+        );
       }
 
       for (const artId of generatedIds) {
-        const found = indexedAfter.find(a => a.artifactId === artId);
+        const found = indexedAfter.find((a) => a.artifactId === artId);
         if (!found) {
-          throw new Error(`State authority failure. Missing reconstructed artifact: ${artId}`);
+          throw new Error(
+            `State authority failure. Missing reconstructed artifact: ${artId}`
+          );
         }
       }
 
@@ -166,7 +180,7 @@ registerTortureBucket({
       // 1. Create a valid mock artifact
       const payload = {
         schema: "hardkas.txPlan" as const,
-        hardkasVersion: "0.7.3-alpha",
+        hardkasVersion: "0.7.4-alpha",
         version: ARTIFACT_VERSION,
         networkId: "simnet" as const,
         mode: "simulated" as const,
@@ -230,12 +244,15 @@ registerTortureBucket({
       store.disconnect();
 
       if (!threwCorrectly) {
-        throw new Error("Invariant violated: corrupted artifact synchronized successfully without error under strict mode");
+        throw new Error(
+          "Invariant violated: corrupted artifact synchronized successfully without error under strict mode"
+        );
       }
 
       return {
         flow: "Verify tampered artifact integrity",
-        mutation: "Alter artifact content Sompi amount on disk leaving original contentHash",
+        mutation:
+          "Alter artifact content Sompi amount on disk leaving original contentHash",
         expectedInvariant: "corrupted_artifacts_must_fail",
         artifactsBefore: [artifactId]
       };
@@ -262,7 +279,7 @@ registerTortureBucket({
 
     const payloadA = {
       schema: "hardkas.txPlan",
-      version: "0.7.3-alpha",
+      version: "0.7.4-alpha",
       networkId: "simnet",
       mode: "simulated",
       amountSompi: amountSompiA,
@@ -279,7 +296,7 @@ registerTortureBucket({
 
     const payloadB = {
       schema: "hardkas.txPlan",
-      version: "0.7.3-alpha",
+      version: "0.7.4-alpha",
       networkId: "simnet",
       mode: "simulated",
       amountSompi: amountSompiB,
@@ -290,7 +307,9 @@ registerTortureBucket({
 
     // 3. Invariant Check: Everything must match exactly down to the byte/hash
     if (hashA !== hashB) {
-      throw new Error(`Divergence detected under same seed ${ctx.caseSeed}. Hash A: ${hashA}, Hash B: ${hashB}`);
+      throw new Error(
+        `Divergence detected under same seed ${ctx.caseSeed}. Hash A: ${hashA}, Hash B: ${hashB}`
+      );
     }
 
     if (JSON.stringify(payloadA) !== JSON.stringify(payloadB)) {
@@ -322,7 +341,7 @@ registerTortureBucket({
       // 1. Write initial artifact
       const payloadV1 = {
         schema: "hardkas.txPlan" as const,
-        hardkasVersion: "0.7.3-alpha",
+        hardkasVersion: "0.7.4-alpha",
         version: ARTIFACT_VERSION,
         networkId: "simnet" as const,
         mode: "simulated" as const,
@@ -384,7 +403,7 @@ registerTortureBucket({
         artifactId, // same ID, updated content/hash
         contentHash: hashV2
       };
-      
+
       // Overwrite the file and force mtime to be in the future relative to originalTime
       fs.writeFileSync(file, JSON.stringify(artifactV2, null, 2), "utf-8");
       const updatedTime = Date.now();
@@ -401,7 +420,9 @@ registerTortureBucket({
       }
 
       if (artAfter.contentHash !== hashV2 || artAfter.payload.state !== "progressed") {
-        throw new Error(`Staleness invariant failure. Expected hash ${hashV2} and state 'progressed', got hash ${artAfter.contentHash} and state '${artAfter.payload.state}'`);
+        throw new Error(
+          `Staleness invariant failure. Expected hash ${hashV2} and state 'progressed', got hash ${artAfter.contentHash} and state '${artAfter.payload.state}'`
+        );
       }
 
       return {
@@ -435,7 +456,7 @@ registerTortureBucket({
       // 1. Initialize Harness and generate a plan artifact (pre-crash state)
       const harness = createTestHarness({ accounts: 3, initialBalance: 100000000000n });
       const names = harness.accountNames();
-      
+
       const tx = harness.send({
         from: names[0]!,
         to: names[1]!,
@@ -449,7 +470,7 @@ registerTortureBucket({
       // Convert harness plan structure into fully conforming TxPlanSchema
       const planArtifact = {
         schema: "hardkas.txPlan" as const,
-        hardkasVersion: "0.7.3-alpha",
+        hardkasVersion: "0.7.4-alpha",
         version: ARTIFACT_VERSION,
         networkId: "simnet" as const,
         mode: "simulated" as const,
@@ -520,7 +541,7 @@ registerTortureBucket({
       // 5. Resume and Complete Flow: Produce signed receipt linked to recovered parent plan
       const receiptArtifact = {
         schema: "hardkas.txReceipt" as const,
-        hardkasVersion: "0.7.3-alpha",
+        hardkasVersion: "0.7.4-alpha",
         version: ARTIFACT_VERSION,
         networkId: "simnet" as const,
         mode: "simulated" as const,
@@ -560,16 +581,21 @@ registerTortureBucket({
       newStore.disconnect();
 
       if (!finalReceipt) {
-        throw new Error("Failed to index final transaction receipt after resuming workflow");
+        throw new Error(
+          "Failed to index final transaction receipt after resuming workflow"
+        );
       }
 
       if (finalReceipt.payload.lineage.parentArtifactId !== planId) {
-        throw new Error("Lineage continuity violated: resumed receipt parentId does not match pre-crash planId");
+        throw new Error(
+          "Lineage continuity violated: resumed receipt parentId does not match pre-crash planId"
+        );
       }
 
       return {
         flow: "Recover from intermediate workflow crash and complete pipeline",
-        mutation: "Wipe sqlite database, rebuild from raw plan, then append signed receipt",
+        mutation:
+          "Wipe sqlite database, rebuild from raw plan, then append signed receipt",
         expectedInvariant: "workflow_crash_resume_integrity",
         artifactsBefore: [planId],
         artifactsAfter: [receiptId]
@@ -591,7 +617,7 @@ registerTortureBucket({
   async run(ctx) {
     const { sandboxDir, artifactsDir, dbPath } = createSandbox(ctx);
     const subCase = ctx.prng.nextInt(1, 12);
-    
+
     try {
       const store = new HardkasStore({ dbPath });
       store.connect({ autoMigrate: true });
@@ -600,7 +626,7 @@ registerTortureBucket({
       const planId = `plan-mock-${ctx.caseId}-${ctx.caseSeed}`;
       const payload = {
         schema: "hardkas.txPlan" as const,
-        hardkasVersion: "0.7.3-alpha",
+        hardkasVersion: "0.7.4-alpha",
         version: ARTIFACT_VERSION,
         networkId: "simnet" as const,
         mode: "simulated" as const,
@@ -611,10 +637,17 @@ registerTortureBucket({
         amountSompi: "1000",
         estimatedFeeSompi: "100",
         estimatedMass: "10",
-        inputs: [{ outpoint: { transactionId: "a".repeat(64), index: 0 }, amountSompi: "2000" }],
-        outputs: [{ address: "kaspa:sim_qq0d6h0prjm5mpdld5pncst3adu0yam6xch9fkr6eg", amountSompi: "1000" }]
+        inputs: [
+          { outpoint: { transactionId: "a".repeat(64), index: 0 }, amountSompi: "2000" }
+        ],
+        outputs: [
+          {
+            address: "kaspa:sim_qq0d6h0prjm5mpdld5pncst3adu0yam6xch9fkr6eg",
+            amountSompi: "1000"
+          }
+        ]
       };
-      
+
       const validHash = calculateContentHash(payload);
       const artifactId = `plan-${validHash.slice(0, 16)}`;
       const file = path.join(artifactsDir, `${artifactId}.json`);
@@ -622,7 +655,7 @@ registerTortureBucket({
       // Write valid artifact first to verify subsequent indexing
       const validArtifact = { ...payload, artifactId, contentHash: validHash };
       fs.writeFileSync(file, JSON.stringify(validArtifact, null, 2));
-      
+
       // Now write a corrupted / partial file based on the subCase
       const badFile = path.join(artifactsDir, `bad-artifact-${subCase}.json`);
       let shouldSyncThrow = false;
@@ -630,44 +663,68 @@ registerTortureBucket({
 
       switch (subCase) {
         case 1: // truncated JSON
-          fs.writeFileSync(badFile, `{"schema": "hardkas.txPlan", "planId": "${planId}"`, "utf-8");
+          fs.writeFileSync(
+            badFile,
+            `{"schema": "hardkas.txPlan", "planId": "${planId}"`,
+            "utf-8"
+          );
           shouldSyncThrow = true;
           break;
         case 2: // invalid UTF-8
           fs.writeFileSync(badFile, Buffer.from([0x7b, 0x22, 0xc3, 0x28, 0x7d]));
           shouldSyncThrow = true;
           break;
-        case 3: { // temp artifact orphan (ends with .json but starts with .tmp-)
+        case 3: {
+          // temp artifact orphan (ends with .json but starts with .tmp-)
           const tempFile = path.join(artifactsDir, `.tmp-plan-${subCase}.json`);
           fs.writeFileSync(tempFile, JSON.stringify(validArtifact, null, 2));
           checkIgnored = true;
           break;
         }
-        case 4: { // content hash mismatch
-          const hashMismatchArt = { ...validArtifact, amountSompi: "9999", artifactId: "plan-mismatch" };
+        case 4: {
+          // content hash mismatch
+          const hashMismatchArt = {
+            ...validArtifact,
+            amountSompi: "9999",
+            artifactId: "plan-mismatch"
+          };
           fs.writeFileSync(badFile, JSON.stringify(hashMismatchArt, null, 2));
           shouldSyncThrow = true;
           break;
         }
         case 5: // metadata-only artifact
-          fs.writeFileSync(badFile, JSON.stringify({ schema: "hardkas.txPlan", version: ARTIFACT_VERSION, contentHash: validHash, artifactId: "plan-meta-only" }, null, 2));
+          fs.writeFileSync(
+            badFile,
+            JSON.stringify(
+              {
+                schema: "hardkas.txPlan",
+                version: ARTIFACT_VERSION,
+                contentHash: validHash,
+                artifactId: "plan-meta-only"
+              },
+              null,
+              2
+            )
+          );
           shouldSyncThrow = true;
           break;
         case 6: // content-only artifact
           fs.writeFileSync(badFile, JSON.stringify(payload, null, 2)); // missing artifactId / contentHash
           shouldSyncThrow = true;
           break;
-        case 7: { // missing contentHash
+        case 7: {
+          // missing contentHash
           const missingHashArt = { ...validArtifact };
           delete (missingHashArt as any).contentHash;
           fs.writeFileSync(badFile, JSON.stringify(missingHashArt, null, 2));
           shouldSyncThrow = true;
           break;
         }
-        case 8: { // missing parent artifact link (orphan receipt)
+        case 8: {
+          // missing parent artifact link (orphan receipt)
           const orphanReceipt = {
             schema: "hardkas.txReceipt" as const,
-            hardkasVersion: "0.7.3-alpha",
+            hardkasVersion: "0.7.4-alpha",
             version: ARTIFACT_VERSION,
             networkId: "simnet" as const,
             mode: "simulated" as const,
@@ -687,21 +744,30 @@ registerTortureBucket({
           };
           const receiptHash = calculateContentHash(orphanReceipt);
           const receiptId = `receipt-${receiptHash.slice(0, 16)}`;
-          fs.writeFileSync(path.join(artifactsDir, `${receiptId}.json`), JSON.stringify({ ...orphanReceipt, artifactId: receiptId, contentHash: receiptHash }, null, 2));
+          fs.writeFileSync(
+            path.join(artifactsDir, `${receiptId}.json`),
+            JSON.stringify(
+              { ...orphanReceipt, artifactId: receiptId, contentHash: receiptHash },
+              null,
+              2
+            )
+          );
           // Does not throw under sync, but parent/child lineage must not return a link to the non-existent parent!
           break;
         }
         case 9: // orphan child artifact
           // similar to case 8
           break;
-        case 10: { // duplicate artifact ID
+        case 10: {
+          // duplicate artifact ID
           const dupFile = path.join(artifactsDir, `dup-artifact-${subCase}.json`);
           const dupArt = { ...validArtifact, amountSompi: "500" }; // different payload, same ID
           fs.writeFileSync(dupFile, JSON.stringify(dupArt, null, 2));
           // Syncing might succeed, but the database must only contain a single canonical record for that ID (ON CONFLICT DO UPDATE)
           break;
         }
-        case 11: { // simulated crash before atomic rename
+        case 11: {
+          // simulated crash before atomic rename
           const crashFile = path.join(artifactsDir, `.tmp-crash-${subCase}`);
           fs.writeFileSync(crashFile, JSON.stringify(validArtifact, null, 2));
           checkIgnored = true;
@@ -729,10 +795,14 @@ registerTortureBucket({
 
       // Check query-store state
       const records = await backend.findArtifacts();
-      
+
       if (checkIgnored) {
         // Temp files must never be indexed
-        const badFound = records.some(r => r.artifactId.includes(`bad-artifact-${subCase}`) || r.artifactId.includes(`.tmp-`));
+        const badFound = records.some(
+          (r) =>
+            r.artifactId.includes(`bad-artifact-${subCase}`) ||
+            r.artifactId.includes(`.tmp-`)
+        );
         if (badFound) {
           throw new TortureInvariantError(
             `Temp or ignored file was indexed into the query-store under case ${subCase}`,
@@ -745,7 +815,9 @@ registerTortureBucket({
       if (subCase === 8 || subCase === 9) {
         // Lineage edges must be consistent
         const edges = await backend.getLineageEdges();
-        const hasBadEdge = edges.some(e => e.parentArtifactId === "non-existent-parent-id");
+        const hasBadEdge = edges.some(
+          (e) => e.parentArtifactId === "non-existent-parent-id"
+        );
         if (hasBadEdge) {
           throw new TortureInvariantError(
             "Orphan child created a valid lineage edge to a missing parent",
@@ -757,7 +829,7 @@ registerTortureBucket({
 
       if (subCase === 10) {
         // Duplicate ID must not result in multiple canonical records for that ID
-        const matched = records.filter(r => r.artifactId === artifactId);
+        const matched = records.filter((r) => r.artifactId === artifactId);
         if (matched.length > 1) {
           throw new TortureInvariantError(
             "Duplicate artifact ID produced multiple canonical query-store records",
@@ -790,7 +862,7 @@ registerTortureBucket({
   expectedInvariant: "single_canonical_lineage_under_concurrent_writes",
   async run(ctx) {
     const { sandboxDir, artifactsDir, dbPath } = createSandbox(ctx);
-    
+
     try {
       const store = new HardkasStore({ dbPath });
       store.connect({ autoMigrate: true });
@@ -804,7 +876,7 @@ registerTortureBucket({
         const pId = `plan-race-${i}-${ctx.caseSeed}`;
         const payload = {
           schema: "hardkas.txPlan" as const,
-          hardkasVersion: "0.7.3-alpha",
+          hardkasVersion: "0.7.4-alpha",
           version: ARTIFACT_VERSION,
           networkId: "simnet" as const,
           mode: "simulated" as const,
@@ -815,21 +887,35 @@ registerTortureBucket({
           amountSompi: "5000",
           estimatedFeeSompi: "100",
           estimatedMass: "10",
-          inputs: [{ outpoint: { transactionId: "c".repeat(64), index: i }, amountSompi: "10000" }],
+          inputs: [
+            {
+              outpoint: { transactionId: "c".repeat(64), index: i },
+              amountSompi: "10000"
+            }
+          ],
           outputs: [{ address: `kaspa:sim_to_${i}`, amountSompi: "5000" }]
         };
         const hash = calculateContentHash(payload);
         const artId = `plan-${hash.slice(0, 16)}`;
         generatedIds.push(artId);
 
-        promises.push((async () => {
-          const file = path.join(artifactsDir, `${artId}.json`);
-          fs.writeFileSync(file, JSON.stringify({ ...payload, artifactId: artId, contentHash: hash }, null, 2));
-          // Simulate some interleaving sync operations
-          try {
-            await backend.sync({ strict: true, cwd: sandboxDir });
-          } catch (err) {}
-        })());
+        promises.push(
+          (async () => {
+            const file = path.join(artifactsDir, `${artId}.json`);
+            fs.writeFileSync(
+              file,
+              JSON.stringify(
+                { ...payload, artifactId: artId, contentHash: hash },
+                null,
+                2
+              )
+            );
+            // Simulate some interleaving sync operations
+            try {
+              await backend.sync({ strict: true, cwd: sandboxDir });
+            } catch (err) {}
+          })()
+        );
       }
 
       await Promise.all(promises);
@@ -847,9 +933,9 @@ registerTortureBucket({
       }
 
       const records = await backend.findArtifacts();
-      
+
       // Verify no duplicate IDs are canonical
-      const ids = records.map(r => r.artifactId);
+      const ids = records.map((r) => r.artifactId);
       const uniqueIds = new Set(ids);
       if (ids.length !== uniqueIds.size) {
         throw new TortureInvariantError(
@@ -882,7 +968,7 @@ registerTortureBucket({
   expectedInvariant: "dashboard_never_claims_verified_from_stale_projection",
   async run(ctx) {
     const { sandboxDir, artifactsDir, dbPath } = createSandbox(ctx);
-    
+
     try {
       const store = new HardkasStore({ dbPath });
       store.connect({ autoMigrate: true });
@@ -891,7 +977,7 @@ registerTortureBucket({
       const planId = `plan-stale-${ctx.caseSeed}`;
       const payload = {
         schema: "hardkas.txPlan" as const,
-        hardkasVersion: "0.7.3-alpha",
+        hardkasVersion: "0.7.4-alpha",
         version: ARTIFACT_VERSION,
         networkId: "simnet" as const,
         mode: "simulated" as const,
@@ -902,14 +988,24 @@ registerTortureBucket({
         amountSompi: "1000",
         estimatedFeeSompi: "100",
         estimatedMass: "10",
-        inputs: [{ outpoint: { transactionId: "d".repeat(64), index: 0 }, amountSompi: "2000" }],
-        outputs: [{ address: "kaspa:sim_qq0d6h0prjm5mpdld5pncst3adu0yam6xch9fkr6eg", amountSompi: "1000" }]
+        inputs: [
+          { outpoint: { transactionId: "d".repeat(64), index: 0 }, amountSompi: "2000" }
+        ],
+        outputs: [
+          {
+            address: "kaspa:sim_qq0d6h0prjm5mpdld5pncst3adu0yam6xch9fkr6eg",
+            amountSompi: "1000"
+          }
+        ]
       };
-      
+
       const hash = calculateContentHash(payload);
       const artId = `plan-${hash.slice(0, 16)}`;
       const file = path.join(artifactsDir, `${artId}.json`);
-      fs.writeFileSync(file, JSON.stringify({ ...payload, artifactId: artId, contentHash: hash }, null, 2));
+      fs.writeFileSync(
+        file,
+        JSON.stringify({ ...payload, artifactId: artId, contentHash: hash }, null, 2)
+      );
 
       await backend.sync({ strict: true, cwd: sandboxDir });
 
@@ -921,17 +1017,24 @@ registerTortureBucket({
       // Mutation: Modifying the file on-disk without running a rebuild/sync
       // We alter the content and update the file modification time
       const mutatedPayload = { ...payload, amountSompi: "9999" };
-      fs.writeFileSync(file, JSON.stringify({ ...mutatedPayload, artifactId: artId, contentHash: hash }, null, 2));
-      
+      fs.writeFileSync(
+        file,
+        JSON.stringify(
+          { ...mutatedPayload, artifactId: artId, contentHash: hash },
+          null,
+          2
+        )
+      );
+
       // Update mtime to trigger staleness detection
       const futureTime = Date.now() + 50000;
       fs.utimesSync(file, new Date(futureTime), new Date(futureTime));
 
       // Doctor must flag this immediately as stale / not verified!
       const statusAfter = await backend.doctor();
-      
+
       // TODO: Integrate doctor status directly into dashboard UI verification API
-      
+
       store.disconnect();
 
       if (statusAfter.ok || statusAfter.staleArtifacts === 0) {
@@ -997,10 +1100,14 @@ registerTortureBucket({
 
         if (stat.isDirectory()) {
           walkAndScan(relPath);
-        } else if (item.endsWith(".ts") || item.endsWith(".js") || item.endsWith(".mts")) {
+        } else if (
+          item.endsWith(".ts") ||
+          item.endsWith(".js") ||
+          item.endsWith(".mts")
+        ) {
           const content = fs.readFileSync(itemPath, "utf-8");
           const lines = content.split("\n");
-          
+
           for (let i = 0; i < lines.length; i++) {
             const line = lines[i]!;
             const lineNum = i + 1;
@@ -1015,7 +1122,7 @@ registerTortureBucket({
                 if (pat.name === "readdirSync()" && line.includes(".sort(")) continue;
 
                 // Non-deterministic path classification (failures only in deterministic paths)
-                const isCoreDeterministic = 
+                const isCoreDeterministic =
                   relPath.includes("packages/artifacts/src/") ||
                   relPath.includes("packages/query-store/src/") ||
                   relPath.includes("packages/sdk/src/replay.ts") ||
@@ -1023,7 +1130,9 @@ registerTortureBucket({
                   relPath.includes("packages/localnet/src/");
 
                 if (isCoreDeterministic) {
-                  findings.push(`${relPath}:${lineNum} - Found core determinism violation: ${pat.name}`);
+                  findings.push(
+                    `${relPath}:${lineNum} - Found core determinism violation: ${pat.name}`
+                  );
                 }
               }
             }
@@ -1063,7 +1172,7 @@ registerTortureBucket({
   expectedInvariant: "event_storm_cannot_create_canonical_divergence",
   async run(ctx) {
     const { sandboxDir, hardkasDir, artifactsDir, dbPath } = createSandbox(ctx);
-    
+
     try {
       const store = new HardkasStore({ dbPath });
       store.connect({ autoMigrate: true });
@@ -1076,7 +1185,7 @@ registerTortureBucket({
       for (let i = 0; i < 10; i++) {
         const payload = {
           schema: "hardkas.txPlan" as const,
-          hardkasVersion: "0.7.3-alpha",
+          hardkasVersion: "0.7.4-alpha",
           version: ARTIFACT_VERSION,
           networkId: "simnet" as const,
           mode: "simulated" as const,
@@ -1087,15 +1196,28 @@ registerTortureBucket({
           amountSompi: (1000n * BigInt(i + 1)).toString(),
           estimatedFeeSompi: "100",
           estimatedMass: "10",
-          inputs: [{ outpoint: { transactionId: "e".repeat(64), index: i }, amountSompi: "20000" }],
-          outputs: [{ address: "kaspa:sim_qq0d6h0prjm5mpdld5pncst3adu0yam6xch9fkr6eg", amountSompi: "1000" }]
+          inputs: [
+            {
+              outpoint: { transactionId: "e".repeat(64), index: i },
+              amountSompi: "20000"
+            }
+          ],
+          outputs: [
+            {
+              address: "kaspa:sim_qq0d6h0prjm5mpdld5pncst3adu0yam6xch9fkr6eg",
+              amountSompi: "1000"
+            }
+          ]
         };
         const hash = calculateContentHash(payload);
         const artId = `plan-${hash.slice(0, 16)}`;
         generatedIds.push(artId);
 
         const file = path.join(artifactsDir, `${artId}.json`);
-        fs.writeFileSync(file, JSON.stringify({ ...payload, artifactId: artId, contentHash: hash }, null, 2));
+        fs.writeFileSync(
+          file,
+          JSON.stringify({ ...payload, artifactId: artId, contentHash: hash }, null, 2)
+        );
 
         // Event log simulations
         const evEnvelope = {
@@ -1145,7 +1267,8 @@ registerTortureBucket({
 
       return {
         flow: "Generate watch event storm with duplicates and dropped events",
-        mutation: "Append duplicates to event log, delete events.jsonl, then trigger rebuild",
+        mutation:
+          "Append duplicates to event log, delete events.jsonl, then trigger rebuild",
         expectedInvariant: "event_storm_cannot_create_canonical_divergence",
         artifactsBefore: generatedIds
       };
@@ -1165,7 +1288,7 @@ registerTortureBucket({
   expectedInvariant: "workspace_boundaries_and_canonical_paths_are_stable",
   async run(ctx) {
     const { sandboxDir, artifactsDir, dbPath } = createSandbox(ctx);
-    
+
     try {
       const store = new HardkasStore({ dbPath });
       store.connect({ autoMigrate: true });
@@ -1175,7 +1298,7 @@ registerTortureBucket({
       const traverseArtId = "../../traversal-escape";
       const payload = {
         schema: "hardkas.txPlan" as const,
-        hardkasVersion: "0.7.3-alpha",
+        hardkasVersion: "0.7.4-alpha",
         version: ARTIFACT_VERSION,
         networkId: "simnet" as const,
         mode: "simulated" as const,
@@ -1186,21 +1309,40 @@ registerTortureBucket({
         amountSompi: "1000",
         estimatedFeeSompi: "100",
         estimatedMass: "10",
-        inputs: [{ outpoint: { transactionId: "g".repeat(64), index: 0 }, amountSompi: "2000" }],
-        outputs: [{ address: "kaspa:sim_qq0d6h0prjm5mpdld5pncst3adu0yam6xch9fkr6eg", amountSompi: "1000" }]
+        inputs: [
+          { outpoint: { transactionId: "g".repeat(64), index: 0 }, amountSompi: "2000" }
+        ],
+        outputs: [
+          {
+            address: "kaspa:sim_qq0d6h0prjm5mpdld5pncst3adu0yam6xch9fkr6eg",
+            amountSompi: "1000"
+          }
+        ]
       };
-      
+
       const hash = calculateContentHash(payload);
-      
+
       // Write file outside using relative traversal
-      const traverseFile = path.join(artifactsDir, "..", "..", `traversal-${ctx.caseSeed}.json`);
-      fs.writeFileSync(traverseFile, JSON.stringify({ ...payload, artifactId: traverseArtId, contentHash: hash }, null, 2));
+      const traverseFile = path.join(
+        artifactsDir,
+        "..",
+        "..",
+        `traversal-${ctx.caseSeed}.json`
+      );
+      fs.writeFileSync(
+        traverseFile,
+        JSON.stringify(
+          { ...payload, artifactId: traverseArtId, contentHash: hash },
+          null,
+          2
+        )
+      );
 
       await backend.sync({ strict: true, cwd: sandboxDir });
       const records = await backend.findArtifacts();
 
       // Check that traversals were completely ignored / sandboxed
-      const escaped = records.some(r => r.artifactId.includes("traversal"));
+      const escaped = records.some((r) => r.artifactId.includes("traversal"));
       if (escaped) {
         throw new TortureInvariantError(
           "Path traversal artifact escaped sandbox and was indexed",
@@ -1213,10 +1355,13 @@ registerTortureBucket({
       // Write a valid plan in artifactsDir
       const validId = `plan-move-${ctx.caseSeed}`;
       const validFile = path.join(artifactsDir, `${validId}.json`);
-      fs.writeFileSync(validFile, JSON.stringify({ ...payload, artifactId: validId, contentHash: hash }, null, 2));
-      
+      fs.writeFileSync(
+        validFile,
+        JSON.stringify({ ...payload, artifactId: validId, contentHash: hash }, null, 2)
+      );
+
       await backend.sync({ strict: true, cwd: sandboxDir });
-      
+
       // Close store connections to unlock the database
       store.disconnect();
 
@@ -1234,16 +1379,19 @@ registerTortureBucket({
       const newBackend = new SqliteQueryBackend(newStore);
 
       // Rebuild on the moved workspace
-      const rebuildResult = await newBackend.rebuild({ strict: true, cwd: newSandboxDir });
+      const rebuildResult = await newBackend.rebuild({
+        strict: true,
+        cwd: newSandboxDir
+      });
       if (!rebuildResult.ok) {
         throw new Error("Failed to rebuild after moving workspace folder");
       }
 
       const movedRecords = await newBackend.findArtifacts();
-      const movedRecord = movedRecords.find(r => r.artifactId === validId);
+      const movedRecord = movedRecords.find((r) => r.artifactId === validId);
 
       newStore.disconnect();
-      
+
       // Cleanup moved sandbox
       cleanupSandbox(newSandboxDir);
 
@@ -1276,7 +1424,7 @@ registerTortureBucket({
   expectedInvariant: "agents_cannot_mutate_without_explicit_capability",
   async run(ctx) {
     const { sandboxDir } = createSandbox(ctx);
-    
+
     try {
       const { Hardkas } = await import("@hardkas/sdk");
 
@@ -1349,7 +1497,10 @@ registerTortureBucket({
   expectedInvariant: "same_contract_inputs_produce_same_compile_artifact",
   async run(ctx) {
     // Deterministic EVM Mock Compiler
-    const compileContract = (source: string, config: { optimizer: boolean; version: string }) => {
+    const compileContract = (
+      source: string,
+      config: { optimizer: boolean; version: string }
+    ) => {
       const payloadToHash = {
         source,
         optimizer: config.optimizer,
@@ -1357,7 +1508,7 @@ registerTortureBucket({
       };
       const bytecodeHash = calculateContentHash(payloadToHash);
       const mockBytecode = `0x608060405234801561001057600080fd5b5061${bytecodeHash.slice(0, 16)}`;
-      
+
       return {
         bytecode: mockBytecode,
         bytecodeHash,
@@ -1371,7 +1522,7 @@ registerTortureBucket({
     const configA = { optimizer: true, version: "0.8.20" };
     const configB = { optimizer: true, version: "0.8.20" };
     const configC = { optimizer: false, version: "0.8.20" }; // optimizer changed
-    const configD = { optimizer: true, version: "0.8.24" };  // version changed
+    const configD = { optimizer: true, version: "0.8.24" }; // version changed
 
     const resA = compileContract(source, configA);
     const resB = compileContract(source, configB);
@@ -1406,7 +1557,8 @@ registerTortureBucket({
 
     return {
       flow: "Execute contract mock compilation with settings and version adjustments",
-      mutation: "Modify Solidity compiler optimizer and version parameters deterministically",
+      mutation:
+        "Modify Solidity compiler optimizer and version parameters deterministically",
       expectedInvariant: "same_contract_inputs_produce_same_compile_artifact"
     };
   }
@@ -1425,17 +1577,21 @@ registerTortureBucket({
   async run(ctx) {
     const { sandboxDir, artifactsDir, dbPath } = createSandbox(ctx);
     const originalCwd = process.cwd();
-    
+
     try {
       const { createTestHarness } = await import("../index.js");
 
       // 1. Write hardkas.config.ts to sandboxDir so that SDK detects a valid workspace
-      fs.writeFileSync(path.join(sandboxDir, "hardkas.config.ts"), "export default {};", "utf-8");
+      fs.writeFileSync(
+        path.join(sandboxDir, "hardkas.config.ts"),
+        "export default {};",
+        "utf-8"
+      );
 
       // 2. Initialize Harness and generate initial history (plan + receipt)
       const harness = createTestHarness({ accounts: 3, initialBalance: 100000000000n });
       const names = harness.accountNames();
-      
+
       const tx = harness.send({
         from: names[0]!,
         to: names[1]!,
@@ -1451,11 +1607,22 @@ registerTortureBucket({
         ...tx.plan,
         artifactId: planId
       };
-      conformingPlan.contentHash = calculateContentHash(conformingPlan, CURRENT_HASH_VERSION);
-      
+      conformingPlan.contentHash = calculateContentHash(
+        conformingPlan,
+        CURRENT_HASH_VERSION
+      );
+
       // Write to artifactsDir for reindexing and root sandboxDir for replay verification
-      fs.writeFileSync(path.join(artifactsDir, `${planId}.json`), JSON.stringify(conformingPlan, null, 2), "utf-8");
-      fs.writeFileSync(path.join(sandboxDir, "tx-plan.json"), JSON.stringify(conformingPlan, null, 2), "utf-8");
+      fs.writeFileSync(
+        path.join(artifactsDir, `${planId}.json`),
+        JSON.stringify(conformingPlan, null, 2),
+        "utf-8"
+      );
+      fs.writeFileSync(
+        path.join(sandboxDir, "tx-plan.json"),
+        JSON.stringify(conformingPlan, null, 2),
+        "utf-8"
+      );
 
       const receiptId = `receipt-${tx.receipt.txId.slice(0, 16)}`;
       const conformingReceipt = {
@@ -1469,11 +1636,22 @@ registerTortureBucket({
         }
       };
 
-      conformingReceipt.contentHash = calculateContentHash(conformingReceipt, CURRENT_HASH_VERSION);
+      conformingReceipt.contentHash = calculateContentHash(
+        conformingReceipt,
+        CURRENT_HASH_VERSION
+      );
 
       // Write to artifactsDir for reindexing and root sandboxDir for replay verification
-      fs.writeFileSync(path.join(artifactsDir, `${receiptId}.json`), JSON.stringify(conformingReceipt, null, 2), "utf-8");
-      fs.writeFileSync(path.join(sandboxDir, "tx-receipt.json"), JSON.stringify(conformingReceipt, null, 2), "utf-8");
+      fs.writeFileSync(
+        path.join(artifactsDir, `${receiptId}.json`),
+        JSON.stringify(conformingReceipt, null, 2),
+        "utf-8"
+      );
+      fs.writeFileSync(
+        path.join(sandboxDir, "tx-receipt.json"),
+        JSON.stringify(conformingReceipt, null, 2),
+        "utf-8"
+      );
 
       // 3. Perform initial sync and capture canonical baseline
       const store = new HardkasStore({ dbPath });
@@ -1483,7 +1661,7 @@ registerTortureBucket({
 
       const indexedBefore = await backend.findArtifacts();
       const lineageBefore = await backend.getLineageEdges();
-      
+
       // Close database connection
       store.disconnect();
 
@@ -1496,7 +1674,7 @@ registerTortureBucket({
       if (fs.existsSync(eventsFile)) {
         fs.unlinkSync(eventsFile);
       }
-      
+
       // 5. Move workspace directory to completely new path (simulates relocated environment)
       const newSandboxDir = `${sandboxDir}-reconstructed`;
       if (fs.existsSync(newSandboxDir)) {
@@ -1506,7 +1684,9 @@ registerTortureBucket({
 
       // Verify that old path is completely dead
       if (fs.existsSync(sandboxDir)) {
-        throw new Error("Failed to completely relocate workspace directory during environment reconstruction");
+        throw new Error(
+          "Failed to completely relocate workspace directory during environment reconstruction"
+        );
       }
 
       // 6. Reconstruct from canonical artifacts alone under new path
@@ -1515,7 +1695,10 @@ registerTortureBucket({
       newStore.connect({ autoMigrate: true });
       const newBackend = new SqliteQueryBackend(newStore);
 
-      const rebuildResult = await newBackend.rebuild({ strict: true, cwd: newSandboxDir });
+      const rebuildResult = await newBackend.rebuild({
+        strict: true,
+        cwd: newSandboxDir
+      });
       if (!rebuildResult.ok) {
         throw new Error("Rebuild failed under reconstructed workspace environment");
       }
@@ -1542,10 +1725,14 @@ registerTortureBucket({
 
       // 8. Verify replay result still evaluates perfectly on the relocated workspace
       const { Hardkas } = await import("@hardkas/sdk");
-      
+
       // Save localnet state for replay to locate it under moved sandbox
       const localnetStatePath = path.join(newSandboxDir, ".hardkas", "localnet.json");
-      fs.writeFileSync(localnetStatePath, JSON.stringify(harness.state, null, 2), "utf-8");
+      fs.writeFileSync(
+        localnetStatePath,
+        JSON.stringify(harness.state, null, 2),
+        "utf-8"
+      );
 
       // Temporarily chdir into sandbox to satisfy process-ambient localnet loaders
       process.chdir(newSandboxDir);
@@ -1571,7 +1758,8 @@ registerTortureBucket({
 
       return {
         flow: "Total environment wipeout, folder relocation, rebuild, and replay verify",
-        mutation: "Delete SQL store/events, rename sandbox, rebuild and execute SDK replay",
+        mutation:
+          "Delete SQL store/events, rename sandbox, rebuild and execute SDK replay",
         expectedInvariant: "canonical_history_survives_full_environment_reconstruction",
         artifactsBefore: [planId],
         artifactsAfter: [receiptId]
@@ -1596,7 +1784,7 @@ registerTortureBucket({
   expectedInvariant: "lineage_closure_consistent_under_scale",
   async run(ctx) {
     const { sandboxDir, hardkasDir, artifactsDir, dbPath } = createSandbox(ctx);
-    
+
     try {
       const store = new HardkasStore({ dbPath });
       store.connect({ autoMigrate: true });
@@ -1610,7 +1798,7 @@ registerTortureBucket({
 
       // Create multiple lineage chains of varying depth
       const numChains = Math.ceil(artifactCount / chainDepth);
-      
+
       for (let chain = 0; chain < numChains; chain++) {
         const chainIds: string[] = [];
         let parentId: string | null = null;
@@ -1622,7 +1810,7 @@ registerTortureBucket({
           const idx = generatedIds.length;
           const payload: Record<string, any> = {
             schema: "hardkas.txPlan" as const,
-            hardkasVersion: "0.7.3-alpha",
+            hardkasVersion: "0.7.4-alpha",
             version: ARTIFACT_VERSION,
             networkId: "simnet" as const,
             mode: "simulated" as const,
@@ -1633,8 +1821,18 @@ registerTortureBucket({
             amountSompi: (1000n * BigInt(ctx.prng.nextInt(1, 100) * 10 + idx)).toString(),
             estimatedFeeSompi: "100",
             estimatedMass: "10",
-            inputs: [{ outpoint: { transactionId: "s".repeat(64), index: idx }, amountSompi: "20000" }],
-            outputs: [{ address: "kaspa:sim_qq0d6h0prjm5mpdld5pncst3adu0yam6xch9fkr6eg", amountSompi: "1000" }]
+            inputs: [
+              {
+                outpoint: { transactionId: "s".repeat(64), index: idx },
+                amountSompi: "20000"
+              }
+            ],
+            outputs: [
+              {
+                address: "kaspa:sim_qq0d6h0prjm5mpdld5pncst3adu0yam6xch9fkr6eg",
+                amountSompi: "1000"
+              }
+            ]
           };
 
           // Add lineage information for non-root nodes
@@ -1667,7 +1865,9 @@ registerTortureBucket({
       const syncDurationMs = Date.now() - syncStart; // hardkas-determinism-allow: perf measurement
 
       if (!syncResult.ok) {
-        throw new Error(`Full sync failed on ${generatedIds.length} artifacts: ${syncResult.errors.join(", ")}`);
+        throw new Error(
+          `Full sync failed on ${generatedIds.length} artifacts: ${syncResult.errors.join(", ")}`
+        );
       }
 
       const allArtifacts = await backend.findArtifacts();
@@ -1683,8 +1883,12 @@ registerTortureBucket({
       const db = store.getDatabase();
       let closureValid = true;
       try {
-        const closureCount = (db.prepare("SELECT COUNT(*) as count FROM lineage_closure").get() as { count: number }).count;
-        
+        const closureCount = (
+          db.prepare("SELECT COUNT(*) as count FROM lineage_closure").get() as {
+            count: number;
+          }
+        ).count;
+
         // For each chain, verify the root can reach all descendants
         for (const chain of lineageChains) {
           if (chain.length < 2) continue;
@@ -1692,9 +1896,11 @@ registerTortureBucket({
           const leafId = chain[chain.length - 1]!;
 
           // Root should be ancestor of leaf
-          const ancestorCheck = db.prepare(
-            "SELECT COUNT(*) as count FROM lineage_closure WHERE ancestor_id = ? AND descendant_id = ?"
-          ).get(rootId, leafId) as { count: number };
+          const ancestorCheck = db
+            .prepare(
+              "SELECT COUNT(*) as count FROM lineage_closure WHERE ancestor_id = ? AND descendant_id = ?"
+            )
+            .get(rootId, leafId) as { count: number };
 
           if (ancestorCheck.count === 0) {
             closureValid = false;
@@ -1707,12 +1913,14 @@ registerTortureBucket({
         }
 
         // Verify stats were updated
-        const statsRow = db.prepare(
-          "SELECT stat_value FROM lineage_stats WHERE stat_key = 'closure_entries'"
-        ).get() as { stat_value: string } | undefined;
-        
+        const statsRow = db
+          .prepare(
+            "SELECT stat_value FROM lineage_stats WHERE stat_key = 'closure_entries'"
+          )
+          .get() as { stat_value: string } | undefined;
+
         if (!statsRow || parseInt(statsRow.stat_value) === 0) {
-          if (lineageChains.some(c => c.length > 1)) {
+          if (lineageChains.some((c) => c.length > 1)) {
             throw new TortureInvariantError(
               "Lineage statistics not populated after scale sync",
               "STATS_NOT_POPULATED",
@@ -1784,53 +1992,67 @@ registerTortureBucket({
   expectedInvariant: "multi_process_writes_converge_to_consistent_state",
   async run(ctx) {
     const { sandboxDir, artifactsDir, dbPath } = createSandbox(ctx);
-    
+
     try {
       // Determine number of concurrent "processes" (simulated via async workers)
       const workerCount = ctx.prng.nextInt(3, 8);
       const artifactsPerWorker = ctx.prng.nextInt(5, 15);
       const allGeneratedIds: string[] = [];
-      
+
       // Phase 1: Simulate multi-process concurrent writes
       // Each "process" writes its own set of artifacts independently
       const workerPromises: Promise<string[]>[] = [];
-      
+
       for (let w = 0; w < workerCount; w++) {
-        workerPromises.push((async () => {
-          const workerIds: string[] = [];
-          const workerPrng = new LcgPrng(ctx.caseSeed + w * 1000);
-          
-          for (let i = 0; i < artifactsPerWorker; i++) {
-            const payload = {
-              schema: "hardkas.txPlan" as const,
-              hardkasVersion: "0.7.3-alpha",
-              version: ARTIFACT_VERSION,
-              networkId: "simnet" as const,
-              mode: "simulated" as const,
-              createdAt: new Date().toISOString(), // hardkas-determinism-allow: mock timestamp
-              planId: `plan-mp-w${w}-${i}-${ctx.caseSeed}`,
-              from: { address: `kaspa:sim_worker_${w}` },
-              to: { address: `kaspa:sim_target_${w}` },
-              amountSompi: (1000n * BigInt(workerPrng.nextInt(1, 100))).toString(),
-              estimatedFeeSompi: "100",
-              estimatedMass: "10",
-              inputs: [{ outpoint: { transactionId: "m".repeat(64), index: w * 100 + i }, amountSompi: "20000" }],
-              outputs: [{ address: `kaspa:sim_target_${w}`, amountSompi: "1000" }]
-            };
-            const hash = calculateContentHash(payload);
-            const artId = `plan-${hash.slice(0, 16)}`;
-            workerIds.push(artId);
+        workerPromises.push(
+          (async () => {
+            const workerIds: string[] = [];
+            const workerPrng = new LcgPrng(ctx.caseSeed + w * 1000);
 
-            const file = path.join(artifactsDir, `${artId}.json`);
-            fs.writeFileSync(file, JSON.stringify({ ...payload, artifactId: artId, contentHash: hash }, null, 2));
+            for (let i = 0; i < artifactsPerWorker; i++) {
+              const payload = {
+                schema: "hardkas.txPlan" as const,
+                hardkasVersion: "0.7.4-alpha",
+                version: ARTIFACT_VERSION,
+                networkId: "simnet" as const,
+                mode: "simulated" as const,
+                createdAt: new Date().toISOString(), // hardkas-determinism-allow: mock timestamp
+                planId: `plan-mp-w${w}-${i}-${ctx.caseSeed}`,
+                from: { address: `kaspa:sim_worker_${w}` },
+                to: { address: `kaspa:sim_target_${w}` },
+                amountSompi: (1000n * BigInt(workerPrng.nextInt(1, 100))).toString(),
+                estimatedFeeSompi: "100",
+                estimatedMass: "10",
+                inputs: [
+                  {
+                    outpoint: { transactionId: "m".repeat(64), index: w * 100 + i },
+                    amountSompi: "20000"
+                  }
+                ],
+                outputs: [{ address: `kaspa:sim_target_${w}`, amountSompi: "1000" }]
+              };
+              const hash = calculateContentHash(payload);
+              const artId = `plan-${hash.slice(0, 16)}`;
+              workerIds.push(artId);
 
-            // Simulate random write delays
-            if (workerPrng.nextInt(0, 3) === 0) {
-              await new Promise(r => setTimeout(r, workerPrng.nextInt(1, 10)));
+              const file = path.join(artifactsDir, `${artId}.json`);
+              fs.writeFileSync(
+                file,
+                JSON.stringify(
+                  { ...payload, artifactId: artId, contentHash: hash },
+                  null,
+                  2
+                )
+              );
+
+              // Simulate random write delays
+              if (workerPrng.nextInt(0, 3) === 0) {
+                await new Promise((r) => setTimeout(r, workerPrng.nextInt(1, 10)));
+              }
             }
-          }
-          return workerIds;
-        })());
+            return workerIds;
+          })()
+        );
       }
 
       const workerResults = await Promise.all(workerPromises);
@@ -1866,7 +2088,7 @@ registerTortureBucket({
       const records = await backend.findArtifacts();
 
       // Check no duplicate IDs
-      const ids = records.map(r => r.artifactId);
+      const ids = records.map((r) => r.artifactId);
       const uniqueIds = new Set(ids);
       if (ids.length !== uniqueIds.size) {
         throw new TortureInvariantError(
@@ -1878,7 +2100,7 @@ registerTortureBucket({
 
       // Check all written artifacts are present
       const uniqueGenerated = new Set(allGeneratedIds);
-      const missingIds = [...uniqueGenerated].filter(id => !uniqueIds.has(id));
+      const missingIds = [...uniqueGenerated].filter((id) => !uniqueIds.has(id));
       if (missingIds.length > 0) {
         throw new TortureInvariantError(
           `Multi-process writes lost ${missingIds.length} artifacts during convergence`,
@@ -1889,15 +2111,15 @@ registerTortureBucket({
 
       // Check orphan edges
       const edges = await backend.getLineageEdges();
-      const orphanEdges = edges.filter(e => 
-        !uniqueIds.has(e.parentArtifactId) || !uniqueIds.has(e.childArtifactId)
+      const orphanEdges = edges.filter(
+        (e) => !uniqueIds.has(e.parentArtifactId) || !uniqueIds.has(e.childArtifactId)
       );
       // Note: these are independent artifacts without lineage, so orphan edges should be 0
       // But we check anyway for safety
-      
+
       // Verify doctor report is clean
       const doctorReport = await backend.doctor();
-      
+
       store.disconnect();
 
       if (doctorReport.orphanEdges > 0) {
@@ -1932,9 +2154,14 @@ registerTortureBucket({
   async run(ctx) {
     const { sandboxDir, artifactsDir, dbPath } = createSandbox(ctx);
     const subCase = ctx.prng.nextInt(1, 5);
-    
+
     try {
-      const { acquireLock, clearLock, listLocks, isProcessAlive: checkAlive } = await import("@hardkas/core");
+      const {
+        acquireLock,
+        clearLock,
+        listLocks,
+        isProcessAlive: checkAlive
+      } = await import("@hardkas/core");
 
       const lockDir = path.join(sandboxDir, ".hardkas", "locks");
       fs.mkdirSync(lockDir, { recursive: true });
@@ -2073,7 +2300,7 @@ registerTortureBucket({
             );
           }
 
-          const found = locks.find(l => l.name === "workspace");
+          const found = locks.find((l) => l.name === "workspace");
           if (!found || !found.isAlive) {
             throw new TortureInvariantError(
               "Active lock not found or reported as dead by listLocks",
@@ -2099,28 +2326,24 @@ registerTortureBucket({
         case 5: {
           // Lock ordering: acquire multiple locks in correct order
           const { withLocks } = await import("@hardkas/core");
-          
+
           let locksAcquired = false;
           try {
-            await withLocks(
-              sandboxDir,
-              ["artifacts", "query-store"],
-              async () => {
-                locksAcquired = true;
-                
-                // While holding locks, verify they exist on disk
-                const artLock = path.join(lockDir, "artifacts.lock");
-                const qsLock = path.join(lockDir, "query-store.lock");
-                
-                if (!fs.existsSync(artLock) || !fs.existsSync(qsLock)) {
-                  throw new TortureInvariantError(
-                    "Lock files not created on disk while held",
-                    "LOCK_FILES_MISSING",
-                    "critical"
-                  );
-                }
+            await withLocks(sandboxDir, ["artifacts", "query-store"], async () => {
+              locksAcquired = true;
+
+              // While holding locks, verify they exist on disk
+              const artLock = path.join(lockDir, "artifacts.lock");
+              const qsLock = path.join(lockDir, "query-store.lock");
+
+              if (!fs.existsSync(artLock) || !fs.existsSync(qsLock)) {
+                throw new TortureInvariantError(
+                  "Lock files not created on disk while held",
+                  "LOCK_FILES_MISSING",
+                  "critical"
+                );
               }
-            );
+            });
           } catch (err: any) {
             if (err instanceof TortureInvariantError) throw err;
             // Lock ordering failures are acceptable error states
@@ -2128,10 +2351,10 @@ registerTortureBucket({
 
           // Verify locks were released
           const remainingLocks = listLocks(sandboxDir);
-          const stale = remainingLocks.filter(l => 
-            l.name === "artifacts" || l.name === "query-store"
+          const stale = remainingLocks.filter(
+            (l) => l.name === "artifacts" || l.name === "query-store"
           );
-          
+
           if (stale.length > 0) {
             throw new TortureInvariantError(
               `${stale.length} locks not released after withLocks completed`,
@@ -2150,7 +2373,7 @@ registerTortureBucket({
 
       const payload = {
         schema: "hardkas.txPlan" as const,
-        hardkasVersion: "0.7.3-alpha",
+        hardkasVersion: "0.7.4-alpha",
         version: ARTIFACT_VERSION,
         networkId: "simnet" as const,
         mode: "simulated" as const,
@@ -2161,13 +2384,23 @@ registerTortureBucket({
         amountSompi: "1000",
         estimatedFeeSompi: "100",
         estimatedMass: "10",
-        inputs: [{ outpoint: { transactionId: "l".repeat(64), index: 0 }, amountSompi: "2000" }],
-        outputs: [{ address: "kaspa:sim_qq0d6h0prjm5mpdld5pncst3adu0yam6xch9fkr6eg", amountSompi: "1000" }]
+        inputs: [
+          { outpoint: { transactionId: "l".repeat(64), index: 0 }, amountSompi: "2000" }
+        ],
+        outputs: [
+          {
+            address: "kaspa:sim_qq0d6h0prjm5mpdld5pncst3adu0yam6xch9fkr6eg",
+            amountSompi: "1000"
+          }
+        ]
       };
       const hash = calculateContentHash(payload);
       const artId = `plan-${hash.slice(0, 16)}`;
       const file = path.join(artifactsDir, `${artId}.json`);
-      fs.writeFileSync(file, JSON.stringify({ ...payload, artifactId: artId, contentHash: hash }, null, 2));
+      fs.writeFileSync(
+        file,
+        JSON.stringify({ ...payload, artifactId: artId, contentHash: hash }, null, 2)
+      );
 
       const syncResult = await backend.sync({ strict: true, cwd: sandboxDir });
       store.disconnect();
@@ -2219,7 +2452,7 @@ registerTortureBucket({
           // Case-insensitive collision: write Plan.json and plan.json
           const payload1 = {
             schema: "hardkas.txPlan" as const,
-            hardkasVersion: "0.7.3-alpha",
+            hardkasVersion: "0.7.4-alpha",
             version: ARTIFACT_VERSION,
             networkId: "simnet" as const,
             mode: "simulated" as const,
@@ -2230,11 +2463,25 @@ registerTortureBucket({
             amountSompi: "1000",
             estimatedFeeSompi: "100",
             estimatedMass: "10",
-            inputs: [{ outpoint: { transactionId: "w".repeat(64), index: 0 }, amountSompi: "2000" }],
-            outputs: [{ address: "kaspa:sim_qq0d6h0prjm5mpdld5pncst3adu0yam6xch9fkr6eg", amountSompi: "1000" }]
+            inputs: [
+              {
+                outpoint: { transactionId: "w".repeat(64), index: 0 },
+                amountSompi: "2000"
+              }
+            ],
+            outputs: [
+              {
+                address: "kaspa:sim_qq0d6h0prjm5mpdld5pncst3adu0yam6xch9fkr6eg",
+                amountSompi: "1000"
+              }
+            ]
           };
           const hash1 = calculateContentHash(payload1);
-          const art1 = { ...payload1, artifactId: `Plan-Upper-${hash1.slice(0, 8)}`, contentHash: hash1 };
+          const art1 = {
+            ...payload1,
+            artifactId: `Plan-Upper-${hash1.slice(0, 8)}`,
+            contentHash: hash1
+          };
 
           const payload2 = {
             ...payload1,
@@ -2242,7 +2489,11 @@ registerTortureBucket({
             amountSompi: "2000"
           };
           const hash2 = calculateContentHash(payload2);
-          const art2 = { ...payload2, artifactId: `plan-lower-${hash2.slice(0, 8)}`, contentHash: hash2 };
+          const art2 = {
+            ...payload2,
+            artifactId: `plan-lower-${hash2.slice(0, 8)}`,
+            contentHash: hash2
+          };
 
           // Write with different casing - on Windows, second may overwrite first
           const file1 = path.join(artifactsDir, `CaseTest.json`);
@@ -2257,7 +2508,8 @@ registerTortureBucket({
             // If both writes succeed, check if they're the same file
             const content1 = fs.readFileSync(file1, "utf-8");
             const content2 = fs.readFileSync(file2, "utf-8");
-            caseCollision = (content1 === content2 && content1 === JSON.stringify(art2, null, 2));
+            caseCollision =
+              content1 === content2 && content1 === JSON.stringify(art2, null, 2);
           } catch {
             caseCollision = true;
           }
@@ -2289,7 +2541,9 @@ registerTortureBucket({
             fs.writeFileSync(testPath, JSON.stringify({ test: true }));
             // If we get here, the OS allowed it (maybe not Windows, or long path syntax)
             // Clean up
-            try { fs.unlinkSync(testPath); } catch {}
+            try {
+              fs.unlinkSync(testPath);
+            } catch {}
           } catch (e: any) {
             reservedFailed = true;
             errorType = e.code || e.message;
@@ -2298,7 +2552,7 @@ registerTortureBucket({
           // Write a safe artifact to verify store is still functional
           const safePayload = {
             schema: "hardkas.txPlan" as const,
-            hardkasVersion: "0.7.3-alpha",
+            hardkasVersion: "0.7.4-alpha",
             version: ARTIFACT_VERSION,
             networkId: "simnet" as const,
             mode: "simulated" as const,
@@ -2309,12 +2563,29 @@ registerTortureBucket({
             amountSompi: "3000",
             estimatedFeeSompi: "100",
             estimatedMass: "10",
-            inputs: [{ outpoint: { transactionId: "r".repeat(64), index: 0 }, amountSompi: "4000" }],
-            outputs: [{ address: "kaspa:sim_qq0d6h0prjm5mpdld5pncst3adu0yam6xch9fkr6eg", amountSompi: "3000" }]
+            inputs: [
+              {
+                outpoint: { transactionId: "r".repeat(64), index: 0 },
+                amountSompi: "4000"
+              }
+            ],
+            outputs: [
+              {
+                address: "kaspa:sim_qq0d6h0prjm5mpdld5pncst3adu0yam6xch9fkr6eg",
+                amountSompi: "3000"
+              }
+            ]
           };
           const safeHash = calculateContentHash(safePayload);
-          const safeArt = { ...safePayload, artifactId: `plan-${safeHash.slice(0, 16)}`, contentHash: safeHash };
-          fs.writeFileSync(path.join(artifactsDir, `${safeArt.artifactId}.json`), JSON.stringify(safeArt, null, 2));
+          const safeArt = {
+            ...safePayload,
+            artifactId: `plan-${safeHash.slice(0, 16)}`,
+            contentHash: safeHash
+          };
+          fs.writeFileSync(
+            path.join(artifactsDir, `${safeArt.artifactId}.json`),
+            JSON.stringify(safeArt, null, 2)
+          );
 
           const syncResult = await backend.sync({ strict: true, cwd: sandboxDir });
           if (!syncResult.ok) {
@@ -2331,7 +2602,7 @@ registerTortureBucket({
           // Backslash normalization: paths with \ vs / must not affect artifact identity
           const payload = {
             schema: "hardkas.txPlan" as const,
-            hardkasVersion: "0.7.3-alpha",
+            hardkasVersion: "0.7.4-alpha",
             version: ARTIFACT_VERSION,
             networkId: "simnet" as const,
             mode: "simulated" as const,
@@ -2342,8 +2613,18 @@ registerTortureBucket({
             amountSompi: "5000",
             estimatedFeeSompi: "100",
             estimatedMass: "10",
-            inputs: [{ outpoint: { transactionId: "b".repeat(64), index: 0 }, amountSompi: "6000" }],
-            outputs: [{ address: "kaspa:sim_qq0d6h0prjm5mpdld5pncst3adu0yam6xch9fkr6eg", amountSompi: "5000" }]
+            inputs: [
+              {
+                outpoint: { transactionId: "b".repeat(64), index: 0 },
+                amountSompi: "6000"
+              }
+            ],
+            outputs: [
+              {
+                address: "kaspa:sim_qq0d6h0prjm5mpdld5pncst3adu0yam6xch9fkr6eg",
+                amountSompi: "5000"
+              }
+            ]
           };
           const hash = calculateContentHash(payload);
           const artId = `plan-${hash.slice(0, 16)}`;
@@ -2399,7 +2680,7 @@ registerTortureBucket({
           // Try to write an artifact at the deepest accessible level
           const payload = {
             schema: "hardkas.txPlan" as const,
-            hardkasVersion: "0.7.3-alpha",
+            hardkasVersion: "0.7.4-alpha",
             version: ARTIFACT_VERSION,
             networkId: "simnet" as const,
             mode: "simulated" as const,
@@ -2410,15 +2691,28 @@ registerTortureBucket({
             amountSompi: "7000",
             estimatedFeeSompi: "100",
             estimatedMass: "10",
-            inputs: [{ outpoint: { transactionId: "p".repeat(64), index: 0 }, amountSompi: "8000" }],
-            outputs: [{ address: "kaspa:sim_qq0d6h0prjm5mpdld5pncst3adu0yam6xch9fkr6eg", amountSompi: "7000" }]
+            inputs: [
+              {
+                outpoint: { transactionId: "p".repeat(64), index: 0 },
+                amountSompi: "8000"
+              }
+            ],
+            outputs: [
+              {
+                address: "kaspa:sim_qq0d6h0prjm5mpdld5pncst3adu0yam6xch9fkr6eg",
+                amountSompi: "7000"
+              }
+            ]
           };
           const hash = calculateContentHash(payload);
           const artId = `plan-${hash.slice(0, 16)}`;
 
           // Also write a safe artifact in the normal location
           const safeArt = { ...payload, artifactId: artId, contentHash: hash };
-          fs.writeFileSync(path.join(artifactsDir, `${artId}.json`), JSON.stringify(safeArt, null, 2));
+          fs.writeFileSync(
+            path.join(artifactsDir, `${artId}.json`),
+            JSON.stringify(safeArt, null, 2)
+          );
 
           // Sync should work for the accessible artifacts
           const syncResult = await backend.sync({ strict: false, cwd: sandboxDir });
@@ -2439,7 +2733,10 @@ registerTortureBucket({
           const newStore = new HardkasStore({ dbPath });
           newStore.connect({ autoMigrate: true });
           const newBackend = new SqliteQueryBackend(newStore);
-          const rebuildResult = await newBackend.rebuild({ strict: false, cwd: sandboxDir });
+          const rebuildResult = await newBackend.rebuild({
+            strict: false,
+            cwd: sandboxDir
+          });
 
           const rebuiltArtifacts = await newBackend.findArtifacts();
           if (rebuiltArtifacts.length !== artifacts.length) {
@@ -2457,7 +2754,7 @@ registerTortureBucket({
           // CRLF in artifact content: verify hash stability across line endings
           const payloadWithCRLF = {
             schema: "hardkas.txPlan" as const,
-            hardkasVersion: "0.7.3-alpha",
+            hardkasVersion: "0.7.4-alpha",
             version: ARTIFACT_VERSION,
             networkId: "simnet" as const,
             mode: "simulated" as const,
@@ -2468,16 +2765,32 @@ registerTortureBucket({
             amountSompi: "9000",
             estimatedFeeSompi: "100",
             estimatedMass: "10",
-            inputs: [{ outpoint: { transactionId: "c".repeat(64), index: 0 }, amountSompi: "10000" }],
-            outputs: [{ address: "kaspa:sim_qq0d6h0prjm5mpdld5pncst3adu0yam6xch9fkr6eg", amountSompi: "9000" }]
+            inputs: [
+              {
+                outpoint: { transactionId: "c".repeat(64), index: 0 },
+                amountSompi: "10000"
+              }
+            ],
+            outputs: [
+              {
+                address: "kaspa:sim_qq0d6h0prjm5mpdld5pncst3adu0yam6xch9fkr6eg",
+                amountSompi: "9000"
+              }
+            ]
           };
 
           // Hash with \n and \r\n content should be identical under v3 canonicalization
           const hashLF = calculateContentHash(payloadWithCRLF, CURRENT_HASH_VERSION);
 
           // Create a version with CRLF injected into a string field
-          const payloadCRLFInjected = { ...payloadWithCRLF, planId: `plan-crlf-test-${ctx.caseSeed}`.replace(/\n/g, "\r\n") };
-          const hashCRLF = calculateContentHash(payloadCRLFInjected, CURRENT_HASH_VERSION);
+          const payloadCRLFInjected = {
+            ...payloadWithCRLF,
+            planId: `plan-crlf-test-${ctx.caseSeed}`.replace(/\n/g, "\r\n")
+          };
+          const hashCRLF = calculateContentHash(
+            payloadCRLFInjected,
+            CURRENT_HASH_VERSION
+          );
 
           // V3 canonicalization normalizes \r\n to \n, so hashes MUST be identical
           if (hashLF !== hashCRLF) {
@@ -2503,7 +2816,7 @@ registerTortureBucket({
           // Locked file during sync: hold file handle open
           const payload = {
             schema: "hardkas.txPlan" as const,
-            hardkasVersion: "0.7.3-alpha",
+            hardkasVersion: "0.7.4-alpha",
             version: ARTIFACT_VERSION,
             networkId: "simnet" as const,
             mode: "simulated" as const,
@@ -2514,8 +2827,18 @@ registerTortureBucket({
             amountSompi: "11000",
             estimatedFeeSompi: "100",
             estimatedMass: "10",
-            inputs: [{ outpoint: { transactionId: "k".repeat(64), index: 0 }, amountSompi: "12000" }],
-            outputs: [{ address: "kaspa:sim_qq0d6h0prjm5mpdld5pncst3adu0yam6xch9fkr6eg", amountSompi: "11000" }]
+            inputs: [
+              {
+                outpoint: { transactionId: "k".repeat(64), index: 0 },
+                amountSompi: "12000"
+              }
+            ],
+            outputs: [
+              {
+                address: "kaspa:sim_qq0d6h0prjm5mpdld5pncst3adu0yam6xch9fkr6eg",
+                amountSompi: "11000"
+              }
+            ]
           };
           const hash = calculateContentHash(payload);
           const artId = `plan-${hash.slice(0, 16)}`;
@@ -2524,17 +2847,27 @@ registerTortureBucket({
           fs.writeFileSync(filePath, JSON.stringify(art, null, 2));
 
           // Also write a second unlocked artifact
-          const payload2 = { ...payload, planId: `plan-unlocked-${ctx.caseSeed}`, amountSompi: "99000" };
+          const payload2 = {
+            ...payload,
+            planId: `plan-unlocked-${ctx.caseSeed}`,
+            amountSompi: "99000"
+          };
           const hash2 = calculateContentHash(payload2);
           const artId2 = `plan-${hash2.slice(0, 16)}`;
-          fs.writeFileSync(path.join(artifactsDir, `${artId2}.json`),
-            JSON.stringify({ ...payload2, artifactId: artId2, contentHash: hash2 }, null, 2));
+          fs.writeFileSync(
+            path.join(artifactsDir, `${artId2}.json`),
+            JSON.stringify(
+              { ...payload2, artifactId: artId2, contentHash: hash2 },
+              null,
+              2
+            )
+          );
 
           // Sync with non-strict mode — should handle locked files gracefully
           // Note: on Windows, read handles don't typically prevent reading,
           // but we test that the indexer doesn't crash
           const syncResult = await backend.sync({ strict: false, cwd: sandboxDir });
-          
+
           // At minimum, the unlocked artifact should be indexed
           const artifacts = await backend.findArtifacts();
           if (artifacts.length === 0) {
@@ -2587,7 +2920,7 @@ registerTortureBucket({
 
           const payload1 = {
             schema: "hardkas.txPlan" as const,
-            hardkasVersion: "0.7.3-alpha",
+            hardkasVersion: "0.7.4-alpha",
             version: ARTIFACT_VERSION,
             networkId: "simnet" as const,
             mode: "simulated" as const,
@@ -2598,11 +2931,24 @@ registerTortureBucket({
             amountSompi: "1000",
             estimatedFeeSompi: "100",
             estimatedMass: "10",
-            inputs: [{ outpoint: { transactionId: "u".repeat(64), index: 0 }, amountSompi: "2000" }],
-            outputs: [{ address: "kaspa:sim_qq0d6h0prjm5mpdld5pncst3adu0yam6xch9fkr6eg", amountSompi: "1000" }]
+            inputs: [
+              {
+                outpoint: { transactionId: "u".repeat(64), index: 0 },
+                amountSompi: "2000"
+              }
+            ],
+            outputs: [
+              {
+                address: "kaspa:sim_qq0d6h0prjm5mpdld5pncst3adu0yam6xch9fkr6eg",
+                amountSompi: "1000"
+              }
+            ]
           };
 
-          const payload2 = { ...payload1, planId: `plan-nfc-${nfdString}-${ctx.caseSeed}` };
+          const payload2 = {
+            ...payload1,
+            planId: `plan-nfc-${nfdString}-${ctx.caseSeed}`
+          };
 
           const hash1 = calculateContentHash(payload1, CURRENT_HASH_VERSION);
           const hash2 = calculateContentHash(payload2, CURRENT_HASH_VERSION);
@@ -2619,7 +2965,10 @@ registerTortureBucket({
           // Write and sync
           const artId = `plan-${hash1.slice(0, 16)}`;
           const art = { ...payload1, artifactId: artId, contentHash: hash1 };
-          fs.writeFileSync(path.join(artifactsDir, `${artId}.json`), JSON.stringify(art, null, 2));
+          fs.writeFileSync(
+            path.join(artifactsDir, `${artId}.json`),
+            JSON.stringify(art, null, 2)
+          );
           await backend.sync({ strict: true, cwd: sandboxDir });
           break;
         }
@@ -2631,7 +2980,7 @@ registerTortureBucket({
 
           const payload = {
             schema: "hardkas.txPlan" as const,
-            hardkasVersion: "0.7.3-alpha",
+            hardkasVersion: "0.7.4-alpha",
             version: ARTIFACT_VERSION,
             networkId: "simnet" as const,
             mode: "simulated" as const,
@@ -2642,13 +2991,26 @@ registerTortureBucket({
             amountSompi: "2000",
             estimatedFeeSompi: "100",
             estimatedMass: "10",
-            inputs: [{ outpoint: { transactionId: "e".repeat(64), index: 0 }, amountSompi: "3000" }],
-            outputs: [{ address: "kaspa:sim_qq0d6h0prjm5mpdld5pncst3adu0yam6xch9fkr6eg", amountSompi: "2000" }]
+            inputs: [
+              {
+                outpoint: { transactionId: "e".repeat(64), index: 0 },
+                amountSompi: "3000"
+              }
+            ],
+            outputs: [
+              {
+                address: "kaspa:sim_qq0d6h0prjm5mpdld5pncst3adu0yam6xch9fkr6eg",
+                amountSompi: "2000"
+              }
+            ]
           };
           const hash = calculateContentHash(payload);
           const artId = `plan-${hash.slice(0, 16)}`;
           const art = { ...payload, artifactId: artId, contentHash: hash };
-          fs.writeFileSync(path.join(artifactsDir, `${artId}.json`), JSON.stringify(art, null, 2));
+          fs.writeFileSync(
+            path.join(artifactsDir, `${artId}.json`),
+            JSON.stringify(art, null, 2)
+          );
 
           const syncResult = await backend.sync({ strict: true, cwd: sandboxDir });
           if (!syncResult.ok) {
@@ -2661,7 +3023,7 @@ registerTortureBucket({
 
           // Verify round-trip
           const artifacts = await backend.findArtifacts();
-          const found = artifacts.find(a => a.artifactId === artId);
+          const found = artifacts.find((a) => a.artifactId === artId);
           if (!found) {
             throw new TortureInvariantError(
               "Emoji artifact not found after sync",
@@ -2679,13 +3041,13 @@ registerTortureBucket({
             "\u200C", // zero-width non-joiner
             "\u200D", // zero-width joiner
             "\uFEFF", // BOM
-            "\u00AD", // soft hyphen
+            "\u00AD" // soft hyphen
           ];
           const invisible = ctx.prng.pick(invisibleChars);
 
           const payload = {
             schema: "hardkas.txPlan" as const,
-            hardkasVersion: "0.7.3-alpha",
+            hardkasVersion: "0.7.4-alpha",
             version: ARTIFACT_VERSION,
             networkId: "simnet" as const,
             mode: "simulated" as const,
@@ -2696,26 +3058,42 @@ registerTortureBucket({
             amountSompi: "4000",
             estimatedFeeSompi: "100",
             estimatedMass: "10",
-            inputs: [{ outpoint: { transactionId: "z".repeat(64), index: 0 }, amountSompi: "5000" }],
-            outputs: [{ address: "kaspa:sim_qq0d6h0prjm5mpdld5pncst3adu0yam6xch9fkr6eg", amountSompi: "4000" }]
+            inputs: [
+              {
+                outpoint: { transactionId: "z".repeat(64), index: 0 },
+                amountSompi: "5000"
+              }
+            ],
+            outputs: [
+              {
+                address: "kaspa:sim_qq0d6h0prjm5mpdld5pncst3adu0yam6xch9fkr6eg",
+                amountSompi: "4000"
+              }
+            ]
           };
           const hash = calculateContentHash(payload);
 
           // Hash with and without invisible char must differ (they're semantically different)
-          const payloadWithout = { ...payload, planId: `plan-invisiblechar-${ctx.caseSeed}` };
+          const payloadWithout = {
+            ...payload,
+            planId: `plan-invisiblechar-${ctx.caseSeed}`
+          };
           const hashWithout = calculateContentHash(payloadWithout);
 
           // These SHOULD be different — invisible chars are real content
           // The invariant is that the hash is STABLE, not that invisibles are stripped
           const artId = `plan-${hash.slice(0, 16)}`;
           const art = { ...payload, artifactId: artId, contentHash: hash };
-          fs.writeFileSync(path.join(artifactsDir, `${artId}.json`), JSON.stringify(art, null, 2));
+          fs.writeFileSync(
+            path.join(artifactsDir, `${artId}.json`),
+            JSON.stringify(art, null, 2)
+          );
 
           await backend.sync({ strict: true, cwd: sandboxDir });
 
           // Verify deterministic hash on re-read
           const artifacts = await backend.findArtifacts();
-          const found = artifacts.find(a => a.artifactId === artId);
+          const found = artifacts.find((a) => a.artifactId === artId);
           if (!found) {
             throw new TortureInvariantError(
               "Invisible Unicode artifact not indexed",
@@ -2733,7 +3111,7 @@ registerTortureBucket({
 
           const payloadLatin = {
             schema: "hardkas.txPlan" as const,
-            hardkasVersion: "0.7.3-alpha",
+            hardkasVersion: "0.7.4-alpha",
             version: ARTIFACT_VERSION,
             networkId: "simnet" as const,
             mode: "simulated" as const,
@@ -2744,11 +3122,25 @@ registerTortureBucket({
             amountSompi: "6000",
             estimatedFeeSompi: "100",
             estimatedMass: "10",
-            inputs: [{ outpoint: { transactionId: "h".repeat(64), index: 0 }, amountSompi: "7000" }],
-            outputs: [{ address: "kaspa:sim_qq0d6h0prjm5mpdld5pncst3adu0yam6xch9fkr6eg", amountSompi: "6000" }]
+            inputs: [
+              {
+                outpoint: { transactionId: "h".repeat(64), index: 0 },
+                amountSompi: "7000"
+              }
+            ],
+            outputs: [
+              {
+                address: "kaspa:sim_qq0d6h0prjm5mpdld5pncst3adu0yam6xch9fkr6eg",
+                amountSompi: "6000"
+              }
+            ]
           };
 
-          const payloadCyrillic = { ...payloadLatin, planId: `plan-homoglyph-cyrillic-${ctx.caseSeed}`, from: { address: cyrillicAddr } };
+          const payloadCyrillic = {
+            ...payloadLatin,
+            planId: `plan-homoglyph-cyrillic-${ctx.caseSeed}`,
+            from: { address: cyrillicAddr }
+          };
 
           const hashLatin = calculateContentHash(payloadLatin);
           const hashCyrillic = calculateContentHash(payloadCyrillic);
@@ -2763,11 +3155,25 @@ registerTortureBucket({
           }
 
           // Write both and verify both are indexed as separate artifacts
-          const art1 = { ...payloadLatin, artifactId: `plan-${hashLatin.slice(0, 16)}`, contentHash: hashLatin };
-          const art2 = { ...payloadCyrillic, artifactId: `plan-${hashCyrillic.slice(0, 16)}`, contentHash: hashCyrillic };
+          const art1 = {
+            ...payloadLatin,
+            artifactId: `plan-${hashLatin.slice(0, 16)}`,
+            contentHash: hashLatin
+          };
+          const art2 = {
+            ...payloadCyrillic,
+            artifactId: `plan-${hashCyrillic.slice(0, 16)}`,
+            contentHash: hashCyrillic
+          };
 
-          fs.writeFileSync(path.join(artifactsDir, `${art1.artifactId}.json`), JSON.stringify(art1, null, 2));
-          fs.writeFileSync(path.join(artifactsDir, `${art2.artifactId}.json`), JSON.stringify(art2, null, 2));
+          fs.writeFileSync(
+            path.join(artifactsDir, `${art1.artifactId}.json`),
+            JSON.stringify(art1, null, 2)
+          );
+          fs.writeFileSync(
+            path.join(artifactsDir, `${art2.artifactId}.json`),
+            JSON.stringify(art2, null, 2)
+          );
 
           await backend.sync({ strict: true, cwd: sandboxDir });
           const artifacts = await backend.findArtifacts();
@@ -2788,7 +3194,7 @@ registerTortureBucket({
 
           const payload = {
             schema: "hardkas.txPlan" as const,
-            hardkasVersion: "0.7.3-alpha",
+            hardkasVersion: "0.7.4-alpha",
             version: ARTIFACT_VERSION,
             networkId: "simnet" as const,
             mode: "simulated" as const,
@@ -2799,12 +3205,25 @@ registerTortureBucket({
             amountSompi: "8000",
             estimatedFeeSompi: "100",
             estimatedMass: "10",
-            inputs: [{ outpoint: { transactionId: "n".repeat(64), index: 0 }, amountSompi: "9000" }],
-            outputs: [{ address: "kaspa:sim_qq0d6h0prjm5mpdld5pncst3adu0yam6xch9fkr6eg", amountSompi: "8000" }]
+            inputs: [
+              {
+                outpoint: { transactionId: "n".repeat(64), index: 0 },
+                amountSompi: "9000"
+              }
+            ],
+            outputs: [
+              {
+                address: "kaspa:sim_qq0d6h0prjm5mpdld5pncst3adu0yam6xch9fkr6eg",
+                amountSompi: "8000"
+              }
+            ]
           };
 
           // V3 canonicalization must normalize both NFC and NFD within the same string
-          const allNFC = { ...payload, planId: `plan-mixed-${mixedString.normalize("NFC")}-${ctx.caseSeed}` };
+          const allNFC = {
+            ...payload,
+            planId: `plan-mixed-${mixedString.normalize("NFC")}-${ctx.caseSeed}`
+          };
           const hash = calculateContentHash(payload, CURRENT_HASH_VERSION);
           const hashNFC = calculateContentHash(allNFC, CURRENT_HASH_VERSION);
 
@@ -2818,7 +3237,10 @@ registerTortureBucket({
 
           const artId = `plan-${hash.slice(0, 16)}`;
           const art = { ...payload, artifactId: artId, contentHash: hash };
-          fs.writeFileSync(path.join(artifactsDir, `${artId}.json`), JSON.stringify(art, null, 2));
+          fs.writeFileSync(
+            path.join(artifactsDir, `${artId}.json`),
+            JSON.stringify(art, null, 2)
+          );
           await backend.sync({ strict: true, cwd: sandboxDir });
           break;
         }
@@ -2858,7 +3280,7 @@ registerTortureBucket({
       function writeArtifact(suffix: string, amount: string): string {
         const payload = {
           schema: "hardkas.txPlan" as const,
-          hardkasVersion: "0.7.3-alpha",
+          hardkasVersion: "0.7.4-alpha",
           version: ARTIFACT_VERSION,
           networkId: "simnet" as const,
           mode: "simulated" as const,
@@ -2869,13 +3291,29 @@ registerTortureBucket({
           amountSompi: amount,
           estimatedFeeSompi: "100",
           estimatedMass: "10",
-          inputs: [{ outpoint: { transactionId: "t".repeat(64), index: parseInt(suffix.replace(/\D/g, "") || "0") }, amountSompi: "20000" }],
-          outputs: [{ address: "kaspa:sim_qq0d6h0prjm5mpdld5pncst3adu0yam6xch9fkr6eg", amountSompi: amount }]
+          inputs: [
+            {
+              outpoint: {
+                transactionId: "t".repeat(64),
+                index: parseInt(suffix.replace(/\D/g, "") || "0")
+              },
+              amountSompi: "20000"
+            }
+          ],
+          outputs: [
+            {
+              address: "kaspa:sim_qq0d6h0prjm5mpdld5pncst3adu0yam6xch9fkr6eg",
+              amountSompi: amount
+            }
+          ]
         };
         const hash = calculateContentHash(payload);
         const artId = `plan-${hash.slice(0, 16)}`;
         const filePath = path.join(artifactsDir, `${artId}.json`);
-        fs.writeFileSync(filePath, JSON.stringify({ ...payload, artifactId: artId, contentHash: hash }, null, 2));
+        fs.writeFileSync(
+          filePath,
+          JSON.stringify({ ...payload, artifactId: artId, contentHash: hash }, null, 2)
+        );
         return filePath;
       }
 
@@ -2890,7 +3328,11 @@ registerTortureBucket({
           fs.utimesSync(filePath, pastTime, pastTime);
 
           // Write new content with the old timestamp
-          const newPayload = { schema: "hardkas.txPlan", changed: true, planId: "modified" };
+          const newPayload = {
+            schema: "hardkas.txPlan",
+            changed: true,
+            planId: "modified"
+          };
           fs.writeFileSync(filePath, JSON.stringify(newPayload));
           fs.utimesSync(filePath, pastTime, pastTime);
 
@@ -2986,7 +3428,7 @@ registerTortureBucket({
           // Write DIFFERENT content (simulating a race)
           const newPayload = {
             schema: "hardkas.txPlan" as const,
-            hardkasVersion: "0.7.3-alpha",
+            hardkasVersion: "0.7.4-alpha",
             version: ARTIFACT_VERSION,
             networkId: "simnet" as const,
             mode: "simulated" as const,
@@ -2997,11 +3439,32 @@ registerTortureBucket({
             amountSompi: "99999",
             estimatedFeeSompi: "100",
             estimatedMass: "10",
-            inputs: [{ outpoint: { transactionId: "f".repeat(64), index: 99 }, amountSompi: "100000" }],
-            outputs: [{ address: "kaspa:sim_qq0d6h0prjm5mpdld5pncst3adu0yam6xch9fkr6eg", amountSompi: "99999" }]
+            inputs: [
+              {
+                outpoint: { transactionId: "f".repeat(64), index: 99 },
+                amountSompi: "100000"
+              }
+            ],
+            outputs: [
+              {
+                address: "kaspa:sim_qq0d6h0prjm5mpdld5pncst3adu0yam6xch9fkr6eg",
+                amountSompi: "99999"
+              }
+            ]
           };
           const newHash = calculateContentHash(newPayload);
-          fs.writeFileSync(filePath, JSON.stringify({ ...newPayload, artifactId: `plan-${newHash.slice(0, 16)}`, contentHash: newHash }, null, 2));
+          fs.writeFileSync(
+            filePath,
+            JSON.stringify(
+              {
+                ...newPayload,
+                artifactId: `plan-${newHash.slice(0, 16)}`,
+                contentHash: newHash
+              },
+              null,
+              2
+            )
+          );
 
           // Set mtime to BEFORE original write — incremental sync might skip this
           fs.utimesSync(filePath, oldTime, oldTime);
@@ -3018,7 +3481,9 @@ registerTortureBucket({
         }
       }
 
-      try { store.disconnect(); } catch {}
+      try {
+        store.disconnect();
+      } catch {}
 
       return {
         flow: `Clock skew subcase ${subCase}: ${["mtime backwards", "future timestamp", "identical mtimes", "epoch zero", "rapid mtime flip"][subCase - 1]}`,
@@ -3052,7 +3517,7 @@ registerTortureBucket({
       for (let i = 0; i < artifactCount; i++) {
         const payload = {
           schema: "hardkas.txPlan" as const,
-          hardkasVersion: "0.7.3-alpha",
+          hardkasVersion: "0.7.4-alpha",
           version: ARTIFACT_VERSION,
           networkId: "simnet" as const,
           mode: "simulated" as const,
@@ -3063,8 +3528,18 @@ registerTortureBucket({
           amountSompi: `${(i + 1) * 1000}`,
           estimatedFeeSompi: "100",
           estimatedMass: "10",
-          inputs: [{ outpoint: { transactionId: "o".repeat(64), index: i }, amountSompi: "20000" }],
-          outputs: [{ address: "kaspa:sim_qq0d6h0prjm5mpdld5pncst3adu0yam6xch9fkr6eg", amountSompi: `${(i + 1) * 1000}` }]
+          inputs: [
+            {
+              outpoint: { transactionId: "o".repeat(64), index: i },
+              amountSompi: "20000"
+            }
+          ],
+          outputs: [
+            {
+              address: "kaspa:sim_qq0d6h0prjm5mpdld5pncst3adu0yam6xch9fkr6eg",
+              amountSompi: `${(i + 1) * 1000}`
+            }
+          ]
         };
         const hash = calculateContentHash(payload);
         const artId = `plan-${hash.slice(0, 16)}`;
@@ -3091,8 +3566,8 @@ registerTortureBucket({
           await backend1.sync({ strict: true, cwd: sandboxDir });
 
           const artifacts1 = await backend1.findArtifacts();
-          const ids1 = artifacts1.map(a => a.artifactId).sort();
-          const hashes1 = artifacts1.map(a => a.contentHash).sort();
+          const ids1 = artifacts1.map((a) => a.artifactId).sort();
+          const hashes1 = artifacts1.map((a) => a.contentHash).sort();
           store1.disconnect();
 
           // Wipe and rebuild
@@ -3103,8 +3578,8 @@ registerTortureBucket({
           await backend2.rebuild({ strict: true, cwd: sandboxDir });
 
           const artifacts2 = await backend2.findArtifacts();
-          const ids2 = artifacts2.map(a => a.artifactId).sort();
-          const hashes2 = artifacts2.map(a => a.contentHash).sort();
+          const ids2 = artifacts2.map((a) => a.artifactId).sort();
+          const hashes2 = artifacts2.map((a) => a.contentHash).sort();
           store2.disconnect();
 
           // IDs and hashes must be identical regardless of creation order
@@ -3166,7 +3641,7 @@ registerTortureBucket({
           for (let i = 0; i < extraCount; i++) {
             const payload = {
               schema: "hardkas.txPlan" as const,
-              hardkasVersion: "0.7.3-alpha",
+              hardkasVersion: "0.7.4-alpha",
               version: ARTIFACT_VERSION,
               networkId: "simnet" as const,
               mode: "simulated" as const,
@@ -3177,13 +3652,29 @@ registerTortureBucket({
               amountSompi: `${(i + 100) * 1000}`,
               estimatedFeeSompi: "100",
               estimatedMass: "10",
-              inputs: [{ outpoint: { transactionId: "x".repeat(64), index: i + 100 }, amountSompi: "200000" }],
-              outputs: [{ address: "kaspa:sim_qq0d6h0prjm5mpdld5pncst3adu0yam6xch9fkr6eg", amountSompi: `${(i + 100) * 1000}` }]
+              inputs: [
+                {
+                  outpoint: { transactionId: "x".repeat(64), index: i + 100 },
+                  amountSompi: "200000"
+                }
+              ],
+              outputs: [
+                {
+                  address: "kaspa:sim_qq0d6h0prjm5mpdld5pncst3adu0yam6xch9fkr6eg",
+                  amountSompi: `${(i + 100) * 1000}`
+                }
+              ]
             };
             const hash = calculateContentHash(payload);
             const artId = `plan-${hash.slice(0, 16)}`;
-            fs.writeFileSync(path.join(artifactsDir, `${artId}.json`),
-              JSON.stringify({ ...payload, artifactId: artId, contentHash: hash }, null, 2));
+            fs.writeFileSync(
+              path.join(artifactsDir, `${artId}.json`),
+              JSON.stringify(
+                { ...payload, artifactId: artId, contentHash: hash },
+                null,
+                2
+              )
+            );
           }
 
           // Second sync should pick up new files
@@ -3233,7 +3724,7 @@ registerTortureBucket({
       for (let i = 0; i < 5; i++) {
         const payload = {
           schema: "hardkas.txPlan" as const,
-          hardkasVersion: "0.7.3-alpha",
+          hardkasVersion: "0.7.4-alpha",
           version: ARTIFACT_VERSION,
           networkId: "simnet" as const,
           mode: "simulated" as const,
@@ -3244,14 +3735,26 @@ registerTortureBucket({
           amountSompi: `${(i + 1) * 1000}`,
           estimatedFeeSompi: "100",
           estimatedMass: "10",
-          inputs: [{ outpoint: { transactionId: "H".repeat(64), index: i }, amountSompi: "20000" }],
-          outputs: [{ address: "kaspa:sim_qq0d6h0prjm5mpdld5pncst3adu0yam6xch9fkr6eg", amountSompi: `${(i + 1) * 1000}` }]
+          inputs: [
+            {
+              outpoint: { transactionId: "H".repeat(64), index: i },
+              amountSompi: "20000"
+            }
+          ],
+          outputs: [
+            {
+              address: "kaspa:sim_qq0d6h0prjm5mpdld5pncst3adu0yam6xch9fkr6eg",
+              amountSompi: `${(i + 1) * 1000}`
+            }
+          ]
         };
         const hash = calculateContentHash(payload);
         const artId = `plan-${hash.slice(0, 16)}`;
         artifactIds.push(artId);
-        fs.writeFileSync(path.join(artifactsDir, `${artId}.json`),
-          JSON.stringify({ ...payload, artifactId: artId, contentHash: hash }, null, 2));
+        fs.writeFileSync(
+          path.join(artifactsDir, `${artId}.json`),
+          JSON.stringify({ ...payload, artifactId: artId, contentHash: hash }, null, 2)
+        );
       }
 
       const store = new HardkasStore({ dbPath });
@@ -3288,7 +3791,7 @@ registerTortureBucket({
           await newBackend.rebuild({ strict: false, cwd: sandboxDir });
 
           const artifacts = await newBackend.findArtifacts();
-          const foundDeleted = artifacts.find(a => a.artifactId === artifactIds[0]);
+          const foundDeleted = artifacts.find((a) => a.artifactId === artifactIds[0]);
 
           if (foundDeleted) {
             throw new TortureInvariantError(
@@ -3313,7 +3816,7 @@ registerTortureBucket({
           // Truncated artifact should be flagged, not silently accepted
           // Other artifacts should still be intact
           const artifacts = await backend.findArtifacts();
-          const nonCorrupted = artifacts.filter(a => a.kind !== "CORRUPTED");
+          const nonCorrupted = artifacts.filter((a) => a.kind !== "CORRUPTED");
 
           if (nonCorrupted.length < 3) {
             throw new TortureInvariantError(
@@ -3328,7 +3831,11 @@ registerTortureBucket({
         case 4: {
           // Corrupt events.jsonl — must not affect canonical artifacts
           const eventsPath = path.join(hardkasDir, "events.jsonl");
-          fs.writeFileSync(eventsPath, "{{GARBAGE}}\n{also invalid}\nNOT JSON AT ALL\n", "utf-8");
+          fs.writeFileSync(
+            eventsPath,
+            "{{GARBAGE}}\n{also invalid}\nNOT JSON AT ALL\n",
+            "utf-8"
+          );
 
           // Rebuild — events corruption must not affect artifact indexing
           store.disconnect();
@@ -3356,21 +3863,32 @@ registerTortureBucket({
           // Phantom artifact: valid JSON structure but wrong hash
           const phantomPayload = {
             schema: "hardkas.txPlan",
-            hardkasVersion: "0.7.3-alpha",
+            hardkasVersion: "0.7.4-alpha",
             version: ARTIFACT_VERSION,
             networkId: "simnet",
             mode: "simulated",
             createdAt: new Date().toISOString(), // hardkas-determinism-allow: mock timestamp
             planId: `plan-phantom-${ctx.caseSeed}`,
             artifactId: "phantom-fake-id-12345",
-            contentHash: "0000000000000000000000000000000000000000000000000000000000000000", // WRONG hash
+            contentHash:
+              "0000000000000000000000000000000000000000000000000000000000000000", // WRONG hash
             from: { address: "kaspa:sim_qz0s9xrz5y5e8dq5azmpg756aeepm6fesq82ye7wv" },
             to: { address: "kaspa:sim_qq0d6h0prjm5mpdld5pncst3adu0yam6xch9fkr6eg" },
             amountSompi: "666",
             estimatedFeeSompi: "100",
             estimatedMass: "10",
-            inputs: [{ outpoint: { transactionId: "P".repeat(64), index: 0 }, amountSompi: "1000" }],
-            outputs: [{ address: "kaspa:sim_qq0d6h0prjm5mpdld5pncst3adu0yam6xch9fkr6eg", amountSompi: "666" }]
+            inputs: [
+              {
+                outpoint: { transactionId: "P".repeat(64), index: 0 },
+                amountSompi: "1000"
+              }
+            ],
+            outputs: [
+              {
+                address: "kaspa:sim_qq0d6h0prjm5mpdld5pncst3adu0yam6xch9fkr6eg",
+                amountSompi: "666"
+              }
+            ]
           };
 
           fs.writeFileSync(
@@ -3382,10 +3900,14 @@ registerTortureBucket({
           const result = await backend.sync({ strict: false, cwd: sandboxDir });
           // The phantom should be indexed but flagged as CORRUPTED
           const artifacts = await backend.findArtifacts();
-          const phantom = artifacts.find(a => a.artifactId === "phantom-fake-id-12345");
+          const phantom = artifacts.find((a) => a.artifactId === "phantom-fake-id-12345");
 
           // Phantom was indexed but its hash should show MISMATCH
-          if (phantom && phantom.contentHash !== "MISMATCH" && phantom.kind !== "CORRUPTED") {
+          if (
+            phantom &&
+            phantom.contentHash !== "MISMATCH" &&
+            phantom.kind !== "CORRUPTED"
+          ) {
             throw new TortureInvariantError(
               "Phantom artifact with wrong hash was accepted as canonical without corruption flag",
               "PHANTOM_ACCEPTED_AS_CANONICAL",
@@ -3396,7 +3918,9 @@ registerTortureBucket({
         }
       }
 
-      try { store.disconnect(); } catch {}
+      try {
+        store.disconnect();
+      } catch {}
 
       return {
         flow: `Human chaos subcase ${subCase}: ${["edit during sync", "delete root", "truncate artifact", "corrupt events.jsonl", "phantom artifact"][subCase - 1]}`,
@@ -3428,10 +3952,13 @@ registerTortureBucket({
       const backend = new SqliteQueryBackend(store);
 
       // Helper to write plans
-      function writePlan(id: string, amount: string): { artId: string; file: string; payload: any } {
+      function writePlan(
+        id: string,
+        amount: string
+      ): { artId: string; file: string; payload: any } {
         const payload = {
           schema: "hardkas.txPlan" as const,
-          hardkasVersion: "0.7.3-alpha",
+          hardkasVersion: "0.7.4-alpha",
           version: ARTIFACT_VERSION,
           networkId: "simnet" as const,
           mode: "simulated" as const,
@@ -3442,13 +3969,26 @@ registerTortureBucket({
           amountSompi: amount,
           estimatedFeeSompi: "100",
           estimatedMass: "10",
-          inputs: [{ outpoint: { transactionId: "a".repeat(64), index: 0 }, amountSompi: "10000" }],
-          outputs: [{ address: "kaspa:sim_qq0d6h0prjm5mpdld5pncst3adu0yam6xch9fkr6eg", amountSompi: amount }]
+          inputs: [
+            {
+              outpoint: { transactionId: "a".repeat(64), index: 0 },
+              amountSompi: "10000"
+            }
+          ],
+          outputs: [
+            {
+              address: "kaspa:sim_qq0d6h0prjm5mpdld5pncst3adu0yam6xch9fkr6eg",
+              amountSompi: amount
+            }
+          ]
         };
         const hash = calculateContentHash(payload);
         const artId = `plan-${hash.slice(0, 16)}`;
         const file = path.join(artifactsDir, `${artId}.json`);
-        fs.writeFileSync(file, JSON.stringify({ ...payload, artifactId: artId, contentHash: hash }, null, 2));
+        fs.writeFileSync(
+          file,
+          JSON.stringify({ ...payload, artifactId: artId, contentHash: hash }, null, 2)
+        );
         return { artId, file, payload };
       }
 
@@ -3457,7 +3997,10 @@ registerTortureBucket({
           // File quarantined (deleted): write 5, sync, delete 2, doctor must detect issues
           const files: string[] = [];
           for (let i = 0; i < 5; i++) {
-            const { file } = writePlan(`plan-av-${i}-${ctx.caseSeed}`, `${(i + 1) * 1000}`);
+            const { file } = writePlan(
+              `plan-av-${i}-${ctx.caseSeed}`,
+              `${(i + 1) * 1000}`
+            );
             files.push(file);
           }
 
@@ -3498,7 +4041,9 @@ registerTortureBucket({
             await backend.sync({ strict: false, cwd: sandboxDir });
           } finally {
             if (fd !== null) {
-              try { fs.closeSync(fd); } catch {}
+              try {
+                fs.closeSync(fd);
+              } catch {}
             }
           }
 
@@ -3516,11 +4061,19 @@ registerTortureBucket({
 
         case 3: {
           // Partial external rewrite: overwrite file with wrong hash/invalid content — doctor must detect
-          const { artId, file, payload } = writePlan(`plan-corrupt-${ctx.caseSeed}`, "9000");
+          const { artId, file, payload } = writePlan(
+            `plan-corrupt-${ctx.caseSeed}`,
+            "9000"
+          );
           await backend.sync({ strict: true, cwd: sandboxDir });
 
           // Overwrite with wrong hash/content
-          const corrupted = { ...payload, artifactId: artId, contentHash: "12345fakehash", amountSompi: "99999" };
+          const corrupted = {
+            ...payload,
+            artifactId: artId,
+            contentHash: "12345fakehash",
+            amountSompi: "99999"
+          };
           fs.writeFileSync(file, JSON.stringify(corrupted, null, 2));
 
           // Run doctor or re-sync
@@ -3576,7 +4129,7 @@ registerTortureBucket({
           const artifacts = await backend.findArtifacts();
 
           // Old must be gone (since sandbox is canonical, deleted file is pruned), new must be indexed
-          const foundOld = artifacts.find(a => a.path === file);
+          const foundOld = artifacts.find((a) => a.path === file);
           if (foundOld) {
             throw new TortureInvariantError(
               "Renamed file's old entry was not pruned",
@@ -3615,13 +4168,17 @@ registerTortureBucket({
     const subCase = ctx.prng.nextInt(1, 5);
 
     // Setup outside reference file
-    const outsideDir = path.join(ctx.workspaceDir, ".tmp", `torture-outside-${ctx.caseId}-${ctx.caseSeed}`);
+    const outsideDir = path.join(
+      ctx.workspaceDir,
+      ".tmp",
+      `torture-outside-${ctx.caseId}-${ctx.caseSeed}`
+    );
     fs.mkdirSync(outsideDir, { recursive: true });
     const outsideFile = path.join(outsideDir, "outside-artifact.json");
-    
+
     const outsidePayload = {
       schema: "hardkas.txPlan" as const,
-      hardkasVersion: "0.7.3-alpha",
+      hardkasVersion: "0.7.4-alpha",
       version: ARTIFACT_VERSION,
       networkId: "simnet" as const,
       mode: "simulated" as const,
@@ -3632,11 +4189,29 @@ registerTortureBucket({
       amountSompi: "500000",
       estimatedFeeSompi: "100",
       estimatedMass: "10",
-      inputs: [{ outpoint: { transactionId: "o".repeat(64), index: 0 }, amountSompi: "600000" }],
-      outputs: [{ address: "kaspa:sim_qq0d6h0prjm5mpdld5pncst3adu0yam6xch9fkr6eg", amountSompi: "500000" }]
+      inputs: [
+        { outpoint: { transactionId: "o".repeat(64), index: 0 }, amountSompi: "600000" }
+      ],
+      outputs: [
+        {
+          address: "kaspa:sim_qq0d6h0prjm5mpdld5pncst3adu0yam6xch9fkr6eg",
+          amountSompi: "500000"
+        }
+      ]
     };
     const outsideHash = calculateContentHash(outsidePayload);
-    fs.writeFileSync(outsideFile, JSON.stringify({ ...outsidePayload, artifactId: `plan-${outsideHash.slice(0, 16)}`, contentHash: outsideHash }, null, 2));
+    fs.writeFileSync(
+      outsideFile,
+      JSON.stringify(
+        {
+          ...outsidePayload,
+          artifactId: `plan-${outsideHash.slice(0, 16)}`,
+          contentHash: outsideHash
+        },
+        null,
+        2
+      )
+    );
 
     try {
       const store = new HardkasStore({ dbPath });
@@ -3675,7 +4250,7 @@ registerTortureBucket({
       function writePlan(id: string, amount: string): { artId: string; file: string } {
         const payload = {
           schema: "hardkas.txPlan" as const,
-          hardkasVersion: "0.7.3-alpha",
+          hardkasVersion: "0.7.4-alpha",
           version: ARTIFACT_VERSION,
           networkId: "simnet" as const,
           mode: "simulated" as const,
@@ -3686,13 +4261,26 @@ registerTortureBucket({
           amountSompi: amount,
           estimatedFeeSompi: "100",
           estimatedMass: "10",
-          inputs: [{ outpoint: { transactionId: "s".repeat(64), index: 0 }, amountSompi: "10000" }],
-          outputs: [{ address: "kaspa:sim_qq0d6h0prjm5mpdld5pncst3adu0yam6xch9fkr6eg", amountSompi: amount }]
+          inputs: [
+            {
+              outpoint: { transactionId: "s".repeat(64), index: 0 },
+              amountSompi: "10000"
+            }
+          ],
+          outputs: [
+            {
+              address: "kaspa:sim_qq0d6h0prjm5mpdld5pncst3adu0yam6xch9fkr6eg",
+              amountSompi: amount
+            }
+          ]
         };
         const hash = calculateContentHash(payload);
         const artId = `plan-${hash.slice(0, 16)}`;
         const file = path.join(artifactsDir, `${artId}.json`);
-        fs.writeFileSync(file, JSON.stringify({ ...payload, artifactId: artId, contentHash: hash }, null, 2));
+        fs.writeFileSync(
+          file,
+          JSON.stringify({ ...payload, artifactId: artId, contentHash: hash }, null, 2)
+        );
         return { artId, file };
       }
 
@@ -3702,12 +4290,14 @@ registerTortureBucket({
           if (symlinksSupported) {
             const linkPath = path.join(artifactsDir, "outside-link.json");
             fs.symlinkSync(outsideFile, linkPath);
-            
+
             // Sync should either reject the link or ignore it, but never index the outside file
             await backend.sync({ strict: false, cwd: sandboxDir });
             const artifacts = await backend.findArtifacts();
-            const foundOutside = artifacts.find(a => a.payload.planId === `plan-outside-${ctx.caseSeed}`);
-            
+            const foundOutside = artifacts.find(
+              (a) => a.payload.planId === `plan-outside-${ctx.caseSeed}`
+            );
+
             if (foundOutside) {
               throw new TortureInvariantError(
                 "Indexed artifact from a symlink pointing outside the workspace boundary",
@@ -3753,7 +4343,7 @@ registerTortureBucket({
             }
             const payload = {
               schema: "hardkas.txPlan" as const,
-              hardkasVersion: "0.7.3-alpha",
+              hardkasVersion: "0.7.4-alpha",
               version: ARTIFACT_VERSION,
               networkId: "simnet" as const,
               mode: "simulated" as const,
@@ -3764,13 +4354,33 @@ registerTortureBucket({
               amountSompi: "3000",
               estimatedFeeSompi: "100",
               estimatedMass: "10",
-              inputs: [{ outpoint: { transactionId: "d".repeat(64), index: 0 }, amountSompi: "5000" }],
-              outputs: [{ address: "kaspa:sim_qq0d6h0prjm5mpdld5pncst3adu0yam6xch9fkr6eg", amountSompi: "3000" }]
+              inputs: [
+                {
+                  outpoint: { transactionId: "d".repeat(64), index: 0 },
+                  amountSompi: "5000"
+                }
+              ],
+              outputs: [
+                {
+                  address: "kaspa:sim_qq0d6h0prjm5mpdld5pncst3adu0yam6xch9fkr6eg",
+                  amountSompi: "3000"
+                }
+              ]
             };
             const hash = calculateContentHash(payload);
-            fs.writeFileSync(path.join(currentDir, `plan-deep-${hash.slice(0, 8)}.json`),
-              JSON.stringify({ ...payload, artifactId: `plan-${hash.slice(0, 16)}`, contentHash: hash }, null, 2));
-            
+            fs.writeFileSync(
+              path.join(currentDir, `plan-deep-${hash.slice(0, 8)}.json`),
+              JSON.stringify(
+                {
+                  ...payload,
+                  artifactId: `plan-${hash.slice(0, 16)}`,
+                  contentHash: hash
+                },
+                null,
+                2
+              )
+            );
+
             await backend.sync({ strict: true, cwd: sandboxDir });
           }
           break;
@@ -3781,7 +4391,7 @@ registerTortureBucket({
           if (symlinksSupported) {
             const linkA = path.join(artifactsDir, "circular-a.json");
             const linkB = path.join(artifactsDir, "circular-b.json");
-            
+
             fs.symlinkSync(linkB, linkA);
             try {
               fs.symlinkSync(linkA, linkB);
@@ -3811,8 +4421,10 @@ registerTortureBucket({
             // Sync should handle junction boundaries without escaping
             await backend.sync({ strict: false, cwd: sandboxDir });
             const artifacts = await backend.findArtifacts();
-            const foundOutside = artifacts.find(a => a.payload.planId === `plan-outside-${ctx.caseSeed}`);
-            
+            const foundOutside = artifacts.find(
+              (a) => a.payload.planId === `plan-outside-${ctx.caseSeed}`
+            );
+
             if (foundOutside) {
               throw new TortureInvariantError(
                 "Indexed artifact from outside the workspace via a directory junction point",
@@ -3880,10 +4492,13 @@ registerTortureBucket({
       const backend = new SqliteQueryBackend(store);
 
       // Helper to write plans
-      function writePlan(id: string, amount: string): { artId: string; file: string; payload: any } {
+      function writePlan(
+        id: string,
+        amount: string
+      ): { artId: string; file: string; payload: any } {
         const payload = {
           schema: "hardkas.txPlan" as const,
-          hardkasVersion: "0.7.3-alpha",
+          hardkasVersion: "0.7.4-alpha",
           version: ARTIFACT_VERSION,
           networkId: "simnet" as const,
           mode: "simulated" as const,
@@ -3894,13 +4509,26 @@ registerTortureBucket({
           amountSompi: amount,
           estimatedFeeSompi: "100",
           estimatedMass: "10",
-          inputs: [{ outpoint: { transactionId: "d".repeat(64), index: 0 }, amountSompi: "10000" }],
-          outputs: [{ address: "kaspa:sim_qq0d6h0prjm5mpdld5pncst3adu0yam6xch9fkr6eg", amountSompi: amount }]
+          inputs: [
+            {
+              outpoint: { transactionId: "d".repeat(64), index: 0 },
+              amountSompi: "10000"
+            }
+          ],
+          outputs: [
+            {
+              address: "kaspa:sim_qq0d6h0prjm5mpdld5pncst3adu0yam6xch9fkr6eg",
+              amountSompi: amount
+            }
+          ]
         };
         const hash = calculateContentHash(payload);
         const artId = `plan-${hash.slice(0, 16)}`;
         const file = path.join(artifactsDir, `${artId}.json`);
-        fs.writeFileSync(file, JSON.stringify({ ...payload, artifactId: artId, contentHash: hash }, null, 2));
+        fs.writeFileSync(
+          file,
+          JSON.stringify({ ...payload, artifactId: artId, contentHash: hash }, null, 2)
+        );
         return { artId, file, payload };
       }
 
@@ -3908,11 +4536,11 @@ registerTortureBucket({
         case 1: {
           // Delayed fsync simulation: write and immediately read/sync without waiting for hardware flush
           const { file } = writePlan(`plan-fsync-${ctx.caseSeed}`, "1000");
-          
+
           // Verify read content is identical to memory write
           const written = fs.readFileSync(file, "utf-8");
           await backend.sync({ strict: true, cwd: sandboxDir });
-          
+
           const artifacts = await backend.findArtifacts();
           if (artifacts.length === 0) {
             throw new TortureInvariantError(
@@ -3927,7 +4555,7 @@ registerTortureBucket({
         case 2: {
           // Permission drift: set file to read-only (chmod 0o444), sync must still read it
           const { file } = writePlan(`plan-readonly-${ctx.caseSeed}`, "2000");
-          
+
           try {
             fs.chmodSync(file, 0o444);
             await backend.sync({ strict: true, cwd: sandboxDir });
@@ -3940,7 +4568,9 @@ registerTortureBucket({
               );
             }
           } finally {
-            try { fs.chmodSync(file, 0o666); } catch {}
+            try {
+              fs.chmodSync(file, 0o666);
+            } catch {}
           }
           break;
         }
@@ -3953,12 +4583,12 @@ registerTortureBucket({
           // Recreate with different content
           fs.unlinkSync(file);
           // Wait briefly to ensure mtime changes
-          await new Promise(resolve => setTimeout(resolve, 10));
+          await new Promise((resolve) => setTimeout(resolve, 10));
           const { file: fileNew } = writePlan(`plan-inode-new-${ctx.caseSeed}`, "99000");
 
           await backend.sync({ strict: true, cwd: sandboxDir });
           const artifacts = await backend.findArtifacts();
-          const foundNew = artifacts.find(a => a.payload.amountSompi === "99000");
+          const foundNew = artifacts.find((a) => a.payload.amountSompi === "99000");
           if (!foundNew) {
             throw new TortureInvariantError(
               "Inode/mtime replacement was not detected during sync",
@@ -3985,7 +4615,9 @@ registerTortureBucket({
             // Sync should handle the read-only directory cleanly for reading existing items
             await backend.sync({ strict: false, cwd: sandboxDir });
           } finally {
-            try { fs.chmodSync(artifactsDir, 0o777); } catch {}
+            try {
+              fs.chmodSync(artifactsDir, 0o777);
+            } catch {}
           }
           break;
         }
@@ -4023,10 +4655,13 @@ registerTortureBucket({
       const backend = new SqliteQueryBackend(store);
 
       // Helper to write plans
-      function writePlan(id: string, amount: string): { artId: string; file: string; payload: any } {
+      function writePlan(
+        id: string,
+        amount: string
+      ): { artId: string; file: string; payload: any } {
         const payload = {
           schema: "hardkas.txPlan" as const,
-          hardkasVersion: "0.7.3-alpha",
+          hardkasVersion: "0.7.4-alpha",
           version: ARTIFACT_VERSION,
           networkId: "simnet" as const,
           mode: "simulated" as const,
@@ -4037,13 +4672,26 @@ registerTortureBucket({
           amountSompi: amount,
           estimatedFeeSompi: "100",
           estimatedMass: "10",
-          inputs: [{ outpoint: { transactionId: "c".repeat(64), index: 0 }, amountSompi: "10000" }],
-          outputs: [{ address: "kaspa:sim_qq0d6h0prjm5mpdld5pncst3adu0yam6xch9fkr6eg", amountSompi: amount }]
+          inputs: [
+            {
+              outpoint: { transactionId: "c".repeat(64), index: 0 },
+              amountSompi: "10000"
+            }
+          ],
+          outputs: [
+            {
+              address: "kaspa:sim_qq0d6h0prjm5mpdld5pncst3adu0yam6xch9fkr6eg",
+              amountSompi: amount
+            }
+          ]
         };
         const hash = calculateContentHash(payload);
         const artId = `plan-${hash.slice(0, 16)}`;
         const file = path.join(artifactsDir, `${artId}.json`);
-        fs.writeFileSync(file, JSON.stringify({ ...payload, artifactId: artId, contentHash: hash }, null, 2));
+        fs.writeFileSync(
+          file,
+          JSON.stringify({ ...payload, artifactId: artId, contentHash: hash }, null, 2)
+        );
         return { artId, file, payload };
       }
 
@@ -4063,7 +4711,9 @@ registerTortureBucket({
               );
             }
           } finally {
-            try { fs.chmodSync(artifactsDir, 0o777); } catch {}
+            try {
+              fs.chmodSync(artifactsDir, 0o777);
+            } catch {}
           }
           break;
         }
@@ -4072,14 +4722,14 @@ registerTortureBucket({
           // Missing .hardkas dir: start with empty sandbox (no .hardkas), store creation and sync must initialize cleanly
           store.disconnect();
           cleanupSandbox(sandboxDir);
-          
+
           // Re-create only sandboxDir (no .hardkas)
           fs.mkdirSync(sandboxDir, { recursive: true });
-          
+
           const newStore = new HardkasStore({ dbPath });
           newStore.connect({ autoMigrate: true });
           const newBackend = new SqliteQueryBackend(newStore);
-          
+
           // Should initialize store cleanly with no artifacts
           const syncResult = await newBackend.sync({ strict: true, cwd: sandboxDir });
           if (!syncResult.ok) {
@@ -4099,15 +4749,18 @@ registerTortureBucket({
           await backend.sync({ strict: true, cwd: sandboxDir });
 
           store.disconnect();
-          
+
           // Delete SQLite DB
           if (fs.existsSync(dbPath)) fs.unlinkSync(dbPath);
-          
+
           const newStore = new HardkasStore({ dbPath });
           newStore.connect({ autoMigrate: true });
           const newBackend = new SqliteQueryBackend(newStore);
-          
-          const rebuildResult = await newBackend.rebuild({ strict: true, cwd: sandboxDir });
+
+          const rebuildResult = await newBackend.rebuild({
+            strict: true,
+            cwd: sandboxDir
+          });
           if (!rebuildResult.ok) {
             throw new TortureInvariantError(
               "Rebuild failed after database file deletion",
@@ -4157,7 +4810,9 @@ registerTortureBucket({
         }
       }
 
-      try { store.disconnect(); } catch {}
+      try {
+        store.disconnect();
+      } catch {}
 
       return {
         flow: `CI environment hell subcase ${subCase}`,
@@ -4165,7 +4820,9 @@ registerTortureBucket({
         expectedInvariant: "ci_environment_variation_preserves_runtime_truth"
       };
     } finally {
-      try { fs.chmodSync(artifactsDir, 0o777); } catch {}
+      try {
+        fs.chmodSync(artifactsDir, 0o777);
+      } catch {}
       cleanupSandbox(sandboxDir);
     }
   }
@@ -4190,10 +4847,13 @@ registerTortureBucket({
       const backend = new SqliteQueryBackend(store);
 
       // Helper to write plans
-      function writePlan(id: string, amount: string): { artId: string; file: string; payload: any } {
+      function writePlan(
+        id: string,
+        amount: string
+      ): { artId: string; file: string; payload: any } {
         const payload = {
           schema: "hardkas.txPlan" as const,
-          hardkasVersion: "0.7.3-alpha",
+          hardkasVersion: "0.7.4-alpha",
           version: ARTIFACT_VERSION,
           networkId: "simnet" as const,
           mode: "simulated" as const,
@@ -4204,13 +4864,26 @@ registerTortureBucket({
           amountSompi: amount,
           estimatedFeeSompi: "100",
           estimatedMass: "10",
-          inputs: [{ outpoint: { transactionId: "n".repeat(64), index: 0 }, amountSompi: "10000" }],
-          outputs: [{ address: "kaspa:sim_qq0d6h0prjm5mpdld5pncst3adu0yam6xch9fkr6eg", amountSompi: amount }]
+          inputs: [
+            {
+              outpoint: { transactionId: "n".repeat(64), index: 0 },
+              amountSompi: "10000"
+            }
+          ],
+          outputs: [
+            {
+              address: "kaspa:sim_qq0d6h0prjm5mpdld5pncst3adu0yam6xch9fkr6eg",
+              amountSompi: amount
+            }
+          ]
         };
         const hash = calculateContentHash(payload);
         const artId = `plan-${hash.slice(0, 16)}`;
         const file = path.join(artifactsDir, `${artId}.json`);
-        fs.writeFileSync(file, JSON.stringify({ ...payload, artifactId: artId, contentHash: hash }, null, 2));
+        fs.writeFileSync(
+          file,
+          JSON.stringify({ ...payload, artifactId: artId, contentHash: hash }, null, 2)
+        );
         return { artId, file, payload };
       }
 
@@ -4221,12 +4894,12 @@ registerTortureBucket({
           await backend.sync({ strict: true, cwd: sandboxDir });
 
           // Wait briefly to guarantee mtime difference if OS has poor mtime granularity
-          await new Promise(resolve => setTimeout(resolve, 20));
+          await new Promise((resolve) => setTimeout(resolve, 20));
 
           // Overwrite with different amount
           const payload = {
             schema: "hardkas.txPlan" as const,
-            hardkasVersion: "0.7.3-alpha",
+            hardkasVersion: "0.7.4-alpha",
             version: ARTIFACT_VERSION,
             networkId: "simnet" as const,
             mode: "simulated" as const,
@@ -4237,16 +4910,33 @@ registerTortureBucket({
             amountSompi: "99000",
             estimatedFeeSompi: "100",
             estimatedMass: "10",
-            inputs: [{ outpoint: { transactionId: "n".repeat(64), index: 0 }, amountSompi: "100000" }],
-            outputs: [{ address: "kaspa:sim_qq0d6h0prjm5mpdld5pncst3adu0yam6xch9fkr6eg", amountSompi: "99000" }]
+            inputs: [
+              {
+                outpoint: { transactionId: "n".repeat(64), index: 0 },
+                amountSompi: "100000"
+              }
+            ],
+            outputs: [
+              {
+                address: "kaspa:sim_qq0d6h0prjm5mpdld5pncst3adu0yam6xch9fkr6eg",
+                amountSompi: "99000"
+              }
+            ]
           };
           const hash = calculateContentHash(payload);
-          fs.writeFileSync(file, JSON.stringify({ ...payload, artifactId: `plan-${hash.slice(0, 16)}`, contentHash: hash }, null, 2));
+          fs.writeFileSync(
+            file,
+            JSON.stringify(
+              { ...payload, artifactId: `plan-${hash.slice(0, 16)}`, contentHash: hash },
+              null,
+              2
+            )
+          );
 
           await backend.sync({ strict: true, cwd: sandboxDir });
           const artifacts = await backend.findArtifacts();
-          const found = artifacts.find(a => a.payload.amountSompi === "99000");
-          
+          const found = artifacts.find((a) => a.payload.amountSompi === "99000");
+
           if (!found) {
             throw new TortureInvariantError(
               "Stale read/overwrite was not detected in second sync",
@@ -4261,13 +4951,16 @@ registerTortureBucket({
           // Out-of-order writes: Create 10 artifacts, sync, then rebuild — must produce identical result
           const plans = [];
           for (let i = 0; i < 10; i++) {
-            const { artId } = writePlan(`plan-ooo-${i}-${ctx.caseSeed}`, `${(i + 1) * 1000}`);
+            const { artId } = writePlan(
+              `plan-ooo-${i}-${ctx.caseSeed}`,
+              `${(i + 1) * 1000}`
+            );
             plans.push(artId);
           }
 
           await backend.sync({ strict: true, cwd: sandboxDir });
           const artifacts1 = await backend.findArtifacts();
-          const ids1 = artifacts1.map(a => a.artifactId).sort();
+          const ids1 = artifacts1.map((a) => a.artifactId).sort();
 
           store.disconnect();
           if (fs.existsSync(dbPath)) fs.unlinkSync(dbPath);
@@ -4275,10 +4968,10 @@ registerTortureBucket({
           const newStore = new HardkasStore({ dbPath });
           newStore.connect({ autoMigrate: true });
           const newBackend = new SqliteQueryBackend(newStore);
-          
+
           await newBackend.rebuild({ strict: true, cwd: sandboxDir });
           const artifacts2 = await newBackend.findArtifacts();
-          const ids2 = artifacts2.map(a => a.artifactId).sort();
+          const ids2 = artifacts2.map((a) => a.artifactId).sort();
 
           if (JSON.stringify(ids1) !== JSON.stringify(ids2)) {
             throw new TortureInvariantError(
@@ -4295,7 +4988,10 @@ registerTortureBucket({
           // Partial sync visibility: write 10 artifacts, sync only first 5 (using syncPaths or passing specificPaths), verify consistency, then sync remaining
           const files: string[] = [];
           for (let i = 0; i < 10; i++) {
-            const { file } = writePlan(`plan-partial-${i}-${ctx.caseSeed}`, `${(i + 1) * 1000}`);
+            const { file } = writePlan(
+              `plan-partial-${i}-${ctx.caseSeed}`,
+              `${(i + 1) * 1000}`
+            );
             files.push(file);
           }
 
@@ -4340,7 +5036,7 @@ registerTortureBucket({
           const newStore = new HardkasStore({ dbPath });
           newStore.connect({ autoMigrate: true });
           const newBackend = new SqliteQueryBackend(newStore);
-          
+
           await newBackend.rebuild({ strict: true, cwd: sandboxDir });
           const artifacts = await newBackend.findArtifacts();
 
@@ -4356,7 +5052,9 @@ registerTortureBucket({
         }
       }
 
-      try { store.disconnect(); } catch {}
+      try {
+        store.disconnect();
+      } catch {}
 
       return {
         flow: `Network drive simulation subcase ${subCase}`,
@@ -4368,7 +5066,3 @@ registerTortureBucket({
     }
   }
 });
-
-
-
-

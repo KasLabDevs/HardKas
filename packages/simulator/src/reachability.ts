@@ -135,7 +135,7 @@ export function orderedMergesetWithoutSelectedParent(
 
   const sortable: SortableBlock[] = unordered.map((hash) => ({
     hash,
-    blueWork: gdStore.getBlueWork(hash) ?? 0n,
+    blueWork: gdStore.getBlueWork(hash) ?? 0n
   }));
 
   return sortBlocks(sortable);

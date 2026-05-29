@@ -49,7 +49,7 @@ describe("Real Account Queries (Balance & UTXOs)", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.mocked(accounts.loadRealAccountStore).mockResolvedValue(mockStore);
-    
+
     // Setup Mock RPC behaviors
     mockRpc.setUtxos("kaspa:sim_alice123", [
       {
@@ -77,8 +77,9 @@ describe("Real Account Queries (Balance & UTXOs)", () => {
     });
 
     it("should throw if alias not found", async () => {
-      await expect(runAccountsRealBalance({ name: "bob" }))
-        .rejects.toThrow(/Account 'bob' not found in real store/);
+      await expect(runAccountsRealBalance({ name: "bob" })).rejects.toThrow(
+        /Account 'bob' not found in real store/
+      );
     });
   });
 

@@ -1,8 +1,5 @@
 import { Hardkas } from "./index.js";
-import { 
-  HardkasAccount, 
-  resolveHardkasAccount 
-} from "@hardkas/accounts";
+import { HardkasAccount, resolveHardkasAccount } from "@hardkas/accounts";
 import { formatSompi } from "@hardkas/core";
 
 /**
@@ -25,13 +22,16 @@ export class HardkasAccounts {
   /**
    * Fetches the balance for an account.
    */
-  async getBalance(accountNameOrAddress: string): Promise<{ sompi: bigint, formatted: string }> {
+  async getBalance(
+    accountNameOrAddress: string
+  ): Promise<{ sompi: bigint; formatted: string }> {
     const account = await this.resolve(accountNameOrAddress);
-    if (!account.address) throw new Error(`Account ${accountNameOrAddress} has no address`);
-    
+    if (!account.address)
+      throw new Error(`Account ${accountNameOrAddress} has no address`);
+
     const { balanceSompi } = await this.sdk.rpc.getBalanceByAddress(account.address);
     const sompi = BigInt(balanceSompi);
-    
+
     return {
       sompi,
       formatted: formatSompi(sompi)

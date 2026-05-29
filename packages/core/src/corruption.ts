@@ -50,22 +50,22 @@ export interface CorruptionIssue {
  */
 export function formatCorruptionIssue(issue: CorruptionIssue): string {
   const parts: string[] = [];
-  
+
   const icon = issue.severity === "error" ? "❌" : "⚠️";
   parts.push(`${icon} [${issue.code}] ${issue.message}`);
-  
+
   if (issue.path) {
     const loc = issue.lineNumber ? `${issue.path}:${issue.lineNumber}` : issue.path;
     parts.push(`   Location: ${loc}`);
   }
-  
+
   if (issue.artifactId) {
     parts.push(`   Artifact: ${issue.artifactId}`);
   }
-  
+
   if (issue.suggestion) {
     parts.push(`   Suggestion: ${issue.suggestion}`);
   }
-  
+
   return parts.join("\n");
 }

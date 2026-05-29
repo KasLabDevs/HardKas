@@ -11,10 +11,14 @@ describe("KeystoreManager", () => {
   const password = "secure-password-123";
 
   it("should encrypt and decrypt a payload correctly", async () => {
-    const keystore = await KeystoreManager.createEncryptedKeystore(mockPayload, password, {
-      label: "test-account",
-      network: "devnet"
-    });
+    const keystore = await KeystoreManager.createEncryptedKeystore(
+      mockPayload,
+      password,
+      {
+        label: "test-account",
+        network: "devnet"
+      }
+    );
 
     // Keystore format version (separate from ARTIFACT_VERSION)
     expect(keystore.version).toBe("2.0.0");
@@ -27,21 +31,32 @@ describe("KeystoreManager", () => {
   });
 
   it("should fail with wrong password", async () => {
-    const keystore = await KeystoreManager.createEncryptedKeystore(mockPayload, password, {
-      label: "test",
-      network: "devnet"
-    });
+    const keystore = await KeystoreManager.createEncryptedKeystore(
+      mockPayload,
+      password,
+      {
+        label: "test",
+        network: "devnet"
+      }
+    );
 
-    const result = await KeystoreManager.decryptEncryptedKeystore(keystore, "wrong-password");
+    const result = await KeystoreManager.decryptEncryptedKeystore(
+      keystore,
+      "wrong-password"
+    );
     expect(result.success).toBe(false);
     expect(result.error).toContain("Invalid password");
   });
 
   it("should fail with corrupted ciphertext", async () => {
-    const keystore = await KeystoreManager.createEncryptedKeystore(mockPayload, password, {
-      label: "test",
-      network: "devnet"
-    });
+    const keystore = await KeystoreManager.createEncryptedKeystore(
+      mockPayload,
+      password,
+      {
+        label: "test",
+        network: "devnet"
+      }
+    );
 
     // Corrupt one byte of encrypted payload
     const buffer = Buffer.from(keystore.encryptedPayload, "base64");
@@ -53,10 +68,14 @@ describe("KeystoreManager", () => {
   });
 
   it("should fail with corrupted auth tag", async () => {
-    const keystore = await KeystoreManager.createEncryptedKeystore(mockPayload, password, {
-      label: "test",
-      network: "devnet"
-    });
+    const keystore = await KeystoreManager.createEncryptedKeystore(
+      mockPayload,
+      password,
+      {
+        label: "test",
+        network: "devnet"
+      }
+    );
 
     // Corrupt auth tag
     const tag = Buffer.from(keystore.cipher.tag, "base64");
@@ -83,43 +102,65 @@ describe("KeystoreManager", () => {
   });
 
   it("should support password change", async () => {
-    const keystore = await KeystoreManager.createEncryptedKeystore(mockPayload, password, {
-      label: "test",
-      network: "devnet"
-    });
+    const keystore = await KeystoreManager.createEncryptedKeystore(
+      mockPayload,
+      password,
+      {
+        label: "test",
+        network: "devnet"
+      }
+    );
 
     const newPassword = "new-secure-password";
-    const updatedKeystore = await KeystoreManager.changeKeystorePassword(keystore, password, newPassword);
+    const updatedKeystore = await KeystoreManager.changeKeystorePassword(
+      keystore,
+      password,
+      newPassword
+    );
 
     expect(updatedKeystore.encryptedPayload).not.toBe(keystore.encryptedPayload);
 
-    const oldResult = await KeystoreManager.decryptEncryptedKeystore(updatedKeystore, password);
+    const oldResult = await KeystoreManager.decryptEncryptedKeystore(
+      updatedKeystore,
+      password
+    );
     expect(oldResult.success).toBe(false);
 
-    const newResult = await KeystoreManager.decryptEncryptedKeystore(updatedKeystore, newPassword);
+    const newResult = await KeystoreManager.decryptEncryptedKeystore(
+      updatedKeystore,
+      newPassword
+    );
     expect(newResult.success).toBe(true);
     expect(newResult.payload).toEqual(mockPayload);
   });
 
   it("should not contain private key in plaintext in the keystore JSON", async () => {
-    const keystore = await KeystoreManager.createEncryptedKeystore(mockPayload, password, {
-      label: "test",
-      network: "devnet"
-    });
+    const keystore = await KeystoreManager.createEncryptedKeystore(
+      mockPayload,
+      password,
+      {
+        label: "test",
+        network: "devnet"
+      }
+    );
 
     const json = JSON.stringify(keystore);
     expect(json).not.toContain(mockPayload.privateKey);
   });
 
   it("should support loading and saving from filesystem", async () => {
-    const keystore = await KeystoreManager.createEncryptedKeystore(mockPayload, password, {
-      label: "test-io",
-      network: "devnet"
-    });
+    const keystore = await KeystoreManager.createEncryptedKeystore(
+      mockPayload,
+      password,
+      {
+        label: "test-io",
+        network: "devnet"
+      }
+    );
 
     const tempPath = "test-keystore.json";
     await KeystoreManager.saveEncryptedKeystore(tempPath, keystore);
-    
+
     const loaded = await KeystoreManager.loadEncryptedKeystore(tempPath);
     expect(loaded).toEqual(keystore);
 
@@ -128,21 +169,27 @@ describe("KeystoreManager", () => {
     expect(result.payload).toEqual(mockPayload);
 
     // Cleanup
-    import("node:fs").then(fs => fs.unlinkSync(tempPath));
+    import("node:fs").then((fs) => fs.unlinkSync(tempPath));
   });
 
   it("should reject empty passwords", async () => {
-    await expect(KeystoreManager.createEncryptedKeystore(mockPayload, "", {
-      label: "test",
-      network: "devnet"
-    })).rejects.toThrow(/Password cannot be empty/);
+    await expect(
+      KeystoreManager.createEncryptedKeystore(mockPayload, "", {
+        label: "test",
+        network: "devnet"
+      })
+    ).rejects.toThrow(/Password cannot be empty/);
   });
 
   it("should reject unsupported version", async () => {
-    const keystore = await KeystoreManager.createEncryptedKeystore(mockPayload, password, {
-      label: "test",
-      network: "devnet"
-    });
+    const keystore = await KeystoreManager.createEncryptedKeystore(
+      mockPayload,
+      password,
+      {
+        label: "test",
+        network: "devnet"
+      }
+    );
 
     (keystore as any).version = "1.0.0";
     const result = await KeystoreManager.decryptEncryptedKeystore(keystore, password);

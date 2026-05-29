@@ -16,13 +16,15 @@ describe("EVM Account Export Security Gates", () => {
   };
 
   it("should fail if network is mainnet", async () => {
-    await expect(prepareEvmAccountExport(evmAccount, "mainnet"))
-      .rejects.toThrow(/NOT allowed on network "mainnet"/);
+    await expect(prepareEvmAccountExport(evmAccount, "mainnet")).rejects.toThrow(
+      /NOT allowed on network "mainnet"/
+    );
   });
 
   it("should fail if network is testnet", async () => {
-    await expect(prepareEvmAccountExport(evmAccount, "testnet-10"))
-      .rejects.toThrow(/NOT allowed on network "testnet-10"/);
+    await expect(prepareEvmAccountExport(evmAccount, "testnet-10")).rejects.toThrow(
+      /NOT allowed on network "testnet-10"/
+    );
   });
 
   it("should succeed on simnet", async () => {
@@ -32,18 +34,22 @@ describe("EVM Account Export Security Gates", () => {
   });
 
   it("should fail if account is not EVM kind", async () => {
-    await expect(prepareEvmAccountExport(kaspaAccount, "simnet"))
-      .rejects.toThrow(/is not an EVM\/L2 account/);
+    await expect(prepareEvmAccountExport(kaspaAccount, "simnet")).rejects.toThrow(
+      /is not an EVM\/L2 account/
+    );
   });
 
   it("should fail if private key is requested but missing", async () => {
-    await expect(prepareEvmAccountExport(evmAccount, "simnet", { includeSecret: true }))
-      .rejects.toThrow(/could not be retrieved/);
+    await expect(
+      prepareEvmAccountExport(evmAccount, "simnet", { includeSecret: true })
+    ).rejects.toThrow(/could not be retrieved/);
   });
 
   it("should include private key if present and requested", async () => {
     const accountWithKey = { ...evmAccount, privateKey: "abcdef123456" };
-    const result = await prepareEvmAccountExport(accountWithKey as any, "simnet", { includeSecret: true });
+    const result = await prepareEvmAccountExport(accountWithKey as any, "simnet", {
+      includeSecret: true
+    });
     expect(result.privateKey).toBe("0xabcdef123456");
     expect(result.isSecret).toBe(true);
   });

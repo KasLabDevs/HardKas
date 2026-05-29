@@ -7,19 +7,22 @@ import { asNetworkId } from "@hardkas/core";
 describe("TxPlanArtifact", () => {
   it("should create a valid artifact from a plan", () => {
     const plan: any = {
-      inputs: [{
-        outpoint: { transactionId: "tx1", index: 0 },
-        amountSompi: 1000n,
-        address: "addr1",
-        scriptPublicKey: "spk"
-      }],
+      inputs: [
+        {
+          outpoint: { transactionId: "tx1", index: 0 },
+          amountSompi: 1000n,
+          address: "addr1",
+          scriptPublicKey: "spk"
+        }
+      ],
       outputs: [{ address: "addr2", amountSompi: 500n }],
       change: { address: "addr1", amountSompi: 490n },
       estimatedFeeSompi: 10n,
       estimatedMass: 100n
     };
 
-    const artifact = createTxPlanArtifact({ ctx: systemRuntimeContext, 
+    const artifact = createTxPlanArtifact({
+      ctx: systemRuntimeContext,
       networkId: asNetworkId("simnet") as any,
       mode: "simulated",
       from: { input: "alice", address: "addr1", accountName: "Alice" },

@@ -204,12 +204,16 @@ function copyRecursive(src: string, dest: string) {
 // Main Harness Runner
 // ============================================================================
 async function main() {
-  console.log("============================================================================");
+  console.log(
+    "============================================================================"
+  );
   console.log("🛡️  HardKAS Agentic E2E Gauntlet Harness starting...");
-  console.log("============================================================================\n");
+  console.log(
+    "============================================================================\n"
+  );
 
   let scale = "dry-run";
-  let targetVersion = "0.7.3-alpha";
+  let targetVersion = "0.7.4-alpha";
   let baseSeed = Math.floor(Math.random() * 1000000);
   let debug = false;
   let mode = "stress";
@@ -234,12 +238,13 @@ async function main() {
     return runCoverageMode(targetVersion);
   }
 
-  const attemptsCount = {
-    "dry-run": 1,
-    "quick": 10,
-    "standard": 100,
-    "stress": 1000
-  }[scale] || 1;
+  const attemptsCount =
+    {
+      "dry-run": 1,
+      quick: 10,
+      standard: 100,
+      stress: 1000
+    }[scale] || 1;
 
   console.log(`📋 Runner Configuration:`);
   console.log(`   - Scale: ${scale} (${attemptsCount} attempts)`);
@@ -257,9 +262,13 @@ async function main() {
   let needsTemplateBuild = !fs.existsSync(templateDir);
   if (!needsTemplateBuild) {
     try {
-      const pkg = JSON.parse(fs.readFileSync(path.join(templateDir, "package.json"), "utf8"));
+      const pkg = JSON.parse(
+        fs.readFileSync(path.join(templateDir, "package.json"), "utf8")
+      );
       if (!pkg.dependencies || !pkg.dependencies["@hardkas/kaspa-rpc"]) {
-        console.log(`🧹 Existing template package.json is missing @hardkas/kaspa-rpc. Deleting and recreating...`);
+        console.log(
+          `🧹 Existing template package.json is missing @hardkas/kaspa-rpc. Deleting and recreating...`
+        );
         fs.rmSync(templateDir, { recursive: true, force: true });
         needsTemplateBuild = true;
       }
@@ -271,20 +280,27 @@ async function main() {
   if (needsTemplateBuild) {
     console.log(`📦 Creating global published package install template...`);
     fs.mkdirSync(templateDir, { recursive: true });
-    
+
     // Write target package.json
-    fs.writeFileSync(path.join(templateDir, "package.json"), JSON.stringify({
-      name: "hardkas-gauntlet-template",
-      version: "1.0.0",
-      type: "module",
-      dependencies: {
-        [`@hardkas/cli`]: targetVersion,
-        [`@hardkas/sdk`]: targetVersion,
-        [`@hardkas/kaspa-rpc`]: targetVersion,
-        "playwright": "^1.49.0",
-        "tsx": "^4.19.2"
-      }
-    }, null, 2));
+    fs.writeFileSync(
+      path.join(templateDir, "package.json"),
+      JSON.stringify(
+        {
+          name: "hardkas-gauntlet-template",
+          version: "1.0.0",
+          type: "module",
+          dependencies: {
+            [`@hardkas/cli`]: targetVersion,
+            [`@hardkas/sdk`]: targetVersion,
+            [`@hardkas/kaspa-rpc`]: targetVersion,
+            playwright: "^1.49.0",
+            tsx: "^4.19.2"
+          }
+        },
+        null,
+        2
+      )
+    );
 
     console.log(`   - Running npm install inside template...`);
     const npmCommand = process.platform === "win32" ? "npm.cmd" : "npm";
@@ -302,13 +318,22 @@ async function main() {
     console.log(`📦 Reusing existing published package install template...`);
   }
 
-  // 1b. Hot-patch template node_modules if using 0.7.3-alpha to fix the schemaVersion replay divergence bug
-  const artifactsIndexJs = path.join(templateDir, "node_modules", "@hardkas", "artifacts", "dist", "index.js");
+  // 1b. Hot-patch template node_modules if using 0.7.4-alpha to fix the schemaVersion replay divergence bug
+  const artifactsIndexJs = path.join(
+    templateDir,
+    "node_modules",
+    "@hardkas",
+    "artifacts",
+    "dist",
+    "index.js"
+  );
   if (fs.existsSync(artifactsIndexJs)) {
     try {
       let content = fs.readFileSync(artifactsIndexJs, "utf8");
       if (!content.includes('"schemaVersion"')) {
-        console.log(`🔧 Hot-patching template @hardkas/artifacts to exclude schemaVersion from canonical checks...`);
+        console.log(
+          `🔧 Hot-patching template @hardkas/artifacts to exclude schemaVersion from canonical checks...`
+        );
         // Find "contentHash" in SEMANTIC_EXCLUSIONS and inject "schemaVersion"
         content = content.replace(/"contentHash",/, '"schemaVersion",\n  "contentHash",');
         fs.writeFileSync(artifactsIndexJs, content, "utf8");
@@ -359,11 +384,18 @@ async function main() {
     const attemptRand = new SeededRandom(attemptSeed);
 
     const dAppType = attemptRand.pick(dappTypes);
-    const chaosMode = attempt === 1 && scale === "dry-run" ? "NONE" : attemptRand.pick(chaosModes);
+    const chaosMode =
+      attempt === 1 && scale === "dry-run" ? "NONE" : attemptRand.pick(chaosModes);
 
-    console.log(`----------------------------------------------------------------------------`);
-    console.log(`🚀 [Attempt #${attempt}/${attemptsCount}] Seed: ${attemptSeed} | dApp: "${dAppType}" | Chaos: ${chaosMode}`);
-    console.log(`----------------------------------------------------------------------------`);
+    console.log(
+      `----------------------------------------------------------------------------`
+    );
+    console.log(
+      `🚀 [Attempt #${attempt}/${attemptsCount}] Seed: ${attemptSeed} | dApp: "${dAppType}" | Chaos: ${chaosMode}`
+    );
+    console.log(
+      `----------------------------------------------------------------------------`
+    );
 
     // Prepare clean workspace path
     let workspaceDirName = `attempt-${attempt}-${attemptSeed}`;
@@ -385,17 +417,26 @@ async function main() {
     try {
       // Step 1: Copy template package and node_modules
       if (debug) console.log(`   - Copying dependencies from npm template workspace...`);
-      copyRecursive(path.join(templateDir, "node_modules"), path.join(attemptDir, "node_modules"));
-      fs.copyFileSync(path.join(templateDir, "package.json"), path.join(attemptDir, "package.json"));
+      copyRecursive(
+        path.join(templateDir, "node_modules"),
+        path.join(attemptDir, "node_modules")
+      );
+      fs.copyFileSync(
+        path.join(templateDir, "package.json"),
+        path.join(attemptDir, "package.json")
+      );
 
       // Step 2: Initialize project
       if (debug) console.log(`   - Initializing HardKAS project...`);
       const npxCommand = process.platform === "win32" ? "npx.cmd" : "npx";
-      execSync(`${npxCommand} hardkas init . --force`, { cwd: attemptDir, stdio: "ignore" });
+      execSync(`${npxCommand} hardkas init . --force`, {
+        cwd: attemptDir,
+        stdio: "ignore"
+      });
 
       // Step 3: Write workflow JSON
       const wf = getDAppWorkflow(dAppType);
-      
+
       // Inject INVALID_INPUT chaos if active
       if (chaosMode === "INVALID_INPUT" && wf.steps[0]?.args) {
         wf.steps[0].args.amount = "-99999.00"; // Trigger validation failure
@@ -412,21 +453,29 @@ async function main() {
         if (step.args?.from) workflowAccounts.add(step.args.from);
         if (step.args?.to) workflowAccounts.add(step.args.to);
       }
-      
+
       for (const acc of workflowAccounts) {
         if (!defaultAccounts.has(acc)) {
-          throw new Error(`Workflow uses non-standard account '${acc}'. Only alice, bob, carol, dave, erin are supported.`);
+          throw new Error(
+            `Workflow uses non-standard account '${acc}'. Only alice, bob, carol, dave, erin are supported.`
+          );
         }
       }
 
       // Always fund Alice heavily as the primary sender
       if (workflowAccounts.has("alice")) {
-        execSync(`${npxCommand} hardkas accounts fund alice --amount 5000`, { cwd: attemptDir, stdio: "ignore" });
+        execSync(`${npxCommand} hardkas accounts fund alice --amount 5000`, {
+          cwd: attemptDir,
+          stdio: "ignore"
+        });
       }
       // Fund other sender accounts if they act as source
       for (const step of wf.steps) {
         if (step.args?.from && step.args.from !== "alice") {
-          execSync(`${npxCommand} hardkas accounts fund ${step.args.from} --amount 1000`, { cwd: attemptDir, stdio: "ignore" });
+          execSync(
+            `${npxCommand} hardkas accounts fund ${step.args.from} --amount 1000`,
+            { cwd: attemptDir, stdio: "ignore" }
+          );
         }
       }
 
@@ -520,7 +569,9 @@ main().catch(err => {
         runnerSuccess = false;
       }
 
-      const parsedRes = runnerStdout ? JSON.parse(runnerStdout.slice(runnerStdout.indexOf("{"))) : null;
+      const parsedRes = runnerStdout
+        ? JSON.parse(runnerStdout.slice(runnerStdout.indexOf("{")))
+        : null;
 
       // Handle expected failures versus actual crashes
       if (wf.expectFailure || chaosMode === "INVALID_INPUT") {
@@ -538,19 +589,28 @@ main().catch(err => {
 
       // Verify filesystem artifacts exist
       const artifactsDir = path.join(attemptDir, ".hardkas", "artifacts");
-      if (runnerSuccess && (!wf.expectFailure && chaosMode !== "INVALID_INPUT")) {
+      if (runnerSuccess && !wf.expectFailure && chaosMode !== "INVALID_INPUT") {
         if (!fs.existsSync(artifactsDir) || fs.readdirSync(artifactsDir).length === 0) {
-          throw new Error("Lineage artifact files were not generated in .hardkas/artifacts!");
+          throw new Error(
+            "Lineage artifact files were not generated in .hardkas/artifacts!"
+          );
         }
-        if (debug) console.log(`   - Filesystem verification: ${fs.readdirSync(artifactsDir).length} artifacts written.`);
+        if (debug)
+          console.log(
+            `   - Filesystem verification: ${fs.readdirSync(artifactsDir).length} artifacts written.`
+          );
       }
 
       // Step 6: Chaos artifact corruption
       if (chaosMode === "CORRUPT_ARTIFACT" && fs.existsSync(artifactsDir)) {
-        const files = fs.readdirSync(artifactsDir).filter(f => f.endsWith(".json"));
+        const files = fs.readdirSync(artifactsDir).filter((f) => f.endsWith(".json"));
         if (files.length > 0) {
-          fs.writeFileSync(path.join(artifactsDir, files[0]!), JSON.stringify({ corrupted: true }));
-          if (debug) console.log(`   - Injected chaos: corrupted artifact file ${files[0]}.`);
+          fs.writeFileSync(
+            path.join(artifactsDir, files[0]!),
+            JSON.stringify({ corrupted: true })
+          );
+          if (debug)
+            console.log(`   - Injected chaos: corrupted artifact file ${files[0]}.`);
         }
       }
 
@@ -559,14 +619,18 @@ main().catch(err => {
         const storeDb = path.join(attemptDir, ".hardkas", "store.db");
         if (fs.existsSync(storeDb)) {
           fs.rmSync(storeDb);
-          if (debug) console.log("   - Injected chaos: deleted store.db prior to rebuild.");
+          if (debug)
+            console.log("   - Injected chaos: deleted store.db prior to rebuild.");
         }
       }
 
       // Rebuild query store
       if (debug) console.log(`   - Rebuilding query-store database...`);
       try {
-        execSync(`${npxCommand} hardkas query store rebuild`, { cwd: attemptDir, stdio: "ignore" });
+        execSync(`${npxCommand} hardkas query store rebuild`, {
+          cwd: attemptDir,
+          stdio: "ignore"
+        });
       } catch (err: any) {
         if (chaosMode !== "CORRUPT_ARTIFACT") {
           throw new Error(`Query store rebuild failed: ${err.message}`);
@@ -579,18 +643,27 @@ main().catch(err => {
       if (debug) console.log(`   - Starting Honō dev-server on port ${port}...`);
 
       let devServerStderr = "";
-      devServerProcess = spawn(npxCommand, ["hardkas", "dev", "server", "--port", port.toString(), "--open", "false"], {
-        cwd: attemptDir,
-        env: { ...process.env, HARDKAS_DEV_TOKEN: token },
-        stdio: "pipe",
-        shell: true
+      devServerProcess = spawn(
+        npxCommand,
+        ["hardkas", "dev", "server", "--port", port.toString(), "--open", "false"],
+        {
+          cwd: attemptDir,
+          env: { ...process.env, HARDKAS_DEV_TOKEN: token },
+          stdio: "pipe",
+          shell: true
+        }
+      );
+      devServerProcess.stderr?.on("data", (chunk: Buffer) => {
+        devServerStderr += chunk.toString();
       });
-      devServerProcess.stderr?.on("data", (chunk: Buffer) => { devServerStderr += chunk.toString(); });
 
       // Track if the dev-server process has exited prematurely
       let devServerExited = false;
       let devServerExitCode: number | null = null;
-      devServerProcess.on("exit", (code) => { devServerExited = true; devServerExitCode = code; });
+      devServerProcess.on("exit", (code) => {
+        devServerExited = true;
+        devServerExitCode = code;
+      });
 
       // Poll dev server — tolerate crashes under CORRUPT_ARTIFACT chaos
       let devServerReady = false;
@@ -602,12 +675,16 @@ main().catch(err => {
             // If the process already exited, stop waiting
             if (devServerExited) {
               clearInterval(interval);
-              reject(new Error(`Dev-server exited prematurely with code ${devServerExitCode}. Stderr: ${devServerStderr.slice(-500)}`));
+              reject(
+                new Error(
+                  `Dev-server exited prematurely with code ${devServerExitCode}. Stderr: ${devServerStderr.slice(-500)}`
+                )
+              );
               return;
             }
             try {
               const res = await fetch(`http://localhost:${port}/api/health`, {
-                headers: { "Authorization": `Bearer ${token}` }
+                headers: { Authorization: `Bearer ${token}` }
               });
               if (res.ok) {
                 clearInterval(interval);
@@ -616,7 +693,11 @@ main().catch(err => {
             } catch {
               if (attempts > 50) {
                 clearInterval(interval);
-                reject(new Error("Timeout waiting for Honō dev-server to respond on /api/health"));
+                reject(
+                  new Error(
+                    "Timeout waiting for Honō dev-server to respond on /api/health"
+                  )
+                );
               }
             }
           }, 150);
@@ -626,7 +707,10 @@ main().catch(err => {
         if (chaosMode === "CORRUPT_ARTIFACT") {
           // Known product bug: dev-server crashes when indexing corrupted artifacts.
           // Record it as a known issue and skip Playwright UI checks.
-          if (debug) console.log(`   - ⚠️ Dev-server failed to start under CORRUPT_ARTIFACT chaos (known product bug): ${healthErr.message.slice(0, 200)}`);
+          if (debug)
+            console.log(
+              `   - ⚠️ Dev-server failed to start under CORRUPT_ARTIFACT chaos (known product bug): ${healthErr.message.slice(0, 200)}`
+            );
           devServerReady = false;
         } else {
           throw healthErr;
@@ -634,37 +718,42 @@ main().catch(err => {
       }
 
       if (devServerReady) {
-        if (debug) console.log(`   - Dev-server ready! Launching Playwright browser check...`);
+        if (debug)
+          console.log(`   - Dev-server ready! Launching Playwright browser check...`);
 
         // Import Playwright programmatically from the sandboxed workspace's node_modules
-        const { pathToFileURL } = await import("node:url");
-        const playwrightPath = pathToFileURL(path.join(attemptDir, "node_modules", "playwright")).href;
-        const playwrightModule = await import(playwrightPath);
-        const playwright = playwrightModule.default || playwrightModule;
+        const { createRequire } = await import("node:module");
+        const require = createRequire(attemptDir);
+        const playwright = require("playwright");
         const chromium = playwright.chromium;
         if (!chromium) {
-          throw new Error("Could not resolve chromium from Playwright module. Exports: " + Object.keys(playwrightModule));
+          throw new Error("Could not resolve chromium from Playwright module.");
         }
         playwrightBrowser = await chromium.launch({ headless: true });
         const page = await playwrightBrowser.newPage();
 
         // Handle Dev-server Restart Chaos
         if (chaosMode === "RESTART_DEV_SERVER") {
-          if (debug) console.log("   - Injected chaos: triggering dev-server hard restart...");
+          if (debug)
+            console.log("   - Injected chaos: triggering dev-server hard restart...");
           if (process.platform === "win32") {
             execSync(`taskkill /pid ${devServerProcess.pid} /t /f`, { stdio: "ignore" });
           } else {
             devServerProcess.kill();
           }
-          await new Promise(r => setTimeout(r, 600));
+          await new Promise((r) => setTimeout(r, 600));
 
           // Restart on same port
-          devServerProcess = spawn(npxCommand, ["hardkas", "dev", "server", "--port", port.toString(), "--open", "false"], {
-            cwd: attemptDir,
-            env: { ...process.env, HARDKAS_DEV_TOKEN: token },
-            stdio: "pipe",
-            shell: true
-          });
+          devServerProcess = spawn(
+            npxCommand,
+            ["hardkas", "dev", "server", "--port", port.toString(), "--open", "false"],
+            {
+              cwd: attemptDir,
+              env: { ...process.env, HARDKAS_DEV_TOKEN: token },
+              stdio: "pipe",
+              shell: true
+            }
+          );
 
           await new Promise<void>((resolve, reject) => {
             let attempts = 0;
@@ -672,7 +761,7 @@ main().catch(err => {
               attempts++;
               try {
                 const res = await fetch(`http://localhost:${port}/api/health`, {
-                  headers: { "Authorization": `Bearer ${token}` }
+                  headers: { Authorization: `Bearer ${token}` }
                 });
                 if (res.ok) {
                   clearInterval(interval);
@@ -681,7 +770,9 @@ main().catch(err => {
               } catch {
                 if (attempts > 50) {
                   clearInterval(interval);
-                  reject(new Error("Timeout waiting for Honō dev-server restart recovery"));
+                  reject(
+                    new Error("Timeout waiting for Honō dev-server restart recovery")
+                  );
                 }
               }
             }, 150);
@@ -695,7 +786,9 @@ main().catch(err => {
           await page.waitForTimeout(1000);
           const statusText = await page.innerText("body");
           if (!statusText.includes("CORRUPTED") && !statusText.includes("diagnostics")) {
-            throw new Error("Dashboard UI failed to report CORRUPTED status on corrupted artifact!");
+            throw new Error(
+              "Dashboard UI failed to report CORRUPTED status on corrupted artifact!"
+            );
           }
         } else {
           await page.waitForTimeout(1000);
@@ -713,7 +806,9 @@ main().catch(err => {
       // Shutdown dev-server process cleanly (whether it started or crashed)
       if (devServerProcess && !devServerExited) {
         if (process.platform === "win32") {
-          try { execSync(`taskkill /pid ${devServerProcess.pid} /t /f`, { stdio: "ignore" }); } catch {}
+          try {
+            execSync(`taskkill /pid ${devServerProcess.pid} /t /f`, { stdio: "ignore" });
+          } catch {}
         } else {
           devServerProcess.kill();
         }
@@ -721,20 +816,39 @@ main().catch(err => {
       devServerProcess = null;
 
       // Replay determinism verification
-      if (runnerSuccess && (!wf.expectFailure && chaosMode !== "INVALID_INPUT" && chaosMode !== "CORRUPT_ARTIFACT")) {
+      if (
+        runnerSuccess &&
+        !wf.expectFailure &&
+        chaosMode !== "INVALID_INPUT" &&
+        chaosMode !== "CORRUPT_ARTIFACT"
+      ) {
         // Find the generated plan and receipt in .hardkas/artifacts and copy them to root as tx-plan.json and tx-receipt.json
         const artifactsDir = path.join(attemptDir, ".hardkas", "artifacts");
         if (fs.existsSync(artifactsDir)) {
           const files = fs.readdirSync(artifactsDir);
-          const planFile = files.find(f => f.startsWith("txPlan-") && f.endsWith(".json"));
-          const receiptFile = files.find(f => f.startsWith("txReceipt-") && f.endsWith(".json"));
+          const planFile = files.find(
+            (f) => f.startsWith("txPlan-") && f.endsWith(".json")
+          );
+          const receiptFile = files.find(
+            (f) => f.startsWith("txReceipt-") && f.endsWith(".json")
+          );
           if (planFile) {
-            fs.copyFileSync(path.join(artifactsDir, planFile), path.join(attemptDir, "tx-plan.json"));
-            if (debug) console.log(`   - Copied ${planFile} to workspace root as tx-plan.json`);
+            fs.copyFileSync(
+              path.join(artifactsDir, planFile),
+              path.join(attemptDir, "tx-plan.json")
+            );
+            if (debug)
+              console.log(`   - Copied ${planFile} to workspace root as tx-plan.json`);
           }
           if (receiptFile) {
-            fs.copyFileSync(path.join(artifactsDir, receiptFile), path.join(attemptDir, "tx-receipt.json"));
-            if (debug) console.log(`   - Copied ${receiptFile} to workspace root as tx-receipt.json`);
+            fs.copyFileSync(
+              path.join(artifactsDir, receiptFile),
+              path.join(attemptDir, "tx-receipt.json")
+            );
+            if (debug)
+              console.log(
+                `   - Copied ${receiptFile} to workspace root as tx-receipt.json`
+              );
           }
         }
 
@@ -743,7 +857,11 @@ main().catch(err => {
           cwd: attemptDir,
           encoding: "utf-8"
         });
-        if (!replayRes.includes("VERIFIED") && !replayRes.includes("passed") && !replayRes.includes("verified")) {
+        if (
+          !replayRes.includes("VERIFIED") &&
+          !replayRes.includes("passed") &&
+          !replayRes.includes("verified")
+        ) {
           throw new Error("Replay verification failed determinism!");
         }
       }
@@ -751,17 +869,20 @@ main().catch(err => {
       console.log(`✅ [Attempt #${attempt}] PASSED!`);
       successCount++;
       results.push({ attempt, seed: attemptSeed, dAppType, chaosMode, status: "PASS" });
-
     } catch (error: any) {
       console.log(`❌ [Attempt #${attempt}] FAILED: ${error.message}`);
-      
+
       // Keep attempts clean
       if (playwrightBrowser) {
-        try { await playwrightBrowser.close(); } catch {}
+        try {
+          await playwrightBrowser.close();
+        } catch {}
       }
       if (devServerProcess) {
         if (process.platform === "win32") {
-          try { execSync(`taskkill /pid ${devServerProcess.pid} /t /f`, { stdio: "ignore" }); } catch {}
+          try {
+            execSync(`taskkill /pid ${devServerProcess.pid} /t /f`, { stdio: "ignore" });
+          } catch {}
         } else {
           devServerProcess.kill();
         }
@@ -778,7 +899,9 @@ main().catch(err => {
       });
 
       // User strict requirement: Stop execution immediately if an attempt fails
-      console.log(`\n🚨 Strict Guard Active: Stopped execution at attempt #${attempt} due to failure.`);
+      console.log(
+        `\n🚨 Strict Guard Active: Stopped execution at attempt #${attempt} due to failure.`
+      );
       break;
     } finally {
       // Teardown isolated workspace
@@ -791,27 +914,42 @@ main().catch(err => {
   }
 
   // Print Summary
-  console.log("\n============================================================================");
+  console.log(
+    "\n============================================================================"
+  );
   console.log("📊 GAUNTLET RUNNER SUMMARY REPORT");
-  console.log("============================================================================");
+  console.log(
+    "============================================================================"
+  );
   console.log(`Total Attempts: ${results.length}`);
   console.log(`Passed: ${successCount}`);
   console.log(`Failed: ${results.length - successCount}`);
-  console.log(`Verification Status: ${successCount === results.length ? "PASS" : "FAIL"}`);
-  console.log("============================================================================\n");
+  console.log(
+    `Verification Status: ${successCount === results.length ? "PASS" : "FAIL"}`
+  );
+  console.log(
+    "============================================================================\n"
+  );
 
   // Output JSON metrics for reporter parsing
-  fs.writeFileSync(path.join(tempDirParent, "gauntlet-results.json"), JSON.stringify({
-    scale,
-    targetVersion,
-    baseSeed,
-    successCount,
-    totalAttempts: results.length,
-    results
-  }, null, 2));
+  fs.writeFileSync(
+    path.join(tempDirParent, "gauntlet-results.json"),
+    JSON.stringify(
+      {
+        scale,
+        targetVersion,
+        baseSeed,
+        successCount,
+        totalAttempts: results.length,
+        results
+      },
+      null,
+      2
+    )
+  );
 }
 
-main().catch(err => {
+main().catch((err) => {
   console.error("Fatal Gauntlet Harness crash:", err);
   process.exit(1);
 });

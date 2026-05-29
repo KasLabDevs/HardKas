@@ -87,7 +87,9 @@ export async function acquireLock(args: AcquireLockArgs): Promise<LockHandle> {
         release: async () => {
           if (fs.existsSync(lockPath)) {
             try {
-              const current = JSON.parse(fs.readFileSync(lockPath, "utf-8")) as LockMetadata;
+              const current = JSON.parse(
+                fs.readFileSync(lockPath, "utf-8")
+              ) as LockMetadata;
               if (current.pid === process.pid) {
                 fs.unlinkSync(lockPath);
               }
@@ -117,7 +119,7 @@ export async function acquireLock(args: AcquireLockArgs): Promise<LockHandle> {
           const ageMs = Date.now() - stats.mtimeMs;
           if (ageMs < LOCK_CREATION_GRACE_MS) {
             // "In-flight" creation, not corrupt. Wait and retry.
-            await new Promise(resolve => setTimeout(resolve, pollMs));
+            await new Promise((resolve) => setTimeout(resolve, pollMs));
             continue;
           }
 
@@ -125,13 +127,27 @@ export async function acquireLock(args: AcquireLockArgs): Promise<LockHandle> {
             staleRecoveryAttempted = true;
             try {
               fs.unlinkSync(lockPath);
-              EnvironmentTelemetry.logAnomaly("STALE_LOCK_RECOVERY", "medium", "lock", `Recovered corrupted lock file at ${lockPath} (Age: ${ageMs}ms)`, args.rootDir);
+              EnvironmentTelemetry.logAnomaly(
+                "STALE_LOCK_RECOVERY",
+                "medium",
+                "lock",
+                `Recovered corrupted lock file at ${lockPath} (Age: ${ageMs}ms)`,
+                args.rootDir
+              );
               continue; // Retry acquisition
             } catch {
-              throw new HardkasError("LOCK_METADATA_INVALID", `Lock file at ${lockPath} is corrupted and cannot be recovered.`, { cause: err });
+              throw new HardkasError(
+                "LOCK_METADATA_INVALID",
+                `Lock file at ${lockPath} is corrupted and cannot be recovered.`,
+                { cause: err }
+              );
             }
           }
-          throw new HardkasError("LOCK_METADATA_INVALID", `Lock file at ${lockPath} is corrupted.`, { cause: err });
+          throw new HardkasError(
+            "LOCK_METADATA_INVALID",
+            `Lock file at ${lockPath} is corrupted.`,
+            { cause: err }
+          );
         }
 
         if (existingMetadata) {
@@ -144,7 +160,13 @@ export async function acquireLock(args: AcquireLockArgs): Promise<LockHandle> {
             staleRecoveryAttempted = true;
             try {
               fs.unlinkSync(lockPath);
-              EnvironmentTelemetry.logAnomaly("STALE_LOCK_RECOVERY", "medium", "lock", `Recovered lock held by dead process (PID: ${existingMetadata.pid})`, args.rootDir);
+              EnvironmentTelemetry.logAnomaly(
+                "STALE_LOCK_RECOVERY",
+                "medium",
+                "lock",
+                `Recovered lock held by dead process (PID: ${existingMetadata.pid})`,
+                args.rootDir
+              );
               continue; // Retry acquisition after recovery
             } catch (unlinkErr) {
               throw new HardkasError(
@@ -166,8 +188,14 @@ export async function acquireLock(args: AcquireLockArgs): Promise<LockHandle> {
 
           // Lock is held by a live process
           if (args.wait && Date.now() - start < timeoutMs) {
-            EnvironmentTelemetry.logAnomaly("LOCK_CONTENTION", "low", "lock", `Waiting for lock ${args.name} held by PID ${existingMetadata.pid}`, args.rootDir);
-            await new Promise(resolve => setTimeout(resolve, pollMs));
+            EnvironmentTelemetry.logAnomaly(
+              "LOCK_CONTENTION",
+              "low",
+              "lock",
+              `Waiting for lock ${args.name} held by PID ${existingMetadata.pid}`,
+              args.rootDir
+            );
+            await new Promise((resolve) => setTimeout(resolve, pollMs));
             continue;
           }
 
@@ -239,7 +267,7 @@ export function isProcessAlive(pid: number): boolean {
   } catch (e: any) {
     if (e.code === "EPERM") return true; // Permission denied -> alive
     if (e.code === "ESRCH") return false; // Process not found -> dead
-    
+
     // Windows might return other errors, treat as ambiguous (assume alive to prevent aggressive deletion)
     return true;
   }
@@ -248,20 +276,22 @@ export function isProcessAlive(pid: number): boolean {
 /**
  * Lists all active locks in the workspace.
  */
-export function listLocks(rootDir: string): Array<{ name: string; metadata: LockMetadata; path: string; isAlive: boolean }> {
+export function listLocks(
+  rootDir: string
+): Array<{ name: string; metadata: LockMetadata; path: string; isAlive: boolean }> {
   const lockDir = path.join(rootDir, ".hardkas", "locks");
   if (!fs.existsSync(lockDir)) return [];
-  
-  const files = fs.readdirSync(lockDir).filter(f => f.endsWith(".lock"));
+
+  const files = fs.readdirSync(lockDir).filter((f) => f.endsWith(".lock"));
   const result = [];
-  
+
   for (const file of files) {
     const lockPath = path.join(lockDir, file);
     try {
       const metadata = JSON.parse(fs.readFileSync(lockPath, "utf-8")) as LockMetadata;
-      result.push({ 
-        name: path.basename(file, ".lock"), 
-        metadata, 
+      result.push({
+        name: path.basename(file, ".lock"),
+        metadata,
         path: lockPath,
         isAlive: metadata.hostname === os.hostname() ? isProcessAlive(metadata.pid) : true // Assume alive if remote
       });
@@ -276,15 +306,15 @@ export function listLocks(rootDir: string): Array<{ name: string; metadata: Lock
  * Safely clears a lock if criteria are met.
  */
 export function clearLock(
-  rootDir: string, 
-  name: string, 
-  options: { force?: boolean, ifDead?: boolean } = {}
+  rootDir: string,
+  name: string,
+  options: { force?: boolean; ifDead?: boolean } = {}
 ): { cleared: boolean; reason?: string } {
   const lockDir = path.join(rootDir, ".hardkas", "locks");
   const lockPath = path.join(lockDir, `${name}.lock`);
-  
+
   if (!fs.existsSync(lockPath)) return { cleared: false, reason: "Lock not found" };
-  
+
   let metadata: LockMetadata;
   try {
     metadata = JSON.parse(fs.readFileSync(lockPath, "utf-8"));
@@ -295,17 +325,25 @@ export function clearLock(
     }
     return { cleared: false, reason: "Corrupt metadata (use --force to clear)" };
   }
-  
+
   const isLocal = metadata.hostname === os.hostname();
   const isAlive = isLocal ? isProcessAlive(metadata.pid) : true;
-  
+
   if (options.ifDead) {
-    if (!isLocal) return { cleared: false, reason: "Cannot verify liveness of remote lock (host: " + metadata.hostname + ")" };
-    if (isAlive) return { cleared: false, reason: `Process (PID: ${metadata.pid}) is still alive` };
+    if (!isLocal)
+      return {
+        cleared: false,
+        reason: "Cannot verify liveness of remote lock (host: " + metadata.hostname + ")"
+      };
+    if (isAlive)
+      return { cleared: false, reason: `Process (PID: ${metadata.pid}) is still alive` };
   } else if (!options.force) {
-    return { cleared: false, reason: "Lock is potentially active. Use --force or --if-dead." };
+    return {
+      cleared: false,
+      reason: "Lock is potentially active. Use --force or --if-dead."
+    };
   }
-  
+
   fs.unlinkSync(lockPath);
   return { cleared: true };
 }

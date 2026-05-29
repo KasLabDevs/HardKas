@@ -18,7 +18,10 @@ export function loadSessionStoreStrict(cwd: string = process.cwd()): SessionStor
   return store;
 }
 
-export function loadSessionStoreWithDiagnostics(cwd: string = process.cwd()): { store: SessionStore; diagnostics: string[] } {
+export function loadSessionStoreWithDiagnostics(cwd: string = process.cwd()): {
+  store: SessionStore;
+  diagnostics: string[];
+} {
   const path = join(cwd, SESSION_FILE);
   if (!existsSync(path)) {
     return { store: { sessions: {} }, diagnostics: [] };
@@ -28,11 +31,14 @@ export function loadSessionStoreWithDiagnostics(cwd: string = process.cwd()): { 
   try {
     raw = JSON.parse(readFileSync(path, "utf-8"));
   } catch (e) {
-    return { store: { sessions: {} }, diagnostics: [`Malformed JSON in ${SESSION_FILE}`] };
+    return {
+      store: { sessions: {} },
+      diagnostics: [`Malformed JSON in ${SESSION_FILE}`]
+    };
   }
 
   const diagnostics: string[] = [];
-  
+
   // Basic structural validation
   if (!raw || typeof raw !== "object") {
     diagnostics.push("Session store must be a JSON object");
@@ -80,33 +86,44 @@ export async function saveSessionStore(store: SessionStore, cwd: string = proces
   });
 }
 
-export async function createSession(session: HardkasSession, cwd: string = process.cwd()) {
-  await withLock({ rootDir: cwd, name: "workspace", wait: true, timeoutMs: 5000 }, async () => {
-    const store = loadSessionStoreStrict(cwd);
-    const newStore = {
-      ...store,
-      sessions: {
-        ...store.sessions,
-        [session.name]: session
-      },
-      activeSession: store.activeSession || session.name
-    };
-    await saveSessionStore(newStore, cwd);
-  });
+export async function createSession(
+  session: HardkasSession,
+  cwd: string = process.cwd()
+) {
+  await withLock(
+    { rootDir: cwd, name: "workspace", wait: true, timeoutMs: 5000 },
+    async () => {
+      const store = loadSessionStoreStrict(cwd);
+      const newStore = {
+        ...store,
+        sessions: {
+          ...store.sessions,
+          [session.name]: session
+        },
+        activeSession: store.activeSession || session.name
+      };
+      await saveSessionStore(newStore, cwd);
+    }
+  );
 }
 
 export async function setActiveSession(name: string, cwd: string = process.cwd()) {
-  await withLock({ rootDir: cwd, name: "workspace", wait: true, timeoutMs: 5000 }, async () => {
-    const store = loadSessionStoreStrict(cwd);
-    if (!store.sessions[name]) {
-      throw new Error(`Session "${name}" not found.`);
+  await withLock(
+    { rootDir: cwd, name: "workspace", wait: true, timeoutMs: 5000 },
+    async () => {
+      const store = loadSessionStoreStrict(cwd);
+      if (!store.sessions[name]) {
+        throw new Error(`Session "${name}" not found.`);
+      }
+      const newStore = { ...store, activeSession: name };
+      await saveSessionStore(newStore, cwd);
     }
-    const newStore = { ...store, activeSession: name };
-    await saveSessionStore(newStore, cwd);
-  });
+  );
 }
 
-export function getActiveSession(cwd: string = process.cwd()): HardkasSession | undefined {
+export function getActiveSession(
+  cwd: string = process.cwd()
+): HardkasSession | undefined {
   const store = loadSessionStore(cwd);
   if (!store.activeSession) return undefined;
   return store.sessions[store.activeSession];

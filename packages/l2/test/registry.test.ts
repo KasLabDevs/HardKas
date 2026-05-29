@@ -6,8 +6,8 @@ describe("L2 Registry", () => {
   describe("listL2Profiles", () => {
     it("should return built-ins by default", () => {
       const profiles = listL2Profiles();
-      expect(profiles.find(p => p.name === "igra")).toBeDefined();
-      expect(profiles.every(p => p.source === "built-in")).toBe(true);
+      expect(profiles.find((p) => p.name === "igra")).toBeDefined();
+      expect(profiles.every((p) => p.source === "built-in")).toBe(true);
     });
 
     it("should include user profiles", () => {
@@ -18,7 +18,7 @@ describe("L2 Registry", () => {
         }
       };
       const profiles = listL2Profiles(userProfiles);
-      const custom = profiles.find(p => p.name === "custom");
+      const custom = profiles.find((p) => p.name === "custom");
       expect(custom).toBeDefined();
       expect(custom?.source).toBe("user-config");
       expect(custom?.chainId).toBe(123);
@@ -32,7 +32,7 @@ describe("L2 Registry", () => {
         }
       };
       const profiles = listL2Profiles(userProfiles);
-      const igra = profiles.find(p => p.name === "igra");
+      const igra = profiles.find((p) => p.name === "igra");
       expect(igra?.source).toBe("user-config");
       expect(igra?.chainId).toBe(999);
     });
@@ -70,8 +70,9 @@ describe("L2 Registry", () => {
     });
 
     it("should throw on unknown network and list available", () => {
-      expect(() => resolveL2Profile({ name: "ghost" }))
-        .toThrow(/L2 profile 'ghost' not found. Available profiles: igra \(built-in\)/);
+      expect(() => resolveL2Profile({ name: "ghost" })).toThrow(
+        /L2 profile 'ghost' not found. Available profiles: igra \(built-in\)/
+      );
     });
 
     it("should validate security invariants (pre-zk cannot have trustlessExit=true)", () => {
@@ -83,8 +84,9 @@ describe("L2 Registry", () => {
           trustlessExit: true
         }
       };
-      expect(() => resolveL2Profile({ name: "badNet", userProfiles }))
-        .toThrow(/trustlessExit=true is only allowed when bridgePhase='zk'/);
+      expect(() => resolveL2Profile({ name: "badNet", userProfiles })).toThrow(
+        /trustlessExit=true is only allowed when bridgePhase='zk'/
+      );
     });
 
     it("should allow trustlessExit=true only for zk phase", () => {
@@ -101,12 +103,14 @@ describe("L2 Registry", () => {
     });
 
     it("should throw on url/rpcUrl conflict in CLI overrides", () => {
-      expect(() => resolveL2Profile({
-        cliOverrides: {
-          url: "http://url1",
-          rpcUrl: "http://url2"
-        }
-      })).toThrow(/Conflict: Both --rpc-url and --url provided/);
+      expect(() =>
+        resolveL2Profile({
+          cliOverrides: {
+            url: "http://url1",
+            rpcUrl: "http://url2"
+          }
+        })
+      ).toThrow(/Conflict: Both --rpc-url and --url provided/);
     });
 
     it("should normalize chainId from string in CLI overrides", () => {

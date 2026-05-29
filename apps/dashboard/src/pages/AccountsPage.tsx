@@ -35,12 +35,16 @@ export function AccountsPage() {
             Simulated Accounts
           </h1>
           <p className="text-xs text-zinc-400 mt-1 leading-normal">
-            Deterministic local accounts and addresses. Balances are derived dynamically from UTXOs in the localnet state.
+            Deterministic local accounts and addresses. Balances are derived dynamically
+            from UTXOs in the localnet state.
           </p>
         </div>
 
         <div className="relative max-w-xs w-full">
-          <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500" />
+          <Search
+            size={14}
+            className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500"
+          />
           <input
             type="text"
             placeholder="Search accounts or addresses..."
@@ -62,29 +66,41 @@ export function AccountsPage() {
         />
       )}
 
-      {!isLoading && accounts.length > 0 && accounts.every((acc: any) => {
-        const bal = acc.balanceKas !== undefined ? acc.balanceKas : (acc.balance !== undefined ? acc.balance.toString() : "0");
-        return bal === "0" || bal === "0.00000000";
-      }) && (
-        <div className="bg-amber-950/20 border border-amber-900/50 rounded-xl p-4 flex items-start gap-3">
-          <Terminal size={16} className="text-amber-400 mt-0.5" />
-          <div>
-            <div className="text-sm font-bold text-amber-400">Unfunded Accounts</div>
-            <div className="text-xs text-amber-400/80 mt-1">
-              Developer aliases are initialized, but no spendable UTXOs are indexed.
-            </div>
-            <div className="mt-3 bg-black/40 rounded p-2 border border-white/5 inline-block">
-              <code className="text-xs font-mono text-zinc-300 select-all">hardkas localnet seed</code>
+      {!isLoading &&
+        accounts.length > 0 &&
+        accounts.every((acc: any) => {
+          const bal =
+            acc.balanceKas !== undefined
+              ? acc.balanceKas
+              : acc.balance !== undefined
+                ? acc.balance.toString()
+                : "0";
+          return bal === "0" || bal === "0.00000000";
+        }) && (
+          <div className="bg-amber-950/20 border border-amber-900/50 rounded-xl p-4 flex items-start gap-3">
+            <Terminal size={16} className="text-amber-400 mt-0.5" />
+            <div>
+              <div className="text-sm font-bold text-amber-400">Unfunded Accounts</div>
+              <div className="text-xs text-amber-400/80 mt-1">
+                Developer aliases are initialized, but no spendable UTXOs are indexed.
+              </div>
+              <div className="mt-3 bg-black/40 rounded p-2 border border-white/5 inline-block">
+                <code className="text-xs font-mono text-zinc-300 select-all">
+                  hardkas localnet seed
+                </code>
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        )}
 
       {/* Main Grid Layout */}
       {isLoading ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {[1, 2, 3].map((n) => (
-            <div key={n} className="bg-zinc-900/20 border border-zinc-800 rounded-2xl p-6 space-y-4 animate-pulse">
+            <div
+              key={n}
+              className="bg-zinc-900/20 border border-zinc-800 rounded-2xl p-6 space-y-4 animate-pulse"
+            >
               <div className="flex items-center justify-between">
                 <div className="h-4 bg-zinc-800 rounded w-24" />
                 <div className="h-4 bg-zinc-800 rounded-full w-16" />
@@ -100,40 +116,48 @@ export function AccountsPage() {
             const isCopied = copiedAddress === account.address;
             const balanceUnit = account.address.startsWith("kaspa:") ? "KAS" : "iKAS";
             const accountType = account.type || "simulated";
-            
+
             return (
-              <div 
-                key={account.address || i} 
+              <div
+                key={account.address || i}
                 className="bg-zinc-900/30 border border-zinc-800 hover:border-zinc-700/60 rounded-2xl p-6 flex flex-col justify-between transition-all duration-300 group relative overflow-hidden shadow-md hover:shadow-indigo-500/5 hover:scale-[1.02]"
               >
-
                 <div className="space-y-4">
                   {/* Alias & Type Badge */}
                   <div className="flex items-center justify-between">
                     <span className="text-sm font-extrabold text-zinc-200 flex items-center gap-1.5 truncate">
                       {account.alias || "Unnamed Account"}
                     </span>
-                    <span className={`text-[9px] font-mono font-bold px-2 py-0.5 rounded border uppercase tracking-wider ${
-                      accountType === "rpc" 
-                        ? "bg-amber-500/10 text-amber-400 border-amber-500/20" 
-                        : accountType === "external"
-                          ? "bg-purple-500/10 text-purple-400 border-purple-500/20"
-                          : "bg-indigo-500/10 text-indigo-400 border-indigo-500/20"
-                    }`}>
+                    <span
+                      className={`text-[9px] font-mono font-bold px-2 py-0.5 rounded border uppercase tracking-wider ${
+                        accountType === "rpc"
+                          ? "bg-amber-500/10 text-amber-400 border-amber-500/20"
+                          : accountType === "external"
+                            ? "bg-purple-500/10 text-purple-400 border-purple-500/20"
+                            : "bg-indigo-500/10 text-indigo-400 border-indigo-500/20"
+                      }`}
+                    >
                       {accountType}
                     </span>
                   </div>
 
                   {/* Copyable Address block */}
                   <div className="bg-zinc-950/50 border border-zinc-900/80 hover:border-zinc-805 rounded-xl p-3 flex items-center justify-between gap-3 group/address transition-all">
-                    <span className="font-mono text-[10px] text-zinc-400 truncate select-all" title={account.address}>
+                    <span
+                      className="font-mono text-[10px] text-zinc-400 truncate select-all"
+                      title={account.address}
+                    >
                       {account.address}
                     </span>
                     <button
                       onClick={() => handleCopy(account.address)}
                       className="shrink-0 p-1.5 bg-zinc-900 border border-zinc-850 hover:border-zinc-700 hover:bg-zinc-850 rounded-lg text-zinc-400 hover:text-zinc-200 transition-all cursor-pointer"
                     >
-                      {isCopied ? <Check size={10} className="text-emerald-400" /> : <Copy size={10} />}
+                      {isCopied ? (
+                        <Check size={10} className="text-emerald-400" />
+                      ) : (
+                        <Copy size={10} />
+                      )}
                     </button>
                   </div>
                 </div>
@@ -141,15 +165,23 @@ export function AccountsPage() {
                 {/* Account Balances */}
                 <div className="mt-6 pt-4 border-t border-zinc-800/60 flex items-end justify-between">
                   <div className="flex flex-col">
-                    <span className="text-[9px] font-mono uppercase tracking-widest text-zinc-500 font-bold">UTXO Balance</span>
+                    <span className="text-[9px] font-mono uppercase tracking-widest text-zinc-500 font-bold">
+                      UTXO Balance
+                    </span>
                     <div className="flex items-baseline gap-1 mt-1.5">
                       <span className="text-xl font-black font-mono text-zinc-100">
-                        {account.balanceKas !== undefined ? account.balanceKas : account.balance !== undefined ? account.balance.toLocaleString() : "0"}
+                        {account.balanceKas !== undefined
+                          ? account.balanceKas
+                          : account.balance !== undefined
+                            ? account.balance.toLocaleString()
+                            : "0"}
                       </span>
-                      <span className="text-[10px] font-mono font-bold text-zinc-500 uppercase">{balanceUnit}</span>
+                      <span className="text-[10px] font-mono font-bold text-zinc-500 uppercase">
+                        {balanceUnit}
+                      </span>
                     </div>
                   </div>
-                  
+
                   {account.derivationPath && (
                     <span className="text-[8px] font-mono text-zinc-500 bg-zinc-950 px-2 py-0.5 rounded border border-zinc-900 font-bold">
                       path: {account.derivationPath}

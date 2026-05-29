@@ -31,32 +31,36 @@ describe("writeFileAtomic Invariant Tests", () => {
         throw new Error("Disk Full Simulation");
       });
 
-      await expect(writeFileAtomic(target, "new content")).rejects.toThrow(/Failed to write file atomically/);
-      
+      await expect(writeFileAtomic(target, "new content")).rejects.toThrow(
+        /Failed to write file atomically/
+      );
+
       // Original file MUST still be there and intact
       expect(fs.readFileSync(target, "utf-8")).toBe("original content");
-      
+
       spy.mockRestore();
     });
 
     it("should never leave partial temp files as canonical if rename fails", async () => {
       const target = path.join(testDir, "partial.txt");
-      
+
       // Mock fs.renameSync to fail
       const spy = vi.spyOn(fs, "renameSync").mockImplementationOnce(() => {
         throw new Error("Access Denied Simulation");
       });
 
-      await expect(writeFileAtomic(target, "content")).rejects.toThrow(/Failed to write file atomically/);
-      
+      await expect(writeFileAtomic(target, "content")).rejects.toThrow(
+        /Failed to write file atomically/
+      );
+
       expect(fs.existsSync(target)).toBe(false);
-      
+
       spy.mockRestore();
     });
 
     it("should cleanup temp files in all cases", async () => {
       const target = path.join(testDir, "cleanup.txt");
-      
+
       // Successful case
       await writeFileAtomic(target, "success");
       const filesAfterSuccess = fs.readdirSync(testDir);
@@ -67,12 +71,12 @@ describe("writeFileAtomic Invariant Tests", () => {
       const spy = vi.spyOn(fs, "renameSync").mockImplementationOnce(() => {
         throw new Error("Cleanup Test Error");
       });
-      
+
       await expect(writeFileAtomic(target, "fail")).rejects.toThrow();
       const filesAfterFailure = fs.readdirSync(testDir);
       expect(filesAfterFailure).toHaveLength(1); // Still only the previous target file
       expect(filesAfterFailure[0]).toBe("cleanup.txt");
-      
+
       spy.mockRestore();
     });
   });
@@ -92,25 +96,27 @@ describe("writeFileAtomic Invariant Tests", () => {
         throw new Error("Sync Disk Full");
       });
 
-      expect(() => writeFileAtomicSync(target, "new sync")).toThrow(/Failed to write file atomically/);
+      expect(() => writeFileAtomicSync(target, "new sync")).toThrow(
+        /Failed to write file atomically/
+      );
       expect(fs.readFileSync(target, "utf-8")).toBe("original sync");
-      
+
       spy.mockRestore();
     });
 
     it("should cleanup temp files in all cases", () => {
       const target = path.join(testDir, "cleanup_sync.txt");
-      
+
       writeFileAtomicSync(target, "success");
       expect(fs.readdirSync(testDir)).toHaveLength(1);
 
       const spy = vi.spyOn(fs, "renameSync").mockImplementationOnce(() => {
         throw new Error("Sync Cleanup Error");
       });
-      
+
       expect(() => writeFileAtomicSync(target, "fail")).toThrow();
       expect(fs.readdirSync(testDir)).toHaveLength(1);
-      
+
       spy.mockRestore();
     });
   });

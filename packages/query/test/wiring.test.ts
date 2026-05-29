@@ -31,11 +31,11 @@ describe("QueryEngine Wiring", () => {
     fs.mkdirSync(hkDir);
     fs.writeFileSync(path.join(hkDir, "store.db"), "fake sqlite data");
 
-    // We expect it to TRY to use SQLite. 
+    // We expect it to TRY to use SQLite.
     // Since it's fake data, it might fail and fallback, or we can mock the import.
     const engine = await QueryEngine.create({ artifactDir: tmpDir });
-    
-    // In this test environment, @hardkas/query-store might not be fully linked 
+
+    // In this test environment, @hardkas/query-store might not be fully linked
     // or the fake file might cause a crash that triggers fallback.
     // The important thing is that it DETECTS it.
     expect(engine.backend).toBeDefined();

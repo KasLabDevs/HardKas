@@ -1,9 +1,9 @@
 import { systemRuntimeContext } from "@hardkas/core";
 import { describe, it, expect } from "vitest";
-import { 
-  utxoToArtifact, 
-  utxoFromArtifact, 
-  txOutputToArtifact, 
+import {
+  utxoToArtifact,
+  utxoFromArtifact,
+  txOutputToArtifact,
   txOutputFromArtifact,
   validateTxPlanArtifact,
   HARDKAS_VERSION,
@@ -47,12 +47,14 @@ describe("Real Transaction Artifacts", () => {
     });
 
     it("should throw on invalid BigInt string", () => {
-      expect(() => utxoFromArtifact({
-        outpoint: { transactionId: asTxId("a"), index: 0 },
-        address: asKaspaAddress("addr"),
-        amountSompi: "invalid",
-        scriptPublicKey: "s"
-      })).toThrow(/Invalid BigInt string/);
+      expect(() =>
+        utxoFromArtifact({
+          outpoint: { transactionId: asTxId("a"), index: 0 },
+          address: asKaspaAddress("addr"),
+          amountSompi: "invalid",
+          scriptPublicKey: "s"
+        })
+      ).toThrow(/Invalid BigInt string/);
     });
   });
 
@@ -68,12 +70,14 @@ describe("Real Transaction Artifacts", () => {
       from: { address: "addr1" },
       to: { address: "addr2" },
       amountSompi: "100",
-      inputs: [{
-        outpoint: { transactionId: "tx1", index: 0 },
-        address: "addr1",
-        amountSompi: "1000",
-        scriptPublicKey: "spk"
-      }],
+      inputs: [
+        {
+          outpoint: { transactionId: "tx1", index: 0 },
+          address: "addr1",
+          amountSompi: "1000",
+          scriptPublicKey: "spk"
+        }
+      ],
       outputs: [{ address: "addr2", amountSompi: "100" }],
       estimatedMass: "1000",
       estimatedFeeSompi: "10"

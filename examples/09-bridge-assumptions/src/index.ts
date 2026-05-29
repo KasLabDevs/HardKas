@@ -1,6 +1,6 @@
 import { Hardkas, writeArtifact } from "@hardkas/sdk";
-import { 
-  getL2BridgeAssumptions, 
+import {
+  getL2BridgeAssumptions,
   listL2BridgeAssumptions,
   L2BridgeAssumptions
 } from "@hardkas/l2";
@@ -9,8 +9,8 @@ import path from "node:path";
 
 /**
  * Example 09: Bridge Assumptions
- * 
- * Demonstrates bridge security phase awareness and risk modeling 
+ *
+ * Demonstrates bridge security phase awareness and risk modeling
  * without automating bridge operations.
  */
 async function main() {
@@ -26,8 +26,10 @@ async function main() {
   // 1. List Available Bridge Assumptions
   console.log("# Known L2 Bridge Profiles");
   const allAssumptions = listL2BridgeAssumptions();
-  allAssumptions.forEach(a => {
-    console.log(`- ${a.l2Network.toUpperCase()} (Phase: ${a.bridgePhase}, Risk: ${a.riskProfile})`);
+  allAssumptions.forEach((a) => {
+    console.log(
+      `- ${a.l2Network.toUpperCase()} (Phase: ${a.bridgePhase}, Risk: ${a.riskProfile})`
+    );
   });
   console.log("");
 
@@ -49,7 +51,7 @@ async function main() {
     console.log("3. zk      -> Validity Proofs (Target State)\n");
 
     console.log("Architectural Guardrails:");
-    igra.notes.forEach(note => {
+    igra.notes.forEach((note) => {
       console.log(`✓ ${note}`);
     });
     console.log("");
@@ -76,7 +78,7 @@ async function main() {
   console.log("Bridge security modeling completed. No bridge transactions executed.");
 }
 
-main().catch(err => {
+main().catch((err) => {
   console.error("\n✖ Example failed");
   console.error(err);
   process.exit(1);

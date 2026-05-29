@@ -1,9 +1,9 @@
 import fs from "node:fs";
 import { calculateContentHash } from "./canonical.js";
-import { 
-  SnapshotSchema, 
-  TxPlanSchema, 
-  TxReceiptSchema, 
+import {
+  SnapshotSchema,
+  TxPlanSchema,
+  TxReceiptSchema,
   TxTraceSchema,
   SignedTxSchema,
   WorkflowSchema,
@@ -63,10 +63,18 @@ export function sortUtxosByOutpoint<T>(utxos: T[]): T[] {
   return [...utxos].sort((a, b) => {
     const aRec = a as Record<string, unknown>;
     const bRec = b as Record<string, unknown>;
-    const aOutpoint = aRec.outpoint as { transactionId?: string; index?: number } | undefined;
-    const bOutpoint = bRec.outpoint as { transactionId?: string; index?: number } | undefined;
-    const aId = (aRec.id as string) || (aOutpoint ? `${aOutpoint.transactionId}:${aOutpoint.index}` : "");
-    const bId = (bRec.id as string) || (bOutpoint ? `${bOutpoint.transactionId}:${bOutpoint.index}` : "");
+    const aOutpoint = aRec.outpoint as
+      | { transactionId?: string; index?: number }
+      | undefined;
+    const bOutpoint = bRec.outpoint as
+      | { transactionId?: string; index?: number }
+      | undefined;
+    const aId =
+      (aRec.id as string) ||
+      (aOutpoint ? `${aOutpoint.transactionId}:${aOutpoint.index}` : "");
+    const bId =
+      (bRec.id as string) ||
+      (bOutpoint ? `${bOutpoint.transactionId}:${bOutpoint.index}` : "");
     return deterministicCompare(aId, bId);
   });
 }
@@ -75,7 +83,9 @@ export function sortUtxosByOutpoint<T>(utxos: T[]): T[] {
  * Verifies an artifact's integrity.
  * Can take a raw object or a file path.
  */
-export async function verifyArtifactIntegrity(artifactOrPath: unknown): Promise<ArtifactVerificationResult> {
+export async function verifyArtifactIntegrity(
+  artifactOrPath: unknown
+): Promise<ArtifactVerificationResult> {
   const result: ArtifactVerificationResult = {
     ok: false,
     errors: [],
@@ -97,7 +107,7 @@ export async function verifyArtifactIntegrity(artifactOrPath: unknown): Promise<
         return result;
       }
       let content = fs.readFileSync(artifactOrPath, "utf-8");
-      if (content.charCodeAt(0) === 0xFEFF) {
+      if (content.charCodeAt(0) === 0xfeff) {
         content = content.slice(1);
       }
       artifact = JSON.parse(content);
@@ -117,7 +127,10 @@ export async function verifyArtifactIntegrity(artifactOrPath: unknown): Promise<
 
     // 2. Basic Version & Schema Check
     if (!v.version || !v.schema) {
-      addError("ARTIFACT_SCHEMA_MISSING", "Missing version or schema (Artifact might be v1 or legacy)");
+      addError(
+        "ARTIFACT_SCHEMA_MISSING",
+        "Missing version or schema (Artifact might be v1 or legacy)"
+      );
       return result;
     }
 
@@ -125,7 +138,10 @@ export async function verifyArtifactIntegrity(artifactOrPath: unknown): Promise<
     const [currentMajor] = ARTIFACT_VERSION.split(".");
     const [artifactMajor] = (v.version as string).split(".");
     if (currentMajor !== artifactMajor) {
-      addError("ARTIFACT_SCHEMA_INVALID", `Incompatible version: current system is v${currentMajor}, artifact is v${artifactMajor}`);
+      addError(
+        "ARTIFACT_SCHEMA_INVALID",
+        `Incompatible version: current system is v${currentMajor}, artifact is v${artifactMajor}`
+      );
       return result;
     }
 
@@ -137,18 +153,33 @@ export async function verifyArtifactIntegrity(artifactOrPath: unknown): Promise<
     if (!v.contentHash) {
       addError("ARTIFACT_HASH_MISMATCH", "Missing contentHash field");
     } else if (actualHash !== v.contentHash) {
-      addError("ARTIFACT_HASH_MISMATCH", `Hash mismatch: expected ${v.contentHash}, got ${actualHash}`);
+      addError(
+        "ARTIFACT_HASH_MISMATCH",
+        `Hash mismatch: expected ${v.contentHash}, got ${actualHash}`
+      );
     }
 
     // 4. Zod Schema Validation
     let schema;
     switch (v.schema) {
-      case "hardkas.snapshot": schema = SnapshotSchema; break;
-      case "hardkas.txPlan": schema = TxPlanSchema; break;
-      case "hardkas.txReceipt": schema = TxReceiptSchema; break;
-      case "hardkas.txTrace": schema = TxTraceSchema; break;
-      case "hardkas.signedTx": schema = SignedTxSchema; break;
-      case "hardkas.workflow.v1": schema = WorkflowSchema; break;
+      case "hardkas.snapshot":
+        schema = SnapshotSchema;
+        break;
+      case "hardkas.txPlan":
+        schema = TxPlanSchema;
+        break;
+      case "hardkas.txReceipt":
+        schema = TxReceiptSchema;
+        break;
+      case "hardkas.txTrace":
+        schema = TxTraceSchema;
+        break;
+      case "hardkas.signedTx":
+        schema = SignedTxSchema;
+        break;
+      case "hardkas.workflow.v1":
+        schema = WorkflowSchema;
+        break;
     }
 
     if (schema) {
@@ -160,12 +191,16 @@ export async function verifyArtifactIntegrity(artifactOrPath: unknown): Promise<
         });
       }
     } else {
-      addError("ARTIFACT_SCHEMA_INVALID", `Unsupported or unknown artifact schema: ${v.schema}`);
+      addError(
+        "ARTIFACT_SCHEMA_INVALID",
+        `Unsupported or unknown artifact schema: ${v.schema}`
+      );
     }
 
-    result.ok = result.issues.every(i => i.severity !== "error" && i.severity !== "critical");
+    result.ok = result.issues.every(
+      (i) => i.severity !== "error" && i.severity !== "critical"
+    );
     return result;
-
   } catch (e: unknown) {
     if (e instanceof SyntaxError) {
       addError("ARTIFACT_JSON_INVALID", `Invalid JSON: ${e.message}`);
@@ -181,7 +216,10 @@ export async function verifyArtifactIntegrity(artifactOrPath: unknown): Promise<
 /**
  * Verifies an artifact's semantic and economic validity.
  */
-export function verifyArtifactSemantics(artifact: unknown, context: VerificationContext = {}): ArtifactVerificationResult {
+export function verifyArtifactSemantics(
+  artifact: unknown,
+  context: VerificationContext = {}
+): ArtifactVerificationResult {
   const result: ArtifactVerificationResult = {
     ok: true,
     errors: [],
@@ -194,13 +232,14 @@ export function verifyArtifactSemantics(artifact: unknown, context: Verification
   const addIssue = (issue: VerificationIssue) => {
     if (issue.severity === "error" || issue.severity === "critical") result.ok = false;
     result.issues.push(issue);
-    if (issue.severity === "error" || issue.severity === "critical") result.errors.push(issue.message);
+    if (issue.severity === "error" || issue.severity === "critical")
+      result.errors.push(issue.message);
   };
 
   // 1. Fee & Economic Audit
   const feeAudit = verifyFeeSemantics(artifact);
   if (!feeAudit.ok) {
-    feeAudit.issues.forEach(msg => {
+    feeAudit.issues.forEach((msg) => {
       addIssue({
         code: "ECONOMIC_VIOLATION",
         severity: strict ? "error" : "warning",
@@ -235,26 +274,56 @@ export function verifyArtifactSemantics(artifact: unknown, context: Verification
   // 3. Lineage Audit (Harden and Harmonize)
   const lineageAudit = verifyLineage(v, context.parent, { strict });
   if (!lineageAudit.ok || (strict && !v.lineage && v.schema !== "hardkas.workflow.v1")) {
-    lineageAudit.issues.forEach(issue => {
+    lineageAudit.issues.forEach((issue) => {
       addIssue(issue);
     });
   }
 
   // 4. Hardening Fields
   if (strict) {
-    if (!v.workflowId) addIssue({ code: "MISSING_WORKFLOW_ID", severity: "error", message: "Strict mode requires workflowId" });
-    if (!v.assumptionLevel && v.schema !== "hardkas.workflow.v1") addIssue({ code: "MISSING_ASSUMPTION_LEVEL", severity: "error", message: "Strict mode requires assumptionLevel" });
-    if (!v.executionMode && !v.mode) addIssue({ code: "MISSING_EXECUTION_MODE", severity: "error", message: "Strict mode requires executionMode" });
+    if (!v.workflowId)
+      addIssue({
+        code: "MISSING_WORKFLOW_ID",
+        severity: "error",
+        message: "Strict mode requires workflowId"
+      });
+    if (!v.assumptionLevel && v.schema !== "hardkas.workflow.v1")
+      addIssue({
+        code: "MISSING_ASSUMPTION_LEVEL",
+        severity: "error",
+        message: "Strict mode requires assumptionLevel"
+      });
+    if (!v.executionMode && !v.mode)
+      addIssue({
+        code: "MISSING_EXECUTION_MODE",
+        severity: "error",
+        message: "Strict mode requires executionMode"
+      });
   } else {
-    if (!v.workflowId) addIssue({ code: "MISSING_WORKFLOW_ID", severity: "warning", message: "Missing workflowId" });
-    if (!v.assumptionLevel && v.schema !== "hardkas.workflow.v1") addIssue({ code: "MISSING_ASSUMPTION_LEVEL", severity: "warning", message: "Missing assumptionLevel" });
-    if (!v.executionMode && !v.mode) addIssue({ code: "MISSING_EXECUTION_MODE", severity: "warning", message: "Missing executionMode" });
+    if (!v.workflowId)
+      addIssue({
+        code: "MISSING_WORKFLOW_ID",
+        severity: "warning",
+        message: "Missing workflowId"
+      });
+    if (!v.assumptionLevel && v.schema !== "hardkas.workflow.v1")
+      addIssue({
+        code: "MISSING_ASSUMPTION_LEVEL",
+        severity: "warning",
+        message: "Missing assumptionLevel"
+      });
+    if (!v.executionMode && !v.mode)
+      addIssue({
+        code: "MISSING_EXECUTION_MODE",
+        severity: "warning",
+        message: "Missing executionMode"
+      });
   }
 
   // 5. Network vs Address prefix check
   const networkId = context.networkId || (v.networkId as NetworkId);
   const networkIdStr = networkId as string;
-  
+
   if (networkId && (v.from || v.to)) {
     const from = v.from as Record<string, unknown>;
     const to = v.to as Record<string, unknown>;
@@ -286,14 +355,20 @@ export function verifyArtifactSemantics(artifact: unknown, context: Verification
  * Verifies an artifact's replay consistency.
  * Honest implementation: reports as unsupported or not implemented.
  */
-export async function verifyArtifactReplay(artifact: unknown, _context: VerificationContext = {}): Promise<ArtifactVerificationResult> {
+export async function verifyArtifactReplay(
+  artifact: unknown,
+  _context: VerificationContext = {}
+): Promise<ArtifactVerificationResult> {
   return {
     ok: false,
-    issues: [{
-      code: "REPLAY_UNSUPPORTED_CHECK",
-      severity: "warning",
-      message: "Replay verification (full consensus simulation) is currently unsupported in this build."
-    }],
+    issues: [
+      {
+        code: "REPLAY_UNSUPPORTED_CHECK",
+        severity: "warning",
+        message:
+          "Replay verification (full consensus simulation) is currently unsupported in this build."
+      }
+    ],
     errors: ["Replay verification (consensus) unsupported"]
   };
 }

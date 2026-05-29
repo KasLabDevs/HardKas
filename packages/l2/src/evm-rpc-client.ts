@@ -24,7 +24,9 @@ export class EvmJsonRpcClient {
     this.fetcher = options.fetcher ?? globalThis.fetch;
 
     if (!this.fetcher) {
-      throw new Error("No fetch implementation found. Ensure global fetch is available or provide a fetcher.");
+      throw new Error(
+        "No fetch implementation found. Ensure global fetch is available or provide a fetcher."
+      );
     }
   }
 
@@ -52,10 +54,12 @@ export class EvmJsonRpcClient {
         throw new Error(`HTTP error ${response.status}: ${response.statusText}`);
       }
 
-      const json = await response.json() as any;
+      const json = (await response.json()) as any;
 
       if (json.error) {
-        throw new Error(`JSON-RPC error: ${json.error.message} (code: ${json.error.code})`);
+        throw new Error(
+          `JSON-RPC error: ${json.error.message} (code: ${json.error.code})`
+        );
       }
 
       return json.result as T;
@@ -79,24 +83,39 @@ export class EvmJsonRpcClient {
     return BigInt(hex);
   }
 
-  async getBalanceWei(address: string, blockTag: "latest" | "pending" = "latest"): Promise<bigint> {
+  async getBalanceWei(
+    address: string,
+    blockTag: "latest" | "pending" = "latest"
+  ): Promise<bigint> {
     this.validateAddress(address);
     const hex = await this.callRpc<string>("eth_getBalance", [address, blockTag]);
     return BigInt(hex);
   }
 
-  async getTransactionCount(address: string, blockTag: "latest" | "pending" = "latest"): Promise<bigint> {
+  async getTransactionCount(
+    address: string,
+    blockTag: "latest" | "pending" = "latest"
+  ): Promise<bigint> {
     this.validateAddress(address);
-    const hex = await this.callRpc<string>("eth_getTransactionCount", [address, blockTag]);
+    const hex = await this.callRpc<string>("eth_getTransactionCount", [
+      address,
+      blockTag
+    ]);
     return BigInt(hex);
   }
 
-  async call(request: EvmCallRequest, blockTag: "latest" | "pending" = "latest"): Promise<string> {
+  async call(
+    request: EvmCallRequest,
+    blockTag: "latest" | "pending" = "latest"
+  ): Promise<string> {
     this.validateCallRequest(request);
     return await this.callRpc<string>("eth_call", [request, blockTag]);
   }
 
-  async estimateGas(request: EvmCallRequest, blockTag: "latest" | "pending" = "latest"): Promise<bigint> {
+  async estimateGas(
+    request: EvmCallRequest,
+    blockTag: "latest" | "pending" = "latest"
+  ): Promise<bigint> {
     this.validateCallRequest(request);
     const hex = await this.callRpc<string>("eth_estimateGas", [request, blockTag]);
     return BigInt(hex);
@@ -114,7 +133,9 @@ export class EvmJsonRpcClient {
 
   private validateTxHash(txHash: string, fieldName: string): void {
     if (!/^0x[a-fA-F0-9]{64}$/.test(txHash)) {
-      throw new Error(`Invalid EVM ${fieldName}: must be a 0x-prefixed 64-character hex string.`);
+      throw new Error(
+        `Invalid EVM ${fieldName}: must be a 0x-prefixed 64-character hex string.`
+      );
     }
   }
 
@@ -132,13 +153,17 @@ export class EvmJsonRpcClient {
       throw new Error(`Invalid ${fieldName}: must be a non-empty string.`);
     }
     if (!/^0x[a-fA-F0-9]{40}$/.test(address)) {
-      throw new Error(`Invalid EVM ${fieldName}: must be a 0x-prefixed 40-character hex string.`);
+      throw new Error(
+        `Invalid EVM ${fieldName}: must be a 0x-prefixed 40-character hex string.`
+      );
     }
   }
 
   private validateHexData(data: string, fieldName: string): void {
     if (!/^0x([a-fA-F0-9]{2})*$/.test(data)) {
-      throw new Error(`Invalid hex ${fieldName}: must be a 0x-prefixed even-length hex string.`);
+      throw new Error(
+        `Invalid hex ${fieldName}: must be a 0x-prefixed even-length hex string.`
+      );
     }
   }
 

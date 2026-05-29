@@ -12,7 +12,7 @@ export class HashInvariant implements Invariant {
   async check(context: InvariantContext): Promise<InvariantViolation[]> {
     const { artifact } = context;
     if (!artifact || typeof artifact !== "object") return [];
-    
+
     // Narrowing unknown to Record for property access (safe after object check)
     const v = artifact as Record<string, unknown>;
     const contentHash = v.contentHash;
@@ -20,12 +20,16 @@ export class HashInvariant implements Invariant {
 
     const actualHash = calculateContentHash(v);
     if (actualHash !== contentHash) {
-      return [{
-        code: this.id,
-        severity: "error",
-        message: `Hash mismatch: expected ${contentHash}, got ${actualHash}`,
-        metadata: { artifactId: typeof v.artifactId === "string" ? v.artifactId : undefined }
-      }];
+      return [
+        {
+          code: this.id,
+          severity: "error",
+          message: `Hash mismatch: expected ${contentHash}, got ${actualHash}`,
+          metadata: {
+            artifactId: typeof v.artifactId === "string" ? v.artifactId : undefined
+          }
+        }
+      ];
     }
     return [];
   }
@@ -48,20 +52,24 @@ export class SchemaInvariant implements Invariant {
     const version = v.version;
 
     if (typeof schema !== "string" || typeof version !== "string") {
-      return [{
-        code: this.id,
-        severity: "error",
-        message: "Artifact missing schema or version metadata"
-      }];
+      return [
+        {
+          code: this.id,
+          severity: "error",
+          message: "Artifact missing schema or version metadata"
+        }
+      ];
     }
 
     const supportedSchemas = Object.values(ARTIFACT_SCHEMAS) as string[];
     if (!supportedSchemas.includes(schema)) {
-      return [{
-        code: this.id,
-        severity: "error",
-        message: `Unsupported schema: ${schema}`
-      }];
+      return [
+        {
+          code: this.id,
+          severity: "error",
+          message: `Unsupported schema: ${schema}`
+        }
+      ];
     }
 
     return [];
@@ -121,12 +129,16 @@ export class BasicLineageInvariant implements Invariant {
 
     const parent = await artifactStore.getArtifact(parentArtifactId);
     if (!parent) {
-      return [{
-        code: this.id,
-        severity: "warning",
-        message: `Parent artifact ${parentArtifactId} not found in store`,
-        metadata: { childId: typeof v.artifactId === "string" ? v.artifactId : undefined }
-      }];
+      return [
+        {
+          code: this.id,
+          severity: "warning",
+          message: `Parent artifact ${parentArtifactId} not found in store`,
+          metadata: {
+            childId: typeof v.artifactId === "string" ? v.artifactId : undefined
+          }
+        }
+      ];
     }
 
     return [];
@@ -139,7 +151,9 @@ export class BasicLineageInvariant implements Invariant {
 export class LifecycleInvariant implements Invariant {
   readonly id = "INVAR_LIFECYCLE_ORDER";
   readonly description = "Workflow events must follow valid lifecycle ordering";
-  async check(): Promise<InvariantViolation[]> { return []; }
+  async check(): Promise<InvariantViolation[]> {
+    return [];
+  }
 }
 
 /**
@@ -148,7 +162,9 @@ export class LifecycleInvariant implements Invariant {
 export class NetworkInvariant implements Invariant {
   readonly id = "INVAR_NETWORK_PREFIX";
   readonly description = "Network ID must match address prefixes";
-  async check(): Promise<InvariantViolation[]> { return []; }
+  async check(): Promise<InvariantViolation[]> {
+    return [];
+  }
 }
 
 /**
@@ -157,5 +173,7 @@ export class NetworkInvariant implements Invariant {
 export class ReplayInvariant implements Invariant {
   readonly id = "INVAR_REPLAY_CONSISTENCY";
   readonly description = "Replay execution must produce consistent results";
-  async check(): Promise<InvariantViolation[]> { return []; }
+  async check(): Promise<InvariantViolation[]> {
+    return [];
+  }
 }

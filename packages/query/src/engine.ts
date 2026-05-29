@@ -42,31 +42,35 @@ export class QueryEngine {
     if (!backend) {
       // Auto-discovery: SQLite > FS Fallback
       const dbPath = path.join(options.artifactDir, ".hardkas", "store.db");
-      
+
       if (fs.existsSync(dbPath)) {
         try {
-          const { HardkasStore, SqliteQueryBackend, HardkasIndexer } = await import("@hardkas/query-store");
+          const { HardkasStore, SqliteQueryBackend, HardkasIndexer } =
+            await import("@hardkas/query-store");
           const store = new HardkasStore({ dbPath });
 
           if (options.autoSync) {
             // MUTATION PATH: Must be protected by lock
-            await withLock({
-              rootDir: options.artifactDir,
-              name: "query-store",
-              command: "query-engine-auto-sync",
-              wait: options.waitLock ?? false,
-              timeoutMs: 5000 // Short timeout for auto-sync
-            }, async () => {
-              store.connect({ autoMigrate: true });
-              const indexer = new HardkasIndexer(store.getDatabase());
-              await indexer.sync();
-            });
+            await withLock(
+              {
+                rootDir: options.artifactDir,
+                name: "query-store",
+                command: "query-engine-auto-sync",
+                wait: options.waitLock ?? false,
+                timeoutMs: 5000 // Short timeout for auto-sync
+              },
+              async () => {
+                store.connect({ autoMigrate: true });
+                const indexer = new HardkasIndexer(store.getDatabase());
+                await indexer.sync();
+              }
+            );
           } else {
             // READ-ONLY PATH: Connect but don't sync
             // NOTE: store.connect() now defaults to autoMigrate: false
             store.connect();
           }
-          
+
           backend = new SqliteQueryBackend(store);
         } catch (e) {
           backend = new FilesystemQueryBackend(options.artifactDir);
@@ -76,21 +80,33 @@ export class QueryEngine {
       }
     }
 
-    return new QueryEngine({ 
+    return new QueryEngine({
       artifactDir: options.artifactDir,
-      backend: backend! 
+      backend: backend!
     });
   }
 
   constructor(options: QueryEngineOptions) {
     this.backend = options.backend || new FilesystemQueryBackend(options.artifactDir);
-    
+
     this.adapters = new Map();
-    this.adapters.set("artifacts", new ArtifactQueryAdapter(options.artifactDir, this.backend));
-    this.adapters.set("lineage", new LineageQueryAdapter(options.artifactDir, this.backend));
-    this.adapters.set("replay", new ReplayQueryAdapter(options.artifactDir, this.backend));
+    this.adapters.set(
+      "artifacts",
+      new ArtifactQueryAdapter(options.artifactDir, this.backend)
+    );
+    this.adapters.set(
+      "lineage",
+      new LineageQueryAdapter(options.artifactDir, this.backend)
+    );
+    this.adapters.set(
+      "replay",
+      new ReplayQueryAdapter(options.artifactDir, this.backend)
+    );
     this.adapters.set("dag", new DagQueryAdapter(options.artifactDir, this.backend));
-    this.adapters.set("events", new EventsQueryAdapter(options.artifactDir, this.backend));
+    this.adapters.set(
+      "events",
+      new EventsQueryAdapter(options.artifactDir, this.backend)
+    );
     this.adapters.set("tx", new TxQueryAdapter(options.artifactDir, this.backend));
   }
 
@@ -106,30 +122,35 @@ export class QueryEngine {
     if (!adapter.supportedOps().includes(request.op)) {
       throw new Error(
         `Operation "${request.op}" is not supported by the "${request.domain}" adapter. ` +
-        `Supported: ${adapter.supportedOps().join(", ")}`
+          `Supported: ${adapter.supportedOps().join(", ")}`
       );
     }
 
     const result = await adapter.execute(request);
-    
+
     // Inject freshness and backend info into annotations
-    const freshness = (await this.backend.getStoreStatus());
+    const freshness = await this.backend.getStoreStatus();
     const backendUsed = this.backend.kind();
-    
+
     let explain: any = undefined;
     if (request.explain) {
       explain = {
         backend: backendUsed,
         executionPlan: ["Discovery", "Filter", "Sort", "Paginate"],
         indexesUsed: backendUsed === "sqlite" ? ["PRIMARY", "idx_artifacts_schema"] : [],
-        filtersApplied: request.filters.map(f => `${f.field} ${f.op} ${f.value}`),
+        filtersApplied: request.filters.map((f) => `${f.field} ${f.op} ${f.value}`),
         rowsRead: result.items.length,
         scannedFiles: result.annotations.filesScanned || 0,
         freshness,
-        warnings: freshness === "stale" ? ["Index is STALE. mtime mismatch detected. Run 'hardkas query store rebuild'."] : []
+        warnings:
+          freshness === "stale"
+            ? [
+                "Index is STALE. mtime mismatch detected. Run 'hardkas query store rebuild'."
+              ]
+            : []
       };
     }
-    
+
     return {
       ...result,
       explain,
@@ -144,8 +165,16 @@ export class QueryEngine {
   /**
    * List available domains and their operations.
    */
-  listCapabilities(): Array<{ domain: QueryDomain; ops: readonly string[]; filters: readonly string[] }> {
-    const result: Array<{ domain: QueryDomain; ops: readonly string[]; filters: readonly string[] }> = [];
+  listCapabilities(): Array<{
+    domain: QueryDomain;
+    ops: readonly string[];
+    filters: readonly string[];
+  }> {
+    const result: Array<{
+      domain: QueryDomain;
+      ops: readonly string[];
+      filters: readonly string[];
+    }> = [];
     for (const [domain, adapter] of this.adapters.entries()) {
       result.push({
         domain,

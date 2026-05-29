@@ -6,7 +6,7 @@ import { UI } from "../ui.js";
 
 export default async function runProjectionRebuildRecipe(sandboxRoot: string) {
   UI.info("Generating canonical workflow artifacts...");
-  
+
   await runDevTxSend({
     from: "alice",
     to: "bob",
@@ -14,17 +14,18 @@ export default async function runProjectionRebuildRecipe(sandboxRoot: string) {
     workspaceRoot: sandboxRoot,
     quiet: true
   });
-  
-  await new Promise(r => setTimeout(r, 1000));
-  
+
+  await new Promise((r) => setTimeout(r, 1000));
+
   const dbPath = path.join(sandboxRoot, ".hardkas", "store.db");
   const walPath = path.join(sandboxRoot, ".hardkas", "store.db-wal");
   const shmPath = path.join(sandboxRoot, ".hardkas", "store.db-shm");
-  
+
   UI.info("Intentionally corrupting local projection (store.db)...");
-  
+
   try {
-    const { disconnectQueryBackend, stopWatcherReconciliationSweep } = await import("@hardkas/dev-server");
+    const { disconnectQueryBackend, stopWatcherReconciliationSweep } =
+      await import("@hardkas/dev-server");
     stopWatcherReconciliationSweep();
     disconnectQueryBackend();
   } catch (e) {
@@ -39,32 +40,36 @@ export default async function runProjectionRebuildRecipe(sandboxRoot: string) {
     // ignore ebusy if windows locks it, just empty it
     try {
       fs.writeFileSync(dbPath, "");
-    } catch(e2) {}
+    } catch (e2) {}
   }
 
   console.log(`\n${pc.red("Projection degraded.")}`);
   console.log(`${pc.blue("Artifacts remain canonical local truth.")}\n`);
 
   console.log(pc.bold("Rebuilding projection..."));
-  
+
   const { HardkasStore, SqliteQueryBackend } = await import("@hardkas/query-store");
   const { withLock } = await import("@hardkas/core");
-  
+
   const store = new HardkasStore({ dbPath });
   store.connect({ autoMigrate: true });
-  
-  await withLock({ rootDir: sandboxRoot, name: "query-store", timeoutMs: 30000, wait: true }, async () => {
-    const backend = new SqliteQueryBackend(store);
-    await backend.rebuild({ strict: true, cwd: sandboxRoot });
-  });
+
+  await withLock(
+    { rootDir: sandboxRoot, name: "query-store", timeoutMs: 30000, wait: true },
+    async () => {
+      const backend = new SqliteQueryBackend(store);
+      await backend.rebuild({ strict: true, cwd: sandboxRoot });
+    }
+  );
 
   console.log(pc.green("Projection restored.\n"));
-  
+
   try {
-    const { startWatcherReconciliationSweep, getQueryBackend } = await import("@hardkas/dev-server");
+    const { startWatcherReconciliationSweep, getQueryBackend } =
+      await import("@hardkas/dev-server");
     getQueryBackend(); // Reconnects the db
     startWatcherReconciliationSweep();
   } catch (e) {}
-  
+
   console.log(pc.yellow(pc.bold("Recipe completed: projection-rebuild\n")));
 }

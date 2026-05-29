@@ -15,11 +15,15 @@ export function verifyMigrationIntegrity(
   postMigration: SemanticIdentity
 ): void {
   if (preMigration.artifactId !== postMigration.artifactId) {
-    throw new Error(`[CRITICAL SEMANTIC ERROR] Migration unexpectedly altered canonical artifact ID: ${preMigration.artifactId} -> ${postMigration.artifactId}`);
+    throw new Error(
+      `[CRITICAL SEMANTIC ERROR] Migration unexpectedly altered canonical artifact ID: ${preMigration.artifactId} -> ${postMigration.artifactId}`
+    );
   }
 
   if (postMigration.schemaVersion < preMigration.schemaVersion) {
-    throw new Error(`[CRITICAL SEMANTIC ERROR] Invalid migration: schema downgraded from ${preMigration.schemaVersion} to ${postMigration.schemaVersion}`);
+    throw new Error(
+      `[CRITICAL SEMANTIC ERROR] Invalid migration: schema downgraded from ${preMigration.schemaVersion} to ${postMigration.schemaVersion}`
+    );
   }
 }
 
@@ -27,7 +31,10 @@ export function verifyMigrationIntegrity(
  * Handles migrating an artifact to a newer schema version.
  * Currently, only schemaVersion: 1 exists as the baseline.
  */
-export function migrateArtifact(identity: SemanticIdentity, targetVersion: SchemaVersion): MigrationResult {
+export function migrateArtifact(
+  identity: SemanticIdentity,
+  targetVersion: SchemaVersion
+): MigrationResult {
   if (identity.schemaVersion === targetVersion) {
     return { migratedIdentity: identity, success: true };
   }
@@ -43,8 +50,13 @@ export function migrateArtifact(identity: SemanticIdentity, targetVersion: Schem
 /**
  * Compares lineage before and after migration to ensure continuity.
  */
-export function comparePrePostMigrationLineage(preLineageId: string, postLineageId: string): void {
+export function comparePrePostMigrationLineage(
+  preLineageId: string,
+  postLineageId: string
+): void {
   if (preLineageId !== postLineageId) {
-    throw new Error(`[CRITICAL SEMANTIC ERROR] Lineage broken across schema migration: ${preLineageId} -> ${postLineageId}`);
+    throw new Error(
+      `[CRITICAL SEMANTIC ERROR] Lineage broken across schema migration: ${preLineageId} -> ${postLineageId}`
+    );
   }
 }

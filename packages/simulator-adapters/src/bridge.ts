@@ -2,12 +2,21 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import { planBridgeEntry, simulatePrefixMining } from "@hardkas/bridge-local";
 import { useHardKas, useHardKasSession } from "@hardkas/react";
 
-export function useBridgeLocalPlan(options: { amountSompi: bigint; toIgra?: string } | null) {
+export function useBridgeLocalPlan(
+  options: { amountSompi: bigint; toIgra?: string } | null
+) {
   const { data: session } = useHardKasSession();
   const { config } = useHardKas();
 
   return useQuery({
-    queryKey: ["bridge", "plan", session?.name, options?.amountSompi.toString(), options?.toIgra, config.localOnly],
+    queryKey: [
+      "bridge",
+      "plan",
+      session?.name,
+      options?.amountSompi.toString(),
+      options?.toIgra,
+      config.localOnly
+    ],
     queryFn: async () => {
       if (!session || !options) return null;
 
@@ -20,23 +29,25 @@ export function useBridgeLocalPlan(options: { amountSompi: bigint; toIgra?: stri
         amountSompi: options.amountSompi,
         networkId: "simnet" as any, // Fixed for local simulation
         availableUtxos: [
-          { 
-            outpoint: { transactionId: "mock-utxo", index: 0 }, 
-            address: session.l1.address!, 
-            amountSompi: options.amountSompi * 2n, 
-            scriptPublicKey: "mock-script" 
+          {
+            outpoint: { transactionId: "mock-utxo", index: 0 },
+            address: session.l1.address!,
+            amountSompi: options.amountSompi * 2n,
+            scriptPublicKey: "mock-script"
           }
         ]
       });
     },
-    enabled: !!session && !!options,
+    enabled: !!session && !!options
   });
 }
 
 export function useBridgeLocalSimulation() {
   return useMutation({
     mutationFn: async (params: { payloadBase: any; prefix: string }) => {
-      return simulatePrefixMining(params.payloadBase, params.prefix, { timeoutMs: 10000 });
+      return simulatePrefixMining(params.payloadBase, params.prefix, {
+        timeoutMs: 10000
+      });
     }
   });
 }

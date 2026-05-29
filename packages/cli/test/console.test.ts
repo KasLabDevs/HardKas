@@ -16,7 +16,11 @@ describe("hardkas console", () => {
       });
       return { ok: true, stdout };
     } catch (err: any) {
-      return { ok: false, stdout: err.stdout?.toString(), stderr: err.stderr?.toString() };
+      return {
+        ok: false,
+        stdout: err.stdout?.toString(),
+        stderr: err.stderr?.toString()
+      };
     }
   }
 

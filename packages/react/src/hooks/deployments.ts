@@ -15,12 +15,13 @@ export interface DeploymentSummary {
 }
 
 export function useDeployments() {
-  const { config, subscribe , apiFetch } = useHardKas();
+  const { config, subscribe, apiFetch } = useHardKas();
   const queryClient = useQueryClient();
 
   useEffect(() => {
-    const sync = () => queryClient.invalidateQueries({ queryKey: ["hardkas", "deployments"] });
-    
+    const sync = () =>
+      queryClient.invalidateQueries({ queryKey: ["hardkas", "deployments"] });
+
     return subscribe((event) => {
       if (["query-synced", "session-changed"].includes(event.type)) {
         sync();
@@ -33,7 +34,11 @@ export function useDeployments() {
     queryFn: async (): Promise<DeploymentSummary[]> => {
       try {
         const baseUrl = config.devServerUrl || "";
-        const url = baseUrl ? (baseUrl.endsWith("/") ? `${baseUrl}api/deployments` : `${baseUrl}/api/deployments`) : "/api/deployments";
+        const url = baseUrl
+          ? baseUrl.endsWith("/")
+            ? `${baseUrl}api/deployments`
+            : `${baseUrl}/api/deployments`
+          : "/api/deployments";
         const response = await apiFetch(url);
         if (!response.ok) return [];
         const data = await response.json();
@@ -43,6 +48,6 @@ export function useDeployments() {
         return [];
       }
     },
-    staleTime: 30000,
+    staleTime: 30000
   });
 }

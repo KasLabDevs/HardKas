@@ -49,11 +49,11 @@ describe("AppendCoordinator Tail Recovery Safety Tests", () => {
       schema: "hardkas.event"
     };
     const line = JSON.stringify(largeObj) + "\n";
-    
+
     // Write valid line and then a partial corrupted line
     fs.writeFileSync(testFile, line, "utf-8");
     const validSize = fs.statSync(testFile).size;
-    
+
     // hardkas-append-allow
     fs.appendFileSync(testFile, '{"broken": "yes", \n'); // malformed and incomplete
 

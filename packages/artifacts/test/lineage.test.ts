@@ -47,37 +47,47 @@ describe("Artifact Lineage Hardening", () => {
     };
     const result = verifyLineage(orphan, rootArtifact);
     expect(result.ok).toBe(false);
-    expect(result.issues.some(i => i.code === "MISSING_PARENT_ID")).toBe(true);
+    expect(result.issues.some((i) => i.code === "MISSING_PARENT_ID")).toBe(true);
   });
 
   it("should fail on lineageId mismatch", () => {
     const corrupted = {
       ...planArtifact,
-      lineage: { ...planArtifact.lineage, lineageId: "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" }
+      lineage: {
+        ...planArtifact.lineage,
+        lineageId: "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      }
     };
     const result = verifyLineage(corrupted, rootArtifact);
     expect(result.ok).toBe(false);
-    expect(result.issues.some(i => i.code === "LINEAGE_ID_MISMATCH")).toBe(true);
+    expect(result.issues.some((i) => i.code === "LINEAGE_ID_MISMATCH")).toBe(true);
   });
 
   it("should fail on rootId mismatch", () => {
     const corrupted = {
       ...planArtifact,
-      lineage: { ...planArtifact.lineage, rootArtifactId: "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb" }
+      lineage: {
+        ...planArtifact.lineage,
+        rootArtifactId: "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+      }
     };
     const result = verifyLineage(corrupted, rootArtifact);
     expect(result.ok).toBe(false);
-    expect(result.issues.some(i => i.code === "ROOT_ARTIFACT_ID_MISMATCH")).toBe(true);
+    expect(result.issues.some((i) => i.code === "ROOT_ARTIFACT_ID_MISMATCH")).toBe(true);
   });
 
   it("should fail on parent hash mismatch", () => {
     const corrupted = {
       ...planArtifact,
-      lineage: { ...planArtifact.lineage, parentArtifactId: "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc" }
+      lineage: {
+        ...planArtifact.lineage,
+        parentArtifactId:
+          "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
+      }
     };
     const result = verifyLineage(corrupted, rootArtifact);
     expect(result.ok).toBe(false);
-    expect(result.issues.some(i => i.code === "PARENT_ID_MISMATCH")).toBe(true);
+    expect(result.issues.some((i) => i.code === "PARENT_ID_MISMATCH")).toBe(true);
   });
 
   it("should WARN but not fail on non-monotonic sequence", () => {
@@ -87,7 +97,11 @@ describe("Artifact Lineage Hardening", () => {
     };
     const result = verifyLineage(corrupted, rootArtifact);
     expect(result.ok).toBe(true); // Warning, not error
-    expect(result.issues.some(i => i.code === "NON_MONOTONIC_SEQUENCE" && i.severity === "warning")).toBe(true);
+    expect(
+      result.issues.some(
+        (i) => i.code === "NON_MONOTONIC_SEQUENCE" && i.severity === "warning"
+      )
+    ).toBe(true);
   });
 
   it("should fail on network mismatch", () => {
@@ -97,7 +111,7 @@ describe("Artifact Lineage Hardening", () => {
     };
     const result = verifyLineage(crossNetwork, rootArtifact);
     expect(result.ok).toBe(false);
-    expect(result.issues.some(i => i.code === "NETWORK_MISMATCH")).toBe(true);
+    expect(result.issues.some((i) => i.code === "NETWORK_MISMATCH")).toBe(true);
   });
 
   it("should fail on mode mismatch", () => {
@@ -107,7 +121,7 @@ describe("Artifact Lineage Hardening", () => {
     };
     const result = verifyLineage(crossMode, rootArtifact);
     expect(result.ok).toBe(false);
-    expect(result.issues.some(i => i.code === "MODE_MISMATCH")).toBe(true);
+    expect(result.issues.some((i) => i.code === "MODE_MISMATCH")).toBe(true);
   });
 
   it("should fail on self-parent", () => {
@@ -117,7 +131,7 @@ describe("Artifact Lineage Hardening", () => {
     };
     const result = verifyLineage(selfParent, rootArtifact);
     expect(result.ok).toBe(false);
-    expect(result.issues.some(i => i.code === "SELF_PARENT")).toBe(true);
+    expect(result.issues.some((i) => i.code === "SELF_PARENT")).toBe(true);
   });
 
   it("should fail on invalid transition (e.g. receipt -> plan)", () => {
@@ -131,11 +145,16 @@ describe("Artifact Lineage Hardening", () => {
       schema: "hardkas.txPlan",
       networkId: "simnet",
       mode: "simulated",
-      lineage: { artifactId: planHash, lineageId: flowId, rootArtifactId: rootHash, parentArtifactId: rootHash }
+      lineage: {
+        artifactId: planHash,
+        lineageId: flowId,
+        rootArtifactId: rootHash,
+        parentArtifactId: rootHash
+      }
     };
     // receipt cannot be parent of plan
     const result = verifyLineage(plan, receipt);
     expect(result.ok).toBe(false);
-    expect(result.issues.some(i => i.code === "INVALID_TRANSITION")).toBe(true);
+    expect(result.issues.some((i) => i.code === "INVALID_TRANSITION")).toBe(true);
   });
 });

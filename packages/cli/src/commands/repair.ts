@@ -9,7 +9,9 @@ import { HardkasStore, HardkasIndexer } from "@hardkas/query-store";
 export function registerRepairCommand(program: Command) {
   program
     .command("repair")
-    .description(`Attempt automatic recovery of corrupt projections or append tails ${UI.maturity("beta")}`)
+    .description(
+      `Attempt automatic recovery of corrupt projections or append tails ${UI.maturity("beta")}`
+    )
     .option("--json", "Output results as stable JSON schema", false)
     .option("--force", "Repair without prompting for confirmation", false)
     .action(async (opts) => {
@@ -36,7 +38,9 @@ async function runRepair(opts: { json?: boolean; force?: boolean }) {
   try {
     const status = MigrationManager.checkVersion(rootDir);
     if (status.needsMigration) {
-      UI.logHuman(`${pc.yellow("⚠️")} Workspace requires migration to ${status.currentVersion}.`);
+      UI.logHuman(
+        `${pc.yellow("⚠️")} Workspace requires migration to ${status.currentVersion}.`
+      );
       if (opts.force) {
         MigrationManager.migrate(rootDir);
         UI.logHuman(`${pc.green("✅")} Successfully migrated workspace.`);
@@ -52,7 +56,7 @@ async function runRepair(opts: { json?: boolean; force?: boolean }) {
   // 2. Clear Stale Locks
   try {
     const files = await fs.readdir(hardkasDir);
-    const locks = files.filter(f => f.endsWith(".lock"));
+    const locks = files.filter((f) => f.endsWith(".lock"));
     for (const lock of locks) {
       const lockPath = path.join(hardkasDir, lock);
       if (opts.force) {
@@ -83,27 +87,29 @@ async function runRepair(opts: { json?: boolean; force?: boolean }) {
       const buffer = Buffer.alloc(1024);
       let bytesRead = 0;
       let fileSize = stats.size;
-      
+
       if (fileSize > 0) {
-         // Read last chunk to check for newline
-         const readSize = Math.min(1024, fileSize);
-         await fd.read(buffer, 0, readSize, fileSize - readSize);
-         const tail = buffer.toString("utf-8", 0, readSize);
-         if (!tail.endsWith("\n")) {
-            UI.logHuman(`${pc.yellow("⚠️")} ${stream.name} has a corrupt tail.`);
-            if (opts.force) {
-               // naive truncate to last newline
-               const lastNewline = tail.lastIndexOf("\n");
-               if (lastNewline !== -1) {
-                  const truncateTo = fileSize - readSize + lastNewline + 1;
-                  await fd.truncate(truncateTo);
-                  UI.logHuman(`${pc.green("✅")} Truncated ${stream.name} at byte ${truncateTo}.`);
-                  repairedCount++;
-               }
-            } else {
-               UI.logHuman(`   Run with --force to truncate corrupt tail.`);
+        // Read last chunk to check for newline
+        const readSize = Math.min(1024, fileSize);
+        await fd.read(buffer, 0, readSize, fileSize - readSize);
+        const tail = buffer.toString("utf-8", 0, readSize);
+        if (!tail.endsWith("\n")) {
+          UI.logHuman(`${pc.yellow("⚠️")} ${stream.name} has a corrupt tail.`);
+          if (opts.force) {
+            // naive truncate to last newline
+            const lastNewline = tail.lastIndexOf("\n");
+            if (lastNewline !== -1) {
+              const truncateTo = fileSize - readSize + lastNewline + 1;
+              await fd.truncate(truncateTo);
+              UI.logHuman(
+                `${pc.green("✅")} Truncated ${stream.name} at byte ${truncateTo}.`
+              );
+              repairedCount++;
             }
-         }
+          } else {
+            UI.logHuman(`   Run with --force to truncate corrupt tail.`);
+          }
+        }
       }
       await fd.close();
     } catch (err) {
@@ -116,23 +122,28 @@ async function runRepair(opts: { json?: boolean; force?: boolean }) {
     const dbPath = path.join(hardkasDir, "store.db");
     const store = new HardkasStore({ dbPath });
     store.connect({ autoMigrate: true });
-    
-    const indexer = new HardkasIndexer(store.getDatabase(), { cwd: rootDir, strict: false });
+
+    const indexer = new HardkasIndexer(store.getDatabase(), {
+      cwd: rootDir,
+      strict: false
+    });
     const idxReport = indexer.doctor();
-    
+
     if (idxReport.duplicateProjections > 0 || idxReport.corruptedFiles.length > 0) {
-       UI.logHuman(`${pc.yellow("⚠️")} SQLite projection is corrupt or stale.`);
-       if (opts.force) {
-          // Rebuild
-          store.disconnect();
-          await fs.unlink(dbPath);
-          UI.logHuman(`${pc.green("✅")} Deleted corrupt SQLite projection. It will be rebuilt on next start.`);
-          repairedCount++;
-       } else {
-          UI.logHuman(`   Run with --force to rebuild SQLite projection.`);
-       }
+      UI.logHuman(`${pc.yellow("⚠️")} SQLite projection is corrupt or stale.`);
+      if (opts.force) {
+        // Rebuild
+        store.disconnect();
+        await fs.unlink(dbPath);
+        UI.logHuman(
+          `${pc.green("✅")} Deleted corrupt SQLite projection. It will be rebuilt on next start.`
+        );
+        repairedCount++;
+      } else {
+        UI.logHuman(`   Run with --force to rebuild SQLite projection.`);
+      }
     } else {
-       store.disconnect();
+      store.disconnect();
     }
   } catch {
     // DB missing or schema error, safe to ignore

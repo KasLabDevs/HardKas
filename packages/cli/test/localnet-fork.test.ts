@@ -6,7 +6,7 @@ describe("localnet fork engine", () => {
   it("creates state from mocked UTXO response", async () => {
     const mockRpc = new MockKaspaRpcClient("testnet-11" as any);
     const address = "kaspa:address1";
-    
+
     mockRpc.setUtxos(address, [
       {
         outpoint: { transactionId: "tx1", index: 0 },

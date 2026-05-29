@@ -16,7 +16,11 @@ describe("hardkas capabilities", () => {
       });
       return { ok: true, stdout };
     } catch (err: any) {
-      return { ok: false, stdout: err.stdout?.toString(), stderr: err.stderr?.toString() };
+      return {
+        ok: false,
+        stdout: err.stdout?.toString(),
+        stderr: err.stderr?.toString()
+      };
     }
   }
 
@@ -24,7 +28,7 @@ describe("hardkas capabilities", () => {
     const result = runHardkas("capabilities --json");
     expect(result.ok).toBe(true);
     const parsed = JSON.parse(result.stdout);
-    
+
     expect(parsed.version).toBeDefined();
     expect(parsed.maturity).toBe("hardened-alpha");
     expect(parsed.capabilities.artifacts).toBe(true);

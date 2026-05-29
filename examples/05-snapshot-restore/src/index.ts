@@ -1,7 +1,7 @@
 import { Hardkas, formatSompi, parseKasToSompi } from "@hardkas/sdk";
-import { 
-  createInitialLocalnetState, 
-  createLocalnetSnapshot, 
+import {
+  createInitialLocalnetState,
+  createLocalnetSnapshot,
   restoreLocalnetSnapshot,
   getAccountBalanceSompi,
   applySimulatedPayment,
@@ -10,8 +10,8 @@ import {
 
 /**
  * Example 05: Snapshot & Restore
- * 
- * Demonstrates deterministic local state management using snapshots 
+ *
+ * Demonstrates deterministic local state management using snapshots
  * and restore flows within the HardKAS infrastructure.
  */
 async function main() {
@@ -22,13 +22,13 @@ async function main() {
 
   // 1. Initialize Hardkas SDK and Initial State
   const hardkas = await Hardkas.create();
-  
+
   console.log("# Initializing Local State");
   let state: LocalnetState = createInitialLocalnetState({
     accounts: 2,
     initialBalanceSompi: parseKasToSompi("1000")
   });
-  
+
   const alice = "alice";
   const bob = "bob";
 
@@ -52,14 +52,14 @@ async function main() {
   // 3. Simulate State Mutation (Transfer)
   const transferAmount = parseKasToSompi("250");
   console.log(`# Simulating Transfer: Alice -> Bob (${formatSompi(transferAmount)})`);
-  
+
   const result = applySimulatedPayment(state, {
     from: alice,
     to: bob,
     amountSompi: transferAmount,
     feeRateSompiPerMass: 1n
   });
-  
+
   state = result.state;
   console.log(`✓ Transfer successful (TxID: ${result.receipt.txId})`);
   console.log(`  Fee: ${formatSompi(BigInt(result.receipt.feeSompi))}\n`);
@@ -95,7 +95,7 @@ async function main() {
   console.log("\nSnapshot restore successful. Deterministic recovery verified.");
 }
 
-main().catch(err => {
+main().catch((err) => {
   console.error("\n✖ Example failed");
   console.error(err);
   process.exit(1);

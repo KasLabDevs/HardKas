@@ -9,31 +9,31 @@ export interface ChaosContext {
   runSeed: number;
 }
 
-export type ChaosActor = (ctx: ChaosContext) => Promise<{ 
-  stdout: string, 
-  stderr: string, 
-  exitCode: number, 
-  action: string,
-  expectedExitCodes?: number[] 
+export type ChaosActor = (ctx: ChaosContext) => Promise<{
+  stdout: string;
+  stderr: string;
+  exitCode: number;
+  action: string;
+  expectedExitCodes?: number[];
 }>;
 
 export const LockHell: ChaosActor = async (ctx) => {
   const locksDir = path.join(ctx.workspaceDir, ".hardkas", "locks");
   await fs.mkdir(locksDir, { recursive: true });
-  
+
   const pids = [999999, process.pid, 1];
   const pid = pids[ctx.runSeed % pids.length];
-  
+
   const action = `Injected lock with PID ${pid}`;
   const lockPath = path.join(locksDir, "workspace.lock");
-  
+
   if (ctx.runSeed % 2 === 0) {
-     // Create 0-byte TOCTOU lock
-     const fd = await fs.open(lockPath, "w");
-     await fd.close();
+    // Create 0-byte TOCTOU lock
+    const fd = await fs.open(lockPath, "w");
+    await fd.close();
   } else {
-     // Create stale lock
-     await fs.writeFile(lockPath, JSON.stringify({ pid, schema: "hardkas.lock.v1" }));
+    // Create stale lock
+    await fs.writeFile(lockPath, JSON.stringify({ pid, schema: "hardkas.lock.v1" }));
   }
 
   // Then spawn a rebuild to test how the system reacts
@@ -41,16 +41,19 @@ export const LockHell: ChaosActor = async (ctx) => {
   let stdout = "";
   let stderr = "";
   try {
-     const cliPath = process.argv[1] || "";
-     const res = await execa(process.execPath, [cliPath, "rebuild", "--from-artifacts"], { cwd: ctx.workspaceDir, reject: false });
-     stdout = res.stdout;
-     stderr = res.stderr;
-     exitCode = res.exitCode || 0;
+    const cliPath = process.argv[1] || "";
+    const res = await execa(process.execPath, [cliPath, "rebuild", "--from-artifacts"], {
+      cwd: ctx.workspaceDir,
+      reject: false
+    });
+    stdout = res.stdout;
+    stderr = res.stderr;
+    exitCode = res.exitCode || 0;
   } catch (e: any) {
-     stderr = e.message;
-     exitCode = 1;
+    stderr = e.message;
+    exitCode = 1;
   }
-  
+
   return { stdout, stderr, exitCode, action, expectedExitCodes: [0, 1] };
 };
 
@@ -60,24 +63,28 @@ export const RotBot: ChaosActor = async (ctx) => {
   let stderr = "";
   let exitCode = 0;
 
-  const target = (ctx.runSeed % 2 === 0) 
-     ? path.join(ctx.workspaceDir, ".hardkas", "telemetry", "telemetry.jsonl")
-     : path.join(ctx.workspaceDir, "events.jsonl");
+  const target =
+    ctx.runSeed % 2 === 0
+      ? path.join(ctx.workspaceDir, ".hardkas", "telemetry", "telemetry.jsonl")
+      : path.join(ctx.workspaceDir, "events.jsonl");
 
   await fs.mkdir(path.dirname(target), { recursive: true });
-  
-  const corruption = (ctx.runSeed % 3 === 0) ? "{" : "GARBAGE\n";
+
+  const corruption = ctx.runSeed % 3 === 0 ? "{" : "GARBAGE\n";
   await fs.appendFile(target, corruption);
 
   try {
-     const cliPath = process.argv[1] || "";
-     const res = await execa(process.execPath, [cliPath, "doctor"], { cwd: ctx.workspaceDir, reject: false });
-     stdout = res.stdout;
-     stderr = res.stderr;
-     exitCode = res.exitCode || 0;
+    const cliPath = process.argv[1] || "";
+    const res = await execa(process.execPath, [cliPath, "doctor"], {
+      cwd: ctx.workspaceDir,
+      reject: false
+    });
+    stdout = res.stdout;
+    stderr = res.stderr;
+    exitCode = res.exitCode || 0;
   } catch (e: any) {
-     stderr = e.message;
-     exitCode = 1;
+    stderr = e.message;
+    exitCode = 1;
   }
 
   return { stdout, stderr, exitCode, action };
@@ -91,20 +98,23 @@ export const DriftHunter: ChaosActor = async (ctx) => {
 
   const dbPath = path.join(ctx.workspaceDir, ".hardkas", "store.db");
   try {
-     await fs.unlink(dbPath);
+    await fs.unlink(dbPath);
   } catch {
-     // ignore if missing
+    // ignore if missing
   }
 
   try {
-     const cliPath = process.argv[1] || "";
-     const res = await execa(process.execPath, [cliPath, "doctor"], { cwd: ctx.workspaceDir, reject: false });
-     stdout = res.stdout;
-     stderr = res.stderr;
-     exitCode = res.exitCode || 0;
+    const cliPath = process.argv[1] || "";
+    const res = await execa(process.execPath, [cliPath, "doctor"], {
+      cwd: ctx.workspaceDir,
+      reject: false
+    });
+    stdout = res.stdout;
+    stderr = res.stderr;
+    exitCode = res.exitCode || 0;
   } catch (e: any) {
-     stderr = e.message;
-     exitCode = 1;
+    stderr = e.message;
+    exitCode = 1;
   }
 
   return { stdout, stderr, exitCode, action };
@@ -117,14 +127,17 @@ export const HumanChaos: ChaosActor = async (ctx) => {
   let exitCode = 0;
 
   try {
-     const cliPath = process.argv[1] || "";
-     const res = await execa(process.execPath, [cliPath, "this-does-not-exist"], { cwd: ctx.workspaceDir, reject: false });
-     stdout = res.stdout;
-     stderr = res.stderr;
-     exitCode = res.exitCode || 0;
+    const cliPath = process.argv[1] || "";
+    const res = await execa(process.execPath, [cliPath, "this-does-not-exist"], {
+      cwd: ctx.workspaceDir,
+      reject: false
+    });
+    stdout = res.stdout;
+    stderr = res.stderr;
+    exitCode = res.exitCode || 0;
   } catch (e: any) {
-     stderr = e.message;
-     exitCode = 1;
+    stderr = e.message;
+    exitCode = 1;
   }
 
   return { stdout, stderr, exitCode, action, expectedExitCodes: [1] };

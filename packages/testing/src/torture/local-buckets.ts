@@ -4,16 +4,17 @@ import fs from "node:fs";
 import { fileURLToPath } from "node:url";
 import path from "node:path";
 import { execSync } from "node:child_process";
-import { 
-  registerTortureBucket, 
-  TortureBucketContext, 
-  TortureInvariantError 
+import {
+  registerTortureBucket,
+  TortureBucketContext,
+  TortureInvariantError
 } from "./torture-engine.js";
 
 registerTortureBucket({
   name: "local-first-lifecycle",
   profiles: ["local"],
-  expectedInvariant: "Workspace init, basic transfer, and dev doctor checks succeed without mutation side effects",
+  expectedInvariant:
+    "Workspace init, basic transfer, and dev doctor checks succeed without mutation side effects",
   run: async (ctx: TortureBucketContext) => {
     const runDir = path.join(ctx.workspaceDir, ".tmp", `local-${ctx.caseId}`);
     fs.rmSync(runDir, { recursive: true, force: true });
@@ -26,13 +27,25 @@ registerTortureBucket({
 
     // 1. hardkas init
     try {
-      execSync(`node "${cliPath}" dev init`, { cwd: runDir, stdio: "pipe", encoding: "utf-8" });
+      execSync(`node "${cliPath}" dev init`, {
+        cwd: runDir,
+        stdio: "pipe",
+        encoding: "utf-8"
+      });
     } catch (e: any) {
-      throw new TortureInvariantError(`hardkas dev init failed: ${e.message}\n${e.stdout}\n${e.stderr}`, "INIT_FAILED", "critical");
+      throw new TortureInvariantError(
+        `hardkas dev init failed: ${e.message}\n${e.stdout}\n${e.stderr}`,
+        "INIT_FAILED",
+        "critical"
+      );
     }
 
     if (!fs.existsSync(path.join(runDir, "hardkas.config.ts"))) {
-      throw new TortureInvariantError("hardkas.config.ts was not generated", "MISSING_CONFIG", "critical");
+      throw new TortureInvariantError(
+        "hardkas.config.ts was not generated",
+        "MISSING_CONFIG",
+        "critical"
+      );
     }
 
     // Overwrite config with a minimal version that doesn't require @hardkas/sdk
@@ -52,21 +65,33 @@ registerTortureBucket({
     // 2. Simple local workflow write (Simulate by creating an events.jsonl with a valid artifact)
     const artifactsDir = path.join(runDir, ".hardkas", "artifacts");
     fs.mkdirSync(artifactsDir, { recursive: true });
-    
+
     const eventsPath = path.join(artifactsDir, "events.jsonl");
-    const mockArtifact = { schema: "hardkas.artifact.v1", type: "transfer", amount: 100, timestamp: Date.now() };
+    const mockArtifact = {
+      schema: "hardkas.artifact.v1",
+      type: "transfer",
+      amount: 100,
+      timestamp: Date.now()
+    };
     // hardkas-append-allow
     fs.appendFileSync(eventsPath, JSON.stringify(mockArtifact) + "\n");
 
     // 3. Dev doctor (use --json to inspect results; only fail on critical workspace checks)
     try {
-      const doctorOutput = execSync(`node "${cliPath}" dev doctor --json`, { cwd: runDir, stdio: "pipe", encoding: "utf-8" });
+      const doctorOutput = execSync(`node "${cliPath}" dev doctor --json`, {
+        cwd: runDir,
+        stdio: "pipe",
+        encoding: "utf-8"
+      });
       const doctorResult = JSON.parse(doctorOutput);
-      const workspaceCheck = doctorResult.checks?.find((c: any) => c.name === "Workspace Validity");
+      const workspaceCheck = doctorResult.checks?.find(
+        (c: any) => c.name === "Workspace Validity"
+      );
       if (workspaceCheck?.status === "error") {
         throw new TortureInvariantError(
           `dev doctor: workspace invalid — ${workspaceCheck.message}`,
-          "DOCTOR_WORKSPACE_INVALID", "critical"
+          "DOCTOR_WORKSPACE_INVALID",
+          "critical"
         );
       }
       // SDK/L2/dev-server warnings are expected in a bare test workspace
@@ -76,11 +101,14 @@ registerTortureBucket({
       const stdout = e.stdout || "";
       try {
         const doctorResult = JSON.parse(stdout);
-        const workspaceCheck = doctorResult.checks?.find((c: any) => c.name === "Workspace Validity");
+        const workspaceCheck = doctorResult.checks?.find(
+          (c: any) => c.name === "Workspace Validity"
+        );
         if (workspaceCheck?.status === "error") {
           throw new TortureInvariantError(
             `dev doctor: workspace invalid — ${workspaceCheck.message}`,
-            "DOCTOR_WORKSPACE_INVALID", "critical"
+            "DOCTOR_WORKSPACE_INVALID",
+            "critical"
           );
         }
         // Non-zero exit but workspace is valid — expected (SDK import fails in bare workspace)
@@ -88,7 +116,8 @@ registerTortureBucket({
         if (parseErr instanceof TortureInvariantError) throw parseErr;
         throw new TortureInvariantError(
           `dev doctor failed and produced unparseable output: ${e.message}`,
-          "DOCTOR_FAILED", "warning"
+          "DOCTOR_FAILED",
+          "warning"
         );
       }
     }

@@ -23,7 +23,9 @@ export function startWatcherReconciliationSweep(intervalMs: number = 10000) {
 
       const status = await backend.doctor();
       if (status.staleArtifacts > 0 || status.zombieArtifacts > 0) {
-        console.warn(`🔄 [Watcher] Reconciliation sweep detected ${status.staleArtifacts} stale and ${status.zombieArtifacts} zombie artifacts. Syncing...`);
+        console.warn(
+          `🔄 [Watcher] Reconciliation sweep detected ${status.staleArtifacts} stale and ${status.zombieArtifacts} zombie artifacts. Syncing...`
+        );
         const syncResult = await backend.sync();
 
         devServerEmitter.emit("projection-synced", {
@@ -48,7 +50,7 @@ export function stopWatcherReconciliationSweep() {
 export function startHardkasWatcher() {
   const rootDir = process.env.HARDKAS_ROOT || process.cwd();
   const hardkasPath = path.join(rootDir, ".hardkas");
-  
+
   if (!fs.existsSync(hardkasPath)) {
     try {
       fs.mkdirSync(hardkasPath, { recursive: true });
@@ -65,16 +67,10 @@ export function startHardkasWatcher() {
   const isLinux = process.platform === "linux";
   const usePollingOverride = process.env.HARDKAS_WATCH_POLLING === "1";
   const forcePolling = usePollingOverride || isLinux;
-  
+
   const startChokidar = (polling: boolean) => {
     const opts: chokidar.WatchOptions = {
-      ignored: [
-        /store\.db/,
-        /\.db-journal/,
-        /\.db-wal/,
-        /\.lock/,
-        /tmp/
-      ],
+      ignored: [/store\.db/, /\.db-journal/, /\.db-wal/, /\.lock/, /tmp/],
       persistent: true,
       ignoreInitial: true,
       usePolling: polling
@@ -88,8 +84,10 @@ export function startHardkasWatcher() {
     try {
       watcher = startChokidar(forcePolling);
     } catch (err: any) {
-      if (!forcePolling && (err.code === 'ENOSPC' || err.code === 'ENOTSUP')) {
-        console.warn(`[Watcher] Native watch failed (${err.code}). Falling back to polling...`);
+      if (!forcePolling && (err.code === "ENOSPC" || err.code === "ENOTSUP")) {
+        console.warn(
+          `[Watcher] Native watch failed (${err.code}). Falling back to polling...`
+        );
         watcher = startChokidar(true);
       } else {
         throw err;
@@ -104,11 +102,15 @@ export function startHardkasWatcher() {
         try {
           const content = fs.readFileSync(absolutePath, "utf-8");
           const parsed = JSON.parse(content);
-          
+
           if (!parsed.artifactId) {
-            parsed.artifactId = parsed.planId || parsed.signedId || parsed.txId || path.basename(absolutePath, ".json");
+            parsed.artifactId =
+              parsed.planId ||
+              parsed.signedId ||
+              parsed.txId ||
+              path.basename(absolutePath, ".json");
           }
-          
+
           coreEvents.emit({
             kind: "artifact.written",
             payload: parsed
@@ -132,12 +134,12 @@ export function startHardkasWatcher() {
 
         try {
           const backend = getQueryBackend();
-          
+
           const syncResult = await backend.syncPaths(pathsToSync);
-          
+
           if (syncResult.artifacts.indexed > 0 || syncResult.events.indexed > 0) {
             console.log(
-              `🔄 [Watcher] Targeted Sync completed for ${pathsToSync.length} paths. (Generation: ${syncResult.generationId || 'unknown'})`
+              `🔄 [Watcher] Targeted Sync completed for ${pathsToSync.length} paths. (Generation: ${syncResult.generationId || "unknown"})`
             );
           }
 
@@ -153,13 +155,15 @@ export function startHardkasWatcher() {
     };
 
     const setupEventHandlers = (w: chokidar.FSWatcher) => {
-      w.on('add', handleChange).on('change', handleChange).on('unlink', handleChange);
+      w.on("add", handleChange).on("change", handleChange).on("unlink", handleChange);
     };
 
-    watcher.on('error', (err: any) => {
+    watcher.on("error", (err: any) => {
       // In chokidar, errors might be emitted via the 'error' event rather than thrown during setup
-      if (!forcePolling && (err.code === 'ENOSPC' || err.code === 'ENOTSUP')) {
-        console.warn(`[Watcher] Native watch error (${err.code}). Restarting with polling...`);
+      if (!forcePolling && (err.code === "ENOSPC" || err.code === "ENOTSUP")) {
+        console.warn(
+          `[Watcher] Native watch error (${err.code}). Restarting with polling...`
+        );
         watcher.close().then(() => {
           watcher = startChokidar(true);
           activeWatcher = watcher;
@@ -174,9 +178,10 @@ export function startHardkasWatcher() {
 
     // Start background reconciliation sweep for self-healing
     startWatcherReconciliationSweep();
-
   } catch (err: any) {
-    console.warn(`⚠️  [Watcher] Failed to start chokidar: ${err.message}. Auto-refresh on changes might be disabled.`);
+    console.warn(
+      `⚠️  [Watcher] Failed to start chokidar: ${err.message}. Auto-refresh on changes might be disabled.`
+    );
   }
 }
 

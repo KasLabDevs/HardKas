@@ -39,9 +39,10 @@ export const hardKasMatchers = {
     const pass = received?.status === "accepted";
     return {
       pass,
-      message: () => pass
-        ? `Expected receipt NOT to be accepted, but status is "${received.status}"`
-        : `Expected receipt to be accepted, but status is "${received?.status ?? "undefined"}"`,
+      message: () =>
+        pass
+          ? `Expected receipt NOT to be accepted, but status is "${received.status}"`
+          : `Expected receipt to be accepted, but status is "${received?.status ?? "undefined"}"`
     };
   },
 
@@ -49,20 +50,24 @@ export const hardKasMatchers = {
     const pass = received?.status === "failed";
     return {
       pass,
-      message: () => pass
-        ? `Expected receipt NOT to be failed, but status is "failed"`
-        : `Expected receipt to be failed, but status is "${received?.status ?? "undefined"}"`,
+      message: () =>
+        pass
+          ? `Expected receipt NOT to be failed, but status is "failed"`
+          : `Expected receipt to be failed, but status is "${received?.status ?? "undefined"}"`
     };
   },
 
   toHaveValidTxId(received: any) {
     const txId = received?.txId || (typeof received === "string" ? received : "");
-    const pass = typeof txId === "string" && (txId.startsWith("simtx_") || /^[0-9a-fA-F]{64}$/.test(txId));
+    const pass =
+      typeof txId === "string" &&
+      (txId.startsWith("simtx_") || /^[0-9a-fA-F]{64}$/.test(txId));
     return {
       pass,
-      message: () => pass
-        ? `Expected "${txId}" NOT to be a valid txId`
-        : `Expected "${txId}" to be a valid txId (starts with "simtx_" or is 64-char hex)`,
+      message: () =>
+        pass
+          ? `Expected "${txId}" NOT to be a valid txId`
+          : `Expected "${txId}" to be a valid txId (starts with "simtx_" or is 64-char hex)`
     };
   },
 
@@ -71,9 +76,10 @@ export const hardKasMatchers = {
     const pass = typeof hash === "string" && /^[0-9a-fA-F]{64}$/.test(hash);
     return {
       pass,
-      message: () => pass
-        ? `Expected "${hash}" NOT to be a valid content hash`
-        : `Expected "${hash}" to be a valid content hash (64-char hex)`,
+      message: () =>
+        pass
+          ? `Expected "${hash}" NOT to be a valid content hash`
+          : `Expected "${hash}" to be a valid content hash (64-char hex)`
     };
   },
 
@@ -82,9 +88,10 @@ export const hardKasMatchers = {
     const pass = Array.isArray(received?.lineage) && received.lineage.length > 0;
     return {
       pass,
-      message: () => pass
-        ? `Expected artifact NOT to pass lineage check`
-        : `Expected artifact to pass lineage check (missing or empty lineage)`,
+      message: () =>
+        pass
+          ? `Expected artifact NOT to pass lineage check`
+          : `Expected artifact to pass lineage check (missing or empty lineage)`
     };
   },
 
@@ -92,9 +99,10 @@ export const hardKasMatchers = {
     const pass = received?.isBlue === true;
     return {
       pass,
-      message: () => pass
-        ? `Expected block NOT to be blue, but it is`
-        : `Expected block to be blue, but it is red or unknown`,
+      message: () =>
+        pass
+          ? `Expected block NOT to be blue, but it is`
+          : `Expected block to be blue, but it is red or unknown`
     };
   },
 
@@ -102,9 +110,10 @@ export const hardKasMatchers = {
     const pass = received?.isBlue === false;
     return {
       pass,
-      message: () => pass
-        ? `Expected block NOT to be red, but it is`
-        : `Expected block to be red, but it is blue or unknown`,
+      message: () =>
+        pass
+          ? `Expected block NOT to be red, but it is`
+          : `Expected block to be red, but it is blue or unknown`
     };
   },
 
@@ -113,9 +122,10 @@ export const hardKasMatchers = {
     const pass = actual >= amount;
     return {
       pass,
-      message: () => pass
-        ? `Expected increase NOT to be at least ${amount}, but got ${actual}`
-        : `Expected increase to be at least ${amount}, but got ${actual}`,
+      message: () =>
+        pass
+          ? `Expected increase NOT to be at least ${amount}, but got ${actual}`
+          : `Expected increase to be at least ${amount}, but got ${actual}`
     };
   },
 
@@ -124,20 +134,24 @@ export const hardKasMatchers = {
     const pass = actual >= amount;
     return {
       pass,
-      message: () => pass
-        ? `Expected decrease NOT to be at least ${amount}, but got ${actual}`
-        : `Expected decrease to be at least ${amount}, but got ${actual}`,
+      message: () =>
+        pass
+          ? `Expected decrease NOT to be at least ${amount}, but got ${actual}`
+          : `Expected decrease to be at least ${amount}, but got ${actual}`
     };
   },
 
   toHaveNoRedBlocks(received: any) {
-    const redBlocks = Object.values(received?.blocks || {}).filter((b: any) => b.isBlue === false);
+    const redBlocks = Object.values(received?.blocks || {}).filter(
+      (b: any) => b.isBlue === false
+    );
     const pass = redBlocks.length === 0;
     return {
       pass,
-      message: () => pass
-        ? `Expected DAG to have red blocks, but it has none`
-        : `Expected DAG to have no red blocks, but found ${redBlocks.length}`,
+      message: () =>
+        pass
+          ? `Expected DAG to have red blocks, but it has none`
+          : `Expected DAG to have no red blocks, but found ${redBlocks.length}`
     };
   },
 
@@ -150,13 +164,14 @@ export const hardKasMatchers = {
         parentIds.add(p);
       }
     }
-    const tips = allBlockIds.filter(id => !parentIds.has(id));
+    const tips = allBlockIds.filter((id) => !parentIds.has(id));
     const pass = tips.length === width;
     return {
       pass,
-      message: () => pass
-        ? `Expected DAG NOT to have width ${width}, but it does`
-        : `Expected DAG to have width ${width}, but got ${tips.length}`,
+      message: () =>
+        pass
+          ? `Expected DAG NOT to have width ${width}, but it does`
+          : `Expected DAG to have width ${width}, but got ${tips.length}`
     };
-  },
+  }
 };

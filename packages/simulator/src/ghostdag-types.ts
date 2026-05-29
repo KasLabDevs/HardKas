@@ -107,6 +107,6 @@ export function compactFromFull(g: GhostdagData): CompactGhostdagData {
   return {
     blueScore: g.blueScore,
     blueWork: g.blueWork,
-    selectedParent: g.selectedParent,
+    selectedParent: g.selectedParent
   };
 }

@@ -1,6 +1,6 @@
 {
   "name": "@hardkas/sdk",
-  "version": "0.7.3-alpha",
+  "version": "0.7.4-alpha",
   "type": "module",
   "files": [
     "dist",
@@ -42,6 +42,7 @@
     "@hardkas/wallet-adapter": "workspace:*"
   },
   "devDependencies": {
+    "@hardkas/query-store": "workspace:*",
     "tsup": "^8.3.5",
     "typescript": "^5.7.2",
     "vitest": "^2.1.8"

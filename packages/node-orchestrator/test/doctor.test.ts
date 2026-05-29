@@ -9,7 +9,7 @@ describe("doctorKaspaNode", () => {
     });
 
     expect(report.binaryFound).toBe(false);
-    expect(report.warnings.some(w => w.includes("binary not found"))).toBe(true);
+    expect(report.warnings.some((w) => w.includes("binary not found"))).toBe(true);
   });
 
   it("should report data dir not exists for new path", async () => {
@@ -19,6 +19,6 @@ describe("doctorKaspaNode", () => {
     });
 
     expect(report.dataDirExists).toBe(false);
-    expect(report.warnings.some(w => w.includes("Data dir does not exist"))).toBe(true);
+    expect(report.warnings.some((w) => w.includes("Data dir does not exist"))).toBe(true);
   });
 });

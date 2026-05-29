@@ -11,7 +11,9 @@ export interface EvmRpcHealthResult {
   readonly error?: string;
 }
 
-export async function checkEvmRpcHealth(options: EvmJsonRpcClientOptions): Promise<EvmRpcHealthResult> {
+export async function checkEvmRpcHealth(
+  options: EvmJsonRpcClientOptions
+): Promise<EvmRpcHealthResult> {
   const start = Date.now();
   const client = new EvmJsonRpcClient(options);
 
@@ -43,10 +45,12 @@ export async function checkEvmRpcHealth(options: EvmJsonRpcClientOptions): Promi
   }
 }
 
-export async function waitForEvmRpcReady(options: EvmJsonRpcClientOptions & {
-  readonly intervalMs?: number;
-  readonly maxWaitMs?: number;
-}): Promise<EvmRpcHealthResult> {
+export async function waitForEvmRpcReady(
+  options: EvmJsonRpcClientOptions & {
+    readonly intervalMs?: number;
+    readonly maxWaitMs?: number;
+  }
+): Promise<EvmRpcHealthResult> {
   const interval = options.intervalMs ?? 1000;
   const maxWait = options.maxWaitMs ?? 60000;
   const start = Date.now();
@@ -59,6 +63,6 @@ export async function waitForEvmRpcReady(options: EvmJsonRpcClientOptions & {
       return health; // Return last health even if not ready
     }
 
-    await new Promise(resolve => setTimeout(resolve, interval));
+    await new Promise((resolve) => setTimeout(resolve, interval));
   }
 }

@@ -7,16 +7,19 @@ export const devStatusRoutes = new Hono<DevEnv>();
 
 function envelope(c: any, ok: boolean, data?: any, error?: any) {
   const sdk = c.get("sdk");
-  return c.json({
-    ok,
-    data,
-    error,
-    warnings: [],
-    meta: {
-      workspace: sdk?.cwd || process.cwd(),
-      network: sdk?.network || "simulated"
-    }
-  }, ok ? 200 : (error?.code === "BAD_REQUEST" ? 400 : 500));
+  return c.json(
+    {
+      ok,
+      data,
+      error,
+      warnings: [],
+      meta: {
+        workspace: sdk?.cwd || process.cwd(),
+        network: sdk?.network || "simulated"
+      }
+    },
+    ok ? 200 : error?.code === "BAD_REQUEST" ? 400 : 500
+  );
 }
 
 devStatusRoutes.use("*", async (c, next) => {
@@ -25,10 +28,16 @@ devStatusRoutes.use("*", async (c, next) => {
     c.set("sdk", sdk);
     await next();
   } catch (e: any) {
-    return c.json({
-      ok: false,
-      error: { code: "HARDKAS_DEV_ERROR", message: "Failed to initialize HardKAS SDK: " + e.message }
-    }, 500);
+    return c.json(
+      {
+        ok: false,
+        error: {
+          code: "HARDKAS_DEV_ERROR",
+          message: "Failed to initialize HardKAS SDK: " + e.message
+        }
+      },
+      500
+    );
   }
 });
 

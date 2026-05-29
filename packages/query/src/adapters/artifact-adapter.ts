@@ -52,7 +52,18 @@ export class ArtifactQueryAdapter implements QueryAdapter {
   }
 
   supportedFilters() {
-    return ["schema", "version", "networkId", "mode", "from.address", "to.address", "amountSompi", "status", "contentHash", "createdAt"] as const;
+    return [
+      "schema",
+      "version",
+      "networkId",
+      "mode",
+      "from.address",
+      "to.address",
+      "amountSompi",
+      "status",
+      "contentHash",
+      "createdAt"
+    ] as const;
   }
 
   async execute(request: QueryRequest): Promise<QueryResult> {
@@ -74,9 +85,11 @@ export class ArtifactQueryAdapter implements QueryAdapter {
   // List — scan, filter, sort, paginate
   // -------------------------------------------------------------------------
 
-  private async executeList(request: QueryRequest): Promise<QueryResult<ArtifactQueryItem>> {
+  private async executeList(
+    request: QueryRequest
+  ): Promise<QueryResult<ArtifactQueryItem>> {
     const start = Date.now();
-    
+
     // Use backend for primary discovery
     const docs = await this.backend.findArtifacts();
     const items: ArtifactQueryItem[] = [];
@@ -114,12 +127,16 @@ export class ArtifactQueryAdapter implements QueryAdapter {
     // Why (Causal Analysis)
     let why: WhyBlock[] | undefined;
     if (request.explain) {
-      why = paged.map(item => explainIntegrity(item, {
-        ok: true,
-        hashMatch: true,
-        schemaValid: KNOWN_SCHEMAS.has(item.schema as typeof ARTIFACT_SCHEMAS[keyof typeof ARTIFACT_SCHEMAS]),
-        errors: []
-      }));
+      why = paged.map((item) =>
+        explainIntegrity(item, {
+          ok: true,
+          hashMatch: true,
+          schemaValid: KNOWN_SCHEMAS.has(
+            item.schema as (typeof ARTIFACT_SCHEMAS)[keyof typeof ARTIFACT_SCHEMAS]
+          ),
+          errors: []
+        })
+      );
     }
 
     return {
@@ -143,10 +160,13 @@ export class ArtifactQueryAdapter implements QueryAdapter {
   // Inspect — deep structural analysis
   // -------------------------------------------------------------------------
 
-  private async executeInspect(request: QueryRequest): Promise<QueryResult<ArtifactInspectResult>> {
+  private async executeInspect(
+    request: QueryRequest
+  ): Promise<QueryResult<ArtifactInspectResult>> {
     const start = Date.now();
     const target = request.params["target"];
-    if (!target) throw new Error("inspect requires params.target (content hash or file path)");
+    if (!target)
+      throw new Error("inspect requires params.target (content hash or file path)");
 
     const filePath = await this.resolveTarget(target);
     const raw = await this.readJsonSafe(filePath);
@@ -157,12 +177,18 @@ export class ArtifactQueryAdapter implements QueryAdapter {
     // Integrity
     const integrityResult = await verifyArtifactIntegrity(raw);
     const semanticResult = verifyArtifactSemantics(raw, { strict: true });
-    const hashMatch = raw.contentHash ? calculateContentHash(raw) === raw.contentHash : true;
+    const hashMatch = raw.contentHash
+      ? calculateContentHash(raw) === raw.contentHash
+      : true;
 
     // Economics (for tx artifacts)
     let economics: ArtifactInspectResult["economics"];
     const artifactType = item.schema.split(".")[1];
-    if (artifactType === "txPlan" || artifactType === "signedTx" || artifactType === "txReceipt") {
+    if (
+      artifactType === "txPlan" ||
+      artifactType === "signedTx" ||
+      artifactType === "txReceipt"
+    ) {
       const feeAudit = verifyFeeSemantics(raw);
       economics = {
         ok: feeAudit.ok,
@@ -187,17 +213,24 @@ export class ArtifactQueryAdapter implements QueryAdapter {
 
     // Lineage status
     const lineageResult = verifyLineage(raw);
-    const lineageStatus = !raw.lineage ? "missing" as const
-      : lineageResult.ok ? "valid" as const
-      : "orphan" as const;
+    const lineageStatus = !raw.lineage
+      ? ("missing" as const)
+      : lineageResult.ok
+        ? ("valid" as const)
+        : ("orphan" as const);
 
     const inspectResult: ArtifactInspectResult = {
       item,
       integrity: {
         ok: integrityResult.ok && hashMatch,
         hashMatch,
-        schemaValid: KNOWN_SCHEMAS.has(item.schema as typeof ARTIFACT_SCHEMAS[keyof typeof ARTIFACT_SCHEMAS]),
-        errors: [...integrityResult.issues.map(i => i.message), ...semanticResult.issues.map(i => i.message)]
+        schemaValid: KNOWN_SCHEMAS.has(
+          item.schema as (typeof ARTIFACT_SCHEMAS)[keyof typeof ARTIFACT_SCHEMAS]
+        ),
+        errors: [
+          ...integrityResult.issues.map((i) => i.message),
+          ...semanticResult.issues.map((i) => i.message)
+        ]
       },
       economics,
       staleness,
@@ -230,11 +263,14 @@ export class ArtifactQueryAdapter implements QueryAdapter {
   // Diff — semantic field-by-field comparison
   // -------------------------------------------------------------------------
 
-  private async executeDiff(request: QueryRequest): Promise<QueryResult<ArtifactDiffResult>> {
+  private async executeDiff(
+    request: QueryRequest
+  ): Promise<QueryResult<ArtifactDiffResult>> {
     const start = Date.now();
     const leftPath = request.params["left"];
     const rightPath = request.params["right"];
-    if (!leftPath || !rightPath) throw new Error("diff requires params.left and params.right");
+    if (!leftPath || !rightPath)
+      throw new Error("diff requires params.left and params.right");
 
     const leftRaw = await this.readJsonSafe(leftPath);
     const rightRaw = await this.readJsonSafe(rightPath);
@@ -295,7 +331,9 @@ export class ArtifactQueryAdapter implements QueryAdapter {
   // Verify — deep verification with optional explain
   // -------------------------------------------------------------------------
 
-  private async executeVerify(request: QueryRequest): Promise<QueryResult<ArtifactInspectResult>> {
+  private async executeVerify(
+    request: QueryRequest
+  ): Promise<QueryResult<ArtifactInspectResult>> {
     // Verify is inspect with strict mode always on
     return this.executeInspect(request);
   }
@@ -323,7 +361,12 @@ export class ArtifactQueryAdapter implements QueryAdapter {
       const full = path.join(dir, entry.name);
       if (entry.isDirectory()) {
         // Skip node_modules, .git, keystores
-        if (entry.name === "node_modules" || entry.name === ".git" || entry.name === "keystores") continue;
+        if (
+          entry.name === "node_modules" ||
+          entry.name === ".git" ||
+          entry.name === "keystores"
+        )
+          continue;
         await this.walkDir(full, out);
       } else if (entry.name.endsWith(".json") && !entry.name.endsWith(".enc.json")) {
         out.push(full);
@@ -357,7 +400,10 @@ export class ArtifactQueryAdapter implements QueryAdapter {
     throw new Error(`No artifact found with hash or ID: ${target}`);
   }
 
-  private sortItems(items: ArtifactQueryItem[], sort?: QueryRequest["sort"]): ArtifactQueryItem[] {
+  private sortItems(
+    items: ArtifactQueryItem[],
+    sort?: QueryRequest["sort"]
+  ): ArtifactQueryItem[] {
     const sorted = [...items];
 
     if (sort) {
@@ -401,13 +447,15 @@ function toArtifactQueryItem(raw: any, filePath: string): ArtifactQueryItem {
     to: raw.to,
     amountSompi: raw.amountSompi,
     status: raw.status,
-    lineage: raw.lineage ? {
-      artifactId: raw.lineage.artifactId,
-      parentArtifactId: raw.lineage.parentArtifactId,
-      rootArtifactId: raw.lineage.rootArtifactId,
-      lineageId: raw.lineage.lineageId,
-      sequence: raw.lineage.sequence
-    } : undefined
+    lineage: raw.lineage
+      ? {
+          artifactId: raw.lineage.artifactId,
+          parentArtifactId: raw.lineage.parentArtifactId,
+          rootArtifactId: raw.lineage.rootArtifactId,
+          lineageId: raw.lineage.lineageId,
+          sequence: raw.lineage.sequence
+        }
+      : undefined
   };
 }
 

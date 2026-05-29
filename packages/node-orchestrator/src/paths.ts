@@ -33,7 +33,7 @@ export function findWorkspaceRoot(startDir: string = process.cwd()): string {
 
 export function resolveRuntimeConfig(config: KaspaNodeConfig): KaspaNodeRuntimeConfig {
   const network = config.network;
-  
+
   let dataDir: string;
   if (config.dataDir) {
     dataDir = path.resolve(config.dataDir);

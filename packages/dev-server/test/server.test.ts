@@ -7,10 +7,10 @@ describe("Dev Server", () => {
     it("subscribes and receives events", () => {
       const listener = vi.fn();
       const unsubscribe = devServerEmitter.subscribe(listener);
-      
+
       const eventData = { foo: "bar" };
       devServerEmitter.emit("test-event", eventData);
-      
+
       expect(listener).toHaveBeenCalledWith({ event: "test-event", data: eventData });
       unsubscribe();
     });
@@ -18,10 +18,10 @@ describe("Dev Server", () => {
     it("stops receiving events after unsubscribe", () => {
       const listener = vi.fn();
       const unsubscribe = devServerEmitter.subscribe(listener);
-      
+
       unsubscribe();
       devServerEmitter.emit("test-event", { foo: "bar" });
-      
+
       expect(listener).not.toHaveBeenCalled();
     });
   });
@@ -32,11 +32,11 @@ describe("Dev Server", () => {
     const token = (server as any).token;
 
     it("returns health status", async () => {
-      const res = await app.request("/api/health", { 
-        headers: { 
+      const res = await app.request("/api/health", {
+        headers: {
           host: "localhost:7420",
           Authorization: `Bearer ${token}`
-        } 
+        }
       });
       expect(res.status).toBe(200);
       const json = await res.json();
@@ -45,11 +45,11 @@ describe("Dev Server", () => {
     });
 
     it("returns active session (null if none)", async () => {
-      const res = await app.request("/api/session", { 
-        headers: { 
+      const res = await app.request("/api/session", {
+        headers: {
           host: "localhost:7420",
           Authorization: `Bearer ${token}`
-        } 
+        }
       });
       expect(res.status).toBe(200);
       const json = await res.json();
@@ -58,11 +58,11 @@ describe("Dev Server", () => {
     });
 
     it("does not expose secrets in health response", async () => {
-      const res = await app.request("/api/health", { 
-        headers: { 
+      const res = await app.request("/api/health", {
+        headers: {
           host: "localhost:7420",
           Authorization: `Bearer ${token}`
-        } 
+        }
       });
       const text = await res.text();
       expect(text).not.toContain("privateKey");
@@ -73,32 +73,51 @@ describe("Dev Server", () => {
 
   describe("CORS Origin Helper", () => {
     it("handles undefined origin safely", () => {
-      expect(resolveCorsOrigin(undefined, { unsafeExternal: false, port: 7420 })).toBeUndefined();
-      expect(resolveCorsOrigin(undefined, { unsafeExternal: true, port: 7420 })).toBeUndefined();
+      expect(
+        resolveCorsOrigin(undefined, { unsafeExternal: false, port: 7420 })
+      ).toBeUndefined();
+      expect(
+        resolveCorsOrigin(undefined, { unsafeExternal: true, port: 7420 })
+      ).toBeUndefined();
     });
 
     it("allows localhost origins on configured port", () => {
-      expect(resolveCorsOrigin("http://localhost:7420", { unsafeExternal: false, port: 7420 })).toBe("http://localhost:7420");
+      expect(
+        resolveCorsOrigin("http://localhost:7420", { unsafeExternal: false, port: 7420 })
+      ).toBe("http://localhost:7420");
     });
 
     it("allows Vite dashboard development localhost origin", () => {
-      expect(resolveCorsOrigin("http://localhost:5173", { unsafeExternal: false, port: 7420 })).toBe("http://localhost:5173");
+      expect(
+        resolveCorsOrigin("http://localhost:5173", { unsafeExternal: false, port: 7420 })
+      ).toBe("http://localhost:5173");
     });
 
     it("allows Vite dashboard development 127.0.0.1 origin", () => {
-      expect(resolveCorsOrigin("http://127.0.0.1:5173", { unsafeExternal: false, port: 7420 })).toBe("http://127.0.0.1:5173");
+      expect(
+        resolveCorsOrigin("http://127.0.0.1:5173", { unsafeExternal: false, port: 7420 })
+      ).toBe("http://127.0.0.1:5173");
     });
 
     it("allows Vite dashboard development IPv6 loopback origin", () => {
-      expect(resolveCorsOrigin("http://[::1]:5173", { unsafeExternal: false, port: 7420 })).toBe("http://[::1]:5173");
+      expect(
+        resolveCorsOrigin("http://[::1]:5173", { unsafeExternal: false, port: 7420 })
+      ).toBe("http://[::1]:5173");
     });
 
     it("rejects unauthorized remote origins by default", () => {
-      expect(resolveCorsOrigin("http://malicious.com", { unsafeExternal: false, port: 7420 })).toBeNull();
+      expect(
+        resolveCorsOrigin("http://malicious.com", { unsafeExternal: false, port: 7420 })
+      ).toBeNull();
     });
 
     it("allows unauthorized remote origins when unsafeExternal is enabled", () => {
-      expect(resolveCorsOrigin("http://external-host.com", { unsafeExternal: true, port: 7420 })).toBe("http://external-host.com");
+      expect(
+        resolveCorsOrigin("http://external-host.com", {
+          unsafeExternal: true,
+          port: 7420
+        })
+      ).toBe("http://external-host.com");
     });
   });
 });

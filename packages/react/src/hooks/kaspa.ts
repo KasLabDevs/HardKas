@@ -14,7 +14,7 @@ export function useKaspaWallet() {
 }
 
 export function useKaspaBalance(options: { refetchInterval?: number } = {}) {
-  const { config, subscribe , apiFetch } = useHardKas();
+  const { config, subscribe, apiFetch } = useHardKas();
   const queryClient = useQueryClient();
   const { address, name } = useKaspaWallet();
   const { data: health } = useHardKasHealth();
@@ -29,7 +29,8 @@ export function useKaspaBalance(options: { refetchInterval?: number } = {}) {
   }, [queryClient, subscribe]);
 
   const l1Status = (health as any)?.kaspa?.status || health?.l1?.status;
-  const isL1Online = l1Status === "healthy" ||
+  const isL1Online =
+    l1Status === "healthy" ||
     l1Status === "simulated-mode" ||
     l1Status === "ok" ||
     l1Status === "running" ||
@@ -44,7 +45,11 @@ export function useKaspaBalance(options: { refetchInterval?: number } = {}) {
       if (address.startsWith("kaspa:sim_") || l1Status === "simulated-mode") {
         try {
           const baseUrl = config.devServerUrl || "";
-          const fetchUrl = baseUrl ? (baseUrl.endsWith("/") ? `${baseUrl}api/accounts` : `${baseUrl}/api/accounts`) : "/api/accounts";
+          const fetchUrl = baseUrl
+            ? baseUrl.endsWith("/")
+              ? `${baseUrl}api/accounts`
+              : `${baseUrl}/api/accounts`
+            : "/api/accounts";
           const res = await apiFetch(fetchUrl);
           if (res.ok) {
             const data = await res.json();
@@ -54,13 +59,16 @@ export function useKaspaBalance(options: { refetchInterval?: number } = {}) {
             }
           }
         } catch (e) {
-          console.warn("Failed to fetch derived simulated balance, falling back to 0:", e);
+          console.warn(
+            "Failed to fetch derived simulated balance, falling back to 0:",
+            e
+          );
         }
         return 0n;
       }
-      
+
       let url = config.kaspaRpcUrl || "http://127.0.0.1:16110";
-      
+
       // If it is our local simnet node port, normalize to ws://127.0.0.1:18210
       if (url.includes("127.0.0.1:16110") || url.includes("localhost:16110")) {
         url = "ws://127.0.0.1:18210";
@@ -78,11 +86,13 @@ export function useKaspaBalance(options: { refetchInterval?: number } = {}) {
             }, 3000);
 
             ws.onopen = () => {
-              ws.send(JSON.stringify({
-                id: 1,
-                method: "getBalanceByAddressRequest",
-                params: { address }
-              }));
+              ws.send(
+                JSON.stringify({
+                  id: 1,
+                  method: "getBalanceByAddressRequest",
+                  params: { address }
+                })
+              );
             };
 
             ws.onmessage = (event) => {
@@ -93,7 +103,8 @@ export function useKaspaBalance(options: { refetchInterval?: number } = {}) {
                 if (response.error) {
                   reject(new Error(response.error.message));
                 } else {
-                  const data = response.result !== undefined ? response.result : response.params;
+                  const data =
+                    response.result !== undefined ? response.result : response.params;
                   resolve(BigInt(data?.balance || 0));
                 }
               } catch (err) {
@@ -109,7 +120,10 @@ export function useKaspaBalance(options: { refetchInterval?: number } = {}) {
             };
           });
         } catch (e) {
-          console.warn("Failed to fetch Kaspa balance via WebSocket, falling back to 0:", e);
+          console.warn(
+            "Failed to fetch Kaspa balance via WebSocket, falling back to 0:",
+            e
+          );
           return 0n;
         }
       }

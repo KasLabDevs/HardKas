@@ -1,6 +1,6 @@
-import { 
-  TxPlan, 
-  TxReceipt, 
+import {
+  TxPlan,
+  TxReceipt,
   calculateContentHash,
   diffArtifacts
 } from "@hardkas/artifacts";
@@ -26,7 +26,7 @@ export interface SimulatedReplaySummary {
 
 /**
  * Verifies that a transaction replay matches the original artifacts.
- * Implements an honest replay model that differentiates between 
+ * Implements an honest replay model that differentiates between
  * reproduced results and unimplemented consensus/bridge features.
  */
 export function verifyReplay(
@@ -37,7 +37,7 @@ export function verifyReplay(
 ): ReplayVerificationReport {
   const errors: string[] = [];
   const reportDivergences: any[] = [];
-  
+
   // 1. Plan Integrity (Deterministic self-check)
   const currentPlanHash = calculateContentHash(originalPlan);
   let planOk = true;
@@ -45,7 +45,11 @@ export function verifyReplay(
     planOk = false;
     const errorMsg = `TxPlan contentHash mismatch: expected ${originalPlan.contentHash}, got ${currentPlanHash}`;
     errors.push(errorMsg);
-    reportDivergences.push({ path: "plan.contentHash", expected: originalPlan.contentHash, actual: currentPlanHash });
+    reportDivergences.push({
+      path: "plan.contentHash",
+      expected: originalPlan.contentHash,
+      actual: currentPlanHash
+    });
   }
 
   // 2. PreStateHash Verification
@@ -74,12 +78,14 @@ export function verifyReplay(
   }
 
   // 3. Execute Replay in simulated environment
-  const result = applySimulatedPlan(state, originalPlan, ctx, { txId: originalReceipt.txId });
+  const result = applySimulatedPlan(state, originalPlan, ctx, {
+    txId: originalReceipt.txId
+  });
   const replayReceipt = result.receipt;
 
   // 3. Semantic Diffing (Divergence detection)
   const diff = diffArtifacts(originalReceipt, replayReceipt);
-  
+
   if (!diff.identical) {
     for (const entry of diff.entries) {
       reportDivergences.push({
@@ -87,7 +93,9 @@ export function verifyReplay(
         expected: entry.left,
         actual: entry.right
       });
-      errors.push(`Receipt divergence at ${entry.path}: expected ${JSON.stringify(entry.left)}, got ${JSON.stringify(entry.right)}`);
+      errors.push(
+        `Receipt divergence at ${entry.path}: expected ${JSON.stringify(entry.left)}, got ${JSON.stringify(entry.right)}`
+      );
     }
   }
 
@@ -116,7 +124,7 @@ export function verifyReplay(
     schema: "hardkas.replayReport.v1",
     txId: originalReceipt.txId,
     planOk,
-    receiptOk: !diff.entries.some(e => !e.path.startsWith("plan")),
+    receiptOk: !diff.entries.some((e) => !e.path.startsWith("plan")),
     invariantsOk,
     checks: {
       workflowDeterministic: invariantsOk ? "reproduced" : "diverged",
@@ -131,7 +139,10 @@ export function verifyReplay(
 /**
  * Loads receipt and trace for a transaction and produces a summary.
  */
-export async function getSimulatedReplaySummary(txId: string, options: { cwd?: string } = {}): Promise<SimulatedReplaySummary> {
+export async function getSimulatedReplaySummary(
+  txId: string,
+  options: { cwd?: string } = {}
+): Promise<SimulatedReplaySummary> {
   const { loadSimulatedReceipt } = await import("./receipts.js");
   const { loadSimulatedTrace } = await import("./traces.js");
 

@@ -20,7 +20,9 @@ export interface CreateSnapshotOptions {
   deterministicScope?: "local-only" | "consensus-validated";
 }
 
-export async function createSnapshot(options: CreateSnapshotOptions): Promise<SnapshotManifest> {
+export async function createSnapshot(
+  options: CreateSnapshotOptions
+): Promise<SnapshotManifest> {
   const { hardkasDir, outputDir, deterministicScope = "local-only" } = options;
 
   await fs.mkdir(outputDir, { recursive: true });
@@ -42,7 +44,7 @@ export async function createSnapshot(options: CreateSnapshotOptions): Promise<Sn
       if (f.endsWith(".json")) {
         const src = path.join(artifactsDir, f);
         const dest = path.join(outputDir, "artifacts", f);
-        
+
         try {
           const content = await fs.readFile(src, "utf-8");
           const parsed = JSON.parse(content);
@@ -81,7 +83,7 @@ export async function createSnapshot(options: CreateSnapshotOptions): Promise<Sn
   const manifest: SnapshotManifest = {
     snapshotVersion: 1,
     createdAt: new Date().toISOString(),
-    hardkasVersion: "0.7.3-alpha",
+    hardkasVersion: "0.7.4-alpha",
     stateAuthority: "filesystem",
     projectionAuthority: "sqlite",
     deterministicScope,
@@ -100,7 +102,9 @@ export async function createSnapshot(options: CreateSnapshotOptions): Promise<Sn
   return manifest;
 }
 
-export async function readSnapshotManifest(snapshotDir: string): Promise<SnapshotManifest> {
+export async function readSnapshotManifest(
+  snapshotDir: string
+): Promise<SnapshotManifest> {
   const manifestPath = path.join(snapshotDir, "manifest.json");
   const content = await fs.readFile(manifestPath, "utf-8");
   return JSON.parse(content) as SnapshotManifest;

@@ -26,14 +26,14 @@ export function EmptyState({ title, description, command, icon }: EmptyStateProp
       )}
       <h3 className="text-lg font-bold text-zinc-100 mb-2">{title}</h3>
       <p className="text-sm text-zinc-400 mb-6 leading-relaxed">{description}</p>
-      
+
       <div className="w-full bg-zinc-950/80 border border-zinc-800/80 rounded-xl p-4 text-left font-mono relative group">
         <div className="flex items-center justify-between text-[10px] text-zinc-500 uppercase tracking-wider mb-2 font-sans select-none">
           <span className="flex items-center gap-1.5">
             <Terminal size={10} />
             Try this in your CLI
           </span>
-          <button 
+          <button
             onClick={handleCopy}
             className="flex items-center gap-1 text-zinc-400 hover:text-zinc-200 transition-colors p-1 rounded hover:bg-zinc-900"
           >

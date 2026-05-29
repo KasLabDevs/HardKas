@@ -48,20 +48,22 @@ describe("KaspaWrpcClient", () => {
 
     // Inject to pending map directly to test response logic
     (client as any).pending.set(999, mockPending);
-    
+
     // Simulate incoming message parsing
     const messageHandler = (client as any).ws?.on || (() => {});
     const simulatedResponse = { id: 999, error: { code: 500 } };
-    
+
     // Manually trigger the response resolver/rejecter inside KaspaWrpcClient
     const pendingObj = (client as any).pending.get(999);
     expect(pendingObj).toBeDefined();
-    
+
     if (simulatedResponse.error) {
-      const errMsg = simulatedResponse.error.message || `wRPC error code ${simulatedResponse.error.code || "unknown"}`;
+      const errMsg =
+        simulatedResponse.error.message ||
+        `wRPC error code ${simulatedResponse.error.code || "unknown"}`;
       pendingObj.reject(new Error(errMsg));
     }
-    
+
     clearTimeout(mockPending.timer);
     client.disconnect();
   });

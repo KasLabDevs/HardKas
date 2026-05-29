@@ -1,22 +1,19 @@
 import fs from "node:fs/promises";
 import path from "node:path";
-import { 
-  TxPlan,
-  SignedTx,
-  TxReceipt
-} from "./schemas.js";
+import { TxPlan, SignedTx, TxReceipt } from "./schemas.js";
 import { verifyArtifact } from "./verify.js";
 
 import { writeFileAtomic } from "@hardkas/core";
 
-export const bigIntReplacer = (_key: string, value: unknown) => 
+export const bigIntReplacer = (_key: string, value: unknown) =>
   typeof value === "bigint" ? value.toString() : value;
 
 export async function writeArtifact(filePath: string, artifact: unknown): Promise<void> {
-  const content = typeof artifact === "string" 
-    ? artifact 
-    : JSON.stringify(artifact, bigIntReplacer, 2) + "\n";
-    
+  const content =
+    typeof artifact === "string"
+      ? artifact
+      : JSON.stringify(artifact, bigIntReplacer, 2) + "\n";
+
   await writeFileAtomic(filePath, content);
 }
 
@@ -27,7 +24,7 @@ export function getDefaultReceiptPath(txId: string, cwd: string = process.cwd())
 export async function readArtifact(filePath: string): Promise<unknown> {
   try {
     let content = await fs.readFile(filePath, "utf-8");
-    if (content.charCodeAt(0) === 0xFEFF) {
+    if (content.charCodeAt(0) === 0xfeff) {
       content = content.slice(1);
     }
     return JSON.parse(content);
@@ -35,7 +32,9 @@ export async function readArtifact(filePath: string): Promise<unknown> {
     if ((error as NodeJS.ErrnoException).code === "ENOENT") {
       throw new Error(`Artifact file not found at ${filePath}`);
     }
-    throw new Error(`Failed to read/parse artifact at ${filePath}: ${error instanceof Error ? error.message : String(error)}`);
+    throw new Error(
+      `Failed to read/parse artifact at ${filePath}: ${error instanceof Error ? error.message : String(error)}`
+    );
   }
 }
 

@@ -17,7 +17,9 @@ async function getClient(options: L2RpcQueryOptions) {
   const rpcUrl = options.url ?? profile.rpcUrl;
 
   if (!rpcUrl) {
-    throw new Error(`No L2 RPC URL configured for network '${networkName}'. Pass --url <rpcUrl>.`);
+    throw new Error(
+      `No L2 RPC URL configured for network '${networkName}'. Pass --url <rpcUrl>.`
+    );
   }
 
   return {
@@ -32,12 +34,18 @@ export async function runL2RpcChainId(options: L2RpcQueryOptions): Promise<void>
   const chainId = await client.getChainId();
 
   if (options.json) {
-    console.log(JSON.stringify({ 
-      networkId: profile.name,
-      l2Network: networkName,
-      rpcUrl: profile.rpcUrl,
-      chainId 
-    }, null, 2));
+    console.log(
+      JSON.stringify(
+        {
+          networkId: profile.name,
+          l2Network: networkName,
+          rpcUrl: profile.rpcUrl,
+          chainId
+        },
+        null,
+        2
+      )
+    );
     return;
   }
 
@@ -54,12 +62,18 @@ export async function runL2RpcBlockNumber(options: L2RpcQueryOptions): Promise<v
   const blockNumber = await client.getBlockNumber();
 
   if (options.json) {
-    console.log(JSON.stringify({ 
-      networkId: profile.name,
-      l2Network: networkName,
-      rpcUrl: profile.rpcUrl,
-      blockNumber: blockNumber.toString() 
-    }, null, 2));
+    console.log(
+      JSON.stringify(
+        {
+          networkId: profile.name,
+          l2Network: networkName,
+          rpcUrl: profile.rpcUrl,
+          blockNumber: blockNumber.toString()
+        },
+        null,
+        2
+      )
+    );
     return;
   }
 
@@ -76,12 +90,18 @@ export async function runL2RpcGasPrice(options: L2RpcQueryOptions): Promise<void
   const gasPrice = await client.getGasPriceWei();
 
   if (options.json) {
-    console.log(JSON.stringify({ 
-      networkId: profile.name,
-      l2Network: networkName,
-      rpcUrl: profile.rpcUrl,
-      gasPrice: gasPrice.toString() 
-    }, null, 2));
+    console.log(
+      JSON.stringify(
+        {
+          networkId: profile.name,
+          l2Network: networkName,
+          rpcUrl: profile.rpcUrl,
+          gasPrice: gasPrice.toString()
+        },
+        null,
+        2
+      )
+    );
     return;
   }
 

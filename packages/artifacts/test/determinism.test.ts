@@ -15,7 +15,7 @@ describe("Artifact Determinism", () => {
       schema: "test",
       data: "foo",
       createdAt: "2024-05-13T12:00:00Z", // Different time
-      rpcUrl: "ws://new.node"             // Different transport
+      rpcUrl: "ws://new.node" // Different transport
     };
 
     expect(canonicalStringify(obj1)).toBe(canonicalStringify(obj2));
@@ -38,7 +38,7 @@ describe("Artifact Determinism", () => {
     };
 
     const artifact1 = createTxPlanArtifact({ ...options, ctx: systemRuntimeContext });
-    
+
     // Simulate a time delay
     const artifact2 = createTxPlanArtifact({ ...options, ctx: systemRuntimeContext });
 

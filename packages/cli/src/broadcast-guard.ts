@@ -12,11 +12,11 @@ export function assertBroadcastNetworkAllowed(input: {
   // Mainnet block
   if (isMainnetArtifact || isMainnetSelected) {
     throw new Error(
-      "Mainnet broadcast is disabled in HardKAS 0.7.3-alpha.\n\n" +
-      "Reason:\n" +
-      "  Production transaction submission is intentionally unavailable in this development release.\n\n" +
-      "Use:\n" +
-      "  simnet or testnet for real transaction testing."
+      "Mainnet broadcast is disabled in HardKAS 0.7.4-alpha.\n\n" +
+        "Reason:\n" +
+        "  Production transaction submission is intentionally unavailable in this development release.\n\n" +
+        "Use:\n" +
+        "  simnet or testnet for real transaction testing."
     );
   }
 
@@ -24,7 +24,7 @@ export function assertBroadcastNetworkAllowed(input: {
   if (!isSameNetwork(input.artifactNetworkId, input.selectedNetwork)) {
     throw new Error(
       `Network mismatch: signed artifact targets '${input.artifactNetworkId}' ` +
-      `but CLI selected '${input.selectedNetwork}'.`
+        `but CLI selected '${input.selectedNetwork}'.`
     );
   }
 }
@@ -38,7 +38,7 @@ function isSameNetwork(n1: string, n2: string): boolean {
   // Simple exact match or mainnet-like equivalence
   if (n1 === n2) return true;
   if (isMainnetLike(n1) && isMainnetLike(n2)) return true;
-  
+
   // Potential future mapping could go here
   return false;
 }

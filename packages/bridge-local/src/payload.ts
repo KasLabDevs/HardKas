@@ -14,9 +14,12 @@ export interface BridgeEntryPayload {
 export function serializeBridgePayload(payload: BridgeEntryPayload): string {
   // Format: [MARKER(4 bytes)][EVM_ADDR(20 bytes)][AMOUNT(8 bytes)][NETWORK(2 bytes)][NONCE(4 bytes)]
   // This is a simplified deterministic model for simulation.
-  
+
   const markerHex = Buffer.from(payload.marker.padEnd(4).slice(0, 4)).toString("hex");
-  const addrHex = payload.targetEvmAddress.replace("0x", "").toLowerCase().padStart(40, "0");
+  const addrHex = payload.targetEvmAddress
+    .replace("0x", "")
+    .toLowerCase()
+    .padStart(40, "0");
   const amountHex = payload.amountSompi.toString(16).padStart(16, "0");
   const networkHex = Buffer.from(payload.networkId.padEnd(2).slice(0, 2)).toString("hex");
   const nonceHex = (payload.nonce ?? 0).toString(16).padStart(8, "0");

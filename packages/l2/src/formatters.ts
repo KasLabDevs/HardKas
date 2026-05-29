@@ -1,4 +1,8 @@
-export function formatWeiAsEtherLike(valueWei: bigint, symbol: string, decimals: number = 18): string {
+export function formatWeiAsEtherLike(
+  valueWei: bigint,
+  symbol: string,
+  decimals: number = 18
+): string {
   const s = valueWei.toString().padStart(decimals + 1, "0");
   const pos = s.length - decimals;
   const intPart = s.substring(0, pos);

@@ -28,7 +28,9 @@ export function createFixture(def: FixtureDefinition): TestHarness {
     for (const tx of def.setup) {
       const result = harness.send(tx);
       if (!result.ok) {
-        throw new Error(`Fixture "${def.name}" failed during setup: ${tx.from} -> ${tx.to} (${tx.amountSompi} sompi). Error: ${result.receipt?.errors?.join(", ") || "Unknown error"}`);
+        throw new Error(
+          `Fixture "${def.name}" failed during setup: ${tx.from} -> ${tx.to} (${tx.amountSompi} sompi). Error: ${result.receipt?.errors?.join(", ") || "Unknown error"}`
+        );
       }
     }
   }

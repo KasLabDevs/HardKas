@@ -1,4 +1,8 @@
-import { loadHardkasConfig as loadConfig, LoadedHardkasConfig as LoadedConfig, defineHardkasConfig } from "@hardkas/config";
+import {
+  loadHardkasConfig as loadConfig,
+  LoadedHardkasConfig as LoadedConfig,
+  defineHardkasConfig
+} from "@hardkas/config";
 import { JsonWrpcKaspaClient, KaspaRpcClient } from "@hardkas/kaspa-rpc";
 import { NetworkId, HardkasError } from "@hardkas/core";
 import { HardkasAccounts } from "./accounts.js";
@@ -24,9 +28,9 @@ export { defineHardkasConfig } from "@hardkas/config";
 export { defineTask, type TaskContext, type TaskArgs } from "./tasks.js";
 export { buildPaymentPlan } from "@hardkas/tx-builder";
 export { signTxPlanArtifact } from "@hardkas/accounts";
-export { 
-  writeArtifact, 
-  createTxPlanArtifact, 
+export {
+  writeArtifact,
+  createTxPlanArtifact,
   ARTIFACT_SCHEMAS,
   HARDKAS_VERSION,
   type TxPlanArtifact,
@@ -35,8 +39,8 @@ export {
   type TxTraceArtifact
 } from "@hardkas/artifacts";
 
-export { 
-  SOMPI_PER_KAS, 
+export {
+  SOMPI_PER_KAS,
   HardkasError,
   parseKasToSompi,
   formatSompi,
@@ -61,7 +65,7 @@ export interface HardkasOptions {
 
 /**
  * HardKAS SDK - Main Entry Point
- * 
+ *
  * Provides a high-level facade for interacting with the Kaspa ecosystem.
  * Acts as a DI container and coordinator.
  */
@@ -88,16 +92,19 @@ export class Hardkas {
   ) {
     this.mode = options?.mode || "developer";
     this.policy = {
-      allowNetwork: options?.policy?.allowNetwork ?? (this.mode === "developer"),
+      allowNetwork: options?.policy?.allowNetwork ?? this.mode === "developer",
       allowMainnet: options?.policy?.allowMainnet ?? false,
-      allowExternalWallet: options?.policy?.allowExternalWallet ?? (this.mode === "developer"),
-      requireDryRun: options?.policy?.requireDryRun ?? (this.mode === "agent")
+      allowExternalWallet:
+        options?.policy?.allowExternalWallet ?? this.mode === "developer",
+      requireDryRun: options?.policy?.requireDryRun ?? this.mode === "agent"
     };
 
     // Default to the standard client if none provided
-    this.rpc = rpc || new JsonWrpcKaspaClient({ 
-      rpcUrl: this.resolveRpcUrl() 
-    });
+    this.rpc =
+      rpc ||
+      new JsonWrpcKaspaClient({
+        rpcUrl: this.resolveRpcUrl()
+      });
 
     this.workspace = new HardkasWorkspace(this.config.cwd);
     this.artifacts = new HardkasArtifactsManager(this.workspace);
@@ -114,8 +121,13 @@ export class Hardkas {
   private resolveRpcUrl(): string {
     const networkId = this.config.config.defaultNetwork || "simnet";
     const target = this.config.config.networks?.[networkId];
-    
-    if (target && (target.kind === "kaspa-rpc" || target.kind === "igra" || target.kind === "kaspa-node")) {
+
+    if (
+      target &&
+      (target.kind === "kaspa-rpc" ||
+        target.kind === "igra" ||
+        target.kind === "kaspa-node")
+    ) {
       return target.rpcUrl || "ws://127.0.0.1:18210";
     }
     return "ws://127.0.0.1:18210";
@@ -125,7 +137,8 @@ export class Hardkas {
    * Opens a HardKAS project in the given directory.
    */
   static async open(dirOrOptions: string | HardkasOptions = "."): Promise<Hardkas> {
-    const options = typeof dirOrOptions === "string" ? { cwd: dirOrOptions } : dirOrOptions;
+    const options =
+      typeof dirOrOptions === "string" ? { cwd: dirOrOptions } : dirOrOptions;
     const loaded = await loadConfig(options);
     return new Hardkas(loaded, options);
   }
@@ -147,7 +160,7 @@ export class Hardkas {
   get sdkConfig() {
     return this.config.config;
   }
-  
+
   get cwd() {
     return this.config.cwd;
   }
@@ -162,23 +175,32 @@ export class Hardkas {
   ): void {
     if (this.mode === "developer") return; // Developers are trusted
 
-    const msg = (policy: string) => `Agent Mode Policy Violation: '${action}' is restricted by policy '${policy}'. ${context || ""}`;
+    const msg = (policy: string) =>
+      `Agent Mode Policy Violation: '${action}' is restricted by policy '${policy}'. ${context || ""}`;
 
     switch (action) {
       case "network":
-        if (!this.policy.allowNetwork) throw new HardkasError("POLICY_VIOLATION", msg("allowNetwork"));
+        if (!this.policy.allowNetwork)
+          throw new HardkasError("POLICY_VIOLATION", msg("allowNetwork"));
         break;
       case "mainnet":
-        if (!this.policy.allowMainnet) throw new HardkasError("POLICY_VIOLATION", msg("allowMainnet"));
+        if (!this.policy.allowMainnet)
+          throw new HardkasError("POLICY_VIOLATION", msg("allowMainnet"));
         break;
       case "external-wallet":
-        if (!this.policy.allowExternalWallet) throw new HardkasError("POLICY_VIOLATION", msg("allowExternalWallet"));
+        if (!this.policy.allowExternalWallet)
+          throw new HardkasError("POLICY_VIOLATION", msg("allowExternalWallet"));
         break;
       case "mutation":
-        if (this.policy.requireDryRun) throw new HardkasError("POLICY_VIOLATION", msg("requireDryRun"));
+        if (this.policy.requireDryRun)
+          throw new HardkasError("POLICY_VIOLATION", msg("requireDryRun"));
         break;
     }
   }
 }
 
-export { createHardkasClient, type HardkasClientOptions, type ClientEnvelope } from "./client.js";
+export {
+  createHardkasClient,
+  type HardkasClientOptions,
+  type ClientEnvelope
+} from "./client.js";

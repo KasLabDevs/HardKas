@@ -83,9 +83,10 @@ function mapProfileToAssumptions(profile: L2NetworkProfile): L2BridgeAssumptions
     bridgePhase: profile.security.bridgePhase,
     trustlessExit: profile.security.trustlessExit,
     custodyModel: profile.security.custodyModel,
-    exitModel: profile.security.bridgePhase === "zk" 
-      ? "Trustless exit is available via ZK proofs." 
-      : "Trustless exit is available only in the ZK phase.",
+    exitModel:
+      profile.security.bridgePhase === "zk"
+        ? "Trustless exit is available via ZK proofs."
+        : "Trustless exit is available only in the ZK phase.",
     riskProfile: profile.security.riskProfile,
     notes: profile.security.notes,
     updatedAt: new Date().toISOString()

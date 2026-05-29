@@ -3,7 +3,11 @@ import { createDevServer } from "../src/server.js";
 
 describe("Dev Server Security Hardening", () => {
   describe("Authentication and Host Checks", () => {
-    const server = createDevServer({ port: 7420, host: "localhost", unsafeExternal: false });
+    const server = createDevServer({
+      port: 7420,
+      host: "localhost",
+      unsafeExternal: false
+    });
     const app = server.app;
     const token = (server as any).token;
 
@@ -102,9 +106,13 @@ describe("Dev Server Security Hardening", () => {
   describe("Unsafe External Security Configuration", () => {
     // Test 8: unsafe-external still requires token
     it("Test 8 — unsafe-external still requires token (401)", async () => {
-      const externalServer = createDevServer({ port: 7420, host: "0.0.0.0", unsafeExternal: true });
+      const externalServer = createDevServer({
+        port: 7420,
+        host: "0.0.0.0",
+        unsafeExternal: true
+      });
       const app = externalServer.app;
-      
+
       const res = await app.request("/api/health", {
         headers: {
           host: "any-host.example"

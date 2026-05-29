@@ -6,7 +6,7 @@ describe("Security Redaction", () => {
     const pk = "1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef";
     const msg = `Your key is ${pk}`;
     const redacted = maskSecrets(msg);
-    
+
     expect(redacted).not.toContain(pk);
     expect(redacted).toContain("123456...cdef [REDACTED]");
   });
@@ -15,7 +15,7 @@ describe("Security Redaction", () => {
     const mnemonic = "word word word word word word word word word word word word";
     const msg = `Mnemonic: ${mnemonic}`;
     const redacted = maskSecrets(msg);
-    
+
     expect(redacted).toContain("[MNEMONIC REDACTED]");
   });
 
@@ -31,7 +31,7 @@ describe("Security Redaction", () => {
     };
 
     const redacted = maskSecrets(obj);
-    
+
     expect(redacted.details.password).toBe("[REDACTED]");
     expect(redacted.details.nested.secretKey).toBe("[REDACTED]");
     expect(redacted.user).toBe("alice");

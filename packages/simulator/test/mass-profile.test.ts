@@ -1,9 +1,9 @@
 import { describe, it, expect } from "vitest";
-import { 
-  profileMass, 
-  compareMassProfiles, 
-  formatMassProfile, 
-  formatMassComparison 
+import {
+  profileMass,
+  compareMassProfiles,
+  formatMassProfile,
+  formatMassComparison
 } from "../src/index.js";
 
 describe("Mass Profiling", () => {

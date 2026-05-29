@@ -34,5 +34,6 @@ hardkas localnet snapshot replay checkpoint-1
 ## 3. Causal Time-Travel Replay
 
 Reconstructing state works dynamically:
-* If a snapshot represents DAA Score `1000`, the localnet engine rolls back modern mutations to match the exact snapshot invariants in milliseconds.
-* This allows isolated testing of branch transaction sets from historical anchors.
+
+- If a snapshot represents DAA Score `1000`, the localnet engine rolls back modern mutations to match the exact snapshot invariants in milliseconds.
+- This allows isolated testing of branch transaction sets from historical anchors.

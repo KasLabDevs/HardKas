@@ -1,5 +1,10 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { LockHell, RotBot, DriftHunter, HumanChaos } from "../src/runners/chaos-actors.js";
+import {
+  LockHell,
+  RotBot,
+  DriftHunter,
+  HumanChaos
+} from "../src/runners/chaos-actors.js";
 import { runChaosEngine } from "../src/runners/chaos-runner.js";
 import { ChaosExitCodes } from "../src/commands/chaos.js";
 import fs from "node:fs/promises";
@@ -9,7 +14,7 @@ vi.mock("node:fs/promises", () => {
     default: {
       rm: vi.fn(),
       mkdir: vi.fn(),
-      writeFile: vi.fn(),
+      writeFile: vi.fn()
     }
   };
 });
@@ -19,7 +24,7 @@ vi.mock("../src/runners/chaos-actors.js", () => {
     LockHell: vi.fn(),
     RotBot: vi.fn(),
     DriftHunter: vi.fn(),
-    HumanChaos: vi.fn(),
+    HumanChaos: vi.fn()
   };
 });
 

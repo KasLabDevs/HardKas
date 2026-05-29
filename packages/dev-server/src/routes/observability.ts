@@ -24,15 +24,17 @@ function tryReadJson(p: string): any | null {
   }
 }
 
-function tryReadJsonl(p: string): { events: any[]; errorLine?: number; parseError?: string } | null {
+function tryReadJsonl(
+  p: string
+): { events: any[]; errorLine?: number; parseError?: string } | null {
   try {
     if (!fs.existsSync(p)) return null;
     const raw = fs.readFileSync(p, "utf-8").trim();
     if (!raw) return { events: [] };
-    
+
     const lines = raw.split("\n");
     const events: any[] = [];
-    
+
     for (let i = 0; i < lines.length; i++) {
       const line = lines[i]!.trim();
       if (!line) continue;
@@ -46,7 +48,7 @@ function tryReadJsonl(p: string): { events: any[]; errorLine?: number; parseErro
         };
       }
     }
-    
+
     return { events };
   } catch (e: any) {
     return { events: [], parseError: e.message };
@@ -69,13 +71,13 @@ observabilityRoutes.get("/status", async (c) => {
       canonicalStatus: "REPLAY_VERIFIED",
       semanticHash: a.semanticHash,
       lineageEdges: a.lineageEdges || [],
-      source: "semantic-bundle",
+      source: "semantic-bundle"
     }));
     return c.json({
       loaded: true,
       source: "hardkas.semantic-bundle.v1.json",
       loadedAt: now,
-      artifacts,
+      artifacts
     });
   }
 
@@ -83,13 +85,14 @@ observabilityRoutes.get("/status", async (c) => {
   if (queryBackend.isReady()) {
     try {
       const allArtifacts = await queryBackend.findArtifacts();
-      const artifacts = allArtifacts.map(art => {
+      const artifacts = allArtifacts.map((art) => {
         let canonicalStatus = "VERIFIED";
         if (art.kind === "CORRUPTED") canonicalStatus = "CORRUPTED";
         else if (art.kind === "QUARANTINED") canonicalStatus = "QUARANTINED";
-        else if (art.schema.includes("replay") || art.schema.includes("Replay")) canonicalStatus = "REPLAY_VERIFIED";
+        else if (art.schema.includes("replay") || art.schema.includes("Replay"))
+          canonicalStatus = "REPLAY_VERIFIED";
         else if (art.kind === "PROJECTED") canonicalStatus = "PROJECTED";
-        
+
         return {
           artifactId: art.artifactId,
           canonicalStatus,
@@ -98,12 +101,12 @@ observabilityRoutes.get("/status", async (c) => {
           sourceNote: "Live SQLite central semantics projection active"
         };
       });
-      
+
       return c.json({
         loaded: true,
         source: "query-store/store.db",
         loadedAt: now,
-        artifacts,
+        artifacts
       });
     } catch (e) {
       console.error("Failed to fetch artifacts from SQLite in status route:", e);
@@ -113,15 +116,15 @@ observabilityRoutes.get("/status", async (c) => {
   // Priority 3: artifacts fallback – scan .hardkas/artifacts
   const artifactsDir = path.join(hardkasDir(), "artifacts");
   if (fs.existsSync(artifactsDir)) {
-    const files = fs.readdirSync(artifactsDir).filter(f => f.endsWith(".json"));
-    const artifacts = files.map(f => {
+    const files = fs.readdirSync(artifactsDir).filter((f) => f.endsWith(".json"));
+    const artifacts = files.map((f) => {
       const content = tryReadJson(path.join(artifactsDir, f));
       return {
         artifactId: f,
         canonicalStatus: "PROJECTED",
         source: "artifacts-fallback",
         semanticHash: content?.hash || content?.contentHash || null,
-        sourceNote: "Raw filesystem truth. Not replay-verified.",
+        sourceNote: "Raw filesystem truth. Not replay-verified."
       };
     });
     return c.json({
@@ -129,7 +132,7 @@ observabilityRoutes.get("/status", async (c) => {
       source: ".hardkas/artifacts (fallback)",
       sourceNote: "PROJECTED / UNVERIFIED – no replay proof available.",
       loadedAt: now,
-      artifacts,
+      artifacts
     });
   }
 
@@ -138,7 +141,7 @@ observabilityRoutes.get("/status", async (c) => {
     source: "none",
     loadedAt: now,
     artifacts: [],
-    message: "No canonical artifacts found in current workspace.",
+    message: "No canonical artifacts found in current workspace."
   });
 });
 
@@ -163,7 +166,7 @@ observabilityRoutes.get("/lineage", async (c) => {
         nodes.push({
           id: a.artifactId,
           data: { label: a.artifactId, semanticHash: a.semanticHash },
-          position: { x: 0, y: 0 },
+          position: { x: 0, y: 0 }
         });
       }
       if (a.lineageEdges && Array.isArray(a.lineageEdges)) {
@@ -173,13 +176,13 @@ observabilityRoutes.get("/lineage", async (c) => {
             nodes.push({
               id: target,
               data: { label: target },
-              position: { x: 0, y: 0 },
+              position: { x: 0, y: 0 }
             });
           }
           edges.push({
             id: `${a.artifactId}->${target}`,
             source: a.artifactId,
-            target,
+            target
           });
         }
       }
@@ -190,7 +193,7 @@ observabilityRoutes.get("/lineage", async (c) => {
       connectedIds.add(e.source);
       connectedIds.add(e.target);
     }
-    const orphanNodes = nodes.filter(n => !connectedIds.has(n.id)).map(n => n.id);
+    const orphanNodes = nodes.filter((n) => !connectedIds.has(n.id)).map((n) => n.id);
 
     return c.json({
       loaded: true,
@@ -204,7 +207,7 @@ observabilityRoutes.get("/lineage", async (c) => {
       nodes: nodes.slice(0, 200),
       edges: edges.slice(0, 500),
       truncated: nodes.length > 200,
-      hiddenNodes: Math.max(0, nodes.length - 200),
+      hiddenNodes: Math.max(0, nodes.length - 200)
     });
   }
 
@@ -212,14 +215,16 @@ observabilityRoutes.get("/lineage", async (c) => {
   if (queryBackend.isReady()) {
     try {
       const allArtifacts = await queryBackend.findArtifacts();
-      const nodes = allArtifacts.map(a => ({
+      const nodes = allArtifacts.map((a) => ({
         id: a.artifactId,
         data: { label: a.artifactId, semanticHash: a.contentHash },
         position: { x: 0, y: 0 }
       }));
-      
-      const dbEdges = await queryBackend.executeRawSql("SELECT parent_artifact_id as source, child_artifact_id as target FROM lineage_edges") as { source: string, target: string }[];
-      const edges = dbEdges.map(e => ({
+
+      const dbEdges = (await queryBackend.executeRawSql(
+        "SELECT parent_artifact_id as source, child_artifact_id as target FROM lineage_edges"
+      )) as { source: string; target: string }[];
+      const edges = dbEdges.map((e) => ({
         id: `${e.source}->${e.target}`,
         source: e.source,
         target: e.target
@@ -230,7 +235,7 @@ observabilityRoutes.get("/lineage", async (c) => {
         connectedIds.add(e.source);
         connectedIds.add(e.target);
       }
-      const orphanNodes = nodes.filter(n => !connectedIds.has(n.id)).map(n => n.id);
+      const orphanNodes = nodes.filter((n) => !connectedIds.has(n.id)).map((n) => n.id);
 
       return c.json({
         loaded: true,
@@ -245,7 +250,7 @@ observabilityRoutes.get("/lineage", async (c) => {
         nodes: nodes.slice(0, 200),
         edges: edges.slice(0, 500),
         truncated: nodes.length > 200,
-        hiddenNodes: Math.max(0, nodes.length - 200),
+        hiddenNodes: Math.max(0, nodes.length - 200)
       });
     } catch (e) {
       console.error("Failed to query lineage in Hono:", e);
@@ -255,23 +260,24 @@ observabilityRoutes.get("/lineage", async (c) => {
   // Priority 3: artifacts fallback
   const artifactsDir = path.join(hardkasDir(), "artifacts");
   if (fs.existsSync(artifactsDir)) {
-    const files = fs.readdirSync(artifactsDir).filter(f => f.endsWith(".json"));
+    const files = fs.readdirSync(artifactsDir).filter((f) => f.endsWith(".json"));
     const nodes = files.map((f, i) => ({
       id: f,
       data: { label: f },
-      position: { x: 0, y: i * 80 },
+      position: { x: 0, y: i * 80 }
     }));
     return c.json({
       loaded: true,
       source: ".hardkas/artifacts (fallback)",
-      sourceNote: "PROJECTED / UNVERIFIED – raw filesystem scan, no lineage edges derived.",
+      sourceNote:
+        "PROJECTED / UNVERIFIED – raw filesystem scan, no lineage edges derived.",
       loadedAt: now,
       totalNodes: nodes.length,
       totalEdges: 0,
-      orphanNodes: nodes.map(n => n.id),
+      orphanNodes: nodes.map((n) => n.id),
       nodes: nodes.slice(0, 200),
       edges: [],
-      truncated: nodes.length > 200,
+      truncated: nodes.length > 200
     });
   }
 
@@ -281,7 +287,7 @@ observabilityRoutes.get("/lineage", async (c) => {
     loadedAt: now,
     message: "No lineage data available.",
     nodes: [],
-    edges: [],
+    edges: []
   });
 });
 
@@ -301,18 +307,19 @@ observabilityRoutes.get("/quarantine", async (c) => {
       items: [],
       message: "Quarantine directory does not exist.",
       recoveryAction: "Run verification checks to audit active schemas:",
-      recoveryCommand: "pnpm hardkas artifact verify .hardkas/quarantine --recursive --strict"
+      recoveryCommand:
+        "pnpm hardkas artifact verify .hardkas/quarantine --recursive --strict"
     });
   }
 
   const files = fs.readdirSync(qPath);
-  const items = files.map(f => {
+  const items = files.map((f) => {
     const stat = fs.statSync(path.join(qPath, f));
     return {
       filename: f,
       reason: "quarantined",
       detectedAt: stat.mtime.toISOString(),
-      originalPath: path.join(qPath, f),
+      originalPath: path.join(qPath, f)
     };
   });
 
@@ -322,8 +329,14 @@ observabilityRoutes.get("/quarantine", async (c) => {
     loadedAt: now,
     totalQuarantined: items.length,
     items,
-    recoveryAction: items.length > 0 ? "To inspect and repair the isolated artifacts, execute a deep safety verification of the quarantine zone:" : undefined,
-    recoveryCommand: items.length > 0 ? "pnpm hardkas artifact verify .hardkas/quarantine --recursive --strict" : undefined
+    recoveryAction:
+      items.length > 0
+        ? "To inspect and repair the isolated artifacts, execute a deep safety verification of the quarantine zone:"
+        : undefined,
+    recoveryCommand:
+      items.length > 0
+        ? "pnpm hardkas artifact verify .hardkas/quarantine --recursive --strict"
+        : undefined
   });
 });
 
@@ -347,8 +360,9 @@ observabilityRoutes.get("/telemetry", async (c) => {
         countsByType: {},
         countsByBucket: {},
         recentEvents: [],
-        recoveryAction: "Run a schema verification check to audit the telemetry event stream log:",
-        recoveryCommand: "pnpm hardkas telemetry verify",
+        recoveryAction:
+          "Run a schema verification check to audit the telemetry event stream log:",
+        recoveryCommand: "pnpm hardkas telemetry verify"
       });
     }
 
@@ -363,8 +377,9 @@ observabilityRoutes.get("/telemetry", async (c) => {
         countsByType: {},
         countsByBucket: {},
         recentEvents: [],
-        recoveryAction: "Examine and repair the stream schema violation utilizing telemetry verify command:",
-        recoveryCommand: "pnpm hardkas telemetry verify",
+        recoveryAction:
+          "Examine and repair the stream schema violation utilizing telemetry verify command:",
+        recoveryCommand: "pnpm hardkas telemetry verify"
       });
     }
 
@@ -378,8 +393,9 @@ observabilityRoutes.get("/telemetry", async (c) => {
         countsByType: {},
         countsByBucket: {},
         recentEvents: [],
-        recoveryAction: "stress-test locks, trigger concurrent executions, and track performance anomalies by running the chaos-matrix suite:",
-        recoveryCommand: "pnpm hardkas torture matrix",
+        recoveryAction:
+          "stress-test locks, trigger concurrent executions, and track performance anomalies by running the chaos-matrix suite:",
+        recoveryCommand: "pnpm hardkas torture matrix"
       });
     }
 
@@ -400,7 +416,7 @@ observabilityRoutes.get("/telemetry", async (c) => {
       totalAnomalies: events.length,
       countsByType,
       countsByBucket,
-      recentEvents: events.slice(-50),
+      recentEvents: events.slice(-50)
     });
   }
 
@@ -418,8 +434,9 @@ observabilityRoutes.get("/telemetry", async (c) => {
     countsByType: {},
     countsByBucket: {},
     recentEvents: [],
-    recoveryAction: "stress-test locks, trigger concurrent executions, and track performance anomalies by running the chaos-matrix suite:",
-    recoveryCommand: "pnpm hardkas torture matrix",
+    recoveryAction:
+      "stress-test locks, trigger concurrent executions, and track performance anomalies by running the chaos-matrix suite:",
+    recoveryCommand: "pnpm hardkas torture matrix"
   });
 });
 
@@ -443,15 +460,20 @@ observabilityRoutes.get("/replay", async (c) => {
   if (queryBackend.isReady()) {
     try {
       replays = await queryBackend.findArtifacts({ schema: "hardkas.replayReport.v1" });
-      const receipts = await queryBackend.findArtifacts({ schema: "hardkas.txReceipt.v1" });
-      const igraReceipts = await queryBackend.findArtifacts({ schema: "hardkas.igraTxReceipt.v1" });
+      const receipts = await queryBackend.findArtifacts({
+        schema: "hardkas.txReceipt.v1"
+      });
+      const igraReceipts = await queryBackend.findArtifacts({
+        schema: "hardkas.igraTxReceipt.v1"
+      });
 
       const allReceipts = [...receipts, ...igraReceipts];
-      const replayTxIds = new Set(replays.map(r => r.payload?.txId));
-      
-      pendingReceipts = allReceipts.filter(r => 
-        (r.payload?.status === "confirmed" || r.payload?.status === "accepted") && 
-        !replayTxIds.has(r.payload?.txId)
+      const replayTxIds = new Set(replays.map((r) => r.payload?.txId));
+
+      pendingReceipts = allReceipts.filter(
+        (r) =>
+          (r.payload?.status === "confirmed" || r.payload?.status === "accepted") &&
+          !replayTxIds.has(r.payload?.txId)
       );
 
       pendingReplay = pendingReceipts.length > 0;
@@ -486,7 +508,7 @@ observabilityRoutes.get("/replay", async (c) => {
   }
 
   if (reportsExist) {
-    const reportFiles = fs.readdirSync(reportsDir).filter(f => f.endsWith(".json"));
+    const reportFiles = fs.readdirSync(reportsDir).filter((f) => f.endsWith(".json"));
     return c.json({
       loaded: true,
       source: ".hardkas/reports",
@@ -538,7 +560,7 @@ observabilityRoutes.get("/bundles", async (c) => {
       loaded: false,
       source: "none",
       loadedAt: now,
-      message: "No semantic bundle found. Run: pnpm hardkas verify-semantics --ci-mode",
+      message: "No semantic bundle found. Run: pnpm hardkas verify-semantics --ci-mode"
     });
   }
 
@@ -548,7 +570,7 @@ observabilityRoutes.get("/bundles", async (c) => {
       loaded: false,
       source: "hardkas.semantic-bundle.v1.json",
       loadedAt: now,
-      message: "Semantic bundle exists but could not be parsed.",
+      message: "Semantic bundle exists but could not be parsed."
     });
   }
 
@@ -569,7 +591,7 @@ observabilityRoutes.get("/bundles", async (c) => {
     failedChecks: bundle.invariantSummary?.failedChecks || 0,
     uniqueArtifacts: bundle.artifacts?.length || 0,
     excludedNoiseFields: bundle.excludedNoiseFields || [],
-    statusSummary: bundle.statusSummary || {},
+    statusSummary: bundle.statusSummary || {}
   });
 });
 
@@ -603,7 +625,7 @@ observabilityRoutes.get("/dashboard-health", async (c) => {
   // 1. Lock state
   try {
     const files = fs.readdirSync(hd);
-    const locks = files.filter(f => f.endsWith(".lock"));
+    const locks = files.filter((f) => f.endsWith(".lock"));
     if (locks.length > 0) {
       lockStatus = "AMBIGUOUS";
       state = "RED"; // Ambiguous locks = RED
@@ -613,20 +635,20 @@ observabilityRoutes.get("/dashboard-health", async (c) => {
   // 2. Stream health
   try {
     if (fs.existsSync(eventsFile)) {
-       // Naive stream corruption check: check if it ends with newline
-       const buffer = Buffer.alloc(1024);
-       const stats = fs.statSync(eventsFile);
-       if (stats.size > 0) {
-         const fd = fs.openSync(eventsFile, "r");
-         const readSize = Math.min(1024, stats.size);
-         fs.readSync(fd, buffer, 0, readSize, stats.size - readSize);
-         fs.closeSync(fd);
-         const tail = buffer.toString("utf-8", 0, readSize);
-         if (!tail.endsWith("\n")) {
-           jsonlCorrupt = true;
-           state = "RED";
-         }
-       }
+      // Naive stream corruption check: check if it ends with newline
+      const buffer = Buffer.alloc(1024);
+      const stats = fs.statSync(eventsFile);
+      if (stats.size > 0) {
+        const fd = fs.openSync(eventsFile, "r");
+        const readSize = Math.min(1024, stats.size);
+        fs.readSync(fd, buffer, 0, readSize, stats.size - readSize);
+        fs.closeSync(fd);
+        const tail = buffer.toString("utf-8", 0, readSize);
+        if (!tail.endsWith("\n")) {
+          jsonlCorrupt = true;
+          state = "RED";
+        }
+      }
     }
   } catch {}
 
@@ -634,15 +656,16 @@ observabilityRoutes.get("/dashboard-health", async (c) => {
   try {
     const parsed = tryReadJsonl(telemetryFile);
     if (parsed && parsed.events) {
-       for (const ev of parsed.events) {
-          if (ev.severity === "low" || ev.severity === "nominal") anomalyCount.low++;
-          else if (ev.severity === "medium" || ev.severity === "elevated") anomalyCount.medium++;
-          else if (ev.severity === "high") anomalyCount.high++;
-          else if (ev.severity === "critical") anomalyCount.critical++;
-       }
+      for (const ev of parsed.events) {
+        if (ev.severity === "low" || ev.severity === "nominal") anomalyCount.low++;
+        else if (ev.severity === "medium" || ev.severity === "elevated")
+          anomalyCount.medium++;
+        else if (ev.severity === "high") anomalyCount.high++;
+        else if (ev.severity === "critical") anomalyCount.critical++;
+      }
     }
     if (anomalyCount.critical > 0 || anomalyCount.high > 0) {
-       if (state === "GREEN") state = "YELLOW";
+      if (state === "GREEN") state = "YELLOW";
     }
   } catch {}
 
@@ -653,29 +676,35 @@ observabilityRoutes.get("/dashboard-health", async (c) => {
   } else {
     try {
       const allArtifacts = await queryBackend.findArtifacts();
-      const fsArtifacts = fs.existsSync(artifactsDir) ? fs.readdirSync(artifactsDir).filter(f => f.endsWith(".json")) : [];
+      const fsArtifacts = fs.existsSync(artifactsDir)
+        ? fs.readdirSync(artifactsDir).filter((f) => f.endsWith(".json"))
+        : [];
       // Simple length check for drift
       if (allArtifacts.length !== fsArtifacts.length) {
-         projectionDrift = true;
-         state = "RED";
+        projectionDrift = true;
+        state = "RED";
       }
     } catch {
-       projectionDrift = true;
-       state = "RED";
+      projectionDrift = true;
+      state = "RED";
     }
   }
 
   // 5. Rotation Status
   try {
-     const archiveDir = path.join(hd, "telemetry", "archive");
-     if (fs.existsSync(archiveDir)) {
-        rotatedSegments = fs.readdirSync(archiveDir).filter(f => f.endsWith(".jsonl")).length;
-     }
+    const archiveDir = path.join(hd, "telemetry", "archive");
+    if (fs.existsSync(archiveDir)) {
+      rotatedSegments = fs
+        .readdirSync(archiveDir)
+        .filter((f) => f.endsWith(".jsonl")).length;
+    }
   } catch {}
 
   const warnings: string[] = [];
-  if (lockStatus !== "OK") warnings.push("Stale or ambiguous lock files detected in workspace.");
-  if (projectionDrift) warnings.push("Projection store.db drift detected or is not synced.");
+  if (lockStatus !== "OK")
+    warnings.push("Stale or ambiguous lock files detected in workspace.");
+  if (projectionDrift)
+    warnings.push("Projection store.db drift detected or is not synced.");
   if (jsonlCorrupt) warnings.push("Event stream logs are corrupt.");
 
   return c.json({

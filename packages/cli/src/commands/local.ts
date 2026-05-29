@@ -11,7 +11,11 @@ export function registerLocalCommands(program: Command) {
     .description(`Guided setup for local development ${UI.maturity("stable")}`)
     .option("--profile <name>", "L2 network profile name", "igra")
     .option("--account <name>", "New or existing EVM account name", "dev_alice")
-    .option("--non-interactive", "Skip interactive prompts (will fail if input required)", false)
+    .option(
+      "--non-interactive",
+      "Skip interactive prompts (will fail if input required)",
+      false
+    )
     .option("--json", "Output as JSON", false)
     .action(async (options: any) => {
       const { runLocalWizard } = await import("../runners/local-wizard-runner.js");

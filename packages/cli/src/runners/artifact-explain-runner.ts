@@ -9,11 +9,14 @@ export interface ArtifactExplainOptions {
   workspaceRoot: string;
 }
 
-export async function runArtifactExplain(options: { path: string, workspaceRoot: string }) {
+export async function runArtifactExplain(options: {
+  path: string;
+  workspaceRoot: string;
+}) {
   const { Hardkas } = await import("@hardkas/sdk");
   const sdk = await Hardkas.open({ cwd: options.workspaceRoot });
   const absolutePath = sdk.workspace.resolvePath(options.path);
-  
+
   if (!fs.existsSync(absolutePath)) {
     UI.error(`File not found: ${options.path}`);
     process.exitCode = 1;
@@ -24,7 +27,7 @@ export async function runArtifactExplain(options: { path: string, workspaceRoot:
   const explanation = await explainArtifact(rawArtifact);
 
   UI.header(`Operational Audit: ${path.basename(options.path)}`);
-  
+
   // 1. Summary Section
   console.log("┌── SUMMARY ───────────────────────────────────────────────────");
   console.log(`│ TYPE:      ${explanation.summary.type.padEnd(48)} │`);
@@ -42,7 +45,9 @@ export async function runArtifactExplain(options: { path: string, workspaceRoot:
   if (explanation.identity.lineageId) {
     console.log(`  LineageId:  ${explanation.identity.lineageId}`);
     console.log(`  RootId:     ${explanation.identity.rootArtifactId}`);
-    console.log(`  ParentId:   ${explanation.identity.parentArtifactId || "None (Root)"}`);
+    console.log(
+      `  ParentId:   ${explanation.identity.parentArtifactId || "None (Root)"}`
+    );
   }
 
   // 3. Economics Section
@@ -57,12 +62,12 @@ export async function runArtifactExplain(options: { path: string, workspaceRoot:
     console.log(`\n  Mass:`);
     console.log(`    Reported:   ${explanation.economics.mass.reported}`);
     console.log(`    Recomputed: ${explanation.economics.mass.recomputed}`);
-    
+
     console.log(`\n  Fees:`);
     console.log(`    Reported:   ${formatSompi(explanation.economics.fee.reported)}`);
     console.log(`    Recomputed: ${formatSompi(explanation.economics.fee.recomputed)}`);
     console.log(`    Rate:       ${explanation.economics.fee.rate} sompi/mass`);
-    
+
     if (explanation.economics.fee.delta !== 0n) {
       const delta = explanation.economics.fee.delta;
       const type = delta > 0n ? "Overpaid" : "Underpaid";
@@ -72,12 +77,20 @@ export async function runArtifactExplain(options: { path: string, workspaceRoot:
     }
 
     console.log(`\n  Balance Sheet:`);
-    console.log(`    Total Inputs:  ${formatSompi(explanation.economics.balance.inputs)}`);
-    console.log(`    Total Outputs: ${formatSompi(explanation.economics.balance.outputs)}`);
+    console.log(
+      `    Total Inputs:  ${formatSompi(explanation.economics.balance.inputs)}`
+    );
+    console.log(
+      `    Total Outputs: ${formatSompi(explanation.economics.balance.outputs)}`
+    );
     if (explanation.economics.balance.change > 0n) {
-      console.log(`    Change:        ${formatSompi(explanation.economics.balance.change)}`);
+      console.log(
+        `    Change:        ${formatSompi(explanation.economics.balance.change)}`
+      );
     }
-    console.log(`    Implied Fee:   ${formatSompi(explanation.economics.balance.impliedFee)}`);
+    console.log(
+      `    Implied Fee:   ${formatSompi(explanation.economics.balance.impliedFee)}`
+    );
   }
 
   // 4. Security Section
@@ -90,8 +103,13 @@ export async function runArtifactExplain(options: { path: string, workspaceRoot:
   }
 
   if (explanation.security.issues.length > 0) {
-    explanation.security.issues.forEach(issue => {
-      const prefix = issue.severity === "critical" ? "CRITICAL" : issue.severity === "error" ? "ERROR" : "WARNING";
+    explanation.security.issues.forEach((issue) => {
+      const prefix =
+        issue.severity === "critical"
+          ? "CRITICAL"
+          : issue.severity === "error"
+            ? "ERROR"
+            : "WARNING";
       console.log(`  • [${prefix}] [${issue.code}] ${issue.message}`);
     });
   }

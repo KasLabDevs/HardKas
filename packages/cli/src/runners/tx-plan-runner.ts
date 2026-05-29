@@ -1,24 +1,9 @@
-import { 
-  parseKasToSompi,
-  systemRuntimeContext,
-  NetworkId
-} from "@hardkas/core";
-import {
-  resolveHardkasAccountAddress
-} from "@hardkas/accounts";
-import { 
-  buildPaymentPlan, 
-  createMockUtxo 
-} from "@hardkas/tx-builder";
-import { 
-  createTxPlanArtifact, 
-  TxPlanArtifact 
-} from "@hardkas/artifacts";
+import { parseKasToSompi, systemRuntimeContext, NetworkId } from "@hardkas/core";
+import { resolveHardkasAccountAddress } from "@hardkas/accounts";
+import { buildPaymentPlan, createMockUtxo } from "@hardkas/tx-builder";
+import { createTxPlanArtifact, TxPlanArtifact } from "@hardkas/artifacts";
 import { coreEvents } from "@hardkas/core";
-import { 
-  resolveNetworkTarget, 
-  HardkasConfig 
-} from "@hardkas/config";
+import { resolveNetworkTarget, HardkasConfig } from "@hardkas/config";
 
 export interface TxPlanRunnerInput {
   from: string;
@@ -36,7 +21,7 @@ export interface TxPlanRunnerInput {
  */
 export async function runTxPlan(input: TxPlanRunnerInput): Promise<TxPlanArtifact> {
   const { from, to, amount, networkId, feeRate, config, url, workspaceRoot } = input;
-  
+
   const fromAddress = resolveHardkasAccountAddress(from, config);
   const toAddress = resolveHardkasAccountAddress(to, config);
   const amountSompi = parseKasToSompi(amount);
@@ -45,25 +30,32 @@ export async function runTxPlan(input: TxPlanRunnerInput): Promise<TxPlanArtifac
   const { target, name } = resolveNetworkTarget({ config, network: networkId });
   const resolvedNetwork = name;
 
-  const isSimulatedSender = fromAddress.startsWith("kaspa:sim_") || fromAddress.startsWith("kaspasim:");
+  const isSimulatedSender =
+    fromAddress.startsWith("kaspa:sim_") || fromAddress.startsWith("kaspasim:");
   const isSimulatedTarget = target.kind === "simulated" || resolvedNetwork === "simnet";
 
   if (isSimulatedSender && !isSimulatedTarget) {
-    throw new Error("NETWORK_ACCOUNT_MISMATCH: Cannot use a simulated account on a real network.");
+    throw new Error(
+      "NETWORK_ACCOUNT_MISMATCH: Cannot use a simulated account on a real network."
+    );
   }
 
-  const backend: "simulated" | "rpc" = (isSimulatedTarget || isSimulatedSender) ? "simulated" : "rpc";
+  const backend: "simulated" | "rpc" =
+    isSimulatedTarget || isSimulatedSender ? "simulated" : "rpc";
 
   let availableUtxos: any[] = [];
   let mode: "simulated" | "kaspa-node" | "kaspa-rpc" = "simulated";
   let rpcUrl: string | undefined;
 
   if (backend === "simulated") {
-    const { loadOrCreateLocalnetState, getSpendableUtxos } = await import("@hardkas/localnet");
-    const localState = await loadOrCreateLocalnetState(workspaceRoot ? { cwd: workspaceRoot } : {});
+    const { loadOrCreateLocalnetState, getSpendableUtxos } =
+      await import("@hardkas/localnet");
+    const localState = await loadOrCreateLocalnetState(
+      workspaceRoot ? { cwd: workspaceRoot } : {}
+    );
     const unspent = getSpendableUtxos(localState, fromAddress);
-    
-    availableUtxos = unspent.map(u => {
+
+    availableUtxos = unspent.map((u) => {
       const parts = u.id.split(":");
       const index = Number(parts[parts.length - 1]);
       const transactionId = parts.slice(0, -1).join(":");
@@ -81,13 +73,17 @@ export async function runTxPlan(input: TxPlanRunnerInput): Promise<TxPlanArtifac
     try {
       const { JsonWrpcKaspaClient } = await import("@hardkas/kaspa-rpc");
       const { resolveRuntimeConfig } = await import("@hardkas/node-orchestrator");
-      
+
       const targetObj = target as unknown as Record<string, unknown>;
-      rpcUrl = url || (typeof targetObj.rpcUrl === "string" ? targetObj.rpcUrl : undefined);
+      rpcUrl =
+        url || (typeof targetObj.rpcUrl === "string" ? targetObj.rpcUrl : undefined);
       if (!rpcUrl && target.kind === "kaspa-node") {
-        rpcUrl = resolveRuntimeConfig({ 
-          network: typeof targetObj.network === "string" ? (targetObj.network as "mainnet" | "testnet-10" | "simnet") : "simnet", 
-          ...(target.dataDir ? { dataDir: target.dataDir } : {}) 
+        rpcUrl = resolveRuntimeConfig({
+          network:
+            typeof targetObj.network === "string"
+              ? (targetObj.network as "mainnet" | "testnet-10" | "simnet")
+              : "simnet",
+          ...(target.dataDir ? { dataDir: target.dataDir } : {})
         }).rpcUrl;
       }
 
@@ -96,8 +92,8 @@ export async function runTxPlan(input: TxPlanRunnerInput): Promise<TxPlanArtifac
       const client = new JsonWrpcKaspaClient({ rpcUrl });
       const rpcUtxos = await client.getUtxosByAddress(fromAddress);
       await client.close();
-      
-      availableUtxos = rpcUtxos.map(u => ({
+
+      availableUtxos = rpcUtxos.map((u) => ({
         outpoint: u.outpoint,
         address: u.address,
         amountSompi: u.amountSompi,

@@ -9,11 +9,11 @@ async function main() {
 
   try {
     const hardkas = await Hardkas.create();
-    
+
     UI_section("Environment Diagnostics");
     console.log(`\x1b[1mNetwork:\x1b[0m    ${hardkas.network}`);
     console.log(`\x1b[1mRPC Target:\x1b[0m ${(hardkas.rpc as any).rpcUrl}`);
-    
+
     const info = await hardkas.rpc.getInfo();
     console.log(`\x1b[1mStatus:\x1b[0m     \x1b[32mconnected\x1b[0m`);
     console.log(`\x1b[1mDAA Score:\x1b[0m  ${info.virtualDaaScore}`);
@@ -50,14 +50,16 @@ async function main() {
 
     console.log("\x1b[1m[4/4] Confirming...\x1b[0m");
     process.stdout.write("  [░░░░░░░░░░] Polling DAG acceptance...");
-    
+
     const finalized = await hardkas.tx.confirm(receipt.txId, { timeout: 30000 });
     process.stdout.write("\r  [\x1b[32m██████████\x1b[0m] 100% (Finalized)        \n");
     console.log("");
 
     UI_section("Summary");
     console.log("\x1b[32m✓\x1b[0m \x1b[1mLocalnet demo completed successfully.\x1b[0m");
-    console.log(`\x1b[1mReceipt stored in:\x1b[0m .hardkas/receipts/${receipt.txId.substring(0, 8)}...json`);
+    console.log(
+      `\x1b[1mReceipt stored in:\x1b[0m .hardkas/receipts/${receipt.txId.substring(0, 8)}...json`
+    );
     console.log("");
 
     console.log("\x1b[90mNext capability hints:\x1b[0m");

@@ -58,20 +58,20 @@ describe("State Reconstruction (Time Travel)", () => {
     // utxo_2_spent_early: keep, spent (created 10 <= 50, spent 20 <= 50)
     // utxo_3_spent_late: keep, UNSPENT (created 15 <= 50, but spent 80 > 50)
     // utxo_4_created_late: DELETE (created 80 > 50)
-    
+
     const reconstructed = reconstructStateAtDaa(mockState, 50n);
 
     expect(reconstructed.daaScore).toBe("50");
     expect(reconstructed.utxos.length).toBe(3); // utxo_4 is wiped out from timeline
 
-    const genesis = reconstructed.utxos.find(u => u.id === "utxo_1_genesis");
+    const genesis = reconstructed.utxos.find((u) => u.id === "utxo_1_genesis");
     expect(genesis?.spent).toBe(false);
 
-    const early = reconstructed.utxos.find(u => u.id === "utxo_2_spent_early");
+    const early = reconstructed.utxos.find((u) => u.id === "utxo_2_spent_early");
     expect(early?.spent).toBe(true);
     expect(early?.spentAtDaaScore).toBe("20");
 
-    const late = reconstructed.utxos.find(u => u.id === "utxo_3_spent_late");
+    const late = reconstructed.utxos.find((u) => u.id === "utxo_3_spent_late");
     expect(late?.spent).toBe(false); // Revived!
     expect(late?.spentAtDaaScore).toBeUndefined(); // Dropped the temporal property
   });

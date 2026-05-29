@@ -1,7 +1,11 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import { existsSync } from "node:fs";
-import { HardkasArtifactBase, HARDKAS_VERSION, ARTIFACT_SCHEMAS } from "@hardkas/artifacts";
+import {
+  HardkasArtifactBase,
+  HARDKAS_VERSION,
+  ARTIFACT_SCHEMAS
+} from "@hardkas/artifacts";
 import { NetworkId, ExecutionMode, writeFileAtomic } from "@hardkas/core";
 import { deterministicCompare } from "@hardkas/core";
 
@@ -48,7 +52,9 @@ export async function saveSimulatedReceipt(
   }
 
   const filePath = getReceiptPath(receipt.txId, options?.cwd);
-  await writeFileAtomic(filePath, JSON.stringify(receipt, null, 2), { encoding: "utf-8" });
+  await writeFileAtomic(filePath, JSON.stringify(receipt, null, 2), {
+    encoding: "utf-8"
+  });
   return filePath;
 }
 
@@ -65,9 +71,9 @@ export async function loadSimulatedReceipt(
   return JSON.parse(data);
 }
 
-export async function listSimulatedReceipts(
-  options?: { cwd?: string }
-): Promise<StoredSimulatedTxReceipt[]> {
+export async function listSimulatedReceipts(options?: {
+  cwd?: string;
+}): Promise<StoredSimulatedTxReceipt[]> {
   const dir = getDefaultReceiptsDir(options?.cwd);
   if (!existsSync(dir)) {
     return [];

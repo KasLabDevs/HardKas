@@ -5,7 +5,12 @@
 import { resolve, join } from "node:path";
 import { existsSync, readFileSync } from "node:fs";
 import { writeFileAtomicSync } from "@hardkas/core";
-import { MassBreakdown, profileMass, compareMassProfiles, MassComparison } from "./mass-profile.js";
+import {
+  MassBreakdown,
+  profileMass,
+  compareMassProfiles,
+  MassComparison
+} from "./mass-profile.js";
 
 export interface MassSnapshot {
   /** Snapshot label (e.g., "basic-transfer", "multi-output"). */
@@ -23,9 +28,13 @@ export interface MassSnapshotStore {
 /**
  * Saves a mass breakdown to a persistent snapshot.
  */
-export function saveMassSnapshot(dir: string, label: string, breakdown: MassBreakdown): void {
+export function saveMassSnapshot(
+  dir: string,
+  label: string,
+  breakdown: MassBreakdown
+): void {
   const snapshotDir = resolve(dir, ".hardkas", "mass-snapshots");
-  
+
   const snapshot: MassSnapshot = {
     label,
     timestamp: new Date().toISOString(),
@@ -48,7 +57,7 @@ export function loadMassSnapshot(dir: string, label: string): MassSnapshot | und
   try {
     const data = readFileSync(filePath, "utf8");
     const snapshot = JSON.parse(data) as MassSnapshot;
-    
+
     // Revive bigints if necessary (though JSON.parse will make them numbers/strings)
     // Actually, MassBreakdown contains bigints. We need a reviver.
     return reviveSnapshot(snapshot);
@@ -62,13 +71,18 @@ export function loadMassSnapshot(dir: string, label: string): MassSnapshot | und
  * Profiles current mass, compares with previous if exists, and saves new snapshot.
  */
 export function profileAndCompare(
-  opts: { inputCount: number; outputCount: number; payloadBytes?: number; feeRate?: bigint },
+  opts: {
+    inputCount: number;
+    outputCount: number;
+    payloadBytes?: number;
+    feeRate?: bigint;
+  },
   snapshotDir: string,
   label: string
 ): { breakdown: MassBreakdown; comparison?: MassComparison } {
   const currentBreakdown = profileMass(opts);
   const previousSnapshot = loadMassSnapshot(snapshotDir, label);
-  
+
   let comparison: MassComparison | undefined;
   if (previousSnapshot) {
     comparison = compareMassProfiles(currentBreakdown, previousSnapshot.breakdown);

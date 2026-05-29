@@ -1,8 +1,8 @@
 import { systemRuntimeContext } from "@hardkas/core";
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { 
-  saveIgraTxReceiptArtifact, 
-  loadIgraTxReceiptArtifact, 
+import {
+  saveIgraTxReceiptArtifact,
+  loadIgraTxReceiptArtifact,
   listIgraTxReceiptArtifacts,
   getL2ReceiptPath
 } from "../src/igra-io.js";
@@ -38,7 +38,10 @@ describe("Igra L2 IO Helpers", () => {
 
   it("should save receipt", async () => {
     await saveIgraTxReceiptArtifact(mockReceipt as any);
-    expect(io.writeArtifact).toHaveBeenCalledWith(expect.stringContaining(mockHash), mockReceipt);
+    expect(io.writeArtifact).toHaveBeenCalledWith(
+      expect.stringContaining(mockHash),
+      mockReceipt
+    );
   });
 
   it("should load receipt", async () => {
@@ -50,13 +53,19 @@ describe("Igra L2 IO Helpers", () => {
 
   it("should list receipts and sort by createdAt descending", async () => {
     (fs.readdir as any).mockResolvedValue(["a.igra.receipt.json", "b.igra.receipt.json"]);
-    
-    const r1 = { ...mockReceipt, txHash: "0x" + "1".repeat(64), createdAt: "2026-01-01T00:00:00Z" };
-    const r2 = { ...mockReceipt, txHash: "0x" + "2".repeat(64), createdAt: "2026-01-02T00:00:00Z" };
 
-    (io.readArtifact as any)
-      .mockResolvedValueOnce(r1)
-      .mockResolvedValueOnce(r2);
+    const r1 = {
+      ...mockReceipt,
+      txHash: "0x" + "1".repeat(64),
+      createdAt: "2026-01-01T00:00:00Z"
+    };
+    const r2 = {
+      ...mockReceipt,
+      txHash: "0x" + "2".repeat(64),
+      createdAt: "2026-01-02T00:00:00Z"
+    };
+
+    (io.readArtifact as any).mockResolvedValueOnce(r1).mockResolvedValueOnce(r2);
 
     const result = await listIgraTxReceiptArtifacts();
     expect(result).toHaveLength(2);

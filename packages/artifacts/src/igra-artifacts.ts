@@ -67,15 +67,17 @@ export function isIgraTxPlanArtifact(value: unknown): value is IgraTxPlanArtifac
 
 export function validateIgraTxPlanArtifact(value: unknown): ArtifactValidationResult {
   const errors: string[] = [];
-  if (typeof value !== "object" || value === null) return { ok: false, errors: ["Artifact must be an object"] };
+  if (typeof value !== "object" || value === null)
+    return { ok: false, errors: ["Artifact must be an object"] };
   const v = value as Record<string, unknown>;
 
-  if (v.schema !== ARTIFACT_SCHEMAS.IGRA_TX_PLAN) errors.push(`Invalid schema: expected '${ARTIFACT_SCHEMAS.IGRA_TX_PLAN}'`);
+  if (v.schema !== ARTIFACT_SCHEMAS.IGRA_TX_PLAN)
+    errors.push(`Invalid schema: expected '${ARTIFACT_SCHEMAS.IGRA_TX_PLAN}'`);
   validateCommon(v, errors);
   if (v.status !== "built") errors.push("Invalid status: expected 'built'");
   if (typeof v.planId !== "string" || !v.planId) errors.push("Missing planId");
   if (typeof v.chainId !== "number" || v.chainId <= 0) errors.push("Invalid chainId");
-  
+
   if (!v.request || typeof v.request !== "object") {
     errors.push("Missing or invalid request object");
   } else {
@@ -91,54 +93,70 @@ export function validateIgraTxPlanArtifact(value: unknown): ArtifactValidationRe
     assertHexData(r.data, "request.data", errors);
     assertDecimalBigIntString(r.valueWei, "request.valueWei", errors);
     if (r.gasLimit) assertDecimalBigIntString(r.gasLimit, "request.gasLimit", errors);
-    if (r.gasPriceWei) assertDecimalBigIntString(r.gasPriceWei, "request.gasPriceWei", errors);
+    if (r.gasPriceWei)
+      assertDecimalBigIntString(r.gasPriceWei, "request.gasPriceWei", errors);
     if (r.nonce) assertDecimalBigIntString(r.nonce, "request.nonce", errors);
   }
 
   if (v.estimatedGas) assertDecimalBigIntString(v.estimatedGas, "estimatedGas", errors);
-  if (v.estimatedFeeWei) assertDecimalBigIntString(v.estimatedFeeWei, "estimatedFeeWei", errors);
+  if (v.estimatedFeeWei)
+    assertDecimalBigIntString(v.estimatedFeeWei, "estimatedFeeWei", errors);
 
   return { ok: errors.length === 0, errors };
 }
 
-export function assertValidIgraTxPlanArtifact(value: unknown): asserts value is IgraTxPlanArtifact {
+export function assertValidIgraTxPlanArtifact(
+  value: unknown
+): asserts value is IgraTxPlanArtifact {
   const result = validateIgraTxPlanArtifact(value);
   if (!result.ok) {
-    throw new Error(`Invalid Igra tx plan artifact:\n${result.errors.map(e => `- ${e}`).join("\n")}`);
+    throw new Error(
+      `Invalid Igra tx plan artifact:\n${result.errors.map((e) => `- ${e}`).join("\n")}`
+    );
   }
 }
 
 export function validateIgraSignedTxArtifact(value: unknown): ArtifactValidationResult {
   const errors: string[] = [];
-  if (typeof value !== "object" || value === null) return { ok: false, errors: ["Artifact must be an object"] };
+  if (typeof value !== "object" || value === null)
+    return { ok: false, errors: ["Artifact must be an object"] };
   const v = value as Record<string, unknown>;
 
-  if (v.schema !== ARTIFACT_SCHEMAS.IGRA_SIGNED_TX) errors.push(`Invalid schema: expected '${ARTIFACT_SCHEMAS.IGRA_SIGNED_TX}'`);
+  if (v.schema !== ARTIFACT_SCHEMAS.IGRA_SIGNED_TX)
+    errors.push(`Invalid schema: expected '${ARTIFACT_SCHEMAS.IGRA_SIGNED_TX}'`);
   validateCommon(v, errors);
   if (v.status !== "signed") errors.push("Invalid status: expected 'signed'");
   if (typeof v.signedId !== "string" || !v.signedId) errors.push("Missing signedId");
-  if (typeof v.sourcePlanId !== "string" || !v.sourcePlanId) errors.push("Missing sourcePlanId");
+  if (typeof v.sourcePlanId !== "string" || !v.sourcePlanId)
+    errors.push("Missing sourcePlanId");
   assertHexData(v.rawTransaction, "rawTransaction", errors);
   if (v.txHash) assertEvmTxHash(v.txHash, "txHash", errors);
 
   return { ok: errors.length === 0, errors };
 }
 
-export function assertValidIgraSignedTxArtifact(value: unknown): asserts value is IgraSignedTxArtifact {
+export function assertValidIgraSignedTxArtifact(
+  value: unknown
+): asserts value is IgraSignedTxArtifact {
   const result = validateIgraSignedTxArtifact(value);
   if (!result.ok) {
-    throw new Error(`Invalid Igra signed tx artifact:\n${result.errors.map(e => `- ${e}`).join("\n")}`);
+    throw new Error(
+      `Invalid Igra signed tx artifact:\n${result.errors.map((e) => `- ${e}`).join("\n")}`
+    );
   }
 }
 
 export function validateIgraTxReceiptArtifact(value: unknown): ArtifactValidationResult {
   const errors: string[] = [];
-  if (typeof value !== "object" || value === null) return { ok: false, errors: ["Artifact must be an object"] };
+  if (typeof value !== "object" || value === null)
+    return { ok: false, errors: ["Artifact must be an object"] };
   const v = value as Record<string, unknown>;
 
-  if (v.schema !== ARTIFACT_SCHEMAS.IGRA_TX_RECEIPT) errors.push(`Invalid schema: expected '${ARTIFACT_SCHEMAS.IGRA_TX_RECEIPT}'`);
+  if (v.schema !== ARTIFACT_SCHEMAS.IGRA_TX_RECEIPT)
+    errors.push(`Invalid schema: expected '${ARTIFACT_SCHEMAS.IGRA_TX_RECEIPT}'`);
   validateCommon(v, errors);
-  if (!["submitted", "confirmed", "failed"].includes(v.status as string)) errors.push("Invalid status");
+  if (!["submitted", "confirmed", "failed"].includes(v.status as string))
+    errors.push("Invalid status");
   assertEvmTxHash(v.txHash, "txHash", errors);
   if (typeof v.rpcUrl !== "string" || !v.rpcUrl) errors.push("Missing rpcUrl");
   if (v.blockNumber) assertDecimalBigIntString(v.blockNumber, "blockNumber", errors);
@@ -146,10 +164,14 @@ export function validateIgraTxReceiptArtifact(value: unknown): ArtifactValidatio
   return { ok: errors.length === 0, errors };
 }
 
-export function assertValidIgraTxReceiptArtifact(value: unknown): asserts value is IgraTxReceiptArtifact {
+export function assertValidIgraTxReceiptArtifact(
+  value: unknown
+): asserts value is IgraTxReceiptArtifact {
   const result = validateIgraTxReceiptArtifact(value);
   if (!result.ok) {
-    throw new Error(`Invalid Igra tx receipt artifact:\n${result.errors.map(e => `- ${e}`).join("\n")}`);
+    throw new Error(
+      `Invalid Igra tx receipt artifact:\n${result.errors.map((e) => `- ${e}`).join("\n")}`
+    );
   }
 }
 
@@ -163,7 +185,11 @@ function validateCommon(v: Record<string, unknown>, errors: string[]): void {
 
 // Helpers
 
-export function assertDecimalBigIntString(value: unknown, field: string, errors: string[]): void {
+export function assertDecimalBigIntString(
+  value: unknown,
+  field: string,
+  errors: string[]
+): void {
   if (typeof value !== "string" || !/^\d+$/.test(value)) {
     errors.push(`Invalid ${field}: must be a decimal bigint string`);
   }
@@ -183,7 +209,9 @@ export function assertEvmAddress(value: unknown, field: string, errors: string[]
 
 export function assertEvmTxHash(value: unknown, field: string, errors: string[]): void {
   if (typeof value !== "string" || !/^0x[a-fA-F0-9]{64}$/.test(value)) {
-    errors.push(`Invalid ${field}: must be a 0x-prefixed 64-character EVM transaction hash`);
+    errors.push(
+      `Invalid ${field}: must be a 0x-prefixed 64-character EVM transaction hash`
+    );
   }
 }
 

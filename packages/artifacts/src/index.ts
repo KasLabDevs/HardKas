@@ -22,7 +22,7 @@ export * from "./diff.js";
 export * from "./deployment.js";
 export * from "./deployment-store.js";
 
-export type { 
+export type {
   TxPlanArtifact,
   SignedTxArtifact,
   TxReceiptArtifact,

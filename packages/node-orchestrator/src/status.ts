@@ -6,18 +6,23 @@ import type { KaspaNodeConfig, KaspaNodeStatus, KaspaNodeDoctorReport } from "./
 
 export async function getNodeStatus(config: KaspaNodeConfig): Promise<KaspaNodeStatus> {
   const runtime = resolveRuntimeConfig(config);
-  
+
   try {
     const pidStr = await fs.readFile(runtime.pidFile, "utf-8");
     const pid = parseInt(pidStr, 10);
-    
+
     if (isNaN(pid)) {
-      return { running: false, rpcUrl: runtime.rpcUrl, dataDir: runtime.dataDir, message: "Invalid PID file" };
+      return {
+        running: false,
+        rpcUrl: runtime.rpcUrl,
+        dataDir: runtime.dataDir,
+        message: "Invalid PID file"
+      };
     }
 
     try {
       process.kill(pid, 0); // Check if process is alive
-      
+
       return {
         running: true,
         pid,
@@ -27,14 +32,26 @@ export async function getNodeStatus(config: KaspaNodeConfig): Promise<KaspaNodeS
         logFile: runtime.logFile
       };
     } catch (e) {
-      return { running: false, rpcUrl: runtime.rpcUrl, dataDir: runtime.dataDir, message: "Process found in PID file but is not running" };
+      return {
+        running: false,
+        rpcUrl: runtime.rpcUrl,
+        dataDir: runtime.dataDir,
+        message: "Process found in PID file but is not running"
+      };
     }
   } catch (e) {
-    return { running: false, rpcUrl: runtime.rpcUrl, dataDir: runtime.dataDir, message: "Node is not running" };
+    return {
+      running: false,
+      rpcUrl: runtime.rpcUrl,
+      dataDir: runtime.dataDir,
+      message: "Node is not running"
+    };
   }
 }
 
-export async function doctorKaspaNode(config: KaspaNodeConfig): Promise<KaspaNodeDoctorReport> {
+export async function doctorKaspaNode(
+  config: KaspaNodeConfig
+): Promise<KaspaNodeDoctorReport> {
   const runtime = resolveRuntimeConfig(config);
   const status = await getNodeStatus(config);
   const warnings: string[] = [];
@@ -70,7 +87,9 @@ export async function doctorKaspaNode(config: KaspaNodeConfig): Promise<KaspaNod
   const logFileExists = fsSync.existsSync(runtime.logFile);
 
   if (!binaryFound) {
-    warnings.push(`${runtime.binaryPath} binary not found. Provide --binary /path/to/kaspad or ensure kaspad is in PATH.`);
+    warnings.push(
+      `${runtime.binaryPath} binary not found. Provide --binary /path/to/kaspad or ensure kaspad is in PATH.`
+    );
   }
 
   if (runtime.rpcListen.startsWith("0.0.0.0")) {
@@ -78,7 +97,9 @@ export async function doctorKaspaNode(config: KaspaNodeConfig): Promise<KaspaNod
   }
 
   if (pidFileExists && !status.running) {
-    warnings.push("PID file exists but process is not running. You may need to run hardkas node stop or hardkas node clean.");
+    warnings.push(
+      "PID file exists but process is not running. You may need to run hardkas node stop or hardkas node clean."
+    );
   }
 
   if (!dataDirExists) {

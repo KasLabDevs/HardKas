@@ -6,7 +6,7 @@ import { HardKasProvider, useHardKas } from "../src/provider.js";
 
 function TestComponent({ onEvent }: { onEvent?: any }) {
   const { sseStatus, subscribe } = useHardKas();
-  
+
   React.useEffect(() => {
     if (onEvent) return subscribe(onEvent);
   }, [subscribe, onEvent]);
@@ -16,7 +16,7 @@ function TestComponent({ onEvent }: { onEvent?: any }) {
 
 function ProjectionTestComponent({ onEvent }: { onEvent?: any }) {
   const { sseStatus, projectionStatus, generationId, apiFetch, subscribe } = useHardKas();
-  
+
   React.useEffect(() => {
     if (onEvent) return subscribe(onEvent);
   }, [subscribe, onEvent]);
@@ -26,7 +26,12 @@ function ProjectionTestComponent({ onEvent }: { onEvent?: any }) {
       <div data-testid="status">{sseStatus}</div>
       <div data-testid="projection">{projectionStatus}</div>
       <div data-testid="generation">{generationId || "null"}</div>
-      <button data-testid="fetch-btn" onClick={() => apiFetch("http://localhost:7420/api/health")}>Fetch</button>
+      <button
+        data-testid="fetch-btn"
+        onClick={() => apiFetch("http://localhost:7420/api/health")}
+      >
+        Fetch
+      </button>
     </div>
   );
 }
@@ -36,8 +41,8 @@ describe("HardKas SSE & Reconnect", () => {
 
   beforeEach(() => {
     vi.useFakeTimers();
-    
-    MockEventSource = vi.fn().mockImplementation(function(this: any, url: string) {
+
+    MockEventSource = vi.fn().mockImplementation(function (this: any, url: string) {
       this.url = url;
       this.onopen = null;
       this.onerror = null;
@@ -76,7 +81,9 @@ describe("HardKas SSE & Reconnect", () => {
 
   it("creates only one EventSource for multiple components", async () => {
     render(
-      <HardKasProvider config={{ localOnly: true, devServerUrl: "http://localhost:7420" }}>
+      <HardKasProvider
+        config={{ localOnly: true, devServerUrl: "http://localhost:7420" }}
+      >
         <TestComponent />
         <TestComponent />
       </HardKasProvider>
@@ -87,24 +94,28 @@ describe("HardKas SSE & Reconnect", () => {
 
   it("transitions through connection states", async () => {
     render(
-      <HardKasProvider config={{ localOnly: true, devServerUrl: "http://localhost:7420" }}>
+      <HardKasProvider
+        config={{ localOnly: true, devServerUrl: "http://localhost:7420" }}
+      >
         <TestComponent />
       </HardKasProvider>
     );
 
     expect(screen.getByTestId("status").textContent).toBe("connecting");
-    
+
     // Advance timers for the MockEventSource constructor setTimeout
     await act(async () => {
       vi.advanceTimersByTime(20);
     });
-    
+
     expect(screen.getByTestId("status").textContent).toBe("connected");
   });
 
   it("reconnects on error with exponential backoff", async () => {
     render(
-      <HardKasProvider config={{ localOnly: true, devServerUrl: "http://localhost:7420" }}>
+      <HardKasProvider
+        config={{ localOnly: true, devServerUrl: "http://localhost:7420" }}
+      >
         <TestComponent />
       </HardKasProvider>
     );
@@ -113,9 +124,9 @@ describe("HardKas SSE & Reconnect", () => {
       vi.advanceTimersByTime(20);
     });
     expect(screen.getByTestId("status").textContent).toBe("connected");
-    
+
     const firstEs = MockEventSource.mock.instances[0] as any;
-    
+
     // Trigger error
     await act(async () => {
       firstEs.emitError();
@@ -133,12 +144,12 @@ describe("HardKas SSE & Reconnect", () => {
       vi.advanceTimersByTime(20); // for onopen
     });
     expect(screen.getByTestId("status").textContent).toBe("connected");
-    
+
     await act(async () => {
       secondEs.emitError();
     });
     expect(screen.getByTestId("status").textContent).toBe("reconnecting");
-    
+
     // Wait for backoff (1000ms)
     await act(async () => {
       vi.advanceTimersByTime(1010);
@@ -148,7 +159,9 @@ describe("HardKas SSE & Reconnect", () => {
 
   it("cleans up on unmount", () => {
     const { unmount } = render(
-      <HardKasProvider config={{ localOnly: true, devServerUrl: "http://localhost:7420" }}>
+      <HardKasProvider
+        config={{ localOnly: true, devServerUrl: "http://localhost:7420" }}
+      >
         <TestComponent />
       </HardKasProvider>
     );
@@ -160,7 +173,9 @@ describe("HardKas SSE & Reconnect", () => {
 
   it("handles projection-stale and projection-synced SSE events", async () => {
     render(
-      <HardKasProvider config={{ localOnly: true, devServerUrl: "http://localhost:7420" }}>
+      <HardKasProvider
+        config={{ localOnly: true, devServerUrl: "http://localhost:7420" }}
+      >
         <ProjectionTestComponent />
       </HardKasProvider>
     );
@@ -174,19 +189,22 @@ describe("HardKas SSE & Reconnect", () => {
     });
 
     const esInstance = MockEventSource.mock.instances[0] as any;
-    
+
     // Emit projection-stale
     await act(async () => {
       esInstance.emit("projection-stale", { timestamp: Date.now() });
     });
-    
+
     expect(screen.getByTestId("projection").textContent).toBe("stale");
 
     // Emit projection-synced
     await act(async () => {
-      esInstance.emit("projection-synced", { timestamp: Date.now(), generationId: "gen-123" });
+      esInstance.emit("projection-synced", {
+        timestamp: Date.now(),
+        generationId: "gen-123"
+      });
     });
-    
+
     expect(screen.getByTestId("projection").textContent).toBe("synced");
     expect(screen.getByTestId("generation").textContent).toBe("gen-123");
   });
@@ -195,13 +213,15 @@ describe("HardKas SSE & Reconnect", () => {
     vi.useRealTimers();
     const globalFetch = vi.fn().mockResolvedValue({
       headers: {
-        get: (key: string) => key === "X-Hardkas-Generation" ? "gen-999" : null
+        get: (key: string) => (key === "X-Hardkas-Generation" ? "gen-999" : null)
       }
     });
     vi.stubGlobal("fetch", globalFetch);
 
     render(
-      <HardKasProvider config={{ localOnly: true, devServerUrl: "http://localhost:7420" }}>
+      <HardKasProvider
+        config={{ localOnly: true, devServerUrl: "http://localhost:7420" }}
+      >
         <ProjectionTestComponent />
       </HardKasProvider>
     );

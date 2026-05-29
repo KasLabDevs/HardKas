@@ -9,11 +9,7 @@
 // Translated from kaspa-sim (Rust) — github.com/KasLabDevs/kaspa-sim
 
 // ── Existing exports (TxSimulator, lifecycle phases) ─────────────────────────
-export type {
-  TxLifecyclePhase,
-  TxTraceEvent,
-  SimulationResult,
-} from "./tx-simulator.js";
+export type { TxLifecyclePhase, TxTraceEvent, SimulationResult } from "./tx-simulator.js";
 export { TxSimulator, createTraceId } from "./tx-simulator.js";
 
 // ── GHOSTDAG Types ───────────────────────────────────────────────────────────
@@ -23,7 +19,7 @@ export type {
   GhostdagData,
   CompactGhostdagData,
   SimBlockHeader,
-  SimBlock,
+  SimBlock
 } from "./ghostdag-types.js";
 
 export {
@@ -33,7 +29,7 @@ export {
   blockBlueWork,
   blockBlueScore,
   headerWork,
-  compactFromFull,
+  compactFromFull
 } from "./ghostdag-types.js";
 
 // ── GHOSTDAG Ordering ────────────────────────────────────────────────────────
@@ -48,7 +44,7 @@ export {
   pastSet,
   isDagAncestorOf,
   unorderedMergesetWithoutSelectedParent,
-  orderedMergesetWithoutSelectedParent,
+  orderedMergesetWithoutSelectedParent
 } from "./reachability.js";
 
 // ── Approximate GHOSTDAG Engine ──────────────────────────────────────────────
@@ -66,7 +62,7 @@ export {
   runWideDag,
   runForkResolution,
   runDiamondDag,
-  runAllScenarios,
+  runAllScenarios
 } from "./scenarios.js";
 
 // ── Report ───────────────────────────────────────────────────────────────────
@@ -74,10 +70,17 @@ export { formatScenarioReport } from "./report.js";
 
 // ── Mass Profiling ───────────────────────────────────────────────────────────
 export type { MassBreakdown, MassComparison } from "./mass-profile.js";
-export { profileMass, compareMassProfiles, formatMassProfile, formatMassComparison } from "./mass-profile.js";
+export {
+  profileMass,
+  compareMassProfiles,
+  formatMassProfile,
+  formatMassComparison
+} from "./mass-profile.js";
 
 // ── Mass Snapshots ──────────────────────────────────────────────────────────
 export type { MassSnapshot, MassSnapshotStore } from "./mass-snapshot.js";
-export { saveMassSnapshot, loadMassSnapshot, profileAndCompare } from "./mass-snapshot.js";
-
-
+export {
+  saveMassSnapshot,
+  loadMassSnapshot,
+  profileAndCompare
+} from "./mass-snapshot.js";

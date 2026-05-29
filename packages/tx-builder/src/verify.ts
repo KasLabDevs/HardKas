@@ -30,7 +30,11 @@ export interface SemanticVerificationResult {
 
 export interface SemanticVerifyContext {
   /** Known UTXOs to verify lineage against */
-  utxoContext?: { address: string; amountSompi: bigint; outpoint: { transactionId: string; index: number } }[];
+  utxoContext?: {
+    address: string;
+    amountSompi: bigint;
+    outpoint: { transactionId: string; index: number };
+  }[];
   /** Expected change address */
   expectedChangeAddress?: string;
   /** Minimum fee rate required by the node */
@@ -46,28 +50,48 @@ export function verifyTxPlanSemantics(
   context: SemanticVerifyContext = {}
 ): SemanticVerificationResult {
   const issues: SemanticVerificationIssue[] = [];
-  
-  const addIssue = (code: string, severity: SemanticVerificationSeverity, message: string, path?: string) => {
+
+  const addIssue = (
+    code: string,
+    severity: SemanticVerificationSeverity,
+    message: string,
+    path?: string
+  ) => {
     issues.push({ code, severity, message, ...(path ? { path } : {}) });
   };
 
   // A. Simulation vs Real separation
   const ePlan = plan as ExtendedPlan;
   if (ePlan.mode === "simulated" && ePlan.networkId !== "simnet") {
-    addIssue("ENV_CONSISTENCY_FAILURE", "error", `Environment mismatch: simulated plan must target 'simnet', but targets '${ePlan.networkId}'`);
+    addIssue(
+      "ENV_CONSISTENCY_FAILURE",
+      "error",
+      `Environment mismatch: simulated plan must target 'simnet', but targets '${ePlan.networkId}'`
+    );
   }
 
   // B. Address Integrity
-  if (!plan.inputs.every(i => i.address.includes(":"))) {
-     addIssue("INVALID_ADDRESS_FORMAT", "error", "One or more input addresses are missing prefix (e.g. kaspa:)");
+  if (!plan.inputs.every((i) => i.address.includes(":"))) {
+    addIssue(
+      "INVALID_ADDRESS_FORMAT",
+      "error",
+      "One or more input addresses are missing prefix (e.g. kaspa:)"
+    );
   }
-  if (!plan.outputs.every(o => o.address.includes(":"))) {
-     addIssue("INVALID_ADDRESS_FORMAT", "error", "One or more output addresses are missing prefix (e.g. kaspa:)");
+  if (!plan.outputs.every((o) => o.address.includes(":"))) {
+    addIssue(
+      "INVALID_ADDRESS_FORMAT",
+      "error",
+      "One or more output addresses are missing prefix (e.g. kaspa:)"
+    );
   }
 
   // 1. Economic Totals
   const inputTotalSompi = plan.inputs.reduce((sum, i) => sum + BigInt(i.amountSompi), 0n);
-  const outputTotalSompi = plan.outputs.reduce((sum, o) => sum + BigInt(o.amountSompi), 0n);
+  const outputTotalSompi = plan.outputs.reduce(
+    (sum, o) => sum + BigInt(o.amountSompi),
+    0n
+  );
   const changeAmountSompi = plan.change ? BigInt(plan.change.amountSompi) : 0n;
   const planFeeSompi = BigInt(plan.estimatedFeeSompi);
 
@@ -79,11 +103,19 @@ export function verifyTxPlanSemantics(
   }
 
   if (outputTotalSompi <= 0n) {
-    addIssue("ZERO_OUTPUTS", "error", "Transaction has zero or negative total outputs (excluding change).");
+    addIssue(
+      "ZERO_OUTPUTS",
+      "error",
+      "Transaction has zero or negative total outputs (excluding change)."
+    );
   }
 
   if (recomputedFeeSompi < 0n) {
-    addIssue("NEGATIVE_FEE", "critical", `Negative fee detected: inputs (${inputTotalSompi}) < outputs + change (${outputTotalSompi + changeAmountSompi})`);
+    addIssue(
+      "NEGATIVE_FEE",
+      "critical",
+      `Negative fee detected: inputs (${inputTotalSompi}) < outputs + change (${outputTotalSompi + changeAmountSompi})`
+    );
   }
 
   // 3. Mass & Fee Consistency
@@ -95,26 +127,49 @@ export function verifyTxPlanSemantics(
   const recomputedMass = massResult.mass;
 
   if (recomputedMass !== BigInt(plan.estimatedMass)) {
-    addIssue("MASS_MISMATCH", "critical", `Mass mismatch: plan says ${plan.estimatedMass}, recomputed ${recomputedMass}`);
+    addIssue(
+      "MASS_MISMATCH",
+      "critical",
+      `Mass mismatch: plan says ${plan.estimatedMass}, recomputed ${recomputedMass}`
+    );
   }
 
   if (planFeeSompi !== recomputedFeeSompi) {
-     addIssue("FEE_MISMATCH", "critical", `Fee mismatch: estimatedFeeSompi (${planFeeSompi}) does not match input-output delta (${recomputedFeeSompi})`);
+    addIssue(
+      "FEE_MISMATCH",
+      "critical",
+      `Fee mismatch: estimatedFeeSompi (${planFeeSompi}) does not match input-output delta (${recomputedFeeSompi})`
+    );
   }
 
   // 4. Output Validation (Dust, Negative, Duplicate)
   plan.outputs.forEach((o, i) => {
     if (BigInt(o.amountSompi) <= 0n) {
-      addIssue("INVALID_OUTPUT_AMOUNT", "error", `Output ${i} has non-positive amount: ${o.amountSompi}`, `outputs[${i}]`);
+      addIssue(
+        "INVALID_OUTPUT_AMOUNT",
+        "error",
+        `Output ${i} has non-positive amount: ${o.amountSompi}`,
+        `outputs[${i}]`
+      );
     }
     // Simple dust check (Kaspa dust is usually 600 sompi for standard P2PKH)
     if (BigInt(o.amountSompi) < 600n) {
-      addIssue("DUST_OUTPUT", "warning", `Output ${i} might be dust: ${o.amountSompi} sompi`, `outputs[${i}]`);
+      addIssue(
+        "DUST_OUTPUT",
+        "warning",
+        `Output ${i} might be dust: ${o.amountSompi} sompi`,
+        `outputs[${i}]`
+      );
     }
   });
 
   if (plan.change && BigInt(plan.change.amountSompi) < 600n) {
-    addIssue("DUST_CHANGE", "warning", `Change output might be dust: ${plan.change.amountSompi} sompi`, "change");
+    addIssue(
+      "DUST_CHANGE",
+      "warning",
+      `Change output might be dust: ${plan.change.amountSompi} sompi`,
+      "change"
+    );
   }
 
   // 5. Input Validation (Duplicates)
@@ -122,7 +177,12 @@ export function verifyTxPlanSemantics(
   plan.inputs.forEach((input, i) => {
     const id = `${input.outpoint.transactionId}:${input.outpoint.index}`;
     if (seenInputs.has(id)) {
-      addIssue("DUPLICATE_INPUT", "critical", `Duplicate input detected: ${id}`, `inputs[${i}]`);
+      addIssue(
+        "DUPLICATE_INPUT",
+        "critical",
+        `Duplicate input detected: ${id}`,
+        `inputs[${i}]`
+      );
     }
     seenInputs.add(id);
   });
@@ -130,26 +190,42 @@ export function verifyTxPlanSemantics(
   // 6. Context-aware checks
   if (context.utxoContext) {
     plan.inputs.forEach((input, i) => {
-      const match = context.utxoContext?.find(u => 
-        u.outpoint.transactionId === input.outpoint.transactionId && 
-        u.outpoint.index === input.outpoint.index
+      const match = context.utxoContext?.find(
+        (u) =>
+          u.outpoint.transactionId === input.outpoint.transactionId &&
+          u.outpoint.index === input.outpoint.index
       );
       if (!match) {
-        addIssue("UNKNOWN_INPUT", "error", `Input ${i} not found in provided UTXO context`, `inputs[${i}]`);
+        addIssue(
+          "UNKNOWN_INPUT",
+          "error",
+          `Input ${i} not found in provided UTXO context`,
+          `inputs[${i}]`
+        );
       } else if (BigInt(match.amountSompi) !== BigInt(input.amountSompi)) {
-        addIssue("INPUT_AMOUNT_MISMATCH", "critical", `Input ${i} amount mismatch: plan says ${input.amountSompi}, context says ${match.amountSompi}`, `inputs[${i}]`);
+        addIssue(
+          "INPUT_AMOUNT_MISMATCH",
+          "critical",
+          `Input ${i} amount mismatch: plan says ${input.amountSompi}, context says ${match.amountSompi}`,
+          `inputs[${i}]`
+        );
       }
     });
   }
 
   if (context.expectedChangeAddress && plan.change) {
     if (plan.change.address !== context.expectedChangeAddress) {
-      addIssue("CHANGE_ADDRESS_MISMATCH", "error", `Change address mismatch: expected ${context.expectedChangeAddress}, got ${plan.change.address}`, "change.address");
+      addIssue(
+        "CHANGE_ADDRESS_MISMATCH",
+        "error",
+        `Change address mismatch: expected ${context.expectedChangeAddress}, got ${plan.change.address}`,
+        "change.address"
+      );
     }
   }
 
   return {
-    ok: issues.every(i => i.severity !== "error" && i.severity !== "critical"),
+    ok: issues.every((i) => i.severity !== "error" && i.severity !== "critical"),
     issues,
     recomputedFeeSompi,
     recomputedMass,
@@ -167,26 +243,49 @@ export function verifySignedTxSemantics(
   plan?: TxPlan
 ): { ok: boolean; issues: SemanticVerificationIssue[] } {
   const issues: SemanticVerificationIssue[] = [];
-  
-  const addIssue = (code: string, severity: SemanticVerificationSeverity, message: string) => {
+
+  const addIssue = (
+    code: string,
+    severity: SemanticVerificationSeverity,
+    message: string
+  ) => {
     issues.push({ code, severity, message });
   };
 
   if (plan) {
     const ePlan = plan as ExtendedPlan;
-    if (signed.sourcePlanId !== ePlan.planId && signed.sourcePlanId !== ePlan.contentHash) {
-       addIssue("PLAN_ID_MISMATCH", "critical", `Security violation: sourcePlanId mismatch. Signed sourcePlanId is ${signed.sourcePlanId}, but plan is ${ePlan.planId}`);
+    if (
+      signed.sourcePlanId !== ePlan.planId &&
+      signed.sourcePlanId !== ePlan.contentHash
+    ) {
+      addIssue(
+        "PLAN_ID_MISMATCH",
+        "critical",
+        `Security violation: sourcePlanId mismatch. Signed sourcePlanId is ${signed.sourcePlanId}, but plan is ${ePlan.planId}`
+      );
     }
-    
+
     if (ePlan.amountSompi && BigInt(signed.amountSompi) !== BigInt(ePlan.amountSompi)) {
-      addIssue("IMMUTABLE_FIELD_MUTATION", "critical", `Security violation: amountSompi changed from ${ePlan.amountSompi} to ${signed.amountSompi} after signing`);
+      addIssue(
+        "IMMUTABLE_FIELD_MUTATION",
+        "critical",
+        `Security violation: amountSompi changed from ${ePlan.amountSompi} to ${signed.amountSompi} after signing`
+      );
     }
-    
+
     if (signed.networkId !== ePlan.networkId) {
-      addIssue("NETWORK_MISMATCH", "critical", `Security violation: networkId changed from ${ePlan.networkId} to ${signed.networkId} after signing`);
+      addIssue(
+        "NETWORK_MISMATCH",
+        "critical",
+        `Security violation: networkId changed from ${ePlan.networkId} to ${signed.networkId} after signing`
+      );
     }
   } else {
-    addIssue("PLAN_UNAVAILABLE_FOR_LINEAGE_CHECK", "warning", "Source plan is not available in the workspace; skipping lineage check");
+    addIssue(
+      "PLAN_UNAVAILABLE_FOR_LINEAGE_CHECK",
+      "warning",
+      "Source plan is not available in the workspace; skipping lineage check"
+    );
   }
 
   if (!signed.signedTransaction?.payload) {
@@ -194,7 +293,7 @@ export function verifySignedTxSemantics(
   }
 
   return {
-    ok: issues.every(i => i.severity !== "error" && i.severity !== "critical"),
+    ok: issues.every((i) => i.severity !== "error" && i.severity !== "critical"),
     issues
   };
 }
@@ -202,12 +301,17 @@ export function verifySignedTxSemantics(
 /**
  * Performs semantic verification of a transaction receipt artifact.
  */
-export function verifyTxReceiptSemantics(
-  receipt: any
-): { ok: boolean; issues: SemanticVerificationIssue[] } {
+export function verifyTxReceiptSemantics(receipt: any): {
+  ok: boolean;
+  issues: SemanticVerificationIssue[];
+} {
   const issues: SemanticVerificationIssue[] = [];
-  
-  const addIssue = (code: string, severity: SemanticVerificationSeverity, message: string) => {
+
+  const addIssue = (
+    code: string,
+    severity: SemanticVerificationSeverity,
+    message: string
+  ) => {
     issues.push({ code, severity, message });
   };
 
@@ -220,7 +324,7 @@ export function verifyTxReceiptSemantics(
   }
 
   return {
-    ok: issues.every(i => i.severity !== "error" && i.severity !== "critical"),
+    ok: issues.every((i) => i.severity !== "error" && i.severity !== "critical"),
     issues
   };
 }

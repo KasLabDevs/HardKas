@@ -1,6 +1,10 @@
 import { describe, it, expect, beforeAll, afterAll } from "vitest";
 import { runAccountsBalance } from "../src/runners/accounts-balance-runner.js";
-import { loadOrCreateLocalnetState, applySimulatedPayment, saveLocalnetState } from "@hardkas/localnet";
+import {
+  loadOrCreateLocalnetState,
+  applySimulatedPayment,
+  saveLocalnetState
+} from "@hardkas/localnet";
 import { systemRuntimeContext } from "@hardkas/core";
 import fs from "node:fs";
 import path from "node:path";
@@ -17,12 +21,15 @@ describe("Accounts Balance Local", () => {
     process.chdir(tmpDir);
 
     const state = await loadOrCreateLocalnetState({ cwd: tmpDir });
-    const aliceAccount = state.accounts.find(a => a.name === "alice");
+    const aliceAccount = state.accounts.find((a) => a.name === "alice");
     if (!aliceAccount) throw new Error("Alice account not found in default state");
     aliceAddress = aliceAccount.address;
-    
+
     // Create minimal hardkas config so it defaults to simnet
-    fs.writeFileSync(path.join(tmpDir, "hardkas.config.ts"), "export default { defaultNetwork: 'simnet' };");
+    fs.writeFileSync(
+      path.join(tmpDir, "hardkas.config.ts"),
+      "export default { defaultNetwork: 'simnet' };"
+    );
   });
 
   afterAll(() => {

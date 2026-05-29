@@ -12,20 +12,20 @@ export default async function runTransferRecipe(sandboxRoot: string) {
     workspaceRoot: sandboxRoot,
     quiet: true
   });
-  
+
   // Output the minimum WOW message requested
   console.log(pc.green(pc.bold("\nRecipe completed: transfer")));
 
   // Wait a moment for the artifacts to fully write before reading
-  await new Promise(r => setTimeout(r, 500));
-  
+  await new Promise((r) => setTimeout(r, 500));
+
   const artifactsDir = path.join(sandboxRoot, ".hardkas", "artifacts");
   if (!fs.existsSync(artifactsDir)) return;
-  
+
   const files = fs.readdirSync(artifactsDir).sort();
-  const plan = files.find(f => f.includes(".plan.json") || f.startsWith("txPlan_"));
-  const signed = files.find(f => f.includes(".signed.json") || f.startsWith("signed_"));
-  const receipt = files.find(f => f.includes("receipt_"));
+  const plan = files.find((f) => f.includes(".plan.json") || f.startsWith("txPlan_"));
+  const signed = files.find((f) => f.includes(".signed.json") || f.startsWith("signed_"));
+  const receipt = files.find((f) => f.includes("receipt_"));
 
   console.log(`\nArtifacts:`);
   if (plan) console.log(`Plan: ${plan}`);

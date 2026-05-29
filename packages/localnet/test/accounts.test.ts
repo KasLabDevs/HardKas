@@ -18,7 +18,9 @@ describe("localnet accounts", () => {
     });
 
     it("should throw for unknown aliases", () => {
-      expect(() => resolveAccountAddress("unknown")).toThrow("Unknown account alias: unknown");
+      expect(() => resolveAccountAddress("unknown")).toThrow(
+        "Unknown account alias: unknown"
+      );
     });
   });
 

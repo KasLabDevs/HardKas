@@ -60,7 +60,7 @@ describe("DockerKaspadRunner", () => {
     await runner.start();
 
     // Check the docker run call
-    const runCall = vi.mocked(execa).mock.calls.find(c => c[1]?.[0] === "run");
+    const runCall = vi.mocked(execa).mock.calls.find((c) => c[1]?.[0] === "run");
     expect(runCall).toBeDefined();
     const args = runCall![1];
     expect(args).toContain("test-node");
@@ -95,9 +95,9 @@ describe("DockerKaspadRunner", () => {
     } as any);
 
     await expect(runner.start()).rejects.toThrow(/Port 16210 is already in use/);
-    
+
     // Should NOT have called docker run
-    const runCall = vi.mocked(execa).mock.calls.find(c => c[1]?.[0] === "run");
+    const runCall = vi.mocked(execa).mock.calls.find((c) => c[1]?.[0] === "run");
     expect(runCall).toBeUndefined();
   });
 

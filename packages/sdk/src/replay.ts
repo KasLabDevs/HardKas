@@ -1,8 +1,8 @@
 import fs from "node:fs";
 import path from "node:path";
-import { 
-  readTxPlanArtifact, 
-  readTxReceiptArtifact, 
+import {
+  readTxPlanArtifact,
+  readTxReceiptArtifact,
   verifyArtifactIntegrity,
   writeArtifact
 } from "@hardkas/artifacts";
@@ -27,7 +27,7 @@ export class HardkasReplay {
   constructor(private sdk: Hardkas) {}
 
   /**
-   * Verifies the deterministic artifact lineage of a transaction replay 
+   * Verifies the deterministic artifact lineage of a transaction replay
    * against the mathematically reconstructed localnet state.
    */
   async verify(options: ReplayVerifyOptions): Promise<ReplayVerifyResult> {
@@ -42,6 +42,20 @@ export class HardkasReplay {
           planPath = fullPath;
           artifactDir = path.dirname(fullPath);
           receiptPath = fullPath.replace("tx-plan", "tx-receipt");
+
+          // Auto-detect workflow artifact
+          try {
+            let content = fs.readFileSync(fullPath, "utf-8");
+            if (content.charCodeAt(0) === 0xfeff) {
+              content = content.slice(1);
+            }
+            const json = JSON.parse(content);
+            if (json && json.schema === "hardkas.workflow.v1" && json.workflowId) {
+              options.workflowId = json.workflowId;
+            }
+          } catch (e) {
+            // Ignore parse errors, fallback to classic path which will handle it
+          }
         } else {
           artifactDir = fullPath;
           planPath = path.join(artifactDir, "tx-plan.json");
@@ -51,8 +65,8 @@ export class HardkasReplay {
         throw new Error(`Path not found: ${options.path}`);
       }
     }
-    
-    // We only check hardkas.config.ts if they gave us a directory that isn't the CWD? 
+
+    // We only check hardkas.config.ts if they gave us a directory that isn't the CWD?
     // Actually we can skip that check or just check workspace.root.
     if (!fs.existsSync(path.join(this.sdk.config.cwd, "hardkas.config.ts"))) {
       throw new Error(`Workspace not found at ${this.sdk.config.cwd}`);
@@ -62,7 +76,7 @@ export class HardkasReplay {
     const canonicalDirs = [
       path.join(artifactDir, ".hardkas", "receipts"),
       path.join(artifactDir, ".hardkas", "traces"),
-      path.join(artifactDir, ".hardkas", "deployments"),
+      path.join(artifactDir, ".hardkas", "deployments")
     ];
 
     const files: string[] = [];
@@ -92,7 +106,11 @@ export class HardkasReplay {
     let contaminationOk = true;
 
     const isContaminated = (artifact: any): boolean => {
-      if (artifact.networkId && artifact.networkId !== "simnet" && artifact.networkId !== "simulated") {
+      if (
+        artifact.networkId &&
+        artifact.networkId !== "simnet" &&
+        artifact.networkId !== "simulated"
+      ) {
         const str = JSON.stringify(artifact);
         if (str.includes("kaspa:sim_")) {
           return true;
@@ -105,12 +123,22 @@ export class HardkasReplay {
       try {
         const content = fs.readFileSync(file, "utf-8");
         const json = JSON.parse(content);
-        if (json && json.schema && typeof json.schema === "string" && json.schema.startsWith("hardkas.")) {
+        if (
+          json &&
+          json.schema &&
+          typeof json.schema === "string" &&
+          json.schema.startsWith("hardkas.")
+        ) {
           artifactCount++;
-          
+
           if (isContaminated(json)) contaminationOk = false;
 
-          const isCoreArtifact = ["hardkas.txPlan", "hardkas.signedTx", "hardkas.txReceipt", "hardkas.snapshot"].includes(json.schema);
+          const isCoreArtifact = [
+            "hardkas.txPlan",
+            "hardkas.signedTx",
+            "hardkas.txReceipt",
+            "hardkas.snapshot"
+          ].includes(json.schema);
           if (isCoreArtifact) {
             const integrity = await verifyArtifactIntegrity(json);
             if (!integrity.ok) determinismOk = false;
@@ -132,24 +160,32 @@ export class HardkasReplay {
     // Workflow Replay Path
     if (options.workflowId) {
       try {
-        const wfArtifactPath = fs.readdirSync(this.sdk.workspace.artifactsDir)
-          .find(f => f.includes(options.workflowId!) && f.endsWith(".json"));
-        
+        const wfArtifactPath = fs
+          .readdirSync(this.sdk.workspace.artifactsDir)
+          .find((f) => f.includes(options.workflowId!) && f.endsWith(".json"));
+
         if (!wfArtifactPath) throw new Error("Workflow artifact not found");
-        
-        const wfArtifactStr = fs.readFileSync(path.join(this.sdk.workspace.artifactsDir, wfArtifactPath), "utf-8");
+
+        const wfArtifactStr = fs.readFileSync(
+          path.join(this.sdk.workspace.artifactsDir, wfArtifactPath),
+          "utf-8"
+        );
         const wfArtifact = JSON.parse(wfArtifactStr) as Record<string, unknown>;
-        
+
         if (wfArtifact.schema !== "hardkas.workflow.v1") {
           throw new Error(`Artifact ${options.workflowId} is not a workflow artifact`);
         }
 
         const childArtifacts = (wfArtifact.producedArtifacts as string[]) || [];
         for (const childId of childArtifacts) {
-          const childFile = fs.readdirSync(this.sdk.workspace.artifactsDir)
-            .find(f => f.includes(childId as string) && f.endsWith(".json"));
+          const childFile = fs
+            .readdirSync(this.sdk.workspace.artifactsDir)
+            .find((f) => f.includes(childId as string) && f.endsWith(".json"));
           if (!childFile) throw new Error(`Child artifact ${childId} not found`);
-          const childStr = fs.readFileSync(path.join(this.sdk.workspace.artifactsDir, childFile), "utf-8");
+          const childStr = fs.readFileSync(
+            path.join(this.sdk.workspace.artifactsDir, childFile),
+            "utf-8"
+          );
           const child = JSON.parse(childStr) as Record<string, unknown>;
           const integrity = await verifyArtifactIntegrity(child);
           if (!integrity.ok) {
@@ -167,18 +203,19 @@ export class HardkasReplay {
 
         // Mock invariants report for workflows
         report = { invariantsOk: determinismOk && contaminationOk };
-
       } catch (e: any) {
         verifyErrorMsg = `Workflow Replay failed: ${e.message}`;
         lineageOk = false;
         determinismOk = false;
       }
-    } 
+    }
     // Classic Transaction Replay Path
     else if (options.path) {
       try {
-        if (!fs.existsSync(planPath)) throw new Error(`Transaction plan artifact is missing at: ${planPath}`);
-        if (!fs.existsSync(receiptPath)) throw new Error(`Transaction receipt artifact is missing at: ${receiptPath}`);
+        if (!fs.existsSync(planPath))
+          throw new Error(`Transaction plan artifact is missing at: ${planPath}`);
+        if (!fs.existsSync(receiptPath))
+          throw new Error(`Transaction receipt artifact is missing at: ${receiptPath}`);
         plan = await readTxPlanArtifact(planPath);
         receipt = await readTxReceiptArtifact(receiptPath);
       } catch (err: any) {
@@ -187,20 +224,21 @@ export class HardkasReplay {
 
       if (!verifyErrorMsg && plan && receipt) {
         try {
-          const { loadOrCreateLocalnetState, reconstructStateAtDaa, verifyReplay } = await import("@hardkas/localnet");
+          const { loadOrCreateLocalnetState, reconstructStateAtDaa, verifyReplay } =
+            await import("@hardkas/localnet");
           const { systemRuntimeContext } = await import("@hardkas/core");
-          
+
           let state = await loadOrCreateLocalnetState({ cwd: this.sdk.workspace.root });
 
           if (receipt.mode === "simulated" && receipt.daaScore) {
             const receiptDaa = BigInt(receipt.daaScore);
             const targetDaa = receiptDaa - 1n;
-            
+
             state = reconstructStateAtDaa(state, targetDaa);
           }
 
           report = verifyReplay(state, plan, receipt, systemRuntimeContext);
-          
+
           // Write replay report artifact to disk for query-store indexing and dashboard visibility
           const reportFilename = `${new Date().toISOString().replace(/:/g, "-")}-${receipt.txId}.replay.json`; // hardkas-determinism-allow: timestamped report file naming
           const reportPath = path.join(this.sdk.workspace.artifactsDir, reportFilename);
@@ -214,7 +252,8 @@ export class HardkasReplay {
     }
 
     const invariantsOk = report ? report.invariantsOk : false;
-    const passed = lineageOk && determinismOk && contaminationOk && invariantsOk && !verifyErrorMsg;
+    const passed =
+      lineageOk && determinismOk && contaminationOk && invariantsOk && !verifyErrorMsg;
 
     return {
       passed,

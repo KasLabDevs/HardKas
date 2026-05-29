@@ -46,7 +46,7 @@ function createBlock(hash: BlockHash, parents: BlockHash[], bits: number): SimBl
       timestampUs: Date.now() * 1000, // Not deterministic but used for simulation
       minerId: 0,
       bits,
-      nonce: 0,
+      nonce: 0
     }
   };
 }
@@ -68,7 +68,7 @@ export function runLinearChain(config: ScenarioConfig): ScenarioResult {
     const hash = scenarioBlockHash(config.name, i);
     const block = createBlock(hash, [prevHash], bits);
     blocks.set(hash, block);
-    
+
     const gdData = engine.computeGhostdag(block, blocks, store);
     store.insert(hash, gdData);
     prevHash = hash;
@@ -99,18 +99,17 @@ export function runWideDag(config: ScenarioConfig): ScenarioResult {
     const hash = scenarioBlockHash(config.name, i);
     const block = createBlock(hash, [GENESIS_HASH], bits);
     blocks.set(hash, block);
-    
+
     const gdData = engine.computeGhostdag(block, blocks, store);
     store.insert(hash, gdData);
   }
 
   // To actually see red blocks, we need a block that merges all these siblings.
-  const siblingHashes = Array.from(blocks.keys()).filter(h => h !== GENESIS_HASH);
+  const siblingHashes = Array.from(blocks.keys()).filter((h) => h !== GENESIS_HASH);
   const mergerHash = scenarioBlockHash(config.name, 9999);
   const mergerBlock = createBlock(mergerHash, siblingHashes, bits);
   blocks.set(mergerHash, mergerBlock);
   store.insert(mergerHash, engine.computeGhostdag(mergerBlock, blocks, store));
-
 
   const metrics = computeDagMetrics(blocks, store, GENESIS_HASH);
 
@@ -122,7 +121,9 @@ export function runWideDag(config: ScenarioConfig): ScenarioResult {
   };
 }
 
-export function runForkResolution(config: ScenarioConfig & { forkPoint: number }): ScenarioResult {
+export function runForkResolution(
+  config: ScenarioConfig & { forkPoint: number }
+): ScenarioResult {
   const start = performance.now();
   const blocks = new Map<BlockHash, SimBlock>();
   const store = new GhostdagStore();
@@ -156,7 +157,7 @@ export function runForkResolution(config: ScenarioConfig & { forkPoint: number }
     prevA = hash;
   }
 
-  // Fork B - slightly more blocks or higher work to win? 
+  // Fork B - slightly more blocks or higher work to win?
   // We'll make it equal length but GHOSTDAG should pick one (by hash tie-break if work equal)
   let prevB = forkHash;
   const branchBLength = config.blockCount - config.forkPoint - branchLength;
@@ -208,7 +209,7 @@ export function runDiamondDag(config: ScenarioConfig): ScenarioResult {
     const blockM = createBlock(hashM, [hashA, hashB], bits);
     blocks.set(hashM, blockM);
     store.insert(hashM, engine.computeGhostdag(blockM, blocks, store));
-    
+
     prevMerge = hashM;
   }
 
@@ -225,7 +226,11 @@ export function runAllScenarios(config: ScenarioConfig): ScenarioResult[] {
   return [
     runLinearChain({ ...config, name: config.name + ":linear" }),
     runWideDag({ ...config, name: config.name + ":wide" }),
-    runForkResolution({ ...config, name: config.name + ":fork", forkPoint: Math.floor(config.blockCount / 2) }),
-    runDiamondDag({ ...config, name: config.name + ":diamond" }),
+    runForkResolution({
+      ...config,
+      name: config.name + ":fork",
+      forkPoint: Math.floor(config.blockCount / 2)
+    }),
+    runDiamondDag({ ...config, name: config.name + ":diamond" })
   ];
 }

@@ -39,7 +39,9 @@ export class MigrationRunner {
    */
   public getAppliedMigrations(): MigrationHistoryEntry[] {
     try {
-      const stmt = this.db.prepare("SELECT * FROM hardkas_migrations ORDER BY version ASC");
+      const stmt = this.db.prepare(
+        "SELECT * FROM hardkas_migrations ORDER BY version ASC"
+      );
       return stmt.all() as MigrationHistoryEntry[];
     } catch {
       return [];
@@ -49,11 +51,14 @@ export class MigrationRunner {
   /**
    * Applies pending migrations in order.
    */
-  public migrate(migrations: Migration[]): { applied: number; status: "ok" | "bootstrapped" | "failed" } {
+  public migrate(migrations: Migration[]): {
+    applied: number;
+    status: "ok" | "bootstrapped" | "failed";
+  } {
     this.ensureHistoryTable();
-    
+
     const applied = this.getAppliedMigrations();
-    const appliedMap = new Map(applied.map(m => [m.version, m]));
+    const appliedMap = new Map(applied.map((m) => [m.version, m]));
 
     // Check for checksum mismatches in already applied migrations
     for (const m of migrations) {
@@ -67,7 +72,7 @@ export class MigrationRunner {
     }
 
     const pending = migrations
-      .filter(m => !appliedMap.has(m.version))
+      .filter((m) => !appliedMap.has(m.version))
       .sort((a, b) => a.version - b.version);
 
     if (pending.length === 0) {
@@ -78,12 +83,14 @@ export class MigrationRunner {
     for (const m of pending) {
       try {
         this.db.exec("BEGIN TRANSACTION;");
-        
+
         m.up(this.db);
-        
-        const stmt = this.db.prepare("INSERT INTO hardkas_migrations (version, name, checksum, applied_at) VALUES (?, ?, ?, ?)");
+
+        const stmt = this.db.prepare(
+          "INSERT INTO hardkas_migrations (version, name, checksum, applied_at) VALUES (?, ?, ?, ?)"
+        );
         stmt.run(m.version, m.name, m.checksum, new Date().toISOString()); // hardkas-determinism-allow: migrations applied_at metadata
-        
+
         this.db.exec("COMMIT;");
         appliedCount++;
       } catch (e) {
@@ -108,14 +115,18 @@ export class MigrationRunner {
     if (applied.length > 0) return false; // Already has history
 
     // Check if it's a known legacy state (e.g. has artifacts table)
-    const tables = this.db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='artifacts'").get();
+    const tables = this.db
+      .prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='artifacts'")
+      .get();
     if (!tables) return false;
 
     // It's a legacy DB. Inject history for migrations up to knownVersion.
     this.ensureHistoryTable();
     for (const m of migrations) {
       if (m.version <= knownVersion) {
-        const stmt = this.db.prepare("INSERT INTO hardkas_migrations (version, name, checksum, applied_at) VALUES (?, ?, ?, ?)");
+        const stmt = this.db.prepare(
+          "INSERT INTO hardkas_migrations (version, name, checksum, applied_at) VALUES (?, ?, ?, ?)"
+        );
         stmt.run(m.version, m.name, m.checksum, new Date().toISOString()); // hardkas-determinism-allow: legacy bootstrap metadata
       }
     }
@@ -125,7 +136,7 @@ export class MigrationRunner {
 
 /**
  * Registry of all query-store migrations.
- * Version 1: Initial schema (Baseline 0.7.3-alpha).
+ * Version 1: Initial schema (Baseline 0.7.4-alpha).
  */
 export const MIGRATIONS: Migration[] = [
   {

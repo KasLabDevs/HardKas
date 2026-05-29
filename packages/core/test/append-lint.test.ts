@@ -61,6 +61,9 @@ describe("appendFileSync usage static analysis lint check", () => {
       }
     });
 
-    expect(violations, `Found raw appendFileSync violations (must use AppendCoordinator in production, or add '// hardkas-append-allow' in tests/scripts):\n${violations.join("\n")}`).toEqual([]);
+    expect(
+      violations,
+      `Found raw appendFileSync violations (must use AppendCoordinator in production, or add '// hardkas-append-allow' in tests/scripts):\n${violations.join("\n")}`
+    ).toEqual([]);
   });
 });

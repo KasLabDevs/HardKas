@@ -1,4 +1,11 @@
-import { TxPlan, TxReceipt, SignedTx, ARTIFACT_VERSION, DagContext, DraftArtifact } from "./schemas.js";
+import {
+  TxPlan,
+  TxReceipt,
+  SignedTx,
+  ARTIFACT_VERSION,
+  DagContext,
+  DraftArtifact
+} from "./schemas.js";
 import { calculateContentHash, CURRENT_HASH_VERSION } from "./canonical.js";
 import { HARDKAS_VERSION } from "./constants.js";
 import type { RuntimeContext } from "@hardkas/core";
@@ -6,7 +13,11 @@ import type { RuntimeContext } from "@hardkas/core";
 /**
  * Creates a canonical simulated signed transaction artifact.
  */
-export function createSimulatedSignedTxArtifact(plan: TxPlan, payload: string, ctx: RuntimeContext): SignedTx {
+export function createSimulatedSignedTxArtifact(
+  plan: TxPlan,
+  payload: string,
+  ctx: RuntimeContext
+): SignedTx {
   const artifact: DraftArtifact<SignedTx, "signedId" | "contentHash"> = {
     schema: "hardkas.signedTx",
     schemaVersion: "hardkas.artifact.v1",
@@ -25,7 +36,8 @@ export function createSimulatedSignedTxArtifact(plan: TxPlan, payload: string, c
     signedTransaction: {
       format: "simulated",
       payload
-    }
+    },
+    ...(plan.workflowId ? { workflowId: plan.workflowId } : {})
   };
 
   const hash = calculateContentHash(artifact, CURRENT_HASH_VERSION);
@@ -39,16 +51,16 @@ export function createSimulatedSignedTxArtifact(plan: TxPlan, payload: string, c
  * Creates a canonical simulated receipt.
  */
 export function createSimulatedTxReceipt(
-  plan: TxPlan, 
-  txId: string, 
+  plan: TxPlan,
+  txId: string,
   ctx: RuntimeContext,
-  extra?: { 
-    spentUtxoIds?: string[], 
-    createdUtxoIds?: string[], 
-    daaScore?: string,
-    preStateHash?: string,
-    postStateHash?: string,
-    dagContext?: DagContext
+  extra?: {
+    spentUtxoIds?: string[];
+    createdUtxoIds?: string[];
+    daaScore?: string;
+    preStateHash?: string;
+    postStateHash?: string;
+    dagContext?: DagContext;
   }
 ): TxReceipt {
   const artifact: DraftArtifact<TxReceipt, "contentHash"> = {
@@ -72,7 +84,8 @@ export function createSimulatedTxReceipt(
     daaScore: extra?.daaScore,
     preStateHash: extra?.preStateHash,
     postStateHash: extra?.postStateHash,
-    dagContext: extra?.dagContext
+    dagContext: extra?.dagContext,
+    ...(plan.workflowId ? { workflowId: plan.workflowId } : {})
   };
 
   const hash = calculateContentHash(artifact, CURRENT_HASH_VERSION);

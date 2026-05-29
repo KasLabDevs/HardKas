@@ -38,7 +38,7 @@ export function Layout({ children }: LayoutProps) {
             <h2 className="text-xs font-extrabold tracking-wide font-sans text-zinc-100 uppercase">
               {overview?.project?.name ?? "HARDKAS COCKPIT"}
             </h2>
-            
+
             {overview?.project?.network && (
               <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[9px] font-bold font-mono bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 uppercase">
                 <Network size={10} />
@@ -50,15 +50,22 @@ export function Layout({ children }: LayoutProps) {
           <div className="flex items-center gap-4">
             {/* Dev Server Connection Status */}
             <div className="flex items-center gap-2 text-[10px] font-mono">
-              <span className="text-zinc-500 uppercase tracking-widest text-[8px]">Server status</span>
-              <span className={`flex items-center gap-1 px-2 py-0.5 rounded-full border text-[9px] font-bold ${
-                sseStatus === "connected" 
-                  ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20" 
-                  : sseStatus === "reconnecting" 
-                    ? "bg-orange-500/10 text-orange-400 border-orange-500/20" 
-                    : "bg-red-500/10 text-red-400 border-red-500/20"
-              }`}>
-                <Server size={8} className={sseStatus === "reconnecting" ? "animate-spin" : ""} />
+              <span className="text-zinc-500 uppercase tracking-widest text-[8px]">
+                Server status
+              </span>
+              <span
+                className={`flex items-center gap-1 px-2 py-0.5 rounded-full border text-[9px] font-bold ${
+                  sseStatus === "connected"
+                    ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20"
+                    : sseStatus === "reconnecting"
+                      ? "bg-orange-500/10 text-orange-400 border-orange-500/20"
+                      : "bg-red-500/10 text-red-400 border-red-500/20"
+                }`}
+              >
+                <Server
+                  size={8}
+                  className={sseStatus === "reconnecting" ? "animate-spin" : ""}
+                />
                 {sseStatus.toUpperCase()}
               </span>
             </div>
@@ -72,7 +79,10 @@ export function Layout({ children }: LayoutProps) {
       {/* Main Container */}
       <div className="main-layout flex flex-col min-h-screen">
         {/* Content Wrapper */}
-        <main key={location.pathname} className="flex-1 p-8 overflow-y-auto w-full max-w-7xl mx-auto">
+        <main
+          key={location.pathname}
+          className="flex-1 p-8 overflow-y-auto w-full max-w-7xl mx-auto"
+        >
           {children}
         </main>
       </div>

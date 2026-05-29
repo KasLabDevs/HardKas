@@ -31,7 +31,7 @@ export class AppendCoordinator {
       // but to be 100% portable and cross-process safe, we spin-wait on a '.lock' file creation.
       const start = Date.now();
       const timeoutMs = 10000;
-      
+
       while (true) {
         try {
           fd = fs.openSync(lockPath, "wx");
@@ -39,7 +39,9 @@ export class AppendCoordinator {
         } catch (e: any) {
           if (e.code === "EEXIST") {
             if (Date.now() - start > timeoutMs) {
-              throw new Error(`[AppendCoordinator] Timeout waiting for lock on ${lockPath}`);
+              throw new Error(
+                `[AppendCoordinator] Timeout waiting for lock on ${lockPath}`
+              );
             }
             // Spin-wait sleep
             const sleepMs = 5 + Math.floor(Math.random() * 15);
@@ -53,7 +55,10 @@ export class AppendCoordinator {
       }
 
       // Write owner details to lock file
-      fs.writeSync(fd, JSON.stringify({ pid: process.pid, time: new Date().toISOString() }));
+      fs.writeSync(
+        fd,
+        JSON.stringify({ pid: process.pid, time: new Date().toISOString() })
+      );
 
       // 2. Repair tail if needed
       const recovery = AppendCoordinator.recoverCorruptedTail(filePath);
@@ -72,7 +77,7 @@ export class AppendCoordinator {
 
       const logFd = fs.openSync(filePath, "a");
       const buffer = Buffer.from(line.endsWith("\n") ? line : line + "\n", "utf-8");
-      
+
       // 4. Append and fsync to physical disk
       fs.writeSync(logFd, buffer, 0, buffer.length);
       fs.fsyncSync(logFd);
@@ -81,7 +86,9 @@ export class AppendCoordinator {
       // 5. Release lock
       if (fd !== null) {
         fs.closeSync(fd);
-        try { fs.unlinkSync(lockPath); } catch {}
+        try {
+          fs.unlinkSync(lockPath);
+        } catch {}
       }
     }
 
@@ -109,9 +116,9 @@ export class AppendCoordinator {
    * supporting lines of arbitrary size and only truncating the last complete
    * valid JSONL boundary if a parse failure is detected.
    */
-  public static recoverCorruptedTail(filePath: string): { 
-    repaired: boolean; 
-    linesDiscarded: number; 
+  public static recoverCorruptedTail(filePath: string): {
+    repaired: boolean;
+    linesDiscarded: number;
     originalTail: string;
     originalSize: number;
     recoveredSize: number;
@@ -134,32 +141,37 @@ export class AppendCoordinator {
     if (stat.size === 0) return defaultRes;
 
     const fd = fs.openSync(filePath, "r");
-    
+
     try {
       let lastCharPos = -1;
       let precedingNewlinePos = -1;
-      
+
       const CHUNK_SIZE = 64 * 1024; // 64KB chunks
       let position = stat.size;
       const buffer = Buffer.alloc(CHUNK_SIZE);
-      
+
       // Pass 1: Find the last non-whitespace/non-newline character from the end
       outer1: while (position > 0) {
         const readLength = Math.min(CHUNK_SIZE, position);
         position -= readLength;
-        
+
         fs.readSync(fd, buffer, 0, readLength, position);
-        
+
         for (let i = readLength - 1; i >= 0; i--) {
           const charCode = buffer[i];
           // Skip space, tab, \n, \r
-          if (charCode !== 0x20 && charCode !== 0x09 && charCode !== 0x0a && charCode !== 0x0d) {
+          if (
+            charCode !== 0x20 &&
+            charCode !== 0x09 &&
+            charCode !== 0x0a &&
+            charCode !== 0x0d
+          ) {
             lastCharPos = position + i;
             break outer1;
           }
         }
       }
-      
+
       // If the file only contains whitespace/newlines
       if (lastCharPos === -1) {
         fs.closeSync(fd);
@@ -173,34 +185,35 @@ export class AppendCoordinator {
           reason: "File only contained whitespaces or newlines"
         };
       }
-      
+
       // Pass 2: Find the newline preceding lastCharPos
       position = lastCharPos;
       outer2: while (position > 0) {
         const readLength = Math.min(CHUNK_SIZE, position);
         position -= readLength;
-        
+
         fs.readSync(fd, buffer, 0, readLength, position);
-        
+
         for (let i = readLength - 1; i >= 0; i--) {
-          if (buffer[i] === 0x0a) { // \n
+          if (buffer[i] === 0x0a) {
+            // \n
             precedingNewlinePos = position + i;
             break outer2;
           }
         }
       }
-      
+
       const lastLineStart = precedingNewlinePos === -1 ? 0 : precedingNewlinePos + 1;
       const lastLineEnd = lastCharPos + 1;
-      
+
       // Read the last line
       const lastLineLength = lastLineEnd - lastLineStart;
       const lastLineBuf = Buffer.alloc(lastLineLength);
       fs.readSync(fd, lastLineBuf, 0, lastLineLength, lastLineStart);
       fs.closeSync(fd);
-      
+
       const lastLine = lastLineBuf.toString("utf-8");
-      
+
       try {
         JSON.parse(lastLine);
         // Valid JSON! No corruption.
@@ -209,9 +222,9 @@ export class AppendCoordinator {
         // Invalid JSON! Truncate the file to lastLineStart
         const truncateTo = lastLineStart;
         const discardedBytes = stat.size - truncateTo;
-        
+
         fs.truncateSync(filePath, truncateTo);
-        
+
         return {
           repaired: true,
           linesDiscarded: discardedBytes,
@@ -222,7 +235,9 @@ export class AppendCoordinator {
         };
       }
     } catch (e) {
-      try { fs.closeSync(fd); } catch {}
+      try {
+        fs.closeSync(fd);
+      } catch {}
       throw e;
     }
   }

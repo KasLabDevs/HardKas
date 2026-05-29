@@ -1,10 +1,11 @@
 # Deterministic Replay Tutorial
 
-HardKAS relies on deterministic replays to guarantee the correctness of your application state. 
+HardKAS relies on deterministic replays to guarantee the correctness of your application state.
 
 ## The Concept
 
 Instead of trusting the network blindly, HardKAS records every transaction workflow locally as a series of artifacts:
+
 1. **Transaction Plan**
 2. **Signed Payload**
 3. **Receipt**
@@ -20,6 +21,7 @@ hardkas dev last --replay
 ```
 
 HardKAS will output a comprehensive replay report:
+
 - `PASS`: The local deterministic execution perfectly matched the network receipt.
 - `FAIL`: The execution diverged, indicating non-determinism, a semantic bug, or a compromised RPC node.
 

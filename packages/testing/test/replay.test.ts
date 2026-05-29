@@ -1,4 +1,4 @@
-import { systemRuntimeContext } from '@hardkas/core';
+import { systemRuntimeContext } from "@hardkas/core";
 import { describe, it, expect } from "vitest";
 import { createTestHarness } from "../src/index.js";
 import { verifyReplay } from "@hardkas/localnet";
@@ -16,7 +16,7 @@ describe("Deterministic Replay Verification", () => {
     const result = h.send({
       from: alice!,
       to: bob!,
-      amountSompi: 10_000_000_000n,
+      amountSompi: 10_000_000_000n
     });
 
     expect(result.ok).toBe(true);
@@ -24,7 +24,12 @@ describe("Deterministic Replay Verification", () => {
     expect(result.plan).toBeDefined();
 
     // 3. Replay transaction and verify it yields the same results deterministically
-    const report = verifyReplay(preState, result.plan!, result.receipt!, systemRuntimeContext);
+    const report = verifyReplay(
+      preState,
+      result.plan!,
+      result.receipt!,
+      systemRuntimeContext
+    );
 
     // 4. Assert invariants
     expect(report.invariantsOk).toBe(true);
@@ -44,7 +49,7 @@ describe("Deterministic Replay Verification", () => {
     const result = h.send({
       from: alice!,
       to: bob!,
-      amountSompi: 10_000_000_000n,
+      amountSompi: 10_000_000_000n
     });
 
     expect(result.ok).toBe(true);
@@ -52,15 +57,22 @@ describe("Deterministic Replay Verification", () => {
     // Modify pre-state UTXOs to trigger a preStateHash divergence
     const badPreState = structuredClone(preState);
     if (badPreState.utxos.length > 0 && badPreState.utxos[0]) {
-      badPreState.utxos[0].amountSompi = (BigInt(badPreState.utxos[0].amountSompi) + 1n).toString();
+      badPreState.utxos[0].amountSompi = (
+        BigInt(badPreState.utxos[0].amountSompi) + 1n
+      ).toString();
     }
 
-    const report = verifyReplay(badPreState, result.plan!, result.receipt!, systemRuntimeContext);
+    const report = verifyReplay(
+      badPreState,
+      result.plan!,
+      result.receipt!,
+      systemRuntimeContext
+    );
 
     expect(report.invariantsOk).toBe(false);
     expect(report.checks.workflowDeterministic).toBe("diverged");
-    expect(report.divergences.some(d => d.path === "preStateHash")).toBe(true);
-    expect(report.errors.some(e => e.includes("preStateHash mismatch"))).toBe(true);
+    expect(report.divergences.some((d) => d.path === "preStateHash")).toBe(true);
+    expect(report.errors.some((e) => e.includes("preStateHash mismatch"))).toBe(true);
   });
 
   it("Plan Hash Mismatch: verification fails if the transaction plan was altered", () => {
@@ -72,7 +84,7 @@ describe("Deterministic Replay Verification", () => {
     const result = h.send({
       from: alice!,
       to: bob!,
-      amountSompi: 10_000_000_000n,
+      amountSompi: 10_000_000_000n
     });
 
     expect(result.ok).toBe(true);
@@ -85,7 +97,7 @@ describe("Deterministic Replay Verification", () => {
 
     expect(report.invariantsOk).toBe(false);
     expect(report.planOk).toBe(false);
-    expect(report.errors.some(e => e.includes("contentHash mismatch"))).toBe(true);
+    expect(report.errors.some((e) => e.includes("contentHash mismatch"))).toBe(true);
   });
 
   it("Receipt Divergence: verification fails if execution results differ from original receipt", () => {
@@ -97,7 +109,7 @@ describe("Deterministic Replay Verification", () => {
     const result = h.send({
       from: alice!,
       to: bob!,
-      amountSompi: 10_000_000_000n,
+      amountSompi: 10_000_000_000n
     });
 
     expect(result.ok).toBe(true);
@@ -110,7 +122,9 @@ describe("Deterministic Replay Verification", () => {
 
     expect(report.invariantsOk).toBe(false);
     expect(report.receiptOk).toBe(false);
-    expect(report.divergences.some(d => d.path === "receipt.feeSompi")).toBe(true);
-    expect(report.errors.some(e => e.includes("Receipt divergence at feeSompi"))).toBe(true);
+    expect(report.divergences.some((d) => d.path === "receipt.feeSompi")).toBe(true);
+    expect(report.errors.some((e) => e.includes("Receipt divergence at feeSompi"))).toBe(
+      true
+    );
   });
 });

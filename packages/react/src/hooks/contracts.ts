@@ -15,7 +15,15 @@ export function useIgraReadContract(options: {
   const { data: session } = useHardKasSession();
 
   return useQuery({
-    queryKey: ["igra", "read", options.address, options.functionName, options.args, config.igraRpcUrl, session?.name],
+    queryKey: [
+      "igra",
+      "read",
+      options.address,
+      options.functionName,
+      options.args,
+      config.igraRpcUrl,
+      session?.name
+    ],
     queryFn: async () => {
       return await igraClient.readContract({
         address: options.address,
@@ -33,17 +41,19 @@ export function useIgraWriteContract() {
   const { activeProvider, walletAddress, igraClient } = useHardKas();
 
   return useMutation({
-    mutationFn: async (params: { 
-      address: Address; 
-      abi: any; 
-      functionName: string; 
+    mutationFn: async (params: {
+      address: Address;
+      abi: any;
+      functionName: string;
       args?: any[];
       walletClient?: any;
     }) => {
       let client = params.walletClient;
       if (!client) {
         if (!activeProvider) {
-          throw new Error("No active browser wallet connected and no walletClient was provided.");
+          throw new Error(
+            "No active browser wallet connected and no walletClient was provided."
+          );
         }
         if (!walletAddress) {
           throw new Error("No active account address available on connected wallet.");

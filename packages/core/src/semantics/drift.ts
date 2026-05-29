@@ -19,7 +19,6 @@ export function detectSemanticDrift(
   replayView: SemanticIdentity,
   filesystemView: SemanticIdentity
 ): SemanticDriftReport {
-  
   const views = {
     Dashboard: dashboardView,
     QueryStore: queryStoreView,
@@ -43,13 +42,17 @@ export function detectSemanticDrift(
     if (view.status !== referenceView.status) {
       // NOTE: Different subsystems might legitimately see different statuses if they haven't synced,
       // but if the Replay says STALE and Dashboard says VERIFIED, it's a critical drift.
-      if (subsystem === "Dashboard" && view.status === "VERIFIED" && replayView.status === "STALE") {
+      if (
+        subsystem === "Dashboard" &&
+        view.status === "VERIFIED" &&
+        replayView.status === "STALE"
+      ) {
         return {
-            hasDrift: true,
-            conflictingSubsystem: subsystem,
-            exactReplayCommand: `hardkas verify-replay --artifact ${referenceView.artifactId}`,
-            severity: "CRITICAL",
-            details: `Dashboard claims VERIFIED but Replay claims STALE.`
+          hasDrift: true,
+          conflictingSubsystem: subsystem,
+          exactReplayCommand: `hardkas verify-replay --artifact ${referenceView.artifactId}`,
+          severity: "CRITICAL",
+          details: `Dashboard claims VERIFIED but Replay claims STALE.`
         };
       }
     }
@@ -67,13 +70,18 @@ export function assertNoSemanticDrift(
   replayView: SemanticIdentity,
   filesystemView: SemanticIdentity
 ): void {
-  const report = detectSemanticDrift(dashboardView, queryStoreView, replayView, filesystemView);
+  const report = detectSemanticDrift(
+    dashboardView,
+    queryStoreView,
+    replayView,
+    filesystemView
+  );
   if (report.hasDrift) {
     throw new Error(
       `[CRITICAL SEMANTIC DRIFT] Subsystem disagreement detected.\n` +
-      `Conflicting Subsystem: ${report.conflictingSubsystem}\n` +
-      `Details: ${report.details}\n` +
-      `Resolution Command: ${report.exactReplayCommand}`
+        `Conflicting Subsystem: ${report.conflictingSubsystem}\n` +
+        `Details: ${report.details}\n` +
+        `Resolution Command: ${report.exactReplayCommand}`
     );
   }
 }

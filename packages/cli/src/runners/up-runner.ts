@@ -8,24 +8,26 @@ import pc from "picocolors";
 
 export async function runUp() {
   UI.box("HardKAS", "Environment Bootstrapper");
-  
+
   try {
     // 1. Load config
     const loaded = await loadHardkasConfig();
     const networkId = loaded.config.defaultNetwork || "simulated";
-    UI.info(`\x1b[1mNetwork Mode:\x1b[0m ${networkId} (${loaded.config.networks?.[networkId]?.kind || "default"})`);
+    UI.info(
+      `\x1b[1mNetwork Mode:\x1b[0m ${networkId} (${loaded.config.networks?.[networkId]?.kind || "default"})`
+    );
     UI.info(`\x1b[1mConfig:\x1b[0m       ${loaded.path || "defaults"}`);
     console.log("");
 
     // 2. Ensure directories
     const runtimeDir = path.join(loaded.cwd, ".hardkas", "runtime");
     const receiptsDir = path.join(loaded.cwd, ".hardkas", "receipts");
-    
+
     await fs.mkdir(runtimeDir, { recursive: true });
     await fs.mkdir(receiptsDir, { recursive: true });
-    
+
     UI.info("\x1b[1mRuntime:\x1b[0m");
-    
+
     // 3. Check RPC
     const target = loaded.config.networks?.[networkId];
     let rpcUrl = "ws://127.0.0.1:18210";
@@ -36,17 +38,21 @@ export async function runUp() {
         rpcUrl = target.rpcUrl;
       }
     }
-    
+
     const client = new JsonWrpcKaspaClient({ rpcUrl });
     try {
       const health = await client.healthCheck();
       if (health.reachable) {
         UI.success(`RPC available at ${rpcUrl}`);
       } else {
-        console.log(`  \x1b[33m⚠\x1b[0m RPC not reachable at ${rpcUrl}. Run 'hardkas node start' or check kaspad.`);
+        console.log(
+          `  \x1b[33m⚠\x1b[0m RPC not reachable at ${rpcUrl}. Run 'hardkas node start' or check kaspad.`
+        );
       }
     } catch (e) {
-      console.log(`  \x1b[33m⚠\x1b[0m RPC check failed: ${e instanceof Error ? e.message : String(e)}`);
+      console.log(
+        `  \x1b[33m⚠\x1b[0m RPC check failed: ${e instanceof Error ? e.message : String(e)}`
+      );
     } finally {
       await client.close();
     }
@@ -84,8 +90,14 @@ export async function runUp() {
     console.log(`    - ${pc.white("stale diagnostics")}\n`);
 
     const { runDevServer } = await import("./dev-server-runner.js");
-    await runDevServer({ port, open: true, host: "localhost", unsafeExternal: false, json: false, showToken: false });
-
+    await runDevServer({
+      port,
+      open: true,
+      host: "localhost",
+      unsafeExternal: false,
+      json: false,
+      showToken: false
+    });
   } catch (error) {
     throw error;
   }

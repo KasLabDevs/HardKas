@@ -1,7 +1,7 @@
-import { 
-  loadRealAccountStore, 
-  saveRealAccountStore, 
-  removeRealDevAccount 
+import {
+  loadRealAccountStore,
+  saveRealAccountStore,
+  removeRealDevAccount
 } from "@hardkas/accounts";
 
 export interface AccountsRealRemoveOptions {

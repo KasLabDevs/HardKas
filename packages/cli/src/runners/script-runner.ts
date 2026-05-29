@@ -6,13 +6,16 @@ import { execSync } from "node:child_process";
 import { loadHardkasConfig } from "@hardkas/config";
 import { tmpdir } from "node:os";
 
-export async function runScript(script: string, opts: {
-  network: string;
-  accounts: string;
-  balance: string;
-  harness: boolean;
-  workspaceRoot?: string;
-}): Promise<void> {
+export async function runScript(
+  script: string,
+  opts: {
+    network: string;
+    accounts: string;
+    balance: string;
+    harness: boolean;
+    workspaceRoot?: string;
+  }
+): Promise<void> {
   const scriptPath = resolve(script);
 
   if (!existsSync(scriptPath)) {
@@ -40,7 +43,8 @@ Object.assign(globalThis, { hardkas });
     } else {
       const netConfigObj = netConfig as unknown as Record<string, unknown>;
       const rpcUrl = typeof netConfigObj.rpcUrl === "string" ? netConfigObj.rpcUrl : "";
-      const networkId = typeof netConfigObj.network === "string" ? netConfigObj.network : opts.network;
+      const networkId =
+        typeof netConfigObj.network === "string" ? netConfigObj.network : opts.network;
       injectionCode = `
 import { JsonWrpcKaspaClient } from "@hardkas/kaspa-rpc";
 const rpc = new JsonWrpcKaspaClient({ rpcUrl: "${rpcUrl}" });
@@ -73,7 +77,7 @@ ${injectionCode}
     const { mkdirSync } = await import("node:fs");
     mkdirSync(dotHardkas, { recursive: true });
   }
-  
+
   const tempWrapper = resolve(dotHardkas, `run-${Date.now()}.mts`);
 
   const { writeFileAtomicSync } = await import("@hardkas/core");
@@ -91,8 +95,8 @@ ${injectionCode}
         ...process.env,
         HARDKAS_NETWORK: opts.network,
         HARDKAS_ACCOUNTS: opts.accounts,
-        HARDKAS_BALANCE: opts.balance,
-      },
+        HARDKAS_BALANCE: opts.balance
+      }
     });
   } finally {
     if (existsSync(tempWrapper)) {

@@ -32,10 +32,10 @@ Workflows are specified in standard JSON format (`hardkas.workflow.v1` schema):
 
 ## 2. Sandbox Policy Reference
 
-* `allowNetwork`: Set to `false` to block external HTTP/RPC requests. Ensures E2E testing runs 100% offline.
-* `allowMainnet`: Set to `false` to prevent planning transactions targeting Kaspa mainnet addresses.
-* `allowExternalWallet`: Set to `false` to block credentials/external signing interfaces.
-* `requireDryRun`: Set to `true` to force dry-run mutations and prevent real broadcasting.
+- `allowNetwork`: Set to `false` to block external HTTP/RPC requests. Ensures E2E testing runs 100% offline.
+- `allowMainnet`: Set to `false` to prevent planning transactions targeting Kaspa mainnet addresses.
+- `allowExternalWallet`: Set to `false` to block credentials/external signing interfaces.
+- `requireDryRun`: Set to `true` to force dry-run mutations and prevent real broadcasting.
 
 ---
 

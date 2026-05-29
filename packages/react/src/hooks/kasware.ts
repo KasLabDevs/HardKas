@@ -27,7 +27,7 @@ export function useKasWareLocal() {
 
   const checkStatus = useCallback(async () => {
     if (typeof window === "undefined" || !window.kasware) {
-      setState(s => ({ ...s, installed: false }));
+      setState((s) => ({ ...s, installed: false }));
       return;
     }
 
@@ -35,7 +35,7 @@ export function useKasWareLocal() {
       const provider = window.kasware;
       const accounts = await provider.getAccounts();
       const network = await provider.getNetwork();
-      
+
       setState({
         installed: true,
         connected: accounts.length > 0,
@@ -47,7 +47,7 @@ export function useKasWareLocal() {
         errors: []
       });
     } catch (e: any) {
-      setState(s => ({ ...s, errors: [e.message] }));
+      setState((s) => ({ ...s, errors: [e.message] }));
     }
   }, []);
 
@@ -58,7 +58,7 @@ export function useKasWareLocal() {
     checkStatus();
 
     const handleChange = () => checkStatus();
-    
+
     provider.on("accountsChanged", handleChange);
     provider.on("networkChanged", handleChange);
     provider.on("disconnect", handleChange);
@@ -97,7 +97,12 @@ export type KasWareSessionMatch = {
   walletAddress?: string;
   sessionAddress?: string;
   matches: boolean;
-  reason?: "not-installed" | "not-connected" | "network-mismatch" | "address-mismatch" | "no-session";
+  reason?:
+    | "not-installed"
+    | "not-connected"
+    | "network-mismatch"
+    | "address-mismatch"
+    | "no-session";
 };
 
 export function useKasWareSessionMatch(sessionL1Address?: string | null) {
@@ -119,7 +124,7 @@ export function useKasWareSessionMatch(sessionL1Address?: string | null) {
     // but canonical representation in HardKAS is consistently prefixed.
     const normalizedWallet = state.address?.toLowerCase().trim();
     const normalizedSession = sessionL1Address?.toLowerCase().trim();
-    
+
     matches = normalizedWallet === normalizedSession;
     if (!matches) reason = "address-mismatch";
   }

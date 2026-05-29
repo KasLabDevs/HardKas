@@ -1,13 +1,9 @@
-import { 
-  estimateTransactionMass, 
+import {
+  estimateTransactionMass,
   estimateFeeFromMass,
   MassEstimateResult
 } from "@hardkas/tx-builder";
-import { 
-  TxPlan, 
-  SignedTx, 
-  TxReceipt 
-} from "./schemas.js";
+import { TxPlan, SignedTx, TxReceipt } from "./schemas.js";
 
 export interface FeeAuditResult {
   ok: boolean;
@@ -34,7 +30,7 @@ export function recomputeMass(artifact: TxPlan | SignedTx | TxReceipt): bigint {
     });
     return result.mass;
   }
-  
+
   if (artifact.schema === "hardkas.txReceipt") {
     const receipt = artifact as TxReceipt;
     // For receipt, we check if we have enough info to recompute
@@ -51,7 +47,7 @@ export function recomputeMass(artifact: TxPlan | SignedTx | TxReceipt): bigint {
  */
 export function verifyFeeSemantics(artifact: any): FeeAuditResult {
   const issues: string[] = [];
-  
+
   let artifactMass = 0n;
   let artifactFee = 0n;
   let inputTotal = 0n;
@@ -62,8 +58,14 @@ export function verifyFeeSemantics(artifact: any): FeeAuditResult {
     const plan = artifact as TxPlan;
     artifactMass = BigInt(plan.estimatedMass || 0);
     artifactFee = BigInt(plan.estimatedFeeSompi || 0);
-    inputTotal = (plan.inputs || []).reduce((sum, i) => sum + BigInt(i.amountSompi || 0), 0n);
-    outputTotal = (plan.outputs || []).reduce((sum, o) => sum + BigInt(o.amountSompi || 0), 0n);
+    inputTotal = (plan.inputs || []).reduce(
+      (sum, i) => sum + BigInt(i.amountSompi || 0),
+      0n
+    );
+    outputTotal = (plan.outputs || []).reduce(
+      (sum, o) => sum + BigInt(o.amountSompi || 0),
+      0n
+    );
     if (plan.change) outputTotal += BigInt(plan.change.amountSompi || 0);
   } else if (artifact.schema === "hardkas.txReceipt") {
     const receipt = artifact as TxReceipt;
@@ -76,7 +78,9 @@ export function verifyFeeSemantics(artifact: any): FeeAuditResult {
   // 1. Recompute Mass
   const recomputedMass = recomputeMass(artifact);
   if (recomputedMass !== artifactMass && artifactMass !== 0n) {
-    issues.push(`Mass mismatch: artifact reports ${artifactMass}, recomputed ${recomputedMass}`);
+    issues.push(
+      `Mass mismatch: artifact reports ${artifactMass}, recomputed ${recomputedMass}`
+    );
   }
 
   // 2. Recompute Fee (using artifact's implied fee rate or default 1)
@@ -85,12 +89,16 @@ export function verifyFeeSemantics(artifact: any): FeeAuditResult {
   const recomputedFee = recomputedMass * impliedFeeRate;
 
   if (recomputedFee !== artifactFee && artifactFee !== 0n) {
-    issues.push(`Fee mismatch: artifact reports ${artifactFee}, recomputed ${recomputedFee} (at rate ${impliedFeeRate})`);
+    issues.push(
+      `Fee mismatch: artifact reports ${artifactFee}, recomputed ${recomputedFee} (at rate ${impliedFeeRate})`
+    );
   }
 
   // 3. Economic Invariant: Input >= Output + Fee
   if (inputTotal > 0n && inputTotal < outputTotal + artifactFee) {
-    issues.push(`Economic violation: Total inputs (${inputTotal}) less than outputs + fee (${outputTotal + artifactFee})`);
+    issues.push(
+      `Economic violation: Total inputs (${inputTotal}) less than outputs + fee (${outputTotal + artifactFee})`
+    );
   }
 
   // 4. Negative Fee Check
@@ -102,7 +110,8 @@ export function verifyFeeSemantics(artifact: any): FeeAuditResult {
   if (artifact.schema === "hardkas.txPlan") {
     const plan = artifact as TxPlan;
     (plan.outputs || []).forEach((o, i) => {
-      if (BigInt(o.amountSompi || 0) < 600n) { // Kaspa standard dust threshold ~600 sompi
+      if (BigInt(o.amountSompi || 0) < 600n) {
+        // Kaspa standard dust threshold ~600 sompi
         issues.push(`Dust output detected at index ${i}: ${o.amountSompi} sompi`);
       }
     });

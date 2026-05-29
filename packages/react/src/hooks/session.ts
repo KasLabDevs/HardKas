@@ -23,16 +23,19 @@ export interface SessionInfo {
 }
 
 export function useHardKasSession(name?: string) {
-  const { config, subscribe , apiFetch } = useHardKas();
+  const { config, subscribe, apiFetch } = useHardKas();
   const queryClient = useQueryClient();
   const sessionToResolve = name || config.sessionName;
 
   // SSE Sync via Shared Provider
   useEffect(() => {
-    const sync = () => queryClient.invalidateQueries({ queryKey: ["hardkas", "session"] });
-    
+    const sync = () =>
+      queryClient.invalidateQueries({ queryKey: ["hardkas", "session"] });
+
     return subscribe((event) => {
-      if (["session-changed", "session-created", "session-deleted"].includes(event.type)) {
+      if (
+        ["session-changed", "session-created", "session-deleted"].includes(event.type)
+      ) {
         sync();
       }
     });
@@ -43,7 +46,11 @@ export function useHardKasSession(name?: string) {
     queryFn: async (): Promise<SessionInfo | null> => {
       try {
         const baseUrl = config.devServerUrl || "";
-        const url = baseUrl ? (baseUrl.endsWith("/") ? `${baseUrl}api/session` : `${baseUrl}/api/session`) : "/api/session";
+        const url = baseUrl
+          ? baseUrl.endsWith("/")
+            ? `${baseUrl}api/session`
+            : `${baseUrl}/api/session`
+          : "/api/session";
         const response = await apiFetch(url);
         const json = await response.json();
         const active = json.active;
@@ -63,6 +70,6 @@ export function useHardKasSession(name?: string) {
         return null;
       }
     },
-    staleTime: 30000, // Rely on SSE for updates
+    staleTime: 30000 // Rely on SSE for updates
   });
 }

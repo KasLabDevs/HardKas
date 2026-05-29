@@ -1,6 +1,6 @@
 {
   "schemaVersion": "hardkas.semantic-bundle.v1",
-  "runtimeVersion": "0.7.3-alpha",
+  "runtimeVersion": "0.7.4-alpha",
   "hashVersion": "sha256",
   "invariantSummary": {
     "totalChecks": 10562,
@@ -4810,9 +4810,7 @@
     {
       "artifactId": "plan-82de8716e1158ad0",
       "semanticHash": "75473719e2db4b65b544c53fdceb326bad416e4c8e4eace42054ba25d3c4c48b",
-      "lineageEdges": [
-        "receipt-simtx_43b6bb78c2"
-      ]
+      "lineageEdges": ["receipt-simtx_43b6bb78c2"]
     },
     {
       "artifactId": "plan-82f043634ed499a6",
@@ -6262,9 +6260,7 @@
     {
       "artifactId": "plan-c5a0a9b8886bfbea",
       "semanticHash": "5a95e5f4880c6f94eeb305a4eaac0e2fd9e10ffcce92b39773f2d34c57260507",
-      "lineageEdges": [
-        "receipt-e094c8b3451d40db"
-      ]
+      "lineageEdges": ["receipt-e094c8b3451d40db"]
     },
     {
       "artifactId": "plan-c5a266a85a199e09",

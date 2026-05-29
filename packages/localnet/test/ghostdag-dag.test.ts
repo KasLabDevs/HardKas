@@ -1,10 +1,10 @@
 import { systemRuntimeContext } from "@hardkas/core";
 import { describe, it, expect, beforeEach } from "vitest";
-import { 
-  createSimulatedDag, 
-  addSimulatedBlock, 
-  moveSink, 
-  getDagColoring, 
+import {
+  createSimulatedDag,
+  addSimulatedBlock,
+  moveSink,
+  getDagColoring,
   getSelectedChain,
   findBestTip,
   resolveConflictsDeterministically
@@ -73,9 +73,27 @@ describe("GHOSTDAG DAG ordering", () => {
   });
 
   it("getSelectedChain returns path from sink to genesis", () => {
-    const a: SimulatedBlock = { id: "A", parents: ["genesis"], blueScore: "1", daaScore: "1", acceptedTxIds: [] };
-    const b: SimulatedBlock = { id: "B", parents: ["A"], blueScore: "2", daaScore: "2", acceptedTxIds: [] };
-    const c: SimulatedBlock = { id: "C", parents: ["B"], blueScore: "3", daaScore: "3", acceptedTxIds: [] };
+    const a: SimulatedBlock = {
+      id: "A",
+      parents: ["genesis"],
+      blueScore: "1",
+      daaScore: "1",
+      acceptedTxIds: []
+    };
+    const b: SimulatedBlock = {
+      id: "B",
+      parents: ["A"],
+      blueScore: "2",
+      daaScore: "2",
+      acceptedTxIds: []
+    };
+    const c: SimulatedBlock = {
+      id: "C",
+      parents: ["B"],
+      blueScore: "3",
+      daaScore: "3",
+      acceptedTxIds: []
+    };
 
     dag = addSimulatedBlock(dag, a);
     dag = addSimulatedBlock(dag, b);
@@ -87,7 +105,13 @@ describe("GHOSTDAG DAG ordering", () => {
   });
 
   it("getDagColoring returns coloring for all blocks", () => {
-    const a: SimulatedBlock = { id: "A", parents: ["genesis"], blueScore: "1", daaScore: "1", acceptedTxIds: [] };
+    const a: SimulatedBlock = {
+      id: "A",
+      parents: ["genesis"],
+      blueScore: "1",
+      daaScore: "1",
+      acceptedTxIds: []
+    };
     dag = addSimulatedBlock(dag, a);
 
     const coloring = getDagColoring(dag);
@@ -100,32 +124,50 @@ describe("GHOSTDAG DAG ordering", () => {
   it("conflict resolution uses GHOSTDAG ordering", () => {
     // Build a DAG where A is blue and B is in anticone (potentially red if K was small)
     // For simplicity, we just verify that blueWork ordering is used if present
-    
-    const a: SimulatedBlock = { id: "A", parents: ["genesis"], blueScore: "1", daaScore: "1", acceptedTxIds: ["txA"] };
-    const b: SimulatedBlock = { id: "B", parents: ["genesis"], blueScore: "1", daaScore: "1", acceptedTxIds: ["txB"] };
-    
+
+    const a: SimulatedBlock = {
+      id: "A",
+      parents: ["genesis"],
+      blueScore: "1",
+      daaScore: "1",
+      acceptedTxIds: ["txA"]
+    };
+    const b: SimulatedBlock = {
+      id: "B",
+      parents: ["genesis"],
+      blueScore: "1",
+      daaScore: "1",
+      acceptedTxIds: ["txB"]
+    };
+
     // We want A to have more work than B
-    // In our implementation, work is accumulated. 
+    // In our implementation, work is accumulated.
     // If we add A first, it's just a tip.
     // If we add C on top of A, A is in the past of C.
-    
+
     dag = addSimulatedBlock(dag, a);
     dag = addSimulatedBlock(dag, b);
-    
+
     // Both are currently blue. Tie-break by blueWork (which might be same) then ID.
     // Let's make A definitively better by adding a block on top of it.
-    const c: SimulatedBlock = { id: "C", parents: ["A"], blueScore: "2", daaScore: "2", acceptedTxIds: [] };
+    const c: SimulatedBlock = {
+      id: "C",
+      parents: ["A"],
+      blueScore: "2",
+      daaScore: "2",
+      acceptedTxIds: []
+    };
     dag = addSimulatedBlock(dag, c);
-    
+
     dag = moveSink(dag, "C", (id) => ({ inputs: ["out1"] }));
-    
+
     const txs = [
       { txId: "txA", blockId: "A", inputs: ["out1"] },
       { txId: "txB", blockId: "B", inputs: ["out1"] }
     ];
-    
+
     const result = resolveConflictsDeterministically(txs, dag);
-    
+
     // A is in the selected path to sink C, so it MUST win regardless of other rules
     expect(result.accepted).toContain("txA");
     expect(result.displaced).toContain("txB");

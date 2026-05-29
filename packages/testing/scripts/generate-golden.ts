@@ -149,12 +149,8 @@ writeGolden("explain-transfer.json", {
   amountSompi: "50000000",
   estimatedFeeSompi: "5000",
   estimatedMass: "2000",
-  inputs: [
-    { outpoint: { transactionId: "prev123", index: 0 }, amountSompi: "50005000" }
-  ],
-  outputs: [
-    { address: "kaspatest:qqgolden2", amountSompi: "50000000" }
-  ],
+  inputs: [{ outpoint: { transactionId: "prev123", index: 0 }, amountSompi: "50005000" }],
+  outputs: [{ address: "kaspatest:qqgolden2", amountSompi: "50000000" }],
   createdAt: COMMON_VOLATILE_TS,
   contentHash: COMMON_HASH
 });
@@ -163,9 +159,7 @@ writeGolden("explain-transfer.json", {
 writeGolden("doctor-clean.json", {
   schemaVersion: "hardkas.devDoctor.v1",
   status: "ready",
-  checks: [
-    { name: "Workspace Structure", status: "success", message: "Valid" }
-  ],
+  checks: [{ name: "Workspace Structure", status: "success", message: "Valid" }],
   timestamp: COMMON_VOLATILE_TS
 });
 
@@ -174,7 +168,13 @@ writeGolden("doctor-corrupt-artifact.json", {
   schemaVersion: "hardkas.devDoctor.v1",
   status: "failed",
   checks: [
-    { name: "Artifact Integrity", status: "error", message: "Corrupt file", code: "ARTIFACT_CORRUPT", suggestion: "Delete it" }
+    {
+      name: "Artifact Integrity",
+      status: "error",
+      message: "Corrupt file",
+      code: "ARTIFACT_CORRUPT",
+      suggestion: "Delete it"
+    }
   ],
   timestamp: COMMON_VOLATILE_TS
 });
@@ -233,12 +233,8 @@ writeGolden("artifact-tx-plan.json", {
   amountSompi: "50000000",
   estimatedFeeSompi: "5000",
   estimatedMass: "2000",
-  inputs: [
-    { outpoint: { transactionId: "prev123", index: 0 }, amountSompi: "50005000" }
-  ],
-  outputs: [
-    { address: "kaspatest:qqgolden2", amountSompi: "50000000" }
-  ],
+  inputs: [{ outpoint: { transactionId: "prev123", index: 0 }, amountSompi: "50005000" }],
+  outputs: [{ address: "kaspatest:qqgolden2", amountSompi: "50000000" }],
   createdAt: COMMON_VOLATILE_TS,
   contentHash: COMMON_HASH
 });

@@ -1,9 +1,17 @@
 import { Command } from "commander";
 import { handleError } from "../../ui.js";
-import { printDagConflicts, printDagDisplaced, printDagHistory, printSinkPath, printDagAnomalies } from "./ui-helpers.js";
+import {
+  printDagConflicts,
+  printDagDisplaced,
+  printDagHistory,
+  printSinkPath,
+  printDagAnomalies
+} from "./ui-helpers.js";
 
 export function registerDagQueryCommands(queryCmd: Command) {
-  const dagCmd = queryCmd.command("dag").description("Query simulated DAG state (deterministic-light-model, NOT GHOSTDAG)");
+  const dagCmd = queryCmd
+    .command("dag")
+    .description("Query simulated DAG state (deterministic-light-model, NOT GHOSTDAG)");
 
   dagCmd
     .command("conflicts")
@@ -15,14 +23,23 @@ export function registerDagQueryCommands(queryCmd: Command) {
       try {
         const { QueryEngine, createQueryRequest } = await import("@hardkas/query");
         const engine = await QueryEngine.create({ artifactDir: process.cwd() });
-        const explain = options.why ? "full" as const : options.explain === true ? "brief" as const : (options.explain || false);
+        const explain = options.why
+          ? ("full" as const)
+          : options.explain === true
+            ? ("brief" as const)
+            : options.explain || false;
         const request = createQueryRequest({ domain: "dag", op: "conflicts", explain });
         const result = await engine.execute(request);
         if (options.json) {
           const { serializeQueryResult } = await import("@hardkas/query");
           console.log(serializeQueryResult(result));
-        } else { printDagConflicts(result as any); }
-      } catch (e) { handleError(e); process.exitCode = 1; }
+        } else {
+          printDagConflicts(result as any);
+        }
+      } catch (e) {
+        handleError(e);
+        process.exitCode = 1;
+      }
     });
 
   dagCmd
@@ -34,14 +51,20 @@ export function registerDagQueryCommands(queryCmd: Command) {
       try {
         const { QueryEngine, createQueryRequest } = await import("@hardkas/query");
         const engine = await QueryEngine.create({ artifactDir: process.cwd() });
-        const explain = options.explain === true ? "brief" as const : (options.explain || false);
+        const explain =
+          options.explain === true ? ("brief" as const) : options.explain || false;
         const request = createQueryRequest({ domain: "dag", op: "displaced", explain });
         const result = await engine.execute(request);
         if (options.json) {
           const { serializeQueryResult } = await import("@hardkas/query");
           console.log(serializeQueryResult(result));
-        } else { printDagDisplaced(result as any); }
-      } catch (e) { handleError(e); process.exitCode = 1; }
+        } else {
+          printDagDisplaced(result as any);
+        }
+      } catch (e) {
+        handleError(e);
+        process.exitCode = 1;
+      }
     });
 
   dagCmd
@@ -54,14 +77,28 @@ export function registerDagQueryCommands(queryCmd: Command) {
       try {
         const { QueryEngine, createQueryRequest } = await import("@hardkas/query");
         const engine = await QueryEngine.create({ artifactDir: process.cwd() });
-        const explain = options.why ? "full" as const : options.explain === true ? "brief" as const : (options.explain || false);
-        const request = createQueryRequest({ domain: "dag", op: "history", params: { txId }, explain });
+        const explain = options.why
+          ? ("full" as const)
+          : options.explain === true
+            ? ("brief" as const)
+            : options.explain || false;
+        const request = createQueryRequest({
+          domain: "dag",
+          op: "history",
+          params: { txId },
+          explain
+        });
         const result = await engine.execute(request);
         if (options.json) {
           const { serializeQueryResult } = await import("@hardkas/query");
           console.log(serializeQueryResult(result));
-        } else { printDagHistory(result as any); }
-      } catch (e) { handleError(e); process.exitCode = 1; }
+        } else {
+          printDagHistory(result as any);
+        }
+      } catch (e) {
+        handleError(e);
+        process.exitCode = 1;
+      }
     });
 
   dagCmd
@@ -77,8 +114,13 @@ export function registerDagQueryCommands(queryCmd: Command) {
         if (options.json) {
           const { serializeQueryResult } = await import("@hardkas/query");
           console.log(serializeQueryResult(result));
-        } else { printSinkPath(result as any); }
-      } catch (e) { handleError(e); process.exitCode = 1; }
+        } else {
+          printSinkPath(result as any);
+        }
+      } catch (e) {
+        handleError(e);
+        process.exitCode = 1;
+      }
     });
 
   dagCmd
@@ -90,13 +132,19 @@ export function registerDagQueryCommands(queryCmd: Command) {
       try {
         const { QueryEngine, createQueryRequest } = await import("@hardkas/query");
         const engine = await QueryEngine.create({ artifactDir: process.cwd() });
-        const explain = options.explain === true ? "brief" as const : (options.explain || false);
+        const explain =
+          options.explain === true ? ("brief" as const) : options.explain || false;
         const request = createQueryRequest({ domain: "dag", op: "anomalies", explain });
         const result = await engine.execute(request);
         if (options.json) {
           const { serializeQueryResult } = await import("@hardkas/query");
           console.log(serializeQueryResult(result));
-        } else { printDagAnomalies(result as any); }
-      } catch (e) { handleError(e); process.exitCode = 1; }
+        } else {
+          printDagAnomalies(result as any);
+        }
+      } catch (e) {
+        handleError(e);
+        process.exitCode = 1;
+      }
     });
 }

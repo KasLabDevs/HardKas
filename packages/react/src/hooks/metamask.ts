@@ -23,7 +23,7 @@ const getMetaMaskProvider = () => {
   if (window.ethereum.providers) {
     return window.ethereum.providers.find((p: any) => p.isMetaMask) || window.ethereum;
   }
-  // Even if not in providers array, we return window.ethereum. 
+  // Even if not in providers array, we return window.ethereum.
   // It might be MetaMask, or it might be another wallet if isMetaMask is false.
   return window.ethereum;
 };
@@ -40,15 +40,17 @@ export function useMetaMaskLocal() {
   const checkStatus = useCallback(async () => {
     const provider = getMetaMaskProvider();
     if (!provider) {
-      setState(s => ({ ...s, installed: false }));
+      setState((s) => ({ ...s, installed: false }));
       return;
     }
 
     try {
       const chainIdHex = await provider.request({ method: "eth_chainId" });
       const chainId = parseInt(chainIdHex as string, 16);
-      const accounts = await provider.request({ method: "eth_accounts" }) as `0x${string}`[];
-      
+      const accounts = (await provider.request({
+        method: "eth_accounts"
+      })) as `0x${string}`[];
+
       setState({
         installed: true,
         connected: accounts.length > 0,
@@ -59,7 +61,7 @@ export function useMetaMaskLocal() {
         errors: []
       });
     } catch (e: any) {
-      setState(s => ({ ...s, errors: [e.message] }));
+      setState((s) => ({ ...s, errors: [e.message] }));
     }
   }, []);
 
@@ -70,18 +72,18 @@ export function useMetaMaskLocal() {
       await provider.request({ method: "eth_requestAccounts" });
       await checkStatus();
     } catch (e: any) {
-      setState(s => ({ ...s, errors: [...s.errors, e.message] }));
+      setState((s) => ({ ...s, errors: [...s.errors, e.message] }));
     }
   }, [checkStatus]);
 
   useEffect(() => {
     const provider = getMetaMaskProvider();
     if (!provider) return;
-    
+
     checkStatus();
 
     const handleChange = () => checkStatus();
-    
+
     provider.on("accountsChanged", handleChange);
     provider.on("chainChanged", handleChange);
     provider.on("disconnect", handleChange);
@@ -102,7 +104,7 @@ export function useSwitchToLocalIgra() {
   const switchChain = async () => {
     const provider = getMetaMaskProvider();
     if (!provider) return;
-    
+
     try {
       await provider.request({
         method: "wallet_switchEthereumChain",
@@ -113,12 +115,14 @@ export function useSwitchToLocalIgra() {
         // Add chain
         await provider.request({
           method: "wallet_addEthereumChain",
-          params: [{
-            chainId: "0x4bd8",
-            chainName: "HardKas Igra Local",
-            rpcUrls: ["http://127.0.0.1:8545"],
-            nativeCurrency: { name: "iKAS", symbol: "iKAS", decimals: 18 }
-          }]
+          params: [
+            {
+              chainId: "0x4bd8",
+              chainName: "HardKas Igra Local",
+              rpcUrls: ["http://127.0.0.1:8545"],
+              nativeCurrency: { name: "iKAS", symbol: "iKAS", decimals: 18 }
+            }
+          ]
         });
       }
     }
@@ -129,8 +133,10 @@ export function useSwitchToLocalIgra() {
 
 export function useIgraInjectedAccount(sessionL2Address?: string) {
   const { state } = useMetaMaskLocal();
-  const matches = !!state.account && !!sessionL2Address && 
-                  state.account.toLowerCase() === sessionL2Address.toLowerCase();
+  const matches =
+    !!state.account &&
+    !!sessionL2Address &&
+    state.account.toLowerCase() === sessionL2Address.toLowerCase();
 
   return {
     injectedAddress: state.account,

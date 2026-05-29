@@ -66,7 +66,8 @@ export const BUILTIN_L2_PROFILES: readonly L2NetworkProfile[] = [
     security: {
       bridgePhase: "pre-zk",
       trustlessExit: false,
-      custodyModel: "Phase-dependent bridge custody; verify live Igra bridge phase before use.",
+      custodyModel:
+        "Phase-dependent bridge custody; verify live Igra bridge phase before use.",
       riskProfile: "high",
       notes: [
         "Kaspa L1 does not execute EVM.",

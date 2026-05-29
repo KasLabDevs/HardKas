@@ -4,24 +4,28 @@ export function generateBasicTemplate(config: {
   accounts: number;
 }): Record<string, string> {
   return {
-    "package.json": JSON.stringify({
-      name: config.name,
-      version: "0.1.0",
-      private: true,
-      type: "module",
-      scripts: {
-        "test": "vitest run",
-        "transfer": "hardkas run scripts/transfer.ts",
-        "balance": "hardkas run scripts/check-balance.ts"
+    "package.json": JSON.stringify(
+      {
+        name: config.name,
+        version: "0.1.0",
+        private: true,
+        type: "module",
+        scripts: {
+          test: "vitest run",
+          transfer: "hardkas run scripts/transfer.ts",
+          balance: "hardkas run scripts/check-balance.ts"
+        },
+        devDependencies: {
+          "@hardkas/cli": "alpha",
+          "@hardkas/testing": "alpha",
+          "@hardkas/artifacts": "alpha",
+          "@hardkas/core": "alpha",
+          vitest: "^2.0.0"
+        }
       },
-      devDependencies: {
-        "@hardkas/cli": "alpha",
-        "@hardkas/testing": "alpha",
-        "@hardkas/artifacts": "alpha",
-        "@hardkas/core": "alpha",
-        "vitest": "^2.0.0"
-      }
-    }, null, 2),
+      null,
+      2
+    ),
 
     "hardkas.config.ts": `import { defineConfig } from "@hardkas/cli";
 

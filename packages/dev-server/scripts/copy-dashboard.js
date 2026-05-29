@@ -7,7 +7,11 @@ const srcDir = path.resolve(__dirname, "../../../apps/dashboard/dist");
 const destDir = path.resolve(__dirname, "../dashboard");
 
 if (!fs.existsSync(srcDir)) {
-  console.warn("⚠️ Warning: Dashboard build not found at " + srcDir + ". Run 'pnpm build' in apps/dashboard first.");
+  console.warn(
+    "⚠️ Warning: Dashboard build not found at " +
+      srcDir +
+      ". Run 'pnpm build' in apps/dashboard first."
+  );
   process.exit(0);
 }
 

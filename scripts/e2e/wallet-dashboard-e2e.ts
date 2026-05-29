@@ -40,20 +40,21 @@ async function exists(dirPath: string): Promise<boolean> {
 async function runE2E() {
   console.log("=== HardKAS Dashboard Wallet E2E Automation ===");
   console.log(`Target URL: ${DASHBOARD_URL}`);
-  
+
   // 1. Validate Extension Paths
   const hasMetaMask = await exists(METAMASK_PATH);
   const hasKasWare = await exists(KASWARE_PATH);
-  
+
   const args = [
     `--disable-extensions-except=${[
       hasMetaMask ? METAMASK_PATH : "",
       hasKasWare ? KASWARE_PATH : ""
-    ].filter(Boolean).join(",")}`,
-    `--load-extension=${[
-      hasMetaMask ? METAMASK_PATH : "",
-      hasKasWare ? KASWARE_PATH : ""
-    ].filter(Boolean).join(",")}`,
+    ]
+      .filter(Boolean)
+      .join(",")}`,
+    `--load-extension=${[hasMetaMask ? METAMASK_PATH : "", hasKasWare ? KASWARE_PATH : ""]
+      .filter(Boolean)
+      .join(",")}`,
     "--headless=new" // Set headless to false if you want to watch the manual popup flows!
   ];
 
@@ -82,7 +83,7 @@ async function runE2E() {
 
     // 4. Verify General Dashboard UI Assertions
     console.log("\n[ASSERT] Verifying general dashboard cockpit elements...");
-    
+
     // Title / Cockpit brand
     const brand = page.locator("h1", { hasText: "HardKAS Cockpit" });
     await brand.waitFor({ state: "visible", timeout: 5000 });
@@ -119,9 +120,11 @@ async function runE2E() {
       const detectedText = metamaskSection.locator("span", { hasText: "Detected" });
       await detectedText.waitFor({ state: "visible" });
       console.log("  ✔ MetaMask extension detected successfully.");
-      
+
       // Connection click trigger simulation
-      const connectBtn = metamaskSection.locator("button", { hasText: "Connect MetaMask" });
+      const connectBtn = metamaskSection.locator("button", {
+        hasText: "Connect MetaMask"
+      });
       if (await connectBtn.isVisible()) {
         console.log("  → Action: Triggering MetaMask wallet connection popup...");
         // Non-blocking trigger so we don't hang if user approval is required
@@ -158,19 +161,20 @@ async function runE2E() {
     const htmlContent = await page.content();
     const secretsRegex = /(0x[a-fA-F0-9]{64}|[a-zA-Z]{3,15}(\s[a-zA-Z]{3,15}){11,23})/g;
     const matches = htmlContent.match(secretsRegex) || [];
-    
+
     // Filter out common UI assets/CSS variables to prevent false positives
-    const actualPrivateKeys = matches.filter(match => match.length === 66); // Hex private key length with 0x prefix
+    const actualPrivateKeys = matches.filter((match) => match.length === 66); // Hex private key length with 0x prefix
     if (actualPrivateKeys.length === 0) {
       console.log("  ✔ No active private keys or mnemonic secrets detected in the DOM.");
     } else {
-      console.log(`  ❌ WARNING: Detected potential private key leakage in DOM! Count: ${actualPrivateKeys.length}`);
+      console.log(
+        `  ❌ WARNING: Detected potential private key leakage in DOM! Count: ${actualPrivateKeys.length}`
+      );
     }
 
     console.log("\n=============================================");
     console.log("✅ Dashboard UI Assertions Completed successfully!");
     console.log("=============================================");
-
   } catch (err) {
     console.error("\n❌ E2E Execution failed:", err);
   } finally {

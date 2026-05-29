@@ -47,8 +47,14 @@ export function generateReproducibilityReport(): ReproducibilityReport {
       { outpoint: { transactionId: "a".repeat(64), index: 0 }, amountSompi: "200000000" }
     ],
     outputs: [
-      { address: "kaspatest:qq0d6h0prjm5mpdld5pncst3adu0yam6xch9fkr6eg", amountSompi: "100000000" },
-      { address: "kaspatest:qz0s9xrz5y5e8dq5azmpg756aeepm6fesq82ye7wv", amountSompi: "99998000" }
+      {
+        address: "kaspatest:qq0d6h0prjm5mpdld5pncst3adu0yam6xch9fkr6eg",
+        amountSompi: "100000000"
+      },
+      {
+        address: "kaspatest:qz0s9xrz5y5e8dq5azmpg756aeepm6fesq82ye7wv",
+        amountSompi: "99998000"
+      }
     ],
     estimatedMass: "2000",
     estimatedFeeSompi: "2000"
@@ -88,16 +94,23 @@ export function generateReproducibilityReport(): ReproducibilityReport {
 
   // Integer-only ratio computation (no float dependency)
   const linearTotal = linearResult.metrics.blueBlocks + linearResult.metrics.redBlocks;
-  const linearRedPpm = linearTotal > 0
-    ? Math.trunc((linearResult.metrics.redBlocks * 1_000_000) / linearTotal)
-    : 0;
+  const linearRedPpm =
+    linearTotal > 0
+      ? Math.trunc((linearResult.metrics.redBlocks * 1_000_000) / linearTotal)
+      : 0;
   const wideTotal = wideResult.metrics.blueBlocks + wideResult.metrics.redBlocks;
-  const wideRedPpm = wideTotal > 0
-    ? Math.trunc((wideResult.metrics.redBlocks * 1_000_000) / wideTotal)
-    : 0;
+  const wideRedPpm =
+    wideTotal > 0
+      ? Math.trunc((wideResult.metrics.redBlocks * 1_000_000) / wideTotal)
+      : 0;
 
   // 5. Mass profile
-  const massResult = profileMass({ inputCount: 3, outputCount: 2, payloadBytes: 0, feeRate: 1n });
+  const massResult = profileMass({
+    inputCount: 3,
+    outputCount: 2,
+    payloadBytes: 0,
+    feeRate: 1n
+  });
 
   // 6. Canonical nesting test (key order, null, BigInt, array order)
   const nestedObj = {
@@ -129,25 +142,27 @@ export function generateReproducibilityReport(): ReproducibilityReport {
         blueBlocks: linearResult.metrics.blueBlocks,
         redBlocks: linearResult.metrics.redBlocks,
         redRatioPpm: linearRedPpm,
-        selectedChainLength: linearResult.metrics.selectedChainLength,
+        selectedChainLength: linearResult.metrics.selectedChainLength
       }),
       dagWideScenario: calculateContentHash({
         totalBlocks: wideResult.metrics.totalBlocks,
         blueBlocks: wideResult.metrics.blueBlocks,
         redBlocks: wideResult.metrics.redBlocks,
-        redRatioPpm: wideRedPpm,
+        redRatioPpm: wideRedPpm
       }),
       massProfile: calculateContentHash({
         totalMass: massResult.totalMass.toString(),
         inputMass: massResult.inputMass.toString(),
         outputMass: massResult.outputMass.toString(),
-        estimatedFeeSompi: massResult.estimatedFeeSompi.toString(),
+        estimatedFeeSompi: massResult.estimatedFeeSompi.toString()
       }),
       canonicalNested: calculateContentHash(nestedObj),
-      simulatedTxReceipt: txResult.ok ? calculateContentHash({
-        status: txResult.receipt.status,
-        txId: txResult.receipt.txId,
-      }) : "TX_FAILED",
+      simulatedTxReceipt: txResult.ok
+        ? calculateContentHash({
+            status: txResult.receipt.status,
+            txId: txResult.receipt.txId
+          })
+        : "TX_FAILED"
     }
   };
 }

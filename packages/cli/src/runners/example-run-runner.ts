@@ -7,7 +7,7 @@ export async function runExampleRun(id: string, options: { workspaceRoot: string
   try {
     let currentDir = options.workspaceRoot;
     let registryPath = path.join(currentDir, "examples", "registry.json");
-    
+
     for (let i = 0; i < 3; i++) {
       try {
         await fs.access(registryPath);
@@ -24,7 +24,9 @@ export async function runExampleRun(id: string, options: { workspaceRoot: string
     const example = examples.find((ex: any) => ex.id === id);
 
     if (!example) {
-      throw new Error(`Example '${id}' not found. Run 'hardkas example list' to see available IDs.`);
+      throw new Error(
+        `Example '${id}' not found. Run 'hardkas example list' to see available IDs.`
+      );
     }
 
     UI.info(`Running example: \x1b[1m${example.name}\x1b[0m...`);

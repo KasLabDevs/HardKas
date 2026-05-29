@@ -19,8 +19,16 @@ function runCommand(args: string) {
     tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "hardkas-deprec-"));
     fs.writeFileSync(path.join(tmpDir, "hardkas.config.ts"), "export default {};");
   }
-  const result = spawnSync(`"${tsx}"`, [`"${cliPath}"`, ...args.split(" ")], { shell: true, encoding: "utf8", cwd: tmpDir });
-  return { stdout: result.stdout || "", stderr: result.stderr || "", combined: (result.stdout || "") + (result.stderr || "") };
+  const result = spawnSync(`"${tsx}"`, [`"${cliPath}"`, ...args.split(" ")], {
+    shell: true,
+    encoding: "utf8",
+    cwd: tmpDir
+  });
+  return {
+    stdout: result.stdout || "",
+    stderr: result.stderr || "",
+    combined: (result.stdout || "") + (result.stderr || "")
+  };
 }
 
 describe("Private Key Deprecation", () => {
@@ -31,8 +39,10 @@ describe("Private Key Deprecation", () => {
 
   it("should print a loud warning when using --private-key as an argument", () => {
     const uniqueName = `test-dep-${Date.now()}`;
-    const output = runCommand(`accounts real import --name ${uniqueName} --address kaspa:sim_test --private-key 0000000000000000000000000000000000000000000000000000000000000001 --unsafe-plaintext --yes`);
-    
+    const output = runCommand(
+      `accounts real import --name ${uniqueName} --address kaspa:sim_test --private-key 0000000000000000000000000000000000000000000000000000000000000001 --unsafe-plaintext --yes`
+    );
+
     console.error("DEBUG STDOUT:", output.stdout);
     console.error("DEBUG STDERR:", output.stderr);
     expect(output.combined).toContain("SECURITY WARNING [PRIVATE_KEY_ARG_DEPRECATED]");
@@ -41,17 +51,21 @@ describe("Private Key Deprecation", () => {
 
   it("should include machine-readable warning in JSON output", () => {
     const uniqueName = `test-json-${Date.now()}`;
-    const output = runCommand(`accounts real import --name ${uniqueName} --address kaspa:sim_test --private-key 0000000000000000000000000000000000000000000000000000000000000001 --json --yes --unsafe-plaintext`);
-    
+    const output = runCommand(
+      `accounts real import --name ${uniqueName} --address kaspa:sim_test --private-key 0000000000000000000000000000000000000000000000000000000000000001 --json --yes --unsafe-plaintext`
+    );
+
     const jsonStr = output.stdout;
-    
+
     try {
       const result = JSON.parse(jsonStr);
       expect(result.warnings).toBeDefined();
-      expect(result.warnings).toContainEqual(expect.objectContaining({
-        code: "PRIVATE_KEY_ARG_DEPRECATED",
-        severity: "warning"
-      }));
+      expect(result.warnings).toContainEqual(
+        expect.objectContaining({
+          code: "PRIVATE_KEY_ARG_DEPRECATED",
+          severity: "warning"
+        })
+      );
     } catch (e) {
       console.error("DEBUG: output was:", output);
       console.error("DEBUG: jsonStr was:", jsonStr);
@@ -60,9 +74,10 @@ describe("Private Key Deprecation", () => {
   });
 
   it("should NOT show warning when using interactive input (simulated via empty call failing)", () => {
-      const uniqueName = `test-int-${Date.now()}`;
-      const output = runCommand(`accounts real import --name ${uniqueName} --address kaspa:sim_test`);
-      expect(output.combined).not.toContain("PRIVATE_KEY_ARG_DEPRECATED");
+    const uniqueName = `test-int-${Date.now()}`;
+    const output = runCommand(
+      `accounts real import --name ${uniqueName} --address kaspa:sim_test`
+    );
+    expect(output.combined).not.toContain("PRIVATE_KEY_ARG_DEPRECATED");
   });
 });
-

@@ -10,7 +10,7 @@ accountsRoutes.get("/", async (c) => {
 
   try {
     const rawAccounts = listHardkasAccounts(config);
-    
+
     const { loadLocalnetState } = await import("@hardkas/localnet");
     const path = await import("path");
     const fs = await import("fs");
@@ -26,16 +26,19 @@ accountsRoutes.get("/", async (c) => {
     } catch (e: any) {
       // P3: Dev-server strictness. If state file exists but fails to load (corrupted/locked),
       // we must not fallback or invent state.
-      throw new Error(`Failed to read authoritative state from localnet.json: ${e.message}`);
+      throw new Error(
+        `Failed to read authoritative state from localnet.json: ${e.message}`
+      );
     }
 
     if (!localState) {
-      warning = "Localnet state not found. Run 'hardkas accounts fund <alias> --amount 1000' or execute a transaction to initialize it.";
+      warning =
+        "Localnet state not found. Run 'hardkas accounts fund <alias> --amount 1000' or execute a transaction to initialize it.";
     }
 
     const result = rawAccounts.map((acc) => {
       let balanceSompiStr = "0";
-      
+
       if (acc.kind === "simulated" && localState?.utxos) {
         // Derive simulated balance by summing unspent UTXOs for this address
         const unspentUtxos = localState.utxos.filter(
@@ -64,7 +67,7 @@ accountsRoutes.get("/", async (c) => {
       };
     });
 
-    const response: any = { 
+    const response: any = {
       accounts: result,
       provenance: {
         authority: "filesystem state read",

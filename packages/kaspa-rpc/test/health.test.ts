@@ -14,15 +14,19 @@ describe("RPC Health API", () => {
   it("should return ready=true when client calls succeed", async () => {
     const mockClient = {
       connect: vi.fn().mockResolvedValue(undefined),
-      getServerInfo: vi.fn().mockResolvedValue({ serverVersion: "1.0.0", isSynced: true }),
-      getBlockDagInfo: vi.fn().mockResolvedValue({ networkId: "simnet", virtualDaaScore: 123n }),
+      getServerInfo: vi
+        .fn()
+        .mockResolvedValue({ serverVersion: "1.0.0", isSynced: true }),
+      getBlockDagInfo: vi
+        .fn()
+        .mockResolvedValue({ networkId: "simnet", virtualDaaScore: 123n }),
       disconnect: vi.fn()
     };
-    
+
     vi.mocked(KaspaWrpcClient).mockReturnValue(mockClient as any);
 
     const result = await checkKaspaRpcHealth();
-    
+
     expect(result.ready).toBe(true);
     expect(result.networkId).toBe("simnet");
     expect(result.virtualDaaScore).toBe("123");
@@ -33,11 +37,11 @@ describe("RPC Health API", () => {
       connect: vi.fn().mockRejectedValue(new Error("Connection refused")),
       disconnect: vi.fn()
     };
-    
+
     vi.mocked(KaspaWrpcClient).mockReturnValue(mockClient as any);
 
     const result = await checkKaspaRpcHealth();
-    
+
     expect(result.ready).toBe(false);
     expect(result.lastError).toBe("Connection refused");
   });
@@ -47,11 +51,15 @@ describe("RPC Health API", () => {
       connect: vi.fn().mockRejectedValue(new Error("Connection refused")),
       disconnect: vi.fn()
     };
-    
+
     const mockClientSuccess = {
       connect: vi.fn().mockResolvedValue(undefined),
-      getServerInfo: vi.fn().mockResolvedValue({ serverVersion: "1.0.0", isSynced: true }),
-      getBlockDagInfo: vi.fn().mockResolvedValue({ networkId: "simnet", virtualDaaScore: 123n }),
+      getServerInfo: vi
+        .fn()
+        .mockResolvedValue({ serverVersion: "1.0.0", isSynced: true }),
+      getBlockDagInfo: vi
+        .fn()
+        .mockResolvedValue({ networkId: "simnet", virtualDaaScore: 123n }),
       disconnect: vi.fn()
     };
 
@@ -61,7 +69,7 @@ describe("RPC Health API", () => {
       .mockReturnValueOnce(mockClientSuccess as any);
 
     const result = await waitForKaspaRpcReady({ intervalMs: 1, maxWaitMs: 100 });
-    
+
     expect(result.ready).toBe(true);
     expect(KaspaWrpcClient).toHaveBeenCalledTimes(2);
   });
@@ -71,32 +79,32 @@ describe("RPC Health API", () => {
       connect: vi.fn().mockRejectedValue(new Error("Connection refused")),
       disconnect: vi.fn()
     };
-    
+
     vi.mocked(KaspaWrpcClient).mockReturnValue(mockClient as any);
 
     const result = await waitForKaspaRpcReady({ intervalMs: 1, maxWaitMs: 10 });
-    
+
     expect(result.ready).toBe(false);
   });
 
   it("should fallback to KaspaJsonRpcClient for HTTP URL not containing 18210/18110", async () => {
     const mockClient = {
-      healthCheck: vi.fn().mockResolvedValue({ 
+      healthCheck: vi.fn().mockResolvedValue({
         status: "healthy",
         info: {
-          networkId: "mainnet", 
+          networkId: "mainnet",
           virtualDaaScore: 456n,
-          serverVersion: "1.0.0", 
-          isSynced: true 
+          serverVersion: "1.0.0",
+          isSynced: true
         },
         latencyMs: 10
       })
     };
-    
+
     vi.mocked(KaspaJsonRpcClient).mockReturnValue(mockClient as any);
 
     const result = await checkKaspaRpcHealth({ url: "http://127.0.0.1:8000" });
-    
+
     expect(result.ready).toBe(true);
     expect(result.networkId).toBe("mainnet");
     expect(result.virtualDaaScore).toBe("456");

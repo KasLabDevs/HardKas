@@ -4,7 +4,7 @@ import {
   GhostdagStore,
   genesisGhostdagData,
   findSelectedParent,
-  GENESIS_HASH as SIM_GENESIS_HASH,
+  GENESIS_HASH as SIM_GENESIS_HASH
 } from "@hardkas/simulator";
 import type { SimBlock as GhostdagSimBlock, BlockHash } from "@hardkas/simulator";
 import { deterministicCompare } from "@hardkas/core";
@@ -36,10 +36,13 @@ function getReverseIdMap(dag: SimulatedDag): Map<BlockHash, string> {
 /**
  * Helper to convert SimulatedBlock to GhostdagSimBlock
  */
-function toGhostdagSimBlock(block: SimulatedBlock, idMap: Map<string, BlockHash>): GhostdagSimBlock {
+function toGhostdagSimBlock(
+  block: SimulatedBlock,
+  idMap: Map<string, BlockHash>
+): GhostdagSimBlock {
   const hash = idMap.get(block.id) || block.id;
-  const parents = block.parents.map(p => idMap.get(p) || p);
-  
+  const parents = block.parents.map((p) => idMap.get(p) || p);
+
   return {
     header: {
       hash,
@@ -47,11 +50,10 @@ function toGhostdagSimBlock(block: SimulatedBlock, idMap: Map<string, BlockHash>
       timestampUs: 0,
       minerId: 0,
       bits: 1000, // Default difficulty for simulation
-      nonce: 0,
+      nonce: 0
     }
   };
 }
-
 
 /**
  * Creates a fresh simulated DAG with a genesis block.
@@ -68,7 +70,7 @@ export function createSimulatedDag(options?: { k?: number }): SimulatedDag {
     acceptedTxIds: [],
     isGenesis: true
   };
-  
+
   const gdStore = new GhostdagStore();
   gdStore.insert(SIM_GENESIS_HASH, genesisGhostdagData(SIM_GENESIS_HASH));
 
@@ -107,7 +109,7 @@ export function addSimulatedBlock(
 
   // 1. Compute GHOSTDAG data
   const gdBlock = toGhostdagSimBlock(block, idMap);
-  
+
   // Create a map of all blocks in simulator format for the engine
   const allGdBlocks = new Map<BlockHash, GhostdagSimBlock>();
   for (const b of Object.values(dag.blocks)) {
@@ -127,14 +129,14 @@ export function addSimulatedBlock(
     blueWork: gdData.blueWork.toString(),
     isBlue: true // The block itself is the new tip on its own path
   };
-  
+
   if (!idMap.has(block.id)) {
     idMap.set(block.id, block.id);
     reverseIdMap.set(block.id, block.id);
   }
 
   const newBlocks = { ...dag.blocks, [updatedBlock.id]: updatedBlock };
-  
+
   // 3. Update isBlue status for blocks in the mergeset of the new block
   for (const blueHash of gdData.mergesetBlues) {
     const id = reverseIdMap.get(blueHash) || blueHash;
@@ -183,18 +185,18 @@ export function moveSink(
   // - blueWork (descending for sorting? No, topological order usually wants ascending)
   // - isBlue (blue blocks before red blocks in mergeset? Step 3 says "transactions in blue blocks have priority")
   // - Tie-break by block ID
-  
+
   const sortedBlocks = reachableBlocks.sort((a, b) => {
     // If both have GHOSTDAG data, use it
     if (a.ghostdagData && b.ghostdagData) {
       const workA = BigInt(a.blueWork || "0");
       const workB = BigInt(b.blueWork || "0");
       if (workA !== workB) return workA < workB ? -1 : 1;
-      
+
       // If work is same, blue blocks first (but work includes this block's work usually)
       if (a.isBlue !== b.isBlue) return a.isBlue ? -1 : 1;
     }
-    
+
     // Fallback to legacy
     const daaA = BigInt(a.daaScore);
     const daaB = BigInt(b.daaScore);
@@ -206,7 +208,11 @@ export function moveSink(
   // Process all txs in topological/deterministic block order
   const acceptedTxIds: string[] = [];
   const displacedTxIds: string[] = [];
-  const conflictSet: Array<{ outpoint: string; winnerTxId: string; loserTxIds: string[] }> = [];
+  const conflictSet: Array<{
+    outpoint: string;
+    winnerTxId: string;
+    loserTxIds: string[];
+  }> = [];
   const spentOutpoints = new Map<string, string>(); // outpoint -> txId
 
   for (const block of sortedBlocks) {
@@ -221,7 +227,7 @@ export function moveSink(
       for (const input of tx.inputs) {
         if (spentOutpoints.has(input)) {
           const winnerTxId = spentOutpoints.get(input)!;
-          let entry = conflictSet.find(c => c.outpoint === input);
+          let entry = conflictSet.find((c) => c.outpoint === input);
           if (!entry) {
             entry = { outpoint: input, winnerTxId, loserTxIds: [] };
             conflictSet.push(entry);
@@ -245,7 +251,7 @@ export function moveSink(
   }
 
   // 5. Track newly displaced transactions (previously accepted but no longer reachable or now conflicted)
-  const newlyDisplaced = dag.acceptedTxIds.filter(id => !acceptedTxIds.includes(id));
+  const newlyDisplaced = dag.acceptedTxIds.filter((id) => !acceptedTxIds.includes(id));
   for (const id of newlyDisplaced) {
     if (!displacedTxIds.includes(id)) {
       displacedTxIds.push(id);
@@ -257,7 +263,7 @@ export function moveSink(
       for (const input of tx.inputs) {
         if (spentOutpoints.has(input)) {
           const winnerTxId = spentOutpoints.get(input)!;
-          let entry = conflictSet.find(c => c.outpoint === input);
+          let entry = conflictSet.find((c) => c.outpoint === input);
           if (!entry) {
             entry = { outpoint: input, winnerTxId, loserTxIds: [] };
             conflictSet.push(entry);
@@ -274,7 +280,7 @@ export function moveSink(
   return {
     ...dag,
     sink: newSinkId,
-    selectedPathToSink: selectedPath.map(b => b.id),
+    selectedPathToSink: selectedPath.map((b) => b.id),
     acceptedTxIds,
     displacedTxIds,
     conflictSet
@@ -290,7 +296,7 @@ function calculateSelectedPath(dag: SimulatedDag, sinkId: string): SimulatedBloc
     if (!current) break;
     path.unshift(current);
     if (current.isGenesis) break;
-    
+
     // GHOSTDAG walk
     if (current.ghostdagData) {
       const spHash: string = current.ghostdagData.selectedParent;
@@ -319,12 +325,12 @@ function identifyReachableBlocks(dag: SimulatedDag, sinkId: string): SimulatedBl
     }
   }
   return Array.from(reachable)
-    .map(id => dag.blocks[id])
+    .map((id) => dag.blocks[id])
     .filter((b): b is SimulatedBlock => b !== undefined);
 }
 
 /**
- * Deterministic Conflict Resolution (Approximation for 0.7.3-alpha)
+ * Deterministic Conflict Resolution (Approximation for 0.7.4-alpha)
  * Priority:
  * 1. sink ancestry priority (is part of selectedPathToSink?)
  * 2. deterministic block order (daaScore then block ID)
@@ -353,7 +359,7 @@ export function resolveConflictsDeterministically(
     if (blockA.ghostdagData && blockB.ghostdagData) {
       // Blue blocks priority
       if (blockA.isBlue !== blockB.isBlue) return blockA.isBlue ? -1 : 1;
-      
+
       // Ascending blueWork within the same color/category
       const workA = BigInt(blockA.blueWork || "0");
       const workB = BigInt(blockB.blueWork || "0");
@@ -380,7 +386,7 @@ export function resolveConflictsDeterministically(
     for (const input of tx.inputs) {
       if (spent.has(input)) {
         const winner = spent.get(input)!;
-        let c = conflicts.find(x => x.outpoint === input);
+        let c = conflicts.find((x) => x.outpoint === input);
         if (!c) {
           c = { outpoint: input, winnerTxId: winner, loserTxIds: [] };
           conflicts.push(c);
@@ -408,8 +414,13 @@ export function resolveConflictsDeterministically(
  * Get the blue/red coloring of all blocks in the DAG.
  * Returns a map of blockId → { isBlue, blueWork, blueScore }.
  */
-export function getDagColoring(dag: SimulatedDag): Map<string, { isBlue: boolean; blueWork: string; blueScore: number }> {
-  const coloring = new Map<string, { isBlue: boolean; blueWork: string; blueScore: number }>();
+export function getDagColoring(
+  dag: SimulatedDag
+): Map<string, { isBlue: boolean; blueWork: string; blueScore: number }> {
+  const coloring = new Map<
+    string,
+    { isBlue: boolean; blueWork: string; blueScore: number }
+  >();
   for (const [id, block] of Object.entries(dag.blocks)) {
     coloring.set(id, {
       isBlue: block.isBlue || false,
@@ -424,7 +435,7 @@ export function getDagColoring(dag: SimulatedDag): Map<string, { isBlue: boolean
  * Get the selected parent chain from sink to genesis.
  */
 export function getSelectedChain(dag: SimulatedDag): string[] {
-  return calculateSelectedPath(dag, dag.sink).map(b => b.id);
+  return calculateSelectedPath(dag, dag.sink).map((b) => b.id);
 }
 
 /**
@@ -434,7 +445,7 @@ export function findBestTip(dag: SimulatedDag): string {
   const idMap = getIdMap(dag);
   const allBlockIds = Object.keys(dag.blocks);
   if (allBlockIds.length === 0) return "genesis";
-  
+
   // A tip is a block that is not a parent of any other block
   const parentIds = new Set<string>();
   for (const block of Object.values(dag.blocks)) {
@@ -442,19 +453,18 @@ export function findBestTip(dag: SimulatedDag): string {
       parentIds.add(p);
     }
   }
-  
-  const tips = allBlockIds.filter(id => !parentIds.has(id));
+
+  const tips = allBlockIds.filter((id) => !parentIds.has(id));
   if (tips.length === 0) return dag.sink;
 
-  const tipData = tips.map(id => ({
+  const tipData = tips.map((id) => ({
     hash: idMap.get(id) || id,
     blueWork: BigInt(dag.blocks[id]!.blueWork || "0")
   }));
 
   const bestTipHash = findSelectedParent(tipData);
   // Reverse map or just find the tip with matching hash/id
-  const bestTip = tips.find(id => (idMap.get(id) || id) === bestTipHash);
-  
+  const bestTip = tips.find((id) => (idMap.get(id) || id) === bestTipHash);
+
   return bestTip || tips[0]!;
 }
-

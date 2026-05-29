@@ -1,7 +1,12 @@
 import fs from "node:fs";
 import path from "node:path";
 import enquirer from "enquirer";
-import { KeystoreManager, loadOrCreateRealAccountStore, saveRealAccountStore, importRealDevAccount } from "@hardkas/accounts";
+import {
+  KeystoreManager,
+  loadOrCreateRealAccountStore,
+  saveRealAccountStore,
+  importRealDevAccount
+} from "@hardkas/accounts";
 import { UI } from "../ui.js";
 import { acquirePassword, acquirePrivateKey } from "./secrets.js";
 
@@ -25,13 +30,19 @@ export async function runAccountsKeystoreImport(options: {
   const address = options.address;
 
   if (options.unsafePlaintext) {
-    UI.warning("LEGACY MODE: Storing private keys in plaintext is unsafe and discouraged.");
+    UI.warning(
+      "LEGACY MODE: Storing private keys in plaintext is unsafe and discouraged."
+    );
     if (!options.yes) {
-      const confirmed = await UI.confirm("Are you sure you want to store this key in plaintext?");
+      const confirmed = await UI.confirm(
+        "Are you sure you want to store this key in plaintext?"
+      );
       if (!confirmed) throw new Error("Import cancelled by user.");
     }
   } else {
-    UI.info("HardKAS: Encrypted keystore is for local developer workflows, not institutional custody.");
+    UI.info(
+      "HardKAS: Encrypted keystore is for local developer workflows, not institutional custody."
+    );
     UI.info("Do not import mainnet keys unless you fully understand the risks.");
   }
 
@@ -59,9 +70,10 @@ export async function runAccountsKeystoreImport(options: {
   }
 
   if (privateKeyUsedAsArg) {
-    const warningMsg = "--private-key may be recorded in shell history, process lists, CI logs, or terminal scrollback.";
+    const warningMsg =
+      "--private-key may be recorded in shell history, process lists, CI logs, or terminal scrollback.";
     const suggestion = "Use --private-key-stdin or --private-key-env instead.";
-    
+
     if (!options.json) {
       UI.securityWarning("PRIVATE_KEY_ARG_DEPRECATED", warningMsg, suggestion);
     }
@@ -70,7 +82,6 @@ export async function runAccountsKeystoreImport(options: {
   if (!finalKey) {
     throw new Error("Private key is required for import.");
   }
-
 
   let keystoreRef: string | undefined;
 
@@ -91,12 +102,18 @@ export async function runAccountsKeystoreImport(options: {
       {
         address,
         privateKey: finalKey,
-        network: (address.startsWith("kaspa:") && !address.startsWith("kaspa:sim_")) ? "mainnet" : "devnet"
+        network:
+          address.startsWith("kaspa:") && !address.startsWith("kaspa:sim_")
+            ? "mainnet"
+            : "devnet"
       },
       password,
       {
         label: name,
-        network: (address.startsWith("kaspa:") && !address.startsWith("kaspa:sim_")) ? "mainnet" : "devnet"
+        network:
+          address.startsWith("kaspa:") && !address.startsWith("kaspa:sim_")
+            ? "mainnet"
+            : "devnet"
       }
     );
 
@@ -105,7 +122,7 @@ export async function runAccountsKeystoreImport(options: {
     const sdk = await Hardkas.open({ cwd: options.workspaceRoot });
     const keystoreDir = sdk.workspace.keystoreDir;
     if (!fs.existsSync(keystoreDir)) fs.mkdirSync(keystoreDir, { recursive: true });
-    
+
     const filePath = sdk.workspace.resolvePath(".hardkas", "keystore", `${name}.json`);
     await KeystoreManager.saveEncryptedKeystore(filePath, keystore);
     keystoreRef = `.hardkas/keystore/${name}.json`;
@@ -126,7 +143,8 @@ export async function runAccountsKeystoreImport(options: {
     warnings.push({
       code: "PRIVATE_KEY_ARG_DEPRECATED",
       severity: "warning",
-      message: "--private-key is deprecated and unsafe. Use --private-key-stdin or --private-key-env."
+      message:
+        "--private-key is deprecated and unsafe. Use --private-key-stdin or --private-key-env."
     });
   }
 
@@ -135,7 +153,7 @@ export async function runAccountsKeystoreImport(options: {
     name,
     encrypted: !options.unsafePlaintext,
     warnings,
-    formatted: options.unsafePlaintext 
+    formatted: options.unsafePlaintext
       ? `✓ Successfully imported account '${name}' (UNSAFE PLAINTEXT)`
       : `✓ Successfully imported and encrypted account '${name}'`
   };
@@ -144,7 +162,7 @@ export async function runAccountsKeystoreImport(options: {
 /**
  * Runner for 'hardkas accounts session-open <name>'
  */
-export async function runAccountsSessionOpen(options: { 
+export async function runAccountsSessionOpen(options: {
   name: string;
   passwordStdin?: boolean;
   passwordEnv?: string;
@@ -181,7 +199,10 @@ export async function runAccountsSessionOpen(options: {
 /**
  * Runner for 'hardkas accounts change-password <name>'
  */
-export async function runAccountsKeystoreChangePassword(options: { name: string, workspaceRoot: string }) {
+export async function runAccountsKeystoreChangePassword(options: {
+  name: string;
+  workspaceRoot: string;
+}) {
   const { name } = options;
   const { Hardkas } = await import("@hardkas/sdk");
   const sdk = await Hardkas.open({ cwd: options.workspaceRoot });
@@ -190,15 +211,15 @@ export async function runAccountsKeystoreChangePassword(options: { name: string,
   const keystore = await KeystoreManager.loadEncryptedKeystore(filePath);
 
   const oldPassword = await acquirePassword({
-    message: 'Enter current password:'
+    message: "Enter current password:"
   });
 
   const newPassword = await acquirePassword({
-    message: 'Enter new password:'
+    message: "Enter new password:"
   });
 
   const confirm = await acquirePassword({
-    message: 'Confirm new password:'
+    message: "Confirm new password:"
   });
 
   if (newPassword !== confirm) {

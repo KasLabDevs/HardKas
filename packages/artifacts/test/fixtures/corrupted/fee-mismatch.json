@@ -1,6 +1,6 @@
 {
   "schema": "hardkas.txPlan",
-  "hardkasVersion": "0.7.3-alpha",
+  "hardkasVersion": "0.7.4-alpha",
   "version": "1.0.0-alpha",
   "createdAt": "2026-05-08T22:21:40Z",
   "networkId": "simnet",
@@ -14,8 +14,5 @@
   "inputs": [
     { "outpoint": { "transactionId": "00", "index": 0 }, "amountSompi": "1000500" }
   ],
-  "outputs": [
-    { "address": "kaspa:456", "amountSompi": "1000000" }
-  ]
+  "outputs": [{ "address": "kaspa:456", "amountSompi": "1000000" }]
 }
-

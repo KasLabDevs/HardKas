@@ -1,7 +1,7 @@
-import { 
-  checkKaspaRpcHealth, 
-  waitForKaspaRpcReady, 
-  RpcHealthResult 
+import {
+  checkKaspaRpcHealth,
+  waitForKaspaRpcReady,
+  RpcHealthResult
 } from "@hardkas/kaspa-rpc";
 import { classifyRpcError, humanReadableRpcError } from "../cli-errors.js";
 
@@ -21,7 +21,9 @@ export async function runRpcHealth(options: RpcHealthRunnerOptions): Promise<{
   let result: RpcHealthResult;
 
   if (options.wait) {
-    console.log(`Waiting for Kaspa RPC at ${options.url || "http://127.0.0.1:18210"} ...`);
+    console.log(
+      `Waiting for Kaspa RPC at ${options.url || "http://127.0.0.1:18210"} ...`
+    );
     result = await waitForKaspaRpcReady({
       url: options.url,
       maxWaitMs: (options.timeout || 60) * 1000,
@@ -53,7 +55,7 @@ export async function runRpcHealth(options: RpcHealthRunnerOptions): Promise<{
     if (options.wait) {
       formatted += `RPC not ready after ${options.timeout || 60}s\n\n`;
     }
-    
+
     // Classify the error into a typed RPC error code
     const errorCode = classifyRpcError(result.error || "Unknown error");
     const cleanError = humanReadableRpcError(errorCode);

@@ -3,12 +3,12 @@ import fs from "node:fs";
 
 /**
  * Deterministic Workspace Abstraction.
- * Encapsulates all filesystem boundary interactions and isolates paths 
+ * Encapsulates all filesystem boundary interactions and isolates paths
  * from the global process.cwd(), ensuring agent/script replayability.
  */
 export class HardkasWorkspace {
   public readonly root: string;
-  
+
   constructor(cwd: string) {
     // Resolve absolute path immediately to freeze the boundary
     this.root = path.resolve(cwd);

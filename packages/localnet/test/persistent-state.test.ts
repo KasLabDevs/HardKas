@@ -3,10 +3,10 @@ import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import fs from "node:fs/promises";
 import path from "node:path";
 import os from "node:os";
-import { 
-  createInitialLocalnetState, 
-  loadOrCreateLocalnetState, 
-  fundAddress, 
+import {
+  createInitialLocalnetState,
+  loadOrCreateLocalnetState,
+  fundAddress,
   getAddressBalanceSompi,
   createLocalnetSnapshot,
   restoreLocalnetSnapshot,
@@ -39,8 +39,11 @@ describe("Persistent Localnet State", () => {
   it("should load or create state file", async () => {
     const state = await loadOrCreateLocalnetState({ cwd: tmpDir, accounts: 2 });
     expect(state.accounts).toHaveLength(2);
-    
-    const exists = await fs.access(statePath).then(() => true).catch(() => false);
+
+    const exists = await fs
+      .access(statePath)
+      .then(() => true)
+      .catch(() => false);
     expect(exists).toBe(true);
 
     const loaded = await loadOrCreateLocalnetState({ cwd: tmpDir });
@@ -51,34 +54,40 @@ describe("Persistent Localnet State", () => {
   it("should fund an address and increment DAA score", () => {
     let state = createInitialLocalnetState({ accounts: 1 });
     const address = state.accounts[0]!.address;
-    
+
     state = fundAddress(state, { address, amountSompi: 100n });
     expect(state.daaScore).toBe("1");
     expect(state.utxos).toHaveLength(2);
     expect(state.utxos[1]!.address).toBe(address);
     expect(state.utxos[1]!.amountSompi).toBe("100");
-    
-    expect(getAddressBalanceSompi(state, address)).toBe(BigInt(state.utxos[0]!.amountSompi) + 100n);
+
+    expect(getAddressBalanceSompi(state, address)).toBe(
+      BigInt(state.utxos[0]!.amountSompi) + 100n
+    );
   });
 
   it("should create and restore snapshots", () => {
     let state = createInitialLocalnetState({ accounts: 1 });
     const address = state.accounts[0]!.address;
-    
+
     state = createLocalnetSnapshot(state, "original");
-    
+
     state = fundAddress(state, { address, amountSompi: 100n });
-    expect(getAddressBalanceSompi(state, address)).toBe(BigInt(state.utxos[0]!.amountSompi) + 100n);
-    
+    expect(getAddressBalanceSompi(state, address)).toBe(
+      BigInt(state.utxos[0]!.amountSompi) + 100n
+    );
+
     state = restoreLocalnetSnapshot(state, "original");
     expect(state.daaScore).toBe("0");
-    expect(getAddressBalanceSompi(state, address)).toBe(BigInt(state.utxos[0]!.amountSompi));
+    expect(getAddressBalanceSompi(state, address)).toBe(
+      BigInt(state.utxos[0]!.amountSompi)
+    );
   });
 
   it("should resolve account addresses", () => {
     const state = createInitialLocalnetState({ accounts: 2 });
     const aliceAddr = state.accounts[0]!.address;
-    
+
     expect(resolveAccountAddressFromState(state, "alice")).toBe(aliceAddr);
     expect(resolveAccountAddressFromState(state, aliceAddr)).toBe(aliceAddr);
     expect(resolveAccountAddressFromState(state, "unknown")).toBe("unknown");

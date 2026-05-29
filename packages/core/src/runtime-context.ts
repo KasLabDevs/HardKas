@@ -18,6 +18,7 @@ export interface RuntimeContext {
   random: DeterministicRandom;
   ids: IdProvider;
   telemetry: TelemetryManager;
+  workflowId?: string;
 }
 
 /**

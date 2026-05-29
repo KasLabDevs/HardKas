@@ -1,8 +1,8 @@
 import fs from "node:fs/promises";
 import path from "node:path";
-import { 
-  resolveL2Profile, 
-  EvmJsonRpcClient, 
+import {
+  resolveL2Profile,
+  EvmJsonRpcClient,
   toHexQuantity,
   EvmCallRequest,
   UnsupportedIgraTxSigner,
@@ -11,7 +11,7 @@ import {
   normalizeEvmTransactionReceipt
 } from "@hardkas/l2";
 import { loadHardkasConfig } from "@hardkas/config";
-import { 
+import {
   IgraTxPlanArtifact,
   IgraSignedTxArtifact,
   assertValidIgraTxPlanArtifact,
@@ -28,10 +28,7 @@ import {
   loadIgraTxReceiptArtifact,
   calculateContentHash
 } from "@hardkas/artifacts";
-import { 
-  loadRealAccountStore, 
-  resolveRealAccountOrAddress 
-} from "@hardkas/accounts";
+import { loadRealAccountStore, resolveRealAccountOrAddress } from "@hardkas/accounts";
 
 export interface L2TxBuildOptions {
   network?: string;
@@ -61,7 +58,9 @@ export async function runL2TxBuild(options: L2TxBuildOptions): Promise<void> {
 
   const rpcUrl = profile.rpcUrl;
   if (!rpcUrl) {
-    throw new Error(`No L2 RPC URL configured for network '${profile.name}'. Pass --url <rpcUrl>.`);
+    throw new Error(
+      `No L2 RPC URL configured for network '${profile.name}'. Pass --url <rpcUrl>.`
+    );
   }
 
   const client = new EvmJsonRpcClient({ url: rpcUrl });
@@ -76,7 +75,7 @@ export async function runL2TxBuild(options: L2TxBuildOptions): Promise<void> {
 
   // 2. Fetch Network Info
   const chainId = await client.getChainId();
-  
+
   let nonce = options.nonce;
   if (!nonce && options.from) {
     const n = await client.getTransactionCount(options.from, "latest");
@@ -146,14 +145,20 @@ export async function runL2TxBuild(options: L2TxBuildOptions): Promise<void> {
 
   // 5. Output
   if (options.json) {
-    console.log(JSON.stringify({
-      networkId: profile.name,
-      l2Network: profile.name,
-      chainId: profile.chainId,
-      planId,
-      artifactPath,
-      artifact
-    }, null, 2));
+    console.log(
+      JSON.stringify(
+        {
+          networkId: profile.name,
+          l2Network: profile.name,
+          chainId: profile.chainId,
+          planId,
+          artifactPath,
+          artifact
+        },
+        null,
+        2
+      )
+    );
     return;
   }
 
@@ -178,7 +183,9 @@ export async function runL2TxBuild(options: L2TxBuildOptions): Promise<void> {
   console.log(`  hardkas l2 tx sign ${artifactPath} --account <name>`);
   console.log("");
   console.log("Warning:");
-  console.log("  This is an Igra L2 EVM transaction plan, not a Kaspa L1 UTXO transaction.");
+  console.log(
+    "  This is an Igra L2 EVM transaction plan, not a Kaspa L1 UTXO transaction."
+  );
 }
 
 export interface L2TxSignOptions {
@@ -209,25 +216,36 @@ export async function runL2TxSign(options: L2TxSignOptions): Promise<void> {
   let accountInfo: IgraTxSigningInput["account"] | undefined;
   if (options.account) {
     const store = await loadRealAccountStore();
-    const accountData = resolveRealAccountOrAddress(store, options.account) as Record<string, unknown>;
-    
+    const accountData = resolveRealAccountOrAddress(store, options.account) as Record<
+      string,
+      unknown
+    >;
+
     // Safety check: address mismatch
-    const accountAddress = typeof accountData.address === "string" ? accountData.address : "";
-    if (plan.request.from && plan.request.from.toLowerCase() !== accountAddress.toLowerCase()) {
-      throw new Error(`Account address mismatch: plan specifies '${plan.request.from}' but resolved account '${String(accountData.name ?? accountAddress)}' is '${accountAddress}'`);
+    const accountAddress =
+      typeof accountData.address === "string" ? accountData.address : "";
+    if (
+      plan.request.from &&
+      plan.request.from.toLowerCase() !== accountAddress.toLowerCase()
+    ) {
+      throw new Error(
+        `Account address mismatch: plan specifies '${plan.request.from}' but resolved account '${String(accountData.name ?? accountAddress)}' is '${accountAddress}'`
+      );
     }
 
     accountInfo = {
       address: accountAddress,
       ...(typeof accountData.name === "string" ? { name: accountData.name } : {}),
-      ...(typeof accountData.privateKey === "string" ? { privateKey: accountData.privateKey } : {})
+      ...(typeof accountData.privateKey === "string"
+        ? { privateKey: accountData.privateKey }
+        : {})
     };
   }
 
   // 3. Sign
   const { ViemIgraTxSigner } = await import("@hardkas/l2");
   const signer = options.signerOverride ?? new ViemIgraTxSigner();
-  
+
   let result;
   try {
     result = await signer.sign({
@@ -236,7 +254,10 @@ export async function runL2TxSign(options: L2TxSignOptions): Promise<void> {
     });
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
-    if (msg.includes("not configured yet") || msg.includes("dependency (viem) is not installed")) {
+    if (
+      msg.includes("not configured yet") ||
+      msg.includes("dependency (viem) is not installed")
+    ) {
       console.log("");
       console.log("Igra L2 signing is not available");
       console.log("");
@@ -245,7 +266,9 @@ export async function runL2TxSign(options: L2TxSignOptions): Promise<void> {
       console.log("");
       console.log("Suggestion:");
       if (msg.includes("viem")) {
-        console.log("  Run 'pnpm add viem' in your project or configure an EVM signer adapter.");
+        console.log(
+          "  Run 'pnpm add viem' in your project or configure an EVM signer adapter."
+        );
       } else {
         console.log("  Configure an EVM-compatible signer adapter in a future phase.");
       }
@@ -290,14 +313,20 @@ export async function runL2TxSign(options: L2TxSignOptions): Promise<void> {
 
   // 6. Output
   if (options.json) {
-    console.log(JSON.stringify({
-      networkId: plan.networkId,
-      l2Network: plan.l2Network,
-      chainId: plan.chainId,
-      signedId,
-      artifactPath,
-      artifact
-    }, null, 2));
+    console.log(
+      JSON.stringify(
+        {
+          networkId: plan.networkId,
+          l2Network: plan.l2Network,
+          chainId: plan.chainId,
+          signedId,
+          artifactPath,
+          artifact
+        },
+        null,
+        2
+      )
+    );
     return;
   }
 
@@ -318,7 +347,9 @@ export async function runL2TxSign(options: L2TxSignOptions): Promise<void> {
   console.log("  L2 transaction sending is not implemented yet.");
   console.log("");
   console.log("Warning:");
-  console.log("  This is an Igra L2 EVM signed transaction, not a Kaspa L1 UTXO transaction.");
+  console.log(
+    "  This is an Igra L2 EVM signed transaction, not a Kaspa L1 UTXO transaction."
+  );
 }
 
 export interface L2TxSendOptions {
@@ -349,9 +380,14 @@ export async function runL2TxSend(options: L2TxSendOptions): Promise<void> {
   });
 
   // Mainnet/Production guardrail
-  const isMainnet = profile.name === "mainnet" || profile.name.includes("mainnet") || artifact.networkId === "mainnet" || artifact.chainId === 1 || profile.chainId === 1;
+  const isMainnet =
+    profile.name === "mainnet" ||
+    profile.name.includes("mainnet") ||
+    artifact.networkId === "mainnet" ||
+    artifact.chainId === 1 ||
+    profile.chainId === 1;
   if (isMainnet) {
-    throw new Error("L2 mainnet broadcast is disabled in HardKAS 0.7.3-alpha.");
+    throw new Error("L2 mainnet broadcast is disabled in HardKAS 0.7.4-alpha.");
   }
 
   if (!options.yes) {
@@ -361,16 +397,23 @@ export async function runL2TxSend(options: L2TxSendOptions): Promise<void> {
 
   const rpcUrl = options.url ?? profile.rpcUrl;
   if (!rpcUrl) {
-    throw new Error(`No L2 RPC URL configured for network '${profile.name}'. Pass --url <rpcUrl>.`);
+    throw new Error(
+      `No L2 RPC URL configured for network '${profile.name}'. Pass --url <rpcUrl>.`
+    );
   }
 
   // 3. RPC Validation
   const client = new EvmJsonRpcClient({ url: rpcUrl });
   const remoteChainId = await client.getChainId();
 
-  if (profile.chainId !== undefined && String(remoteChainId) !== String(profile.chainId)) {
+  if (
+    profile.chainId !== undefined &&
+    String(remoteChainId) !== String(profile.chainId)
+  ) {
     console.log("");
-    console.log("Refusing to submit Igra L2 transaction: profile chainId does not match RPC endpoint.");
+    console.log(
+      "Refusing to submit Igra L2 transaction: profile chainId does not match RPC endpoint."
+    );
     console.log("");
     console.log(`Profile chainId: ${profile.chainId}`);
     console.log(`RPC chainId:      ${remoteChainId}`);
@@ -382,7 +425,9 @@ export async function runL2TxSend(options: L2TxSendOptions): Promise<void> {
 
   if (String(remoteChainId) !== String(artifact.chainId)) {
     console.log("");
-    console.log("Refusing to submit Igra L2 transaction: signed artifact chainId does not match RPC endpoint.");
+    console.log(
+      "Refusing to submit Igra L2 transaction: signed artifact chainId does not match RPC endpoint."
+    );
     console.log("");
     console.log(`Artifact chainId: ${artifact.chainId}`);
     console.log(`RPC chainId:      ${remoteChainId}`);
@@ -418,16 +463,22 @@ export async function runL2TxSend(options: L2TxSendOptions): Promise<void> {
 
   // 6. Output
   if (options.json) {
-    console.log(JSON.stringify({
-      networkId: artifact.networkId,
-      l2Network: profile.name,
-      chainId: artifact.chainId,
-      rpcUrl,
-      txHash,
-      artifactPath: options.signedPath,
-      receiptPath,
-      receipt
-    }, (key, value) => typeof value === "bigint" ? value.toString() : value, 2));
+    console.log(
+      JSON.stringify(
+        {
+          networkId: artifact.networkId,
+          l2Network: profile.name,
+          chainId: artifact.chainId,
+          rpcUrl,
+          txHash,
+          artifactPath: options.signedPath,
+          receiptPath,
+          receipt
+        },
+        (key, value) => (typeof value === "bigint" ? value.toString() : value),
+        2
+      )
+    );
     return;
   }
 
@@ -491,16 +542,22 @@ export async function runL2TxReceipt(options: L2TxReceiptOptions): Promise<void>
   const status = remoteReceipt?.status ?? (localReceipt ? "submitted" : "pending");
 
   if (options.json) {
-    console.log(JSON.stringify({
-      networkId: localReceipt?.networkId ?? "igra",
-      l2Network: profile.name,
-      chainId: localReceipt?.chainId,
-      rpcUrl,
-      txHash: options.txHash,
-      status,
-      local: localReceipt,
-      remote: remoteReceipt
-    }, (key, value) => typeof value === "bigint" ? value.toString() : value, 2));
+    console.log(
+      JSON.stringify(
+        {
+          networkId: localReceipt?.networkId ?? "igra",
+          l2Network: profile.name,
+          chainId: localReceipt?.chainId,
+          rpcUrl,
+          txHash: options.txHash,
+          status,
+          local: localReceipt,
+          remote: remoteReceipt
+        },
+        (key, value) => (typeof value === "bigint" ? value.toString() : value),
+        2
+      )
+    );
     return;
   }
 
@@ -515,7 +572,7 @@ export async function runL2TxReceipt(options: L2TxReceiptOptions): Promise<void>
   } else {
     console.log(`Local:     not found`);
   }
-  
+
   if (remoteReceipt) {
     console.log("");
     console.log("Remote Status:");
@@ -529,7 +586,9 @@ export async function runL2TxReceipt(options: L2TxReceiptOptions): Promise<void>
 
   console.log("");
   console.log("Warning:");
-  console.log("  This is an Igra L2 EVM transaction receipt, not a Kaspa L1 transaction.");
+  console.log(
+    "  This is an Igra L2 EVM transaction receipt, not a Kaspa L1 transaction."
+  );
 }
 
 export interface L2TxReceiptsOptions {
@@ -540,7 +599,13 @@ export async function runL2TxReceipts(options: L2TxReceiptsOptions): Promise<voi
   const receipts = await listIgraTxReceiptArtifacts();
 
   if (options.json) {
-    console.log(JSON.stringify(receipts, (key, value) => typeof value === "bigint" ? value.toString() : value, 2));
+    console.log(
+      JSON.stringify(
+        receipts,
+        (key, value) => (typeof value === "bigint" ? value.toString() : value),
+        2
+      )
+    );
     return;
   }
 
@@ -554,7 +619,9 @@ export async function runL2TxReceipts(options: L2TxReceiptsOptions): Promise<voi
 
   for (const r of receipts) {
     const shortHash = r.txHash.substring(0, 10) + "...";
-    console.log(`${shortHash.padEnd(15)} ${r.status.padEnd(12)} chain ${r.chainId.toString().padEnd(8)} network ${r.l2Network.padEnd(10)} ${r.createdAt}`);
+    console.log(
+      `${shortHash.padEnd(15)} ${r.status.padEnd(12)} chain ${r.chainId.toString().padEnd(8)} network ${r.l2Network.padEnd(10)} ${r.createdAt}`
+    );
   }
 }
 
@@ -578,7 +645,9 @@ export async function runL2TxStatus(options: L2TxStatusOptions): Promise<void> {
   const rpcUrl = profile.rpcUrl;
 
   if (!rpcUrl) {
-    throw new Error(`No L2 RPC URL configured for network '${profile.name}'. Pass --url <rpcUrl>.`);
+    throw new Error(
+      `No L2 RPC URL configured for network '${profile.name}'. Pass --url <rpcUrl>.`
+    );
   }
 
   const client = new EvmJsonRpcClient({ url: rpcUrl });
@@ -588,14 +657,20 @@ export async function runL2TxStatus(options: L2TxStatusOptions): Promise<void> {
   const status = remoteReceipt?.status ?? "pending";
 
   if (options.json) {
-    console.log(JSON.stringify({
-      networkId: profile.name,
-      l2Network: profile.name,
-      rpcUrl,
-      txHash: options.txHash,
-      status,
-      remote: remoteReceipt
-    }, (key, value) => typeof value === "bigint" ? value.toString() : value, 2));
+    console.log(
+      JSON.stringify(
+        {
+          networkId: profile.name,
+          l2Network: profile.name,
+          rpcUrl,
+          txHash: options.txHash,
+          status,
+          remote: remoteReceipt
+        },
+        (key, value) => (typeof value === "bigint" ? value.toString() : value),
+        2
+      )
+    );
     return;
   }
 
@@ -604,7 +679,7 @@ export async function runL2TxStatus(options: L2TxStatusOptions): Promise<void> {
   console.log(`Tx hash:   ${options.txHash}`);
   console.log(`Network:   ${profile.name} (${profile.source})`);
   console.log(`Status:    ${status}`);
-  
+
   if (remoteReceipt) {
     console.log(`Block:     ${remoteReceipt.blockNumber ?? "unknown"}`);
     console.log(`Gas used:  ${remoteReceipt.gasUsed ?? "unknown"}`);
@@ -613,12 +688,16 @@ export async function runL2TxStatus(options: L2TxStatusOptions): Promise<void> {
 
 function assertEvmAddress(address: string, field: string): void {
   if (!/^0x[a-fA-F0-9]{40}$/.test(address)) {
-    throw new Error(`Invalid EVM ${field}: must be a 0x-prefixed 40-character hex string.`);
+    throw new Error(
+      `Invalid EVM ${field}: must be a 0x-prefixed 40-character hex string.`
+    );
   }
 }
 
 function assertHexData(data: string, field: string): void {
   if (!/^0x([a-fA-F0-9]{2})*$/.test(data)) {
-    throw new Error(`Invalid hex ${field}: must be a 0x-prefixed even-length hex string.`);
+    throw new Error(
+      `Invalid hex ${field}: must be a 0x-prefixed even-length hex string.`
+    );
   }
 }

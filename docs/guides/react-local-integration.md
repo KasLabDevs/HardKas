@@ -26,7 +26,7 @@ import { HardKasProvider } from "@hardkas/react";
 
 function Root() {
   return (
-    <HardKasProvider 
+    <HardKasProvider
       config={{
         kaspaRpcUrl: "http://127.0.0.1:16110",
         igraRpcUrl: "http://127.0.0.1:8545",
@@ -64,13 +64,17 @@ function Dashboard() {
 ## Advanced Features
 
 ### Deterministic Cache Aiding
+
 All query keys in `@hardkas/react` are deterministic and include:
+
 - **Session Identity**: Data is isolated per session name.
 - **RPC Identity**: Prevents collisions when switching between different local nodes.
 - **Network Mode**: Isolated caches for different simulation modes.
 
 ### SSR & Next.js Compatibility
+
 The library is safe for Server-Side Rendering. It avoids direct browser API access (`window`, `localStorage`) in its hooks, making it ideal for Next.js (App Router or Pages Router) and other modern frameworks.
+
 ```
 
 ## Limitations
@@ -83,3 +87,4 @@ The library is safe for Server-Side Rendering. It avoids direct browser API acce
 
 - **PR 26+**: Browser Wallet Adapter (MetaMask/KasWare integration).
 - **HardKAS Dev Server**: A local sidecar process to expose workspace sessions and artifacts to the browser safely.
+```

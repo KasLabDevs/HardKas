@@ -18,7 +18,11 @@ describe("Deployment tracking", () => {
       });
       return { ok: true, stdout };
     } catch (err: any) {
-      return { ok: false, stdout: err.stdout?.toString(), stderr: err.stderr?.toString() };
+      return {
+        ok: false,
+        stdout: err.stdout?.toString(),
+        stderr: err.stderr?.toString()
+      };
     }
   }
 
@@ -32,23 +36,29 @@ describe("Deployment tracking", () => {
   });
 
   it("tracks a deployment with label and network", () => {
-    const result = runHardkas('deploy track my-deploy --network simnet --tx-id simtx_abc --status sent');
+    const result = runHardkas(
+      "deploy track my-deploy --network simnet --tx-id simtx_abc --status sent"
+    );
     expect(result.ok).toBe(true);
     expect(result.stdout).toContain("Tracked deployment: my-deploy (simnet)");
   });
 
   it("lists tracked deployments", () => {
-    runHardkas('deploy track deploy-1 --network simnet --tx-id simtx_1 --status sent');
-    runHardkas('deploy track deploy-2 --network simnet --tx-id simtx_2 --status confirmed');
-    const result = runHardkas('deploy list --json');
+    runHardkas("deploy track deploy-1 --network simnet --tx-id simtx_1 --status sent");
+    runHardkas(
+      "deploy track deploy-2 --network simnet --tx-id simtx_2 --status confirmed"
+    );
+    const result = runHardkas("deploy list --json");
     expect(result.ok).toBe(true);
     const parsed = JSON.parse(result.stdout);
     expect(parsed.length).toBe(2);
   });
 
   it("inspects a specific deployment", () => {
-    runHardkas('deploy track vault-v1 --network testnet-11 --tx-id tx_abc --notes "first deploy"');
-    const result = runHardkas('deploy inspect vault-v1 --network testnet-11 --json');
+    runHardkas(
+      'deploy track vault-v1 --network testnet-11 --tx-id tx_abc --notes "first deploy"'
+    );
+    const result = runHardkas("deploy inspect vault-v1 --network testnet-11 --json");
     expect(result.ok).toBe(true);
     const parsed = JSON.parse(result.stdout);
     expect(parsed.label).toBe("vault-v1");
@@ -56,22 +66,22 @@ describe("Deployment tracking", () => {
   });
 
   it("deployment has valid content hash", () => {
-    runHardkas('deploy track test-deploy --network simnet --tx-id simtx_x');
-    const result = runHardkas('deploy inspect test-deploy --network simnet --json');
+    runHardkas("deploy track test-deploy --network simnet --tx-id simtx_x");
+    const result = runHardkas("deploy inspect test-deploy --network simnet --json");
     const parsed = JSON.parse(result.stdout);
     expect(parsed.contentHash).toMatch(/^[a-f0-9]{64}$/);
   });
 
   it("refuses duplicate label on same network", () => {
-    runHardkas('deploy track dup --network simnet --tx-id simtx_1');
-    const result = runHardkas('deploy track dup --network simnet --tx-id simtx_2');
+    runHardkas("deploy track dup --network simnet --tx-id simtx_1");
+    const result = runHardkas("deploy track dup --network simnet --tx-id simtx_2");
     expect(result.ok).toBe(false);
     expect(result.stderr || result.stdout).toContain("already exists");
   });
 
   it("same label allowed on different networks", () => {
-    runHardkas('deploy track multi --network simnet --tx-id simtx_1');
-    const result = runHardkas('deploy track multi --network testnet-11 --tx-id tx_2');
+    runHardkas("deploy track multi --network simnet --tx-id simtx_1");
+    const result = runHardkas("deploy track multi --network testnet-11 --tx-id tx_2");
     expect(result.ok).toBe(true);
   });
 });

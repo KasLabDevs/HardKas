@@ -27,7 +27,7 @@ describe("Simulated Isolation", () => {
 
   it("must succeed even if an unreachable RPC URL is provided", async () => {
     const { config } = await loadHardkasConfig();
-    
+
     // We provide a bogus URL that would normally timeout or fail.
     // However, because networkId is simnet, the simulated backend must not even attempt to connect to it.
     const artifact = await runTxPlan({

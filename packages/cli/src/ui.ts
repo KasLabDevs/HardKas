@@ -30,7 +30,7 @@ export const UI = {
     const masked = maskSecrets(text);
     this.logHuman(pc.bold(pc.magenta(`\n  ═══ ${masked} ═══`)));
   },
-  
+
   divider() {
     this.logHuman(pc.dim("  " + "─".repeat(50)));
   },
@@ -38,7 +38,7 @@ export const UI = {
   bullet(text: string) {
     this.logHuman(`  • ${text}`);
   },
-  
+
   step(num: number, text: string) {
     this.logHuman(`  ${pc.dim(num.toString() + ".")} ${text}`);
   },
@@ -62,9 +62,17 @@ export const UI = {
   box(title: string, subtitle?: string) {
     const width = 40;
     this.logHuman(pc.magenta(`  ╔${"═".repeat(width - 2)}╗`));
-    this.logHuman(pc.magenta(`  ║${pc.bold(pc.white(title.padStart((width - 2 + title.length) / 2).padEnd(width - 2)))}║`));
+    this.logHuman(
+      pc.magenta(
+        `  ║${pc.bold(pc.white(title.padStart((width - 2 + title.length) / 2).padEnd(width - 2)))}║`
+      )
+    );
     if (subtitle) {
-      this.logHuman(pc.magenta(`  ║${pc.italic(pc.dim(subtitle.padStart((width - 2 + subtitle.length) / 2).padEnd(width - 2)))}║`));
+      this.logHuman(
+        pc.magenta(
+          `  ║${pc.italic(pc.dim(subtitle.padStart((width - 2 + subtitle.length) / 2).padEnd(width - 2)))}║`
+        )
+      );
     }
     this.logHuman(pc.magenta(`  ╚${"═".repeat(width - 2)}╝`));
     this.logHuman("");
@@ -98,7 +106,8 @@ export const UI = {
   },
 
   field(label: string, value: string | number | boolean | undefined | null) {
-    const val = value === undefined || value === null ? pc.dim("none") : maskSecrets(String(value));
+    const val =
+      value === undefined || value === null ? pc.dim("none") : maskSecrets(String(value));
     this.logHuman(`  ${pc.dim(label.padEnd(16))} ${pc.white(val)}`);
   },
 
@@ -133,7 +142,11 @@ export const UI = {
     this.logHuman("");
   },
 
-  causality(title: string, details: Record<string, string | undefined>, nextSteps?: string[]) {
+  causality(
+    title: string,
+    details: Record<string, string | undefined>,
+    nextSteps?: string[]
+  ) {
     this.logHuman(`\n  ${pc.green("✔")} ${pc.bold(title)}\n`);
     for (const [key, value] of Object.entries(details)) {
       if (value) {
@@ -155,7 +168,13 @@ export const UI = {
     this.logHuman("");
   },
 
-  semanticError(title: string, cause: string, invariant: string, consequence: string, remediation: string) {
+  semanticError(
+    title: string,
+    cause: string,
+    invariant: string,
+    consequence: string,
+    remediation: string
+  ) {
     console.error(pc.red(`\n  ✗ ${title}\n`));
     console.error(`  ${pc.dim("Cause:")}`);
     console.error(`    ${pc.white(cause)}\n`);
@@ -171,7 +190,11 @@ export const UI = {
     // Always write to stderr — must not pollute stdout (which may carry JSON)
     console.error(pc.yellow(`\n  [DRY RUN]`));
     console.error(pc.white(`  No persistent artifacts were written.`));
-    console.error(pc.dim(`\n  Use:\n    ${pc.white("--yes")}\n  to persist deterministic artifacts.\n`));
+    console.error(
+      pc.dim(
+        `\n  Use:\n    ${pc.white("--yes")}\n  to persist deterministic artifacts.\n`
+      )
+    );
   },
 
   writeError(msg: string) {
@@ -206,32 +229,38 @@ export function handleError(e: unknown, context?: string) {
   const rawMsg = e instanceof Error ? e.message : String(e);
   const msg = maskSecrets ? maskSecrets(rawMsg) : rawMsg;
   const errorObj = e as any;
-  
+
   let reason = maskSecrets ? maskSecrets(errorObj.reason) : errorObj.reason;
   let suggestion = maskSecrets ? maskSecrets(errorObj.suggestion) : errorObj.suggestion;
 
   if (msg === "Real transaction signing is not available") {
     console.error(`\n${msg}`);
     if (reason) console.error(`\nReason:\n  ${reason}`);
-    if (suggestion) console.error(`\nSuggestion:\n  ${suggestion}\n  No artifact was written.`);
+    if (suggestion)
+      console.error(`\nSuggestion:\n  ${suggestion}\n  No artifact was written.`);
     return;
   }
 
   if (!suggestion) {
     if (msg.includes("Localnet state not found")) {
-      suggestion = "Run 'hardkas localnet reset' to initialize the simulated environment.";
+      suggestion =
+        "Run 'hardkas localnet reset' to initialize the simulated environment.";
     } else if (msg.includes("Insufficient funds")) {
-      suggestion = "Use 'hardkas faucet <address> <amount>' to add funds to your account.";
+      suggestion =
+        "Use 'hardkas faucet <address> <amount>' to add funds to your account.";
     } else if (msg.includes("Account not found")) {
       suggestion = "Check your 'hardkas.config.ts' or use a full Kaspa address.";
     } else if (msg.includes("Docker") || msg.includes("container")) {
-      suggestion = "Ensure Docker is running and you have permissions to manage containers.";
+      suggestion =
+        "Ensure Docker is running and you have permissions to manage containers.";
     } else if (msg.includes("L2 RPC") || msg.includes("L2 profile")) {
       suggestion = "Check your L2 network configuration or pass a valid --url.";
     } else if (msg.includes("RPC") || msg.includes("Connection refused")) {
-      suggestion = "The Kaspa node might still be starting. Try 'hardkas rpc health --wait'.";
+      suggestion =
+        "The Kaspa node might still be starting. Try 'hardkas rpc health --wait'.";
     } else if (msg.includes("submitTransaction is not exposed")) {
-      suggestion = "Ensure your node/RPC provider supports transaction submission and you are NOT on mainnet without --allow-mainnet-signing.";
+      suggestion =
+        "Ensure your node/RPC provider supports transaction submission and you are NOT on mainnet without --allow-mainnet-signing.";
     }
   }
 
@@ -241,7 +270,7 @@ export function handleError(e: unknown, context?: string) {
     const ctx = (e as any).context;
     console.error(`  ${pc.dim("Code:")}     ${pc.white((e as any).code)}`);
     if (ctx.endpoint) console.error(`  ${pc.dim("Endpoint:")} ${pc.white(ctx.endpoint)}`);
-    if (ctx.network)  console.error(`  ${pc.dim("Network:")}  ${pc.white(ctx.network)}`);
+    if (ctx.network) console.error(`  ${pc.dim("Network:")}  ${pc.white(ctx.network)}`);
     if (ctx.protocol) console.error(`  ${pc.dim("Protocol:")} ${pc.white(ctx.protocol)}`);
   }
 }
@@ -254,13 +283,14 @@ export function handleLockError(e: any) {
   const meta = e.cause as any;
 
   if (code === "LOCK_HELD" || code === "LOCK_TIMEOUT" || code === "STALE_LOCK") {
-    const title = code === "STALE_LOCK" 
-      ? "Stale Workspace Lock Detected" 
-      : "Workspace is locked by another HardKAS process";
-    
+    const title =
+      code === "STALE_LOCK"
+        ? "Stale Workspace Lock Detected"
+        : "Workspace is locked by another HardKAS process";
+
     console.error(pc.red(`\n  ✗ ${pc.bold(title)}`));
     console.error(pc.red(`  ${"─".repeat(title.length + 4)}`));
-    
+
     if (meta) {
       console.error(`  ${pc.dim("Lock:")}    ${pc.white(meta.name)}`);
       console.error(`  ${pc.dim("PID:")}     ${pc.white(meta.pid)}`);
@@ -272,7 +302,9 @@ export function handleLockError(e: any) {
     console.error(pc.cyan(`\n  💡 Suggestion:`));
     if (code === "STALE_LOCK") {
       console.error(`    The process (PID ${meta?.pid}) appears to be dead.`);
-      console.error(`    Run 'hardkas lock clear ${meta?.name} --if-dead' to release it safely.`);
+      console.error(
+        `    Run 'hardkas lock clear ${meta?.name} --if-dead' to release it safely.`
+      );
     } else {
       console.error(`    Wait for the process to finish, or run:`);
       console.error(`    hardkas lock doctor`);

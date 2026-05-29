@@ -5,7 +5,7 @@ import { ARTIFACT_VERSION } from "../src/schemas.js";
 
 describe("Artifact Golden Fixtures (Cross-Runtime)", () => {
   // RULE: These tests must pass on any Node version, OS, or CI environment.
-  // Any change to these golden strings or hashes indicates a breaking 
+  // Any change to these golden strings or hashes indicates a breaking
   // change to artifact identity.
 
   it("should have stable version-aware hashing", () => {
@@ -20,7 +20,7 @@ describe("Artifact Golden Fixtures (Cross-Runtime)", () => {
     const canonical = canonicalStringify(artifact);
     // Note: 'version' IS included now.
     expect(canonical).toContain('"version":"1.0.0-alpha"');
-    
+
     const hash = calculateContentHash(artifact);
     // If ARTIFACT_VERSION is 1.0.0-alpha, this hash should be stable.
     expect(hash).toBeDefined();
@@ -59,13 +59,13 @@ describe("Artifact Golden Fixtures (Cross-Runtime)", () => {
       version: ARTIFACT_VERSION,
       data: "semantic",
       createdAt: "2024-01-01T00:00:00Z",
-      hardkasVersion: "0.7.3-alpha"
+      hardkasVersion: "0.7.4-alpha"
     };
 
     const mutatedMetadata = {
       ...base,
       createdAt: "2025-12-31T23:59:59Z",
-      hardkasVersion: "0.7.3-alpha",
+      hardkasVersion: "0.7.4-alpha",
       rpcUrl: "http://another-node:16110"
     };
 

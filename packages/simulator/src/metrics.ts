@@ -35,7 +35,7 @@ export function computeDagMetrics(
   genesisHash: BlockHash
 ): DagMetrics {
   const totalBlocks = allBlocks.size - 1; // excluding genesis
-  
+
   // Tips are blocks that are not parents of any other block
   const parentIds = new Set<BlockHash>();
   let totalParentLinks = 0;
@@ -43,24 +43,27 @@ export function computeDagMetrics(
     for (const p of block.header.parents) {
       parentIds.add(p);
     }
-    if (!block.header.parents.includes(genesisHash) && block.header.hash !== genesisHash) {
-        // Just for mean parents calculation
+    if (
+      !block.header.parents.includes(genesisHash) &&
+      block.header.hash !== genesisHash
+    ) {
+      // Just for mean parents calculation
     }
     totalParentLinks += block.header.parents.length;
   }
-  
-  const tips = Array.from(allBlocks.keys()).filter(id => !parentIds.has(id));
+
+  const tips = Array.from(allBlocks.keys()).filter((id) => !parentIds.has(id));
   const dagWidth = tips.length;
   const meanParents = totalBlocks > 0 ? totalParentLinks / (totalBlocks + 1) : 0;
 
   // Sink is the best tip
-  const tipData = tips.map(id => ({
+  const tipData = tips.map((id) => ({
     hash: id,
     blueWork: gdStore.getBlueWork(id) ?? 0n
   }));
-  
+
   const sink = findSelectedParent(tipData) || genesisHash;
-  
+
   // Selected chain walk
   const selectedChain: string[] = [];
   let currentId: BlockHash | undefined = sink;
@@ -75,7 +78,7 @@ export function computeDagMetrics(
   // HEURISTIC: In a stable DAG, blue blocks are those that are NOT red in the sink's view.
   // Actually, let's use the sink's GhostdagData if available to count blues/reds in the whole past.
   // Wait, GHOSTDAG coloring is relative to a block. We usually mean "blue in the sink's past".
-  
+
   let blueBlocks = 0;
   let redBlocks = 0;
   let maxBlueScore = 0;
@@ -84,7 +87,7 @@ export function computeDagMetrics(
   // We'll traverse all blocks and check their status relative to the sink's view
   // But wait, computeGhostdag already defines blueScore and blueWork for each block.
   // blueScore(sink) is the number of blue blocks in past(sink).
-  
+
   const sinkData = gdStore.getData(sink);
   if (sinkData) {
     blueBlocks = sinkData.blueScore; // includes genesis? usually yes in this impl
@@ -103,22 +106,22 @@ export function computeDagMetrics(
   // To count total red blocks in the DAG, we need to know all blocks in past(sink)
   // and which ones are not blue.
   // Since we are building these DAGs in scenarios, we can just look at the final sink.
-  
+
   if (sinkData) {
-      // In this simulator, blueScore is total blues in past.
-      // We need to count total blocks in past(sink).
-      const past = identifyReachableBlocks(allBlocks, sink);
-      const totalInPast = past.size - 1; // excluding genesis
-      blueBlocks = sinkData.blueScore + 1; 
-      // If genesis is blueScore 0, then blueBlocks is count of non-genesis blues.
-      redBlocks = Math.max(0, totalInPast - blueBlocks);
+    // In this simulator, blueScore is total blues in past.
+    // We need to count total blocks in past(sink).
+    const past = identifyReachableBlocks(allBlocks, sink);
+    const totalInPast = past.size - 1; // excluding genesis
+    blueBlocks = sinkData.blueScore + 1;
+    // If genesis is blueScore 0, then blueBlocks is count of non-genesis blues.
+    redBlocks = Math.max(0, totalInPast - blueBlocks);
   }
 
   return {
     totalBlocks,
     blueBlocks,
     redBlocks,
-    redRatio: (blueBlocks + redBlocks) > 0 ? redBlocks / (blueBlocks + redBlocks) : 0,
+    redRatio: blueBlocks + redBlocks > 0 ? redBlocks / (blueBlocks + redBlocks) : 0,
     meanParents,
     dagWidth,
     maxBlueScore,
@@ -128,7 +131,10 @@ export function computeDagMetrics(
   };
 }
 
-function identifyReachableBlocks(allBlocks: Map<BlockHash, SimBlock>, sinkId: BlockHash): Set<BlockHash> {
+function identifyReachableBlocks(
+  allBlocks: Map<BlockHash, SimBlock>,
+  sinkId: BlockHash
+): Set<BlockHash> {
   const reachable = new Set<BlockHash>();
   const stack = [sinkId];
   while (stack.length > 0) {

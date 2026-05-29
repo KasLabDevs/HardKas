@@ -9,8 +9,8 @@ export interface EvmExportResult {
 
 /**
  * Validates and prepares an account for EVM export.
- * 
- * SECURITY CONSTRAINT: 
+ *
+ * SECURITY CONSTRAINT:
  * - Only explicit EVM/L2 accounts are exported.
  * - No derivation from Kaspa L1 keys in this PR.
  * - Fails on mainnet/testnet.
@@ -22,17 +22,23 @@ export async function prepareEvmAccountExport(
 ): Promise<EvmExportResult> {
   // 1. Hard failure on mainnet/public testnet
   if (networkId === "mainnet" || networkId.startsWith("testnet")) {
-    throw new Error(`EVM account export is NOT allowed on network "${networkId}" for security reasons.`);
+    throw new Error(
+      `EVM account export is NOT allowed on network "${networkId}" for security reasons.`
+    );
   }
 
   // 2. Only allow simnet/localnet
   if (networkId !== "simnet" && networkId !== "localnet") {
-    throw new Error(`EVM account export is only supported on local development networks (simnet, localnet).`);
+    throw new Error(
+      `EVM account export is only supported on local development networks (simnet, localnet).`
+    );
   }
 
   // 3. Only allow explicit EVM/L2 accounts
   if (account.kind !== "evm-private-key") {
-    throw new Error(`Account "${account.name}" is not an EVM/L2 account (kind: ${account.kind}). Only explicit EVM accounts can be exported.`);
+    throw new Error(
+      `Account "${account.name}" is not an EVM/L2 account (kind: ${account.kind}). Only explicit EVM accounts can be exported.`
+    );
   }
 
   // 4. Validate address format (should be 0x-prefixed)
@@ -54,22 +60,29 @@ export async function prepareEvmAccountExport(
       if (account.privateKeyEnv) {
         privateKey = process.env[account.privateKeyEnv];
         if (!privateKey) {
-          throw new Error(`Private key environment variable "${account.privateKeyEnv}" is not set.`);
+          throw new Error(
+            `Private key environment variable "${account.privateKeyEnv}" is not set.`
+          );
         }
       } else {
         // In the future, this would fetch from the encrypted keystore.
         // For now, if it's not in an env var, we might not have it unless it's a raw account in config.
         // We check if the account object has a privateKey (legacy/config path)
-        privateKey = (account as HardkasEvmPrivateKeyAccount & { privateKey?: string }).privateKey;
+        privateKey = (account as HardkasEvmPrivateKeyAccount & { privateKey?: string })
+          .privateKey;
       }
     }
 
     if (privateKey) {
       // Ensure 0x prefix
-      result.privateKey = privateKey.startsWith("0x") ? (privateKey as `0x${string}`) : `0x${privateKey}` as `0x${string}`;
+      result.privateKey = privateKey.startsWith("0x")
+        ? (privateKey as `0x${string}`)
+        : (`0x${privateKey}` as `0x${string}`);
       result.isSecret = true;
     } else {
-      throw new Error(`Private key for account "${account.name}" could not be retrieved.`);
+      throw new Error(
+        `Private key for account "${account.name}" could not be retrieved.`
+      );
     }
   }
 

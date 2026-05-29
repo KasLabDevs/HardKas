@@ -13,7 +13,7 @@ overviewRoutes.get("/", async (c) => {
   const workspaceRoot = process.cwd();
   const artifactDir = ".hardkas/artifacts";
   const queryStorePath = ".hardkas/store.db";
-  
+
   const projectName = (config as any).project?.name || path.basename(workspaceRoot);
   const network = config.defaultNetwork || "simulated";
 
@@ -22,17 +22,23 @@ overviewRoutes.get("/", async (c) => {
   let replayCount = 0;
   let pendingReplays = 0;
   try {
-    const replays = await queryBackend.findArtifacts({ schema: "hardkas.replayReport.v1" });
+    const replays = await queryBackend.findArtifacts({
+      schema: "hardkas.replayReport.v1"
+    });
     const receipts = await queryBackend.findArtifacts({ schema: "hardkas.txReceipt.v1" });
-    
+
     replayCount = replays.length;
     if (replays.length > 0) {
-      const allPassed = replays.every(r => r.payload.planOk && r.payload.receiptOk && r.payload.invariantsOk);
+      const allPassed = replays.every(
+        (r) => r.payload.planOk && r.payload.receiptOk && r.payload.invariantsOk
+      );
       replayStatus = allPassed ? "PASS" : "FAIL";
     }
 
-    const replayTxIds = new Set(replays.map(r => r.payload.txId));
-    pendingReplays = receipts.filter(r => r.payload.status === "confirmed" && !replayTxIds.has(r.payload.txId)).length;
+    const replayTxIds = new Set(replays.map((r) => r.payload.txId));
+    pendingReplays = receipts.filter(
+      (r) => r.payload.status === "confirmed" && !replayTxIds.has(r.payload.txId)
+    ).length;
   } catch (e) {
     console.error("Failed to query replay artifacts:", e);
   }
@@ -48,7 +54,7 @@ overviewRoutes.get("/", async (c) => {
   try {
     const allArtifacts = await queryBackend.findArtifacts();
     artifactCount = allArtifacts.length;
-    corruptedCount = allArtifacts.filter(a => a.kind === "CORRUPTED").length;
+    corruptedCount = allArtifacts.filter((a) => a.kind === "CORRUPTED").length;
 
     // Unique transaction IDs from receipts or plans
     const txIds = new Set<string>();
@@ -85,8 +91,14 @@ overviewRoutes.get("/", async (c) => {
   }
 
   // SEMANTIC STATE ENGINE
-  type RuntimeSemanticState = "EMPTY" | "ACTIVE" | "PENDING" | "DEGRADED" | "CORRUPTED" | "VERIFIED";
-  
+  type RuntimeSemanticState =
+    | "EMPTY"
+    | "ACTIVE"
+    | "PENDING"
+    | "DEGRADED"
+    | "CORRUPTED"
+    | "VERIFIED";
+
   let runtimeState: RuntimeSemanticState = "ACTIVE";
   let runtimeReason = "Runtime data exists.";
   let recommendedAction = "hardkas tx send";
@@ -97,7 +109,7 @@ overviewRoutes.get("/", async (c) => {
     const fs = await import("node:fs");
     const artifactsDiskDir = path.join(workspaceRoot, ".hardkas", "artifacts");
     if (fs.existsSync(artifactsDiskDir)) {
-      const files = fs.readdirSync(artifactsDiskDir).filter(f => f.endsWith(".json"));
+      const files = fs.readdirSync(artifactsDiskDir).filter((f) => f.endsWith(".json"));
       if (files.length > 0 && artifactCount === 0) {
         isDegraded = true;
       }
@@ -106,15 +118,25 @@ overviewRoutes.get("/", async (c) => {
 
   if (corruptedCount > 0 || replayStatus === "FAIL") {
     runtimeState = "CORRUPTED";
-    runtimeReason = replayStatus === "FAIL" ? "Replay verification failed." : "Artifact integrity failed. Deterministic replay is unsafe.";
+    runtimeReason =
+      replayStatus === "FAIL"
+        ? "Replay verification failed."
+        : "Artifact integrity failed. Deterministic replay is unsafe.";
     recommendedAction = "hardkas doctor --consistency --strict";
   } else if (isDegraded) {
     runtimeState = "DEGRADED";
-    runtimeReason = "Projection cache (SQLite) is missing or out of sync with filesystem artifacts.";
+    runtimeReason =
+      "Projection cache (SQLite) is missing or out of sync with filesystem artifacts.";
     recommendedAction = "hardkas query store rebuild";
-  } else if (artifactCount === 0 && eventCount === 0 && txCount === 0 && replayCount === 0) {
+  } else if (
+    artifactCount === 0 &&
+    eventCount === 0 &&
+    txCount === 0 &&
+    replayCount === 0
+  ) {
     runtimeState = "EMPTY";
-    runtimeReason = "Workspace initialized. No deterministic activity has been recorded yet.";
+    runtimeReason =
+      "Workspace initialized. No deterministic activity has been recorded yet.";
     recommendedAction = "hardkas tx send --from alice --to bob --amount 10 --yes";
   } else if (artifactCount > 0 && replayCount === 0) {
     runtimeState = "PENDING";
@@ -136,7 +158,8 @@ overviewRoutes.get("/", async (c) => {
 
   const guarantees = {
     artifactIntegrity: corruptedCount === 0 ? "available" : "failed",
-    localReplay: replayCount > 0 ? (replayStatus === "PASS" ? "verified" : "failed") : "not_checked",
+    localReplay:
+      replayCount > 0 ? (replayStatus === "PASS" ? "verified" : "failed") : "not_checked",
     consensusValidated: false,
     networkFinality: false
   };

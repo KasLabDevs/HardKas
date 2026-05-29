@@ -4,7 +4,7 @@ import { verifyTxPlanSemantics } from "../src/verify.js";
 
 describe("Transaction Semantic Verification", () => {
   const utxo = createMockUtxo({ address: "kaspa:address1", amountSompi: 1000000n });
-  
+
   it("should pass for a valid plan", () => {
     const plan = buildPaymentPlan({
       fromAddress: "kaspa:address1",
@@ -31,7 +31,7 @@ describe("Transaction Semantic Verification", () => {
 
     const result = verifyTxPlanSemantics(plan);
     expect(result.ok).toBe(false);
-    expect(result.issues.some(i => i.code === "MASS_MISMATCH")).toBe(true);
+    expect(result.issues.some((i) => i.code === "MASS_MISMATCH")).toBe(true);
   });
 
   it("should detect duplicate inputs", () => {
@@ -47,7 +47,7 @@ describe("Transaction Semantic Verification", () => {
 
     const result = verifyTxPlanSemantics(plan);
     expect(result.ok).toBe(false);
-    expect(result.issues.some(i => i.code === "DUPLICATE_INPUT")).toBe(true);
+    expect(result.issues.some((i) => i.code === "DUPLICATE_INPUT")).toBe(true);
   });
 
   it("should detect dust outputs", () => {
@@ -59,6 +59,6 @@ describe("Transaction Semantic Verification", () => {
     });
 
     const result = verifyTxPlanSemantics(plan);
-    expect(result.issues.some(i => i.code === "DUST_OUTPUT")).toBe(true);
+    expect(result.issues.some((i) => i.code === "DUST_OUTPUT")).toBe(true);
   });
 });

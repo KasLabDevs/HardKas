@@ -19,7 +19,7 @@ export async function loadKaspaWasm() {
     // Fallback or re-throw with helpful message
     throw new Error(
       "Kaspa WASM signing backend is not available. " +
-      "Please install the official 'kaspa' package: pnpm add kaspa"
+        "Please install the official 'kaspa' package: pnpm add kaspa"
     );
   }
 }

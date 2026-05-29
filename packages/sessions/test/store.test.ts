@@ -1,11 +1,20 @@
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
-import { loadSessionStore, loadSessionStoreStrict, createSession, setActiveSession, getActiveSession } from "../src/store.js";
+import {
+  loadSessionStore,
+  loadSessionStoreStrict,
+  createSession,
+  setActiveSession,
+  getActiveSession
+} from "../src/store.js";
 import fs from "node:fs";
 import path from "node:path";
 import os from "node:os";
 
 describe("Session Store", () => {
-  const tempDir = path.join(os.tmpdir(), `hardkas-test-sessions-${Math.random().toString(36).slice(2)}`);
+  const tempDir = path.join(
+    os.tmpdir(),
+    `hardkas-test-sessions-${Math.random().toString(36).slice(2)}`
+  );
 
   beforeEach(() => {
     if (!fs.existsSync(tempDir)) {
@@ -31,18 +40,32 @@ describe("Session Store", () => {
 
     await createSession(session, tempDir);
     const store = loadSessionStore(tempDir);
-    
+
     expect(store.sessions["test-session"]).toEqual(session);
     expect(store.activeSession).toBe("test-session");
   });
 
   it("preserves existing sessions when adding another", async () => {
-    const s1 = { name: "s1", schema: "hardkas.session.v1" as const, l1: { wallet: "w1" }, l2: { account: "a1" }, bridge: { mode: "local-simulated" as const }, createdAt: "t" };
-    const s2 = { name: "s2", schema: "hardkas.session.v1" as const, l1: { wallet: "w2" }, l2: { account: "a2" }, bridge: { mode: "local-simulated" as const }, createdAt: "t" };
+    const s1 = {
+      name: "s1",
+      schema: "hardkas.session.v1" as const,
+      l1: { wallet: "w1" },
+      l2: { account: "a1" },
+      bridge: { mode: "local-simulated" as const },
+      createdAt: "t"
+    };
+    const s2 = {
+      name: "s2",
+      schema: "hardkas.session.v1" as const,
+      l1: { wallet: "w2" },
+      l2: { account: "a2" },
+      bridge: { mode: "local-simulated" as const },
+      createdAt: "t"
+    };
 
     await createSession(s1, tempDir);
     await createSession(s2, tempDir);
-    
+
     const store = loadSessionStore(tempDir);
     expect(Object.keys(store.sessions)).toHaveLength(2);
     expect(store.sessions["s1"]).toBeDefined();
@@ -50,15 +73,29 @@ describe("Session Store", () => {
   });
 
   it("sets and gets active session", async () => {
-    const s1 = { name: "s1", schema: "hardkas.session.v1" as const, l1: { wallet: "w1" }, l2: { account: "a1" }, bridge: { mode: "local-simulated" as const }, createdAt: "t" };
-    const s2 = { name: "s2", schema: "hardkas.session.v1" as const, l1: { wallet: "w2" }, l2: { account: "a2" }, bridge: { mode: "local-simulated" as const }, createdAt: "t" };
+    const s1 = {
+      name: "s1",
+      schema: "hardkas.session.v1" as const,
+      l1: { wallet: "w1" },
+      l2: { account: "a1" },
+      bridge: { mode: "local-simulated" as const },
+      createdAt: "t"
+    };
+    const s2 = {
+      name: "s2",
+      schema: "hardkas.session.v1" as const,
+      l1: { wallet: "w2" },
+      l2: { account: "a2" },
+      bridge: { mode: "local-simulated" as const },
+      createdAt: "t"
+    };
 
     await createSession(s1, tempDir);
     await createSession(s2, tempDir);
-    
+
     await setActiveSession("s2", tempDir);
     expect(getActiveSession(tempDir)?.name).toBe("s2");
-    
+
     await setActiveSession("s1", tempDir);
     expect(getActiveSession(tempDir)?.name).toBe("s1");
   });
@@ -67,7 +104,7 @@ describe("Session Store", () => {
     const sessionFile = path.join(tempDir, ".hardkas", "sessions.json");
     fs.mkdirSync(path.dirname(sessionFile), { recursive: true });
     fs.writeFileSync(sessionFile, "not-json");
-    
+
     const store = loadSessionStore(tempDir);
     expect(store.sessions).toEqual({});
   });
@@ -84,11 +121,11 @@ describe("Session Store", () => {
     }));
 
     // Run them in parallel
-    await Promise.all(sessions.map(s => createSession(s, tempDir)));
+    await Promise.all(sessions.map((s) => createSession(s, tempDir)));
 
     const store = loadSessionStore(tempDir);
     expect(Object.keys(store.sessions)).toHaveLength(5);
-    sessions.forEach(s => {
+    sessions.forEach((s) => {
       expect(store.sessions[s.name]).toBeDefined();
     });
   });
@@ -97,7 +134,7 @@ describe("Session Store", () => {
     const sessionFile = path.join(tempDir, ".hardkas", "sessions.json");
     fs.mkdirSync(path.dirname(sessionFile), { recursive: true });
     fs.writeFileSync(sessionFile, "not-json");
-    
+
     expect(() => loadSessionStoreStrict(tempDir)).toThrow("Invalid session store");
   });
 
@@ -115,7 +152,9 @@ describe("Session Store", () => {
       createdAt: "t"
     };
 
-    await expect(createSession(newSession, tempDir)).rejects.toThrow("Invalid session store");
+    await expect(createSession(newSession, tempDir)).rejects.toThrow(
+      "Invalid session store"
+    );
     // Verify file was NOT overwritten with empty store containing the new session
     const fileContent = fs.readFileSync(sessionFile, "utf-8");
     expect(fileContent).toBe("not-json");

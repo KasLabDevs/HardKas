@@ -4,12 +4,12 @@
 
 // ── Test Harness ─────────────────────────────────────────────────────────────
 export type { HarnessConfig, TestHarness, SendResult } from "./harness.js";
-export { 
-  createTestHarness, 
-  enableMassTracking, 
-  disableMassTracking, 
-  getMassRecords, 
-  clearMassRecords 
+export {
+  createTestHarness,
+  enableMassTracking,
+  disableMassTracking,
+  getMassRecords,
+  clearMassRecords
 } from "./harness.js";
 
 // ── Fixtures ─────────────────────────────────────────────────────────────────
@@ -33,9 +33,17 @@ export { generateReproducibilityReport } from "./reproducibility.js";
 export { AdversarialFixtures } from "./adversarial-fixtures.js";
 
 // ── Torture Suite ────────────────────────────────────────────────────────────
-export type { TortureCaseResult, TortureBucketContext, TortureBucket } from "./torture/torture-engine.js";
-export { LcgPrng, getAllTortureBuckets, getTortureBucket, TortureInvariantError } from "./torture/torture-engine.js";
+export type {
+  TortureCaseResult,
+  TortureBucketContext,
+  TortureBucket
+} from "./torture/torture-engine.js";
+export {
+  LcgPrng,
+  getAllTortureBuckets,
+  getTortureBucket,
+  TortureInvariantError
+} from "./torture/torture-engine.js";
 import "./torture/buckets.js";
 import "./torture/local-buckets.js";
 import "./torture/corruption-buckets.js";
-

@@ -4,14 +4,17 @@ import { handleError } from "../ui.js";
 export function registerConfigCommands(program: Command) {
   const configCmd = program.command("config").description("Manage HardKAS configuration");
 
-  configCmd.command("show")
+  configCmd
+    .command("show")
     .description("Show the current HardKAS configuration")
     .option("--config <path>", "Path to config file")
     .option("--json", "Output as JSON", false)
-    .action(async (options: { config?: string, json: boolean }) => {
+    .action(async (options: { config?: string; json: boolean }) => {
       const { loadHardkasConfig } = await import("@hardkas/config");
       try {
-        const loaded = await loadHardkasConfig(options.config ? { configPath: options.config } : {});
+        const loaded = await loadHardkasConfig(
+          options.config ? { configPath: options.config } : {}
+        );
 
         if (options.json) {
           console.log(JSON.stringify(loaded, null, 2));
@@ -43,7 +46,8 @@ export function registerConfigCommands(program: Command) {
       }
     });
 
-  configCmd.command("networks")
+  configCmd
+    .command("networks")
     .description("List configured networks")
     .option("--json", "Output as JSON", false)
     .action(async (opts: { json: boolean }) => {
@@ -58,7 +62,7 @@ export function registerConfigCommands(program: Command) {
       }
 
       UI.header("HardKAS Networks");
-      
+
       const header = "  Network        RPC                              Kind";
       console.log(header);
       console.log("  " + "─".repeat(header.length - 2));

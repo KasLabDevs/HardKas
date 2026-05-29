@@ -16,58 +16,67 @@ describe("ReplayQueryAdapter", () => {
     await fs.mkdir(tracesDir, { recursive: true });
 
     // Receipt: confirmed tx
-    await fs.writeFile(path.join(receiptsDir, "tx-abc.json"), JSON.stringify({
-      schema: "hardkas.txReceipt",
-      txId: "tx-abc",
-      status: "confirmed",
-      mode: "simulated",
-      networkId: "simnet",
-      from: { address: "kaspa:alice" },
-      to: { address: "kaspa:bob" },
-      amountSompi: "100000",
-      feeSompi: "250",
-      mass: "250",
-      daaScore: "42",
-      spentUtxoIds: ["u1", "u2"],
-      createdUtxoIds: ["u3", "u4"],
-      preStateHash: "pre123",
-      postStateHash: "post456",
-      createdAt: "2026-01-01T00:00:00Z"
-    }));
+    await fs.writeFile(
+      path.join(receiptsDir, "tx-abc.json"),
+      JSON.stringify({
+        schema: "hardkas.txReceipt",
+        txId: "tx-abc",
+        status: "confirmed",
+        mode: "simulated",
+        networkId: "simnet",
+        from: { address: "kaspa:alice" },
+        to: { address: "kaspa:bob" },
+        amountSompi: "100000",
+        feeSompi: "250",
+        mass: "250",
+        daaScore: "42",
+        spentUtxoIds: ["u1", "u2"],
+        createdUtxoIds: ["u3", "u4"],
+        preStateHash: "pre123",
+        postStateHash: "post456",
+        createdAt: "2026-01-01T00:00:00Z"
+      })
+    );
 
     // Receipt: failed tx (with state change — divergence)
-    await fs.writeFile(path.join(receiptsDir, "tx-fail.json"), JSON.stringify({
-      schema: "hardkas.txReceipt",
-      txId: "tx-fail",
-      status: "failed",
-      mode: "simulated",
-      networkId: "simnet",
-      from: { address: "kaspa:alice" },
-      to: { address: "kaspa:bob" },
-      amountSompi: "100000",
-      feeSompi: "0",
-      daaScore: "43",
-      spentUtxoIds: [],
-      createdUtxoIds: [],
-      preStateHash: "pre123",
-      postStateHash: "post789", // BUG: failed tx changed state
-      createdAt: "2026-01-01T00:01:00Z"
-    }));
+    await fs.writeFile(
+      path.join(receiptsDir, "tx-fail.json"),
+      JSON.stringify({
+        schema: "hardkas.txReceipt",
+        txId: "tx-fail",
+        status: "failed",
+        mode: "simulated",
+        networkId: "simnet",
+        from: { address: "kaspa:alice" },
+        to: { address: "kaspa:bob" },
+        amountSompi: "100000",
+        feeSompi: "0",
+        daaScore: "43",
+        spentUtxoIds: [],
+        createdUtxoIds: [],
+        preStateHash: "pre123",
+        postStateHash: "post789", // BUG: failed tx changed state
+        createdAt: "2026-01-01T00:01:00Z"
+      })
+    );
 
     // Trace for tx-abc
-    await fs.writeFile(path.join(tracesDir, "tx-abc.trace.json"), JSON.stringify({
-      schema: "hardkas.txTrace",
-      txId: "tx-abc",
-      mode: "simulated",
-      networkId: "simnet",
-      events: [
-        { type: "phase.started", phase: "validation", timestamp: 1000 },
-        { type: "phase.completed", phase: "validation", timestamp: 1001 },
-        { type: "phase.started", phase: "execution", timestamp: 1002 },
-        { type: "phase.completed", phase: "execution", timestamp: 1003 }
-      ],
-      createdAt: "2026-01-01T00:00:00Z"
-    }));
+    await fs.writeFile(
+      path.join(tracesDir, "tx-abc.trace.json"),
+      JSON.stringify({
+        schema: "hardkas.txTrace",
+        txId: "tx-abc",
+        mode: "simulated",
+        networkId: "simnet",
+        events: [
+          { type: "phase.started", phase: "validation", timestamp: 1000 },
+          { type: "phase.completed", phase: "validation", timestamp: 1001 },
+          { type: "phase.started", phase: "execution", timestamp: 1002 },
+          { type: "phase.completed", phase: "execution", timestamp: 1003 }
+        ],
+        createdAt: "2026-01-01T00:00:00Z"
+      })
+    );
 
     engine = new QueryEngine({ artifactDir: tmpDir });
   });
@@ -77,14 +86,18 @@ describe("ReplayQueryAdapter", () => {
   });
 
   it("list — should enumerate receipts", async () => {
-    const result = await engine.execute(createQueryRequest({ domain: "replay", op: "list" }));
+    const result = await engine.execute(
+      createQueryRequest({ domain: "replay", op: "list" })
+    );
     expect(result.total).toBe(2);
     expect(result.items.length).toBe(2);
     expect(result.deterministic).toBe(true);
   });
 
   it("summary — should return detailed summary for a txId", async () => {
-    const result = await engine.execute(createQueryRequest({ domain: "replay", op: "summary", params: { txId: "tx-abc" } }));
+    const result = await engine.execute(
+      createQueryRequest({ domain: "replay", op: "summary", params: { txId: "tx-abc" } })
+    );
     expect(result.total).toBe(1);
     const summary: any = result.items[0];
     expect(summary.txId).toBe("tx-abc");
@@ -95,16 +108,22 @@ describe("ReplayQueryAdapter", () => {
   });
 
   it("divergences — should detect failed tx with state change", async () => {
-    const result = await engine.execute(createQueryRequest({ domain: "replay", op: "divergences" }));
+    const result = await engine.execute(
+      createQueryRequest({ domain: "replay", op: "divergences" })
+    );
     expect(result.total).toBeGreaterThan(0);
     const divs = result.items as any[];
-    const failDiv = divs.find((d: any) => d.txId === "tx-fail" && d.kind === "status-mismatch");
+    const failDiv = divs.find(
+      (d: any) => d.txId === "tx-fail" && d.kind === "status-mismatch"
+    );
     expect(failDiv).toBeDefined();
     expect(failDiv.field).toBe("status");
   });
 
   it("divergences — should produce explain chains", async () => {
-    const result = await engine.execute(createQueryRequest({ domain: "replay", op: "divergences", explain: "brief" }));
+    const result = await engine.execute(
+      createQueryRequest({ domain: "replay", op: "divergences", explain: "brief" })
+    );
     if (result.total > 0 && result.why) {
       expect(result.why.length).toBeGreaterThan(0);
       expect(result.why[0]!.model).toBe("replay-analysis");
@@ -112,7 +131,13 @@ describe("ReplayQueryAdapter", () => {
   });
 
   it("invariants — should check all invariants for a confirmed tx", async () => {
-    const result = await engine.execute(createQueryRequest({ domain: "replay", op: "invariants", params: { txId: "tx-abc" } }));
+    const result = await engine.execute(
+      createQueryRequest({
+        domain: "replay",
+        op: "invariants",
+        params: { txId: "tx-abc" }
+      })
+    );
     const inv: any = result.items[0];
     expect(inv.txId).toBe("tx-abc");
     expect(inv.stateTransitionValid).toBe(true);
@@ -121,7 +146,13 @@ describe("ReplayQueryAdapter", () => {
   });
 
   it("invariants — should detect state transition issue on failed tx", async () => {
-    const result = await engine.execute(createQueryRequest({ domain: "replay", op: "invariants", params: { txId: "tx-fail" } }));
+    const result = await engine.execute(
+      createQueryRequest({
+        domain: "replay",
+        op: "invariants",
+        params: { txId: "tx-fail" }
+      })
+    );
     const inv: any = result.items[0];
     expect(inv.stateTransitionValid).toBe(false);
     expect(inv.issues.length).toBeGreaterThan(0);

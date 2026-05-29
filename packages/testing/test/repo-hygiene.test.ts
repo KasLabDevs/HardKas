@@ -15,7 +15,7 @@ describe("Repository Hygiene", () => {
         "(\\\\|/)test-commander\\.ts$",
         "(\\\\|/)release-gate\\.mjs$",
         "(\\\\|/).*\\.log$"
-      ].map(p => new RegExp(p));
+      ].map((p) => new RegExp(p));
 
       const violations: string[] = [];
       for (const file of lines) {
@@ -30,7 +30,10 @@ describe("Repository Hygiene", () => {
 
       expect(violations).toEqual([]);
     } catch (e: any) {
-      if (e.message.includes("not a git repository") || e.message.includes("git: command not found")) {
+      if (
+        e.message.includes("not a git repository") ||
+        e.message.includes("git: command not found")
+      ) {
         console.warn("Skipping hygiene test: git not available or not a git repo");
       } else {
         throw e;

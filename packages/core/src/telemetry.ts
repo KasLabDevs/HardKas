@@ -3,17 +3,17 @@ import path from "node:path";
 import crypto from "node:crypto";
 import { AppendCoordinator } from "./append-coordinator.js";
 
-export type TelemetrySubsystem = 
-  | "lock" 
-  | "fs" 
-  | "replay" 
-  | "normalization" 
-  | "query-store" 
-  | "lineage" 
+export type TelemetrySubsystem =
+  | "lock"
+  | "fs"
+  | "replay"
+  | "normalization"
+  | "query-store"
+  | "lineage"
   | "projection"
   | "unknown";
 
-export type AnomalyType = 
+export type AnomalyType =
   | "LOCK_CONTENTION"
   | "STALE_LOCK_RECOVERY"
   | "FS_RETRY"
@@ -41,8 +41,8 @@ import { AsyncLocalStorage } from "node:async_hooks";
 
 export class TelemetryManager {
   private rootDir: string | null = null;
-  private currentContext: { seed?: number, caseId?: string, bucket?: string } = {};
-  
+  private currentContext: { seed?: number; caseId?: string; bucket?: string } = {};
+
   // Track sandboxes that need to be preserved because they hit severe anomalies
   private preservedSandboxes = new Set<string>();
 
@@ -54,10 +54,10 @@ export class TelemetryManager {
     this.rootDir = rootDir;
   }
 
-  public setContext(context: { seed?: number, caseId?: string, bucket?: string }) {
+  public setContext(context: { seed?: number; caseId?: string; bucket?: string }) {
     this.currentContext = { ...this.currentContext, ...context };
   }
-  
+
   public clearContext() {
     this.currentContext = {};
   }
@@ -67,21 +67,26 @@ export class TelemetryManager {
   }
 
   public logAnomaly(
-    anomalyType: AnomalyType, 
-    severity: Severity, 
-    subsystem: TelemetrySubsystem, 
+    anomalyType: AnomalyType,
+    severity: Severity,
+    subsystem: TelemetrySubsystem,
     details: string,
     sandboxOverride?: string
   ) {
-    const logDir = this.rootDir ? path.join(this.rootDir, ".hardkas", "telemetry") : 
-                   (sandboxOverride ? path.join(sandboxOverride, ".hardkas", "telemetry") : null);
-                   
+    const logDir = this.rootDir
+      ? path.join(this.rootDir, ".hardkas", "telemetry")
+      : sandboxOverride
+        ? path.join(sandboxOverride, ".hardkas", "telemetry")
+        : null;
+
     if (!logDir) return;
 
     const nowStr = new Date().toISOString();
-    const runId = this.currentContext.seed ? `run-${this.currentContext.seed}` : "run-core";
+    const runId = this.currentContext.seed
+      ? `run-${this.currentContext.seed}`
+      : "run-core";
     const bucket = this.currentContext.bucket || "core";
-    
+
     let mappedSeverity: "nominal" | "elevated" | "critical" = "nominal";
     if (severity === "medium") mappedSeverity = "elevated";
     else if (severity === "high" || severity === "critical") mappedSeverity = "critical";
@@ -98,10 +103,18 @@ export class TelemetryManager {
         sandbox: sandboxOverride
       }
     });
-    const eventHash = crypto.createHash("sha256").update(canonicalPayloadRaw).digest("hex").slice(0, 32);
+    const eventHash = crypto
+      .createHash("sha256")
+      .update(canonicalPayloadRaw)
+      .digest("hex")
+      .slice(0, 32);
 
     const eventIdRaw = `${eventHash}-${nowStr}`;
-    const eventId = crypto.createHash("sha256").update(eventIdRaw).digest("hex").slice(0, 32);
+    const eventId = crypto
+      .createHash("sha256")
+      .update(eventIdRaw)
+      .digest("hex")
+      .slice(0, 32);
 
     const event = {
       schemaVersion: "hardkas.telemetry.v1",
@@ -121,10 +134,15 @@ export class TelemetryManager {
       }
     };
 
-    if (severity === "high" || severity === "critical" || anomalyType === "REPLAY_RECONCILIATION" || anomalyType === "NORMALIZATION_COLLISION") {
-       if (sandboxOverride) {
-         this.preservedSandboxes.add(sandboxOverride);
-       }
+    if (
+      severity === "high" ||
+      severity === "critical" ||
+      anomalyType === "REPLAY_RECONCILIATION" ||
+      anomalyType === "NORMALIZATION_COLLISION"
+    ) {
+      if (sandboxOverride) {
+        this.preservedSandboxes.add(sandboxOverride);
+      }
     }
 
     try {
@@ -150,18 +168,24 @@ export function getTelemetry(): TelemetryManager {
 
 class TelemetryProxy {
   logAnomaly(
-    anomalyType: AnomalyType, 
-    severity: Severity, 
-    subsystem: TelemetrySubsystem, 
+    anomalyType: AnomalyType,
+    severity: Severity,
+    subsystem: TelemetrySubsystem,
     details: string,
     sandboxOverride?: string
   ) {
-    return getTelemetry().logAnomaly(anomalyType, severity, subsystem, details, sandboxOverride);
+    return getTelemetry().logAnomaly(
+      anomalyType,
+      severity,
+      subsystem,
+      details,
+      sandboxOverride
+    );
   }
   init(rootDir: string) {
     return getTelemetry().init(rootDir);
   }
-  setContext(context: { seed?: number, caseId?: string, bucket?: string }) {
+  setContext(context: { seed?: number; caseId?: string; bucket?: string }) {
     return getTelemetry().setContext(context);
   }
   clearContext() {

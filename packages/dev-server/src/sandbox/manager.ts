@@ -28,14 +28,18 @@ class SandboxManager extends EventEmitter {
     return session;
   }
 
-  pairSession(id: string, l1Address?: string, l2Address?: `0x${string}`): SandboxConnection | null {
+  pairSession(
+    id: string,
+    l1Address?: string,
+    l2Address?: `0x${string}`
+  ): SandboxConnection | null {
     const session = this.sessions.get(id);
     if (!session || session.status !== "pending") return null;
 
     session.status = "paired";
     if (l1Address) session.l1Address = l1Address;
     if (l2Address) session.l2Address = l2Address;
-    
+
     this.emit("paired", session);
     return session;
   }

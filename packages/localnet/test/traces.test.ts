@@ -3,9 +3,9 @@ import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import fs from "node:fs/promises";
 import path from "node:path";
 import os from "node:os";
-import { 
-  saveSimulatedTrace, 
-  loadSimulatedTrace, 
+import {
+  saveSimulatedTrace,
+  loadSimulatedTrace,
   listSimulatedTraces,
   StoredSimulatedTxTrace
 } from "../src/traces";
@@ -24,7 +24,7 @@ describe("traces store", () => {
 
   const mockTrace = {
     schema: ARTIFACT_SCHEMAS.TX_TRACE,
-    hardkasVersion: "0.7.3-alpha",
+    hardkasVersion: "0.7.4-alpha",
     version: "1.0.0-alpha",
     txId: "simtx_trace_123",
     mode: "simulated",
@@ -47,7 +47,7 @@ describe("traces store", () => {
   it("should list traces sorted by date", async () => {
     const t1: any = {
       schema: ARTIFACT_SCHEMAS.TX_TRACE,
-      hardkasVersion: "0.7.3-alpha",
+      hardkasVersion: "0.7.4-alpha",
       version: "1.0.0-alpha",
       txId: "t1",
       mode: "simulated",
@@ -57,7 +57,7 @@ describe("traces store", () => {
     };
     const t2: any = {
       schema: ARTIFACT_SCHEMAS.TX_TRACE,
-      hardkasVersion: "0.7.3-alpha",
+      hardkasVersion: "0.7.4-alpha",
       version: "1.0.0-alpha",
       txId: "t2",
       mode: "simulated",
@@ -65,10 +65,10 @@ describe("traces store", () => {
       createdAt: "2026-01-01T11:00:00Z",
       events: []
     };
-    
+
     await saveSimulatedTrace(t1, { cwd: tempDir });
     await saveSimulatedTrace(t2, { cwd: tempDir });
-    
+
     const list = await listSimulatedTraces({ cwd: tempDir });
     expect(list.length).toBe(2);
     expect(list[0]!.txId).toBe("t2");
@@ -76,7 +76,8 @@ describe("traces store", () => {
   });
 
   it("should throw error for invalid txId (path traversal)", async () => {
-    await expect(loadSimulatedTrace("..\\something", { cwd: tempDir }))
-      .rejects.toThrow("Invalid txId");
+    await expect(loadSimulatedTrace("..\\something", { cwd: tempDir })).rejects.toThrow(
+      "Invalid txId"
+    );
   });
 });

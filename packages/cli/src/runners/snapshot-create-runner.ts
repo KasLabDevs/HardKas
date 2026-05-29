@@ -22,7 +22,9 @@ export async function runSnapshotCreate(options: SnapshotCreateOptions) {
     const manifest = await createSnapshot({
       hardkasDir,
       outputDir,
-      deterministicScope: options.consensusValidated ? "consensus-validated" : "local-only"
+      deterministicScope: options.consensusValidated
+        ? "consensus-validated"
+        : "local-only"
     });
 
     if (options.json) {
@@ -30,20 +32,17 @@ export async function runSnapshotCreate(options: SnapshotCreateOptions) {
       return;
     }
 
-    UI.causality(
-      `Snapshot Created: ${options.name}`,
-      {
-        "Execution Scope": manifest.deterministicScope,
-        "Snapshot Path": outputDir,
-        "State Authority": manifest.stateAuthority || "filesystem artifacts",
-        "Projection Layer": manifest.projectionAuthority || "local cache",
-        "Snapshot Version": String(manifest.snapshotVersion),
-        "Included Artifacts": String(manifest.includedArtifacts),
-        "Excluded/Corrupted": `${manifest.excludedArtifacts} / ${manifest.corruptedArtifacts}`,
-        "Consensus Validated": options.consensusValidated ? "YES" : "NO",
-        "Notice": "Snapshots are portable local deterministic captures, NOT consensus proofs"
-      }
-    );
+    UI.causality(`Snapshot Created: ${options.name}`, {
+      "Execution Scope": manifest.deterministicScope,
+      "Snapshot Path": outputDir,
+      "State Authority": manifest.stateAuthority || "filesystem artifacts",
+      "Projection Layer": manifest.projectionAuthority || "local cache",
+      "Snapshot Version": String(manifest.snapshotVersion),
+      "Included Artifacts": String(manifest.includedArtifacts),
+      "Excluded/Corrupted": `${manifest.excludedArtifacts} / ${manifest.corruptedArtifacts}`,
+      "Consensus Validated": options.consensusValidated ? "YES" : "NO",
+      Notice: "Snapshots are portable local deterministic captures, NOT consensus proofs"
+    });
   } catch (err: any) {
     if (!options.json) handleError(err);
     process.exitCode = 1;

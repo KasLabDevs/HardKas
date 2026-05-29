@@ -31,9 +31,14 @@ export async function getOrCreateDevAccount(
 
   if (fs.existsSync(filePath)) {
     const keystore = await KeystoreManager.loadEncryptedKeystore(filePath);
-    const unlock = await KeystoreManager.decryptEncryptedKeystore(keystore, DEV_ACCOUNTS_PASSWORD);
+    const unlock = await KeystoreManager.decryptEncryptedKeystore(
+      keystore,
+      DEV_ACCOUNTS_PASSWORD
+    );
     if (!unlock.success || !unlock.payload) {
-      throw new Error(`Failed to decrypt dev account ${alias}. Expected password: ${DEV_ACCOUNTS_PASSWORD}`);
+      throw new Error(
+        `Failed to decrypt dev account ${alias}. Expected password: ${DEV_ACCOUNTS_PASSWORD}`
+      );
     }
     return {
       address: unlock.payload.address,
@@ -52,7 +57,9 @@ export async function getOrCreateDevAccount(
     // @ts-ignore
     sdkModule = await import(/* @vite-ignore */ "@kaspa/core-lib");
   } catch (e) {
-    console.warn(`\n[Warning] Kaspa SDK (@kaspa/core-lib) is not installed in the workspace.\nCould not generate dev account '${alias}'.`);
+    console.warn(
+      `\n[Warning] Kaspa SDK (@kaspa/core-lib) is not installed in the workspace.\nCould not generate dev account '${alias}'.`
+    );
     return { address: "", privateKey: "", publicKey: "" };
   }
 
@@ -95,7 +102,9 @@ export async function getOrCreateDevAccount(
   return accountData;
 }
 
-export function listDevAccountsSync(workspaceDir: string): { name: string; address: string }[] {
+export function listDevAccountsSync(
+  workspaceDir: string
+): { name: string; address: string }[] {
   const devAccountsDir = path.join(workspaceDir, ".hardkas", "dev-accounts");
   if (!fs.existsSync(devAccountsDir)) {
     return [];
@@ -120,7 +129,7 @@ export function listDevAccountsSync(workspaceDir: string): { name: string; addre
       }
     }
   }
-  
+
   // Sort them so alice is generally first, bob second
   accounts.sort((a, b) => a.name.localeCompare(b.name));
   return accounts;

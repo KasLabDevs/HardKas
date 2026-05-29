@@ -7,25 +7,30 @@ import { UI } from "../ui.js";
 // Helper to fetch JSON from localhost API
 function fetchJson(url: string): Promise<any> {
   return new Promise((resolve, reject) => {
-    http.get(url, { timeout: 2000 }, (res) => {
-      if (res.statusCode !== 200) {
-        reject(new Error(`HTTP status ${res.statusCode}`));
-        return;
-      }
-      let rawData = "";
-      res.on("data", (chunk) => { rawData += chunk; });
-      res.on("end", () => {
-        try {
-          resolve(JSON.parse(rawData));
-        } catch (e) {
-          reject(e);
+    http
+      .get(url, { timeout: 2000 }, (res) => {
+        if (res.statusCode !== 200) {
+          reject(new Error(`HTTP status ${res.statusCode}`));
+          return;
         }
+        let rawData = "";
+        res.on("data", (chunk) => {
+          rawData += chunk;
+        });
+        res.on("end", () => {
+          try {
+            resolve(JSON.parse(rawData));
+          } catch (e) {
+            reject(e);
+          }
+        });
+      })
+      .on("error", (e) => {
+        reject(e);
+      })
+      .on("timeout", () => {
+        reject(new Error("Request timed out"));
       });
-    }).on("error", (e) => {
-      reject(e);
-    }).on("timeout", () => {
-      reject(new Error("Request timed out"));
-    });
   });
 }
 
@@ -84,9 +89,18 @@ export async function runDashboardDoctor() {
       { name: "Truth Status (/api/status)", path: "http://localhost:3333/api/status" },
       { name: "Telemetry (/api/telemetry)", path: "http://localhost:3333/api/telemetry" },
       { name: "Replay (/api/replay)", path: "http://localhost:3333/api/replay" },
-      { name: "Causal Lineage (/api/lineage)", path: "http://localhost:3333/api/lineage" },
-      { name: "Quarantine (/api/quarantine)", path: "http://localhost:3333/api/quarantine" },
-      { name: "Semantic Bundles (/api/bundles)", path: "http://localhost:3333/api/bundles" },
+      {
+        name: "Causal Lineage (/api/lineage)",
+        path: "http://localhost:3333/api/lineage"
+      },
+      {
+        name: "Quarantine (/api/quarantine)",
+        path: "http://localhost:3333/api/quarantine"
+      },
+      {
+        name: "Semantic Bundles (/api/bundles)",
+        path: "http://localhost:3333/api/bundles"
+      }
     ];
 
     for (const ep of endpoints) {
@@ -97,21 +111,21 @@ export async function runDashboardDoctor() {
           checks.push({
             name: ep.name,
             status: "warning",
-            message: `Awaiting real-data initialization ${sourceLabel}`,
+            message: `Awaiting real-data initialization ${sourceLabel}`
           });
           hasWarnings = true;
         } else {
           checks.push({
             name: ep.name,
             status: "success",
-            message: `Active and operational ${sourceLabel}`,
+            message: `Active and operational ${sourceLabel}`
           });
         }
       } catch (e: any) {
         checks.push({
           name: ep.name,
           status: "error",
-          message: `Divergent or broken payload: ${e.message}`,
+          message: `Divergent or broken payload: ${e.message}`
         });
         hasErrors = true;
       }
@@ -127,7 +141,7 @@ export async function runDashboardDoctor() {
   checks.push({
     name: ".hardkas directory",
     status: dirExists ? "success" : "error",
-    message: dirExists ? "Exists and initialized" : "Missing - Workspace not initialized",
+    message: dirExists ? "Exists and initialized" : "Missing - Workspace not initialized"
   });
   if (!dirExists) hasErrors = true;
 
@@ -137,7 +151,9 @@ export async function runDashboardDoctor() {
     checks.push({
       name: "Semantic Bundle File",
       status: bundleExists ? "success" : "warning",
-      message: bundleExists ? "hardkas.semantic-bundle.v1.json exists" : "Missing - Awaiting first verification cycle",
+      message: bundleExists
+        ? "hardkas.semantic-bundle.v1.json exists"
+        : "Missing - Awaiting first verification cycle"
     });
     if (!bundleExists) hasWarnings = true;
 
@@ -147,7 +163,7 @@ export async function runDashboardDoctor() {
       checks.push({
         name: "Telemetry Log",
         status: "warning",
-        message: "Missing - Telemetry pressure not initialized",
+        message: "Missing - Telemetry pressure not initialized"
       });
       hasWarnings = true;
     } else {
@@ -157,7 +173,7 @@ export async function runDashboardDoctor() {
           checks.push({
             name: "Telemetry Log",
             status: "success",
-            message: "telemetry.jsonl exists but has no events recorded yet",
+            message: "telemetry.jsonl exists but has no events recorded yet"
           });
         } else {
           const lines = raw.split("\n");
@@ -170,7 +186,7 @@ export async function runDashboardDoctor() {
             if (!trimmed) continue;
             try {
               const event = JSON.parse(trimmed);
-              const hasMandatoryKeys = 
+              const hasMandatoryKeys =
                 event.schemaVersion === "hardkas.telemetry.v1" &&
                 event.eventId &&
                 event.eventHash &&
@@ -181,7 +197,7 @@ export async function runDashboardDoctor() {
                 event.type &&
                 event.severity &&
                 event.payload !== undefined;
-              
+
               if (hasMandatoryKeys) {
                 validCount++;
                 runs.add(event.runId);
@@ -197,14 +213,14 @@ export async function runDashboardDoctor() {
             checks.push({
               name: "Telemetry Log",
               status: "error",
-              message: `Corrupted - telemetry.jsonl has ${invalidCount} schema violations or parse issues!`,
+              message: `Corrupted - telemetry.jsonl has ${invalidCount} schema violations or parse issues!`
             });
             hasErrors = true;
           } else {
             checks.push({
               name: "Telemetry Log",
               status: "success",
-              message: `Healthy - Verified ${validCount} events across ${runs.size} active run(s) [v1 Contract]`,
+              message: `Healthy - Verified ${validCount} events across ${runs.size} active run(s) [v1 Contract]`
             });
           }
         }
@@ -212,7 +228,7 @@ export async function runDashboardDoctor() {
         checks.push({
           name: "Telemetry Log",
           status: "error",
-          message: `Read Error - Failed to scan telemetry file: ${err.message}`,
+          message: `Read Error - Failed to scan telemetry file: ${err.message}`
         });
         hasErrors = true;
       }
@@ -223,7 +239,9 @@ export async function runDashboardDoctor() {
     checks.push({
       name: "Query Store Index",
       status: dbExists ? "success" : "warning",
-      message: dbExists ? "store.db is active" : "Missing - SQLite index database not found",
+      message: dbExists
+        ? "store.db is active"
+        : "Missing - SQLite index database not found"
     });
     if (!dbExists) hasWarnings = true;
 
@@ -232,7 +250,9 @@ export async function runDashboardDoctor() {
     checks.push({
       name: "Quarantine Directory",
       status: qExists ? "success" : "warning",
-      message: qExists ? "quarantine/ is active" : "Missing - quarantine/ directory not found",
+      message: qExists
+        ? "quarantine/ is active"
+        : "Missing - quarantine/ directory not found"
     });
     if (!qExists) hasWarnings = true;
   }
@@ -241,11 +261,12 @@ export async function runDashboardDoctor() {
   console.log(pc.bold("\nDiagnostic Checklist:"));
   console.log("─────────────────────────────────────────────────");
   for (const check of checks) {
-    const icon = check.status === "success" 
-      ? pc.green("  ✓ ") 
-      : check.status === "warning" 
-        ? pc.yellow("  ⚠ ") 
-        : pc.red("  ✗ ");
+    const icon =
+      check.status === "success"
+        ? pc.green("  ✓ ")
+        : check.status === "warning"
+          ? pc.yellow("  ⚠ ")
+          : pc.red("  ✗ ");
     const nameStr = pc.bold(check.name.padEnd(30));
     console.log(`${icon}${nameStr} ${check.message}`);
   }
@@ -264,25 +285,35 @@ export async function runDashboardDoctor() {
   // Suggestions/Fix recommendations
   if (hasErrors || hasWarnings) {
     console.log(`\n${pc.bold("Recovery Suggestions:")}`);
-    
-    if (checks.some(c => c.name === "Dashboard API Server" && c.status === "error")) {
-      console.log(`  - ${pc.white("Start the API:")} Run '${pc.cyan("pnpm --filter @hardkas/cli run dev dashboard")}' or '${pc.cyan("hardkas dashboard")}' in your terminal.`);
+
+    if (checks.some((c) => c.name === "Dashboard API Server" && c.status === "error")) {
+      console.log(
+        `  - ${pc.white("Start the API:")} Run '${pc.cyan("pnpm --filter @hardkas/cli run dev dashboard")}' or '${pc.cyan("hardkas dashboard")}' in your terminal.`
+      );
     }
 
-    if (checks.some(c => c.name === "Semantic Bundle File" && c.status === "warning")) {
-      console.log(`  - ${pc.white("Generate Bundle:")} Run '${pc.cyan("pnpm hardkas verify-semantics --ci-mode")}' to generate a semantic-bundle and verify causal invariants.`);
+    if (checks.some((c) => c.name === "Semantic Bundle File" && c.status === "warning")) {
+      console.log(
+        `  - ${pc.white("Generate Bundle:")} Run '${pc.cyan("pnpm hardkas verify-semantics --ci-mode")}' to generate a semantic-bundle and verify causal invariants.`
+      );
     }
 
-    if (checks.some(c => c.name === "Telemetry Log" && c.status === "warning")) {
-      console.log(`  - ${pc.white("Initialize Telemetry:")} Run a simulation or torture matrix using '${pc.cyan("pnpm hardkas torture")}' to populate runtime logs.`);
+    if (checks.some((c) => c.name === "Telemetry Log" && c.status === "warning")) {
+      console.log(
+        `  - ${pc.white("Initialize Telemetry:")} Run a simulation or torture matrix using '${pc.cyan("pnpm hardkas torture")}' to populate runtime logs.`
+      );
     }
 
-    if (checks.some(c => c.name === "Query Store Index" && c.status === "warning")) {
-      console.log(`  - ${pc.white("Rebuild Index:")} Run '${pc.cyan("pnpm hardkas query store rebuild")}' to populate SQLite projection storage.`);
+    if (checks.some((c) => c.name === "Query Store Index" && c.status === "warning")) {
+      console.log(
+        `  - ${pc.white("Rebuild Index:")} Run '${pc.cyan("pnpm hardkas query store rebuild")}' to populate SQLite projection storage.`
+      );
     }
 
-    if (checks.some(c => c.name === ".hardkas directory" && c.status === "error")) {
-      console.log(`  - ${pc.white("Initialize Workspace:")} Run '${pc.cyan("pnpm hardkas init")}' to construct the .hardkas folder layout.`);
+    if (checks.some((c) => c.name === ".hardkas directory" && c.status === "error")) {
+      console.log(
+        `  - ${pc.white("Initialize Workspace:")} Run '${pc.cyan("pnpm hardkas init")}' to construct the .hardkas folder layout.`
+      );
     }
   }
   console.log("");

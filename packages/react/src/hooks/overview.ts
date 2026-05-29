@@ -29,12 +29,13 @@ export interface OverviewStats {
 }
 
 export function useOverview() {
-  const { config, subscribe , apiFetch } = useHardKas();
+  const { config, subscribe, apiFetch } = useHardKas();
   const queryClient = useQueryClient();
 
   useEffect(() => {
-    const sync = () => queryClient.invalidateQueries({ queryKey: ["hardkas", "overview"] });
-    
+    const sync = () =>
+      queryClient.invalidateQueries({ queryKey: ["hardkas", "overview"] });
+
     return subscribe((event) => {
       if (["query-synced", "session-changed"].includes(event.type)) {
         sync();
@@ -47,7 +48,11 @@ export function useOverview() {
     queryFn: async (): Promise<OverviewStats | null> => {
       try {
         const baseUrl = config.devServerUrl || "";
-        const url = baseUrl ? (baseUrl.endsWith("/") ? `${baseUrl}api/overview` : `${baseUrl}/api/overview`) : "/api/overview";
+        const url = baseUrl
+          ? baseUrl.endsWith("/")
+            ? `${baseUrl}api/overview`
+            : `${baseUrl}/api/overview`
+          : "/api/overview";
         const response = await apiFetch(url);
         if (!response.ok) return null;
         return await response.json();
@@ -56,6 +61,6 @@ export function useOverview() {
         return null;
       }
     },
-    staleTime: 60000,
+    staleTime: 60000
   });
 }

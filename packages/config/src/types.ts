@@ -1,8 +1,4 @@
-export type HardkasTargetKind =
-  | "simulated"
-  | "kaspa-node"
-  | "kaspa-rpc"
-  | "igra";
+export type HardkasTargetKind = "simulated" | "kaspa-node" | "kaspa-rpc" | "igra";
 
 export type HardkasNetworkName = string;
 

@@ -1,6 +1,17 @@
 import { describe, it, expect } from "vitest";
-import { explainIntegrity, explainTransition, explainOrphan, formatExplainBlock, formatWhyBlock } from "../src/explain.js";
-import type { ArtifactQueryItem, LineageNode, LineageTransition, ExplainBlock } from "../src/types.js";
+import {
+  explainIntegrity,
+  explainTransition,
+  explainOrphan,
+  formatExplainBlock,
+  formatWhyBlock
+} from "../src/explain.js";
+import type {
+  ArtifactQueryItem,
+  LineageNode,
+  LineageTransition,
+  ExplainBlock
+} from "../src/types.js";
 
 const mockNode = (schema: string, overrides: Partial<LineageNode> = {}): LineageNode => ({
   contentHash: "a".repeat(64),
@@ -27,7 +38,12 @@ describe("explainIntegrity", () => {
       contentHash: "abc123"
     };
 
-    const chain = explainIntegrity(item, { ok: true, hashMatch: true, schemaValid: true, errors: [] });
+    const chain = explainIntegrity(item, {
+      ok: true,
+      hashMatch: true,
+      schemaValid: true,
+      errors: []
+    });
 
     expect(chain.confidence).toBe("definitive");
     expect(chain.model).toBe("integrity-verifier");
@@ -48,10 +64,17 @@ describe("explainIntegrity", () => {
       contentHash: "foo"
     };
 
-    const chain = explainIntegrity(item, { ok: false, hashMatch: false, schemaValid: false, errors: ["Schema not recognized"] });
+    const chain = explainIntegrity(item, {
+      ok: false,
+      hashMatch: false,
+      schemaValid: false,
+      errors: ["Schema not recognized"]
+    });
 
     expect(chain.answer).toContain("Verification failed");
-    expect(chain.causalChain.some(s => s.assertion.includes("not recognized"))).toBe(true);
+    expect(chain.causalChain.some((s) => s.assertion.includes("not recognized"))).toBe(
+      true
+    );
   });
 });
 
@@ -83,7 +106,7 @@ describe("explainTransition", () => {
     const chain = explainTransition(transition);
 
     expect(chain.answer).toContain("Workflow violation");
-    expect(chain.causalChain.some(s => s.assertion.includes("NOT allowed"))).toBe(true);
+    expect(chain.causalChain.some((s) => s.assertion.includes("NOT allowed"))).toBe(true);
   });
 
   it("should detect context mismatch", () => {
@@ -95,7 +118,9 @@ describe("explainTransition", () => {
     };
 
     const chain = explainTransition(transition);
-    expect(chain.causalChain.some(s => s.assertion.includes("CONTEXT MISMATCH"))).toBe(true);
+    expect(chain.causalChain.some((s) => s.assertion.includes("CONTEXT MISMATCH"))).toBe(
+      true
+    );
   });
 });
 
@@ -130,7 +155,14 @@ describe("formatting", () => {
 
   it("formatWhyBlock should produce causal output", () => {
     const chain = explainIntegrity(
-      { filePath: "/t.json", schema: "hardkas.txPlan", version: "1.0.0-alpha", networkId: "simnet", mode: "simulated", createdAt: "" },
+      {
+        filePath: "/t.json",
+        schema: "hardkas.txPlan",
+        version: "1.0.0-alpha",
+        networkId: "simnet",
+        mode: "simulated",
+        createdAt: ""
+      },
       { ok: true, hashMatch: true, schemaValid: true, errors: [] }
     );
 

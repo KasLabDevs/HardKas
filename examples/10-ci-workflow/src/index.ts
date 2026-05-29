@@ -1,15 +1,15 @@
-import { 
-  Hardkas, 
-  formatSompi, 
+import {
+  Hardkas,
+  formatSompi,
   parseKasToSompi,
   writeArtifact,
   createTxPlanArtifact,
   buildPaymentPlan
 } from "@hardkas/sdk";
 import { systemRuntimeContext } from "@hardkas/core";
-import { 
-  createInitialLocalnetState, 
-  createLocalnetSnapshot, 
+import {
+  createInitialLocalnetState,
+  createLocalnetSnapshot,
   restoreLocalnetSnapshot,
   getAccountBalanceSompi,
   applySimulatedPayment,
@@ -20,7 +20,7 @@ import path from "node:path";
 
 /**
  * Example 10: CI Workflow
- * 
+ *
  * Demonstrates a complete, deterministic CI pipeline using HardKAS
  * to verify transaction logic, state transitions, and recovery.
  */
@@ -40,7 +40,7 @@ async function main() {
     accounts: 2,
     initialBalanceSompi: parseKasToSompi("500")
   });
-  
+
   const alice = "alice";
   const bob = "bob";
   const initialAliceBal = getAccountBalanceSompi(state, alice);
@@ -54,19 +54,23 @@ async function main() {
   // 3. Simulate Transaction & Generate Artifacts
   console.log("[CI] Phase 3: Simulate Transaction & Audit");
   const amount = parseKasToSompi("100");
-  
+
   // Apply state change
-  const result = applySimulatedPayment(state, {
-    from: alice,
-    to: bob,
-    amountSompi: amount
-  }, systemRuntimeContext);
+  const result = applySimulatedPayment(
+    state,
+    {
+      from: alice,
+      to: bob,
+      amountSompi: amount
+    },
+    systemRuntimeContext
+  );
   state = result.state;
-  
+
   // Verify state change
   const aliceBalAfter = getAccountBalanceSompi(state, alice);
   console.log(`✓ Transaction Simulated. Alice: ${formatSompi(aliceBalAfter)}`);
-  
+
   // Save receipt for CI logs
   await writeArtifact(path.join(artifactsDir, "ci-tx-receipt.json"), result.receipt);
   console.log("✓ Audit receipt saved.\n");
@@ -76,12 +80,14 @@ async function main() {
   const replayedPlan = buildPaymentPlan({
     fromAddress: (result.receipt as any).from.address,
     outputs: [{ address: (result.receipt as any).to.address, amountSompi: amount }],
-    availableUtxos: [{
-      outpoint: { transactionId: "genesis:alice", index: 0 },
-      address: (result.receipt as any).from.address,
-      amountSompi: initialAliceBal,
-      scriptPublicKey: "mock"
-    }],
+    availableUtxos: [
+      {
+        outpoint: { transactionId: "genesis:alice", index: 0 },
+        address: (result.receipt as any).from.address,
+        amountSompi: initialAliceBal,
+        scriptPublicKey: "mock"
+      }
+    ],
     feeRateSompiPerMass: 1n
   });
 
@@ -89,7 +95,9 @@ async function main() {
     console.log("✓ Replay Match: Fee and Mass are deterministic.\n");
   } else {
     console.error(`✗ Replay Mismatch: Determinism failure detected.`);
-    console.error(`  Expected (from replayed plan): ${replayedPlan.estimatedFeeSompi.toString()}`);
+    console.error(
+      `  Expected (from replayed plan): ${replayedPlan.estimatedFeeSompi.toString()}`
+    );
     console.error(`  Actual (from receipt): ${result.receipt.feeSompi}`);
     process.exit(1);
   }
@@ -111,11 +119,11 @@ async function main() {
   console.log("✓ Snapshot/Restore:     PASS");
   console.log("✓ Deterministic Replay: PASS");
   console.log("✓ Audit Logs:           PASS");
-  
+
   console.log("\nCI Pipeline Successfully Verified.");
 }
 
-main().catch(err => {
+main().catch((err) => {
   console.error("\n✖ CI Pipeline Failed");
   console.error(err);
   process.exit(1);

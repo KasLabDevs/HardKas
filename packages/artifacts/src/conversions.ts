@@ -13,7 +13,9 @@ export function utxoToArtifact(utxo: Utxo): UtxoArtifact {
     address: utxo.address as import("@hardkas/core").KaspaAddress,
     amountSompi: utxo.amountSompi.toString(),
     scriptPublicKey: utxo.scriptPublicKey,
-    ...(utxo.blockDaaScore !== undefined ? { blockDaaScore: utxo.blockDaaScore.toString() } : {}),
+    ...(utxo.blockDaaScore !== undefined
+      ? { blockDaaScore: utxo.blockDaaScore.toString() }
+      : {}),
     ...(utxo.isCoinbase !== undefined ? { isCoinbase: utxo.isCoinbase } : {})
   };
 }
@@ -30,7 +32,14 @@ export function utxoFromArtifact(artifact: UtxoArtifact): Utxo {
     address: artifact.address,
     amountSompi: safeParseBigInt(artifact.amountSompi, "UtxoArtifact.amountSompi"),
     scriptPublicKey: artifact.scriptPublicKey,
-    ...(artifact.blockDaaScore !== undefined ? { blockDaaScore: safeParseBigInt(artifact.blockDaaScore, "UtxoArtifact.blockDaaScore") } : {}),
+    ...(artifact.blockDaaScore !== undefined
+      ? {
+          blockDaaScore: safeParseBigInt(
+            artifact.blockDaaScore,
+            "UtxoArtifact.blockDaaScore"
+          )
+        }
+      : {}),
     ...(artifact.isCoinbase !== undefined ? { isCoinbase: artifact.isCoinbase } : {})
   };
 }

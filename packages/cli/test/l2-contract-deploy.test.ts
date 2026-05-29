@@ -5,7 +5,7 @@ import * as artifacts from "@hardkas/artifacts";
 
 // Mock @hardkas/l2
 vi.mock("@hardkas/l2", async (importOriginal) => {
-  const actual = await importOriginal() as any;
+  const actual = (await importOriginal()) as any;
   return {
     ...actual,
     EvmJsonRpcClient: vi.fn().mockImplementation(() => ({
@@ -15,15 +15,15 @@ vi.mock("@hardkas/l2", async (importOriginal) => {
       estimateGas: vi.fn().mockResolvedValue(100000n)
     })),
     encodeConstructorArgs: vi.fn().mockImplementation((bytecode, sig, args) => {
-        // console.log("MOCK: encodeConstructorArgs called with sig:", sig);
-        return bytecode + "beef"; // Mock appending encoded args
+      // console.log("MOCK: encodeConstructorArgs called with sig:", sig);
+      return bytecode + "beef"; // Mock appending encoded args
     })
   };
 });
 
 // Mock @hardkas/artifacts
 vi.mock("@hardkas/artifacts", async (importOriginal) => {
-  const actual = await importOriginal() as any;
+  const actual = (await importOriginal()) as any;
   return {
     ...actual,
     writeArtifact: vi.fn().mockResolvedValue(undefined),
@@ -56,15 +56,19 @@ describe("runL2ContractDeployPlan", () => {
 
     expect(artifacts.writeArtifact).toHaveBeenCalled();
     const artifact = (artifacts.writeArtifact as any).mock.calls[0][1];
-    
+
     expect(artifact.txType).toBe("contract-deploy");
     expect(artifact.request.to).toBeUndefined();
     expect(artifact.request.data).toBe("0x60006000");
     expect(artifact.chainId).toBe(12345);
     expect(artifact.request.nonce).toBe("7");
-    
-    expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining("contract deploy plan built"));
-    expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining("igradeploy_mock_123"));
+
+    expect(consoleSpy).toHaveBeenCalledWith(
+      expect.stringContaining("contract deploy plan built")
+    );
+    expect(consoleSpy).toHaveBeenCalledWith(
+      expect.stringContaining("igradeploy_mock_123")
+    );
   });
 
   it("builds a deployment plan with constructor args", async () => {
@@ -79,7 +83,11 @@ describe("runL2ContractDeployPlan", () => {
 
     await runL2ContractDeployPlan(options);
 
-    expect(l2.encodeConstructorArgs).toHaveBeenCalledWith("0x60006000", "constructor(uint256)", ["100"]);
+    expect(l2.encodeConstructorArgs).toHaveBeenCalledWith(
+      "0x60006000",
+      "constructor(uint256)",
+      ["100"]
+    );
     const artifact = (artifacts.writeArtifact as any).mock.calls[0][1];
     expect(artifact.request.data).toBe("0x60006000beef");
   });
@@ -92,7 +100,9 @@ describe("runL2ContractDeployPlan", () => {
       url: "http://localhost:8545"
     };
 
-    await expect(runL2ContractDeployPlan(options)).rejects.toThrow("Invalid hex bytecode");
+    await expect(runL2ContractDeployPlan(options)).rejects.toThrow(
+      "Invalid hex bytecode"
+    );
   });
 
   it("rejects empty bytecode", async () => {
@@ -103,7 +113,9 @@ describe("runL2ContractDeployPlan", () => {
       url: "http://localhost:8545"
     };
 
-    await expect(runL2ContractDeployPlan(options)).rejects.toThrow("Missing or empty bytecode");
+    await expect(runL2ContractDeployPlan(options)).rejects.toThrow(
+      "Missing or empty bytecode"
+    );
   });
 
   it("outputs JSON when requested", async () => {
@@ -117,6 +129,8 @@ describe("runL2ContractDeployPlan", () => {
 
     await runL2ContractDeployPlan(options);
 
-    expect(consoleSpy).toHaveBeenCalledWith(expect.stringMatching(/\{[\s\S]*artifact[\s\S]*\}/));
+    expect(consoleSpy).toHaveBeenCalledWith(
+      expect.stringMatching(/\{[\s\S]*artifact[\s\S]*\}/)
+    );
   });
 });

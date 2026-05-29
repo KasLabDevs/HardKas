@@ -1,7 +1,4 @@
-import { 
-  verifyArtifactIntegrity, 
-  verifyLineage 
-} from "@hardkas/artifacts";
+import { verifyArtifactIntegrity, verifyLineage } from "@hardkas/artifacts";
 import { UI } from "../ui.js";
 import fs from "node:fs";
 import path from "node:path";
@@ -15,7 +12,7 @@ export async function runArtifactLineage(options: ArtifactLineageOptions) {
   const { Hardkas } = await import("@hardkas/sdk");
   const sdk = await Hardkas.open({ cwd: options.workspaceRoot });
   const absolutePath = sdk.workspace.resolvePath(options.path);
-  
+
   if (!fs.existsSync(absolutePath)) {
     UI.error(`File not found: ${options.path}`);
     process.exitCode = 1;
@@ -58,13 +55,13 @@ export async function runArtifactLineage(options: ArtifactLineageOptions) {
     chain.push(`[HERE] ${artifact.schema} (${lineage.artifactId.slice(0, 8)}...)`);
   }
 
-  chain.forEach(step => console.log(`  ${step}`));
+  chain.forEach((step) => console.log(`  ${step}`));
 
   // Validation
   const result = verifyLineage(artifact);
   if (!result.ok) {
     console.log("\nLineage Violations:");
-    result.issues.forEach(i => {
+    result.issues.forEach((i) => {
       const prefix = i.severity === "error" ? "✗" : "⚠";
       console.log(`  ${prefix} [${i.code}] ${i.message}`);
     });

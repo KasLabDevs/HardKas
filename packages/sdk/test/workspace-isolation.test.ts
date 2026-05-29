@@ -29,8 +29,12 @@ describe("Workspace Boundary Isolation", () => {
     // 1. Verify basic paths point to tmpDir, NOT process.cwd()
     expect(sdk.workspace.root).toBe(path.resolve(tmpDir));
     expect(sdk.workspace.hardkasDir).toBe(path.join(path.resolve(tmpDir), ".hardkas"));
-    expect(sdk.workspace.artifactsDir).toBe(path.join(path.resolve(tmpDir), ".hardkas", "artifacts"));
-    expect(sdk.workspace.keystoreDir).toBe(path.join(path.resolve(tmpDir), ".hardkas", "keystore"));
+    expect(sdk.workspace.artifactsDir).toBe(
+      path.join(path.resolve(tmpDir), ".hardkas", "artifacts")
+    );
+    expect(sdk.workspace.keystoreDir).toBe(
+      path.join(path.resolve(tmpDir), ".hardkas", "keystore")
+    );
 
     // 2. Verify relative resolution
     const resolved = sdk.workspace.resolvePath("some", "nested", "file.json");
@@ -45,7 +49,7 @@ describe("Workspace Boundary Isolation", () => {
     };
 
     const result = await sdk.artifacts.write(dummyArtifact as any);
-    
+
     // Assert physical file exists in tmpDir
     expect(result.dryRun).toBe(false);
     expect(result.absolutePath).toBeDefined();
@@ -53,7 +57,12 @@ describe("Workspace Boundary Isolation", () => {
     expect(fs.existsSync(result.absolutePath!)).toBe(true);
 
     // 4. Assert NOTHING leaked to process.cwd()
-    const leakCheckPath = path.join(process.cwd(), ".hardkas", "artifacts", "tx-plan-hash123.json");
+    const leakCheckPath = path.join(
+      process.cwd(),
+      ".hardkas",
+      "artifacts",
+      "tx-plan-hash123.json"
+    );
     if (process.cwd() !== tmpDir) {
       expect(fs.existsSync(leakCheckPath)).toBe(false);
     }
@@ -70,10 +79,10 @@ describe("Workspace Boundary Isolation", () => {
     };
 
     const result = await sdk.artifacts.write(dummyArtifact as any, { dryRun: true });
-    
+
     expect(result.dryRun).toBe(true);
     expect(result.absolutePath).toBeUndefined();
-    
+
     // Hardkas dir shouldn't even exist since we didn't write anything
     expect(fs.existsSync(sdk.workspace.artifactsDir)).toBe(false);
   });

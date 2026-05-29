@@ -11,7 +11,7 @@ const LEGAL_TRANSITIONS: Record<ArtifactStatus, ReadonlyArray<ArtifactStatus>> =
   STALE: ["VERIFIED", "REPLAY_VERIFIED", "CORRUPTED"],
   REPLAY_VERIFIED: ["STALE", "CORRUPTED"],
   CORRUPTED: ["QUARANTINED"],
-  QUARANTINED: [], // Terminal state
+  QUARANTINED: [] // Terminal state
 };
 
 /**
@@ -25,7 +25,7 @@ export function validateStatusTransition(from: ArtifactStatus, to: ArtifactStatu
   if (!allowed.includes(to)) {
     throw new Error(
       `[CRITICAL SEMANTIC ERROR] Illegal artifact status transition attempted: ${from} -> ${to}. ` +
-      `This is a violation of the semantic artifact status lattice.`
+        `This is a violation of the semantic artifact status lattice.`
     );
   }
 }

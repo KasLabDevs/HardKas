@@ -31,7 +31,7 @@ healthRoutes.get("/", async (c) => {
     const client = new KaspaWrpcClient(l1Url);
     try {
       await client.connect(800);
-      const dagInfo = await client.getBlockDagInfo() as any;
+      const dagInfo = (await client.getBlockDagInfo()) as any;
       client.disconnect();
       l1Status = {
         status: "healthy",
@@ -52,8 +52,13 @@ healthRoutes.get("/", async (c) => {
       const res = await fetch(l2Url, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ jsonrpc: "2.0", method: "eth_chainId", params: [], id: 1 }),
-        signal: ctrl.signal,
+        body: JSON.stringify({
+          jsonrpc: "2.0",
+          method: "eth_chainId",
+          params: [],
+          id: 1
+        }),
+        signal: ctrl.signal
       });
       clearTimeout(timer);
       if (res.ok) {
@@ -69,11 +74,8 @@ healthRoutes.get("/", async (c) => {
   const l1Healthy = l1Status.status === "healthy" || l1Status.status === "simulated-mode";
   const l2Healthy = l2Status.status === "healthy" || l2Status.status === "not-configured";
 
-  const overall = l1Healthy && l2Healthy
-    ? "healthy"
-    : l1Healthy || l2Healthy
-      ? "stale"
-      : "offline";
+  const overall =
+    l1Healthy && l2Healthy ? "healthy" : l1Healthy || l2Healthy ? "stale" : "offline";
 
   return c.json({
     status: overall,

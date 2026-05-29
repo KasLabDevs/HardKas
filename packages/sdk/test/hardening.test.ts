@@ -1,6 +1,10 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { Hardkas } from "../src/index.js";
-import { KaspaWasmPrivateKeySigner, listHardkasAccounts, resolveHardkasAccount } from "@hardkas/accounts";
+import {
+  KaspaWasmPrivateKeySigner,
+  listHardkasAccounts,
+  resolveHardkasAccount
+} from "@hardkas/accounts";
 import { verifySignedTxSemantics } from "@hardkas/tx-builder";
 import { finalizeArtifact, deepFreeze, writeArtifact } from "@hardkas/artifacts";
 import path from "node:path";
@@ -13,7 +17,11 @@ vi.mock("kaspa", () => {
       toAddress: vi.fn().mockReturnValue("kaspa:mock_addr")
     })),
     UtxoEntry: vi.fn().mockImplementation((amount, spk, txid, idx, address) => ({
-      amount, spk, txid, idx, address
+      amount,
+      spk,
+      txid,
+      idx,
+      address
     })),
     PaymentOutput: vi.fn(),
     Address: vi.fn(),
@@ -32,9 +40,11 @@ vi.mock("kaspa", () => {
 vi.mock("@hardkas/kaspa-rpc", async () => {
   const actual = await vi.importActual("@hardkas/kaspa-rpc");
   return {
-    ...actual as any,
+    ...(actual as any),
     JsonWrpcKaspaClient: vi.fn().mockImplementation(() => ({
-      submitTransaction: vi.fn().mockResolvedValue({ accepted: true, transactionId: "tx_mock_hash_123" }),
+      submitTransaction: vi
+        .fn()
+        .mockResolvedValue({ accepted: true, transactionId: "tx_mock_hash_123" }),
       getUtxosByAddress: vi.fn().mockResolvedValue([]),
       getBalanceByAddress: vi.fn().mockResolvedValue({ balanceSompi: 100000000n })
     }))
@@ -71,13 +81,14 @@ describe("Core Hardening Sprint Regressions", () => {
           // scriptPublicKey is omitted
         }
       ],
-      outputs: [
-        { address: "kaspa:to", amountSompi: "900" }
-      ]
+      outputs: [{ address: "kaspa:to", amountSompi: "900" }]
     };
 
-    await expect(signer.signTxPlan({ planArtifact: plan as any, accountName: "test" }))
-      .rejects.toThrow("UTXO is missing scriptPublicKey. Real signing flows must never fabricate cryptographic state.");
+    await expect(
+      signer.signTxPlan({ planArtifact: plan as any, accountName: "test" })
+    ).rejects.toThrow(
+      "UTXO is missing scriptPublicKey. Real signing flows must never fabricate cryptographic state."
+    );
   });
 
   // VULN-02: No-Op Plan ID Verification
@@ -97,13 +108,13 @@ describe("Core Hardening Sprint Regressions", () => {
 
     const result = verifySignedTxSemantics(signed, plan as any);
     expect(result.ok).toBe(false);
-    expect(result.issues.some(i => i.code === "PLAN_ID_MISMATCH")).toBe(true);
+    expect(result.issues.some((i) => i.code === "PLAN_ID_MISMATCH")).toBe(true);
   });
 
   // VULN-03: Post-Hash Artifact Mutation
   it("[VULN-03] should produce an immutable receipt and seal tracePath before hashing", async () => {
     const sdk = await Hardkas.open({ cwd: "./test-workspace" });
-    
+
     const signedArtifact = {
       signedId: "signed_123",
       amountSompi: "1000",
@@ -117,7 +128,7 @@ describe("Core Hardening Sprint Regressions", () => {
 
     // Verify tracePath is populated inside receipt
     expect(receipt.tracePath).toBeDefined();
-    
+
     // Verify that the receipt is frozen (immutable)
     expect(Object.isFrozen(receipt)).toBe(true);
 
@@ -130,7 +141,7 @@ describe("Core Hardening Sprint Regressions", () => {
   // VULN-05: Optional Semantic Verification
   it("[VULN-05] should fail closed and prevent broadcast if pre-broadcast semantic verification fails", async () => {
     const sdk = await Hardkas.open({ cwd: "./test-workspace" });
-    
+
     const invalidSigned = {
       signedId: "signed_123",
       amountSompi: "1000",
@@ -140,8 +151,9 @@ describe("Core Hardening Sprint Regressions", () => {
       // Missing signedTransaction payload
     };
 
-    await expect(sdk.tx.send(invalidSigned as any))
-      .rejects.toThrow(/Pre-broadcast semantic verification failed/);
+    await expect(sdk.tx.send(invalidSigned as any)).rejects.toThrow(
+      /Pre-broadcast semantic verification failed/
+    );
   });
 
   it("[VULN-05] should warn PLAN_UNAVAILABLE_FOR_LINEAGE_CHECK if plan is not in the workspace during send", async () => {
@@ -157,14 +169,19 @@ describe("Core Hardening Sprint Regressions", () => {
 
     const planVerification = verifySignedTxSemantics(signed, undefined);
     expect(planVerification.ok).toBe(true); // Should pass as ok because it's a warning
-    expect(planVerification.issues.some(i => i.code === "PLAN_UNAVAILABLE_FOR_LINEAGE_CHECK")).toBe(true);
+    expect(
+      planVerification.issues.some((i) => i.code === "PLAN_UNAVAILABLE_FOR_LINEAGE_CHECK")
+    ).toBe(true);
   });
 
   // VULN-06: Path Resolution Divergence
   it("[VULN-06] should fail closed when attempting encrypted keystore listing without cwd context", () => {
     const mockExistsSync = vi.spyOn(fs, "existsSync");
     mockExistsSync.mockImplementation((filePath) => {
-      if (typeof filePath === "string" && filePath.includes(path.join(process.cwd(), ".hardkas", "keystore"))) {
+      if (
+        typeof filePath === "string" &&
+        filePath.includes(path.join(process.cwd(), ".hardkas", "keystore"))
+      ) {
         return true;
       }
       return false;

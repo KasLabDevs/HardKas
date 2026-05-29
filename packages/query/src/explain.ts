@@ -5,13 +5,13 @@
  * Every analysis is based on explicit rules, deterministic evidence,
  * and actual execution state.
  */
-import type { 
-  ExplainBlock, 
-  WhyBlock, 
-  EvidenceRef, 
-  CausalStep, 
-  ArtifactQueryItem, 
-  LineageNode, 
+import type {
+  ExplainBlock,
+  WhyBlock,
+  EvidenceRef,
+  CausalStep,
+  ArtifactQueryItem,
+  LineageNode,
   LineageTransition,
   QueryStoreStatus
 } from "./types.js";
@@ -61,7 +61,12 @@ export function createExplainBlock(options: {
  */
 export function explainIntegrity(
   artifact: ArtifactQueryItem,
-  integrity: { ok: boolean; hashMatch: boolean; schemaValid: boolean; errors: readonly string[] }
+  integrity: {
+    ok: boolean;
+    hashMatch: boolean;
+    schemaValid: boolean;
+    errors: readonly string[];
+  }
 ): WhyBlock {
   const causalChain: CausalStep[] = [];
   const evidence: EvidenceRef[] = [];
@@ -142,9 +147,10 @@ export function explainTransition(transition: LineageTransition): WhyBlock {
   });
 
   // Step 2: Context consistency
-  const contextMatch = transition.from.networkId === transition.to.networkId && 
-                       transition.from.mode === transition.to.mode;
-  
+  const contextMatch =
+    transition.from.networkId === transition.to.networkId &&
+    transition.from.mode === transition.to.mode;
+
   causalChain.push({
     order: order++,
     assertion: contextMatch
@@ -156,9 +162,10 @@ export function explainTransition(transition: LineageTransition): WhyBlock {
 
   return {
     question: `Why transition ${transition.from.schema} → ${transition.to.schema}?`,
-    answer: transition.valid && contextMatch 
-      ? "Causal chain is consistent with HardKAS state transition rules."
-      : "Workflow violation: invalid schema transition or context contamination.",
+    answer:
+      transition.valid && contextMatch
+        ? "Causal chain is consistent with HardKAS state transition rules."
+        : "Workflow violation: invalid schema transition or context contamination.",
     evidence,
     causalChain,
     model: "causal-lineage",
@@ -169,13 +176,11 @@ export function explainTransition(transition: LineageTransition): WhyBlock {
 /**
  * Why is this artifact an orphan?
  */
-export function explainOrphan(
-  node: LineageNode,
-  missingParentId: string
-): WhyBlock {
+export function explainOrphan(node: LineageNode, missingParentId: string): WhyBlock {
   return {
     question: `Why is artifact "${node.artifactId.slice(0, 8)}" an orphan?`,
-    answer: "The parent artifact referenced in the lineage metadata is missing from the indexed store.",
+    answer:
+      "The parent artifact referenced in the lineage metadata is missing from the indexed store.",
     evidence: [
       { type: "artifactId", value: node.artifactId },
       { type: "artifactId", value: missingParentId }
@@ -233,7 +238,9 @@ export function formatWhyBlock(block: WhyBlock): string {
   }
   if (block.evidence.length > 0) {
     lines.push("");
-    lines.push(`  Evidence Refs: ${block.evidence.map(e => `${e.type}:${e.value.slice(0, 12)}...`).join(", ")}`);
+    lines.push(
+      `  Evidence Refs: ${block.evidence.map((e) => `${e.type}:${e.value.slice(0, 12)}...`).join(", ")}`
+    );
   }
   return lines.join("\n");
 }

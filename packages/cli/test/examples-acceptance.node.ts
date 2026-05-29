@@ -20,7 +20,7 @@ const SANDBOX_DIR = path.resolve(__dirname, "../.tmp/examples-suite");
 
 const TEST_PASS = "gauntlet-pass-123";
 const ARTIFACT_VERSION = "1.0.0-alpha";
-const HARDKAS_VERSION = "0.7.3-alpha";
+const HARDKAS_VERSION = "0.7.4-alpha";
 
 // Verification Metrics
 let commandsRun = 0;
@@ -43,13 +43,13 @@ interface RunExampleOptions {
 async function runCliExample(options: RunExampleOptions) {
   commandsRun++;
   const testCwd = options.cwd || SANDBOX_DIR;
-  
+
   if (!fs.existsSync(testCwd)) {
     fs.mkdirSync(testCwd, { recursive: true });
   }
 
   const args = options.command.split(" ");
-  
+
   try {
     const proc = execa(TSX, [CLI_SRC, ...args], {
       cwd: testCwd,
@@ -79,7 +79,7 @@ async function runCliExample(options: RunExampleOptions) {
     }
 
     const expectedCode = options.expectExitCode ?? 0;
-    
+
     if (exitCode === expectedCode) {
       if (expectedCode !== 0) expectedFailures++;
       else successfulCommands++;
@@ -94,17 +94,27 @@ async function runCliExample(options: RunExampleOptions) {
     });
 
     // Assertions
-    assert.strictEqual(exitCode, expectedCode, `Command "${options.command}" failed with code ${exitCode}, expected ${expectedCode}\nOutput: ${output}`);
+    assert.strictEqual(
+      exitCode,
+      expectedCode,
+      `Command "${options.command}" failed with code ${exitCode}, expected ${expectedCode}\nOutput: ${output}`
+    );
 
     if (options.outputIncludes) {
       for (const inc of options.outputIncludes) {
-        assert.ok(output.includes(inc), `Output should include "${inc}"\nActual: ${output}`);
+        assert.ok(
+          output.includes(inc),
+          `Output should include "${inc}"\nActual: ${output}`
+        );
       }
     }
 
     if (options.outputExcludes) {
       for (const exc of options.outputExcludes) {
-        assert.ok(!output.includes(exc), `Output should NOT include "${exc}"\nActual: ${output}`);
+        assert.ok(
+          !output.includes(exc),
+          `Output should NOT include "${exc}"\nActual: ${output}`
+        );
       }
     }
 
@@ -156,7 +166,8 @@ describe("HardKAS CLI Examples Acceptance Suite", () => {
       // First attempt to detect SDK state without hanging on prompt
       await runCliExample({
         name: "acc-detect",
-        command: "accounts real generate --name detect --network simnet --password-env HARDKAS_TEST_PASS",
+        command:
+          "accounts real generate --name detect --network simnet --password-env HARDKAS_TEST_PASS",
         expectExitCode: sdkMissing ? 1 : 0
       }).catch(() => null);
 
@@ -164,7 +175,8 @@ describe("HardKAS CLI Examples Acceptance Suite", () => {
 
       await runCliExample({
         name: "acc-gen",
-        command: "accounts real generate --name test-acc --count 1 --network simnet --password-env HARDKAS_TEST_PASS",
+        command:
+          "accounts real generate --name test-acc --count 1 --network simnet --password-env HARDKAS_TEST_PASS",
         expectExitCode: effectiveExpectedCode,
         outputIncludes: sdkMissing ? ["Kaspa SDK"] : ["Created"]
       });
@@ -229,10 +241,13 @@ describe("HardKAS CLI Examples Acceptance Suite", () => {
   describe("Script Runner Workflow", () => {
     it("should run a simple script", async () => {
       const scriptPath = path.join(SANDBOX_DIR, "simple-test.ts");
-      fs.writeFileSync(scriptPath, `
+      fs.writeFileSync(
+        scriptPath,
+        `
         import { UI } from "@hardkas/sdk";
         console.log("HELLO FROM SCRIPT");
-      `);
+      `
+      );
 
       await runCliExample({
         name: "run-script",
@@ -260,7 +275,7 @@ describe("HardKAS CLI Examples Acceptance Suite", () => {
         inputs: [],
         outputs: []
       };
-      
+
       mainnetPlan.contentHash = calculateContentHash(mainnetPlan);
       const planPath = path.join(SANDBOX_DIR, "mainnet-plan.json");
       fs.writeFileSync(planPath, JSON.stringify(mainnetPlan));
@@ -275,11 +290,14 @@ describe("HardKAS CLI Examples Acceptance Suite", () => {
 
     it("should refuse faucet on mainnet", async () => {
       const configPath = path.join(SANDBOX_DIR, "hardkas.config.ts");
-      fs.writeFileSync(configPath, `
+      fs.writeFileSync(
+        configPath,
+        `
         export default {
           defaultNetwork: "mainnet"
         };
-      `);
+      `
+      );
 
       await runCliExample({
         name: "mainnet-faucet-guard",
@@ -294,7 +312,9 @@ describe("HardKAS CLI Examples Acceptance Suite", () => {
 
   after(async () => {
     const artifactsDir = path.join(SANDBOX_DIR, ".hardkas", "artifacts");
-    const artifactCount = fs.existsSync(artifactsDir) ? fs.readdirSync(artifactsDir).length : 0;
+    const artifactCount = fs.existsSync(artifactsDir)
+      ? fs.readdirSync(artifactsDir).length
+      : 0;
 
     const summary = {
       examplesVersion: "cli-examples-v0",
@@ -305,23 +325,25 @@ describe("HardKAS CLI Examples Acceptance Suite", () => {
       sdkPresent: !sdkMissing,
       summaryHash: ""
     };
-    
+
     const hashBasis = {
       v: summary.examplesVersion,
       results: commandResults,
       arts: artifactCount
     };
     summary.summaryHash = calculateContentHash(hashBasis);
-    
+
     const goldenDir = path.resolve(__dirname, "../test/golden");
     if (!fs.existsSync(goldenDir)) fs.mkdirSync(goldenDir, { recursive: true });
-    
+
     const goldenPath = path.join(goldenDir, "examples-summary.json");
     fs.writeFileSync(goldenPath, JSON.stringify(summary, null, 2));
-    
+
     const suiteDuration = Date.now() - suiteStart;
     console.log(`\n  [DX ACCEPTANCE] Suite Finished.`);
-    console.log(`  Summary: ${successfulCommands}/${commandsRun} passed, ${expectedFailures} expected failures.`);
+    console.log(
+      `  Summary: ${successfulCommands}/${commandsRun} passed, ${expectedFailures} expected failures.`
+    );
     console.log(`  Artifacts: ${artifactCount}`);
     console.log(`  SDK Present: ${!sdkMissing}`);
     console.log(`  Duration: ${suiteDuration}ms`);

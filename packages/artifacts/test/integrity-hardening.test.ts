@@ -1,7 +1,7 @@
 import { systemRuntimeContext } from "@hardkas/core";
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
-import { 
-  verifyArtifactIntegrity, 
+import {
+  verifyArtifactIntegrity,
   calculateContentHash,
   ARTIFACT_VERSION
 } from "../src/index.js";
@@ -22,7 +22,7 @@ describe("Artifact Integrity Hardening (P1.1)", () => {
 
   const createValidArtifact = () => ({
     schema: "hardkas.txPlan",
-    hardkasVersion: "0.7.3-alpha",
+    hardkasVersion: "0.7.4-alpha",
     version: ARTIFACT_VERSION,
     createdAt: new Date().toISOString(),
     networkId: "simnet",
@@ -40,7 +40,7 @@ describe("Artifact Integrity Hardening (P1.1)", () => {
   it("should verify a valid artifact object", async () => {
     const artifact: any = createValidArtifact();
     artifact.contentHash = calculateContentHash(artifact);
-    
+
     const result = await verifyArtifactIntegrity(artifact);
     expect(result.ok).toBe(true);
   });
@@ -48,10 +48,10 @@ describe("Artifact Integrity Hardening (P1.1)", () => {
   it("should detect content manipulation", async () => {
     const artifact: any = createValidArtifact();
     artifact.contentHash = calculateContentHash(artifact);
-    
+
     // Mutate amount
     artifact.amountSompi = "9999";
-    
+
     const result = await verifyArtifactIntegrity(artifact);
     expect(result.ok).toBe(false);
     expect(result.errors[0]).toContain("Hash mismatch");
@@ -59,7 +59,7 @@ describe("Artifact Integrity Hardening (P1.1)", () => {
 
   it("should fail if contentHash is missing", async () => {
     const artifact = createValidArtifact();
-    
+
     const result = await verifyArtifactIntegrity(artifact);
     expect(result.ok).toBe(false);
     expect(result.errors[0]).toContain("Missing contentHash");
@@ -69,7 +69,7 @@ describe("Artifact Integrity Hardening (P1.1)", () => {
     const artifact: any = createValidArtifact();
     artifact.version = "3.0.0"; // Future incompatible version
     artifact.contentHash = calculateContentHash(artifact);
-    
+
     const result = await verifyArtifactIntegrity(artifact);
     expect(result.ok).toBe(false);
     expect(result.errors[0]).toContain("Incompatible version");
@@ -97,7 +97,7 @@ describe("Artifact Integrity Hardening (P1.1)", () => {
   it("should ignore filesystem path metadata", async () => {
     const artifact: any = createValidArtifact();
     artifact.contentHash = calculateContentHash(artifact);
-    
+
     const pathA = path.join(testDir, "artifact_a.json");
     const subDir = path.join(testDir, "sub");
     fs.mkdirSync(subDir);

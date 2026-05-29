@@ -5,6 +5,7 @@ HardKAS is built fundamentally as a **local-first** developer runtime.
 It is designed to give you a robust, reproducible, and private environment to model Kaspa transactions, debug workflows, and build dApps offline or against local nodes before considering testnet or mainnet deployments.
 
 ## Core Philosophy
+
 - **Local Over Remote:** Localnet simulations and isolated workspaces take precedence over immediate mainnet connection.
 - **No Production Bridge:** We do not provide a production L1-L2 bridge. Any bridge tooling (e.g., Igra) is strictly experimental and read-only.
 - **No Trustless Exits:** HardKAS does not facilitate trustless exits or ZK proofs to Kaspa L1.

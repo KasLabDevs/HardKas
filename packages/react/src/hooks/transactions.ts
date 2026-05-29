@@ -45,12 +45,13 @@ export interface TransactionDetail {
 }
 
 export function useTransactions() {
-  const { config, subscribe , apiFetch } = useHardKas();
+  const { config, subscribe, apiFetch } = useHardKas();
   const queryClient = useQueryClient();
 
   useEffect(() => {
-    const sync = () => queryClient.invalidateQueries({ queryKey: ["hardkas", "transactions"] });
-    
+    const sync = () =>
+      queryClient.invalidateQueries({ queryKey: ["hardkas", "transactions"] });
+
     return subscribe((event) => {
       if (["query-synced", "session-changed"].includes(event.type)) {
         sync();
@@ -63,7 +64,11 @@ export function useTransactions() {
     queryFn: async (): Promise<TransactionSummary[]> => {
       try {
         const baseUrl = config.devServerUrl || "";
-        const url = baseUrl ? (baseUrl.endsWith("/") ? `${baseUrl}api/transactions` : `${baseUrl}/api/transactions`) : "/api/transactions";
+        const url = baseUrl
+          ? baseUrl.endsWith("/")
+            ? `${baseUrl}api/transactions`
+            : `${baseUrl}/api/transactions`
+          : "/api/transactions";
         const response = await apiFetch(url);
         if (!response.ok) return [];
         const data = await response.json();
@@ -73,17 +78,18 @@ export function useTransactions() {
         return [];
       }
     },
-    staleTime: 10000,
+    staleTime: 10000
   });
 }
 
 export function useTransaction(id: string) {
-  const { config, subscribe , apiFetch } = useHardKas();
+  const { config, subscribe, apiFetch } = useHardKas();
   const queryClient = useQueryClient();
 
   useEffect(() => {
-    const sync = () => queryClient.invalidateQueries({ queryKey: ["hardkas", "transaction", id] });
-    
+    const sync = () =>
+      queryClient.invalidateQueries({ queryKey: ["hardkas", "transaction", id] });
+
     return subscribe((event) => {
       if (["query-synced", "session-changed"].includes(event.type)) {
         sync();
@@ -97,7 +103,11 @@ export function useTransaction(id: string) {
       if (!id) return null;
       try {
         const baseUrl = config.devServerUrl || "";
-        const url = baseUrl ? (baseUrl.endsWith("/") ? `${baseUrl}api/transactions/${id}` : `${baseUrl}/api/transactions/${id}`) : `/api/transactions/${id}`;
+        const url = baseUrl
+          ? baseUrl.endsWith("/")
+            ? `${baseUrl}api/transactions/${id}`
+            : `${baseUrl}/api/transactions/${id}`
+          : `/api/transactions/${id}`;
         const response = await apiFetch(url);
         if (!response.ok) return null;
         return await response.json();
@@ -107,6 +117,6 @@ export function useTransaction(id: string) {
       }
     },
     enabled: !!id,
-    staleTime: 10000,
+    staleTime: 10000
   });
 }

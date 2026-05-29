@@ -34,13 +34,15 @@ export function registerStatusCommands(program: Command) {
         // We do a fast check by trying to connect to the dev-server
         let serverOnline = false;
         try {
-          const res = await fetch("http://localhost:3333/api/dashboard-health", { signal: AbortSignal.timeout(500) });
+          const res = await fetch("http://localhost:3333/api/dashboard-health", {
+            signal: AbortSignal.timeout(500)
+          });
           if (res.ok) serverOnline = true;
         } catch {}
 
         UI.field("Dev Server", serverOnline ? "🟢 Online" : "🔴 Offline");
         UI.field("Kaspa Node", serverOnline ? "🟢 Online (Simulated)" : "🔴 Offline");
-        
+
         UI.emptyLine();
 
         // 3. Artifacts
@@ -49,13 +51,16 @@ export function registerStatusCommands(program: Command) {
         let receiptCount = 0;
         let replayCount = 0;
         let latestWorkflow = "none";
-        
+
         if (fs.existsSync(artifactsDir)) {
-          const files = fs.readdirSync(artifactsDir).filter(f => f.endsWith(".json"));
+          const files = fs.readdirSync(artifactsDir).filter((f) => f.endsWith(".json"));
           UI.field("Artifacts", `${files.length} indexed`);
 
           const sorted = files
-            .map(f => ({ file: f, time: fs.statSync(path.join(artifactsDir, f)).mtimeMs }))
+            .map((f) => ({
+              file: f,
+              time: fs.statSync(path.join(artifactsDir, f)).mtimeMs
+            }))
             .sort((a, b) => b.time - a.time);
 
           if (sorted.length > 0 && sorted[0]) {
@@ -96,11 +101,13 @@ export function registerStatusCommands(program: Command) {
         // 6. Next Steps
         const nextSteps = [];
         const wsSuffix = options.workspace ? ` --workspace ${options.workspace}` : "";
-        
+
         if (!serverOnline) {
           nextSteps.push(`hardkas dev --with-node${wsSuffix}`);
         } else {
-          nextSteps.push(`hardkas dev tx send --from alice --to bob --amount 1${wsSuffix}`);
+          nextSteps.push(
+            `hardkas dev tx send --from alice --to bob --amount 1${wsSuffix}`
+          );
         }
         if (latestWorkflow !== "none") {
           nextSteps.push(`hardkas why ${latestWorkflow}${wsSuffix}`);

@@ -9,19 +9,32 @@ export const ChaosExitCodes = {
   FINDINGS_RECOVERABLE: 1,
   INVARIANT_VIOLATION: 2,
   UNSAFE_CONFIG_REFUSED: 3,
-  INTERNAL_FAILURE: 4,
+  INTERNAL_FAILURE: 4
 };
 
 export function registerChaosCommands(program: Command) {
   const chaosCmd = program
     .command("chaos")
-    .description(`Run the internal Chaos Engine to stress-test the runtime ${UI.maturity("experimental")}`)
+    .description(
+      `Run the internal Chaos Engine to stress-test the runtime ${UI.maturity("experimental")}`
+    )
     .option("--runs <number>", "Number of chaos iterations to run", "300")
     .option("--seed <number>", "Deterministic PRNG seed", "1337")
     .option("--profile <smoke|targeted|full>", "Fuzzing distribution profile", "smoke")
-    .option("--actor <LockHell|RotBot|DriftHunter|HumanChaos>", "Target a specific chaos actor instead of using a profile")
-    .option("--isolate", "Run the chaos engine in a dedicated temporary workspace (Default)", true)
-    .option("--unsafe-current-dir", "Run chaos in the current directory (DANGEROUS)", false)
+    .option(
+      "--actor <LockHell|RotBot|DriftHunter|HumanChaos>",
+      "Target a specific chaos actor instead of using a profile"
+    )
+    .option(
+      "--isolate",
+      "Run the chaos engine in a dedicated temporary workspace (Default)",
+      true
+    )
+    .option(
+      "--unsafe-current-dir",
+      "Run chaos in the current directory (DANGEROUS)",
+      false
+    )
     .option("--force-ci-chaos", "Allow unsafe chaos in CI environments", false)
     .option("--force-chaos-destructive", "Bypass workspace protection guards", false)
     .action(async (options) => {
@@ -51,9 +64,9 @@ export function registerChaosCommands(program: Command) {
         const { replayChaosRun } = await import("../runners/chaos-runner.js");
         await replayChaosRun(options);
       } catch (err: any) {
-         if (err.exitCode !== undefined) process.exit(err.exitCode);
-         handleError(err);
-         process.exit(ChaosExitCodes.INTERNAL_FAILURE);
+        if (err.exitCode !== undefined) process.exit(err.exitCode);
+        handleError(err);
+        process.exit(ChaosExitCodes.INTERNAL_FAILURE);
       }
     });
 }
@@ -67,11 +80,17 @@ async function enforceSafetyGuards(options: any) {
 
   // Unsafe mode requested
   if (process.env.HARDKAS_ALLOW_UNSAFE_CHAOS !== "1") {
-    throw { message: "Unsafe chaos mode requires HARDKAS_ALLOW_UNSAFE_CHAOS=1 in environment.", exitCode: ChaosExitCodes.UNSAFE_CONFIG_REFUSED };
+    throw {
+      message: "Unsafe chaos mode requires HARDKAS_ALLOW_UNSAFE_CHAOS=1 in environment.",
+      exitCode: ChaosExitCodes.UNSAFE_CONFIG_REFUSED
+    };
   }
 
   if (process.env.CI && !options.forceCiChaos) {
-    throw { message: "Unsafe chaos is disabled in CI. Use --force-ci-chaos to override.", exitCode: ChaosExitCodes.UNSAFE_CONFIG_REFUSED };
+    throw {
+      message: "Unsafe chaos is disabled in CI. Use --force-ci-chaos to override.",
+      exitCode: ChaosExitCodes.UNSAFE_CONFIG_REFUSED
+    };
   }
 
   if (!options.forceChaosDestructive) {
@@ -88,9 +107,9 @@ async function enforceSafetyGuards(options: any) {
       try {
         const stats = await fs.stat(p);
         if (stats) {
-          throw { 
-            message: `Unsafe chaos refused: Found protected resource at '${p}'.\nUse --force-chaos-destructive if you absolutely know what you are doing.`, 
-            exitCode: ChaosExitCodes.UNSAFE_CONFIG_REFUSED 
+          throw {
+            message: `Unsafe chaos refused: Found protected resource at '${p}'.\nUse --force-chaos-destructive if you absolutely know what you are doing.`,
+            exitCode: ChaosExitCodes.UNSAFE_CONFIG_REFUSED
           };
         }
       } catch (e: any) {
@@ -98,9 +117,11 @@ async function enforceSafetyGuards(options: any) {
         // File doesn't exist, which is good
       }
     }
-    
+
     // Prompt confirmation
-    const sure = await UI.confirm("You are about to unleash chaos on your current directory. It may destroy data. Proceed?");
+    const sure = await UI.confirm(
+      "You are about to unleash chaos on your current directory. It may destroy data. Proceed?"
+    );
     if (!sure) {
       throw { message: "Chaos aborted.", exitCode: ChaosExitCodes.UNSAFE_CONFIG_REFUSED };
     }

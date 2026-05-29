@@ -43,7 +43,7 @@ const AdversarialFixtures = {
       contentHash: "hash-simnet",
       networkId: "simnet",
       mode: "simulated",
-      lineage: { 
+      lineage: {
         artifactId: "hash-simnet",
         parentArtifactId: "parent-mainnet",
         lineageId: "b".repeat(64),
@@ -58,17 +58,17 @@ describe("PR 7: Adversarial Integrity Validation", () => {
   it("should detect hash mismatch in tampered artifacts", async () => {
     const artifact = AdversarialFixtures.hashMismatch();
     const result = await verifyArtifactIntegrity(artifact);
-    
+
     expect(result.ok).toBe(false);
-    expect(result.issues.some(i => i.code === "ARTIFACT_HASH_MISMATCH")).toBe(true);
+    expect(result.issues.some((i) => i.code === "ARTIFACT_HASH_MISMATCH")).toBe(true);
   });
 
   it("should detect cross-network contamination", () => {
     const { parent, child } = AdversarialFixtures.crossNetworkLineage();
     const result = verifyArtifactSemantics(child, { parent });
-    
+
     expect(result.ok).toBe(false);
-    expect(result.issues.some(i => i.code === "NETWORK_MISMATCH")).toBe(true);
+    expect(result.issues.some((i) => i.code === "NETWORK_MISMATCH")).toBe(true);
   });
 
   it("should detect self-parenting (simple cycle)", () => {
@@ -85,11 +85,11 @@ describe("PR 7: Adversarial Integrity Validation", () => {
       }
     };
     const result = verifyArtifactSemantics(artifact, { parent: artifact });
-    
+
     expect(result.ok).toBe(false);
-    expect(result.issues.some(i => i.code === "SELF_PARENT")).toBe(true);
+    expect(result.issues.some((i) => i.code === "SELF_PARENT")).toBe(true);
   });
-  
-  // Note: Deep circularity (A -> B -> A) requires multi-artifact verification, 
+
+  // Note: Deep circularity (A -> B -> A) requires multi-artifact verification,
   // which is typically handled by the CLI or a crawler.
 });

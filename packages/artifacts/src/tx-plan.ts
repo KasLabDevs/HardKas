@@ -49,30 +49,31 @@ export function createTxPlanArtifact(options: CreateTxPlanArtifactOptions): TxPl
     amountSompi: options.amountSompi.toString(),
     estimatedFeeSompi: options.plan.estimatedFeeSompi.toString(),
     estimatedMass: options.plan.estimatedMass.toString(),
-    inputs: options.plan.inputs.map(i => ({
+    inputs: options.plan.inputs.map((i) => ({
       outpoint: {
         transactionId: i.outpoint.transactionId,
         index: i.outpoint.index
       },
       amountSompi: i.amountSompi.toString()
     })),
-    outputs: options.plan.outputs.map(o => ({
+    outputs: options.plan.outputs.map((o) => ({
       address: o.address,
       amountSompi: o.amountSompi.toString()
     })),
-    rpcUrl: options.rpcUrl
+    rpcUrl: options.rpcUrl,
+    ...(options.ctx.workflowId ? { workflowId: options.ctx.workflowId } : {})
   };
 
   if (options.plan.change) {
-     artifact.change = {
-       address: options.plan.change.address,
-       amountSompi: options.plan.change.amountSompi.toString()
-     };
+    artifact.change = {
+      address: options.plan.change.address,
+      amountSompi: options.plan.change.amountSompi.toString()
+    };
   }
 
   const hash = calculateContentHash(artifact, CURRENT_HASH_VERSION);
   artifact.planId = `plan-${hash.slice(0, 16)}`;
   artifact.contentHash = hash;
-  
+
   return artifact as TxPlan;
 }

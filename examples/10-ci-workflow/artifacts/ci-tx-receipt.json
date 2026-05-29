@@ -1,6 +1,6 @@
 {
   "schema": "hardkas.txReceipt",
-  "hardkasVersion": "0.7.3-alpha",
+  "hardkasVersion": "0.7.4-alpha",
   "version": "1.0.0-alpha",
   "hashVersion": 3,
   "createdAt": "2026-05-25T13:04:38.281Z",
@@ -17,9 +17,7 @@
   "amountSompi": "10000000000",
   "feeSompi": "350",
   "changeSompi": "39999999650",
-  "spentUtxoIds": [
-    "genesis:alice:0"
-  ],
+  "spentUtxoIds": ["genesis:alice:0"],
   "createdUtxoIds": [
     "simtx_574ae9968b1b45cb8900f75c6b148412:0",
     "simtx_574ae9968b1b45cb8900f75c6b148412:1"

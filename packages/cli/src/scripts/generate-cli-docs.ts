@@ -11,7 +11,7 @@ const ROOT_DIR = path.resolve(__dirname, "../../../../"); // Repo root
 async function main() {
   const isCheck = process.argv.includes("--check");
   const program = buildHardkasProgram({ forDocs: true });
-  
+
   const ref = extractCliReference(program, { deterministic: true });
   const markdown = generateCliMarkdown(ref);
   const json = JSON.stringify(ref, null, 2);
@@ -26,7 +26,10 @@ async function main() {
       const existingJson = await fs.readFile(jsonPath, "utf-8");
 
       const normalize = (s: string) => s.replace(/\r\n/g, "\n");
-      if (normalize(existingMd) !== normalize(markdown) || normalize(existingJson) !== normalize(json)) {
+      if (
+        normalize(existingMd) !== normalize(markdown) ||
+        normalize(existingJson) !== normalize(json)
+      ) {
         console.error("\n[!] CLI documentation is OUT OF DATE.");
         console.error("    Run 'pnpm docs:generate-cli' to update them.");
         process.exit(1);
@@ -34,29 +37,36 @@ async function main() {
       console.log("✓ CLI documentation is up to date.");
     } catch (e: any) {
       console.error(`\n[!] Error reading existing documentation: ${e.message}`);
-      console.error("    Run 'pnpm docs:generate-cli' to generate them for the first time.");
+      console.error(
+        "    Run 'pnpm docs:generate-cli' to generate them for the first time."
+      );
       process.exit(1);
     }
   } else {
     console.log("Generating CLI documentation...");
-    
+
     // Ensure directory exists
     await fs.mkdir(path.dirname(mdPath), { recursive: true });
-    
+
     await writeFileAtomic(mdPath, markdown, { encoding: "utf-8" });
     await writeFileAtomic(jsonPath, json, { encoding: "utf-8" });
 
     console.log(`\n✓ Generated: ${path.relative(ROOT_DIR, mdPath)}`);
     console.log(`✓ Generated: ${path.relative(ROOT_DIR, jsonPath)}`);
-    console.log(`\nTotal commands: ${ref.commands.length + ref.commands.reduce((acc, c) => acc + countSubcommands(c), 0)}`);
+    console.log(
+      `\nTotal commands: ${ref.commands.length + ref.commands.reduce((acc, c) => acc + countSubcommands(c), 0)}`
+    );
   }
 }
 
 function countSubcommands(cmd: any): number {
-  return cmd.subcommands.length + cmd.subcommands.reduce((acc: number, c: any) => acc + countSubcommands(c), 0);
+  return (
+    cmd.subcommands.length +
+    cmd.subcommands.reduce((acc: number, c: any) => acc + countSubcommands(c), 0)
+  );
 }
 
-main().catch(err => {
+main().catch((err) => {
   console.error("Fatal error during docs generation:", err);
   process.exit(1);
 });

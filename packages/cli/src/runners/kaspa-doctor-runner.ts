@@ -24,43 +24,78 @@ export async function runKaspaDoctor(options: { rpcUrl: string; json: boolean })
     // 1. RPC Reachability
     try {
       const info = await client.getInfo();
-      checks.push({ name: "RPC Reachability", status: "success", message: `Connected to kaspad ${info.serverVersion || ""}` });
-      
+      checks.push({
+        name: "RPC Reachability",
+        status: "success",
+        message: `Connected to kaspad ${info.serverVersion || ""}`
+      });
+
       // 2. Sync Status
       if (info.isSynced) {
-        checks.push({ name: "Sync Status", status: "success", message: "Node is synced" });
+        checks.push({
+          name: "Sync Status",
+          status: "success",
+          message: "Node is synced"
+        });
       } else {
-        checks.push({ name: "Sync Status", status: "warning", message: "Node is still syncing" });
+        checks.push({
+          name: "Sync Status",
+          status: "warning",
+          message: "Node is still syncing"
+        });
         if (finalStatus === "ready") finalStatus = "warning";
       }
 
       // 3. UTXO Index
       if (info.isUtxoIndexed) {
-        checks.push({ name: "UTXO Index", status: "success", message: "Indexed and searchable" });
+        checks.push({
+          name: "UTXO Index",
+          status: "success",
+          message: "Indexed and searchable"
+        });
       } else {
-        checks.push({ name: "UTXO Index", status: "error", message: "UTXO index disabled (required for wallet balance/send)" });
+        checks.push({
+          name: "UTXO Index",
+          status: "error",
+          message: "UTXO index disabled (required for wallet balance/send)"
+        });
         finalStatus = "failed";
       }
 
       // 4. DAG Info
       try {
         const dag = await client.getBlockDagInfo();
-        checks.push({ name: "DAG Status", status: "success", message: `Network: ${dag.networkId}, DAA Score: ${dag.virtualDaaScore}` });
+        checks.push({
+          name: "DAG Status",
+          status: "success",
+          message: `Network: ${dag.networkId}, DAA Score: ${dag.virtualDaaScore}`
+        });
       } catch (e: any) {
-        checks.push({ name: "DAG Status", status: "error", message: `Failed to fetch DAG info: ${e.message}` });
+        checks.push({
+          name: "DAG Status",
+          status: "error",
+          message: `Failed to fetch DAG info: ${e.message}`
+        });
         finalStatus = "failed";
       }
 
       // 5. Mempool
       try {
         const mempoolSize = info.mempoolSize ?? 0;
-        checks.push({ name: "Mempool", status: "success", message: `${mempoolSize} transactions pending` });
+        checks.push({
+          name: "Mempool",
+          status: "success",
+          message: `${mempoolSize} transactions pending`
+        });
       } catch (e) {
-         // Ignore
+        // Ignore
       }
-
     } catch (e: any) {
-      checks.push({ name: "RPC Reachability", status: "error", message: `Failed to connect: ${e.message}` });
+      checks.push({
+        name: "RPC Reachability",
+        status: "error",
+        message: `Failed to connect: ${e.message}`
+      });
       finalStatus = "failed";
     }
 
@@ -81,24 +116,35 @@ export async function runKaspaDoctor(options: { rpcUrl: string; json: boolean })
     console.log(pc.bold("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"));
 
     for (const check of checks) {
-      const icon = check.status === "success" ? pc.green("✓") : check.status === "warning" ? pc.yellow("⚠") : pc.red("✗");
+      const icon =
+        check.status === "success"
+          ? pc.green("✓")
+          : check.status === "warning"
+            ? pc.yellow("⚠")
+            : pc.red("✗");
       console.log(`${icon} ${pc.bold(check.name)}: ${check.message}`);
     }
 
-    console.log(pc.bold("\nStatus: ") + (finalStatus === "ready" ? pc.green("READY") : finalStatus === "warning" ? pc.yellow("WARNING") : pc.red("FAILED")));
+    console.log(
+      pc.bold("\nStatus: ") +
+        (finalStatus === "ready"
+          ? pc.green("READY")
+          : finalStatus === "warning"
+            ? pc.yellow("WARNING")
+            : pc.red("FAILED"))
+    );
 
     if (finalStatus === "failed") {
       console.log(`\n${pc.red("Fix recommendations:")}`);
-      if (checks.some(c => c.name === "RPC Reachability" && c.status === "error")) {
+      if (checks.some((c) => c.name === "RPC Reachability" && c.status === "error")) {
         console.log(`  - Ensure kaspad is running with ${pc.white("--rpclisten-json")}.`);
         console.log(`  - Check if the port ${pc.white("16110")} is open.`);
       }
-      if (checks.some(c => c.name === "UTXO Index" && c.status === "error")) {
+      if (checks.some((c) => c.name === "UTXO Index" && c.status === "error")) {
         console.log(`  - Start kaspad with ${pc.white("--utxoindex")}.`);
       }
       process.exitCode = 1;
     }
-
   } catch (e) {
     process.exitCode = 1;
     handleError(e);

@@ -1,8 +1,8 @@
 import { systemRuntimeContext } from "@hardkas/core";
 import { describe, it, expect } from "vitest";
-import { 
-  canonicalStringify, 
-  calculateContentHash, 
+import {
+  canonicalStringify,
+  calculateContentHash,
   verifyArtifact,
   migrateToCanonical,
   sortUtxosByOutpoint,
@@ -29,7 +29,9 @@ describe("Artifacts - Determinism and Verification", () => {
     const withUndefined = { a: 1, b: undefined };
 
     expect(canonicalStringify(withoutUndefined)).toBe(canonicalStringify(withUndefined));
-    expect(calculateContentHash(withoutUndefined)).toBe(calculateContentHash(withUndefined));
+    expect(calculateContentHash(withoutUndefined)).toBe(
+      calculateContentHash(withUndefined)
+    );
   });
 
   it("should exclude contentHash from canonical stringify", () => {
@@ -68,7 +70,7 @@ describe("Artifacts - Determinism and Verification", () => {
 
     const artifact: any = {
       schema: "hardkas.txPlan",
-      hardkasVersion: "0.7.3-alpha",
+      hardkasVersion: "0.7.4-alpha",
       version: ARTIFACT_VERSION,
       createdAt: new Date().toISOString(),
       networkId: "simnet",
@@ -99,7 +101,7 @@ describe("Artifacts - Determinism and Verification", () => {
 
     const artifact: any = {
       schema: "hardkas.txPlan",
-      hardkasVersion: "0.7.3-alpha",
+      hardkasVersion: "0.7.4-alpha",
       version: ARTIFACT_VERSION,
       createdAt: new Date().toISOString(),
       networkId: "simnet",

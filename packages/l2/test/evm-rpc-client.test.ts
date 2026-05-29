@@ -8,14 +8,20 @@ describe("EvmJsonRpcClient", () => {
       json: async () => ({ jsonrpc: "2.0", id: 1, result: "0x3039" }) // 12345 in hex
     });
 
-    const client = new EvmJsonRpcClient({ url: "http://localhost:8545", fetcher: mockFetcher as any });
+    const client = new EvmJsonRpcClient({
+      url: "http://localhost:8545",
+      fetcher: mockFetcher as any
+    });
     const chainId = await client.getChainId();
 
     expect(chainId).toBe(12345);
-    expect(mockFetcher).toHaveBeenCalledWith("http://localhost:8545", expect.objectContaining({
-      method: "POST",
-      body: expect.stringContaining('"method":"eth_chainId"')
-    }));
+    expect(mockFetcher).toHaveBeenCalledWith(
+      "http://localhost:8545",
+      expect.objectContaining({
+        method: "POST",
+        body: expect.stringContaining('"method":"eth_chainId"')
+      })
+    );
   });
 
   it("should parse blockNumber as bigint", async () => {
@@ -24,7 +30,10 @@ describe("EvmJsonRpcClient", () => {
       json: async () => ({ jsonrpc: "2.0", id: 1, result: "0x64" }) // 100 in hex
     });
 
-    const client = new EvmJsonRpcClient({ url: "http://localhost:8545", fetcher: mockFetcher as any });
+    const client = new EvmJsonRpcClient({
+      url: "http://localhost:8545",
+      fetcher: mockFetcher as any
+    });
     const blockNumber = await client.getBlockNumber();
 
     expect(blockNumber).toBe(100n);
@@ -33,10 +42,17 @@ describe("EvmJsonRpcClient", () => {
   it("should handle JSON-RPC errors", async () => {
     const mockFetcher = vi.fn().mockResolvedValue({
       ok: true,
-      json: async () => ({ jsonrpc: "2.0", id: 1, error: { code: -32601, message: "Method not found" } })
+      json: async () => ({
+        jsonrpc: "2.0",
+        id: 1,
+        error: { code: -32601, message: "Method not found" }
+      })
     });
 
-    const client = new EvmJsonRpcClient({ url: "http://localhost:8545", fetcher: mockFetcher as any });
+    const client = new EvmJsonRpcClient({
+      url: "http://localhost:8545",
+      fetcher: mockFetcher as any
+    });
     await expect(client.getChainId()).rejects.toThrow(/JSON-RPC error: Method not found/);
   });
 
@@ -47,7 +63,10 @@ describe("EvmJsonRpcClient", () => {
       statusText: "Internal Server Error"
     });
 
-    const client = new EvmJsonRpcClient({ url: "http://localhost:8545", fetcher: mockFetcher as any });
+    const client = new EvmJsonRpcClient({
+      url: "http://localhost:8545",
+      fetcher: mockFetcher as any
+    });
     await expect(client.getChainId()).rejects.toThrow(/HTTP error 500/);
   });
 
@@ -57,8 +76,13 @@ describe("EvmJsonRpcClient", () => {
       json: async () => ({ jsonrpc: "2.0", id: 1, result: "0xde0b6b3a7640000" }) // 1 ether in hex
     });
 
-    const client = new EvmJsonRpcClient({ url: "http://localhost:8545", fetcher: mockFetcher as any });
-    const balance = await client.getBalanceWei("0x0000000000000000000000000000000000000000");
+    const client = new EvmJsonRpcClient({
+      url: "http://localhost:8545",
+      fetcher: mockFetcher as any
+    });
+    const balance = await client.getBalanceWei(
+      "0x0000000000000000000000000000000000000000"
+    );
 
     expect(balance).toBe(1000000000000000000n);
   });
@@ -69,8 +93,13 @@ describe("EvmJsonRpcClient", () => {
       json: async () => ({ jsonrpc: "2.0", id: 1, result: "0x7" })
     });
 
-    const client = new EvmJsonRpcClient({ url: "http://localhost:8545", fetcher: mockFetcher as any });
-    const nonce = await client.getTransactionCount("0x0000000000000000000000000000000000000000");
+    const client = new EvmJsonRpcClient({
+      url: "http://localhost:8545",
+      fetcher: mockFetcher as any
+    });
+    const nonce = await client.getTransactionCount(
+      "0x0000000000000000000000000000000000000000"
+    );
 
     expect(nonce).toBe(7n);
   });
@@ -87,16 +116,22 @@ describe("EvmJsonRpcClient", () => {
       json: async () => ({ jsonrpc: "2.0", id: 1, result: "0x1234" })
     });
 
-    const client = new EvmJsonRpcClient({ url: "http://localhost:8545", fetcher: mockFetcher as any });
+    const client = new EvmJsonRpcClient({
+      url: "http://localhost:8545",
+      fetcher: mockFetcher as any
+    });
     const result = await client.call({
       to: "0x0000000000000000000000000000000000000000",
       data: "0x6060"
     });
 
     expect(result).toBe("0x1234");
-    expect(mockFetcher).toHaveBeenCalledWith("http://localhost:8545", expect.objectContaining({
-      body: expect.stringContaining('"method":"eth_call"')
-    }));
+    expect(mockFetcher).toHaveBeenCalledWith(
+      "http://localhost:8545",
+      expect.objectContaining({
+        body: expect.stringContaining('"method":"eth_call"')
+      })
+    );
   });
 
   it("should perform eth_estimateGas", async () => {
@@ -105,7 +140,10 @@ describe("EvmJsonRpcClient", () => {
       json: async () => ({ jsonrpc: "2.0", id: 1, result: "0x5208" }) // 21000 in hex
     });
 
-    const client = new EvmJsonRpcClient({ url: "http://localhost:8545", fetcher: mockFetcher as any });
+    const client = new EvmJsonRpcClient({
+      url: "http://localhost:8545",
+      fetcher: mockFetcher as any
+    });
     const gas = await client.estimateGas({
       to: "0x0000000000000000000000000000000000000000"
     });
@@ -115,20 +153,24 @@ describe("EvmJsonRpcClient", () => {
 
   it.skip("should reject invalid call requests", async () => {
     const client = new EvmJsonRpcClient({ url: "http://localhost:8545" });
-    
+
     // Missing to
     await expect(client.call({ to: "" } as any)).rejects.toThrow(/required/);
-    
+
     // Invalid data
-    await expect(client.call({ 
-      to: "0x0000000000000000000000000000000000000000",
-      data: "invalid"
-    })).rejects.toThrow(/Invalid hex data/);
+    await expect(
+      client.call({
+        to: "0x0000000000000000000000000000000000000000",
+        data: "invalid"
+      })
+    ).rejects.toThrow(/Invalid hex data/);
 
     // Invalid value
-    await expect(client.call({ 
-      to: "0x0000000000000000000000000000000000000000",
-      value: "100" // No 0x
-    })).rejects.toThrow(/Invalid hex value/);
+    await expect(
+      client.call({
+        to: "0x0000000000000000000000000000000000000000",
+        value: "100" // No 0x
+      })
+    ).rejects.toThrow(/Invalid hex value/);
   });
 });

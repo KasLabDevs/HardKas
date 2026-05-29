@@ -15,7 +15,10 @@ export class TelemetryRotator {
    * Rotates the telemetry stream if it exceeds the maximum size.
    * This is a safe operation that renames the active file to an archive directory.
    */
-  public static rotateIfNeeded(rootDir: string, maxSizeBytes = this.DEFAULT_MAX_SIZE_BYTES): RotationResult {
+  public static rotateIfNeeded(
+    rootDir: string,
+    maxSizeBytes = this.DEFAULT_MAX_SIZE_BYTES
+  ): RotationResult {
     const telemetryDir = path.join(rootDir, ".hardkas", "telemetry");
     const activeFile = path.join(telemetryDir, "telemetry.jsonl");
 
@@ -25,7 +28,10 @@ export class TelemetryRotator {
 
     const stats = fs.statSync(activeFile);
     if (stats.size < maxSizeBytes) {
-      return { rotated: false, reason: `File size (${stats.size}) is below threshold (${maxSizeBytes})` };
+      return {
+        rotated: false,
+        reason: `File size (${stats.size}) is below threshold (${maxSizeBytes})`
+      };
     }
 
     return this.forceRotate(rootDir);
@@ -71,8 +77,9 @@ export class TelemetryRotator {
     const archiveDir = path.join(rootDir, ".hardkas", "telemetry", "archive");
     if (!fs.existsSync(archiveDir)) return [];
 
-    return fs.readdirSync(archiveDir)
-      .filter(f => f.startsWith("telemetry-") && f.endsWith(".jsonl"))
+    return fs
+      .readdirSync(archiveDir)
+      .filter((f) => f.startsWith("telemetry-") && f.endsWith(".jsonl"))
       .sort(); // Lexicographical sort works well for ISO timestamps
   }
 }

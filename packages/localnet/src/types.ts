@@ -9,7 +9,7 @@ export interface LocalnetAccount {
 export interface LocalnetUtxo {
   id: string;
   address: string;
-  amountSompi: string; 
+  amountSompi: string;
   spent: boolean;
   createdAtDaaScore: string;
   spentAtDaaScore?: string;
@@ -90,7 +90,7 @@ export interface ReplayVerificationReport {
   planOk: boolean;
   receiptOk: boolean;
   invariantsOk: boolean;
-  
+
   /** Honest check status to avoid overclaiming. */
   checks: {
     /** Whether the internal HardKAS workflow (Plan -> Receipt) was reproduced. */

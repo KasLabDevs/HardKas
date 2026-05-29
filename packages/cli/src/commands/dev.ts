@@ -5,7 +5,11 @@ export function registerDevCommands(program: Command) {
   const devCmd = program
     .command("dev")
     .description("Local development and Igra-native environment tools")
-    .option("--once", "Initialize dev environment, run health checks, and exit (headless)", false)
+    .option(
+      "--once",
+      "Initialize dev environment, run health checks, and exit (headless)",
+      false
+    )
     .option("--headless", "Run headlessly (no UI open)", false)
     .action(async (options: any) => {
       try {
@@ -32,7 +36,9 @@ export function registerDevCommands(program: Command) {
 
   devCmd
     .command("init")
-    .description(`Initialize dApp support in the current workspace ${UI.maturity("stable")}`)
+    .description(
+      `Initialize dApp support in the current workspace ${UI.maturity("stable")}`
+    )
     .action(async () => {
       try {
         const { runDevInit } = await import("../runners/dev-init-runner.js");
@@ -54,7 +60,6 @@ export function registerDevCommands(program: Command) {
     .option("--release", "Run strict release gate checks")
     .action(async (options: any) => {
       try {
-
         const { runDevDoctor } = await import("../runners/dev-doctor-runner.js");
         await runDevDoctor(options);
       } catch (e) {
@@ -69,8 +74,16 @@ export function registerDevCommands(program: Command) {
     .option("--port <number>", "Port to bind to", "7420")
     .option("--host <string>", "Host to bind to", "localhost")
     .option("--open", "Open dashboard in browser automatically", false)
-    .option("--unsafe-external", "Allow external access (binds to 0.0.0.0 if host not specified)", false)
-    .option("--show-token", "Show the generated API session token for manual script integration", false)
+    .option(
+      "--unsafe-external",
+      "Allow external access (binds to 0.0.0.0 if host not specified)",
+      false
+    )
+    .option(
+      "--show-token",
+      "Show the generated API session token for manual script integration",
+      false
+    )
     .option("--with-node", "Spawn the localnet node and auto-fund simnet accounts", false)
     .option("--json", "Output status as JSON", false)
     .action(async (options: any) => {
@@ -83,23 +96,28 @@ export function registerDevCommands(program: Command) {
       }
     });
 
-  const accountsCmd = devCmd.command("accounts").description("Manage simnet dev accounts");
-  
-  accountsCmd.command("list")
+  const accountsCmd = devCmd
+    .command("accounts")
+    .description("Manage simnet dev accounts");
+
+  accountsCmd
+    .command("list")
     .description("List dev accounts")
     .action(async () => {
       const { runDevAccountsList } = await import("../runners/dev-accounts-runners.js");
       await runDevAccountsList();
     });
 
-  accountsCmd.command("reveal <alias>")
+  accountsCmd
+    .command("reveal <alias>")
     .description("Reveal private key for a dev account (simnet only)")
     .action(async (alias: string) => {
       const { runDevAccountsReveal } = await import("../runners/dev-accounts-runners.js");
       await runDevAccountsReveal(alias);
     });
 
-  accountsCmd.command("export kasware")
+  accountsCmd
+    .command("export kasware")
     .description("Export dev account in format suitable for Kasware manual import")
     .option("--alias <alias>", "Alias to export", "alice")
     .action(async (options: any) => {
@@ -109,7 +127,8 @@ export function registerDevCommands(program: Command) {
 
   const txCmd = devCmd.command("tx").description("Quick transaction flows for dev");
 
-  txCmd.command("send")
+  txCmd
+    .command("send")
     .description("Quick send transaction")
     .option("--from <accountOrAddress>", "Sender alias")
     .option("--to <address>", "Recipient address")
@@ -121,7 +140,8 @@ export function registerDevCommands(program: Command) {
       await runDevTxSend(options);
     });
 
-  devCmd.command("last")
+  devCmd
+    .command("last")
     .description("Interact with the latest local workflow")
     .option("--inspect", "Inspect the latest artifact", false)
     .option("--replay", "Replay the latest workflow", false)

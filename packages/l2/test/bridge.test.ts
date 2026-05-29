@@ -1,8 +1,8 @@
 import { describe, it, expect } from "vitest";
-import { 
-  getL2BridgeAssumptions, 
-  validateL2BridgeAssumptions, 
-  assertValidL2BridgeAssumptions 
+import {
+  getL2BridgeAssumptions,
+  validateL2BridgeAssumptions,
+  assertValidL2BridgeAssumptions
 } from "../src/bridge.js";
 
 describe("L2 Bridge Awareness", () => {
@@ -26,15 +26,19 @@ describe("L2 Bridge Awareness", () => {
 
   it("should reject trustlessExit=true if phase is pre-zk", () => {
     const invalid = {
-      ...(getL2BridgeAssumptions("igra")!),
+      ...getL2BridgeAssumptions("igra")!,
       trustlessExit: true
     };
     const result = validateL2BridgeAssumptions(invalid);
     expect(result.ok).toBe(false);
-    expect(result.errors).toContain("trustlessExit must be false if bridgePhase is not 'zk'");
+    expect(result.errors).toContain(
+      "trustlessExit must be false if bridgePhase is not 'zk'"
+    );
   });
 
   it("should throw on assertValid for invalid input", () => {
-    expect(() => assertValidL2BridgeAssumptions({})).toThrow("Invalid L2 bridge assumptions");
+    expect(() => assertValidL2BridgeAssumptions({})).toThrow(
+      "Invalid L2 bridge assumptions"
+    );
   });
 });

@@ -3,7 +3,7 @@ import { coreEvents, CoreEvent } from "@hardkas/core";
 
 /**
  * System Invariant Verifiers
- * 
+ *
  * Instead of just unit tests, these provide "System Guarantees".
  */
 
@@ -11,7 +11,10 @@ export const Invariants = {
   /**
    * Guarantee: An artifact's content hash MUST match its current state.
    */
-  async verifyArtifactIntegrity(artifact: BaseArtifact<any>, calculateHash: (a: any) => string): Promise<boolean> {
+  async verifyArtifactIntegrity(
+    artifact: BaseArtifact<any>,
+    calculateHash: (a: any) => string
+  ): Promise<boolean> {
     if (!artifact.contentHash) return true; // hash optional for some types
     const actual = calculateHash(artifact);
     return artifact.contentHash === actual;
@@ -22,16 +25,16 @@ export const Invariants = {
    */
   verifyLineageContinuity(artifacts: BaseArtifact<any>[]): boolean {
     if (artifacts.length < 2) return true;
-    
-    const sorted = [...artifacts].sort((a, b) => 
-      (a.lineage?.sequence ?? 0) - (b.lineage?.sequence ?? 0)
+
+    const sorted = [...artifacts].sort(
+      (a, b) => (a.lineage?.sequence ?? 0) - (b.lineage?.sequence ?? 0)
     );
 
     for (let i = 1; i < sorted.length; i++) {
       const prev = sorted[i - 1];
       const curr = sorted[i];
       if (!prev || !curr) continue;
-      
+
       if (curr.lineage?.parentArtifactId !== prev.lineage?.artifactId) {
         return false;
       }
@@ -58,14 +61,16 @@ export class InvariantWatcher {
   private violations: string[] = [];
 
   constructor() {
-    coreEvents.on(event => {
+    coreEvents.on((event) => {
       if (!Invariants.verifyEventCompliance(event)) {
         this.violations.push(`Event compliance violation: ${event.kind}`);
       }
-      
+
       if (event.kind === "integrity.hash_mismatch") {
         const payload = event.payload as any;
-        this.violations.push(`Hash mismatch detected: ${payload.artifactId || event.artifactId}`);
+        this.violations.push(
+          `Hash mismatch detected: ${payload.artifactId || event.artifactId}`
+        );
       }
     });
   }
@@ -73,7 +78,7 @@ export class InvariantWatcher {
   getViolations() {
     return this.violations;
   }
-  
+
   hasViolations() {
     return this.violations.length > 0;
   }

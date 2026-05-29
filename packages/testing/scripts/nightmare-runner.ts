@@ -22,7 +22,9 @@ async function enforceSafetyGuardrails(targetDir: string) {
   try {
     await fs.stat(markerPath);
   } catch {
-    console.error(`FATAL: Target directory ${absoluteTarget} is missing the .hardkas-nightmare-target marker. It is not a designated temporary workspace.`);
+    console.error(
+      `FATAL: Target directory ${absoluteTarget} is missing the .hardkas-nightmare-target marker. It is not a designated temporary workspace.`
+    );
     process.exit(1);
   }
 }
@@ -31,7 +33,7 @@ async function createTempWorkspace(name: string): Promise<string> {
   const tmpDir = path.join(ROOT_DIR, `.nightmare-${name}-${randomUUID().slice(0, 8)}`);
   await fs.mkdir(tmpDir, { recursive: true });
   await fs.writeFile(path.join(tmpDir, ".hardkas-nightmare-target"), "DO NOT REMOVE\n");
-  
+
   // Init a blank workspace via SDK or CLI
   const cliPath = path.join(ROOT_DIR, "packages/cli/dist/index.js");
   await execa("node", [cliPath, "init"], { cwd: tmpDir, reject: false });
@@ -55,9 +57,14 @@ export interface NightmareResult {
   stderr?: string;
 }
 
-async function runVector(name: string, fn: (workspace: string, cliPath: string) => Promise<void>): Promise<NightmareResult> {
+async function runVector(
+  name: string,
+  fn: (workspace: string, cliPath: string) => Promise<void>
+): Promise<NightmareResult> {
   console.log(`\n😈 Starting Nightmare Vector: ${name}`);
-  const workspace = await createTempWorkspace(name.replace(/[^a-zA-Z0-9]/g, "-").toLowerCase());
+  const workspace = await createTempWorkspace(
+    name.replace(/[^a-zA-Z0-9]/g, "-").toLowerCase()
+  );
   await enforceSafetyGuardrails(workspace);
   const cliPath = path.join(ROOT_DIR, "packages/cli/dist/index.js");
 
@@ -81,35 +88,60 @@ async function runVector(name: string, fn: (workspace: string, cliPath: string) 
 // -----------------------------------------------------------------------------
 
 async function nuclearCorruption(workspace: string, cliPath: string) {
-  const child = execa("node", [cliPath, "torture", "matrix", "--profile", "corruption", "--iterations", "10"], { cwd: workspace, reject: false });
-  await new Promise(r => setTimeout(r, 500));
-  
+  const child = execa(
+    "node",
+    [cliPath, "torture", "matrix", "--profile", "corruption", "--iterations", "10"],
+    { cwd: workspace, reject: false }
+  );
+  await new Promise((r) => setTimeout(r, 500));
+
   const dbPath = path.join(workspace, ".hardkas", "store.db");
   const lockDir = path.join(workspace, ".hardkas", "locks");
   const telPath = path.join(workspace, ".hardkas", "telemetry", "telemetry.jsonl");
-  
-  try { await fs.rm(dbPath, { force: true }); } catch {}
-  try { 
+
+  try {
+    await fs.rm(dbPath, { force: true });
+  } catch {}
+  try {
     await fs.mkdir(lockDir, { recursive: true });
     await fs.writeFile(path.join(lockDir, "zombie.lock"), "PID:99999999");
     await fs.chmod(path.join(lockDir, "zombie.lock"), 0o444);
   } catch {}
-  try { await fs.appendFile(telPath, "\x00\x01\x02 GARBAGE \r\n"); } catch {}
-  
+  try {
+    await fs.appendFile(telPath, "\x00\x01\x02 GARBAGE \r\n");
+  } catch {}
+
   await child;
-  const doc = await execa("node", [cliPath, "dev", "doctor", "--json"], { cwd: workspace, reject: false });
-  if (doc.exitCode !== 0 && !doc.stdout.includes("repaired") && !doc.stdout.includes("degraded") && !doc.stdout.includes("failed")) {
-    throw new Error(`Nuclear corruption failed silently or did not report damage. Exit: ${doc.exitCode}`);
+  const doc = await execa("node", [cliPath, "dev", "doctor", "--json"], {
+    cwd: workspace,
+    reject: false
+  });
+  if (
+    doc.exitCode !== 0 &&
+    !doc.stdout.includes("repaired") &&
+    !doc.stdout.includes("degraded") &&
+    !doc.stdout.includes("failed")
+  ) {
+    throw new Error(
+      `Nuclear corruption failed silently or did not report damage. Exit: ${doc.exitCode}`
+    );
   }
 }
 
 async function kill9PowerLoss(workspace: string, cliPath: string) {
-  const child = execa("node", [cliPath, "torture", "matrix", "--profile", "local", "--iterations", "100"], { cwd: workspace });
-  await new Promise(r => setTimeout(r, 2000));
+  const child = execa(
+    "node",
+    [cliPath, "torture", "matrix", "--profile", "local", "--iterations", "100"],
+    { cwd: workspace }
+  );
+  await new Promise((r) => setTimeout(r, 2000));
   child.kill("SIGKILL");
   await child.catch(() => {});
-  
-  const doc = await execa("node", [cliPath, "dev", "doctor", "--json"], { cwd: workspace, reject: false });
+
+  const doc = await execa("node", [cliPath, "dev", "doctor", "--json"], {
+    cwd: workspace,
+    reject: false
+  });
   try {
     const docJson = JSON.parse(doc.stdout);
     if (docJson.status === "success" && !doc.stdout.includes("repaired")) {
@@ -124,21 +156,50 @@ async function kill9PowerLoss(workspace: string, cliPath: string) {
 
 async function idiotDeveloper(workspace: string, cliPath: string) {
   // 1. Run doctor while rebuild is happening
-  const rebuild = execa("node", [cliPath, "rebuild", "--from-artifacts"], { cwd: workspace, reject: false });
-  const doctor = await execa("node", [cliPath, "dev", "doctor", "--json"], { cwd: workspace, reject: false });
+  const rebuild = execa("node", [cliPath, "rebuild", "--from-artifacts"], {
+    cwd: workspace,
+    reject: false
+  });
+  const doctor = await execa("node", [cliPath, "dev", "doctor", "--json"], {
+    cwd: workspace,
+    reject: false
+  });
   await rebuild;
-  
-  if (!doctor.stdout.includes("EBUSY") && doctor.exitCode !== 0 && !doctor.stdout.includes("error")) {
+
+  if (
+    !doctor.stdout.includes("EBUSY") &&
+    doctor.exitCode !== 0 &&
+    !doctor.stdout.includes("error")
+  ) {
     // Expected to either succeed cleanly (if locks missed) or fail with clear error
   }
-  
+
   // 2. Duplicate artifacts
   const artifactsDir = path.join(workspace, ".hardkas", "artifacts");
-  try { await fs.mkdir(artifactsDir, { recursive: true }); } catch {}
-  await fs.writeFile(path.join(artifactsDir, "foo.json"), JSON.stringify({ schemaVersion: "hardkas.artifact.v1", id: "foo", canonicalHash: "123" }));
-  await fs.writeFile(path.join(artifactsDir, "bar.json"), JSON.stringify({ schemaVersion: "hardkas.artifact.v1", id: "bar", canonicalHash: "123" }));
-  
-  const check = await execa("node", [cliPath, "dev", "doctor", "--json"], { cwd: workspace, reject: false });
+  try {
+    await fs.mkdir(artifactsDir, { recursive: true });
+  } catch {}
+  await fs.writeFile(
+    path.join(artifactsDir, "foo.json"),
+    JSON.stringify({
+      schemaVersion: "hardkas.artifact.v1",
+      id: "foo",
+      canonicalHash: "123"
+    })
+  );
+  await fs.writeFile(
+    path.join(artifactsDir, "bar.json"),
+    JSON.stringify({
+      schemaVersion: "hardkas.artifact.v1",
+      id: "bar",
+      canonicalHash: "123"
+    })
+  );
+
+  const check = await execa("node", [cliPath, "dev", "doctor", "--json"], {
+    cwd: workspace,
+    reject: false
+  });
   if (check.exitCode === 0) {
     throw new Error("Idiot Developer duplicate artifact bypassed doctor!");
   }
@@ -146,16 +207,32 @@ async function idiotDeveloper(workspace: string, cliPath: string) {
 
 async function memoryPressure(workspace: string, cliPath: string) {
   // node --max-old-space-size=64
-  const res = await execa("node", ["--max-old-space-size=64", cliPath, "torture", "matrix", "--profile", "local", "--iterations", "100"], { cwd: workspace, reject: false });
+  const res = await execa(
+    "node",
+    [
+      "--max-old-space-size=64",
+      cliPath,
+      "torture",
+      "matrix",
+      "--profile",
+      "local",
+      "--iterations",
+      "100"
+    ],
+    { cwd: workspace, reject: false }
+  );
   if (res.exitCode !== 0) {
     if (res.stderr.includes("JavaScript heap out of memory")) {
-       // OOM is allowed as long as the ledger is recoverable
-       const doc = await execa("node", [cliPath, "dev", "doctor", "--json"], { cwd: workspace, reject: false });
-       if (doc.exitCode !== 0 && !doc.stdout.includes("error")) {
-         throw new Error("OOM caused silent unrecoverable ledger corruption.");
-       }
+      // OOM is allowed as long as the ledger is recoverable
+      const doc = await execa("node", [cliPath, "dev", "doctor", "--json"], {
+        cwd: workspace,
+        reject: false
+      });
+      if (doc.exitCode !== 0 && !doc.stdout.includes("error")) {
+        throw new Error("OOM caused silent unrecoverable ledger corruption.");
+      }
     } else {
-       throw new Error(`Memory pressure failed for non-OOM reason: ${res.stderr}`);
+      throw new Error(`Memory pressure failed for non-OOM reason: ${res.stderr}`);
     }
   }
 }
@@ -163,11 +240,11 @@ async function memoryPressure(workspace: string, cliPath: string) {
 async function parallelHell(workspace: string, cliPath: string) {
   const durationMin = parseInt(process.env.NIGHTMARE_DURATION_MIN || "5", 10);
   console.log(`    Running Parallel Hell for ${durationMin} minutes...`);
-  
+
   const endTime = Date.now() + durationMin * 60 * 1000;
   let hasFailed = false;
   let errString = "";
-  
+
   const runners = [];
   const startRunner = (args: string[]) => {
     return (async () => {
@@ -175,9 +252,13 @@ async function parallelHell(workspace: string, cliPath: string) {
         try {
           await execa("node", [cliPath, ...args], { cwd: workspace });
         } catch (e: any) {
-          if (!e.stderr?.includes("EBUSY") && !e.stderr?.includes("LOCKED") && e.exitCode !== 1) {
-             hasFailed = true;
-             errString = `Process ${args.join(" ")} crashed fatally: ${e.message}`;
+          if (
+            !e.stderr?.includes("EBUSY") &&
+            !e.stderr?.includes("LOCKED") &&
+            e.exitCode !== 1
+          ) {
+            hasFailed = true;
+            errString = `Process ${args.join(" ")} crashed fatally: ${e.message}`;
           }
         }
       }
@@ -185,18 +266,27 @@ async function parallelHell(workspace: string, cliPath: string) {
   };
 
   for (let i = 0; i < 5; i++) runners.push(startRunner(["dev", "doctor"]));
-  for (let i = 0; i < 5; i++) runners.push(startRunner(["artifact", "inspect", "invalid_id_ignore"]));
+  for (let i = 0; i < 5; i++)
+    runners.push(startRunner(["artifact", "inspect", "invalid_id_ignore"]));
   for (let i = 0; i < 3; i++) runners.push(startRunner(["rebuild", "--from-artifacts"]));
-  for (let i = 0; i < 2; i++) runners.push(startRunner(["torture", "matrix", "--profile", "local", "--iterations", "10"]));
-  
+  for (let i = 0; i < 2; i++)
+    runners.push(
+      startRunner(["torture", "matrix", "--profile", "local", "--iterations", "10"])
+    );
+
   await Promise.all(runners);
-  
+
   if (hasFailed) throw new Error(errString);
-  
+
   // Post-mortem
-  const doc = await execa("node", [cliPath, "dev", "doctor", "--json"], { cwd: workspace, reject: false });
+  const doc = await execa("node", [cliPath, "dev", "doctor", "--json"], {
+    cwd: workspace,
+    reject: false
+  });
   if (doc.exitCode !== 0) {
-    throw new Error("Parallel Hell left the workspace in an unrecoverable corrupted state.");
+    throw new Error(
+      "Parallel Hell left the workspace in an unrecoverable corrupted state."
+    );
   }
 }
 
@@ -204,12 +294,19 @@ async function unicodeNightmare(workspace: string, cliPath: string) {
   const artifactsDir = path.join(workspace, ".hardkas", "artifacts");
   await fs.mkdir(artifactsDir, { recursive: true });
   const evilString = "💩مرحبا\t\r\n\\\\";
-  const payload = { schemaVersion: "hardkas.artifact.v1", data: evilString, canonicalHash: "abc" };
+  const payload = {
+    schemaVersion: "hardkas.artifact.v1",
+    data: evilString,
+    canonicalHash: "abc"
+  };
   await fs.writeFile(path.join(artifactsDir, "unicode.json"), JSON.stringify(payload));
-  
-  const doc = await execa("node", [cliPath, "dev", "doctor", "--json"], { cwd: workspace, reject: false });
+
+  const doc = await execa("node", [cliPath, "dev", "doctor", "--json"], {
+    cwd: workspace,
+    reject: false
+  });
   if (doc.exitCode !== 0) {
-     throw new Error("Unicode parsing corrupted doctor output.");
+    throw new Error("Unicode parsing corrupted doctor output.");
   }
 }
 
@@ -222,25 +319,39 @@ async function filesystemFromHell(workspace: string, cliPath: string) {
     await execa("node", [cliPath, "dev", "doctor"], { cwd: deepDir, reject: false });
   } catch (e: any) {
     if (e.code === "ENAMETOOLONG" || e.message.includes("ENOENT")) {
-      throw new Error(`[WARNING_ONLY] Filesystem limits prevented execution: ${e.message}`);
+      throw new Error(
+        `[WARNING_ONLY] Filesystem limits prevented execution: ${e.message}`
+      );
     }
     throw e;
   }
 }
 
 async function timeTravelInsanity(workspace: string, cliPath: string) {
-  const res = await execa("node", [cliPath, "torture", "matrix", "--profile", "local", "--iterations", "50"], { cwd: workspace, reject: false });
+  const res = await execa(
+    "node",
+    [cliPath, "torture", "matrix", "--profile", "local", "--iterations", "50"],
+    { cwd: workspace, reject: false }
+  );
   const artifactsDir = path.join(workspace, ".hardkas", "artifacts");
   const files = await fs.readdir(artifactsDir).catch(() => []);
   if (files.length > 0) {
-    const inspect = await execa("node", [cliPath, "artifact", "inspect", files[0], "--json"], { cwd: workspace, reject: false });
+    const inspect = await execa(
+      "node",
+      [cliPath, "artifact", "inspect", files[0], "--json"],
+      { cwd: workspace, reject: false }
+    );
     if (inspect.exitCode !== 0) throw new Error("Time travel artifact inspect failed.");
   }
 }
 
 async function fakeRpcLiar(workspace: string, cliPath: string) {
   // Mock testing that local artifacts do not report as FINALIZED
-  const inspect = await execa("node", [cliPath, "artifact", "inspect", "invalid", "--json"], { cwd: workspace, reject: false });
+  const inspect = await execa(
+    "node",
+    [cliPath, "artifact", "inspect", "invalid", "--json"],
+    { cwd: workspace, reject: false }
+  );
   if (inspect.stdout.includes('"finality": "finalized"')) {
     throw new Error("Fake RPC check failed: System overclaimed finality without proof.");
   }
@@ -248,9 +359,17 @@ async function fakeRpcLiar(workspace: string, cliPath: string) {
 
 async function theTruthTest(workspace: string, cliPath: string) {
   // Audit the current workspace artifacts for any overclaims
-  const doctor = await execa("node", [cliPath, "dev", "doctor", "--json"], { cwd: workspace, reject: false });
-  if (doctor.stdout.includes('"deterministic": true') && !doctor.stdout.includes("proof")) {
-    throw new Error("Truth Test failed: Doctor claims deterministic without cryptographic proof trace.");
+  const doctor = await execa("node", [cliPath, "dev", "doctor", "--json"], {
+    cwd: workspace,
+    reject: false
+  });
+  if (
+    doctor.stdout.includes('"deterministic": true') &&
+    !doctor.stdout.includes("proof")
+  ) {
+    throw new Error(
+      "Truth Test failed: Doctor claims deterministic without cryptographic proof trace."
+    );
   }
 }
 
@@ -259,21 +378,42 @@ async function duplicateArtifactRegression(workspace: string, cliPath: string) {
   await fs.mkdir(artifactsDir, { recursive: true });
 
   // Rule 1: DUPLICATE_ARTIFACT_ID — same id, same hash, two files
-  await fs.writeFile(path.join(artifactsDir, "dup1a.json"), JSON.stringify({ id: "dup-id-1", canonicalHash: "hash-aaa" }));
-  await fs.writeFile(path.join(artifactsDir, "dup1b.json"), JSON.stringify({ id: "dup-id-1", canonicalHash: "hash-aaa" }));
+  await fs.writeFile(
+    path.join(artifactsDir, "dup1a.json"),
+    JSON.stringify({ id: "dup-id-1", canonicalHash: "hash-aaa" })
+  );
+  await fs.writeFile(
+    path.join(artifactsDir, "dup1b.json"),
+    JSON.stringify({ id: "dup-id-1", canonicalHash: "hash-aaa" })
+  );
 
   // Rule 2: ARTIFACT_ID_HASH_CONFLICT — same id, different hash
-  await fs.writeFile(path.join(artifactsDir, "conflict1.json"), JSON.stringify({ id: "conflict-id", canonicalHash: "hash-bbb" }));
-  await fs.writeFile(path.join(artifactsDir, "conflict2.json"), JSON.stringify({ id: "conflict-id", canonicalHash: "hash-ccc" }));
+  await fs.writeFile(
+    path.join(artifactsDir, "conflict1.json"),
+    JSON.stringify({ id: "conflict-id", canonicalHash: "hash-bbb" })
+  );
+  await fs.writeFile(
+    path.join(artifactsDir, "conflict2.json"),
+    JSON.stringify({ id: "conflict-id", canonicalHash: "hash-ccc" })
+  );
 
   // Rule 3: DUPLICATE_ARTIFACT_HASH — different id, same hash
-  await fs.writeFile(path.join(artifactsDir, "hashdup1.json"), JSON.stringify({ id: "id-x", canonicalHash: "hash-shared" }));
-  await fs.writeFile(path.join(artifactsDir, "hashdup2.json"), JSON.stringify({ id: "id-y", canonicalHash: "hash-shared" }));
+  await fs.writeFile(
+    path.join(artifactsDir, "hashdup1.json"),
+    JSON.stringify({ id: "id-x", canonicalHash: "hash-shared" })
+  );
+  await fs.writeFile(
+    path.join(artifactsDir, "hashdup2.json"),
+    JSON.stringify({ id: "id-y", canonicalHash: "hash-shared" })
+  );
 
   // Rule 4: MALFORMED_ARTIFACT
   await fs.writeFile(path.join(artifactsDir, "broken.json"), "NOT VALID JSON {{{");
 
-  const doc = await execa("node", [cliPath, "dev", "doctor", "--json"], { cwd: workspace, reject: false });
+  const doc = await execa("node", [cliPath, "dev", "doctor", "--json"], {
+    cwd: workspace,
+    reject: false
+  });
 
   if (doc.exitCode === 0) {
     console.error("DEV DOCTOR STDOUT:", doc.stdout);
@@ -282,10 +422,17 @@ async function duplicateArtifactRegression(workspace: string, cliPath: string) {
   }
 
   const stdout = doc.stdout;
-  const mustContain = ["DUPLICATE_ARTIFACT_ID", "ARTIFACT_ID_HASH_CONFLICT", "DUPLICATE_ARTIFACT_HASH", "MALFORMED_ARTIFACT"];
+  const mustContain = [
+    "DUPLICATE_ARTIFACT_ID",
+    "ARTIFACT_ID_HASH_CONFLICT",
+    "DUPLICATE_ARTIFACT_HASH",
+    "MALFORMED_ARTIFACT"
+  ];
   for (const code of mustContain) {
     if (!stdout.includes(code)) {
-      throw new Error(`Doctor did not report expected error code: ${code}. Output: ${stdout.slice(0, 500)}`);
+      throw new Error(
+        `Doctor did not report expected error code: ${code}. Output: ${stdout.slice(0, 500)}`
+      );
     }
   }
 }
@@ -302,7 +449,10 @@ async function parallelHellMiniRegression(workspace: string, cliPath: string) {
   const spawn = (args: string[]) => {
     return (async () => {
       while (Date.now() < endTime) {
-        const res = await execa("node", [cliPath, ...args], { cwd: workspace, reject: false });
+        const res = await execa("node", [cliPath, ...args], {
+          cwd: workspace,
+          reject: false
+        });
         if (res.exitCode === NATIVE_CRASH_CODE || res.exitCode === -1073741819) {
           nativeCrashDetected = true;
           crashDetail = `${args.join(" ")} exited with ${res.exitCode}`;
@@ -330,37 +480,62 @@ async function sandboxNightmare(workspace: string, cliPath: string) {
   const DURATION_MS = parseInt(process.env.NIGHTMARE_DURATION_MIN || "2", 10) * 60 * 1000;
   const endTime = Date.now() + DURATION_MS;
   console.log(`    Running Sandbox Nightmare Suite for ${DURATION_MS / 1000} seconds...`);
-  
+
   let failed = false;
   let failDetail = "";
 
   const runSandbox = async () => {
     while (Date.now() < endTime && !failed) {
-      const sandboxTmp = path.join(workspace, `.sandbox-test-${randomUUID().slice(0, 8)}`);
+      const sandboxTmp = path.join(
+        workspace,
+        `.sandbox-test-${randomUUID().slice(0, 8)}`
+      );
       try {
         await fs.mkdir(sandboxTmp, { recursive: true });
-        await fs.writeFile(path.join(sandboxTmp, ".hardkas-sandbox-target"), "DO NOT REMOVE");
+        await fs.writeFile(
+          path.join(sandboxTmp, ".hardkas-sandbox-target"),
+          "DO NOT REMOVE"
+        );
 
         // 1. Rapid launch & kill
-        const child1 = execa("node", [cliPath, "sandbox", "--with-node", "--recipe", "transfer"], { cwd: sandboxTmp, reject: false });
-        await new Promise(r => setTimeout(r, 1000));
+        const child1 = execa(
+          "node",
+          [cliPath, "sandbox", "--with-node", "--recipe", "transfer"],
+          { cwd: sandboxTmp, reject: false }
+        );
+        await new Promise((r) => setTimeout(r, 1000));
         child1.kill("SIGINT");
         await child1.catch(() => {});
 
         // 2. Concurrent recipes
-        const p1 = execa("node", [cliPath, "sandbox", "--with-node", "--recipe", "transfer"], { cwd: sandboxTmp, reject: false });
-        const p2 = execa("node", [cliPath, "sandbox", "--with-node", "--recipe", "replay-failure"], { cwd: sandboxTmp, reject: false });
-        const p3 = execa("node", [cliPath, "sandbox", "--with-node", "--recipe", "projection-rebuild"], { cwd: sandboxTmp, reject: false });
-        
+        const p1 = execa(
+          "node",
+          [cliPath, "sandbox", "--with-node", "--recipe", "transfer"],
+          { cwd: sandboxTmp, reject: false }
+        );
+        const p2 = execa(
+          "node",
+          [cliPath, "sandbox", "--with-node", "--recipe", "replay-failure"],
+          { cwd: sandboxTmp, reject: false }
+        );
+        const p3 = execa(
+          "node",
+          [cliPath, "sandbox", "--with-node", "--recipe", "projection-rebuild"],
+          { cwd: sandboxTmp, reject: false }
+        );
+
         // 3. Tmp deletion race
         setTimeout(() => {
-           fs.rm(sandboxTmp, { recursive: true, force: true }).catch(() => {});
+          fs.rm(sandboxTmp, { recursive: true, force: true }).catch(() => {});
         }, 500);
 
         await Promise.all([p1, p2, p3]);
-
       } catch (e: any) {
-        if (!e.message.includes("ENOENT") && !e.message.includes("EBUSY") && !e.message.includes("EPERM")) {
+        if (
+          !e.message.includes("ENOENT") &&
+          !e.message.includes("EBUSY") &&
+          !e.message.includes("EPERM")
+        ) {
           failed = true;
           failDetail = `Sandbox crashed unexpectedly: ${e.message}`;
         }
@@ -398,21 +573,29 @@ async function main() {
   for (let i = 0; i < argv.length; i++) {
     if (argv[i] === "--only" && i + 1 < argv.length) {
       i++;
-      onlyFilters.push(...argv[i].split(",").map(s => s.trim().toLowerCase()).filter(Boolean));
+      onlyFilters.push(
+        ...argv[i]
+          .split(",")
+          .map((s) => s.trim().toLowerCase())
+          .filter(Boolean)
+      );
     }
   }
 
   const shouldRun = (name: string): boolean => {
     if (onlyFilters.length === 0) return true;
     const lower = name.toLowerCase();
-    return onlyFilters.some(f => lower.includes(f));
+    return onlyFilters.some((f) => lower.includes(f));
   };
 
   if (onlyFilters.length > 0) {
     console.log(`🎯 --only filter active: [${onlyFilters.join(", ")}]`);
   }
 
-  const vectors: Array<{ name: string; fn: (workspace: string, cliPath: string) => Promise<void> }> = [
+  const vectors: Array<{
+    name: string;
+    fn: (workspace: string, cliPath: string) => Promise<void>;
+  }> = [
     { name: "Duplicate Artifact Regression", fn: duplicateArtifactRegression },
     { name: "Parallel Hell Mini Regression", fn: parallelHellMiniRegression },
     { name: "Nuclear Corruption", fn: nuclearCorruption },
@@ -425,7 +608,7 @@ async function main() {
     { name: "Time Travel Insanity", fn: timeTravelInsanity },
     { name: "Fake RPC Liar Mode", fn: fakeRpcLiar },
     { name: "The Truth Test", fn: theTruthTest },
-    { name: "Sandbox Nightmare", fn: sandboxNightmare },
+    { name: "Sandbox Nightmare", fn: sandboxNightmare }
   ];
 
   const results: NightmareResult[] = [];
@@ -441,15 +624,21 @@ async function main() {
   console.log("\n📊 NIGHTMARE SUITE REPORT");
   let blockers = 0;
   for (const r of results) {
-    console.log(`- ${r.vector}: ${r.passed ? "PASS" : r.severity === "blocker" ? "FAIL (BLOCKER)" : "FAIL (WARNING)"}`);
+    console.log(
+      `- ${r.vector}: ${r.passed ? "PASS" : r.severity === "blocker" ? "FAIL (BLOCKER)" : "FAIL (WARNING)"}`
+    );
     if (!r.passed && r.severity === "blocker") blockers++;
   }
 
   if (blockers > 0) {
-    console.log(`\n❌ SURVIVAL FAILED. HardKAS is not ready. ${blockers} blockers found.`);
+    console.log(
+      `\n❌ SURVIVAL FAILED. HardKAS is not ready. ${blockers} blockers found.`
+    );
     process.exit(1);
   } else {
-    console.log("\n✨ SURVIVED. HardKAS survived the Nightmare Suite under controlled local adversarial conditions.");
+    console.log(
+      "\n✨ SURVIVED. HardKAS survived the Nightmare Suite under controlled local adversarial conditions."
+    );
     process.exit(0);
   }
 }

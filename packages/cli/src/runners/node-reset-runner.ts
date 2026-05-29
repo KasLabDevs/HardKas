@@ -10,8 +10,12 @@ export interface NodeResetRunnerResult {
   formatted: string;
 }
 
-export async function runNodeReset(input: NodeResetRunnerInput): Promise<NodeResetRunnerResult> {
-  const runner = new DockerKaspadRunner(input.containerName ? { containerName: input.containerName } : {});
+export async function runNodeReset(
+  input: NodeResetRunnerInput
+): Promise<NodeResetRunnerResult> {
+  const runner = new DockerKaspadRunner(
+    input.containerName ? { containerName: input.containerName } : {}
+  );
   const status = await runner.reset({ removeData: input.removeData !== false });
 
   return {
