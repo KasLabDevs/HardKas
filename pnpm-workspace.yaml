@@ -2,6 +2,7 @@ packages:
   - "apps/*"
   - "packages/*"
   - "examples/*"
+  - "generated-apps/*"
   - "demo2"
 
 supportedArchitectures:

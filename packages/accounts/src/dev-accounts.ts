@@ -47,15 +47,16 @@ export async function getOrCreateDevAccount(
   const privateKeyHex = crypto.createHash("sha256").update(seedString).digest("hex");
 
   // Dynamically load kaspa to get the public key and address
-  let sdk;
+  let sdkModule;
   try {
     // @ts-ignore
-    sdk = await import(/* @vite-ignore */ "@kaspa/core-lib");
+    sdkModule = await import(/* @vite-ignore */ "@kaspa/core-lib");
   } catch (e) {
     console.warn(`\n[Warning] Kaspa SDK (@kaspa/core-lib) is not installed in the workspace.\nCould not generate dev account '${alias}'.`);
     return { address: "", privateKey: "", publicKey: "" };
   }
 
+  const sdk = sdkModule.default || sdkModule;
   const privKey = new sdk.PrivateKey(privateKeyHex);
   const pubKey = privKey.toPublicKey();
   const address = pubKey.toAddress("simnet").toString();

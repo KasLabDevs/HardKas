@@ -11,14 +11,11 @@ export interface ReplayVerifyOptions {
 
 export async function runReplayVerify(options: ReplayVerifyOptions) {
   const { Hardkas } = await import("@hardkas/sdk");
-  const rootSdk = await Hardkas.open({ cwd: options.workspaceRoot });
-  const targetDir = rootSdk.workspace.resolvePath(options.path);
-  
-  // Initialize SDK pointed at the target replay workspace
-  const sdk = await Hardkas.open({ cwd: targetDir });
+  const sdk = await Hardkas.open({ cwd: options.workspaceRoot });
+  const targetDir = sdk.workspace.resolvePath(options.path);
 
   // Delegate entirely to SDK Replay macro
-  const result = await sdk.replay.verify({ path: "." });
+  const result = await sdk.replay.verify({ path: options.path });
 
   // Map result to requested literal status
   let finalStatus: "passed" | "diverged" | "unsupported" | "missing_dependency" | "non_deterministic" = "diverged";

@@ -24,6 +24,17 @@ describe("PR 7: Cross-Platform Hash Determinism (v3)", () => {
     expect(strWin).not.toBe(strUnix);
   });
 
+  it("should reject undefined at root but safely omit it from object properties or replace it with null in arrays", () => {
+    // Root undefined throws
+    expect(() => canonicalStringify(undefined)).toThrowError();
+
+    // Object properties with undefined are omitted
+    expect(canonicalStringify({ a: 1, b: undefined })).toBe('{"a":1}');
+
+    // Array items with undefined are converted to null
+    expect(canonicalStringify([1, undefined, 2])).toBe('[1,null,2]');
+  });
+
   it("should normalize UTF-8 NFC in v3", () => {
     // 'e' + combining acute accent (é) vs 'é' precomposed
     const s1 = "\u0065\u0301"; 

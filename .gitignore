@@ -34,3 +34,6 @@ tx-signed.json
 tx-receipt.json
 
 *.tgz
+
+generated-apps/
+

@@ -51,16 +51,36 @@ export class HardkasTx {
       : (typeof options.amount === "number" ? BigInt(options.amount) : options.amount);
 
     // Fetch UTXOs
-    const rpcUtxos = await this.sdk.rpc.getUtxosByAddress(fromAccount.address);
-    const builderUtxos: BuilderUtxo[] = rpcUtxos.map(u => ({
-      outpoint: {
-        transactionId: u.outpoint.transactionId,
-        index: u.outpoint.index
-      },
-      address: u.address,
-      amountSompi: u.amountSompi,
-      scriptPublicKey: u.scriptPublicKey || ""
-    }));
+    let builderUtxos: BuilderUtxo[] = [];
+    if (this.sdk.network === "simulated") {
+      // TODO: Extract a shared UtxoProvider / RuntimeBackend so HardkasTx 
+      // does not depend directly on localnet implementation details.
+      const { loadOrCreateLocalnetState, getSpendableUtxos } = await import("@hardkas/localnet");
+      const localState = await loadOrCreateLocalnetState({ cwd: this.sdk.workspace.root });
+      const unspent = getSpendableUtxos(localState, fromAccount.address);
+      builderUtxos = unspent.map(u => {
+        const parts = u.id.split(":");
+        const index = Number(parts[parts.length - 1]);
+        const transactionId = parts.slice(0, -1).join(":");
+        return {
+          outpoint: { transactionId, index },
+          address: u.address,
+          amountSompi: BigInt(u.amountSompi),
+          scriptPublicKey: "mock-script"
+        };
+      });
+    } else {
+      const rpcUtxos = await this.sdk.rpc.getUtxosByAddress(fromAccount.address);
+      builderUtxos = rpcUtxos.map(u => ({
+        outpoint: {
+          transactionId: u.outpoint.transactionId,
+          index: u.outpoint.index
+        },
+        address: u.address,
+        amountSompi: u.amountSompi,
+        scriptPublicKey: u.scriptPublicKey || ""
+      }));
+    }
 
     const builderPlan = buildPaymentPlan({
       fromAddress: fromAccount.address,
@@ -208,6 +228,25 @@ export class HardkasTx {
       events, 
       receiptPath
     });
+
+    // P1.1 Emit dashboard/query-store events for local/simulated transactions
+    coreEvents.normalizeAndEmit({
+      kind: "artifact.created",
+      schema: receipt.schema,
+      artifactId: receipt.txId,
+      network: receipt.networkId,
+      mode: receipt.mode,
+      path: receiptPath
+    } as unknown as Parameters<typeof coreEvents.normalizeAndEmit>[0]);
+
+    coreEvents.normalizeAndEmit({
+      kind: "tx.confirmed",
+      txId: receipt.txId,
+      network: receipt.networkId,
+      mode: receipt.mode,
+      amountSompi: receipt.amountSompi,
+      feeSompi: receipt.feeSompi
+    } as unknown as Parameters<typeof coreEvents.normalizeAndEmit>[0]);
 
     return {
       receipt,

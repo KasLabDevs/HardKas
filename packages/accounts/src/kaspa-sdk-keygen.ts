@@ -28,8 +28,8 @@ export class KaspaSdkKeyGenerator implements KaspaKeyGenerator {
         return await rawLoader();
       } catch (e) {
         throw new Error(
-          "Kaspa SDK key generation dependency is not installed. " +
-          "Install/configure the supported Kaspa WASM SDK adapter. " +
+          "Kaspa cryptography adapter missing. Real account generation requires WASM execution.\n" +
+          "Run: npm install @kaspa/wallet-wasm\n" +
           "Use 'hardkas accounts real import' to add accounts manually for now."
         );
       }

@@ -351,7 +351,7 @@ export async function runL2TxSend(options: L2TxSendOptions): Promise<void> {
   // Mainnet/Production guardrail
   const isMainnet = profile.name === "mainnet" || profile.name.includes("mainnet") || artifact.networkId === "mainnet" || artifact.chainId === 1 || profile.chainId === 1;
   if (isMainnet) {
-    throw new Error("L2 mainnet broadcast is disabled in HardKAS 0.7.1-alpha.");
+    throw new Error("L2 mainnet broadcast is disabled in HardKAS 0.7.3-alpha.");
   }
 
   if (!options.yes) {

@@ -49,8 +49,9 @@ hardkas accounts balance [options] <identifier>
 
 | Flag | Description | Default |
 | :--- | :--- | :--- |
-| `--network <name>` | Network name (simnet, localnet, etc.) |  |
-| `--url <rpc-url>` | Explicit RPC URL |  |
+| `--network <net>` | Specify target network (mainnet, testnet-10, simnet) |  |
+| `--url <url>` | Custom RPC URL (ws://...) |  |
+| `--local` | Query local query-store instead of remote RPC (for simulated networks) | false |
 | `--json` | Output as JSON | false |
 
 ### Arguments
@@ -325,6 +326,7 @@ No arguments.
 ### Subcommands
 
 - [hardkas artifact explain](#hardkas-artifact-explain)
+- [hardkas artifact inspect](#hardkas-artifact-inspect)
 - [hardkas artifact lineage](#hardkas-artifact-lineage)
 - [hardkas artifact verify](#hardkas-artifact-verify)
 
@@ -345,12 +347,38 @@ hardkas artifact explain [options] <path>
 | Flag | Description | Default |
 | :--- | :--- | :--- |
 | `--json` | Output as JSON | false |
+| `--workspace <path>` | Override workspace root directory |  |
 
 ### Arguments
 
 | Argument | Description |
 | :--- | :--- |
 | `path` |  |
+
+---
+
+## hardkas artifact inspect
+
+Deep inspect an artifact by ID or path stable
+
+### Usage
+
+```bash
+hardkas artifact inspect [options] <id_or_path>
+```
+
+### Options
+
+| Flag | Description | Default |
+| :--- | :--- | :--- |
+| `--json` | Output results as JSON | false |
+| `--workspace <path>` | Override workspace root directory |  |
+
+### Arguments
+
+| Argument | Description |
+| :--- | :--- |
+| `id_or_path` |  |
 
 ---
 
@@ -369,6 +397,7 @@ hardkas artifact lineage [options] <path>
 | Flag | Description | Default |
 | :--- | :--- | :--- |
 | `--json` | Output as JSON | false |
+| `--workspace <path>` | Override workspace root directory |  |
 
 ### Arguments
 
@@ -395,6 +424,7 @@ hardkas artifact verify [options] <path>
 | `--json` | Output results as JSON | false |
 | `--recursive` | Recursively verify all artifacts in a directory | false |
 | `--strict` | Perform deep semantic and operational safety verification | false |
+| `--workspace <path>` | Override workspace root directory |  |
 
 ### Arguments
 
@@ -546,6 +576,106 @@ hardkas capabilities [options]
 | Flag | Description | Default |
 | :--- | :--- | :--- |
 | `--json` | Output as stable JSON schema | false |
+
+### Arguments
+
+No arguments.
+
+---
+
+## hardkas chaos
+
+Run the internal Chaos Engine to stress-test the runtime experimental
+
+### Usage
+
+```bash
+hardkas chaos [options] [command]
+```
+
+### Options
+
+| Flag | Description | Default |
+| :--- | :--- | :--- |
+| `--runs <number>` | Number of chaos iterations to run | 300 |
+| `--seed <number>` | Deterministic PRNG seed | 1337 |
+| `--profile <smoke|targeted|full>` | Fuzzing distribution profile | smoke |
+| `--actor <LockHell|RotBot|DriftHunter|HumanChaos>` | Target a specific chaos actor instead of using a profile |  |
+| `--isolate` | Run the chaos engine in a dedicated temporary workspace (Default) | true |
+| `--unsafe-current-dir` | Run chaos in the current directory (DANGEROUS) | false |
+| `--force-ci-chaos` | Allow unsafe chaos in CI environments | false |
+| `--force-chaos-destructive` | Bypass workspace protection guards | false |
+
+### Arguments
+
+No arguments.
+
+### Subcommands
+
+- [hardkas chaos replay](#hardkas-chaos-replay)
+
+---
+
+## hardkas chaos replay
+
+Replay a specific chaos run deterministically
+
+### Usage
+
+```bash
+hardkas chaos replay [options]
+```
+
+### Options
+
+| Flag | Description | Default |
+| :--- | :--- | :--- |
+| `--run-seed <number>` | The run seed to replay |  |
+| `--isolate` | Run in isolated workspace | true |
+
+### Arguments
+
+No arguments.
+
+---
+
+## hardkas ci
+
+Continuous Integration and DevSecOps commands
+
+### Usage
+
+```bash
+hardkas ci [options] [command]
+```
+
+### Options
+
+No options.
+
+### Arguments
+
+No arguments.
+
+### Subcommands
+
+- [hardkas ci verify](#hardkas-ci-verify)
+
+---
+
+## hardkas ci verify
+
+Non-interactively verify workspace integrity, artifacts, and projections
+
+### Usage
+
+```bash
+hardkas ci verify [options]
+```
+
+### Options
+
+No options.
 
 ### Arguments
 
@@ -716,21 +846,41 @@ No arguments.
 
 ## hardkas dashboard
 
-Open the HardKas Local Dashboard stable
+Open the HardKAS Semantic Observability Dashboard alpha
 
 ### Usage
 
 ```bash
-hardkas dashboard [options]
+hardkas dashboard [options] [command]
 ```
 
 ### Options
 
-| Flag | Description | Default |
-| :--- | :--- | :--- |
-| `--port <number>` | Port to bind to | 7420 |
-| `--start-server` | Start the dev server if not running | false |
-| `--show-token` | Show the generated API session token if starting the dev server | false |
+No options.
+
+### Arguments
+
+No arguments.
+
+### Subcommands
+
+- [hardkas dashboard doctor](#hardkas-dashboard-doctor)
+
+---
+
+## hardkas dashboard doctor
+
+Verify dashboard endpoints and diagnostic health status
+
+### Usage
+
+```bash
+hardkas dashboard doctor [options]
+```
+
+### Options
+
+No options.
 
 ### Arguments
 
@@ -909,7 +1059,6 @@ hardkas dev [options] [command]
 | :--- | :--- | :--- |
 | `--once` | Initialize dev environment, run health checks, and exit (headless) | false |
 | `--headless` | Run headlessly (no UI open) | false |
-| `--json` | Output status as JSON | false |
 
 ### Arguments
 
@@ -917,8 +1066,127 @@ No arguments.
 
 ### Subcommands
 
+- [hardkas dev accounts](#hardkas-dev-accounts)
+- [hardkas dev create](#hardkas-dev-create)
 - [hardkas dev doctor](#hardkas-dev-doctor)
+- [hardkas dev init](#hardkas-dev-init)
+- [hardkas dev last](#hardkas-dev-last)
 - [hardkas dev server](#hardkas-dev-server)
+- [hardkas dev tx](#hardkas-dev-tx)
+
+---
+
+## hardkas dev accounts
+
+Manage simnet dev accounts
+
+### Usage
+
+```bash
+hardkas dev accounts [options] [command]
+```
+
+### Options
+
+No options.
+
+### Arguments
+
+No arguments.
+
+### Subcommands
+
+- [hardkas dev accounts export](#hardkas-dev-accounts-export)
+- [hardkas dev accounts list](#hardkas-dev-accounts-list)
+- [hardkas dev accounts reveal](#hardkas-dev-accounts-reveal)
+
+---
+
+## hardkas dev accounts export
+
+Export dev account in format suitable for Kasware manual import
+
+### Usage
+
+```bash
+hardkas dev accounts export [options] <kasware>
+```
+
+### Options
+
+| Flag | Description | Default |
+| :--- | :--- | :--- |
+| `--alias <alias>` | Alias to export | alice |
+
+### Arguments
+
+| Argument | Description |
+| :--- | :--- |
+| `kasware` |  |
+
+---
+
+## hardkas dev accounts list
+
+List dev accounts
+
+### Usage
+
+```bash
+hardkas dev accounts list [options]
+```
+
+### Options
+
+No options.
+
+### Arguments
+
+No arguments.
+
+---
+
+## hardkas dev accounts reveal
+
+Reveal private key for a dev account (simnet only)
+
+### Usage
+
+```bash
+hardkas dev accounts reveal [options] <alias>
+```
+
+### Options
+
+No options.
+
+### Arguments
+
+| Argument | Description |
+| :--- | :--- |
+| `alias` |  |
+
+---
+
+## hardkas dev create
+
+Create a new dApp project from a template stable
+
+### Usage
+
+```bash
+hardkas dev create [options] <name>
+```
+
+### Options
+
+No options.
+
+### Arguments
+
+| Argument | Description |
+| :--- | :--- |
+| `name` |  |
 
 ---
 
@@ -940,7 +1208,53 @@ hardkas dev doctor [options]
 | `--rpc-url <url>` | Explicit Igra RPC URL to check |  |
 | `--account <name>` | Local EVM account name to verify balance |  |
 | `--timeout <ms>` | RPC timeout in milliseconds | 3000 |
-| `--json` | Output as JSON | false |
+| `--json` | Output as JSON |  |
+| `--release` | Run strict release gate checks |  |
+
+### Arguments
+
+No arguments.
+
+---
+
+## hardkas dev init
+
+Initialize dApp support in the current workspace stable
+
+### Usage
+
+```bash
+hardkas dev init [options]
+```
+
+### Options
+
+No options.
+
+### Arguments
+
+No arguments.
+
+---
+
+## hardkas dev last
+
+Interact with the latest local workflow
+
+### Usage
+
+```bash
+hardkas dev last [options]
+```
+
+### Options
+
+| Flag | Description | Default |
+| :--- | :--- | :--- |
+| `--inspect` | Inspect the latest artifact | false |
+| `--replay` | Replay the latest workflow | false |
+| `--explain` | Explain the latest workflow | false |
+| `--workspace <path>` | Override workspace root directory |  |
 
 ### Arguments
 
@@ -967,7 +1281,57 @@ hardkas dev server [options]
 | `--open` | Open dashboard in browser automatically | false |
 | `--unsafe-external` | Allow external access (binds to 0.0.0.0 if host not specified) | false |
 | `--show-token` | Show the generated API session token for manual script integration | false |
+| `--with-node` | Spawn the localnet node and auto-fund simnet accounts | false |
 | `--json` | Output status as JSON | false |
+
+### Arguments
+
+No arguments.
+
+---
+
+## hardkas dev tx
+
+Quick transaction flows for dev
+
+### Usage
+
+```bash
+hardkas dev tx [options] [command]
+```
+
+### Options
+
+No options.
+
+### Arguments
+
+No arguments.
+
+### Subcommands
+
+- [hardkas dev tx send](#hardkas-dev-tx-send)
+
+---
+
+## hardkas dev tx send
+
+Quick send transaction
+
+### Usage
+
+```bash
+hardkas dev tx send [options]
+```
+
+### Options
+
+| Flag | Description | Default |
+| :--- | :--- | :--- |
+| `--from <accountOrAddress>` | Sender alias |  |
+| `--to <address>` | Recipient address |  |
+| `--amount <kas>` | Amount in KAS |  |
+| `--workspace <path>` | Override workspace root directory |  |
 
 ### Arguments
 
@@ -1046,6 +1410,28 @@ hardkas init [options] [name]
 | Argument | Description |
 | :--- | :--- |
 | `name` | Project name or directory |
+
+---
+
+## hardkas inspect
+
+Inspect stream sizes and archive segments beta
+
+### Usage
+
+```bash
+hardkas inspect [options]
+```
+
+### Options
+
+| Flag | Description | Default |
+| :--- | :--- | :--- |
+| `--json` | Output results as stable JSON schema | false |
+
+### Arguments
+
+No arguments.
 
 ---
 
@@ -1846,7 +2232,7 @@ hardkas localnet fork [options]
 | :--- | :--- | :--- |
 | `--network <name>` | Network to fork from |  |
 | `--addresses <addrs...>` | Only fetch UTXOs for these addresses |  |
-| `--at-daa-score <score>` | Fork at specific DAA score (default: latest) |  |
+| `--at-daa-score <score>` | Fork at specific DAA score (implicit latest is forbidden) |  |
 | `--output <path>` | Save fork snapshot to file |  |
 | `--json` | Output as JSON | false |
 
@@ -3095,6 +3481,29 @@ No arguments.
 
 ---
 
+## hardkas repair
+
+Attempt automatic recovery of corrupt projections or append tails beta
+
+### Usage
+
+```bash
+hardkas repair [options]
+```
+
+### Options
+
+| Flag | Description | Default |
+| :--- | :--- | :--- |
+| `--json` | Output results as stable JSON schema | false |
+| `--force` | Repair without prompting for confirmation | false |
+
+### Arguments
+
+No arguments.
+
+---
+
 ## hardkas replay
 
 Manage HardKAS transaction replays
@@ -3160,12 +3569,36 @@ hardkas replay verify [options] [path]
 | Flag | Description | Default |
 | :--- | :--- | :--- |
 | `--json` | Output as JSON | false |
+| `--workspace <path>` | Override workspace root directory |  |
 
 ### Arguments
 
 | Argument | Description |
 | :--- | :--- |
 | `path` |  |
+
+---
+
+## hardkas rotate
+
+Rotate and archive telemetry streams beta
+
+### Usage
+
+```bash
+hardkas rotate [options]
+```
+
+### Options
+
+| Flag | Description | Default |
+| :--- | :--- | :--- |
+| `--json` | Output results as stable JSON schema | false |
+| `--force` | Force rotation even if file size is below threshold | false |
+
+### Arguments
+
+No arguments.
 
 ---
 
@@ -3354,6 +3787,31 @@ hardkas run [options] <script>
 
 ---
 
+## hardkas sandbox
+
+Start a temporary, ephemeral HardKAS local experimentation environment
+
+### Usage
+
+```bash
+hardkas sandbox [options]
+```
+
+### Options
+
+| Flag | Description | Default |
+| :--- | :--- | :--- |
+| `--with-node` | Start a simulated Kaspa node in the background with mining |  |
+| `--recipe <name>` | Run an initial recipe/template inside the sandbox |  |
+| `-p, --port <port>` | Port for dashboard | 3000 |
+| `-h, --host <host>` | Host for dashboard | localhost |
+
+### Arguments
+
+No arguments.
+
+---
+
 ## hardkas session
 
 L1/L2 developer identity linkage and sessions
@@ -3468,6 +3926,119 @@ No options.
 
 ---
 
+## hardkas status
+
+Display the current state of the local HardKAS runtime workspace
+
+### Usage
+
+```bash
+hardkas status [options]
+```
+
+### Options
+
+| Flag | Description | Default |
+| :--- | :--- | :--- |
+| `--workspace <path>` | Override workspace root directory |  |
+
+### Arguments
+
+No arguments.
+
+---
+
+## hardkas telemetry
+
+Inspect, verify, and monitor the canonical runtime pressure telemetry stream
+
+### Usage
+
+```bash
+hardkas telemetry [options] [command]
+```
+
+### Options
+
+No options.
+
+### Arguments
+
+No arguments.
+
+### Subcommands
+
+- [hardkas telemetry inspect](#hardkas-telemetry-inspect)
+- [hardkas telemetry tail](#hardkas-telemetry-tail)
+- [hardkas telemetry verify](#hardkas-telemetry-verify)
+
+---
+
+## hardkas telemetry inspect
+
+Deep introspection of the telemetry stream stable
+
+### Usage
+
+```bash
+hardkas telemetry inspect [options]
+```
+
+### Options
+
+| Flag | Description | Default |
+| :--- | :--- | :--- |
+| `--limit <n>` | Number of recent events to display | 5 |
+
+### Arguments
+
+No arguments.
+
+---
+
+## hardkas telemetry tail
+
+Real-time monitor of the telemetry stream stable
+
+### Usage
+
+```bash
+hardkas telemetry tail [options]
+```
+
+### Options
+
+| Flag | Description | Default |
+| :--- | :--- | :--- |
+| `-f, --follow` | Keep checking for incoming telemetry events | false |
+| `-n, --lines <n>` | Number of initial lines to tail | 20 |
+
+### Arguments
+
+No arguments.
+
+---
+
+## hardkas telemetry verify
+
+Verify schema integrity conforming to Telemetry Source Contract v1 stable
+
+### Usage
+
+```bash
+hardkas telemetry verify [options]
+```
+
+### Options
+
+No options.
+
+### Arguments
+
+No arguments.
+
+---
+
 ## hardkas test
 
 Run HardKAS tests against localnet stable
@@ -3494,6 +4065,81 @@ hardkas test [options] [files...]
 | Argument | Description |
 | :--- | :--- |
 | `files` |  |
+
+---
+
+## hardkas torture
+
+HardKAS Semantic Torture Testing Suite
+
+### Usage
+
+```bash
+hardkas torture [options] [command]
+```
+
+### Options
+
+No options.
+
+### Arguments
+
+No arguments.
+
+### Subcommands
+
+- [hardkas torture matrix](#hardkas-torture-matrix)
+- [hardkas torture replay](#hardkas-torture-replay)
+
+---
+
+## hardkas torture matrix
+
+Execute the deterministic chaos-and-mutation torture matrix alpha
+
+### Usage
+
+```bash
+hardkas torture matrix [options]
+```
+
+### Options
+
+| Flag | Description | Default |
+| :--- | :--- | :--- |
+| `--iterations <number>` | Number of torture cases to execute | 300 |
+| `--seed <seed>` | Seed value for deterministic inputs or 'random' | random |
+| `--report [path]` | Optional custom JSON output filepath for findings report |  |
+| `--bucket <name>` | Optional target bucket name to execute exclusively |  |
+| `--profile <name>` | Optional profile name to execute |  |
+
+### Arguments
+
+No arguments.
+
+---
+
+## hardkas torture replay
+
+Replay and debug a specific failed case from a torture run alpha
+
+### Usage
+
+```bash
+hardkas torture replay [options]
+```
+
+### Options
+
+| Flag | Description | Default |
+| :--- | :--- | :--- |
+| `--seed <number>` | Original global seed of the failed matrix run |  |
+| `--case <caseId>` | Failed case ID, e.g. case-001 |  |
+| `--profile <name>` | Original profile filter of the failed matrix run |  |
+
+### Arguments
+
+No arguments.
 
 ---
 
@@ -3757,6 +4403,54 @@ No arguments.
 
 ---
 
+## hardkas verify-semantics
+
+Verify semantic truth agreement across all HardKAS subsystems alpha
+
+### Usage
+
+```bash
+hardkas verify-semantics [options]
+```
+
+### Options
+
+| Flag | Description | Default |
+| :--- | :--- | :--- |
+| `--json` | Output machine-readable JSON | false |
+| `--ci-mode` | Verify semantic truth equivalence across OS boundaries | false |
+
+### Arguments
+
+No arguments.
+
+---
+
+## hardkas why
+
+Explain the causal lineage of a given artifact ID
+
+### Usage
+
+```bash
+hardkas why [options] <artifactId>
+```
+
+### Options
+
+| Flag | Description | Default |
+| :--- | :--- | :--- |
+| `--json` | Output lineage graph in JSON format |  |
+| `--workspace <path>` | Override workspace root directory |  |
+
+### Arguments
+
+| Argument | Description |
+| :--- | :--- |
+| `artifactId` | The full or partial ID of the artifact |
+
+---
+
 ## hardkas workflow
 
 Programmable deterministic workflows and agent orchestration alpha
@@ -3868,6 +4562,9 @@ hardkas workflow run [options] <file>
 | Flag | Description | Default |
 | :--- | :--- | :--- |
 | `--dry-run` | Simulate the workflow without mutating the filesystem | false |
+| `--network <net>` | Target network (e.g. simulated, testnet-10, mainnet) |  |
+| `--offline` | Force offline execution (rejects real RPC connections) | false |
+| `--timeout <ms>` | Maximum execution time in milliseconds |  |
 | `--json` | Output the final workflow artifact as JSON | false |
 
 ### Arguments

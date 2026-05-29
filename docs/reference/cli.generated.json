@@ -25,17 +25,24 @@
           ],
           "options": [
             {
-              "flags": "--network <name>",
-              "description": "Network name (simnet, localnet, etc.)",
+              "flags": "--network <net>",
+              "description": "Specify target network (mainnet, testnet-10, simnet)",
               "default": null,
               "required": true,
               "mandatory": false
             },
             {
-              "flags": "--url <rpc-url>",
-              "description": "Explicit RPC URL",
+              "flags": "--url <url>",
+              "description": "Custom RPC URL (ws://...)",
               "default": null,
               "required": true,
+              "mandatory": false
+            },
+            {
+              "flags": "--local",
+              "description": "Query local query-store instead of remote RPC (for simulated networks)",
+              "default": false,
+              "required": false,
               "mandatory": false
             },
             {
@@ -445,6 +452,43 @@
               "default": false,
               "required": false,
               "mandatory": false
+            },
+            {
+              "flags": "--workspace <path>",
+              "description": "Override workspace root directory",
+              "default": null,
+              "required": true,
+              "mandatory": false
+            }
+          ],
+          "subcommands": []
+        },
+        {
+          "path": "hardkas artifact inspect",
+          "name": "inspect",
+          "aliases": [],
+          "description": "Deep inspect an artifact by ID or path stable",
+          "usage": "hardkas artifact inspect [options] <id_or_path>",
+          "arguments": [
+            {
+              "name": "id_or_path",
+              "description": ""
+            }
+          ],
+          "options": [
+            {
+              "flags": "--json",
+              "description": "Output results as JSON",
+              "default": false,
+              "required": false,
+              "mandatory": false
+            },
+            {
+              "flags": "--workspace <path>",
+              "description": "Override workspace root directory",
+              "default": null,
+              "required": true,
+              "mandatory": false
             }
           ],
           "subcommands": []
@@ -467,6 +511,13 @@
               "description": "Output as JSON",
               "default": false,
               "required": false,
+              "mandatory": false
+            },
+            {
+              "flags": "--workspace <path>",
+              "description": "Override workspace root directory",
+              "default": null,
+              "required": true,
               "mandatory": false
             }
           ],
@@ -504,6 +555,13 @@
               "description": "Perform deep semantic and operational safety verification",
               "default": false,
               "required": false,
+              "mandatory": false
+            },
+            {
+              "flags": "--workspace <path>",
+              "description": "Override workspace root directory",
+              "default": null,
+              "required": true,
               "mandatory": false
             }
           ],
@@ -674,6 +732,120 @@
       "subcommands": []
     },
     {
+      "path": "hardkas chaos",
+      "name": "chaos",
+      "aliases": [],
+      "description": "Run the internal Chaos Engine to stress-test the runtime experimental",
+      "usage": "hardkas chaos [options] [command]",
+      "arguments": [],
+      "options": [
+        {
+          "flags": "--runs <number>",
+          "description": "Number of chaos iterations to run",
+          "default": "300",
+          "required": true,
+          "mandatory": false
+        },
+        {
+          "flags": "--seed <number>",
+          "description": "Deterministic PRNG seed",
+          "default": "1337",
+          "required": true,
+          "mandatory": false
+        },
+        {
+          "flags": "--profile <smoke|targeted|full>",
+          "description": "Fuzzing distribution profile",
+          "default": "smoke",
+          "required": true,
+          "mandatory": false
+        },
+        {
+          "flags": "--actor <LockHell|RotBot|DriftHunter|HumanChaos>",
+          "description": "Target a specific chaos actor instead of using a profile",
+          "default": null,
+          "required": true,
+          "mandatory": false
+        },
+        {
+          "flags": "--isolate",
+          "description": "Run the chaos engine in a dedicated temporary workspace (Default)",
+          "default": true,
+          "required": false,
+          "mandatory": false
+        },
+        {
+          "flags": "--unsafe-current-dir",
+          "description": "Run chaos in the current directory (DANGEROUS)",
+          "default": false,
+          "required": false,
+          "mandatory": false
+        },
+        {
+          "flags": "--force-ci-chaos",
+          "description": "Allow unsafe chaos in CI environments",
+          "default": false,
+          "required": false,
+          "mandatory": false
+        },
+        {
+          "flags": "--force-chaos-destructive",
+          "description": "Bypass workspace protection guards",
+          "default": false,
+          "required": false,
+          "mandatory": false
+        }
+      ],
+      "subcommands": [
+        {
+          "path": "hardkas chaos replay",
+          "name": "replay",
+          "aliases": [],
+          "description": "Replay a specific chaos run deterministically",
+          "usage": "hardkas chaos replay [options]",
+          "arguments": [],
+          "options": [
+            {
+              "flags": "--run-seed <number>",
+              "description": "The run seed to replay",
+              "default": null,
+              "required": true,
+              "mandatory": true
+            },
+            {
+              "flags": "--isolate",
+              "description": "Run in isolated workspace",
+              "default": true,
+              "required": false,
+              "mandatory": false
+            }
+          ],
+          "subcommands": []
+        }
+      ]
+    },
+    {
+      "path": "hardkas ci",
+      "name": "ci",
+      "aliases": [],
+      "description": "Continuous Integration and DevSecOps commands",
+      "usage": "hardkas ci [options] [command]",
+      "arguments": [],
+      "options": [],
+      "subcommands": [
+        {
+          "path": "hardkas ci verify",
+          "name": "verify",
+          "aliases": [],
+          "description": "Non-interactively verify workspace integrity, artifacts, and projections",
+          "usage": "hardkas ci verify [options]",
+          "arguments": [],
+          "options": [],
+          "subcommands": []
+        }
+      ]
+    },
+    {
       "path": "hardkas config",
       "name": "config",
       "aliases": [],
@@ -802,33 +974,22 @@
       "path": "hardkas dashboard",
       "name": "dashboard",
       "aliases": [],
-      "description": "Open the HardKas Local Dashboard stable",
-      "usage": "hardkas dashboard [options]",
+      "description": "Open the HardKAS Semantic Observability Dashboard alpha",
+      "usage": "hardkas dashboard [options] [command]",
       "arguments": [],
-      "options": [
+      "options": [],
+      "subcommands": [
         {
-          "flags": "--port <number>",
-          "description": "Port to bind to",
-          "default": "7420",
-          "required": true,
-          "mandatory": false
-        },
-        {
-          "flags": "--start-server",
-          "description": "Start the dev server if not running",
-          "default": false,
-          "required": false,
-          "mandatory": false
-        },
-        {
-          "flags": "--show-token",
-          "description": "Show the generated API session token if starting the dev server",
-          "default": false,
-          "required": false,
-          "mandatory": false
+          "path": "hardkas dashboard doctor",
+          "name": "doctor",
+          "aliases": [],
+          "description": "Verify dashboard endpoints and diagnostic health status",
+          "usage": "hardkas dashboard doctor [options]",
+          "arguments": [],
+          "options": [],
+          "subcommands": []
         }
-      ],
-      "subcommands": []
+      ]
     },
     {
       "path": "hardkas deploy",
@@ -1044,16 +1205,83 @@
           "default": false,
           "required": false,
           "mandatory": false
-        },
-        {
-          "flags": "--json",
-          "description": "Output status as JSON",
-          "default": false,
-          "required": false,
-          "mandatory": false
         }
       ],
       "subcommands": [
+        {
+          "path": "hardkas dev accounts",
+          "name": "accounts",
+          "aliases": [],
+          "description": "Manage simnet dev accounts",
+          "usage": "hardkas dev accounts [options] [command]",
+          "arguments": [],
+          "options": [],
+          "subcommands": [
+            {
+              "path": "hardkas dev accounts export",
+              "name": "export",
+              "aliases": [],
+              "description": "Export dev account in format suitable for Kasware manual import",
+              "usage": "hardkas dev accounts export [options] <kasware>",
+              "arguments": [
+                {
+                  "name": "kasware",
+                  "description": ""
+                }
+              ],
+              "options": [
+                {
+                  "flags": "--alias <alias>",
+                  "description": "Alias to export",
+                  "default": "alice",
+                  "required": true,
+                  "mandatory": false
+                }
+              ],
+              "subcommands": []
+            },
+            {
+              "path": "hardkas dev accounts list",
+              "name": "list",
+              "aliases": [],
+              "description": "List dev accounts",
+              "usage": "hardkas dev accounts list [options]",
+              "arguments": [],
+              "options": [],
+              "subcommands": []
+            },
+            {
+              "path": "hardkas dev accounts reveal",
+              "name": "reveal",
+              "aliases": [],
+              "description": "Reveal private key for a dev account (simnet only)",
+              "usage": "hardkas dev accounts reveal [options] <alias>",
+              "arguments": [
+                {
+                  "name": "alias",
+                  "description": ""
+                }
+              ],
+              "options": [],
+              "subcommands": []
+            }
+          ]
+        },
+        {
+          "path": "hardkas dev create",
+          "name": "create",
+          "aliases": [],
+          "description": "Create a new dApp project from a template stable",
+          "usage": "hardkas dev create [options] <name>",
+          "arguments": [
+            {
+              "name": "name",
+              "description": ""
+            }
+          ],
+          "options": [],
+          "subcommands": []
+        },
         {
           "path": "hardkas dev doctor",
           "name": "doctor",
@@ -1093,8 +1321,64 @@
             {
               "flags": "--json",
               "description": "Output as JSON",
+              "default": null,
+              "required": false,
+              "mandatory": false
+            },
+            {
+              "flags": "--release",
+              "description": "Run strict release gate checks",
+              "default": null,
+              "required": false,
+              "mandatory": false
+            }
+          ],
+          "subcommands": []
+        },
+        {
+          "path": "hardkas dev init",
+          "name": "init",
+          "aliases": [],
+          "description": "Initialize dApp support in the current workspace stable",
+          "usage": "hardkas dev init [options]",
+          "arguments": [],
+          "options": [],
+          "subcommands": []
+        },
+        {
+          "path": "hardkas dev last",
+          "name": "last",
+          "aliases": [],
+          "description": "Interact with the latest local workflow",
+          "usage": "hardkas dev last [options]",
+          "arguments": [],
+          "options": [
+            {
+              "flags": "--inspect",
+              "description": "Inspect the latest artifact",
               "default": false,
               "required": false,
+              "mandatory": false
+            },
+            {
+              "flags": "--replay",
+              "description": "Replay the latest workflow",
+              "default": false,
+              "required": false,
+              "mandatory": false
+            },
+            {
+              "flags": "--explain",
+              "description": "Explain the latest workflow",
+              "default": false,
+              "required": false,
+              "mandatory": false
+            },
+            {
+              "flags": "--workspace <path>",
+              "description": "Override workspace root directory",
+              "default": null,
+              "required": true,
               "mandatory": false
             }
           ],
@@ -1144,6 +1428,13 @@
               "mandatory": false
             },
             {
+              "flags": "--with-node",
+              "description": "Spawn the localnet node and auto-fund simnet accounts",
+              "default": false,
+              "required": false,
+              "mandatory": false
+            },
+            {
               "flags": "--json",
               "description": "Output status as JSON",
               "default": false,
@@ -1152,6 +1443,56 @@
             }
           ],
           "subcommands": []
+        },
+        {
+          "path": "hardkas dev tx",
+          "name": "tx",
+          "aliases": [],
+          "description": "Quick transaction flows for dev",
+          "usage": "hardkas dev tx [options] [command]",
+          "arguments": [],
+          "options": [],
+          "subcommands": [
+            {
+              "path": "hardkas dev tx send",
+              "name": "send",
+              "aliases": [],
+              "description": "Quick send transaction",
+              "usage": "hardkas dev tx send [options]",
+              "arguments": [],
+              "options": [
+                {
+                  "flags": "--from <accountOrAddress>",
+                  "description": "Sender alias",
+                  "default": null,
+                  "required": true,
+                  "mandatory": false
+                },
+                {
+                  "flags": "--to <address>",
+                  "description": "Recipient address",
+                  "default": null,
+                  "required": true,
+                  "mandatory": false
+                },
+                {
+                  "flags": "--amount <kas>",
+                  "description": "Amount in KAS",
+                  "default": null,
+                  "required": true,
+                  "mandatory": false
+                },
+                {
+                  "flags": "--workspace <path>",
+                  "description": "Override workspace root directory",
+                  "default": null,
+                  "required": true,
+                  "mandatory": false
+                }
+              ],
+              "subcommands": []
+            }
+          ]
         }
       ]
     },
@@ -1246,6 +1587,24 @@
         {
           "flags": "--skip-install",
           "description": "Skip pnpm install for new projects",
+          "default": false,
+          "required": false,
+          "mandatory": false
+        }
+      ],
+      "subcommands": []
+    },
+    {
+      "path": "hardkas inspect",
+      "name": "inspect",
+      "aliases": [],
+      "description": "Inspect stream sizes and archive segments beta",
+      "usage": "hardkas inspect [options]",
+      "arguments": [],
+      "options": [
+        {
+          "flags": "--json",
+          "description": "Output results as stable JSON schema",
           "default": false,
           "required": false,
           "mandatory": false
@@ -2078,10 +2437,10 @@
             },
             {
               "flags": "--at-daa-score <score>",
-              "description": "Fork at specific DAA score (default: latest)",
+              "description": "Fork at specific DAA score (implicit latest is forbidden)",
               "default": null,
               "required": true,
-              "mandatory": false
+              "mandatory": true
             },
             {
               "flags": "--output <path>",
@@ -3399,6 +3758,31 @@
       "subcommands": []
     },
     {
+      "path": "hardkas repair",
+      "name": "repair",
+      "aliases": [],
+      "description": "Attempt automatic recovery of corrupt projections or append tails beta",
+      "usage": "hardkas repair [options]",
+      "arguments": [],
+      "options": [
+        {
+          "flags": "--json",
+          "description": "Output results as stable JSON schema",
+          "default": false,
+          "required": false,
+          "mandatory": false
+        },
+        {
+          "flags": "--force",
+          "description": "Repair without prompting for confirmation",
+          "default": false,
+          "required": false,
+          "mandatory": false
+        }
+      ],
+      "subcommands": []
+    },
+    {
       "path": "hardkas replay",
       "name": "replay",
       "aliases": [],
@@ -3453,11 +3837,43 @@
               "default": false,
               "required": false,
               "mandatory": false
+            },
+            {
+              "flags": "--workspace <path>",
+              "description": "Override workspace root directory",
+              "default": null,
+              "required": true,
+              "mandatory": false
             }
           ],
           "subcommands": []
         }
       ]
+    },
+    {
+      "path": "hardkas rotate",
+      "name": "rotate",
+      "aliases": [],
+      "description": "Rotate and archive telemetry streams beta",
+      "usage": "hardkas rotate [options]",
+      "arguments": [],
+      "options": [
+        {
+          "flags": "--json",
+          "description": "Output results as stable JSON schema",
+          "default": false,
+          "required": false,
+          "mandatory": false
+        },
+        {
+          "flags": "--force",
+          "description": "Force rotation even if file size is below threshold",
+          "default": false,
+          "required": false,
+          "mandatory": false
+        }
+      ],
+      "subcommands": []
     },
     {
       "path": "hardkas rpc",
@@ -3608,6 +4024,45 @@
       "subcommands": []
     },
     {
+      "path": "hardkas sandbox",
+      "name": "sandbox",
+      "aliases": [],
+      "description": "Start a temporary, ephemeral HardKAS local experimentation environment",
+      "usage": "hardkas sandbox [options]",
+      "arguments": [],
+      "options": [
+        {
+          "flags": "--with-node",
+          "description": "Start a simulated Kaspa node in the background with mining",
+          "default": null,
+          "required": false,
+          "mandatory": false
+        },
+        {
+          "flags": "--recipe <name>",
+          "description": "Run an initial recipe/template inside the sandbox",
+          "default": null,
+          "required": true,
+          "mandatory": false
+        },
+        {
+          "flags": "-p, --port <port>",
+          "description": "Port for dashboard",
+          "default": "3000",
+          "required": true,
+          "mandatory": false
+        },
+        {
+          "flags": "-h, --host <host>",
+          "description": "Host for dashboard",
+          "default": "localhost",
+          "required": true,
+          "mandatory": false
+        }
+      ],
+      "subcommands": []
+    },
+    {
       "path": "hardkas session",
       "name": "session",
       "aliases": [],
@@ -3684,6 +4139,88 @@
       ]
     },
     {
+      "path": "hardkas status",
+      "name": "status",
+      "aliases": [],
+      "description": "Display the current state of the local HardKAS runtime workspace",
+      "usage": "hardkas status [options]",
+      "arguments": [],
+      "options": [
+        {
+          "flags": "--workspace <path>",
+          "description": "Override workspace root directory",
+          "default": null,
+          "required": true,
+          "mandatory": false
+        }
+      ],
+      "subcommands": []
+    },
+    {
+      "path": "hardkas telemetry",
+      "name": "telemetry",
+      "aliases": [],
+      "description": "Inspect, verify, and monitor the canonical runtime pressure telemetry stream",
+      "usage": "hardkas telemetry [options] [command]",
+      "arguments": [],
+      "options": [],
+      "subcommands": [
+        {
+          "path": "hardkas telemetry inspect",
+          "name": "inspect",
+          "aliases": [],
+          "description": "Deep introspection of the telemetry stream stable",
+          "usage": "hardkas telemetry inspect [options]",
+          "arguments": [],
+          "options": [
+            {
+              "flags": "--limit <n>",
+              "description": "Number of recent events to display",
+              "default": "5",
+              "required": true,
+              "mandatory": false
+            }
+          ],
+          "subcommands": []
+        },
+        {
+          "path": "hardkas telemetry tail",
+          "name": "tail",
+          "aliases": [],
+          "description": "Real-time monitor of the telemetry stream stable",
+          "usage": "hardkas telemetry tail [options]",
+          "arguments": [],
+          "options": [
+            {
+              "flags": "-f, --follow",
+              "description": "Keep checking for incoming telemetry events",
+              "default": false,
+              "required": false,
+              "mandatory": false
+            },
+            {
+              "flags": "-n, --lines <n>",
+              "description": "Number of initial lines to tail",
+              "default": "20",
+              "required": true,
+              "mandatory": false
+            }
+          ],
+          "subcommands": []
+        },
+        {
+          "path": "hardkas telemetry verify",
+          "name": "verify",
+          "aliases": [],
+          "description": "Verify schema integrity conforming to Telemetry Source Contract v1 stable",
+          "usage": "hardkas telemetry verify [options]",
+          "arguments": [],
+          "options": [],
+          "subcommands": []
+        }
+      ]
+    },
+    {
       "path": "hardkas test",
       "name": "test",
       "aliases": [],
@@ -3740,6 +4277,95 @@
         }
       ],
       "subcommands": []
+    },
+    {
+      "path": "hardkas torture",
+      "name": "torture",
+      "aliases": [],
+      "description": "HardKAS Semantic Torture Testing Suite",
+      "usage": "hardkas torture [options] [command]",
+      "arguments": [],
+      "options": [],
+      "subcommands": [
+        {
+          "path": "hardkas torture matrix",
+          "name": "matrix",
+          "aliases": [],
+          "description": "Execute the deterministic chaos-and-mutation torture matrix alpha",
+          "usage": "hardkas torture matrix [options]",
+          "arguments": [],
+          "options": [
+            {
+              "flags": "--iterations <number>",
+              "description": "Number of torture cases to execute",
+              "default": "300",
+              "required": true,
+              "mandatory": false
+            },
+            {
+              "flags": "--seed <seed>",
+              "description": "Seed value for deterministic inputs or 'random'",
+              "default": "random",
+              "required": true,
+              "mandatory": false
+            },
+            {
+              "flags": "--report [path]",
+              "description": "Optional custom JSON output filepath for findings report",
+              "default": null,
+              "required": false,
+              "mandatory": false
+            },
+            {
+              "flags": "--bucket <name>",
+              "description": "Optional target bucket name to execute exclusively",
+              "default": null,
+              "required": true,
+              "mandatory": false
+            },
+            {
+              "flags": "--profile <name>",
+              "description": "Optional profile name to execute",
+              "default": null,
+              "required": true,
+              "mandatory": false
+            }
+          ],
+          "subcommands": []
+        },
+        {
+          "path": "hardkas torture replay",
+          "name": "replay",
+          "aliases": [],
+          "description": "Replay and debug a specific failed case from a torture run alpha",
+          "usage": "hardkas torture replay [options]",
+          "arguments": [],
+          "options": [
+            {
+              "flags": "--seed <number>",
+              "description": "Original global seed of the failed matrix run",
+              "default": null,
+              "required": true,
+              "mandatory": true
+            },
+            {
+              "flags": "--case <caseId>",
+              "description": "Failed case ID, e.g. case-001",
+              "default": null,
+              "required": true,
+              "mandatory": true
+            },
+            {
+              "flags": "--profile <name>",
+              "description": "Original profile filter of the failed matrix run",
+              "default": null,
+              "required": true,
+              "mandatory": false
+            }
+          ],
+          "subcommands": []
+        }
+      ]
     },
     {
       "path": "hardkas tx",
@@ -4097,6 +4723,61 @@
       "subcommands": []
     },
     {
+      "path": "hardkas verify-semantics",
+      "name": "verify-semantics",
+      "aliases": [],
+      "description": "Verify semantic truth agreement across all HardKAS subsystems alpha",
+      "usage": "hardkas verify-semantics [options]",
+      "arguments": [],
+      "options": [
+        {
+          "flags": "--json",
+          "description": "Output machine-readable JSON",
+          "default": false,
+          "required": false,
+          "mandatory": false
+        },
+        {
+          "flags": "--ci-mode",
+          "description": "Verify semantic truth equivalence across OS boundaries",
+          "default": false,
+          "required": false,
+          "mandatory": false
+        }
+      ],
+      "subcommands": []
+    },
+    {
+      "path": "hardkas why",
+      "name": "why",
+      "aliases": [],
+      "description": "Explain the causal lineage of a given artifact ID",
+      "usage": "hardkas why [options] <artifactId>",
+      "arguments": [
+        {
+          "name": "artifactId",
+          "description": "The full or partial ID of the artifact"
+        }
+      ],
+      "options": [
+        {
+          "flags": "--json",
+          "description": "Output lineage graph in JSON format",
+          "default": null,
+          "required": false,
+          "mandatory": false
+        },
+        {
+          "flags": "--workspace <path>",
+          "description": "Override workspace root directory",
+          "default": null,
+          "required": true,
+          "mandatory": false
+        }
+      ],
+      "subcommands": []
+    },
+    {
       "path": "hardkas workflow",
       "name": "workflow",
       "aliases": [],
@@ -4180,6 +4861,27 @@
               "description": "Simulate the workflow without mutating the filesystem",
               "default": false,
               "required": false,
+              "mandatory": false
+            },
+            {
+              "flags": "--network <net>",
+              "description": "Target network (e.g. simulated, testnet-10, mainnet)",
+              "default": null,
+              "required": true,
+              "mandatory": false
+            },
+            {
+              "flags": "--offline",
+              "description": "Force offline execution (rejects real RPC connections)",
+              "default": false,
+              "required": false,
+              "mandatory": false
+            },
+            {
+              "flags": "--timeout <ms>",
+              "description": "Maximum execution time in milliseconds",
+              "default": null,
+              "required": true,
               "mandatory": false
             },
             {

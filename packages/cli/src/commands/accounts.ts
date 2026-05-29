@@ -187,12 +187,13 @@ export function registerAccountsCommands(program: Command) {
 
   accountsCmd.command("balance <identifier>")
     .description(`Show account balance ${UI.maturity("stable")}`)
-    .option("--network <name>", "Network name (simnet, localnet, etc.)")
-    .option("--url <rpc-url>", "Explicit RPC URL")
+    .option("--network <net>", "Specify target network (mainnet, testnet-10, simnet)")
+    .option("--url <url>", "Custom RPC URL (ws://...)")
+    .option("--local", "Query local query-store instead of remote RPC (for simulated networks)", false)
     .option("--json", "Output as JSON", false)
-    .action(async (identifier: string, options: { network?: string, url?: string, json: boolean }) => {
+    .action(async (identifier: string, options: any) => {
       try {
-        const result = await runAccountsBalance({ identifier, network: options.network ?? "simnet", url: options.url ?? "" });
+        const result = await runAccountsBalance({ identifier, network: options.network ?? "simnet", url: options.url ?? "", local: options.local });
         if (options.json) {
           console.log(JSON.stringify(result, null, 2));
         } else {

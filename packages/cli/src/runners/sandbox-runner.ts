@@ -3,6 +3,9 @@ import path from "node:path";
 import os from "node:os";
 import pc from "picocolors";
 import { UI, handleError } from "../ui.js";
+import runTransferRecipe from "../recipes/transfer.js";
+import runProjectionRebuildRecipe from "../recipes/projection-rebuild.js";
+import runReplayFailureRecipe from "../recipes/replay-failure.js";
 
 export async function runSandbox(options: {
   withNode?: boolean;
@@ -93,19 +96,22 @@ export async function runSandbox(options: {
     if (options.recipe) {
       console.log(pc.bold(`Recipe:`));
       console.log(`  ${pc.magenta(options.recipe)} executing...\n`);
-      try {
-        const recipeModule = await import(`../recipes/${options.recipe}.js`);
-        if (typeof recipeModule.default === 'function') {
-          await recipeModule.default(sandboxRoot);
-        } else {
-          console.log(pc.red(`Recipe '${options.recipe}' does not export a default function.`));
-        }
-      } catch (err: any) {
-        if (err.code === 'ERR_MODULE_NOT_FOUND') {
-          console.log(pc.red(`Recipe '${options.recipe}' not found.`));
-        } else {
+      
+      const RECIPES: Record<string, (sandboxRoot: string) => Promise<void>> = {
+        "transfer": runTransferRecipe,
+        "projection-rebuild": runProjectionRebuildRecipe,
+        "replay-failure": runReplayFailureRecipe
+      };
+
+      const recipeFn = RECIPES[options.recipe];
+      if (recipeFn) {
+        try {
+          await recipeFn(sandboxRoot);
+        } catch (err: any) {
           console.error(pc.red(`Recipe execution failed: ${err.message}`));
         }
+      } else {
+        console.log(pc.red(`Recipe '${options.recipe}' not found.`));
       }
     }
 
