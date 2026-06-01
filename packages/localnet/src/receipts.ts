@@ -87,7 +87,9 @@ export async function listSimulatedReceipts(options?: {
       try {
         const txId = path.basename(file, ".json");
         const receipt = await loadSimulatedReceipt(txId, options);
-        receipts.push(receipt);
+        if (receipt.schema === ARTIFACT_SCHEMAS.TX_RECEIPT) {
+          receipts.push(receipt);
+        }
       } catch (e) {
         // Skip invalid receipts
       }

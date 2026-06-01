@@ -5,14 +5,14 @@ import { loadHardkasConfig } from "@hardkas/config";
 import { UI } from "../ui.js";
 
 export async function runTxBatch(options: any) {
-  const { file, network = "simulated", json } = options;
+  const { file, network = "simulated", json, workspace } = options;
 
   if (!file) {
     throw new Error("Must provide --file with payments.json");
   }
 
-  const loaded = await loadHardkasConfig();
-  const filePath = path.resolve(process.cwd(), file);
+  const loaded = await loadHardkasConfig({ cwd: workspace });
+  const filePath = path.resolve(workspace || process.cwd(), file);
   
   let payments: any[];
   try {
@@ -61,7 +61,7 @@ export async function runTxBatch(options: any) {
         send: true,
         yes: true,
         config: loaded.config,
-        workspaceRoot: process.cwd()
+        workspaceRoot: workspace || process.cwd()
       });
 
       results.push({ 

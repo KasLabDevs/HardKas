@@ -29,6 +29,7 @@ export function registerTxCommands(program: Command) {
     .description(`Process a batch of transactions sequentially ${UI.maturity("stable")}`)
     .requiredOption("--file <path>", "Path to JSON file containing batch payments")
     .option("--network <name>", "Network name", "simulated")
+    .option("--workspace <path>", "Override workspace root directory")
     .option("--json", "Output as JSON", false)
     .action(async (options: any) => {
       try {

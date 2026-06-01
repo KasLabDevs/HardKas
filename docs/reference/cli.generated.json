@@ -1591,6 +1591,13 @@
                   "mandatory": false
                 },
                 {
+                  "flags": "--workspace <path>",
+                  "description": "Override workspace root directory",
+                  "default": null,
+                  "required": true,
+                  "mandatory": false
+                },
+                {
                   "flags": "--json",
                   "description": "Output as JSON",
                   "default": false,
@@ -4576,6 +4583,13 @@
               "flags": "--network <name>",
               "description": "Network name",
               "default": "simulated",
+              "required": true,
+              "mandatory": false
+            },
+            {
+              "flags": "--workspace <path>",
+              "description": "Override workspace root directory",
+              "default": null,
               "required": true,
               "mandatory": false
             },

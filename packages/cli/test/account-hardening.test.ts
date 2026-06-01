@@ -1,16 +1,25 @@
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import fs from "node:fs";
 import path from "node:path";
+import os from "node:os";
 import { runAccountsKeystoreImport } from "../src/runners/accounts-keystore-runners";
 import { runAccountsRealGenerate } from "../src/runners/accounts-real-generate-runner";
 import { runTxSign } from "../src/runners/tx-sign-runner";
 import { loadRealAccountStoreSync } from "@hardkas/accounts";
 
 describe("Account Hardening & Security Guards", () => {
-  const accountsFile = path.join(process.cwd(), ".hardkas", "accounts.real.json");
-  const keystoreDir = path.join(process.cwd(), ".hardkas", "keystore");
+  let tmpDir: string;
+  let accountsFile: string;
+  let keystoreDir: string;
+  let dummyConfig: string;
 
-  beforeEach(() => {
+  beforeEach(async () => {
+    tmpDir = await fs.promises.mkdtemp(path.join(os.tmpdir(), "account-hardening-test-"));
+    accountsFile = path.join(tmpDir, ".hardkas", "accounts.real.json");
+    keystoreDir = path.join(tmpDir, ".hardkas", "keystore");
+    dummyConfig = path.join(tmpDir, "hardkas.config.ts");
+
+    fs.writeFileSync(dummyConfig, "export default {};", "utf-8");
     if (fs.existsSync(accountsFile)) fs.unlinkSync(accountsFile);
     if (fs.existsSync(keystoreDir))
       fs.rmSync(keystoreDir, { recursive: true, force: true });
@@ -19,6 +28,7 @@ describe("Account Hardening & Security Guards", () => {
   });
 
   afterEach(() => {
+    fs.rmSync(tmpDir, { recursive: true, force: true });
     delete process.env.HARDKAS_TEST_PW;
     delete process.env.HARDKAS_TEST_PK;
   });
@@ -29,7 +39,7 @@ describe("Account Hardening & Security Guards", () => {
       address: "kaspatest:qrh60m5zv98m5l855l855l855l855l855l855l855l855l85sxtunx",
       privateKeyEnv: "HARDKAS_TEST_PK",
       passwordEnv: "HARDKAS_TEST_PW",
-      workspaceRoot: process.cwd()
+      workspaceRoot: tmpDir
     } as any);
 
     const keystorePath = path.join(keystoreDir, "alice.json");
@@ -43,7 +53,7 @@ describe("Account Hardening & Security Guards", () => {
       expect(stats.mode & 0o777).toBe(0o600);
     }
 
-    const store = loadRealAccountStoreSync({ cwd: process.cwd() });
+    const store = loadRealAccountStoreSync({ cwd: tmpDir });
     const alice = store?.accounts.find((a) => a.name === "alice");
     expect(alice?.privateKey).toBeUndefined();
     expect(alice?.keystoreRef).toBe(".hardkas/keystore/alice.json");
@@ -56,10 +66,10 @@ describe("Account Hardening & Security Guards", () => {
       privateKeyEnv: "HARDKAS_TEST_PK",
       unsafePlaintext: true,
       yes: true,
-      workspaceRoot: process.cwd()
+      workspaceRoot: tmpDir
     } as any);
 
-    const store = loadRealAccountStoreSync({ cwd: process.cwd() });
+    const store = loadRealAccountStoreSync({ cwd: tmpDir });
     const bob = store?.accounts.find((a) => a.name === "bob");
     expect(bob?.privateKey).toBe(process.env.HARDKAS_TEST_PK);
     expect(bob?.keystoreRef).toBeUndefined();

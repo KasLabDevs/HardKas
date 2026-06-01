@@ -4,7 +4,7 @@ import { UI } from "../ui.js";
 import { systemRuntimeContext } from "@hardkas/core";
 
 export async function runDevTxGenerate(options: any) {
-  const { count, network = "simulated", json } = options;
+  const { count, network = "simulated", json, workspace } = options;
   
   if (network !== "simulated" && network !== "simnet") {
     throw new Error("dev tx generate in 0.7.5 is strictly limited to local simulated networks to avoid accidental mainnet broadcasts.");
@@ -15,7 +15,7 @@ export async function runDevTxGenerate(options: any) {
     throw new Error("--count must be a positive number.");
   }
 
-  const loaded = await loadHardkasConfig();
+  const loaded = await loadHardkasConfig({ cwd: workspace });
 
   // Pick some default dev accounts
   const devAccounts = ["alice", "bob", "carol"];
@@ -47,7 +47,7 @@ export async function runDevTxGenerate(options: any) {
         send: true,
         yes: true,
         config: loaded.config,
-        workspaceRoot: process.cwd()
+        workspaceRoot: workspace || process.cwd()
       });
 
       if (flowResult.ok) {

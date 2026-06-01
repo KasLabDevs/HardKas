@@ -1452,6 +1452,7 @@ hardkas dev tx generate [options]
 | :--- | :--- | :--- |
 | `--count <number>` | Number of transactions to generate |  |
 | `--network <name>` | Network name | simulated |
+| `--workspace <path>` | Override workspace root directory |  |
 | `--json` | Output as JSON | false |
 
 ### Arguments
@@ -4386,6 +4387,7 @@ hardkas tx batch [options]
 | :--- | :--- | :--- |
 | `--file <path>` | Path to JSON file containing batch payments |  |
 | `--network <name>` | Network name | simulated |
+| `--workspace <path>` | Override workspace root directory |  |
 | `--json` | Output as JSON | false |
 
 ### Arguments

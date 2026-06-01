@@ -7,11 +7,29 @@ import os from "node:os";
 describe("hardkas tx batch", () => {
   let tmpDir: string;
   const cliPath = path.resolve(__dirname, "../src/index.ts");
-  const tsx = "npx";
-  const runArgs = ["tsx", cliPath];
+  const tsx = "node";
+  const runArgs = ["--import", "tsx", cliPath];
 
   beforeAll(async () => {
     tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), "tx-batch-test-"));
+    // Write dummy config so loadHardkasConfig resolves to tmpDir hermetically
+    const configContent = `
+import { defineHardkasConfig } from "@hardkas/sdk";
+export default defineHardkasConfig({
+  defaultNetwork: "simulated",
+  networks: {
+    simulated: {
+      kind: "simulated",
+      description: "Pure local simulation"
+    }
+  },
+  accounts: {
+    alice: { kind: "simulated", address: "kaspa:sim_alice" },
+    bob: { kind: "simulated", address: "kaspa:sim_bob" }
+  }
+});
+`;
+    await fs.writeFile(path.join(tmpDir, "hardkas.config.ts"), configContent, "utf-8");
   });
 
   afterAll(async () => {
@@ -26,7 +44,8 @@ describe("hardkas tx batch", () => {
     const file = path.join(tmpDir, "payments.json");
     await fs.writeFile(file, JSON.stringify(payments), "utf-8");
 
-    const { stdout } = await execa(tsx, [...runArgs, "tx", "batch", "--file", file, "--json"]);
+    // Execute with process.cwd() (default) so `--import tsx` is resolved, and pass `--workspace tmpDir`
+    const { stdout } = await execa(tsx, [...runArgs, "tx", "batch", "--file", file, "--workspace", tmpDir, "--json"]);
     const result = JSON.parse(stdout);
 
     expect(result.batchSize).toBe(2);

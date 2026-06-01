@@ -145,6 +145,7 @@ export function registerDevCommands(program: Command) {
     .description(`Generate simulated load/batch transactions ${UI.maturity("stable")}`)
     .requiredOption("--count <number>", "Number of transactions to generate")
     .option("--network <name>", "Network name", "simulated")
+    .option("--workspace <path>", "Override workspace root directory")
     .option("--json", "Output as JSON", false)
     .action(async (options: any) => {
       try {

@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeAll, afterAll, vi } from "vitest";
+import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import { Hardkas } from "@hardkas/sdk";
 import fs from "node:fs";
 import path from "node:path";
@@ -12,7 +12,7 @@ describe("Workflow Runtime & Adversarial Defense", () => {
   let strictSdk: Hardkas;
   const corpusDir = path.resolve(__dirname, "../../../examples/workflows");
 
-  beforeAll(async () => {
+  beforeEach(async () => {
     tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "hardkas-wf-test-"));
     fs.writeFileSync(
       path.join(tmpDir, "hardkas.config.ts"),
@@ -51,33 +51,52 @@ describe("Workflow Runtime & Adversarial Defense", () => {
     });
 
     // Mock RPC UTXOs
-    vi.spyOn(sdk.rpc, "getUtxosByAddress").mockResolvedValue([
-      {
-        outpoint: { transactionId: "mocktx", index: 0 },
-        address: "kaspa:sim_qruf...alice",
-        amountSompi: 900000000000000n,
-        isSpendable: true
-      },
-      {
-        outpoint: { transactionId: "mocktx", index: 1 },
-        address: "kaspa:sim_qruf...carol",
-        amountSompi: 900000000000000n,
-        isSpendable: true
+    vi.spyOn(sdk.rpc, "getUtxosByAddress").mockImplementation(async (addr: string) => {
+      if (addr.includes("alice")) {
+        return [
+          {
+            outpoint: { transactionId: "mocktx", index: 0 },
+            address: "kaspa:sim_qruf...alice",
+            amountSompi: 900000000000000n,
+            isSpendable: true
+          }
+        ] as any;
       }
-    ] as any);
+      return [
+        {
+          outpoint: { transactionId: "mocktx", index: 1 },
+          address: "kaspa:sim_qruf...carol",
+          amountSompi: 900000000000000n,
+          isSpendable: true
+        }
+      ] as any;
+    });
 
-    vi.spyOn(strictSdk.rpc, "getUtxosByAddress").mockResolvedValue([
-      {
-        outpoint: { transactionId: "mocktx", index: 1 },
-        address: "kaspa:sim_qruf...carol",
-        amountSompi: 900000000000000n,
-        isSpendable: true
+    vi.spyOn(strictSdk.rpc, "getUtxosByAddress").mockImplementation(async (addr: string) => {
+      if (addr.includes("alice")) {
+        return [
+          {
+            outpoint: { transactionId: "mocktx", index: 0 },
+            address: "kaspa:sim_qruf...alice",
+            amountSompi: 900000000000000n,
+            isSpendable: true
+          }
+        ] as any;
       }
-    ] as any);
+      return [
+        {
+          outpoint: { transactionId: "mocktx", index: 1 },
+          address: "kaspa:sim_qruf...carol",
+          amountSompi: 900000000000000n,
+          isSpendable: true
+        }
+      ] as any;
+    });
   });
 
-  afterAll(() => {
+  afterEach(() => {
     fs.rmSync(tmpDir, { recursive: true, force: true });
+    vi.restoreAllMocks();
   });
 
   const loadWorkflow = (name: string) => {

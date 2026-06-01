@@ -4,8 +4,8 @@ import path from "node:path";
 
 describe("hardkas localnet account create", () => {
   const cliPath = path.resolve(__dirname, "../src/index.ts");
-  const tsx = "npx";
-  const runArgs = ["tsx", cliPath];
+  const tsx = "node";
+  const runArgs = ["--import", "tsx", cliPath];
 
   it("should deterministically create a simulated localnet account", async () => {
     const { stdout } = await execa(tsx, [...runArgs, "localnet", "account", "create", "alice", "--json"]);

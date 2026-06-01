@@ -7,8 +7,8 @@ import os from "node:os";
 describe("hardkas dev fixture generate", () => {
   let tmpDir: string;
   const cliPath = path.resolve(__dirname, "../src/index.ts");
-  const tsx = "npx";
-  const runArgs = ["tsx", cliPath];
+  const tsx = "node";
+  const runArgs = ["--import", "tsx", cliPath];
 
   beforeAll(async () => {
     tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), "dev-fixture-test-"));

@@ -285,7 +285,8 @@ export async function runTxFlow(input: TxFlowInput): Promise<TxFlowResult> {
       const signedArtifact = await runTxSign({
         planArtifact,
         config,
-        ...(allowMainnetSigning !== undefined ? { allowMainnetSigning } : {})
+        ...(allowMainnetSigning !== undefined ? { allowMainnetSigning } : {}),
+        ...(workspaceRoot ? { workspaceRoot } : {})
       });
 
       flowResult.steps.sign = { status: "ok", artifact: signedArtifact };
@@ -351,7 +352,8 @@ export async function runTxFlow(input: TxFlowInput): Promise<TxFlowResult> {
           const sendResult = await runTxSend({
             signedArtifact,
             config,
-            ...(url ? { url } : {})
+            ...(url ? { url } : {}),
+            ...(workspaceRoot ? { workspaceRoot } : {})
           });
 
           if (actualOutDir && sendResult.receipt) {

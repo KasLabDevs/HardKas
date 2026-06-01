@@ -400,6 +400,7 @@ export class HardkasTx {
     const {
       loadOrCreateLocalnetState,
       saveLocalnetState,
+      getDefaultLocalnetStatePath,
       applySimulatedPlan,
       saveSimulatedReceipt,
       saveSimulatedTrace
@@ -434,9 +435,10 @@ export class HardkasTx {
 
     events.push({ type: "phase.completed", phase: "send", timestamp: Date.now() });
 
-    await saveLocalnetState(simResult.state);
+    await saveLocalnetState(simResult.state, getDefaultLocalnetStatePath(this.sdk.workspace.root));
     const receiptPath = await saveSimulatedReceipt(
-      simResult.receipt as Parameters<typeof saveSimulatedReceipt>[0]
+      simResult.receipt as Parameters<typeof saveSimulatedReceipt>[0],
+      { cwd: this.sdk.workspace.root }
     );
 
     // Pre-determine trace path for immutability and hermetic sealing (VULN-03)
@@ -505,7 +507,7 @@ export class HardkasTx {
       ...traceBase,
       events,
       receiptPath
-    });
+    }, { cwd: this.sdk.workspace.root });
 
     // P1.1 Emit dashboard/query-store events for local/simulated transactions
     coreEvents.normalizeAndEmit({
