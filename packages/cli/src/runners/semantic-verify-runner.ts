@@ -107,13 +107,14 @@ export async function runSemanticVerify(options: SemanticVerifyOptions) {
   }
 
   // Sort all artifacts deterministically
+  const { deterministicCompare } = require("@hardkas/core");
   const artifacts = Array.from(artifactMap.values()).sort((a, b) =>
-    a.artifactId.localeCompare(b.artifactId)
+    deterministicCompare(a.artifactId, b.artifactId)
   );
 
   const bundle: SemanticBundleV1 = {
     schemaVersion: "hardkas.semantic-bundle.v1",
-    runtimeVersion: "0.7.7-alpha",
+    runtimeVersion: "0.7.8-alpha",
     hashVersion: "sha256",
     invariantSummary: {
       totalChecks,

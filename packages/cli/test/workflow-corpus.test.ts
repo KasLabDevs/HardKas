@@ -16,13 +16,13 @@ describe("Workflow Runtime & Adversarial Defense", () => {
     tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "hardkas-wf-test-"));
     fs.writeFileSync(
       path.join(tmpDir, "hardkas.config.ts"),
-      `export default { defaultNetwork: "simnet" };`
+      `export default { defaultNetwork: "simulated" };`
     );
     fs.mkdirSync(path.join(tmpDir, ".hardkas", "artifacts"), { recursive: true });
 
     // Seed localnet state to pass strict simulated validation
     const mockState = {
-      networkId: "simnet",
+      networkId: "simulated",
       daaScore: "1000",
       utxos: [
         {

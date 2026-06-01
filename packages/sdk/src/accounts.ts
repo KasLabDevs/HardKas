@@ -59,8 +59,25 @@ export class HardkasAccounts {
     accountNameOrAddress: string,
     options?: { from?: string; amount?: string | bigint }
   ): Promise<any> {
-    const from = options?.from || "default";
+    let from = options?.from;
     const amount = options?.amount || "1000000000"; // 10 KAS default
+
+    if (!from) {
+      const accounts = await this.list();
+      if (accounts.includes("faucet")) {
+        from = "faucet";
+      } else if (accounts.includes("simulated_faucet")) {
+        from = "simulated_faucet";
+      } else if (this.sdk.network === "simulated" && accounts.includes("alice")) {
+        from = "alice";
+      } else {
+        throw new Error("No funding account available.\nFor simulated mode, run Hardkas.create({ network: 'simulated', autoBootstrap: true })\nor call accounts.fund(target, { from: 'alice' }).");
+      }
+    }
+
+    if (from === accountNameOrAddress) {
+      throw new Error(`Cannot fund account '${accountNameOrAddress}' from itself.`);
+    }
     const plan = await this.sdk.tx.plan({
       from,
       to: accountNameOrAddress,

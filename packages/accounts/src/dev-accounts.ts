@@ -3,6 +3,7 @@ import path from "node:path";
 import crypto from "node:crypto";
 import { KeystoreManager } from "./keystore.js";
 import type { GeneratedKaspaDevAccount } from "./real-keygen.js";
+import { deterministicCompare } from "@hardkas/core";
 
 // Hardcoded explicit dev password for simnet convenience, as requested.
 export const DEV_ACCOUNTS_PASSWORD = "hardkas-local-dev";
@@ -131,6 +132,6 @@ export function listDevAccountsSync(
   }
 
   // Sort them so alice is generally first, bob second
-  accounts.sort((a, b) => a.name.localeCompare(b.name));
+  accounts.sort((a, b) => deterministicCompare(a.name, b.name));
   return accounts;
 }

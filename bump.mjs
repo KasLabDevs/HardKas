@@ -2,7 +2,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 
 const packagesDir = 'packages';
-const newVersion = '0.7.7-alpha';
+const newVersion = '0.7.8-alpha';
 
 const directories = fs.readdirSync(packagesDir, { withFileTypes: true })
   .filter(dirent => dirent.isDirectory())

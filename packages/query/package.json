@@ -1,6 +1,6 @@
 {
   "name": "@hardkas/query",
-  "version": "0.7.7-alpha",
+  "version": "0.7.8-alpha",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -18,8 +18,8 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@hardkas/core": "workspace:*",
     "@hardkas/artifacts": "workspace:*",
+    "@hardkas/core": "workspace:*",
     "@hardkas/query-store": "workspace:*",
     "picocolors": "^1.1.1"
   },

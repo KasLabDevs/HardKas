@@ -23,7 +23,7 @@ export class HardkasWorkspace {
   }
 
   get localnetStatePath(): string {
-    return path.join(this.hardkasDir, "localnet-state.json");
+    return path.join(this.hardkasDir, "localnet.json");
   }
 
   get keystoreDir(): string {

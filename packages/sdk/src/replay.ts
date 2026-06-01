@@ -6,6 +6,7 @@ import {
   verifyArtifactIntegrity,
   writeArtifact
 } from "@hardkas/artifacts";
+import { deterministicCompare } from "@hardkas/core";
 import type { Hardkas } from "./index.js";
 
 export interface ReplayVerifyOptions {
@@ -145,7 +146,7 @@ function resolveFromDirectory(
   }
 
   // Sort plans newest first
-  plans.sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+  plans.sort((a, b) => deterministicCompare(b.createdAt, a.createdAt));
 
   // Strategy: pick most recent plan that has a matching receipt
   // Match by: (1) sourcePlanId, (2) txId contains planId, (3) createdAt proximity
@@ -211,8 +212,21 @@ export class HardkasReplay {
    * Verifies the deterministic artifact lineage of a transaction replay
    * against the mathematically reconstructed localnet state.
    */
-  async verify(options: ReplayVerifyOptions): Promise<ReplayVerifyResult> {
-    const targets = resolveReplayTargets(this.sdk.config.cwd, options);
+  async verify(
+    targetOrOptions?: string | { schema?: string; artifactId?: string } | ReplayVerifyOptions,
+    options?: ReplayVerifyOptions
+  ): Promise<ReplayVerifyResult> {
+    let opts: ReplayVerifyOptions = options || {};
+    
+    if (typeof targetOrOptions === "string") {
+      opts.path = targetOrOptions;
+    } else if (targetOrOptions && 'artifactId' in targetOrOptions) {
+      opts.path = (targetOrOptions as any).artifactId;
+    } else if (targetOrOptions) {
+      opts = { ...opts, ...(targetOrOptions as ReplayVerifyOptions) };
+    }
+
+    const targets = resolveReplayTargets(this.sdk.config.cwd, opts);
     let { planPath, receiptPath, artifactDir } = targets;
 
     // We only check hardkas.config.ts if they gave us a directory that isn't the CWD?
@@ -223,9 +237,9 @@ export class HardkasReplay {
 
     // Collect files
     const canonicalDirs = [
-      path.join(artifactDir, ".hardkas", "receipts"),
-      path.join(artifactDir, ".hardkas", "traces"),
-      path.join(artifactDir, ".hardkas", "deployments")
+      path.join(this.sdk.workspace.hardkasDir, "receipts"),
+      path.join(this.sdk.workspace.hardkasDir, "traces"),
+      path.join(this.sdk.workspace.hardkasDir, "deployments")
     ];
 
     const files: string[] = [];
@@ -307,11 +321,11 @@ export class HardkasReplay {
     let report: any = null;
 
     // Workflow Replay Path
-    if (options.workflowId) {
+    if (opts.workflowId) {
       try {
         const wfArtifactPath = fs
           .readdirSync(this.sdk.workspace.artifactsDir)
-          .find((f) => f.includes(options.workflowId!) && f.endsWith(".json"));
+          .find((f) => f.includes(opts.workflowId!) && f.endsWith(".json"));
 
         if (!wfArtifactPath) throw new Error("Workflow artifact not found");
 
@@ -322,7 +336,7 @@ export class HardkasReplay {
         const wfArtifact = JSON.parse(wfArtifactStr) as Record<string, unknown>;
 
         if (wfArtifact.schema !== "hardkas.workflow.v1") {
-          throw new Error(`Artifact ${options.workflowId} is not a workflow artifact`);
+          throw new Error(`Artifact ${opts.workflowId} is not a workflow artifact`);
         }
 
         const childArtifacts = (wfArtifact.producedArtifacts as string[]) || [];

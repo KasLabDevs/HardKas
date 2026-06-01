@@ -3,6 +3,7 @@ import fs from "node:fs";
 import type { HardkasWorkspace } from "./workspace.js";
 import { writeArtifact } from "@hardkas/artifacts";
 import type { HardkasArtifactBase } from "@hardkas/artifacts";
+import { HardkasError } from "@hardkas/core";
 
 export interface WriteArtifactOptions {
   /**
@@ -131,6 +132,23 @@ export class HardkasArtifactsManager {
     const { readArtifact } = await import("@hardkas/artifacts");
     let filePath = id;
 
+    // Path Boundary Sandbox Enforcement
+    let resolvedPath = path.resolve(this.workspace.root, filePath);
+    if (fs.existsSync(resolvedPath)) {
+      resolvedPath = fs.realpathSync(resolvedPath);
+    }
+
+    const rootRel = path.relative(this.workspace.root, resolvedPath);
+    const artifactsRel = path.relative(this.workspace.artifactsDir, resolvedPath);
+
+    // Ensure it does NOT escape both root and artifactsDir
+    if (
+      (rootRel.startsWith("..") || path.isAbsolute(rootRel)) &&
+      (artifactsRel.startsWith("..") || path.isAbsolute(artifactsRel))
+    ) {
+      throw new HardkasError("PATH_TRAVERSAL", "Artifact path escapes workspace boundary");
+    }
+
     if (!fs.existsSync(filePath)) {
       // 1. Try in workspace artifacts directory
       filePath = path.join(this.workspace.artifactsDir, `${id}.json`);
@@ -181,5 +199,23 @@ export class HardkasArtifactsManager {
       }
     }
     return artifacts;
+  }
+
+  /**
+   * Cryptographically verifies the determinism and integrity of an artifact.
+   * Throws an error with details if corruption or mismatch is found.
+   */
+  async verify(target: string | { schema?: string; artifactId?: string; contentHash?: string }): Promise<any> {
+    const id = typeof target === "string" ? target : (target.artifactId || target.contentHash || "");
+    if (!id) throw new Error("No artifact target provided for verification.");
+
+    const artifact = await this.read(id);
+    const { verifyArtifactIntegrity } = await import("@hardkas/artifacts");
+    
+    const result = await verifyArtifactIntegrity(artifact);
+    if (!result.ok) {
+       throw new Error(`Artifact ${id} corrupted or invalid: ` + JSON.stringify(result.issues, null, 2));
+    }
+    return result;
   }
 }

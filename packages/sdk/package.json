@@ -1,6 +1,6 @@
 {
   "name": "@hardkas/sdk",
-  "version": "0.7.7-alpha",
+  "version": "0.7.8-alpha",
   "type": "module",
   "files": [
     "dist",
@@ -34,16 +34,17 @@
     "@hardkas/config": "workspace:*",
     "@hardkas/core": "workspace:*",
     "@hardkas/kaspa-rpc": "workspace:*",
-    "@hardkas/query": "workspace:*",
     "@hardkas/l2": "workspace:*",
     "@hardkas/localnet": "workspace:*",
+    "@hardkas/query": "workspace:*",
     "@hardkas/simulator": "workspace:*",
     "@hardkas/tx-builder": "workspace:*",
-    "@hardkas/wallet-adapter": "workspace:*"
+    "@hardkas/wallet-adapter": "workspace:*",
+    "@hardkas/query-store": "workspace:*"
   },
   "devDependencies": {
-    "@hardkas/query-store": "workspace:*",
     "tsup": "^8.3.5",
+    "@types/node": "^20.12.7",
     "typescript": "^5.7.2",
     "vitest": "^2.1.8"
   },
