@@ -12,10 +12,16 @@ export interface ReplayVerifyOptions {
 export async function runReplayVerify(options: ReplayVerifyOptions) {
   const { Hardkas } = await import("@hardkas/sdk");
   const sdk = await Hardkas.open({ cwd: options.workspaceRoot });
-  const targetDir = sdk.workspace.resolvePath(options.path);
+  const effectivePath = options.path || undefined;
+  const targetDir = effectivePath
+    ? sdk.workspace.resolvePath(effectivePath)
+    : options.workspaceRoot;
 
-  // Delegate entirely to SDK Replay macro
-  const result = await sdk.replay.verify({ path: options.path });
+  const verifyOptions: any = {};
+  if (effectivePath) {
+    verifyOptions.path = effectivePath;
+  }
+  const result = await sdk.replay.verify(verifyOptions);
 
   // Map result to requested literal status
   let finalStatus:

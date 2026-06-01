@@ -330,7 +330,7 @@ function identifyReachableBlocks(dag: SimulatedDag, sinkId: string): SimulatedBl
 }
 
 /**
- * Deterministic Conflict Resolution (Approximation for 0.7.5-alpha)
+ * Deterministic Conflict Resolution (Approximation for 0.7.6-alpha)
  * Priority:
  * 1. sink ancestry priority (is part of selectedPathToSink?)
  * 2. deterministic block order (daaScore then block ID)

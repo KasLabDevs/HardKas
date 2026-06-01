@@ -99,6 +99,30 @@ export function registerTxCommands(program: Command) {
 
               const outPath = options.out || options.save;
               if (outPath) await writeArtifact(outPath, artifact);
+
+              // Always persist to .hardkas/artifacts/ for lattice indexing
+              const artifactsDir = (await import("node:path")).join(
+                process.cwd(),
+                ".hardkas",
+                "artifacts"
+              );
+              const fsNode = await import("node:fs");
+              if (
+                fsNode.existsSync(
+                  (await import("node:path")).join(process.cwd(), ".hardkas")
+                )
+              ) {
+                if (!fsNode.existsSync(artifactsDir))
+                  fsNode.mkdirSync(artifactsDir, { recursive: true });
+                const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
+                const planId = artifact.planId || "unknown";
+                const latticeFile = (await import("node:path")).join(
+                  artifactsDir,
+                  `${timestamp}-${planId}.plan.json`
+                );
+                await writeArtifact(latticeFile, artifact);
+              }
+
               if (options.json) {
                 UI.writeJson(artifact);
               } else {
@@ -177,8 +201,12 @@ export function registerTxCommands(program: Command) {
                 config: loaded.config,
                 allowMainnetSigning: options.allowMainnetSigning,
                 append: options.append,
-                ...(options.threshold !== undefined ? { threshold: parseInt(options.threshold) } : {}),
-                ...(options.requiredSigners !== undefined ? { requiredSigners: options.requiredSigners.split(",") } : {})
+                ...(options.threshold !== undefined
+                  ? { threshold: parseInt(options.threshold) }
+                  : {}),
+                ...(options.requiredSigners !== undefined
+                  ? { requiredSigners: options.requiredSigners.split(",") }
+                  : {})
               });
 
               if (options.out) await writeArtifact(options.out, signedArtifact);

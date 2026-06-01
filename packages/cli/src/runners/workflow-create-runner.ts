@@ -15,11 +15,13 @@ export interface WorkflowCreateOptions {
 export async function runWorkflowCreate(options: WorkflowCreateOptions) {
   const templateDef = WORKFLOW_TEMPLATES[options.template];
   if (!templateDef) {
-    throw new Error(`Template '${options.template}' not found. Available templates: ${Object.keys(WORKFLOW_TEMPLATES).join(", ")}`);
+    throw new Error(
+      `Template '${options.template}' not found. Available templates: ${Object.keys(WORKFLOW_TEMPLATES).join(", ")}`
+    );
   }
 
   const workflowId = `wf_${options.name}_${systemRuntimeContext.clock.now().toString(36)}`;
-  
+
   const workflowDef = {
     workflowId,
     name: options.name,

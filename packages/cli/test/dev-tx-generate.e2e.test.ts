@@ -36,7 +36,17 @@ export default defineHardkasConfig({
   });
 
   it("should generate 50 mock transactions", async () => {
-    const { stdout } = await execa(tsx, [...runArgs, "dev", "tx", "generate", "--count", "50", "--workspace", tmpDir, "--json"]);
+    const { stdout } = await execa(tsx, [
+      ...runArgs,
+      "dev",
+      "tx",
+      "generate",
+      "--count",
+      "50",
+      "--workspace",
+      tmpDir,
+      "--json"
+    ]);
     const result = JSON.parse(stdout);
 
     expect(result.generated).toBe(50);
@@ -48,7 +58,17 @@ export default defineHardkasConfig({
   }, 120000);
 
   it("should generate 10 mock transactions quickly", async () => {
-    const { stdout } = await execa(tsx, [...runArgs, "dev", "tx", "generate", "--count", "10", "--workspace", tmpDir, "--json"]);
+    const { stdout } = await execa(tsx, [
+      ...runArgs,
+      "dev",
+      "tx",
+      "generate",
+      "--count",
+      "10",
+      "--workspace",
+      tmpDir,
+      "--json"
+    ]);
     const result = JSON.parse(stdout);
 
     expect(result.generated).toBe(10);

@@ -16,7 +16,8 @@ export function registerArtifactCommands(program: Command) {
     .option("--workspace <path>", "Override workspace root directory")
     .action(async (type: string, options: any) => {
       try {
-        const { runArtifactCreate } = await import("../runners/artifact-create-runner.js");
+        const { runArtifactCreate } =
+          await import("../runners/artifact-create-runner.js");
         const workspaceRoot = options.workspace
           ? path.resolve(options.workspace)
           : process.cwd();

@@ -1,6 +1,6 @@
 # HardKAS Runtime Contract
 
-**Version**: 0.7.5-alpha
+**Version**: 0.7.6-alpha
 
 > _HardKAS assumes the user, the filesystem, and the runtime environment will eventually fail._
 

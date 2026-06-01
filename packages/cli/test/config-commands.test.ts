@@ -43,7 +43,10 @@ describe("Config Commands", () => {
   });
 
   it("should repair an invalid config file by backing it up", () => {
-    fs.writeFileSync(path.join(tempDir, "hardkas.config.ts"), "invalid typescript content");
+    fs.writeFileSync(
+      path.join(tempDir, "hardkas.config.ts"),
+      "invalid typescript content"
+    );
     const output = execSync("node ../dist/index.js config repair", {
       cwd: tempDir,
       encoding: "utf-8"

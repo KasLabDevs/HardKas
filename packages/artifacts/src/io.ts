@@ -13,20 +13,38 @@ export async function writeArtifact(filePath: string, artifact: unknown): Promis
   try {
     const stats = await fs.stat(filePath);
     if (stats.isDirectory()) {
-      const artifactObj = typeof artifact === "string" ? JSON.parse(artifact) : (artifact as any);
-      const id = artifactObj.planId || artifactObj.signedId || artifactObj.txId || Date.now().toString(36);
-      const prefix = artifactObj.schema ? artifactObj.schema.split('.')[1] || 'artifact' : 'artifact';
+      const artifactObj =
+        typeof artifact === "string" ? JSON.parse(artifact) : (artifact as any);
+      const id =
+        artifactObj.planId ||
+        artifactObj.signedId ||
+        artifactObj.txId ||
+        Date.now().toString(36);
+      const prefix = artifactObj.schema
+        ? artifactObj.schema.split(".")[1] || "artifact"
+        : "artifact";
       targetPath = path.join(filePath, `${prefix}-${id}.json`);
-      console.log(`\nNote: Provided path is a directory. Auto-generating artifact filename: ${path.basename(targetPath)}`);
+      console.log(
+        `\nNote: Provided path is a directory. Auto-generating artifact filename: ${path.basename(targetPath)}`
+      );
     }
   } catch (e) {
     // Path does not exist, assume it's a file path unless it explicitly ends with a slash
-    if (filePath.endsWith('/') || filePath.endsWith('\\')) {
-      const artifactObj = typeof artifact === "string" ? JSON.parse(artifact) : (artifact as any);
-      const id = artifactObj.planId || artifactObj.signedId || artifactObj.txId || Date.now().toString(36);
-      const prefix = artifactObj.schema ? artifactObj.schema.split('.')[1] || 'artifact' : 'artifact';
+    if (filePath.endsWith("/") || filePath.endsWith("\\")) {
+      const artifactObj =
+        typeof artifact === "string" ? JSON.parse(artifact) : (artifact as any);
+      const id =
+        artifactObj.planId ||
+        artifactObj.signedId ||
+        artifactObj.txId ||
+        Date.now().toString(36);
+      const prefix = artifactObj.schema
+        ? artifactObj.schema.split(".")[1] || "artifact"
+        : "artifact";
       targetPath = path.join(filePath, `${prefix}-${id}.json`);
-      console.log(`\nNote: Provided path is a directory. Auto-generating artifact filename: ${path.basename(targetPath)}`);
+      console.log(
+        `\nNote: Provided path is a directory. Auto-generating artifact filename: ${path.basename(targetPath)}`
+      );
     }
   }
 

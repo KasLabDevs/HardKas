@@ -637,18 +637,32 @@ export async function runDashboard() {
   });
 
   // API Routes
-  app.get("/api/status", (req, res) => handleStatus(new URL(req.url, `http://localhost:${port}`), res));
-  app.get("/api/telemetry", (req, res) => handleTelemetry(new URL(req.url, `http://localhost:${port}`), res));
-  app.get("/api/replay", (req, res) => handleReplay(new URL(req.url, `http://localhost:${port}`), res));
-  app.get("/api/lineage", (req, res) => handleLineage(new URL(req.url, `http://localhost:${port}`), res));
-  app.get("/api/quarantine", (req, res) => handleQuarantine(new URL(req.url, `http://localhost:${port}`), res));
-  app.get("/api/bundles", (req, res) => handleBundles(new URL(req.url, `http://localhost:${port}`), res));
-  app.get("/api/dashboard-health", (req, res) => handleDashboardHealth(new URL(req.url, `http://localhost:${port}`), res));
+  app.get("/api/status", (req, res) =>
+    handleStatus(new URL(req.url, `http://localhost:${port}`), res)
+  );
+  app.get("/api/telemetry", (req, res) =>
+    handleTelemetry(new URL(req.url, `http://localhost:${port}`), res)
+  );
+  app.get("/api/replay", (req, res) =>
+    handleReplay(new URL(req.url, `http://localhost:${port}`), res)
+  );
+  app.get("/api/lineage", (req, res) =>
+    handleLineage(new URL(req.url, `http://localhost:${port}`), res)
+  );
+  app.get("/api/quarantine", (req, res) =>
+    handleQuarantine(new URL(req.url, `http://localhost:${port}`), res)
+  );
+  app.get("/api/bundles", (req, res) =>
+    handleBundles(new URL(req.url, `http://localhost:${port}`), res)
+  );
+  app.get("/api/dashboard-health", (req, res) =>
+    handleDashboardHealth(new URL(req.url, `http://localhost:${port}`), res)
+  );
 
   // Serve static UI. In dev, __dirname is src/runners. In prod, __dirname is dist.
   const isProd = __dirname.endsWith("dist");
-  const distPath = isProd 
-    ? path.join(__dirname, "..", "dashboard-dist") 
+  const distPath = isProd
+    ? path.join(__dirname, "..", "dashboard-dist")
     : path.join(__dirname, "..", "..", "dashboard-dist");
   app.use(express.static(distPath));
 
@@ -660,7 +674,9 @@ export async function runDashboard() {
       if (fs.existsSync(indexPath)) {
         res.sendFile(indexPath);
       } else {
-        res.status(404).send("Dashboard UI not built. Run 'pnpm build' in apps/dashboard.");
+        res
+          .status(404)
+          .send("Dashboard UI not built. Run 'pnpm build' in apps/dashboard.");
       }
     }
   });
@@ -670,8 +686,8 @@ export async function runDashboard() {
       UI.success(`Dashboard API and UI running at http://localhost:${port}`);
       resolve(null);
     });
-    server.on('error', (err: any) => {
-      if (err.code === 'EADDRINUSE') {
+    server.on("error", (err: any) => {
+      if (err.code === "EADDRINUSE") {
         UI.error(`Port ${port} is already in use.`);
         UI.info(`Try freeing the port or specify another one (if supported).`);
         process.exitCode = 1;

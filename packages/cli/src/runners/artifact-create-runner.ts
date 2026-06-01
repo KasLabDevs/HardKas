@@ -14,7 +14,7 @@ export interface ArtifactCreateOptions {
 
 export async function runArtifactCreate(options: ArtifactCreateOptions) {
   const inputPath = path.resolve(options.workspaceRoot, options.input);
-  
+
   let payloadContent: string;
   try {
     payloadContent = await fs.readFile(inputPath, "utf-8");
@@ -43,7 +43,7 @@ export async function runArtifactCreate(options: ArtifactCreateOptions) {
   };
 
   const contentHash = calculateContentHash(artifact);
-  
+
   const finalArtifact = {
     ...artifact,
     contentHash

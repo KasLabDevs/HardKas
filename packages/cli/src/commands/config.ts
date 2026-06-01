@@ -99,7 +99,7 @@ export default defineHardkasConfig({
     simulated: { kind: "simulated" }
   },
   accounts: {
-    alice: { kind: "simulated", address: "kaspa:sim_sim_alice" }
+    alice: { kind: "simulated", address: "kaspa:sim_alice" }
   }
 });
 `;
@@ -134,7 +134,9 @@ export default defineHardkasConfig({
         UI.warning("Backing up and generating a fresh config...");
         fs.copyFileSync(configPath, `${configPath}.backup`);
         fs.writeFileSync(configPath, template, "utf-8");
-        UI.success("Repaired: Created fresh hardkas.config.ts (backup saved to hardkas.config.ts.backup)");
+        UI.success(
+          "Repaired: Created fresh hardkas.config.ts (backup saved to hardkas.config.ts.backup)"
+        );
       }
     });
 }

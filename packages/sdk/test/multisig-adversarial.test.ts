@@ -60,9 +60,9 @@ describe("Multisig Adversarial Suite", () => {
     expect(sig2.signedTransaction).toBeDefined();
 
     // Carol tries to append to already signed transaction (Case 4)
-    await expect(
-      sdk.tx.sign(sig2, "carol", { append: true })
-    ).rejects.toThrow(/already completed/);
+    await expect(sdk.tx.sign(sig2, "carol", { append: true })).rejects.toThrow(
+      /already completed/
+    );
   });
 
   it("Case 2: Should reject duplicate signature", async () => {
@@ -76,9 +76,9 @@ describe("Multisig Adversarial Suite", () => {
     });
 
     // Alice tries to sign again
-    await expect(
-      sdk.tx.sign(sig1, "alice", { append: true })
-    ).rejects.toThrow(/already signed/);
+    await expect(sdk.tx.sign(sig1, "alice", { append: true })).rejects.toThrow(
+      /already signed/
+    );
   });
 
   it("Case 3: Should reject unauthorized signer", async () => {
@@ -92,9 +92,9 @@ describe("Multisig Adversarial Suite", () => {
     });
 
     // Carol is not authorized
-    await expect(
-      sdk.tx.sign(sig1, "carol", { append: true })
-    ).rejects.toThrow(/not an authorized signer/);
+    await expect(sdk.tx.sign(sig1, "carol", { append: true })).rejects.toThrow(
+      /not an authorized signer/
+    );
   });
 
   it("Case 5: Should pass replay verify on signed multisig", async () => {
@@ -121,7 +121,10 @@ describe("Multisig Adversarial Suite", () => {
 
     // Write named files so replay verification can resolve them
     fs.writeFileSync(path.join(tmpDir, "tx-plan.json"), JSON.stringify(plan, null, 2));
-    fs.writeFileSync(path.join(tmpDir, "tx-receipt.json"), JSON.stringify(simResult.receipt, null, 2));
+    fs.writeFileSync(
+      path.join(tmpDir, "tx-receipt.json"),
+      JSON.stringify(simResult.receipt, null, 2)
+    );
 
     // Verify replay consistency of the signed transaction sequence
     const verifyResult = await sdk.replay.verify({ path: "tx-plan.json" });
@@ -150,7 +153,7 @@ describe("Multisig Adversarial Suite", () => {
 
     for (let i = 0; i < 100; i++) {
       const shuffled = shuffle(signers);
-      
+
       // Step 1: First signer signs plan
       let state = await sdk.tx.sign(plan, shuffled[0].name, options);
 

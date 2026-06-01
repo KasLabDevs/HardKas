@@ -219,7 +219,9 @@ export async function runKaspaWalletSend(
 
     // 3. Broadcast
     if (!signedArtifact.signedTransaction) {
-      throw new Error("Failed to sign transaction: signedTransaction payload is missing.");
+      throw new Error(
+        "Failed to sign transaction: signedTransaction payload is missing."
+      );
     }
     const submitResult = await client.submitTransaction(
       signedArtifact.signedTransaction.payload

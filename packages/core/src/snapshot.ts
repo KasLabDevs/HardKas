@@ -83,7 +83,7 @@ export async function createSnapshot(
   const manifest: SnapshotManifest = {
     snapshotVersion: 1,
     createdAt: new Date().toISOString(),
-    hardkasVersion: "0.7.5-alpha",
+    hardkasVersion: "0.7.6-alpha",
     stateAuthority: "filesystem",
     projectionAuthority: "sqlite",
     deterministicScope,

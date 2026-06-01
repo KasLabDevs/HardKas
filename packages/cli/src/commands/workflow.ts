@@ -18,7 +18,10 @@ export function registerWorkflowCommands(program: Command) {
   workflowCmd
     .command("create <name>")
     .description("Create a deterministic workflow from a template")
-    .requiredOption("--template <name>", "Embedded template name (basic, payroll, dao, escrow, marketplace)")
+    .requiredOption(
+      "--template <name>",
+      "Embedded template name (basic, payroll, dao, escrow, marketplace)"
+    )
     .option("--out <path>", "Output artifact file path")
     .option("--json", "Output the final workflow artifact as JSON", false)
     .option("--workspace <path>", "Override workspace root directory")

@@ -21,17 +21,41 @@ describe("hardkas artifact create", () => {
   it("should create an artifact deterministically from input JSON", async () => {
     const payloadPath = path.join(tmpDir, "payload.json");
     // Ensure keys are out of order to test canonicalization implicitly if hash is stable
-    await fs.writeFile(payloadPath, JSON.stringify({ key: "value", b: 2, a: 1 }), "utf-8");
-    
+    await fs.writeFile(
+      payloadPath,
+      JSON.stringify({ key: "value", b: 2, a: 1 }),
+      "utf-8"
+    );
+
     const outPath1 = path.join(tmpDir, "out1.json");
     const outPath2 = path.join(tmpDir, "out2.json");
 
-    await execa(tsx, [...runArgs, "artifact", "create", "test-type", "--input", payloadPath, "--out", outPath1, "--json"]);
-    
+    await execa(tsx, [
+      ...runArgs,
+      "artifact",
+      "create",
+      "test-type",
+      "--input",
+      payloadPath,
+      "--out",
+      outPath1,
+      "--json"
+    ]);
+
     // Simulate delay for timestamp change
-    await new Promise(r => setTimeout(r, 10));
-    
-    await execa(tsx, [...runArgs, "artifact", "create", "test-type", "--input", payloadPath, "--out", outPath2, "--json"]);
+    await new Promise((r) => setTimeout(r, 10));
+
+    await execa(tsx, [
+      ...runArgs,
+      "artifact",
+      "create",
+      "test-type",
+      "--input",
+      payloadPath,
+      "--out",
+      outPath2,
+      "--json"
+    ]);
 
     const out1 = JSON.parse(await fs.readFile(outPath1, "utf-8"));
     const out2 = JSON.parse(await fs.readFile(outPath2, "utf-8"));
