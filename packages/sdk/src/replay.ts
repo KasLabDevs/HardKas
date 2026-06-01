@@ -127,7 +127,7 @@ function resolveFromDirectory(
       } else if (data.schema === "hardkas.txReceipt") {
         receipts.push({
           file: f,
-          sourcePlanId: data.sourcePlanId || "",
+          sourcePlanId: data.sourcePlanId || data.lineage?.parentArtifactId || data.lineage?.rootArtifactId || "",
           txId: data.txId || "",
           createdAt: data.createdAt || ""
         });
@@ -191,6 +191,8 @@ function findReceiptByPlanId(dir: string, planId: string): string {
         data &&
         data.schema === "hardkas.txReceipt" &&
         ((data.sourcePlanId && data.sourcePlanId === planId) ||
+          (data.lineage?.parentArtifactId && data.lineage.parentArtifactId === planId) ||
+          (data.lineage?.rootArtifactId && data.lineage.rootArtifactId === planId) ||
           (data.txId && data.txId.includes(planId)))
       ) {
         return path.join(dir, f);
