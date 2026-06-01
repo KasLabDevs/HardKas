@@ -13,3 +13,4 @@ export * from "./traces.js";
 export * from "./replay.js";
 export * from "./dag.js";
 export * from "./fork.js";
+export * from "./provider.js";

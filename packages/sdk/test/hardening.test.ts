@@ -116,6 +116,7 @@ describe("Core Hardening Sprint Regressions", () => {
     const sdk = await Hardkas.open({ cwd: "./test-workspace" });
 
     const signedArtifact = {
+      schema: "hardkas.signedTx",
       signedId: "signed_123",
       sourcePlanId: "plan_123",
       amountSompi: "1000",

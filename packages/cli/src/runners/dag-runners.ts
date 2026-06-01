@@ -54,7 +54,7 @@ export async function runDagSimulateReorg(options: { depth: number }) {
 
   UI.info(`Simulating reorg at depth ${options.depth}...`);
 
-  // Minimal 0.7.9-alpha implementation:
+  // Minimal 0.7.10-alpha implementation:
   // 1. Create a side-branch starting 'depth' blocks back.
   // 2. Move sink to that side-branch.
 

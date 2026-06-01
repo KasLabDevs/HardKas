@@ -13,12 +13,11 @@ const apps = [
   { name: "01-wallet-backend", type: "node", code: `
     import { Hardkas } from '@hardkas/sdk';
     async function run() {
-      const sdk = await Hardkas.create({ cwd: process.cwd() });
-      await sdk.accounts.fund('alice', { amount: '1000' });
+      const sdk = await Hardkas.create({ cwd: process.cwd(), autoBootstrap: true, network: 'simulated' });
       const plan = await sdk.tx.plan({ from: 'alice', to: 'bob', amount: '10' });
       const signed = await sdk.tx.sign(plan, 'alice');
-      const tx = await sdk.tx.send(signed);
-      console.log('SUCCESS', tx.txId);
+      const { receipt } = await sdk.tx.simulate(signed);
+      console.log('SUCCESS', receipt.txId);
     }
     run();
   `},
@@ -29,7 +28,7 @@ const apps = [
   { name: "03-audit-explorer-node", type: "node", code: `
     import { Hardkas } from '@hardkas/sdk';
     async function run() {
-      const sdk = await Hardkas.create({ cwd: process.cwd() });
+      const sdk = await Hardkas.create({ cwd: process.cwd(), autoBootstrap: true, network: 'simulated' });
       const artifacts = await sdk.artifacts.list();
       console.log('Artifacts:', artifacts.length);
     }
@@ -42,7 +41,7 @@ const apps = [
   { name: "05-document-notary-node", type: "node", code: `
     import { Hardkas } from '@hardkas/sdk';
     async function run() {
-      const sdk = await Hardkas.create({ cwd: process.cwd() });
+      const sdk = await Hardkas.create({ cwd: process.cwd(), autoBootstrap: true, network: 'simulated' });
       try {
         await sdk.tx.plan({ from: 'alice', to: 'bob', amount: '0' });
       } catch (e) {
@@ -59,7 +58,7 @@ const apps = [
   { name: "07-game-backend", type: "node", code: `
     import { Hardkas } from '@hardkas/sdk';
     async function run() {
-      const sdk = await Hardkas.create({ cwd: process.cwd() });
+      const sdk = await Hardkas.create({ cwd: process.cwd(), autoBootstrap: true, network: 'simulated' });
       const b = await sdk.accounts.balance('alice');
       console.log('Balance:', b);
     }
@@ -72,11 +71,10 @@ const apps = [
   { name: "09-payroll-service", type: "node", code: `
     import { Hardkas } from '@hardkas/sdk';
     async function run() {
-      const sdk = await Hardkas.create({ cwd: process.cwd() });
-      await sdk.accounts.fund('alice', { amount: '500' });
+      const sdk = await Hardkas.create({ cwd: process.cwd(), autoBootstrap: true, network: 'simulated' });
       const plan = await sdk.tx.plan({ from: 'alice', to: 'bob', amount: '5' });
       const signed = await sdk.tx.sign(plan, 'alice');
-      await sdk.tx.send(signed);
+      await sdk.tx.simulate(signed);
     }
     run();
   `},
@@ -87,12 +85,11 @@ const apps = [
   { name: "11-dao-multisig-node", type: "node", code: `
     import { Hardkas } from '@hardkas/sdk';
     async function run() {
-      const sdk = await Hardkas.create({ cwd: process.cwd() });
-      await sdk.accounts.fund('alice', { amount: '100' });
+      const sdk = await Hardkas.create({ cwd: process.cwd(), autoBootstrap: true, network: 'simulated' });
       const plan = await sdk.tx.plan({ from: 'alice', to: 'bob', amount: '10' });
       const sig1 = await sdk.tx.sign(plan, 'alice', { requiredSigners: ['alice', 'bob'], threshold: 2 });
       const sig2 = await sdk.tx.sign(sig1, 'bob');
-      await sdk.tx.send(sig2);
+      await sdk.tx.simulate(sig2);
     }
     run();
   `},
@@ -101,27 +98,34 @@ const apps = [
     console.log('DAO React');
   `},
   { name: "13-backup-integrity", type: "node", code: `
-    import { execSync } from 'node:child_process';
     import { Hardkas } from '@hardkas/sdk';
     async function run() {
-      const sdk = await Hardkas.create({ cwd: process.cwd() });
-      // Fallback CLI since replay.verify isn't in public facade yet!
-      execSync('npx hardkas replay verify', { stdio: 'pipe' });
-      console.log('Fallback used');
+      const sdk = await Hardkas.create({ cwd: process.cwd(), autoBootstrap: true, network: 'simulated' });
+      const plan = await sdk.tx.plan({ from: 'alice', to: 'bob', amount: '10' });
+      await sdk.artifacts.write(plan);
+      const signed = await sdk.tx.sign(plan, 'alice');
+      const { receipt } = await sdk.tx.simulate(signed);
+      const replay = await sdk.replay.verify({ target: receipt.receiptId });
+      if (!replay.passed) throw new Error("Replay failed");
+      console.log('Replay success');
     }
     run();
-  `, fallback: true },
+  `},
   { name: "14-ci-artifact-verifier", type: "node", code: `
-    import { execSync } from 'node:child_process';
+    import { Hardkas } from '@hardkas/sdk';
     async function run() {
-      execSync('npx hardkas artifact verify .hardkas/artifacts/ --recursive', { stdio: 'pipe' });
+      const sdk = await Hardkas.create({ cwd: process.cwd(), autoBootstrap: true, network: 'simulated' });
+      const plan = await sdk.tx.plan({ from: 'alice', to: 'bob', amount: '1' });
+      const artifactPath = await sdk.artifacts.write(plan);
+      const res = await sdk.artifacts.verify(plan.planId);
+      if (!res.valid) throw new Error("Verification failed");
     }
     run();
-  `, fallback: true },
+  `},
   { name: "15-agent-wallet", type: "node", code: `
     import { Hardkas } from '@hardkas/sdk';
     async function run() {
-      const sdk = await Hardkas.create({ cwd: process.cwd() });
+      const sdk = await Hardkas.create({ cwd: process.cwd(), autoBootstrap: true, network: 'simulated' });
       await sdk.accounts.list();
     }
     run();
@@ -129,26 +133,30 @@ const apps = [
   { name: "16-agent-approval-flow", type: "node", code: `
     import { Hardkas } from '@hardkas/sdk';
     async function run() {
-      const sdk = await Hardkas.create({ cwd: process.cwd() });
+      const sdk = await Hardkas.create({ cwd: process.cwd(), autoBootstrap: true, network: 'simulated' });
       const plan = await sdk.tx.plan({ from: 'alice', to: 'bob', amount: '1' });
-      console.log(plan);
+      console.log(plan.planId);
     }
     run();
   `},
   { name: "17-mini-indexer", type: "node", code: `
-    import { execSync } from 'node:child_process';
+    import { Hardkas } from '@hardkas/sdk';
     async function run() {
-      execSync('npx hardkas query sql "SELECT * FROM artifacts"', { stdio: 'pipe' });
+      const sdk = await Hardkas.create({ cwd: process.cwd(), autoBootstrap: true, network: 'simulated' });
+      const res = await sdk.query.sync();
+      console.log("Indexed:", res);
     }
     run();
-  `, fallback: true },
+  `},
   { name: "18-query-store-test", type: "node", code: `
-    import { execSync } from 'node:child_process';
+    import { Hardkas } from '@hardkas/sdk';
     async function run() {
-      execSync('npx hardkas query store sync', { stdio: 'pipe' });
+      const sdk = await Hardkas.create({ cwd: process.cwd(), autoBootstrap: true, network: 'simulated' });
+      await sdk.query.sync();
+      console.log("Sync success");
     }
     run();
-  `, fallback: true },
+  `},
   { name: "19-dashboard-integration", type: "react", code: `
     import { Hardkas } from '@hardkas/sdk';
     console.log('Integration');
@@ -156,7 +164,7 @@ const apps = [
   { name: "20-kastj-migration-spike", type: "node", code: `
     import { Hardkas } from '@hardkas/sdk';
     async function run() {
-      const sdk = await Hardkas.create({ cwd: process.cwd() });
+      const sdk = await Hardkas.create({ cwd: process.cwd(), autoBootstrap: true, network: 'simulated' });
       // Kastj typically requires building transactions manually and simulating them.
       // We check if SDK provides enough tooling.
       const plan = await sdk.tx.plan({ from: 'alice', to: 'bob', amount: '5' });
@@ -196,11 +204,11 @@ async function main() {
       }
 
       // 2. Install SDK from NPM
-      console.log('Installing @hardkas/sdk@0.7.9-alpha...');
-      execSync('npm install @hardkas/sdk@0.7.9-alpha @hardkas/cli@0.7.9-alpha', { cwd: appDir, stdio: 'ignore' });
+      console.log('Installing @hardkas/sdk@0.7.10-alpha...');
+      execSync('npm install @hardkas/sdk@0.7.10-alpha @hardkas/cli@0.7.10-alpha', { cwd: appDir, stdio: 'ignore' });
       if (app.code.includes('@hardkas/react')) {
          try {
-           execSync('npm install @hardkas/react@0.7.9-alpha', { cwd: appDir, stdio: 'ignore' });
+           execSync('npm install @hardkas/react@0.7.10-alpha', { cwd: appDir, stdio: 'ignore' });
          } catch(e) {
            // Might not be published yet, ignore for now to let the import fail naturally
          }

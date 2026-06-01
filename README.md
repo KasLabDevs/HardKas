@@ -1,18 +1,65 @@
 # HardKAS
 
-HardKAS is a local-first reproducible Kaspa developer runtime.
+HardKAS is a local-first, deterministic runtime and SDK for building and testing Kaspa dApps. It manages isolated workspaces, enforces strict semantic invariants, and produces verifiable artifacts for every transaction. 
 
-It moves beyond standard SDKs and dev-servers to provide a platform where Kaspa transactions, localnet executions, and development workflows are fully observable via an immutable **Artifact Graph**. All artifacts are the canonical local truth. SQLite, dashboards, and dev-servers are merely projections/facades over these artifacts.
+By prioritizing local execution and cryptographic determinism, HardKAS ensures that if your workflow passes locally, it will behave exactly the same way in CI, on testnet, or on mainnet.
 
-## Key Features
+## 1. Install
 
-- **Artifact-First Architecture:** The filesystem is the canonical source of truth. Every plan, transaction, and receipt is immutably appended.
-- **Deterministic Sessions:** Take snapshots of your dev environment and utilize read-only time-travel debugging to inspect historical state changes. Replay is deterministic only where supported. Unsupported operations will fail gracefully.
-- **Unified Send Semantics:** A single, consistent transaction envelope from the CLI to the browser facade.
-- **Localnet & Simulated Modes:** Develop against local, isolated Kaspa nodes or fully mocked simulation networks seamlessly. Note: Localnet is not mainnet finality. Kaspa L1 does not execute EVM. L2/Igra bridge tooling is experimental/read-only. There is no production bridge, no trustless exit, no covenant execution, and no SilverScript/Tockata execution.
+To use HardKAS in your project, install both the CLI and SDK:
 
-See the [Known Limits](./docs/known-limits.md) before using HardKAS for external systems.
+```bash
+pnpm add @hardkas/sdk
+pnpm add -D @hardkas/cli
+```
 
-## Getting Started
+Initialize your workspace:
+```bash
+pnpm hardkas init
+```
 
-Head over to the [Quickstart Guide](./docs/quickstart.md).
+## 2. Your First CLI Command
+
+Run a local simulated network and fork state from testnet:
+
+```bash
+pnpm hardkas localnet fork --network testnet-10
+```
+
+Verify your workspace artifacts:
+```bash
+pnpm hardkas verify --strict
+```
+
+## 3. Your First SDK Call
+
+Interact with the runtime programmatically using the SDK:
+
+```typescript
+import { Hardkas } from '@hardkas/sdk';
+
+async function main() {
+  // Automatically bootstrap a workspace in the current directory
+  const sdk = await Hardkas.create({ autoBootstrap: true });
+
+  // Plan a deterministic transaction
+  const plan = await sdk.tx.plan({
+    to: 'kaspatest:q...',
+    amount: 100000000n, // Sompis
+  });
+
+  console.log('Created Plan Artifact:', plan.artifactId);
+}
+```
+
+## 4. Next Steps
+
+To dive deeper into the HardKAS ecosystem, check out the consolidated documentation:
+
+- [Quickstart Guide](docs/quickstart.md) - Build your first complete dApp workflow.
+- [CLI Reference](docs/cli.md) - Learn about commands, flags, and JSON outputs.
+- [SDK Reference](docs/sdk.md) - Deep dive into programmatic usage.
+- [Artifacts Guide](docs/artifacts-guide.md) - Understand the immutable artifact lifecycle.
+- [Local Development](docs/local-development.md) - Best practices for localnet and testing.
+- [Testing & Replay](docs/testing.md) - Using the Replay Engine for deterministic CI.
+- [Runtime Contract](RUNTIME_CONTRACT.md) - The strict formal rules of the HardKAS runtime.

@@ -53,7 +53,6 @@ export class HardkasArtifactsManager {
   ): Promise<WriteArtifactResult> {
     const record = artifact as unknown as Record<string, string>;
     const hash = record.contentHash || "unknown";
-
     if (record.planId) this.cache.set(record.planId, artifact);
     if (record.signedId) this.cache.set(record.signedId, artifact);
     if (record.txId) this.cache.set(record.txId, artifact);
@@ -205,17 +204,47 @@ export class HardkasArtifactsManager {
    * Cryptographically verifies the determinism and integrity of an artifact.
    * Throws an error with details if corruption or mismatch is found.
    */
-  async verify(target: string | { schema?: string; artifactId?: string; contentHash?: string }): Promise<any> {
+  async verify(
+    target: string | { schema?: string; artifactId?: string; contentHash?: string },
+    options: { throwOnInvalid?: boolean } = {}
+  ): Promise<any> {
+    const throwOnInvalid = options.throwOnInvalid ?? true;
     const id = typeof target === "string" ? target : (target.artifactId || target.contentHash || "");
-    if (!id) throw new Error("No artifact target provided for verification.");
+    
+    if (!id) {
+      if (throwOnInvalid) throw new Error("No artifact target provided for verification.");
+      return { valid: false, reason: "unknown", message: "No artifact target provided for verification." };
+    }
 
-    const artifact = await this.read(id);
+    let artifact;
+    try {
+      artifact = await this.read(id);
+    } catch (e: any) {
+      if (throwOnInvalid) throw e;
+      return { valid: false, reason: "missing_artifact", message: e.message, artifactId: id };
+    }
+
     const { verifyArtifactIntegrity } = await import("@hardkas/artifacts");
     
     const result = await verifyArtifactIntegrity(artifact);
     if (!result.ok) {
-       throw new Error(`Artifact ${id} corrupted or invalid: ` + JSON.stringify(result.issues, null, 2));
+       if (throwOnInvalid) {
+         throw new Error(`Artifact ${id} corrupted or invalid: ` + JSON.stringify(result.issues, null, 2));
+       }
+       return { 
+         valid: false, 
+         reason: result.issues[0]?.code === "HASH_MISMATCH" ? "hash_mismatch" : 
+                 result.issues[0]?.code === "MISSING_SIGNATURE" ? "missing_signature" : "schema_invalid", 
+         message: result.issues.map((i: any) => i.message).join(", "),
+         artifactId: id,
+         details: result.issues
+       };
     }
+
+    if (!throwOnInvalid) {
+      return { valid: true, artifactId: id, details: result };
+    }
+
     return result;
   }
 }

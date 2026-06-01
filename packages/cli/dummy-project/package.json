@@ -1,6 +1,6 @@
 {
   "name": "dummy-project",
-  "version": "0.7.9-alpha",
+  "version": "0.7.10-alpha",
   "private": true,
   "type": "module",
   "scripts": {
