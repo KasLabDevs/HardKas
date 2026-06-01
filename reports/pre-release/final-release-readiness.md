@@ -1,12 +1,12 @@
 # Final Release Readiness
 
-**Target Version:** 0.7.4-alpha
+**Target Version:** 0.7.5-alpha
 **Date:** 2026-05-28
 **Status:** GREEN - CLEARED FOR RELEASE
 
 ## Assessment
 
-The HardKAS `0.7.4-alpha` release candidate has undergone extensive stabilization, architectural auditing, and adversarial testing (the "Nightmare Suite"). All detected operational blockers and semantic constraints have been fully addressed.
+The HardKAS `0.7.5-alpha` release candidate has undergone extensive stabilization, architectural auditing, and adversarial testing (the "Nightmare Suite"). All detected operational blockers and semantic constraints have been fully addressed.
 
 ### Key Milestones Completed
 
@@ -24,4 +24,4 @@ The HardKAS `0.7.4-alpha` release candidate has undergone extensive stabilizatio
 
 ## Recommendation
 
-Tag the `0.7.4-alpha` release on the main branch. The system has reached the necessary operational resilience required for a public alpha.
+Tag the `0.7.5-alpha` release on the main branch. The system has reached the necessary operational resilience required for a public alpha.

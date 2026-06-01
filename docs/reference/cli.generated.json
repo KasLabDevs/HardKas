@@ -434,6 +434,50 @@
       "options": [],
       "subcommands": [
         {
+          "path": "hardkas artifact create",
+          "name": "create",
+          "aliases": [],
+          "description": "Create a new HardKAS artifact alpha",
+          "usage": "hardkas artifact create [options] <type>",
+          "arguments": [
+            {
+              "name": "type",
+              "description": ""
+            }
+          ],
+          "options": [
+            {
+              "flags": "--input <path>",
+              "description": "Input JSON payload file",
+              "default": null,
+              "required": true,
+              "mandatory": true
+            },
+            {
+              "flags": "--out <path>",
+              "description": "Output artifact file path",
+              "default": null,
+              "required": true,
+              "mandatory": false
+            },
+            {
+              "flags": "--json",
+              "description": "Output results as JSON",
+              "default": false,
+              "required": false,
+              "mandatory": false
+            },
+            {
+              "flags": "--workspace <path>",
+              "description": "Override workspace root directory",
+              "default": null,
+              "required": true,
+              "mandatory": false
+            }
+          ],
+          "subcommands": []
+        },
+        {
           "path": "hardkas artifact explain",
           "name": "explain",
           "aliases": [],
@@ -855,6 +899,24 @@
       "options": [],
       "subcommands": [
         {
+          "path": "hardkas config init",
+          "name": "init",
+          "aliases": [],
+          "description": "Initialize a basic hardkas.config.ts in the current directory",
+          "usage": "hardkas config init [options]",
+          "arguments": [],
+          "options": [
+            {
+              "flags": "--force",
+              "description": "Overwrite existing config",
+              "default": false,
+              "required": false,
+              "mandatory": false
+            }
+          ],
+          "subcommands": []
+        },
+        {
           "path": "hardkas config networks",
           "name": "networks",
           "aliases": [],
@@ -870,6 +932,16 @@
               "mandatory": false
             }
           ],
+          "subcommands": []
+        },
+        {
+          "path": "hardkas config repair",
+          "name": "repair",
+          "aliases": [],
+          "description": "Repair an invalid or missing hardkas.config.ts",
+          "usage": "hardkas config repair [options]",
+          "arguments": [],
+          "options": [],
           "subcommands": []
         },
         {
@@ -1336,6 +1408,49 @@
           "subcommands": []
         },
         {
+          "path": "hardkas dev fixture",
+          "name": "fixture",
+          "aliases": [],
+          "description": "Manage dev mock fixtures",
+          "usage": "hardkas dev fixture [options] [command]",
+          "arguments": [],
+          "options": [],
+          "subcommands": [
+            {
+              "path": "hardkas dev fixture generate",
+              "name": "generate",
+              "aliases": [],
+              "description": "Generate mock fixtures for testing stable",
+              "usage": "hardkas dev fixture generate [options]",
+              "arguments": [],
+              "options": [
+                {
+                  "flags": "--type <type>",
+                  "description": "Type of fixture (marketplace|dao|payroll|random)",
+                  "default": null,
+                  "required": true,
+                  "mandatory": true
+                },
+                {
+                  "flags": "--out <path>",
+                  "description": "Save fixture as JSON to this file",
+                  "default": null,
+                  "required": true,
+                  "mandatory": false
+                },
+                {
+                  "flags": "--json",
+                  "description": "Output as JSON",
+                  "default": false,
+                  "required": false,
+                  "mandatory": false
+                }
+              ],
+              "subcommands": []
+            }
+          ]
+        },
+        {
           "path": "hardkas dev init",
           "name": "init",
           "aliases": [],
@@ -1453,6 +1568,45 @@
           "arguments": [],
           "options": [],
           "subcommands": [
+            {
+              "path": "hardkas dev tx generate",
+              "name": "generate",
+              "aliases": [],
+              "description": "Generate simulated load/batch transactions stable",
+              "usage": "hardkas dev tx generate [options]",
+              "arguments": [],
+              "options": [
+                {
+                  "flags": "--count <number>",
+                  "description": "Number of transactions to generate",
+                  "default": null,
+                  "required": true,
+                  "mandatory": true
+                },
+                {
+                  "flags": "--network <name>",
+                  "description": "Network name",
+                  "default": "simulated",
+                  "required": true,
+                  "mandatory": false
+                },
+                {
+                  "flags": "--workspace <path>",
+                  "description": "Override workspace root directory",
+                  "default": null,
+                  "required": true,
+                  "mandatory": false
+                },
+                {
+                  "flags": "--json",
+                  "description": "Output as JSON",
+                  "default": false,
+                  "required": false,
+                  "mandatory": false
+                }
+              ],
+              "subcommands": []
+            },
             {
               "path": "hardkas dev tx send",
               "name": "send",
@@ -2413,6 +2567,40 @@
       "arguments": [],
       "options": [],
       "subcommands": [
+        {
+          "path": "hardkas localnet account",
+          "name": "account",
+          "aliases": [],
+          "description": "Manage simulated localnet accounts",
+          "usage": "hardkas localnet account [options] [command]",
+          "arguments": [],
+          "options": [],
+          "subcommands": [
+            {
+              "path": "hardkas localnet account create",
+              "name": "create",
+              "aliases": [],
+              "description": "Create a simulated localnet account",
+              "usage": "hardkas localnet account create [options] <name>",
+              "arguments": [
+                {
+                  "name": "name",
+                  "description": ""
+                }
+              ],
+              "options": [
+                {
+                  "flags": "--json",
+                  "description": "Output as JSON",
+                  "default": false,
+                  "required": false,
+                  "mandatory": false
+                }
+              ],
+              "subcommands": []
+            }
+          ]
+        },
         {
           "path": "hardkas localnet fork",
           "name": "fork",
@@ -4377,6 +4565,45 @@
       "options": [],
       "subcommands": [
         {
+          "path": "hardkas tx batch",
+          "name": "batch",
+          "aliases": [],
+          "description": "Process a batch of transactions sequentially stable",
+          "usage": "hardkas tx batch [options]",
+          "arguments": [],
+          "options": [
+            {
+              "flags": "--file <path>",
+              "description": "Path to JSON file containing batch payments",
+              "default": null,
+              "required": true,
+              "mandatory": true
+            },
+            {
+              "flags": "--network <name>",
+              "description": "Network name",
+              "default": "simulated",
+              "required": true,
+              "mandatory": false
+            },
+            {
+              "flags": "--workspace <path>",
+              "description": "Override workspace root directory",
+              "default": null,
+              "required": true,
+              "mandatory": false
+            },
+            {
+              "flags": "--json",
+              "description": "Output as JSON",
+              "default": false,
+              "required": false,
+              "mandatory": false
+            }
+          ],
+          "subcommands": []
+        },
+        {
           "path": "hardkas tx plan",
           "name": "plan",
           "aliases": [],
@@ -4429,6 +4656,13 @@
             {
               "flags": "--out <path>",
               "description": "Save plan as artifact JSON",
+              "default": null,
+              "required": true,
+              "mandatory": false
+            },
+            {
+              "flags": "--save <path>",
+              "description": "Alias for --out (Save plan as artifact JSON)",
               "default": null,
               "required": true,
               "mandatory": false
@@ -4830,6 +5064,50 @@
       "arguments": [],
       "options": [],
       "subcommands": [
+        {
+          "path": "hardkas workflow create",
+          "name": "create",
+          "aliases": [],
+          "description": "Create a deterministic workflow from a template",
+          "usage": "hardkas workflow create [options] <name>",
+          "arguments": [
+            {
+              "name": "name",
+              "description": ""
+            }
+          ],
+          "options": [
+            {
+              "flags": "--template <name>",
+              "description": "Embedded template name (basic, payroll, dao, escrow, marketplace)",
+              "default": null,
+              "required": true,
+              "mandatory": true
+            },
+            {
+              "flags": "--out <path>",
+              "description": "Output artifact file path",
+              "default": null,
+              "required": true,
+              "mandatory": false
+            },
+            {
+              "flags": "--json",
+              "description": "Output the final workflow artifact as JSON",
+              "default": false,
+              "required": false,
+              "mandatory": false
+            },
+            {
+              "flags": "--workspace <path>",
+              "description": "Override workspace root directory",
+              "default": null,
+              "required": true,
+              "mandatory": false
+            }
+          ],
+          "subcommands": []
+        },
         {
           "path": "hardkas workflow diff",
           "name": "diff",

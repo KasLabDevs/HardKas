@@ -39,6 +39,8 @@ export interface WriteArtifactResult {
  * Deterministic Artifact I/O boundary.
  */
 export class HardkasArtifactsManager {
+  private cache = new Map<string, any>();
+
   constructor(private workspace: HardkasWorkspace) {}
 
   /**
@@ -50,6 +52,11 @@ export class HardkasArtifactsManager {
   ): Promise<WriteArtifactResult> {
     const record = artifact as unknown as Record<string, string>;
     const hash = record.contentHash || "unknown";
+
+    if (record.planId) this.cache.set(record.planId, artifact);
+    if (record.signedId) this.cache.set(record.signedId, artifact);
+    if (record.txId) this.cache.set(record.txId, artifact);
+    this.cache.set(hash, artifact);
 
     if (options.dryRun) {
       return {
@@ -117,6 +124,10 @@ export class HardkasArtifactsManager {
    * Reads an artifact by path or ID/hash from the workspace.
    */
   async read(id: string): Promise<any> {
+    if (this.cache.has(id)) {
+      return this.cache.get(id);
+    }
+
     const { readArtifact } = await import("@hardkas/artifacts");
     let filePath = id;
 

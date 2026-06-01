@@ -13,6 +13,18 @@ export async function runUp() {
     // 1. Load config
     const loaded = await loadHardkasConfig();
     const networkId = loaded.config.defaultNetwork || "simulated";
+    
+    // Dependency Checks
+    try {
+      const { createRequire } = await import("node:module");
+      const req = createRequire(path.join(loaded.cwd, "package.json"));
+      req.resolve("@kaspa/core-lib");
+    } catch (e: any) {
+      UI.error("Missing dependency: @kaspa/core-lib");
+      UI.info("Run 'npm install @kaspa/core-lib' or 'pnpm add @kaspa/core-lib'");
+      process.exitCode = 1;
+      return;
+    }
     UI.info(
       `\x1b[1mNetwork Mode:\x1b[0m ${networkId} (${loaded.config.networks?.[networkId]?.kind || "default"})`
     );

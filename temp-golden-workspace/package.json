@@ -1,8 +1,0 @@
-{
-  "name": "hardkas-project",
-  "version": "0.7.4-alpha",
-  "type": "module",
-  "dependencies": {
-    "@hardkas/sdk": "workspace:*"
-  }
-}

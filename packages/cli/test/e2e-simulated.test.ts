@@ -1,18 +1,19 @@
-import { describe, it, expect, beforeEach } from "vitest";
+import { describe, it, expect, beforeEach, beforeAll, afterAll } from "vitest";
 import {
   resetLocalnetState,
   loadLocalnetState,
   getDefaultLocalnetStatePath,
   listSimulatedReceipts
 } from "@hardkas/localnet";
-import { runTxFlow } from "../src/runners/tx-flow";
+import { runTxFlow } from "../src/runners/tx-flow.js";
 import { HardkasConfig } from "@hardkas/config";
 import * as artifacts from "@hardkas/artifacts";
-import fs from "node:fs";
+import fs from "node:fs/promises";
 import path from "node:path";
+import os from "node:os";
 
 describe("E2E Simulated Happy Path", () => {
-  const tempDir = path.join(process.cwd(), ".hardkas-test-e2e");
+  let tmpDir: string;
 
   const mockConfig: HardkasConfig = {
     defaultNetwork: "simulated",
@@ -25,21 +26,40 @@ describe("E2E Simulated Happy Path", () => {
     }
   };
 
-  beforeEach(async () => {
-    // Ensure we start clean
-    const receiptsDir = path.join(process.cwd(), ".hardkas", "receipts");
-    const tracesDir = path.join(process.cwd(), ".hardkas", "traces");
-    if (fs.existsSync(receiptsDir)) fs.rmSync(receiptsDir, { recursive: true });
-    if (fs.existsSync(tracesDir)) fs.rmSync(tracesDir, { recursive: true });
+  beforeAll(async () => {
+    tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), "e2e-sim-test-"));
+    // Write dummy config so loadHardkasConfig resolves to tmpDir hermetically
+    const configContent = `
+import { defineHardkasConfig } from "@hardkas/sdk";
+export default defineHardkasConfig({
+  defaultNetwork: "simulated",
+  networks: {
+    simulated: {
+      kind: "simulated",
+      description: "Pure local simulation"
+    }
+  },
+  accounts: {
+    alice: { kind: "simulated", address: "kaspa:sim_alice" },
+    bob: { kind: "simulated", address: "kaspa:sim_bob" }
+  }
+});
+`;
+    await fs.writeFile(path.join(tmpDir, "hardkas.config.ts"), configContent, "utf-8");
+  });
 
+  afterAll(async () => {
+    await fs.rm(tmpDir, { recursive: true, force: true });
+  });
+
+  beforeEach(async () => {
     // For now, let's just use the real resetLocalnetState.
-    await resetLocalnetState();
+    await resetLocalnetState({ cwd: tmpDir });
   });
 
   it("should complete a full plan -> sign -> send flow", async () => {
     // 1. Initial balance should be 0 or from faucet
-    // We don't have a faucet runner yet, but we can simulate it by resetting with initial balance
-    await resetLocalnetState({ initialBalanceSompi: 100_000_000_000n }); // 1000 KAS
+    await resetLocalnetState({ cwd: tmpDir, initialBalanceSompi: 100_000_000_000n }); // 1000 KAS
 
     // 2. Run Tx Flow
     const result = await runTxFlow({
@@ -50,7 +70,8 @@ describe("E2E Simulated Happy Path", () => {
       config: mockConfig,
       send: true,
       yes: true,
-      network: "simulated"
+      network: "simulated",
+      workspaceRoot: tmpDir
     });
 
     if (!result.ok) {
@@ -67,22 +88,22 @@ describe("E2E Simulated Happy Path", () => {
     expect(txId).toBeDefined();
 
     // 3. Verify state changed
-    const state = await loadLocalnetState();
+    const state = await loadLocalnetState(getDefaultLocalnetStatePath(tmpDir));
     expect(state).not.toBeNull();
     // Alice had 1000 KAS, sent 10 KAS + fee
     // DAA score should be 1
     expect(state?.daaScore).toBe("1");
 
     // 4. Verify receipt exists
-    const receipts = await listSimulatedReceipts();
+    const receipts = await listSimulatedReceipts({ cwd: tmpDir });
     const myReceipt = receipts.find((r: any) => r.txId === txId);
     expect(myReceipt).toBeDefined();
     expect(myReceipt.schema).toBe(artifacts.ARTIFACT_SCHEMAS.TX_RECEIPT);
-  });
+  }, 60000);
 
   it("should fail if insufficient funds", async () => {
     // Reset with 0 balance
-    await resetLocalnetState({ initialBalanceSompi: 0n });
+    await resetLocalnetState({ cwd: tmpDir, initialBalanceSompi: 0n });
 
     const result = await runTxFlow({
       from: "alice",
@@ -92,7 +113,8 @@ describe("E2E Simulated Happy Path", () => {
       config: mockConfig,
       send: true,
       yes: true,
-      network: "simulated"
+      network: "simulated",
+      workspaceRoot: tmpDir
     });
 
     expect(result.ok).toBe(false);

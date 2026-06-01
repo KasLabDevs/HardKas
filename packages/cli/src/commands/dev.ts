@@ -140,6 +140,43 @@ export function registerDevCommands(program: Command) {
       await runDevTxSend(options);
     });
 
+  txCmd
+    .command("generate")
+    .description(`Generate simulated load/batch transactions ${UI.maturity("stable")}`)
+    .requiredOption("--count <number>", "Number of transactions to generate")
+    .option("--network <name>", "Network name", "simulated")
+    .option("--workspace <path>", "Override workspace root directory")
+    .option("--json", "Output as JSON", false)
+    .action(async (options: any) => {
+      try {
+        if (options.json) UI.setJsonMode(true);
+        const { runDevTxGenerate } = await import("../runners/dev-tx-generate-runner.js");
+        await runDevTxGenerate(options);
+      } catch (e) {
+        handleError(e, "Dev tx generate failed");
+        process.exitCode = 1;
+      }
+    });
+
+  devCmd
+    .command("fixture")
+    .description("Manage dev mock fixtures")
+    .command("generate")
+    .description(`Generate mock fixtures for testing ${UI.maturity("stable")}`)
+    .requiredOption("--type <type>", "Type of fixture (marketplace|dao|payroll|random)")
+    .option("--out <path>", "Save fixture as JSON to this file")
+    .option("--json", "Output as JSON", false)
+    .action(async (options: any) => {
+      try {
+        if (options.json) UI.setJsonMode(true);
+        const { runDevFixtureGenerate } = await import("../runners/dev-fixture-generate-runner.js");
+        await runDevFixtureGenerate(options);
+      } catch (e) {
+        handleError(e, "Dev fixture generate failed");
+        process.exitCode = 1;
+      }
+    });
+
   devCmd
     .command("last")
     .description("Interact with the latest local workflow")

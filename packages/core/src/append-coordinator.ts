@@ -222,8 +222,23 @@ export class AppendCoordinator {
         // Invalid JSON! Truncate the file to lastLineStart
         const truncateTo = lastLineStart;
         const discardedBytes = stat.size - truncateTo;
-
-        fs.truncateSync(filePath, truncateTo);
+        let truncated = false;
+        let retries = 5;
+        let lastError = null;
+        while (retries > 0 && !truncated) {
+          try {
+            fs.truncateSync(filePath, truncateTo);
+            truncated = true;
+          } catch (e: any) {
+            lastError = e;
+            retries--;
+            if (retries > 0) {
+              const sharedBuf = new Int32Array(new SharedArrayBuffer(4));
+              Atomics.wait(sharedBuf, 0, 0, 10); // Wait 10ms
+            }
+          }
+        }
+        if (!truncated) throw lastError;
 
         return {
           repaired: true,

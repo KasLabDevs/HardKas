@@ -7,6 +7,19 @@ export function registerLocalnetCommands(program: Command): void {
     .command("localnet")
     .description("Manage localnet state and snapshots");
 
+  const accountCmd = localnet
+    .command("account")
+    .description("Manage simulated localnet accounts");
+
+  accountCmd
+    .command("create <name>")
+    .description("Create a simulated localnet account")
+    .option("--json", "Output as JSON", false)
+    .action(async (name: string, options: any) => {
+      const { runLocalnetAccountCreate } = await import("../runners/localnet-account-runners.js");
+      await runLocalnetAccountCreate(name, options);
+    });
+
   localnet
     .command("fork")
     .description(

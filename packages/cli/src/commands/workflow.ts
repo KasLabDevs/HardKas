@@ -1,5 +1,6 @@
 import { Command } from "commander";
 import { UI } from "../ui.js";
+import path from "node:path";
 import {
   runWorkflowRun,
   runWorkflowInspect,
@@ -13,6 +14,21 @@ export function registerWorkflowCommands(program: Command) {
     .description(
       `Programmable deterministic workflows and agent orchestration ${UI.maturity("alpha")}`
     );
+
+  workflowCmd
+    .command("create <name>")
+    .description("Create a deterministic workflow from a template")
+    .requiredOption("--template <name>", "Embedded template name (basic, payroll, dao, escrow, marketplace)")
+    .option("--out <path>", "Output artifact file path")
+    .option("--json", "Output the final workflow artifact as JSON", false)
+    .option("--workspace <path>", "Override workspace root directory")
+    .action(async (name: string, options: any) => {
+      const { runWorkflowCreate } = await import("../runners/workflow-create-runner.js");
+      const workspaceRoot = options.workspace
+        ? path.resolve(options.workspace)
+        : process.cwd();
+      await runWorkflowCreate({ name, ...options, workspaceRoot });
+    });
 
   workflowCmd
     .command("run <file>")

@@ -74,4 +74,67 @@ export function registerConfigCommands(program: Command) {
       }
       console.log("");
     });
+
+  configCmd
+    .command("init")
+    .description("Initialize a basic hardkas.config.ts in the current directory")
+    .option("--force", "Overwrite existing config", false)
+    .action(async (options) => {
+      const { UI } = await import("../ui.js");
+      const fs = await import("node:fs");
+      const path = await import("node:path");
+
+      const configPath = path.join(process.cwd(), "hardkas.config.ts");
+      if (fs.existsSync(configPath) && !options.force) {
+        UI.error("hardkas.config.ts already exists. Use --force to overwrite.");
+        process.exitCode = 1;
+        return;
+      }
+
+      const template = `import { defineHardkasConfig } from "@hardkas/sdk";
+
+export default defineHardkasConfig({
+  defaultNetwork: "simulated",
+  networks: {
+    simulated: { kind: "simulated" }
+  },
+  accounts: {
+    alice: { kind: "simulated", address: "kaspa:sim_sim_alice" }
+  }
+});
+`;
+      fs.writeFileSync(configPath, template, "utf-8");
+      UI.success("Created hardkas.config.ts");
+    });
+
+  configCmd
+    .command("repair")
+    .description("Repair an invalid or missing hardkas.config.ts")
+    .action(async () => {
+      const { UI } = await import("../ui.js");
+      const fs = await import("node:fs");
+      const path = await import("node:path");
+      const configPath = path.join(process.cwd(), "hardkas.config.ts");
+
+      const template = `import { defineHardkasConfig } from "@hardkas/sdk";\n\nexport default defineHardkasConfig({\n  defaultNetwork: "simulated",\n  networks: {\n    simulated: { kind: "simulated" }\n  }\n});\n`;
+
+      if (!fs.existsSync(configPath)) {
+        UI.warning("Config file missing. Generating a new one...");
+        fs.writeFileSync(configPath, template, "utf-8");
+        UI.success("Repaired: Created fresh hardkas.config.ts");
+        return;
+      }
+
+      const { loadHardkasConfig } = await import("@hardkas/config");
+      try {
+        await loadHardkasConfig();
+        UI.success("Config file is valid. No repair needed.");
+      } catch (err: any) {
+        UI.error(`Config file is invalid: ${err.message}`);
+        UI.warning("Backing up and generating a fresh config...");
+        fs.copyFileSync(configPath, `${configPath}.backup`);
+        fs.writeFileSync(configPath, template, "utf-8");
+        UI.success("Repaired: Created fresh hardkas.config.ts (backup saved to hardkas.config.ts.backup)");
+      }
+    });
 }

@@ -1,3 +1,8 @@
 
 # HardKAS local storage
 .hardkas/
+
+dashboard-dist/
+events.jsonl
+hardkas.config.ts
+*.semantic-bundle.*.json

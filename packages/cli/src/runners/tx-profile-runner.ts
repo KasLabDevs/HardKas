@@ -80,5 +80,5 @@ export async function runTxProfile(options: TxProfileOptions) {
     );
   }
 
-  console.log("\nNote: Mass estimation is protocol-aware (0.7.4-alpha best-effort).");
+  console.log("\nNote: Mass estimation is protocol-aware (0.7.5-alpha best-effort).");
 }
