@@ -16,7 +16,7 @@ interface CommandCoverage {
   flagsDiscovered: string[];
 }
 
-export async function runCoverageMode(targetVersion = "0.7.5-alpha") {
+export async function runCoverageMode(targetVersion = "0.7.7-alpha") {
   console.log(
     "\n============================================================================"
   );

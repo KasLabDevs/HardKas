@@ -1,0 +1,34 @@
+{
+  "generatedAt": "2026-06-01T12:31:11.713Z",
+  "sdkVersion": "0.7.7-alpha",
+  "criticalApiGaps": [
+    {
+      "api": "hk.artifacts.list()",
+      "severity": "HIGH",
+      "impactedApps": [
+        "SDK-03",
+        "SDK-04"
+      ],
+      "friction": "Forces manual fs.readdirSync on .hardkas/artifacts"
+    },
+    {
+      "api": "hk.tx.signPartial()",
+      "severity": "CRITICAL",
+      "impactedApps": [
+        "SDK-11",
+        "SDK-12",
+        "SDK-20"
+      ],
+      "friction": "Forces shell calls to npx hardkas tx sign"
+    },
+    {
+      "api": "hk.queryStore.getUtxos()",
+      "severity": "HIGH",
+      "impactedApps": [
+        "SDK-17",
+        "SDK-18"
+      ],
+      "friction": "Forces manual raw SQL SQLite queries"
+    }
+  ]
+}

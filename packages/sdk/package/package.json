@@ -1,0 +1,61 @@
+{
+  "name": "@hardkas/sdk",
+  "version": "0.7.7-alpha",
+  "type": "module",
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "sideEffects": false,
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    },
+    "./client": {
+      "types": "./dist/client.d.ts",
+      "import": "./dist/client.js",
+      "default": "./dist/client.js"
+    }
+  },
+  "dependencies": {
+    "@hardkas/accounts": "0.7.7-alpha",
+    "@hardkas/artifacts": "0.7.7-alpha",
+    "@hardkas/config": "0.7.7-alpha",
+    "@hardkas/core": "0.7.7-alpha",
+    "@hardkas/query": "0.7.7-alpha",
+    "@hardkas/l2": "0.7.7-alpha",
+    "@hardkas/localnet": "0.7.7-alpha",
+    "@hardkas/kaspa-rpc": "0.7.7-alpha",
+    "@hardkas/tx-builder": "0.7.7-alpha",
+    "@hardkas/wallet-adapter": "0.7.7-alpha",
+    "@hardkas/simulator": "0.7.7-alpha"
+  },
+  "devDependencies": {
+    "tsup": "^8.3.5",
+    "typescript": "^5.7.2",
+    "vitest": "^2.1.8",
+    "@hardkas/query-store": "0.7.7-alpha"
+  },
+  "license": "MIT",
+  "author": "Javier Rodriguez",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/KasLabDevs/HardKas.git",
+    "directory": "packages/sdk"
+  },
+  "bugs": {
+    "url": "https://github.com/KasLabDevs/HardKas/issues"
+  },
+  "homepage": "https://github.com/KasLabDevs/HardKas/tree/main/packages/sdk#readme",
+  "scripts": {
+    "build": "tsup src/index.ts src/client.ts --format esm --dts --clean",
+    "test": "vitest run --passWithNoTests",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint ."
+  }
+}

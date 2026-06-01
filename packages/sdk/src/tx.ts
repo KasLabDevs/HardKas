@@ -62,6 +62,10 @@ export class HardkasTx {
           ? BigInt(options.amount)
           : options.amount;
 
+    if (amountSompi === 0n) {
+      throw new Error("Kaspa value-transfer outputs require amount > 0.\nFor metadata/notary/DID marker transactions use --amount 1.\nFuture: hardkas tx anchor.");
+    }
+
     // Fetch UTXOs
     let builderUtxos: BuilderUtxo[] = [];
     if (this.sdk.network === "simulated") {
@@ -166,6 +170,10 @@ export class HardkasTx {
         throw new Error(
           "Cannot append signature to an already completed signed transaction."
         );
+      }
+      if (options?.append === undefined && plan.status === "partially_signed") {
+        // Auto-detect append
+        options = { ...options, append: true };
       }
       if (!options?.append) {
         throw new Error(
@@ -276,7 +284,13 @@ export class HardkasTx {
           throw new Error(`Signer account '${resolvedAccount.name}' has no address.`);
         }
 
-        const requiredSigners = options?.requiredSigners || [signerAddress];
+        const requiredSignersList = options?.requiredSigners || [signerAddress];
+        const requiredSigners = [];
+        for (const r of requiredSignersList) {
+          const acc = await this.sdk.accounts.resolve(r);
+          requiredSigners.push(acc.address || r);
+        }
+
         if (!requiredSigners.includes(signerAddress)) {
           throw new Error(
             `Signer '${signerAddress}' is not an authorized signer for this transaction.`
@@ -604,5 +618,28 @@ export class HardkasTx {
       receipt,
       receiptPath
     };
+  }
+
+  /**
+   * Explicitly appends a signature to a partially signed transaction.
+   */
+  async appendSignature(
+    plan: SignedTxArtifact,
+    account?: HardkasAccount | string
+  ): Promise<SignedTxArtifact> {
+    return this.sign(plan, account, { append: true });
+  }
+
+  /**
+   * Fetches the current status of a transaction by ID.
+   */
+  async status(txId: string): Promise<any> {
+    const isLocal = txId.startsWith("simulated-");
+    if (isLocal) {
+      return { status: "simulated_confirmed" }; // Simplify for now
+    }
+    // Real network query
+    const result = await this.sdk.rpc.getTransaction(txId);
+    return result;
   }
 }
