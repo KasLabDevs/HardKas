@@ -75,7 +75,7 @@ This document presents an exhaustive audit of all runners implemented in the `@h
 | Runner             | Evidence                               | Classification              | Recommended action                                          |
 | :----------------- | :------------------------------------- | :-------------------------- | :---------------------------------------------------------- |
 | (Command)          | `hardkas test` (inline)                | `MOCK`                      | Implement real runner with Vitest.                          |
-| `dag-runners.ts`   | `"Minimal 0.7.8-alpha implementation"` | `PARTIAL`                   | Expand simulated GHOSTDAG logic.                            |
+| `dag-runners.ts`   | `"Minimal 0.7.9-alpha implementation"` | `PARTIAL`                   | Expand simulated GHOSTDAG logic.                            |
 | `accounts.ts`      | Lock/Session model                     | `PARTIAL`                   | Implement real session management.                          |
 | `l2-tx-runners.ts` | Outdated next step message             | **REAL with stale UX hint** | Correct message; send support already exists. [STILL VALID] |
 | `trace-runner.ts`  | Associated command disabled            | **UNUSED**                  | Integrate with Query Engine or remove.                      |

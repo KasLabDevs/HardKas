@@ -2,7 +2,7 @@
 
 ## Overview
 
-This report validates the freezing of the public local runtime contracts for HardKAS `0.7.8-alpha`. We ensured that new versions of outputs are securely versioned, while retaining full backwards compatibility with legacy artifacts.
+This report validates the freezing of the public local runtime contracts for HardKAS `0.7.9-alpha`. We ensured that new versions of outputs are securely versioned, while retaining full backwards compatibility with legacy artifacts.
 
 ## Validated Contracts
 

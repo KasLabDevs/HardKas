@@ -196,11 +196,11 @@ async function main() {
       }
 
       // 2. Install SDK from NPM
-      console.log('Installing @hardkas/sdk@0.7.8-alpha...');
-      execSync('npm install @hardkas/sdk@0.7.8-alpha @hardkas/cli@0.7.8-alpha', { cwd: appDir, stdio: 'ignore' });
+      console.log('Installing @hardkas/sdk@0.7.9-alpha...');
+      execSync('npm install @hardkas/sdk@0.7.9-alpha @hardkas/cli@0.7.9-alpha', { cwd: appDir, stdio: 'ignore' });
       if (app.code.includes('@hardkas/react')) {
          try {
-           execSync('npm install @hardkas/react@0.7.8-alpha', { cwd: appDir, stdio: 'ignore' });
+           execSync('npm install @hardkas/react@0.7.9-alpha', { cwd: appDir, stdio: 'ignore' });
          } catch(e) {
            // Might not be published yet, ignore for now to let the import fail naturally
          }
