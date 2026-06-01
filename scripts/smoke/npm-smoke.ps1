@@ -1,7 +1,7 @@
 $ErrorActionPreference = "Stop"
 Set-StrictMode -Version Latest
 
-Write-Host "=== HardKAS NPM Smoke Test (0.7.7-alpha) ==="
+Write-Host "=== HardKAS NPM Smoke Test (0.7.9-alpha) ==="
 
 $Workspace = "C:\Users\jrodr\Documents\kaslabdevs\GitHub\HardKas-repo"
 $SmokeDir = Join-Path $Workspace "npm-smoke-test-run"
@@ -17,12 +17,12 @@ if (Test-Path $SmokeDir) {
 New-Item -ItemType Directory -Path $SmokeDir | Out-Null
 Set-Location $SmokeDir
 
-# 2. Scaffold new project using npx @hardkas/cli@0.7.7-alpha
+# 2. Scaffold new project using npx @hardkas/cli@0.7.9-alpha
 Write-Host "`nStep 2: Scaffolding new project using NPM package..."
-# We run npx @hardkas/cli@0.7.7-alpha init with --skip-install to manually install with npm afterwards
-& npx @hardkas/cli@0.7.7-alpha init $ProjectName --skip-install
+# We run npx @hardkas/cli@0.7.9-alpha init with --skip-install to manually install with npm afterwards
+& npx @hardkas/cli@0.7.9-alpha init $ProjectName --skip-install
 if ($LASTEXITCODE -ne 0) {
-    throw "npx @hardkas/cli@0.7.7-alpha init failed"
+    throw "npx @hardkas/cli@0.7.9-alpha init failed"
 }
 
 # Move into project directory
@@ -46,8 +46,8 @@ $pkgJson.devDependencies | Format-List
 Write-Host "`nChecking CLI version..."
 $cliVersion = & npx hardkas --version
 Write-Host "  Installed CLI Version: $cliVersion"
-if ($cliVersion -ne "0.7.7-alpha") {
-    throw "Expected version 0.7.7-alpha, got $cliVersion"
+if ($cliVersion -ne "0.7.9-alpha") {
+    throw "Expected version 0.7.9-alpha, got $cliVersion"
 }
 
 # Run doctor and capabilities

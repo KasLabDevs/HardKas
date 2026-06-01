@@ -11,6 +11,7 @@ import { HardkasL2 } from "./l2.js";
 import { HardkasQuery } from "./query.js";
 import { HardkasLocalnet } from "./localnet.js";
 import { HardkasReplay } from "./replay.js";
+import { HardkasLineage } from "./lineage.js";
 import { HardkasWorkspace } from "./workspace.js";
 import { HardkasArtifactsManager } from "./artifacts-manager.js";
 import { HardkasWorkflow } from "./workflow.js";
@@ -22,6 +23,7 @@ export { HardkasL2 } from "./l2.js";
 export { HardkasQuery } from "./query.js";
 export { HardkasLocalnet } from "./localnet.js";
 export { HardkasReplay } from "./replay.js";
+export { HardkasLineage } from "./lineage.js";
 export { HardkasWorkspace } from "./workspace.js";
 export { HardkasArtifactsManager } from "./artifacts-manager.js";
 export { defineHardkasConfig } from "@hardkas/config";
@@ -55,6 +57,15 @@ export interface HardkasOptions {
   cwd?: string;
   configPath?: string;
   mode?: "developer" | "agent";
+  network?: string;
+  autoBootstrap?: boolean;
+  logger?: {
+    info: (msg: string) => void;
+    warn: (msg: string) => void;
+    error: (msg: string) => void;
+    debug: (msg: string) => void;
+    [key: string]: any;
+  };
   policy?: {
     allowNetwork?: boolean;
     allowMainnet?: boolean;
@@ -78,6 +89,7 @@ export class Hardkas {
   public readonly query: HardkasQuery;
   public readonly localnet: HardkasLocalnet;
   public readonly replay: HardkasReplay;
+  public readonly lineage: HardkasLineage;
   public readonly workflow: HardkasWorkflow;
 
   public readonly mode: "developer" | "agent";
@@ -115,6 +127,7 @@ export class Hardkas {
     this.query = new HardkasQuery(this);
     this.localnet = new HardkasLocalnet(this);
     this.replay = new HardkasReplay(this);
+    this.lineage = new HardkasLineage(this);
     this.workflow = new HardkasWorkflow(this);
   }
 
@@ -140,6 +153,46 @@ export class Hardkas {
     const options =
       typeof dirOrOptions === "string" ? { cwd: dirOrOptions } : dirOrOptions;
     const loaded = await loadConfig(options);
+    
+    const activeNetwork = options.network || loaded.config.defaultNetwork || "simnet";
+    const isSimulated = activeNetwork === "simulated" || loaded.config.networks?.[activeNetwork]?.kind === "simulated";
+    const autoBootstrap = options.autoBootstrap ?? (isSimulated ? true : false);
+
+    const fs = await import("node:fs");
+    const path = await import("node:path");
+    const cwd = options.cwd || process.cwd();
+    const hardkasDir = path.join(cwd, ".hardkas");
+
+    if (autoBootstrap) {
+      if (!isSimulated) {
+        if (options.logger) {
+           options.logger.warn("[HardKAS] autoBootstrap ignored for non-simulated network");
+        }
+      } else {
+        if (!fs.existsSync(hardkasDir)) {
+          if (options.logger) {
+             options.logger.info("[HardKAS] Auto-bootstrapping simulated workspace");
+          }
+          fs.mkdirSync(hardkasDir, { recursive: true });
+        }
+        try {
+          const { loadOrCreateLocalnetState } = await import("@hardkas/localnet");
+          await loadOrCreateLocalnetState({ cwd });
+        } catch {
+          // ignore error if it fails to init localnet
+        }
+      }
+    } else {
+      if (!fs.existsSync(hardkasDir)) {
+        throw new HardkasError("NOT_INITIALIZED", "Workspace not initialized. Run npx hardkas init . or pass autoBootstrap: true.");
+      }
+    }
+
+    // Pass the overridden network back into config for downstream use if needed
+    if (options.network) {
+       loaded.config.defaultNetwork = options.network;
+    }
+
     return new Hardkas(loaded, options);
   }
 

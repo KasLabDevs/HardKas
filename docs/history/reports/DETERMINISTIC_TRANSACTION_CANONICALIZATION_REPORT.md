@@ -82,7 +82,7 @@ We established a rigid cross-platform transaction plan fixture that calculates t
 ```json
 {
   "schema": "hardkas.txPlan",
-  "hardkasVersion": "0.7.7-alpha",
+  "hardkasVersion": "0.7.9-alpha",
   "version": "1.0.0-alpha",
   "hashVersion": 3,
   "networkId": "simnet",

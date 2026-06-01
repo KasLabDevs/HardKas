@@ -1,34 +1,58 @@
 {
-  "generatedAt": "2026-06-01T12:31:11.713Z",
-  "sdkVersion": "0.7.7-alpha",
-  "criticalApiGaps": [
+  "missingApis": [
     {
-      "api": "hk.artifacts.list()",
-      "severity": "HIGH",
-      "impactedApps": [
-        "SDK-03",
-        "SDK-04"
-      ],
-      "friction": "Forces manual fs.readdirSync on .hardkas/artifacts"
+      "app": "01-wallet-backend",
+      "missing": "Runtime error or missing export",
+      "error": "file:///C:/Users/jrodr/Documents/kaslabdevs/GitHub/external-gauntlet-runs/01-wallet-backend/node_modules/@hardkas/accounts/dist/index.js:231\r\n  throw new Error(\r\n        ^\r\n\r\nError: Unknown HardKAS account 'default'. Available accounts: alice, bob, carol, dave, erin\r\n    at resolveHardkasAccount (file:///C:/Users/jrodr/Documents/kaslabdevs/GitHub/external-gauntlet-runs/01-wallet-backend/node_modules/@hardkas/accounts/dist/index.js:231:9)\r\n    at HardkasAccounts.resolve (file:///C:/Users/jrodr/Documents/kaslabdevs/GitHub/external-gauntlet-runs/01-wallet-backend/node_modules/@hardkas/sdk/dist/index.js:24:12)\r\n    at HardkasTx.plan (file:///C:/Users/jrodr/Documents/kaslabdevs/GitHub/external-gauntlet-runs/01-wallet-backend/node_modules/@hardkas/sdk/dist/index.js:104:84)\r\n    at HardkasAccounts.fund (file:///C:/Users/jrodr/Documents/kaslabdevs/GitHub/external-gauntlet-runs/01-wallet-backend/node_modules/@hardkas/sdk/dist/index.js:61:36)\r\n    at run (file:///C:/Users/jrodr/Documents/kaslabdevs/GitHub/external-gauntlet-runs/01-wallet-backend/index.mjs:5:26)\r\n\r\nNode.js v24.15.0\r\n"
     },
     {
-      "api": "hk.tx.signPartial()",
-      "severity": "CRITICAL",
-      "impactedApps": [
-        "SDK-11",
-        "SDK-12",
-        "SDK-20"
-      ],
-      "friction": "Forces shell calls to npx hardkas tx sign"
+      "app": "06-document-notary-react",
+      "missing": "@hardkas/react context/hooks"
     },
     {
-      "api": "hk.queryStore.getUtxos()",
-      "severity": "HIGH",
-      "impactedApps": [
-        "SDK-17",
-        "SDK-18"
-      ],
-      "friction": "Forces manual raw SQL SQLite queries"
+      "app": "07-game-backend",
+      "missing": "Runtime error or missing export",
+      "error": "[wRPC Debug] Sending payload: {\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"getBalancesByAddresses\",\"params\":{\"addresses\":[\"kaspa:sim_alice\"]}}\n[wRPC Debug] Received for getBalancesByAddresses: {\"id\":1,\"method\":\"getBalancesByAddresses\",\"error\":{\"code\":0,\"message\":\"request deserialization error\",\"data\":null}}\n[wRPC Debug] Sending payload: {\"jsonrpc\":\"2.0\",\"id\":2,\"method\":\"getBalancesByAddresses\",\"params\":[[\"kaspa:sim_alice\"]]}\n[wRPC Debug] Received for getBalancesByAddresses: {\"id\":2,\"method\":\"getBalancesByAddresses\",\"error\":{\"code\":0,\"message\":\"request deserialization error\",\"data\":null}}\n[wRPC Debug] Sending payload: {\"jsonrpc\":\"2.0\",\"id\":3,\"method\":\"getBalancesByAddressesRequest\",\"params\":{\"addresses\":[\"kaspa:sim_alice\"]}}\n[wRPC Debug] Timeout for method: getBalancesByAddressesRequest\n[wRPC Debug] Sending payload: {\"jsonrpc\":\"2.0\",\"id\":4,\"method\":\"getBalanceByAddressRequest\",\"params\":{\"address\":\"kaspa:sim_alice\"}}\n[wRPC Debug] Timeout for method: getBalanceByAddressRequest\n[wRPC Debug] Sending payload: {\"jsonrpc\":\"2.0\",\"id\":5,\"method\":\"GetBalancesByAddresses\",\"params\":{\"addresses\":[\"kaspa:sim_alice\"]}}\n[wRPC Debug] Timeout for method: GetBalancesByAddresses\n[wRPC Debug] Sending payload: {\"jsonrpc\":\"2.0\",\"id\":6,\"method\":\"get_balances_by_addresses\",\"params\":{\"addresses\":[\"kaspa:sim_alice\"]}}\n[wRPC Debug] Timeout for method: get_balances_by_addresses\n[wRPC Debug] Sending payload: {\"jsonrpc\":\"2.0\",\"id\":7,\"method\":\"GetBalanceByAddress\",\"params\":{\"addresses\":[\"kaspa:sim_alice\"]}}\n[wRPC Debug] Timeout for method: GetBalanceByAddress\n[wRPC Debug] Sending payload: {\"jsonrpc\":\"2.0\",\"id\":8,\"method\":\"getBalanceByAddress\",\"params\":{\"addresses\":[\"kaspa:sim_alice\"]}}\n[wRPC Debug] Received for getBalanceByAddress: {\"id\":8,\"method\":\"getBalanceByAddress\",\"error\":{\"code\":0,\"message\":\"request deserialization error\",\"data\":null}}\n[wRPC Debug] Sending payload: {\"jsonrpc\":\"2.0\",\"id\":9,\"method\":\"getBalanceByAddress\",\"params\":[[\"kaspa:sim_alice\"]]}\n[wRPC Debug] Received for getBalanceByAddress: {\"id\":9,\"method\":\"getBalanceByAddress\",\"error\":{\"code\":0,\"message\":\"request deserialization error\",\"data\":null}}\n[wRPC Debug] Sending payload: {\"jsonrpc\":\"2.0\",\"id\":10,\"method\":\"get_balance_by_address\",\"params\":{\"addresses\":[\"kaspa:sim_alice\"]}}\n[wRPC Debug] Timeout for method: get_balance_by_address\n"
+    },
+    {
+      "app": "09-payroll-service",
+      "missing": "Runtime error or missing export",
+      "error": "file:///C:/Users/jrodr/Documents/kaslabdevs/GitHub/external-gauntlet-runs/09-payroll-service/node_modules/@hardkas/accounts/dist/index.js:231\r\n  throw new Error(\r\n        ^\r\n\r\nError: Unknown HardKAS account 'default'. Available accounts: alice, bob, carol, dave, erin\r\n    at resolveHardkasAccount (file:///C:/Users/jrodr/Documents/kaslabdevs/GitHub/external-gauntlet-runs/09-payroll-service/node_modules/@hardkas/accounts/dist/index.js:231:9)\r\n    at HardkasAccounts.resolve (file:///C:/Users/jrodr/Documents/kaslabdevs/GitHub/external-gauntlet-runs/09-payroll-service/node_modules/@hardkas/sdk/dist/index.js:24:12)\r\n    at HardkasTx.plan (file:///C:/Users/jrodr/Documents/kaslabdevs/GitHub/external-gauntlet-runs/09-payroll-service/node_modules/@hardkas/sdk/dist/index.js:104:84)\r\n    at HardkasAccounts.fund (file:///C:/Users/jrodr/Documents/kaslabdevs/GitHub/external-gauntlet-runs/09-payroll-service/node_modules/@hardkas/sdk/dist/index.js:61:36)\r\n    at run (file:///C:/Users/jrodr/Documents/kaslabdevs/GitHub/external-gauntlet-runs/09-payroll-service/index.mjs:5:26)\r\n\r\nNode.js v24.15.0\r\n"
+    },
+    {
+      "app": "10-payroll-ui",
+      "missing": "@hardkas/react context/hooks"
+    },
+    {
+      "app": "11-dao-multisig-node",
+      "missing": "Runtime error or missing export",
+      "error": "file:///C:/Users/jrodr/Documents/kaslabdevs/GitHub/external-gauntlet-runs/11-dao-multisig-node/node_modules/@hardkas/accounts/dist/index.js:231\r\n  throw new Error(\r\n        ^\r\n\r\nError: Unknown HardKAS account 'default'. Available accounts: alice, bob, carol, dave, erin\r\n    at resolveHardkasAccount (file:///C:/Users/jrodr/Documents/kaslabdevs/GitHub/external-gauntlet-runs/11-dao-multisig-node/node_modules/@hardkas/accounts/dist/index.js:231:9)\r\n    at HardkasAccounts.resolve (file:///C:/Users/jrodr/Documents/kaslabdevs/GitHub/external-gauntlet-runs/11-dao-multisig-node/node_modules/@hardkas/sdk/dist/index.js:24:12)\r\n    at HardkasTx.plan (file:///C:/Users/jrodr/Documents/kaslabdevs/GitHub/external-gauntlet-runs/11-dao-multisig-node/node_modules/@hardkas/sdk/dist/index.js:104:84)\r\n    at HardkasAccounts.fund (file:///C:/Users/jrodr/Documents/kaslabdevs/GitHub/external-gauntlet-runs/11-dao-multisig-node/node_modules/@hardkas/sdk/dist/index.js:61:36)\r\n    at run (file:///C:/Users/jrodr/Documents/kaslabdevs/GitHub/external-gauntlet-runs/11-dao-multisig-node/index.mjs:5:26)\r\n\r\nNode.js v24.15.0\r\n"
+    },
+    {
+      "app": "13-backup-integrity",
+      "missing": "Runtime error or missing export",
+      "error": "node:internal/errors:985\r\n  const err = new Error(message);\r\n              ^\r\n\r\nError: Command failed: npx hardkas replay verify\r\n\u001b[31m\r\n  ✗ Error:\u001b[39m\r\n\u001b[31m    No plan artifacts found in C:\\Users\\jrodr\\Documents\\kaslabdevs\\GitHub\\external-gauntlet-runs\\13-backup-integrity\\.hardkas\\artifacts.\r\n  Hint: Run a transaction first: hardkas tx send --from alice --to bob --amount 10 --network simulated --yes\u001b[39m\r\n\r\n    at genericNodeError (node:internal/errors:985:15)\r\n    at wrappedFn (node:internal/errors:539:14)\r\n    at checkExecSyncError (node:child_process:925:11)\r\n    at execSync (node:child_process:997:15)\r\n    at run (file:///C:/Users/jrodr/Documents/kaslabdevs/GitHub/external-gauntlet-runs/13-backup-integrity/index.mjs:7:7) {\r\n  status: 1,\r\n  signal: null,\r\n  output: [\r\n    null,\r\n    Buffer(0) [Uint8Array] [],\r\n    Buffer(280) [Uint8Array] [\r\n       27,  91,  51,  49, 109,  10,  32,  32, 226, 156, 151,  32,\r\n       69, 114, 114, 111, 114,  58,  27,  91,  51,  57, 109,  10,\r\n       27,  91,  51,  49, 109,  32,  32,  32,  32,  78, 111,  32,\r\n      112, 108,  97, 110,  32,  97, 114, 116, 105, 102,  97,  99,\r\n      116, 115,  32, 102, 111, 117, 110, 100,  32, 105, 110,  32,\r\n       67,  58,  92,  85, 115, 101, 114, 115,  92, 106, 114, 111,\r\n      100, 114,  92,  68, 111,  99, 117, 109, 101, 110, 116, 115,\r\n       92, 107,  97, 115, 108,  97,  98, 100, 101, 118, 115,  92,\r\n       71, 105, 116,  72,\r\n      ... 180 more items\r\n    ]\r\n  ],\r\n  pid: 6980,\r\n  stdout: Buffer(0) [Uint8Array] [],\r\n  stderr: Buffer(280) [Uint8Array] [\r\n     27,  91,  51,  49, 109,  10,  32,  32, 226, 156, 151,  32,\r\n     69, 114, 114, 111, 114,  58,  27,  91,  51,  57, 109,  10,\r\n     27,  91,  51,  49, 109,  32,  32,  32,  32,  78, 111,  32,\r\n    112, 108,  97, 110,  32,  97, 114, 116, 105, 102,  97,  99,\r\n    116, 115,  32, 102, 111, 117, 110, 100,  32, 105, 110,  32,\r\n     67,  58,  92,  85, 115, 101, 114, 115,  92, 106, 114, 111,\r\n    100, 114,  92,  68, 111,  99, 117, 109, 101, 110, 116, 115,\r\n     92, 107,  97, 115, 108,  97,  98, 100, 101, 118, 115,  92,\r\n     71, 105, 116,  72,\r\n    ... 180 more items\r\n  ]\r\n}\r\n\r\nNode.js v24.15.0\r\n"
+    },
+    {
+      "app": "17-mini-indexer",
+      "missing": "Runtime error or missing export",
+      "error": "node:internal/errors:985\r\n  const err = new Error(message);\r\n              ^\r\n\r\nError: Command failed: npx hardkas query sql \"SELECT * FROM artifacts\"\r\nerror: unknown command 'sql'\r\n\r\nUsage: hardkas query [options] [command]\r\n\r\nQuery and introspect HardKAS artifacts, lineage, and workflows\r\n\r\nOptions:\r\n  -h, --help           display help for command\r\n\r\nCommands:\r\n  artifacts            Query artifact store \u001b[32mstable\u001b[39m\r\n  store                Manage query store index \u001b[32mstable\u001b[39m\r\n  lineage              Traverse artifact lineage \u001b[32mstable\u001b[39m\r\n  replay               Inspect replay history and divergence \u001b[32mstable\u001b[39m\r\n  dag                  Query simulated DAG state \u001b[35mresearch\u001b[39m\r\n  events [options]     Query event log\r\n  tx [options] <txId>  Aggregate all data for a transaction \u001b[32mstable\u001b[39m\r\n  help [command]       display help for command\r\n\r\n    at genericNodeError (node:internal/errors:985:15)\r\n    at wrappedFn (node:internal/errors:539:14)\r\n    at checkExecSyncError (node:child_process:925:11)\r\n    at execSync (node:child_process:997:15)\r\n    at run (file:///C:/Users/jrodr/Documents/kaslabdevs/GitHub/external-gauntlet-runs/17-mini-indexer/index.mjs:4:7)\r\n    at file:///C:/Users/jrodr/Documents/kaslabdevs/GitHub/external-gauntlet-runs/17-mini-indexer/index.mjs:6:5\r\n    at ModuleJob.run (node:internal/modules/esm/module_job:437:25)\r\n    at async node:internal/modules/esm/loader:639:26\r\n    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:101:5) {\r\n  status: 1,\r\n  signal: null,\r\n  output: [\r\n    null,\r\n    Buffer(0) [Uint8Array] [],\r\n    Buffer(706) [Uint8Array] [\r\n      101, 114, 114, 111, 114,  58,  32, 117, 110, 107, 110, 111,\r\n      119, 110,  32,  99, 111, 109, 109,  97, 110, 100,  32,  39,\r\n      115, 113, 108,  39,  10,  10,  85, 115,  97, 103, 101,  58,\r\n       32, 104,  97, 114, 100, 107,  97, 115,  32, 113, 117, 101,\r\n      114, 121,  32,  91, 111, 112, 116, 105, 111, 110, 115,  93,\r\n       32,  91,  99, 111, 109, 109,  97, 110, 100,  93,  10,  10,\r\n       81, 117, 101, 114, 121,  32,  97, 110, 100,  32, 105, 110,\r\n      116, 114, 111, 115, 112, 101,  99, 116,  32,  72,  97, 114,\r\n      100,  75,  65,  83,\r\n      ... 606 more items\r\n    ]\r\n  ],\r\n  pid: 28036,\r\n  stdout: Buffer(0) [Uint8Array] [],\r\n  stderr: Buffer(706) [Uint8Array] [\r\n    101, 114, 114, 111, 114,  58,  32, 117, 110, 107, 110, 111,\r\n    119, 110,  32,  99, 111, 109, 109,  97, 110, 100,  32,  39,\r\n    115, 113, 108,  39,  10,  10,  85, 115,  97, 103, 101,  58,\r\n     32, 104,  97, 114, 100, 107,  97, 115,  32, 113, 117, 101,\r\n    114, 121,  32,  91, 111, 112, 116, 105, 111, 110, 115,  93,\r\n     32,  91,  99, 111, 109, 109,  97, 110, 100,  93,  10,  10,\r\n     81, 117, 101, 114, 121,  32,  97, 110, 100,  32, 105, 110,\r\n    116, 114, 111, 115, 112, 101,  99, 116,  32,  72,  97, 114,\r\n    100,  75,  65,  83,\r\n    ... 606 more items\r\n  ]\r\n}\r\n\r\nNode.js v24.15.0\r\n"
+    },
+    {
+      "app": "20-kastj-migration-spike",
+      "missing": "Runtime error or missing export",
+      "error": "file:///C:/Users/jrodr/Documents/kaslabdevs/GitHub/external-gauntlet-runs/20-kastj-migration-spike/index.mjs:8\r\n      if (!plan.unsignedPayloadHash) throw new Error(\"Missing Kastj hash access\");\r\n                                           ^\r\n\r\nError: Missing Kastj hash access\r\n    at run (file:///C:/Users/jrodr/Documents/kaslabdevs/GitHub/external-gauntlet-runs/20-kastj-migration-spike/index.mjs:8:44)\r\n\r\nNode.js v24.15.0\r\n"
+    }
+  ],
+  "expectedBrowserBoundaries": [],
+  "cliFallbacks": [
+    {
+      "app": "14-ci-artifact-verifier",
+      "reason": "CLI fallback used for core operation"
+    },
+    {
+      "app": "18-query-store-test",
+      "reason": "CLI fallback used for core operation"
     }
   ]
 }

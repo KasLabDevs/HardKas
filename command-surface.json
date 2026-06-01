@@ -1,0 +1,87 @@
+{
+  "generatedAt": "2026-06-01T12:14:52.847Z",
+  "totalCommands": 20,
+  "executedCommands": 16,
+  "surfaceDiscovered": [
+    {
+      "name": "init",
+      "status": "EXECUTED_WITH_ARTIFACT"
+    },
+    {
+      "name": "tx plan",
+      "status": "EXECUTED_WITH_ARTIFACT"
+    },
+    {
+      "name": "tx sign",
+      "status": "EXECUTED_WITH_ARTIFACT"
+    },
+    {
+      "name": "tx send",
+      "status": "EXECUTED_WITH_ARTIFACT"
+    },
+    {
+      "name": "tx status",
+      "status": "EXECUTED"
+    },
+    {
+      "name": "tx batch",
+      "status": "EXECUTED"
+    },
+    {
+      "name": "tx receipt",
+      "status": "UNTOUCHED"
+    },
+    {
+      "name": "doctor",
+      "status": "EXECUTED"
+    },
+    {
+      "name": "replay verify",
+      "status": "EXECUTED"
+    },
+    {
+      "name": "accounts list",
+      "status": "EXECUTED"
+    },
+    {
+      "name": "accounts balance",
+      "status": "EXECUTED"
+    },
+    {
+      "name": "accounts fund",
+      "status": "EXECUTED"
+    },
+    {
+      "name": "capabilities",
+      "status": "EXECUTED"
+    },
+    {
+      "name": "new",
+      "status": "UNTOUCHED"
+    },
+    {
+      "name": "deploy list",
+      "status": "UNTOUCHED"
+    },
+    {
+      "name": "deploy inspect",
+      "status": "UNTOUCHED"
+    },
+    {
+      "name": "l2 bridge assumptions",
+      "status": "EXECUTED"
+    },
+    {
+      "name": "l2 networks",
+      "status": "EXECUTED"
+    },
+    {
+      "name": "bridge local plan",
+      "status": "EXECUTED"
+    },
+    {
+      "name": "bridge local simulate",
+      "status": "EXECUTED"
+    }
+  ]
+}

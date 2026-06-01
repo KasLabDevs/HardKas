@@ -1,7 +1,7 @@
 # Nightmare Blocker Remediation
 
 **Date:** 2026-05-28
-**Sprint Goal:** Fix the two release blockers found by the Nightmare Suite before tagging `0.7.7-alpha`.
+**Sprint Goal:** Fix the two release blockers found by the Nightmare Suite before tagging `0.7.9-alpha`.
 
 ## Executive Summary
 
@@ -39,4 +39,4 @@ The HardKAS Nightmare Suite identified two critical operational blockers during 
   - `ParallelHellMiniRegression`: Validated that intense concurrent read/write operations against the projection layer result in graceful warnings rather than fatal runtime crashes.
 - **Project Test Suite:** Full monorepo pass (`136/136` tests) for `@hardkas/cli`.
 
-**Status:** ALL BLOCKERS RESOLVED. Ready for `0.7.7-alpha` release.
+**Status:** ALL BLOCKERS RESOLVED. Ready for `0.7.9-alpha` release.

@@ -29,8 +29,8 @@ if ($LASTEXITCODE -ne 0) {
 $installedVersion = npx hardkas --version
 Write-Host "Installed HardKAS CLI version: $installedVersion"
 
-if ($installedVersion -ne "0.7.7-alpha") {
-    throw "Expected version 0.7.7-alpha, but got $installedVersion"
+if ($installedVersion -ne "0.7.9-alpha") {
+    throw "Expected version 0.7.9-alpha, but got $installedVersion"
 }
 
 # 3. Scaffold a new workspace

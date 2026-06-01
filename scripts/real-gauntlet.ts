@@ -718,7 +718,7 @@ async function main() {
   console.log("📦 Creating isolated registry-based template workspace...");
   runCmd("npm init -y", templateDir);
 
-  const installCmd = "npm install @hardkas/sdk@0.7.7-alpha @hardkas/cli@0.7.7-alpha @hardkas/react@0.7.7-alpha @hardkas/query-store@0.7.7-alpha react react-dom vite express --no-audit --no-fund --legacy-peer-deps";
+  const installCmd = "npm install @hardkas/sdk@0.7.9-alpha @hardkas/cli@0.7.9-alpha @hardkas/react@0.7.9-alpha @hardkas/query-store@0.7.9-alpha react react-dom vite express --no-audit --no-fund --legacy-peer-deps";
   console.log(`   └─ Installing from public NPM registry: \`${installCmd}\`...`);
   
   const installStart = Date.now();
@@ -906,7 +906,7 @@ ${results.map(r => `| ${r.id} | ${r.name} | ${r.classification} | ${r.artifactCo
 
   // ─── Generate SDK Product Fit ─────────────────────────────────────────────────
 
-  const productFitMd = `# SDK Product Fit Analysis — HardKAS 0.7.7-alpha
+  const productFitMd = `# SDK Product Fit Analysis — HardKAS 0.7.9-alpha
 
 Based on empirical data collected across **20 automated, non-adapted sandboxed runs** of HardKAS SDK, we evaluate its maturity as an application development library.
 
@@ -959,7 +959,7 @@ Currently, **no**. The SDK is too low-level and forces developers to shell out t
 
   const gapMatrix = {
     generatedAt: new Date().toISOString(),
-    sdkVersion: "0.7.7-alpha",
+    sdkVersion: "0.7.9-alpha",
     criticalApiGaps: [
       {
         api: "hk.artifacts.list()",

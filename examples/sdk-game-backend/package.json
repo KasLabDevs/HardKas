@@ -1,0 +1,11 @@
+{
+  "name": "sdk-game-backend",
+  "version": "0.7.9-alpha",
+  "type": "module",
+  "scripts": {
+    "demo": "node src/index.mjs"
+  },
+  "dependencies": {
+    "@hardkas/sdk": "workspace:*"
+  }
+}

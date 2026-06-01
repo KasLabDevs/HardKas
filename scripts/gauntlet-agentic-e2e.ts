@@ -213,7 +213,7 @@ async function main() {
   );
 
   let scale = "dry-run";
-  let targetVersion = "0.7.7-alpha";
+  let targetVersion = "0.7.9-alpha";
   let baseSeed = Math.floor(Math.random() * 1000000);
   let debug = false;
   let mode = "stress";
@@ -318,7 +318,7 @@ async function main() {
     console.log(`📦 Reusing existing published package install template...`);
   }
 
-  // 1b. Hot-patch template node_modules if using 0.7.7-alpha to fix the schemaVersion replay divergence bug
+  // 1b. Hot-patch template node_modules if using 0.7.9-alpha to fix the schemaVersion replay divergence bug
   const artifactsIndexJs = path.join(
     templateDir,
     "node_modules",

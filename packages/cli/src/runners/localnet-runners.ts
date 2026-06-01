@@ -52,7 +52,7 @@ export async function runLocalnetFork(opts: {
 
         const outputPath = opts.outputPath
           ? resolve(opts.outputPath)
-          : resolve(wsRoot, ".hardkas", "localnet-state.json");
+          : resolve(wsRoot, ".hardkas", "localnet.json");
 
         await saveLocalnetState(state, outputPath);
 

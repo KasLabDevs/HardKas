@@ -420,7 +420,7 @@ export class HardkasIndexer {
 
         if (isCorrupt) {
           result.artifacts.corrupted++;
-          verification.issues.forEach((issue) => {
+          verification.issues.forEach((issue: any) => {
             const corruptionIssue: CorruptionIssue = {
               code: issue.code as CorruptionCode,
               severity: issue.severity === "warning" ? "warning" : "error",
@@ -835,6 +835,8 @@ export class HardkasIndexer {
         !file.endsWith("events.jsonl") &&
         file !== "state.json" &&
         !file.endsWith("localnet.json") &&
+        !file.endsWith("localnet-state.json") &&
+        !file.endsWith("localnet-indexer.json") &&
         !file.endsWith("accounts.real.json") &&
         !file.endsWith("sessions.json")
       ) {

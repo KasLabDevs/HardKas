@@ -1,4 +1,4 @@
-import { systemRuntimeContext } from "@hardkas/core";
+import { systemRuntimeContext, deterministicCompare } from "@hardkas/core";
 import { Hardkas } from "./index.js";
 import {
   buildPaymentPlan,
@@ -68,7 +68,8 @@ export class HardkasTx {
 
     // Fetch UTXOs
     let builderUtxos: BuilderUtxo[] = [];
-    if (this.sdk.network === "simulated") {
+    const activeNetwork = this.sdk.config.config.defaultNetwork || "simnet";
+    if (activeNetwork === "simulated" || this.sdk.config.config.networks?.[activeNetwork]?.kind === "simulated") {
       // TODO: Extract a shared UtxoProvider / RuntimeBackend so HardkasTx
       // does not depend directly on localnet implementation details.
       const { loadOrCreateLocalnetState, getSpendableUtxos } =
@@ -113,9 +114,10 @@ export class HardkasTx {
       feeRateSompiPerMass: options.feeRate ?? 1n
     });
 
+    const isSimulated = activeNetwork === "simulated" || this.sdk.config.config.networks?.[activeNetwork]?.kind === "simulated";
     return createTxPlanArtifact({
-      networkId: this.sdk.network as NetworkId,
-      mode: "simulated",
+      networkId: activeNetwork as NetworkId,
+      mode: isSimulated ? "simulated" : "real",
       from: {
         input: fromAccount.name || fromAccount.address,
         address: fromAccount.address,
@@ -217,7 +219,7 @@ export class HardkasTx {
 
       // Append signature and sort alphabetically by signer address to ensure deterministic hash
       const newSignatures = [...sigs, signatureEntry].sort((a, b) =>
-        a.signer.localeCompare(b.signer)
+        deterministicCompare(a.signer, b.signer)
       );
 
       // Append metadata (excl. from contentHash)
@@ -303,7 +305,7 @@ export class HardkasTx {
         };
 
         const signatures = [signatureEntry].sort((a, b) =>
-          a.signer.localeCompare(b.signer)
+          deterministicCompare(a.signer, b.signer)
         );
         const signatureMetadata = [
           {
@@ -460,6 +462,8 @@ export class HardkasTx {
 
     // Pre-determine trace path for immutability and hermetic sealing (VULN-03)
     const tracePath = receiptPath.replace(".json", ".trace.json");
+    const activeNetwork = this.sdk.config.config.defaultNetwork || "simnet";
+    const isSimulated = activeNetwork === "simulated" || this.sdk.config.config.networks?.[activeNetwork]?.kind === "simulated";
 
     // Create unified receipt
     const receiptBase: any = {
@@ -468,8 +472,8 @@ export class HardkasTx {
       hardkasVersion: HARDKAS_VERSION,
       version: ARTIFACT_VERSION,
       hashVersion: CURRENT_HASH_VERSION,
-      networkId: this.sdk.network,
-      mode: "simulated",
+      networkId: activeNetwork,
+      mode: isSimulated ? "simulated" : "real",
       createdAt: new Date().toISOString(),
       status: "confirmed",
       txId: simResult.receipt.txId,
@@ -514,8 +518,8 @@ export class HardkasTx {
       hashVersion: CURRENT_HASH_VERSION,
       createdAt: receipt.createdAt,
       txId: receipt.txId,
-      mode: "simulated",
-      networkId: this.sdk.network,
+      mode: isSimulated ? "simulated" : "real",
+      networkId: activeNetwork,
       steps: traceSteps
     };
     traceBase.contentHash = calculateContentHash(traceBase, CURRENT_HASH_VERSION);

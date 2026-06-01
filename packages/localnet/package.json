@@ -1,6 +1,6 @@
 {
   "name": "@hardkas/localnet",
-  "version": "0.7.7-alpha",
+  "version": "0.7.9-alpha",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -16,10 +16,10 @@
   "dependencies": {
     "@hardkas/artifacts": "workspace:*",
     "@hardkas/core": "workspace:*",
+    "@hardkas/kaspa-rpc": "workspace:*",
     "@hardkas/query": "workspace:*",
     "@hardkas/simulator": "workspace:*",
-    "@hardkas/tx-builder": "workspace:*",
-    "@hardkas/kaspa-rpc": "workspace:*"
+    "@hardkas/tx-builder": "workspace:*"
   },
   "devDependencies": {
     "fast-check": "^4.8.0",
