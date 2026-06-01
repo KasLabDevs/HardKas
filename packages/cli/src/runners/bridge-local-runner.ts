@@ -59,7 +59,7 @@ export async function runBridgeLocalPlan(options: {
       console.log(
         JSON.stringify(
           {
-            schema: "hardkas.bridgeLocalSessionPlan.v1",
+            schema: "hardkas.bridge.localPlan.v1",
             session: {
               source: ctx.source,
               name: ctx.sessionName || null
@@ -89,13 +89,12 @@ export async function runBridgeLocalPlan(options: {
     // Persist bridge plan artifact
     const cwd = process.cwd();
     const artifactsDir = path.join(cwd, ".hardkas", "artifacts");
-    if (fs.existsSync(path.join(cwd, ".hardkas"))) {
-      if (!fs.existsSync(artifactsDir)) fs.mkdirSync(artifactsDir, { recursive: true });
-      const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
-      const artifactPath = path.join(artifactsDir, `${timestamp}-bridge-local-plan.json`);
-      const artifactData = {
-        schema: "hardkas.bridgeLocalSessionPlan.v1",
-        session: { source: ctx.source, name: ctx.sessionName || null },
+    if (!fs.existsSync(artifactsDir)) fs.mkdirSync(artifactsDir, { recursive: true });
+    const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
+    const artifactPath = path.join(artifactsDir, `${timestamp}-bridge-local-plan.json`);
+    const artifactData = {
+      schema: "hardkas.bridge.localPlan.v1",
+      session: { source: ctx.source, name: ctx.sessionName || null },
         l1: { wallet: ctx.l1.walletName, address: ctx.l1.address },
         l2: { account: ctx.l2.accountName || null, address: ctx.l2.address },
         bridge: {
@@ -106,10 +105,9 @@ export async function runBridgeLocalPlan(options: {
         plan: JSON.parse(
           JSON.stringify(plan, (k, v) => (typeof v === "bigint" ? v.toString() : v))
         ),
-        createdAt: new Date().toISOString()
-      };
-      await writeArtifact(artifactPath, artifactData);
-    }
+      createdAt: new Date().toISOString()
+    };
+    await writeArtifact(artifactPath, artifactData);
 
     printBridgeContext(ctx, options.amount, plan.serializedPayload);
 
@@ -193,7 +191,7 @@ export async function runBridgeLocalSimulate(options: {
       console.log(
         JSON.stringify(
           {
-            schema: "hardkas.bridgeLocalSessionSimulation.v1",
+            schema: "hardkas.bridge.localSimulation.v1",
             status: "success",
             session: {
               source: ctx.source,
@@ -220,16 +218,15 @@ export async function runBridgeLocalSimulate(options: {
     // Persist bridge simulation artifact
     const cwd = process.cwd();
     const artifactsDir = path.join(cwd, ".hardkas", "artifacts");
-    if (fs.existsSync(path.join(cwd, ".hardkas"))) {
-      if (!fs.existsSync(artifactsDir)) fs.mkdirSync(artifactsDir, { recursive: true });
-      const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
-      const artifactPath = path.join(
-        artifactsDir,
-        `${timestamp}-bridge-local-simulate.json`
-      );
-      const artifactData = {
-        schema: "hardkas.bridgeLocalSessionSimulation.v1",
-        status: "success",
+    if (!fs.existsSync(artifactsDir)) fs.mkdirSync(artifactsDir, { recursive: true });
+    const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
+    const artifactPath = path.join(
+      artifactsDir,
+      `${timestamp}-bridge-local-simulate.json`
+    );
+    const artifactData = {
+      schema: "hardkas.bridge.localSimulation.v1",
+      status: "success",
         session: { source: ctx.source, name: ctx.sessionName || null },
         l1: { wallet: ctx.l1.walletName, address: ctx.l1.address },
         l2: { account: ctx.l2.accountName || null, address: ctx.l2.address },
@@ -238,9 +235,8 @@ export async function runBridgeLocalSimulate(options: {
           JSON.stringify(plan, (k, v) => (typeof v === "bigint" ? v.toString() : v))
         ),
         createdAt: new Date().toISOString()
-      };
-      await writeArtifact(artifactPath, artifactData);
-    }
+    };
+    await writeArtifact(artifactPath, artifactData);
 
     console.log(
       `  ${pc.green("✓")} Target found at nonce: ${pc.white(miningResult.nonce)}`

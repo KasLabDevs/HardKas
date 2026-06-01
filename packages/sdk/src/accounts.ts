@@ -37,4 +37,40 @@ export class HardkasAccounts {
       formatted: formatSompi(sompi)
     };
   }
+
+  /**
+   * Alias for getBalance.
+   */
+  async balance(accountNameOrAddress: string) {
+    return this.getBalance(accountNameOrAddress);
+  }
+
+  /**
+   * Lists all configured account names.
+   */
+  async list(): Promise<string[]> {
+    return Object.keys(this.sdk.config.config.accounts || {});
+  }
+
+  /**
+   * Funds an account from another account (defaults to 'default' account).
+   */
+  async fund(
+    accountNameOrAddress: string,
+    options?: { from?: string; amount?: string | bigint }
+  ): Promise<any> {
+    const from = options?.from || "default";
+    const amount = options?.amount || "1000000000"; // 10 KAS default
+    const plan = await this.sdk.tx.plan({
+      from,
+      to: accountNameOrAddress,
+      amount
+    });
+    const signed = await this.sdk.tx.sign(plan, from);
+    if (this.sdk.network === "simulated") {
+      return this.sdk.tx.simulate(signed);
+    } else {
+      return this.sdk.tx.send(signed);
+    }
+  }
 }

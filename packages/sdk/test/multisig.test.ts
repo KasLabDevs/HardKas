@@ -59,11 +59,8 @@ describe("P1 Multisig & Sequential Signing", () => {
       /not an authorized signer/
     );
 
-    // 6. Reject signing partial without --append flag
-    await expect(sdk.tx.sign(sig1, "bob")).rejects.toThrow(/Use the --append flag/);
-
-    // 7. Second signature: Bob appends
-    const sig2 = await sdk.tx.sign(sig1, "bob", { append: true });
+    // 6. Second signature: Bob signs, and the system auto-appends (no --append flag required)
+    const sig2 = await sdk.tx.sign(sig1, "bob");
 
     expect(sig2.status).toBe("signed");
     expect(sig2.signedTransaction).toBeDefined();

@@ -152,4 +152,34 @@ export class HardkasArtifactsManager {
 
     return readArtifact(filePath);
   }
+
+  /**
+   * Alias for read().
+   */
+  async get(id: string): Promise<any> {
+    return this.read(id);
+  }
+
+  /**
+   * Lists all artifacts in the workspace.
+   */
+  async list(): Promise<any[]> {
+    if (!fs.existsSync(this.workspace.artifactsDir)) {
+      return [];
+    }
+    const { readArtifact } = await import("@hardkas/artifacts");
+    const files = fs.readdirSync(this.workspace.artifactsDir);
+    const artifacts = [];
+    for (const file of files) {
+      if (file.endsWith(".json")) {
+        try {
+          const artifact = await readArtifact(path.join(this.workspace.artifactsDir, file));
+          artifacts.push(artifact);
+        } catch (e) {
+          // Skip invalid JSON
+        }
+      }
+    }
+    return artifacts;
+  }
 }

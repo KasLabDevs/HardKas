@@ -23,6 +23,8 @@ export interface CliCommandReference {
 export interface CliReference {
   schema: "hardkas.cliReference.v1";
   generatedAt: string;
+  totalCommands: number;
+  flatSurface: string[];
   commands: CliCommandReference[];
 }
 
@@ -33,12 +35,25 @@ export function extractCliReference(
   program: Command,
   options?: { deterministic?: boolean }
 ): CliReference {
+  const commands = program.commands
+    .map((cmd) => extractCommand(cmd, program.name()))
+    .sort((a, b) => deterministicCompare(a.path, b.path));
+
+  const flatSurface: string[] = [];
+  const walk = (cmds: CliCommandReference[]) => {
+    for (const c of cmds) {
+      flatSurface.push(c.path);
+      walk(c.subcommands);
+    }
+  };
+  walk(commands);
+
   return {
     schema: "hardkas.cliReference.v1",
     generatedAt: options?.deterministic ? "deterministic" : new Date().toISOString(),
-    commands: program.commands
-      .map((cmd) => extractCommand(cmd, program.name()))
-      .sort((a, b) => deterministicCompare(a.path, b.path))
+    totalCommands: flatSurface.length,
+    flatSurface,
+    commands
   };
 }
 
