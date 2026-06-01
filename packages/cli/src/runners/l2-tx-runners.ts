@@ -387,7 +387,7 @@ export async function runL2TxSend(options: L2TxSendOptions): Promise<void> {
     artifact.chainId === 1 ||
     profile.chainId === 1;
   if (isMainnet) {
-    throw new Error("L2 mainnet broadcast is disabled in HardKAS 0.7.10-alpha.");
+    throw new Error("L2 mainnet broadcast is disabled in HardKAS 0.7.11-alpha.");
   }
 
   if (!options.yes) {

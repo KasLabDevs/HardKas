@@ -18,8 +18,8 @@ console.log("Initializing discovery workspace at:", workspace);
 
 // 1. Install packages
 fs.writeFileSync(path.join(workspace, 'package.json'), JSON.stringify({ name: "discovery-lab", type: "module" }));
-console.log("Installing @hardkas/cli@0.7.10-alpha and @hardkas/sdk@0.7.10-alpha...");
-execSync('npm install @hardkas/cli@0.7.10-alpha @hardkas/sdk@0.7.10-alpha', { cwd: workspace, stdio: 'ignore' });
+console.log("Installing @hardkas/cli@0.7.11-alpha and @hardkas/sdk@0.7.11-alpha...");
+execSync('npm install @hardkas/cli@0.7.11-alpha @hardkas/sdk@0.7.11-alpha', { cwd: workspace, stdio: 'ignore' });
 
 const commands = [];
 const sdkApis = [];

@@ -281,7 +281,7 @@ for (const [cmd, stat] of Object.entries(commandFinalStatus)) {
 const totalDiscovered = fullSurface.commands.length;
 
 const mdCoverage = `
-# HardKAS 0.7.10-alpha CLI Coverage
+# HardKAS 0.7.11-alpha CLI Coverage
 
 - Total CLI Commands Discovered: ${totalDiscovered}
 - Executed (Success): ${cExecuted}
@@ -299,7 +299,7 @@ Execution Coverage: ${Math.round((cExecuted + cFailed) / totalDiscovered * 100)}
 fs.writeFileSync(path.join(reportsDir, 'full-command-coverage-0710-fixed.md'), mdCoverage.trim());
 
 const sdkCoverage = `
-# HardKAS 0.7.10-alpha SDK Coverage (Fixed)
+# HardKAS 0.7.11-alpha SDK Coverage (Fixed)
 
 - SDK APIs manually mapped: 11
 - Executed: ${executedSdkApis.size}

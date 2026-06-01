@@ -222,7 +222,7 @@ try {
   const helpOnly = commandResults.filter(c => c.type === 'CLI' && c.status === 'HELP_ONLY').length;
 
   const mdCoverage = `
-# HardKAS 0.7.10-alpha CLI Coverage
+# HardKAS 0.7.11-alpha CLI Coverage
 
 - Total CLI Commands Discovered: ${totalDiscovered}
 - Executed (Success/Fail): ${executed}
@@ -236,7 +236,7 @@ Coverage (Executed + Help + Skipped = Total): ${(executed + helpOnly + skipped)}
   fs.writeFileSync(path.join(reportsDir, 'full-command-coverage-079.md'), mdCoverage.trim());
 
   const sdkCoverage = `
-# HardKAS 0.7.10-alpha SDK Coverage
+# HardKAS 0.7.11-alpha SDK Coverage
 
 - SDK APIs manually mapped: 11
 - Executed: ${executedSdkApis.size}
@@ -247,7 +247,7 @@ We manually asserted the public facade based on 0.7.8 knowledge.
   fs.writeFileSync(path.join(reportsDir, 'sdk-coverage-079.md'), sdkCoverage.trim());
 
   const productReadiness = `
-# Product Readiness - 0.7.10-alpha
+# Product Readiness - 0.7.11-alpha
 
 ## ¿HardKAS CLI está listo como alpha usable?
 Sí, el CLI es estable. La arquitectura está modularizada y previene escapes de sandbox de forma estricta. Las validaciones semánticas protegen los comandos.

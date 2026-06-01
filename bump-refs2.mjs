@@ -1,8 +1,8 @@
 import fs from 'node:fs';
 import path from 'node:path';
 
-const searchStr = '0.7.10-alpha';
-const replaceStr = '0.7.10-alpha';
+const searchStr = '0.7.11-alpha';
+const replaceStr = '0.7.11-alpha';
 
 function walk(dir) {
   const entries = fs.readdirSync(dir, { withFileTypes: true });
