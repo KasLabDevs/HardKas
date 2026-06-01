@@ -1,0 +1,3214 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1" name="viewport"/>
+<title>HardKAS Documentation</title>
+<meta content="HardKAS documentation: Kaspa-native deterministic developer environment for simulation, artifact-driven transactions, RPC diagnostics and Igra L2 workflows." name="description"/>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&amp;family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<style>
+    :root {
+      --bg: #05070a;
+      --surface: #0b0f17;
+      --surface-2: #080c14;
+      --surface-3: #0d1321;
+      --border: #1e2633;
+      --border-soft: #141c28;
+      --border-focus: #3b4b66;
+      --text: #e2e8f0;
+      --muted: #7b8797;
+      --muted-2: #536073;
+      --accent: #10b981;
+      --accent-soft: rgba(16, 185, 129, 0.10);
+      --accent-line: rgba(16, 185, 129, 0.28);
+      --warning: #d29922;
+      --danger: #ef4444;
+      --code-bg: #06090e;
+      --code-text: #d6dee8;
+      --radius: 8px;
+      --mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      --sans: 'Plus Jakarta Sans', 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+    }
+
+    [data-theme="light"] {
+      --bg: #f5f2ea;
+      --surface: #fffdf7;
+      --surface-2: #f0eadf;
+      --surface-3: #e8e0d2;
+      --border: #d5cbbb;
+      --border-soft: #e1d8ca;
+      --border-focus: #9f927f;
+      --text: #1d231f;
+      --muted: #5c665f;
+      --muted-2: #7a837d;
+      --accent: #087f5b;
+      --accent-soft: rgba(8, 127, 91, 0.09);
+      --accent-line: rgba(8, 127, 91, 0.24);
+      --warning: #8a6d1b;
+      --danger: #b42318;
+      --code-bg: #ebe4d8;
+      --code-text: #1d231f;
+    }
+
+    * { box-sizing: border-box; }
+    html { scroll-behavior: auto; }
+    body {
+      margin: 0;
+      background:
+        radial-gradient(circle at 20% -10%, rgba(16,185,129,.08), transparent 34rem),
+        linear-gradient(180deg, var(--bg), var(--bg));
+      color: var(--text);
+      font-family: var(--sans);
+      font-size: 15px;
+      line-height: 1.62;
+      padding-bottom: 64px;
+    }
+
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      opacity: .15;
+      background-image:
+        linear-gradient(rgba(255,255,255,.035) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,.035) 1px, transparent 1px);
+      background-size: 52px 52px;
+      mask-image: linear-gradient(to bottom, black, transparent 72%);
+      z-index: -1;
+    }
+
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    code, pre { font-family: var(--mono); }
+    code {
+      font-size: .9em;
+      background: var(--surface-2);
+      border: 1px solid var(--border-soft);
+      border-radius: 5px;
+      padding: .13rem .34rem;
+      color: var(--code-text);
+    }
+    pre code { background: transparent; border: 0; padding: 0; }
+    p { margin: 0 0 12px; color: var(--muted); }
+    strong { color: var(--text); }
+    h1, h2, h3, h4 { color: var(--text); line-height: 1.2; margin: 0; font-weight: 700; letter-spacing: -.025em; }
+    h1 { font-size: clamp(34px, 5vw, 56px); letter-spacing: -.055em; line-height: 1.03; }
+    h2 { font-size: 25px; padding-bottom: 12px; border-bottom: 1px solid var(--border); margin-bottom: 18px; }
+    h3 { font-size: 17px; margin-bottom: 8px; }
+    h4 { font-size: 14px; margin-bottom: 6px; }
+    ul { margin: 8px 0 0; padding-left: 20px; color: var(--muted); }
+    li { margin: 4px 0; }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      border: 1px solid var(--border);
+      margin: 14px 0 0;
+      font-size: 13px;
+      background: rgba(11,15,23,.58);
+      border-radius: var(--radius);
+      overflow: hidden;
+    }
+    th, td { padding: 10px 11px; border: 1px solid var(--border); vertical-align: top; text-align: left; }
+    th { color: var(--text); background: var(--surface-3); font-weight: 700; }
+    td { color: var(--muted); }
+    td code { background: transparent; border: none; padding: 0; color: var(--accent); font-size: 12px; }
+
+    .topbar {
+      position: sticky;
+      top: 0;
+      z-index: 20;
+      background: rgba(5, 7, 10, .82);
+      backdrop-filter: blur(14px);
+      border-bottom: 1px solid var(--border);
+    }
+    [data-theme="light"] .topbar { background: rgba(245, 242, 234, .88); }
+
+    .top-inner {
+      max-width: 1320px;
+      margin: 0 auto;
+      padding: 12px 26px;
+      display: flex;
+      align-items: center;
+      gap: 18px;
+      min-height: 64px;
+    }
+    .brand { display: flex; align-items: center; gap: 10px; color: var(--text); min-width: max-content; }
+    .brand-logo { height: 38px; width: auto; display: block; object-fit: contain; }
+    .brand strong { font-size: 17px; letter-spacing: -.035em; }
+    .brand span { color: var(--accent); font-size: 11px; font-family: var(--mono); background: var(--accent-soft); border: 1px solid var(--accent-line); border-radius: 5px; padding: 2px 6px; }
+
+    nav { display: flex; gap: 18px; margin-left: 4px; }
+    nav a { color: var(--muted); font-size: 13px; font-weight: 600; }
+    nav a:hover { color: var(--text); text-decoration: none; }
+
+    .search {
+      margin-left: auto;
+      width: 270px;
+      max-width: 30vw;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 8px 10px;
+      color: var(--muted-2);
+      background: var(--surface);
+      font-size: 13px;
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,.015);
+    }
+
+    .github, .theme-toggle, .mobile-nav {
+      color: var(--text);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 0;
+      font-size: 14px;
+      background: transparent;
+      cursor: pointer;
+      line-height: 1;
+      width: 36px;
+      height: 36px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .github:hover, .theme-toggle:hover, .mobile-nav:hover { border-color: var(--border-focus); text-decoration: none; }
+    .github-icon { width: 16px; height: 16px; display: block; }
+
+    .top-actions {
+      margin-left: auto;
+      width: auto;
+      display: flex;
+      align-items: center;
+      justify-content: flex-start;
+      gap: 10px;
+      padding-left: 12px;
+    }
+    .top-actions .theme-toggle { margin-left: 0; }
+
+    .layout {
+      max-width: 1320px;
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: 240px minmax(0, 1fr) 190px;
+      gap: 28px;
+      padding: 0 26px;
+    }
+
+    aside.left, aside.right {
+      position: sticky;
+      top: 65px;
+      height: calc(100vh - 65px);
+      overflow: auto;
+      scrollbar-width: thin;
+    }
+    aside.left {
+      padding: 28px 18px 48px 0;
+      border-right: 1px solid var(--border-soft);
+    }
+    aside.right {
+      padding: 28px 0 48px 18px;
+      border-left: 1px solid var(--border-soft);
+    }
+    .side-title {
+      color: var(--muted-2);
+      font-size: 10px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: .11em;
+      margin: 18px 0 7px;
+    }
+    .side a, .toc a {
+      display: block;
+      color: var(--muted);
+      padding: 5px 0;
+      font-size: 13px;
+      line-height: 1.25;
+    }
+    .side a:hover, .toc a:hover { color: var(--accent); text-decoration: none; }
+
+    main { padding: 34px 0 72px; min-width: 0; }
+    section { padding-top: 30px; margin-top: 4px; scroll-margin-top: 82px; }
+
+    .header {
+      padding: 42px 0 34px;
+      border-bottom: 1px solid var(--border);
+    }
+    .header-row {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(330px, 420px);
+      gap: 34px;
+      align-items: center;
+    }
+    .subtitle {
+      color: var(--muted);
+      font-size: 17px;
+      line-height: 1.62;
+      margin: 14px 0 18px;
+      max-width: 780px;
+    }
+    .meta { display: flex; flex-wrap: wrap; gap: 8px; margin: 14px 0 0; }
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      color: var(--muted);
+      padding: 3px 8px;
+      font-size: 12px;
+      line-height: 1.5;
+      background: rgba(255,255,255,.015);
+    }
+    .badge.accent { color: var(--accent); border-color: var(--accent-line); background: var(--accent-soft); }
+    .actions { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 18px; }
+    .button {
+      display: inline-flex;
+      align-items: center;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--text);
+      padding: 8px 10px;
+      font-size: 13px;
+      font-weight: 650;
+      background: var(--surface);
+    }
+    .button.primary { border-color: var(--accent-line); color: var(--accent); background: var(--accent-soft); }
+    .button:hover { border-color: var(--border-focus); text-decoration: none; }
+
+    .codeblock {
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      background: var(--code-bg);
+      overflow: hidden;
+      margin: 12px 0 0;
+      box-shadow: 0 16px 42px rgba(0,0,0,.22);
+    }
+    .codebar {
+      border-bottom: 1px solid var(--border);
+      padding: 8px 10px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: var(--muted-2);
+      font-size: 12px;
+      font-family: var(--mono);
+      background: var(--surface-3);
+    }
+    .codebar::before {
+      content: "";
+      width: 9px;
+      height: 9px;
+      border-radius: 99px;
+      background: var(--accent);
+      box-shadow: 14px 0 0 var(--warning), 28px 0 0 var(--danger);
+      margin-right: 28px;
+      opacity: .85;
+    }
+    .copy {
+      margin-left: auto;
+      color: var(--muted);
+      border: 1px solid var(--border);
+      background: transparent;
+      border-radius: 5px;
+      padding: 4px 8px;
+      font-size: 12px;
+      cursor: pointer;
+      font-family: var(--sans);
+    }
+    .copy:hover { color: var(--accent); border-color: var(--accent-line); }
+    pre {
+      margin: 0;
+      padding: 15px;
+      overflow: auto;
+      color: var(--code-text);
+      background: var(--code-bg);
+      font-size: 12.5px;
+      line-height: 1.65;
+    }
+    .cmd { color: #34d399; }
+    .flag { color: #94a3b8; }
+    .comment { color: var(--muted-2); }
+    .str { color: #fbbf24; }
+
+    .note, .warning, .danger {
+      border-left: 3px solid var(--accent);
+      padding: 10px 12px;
+      background: var(--accent-soft);
+      color: var(--muted);
+      margin: 14px 0 0;
+      border-radius: 0 8px 8px 0;
+    }
+    .warning { border-left-color: var(--warning); background: rgba(210,153,34,.07); margin: 14px 0; }
+    .danger { border-left-color: var(--danger); background: rgba(239,68,68,.075); margin: 14px 0; }
+
+    .grid { display: grid; gap: 14px; }
+    .cols-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .cols-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .cols-4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+
+    .box, .command, details {
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      background: rgba(11,15,23,.54);
+    }
+    .box { padding: 15px; }
+    .box h3, .box h4 { margin-bottom: 7px; }
+    .box p { margin-bottom: 0; }
+
+    /* Give dense docs a less AI-grid feel: slight stagger, without changing content. */
+    .grid .box:nth-child(3n+2) { transform: translateY(3px); }
+    .grid .box:nth-child(3n) { transform: translateY(1px); }
+
+    .diagram { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; margin-top: 12px; }
+    .pipeline { display: flex; flex-wrap: wrap; gap: 9px; margin: 14px 0; align-items: stretch; }
+    .pipe {
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 8px 10px;
+      color: var(--muted);
+      font-size: 12px;
+      background: rgba(11,15,23,.54);
+      min-width: 118px;
+    }
+    .pipe strong { display:block; color: var(--text); margin-bottom: 3px; }
+    .pipe .dot { color: var(--accent); font-size: 12px; margin-right: 4px; }
+    .pipe .pending { color: var(--muted-2); }
+    .arrow { align-self: center; color: var(--muted-2); font-family: var(--mono); }
+
+    .accordion { display: grid; gap: 9px; margin-top: 14px; }
+    summary {
+      list-style: none;
+      cursor: pointer;
+      padding: 11px 12px;
+      color: var(--text);
+      font-weight: 700;
+      font-size: 14px;
+    }
+    summary::-webkit-details-marker { display: none; }
+    summary::after { content: "+"; float: right; color: var(--muted-2); }
+    details[open] summary::after { content: "–"; }
+    .details-body { border-top: 1px solid var(--border); padding: 12px; }
+    .command-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 9px; }
+    .command { border-color: var(--border-soft); padding: 11px; }
+    .command:has(.flags) { grid-column: 1 / -1; }
+    .command code { display: block; width: fit-content; color: var(--accent); margin-bottom: 6px; }
+    .command span { color: var(--muted); font-size: 13px; }
+
+    .flags { margin: 8px 0 2px; font-size: 13px; width: 100%; border-collapse: collapse; background: transparent; }
+    .flags td:first-child { width: 230px; white-space: nowrap; color: var(--accent); font-family: var(--mono); font-size: 12px; }
+    .flags td:last-child { color: var(--muted); }
+    .flags td { padding: 5px 8px; border: none; border-top: 1px solid var(--border); }
+    .flags tr:first-child td { border-top: none; }
+    .command span + .flags { margin-top: 8px; padding-top: 4px; border-top: 1px solid var(--border); }
+
+    .split { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+    .footer {
+      padding: 32px 0 45px;
+      border-top: 1px solid var(--border);
+      color: var(--muted-2);
+      font-size: 13px;
+      margin-top: 32px;
+    }
+    .mobile-nav { display: none; }
+
+    .artifact-pipeline {
+      flex-wrap: nowrap;
+      overflow-x: auto;
+      align-items: stretch;
+      gap: 20px;
+      padding-bottom: 6px;
+    }
+    .artifact-pipeline .pipe {
+      flex: 0 0 auto;
+      position: relative;
+    }
+    .artifact-pipeline .pipe:not(:last-child)::after {
+      content: "→";
+      position: absolute;
+      right: -16px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--muted-2);
+      font-family: var(--mono);
+    }
+
+    .cycle-flow {
+      display: grid;
+      grid-template-columns: 1fr 48px 1fr 48px 1fr;
+      grid-template-rows: auto 54px auto;
+      align-items: center;
+      gap: 0;
+      margin: 16px 0;
+    }
+    .flow-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 13px 16px;
+      min-height: 78px;
+    }
+    .flow-card strong {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      color: var(--text);
+      font-weight: 750;
+      margin-bottom: 4px;
+    }
+    .flow-card span.desc { display: block; color: var(--muted); font-size: 12px; line-height: 1.45; }
+    .flow-dot { width: 8px; height: 8px; border-radius: 999px; display: inline-block; flex: 0 0 auto; background: var(--accent); }
+    .flow-dot.optional { background: var(--muted-2); }
+    .flow-arrow-h, .flow-arrow-v { position: relative; color: var(--muted-2); }
+    .flow-arrow-h { height: 2px; background: var(--muted-2); margin: 0 10px; opacity: .65; }
+    .flow-arrow-h::after {
+      content: "";
+      position: absolute;
+      right: -1px;
+      top: 50%;
+      width: 7px;
+      height: 7px;
+      border-right: 2px solid var(--muted-2);
+      border-top: 2px solid var(--muted-2);
+      transform: translateY(-50%) rotate(45deg);
+      background: transparent;
+    }
+    .flow-arrow-h.left { transform: rotate(180deg); }
+    .flow-arrow-v {
+      justify-self: center;
+      width: 2px;
+      height: 42px;
+      background: var(--muted-2);
+      opacity: .65;
+    }
+    .flow-arrow-v::after {
+      content: "";
+      position: absolute;
+      left: 50%;
+      bottom: -1px;
+      width: 7px;
+      height: 7px;
+      border-right: 2px solid var(--muted-2);
+      border-bottom: 2px solid var(--muted-2);
+      transform: translateX(-50%) rotate(45deg);
+      background: transparent;
+    }
+    .flow-return { display: flex; align-items: center; gap: 8px; justify-self: center; align-self: stretch; }
+    .flow-return .flow-arrow-v { height: 100%; min-height: 42px; }
+    .flow-return .flow-arrow-v.up::after {
+      top: -1px;
+      bottom: auto;
+      border-right: 2px solid var(--muted-2);
+      border-bottom: 0;
+      border-top: 2px solid var(--muted-2);
+      transform: translateX(-50%) rotate(-45deg);
+    }
+    .flow-return-label, .mobile-return-label { color: var(--muted); font-size: 12px; font-style: italic; white-space: nowrap; }
+    .mobile-return-label { display: none; }
+
+    .cycle-plan { grid-column: 1; grid-row: 1; }
+    .cycle-sign { grid-column: 3; grid-row: 1; }
+    .cycle-broadcast { grid-column: 5; grid-row: 1; }
+    .cycle-receipt { grid-column: 5; grid-row: 3; }
+    .cycle-trace { grid-column: 3; grid-row: 3; }
+    .cycle-verify { grid-column: 1; grid-row: 3; }
+    .arrow-plan-sign { grid-column: 2; grid-row: 1; }
+    .arrow-sign-broadcast { grid-column: 4; grid-row: 1; }
+    .arrow-broadcast-receipt { grid-column: 5; grid-row: 2; }
+    .arrow-receipt-trace { grid-column: 4; grid-row: 3; }
+    .arrow-trace-verify { grid-column: 2; grid-row: 3; }
+    .arrow-verify-plan { grid-column: 1; grid-row: 2; }
+
+    .layer-l1 { border-top: 2px solid var(--accent); }
+    .layer-hardkas { border-top: 2px solid var(--muted-2); }
+    .layer-l2 { border-top: 2px solid var(--warning); }
+    .layer-subtitle { color: var(--muted); font-size: 12px; margin: -2px 0 8px; }
+
+    /* A small “cockpit” touch for the first command block only. */
+    #overview .codeblock {
+      transform: rotate(.15deg);
+    }
+
+    @media (max-width: 1160px) {
+      .layout { grid-template-columns: 220px minmax(0, 1fr); }
+      aside.right { display: none; }
+      .header-row, .split { grid-template-columns: 1fr; }
+      #overview .codeblock { transform: none; }
+    }
+
+    @media (max-width: 860px) {
+      nav, .search, aside.left { display: none; }
+      .mobile-nav { display: inline-flex; margin-left: 0; }
+      .layout { display: block; padding: 0 16px; }
+      .top-inner { padding: 10px 16px; min-height: 58px; }
+      .brand-logo { height: 32px; max-width: 160px; }
+      h1 { font-size: 34px; }
+      h2 { font-size: 22px; }
+      .header-row, .diagram, .cols-2, .cols-3, .cols-4, .command-grid { grid-template-columns: 1fr; }
+      .grid .box:nth-child(n) { transform: none; }
+      .arrow { display: none; }
+      main { padding-top: 22px; }
+      .top-actions { margin-left: auto; width: auto; padding-left: 0; gap: 8px; }
+
+      body.nav-open aside.left {
+        display: block;
+        position: fixed;
+        top: 58px;
+        left: 0;
+        width: min(86vw, 340px);
+        height: calc(100vh - 58px);
+        overflow: auto;
+        padding: 18px 16px 40px;
+        background: var(--bg);
+        border-right: 1px solid var(--border);
+        z-index: 40;
+        box-shadow: 20px 0 60px rgba(0,0,0,.36);
+      }
+      body.nav-open::after {
+        content: "";
+        position: fixed;
+        top: 58px;
+        left: min(86vw, 340px);
+        right: 0;
+        bottom: 0;
+        background: rgba(0,0,0,.45);
+        z-index: 35;
+      }
+    }
+
+    @media (max-width: 640px) {
+      body { font-size: 14px; line-height: 1.52; overflow-x: hidden; }
+      .top-inner { min-height: 54px; padding: 8px 13px; gap: 8px; }
+      .brand-logo { height: 29px; max-width: 145px; }
+      .layout { padding: 0 13px; }
+      main { padding-top: 16px; padding-bottom: 48px; }
+      .header { padding: 24px 0 22px; }
+      .subtitle { font-size: 14px; line-height: 1.55; max-width: 100%; }
+      h1 { font-size: 30px; line-height: 1.08; }
+      h2 { font-size: 21px; margin-bottom: 12px; padding-bottom: 8px; }
+      h3 { font-size: 15px; }
+      section { padding-top: 24px; scroll-margin-top: 64px; }
+      p { margin-bottom: 10px; }
+
+      .meta { gap: 6px; }
+      .badge { font-size: 11px; padding: 2px 6px; }
+      .actions { gap: 8px; }
+      .button { padding: 7px 8px; font-size: 12px; }
+
+      .grid, .split, .diagram, .cols-2, .cols-3, .cols-4, .command-grid {
+        grid-template-columns: 1fr !important;
+        gap: 10px;
+      }
+
+      .box, .command, .note, .warning, .danger { padding: 11px; }
+      .codeblock { margin-top: 10px; max-width: 100%; border-radius: 9px; box-shadow: none; }
+      .codebar { padding: 7px 8px; font-size: 10.8px; }
+      .codebar::before { width: 7px; height: 7px; box-shadow: 12px 0 0 var(--warning), 24px 0 0 var(--danger); margin-right: 24px; }
+      .copy { padding: 3px 7px; font-size: 11px; }
+      pre { padding: 11px; font-size: 11px; line-height: 1.55; max-width: 100%; }
+      code { overflow-wrap: anywhere; word-break: break-word; }
+      .command code { max-width: 100%; white-space: normal; overflow-wrap: anywhere; word-break: break-word; line-height: 1.45; }
+      .command span { font-size: 12.5px; line-height: 1.45; }
+
+      table {
+        display: block;
+        width: 100%;
+        border: 0;
+        margin-top: 12px;
+        font-size: 12.5px;
+        background: transparent;
+      }
+      thead { display: none; }
+      tbody, tr, td { display: block; width: 100%; }
+      tr {
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        margin-bottom: 10px;
+        overflow: hidden;
+        background: var(--surface);
+      }
+      td {
+        border: 0;
+        border-top: 1px solid var(--border-soft);
+        padding: 9px 10px;
+        color: var(--muted);
+      }
+      td:first-child {
+        border-top: 0;
+        background: var(--surface-3);
+        color: var(--text);
+        font-weight: 700;
+      }
+      td::before {
+        content: attr(data-label);
+        display: block;
+        color: var(--muted-2);
+        font-size: 10px;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: .055em;
+        margin-bottom: 4px;
+      }
+      .flags, .flags tbody, .flags tr, .flags td { display: block; }
+      .flags tr { border: 0; border-radius: 0; margin: 0; background: transparent; }
+      .flags td { border: 0; border-top: 1px solid var(--border-soft); padding: 6px 0; }
+      .flags td::before { display: none; }
+      .flags td:first-child { width: auto; background: transparent; color: var(--accent); font-size: 11.5px; margin-bottom: 2px; }
+      .flags td:last-child { color: var(--muted); }
+
+      .pipeline, .artifact-pipeline {
+        display: grid;
+        grid-template-columns: 1fr;
+        overflow: visible;
+        gap: 8px;
+        padding-bottom: 0;
+      }
+      .pipe { min-width: 0; width: 100%; padding: 9px 10px; }
+      .artifact-pipeline .pipe::after, .artifact-pipeline .pipe:not(:last-child)::after { content: none; }
+
+      .cycle-flow {
+        display: flex;
+        flex-direction: column;
+        align-items: stretch;
+        gap: 8px;
+      }
+      .flow-card { min-height: 0; }
+      .flow-arrow-h, .flow-arrow-h.left, .flow-return {
+        width: 2px;
+        height: 24px;
+        min-height: 24px;
+        background: var(--muted-2);
+        margin: 0 auto;
+        transform: none;
+        display: block;
+      }
+      .flow-arrow-h::after, .flow-arrow-h.left::after, .flow-return::after {
+        content: "";
+        position: absolute;
+        left: 50%;
+        bottom: -1px;
+        width: 7px;
+        height: 7px;
+        border-right: 2px solid var(--muted-2);
+        border-bottom: 2px solid var(--muted-2);
+        border-top: 0;
+        transform: translateX(-50%) rotate(45deg);
+      }
+      .flow-arrow-v, .flow-return .flow-arrow-v, .flow-return-label { display: none; }
+      .mobile-return-label { display: block; }
+
+      summary { padding: 10px; font-size: 14px; }
+      .details-body { padding: 10px; }
+      .github, .theme-toggle, .mobile-nav { width: 32px; height: 32px; }
+      .footer { margin-top: 24px; padding: 24px 0 34px; }
+    }
+
+    @media (max-width: 420px) {
+      .brand-logo { height: 27px; max-width: 138px; }
+      h1 { font-size: 28px; }
+      h2 { font-size: 20px; }
+      .layout { padding: 0 12px; }
+      .top-inner { padding-left: 12px; padding-right: 12px; }
+      .subtitle { font-size: 13.5px; }
+      pre { font-size: 10.6px; }
+    }
+  
+    /* === Desktop visual refinement pass: keep content, improve hero balance === */
+    @media (min-width: 861px) {
+      .layout {
+        max-width: 1260px;
+        grid-template-columns: 220px minmax(0, 1fr) 165px;
+        gap: 22px;
+        padding: 0 24px;
+      }
+
+      main {
+        max-width: 860px;
+        margin: 0 auto;
+      }
+
+      aside.right {
+        padding-left: 14px;
+      }
+
+      .header {
+        padding: 34px 0 38px;
+        margin-bottom: 8px;
+        position: relative;
+      }
+
+      .header-row {
+        grid-template-columns: minmax(360px, .88fr) minmax(360px, .92fr);
+        gap: 36px;
+        align-items: center;
+      }
+
+      .header h1 {
+        max-width: 560px;
+        font-size: clamp(42px, 4.1vw, 52px);
+        line-height: 1.02;
+        letter-spacing: -.055em;
+      }
+
+      .subtitle {
+        max-width: 520px;
+        font-size: 16px;
+        line-height: 1.58;
+      }
+
+      .header .actions {
+        margin-top: 18px;
+      }
+
+      .header .meta {
+        max-width: 520px;
+      }
+
+      .header .warning {
+        max-width: 520px;
+        margin-top: 14px;
+      }
+
+      .header-row > .codeblock {
+        margin-top: 0;
+        width: 100%;
+        align-self: center;
+        box-shadow: none;
+        border-color: #1b2636;
+        background: #070b11;
+      }
+
+      .header-row > .codeblock pre {
+        padding: 18px 20px;
+        font-size: 13px;
+        line-height: 1.65;
+      }
+
+      .header-row > .codeblock .codebar {
+        padding: 9px 11px;
+      }
+
+      section {
+        padding-top: 34px;
+      }
+
+      #overview {
+        padding-top: 30px;
+      }
+
+      #overview .grid.cols-3 {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 14px;
+      }
+
+      .box {
+        background: rgba(11, 15, 23, .34);
+      }
+
+      .button {
+        background: rgba(15, 23, 42, .25);
+      }
+
+      .button.primary {
+        background: rgba(16, 185, 129, .08);
+      }
+    }
+
+    @media (min-width: 861px) and (max-width: 1160px) {
+      .layout {
+        max-width: 1040px;
+        grid-template-columns: minmax(0, 1fr) 150px;
+        gap: 18px;
+      }
+
+      aside.left {
+        display: none;
+      }
+
+      aside.right {
+        display: block;
+      }
+
+      main {
+        max-width: 780px;
+      }
+
+      .header-row {
+        grid-template-columns: minmax(0, 1fr) minmax(330px, 420px);
+        gap: 26px;
+      }
+
+      .header h1 {
+        font-size: clamp(38px, 5vw, 48px);
+      }
+    }
+
+    @media (min-width: 861px) and (max-width: 980px) {
+      .layout {
+        display: block;
+        max-width: 840px;
+      }
+
+      aside.left,
+      aside.right {
+        display: none;
+      }
+
+      main {
+        max-width: 100%;
+      }
+
+      .header-row {
+        grid-template-columns: 1fr;
+        gap: 22px;
+      }
+
+      .header-row > .codeblock {
+        max-width: 560px;
+      }
+    }
+
+  
+    /* === Mobile mental-model compaction pass === */
+    @media (max-width: 640px) {
+      #mental-model .cycle-flow {
+        display: grid !important;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 9px;
+        margin: 12px 0 14px;
+      }
+
+      #mental-model .flow-card {
+        padding: 12px 12px;
+        min-height: 0;
+        border-radius: 12px;
+      }
+
+      #mental-model .flow-card strong {
+        font-size: 15px;
+        margin-bottom: 4px;
+        gap: 7px;
+      }
+
+      #mental-model .flow-card span.desc {
+        font-size: 12px;
+        line-height: 1.35;
+      }
+
+      #mental-model .flow-dot {
+        width: 7px;
+        height: 7px;
+      }
+
+      #mental-model .flow-arrow-h,
+      #mental-model .flow-arrow-v,
+      #mental-model .flow-return,
+      #mental-model .mobile-return-label {
+        display: none !important;
+      }
+
+      #mental-model .cycle-plan { order: 1; }
+      #mental-model .cycle-sign { order: 2; }
+      #mental-model .cycle-broadcast { order: 3; }
+      #mental-model .cycle-receipt { order: 4; }
+      #mental-model .cycle-trace { order: 5; }
+      #mental-model .cycle-verify { order: 6; }
+
+      #mental-model .cycle-verify::after {
+        content: "iterate";
+        display: inline-block;
+        margin-top: 6px;
+        color: var(--muted-2);
+        font-size: 11px;
+        font-style: italic;
+      }
+
+      #mental-model .artifact-pipeline {
+        display: grid !important;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 8px;
+        margin-top: 10px;
+      }
+
+      #mental-model .artifact-pipeline::before {
+        content: "Artifacts written by the runtime";
+        grid-column: 1 / -1;
+        color: var(--muted-2);
+        font-size: 10px;
+        font-weight: 800;
+        letter-spacing: .07em;
+        text-transform: uppercase;
+        margin: 2px 0 0;
+      }
+
+      #mental-model .artifact-pipeline .pipe {
+        width: auto;
+        min-width: 0;
+        padding: 9px 10px;
+        border-radius: 10px;
+        font-size: 11.5px;
+      }
+
+      #mental-model .artifact-pipeline .pipe strong {
+        font-size: 12px;
+        margin-bottom: 2px;
+      }
+    }
+
+    @media (max-width: 380px) {
+      #mental-model .cycle-flow,
+      #mental-model .artifact-pipeline {
+        grid-template-columns: 1fr;
+      }
+    }
+
+  
+/* === Final desktop hero balance pass === */
+@media (min-width: 981px) {
+  .header {
+    padding: 58px 0 52px;
+  }
+
+  .header-row {
+    grid-template-columns: minmax(360px, 470px) minmax(420px, 560px) !important;
+    gap: clamp(28px, 4vw, 54px) !important;
+    align-items: start !important;
+  }
+
+  .header h1 {
+    max-width: 470px;
+    font-size: clamp(48px, 5.2vw, 66px) !important;
+    line-height: .96;
+    letter-spacing: -.055em;
+  }
+
+  .header .subtitle {
+    max-width: 440px;
+    font-size: 16px;
+    line-height: 1.58;
+    margin-top: 18px;
+  }
+
+  .header .actions {
+    max-width: 430px;
+  }
+
+  .header .meta {
+    max-width: 430px;
+  }
+
+  .header .warning {
+    max-width: 430px;
+    margin-top: 14px;
+  }
+
+  .header-row > .codeblock {
+    width: 100%;
+    max-width: 560px;
+    justify-self: start;
+    margin-top: 92px !important;
+    transform: none !important;
+  }
+
+  .header-row > .codeblock pre {
+    font-size: 13px;
+    line-height: 1.65;
+    padding: 18px 20px;
+  }
+}
+
+@media (min-width: 1161px) {
+  .layout {
+    max-width: 1320px;
+    grid-template-columns: 220px minmax(0, 1fr) 170px;
+    gap: 24px;
+  }
+
+  aside.left {
+    padding-right: 14px;
+  }
+
+  aside.right {
+    padding-left: 14px;
+  }
+}
+
+@media (min-width: 981px) and (max-width: 1160px) {
+  .layout {
+    max-width: 1060px;
+    grid-template-columns: minmax(0, 1fr) 150px;
+    gap: 18px;
+  }
+
+  aside.left {
+    display: none;
+  }
+
+  aside.right {
+    display: block;
+  }
+
+  .header-row {
+    grid-template-columns: minmax(340px, 440px) minmax(360px, 500px) !important;
+    gap: 28px !important;
+  }
+
+  .header-row > .codeblock {
+    margin-top: 74px !important;
+  }
+}
+
+@media (min-width: 861px) and (max-width: 980px) {
+  .header-row {
+    grid-template-columns: 1fr !important;
+    gap: 20px !important;
+  }
+
+  .header-row > .codeblock {
+    margin-top: 10px !important;
+    max-width: 640px;
+  }
+
+  .header .subtitle,
+  .header .warning,
+  .header .meta,
+  .header .actions {
+    max-width: 660px;
+  }
+}
+
+
+    /* Hero polish pass: only the top overview block. */
+    #overview.header {
+      padding: 60px 0 58px;
+      min-height: 720px;
+      display: flex;
+      align-items: center;
+    }
+
+    #overview .hero-shell {
+      width: 100%;
+      display: grid;
+      grid-template-columns: minmax(0, 520px) minmax(380px, 460px);
+      gap: clamp(42px, 6vw, 72px);
+      align-items: start;
+      position: relative;
+    }
+
+    #overview .hero-copy {
+      position: relative;
+      z-index: 1;
+    }
+
+    #overview .hero-kicker {
+      margin-bottom: 16px;
+      color: var(--accent);
+      font-family: var(--mono);
+      font-size: 11px;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+      opacity: .88;
+    }
+
+    #overview h1 {
+      max-width: 540px;
+      font-size: clamp(54px, 5.7vw, 76px);
+      line-height: .96;
+      letter-spacing: -.065em;
+      margin-bottom: 22px;
+    }
+
+    #overview .subtitle {
+      max-width: 500px;
+      font-size: 16px;
+      line-height: 1.68;
+      margin: 0 0 20px;
+    }
+
+    #overview .actions {
+      max-width: 470px;
+      margin-top: 18px;
+      gap: 10px;
+    }
+
+    #overview .meta {
+      max-width: 470px;
+      margin-top: 18px;
+    }
+
+    #overview .warning {
+      max-width: 470px;
+      margin-top: 18px;
+      padding: 12px 14px;
+      border-radius: 8px;
+      background: rgba(210, 153, 34, 0.075);
+    }
+
+    #overview .hero-runbook {
+      position: relative;
+      z-index: 1;
+      margin-top: 158px;
+    }
+
+    #overview .hero-runbook::before {
+      content: "";
+      position: absolute;
+      inset: -24px -18px -26px -18px;
+      border: 1px solid rgba(16,185,129,.08);
+      border-radius: 18px;
+      background:
+        linear-gradient(135deg, rgba(16,185,129,.06), transparent 38%),
+        linear-gradient(180deg, rgba(255,255,255,.018), transparent);
+      pointer-events: none;
+    }
+
+    #overview .runbook-topline {
+      position: relative;
+      z-index: 1;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin: 0 0 10px;
+      font-family: var(--mono);
+      font-size: 11px;
+      color: var(--muted-2);
+      letter-spacing: .05em;
+      text-transform: uppercase;
+    }
+
+    #overview .runbook-pill {
+      color: var(--accent);
+      border: 1px solid var(--accent-line);
+      background: var(--accent-soft);
+      border-radius: 999px;
+      padding: 2px 8px;
+      letter-spacing: 0;
+      text-transform: none;
+    }
+
+    #overview .hero-runbook .codeblock {
+      position: relative;
+      z-index: 1;
+      margin: 0;
+      border-radius: 12px;
+      box-shadow: 0 26px 80px rgba(0,0,0,.34);
+      overflow: hidden;
+    }
+
+    #overview .hero-runbook pre {
+      padding: 18px 20px;
+      font-size: 13px;
+      line-height: 1.72;
+    }
+
+    #overview .hero-runbook .codebar {
+      padding: 10px 12px;
+    }
+
+    #overview .runbook-foot {
+      position: relative;
+      z-index: 1;
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0,1fr));
+      gap: 8px;
+      margin-top: 10px;
+      font-family: var(--mono);
+      font-size: 10.5px;
+      color: var(--muted-2);
+    }
+
+    #overview .runbook-foot span {
+      border: 1px solid var(--border-soft);
+      border-radius: 7px;
+      padding: 6px 7px;
+      text-align: center;
+      background: rgba(255,255,255,.012);
+    }
+
+    [data-theme="light"] #overview .hero-runbook::before {
+      background:
+        linear-gradient(135deg, rgba(8,127,91,.07), transparent 38%),
+        linear-gradient(180deg, rgba(255,255,255,.25), transparent);
+    }
+
+    @media (max-width: 1160px) {
+      #overview.header {
+        min-height: 0;
+        padding: 42px 0 42px;
+        display: block;
+      }
+
+      #overview .hero-shell {
+        grid-template-columns: 1fr;
+        gap: 28px;
+      }
+
+      #overview .hero-runbook {
+        margin-top: 0;
+        max-width: 560px;
+      }
+    }
+
+    @media (max-width: 860px) {
+      #overview.header {
+        padding: 30px 0 28px;
+      }
+
+      #overview h1 {
+        font-size: clamp(38px, 12vw, 56px);
+        letter-spacing: -.055em;
+      }
+
+      #overview .subtitle,
+      #overview .actions,
+      #overview .meta,
+      #overview .warning {
+        max-width: 100%;
+      }
+
+      #overview .hero-runbook::before,
+      #overview .runbook-topline,
+      #overview .runbook-foot {
+        display: none;
+      }
+
+      #overview .hero-runbook pre {
+        font-size: 11.4px;
+        padding: 12px;
+      }
+    }
+
+</style>
+
+
+<style id="hero-fix-patch">
+/* Top hero only: single-column editorial layout, terminal as first-run block. */
+#overview.header{
+  min-height: 0 !important;
+  padding: 12px 0 66px !important;
+  display: block !important;
+  align-items: initial !important;
+}
+
+#overview .hero-shell{
+  display: block !important;
+  max-width: 880px !important;
+  width: 100% !important;
+  margin: 0 auto !important;
+}
+
+#overview .hero-copy{
+  max-width: 880px !important;
+}
+
+#overview .hero-kicker{
+  margin-bottom: 18px !important;
+}
+
+#overview h1{
+  max-width: 760px !important;
+  font-size: clamp(58px, 6.2vw, 82px) !important;
+  line-height: .94 !important;
+  letter-spacing: -.065em !important;
+  margin-bottom: 22px !important;
+}
+
+#overview .subtitle{
+  max-width: 690px !important;
+  font-size: 17px !important;
+  line-height: 1.66 !important;
+  margin-bottom: 22px !important;
+}
+
+#overview .actions{
+  max-width: 680px !important;
+  gap: 12px !important;
+  margin-top: 18px !important;
+}
+
+#overview .meta{
+  max-width: 720px !important;
+  margin-top: 18px !important;
+}
+
+#overview .hero-runbook{
+  max-width: 820px !important;
+  margin-top: 18px !important;
+  position: relative !important;
+  z-index: 1 !important;
+}
+
+#overview .hero-runbook::before,
+#overview .runbook-topline,
+#overview .runbook-foot{
+  display: none !important;
+}
+
+#overview .hero-runbook .codeblock{
+  margin: 0 !important;
+  border-radius: 10px !important;
+  border-color: var(--border) !important;
+  box-shadow: 0 18px 56px rgba(0,0,0,.28) !important;
+}
+
+#overview .hero-runbook .codebar{
+  padding: 9px 12px !important;
+}
+
+#overview .hero-runbook pre{
+  padding: 18px 20px !important;
+  font-size: 13.2px !important;
+  line-height: 1.72 !important;
+}
+
+#overview .warning{
+  max-width: 820px !important;
+  margin-top: 18px !important;
+  padding: 16px 18px 16px 58px !important;
+  border-left: 0 !important;
+  border: 1px solid rgba(210,153,34,.34) !important;
+  border-radius: 10px !important;
+  background:
+    linear-gradient(90deg, rgba(210,153,34,.12), rgba(210,153,34,.045)) !important;
+  position: relative !important;
+  font-size: 15px !important;
+  line-height: 1.55 !important;
+}
+
+#overview .warning::before{
+  content: "⚠";
+  position: absolute;
+  left: 19px;
+  top: 17px;
+  width: 24px;
+  height: 24px;
+  border: 1px solid rgba(210,153,34,.55);
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--warning);
+  font-size: 14px;
+  line-height: 1;
+}
+
+@media (max-width: 860px){
+  #overview.header{
+    padding: 34px 0 38px !important;
+  }
+
+  #overview .hero-shell{
+    max-width: 100% !important;
+  }
+
+  #overview h1{
+    font-size: clamp(40px, 12vw, 58px) !important;
+    max-width: 100% !important;
+  }
+
+  #overview .subtitle{
+    font-size: 15px !important;
+    max-width: 100% !important;
+  }
+
+  #overview .hero-runbook{
+    max-width: 100% !important;
+  }
+
+  #overview .hero-runbook pre{
+    font-size: 11.2px !important;
+    padding: 12px !important;
+  }
+
+  #overview .warning{
+    padding: 12px 12px 12px 42px !important;
+    font-size: 13.5px !important;
+  }
+
+  #overview .warning::before{
+    left: 12px;
+    top: 13px;
+    width: 20px;
+    height: 20px;
+    font-size: 12px;
+  }
+}
+
+/* === HardKAS docs layout + light-mode containment patch ===
+   Scope: fix overflow and light-theme readability without changing branding/logo/content. */
+@media (min-width: 861px) {
+  .layout {
+    max-width: 1320px !important;
+    grid-template-columns: 220px minmax(0, 820px) 210px !important;
+    gap: 28px !important;
+    align-items: start !important;
+  }
+
+  main {
+    width: 100% !important;
+    max-width: 820px !important;
+    min-width: 0 !important;
+    margin: 0 auto !important;
+    overflow: hidden !important;
+  }
+
+  aside.right {
+    width: 210px !important;
+    min-width: 210px !important;
+    max-width: 210px !important;
+    overflow-x: hidden !important;
+    padding-left: 18px !important;
+  }
+
+  .toc a {
+    white-space: normal !important;
+    overflow-wrap: anywhere !important;
+    word-break: break-word !important;
+    line-height: 1.45 !important;
+    padding-right: 4px !important;
+  }
+
+  section,
+  .grid,
+  .split,
+  .diagram,
+  .command-grid,
+  .cycle-flow,
+  .artifact-pipeline,
+  table,
+  .codeblock,
+  .note,
+  .warning,
+  .danger {
+    max-width: 100% !important;
+  }
+
+  .grid,
+  .split,
+  .diagram,
+  .command-grid {
+    min-width: 0 !important;
+  }
+
+  .box,
+  .command,
+  .flow-card,
+  .pipe,
+  details {
+    min-width: 0 !important;
+    overflow-wrap: break-word !important;
+  }
+
+  .codeblock,
+  pre {
+    overflow-x: auto !important;
+  }
+}
+
+@media (min-width: 861px) and (max-width: 1160px) {
+  .layout {
+    grid-template-columns: minmax(0, 820px) 200px !important;
+    max-width: 1060px !important;
+  }
+
+  main {
+    max-width: 820px !important;
+  }
+
+  aside.right {
+    width: 200px !important;
+    min-width: 200px !important;
+    max-width: 200px !important;
+  }
+}
+
+/* Light theme readability: remove washed dark overlays and restore contrast. */
+[data-theme="light"] table {
+  background: #fffaf1 !important;
+  border-color: #d4c7b5 !important;
+}
+
+[data-theme="light"] th {
+  background: #e9dfcf !important;
+  color: #1d231f !important;
+  border-color: #cfc1ad !important;
+}
+
+[data-theme="light"] td {
+  background: #fffaf1 !important;
+  color: #4f5a53 !important;
+  border-color: #d8cbbb !important;
+}
+
+[data-theme="light"] .box,
+[data-theme="light"] .command,
+[data-theme="light"] .flow-card,
+[data-theme="light"] details,
+[data-theme="light"] .pipe {
+  background: #fffaf1 !important;
+  border-color: #d6c9b7 !important;
+  color: #1d231f !important;
+  box-shadow: none !important;
+}
+
+[data-theme="light"] .box p,
+[data-theme="light"] .command span,
+[data-theme="light"] .flow-card span.desc,
+[data-theme="light"] .pipe,
+[data-theme="light"] td,
+[data-theme="light"] li,
+[data-theme="light"] p {
+  color: #5c665f !important;
+}
+
+[data-theme="light"] .box h3,
+[data-theme="light"] .box h4,
+[data-theme="light"] .command h3,
+[data-theme="light"] .flow-card strong,
+[data-theme="light"] strong {
+  color: #1d231f !important;
+}
+
+[data-theme="light"] .codeblock {
+  background: #f0e7d8 !important;
+  border-color: #d2c3ae !important;
+  box-shadow: 0 10px 30px rgba(38, 28, 16, .07) !important;
+}
+
+[data-theme="light"] .codebar {
+  background: #e6dac8 !important;
+  border-bottom-color: #d0c0aa !important;
+  color: #68726b !important;
+}
+
+[data-theme="light"] pre {
+  background: #f0e7d8 !important;
+  color: #24302a !important;
+}
+
+[data-theme="light"] code {
+  background: #eee4d4 !important;
+  border-color: #d3c5b1 !important;
+  color: #1d231f !important;
+}
+
+[data-theme="light"] .cmd,
+[data-theme="light"] .command code,
+[data-theme="light"] td code {
+  color: #087f5b !important;
+}
+
+[data-theme="light"] .flag {
+  color: #7b8da8 !important;
+}
+
+[data-theme="light"] .comment {
+  color: #7a837d !important;
+}
+
+[data-theme="light"] .warning {
+  background: rgba(210,153,34,.10) !important;
+  border-color: rgba(138,109,27,.30) !important;
+  color: #5c665f !important;
+}
+
+[data-theme="light"] .danger {
+  background: rgba(180,35,24,.08) !important;
+  border-color: rgba(180,35,24,.32) !important;
+  color: #5c665f !important;
+}
+
+[data-theme="light"] .note {
+  background: rgba(8,127,91,.07) !important;
+  border-color: rgba(8,127,91,.22) !important;
+  color: #5c665f !important;
+}
+
+[data-theme="light"] .flow-arrow-h,
+[data-theme="light"] .flow-arrow-v {
+  background: #9f927f !important;
+  opacity: .48 !important;
+}
+
+[data-theme="light"] .flow-arrow-h::after,
+[data-theme="light"] .flow-arrow-v::after {
+  border-color: #9f927f !important;
+}
+
+/* Prevent long inline command chips from pushing grids past the content column. */
+.command code,
+td code,
+pre code {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+</style>
+
+<style id="hardkas-final-visual-fix">
+/* Final containment pass: fix light-mode grey cards and prevent content/TOC collision. */
+@media (min-width: 861px) {
+  .layout {
+    grid-template-columns: 220px minmax(0, 760px) 190px !important;
+    gap: 30px !important;
+    max-width: 1240px !important;
+  }
+
+  main {
+    width: 100% !important;
+    max-width: 760px !important;
+    min-width: 0 !important;
+    overflow: visible !important;
+  }
+
+  aside.right {
+    width: 190px !important;
+    min-width: 190px !important;
+    max-width: 190px !important;
+    padding-left: 18px !important;
+    overflow-x: hidden !important;
+  }
+
+  .toc a {
+    white-space: normal !important;
+    overflow-wrap: anywhere !important;
+    word-break: normal !important;
+    line-height: 1.45 !important;
+  }
+
+  table {
+    table-layout: fixed !important;
+  }
+
+  th, td {
+    overflow-wrap: anywhere !important;
+  }
+
+  .command-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+
+  .command,
+  .box,
+  .flow-card,
+  .pipe {
+    min-width: 0 !important;
+  }
+
+  .command code,
+  td code,
+  pre code {
+    white-space: pre-wrap !important;
+    overflow-wrap: anywhere !important;
+    word-break: break-word !important;
+  }
+}
+
+@media (min-width: 861px) and (max-width: 1120px) {
+  .layout {
+    grid-template-columns: minmax(0, 760px) 180px !important;
+    max-width: 980px !important;
+    gap: 24px !important;
+  }
+
+  aside.left {
+    display: none !important;
+  }
+
+  aside.right {
+    width: 180px !important;
+    min-width: 180px !important;
+    max-width: 180px !important;
+  }
+}
+
+/* Strong light-theme card cleanup. Applied late to beat older dark card rules. */
+html[data-theme="light"] .box,
+html[data-theme="light"] .command,
+html[data-theme="light"] .flow-card,
+html[data-theme="light"] details,
+html[data-theme="light"] .pipe {
+  background: #fffaf1 !important;
+  border-color: #d9ccb9 !important;
+  color: #1d231f !important;
+  box-shadow: none !important;
+}
+
+html[data-theme="light"] .command-grid .command {
+  background: #fffaf1 !important;
+}
+
+html[data-theme="light"] .box .command {
+  background: #fffdf7 !important;
+}
+
+html[data-theme="light"] .codeblock {
+  background: #f1e7d8 !important;
+  border-color: #d5c7b3 !important;
+  box-shadow: 0 8px 22px rgba(62, 45, 22, .06) !important;
+}
+
+html[data-theme="light"] .codebar {
+  background: #eadfce !important;
+  border-bottom-color: #d1c2ad !important;
+  color: #6b746d !important;
+}
+
+html[data-theme="light"] pre {
+  background: #f1e7d8 !important;
+  color: #223028 !important;
+}
+
+html[data-theme="light"] table {
+  background: #fffaf1 !important;
+  border-color: #d6c9b7 !important;
+}
+
+html[data-theme="light"] th {
+  background: #eadfce !important;
+  color: #1d231f !important;
+  border-color: #cabba6 !important;
+}
+
+html[data-theme="light"] td {
+  background: #fffaf1 !important;
+  color: #536057 !important;
+  border-color: #d6c9b7 !important;
+}
+
+html[data-theme="light"] .box p,
+html[data-theme="light"] .command span,
+html[data-theme="light"] .flow-card span.desc,
+html[data-theme="light"] .pipe,
+html[data-theme="light"] td,
+html[data-theme="light"] li,
+html[data-theme="light"] p {
+  color: #5d685f !important;
+}
+
+html[data-theme="light"] .box h3,
+html[data-theme="light"] .box h4,
+html[data-theme="light"] .flow-card strong,
+html[data-theme="light"] strong {
+  color: #1d231f !important;
+}
+
+html[data-theme="light"] code {
+  background: #efe5d5 !important;
+  border-color: #d5c7b3 !important;
+  color: #1d231f !important;
+}
+
+html[data-theme="light"] .command code,
+html[data-theme="light"] td code,
+html[data-theme="light"] .cmd {
+  color: #087f5b !important;
+}
+
+html[data-theme="light"] .flag {
+  color: #7e90aa !important;
+}
+
+html[data-theme="light"] .comment {
+  color: #7a837d !important;
+}
+
+html[data-theme="light"] .note {
+  background: rgba(8,127,91,.07) !important;
+  border-color: rgba(8,127,91,.25) !important;
+}
+
+html[data-theme="light"] .warning {
+  background: rgba(210,153,34,.09) !important;
+  border-color: rgba(138,109,27,.25) !important;
+}
+
+html[data-theme="light"] .danger {
+  background: rgba(180,35,24,.075) !important;
+  border-color: rgba(180,35,24,.28) !important;
+}
+
+/* Replay command cards look better as compact tiles, not nested dark blocks. */
+html[data-theme="light"] #replay .box {
+  background: #fffdf7 !important;
+}
+
+html[data-theme="light"] #replay .box .command {
+  background: #fffaf1 !important;
+}
+
+/* If the OS/browser opens the page in light mode before JS sets data-theme, avoid dark grey islands. */
+@media (prefers-color-scheme: light) {
+  html:not([data-theme="dark"]) .box,
+  html:not([data-theme="dark"]) .command,
+  html:not([data-theme="dark"]) .flow-card,
+  html:not([data-theme="dark"]) details,
+  html:not([data-theme="dark"]) .pipe {
+    background: #fffaf1 !important;
+    border-color: #d9ccb9 !important;
+    color: #1d231f !important;
+    box-shadow: none !important;
+  }
+
+  html:not([data-theme="dark"]) table {
+    background: #fffaf1 !important;
+  }
+
+  html:not([data-theme="dark"]) th {
+    background: #eadfce !important;
+    color: #1d231f !important;
+  }
+
+  html:not([data-theme="dark"]) td {
+    background: #fffaf1 !important;
+    color: #536057 !important;
+  }
+}
+</style>
+
+
+<style id="hardkas-premium-docs-polish">
+/* Premium docs polish: more breathing room, less grey density, no content/TOC collision. */
+@media (min-width: 861px) {
+  .layout {
+    max-width: 1280px !important;
+    grid-template-columns: 210px minmax(0, 780px) 200px !important;
+    gap: 42px !important;
+  }
+
+  main {
+    max-width: 780px !important;
+    overflow: visible !important;
+  }
+
+  aside.right {
+    width: 200px !important;
+    min-width: 200px !important;
+    max-width: 200px !important;
+    padding-left: 24px !important;
+  }
+
+  .toc a {
+    line-height: 1.72 !important;
+    padding: 3px 0 !important;
+    white-space: normal !important;
+    overflow-wrap: normal !important;
+    word-break: normal !important;
+  }
+
+  section {
+    padding-top: 42px !important;
+  }
+
+  h2 {
+    margin-bottom: 22px !important;
+  }
+
+  .grid,
+  .split,
+  .diagram,
+  .command-grid {
+    gap: 18px !important;
+  }
+
+  .box,
+  .command,
+  .flow-card,
+  details {
+    padding: 18px !important;
+  }
+
+  .command {
+    min-height: 132px !important;
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: flex-start !important;
+  }
+
+  .command code {
+    margin-bottom: 12px !important;
+    line-height: 1.55 !important;
+  }
+
+  .command span {
+    line-height: 1.65 !important;
+  }
+
+  table {
+    table-layout: fixed !important;
+    margin-top: 18px !important;
+  }
+
+  th, td {
+    padding: 13px 14px !important;
+    line-height: 1.62 !important;
+  }
+}
+
+/* Light theme: warm surfaces, no dead grey panels. */
+html[data-theme="light"] .box,
+html[data-theme="light"] .command,
+html[data-theme="light"] .flow-card,
+html[data-theme="light"] details,
+html[data-theme="light"] .pipe {
+  background: #fffbf3 !important;
+  border-color: #d8cbb9 !important;
+  color: #202620 !important;
+  box-shadow: none !important;
+}
+
+html[data-theme="light"] .command-grid .command,
+html[data-theme="light"] .box .command {
+  background: #fffdf8 !important;
+}
+
+html[data-theme="light"] table {
+  background: #fffbf3 !important;
+  border-color: #d4c6b3 !important;
+}
+
+html[data-theme="light"] th {
+  background: #ebe1d2 !important;
+  color: #202620 !important;
+  border-color: #cfc0aa !important;
+}
+
+html[data-theme="light"] td {
+  background: #fffbf3 !important;
+  color: #58635b !important;
+  border-color: #d8cbb9 !important;
+}
+
+html[data-theme="light"] tr:nth-child(even) td {
+  background: #faf4ea !important;
+}
+
+html[data-theme="light"] p,
+html[data-theme="light"] li,
+html[data-theme="light"] td,
+html[data-theme="light"] .box p,
+html[data-theme="light"] .command span,
+html[data-theme="light"] .flow-card span.desc,
+html[data-theme="light"] .pipe {
+  color: #5f6a62 !important;
+}
+
+html[data-theme="light"] strong,
+html[data-theme="light"] h1,
+html[data-theme="light"] h2,
+html[data-theme="light"] h3,
+html[data-theme="light"] h4,
+html[data-theme="light"] .box h3,
+html[data-theme="light"] .box h4,
+html[data-theme="light"] .flow-card strong {
+  color: #202620 !important;
+}
+
+html[data-theme="light"] .codeblock {
+  background: #f3eadc !important;
+  border-color: #d6c7b4 !important;
+  box-shadow: 0 10px 28px rgba(54, 38, 18, .055) !important;
+}
+
+html[data-theme="light"] .codebar {
+  background: #eadfce !important;
+  border-bottom-color: #d0c1ab !important;
+  color: #707a72 !important;
+}
+
+html[data-theme="light"] pre {
+  background: #f3eadc !important;
+  color: #26332c !important;
+}
+
+html[data-theme="light"] code {
+  background: #efe5d5 !important;
+  border-color: #d5c6b2 !important;
+  color: #202620 !important;
+}
+
+html[data-theme="light"] .command code,
+html[data-theme="light"] td code,
+html[data-theme="light"] .cmd {
+  color: #087f5b !important;
+}
+
+html[data-theme="light"] .flag {
+  color: #7186a3 !important;
+}
+
+html[data-theme="light"] .comment {
+  color: #7f887f !important;
+}
+
+/* Reduce visual dominance of nested replay cards and make them read like compact spec items. */
+@media (min-width: 861px) {
+  #replay .split {
+    grid-template-columns: minmax(0, .94fr) minmax(0, 1fr) !important;
+    align-items: stretch !important;
+  }
+
+  #replay .command-grid {
+    gap: 12px !important;
+  }
+
+  #replay .command {
+    min-height: 118px !important;
+    padding: 13px !important;
+  }
+
+  #replay .command code {
+    margin-bottom: 8px !important;
+  }
+}
+
+html[data-theme="light"] #replay .box {
+  background: #fffdf8 !important;
+}
+
+html[data-theme="light"] #replay .command {
+  background: #fffaf1 !important;
+}
+
+/* Notes/warnings stay subtle, not highlighter blocks. */
+html[data-theme="light"] .note {
+  background: rgba(8,127,91,.055) !important;
+  border-color: rgba(8,127,91,.22) !important;
+}
+
+html[data-theme="light"] .warning {
+  background: rgba(210,153,34,.075) !important;
+  border-color: rgba(138,109,27,.22) !important;
+}
+
+html[data-theme="light"] .danger {
+  background: rgba(180,35,24,.065) !important;
+  border-color: rgba(180,35,24,.25) !important;
+}
+
+/* Safety fallback if the browser loads light colors before explicit data-theme is applied. */
+@media (prefers-color-scheme: light) {
+  html:not([data-theme="dark"]) .box,
+  html:not([data-theme="dark"]) .command,
+  html:not([data-theme="dark"]) .flow-card,
+  html:not([data-theme="dark"]) details,
+  html:not([data-theme="dark"]) .pipe {
+    background: #fffbf3 !important;
+    border-color: #d8cbb9 !important;
+    color: #202620 !important;
+  }
+
+  html:not([data-theme="dark"]) table {
+    background: #fffbf3 !important;
+  }
+
+  html:not([data-theme="dark"]) th {
+    background: #ebe1d2 !important;
+    color: #202620 !important;
+  }
+
+  html:not([data-theme="dark"]) td {
+    background: #fffbf3 !important;
+    color: #58635b !important;
+  }
+}
+</style>
+
+</head>
+<body>
+<header class="topbar">
+<div class="top-inner">
+<a class="brand" href="#top"><img alt="HardKas — Kaspa Developer Toolkit" class="brand-logo" src="data:image/png;base64,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"/></a>
+<nav aria-label="Top navigation">
+<a href="#docs">Docs</a>
+<a href="#cli">CLI</a>
+<a href="#packages">SDK</a>
+<a href="#examples">Examples</a>
+<a href="#security">Security</a>
+</nav>
+<div class="top-actions">
+<button aria-label="Toggle theme" class="theme-toggle" type="button">☀</button>
+<a aria-label="GitHub" class="github" href="https://github.com/KasLabDevs/HardKas" rel="noreferrer" target="_blank">
+<svg aria-hidden="true" class="github-icon" viewbox="0 0 16 16">
+<path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8Z" fill="currentColor"></path>
+</svg>
+</a>
+<a class="github" href="hardkas-one-doc.pdf" target="_blank" rel="noopener" title="Download HardKAS One‑Doc" aria-label="Download HardKAS One‑Doc">
+  <svg class="github-icon" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+    <path d="M14 2v6h6"/>
+    <path d="M12 11v6"/>
+    <path d="M9.5 14.5 12 17l2.5-2.5"/>
+  </svg>
+</a>
+</div>
+<button aria-expanded="false" aria-label="Open navigation" class="mobile-nav" type="button">☰</button>
+</div>
+</header>
+<div class="layout" id="top">
+<aside class="left side">
+<div class="side-title">Start</div>
+<a href="#overview">Overview</a>
+<a href="#what">What is HardKAS?</a>
+<a href="#prerequisites">Prerequisites</a><a href="#quickstart">Quickstart</a>
+<a href="#mental-model">Mental model</a>
+<a href="#status">What works</a>
+<div class="side-title">Workflow</div>
+<a href="#flow">Developer flow</a>
+<a href="#sessions">Sessions</a>
+<a href="#dashboard">Dashboard</a>
+<a href="#node">Docker node</a>
+<a href="#wallets">Wallets</a>
+<div class="side-title">Runtime</div>
+<a href="#architecture">Architecture</a>
+<a href="#artifacts">Artifacts</a>
+<a href="#canonical-hashing">Canonical hashing</a>
+<a href="#query-store">Query store</a>
+<a href="#replay">Replay</a>
+<a href="#chaos">Chaos engine</a>
+<a href="#operator">Operator commands</a>
+<a href="#telemetry">Events &amp; telemetry</a>
+<div class="side-title">Kaspa / Igra</div>
+<a href="#l1l2">Kaspa L1 vs Igra L2</a>
+<a href="#bridge">Bridge local</a>
+<a href="#rpc">RPC diagnostics</a>
+<a href="#dag">DAG simulation</a>
+<div class="side-title">Reference</div>
+<a href="#cli">CLI reference</a>
+<a href="#packages">Packages</a>
+<a href="#security">Security model</a>
+<a href="#agent">AGENT.md rules</a>
+<a href="#examples">Examples</a>
+<a href="#faq">FAQ</a>
+</aside>
+<main>
+<section class="header" id="overview">
+<div class="hero-shell">
+<div class="hero-copy">
+<div class="hero-kicker">HardKAS / local runtime docs</div>
+<h1>HardKAS Documentation</h1>
+<p class="subtitle">HardKAS is a deterministic, local-first developer operating system for Kaspa and Igra workflows. It gives developers a reproducible CLI, local runtime, dashboard, artifact engine, RPC diagnostics, wallet adapters and L1/L2 simulation tools without pretending to be a production wallet, consensus client or trustless bridge.</p>
+<div class="actions">
+
+
+<a class="button primary" href="#quickstart">Get Started</a>
+<a class="button" href="#cli">CLI Reference</a>
+<a class="button" href="#security">Security Model</a>
+<a class="button" href="https://github.com/KasLabDevs/HardKas" rel="noreferrer" target="_blank">GitHub</a>
+</div>
+<div class="meta">
+<span class="badge accent">0.7.9-alpha</span>
+<span class="badge">Kaspa Native</span>
+<span class="badge">Igra-aware</span>
+<span class="badge">Local-first</span>
+<span class="badge">Artifact-first</span>
+<span class="badge">Deterministic tooling</span>
+</div><div aria-label="HardKAS first run terminal" class="hero-runbook">
+<div class="runbook-topline">
+<span class="runbook-title">local first run</span>
+<span class="runbook-pill">simnet</span>
+</div>
+<div class="codeblock">
+<div class="codebar">first run <button class="copy" data-copy="pnpm install -g @hardkas/cli@alpha
+hardkas doctor --json
+hardkas capabilities --json
+hardkas local wizard
+hardkas dev server --open">Copy</button></div>
+<pre><span class="cmd">pnpm</span> install -g @hardkas/cli@alpha
+<span class="cmd">hardkas</span> doctor <span class="flag">--json</span>
+<span class="cmd">hardkas</span> capabilities <span class="flag">--json</span>
+<span class="cmd">hardkas</span> local wizard
+<span class="cmd">hardkas</span> dev server <span class="flag">--open</span></pre>
+</div>
+<div class="runbook-foot">
+<span>CLI</span>
+<span>sessions</span>
+<span>artifacts</span>
+<span>dashboard</span>
+</div>
+</div><div class="warning"><strong>Alpha boundary.</strong> HardKAS is developer infrastructure. It is not production custody software, not a Kaspa consensus implementation, not a hosted relay and not a trustless bridge implementation.</div>
+
+</div>
+
+</div>
+</section>
+<section id="what">
+<h2>What is HardKAS?</h2>
+<div class="grid cols-3">
+<div class="box">
+<h3>Local runtime</h3>
+<p>A local developer cockpit around Kaspa/Igra workflows: sessions, dev server, dashboard, SSE invalidation, Docker node orchestration and local state.</p>
+</div>
+<div class="box">
+<h3>Artifact engine</h3>
+<div class="warning" style="margin-top:10px;font-size:0.85em;"><strong>Security:</strong> Strict path traversal boundaries prevent reading/writing outside the <code>.hardkas/</code> workspace.</div>
+<p>Plan, sign, send, receipt, trace and replay artifacts with canonical hashes, lineage metadata and reproducibility checks.</p>
+</div>
+<div class="box">
+<h3>Protocol tooling</h3>
+<p>Kaspa RPC diagnostics, local wallet tools, DAG simulation, Igra L2 profiles, bridge assumption checks and local bridge simulation.</p>
+</div>
+</div>
+<table>
+<thead><tr><th>HardKAS is</th><th>HardKAS is not</th></tr></thead>
+<tbody>
+<tr><td>Developer tooling for local Kaspa/Igra workflows.</td><td>A production wallet, hosted service or custody platform.</td></tr>
+<tr><td>A deterministic artifact workflow for planning, replaying and inspecting transactions.</td><td>A Kaspa consensus validator or replacement for rusty-kaspa/kaspad.</td></tr>
+<tr><td>A bridge-aware local simulator with explicit assumptions.</td><td>A trustless bridge. Trustless exit belongs to the future ZK phase.</td></tr>
+<tr><td>An AI-friendly repository with machine-readable capabilities.</td><td>A framework that lets agents invent unsupported features.</td></tr>
+</tbody>
+</table>
+</section>
+<section id="prerequisites">
+<h2>Prerequisites</h2>
+<table>
+<thead><tr><th>Dependency</th><th>Required for</th><th>Install</th></tr></thead>
+<tbody>
+<tr><td><strong>Node.js ≥ 22.5</strong></td><td>All HardKAS commands (uses <code>node:sqlite</code>)</td><td><a href="https://nodejs.org">nodejs.org</a></td></tr>
+<tr><td><strong>pnpm</strong></td><td>Package installation</td><td><code>npm install -g pnpm</code></td></tr>
+<tr><td><strong>Docker</strong></td><td><code>hardkas node start/stop/reset/logs</code></td><td><a href="https://docker.com">docker.com</a></td></tr>
+<tr><td><strong>Solidity compiler</strong></td><td><code>hardkas l2 contract compile</code></td><td>Included via Docker or <code>pnpm add -g solc</code></td></tr>
+</tbody>
+</table>
+<div class="codeblock">
+<div class="codebar">check your environment <button class="copy" data-copy="hardkas doctor">Copy</button></div>
+<pre><span class="cmd">hardkas</span> doctor</pre>
+</div>
+<p><code>hardkas doctor</code> checks for missing dependencies and reports what is needed. Use <code>--json</code> for machine-readable output.</p>
+</section><section id="quickstart">
+<h2>Quickstart</h2>
+<p>Start with diagnostics. HardKAS is intentionally explicit: ask what the runtime supports, then create the local environment, then run workflows.</p>
+<div class="grid cols-2">
+<div class="box">
+<h3>New project (recommended)</h3>
+<div class="codeblock">
+<div class="codebar">scaffold <button class="copy" data-copy="pnpm add -D @hardkas/cli
+pnpm add @hardkas/sdk
+hardkas new my-kaspa-app
+cd my-kaspa-app
+pnpm test
+hardkas console">Copy</button></div>
+<pre><span class="cmd">pnpm</span> add -g @hardkas/cli@alpha
+<span class="cmd">hardkas</span> new my-kaspa-app
+<span class="cmd">cd</span> my-kaspa-app
+<span class="cmd">pnpm</span> test
+<span class="cmd">hardkas</span> console</pre>
+</div>
+<p>Creates a complete project with config, example scripts, tests, and README. Optional flags: <code>--template basic</code>, <code>--network simnet</code>, <code>--accounts 3</code> (all defaults).</p>
+</div>
+<div class="box">
+<h3>Existing repo</h3>
+<div class="codeblock">
+<div class="codebar">init local runtime <button class="copy" data-copy="hardkas init
+hardkas local wizard --profile igra
+hardkas dev doctor --profile igra
+hardkas dev server --open">Copy</button></div>
+<pre><span class="cmd">hardkas</span> init
+<span class="cmd">hardkas</span> local wizard <span class="flag">--profile</span> igra
+<span class="cmd">hardkas</span> dev doctor <span class="flag">--profile</span> igra
+<span class="cmd">hardkas</span> dev server <span class="flag">--open</span></pre>
+</div>
+</div>
+</div>
+<div class="note"><strong>Recommended default.</strong> Use <code>simnet</code> or local profiles while developing. Mainnet signing/funding paths are guarded and should stay explicit.</div>
+</section>
+<section id="mental-model">
+<h2>Mental model</h2>
+<div class="cycle-flow">
+<div class="flow-card cycle-plan"><strong><span class="flow-dot"></span>Plan</strong><span class="desc">Build a deterministic tx plan or L2 call plan.</span></div>
+<div class="flow-arrow-h arrow-plan-sign"></div>
+<div class="flow-card cycle-sign"><strong><span class="flow-dot"></span>Sign</strong><span class="desc">Use local dev accounts or wallet adapters.</span></div>
+<div class="flow-arrow-h arrow-sign-broadcast"></div>
+<div class="flow-card cycle-broadcast"><strong><span class="flow-dot"></span>Send</strong><span class="desc">Broadcast through configured RPC or local runtime.</span></div>
+<div class="flow-arrow-v arrow-broadcast-receipt"></div>
+<div class="flow-card cycle-receipt"><strong><span class="flow-dot"></span>Receipt</strong><span class="desc">Record observed result as an artifact.</span></div>
+<div class="flow-arrow-h left arrow-receipt-trace"></div>
+<div class="flow-card cycle-trace"><strong><span class="flow-dot"></span>Trace</strong><span class="desc">Inspect lineage, query store and event history.</span></div>
+<div class="flow-arrow-h left arrow-trace-verify"></div>
+<div class="flow-card cycle-verify"><strong><span class="flow-dot"></span>Verify</strong><span class="desc">Check hashes, schema, replay invariants and drift.</span><span class="mobile-return-label">iterate</span></div>
+<div class="flow-return arrow-verify-plan"><div class="flow-arrow-v up"></div><span class="flow-return-label">iterate</span></div>
+</div>
+<div class="pipeline artifact-pipeline">
+<div class="pipe"><strong><span class="dot">●</span>TxPlan</strong>Unsigned intent</div>
+<div class="pipe"><strong><span class="dot">●</span>SignedTx</strong>Signed artifact</div>
+<div class="pipe"><strong><span class="dot">●</span>Receipt</strong>Observed result</div>
+<div class="pipe"><strong><span class="dot">●</span>Trace</strong>Runtime context</div>
+<div class="pipe"><strong><span class="dot">●</span>Replay</strong>Invariant check</div>
+</div>
+</section>
+<section id="flow">
+<h2>Developer flow</h2>
+<div class="split">
+<div>
+<h3>Local Igra-aware flow</h3>
+<div class="codeblock">
+<div class="codebar">l2 workflow <button class="copy" data-copy="hardkas local wizard --profile igra --account bob
+hardkas l2 profile validate igra --json
+hardkas metamask network --profile igra
+hardkas metamask account bob --json
+hardkas l2 rpc health --network igra --json">Copy</button></div>
+<pre><span class="cmd">hardkas</span> local wizard <span class="flag">--profile</span> igra <span class="flag">--account</span> bob
+<span class="cmd">hardkas</span> l2 profile validate igra <span class="flag">--json</span>
+<span class="cmd">hardkas</span> metamask network <span class="flag">--profile</span> igra
+<span class="cmd">hardkas</span> metamask account bob <span class="flag">--json</span>
+<span class="cmd">hardkas</span> l2 rpc health <span class="flag">--network</span> igra <span class="flag">--json</span></pre>
+</div>
+</div>
+<div>
+<h3>Kaspa L1 local flow</h3>
+<div class="codeblock">
+<div class="codebar">l1 workflow <button class="copy" data-copy="hardkas node start
+hardkas kaspa doctor --json
+hardkas kaspa wallet create alice --network simnet
+hardkas kaspa wallet create bob --network simnet
+hardkas kaspa wallet send alice bob --amount 1 --dry-run">Copy</button></div>
+<pre><span class="cmd">hardkas</span> node start
+<span class="cmd">hardkas</span> kaspa doctor <span class="flag">--json</span>
+<span class="cmd">hardkas</span> kaspa wallet create alice <span class="flag">--network</span> simnet
+<span class="cmd">hardkas</span> kaspa wallet create bob <span class="flag">--network</span> simnet
+<span class="cmd">hardkas</span> kaspa wallet send alice bob <span class="flag">--amount</span> 1 <span class="flag">--dry-run</span></pre>
+</div>
+</div>
+</div>
+</section>
+<section id="status">
+<h2>What actually works in 0.7.9-alpha</h2>
+<table>
+<thead><tr><th>Status</th><th>Systems</th><th>Notes</th></tr></thead>
+<tbody>
+<tr><td><strong>Stable</strong></td><td>Core safety: atomic persistence, workspace locks, corruption diagnostics, secret redaction, mainnet guards, encrypted keystore, .gitignore protection.</td><td>Hardened local developer state.</td></tr>
+<tr><td><strong>Stable</strong></td><td>Artifact system: canonical hashing v3, verification, lineage, reproducibility proofs, L1 plan/sign/send/receipt/trace pipeline.</td><td>Version metadata excluded from hashing.</td></tr>
+<tr><td><strong>Stable</strong></td><td>Runtime operations: chaos engine (4 actors), doctor, repair, inspect, rotate, rebuild, verify. Event ledger with AppendCoordinator. Telemetry with rotation.</td><td>Deterministic PRNG seeds. Exclusive locks + fsync.</td></tr>
+<tr><td><strong>Stable</strong></td><td>SDK: policy engine (agent/developer), workspace abstraction, artifacts manager with dry-run, RuntimeContext DI, workflow identity from intent hash.</td><td>4 policy dimensions. CLI + agent operable.</td></tr>
+<tr><td><strong>Experimental</strong></td><td>Localnet fork, GHOSTDAG simulator, DAG scenarios, mass profiler, replay verification.</td><td>Research/dev tooling, not consensus.</td></tr>
+<tr><td><strong>Partial</strong></td><td>L2/Igra tx lifecycle, Docker node orchestration, bridge profiles, SSE dashboard.</td><td>SSE reconnect exists; durable cursors do not.</td></tr>
+<tr><td><strong>Not implemented</strong></td><td>Consensus validation, production wallet, SilverScript/covenants, trustless exit, plugin system.</td><td>Do not imply in docs or agents.</td></tr>
+</tbody>
+</table>
+</section>
+<section id="sessions">
+<h2>Sessions</h2>
+<p>Sessions bind L1/L2 developer context: wallet names, EVM accounts, selected profiles, bridge plans and local runtime state. In 0.7.9-alpha mutating session paths fail closed on corrupt stores and canonical writes use atomic persistence with parent directory fsync.</p>
+<div class="grid cols-2">
+<div class="box">
+<h3>Typical use</h3>
+<div class="codeblock">
+<div class="codebar">session context <button class="copy" data-copy="hardkas session create dev --l1 alice --l2 bob
+hardkas session use dev
+hardkas session status">Copy</button></div>
+<pre><span class="cmd">hardkas</span> session create dev <span class="flag">--l1</span> alice <span class="flag">--l2</span> bob
+<span class="cmd">hardkas</span> session use dev
+<span class="cmd">hardkas</span> session status</pre>
+</div>
+</div>
+<div class="box">
+<h3>Safety model</h3>
+<ul>
+<li>Corrupt session stores are diagnostic-readable but mutation-blocking.</li>
+<li>Workspace locks protect mutating paths.</li>
+<li>Secrets should be redacted in CLI error paths.</li>
+<li>Session state is local developer state, not custody state.</li>
+</ul>
+</div>
+</div>
+</section>
+<section id="dashboard">
+<h2>Dashboard and dev server</h2>
+<p>The dashboard is a local cockpit that visualizes your entire development runtime in real time. It connects to the dev server via SSE and reacts to CLI state changes instantly.</p>
+<div class="codeblock">
+<div class="codebar">start the runtime <button class="copy" data-copy="hardkas dev server --port 7420 --open">Copy</button></div>
+<pre><span class="cmd">hardkas</span> dev server <span class="flag">--port</span> 7420 <span class="flag">--open</span></pre>
+</div><p>Alternatively: <code>hardkas dashboard --start-server</code> starts the server and opens the dashboard in one command.</p>
+<h3>What you see</h3>
+<div class="grid cols-2">
+<div class="box">
+<h4>Session identity</h4>
+<p>Active session with L1 (Kaspa wallet) and L2 (EVM account) linked identity. Shows wallet names, addresses, bridge mode, and connection status.</p>
+</div>
+<div class="box">
+<h4>Health panel</h4>
+<p>Real-time status of Kaspa L1 RPC, Igra L2 RPC, and Docker node. Shows DAA score, block height, network ID. Stale indicators appear after 45 seconds without update.</p>
+</div>
+<div class="box">
+<h4>Wallet sync indicators</h4>
+<p>MetaMask and KasWare panels show whether the browser wallet matches the active session. Mismatch reasons are displayed when address or network differs.</p>
+</div>
+<div class="box">
+<h4>Runtime event stream</h4>
+<p>Live SSE log showing session changes, health updates, bridge events, and wallet sync events. Capped at 50 entries. Reconnects automatically with backoff on disconnect.</p>
+</div>
+<div class="box">
+<h4>Bridge laboratory</h4>
+<p>Simulate Kaspa → Igra bridge payloads locally. Deterministic payload generation, prefix mining simulation, and bridge plan inspection — all without touching a real bridge.</p>
+</div>
+<div class="box">
+<h4>WalletConnect sandbox</h4>
+<p>Simulated WalletConnect pairing for testing mobile wallet UX. Ephemeral sessions, no real relay traffic. Clearly labeled as laboratory-only.</p>
+</div>
+</div>
+<div class="warning"><strong>SSE limitation.</strong> The dashboard supports reconnect/backoff, but 0.7.9-alpha does not yet provide durable replay cursors or monotonic event IDs. If the dev server restarts, the event stream resets.</div>
+<h3>CLI ↔ Dashboard sync</h3>
+<p>The dashboard is not a separate world — it reads from the same session store as the CLI. Run <code>hardkas session use dev</code> in the terminal and the dashboard updates in real time via SSE. No refresh needed.</p>
+<div class="codeblock">
+<div class="codebar">example flow <button class="copy" data-copy="# Terminal 1: start dashboard
+hardkas dev server --open
+
+# Terminal 2: interact via CLI
+hardkas session create dev --l1 alice --l2 bob
+hardkas session use dev
+# → Dashboard updates instantly">Copy</button></div>
+<pre><span class="comment"># Terminal 1: start dashboard</span>
+<span class="cmd">hardkas</span> dev server <span class="flag">--open</span>
+
+<span class="comment"># Terminal 2: interact via CLI</span>
+<span class="cmd">hardkas</span> session create dev <span class="flag">--l1</span> alice <span class="flag">--l2</span> bob
+<span class="cmd">hardkas</span> session use dev
+<span class="comment"># → Dashboard updates instantly via SSE</span></pre>
+</div>
+</section>
+<section id="node">
+<h2>Docker node workflow</h2>
+<p>HardKAS can manage a local Kaspa node through Docker for development. It is a lifecycle helper, not multi-node production orchestration.</p>
+<div class="command-grid">
+<div class="command"><code>hardkas node start</code><span>Start local node. Supports image override and lock wait flags.</span></div>
+<div class="command"><code>hardkas node status --json</code><span>Check node status in machine-readable form.</span></div>
+<div class="command"><code>hardkas node logs --tail 100 --follow</code><span>Inspect local node logs.</span></div>
+<div class="command"><code>hardkas node restart</code><span>Restart local node with workspace lock protection.</span></div>
+<div class="command"><code>hardkas node stop</code><span>Stop local node.</span></div>
+<div class="command"><code>hardkas node reset --yes</code><span>Preview-grade destructive reset of local chain data.</span></div>
+</div>
+</section>
+<section id="wallets">
+<h2>Wallets and local accounts</h2>
+<div class="grid cols-3">
+<div class="box">
+<h3>Kaspa wallets</h3>
+<p>Local L1 wallets for development: create, list, balance, address and send.</p>
+</div>
+<div class="box">
+<h3>Real dev account store</h3>
+<p>Persistent encrypted account store using safe password input paths and lock protection.</p>
+</div>
+<div class="box">
+<h3>MetaMask helpers</h3>
+<p>Local EVM account export and Igra network snippets for developer onboarding.</p>
+</div>
+</div>
+<div class="codeblock">
+<div class="codebar">wallet commands <button class="copy" data-copy="hardkas accounts real init --json
+hardkas accounts real generate --name dev --count 1 --network simnet --password-stdin
+hardkas metamask network --profile igra --json
+hardkas metamask account bob --json">Copy</button></div>
+<pre><span class="cmd">hardkas</span> accounts real init <span class="flag">--json</span>
+<span class="cmd">hardkas</span> accounts real generate <span class="flag">--name</span> dev <span class="flag">--count</span> 1 <span class="flag">--network</span> simnet <span class="flag">--password-stdin</span>
+<span class="cmd">hardkas</span> metamask network <span class="flag">--profile</span> igra <span class="flag">--json</span>
+<span class="cmd">hardkas</span> metamask account bob <span class="flag">--json</span></pre>
+</div>
+</section>
+<section id="architecture">
+<h2>Architecture overview</h2>
+<div class="diagram">
+<div class="box layer-l1">
+<h3>Kaspa L1</h3>
+<div class="layer-subtitle">Sequencing / DA / anchoring</div>
+<p>Kaspa L1 provides ordering, data availability and state anchoring. It does not execute EVM smart contracts.</p>
+</div>
+<div class="box layer-hardkas">
+<h3>HardKAS</h3>
+<div class="layer-subtitle">Local deterministic tooling</div>
+<p>CLI, sessions, artifacts, query store, dev server, dashboard, adapters, bridge simulation and reproducibility checks.</p>
+</div>
+<div class="box layer-l2">
+<h3>Igra L2</h3>
+<div class="layer-subtitle">EVM execution</div>
+<p>Igra provides L2 EVM execution within the based-rollup architecture class. HardKAS talks to Igra via configured RPC profiles.</p>
+</div>
+</div>
+<table>
+<thead><tr><th>Layer</th><th>HardKAS responsibility</th><th>Boundary</th></tr></thead>
+<tbody>
+<tr><td>CLI</td><td>Human and machine entrypoint, JSON output, diagnostics, lifecycle commands.</td><td>Should not hide unsupported trust assumptions.</td></tr>
+<tr><td>Sessions</td><td>Local workflow context and state binding.</td><td>Not custody, not a production account manager.</td></tr>
+<tr><td>Artifacts</td><td>Deterministic records of plans, signed payloads, receipts and lineage.</td><td>Not consensus proof.</td></tr>
+<tr><td>Query store</td><td>SQLite read model rebuilt from artifacts and events.</td><td>Not a chain archive.</td></tr>
+<tr><td>React/dashboard</td><td>Local UI over dev-server APIs and SSE invalidation.</td><td>React must not become runtime authority.</td></tr>
+</tbody>
+</table>
+</section>
+<section id="artifacts">
+<h2>Artifact lifecycle</h2>
+<p>HardKAS records developer workflows as content-addressed artifacts. The goal is not just “send a tx”; the goal is to explain what was planned, what was signed, what was observed and whether the local replay still makes sense.</p>
+<div class="pipeline artifact-pipeline">
+<div class="pipe"><strong>Build plan</strong>intent + inputs</div>
+<div class="pipe"><strong>Sign</strong>local key / adapter</div>
+<div class="pipe"><strong>Send</strong>RPC submission</div>
+<div class="pipe"><strong>Receipt</strong>observed result</div>
+<div class="pipe"><strong>Trace</strong>query/runtime view</div>
+<div class="pipe"><strong>Verify</strong>hash + lineage</div>
+</div>
+<div class="command-grid">
+<div class="command"><code>hardkas artifact verify path --strict</code><span>Verify schema, hash and semantic integrity.</span></div>
+<div class="command"><code>hardkas artifact explain path</code><span>Human-readable operational summary.</span></div>
+<div class="command"><code>hardkas artifact lineage path</code><span>Show provenance and operational history.</span></div>
+<div class="command"><code>hardkas replay verify .hardkas/artifacts --json</code><span>Check local replay invariants over artifacts.</span></div>
+</div>
+</section>
+<section id="canonical-hashing">
+<h2>Canonical hashing</h2>
+<p>HardKAS separates semantic content from operational metadata. Hashes are meant to remain stable across fields like runtime version, file path, indexed timestamp or generated identifiers.</p>
+<div class="codeblock">
+<div class="codebar">hash pipeline <button class="copy" data-copy="Artifact JSON
+  -&gt; strip semantic exclusions
+  -&gt; normalize Unicode/newlines
+  -&gt; sort keys recursively
+  -&gt; stringify BigInt values
+  -&gt; SHA-256 contentHash">Copy</button></div>
+<pre>Artifact JSON
+  -&gt; strip semantic exclusions
+  -&gt; normalize Unicode/newlines
+  -&gt; sort keys recursively
+  -&gt; stringify BigInt values
+  -&gt; SHA-256 contentHash</pre>
+</div>
+<div class="note"><strong>Release metadata boundary.</strong> <code>hardkasVersion</code> is metadata. It must not change semantic content hashes.</div>
+</section>
+<section id="query-store">
+<h2>Query store</h2>
+<p>The query store is a rebuildable SQLite read model over artifacts, lineage, events, replay state and simulated DAG information.</p>
+<div class="command-grid">
+<div class="command"><code>hardkas query store sync --json</code><span>Synchronize filesystem artifacts into the query index.</span></div>
+<div class="command"><code>hardkas query store doctor --migrate</code><span>Check integrity and apply pending migrations.</span></div>
+<div class="command"><code>hardkas query artifacts list --schema txPlan --json</code><span>List artifacts with deterministic filters.</span></div>
+<div class="command"><code>hardkas query tx &lt;txId&gt; --explain full</code><span>Aggregate known data for a transaction.</span></div>
+<div class="command"><code>hardkas query lineage chain &lt;anchor&gt; --why</code><span>Explain ancestors or descendants of an artifact.</span></div>
+<div class="command"><code>hardkas query events --domain tx --limit 50</code><span>Inspect event log entries.</span></div>
+</div>
+</section>
+<section id="replay">
+<h2>Replay and reproducibility</h2>
+<p>Replay in HardKAS means local workflow reproducibility: artifact invariants, receipt consistency, divergence indicators and deterministic reconstruction. It does not mean Kaspa consensus validation.</p>
+<div class="split">
+<div class="box">
+<h3>Replay commands</h3>
+<div class="command-grid">
+<div class="command"><code>hardkas replay verify path --json</code><span>Verify replay invariants for a directory.</span></div>
+<div class="command"><code>hardkas query replay list</code><span>List stored receipts.</span></div>
+<div class="command"><code>hardkas query replay summary &lt;txId&gt;</code><span>Detailed receipt and trace summary.</span></div>
+<div class="command"><code>hardkas query replay divergences --json</code><span>Detect replay divergence indicators.</span></div>
+</div>
+</div>
+<div class="box">
+<h3>Boundary</h3>
+<ul>
+<li><code>consensusValidation</code> is unimplemented.</li>
+<li>Replay is local workflow verification.</li>
+<li>Golden hashes and CI matrix prove artifact reproducibility, not chain correctness.</li>
+</ul>
+</div>
+</div>
+</section>
+<section id="chaos">
+<h2>Chaos engine</h2>
+<p><code>hardkas chaos</code> formalizes destructive behavior into deterministic, reproducible campaigns. It uses a seeded LCG PRNG (MINSTD) so every campaign is reproducible from its seed.</p>
+<div class="grid cols-4">
+<div class="box"><h4>LockHell</h4><p>Injects stale locks, zero-byte TOCTOU locks, concurrent rebuilds.</p></div>
+<div class="box"><h4>RotBot</h4><p>Corrupts JSONL streams with truncated JSON, garbage bytes, schema violations.</p></div>
+<div class="box"><h4>DriftHunter</h4><p>Deletes SQLite, mutates projection inputs, verifies rebuild from artifacts.</p></div>
+<div class="box"><h4>HumanChaos</h4><p>Runs invalid commands and operator mistakes to detect raw stack trace leaks.</p></div>
+</div>
+<div class="codeblock">
+<div class="codebar">chaos campaigns <button class="copy" data-copy="hardkas chaos --runs 300 --seed 1337 --profile smoke
+hardkas chaos --runs 3000 --seed 1337 --profile targeted
+hardkas chaos --actor LockHell --runs 500 --seed 404
+hardkas chaos replay --run-seed 42">Copy</button></div>
+<pre><span class="cmd">hardkas</span> chaos <span class="flag">--runs</span> 300 <span class="flag">--seed</span> 1337 <span class="flag">--profile</span> smoke
+<span class="cmd">hardkas</span> chaos <span class="flag">--runs</span> 3000 <span class="flag">--seed</span> 1337 <span class="flag">--profile</span> targeted
+<span class="cmd">hardkas</span> chaos <span class="flag">--actor</span> LockHell <span class="flag">--runs</span> 500 <span class="flag">--seed</span> 404
+<span class="cmd">hardkas</span> chaos replay <span class="flag">--run-seed</span> 42</pre>
+</div>
+<table>
+<thead><tr><th>Exit code</th><th>Meaning</th></tr></thead>
+<tbody>
+<tr><td>0</td><td>No findings.</td></tr>
+<tr><td>1</td><td>Recoverable findings.</td></tr>
+<tr><td>2</td><td>Invariant violation (includes raw stack trace leaks).</td></tr>
+<tr><td>3</td><td>Unsafe configuration refused.</td></tr>
+<tr><td>4</td><td>Internal chaos engine failure.</td></tr>
+</tbody>
+</table>
+<div class="note"><strong>Isolation.</strong> Chaos runs in an isolated workspace by default and refuses unsafe current-directory destruction without explicit opt-in.</div>
+</section>
+<section id="operator">
+<h2>Operator commands</h2>
+<p>HardKAS is designed to fail loudly and recover explicitly. Operator commands exist so developers do not repair runtime state by hand.</p>
+<div class="grid cols-3">
+<div class="box"><h4><code>hardkas doctor</code></h4><p>Full workspace diagnostic: locks, JSONL streams, projection health, anomalies, authority status.</p></div>
+<div class="box"><h4><code>hardkas repair</code></h4><p>Recover JSONL tails, clear stale locks, rebuild SQLite, quarantine malformed files. Use <code>--dry-run</code> first.</p></div>
+<div class="box"><h4><code>hardkas inspect</code></h4><p>Report stream sizes, archive segments, workspace metadata and operational status.</p></div>
+<div class="box"><h4><code>hardkas rebuild</code></h4><p>Rebuild SQLite projections from canonical artifacts. <code>--from-artifacts</code> flag.</p></div>
+<div class="box"><h4><code>hardkas rotate</code></h4><p>Rotate telemetry archives. Event ledger rotation is intentionally not supported (append-only by contract).</p></div>
+<div class="box"><h4><code>hardkas verify</code></h4><p>Validate artifacts, semantic bundles and replay-relevant invariants.</p></div>
+</div>
+<div class="warning"><strong>No silent recovery.</strong> Any automatic repair emits an anomaly or visible operator message. Quiet corruption handling is treated as a runtime bug.</div>
+</section>
+<section id="telemetry">
+<h2>Event ledger and telemetry</h2>
+<p>HardKAS separates two operational streams with different retention semantics:</p>
+<div class="grid cols-2">
+<div class="box"><h4>Event ledger (<code>events.jsonl</code>)</h4><p>Append-only operational evidence. Never rotated. Each event carries <code>eventId</code>, <code>causationId</code>, <code>domain</code>, and <code>kind</code>. Protected by <code>AppendCoordinator</code> with exclusive locks and fsync.</p></div>
+<div class="box"><h4>Telemetry (<code>telemetry.jsonl</code>)</h4><p>Rotatable observability stream. 8 anomaly types: LOCK_CONTENTION, STALE_LOCK_RECOVERY, FS_RETRY, NORMALIZATION_COLLISION, EXTERNAL_MUTATION, PATH_TRAVERSAL_ATTEMPT, ORPHAN_PROJECTION_RECOVERY. Scoped via <code>AsyncLocalStorage</code>.</p></div>
+</div>
+<div class="note"><strong>AppendCoordinator.</strong> JSONL persistence uses exclusive file locks (<code>openSync("wx")</code>), spin-wait acquisition, automatic tail repair for corrupted JSON, and <code>fsync</code> after every write.</div>
+</section>
+<section id="l1l2">
+<h2>Kaspa L1 vs Igra L2</h2>
+<table>
+<thead><tr><th>System</th><th>Role</th><th>HardKAS treatment</th></tr></thead>
+<tbody>
+<tr><td>Kaspa L1</td><td>Proof-of-work blockDAG, sequencing, data availability, state anchoring and finality via GHOSTDAG / future DAGKnight model.</td><td>HardKAS queries RPC, manages local wallets and simulates workflows. It does not validate consensus.</td></tr>
+<tr><td>Kasplex L1</td><td>Asset hub for native asset issuance and transfer on Kaspa L1.</td><td>Distinguished from Kasplex L2 architecture terminology.</td></tr>
+<tr><td>Igra L2</td><td>EVM-compatible L2 execution environment in the based-rollup architectural class.</td><td>HardKAS provides profiles, RPC health, balance/nonce queries, tx build/sign/send/status and contract deploy planning.</td></tr>
+<tr><td>Bridge phases</td><td>Pre-ZK → MPC/committee-style assumptions → ZK exit phase.</td><td>Pre-ZK bridge workflows are assumption-aware; trustless exit is false until ZK phase.</td></tr>
+</tbody>
+</table>
+<div class="danger"><strong>No EVM on Kaspa L1.</strong> HardKAS documentation and examples must preserve this boundary. Execution happens on L2, not on Kaspa L1.</div>
+</section>
+<section id="bridge">
+<h2>Bridge local simulation</h2>
+<p>Bridge local commands model developer bridge-entry flows. They are deterministic local simulation utilities, not a production bridge implementation.</p>
+<div class="codeblock">
+<div class="codebar">bridge local <button class="copy" data-copy="hardkas bridge local plan --session dev --amount 10 --json
+hardkas bridge local simulate --session dev --amount 10 --prefix abc --json
+hardkas bridge local inspect &lt;txid&gt; --json
+hardkas l2 bridge assumptions --json">Copy</button></div>
+<pre><span class="cmd">hardkas</span> bridge local plan <span class="flag">--session</span> dev <span class="flag">--amount</span> 10 <span class="flag">--json</span>
+<span class="cmd">hardkas</span> bridge local simulate <span class="flag">--session</span> dev <span class="flag">--amount</span> 10 <span class="flag">--prefix</span> abc <span class="flag">--json</span>
+<span class="cmd">hardkas</span> bridge local inspect &lt;txid&gt; <span class="flag">--json</span>
+<span class="cmd">hardkas</span> l2 bridge assumptions <span class="flag">--json</span></pre>
+</div>
+<table>
+<thead><tr><th>Field</th><th>Expected meaning</th></tr></thead>
+<tbody>
+<tr><td><code>trustlessExit</code></td><td><code>false</code> in pre-ZK phase.</td></tr>
+<tr><td><code>l2BridgeCorrectness</code></td><td>Unimplemented unless explicitly implemented in source.</td></tr>
+<tr><td><code>phase</code></td><td>Used to distinguish current assumption model from future ZK exit.</td></tr>
+</tbody>
+</table>
+</section>
+<section id="rpc">
+<h2>RPC diagnostics</h2>
+<p>HardKAS includes L1 and L2 RPC diagnostics so tools and agents can inspect runtime readiness instead of guessing.</p>
+<div class="command-grid">
+<div class="command"><code>hardkas rpc health</code><span>Check Kaspa RPC availability.</span></div>
+<div class="command"><code>hardkas rpc info</code><span>Show RPC connection information.</span></div>
+<div class="command"><code>hardkas rpc doctor --endpoints a,b</code><span>Run endpoint diagnostics.</span></div>
+<div class="command"><code>hardkas rpc dag</code><span>Show DAG information from node.</span></div>
+<div class="command"><code>hardkas rpc mempool [txId]</code><span>Inspect mempool status.</span></div>
+<div class="command"><code>hardkas rpc utxos &lt;address&gt;</code><span>Query UTXOs for an address.</span></div>
+<div class="command"><code>hardkas l2 rpc health --network igra --json</code><span>Check Igra RPC health.</span></div>
+<div class="command"><code>hardkas l2 profile validate igra --json</code><span>Validate L2 profile configuration.</span></div>
+</div>
+</section>
+<section id="dag">
+<h2>DAG simulation</h2>
+<p>DAG commands and query views are research/dev tooling. They are useful to inspect conflicts, selected-path movement and local scenarios, but they are not rusty-kaspa validated consensus parity.</p>
+<div class="command-grid">
+<div class="command"><code>hardkas dag status</code><span>View current local simulated DAG status.</span></div>
+<div class="command"><code>hardkas dag simulate-reorg --depth 1</code><span>Simulate a local DAG reorg.</span></div>
+<div class="command"><code>hardkas query dag conflicts --why</code><span>Explain local double-spend conflict analysis.</span></div>
+<div class="command"><code>hardkas query dag sink-path</code><span>Show selected path from genesis to sink.</span></div>
+<div class="command"><code>hardkas query dag displaced</code><span>Show displaced transactions.</span></div>
+<div class="command"><code>hardkas query dag history &lt;txId&gt; --why</code><span>Trace simulated DAG lifecycle for a transaction.</span></div>
+</div>
+</section>
+<section id="cli">
+<h2>CLI reference</h2>
+<p>The CLI reference is generated from the Commander command tree. Do not maintain flags manually in docs; regenerate from code.</p>
+<div class="accordion">
+<details open="">
+<summary>Core and diagnostics</summary>
+<div class="details-body command-grid">
+<div class="command"><code>hardkas doctor</code><span>Full system diagnostic and health report.</span>
+<table class="flags">
+<tr><td><code>--json</code></td><td>Machine-readable output</td></tr>
+</table>
+</div>
+<div class="command"><code>hardkas capabilities</code><span>Machine-readable capability and trust-boundary report.</span>
+<table class="flags">
+<tr><td><code>--json</code></td><td>Machine-readable output</td></tr>
+</table>
+</div>
+<div class="command"><code>hardkas init [name]</code><span>Initialize HardKAS config in a project.</span></div>
+<div class="command"><code>hardkas new &lt;name&gt;</code><span>Create project scaffolding.</span>
+<table class="flags">
+<tr><td><code>--template &lt;type&gt;</code></td><td>Project template (default: basic)</td></tr>
+<tr><td><code>--network &lt;name&gt;</code></td><td>Default network (default: simnet)</td></tr>
+<tr><td><code>--accounts &lt;n&gt;</code></td><td>Number of simulated accounts (default: 3)</td></tr>
+<tr><td><code>--skip-install</code></td><td>Skip pnpm install</td></tr>
+</table>
+</div>
+<div class="command"><code>hardkas config show --json</code><span>Show resolved configuration.</span></div>
+<div class="command"><code>hardkas networks</code><span>List configured networks.</span>
+<table class="flags">
+<tr><td><code>--json</code></td><td>Machine-readable output</td></tr>
+</table>
+</div>
+</div>
+</details>
+<details>
+<summary>Development runtime</summary>
+<div class="details-body command-grid">
+<div class="command"><code>hardkas dev doctor --profile igra --json</code><span>Validate Igra/local dev readiness.</span></div>
+<div class="command"><code>hardkas dev server</code><span>Start local dev server and dashboard.</span>
+<table class="flags">
+<tr><td><code>--port &lt;n&gt;</code></td><td>Server port (default: 7420)</td></tr>
+<tr><td><code>--host &lt;host&gt;</code></td><td>Bind host (default: localhost)</td></tr>
+<tr><td><code>--open</code></td><td>Open dashboard in browser</td></tr>
+<tr><td><code>--unsafe-external</code></td><td>Allow non-localhost connections</td></tr>
+</table>
+</div>
+<div class="command"><code>hardkas dashboard --start-server</code><span>Open dashboard, starting server when needed.</span></div>
+<div class="command"><code>hardkas local wizard --profile igra</code><span>Guided local setup.</span></div>
+<div class="command"><code>hardkas console</code><span>Interactive REPL with SDK loaded.</span>
+<table class="flags">
+<tr><td><code>--network &lt;name&gt;</code></td><td>Network name (default: simnet)</td></tr>
+<tr><td><code>--accounts &lt;n&gt;</code></td><td>Simulated accounts (default: 3)</td></tr>
+<tr><td><code>--balance &lt;sompi&gt;</code></td><td>Initial balance per account</td></tr>
+</table>
+</div>
+<div class="command"><code>hardkas run &lt;script&gt;</code><span>Run TS/JS file with HardKAS harness injection.</span>
+<table class="flags">
+<tr><td><code>--network &lt;name&gt;</code></td><td>Network name (default: simnet)</td></tr>
+<tr><td><code>--accounts &lt;n&gt;</code></td><td>Simulated accounts (default: 3)</td></tr>
+<tr><td><code>--balance &lt;sompi&gt;</code></td><td>Initial balance per account</td></tr>
+<tr><td><code>--no-harness</code></td><td>Skip harness injection</td></tr>
+</table>
+</div>
+<div class="command"><code>hardkas test [pattern]</code><span>Run project tests with HardKAS test helpers.</span>
+<table class="flags">
+<tr><td><code>--mass-report</code></td><td>Show mass/fee report after tests</td></tr>
+<tr><td><code>--mass-snapshot &lt;label&gt;</code></td><td>Save mass snapshot for regression</td></tr>
+<tr><td><code>--mass-compare &lt;label&gt;</code></td><td>Compare against saved snapshot</td></tr>
+</table>
+</div>
+</div>
+</details>
+<details>
+<summary>Accounts and wallets</summary>
+<div class="details-body command-grid">
+<div class="command"><code>hardkas session create &lt;name&gt;</code><span>Create a local developer session binding L1/L2 identities.</span>
+<table class="flags"><tr><td><code>--l1 &lt;wallet&gt;</code></td><td>Name of the Kaspa L1 wallet (required)</td></tr><tr><td><code>--l2 &lt;account&gt;</code></td><td>Name of the Igra L2 account (required)</td></tr></table></div>
+<div class="command"><code>hardkas accounts list --json</code><span>List configured accounts.</span></div>
+<div class="command"><code>hardkas accounts balance &lt;identifier&gt; --json</code><span>Show account balance.</span></div>
+<div class="command"><code>hardkas accounts real init</code><span>Initialize encrypted dev account store.</span></div>
+<div class="command"><code>hardkas accounts real generate</code><span>Generate persistent dev accounts.</span></div>
+<div class="command"><code>hardkas accounts real import</code><span>Import an account safely.</span></div>
+<div class="command"><code>hardkas accounts real session-open &lt;name&gt;</code><span>Verify keystore access and mark local signing intent.</span></div>
+<div class="command"><code>hardkas kaspa wallet create &lt;name&gt;</code><span>Create local Kaspa wallet.</span></div>
+<div class="command"><code>hardkas metamask network --profile igra</code><span>Show MetaMask local Igra network settings.</span></div>
+</div>
+</details>
+<details>
+<summary>Kaspa L1 and node</summary>
+<div class="details-body command-grid">
+<div class="command"><code>hardkas node start</code><span>Start Docker Kaspa node.</span></div>
+<div class="command"><code>hardkas node status --json</code><span>Check node status.</span></div>
+<div class="command"><code>hardkas kaspa doctor --json</code><span>Verify local Kaspa L1 readiness.</span></div>
+<div class="command"><code>hardkas kaspa wallet send from to --amount 1 --dry-run</code><span>Plan local wallet send.</span></div>
+<div class="command"><code>hardkas faucet &lt;identifier&gt; --amount 1000</code><span>Local-only funding helper.</span></div>
+<div class="command"><code>hardkas localnet fork --network testnet-10 --json</code><span>Fork UTXO state into local simulation preview.</span></div>
+</div>
+</details>
+<details>
+<summary>Igra L2</summary>
+<div class="details-body command-grid">
+<div class="command"><code>hardkas l2 networks --json</code><span>List L2 profiles.</span></div>
+<div class="command"><code>hardkas l2 profile show igra --json</code><span>Show Igra profile details.</span></div>
+<div class="command"><code>hardkas l2 balance &lt;address&gt; --network igra --json</code><span>Check L2 balance.</span></div>
+<div class="command"><code>hardkas l2 nonce &lt;address&gt; --network igra --json</code><span>Check L2 nonce.</span></div>
+<div class="command"><code>hardkas l2 tx build --from ... --to ... --value 0 --json</code><span>Build L2 transaction plan.</span></div>
+<div class="command"><code>hardkas l2 tx sign plan.json --account bob</code><span>Sign L2 plan.</span></div>
+<div class="command"><code>hardkas l2 tx send signed.json --yes</code><span>Submit signed L2 transaction.</span></div>
+<div class="command"><code>hardkas l2 contract deploy-plan --bytecode 0x...</code><span>Build L2 contract deployment plan.</span></div>
+</div>
+</details>
+<details>
+<summary>Artifacts, query and replay</summary>
+<div class="details-body command-grid">
+<div class="command"><code>hardkas deploy track &lt;label&gt;</code><span>Track deployment status and link it to artifacts.</span>
+<table class="flags">
+<tr><td><code>--network &lt;name&gt;</code></td><td>Network where deployed</td></tr>
+<tr><td><code>--tx-id &lt;txId&gt;</code></td><td>Transaction ID</td></tr>
+<tr><td><code>--plan &lt;artifactId&gt;</code></td><td>Reference to plan artifact</td></tr>
+<tr><td><code>--status &lt;status&gt;</code></td><td>Deployment status (default: sent)</td></tr>
+<tr><td><code>--notes &lt;text&gt;</code></td><td>Notes</td></tr>
+</table>
+</div>
+<div class="command"><code>hardkas artifact verify path --strict</code><span>Verify artifact integrity.</span></div>
+<div class="command"><code>hardkas query store sync --json</code><span>Index artifacts into SQLite read model.</span></div>
+<div class="command"><code>hardkas query artifacts list --limit 100</code><span>List indexed artifacts.</span></div>
+<div class="command"><code>hardkas query artifacts inspect &lt;target&gt; --explain full</code><span>Deep structural analysis.</span></div>
+<div class="command"><code>hardkas query lineage chain &lt;anchor&gt; --why</code><span>Explain artifact lineage.</span></div>
+<div class="command"><code>hardkas replay verify path --json</code><span>Verify local replay invariants.</span></div>
+</div>
+</details>
+<details>
+<summary>Fork state and test deterministic hashing</summary>
+<div class="details-body">
+<div class="codeblock">
+<div class="codebar">localnet <button class="copy" data-copy="hardkas localnet fork --network testnet-10\nhardkas tx plan --to qz... --amount 1000\nhardkas tx sign ./artifacts/plan.json --account dev\nhardkas verify --strict">Copy</button></div>
+<pre><span class="cmd">hardkas</span> localnet fork <span class="flag">--network</span> testnet-10
+<span class="cmd">hardkas</span> tx plan <span class="flag">--to</span> qz... <span class="flag">--amount</span> 1000
+<span class="cmd">hardkas</span> tx sign ./artifacts/plan.json <span class="flag">--account</span> dev
+<span class="cmd">hardkas</span> verify <span class="flag">--strict</span></pre>
+</div>
+<div class="codeblock" style="margin-top: 8px;">
+<div class="codebar">sample output</div>
+<pre><span class="comment">Strict verification:</span>
+  Sorting:     <span style="color:#72f2c3">byte-level deterministic</span>
+  Boundaries:  <span style="color:#72f2c3">enforced (.hardkas/ context)</span>
+  Hash match:  <span style="color:#72f2c3">passed</span></pre>
+</div>
+</div>
+</details>
+<details>
+<summary>Replay causal graph from a crashed workspace</summary>
+<div class="details-body">
+<div class="codeblock">
+<div class="codebar">replay <button class="copy" data-copy="hardkas doctor --json\nhardkas repair --dry-run\nhardkas rebuild --from-artifacts\nhardkas replay verify path --json">Copy</button></div>
+<pre><span class="cmd">hardkas</span> doctor <span class="flag">--json</span>
+<span class="cmd">hardkas</span> repair <span class="flag">--dry-run</span>
+<span class="cmd">hardkas</span> rebuild <span class="flag">--from-artifacts</span>
+<span class="cmd">hardkas</span> replay verify path <span class="flag">--json</span></pre>
+</div>
+<div class="codeblock" style="margin-top: 8px;">
+<div class="codebar">sample output</div>
+<pre><span class="comment">Rebuild complete:</span>
+  Events parsed:  1542
+  Artifacts:      128
+  Conflicts:      0
+
+<span class="comment">Replay Verification:</span>
+  Status:         <span style="color:#72f2c3">VERIFIED</span>
+  Causal Graph:   <span style="color:#72f2c3">intact</span></pre>
+</div>
+</div>
+</details>
+</div>
+</section>
+<section id="packages">
+<h2>Package map</h2>
+<table>
+<thead><tr><th>Package / area</th><th>Purpose</th></tr></thead>
+<tbody>
+<tr><td><code>@hardkas/cli</code></td><td>Commander-based CLI entrypoint and command groups.</td></tr>
+<tr><td><code>@hardkas/core</code></td><td>Shared core utilities and primitives.</td></tr>
+<tr><td><code>@hardkas/artifacts</code></td><td>Canonical artifact schemas, hashing and verification.</td></tr>
+<tr><td><code>@hardkas/sessions</code></td><td>Local session state and persistence.</td></tr>
+<tr><td><code>@hardkas/dev-server</code></td><td>Local Hono server, health endpoints and SSE invalidation.</td></tr>
+<tr><td><code>@hardkas/react</code></td><td>React hooks and provider integration for local dashboard/runtime use.</td></tr>
+<tr><td><code>@hardkas/bridge-local</code></td><td>Deterministic local bridge-entry planning and simulation.</td></tr>
+<tr><td><code>@hardkas/query-store</code></td><td>SQLite index and query read model.</td></tr>
+<tr><td><code>@hardkas/wallet-adapter</code></td><td>Wallet adapter boundary and local wallet connection helpers.</td></tr>
+<tr><td><code>@hardkas/sdk</code></td><td>Convenience aggregation surface. Keep browser/runtime boundaries explicit.</td></tr>
+</tbody>
+</table>
+</section>
+<section id="security">
+<h2>Security model</h2>
+<div class="grid cols-2">
+<div class="box">
+<h3>Implemented safety rails</h3>
+<ul>
+<li>Atomic persistence with temp+rename+fsync behavior.</li>
+<li>Workspace locks with stale detection.</li>
+<li>Corruption diagnostics and strict mutation paths.</li>
+<li>Secret redaction in CLI error paths.</li>
+<li>Mainnet guards for signing/faucet/fund operations.</li>
+<li>Encrypted dev keystore using Argon2id + AES-GCM.</li>
+</ul>
+</div>
+<div class="box">
+<h3>Explicit non-goals</h3>
+<ul>
+<li>No production wallet guarantee.</li>
+<li>No Kaspa consensus validation.</li>
+<li>No trustless bridge exit in pre-ZK phase.</li>
+<li>No claim that DAG simulator equals rusty-kaspa.</li>
+<li>No hosted relay or cloud runtime.</li>
+<li>No hidden mainnet signing.</li>
+</ul>
+</div>
+</div>
+<div class="danger"><strong>Main rule.</strong> If a feature is not reported by <code>hardkas capabilities --json</code>, agents and docs should not imply that it exists.</div>
+</section>
+<section id="agent">
+<h2>AGENT.md rules</h2>
+<p>HardKAS is designed to be readable by AI coding agents without letting them invent unsupported behavior.</p>
+<table>
+<thead><tr><th>Rule</th><th>Reason</th></tr></thead>
+<tbody>
+<tr><td>Run <code>hardkas capabilities --json</code> first.</td><td>Prevents agents from assuming features that are not implemented.</td></tr>
+<tr><td>Run <code>hardkas doctor --json</code> before runtime work.</td><td>Captures local environment readiness.</td></tr>
+<tr><td>Prefer <code>--json</code> for automation.</td><td>Keeps machine workflows stable.</td></tr>
+<tr><td>Default to simnet/local profiles.</td><td>Avoids accidental mainnet mutation.</td></tr>
+<tr><td>Do not invent txids, balances, finality or trustlessness.</td><td>Preserves protocol honesty.</td></tr>
+<tr><td>Respect trust boundaries.</td><td>HardKAS is local developer tooling, not production protocol validation.</td></tr>
+</tbody>
+</table>
+</section>
+<section id="examples">
+<h2>Examples</h2>
+<div class="accordion">
+<details open="">
+<summary>Inspect local environment</summary>
+<div class="details-body">
+<div class="codeblock">
+<div class="codebar">diagnostics <button class="copy" data-copy="hardkas doctor --json
+hardkas capabilities --json
+hardkas networks --json
+hardkas config show --json">Copy</button></div>
+<pre><span class="cmd">hardkas</span> doctor <span class="flag">--json</span>
+<span class="cmd">hardkas</span> capabilities <span class="flag">--json</span>
+<span class="cmd">hardkas</span> networks <span class="flag">--json</span>
+<span class="cmd">hardkas</span> config show <span class="flag">--json</span></pre>
+</div>
+<div class="codeblock" style="margin-top: 8px;">
+<div class="codebar">sample output</div>
+<pre><span class="comment">HardKAS Doctor</span>
+
+  <span style="color:#72f2c3">✅</span> Node.js v22.5.0 (≥ 22.5 required)
+  <span style="color:#72f2c3">✅</span> pnpm 9.1.0
+  <span style="color:#72f2c3">✅</span> .hardkas/ exists
+  <span style="color:#72f2c3">✅</span> .gitignore protects .hardkas/
+  <span style="color:#d29922">⚠️</span> store.db not found (run hardkas query store rebuild)
+  <span style="color:#72f2c3">✅</span> No stale locks
+  <span style="color:#f85149">❌</span> Docker not reachable
+  <span style="color:#6e7681">⏭️</span> RPC check skipped (no node running)
+
+  Summary: 5 passed, 1 failed, 1 warning, 1 skipped</pre>
+</div>
+<div class="codeblock" style="margin-top: 8px;">
+<div class="codebar">sample output (truncated)</div>
+<pre>{
+  <span class="str">"version"</span>: <span class="str">"0.7.9-alpha"</span>,
+  <span class="str">"maturity"</span>: <span class="str">"hardened-alpha"</span>,
+  <span class="str">"capabilities"</span>: {
+    <span class="str">"artifacts"</span>: <span style="color:#72f2c3">true</span>,
+    <span class="str">"deterministicHashing"</span>: <span style="color:#72f2c3">true</span>,
+    <span class="str">"workspaceLocks"</span>: <span style="color:#72f2c3">true</span>,
+    <span class="str">"consensusValidation"</span>: <span style="color:#f85149">false</span>,
+    <span class="str">"silverScript"</span>: <span style="color:#f85149">false</span>
+  }
+}</pre>
+</div>
+</div>
+</details>
+<details>
+<summary>Create and inspect an L2 transaction plan</summary>
+<div class="details-body">
+<div class="codeblock">
+<div class="codebar">l2 tx <button class="copy" data-copy="hardkas l2 tx build --network igra --from 0x... --to 0x... --value 0 --data 0x --json
+hardkas l2 tx sign ./artifacts/l2-plan.json --account bob --json
+hardkas l2 tx send ./artifacts/l2-signed.json --yes --json
+hardkas l2 tx receipt &lt;txHash&gt; --json">Copy</button></div>
+<pre><span class="cmd">hardkas</span> l2 tx build <span class="flag">--network</span> igra <span class="flag">--from</span> 0x... <span class="flag">--to</span> 0x... <span class="flag">--value</span> 0 <span class="flag">--data</span> 0x <span class="flag">--json</span>
+<span class="cmd">hardkas</span> l2 tx sign ./artifacts/l2-plan.json <span class="flag">--account</span> bob <span class="flag">--json</span>
+<span class="cmd">hardkas</span> l2 tx send ./artifacts/l2-signed.json <span class="flag">--yes</span> <span class="flag">--json</span>
+<span class="cmd">hardkas</span> l2 tx receipt &lt;txHash&gt; <span class="flag">--json</span></pre>
+</div>
+<div class="codeblock" style="margin-top: 8px;">
+<div class="codebar">sample output</div>
+<pre><span class="comment">L2 transaction plan:</span>
+  Network: igra
+  From:    0xbob...
+  To:      0xreceiver...
+  Value:   0
+  Status:  <span style="color:#72f2c3">planned</span>
+
+<span class="comment">Signed artifact:</span>
+  Artifact: l2-signed-tx
+  Hash:     sha256:8f2c...
+
+<span class="comment">Send result:</span>
+  Status: <span style="color:#72f2c3">accepted</span>
+  TxHash: 0xa1b2c3d4e5f6...</pre>
+</div>
+</div>
+</details>
+<details>
+<summary>Index and explain artifacts</summary>
+<div class="details-body">
+<div class="codeblock">
+<div class="codebar">query <button class="copy" data-copy="hardkas query store sync --strict --json
+hardkas query artifacts list --sort createdAt:desc --limit 20
+hardkas query artifacts inspect &lt;contentHash&gt; --explain full
+hardkas query lineage chain &lt;artifactId&gt; --why">Copy</button></div>
+<pre><span class="cmd">hardkas</span> query store sync <span class="flag">--strict</span> <span class="flag">--json</span>
+<span class="cmd">hardkas</span> query artifacts list <span class="flag">--sort</span> createdAt:desc <span class="flag">--limit</span> 20
+<span class="cmd">hardkas</span> query artifacts inspect &lt;contentHash&gt; <span class="flag">--explain</span> full
+<span class="cmd">hardkas</span> query lineage chain &lt;artifactId&gt; <span class="flag">--why</span></pre>
+</div>
+<div class="codeblock" style="margin-top: 8px;">
+<div class="codebar">sample output</div>
+<pre><span class="comment">Query store sync</span>
+  Indexed artifacts: 42
+  New records:       3
+  Strict mode:       <span style="color:#72f2c3">passed</span>
+
+<span class="comment">Latest artifacts</span>
+  tx-plan     sha256:91ab...
+  signed-tx   sha256:2f7c...
+  receipt     sha256:19ed...
+
+<span class="comment">Lineage</span>
+  TxPlan → SignedTx → Receipt → ReplayCheck</pre>
+</div>
+</div>
+</details>
+<details>
+<summary>SQLite query store diagnostics and event tracing</summary>
+<div class="details-body">
+<div class="codeblock">
+<div class="codebar">query store <button class="copy" data-copy="hardkas query store doctor --migrate\nhardkas query events --domain tx --limit 10\nhardkas query tx 0xa1b2... --explain full">Copy</button></div>
+<pre><span class="cmd">hardkas</span> query store doctor <span class="flag">--migrate</span>
+<span class="cmd">hardkas</span> query events <span class="flag">--domain</span> tx <span class="flag">--limit</span> 10
+<span class="cmd">hardkas</span> query tx 0xa1b2... <span class="flag">--explain</span> full</pre>
+</div>
+<div class="codeblock" style="margin-top: 8px;">
+<div class="codebar">sample output</div>
+<pre><span class="comment">Store Doctor:</span>
+  Migrations:  <span style="color:#72f2c3">up to date</span>
+  Schema:      v4
+  Health:      <span style="color:#72f2c3">passed</span>
+
+<span class="comment">Tx Explain:</span>
+  TxId:       0xa1b2...
+  Domain:     tx
+  Events:     [PlanCreated, Signed, Broadcast, ReceiptObserved]
+  Lineage:    Plan → Signature → RPC
+  Replay:     <span style="color:#72f2c3">Deterministic match</span></pre>
+</div>
+</div>
+</details>
+</div>
+</section>
+<section id="faq">
+<h2>FAQ</h2>
+<div class="accordion">
+<details open="">
+<summary>Does HardKAS execute EVM on Kaspa L1?</summary>
+<div class="details-body"><p>No. Kaspa L1 does not execute EVM smart contracts. EVM execution belongs to Igra/Kasplex L2 architecture. HardKAS preserves this distinction.</p></div>
+</details>
+<details>
+<summary>Is the bridge trustless today?</summary>
+<div class="details-body"><p>No. Pre-ZK bridge workflows are assumption-aware. Trustless exit only applies once the ZK phase exists and is explicitly implemented.</p></div>
+</details>
+<details>
+<summary>Is the DAG simulator consensus-equivalent?</summary>
+<div class="details-body"><p>No. It is research/dev tooling for local scenarios. It is not differential validation against rusty-kaspa and not a consensus proof.</p></div>
+</details>
+<details>
+<summary>Can agents use HardKAS safely?</summary>
+<div class="details-body"><p>Yes, if they follow the AGENT.md pattern: inspect capabilities and doctor output first, use JSON outputs, and never assume unsupported capabilities.</p></div>
+</details>
+<details>
+<summary>What should be linked from the website?</summary>
+<div class="details-body"><p>README, CLI reference, what-actually-works status page, AGENT.md, security model, release checklist and examples.</p></div>
+</details>
+</div>
+</section>
+<footer class="footer">
+        HardKAS Documentation · 0.7.9-alpha · CLI · SDK · Examples · Security · GitHub · MIT License<br/>
+        HardKAS is local developer infrastructure in active alpha. It is provided without warranty and is not production custody software.
+      </footer>
+</main>
+<aside class="right toc">
+<div class="side-title">On this page</div>
+<a href="#overview">Overview</a>
+<a href="#quickstart">Quickstart</a>
+<a href="#prerequisites">Prerequisites</a>
+<a href="#status">What works</a>
+<a href="#sessions">Sessions</a>
+<a href="#dashboard">Dashboard</a>
+<a href="#architecture">Architecture</a>
+<a href="#artifacts">Artifacts</a>
+<a href="#query-store">Query store</a>
+<a href="#chaos">Chaos engine</a>
+<a href="#operator">Operator cmds</a>
+<a href="#telemetry">Events &amp; telemetry</a>
+<a href="#l1l2">L1 vs L2</a>
+<a href="#bridge">Bridge</a>
+<a href="#cli">CLI reference</a>
+<a href="#security">Security</a>
+<a href="#agent">AGENT.md</a>
+<a href="#faq">FAQ</a>
+</aside>
+</div>
+<script>
+
+    document.querySelectorAll('table').forEach((table) => {
+      const headers = Array.from(table.querySelectorAll('thead th')).map((th) => th.textContent.trim());
+      if (!headers.length) return;
+      table.querySelectorAll('tbody tr').forEach((row) => {
+        Array.from(row.children).forEach((cell, index) => {
+          if (headers[index]) cell.setAttribute('data-label', headers[index]);
+        });
+      });
+    });
+
+    document.querySelectorAll('.copy').forEach((btn) => {
+      btn.addEventListener('click', async () => {
+        const text = btn.getAttribute('data-copy') || '';
+        try {
+          await navigator.clipboard.writeText(text);
+          const old = btn.textContent;
+          btn.textContent = 'Copied';
+          setTimeout(() => btn.textContent = old, 900);
+        } catch (err) {
+          btn.textContent = 'Failed';
+          setTimeout(() => btn.textContent = 'Copy', 900);
+        }
+      });
+    });
+    const toggle = document.querySelector('.theme-toggle');
+    const saved = localStorage.getItem('hardkas-theme');
+    if (saved) {
+      document.documentElement.setAttribute('data-theme', saved);
+    }
+
+    if (toggle) {
+      const current = document.documentElement.getAttribute('data-theme');
+      toggle.textContent = current === 'light' ? '☾' : '☀';
+
+      toggle.addEventListener('click', () => {
+        const current = document.documentElement.getAttribute('data-theme');
+        const next = current === 'light' ? 'dark' : 'light';
+        document.documentElement.setAttribute('data-theme', next);
+        localStorage.setItem('hardkas-theme', next);
+        toggle.textContent = next === 'light' ? '☾' : '☀';
+      });
+    }
+
+
+    const mobileNav = document.querySelector('.mobile-nav');
+    if (mobileNav) {
+      mobileNav.addEventListener('click', () => {
+        const open = document.body.classList.toggle('nav-open');
+        mobileNav.setAttribute('aria-expanded', open ? 'true' : 'false');
+        mobileNav.textContent = open ? '×' : '☰';
+      });
+
+      document.querySelectorAll('aside.left a').forEach((link) => {
+        link.addEventListener('click', () => {
+          document.body.classList.remove('nav-open');
+          mobileNav.setAttribute('aria-expanded', 'false');
+          mobileNav.textContent = '☰';
+        });
+      });
+    }
+
+  </script>
+</body>
+</html>

@@ -453,8 +453,29 @@ export class HardkasTx {
       try {
         planArtifact = await this.sdk.artifacts.read(sourcePlanId);
       } catch (e) {
-        // If not found on disk, we can't simulate a signed artifact without its plan
-        throw new Error(`Cannot simulate signed artifact: source plan '${sourcePlanId}' not found in workspace.`);
+        // If not found on disk, we reconstruct a pseudo-plan from the signed artifact to allow simulation
+        if ((targetObj as any).from && (targetObj as any).to && (targetObj as any).amountSompi) {
+          planArtifact = {
+            schema: "hardkas.txPlan",
+            planId: sourcePlanId,
+            from: (targetObj as any).from,
+            to: (targetObj as any).to,
+            amountSompi: (targetObj as any).amountSompi,
+            estimatedFeeSompi: "0",
+            estimatedMass: "0",
+            inputs: [],
+            outputs: [{ address: (targetObj as any).to.address, amountSompi: (targetObj as any).amountSompi || "0" }],
+            plan: {
+               inputs: [],
+               outputs: [{ address: (targetObj as any).to.address, amountSompi: BigInt((targetObj as any).amountSompi || 0) }],
+               feeSompi: 0n,
+               mass: 0n,
+               changeSompi: 0n
+            }
+          } as any;
+        } else {
+          throw new Error(`Cannot simulate signed artifact: source plan '${sourcePlanId}' not found in workspace and artifact lacks details.`);
+        }
       }
     } else {
       planArtifact = targetObj;
@@ -607,8 +628,16 @@ export class HardkasTx {
    */
   async send(
     signedArtifact: SignedTxArtifact,
-    url?: string
-  ): Promise<{ receipt: TxReceiptArtifact; receiptPath: string }> {
+    urlOrOptions?: string | { persist?: boolean }
+  ): Promise<{
+    receipt: TxReceiptArtifact;
+    receiptPath?: string;
+    artifactId?: string;
+    mode?: string;
+    simulated?: boolean;
+    submitted?: boolean;
+    txId?: string;
+  }> {
     // Perform pre-broadcast semantic verification (VULN-05)
     const verification = verifySignedTxSemantics(signedArtifact);
     if (!verification.ok) {
@@ -617,6 +646,32 @@ export class HardkasTx {
       );
     }
 
+    const activeNetwork = this.sdk.config.config.defaultNetwork || "simnet";
+    const isSimulated = activeNetwork === "simulated" || this.sdk.config.config.networks?.[activeNetwork]?.kind === "simulated";
+
+    if (isSimulated) {
+      const persistOpt = typeof urlOrOptions === 'object' ? urlOrOptions.persist : true;
+      const simOpts = persistOpt !== undefined ? { persist: persistOpt } : {};
+      const simResult = await this.simulate(signedArtifact, simOpts);
+      
+      const result: any = {
+        mode: "simulated",
+        simulated: true,
+        submitted: false,
+        txId: simResult.receipt.txId,
+        artifactId: (simResult.receipt as any).artifactId ?? (simResult as any).artifactId ?? (simResult.receipt as any).contentHash,
+        receipt: simResult.receipt
+      };
+      
+      if (simResult.receiptPath !== undefined) {
+        result.receiptPath = simResult.receiptPath;
+      }
+      
+      return result;
+    }
+    
+    const url = typeof urlOrOptions === 'string' ? urlOrOptions : undefined;
+    
     const broadcastable = getBroadcastableSignedTransaction(signedArtifact);
 
     // Attempt broadcast
