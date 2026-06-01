@@ -27,41 +27,29 @@ HardKAS explicitly categorizes runtime behavior into two buckets:
 - The number of **Satisfied Invariants**.
 - The specific `artifactId`s that have been committed.
 
+## Filesystem Boundaries & Security
+
+### Workspace Path Traversal Prevention
+HardKAS strictly restricts artifact reads and writes to the workspace boundary.
+- `sdk.artifacts.read()` and related methods must resolve absolute paths and verify they are prefixed with the workspace root.
+- Any attempt to access files outside the workspace (e.g., `../../../.ssh/id_rsa`) will throw a `HardkasError('PATH_TRAVERSAL')`.
+
+### Canonical Directory Resolution
+Canonical directories (`artifacts`, `receipts`, `traces`, `deployments`) are resolved **directly from the workspace root** (`.hardkas/`).
+- They are not nested recursively (e.g., `.hardkas/artifacts/.hardkas/receipts` is invalid). Replay and query tools strictly adhere to this flat `.hardkas/` structure.
+
 ## Semantic Bundle v1
 
-To prove cross-platform truth equivalence, the HardKAS CI pipeline exports a `hardkas.semantic-bundle.v1.json` artifact at the end of execution.
-
-This bundle represents the **portable mathematical proof** of the system's state. If `hardkas.semantic-bundle.v1.json` matches exactly byte-for-byte across Windows and Linux, the runtime's determinism is validated.
-
-### Schema: `hardkas.semantic-bundle.v1`
+To prove cross-platform truth equivalence, the HardKAS CI pipeline exports a `hardkas.semantic-bundle.v1.json` artifact. This represents the portable mathematical proof of the system's state.
 
 ```json
 {
   "schemaVersion": "hardkas.semantic-bundle.v1",
-  "runtimeVersion": "0.7.9-alpha",
+  "runtimeVersion": "0.7.10-alpha",
   "hashVersion": "sha256",
   "globalSemanticHash": "...",
-  "invariantSummary": {
-    "totalChecks": 9000,
-    "passedChecks": 9000,
-    "failedChecks": 0
-  },
-  "statusSummary": { ... },
-  "artifacts": [
-    {
-      "artifactId": "plan-1234...",
-      "semanticHash": "abcdef...",
-      "lineageEdges": ["receipt-5678..."]
-    }
-  ],
-  "excludedNoiseFields": [
-    "sandboxSnapshotPath",
-    "executionDurationMs",
-    "telemetryEventOrdering",
-    "osLockTiming",
-    "fsMtimes"
-  ]
+  "invariantSummary": { "totalChecks": 9000, "passedChecks": 9000, "failedChecks": 0 },
+  "artifacts": [ ... ],
+  "excludedNoiseFields": [ "sandboxSnapshotPath", "executionDurationMs", "fsMtimes" ]
 }
 ```
-
-The `globalSemanticHash` is computed over the stable JSON representation of the bundle itself (excluding the `globalSemanticHash` field).

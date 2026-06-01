@@ -17,7 +17,7 @@ export interface TxSendRunnerResult {
   rpcUrl: string;
   networkName: string;
   receipt: TxReceiptArtifact;
-  receiptPath?: string;
+  receiptPath?: string | undefined;
   executionId?: string;
   replayId?: string;
 }

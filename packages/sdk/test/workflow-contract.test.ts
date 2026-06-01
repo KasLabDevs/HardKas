@@ -48,6 +48,9 @@ describe("Workflow Runtime Contract", () => {
       dryRun: true // Avoid saving to disk for quick test
     });
 
+    if (artifact.status === "failed") {
+      console.log("WORKFLOW FAILED:", artifact.errorEnvelope, artifact.steps);
+    }
     expect(artifact.schema).toBe("hardkas.workflow.v1");
     expect(artifact.status).toBe("completed");
     expect(artifact.steps).toHaveLength(2);

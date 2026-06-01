@@ -32,31 +32,53 @@ export class HardkasQuery {
    * Synchronizes the query store with the filesystem artifacts.
    */
   async sync(options?: { force?: boolean }): Promise<any> {
-    const { HardkasStore, HardkasIndexer } = await import("@hardkas/query-store");
-    const { withLock } = await import("@hardkas/core");
+    const fs = await import("node:fs");
     const path = await import("node:path");
     
-    const dbPath = path.join(this.sdk.workspace.root, ".hardkas", "store.db");
+    const hardkasDir = path.join(this.sdk.workspace.root, ".hardkas");
+    if (!fs.existsSync(hardkasDir)) {
+      throw new Error("Workspace not initialized. Run hardkas init or Hardkas.create({ autoBootstrap:true }).");
+    }
+
+    let HardkasStore: any, HardkasIndexer: any;
+    try {
+      const qs = await import("@hardkas/query-store");
+      HardkasStore = qs.HardkasStore;
+      HardkasIndexer = qs.HardkasIndexer;
+    } catch (e) {
+      throw new Error("Query store backend unavailable. Install @hardkas/query-store or run query.store.rebuild.");
+    }
+
+    const { withLock } = await import("@hardkas/core");
+    
+    const dbPath = path.join(hardkasDir, "store.db");
     const store = new HardkasStore({ dbPath });
     
     let stats: any;
-    await withLock(
-      {
-        rootDir: this.sdk.workspace.root,
-        name: "query-store",
-        command: "query-sync",
-        wait: true
-      },
-      async () => {
-        store.connect({ autoMigrate: true });
-        const indexer = new HardkasIndexer(store.getDatabase());
-        if (options?.force) {
-           stats = await indexer.rebuild();
-        } else {
-           stats = await indexer.sync();
+    try {
+      await withLock(
+        {
+          rootDir: this.sdk.workspace.root,
+          name: "query-store",
+          command: "query-sync",
+          wait: true
+        },
+        async () => {
+          store.connect({ autoMigrate: true });
+          const indexer = new HardkasIndexer(store.getDatabase());
+          if (options?.force) {
+             stats = await indexer.rebuild();
+          } else {
+             stats = await indexer.sync();
+          }
         }
+      );
+    } catch (e: any) {
+      if (e.message?.includes("SQLITE") || e.message?.includes("Cannot read properties")) {
+        throw new Error("Query store database is not configured correctly or corrupted. Try running query.sync({ force: true }).");
       }
-    );
+      throw e;
+    }
     return stats;
   }
 

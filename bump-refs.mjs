@@ -1,8 +1,8 @@
 import fs from 'node:fs';
 import path from 'node:path';
 
-const oldVersion = '0.7.9-alpha';
-const newVersion = '0.7.9-alpha';
+const oldVersion = '0.7.10-alpha';
+const newVersion = '0.7.10-alpha';
 
 const filesToUpdate = [
   'packages/artifacts/src/constants.ts',

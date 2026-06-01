@@ -193,7 +193,13 @@ export class Hardkas {
        loaded.config.defaultNetwork = options.network;
     }
 
-    return new Hardkas(loaded, options);
+    let provider: KaspaRpcClient | undefined;
+    if (isSimulated) {
+      const { LocalnetSimulatedProvider } = await import("@hardkas/localnet");
+      provider = new LocalnetSimulatedProvider(cwd);
+    }
+
+    return new Hardkas(loaded, options, provider);
   }
 
   /**

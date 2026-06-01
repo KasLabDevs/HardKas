@@ -132,7 +132,11 @@ export class SqliteQueryBackend implements QueryBackend {
   }
 
   isReady(): boolean {
-    return this.store.getDatabase() !== null;
+    try {
+      return this.store.getDatabase() !== null;
+    } catch (e) {
+      return false;
+    }
   }
 
   kind(): "sqlite" {

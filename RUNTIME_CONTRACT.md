@@ -1,66 +1,47 @@
 # HardKAS Formal Runtime Contract
 
-This document formally defines the operational semantics, guarantees, and failure modes of the HardKAS runtime. This is not a "best effort" guide; it is the strict operational contract that the runtime must uphold.
+This document formally defines the operational semantics, guarantees, and failure modes of the HardKAS runtime (v0.7.10-alpha+). This is not a "best effort" guide; it is the strict operational contract that the runtime must uphold.
 
-## 1. Authority Model
+## 1. Authority Hierarchy & Artifact Identity
 
-HardKAS distinguishes between authoritative truth and observational projections.
+HardKAS distinguishes between authoritative truth and observational projections. The filesystem is the sole source of truth.
 
 - **Canonical Filesystem Artifacts**: The ultimate authority. Artifact files (`artifacts/`) represent the immutable, hash-addressed source of truth for the workspace.
-- **Event Ledger (`events.jsonl`)**: The canonical history of mutations. It is an append-only stream of `EventEnvelope`s with causality tracking (`causationId`). It is **never rotated** and represents the cryptographic provenance log.
-- **Telemetry Stream (`telemetry.jsonl`)**: Purely observational. It contains anomalies, performance metrics, and logs. It is **rotatable** and loss of telemetry does not invalidate canonical state.
-- **SQLite Projection**: A disposable, derived index of the event ledger and artifacts. It is **never authoritative**. If it is lost, corrupt, or stale, it must be rebuilt from the event ledger and artifacts.
-- **Semantic Bundle (`hardkas.semantic-bundle.v1.json`)**: The deterministic proof of execution. It is a canonical output, mathematically derived from the workspace state.
-- **Dashboard Status**: Purely observational, derived from the watcher's reconciliation loop. It must never show GREEN if authority is ambiguous.
+- **Event Ledger (`events.jsonl`)**: The canonical history of mutations. It is an append-only stream of `EventEnvelope`s with causality tracking. It is **never rotated**.
+- **Telemetry Stream (`telemetry.jsonl`)**: Purely observational. Contains anomalies, metrics, and logs. It is **rotatable** and loss of telemetry does not invalidate canonical state.
+- **SQLite Projection (query-store)**: A disposable, derived index. It is **never authoritative**. If lost, corrupt, or stale, it must be rebuilt from the event ledger and artifacts.
+- **Dashboard Status**: Purely observational, derived from the watcher's reconciliation loop.
 
-## 2. Crash Semantics
+## 2. Determinism & Workflow Identity
 
-If the HardKAS runtime process is killed or crashes:
+Workflow Execution IDs (`workflowId`) are strictly deterministic cryptographic hashes, eliminating reliance on ambient time (`Date.now()`) or random placeholders.
 
-- **Crash during artifact write**: Handled via atomic writes (write to temp, `renameSync` to final). Partial artifacts will not exist. The temp file will be ignored on restart.
-- **Crash during append (`events.jsonl` or `telemetry.jsonl`)**:
-  - The JSONL line might be partially written (corrupt tail).
-  - The append lock might be held.
-  - Recovery: The next process attempting to append will detect the lock (or staleness), detect the corrupt JSONL tail, **truncate the corrupt bytes**, emit an `EXTERNAL_MUTATION` or `CORRUPT_TAIL_RECOVERED` anomaly, and proceed.
-- **Crash during SQLite sync**:
-  - The SQLite WAL or main DB may be in an inconsistent projection state.
-  - Recovery: The watcher reconciliation sweep will detect the drift and trigger a full rebuild, or the `hardkas repair` tool will rebuild it.
-- **Crash during watcher reconciliation**: Safe to crash. The sweep is idempotent.
-- **Crash during dashboard query**: Safe to crash. The HTTP client will receive a connection reset.
+### Strict Data Determinism
+To guarantee byte-identical outputs across operating systems and locales, HardKAS enforces strict deterministic sorting for all arrays that affect cryptographic hashes.
+- **Signature Sorting**: Signatures (e.g., in multisig transactions) are sorted using `deterministicCompare(a, b)` (byte-value comparison), **never** locale-dependent functions like `localeCompare`.
 
-## 3. Concurrency Semantics
+## 3. Visibility Semantics
 
-- **Single-Writer vs Multi-Writer**: HardKAS supports multi-writer concurrency for CLI tools and parallel test runners targeting the same workspace.
-- **Append Lock Guarantees**: `events.jsonl` and `telemetry.jsonl` are protected by physical filesystem locks (using exclusive create `wx` mode and lockfiles). The lock ensures strict serialization of appends.
-- **Artifact Lock Guarantees**: Artifacts are immutable and content-addressed. Concurrency is handled by atomic file renames. Two processes writing the same artifact will overwrite each other safely with identical content.
-- **Projection Rebuild Guarantees**: Rebuilding the SQLite projection locks the DB exclusively. Other processes attempting to read/write will wait or fallback to polling.
-- **Unsupported Concurrent Modes**: Modifying `events.jsonl` externally (e.g., via `sed` or `vim`) while HardKAS is running is unsupported and will trigger an `EXTERNAL_MUTATION` anomaly.
+Artifacts transition through strict visibility states to prevent ambiguous authority:
 
-## 4. Recovery Semantics
+1. **Staged:** Written to a temporary file, invisible to observers.
+2. **Committed:** Atomically renamed (`renameSync`) to its final deterministic hash path.
+3. **Visible:** Picked up by the filesystem watcher.
+4. **Indexed:** Successfully parsed by the `query-store`.
 
-- **What repairs automatically**:
-  - Stale or corrupt SQLite projection (rebuilt on startup or during watcher sweep).
-  - Stale lockfiles (detected via pid liveness or timeout, automatically cleared).
-  - Incomplete atomic artifact writes (abandoned `.tmp` files are ignored).
-- **What requires operator action**:
-  - Unrecoverable JSONL corruption in the _middle_ of the event ledger (requires `hardkas repair` to quarantine or manual intervention).
-  - Semantic drift where artifacts do not match the event ledger.
-- **What emits anomaly**:
-  - Any automatic recovery (stale lock cleared, tail truncated).
-  - Slow appends (lock contention > 100ms).
-  - Watcher polling fallback activated.
-- **What is fatal**:
-  - EACCES / ENOSPC (Cannot write to disk).
-  - Missing canonical artifacts referenced in the event ledger.
+## 4. Crash Consistency & Recovery
 
-## 5. Replay Semantics
+- **Crash before rename**: Artifact remains invisible (temp file garbage collected).
+- **Crash after rename**: Artifact committed, fully authoritative.
+- **Projection corruption**: Fully rebuildable via `hardkas rebuild --from-artifacts`.
+- **Append corruption (`events.jsonl`)**: The next append operation will detect the lock/staleness, truncate the corrupt tail, emit an anomaly, and proceed.
 
-- **Byte-Identical Replay Requirements**: Replaying a workflow must produce byte-identical semantic bundles.
-- **Functionally Equivalent Replay**: If the underlying OS differs (e.g. Linux vs Windows), the semantic bundle remains byte-identical, but the telemetry and `executionDurationMs` will differ.
-- **Non-Canonical Telemetry Nondeterminism**: Telemetry is inherently non-deterministic. Replaying the same workflow will yield a different telemetry stream.
-- **Event Ordering Guarantees**: The event ledger enforces strict total ordering. Replays process the ledger sequentially.
+## 5. Localnet State Contract
 
-## 6. Retention and Rotation
+The local simulated network uses a single file for state persistence to ensure proper bootstrap and indexer behavior.
+- **State File**: `.hardkas/localnet.json`
+- Forked states and new states must strictly use this filename. The indexer will exclude this file to prevent corrupted artifact warnings.
 
-- **Event Ledger**: **EXPLICIT NON-ROTATION CONTRACT**. `events.jsonl` represents the canonical timeline. It is append-only and never pruned.
-- **Telemetry**: Rotated automatically when it exceeds the configured size. Rotated segments are stored in `.hardkas/telemetry/archive/` and kept for a configurable retention period.
+## 6. Strict JSON/Stdout Contract
+
+All CLI commands intended for programmatic use must negotiate their schema version. Pipelines, CI, and external tooling depend on this stability. When using the `--json` flag, HardKAS outputs strictly parsed JSON to `stdout` with no extraneous logs.

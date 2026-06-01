@@ -411,8 +411,10 @@ export class HardkasTx {
    * Modifies the local deterministic state and outputs receipt/trace artifacts.
    */
   async simulate(
-    signedArtifact: SignedTxArtifact
-  ): Promise<{ receipt: TxReceiptArtifact; receiptPath: string; tracePath: string }> {
+    target: string | Partial<TxPlanArtifact> | SignedTxArtifact,
+    options: { persist?: boolean } = {}
+  ): Promise<{ receipt: TxReceiptArtifact; receiptPath?: string; tracePath?: string }> {
+    const persist = options.persist ?? true;
     const {
       loadOrCreateLocalnetState,
       saveLocalnetState,
@@ -430,13 +432,48 @@ export class HardkasTx {
       { type: "phase.started", phase: "send", timestamp: startTime }
     ];
 
-    const planArtifact = await this.sdk.artifacts.read(signedArtifact.sourcePlanId);
+    let planArtifact: any;
+    let signedId = "unknown";
+    let sourcePlanId = "unknown";
+    let txId = `simulated-tx-${Date.now()}`;
+    let targetObj: any = target;
 
+    if (typeof target === "string") {
+      try {
+        targetObj = await this.sdk.artifacts.read(target);
+      } catch (e) {
+        throw new Error(`Artifact '${target}' not found. If you already have an in-memory artifact, pass the object directly to tx.simulate(artifact).`);
+      }
+    }
+
+    if (targetObj.schema === ARTIFACT_SCHEMAS.SIGNED_TX) {
+      signedId = targetObj.signedId || targetObj.id || "unknown";
+      sourcePlanId = targetObj.sourcePlanId || "unknown";
+      txId = targetObj.txId || `simulated-${sourcePlanId}-tx`;
+      try {
+        planArtifact = await this.sdk.artifacts.read(sourcePlanId);
+      } catch (e) {
+        // If not found on disk, we can't simulate a signed artifact without its plan
+        throw new Error(`Cannot simulate signed artifact: source plan '${sourcePlanId}' not found in workspace.`);
+      }
+    } else {
+      planArtifact = targetObj;
+      sourcePlanId = planArtifact.planId || planArtifact.id || "unknown";
+      txId = `simulated-${sourcePlanId}-tx`;
+      
+      // If persist is true and it's a new in-memory plan (no ID), we write it
+      if (persist && !planArtifact.planId) {
+        const savedPlanResult = await this.sdk.artifacts.write(planArtifact);
+        // Usually we expect the id to be assigned into planArtifact by the artifact manager, or we can just read it back
+        sourcePlanId = planArtifact.planId || "unknown";
+      }
+    }
+    
     const simResult = applySimulatedPlan(
       state,
       planArtifact as any,
       systemRuntimeContext,
-      { txId: signedArtifact.txId || `simulated-${signedArtifact.sourcePlanId}-tx` }
+      { txId }
     );
 
     if (!simResult.ok) {
@@ -451,17 +488,20 @@ export class HardkasTx {
 
     events.push({ type: "phase.completed", phase: "send", timestamp: Date.now() });
 
-    await saveLocalnetState(
-      simResult.state,
-      getDefaultLocalnetStatePath(this.sdk.workspace.root)
-    );
-    const receiptPath = await saveSimulatedReceipt(
-      simResult.receipt as Parameters<typeof saveSimulatedReceipt>[0],
-      { cwd: this.sdk.workspace.root }
-    );
+    let receiptPath: string | undefined;
+    if (persist) {
+      await saveLocalnetState(
+        simResult.state,
+        getDefaultLocalnetStatePath(this.sdk.workspace.root)
+      );
+      receiptPath = await saveSimulatedReceipt(
+        simResult.receipt as Parameters<typeof saveSimulatedReceipt>[0],
+        { cwd: this.sdk.workspace.root }
+      );
+    }
 
     // Pre-determine trace path for immutability and hermetic sealing (VULN-03)
-    const tracePath = receiptPath.replace(".json", ".trace.json");
+    const tracePath = receiptPath ? receiptPath.replace(".json", ".trace.json") : undefined;
     const activeNetwork = this.sdk.config.config.defaultNetwork || "simnet";
     const isSimulated = activeNetwork === "simulated" || this.sdk.config.config.networks?.[activeNetwork]?.kind === "simulated";
 
@@ -477,10 +517,10 @@ export class HardkasTx {
       createdAt: new Date().toISOString(),
       status: "confirmed",
       txId: simResult.receipt.txId,
-      sourceSignedId: signedArtifact.signedId,
-      from: { address: signedArtifact.from.address },
-      to: { address: signedArtifact.to.address },
-      amountSompi: signedArtifact.amountSompi,
+      sourceSignedId: signedId,
+      from: { address: planArtifact.from?.address || "unknown" },
+      to: { address: planArtifact.to?.address || "unknown" },
+      amountSompi: planArtifact.amountSompi || "0",
       feeSompi: simResult.receipt.feeSompi?.toString() || "0",
       changeSompi: simResult.receipt.changeSompi?.toString() || "0",
       spentUtxoIds: simResult.receipt.spentUtxoIds,
@@ -524,24 +564,28 @@ export class HardkasTx {
     };
     traceBase.contentHash = calculateContentHash(traceBase, CURRENT_HASH_VERSION);
 
-    await saveSimulatedTrace(
-      {
-        ...traceBase,
-        events,
-        receiptPath
-      },
-      { cwd: this.sdk.workspace.root }
-    );
+    if (persist) {
+      await saveSimulatedTrace(
+        {
+          ...traceBase,
+          events,
+          receiptPath: receiptPath!
+        },
+        { cwd: this.sdk.workspace.root }
+      );
+    }
 
     // P1.1 Emit dashboard/query-store events for local/simulated transactions
-    coreEvents.normalizeAndEmit({
-      kind: "artifact.created",
-      schema: receipt.schema,
-      artifactId: receipt.txId,
-      network: receipt.networkId,
-      mode: receipt.mode,
-      path: receiptPath
-    } as unknown as Parameters<typeof coreEvents.normalizeAndEmit>[0]);
+    if (persist) {
+      coreEvents.normalizeAndEmit({
+        kind: "artifact.created",
+        schema: receipt.schema,
+        artifactId: receipt.txId,
+        network: receipt.networkId,
+        mode: receipt.mode,
+        path: receiptPath!
+      } as unknown as Parameters<typeof coreEvents.normalizeAndEmit>[0]);
+    }
 
     coreEvents.normalizeAndEmit({
       kind: "tx.confirmed",
@@ -551,12 +595,11 @@ export class HardkasTx {
       amountSompi: receipt.amountSompi,
       feeSompi: receipt.feeSompi
     } as unknown as Parameters<typeof coreEvents.normalizeAndEmit>[0]);
+    const result: { receipt: TxReceiptArtifact; receiptPath?: string; tracePath?: string } = { receipt };
+    if (receiptPath) result.receiptPath = receiptPath;
+    if (tracePath) result.tracePath = tracePath;
 
-    return {
-      receipt,
-      receiptPath,
-      tracePath
-    };
+    return result;
   }
 
   /**

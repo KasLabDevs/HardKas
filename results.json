@@ -3,8 +3,8 @@
     "name": "01-wallet-backend",
     "type": "node",
     "status": "FAILED",
-    "artifacts": 0,
-    "durationMs": 42885,
+    "artifacts": 1,
+    "durationMs": 70176,
     "error": "file:///C:/Users/jrodr/Documents/kaslabdevs/GitHub/external-gauntlet-runs/01-wallet-backend/node_mod"
   },
   {
@@ -12,7 +12,7 @@
     "type": "react",
     "status": "SUCCESSFUL",
     "artifacts": 0,
-    "durationMs": 28297,
+    "durationMs": 31255,
     "error": null
   },
   {
@@ -20,7 +20,7 @@
     "type": "node",
     "status": "SUCCESSFUL",
     "artifacts": 0,
-    "durationMs": 28055,
+    "durationMs": 29857,
     "error": null
   },
   {
@@ -28,7 +28,7 @@
     "type": "react",
     "status": "SUCCESSFUL",
     "artifacts": 0,
-    "durationMs": 28262,
+    "durationMs": 30376,
     "error": null
   },
   {
@@ -36,7 +36,7 @@
     "type": "node",
     "status": "SUCCESSFUL",
     "artifacts": 0,
-    "durationMs": 33781,
+    "durationMs": 30565,
     "error": null
   },
   {
@@ -44,7 +44,7 @@
     "type": "react",
     "status": "FAILED",
     "artifacts": 0,
-    "durationMs": 33789,
+    "durationMs": 35659,
     "error": "P1/P2 DX gap: @hardkas/react failed or missing"
   },
   {
@@ -52,7 +52,7 @@
     "type": "node",
     "status": "FAILED",
     "artifacts": 0,
-    "durationMs": 91477,
+    "durationMs": 92008,
     "error": "[wRPC Debug] Sending payload: {\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"getBalancesByAddresses\",\"params\":{\"a"
   },
   {
@@ -60,15 +60,15 @@
     "type": "react",
     "status": "SUCCESSFUL",
     "artifacts": 0,
-    "durationMs": 29418,
+    "durationMs": 35121,
     "error": null
   },
   {
     "name": "09-payroll-service",
     "type": "node",
     "status": "FAILED",
-    "artifacts": 0,
-    "durationMs": 38665,
+    "artifacts": 1,
+    "durationMs": 39157,
     "error": "file:///C:/Users/jrodr/Documents/kaslabdevs/GitHub/external-gauntlet-runs/09-payroll-service/node_mo"
   },
   {
@@ -76,15 +76,15 @@
     "type": "react",
     "status": "FAILED",
     "artifacts": 0,
-    "durationMs": 32820,
+    "durationMs": 38198,
     "error": "P1/P2 DX gap: @hardkas/react failed or missing"
   },
   {
     "name": "11-dao-multisig-node",
     "type": "node",
     "status": "FAILED",
-    "artifacts": 0,
-    "durationMs": 38945,
+    "artifacts": 2,
+    "durationMs": 38449,
     "error": "file:///C:/Users/jrodr/Documents/kaslabdevs/GitHub/external-gauntlet-runs/11-dao-multisig-node/node_"
   },
   {
@@ -92,31 +92,31 @@
     "type": "react",
     "status": "SUCCESSFUL",
     "artifacts": 0,
-    "durationMs": 31110,
+    "durationMs": 33556,
     "error": null
   },
   {
     "name": "13-backup-integrity",
     "type": "node",
-    "status": "FAILED",
-    "artifacts": 0,
-    "durationMs": 37554,
-    "error": "node:internal/errors:985\r\n  const err = new Error(message);\r\n              ^\r\n\r\nError: Command faile"
+    "status": "SUCCESSFUL",
+    "artifacts": 5,
+    "durationMs": 34961,
+    "error": null
   },
   {
     "name": "14-ci-artifact-verifier",
     "type": "node",
-    "status": "PARTIAL",
-    "artifacts": 0,
-    "durationMs": 32945,
-    "error": null
+    "status": "FAILED",
+    "artifacts": 1,
+    "durationMs": 29278,
+    "error": "file:///C:/Users/jrodr/Documents/kaslabdevs/GitHub/external-gauntlet-runs/14-ci-artifact-verifier/in"
   },
   {
     "name": "15-agent-wallet",
     "type": "node",
     "status": "SUCCESSFUL",
     "artifacts": 0,
-    "durationMs": 34249,
+    "durationMs": 33588,
     "error": null
   },
   {
@@ -124,23 +124,23 @@
     "type": "node",
     "status": "SUCCESSFUL",
     "artifacts": 0,
-    "durationMs": 30305,
+    "durationMs": 38735,
     "error": null
   },
   {
     "name": "17-mini-indexer",
     "type": "node",
-    "status": "FAILED",
+    "status": "SUCCESSFUL",
     "artifacts": 0,
-    "durationMs": 33187,
-    "error": "node:internal/errors:985\r\n  const err = new Error(message);\r\n              ^\r\n\r\nError: Command faile"
+    "durationMs": 37484,
+    "error": null
   },
   {
     "name": "18-query-store-test",
     "type": "node",
-    "status": "PARTIAL",
+    "status": "SUCCESSFUL",
     "artifacts": 0,
-    "durationMs": 44609,
+    "durationMs": 36026,
     "error": null
   },
   {
@@ -148,7 +148,7 @@
     "type": "react",
     "status": "SUCCESSFUL",
     "artifacts": 0,
-    "durationMs": 29329,
+    "durationMs": 30137,
     "error": null
   },
   {
@@ -156,7 +156,7 @@
     "type": "node",
     "status": "FAILED",
     "artifacts": 0,
-    "durationMs": 35647,
+    "durationMs": 40105,
     "error": "file:///C:/Users/jrodr/Documents/kaslabdevs/GitHub/external-gauntlet-runs/20-kastj-migration-spike/i"
   }
 ]
