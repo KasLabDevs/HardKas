@@ -13,17 +13,28 @@ export async function runTxBatch(options: any) {
 
   const loaded = await loadHardkasConfig({ cwd: workspace });
   const filePath = path.resolve(workspace || process.cwd(), file);
-  
+
   let payments: any[];
   try {
     const content = await fs.readFile(filePath, "utf-8");
-    payments = JSON.parse(content);
+    const parsed = JSON.parse(content);
+    // Accept both flat array and { payments: [...] } wrapper
+    if (Array.isArray(parsed)) {
+      payments = parsed;
+    } else if (parsed && typeof parsed === "object" && Array.isArray(parsed.payments)) {
+      payments = parsed.payments;
+    } else {
+      throw new Error(
+        "Invalid batch file format. Expected:\n" +
+          '  Format 1 (array): [{"from":"alice","to":"bob","amount":"10"}]\n' +
+          '  Format 2 (object): {"payments":[{"from":"alice","to":"bob","amount":"10"}]}'
+      );
+    }
   } catch (e) {
-    throw new Error(`Failed to read or parse batch file ${file}: ${e instanceof Error ? e.message : String(e)}`);
-  }
-
-  if (!Array.isArray(payments)) {
-    throw new Error("Batch file must contain a JSON array of payment objects: { from, to, amount }");
+    if (e instanceof Error && e.message.startsWith("Invalid batch file format")) throw e;
+    throw new Error(
+      `Failed to read or parse batch file ${file}: ${e instanceof Error ? e.message : String(e)}`
+    );
   }
 
   const results = [];
@@ -37,17 +48,26 @@ export async function runTxBatch(options: any) {
   // Strictly sequential execution for 0.7.5 to avoid UTXO race conditions
   for (let i = 0; i < payments.length; i++) {
     const payment = payments[i];
-    
+
     if (!payment.from || !payment.to || !payment.amount) {
-      if (!json) console.error(`[${i+1}/${payments.length}] Skipping invalid payment object (missing from/to/amount).`);
-      results.push({ index: i, ok: false, error: "Missing required fields (from, to, amount)" });
+      if (!json)
+        console.error(
+          `[${i + 1}/${payments.length}] Skipping invalid payment object (missing from/to/amount).`
+        );
+      results.push({
+        index: i,
+        ok: false,
+        error: "Missing required fields (from, to, amount)"
+      });
       failCount++;
       continue;
     }
 
     try {
       if (!json) {
-        console.log(`[${i+1}/${payments.length}] Flow: ${payment.from} -> ${payment.to} (${payment.amount} KAS) on ${network}`);
+        console.log(
+          `[${i + 1}/${payments.length}] Flow: ${payment.from} -> ${payment.to} (${payment.amount} KAS) on ${network}`
+        );
       }
 
       const flowResult = await runTxFlow({
@@ -64,9 +84,9 @@ export async function runTxBatch(options: any) {
         workspaceRoot: workspace || process.cwd()
       });
 
-      results.push({ 
-        index: i, 
-        ok: flowResult.ok, 
+      results.push({
+        index: i,
+        ok: flowResult.ok,
         result: flowResult.result,
         planError: flowResult.steps.plan.error,
         signError: flowResult.steps.sign.error,
@@ -77,7 +97,10 @@ export async function runTxBatch(options: any) {
         if (!json) console.log(`  ✓ Success`);
       } else {
         failCount++;
-        if (!json) console.log(`  ✗ Failed: Flow did not complete ok. (plan: ${flowResult.steps.plan.error}, sign: ${flowResult.steps.sign.error}, send: ${flowResult.steps.send.error})`);
+        if (!json)
+          console.log(
+            `  ✗ Failed: Flow did not complete ok. (plan: ${flowResult.steps.plan.error}, sign: ${flowResult.steps.sign.error}, send: ${flowResult.steps.send.error})`
+          );
       }
     } catch (e) {
       failCount++;

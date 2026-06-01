@@ -87,8 +87,16 @@ export async function runTxFlow(input: TxFlowInput): Promise<TxFlowResult> {
   } = input;
 
   const { Hardkas } = await import("@hardkas/sdk");
-  const sdk = await Hardkas.open({ cwd: workspaceRoot || process.cwd() });
-  const actualOutDir = outDir || sdk.workspace.artifactsDir;
+  let sdk: any = null;
+  let actualOutDir: string;
+  try {
+    sdk = await Hardkas.open({ cwd: workspaceRoot || process.cwd() });
+    actualOutDir = outDir || sdk.workspace.artifactsDir;
+  } catch {
+    // SDK not available (e.g. standalone CLI install) — use default artifacts dir
+    const cwd = workspaceRoot || process.cwd();
+    actualOutDir = outDir || path.join(cwd, ".hardkas", "artifacts");
+  }
   if (!fs.existsSync(actualOutDir)) {
     fs.mkdirSync(actualOutDir, { recursive: true });
   }
@@ -465,11 +473,21 @@ async function saveArtifact(
     const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
     const sanitizedFrom = from.replace(/[^a-z0-9]/gi, "_").substring(0, 10);
     const sanitizedTo = to.replace(/[^a-z0-9]/gi, "_").substring(0, 10);
-    const idPart = artifact.planId || artifact.signedId || artifact.txId || artifact.contentHash || "unknown";
+    const idPart =
+      artifact.planId ||
+      artifact.signedId ||
+      artifact.txId ||
+      artifact.contentHash ||
+      "unknown";
     fileName = `${timestamp}-${sanitizedFrom}-to-${sanitizedTo}-${amount}-${idPart}.${suffix}.json`;
   }
 
   const fullPath = path.join(outDir, fileName);
-  await sdk.artifacts.write(artifact, { outputDir: outDir, fileName });
+  if (sdk && sdk.artifacts && typeof sdk.artifacts.write === "function") {
+    await sdk.artifacts.write(artifact, { outputDir: outDir, fileName });
+  } else {
+    // Fallback: write artifact directly without SDK
+    fs.writeFileSync(fullPath, JSON.stringify(artifact, null, 2), "utf-8");
+  }
   return fullPath;
 }

@@ -20,8 +20,18 @@ describe("hardkas dev fixture generate", () => {
 
   it("should generate a mock fixture for payroll", async () => {
     const outPath = path.join(tmpDir, "payroll.json");
-    await execa(tsx, [...runArgs, "dev", "fixture", "generate", "--type", "payroll", "--out", outPath, "--json"]);
-    
+    await execa(tsx, [
+      ...runArgs,
+      "dev",
+      "fixture",
+      "generate",
+      "--type",
+      "payroll",
+      "--out",
+      outPath,
+      "--json"
+    ]);
+
     const content = await fs.readFile(outPath, "utf-8");
     const payload = JSON.parse(content);
 
@@ -34,7 +44,15 @@ describe("hardkas dev fixture generate", () => {
 
   it("should fail for invalid type", async () => {
     await expect(
-      execa(tsx, [...runArgs, "dev", "fixture", "generate", "--type", "invalid-type", "--json"])
+      execa(tsx, [
+        ...runArgs,
+        "dev",
+        "fixture",
+        "generate",
+        "--type",
+        "invalid-type",
+        "--json"
+      ])
     ).rejects.toThrow(/Invalid fixture type: invalid-type/);
   }, 30000);
 });

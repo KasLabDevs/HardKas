@@ -1,6 +1,6 @@
 {
   "name": "@examples/rpc-node-health",
-  "version": "0.7.5-alpha",
+  "version": "0.7.6-alpha",
   "private": true,
   "type": "module",
   "scripts": {

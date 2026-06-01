@@ -23,7 +23,7 @@ export async function runDevFixtureGenerate(options: any) {
     for (let i = 0; i < 5; i++) {
       payload.items.push({
         from: "treasury",
-        to: `employee${i+1}`,
+        to: `employee${i + 1}`,
         amount: (1000 + i * 100).toString()
       });
     }
@@ -45,7 +45,7 @@ export async function runDevFixtureGenerate(options: any) {
     for (let i = 0; i < 10; i++) {
       payload.items.push({
         from: `user${i}`,
-        to: `user${i+1}`,
+        to: `user${i + 1}`,
         amount: Math.floor(Math.random() * 100).toString()
       });
     }

@@ -2,7 +2,7 @@
 
 All notable changes to HardKAS will be documented in this file.
 
-## [v0.7.5-alpha] - 2026-05-29
+## [v0.7.6-alpha] - 2026-05-29
 
 ### Bug Bash & Canonicalization Hotfixes
 

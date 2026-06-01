@@ -5,9 +5,11 @@ import { systemRuntimeContext } from "@hardkas/core";
 
 export async function runDevTxGenerate(options: any) {
   const { count, network = "simulated", json, workspace } = options;
-  
+
   if (network !== "simulated" && network !== "simnet") {
-    throw new Error("dev tx generate in 0.7.5 is strictly limited to local simulated networks to avoid accidental mainnet broadcasts.");
+    throw new Error(
+      "dev tx generate in 0.7.5 is strictly limited to local simulated networks to avoid accidental mainnet broadcasts."
+    );
   }
 
   const numCount = parseInt(count, 10);
@@ -55,10 +57,10 @@ export async function runDevTxGenerate(options: any) {
       } else {
         failCount++;
       }
-      
-      results.push({ 
-        index: i, 
-        ok: flowResult.ok, 
+
+      results.push({
+        index: i,
+        ok: flowResult.ok,
         result: flowResult.result,
         planError: flowResult.steps.plan.error,
         signError: flowResult.steps.sign.error,
@@ -66,7 +68,11 @@ export async function runDevTxGenerate(options: any) {
       });
     } catch (e) {
       failCount++;
-      results.push({ index: i, ok: false, error: e instanceof Error ? e.message : String(e) });
+      results.push({
+        index: i,
+        ok: false,
+        error: e instanceof Error ? e.message : String(e)
+      });
     }
   }
 
@@ -81,7 +87,9 @@ export async function runDevTxGenerate(options: any) {
       results
     });
   } else {
-    console.log(`\nGeneration complete (mode: simulated, purpose: load-test, securityModel: mock-fixture).`);
+    console.log(
+      `\nGeneration complete (mode: simulated, purpose: load-test, securityModel: mock-fixture).`
+    );
     console.log(`Success: ${successCount}`);
     console.log(`Failed:  ${failCount}`);
   }

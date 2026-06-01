@@ -8,19 +8,19 @@ This audit analyzes versioning discrepancies between the package manifest (`pack
 
 | Source                | Detected value | File                                  | Status  |
 | :-------------------- | :------------- | :------------------------------------ | :------ |
-| **CLI Manifest**      | `0.7.5-alpha`  | `packages/cli/package.json`           | `MATCH` |
-| **CLI Runtime**       | `0.7.5-alpha`  | `packages/cli/src/index.ts`           | `MATCH` |
-| **Artifact Metadata** | `0.7.5-alpha`  | `packages/artifacts/src/constants.ts` | `MATCH` |
-| **CLI Output**        | `0.7.5-alpha`  | `hardkas --version`                   | `MATCH` |
+| **CLI Manifest**      | `0.7.6-alpha`  | `packages/cli/package.json`           | `MATCH` |
+| **CLI Runtime**       | `0.7.6-alpha`  | `packages/cli/src/index.ts`           | `MATCH` |
+| **Artifact Metadata** | `0.7.6-alpha`  | `packages/artifacts/src/constants.ts` | `MATCH` |
+| **CLI Output**        | `0.7.6-alpha`  | `hardkas --version`                   | `MATCH` |
 
 ## 3. Hardcoded Version References
 
 | File                                  | Reference                                       | Type             | Action                   |
 | :------------------------------------ | :---------------------------------------------- | :--------------- | :----------------------- |
 | `packages/cli/src/index.ts`           | `const { version: HARDKAS_VERSION } = ...`      | runtime dynamic  | **FIXED**                |
-| `packages/artifacts/src/constants.ts` | `export const HARDKAS_VERSION = "0.7.5-alpha";` | package hardcode | Validated by sync script |
-| `packages/cli/package.json`           | `"version": "0.7.5-alpha"`                      | manifest         | **Source of Truth**      |
-| `packages/artifacts/package.json`     | `"version": "0.7.5-alpha"`                      | manifest         | Validated by sync script |
+| `packages/artifacts/src/constants.ts` | `export const HARDKAS_VERSION = "0.7.6-alpha";` | package hardcode | Validated by sync script |
+| `packages/cli/package.json`           | `"version": "0.7.6-alpha"`                      | manifest         | **Source of Truth**      |
+| `packages/artifacts/package.json`     | `"version": "0.7.6-alpha"`                      | manifest         | Validated by sync script |
 
 ## 4. Problem Statement
 

@@ -1,8 +1,6 @@
 export const WORKFLOW_TEMPLATES: Record<string, any> = {
   basic: {
-    steps: [
-      { id: "step1", action: "noop" }
-    ]
+    steps: [{ id: "step1", action: "noop" }]
   },
   payroll: {
     steps: [

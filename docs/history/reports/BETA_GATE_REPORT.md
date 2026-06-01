@@ -2,7 +2,7 @@
 
 **Maturity Level:** BETA CANDIDATE
 **Date:** 2026-05-15
-**Version:** 0.7.5-alpha
+**Version:** 0.7.6-alpha
 
 ## 1. Executive Summary
 

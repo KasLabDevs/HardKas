@@ -67,7 +67,7 @@ export function registerInitCommands(program: Command) {
             const template = `import { defineHardkasConfig } from "@hardkas/sdk";
 
 export default defineHardkasConfig({
-  // HardKAS v0.7.5-alpha Configuration
+  // HardKAS v0.7.6-alpha Configuration
   defaultNetwork: "simulated",
 
   networks: {
@@ -87,11 +87,11 @@ export default defineHardkasConfig({
   accounts: {
     alice: {
       kind: "simulated",
-      address: "kaspa:sim_sim_alice"
+      address: "kaspa:sim_alice"
     },
     bob: {
       kind: "simulated",
-      address: "kaspa:sim_sim_bob"
+      address: "kaspa:sim_bob"
     }
   }
 });
@@ -114,11 +114,34 @@ export default defineHardkasConfig({
               }
             }
 
+            // Eager localnet state creation for simulated workspaces
+            // This ensures `tx plan` works immediately after init (funded accounts)
+            const isSimulatedDefault =
+              !options.network || options.network === "simulated";
+            if (isSimulatedDefault) {
+              try {
+                const { loadOrCreateLocalnetState } = await import("@hardkas/localnet");
+                await loadOrCreateLocalnetState({ cwd: targetDir });
+
+                // Also create artifacts directory eagerly
+                const artifactsDir = path.join(targetDir, ".hardkas", "artifacts");
+                if (!fs.existsSync(artifactsDir)) {
+                  fs.mkdirSync(artifactsDir, { recursive: true });
+                }
+
+                UI.info(
+                  "Created: .hardkas/localnet.json (simulated accounts funded: 1000 KAS each)"
+                );
+              } catch {
+                // Non-fatal: localnet state will be created lazily on first tx plan
+              }
+            }
+
             UI.success(
               `HardKAS project '${name || "current"}' initialized successfully.`
             );
             if (name) UI.info(`Project folder: ${targetDir}`);
-            UI.info(`Created: hardkas.config.ts (0.7.5-alpha)`);
+            UI.info(`Created: hardkas.config.ts (0.7.6-alpha)`);
             UI.footer(`Run 'cd ${name || "."}' and then 'hardkas up' to start.`);
           }
         );

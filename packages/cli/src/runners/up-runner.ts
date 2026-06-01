@@ -13,7 +13,7 @@ export async function runUp() {
     // 1. Load config
     const loaded = await loadHardkasConfig();
     const networkId = loaded.config.defaultNetwork || "simulated";
-    
+
     // Dependency Checks
     try {
       const { createRequire } = await import("node:module");

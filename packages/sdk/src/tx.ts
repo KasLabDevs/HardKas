@@ -415,7 +415,7 @@ export class HardkasTx {
     ];
 
     const planArtifact = await this.sdk.artifacts.read(signedArtifact.sourcePlanId);
-    
+
     const simResult = applySimulatedPlan(
       state,
       planArtifact as any,
@@ -435,7 +435,10 @@ export class HardkasTx {
 
     events.push({ type: "phase.completed", phase: "send", timestamp: Date.now() });
 
-    await saveLocalnetState(simResult.state, getDefaultLocalnetStatePath(this.sdk.workspace.root));
+    await saveLocalnetState(
+      simResult.state,
+      getDefaultLocalnetStatePath(this.sdk.workspace.root)
+    );
     const receiptPath = await saveSimulatedReceipt(
       simResult.receipt as Parameters<typeof saveSimulatedReceipt>[0],
       { cwd: this.sdk.workspace.root }
@@ -503,11 +506,14 @@ export class HardkasTx {
     };
     traceBase.contentHash = calculateContentHash(traceBase, CURRENT_HASH_VERSION);
 
-    await saveSimulatedTrace({
-      ...traceBase,
-      events,
-      receiptPath
-    }, { cwd: this.sdk.workspace.root });
+    await saveSimulatedTrace(
+      {
+        ...traceBase,
+        events,
+        receiptPath
+      },
+      { cwd: this.sdk.workspace.root }
+    );
 
     // P1.1 Emit dashboard/query-store events for local/simulated transactions
     coreEvents.normalizeAndEmit({

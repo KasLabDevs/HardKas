@@ -169,7 +169,8 @@ export function registerDevCommands(program: Command) {
     .action(async (options: any) => {
       try {
         if (options.json) UI.setJsonMode(true);
-        const { runDevFixtureGenerate } = await import("../runners/dev-fixture-generate-runner.js");
+        const { runDevFixtureGenerate } =
+          await import("../runners/dev-fixture-generate-runner.js");
         await runDevFixtureGenerate(options);
       } catch (e) {
         handleError(e, "Dev fixture generate failed");

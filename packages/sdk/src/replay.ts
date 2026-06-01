@@ -23,6 +23,187 @@ export interface ReplayVerifyResult {
   error?: string;
 }
 
+interface ReplayTargets {
+  planPath: string;
+  receiptPath: string;
+  artifactDir: string;
+  source: "explicit-file" | "explicit-dir" | "artifact-scan" | "workflow-id" | "none";
+}
+
+/**
+ * Pure function: resolves plan and receipt artifact paths.
+ * Never mutates `options`.
+ */
+function resolveReplayTargets(cwd: string, options: ReplayVerifyOptions): ReplayTargets {
+  // 1. Explicit file path
+  if (options.path) {
+    const fullPath = path.resolve(cwd, options.path);
+    if (!fs.existsSync(fullPath)) {
+      throw new Error(`Path not found: ${options.path}`);
+    }
+
+    if (fs.statSync(fullPath).isFile()) {
+      const dir = path.dirname(fullPath);
+      // Read plan to get planId for receipt matching
+      let planId = "";
+      try {
+        const data = JSON.parse(fs.readFileSync(fullPath, "utf-8"));
+        planId = data.planId || "";
+      } catch {
+        /* ignore */
+      }
+
+      // Find receipt by scanning directory for matching sourcePlanId
+      let receiptPath = "";
+      if (planId) {
+        receiptPath = findReceiptByPlanId(dir, planId);
+      }
+
+      return {
+        planPath: fullPath,
+        receiptPath,
+        artifactDir: dir,
+        source: "explicit-file"
+      };
+    }
+
+    // Explicit directory
+    return resolveFromDirectory(fullPath, "explicit-dir");
+  }
+
+  // 2. Workflow ID (no path) — use defaults
+  if (options.workflowId) {
+    return {
+      planPath: path.join(cwd, "tx-plan.json"),
+      receiptPath: path.join(cwd, "tx-receipt.json"),
+      artifactDir: cwd,
+      source: "workflow-id"
+    };
+  }
+
+  // 3. No path, no workflowId → scan .hardkas/artifacts/
+  const artifactsDir = path.join(cwd, ".hardkas", "artifacts");
+  if (!fs.existsSync(artifactsDir) || !fs.statSync(artifactsDir).isDirectory()) {
+    throw new Error(
+      `No .hardkas/artifacts/ directory found.\n` +
+        `  Hint: Run 'hardkas init' first, then execute a transaction.`
+    );
+  }
+
+  return resolveFromDirectory(artifactsDir, "artifact-scan");
+}
+
+/**
+ * Scans a directory for plan/receipt artifacts and picks the best match.
+ * Matches plan→receipt by sourcePlanId metadata (not filename).
+ */
+function resolveFromDirectory(
+  dir: string,
+  source: "explicit-dir" | "artifact-scan"
+): ReplayTargets {
+  const allFiles = fs.readdirSync(dir).filter((f) => f.endsWith(".json"));
+
+  // Parse all artifacts
+  const plans: { file: string; planId: string; createdAt: string }[] = [];
+  const receipts: {
+    file: string;
+    sourcePlanId: string;
+    txId: string;
+    createdAt: string;
+  }[] = [];
+
+  for (const f of allFiles) {
+    try {
+      const raw = fs.readFileSync(path.join(dir, f), "utf-8");
+      const data = JSON.parse(raw);
+      if (!data || !data.schema) continue;
+
+      if (data.schema === "hardkas.txPlan") {
+        plans.push({
+          file: f,
+          planId: data.planId || "",
+          createdAt: data.createdAt || ""
+        });
+      } else if (data.schema === "hardkas.txReceipt") {
+        receipts.push({
+          file: f,
+          sourcePlanId: data.sourcePlanId || data.lineage?.parentArtifactId || data.lineage?.rootArtifactId || "",
+          txId: data.txId || "",
+          createdAt: data.createdAt || ""
+        });
+      }
+    } catch {
+      /* skip */
+    }
+  }
+
+  if (plans.length === 0) {
+    throw new Error(
+      `No plan artifacts found in ${dir}.\n` +
+        `  Hint: Run a transaction first: hardkas tx send --from alice --to bob --amount 10 --network simulated --yes`
+    );
+  }
+
+  // Sort plans newest first
+  plans.sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+
+  // Strategy: pick most recent plan that has a matching receipt
+  // Match by: (1) sourcePlanId, (2) txId contains planId, (3) createdAt proximity
+  for (const plan of plans) {
+    const matchingReceipt = receipts.find(
+      (r) =>
+        // Direct sourcePlanId match
+        (r.sourcePlanId && r.sourcePlanId === plan.planId) ||
+        // txId derived from planId (e.g., "simulated-plan-xxx-tx" contains "plan-xxx")
+        (r.txId && plan.planId && r.txId.includes(plan.planId))
+    );
+    if (matchingReceipt) {
+      return {
+        planPath: path.join(dir, plan.file),
+        receiptPath: path.join(dir, matchingReceipt.file),
+        artifactDir: dir,
+        source
+      };
+    }
+  }
+
+  // No plan has a matching receipt — pick most recent plan, report missing receipt
+  const bestPlan = plans[0]!;
+  return {
+    planPath: path.join(dir, bestPlan.file),
+    receiptPath: "", // Will trigger actionable error downstream
+    artifactDir: dir,
+    source
+  };
+}
+
+/**
+ * Finds a receipt artifact whose sourcePlanId matches the given planId.
+ */
+function findReceiptByPlanId(dir: string, planId: string): string {
+  if (!fs.existsSync(dir)) return "";
+  const files = fs.readdirSync(dir).filter((f) => f.endsWith(".json"));
+  for (const f of files) {
+    try {
+      const raw = fs.readFileSync(path.join(dir, f), "utf-8");
+      const data = JSON.parse(raw);
+      if (
+        data &&
+        data.schema === "hardkas.txReceipt" &&
+        ((data.sourcePlanId && data.sourcePlanId === planId) ||
+          (data.lineage?.parentArtifactId && data.lineage.parentArtifactId === planId) ||
+          (data.lineage?.rootArtifactId && data.lineage.rootArtifactId === planId) ||
+          (data.txId && data.txId.includes(planId)))
+      ) {
+        return path.join(dir, f);
+      }
+    } catch {
+      /* skip */
+    }
+  }
+  return "";
+}
+
 export class HardkasReplay {
   constructor(private sdk: Hardkas) {}
 
@@ -31,40 +212,8 @@ export class HardkasReplay {
    * against the mathematically reconstructed localnet state.
    */
   async verify(options: ReplayVerifyOptions): Promise<ReplayVerifyResult> {
-    let artifactDir = this.sdk.config.cwd;
-    let planPath = path.join(artifactDir, "tx-plan.json");
-    let receiptPath = path.join(artifactDir, "tx-receipt.json");
-
-    if (options.path) {
-      const fullPath = path.resolve(this.sdk.config.cwd, options.path);
-      if (fs.existsSync(fullPath)) {
-        if (fs.statSync(fullPath).isFile()) {
-          planPath = fullPath;
-          artifactDir = path.dirname(fullPath);
-          receiptPath = fullPath.replace("tx-plan", "tx-receipt");
-
-          // Auto-detect workflow artifact
-          try {
-            let content = fs.readFileSync(fullPath, "utf-8");
-            if (content.charCodeAt(0) === 0xfeff) {
-              content = content.slice(1);
-            }
-            const json = JSON.parse(content);
-            if (json && json.schema === "hardkas.workflow.v1" && json.workflowId) {
-              options.workflowId = json.workflowId;
-            }
-          } catch (e) {
-            // Ignore parse errors, fallback to classic path which will handle it
-          }
-        } else {
-          artifactDir = fullPath;
-          planPath = path.join(artifactDir, "tx-plan.json");
-          receiptPath = path.join(artifactDir, "tx-receipt.json");
-        }
-      } else {
-        throw new Error(`Path not found: ${options.path}`);
-      }
-    }
+    const targets = resolveReplayTargets(this.sdk.config.cwd, options);
+    let { planPath, receiptPath, artifactDir } = targets;
 
     // We only check hardkas.config.ts if they gave us a directory that isn't the CWD?
     // Actually we can skip that check or just check workspace.root.
@@ -210,12 +359,15 @@ export class HardkasReplay {
       }
     }
     // Classic Transaction Replay Path
-    else if (options.path) {
+    else if (targets.source !== "none") {
       try {
         if (!fs.existsSync(planPath))
           throw new Error(`Transaction plan artifact is missing at: ${planPath}`);
-        if (!fs.existsSync(receiptPath))
-          throw new Error(`Transaction receipt artifact is missing at: ${receiptPath}`);
+        if (!receiptPath || !fs.existsSync(receiptPath))
+          throw new Error(
+            `No matching receipt artifact found for plan at: ${planPath}\n` +
+              `  Hint: Run 'hardkas tx send --from alice --to bob --amount 10 --network simulated --yes' to create a complete plan→sign→send chain.`
+          );
         plan = await readTxPlanArtifact(planPath);
         receipt = await readTxReceiptArtifact(receiptPath);
       } catch (err: any) {
@@ -248,6 +400,8 @@ export class HardkasReplay {
         }
       }
     } else {
+      // This branch should no longer be reachable since the scan block above
+      // either sets options.path or throws, but keep as a safety net.
       verifyErrorMsg = "No path or workflowId provided for replay verification";
     }
 

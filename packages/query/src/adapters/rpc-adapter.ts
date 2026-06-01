@@ -8,8 +8,8 @@
  */
 import { readEvents } from "../events.js";
 import { computeQueryHash } from "../serialize.js";
-import type {
 import { deterministicCompare } from "@hardkas/core";
+import type {
   QueryAdapter,
   QueryRequest,
   QueryResult,
@@ -69,7 +69,7 @@ export class RpcQueryAdapter implements QueryAdapter {
       limit: request.limit
     });
 
-    const items: RpcHealthEntry[] = events.map(e => ({
+    const items: RpcHealthEntry[] = events.map((e) => ({
       ts: e.ts,
       endpoint: String(e["endpoint"] || "unknown"),
       state: String(e["state"] || "unknown"),
@@ -86,7 +86,10 @@ export class RpcQueryAdapter implements QueryAdapter {
       truncated: events.length >= request.limit,
       deterministic: true,
       queryHash: computeQueryHash(items),
-      annotations: { executedAt: new Date().toISOString(), executionMs: Date.now() - start }
+      annotations: {
+        executedAt: new Date().toISOString(),
+        executionMs: Date.now() - start
+      }
     };
   }
 
@@ -130,10 +133,13 @@ export class RpcQueryAdapter implements QueryAdapter {
             startTs: currentDeg.startTs,
             endTs: lastEvent.ts,
             endpoint: currentDeg.endpoint,
-            durationMs: new Date(lastEvent.ts).getTime() - new Date(currentDeg.startTs).getTime(),
-            lowestScore: Math.min(...currentDeg.events.map(e => e.score)),
-            worstState: currentDeg.events.reduce((w, e) =>
-              stateRank(e.state) > stateRank(w) ? e.state : w, currentDeg.events[0]!.state),
+            durationMs:
+              new Date(lastEvent.ts).getTime() - new Date(currentDeg.startTs).getTime(),
+            lowestScore: Math.min(...currentDeg.events.map((e) => e.score)),
+            worstState: currentDeg.events.reduce(
+              (w, e) => (stateRank(e.state) > stateRank(w) ? e.state : w),
+              currentDeg.events[0]!.state
+            ),
             eventCount: currentDeg.events.length
           });
         }
@@ -148,10 +154,13 @@ export class RpcQueryAdapter implements QueryAdapter {
         startTs: currentDeg.startTs,
         endTs: lastEvent.ts,
         endpoint: currentDeg.endpoint,
-        durationMs: new Date(lastEvent.ts).getTime() - new Date(currentDeg.startTs).getTime(),
-        lowestScore: Math.min(...currentDeg.events.map(e => e.score)),
-        worstState: currentDeg.events.reduce((w, e) =>
-          stateRank(e.state) > stateRank(w) ? e.state : w, currentDeg.events[0]!.state),
+        durationMs:
+          new Date(lastEvent.ts).getTime() - new Date(currentDeg.startTs).getTime(),
+        lowestScore: Math.min(...currentDeg.events.map((e) => e.score)),
+        worstState: currentDeg.events.reduce(
+          (w, e) => (stateRank(e.state) > stateRank(w) ? e.state : w),
+          currentDeg.events[0]!.state
+        ),
         eventCount: currentDeg.events.length
       });
     }
@@ -167,7 +176,10 @@ export class RpcQueryAdapter implements QueryAdapter {
       truncated: degradations.length > request.offset + request.limit,
       deterministic: true,
       queryHash: computeQueryHash(paged),
-      annotations: { executedAt: new Date().toISOString(), executionMs: Date.now() - start }
+      annotations: {
+        executedAt: new Date().toISOString(),
+        executionMs: Date.now() - start
+      }
     };
   }
 
@@ -186,7 +198,7 @@ export class RpcQueryAdapter implements QueryAdapter {
       kind: "workflow.submitted"
     });
 
-    const submission = workflowEvents.find(e => e["txId"] === txId);
+    const submission = workflowEvents.find((e) => e["txId"] === txId);
     if (!submission) {
       throw new Error(`No submission event found for txId: ${txId}`);
     }
@@ -196,7 +208,9 @@ export class RpcQueryAdapter implements QueryAdapter {
 
     // Find RPC health events around the submission time
     const windowMs = 30000; // ±30 seconds
-    const windowStart = new Date(new Date(submittedAt).getTime() - windowMs).toISOString();
+    const windowStart = new Date(
+      new Date(submittedAt).getTime() - windowMs
+    ).toISOString();
     const windowEnd = new Date(new Date(submittedAt).getTime() + windowMs).toISOString();
 
     const healthEvents = await readEvents({
@@ -205,17 +219,23 @@ export class RpcQueryAdapter implements QueryAdapter {
       since: windowStart
     });
 
-    const nearbyHealth = healthEvents.filter(e => e.ts >= windowStart && e.ts <= windowEnd);
+    const nearbyHealth = healthEvents.filter(
+      (e) => e.ts >= windowStart && e.ts <= windowEnd
+    );
 
     // Find the closest health event before submission
     const beforeSubmission = nearbyHealth
-      .filter(e => e.ts <= submittedAt)
+      .filter((e) => e.ts <= submittedAt)
       .sort((a, b) => deterministicCompare(b.ts, a.ts));
 
     const closestHealth = beforeSubmission[0];
     const scoreAtSubmission = closestHealth ? Number(closestHealth["score"] || 0) : -1;
-    const stateAtSubmission = closestHealth ? String(closestHealth["state"] || "unknown") : "unknown";
-    const latencyAtSubmission = closestHealth ? Number(closestHealth["latencyMs"] || 0) : -1;
+    const stateAtSubmission = closestHealth
+      ? String(closestHealth["state"] || "unknown")
+      : "unknown";
+    const latencyAtSubmission = closestHealth
+      ? Number(closestHealth["latencyMs"] || 0)
+      : -1;
 
     // Find nearby RPC errors
     const errorEvents = await readEvents({
@@ -225,8 +245,8 @@ export class RpcQueryAdapter implements QueryAdapter {
     });
 
     const nearbyErrors: RpcNearbyError[] = errorEvents
-      .filter(e => e.ts >= windowStart && e.ts <= windowEnd)
-      .map(e => ({
+      .filter((e) => e.ts >= windowStart && e.ts <= windowEnd)
+      .map((e) => ({
         ts: e.ts,
         error: String(e["error"] || "unknown"),
         retriable: Boolean(e["retriable"])
@@ -262,7 +282,10 @@ export class RpcQueryAdapter implements QueryAdapter {
       deterministic: true,
       queryHash: computeQueryHash([correlation]),
       explain,
-      annotations: { executedAt: new Date().toISOString(), executionMs: Date.now() - start }
+      annotations: {
+        executedAt: new Date().toISOString(),
+        executionMs: Date.now() - start
+      }
     };
   }
 }
@@ -273,10 +296,14 @@ export class RpcQueryAdapter implements QueryAdapter {
 
 function stateRank(state: string): number {
   switch (state) {
-    case "unreachable": return 3;
-    case "stale": return 2;
-    case "degraded": return 1;
-    default: return 0;
+    case "unreachable":
+      return 3;
+    case "stale":
+      return 2;
+    case "degraded":
+      return 1;
+    default:
+      return 0;
   }
 }
 
@@ -308,7 +335,7 @@ function explainCorrelation(c: RpcCorrelation): ExplainChain {
     steps.push({
       order: order++,
       assertion: `${c.nearbyErrors.length} RPC error(s) within ±30s of submission`,
-      evidence: c.nearbyErrors.map(e => `${e.ts}: ${e.error}`).join("; "),
+      evidence: c.nearbyErrors.map((e) => `${e.ts}: ${e.error}`).join("; "),
       rule: "RPC error correlation window (±30s)"
     });
   }

@@ -20,10 +20,20 @@ describe("hardkas workflow create", () => {
 
   it("should create a workflow from a template offline", async () => {
     const outPath = path.join(tmpDir, "wf-basic.json");
-    
+
     // Test basic template
-    await execa(tsx, [...runArgs, "workflow", "create", "test-flow", "--template", "basic", "--out", outPath, "--json"]);
-    
+    await execa(tsx, [
+      ...runArgs,
+      "workflow",
+      "create",
+      "test-flow",
+      "--template",
+      "basic",
+      "--out",
+      outPath,
+      "--json"
+    ]);
+
     const wf = JSON.parse(await fs.readFile(outPath, "utf-8"));
 
     expect(wf.workflowId).toMatch(/^wf_test-flow_/);
@@ -34,7 +44,15 @@ describe("hardkas workflow create", () => {
 
   it("should fail for invalid template", async () => {
     await expect(
-      execa(tsx, [...runArgs, "workflow", "create", "test-flow", "--template", "invalid-template", "--json"])
+      execa(tsx, [
+        ...runArgs,
+        "workflow",
+        "create",
+        "test-flow",
+        "--template",
+        "invalid-template",
+        "--json"
+      ])
     ).rejects.toThrow(/Template 'invalid-template' not found/);
   }, 30000);
 });

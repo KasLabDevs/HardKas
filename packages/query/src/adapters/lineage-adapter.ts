@@ -370,7 +370,8 @@ export class LineageQueryAdapter implements QueryAdapter {
       if (current.workflowId) parentIds.push(current.workflowId);
 
       for (const parentId of parentIds) {
-        const parent = graph.byArtifactId.get(parentId) ?? graph.byContentHash.get(parentId);
+        const parent =
+          graph.byArtifactId.get(parentId) ?? graph.byContentHash.get(parentId);
         if (!parent) continue;
 
         if (!queued.has(parent.artifactId)) {

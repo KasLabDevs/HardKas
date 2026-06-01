@@ -25,11 +25,26 @@ describe("Workflow Runtime & Adversarial Defense", () => {
       networkId: "simnet",
       daaScore: "1000",
       utxos: [
-        { id: "mocktx:0", address: "kaspa:sim_alice", amountSompi: "900000000000000", spent: false, createdAtDaaScore: "100" },
-        { id: "mocktx:1", address: "kaspa:sim_carol", amountSompi: "900000000000000", spent: false, createdAtDaaScore: "100" }
+        {
+          id: "mocktx:0",
+          address: "kaspa:sim_alice",
+          amountSompi: "900000000000000",
+          spent: false,
+          createdAtDaaScore: "100"
+        },
+        {
+          id: "mocktx:1",
+          address: "kaspa:sim_carol",
+          amountSompi: "900000000000000",
+          spent: false,
+          createdAtDaaScore: "100"
+        }
       ]
     };
-    fs.writeFileSync(path.join(tmpDir, ".hardkas", "localnet.json"), JSON.stringify(mockState));
+    fs.writeFileSync(
+      path.join(tmpDir, ".hardkas", "localnet.json"),
+      JSON.stringify(mockState)
+    );
 
     // Create an agent SDK instance allowed to mutate for standard tests
     sdk = await Hardkas.open({
@@ -72,26 +87,28 @@ describe("Workflow Runtime & Adversarial Defense", () => {
       ] as any;
     });
 
-    vi.spyOn(strictSdk.rpc, "getUtxosByAddress").mockImplementation(async (addr: string) => {
-      if (addr.includes("alice")) {
+    vi.spyOn(strictSdk.rpc, "getUtxosByAddress").mockImplementation(
+      async (addr: string) => {
+        if (addr.includes("alice")) {
+          return [
+            {
+              outpoint: { transactionId: "mocktx", index: 0 },
+              address: "kaspa:sim_qruf...alice",
+              amountSompi: 900000000000000n,
+              isSpendable: true
+            }
+          ] as any;
+        }
         return [
           {
-            outpoint: { transactionId: "mocktx", index: 0 },
-            address: "kaspa:sim_qruf...alice",
+            outpoint: { transactionId: "mocktx", index: 1 },
+            address: "kaspa:sim_qruf...carol",
             amountSompi: 900000000000000n,
             isSpendable: true
           }
         ] as any;
       }
-      return [
-        {
-          outpoint: { transactionId: "mocktx", index: 1 },
-          address: "kaspa:sim_qruf...carol",
-          amountSompi: 900000000000000n,
-          isSpendable: true
-        }
-      ] as any;
-    });
+    );
   });
 
   afterEach(() => {

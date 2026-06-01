@@ -8,8 +8,15 @@ describe("hardkas localnet account create", () => {
   const runArgs = ["--import", "tsx", cliPath];
 
   it("should deterministically create a simulated localnet account", async () => {
-    const { stdout } = await execa(tsx, [...runArgs, "localnet", "account", "create", "alice", "--json"]);
-    
+    const { stdout } = await execa(tsx, [
+      ...runArgs,
+      "localnet",
+      "account",
+      "create",
+      "alice",
+      "--json"
+    ]);
+
     const account = JSON.parse(stdout);
 
     expect(account.accountName).toBe("alice");
@@ -17,15 +24,29 @@ describe("hardkas localnet account create", () => {
     expect(account.securityModel).toBe("simulated-only");
     expect(account.rpc).toBe("disabled");
     expect(account.wasm).toBe("disabled");
-    
+
     // Check determinism
-    const { stdout: stdout2 } = await execa(tsx, [...runArgs, "localnet", "account", "create", "alice", "--json"]);
+    const { stdout: stdout2 } = await execa(tsx, [
+      ...runArgs,
+      "localnet",
+      "account",
+      "create",
+      "alice",
+      "--json"
+    ]);
     const account2 = JSON.parse(stdout2);
 
     expect(account).toEqual(account2);
 
     // Another account
-    const { stdout: stdout3 } = await execa(tsx, [...runArgs, "localnet", "account", "create", "bob", "--json"]);
+    const { stdout: stdout3 } = await execa(tsx, [
+      ...runArgs,
+      "localnet",
+      "account",
+      "create",
+      "bob",
+      "--json"
+    ]);
     const account3 = JSON.parse(stdout3);
 
     expect(account.privateKey).not.toBe(account3.privateKey);

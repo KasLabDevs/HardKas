@@ -1,6 +1,9 @@
 import pc from "picocolors";
 import { UI, handleError } from "../ui.js";
 import { loadHardkasConfig } from "@hardkas/config";
+import { writeArtifact } from "@hardkas/artifacts";
+import path from "node:path";
+import fs from "node:fs";
 
 export async function runBridgeLocalPlan(options: {
   from?: string;
@@ -81,6 +84,31 @@ export async function runBridgeLocalPlan(options: {
         )
       );
       return;
+    }
+
+    // Persist bridge plan artifact
+    const cwd = process.cwd();
+    const artifactsDir = path.join(cwd, ".hardkas", "artifacts");
+    if (fs.existsSync(path.join(cwd, ".hardkas"))) {
+      if (!fs.existsSync(artifactsDir)) fs.mkdirSync(artifactsDir, { recursive: true });
+      const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
+      const artifactPath = path.join(artifactsDir, `${timestamp}-bridge-local-plan.json`);
+      const artifactData = {
+        schema: "hardkas.bridgeLocalSessionPlan.v1",
+        session: { source: ctx.source, name: ctx.sessionName || null },
+        l1: { wallet: ctx.l1.walletName, address: ctx.l1.address },
+        l2: { account: ctx.l2.accountName || null, address: ctx.l2.address },
+        bridge: {
+          mode: ctx.bridgeMode,
+          amount: options.amount,
+          payload: plan.serializedPayload
+        },
+        plan: JSON.parse(
+          JSON.stringify(plan, (k, v) => (typeof v === "bigint" ? v.toString() : v))
+        ),
+        createdAt: new Date().toISOString()
+      };
+      await writeArtifact(artifactPath, artifactData);
     }
 
     printBridgeContext(ctx, options.amount, plan.serializedPayload);
@@ -187,6 +215,31 @@ export async function runBridgeLocalSimulate(options: {
         )
       );
       return;
+    }
+
+    // Persist bridge simulation artifact
+    const cwd = process.cwd();
+    const artifactsDir = path.join(cwd, ".hardkas", "artifacts");
+    if (fs.existsSync(path.join(cwd, ".hardkas"))) {
+      if (!fs.existsSync(artifactsDir)) fs.mkdirSync(artifactsDir, { recursive: true });
+      const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
+      const artifactPath = path.join(
+        artifactsDir,
+        `${timestamp}-bridge-local-simulate.json`
+      );
+      const artifactData = {
+        schema: "hardkas.bridgeLocalSessionSimulation.v1",
+        status: "success",
+        session: { source: ctx.source, name: ctx.sessionName || null },
+        l1: { wallet: ctx.l1.walletName, address: ctx.l1.address },
+        l2: { account: ctx.l2.accountName || null, address: ctx.l2.address },
+        miningResult,
+        plan: JSON.parse(
+          JSON.stringify(plan, (k, v) => (typeof v === "bigint" ? v.toString() : v))
+        ),
+        createdAt: new Date().toISOString()
+      };
+      await writeArtifact(artifactPath, artifactData);
     }
 
     console.log(

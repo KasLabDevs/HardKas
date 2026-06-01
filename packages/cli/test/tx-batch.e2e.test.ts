@@ -45,7 +45,16 @@ export default defineHardkasConfig({
     await fs.writeFile(file, JSON.stringify(payments), "utf-8");
 
     // Execute with process.cwd() (default) so `--import tsx` is resolved, and pass `--workspace tmpDir`
-    const { stdout } = await execa(tsx, [...runArgs, "tx", "batch", "--file", file, "--workspace", tmpDir, "--json"]);
+    const { stdout } = await execa(tsx, [
+      ...runArgs,
+      "tx",
+      "batch",
+      "--file",
+      file,
+      "--workspace",
+      tmpDir,
+      "--json"
+    ]);
     const result = JSON.parse(stdout);
 
     expect(result.batchSize).toBe(2);

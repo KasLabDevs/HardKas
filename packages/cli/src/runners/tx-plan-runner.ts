@@ -114,7 +114,13 @@ export async function runTxPlan(input: TxPlanRunnerInput): Promise<TxPlanArtifac
   }
 
   if (availableUtxos.length === 0) {
-    throw new Error(`No UTXOs found for ${fromAddress} on network '${resolvedNetwork}'.`);
+    const hint =
+      backend === "simulated"
+        ? `\n  Hint: Run 'hardkas accounts fund ${from} --amount 1000' to create simulated UTXOs,\n  or re-initialize with 'hardkas init --force'.`
+        : `\n  Hint: Ensure the account has received funds on the '${resolvedNetwork}' network.`;
+    throw new Error(
+      `No UTXOs found for ${fromAddress} on network '${resolvedNetwork}'.${hint}`
+    );
   }
 
   const plan = buildPaymentPlan({

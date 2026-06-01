@@ -97,7 +97,9 @@ export class HardkasWorkflow {
               },
               sign: async (plan: any, account?: any) => {
                 const signed = await this.sdk.tx.sign(plan, account);
-                await this.sdk.artifacts.write(signed, { dryRun: options.dryRun ?? false });
+                await this.sdk.artifacts.write(signed, {
+                  dryRun: options.dryRun ?? false
+                });
                 const signedRecord = signed as unknown as Record<string, string>;
                 const id =
                   signedRecord.contentHash || signedRecord.artifactId || signed.signedId;
@@ -114,7 +116,9 @@ export class HardkasWorkflow {
                   this.sdk.network === "simulated"
                     ? await this.sdk.tx.simulate(signed)
                     : await this.sdk.tx.send(signed);
-                await this.sdk.artifacts.write(res.receipt, { dryRun: options.dryRun ?? false });
+                await this.sdk.artifacts.write(res.receipt, {
+                  dryRun: options.dryRun ?? false
+                });
                 const receiptRecord = res.receipt as unknown as Record<string, string>;
                 const id =
                   receiptRecord.contentHash ||
@@ -125,7 +129,9 @@ export class HardkasWorkflow {
               },
               simulate: async (signed: any) => {
                 const res = await this.sdk.tx.simulate(signed);
-                await this.sdk.artifacts.write(res.receipt, { dryRun: options.dryRun ?? false });
+                await this.sdk.artifacts.write(res.receipt, {
+                  dryRun: options.dryRun ?? false
+                });
                 const receiptRecord = res.receipt as unknown as Record<string, string>;
                 const id =
                   receiptRecord.contentHash ||
