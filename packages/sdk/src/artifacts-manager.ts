@@ -123,9 +123,13 @@ export class HardkasArtifactsManager {
   /**
    * Reads an artifact by path or ID/hash from the workspace.
    */
-  async read(id: string): Promise<any> {
+  async read(id: string, options?: { expectedSchema?: string }): Promise<any> {
     if (this.cache.has(id)) {
-      return this.cache.get(id);
+      const cached = this.cache.get(id);
+      if (options?.expectedSchema && cached.schema !== options.expectedSchema) {
+        throw new Error(`Artifact ${id} has schema '${cached.schema}' but expected '${options.expectedSchema}'`);
+      }
+      return cached;
     }
 
     const { readArtifact } = await import("@hardkas/artifacts");
@@ -155,7 +159,7 @@ export class HardkasArtifactsManager {
         // 2. Try prefix search in workspace artifacts directory
         if (fs.existsSync(this.workspace.artifactsDir)) {
           const files = fs.readdirSync(this.workspace.artifactsDir);
-          const found = files.find((f) => f.includes(id) || f.endsWith(`${id}.json`));
+          const found = files.find((f) => f === `${id}.json` || f.startsWith(`${id}-`) || f.startsWith(`${id}.`));
           if (found) {
             filePath = path.join(this.workspace.artifactsDir, found);
           } else {
@@ -167,14 +171,18 @@ export class HardkasArtifactsManager {
       }
     }
 
-    return readArtifact(filePath);
+    const artifact: any = await readArtifact(filePath);
+    if (options?.expectedSchema && artifact.schema !== options.expectedSchema) {
+      throw new Error(`Artifact ${id} has schema '${artifact.schema}' but expected '${options.expectedSchema}'`);
+    }
+    return artifact;
   }
 
   /**
    * Alias for read().
    */
-  async get(id: string): Promise<any> {
-    return this.read(id);
+  async get(id: string, options?: { expectedSchema?: string }): Promise<any> {
+    return this.read(id, options);
   }
 
   /**

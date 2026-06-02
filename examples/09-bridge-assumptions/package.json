@@ -1,6 +1,6 @@
 {
   "name": "@examples/bridge-assumptions",
-  "version": "0.7.12-alpha",
+  "version": "0.7.13-alpha",
   "private": true,
   "type": "module",
   "scripts": {

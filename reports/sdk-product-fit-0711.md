@@ -1,7 +1,7 @@
-# HardKAS 0.7.12-alpha — SDK Product Fit Report
+# HardKAS 0.7.13-alpha — SDK Product Fit Report
 
 **Date:** 2026-06-02  
-**Version:** 0.7.12-alpha
+**Version:** 0.7.13-alpha
 
 ---
 
@@ -46,7 +46,7 @@
 
 ## Recommendation
 
-**0.7.12-alpha is production-viable for Node.js backends.**
+**0.7.13-alpha is production-viable for Node.js backends.**
 
 For full product coverage:
 1. Fix `artifacts.verify()` → 0.7.12
