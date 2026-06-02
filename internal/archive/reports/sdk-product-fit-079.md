@@ -1,4 +1,4 @@
-# SDK Product Fit - 0.7.11-alpha
+# SDK Product Fit - 0.7.12-alpha
 
 ## Overview
 Phase 7-C testing successfully demonstrated that the SDK can replace the CLI for over 60% of the workflows. However, it also exposed critical DX gaps that prevent the SDK from feeling "frictionless".

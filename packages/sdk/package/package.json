@@ -1,6 +1,6 @@
 {
   "name": "@hardkas/sdk",
-  "version": "0.7.11-alpha",
+  "version": "0.7.12-alpha",
   "type": "module",
   "files": [
     "dist",
@@ -23,23 +23,23 @@
     }
   },
   "dependencies": {
-    "@hardkas/accounts": "0.7.11-alpha",
-    "@hardkas/artifacts": "0.7.11-alpha",
-    "@hardkas/config": "0.7.11-alpha",
-    "@hardkas/core": "0.7.11-alpha",
-    "@hardkas/query": "0.7.11-alpha",
-    "@hardkas/l2": "0.7.11-alpha",
-    "@hardkas/localnet": "0.7.11-alpha",
-    "@hardkas/kaspa-rpc": "0.7.11-alpha",
-    "@hardkas/tx-builder": "0.7.11-alpha",
-    "@hardkas/wallet-adapter": "0.7.11-alpha",
-    "@hardkas/simulator": "0.7.11-alpha"
+    "@hardkas/accounts": "0.7.12-alpha",
+    "@hardkas/artifacts": "0.7.12-alpha",
+    "@hardkas/config": "0.7.12-alpha",
+    "@hardkas/core": "0.7.12-alpha",
+    "@hardkas/query": "0.7.12-alpha",
+    "@hardkas/l2": "0.7.12-alpha",
+    "@hardkas/localnet": "0.7.12-alpha",
+    "@hardkas/kaspa-rpc": "0.7.12-alpha",
+    "@hardkas/tx-builder": "0.7.12-alpha",
+    "@hardkas/wallet-adapter": "0.7.12-alpha",
+    "@hardkas/simulator": "0.7.12-alpha"
   },
   "devDependencies": {
     "tsup": "^8.3.5",
     "typescript": "^5.7.2",
     "vitest": "^2.1.8",
-    "@hardkas/query-store": "0.7.11-alpha"
+    "@hardkas/query-store": "0.7.12-alpha"
   },
   "license": "MIT",
   "author": "Javier Rodriguez",

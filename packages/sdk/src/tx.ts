@@ -652,7 +652,37 @@ export class HardkasTx {
     if (isSimulated) {
       const persistOpt = typeof urlOrOptions === 'object' ? urlOrOptions.persist : true;
       const simOpts = persistOpt !== undefined ? { persist: persistOpt } : {};
-      const simResult = await this.simulate(signedArtifact, simOpts);
+      
+      let simResult: any;
+      try {
+        simResult = await this.simulate(signedArtifact, simOpts);
+      } catch (e: any) {
+        if (e.message && e.message.includes("invalid simulated input")) {
+          // P1. Robust Idempotence: The UTXOs are already spent. 
+          // Check if they were spent by a previous simulation of this exact same transaction.
+          try {
+            const { loadSimulatedReceipt, getReceiptPath } = await import("@hardkas/localnet");
+            const existingReceipt = await loadSimulatedReceipt(signedArtifact.txId, { cwd: this.sdk.workspace.root });
+            
+            if (existingReceipt) {
+              if (existingReceipt.schema === ARTIFACT_SCHEMAS.TX_RECEIPT && (existingReceipt.status === "confirmed" || existingReceipt.status === "accepted")) {
+                return {
+                   mode: "simulated",
+                   simulated: true,
+                   submitted: false,
+                   txId: existingReceipt.txId,
+                   artifactId: existingReceipt.txId, // simulated receipts use txId as artifactId
+                   receipt: existingReceipt as any,
+                   receiptPath: getReceiptPath(existingReceipt.txId, this.sdk.workspace.root)
+                };
+              }
+            }
+          } catch (err) {
+             // Silently ignore if receipt not found, re-throw the original error
+          }
+        }
+        throw e; // Re-throw if it wasn't an idempotent double-spend
+      }
       
       const result: any = {
         mode: "simulated",
