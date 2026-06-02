@@ -1,0 +1,26 @@
+{
+  "name": "@hardkas/client",
+  "version": "0.8.0-alpha",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "sideEffects": false,
+  "exports": {
+    ".": "./dist/index.js"
+  },
+  "scripts": {
+    "build": "tsup src/index.ts --format esm,cjs --dts --clean",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "tsup": "^8.3.5",
+    "typescript": "^5.7.2"
+  },
+  "license": "MIT",
+  "author": "Javier Rodriguez",
+  "files": [
+    "dist",
+    "README.md"
+  ]
+}

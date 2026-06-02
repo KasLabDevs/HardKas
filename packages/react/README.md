@@ -1,13 +1,68 @@
 # @hardkas/react
 
-React hooks and provider context for integrating with the HardKAS deterministic local developer runtime.
+Zero-dependency React hooks for HardKAS.
 
-## ⚠️ Alpha-Only Local-Runtime Coupling Warning
+> [!WARNING]
+> **DO NOT import `@hardkas/sdk` in the browser!**
+> The main SDK package contains Node.js specific libraries. Use `@hardkas/react` for your web UI.
 
-Please note that in the `v0.5.4-alpha` release, this package has direct dependencies on the **`@hardkas/bridge-local`** package to facilitate local bridge payload planning and prefix-mining simulations directly within hooks like `useBridgeLocalPlan` and `useBridgeLocalSimulation`.
+## Installation
 
-### 🛡️ Production & Browser Safety
+```bash
+npm install @hardkas/react @hardkas/client
+```
 
-- **Local Developer Context Only**: The current coupling is designed strictly for local developer preview, ZK/bridge research, and sandbox cockpit operations.
-- **Not Safe for Production Web Browsers**: Do not use the bridge simulation hooks in a public-facing production environment, as they contain node/local-first filesystem assumptions and heavy CPU simulation logic.
-- **Future Separation Roadmap**: We plan to decouple this local simulation code from `@hardkas/react` into a dedicated local testing library (`@hardkas/react-local`) in a post-alpha release.
+## Setup Provider
+
+Wrap your application in the `HardKASProvider`. This initializes the underlying `@hardkas/client` instance.
+
+```tsx
+import { HardKASProvider } from '@hardkas/react';
+
+function App() {
+  return (
+    <HardKASProvider baseUrl="http://127.0.0.1:7420" timeout={10000}>
+      <MyDApp />
+    </HardKASProvider>
+  );
+}
+```
+
+## Hooks
+
+### `useWallet`
+
+Fetch wallet details.
+
+```tsx
+import { useWallet } from '@hardkas/react';
+
+function WalletView() {
+  const { data, loading, error } = useWallet('alice');
+
+  if (loading) return <p>Loading...</p>;
+  if (error) return <p>Error: {error.message}</p>;
+
+  return <pre>{JSON.stringify(data, null, 2)}</pre>;
+}
+```
+
+### `useMutation`
+
+Generic hook for executing state-changing transactions against the Dev API.
+
+```tsx
+import { useMutation } from '@hardkas/react';
+
+function SendKas() {
+  const { execute, loading } = useMutation((client, vars: { to: string, amount: number }) => {
+    return client.txSimulate({ ...vars });
+  });
+
+  return (
+    <button onClick={() => execute({ to: 'bob', amount: 100 })} disabled={loading}>
+      {loading ? 'Sending...' : 'Send to Bob'}
+    </button>
+  );
+}
+```

@@ -1,7 +1,7 @@
-# HardKAS 0.7.13-alpha Product Readiness Report
+# HardKAS 0.8.0-alpha Product Readiness Report
 
 ## Status: NOT CERTIFIED 🚨
-The `0.7.13-alpha` release candidate contains a critical runtime bug that prevents idempotent transaction simulation on in-memory artifacts. 
+The `0.8.0-alpha` release candidate contains a critical runtime bug that prevents idempotent transaction simulation on in-memory artifacts. 
 
 ---
 
@@ -18,9 +18,9 @@ The `0.7.13-alpha` release candidate contains a critical runtime bug that preven
 - **React/browser integration** (Pending Phase 0.8.0 sprint)
 - **Mainnet real funds** (Currently restricted by policy and untested)
 - **Kastj low-level raw tx** (Out of scope for current API boundary)
-- **tx.send idempotency (Simulated)** (FAILED P1 test in 0.7.13-alpha)
+- **tx.send idempotency (Simulated)** (FAILED P1 test in 0.8.0-alpha)
 
 ---
 
 ## Action Required
-A hotfix `0.7.13-alpha` is required to address the `TxPlan` fallback initialization bug in `HardkasTx.simulate` before proceeding to Phase 2 (SDK Gauntlet) and Phase 3 (Command Coverage).
+A hotfix `0.8.0-alpha` is required to address the `TxPlan` fallback initialization bug in `HardkasTx.simulate` before proceeding to Phase 2 (SDK Gauntlet) and Phase 3 (Command Coverage).

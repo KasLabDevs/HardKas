@@ -49,7 +49,7 @@ export async function runDevServer(options: {
     const port = parseInt(options.port, 10);
     let host = options.host;
 
-    if (options.unsafeExternal && options.host === "localhost") {
+    if (options.unsafeExternal && options.host === "127.0.0.1") {
       host = "0.0.0.0";
     }
 

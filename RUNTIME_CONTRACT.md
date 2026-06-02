@@ -1,6 +1,6 @@
 # HardKAS Formal Runtime Contract
 
-This document formally defines the operational semantics, guarantees, and failure modes of the HardKAS runtime (v0.7.13-alpha+). This is not a "best effort" guide; it is the strict operational contract that the runtime must uphold.
+This document formally defines the operational semantics, guarantees, and failure modes of the HardKAS runtime (v0.8.0-alpha+). This is not a "best effort" guide; it is the strict operational contract that the runtime must uphold.
 
 ## 1. Authority Hierarchy & Artifact Identity
 

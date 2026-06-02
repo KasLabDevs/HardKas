@@ -1,7 +1,7 @@
-# HardKAS 0.7.13-alpha — CLI-SDK Equivalence Report
+# HardKAS 0.8.0-alpha — CLI-SDK Equivalence Report
 
 **Date:** 2026-06-02  
-**Version:** 0.7.13-alpha
+**Version:** 0.8.0-alpha
 
 ---
 
