@@ -72,7 +72,7 @@ export function registerDevCommands(program: Command) {
     .command("server")
     .description(`Start the local HardKas Dev Server ${UI.maturity("stable")}`)
     .option("--port <number>", "Port to bind to", "7420")
-    .option("--host <string>", "Host to bind to", "localhost")
+    .option("--host <string>", "Host to bind to", "127.0.0.1")
     .option("--open", "Open dashboard in browser automatically", false)
     .option(
       "--unsafe-external",

@@ -1,7 +1,7 @@
-# HardKAS 0.7.13-alpha — Full Command Coverage Report
+# HardKAS 0.8.0-alpha — Full Command Coverage Report
 
 **Date:** 2026-06-02  
-**CLI Version:** `@hardkas/cli@0.7.13-alpha`  
+**CLI Version:** `@hardkas/cli@0.8.0-alpha`  
 **Discovery Method:** `--help` recursivo real  
 **Node:** v24.15.0
 

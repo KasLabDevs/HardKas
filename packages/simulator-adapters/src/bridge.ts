@@ -1,12 +1,12 @@
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { planBridgeEntry, simulatePrefixMining } from "@hardkas/bridge-local";
-import { useHardKas, useHardKasSession } from "@hardkas/react";
 
 export function useBridgeLocalPlan(
   options: { amountSompi: bigint; toIgra?: string } | null
 ) {
-  const { data: session } = useHardKasSession();
-  const { config } = useHardKas();
+  // Mock session data as @hardkas/react is now zero-dependency
+  const session = { name: "mockSession", l1: { address: "kaspa:mock" }, l2: { address: "0xMock" } };
+  const config = { localOnly: true };
 
   return useQuery({
     queryKey: [

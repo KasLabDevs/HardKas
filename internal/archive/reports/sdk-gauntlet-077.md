@@ -1,10 +1,10 @@
-# Phase 7-B SDK Revenge Run: 0.7.13-alpha vs 0.7.6-alpha
+# Phase 7-B SDK Revenge Run: 0.8.0-alpha vs 0.7.6-alpha
 
-This gauntlet executed 20 real-world React and Node.js applications strictly using `@hardkas/sdk@0.7.13-alpha` installed directly from the public NPM registry. No monorepo links or CLI workarounds were allowed for core operations (`tx plan`, `sign`, `send`, `query`).
+This gauntlet executed 20 real-world React and Node.js applications strictly using `@hardkas/sdk@0.8.0-alpha` installed directly from the public NPM registry. No monorepo links or CLI workarounds were allowed for core operations (`tx plan`, `sign`, `send`, `query`).
 
 ## Global Results
 
-| Metric | 0.7.6-alpha (Baseline) | 0.7.13-alpha (Revenge Run) | Delta |
+| Metric | 0.7.6-alpha (Baseline) | 0.8.0-alpha (Revenge Run) | Delta |
 |--------|-----------------------|--------------------------|-------|
 | **SUCCESSFUL** | 0 | 9 | 🟢 +9 |
 | **PARTIAL** | 4 | 2 | 🟡 -2 |
@@ -40,6 +40,6 @@ This gauntlet executed 20 real-world React and Node.js applications strictly usi
 
 ## Key Findings
 
-1. **Packaging Solved**: `@hardkas/sdk@0.7.13-alpha` successfully installed and executed in totally isolated, clean workspaces fetching from the public registry.
+1. **Packaging Solved**: `@hardkas/sdk@0.8.0-alpha` successfully installed and executed in totally isolated, clean workspaces fetching from the public registry.
 2. **React Viability**: Simple React consumption works! The SDK doesn't instantly crash on import. However, the dedicated `@hardkas/react` library is non-existent/unusable, causing failure in apps relying on hooks.
 3. **Internal Defaults Bug**: `hardkas.accounts.fund` crashes when it tries to derive the funding source and hits an `Unknown HardKAS account 'default'` error. This needs a patch.

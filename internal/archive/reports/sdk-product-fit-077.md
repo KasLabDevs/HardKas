@@ -1,4 +1,4 @@
-# HardKAS 0.7.13-alpha: SDK Product-Market Fit & DX Friction
+# HardKAS 0.8.0-alpha: SDK Product-Market Fit & DX Friction
 
 The Phase 7-B Revenge Run proved that HardKAS is evolving successfully beyond a CLI tool into an adoptable framework. The public NPM installation hurdle is fully solved. 
 
