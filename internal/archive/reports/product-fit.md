@@ -1,4 +1,4 @@
-# Product Fit Analysis — HardKAS 0.7.12-alpha
+# Product Fit Analysis — HardKAS 0.7.13-alpha
 
 Based on empirical data collected across **100 diverse, automated, non-adapted sandboxed runs** of HardKAS, we evaluate the system's exact fit and maturity.
 

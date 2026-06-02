@@ -1,8 +1,8 @@
-# HardKAS 0.7.12-alpha — SDK Gauntlet Report (20 Apps)
+# HardKAS 0.7.13-alpha — SDK Gauntlet Report (20 Apps)
 
 **Date:** 2026-06-02  
-**SDK:** `@hardkas/sdk@0.7.12-alpha`  
-**CLI:** `@hardkas/cli@0.7.12-alpha`  
+**SDK:** `@hardkas/sdk@0.7.13-alpha`  
+**CLI:** `@hardkas/cli@0.7.13-alpha`  
 **Registry:** https://registry.npmjs.org/  
 **Node:** v24.15.0  
 **Total Duration:** ~11m 30s  

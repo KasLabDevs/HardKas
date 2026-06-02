@@ -1,4 +1,4 @@
-# HardKAS 0.7.12-alpha — React/App Readiness Probe
+# HardKAS 0.7.13-alpha — React/App Readiness Probe
 
 ## react-wallet-readonly
 **Classification:** NODE_ONLY_BOUNDARY

@@ -1,4 +1,4 @@
-# HardKAS 0.7.12-alpha CLI Coverage (Fixed)
+# HardKAS 0.7.13-alpha CLI Coverage (Fixed)
 
 - Total CLI Commands Discovered: 124
 - Executed (Success): 6

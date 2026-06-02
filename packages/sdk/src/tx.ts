@@ -24,6 +24,41 @@ import { coreEvents } from "@hardkas/core";
 import { HardkasAccount, signTxPlanArtifact } from "@hardkas/accounts";
 import { parseKasToSompi, type NetworkId } from "@hardkas/core";
 
+function normalizeSimulatedPlanInput(target: any, fallbackId: string): TxPlanArtifact {
+  if (target.schema === ARTIFACT_SCHEMAS.TX_PLAN && Array.isArray(target.inputs)) {
+    return target as TxPlanArtifact;
+  }
+  
+  if (target.from && target.to && target.amountSompi) {
+     if (target.mode !== "simulated") {
+       throw new Error("Cannot simulate real signed artifact without parent plan. Missing plan inputs data.");
+     }
+     
+     return {
+       schema: ARTIFACT_SCHEMAS.TX_PLAN,
+       planId: target.planId || target.sourcePlanId || fallbackId,
+       networkId: target.networkId || "simnet",
+       mode: "simulated",
+       from: target.from,
+       to: target.to,
+       amountSompi: target.amountSompi,
+       estimatedFeeSompi: "0",
+       estimatedMass: "0",
+       inputs: [],
+       outputs: [{ address: target.to.address, amountSompi: target.amountSompi || "0" }],
+       plan: {
+         inputs: [],
+         outputs: [{ address: target.to.address, amountSompi: BigInt(target.amountSompi || 0) }],
+         feeSompi: 0n,
+         mass: 0n,
+         changeSompi: 0n
+       }
+     } as any;
+  }
+  
+  throw new Error("Cannot simulate signed artifact without parent plan or embedded plan data.");
+}
+
 /**
  * HardKAS Transaction Module
  * @alpha
@@ -440,7 +475,7 @@ export class HardkasTx {
 
     if (typeof target === "string") {
       try {
-        targetObj = await this.sdk.artifacts.read(target);
+        targetObj = await this.sdk.artifacts.read(target, { expectedSchema: ARTIFACT_SCHEMAS.TX_PLAN });
       } catch (e) {
         throw new Error(`Artifact '${target}' not found. If you already have an in-memory artifact, pass the object directly to tx.simulate(artifact).`);
       }
@@ -451,31 +486,10 @@ export class HardkasTx {
       sourcePlanId = targetObj.sourcePlanId || "unknown";
       txId = targetObj.txId || `simulated-${sourcePlanId}-tx`;
       try {
-        planArtifact = await this.sdk.artifacts.read(sourcePlanId);
+        planArtifact = await this.sdk.artifacts.read(sourcePlanId, { expectedSchema: ARTIFACT_SCHEMAS.TX_PLAN });
       } catch (e) {
-        // If not found on disk, we reconstruct a pseudo-plan from the signed artifact to allow simulation
-        if ((targetObj as any).from && (targetObj as any).to && (targetObj as any).amountSompi) {
-          planArtifact = {
-            schema: "hardkas.txPlan",
-            planId: sourcePlanId,
-            from: (targetObj as any).from,
-            to: (targetObj as any).to,
-            amountSompi: (targetObj as any).amountSompi,
-            estimatedFeeSompi: "0",
-            estimatedMass: "0",
-            inputs: [],
-            outputs: [{ address: (targetObj as any).to.address, amountSompi: (targetObj as any).amountSompi || "0" }],
-            plan: {
-               inputs: [],
-               outputs: [{ address: (targetObj as any).to.address, amountSompi: BigInt((targetObj as any).amountSompi || 0) }],
-               feeSompi: 0n,
-               mass: 0n,
-               changeSompi: 0n
-            }
-          } as any;
-        } else {
-          throw new Error(`Cannot simulate signed artifact: source plan '${sourcePlanId}' not found in workspace and artifact lacks details.`);
-        }
+        // If parent plan not found, pass the signed artifact for reconstruction
+        planArtifact = targetObj;
       }
     } else {
       planArtifact = targetObj;
@@ -485,14 +499,15 @@ export class HardkasTx {
       // If persist is true and it's a new in-memory plan (no ID), we write it
       if (persist && !planArtifact.planId) {
         const savedPlanResult = await this.sdk.artifacts.write(planArtifact);
-        // Usually we expect the id to be assigned into planArtifact by the artifact manager, or we can just read it back
         sourcePlanId = planArtifact.planId || "unknown";
       }
     }
     
+    const normalizedPlan = normalizeSimulatedPlanInput(planArtifact, sourcePlanId);
+    
     const simResult = applySimulatedPlan(
       state,
-      planArtifact as any,
+      normalizedPlan as any,
       systemRuntimeContext,
       { txId }
     );
