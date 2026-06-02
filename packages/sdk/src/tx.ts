@@ -662,10 +662,11 @@ export class HardkasTx {
           // Check if they were spent by a previous simulation of this exact same transaction.
           try {
             const { loadSimulatedReceipt, getReceiptPath } = await import("@hardkas/localnet");
-            const existingReceipt = await loadSimulatedReceipt(signedArtifact.txId, { cwd: this.sdk.workspace.root });
+            const txIdToLoad = signedArtifact.txId || `simulated-${signedArtifact.sourcePlanId}-tx`;
+            const existingReceipt = await loadSimulatedReceipt(txIdToLoad, { cwd: this.sdk.workspace.root });
             
             if (existingReceipt) {
-              if (existingReceipt.schema === ARTIFACT_SCHEMAS.TX_RECEIPT && (existingReceipt.status === "confirmed" || existingReceipt.status === "accepted")) {
+              if (existingReceipt.schema === ARTIFACT_SCHEMAS.TX_RECEIPT && (existingReceipt.status === "confirmed" || (existingReceipt.status as any) === "accepted")) {
                 return {
                    mode: "simulated",
                    simulated: true,
