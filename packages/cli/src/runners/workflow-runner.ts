@@ -125,7 +125,18 @@ export async function runWorkflowInspect(
       mode: "agent"
     });
 
-    const artifact = (await sdk.artifacts.read(id)) as WorkflowArtifact;
+    let targetId = id;
+    if (id === "latest") {
+      const allArtifacts = await sdk.artifacts.list();
+      const workflows = allArtifacts
+        .filter((a: any) => a.schema === "hardkas.workflow.v1")
+        .sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+      if (workflows.length === 0) throw new Error("No workflow artifacts found to resolve 'latest'.");
+      targetId = workflows[0].id || workflows[0].workflowId || workflows[0].contentHash;
+      UI.info(`Resolved 'latest' to workflow: ${targetId}`);
+    }
+
+    const artifact = (await sdk.artifacts.read(targetId)) as WorkflowArtifact;
 
     if (artifact.schema !== "hardkas.workflow.v1") {
       throw new Error(`Artifact ${id} is not a valid workflow artifact`);
@@ -149,9 +160,21 @@ export async function runWorkflowInspect(
 export async function runWorkflowReplay(id: string, options: any) {
   try {
     const sdk = await Hardkas.open({ cwd: options.workspaceRoot });
-    UI.info(`Replaying workflow lineage for ${id}...`);
 
-    const result = await sdk.replay.verify({ workflowId: id });
+    let targetId = id;
+    if (id === "latest") {
+      const allArtifacts = await sdk.artifacts.list();
+      const workflows = allArtifacts
+        .filter((a: any) => a.schema === "hardkas.workflow.v1")
+        .sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+      if (workflows.length === 0) throw new Error("No workflow artifacts found to resolve 'latest'.");
+      targetId = workflows[0].id || workflows[0].workflowId || workflows[0].contentHash;
+      UI.info(`Resolved 'latest' to workflow: ${targetId}`);
+    }
+
+    UI.info(`Replaying workflow lineage for ${targetId}...`);
+
+    const result = await sdk.replay.verify({ workflowId: targetId });
 
     if (!result.passed) {
       UI.error(
@@ -181,10 +204,25 @@ export async function runWorkflowDiff(
       ...(options.workspaceRoot ? { cwd: options.workspaceRoot } : {})
     } as HardkasOptions);
 
-    UI.info(`Comparing Workflow A (${idA}) against Workflow B (${idB})...`);
+    const resolveAlias = async (id: string) => {
+      if (id === "latest") {
+        const allArtifacts = await sdk.artifacts.list();
+        const workflows = allArtifacts
+          .filter((a: any) => a.schema === "hardkas.workflow.v1")
+          .sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+        if (workflows.length === 0) throw new Error("No workflow artifacts found to resolve 'latest'.");
+        return workflows[0].id || workflows[0].workflowId || workflows[0].contentHash;
+      }
+      return id;
+    };
 
-    const wfA = (await sdk.artifacts.read(idA)) as WorkflowArtifact;
-    const wfB = (await sdk.artifacts.read(idB)) as WorkflowArtifact;
+    const targetIdA = await resolveAlias(idA);
+    const targetIdB = await resolveAlias(idB);
+
+    UI.info(`Comparing Workflow A (${targetIdA}) against Workflow B (${targetIdB})...`);
+
+    const wfA = (await sdk.artifacts.read(targetIdA)) as WorkflowArtifact;
+    const wfB = (await sdk.artifacts.read(targetIdB)) as WorkflowArtifact;
 
     if (wfA.schema !== "hardkas.workflow.v1" || wfB.schema !== "hardkas.workflow.v1") {
       throw new Error("Both artifacts must be workflows");

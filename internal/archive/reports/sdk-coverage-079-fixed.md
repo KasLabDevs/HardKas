@@ -1,4 +1,4 @@
-# HardKAS 0.7.11-alpha SDK Coverage (Fixed)
+# HardKAS 0.7.12-alpha SDK Coverage (Fixed)
 
 - SDK APIs manually mapped: 11
 - Executed: 11

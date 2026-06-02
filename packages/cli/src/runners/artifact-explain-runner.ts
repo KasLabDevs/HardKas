@@ -98,8 +98,15 @@ export async function runArtifactExplain(options: {
   if (explanation.security.strictOk) {
     UI.success("  ✓ No critical integrity violations detected.");
   } else {
-    UI.error("  ✗ SECURITY WARNINGS DETECTED.");
-    process.exitCode = 1;
+    const hasErrors = explanation.security.issues.some(
+      (i: any) => i.severity === "critical" || i.severity === "error"
+    );
+    if (hasErrors) {
+      UI.error("  ✗ SECURITY WARNINGS DETECTED.");
+      process.exitCode = 1;
+    } else {
+      UI.warning("  ⚠ SECURITY WARNINGS DETECTED.");
+    }
   }
 
   if (explanation.security.issues.length > 0) {

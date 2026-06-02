@@ -11,7 +11,7 @@ export async function runSnapshotVerify(options: SnapshotVerifyOptions) {
   try {
     const { Hardkas } = await import("@hardkas/sdk");
     const sdk = await Hardkas.open({ cwd: options.workspaceRoot });
-    const state = await loadOrCreateLocalnetState();
+    const state = await loadOrCreateLocalnetState({ cwd: options.workspaceRoot });
     const snapshot = state.snapshots?.find(
       (s: any) =>
         s.id === options.idOrName ||

@@ -1,0 +1,162 @@
+[
+  {
+    "name": "01-wallet-backend",
+    "type": "node",
+    "status": "SUCCESSFUL",
+    "artifacts": 3,
+    "durationMs": 41399,
+    "error": null
+  },
+  {
+    "name": "02-react-wallet",
+    "type": "react",
+    "status": "SUCCESSFUL",
+    "artifacts": 0,
+    "durationMs": 31518,
+    "error": null
+  },
+  {
+    "name": "03-audit-explorer-node",
+    "type": "node",
+    "status": "SUCCESSFUL",
+    "artifacts": 0,
+    "durationMs": 34117,
+    "error": null
+  },
+  {
+    "name": "04-audit-explorer-react",
+    "type": "react",
+    "status": "SUCCESSFUL",
+    "artifacts": 0,
+    "durationMs": 27961,
+    "error": null
+  },
+  {
+    "name": "05-document-notary-node",
+    "type": "node",
+    "status": "SUCCESSFUL",
+    "artifacts": 0,
+    "durationMs": 37957,
+    "error": null
+  },
+  {
+    "name": "06-document-notary-react",
+    "type": "react",
+    "status": "FAILED",
+    "artifacts": 0,
+    "durationMs": 32991,
+    "error": "P1/P2 DX gap: @hardkas/react failed or missing"
+  },
+  {
+    "name": "07-game-backend",
+    "type": "node",
+    "status": "SUCCESSFUL",
+    "artifacts": 0,
+    "durationMs": 27925,
+    "error": null
+  },
+  {
+    "name": "08-game-dashboard",
+    "type": "react",
+    "status": "SUCCESSFUL",
+    "artifacts": 0,
+    "durationMs": 36486,
+    "error": null
+  },
+  {
+    "name": "09-payroll-service",
+    "type": "node",
+    "status": "SUCCESSFUL",
+    "artifacts": 3,
+    "durationMs": 32595,
+    "error": null
+  },
+  {
+    "name": "10-payroll-ui",
+    "type": "react",
+    "status": "FAILED",
+    "artifacts": 0,
+    "durationMs": 39441,
+    "error": "P1/P2 DX gap: @hardkas/react failed or missing"
+  },
+  {
+    "name": "11-dao-multisig-node",
+    "type": "node",
+    "status": "SUCCESSFUL",
+    "artifacts": 4,
+    "durationMs": 44566,
+    "error": null
+  },
+  {
+    "name": "12-dao-dashboard",
+    "type": "react",
+    "status": "SUCCESSFUL",
+    "artifacts": 0,
+    "durationMs": 31325,
+    "error": null
+  },
+  {
+    "name": "13-backup-integrity",
+    "type": "node",
+    "status": "SUCCESSFUL",
+    "artifacts": 5,
+    "durationMs": 38283,
+    "error": null
+  },
+  {
+    "name": "14-ci-artifact-verifier",
+    "type": "node",
+    "status": "FAILED",
+    "artifacts": 1,
+    "durationMs": 29388,
+    "error": "file:///C:/Users/jrodr/Documents/kaslabdevs/GitHub/external-gauntlet-runs/14-ci-artifact-verifier/in"
+  },
+  {
+    "name": "15-agent-wallet",
+    "type": "node",
+    "status": "SUCCESSFUL",
+    "artifacts": 0,
+    "durationMs": 29969,
+    "error": null
+  },
+  {
+    "name": "16-agent-approval-flow",
+    "type": "node",
+    "status": "SUCCESSFUL",
+    "artifacts": 0,
+    "durationMs": 30183,
+    "error": null
+  },
+  {
+    "name": "17-mini-indexer",
+    "type": "node",
+    "status": "SUCCESSFUL",
+    "artifacts": 0,
+    "durationMs": 34832,
+    "error": null
+  },
+  {
+    "name": "18-query-store-test",
+    "type": "node",
+    "status": "SUCCESSFUL",
+    "artifacts": 0,
+    "durationMs": 31989,
+    "error": null
+  },
+  {
+    "name": "19-dashboard-integration",
+    "type": "react",
+    "status": "SUCCESSFUL",
+    "artifacts": 0,
+    "durationMs": 36887,
+    "error": null
+  },
+  {
+    "name": "20-kastj-migration-spike",
+    "type": "node",
+    "status": "FAILED",
+    "artifacts": 0,
+    "durationMs": 38898,
+    "error": "file:///C:/Users/jrodr/Documents/kaslabdevs/GitHub/external-gauntlet-runs/20-kastj-migration-spike/i"
+  }
+]
