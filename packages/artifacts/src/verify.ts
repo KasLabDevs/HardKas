@@ -1,4 +1,5 @@
 import fs from "node:fs";
+import path from "node:path";
 import { calculateContentHash } from "./canonical.js";
 import {
   SnapshotSchema,
@@ -30,6 +31,9 @@ export interface VerificationContext {
   strict?: boolean;
   networkId?: NetworkId;
   parent?: unknown;
+  artifactsDir?: string;
+  enforceMetadata?: boolean;
+  resolveArtifact?: (id: string) => any;
 }
 
 export type VerificationSeverity = CorruptionSeverity | "info" | "critical";
@@ -84,12 +88,12 @@ export function sortUtxosByOutpoint<T>(utxos: T[]): T[] {
 }
 
 /**
- * Verifies an artifact's integrity.
+ * Verifies an artifact's integrity synchronously.
  * Can take a raw object or a file path.
  */
-export async function verifyArtifactIntegrity(
+export function verifyArtifactIntegritySync(
   artifactOrPath: unknown
-): Promise<ArtifactVerificationResult> {
+): ArtifactVerificationResult {
   const result: ArtifactVerificationResult = {
     ok: false,
     errors: [],
@@ -230,6 +234,52 @@ export async function verifyArtifactIntegrity(
 }
 
 /**
+ * Verifies an artifact's integrity asynchronously.
+ * Can take a raw object or a file path.
+ */
+export async function verifyArtifactIntegrity(
+  artifactOrPath: unknown
+): Promise<ArtifactVerificationResult> {
+  return verifyArtifactIntegritySync(artifactOrPath);
+}
+
+function findFileByHash(hash: string, dirs: string[]): string | null {
+  for (const dir of dirs) {
+    if (!fs.existsSync(dir)) continue;
+    try {
+      const files = fs.readdirSync(dir);
+      if (files.includes(`${hash}.json`)) {
+        return path.join(dir, `${hash}.json`);
+      }
+      const candidates = files.filter(
+        (f) => f.startsWith(`${hash}-`) || f.startsWith(`${hash}.`) || f.includes(hash)
+      );
+      for (const file of candidates) {
+        const filePath = path.join(dir, file);
+        try {
+          const content = fs.readFileSync(filePath, "utf-8");
+          const obj = JSON.parse(content);
+          if (
+            obj.contentHash === hash ||
+            obj.artifactId === hash ||
+            obj.planId === hash ||
+            obj.signedId === hash ||
+            obj.txId === hash
+          ) {
+            return filePath;
+          }
+        } catch {
+          // ignore
+        }
+      }
+    } catch {
+      // ignore
+    }
+  }
+  return null;
+}
+
+/**
  * Verifies an artifact's semantic and economic validity.
  */
 export function verifyArtifactSemantics(
@@ -266,6 +316,244 @@ export function verifyArtifactSemantics(
 
   const v = artifact as Record<string, unknown>;
 
+  // Strict Reference and Policy Evaluation (HardKAS v0.8.4)
+  let parentObj: any = null;
+
+  if (strict) {
+    const searchDirs = [];
+    if (context.artifactsDir) {
+      searchDirs.push(context.artifactsDir);
+    }
+    searchDirs.push(path.join(process.cwd(), ".hardkas", "artifacts"));
+    searchDirs.push(path.join(process.cwd(), "artifacts"));
+
+    // Collect policy references
+    const policyRefs: string[] = [];
+    if (Array.isArray(v.policyRefs)) {
+      policyRefs.push(...v.policyRefs);
+    } else if (typeof v.policyRef === "string") {
+      policyRefs.push(v.policyRef);
+    }
+
+
+
+    // Resolve policies
+    for (const ref of policyRefs) {
+      let refObj = context.resolveArtifact ? context.resolveArtifact(ref) : null;
+      if (!refObj) {
+        const refFile = findFileByHash(ref, searchDirs);
+        if (refFile) {
+          try {
+            const content = fs.readFileSync(refFile, "utf-8");
+            refObj = JSON.parse(content);
+          } catch (e: any) {
+            addIssue({
+              code: "REFERENCE_CORRUPT",
+              severity: "error",
+              message: `Failed to read policy ${ref}: ${e.message}`
+            });
+          }
+        }
+      }
+
+      if (!refObj) {
+        addIssue({
+          code: "REFERENCE_MISSING",
+          severity: "error",
+          message: `Referenced policy artifact ${ref} not found in workspace`
+        });
+      } else {
+        try {
+          // 1. Verify policy integrity
+          const integrity = verifyArtifactIntegritySync(refObj);
+          if (!integrity.ok) {
+            addIssue({
+              code: "REFERENCE_HASH_MISMATCH",
+              severity: "error",
+              message: `Referenced policy ${ref} integrity check failed: ${integrity.errors.join(", ")}`
+            });
+          } else if (refObj.contentHash !== ref && refObj.artifactId !== ref) {
+            addIssue({
+              code: "REFERENCE_HASH_MISMATCH",
+              severity: "error",
+              message: `Policy reference mismatch: expected ${ref}, got ${refObj.contentHash}`
+            });
+          } else {
+            // 2. Minimal Policy Evaluation
+            if (refObj.schema === "hardkas.policy.v1") {
+              if (refObj.decision === "DENY") {
+                addIssue({
+                  code: "POLICY_VIOLATION",
+                  severity: "error",
+                  message: `Policy evaluation rejected: decision is DENY`
+                });
+              } else if (refObj.decision !== "ALLOW") {
+                addIssue({
+                  code: "POLICY_VIOLATION",
+                  severity: "error",
+                  message: `Policy evaluation rejected: decision is invalid (${refObj.decision})`
+                });
+              }
+              const failedRules = refObj.rules?.filter((r: any) => r.result === "FAIL") || [];
+              if (failedRules.length > 0) {
+                addIssue({
+                  code: "POLICY_VIOLATION",
+                  severity: "error",
+                  message: `Policy rules failed: ${failedRules.map((r: any) => r.id).join(", ")}`
+                });
+              }
+            }
+          }
+        } catch (e: any) {
+          addIssue({
+            code: "REFERENCE_CORRUPT",
+            severity: "error",
+            message: `Failed to read/verify policy ${ref}: ${e.message}`
+          });
+        }
+      }
+    }
+
+    // Resolve networkProfileRef
+    if (typeof v.networkProfileRef === "string") {
+      const ref = v.networkProfileRef;
+      let refObj = context.resolveArtifact ? context.resolveArtifact(ref) : null;
+      if (!refObj) {
+        const refFile = findFileByHash(ref, searchDirs);
+        if (refFile) {
+          try {
+            refObj = JSON.parse(fs.readFileSync(refFile, "utf-8"));
+          } catch {}
+        }
+      }
+      if (!refObj) {
+        addIssue({
+          code: "REFERENCE_MISSING",
+          severity: "error",
+          message: `Referenced network profile ${ref} not found in workspace`
+        });
+      } else {
+        try {
+          const integrity = verifyArtifactIntegritySync(refObj);
+          if (!integrity.ok) {
+            addIssue({
+              code: "REFERENCE_HASH_MISMATCH",
+              severity: "error",
+              message: `Referenced profile ${ref} integrity check failed`
+            });
+          } else if (refObj.contentHash !== ref && refObj.artifactId !== ref) {
+            addIssue({
+              code: "REFERENCE_HASH_MISMATCH",
+              severity: "error",
+              message: `Profile reference mismatch: expected ${ref}, got ${refObj.contentHash}`
+            });
+          }
+        } catch (e: any) {
+          addIssue({
+            code: "REFERENCE_CORRUPT",
+            severity: "error",
+            message: `Failed to verify profile ${ref}`
+          });
+        }
+      }
+    }
+
+    // Resolve assumptionRef
+    if (typeof v.assumptionRef === "string") {
+      const ref = v.assumptionRef;
+      let refObj = context.resolveArtifact ? context.resolveArtifact(ref) : null;
+      if (!refObj) {
+        const refFile = findFileByHash(ref, searchDirs);
+        if (refFile) {
+          try {
+            refObj = JSON.parse(fs.readFileSync(refFile, "utf-8"));
+          } catch {}
+        }
+      }
+      if (!refObj) {
+        addIssue({
+          code: "REFERENCE_MISSING",
+          severity: "error",
+          message: `Referenced assumption ${ref} not found in workspace`
+        });
+      } else {
+        try {
+          const integrity = verifyArtifactIntegritySync(refObj);
+          if (!integrity.ok) {
+            addIssue({
+              code: "REFERENCE_HASH_MISMATCH",
+              severity: "error",
+              message: `Referenced assumption ${ref} integrity check failed`
+            });
+          } else if (refObj.contentHash !== ref && refObj.artifactId !== ref) {
+            addIssue({
+              code: "REFERENCE_HASH_MISMATCH",
+              severity: "error",
+              message: `Assumption reference mismatch: expected ${ref}, got ${refObj.contentHash}`
+            });
+          }
+        } catch (e: any) {
+          addIssue({
+            code: "REFERENCE_CORRUPT",
+            severity: "error",
+            message: `Failed to verify assumption ${ref}`
+          });
+        }
+      }
+    }
+
+    // Resolve parent artifact for active lineage check
+    let parentId: string | undefined;
+    const lineage = v.lineage as any;
+    if (lineage?.parentArtifactId && lineage?.parentArtifactId !== lineage?.artifactId) {
+      parentId = lineage?.parentArtifactId as string;
+    } else if (v.schema === "hardkas.signedTx") {
+      parentId = v.sourcePlanId as string;
+    } else if (v.schema === "hardkas.txReceipt") {
+      parentId = (v.sourceSignedId || lineage?.parentArtifactId) as string;
+    }
+
+    if (parentId) {
+      parentObj = context.resolveArtifact ? context.resolveArtifact(parentId) : null;
+      if (!parentObj) {
+        const parentFile = findFileByHash(parentId, searchDirs);
+        if (parentFile) {
+          try {
+            parentObj = JSON.parse(fs.readFileSync(parentFile, "utf-8"));
+          } catch (e: any) {
+            addIssue({
+              code: "PARENT_CORRUPT",
+              severity: "error",
+              message: `Failed to read parent ${parentId}: ${e.message}`
+            });
+          }
+        }
+      }
+
+      if (!parentObj) {
+        addIssue({
+          code: "PARENT_MISSING",
+          severity: "error",
+          message: `Parent artifact ${parentId} not found in workspace`
+        });
+      } else {
+        try {
+          // Recursively verify parent semantic checks
+          const parentSem = verifyArtifactSemantics(parentObj, { ...context, strict: true });
+          if (!parentSem.ok) {
+            parentSem.issues.forEach(issue => addIssue(issue));
+          }
+        } catch (e: any) {
+          addIssue({
+            code: "PARENT_CORRUPT",
+            severity: "error",
+            message: `Failed to verify parent ${parentId}: ${e.message}`
+          });
+        }
+      }
+    }
+  }
+
   // 2. Staleness Check
   if (v.createdAt && typeof v.createdAt === "string") {
     const created = new Date(v.createdAt).getTime();
@@ -288,7 +576,7 @@ export function verifyArtifactSemantics(
   }
 
   // 3. Lineage Audit (Harden and Harmonize)
-  const lineageAudit = verifyLineage(v, context.parent, { strict });
+  const lineageAudit = verifyLineage(v, parentObj || context.parent, { strict });
   if (!lineageAudit.ok || (strict && !v.lineage && v.schema !== "hardkas.workflow.v1")) {
     lineageAudit.issues.forEach((issue) => {
       addIssue(issue);
@@ -297,24 +585,40 @@ export function verifyArtifactSemantics(
 
   // 4. Hardening Fields
   if (strict) {
-    if (!v.workflowId)
-      addIssue({
-        code: "MISSING_WORKFLOW_ID",
-        severity: "error",
-        message: "Strict mode requires workflowId"
-      });
-    if (!v.assumptionLevel && v.schema !== "hardkas.workflow.v1")
-      addIssue({
-        code: "MISSING_ASSUMPTION_LEVEL",
-        severity: "error",
-        message: "Strict mode requires assumptionLevel"
-      });
-    if (!v.executionMode && !v.mode)
-      addIssue({
-        code: "MISSING_EXECUTION_MODE",
-        severity: "error",
-        message: "Strict mode requires executionMode"
-      });
+    const enforceMetadata = context.enforceMetadata ?? true;
+    if (enforceMetadata) {
+      if (!v.workflowId)
+        addIssue({
+          code: "MISSING_WORKFLOW_ID",
+          severity: "error",
+          message: "Strict mode requires workflowId"
+        });
+      if (!v.assumptionLevel && v.schema !== "hardkas.workflow.v1")
+        addIssue({
+          code: "MISSING_ASSUMPTION_LEVEL",
+          severity: "error",
+          message: "Strict mode requires assumptionLevel"
+        });
+      if (!v.executionMode && !v.mode)
+        addIssue({
+          code: "MISSING_EXECUTION_MODE",
+          severity: "error",
+          message: "Strict mode requires executionMode"
+        });
+    } else {
+      if (!v.workflowId)
+        addIssue({
+          code: "MISSING_WORKFLOW_ID",
+          severity: "warning",
+          message: "Missing workflowId"
+        });
+      if (!v.assumptionLevel && v.schema !== "hardkas.workflow.v1")
+        addIssue({
+          code: "MISSING_ASSUMPTION_LEVEL",
+          severity: "warning",
+          message: "Missing assumptionLevel"
+        });
+    }
   } else {
     if (!v.workflowId)
       addIssue({

@@ -218,6 +218,7 @@ export interface TxPlanArtifact extends BaseArtifact<"txPlan"> {
     | undefined;
   networkProfileRef?: string | undefined;
   policyRef?: string | undefined;
+  policyRefs?: string[] | undefined;
   assumptionRef?: string | undefined;
 }
 

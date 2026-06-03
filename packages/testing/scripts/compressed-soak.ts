@@ -74,6 +74,9 @@ async function runSoak() {
 
       // Save them (if SDK exposes save artifact, or just pass them raw)
       // We will pass the raw objects to plan as we added support for it
+      sdk.artifacts.cacheArtifact(policy);
+      sdk.artifacts.cacheArtifact(netProfile);
+      sdk.artifacts.cacheArtifact(assumption);
       
       // 2. Tx Plan
       const plan = await sdk.tx.plan({

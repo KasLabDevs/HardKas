@@ -36,7 +36,7 @@ describe("Query Store Rebuild Equivalence", () => {
     const artifact: any = {
       schema,
       version: "1.0.0-alpha",
-      hardkasVersion: "0.8.3-alpha",
+      hardkasVersion: "0.8.4-alpha",
       networkId: "simnet",
       mode: "real",
       artifactId: id,
