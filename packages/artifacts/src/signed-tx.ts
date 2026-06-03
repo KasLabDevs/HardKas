@@ -39,7 +39,7 @@ export function createSimulatedSignedTxArtifact(
     },
     lineage: {
       artifactId: "",
-      lineageId: plan.lineage?.lineageId || Array.from({length: 64}, () => Math.floor(Math.random()*16).toString(16)).join(''),
+      lineageId: plan.lineage?.lineageId || plan.contentHash || "0".repeat(64),
       parentArtifactId: plan.contentHash || "0".repeat(64),
       rootArtifactId: plan.lineage?.rootArtifactId || plan.contentHash || "0".repeat(64),
       sequence: (plan.lineage?.sequence || 0) + 1
@@ -97,7 +97,7 @@ export function createSimulatedTxReceipt(
     dagContext: extra?.dagContext,
     lineage: {
       artifactId: "",
-      lineageId: plan.lineage?.lineageId || Array.from({length: 64}, () => Math.floor(Math.random()*16).toString(16)).join(''),
+      lineageId: plan.lineage?.lineageId || plan.contentHash || "0".repeat(64),
       parentArtifactId: "0".repeat(64), // Will set to contentHash of signedTx later
       rootArtifactId: plan.lineage?.rootArtifactId || plan.contentHash || "0".repeat(64),
       sequence: (plan.lineage?.sequence || 1) + 1
