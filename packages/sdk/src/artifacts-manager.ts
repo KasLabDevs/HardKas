@@ -171,7 +171,40 @@ export class HardkasArtifactsManager {
         // 2. Try prefix search in workspace artifacts directory
         if (fs.existsSync(this.workspace.artifactsDir)) {
           const files = fs.readdirSync(this.workspace.artifactsDir);
-          const found = files.find((f) => f === `${id}.json` || f.startsWith(`${id}-`) || f.startsWith(`${id}.`) || f.endsWith(`-${id}.json`));
+          let found = files.find((f) => 
+            f === `${id}.json` || 
+            f.startsWith(`${id}-`) || 
+            f.startsWith(`${id}.`) || 
+            f.endsWith(`-${id}.json`) ||
+            f.endsWith(`-${id}.plan.json`) ||
+            f.endsWith(`-${id}.signed.json`) ||
+            f.endsWith(`-${id}.receipt.json`)
+          );
+          
+          if (!found) {
+            const shortId = id.startsWith("plan-") || id.startsWith("signed-") ? id : id.slice(0, 16);
+            for (const file of files) {
+              if (!file.endsWith(".json")) continue;
+              if (file.includes(id) || file.includes(shortId) || file.includes(id.slice(0, 8))) {
+                const fp = path.join(this.workspace.artifactsDir, file);
+                try {
+                  const content = fs.readFileSync(fp, "utf-8");
+                  const obj = JSON.parse(content);
+                  if (
+                    obj.contentHash === id ||
+                    obj.artifactId === id ||
+                    obj.planId === id ||
+                    obj.signedId === id ||
+                    obj.txId === id
+                  ) {
+                    found = file;
+                    break;
+                  }
+                } catch {}
+              }
+            }
+          }
+          
           if (found) {
             filePath = path.join(this.workspace.artifactsDir, found);
           } else {

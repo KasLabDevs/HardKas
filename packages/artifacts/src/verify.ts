@@ -244,6 +244,7 @@ export async function verifyArtifactIntegrity(
 }
 
 function findFileByHash(hash: string, dirs: string[]): string | null {
+  const shortHash = hash.startsWith("plan-") || hash.startsWith("signed-") ? hash : hash.slice(0, 16);
   for (const dir of dirs) {
     if (!fs.existsSync(dir)) continue;
     try {
@@ -251,25 +252,29 @@ function findFileByHash(hash: string, dirs: string[]): string | null {
       if (files.includes(`${hash}.json`)) {
         return path.join(dir, `${hash}.json`);
       }
-      const candidates = files.filter(
-        (f) => f.startsWith(`${hash}-`) || f.startsWith(`${hash}.`) || f.includes(hash)
-      );
-      for (const file of candidates) {
-        const filePath = path.join(dir, file);
-        try {
-          const content = fs.readFileSync(filePath, "utf-8");
-          const obj = JSON.parse(content);
-          if (
-            obj.contentHash === hash ||
-            obj.artifactId === hash ||
-            obj.planId === hash ||
-            obj.signedId === hash ||
-            obj.txId === hash
-          ) {
-            return filePath;
+      for (const file of files) {
+        if (!file.endsWith(".json")) continue;
+        if (
+          file.includes(hash) ||
+          file.includes(shortHash) ||
+          file.includes(hash.slice(0, 8))
+        ) {
+          const filePath = path.join(dir, file);
+          try {
+            const content = fs.readFileSync(filePath, "utf-8");
+            const obj = JSON.parse(content);
+            if (
+              obj.contentHash === hash ||
+              obj.artifactId === hash ||
+              obj.planId === hash ||
+              obj.signedId === hash ||
+              obj.txId === hash
+            ) {
+              return filePath;
+            }
+          } catch {
+            // ignore
           }
-        } catch {
-          // ignore
         }
       }
     } catch {
@@ -533,7 +538,7 @@ export function verifyArtifactSemantics(
       if (!parentObj) {
         addIssue({
           code: "PARENT_MISSING",
-          severity: "error",
+          severity: "warning",
           message: `Parent artifact ${parentId} not found in workspace`
         });
       } else {
