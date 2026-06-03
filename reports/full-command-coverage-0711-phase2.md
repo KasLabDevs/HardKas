@@ -1,7 +1,7 @@
-# HardKAS 0.8.1-alpha — Command Coverage Phase 2
+# HardKAS 0.8.2-alpha — Command Coverage Phase 2
 
 **Date:** 2026-06-02  
-**CLI:** `@hardkas/cli@0.8.1-alpha`  
+**CLI:** `@hardkas/cli@0.8.2-alpha`  
 **Registry:** https://registry.npmjs.org/  
 **Node:** v24.15.0  
 **Total Duration:** 103.8s  
@@ -28,7 +28,7 @@
 
 | # | Label | Command | Status | Duration | Category |
 |---|-------|---------|--------|----------|----------|
-| 1 | npm-install | `npm install @hardkas/sdk@0.8.1-alpha ...` | ✅ | 37.1s | setup |
+| 1 | npm-install | `npm install @hardkas/sdk@0.8.2-alpha ...` | ✅ | 37.1s | setup |
 | 2 | cli-init | `npx @hardkas/cli init . --skip-install` | ✅ | 7.6s | setup |
 | 3 | seed-data | `node seed.mjs` | ❌ | 0.8s | **BUG** |
 | 4 | config-show | `npx @hardkas/cli config show` | ✅ | 1.8s | ✅ |

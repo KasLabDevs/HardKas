@@ -1,9 +1,9 @@
 
-# HardKAS 0.8.1-alpha SDK Gauntlet Report
+# HardKAS 0.8.2-alpha SDK Gauntlet Report
 
 ## Execution Summary
 - **Workspace**: `external-0713-gauntlet`
-- **NPM Package**: `@hardkas/sdk@0.8.1-alpha`
+- **NPM Package**: `@hardkas/sdk@0.8.2-alpha`
 - **Target Achieved**: 18/20 (Goal: >=15)
 - **Previous (0.7.9)**: 12 SUCCESS / 8 FAILED
 

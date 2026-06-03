@@ -1,4 +1,4 @@
-# HardKAS 0.8.1-alpha Targeted Regression
+# HardKAS 0.8.2-alpha Targeted Regression
 
 | App | Status |
 |---|---|

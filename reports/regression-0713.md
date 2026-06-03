@@ -1,9 +1,9 @@
 
-# HardKAS 0.8.1-alpha Targeted Regression Report
+# HardKAS 0.8.2-alpha Targeted Regression Report
 
 ## Execution Summary
 - **Workspace**: `external-0713-regression`
-- **NPM Package**: `@hardkas/sdk@0.8.1-alpha`
+- **NPM Package**: `@hardkas/sdk@0.8.2-alpha`
 - **Status**: ✅ ALL PASSED
 
 ## Application Matrix

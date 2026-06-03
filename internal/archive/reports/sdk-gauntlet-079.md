@@ -1,7 +1,7 @@
-# SDK Gauntlet 0.8.1-alpha
+# SDK Gauntlet 0.8.2-alpha
 
 ## Overview
-This document contains the execution results of the **Phase 7-C SDK Revenge Run** against the `@hardkas/sdk@0.8.1-alpha` version pulled from the **real NPM registry**.
+This document contains the execution results of the **Phase 7-C SDK Revenge Run** against the `@hardkas/sdk@0.8.2-alpha` version pulled from the **real NPM registry**.
 
 All CLI fallbacks for core operations were strictly prohibited. The focus was on identifying whether the SDK could achieve a target of 15+ `SUCCESS` applications out of the 20 benchmark applications, purely using programmatic interfaces.
 

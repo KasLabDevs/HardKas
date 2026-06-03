@@ -72,7 +72,7 @@ export class HardkasTx {
   async plan(options: {
     from: string | HardkasAccount;
     to: string | HardkasAccount;
-    amount: string | bigint;
+    amount: string | number | bigint;
     feeRate?: bigint;
     workflowId?: string;
   }): Promise<TxPlanArtifact> {
@@ -94,7 +94,7 @@ export class HardkasTx {
       typeof options.amount === "string"
         ? parseKasToSompi(options.amount)
         : typeof options.amount === "number"
-          ? BigInt(options.amount)
+          ? parseKasToSompi(options.amount.toString())
           : options.amount;
 
     if (amountSompi === 0n) {
@@ -182,6 +182,10 @@ export class HardkasTx {
       requiredSigners?: string[];
     }
   ): Promise<SignedTxArtifact> {
+    if (typeof plan === "object" && plan !== null && (plan as any).contentHash) {
+      await this.sdk.artifacts.verify(plan, { throwOnInvalid: true });
+    }
+
     let resolvedAccount: HardkasAccount;
     if (typeof account === "string") {
       resolvedAccount = await this.sdk.accounts.resolve(account);
@@ -401,6 +405,9 @@ export class HardkasTx {
 
         signedArtifact = draft;
       } else {
+        if (resolvedAccount.address !== plan.from.address) {
+          throw new Error(`Signer account '${resolvedAccount.address}' is not authorized to sign for '${plan.from.address}'.`);
+        }
         // Standard single-signature plan signing (maintains 100% backward compatibility)
         signedArtifact = await signTxPlanArtifact({
           planArtifact: plan,
@@ -449,6 +456,9 @@ export class HardkasTx {
     target: string | Partial<TxPlanArtifact> | SignedTxArtifact,
     options: { persist?: boolean } = {}
   ): Promise<{ receipt: TxReceiptArtifact; receiptPath?: string; tracePath?: string }> {
+    if (typeof target === "object" && target !== null && (target as any).contentHash) {
+      await this.sdk.artifacts.verify(target, { throwOnInvalid: true });
+    }
     const persist = options.persist ?? true;
     const {
       loadOrCreateLocalnetState,
@@ -653,6 +663,10 @@ export class HardkasTx {
     submitted?: boolean;
     txId?: string;
   }> {
+    if (typeof signedArtifact === "object" && signedArtifact !== null && (signedArtifact as any).contentHash) {
+      await this.sdk.artifacts.verify(signedArtifact as any, { throwOnInvalid: true });
+    }
+
     // Perform pre-broadcast semantic verification (VULN-05)
     const verification = verifySignedTxSemantics(signedArtifact);
     if (!verification.ok) {

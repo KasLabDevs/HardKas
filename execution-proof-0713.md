@@ -1,9 +1,9 @@
 
-# Execution Proof 0.8.1-alpha
+# Execution Proof 0.8.2-alpha
 
 - Node Version: v24.15.0
 - NPM Version: 11.12.1
-- CLI Version: 0.8.1-alpha
+- CLI Version: 0.8.2-alpha
 - Package Lock Hash (App 1): 6e4dbf5c65485d2b182350fe6c4015b9d302d76be19afafd8801be14cb76a052
 - Duration: N/A
 

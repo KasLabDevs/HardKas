@@ -1,4 +1,4 @@
-# HardKAS 0.8.1-alpha CLI Coverage
+# HardKAS 0.8.2-alpha CLI Coverage
 
 - Total CLI Commands Discovered: 124
 - Executed (Success): 6

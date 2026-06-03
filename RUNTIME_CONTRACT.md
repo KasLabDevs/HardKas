@@ -1,6 +1,6 @@
 # HardKAS Formal Runtime Contract
 
-This document formally defines the operational semantics, guarantees, and failure modes of the HardKAS runtime (v0.8.1-alpha+). This is not a "best effort" guide; it is the strict operational contract that the runtime must uphold.
+This document formally defines the operational semantics, guarantees, and failure modes of the HardKAS runtime (v0.8.2-alpha+). This is not a "best effort" guide; it is the strict operational contract that the runtime must uphold.
 
 ## 1. Authority Hierarchy & Artifact Identity
 
@@ -11,6 +11,11 @@ HardKAS distinguishes between authoritative truth and observational projections.
 - **Telemetry Stream (`telemetry.jsonl`)**: Purely observational. Contains anomalies, metrics, and logs. It is **rotatable** and loss of telemetry does not invalidate canonical state.
 - **SQLite Projection (query-store)**: A disposable, derived index. It is **never authoritative**. If lost, corrupt, or stale, it must be rebuilt from the event ledger and artifacts.
 - **Dashboard Status**: Purely observational, derived from the watcher's reconciliation loop.
+
+## 1.1 Zero-Trust Artifact Validation
+The SDK strictly enforces zero-trust artifact verification. Any artifact loaded into memory from an external source or created locally must be verified mathematically before consumption (`simulate`, `send`, `verify`).
+- `contentHash` is verified dynamically by recalculating the deterministic payload hash and comparing it strictly against the self-declared field.
+- The SDK **never** trusts self-declared metadata. If a tampered object is passed, it is rejected instantly. It does **not** rely on cache hits or canonical IDs to bypass memory validation.
 
 ## 2. Determinism & Workflow Identity
 

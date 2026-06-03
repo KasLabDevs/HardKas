@@ -216,6 +216,10 @@ export class HardkasReplay {
     targetOrOptions?: string | { schema?: string; artifactId?: string } | ReplayVerifyOptions,
     options?: ReplayVerifyOptions
   ): Promise<ReplayVerifyResult> {
+    if (typeof targetOrOptions === "object" && targetOrOptions !== null && (targetOrOptions as any).contentHash) {
+       await this.sdk.artifacts.verify(targetOrOptions, { throwOnInvalid: true });
+    }
+
     let opts: ReplayVerifyOptions = options || {};
     
     if (typeof targetOrOptions === "string") {
