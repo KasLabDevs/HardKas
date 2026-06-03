@@ -216,6 +216,9 @@ export interface TxPlanArtifact extends BaseArtifact<"txPlan"> {
         amountSompi: string;
       }
     | undefined;
+  networkProfileRef?: string | undefined;
+  policyRef?: string | undefined;
+  assumptionRef?: string | undefined;
 }
 
 export interface SignedTxArtifact extends BaseArtifact<"signedTx"> {
@@ -301,6 +304,39 @@ export interface TxTraceArtifact extends BaseArtifact<"txTrace"> {
     details?: any;
   }>;
   dagContext?: DagContext | undefined;
+}
+
+export interface PolicyArtifact extends BaseArtifact<"policy.v1"> {
+  decision: "ALLOW" | "DENY";
+  rules: Array<{
+    id: string;
+    result: "PASS" | "FAIL";
+    inputHash?: string | undefined;
+  }>;
+}
+
+export interface NetworkProfileArtifact extends BaseArtifact<"networkProfile.v1"> {
+  networkProfileId: string;
+  layer: string;
+  capabilities: Record<string, any>;
+}
+
+export interface AssumptionArtifact extends BaseArtifact<"assumption.v1"> {
+  settlement?: string | undefined;
+  securityModel?: string | undefined;
+  bridgePhase?: string | undefined;
+  exitModel?: string | undefined;
+  customAssumptions?: Record<string, any> | undefined;
+}
+
+export interface MigrationReceiptArtifact extends BaseArtifact<"migrationReceipt.v1"> {
+  oldHash: string;
+  newHash: string;
+  fromSchema: string;
+  toSchema: string;
+  migrationId: string;
+  migrationVersion?: string | undefined;
+  decision: "MIGRATED_WITH_PROOF";
 }
 
 // Igra L2 Artifacts (Imported from igra-artifacts.ts)

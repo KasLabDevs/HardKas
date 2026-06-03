@@ -135,13 +135,8 @@ export class Hardkas {
     const networkId = this.config.config.defaultNetwork || "simnet";
     const target = this.config.config.networks?.[networkId];
 
-    if (
-      target &&
-      (target.kind === "kaspa-rpc" ||
-        target.kind === "igra" ||
-        target.kind === "kaspa-node")
-    ) {
-      return target.rpcUrl || "ws://127.0.0.1:18210";
+    if (target && "rpcUrl" in target && typeof target.rpcUrl === "string") {
+      return target.rpcUrl;
     }
     return "ws://127.0.0.1:18210";
   }

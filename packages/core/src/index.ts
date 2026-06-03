@@ -11,7 +11,8 @@ export const kaspaNetworkIdSchema = z.enum([
   "simnet",
   "simnet-1",
   "devnet",
-  "simulated"
+  "simulated",
+  "igra"
 ]);
 
 export type NetworkId = Brand<z.infer<typeof kaspaNetworkIdSchema>, "NetworkId">;
@@ -26,7 +27,11 @@ export const artifactTypeSchema = z.enum([
   "txReceipt",
   "txTrace",
   "snapshot",
-  "workflow.v1"
+  "workflow.v1",
+  "policy.v1",
+  "networkProfile.v1",
+  "assumption.v1",
+  "migrationReceipt.v1"
 ]);
 
 export type ArtifactType = z.infer<typeof artifactTypeSchema>;

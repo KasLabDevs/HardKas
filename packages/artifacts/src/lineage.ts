@@ -141,13 +141,25 @@ export function verifyLineage(
   // 4. Transition Logic
   if (parent) {
     const validTransitions: Record<string, string[]> = {
-      "hardkas.snapshot": ["hardkas.txPlan"],
-      "hardkas.txPlan": ["hardkas.signedTx"],
-      "hardkas.signedTx": ["hardkas.txReceipt"]
+      "hardkas.snapshot": ["hardkas.txPlan", "hardkas.migrationReceipt.v1"],
+      "hardkas.txPlan": ["hardkas.signedTx", "hardkas.migrationReceipt.v1"],
+      "hardkas.signedTx": ["hardkas.txReceipt", "hardkas.signedTx", "hardkas.migrationReceipt.v1"],
+      "hardkas.txReceipt": ["hardkas.txTrace", "hardkas.migrationReceipt.v1"]
     };
 
-    const allowed = validTransitions[parent.schema] || [];
-    if (!allowed.includes(artifact.schema)) {
+    let isValidTransition = false;
+    
+    // Migration receipt rules
+    if (parent.schema === "hardkas.migrationReceipt.v1") {
+      isValidTransition = parent.toSchema === artifact.schema;
+    } else if (artifact.schema === "hardkas.migrationReceipt.v1") {
+      isValidTransition = artifact.fromSchema === parent.schema;
+    } else {
+      const allowed = validTransitions[parent.schema] || [];
+      isValidTransition = allowed.includes(artifact.schema);
+    }
+
+    if (!isValidTransition) {
       addIssue(
         "INVALID_TRANSITION",
         `Invalid lineage transition: ${parent.schema} -> ${artifact.schema}`

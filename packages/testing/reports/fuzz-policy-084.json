@@ -1,0 +1,7 @@
+{
+  "target": "hardkas.policy.v1",
+  "iterations": 10000,
+  "acceptedInvalid": 0,
+  "rawStacktraces": 0,
+  "status": "PASS"
+}

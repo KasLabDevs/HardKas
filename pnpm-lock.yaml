@@ -271,6 +271,30 @@ importers:
         specifier: workspace:*
         version: link:../../packages/sdk
 
+  examples/audit-pipeline:
+    dependencies:
+      '@hardkas/sdk':
+        specifier: workspace:*
+        version: link:../../packages/sdk
+
+  examples/backend-service:
+    dependencies:
+      '@hardkas/sdk':
+        specifier: workspace:*
+        version: link:../../packages/sdk
+
+  examples/basic-transfer:
+    dependencies:
+      '@hardkas/sdk':
+        specifier: workspace:*
+        version: link:../../packages/sdk
+
+  examples/policy:
+    dependencies:
+      '@hardkas/sdk':
+        specifier: workspace:*
+        version: link:../../packages/sdk
+
   examples/react-local-igra:
     dependencies:
       '@hardkas/react':
@@ -338,6 +362,12 @@ importers:
       vite:
         specifier: ^6.0.3
         version: 6.4.2(@types/node@25.9.1)(jiti@2.7.0)(lightningcss@1.32.0)(tsx@4.21.0)
+
+  examples/replay:
+    dependencies:
+      '@hardkas/sdk':
+        specifier: workspace:*
+        version: link:../../packages/sdk
 
   examples/sdk-audit-server:
     dependencies:

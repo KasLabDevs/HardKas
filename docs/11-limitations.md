@@ -13,3 +13,6 @@ The current SQLite `query-store` indexer and the filesystem watcher use basic lo
 
 ## 4. Keystore is Insecure
 The local simulated accounts (`alice`, `bob`) use hardcoded or plaintext keystores. This is by design for local testing reproducibility. **Do not** import mainnet seed phrases into HardKAS.
+
+## 5. Legacy Direct Read Compatibility
+While HardKAS indexers (`query store rebuild`) safely handle older artifacts (0.7.x - 0.8.3-alpha), direct artifact API reads (`sdk.artifacts.verify`) may fail with `Artifact not found` instead of gracefully parsing older schema files due to changes in filename mapping rules (`plan-*` vs legacy names). This acts as a safe rejection barrier (`SAFE_REJECT_UNSUPPORTED`). A future `migrate artifact` command will be provided to automatically rename and upgrade these schemas.

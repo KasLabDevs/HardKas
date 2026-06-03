@@ -1,87 +1,92 @@
-<div align="center">
-  <img src="https://raw.githubusercontent.com/KasLabDevs/HardKas/main/docs/logo.png" alt="HardKAS Logo" width="280"/>
-  <br/>
-  <h3>Local-first, deterministic developer OS for Kaspa and Igra</h3>
+# HardKAS
 
-  <p>
-    <a href="https://github.com/KasLabDevs/HardKas/actions"><img alt="Build Status" src="https://img.shields.io/github/actions/workflow/status/KasLabDevs/HardKas/ci.yml?branch=main&style=flat-square&color=10b981"></a>
-    <a href="https://www.npmjs.com/package/@hardkas/sdk"><img alt="NPM Version" src="https://img.shields.io/npm/v/@hardkas/sdk?style=flat-square&color=10b981"></a>
-    <a href="https://github.com/KasLabDevs/HardKas/blob/main/LICENSE"><img alt="License" src="https://img.shields.io/github/license/KasLabDevs/HardKas?style=flat-square&color=1e2633"></a>
-  </p>
-</div>
+Deterministic transaction infrastructure for Kaspa applications.
+
+Build workflows that can be:
+- replayed
+- verified
+- audited
+- explained
+
+"HardKAS does not make transactions safer by trusting more code. It makes them safer by making every step reproducible."
 
 ---
 
-**HardKAS** is a local-first, cryptographically deterministic developer environment for Kaspa L1 and Igra L2 workflows. It replaces chaotic testnet scripts with verifiable, offline-first artifact pipelines.
+## Why?
 
-If it passes locally in HardKAS, it passes in CI.
+**Normal apps:**  
+`request` → `mutation` → `hope`
 
-## ⚡ 5-Minute Quickstart
+**HardKAS:**  
+`intent` → `artifact` → `verification` → `execution` → `replay`
 
-### 1. Install
-Add HardKAS and its SDK to your project. By design, HardKAS is installed locally to ensure strict version reproducibility.
+Instead of submitting raw payloads and hoping the network accepts them, HardKAS forces your application to declare intent as a deterministic **Artifact**. This artifact is validated locally via a Zero-Trust hash check before being simulated, sent, and finally receipted. If something fails, you don't guess—you replay the exact artifact to trace the state divergence.
 
-```bash
-pnpm add @hardkas/sdk
-pnpm add -D @hardkas/cli
-```
+---
 
-### 2. Initialize
-Create your isolated workspace (the `.hardkas/` directory) and verify the strict semantic boundaries.
-
-```bash
-pnpm hardkas init
-pnpm hardkas doctor --json
-```
-
-### 3. Your First CLI Command
-Fork the network state and verify that your local environment is cryptographically sound.
-
-```bash
-# Fork L1 state for local testing
-pnpm hardkas localnet fork --network testnet-10
-
-# Verify workspace invariants
-pnpm hardkas verify --strict
-```
-
-### 4. Your First SDK Call
-Interact with the HardKAS runtime programmatically to plan deterministic L2 transactions.
+## 30 Second Example
 
 ```typescript
 import { Hardkas } from '@hardkas/sdk';
 
-async function main() {
-  // Bootstraps a strict, locked workspace in the current directory
-  const sdk = await Hardkas.create({ autoBootstrap: true });
+const sdk = await Hardkas.create({ network: 'simulated' });
 
-  // Plan an Igra L2 transaction deterministically
-  const plan = await sdk.tx.plan({
-    to: 'kaspatest:qz7...',
-    amount: 50000000n, // Sompis
-  });
+// 1. Declare intent
+const plan = await sdk.tx.plan({ from: 'alice', to: 'bob', amount: '10' });
 
-  console.log('✅ Created Artifact:', plan.artifactId);
-}
+// 2. Sign deterministic artifact
+const signed = await sdk.tx.sign(plan, 'alice');
 
-main();
+// 3. Execute and capture receipt
+const receipt = await sdk.tx.send(signed);
+
+// 4. Cryptographically prove equivalence
+await sdk.replay.verify(receipt);
 ```
+*(Source: `examples/basic-transfer`)*
 
 ---
 
-## 📚 The Source of Truth
+## Core Concepts
 
-We don't believe in graveyard documentation or fragmented markdown files. **Everything you need to know**—from causal graphs and the Replay Engine, to CLI workflows and the SDK reference—is consolidated into our interactive HTML documentation.
+### Artifacts
+Immutable JSON files representing a specific state machine transition (Plan, Signed, Receipt). They use canonical JSON hashing to ensure cross-platform deterministic equivalence.
 
-👉 **[Open the HardKAS Documentation (docs/index.html)](docs/index.html)**
+### Lineage
+The cryptographic DAG (Directed Acyclic Graph) of artifacts. A receipt guarantees it came from a specific signed transaction, which guarantees it came from a specific plan.
 
-### Core Contracts
-HardKAS enforces strict runtime behavior. If you are building tooling or agents on top of HardKAS, you must adhere to these invariants:
-- [RUNTIME_CONTRACT.md](RUNTIME_CONTRACT.md): The non-negotiable semantic boundaries of the tool.
-- [RUNTIME_SEMANTICS.md](RUNTIME_SEMANTICS.md): Details on file locking, telemetry, and persistence guarantees.
+### Replay
+The engine that reads a historical artifact and reconstructs the precise local environment (UTXOs, timestamps) to prove that the execution was deterministic and untampered.
+
+### Query Store
+A high-performance local indexer (SQLite) built automatically by traversing your `.hardkas/artifacts/` folder, ensuring `O(1)` lookups without relying on an external database.
+
+### Policies
+Strict mathematical constraints (e.g., "Amount must be < 100", "Must involve a multisig node") applied during the `verify` phase to block adversarial artifacts before execution.
 
 ---
 
-<div align="center">
-  <i>Built for developers who value determinism.</i>
-</div>
+## Guarantees
+
+- [x] **Deterministic hashing:** Canonical serialization ensures Windows and Linux produce the exact same `contentHash`.
+- [x] **Tamper detection:** `artifacts.verify()` dynamically recalculates hashes in memory, preventing modified JSON from bypassing checks.
+- [x] **Crash recovery:** If the process dies midway, the `query store rebuild` command deterministically restores the exact state from the filesystem.
+- [x] **Forward safety:** The system will safely reject (`SAFE_REJECT_UNSUPPORTED`) incompatible legacy artifacts without corrupting the local workspace index.
+
+---
+
+## What HardKAS is not
+
+- **Not a wallet:** HardKAS does not manage seeds securely for users. It is infrastructure for builders.
+- **Not consensus:** It does not invent new cryptographic primitives. It strictly adheres to Kaspa's transaction formats.
+- **Not replacing Kaspa nodes:** You still need RPC nodes to broadcast to mainnet. HardKAS just ensures your local payloads are mathematically sound before you do.
+
+---
+
+## Production Status
+
+- **Version:** `0.9 beta candidate`
+- **API Status:** API freeze starting.
+- **Audits:** Core Crypto ✅, Artifact Safety ✅, State Machine ✅, Persistence ✅, Backward Safety ✅, Long Runtime ⏳ (Soak pending).
+
+*(See [docs/](docs/) for full architectural guides and security claims).*

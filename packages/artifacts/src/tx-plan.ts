@@ -61,6 +61,13 @@ export function createTxPlanArtifact(options: CreateTxPlanArtifactOptions): TxPl
       amountSompi: o.amountSompi.toString()
     })),
     rpcUrl: options.rpcUrl,
+    lineage: {
+      artifactId: "",
+      lineageId: "0".repeat(64), // placeholder, will be replaced if empty
+      parentArtifactId: "",
+      rootArtifactId: "",
+      sequence: 1
+    },
     ...(options.ctx.workflowId ? { workflowId: options.ctx.workflowId } : {})
   };
 
@@ -74,6 +81,22 @@ export function createTxPlanArtifact(options: CreateTxPlanArtifactOptions): TxPl
   const hash = calculateContentHash(artifact, CURRENT_HASH_VERSION);
   artifact.planId = `plan-${hash.slice(0, 16)}`;
   artifact.contentHash = hash;
+  
+  if (artifact.lineage) {
+    artifact.lineage.lineageId = Array.from({length: 64}, () => Math.floor(Math.random()*16).toString(16)).join('');
+    artifact.lineage.artifactId = artifact.contentHash;
+    artifact.lineage.parentArtifactId = artifact.contentHash;
+    artifact.lineage.rootArtifactId = artifact.contentHash;
+    
+    // Re-calculate hash since we mutated lineage properties!
+    const finalHash = calculateContentHash(artifact, CURRENT_HASH_VERSION);
+    artifact.planId = `plan-${finalHash.slice(0, 16)}`;
+    artifact.contentHash = finalHash;
+    
+    artifact.lineage.artifactId = finalHash;
+    artifact.lineage.parentArtifactId = finalHash;
+    artifact.lineage.rootArtifactId = finalHash;
+  }
 
   return artifact as TxPlan;
 }

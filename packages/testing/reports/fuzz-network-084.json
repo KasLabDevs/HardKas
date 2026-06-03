@@ -1,0 +1,7 @@
+{
+  "target": "hardkas.networkProfile.v1",
+  "iterations": 1000,
+  "acceptedInvalid": 0,
+  "rawStacktraces": 0,
+  "status": "PASS"
+}

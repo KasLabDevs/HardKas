@@ -1398,7 +1398,7 @@ hardkas dev server [options]
 | Flag | Description | Default |
 | :--- | :--- | :--- |
 | `--port <number>` | Port to bind to | 7420 |
-| `--host <string>` | Host to bind to | localhost |
+| `--host <string>` | Host to bind to | 127.0.0.1 |
 | `--open` | Open dashboard in browser automatically | false |
 | `--unsafe-external` | Allow external access (binds to 0.0.0.0 if host not specified) | false |
 | `--show-token` | Show the generated API session token for manual script integration | false |
@@ -4308,6 +4308,7 @@ hardkas torture matrix [options]
 | `--report [path]` | Optional custom JSON output filepath for findings report |  |
 | `--bucket <name>` | Optional target bucket name to execute exclusively |  |
 | `--profile <name>` | Optional profile name to execute |  |
+| `--debug-stack` | Print raw stacktraces when cases fail | false |
 
 ### Arguments
 

@@ -11,7 +11,11 @@ export const ARTIFACT_SCHEMAS = {
   SNAPSHOT: "hardkas.snapshot",
   IGRA_TX_PLAN: "hardkas.igraTxPlan.v1",
   IGRA_SIGNED_TX: "hardkas.igraSignedTx.v1",
-  IGRA_TX_RECEIPT: "hardkas.igraTxReceipt.v1"
+  IGRA_TX_RECEIPT: "hardkas.igraTxReceipt.v1",
+  POLICY: "hardkas.policy.v1",
+  NETWORK_PROFILE: "hardkas.networkProfile.v1",
+  ASSUMPTION: "hardkas.assumption.v1",
+  MIGRATION_RECEIPT: "hardkas.migrationReceipt.v1"
 } as const;
 
 export type HardkasArtifactSchema =

@@ -63,6 +63,45 @@ export const AccountRefSchema = z.object({
   input: z.string().optional()
 });
 
+export const PolicySchema = BaseArtifactSchema.extend({
+  schema: z.literal("hardkas.policy.v1"),
+  decision: z.enum(["ALLOW", "DENY"]),
+  rules: z.array(
+    z.object({
+      id: z.string(),
+      result: z.enum(["PASS", "FAIL"]),
+      inputHash: z.string().optional()
+    })
+  )
+});
+
+export const NetworkProfileSchema = BaseArtifactSchema.extend({
+  schema: z.literal("hardkas.networkProfile.v1"),
+  networkProfileId: z.string(),
+  layer: z.string(),
+  capabilities: z.record(z.any())
+});
+
+export const AssumptionSchema = BaseArtifactSchema.extend({
+  schema: z.literal("hardkas.assumption.v1"),
+  settlement: z.string().optional(),
+  securityModel: z.string().optional(),
+  bridgePhase: z.string().optional(),
+  exitModel: z.string().optional(),
+  customAssumptions: z.record(z.any()).optional()
+});
+
+export const MigrationReceiptSchema = BaseArtifactSchema.extend({
+  schema: z.literal("hardkas.migrationReceipt.v1"),
+  oldHash: z.string(),
+  newHash: z.string(),
+  fromSchema: z.string(),
+  toSchema: z.string(),
+  migrationId: z.string(),
+  migrationVersion: z.string().optional(),
+  decision: z.literal("MIGRATED_WITH_PROOF")
+});
+
 export const TxPlanSchema = BaseArtifactSchema.extend({
   schema: z.literal("hardkas.txPlan"),
   networkId: kaspaNetworkIdSchema,
@@ -94,7 +133,10 @@ export const TxPlanSchema = BaseArtifactSchema.extend({
       amountSompi: z.string()
     })
     .optional(),
-  rpcUrl: z.string().optional()
+  rpcUrl: z.string().optional(),
+  networkProfileRef: z.string().optional(),
+  policyRef: z.string().optional(),
+  assumptionRef: z.string().optional()
 });
 
 export const DagContextSchema = z.object({
@@ -277,6 +319,10 @@ export type TxTrace = z.infer<typeof TxTraceSchema>;
 export type DagContext = z.infer<typeof DagContextSchema>;
 export type Workflow = z.infer<typeof WorkflowSchema>;
 export type ScriptCapability = z.infer<typeof ScriptCapabilitySchema>;
+export type Policy = z.infer<typeof PolicySchema>;
+export type NetworkProfile = z.infer<typeof NetworkProfileSchema>;
+export type Assumption = z.infer<typeof AssumptionSchema>;
+export type MigrationReceipt = z.infer<typeof MigrationReceiptSchema>;
 
 export const RuntimeSessionSchema = BaseArtifactSchema.extend({
   sessionId: z.string(),

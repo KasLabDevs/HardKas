@@ -21,6 +21,12 @@
     "dev": "turbo dev",
     "test": "pnpm -r test && pnpm test:workflows",
     "test:workflows": "vitest run packages/cli/test/workflow-corpus.test.ts",
+    "test:fuzz": "vitest run packages/testing/test/fuzz-policy.test.ts packages/testing/test/fuzz-network.test.ts packages/testing/test/fuzz-migration.test.ts",
+    "test:fuzz:policy": "vitest run packages/testing/test/fuzz-policy.test.ts",
+    "test:fuzz:network": "vitest run packages/testing/test/fuzz-network.test.ts",
+    "test:fuzz:migration": "vitest run packages/testing/test/fuzz-migration.test.ts",
+    "test:backward": "vitest run packages/testing/test/backward-compat.test.ts",
+    "smoke:backward": "tsx packages/testing/scripts/smoke-backward-compat.ts",
     "typecheck": "turbo typecheck",
     "lint": "turbo lint",
     "format": "prettier --write .",
@@ -48,6 +54,7 @@
     "example:bridge-assumptions": "pnpm --filter @examples/bridge-assumptions start",
     "example:ci": "pnpm --filter @examples/ci-workflow start",
     "example:dag-reorg": "pnpm --filter @examples/dag-reorg-simulation start",
+    "examples:test": "pnpm --filter @examples/basic-transfer start && pnpm --filter @examples/backend-service start && pnpm --filter @examples/audit-pipeline start && pnpm --filter @examples/replay start && pnpm --filter @examples/policy start",
     "docs:check": "node scripts/docs-check.mjs"
   },
   "devDependencies": {
@@ -68,5 +75,5 @@
     "typescript-eslint": "^8.59.3",
     "vitest": "^2.1.9"
   },
-  "version": "0.8.2-alpha"
+  "version": "0.8.3-alpha"
 }
