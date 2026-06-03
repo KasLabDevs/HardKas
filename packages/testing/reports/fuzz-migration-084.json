@@ -1,0 +1,7 @@
+{
+  "target": "hardkas.migration.engine",
+  "iterations": 1000,
+  "silentMigrations": 0,
+  "rawStacktraces": 0,
+  "status": "PASS"
+}

@@ -7,6 +7,10 @@ import {
   TxTraceSchema,
   SignedTxSchema,
   WorkflowSchema,
+  PolicySchema,
+  NetworkProfileSchema,
+  AssumptionSchema,
+  MigrationReceiptSchema,
   ARTIFACT_VERSION
 } from "./schemas.js";
 import { NetworkId, type CorruptionCode, type CorruptionSeverity } from "@hardkas/core";
@@ -179,6 +183,18 @@ export async function verifyArtifactIntegrity(
         break;
       case "hardkas.workflow.v1":
         schema = WorkflowSchema;
+        break;
+      case "hardkas.policy.v1":
+        schema = PolicySchema;
+        break;
+      case "hardkas.networkProfile.v1":
+        schema = NetworkProfileSchema;
+        break;
+      case "hardkas.assumption.v1":
+        schema = AssumptionSchema;
+        break;
+      case "hardkas.migrationReceipt.v1":
+        schema = MigrationReceiptSchema;
         break;
     }
 

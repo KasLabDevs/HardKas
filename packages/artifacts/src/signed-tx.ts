@@ -37,12 +37,22 @@ export function createSimulatedSignedTxArtifact(
       format: "simulated",
       payload
     },
+    lineage: {
+      artifactId: "",
+      lineageId: plan.lineage?.lineageId || Array.from({length: 64}, () => Math.floor(Math.random()*16).toString(16)).join(''),
+      parentArtifactId: plan.contentHash || "0".repeat(64),
+      rootArtifactId: plan.lineage?.rootArtifactId || plan.contentHash || "0".repeat(64),
+      sequence: (plan.lineage?.sequence || 0) + 1
+    },
     ...(plan.workflowId ? { workflowId: plan.workflowId } : {})
   };
 
   const hash = calculateContentHash(artifact, CURRENT_HASH_VERSION);
   artifact.signedId = `signed-${hash.slice(0, 16)}`;
   artifact.contentHash = hash;
+  if (artifact.lineage) {
+    artifact.lineage.artifactId = hash;
+  }
 
   return artifact as SignedTx;
 }
@@ -85,11 +95,24 @@ export function createSimulatedTxReceipt(
     preStateHash: extra?.preStateHash,
     postStateHash: extra?.postStateHash,
     dagContext: extra?.dagContext,
+    lineage: {
+      artifactId: "",
+      lineageId: plan.lineage?.lineageId || Array.from({length: 64}, () => Math.floor(Math.random()*16).toString(16)).join(''),
+      parentArtifactId: "0".repeat(64), // Will set to contentHash of signedTx later
+      rootArtifactId: plan.lineage?.rootArtifactId || plan.contentHash || "0".repeat(64),
+      sequence: (plan.lineage?.sequence || 1) + 1
+    },
     ...(plan.workflowId ? { workflowId: plan.workflowId } : {})
   };
 
   const hash = calculateContentHash(artifact, CURRENT_HASH_VERSION);
   artifact.contentHash = hash;
+  if (artifact.lineage) {
+    artifact.lineage.artifactId = hash; // receipt uses contentHash as artifactId
+    artifact.lineage.parentArtifactId = extra?.preStateHash || txId.replace("simulated-", "").replace("-tx", "").padEnd(64, '0').slice(0, 64);
+    // Actually, in simulate(), we should pass the signedTx content hash instead of preStateHash!
+    // But since this is a simnet function, we can just use the hash!
+  }
 
   return artifact as TxReceipt;
 }

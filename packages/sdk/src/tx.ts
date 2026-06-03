@@ -75,6 +75,9 @@ export class HardkasTx {
     amount: string | number | bigint;
     feeRate?: bigint;
     workflowId?: string;
+    policy?: string;
+    networkProfile?: string;
+    assumption?: string;
   }): Promise<TxPlanArtifact> {
     const fromAccount =
       typeof options.from === "string"
@@ -150,7 +153,7 @@ export class HardkasTx {
     });
 
     const isSimulated = activeNetwork === "simulated" || this.sdk.config.config.networks?.[activeNetwork]?.kind === "simulated";
-    return createTxPlanArtifact({
+    const basePlan = createTxPlanArtifact({
       networkId: activeNetwork as NetworkId,
       mode: isSimulated ? "simulated" : "real",
       from: {
@@ -168,6 +171,51 @@ export class HardkasTx {
         ? { ...systemRuntimeContext, workflowId: options.workflowId }
         : systemRuntimeContext
     }) as unknown as TxPlanArtifact;
+    
+    // Resolve alias to immutable contentHash
+    if (options.policy) {
+      try {
+        const pol = await this.sdk.artifacts.read(options.policy);
+        (basePlan as any).policyRef = pol.contentHash || pol.artifactId || options.policy;
+      } catch (e) {
+        (basePlan as any).policyRef = options.policy; // Fallback to raw if not found
+      }
+    }
+    
+    if (options.networkProfile) {
+      try {
+        const net = await this.sdk.artifacts.read(options.networkProfile);
+        (basePlan as any).networkProfileRef = net.contentHash || net.artifactId || options.networkProfile;
+      } catch (e) {
+        (basePlan as any).networkProfileRef = options.networkProfile;
+      }
+    }
+    
+    if (options.assumption) {
+      try {
+        const asm = await this.sdk.artifacts.read(options.assumption);
+        (basePlan as any).assumptionRef = asm.contentHash || asm.artifactId || options.assumption;
+      } catch (e) {
+        (basePlan as any).assumptionRef = options.assumption;
+      }
+    }
+    
+    // Re-calculate hash now that references are injected
+    const { CURRENT_HASH_VERSION, calculateContentHash } = await import("@hardkas/artifacts");
+    const newHash = calculateContentHash(basePlan, CURRENT_HASH_VERSION);
+    (basePlan as any).contentHash = newHash;
+    if ((basePlan as any).lineage) {
+        (basePlan as any).lineage.artifactId = newHash;
+        (basePlan as any).lineage.parentArtifactId = newHash;
+        (basePlan as any).lineage.rootArtifactId = newHash;
+        const finalHash = calculateContentHash(basePlan, CURRENT_HASH_VERSION);
+        (basePlan as any).contentHash = finalHash;
+        (basePlan as any).lineage.artifactId = finalHash;
+        (basePlan as any).lineage.parentArtifactId = finalHash;
+        (basePlan as any).lineage.rootArtifactId = finalHash;
+    }
+    
+    return basePlan;
   }
 
   /**
@@ -577,9 +625,21 @@ export class HardkasTx {
       submittedAt: simResult.receipt.createdAt,
       confirmedAt: simResult.receipt.createdAt,
       rpcUrl: "simulated://local",
-      tracePath
+      tracePath,
+      lineage: {
+        artifactId: "", // To be computed
+        lineageId: targetObj.lineage?.lineageId || Array.from({length: 64}, () => Math.floor(Math.random()*16).toString(16)).join(''),
+        parentArtifactId: targetObj.contentHash || "0".repeat(64),
+        rootArtifactId: targetObj.lineage?.rootArtifactId || "0".repeat(64),
+        sequence: (targetObj.lineage?.sequence || 1) + 1
+      }
     };
     receiptBase.contentHash = calculateContentHash(receiptBase, CURRENT_HASH_VERSION);
+    if (receiptBase.lineage) {
+      receiptBase.lineage.artifactId = receiptBase.contentHash;
+      receiptBase.contentHash = calculateContentHash(receiptBase, CURRENT_HASH_VERSION);
+      receiptBase.lineage.artifactId = receiptBase.contentHash;
+    }
     const receipt: TxReceiptArtifact = Object.freeze(receiptBase);
 
     // Convert events to steps
@@ -765,12 +825,25 @@ export class HardkasTx {
       feeSompi: signedArtifact.metadata?.estimatedFeeSompi || "0",
       submittedAt: new Date().toISOString(),
       ...(url ? { rpcUrl: url } : {}),
-      ...(signedArtifact.workflowId ? { workflowId: signedArtifact.workflowId } : {})
+      ...(signedArtifact.workflowId ? { workflowId: signedArtifact.workflowId } : {}),
+      tracePath: undefined,
+      lineage: {
+        artifactId: "", // To be computed
+        lineageId: signedArtifact.lineage?.lineageId || Array.from({length: 64}, () => Math.floor(Math.random()*16).toString(16)).join(''),
+        parentArtifactId: signedArtifact.contentHash || "0".repeat(64),
+        rootArtifactId: signedArtifact.lineage?.rootArtifactId || "0".repeat(64),
+        sequence: (signedArtifact.lineage?.sequence || 1) + 1
+      }
     };
     realReceiptBase.contentHash = calculateContentHash(
       realReceiptBase,
       CURRENT_HASH_VERSION
     );
+    if (realReceiptBase.lineage) {
+      realReceiptBase.lineage.artifactId = realReceiptBase.contentHash;
+      realReceiptBase.contentHash = calculateContentHash(realReceiptBase, CURRENT_HASH_VERSION);
+      realReceiptBase.lineage.artifactId = realReceiptBase.contentHash;
+    }
     const receipt: TxReceiptArtifact = realReceiptBase;
 
     const receiptPath = getDefaultReceiptPath(receipt.txId, this.sdk.config.cwd);

@@ -1715,7 +1715,7 @@
             {
               "flags": "--host <string>",
               "description": "Host to bind to",
-              "default": "localhost",
+              "default": "127.0.0.1",
               "required": true,
               "mandatory": false
             },
@@ -4714,6 +4714,13 @@
               "description": "Optional profile name to execute",
               "default": null,
               "required": true,
+              "mandatory": false
+            },
+            {
+              "flags": "--debug-stack",
+              "description": "Print raw stacktraces when cases fail",
+              "default": false,
+              "required": false,
               "mandatory": false
             }
           ],

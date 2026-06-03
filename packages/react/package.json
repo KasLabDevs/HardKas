@@ -1,6 +1,6 @@
 {
   "name": "@hardkas/react",
-  "version": "0.8.2-alpha",
+  "version": "0.8.3-alpha",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",

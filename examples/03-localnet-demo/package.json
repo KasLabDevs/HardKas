@@ -1,6 +1,6 @@
 {
   "name": "@hardkas/example-03-localnet-demo",
-  "version": "0.8.2-alpha",
+  "version": "0.8.3-alpha",
   "private": true,
   "type": "module",
   "scripts": {

@@ -50,6 +50,13 @@ export interface MigrationResult {
   }>;
 }
 
+export class MigrationRequiredError extends Error {
+  constructor(public oldVersion: string, public targetVersion: string) {
+    super(`MIGRATION_REQUIRED: Artifact requires explicit migration from ${oldVersion} to ${targetVersion}`);
+    this.name = "MigrationRequiredError";
+  }
+}
+
 // ---------------------------------------------------------------------------
 // Migration Registry
 // ---------------------------------------------------------------------------
@@ -102,6 +109,9 @@ registerMigrationStep({
   description: "Legacy v1 schemas to canonical 1.0.0-alpha format",
   transform(artifact: ArtifactPayload): ArtifactPayload {
     const migrated = { ...artifact };
+    if (migrated.lineage) {
+      migrated.lineage = { ...(migrated.lineage as object) };
+    }
 
     // 1. Strip .v1 suffix from schema names
     if (typeof migrated.schema === "string" && migrated.schema.endsWith(".v1")) {
@@ -274,7 +284,8 @@ export function canMigrate(
  */
 export function migrateArtifactPayload(
   artifact: ArtifactPayload,
-  targetVersion: string = ARTIFACT_VERSION
+  targetVersion: string = ARTIFACT_VERSION,
+  options?: { strictPolicy?: boolean }
 ): MigrationResult {
   const currentVersion = detectArtifactVersion(artifact);
 
@@ -286,6 +297,10 @@ export function migrateArtifactPayload(
       originalContentHash: artifact.contentHash as string | undefined,
       appliedSteps: []
     };
+  }
+
+  if (options?.strictPolicy) {
+    throw new MigrationRequiredError(currentVersion, targetVersion);
   }
 
   // Resolve migration path
@@ -365,4 +380,58 @@ export function migrateToCanonical(v1Artifact: ArtifactPayload): ArtifactPayload
 
   const result = migrateArtifactPayload(v1Artifact, ARTIFACT_VERSION);
   return result.artifact;
+}
+
+/**
+ * Generates an explicit MigrationReceipt connecting old artifact to new artifact.
+ */
+export function generateMigrationReceipt(
+  oldArtifact: ArtifactPayload,
+  newArtifact: ArtifactPayload,
+  migrationId: string
+): any {
+  const oldHash = oldArtifact.contentHash as string || calculateContentHash(oldArtifact, CURRENT_HASH_VERSION);
+  const newHash = newArtifact.contentHash as string || calculateContentHash(newArtifact, CURRENT_HASH_VERSION);
+
+  const receipt: any = {
+    schema: "hardkas.migrationReceipt.v1",
+    hardkasVersion: HARDKAS_VERSION,
+    version: ARTIFACT_VERSION,
+    hashVersion: CURRENT_HASH_VERSION,
+    networkId: (oldArtifact.networkId as string) || "simnet",
+    mode: (oldArtifact.mode as string) || "simulated",
+    createdAt: new Date().toISOString(),
+    oldHash,
+    newHash,
+    fromSchema: (oldArtifact.schema as string) || "unknown",
+    toSchema: (newArtifact.schema as string) || "unknown",
+    migrationId,
+    decision: "MIGRATED_WITH_PROOF",
+    lineage: {
+      artifactId: "", // Filled after hash
+      lineageId: ((oldArtifact.lineage as any)?.lineageId as string) || ("migration" + oldHash).padEnd(64, "0").slice(0, 64),
+      parentArtifactId: oldHash,
+      rootArtifactId: ((oldArtifact.lineage as any)?.rootArtifactId as string) || oldHash
+    }
+  };
+
+  receipt.contentHash = calculateContentHash(receipt, CURRENT_HASH_VERSION);
+  receipt.lineage.artifactId = receipt.contentHash;
+
+  // Re-link the new artifact to point to the receipt
+  if (!newArtifact.lineage) {
+    newArtifact.lineage = {
+      artifactId: newHash,
+      lineageId: receipt.lineage.lineageId,
+      parentArtifactId: receipt.contentHash,
+      rootArtifactId: receipt.lineage.rootArtifactId
+    };
+  } else {
+    (newArtifact.lineage as any).parentArtifactId = receipt.contentHash;
+  }
+  // Re-calculate hash for new artifact because lineage changed
+  newArtifact.contentHash = calculateContentHash(newArtifact, CURRENT_HASH_VERSION);
+  (newArtifact.lineage as any).artifactId = newArtifact.contentHash;
+
+  return receipt;
 }

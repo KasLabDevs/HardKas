@@ -1,6 +1,6 @@
 {
   "name": "sdk-audit-server",
-  "version": "0.8.2-alpha",
+  "version": "0.8.3-alpha",
   "type": "module",
   "scripts": {
     "demo": "node src/index.mjs"
