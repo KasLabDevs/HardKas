@@ -1,6 +1,6 @@
 {
   "schema": "hardkas.txTrace",
-  "hardkasVersion": "0.8.4-alpha",
+  "hardkasVersion": "0.8.5-alpha",
   "networkId": "simulated",
   "mode": "simulated",
   "createdAt": "2026-05-25T13:40:53.360Z",

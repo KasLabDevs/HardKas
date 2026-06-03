@@ -1,11 +1,15 @@
 {
   "name": "@hardkas/cli",
-  "version": "0.8.4-alpha",
+  "version": "0.8.5-alpha",
   "type": "module",
-  "main": "./dist/public.js",
-  "types": "./dist/public.d.ts",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
   "exports": {
-    ".": "./dist/public.js",
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    },
     "./bin": "./dist/index.js"
   },
   "files": [
