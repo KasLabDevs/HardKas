@@ -1,5 +1,5 @@
 
-# Full Command Execution Rerun (HardKAS 0.8.1-alpha)
+# Full Command Execution Rerun (HardKAS 0.8.2-alpha)
 
 ## Metrics
 - Commands Classified: 124

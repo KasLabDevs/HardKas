@@ -216,6 +216,22 @@ export class HardkasReplay {
     targetOrOptions?: string | { schema?: string; artifactId?: string } | ReplayVerifyOptions,
     options?: ReplayVerifyOptions
   ): Promise<ReplayVerifyResult> {
+    const throwOnInvalid = (options as any)?.throwOnInvalid !== false;
+    if (typeof targetOrOptions === "object" && targetOrOptions !== null && (targetOrOptions as any).contentHash) {
+       const verifyRes = await this.sdk.artifacts.verify(targetOrOptions, { throwOnInvalid });
+       if (!verifyRes.valid && !throwOnInvalid) {
+         return {
+           passed: false,
+           artifactsScanned: 1,
+           lineage: "invalid",
+           determinism: "failed",
+           contamination: "clean",
+           report: null,
+           error: `Artifact verification failed: ${verifyRes.reason}`
+         };
+       }
+    }
+
     let opts: ReplayVerifyOptions = options || {};
     
     if (typeof targetOrOptions === "string") {

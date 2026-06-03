@@ -1,6 +1,6 @@
 {
   "schema": "hardkas.l2BridgeAssumptions.v1",
-  "hardkasVersion": "0.8.1-alpha",
+  "hardkasVersion": "0.8.2-alpha",
   "l2Network": "igra",
   "bridgePhase": "pre-zk",
   "trustlessExit": false,
@@ -13,7 +13,7 @@
     "pre-ZK implies stronger trust assumptions.",
     "MPC implies threshold committee trust assumptions.",
     "ZK phase enables validity-proof based trustless exit.",
-    "HardKAS does not perform bridge operations in 0.8.1-alpha."
+    "HardKAS does not perform bridge operations in 0.8.2-alpha."
   ],
   "updatedAt": "2026-05-07T00:00:00Z"
 }

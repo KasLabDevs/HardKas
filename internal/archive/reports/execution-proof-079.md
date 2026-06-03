@@ -1,10 +1,10 @@
-# Execution Proof 0.8.1-alpha
+# Execution Proof 0.8.2-alpha
 
 This document serves as proof of the Phase 7-C Gauntlet run executed against the real NPM registry.
 
 ## Run Parameters
-- **Target**: `@hardkas/sdk@0.8.1-alpha`
-- **Installation Method**: `npm install @hardkas/sdk@0.8.1-alpha`
+- **Target**: `@hardkas/sdk@0.8.2-alpha`
+- **Installation Method**: `npm install @hardkas/sdk@0.8.2-alpha`
 - **Total Apps Executed**: 20
 - **Total Duration**: ~12 minutes
 
@@ -24,23 +24,23 @@ This document serves as proof of the Phase 7-C Gauntlet run executed against the
 ## Logs excerpt
 ```text
 --- Running 01-wallet-backend ---
-Installing @hardkas/sdk@0.8.1-alpha...
+Installing @hardkas/sdk@0.8.2-alpha...
 Status: FAILED | Artifacts: 1 | Time: 70176ms
 
 --- Running 02-react-wallet ---
-Installing @hardkas/sdk@0.8.1-alpha...
+Installing @hardkas/sdk@0.8.2-alpha...
 Status: SUCCESSFUL | Artifacts: 0 | Time: 31255ms
 
 ...
 
 --- Running 13-backup-integrity ---
-Installing @hardkas/sdk@0.8.1-alpha...
+Installing @hardkas/sdk@0.8.2-alpha...
 Status: SUCCESSFUL | Artifacts: 5 | Time: 34961ms
 
 ...
 
 --- Running 20-kastj-migration-spike ---
-Installing @hardkas/sdk@0.8.1-alpha...
+Installing @hardkas/sdk@0.8.2-alpha...
 Status: FAILED | Artifacts: 0 | Time: 40105ms
 DONE
 ```

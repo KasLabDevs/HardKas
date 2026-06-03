@@ -1,4 +1,4 @@
-# Audit Regression 0.8.1-alpha
+# Audit Regression 0.8.2-alpha
 
 ## Overview
 This document evaluates whether the critical fixes introduced in the **0.7.8-alpha Audit Hardening Sprint** remained intact during the execution of the Phase 7-C gauntlet against the real NPM registry.
@@ -11,4 +11,4 @@ This document evaluates whether the critical fixes introduced in the **0.7.8-alp
 - [x] **P1.2 Number vs BigInt**: All SDK numeric conversions correctly used BigInt and arithmetic bugs were absent during `simulate()` (exceptions in `simulate` were strictly due to I/O).
 
 ## Conclusion
-Zero regressions detected from the 0.7.8 audit sprint. The core cryptographic and sandbox components are highly stable in 0.8.1-alpha.
+Zero regressions detected from the 0.7.8 audit sprint. The core cryptographic and sandbox components are highly stable in 0.8.2-alpha.

@@ -151,10 +151,10 @@ export async function verifyArtifactIntegrity(
     result.actualHash = actualHash;
 
     if (!v.contentHash) {
-      addError("ARTIFACT_HASH_MISMATCH", "Missing contentHash field");
+      addError("MISSING_CONTENT_HASH", "Missing contentHash field");
     } else if (actualHash !== v.contentHash) {
       addError(
-        "ARTIFACT_HASH_MISMATCH",
+        "HASH_MISMATCH",
         `Hash mismatch: expected ${v.contentHash}, got ${actualHash}`
       );
     }

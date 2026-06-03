@@ -213,38 +213,50 @@ export class HardkasArtifactsManager {
    * Throws an error with details if corruption or mismatch is found.
    */
   async verify(
-    target: string | { schema?: string; artifactId?: string; contentHash?: string },
+    target: any,
     options: { throwOnInvalid?: boolean } = {}
   ): Promise<any> {
     const throwOnInvalid = options.throwOnInvalid ?? true;
-    const id = typeof target === "string" ? target : (target.artifactId || target.contentHash || "");
     
-    if (!id) {
-      if (throwOnInvalid) throw new Error("No artifact target provided for verification.");
-      return { valid: false, reason: "unknown", message: "No artifact target provided for verification." };
-    }
+    let artifact: any;
+    let id: string;
 
-    let artifact;
-    try {
-      artifact = await this.read(id);
-    } catch (e: any) {
-      if (throwOnInvalid) throw e;
-      return { valid: false, reason: "missing_artifact", message: e.message, artifactId: id };
+    if (typeof target === "string") {
+      id = target;
+      if (!id) {
+        if (throwOnInvalid) throw new Error("No artifact target provided for verification.");
+        return { valid: false, reason: "unknown", message: "No artifact target provided for verification." };
+      }
+      try {
+        artifact = await this.read(id);
+      } catch (e: any) {
+        if (throwOnInvalid) throw e;
+        return { valid: false, reason: "missing_artifact", message: e.message, artifactId: id };
+      }
+    } else {
+      artifact = target;
+      id = (artifact.artifactId || artifact.contentHash || "") as string;
     }
 
     const { verifyArtifactIntegrity } = await import("@hardkas/artifacts");
     
     const result = await verifyArtifactIntegrity(artifact);
     if (!result.ok) {
+       const mappedReason = 
+         result.issues[0]?.code === "HASH_MISMATCH" ? "content_hash_mismatch" : 
+         result.issues[0]?.code === "MISSING_CONTENT_HASH" ? "missing_content_hash" : 
+         result.issues[0]?.code === "MISSING_SIGNATURE" ? "missing_signature" : "schema_invalid";
+
        if (throwOnInvalid) {
          throw new Error(`Artifact ${id} corrupted or invalid: ` + JSON.stringify(result.issues, null, 2));
        }
        return { 
          valid: false, 
-         reason: result.issues[0]?.code === "HASH_MISMATCH" ? "hash_mismatch" : 
-                 result.issues[0]?.code === "MISSING_SIGNATURE" ? "missing_signature" : "schema_invalid", 
+         reason: mappedReason,
          message: result.issues.map((i: any) => i.message).join(", "),
          artifactId: id,
+         expected: result.expectedHash,
+         actual: result.actualHash,
          details: result.issues
        };
     }

@@ -1,4 +1,4 @@
-# SDK Product Fit Analysis — HardKAS 0.8.1-alpha
+# SDK Product Fit Analysis — HardKAS 0.8.2-alpha
 
 Based on empirical data collected across **20 automated, non-adapted sandboxed runs** of HardKAS SDK, we evaluate its maturity as an application development library.
 
