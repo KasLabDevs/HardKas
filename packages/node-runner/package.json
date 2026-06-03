@@ -1,6 +1,6 @@
 {
   "name": "@hardkas/node-runner",
-  "version": "0.8.4-alpha",
+  "version": "0.8.5-alpha",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -35,5 +35,12 @@
     "dist",
     "LICENSE",
     "README.md"
-  ]
+  ],
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    }
+  }
 }
