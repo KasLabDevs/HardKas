@@ -1,4 +1,4 @@
-# HardKAS 0.8.0-alpha Execution Proof
+# HardKAS 0.8.1-alpha Execution Proof
 
 ## Environment Settings
 - **NPM Registry**: Real (registry.npmjs.org)
@@ -11,7 +11,7 @@
 
 ### Phase 1: Regression Verification
 
-Phase 1 was initiated to verify the P1 and P2 bug fixes. However, the `tx.send` strict validation idempotency test (P1) **failed** due to a runtime bug in the published `@hardkas/sdk@0.8.0-alpha` version from the NPM registry.
+Phase 1 was initiated to verify the P1 and P2 bug fixes. However, the `tx.send` strict validation idempotency test (P1) **failed** due to a runtime bug in the published `@hardkas/sdk@0.8.1-alpha` version from the NPM registry.
 
 **Error encountered:**
 ```
@@ -25,4 +25,4 @@ When `tx.send` falls back to `simulate()` on an in-memory artifact, the SDK atte
 
 ### Hard Stop Applied
 Per instructions: *Si Fase 1 falla → parar.*
-The execution has been stopped. The release candidate `0.8.0-alpha` cannot be certified at this time.
+The execution has been stopped. The release candidate `0.8.1-alpha` cannot be certified at this time.

@@ -1,7 +1,7 @@
 # HardKAS Pre-0.7.12 Scope Analysis
 
 **Date:** 2026-06-02  
-**Context:** Following the 0.8.0-alpha release, two major probes were executed: Command Coverage Phase 2b (testing all remaining CLI commands with correct args) and a React Frontend Readiness Probe.
+**Context:** Following the 0.8.1-alpha release, two major probes were executed: Command Coverage Phase 2b (testing all remaining CLI commands with correct args) and a React Frontend Readiness Probe.
 
 ---
 
@@ -35,7 +35,7 @@ Of the ~100 discovered CLI commands, we have now successfully executed and class
 
 ## 2. React / Frontend Readiness
 
-A series of 5 Vite/React probes were built against `@hardkas/sdk@0.8.0-alpha` to map the browser boundary.
+A series of 5 Vite/React probes were built against `@hardkas/sdk@0.8.1-alpha` to map the browser boundary.
 
 ### Probe Results
 

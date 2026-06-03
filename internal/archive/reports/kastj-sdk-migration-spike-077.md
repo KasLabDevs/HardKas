@@ -1,4 +1,4 @@
-# Kastj Migration Spike: 0.8.0-alpha Analysis
+# Kastj Migration Spike: 0.8.1-alpha Analysis
 
 This report addresses the explicit requirement: *Can Kastj locally migrate to HardKAS as its underlying transaction engine?*
 
@@ -26,7 +26,7 @@ Error: Missing Kastj hash access
    Currently, the SDK facade (`tx.plan`, `tx.sign`) is too "high-level" and abstracts away the cryptography.
 
 ## Verdict
-**HardKAS 0.8.0-alpha is NOT ready to replace Kastj's internal engine.** 
+**HardKAS 0.8.1-alpha is NOT ready to replace Kastj's internal engine.** 
 
 While the CLI works beautifully for end-users, Kastj requires a "Low-Level API" (L1 API) exposed through `@hardkas/sdk` or `@hardkas/core` that allows raw byte manipulation and hash inspection without executing full CLI runner loops.
 

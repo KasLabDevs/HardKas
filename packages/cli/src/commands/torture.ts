@@ -18,6 +18,7 @@ export function registerTortureCommands(program: Command) {
     .option("--report [path]", "Optional custom JSON output filepath for findings report")
     .option("--bucket <name>", "Optional target bucket name to execute exclusively")
     .option("--profile <name>", "Optional profile name to execute")
+    .option("--debug-stack", "Print raw stacktraces when cases fail", false)
     .action(
       async (options: {
         iterations: string;
@@ -25,6 +26,7 @@ export function registerTortureCommands(program: Command) {
         report?: string;
         bucket?: string;
         profile?: string;
+        debugStack?: boolean;
       }) => {
         try {
           const { runTortureMatrix } = await import("../runners/torture-runner.js");
@@ -38,7 +40,8 @@ export function registerTortureCommands(program: Command) {
             seed: options.seed,
             report: options.report,
             bucket: options.bucket,
-            profile: options.profile
+            profile: options.profile,
+            debugStack: options.debugStack
           });
         } catch (err: any) {
           handleError(err);

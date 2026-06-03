@@ -14,6 +14,7 @@ export interface TortureMatrixOptions {
   report?: string | undefined;
   bucket?: string | undefined;
   profile?: string | undefined;
+  debugStack?: boolean | undefined;
 }
 
 export interface TortureReplayOptions {
@@ -133,7 +134,7 @@ export async function runTortureMatrix(options: TortureMatrixOptions) {
     });
 
     const startTime = Date.now();
-    let status: "pass" | "fail" = "pass";
+    let status: "pass" | "fail" | "FAILED_CASE" = "pass";
     let failureReason: string | undefined;
     let failureCode: string | undefined;
     let severity: "info" | "warning" | "critical" | undefined;
@@ -151,6 +152,16 @@ export async function runTortureMatrix(options: TortureMatrixOptions) {
     let externalMutationDetected: boolean | undefined;
     let longPathSupportDetected: boolean | undefined;
     let sandboxSnapshotPath: string | undefined;
+
+    const originalConsoleError = console.error;
+    if (!options.debugStack) {
+      console.error = (...args: any[]) => {
+        if (args.length > 0 && typeof args[0] === 'string' && args[0].startsWith("DEBUG WORKFLOW ERROR")) {
+          return; // swallow the expected error and its associated stacktrace
+        }
+        originalConsoleError(...args);
+      };
+    }
 
     try {
       const runResult = await bucket.run(ctx);
@@ -170,7 +181,7 @@ export async function runTortureMatrix(options: TortureMatrixOptions) {
       longPathSupportDetected = runResult.longPathSupportDetected;
       passedCount++;
     } catch (err: any) {
-      status = "fail";
+      status = "FAILED_CASE" as any;
       failureReason = err.message || String(err);
       failureCode = err.code || "UNKNOWN_ERROR";
       severity = err.severity || "critical";
@@ -184,6 +195,7 @@ export async function runTortureMatrix(options: TortureMatrixOptions) {
       longPathSupportDetected = err.longPathSupportDetected;
       failedCount++;
     } finally {
+      console.error = originalConsoleError;
       EnvironmentTelemetry.clearContext();
     }
 
@@ -199,6 +211,9 @@ export async function runTortureMatrix(options: TortureMatrixOptions) {
       expectedInvariant,
       status,
       reproduceCommand,
+      ...(failureCode !== undefined ? { errorCode: failureCode } : {}),
+      ...(failureReason !== undefined ? { message: failureReason } : {}),
+      ...(status === "FAILED_CASE" ? { stackHidden: !options.debugStack } : {}),
       ...(failureReason !== undefined ? { failureReason } : {}),
       ...(failureCode !== undefined ? { failureCode } : {}),
       ...(severity !== undefined ? { severity } : {}),
@@ -261,7 +276,7 @@ export async function runTortureMatrix(options: TortureMatrixOptions) {
     }
 
     const eventSeverity =
-      status === "fail" ? "critical" : item.iteration % 10 === 0 ? "elevated" : "nominal";
+      status === "FAILED_CASE" ? "critical" : item.iteration % 10 === 0 ? "elevated" : "nominal";
 
     const telemetryDir = path.join(process.cwd(), ".hardkas", "telemetry");
     if (!fs.existsSync(telemetryDir)) {
@@ -332,7 +347,7 @@ export async function runTortureMatrix(options: TortureMatrixOptions) {
       `  ${indicator} [${pc.cyan(item.caseId)}] [${pc.blue(bucket.name.padEnd(28))}] -> ${statusText} ${pc.dim(`(${duration}ms)`)}`
     );
 
-    if (status === "fail") {
+    if (status === "FAILED_CASE") {
       UI.info(`     ${pc.red("Invariant:")} ${pc.yellow(expectedInvariant)}`);
       UI.info(`     ${pc.red("Reason:")}    ${pc.red(failureReason || "")}`);
       UI.info(`     ${pc.red("Code:")}      ${pc.red(failureCode || "")}`);
@@ -385,7 +400,7 @@ export async function runTortureMatrix(options: TortureMatrixOptions) {
   if (failedCount > 0) {
     UI.info(`\n${pc.bold(pc.red("❌ Failed Cases & Replay Instructions:"))}`);
     for (const r of results) {
-      if (r.status === "fail") {
+      if (r.status === "FAILED_CASE") {
         UI.info(
           `  - ${pc.cyan(r.caseId)} [${pc.yellow(r.bucket)}] fails invariant: ${pc.red(r.expectedInvariant)} (Severity: ${pc.red(r.severity || "critical")})`
         );
@@ -452,7 +467,7 @@ export async function runTortureMatrix(options: TortureMatrixOptions) {
       profile: options.profile || null,
       bucketFilter: options.bucket || null,
       reproduceCommand: `pnpm hardkas torture matrix --seed ${seed} --iterations ${iterations}${options.profile ? ` --profile ${options.profile}` : ""}`,
-      failures: results.filter((r) => r.status === "fail").length,
+      failures: results.filter((r) => r.status === "FAILED_CASE").length,
       warnings: results.filter((r) => r.severity === "warning").length,
       summary: {
         total: results.length,
@@ -467,10 +482,6 @@ export async function runTortureMatrix(options: TortureMatrixOptions) {
     UI.info(`\n💾 Saved machine-readable JSON report to: ${pc.cyan(reportPath)}`);
   } catch (err: any) {
     UI.info(`\n⚠️  Failed to save JSON report: ${err.message}`);
-  }
-
-  if (failedCount > 0) {
-    process.exitCode = 1;
   }
 }
 

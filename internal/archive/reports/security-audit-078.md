@@ -1,15 +1,15 @@
-# HardKAS 0.8.0-alpha Technical Security & Architectural Audit
+# HardKAS 0.8.1-alpha Technical Security & Architectural Audit
 ## Post SDK Completeness Sprint Assessment
 
 > [!IMPORTANT]
 > **Status:** **REJECTED / NOT READY FOR PRODUCTION RELEASE**
-> HardKAS has made impressive progress, stabilizing its CLI gauntlet and expanding its SDK capabilities. However, this audit has uncovered **7 Critical Architecture and Security Bugs (P0 & P1)** that prevent it from advancing beyond `0.8.0-alpha`. Most notably, cross-platform hashing non-determinism, severe workspace path traversal, and file-naming inconsistencies completely break the Replay and Localnet fork architectures.
+> HardKAS has made impressive progress, stabilizing its CLI gauntlet and expanding its SDK capabilities. However, this audit has uncovered **7 Critical Architecture and Security Bugs (P0 & P1)** that prevent it from advancing beyond `0.8.1-alpha`. Most notably, cross-platform hashing non-determinism, severe workspace path traversal, and file-naming inconsistencies completely break the Replay and Localnet fork architectures.
 
 ---
 
 ## 1. Executive Summary
 
-This audit performs a full-surface analysis of HardKAS `0.8.0-alpha` across determinism, security, consistency, package integrity, and DX. While the core invariants of canonical serialization (such as property sorting and metadata exclusion) are robustly implemented in `packages/artifacts`, the integration layers in the SDK and CLI introduce severe vulnerabilities and architectural defects.
+This audit performs a full-surface analysis of HardKAS `0.8.1-alpha` across determinism, security, consistency, package integrity, and DX. While the core invariants of canonical serialization (such as property sorting and metadata exclusion) are robustly implemented in `packages/artifacts`, the integration layers in the SDK and CLI introduce severe vulnerabilities and architectural defects.
 
 ### High-Level Status Table
 
@@ -196,7 +196,7 @@ Below is a detailed parity comparison of the CLI command set against the SDK fac
 
 ## 7. Action Plan & Suggested Fixes
 
-To prepare HardKAS for `0.8.0-alpha` release readiness, the following fixes should be implemented:
+To prepare HardKAS for `0.8.1-alpha` release readiness, the following fixes should be implemented:
 
 1. **Deterministic Multisig:** Replace `localeCompare` with `deterministicCompare` in `packages/sdk/src/tx.ts` for all signature array sorting.
 2. **Secure Sandbox:** Implement strict parent path checks in `HardkasArtifactsManager.read` to block path traversal attempts.

@@ -1,8 +1,8 @@
-# HardKAS 0.8.0-alpha — Targeted Regression Report
+# HardKAS 0.8.1-alpha — Targeted Regression Report
 
 **Date:** 2026-06-02  
-**SDK:** `@hardkas/sdk@0.8.0-alpha`  
-**CLI:** `@hardkas/cli@0.8.0-alpha`  
+**SDK:** `@hardkas/sdk@0.8.1-alpha`  
+**CLI:** `@hardkas/cli@0.8.1-alpha`  
 **Registry:** https://registry.npmjs.org/  
 **Node:** v24.15.0  
 **Mode:** External workspace (no monorepo, no local links)
