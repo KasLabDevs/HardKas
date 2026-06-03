@@ -1,9 +1,0 @@
-{
-  "suite": "Tamper Detection",
-  "timestamp": "2026-06-03T09:02:07.136Z",
-  "input": null,
-  "mutatedInput": null,
-  "hashBefore": null,
-  "hashAfter": null,
-  "stack": "TypeError: Cannot set properties of undefined (setting 'amount')\n    at run (file:///C:/Users/jrodr/Documents/kaslabdevs/GitHub/crypto-audit-081-workspace/run-crypto-audit.mjs:104:33)"
-}
