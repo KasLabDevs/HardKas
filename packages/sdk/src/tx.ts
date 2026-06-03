@@ -333,7 +333,7 @@ export class HardkasTx {
           artifactId: "", // To be computed from contentHash
           lineageId:
             partialTx.lineage?.lineageId ||
-            `lineage-${Math.random().toString(36).slice(2, 10)}`,
+            partialTx.contentHash || "0".repeat(64),
           parentArtifactId: partialTx.contentHash || partialTx.signedId,
           rootArtifactId: partialTx.lineage?.rootArtifactId || partialTx.sourcePlanId
         }
@@ -431,7 +431,7 @@ export class HardkasTx {
             artifactId: "", // To be computed
             lineageId:
               plan.lineage?.lineageId ||
-              `lineage-${Math.random().toString(36).slice(2, 10)}`,
+              plan.contentHash || "0".repeat(64),
             parentArtifactId: plan.contentHash || plan.planId,
             rootArtifactId: plan.contentHash || plan.planId
           },
@@ -628,7 +628,7 @@ export class HardkasTx {
       tracePath,
       lineage: {
         artifactId: "", // To be computed
-        lineageId: targetObj.lineage?.lineageId || Array.from({length: 64}, () => Math.floor(Math.random()*16).toString(16)).join(''),
+        lineageId: targetObj.lineage?.lineageId || targetObj.contentHash || "0".repeat(64),
         parentArtifactId: targetObj.contentHash || "0".repeat(64),
         rootArtifactId: targetObj.lineage?.rootArtifactId || "0".repeat(64),
         sequence: (targetObj.lineage?.sequence || 1) + 1
@@ -829,7 +829,7 @@ export class HardkasTx {
       tracePath: undefined,
       lineage: {
         artifactId: "", // To be computed
-        lineageId: signedArtifact.lineage?.lineageId || Array.from({length: 64}, () => Math.floor(Math.random()*16).toString(16)).join(''),
+        lineageId: signedArtifact.lineage?.lineageId || signedArtifact.contentHash || "0".repeat(64),
         parentArtifactId: signedArtifact.contentHash || "0".repeat(64),
         rootArtifactId: signedArtifact.lineage?.rootArtifactId || "0".repeat(64),
         sequence: (signedArtifact.lineage?.sequence || 1) + 1
