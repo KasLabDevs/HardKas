@@ -1,11 +1,11 @@
 {
-  "cycles": 16028,
-  "policyRefsVerified": 16028,
-  "networkRefsVerified": 16028,
-  "assumptionRefsVerified": 16028,
-  "lineageWithContextPassed": 16028,
+  "cycles": 0,
+  "policyRefsVerified": 0,
+  "networkRefsVerified": 0,
+  "assumptionRefsVerified": 0,
+  "lineageWithContextPassed": 0,
   "hashDrift": 0,
   "brokenRefs": 0,
-  "memoryStart": 22959920,
-  "memoryPeak": 137206328
+  "memoryStart": 30834904,
+  "memoryPeak": 0
 }

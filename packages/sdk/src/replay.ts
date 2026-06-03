@@ -218,7 +218,7 @@ export class HardkasReplay {
   ): Promise<ReplayVerifyResult> {
     const throwOnInvalid = (options as any)?.throwOnInvalid !== false;
     if (typeof targetOrOptions === "object" && targetOrOptions !== null && (targetOrOptions as any).contentHash) {
-       const verifyRes = await this.sdk.artifacts.verify(targetOrOptions, { throwOnInvalid });
+       const verifyRes = await this.sdk.artifacts.verify(targetOrOptions, { throwOnInvalid, strict: true });
        if (!verifyRes.valid && !throwOnInvalid) {
          return {
            passed: false,

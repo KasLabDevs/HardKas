@@ -173,12 +173,20 @@ export class HardkasTx {
     }) as unknown as TxPlanArtifact;
     
     // Resolve alias to immutable contentHash
-    if (options.policy) {
-      try {
-        const pol = await this.sdk.artifacts.read(options.policy);
-        (basePlan as any).policyRef = pol.contentHash || pol.artifactId || options.policy;
-      } catch (e) {
-        (basePlan as any).policyRef = options.policy; // Fallback to raw if not found
+    if (options.policy || (options as any).policies) {
+      const inputPolicies = (options as any).policies || (options.policy ? [options.policy] : []);
+      const resolvedRefs: string[] = [];
+      for (const p of inputPolicies) {
+        try {
+          const pol = await this.sdk.artifacts.read(p);
+          resolvedRefs.push(pol.contentHash || pol.artifactId || p);
+        } catch (e) {
+          resolvedRefs.push(p); // Fallback to raw if not found
+        }
+      }
+      if (resolvedRefs.length > 0) {
+        (basePlan as any).policyRefs = resolvedRefs;
+        (basePlan as any).policyRef = resolvedRefs[0]; // Legacy fallback
       }
     }
     
@@ -214,6 +222,14 @@ export class HardkasTx {
         (basePlan as any).lineage.parentArtifactId = finalHash;
         (basePlan as any).lineage.rootArtifactId = finalHash;
     }
+
+    // Cache in memory for simulation/signing lookups
+    this.sdk.artifacts.cacheArtifact(basePlan);
+
+    // Verify policy evaluation at planning time if policies are provided
+    if ((basePlan as any).policyRefs && (basePlan as any).policyRefs.length > 0) {
+      await this.sdk.artifacts.verify(basePlan, { throwOnInvalid: true, strict: true, enforceMetadata: false });
+    }
     
     return basePlan;
   }
@@ -231,7 +247,7 @@ export class HardkasTx {
     }
   ): Promise<SignedTxArtifact> {
     if (typeof plan === "object" && plan !== null && (plan as any).contentHash) {
-      await this.sdk.artifacts.verify(plan, { throwOnInvalid: true });
+      await this.sdk.artifacts.verify(plan, { throwOnInvalid: true, strict: true, enforceMetadata: false });
     }
 
     let resolvedAccount: HardkasAccount;
@@ -354,7 +370,7 @@ export class HardkasTx {
       const hash = calculateContentHash(draft, CURRENT_HASH_VERSION);
       draft.signedId = `signed-${hash.slice(0, 16)}`;
       draft.contentHash = hash;
-      if (draft.lineage) draft.lineage.artifactId = draft.signedId;
+      if (draft.lineage) draft.lineage.artifactId = hash;
 
       signedArtifact = draft;
     } else if (plan.schema === "hardkas.txPlan") {
@@ -449,7 +465,7 @@ export class HardkasTx {
         const hash = calculateContentHash(draft, CURRENT_HASH_VERSION);
         draft.signedId = `signed-${hash.slice(0, 16)}`;
         draft.contentHash = hash;
-        if (draft.lineage) draft.lineage.artifactId = draft.signedId;
+        if (draft.lineage) draft.lineage.artifactId = hash;
 
         signedArtifact = draft;
       } else {
@@ -505,9 +521,23 @@ export class HardkasTx {
     options: { persist?: boolean } = {}
   ): Promise<{ receipt: TxReceiptArtifact; receiptPath?: string; tracePath?: string }> {
     if (typeof target === "object" && target !== null && (target as any).contentHash) {
-      await this.sdk.artifacts.verify(target, { throwOnInvalid: true });
+      await this.sdk.artifacts.verify(target, { throwOnInvalid: true, strict: true, enforceMetadata: false });
     }
     const persist = options.persist ?? true;
+    if (typeof target === "object" && target !== null) {
+      const checkTxId = (target as any).txId || ((target as any).schema === ARTIFACT_SCHEMAS.SIGNED_TX ? `simulated-${(target as any).sourcePlanId || "unknown"}-tx` : `simulated-${(target as any).planId || (target as any).id || "unknown"}-tx`);
+      if (checkTxId) {
+        try {
+          const existingReceipt = await this.sdk.artifacts.read(checkTxId, { expectedSchema: ARTIFACT_SCHEMAS.TX_RECEIPT });
+          if (existingReceipt && existingReceipt.schema === ARTIFACT_SCHEMAS.TX_RECEIPT) {
+            const receiptPath = getDefaultReceiptPath(checkTxId, this.sdk.config.cwd);
+            return { receipt: existingReceipt, receiptPath };
+          }
+        } catch (e) {
+          // Proceed with simulation
+        }
+      }
+    }
     const {
       loadOrCreateLocalnetState,
       saveLocalnetState,
@@ -543,11 +573,13 @@ export class HardkasTx {
       signedId = targetObj.signedId || targetObj.id || "unknown";
       sourcePlanId = targetObj.sourcePlanId || "unknown";
       txId = targetObj.txId || `simulated-${sourcePlanId}-tx`;
-      try {
-        planArtifact = await this.sdk.artifacts.read(sourcePlanId, { expectedSchema: ARTIFACT_SCHEMAS.TX_PLAN });
-      } catch (e) {
-        // If parent plan not found, pass the signed artifact for reconstruction
-        planArtifact = targetObj;
+      planArtifact = this.sdk.artifacts.getCached(sourcePlanId);
+      if (!planArtifact) {
+        try {
+          planArtifact = await this.sdk.artifacts.read(sourcePlanId, { expectedSchema: ARTIFACT_SCHEMAS.TX_PLAN });
+        } catch (e) {
+          throw new Error("parent_plan_unresolved");
+        }
       }
     } else {
       planArtifact = targetObj;
@@ -724,7 +756,7 @@ export class HardkasTx {
     txId?: string;
   }> {
     if (typeof signedArtifact === "object" && signedArtifact !== null && (signedArtifact as any).contentHash) {
-      await this.sdk.artifacts.verify(signedArtifact as any, { throwOnInvalid: true });
+      await this.sdk.artifacts.verify(signedArtifact as any, { throwOnInvalid: true, strict: true, enforceMetadata: false });
     }
 
     // Perform pre-broadcast semantic verification (VULN-05)

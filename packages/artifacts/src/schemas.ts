@@ -136,6 +136,7 @@ export const TxPlanSchema = BaseArtifactSchema.extend({
   rpcUrl: z.string().optional(),
   networkProfileRef: z.string().optional(),
   policyRef: z.string().optional(),
+  policyRefs: z.array(z.string()).optional(),
   assumptionRef: z.string().optional()
 });
 
