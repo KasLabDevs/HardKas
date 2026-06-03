@@ -23,7 +23,7 @@ describe("replay summary", () => {
     const txId = "simtx_replay_123";
     const receipt: any = {
       schema: ARTIFACT_SCHEMAS.TX_RECEIPT,
-      hardkasVersion: "0.8.0-alpha",
+      hardkasVersion: "0.8.1-alpha",
       version: "1.0.0-alpha",
       hashVersion: 1,
       txId,
@@ -42,7 +42,7 @@ describe("replay summary", () => {
 
     const trace: any = {
       schema: ARTIFACT_SCHEMAS.TX_TRACE,
-      hardkasVersion: "0.8.0-alpha",
+      hardkasVersion: "0.8.1-alpha",
       version: "1.0.0-alpha",
       txId,
       mode: "simulated" as const,

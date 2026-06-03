@@ -1,4 +1,4 @@
-# Product Readiness - 0.8.0-alpha
+# Product Readiness - 0.8.1-alpha
 
 ## ¿HardKAS CLI está listo como alpha usable?
 Sí, el CLI es estable. La arquitectura está modularizada y previene escapes de sandbox de forma estricta. Las validaciones semánticas protegen los comandos.

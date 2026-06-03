@@ -1,4 +1,4 @@
-# HardKAS 0.8.0-alpha — Execution Proof
+# HardKAS 0.8.1-alpha — Execution Proof
 
 **Generated:** 2026-06-02T00:54:00+02:00
 
@@ -9,8 +9,8 @@
 | Key | Value |
 |-----|-------|
 | npm registry | https://registry.npmjs.org/ |
-| sdk version resolved | `@hardkas/sdk@0.8.0-alpha` |
-| cli version resolved | `@hardkas/cli@0.8.0-alpha` |
+| sdk version resolved | `@hardkas/sdk@0.8.1-alpha` |
+| cli version resolved | `@hardkas/cli@0.8.1-alpha` |
 | node version | v24.15.0 |
 | OS | Windows 11 |
 | total duration | ~11m 30s (20 apps × ~35s avg) |
@@ -36,7 +36,7 @@
 ```
 Script: scripts/run-revenge-gauntlet.mjs
 Workspace: ../external-gauntlet-runs/
-Install command: npm install @hardkas/sdk@0.8.0-alpha @hardkas/cli@0.8.0-alpha
+Install command: npm install @hardkas/sdk@0.8.1-alpha @hardkas/cli@0.8.1-alpha
 Init command: npx @hardkas/cli init . --skip-install
 Run command: node index.mjs
 ```
@@ -81,4 +81,4 @@ All 4 failures existed in 0.7.9 or are known gaps:
 2. **APP 14**: `artifacts.verify()` hash mismatch bug
 3. **APP 20**: `unsignedPayloadHash` not exposed on plan (Kastj feature gap)
 
-**Zero new regressions introduced by 0.8.0-alpha.**
+**Zero new regressions introduced by 0.8.1-alpha.**

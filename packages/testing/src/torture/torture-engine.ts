@@ -49,7 +49,10 @@ export type TortureCaseResult = {
   flow: string;
   mutation: string;
   expectedInvariant: string;
-  status: "pass" | "fail";
+  status: "pass" | "fail" | "FAILED_CASE";
+  errorCode?: string;
+  message?: string;
+  stackHidden?: boolean;
   failureReason?: string;
   failureCode?: string;
   severity?: "info" | "warning" | "critical" | "catastrophic";

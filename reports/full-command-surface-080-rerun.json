@@ -1,0 +1,500 @@
+{
+  "commands": [
+    {
+      "command": "accounts balance",
+      "status": "EXECUTED_SUCCESS"
+    },
+    {
+      "command": "accounts fund",
+      "status": "EXECUTED_EXPECTED_FAILURE"
+    },
+    {
+      "command": "accounts list",
+      "status": "EXECUTED_SUCCESS"
+    },
+    {
+      "command": "accounts real change-password",
+      "status": "SKIPPED_NEEDS_NETWORK"
+    },
+    {
+      "command": "accounts real generate",
+      "status": "SKIPPED_NEEDS_NETWORK"
+    },
+    {
+      "command": "accounts real import",
+      "status": "SKIPPED_NEEDS_NETWORK"
+    },
+    {
+      "command": "accounts real init",
+      "status": "SKIPPED_DESTRUCTIVE"
+    },
+    {
+      "command": "artifact create",
+      "status": "EXECUTED_EXPECTED_FAILURE"
+    },
+    {
+      "command": "artifact explain",
+      "status": "EXECUTED_EXPECTED_FAILURE"
+    },
+    {
+      "command": "artifact inspect",
+      "status": "EXECUTED_SUCCESS"
+    },
+    {
+      "command": "artifact lineage",
+      "status": "EXECUTED_EXPECTED_FAILURE"
+    },
+    {
+      "command": "artifact verify",
+      "status": "EXECUTED_EXPECTED_FAILURE"
+    },
+    {
+      "command": "chaos replay",
+      "status": "EXECUTED_EXPECTED_FAILURE"
+    },
+    {
+      "command": "ci verify",
+      "status": "EXECUTED_SUCCESS"
+    },
+    {
+      "command": "config init",
+      "status": "EXECUTED_EXPECTED_FAILURE"
+    },
+    {
+      "command": "config networks",
+      "status": "EXECUTED_SUCCESS"
+    },
+    {
+      "command": "config repair",
+      "status": "SKIPPED_DESTRUCTIVE"
+    },
+    {
+      "command": "config show",
+      "status": "EXECUTED_SUCCESS"
+    },
+    {
+      "command": "console",
+      "status": "SKIPPED_INTERACTIVE"
+    },
+    {
+      "command": "dag simulate-reorg",
+      "status": "SKIPPED_NEEDS_NETWORK"
+    },
+    {
+      "command": "dag status",
+      "status": "SKIPPED_NEEDS_NETWORK"
+    },
+    {
+      "command": "dashboard doctor",
+      "status": "EXECUTED_SUCCESS"
+    },
+    {
+      "command": "deploy history",
+      "status": "EXECUTED_SUCCESS"
+    },
+    {
+      "command": "deploy inspect",
+      "status": "EXECUTED_EXPECTED_FAILURE"
+    },
+    {
+      "command": "deploy list",
+      "status": "EXECUTED_SUCCESS"
+    },
+    {
+      "command": "deploy status",
+      "status": "EXECUTED_EXPECTED_FAILURE"
+    },
+    {
+      "command": "deploy track",
+      "status": "EXECUTED_EXPECTED_FAILURE"
+    },
+    {
+      "command": "dev accounts export",
+      "status": "EXECUTED_EXPECTED_FAILURE"
+    },
+    {
+      "command": "dev accounts list",
+      "status": "EXECUTED_SUCCESS"
+    },
+    {
+      "command": "dev accounts reveal",
+      "status": "EXECUTED_EXPECTED_FAILURE"
+    },
+    {
+      "command": "dev create",
+      "status": "SKIPPED_INTERACTIVE"
+    },
+    {
+      "command": "dev doctor",
+      "status": "EXECUTED_REAL_FAILURE"
+    },
+    {
+      "command": "dev fixture generate",
+      "status": "EXECUTED_EXPECTED_FAILURE"
+    },
+    {
+      "command": "dev init",
+      "status": "EXECUTED_SUCCESS"
+    },
+    {
+      "command": "dev last",
+      "status": "EXECUTED_SUCCESS"
+    },
+    {
+      "command": "dev server",
+      "status": "EXECUTED_SUCCESS"
+    },
+    {
+      "command": "dev tx generate",
+      "status": "EXECUTED_EXPECTED_FAILURE"
+    },
+    {
+      "command": "dev tx send",
+      "status": "EXECUTED_SUCCESS"
+    },
+    {
+      "command": "doctor",
+      "status": "EXECUTED_SUCCESS"
+    },
+    {
+      "command": "explain",
+      "status": "EXECUTED_EXPECTED_FAILURE"
+    },
+    {
+      "command": "init",
+      "status": "EXECUTED_SUCCESS"
+    },
+    {
+      "command": "inspect",
+      "status": "EXECUTED_SUCCESS"
+    },
+    {
+      "command": "kaspa doctor",
+      "status": "SKIPPED_NEEDS_NETWORK"
+    },
+    {
+      "command": "kaspa wallet address",
+      "status": "EXECUTED_SUCCESS"
+    },
+    {
+      "command": "kaspa wallet balance",
+      "status": "EXECUTED_EXPECTED_FAILURE"
+    },
+    {
+      "command": "kaspa wallet create",
+      "status": "EXECUTED_EXPECTED_FAILURE"
+    },
+    {
+      "command": "kaspa wallet list",
+      "status": "EXECUTED_SUCCESS"
+    },
+    {
+      "command": "kaspa wallet send",
+      "status": "EXECUTED_EXPECTED_FAILURE"
+    },
+    {
+      "command": "local wizard",
+      "status": "SKIPPED_INTERACTIVE"
+    },
+    {
+      "command": "localnet account create",
+      "status": "EXECUTED_EXPECTED_FAILURE"
+    },
+    {
+      "command": "localnet fork",
+      "status": "SKIPPED_REQUIRES_DOCKER"
+    },
+    {
+      "command": "localnet snapshot create",
+      "status": "EXECUTED_EXPECTED_FAILURE"
+    },
+    {
+      "command": "localnet snapshot replay",
+      "status": "EXECUTED_EXPECTED_FAILURE"
+    },
+    {
+      "command": "localnet snapshot verify",
+      "status": "EXECUTED_EXPECTED_FAILURE"
+    },
+    {
+      "command": "lock clear",
+      "status": "SKIPPED_DESTRUCTIVE"
+    },
+    {
+      "command": "lock doctor",
+      "status": "EXECUTED_SUCCESS"
+    },
+    {
+      "command": "lock list",
+      "status": "EXECUTED_SUCCESS"
+    },
+    {
+      "command": "lock status",
+      "status": "EXECUTED_SUCCESS"
+    },
+    {
+      "command": "node logs",
+      "status": "SKIPPED_REQUIRES_DOCKER"
+    },
+    {
+      "command": "node reset",
+      "status": "SKIPPED_NEEDS_NETWORK"
+    },
+    {
+      "command": "node restart",
+      "status": "SKIPPED_REQUIRES_DOCKER"
+    },
+    {
+      "command": "node start",
+      "status": "SKIPPED_REQUIRES_DOCKER"
+    },
+    {
+      "command": "node status",
+      "status": "SKIPPED_REQUIRES_DOCKER"
+    },
+    {
+      "command": "node stop",
+      "status": "SKIPPED_REQUIRES_DOCKER"
+    },
+    {
+      "command": "query artifacts diff",
+      "status": "EXECUTED_EXPECTED_FAILURE"
+    },
+    {
+      "command": "query artifacts inspect",
+      "status": "EXECUTED_EXPECTED_FAILURE"
+    },
+    {
+      "command": "query artifacts list",
+      "status": "EXECUTED_SUCCESS"
+    },
+    {
+      "command": "query dag anomalies",
+      "status": "EXECUTED_SUCCESS"
+    },
+    {
+      "command": "query dag conflicts",
+      "status": "EXECUTED_SUCCESS"
+    },
+    {
+      "command": "query dag displaced",
+      "status": "EXECUTED_SUCCESS"
+    },
+    {
+      "command": "query dag history",
+      "status": "EXECUTED_EXPECTED_FAILURE"
+    },
+    {
+      "command": "query dag sink-path",
+      "status": "EXECUTED_SUCCESS"
+    },
+    {
+      "command": "query events",
+      "status": "EXECUTED_SUCCESS"
+    },
+    {
+      "command": "query lineage chain",
+      "status": "EXECUTED_EXPECTED_FAILURE"
+    },
+    {
+      "command": "query lineage orphans",
+      "status": "EXECUTED_SUCCESS"
+    },
+    {
+      "command": "query lineage transitions",
+      "status": "EXECUTED_SUCCESS"
+    },
+    {
+      "command": "query replay divergences",
+      "status": "EXECUTED_SUCCESS"
+    },
+    {
+      "command": "query replay invariants",
+      "status": "EXECUTED_EXPECTED_FAILURE"
+    },
+    {
+      "command": "query replay list",
+      "status": "EXECUTED_SUCCESS"
+    },
+    {
+      "command": "query replay summary",
+      "status": "EXECUTED_EXPECTED_FAILURE"
+    },
+    {
+      "command": "query store doctor",
+      "status": "EXECUTED_SUCCESS"
+    },
+    {
+      "command": "query store export",
+      "status": "EXECUTED_SUCCESS"
+    },
+    {
+      "command": "query store migrate",
+      "status": "SKIPPED_DESTRUCTIVE"
+    },
+    {
+      "command": "query store rebuild",
+      "status": "EXECUTED_SUCCESS"
+    },
+    {
+      "command": "query store sql",
+      "status": "EXECUTED_EXPECTED_FAILURE"
+    },
+    {
+      "command": "query tx",
+      "status": "EXECUTED_SUCCESS"
+    },
+    {
+      "command": "rebuild",
+      "status": "EXECUTED_EXPECTED_FAILURE"
+    },
+    {
+      "command": "repair",
+      "status": "EXECUTED_SUCCESS"
+    },
+    {
+      "command": "replay diff",
+      "status": "EXECUTED_EXPECTED_FAILURE"
+    },
+    {
+      "command": "replay verify",
+      "status": "EXECUTED_EXPECTED_FAILURE"
+    },
+    {
+      "command": "rotate",
+      "status": "EXECUTED_SUCCESS"
+    },
+    {
+      "command": "rpc dag",
+      "status": "SKIPPED_NEEDS_NETWORK"
+    },
+    {
+      "command": "rpc doctor",
+      "status": "SKIPPED_NEEDS_NETWORK"
+    },
+    {
+      "command": "rpc health",
+      "status": "SKIPPED_NEEDS_NETWORK"
+    },
+    {
+      "command": "rpc info",
+      "status": "SKIPPED_NEEDS_NETWORK"
+    },
+    {
+      "command": "rpc mempool",
+      "status": "SKIPPED_NEEDS_NETWORK"
+    },
+    {
+      "command": "rpc utxos",
+      "status": "SKIPPED_NEEDS_NETWORK"
+    },
+    {
+      "command": "run",
+      "status": "EXECUTED_EXPECTED_FAILURE"
+    },
+    {
+      "command": "sandbox",
+      "status": "EXECUTED_REAL_FAILURE"
+    },
+    {
+      "command": "status",
+      "status": "EXECUTED_SUCCESS"
+    },
+    {
+      "command": "telemetry inspect",
+      "status": "EXECUTED_SUCCESS"
+    },
+    {
+      "command": "telemetry tail",
+      "status": "EXECUTED_EXPECTED_FAILURE"
+    },
+    {
+      "command": "telemetry verify",
+      "status": "EXECUTED_EXPECTED_FAILURE"
+    },
+    {
+      "command": "test",
+      "status": "EXECUTED_EXPECTED_FAILURE"
+    },
+    {
+      "command": "torture matrix",
+      "status": "EXECUTED_REAL_FAILURE"
+    },
+    {
+      "command": "torture replay",
+      "status": "EXECUTED_EXPECTED_FAILURE"
+    },
+    {
+      "command": "tx batch",
+      "status": "EXECUTED_EXPECTED_FAILURE"
+    },
+    {
+      "command": "tx plan",
+      "status": "EXECUTED_SUCCESS"
+    },
+    {
+      "command": "tx profile",
+      "status": "EXECUTED_EXPECTED_FAILURE"
+    },
+    {
+      "command": "tx receipt",
+      "status": "EXECUTED_EXPECTED_FAILURE"
+    },
+    {
+      "command": "tx send",
+      "status": "EXECUTED_EXPECTED_FAILURE"
+    },
+    {
+      "command": "tx sign",
+      "status": "EXECUTED_EXPECTED_FAILURE"
+    },
+    {
+      "command": "tx status",
+      "status": "EXECUTED_EXPECTED_FAILURE"
+    },
+    {
+      "command": "tx trace",
+      "status": "EXECUTED_EXPECTED_FAILURE"
+    },
+    {
+      "command": "tx verify",
+      "status": "EXECUTED_EXPECTED_FAILURE"
+    },
+    {
+      "command": "up",
+      "status": "EXECUTED_EXPECTED_FAILURE"
+    },
+    {
+      "command": "verify",
+      "status": "EXECUTED_EXPECTED_FAILURE"
+    },
+    {
+      "command": "verify-semantics",
+      "status": "EXECUTED_EXPECTED_FAILURE"
+    },
+    {
+      "command": "why",
+      "status": "EXECUTED_EXPECTED_FAILURE"
+    },
+    {
+      "command": "workflow create",
+      "status": "EXECUTED_EXPECTED_FAILURE"
+    },
+    {
+      "command": "workflow diff",
+      "status": "EXECUTED_EXPECTED_FAILURE"
+    },
+    {
+      "command": "workflow inspect",
+      "status": "EXECUTED_EXPECTED_FAILURE"
+    },
+    {
+      "command": "workflow replay",
+      "status": "EXECUTED_EXPECTED_FAILURE"
+    },
+    {
+      "command": "workflow run",
+      "status": "EXECUTED_EXPECTED_FAILURE"
+    }
+  ]
+}
