@@ -57,8 +57,12 @@ describe("0.8.4-alpha Lifecycle Integrity & Trust Boundary Tests", () => {
     const policyPath = path.join(sdk.workspace.artifactsDir, `policy.v1-${policy.contentHash}.json`);
     fs.writeFileSync(policyPath, JSON.stringify(badPolicy, null, 2), "utf-8");
 
+    // Clear artifacts manager memory cache to force disk load
+    (sdk.artifacts as any).cache.clear();
+
     // Verification must fail because of REFERENCE_HASH_MISMATCH
-    const result = await sdk.artifacts.verify(plan, { throwOnInvalid: false, strict: true });
+    const result = await sdk.artifacts.verify(plan, { throwOnInvalid: false, strict: true, enforceMetadata: false });
+    console.log("TEST 1 DIAGNOSTIC RESULT:", JSON.stringify(result, null, 2));
     expect(result.valid).toBe(false);
     expect(result.details.some((i: any) => i.code === "REFERENCE_HASH_MISMATCH")).toBe(true);
   });
