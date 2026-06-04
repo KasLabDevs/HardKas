@@ -263,8 +263,58 @@ export class KaspaJsonRpcClient implements KaspaRpcClient {
   }
 
   async submitTransaction(rawTx: unknown): Promise<{ transactionId: string }> {
+    let txObj = rawTx;
+    try {
+      while (typeof txObj === "string" && txObj.startsWith("{")) {
+        const parsed = JSON.parse(txObj);
+        if (parsed && typeof parsed === "object") {
+          if ("tx" in parsed) txObj = parsed.tx;
+          else if ("inner" in parsed) txObj = parsed.inner;
+          else txObj = parsed;
+        } else {
+          txObj = parsed;
+        }
+      }
+      
+      // One final check for POJO nested inner/tx in case it wasn't a string at a nested level
+      while (txObj && typeof txObj === "object" && !Array.isArray(txObj) && ("tx" in txObj || "inner" in txObj)) {
+         if ("tx" in txObj) txObj = (txObj as any).tx;
+         else if ("inner" in txObj) txObj = (txObj as any).inner;
+      }
+
+      const txAny = txObj as any;
+      if (txAny && typeof txAny === "object") {
+        txAny.mass = txAny.mass || 0;
+        if (txAny.payload === undefined) txAny.payload = "";
+
+        if (txAny.outputs && Array.isArray(txAny.outputs)) {
+          txAny.outputs.forEach((output: any) => {
+            const amount = output.amount !== undefined ? output.amount : output.value;
+            output.value = typeof amount === "string" ? Number(amount) : amount;
+            delete output.amount;
+
+            if (output.scriptPublicKey && typeof output.scriptPublicKey === "object") {
+              const spk = output.scriptPublicKey;
+              const versionHex = spk.version.toString(16).padStart(4, "0");
+              output.scriptPublicKey = versionHex + spk.scriptPublicKey;
+            }
+          });
+        }
+
+        if (txAny.inputs && Array.isArray(txAny.inputs)) {
+          txAny.inputs.forEach((input: any) => {
+            if (typeof input.sequence === "string") input.sequence = Number(input.sequence);
+            if (typeof input.sigOpCount === "string") input.sigOpCount = Number(input.sigOpCount);
+          });
+        }
+      }
+    } catch (e) {
+      // Ignored
+    }
+
     const result = (await this.callRpc("submitTransactionRequest", {
-      transaction: rawTx
+      transaction: txObj,
+      allowOrphan: false
     })) as { transactionId: string };
     return { transactionId: result.transactionId };
   }
