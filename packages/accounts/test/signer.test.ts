@@ -1,7 +1,17 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi } from "vitest";
 import { signTxPlanArtifact } from "../src/signer.js";
 import { TxPlanArtifact } from "@hardkas/artifacts";
 import { HardkasAccount } from "../src/types.js";
+
+vi.mock("../src/signer-backend.js", () => {
+  return {
+    getKaspaSigningBackendStatus: vi.fn().mockResolvedValue({
+      available: false,
+      error: "Mocked unavailable backend",
+      name: "None"
+    })
+  };
+});
 
 describe("signTxPlanArtifact", () => {
   const mockSimulatedPlan: any = {
