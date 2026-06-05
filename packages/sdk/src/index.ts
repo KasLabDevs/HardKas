@@ -4,7 +4,7 @@ import {
   defineHardkasConfig
 } from "@hardkas/config";
 import { resolveHardkasAccount, HardkasAccount } from "@hardkas/accounts";
-import { ExternalHardkasSigner } from "@hardkas/core";
+import { ExternalHardkasSigner } from "@hardkas/artifacts";
 import { JsonWrpcKaspaClient, KaspaRpcClient } from "@hardkas/kaspa-rpc";
 import { NetworkId, HardkasError } from "@hardkas/core";
 import { HardkasAccounts } from "./accounts.js";

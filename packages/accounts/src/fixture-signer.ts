@@ -1,5 +1,4 @@
-import { TxPlanArtifact, SignedTxArtifact, calculateContentHash, HARDKAS_VERSION, ARTIFACT_VERSION, CURRENT_HASH_VERSION } from "@hardkas/artifacts";
-import { ExternalHardkasSigner } from "@hardkas/core";
+import { TxPlanArtifact, SignedTxArtifact, ExternalHardkasSigner, calculateContentHash, HARDKAS_VERSION, ARTIFACT_VERSION, CURRENT_HASH_VERSION } from "@hardkas/artifacts";
 
 function toHex(arr: Uint8Array): string {
   return Buffer.from(arr).toString("hex");

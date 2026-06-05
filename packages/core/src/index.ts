@@ -150,7 +150,6 @@ export * from "./snapshot.js";
 export * from "./deterministic.js";
 export * from "./retention.js";
 export * from "./telemetry.js";
-export * from "./signer.js";
 export { TelemetryRotator } from "./retention.js";
 export * from "./runtime-context.js";
 export * from "./semantics/index.js";

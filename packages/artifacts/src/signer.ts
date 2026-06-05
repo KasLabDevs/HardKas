@@ -1,4 +1,4 @@
-import { TxPlanArtifact, SignedTxArtifact } from "@hardkas/artifacts";
+import { TxPlanArtifact, SignedTxArtifact } from "./types.js";
 
 /**
  * Interface for external wallets and signers.
