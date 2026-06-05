@@ -132,7 +132,8 @@ async function runRecursiveVerify(dir: string, options: ArtifactVerifyOptions) {
     // 2. Semantic & Lineage Audit
     const artifact = JSON.parse(fs.readFileSync(file, "utf-8"));
     const semanticResult = verifyArtifactSemantics(artifact, {
-      strict: options.strict ?? false
+      strict: options.strict ?? false,
+      searchDirs: [dir]
     });
 
     // Merge results
