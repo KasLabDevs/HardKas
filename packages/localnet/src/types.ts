@@ -17,8 +17,13 @@ export interface LocalnetUtxo {
 
 export interface LocalnetState extends HardkasArtifactBase {
   schema: "hardkas.localnetState.v1";
+  hardkasVersion: string;
+  version: string;
+  createdAt: string;
   mode: ExecutionMode;
   networkId: NetworkId;
+  workflowId: string;
+  assumptionLevel: string;
   daaScore: string;
   accounts: LocalnetAccount[];
   utxos: LocalnetUtxo[];

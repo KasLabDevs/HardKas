@@ -1,6 +1,6 @@
 {
   "name": "@hardkas/simulator-adapters",
-  "version": "0.8.14-alpha",
+  "version": "0.8.15-alpha",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",

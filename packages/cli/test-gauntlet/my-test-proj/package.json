@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "type": "module",
   "dependencies": {
-    "@hardkas/sdk": "latest"
+    "@hardkas/sdk": "latest",
+    "@kaspa/core-lib": "^1.6.5"
   }
 }

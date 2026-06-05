@@ -55,7 +55,8 @@ export function registerInitCommands(program: Command) {
                 version: "1.0.0",
                 type: "module",
                 dependencies: {
-                  "@hardkas/sdk": "latest"
+                  "@hardkas/sdk": "latest",
+                  "@kaspa/core-lib": "^1.6.5"
                 }
               };
               writeFileAtomicSync(pkgFile, JSON.stringify(pkgTemplate, null, 2), {
@@ -67,7 +68,7 @@ export function registerInitCommands(program: Command) {
             const template = `import { defineHardkasConfig } from "@hardkas/sdk";
 
 export default defineHardkasConfig({
-  // HardKAS v0.8.14-alpha Configuration
+  // HardKAS v0.8.15-alpha Configuration
   defaultNetwork: "simulated",
 
   networks: {
@@ -141,7 +142,7 @@ export default defineHardkasConfig({
               `HardKAS project '${name || "current"}' initialized successfully.`
             );
             if (name) UI.info(`Project folder: ${targetDir}`);
-            UI.info(`Created: hardkas.config.ts (0.8.14-alpha)`);
+            UI.info(`Created: hardkas.config.ts (0.8.15-alpha)`);
             UI.footer(`Run 'cd ${name || "."}' and then 'hardkas up' to start.`);
           }
         );

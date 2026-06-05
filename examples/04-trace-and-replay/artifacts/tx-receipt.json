@@ -1,6 +1,6 @@
 {
   "schema": "hardkas.txReceipt",
-  "hardkasVersion": "0.8.14-alpha",
+  "hardkasVersion": "0.8.15-alpha",
   "networkId": "simulated",
   "mode": "simulated",
   "status": "accepted",

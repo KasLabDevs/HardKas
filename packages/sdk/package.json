@@ -1,6 +1,6 @@
 {
   "name": "@hardkas/sdk",
-  "version": "0.8.14-alpha",
+  "version": "0.8.15-alpha",
   "type": "module",
   "files": [
     "dist",
@@ -40,7 +40,8 @@
     "@hardkas/simulator": "workspace:*",
     "@hardkas/tx-builder": "workspace:*",
     "@hardkas/wallet-adapter": "workspace:*",
-    "@hardkas/query-store": "workspace:*"
+    "@hardkas/query-store": "workspace:*",
+    "@kaspa/core-lib": "^1.6.5"
   },
   "devDependencies": {
     "tsup": "^8.3.5",

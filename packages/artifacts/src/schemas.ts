@@ -52,6 +52,7 @@ export const BaseArtifactSchema = z.object({
   parents: z.array(z.string()).optional(),
   lineageDepth: z.number().optional(),
   workflowId: z.string().optional(),
+  assumptionLevel: z.string().optional(),
   scriptProfile: z.enum(["standard", "experimental"]).optional(),
   scriptCapabilities: z.array(ScriptCapabilitySchema).optional(),
   scriptMetadata: ScriptMetadataSchema.optional()

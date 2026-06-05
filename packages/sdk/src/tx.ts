@@ -154,6 +154,17 @@ export class HardkasTx {
     });
 
     const isSimulated = activeNetwork === "simulated" || this.sdk.config.config.networks?.[activeNetwork]?.kind === "simulated";
+    let resolvedAssumptionLevel = options.assumption;
+    if (!resolvedAssumptionLevel) {
+      if (isSimulated) {
+        resolvedAssumptionLevel = "local-simulated";
+      } else if (activeNetwork === "simnet") {
+        resolvedAssumptionLevel = "local-rpc";
+      } else {
+        resolvedAssumptionLevel = activeNetwork;
+      }
+    }
+
     const basePlan = createTxPlanArtifact({
       networkId: activeNetwork as NetworkId,
       mode: isSimulated ? "simulated" : "real",
@@ -168,9 +179,11 @@ export class HardkasTx {
       },
       amountSompi,
       plan: builderPlan,
-      ctx: options.workflowId
-        ? { ...systemRuntimeContext, workflowId: options.workflowId }
-        : systemRuntimeContext
+      ctx: { 
+        ...systemRuntimeContext, 
+        ...(options.workflowId ? { workflowId: options.workflowId } : {}),
+        assumptionLevel: resolvedAssumptionLevel
+      }
     }) as unknown as TxPlanArtifact;
     
     // Resolve alias to immutable contentHash
