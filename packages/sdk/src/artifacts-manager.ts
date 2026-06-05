@@ -302,13 +302,7 @@ export class HardkasArtifactsManager {
         strict: true, 
         artifactsDir: this.workspace.artifactsDir,
         enforceMetadata,
-        resolveArtifact: (id: string) => {
-          const cached = this.cache.get(id);
-          if (!cached) {
-            console.log(`[VERIFY-DEBUG] cache miss for ${id}. Cache keys:`, Array.from(this.cache.keys()));
-          }
-          return cached;
-        }
+        resolveArtifact: (id: string) => this.cache.get(id)
       });
       if (!semResult.ok) {
         result.ok = false;

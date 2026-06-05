@@ -258,17 +258,12 @@ export class HardkasTx {
       requiredSigners?: string[];
     }
   ): Promise<SignedTxArtifact> {
-    console.log("DEBUG: tx.sign CALLED WITH plan.schema =", plan.schema);
-    console.log("DEBUG: plan.contentHash passed to tx.sign =", (plan as any).contentHash);
-    
     if (typeof plan === "object" && plan !== null && (plan as any).contentHash) {
       await this.sdk.artifacts.verify(plan, { throwOnInvalid: true, strict: true, enforceMetadata: false });
     }
 
     if (this.sdk.signer && plan.schema === "hardkas.txPlan") {
-      console.log("DEBUG: plan.contentHash before signing:", (plan as any).contentHash);
       const signedArtifact = await this.sdk.signer.signTransaction(plan as TxPlanArtifact);
-      console.log("DEBUG: signedArtifact.lineage.parentArtifactId:", (signedArtifact as any).lineage?.parentArtifactId);
       
       const { absolutePath } = await this.sdk.artifacts.write(signedArtifact);
       const { coreEvents } = await import("@hardkas/core");
@@ -558,7 +553,14 @@ export class HardkasTx {
     options: { persist?: boolean } = {}
   ): Promise<{ receipt: TxReceiptArtifact; receiptPath?: string; tracePath?: string }> {
     if (typeof target === "object" && target !== null && (target as any).contentHash) {
-      await this.sdk.artifacts.verify(target, { throwOnInvalid: true, strict: true, enforceMetadata: false });
+      try {
+        await this.sdk.artifacts.verify(target, { throwOnInvalid: true, strict: true, enforceMetadata: false });
+      } catch (e: any) {
+        if (e.message.includes("PARENT_MISSING")) {
+          throw new Error("parent_plan_unresolved: Missing context plan for simulation.");
+        }
+        throw e;
+      }
     }
     const persist = options.persist ?? true;
     if (typeof target === "object" && target !== null) {
@@ -795,7 +797,14 @@ export class HardkasTx {
     txId?: string;
   }> {
     if (typeof signedArtifact === "object" && signedArtifact !== null && (signedArtifact as any).contentHash) {
-      await this.sdk.artifacts.verify(signedArtifact as any, { throwOnInvalid: true, strict: true, enforceMetadata: false });
+      try {
+        await this.sdk.artifacts.verify(signedArtifact as any, { throwOnInvalid: true, strict: true, enforceMetadata: false });
+      } catch (e: any) {
+        if (e.message.includes("PARENT_MISSING")) {
+          throw new Error("parent_plan_unresolved: Missing context plan for simulation.");
+        }
+        throw e;
+      }
     }
 
     // Perform pre-broadcast semantic verification (VULN-05)
