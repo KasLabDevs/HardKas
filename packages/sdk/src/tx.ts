@@ -154,6 +154,17 @@ export class HardkasTx {
     });
 
     const isSimulated = activeNetwork === "simulated" || this.sdk.config.config.networks?.[activeNetwork]?.kind === "simulated";
+    let resolvedAssumptionLevel = options.assumption;
+    if (!resolvedAssumptionLevel) {
+      if (isSimulated) {
+        resolvedAssumptionLevel = "local-simulated";
+      } else if (activeNetwork === "simnet") {
+        resolvedAssumptionLevel = "local-rpc";
+      } else {
+        resolvedAssumptionLevel = activeNetwork;
+      }
+    }
+
     const basePlan = createTxPlanArtifact({
       networkId: activeNetwork as NetworkId,
       mode: isSimulated ? "simulated" : "real",
@@ -168,9 +179,11 @@ export class HardkasTx {
       },
       amountSompi,
       plan: builderPlan,
-      ctx: options.workflowId
-        ? { ...systemRuntimeContext, workflowId: options.workflowId }
-        : systemRuntimeContext
+      ctx: { 
+        ...systemRuntimeContext, 
+        ...(options.workflowId ? { workflowId: options.workflowId } : {}),
+        assumptionLevel: resolvedAssumptionLevel
+      }
     }) as unknown as TxPlanArtifact;
     
     // Resolve alias to immutable contentHash
@@ -215,14 +228,14 @@ export class HardkasTx {
     (basePlan as any).contentHash = newHash;
     if ((basePlan as any).lineage) {
         (basePlan as any).lineage.lineageId = newHash;
-        (basePlan as any).lineage.parentArtifactId = newHash;
+        (basePlan as any).lineage.parentArtifactId = ""; // Root plans have no parent
         (basePlan as any).lineage.rootArtifactId = newHash;
         const finalHash = calculateContentHash(basePlan, CURRENT_HASH_VERSION);
         (basePlan as any).contentHash = finalHash;
         (basePlan as any).lineage.artifactId = finalHash;
+        (basePlan as any).planId = `plan-${finalHash.slice(0, 16)}`;
     }
 
-    // Cache in memory for simulation/signing lookups
     this.sdk.artifacts.cacheArtifact(basePlan);
 
     // Verify policy evaluation at planning time if policies are provided
@@ -540,7 +553,14 @@ export class HardkasTx {
     options: { persist?: boolean } = {}
   ): Promise<{ receipt: TxReceiptArtifact; receiptPath?: string; tracePath?: string }> {
     if (typeof target === "object" && target !== null && (target as any).contentHash) {
-      await this.sdk.artifacts.verify(target, { throwOnInvalid: true, strict: true, enforceMetadata: false });
+      try {
+        await this.sdk.artifacts.verify(target, { throwOnInvalid: true, strict: true, enforceMetadata: false });
+      } catch (e: any) {
+        if (e.message.includes("PARENT_MISSING")) {
+          throw new Error("parent_plan_unresolved: Missing context plan for simulation.");
+        }
+        throw e;
+      }
     }
     const persist = options.persist ?? true;
     if (typeof target === "object" && target !== null) {
@@ -677,6 +697,8 @@ export class HardkasTx {
       confirmedAt: simResult.receipt.createdAt,
       rpcUrl: "simulated://local",
       tracePath,
+      ...(planArtifact.workflowId ? { workflowId: planArtifact.workflowId } : {}),
+      ...(planArtifact.assumptionLevel ? { assumptionLevel: planArtifact.assumptionLevel } : {}),
       lineage: {
         artifactId: "", // To be computed
         lineageId: targetObj.lineage?.lineageId || targetObj.contentHash || "0".repeat(64),
@@ -775,7 +797,14 @@ export class HardkasTx {
     txId?: string;
   }> {
     if (typeof signedArtifact === "object" && signedArtifact !== null && (signedArtifact as any).contentHash) {
-      await this.sdk.artifacts.verify(signedArtifact as any, { throwOnInvalid: true, strict: true, enforceMetadata: false });
+      try {
+        await this.sdk.artifacts.verify(signedArtifact as any, { throwOnInvalid: true, strict: true, enforceMetadata: false });
+      } catch (e: any) {
+        if (e.message.includes("PARENT_MISSING")) {
+          throw new Error("parent_plan_unresolved: Missing context plan for simulation.");
+        }
+        throw e;
+      }
     }
 
     // Perform pre-broadcast semantic verification (VULN-05)

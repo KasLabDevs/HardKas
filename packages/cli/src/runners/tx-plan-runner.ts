@@ -15,13 +15,15 @@ export interface TxPlanRunnerInput {
   config: HardkasConfig;
   url?: string;
   workspaceRoot?: string;
+  workflowId?: string;
+  assumptionLevel?: string;
 }
 
 /**
  * Reusable logic for transaction planning.
  */
 export async function runTxPlan(input: TxPlanRunnerInput): Promise<TxPlanArtifact> {
-  const { from, to, amount, networkId, feeRate, config, url, workspaceRoot } = input;
+  const { from, to, amount, networkId, feeRate, config, url, workspaceRoot, workflowId, assumptionLevel } = input;
 
   const fromAddress = await resolveHardkasAccountAddress(from, config);
   const toAddress = await resolveHardkasAccountAddress(to, config);
@@ -140,6 +142,17 @@ export async function runTxPlan(input: TxPlanRunnerInput): Promise<TxPlanArtifac
     feeRateSompiPerMass
   });
 
+  let resolvedAssumptionLevel = assumptionLevel;
+  if (!resolvedAssumptionLevel) {
+    if (mode === "simulated") {
+      resolvedAssumptionLevel = "local-simulated";
+    } else if (mode === "kaspa-rpc" && resolvedNetwork === "simnet") {
+      resolvedAssumptionLevel = "local-rpc";
+    } else {
+      resolvedAssumptionLevel = resolvedNetwork;
+    }
+  }
+
   const artifact = createTxPlanArtifact({
     networkId: resolvedNetwork as NetworkId,
     mode: mode === "simulated" ? "simulated" : "real",
@@ -148,7 +161,11 @@ export async function runTxPlan(input: TxPlanRunnerInput): Promise<TxPlanArtifac
     to: { input: to, address: toAddress },
     amountSompi,
     plan,
-    ctx: systemRuntimeContext
+    ctx: { 
+      ...systemRuntimeContext, 
+      ...(workflowId ? { workflowId } : {}), 
+      assumptionLevel: resolvedAssumptionLevel 
+    }
   }) as unknown as TxPlanArtifact;
 
   coreEvents.normalizeAndEmit({

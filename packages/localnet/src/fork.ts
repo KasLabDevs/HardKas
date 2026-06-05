@@ -46,6 +46,8 @@ export async function forkFromNetwork(
     mode: "simulated" as ExecutionMode,
     createdAt: new Date().toISOString(), // hardkas-determinism-allow: fork state creation timestamp
     networkId,
+    workflowId: "wf_system_bootstrap",
+    assumptionLevel: "default",
     daaScore: targetDaaScore,
     accounts: opts.addresses.map((addr, i) => ({
       name: `forked_${i}`,

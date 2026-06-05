@@ -76,6 +76,7 @@ export function registerArtifactCommands(program: Command) {
       `Provide a human-readable operational summary of an artifact ${UI.maturity("stable")}`
     )
     .option("--json", "Output as JSON", false)
+    .option("--strict", "Perform deep semantic and operational safety verification", false)
     .option("--workspace <path>", "Override workspace root directory")
     .action(async (targetPath: string, options: any) => {
       try {

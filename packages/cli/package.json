@@ -1,6 +1,6 @@
 {
   "name": "@hardkas/cli",
-  "version": "0.8.14-alpha",
+  "version": "0.8.15-alpha",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -56,6 +56,7 @@
     "enquirer": "^2.4.1",
     "execa": "^9.5.2",
     "express": "^5.2.1",
+    "@kaspa/core-lib": "^1.6.5",
     "open": "^10.1.0",
     "picocolors": "^1.1.1",
     "viem": "^2.21.32",

@@ -72,7 +72,8 @@ export function createTxPlanArtifact(options: CreateTxPlanArtifactOptions): TxPl
       rootArtifactId: "",
       sequence: 1
     },
-    ...(options.ctx.workflowId ? { workflowId: options.ctx.workflowId } : {})
+    ...(options.ctx.workflowId ? { workflowId: options.ctx.workflowId } : {}),
+    assumptionLevel: options.ctx.assumptionLevel || (options.mode === "simulated" ? "local-simulated" : "local-dev")
   };
 
   if (options.plan.change) {
@@ -86,17 +87,22 @@ export function createTxPlanArtifact(options: CreateTxPlanArtifactOptions): TxPl
   artifact.planId = `plan-${hash.slice(0, 16)}`;
   artifact.contentHash = hash;
   
+  // Deterministic workflowId derived from the intent hash
+  if (!artifact.workflowId) {
+    artifact.workflowId = `wf_${hash.slice(0, 16)}`;
+  }
+  
   if (artifact.lineage) {
     // For a root plan, rootArtifactId = contentHash (the artifact's own identity).
     // Since lineage is included in hash computation, we use the contentHash as the
     // canonical self-reference. Set lineageId/parentArtifactId to empty sentinels 
     // during hashing, then fix them to contentHash.
     artifact.lineage.lineageId = hash;
-    artifact.lineage.parentArtifactId = hash;
+    artifact.lineage.parentArtifactId = ""; // Root plans have no parent
     artifact.lineage.rootArtifactId = hash;
     artifact.lineage.artifactId = hash;
     
-    // Recalculate with the first-pass lineage values
+    // Recalculate with the first-pass lineage values AND the derived workflowId
     const finalHash = calculateContentHash(artifact, CURRENT_HASH_VERSION);
     artifact.planId = `plan-${finalHash.slice(0, 16)}`;
     artifact.contentHash = finalHash;

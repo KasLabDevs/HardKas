@@ -19,6 +19,7 @@ export interface RuntimeContext {
   ids: IdProvider;
   telemetry: TelemetryManager;
   workflowId?: string;
+  assumptionLevel?: string;
 }
 
 /**

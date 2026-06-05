@@ -26,7 +26,6 @@ export const SEMANTIC_EXCLUSIONS = new Set([
   "confirmedAt",
   "dagContext",
   "executionId",
-  "workflowId",
   "signatureMetadata"
 ]);
 
@@ -58,7 +57,6 @@ export const V4_SEMANTIC_EXCLUSIONS = new Set([
   "tracePath",
   "receiptPath",
   "sourceSignedId",
-  "workflowId",
   "signatureMetadata",
   "rpcHost",
   "rpcUrl",

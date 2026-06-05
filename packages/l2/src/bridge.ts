@@ -31,7 +31,7 @@ const IGRA_BRIDGE_ASSUMPTIONS: L2BridgeAssumptions = {
     "pre-ZK implies stronger trust assumptions.",
     "MPC implies threshold committee trust assumptions.",
     "ZK phase enables validity-proof based trustless exit.",
-    "HardKAS does not perform bridge operations in 0.8.14-alpha."
+    "HardKAS does not perform bridge operations in 0.8.15-alpha."
   ],
   updatedAt: "2026-05-07T00:00:00Z" // Reference date for Phase 33
 };

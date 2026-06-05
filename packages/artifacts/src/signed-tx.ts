@@ -39,7 +39,8 @@ export function createSimulatedSignedTxArtifact(
       payload
     },
     lineage: createLineageTransition(plan, "hardkas.signedTx"),
-    ...(plan.workflowId ? { workflowId: plan.workflowId } : {})
+    ...(plan.workflowId ? { workflowId: plan.workflowId } : {}),
+    ...(plan.assumptionLevel ? { assumptionLevel: plan.assumptionLevel } : {})
   };
 
   const hash = calculateContentHash(artifact, CURRENT_HASH_VERSION);
@@ -91,7 +92,8 @@ export function createSimulatedTxReceipt(
     postStateHash: extra?.postStateHash,
     dagContext: extra?.dagContext,
     lineage: createLineageTransition(plan, "hardkas.txReceipt"),
-    ...(plan.workflowId ? { workflowId: plan.workflowId } : {})
+    ...(plan.workflowId ? { workflowId: plan.workflowId } : {}),
+    ...(plan.assumptionLevel ? { assumptionLevel: plan.assumptionLevel } : {})
   };
 
   if (artifact.lineage) {

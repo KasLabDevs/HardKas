@@ -1,7 +1,7 @@
 {
   "schema": "hardkas.signedTx",
   "schemaVersion": "hardkas.artifact.v1",
-  "hardkasVersion": "0.8.14-alpha",
+  "hardkasVersion": "0.8.15-alpha",
   "version": "1.0.0-alpha",
   "hashVersion": 3,
   "createdAt": "2026-05-27T23:06:20.831Z",

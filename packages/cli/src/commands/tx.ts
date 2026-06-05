@@ -53,6 +53,8 @@ export function registerTxCommands(program: Command) {
     .option("--url <url>", "RPC URL (optional override)")
     .option("--out <path>", "Save plan as artifact JSON")
     .option("--save <path>", "Alias for --out (Save plan as artifact JSON)")
+    .option("--workflow-id <id>", "Optional deterministic workflow ID override")
+    .option("--assumption-level <level>", "Optional assumption level override")
     .option("--wait-lock", "Wait for workspace lock if held", false)
     .option("--lock-timeout <ms>", "Lock wait timeout in ms", "30000")
     .option("--json", "Output as JSON", false)
@@ -67,6 +69,8 @@ export function registerTxCommands(program: Command) {
         url?: string;
         out?: string;
         save?: string;
+        workflowId?: string;
+        assumptionLevel?: string;
         waitLock: boolean;
         lockTimeout: string;
         json: boolean;
@@ -97,6 +101,8 @@ export function registerTxCommands(program: Command) {
                 provider: options.provider,
                 feeRate: options.feeRate || "1",
                 config: loaded.config,
+                ...(options.workflowId ? { workflowId: options.workflowId } : {}),
+                ...(options.assumptionLevel ? { assumptionLevel: options.assumptionLevel } : {}),
                 ...(options.url ? { url: options.url } : {})
               });
 

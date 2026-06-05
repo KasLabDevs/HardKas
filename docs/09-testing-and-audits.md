@@ -3,7 +3,7 @@
 HardKAS makes strict security claims. To back them up, the 0.8.x alpha branch has been rigorously tested against specific execution scenarios and adversarial boundaries.
 
 ## 1. Local Cryptographic Audit (13/13 Suites Passed)
-The 0.8.14-alpha release passed a comprehensive 13-suite Local Cryptographic Audit. This test specifically validated:
+The 0.8.15-alpha release passed a comprehensive 13-suite Local Cryptographic Audit. This test specifically validated:
 - **Tamper Detection**: Malicious mutation of an artifact's amount or recipient is 100% caught dynamically by the verification engine.
 - **Serialization Poison**: Successfully mitigates type-confusion and Unicode normalizations.
 - **Signature Boundaries**: Enforces strict identity verification during transaction planning.

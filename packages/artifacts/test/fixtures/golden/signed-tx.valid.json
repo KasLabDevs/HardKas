@@ -5,7 +5,7 @@
   "createdAt": "2026-05-24T13:09:23.580Z",
   "status": "signed",
   "signedId": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
-  "sourcePlanId": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+  "sourcePlanId": "2f3e14b3b35dc2182fbc2f775232b3f7e97ddee6b977b7fa88fe4c0d6d1412e6",
   "networkId": "simnet",
   "mode": "simulated",
   "workflowId": "test-workflow",
@@ -23,11 +23,12 @@
     "payload": "00"
   },
   "lineage": {
-    "artifactId": "052563a8f5ea417de11da2d81af4a87ffb88ac5799c0036ca1178dbb03ac7f1d",
+    "artifactId": "b78978bc922236b8dc27afbba7a5d3de33ca4bed3751411bb8f31349ebc50e78",
     "lineageId": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
-    "parentArtifactId": "317b9f7fa35befa2d0406b3e2d0929e8dcb1d945813d0a82677a78e65fa7ffe2",
+    "parentArtifactId": "2f3e14b3b35dc2182fbc2f775232b3f7e97ddee6b977b7fa88fe4c0d6d1412e6",
     "rootArtifactId": "2b4baed6aab94827f47c19195591a9f619be50882de2c564ca9fa1bd09d57fb5",
     "sequence": 2
   },
-  "contentHash": "052563a8f5ea417de11da2d81af4a87ffb88ac5799c0036ca1178dbb03ac7f1d"
+  "contentHash": "b78978bc922236b8dc27afbba7a5d3de33ca4bed3751411bb8f31349ebc50e78",
+  "hashVersion": 4
 }

@@ -31,6 +31,8 @@ export function createInitialLocalnetState(
     createdAt: new Date().toISOString(), // hardkas-determinism-allow: initial state creation timestamp
     mode: "simulated" as ExecutionMode,
     networkId: "simnet" as NetworkId,
+    workflowId: "wf_system_bootstrap",
+    assumptionLevel: "default",
     daaScore: "0",
     accounts: accounts.map((a) => ({
       name: a.name,
