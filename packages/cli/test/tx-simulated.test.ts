@@ -70,7 +70,7 @@ describe("Simnet Transaction Backend Mismatch Regression", () => {
     }
   }, 30000);
 
-  it("should ignore RPC URL override on simnet and not touch RPC", async () => {
+  it("should fail with NETWORK_ACCOUNT_MISMATCH when provider rpc is forced on simnet", async () => {
     // 0. Initialize workspace so default network is simulated
     fs.writeFileSync(
       path.join(SANDBOX_DIR, "hardkas.config.js"),
@@ -89,8 +89,7 @@ describe("Simnet Transaction Backend Mismatch Regression", () => {
       );
     }
 
-    // 2. Plan a transaction using an invalid RPC URL on simnet
-    // If the bug exists, this will hang or return "fetch failed" / "unreachable"
+    // 2. Plan a transaction using an explicit RPC URL on simnet
     const txPlanPath = "tx-plan.json";
     const { exitCode, stdout, stderr } = await runCmd([
       "tx",
@@ -103,43 +102,23 @@ describe("Simnet Transaction Backend Mismatch Regression", () => {
       "10",
       "--network",
       "simnet",
+      "--provider",
+      "rpc",
       "--url",
-      "http://127.0.0.1:1",
+      "ws://127.0.0.1:1",
       "--out",
       txPlanPath
     ]);
 
     const output = stdout + stderr;
 
-    if (exitCode !== 0) {
+    if (exitCode === 0) {
+      throw new Error(`Expected command to fail, but it succeeded. Output:\n${output}`);
+    }
+
+    if (!output.includes("NETWORK_ACCOUNT_MISMATCH")) {
       throw new Error(
-        `Expected command to succeed, but it failed with code ${exitCode}. Output:\n${output}`
-      );
-    }
-
-    if (
-      output.includes("timeout") ||
-      output.includes("fetch failed") ||
-      output.includes("RPC unavailable")
-    ) {
-      throw new Error(`Command attempted to call RPC. Output:\n${output}`);
-    }
-
-    // 3. Verify the artifact was created
-    const artifactFullPath = path.join(SANDBOX_DIR, txPlanPath);
-    if (!fs.existsSync(artifactFullPath)) {
-      throw new Error(`Expected artifact ${txPlanPath} to exist.`);
-    }
-
-    const artifactContent = fs.readFileSync(artifactFullPath, "utf8");
-    const parsed = JSON.parse(artifactContent);
-
-    if (parsed.mode !== "simulated") {
-      throw new Error(`Expected artifact mode to be 'simulated', got '${parsed.mode}'`);
-    }
-    if (parsed.networkId !== "simnet") {
-      throw new Error(
-        `Expected artifact networkId to be 'simnet', got '${parsed.networkId}'`
+        `Expected output to contain 'NETWORK_ACCOUNT_MISMATCH'. Actual:\n${output}`
       );
     }
   }, 30000);
