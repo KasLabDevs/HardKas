@@ -42,20 +42,7 @@ export async function runTxPlan(input: TxPlanRunnerInput): Promise<TxPlanArtifac
   const resolvedNetwork = providerConfig.network;
   let backend = providerConfig.mode;
 
-  const isSimulatedSender =
-    fromAddress.startsWith("kaspa:sim_") || fromAddress.startsWith("kaspasim:");
-  const isSimulatedTarget = backend === "simulated" || resolvedNetwork === "simnet";
 
-  if (isSimulatedSender && !isSimulatedTarget) {
-    throw new Error(
-      "NETWORK_ACCOUNT_MISMATCH: Cannot use a simulated account on a real network."
-    );
-  }
-
-  // Force simulated backend for simnet or simulated senders (legacy behavior)
-  if (isSimulatedTarget || isSimulatedSender) {
-    backend = "simulated";
-  }
 
   let availableUtxos: any[] = [];
   let mode: "simulated" | "kaspa-node" | "kaspa-rpc" = "simulated";

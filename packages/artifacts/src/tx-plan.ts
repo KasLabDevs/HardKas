@@ -87,15 +87,22 @@ export function createTxPlanArtifact(options: CreateTxPlanArtifactOptions): TxPl
   artifact.contentHash = hash;
   
   if (artifact.lineage) {
+    // For a root plan, rootArtifactId = contentHash (the artifact's own identity).
+    // Since lineage is included in hash computation, we use the contentHash as the
+    // canonical self-reference. Set lineageId/parentArtifactId to empty sentinels 
+    // during hashing, then fix them to contentHash.
     artifact.lineage.lineageId = hash;
     artifact.lineage.parentArtifactId = hash;
     artifact.lineage.rootArtifactId = hash;
+    artifact.lineage.artifactId = hash;
     
-    // Re-calculate hash since we mutated lineage properties!
+    // Recalculate with the first-pass lineage values
     const finalHash = calculateContentHash(artifact, CURRENT_HASH_VERSION);
     artifact.planId = `plan-${finalHash.slice(0, 16)}`;
     artifact.contentHash = finalHash;
     artifact.lineage.artifactId = finalHash;
+    // rootArtifactId stays as the original `hash` — this is the canonical lineage root.
+    // All children inherit this value via createLineageTransition.
   }
 
   return artifact as TxPlan;

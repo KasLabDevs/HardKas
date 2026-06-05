@@ -169,7 +169,7 @@ export class HardkasFixtureSigner implements ExternalHardkasSigner {
           plan.lineage?.lineageId ||
           plan.contentHash || "0".repeat(64),
         parentArtifactId: plan.contentHash || plan.planId,
-        rootArtifactId: plan.contentHash || plan.planId
+        rootArtifactId: plan.lineage?.rootArtifactId || plan.contentHash || plan.planId
       }
     };
 
