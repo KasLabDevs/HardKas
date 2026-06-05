@@ -4,6 +4,7 @@ export interface ResolveProviderOptions {
   network: string;
   provider?: string | undefined;
   url?: string | undefined;
+  configNetworkKind?: "simulated" | "kaspa-node" | "kaspa-rpc" | string | undefined;
 }
 
 export interface ResolvedProvider {
@@ -43,7 +44,15 @@ export function resolveProvider(options: ResolveProviderOptions): ResolvedProvid
   }
 
   // 3. Fallback to network alias logic (simnet defaults to simulated without an explicit URL/provider)
-  if (network === "simnet" || network === "local") {
+  if (network === "simnet" || network === "local" || network === "simulated") {
+    return {
+      mode: "simulated",
+      network,
+    };
+  }
+
+  // 4. Fallback to config kind
+  if (options.configNetworkKind === "simulated") {
     return {
       mode: "simulated",
       network,

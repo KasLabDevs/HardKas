@@ -28,23 +28,33 @@ export async function runTxPlan(input: TxPlanRunnerInput): Promise<TxPlanArtifac
   const amountSompi = parseKasToSompi(amount);
   const feeRateSompiPerMass = BigInt(feeRate);
 
+  const networkDef = config.networks?.[networkId];
+  const configNetworkKind = typeof networkDef === "object" ? networkDef?.kind : undefined;
+
   const { resolveProvider } = await import("@hardkas/config");
   const providerConfig = resolveProvider({
     network: networkId,
     provider: input.provider,
-    url
+    url,
+    configNetworkKind
   });
 
   const resolvedNetwork = providerConfig.network;
-  const backend = providerConfig.mode;
+  let backend = providerConfig.mode;
 
   const isSimulatedSender =
     fromAddress.startsWith("kaspa:sim_") || fromAddress.startsWith("kaspasim:");
+  const isSimulatedTarget = backend === "simulated" || resolvedNetwork === "simnet";
 
-  if (isSimulatedSender && backend === "rpc" && resolvedNetwork !== "simnet") {
+  if (isSimulatedSender && !isSimulatedTarget) {
     throw new Error(
       "NETWORK_ACCOUNT_MISMATCH: Cannot use a simulated account on a real network."
     );
+  }
+
+  // Force simulated backend for simnet or simulated senders (legacy behavior)
+  if (isSimulatedTarget || isSimulatedSender) {
+    backend = "simulated";
   }
 
   let availableUtxos: any[] = [];

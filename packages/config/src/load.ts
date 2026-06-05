@@ -1,5 +1,6 @@
 import path from "node:path";
 import fs from "node:fs";
+import { fileURLToPath } from "node:url";
 import { createJiti } from "jiti";
 import { DEFAULT_HARDKAS_CONFIG } from "./defaults";
 import type { LoadedHardkasConfig, HardkasConfig } from "./types";
@@ -59,7 +60,20 @@ async function loadConfigFile(
   cwd: string
 ): Promise<LoadedHardkasConfig> {
   try {
-    const jiti = createJiti(import.meta.url);
+    const isTestMode = process.env.NODE_ENV === "test" || process.env.VITEST;
+    const jitiOptions: any = {};
+    if (isTestMode) {
+      try {
+        const _dirname = path.dirname(fileURLToPath(import.meta.url));
+        const resolvedSdk = path.resolve(_dirname, "../../sdk/src/index.ts");
+        jitiOptions.alias = {
+          "@hardkas/sdk": resolvedSdk
+        };
+      } catch (e) {
+        // ignore
+      }
+    }
+    const jiti = createJiti(import.meta.url, jitiOptions);
     const module = (await jiti.import(filePath)) as any;
     const userConfig = module.default || module.config || module;
 
