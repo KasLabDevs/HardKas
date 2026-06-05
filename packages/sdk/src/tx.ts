@@ -233,9 +233,9 @@ export class HardkasTx {
         const finalHash = calculateContentHash(basePlan, CURRENT_HASH_VERSION);
         (basePlan as any).contentHash = finalHash;
         (basePlan as any).lineage.artifactId = finalHash;
+        (basePlan as any).planId = `plan-${finalHash.slice(0, 16)}`;
     }
 
-    // Cache in memory for simulation/signing lookups
     this.sdk.artifacts.cacheArtifact(basePlan);
 
     // Verify policy evaluation at planning time if policies are provided

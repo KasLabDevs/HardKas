@@ -98,7 +98,7 @@ export function createTxPlanArtifact(options: CreateTxPlanArtifactOptions): TxPl
     // canonical self-reference. Set lineageId/parentArtifactId to empty sentinels 
     // during hashing, then fix them to contentHash.
     artifact.lineage.lineageId = hash;
-    artifact.lineage.parentArtifactId = hash;
+    artifact.lineage.parentArtifactId = ""; // Root plans have no parent
     artifact.lineage.rootArtifactId = hash;
     artifact.lineage.artifactId = hash;
     
