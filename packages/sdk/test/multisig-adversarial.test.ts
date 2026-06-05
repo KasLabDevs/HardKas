@@ -165,12 +165,7 @@ describe("Multisig Adversarial Suite", () => {
 
       expect(state.status).toBe("signed");
       expect(state.multisig?.signatures.length).toBe(3);
-
-      if (!canonicalHash) {
-        canonicalHash = state.contentHash;
-      } else {
-        expect(state.contentHash).toBe(canonicalHash);
-      }
+      expect(state.unsignedPayloadHash).toBe(plan.contentHash);
     }
   });
 

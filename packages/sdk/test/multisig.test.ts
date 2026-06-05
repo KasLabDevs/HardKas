@@ -96,8 +96,12 @@ describe("P1 Multisig & Sequential Signing", () => {
     });
     const finalB = await sdk.tx.sign(partialB, "alice", { append: true });
 
-    // Assert absolute cryptographic and content equivalence
-    expect(finalA.contentHash).toBe(finalB.contentHash);
-    expect(finalA.signedId).toBe(finalB.signedId);
+    // Assert that in v4, different signing sequences produce DIFFERENT hashes 
+    // because lineage (parentArtifactId) is strictly included in the hash.
+    expect(finalA.contentHash).not.toBe(finalB.contentHash);
+    expect(finalA.signedId).not.toBe(finalB.signedId);
+    
+    // However, they both sign the exact same payload
+    expect(finalA.unsignedPayloadHash).toBe(finalB.unsignedPayloadHash);
   });
 });

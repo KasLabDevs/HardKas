@@ -13,7 +13,7 @@ export interface AccountsFundOptions {
 
 export async function runAccountsFund(options: AccountsFundOptions) {
   const loadedConfig = await loadHardkasConfig({});
-  const address = resolveHardkasAccountAddress(options.identifier, loadedConfig.config);
+  const address = await resolveHardkasAccountAddress(options.identifier, loadedConfig.config);
 
   // 1. Safety Check: Determine current network
   const networkId = loadedConfig.config.defaultNetwork || "simnet";

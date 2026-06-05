@@ -15,7 +15,7 @@ import fsSync from "node:fs";
 
 export function registerDoctorCommand(program: Command) {
   program
-    .command("doctor")
+    .command("doctor [module]")
     .description(
       `Perform a full system diagnostic and health report ${UI.maturity("stable")}`
     )
@@ -26,9 +26,17 @@ export function registerDoctorCommand(program: Command) {
       "Fail strictly (exit 1) if invariants or consistency checks fail",
       false
     )
-    .action(async (opts) => {
+    .action(async (moduleStr, opts) => {
       try {
-        await runDoctorChecks(process.cwd(), opts);
+        if (moduleStr === "signer") {
+          const { runDoctorSigner } = await import("../runners/doctor-signer-runner.js");
+          await runDoctorSigner(opts);
+        } else if (moduleStr === "node") {
+          const { runDoctorNode } = await import("../runners/doctor-node-runner.js");
+          await runDoctorNode(opts);
+        } else {
+          await runDoctorChecks(process.cwd(), opts);
+        }
       } catch (err) {
         handleError(err);
       }

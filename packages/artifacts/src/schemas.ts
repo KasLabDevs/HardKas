@@ -118,7 +118,11 @@ export const TxPlanSchema = BaseArtifactSchema.extend({
         transactionId: z.string(),
         index: z.number()
       }),
-      amountSompi: z.string()
+      amountSompi: z.string(),
+      address: z.string().optional(),
+      scriptPublicKey: z.string().optional(),
+      blockDaaScore: z.string().optional(),
+      isCoinbase: z.boolean().optional()
     })
   ),
   outputs: z.array(

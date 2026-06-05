@@ -6,19 +6,20 @@ import {
   verifySignedTxSemantics
 } from "@hardkas/tx-builder";
 import {
-  TxPlanArtifact,
+  ARTIFACT_SCHEMAS,
+  CURRENT_HASH_VERSION,
+  calculateContentHash,
   SignedTxArtifact,
   TxReceiptArtifact,
-  HARDKAS_VERSION,
-  ARTIFACT_SCHEMAS,
-  ARTIFACT_VERSION,
-  CURRENT_HASH_VERSION,
-  getBroadcastableSignedTransaction,
-  writeArtifact,
+  TxPlanArtifact,
   getDefaultReceiptPath,
+  writeArtifact,
+  createLineageTransition,
   createTxPlanArtifact,
   readTxReceiptArtifact,
-  calculateContentHash
+  HARDKAS_VERSION,
+  ARTIFACT_VERSION,
+  getBroadcastableSignedTransaction
 } from "@hardkas/artifacts";
 import { coreEvents } from "@hardkas/core";
 import { HardkasAccount, signTxPlanArtifact } from "@hardkas/accounts";
@@ -213,14 +214,12 @@ export class HardkasTx {
     const newHash = calculateContentHash(basePlan, CURRENT_HASH_VERSION);
     (basePlan as any).contentHash = newHash;
     if ((basePlan as any).lineage) {
-        (basePlan as any).lineage.artifactId = newHash;
+        (basePlan as any).lineage.lineageId = newHash;
         (basePlan as any).lineage.parentArtifactId = newHash;
         (basePlan as any).lineage.rootArtifactId = newHash;
         const finalHash = calculateContentHash(basePlan, CURRENT_HASH_VERSION);
         (basePlan as any).contentHash = finalHash;
         (basePlan as any).lineage.artifactId = finalHash;
-        (basePlan as any).lineage.parentArtifactId = finalHash;
-        (basePlan as any).lineage.rootArtifactId = finalHash;
     }
 
     // Cache in memory for simulation/signing lookups
@@ -248,6 +247,34 @@ export class HardkasTx {
   ): Promise<SignedTxArtifact> {
     if (typeof plan === "object" && plan !== null && (plan as any).contentHash) {
       await this.sdk.artifacts.verify(plan, { throwOnInvalid: true, strict: true, enforceMetadata: false });
+    }
+
+    if (this.sdk.signer && plan.schema === "hardkas.txPlan") {
+      const signedArtifact = await this.sdk.signer.signTransaction(plan as TxPlanArtifact);
+      
+      const { absolutePath } = await this.sdk.artifacts.write(signedArtifact);
+      const { coreEvents } = await import("@hardkas/core");
+      const signedRecord = signedArtifact as unknown as Record<string, string>;
+      const artifactId = signedRecord.artifactId || signedArtifact.signedId || signedRecord.contentHash;
+      
+      coreEvents.normalizeAndEmit({
+        kind: "artifact.created",
+        schema: signedArtifact.schema,
+        artifactId: artifactId,
+        network: signedArtifact.networkId,
+        mode: signedArtifact.mode,
+        path: absolutePath
+      } as unknown as Parameters<typeof coreEvents.normalizeAndEmit>[0]);
+  
+      coreEvents.normalizeAndEmit({
+        kind: "tx.signed",
+        txId: signedArtifact.txId || artifactId,
+        network: signedArtifact.networkId,
+        mode: signedArtifact.mode,
+        amountSompi: signedArtifact.amountSompi
+      } as unknown as Parameters<typeof coreEvents.normalizeAndEmit>[0]);
+  
+      return signedArtifact;
     }
 
     let resolvedAccount: HardkasAccount;
@@ -345,14 +372,7 @@ export class HardkasTx {
           signatures: newSignatures
         },
         signatureMetadata: newMeta,
-        lineage: {
-          artifactId: "", // To be computed from contentHash
-          lineageId:
-            partialTx.lineage?.lineageId ||
-            partialTx.contentHash || "0".repeat(64),
-          parentArtifactId: partialTx.contentHash || partialTx.signedId,
-          rootArtifactId: partialTx.lineage?.rootArtifactId || partialTx.sourcePlanId
-        }
+        lineage: createLineageTransition(partialTx, "hardkas.signedTx")
       };
 
       if (thresholdReached) {
@@ -443,14 +463,7 @@ export class HardkasTx {
             signatures
           },
           signatureMetadata,
-          lineage: {
-            artifactId: "", // To be computed
-            lineageId:
-              plan.lineage?.lineageId ||
-              plan.contentHash || "0".repeat(64),
-            parentArtifactId: plan.contentHash || plan.planId,
-            rootArtifactId: plan.contentHash || plan.planId
-          },
+          lineage: createLineageTransition(plan, "hardkas.signedTx"),
           ...(plan.workflowId ? { workflowId: plan.workflowId } : {})
         };
 
@@ -462,10 +475,16 @@ export class HardkasTx {
           draft.txId = `simulated-${plan.planId}-tx`;
         }
 
-        const hash = calculateContentHash(draft, CURRENT_HASH_VERSION);
+        let hash = calculateContentHash(draft, CURRENT_HASH_VERSION);
         draft.signedId = `signed-${hash.slice(0, 16)}`;
         draft.contentHash = hash;
-        if (draft.lineage) draft.lineage.artifactId = hash;
+        if (draft.lineage) {
+          draft.lineage.artifactId = hash;
+          // Re-hash because lineage is now included in v4
+          hash = calculateContentHash(draft, CURRENT_HASH_VERSION);
+          draft.contentHash = hash;
+          draft.lineage.artifactId = hash;
+        }
 
         signedArtifact = draft;
       } else {
@@ -768,7 +787,8 @@ export class HardkasTx {
     }
 
     const activeNetwork = this.sdk.config.config.defaultNetwork || "simnet";
-    const isSimulated = activeNetwork === "simulated" || this.sdk.config.config.networks?.[activeNetwork]?.kind === "simulated";
+    const isExplicitRpc = typeof urlOrOptions === "string" && (urlOrOptions.startsWith("ws://") || urlOrOptions.startsWith("http://") || urlOrOptions.startsWith("wss://") || urlOrOptions.startsWith("https://"));
+    const isSimulated = !isExplicitRpc && (activeNetwork === "simulated" || this.sdk.config.config.networks?.[activeNetwork]?.kind === "simulated");
 
     if (isSimulated) {
       const persistOpt = typeof urlOrOptions === 'object' ? urlOrOptions.persist : true;
@@ -859,13 +879,7 @@ export class HardkasTx {
       ...(url ? { rpcUrl: url } : {}),
       ...(signedArtifact.workflowId ? { workflowId: signedArtifact.workflowId } : {}),
       tracePath: undefined,
-      lineage: {
-        artifactId: "", // To be computed
-        lineageId: signedArtifact.lineage?.lineageId || signedArtifact.contentHash || "0".repeat(64),
-        parentArtifactId: signedArtifact.contentHash || "0".repeat(64),
-        rootArtifactId: signedArtifact.lineage?.rootArtifactId || "0".repeat(64),
-        sequence: (signedArtifact.lineage?.sequence || 1) + 1
-      }
+      lineage: createLineageTransition(signedArtifact, "hardkas.txReceipt")
     };
     realReceiptBase.contentHash = calculateContentHash(
       realReceiptBase,

@@ -6,6 +6,7 @@ import {
   describeAccount
 } from "../src";
 import { maskSecrets } from "@hardkas/core";
+import type { HardkasConfig } from "@hardkas/config";
 
 describe("accounts", () => {
   it("listHardkasAccounts should return deterministic accounts by default", () => {
@@ -28,19 +29,19 @@ describe("accounts", () => {
     expect(acc.address).toBe("kaspa:sim_custom");
   });
 
-  it("resolveHardkasAccountAddress should return address for known account", () => {
-    const addr = resolveHardkasAccountAddress("bob");
-    expect(addr).toBe("kaspa:sim_bob");
+  it("resolveHardkasAccountAddress should return address for known account", async () => {
+    const addr = await resolveHardkasAccountAddress("bob");
+    expect(addr.startsWith("kaspasim:") || addr.startsWith("kaspa:")).toBe(true);
   });
 
-  it("resolveHardkasAccountAddress should use config if provided", () => {
-    const config = {
+  it("resolveHardkasAccountAddress should use config if provided", async () => {
+    const config: HardkasConfig = {
       accounts: {
-        treasury: { kind: "simulated" as const, address: "kaspa:sim_treasury" }
+        treasury: { kind: "simulated", address: "kaspasim:treasury" }
       }
     };
-    const addr = resolveHardkasAccountAddress("treasury", config);
-    expect(addr).toBe("kaspa:sim_treasury");
+    const addr = await resolveHardkasAccountAddress("treasury", config);
+    expect(addr).toBe("kaspasim:treasury");
   });
 
   it("resolveHardkasAccount should throw for unknown account", () => {

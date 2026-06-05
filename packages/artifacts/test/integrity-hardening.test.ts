@@ -3,7 +3,8 @@ import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import {
   verifyArtifactIntegrity,
   calculateContentHash,
-  ARTIFACT_VERSION
+  ARTIFACT_VERSION,
+  CURRENT_HASH_VERSION
 } from "../src/index.js";
 import fs from "node:fs";
 import path from "node:path";
@@ -22,8 +23,9 @@ describe("Artifact Integrity Hardening (P1.1)", () => {
 
   const createValidArtifact = () => ({
     schema: "hardkas.txPlan",
-    hardkasVersion: "0.8.5-alpha",
+    hardkasVersion: "0.8.6-alpha",
     version: ARTIFACT_VERSION,
+    hashVersion: CURRENT_HASH_VERSION,
     createdAt: new Date().toISOString(),
     networkId: "simnet",
     mode: "simulated",

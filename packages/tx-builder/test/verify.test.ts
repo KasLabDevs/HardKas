@@ -50,7 +50,7 @@ describe("Transaction Semantic Verification", () => {
     expect(result.issues.some((i) => i.code === "DUPLICATE_INPUT")).toBe(true);
   });
 
-  it("should detect dust outputs", () => {
+  it("should detect dust outputs as errors", () => {
     const plan = buildPaymentPlan({
       fromAddress: "kaspa:address1",
       availableUtxos: [utxo],
@@ -59,6 +59,22 @@ describe("Transaction Semantic Verification", () => {
     });
 
     const result = verifyTxPlanSemantics(plan);
+    expect(result.ok).toBe(false);
     expect(result.issues.some((i) => i.code === "DUST_OUTPUT")).toBe(true);
+  });
+
+  it("should detect dust change as error", () => {
+    // Manually construct a plan with dust change
+    const plan = {
+      inputs: [utxo],
+      outputs: [{ address: "kaspa:address2", amountSompi: 900000n }],
+      change: { address: "kaspa:address1", amountSompi: 100n }, // Dust change
+      estimatedMass: 1000n,
+      estimatedFeeSompi: 1000n
+    };
+
+    const result = verifyTxPlanSemantics(plan as any);
+    expect(result.ok).toBe(false);
+    expect(result.issues.some((i) => i.code === "DUST_CHANGE")).toBe(true);
   });
 });

@@ -6,7 +6,8 @@ import {
   createSimulatedSignedTxArtifact,
   calculateContentHash,
   HARDKAS_VERSION,
-  ARTIFACT_SCHEMAS
+  ARTIFACT_SCHEMAS,
+  createLineageTransition
 } from "@hardkas/artifacts";
 import { systemRuntimeContext } from "@hardkas/core";
 import {
@@ -141,12 +142,16 @@ export async function signTxPlanArtifact(input: {
         format: result.signedTransaction?.format === "hex" ? "hex" : "unknown",
         payload: result.signedTransaction?.payload || ""
       },
+      lineage: createLineageTransition(planArtifact, "hardkas.signedTx"),
       ...(planArtifact.workflowId ? { workflowId: planArtifact.workflowId } : {})
     };
 
     const contentHash = calculateContentHash(artifact);
     artifact.signedId = `signed-${contentHash.slice(0, 16)}`;
     artifact.contentHash = contentHash;
+    if (artifact.lineage) {
+      artifact.lineage.artifactId = contentHash;
+    }
 
     return artifact;
   }

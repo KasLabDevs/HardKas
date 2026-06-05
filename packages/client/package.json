@@ -1,6 +1,6 @@
 {
   "name": "@hardkas/client",
-  "version": "0.8.5-alpha",
+  "version": "0.8.6-alpha",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -25,6 +25,16 @@
   "author": "Javier Rodriguez",
   "files": [
     "dist",
-    "README.md"
-  ]
+    "README.md",
+    "LICENSE"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/KasLabDevs/HardKas.git",
+    "directory": "packages/client"
+  },
+  "bugs": {
+    "url": "https://github.com/KasLabDevs/HardKas/issues"
+  },
+  "homepage": "https://github.com/KasLabDevs/HardKas/tree/main/packages/client#readme"
 }

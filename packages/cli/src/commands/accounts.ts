@@ -115,6 +115,7 @@ export function registerAccountsCommands(program: Command) {
       "Store private key in plaintext (legacy/discouraged)",
       false
     )
+    .option("--fixture <name>", "Import deterministic fixture test account")
     .option("--yes", "Skip confirmation for unsafe operations", false)
     .option("--wait-lock", "Wait for workspace lock if held", false)
     .option("--lock-timeout <ms>", "Lock wait timeout in ms", "30000")
@@ -242,7 +243,7 @@ export function registerAccountsCommands(program: Command) {
       "simnet"
     )
     .option("--password-stdin", "Read keystore password from stdin", false)
-    .option("--password-env <env>", "Read keystore password from environment variable")
+    .option("--password-env <env>", "Read password from environment variable")
     .option(
       "--unsafe-plaintext",
       "Generate accounts in plaintext (legacy/discouraged)",
@@ -285,8 +286,9 @@ export function registerAccountsCommands(program: Command) {
   accountsCmd
     .command("balance <identifier>")
     .description(`Show account balance ${UI.maturity("stable")}`)
-    .option("--network <net>", "Specify target network (mainnet, testnet-10, simnet)")
-    .option("--url <url>", "Custom RPC URL (ws://...)")
+    .option("--network <name>", "Kaspa network name", "simnet")
+    .option("--provider <type>", "Provider mode (auto, rpc, simulated)", "auto")
+    .option("--url <url>", "RPC URL (optional override)")
     .option(
       "--local",
       "Query local query-store instead of remote RPC (for simulated networks)",
@@ -298,6 +300,7 @@ export function registerAccountsCommands(program: Command) {
         const result = await runAccountsBalance({
           identifier,
           network: options.network ?? "simnet",
+          provider: options.provider ?? "auto",
           url: options.url ?? "",
           local: options.local
         });

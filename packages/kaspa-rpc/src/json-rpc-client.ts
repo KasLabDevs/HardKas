@@ -295,8 +295,9 @@ export class KaspaJsonRpcClient implements KaspaRpcClient {
 
             if (output.scriptPublicKey && typeof output.scriptPublicKey === "object") {
               const spk = output.scriptPublicKey;
-              const versionHex = spk.version.toString(16).padStart(4, "0");
-              output.scriptPublicKey = versionHex + spk.scriptPublicKey;
+              const versionHex = (spk.version || 0).toString(16).padStart(4, "0");
+              const scriptHex = spk.script || spk.scriptPublicKey || "";
+              output.scriptPublicKey = versionHex + scriptHex;
             }
           });
         }

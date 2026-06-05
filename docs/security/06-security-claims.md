@@ -14,6 +14,7 @@ This means HardKAS mathematically protects against various vectors, but explicit
 | **Replay inconsistency** | ✅ YES | The Replay Engine verifies that a previously emitted receipt mathematically perfectly matches current execution semantics. |
 | **Unicode poison** | ✅ YES | The SDK enforces strict UTF-8 normalization before hashing, preventing visually identical but byte-different strings from creating hash collisions. |
 | **Prototype pollution** | ✅ YES | Core logic parses raw objects safely, discarding prototype chains when validating artifacts. |
+| **Path traversal escape** | ✅ YES | Strict sandboxing restricts all artifact reads, writes, and verification paths to the project directory boundary. |
 
 ## What is NOT Protected?
 

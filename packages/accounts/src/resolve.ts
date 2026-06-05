@@ -154,11 +154,7 @@ export function listHardkasAccounts(config?: HardkasConfig): HardkasAccount[] {
   // Add from encrypted keystore directory
   const keystoreDir = path.join(process.cwd(), ".hardkas", "keystore");
   if (fs.existsSync(keystoreDir)) {
-    if (!config || !(config as any).cwd) {
-      throw new Error(
-        "Workspace root/cwd is required for hermetic keystore path resolution"
-      );
-    }
+    const cwd = (config as any)?.cwd || process.cwd();
     const files = fs.readdirSync(keystoreDir);
     for (const file of files) {
       if (file.endsWith(".json")) {
@@ -193,11 +189,11 @@ export function listHardkasAccounts(config?: HardkasConfig): HardkasAccount[] {
   return Array.from(accounts.values());
 }
 
-export function resolveHardkasAccountAddress(
+export async function resolveHardkasAccountAddress(
   accountOrAddress: string,
   config?: HardkasConfig,
   context: "L1" | "L2" = "L1"
-): string {
+): Promise<string> {
   if (
     accountOrAddress.startsWith("kaspa:") ||
     accountOrAddress.startsWith("kaspatest:") ||
@@ -208,6 +204,32 @@ export function resolveHardkasAccountAddress(
         `Invalid L2 address provided: ${accountOrAddress}. Expected EVM address or account alias.`
       );
     }
+    
+    // Add runtime address validation, skip for simulated internal accounts
+    if (!accountOrAddress.startsWith("kaspa:sim_")) {
+      try {
+        // @ts-ignore
+        const kaspa = await import("kaspa-wasm");
+        try {
+          if (typeof kaspa.Address === "function" || kaspa.Address) {
+            new kaspa.Address(accountOrAddress);
+          }
+        } catch (e) {
+          const err = new Error(`HARDKAS_INVALID_ADDRESS: Invalid Kaspa address format or checksum.`);
+          (err as any).code = "HARDKAS_INVALID_ADDRESS";
+          throw err;
+        }
+      } catch (e: any) {
+        if (e.code === "HARDKAS_INVALID_ADDRESS") throw e;
+        if (e.code === "ERR_MODULE_NOT_FOUND" || e.message.includes("Cannot find module") || e.message.includes("kaspa-wasm")) {
+          const err = new Error("ADDRESS_VALIDATOR_UNAVAILABLE: The Kaspa address validator backend is not available.");
+          (err as any).code = "ADDRESS_VALIDATOR_UNAVAILABLE";
+          throw err;
+        }
+        throw e;
+      }
+    }
+    
     return accountOrAddress;
   }
 

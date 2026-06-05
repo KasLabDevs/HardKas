@@ -63,7 +63,14 @@ export class HardkasArtifactsManager {
     artifact: HardkasArtifactBase,
     options: WriteArtifactOptions = {}
   ): Promise<WriteArtifactResult> {
-    const record = artifact as unknown as Record<string, string>;
+    const record = artifact as unknown as Record<string, any>;
+    
+    // Ensure hashVersion is explicitly written to disk so readers don't fallback to v1
+    if (!record.hashVersion) {
+      const { CURRENT_HASH_VERSION } = await import("@hardkas/artifacts");
+      record.hashVersion = CURRENT_HASH_VERSION;
+    }
+
     const hash = record.contentHash || "unknown";
     if (record.planId) this.cache.set(record.planId, artifact);
     if (record.signedId) this.cache.set(record.signedId, artifact);
@@ -185,23 +192,25 @@ export class HardkasArtifactsManager {
             const shortId = id.startsWith("plan-") || id.startsWith("signed-") ? id : id.slice(0, 16);
             for (const file of files) {
               if (!file.endsWith(".json")) continue;
-              if (file.includes(id) || file.includes(shortId) || file.includes(id.slice(0, 8))) {
-                const fp = path.join(this.workspace.artifactsDir, file);
-                try {
-                  const content = fs.readFileSync(fp, "utf-8");
-                  const obj = JSON.parse(content);
-                  if (
-                    obj.contentHash === id ||
-                    obj.artifactId === id ||
-                    obj.planId === id ||
-                    obj.signedId === id ||
-                    obj.txId === id
-                  ) {
-                    found = file;
-                    break;
-                  }
-                } catch {}
-              }
+              
+              // Fast path: if the filename contains the ID, check it first.
+              // But we MUST check all files if the fast path fails, because sometimes 
+              // artifacts (like funding receipts) have filenames based on txId instead of contentHash.
+              const fp = path.join(this.workspace.artifactsDir, file);
+              try {
+                const content = fs.readFileSync(fp, "utf-8");
+                const obj = JSON.parse(content);
+                if (
+                  obj.contentHash === id ||
+                  obj.artifactId === id ||
+                  obj.planId === id ||
+                  obj.signedId === id ||
+                  obj.txId === id
+                ) {
+                  found = file;
+                  break;
+                }
+              } catch {}
             }
           }
           
@@ -310,6 +319,7 @@ export class HardkasArtifactsManager {
          result.issues[0]?.code === "REFERENCE_MISSING" ? "reference_missing" :
          result.issues[0]?.code === "REFERENCE_HASH_MISMATCH" ? "reference_hash_mismatch" :
          result.issues[0]?.code === "POLICY_VIOLATION" ? "policy_violation" :
+         result.issues[0]?.code === "LEGACY_HASH_VERSION_UNSAFE" ? "legacy_hash_version_unsafe" :
          result.issues[0]?.code === "PARENT_MISSING" ? "parent_missing" : "schema_invalid";
 
        if (throwOnInvalid) {
@@ -331,5 +341,37 @@ export class HardkasArtifactsManager {
     }
 
     return result;
+  }
+
+  /**
+   * Migrates a legacy artifact to v4 using a migration receipt.
+   */
+  async migrate(
+    target: any,
+    migrationId: string
+  ): Promise<{ migrated: any; receipt: any }> {
+    let artifact: any;
+    if (typeof target === "string") {
+      artifact = await this.read(target);
+    } else {
+      artifact = target;
+    }
+
+    const { migrateArtifactPayload, generateMigrationReceipt } = await import("@hardkas/artifacts");
+    
+    // Perform in-memory migration
+    const result = migrateArtifactPayload(artifact, undefined, { strictPolicy: false });
+    if (!result.migrated) {
+      throw new Error(`Artifact ${artifact.artifactId || artifact.contentHash} is already at the target version or cannot be migrated.`);
+    }
+
+    // Generate receipt
+    const receipt = generateMigrationReceipt(artifact, result.artifact, migrationId);
+
+    // Save both to workspace
+    await this.write(result.artifact as any);
+    await this.write(receipt as any);
+
+    return { migrated: result.artifact, receipt };
   }
 }

@@ -6,7 +6,8 @@ import {
   verifyArtifact,
   migrateToCanonical,
   sortUtxosByOutpoint,
-  ARTIFACT_VERSION
+  ARTIFACT_VERSION,
+  CURRENT_HASH_VERSION
 } from "../src/index.js";
 import fs from "node:fs";
 import path from "node:path";
@@ -70,8 +71,9 @@ describe("Artifacts - Determinism and Verification", () => {
 
     const artifact: any = {
       schema: "hardkas.txPlan",
-      hardkasVersion: "0.8.5-alpha",
+      hardkasVersion: "0.8.6-alpha",
       version: ARTIFACT_VERSION,
+      hashVersion: CURRENT_HASH_VERSION,
       createdAt: new Date().toISOString(),
       networkId: "simnet",
       mode: "simulated",
@@ -101,8 +103,9 @@ describe("Artifacts - Determinism and Verification", () => {
 
     const artifact: any = {
       schema: "hardkas.txPlan",
-      hardkasVersion: "0.8.5-alpha",
+      hardkasVersion: "0.8.6-alpha",
       version: ARTIFACT_VERSION,
+      hashVersion: CURRENT_HASH_VERSION,
       createdAt: new Date().toISOString(),
       networkId: "simnet",
       mode: "simulated",

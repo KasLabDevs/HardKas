@@ -9,6 +9,43 @@ import {
 import { NetworkId } from "@hardkas/core";
 import { loadKaspaWasm } from "./signer-backend.js";
 
+function toHex(arr: Uint8Array): string {
+  return Buffer.from(arr).toString("hex");
+}
+
+function parseWasmTxToRpc(wasmTxStr: string): any {
+  let parsed = JSON.parse(wasmTxStr);
+  if (typeof parsed === "string") {
+    parsed = JSON.parse(parsed);
+  }
+  const txInner = parsed.tx ? parsed.tx.inner : parsed.inner;
+  if (!txInner) throw new Error("Could not find inner tx data");
+  
+  return {
+    version: txInner.version || 0,
+    inputs: (txInner.inputs || []).map((i: any) => ({
+      previousOutpoint: {
+        transactionId: i.inner.previousOutpoint.inner.transactionId,
+        index: i.inner.previousOutpoint.inner.index
+      },
+      signatureScript: toHex(i.inner.signatureScript),
+      sequence: i.inner.sequence || 0,
+      sigOpCount: i.inner.sigOpCount || 1
+    })),
+    outputs: (txInner.outputs || []).map((o: any) => ({
+      amount: o.inner.value.toString(),
+      scriptPublicKey: {
+        version: parseInt(o.inner.scriptPublicKey.substring(0, 4), 16) || 0,
+        scriptPublicKey: o.inner.scriptPublicKey.substring(4)
+      }
+    })),
+    lockTime: txInner.lockTime || 0,
+    subnetworkId: txInner.subnetworkId || "0000000000000000000000000000000000000000",
+    gas: txInner.gas || 0,
+    payload: txInner.payload && txInner.payload.length > 0 ? toHex(txInner.payload) : ""
+  };
+}
+
 /**
  * Real Kaspa signer using the official WASM SDK.
  * Only works if the 'kaspa' package is installed.
@@ -61,18 +98,27 @@ export class KaspaWasmPrivateKeySigner implements HardkasTxPlanSigner {
           );
         }
 
-        return new sdk.UtxoEntry(
-          BigInt(u.amountSompi),
-          spk,
-          u.outpoint.transactionId,
-          u.outpoint.index,
-          plan.from.address
-        );
+        return {
+          address: plan.from.address,
+          outpoint: {
+            transactionId: u.outpoint.transactionId,
+            index: u.outpoint.index
+          },
+          utxoEntry: {
+            amount: BigInt(u.amountSompi),
+            scriptPublicKey: spk,
+            blockDaaScore: BigInt((u as any).blockDaaScore || "0"),
+            isCoinbase: !!(u as any).isCoinbase
+          }
+        };
       });
 
       const outputs = plan.outputs.map((o) => {
         if (!o.address) throw new Error("Output is missing address.");
-        return new sdk.PaymentOutput(new sdk.Address(o.address), BigInt(o.amountSompi));
+        return {
+          address: o.address,
+          amount: BigInt(o.amountSompi)
+        };
       });
 
       const changeAddress = plan.change?.address
@@ -92,9 +138,7 @@ export class KaspaWasmPrivateKeySigner implements HardkasTxPlanSigner {
       const signedTx = sdk.signTransaction(unsignedTx, [privateKey], true);
 
       // 6. Serialize
-      const rawTx = signedTx.serialize
-        ? signedTx.serialize()
-        : JSON.stringify(signedTx.toRpcTransaction());
+      const rawTx = JSON.stringify(parseWasmTxToRpc(signedTx.toString()));
 
       return {
         signatureKind: "kaspa-private-key",

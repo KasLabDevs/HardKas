@@ -30,13 +30,49 @@ export const SEMANTIC_EXCLUSIONS = new Set([
   "signatureMetadata"
 ]);
 
+export const V4_SEMANTIC_EXCLUSIONS = new Set([
+  // Core Hash Identity
+  "contentHash",
+  "artifactId",
+  "planId",
+  "signedId",
+  "hashVersion",
+  // Runtime/Display fields (user requested)
+  "filePath",
+  "file_path",
+  "workspacePath",
+  "debug",
+  "logs",
+  "uiHints",
+  "cache",
+  "lastViewedAt",
+  // Other runtime fields that must not break hash
+  "createdAt",
+  "events",
+  "status",
+  "submittedAt",
+  "confirmedAt",
+  "dagContext",
+  "executionId",
+  "deployedAt",
+  "tracePath",
+  "receiptPath",
+  "sourceSignedId",
+  "workflowId",
+  "signatureMetadata",
+  "rpcHost",
+  "latencyMs",
+  "indexedAt"
+]);
+
 /**
  * Current canonicalization version.
  * v1: BigInt(123) -> "123" (Collision with String "123")
  * v2: BigInt(123) -> "n:123" (Distinguishable)
  * v3: String normalization (\r\n -> \n, NFC) for cross-platform stability.
+ * v4: Strict Metadata Integrity (includes lineage, parentArtifactId, signatureMetadata, etc in the hash).
  */
-export const CURRENT_HASH_VERSION = 3;
+export const CURRENT_HASH_VERSION = 4;
 
 export const STRICT_PATH_KEYS = new Set([
   "file_path",
@@ -122,10 +158,12 @@ export function canonicalStringify(
     throw new Error("Non-plain object encountered in canonicalizer.");
   }
 
+  const exclusions = version >= 4 ? V4_SEMANTIC_EXCLUSIONS : SEMANTIC_EXCLUSIONS;
+
   const sortedKeys = Object.keys(obj)
     .filter(
       (key) =>
-        !SEMANTIC_EXCLUSIONS.has(key) &&
+        !exclusions.has(key) &&
         (obj as Record<string, unknown>)[key] !== undefined
     )
     .sort(deterministicCompare);

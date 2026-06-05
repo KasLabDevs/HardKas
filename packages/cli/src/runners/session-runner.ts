@@ -12,8 +12,8 @@ export async function runSessionCreate(
     const { resolveHardkasAccountAddress } = await import("@hardkas/accounts");
 
     // Validate accounts exist
-    const l1Address = resolveHardkasAccountAddress(options.l1, config.config);
-    const l2Address = resolveHardkasAccountAddress(options.l2, config.config);
+    const l1Address = await resolveHardkasAccountAddress(options.l1, config.config);
+    const l2Address = await resolveHardkasAccountAddress(options.l2, config.config);
 
     await createSession({
       schema: "hardkas.session.v1",

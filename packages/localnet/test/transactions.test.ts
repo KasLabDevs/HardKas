@@ -24,7 +24,7 @@ describe("Simulated Transactions", () => {
   it("should spend sender UTXOs and create recipient/change UTXOs", () => {
     const initialState = createInitialLocalnetState({
       accounts: 2,
-      initialBalanceSompi: 1000n
+      initialBalanceSompi: 10000n
     });
     const alice = initialState.accounts[0]!.address;
     const bob = initialState.accounts[1]!.address;
@@ -50,7 +50,7 @@ describe("Simulated Transactions", () => {
 
     // Verify Bob received a UTXO
     const bobUtxos = state.utxos.filter((u) => u.address === bob && !u.spent);
-    expect(bobUtxos).toHaveLength(2); // Initial 1000 + new 100
+    expect(bobUtxos).toHaveLength(2); // Initial 10000 + new 100
     const receivedUtxo = bobUtxos.find((u) => u.amountSompi === "100");
     expect(receivedUtxo).toBeDefined();
     expect(receivedUtxo?.createdAtDaaScore).toBe("1");
@@ -58,12 +58,12 @@ describe("Simulated Transactions", () => {
     // Verify Alice received change
     const aliceUtxos = state.utxos.filter((u) => u.address === alice && !u.spent);
     expect(aliceUtxos).toHaveLength(1);
-    const changeAmount = 1000n - 100n - BigInt(receipt.feeSompi);
+    const changeAmount = 10000n - 100n - BigInt(receipt.feeSompi);
     expect(aliceUtxos[0]!.amountSompi).toBe(changeAmount.toString());
 
     // Verify balances
     expect(getAddressBalanceSompi(state, alice)).toBe(changeAmount);
-    expect(getAddressBalanceSompi(state, bob)).toBe(1100n);
+    expect(getAddressBalanceSompi(state, bob)).toBe(10100n);
   });
 
   it("should return ok:false for insufficient funds", () => {
@@ -101,7 +101,7 @@ describe("Simulated Transactions", () => {
   });
 
   it("should handle address as recipient", () => {
-    const state = createInitialLocalnetState({ accounts: 2, initialBalanceSompi: 1000n });
+    const state = createInitialLocalnetState({ accounts: 2, initialBalanceSompi: 10000n });
     const bobAddr = state.accounts[1]!.address;
 
     const { state: nextState } = applySimulatedPayment(
@@ -114,6 +114,6 @@ describe("Simulated Transactions", () => {
       systemRuntimeContext
     );
 
-    expect(getAddressBalanceSompi(nextState, bobAddr)).toBe(1100n);
+    expect(getAddressBalanceSompi(nextState, bobAddr)).toBe(10100n);
   });
 });

@@ -1,6 +1,6 @@
 {
   "name": "@hardkas/localnet",
-  "version": "0.8.5-alpha",
+  "version": "0.8.6-alpha",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -12,7 +12,8 @@
     }
   },
   "scripts": {
-    "build": "tsup src/index.ts --format esm --dts --clean --external kaspa",
+    "build": "tsup src/index.ts --format esm --dts --clean --external kaspa-wasm",
+    "dev": "tsup src/index.ts --format esm --watch --dts --external kaspa-wasm",
     "test": "vitest run",
     "typecheck": "tsc --noEmit",
     "lint": "eslint ."
@@ -23,7 +24,8 @@
     "@hardkas/kaspa-rpc": "workspace:*",
     "@hardkas/query": "workspace:*",
     "@hardkas/simulator": "workspace:*",
-    "@hardkas/tx-builder": "workspace:*"
+    "@hardkas/tx-builder": "workspace:*",
+    "kaspa-wasm": "0.13.0"
   },
   "devDependencies": {
     "fast-check": "^4.8.0",

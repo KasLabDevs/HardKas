@@ -2198,7 +2198,7 @@ html[data-theme="light"] .danger {
 <a class="button" href="https://github.com/KasLabDevs/HardKas" rel="noreferrer" target="_blank">GitHub</a>
 </div>
 <div class="meta">
-<span class="badge accent">0.7.9-alpha</span>
+<span class="badge accent">0.8.6-alpha</span>
 <span class="badge">Kaspa Native</span>
 <span class="badge">Igra-aware</span>
 <span class="badge">Local-first</span>
@@ -2227,7 +2227,7 @@ hardkas dev server --open">Copy</button></div>
 <span>artifacts</span>
 <span>dashboard</span>
 </div>
-</div><div class="warning"><strong>Alpha boundary.</strong> HardKAS is developer infrastructure. It is not production custody software, not a Kaspa consensus implementation, not a hosted relay and not a trustless bridge implementation.</div>
+</div><div class="warning"><strong>Alpha boundary (0.8.6-alpha).</strong> HardKAS is developer infrastructure. It enforces strict path traversal sandboxing, rule evaluation for <code>hardkas.policy.v1</code>, and strict lineage sequence verification. It is not production custody software.</div>
 
 </div>
 
@@ -2339,41 +2339,91 @@ hardkas dev server --open">Copy</button></div>
 </section>
 <section id="flow">
 <h2>Developer flow</h2>
-<div class="split">
-<div>
-<h3>Local Igra-aware flow</h3>
-<div class="codeblock">
-<div class="codebar">l2 workflow <button class="copy" data-copy="hardkas local wizard --profile igra --account bob
-hardkas l2 profile validate igra --json
-hardkas metamask network --profile igra
-hardkas metamask account bob --json
-hardkas l2 rpc health --network igra --json">Copy</button></div>
-<pre><span class="cmd">hardkas</span> local wizard <span class="flag">--profile</span> igra <span class="flag">--account</span> bob
-<span class="cmd">hardkas</span> l2 profile validate igra <span class="flag">--json</span>
-<span class="cmd">hardkas</span> metamask network <span class="flag">--profile</span> igra
-<span class="cmd">hardkas</span> metamask account bob <span class="flag">--json</span>
-<span class="cmd">hardkas</span> l2 rpc health <span class="flag">--network</span> igra <span class="flag">--json</span></pre>
+<p>HardKAS supports three distinct development pathways depending on your testing needs and external dependencies.</p>
+
+<table>
+<thead>
+  <tr>
+    <th>Mode</th>
+    <th>Network Context</th>
+    <th>Dependencies & Setup</th>
+    <th>Target Use Case</th>
+    <th>Core Commands</th>
+  </tr>
+</thead>
+<tbody>
+  <tr>
+    <td><strong>1. Local-Only (Simulated)</strong></td>
+    <td><code>network: 'simulated'</code></td>
+    <td>None. Auto-bootstrapped in-memory environment.</td>
+    <td>Fast prototyping, unit/E2E testing, offline local verification, CI/CD validation.</td>
+    <td><code>hardkas verify --strict</code><br/><code>hardkas replay verify</code></td>
+  </tr>
+  <tr>
+    <td><strong>2. Local Node (L1 Devnet)</strong></td>
+    <td>Local Devnet / Simnet</td>
+    <td>Docker daemon running locally.</td>
+    <td>Testing transaction propagation, block DAG timing, mempool state, L1 RPC diagnostics.</td>
+    <td><code>hardkas node start</code><br/><code>hardkas faucet</code><br/><code>hardkas node status</code></td>
+  </tr>
+  <tr>
+    <td><strong>3. Based Rollup (Igra L2)</strong></td>
+    <td>Simulated L2 EVM with <code>profile: igra</code></td>
+    <td>L2 config profiles pointing to an external Igra RPC node.</td>
+    <td>Deploying L2 smart contracts, verifying exit/bridge assumptions, testing policy engine rules.</td>
+    <td><code>hardkas local wizard --profile igra</code><br/><code>hardkas l2 balance</code><br/><code>hardkas l2 contract deploy-plan</code></td>
+  </tr>
+</tbody>
+</table>
+
+<div class="grid cols-3" style="margin-top: 18px;">
+<div class="box">
+  <h3>1. Local-Only Flow</h3>
+  <p>In this mode, all state is simulated in memory. Txs are planned and simulated instantly.</p>
+  <ul>
+    <li><strong>In-Memory Caching:</strong> Planned transactions are cached in memory during <code>sdk.tx.plan</code>, allowing <code>sdk.tx.simulate</code> to resolve them without requiring files to be written to disk.</li>
+    <li><strong>Strict Mode:</strong> Pass <code>--strict</code> in the CLI or <code>{ strict: true }</code> in the SDK to enforce policy resolution and lineage validation.</li>
+  </ul>
+  <div class="codeblock">
+    <div class="codebar">local-only workflow <button class="copy" data-copy="hardkas tx plan --to kaspatest:qz7... --amount 50000000 --json&#10;hardkas verify --strict">Copy</button></div>
+    <pre><span class="cmd">hardkas</span> tx plan <span class="flag">--to</span> kaspatest:qz7... <span class="flag">--amount</span> 50000000 <span class="flag">--json</span>
+<span class="cmd">hardkas</span> verify <span class="flag">--strict</span></pre>
+  </div>
 </div>
+
+<div class="box">
+  <h3>2. Local Node (Docker L1)</h3>
+  <p>Run a real local Kaspa L1 node (<code>kaspad</code>) in Docker. HardKAS manages node lifetimes safely.</p>
+  <ul>
+    <li><strong>Exclusive Locks:</strong> HardKAS uses strict <code>.lock</code> files with stale-lock detection to protect mutating paths during node commands.</li>
+    <li><strong>L1-Only Boundary:</strong> The Docker runner manages the Kaspa L1 node only. It does not spin up or configure Igra L2 nodes.</li>
+  </ul>
+  <div class="codeblock">
+    <div class="codebar">node workflow <button class="copy" data-copy="hardkas node start&#10;hardkas node status --json&#10;hardkas faucet alice --amount 1000">Copy</button></div>
+    <pre><span class="cmd">hardkas</span> node start
+<span class="cmd">hardkas</span> node status <span class="flag">--json</span>
+<span class="cmd">hardkas</span> faucet alice <span class="flag">--amount</span> 1000</pre>
+  </div>
 </div>
-<div>
-<h3>Kaspa L1 local flow</h3>
-<div class="codeblock">
-<div class="codebar">l1 workflow <button class="copy" data-copy="hardkas node start
-hardkas kaspa doctor --json
-hardkas kaspa wallet create alice --network simnet
-hardkas kaspa wallet create bob --network simnet
-hardkas kaspa wallet send alice bob --amount 1 --dry-run">Copy</button></div>
-<pre><span class="cmd">hardkas</span> node start
-<span class="cmd">hardkas</span> kaspa doctor <span class="flag">--json</span>
-<span class="cmd">hardkas</span> kaspa wallet create alice <span class="flag">--network</span> simnet
-<span class="cmd">hardkas</span> kaspa wallet create bob <span class="flag">--network</span> simnet
-<span class="cmd">hardkas</span> kaspa wallet send alice bob <span class="flag">--amount</span> 1 <span class="flag">--dry-run</span></pre>
-</div>
+
+<div class="box">
+  <h3>3. Based Rollup (Igra L2)</h3>
+  <p>Plan and sign Igra L2 EVM transactions and verify bridge rules.</p>
+  <ul>
+    <li><strong>Policy Engine:</strong> HardKAS evaluates rule definitions in the <code>hardkas.policy.v1</code> schema against transaction attributes. Policies are declared using the pluralized <code>policyRefs</code> array.</li>
+    <li><strong>Simulator Hardening:</strong> Dummy fallbacks are removed. If L2 simulation fails, it fails hard and aborts execution.</li>
+  </ul>
+  <div class="codeblock">
+    <div class="codebar">l2 workflow <button class="copy" data-copy="hardkas local wizard --profile igra&#10;hardkas l2 balance 0x... --network igra&#10;hardkas l2 contract deploy-plan --bytecode 0x...">Copy</button></div>
+    <pre><span class="cmd">hardkas</span> local wizard <span class="flag">--profile</span> igra
+<span class="cmd">hardkas</span> l2 balance 0x... <span class="flag">--network</span> igra
+<span class="cmd">hardkas</span> l2 contract deploy-plan <span class="flag">--bytecode</span> 0x...</pre>
+  </div>
 </div>
 </div>
 </section>
 <section id="status">
-<h2>What actually works in 0.7.9-alpha</h2>
+<h2>What actually works in 0.8.6-alpha</h2>
 <table>
 <thead><tr><th>Status</th><th>Systems</th><th>Notes</th></tr></thead>
 <tbody>
@@ -2389,7 +2439,7 @@ hardkas kaspa wallet send alice bob --amount 1 --dry-run">Copy</button></div>
 </section>
 <section id="sessions">
 <h2>Sessions</h2>
-<p>Sessions bind L1/L2 developer context: wallet names, EVM accounts, selected profiles, bridge plans and local runtime state. In 0.7.9-alpha mutating session paths fail closed on corrupt stores and canonical writes use atomic persistence with parent directory fsync.</p>
+<p>Sessions bind L1/L2 developer context: wallet names, EVM accounts, selected profiles, bridge plans and local runtime state. In 0.8.6-alpha mutating session paths fail closed on corrupt stores and canonical writes use atomic persistence with parent directory fsync.</p>
 <div class="grid cols-2">
 <div class="box">
 <h3>Typical use</h3>
@@ -2447,7 +2497,7 @@ hardkas session status">Copy</button></div>
 <p>Simulated WalletConnect pairing for testing mobile wallet UX. Ephemeral sessions, no real relay traffic. Clearly labeled as laboratory-only.</p>
 </div>
 </div>
-<div class="warning"><strong>SSE limitation.</strong> The dashboard supports reconnect/backoff, but 0.7.9-alpha does not yet provide durable replay cursors or monotonic event IDs. If the dev server restarts, the event stream resets.</div>
+<div class="warning"><strong>SSE limitation.</strong> The dashboard supports reconnect/backoff, but 0.8.6-alpha does not yet provide durable replay cursors or monotonic event IDs. If the dev server restarts, the event stream resets.</div>
 <h3>CLI ↔ Dashboard sync</h3>
 <p>The dashboard is not a separate world — it reads from the same session store as the CLI. Run <code>hardkas session use dev</code> in the terminal and the dashboard updates in real time via SSE. No refresh needed.</p>
 <div class="codeblock">
@@ -2927,6 +2977,7 @@ hardkas l2 bridge assumptions --json">Copy</button></div>
 <li>Secret redaction in CLI error paths.</li>
 <li>Mainnet guards for signing/faucet/fund operations.</li>
 <li>Encrypted dev keystore using Argon2id + AES-GCM.</li>
+<li>Absolute path traversal sandboxing (restricts all artifact reads, writes, and verification to the project boundary).</li>
 </ul>
 </div>
 <div class="box">
@@ -2992,7 +3043,7 @@ hardkas config show --json">Copy</button></div>
 <div class="codeblock" style="margin-top: 8px;">
 <div class="codebar">sample output (truncated)</div>
 <pre>{
-  <span class="str">"version"</span>: <span class="str">"0.7.9-alpha"</span>,
+  <span class="str">"version"</span>: <span class="str">"0.8.6-alpha"</span>,
   <span class="str">"maturity"</span>: <span class="str">"hardened-alpha"</span>,
   <span class="str">"capabilities"</span>: {
     <span class="str">"artifacts"</span>: <span style="color:#72f2c3">true</span>,
@@ -3120,7 +3171,7 @@ hardkas query lineage chain &lt;artifactId&gt; --why">Copy</button></div>
 </div>
 </section>
 <footer class="footer">
-        HardKAS Documentation · 0.7.9-alpha · CLI · SDK · Examples · Security · GitHub · MIT License<br/>
+        HardKAS Documentation · 0.8.6-alpha · CLI · SDK · Examples · Security · GitHub · MIT License<br/>
         HardKAS is local developer infrastructure in active alpha. It is provided without warranty and is not production custody software.
       </footer>
 </main>

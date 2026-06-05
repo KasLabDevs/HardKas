@@ -1,6 +1,15 @@
 import { TxPlan, TxOutput } from "./index.js";
 import { estimateTransactionMass } from "./mass.js";
 
+/**
+ * Kaspa dust threshold in sompi.
+ * Based on the rusty-kaspa wallet heuristic for standard P2PK outputs:
+ *   value * 1000 / (STANDARD_OUTPUT_SIZE_PLUS_INPUT_SIZE * 3) < MINIMUM_RELAY_TRANSACTION_FEE
+ * For standard outputs this equates to ~546 sompi.
+ * We use 600 as a conservative margin, consistent with the localnet.
+ */
+export const DUST_THRESHOLD_SOMPI = 600n;
+
 interface ExtendedPlan extends TxPlan {
   mode?: string;
   networkId?: string;
@@ -152,22 +161,23 @@ export function verifyTxPlanSemantics(
         `outputs[${i}]`
       );
     }
-    // Simple dust check (Kaspa dust is usually 600 sompi for standard P2PKH)
-    if (BigInt(o.amountSompi) < 600n) {
+    // Dust check: reject outputs below the Kaspa dust threshold (600 sompi)
+    // This must be an error, not a warning, to match real node behavior.
+    if (BigInt(o.amountSompi) < DUST_THRESHOLD_SOMPI) {
       addIssue(
         "DUST_OUTPUT",
-        "warning",
-        `Output ${i} might be dust: ${o.amountSompi} sompi`,
+        "error",
+        `Output ${i} is below dust threshold (${DUST_THRESHOLD_SOMPI} sompi): ${o.amountSompi} sompi`,
         `outputs[${i}]`
       );
     }
   });
 
-  if (plan.change && BigInt(plan.change.amountSompi) < 600n) {
+  if (plan.change && BigInt(plan.change.amountSompi) < DUST_THRESHOLD_SOMPI) {
     addIssue(
       "DUST_CHANGE",
-      "warning",
-      `Change output might be dust: ${plan.change.amountSompi} sompi`,
+      "error",
+      `Change output is below dust threshold (${DUST_THRESHOLD_SOMPI} sompi): ${plan.change.amountSompi} sompi`,
       "change"
     );
   }

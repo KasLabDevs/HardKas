@@ -1,6 +1,6 @@
 {
   "name": "@hardkas/simulator-adapters",
-  "version": "0.8.5-alpha",
+  "version": "0.8.6-alpha",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -27,5 +27,21 @@
   "devDependencies": {
     "rimraf": "^6.0.1",
     "typescript": "^5.7.2"
-  }
+  },
+  "license": "MIT",
+  "author": "Javier Rodriguez",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/KasLabDevs/HardKas.git",
+    "directory": "packages/simulator-adapters"
+  },
+  "bugs": {
+    "url": "https://github.com/KasLabDevs/HardKas/issues"
+  },
+  "homepage": "https://github.com/KasLabDevs/HardKas/tree/main/packages/simulator-adapters#readme",
+  "files": [
+    "dist",
+    "LICENSE",
+    "README.md"
+  ]
 }

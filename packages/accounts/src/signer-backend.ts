@@ -9,18 +9,16 @@ export interface KaspaSigningBackendStatus {
  * Loads the official Kaspa WASM SDK dynamically.
  * This ensures the toolkit remains usable even if the SDK is not installed.
  */
-export async function loadKaspaWasm() {
+export async function loadKaspaWasm(): Promise<any> {
   try {
-    // In Node.js environment, we look for the 'kaspa' package
-    // @ts-ignore - 'kaspa' package is an optional dependency
-    const sdk = await import("kaspa");
-    return sdk;
+    // @ts-ignore
+    return await import("kaspa-wasm");
   } catch (error) {
-    // Fallback or re-throw with helpful message
-    throw new Error(
-      "Kaspa WASM signing backend is not available. " +
-        "Please install the official 'kaspa' package: pnpm add kaspa"
+    const err = new Error(
+      "SIGNER_BACKEND_UNAVAILABLE: Official Kaspa WASM backend is required to sign transactions.\nInstall it via: npm install kaspa-wasm"
     );
+    (err as any).code = "SIGNER_BACKEND_UNAVAILABLE";
+    throw err;
   }
 }
 

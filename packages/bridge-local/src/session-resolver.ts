@@ -38,7 +38,7 @@ export async function resolveBridgeLocalContext(
 
   // 1. Explicit
   if (from && toIgra) {
-    const l1Address = resolveHardkasAccountAddress(from, config.config);
+    const l1Address = await resolveHardkasAccountAddress(from, config.config);
     return {
       source: "explicit",
       l1: { walletName: from, address: l1Address },

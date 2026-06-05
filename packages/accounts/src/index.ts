@@ -7,6 +7,7 @@ export * from "./signer.js";
 export * from "./signer-backend.js";
 export * from "./kaspa-wallet.js";
 export * from "./kaspa-wasm-signer.js";
+export * from "./fixture-signer.js";
 export * from "./real-signer.js";
 export * from "./kaspa-sdk-real-signer.js";
 export * from "./real-accounts.js";
