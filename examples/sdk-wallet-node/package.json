@@ -1,6 +1,6 @@
 {
   "name": "sdk-wallet-node",
-  "version": "0.8.12-alpha",
+  "version": "0.8.13-alpha",
   "type": "module",
   "scripts": {
     "demo": "node src/index.mjs"

@@ -25,26 +25,20 @@ describe("Simulated Isolation", () => {
     }
   });
 
-  it("must succeed even if an unreachable RPC URL is provided", async () => {
+  it("throws NETWORK_ACCOUNT_MISMATCH when URL forces RPC with simulated account", async () => {
     const { config } = await loadHardkasConfig();
 
-    // We provide a bogus URL that would normally timeout or fail.
-    // However, because networkId is simnet, the simulated backend must not even attempt to connect to it.
-    const artifact = await runTxPlan({
-      from: "kaspa:sim_alice",
-      to: "kaspa:sim_bob",
-      amount: "10",
-      networkId: "simnet",
-      feeRate: "1",
-      config,
-      url: "http://127.0.0.1:1" // Unreachable port
-    });
-
-    expect(artifact).toBeDefined();
-    expect(artifact.networkId).toBe("simnet");
-    expect(artifact.mode).toBe("simulated");
-    expect(artifact.from.address).toContain("kaspa:sim_");
-    expect(artifact.rpcUrl).toBe("simulated://local"); // It ignores the provided URL
+    await expect(
+      runTxPlan({
+        from: "kaspa:sim_alice",
+        to: "kaspa:sim_bob",
+        amount: "10",
+        networkId: "simnet",
+        feeRate: "1",
+        config,
+        url: "http://127.0.0.1:1" // Forces RPC backend
+      })
+    ).rejects.toThrow(/NETWORK_ACCOUNT_MISMATCH/);
   });
 
   it("simulated mode never performs network fetches and sets rpcUrl to simulated://local", async () => {
