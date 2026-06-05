@@ -46,6 +46,18 @@ export async function runTxPlan(input: TxPlanRunnerInput): Promise<TxPlanArtifac
   // Real Kaspa simnet addresses (kaspasim:*) are NOT affected — they can use RPC.
   const isHardkasSimulatedAccount = fromAddress.startsWith("kaspa:sim_");
 
+  if (isHardkasSimulatedAccount) {
+    // A HardKAS simulated account on a real network is always a mismatch
+    const isRealNetwork = resolvedNetwork !== "simnet" && resolvedNetwork !== "simulated";
+    if (isRealNetwork) {
+      throw new Error(
+        "NETWORK_ACCOUNT_MISMATCH: Cannot use a simulated account on a real network."
+      );
+    }
+    // Force simulated backend for HardKAS simulated accounts (they have no real keys)
+    backend = "simulated";
+  }
+
   let availableUtxos: any[] = [];
   let mode: "simulated" | "kaspa-node" | "kaspa-rpc" = "simulated";
   let rpcUrl: string | undefined = providerConfig.endpoint;
