@@ -20,16 +20,7 @@ export interface ResolvedProvider {
 export function resolveProvider(options: ResolveProviderOptions): ResolvedProvider {
   const { network, provider, url } = options;
 
-  // 1. If explicitly simulated or simnet, ignore URL and RPC overrides
-  const isSimulated = provider === "simulated" || network === "simnet" || network === "local" || network === "simulated" || options.configNetworkKind === "simulated";
-  if (isSimulated) {
-    return {
-      mode: "simulated",
-      network,
-    };
-  }
-
-  // 2. Explicit URL -> RPC mode
+  // 1. Explicit URL -> RPC mode
   if (url) {
     return {
       mode: "rpc",
