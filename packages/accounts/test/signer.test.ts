@@ -17,7 +17,7 @@ describe("signTxPlanArtifact", () => {
   const mockSimulatedPlan: any = {
     schema: "hardkas.txPlan",
     version: "1.0.0-alpha",
-    hardkasVersion: "0.8.11-alpha",
+    hardkasVersion: "0.8.12-alpha",
     createdAt: new Date().toISOString(),
     networkId: "simnet",
     mode: "simulated",

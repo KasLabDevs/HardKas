@@ -20,6 +20,10 @@ export interface ResolvedProvider {
 export function resolveProvider(options: ResolveProviderOptions): ResolvedProvider {
   const { network, provider, url } = options;
 
+  if (provider === "simulated" && url) {
+    throw new Error("PROVIDER_CONFLICT: Simulated backend cannot be used with explicit RPC URL");
+  }
+
   // 1. Explicit URL -> RPC mode
   if (url) {
     return {
