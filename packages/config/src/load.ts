@@ -60,18 +60,27 @@ async function loadConfigFile(
   cwd: string
 ): Promise<LoadedHardkasConfig> {
   try {
-    const isTestMode = process.env.NODE_ENV === "test" || process.env.VITEST;
     const jitiOptions: any = {};
-    if (isTestMode) {
-      try {
-        const _dirname = path.dirname(fileURLToPath(import.meta.url));
-        const resolvedSdk = path.resolve(_dirname, "../../sdk/src/index.ts");
+    try {
+      const _dirname = path.dirname(fileURLToPath(import.meta.url));
+      const resolvedSdk = path.resolve(_dirname, "../../sdk/src/index.ts");
+      const rootPkgPath = path.resolve(_dirname, "../../../package.json");
+      
+      let isMonorepoDev = false;
+      if (fs.existsSync(resolvedSdk) && fs.existsSync(rootPkgPath)) {
+        const rootPkg = JSON.parse(fs.readFileSync(rootPkgPath, "utf8"));
+        if (rootPkg.name === "hardkas-monorepo") {
+          isMonorepoDev = true;
+        }
+      }
+
+      if (isMonorepoDev) {
         jitiOptions.alias = {
           "@hardkas/sdk": resolvedSdk
         };
-      } catch (e) {
-        // ignore
       }
+    } catch (e) {
+      // ignore
     }
     const jiti = createJiti(import.meta.url, jitiOptions);
     const module = (await jiti.import(filePath)) as any;

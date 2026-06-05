@@ -5,7 +5,7 @@ import * as fs from "node:fs";
 import * as path from "node:path";
 import * as os from "node:os";
 
-describe("0.8.6-alpha Lifecycle Integrity & Trust Boundary Tests", () => {
+describe("0.8.10-alpha Lifecycle Integrity & Trust Boundary Tests", () => {
   let sdk: Hardkas;
   let workspaceRoot: string;
 
@@ -26,7 +26,7 @@ describe("0.8.6-alpha Lifecycle Integrity & Trust Boundary Tests", () => {
     // Write a valid policy
     const policy = {
       schema: "hardkas.policy.v1",
-      hardkasVersion: "0.8.6-alpha",
+      hardkasVersion: "0.8.10-alpha",
       version: "1.0.0-alpha",
       networkId: "simnet",
       mode: "simulated",
@@ -71,7 +71,7 @@ describe("0.8.6-alpha Lifecycle Integrity & Trust Boundary Tests", () => {
     // Write a DENY policy
     const policy = {
       schema: "hardkas.policy.v1",
-      hardkasVersion: "0.8.6-alpha",
+      hardkasVersion: "0.8.10-alpha",
       version: "1.0.0-alpha",
       networkId: "simnet",
       mode: "simulated",
@@ -130,7 +130,7 @@ describe("0.8.6-alpha Lifecycle Integrity & Trust Boundary Tests", () => {
   it("5. Tampered policy content must fail hash match", async () => {
     const policy = {
       schema: "hardkas.policy.v1",
-      hardkasVersion: "0.8.6-alpha",
+      hardkasVersion: "0.8.10-alpha",
       version: "1.0.0-alpha",
       networkId: "simnet",
       mode: "simulated",
@@ -253,7 +253,7 @@ describe("0.8.6-alpha Lifecycle Integrity & Trust Boundary Tests", () => {
     const trace = {
       schema: ARTIFACT_SCHEMAS.TX_TRACE,
       schemaVersion: "hardkas.artifact.v1",
-      hardkasVersion: "0.8.6-alpha",
+      hardkasVersion: "0.8.10-alpha",
       version: "1.0.0-alpha",
       hashVersion: CURRENT_HASH_VERSION,
       createdAt: new Date().toISOString(),
