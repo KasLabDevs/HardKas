@@ -4,8 +4,8 @@
   "artifactCount": 185,
   "acceptedTxCount": 85,
   "rejectedTxCount": 15,
-  "finalStateHash": "1b71a811ae8a2d8d1515d8136033b0459a0f07a482b6688e658fa4a449579412",
-  "queryResultHash": "f46fa3f84b7eaa4579dc2d5d8afa3341b590d32ce6a38ff83ad980ebbbec0509",
+  "finalStateHash": "92153ebd47259319c83a1f673ea14a7cd605a0af069aeb398c908be48b4be1ff",
+  "queryResultHash": "f41824c11f010b70490bdf655463fb25ab78768ee18bab6485973f185ae8791b",
   "dagMetricsHash": "877fd3e9752536ab945b888e035af4534834c5a4e24b06e1e8bbaf72ce375dcc",
   "massProfileHash": "7d7b88052db5842345a786085d98465e98b95d2a2aa6f7dc65353a0241f80393"
 }

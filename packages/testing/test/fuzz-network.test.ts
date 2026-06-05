@@ -15,8 +15,8 @@ describe("Phase 6A: Network Fuzzing", () => {
       capabilities: { supports_rbf: false, gas_model: "utxo" },
       createdAt: new Date().toISOString()
     };
-    (original as any).hashVersion = 2;
-    (original as any).contentHash = calculateContentHash(original, 2);
+    (original as any).hashVersion = 4;
+    (original as any).contentHash = calculateContentHash(original, 4);
 
     let acceptedInvalid = 0;
     let stacktraces = 0;
