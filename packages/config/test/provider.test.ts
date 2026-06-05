@@ -28,4 +28,10 @@ describe("Provider Resolution", () => {
     const res = resolveProvider({ network: "simnet" });
     expect(res.mode).toBe("simulated");
   });
+
+  it("6. provider simulated + url EXPECT PROVIDER_CONFLICT", () => {
+    expect(() => {
+      resolveProvider({ network: "simnet", provider: "simulated", url: "ws://127.0.0.1:18210" });
+    }).toThrow("PROVIDER_CONFLICT");
+  });
 });
