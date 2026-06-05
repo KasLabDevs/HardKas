@@ -32,5 +32,6 @@
     "rootArtifactId": "2b4baed6aab94827f47c19195591a9f619be50882de2c564ca9fa1bd09d57fb5",
     "sequence": 1
   },
-  "contentHash": "2f3e14b3b35dc2182fbc2f775232b3f7e97ddee6b977b7fa88fe4c0d6d1412e6"
+  "contentHash": "2f3e14b3b35dc2182fbc2f775232b3f7e97ddee6b977b7fa88fe4c0d6d1412e6",
+  "hashVersion": 4
 }
