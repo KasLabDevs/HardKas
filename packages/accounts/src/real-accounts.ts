@@ -24,6 +24,8 @@ export interface RealDevAccount {
   readonly publicKey?: string;
   /** @deprecated Use keystoreRef for encrypted storage. Plaintext keys in this field are considered legacy/unsafe. */
   readonly privateKey?: string;
+  /** Environment variable name containing the private key */
+  readonly privateKeyEnv?: string;
   /** Reference to the encrypted keystore file in .hardkas/keystore/ */
   readonly keystoreRef?: string;
   readonly createdAt: string;
@@ -157,6 +159,7 @@ export function importRealDevAccount(
     readonly address: string;
     readonly publicKey?: string;
     readonly privateKey?: string;
+    readonly privateKeyEnv?: string;
     readonly keystoreRef?: string;
   }
 ): RealAccountStore {

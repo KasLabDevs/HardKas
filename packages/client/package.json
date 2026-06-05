@@ -1,6 +1,6 @@
 {
   "name": "@hardkas/client",
-  "version": "0.8.15-alpha",
+  "version": "0.8.16-alpha",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -16,7 +16,6 @@
     "build": "tsup src/index.ts --format esm,cjs --dts --clean",
     "typecheck": "tsc --noEmit"
   },
-  "dependencies": {},
   "devDependencies": {
     "tsup": "^8.3.5",
     "typescript": "^5.7.2"

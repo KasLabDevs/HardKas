@@ -75,9 +75,17 @@ export class KaspaWasmPrivateKeySigner implements HardkasTxPlanSigner {
     });
 
     // 3. Resolve Private Key
-    const pkValue = account.privateKeyEnv
+    let pkValue = account.privateKeyEnv
       ? process.env[account.privateKeyEnv]
       : undefined;
+
+    if (!pkValue && (account as any).privateKey) {
+      if (plan.networkId === "mainnet") {
+        throw new Error(`Mainnet guard: Unsafe plaintext privateKey fallback is forbidden on mainnet for account '${account.name}'. Use privateKeyEnv instead.`);
+      }
+      pkValue = (account as any).privateKey;
+    }
+
     if (!pkValue) {
       throw new Error(`Missing required private key for account '${account.name}'.`);
     }

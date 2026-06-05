@@ -261,6 +261,10 @@ export interface SignedTxArtifact extends BaseArtifact<"signedTx"> {
         signedAt: string;
       }>
     | undefined;
+  networkProfileRef?: string | undefined;
+  policyRef?: string | undefined;
+  policyRefs?: string[] | undefined;
+  assumptionRef?: string | undefined;
   metadata?: any | undefined;
 }
 
@@ -280,6 +284,10 @@ export interface TxReceiptArtifact extends BaseArtifact<"txReceipt"> {
   tracePath?: string | undefined;
   rpcUrl?: string | undefined;
   sourceSignedId?: ArtifactId | undefined;
+  networkProfileRef?: string | undefined;
+  policyRef?: string | undefined;
+  policyRefs?: string[] | undefined;
+  assumptionRef?: string | undefined;
   metadata?: any | undefined;
 }
 
