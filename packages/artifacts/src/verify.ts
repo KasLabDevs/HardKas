@@ -566,7 +566,7 @@ export function verifyArtifactSemantics(
       if (!parentObj) {
         addIssue({
           code: "PARENT_MISSING",
-          severity: "warning",
+          severity: strict ? "error" : "warning",
           message: `Parent artifact ${parentId} not found in workspace`
         });
       } else {

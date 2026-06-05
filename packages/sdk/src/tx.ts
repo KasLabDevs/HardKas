@@ -263,7 +263,9 @@ export class HardkasTx {
     }
 
     if (this.sdk.signer && plan.schema === "hardkas.txPlan") {
+      console.log("DEBUG: plan.contentHash before signing:", (plan as any).contentHash);
       const signedArtifact = await this.sdk.signer.signTransaction(plan as TxPlanArtifact);
+      console.log("DEBUG: signedArtifact.lineage.parentArtifactId:", (signedArtifact as any).lineage?.parentArtifactId);
       
       const { absolutePath } = await this.sdk.artifacts.write(signedArtifact);
       const { coreEvents } = await import("@hardkas/core");
@@ -690,6 +692,8 @@ export class HardkasTx {
       confirmedAt: simResult.receipt.createdAt,
       rpcUrl: "simulated://local",
       tracePath,
+      ...(planArtifact.workflowId ? { workflowId: planArtifact.workflowId } : {}),
+      ...(planArtifact.assumptionLevel ? { assumptionLevel: planArtifact.assumptionLevel } : {}),
       lineage: {
         artifactId: "", // To be computed
         lineageId: targetObj.lineage?.lineageId || targetObj.contentHash || "0".repeat(64),
