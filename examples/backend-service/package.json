@@ -1,6 +1,6 @@
 {
   "name": "@examples/backend-service",
-  "version": "0.8.6-alpha",
+  "version": "0.8.10-alpha",
   "private": true,
   "type": "module",
   "scripts": {
