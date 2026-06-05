@@ -133,7 +133,7 @@ async function runRecursiveVerify(dir: string, options: ArtifactVerifyOptions) {
     const artifact = JSON.parse(fs.readFileSync(file, "utf-8"));
     const semanticResult = verifyArtifactSemantics(artifact, {
       strict: options.strict ?? false,
-      searchDirs: [dir],
+      artifactsDir: dir,
       resolveArtifact: (id) => {
         for (const f of files) {
           try {
