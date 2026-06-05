@@ -699,6 +699,9 @@ export class HardkasTx {
       tracePath,
       ...(planArtifact.workflowId ? { workflowId: planArtifact.workflowId } : {}),
       ...(planArtifact.assumptionLevel ? { assumptionLevel: planArtifact.assumptionLevel } : {}),
+      ...(planArtifact.policyRefs ? { policyRefs: planArtifact.policyRefs } : {}),
+      ...(planArtifact.networkProfileRef ? { networkProfileRef: planArtifact.networkProfileRef } : {}),
+      ...(planArtifact.assumptionRef ? { assumptionRef: planArtifact.assumptionRef } : {}),
       lineage: {
         artifactId: "", // To be computed
         lineageId: targetObj.lineage?.lineageId || targetObj.contentHash || "0".repeat(64),
@@ -907,6 +910,10 @@ export class HardkasTx {
       submittedAt: new Date().toISOString(),
       ...(url ? { rpcUrl: url } : {}),
       ...(signedArtifact.workflowId ? { workflowId: signedArtifact.workflowId } : {}),
+      ...(signedArtifact.assumptionLevel ? { assumptionLevel: signedArtifact.assumptionLevel } : {}),
+      ...(signedArtifact.policyRefs ? { policyRefs: signedArtifact.policyRefs } : {}),
+      ...(signedArtifact.networkProfileRef ? { networkProfileRef: signedArtifact.networkProfileRef } : {}),
+      ...(signedArtifact.assumptionRef ? { assumptionRef: signedArtifact.assumptionRef } : {}),
       tracePath: undefined,
       lineage: createLineageTransition(signedArtifact, "hardkas.txReceipt")
     };

@@ -75,7 +75,9 @@ export function resolveHardkasAccount(options: ResolveAccountOptions): HardkasAc
     return {
       name: realAcc.name,
       kind: "kaspa-private-key", // Assuming Kaspa for now, could be extensible
-      address: realAcc.address
+      address: realAcc.address,
+      ...(realAcc.privateKeyEnv ? { privateKeyEnv: realAcc.privateKeyEnv } : {}),
+      ...(realAcc.privateKey ? { privateKey: realAcc.privateKey } : {})
     };
   }
 
@@ -146,7 +148,9 @@ export function listHardkasAccounts(config?: HardkasConfig): HardkasAccount[] {
       accounts.set(realAcc.name, {
         name: realAcc.name,
         kind: "kaspa-private-key",
-        address: realAcc.address
+        address: realAcc.address,
+        ...(realAcc.privateKeyEnv ? { privateKeyEnv: realAcc.privateKeyEnv } : {}),
+        ...(realAcc.privateKey ? { privateKey: realAcc.privateKey } : {})
       });
     }
   }

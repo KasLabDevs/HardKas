@@ -154,6 +154,7 @@ export async function runAccountsKeystoreImport(options: {
     name,
     address,
     ...(options.unsafePlaintext ? { privateKey: finalKey } : {}),
+    ...(options.privateKeyEnv ? { privateKeyEnv: options.privateKeyEnv } : {}),
     ...(keystoreRef ? { keystoreRef } : {})
   });
   await saveRealAccountStore(store, { cwd: options.workspaceRoot });

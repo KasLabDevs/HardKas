@@ -52,27 +52,68 @@ export async function getOrCreateDevAccount(
   const seedString = `${SIMNET_DETERMINISTIC_SEED}-${index}`;
   const privateKeyHex = crypto.createHash("sha256").update(seedString).digest("hex");
 
-  // Dynamically load kaspa to get the public key and address
-  let sdkModule;
+  const network = "simnet";
+  const isSimnet = ["simnet", "kaspasim", "local"].includes(network);
+  
+  let address = "";
+  let privateKey = "";
+  let publicKey = "";
+
   try {
-    // @ts-ignore
-    sdkModule = await import(/* @vite-ignore */ "@kaspa/core-lib");
-  } catch (e) {
-    console.warn(
-      `\n[Warning] Kaspa SDK (@kaspa/core-lib) is not installed in the workspace.\nCould not generate dev account '${alias}'.`
-    );
+    if (isSimnet) {
+      let kaspaWasm: any;
+      try {
+        kaspaWasm = await import(/* @vite-ignore */ "kaspa-wasm");
+      } catch (e) {
+        console.warn(`\n[Warning] kaspa-wasm is not installed. Required for simnet.`);
+        return { address: "", privateKey: "", publicKey: "" };
+      }
+      const privKey = new kaspaWasm.PrivateKey(privateKeyHex);
+      const kp = privKey.toKeypair();
+      address = kp.toAddress(network).toString();
+      publicKey = kp.publicKey;
+      privateKey = kp.privateKey;
+    } else {
+      let sdkModule: any;
+      try {
+        // @ts-ignore
+        sdkModule = await import(/* @vite-ignore */ "@kaspa/core-lib");
+      } catch (e) {
+        console.warn(`\n[Warning] @kaspa/core-lib is not installed.`);
+        return { address: "", privateKey: "", publicKey: "" };
+      }
+      const sdk = sdkModule.default || sdkModule;
+      if (typeof sdk.initRuntime === "function") {
+        await sdk.initRuntime();
+      }
+      const privKey = new sdk.PrivateKey(privateKeyHex);
+      const pubKey = privKey.toPublicKey();
+      try {
+        address = pubKey.toAddress(network).toString();
+      } catch (e: any) {
+        const msg = e instanceof Error ? e.message : String(e);
+        if (msg.includes("Second argument must be") || msg.includes("Unsupported")) {
+          const err = new Error("DEV_ACCOUNT_BACKEND_UNSUPPORTED_NETWORK");
+          (err as any).code = "DEV_ACCOUNT_BACKEND_UNSUPPORTED_NETWORK";
+          throw err;
+        }
+        throw e;
+      }
+      publicKey = pubKey.toString();
+      privateKey = privKey.toString();
+    }
+  } catch (e: any) {
+    if (e.message === "DEV_ACCOUNT_BACKEND_UNSUPPORTED_NETWORK") {
+      throw e;
+    }
+    console.warn(`\n[Warning] Could not generate dev account '${alias}'.\n${e.message}`);
     return { address: "", privateKey: "", publicKey: "" };
   }
 
-  const sdk = sdkModule.default || sdkModule;
-  const privKey = new sdk.PrivateKey(privateKeyHex);
-  const pubKey = privKey.toPublicKey();
-  const address = pubKey.toAddress("simnet").toString();
-
   const accountData: GeneratedKaspaDevAccount = {
     address,
-    privateKey: privKey.toString(),
-    publicKey: pubKey.toString()
+    privateKey,
+    publicKey
   };
 
   // Save to .hardkas/dev-accounts/<alias>.json

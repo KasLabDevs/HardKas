@@ -143,7 +143,11 @@ export async function signTxPlanArtifact(input: {
         payload: result.signedTransaction?.payload || ""
       },
       lineage: createLineageTransition(planArtifact, "hardkas.signedTx"),
-      ...(planArtifact.workflowId ? { workflowId: planArtifact.workflowId } : {})
+      ...(planArtifact.workflowId ? { workflowId: planArtifact.workflowId } : {}),
+      ...(planArtifact.assumptionLevel ? { assumptionLevel: planArtifact.assumptionLevel } : {}),
+      ...(planArtifact.policyRefs ? { policyRefs: planArtifact.policyRefs } : {}),
+      ...(planArtifact.networkProfileRef ? { networkProfileRef: planArtifact.networkProfileRef } : {}),
+      ...(planArtifact.assumptionRef ? { assumptionRef: planArtifact.assumptionRef } : {})
     };
 
     const contentHash = calculateContentHash(artifact);
