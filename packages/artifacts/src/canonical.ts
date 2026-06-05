@@ -61,8 +61,11 @@ export const V4_SEMANTIC_EXCLUSIONS = new Set([
   "workflowId",
   "signatureMetadata",
   "rpcHost",
+  "rpcUrl",
   "latencyMs",
-  "indexedAt"
+  "indexedAt",
+  "file_mtime_ms",
+  "hardkasVersion"
 ]);
 
 /**

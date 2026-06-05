@@ -5,15 +5,6 @@ import golden from "./golden/reproducibility.json";
 describe("Reproducibility Proof v0", () => {
   const actual = generateReproducibilityReport();
 
-  // Normalize simulatedTxReceipt hash between local Windows runs and Linux CI runners
-  const validSimHashes = [
-    "b8239282bb56bcbdeff8fa287f32ccb8d35fbc4caf379ae5e20fe059e60f456e",
-    "873644cec13e30e7cfa3ccbf6faeaf8b3142d76d8293e2377befc3bede461b69"
-  ];
-  if (validSimHashes.includes(actual.artifacts.simulatedTxReceipt)) {
-    actual.artifacts.simulatedTxReceipt = golden.artifacts.simulatedTxReceipt;
-  }
-
   it("proof version matches", () => {
     expect(actual.proofVersion).toBe("repro-v0");
   });
