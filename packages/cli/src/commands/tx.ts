@@ -101,8 +101,8 @@ export function registerTxCommands(program: Command) {
                 provider: options.provider,
                 feeRate: options.feeRate || "1",
                 config: loaded.config,
-                workflowId: options.workflowId,
-                assumptionLevel: options.assumptionLevel,
+                ...(options.workflowId ? { workflowId: options.workflowId } : {}),
+                ...(options.assumptionLevel ? { assumptionLevel: options.assumptionLevel } : {}),
                 ...(options.url ? { url: options.url } : {})
               });
 
