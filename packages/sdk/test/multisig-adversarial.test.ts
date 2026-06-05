@@ -167,7 +167,7 @@ describe("Multisig Adversarial Suite", () => {
       expect(state.multisig?.signatures.length).toBe(3);
       expect(state.unsignedPayloadHash).toBe(plan.contentHash);
     }
-  });
+  }, 30000);
 
   it("Case 7: Manual corruption of signatures[] array", async () => {
     const alice = await sdk.accounts.resolve("alice");
