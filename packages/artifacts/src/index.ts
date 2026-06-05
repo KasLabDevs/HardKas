@@ -21,6 +21,7 @@ export * from "./lineage.js";
 export * from "./diff.js";
 export * from "./deployment.js";
 export * from "./deployment-store.js";
+export * from "./signer.js";
 
 export type {
   TxPlanArtifact,

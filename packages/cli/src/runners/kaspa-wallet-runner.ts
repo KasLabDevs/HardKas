@@ -72,7 +72,7 @@ export async function runKaspaWalletAddress(name: string) {
   try {
     const config = await loadHardkasConfig();
     const { resolveHardkasAccountAddress } = await import("@hardkas/accounts");
-    const address = resolveHardkasAccountAddress(name, config.config);
+    const address = await resolveHardkasAccountAddress(name, config.config);
     console.log(address);
   } catch (e) {
     handleError(e);
@@ -89,7 +89,7 @@ export async function runKaspaWalletBalance(
     const { resolveHardkasAccountAddress } = await import("@hardkas/accounts");
     const { JsonWrpcKaspaClient } = await import("@hardkas/kaspa-rpc");
 
-    const address = resolveHardkasAccountAddress(name, config.config);
+    const address = await resolveHardkasAccountAddress(name, config.config);
     const client = new JsonWrpcKaspaClient({ rpcUrl: options.rpcUrl });
     const balance = await client.getBalanceByAddress(address);
 
@@ -124,7 +124,7 @@ export async function runKaspaWalletSend(
     const { HARDKAS_VERSION, calculateContentHash } = await import("@hardkas/artifacts");
 
     const sender = resolveHardkasAccount({ nameOrAddress: from, config: config.config });
-    const targetAddress = resolveHardkasAccountAddress(to, config.config);
+    const targetAddress = await resolveHardkasAccountAddress(to, config.config);
     const amountSompi = BigInt(Math.floor(parseFloat(options.amount) * 1e8));
 
     const client = new JsonWrpcKaspaClient({ rpcUrl: options.rpcUrl });

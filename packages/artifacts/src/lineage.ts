@@ -160,6 +160,16 @@ export function verifyLineage(
     }
 
     if (!isValidTransition) {
+      // Also allow schema migration transitions (e.g., hardkas.txPlan.v1 → hardkas.txPlan)
+      // where the parent's .v1 suffix was stripped during migration
+      const parentBase = parent.schema?.replace(/\.v1$/, "");
+      const childBase = artifact.schema?.replace(/\.v1$/, "");
+      if (parentBase && childBase && parentBase === childBase) {
+        isValidTransition = true;
+      }
+    }
+
+    if (!isValidTransition) {
       addIssue(
         "INVALID_TRANSITION",
         `Invalid lineage transition: ${parent.schema} -> ${artifact.schema}`
@@ -170,5 +180,22 @@ export function verifyLineage(
   return {
     ok: issues.every((i) => i.severity !== "error"),
     issues
+  };
+}
+
+/**
+ * Creates a valid lineage transition object for a new child artifact based on its parent.
+ * This should be attached to the child artifact before calculating its final hash.
+ */
+export function createLineageTransition(parent: any, childType: string): { artifactId: string; lineageId: string; parentArtifactId: string; rootArtifactId: string; sequence: number; } {
+  const parentLineage = parent.lineage || {};
+  const parentId = parent.contentHash || parent.artifactId || parent.planId || parent.signedId || "0".repeat(64);
+
+  return {
+    artifactId: "", // To be computed after the rest of the artifact is hashed
+    lineageId: parentLineage.lineageId || parentId,
+    parentArtifactId: parentId,
+    rootArtifactId: parentLineage.rootArtifactId || parentId,
+    sequence: (parentLineage.sequence || 0) + 1
   };
 }

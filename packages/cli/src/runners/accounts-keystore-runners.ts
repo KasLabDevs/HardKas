@@ -22,12 +22,23 @@ export async function runAccountsKeystoreImport(options: {
   passwordStdin?: boolean;
   passwordEnv?: string;
   unsafePlaintext?: boolean;
+  fixture?: string;
   yes?: boolean;
   json?: boolean;
   workspaceRoot: string;
 }) {
-  const name = options.name || "default";
-  const address = options.address;
+  let name = options.name || "default";
+  let address = options.address;
+
+  if (options.fixture) {
+    const { HardkasFixtureSigner } = await import("@hardkas/accounts");
+    const signer = new HardkasFixtureSigner("simnet");
+    address = await signer.getAddress();
+    options.privateKey = "b7e151628aed2a6abf7158809cf4f3c762e7160f38b4da56a784d9045190cfef";
+    name = options.fixture;
+    options.unsafePlaintext = true;
+    options.yes = true;
+  }
 
   if (options.unsafePlaintext) {
     UI.warning(
@@ -48,6 +59,15 @@ export async function runAccountsKeystoreImport(options: {
 
   if (!address) {
     throw new Error("Address is required for import.");
+  }
+
+  if (name === "hardkas-local-docker-test-only") {
+    const isMainnet = address.startsWith("kaspa:") && !address.startsWith("kaspa:sim_");
+    if (isMainnet) {
+      throw new Error(
+        "Fixture 'hardkas-local-docker-test-only' is strictly blocked on mainnet. (TEST_ONLY_DO_NOT_USE_FOR_FUNDS)"
+      );
+    }
   }
 
   // Acquire Private Key

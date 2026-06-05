@@ -344,12 +344,22 @@ export function migrateArtifactPayload(
     if (migratedLineage && typeof migratedLineage === "object") {
       // Root artifact ID must NEVER change during migration
       migratedLineage.rootArtifactId = originalLineage.rootArtifactId;
+      // Link back to the original artifact for lineage tracing
+      if (originalContentHash) {
+        migratedLineage.parentArtifactId = originalContentHash;
+      }
     }
   }
 
-  // Recalculate content hash with current hash version
+  // Recalculate content hash with current hash version (double-pass)
   current.hashVersion = CURRENT_HASH_VERSION;
-  current.contentHash = calculateContentHash(current, CURRENT_HASH_VERSION);
+  let hash = calculateContentHash(current, CURRENT_HASH_VERSION);
+  // Update lineage.artifactId to match the new contentHash, then recalculate
+  if (current.lineage && typeof current.lineage === "object") {
+    (current.lineage as Record<string, unknown>).artifactId = hash;
+    hash = calculateContentHash(current, CURRENT_HASH_VERSION);
+  }
+  current.contentHash = hash;
 
   return {
     artifact: current,
@@ -418,20 +428,9 @@ export function generateMigrationReceipt(
   receipt.contentHash = calculateContentHash(receipt, CURRENT_HASH_VERSION);
   receipt.lineage.artifactId = receipt.contentHash;
 
-  // Re-link the new artifact to point to the receipt
-  if (!newArtifact.lineage) {
-    newArtifact.lineage = {
-      artifactId: newHash,
-      lineageId: receipt.lineage.lineageId,
-      parentArtifactId: receipt.contentHash,
-      rootArtifactId: receipt.lineage.rootArtifactId
-    };
-  } else {
-    (newArtifact.lineage as any).parentArtifactId = receipt.contentHash;
-  }
-  // Re-calculate hash for new artifact because lineage changed
-  newArtifact.contentHash = calculateContentHash(newArtifact, CURRENT_HASH_VERSION);
-  (newArtifact.lineage as any).artifactId = newArtifact.contentHash;
+  // We DO NOT mutate newArtifact to point to the receipt because that would 
+  // create a circular hash dependency (receipt needs newArtifact hash, newArtifact needs receipt hash).
+  // newArtifact's parent is simply oldArtifact.
 
   return receipt;
 }

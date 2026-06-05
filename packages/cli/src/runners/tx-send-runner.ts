@@ -8,6 +8,7 @@ export interface TxSendRunnerInput {
   network?: string;
   config: HardkasConfig;
   url?: string;
+  provider?: string;
   workspaceRoot?: string;
 }
 
@@ -35,12 +36,19 @@ export async function runTxSend(input: TxSendRunnerInput): Promise<TxSendRunnerR
     config
   });
 
+  const { resolveProvider } = await import("@hardkas/config");
+  const provider = resolveProvider({
+    network: resolvedName,
+    provider: input.provider,
+    url
+  });
+
   // Initialize the SDK
   const sdk = await Hardkas.open({ cwd: input.workspaceRoot || process.cwd() });
   sdk.config.config.defaultNetwork = resolvedName;
 
   // 1. Simulated Mode
-  if (target.kind === "simulated" || signedArtifact.mode === "simulated") {
+  if (provider.mode === "simulated" && signedArtifact.mode !== "real") {
     const { receipt, receiptPath } = await sdk.tx.simulate(signedArtifact);
 
     return {
@@ -64,8 +72,12 @@ export async function runTxSend(input: TxSendRunnerInput): Promise<TxSendRunnerR
   const targetRecord = target as unknown as Record<string, unknown>;
   const targetRpcUrl =
     typeof targetRecord["rpcUrl"] === "string" ? targetRecord["rpcUrl"] : undefined;
-  const rpcUrl = url || targetRpcUrl;
+  const rpcUrl = url || targetRpcUrl || provider.endpoint;
   if (!rpcUrl) throw new Error(`No RPC URL found for network '${networkName}'.`);
+
+  // Override the SDK RPC client for real mode since default simnet creates a simulated provider
+  const { JsonWrpcKaspaClient } = await import("@hardkas/kaspa-rpc");
+  (sdk as any).rpc = new JsonWrpcKaspaClient({ rpcUrl: rpcUrl });
 
   const { receipt, receiptPath } = await sdk.tx.send(signedArtifact, rpcUrl);
 

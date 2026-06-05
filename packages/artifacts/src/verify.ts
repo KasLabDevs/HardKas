@@ -92,7 +92,8 @@ export function sortUtxosByOutpoint<T>(utxos: T[]): T[] {
  * Can take a raw object or a file path.
  */
 export function verifyArtifactIntegritySync(
-  artifactOrPath: unknown
+  artifactOrPath: unknown,
+  context: VerificationContext = {}
 ): ArtifactVerificationResult {
   const result: ArtifactVerificationResult = {
     ok: false,
@@ -165,6 +166,20 @@ export function verifyArtifactIntegritySync(
         "HASH_MISMATCH",
         `Hash mismatch: expected ${v.contentHash}, got ${actualHash}`
       );
+    } else if (hashVersion < 4) {
+      if (context.strict) {
+        addError(
+          "LEGACY_HASH_VERSION_UNSAFE",
+          `Artifact uses legacy hash version ${hashVersion}. Migration to v4 is required for strict pipelines.`
+        );
+      } else {
+        // Just add an info issue, ok remains true
+        result.issues.push({
+          code: "LEGACY_VALID",
+          severity: "info",
+          message: `Artifact uses legacy hash version ${hashVersion} (valid but unsafe for strict mode).`
+        });
+      }
     }
 
     // 4. Zod Schema Validation
@@ -205,9 +220,21 @@ export function verifyArtifactIntegritySync(
     if (schema) {
       const validation = schema.safeParse(v);
       if (!validation.success) {
+        // For legacy artifacts (hashVersion < 4), Zod schema mismatches are warnings
+        // since they may not conform to the current schema but are still integrity-valid.
+        const zodSeverity: VerificationSeverity = (hashVersion < 4 && !context.strict) ? "warning" : "error";
         validation.error.issues.forEach((e) => {
           const pathStr = e.path.join(".");
-          addError("ARTIFACT_SCHEMA_INVALID", `${pathStr}: ${e.message}`, pathStr);
+          if (zodSeverity === "warning") {
+            result.issues.push({
+              code: "ARTIFACT_SCHEMA_INVALID" as CorruptionCode,
+              severity: zodSeverity,
+              message: `${pathStr}: ${e.message}`,
+              ...(pathStr ? { path: pathStr } : {})
+            });
+          } else {
+            addError("ARTIFACT_SCHEMA_INVALID", `${pathStr}: ${e.message}`, pathStr);
+          }
         });
       }
     } else {
@@ -238,9 +265,10 @@ export function verifyArtifactIntegritySync(
  * Can take a raw object or a file path.
  */
 export async function verifyArtifactIntegrity(
-  artifactOrPath: unknown
+  artifactOrPath: unknown,
+  context: VerificationContext = {}
 ): Promise<ArtifactVerificationResult> {
-  return verifyArtifactIntegritySync(artifactOrPath);
+  return verifyArtifactIntegritySync(artifactOrPath, context);
 }
 
 function findFileByHash(hash: string, dirs: string[]): string | null {
@@ -370,7 +398,7 @@ export function verifyArtifactSemantics(
       } else {
         try {
           // 1. Verify policy integrity
-          const integrity = verifyArtifactIntegritySync(refObj);
+          const integrity = verifyArtifactIntegritySync(refObj, context);
           if (!integrity.ok) {
             addIssue({
               code: "REFERENCE_HASH_MISMATCH",
@@ -439,7 +467,7 @@ export function verifyArtifactSemantics(
         });
       } else {
         try {
-          const integrity = verifyArtifactIntegritySync(refObj);
+          const integrity = verifyArtifactIntegritySync(refObj, context);
           if (!integrity.ok) {
             addIssue({
               code: "REFERENCE_HASH_MISMATCH",
@@ -483,7 +511,7 @@ export function verifyArtifactSemantics(
         });
       } else {
         try {
-          const integrity = verifyArtifactIntegritySync(refObj);
+          const integrity = verifyArtifactIntegritySync(refObj, context);
           if (!integrity.ok) {
             addIssue({
               code: "REFERENCE_HASH_MISMATCH",
@@ -656,11 +684,11 @@ export function verifyArtifactSemantics(
     if (addr && typeof addr === "string") {
       let mismatch = false;
       if (networkIdStr === "mainnet") {
-        mismatch = !addr.startsWith("kaspa:") || addr.startsWith("kaspa:sim_");
+        mismatch = !addr.startsWith("kaspa:") || addr.startsWith("kaspasim:") || addr.startsWith("kaspa:sim_");
       } else if (networkIdStr.startsWith("testnet")) {
         mismatch = !addr.startsWith("kaspatest:");
       } else {
-        mismatch = !addr.startsWith("kaspa:sim_");
+        mismatch = !addr.startsWith("kaspasim:") && !addr.startsWith("kaspa:sim_");
       }
 
       if (mismatch) {

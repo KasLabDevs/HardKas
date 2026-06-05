@@ -8,15 +8,15 @@ describe("Phase 6A: Network Fuzzing", () => {
     const sdk = await Hardkas.open({ network: "simnet", autoBootstrap: true });
     const original = {
       schema: "hardkas.networkProfile.v1",
-      hardkasVersion: "0.8.5-alpha",
+      hardkasVersion: "0.8.6-alpha",
       version: "1.0.0-alpha",
       networkId: "simnet",
       layer: "L1",
       capabilities: { supports_rbf: false, gas_model: "utxo" },
       createdAt: new Date().toISOString()
     };
-    (original as any).hashVersion = 2;
-    (original as any).contentHash = calculateContentHash(original, 2);
+    (original as any).hashVersion = 4;
+    (original as any).contentHash = calculateContentHash(original, 4);
 
     let acceptedInvalid = 0;
     let stacktraces = 0;

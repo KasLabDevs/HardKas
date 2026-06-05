@@ -1,6 +1,6 @@
 import { systemRuntimeContext } from "@hardkas/core";
 import { describe, it, expect } from "vitest";
-import { verifyLineage } from "../src/index.js";
+import { verifyLineage, createLineageTransition } from "../src/index.js";
 
 describe("Artifact Lineage Hardening", () => {
   const rootHash = "a4bf569a1559b4d1832552b588e8c92c7d95081ab11feb08ad2de7bc0f451665";
@@ -156,5 +156,58 @@ describe("Artifact Lineage Hardening", () => {
     const result = verifyLineage(plan, receipt);
     expect(result.ok).toBe(false);
     expect(result.issues.some((i) => i.code === "INVALID_TRANSITION")).toBe(true);
+  });
+
+  it("verifyFullChain: should maintain continuous lineage from TxPlan to TxReceipt", () => {
+    const planHash = "0000000000000000000000000000000000000000000000000000000000000011";
+    const flowId = "0000000000000000000000000000000000000000000000000000000000000099";
+
+    const plan: any = {
+      schema: "hardkas.txPlan",
+      contentHash: planHash,
+      networkId: "simnet",
+      mode: "simulated",
+      lineage: {
+        artifactId: planHash,
+        lineageId: flowId,
+        rootArtifactId: flowId,
+        sequence: 0
+      }
+    };
+
+    // Simulate Tx Sign
+    const signedTx: any = {
+      schema: "hardkas.signedTx",
+      networkId: "simnet",
+      mode: "simulated",
+      lineage: createLineageTransition(plan, "hardkas.signedTx")
+    };
+    // Simulate hashing the signedTx
+    const signedTxHash = "0000000000000000000000000000000000000000000000000000000000000022";
+    signedTx.contentHash = signedTxHash;
+    signedTx.lineage.artifactId = signedTxHash;
+
+    const r1 = verifyLineage(signedTx, plan);
+    expect(r1.ok).toBe(true);
+    expect(signedTx.lineage.sequence).toBe(1);
+    expect(signedTx.lineage.parentArtifactId).toBe(planHash);
+
+    // Simulate Tx Send (Receipt)
+    const receipt: any = {
+      schema: "hardkas.txReceipt",
+      networkId: "simnet",
+      mode: "simulated",
+      lineage: createLineageTransition(signedTx, "hardkas.txReceipt")
+    };
+    // Simulate hashing the receipt
+    const receiptHash = "0000000000000000000000000000000000000000000000000000000000000033";
+    receipt.contentHash = receiptHash;
+    receipt.lineage.artifactId = receiptHash;
+
+    const r2 = verifyLineage(receipt, signedTx);
+    expect(r2.ok).toBe(true);
+    expect(receipt.lineage.sequence).toBe(2);
+    expect(receipt.lineage.parentArtifactId).toBe(signedTxHash);
+    expect(receipt.lineage.rootArtifactId).toBe(flowId);
   });
 });

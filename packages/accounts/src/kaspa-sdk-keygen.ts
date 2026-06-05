@@ -19,18 +19,19 @@ export class KaspaSdkKeyGenerator implements KaspaKeyGenerator {
       options?.sdkLoader ||
       (async () => {
         // @ts-ignore
-        return await import("kaspa");
+        return await import("kaspa-wasm");
       });
 
     this.sdkLoader = async () => {
       try {
         return await rawLoader();
       } catch (e) {
-        throw new Error(
-          "Kaspa cryptography adapter missing. Real account generation requires WASM execution.\n" +
-            "Run: npm install @kaspa/wallet-wasm\n" +
-            "Use 'hardkas accounts real import' to add accounts manually for now."
+        const err = new Error(
+          "WALLET_BACKEND_UNAVAILABLE: Kaspa cryptography adapter missing. Real account generation requires WASM execution.\n" +
+            "Use 'hardkas accounts real import' to add a test fixture manually for now."
         );
+        (err as any).code = "WALLET_BACKEND_UNAVAILABLE";
+        throw err;
       }
     };
   }
@@ -43,11 +44,14 @@ export class KaspaSdkKeyGenerator implements KaspaKeyGenerator {
 
     try {
       if (typeof sdk.PrivateKey === "function") {
-        const privKey = new sdk.PrivateKey();
-        const pubKey = privKey.toPublicKey();
-        const address = pubKey.toAddress(network).toString();
-        const privateKeyStr = privKey.toString();
-        const publicKeyStr = pubKey.toString();
+        const crypto = await import("node:crypto");
+        const randomBytes = crypto.randomBytes(32);
+        const hex = randomBytes.toString("hex");
+        const privKey = new sdk.PrivateKey(hex);
+        const kp = privKey.toKeypair();
+        const address = kp.toAddress(network).toString();
+        const privateKeyStr = kp.privateKey;
+        const publicKeyStr = kp.publicKey;
 
         return {
           address,

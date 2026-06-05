@@ -83,7 +83,7 @@ export interface KaspaRpcClient {
   healthCheck(): Promise<KaspaRpcHealth>;
   getBalanceByAddress(address: string): Promise<KaspaAddressBalance>;
   getUtxosByAddress(address: string): Promise<KaspaRpcUtxo[]>;
-  submitTransaction(rawTransaction: string): Promise<KaspaSubmitTransactionResult>;
+  submitTransaction(rawTransaction: unknown): Promise<KaspaSubmitTransactionResult>;
   getMempoolEntry(txId: string): Promise<MempoolEntry | null>;
   getTransaction(txId: string): Promise<unknown | null>;
   getBlockDagInfo(): Promise<BlockDagInfo>;
@@ -102,35 +102,50 @@ export class JsonWrpcKaspaClient implements KaspaRpcClient {
     this.timeoutMs = options.timeoutMs ?? 10000;
   }
 
+  private rpcFlavor: "legacy" | "wrpc" | null = null;
+  private preflightPromise: Promise<void> | null = null;
+
+  private async detectFlavor(): Promise<void> {
+    if (this.rpcFlavor) return;
+    if (this.preflightPromise) return this.preflightPromise;
+
+    this.preflightPromise = (async () => {
+      try {
+        const ws = await this.connect();
+        // Send getServerInfo first because wrpc accepts it, and legacy returns Method Not Found.
+        // If we sent getServerInfoRequest first, wrpc would close the connection.
+        const res = await this.requestRaw("getServerInfo", {});
+        this.rpcFlavor = "wrpc";
+      } catch (e: any) {
+        if (e.message && e.message.includes("Method not found")) {
+          this.rpcFlavor = "legacy";
+        } else {
+          // If connection closed or timed out, default to wrpc and let it fail naturally later
+          this.rpcFlavor = "wrpc";
+        }
+      }
+    })();
+    return this.preflightPromise;
+  }
+
+  private async callMethod(wrpcName: string, legacyName: string, params: any = {}): Promise<unknown> {
+    await this.detectFlavor();
+    const method = this.rpcFlavor === "legacy" ? legacyName : wrpcName;
+    return this.requestRaw(method, params);
+  }
+
   async getInfo(): Promise<KaspaNodeInfo> {
-    const response = await this.safeRequest([
-      "getInfo",
-      "getInfoRequest",
-      "GetInfo",
-      "get_info"
-    ]);
+    const response = await this.callMethod("getInfo", "getInfoRequest");
     const info = mapKaspaNodeInfo(response);
 
-    // Try to supplement with DAG info if virtualDaaScore is missing
     if (info.virtualDaaScore === undefined) {
       try {
-        const dagResponse = await this.safeRequest([
-          "getBlockDagInfo",
-          "getBlockDagInfoRequest",
-          "GetBlockDagInfo",
-          "get_block_dag_info"
-        ]);
-        const dagData =
-          (dagResponse as Record<string, unknown>)?.params ||
-          (dagResponse as Record<string, unknown>);
+        const dagResponse = await this.callMethod("getBlockDagInfo", "getBlockDagInfoRequest");
+        const dagData = (dagResponse as any)?.params || dagResponse;
         if (dagData && typeof dagData === "object" && "virtualDaaScore" in dagData) {
-          info.virtualDaaScore = BigInt(
-            (dagData as Record<string, unknown>).virtualDaaScore as string | number
-          );
+          info.virtualDaaScore = BigInt((dagData as any).virtualDaaScore);
         }
-      } catch (e) {
-        // Ignore errors supplementing info
-      }
+      } catch (e) {}
     }
     return info;
   }
@@ -155,58 +170,73 @@ export class JsonWrpcKaspaClient implements KaspaRpcClient {
   }
 
   async getBalanceByAddress(address: string): Promise<KaspaAddressBalance> {
-    const response = await this.safeRequest(
-      [
-        "getBalancesByAddresses",
-        "getBalancesByAddressesRequest",
-        "getBalanceByAddressRequest",
-        "GetBalancesByAddresses",
-        "get_balances_by_addresses",
-        "GetBalanceByAddress",
-        "getBalanceByAddress",
-        "get_balance_by_address"
-      ],
-      { addresses: [address], address }
-    );
+    await this.detectFlavor();
+    // For wrpc, we must use getBalancesByAddresses with { addresses: [address] }
+    // For legacy, getBalanceByAddressRequest with { address } works
+    let response;
+    if (this.rpcFlavor === "legacy") {
+      response = await this.callMethod("getBalanceByAddress", "getBalanceByAddressRequest", { address });
+    } else {
+      response = await this.callMethod("getBalancesByAddresses", "getBalancesByAddressesRequest", { addresses: [address] });
+    }
     return mapKaspaAddressBalance(response, address);
   }
 
   async getUtxosByAddress(address: string): Promise<KaspaRpcUtxo[]> {
-    const response = await this.safeRequest(
-      [
-        "getUtxosByAddresses",
-        "getUtxosByAddressesRequest",
-        "getUtxosByAddressRequest",
-        "GetUtxosByAddresses",
-        "get_utxos_by_addresses",
-        "GetUtxosByAddress",
-        "getUtxosByAddress",
-        "get_utxos_by_address"
-      ],
-      { addresses: [address], address }
-    );
+    const response = await this.callMethod("getUtxosByAddresses", "getUtxosByAddressesRequest", { addresses: [address] });
     return mapKaspaRpcUtxos(response, address);
   }
 
-  async submitTransaction(rawTransaction: string): Promise<KaspaSubmitTransactionResult> {
-    const response = await this.safeRequest(
-      [
-        "submitTransaction",
-        "submitTransactionRequest",
-        "SubmitTransaction",
-        "submit_transaction"
-      ],
-      { transaction: rawTransaction, transactionHex: rawTransaction, rawTransaction }
-    );
+  async submitTransaction(rawTransaction: unknown): Promise<KaspaSubmitTransactionResult> {
+    let txObj = rawTransaction;
+    try {
+      while (typeof txObj === "string" && txObj.startsWith("{")) {
+        const parsed = JSON.parse(txObj);
+        if (parsed && typeof parsed === "object") {
+          if ("tx" in parsed) txObj = parsed.tx;
+          else if ("inner" in parsed) txObj = parsed.inner;
+          else txObj = parsed;
+        } else {
+          txObj = parsed;
+        }
+      }
+      
+      // One final check for POJO nested inner/tx in case it wasn't a string at a nested level
+      while (txObj && typeof txObj === "object" && !Array.isArray(txObj) && ("tx" in txObj || "inner" in txObj)) {
+         if ("tx" in txObj) txObj = (txObj as any).tx;
+         else if ("inner" in txObj) txObj = (txObj as any).inner;
+      }
+      
+      // Fix types for wRPC (it expects numbers for amounts/values)
+      const txAny = txObj as any;
+      if (txAny && typeof txAny === "object" && txAny.outputs && Array.isArray(txAny.outputs)) {
+        txAny.outputs.forEach((output: any) => {
+           if (typeof output.amount === "string") {
+              output.amount = Number(output.amount);
+           }
+           if (typeof output.value === "string") {
+              output.value = Number(output.value);
+           }
+        });
+      }
+      if (txAny && typeof txAny === "object" && txAny.inputs && Array.isArray(txAny.inputs)) {
+        txAny.inputs.forEach((input: any) => {
+           if (typeof input.sequence === "string") input.sequence = Number(input.sequence);
+           if (typeof input.sigOpCount === "string") input.sigOpCount = Number(input.sigOpCount);
+        });
+      }
+    } catch (e) {
+      // Ignored
+    }
+
+    // Both flavors accept the transaction wrapped in an object
+    const response = await this.callMethod("submitTransaction", "submitTransactionRequest", { transaction: txObj, allowOrphan: false });
     return mapKaspaSubmitTransactionResult(response);
   }
 
   async getMempoolEntry(txId: string): Promise<MempoolEntry | null> {
     try {
-      const response = await this.safeRequest(
-        ["getMempoolEntryRequest", "getMempoolEntry"],
-        { txId, transactionId: txId }
-      );
+      const response = await this.callMethod("getMempoolEntry", "getMempoolEntryRequest", { transactionId: txId, includeOrphanPool: true, filterTransactionPool: false });
       if (!response) return null;
       const resObj = response as Record<string, unknown>;
       return {
@@ -220,11 +250,7 @@ export class JsonWrpcKaspaClient implements KaspaRpcClient {
 
   async getTransaction(txId: string): Promise<unknown | null> {
     try {
-      const response = await this.safeRequest(
-        ["getTransactionRequest", "getTransaction"],
-        { txId, transactionId: txId }
-      );
-      return response;
+      return await this.callMethod("getTransaction", "getTransactionRequest", { transactionId: txId });
     } catch (e) {
       return null;
     }
@@ -259,46 +285,7 @@ export class JsonWrpcKaspaClient implements KaspaRpcClient {
     }
   }
 
-  private async safeRequest(methods: string[], params: unknown = {}): Promise<unknown> {
-    let lastError: any = null;
-    for (const method of methods) {
-      try {
-        let actualParams: any = params;
-        const lowerMethod = method.toLowerCase();
-        const pObj = params as Record<string, unknown>;
-        // Strict mapping based on method name
-        if (lowerMethod.includes("addresses") || lowerMethod.endsWith("s")) {
-          if (pObj.address && !pObj.addresses) {
-            actualParams = { addresses: [pObj.address] };
-          } else if (pObj.addresses) {
-            actualParams = { addresses: pObj.addresses };
-          }
-        } else if (pObj.addresses && !pObj.address) {
-          actualParams = { address: (pObj.addresses as unknown[])[0] };
-        } else if (pObj.address) {
-          actualParams = { address: pObj.address };
-        }
-
-        // Try object params first
-        try {
-          return await this.request(method, actualParams);
-        } catch (e: any) {
-          if (e.message?.includes("deserialization")) {
-            // Try array-based params as fallback for deserialization errors
-            const arrayParams = Object.values(actualParams);
-            return await this.request(method, arrayParams);
-          }
-          throw e;
-        }
-      } catch (error) {
-        lastError = error;
-        continue;
-      }
-    }
-    throw lastError ?? new Error(`Methods failed: ${methods.join(", ")}`);
-  }
-
-  private async request(method: string, params: unknown = {}): Promise<unknown> {
+  private async requestRaw(method: string, params: unknown = {}): Promise<unknown> {
     const ws = await this.connect();
     const id = this.requestId++;
     const payload = JSON.stringify({
@@ -517,7 +504,11 @@ export function mapKaspaSubmitTransactionResult(
     accepted:
       result.accepted !== undefined
         ? result.accepted
-        : result.isAccepted || result.success,
+        : result.isAccepted !== undefined
+          ? result.isAccepted
+          : result.success !== undefined
+            ? result.success
+            : !!(result.transactionId || result.transaction_id || result.txId || result.tx_id),
     raw: result
   };
 }
@@ -560,7 +551,7 @@ export class MockKaspaRpcClient implements KaspaRpcClient {
     this.utxosByAddress.set(address, utxos);
   }
 
-  async submitTransaction(rawTransaction: string): Promise<KaspaSubmitTransactionResult> {
+  async submitTransaction(rawTransaction: unknown): Promise<KaspaSubmitTransactionResult> {
     return {
       transactionId: "mock-txid",
       accepted: true,

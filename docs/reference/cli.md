@@ -49,8 +49,9 @@ hardkas accounts balance [options] <identifier>
 
 | Flag | Description | Default |
 | :--- | :--- | :--- |
-| `--network <net>` | Specify target network (mainnet, testnet-10, simnet) |  |
-| `--url <url>` | Custom RPC URL (ws://...) |  |
+| `--network <name>` | Kaspa network name | simnet |
+| `--provider <type>` | Provider mode (auto, rpc, simulated) | auto |
+| `--url <url>` | RPC URL (optional override) |  |
 | `--local` | Query local query-store instead of remote RPC (for simulated networks) | false |
 | `--json` | Output as JSON | false |
 
@@ -181,7 +182,7 @@ hardkas accounts real generate [options]
 | `--count <number>` | Number of accounts to generate | 1 |
 | `--network <network>` | Kaspa network (simnet, testnet-10, mainnet) | simnet |
 | `--password-stdin` | Read keystore password from stdin | false |
-| `--password-env <env>` | Read keystore password from environment variable |  |
+| `--password-env <env>` | Read password from environment variable |  |
 | `--unsafe-plaintext` | Generate accounts in plaintext (legacy/discouraged) | false |
 | `--yes` | Skip confirmation for unsafe operations | false |
 | `--wait-lock` | Wait for workspace lock if held | false |
@@ -216,6 +217,7 @@ hardkas accounts real import [options]
 | `--password-stdin` | Read keystore password from stdin (safe) | false |
 | `--password-env <env>` | Read keystore password from environment variable (safe) |  |
 | `--unsafe-plaintext` | Store private key in plaintext (legacy/discouraged) | false |
+| `--fixture <name>` | Import deterministic fixture test account |  |
 | `--yes` | Skip confirmation for unsafe operations | false |
 | `--wait-lock` | Wait for workspace lock if held | false |
 | `--lock-timeout <ms>` | Lock wait timeout in ms | 30000 |
@@ -1493,7 +1495,7 @@ Perform a full system diagnostic and health report stable
 ### Usage
 
 ```bash
-hardkas doctor [options]
+hardkas doctor [options] [module]
 ```
 
 ### Options
@@ -1506,7 +1508,9 @@ hardkas doctor [options]
 
 ### Arguments
 
-No arguments.
+| Argument | Description |
+| :--- | :--- |
+| `module` |  |
 
 ---
 
@@ -4361,6 +4365,7 @@ No arguments.
 ### Subcommands
 
 - [hardkas tx batch](#hardkas-tx-batch)
+- [hardkas tx compare](#hardkas-tx-compare)
 - [hardkas tx plan](#hardkas-tx-plan)
 - [hardkas tx profile](#hardkas-tx-profile)
 - [hardkas tx receipt](#hardkas-tx-receipt)
@@ -4369,6 +4374,7 @@ No arguments.
 - [hardkas tx status](#hardkas-tx-status)
 - [hardkas tx trace](#hardkas-tx-trace)
 - [hardkas tx verify](#hardkas-tx-verify)
+- [hardkas tx wait](#hardkas-tx-wait)
 
 ---
 
@@ -4397,6 +4403,29 @@ No arguments.
 
 ---
 
+## hardkas tx compare
+
+Compare simulated vs real receipts for fidelity stable
+
+### Usage
+
+```bash
+hardkas tx compare [options] <simulatedPath> <realPath>
+```
+
+### Options
+
+No options.
+
+### Arguments
+
+| Argument | Description |
+| :--- | :--- |
+| `simulatedPath` |  |
+| `realPath` |  |
+
+---
+
 ## hardkas tx plan
 
 Build a transaction plan artifact stable
@@ -4416,6 +4445,7 @@ hardkas tx plan [options]
 | `--amount <kas>` | Amount in KAS |  |
 | `--network <name>` | Kaspa network name | simnet |
 | `--fee-rate <sompiPerMass>` | Fee rate in sompi per mass | 1 |
+| `--provider <type>` | Provider mode (auto, rpc, simulated) | auto |
 | `--url <url>` | RPC URL (optional override) |  |
 | `--out <path>` | Save plan as artifact JSON |  |
 | `--save <path>` | Alias for --out (Save plan as artifact JSON) |  |
@@ -4495,6 +4525,7 @@ hardkas tx send [options] [signedPath]
 | `--to <address>` | Recipient (shortcut mode) |  |
 | `--amount <kas>` | Amount in KAS (shortcut mode) |  |
 | `--network <name>` | Network name | simnet |
+| `--provider <type>` | Provider mode (auto, rpc, simulated) | auto |
 | `--url <url>` | RPC URL (optional override) |  |
 | `--yes` | Confirm broadcast | false |
 | `--wait-lock` | Wait for workspace lock if held | false |
@@ -4526,6 +4557,7 @@ hardkas tx sign [options] <planPath>
 | :--- | :--- | :--- |
 | `--account <name>` | Account name to sign with |  |
 | `--out <path>` | Save signed artifact JSON |  |
+| `--fixture` | Use fixture signer for Docker testing on simnet | false |
 | `--allow-mainnet-signing` | Allow signing for mainnet | false |
 | `--threshold <number>` | Multisig threshold |  |
 | `--required-signers <list>` | Comma-separated list of required signers |  |
@@ -4609,6 +4641,33 @@ hardkas tx verify [options] <path>
 | Argument | Description |
 | :--- | :--- |
 | `path` |  |
+
+---
+
+## hardkas tx wait
+
+Wait for transaction to be confirmed stable
+
+### Usage
+
+```bash
+hardkas tx wait [options] <txId>
+```
+
+### Options
+
+| Flag | Description | Default |
+| :--- | :--- | :--- |
+| `--timeout <seconds>` | Timeout in seconds | 60 |
+| `--url <url>` | Override RPC URL |  |
+| `-n, --network <network>` | Network to use |  |
+| `--address <address>` | Recipient address to verify UTXO maturity |  |
+
+### Arguments
+
+| Argument | Description |
+| :--- | :--- |
+| `txId` |  |
 
 ---
 

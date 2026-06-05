@@ -3,6 +3,8 @@ import {
   LoadedHardkasConfig as LoadedConfig,
   defineHardkasConfig
 } from "@hardkas/config";
+import { resolveHardkasAccount, HardkasAccount } from "@hardkas/accounts";
+import { ExternalHardkasSigner } from "@hardkas/artifacts";
 import { JsonWrpcKaspaClient, KaspaRpcClient } from "@hardkas/kaspa-rpc";
 import { NetworkId, HardkasError } from "@hardkas/core";
 import { HardkasAccounts } from "./accounts.js";
@@ -59,6 +61,7 @@ export interface HardkasOptions {
   mode?: "developer" | "agent";
   network?: string;
   autoBootstrap?: boolean;
+  signer?: ExternalHardkasSigner;
   logger?: {
     info: (msg: string) => void;
     warn: (msg: string) => void;
@@ -91,6 +94,7 @@ export class Hardkas {
   public readonly replay: HardkasReplay;
   public readonly lineage: HardkasLineage;
   public readonly workflow: HardkasWorkflow;
+  public readonly signer?: ExternalHardkasSigner | undefined;
 
   public readonly mode: "developer" | "agent";
   public readonly policy: Required<NonNullable<HardkasOptions["policy"]>>;
@@ -125,6 +129,7 @@ export class Hardkas {
     this.tx = new HardkasTx(this);
     this.l2 = new HardkasL2();
     this.query = new HardkasQuery(this);
+    this.signer = options?.signer;
     this.localnet = new HardkasLocalnet(this);
     this.replay = new HardkasReplay(this);
     this.lineage = new HardkasLineage(this);

@@ -13,6 +13,7 @@ export interface TxSignRunnerInput {
   threshold?: number;
   requiredSigners?: string[];
   workspaceRoot?: string;
+  signer?: any;
 }
 
 /**
@@ -27,7 +28,8 @@ export async function runTxSign(input: TxSignRunnerInput): Promise<SignedTxArtif
     append,
     threshold,
     requiredSigners,
-    workspaceRoot
+    workspaceRoot,
+    signer
   } = input;
 
   const targetAccountName =
@@ -62,7 +64,7 @@ export async function runTxSign(input: TxSignRunnerInput): Promise<SignedTxArtif
   }
 
   // Open the SDK to perform transaction signing & event emission & SQLite indexing
-  const sdk = await Hardkas.open({ cwd: workspaceRoot || process.cwd() });
+  const sdk = await Hardkas.open({ cwd: workspaceRoot || process.cwd(), signer });
 
   const signedArtifact = await sdk.tx.sign(planArtifact as any, accountName, {
     ...(append !== undefined ? { append } : {}),

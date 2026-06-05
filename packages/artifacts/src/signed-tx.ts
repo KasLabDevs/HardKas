@@ -7,6 +7,7 @@ import {
   DraftArtifact
 } from "./schemas.js";
 import { calculateContentHash, CURRENT_HASH_VERSION } from "./canonical.js";
+import { createLineageTransition } from "./lineage.js";
 import { HARDKAS_VERSION } from "./constants.js";
 import type { RuntimeContext } from "@hardkas/core";
 
@@ -37,13 +38,7 @@ export function createSimulatedSignedTxArtifact(
       format: "simulated",
       payload
     },
-    lineage: {
-      artifactId: "",
-      lineageId: plan.lineage?.lineageId || plan.contentHash || "0".repeat(64),
-      parentArtifactId: plan.contentHash || "0".repeat(64),
-      rootArtifactId: plan.lineage?.rootArtifactId || plan.contentHash || "0".repeat(64),
-      sequence: (plan.lineage?.sequence || 0) + 1
-    },
+    lineage: createLineageTransition(plan, "hardkas.signedTx"),
     ...(plan.workflowId ? { workflowId: plan.workflowId } : {})
   };
 
@@ -95,23 +90,17 @@ export function createSimulatedTxReceipt(
     preStateHash: extra?.preStateHash,
     postStateHash: extra?.postStateHash,
     dagContext: extra?.dagContext,
-    lineage: {
-      artifactId: "",
-      lineageId: plan.lineage?.lineageId || plan.contentHash || "0".repeat(64),
-      parentArtifactId: "0".repeat(64), // Will set to contentHash of signedTx later
-      rootArtifactId: plan.lineage?.rootArtifactId || plan.contentHash || "0".repeat(64),
-      sequence: (plan.lineage?.sequence || 1) + 1
-    },
+    lineage: createLineageTransition(plan, "hardkas.txReceipt"),
     ...(plan.workflowId ? { workflowId: plan.workflowId } : {})
   };
 
+  if (artifact.lineage) {
+    artifact.lineage.parentArtifactId = extra?.preStateHash || txId.replace("simulated-", "").replace("-tx", "").padEnd(64, '0').slice(0, 64);
+  }
   const hash = calculateContentHash(artifact, CURRENT_HASH_VERSION);
   artifact.contentHash = hash;
   if (artifact.lineage) {
     artifact.lineage.artifactId = hash; // receipt uses contentHash as artifactId
-    artifact.lineage.parentArtifactId = extra?.preStateHash || txId.replace("simulated-", "").replace("-tx", "").padEnd(64, '0').slice(0, 64);
-    // Actually, in simulate(), we should pass the signedTx content hash instead of preStateHash!
-    // But since this is a simnet function, we can just use the hash!
   }
 
   return artifact as TxReceipt;

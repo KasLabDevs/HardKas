@@ -11,6 +11,7 @@ export interface TxPlanRunnerInput {
   amount: string;
   networkId: string;
   feeRate: string;
+  provider: string;
   config: HardkasConfig;
   url?: string;
   workspaceRoot?: string;
@@ -22,17 +23,28 @@ export interface TxPlanRunnerInput {
 export async function runTxPlan(input: TxPlanRunnerInput): Promise<TxPlanArtifact> {
   const { from, to, amount, networkId, feeRate, config, url, workspaceRoot } = input;
 
-  const fromAddress = resolveHardkasAccountAddress(from, config);
-  const toAddress = resolveHardkasAccountAddress(to, config);
+  const fromAddress = await resolveHardkasAccountAddress(from, config);
+  const toAddress = await resolveHardkasAccountAddress(to, config);
   const amountSompi = parseKasToSompi(amount);
   const feeRateSompiPerMass = BigInt(feeRate);
 
-  const { target, name } = resolveNetworkTarget({ config, network: networkId });
-  const resolvedNetwork = name;
+  const networkDef = config.networks?.[networkId];
+  const configNetworkKind = typeof networkDef === "object" ? networkDef?.kind : undefined;
+
+  const { resolveProvider } = await import("@hardkas/config");
+  const providerConfig = resolveProvider({
+    network: networkId,
+    provider: input.provider,
+    url,
+    configNetworkKind
+  });
+
+  const resolvedNetwork = providerConfig.network;
+  let backend = providerConfig.mode;
 
   const isSimulatedSender =
     fromAddress.startsWith("kaspa:sim_") || fromAddress.startsWith("kaspasim:");
-  const isSimulatedTarget = target.kind === "simulated" || resolvedNetwork === "simnet";
+  const isSimulatedTarget = backend === "simulated" || resolvedNetwork === "simnet";
 
   if (isSimulatedSender && !isSimulatedTarget) {
     throw new Error(
@@ -40,12 +52,14 @@ export async function runTxPlan(input: TxPlanRunnerInput): Promise<TxPlanArtifac
     );
   }
 
-  const backend: "simulated" | "rpc" =
-    isSimulatedTarget || isSimulatedSender ? "simulated" : "rpc";
+  // Force simulated backend for simnet or simulated senders (legacy behavior)
+  if (isSimulatedTarget || isSimulatedSender) {
+    backend = "simulated";
+  }
 
   let availableUtxos: any[] = [];
   let mode: "simulated" | "kaspa-node" | "kaspa-rpc" = "simulated";
-  let rpcUrl: string | undefined;
+  let rpcUrl: string | undefined = providerConfig.endpoint;
 
   if (backend === "simulated") {
     const { loadOrCreateLocalnetState, getSpendableUtxos } =
@@ -74,16 +88,9 @@ export async function runTxPlan(input: TxPlanRunnerInput): Promise<TxPlanArtifac
       const { JsonWrpcKaspaClient } = await import("@hardkas/kaspa-rpc");
       const { resolveRuntimeConfig } = await import("@hardkas/node-orchestrator");
 
-      const targetObj = target as unknown as Record<string, unknown>;
-      rpcUrl =
-        url || (typeof targetObj.rpcUrl === "string" ? targetObj.rpcUrl : undefined);
-      if (!rpcUrl && target.kind === "kaspa-node") {
+      if (!rpcUrl) {
         rpcUrl = resolveRuntimeConfig({
-          network:
-            typeof targetObj.network === "string"
-              ? (targetObj.network as "mainnet" | "testnet-10" | "simnet")
-              : "simnet",
-          ...(target.dataDir ? { dataDir: target.dataDir } : {})
+          network: resolvedNetwork as "mainnet" | "testnet-10" | "simnet"
         }).rpcUrl;
       }
 
@@ -99,15 +106,24 @@ export async function runTxPlan(input: TxPlanRunnerInput): Promise<TxPlanArtifac
         amountSompi: u.amountSompi,
         scriptPublicKey: u.scriptPublicKey || "unresolved"
       }));
-      mode = target.kind === "kaspa-node" ? "kaspa-node" : "kaspa-rpc";
+      mode = "kaspa-rpc";
     } catch (e: any) {
       const protocol = rpcUrl?.startsWith("ws") ? "WebSocket" : "JSON-RPC";
-      const { RpcConnectionError, classifyRpcError } = await import("../cli-errors.js");
+      const { RpcConnectionError, RpcSchemaError, classifyRpcError } = await import("../cli-errors.js");
+      const errCode = classifyRpcError(e);
+      if (errCode === "RPC_SCHEMA_ERROR") {
+        throw new RpcSchemaError({
+          endpoint: rpcUrl || "unknown",
+          method: "getUtxosByAddress",
+          suspectedCause: "Invalid Kaspa address format/checksum or incompatible node version",
+          rawError: e.message
+        });
+      }
       throw new RpcConnectionError({
         endpoint: rpcUrl || "unknown",
         network: resolvedNetwork,
         protocol,
-        errorCode: classifyRpcError(e),
+        errorCode: errCode,
         rawError: e.message
       });
     }

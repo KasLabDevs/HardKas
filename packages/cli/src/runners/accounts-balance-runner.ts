@@ -15,6 +15,7 @@ export interface AccountBalanceResult {
 export interface AccountsBalanceOptions {
   identifier: string; // name or address
   network?: string;
+  provider?: string;
   url?: string;
   local?: boolean;
 }
@@ -44,8 +45,15 @@ export async function runAccountsBalance(
   }
 
   // 2. Setup RPC Client or Local Backend
-  const network = options.network ?? loadedConfig.config.defaultNetwork ?? "simnet";
-  const isSimulated = options.local || network === "simulated" || network === "simnet";
+  const { resolveProvider } = await import("@hardkas/config");
+  const provider = resolveProvider({
+    network: options.network ?? loadedConfig.config.defaultNetwork ?? "simnet",
+    provider: options.provider,
+    url: options.url
+  });
+
+  const network = provider.network;
+  const isSimulated = options.local || provider.mode === "simulated";
 
   if (isSimulated) {
     const { loadOrCreateLocalnetState, getSpendableUtxos } =
@@ -62,7 +70,7 @@ export async function runAccountsBalance(
       network: "simulated"
     };
   } else {
-    let rpcUrl = options.url;
+    let rpcUrl = provider.endpoint;
     if (!rpcUrl) {
       rpcUrl = resolveRuntimeConfig({
         network: network as "mainnet" | "testnet-10" | "simnet"

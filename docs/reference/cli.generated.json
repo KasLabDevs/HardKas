@@ -1,7 +1,7 @@
 {
   "schema": "hardkas.cliReference.v1",
   "generatedAt": "deterministic",
-  "totalCommands": 195,
+  "totalCommands": 197,
   "flatSurface": [
     "hardkas accounts",
     "hardkas accounts balance",
@@ -180,6 +180,7 @@
     "hardkas torture replay",
     "hardkas tx",
     "hardkas tx batch",
+    "hardkas tx compare",
     "hardkas tx plan",
     "hardkas tx profile",
     "hardkas tx receipt",
@@ -188,6 +189,7 @@
     "hardkas tx status",
     "hardkas tx trace",
     "hardkas tx verify",
+    "hardkas tx wait",
     "hardkas up",
     "hardkas verify",
     "hardkas verify-semantics",
@@ -223,15 +225,22 @@
           ],
           "options": [
             {
-              "flags": "--network <net>",
-              "description": "Specify target network (mainnet, testnet-10, simnet)",
-              "default": null,
+              "flags": "--network <name>",
+              "description": "Kaspa network name",
+              "default": "simnet",
+              "required": true,
+              "mandatory": false
+            },
+            {
+              "flags": "--provider <type>",
+              "description": "Provider mode (auto, rpc, simulated)",
+              "default": "auto",
               "required": true,
               "mandatory": false
             },
             {
               "flags": "--url <url>",
-              "description": "Custom RPC URL (ws://...)",
+              "description": "RPC URL (optional override)",
               "default": null,
               "required": true,
               "mandatory": false
@@ -378,7 +387,7 @@
                 },
                 {
                   "flags": "--password-env <env>",
-                  "description": "Read keystore password from environment variable",
+                  "description": "Read password from environment variable",
                   "default": null,
                   "required": true,
                   "mandatory": false
@@ -483,6 +492,13 @@
                   "description": "Store private key in plaintext (legacy/discouraged)",
                   "default": false,
                   "required": false,
+                  "mandatory": false
+                },
+                {
+                  "flags": "--fixture <name>",
+                  "description": "Import deterministic fixture test account",
+                  "default": null,
+                  "required": true,
                   "mandatory": false
                 },
                 {
@@ -1853,8 +1869,13 @@
       "name": "doctor",
       "aliases": [],
       "description": "Perform a full system diagnostic and health report stable",
-      "usage": "hardkas doctor [options]",
-      "arguments": [],
+      "usage": "hardkas doctor [options] [module]",
+      "arguments": [
+        {
+          "name": "module",
+          "description": ""
+        }
+      ],
       "options": [
         {
           "flags": "--json",
@@ -4809,6 +4830,25 @@
           "subcommands": []
         },
         {
+          "path": "hardkas tx compare",
+          "name": "compare",
+          "aliases": [],
+          "description": "Compare simulated vs real receipts for fidelity stable",
+          "usage": "hardkas tx compare [options] <simulatedPath> <realPath>",
+          "arguments": [
+            {
+              "name": "simulatedPath",
+              "description": ""
+            },
+            {
+              "name": "realPath",
+              "description": ""
+            }
+          ],
+          "options": [],
+          "subcommands": []
+        },
+        {
           "path": "hardkas tx plan",
           "name": "plan",
           "aliases": [],
@@ -4848,6 +4888,13 @@
               "flags": "--fee-rate <sompiPerMass>",
               "description": "Fee rate in sompi per mass",
               "default": "1",
+              "required": true,
+              "mandatory": false
+            },
+            {
+              "flags": "--provider <type>",
+              "description": "Provider mode (auto, rpc, simulated)",
+              "default": "auto",
               "required": true,
               "mandatory": false
             },
@@ -4984,6 +5031,13 @@
               "mandatory": false
             },
             {
+              "flags": "--provider <type>",
+              "description": "Provider mode (auto, rpc, simulated)",
+              "default": "auto",
+              "required": true,
+              "mandatory": false
+            },
+            {
               "flags": "--url <url>",
               "description": "RPC URL (optional override)",
               "default": null,
@@ -5053,6 +5107,13 @@
               "description": "Save signed artifact JSON",
               "default": null,
               "required": true,
+              "mandatory": false
+            },
+            {
+              "flags": "--fixture",
+              "description": "Use fixture signer for Docker testing on simnet",
+              "default": false,
+              "required": false,
               "mandatory": false
             },
             {
@@ -5163,6 +5224,50 @@
               "description": "Output as JSON",
               "default": false,
               "required": false,
+              "mandatory": false
+            }
+          ],
+          "subcommands": []
+        },
+        {
+          "path": "hardkas tx wait",
+          "name": "wait",
+          "aliases": [],
+          "description": "Wait for transaction to be confirmed stable",
+          "usage": "hardkas tx wait [options] <txId>",
+          "arguments": [
+            {
+              "name": "txId",
+              "description": ""
+            }
+          ],
+          "options": [
+            {
+              "flags": "--timeout <seconds>",
+              "description": "Timeout in seconds",
+              "default": "60",
+              "required": true,
+              "mandatory": false
+            },
+            {
+              "flags": "--url <url>",
+              "description": "Override RPC URL",
+              "default": null,
+              "required": true,
+              "mandatory": false
+            },
+            {
+              "flags": "-n, --network <network>",
+              "description": "Network to use",
+              "default": null,
+              "required": true,
+              "mandatory": false
+            },
+            {
+              "flags": "--address <address>",
+              "description": "Recipient address to verify UTXO maturity",
+              "default": null,
+              "required": true,
               "mandatory": false
             }
           ],

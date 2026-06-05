@@ -54,7 +54,11 @@ export function createTxPlanArtifact(options: CreateTxPlanArtifactOptions): TxPl
         transactionId: i.outpoint.transactionId,
         index: i.outpoint.index
       },
-      amountSompi: i.amountSompi.toString()
+      amountSompi: i.amountSompi.toString(),
+      address: i.address,
+      scriptPublicKey: i.scriptPublicKey,
+      ...(i.blockDaaScore !== undefined ? { blockDaaScore: i.blockDaaScore.toString() } : {}),
+      ...(i.isCoinbase !== undefined ? { isCoinbase: i.isCoinbase } : {})
     })),
     outputs: options.plan.outputs.map((o) => ({
       address: o.address,
@@ -83,19 +87,15 @@ export function createTxPlanArtifact(options: CreateTxPlanArtifactOptions): TxPl
   artifact.contentHash = hash;
   
   if (artifact.lineage) {
-    artifact.lineage.lineageId = artifact.contentHash;
-    artifact.lineage.artifactId = artifact.contentHash;
-    artifact.lineage.parentArtifactId = artifact.contentHash;
-    artifact.lineage.rootArtifactId = artifact.contentHash;
+    artifact.lineage.lineageId = hash;
+    artifact.lineage.parentArtifactId = hash;
+    artifact.lineage.rootArtifactId = hash;
     
     // Re-calculate hash since we mutated lineage properties!
     const finalHash = calculateContentHash(artifact, CURRENT_HASH_VERSION);
     artifact.planId = `plan-${finalHash.slice(0, 16)}`;
     artifact.contentHash = finalHash;
-    
     artifact.lineage.artifactId = finalHash;
-    artifact.lineage.parentArtifactId = finalHash;
-    artifact.lineage.rootArtifactId = finalHash;
   }
 
   return artifact as TxPlan;

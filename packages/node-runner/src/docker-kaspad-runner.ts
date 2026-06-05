@@ -122,9 +122,10 @@ export class DockerKaspadRunner {
       "--disable-upnp",
       "--utxoindex",
       ...(networkFlag ? [networkFlag] : []),
-      `--rpclisten=0.0.0.0:${this.options.ports.rpc}`,
-      `--rpclisten-borsh=0.0.0.0:${this.options.ports.borshRpc}`,
-      `--rpclisten-json=0.0.0.0:${this.options.ports.jsonRpc}`
+      `--rpclisten=0.0.0.0:${this.options.ports?.rpc || 16210}`,
+      `--rpclisten-borsh=0.0.0.0:${this.options.ports?.borshRpc || 17210}`,
+      `--rpclisten-json=0.0.0.0:${this.options.ports?.jsonRpc || 18210}`,
+      `--enable-unsynced-mining`
     ];
 
     await execa("docker", args);

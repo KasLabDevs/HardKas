@@ -79,6 +79,7 @@ export type RpcErrorCode =
   | "TIMEOUT"
   | "DNS_FAILURE"
   | "TLS_FAILURE"
+  | "RPC_SCHEMA_ERROR"
   | "UNKNOWN";
 
 export class RpcConnectionError extends HardkasCliError {
@@ -98,6 +99,28 @@ export class RpcConnectionError extends HardkasCliError {
       }
     });
     this.name = "RpcConnectionError";
+  }
+}
+
+export class RpcSchemaError extends HardkasCliError {
+  constructor(options: {
+    endpoint: string;
+    method: string;
+    suspectedCause: string;
+    payloadShape?: string;
+    rawError: string;
+  }) {
+    super("RPC_SCHEMA_ERROR", "The RPC node rejected the request payload schema.", {
+      suggestion: "Check for correct address formats, valid UTXOs, and compatibility with the node version.",
+      context: {
+        endpoint: options.endpoint,
+        method: options.method,
+        suspectedCause: options.suspectedCause,
+        ...(options.payloadShape ? { payloadShape: options.payloadShape } : {}),
+        rawError: options.rawError
+      }
+    });
+    this.name = "RpcSchemaError";
   }
 }
 
@@ -125,6 +148,8 @@ export function classifyRpcError(error: Error | string): RpcErrorCode {
     msg.includes("certificate")
   )
     return "TLS_FAILURE";
+  if (msg.includes("request deserialization error"))
+    return "RPC_SCHEMA_ERROR";
 
   return "UNKNOWN";
 }
@@ -138,6 +163,7 @@ export function humanReadableRpcError(code: RpcErrorCode): string {
     TIMEOUT: "Connection timed out",
     DNS_FAILURE: "DNS resolution failed",
     TLS_FAILURE: "TLS/SSL error",
+    RPC_SCHEMA_ERROR: "RPC Schema Validation Error",
     UNKNOWN: "Unknown connection error"
   };
   return labels[code];

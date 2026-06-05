@@ -69,14 +69,15 @@ describe("Phase 6B: Backward Compatibility (Vitest Layer 1)", () => {
     if (!receiptLineageOk.ok) console.log(receiptLineageOk.issues);
     expect(receiptLineageOk.ok).toBe(true);
 
-    // Verify new artifact links to receipt correctly
-    const newArtifactLineageOk = verifyLineage(migrated.artifact, receipt, { strict: true });
+    // Verify new artifact links directly to legacy correctly, NOT to receipt
+    const newArtifactLineageOk = verifyLineage(migrated.artifact, legacyArtifact, { strict: true });
     expect(newArtifactLineageOk.ok).toBe(true);
 
-    // Explicit check: oldHash -> migrationReceipt -> newHash
+    // Explicit check: oldHash -> migrationReceipt
+    // And oldHash -> newHash (receipt is a sidecar)
     expect(receipt.oldHash).toBe(legacyArtifact.contentHash);
     expect(receipt.newHash).toBe(migrated.artifact.contentHash);
     expect(receipt.lineage.parentArtifactId).toBe(legacyArtifact.contentHash);
-    expect((migrated.artifact.lineage as any).parentArtifactId).toBe(receipt.contentHash);
+    expect((migrated.artifact.lineage as any).parentArtifactId).toBe(legacyArtifact.contentHash);
   });
 });

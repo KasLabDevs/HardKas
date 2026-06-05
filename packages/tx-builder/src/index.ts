@@ -1,5 +1,6 @@
 export type Sompi = bigint;
 import { estimateTransactionMass } from "./mass.js";
+import { DUST_THRESHOLD_SOMPI } from "./verify.js";
 export * from "./mass.js";
 export * from "./verify.js";
 
@@ -101,7 +102,9 @@ export function buildPaymentPlan(request: TxBuildRequest): TxPlan {
 
     if (selectedAmount >= target + estimatedFeeSompi) {
       const changeAmount = selectedAmount - target - estimatedFeeSompi;
-      const hasActualChange = changeAmount > 0n;
+      // Sub-dust change is absorbed into the fee (matching rusty-kaspa wallet behavior).
+      // This prevents creating plans with dust change outputs that the node would reject.
+      const hasActualChange = changeAmount >= DUST_THRESHOLD_SOMPI;
 
       // Recalculate mass if no change output is actually needed
       let finalMass = estimatedMass;

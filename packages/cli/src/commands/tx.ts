@@ -49,6 +49,7 @@ export function registerTxCommands(program: Command) {
     .option("--amount <kas>", "Amount in KAS")
     .option("--network <name>", "Kaspa network name", "simnet")
     .option("--fee-rate <sompiPerMass>", "Fee rate in sompi per mass", "1")
+    .option("--provider <type>", "Provider mode (auto, rpc, simulated)", "auto")
     .option("--url <url>", "RPC URL (optional override)")
     .option("--out <path>", "Save plan as artifact JSON")
     .option("--save <path>", "Alias for --out (Save plan as artifact JSON)")
@@ -61,7 +62,8 @@ export function registerTxCommands(program: Command) {
         to?: string;
         amount?: string;
         network: string;
-        feeRate: string;
+        provider: string;
+        feeRate?: string;
         url?: string;
         out?: string;
         save?: string;
@@ -92,7 +94,8 @@ export function registerTxCommands(program: Command) {
                 to: options.to || "bob",
                 amount: options.amount || "1",
                 networkId: options.network,
-                feeRate: options.feeRate,
+                provider: options.provider,
+                feeRate: options.feeRate || "1",
                 config: loaded.config,
                 ...(options.url ? { url: options.url } : {})
               });
@@ -142,6 +145,7 @@ export function registerTxCommands(program: Command) {
     .description(`Sign a transaction plan artifact ${UI.maturity("stable")}`)
     .option("--account <name>", "Account name to sign with")
     .option("--out <path>", "Save signed artifact JSON")
+    .option("--fixture", "Use fixture signer for Docker testing on simnet", false)
     .option("--allow-mainnet-signing", "Allow signing for mainnet", false)
     .option("--threshold <number>", "Multisig threshold")
     .option("--required-signers <list>", "Comma-separated list of required signers")
@@ -155,6 +159,7 @@ export function registerTxCommands(program: Command) {
         options: {
           account?: string;
           out?: string;
+          fixture: boolean;
           allowMainnetSigning: boolean;
           threshold?: string;
           requiredSigners?: string;
@@ -195,10 +200,18 @@ export function registerTxCommands(program: Command) {
               }
               const loaded = await loadHardkasConfig();
 
+              let signer;
+              if (options.fixture) {
+                const { HardkasFixtureSigner } = await import("@hardkas/accounts");
+                const networkId = (planArtifact as any).networkId || "simnet";
+                signer = new HardkasFixtureSigner(networkId);
+              }
+
               const signedArtifact = await runTxSign({
                 planArtifact: planArtifact as any,
                 ...(options.account ? { accountName: options.account } : {}),
                 config: loaded.config,
+                signer,
                 allowMainnetSigning: options.allowMainnetSigning,
                 append: options.append,
                 ...(options.threshold !== undefined
@@ -299,6 +312,7 @@ export function registerTxCommands(program: Command) {
     .option("--to <address>", "Recipient (shortcut mode)")
     .option("--amount <kas>", "Amount in KAS (shortcut mode)")
     .option("--network <name>", "Network name", "simnet")
+    .option("--provider <type>", "Provider mode (auto, rpc, simulated)", "auto")
     .option("--url <url>", "RPC URL (optional override)")
     .option("--yes", "Confirm broadcast", false)
     .option("--wait-lock", "Wait for workspace lock if held", false)
@@ -313,6 +327,7 @@ export function registerTxCommands(program: Command) {
           to?: string;
           amount?: string;
           network: string;
+          provider: string;
           url?: string;
           yes: boolean;
           waitLock: boolean;
@@ -354,6 +369,7 @@ export function registerTxCommands(program: Command) {
                 const result = await runTxSend({
                   signedArtifact: signedArtifact as any,
                   network: options.network,
+                  provider: options.provider,
                   config: loaded.config,
                   ...(options.url ? { url: options.url } : {})
                 });
@@ -433,6 +449,7 @@ export function registerTxCommands(program: Command) {
                   to: options.to!,
                   send: true,
                   feeRate: "1", // Default fee rate for shortcut
+                  provider: options.provider,
                   config: loaded.config,
                   ...(options.url ? { url: options.url } : {})
                 });
@@ -466,7 +483,7 @@ export function registerTxCommands(program: Command) {
                   const { UI } = await import("../ui.js");
                   const sendResult = result.steps.send;
                   const isSimulated =
-                    options.network === "simulated" || options.network === "simnet";
+                    sendResult?.artifact?.rpcUrl === "simulated://local" || options.network === "simulated";
 
                   UI.causality(
                     isSimulated
@@ -527,6 +544,31 @@ export function registerTxCommands(program: Command) {
       }
     });
 
+  tx.command("wait <txId>")
+    .description(`Wait for transaction to be confirmed ${UI.maturity("stable")}`)
+    .option("--timeout <seconds>", "Timeout in seconds", "60")
+    .option("--url <url>", "Override RPC URL")
+    .option("-n, --network <network>", "Network to use")
+    .option("--address <address>", "Recipient address to verify UTXO maturity")
+    .action(async (txId, options) => {
+      try {
+        const { loadHardkasConfig } = await import("@hardkas/config");
+        const config = await loadHardkasConfig();
+        const { runTxWait } = await import("../runners/tx-wait-runner.js");
+        await runTxWait({ 
+          txId, 
+          config: config.config,
+          url: options.url,
+          network: options.network,
+          timeoutMs: parseInt(options.timeout) * 1000,
+          address: options.address
+        });
+      } catch (e) {
+        handleError(e);
+        process.exitCode = 1;
+      }
+    });
+
   tx.command("verify <path>")
     .description(
       `Perform deep semantic verification of a transaction plan ${UI.maturity("preview")}`
@@ -550,5 +592,17 @@ export function registerTxCommands(program: Command) {
       const { UI } = await import("../ui.js");
       UI.error("Tracing is temporarily disabled while the query API stabilizes.");
       process.exitCode = 1;
+    });
+
+  tx.command("compare <simulatedPath> <realPath>")
+    .description(`Compare simulated vs real receipts for fidelity ${UI.maturity("stable")}`)
+    .action(async (simulatedPath, realPath) => {
+      try {
+        const { runTxCompare } = await import("../runners/tx-compare-runner.js");
+        await runTxCompare({ simulatedPath, realPath });
+      } catch (e) {
+        handleError(e);
+        process.exitCode = 1;
+      }
     });
 }
