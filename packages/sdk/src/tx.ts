@@ -228,7 +228,7 @@ export class HardkasTx {
     (basePlan as any).contentHash = newHash;
     if ((basePlan as any).lineage) {
         (basePlan as any).lineage.lineageId = newHash;
-        (basePlan as any).lineage.parentArtifactId = newHash;
+        (basePlan as any).lineage.parentArtifactId = ""; // Root plans have no parent
         (basePlan as any).lineage.rootArtifactId = newHash;
         const finalHash = calculateContentHash(basePlan, CURRENT_HASH_VERSION);
         (basePlan as any).contentHash = finalHash;
@@ -258,6 +258,9 @@ export class HardkasTx {
       requiredSigners?: string[];
     }
   ): Promise<SignedTxArtifact> {
+    console.log("DEBUG: tx.sign CALLED WITH plan.schema =", plan.schema);
+    console.log("DEBUG: plan.contentHash passed to tx.sign =", (plan as any).contentHash);
+    
     if (typeof plan === "object" && plan !== null && (plan as any).contentHash) {
       await this.sdk.artifacts.verify(plan, { throwOnInvalid: true, strict: true, enforceMetadata: false });
     }
