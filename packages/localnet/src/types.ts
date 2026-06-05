@@ -22,8 +22,8 @@ export interface LocalnetState extends HardkasArtifactBase {
   createdAt: string;
   mode: ExecutionMode;
   networkId: NetworkId;
-  workflowId: string;
-  assumptionLevel: string;
+  workflowId?: string;
+  assumptionLevel?: string;
   daaScore: string;
   accounts: LocalnetAccount[];
   utxos: LocalnetUtxo[];
