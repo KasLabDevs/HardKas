@@ -8,6 +8,8 @@ import {
 } from "./types.js";
 import { NetworkId } from "@hardkas/core";
 import { loadKaspaWasm } from "./signer-backend.js";
+import { KeystoreManager } from "./keystore.js";
+import { DEV_ACCOUNTS_PASSWORD } from "./dev-accounts.js";
 
 function toHex(arr: Uint8Array): string {
   return Buffer.from(arr).toString("hex");
@@ -86,8 +88,25 @@ export class KaspaWasmPrivateKeySigner implements HardkasTxPlanSigner {
       pkValue = (account as any).privateKey;
     }
 
+    if (!pkValue && account.keystorePath) {
+      try {
+        const keystore = await KeystoreManager.loadEncryptedKeystore(account.keystorePath);
+        const unlock = await KeystoreManager.decryptEncryptedKeystore(
+          keystore,
+          DEV_ACCOUNTS_PASSWORD
+        );
+        if (unlock.success && unlock.payload) {
+          pkValue = unlock.payload.privateKey;
+        }
+      } catch (e) {
+        // Fallthrough to the error below
+      }
+    }
+
     if (!pkValue) {
-      throw new Error(`Missing required private key for account '${account.name}'.`);
+      const err = new Error(`DEV_ACCOUNT_KEY_UNAVAILABLE: Missing required private key for account '${account.name}'.`);
+      (err as any).code = "DEV_ACCOUNT_KEY_UNAVAILABLE";
+      throw err;
     }
 
     try {

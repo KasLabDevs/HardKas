@@ -20,6 +20,11 @@ export interface RuntimeContext {
   telemetry: TelemetryManager;
   workflowId?: string;
   assumptionLevel?: string;
+  utxoSelection?: {
+    totalUtxosSeen: number;
+    selectedUtxos: number;
+    selectionStrategy: string;
+  };
 }
 
 /**

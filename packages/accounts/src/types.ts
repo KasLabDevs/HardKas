@@ -65,6 +65,7 @@ export interface HardkasSimulatedAccount extends HardkasBaseAccount {
 export interface HardkasKaspaPrivateKeyAccount extends HardkasBaseAccount {
   kind: "kaspa-private-key";
   privateKeyEnv?: string | undefined;
+  keystorePath?: string | undefined;
   address?: string;
 }
 

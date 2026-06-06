@@ -146,11 +146,44 @@ export function validateAddressPrefix(address: string): void {
   const validPrefixes = ["kaspa:", "kaspatest:", "kaspasim:"];
   const hasValidPrefix = validPrefixes.some((prefix) => address.startsWith(prefix));
   if (!hasValidPrefix) {
-    throw new Error(
-      `Invalid address '${address}'. Must start with one of: ${validPrefixes.join(", ")}`
-    );
+    const err = new Error(`HARDKAS_INVALID_ADDRESS: Invalid address '${address}'. Must start with one of: ${validPrefixes.join(", ")}`);
+    (err as any).code = "HARDKAS_INVALID_ADDRESS";
+    throw err;
   }
 }
+
+export function validateAddressNetwork(address: string, networkId: string, allowMainnet?: boolean): void {
+  // Simulated internal addresses skip validation
+  if (address.startsWith("kaspa:sim_")) {
+    return;
+  }
+
+  validateAddressPrefix(address);
+
+  let expectedPrefix: string;
+  if (networkId === "mainnet") {
+    expectedPrefix = "kaspa:";
+  } else if (networkId === "testnet-10" || networkId === "testnet-11") {
+    expectedPrefix = "kaspatest:";
+  } else if (networkId === "simnet" || networkId === "devnet" || networkId === "simulated") {
+    expectedPrefix = "kaspasim:";
+  } else {
+    // Unknown network, fallback to default validation
+    return;
+  }
+
+  // If allowMainnet is explicitly true, and the address is mainnet, allow it.
+  if (expectedPrefix !== "kaspa:" && address.startsWith("kaspa:") && allowMainnet) {
+    return;
+  }
+
+  if (!address.startsWith(expectedPrefix)) {
+    const err = new Error(`NETWORK_ADDRESS_MISMATCH: Address '${address}' does not match the expected prefix '${expectedPrefix}' for network '${networkId}'.`);
+    (err as any).code = "NETWORK_ADDRESS_MISMATCH";
+    throw err;
+  }
+}
+
 
 export function importRealDevAccount(
   store: RealAccountStore,
