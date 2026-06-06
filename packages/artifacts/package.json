@@ -33,8 +33,8 @@
     "lint": "tsc --noEmit"
   },
   "dependencies": {
-    "@hardkas/core": "0.8.20-alpha",
-    "@hardkas/tx-builder": "0.8.20-alpha",
+    "@hardkas/core": "workspace:*",
+    "@hardkas/tx-builder": "workspace:*",
     "zod": "^3.24.1"
   },
   "devDependencies": {

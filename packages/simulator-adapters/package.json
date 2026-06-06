@@ -17,10 +17,10 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@hardkas/bridge-local": "0.8.20-alpha",
-    "@hardkas/core": "0.8.20-alpha",
-    "@hardkas/react": "0.8.20-alpha",
-    "@hardkas/sdk": "0.8.20-alpha",
+    "@hardkas/bridge-local": "workspace:*",
+    "@hardkas/core": "workspace:*",
+    "@hardkas/react": "workspace:*",
+    "@hardkas/sdk": "workspace:*",
     "@tanstack/react-query": "^5.100.14",
     "react": "^19.2.6"
   },

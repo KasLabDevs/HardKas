@@ -23,10 +23,10 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@hardkas/artifacts": "0.8.20-alpha",
-    "@hardkas/config": "0.8.20-alpha",
-    "@hardkas/core": "0.8.20-alpha",
-    "@hardkas/localnet": "0.8.20-alpha",
+    "@hardkas/artifacts": "workspace:*",
+    "@hardkas/config": "workspace:*",
+    "@hardkas/core": "workspace:*",
+    "@hardkas/localnet": "workspace:*",
     "hash-wasm": "^4.12.0",
     "kaspa-wasm": "0.13.0"
   },

@@ -18,8 +18,8 @@
     "lint": "eslint ."
   },
   "dependencies": {
-    "@hardkas/core": "0.8.20-alpha",
-    "@hardkas/tx-builder": "0.8.20-alpha",
+    "@hardkas/core": "workspace:*",
+    "@hardkas/tx-builder": "workspace:*",
     "ws": "^8.18.0"
   },
   "devDependencies": {
