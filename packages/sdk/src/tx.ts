@@ -22,7 +22,7 @@ import {
   getBroadcastableSignedTransaction
 } from "@hardkas/artifacts";
 import { coreEvents } from "@hardkas/core";
-import { HardkasAccount, signTxPlanArtifact } from "@hardkas/accounts";
+import { HardkasAccount, signTxPlanArtifact, validateAddressNetwork } from "@hardkas/accounts";
 import { parseKasToSompi, type NetworkId } from "@hardkas/core";
 
 function normalizeSimulatedPlanInput(target: any, fallbackId: string): TxPlanArtifact {
@@ -105,9 +105,18 @@ export class HardkasTx {
       throw new Error("Kaspa value-transfer outputs require amount > 0.\nFor metadata/notary/DID marker transactions use --amount 1.\nFuture: hardkas tx anchor.");
     }
 
-    // Fetch UTXOs
-    let builderUtxos: BuilderUtxo[] = [];
     const activeNetwork = this.sdk.config.config.defaultNetwork || "simnet";
+    const allowMainnet = (this.sdk.config.config.networks?.mainnet as any)?.allowMainnet === true;
+
+    // Address Preflight Validation
+    validateAddressNetwork(fromAccount.address, activeNetwork, allowMainnet);
+    validateAddressNetwork(toAccount.address, activeNetwork, allowMainnet);
+    if ((options as any).changeAddress) {
+      validateAddressNetwork((options as any).changeAddress, activeNetwork, allowMainnet);
+    }
+
+    // Fetch UTXOs
+    let allFetchedUtxos: BuilderUtxo[] = [];
     if (activeNetwork === "simulated" || this.sdk.config.config.networks?.[activeNetwork]?.kind === "simulated") {
       // TODO: Extract a shared UtxoProvider / RuntimeBackend so HardkasTx
       // does not depend directly on localnet implementation details.
@@ -117,7 +126,7 @@ export class HardkasTx {
         cwd: this.sdk.workspace.root
       });
       const unspent = getSpendableUtxos(localState, fromAccount.address);
-      builderUtxos = unspent.map((u) => {
+      allFetchedUtxos = unspent.map((u) => {
         const parts = u.id.split(":");
         const index = Number(parts[parts.length - 1]);
         const transactionId = parts.slice(0, -1).join(":");
@@ -130,15 +139,64 @@ export class HardkasTx {
       });
     } else {
       const rpcUtxos = await this.sdk.rpc.getUtxosByAddress(fromAccount.address);
-      builderUtxos = rpcUtxos.map((u) => ({
+      allFetchedUtxos = rpcUtxos.map((u) => ({
         outpoint: {
           transactionId: u.outpoint.transactionId,
           index: u.outpoint.index
         },
         address: u.address,
-        amountSompi: u.amountSompi,
+        amountSompi: BigInt(u.amountSompi),
         scriptPublicKey: u.scriptPublicKey || ""
       }));
+    }
+
+    // P0: UTXO Pre-selection & Pagination Guardrail
+    // Prefer largest UTXOs first to minimize input count
+    const sortedUtxos = [...allFetchedUtxos].sort((a, b) => {
+      if (a.amountSompi > b.amountSompi) return -1;
+      if (a.amountSompi < b.amountSompi) return 1;
+      return 0;
+    });
+
+    const MAX_INPUTS_PER_TX = 512;
+    const WARN_INPUTS = 128;
+    const HARD_LIMIT = 1000;
+    
+    // Safety margin for fees assuming a maximum bound of mass per input.
+    // 1500 sompi per input is a very safe upper bound.
+    const MARGIN_FEE_PER_INPUT = 1500n * (options.feeRate ?? 1n); 
+    let selectedAmount = 0n;
+    let selectedInputsCount = 0;
+    const builderUtxos: BuilderUtxo[] = [];
+
+    for (const utxo of sortedUtxos) {
+      builderUtxos.push(utxo);
+      selectedAmount += utxo.amountSompi;
+      selectedInputsCount++;
+
+      const requiredTotal = amountSompi + (BigInt(selectedInputsCount) * MARGIN_FEE_PER_INPUT);
+      if (selectedAmount >= requiredTotal) {
+        break;
+      }
+      
+      // Hard limit fail-safe to prevent out of memory during iteration or later in kaspa-wasm
+      if (selectedInputsCount >= HARD_LIMIT) {
+        break;
+      }
+    }
+
+    if (selectedAmount < amountSompi) {
+      throw new Error(`Insufficient funds: needed ${amountSompi} sompi but only found ${selectedAmount} sompi across ${selectedInputsCount} UTXOs.`);
+    }
+
+    if (selectedInputsCount > MAX_INPUTS_PER_TX) {
+      const err = new Error(`TOO_MANY_INPUTS_FOR_SINGLE_TX: Transaction requires ${selectedInputsCount} inputs to cover the amount, which exceeds the safe limit of ${MAX_INPUTS_PER_TX} inputs.\nHint: Run 'hardkas accounts consolidate' to merge dust UTXOs.`);
+      (err as any).code = "TOO_MANY_INPUTS_FOR_SINGLE_TX";
+      throw err;
+    }
+
+    if (selectedInputsCount >= WARN_INPUTS) {
+      console.warn(`⚠️  WARNING: Transaction requires ${selectedInputsCount} inputs. Consider running 'hardkas accounts consolidate'.`);
     }
 
     const builderPlan = buildPaymentPlan({
@@ -182,7 +240,12 @@ export class HardkasTx {
       ctx: { 
         ...systemRuntimeContext, 
         ...(options.workflowId ? { workflowId: options.workflowId } : {}),
-        assumptionLevel: resolvedAssumptionLevel
+        assumptionLevel: resolvedAssumptionLevel,
+        utxoSelection: {
+          totalUtxosSeen: allFetchedUtxos.length,
+          selectedUtxos: selectedInputsCount,
+          selectionStrategy: "largest-first"
+        }
       }
     }) as unknown as TxPlanArtifact;
     
@@ -243,6 +306,117 @@ export class HardkasTx {
       await this.sdk.artifacts.verify(basePlan, { throwOnInvalid: true, strict: true, enforceMetadata: false });
     }
     
+    return basePlan;
+  }
+
+  /**
+   * Creates a transaction plan explicitly for consolidation.
+   * This overrides normal selection logic and uses precisely the provided UTXOs.
+   */
+  async createConsolidationPlan(options: {
+    account: HardkasAccount | string;
+    selectedUtxos: any[];
+    destination: string;
+    network?: string;
+    feeRate?: bigint;
+    totalUtxosSeen?: number;
+  }): Promise<TxPlanArtifact> {
+    let resolvedAccount: HardkasAccount;
+    if (typeof options.account === "string") {
+      resolvedAccount = await this.sdk.accounts.resolve(options.account);
+    } else {
+      resolvedAccount = options.account;
+    }
+
+    if (!resolvedAccount.address) {
+      throw new Error(`Account '${resolvedAccount.name || options.account}' has no address.`);
+    }
+
+    const activeNetwork = options.network || this.sdk.config.config.defaultNetwork || "simnet";
+    const isSimulated = activeNetwork === "simulated" || this.sdk.config.config.networks?.[activeNetwork]?.kind === "simulated";
+
+    let totalAmount = 0n;
+    const builderUtxos = options.selectedUtxos.map((u) => {
+      const amount = BigInt(u.amountSompi);
+      totalAmount += amount;
+      return {
+        outpoint: {
+          transactionId: u.outpoint.transactionId,
+          index: u.outpoint.index
+        },
+        address: u.address,
+        amountSompi: amount,
+        scriptPublicKey: u.scriptPublicKey || ""
+      };
+    });
+
+    const feeRate = options.feeRate ?? 1n;
+    // Estimate fee safely based on the number of inputs and 1 output
+    const massPerInput = 1500n; // Conservative upper bound
+    const estimatedMass = BigInt(options.selectedUtxos.length) * massPerInput + 500n;
+    const expectedFee = estimatedMass * feeRate;
+
+    if (totalAmount <= expectedFee) {
+      throw new Error(`Consolidation failed: Total selected UTXO amount (${totalAmount}) is less than or equal to the estimated fee (${expectedFee}).`);
+    }
+
+    const outputAmount = totalAmount - expectedFee;
+
+    const builderPlan = buildPaymentPlan({
+      fromAddress: resolvedAccount.address as string,
+      availableUtxos: builderUtxos,
+      outputs: [
+        {
+          address: options.destination,
+          amountSompi: outputAmount
+        }
+      ],
+      feeRateSompiPerMass: feeRate
+    });
+
+    let resolvedAssumptionLevel = isSimulated ? "local-simulated" : "local-rpc";
+
+    const basePlan = createTxPlanArtifact({
+      networkId: activeNetwork as any,
+      mode: isSimulated ? "simulated" : "real",
+      from: {
+        input: resolvedAccount.name || (resolvedAccount.address as string),
+        address: resolvedAccount.address as string,
+        accountName: resolvedAccount.name
+      },
+      to: {
+        input: options.destination,
+        address: options.destination
+      },
+      amountSompi: outputAmount,
+      plan: builderPlan,
+      ctx: {
+        ...systemRuntimeContext,
+        assumptionLevel: resolvedAssumptionLevel,
+        utxoSelection: {
+          strategy: "consolidation-smallest-first",
+          totalUtxosSeen: options.totalUtxosSeen ?? options.selectedUtxos.length,
+          selectedUtxos: options.selectedUtxos.length,
+          purpose: "wallet-consolidation"
+        }
+      } as any
+    }) as unknown as TxPlanArtifact;
+
+    const { CURRENT_HASH_VERSION, calculateContentHash } = await import("@hardkas/artifacts");
+    const newHash = calculateContentHash(basePlan, CURRENT_HASH_VERSION);
+    (basePlan as any).contentHash = newHash;
+    if ((basePlan as any).lineage) {
+        (basePlan as any).lineage.lineageId = newHash;
+        (basePlan as any).lineage.parentArtifactId = "";
+        (basePlan as any).lineage.rootArtifactId = newHash;
+        const finalHash = calculateContentHash(basePlan, CURRENT_HASH_VERSION);
+        (basePlan as any).contentHash = finalHash;
+        (basePlan as any).lineage.artifactId = finalHash;
+        (basePlan as any).planId = `plan-${finalHash.slice(0, 16)}`;
+    }
+
+    this.sdk.artifacts.cacheArtifact(basePlan);
+
     return basePlan;
   }
 

@@ -305,7 +305,7 @@ export function registerAccountsCommands(program: Command) {
           local: options.local
         });
         if (options.json) {
-          console.log(JSON.stringify(result, null, 2));
+          console.log(JSON.stringify(result, (k, v) => typeof v === "bigint" ? v.toString() : v, 2));
         } else {
           console.log(`\nAccount:  ${result.name}`);
           console.log(`Address:  ${result.address}`);
@@ -329,6 +329,51 @@ export function registerAccountsCommands(program: Command) {
         const result = await runAccountsFund({ identifier, amountSompi });
         console.log(result.formatted);
       } catch (e) {
+        handleError(e);
+        process.exitCode = 1;
+      }
+    });
+
+  accountsCmd
+    .command("consolidate <account>")
+    .description(`Consolidate dust UTXOs into a single UTXO ${UI.maturity("alpha")}`)
+    .option("--network <name>", "Kaspa network name")
+    .option("--provider <type>", "Provider mode (auto, rpc, simulated)", "auto")
+    .option("--url <url>", "RPC URL (optional override)")
+    .option("--target-utxos <n>", "Target number of UTXOs to leave behind", "20")
+    .option("--batch-size <n>", "Number of UTXOs to consolidate per batch (max 512)", "256")
+    .option("--min-utxo <sompi>", "Minimum UTXO size to consolidate in sompi")
+    .option("--dry-run", "Only estimate batches (default if --execute is not provided)")
+    .option("--execute", "Execute the consolidation (requires --yes to broadcast)")
+    .option("--yes", "Confirm broadcast for execution")
+    .option("--allow-mainnet", "Allow consolidation on mainnet")
+    .option("--json", "Output as JSON", false)
+    .action(async (account: string, options: any) => {
+      try {
+        const { runAccountsConsolidate } = await import("../runners/accounts-consolidate-runner.js");
+        await runAccountsConsolidate({
+          account,
+          network: options.network,
+          provider: options.provider,
+          url: options.url,
+          targetUtxos: parseInt(options.targetUtxos, 10),
+          batchSize: parseInt(options.batchSize, 10),
+          minUtxo: options.minUtxo ? BigInt(options.minUtxo) : undefined,
+          dryRun: !options.execute || options.dryRun,
+          execute: options.execute === true,
+          yes: options.yes === true,
+          allowMainnet: options.allowMainnet === true,
+          json: options.json === true,
+        });
+      } catch (e: any) {
+        if (e.code === "CONSOLIDATION_NOT_REQUIRED") {
+          if (options.json) {
+             console.log(JSON.stringify({ status: "CONSOLIDATION_NOT_REQUIRED", message: e.message }));
+          } else {
+             console.log(`\n  ℹ ${e.message}\n`);
+          }
+          return;
+        }
         handleError(e);
         process.exitCode = 1;
       }

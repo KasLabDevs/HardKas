@@ -51,7 +51,8 @@ export function resolveHardkasAccount(options: ResolveAccountOptions): HardkasAc
         return {
           name: alias,
           kind: "kaspa-private-key",
-          address: keystore.metadata?.address
+          address: keystore.metadata?.address,
+          keystorePath: devAccountPath
         };
       }
     } catch (e) {
@@ -131,7 +132,8 @@ export function listHardkasAccounts(config?: HardkasConfig): HardkasAccount[] {
             accounts.set(name, {
               name,
               kind: "kaspa-private-key",
-              address: keystore.payload?.address || keystore.metadata?.address
+              address: keystore.payload?.address || keystore.metadata?.address,
+              keystorePath: path.join(devAccountsDir, file)
             });
           }
         } catch (e) {
@@ -170,7 +172,8 @@ export function listHardkasAccounts(config?: HardkasConfig): HardkasAccount[] {
             accounts.set(name, {
               name,
               kind: "kaspa-private-key",
-              address: keystore.payload?.address || keystore.metadata?.address // Payloads are encrypted, but address might be in metadata
+              address: keystore.payload?.address || keystore.metadata?.address, // Payloads are encrypted, but address might be in metadata
+              keystorePath: path.join(keystoreDir, file)
             });
           }
         } catch (e) {

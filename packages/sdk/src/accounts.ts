@@ -15,7 +15,7 @@ export class HardkasAccounts {
   async resolve(nameOrAddress: string): Promise<HardkasAccount> {
     return resolveHardkasAccount({
       nameOrAddress,
-      config: this.sdk.config.config
+      config: { ...this.sdk.config.config, cwd: this.sdk.workspace.root } as any
     });
   }
 

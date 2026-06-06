@@ -1,6 +1,6 @@
 {
   "name": "@hardkas/cli",
-  "version": "0.8.16-alpha",
+  "version": "0.8.18-alpha",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
