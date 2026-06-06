@@ -3,12 +3,12 @@ import { resolveNetworkTarget } from "@hardkas/config";
 
 export interface AccountsConsolidateOptions {
   account: string;
-  network?: string;
-  provider?: string;
-  url?: string;
+  network?: string | undefined;
+  provider?: string | undefined;
+  url?: string | undefined;
   targetUtxos: number;
   batchSize: number;
-  minUtxo?: bigint;
+  minUtxo?: bigint | undefined;
   dryRun: boolean;
   execute: boolean;
   yes: boolean;
@@ -36,7 +36,7 @@ export async function runAccountsConsolidate(options: AccountsConsolidateOptions
 
   if (provider.mode !== "simulated") {
     const { JsonWrpcKaspaClient } = await import("@hardkas/kaspa-rpc");
-    (sdk as any).rpc = new JsonWrpcKaspaClient({ rpcUrl: provider.endpoint });
+    (sdk as any).rpc = new JsonWrpcKaspaClient({ rpcUrl: provider.endpoint! });
   }
 
   const resolvedAccount = await sdk.accounts.resolve(options.account);
@@ -49,7 +49,7 @@ export async function runAccountsConsolidate(options: AccountsConsolidateOptions
   let allUtxos: any[] = [];
   try {
     if (provider.mode !== "simulated") {
-      const rpcUtxos = await sdk.rpc.getUtxosByAddress({ address: resolvedAccount.address });
+      const rpcUtxos = await sdk.rpc.getUtxosByAddress(resolvedAccount.address!);
       allUtxos = rpcUtxos.map((u: any) => ({
         outpoint: {
           transactionId: u.outpoint.transactionId,
@@ -62,7 +62,7 @@ export async function runAccountsConsolidate(options: AccountsConsolidateOptions
     } else {
       const { loadOrCreateLocalnetState, getSpendableUtxos } = await import("@hardkas/localnet");
       const localState = await loadOrCreateLocalnetState({ cwd: sdk.workspace.root });
-      const unspent = getSpendableUtxos(localState, resolvedAccount.address);
+      const unspent = getSpendableUtxos(localState, resolvedAccount.address!);
       allUtxos = unspent.map((u) => {
         const parts = u.id.split(":");
         const index = Number(parts[parts.length - 1]);
@@ -149,7 +149,7 @@ export async function runAccountsConsolidate(options: AccountsConsolidateOptions
       console.log(`Strategy:\n smallest-first\n`);
       console.log(`Plan:`);
       for (let i = 0; i < batches.length; i++) {
-        console.log(` Batch ${i + 1}: ${batches[i].length} inputs -> 1 output`);
+        console.log(` Batch ${i + 1}: ${batches[i]!.length} inputs -> 1 output`);
       }
       console.log(` Expected after: ~${afterEstimate} UTXOs\n`);
       console.log(`Status:\n DRY RUN - no transactions created\n`);
@@ -165,7 +165,7 @@ export async function runAccountsConsolidate(options: AccountsConsolidateOptions
   const receipts: string[] = [];
 
   for (let i = 0; i < batches.length; i++) {
-    const batch = batches[i];
+    const batch = batches[i]!;
     if (!options.json) {
       console.log(`\nExecuting Batch ${i + 1}/${batches.length} (${batch.length} inputs)...`);
     }
@@ -173,7 +173,7 @@ export async function runAccountsConsolidate(options: AccountsConsolidateOptions
     const plan = await sdk.tx.createConsolidationPlan({
       account: resolvedAccount,
       selectedUtxos: batch,
-      destination: resolvedAccount.address,
+      destination: resolvedAccount.address!,
       network: resolvedName,
       totalUtxosSeen: beforeCount
     });
@@ -199,7 +199,7 @@ export async function runAccountsConsolidate(options: AccountsConsolidateOptions
   // Reload local state to see if it decreased
   const { loadOrCreateLocalnetState, getSpendableUtxos } = await import("@hardkas/localnet");
   const localState = await loadOrCreateLocalnetState({ cwd: sdk.workspace.root });
-  const finalUtxos = getSpendableUtxos(localState, resolvedAccount.address);
+  const finalUtxos = getSpendableUtxos(localState, resolvedAccount.address!);
 
   if (options.json) {
     console.log(JSON.stringify({
