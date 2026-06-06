@@ -8,5 +8,5 @@
   "dependencies": {
     "@hardkas/sdk": "workspace:*"
   },
-  "version": "0.8.18-alpha"
+  "version": "0.8.19-alpha"
 }
