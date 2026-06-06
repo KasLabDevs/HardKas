@@ -68,7 +68,7 @@ export function registerInitCommands(program: Command) {
             const template = `import { defineHardkasConfig } from "@hardkas/sdk";
 
 export default defineHardkasConfig({
-  // HardKAS v0.8.18-alpha Configuration
+  // HardKAS v0.8.19-alpha Configuration
   defaultNetwork: "simulated",
 
   networks: {
@@ -142,7 +142,7 @@ export default defineHardkasConfig({
               `HardKAS project '${name || "current"}' initialized successfully.`
             );
             if (name) UI.info(`Project folder: ${targetDir}`);
-            UI.info(`Created: hardkas.config.ts (0.8.18-alpha)`);
+            UI.info(`Created: hardkas.config.ts (0.8.19-alpha)`);
             UI.footer(`Run 'cd ${name || "."}' and then 'hardkas up' to start.`);
           }
         );
