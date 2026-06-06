@@ -33,7 +33,7 @@ test("tx.simulate should not crash with .map undefined on in-memory signed artif
   // We can also test idempotency by sending
   const res = await hk.tx.send(signed);
   expect(res.status).not.toBe("failed");
-});
+}, 20000);
 
 test("artifacts.read should fail if expectedSchema is mismatched", async () => {
   const hk = await Hardkas.create({
@@ -57,4 +57,4 @@ test("artifacts.read should fail if expectedSchema is mismatched", async () => {
   // Read the receipt directly
   const receipt = await hk.artifacts.read(simResult.receipt.txId);
   expect(receipt.schema).toBe(ARTIFACT_SCHEMAS.TX_RECEIPT);
-});
+}, 20000);

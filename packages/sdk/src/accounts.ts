@@ -68,7 +68,7 @@ export class HardkasAccounts {
         from = "faucet";
       } else if (accounts.includes("simulated_faucet")) {
         from = "simulated_faucet";
-      } else if (this.sdk.network === "simulated" && accounts.includes("alice")) {
+      } else if ((this.sdk.network as string) === "simulated" && accounts.includes("alice")) {
         from = "alice";
       } else {
         throw new Error("No funding account available.\nFor simulated mode, run Hardkas.create({ network: 'simulated', autoBootstrap: true })\nor call accounts.fund(target, { from: 'alice' }).");
@@ -84,7 +84,7 @@ export class HardkasAccounts {
       amount
     });
     const signed = await this.sdk.tx.sign(plan, from);
-    if (this.sdk.network === "simulated") {
+    if ((this.sdk.network as string) === "simulated") {
       return this.sdk.tx.simulate(signed);
     } else {
       return this.sdk.tx.send(signed);

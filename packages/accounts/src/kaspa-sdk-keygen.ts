@@ -50,8 +50,12 @@ export class KaspaSdkKeyGenerator implements KaspaKeyGenerator {
         const privKey = new sdk.PrivateKey(hex);
         const kp = privKey.toKeypair();
         const address = kp.toAddress(network).toString();
-        const privateKeyStr = kp.privateKey;
-        const publicKeyStr = kp.publicKey;
+        const privateKeyStr = typeof kp.privateKey === "object" ? hex : kp.privateKey;
+        const publicKeyStr = typeof kp.publicKey === "object" ? kp.publicKey.toString() : kp.publicKey;
+        
+        if (typeof privateKeyStr !== "string" || !/^[0-9a-f]{64}$/i.test(privateKeyStr)) {
+          throw new Error("Generated private key is not a valid 64-character hex string.");
+        }
 
         return {
           address,

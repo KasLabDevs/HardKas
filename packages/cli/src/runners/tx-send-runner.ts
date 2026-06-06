@@ -77,18 +77,25 @@ export async function runTxSend(input: TxSendRunnerInput): Promise<TxSendRunnerR
 
   // Override the SDK RPC client for real mode since default simnet creates a simulated provider
   const { JsonWrpcKaspaClient } = await import("@hardkas/kaspa-rpc");
-  (sdk as any).rpc = new JsonWrpcKaspaClient({ rpcUrl: rpcUrl });
+  const rpcClient = new JsonWrpcKaspaClient({ rpcUrl: rpcUrl });
+  (sdk as any).rpc = rpcClient;
 
-  const { receipt, receiptPath } = await sdk.tx.send(signedArtifact, rpcUrl);
+  try {
+    const { receipt, receiptPath } = await sdk.tx.send(signedArtifact, rpcUrl);
 
-  return {
-    accepted: receipt.status === "submitted" || receipt.status === "confirmed",
-    txId: receipt.txId,
-    rpcUrl,
-    networkName: resolvedName,
-    receipt,
-    receiptPath,
-    executionId: `exec_${Date.now().toString(36)}`,
-    replayId: `replay_${receipt.txId.substring(0, 8)}`
-  };
+    return {
+      accepted: receipt.status === "submitted" || receipt.status === "confirmed",
+      txId: receipt.txId,
+      rpcUrl,
+      networkName: resolvedName,
+      receipt,
+      receiptPath,
+      executionId: `exec_${Date.now().toString(36)}`,
+      replayId: `replay_${receipt.txId.substring(0, 8)}`
+    };
+  } finally {
+    if (rpcClient && typeof rpcClient.close === "function") {
+      await rpcClient.close();
+    }
+  }
 }
