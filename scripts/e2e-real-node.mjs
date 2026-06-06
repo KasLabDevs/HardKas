@@ -9,8 +9,8 @@ async function run() {
     autoBootstrap: true,
   });
 
-  const alice = await sdk.accounts.get("alice");
-  const bob = await sdk.accounts.get("bob");
+  const alice = await sdk.accounts.resolve("alice");
+  const bob = await sdk.accounts.resolve("bob");
   if (!alice || !bob) throw new Error("Missing alice or bob dev accounts");
 
   console.log(`Alice: ${alice.address}`);
@@ -19,19 +19,19 @@ async function run() {
   // 1. Sync
   console.log("\n[1] Syncing node state...");
   await sdk.query.sync();
-  let aliceBal = await sdk.accounts.balanceOf("alice");
-  console.log(`Alice initial balance: ${formatSompi(aliceBal)}`);
+  let aliceBal = await sdk.accounts.balance("alice");
+  console.log(`Alice initial balance: ${aliceBal.formatted}`);
 
   // 2. Dirty Alice (create 5 small UTXOs if she has enough balance)
   console.log("\n[2] Dirtying Alice (creating dust UTXOs)...");
-  if (aliceBal > 5000n) {
+  if (aliceBal.sompi > 5000n) {
     for (let i = 0; i < 5; i++) {
       const p = await sdk.tx.plan({ from: "alice", to: "alice", amount: "1000" });
       const s = await sdk.tx.sign(p, "alice");
       await sdk.tx.send(s);
     }
     console.log("Waiting for dust transactions to settle...");
-    await new Promise(resolve => setTimeout(resolve, 2000));
+    await new Promise(resolve => setTimeout(resolve, 3000));
     await sdk.query.sync();
   }
 
@@ -41,11 +41,12 @@ async function run() {
   // 3. Consolidate
   if (utxos.length > 1) {
     console.log("\n[3] Consolidating Alice...");
-    const result = await sdk.accounts.consolidate("alice", { targetUtxos: 1 });
-    console.log(`Consolidated! New plan created: ${result.planArtifact?.planId}`);
+    const { execSync } = await import("child_process");
+    // Run CLI consolidate directly using current tsx / pnpm workspace
+    execSync(`npx @hardkas/cli accounts consolidate alice --target-utxos 1 --yes`, { stdio: "inherit" });
     
     console.log("Waiting for consolidation to settle...");
-    await new Promise(resolve => setTimeout(resolve, 2000));
+    await new Promise(resolve => setTimeout(resolve, 3000));
     await sdk.query.sync();
     
     const newUtxos = await sdk.query.findUtxosByAddress(alice.address);
