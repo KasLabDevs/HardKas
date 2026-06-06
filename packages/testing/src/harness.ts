@@ -94,7 +94,11 @@ export function createTestHarness(config?: HarnessConfig): TestHarness {
         to: getAccountBalanceSompi(currentState, opts.to)
       };
 
-      const dummyContext: any = {};
+      const dummyContext: any = {
+        clock: { now: () => Date.now() },
+        env: { isTest: true },
+        fs: { write: async () => {}, read: async () => null }
+      };
       const result = applySimulatedPayment(currentState, opts, dummyContext);
 
       if (result.ok) {
