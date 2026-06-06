@@ -1,6 +1,6 @@
 {
   "name": "@hardkas/artifacts",
-  "version": "0.8.19-alpha",
+  "version": "0.8.20-alpha",
   "type": "module",
   "license": "MIT",
   "author": "Javier Rodriguez",
@@ -33,8 +33,8 @@
     "lint": "tsc --noEmit"
   },
   "dependencies": {
-    "@hardkas/core": "workspace:*",
-    "@hardkas/tx-builder": "workspace:*",
+    "@hardkas/core": "0.8.20-alpha",
+    "@hardkas/tx-builder": "0.8.20-alpha",
     "zod": "^3.24.1"
   },
   "devDependencies": {

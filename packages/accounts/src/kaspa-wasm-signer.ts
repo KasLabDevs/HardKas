@@ -109,6 +109,12 @@ export class KaspaWasmPrivateKeySigner implements HardkasTxPlanSigner {
       throw err;
     }
 
+    if (typeof pkValue !== "string" || pkValue.trim() === "" || !/^[0-9a-fA-F]{64}$/.test(pkValue)) {
+      const err = new Error("INVALID_PRIVATE_KEY_MATERIAL: Private key must be a valid 64-character hex string.");
+      (err as any).code = "INVALID_PRIVATE_KEY_MATERIAL";
+      throw err;
+    }
+
     try {
       // 4. Map Artifact to SDK objects
       const privateKey = new sdk.PrivateKey(pkValue);

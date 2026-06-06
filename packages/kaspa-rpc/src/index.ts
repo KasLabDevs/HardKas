@@ -209,21 +209,31 @@ export class JsonWrpcKaspaClient implements KaspaRpcClient {
       
       // Fix types for wRPC (it expects numbers for amounts/values)
       const txAny = txObj as any;
-      if (txAny && typeof txAny === "object" && txAny.outputs && Array.isArray(txAny.outputs)) {
-        txAny.outputs.forEach((output: any) => {
-           if (typeof output.amount === "string") {
-              output.amount = Number(output.amount);
-           }
-           if (typeof output.value === "string") {
-              output.value = Number(output.value);
-           }
-        });
-      }
-      if (txAny && typeof txAny === "object" && txAny.inputs && Array.isArray(txAny.inputs)) {
-        txAny.inputs.forEach((input: any) => {
-           if (typeof input.sequence === "string") input.sequence = Number(input.sequence);
-           if (typeof input.sigOpCount === "string") input.sigOpCount = Number(input.sigOpCount);
-        });
+      if (txAny && typeof txAny === "object") {
+        if (txAny.mass === undefined) txAny.mass = 0;
+        if (txAny.outputs && Array.isArray(txAny.outputs)) {
+          txAny.outputs.forEach((output: any) => {
+             if (output.amount !== undefined && output.value === undefined) {
+               output.value = output.amount;
+               delete output.amount;
+             }
+             if (typeof output.amount === "string") output.amount = Number(output.amount);
+             if (typeof output.value === "string") output.value = Number(output.value);
+             
+             if (output.scriptPublicKey && typeof output.scriptPublicKey === "object") {
+               if (output.scriptPublicKey.scriptPublicKey !== undefined && output.scriptPublicKey.script === undefined) {
+                 output.scriptPublicKey.script = output.scriptPublicKey.scriptPublicKey;
+                 delete output.scriptPublicKey.scriptPublicKey;
+               }
+             }
+          });
+        }
+        if (txAny.inputs && Array.isArray(txAny.inputs)) {
+          txAny.inputs.forEach((input: any) => {
+             if (typeof input.sequence === "string") input.sequence = Number(input.sequence);
+             if (typeof input.sigOpCount === "string") input.sigOpCount = Number(input.sigOpCount);
+          });
+        }
       }
     } catch (e) {
       // Ignored

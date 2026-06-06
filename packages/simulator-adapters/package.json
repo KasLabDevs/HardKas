@@ -1,6 +1,6 @@
 {
   "name": "@hardkas/simulator-adapters",
-  "version": "0.8.19-alpha",
+  "version": "0.8.20-alpha",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -17,10 +17,10 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@hardkas/bridge-local": "workspace:*",
-    "@hardkas/core": "workspace:*",
-    "@hardkas/react": "workspace:*",
-    "@hardkas/sdk": "workspace:*",
+    "@hardkas/bridge-local": "0.8.20-alpha",
+    "@hardkas/core": "0.8.20-alpha",
+    "@hardkas/react": "0.8.20-alpha",
+    "@hardkas/sdk": "0.8.20-alpha",
     "@tanstack/react-query": "^5.100.14",
     "react": "^19.2.6"
   },

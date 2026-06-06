@@ -1,6 +1,6 @@
 {
   "name": "@hardkas/bridge-local",
-  "version": "0.8.19-alpha",
+  "version": "0.8.20-alpha",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -17,12 +17,12 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@hardkas/accounts": "workspace:*",
-    "@hardkas/artifacts": "workspace:*",
-    "@hardkas/config": "workspace:*",
-    "@hardkas/core": "workspace:*",
-    "@hardkas/sessions": "workspace:*",
-    "@hardkas/tx-builder": "workspace:*"
+    "@hardkas/accounts": "0.8.20-alpha",
+    "@hardkas/artifacts": "0.8.20-alpha",
+    "@hardkas/config": "0.8.20-alpha",
+    "@hardkas/core": "0.8.20-alpha",
+    "@hardkas/sessions": "0.8.20-alpha",
+    "@hardkas/tx-builder": "0.8.20-alpha"
   },
   "devDependencies": {
     "tsup": "^8.3.5",

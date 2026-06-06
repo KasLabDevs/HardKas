@@ -1,6 +1,6 @@
 {
   "name": "@hardkas/simulator",
-  "version": "0.8.19-alpha",
+  "version": "0.8.20-alpha",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -18,8 +18,8 @@
     "lint": "eslint ."
   },
   "dependencies": {
-    "@hardkas/core": "workspace:*",
-    "@hardkas/tx-builder": "workspace:*"
+    "@hardkas/core": "0.8.20-alpha",
+    "@hardkas/tx-builder": "0.8.20-alpha"
   },
   "devDependencies": {
     "tsup": "^8.3.5",

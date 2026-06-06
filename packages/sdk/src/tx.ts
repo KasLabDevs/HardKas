@@ -139,7 +139,30 @@ export class HardkasTx {
       });
     } else {
       const rpcUtxos = await this.sdk.rpc.getUtxosByAddress(fromAccount.address);
-      allFetchedUtxos = rpcUtxos.map((u) => ({
+
+      // P0: Coinbase maturity filter — exclude immature coinbase UTXOs
+      // Kaspa requires COINBASE_MATURITY (1000) DAA confirmations before
+      // coinbase outputs can be spent. Selecting immature ones causes
+      // "immature UTXO" rejection at submission time.
+      const COINBASE_MATURITY = 1000n;
+      let virtualDaaScore: bigint | undefined;
+      try {
+        const dagInfo = await this.sdk.rpc.getBlockDagInfo();
+        virtualDaaScore = dagInfo.virtualDaaScore;
+      } catch {
+        // If we can't get DAA score, skip filtering (best-effort)
+      }
+
+      const matureUtxos = virtualDaaScore !== undefined
+        ? rpcUtxos.filter((u) => {
+            if (!u.isCoinbase) return true;
+            const score = u.blockDaaScore !== undefined ? BigInt(u.blockDaaScore) : undefined;
+            if (score === undefined) return true; // can't determine, keep it
+            return (virtualDaaScore! - score) >= COINBASE_MATURITY;
+          })
+        : rpcUtxos;
+
+      allFetchedUtxos = matureUtxos.map((u) => ({
         outpoint: {
           transactionId: u.outpoint.transactionId,
           index: u.outpoint.index

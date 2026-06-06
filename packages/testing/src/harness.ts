@@ -1,4 +1,3 @@
-import { systemRuntimeContext } from "@hardkas/core";
 // SAFETY_LEVEL: SIMULATION_ONLY
 //
 // Test harness for HardKAS — provides fresh localnet per test.
@@ -95,7 +94,8 @@ export function createTestHarness(config?: HarnessConfig): TestHarness {
         to: getAccountBalanceSompi(currentState, opts.to)
       };
 
-      const result = applySimulatedPayment(currentState, opts, systemRuntimeContext);
+      const dummyContext: any = {};
+      const result = applySimulatedPayment(currentState, opts, dummyContext);
 
       if (result.ok) {
         currentState = result.state;
