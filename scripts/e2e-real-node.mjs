@@ -18,6 +18,8 @@ async function run() {
 
   // 1. Sync
   console.log("\n[1] Syncing node state...");
+  console.log("sdk.query keys:", Object.keys(sdk.query), sdk.query.sync ? "has sync" : "no sync");
+  console.log("sdk.query proto keys:", Object.getOwnPropertyNames(Object.getPrototypeOf(sdk.query)));
   await sdk.query.sync();
   let aliceBal = await sdk.accounts.balance("alice");
   console.log(`Alice initial balance: ${aliceBal.formatted}`);
