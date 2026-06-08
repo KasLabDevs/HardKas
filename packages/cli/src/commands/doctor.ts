@@ -20,6 +20,7 @@ export function registerDoctorCommand(program: Command) {
       `Perform a full system diagnostic and health report ${UI.maturity("stable")}`
     )
     .option("--json", "Output results as stable JSON schema", false)
+    .option("--capabilities", "Report local node capabilities (RPC, network, DAA)", false)
     .option("--consistency", "Run advanced deterministic consistency checks", false)
     .option(
       "--strict",

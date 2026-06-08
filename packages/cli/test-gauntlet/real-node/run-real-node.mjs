@@ -14,7 +14,7 @@ function run(cmd) {
 }
 
 async function runRealNodeCert() {
-  console.log("=== Real Node 0.8.20-alpha Certification ===");
+  console.log("=== Real Node 0.9.0-alpha Certification ===");
 
   // Clean state
   if (fs.existsSync(".hardkas")) {

@@ -4,11 +4,15 @@ import { JsonWrpcKaspaClient } from "@hardkas/kaspa-rpc";
 import { execa } from "execa";
 import { HardkasFixtureSigner } from "@hardkas/accounts";
 
-export async function runDoctorNode(opts: { json?: boolean }) {
+export async function runDoctorNode(opts: { json?: boolean, capabilities?: boolean }) {
   if (opts.json) UI.setJsonMode(true);
   
   if (!opts.json) {
     UI.box("HardKAS Doctor", "Real Node Diagnostics (Phase 9)");
+  }
+
+  if (opts.capabilities) {
+    return await runCapabilitiesReport();
   }
 
   // 1. Node check
@@ -81,3 +85,59 @@ export async function runDoctorNode(opts: { json?: boolean }) {
     UI.logHuman(`  ❌ Fixture balance: ERROR (${err.message})`);
   }
 }
+
+async function runCapabilitiesReport() {
+  const report = {
+    nodeVersion: "unknown",
+    network: "unknown",
+    rpc: "unavailable",
+    daaAdvancing: false,
+    scriptCapabilities: "unknown"
+  };
+
+  let client: JsonWrpcKaspaClient | null = null;
+  // Try port 16210 first (TN12), then 18210 (simnet)
+  const ports = [16210, 18210];
+  let connected = false;
+
+  for (const port of ports) {
+    try {
+      client = new JsonWrpcKaspaClient({ rpcUrl: `ws://127.0.0.1:${port}` });
+      // If we can get block dag info, we are connected
+      const info1 = await client.getBlockDagInfo();
+      connected = true;
+      report.rpc = "ready";
+      report.network = (info1 as any).networkName || (info1 as any).networkId || "unknown";
+
+      try {
+        const serverInfo = await client.getServerInfo();
+        report.nodeVersion = serverInfo.serverVersion || "unknown";
+      } catch (e) {
+        // Ignored, maybe unsupported
+      }
+
+      const score1 = info1.virtualDaaScore || 0n;
+      await new Promise(r => setTimeout(r, 2000));
+      const info2 = await client.getBlockDagInfo();
+      const score2 = info2.virtualDaaScore || 0n;
+
+      if (score2 > score1) {
+        report.daaAdvancing = true;
+      }
+      break;
+    } catch (e) {
+      if (client) {
+        await client.close().catch(() => {});
+        client = null;
+      }
+    }
+  }
+
+  if (client) {
+    await client.close().catch(() => {});
+  }
+
+  // Ensure JSON output as requested
+  console.log(JSON.stringify(report, null, 2));
+}
+

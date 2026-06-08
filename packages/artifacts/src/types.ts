@@ -432,3 +432,76 @@ export interface DeploymentSummary {
   deployedAt: string;
   contentHash: string;
 }
+
+export interface SilverCompileArtifact extends BaseArtifact<"silver.compile"> {
+  sourcePath: string;
+  sourceHash: string;
+  compilerName: string;
+  compilerVersion: string;
+  compilerCommand: string;
+  compiledScriptHex?: string | undefined;
+  compiledScriptHash?: string | undefined;
+  abi?: any | undefined;
+  network: string;
+  assumptions?: string[] | undefined;
+}
+
+export interface SilverTestArtifact extends BaseArtifact<"silver.test"> {
+  compileArtifactHash: string;
+  sourceHash: string;
+  compiledScriptHash: string;
+  testVectorsHash?: string | null | undefined;
+  compilerName: string;
+  compilerVersion: string;
+  results: Array<{
+    name: string;
+    status: "PASS" | "FAIL" | "SKIPPED" | "EXPECTED_COMPILER_FAILURE" | "PARTIAL_TEST_VECTOR_SUPPORT";
+    reason?: string | undefined;
+  }>;
+  status: "PASS" | "FAIL" | "PARTIAL_TEST_VECTOR_SUPPORT" | "EXPECTED_COMPILER_FAILURE";
+}
+
+export interface SilverDeployPlanArtifact extends BaseArtifact<"silver.deployPlan"> {
+  compileArtifactHash: string;
+  compiledScriptHash: string;
+  redeemScriptHex: string;
+  redeemScriptHash: string;
+  lockingScriptHex: string;
+  scriptPublicKeyVersion: number;
+  amountSompi: string;
+  deployerAddress: string;
+}
+
+export interface SilverDeployArtifact extends BaseArtifact<"silver.deploy"> {
+  deployPlanHash: string;
+  compileArtifactHash: string;
+  compiledScriptHash: string;
+  redeemScriptHex: string;
+  redeemScriptHash: string;
+  lockingScriptHex: string;
+  scriptPublicKeyVersion: number;
+  deployTxId: string;
+  outputIndex: number;
+  amountSompi: string;
+  nodeVersion: string;
+}
+
+export interface SilverSpendPlanArtifact extends BaseArtifact<"silver.spendPlan"> {
+  deployArtifactHash: string;
+  compileArtifactHash: string;
+  redeemScriptHash: string;
+  lockingScriptHex: string;
+  contractUtxoRef: {
+    transactionId: string;
+    index: number;
+  };
+  args: Array<{ type: "hex"; value: string }>;
+  argsHash: string;
+  signatureScriptHex: string;
+  expectedOutputs: Array<{
+    address: string;
+    amountSompi: string;
+    scriptHash?: string | undefined;
+  }>;
+  assumptionLevel?: AssumptionLevel | undefined;
+}

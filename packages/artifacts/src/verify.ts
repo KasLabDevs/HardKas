@@ -17,6 +17,11 @@ import {
 import { NetworkId, type CorruptionCode, type CorruptionSeverity } from "@hardkas/core";
 import { verifyFeeSemantics } from "./feeVerify.js";
 import { verifyLineage } from "./lineage.js";
+import { 
+  SilverCompileArtifactSchema,
+  SilverTestArtifactSchema,
+  SilverSpendPlanArtifactSchema
+} from "./schemas.js";
 
 export interface Clock {
   now(): number;
@@ -214,6 +219,15 @@ export function verifyArtifactIntegritySync(
         break;
       case "hardkas.migrationReceipt.v1":
         schema = MigrationReceiptSchema;
+        break;
+      case "hardkas.silver.compile":
+        schema = SilverCompileArtifactSchema;
+        break;
+      case "hardkas.silver.test":
+        schema = SilverTestArtifactSchema;
+        break;
+      case "hardkas.silver.spendPlan":
+        schema = SilverSpendPlanArtifactSchema;
         break;
     }
 

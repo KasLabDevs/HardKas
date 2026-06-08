@@ -12,7 +12,7 @@ function App() {
 
   return (
     <div>
-      <h1>HardKAS React Demo (0.8.20-alpha Refactored)</h1>
+      <h1>HardKAS React Demo (0.9.0-alpha Refactored)</h1>
 
       {!walletData ? (
         <div className="card status-error">

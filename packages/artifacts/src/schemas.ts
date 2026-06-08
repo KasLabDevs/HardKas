@@ -343,3 +343,104 @@ export const RuntimeSessionSchema = BaseArtifactSchema.extend({
 });
 
 export type RuntimeSession = z.infer<typeof RuntimeSessionSchema>;
+
+export const SilverCompileArtifactSchema = BaseArtifactSchema.extend({
+  schema: z.literal("hardkas.silver.compile"),
+  sourcePath: z.string(),
+  sourceHash: z.string(),
+  compilerName: z.string(),
+  compilerVersion: z.string(),
+  compilerCommand: z.string(),
+  compiledScriptHex: z.string(),
+  compiledScriptHash: z.string(), // semantic hash
+  abi: z.any().optional(),
+  network: z.string(),
+  assumptions: z.array(z.string()).optional()
+});
+
+export type SilverCompileArtifact = z.infer<typeof SilverCompileArtifactSchema>;
+
+export const SilverDeployPlanArtifactSchema = BaseArtifactSchema.extend({
+  schema: z.literal("hardkas.silver.deployPlan"),
+  compileArtifactHash: z.string(),
+  compiledScriptHash: z.string(),
+  redeemScriptHex: z.string(),
+  redeemScriptHash: z.string(), // blake2b32 of raw bytes
+  lockingScriptHex: z.string(),
+  scriptPublicKeyVersion: z.number(),
+  amountSompi: z.string(),
+  networkId: kaspaNetworkIdSchema,
+  deployerAddress: z.string()
+});
+
+export type SilverDeployPlanArtifact = z.infer<typeof SilverDeployPlanArtifactSchema>;
+
+export const SilverDeployArtifactSchema = BaseArtifactSchema.extend({
+  schema: z.literal("hardkas.silver.deploy"),
+  deployPlanHash: z.string(),
+  compileArtifactHash: z.string(),
+  compiledScriptHash: z.string(),
+  redeemScriptHex: z.string(),
+  redeemScriptHash: z.string(),
+  lockingScriptHex: z.string(),
+  scriptPublicKeyVersion: z.number(),
+  deployTxId: z.string(),
+  outputIndex: z.number(),
+  amountSompi: z.string(),
+  networkId: kaspaNetworkIdSchema,
+  nodeVersion: z.string()
+});
+
+export type SilverDeployArtifact = z.infer<typeof SilverDeployArtifactSchema>;
+
+export const SilverScriptArgSchema = z.object({
+  type: z.literal("hex"),
+  value: z.string()
+});
+
+export const SilverSpendPlanArtifactSchema = BaseArtifactSchema.extend({
+  schema: z.literal("hardkas.silver.spendPlan"),
+  deployArtifactHash: z.string(),
+  compileArtifactHash: z.string(),
+  redeemScriptHash: z.string(),
+  lockingScriptHex: z.string(),
+  contractUtxoRef: z.object({
+    transactionId: z.string(),
+    index: z.number()
+  }),
+  args: z.array(SilverScriptArgSchema),
+  argsHash: z.string(),
+  signatureScriptHex: z.string(),
+  expectedOutputs: z.array(z.object({
+    address: z.string(),
+    amountSompi: z.string(),
+    scriptHash: z.string().optional()
+  })),
+  networkId: kaspaNetworkIdSchema,
+  assumptionLevel: z.string().optional()
+});
+
+export type SilverSpendPlanArtifact = z.infer<typeof SilverSpendPlanArtifactSchema>;
+
+export const SilverTestArtifactSchema = BaseArtifactSchema.extend({
+  schema: z.literal("hardkas.silver.test"),
+  compileArtifactHash: z.string(),
+  sourceHash: z.string(),
+  compiledScriptHash: z.string(),
+  testVectorsHash: z.string().optional().nullable(),
+  compilerName: z.string(),
+  compilerVersion: z.string(),
+  results: z.array(z.object({
+    name: z.string(),
+    status: z.enum(["PASS", "FAIL", "SKIPPED", "EXPECTED_COMPILER_FAILURE", "PARTIAL_TEST_VECTOR_SUPPORT"]),
+    reason: z.string().optional()
+  })),
+  status: z.enum([
+    "PASS", 
+    "FAIL", 
+    "PARTIAL_TEST_VECTOR_SUPPORT", 
+    "EXPECTED_COMPILER_FAILURE"
+  ])
+});
+
+export type SilverTestArtifact = z.infer<typeof SilverTestArtifactSchema>;

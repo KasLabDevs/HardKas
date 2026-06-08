@@ -2198,7 +2198,7 @@ html[data-theme="light"] .danger {
 <a class="button" href="https://github.com/KasLabDevs/HardKas" rel="noreferrer" target="_blank">GitHub</a>
 </div>
 <div class="meta">
-<span class="badge accent">0.8.20-alpha</span>
+<span class="badge accent">0.9.0-alpha</span>
 <span class="badge">Kaspa Native</span>
 <span class="badge">Igra-aware</span>
 <span class="badge">Local-first</span>
@@ -2227,7 +2227,7 @@ hardkas dev server --open">Copy</button></div>
 <span>artifacts</span>
 <span>dashboard</span>
 </div>
-</div><div class="warning"><strong>Alpha boundary (0.8.20-alpha).</strong> HardKAS is developer infrastructure. It enforces strict path traversal sandboxing, rule evaluation for <code>hardkas.policy.v1</code>, and strict lineage sequence verification. It is not production custody software.</div>
+</div><div class="warning"><strong>Alpha boundary (0.9.0-alpha).</strong> HardKAS is developer infrastructure. It enforces strict path traversal sandboxing, rule evaluation for <code>hardkas.policy.v1</code>, and strict lineage sequence verification. It is not production custody software.</div>
 
 </div>
 
@@ -2423,7 +2423,7 @@ hardkas dev server --open">Copy</button></div>
 </div>
 </section>
 <section id="status">
-<h2>What actually works in 0.8.20-alpha</h2>
+<h2>What actually works in 0.9.0-alpha</h2>
 <table>
 <thead><tr><th>Status</th><th>Systems</th><th>Notes</th></tr></thead>
 <tbody>
@@ -2439,7 +2439,7 @@ hardkas dev server --open">Copy</button></div>
 </section>
 <section id="sessions">
 <h2>Sessions</h2>
-<p>Sessions bind L1/L2 developer context: wallet names, EVM accounts, selected profiles, bridge plans and local runtime state. In 0.8.20-alpha mutating session paths fail closed on corrupt stores and canonical writes use atomic persistence with parent directory fsync.</p>
+<p>Sessions bind L1/L2 developer context: wallet names, EVM accounts, selected profiles, bridge plans and local runtime state. In 0.9.0-alpha mutating session paths fail closed on corrupt stores and canonical writes use atomic persistence with parent directory fsync.</p>
 <div class="grid cols-2">
 <div class="box">
 <h3>Typical use</h3>
@@ -2497,7 +2497,7 @@ hardkas session status">Copy</button></div>
 <p>Simulated WalletConnect pairing for testing mobile wallet UX. Ephemeral sessions, no real relay traffic. Clearly labeled as laboratory-only.</p>
 </div>
 </div>
-<div class="warning"><strong>SSE limitation.</strong> The dashboard supports reconnect/backoff, but 0.8.20-alpha does not yet provide durable replay cursors or monotonic event IDs. If the dev server restarts, the event stream resets.</div>
+<div class="warning"><strong>SSE limitation.</strong> The dashboard supports reconnect/backoff, but 0.9.0-alpha does not yet provide durable replay cursors or monotonic event IDs. If the dev server restarts, the event stream resets.</div>
 <h3>CLI ↔ Dashboard sync</h3>
 <p>The dashboard is not a separate world — it reads from the same session store as the CLI. Run <code>hardkas session use dev</code> in the terminal and the dashboard updates in real time via SSE. No refresh needed.</p>
 <div class="codeblock">
@@ -3043,7 +3043,7 @@ hardkas config show --json">Copy</button></div>
 <div class="codeblock" style="margin-top: 8px;">
 <div class="codebar">sample output (truncated)</div>
 <pre>{
-  <span class="str">"version"</span>: <span class="str">"0.8.20-alpha"</span>,
+  <span class="str">"version"</span>: <span class="str">"0.9.0-alpha"</span>,
   <span class="str">"maturity"</span>: <span class="str">"hardened-alpha"</span>,
   <span class="str">"capabilities"</span>: {
     <span class="str">"artifacts"</span>: <span style="color:#72f2c3">true</span>,
@@ -3171,7 +3171,7 @@ hardkas query lineage chain &lt;artifactId&gt; --why">Copy</button></div>
 </div>
 </section>
 <footer class="footer">
-        HardKAS Documentation · 0.8.20-alpha · CLI · SDK · Examples · Security · GitHub · MIT License<br/>
+        HardKAS Documentation · 0.9.0-alpha · CLI · SDK · Examples · Security · GitHub · MIT License<br/>
         HardKAS is local developer infrastructure in active alpha. It is provided without warranty and is not production custody software.
       </footer>
 </main>

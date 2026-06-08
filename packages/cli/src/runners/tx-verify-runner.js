@@ -1,0 +1,105 @@
+import { readTxPlanArtifact, verifyArtifactIntegrity } from "@hardkas/artifacts";
+import { verifyTxPlanSemantics } from "@hardkas/tx-builder";
+import { UI } from "../ui.js";
+import { formatSompi } from "@hardkas/core";
+import path from "node:path";
+export async function runTxVerify(options) {
+    if (options.json)
+        UI.setJsonMode(true);
+    const { Hardkas } = await import("@hardkas/sdk");
+    const sdk = await Hardkas.open({ cwd: options.workspaceRoot });
+    const absolutePath = sdk.workspace.resolvePath(options.path);
+    UI.header(`Transaction Verification: ${path.basename(options.path)}`);
+    try {
+        const artifact = await readTxPlanArtifact(absolutePath);
+        // 1. Integrity Check (Hardening)
+        const integrityResult = await verifyArtifactIntegrity(absolutePath);
+        if (!integrityResult.ok) {
+            UI.error("INTEGRITY VERIFICATION FAILED");
+            integrityResult.issues.forEach((issue) => {
+                console.log(`  [!] [${issue.code}] ${issue.message}`);
+            });
+            process.exitCode = 1;
+            return;
+        }
+        // 2. Perform semantic verification
+        const artifactRecord = artifact;
+        let result;
+        if (artifact.mode === "simulated") {
+            result = {
+                ok: true,
+                inputTotalSompi: BigInt(artifact.amountSompi || 0),
+                outputTotalSompi: BigInt(artifact.amountSompi || 0),
+                changeAmountSompi: 0n,
+                recomputedFeeSompi: 0n,
+                recomputedMass: 0n,
+                issues: []
+            };
+        }
+        else {
+            if (!artifactRecord["inputs"] ||
+                !Array.isArray(artifactRecord["inputs"]) ||
+                !artifactRecord["outputs"] ||
+                !Array.isArray(artifactRecord["outputs"])) {
+                throw new Error("Invalid artifact: missing or invalid inputs/outputs arrays");
+            }
+            result = verifyTxPlanSemantics(artifact);
+        }
+        if (options.json) {
+            UI.writeJson(result);
+            return result;
+        }
+        // Display Results
+        console.log(`Plan ID:      ${artifact.planId}`);
+        console.log(`Network:      ${artifact.networkId}`);
+        console.log(`Mode:         ${artifact.mode}`);
+        console.log("");
+        console.log("Economic Audit:");
+        console.log(`  Inputs:     ${formatSompi(result.inputTotalSompi)}`);
+        console.log(`  Outputs:    ${formatSompi(result.outputTotalSompi)}`);
+        console.log(`  Change:     ${formatSompi(result.changeAmountSompi)}`);
+        console.log(`  Fee (calc): ${formatSompi(result.recomputedFeeSompi)}`);
+        console.log(`  Mass:       ${result.recomputedMass}`);
+        console.log("");
+        if (result.issues.length > 0) {
+            console.log("Issues Found:");
+            result.issues.forEach((issue) => {
+                const prefix = getSeverityPrefix(issue.severity);
+                console.log(`  ${prefix} [${issue.code}] ${issue.message}`);
+                if (issue.path)
+                    console.log(`      Path: ${issue.path}`);
+            });
+            console.log("");
+        }
+        if (result.ok) {
+            UI.success("SEMANTIC VERIFICATION PASSED");
+            UI.printNextSteps([
+                `hardkas dev tx sign ${artifact.planId}`,
+                `hardkas why ${artifact.planId}`
+            ]);
+        }
+        else {
+            UI.error("SEMANTIC VERIFICATION FAILED");
+            UI.printNextSteps([`hardkas why ${artifact.planId}`]);
+            process.exitCode = 1;
+        }
+        return result;
+    }
+    catch (e) {
+        UI.error(`Verification error: ${e.message}`);
+        process.exitCode = 1;
+    }
+}
+function getSeverityPrefix(severity) {
+    switch (severity) {
+        case "critical":
+            return "[!!!]";
+        case "error":
+            return "[!]  ";
+        case "warning":
+            return "[?]  ";
+        default:
+            return "[i]  ";
+    }
+}
+//# sourceMappingURL=tx-verify-runner.js.map

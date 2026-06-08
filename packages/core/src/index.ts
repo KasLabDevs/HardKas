@@ -31,7 +31,13 @@ export const artifactTypeSchema = z.enum([
   "policy.v1",
   "networkProfile.v1",
   "assumption.v1",
-  "migrationReceipt.v1"
+  "migrationReceipt.v1",
+  "silver.compile",
+  "silver.test",
+  "silver.spendPlan",
+  "silver.deployPlan",
+  "silver.deploy",
+  "silver.spendReceipt"
 ]);
 
 export type ArtifactType = z.infer<typeof artifactTypeSchema>;
@@ -155,3 +161,4 @@ export * from "./runtime-context.js";
 export * from "./semantics/index.js";
 export * from "./append-coordinator.js";
 export * from "./migrations.js";
+export * from "./silver.js";
