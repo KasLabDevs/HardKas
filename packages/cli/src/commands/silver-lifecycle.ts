@@ -163,18 +163,30 @@ export function getSilverDeployCommand() {
       }
 
       const kaspaUtxos = selectedInputs.map(u => {
-          const rawUtxoEntry = u.raw.utxoEntry;
+          const rawUtxoEntry = u.raw.utxoEntry || u.raw.utxo_entry || u.raw;
+          // scriptPublicKey can be a flat hex string "VVVV<script>" or an object {version, scriptPublicKey/script}
+          let spkVersion: number;
+          let spkScript: string;
+          const rawSpk = rawUtxoEntry.scriptPublicKey || rawUtxoEntry.script_public_key;
+          if (typeof rawSpk === "string") {
+              // Flat hex: first 4 chars = version (uint16 LE hex), rest = script hex
+              spkVersion = parseInt(rawSpk.substring(0, 4), 16);
+              spkScript = rawSpk.substring(4);
+          } else if (rawSpk && typeof rawSpk === "object") {
+              spkVersion = rawSpk.version ?? 0;
+              spkScript = rawSpk.scriptPublicKey || rawSpk.script || rawSpk.script_public_key || "";
+          } else {
+              spkVersion = 0;
+              spkScript = "";
+          }
           return {
               address: address,
               outpoint: { transactionId: u.outpoint.transactionId, index: u.outpoint.index },
               utxoEntry: {
                   amount: BigInt(u.amountSompi),
-                  scriptPublicKey: new kaspa.ScriptPublicKey(
-                      rawUtxoEntry.scriptPublicKey.version,
-                      rawUtxoEntry.scriptPublicKey.scriptPublicKey
-                  ),
-                  blockDaaScore: BigInt(rawUtxoEntry.blockDaaScore),
-                  isCoinbase: !!rawUtxoEntry.isCoinbase
+                  scriptPublicKey: new kaspa.ScriptPublicKey(spkVersion, spkScript),
+                  blockDaaScore: BigInt(rawUtxoEntry.blockDaaScore || rawUtxoEntry.block_daa_score || 0),
+                  isCoinbase: !!(rawUtxoEntry.isCoinbase || rawUtxoEntry.is_coinbase)
               }
           };
       });
