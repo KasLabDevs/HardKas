@@ -1,5 +1,5 @@
 import { Command } from "commander";
-import { UI, handleError } from "../ui.js";
+import { UI } from "../ui.js";
 import { runTest } from "../runners/test-runner.js";
 
 export function registerTestCommands(program: Command) {
@@ -39,7 +39,7 @@ export function registerTestCommands(program: Command) {
           });
         } catch (e) {
           handleError(e, "Test execution failed");
-          process.exit(1);
+          throw new Error("Command failed");
         }
       }
     );

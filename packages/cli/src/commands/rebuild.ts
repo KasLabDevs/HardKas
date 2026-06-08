@@ -1,5 +1,5 @@
 import { Command } from "commander";
-import { UI, handleError } from "../ui.js";
+import { UI } from "../ui.js";
 import { HardkasCliError, HardkasExitCode } from "../cli-errors.js";
 
 export function registerRebuildCommand(program: Command) {
@@ -90,12 +90,10 @@ export function registerRebuildCommand(program: Command) {
             message: err.message,
             code: err.code || "UNKNOWN_ERROR"
           });
+          throw err;
         } else {
-          handleError(err);
+          throw err;
         }
-        process.exit(
-          err instanceof HardkasCliError ? err.exitCode : HardkasExitCode.RUNTIME_FAILURE
-        );
       }
     });
 }

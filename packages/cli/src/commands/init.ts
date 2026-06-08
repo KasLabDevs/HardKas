@@ -17,8 +17,6 @@ export function registerInitCommands(program: Command) {
       let targetDir = process.cwd();
       const path = await import("node:path");
       const { withLock } = await import("@hardkas/core");
-      const { handleLockError } = await import("../ui.js");
-
       if (name) {
         targetDir = path.resolve(process.cwd(), name);
       }
@@ -147,8 +145,7 @@ export default defineHardkasConfig({
           }
         );
       } catch (e) {
-        handleLockError(e);
-        process.exitCode = 1;
+        throw e;
       }
     });
 
@@ -162,8 +159,7 @@ export default defineHardkasConfig({
       try {
         await runUp();
       } catch (e) {
-        handleError(e, "Bootstrap failed");
-        process.exitCode = 1;
+        throw e, "Bootstrap failed";
       }
     });
 }

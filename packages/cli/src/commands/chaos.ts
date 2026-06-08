@@ -1,7 +1,7 @@
 import { Command } from "commander";
 import path from "node:path";
 import fs from "node:fs/promises";
-import { UI, handleError } from "../ui.js";
+import { UI } from "../ui.js";
 
 // Chaos Exit Codes
 export const ChaosExitCodes = {
@@ -47,10 +47,10 @@ export function registerChaosCommands(program: Command) {
           if (err.exitCode !== ChaosExitCodes.NO_FINDINGS) {
             UI.error(err.message);
           }
-          process.exit(err.exitCode);
+          throw err;
         }
         handleError(err);
-        process.exit(ChaosExitCodes.INTERNAL_FAILURE);
+        throw new Error("Chaos Internal Failure");
       }
     });
 
@@ -64,9 +64,9 @@ export function registerChaosCommands(program: Command) {
         const { replayChaosRun } = await import("../runners/chaos-runner.js");
         await replayChaosRun(options);
       } catch (err: any) {
-        if (err.exitCode !== undefined) process.exit(err.exitCode);
+        if (err.exitCode !== undefined) throw err;
         handleError(err);
-        process.exit(ChaosExitCodes.INTERNAL_FAILURE);
+        throw new Error("Chaos Internal Failure");
       }
     });
 }

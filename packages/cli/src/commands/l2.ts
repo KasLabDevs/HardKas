@@ -1,5 +1,4 @@
 import { Command } from "commander";
-import { handleError } from "../ui.js";
 import { runL2Networks } from "../runners/l2-networks-runner.js";
 import { runL2ProfileShow } from "../runners/l2-profile-show-runner.js";
 import { runL2ProfileValidate } from "../runners/l2-profile-validate-runner.js";

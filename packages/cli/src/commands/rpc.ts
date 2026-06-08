@@ -1,5 +1,4 @@
 import { Command } from "commander";
-import { handleError } from "../ui.js";
 import { runRpcInfo } from "../runners/rpc-info-runner.js";
 import { runRpcHealth } from "../runners/rpc-health-runner.js";
 import { runRpcDag } from "../runners/rpc-dag-runner.js";
@@ -33,11 +32,10 @@ export function registerRpcCommands(program: Command) {
         });
         console.log(res.formatted);
         if (!res.result.ready) {
-          process.exitCode = 1;
+          throw e;
         }
       } catch (e) {
-        handleError(e);
-        process.exitCode = 1;
+        throw e;
       }
     });
 

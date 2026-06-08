@@ -642,7 +642,12 @@ export async function runDoctorChecks(
   }
 
   if (opts.strict && report.summary.failed > 0) {
-    process.exit(1);
+    const { HardkasCliError, HardkasExitCode } = await import("../cli-errors.js");
+    throw new HardkasCliError(
+      "DOCTOR_FAILED",
+      "Strict mode: Doctor health checks failed.",
+      { exitCode: HardkasExitCode.RUNTIME_FAILURE }
+    );
   }
 
   return report.summary.failed === 0;

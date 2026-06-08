@@ -1,1 +1,0 @@
-{"version":3,"file":"artifact-create-runner.d.ts","sourceRoot":"","sources":["artifact-create-runner.ts"],"names":[],"mappings":"AAMA,MAAM,WAAW,qBAAqB;IACpC,IAAI,EAAE,MAAM,CAAC;IACb,KAAK,EAAE,MAAM,CAAC;IACd,GAAG,CAAC,EAAE,MAAM,CAAC;IACb,IAAI,EAAE,OAAO,CAAC;IACd,aAAa,EAAE,MAAM,CAAC;CACvB;AAED,wBAAsB,iBAAiB,CAAC,OAAO,EAAE,qBAAqB,iBAoDrE"}

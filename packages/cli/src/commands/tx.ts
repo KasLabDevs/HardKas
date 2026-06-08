@@ -20,8 +20,7 @@ export function registerTxCommands(program: Command) {
       try {
         await runTxProfile({ path, ...options, workspaceRoot: process.cwd() });
       } catch (e) {
-        handleError(e);
-        process.exitCode = 1;
+        throw e;
       }
     });
 
@@ -37,8 +36,7 @@ export function registerTxCommands(program: Command) {
         if (options.json) UI.setJsonMode(true);
         await runTxBatch(options);
       } catch (e) {
-        handleError(e);
-        process.exitCode = 1;
+        throw e;
       }
     });
 
@@ -76,7 +74,6 @@ export function registerTxCommands(program: Command) {
         json: boolean;
       }) => {
         const { withLock } = await import("@hardkas/core");
-        const { handleLockError } = await import("../ui.js");
         try {
           if (options.json) UI.setJsonMode(true);
           await withLock(
@@ -141,8 +138,7 @@ export function registerTxCommands(program: Command) {
             }
           );
         } catch (e) {
-          handleLockError(e);
-          process.exitCode = 1;
+          throw e;
         }
       }
     );
@@ -176,7 +172,6 @@ export function registerTxCommands(program: Command) {
         }
       ) => {
         const { withLock } = await import("@hardkas/core");
-        const { handleLockError } = await import("../ui.js");
         try {
           if (options.json) UI.setJsonMode(true);
           await withLock(
@@ -239,8 +234,7 @@ export function registerTxCommands(program: Command) {
             }
           );
         } catch (e) {
-          handleLockError(e);
-          process.exitCode = 1;
+          throw e;
         }
       }
     );
@@ -306,7 +300,7 @@ export function registerTxCommands(program: Command) {
         console.log();
       } catch (e) {
         console.error(e instanceof Error ? e.message : String(e));
-        process.exitCode = 1;
+        throw e;
       }
     });
 
@@ -343,7 +337,6 @@ export function registerTxCommands(program: Command) {
         }
       ) => {
         const { withLock } = await import("@hardkas/core");
-        const { handleLockError } = await import("../ui.js");
         try {
           if (options.json) UI.setJsonMode(true);
           await withLock(
@@ -525,13 +518,12 @@ export function registerTxCommands(program: Command) {
                 console.error(
                   "Provide a path to a signed artifact or use --from, --to, --amount."
                 );
-                process.exitCode = 1;
+                throw e;
               }
             }
           );
         } catch (e) {
-          handleLockError(e);
-          process.exitCode = 1;
+          throw e;
         }
       }
     );
@@ -545,8 +537,7 @@ export function registerTxCommands(program: Command) {
         if (options.json) console.log(JSON.stringify(result.receipt, bigIntReplacer, 2));
         else console.log(result.formatted);
       } catch (e) {
-        handleError(e);
-        process.exitCode = 1;
+        throw e;
       }
     });
 
@@ -570,8 +561,7 @@ export function registerTxCommands(program: Command) {
           address: options.address
         });
       } catch (e) {
-        handleError(e);
-        process.exitCode = 1;
+        throw e;
       }
     });
 
@@ -585,8 +575,7 @@ export function registerTxCommands(program: Command) {
         const { runTxVerify } = await import("../runners/tx-verify-runner.js");
         await runTxVerify({ path, json: options.json, workspaceRoot: process.cwd() });
       } catch (e) {
-        handleError(e);
-        process.exitCode = 1;
+        throw e;
       }
     });
 
@@ -597,7 +586,7 @@ export function registerTxCommands(program: Command) {
     .action(async (txId: string) => {
       const { UI } = await import("../ui.js");
       UI.error("Tracing is temporarily disabled while the query API stabilizes.");
-      process.exitCode = 1;
+      throw e;
     });
 
   tx.command("compare <simulatedPath> <realPath>")
@@ -607,8 +596,7 @@ export function registerTxCommands(program: Command) {
         const { runTxCompare } = await import("../runners/tx-compare-runner.js");
         await runTxCompare({ simulatedPath, realPath });
       } catch (e) {
-        handleError(e);
-        process.exitCode = 1;
+        throw e;
       }
     });
 }

@@ -1,7 +1,7 @@
 import { Command } from "commander";
 import { runArtifactVerify } from "../runners/artifact-verify-runner.js";
 import { runSemanticVerify } from "../runners/semantic-verify-runner.js";
-import { UI, handleError } from "../ui.js";
+import { UI } from "../ui.js";
 import { HardkasCliError, HardkasExitCode } from "../cli-errors.js";
 
 export function registerVerifyCommand(program: Command) {
@@ -74,7 +74,7 @@ export function registerVerifyCommand(program: Command) {
         } else {
           UI.error(err.message);
         }
-        process.exit(1);
+        throw new Error("Command failed");
       }
     });
 }

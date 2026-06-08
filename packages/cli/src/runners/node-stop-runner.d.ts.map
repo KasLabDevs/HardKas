@@ -1,1 +1,0 @@
-{"version":3,"file":"node-stop-runner.d.ts","sourceRoot":"","sources":["node-stop-runner.ts"],"names":[],"mappings":"AAAA,OAAO,EAAsB,gBAAgB,EAAE,MAAM,sBAAsB,CAAC;AAE5E,MAAM,WAAW,mBAAmB;IAClC,aAAa,CAAC,EAAE,MAAM,CAAC;CACxB;AAED,wBAAsB,WAAW,CAAC,KAAK,EAAE,mBAAmB,GAAG,OAAO,CAAC,gBAAgB,CAAC,CAKvF"}
