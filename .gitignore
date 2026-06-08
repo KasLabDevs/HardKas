@@ -37,5 +37,12 @@ tx-receipt.json
 
 generated-apps/
 
-
 temp-*/
+
+_e2e_test/
+tx-lifecycle-smoke/
+dist-release/
+bin_wrapper/
+snapshots/
+campaign.ps1
+test-commander.ts
