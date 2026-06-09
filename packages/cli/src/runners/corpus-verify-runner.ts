@@ -256,6 +256,14 @@ function verifyContentHash(artifact: any, issues: CorpusIssue[], filePath: strin
 function validateFailureReferences(fixture: any, issues: CorpusIssue[], filePath: string, corpusPath: string) {
   for (const ref of collectFixtureRefs(fixture)) {
     const refPath = ref.split("#")[0];
+    if (!refPath) {
+      issues.push({
+        code: "FAILURE_REFERENCE_INVALID",
+        message: `Referenced fixture path is empty: ${ref}.`,
+        file: filePath
+      });
+      continue;
+    }
     const resolved = path.resolve(path.dirname(filePath), refPath);
     if (!resolved.startsWith(corpusPath) || !fs.existsSync(resolved)) {
       issues.push({
