@@ -1,0 +1,19 @@
+{
+  "schema": "hardkas.silver.deployPlan",
+  "hardkasVersion": "0.9.0-alpha",
+  "version": "1.0.0-alpha",
+  "hashVersion": 4,
+  "networkId": "simnet",
+  "mode": "simulated",
+  "createdAt": "2026-06-09T17:25:31.616Z",
+  "compileArtifactHash": "2c01b25995895c37eda9531dae778206c212299ec350d46d95d8848d411b2f2e",
+  "compiledScriptHash": "4ae81572f06e1b88fd5ced7a1a000945432e83e1551e6f721ee9c00b8cc33260",
+  "redeemScriptHex": "51",
+  "redeemScriptHash": "ce57216285125006ec18197bd8184221cefa559bb0798410d99a5bba5b07cd1d",
+  "lockingScriptHex": "aa20ce57216285125006ec18197bd8184221cefa559bb0798410d99a5bba5b07cd1d87",
+  "scriptPublicKeyVersion": 0,
+  "amountSompi": "100000000",
+  "deployerAddress": "kaspasim:qzj95d4axnxz6yl9utawl2ezx822gs752r6nfgt6a4hxc76u7t33cr9rvz43e",
+  "contentHash": "f0f45cbfa841b0f1b8a198406b186ee3917da23d1c75a5595aa4d3ed2e421cac",
+  "artifactId": "silverdeployplan-f0f45cbfa841b0f1"
+}

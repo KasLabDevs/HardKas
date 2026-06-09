@@ -139,7 +139,7 @@ export function registerLockCommands(program: Command) {
           UI.success(`Lock '${name}' cleared.`);
         } else {
           UI.error(`Could not clear lock '${name}': ${result.reason}`);
-          throw e;
+          throw new Error("Command failed");
         }
       } catch (e) {
         throw e;

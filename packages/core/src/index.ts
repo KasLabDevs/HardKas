@@ -37,7 +37,9 @@ export const artifactTypeSchema = z.enum([
   "silver.spendPlan",
   "silver.deployPlan",
   "silver.deploy",
-  "silver.spendReceipt"
+  "silver.spendReceipt",
+  "silver.deploySimulation",
+  "silver.spendSimulation"
 ]);
 
 export type ArtifactType = z.infer<typeof artifactTypeSchema>;

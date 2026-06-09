@@ -1,7 +1,7 @@
 import { Command } from "commander";
 import path from "node:path";
 import fs from "node:fs/promises";
-import { UI } from "../ui.js";
+import { UI, handleError } from "../ui.js";
 
 // Chaos Exit Codes
 export const ChaosExitCodes = {
@@ -113,7 +113,7 @@ async function enforceSafetyGuards(options: any) {
           };
         }
       } catch (e: any) {
-        if (e.exitCode) throw e; // bubble up
+        if (e.exitCode) throw new Error("Command failed"); // bubble up
         // File doesn't exist, which is good
       }
     }

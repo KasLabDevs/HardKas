@@ -22,7 +22,7 @@ export function registerReplayCommands(program: Command) {
           : process.cwd();
         await runReplayVerify({ path: targetPath || "", ...options, workspaceRoot });
       } catch (e: any) {
-        throw e;
+        throw new Error("Command failed");
       }
     });
   replayCmd
@@ -42,7 +42,7 @@ export function registerReplayCommands(program: Command) {
           workspaceRoot: process.cwd()
         });
       } catch (e: any) {
-        throw e;
+        throw new Error("Command failed");
       }
     });
 }

@@ -1,3 +1,4 @@
+import { handleLockError } from "../ui.js";
 import { Command } from "commander";
 import { handleError, UI } from "../ui.js";
 import { runNodeStart } from "../runners/node-start-runner.js";

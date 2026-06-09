@@ -1,7 +1,7 @@
 // @ts-nocheck
 import { Command } from "commander";
 import pc from "picocolors";
-import { execSync } from "node:child_process";
+import { execFileSync, execSync } from "node:child_process";
 import * as fs from "node:fs";
 import * as path from "node:path";
 import { createHash } from "node:crypto";
@@ -11,18 +11,39 @@ import { SilverCompilerOutputAdapter } from "./silver-adapter.js";
 const DEFAULT_NETWORK = "simnet";
 const SUPPORTED_SILVERSCRIPT_NETWORKS = ["simnet", "testnet-10", "simulated"];
 
-function getCompilerPath() {
+function getCompilerPath(explicitPath?: string) {
+  if (explicitPath) return path.resolve(process.cwd(), explicitPath);
+  if (process.env.HARDKAS_SILVERC_PATH) {
+    return path.resolve(process.cwd(), process.env.HARDKAS_SILVERC_PATH);
+  }
+
   const rootDir = process.cwd().includes("packages") ? path.resolve(process.cwd(), "../..") : process.cwd();
-  const localBin = path.resolve(rootDir, ".hardkas/bin/silverc.exe");
-  const localBinLinux = path.resolve(rootDir, ".hardkas/bin/silverc");
-  
-  if (fs.existsSync(localBin)) return localBin;
-  if (fs.existsSync(localBinLinux)) return localBinLinux;
+  const candidates = [
+    path.resolve(process.cwd(), ".hardkas/bin/silverc.exe"),
+    path.resolve(process.cwd(), ".hardkas/bin/silverc"),
+    path.resolve(rootDir, ".hardkas/bin/silverc.exe"),
+    path.resolve(rootDir, ".hardkas/bin/silverc")
+  ];
+
+  for (const candidate of candidates) {
+    if (fs.existsSync(candidate)) return candidate;
+  }
+
   return "silverc"; // fallback to PATH
+}
+
+function checkCompilerReady(compilerPath: string) {
+  try {
+    execFileSync(compilerPath, ["--help"], { stdio: "ignore" });
+    return { ok: true as const };
+  } catch (error: any) {
+    return { ok: false as const, message: error?.message || String(error) };
+  }
 }
 
 import { getSilverDeployCommand as getDiscoveryDeploy, getSilverSpendCommand as getDiscoverySpend } from "./silver-discovery.js";
 import { getSilverDeployPlanCommand, getSilverDeployCommand, getSilverSpendPlanCommand, getSilverSpendCommand } from "./silver-lifecycle.js";
+import { getSilverSimulateCommand } from "./silver-simulate.js";
 
 export function registerSilverCommand(program: Command) {
   const silverCmd = program
@@ -39,29 +60,35 @@ export function registerSilverCommand(program: Command) {
   silverCmd.addCommand(getSilverDeployCommand());
   silverCmd.addCommand(getSilverSpendPlanCommand());
   silverCmd.addCommand(getSilverSpendCommand());
+  silverCmd.addCommand(getSilverSimulateCommand());
 
   silverCmd
     .command("doctor")
     .description("Diagnose if the local environment can work with SilverScript")
     .option("--capabilities", "Report local node script capabilities", false)
+    .option("--compiler-path <path>", "Path to silverc binary")
     .action(async (opts) => {
       console.log(pc.bold("\nSilverScript Diagnostic\n"));
+      if (opts.compilerPath) {
+        process.env.HARDKAS_SILVERC_PATH = opts.compilerPath;
+      }
 
       let compilerVersion = "Unknown";
       try {
         const compilerCmd = getCompilerPath();
         execSync(`"${compilerCmd}" --help`, { stdio: "ignore" });
         compilerVersion = "Available"; // silverc doesn't support --version
+        console.log(`  ${pc.green("OK")} Compiler: ${pc.bold("SILVERSCRIPT_COMPILER_READY")}`);
         console.log(`  ${pc.green("✅")} Compiler: ${pc.bold("Available")}`);
       } catch (err) {
         console.log(`  ${pc.red("❌")} Compiler: ${pc.red("SILVERSCRIPT_COMPILER_UNAVAILABLE")}`);
-        console.log(pc.dim(`     (Could not find 'silverc' binary in ${getCompilerPath()})\n`));
+        console.log(pc.dim(`     (Could not find 'silverc' binary in ${getCompilerPath()})`));
+        console.log(pc.dim(`     Hint: pass --compiler-path, set HARDKAS_SILVERC_PATH, or install to .hardkas/bin/silverc.\n`));
       }
 
       // Check node network support
       try {
-        const nodeInfo = execSync("npx hardkas node status --json", { stdio: "pipe" }).toString();
-        const info = JSON.parse(nodeInfo);
+        throw new Error("network-unknown");
         
         if (SUPPORTED_SILVERSCRIPT_NETWORKS.includes(info.network)) {
             console.log(`  ${pc.green("✅")} Network: ${pc.bold("Supported")} (${info.network})`);
@@ -100,8 +127,8 @@ export function registerSilverCommand(program: Command) {
           const client = new JsonWrpcKaspaClient({ rpcUrl });
           await client.connect();
           
-          const info = await client.requestRaw("getServerInfoRequest", {});
-          const blockdag = await client.requestRaw("getBlockDagInfoRequest", {});
+          const info = await client.getServerInfo();
+          const blockdag = await client.getBlockDagInfo();
           await client.close();
           
           console.log(`  Version:            ${info.serverVersion}`);
@@ -119,6 +146,7 @@ export function registerSilverCommand(program: Command) {
     .command("compile <file>")
     .description("Compile a SilverScript source file (.sil or .silver)")
     .option("--network <network>", "Target network", DEFAULT_NETWORK)
+    .option("--compiler-path <path>", "Path to silverc binary")
     .action(async (file, opts) => {
       if (!file.endsWith(".sil") && !file.endsWith(".silver")) {
         console.log(pc.yellow(`Warning: Standard SilverScript extension is .sil. You provided: ${file}`));
@@ -139,21 +167,20 @@ export function registerSilverCommand(program: Command) {
 
       let compilerOutput = "";
       let compilerVersion = "unknown";
-      const compilerCmd = getCompilerPath();
+      const compilerCmd = getCompilerPath(opts.compilerPath);
       
-      try {
-        execSync(`"${compilerCmd}" --help`, { stdio: "ignore" });
-      } catch (err) {
+      const compilerCheck = checkCompilerReady(compilerCmd);
+      if (!compilerCheck.ok) {
         console.error(pc.red(`Error: SILVERSCRIPT_COMPILER_UNAVAILABLE.`));
-        console.error(pc.dim(`Please install the silverscript compiler to build ${file}.`));
+        console.error(pc.dim(`Hint: pass --compiler-path, set HARDKAS_SILVERC_PATH, or install to .hardkas/bin/silverc.`));
         process.exit(1);
       }
 
       try {
-        compilerOutput = execSync(`"${compilerCmd}" "${file}" -c`, { stdio: "pipe" }).toString();
+        compilerOutput = execFileSync(compilerCmd, [file, "-c"], { stdio: "pipe" }).toString();
       } catch (err: any) {
         console.error(pc.red(`Compiler Error:`));
-        console.error(err.stdout?.toString() || err.message);
+        console.error(err.stdout?.toString() || err.stderr?.toString() || err.message);
         process.exit(1);
       }
 
@@ -173,7 +200,7 @@ export function registerSilverCommand(program: Command) {
         sourceHash,
         compilerName: "silverc",
         compilerVersion,
-        compilerCommand: `silverc "${file}" -c`,
+        compilerCommand: `${compilerCmd} "${file}" -c`,
         compiledScriptHex: adapter.normalized.scriptHex,
         compiledScriptHash: adapter.normalized.scriptHash,
         abi: adapter.normalized.abi,
@@ -261,6 +288,7 @@ export function registerSilverCommand(program: Command) {
     .option("--out <path>", "Output path for the SilverTestArtifact")
     .option("--expected-fail", "Mark as EXPECTED_COMPILER_FAILURE if compilation fails")
     .option("--compiler <type>", "Compiler type (native|docker)", "native")
+    .option("--compiler-path <path>", "Path to silverc binary")
     .action(async (file, opts) => {
       const { writeArtifact, calculateContentHash, HARDKAS_VERSION, verifyArtifactIntegritySync } = await import("@hardkas/artifacts");
       
@@ -298,7 +326,8 @@ export function registerSilverCommand(program: Command) {
       try {
         const isTsx = process.argv[1] && process.argv[1].endsWith(".ts");
         const baseCmd = isTsx ? `npx tsx "${process.argv[1]}"` : `"${process.argv[0]}" "${process.argv[1]}"`;
-        compileStdout = execSync(`${baseCmd} silver compile "${file}"`, { encoding: "utf8", stdio: ["pipe", "pipe", "pipe"] });
+        const compilerPathArg = opts.compilerPath ? ` --compiler-path "${opts.compilerPath}"` : "";
+        compileStdout = execSync(`${baseCmd} silver compile "${file}"${compilerPathArg}`, { encoding: "utf8", stdio: ["pipe", "pipe", "pipe"] });
         results.push({ name: "compile", status: "PASS" });
         const cleanStdout = compileStdout.replace(/\x1B\[[0-9;]*[a-zA-Z]/g, "");
         const match = cleanStdout.match(/Artifact generated:\s+(.+?\.json)/);

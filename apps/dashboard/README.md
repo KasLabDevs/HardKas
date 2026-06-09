@@ -1,73 +1,47 @@
-# React + TypeScript + Vite
+# `@hardkas/dashboard`
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+The dashboard is the local HardKas workspace viewer. It observes artifacts, transactions, replay status, query-store health, lineage, telemetry, and dashboard API availability.
 
-Currently, two official plugins are available:
+It is not a wallet and it should not invent state. The UI reads the local dev-server/dashboard API and displays what the workspace can prove.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## Run Locally
 
-## React Compiler
+From the repo root:
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
-
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default defineConfig([
-  globalIgnores(["dist"]),
-  {
-    files: ["**/*.{ts,tsx}"],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ["./tsconfig.node.json", "./tsconfig.app.json"],
-        tsconfigRootDir: import.meta.dirname
-      }
-      // other options...
-    }
-  }
-]);
+```bash
+pnpm --filter @hardkas/dashboard dev
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+The app expects the HardKas dashboard/dev API on:
 
-```js
-// eslint.config.js
-import reactX from "eslint-plugin-react-x";
-import reactDom from "eslint-plugin-react-dom";
-
-export default defineConfig([
-  globalIgnores(["dist"]),
-  {
-    files: ["**/*.{ts,tsx}"],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs["recommended-typescript"],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ["./tsconfig.node.json", "./tsconfig.app.json"],
-        tsconfigRootDir: import.meta.dirname
-      }
-      // other options...
-    }
-  }
-]);
+```text
+http://localhost:7420
 ```
+
+Start the CLI-side dashboard/server flow separately when needed:
+
+```bash
+hardkas dashboard
+```
+
+## Useful Local Flow
+
+Generate local data first:
+
+```bash
+hardkas init
+hardkas tx send --from alice --to bob --amount 1 --network simulated --yes
+hardkas query store sync
+```
+
+Then open the dashboard and check:
+
+- workspace health
+- artifact list
+- transaction receipts
+- replay/lineage state
+- query-store drift
+
+## Boundary
+
+The browser app should use `@hardkas/react` and `@hardkas/client`. It should not import `@hardkas/sdk` directly because the SDK is Node-oriented and depends on filesystem/runtime packages.

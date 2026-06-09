@@ -94,7 +94,7 @@ export function registerCiCommand(program: Command) {
           return;
         }
       } catch (e: any) {
-        if (e.name === "HardkasCliError") throw e;
+        if (e.name === "HardkasCliError") throw new Error("Command failed");
         const { HardkasCliError, HardkasExitCode } = await import("../cli-errors.js");
         throw new HardkasCliError("CI_ERROR", e.message || String(e), {
           exitCode: HardkasExitCode.RUNTIME_FAILURE

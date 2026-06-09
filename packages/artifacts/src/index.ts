@@ -38,5 +38,8 @@ export type {
   SilverTestArtifact,
   SilverDeployPlanArtifact,
   SilverDeployArtifact,
-  SilverSpendPlanArtifact
+  SilverSpendPlanArtifact,
+  SilverSpendReceiptArtifact,
+  SilverDeploySimulationArtifact,
+  SilverSpendSimulationArtifact
 } from "./types.js";

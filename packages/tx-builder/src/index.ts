@@ -3,6 +3,7 @@ import { estimateTransactionMass } from "./mass.js";
 import { DUST_THRESHOLD_SOMPI } from "./verify.js";
 export * from "./mass.js";
 export * from "./verify.js";
+export * from "./service.js";
 
 export interface Outpoint {
   readonly transactionId: string;

@@ -1,0 +1,29 @@
+{
+  "schema": "hardkas.toccataGoldenFailureCase.v1",
+  "caseId": "wrong-network",
+  "title": "Deploy plan targets a non-simnet network",
+  "network": "testnet-10",
+  "profile": "toccata-v2",
+  "baseArtifact": "../op-true/deploy-plan.json",
+  "input": {
+    "artifactSchema": "hardkas.silver.deployPlan",
+    "mutation": {
+      "path": "$.networkId",
+      "from": "simnet",
+      "to": "testnet-10"
+    }
+  },
+  "expectedSimulator": {
+    "phase": "simulateSilverDeploy",
+    "status": "REJECTED",
+    "error": "SILVERSCRIPT_NETWORK_UNSUPPORTED"
+  },
+  "expectedReal": {
+    "status": "NOT_SUBMITTED",
+    "reason": "Toccata golden corpus is local/simnet only."
+  },
+  "compare": {
+    "status": "NOT_APPLICABLE_INPUT_REJECTED",
+    "reason": "No simulated receipt should be produced for a non-simnet deploy plan."
+  }
+}

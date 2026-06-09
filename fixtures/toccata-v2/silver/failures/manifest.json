@@ -1,0 +1,56 @@
+{
+  "schema": "hardkas.toccataGoldenFailureManifest.v1",
+  "corpus": "fixtures/toccata-v2/silver/failures",
+  "network": "simnet",
+  "node": "rusty-kaspad:v2.0.0",
+  "profile": "toccata-v2",
+  "generatedFrom": "P5_GOLDEN_FAILURE_CORPUS",
+  "status": "P5_GOLDEN_FAILURE_CORPUS_STARTED",
+  "simulationClaim": {
+    "artifactCoherence": "READY",
+    "runtimeOutcome": "PARTIAL",
+    "vmConsensusEquivalence": "NOT_CLAIMED"
+  },
+  "expectedKnownLimitations": [
+    "PARTIAL_VM_SIMULATION"
+  ],
+  "cases": [
+    {
+      "caseId": "wrong-redeem-hash",
+      "file": "wrong-redeem-hash.json",
+      "expectedSimulatorError": "SILVERSCRIPT_REDEEM_HASH_MISMATCH",
+      "compareStatus": "NOT_APPLICABLE_INPUT_REJECTED"
+    },
+    {
+      "caseId": "non-push-only-unlock",
+      "file": "non-push-only-unlock.json",
+      "expectedSimulatorError": "SILVERSCRIPT_SIGNATURE_SCRIPT_NOT_PUSH_ONLY",
+      "compareStatus": "NOT_APPLICABLE_INPUT_REJECTED"
+    },
+    {
+      "caseId": "mutated-args",
+      "file": "mutated-args.json",
+      "expectedSimulatorError": "SILVERSCRIPT_ARGS_HASH_MISMATCH",
+      "compareStatus": "NOT_APPLICABLE_INPUT_REJECTED"
+    },
+    {
+      "caseId": "wrong-network",
+      "file": "wrong-network.json",
+      "expectedSimulatorError": "SILVERSCRIPT_NETWORK_UNSUPPORTED",
+      "compareStatus": "NOT_APPLICABLE_INPUT_REJECTED"
+    },
+    {
+      "caseId": "double-spend",
+      "file": "double-spend.json",
+      "expectedSimulatorError": "SILVERSCRIPT_UTXO_ALREADY_SPENT",
+      "compareStatus": "NOT_APPLICABLE_INPUT_REJECTED"
+    },
+    {
+      "caseId": "mainnet-guard",
+      "file": "mainnet-guard.json",
+      "expectedSimulatorError": "SILVERSCRIPT_NETWORK_UNSUPPORTED",
+      "expectedRealError": "SILVERSCRIPT_MAINNET_NOT_ENABLED",
+      "compareStatus": "NOT_APPLICABLE_MAINNET_GUARD"
+    }
+  ]
+}

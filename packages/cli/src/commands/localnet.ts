@@ -1,11 +1,61 @@
 import { Command } from "commander";
 import { UI } from "../ui.js";
-import { runLocalnetFork } from "../runners/localnet-runners.js";
+import {
+  runLocalnetFork,
+  runLocalnetFund,
+  runLocalnetStart,
+  runLocalnetStatus
+} from "../runners/localnet-runners.js";
+import { parseKasToSompi } from "@hardkas/core";
 
 export function registerLocalnetCommands(program: Command): void {
   const localnet = program
     .command("localnet")
     .description("Manage localnet state and snapshots");
+
+  localnet
+    .command("start")
+    .description(`Start localnet profile ${UI.maturity("alpha")}`)
+    .option("--profile <name>", "Localnet profile", "simulated")
+    .option("--json", "Output as JSON", false)
+    .action(async (opts) => {
+      await runLocalnetStart({
+        profile: opts.profile,
+        json: opts.json,
+        workspaceRoot: process.cwd()
+      });
+    });
+
+  localnet
+    .command("status")
+    .description(`Show localnet status ${UI.maturity("alpha")}`)
+    .option("--json", "Output as JSON", false)
+    .action(async (opts) => {
+      await runLocalnetStatus({
+        json: opts.json,
+        workspaceRoot: process.cwd()
+      });
+    });
+
+  localnet
+    .command("fund <identifier>")
+    .description(`Fund a local Toccata/simnet account ${UI.maturity("alpha")}`)
+    .option("--profile <name>", "Funding profile", "toccata-v2")
+    .option("--amount <kas>", "Target mining amount hint in KAS", "1000")
+    .option("--timeout <ms>", "Funding/maturity wait timeout in ms", "300000")
+    .option("--keep-miner", "Leave the companion miner running", false)
+    .option("--json", "Output as JSON", false)
+    .action(async (identifier, opts) => {
+      await runLocalnetFund({
+        identifier,
+        amountSompi: parseKasToSompi(opts.amount),
+        profile: opts.profile,
+        timeoutMs: parseInt(opts.timeout, 10),
+        keepMiner: opts.keepMiner,
+        json: opts.json,
+        workspaceRoot: process.cwd()
+      });
+    });
 
   const accountCmd = localnet
     .command("account")

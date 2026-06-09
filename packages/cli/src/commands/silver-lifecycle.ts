@@ -134,7 +134,12 @@ export function getSilverDeployCommand() {
         if (!rpcUrl) throw new Error("Could not resolve RPC URL");
         
         const client = new JsonWrpcKaspaClient({ rpcUrl });
-        utxos = await client.getUtxosByAddress(address.toString());
+        const info = await client.getInfo();
+        utxos = (await client.getUtxosByAddress(address.toString())).filter((u: any) => {
+          if (!u.isCoinbase) return true;
+          if (info.virtualDaaScore === undefined || u.blockDaaScore === undefined) return false;
+          return (info.virtualDaaScore - BigInt(u.blockDaaScore)) >= 1000n;
+        });
         await client.close();
       } catch (err: any) {
         console.error(pc.red(`Failed to fetch UTXOs: ${err.message}`));
@@ -164,27 +169,21 @@ export function getSilverDeployCommand() {
 
       const kaspaUtxos = selectedInputs.map(u => {
           const rawUtxoEntry = u.raw.utxoEntry || u.raw.utxo_entry || u.raw;
-          // scriptPublicKey can be a flat hex string "VVVV<script>" or an object {version, scriptPublicKey/script}
-          let spkVersion: number;
           let spkScript: string;
           const rawSpk = rawUtxoEntry.scriptPublicKey || rawUtxoEntry.script_public_key;
           if (typeof rawSpk === "string") {
-              // Flat hex: first 4 chars = version (uint16 LE hex), rest = script hex
-              spkVersion = parseInt(rawSpk.substring(0, 4), 16);
-              spkScript = rawSpk.substring(4);
+              spkScript = rawSpk;
           } else if (rawSpk && typeof rawSpk === "object") {
-              spkVersion = rawSpk.version ?? 0;
               spkScript = rawSpk.scriptPublicKey || rawSpk.script || rawSpk.script_public_key || "";
           } else {
-              spkVersion = 0;
-              spkScript = "";
+              spkScript = u.scriptPublicKey || "";
           }
           return {
-              address: address,
+              address: address.toString(),
               outpoint: { transactionId: u.outpoint.transactionId, index: u.outpoint.index },
               utxoEntry: {
                   amount: BigInt(u.amountSompi),
-                  scriptPublicKey: new kaspa.ScriptPublicKey(spkVersion, spkScript),
+                  scriptPublicKey: spkScript,
                   blockDaaScore: BigInt(rawUtxoEntry.blockDaaScore || rawUtxoEntry.block_daa_score || 0),
                   isCoinbase: !!(rawUtxoEntry.isCoinbase || rawUtxoEntry.is_coinbase)
               }
@@ -194,12 +193,16 @@ export function getSilverDeployCommand() {
       const outputs = [
           {
               amount: targetSompi,
-              scriptPublicKey: new kaspa.ScriptPublicKey(deployPlan.scriptPublicKeyVersion, deployPlan.lockingScriptHex)
+              address: address.toString()
           }
       ];
 
       const changeAddress = address;
       const txSignable = kaspa.createTransaction(kaspaUtxos, outputs, changeAddress, feeSompi);
+      txSignable.tx.outputs[0].scriptPublicKey = new kaspa.ScriptPublicKey(
+          deployPlan.scriptPublicKeyVersion,
+          deployPlan.lockingScriptHex
+      );
       
       let signedTx;
       try {
@@ -240,11 +243,17 @@ export function getSilverDeployCommand() {
           const res = await sdk.rpc.submitTransaction(rawTx);
           txId = res.transactionId;
       } catch (err: any) {
-          console.error(pc.red(`Deployment failed: ${err.message}`));
-          process.exit(1);
+          const msg = err.message || String(err);
+          const mempoolMatch = msg.match(/transaction ([0-9a-f]{64}) is already in the mempool/i);
+          if (mempoolMatch?.[1]) {
+              txId = mempoolMatch[1];
+          } else {
+              console.error(pc.red(`Deployment failed: ${msg}`));
+              process.exit(1);
+          }
       }
 
-      const info = await sdk.rpc.requestRaw("getServerInfoRequest", {});
+      const info = await sdk.rpc.getServerInfo();
 
       const deployArtifact = {
           schema: "hardkas.silver.deploy",
@@ -273,6 +282,7 @@ export function getSilverDeployCommand() {
 
       const outPath = path.resolve(process.cwd(), `${(deployArtifact as any).artifactId}.json`);
       await writeArtifact(outPath, deployArtifact as any);
+      await sdk.rpc.close();
 
       console.log(pc.green(`✅ SilverScript Deployed!`));
       console.log(`Transaction ID: ${pc.bold(txId)}`);
@@ -287,7 +297,7 @@ export function getSilverSpendPlanCommand() {
     .option("--args <json-file>", "JSON file with args array: [{type: 'hex', value: '...'}]")
     .option("--to <address>", "Recipient address")
     .action(async (deployArtifactPath, opts) => {
-      const { calculateContentHash, writeArtifact, HARDKAS_VERSION } = await import("@hardkas/artifacts");
+      const { calculateContentHash, createLineageTransition, writeArtifact, HARDKAS_VERSION } = await import("@hardkas/artifacts");
       const { createKaspaP2shBlake2bLock, createPushOnlySignatureScript } = await import("@hardkas/core");
 
       if (!fs.existsSync(deployArtifactPath)) {
@@ -354,7 +364,7 @@ export function getSilverSpendPlanCommand() {
 
       const argsHash = createHash("sha256").update(JSON.stringify(parsedArgs)).digest("hex");
       
-      const feeSompi = 2000n;
+      const feeSompi = 200000n;
       const sendAmount = BigInt(deployArtifact.amountSompi) - feeSompi;
 
       if (sendAmount <= 0) {
@@ -405,7 +415,7 @@ export function getSilverSpendCommand() {
     .argument("<spend-plan-artifact>")
     .description("Execute a SilverScript spend plan to spend the UTXO on-chain")
     .action(async (spendPlanPath) => {
-      const { calculateContentHash, writeArtifact, HARDKAS_VERSION } = await import("@hardkas/artifacts");
+      const { calculateContentHash, createLineageTransition, writeArtifact, HARDKAS_VERSION } = await import("@hardkas/artifacts");
 
       if (!fs.existsSync(spendPlanPath)) {
         console.error(pc.red(`Error: Spend plan not found at ${spendPlanPath}`));
@@ -429,6 +439,32 @@ export function getSilverSpendCommand() {
       console.log(pc.cyan(`\nSpending from UTXO ${spendPlan.contractUtxoRef.transactionId}:${spendPlan.contractUtxoRef.index}...`));
       
       const kaspa = await import("kaspa-wasm");
+      const createOutputScriptPublicKey = (address: string, amountSompi: string) => {
+          const dummyScript = `20${"00".repeat(32)}ac`;
+          const dummyUtxos = [{
+              address,
+              outpoint: { transactionId: "00".repeat(32), index: 0 },
+              utxoEntry: {
+                  amount: BigInt(amountSompi) + 2000n,
+                  scriptPublicKey: dummyScript,
+                  blockDaaScore: 0n,
+                  isCoinbase: false
+              }
+          }];
+          const tx = kaspa.createTransaction(
+              dummyUtxos,
+              [{ address, amount: BigInt(amountSompi) }],
+              new kaspa.Address(address),
+              2000n
+          );
+          let parsed = JSON.parse(tx.toString());
+          if (typeof parsed === "string") parsed = JSON.parse(parsed);
+          const spkHex = parsed.tx.inner.outputs[0].inner.scriptPublicKey;
+          return {
+              version: parseInt(spkHex.substring(0, 4), 16) || 0,
+              scriptPublicKey: spkHex.substring(4)
+          };
+      };
       
       // Verify UTXO is not stale
       let utxoResponse;
@@ -451,13 +487,9 @@ export function getSilverSpendCommand() {
               sigOpCount: 1
           }],
           outputs: spendPlan.expectedOutputs.map((o: any) => {
-              const spk = new kaspa.Address(o.address).createScriptPublicKey();
               return {
                   amount: o.amountSompi,
-                  scriptPublicKey: {
-                      version: spk.version,
-                      scriptPublicKey: spk.scriptPublicKey
-                  }
+                  scriptPublicKey: createOutputScriptPublicKey(o.address, o.amountSompi)
               };
           }),
           lockTime: 0,
@@ -489,16 +521,25 @@ export function getSilverSpendCommand() {
           mode: "real",
           createdAt: new Date().toISOString(),
           spendPlanHash: spendPlan.contentHash,
+          deployArtifactHash: spendPlan.deployArtifactHash,
+          redeemScriptHash: spendPlan.redeemScriptHash,
+          lockingScriptHex: spendPlan.lockingScriptHex,
+          signatureScriptHex: spendPlan.signatureScriptHex,
+          spentOutpoint: spendPlan.contractUtxoRef,
+          expectedOutputs: spendPlan.expectedOutputs,
           txId,
-          status: "submitted"
+          status: "accepted",
+          lineage: createLineageTransition(spendPlan, "hardkas.silver.spendReceipt")
       };
 
       const contentHash = calculateContentHash(receipt);
       (receipt as any).contentHash = contentHash;
       (receipt as any).artifactId = `silverreceipt-${contentHash.substring(0, 16)}`;
+      (receipt as any).lineage.artifactId = contentHash;
 
       const outPath = path.resolve(process.cwd(), `${(receipt as any).artifactId}.json`);
       await writeArtifact(outPath, receipt as any);
+      await sdk.rpc.close();
 
       console.log(pc.green(`✅ SilverScript Spend Success!`));
       console.log(`Transaction ID: ${pc.bold(txId)}`);

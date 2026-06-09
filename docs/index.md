@@ -1,32 +1,68 @@
 # HardKAS Technical Documentation
 
-Welcome to the definitive technical documentation for **HardKAS 0.8.x**.
+Welcome to the technical documentation for **HardKAS 0.9.0-alpha**.
 
-HardKAS is an isolated, deterministic, artifact-driven transaction lifecycle engine for Kaspa. It is designed to safely abstract the complexities of UTXO management, cryptographic signing boundaries, and Node RPC communications into a rigid, verifiable pipeline.
+HardKAS is a deterministic, local-first developer environment for Kaspa
+transaction workflows. It helps builders plan, sign, simulate, inspect, replay,
+and explain transactions through explicit filesystem artifacts.
 
 ## What HardKAS Solves
 
-Kaspa transactions involve raw UTXO selection, fee estimation, and precise signature generation over strict binary layouts. Standard implementations often mix these concerns—fetching UTXOs from a node, mutating them in memory, signing them, and broadcasting them in a single unpredictable lifecycle.
+Kaspa development involves UTXO discovery, fee estimation, signing, RPC
+submission, and receipt tracking. Many tools mix those concerns into one opaque
+operation.
 
-**HardKAS introduces a deliberate architectural boundary:**
-1. **Planning is isolated from signing.** A transaction is "planned" into a deterministic, portable JSON artifact.
-2. **Key material is highly protected.** Private keys never cross serialization boundaries.
-3. **Execution is independently verifiable.** Artifacts cryptographically commit to their lineage, meaning any stage of the lifecycle can be replayed and independently audited offline.
+HardKAS separates the lifecycle:
+
+1. Planning creates a deterministic `txPlan` artifact.
+2. Inspection and verification happen before key material is touched.
+3. Signing creates a `signedTx` artifact linked to the plan.
+4. Simulated or network execution creates a receipt artifact.
+5. Replay and query tooling explain what happened.
+
+## Product Boundary
+
+HardKAS is **local-first**:
+
+- Use `simulated` for the main development loop.
+- Use Toccata v2 `simnet` when you need the certified local real-node baseline.
+- Use testnet only when you need external integration.
+- Treat mainnet as out of scope for the alpha happy path.
+
+HardKAS does not replace Kaspa consensus and is not production custody software.
+The real network remains the final validator for real transactions.
+
+## 0.9.0-alpha Toccata Status
+
+The current alpha includes Docker `rusty-kaspad` v2.0.0 simnet funding, a real
+standard transaction lifecycle, real Silver OP_TRUE deploy/spend, simulator
+artifact-coherence comparison, and a machine-verifiable golden corpus in
+`pnpm gauntlet:toccata`.
+
+Simulation claims are intentionally bounded:
+
+- Artifact coherence: `READY_MATCH`.
+- Runtime outcome: `PARTIAL`.
+- VM/consensus equivalence: `NOT_CLAIMED`.
+- Mainnet: `BLOCKED_BY_POLICY`.
 
 ## Core Capabilities
 
-- **Large Wallet Resilience:** Deterministic dust aggregation and UTXO consolidation (handling thousands of inputs) without OOM crashes.
-- **Artifact Mutability Protection:** Structural and hashing rules that prevent mid-flight tampering of transactions.
-- **Provider Agnostic:** Supports execution against simulated environments (for instant deterministic testing) and real `rusty-kaspad` JSON-RPC nodes.
-- **Isomorphic Core:** `@hardkas/sdk` executes cleanly in Node.js and bundles natively into Vite/React frontends without pulling in server-side polyfills.
+- Deterministic transaction artifacts.
+- Planning and signing isolation.
+- Local simulated UTXO state in `.hardkas/localnet.json`.
+- Rebuildable SQLite query-store projection.
+- Artifact inspection, verification, lineage, and replay.
+- CLI, SDK, dev-server, and dashboard surfaces for the same workspace.
 
 ## Documentation Levels
 
-Whether you are building a React wallet, a backend daemon, or auditing the system for security, these documents are structured to serve you:
-
-- **Level 1 (New User):** See [Getting Started](./getting-started/installation.md) and [Quickstart](./getting-started/quickstart.md) for basic integration.
-- **Level 2 (Developer):** Review the [Transaction Lifecycle](./concepts/transaction-lifecycle.md) and the [SDK Reference](./reference/sdk.md).
-- **Level 3 (Maintainer/Auditor):** Read the [Invariants](./concepts/invariants.md), [Security Model](./concepts/security-model.md), and the [Capability Matrix](./certification/capability-matrix.md).
-
-> [!NOTE]
-> HardKAS **does not** replace Kaspa consensus. It is a strictly structured client-side orchestrator. The real network validation always happens at the `rusty-kaspad` RPC boundary.
+- **New user:** [Installation](./getting-started/installation.md) and
+  [Quickstart](./getting-started/quickstart.md).
+- **Developer:** [Mental Model](./guides/01-mental-model.md),
+  [Transaction Lifecycle](./concepts/transaction-lifecycle.md), and
+  [SDK Reference](./reference/sdk.md).
+- **Maintainer or auditor:** [Invariants](./concepts/invariants.md),
+  [Security Model](./concepts/security-model.md),
+  [Release Claims](./release-claims.md), and
+  [Capability Matrix](./certification/capability-matrix.md).

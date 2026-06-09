@@ -1,3 +1,4 @@
+import { handleError } from "../ui.js";
 import { Command } from "commander";
 import { runRpcInfo } from "../runners/rpc-info-runner.js";
 import { runRpcHealth } from "../runners/rpc-health-runner.js";
@@ -32,7 +33,7 @@ export function registerRpcCommands(program: Command) {
         });
         console.log(res.formatted);
         if (!res.result.ready) {
-          throw e;
+          throw new Error("Command failed");
         }
       } catch (e) {
         throw e;

@@ -93,15 +93,24 @@ export async function runTxPlan(input: TxPlanRunnerInput): Promise<TxPlanArtifac
       if (!rpcUrl) throw new Error("Could not resolve RPC URL");
 
       const client = new JsonWrpcKaspaClient({ rpcUrl });
+      const info = await client.getInfo();
       const rpcUtxos = await client.getUtxosByAddress(fromAddress);
       await client.close();
 
-      availableUtxos = rpcUtxos.map((u) => ({
-        outpoint: u.outpoint,
-        address: u.address,
-        amountSompi: u.amountSompi,
-        scriptPublicKey: u.scriptPublicKey || "unresolved"
-      }));
+      availableUtxos = rpcUtxos
+        .filter((u) => {
+          if (!u.isCoinbase) return true;
+          if (info.virtualDaaScore === undefined || u.blockDaaScore === undefined) return false;
+          return (info.virtualDaaScore - BigInt(u.blockDaaScore)) >= 1000n;
+        })
+        .map((u) => ({
+          outpoint: u.outpoint,
+          address: u.address,
+          amountSompi: u.amountSompi,
+          scriptPublicKey: u.scriptPublicKey || "unresolved",
+          ...(u.blockDaaScore !== undefined ? { blockDaaScore: BigInt(u.blockDaaScore) } : {}),
+          ...(u.isCoinbase !== undefined ? { isCoinbase: u.isCoinbase } : {})
+        }));
       mode = "kaspa-rpc";
     } catch (e: any) {
       const protocol = rpcUrl?.startsWith("ws") ? "WebSocket" : "JSON-RPC";

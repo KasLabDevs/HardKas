@@ -19,6 +19,11 @@ import { verifyFeeSemantics } from "./feeVerify.js";
 import { verifyLineage } from "./lineage.js";
 import { 
   SilverCompileArtifactSchema,
+  SilverDeployArtifactSchema,
+  SilverDeployPlanArtifactSchema,
+  SilverDeploySimulationArtifactSchema,
+  SilverSpendReceiptArtifactSchema,
+  SilverSpendSimulationArtifactSchema,
   SilverTestArtifactSchema,
   SilverSpendPlanArtifactSchema
 } from "./schemas.js";
@@ -223,11 +228,26 @@ export function verifyArtifactIntegritySync(
       case "hardkas.silver.compile":
         schema = SilverCompileArtifactSchema;
         break;
+      case "hardkas.silver.deployPlan":
+        schema = SilverDeployPlanArtifactSchema;
+        break;
+      case "hardkas.silver.deploy":
+        schema = SilverDeployArtifactSchema;
+        break;
       case "hardkas.silver.test":
         schema = SilverTestArtifactSchema;
         break;
       case "hardkas.silver.spendPlan":
         schema = SilverSpendPlanArtifactSchema;
+        break;
+      case "hardkas.silver.spendReceipt":
+        schema = SilverSpendReceiptArtifactSchema;
+        break;
+      case "hardkas.silver.deploySimulation":
+        schema = SilverDeploySimulationArtifactSchema;
+        break;
+      case "hardkas.silver.spendSimulation":
+        schema = SilverSpendSimulationArtifactSchema;
         break;
     }
 

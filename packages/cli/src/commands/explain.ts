@@ -48,7 +48,7 @@ export function registerExplainCommand(program: Command) {
             "cannot explain deterministic causality for missing data",
             "verify the ID and ensure you are in the correct HardKAS workspace"
           );
-          throw e;
+          throw new Error("Command failed");
           return;
         }
 

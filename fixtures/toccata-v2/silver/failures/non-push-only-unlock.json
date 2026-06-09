@@ -1,0 +1,43 @@
+{
+  "schema": "hardkas.toccataGoldenFailureCase.v1",
+  "caseId": "non-push-only-unlock",
+  "title": "Spend plan signatureScriptHex is not a valid push-only unlock",
+  "network": "simnet",
+  "profile": "toccata-v2",
+  "baseArtifact": "../op-true/spend-plan.json",
+  "stateSetup": {
+    "deployPlan": "../op-true/deploy-plan.json",
+    "deploySimulationReceipt": "../op-true/deploy-simulated.json",
+    "simulatorSpendInputNormalization": [
+      {
+        "path": "$.deployArtifactHash",
+        "valueFrom": "../op-true/deploy-simulated.json#$.contentHash"
+      },
+      {
+        "path": "$.contractUtxoRef",
+        "valueFrom": "../op-true/deploy-simulated.json#$.syntheticOutpoint"
+      }
+    ]
+  },
+  "input": {
+    "artifactSchema": "hardkas.silver.spendPlan",
+    "mutation": {
+      "path": "$.signatureScriptHex",
+      "from": "0151",
+      "to": "51"
+    }
+  },
+  "expectedSimulator": {
+    "phase": "simulateSilverSpend",
+    "status": "REJECTED",
+    "error": "SILVERSCRIPT_SIGNATURE_SCRIPT_NOT_PUSH_ONLY"
+  },
+  "expectedReal": {
+    "status": "NOT_SUBMITTED",
+    "reason": "Local unlock-script guard rejects non-push-only signature scripts before Docker submission."
+  },
+  "compare": {
+    "status": "NOT_APPLICABLE_INPUT_REJECTED",
+    "reason": "No simulated receipt should be produced for a non-push-only unlock script."
+  }
+}

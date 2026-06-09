@@ -1,5 +1,5 @@
 import { Command } from "commander";
-import { UI } from "../ui.js";
+import { UI, handleError } from "../ui.js";
 import { runTest } from "../runners/test-runner.js";
 
 export function registerTestCommands(program: Command) {

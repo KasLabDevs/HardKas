@@ -1,0 +1,33 @@
+{
+  "schema": "hardkas.silver.deploySimulation",
+  "hardkasVersion": "0.9.0-alpha",
+  "version": "1.0.0-alpha",
+  "hashVersion": 4,
+  "networkId": "simnet",
+  "mode": "simulated",
+  "createdAt": "1970-01-01T00:00:00.000Z",
+  "deployPlanHash": "3b311b21abb2d663330cb3858a2fe1662c64cd9148c1b827859f58175f1d3041",
+  "compileArtifactHash": "2c01b25995895c37eda9531dae778206c212299ec350d46d95d8848d411b2f2e",
+  "compiledScriptHash": "4ae81572f06e1b88fd5ced7a1a000945432e83e1551e6f721ee9c00b8cc33260",
+  "redeemScriptHex": "51",
+  "redeemScriptHash": "ce57216285125006ec18197bd8184221cefa559bb0798410d99a5bba5b07cd1d",
+  "lockingScriptHex": "aa20ce57216285125006ec18197bd8184221cefa559bb0798410d99a5bba5b07cd1d87",
+  "scriptPublicKeyVersion": 0,
+  "simulatedDeployTxId": "abe7db370d250f9e58a5af519b878781048c37e7cd24786fde3c88bbbba9a1cf",
+  "syntheticOutpoint": {
+    "transactionId": "abe7db370d250f9e58a5af519b878781048c37e7cd24786fde3c88bbbba9a1cf",
+    "index": 0
+  },
+  "amountSompi": "100000000",
+  "feeSompi": "2000",
+  "status": "SIMULATED_ACCEPTED",
+  "lineage": {
+    "artifactId": "deploy-sim-3b311b21abb2d663",
+    "lineageId": "silver-lineage-3b311b21abb2d663",
+    "parentArtifactId": "3b311b21abb2d663330cb3858a2fe1662c64cd9148c1b827859f58175f1d3041",
+    "rootArtifactId": "3b311b21abb2d663330cb3858a2fe1662c64cd9148c1b827859f58175f1d3041",
+    "sequence": 1
+  },
+  "contentHash": "8722a524bb064accd5c4ba47e2d6fecd513206e797061ceb929b6b2e8320af78",
+  "artifactId": "silverdeploysim-8722a524bb064acc"
+}

@@ -1,42 +1,60 @@
 # Quickstart
 
-The fastest way to experience HardKAS is in deterministic simulated mode.
+The fastest way to feel HardKAS is deterministic `simulated` mode. It does not
+need Docker, a Kaspa node, faucet funds, or network access.
 
-1. **Initialize Workspace**
-   \`\`\`bash
-   hardkas init .
-   \`\`\`
-   *This bootstraps your directory with \`hardkas.config.ts\` and local state.*
+## 1. Initialize A Workspace
 
-2. **Create an Account**
-   \`\`\`bash
-   hardkas accounts real init
-   \`\`\`
-   *For simulation, HardKAS also automatically provisions dev accounts like \`kaspa:sim_alice\`. You can also generate random fixtures using:*
-   \`\`\`bash
-   hardkas dev fixture generate --type random
-   \`\`\`
+```bash
+hardkas init .
+```
 
-3. **Plan a Transaction**
-   \`\`\`bash
-   hardkas tx plan --from alice --to bob --amount 10
-   \`\`\`
-   *Outputs a deterministic \`txPlan\` artifact containing exact routing and selected UTXOs.*
+This creates `hardkas.config.ts`, `.hardkas/`, and default simulated accounts
+such as `alice` and `bob`.
 
-4. **Verify and Inspect the Artifact**
-   \`\`\`bash
-   hardkas artifact inspect .hardkas/artifacts/*.plan.json
-   \`\`\`
-   *This is a critical boundary: you should visually or programmatically assert that the destination and amount are correct before your private key is ever decrypted.*
+## 2. Run The One-Command Local Transfer
 
-5. **Sign the Transaction**
-   \`\`\`bash
-   hardkas tx sign .hardkas/artifacts/*.plan.json --account alice
-   \`\`\`
-   *This loads the key, hashes the plan, produces a \`signedTx\` artifact, and destroys the key in memory.*
+```bash
+hardkas tx send --from alice --to bob --amount 10 --network simulated --yes
+```
 
-6. **Send and Settle**
-   \`\`\`bash
-   hardkas tx send .hardkas/artifacts/*.signed.json
-   \`\`\`
-   *Because you are in simulated mode, this settles locally and returns a receipt. If you were configured for \`rpc\`, it would broadcast the hex payload to a Kaspa node.*
+This performs the full local lifecycle:
+
+```txt
+plan -> sign -> simulate -> receipt
+```
+
+## 3. Open The Dashboard
+
+```bash
+hardkas dashboard
+```
+
+The dashboard reads the same `.hardkas` workspace and shows transactions,
+artifacts, replay status, events, and lineage.
+
+## 4. Run The Explicit Artifact Flow
+
+Use this when you want to inspect the boundary before signing:
+
+```bash
+hardkas tx plan --from alice --to bob --amount 10 --network simulated --out tx-plan.json
+hardkas artifact inspect tx-plan.json
+hardkas artifact verify tx-plan.json --strict
+hardkas tx sign tx-plan.json --account alice --out tx-signed.json
+hardkas tx send tx-signed.json --network simulated --yes
+```
+
+`tx-plan.json` and `tx-signed.json` are local artifacts and should not be
+committed.
+
+## 5. Rebuild And Query
+
+If the SQLite projection is stale, rebuild it from artifacts:
+
+```bash
+hardkas query store sync
+hardkas query store doctor
+```
+
+The filesystem artifacts remain the source of truth.

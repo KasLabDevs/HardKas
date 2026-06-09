@@ -13,6 +13,41 @@ function run(cmd) {
   }
 }
 
+function mineBriefly(address, label) {
+  console.log(`  Mining confirmation blocks for ${label}...`);
+  try {
+    execSync("docker image inspect hardkas/stratum-bridge:v2.0.0-local-simnet-unsynced", { stdio: "ignore" });
+    try {
+      execSync("docker rm -f hardkas-toccata-stratum-v2", { stdio: "ignore" });
+    } catch {}
+    execSync(
+      [
+        "docker run -d",
+        "--name hardkas-toccata-stratum-v2",
+        "--add-host=host.docker.internal:host-gateway",
+        "hardkas/stratum-bridge:v2.0.0-local-simnet-unsynced",
+        "/app/stratum-bridge",
+        "--node-mode external",
+        "--kaspad-address host.docker.internal:16210",
+        "--web-dashboard-port :3031",
+        "--instance port=:16120,diff=1",
+        "--internal-cpu-miner",
+        `--internal-cpu-miner-address ${address}`,
+        "--internal-cpu-miner-threads 1",
+        "--internal-cpu-miner-template-poll-ms 250",
+        "--print-stats true",
+        "--log-to-file false"
+      ].join(" "),
+      { stdio: "ignore" }
+    );
+    execSync('node -e "setTimeout(()=>{}, 8000)"');
+  } finally {
+    try {
+      execSync("docker stop hardkas-toccata-stratum-v2", { stdio: "ignore" });
+    } catch {}
+  }
+}
+
 async function runRealNodeCert() {
   console.log("=== Real Node 0.9.0-alpha Certification ===");
 
@@ -38,7 +73,8 @@ async function runRealNodeCert() {
   // [2] Import fixture miner account (has mature coinbase UTXOs)
   console.log("\n[2] Importing Fixture Account...");
   const fixtureKey = "b7e151628aed2a6abf7158809cf4f3c762e7160f38b4da56a784d9045190cfef";
-  run(`accounts real import --name fixture --private-key ${fixtureKey} --address kaspasim:qr0lr4ml9fn3chekrqmjdkergxl93l4wrk3dankcgvjq776s9wn9jeadh9sjw --unsafe-plaintext --yes`);
+  const fixtureAddress = "kaspasim:qr0lr4ml9fn3chekrqmjdkergxl93l4wrk3dankcgvjq776s9wn9jeadh9sjw";
+  run(`accounts real import --name fixture --private-key ${fixtureKey} --address ${fixtureAddress} --unsafe-plaintext --yes`);
 
   // Check fixture balance
   const balanceOut = run("accounts balance fixture --provider rpc");
@@ -56,6 +92,7 @@ async function runRealNodeCert() {
   console.log("  Signed: 1.signed.json");
 
   run(`tx send .hardkas/artifacts/1.signed.json --provider rpc`);
+  mineBriefly(fixtureAddress, "fixture -> Alice");
   console.log("  ✓ Transaction sent!");
 
   // [4] Verify receipt was created
@@ -72,9 +109,6 @@ async function runRealNodeCert() {
 
   // [5] Alice -> Bob lifecycle
   console.log("\n[5] Tx Lifecycle Alice -> Bob...");
-  // Wait a moment for the funding tx to be confirmed
-  execSync('node -e "setTimeout(()=>{}, 3000)"');
-
   const aliceBalance = run(`accounts balance ${alice.name} --provider rpc`);
   console.log("  Alice balance:", aliceBalance.trim().split("\n").filter(l => l.includes("Balance")).join(""));
 
@@ -87,11 +121,11 @@ async function runRealNodeCert() {
   console.log("  Signed: 2.signed.json");
 
   run(`tx send .hardkas/artifacts/2.signed.json --provider rpc`);
+  mineBriefly(fixtureAddress, "Alice -> Bob");
   console.log("  ✓ Transaction sent!");
 
   // [6] Final balances
   console.log("\n[6] Final Balances...");
-  execSync('node -e "setTimeout(()=>{}, 2000)"');
   run(`accounts balance ${alice.name} --provider rpc`);
   run(`accounts balance ${bob.name} --provider rpc`);
 

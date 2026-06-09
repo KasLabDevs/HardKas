@@ -2,6 +2,64 @@
 
 All notable changes to HardKAS will be documented in this file.
 
+## 0.9.0-alpha - Toccata Local-First Baseline - 2026-06-09
+
+### Toccata v2 Localnet Baseline
+
+HardKAS 0.9.0-alpha includes a normalized Toccata v2 localnet baseline with
+Docker simnet funding, real standard transaction lifecycle, real Silver OP_TRUE
+deploy/spend, artifact-coherence simulator comparison, mainnet guard
+enforcement, and a machine-verifiable golden corpus integrated into the Toccata
+gauntlet.
+
+Included:
+
+- Normalized Toccata v2 localnet profile.
+- Docker simnet funding fixture.
+- Toccata miner/stratum companion integration.
+- Standard tx lifecycle real gauntlet.
+- SilverScript local OP_TRUE deploy/spend baseline.
+- `pnpm gauntlet:toccata` as release gate.
+- Mainnet guard remains enforced.
+
+### Release Gates
+
+- `pnpm build`: PASS
+- `pnpm test`: PASS
+- `pnpm corpus:toccata`: PASS
+- `pnpm gauntlet:toccata`: PASS
+- CLI tests: 157 PASS
+- `git diff --check`: PASS
+
+### Silver/Toccata Simulator Claims
+
+- `artifactCoherence`: READY_MATCH
+- `runtimeOutcome`: PARTIAL
+- `vmConsensusEquivalence`: NOT_CLAIMED
+- `mainnet`: BLOCKED_BY_POLICY
+
+`silver simulate compare` now supports `artifact-coherence`,
+`runtime-outcome`, and `strict` modes. The default `artifact-coherence` mode
+reports `SILVERSCRIPT_SIMULATION_MATCH` for the golden OP_TRUE flow while
+preserving `PARTIAL_VM_SIMULATION` as an explicit known limitation. Full Kaspa
+VM or consensus equivalence is not claimed.
+
+Known limitations:
+
+- Runtime outcome simulation is `PARTIAL`.
+- Full VM/consensus equivalence is `NOT_CLAIMED`.
+- Strict compare may still show runtime identifier drift.
+- Mainnet remains `BLOCKED_BY_POLICY`.
+
+### Golden Corpus
+
+- Added a verified OP_TRUE Silver/Toccata corpus under
+  `fixtures/toccata-v2/silver/op-true`.
+- Added a verified failure corpus under `fixtures/toccata-v2/silver/failures`.
+- Added `hardkas corpus verify <path> --json`.
+- Added `pnpm corpus:toccata`.
+- Integrated corpus verification into `pnpm gauntlet:toccata`.
+
 ## [v0.7.7-alpha] - 2026-06-01
 
 ### SDK Productization & DX Hardening

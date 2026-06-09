@@ -22,7 +22,7 @@
     "hardkas": "./dist/index.js"
   },
   "scripts": {
-    "build": "tsup src/index.ts src/public.ts --format esm --dts --clean --external vitest",
+    "build": "tsup src/index.ts src/public.ts --format esm --dts --clean --external vitest --external kaspa-wasm",
     "dev": "tsx src/index.ts",
     "hardkas": "tsx src/index.ts",
     "typecheck": "tsc --noEmit",

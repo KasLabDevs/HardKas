@@ -1,37 +1,78 @@
 # SDK Guide
 
-The `@hardkas/sdk` package is the programmatic interface to the HardKAS ecosystem.
+The `@hardkas/sdk` package is the programmatic interface to a HardKAS workspace.
+
+## Create A Local SDK
+
+```typescript
+import { Hardkas } from "@hardkas/sdk";
+
+const sdk = await Hardkas.create({
+  cwd: process.cwd(),
+  network: "simulated",
+  autoBootstrap: true
+});
+```
+
+`simulated` is the recommended development mode. It uses local state and does
+not require a Kaspa node.
+
+## Transaction Lifecycle
+
+```typescript
+const plan = await sdk.tx.plan({
+  from: "alice",
+  to: "bob",
+  amount: "10"
+});
+
+await sdk.artifacts.write(plan);
+
+const signed = await sdk.tx.sign(plan, "alice");
+await sdk.artifacts.write(signed);
+
+const { receipt } = await sdk.tx.simulate(signed);
+await sdk.artifacts.write(receipt);
+```
+
+Use `sdk.tx.simulate(...)` for local execution. `sdk.tx.send(...)` delegates to
+simulation when the active network is `simulated`, and uses RPC for real network
+contexts.
 
 ## Core Services
 
-When you instantiate the SDK (`Hardkas.create()`), you gain access to several isolated services:
+### `sdk.tx`
 
-### 1. `sdk.tx`
-Handles the core transaction lifecycle.
-- **`plan({ from, to, amount, feeRate })`**: Returns a `TxPlanArtifact`. Normalizes the inputs and creates a deterministic cryptographic hash.
-- **`sign(planArtifact, signerId)`**: Takes a `TxPlanArtifact` and returns a `SignedTxArtifact`. Expects valid signer authorization.
-- **`simulate(signedArtifact)`**: Sends the transaction to the local simulated network to produce a `TxReceiptArtifact`. Ensures 100% semantic isolation.
-- **`send(signedArtifact)`**: Similar to simulate, but targets the active network provider (e.g., testnet).
+- `plan(...)`: create a deterministic transaction plan.
+- `sign(...)`: create a signed transaction artifact.
+- `simulate(...)`: apply a signed transaction to local simulated state.
+- `send(...)`: execute according to the active provider.
+- `status(...)`: inspect transaction status.
 
-### 2. `sdk.artifacts`
-Handles the storage, retrieval, and validation of the cryptographic objects.
-- **`read(artifactId)`**: Loads an artifact from the local `.hardkas/artifacts/` store and automatically performs Zero-Trust validation.
-- **`write(artifact)`**: Commits a valid artifact to the filesystem using an atomic rename operation to prevent corruption.
-- **`verify(artifact)`**: Dynamically recalculates the canonical hash and ensures data integrity. Throws if corrupted.
+### `sdk.artifacts`
 
-### 3. `sdk.query`
-Provides indexed access to the artifact lineage via SQLite.
-- **`sync()`**: Scans the `.hardkas/events.jsonl` ledger and builds a relational projection.
-- **`lineage(artifactId)`**: Returns the parent-child graph (e.g., `Plan -> SignedTx -> Receipt`).
+- `write(...)`: write artifacts into `.hardkas/artifacts`.
+- `read(...)`: resolve an artifact by path or ID.
+- `list()`: list workspace artifacts.
+- `verify(...)`: recalculate canonical hashes and validate semantics.
 
-### 4. `sdk.accounts`
-Manages the local simulation keystore.
-- **`list()`**: Returns available mock accounts (e.g., `alice`, `bob`).
-- **`balance(accountId)`**: Retrieves the current balance from the simulated UTXO set.
+### `sdk.accounts`
+
+- `list()`: list configured account names.
+- `resolve(...)`: resolve account definitions.
+- `balance(...)`: get balance.
+- `fund(...)`: fund local simulated accounts through an available simulated
+  funding account.
+
+### `sdk.query`, `sdk.lineage`, `sdk.replay`
+
+- `sdk.query.sync()`: synchronize the SQLite projection.
+- `sdk.query.events(...)`: read indexed events.
+- `sdk.lineage.trace(...)`: trace artifact ancestry or descendants.
+- `sdk.replay.verify(...)`: verify deterministic replay.
 
 ## Error Handling
 
-HardKAS methods throw specific `HardkasError` subclasses. Always check `error.code`:
-- `HASH_MISMATCH`: The artifact has been tampered with.
-- `MISSING_CONTENT_HASH`: The object is missing required cryptographic identity.
-- `INVALID_SIGNER`: The requested signer does not match the planned sender.
+HardKAS throws normal `Error` objects and typed HardKAS errors depending on the
+layer. Check `error.code` when present, and always treat artifact verification
+failures as hard stops.

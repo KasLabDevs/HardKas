@@ -505,3 +505,60 @@ export interface SilverSpendPlanArtifact extends BaseArtifact<"silver.spendPlan"
   }>;
   assumptionLevel?: AssumptionLevel | undefined;
 }
+
+export interface SilverSpendReceiptArtifact extends BaseArtifact<"silver.spendReceipt"> {
+  spendPlanHash: string;
+  deployArtifactHash?: string | undefined;
+  redeemScriptHash?: string | undefined;
+  lockingScriptHex?: string | undefined;
+  signatureScriptHex?: string | undefined;
+  spentOutpoint?: {
+    transactionId: string;
+    index: number;
+  } | undefined;
+  expectedOutputs?: Array<{
+    address: string;
+    amountSompi: string;
+    scriptHash?: string | undefined;
+  }> | undefined;
+  txId: string;
+  status: "simulated" | "submitted" | "accepted" | "rejected";
+}
+
+export interface SilverDeploySimulationArtifact extends BaseArtifact<"silver.deploySimulation"> {
+  deployPlanHash: string;
+  compileArtifactHash: string;
+  compiledScriptHash: string;
+  redeemScriptHex: string;
+  redeemScriptHash: string;
+  lockingScriptHex: string;
+  scriptPublicKeyVersion: 0;
+  simulatedDeployTxId: string;
+  syntheticOutpoint: {
+    transactionId: string;
+    index: number;
+  };
+  amountSompi: string;
+  feeSompi: string;
+  status: "SIMULATED_ACCEPTED";
+}
+
+export interface SilverSpendSimulationArtifact extends BaseArtifact<"silver.spendSimulation"> {
+  deploySimulationHash: string;
+  spendPlanHash: string;
+  redeemScriptHash: string;
+  lockingScriptHex: string;
+  signatureScriptHex: string;
+  simulatedSpendTxId: string;
+  spentOutpoint: {
+    transactionId: string;
+    index: number;
+  };
+  expectedOutputs: Array<{
+    address: string;
+    amountSompi: string;
+    scriptHash?: string | undefined;
+  }>;
+  feeSompi: string;
+  status: "SIMULATED_ACCEPTED";
+}

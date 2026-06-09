@@ -13,7 +13,7 @@ describe("Artifact Hash Integrity", () => {
     
     const result = await verifyArtifactIntegrity(artifact);
     expect(result.ok).toBe(false);
-    expect(result.issues[0].code).toBe("MISSING_CONTENT_HASH");
+    expect(result.issues.at(0)?.code).toBe("MISSING_CONTENT_HASH");
   });
 
   it("should fail validation if contentHash mismatches payload", async () => {
@@ -33,7 +33,7 @@ describe("Artifact Hash Integrity", () => {
     
     const result = await verifyArtifactIntegrity(artifact);
     expect(result.ok).toBe(false);
-    expect(result.issues[0].code).toBe("HASH_MISMATCH");
+    expect(result.issues.at(0)?.code).toBe("HASH_MISMATCH");
     expect(result.actualHash).toBeDefined();
     expect(result.expectedHash).toBeDefined();
     expect(result.actualHash).not.toBe(result.expectedHash);

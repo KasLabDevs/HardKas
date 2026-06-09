@@ -1,119 +1,97 @@
-# Error Recovery and Diagnostics
+# Error Recovery And Diagnostics
 
-HardKAS enforces strict boundaries. When a boundary is violated, it will throw a highly specific error code. This document explains what these errors mean, what causes them, and how to resolve them.
+HardKas should fail early when a command crosses a local safety boundary. This page lists the errors that matter most for the local-first alpha workflow.
 
----
+## `NETWORK_ADDRESS_MISMATCH`
 
-## Disaster Recovery Cases
+Meaning:
+A transaction artifact, address, or provider belongs to a different Kaspa network context than the command is trying to use.
 
-These are historical "war stories" from the HardKAS certification gauntlet that highlight deeper architectural issues.
+Common cause:
+You planned a transaction for `simulated`, `simnet`, or `testnet-10`, then tried to send it through a different provider or node.
 
-### Disaster: Kaspa WASM Memory Access Out of Bounds
+Example:
 
-**Symptom:**
-During high-volume signing, Node.js or the browser crashes with a cryptic WebAssembly error: `memory access out of bounds`.
+```bash
+hardkas tx send testnet-signed.json \
+  --network mainnet \
+  --provider rpc \
+  --url ws://mainnet-node.example:16110
+```
 
-**Wrong Assumption:**
-"The `kaspa-wasm` module is broken and cannot sign."
+Resolution:
+Check the artifact's `networkId`, the selected provider, and the node URL. Re-run `hardkas tx plan` for the intended network instead of editing the artifact by hand.
 
-**Actual Historical Cause:**
-A corrupted serialized `PrivateKey` object was passed across execution boundaries. A developer attempted to pass the raw Javascript object wrapping the WASM pointer (`__wbg_ptr`) instead of serializing the key into a primitive hex string. Because the WASM memory space was recycled or didn't exist in the target thread, the pointer referenced garbage memory, causing an out-of-bounds crash.
+## `INVALID_PRIVATE_KEY_MATERIAL`
 
-**Detection:**
-Inspect the payload being passed to the Signer. If the `privateKey` contains a `__wbg_ptr` property instead of being a plain 64-character string, you are leaking WASM references.
+Meaning:
+The signer received key material that cannot be parsed as a valid Kaspa private key or seed.
 
-**Resolution:**
-Immediately audit your keystore integration. Do not use `JSON.stringify` on raw Kaspa classes. Only extract the primitive hex string before crossing the React/Node boundary, and re-instantiate it on the other side. If the account is permanently corrupted in your local database, regenerate the account from the seed phrase.
+Common cause:
+A script passed a password, malformed hex string, or serialized object where primitive key material was expected.
 
----
+Resolution:
+Audit the keystore path and signer input. Do not pass raw WASM objects or arbitrary strings into the signer.
 
-## Common Errors
+## `CORRUPTED_PRIVATE_KEY_SERIALIZATION`
 
-### `NETWORK_ADDRESS_MISMATCH`
+Meaning:
+Key material crossed an execution boundary as a runtime object, usually with a WASM pointer such as `__wbg_ptr`, instead of portable data.
 
-**Meaning:** 
-A transaction artifact is attempting to interact with an address or a provider that belongs to a different Kaspa subnetwork.
+Resolution:
+Never serialize raw Kaspa WASM classes. Export encrypted keystore JSON or primitive key data, then recreate runtime key objects inside the signing process.
 
-**Cause:** 
-You generated a `txPlan` while configured for `simulated` or `testnet-10`, and are attempting to broadcast it to a node running `mainnet` (or vice-versa). The Kaspa signature algorithm commits to the subnetwork ID. HardKAS catches this mismatch locally before hitting the RPC endpoint.
+## `TOO_MANY_INPUTS_FOR_SINGLE_TX`
 
-**Example:**
-Trying to run `hardkas tx send my-testnet-plan.json` when your `hardkas.config.ts` has `network: 'mainnet'`.
+Meaning:
+The planner would need more UTXOs than the transaction mass limit allows.
 
-**Resolution (User/Environment Bug):**
-Ensure that the artifact's serialized `networkId` matches the network context of your active Provider. Re-run `hardkas tx plan` in the correct environment to generate a valid artifact.
+Common cause:
+A mining or test wallet has many small UTXOs and tries to send a large amount in one transaction.
 
----
+Resolution:
+Use the consolidation workflow before sending:
 
-### `INVALID_PRIVATE_KEY_MATERIAL`
+```bash
+hardkas accounts consolidate --execute --yes
+```
 
-**Meaning:** 
-The material provided to the signer cannot be parsed into a valid cryptographic seed or key.
+## `DEV_ACCOUNT_KEY_UNAVAILABLE`
 
-**Cause:** 
-The key string provided to `sdk.tx.sign()` or the password provided to the encrypted keystore resulted in malformed bytes. HardKAS validates the shape of the data before ever attempting to instantiate the internal WASM PrivateKey object.
+Meaning:
+HardKas tried to sign for a simulated account, but the local workspace does not contain the matching dev key data.
 
-**Example:**
-Passing a standard string `"my-secret-password"` instead of a valid hex-encoded Kaspa private key to the signer.
+Resolution:
+Initialize or repair the local workspace:
 
-**Resolution (User Bug):**
-Verify that you are passing a 64-character hex string or correctly decrypting your keystore file. 
+```bash
+hardkas init
+hardkas dev doctor
+```
 
----
+## `MALFORMED_ARTIFACT`
 
-### `CORRUPTED_PRIVATE_KEY_SERIALIZATION`
+Meaning:
+An artifact is missing required fields or its canonical content no longer matches its stored identity.
 
-**Meaning:** 
-The key material crossed a boundary incorrectly, typically leaking as an opaque WASM memory pointer instead of primitive data.
+Common cause:
+The JSON file was manually edited after creation.
 
-**Cause:** 
-A background process or a previous SDK call attempted to return the actual `kaspa-wasm` PrivateKey object (which contains a `__wbg_ptr` to process-local memory) rather than serializing the primitive string. When the active process attempts to use it, the memory pointer is invalid.
+Resolution:
+Discard the artifact and regenerate it from the previous valid step:
 
-**Example:**
-Using a naive JSON serialization to pass key objects between a Node.js daemon and a React frontend.
+```bash
+hardkas tx plan --from alice --to bob --amount 1 --network simulated --out plan.json
+hardkas tx sign plan.json --account alice --out signed.json
+```
 
-**Resolution (Environment/Integration Bug):**
-Never pass WASM runtime objects across execution boundaries. Ensure that your key management layer only exports encrypted JSON keystores or plaintext primitive hex strings.
+## WASM Memory Access Out Of Bounds
 
----
+Symptom:
+Node.js or a browser process crashes with a WebAssembly memory error during signing.
 
-### `TOO_MANY_INPUTS_FOR_SINGLE_TX`
+Likely cause:
+A raw Kaspa WASM object was passed between processes, threads, or browser/Node boundaries.
 
-**Meaning:** 
-The transaction requires more UTXOs to fulfill the `amountSompi` than Kaspa's maximum transaction mass allows.
-
-**Cause:** 
-The source wallet contains highly fragmented "dust" UTXOs. To send a standard transaction, the Planner must collect thousands of UTXOs to reach the target amount. Constructing this transaction would exceed the byte limit of a Kaspa network block or standard relay rule.
-
-**Example:**
-A mining wallet attempting to send 1,000 KAS, but the balance is made up of 10,000 separate 0.1 KAS mining rewards.
-
-**Resolution (User Bug):**
-You must consolidate your wallet before sending this transaction. Run `hardkas accounts consolidate --execute --yes` to batch the dust into larger UTXOs. See the [Large Wallet Consolidation](../guides/large-wallet-consolidation.md) guide.
-
----
-
-### `DEV_ACCOUNT_KEY_UNAVAILABLE`
-
-**Meaning:** 
-The system attempted to sign a transaction on behalf of a simulated dev account, but the associated key could not be found in the local configuration.
-
-**Cause:** 
-You executed a command like `tx sign` targeting `kaspa:sim_alice`, but your `.hardkas/localnet.json` or `hardkas.config.ts` does not contain the deterministic seed mapping for that account.
-
-**Resolution (Environment Bug):**
-Ensure your project has been properly bootstrapped. Run `hardkas dev doctor` or `hardkas dev fixture generate` to populate the default simulated accounts.
-
----
-
-### `[MALFORMED_ARTIFACT]`
-
-**Meaning:** 
-The cryptographic hash of the JSON artifact does not match its `id`, or required structural metadata is missing.
-
-**Cause:** 
-The artifact file was manually edited (e.g., someone changed `amountSompi` in a text editor), or the artifact was generated by a buggy mock generator that failed to include the `id` field.
-
-**Resolution (User/Tooling Bug):**
-If this is a real transaction: It has been tampered with and the signature is void. Discard it and re-run `tx plan`.
-If this occurs during `hardkas doctor` on simulated test data: It is a known technical debt item where mock receipts lack IDs. You can ignore or quarantine the files.
+Resolution:
+Only pass portable data across boundaries. Browser apps should use `@hardkas/client` or `@hardkas/react` against the dev server instead of importing the Node SDK directly.

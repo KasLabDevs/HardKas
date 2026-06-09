@@ -18,7 +18,12 @@ export const ARTIFACT_SCHEMAS = {
   MIGRATION_RECEIPT: "hardkas.migrationReceipt.v1",
   SILVER_COMPILE: "hardkas.silver.compile",
   SILVER_TEST: "hardkas.silver.test",
-  SILVER_SPEND_PLAN: "hardkas.silver.spendPlan"
+  SILVER_DEPLOY_PLAN: "hardkas.silver.deployPlan",
+  SILVER_DEPLOY: "hardkas.silver.deploy",
+  SILVER_SPEND_PLAN: "hardkas.silver.spendPlan",
+  SILVER_SPEND_RECEIPT: "hardkas.silver.spendReceipt",
+  SILVER_DEPLOY_SIMULATION: "hardkas.silver.deploySimulation",
+  SILVER_SPEND_SIMULATION: "hardkas.silver.spendSimulation"
 } as const;
 
 export type HardkasArtifactSchema =

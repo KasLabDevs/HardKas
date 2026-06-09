@@ -70,7 +70,7 @@ export function registerQueryCommands(program: Command) {
             console.log(
               `\n  ${UI.warning("Recommendation:")} Run 'hardkas query store ${cmd}' to fix issues.\n`
             );
-            throw e;
+            throw new Error("Command failed");
           } else {
             console.log("\n  ✓ Everything looks good.\n");
           }
@@ -185,7 +185,7 @@ export function registerQueryCommands(program: Command) {
                 console.log(
                   `\n  ${UI.error("Synchronization encountered corruption.")} Use --strict for fail-fast behavior.`
                 );
-                throw e;
+                throw new Error("Command failed");
               }
               console.log("");
             }
@@ -252,7 +252,7 @@ export function registerQueryCommands(program: Command) {
                 UI.logHuman(
                   `\n  ${UI.error("Rebuild failed or encountered corruption.")} Use --strict for fail-fast behavior.`
                 );
-                throw e;
+                throw new Error("Command failed");
               }
               UI.logHuman("");
             }

@@ -159,7 +159,7 @@ export default defineHardkasConfig({
       try {
         await runUp();
       } catch (e) {
-        throw e, "Bootstrap failed";
+        throw new Error("Bootstrap failed");
       }
     });
 }

@@ -81,7 +81,7 @@ export async function runAccountsConsolidate(options: AccountsConsolidateOptions
       (err as any).code = "RPC_CONNECTION_FAILED";
       throw err;
     }
-    throw e;
+    throw new Error("Command failed");
   }
 
   if (options.minUtxo) {

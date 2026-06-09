@@ -2,17 +2,22 @@
 
 ## HardKAS 0.9.0-alpha Security Posture
 
-HardKAS is a development tool designed for the Kaspa BlockDAG ecosystem. It is currently in **Alpha / Pre-release** staging.
+HardKAS 0.9.0-alpha is local-first tooling for the Kaspa/Toccata development
+loop. It is currently in **Alpha / Pre-release** staging.
 
 ### 1. Developer Workflow Warning
 
-HardKAS is optimized for developer velocity and local simulation. It includes features like deterministic "Simulated Mode" and automated node orchestration that are intended for testing environments.
+HardKAS is optimized for developer velocity, local simulation, and Toccata v2
+simnet certification. It includes deterministic simulated mode and automated
+node orchestration intended for local development environments.
 
 ### 2. No Production Custody Guarantee
 
 **HardKAS is NOT a production-grade custody solution.**
 
 - Do not use HardKAS as your primary wallet for high-value mainnet funds.
+- Do not import mainnet seed phrases into a HardKAS workspace.
+- Local accounts are for simnet/dev workflows only.
 - For production assets, always use dedicated, hardware-backed custody solutions or official Kaspa core wallets.
 
 ### 3. Encrypted Keystore Limitations
@@ -31,14 +36,28 @@ HardKAS CLI commands that accept secrets (private keys, passwords) via command-l
 - **Policy**: Always prefer `--private-key-stdin` or `--password-env`.
 - **Automated Redaction**: HardKAS implements **Recursive Secret Redaction**. Known secrets (like private keys or passwords) are automatically masked (e.g., `[REDACTED]`) in all CLI logs, error messages, and telemetry to prevent accidental exposure in CI logs.
 
-### 5. Mainnet Signing Warning
+### 5. Mainnet And SilverScript Policy
 
-Mainnet signing and broadcasting are disabled by default.
+Mainnet signing and broadcasting are outside the 0.9.0-alpha release claim.
+SilverScript mainnet execution is disabled by policy.
 
-- Using the `--allow-mainnet-signing` flag bypasses safety checks.
-- Use this flag only if you fully understand the risks of broadcasting live transactions.
+- SilverScript mainnet paths must fail with `SILVERSCRIPT_MAINNET_NOT_ENABLED`.
+- Mainnet signing/broadcast for SilverScript is not enabled in this release.
+- Do not treat testnet or mainnet behavior as certified by the Toccata localnet gauntlet.
+- Trustless bridge/security claims are not included in this release.
 
-### 6. Workspace Lock Safety
+### 6. Simulator Boundary
+
+The Silver/Toccata simulator is artifact-coherence oriented. It validates local
+artifact coherence and replayability, but it is not a consensus validator and it
+does not replace `rusty-kaspa`.
+
+- `artifactCoherence`: `READY_MATCH`
+- `runtimeOutcome`: `PARTIAL`
+- `vmConsensusEquivalence`: `NOT_CLAIMED`
+- `mainnet`: `BLOCKED_BY_POLICY`
+
+### 7. Workspace Lock Safety
 
 HardKAS uses a conservative filesystem locking mechanism to prevent concurrent writes to the same workspace.
 
@@ -47,7 +66,7 @@ HardKAS uses a conservative filesystem locking mechanism to prevent concurrent w
 - **Manual Intervention**: If a process crashes and leaves a stale lock, use `hardkas lock doctor` to identify it and `hardkas lock clear <name> --if-dead` to release it.
 - **Risk**: Clearing a lock while another process is active can lead to **permanent data corruption** in the query store or artifact registry.
 
-### 7. Dev-Server Workstation Containment
+### 8. Dev-Server Workstation Containment
 
 The local dev-server is secured against malicious external websites trying to exploit the local loopback through the following measures:
 
@@ -56,13 +75,15 @@ The local dev-server is secured against malicious external websites trying to ex
 - **DNS Rebinding Defense:** Host headers are strictly verified against loopback endpoints. Custom malicious hosts are rejected with a `403 Forbidden` response.
 - **Strict CORS Loops:** Cross-Origin requests are locked down strictly to same-origin configurations matching the dev-server and Vite development environments.
 
-### 8. Responsible Disclosure
+### 9. Responsible Disclosure
 
 If you discover a security vulnerability within HardKAS, please do not open a public issue. Instead, report it responsibly:
 
 - **Contact**: security@hardkas.org
 - Please provide a detailed description of the vulnerability and steps to reproduce.
 
-### 9. External Dependencies
+### 10. External Dependencies
 
-HardKAS relies on official Kaspa WASM/gRPC libraries for consensus-critical logic. Vulnerabilities in underlying Kaspa core libraries should be reported to the official Kaspa security team.
+HardKAS relies on official Kaspa WASM/gRPC libraries and local `rusty-kaspa`
+nodes for consensus-critical behavior. Vulnerabilities in underlying Kaspa core
+libraries should be reported to the official Kaspa security team.

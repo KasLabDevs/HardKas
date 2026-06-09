@@ -1,72 +1,69 @@
 # 5-Minute Quickstart
 
-Get up and running with HardKAS in a local simulated environment in under 5 minutes.
+Get up and running with HardKAS in a local simulated environment.
 
 ## 1. Installation
 
-Install the HardKAS SDK and CLI locally in your project. We enforce local installation to guarantee exact deterministic versioning.
+Install the SDK and CLI in your project:
 
 ```bash
 npm install @hardkas/sdk@0.9.0-alpha
 npm install -D @hardkas/cli@0.9.0-alpha
 ```
 
-## 2. Initialize the Workspace
-
-Initialize your `.hardkas/` workspace using the CLI. This creates the local isolated environment for all artifacts.
+## 2. Initialize The Workspace
 
 ```bash
-npx @hardkas/cli init .
+npx hardkas init .
 ```
+
+This creates the local `.hardkas/` workspace and a `hardkas.config.ts` whose
+default network is `simulated`.
 
 ## 3. CLI Workflow
 
-You can interact with HardKAS via the CLI to create deterministic artifacts.
+Shortcut mode:
 
 ```bash
-# 1. Plan a transaction
-npx @hardkas/cli tx plan --from alice --to bob --amount 10000
+npx hardkas tx send --from alice --to bob --amount 10 --network simulated --yes
+```
 
-# 2. Sign the planned transaction (using the printed artifact ID)
-npx @hardkas/cli tx sign <plan_artifact_id> --signer alice
+Explicit artifact mode:
 
-# 3. Send to the simulated network
-npx @hardkas/cli tx send <signed_artifact_id>
+```bash
+npx hardkas tx plan --from alice --to bob --amount 10 --network simulated --out tx-plan.json
+npx hardkas artifact inspect tx-plan.json
+npx hardkas artifact verify tx-plan.json --strict
+npx hardkas tx sign tx-plan.json --account alice --out tx-signed.json
+npx hardkas tx send tx-signed.json --network simulated --yes
 ```
 
 ## 4. SDK Workflow
 
-For programmatic control, use the Node.js SDK. This script demonstrates the full deterministic lifecycle.
-
 ```typescript
-import { Hardkas } from '@hardkas/sdk';
+import { Hardkas } from "@hardkas/sdk";
 
 async function run() {
-  // 1. Initialize the SDK connected to the local simulated network
-  const sdk = await Hardkas.create({ 
-    cwd: process.cwd(), 
-    autoBootstrap: true, 
-    network: 'simulated' 
+  const sdk = await Hardkas.create({
+    cwd: process.cwd(),
+    autoBootstrap: true,
+    network: "simulated"
   });
 
-  // 2. Plan
   const plan = await sdk.tx.plan({
-    from: 'alice',
-    to: 'bob',
-    amount: '10000'
+    from: "alice",
+    to: "bob",
+    amount: "10"
   });
-  console.log('Plan created:', plan.artifactId);
 
-  // 3. Sign
-  const signedTx = await sdk.tx.sign(plan, 'alice');
-  console.log('Signed artifact:', signedTx.artifactId);
+  const signed = await sdk.tx.sign(plan, "alice");
+  const { receipt } = await sdk.tx.simulate(signed);
 
-  // 4. Simulate & Send
-  const result = await sdk.tx.simulate(signedTx);
-  console.log('Simulation Receipt:', result.receipt.artifactId);
-  
-  // Note: We use simulate() locally for identical determinism guarantees without needing Kaspa PoW.
+  console.log("Simulation receipt:", receipt.txId);
 }
 
 run().catch(console.error);
 ```
+
+Use `simulate()` for the local loop. Move to `simnet` or testnet only when the
+local artifact lifecycle is already stable.

@@ -1,83 +1,118 @@
 # Certification Capability Matrix
 
-HardKAS undergoes a rigorous 12-Phase No-Regression Gauntlet prior to release. This matrix documents the functional capabilities that are mathematically and practically validated during this certification process. 
+This matrix describes the capabilities HardKas should prove before a release is treated as stable. For 0.9.0-alpha, the priority is the local-first development loop.
 
-This is not a version history. This documents the established, guaranteed capabilities of the current system architecture.
+## Local Transaction Lifecycle
 
----
+Status: primary release gate
 
-### Capability: Real Node Transaction Lifecycle
-**Status:** Validated
+Coverage:
 
-**Description:** The complete integration between HardKAS and a live Kaspa instance (`rusty-kaspad`).
+- Initialize a workspace with simulated accounts.
+- Plan a deterministic transaction.
+- Sign the plan.
+- Execute it through the simulated provider.
+- Write plan, signed transaction, and receipt artifacts.
+- Sync the query store and inspect the result.
 
-**Coverage:**
-- ✓ **RPC Connection:** Establishes resilient connections to JSON-RPC endpoints.
-- ✓ **UTXO Discovery:** Accurate retrieval of spendable outputs.
-- ✓ **Transaction Planning:** Deterministic construction of valid `txPlan` artifacts from live UTXOs.
-- ✓ **Signing:** WASM-based generation of sighashes and signatures matching node consensus rules.
-- ✓ **Broadcast:** Direct hex payload submission via `submitTransaction`.
-- ✓ **Confirmation Polling:** Monitoring network state until the node acknowledges block inclusion.
-- ✓ **Receipt Generation:** Final extraction of `txId` into an immutable receipt artifact.
+## Artifact Security
 
----
+Status: primary release gate
 
-### Capability: Large Wallet Handling
-**Status:** Validated
+Coverage:
 
-**Description:** Ensuring stability and predictability for accounts containing thousands of UTXOs (e.g., heavily utilized mining wallets).
+- Detect mutation of financial and network intent fields.
+- Recalculate canonical hashes.
+- Verify lineage from receipt back to signed transaction and plan.
+- Quarantine or reject malformed artifacts.
+- Replay local records without contacting a Kaspa node.
 
-**Coverage:**
-- ✓ **Thousands of UTXOs:** Successfully discovering and indexing 5,000+ UTXOs without timing out the node connection.
-- ✓ **Controlled Input Selection:** Implementing a largest-first search algorithm to ensure a standard transaction does not exceed Kaspa network mass limits, preventing transaction rejection.
-- ✓ **Signing Protection:** Passing only the required subset of UTXOs to the WASM signer to prevent Out-Of-Memory (OOM) V8 crashes.
-- ✓ **Consolidation:** The `accounts consolidate` engine effectively batches small UTXOs into blocks, paying fees appropriately, and recursively sweeping dust.
+## Query Store Projection
 
----
+Status: primary release gate
 
-### Capability: Artifact Security
-**Status:** Validated
+Coverage:
 
-**Description:** The cryptographic immutability of the artifact chain (`txPlan` -> `signedTx` -> `receipt`).
+- Sync events and artifacts into SQLite.
+- Rebuild the projection from workspace data.
+- Detect drift between artifacts, events, and projection rows.
+- Keep the artifact/event data as the source of truth.
 
-**Coverage:**
-- ✓ **Mutation Detection:** Any manipulation of financial or routing data within an artifact's JSON payload results in a hash mismatch, halting execution.
-- ✓ **Hash Validation:** Rigorous verification of SHA-256 constraints across lineage pointers.
-- ✓ **Lineage Integrity:** Recursive assertion that the final receipt correctly maps back through the signed payload to the original plan.
-- ✓ **Replay Logic:** The ability to replay a historical lineage entirely offline without Kaspa Node interaction.
+## CLI Surface
 
----
+Status: primary release gate for stable commands
 
-### Capability: Signer Safety
-**Status:** Validated
+Coverage:
 
-**Description:** Isolating the highly sensitive private key operations from the rest of the ecosystem.
+- Stable commands show help and fail cleanly.
+- Local transaction commands work end to end.
+- `query store sync`, `verify --deep`, and `artifact verify --strict` work on generated local data.
+- Preview and research commands are clearly marked.
 
-**Coverage:**
-- ✓ **Key Validation:** Strict rejection of poorly formatted or unauthorized key material before invoking WASM.
-- ✓ **Serialization Boundary:** Ensuring that private keys exist as transient primitive strings during transport and are never leaked as lingering memory references.
-- ✓ **Malformed Input Rejection:** Safely rejecting invalid destination addresses, non-existent source accounts, and unsupported transaction formats.
+## SDK Surface
 
----
+Status: primary release gate for the local API
 
-### Capability: Full CLI Surface
-**Status:** Validated
+Coverage:
 
-**Description:** Ensuring that the `@hardkas/cli` acts as a robust, user-friendly orchestrator for the SDK.
+- `Hardkas.create({ autoBootstrap: true, network: "simulated" })`.
+- `sdk.tx.plan`.
+- `sdk.tx.sign`.
+- `sdk.tx.simulate`.
+- Artifact reads, lineage trace, and query-store access.
 
-**Coverage:**
-- ✓ **Dev Environment:** Features like `dev tx generate` and `dev fixture generate` function deterministically.
-- ✓ **Telemetry & Health:** The `doctor` and `telemetry` subcommands successfully audit the local environment and index databases.
-- ✓ **Safe Command Execution:** Every command properly handles `--help` routing and gracefully outputs errors rather than throwing unhandled exceptions.
+## Dashboard And Client Boundary
 
----
+Status: supporting release gate
 
-### Capability: React / Client Boundary
-**Status:** Validated
+Coverage:
 
-**Description:** Guaranteeing that the core logic can be consumed in modern browser-based frontend contexts.
+- The dashboard reads the dev-server API instead of inventing state.
+- `@hardkas/client` remains browser-safe and talks HTTP to the dev server.
+- `@hardkas/react` provides React bindings over `@hardkas/client`.
+- The browser does not import the Node SDK directly.
 
-**Coverage:**
-- ✓ **Vite Bundling:** The `@hardkas/sdk` and `@hardkas/client` packages successfully compile via Vite without crashing due to unsupported Node.js native modules (`fs`, `crypto`, etc.).
-- ✓ **Provider Injection:** `HardkasProvider` initializes correctly in the DOM.
-- ✓ **Isomorphic Execution:** Planning and artifact creation can happen exclusively in the browser context.
+## Real Simnet RPC
+
+Status: advanced integration gate
+
+Coverage:
+
+- Explicit `--network simnet --provider rpc --url ...` planning.
+- UTXO discovery from a real local node.
+- Signing as a separate step.
+- Explicit send through RPC.
+- Receipt generation from node acceptance.
+
+This is important, but it is not the default happy path.
+
+## Toccata v2 Localnet Baseline
+
+Status: certified alpha localnet gate
+
+Coverage:
+
+- Start Docker `rusty-kaspad` v2.0.0 in simnet.
+- Fund local accounts through a compatible miner companion.
+- Run the standard transaction lifecycle against the local node.
+- Compile Silver OP_TRUE, create deploy/spend plans, and execute real
+  deploy/spend receipts.
+- Run simulator deploy/spend receipts.
+- Compare simulator and Docker receipts in `artifact-coherence` mode.
+- Verify the OP_TRUE and failure golden corpus.
+
+Claims:
+
+- Artifact coherence: `READY_MATCH`.
+- Runtime outcome: `PARTIAL`.
+- VM/consensus equivalence: `NOT_CLAIMED`.
+- Mainnet: `BLOCKED_BY_POLICY`.
+
+The strict compare mode may still show non-consensus runtime identifier drift.
+That drift is expected and does not block the alpha localnet gate.
+
+## Mainnet
+
+Status: out of scope for the 0.9.0-alpha happy path
+
+Any future mainnet certification must be separate from local simulation and simnet tests. It needs stronger UX guards, signing policy, documentation, and operational review.

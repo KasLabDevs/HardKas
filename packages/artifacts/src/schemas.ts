@@ -422,6 +422,72 @@ export const SilverSpendPlanArtifactSchema = BaseArtifactSchema.extend({
 
 export type SilverSpendPlanArtifact = z.infer<typeof SilverSpendPlanArtifactSchema>;
 
+export const SilverSpendReceiptArtifactSchema = BaseArtifactSchema.extend({
+  schema: z.literal("hardkas.silver.spendReceipt"),
+  spendPlanHash: z.string(),
+  deployArtifactHash: z.string().optional(),
+  redeemScriptHash: z.string().optional(),
+  lockingScriptHex: z.string().optional(),
+  signatureScriptHex: z.string().optional(),
+  spentOutpoint: z.object({
+    transactionId: z.string(),
+    index: z.number()
+  }).optional(),
+  expectedOutputs: z.array(z.object({
+    address: z.string(),
+    amountSompi: z.string(),
+    scriptHash: z.string().optional()
+  })).optional(),
+  txId: z.string(),
+  status: z.enum(["simulated", "submitted", "accepted", "rejected"])
+});
+
+export type SilverSpendReceiptArtifact = z.infer<typeof SilverSpendReceiptArtifactSchema>;
+
+export const SilverDeploySimulationArtifactSchema = BaseArtifactSchema.extend({
+  schema: z.literal("hardkas.silver.deploySimulation"),
+  deployPlanHash: z.string(),
+  compileArtifactHash: z.string(),
+  compiledScriptHash: z.string(),
+  redeemScriptHex: z.string(),
+  redeemScriptHash: z.string(),
+  lockingScriptHex: z.string(),
+  scriptPublicKeyVersion: z.literal(0),
+  simulatedDeployTxId: z.string(),
+  syntheticOutpoint: z.object({
+    transactionId: z.string(),
+    index: z.number()
+  }),
+  amountSompi: z.string(),
+  feeSompi: z.string(),
+  status: z.literal("SIMULATED_ACCEPTED")
+});
+
+export type SilverDeploySimulationArtifact = z.infer<typeof SilverDeploySimulationArtifactSchema>;
+
+export const SilverSpendSimulationArtifactSchema = BaseArtifactSchema.extend({
+  schema: z.literal("hardkas.silver.spendSimulation"),
+  deploySimulationHash: z.string(),
+  spendPlanHash: z.string(),
+  redeemScriptHash: z.string(),
+  lockingScriptHex: z.string(),
+  signatureScriptHex: z.string(),
+  simulatedSpendTxId: z.string(),
+  spentOutpoint: z.object({
+    transactionId: z.string(),
+    index: z.number()
+  }),
+  expectedOutputs: z.array(z.object({
+    address: z.string(),
+    amountSompi: z.string(),
+    scriptHash: z.string().optional()
+  })),
+  feeSompi: z.string(),
+  status: z.literal("SIMULATED_ACCEPTED")
+});
+
+export type SilverSpendSimulationArtifact = z.infer<typeof SilverSpendSimulationArtifactSchema>;
+
 export const SilverTestArtifactSchema = BaseArtifactSchema.extend({
   schema: z.literal("hardkas.silver.test"),
   compileArtifactHash: z.string(),

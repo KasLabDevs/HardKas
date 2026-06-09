@@ -85,7 +85,7 @@ export function registerConfigCommands(program: Command) {
       const configPath = path.join(process.cwd(), "hardkas.config.ts");
       if (fs.existsSync(configPath) && !options.force) {
         UI.error("hardkas.config.ts already exists. Use --force to overwrite.");
-        throw e;
+        throw new Error("Command failed");
         return;
       }
 

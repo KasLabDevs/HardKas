@@ -518,7 +518,7 @@ export function registerTxCommands(program: Command) {
                 console.error(
                   "Provide a path to a signed artifact or use --from, --to, --amount."
                 );
-                throw e;
+                throw new Error("Command failed");
               }
             }
           );
@@ -586,7 +586,7 @@ export function registerTxCommands(program: Command) {
     .action(async (txId: string) => {
       const { UI } = await import("../ui.js");
       UI.error("Tracing is temporarily disabled while the query API stabilizes.");
-      throw e;
+      throw new Error("Command failed");
     });
 
   tx.command("compare <simulatedPath> <realPath>")

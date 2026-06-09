@@ -1,5 +1,5 @@
 import { Command } from "commander";
-import { UI } from "../ui.js";
+import { UI, handleError } from "../ui.js";
 import { listDevAccountsSync } from "@hardkas/accounts";
 import fs from "fs";
 import path from "path";
