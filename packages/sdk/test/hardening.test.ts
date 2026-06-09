@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, vi, beforeEach, beforeAll, afterAll } from "vitest";
 import { Hardkas } from "../src/index.js";
 import {
   KaspaWasmPrivateKeySigner,
@@ -9,6 +9,7 @@ import { verifySignedTxSemantics } from "@hardkas/tx-builder";
 import { finalizeArtifact, deepFreeze, writeArtifact } from "@hardkas/artifacts";
 import path from "node:path";
 import fs from "node:fs";
+import os from "node:os";
 
 // Mock Kaspa WASM dependency
 vi.mock("kaspa", () => {
@@ -52,6 +53,16 @@ vi.mock("@hardkas/kaspa-rpc", async () => {
 });
 
 describe("Core Hardening Sprint Regressions", () => {
+  let tmpDir: string;
+
+  beforeAll(() => {
+    tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "hardkas-hardening-"));
+  });
+
+  afterAll(() => {
+    fs.rmSync(tmpDir, { recursive: true, force: true });
+  });
+
   beforeEach(() => {
     vi.clearAllMocks();
   });
@@ -113,7 +124,7 @@ describe("Core Hardening Sprint Regressions", () => {
 
   // VULN-03: Post-Hash Artifact Mutation
   it("[VULN-03] should produce an immutable receipt and seal tracePath before hashing", async () => {
-    const sdk = await Hardkas.open({ cwd: "./test-workspace" });
+    const sdk = await Hardkas.open({ cwd: tmpDir });
 
     const signedArtifact = {
       schema: "hardkas.signedTx",
@@ -154,7 +165,7 @@ describe("Core Hardening Sprint Regressions", () => {
 
   // VULN-05: Optional Semantic Verification
   it("[VULN-05] should fail closed and prevent broadcast if pre-broadcast semantic verification fails", async () => {
-    const sdk = await Hardkas.open({ cwd: "./test-workspace" });
+    const sdk = await Hardkas.open({ cwd: tmpDir });
 
     const invalidSigned = {
       signedId: "signed_123",

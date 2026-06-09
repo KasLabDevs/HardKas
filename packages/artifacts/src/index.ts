@@ -33,5 +33,13 @@ export type {
   DeploymentIndex,
   DeploymentSummary,
   DagContext,
-  WorkflowArtifact
+  WorkflowArtifact,
+  SilverCompileArtifact,
+  SilverTestArtifact,
+  SilverDeployPlanArtifact,
+  SilverDeployArtifact,
+  SilverSpendPlanArtifact,
+  SilverSpendReceiptArtifact,
+  SilverDeploySimulationArtifact,
+  SilverSpendSimulationArtifact
 } from "./types.js";

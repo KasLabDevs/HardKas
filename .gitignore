@@ -1,41 +1,106 @@
-node_modules
-dist
-.turbo
+# Dependencies
+node_modules/
+
+# Build outputs and tool caches
+dist/
+dist-release/
+.turbo/
+.tmp/
+.cache/
+.vite/
+coverage/
+playwright-report/
+test-results/
+*.tsbuildinfo
+
+# Environment and machine-local files
 .env
 .env.*
-coverage
+!.env.example
 .DS_Store
+Thumbs.db
 *.log
-# HardKAS Local-only
+/*.jsonl
+
+# HardKas local workspaces
 .hardkas/
 .hardkas-*/
 .crash-workspace/
-demo-workspace/
-fix-*.js
-scratch/
-temp-artifacts/
-test-artifacts/
-test-audit/
-runs/
+.fuzz-workspace/
+.smoke-workspace/
+.nightmare-*/
+/demo-workspace/
+/_e2e_test/
+/tx-lifecycle-smoke/
+
+# Generated artifacts and local run output at repository root
+/artifacts/
+/plans/
+/signed/
+/reports/
+/evidence/
+/bugs/
+/bugs-sdk/
+/plan.json
+/signed.json
+/tx-plan.json
+/tx-signed.json
+/tx-receipt.json
+/args.json
+/bad-args.json
+/bad-vectors.json
+/mock_deploy.json
+/mutated-plan.json
+/silver*.json
+/silverdeployplan-*.json
+/silverplan-*.json
+/silvertst-*.json
+
+# Scratch labs and generated app/workspace folders
+/scratch/
+/scratch-*/
+/scratch-silverscript/
+/smoke-gauntlet-docs/
+/generated-apps/
+/temp-*/
+/temp-artifacts/
+/test-artifacts/
+/test-audit/
+/runs/
+
+# Local generated source/build leftovers
+/packages/cli/src/**/*.js
+/packages/cli/src/**/*.js.map
+/packages/cli/src/**/*.d.ts
+/packages/cli/src/**/*.d.ts.map
+/packages/query-store/test/**/*.js
+/packages/query-store/test/**/*.js.map
+/packages/query-store/test/**/*.d.ts
+/packages/query-store/test/**/*.d.ts.map
+/packages/*/package/
+
+# Local JSON artifacts
 *.local.json
 *.plan.local.json
 *.signed.local.json
+
+# Packed packages and temporary backups
+*.tgz
+*.bak
 *.backup
 *.tmp
 pnpm-lock.yaml.*
-.env
-.env.local
-.env.*
-# HardKAS Artifacts
-plan.json
-signed.json
-tx-plan.json
-tx-signed.json
-tx-receipt.json
 
-*.tgz
-
-generated-apps/
-
-
-temp-*/
+# One-off local helpers
+fix-*.js
+/campaign.ps1
+/test-commander.ts
+/index.html
+/DOCUMENTATION_REPORT.md
+/contractA.sil
+/if_statement.sil
+/test.sil
+/test_contract.sil
+/test_args.json
+/bin_wrapper/
+/snapshots/

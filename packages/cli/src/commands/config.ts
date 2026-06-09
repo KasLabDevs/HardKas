@@ -1,5 +1,4 @@
 import { Command } from "commander";
-import { handleError } from "../ui.js";
 
 export function registerConfigCommands(program: Command) {
   const configCmd = program.command("config").description("Manage HardKAS configuration");
@@ -41,8 +40,7 @@ export function registerConfigCommands(program: Command) {
           }
         }
       } catch (e) {
-        handleError(e);
-        process.exitCode = 1;
+        throw e;
       }
     });
 
@@ -87,7 +85,7 @@ export function registerConfigCommands(program: Command) {
       const configPath = path.join(process.cwd(), "hardkas.config.ts");
       if (fs.existsSync(configPath) && !options.force) {
         UI.error("hardkas.config.ts already exists. Use --force to overwrite.");
-        process.exitCode = 1;
+        throw new Error("Command failed");
         return;
       }
 

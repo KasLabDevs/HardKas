@@ -1,17 +1,48 @@
 # Version Guarantees
 
-HardKAS is currently in the `0.8.x-alpha` release cycle. While we are in alpha, we maintain strict guarantees over certain system boundaries while leaving others open for rapid iteration.
+HardKAS is currently in the `0.9.0-alpha` release cycle.
 
-## 0.8.x Alpha Guarantees
+The project is stable enough for local development workflows, but it is still an
+alpha. APIs, command names, and advanced integrations may change while the
+local-first product surface is tightened.
 
-### ✅ Stable
-The following systems have been formally audited and their APIs/outputs are considered stable. Breaking changes to these will only occur on minor version bumps (e.g., `0.9.0`):
-- **Artifact Schema**: The JSON structure of `TxPlanArtifact`, `SignedTxArtifact`, and `TxReceiptArtifact`.
-- **Hashing Rules**: The cryptographic normalization and deterministic sorting logic used to generate `contentHash`.
-- **Replay Semantics**: The rules and mathematical proofs the Replay Engine uses to determine state equivalence.
+## Stable In This Alpha
 
-### ⚠️ Experimental
-The following systems are under active development and their APIs may change without warning in patch versions:
-- **Network Adapters**: Integrations with Kaspa mainnet RPC nodes, testnet sync logic, and L2 node clients.
-- **Advanced CLI Workflows**: Commands under the `workflow` and `chaos` namespaces.
-- **Future Integrations**: Third-party framework plugins (like Next.js/React hooks wrapper).
+These boundaries should change only with intentional release notes:
+
+- **Artifact identity:** content-addressed transaction plans, signed payloads,
+  receipts, traces, and workflow artifacts.
+- **Hashing rules:** canonical serialization and deterministic sorting used to
+  calculate `contentHash`.
+- **Local simulated state:** `.hardkas/localnet.json` as the local UTXO state
+  boundary.
+- **Core transaction lifecycle:** `plan -> inspect/verify -> sign -> send/simulate
+  -> receipt -> replay`.
+- **Toccata v2 localnet baseline:** Docker simnet funding, standard transaction
+  lifecycle, Silver OP_TRUE deploy/spend, and corpus verification through
+  `pnpm gauntlet:toccata`.
+- **Release claims:** `artifactCoherence = READY_MATCH`,
+  `runtimeOutcome = PARTIAL`, `vmConsensusEquivalence = NOT_CLAIMED`, and
+  `mainnet = BLOCKED_BY_POLICY`.
+
+## Preview
+
+These systems exist and are useful, but are still being hardened:
+
+- Query-store projections and dashboard views.
+- Dev-server HTTP workflow endpoints.
+- Real `simnet`/testnet RPC adapters.
+- Localnet snapshots and fork/replay tooling.
+- Workflow and session orchestration.
+
+## Experimental
+
+These surfaces may change quickly:
+
+- Mainnet-related signing flags and RPC paths. Mainnet is blocked by policy for
+  the 0.9.0-alpha release claim.
+- L2, bridge, MetaMask, KasWare, and sandbox integrations.
+- Chaos, torture, and certification tooling.
+- SilverScript/Toccata behavior beyond the verified OP_TRUE localnet baseline.
+
+Mainnet is not part of the 0.9.0-alpha happy path.

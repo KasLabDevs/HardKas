@@ -39,6 +39,8 @@ import { registerStatusCommands } from "./commands/status.js";
 import { registerWhyCommand } from "./commands/why.js";
 import { registerCiCommand } from "./commands/ci.js";
 import { registerSandboxCommand } from "./commands/sandbox.js";
+import { registerSilverCommand } from "./commands/silver.js";
+import { registerCorpusCommands } from "./commands/corpus.js";
 
 import { HARDKAS_VERSION } from "@hardkas/artifacts";
 
@@ -96,6 +98,8 @@ export function buildHardkasProgram(options?: { forDocs?: boolean }): Command {
   registerWhyCommand(program);
   registerCiCommand(program);
   registerSandboxCommand(program);
+  registerSilverCommand(program);
+  registerCorpusCommands(program);
 
   // Programmable workflows & Agent Mode
   registerWorkflowCommands(program);

@@ -1,40 +1,51 @@
 # `@hardkas/sdk`
 
-The HardKAS SDK acts as the programmatic boundary between developer scripts and the isolated HardKAS runtime engine.
+The HardKas SDK is the programmatic API for local-first transaction workflows. It exposes the same core model as the CLI: plan, sign, simulate or send, then inspect artifacts and lineage.
 
-## 1. Bootstrapping Variants
+## 1. Create A Local SDK
 
-The SDK injects dependencies via a `RuntimeContext` container. This container abstracts the filesystem, logging, and RPC configurations.
-
-### Flow: Auto-Bootstrap
 ```typescript
-const sdk = await Hardkas.create({ autoBootstrap: true });
+import { Hardkas } from "@hardkas/sdk";
+
+const sdk = await Hardkas.create({
+  cwd: process.cwd(),
+  autoBootstrap: true,
+  network: "simulated"
+});
 ```
-1. The engine scans upward from `process.cwd()` to find `.hardkas/`.
-2. It acquires necessary read/write workspace locks.
-3. If the workspace does not exist, it automatically creates it, generating a new developer identity and local configuration.
 
-### Variant: Manual Policy Engine
-When running inside an AI agent (like KI) or CI environment, `autoBootstrap` is disabled.
-1. The SDK enforces the 4 Policy Dimensions (Local isolation, Determinism, Replayability, Mainnet Guards).
-2. It calls `hardkas doctor --json` internally before initializing.
-3. If the environment fails policy checks (e.g., trying to write to mainnet without the explicit `--unsafe-mainnet` flag), the instantiation throws synchronously.
+`autoBootstrap: true` is the easiest local path. It creates or loads the workspace data needed for simulated accounts, artifacts, and local execution.
 
-## 2. Transaction Flow & Dry-Runs
+## 2. Transaction Flow
 
-All SDK transaction methods follow the Plan -> Sign -> Broadcast pipeline.
-
-### Flow: `sdk.tx.plan`
-1. The SDK calculates the deterministic payload size.
-2. It interacts with the `Query Store` to fetch available UXTOs (for L1) or Nonces (for L2).
-3. It emits a `PlanCreated` event to the `events.jsonl` ledger.
-4. It persists a `TxPlan` artifact in `.hardkas/artifacts/`.
-
-### Variant: Dry-Run Execution
 ```typescript
-const plan = await sdk.tx.plan({ to, amount, dryRun: true });
+const plan = await sdk.tx.plan({
+  from: "alice",
+  to: "bob",
+  amount: "1",
+  network: "simulated"
+});
+
+const signed = await sdk.tx.sign(plan, {
+  account: "alice"
+});
+
+const receipt = await sdk.tx.simulate(signed);
 ```
-1. The SDK skips steps 3 and 4.
-2. No locks are acquired.
-3. No events are emitted to the append-only ledger.
-4. The plan is returned purely in-memory as a preview object, which throws an exception if you attempt to pass it into `sdk.tx.sign`.
+
+For a real RPC-backed node, create the SDK with an explicit network/provider configuration and treat the send step as network-state dependent. Mainnet should remain outside the default local development flow.
+
+## 3. Artifacts And Queries
+
+The SDK can read artifacts, trace lineage, replay local records, and query the local projection:
+
+```typescript
+const artifacts = await sdk.query.artifacts.list();
+const trace = await sdk.lineage.trace(receipt.txId);
+```
+
+The SQLite query store is rebuildable. The durable source of truth is the workspace artifact and event data.
+
+## 4. Boundary
+
+The SDK should be used from Node.js. Browser applications should talk to the dev server through `@hardkas/client`, not import `@hardkas/sdk` directly.

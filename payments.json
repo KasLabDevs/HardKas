@@ -1,4 +1,0 @@
-[
-  { "from": "alice", "to": "bob", "amount": "1.5" },
-  { "from": "alice", "to": "carol", "amount": "0.8" }
-]

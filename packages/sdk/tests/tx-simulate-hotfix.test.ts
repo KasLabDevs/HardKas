@@ -1,12 +1,25 @@
-import { test, expect } from "vitest";
+import { test, expect, beforeAll, afterAll } from "vitest";
 import { Hardkas } from "../src/index.js";
 import { ARTIFACT_SCHEMAS } from "@hardkas/artifacts";
+import fs from "node:fs";
+import path from "node:path";
+import os from "node:os";
+
+let tmpDir: string;
+
+beforeAll(() => {
+  tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "hardkas-hotfix-"));
+});
+
+afterAll(() => {
+  fs.rmSync(tmpDir, { recursive: true, force: true });
+});
 
 test("tx.simulate should not crash with .map undefined on in-memory signed artifacts when only receipt is on disk", async () => {
   const hk = await Hardkas.create({
     network: "simulated",
     autoBootstrap: true,
-    cwd: process.cwd()
+    cwd: tmpDir
   });
 
   // Create a plan without saving it to disk
@@ -39,7 +52,7 @@ test("artifacts.read should fail if expectedSchema is mismatched", async () => {
   const hk = await Hardkas.create({
     network: "simulated",
     autoBootstrap: true,
-    cwd: process.cwd()
+    cwd: tmpDir
   });
 
   const plan = await hk.tx.plan({

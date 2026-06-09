@@ -39,7 +39,7 @@ export function registerTestCommands(program: Command) {
           });
         } catch (e) {
           handleError(e, "Test execution failed");
-          process.exit(1);
+          throw new Error("Command failed");
         }
       }
     );

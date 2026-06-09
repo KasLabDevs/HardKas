@@ -1,3 +1,4 @@
+import { handleLockError } from "../ui.js";
 import { Command } from "commander";
 import { handleError, UI } from "../ui.js";
 import { runNodeStart } from "../runners/node-start-runner.js";
@@ -23,7 +24,6 @@ export function registerNodeCommands(program: Command) {
     .option("--lock-timeout <ms>", "Lock wait timeout in ms", "30000")
     .action(async (options) => {
       const { withLock } = await import("@hardkas/core");
-      const { handleLockError } = await import("../ui.js");
       try {
         await withLock(
           {
@@ -51,7 +51,6 @@ export function registerNodeCommands(program: Command) {
     .option("--lock-timeout <ms>", "Lock wait timeout in ms", "30000")
     .action(async (options) => {
       const { withLock } = await import("@hardkas/core");
-      const { handleLockError } = await import("../ui.js");
       try {
         await withLock(
           {
@@ -78,7 +77,6 @@ export function registerNodeCommands(program: Command) {
     .option("--lock-timeout <ms>", "Lock wait timeout in ms", "30000")
     .action(async (options) => {
       const { withLock } = await import("@hardkas/core");
-      const { handleLockError } = await import("../ui.js");
       try {
         await withLock(
           {
@@ -107,7 +105,6 @@ export function registerNodeCommands(program: Command) {
     .option("--lock-timeout <ms>", "Lock wait timeout in ms", "30000")
     .action(async (options) => {
       const { withLock } = await import("@hardkas/core");
-      const { handleLockError } = await import("../ui.js");
       try {
         await withLock(
           {

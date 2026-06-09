@@ -1,5 +1,5 @@
 import { Command } from "commander";
-import { UI, handleError } from "../ui.js";
+import { UI } from "../ui.js";
 import { runDoctorChecks } from "./doctor.js";
 import { HardkasStore } from "@hardkas/query-store";
 import fs from "fs";
@@ -81,18 +81,24 @@ export function registerCiCommand(program: Command) {
         }
 
         UI.emptyLine();
+        UI.emptyLine();
         if (hasErrors) {
-          UI.error(
-            "CI Verification Failed. Workspace is corrupted or incorrectly configured."
+          const { HardkasCliError, HardkasExitCode } = await import("../cli-errors.js");
+          throw new HardkasCliError(
+            "CI_VERIFY_FAILED",
+            "CI Verification Failed. Workspace is corrupted or incorrectly configured.",
+            { exitCode: HardkasExitCode.RUNTIME_FAILURE }
           );
-          process.exit(1);
         } else {
           UI.success("CI Verification Passed. Workspace is pristine.");
-          process.exit(0);
+          return;
         }
-      } catch (e) {
-        handleError(e, "CI Verify Error");
-        process.exit(1);
+      } catch (e: any) {
+        if (e.name === "HardkasCliError") throw new Error("Command failed");
+        const { HardkasCliError, HardkasExitCode } = await import("../cli-errors.js");
+        throw new HardkasCliError("CI_ERROR", e.message || String(e), {
+          exitCode: HardkasExitCode.RUNTIME_FAILURE
+        });
       }
     });
 }

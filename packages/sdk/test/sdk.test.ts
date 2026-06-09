@@ -1,6 +1,9 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, vi, beforeEach, beforeAll, afterAll } from "vitest";
 import { Hardkas } from "../src/index.js";
 import { JsonWrpcKaspaClient } from "@hardkas/kaspa-rpc";
+import fs from "node:fs";
+import path from "node:path";
+import os from "node:os";
 
 vi.mock("@hardkas/kaspa-rpc", async () => {
   const actual = await vi.importActual("@hardkas/kaspa-rpc");
@@ -16,6 +19,16 @@ vi.mock("@hardkas/kaspa-rpc", async () => {
 });
 
 describe("Hardkas SDK", () => {
+  let tmpDir: string;
+
+  beforeAll(() => {
+    tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "hardkas-sdk-"));
+  });
+
+  afterAll(() => {
+    fs.rmSync(tmpDir, { recursive: true, force: true });
+  });
+
   beforeEach(() => {
     vi.clearAllMocks();
   });
@@ -25,7 +38,7 @@ describe("Hardkas SDK", () => {
   });
 
   it("should have modular sub-facades", async () => {
-    const sdk = await Hardkas.open();
+    const sdk = await Hardkas.open({ cwd: tmpDir });
     expect(sdk.accounts).toBeDefined();
     expect(sdk.tx).toBeDefined();
     expect(sdk.l2).toBeDefined();

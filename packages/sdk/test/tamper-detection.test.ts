@@ -1,16 +1,23 @@
-import { describe, it, expect, beforeAll } from "vitest";
+import { describe, it, expect, beforeAll, afterAll } from "vitest";
 import { Hardkas } from "../src/index.js";
 import fs from "node:fs";
 import path from "node:path";
+import os from "node:os";
 import { fileURLToPath } from "node:url";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 describe("SDK Tamper Detection & Forensic Regression", () => {
   let sdk: Hardkas;
+  let tmpDir: string;
   
   beforeAll(async () => {
-    sdk = await Hardkas.create({ cwd: process.cwd(), autoBootstrap: true, network: 'simulated' });
+    tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "hardkas-tamper-"));
+    sdk = await Hardkas.create({ cwd: tmpDir, autoBootstrap: true, network: 'simulated' });
+  });
+
+  afterAll(async () => {
+    fs.rmSync(tmpDir, { recursive: true, force: true });
   });
 
   it("should reject tampered signedTx during verify, simulate, and send", async () => {

@@ -1,0 +1,52 @@
+{
+  "schema": "hardkas.toccataGoldenFailureCase.v1",
+  "caseId": "mutated-args",
+  "title": "Spend plan args were mutated without updating argsHash",
+  "network": "simnet",
+  "profile": "toccata-v2",
+  "baseArtifact": "../op-true/spend-plan.json",
+  "stateSetup": {
+    "deployPlan": "../op-true/deploy-plan.json",
+    "deploySimulationReceipt": "../op-true/deploy-simulated.json",
+    "simulatorSpendInputNormalization": [
+      {
+        "path": "$.deployArtifactHash",
+        "valueFrom": "../op-true/deploy-simulated.json#$.contentHash"
+      },
+      {
+        "path": "$.contractUtxoRef",
+        "valueFrom": "../op-true/deploy-simulated.json#$.syntheticOutpoint"
+      }
+    ]
+  },
+  "input": {
+    "artifactSchema": "hardkas.silver.spendPlan",
+    "mutation": {
+      "path": "$.args",
+      "from": [],
+      "to": [
+        {
+          "type": "hex",
+          "value": "aa"
+        }
+      ]
+    },
+    "unchangedField": {
+      "path": "$.argsHash",
+      "value": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+    }
+  },
+  "expectedSimulator": {
+    "phase": "simulateSilverSpend",
+    "status": "REJECTED",
+    "error": "SILVERSCRIPT_ARGS_HASH_MISMATCH"
+  },
+  "expectedReal": {
+    "status": "NOT_SUBMITTED",
+    "reason": "Local argsHash coherence rejects the spend plan before Docker submission."
+  },
+  "compare": {
+    "status": "NOT_APPLICABLE_INPUT_REJECTED",
+    "reason": "No simulated receipt should be produced for a mutated argsHash input."
+  }
+}

@@ -1,0 +1,30 @@
+{
+  "schema": "hardkas.toccataGoldenFailureCase.v1",
+  "caseId": "mainnet-guard",
+  "title": "Deploy plan attempts to target mainnet",
+  "network": "mainnet",
+  "profile": "toccata-v2",
+  "baseArtifact": "../op-true/deploy-plan.json",
+  "input": {
+    "artifactSchema": "hardkas.silver.deployPlan",
+    "mutation": {
+      "path": "$.networkId",
+      "from": "simnet",
+      "to": "mainnet"
+    }
+  },
+  "expectedSimulator": {
+    "phase": "simulateSilverDeploy",
+    "status": "REJECTED",
+    "error": "SILVERSCRIPT_NETWORK_UNSUPPORTED"
+  },
+  "expectedReal": {
+    "status": "BLOCKED_BY_POLICY",
+    "error": "SILVERSCRIPT_MAINNET_NOT_ENABLED",
+    "reason": "HardKAS 0.9.0-alpha does not submit Silver/Toccata artifacts to mainnet."
+  },
+  "compare": {
+    "status": "NOT_APPLICABLE_MAINNET_GUARD",
+    "reason": "Mainnet guarded inputs are intentionally never compared against Docker simnet receipts."
+  }
+}

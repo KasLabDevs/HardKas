@@ -1,7 +1,7 @@
 import { defineHardkasConfig } from "@hardkas/config";
 
 export default defineHardkasConfig({
-  // HardKAS v0.8.20-alpha Configuration
+  // HardKAS v0.9.0-alpha Configuration
   defaultNetwork: "simulated",
 
   networks: {
@@ -15,13 +15,19 @@ export default defineHardkasConfig({
       network: "simnet",
       rpcUrl: "ws://127.0.0.1:18210",
       description: "Local Docker kaspad on simnet — requires hardkas node start"
+    },
+    "testnet-12": {
+      kind: "kaspa-node",
+      network: "testnet-12",
+      rpcUrl: "ws://127.0.0.1:18210",
+      description: "Local Toccata lab"
     }
   },
 
   accounts: {
     alice: {
       kind: "simulated",
-      address: "kaspa:sim_alice"
+      address: "kaspasim:qzzm5spp0pd0vppkhpkthtux20fx4sa0mghwvqyyt2p85pgmlrnnsp2wtmh7z"
     },
     bob: {
       kind: "simulated",

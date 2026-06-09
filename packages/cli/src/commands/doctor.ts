@@ -20,6 +20,7 @@ export function registerDoctorCommand(program: Command) {
       `Perform a full system diagnostic and health report ${UI.maturity("stable")}`
     )
     .option("--json", "Output results as stable JSON schema", false)
+    .option("--capabilities", "Report local node capabilities (RPC, network, DAA)", false)
     .option("--consistency", "Run advanced deterministic consistency checks", false)
     .option(
       "--strict",
@@ -641,7 +642,12 @@ export async function runDoctorChecks(
   }
 
   if (opts.strict && report.summary.failed > 0) {
-    process.exit(1);
+    const { HardkasCliError, HardkasExitCode } = await import("../cli-errors.js");
+    throw new HardkasCliError(
+      "DOCTOR_FAILED",
+      "Strict mode: Doctor health checks failed.",
+      { exitCode: HardkasExitCode.RUNTIME_FAILURE }
+    );
   }
 
   return report.summary.failed === 0;

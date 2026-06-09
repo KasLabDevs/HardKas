@@ -1,0 +1,32 @@
+{
+  "schema": "hardkas.txReceipt",
+  "hardkasVersion": "0.9.0-alpha",
+  "version": "1.0.0-alpha",
+  "hashVersion": 4,
+  "networkId": "simnet",
+  "mode": "real",
+  "createdAt": "2026-06-09T13:59:55.861Z",
+  "status": "submitted",
+  "txId": "c5089fcff3f30f7fc2e9e07f8af7ac3e07ad139cd8a754e07639735ae4d41190",
+  "sourceSignedId": "signed-03d039d4f4e9d1da",
+  "from": {
+    "address": "kaspasim:qr0lr4ml9fn3chekrqmjdkergxl93l4wrk3dankcgvjq776s9wn9jeadh9sjw"
+  },
+  "to": {
+    "address": "kaspasim:qrcx0nst2hfvw37qmdwre2eeydwap9u3c47x24pr8jsddyk4sg69q9ze435ss"
+  },
+  "amountSompi": "100000000000",
+  "feeSompi": "0",
+  "submittedAt": "2026-06-09T13:59:55.861Z",
+  "rpcUrl": "ws://127.0.0.1:18210",
+  "workflowId": "wf_f8eb335be959fa2b",
+  "assumptionLevel": "local-rpc",
+  "lineage": {
+    "artifactId": "4941d9f8b23da5e555ae3b12875fe31ef3b1b9266be59678caa40b7354a133f1",
+    "lineageId": "f8eb335be959fa2bde5209d173e3a6d42a40263b615bd61bffa641bccfbe5e06",
+    "parentArtifactId": "03d039d4f4e9d1dacd88e1dab27279900bc543f17941d57301e957d99debfb78",
+    "rootArtifactId": "f8eb335be959fa2bde5209d173e3a6d42a40263b615bd61bffa641bccfbe5e06",
+    "sequence": 3
+  },
+  "contentHash": "4941d9f8b23da5e555ae3b12875fe31ef3b1b9266be59678caa40b7354a133f1"
+}

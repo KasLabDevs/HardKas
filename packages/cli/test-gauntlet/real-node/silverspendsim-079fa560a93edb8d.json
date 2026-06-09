@@ -1,0 +1,36 @@
+{
+  "schema": "hardkas.silver.spendSimulation",
+  "hardkasVersion": "0.9.0-alpha",
+  "version": "1.0.0-alpha",
+  "hashVersion": 4,
+  "networkId": "simnet",
+  "mode": "simulated",
+  "createdAt": "1970-01-01T00:00:00.000Z",
+  "deploySimulationHash": "98eff01d3b833c0843e8a786cb71d93bfdfb7aa6c272b6772c2c18a3e95f2b3b",
+  "spendPlanHash": "b66691bccccae3dce29823c3666fa83324b0059004d7405020168cbf4f137728",
+  "redeemScriptHash": "ce57216285125006ec18197bd8184221cefa559bb0798410d99a5bba5b07cd1d",
+  "lockingScriptHex": "aa20ce57216285125006ec18197bd8184221cefa559bb0798410d99a5bba5b07cd1d87",
+  "signatureScriptHex": "0151",
+  "simulatedSpendTxId": "e632feb11149a13afac5789aacce1d18cf81d6e54ae5c172bee835bc35ff23c1",
+  "spentOutpoint": {
+    "transactionId": "782f6fd3c6c16d71cdef75609f4c0d4bd17f466ee5decf8dcba1a3594c43b361",
+    "index": 0
+  },
+  "expectedOutputs": [
+    {
+      "address": "kaspasim:qrp0xzkdjw9a8h4rlhcsgrzxhw03ncm62pp048rcw9p8662ucjq3qptdq89pc",
+      "amountSompi": "99800000"
+    }
+  ],
+  "feeSompi": "2000",
+  "status": "SIMULATED_ACCEPTED",
+  "lineage": {
+    "artifactId": "spend-sim-b66691bccccae3dc",
+    "lineageId": "silver-lineage-127786cd51321f99",
+    "parentArtifactId": "b66691bccccae3dce29823c3666fa83324b0059004d7405020168cbf4f137728",
+    "rootArtifactId": "127786cd51321f99301b4ede8f9f8550b915541815a9b19ad6fc9720de822c9b",
+    "sequence": 2
+  },
+  "contentHash": "079fa560a93edb8df02f382ad68d53113912dcf271b448c48b42408a9fc8d1f7",
+  "artifactId": "silverspendsim-079fa560a93edb8d"
+}

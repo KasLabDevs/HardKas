@@ -1,22 +1,38 @@
 # The HardKAS Mental Model
 
-Before writing any code, it is essential to understand the architectural philosophy of HardKAS. It completely flips the traditional testnet-based development paradigm.
+Before writing code, understand the core product boundary: HardKAS is a
+local-first deterministic workspace for Kaspa builders.
 
 ## 1. Local-First Over Testnet
 
-Traditionally, Web3 development relies heavily on remote testnets. This introduces ambient noise: network latency, RPC unreliability, block times, and faucet dependency.
-HardKAS enforces a **Local-First Model**. You execute your transactions against a simulated, offline network (`.hardkas/localnet.json`). If the logic is sound and the cryptographic signatures are deterministic, the workflow is mathematically guaranteed to be reproducible when later broadcasted to a live network.
+Traditional crypto development often starts with remote testnets. That adds
+latency, RPC failures, faucet dependency, and network state you do not control.
+
+HardKAS starts with a simulated offline network in `.hardkas/localnet.json`. You
+prove your transaction logic locally first, then move outward to `simnet`,
+testnet, and eventually carefully controlled production tooling.
 
 ## 2. Deterministic Artifacts
 
-In HardKAS, everything is an **Artifact**. An artifact is an immutable JSON document representing a specific state transition (e.g., a planned transaction, a signed transaction, a receipt).
-Every artifact has a `contentHash`, which is its unique cryptographic identity.
-Because artifacts are strictly deterministic—down to canonical JSON sorting and Unicode normalization—the exact same inputs will produce the exact same `contentHash` on Windows, Linux, and macOS.
+In HardKAS, every meaningful state transition becomes an artifact: plan, signed
+transaction, receipt, trace, replay report, or workflow.
 
-## 3. The Workspace is the Ledger
+Each artifact has a `contentHash` derived from canonical serialization. The same
+inputs should produce the same identity on Windows, Linux, and macOS.
 
-Your `.hardkas/` directory acts as an offline ledger. It contains the raw artifacts, the deterministic event history (`events.jsonl`), and any local simulated state. This means your CI pipelines can cache the workspace, perform regressions, and verify logic without ever needing external network consensus.
+## 3. The Workspace Is The Ledger
 
-## 4. Zero-Trust Architecture
+The `.hardkas/` directory is the local source of truth. It contains artifacts,
+local simulated state, events, and rebuildable projections.
 
-You should never blindly trust metadata. When an artifact is loaded (e.g., from disk into memory, or passed via an API), the HardKAS SDK performs a **Zero-Trust Validation**. It dynamically calculates the canonical hash of the raw payload to ensure it matches the stated `contentHash`. Any tampering instantly rejects the artifact.
+SQLite query-store data and dashboard views are projections. They are useful,
+but they are not the authority.
+
+## 4. Zero-Trust Artifact Loading
+
+HardKAS does not trust an artifact just because it exists on disk. When an
+artifact is consumed, the SDK recalculates the canonical hash and rejects
+tampering.
+
+That is the main safety idea: planning, signing, execution, replay, and
+observability all meet at the artifact boundary.

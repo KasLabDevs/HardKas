@@ -23,8 +23,7 @@ export function registerArtifactCommands(program: Command) {
           : process.cwd();
         await runArtifactCreate({ type, ...options, workspaceRoot });
       } catch (e) {
-        handleError(e);
-        process.exitCode = 1;
+        throw e;
       }
     });
 
@@ -42,8 +41,7 @@ export function registerArtifactCommands(program: Command) {
           : process.cwd();
         await runArtifactInspect({ idOrPath, ...options, workspaceRoot });
       } catch (e) {
-        handleError(e);
-        process.exitCode = 1;
+        throw e;
       }
     });
 
@@ -65,8 +63,7 @@ export function registerArtifactCommands(program: Command) {
           : process.cwd();
         await runArtifactVerify({ path: targetPath, ...options, workspaceRoot });
       } catch (e) {
-        handleError(e);
-        process.exitCode = 1;
+        throw e;
       }
     });
 
@@ -85,8 +82,7 @@ export function registerArtifactCommands(program: Command) {
           : process.cwd();
         await runArtifactExplain({ path: targetPath, ...options, workspaceRoot });
       } catch (e) {
-        handleError(e);
-        process.exitCode = 1;
+        throw e;
       }
     });
 
@@ -106,8 +102,7 @@ export function registerArtifactCommands(program: Command) {
           : process.cwd();
         await runArtifactLineage({ path: targetPath, workspaceRoot, ...options });
       } catch (e) {
-        handleError(e);
-        process.exitCode = 1;
+        throw e;
       }
     });
 }

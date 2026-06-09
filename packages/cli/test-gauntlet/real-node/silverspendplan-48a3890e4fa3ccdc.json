@@ -1,0 +1,28 @@
+{
+  "schema": "hardkas.silver.spendPlan",
+  "hardkasVersion": "0.9.0-alpha",
+  "version": "1.0.0-alpha",
+  "hashVersion": 4,
+  "networkId": "simnet",
+  "mode": "simulated",
+  "createdAt": "2026-06-09T10:27:24.816Z",
+  "deployArtifactHash": "856ad480c3e5b2aabed3eb54d4e9bd98069dcae20ab6dbe1f26f6556b57bcdf2",
+  "compileArtifactHash": "2c01b25995895c37eda9531dae778206c212299ec350d46d95d8848d411b2f2e",
+  "redeemScriptHash": "ce57216285125006ec18197bd8184221cefa559bb0798410d99a5bba5b07cd1d",
+  "lockingScriptHex": "aa20ce57216285125006ec18197bd8184221cefa559bb0798410d99a5bba5b07cd1d87",
+  "contractUtxoRef": {
+    "transactionId": "4f15141644133a8b9477c73187e4d6656216df0f80664c25a324849b292cd954",
+    "index": 0
+  },
+  "args": [],
+  "argsHash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+  "signatureScriptHex": "0151",
+  "expectedOutputs": [
+    {
+      "address": "kaspasim:qqkge8wqtmwvd0u9cz05kzcwze8nf5c0vld08tplu63t39fc4lx466252mm8s",
+      "amountSompi": "99800000"
+    }
+  ],
+  "contentHash": "48a3890e4fa3ccdc9ad6e48988d24416bc479003adcf6f2424db27124998f06c",
+  "artifactId": "silverspendplan-48a3890e4fa3ccdc"
+}

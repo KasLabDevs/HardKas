@@ -1,7 +1,7 @@
 // SAFETY_LEVEL: SIMULATION_ONLY
 
 import { Command } from "commander";
-import { UI, handleError } from "../ui.js";
+import { UI } from "../ui.js";
 
 export function registerTortureCommands(program: Command) {
   const tortureCmd = program
@@ -44,8 +44,7 @@ export function registerTortureCommands(program: Command) {
             debugStack: options.debugStack
           });
         } catch (err: any) {
-          handleError(err);
-          process.exitCode = 1;
+          throw err;
         }
       }
     );
@@ -72,8 +71,7 @@ export function registerTortureCommands(program: Command) {
           ...(options.profile !== undefined ? { profile: options.profile } : {})
         });
       } catch (err: any) {
-        handleError(err);
-        process.exitCode = 1;
+        throw err;
       }
     });
 }

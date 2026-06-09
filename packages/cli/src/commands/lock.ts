@@ -36,8 +36,7 @@ export function registerLockCommands(program: Command) {
           console.log("");
         }
       } catch (e) {
-        handleLockError(e);
-        process.exitCode = 1;
+        throw e;
       }
     });
 
@@ -74,8 +73,7 @@ export function registerLockCommands(program: Command) {
           console.log("");
         }
       } catch (e) {
-        handleLockError(e);
-        process.exitCode = 1;
+        throw e;
       }
     });
 
@@ -113,8 +111,7 @@ export function registerLockCommands(program: Command) {
         }
         console.log("");
       } catch (e) {
-        handleLockError(e);
-        process.exitCode = 1;
+        throw e;
       }
     });
 
@@ -142,11 +139,10 @@ export function registerLockCommands(program: Command) {
           UI.success(`Lock '${name}' cleared.`);
         } else {
           UI.error(`Could not clear lock '${name}': ${result.reason}`);
-          process.exitCode = 1;
+          throw new Error("Command failed");
         }
       } catch (e) {
-        handleLockError(e);
-        process.exitCode = 1;
+        throw e;
       }
     });
 }

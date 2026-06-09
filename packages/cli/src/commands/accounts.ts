@@ -1,5 +1,5 @@
 import { Command } from "commander";
-import { UI, handleError } from "../ui.js";
+import { UI } from "../ui.js";
 import { runAccountsRealInit } from "../runners/accounts-real-init-runner.js";
 import { runAccountsRealGenerate } from "../runners/accounts-real-generate-runner.js";
 import { runAccountsBalance } from "../runners/accounts-balance-runner.js";
@@ -44,8 +44,7 @@ export function registerAccountsCommands(program: Command) {
           );
         }
       } catch (e) {
-        handleError(e);
-        process.exitCode = 1;
+        throw e;
       }
     });
 
@@ -68,7 +67,6 @@ export function registerAccountsCommands(program: Command) {
         json: boolean;
       }) => {
         const { withLock } = await import("@hardkas/core");
-        const { handleLockError } = await import("../ui.js");
         try {
           await withLock(
             {
@@ -88,8 +86,7 @@ export function registerAccountsCommands(program: Command) {
             }
           );
         } catch (e) {
-          handleLockError(e);
-          process.exitCode = 1;
+          throw e;
         }
       }
     );
@@ -122,7 +119,6 @@ export function registerAccountsCommands(program: Command) {
     .option("--json", "Output as JSON", false)
     .action(async (options: any) => {
       const { withLock } = await import("@hardkas/core");
-      const { handleLockError } = await import("../ui.js");
       try {
         await withLock(
           {
@@ -144,8 +140,7 @@ export function registerAccountsCommands(program: Command) {
           }
         );
       } catch (e) {
-        handleLockError(e);
-        process.exitCode = 1;
+        throw e;
       }
     });
 
@@ -161,7 +156,6 @@ export function registerAccountsCommands(program: Command) {
     .option("--lock-timeout <ms>", "Lock wait timeout in ms", "30000")
     .action(async (name: string, options: any) => {
       const { withLock } = await import("@hardkas/core");
-      const { handleLockError } = await import("../ui.js");
       try {
         await withLock(
           {
@@ -182,8 +176,7 @@ export function registerAccountsCommands(program: Command) {
           }
         );
       } catch (e) {
-        handleLockError(e);
-        process.exitCode = 1;
+        throw e;
       }
     });
 
@@ -205,7 +198,6 @@ export function registerAccountsCommands(program: Command) {
     .option("--lock-timeout <ms>", "Lock wait timeout in ms", "30000")
     .action(async (name: string, options: any) => {
       const { withLock } = await import("@hardkas/core");
-      const { handleLockError } = await import("../ui.js");
       try {
         await withLock(
           {
@@ -225,8 +217,7 @@ export function registerAccountsCommands(program: Command) {
           }
         );
       } catch (e) {
-        handleLockError(e);
-        process.exitCode = 1;
+        throw e;
       }
     });
 
@@ -255,7 +246,6 @@ export function registerAccountsCommands(program: Command) {
     .option("--json", "Output as JSON", false)
     .action(async (options: any) => {
       const { withLock } = await import("@hardkas/core");
-      const { handleLockError } = await import("../ui.js");
       try {
         await withLock(
           {
@@ -278,8 +268,7 @@ export function registerAccountsCommands(program: Command) {
           }
         );
       } catch (e) {
-        handleLockError(e);
-        process.exitCode = 1;
+        throw e;
       }
     });
 
@@ -314,8 +303,7 @@ export function registerAccountsCommands(program: Command) {
           console.log(`Network:  ${result.network}`);
         }
       } catch (e) {
-        handleError(e);
-        process.exitCode = 1;
+        throw e;
       }
     });
 
@@ -329,8 +317,7 @@ export function registerAccountsCommands(program: Command) {
         const result = await runAccountsFund({ identifier, amountSompi });
         console.log(result.formatted);
       } catch (e) {
-        handleError(e);
-        process.exitCode = 1;
+        throw e;
       }
     });
 
@@ -374,8 +361,7 @@ export function registerAccountsCommands(program: Command) {
           }
           return;
         }
-        handleError(e);
-        process.exitCode = 1;
+        throw e;
       }
     });
 }

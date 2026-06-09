@@ -1,5 +1,5 @@
 import { Command } from "commander";
-import { UI, handleError } from "../ui.js";
+import { UI } from "../ui.js";
 import path from "node:path";
 
 export function registerReplayCommands(program: Command) {
@@ -22,8 +22,7 @@ export function registerReplayCommands(program: Command) {
           : process.cwd();
         await runReplayVerify({ path: targetPath || "", ...options, workspaceRoot });
       } catch (e: any) {
-        handleError(e);
-        process.exitCode = 1;
+        throw new Error("Command failed");
       }
     });
   replayCmd
@@ -43,8 +42,7 @@ export function registerReplayCommands(program: Command) {
           workspaceRoot: process.cwd()
         });
       } catch (e: any) {
-        handleError(e);
-        process.exitCode = 1;
+        throw new Error("Command failed");
       }
     });
 }

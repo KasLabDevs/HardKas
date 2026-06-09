@@ -56,7 +56,9 @@
     "example:ci": "pnpm --filter @examples/ci-workflow start",
     "example:dag-reorg": "pnpm --filter @examples/dag-reorg-simulation start",
     "examples:test": "pnpm --filter @examples/basic-transfer start && pnpm --filter @examples/backend-service start && pnpm --filter @examples/audit-pipeline start && pnpm --filter @examples/replay start && pnpm --filter @examples/policy start",
-    "docs:check": "node scripts/docs-check.mjs"
+    "docs:check": "node scripts/docs-check.mjs",
+    "gauntlet:toccata": "node scripts/toccata-gauntlet.mjs",
+    "corpus:toccata": "tsx packages/cli/src/index.ts corpus verify fixtures/toccata-v2/silver --json --workspace ."
   },
   "devDependencies": {
     "@changesets/cli": "^2.31.0",
@@ -79,7 +81,7 @@
     "typescript-eslint": "^8.59.3",
     "vitest": "^2.1.9"
   },
-  "version": "0.8.20-alpha",
+  "version": "0.9.0-alpha",
   "dependencies": {
     "kaspa": "^0.13.0",
     "kaspa-wasm": "^0.13.0"

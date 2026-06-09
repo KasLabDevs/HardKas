@@ -1,0 +1,35 @@
+{
+  "schema": "hardkas.silver.spendReceipt",
+  "hardkasVersion": "0.9.0-alpha",
+  "version": "1.0.0-alpha",
+  "hashVersion": 4,
+  "networkId": "simnet",
+  "mode": "real",
+  "createdAt": "2026-06-09T17:25:44.497Z",
+  "spendPlanHash": "b62865fa4567fdded0d5acbffd51ddd40093c94cddea769337235de1fde6b7e8",
+  "deployArtifactHash": "ac2fe16495e72c5374b059a344288edb97f49035992e8f067ca4a16763e8f890",
+  "redeemScriptHash": "ce57216285125006ec18197bd8184221cefa559bb0798410d99a5bba5b07cd1d",
+  "lockingScriptHex": "aa20ce57216285125006ec18197bd8184221cefa559bb0798410d99a5bba5b07cd1d87",
+  "signatureScriptHex": "0151",
+  "spentOutpoint": {
+    "transactionId": "2027b0fe8e770cb1911f6120c9857e3f275426539dd0966ad90a96178808dfa2",
+    "index": 0
+  },
+  "expectedOutputs": [
+    {
+      "address": "kaspasim:qzj95d4axnxz6yl9utawl2ezx822gs752r6nfgt6a4hxc76u7t33cr9rvz43e",
+      "amountSompi": "99800000"
+    }
+  ],
+  "txId": "7c0fbf77fb50e83487abdcf692eb56960b63fb2e02e37de4f06b5ac7cf40ce8a",
+  "status": "accepted",
+  "lineage": {
+    "artifactId": "104ec8f1e1f75589c8b352a2f8de2d775055b9e96e4ef3fa410d505bf93c5afb",
+    "lineageId": "b62865fa4567fdded0d5acbffd51ddd40093c94cddea769337235de1fde6b7e8",
+    "parentArtifactId": "b62865fa4567fdded0d5acbffd51ddd40093c94cddea769337235de1fde6b7e8",
+    "rootArtifactId": "b62865fa4567fdded0d5acbffd51ddd40093c94cddea769337235de1fde6b7e8",
+    "sequence": 1
+  },
+  "contentHash": "104ec8f1e1f75589c8b352a2f8de2d775055b9e96e4ef3fa410d505bf93c5afb",
+  "artifactId": "silverreceipt-104ec8f1e1f75589"
+}

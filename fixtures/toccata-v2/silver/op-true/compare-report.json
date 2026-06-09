@@ -1,0 +1,40 @@
+{
+  "schema": "hardkas.toccataGoldenCompare.v1",
+  "network": "simnet",
+  "node": "rusty-kaspad:v2.0.0",
+  "profile": "toccata-v2",
+  "simulatedReceipt": "spend-simulated.json",
+  "dockerReceipt": "spend-receipt-real.json",
+  "compareMode": "artifact-coherence",
+  "status": "SILVERSCRIPT_SIMULATION_MATCH",
+  "expectedCompareStatus": "PARTIAL_VM_SIMULATION",
+  "expectedKnownLimitation": true,
+  "drift": [],
+  "semanticNotes": [
+    {
+      "field": "lineage.source.deploy",
+      "classification": "SEMANTICALLY_DERIVED",
+      "reason": "simulator references deploySimulationHash; Docker references real deployArtifactHash"
+    },
+    {
+      "field": "lineage.source.spendPlanHash",
+      "classification": "SEMANTICALLY_DERIVED",
+      "reason": "simulator spend plan hash is derived from synthetic outpoint normalization; Docker spend plan hash is derived from real outpoint"
+    },
+    {
+      "field": "lineage.blob",
+      "classification": "SEMANTICALLY_DERIVED",
+      "reason": "raw lineage IDs are domain-specific: simulator lineage is synthetic, Docker lineage is receipt artifact lineage"
+    },
+    {
+      "field": "lineage.runtime.txid",
+      "classification": "IGNORED_NON_CONSENSUS",
+      "reason": "simulatedSpendTxId and Docker txId are intentionally different runtime identifiers"
+    },
+    {
+      "field": "lineage.runtime.spentOutpoint",
+      "classification": "IGNORED_NON_CONSENSUS",
+      "reason": "synthetic simulator outpoint and Docker-observed outpoint are compared as runtime metadata, not consensus equivalence"
+    }
+  ]
+}

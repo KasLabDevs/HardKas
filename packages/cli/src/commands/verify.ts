@@ -74,7 +74,7 @@ export function registerVerifyCommand(program: Command) {
         } else {
           UI.error(err.message);
         }
-        process.exit(1);
+        throw new Error("Command failed");
       }
     });
 }

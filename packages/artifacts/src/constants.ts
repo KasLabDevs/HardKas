@@ -15,7 +15,15 @@ export const ARTIFACT_SCHEMAS = {
   POLICY: "hardkas.policy.v1",
   NETWORK_PROFILE: "hardkas.networkProfile.v1",
   ASSUMPTION: "hardkas.assumption.v1",
-  MIGRATION_RECEIPT: "hardkas.migrationReceipt.v1"
+  MIGRATION_RECEIPT: "hardkas.migrationReceipt.v1",
+  SILVER_COMPILE: "hardkas.silver.compile",
+  SILVER_TEST: "hardkas.silver.test",
+  SILVER_DEPLOY_PLAN: "hardkas.silver.deployPlan",
+  SILVER_DEPLOY: "hardkas.silver.deploy",
+  SILVER_SPEND_PLAN: "hardkas.silver.spendPlan",
+  SILVER_SPEND_RECEIPT: "hardkas.silver.spendReceipt",
+  SILVER_DEPLOY_SIMULATION: "hardkas.silver.deploySimulation",
+  SILVER_SPEND_SIMULATION: "hardkas.silver.spendSimulation"
 } as const;
 
 export type HardkasArtifactSchema =

@@ -17,8 +17,7 @@ export function registerTelemetryCommands(program: Command) {
         const { runTelemetryInspect } = await import("../runners/telemetry-runners.js");
         await runTelemetryInspect(options);
       } catch (e) {
-        handleError(e);
-        process.exitCode = 1;
+        throw e;
       }
     });
 
@@ -32,8 +31,7 @@ export function registerTelemetryCommands(program: Command) {
         const { runTelemetryVerify } = await import("../runners/telemetry-runners.js");
         await runTelemetryVerify();
       } catch (e) {
-        handleError(e);
-        process.exitCode = 1;
+        throw e;
       }
     });
 
@@ -47,8 +45,7 @@ export function registerTelemetryCommands(program: Command) {
         const { runTelemetryTail } = await import("../runners/telemetry-runners.js");
         await runTelemetryTail(options);
       } catch (e) {
-        handleError(e);
-        process.exitCode = 1;
+        throw e;
       }
     });
 }

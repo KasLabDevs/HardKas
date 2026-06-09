@@ -31,7 +31,6 @@ export function registerQueryCommands(program: Command) {
     .option("--lock-timeout <ms>", "Lock wait timeout in ms", "30000")
     .action(async (options) => {
       const { withLock } = await import("@hardkas/core");
-      const { handleLockError } = await import("../ui.js");
       try {
         const action = async () => {
           const engine = await getQueryEngine();
@@ -71,7 +70,7 @@ export function registerQueryCommands(program: Command) {
             console.log(
               `\n  ${UI.warning("Recommendation:")} Run 'hardkas query store ${cmd}' to fix issues.\n`
             );
-            process.exitCode = 1;
+            throw new Error("Command failed");
           } else {
             console.log("\n  ✓ Everything looks good.\n");
           }
@@ -92,8 +91,7 @@ export function registerQueryCommands(program: Command) {
           await action();
         }
       } catch (e) {
-        handleLockError(e);
-        process.exitCode = 1;
+        throw e;
       }
     });
 
@@ -104,7 +102,6 @@ export function registerQueryCommands(program: Command) {
     .option("--lock-timeout <ms>", "Lock wait timeout in ms", "30000")
     .action(async (options) => {
       const { withLock } = await import("@hardkas/core");
-      const { handleLockError } = await import("../ui.js");
       try {
         await withLock(
           {
@@ -128,8 +125,7 @@ export function registerQueryCommands(program: Command) {
           }
         );
       } catch (e) {
-        handleLockError(e);
-        process.exitCode = 1;
+        throw e;
       }
     });
 
@@ -143,7 +139,6 @@ export function registerQueryCommands(program: Command) {
     .option("--json", "Output as JSON", false)
     .action(async (options) => {
       const { withLock } = await import("@hardkas/core");
-      const { handleLockError } = await import("../ui.js");
       try {
         await withLock(
           {
@@ -190,15 +185,14 @@ export function registerQueryCommands(program: Command) {
                 console.log(
                   `\n  ${UI.error("Synchronization encountered corruption.")} Use --strict for fail-fast behavior.`
                 );
-                process.exitCode = 1;
+                throw new Error("Command failed");
               }
               console.log("");
             }
           }
         );
       } catch (e) {
-        handleLockError(e);
-        process.exitCode = 1;
+        throw e;
       }
     });
 
@@ -212,7 +206,6 @@ export function registerQueryCommands(program: Command) {
     .action(async (options) => {
       if (options.json) UI.setJsonMode(true);
       const { withLock } = await import("@hardkas/core");
-      const { handleLockError } = await import("../ui.js");
       try {
         await withLock(
           {
@@ -259,15 +252,14 @@ export function registerQueryCommands(program: Command) {
                 UI.logHuman(
                   `\n  ${UI.error("Rebuild failed or encountered corruption.")} Use --strict for fail-fast behavior.`
                 );
-                process.exitCode = 1;
+                throw new Error("Command failed");
               }
               UI.logHuman("");
             }
           }
         );
       } catch (e) {
-        handleLockError(e);
-        process.exitCode = 1;
+        throw e;
       }
     });
 
@@ -302,8 +294,7 @@ export function registerQueryCommands(program: Command) {
           }
         }
       } catch (e) {
-        handleError(e);
-        process.exitCode = 1;
+        throw e;
       }
     });
 
@@ -335,8 +326,7 @@ export function registerQueryCommands(program: Command) {
         }
         store.disconnect();
       } catch (e) {
-        handleError(e);
-        process.exitCode = 1;
+        throw e;
       }
     });
 
@@ -392,8 +382,7 @@ export function registerQueryCommands(program: Command) {
           printArtifactList(result);
         }
       } catch (e) {
-        handleError(e);
-        process.exitCode = 1;
+        throw e;
       }
     });
 
@@ -423,8 +412,7 @@ export function registerQueryCommands(program: Command) {
           printInspectResult(result);
         }
       } catch (e) {
-        handleError(e);
-        process.exitCode = 1;
+        throw e;
       }
     });
 
@@ -452,8 +440,7 @@ export function registerQueryCommands(program: Command) {
           printDiffResult(result);
         }
       } catch (e) {
-        handleError(e);
-        process.exitCode = 1;
+        throw e;
       }
     });
 
@@ -503,8 +490,7 @@ export function registerQueryCommands(program: Command) {
           printLineageChain(result);
         }
       } catch (e) {
-        handleError(e);
-        process.exitCode = 1;
+        throw e;
       }
     });
 
@@ -542,8 +528,7 @@ export function registerQueryCommands(program: Command) {
           printTransitions(result);
         }
       } catch (e) {
-        handleError(e);
-        process.exitCode = 1;
+        throw e;
       }
     });
 
@@ -572,8 +557,7 @@ export function registerQueryCommands(program: Command) {
           printOrphans(result);
         }
       } catch (e) {
-        handleError(e);
-        process.exitCode = 1;
+        throw e;
       }
     });
   // =========================================================================
@@ -613,8 +597,7 @@ export function registerQueryCommands(program: Command) {
           printReplayList(result);
         }
       } catch (e) {
-        handleError(e);
-        process.exitCode = 1;
+        throw e;
       }
     });
 
@@ -641,8 +624,7 @@ export function registerQueryCommands(program: Command) {
           printReplaySummary(result);
         }
       } catch (e) {
-        handleError(e);
-        process.exitCode = 1;
+        throw e;
       }
     });
 
@@ -670,8 +652,7 @@ export function registerQueryCommands(program: Command) {
           printDivergences(result);
         }
       } catch (e) {
-        handleError(e);
-        process.exitCode = 1;
+        throw e;
       }
     });
 
@@ -700,8 +681,7 @@ export function registerQueryCommands(program: Command) {
           printInvariants(result);
         }
       } catch (e) {
-        handleError(e);
-        process.exitCode = 1;
+        throw e;
       }
     });
 
@@ -737,8 +717,7 @@ export function registerQueryCommands(program: Command) {
           printDagConflicts(result);
         }
       } catch (e) {
-        handleError(e);
-        process.exitCode = 1;
+        throw e;
       }
     });
 
@@ -762,8 +741,7 @@ export function registerQueryCommands(program: Command) {
           printDagDisplaced(result);
         }
       } catch (e) {
-        handleError(e);
-        process.exitCode = 1;
+        throw e;
       }
     });
 
@@ -796,8 +774,7 @@ export function registerQueryCommands(program: Command) {
           printDagHistory(result);
         }
       } catch (e) {
-        handleError(e);
-        process.exitCode = 1;
+        throw e;
       }
     });
 
@@ -818,8 +795,7 @@ export function registerQueryCommands(program: Command) {
           printSinkPath(result);
         }
       } catch (e) {
-        handleError(e);
-        process.exitCode = 1;
+        throw e;
       }
     });
 
@@ -843,8 +819,7 @@ export function registerQueryCommands(program: Command) {
           printDagAnomalies(result);
         }
       } catch (e) {
-        handleError(e);
-        process.exitCode = 1;
+        throw e;
       }
     });
 
@@ -895,8 +870,7 @@ export function registerQueryCommands(program: Command) {
           printEventList(result);
         }
       } catch (e) {
-        handleError(e);
-        process.exitCode = 1;
+        throw e;
       }
     });
 
@@ -930,8 +904,7 @@ export function registerQueryCommands(program: Command) {
           printTxAggregate(result);
         }
       } catch (e) {
-        handleError(e);
-        process.exitCode = 1;
+        throw e;
       }
     });
 }

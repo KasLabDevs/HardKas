@@ -47,10 +47,10 @@ export function registerChaosCommands(program: Command) {
           if (err.exitCode !== ChaosExitCodes.NO_FINDINGS) {
             UI.error(err.message);
           }
-          process.exit(err.exitCode);
+          throw err;
         }
         handleError(err);
-        process.exit(ChaosExitCodes.INTERNAL_FAILURE);
+        throw new Error("Chaos Internal Failure");
       }
     });
 
@@ -64,9 +64,9 @@ export function registerChaosCommands(program: Command) {
         const { replayChaosRun } = await import("../runners/chaos-runner.js");
         await replayChaosRun(options);
       } catch (err: any) {
-        if (err.exitCode !== undefined) process.exit(err.exitCode);
+        if (err.exitCode !== undefined) throw err;
         handleError(err);
-        process.exit(ChaosExitCodes.INTERNAL_FAILURE);
+        throw new Error("Chaos Internal Failure");
       }
     });
 }
@@ -113,7 +113,7 @@ async function enforceSafetyGuards(options: any) {
           };
         }
       } catch (e: any) {
-        if (e.exitCode) throw e; // bubble up
+        if (e.exitCode) throw new Error("Command failed"); // bubble up
         // File doesn't exist, which is good
       }
     }

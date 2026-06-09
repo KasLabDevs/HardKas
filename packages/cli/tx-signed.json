@@ -1,0 +1,25 @@
+{
+  "schema": "hardkas.signedTx",
+  "hardkasVersion": "0.6.0-alpha",
+  "version": "1.0.0-alpha",
+  "hashVersion": 3,
+  "createdAt": "2026-05-21T23:40:01.801Z",
+  "status": "signed",
+  "sourcePlanId": "plan-f239a106c7519f94",
+  "networkId": "simnet",
+  "mode": "simulated",
+  "from": {
+    "address": "kaspa:sim_alice"
+  },
+  "to": {
+    "address": "kaspa:sim_bob"
+  },
+  "amountSompi": "1000000000",
+  "txId": "simulated-plan-f239a106c7519f94-tx",
+  "signedTransaction": {
+    "format": "simulated",
+    "payload": "simulated-signed-tx:plan-f239a106c7519f94"
+  },
+  "signedId": "signed-eaa5a6131cd08a74",
+  "contentHash": "eaa5a6131cd08a74f317226151faf8d425a27d956a609c9ad67be4def5196051"
+}

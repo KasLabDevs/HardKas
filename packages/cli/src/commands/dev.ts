@@ -1,5 +1,5 @@
 import { Command } from "commander";
-import { UI, handleError } from "../ui.js";
+import { UI } from "../ui.js";
 
 export function registerDevCommands(program: Command) {
   const devCmd = program
@@ -16,8 +16,7 @@ export function registerDevCommands(program: Command) {
         const { runDevEnv } = await import("../runners/dev-env-runner.js");
         await runDevEnv(options);
       } catch (e) {
-        handleError(e, "Dev environment bootstrap failed");
-        process.exitCode = 1;
+        throw new Error("Dev environment bootstrap failed");
       }
     });
 
@@ -29,8 +28,7 @@ export function registerDevCommands(program: Command) {
         const { runDevCreate } = await import("../runners/dev-create-runner.js");
         await runDevCreate(name);
       } catch (e) {
-        handleError(e, "Dev create failed");
-        process.exitCode = 1;
+        throw new Error("Dev create failed");
       }
     });
 
@@ -44,8 +42,7 @@ export function registerDevCommands(program: Command) {
         const { runDevInit } = await import("../runners/dev-init-runner.js");
         await runDevInit();
       } catch (e) {
-        handleError(e, "Dev init failed");
-        process.exitCode = 1;
+        throw new Error("Dev init failed");
       }
     });
 
@@ -63,8 +60,7 @@ export function registerDevCommands(program: Command) {
         const { runDevDoctor } = await import("../runners/dev-doctor-runner.js");
         await runDevDoctor(options);
       } catch (e) {
-        handleError(e, "Dev doctor failed");
-        process.exitCode = 1;
+        throw new Error("Dev doctor failed");
       }
     });
 
@@ -91,8 +87,7 @@ export function registerDevCommands(program: Command) {
         const { runDevServer } = await import("../runners/dev-server-runner.js");
         await runDevServer(options);
       } catch (e) {
-        handleError(e, "Dev server failed");
-        process.exitCode = 1;
+        throw new Error("Dev server failed");
       }
     });
 
@@ -153,8 +148,7 @@ export function registerDevCommands(program: Command) {
         const { runDevTxGenerate } = await import("../runners/dev-tx-generate-runner.js");
         await runDevTxGenerate(options);
       } catch (e) {
-        handleError(e, "Dev tx generate failed");
-        process.exitCode = 1;
+        throw new Error("Dev tx generate failed");
       }
     });
 
@@ -173,8 +167,8 @@ export function registerDevCommands(program: Command) {
           await import("../runners/dev-fixture-generate-runner.js");
         await runDevFixtureGenerate(options);
       } catch (e) {
-        handleError(e, "Dev fixture generate failed");
-        process.exitCode = 1;
+        if (e instanceof Error) throw e;
+        throw new Error("Dev fixture generate failed");
       }
     });
 
@@ -191,8 +185,7 @@ export function registerDevCommands(program: Command) {
         const { runDevLast } = await import("../runners/dev-last-runner.js");
         await runDevLast(options);
       } catch (e) {
-        handleError(e, "Dev last failed");
-        process.exitCode = 1;
+        throw new Error("Dev last failed");
       }
     });
 }

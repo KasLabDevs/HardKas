@@ -84,3 +84,33 @@ export {
   loadMassSnapshot,
   profileAndCompare
 } from "./mass-snapshot.js";
+
+// SilverScript/Toccata local lifecycle simulator.
+// This validates local artifact coherence only; it is not consensus-canonical.
+export type {
+  SilverArgArtifactLike,
+  SilverDeployPlanArtifactLike,
+  SilverDeploySimulationReceipt,
+  SilverDeploySimulationResult,
+  SilverExpectedOutput,
+  SilverSimulatedUtxo,
+  SilverSimulationErrorCode,
+  SilverSimulationOptions,
+  SilverSimulationStatus,
+  SilverSimulationState,
+  SilverSpendPlanArtifactLike,
+  SilverSpendSimulationReceipt,
+  SilverSpendSimulationResult
+} from "./silver-simulator.js";
+export {
+  SILVER_SIMULATOR_CREATED_AT,
+  SILVER_SIMULATOR_FEE_SOMPI,
+  SILVER_SIMULATOR_VERSION,
+  SilverSimulationError,
+  calculateSilverArgsHash,
+  createSilverSimulationState,
+  outpointKey,
+  parsePushOnlyScript,
+  simulateSilverDeploy,
+  simulateSilverSpend
+} from "./silver-simulator.js";

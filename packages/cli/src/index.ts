@@ -12,8 +12,8 @@ async function main() {
   try {
     await program.parseAsync(process.argv);
   } catch (err: any) {
-    const { maskSecrets } = await import("@hardkas/core");
-    console.error(`\nError: ${maskSecrets(err.message || String(err))}`);
+    const { handleError } = await import("./ui.js");
+    handleError(err);
     const exitCode =
       err instanceof HardkasCliError
         ? err.exitCode
@@ -25,9 +25,10 @@ async function main() {
 }
 
 main().catch(async (err) => {
-  const { maskSecrets } = await import("@hardkas/core");
-  console.error("Fatal error:", maskSecrets(err.message || String(err)));
+  const { handleError } = await import("./ui.js");
+  handleError(err, "Fatal error");
   if (err.stack) {
+    const { maskSecrets } = await import("@hardkas/core");
     console.error(maskSecrets(err.stack));
   }
   const exitCode =

@@ -2,7 +2,7 @@ import { Command } from "commander";
 import pc from "picocolors";
 import path from "node:path";
 import fs from "node:fs/promises";
-import { UI, handleError } from "../ui.js";
+import { UI } from "../ui.js";
 
 async function resolveArtifactPath(id: string): Promise<string | null> {
   // If it's a direct file path that exists, return it
@@ -48,7 +48,7 @@ export function registerExplainCommand(program: Command) {
             "cannot explain deterministic causality for missing data",
             "verify the ID and ensure you are in the correct HardKAS workspace"
           );
-          process.exitCode = 1;
+          throw new Error("Command failed");
           return;
         }
 
@@ -89,8 +89,7 @@ export function registerExplainCommand(program: Command) {
             : "network interaction implies Kaspa consensus"
         });
       } catch (e) {
-        handleError(e);
-        process.exitCode = 1;
+        throw e;
       }
     });
 }
