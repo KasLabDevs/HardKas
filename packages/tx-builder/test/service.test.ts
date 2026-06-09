@@ -34,7 +34,7 @@ describe("TxPlanService", () => {
     // Should only select the single large UTXO
     expect(result.utxoSelection.selectedUtxos).toBe(1);
     expect(result.plan.inputs.length).toBe(1);
-    expect(result.plan.inputs[0].amountSompi).toBe(5000000n);
+    expect(result.plan.inputs[0]?.amountSompi).toBe(5000000n);
   });
 
   it("should filter out immature coinbase UTXOs", async () => {
