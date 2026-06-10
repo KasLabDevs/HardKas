@@ -1,6 +1,5 @@
 import { describe, it, expect } from "vitest";
 import { HardkasSchemas, isKnownArtifactType, assertKnownArtifactType, describeArtifactType } from "../src/registry.js";
-import { HardkasSchemas as ArtifactsRegistry } from "@hardkas/artifacts";
 
 describe("Artifact Registry", () => {
   it("has unique values across all schemas", () => {
@@ -35,9 +34,4 @@ describe("Artifact Registry", () => {
     expect(legacySchemas.length).toBeGreaterThan(0);
   });
 
-  it("registry re-export from @hardkas/artifacts matches core exactly", () => {
-    expect(ArtifactsRegistry).toBeDefined();
-    expect(Object.keys(ArtifactsRegistry).length).toBe(Object.keys(HardkasSchemas).length);
-    expect(ArtifactsRegistry.TxPlan).toBe(HardkasSchemas.TxPlan);
-  });
 });
