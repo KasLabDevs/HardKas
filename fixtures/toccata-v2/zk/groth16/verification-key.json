@@ -1,0 +1,8 @@
+{
+  "schema": "hardkas.zk.groth16.verificationKey.v1",
+  "protocol": "groth16",
+  "curve": "bn128",
+  "verificationKeyId": "hardkas-groth16-smoke-vkey",
+  "statementHash": "a5fd445015128b731689b317267b3db8ed6865ac3d52888940fdaaa06b48f40f",
+  "note": "Experimental fixture coherence key; not a production trusted setup claim."
+}

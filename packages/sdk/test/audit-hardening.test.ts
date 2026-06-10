@@ -5,7 +5,7 @@ import os from "node:os";
 import { Hardkas } from "@hardkas/sdk";
 import { deterministicCompare } from "@hardkas/core";
 
-describe("Audit Hardening Suite (0.9.0-alpha)", () => {
+describe("Audit Hardening Suite (0.9.1-alpha)", () => {
   let tmpDir: string;
   let sdk: Hardkas;
 
@@ -116,6 +116,7 @@ describe("Audit Hardening Suite (0.9.0-alpha)", () => {
           scriptPublicKey: "mock"
         }];
       };
+      realSdk.rpc.getBlockDagInfo = async () => ({ virtualDaaScore: 0n } as any);
 
       const plan = await realSdk.tx.plan({
         from: "alice",

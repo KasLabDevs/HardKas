@@ -1,0 +1,32 @@
+{
+  "schema": "hardkas.zkCorpus.v1",
+  "version": "0.1.0-experimental",
+  "network": "simnet",
+  "profile": "toccata-v2",
+  "experimental": true,
+  "proofSystems": ["groth16", "risc0"],
+  "expectedKnownLimitations": [
+    "ZK_ONCHAIN_VERIFICATION_NOT_CLAIMED",
+    "PARTIAL_VM_SIMULATION"
+  ],
+  "claims": {
+    "zkArtifactCoherence": "READY_MATCH",
+    "zkLocalVerification": "READY_GROTH16_FIXTURE_COHERENCE",
+    "zkOnchainVerification": "NOT_CLAIMED",
+    "runtimeOutcome": "PARTIAL",
+    "vmConsensusEquivalence": "NOT_CLAIMED",
+    "mainnet": "BLOCKED_BY_POLICY"
+  },
+  "fixtures": [
+    {
+      "id": "groth16-smoke",
+      "path": "groth16/manifest.json",
+      "expectedStatus": "ZK_FIXTURE_COHERENCE_PASS"
+    },
+    {
+      "id": "risc0-smoke",
+      "path": "risc0/manifest.json",
+      "expectedStatus": "RISC0_LOCAL_VERIFICATION_NOT_IMPLEMENTED"
+    }
+  ]
+}

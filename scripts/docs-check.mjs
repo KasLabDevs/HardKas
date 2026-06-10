@@ -27,14 +27,14 @@ const mdFiles = [...rootMdFiles, ...getDocsFiles(path.join(projectRoot, 'docs'))
 let hasErrors = false;
 
 // Current valid version
-const CURRENT_VERSION = '0.7.11-alpha';
+const CURRENT_VERSION = '0.9.1-alpha';
 
 for (const file of mdFiles) {
   const content = fs.readFileSync(file, 'utf8');
   const dir = path.dirname(file);
 
-  // Check old versions (e.g. 0.7.8, 0.6.x)
-  const oldVersionMatches = content.match(/0\.[67]\.[0-8]-alpha/g);
+  // Check old versions (e.g. 0.7.x, 0.8.x)
+  const oldVersionMatches = content.match(/0\.(?:6|7|8)(?:\.\d+)?-alpha/g);
   if (oldVersionMatches) {
     console.error(`\u274c [${path.relative(projectRoot, file)}] Contains old version reference: ${oldVersionMatches[0]}`);
     hasErrors = true;

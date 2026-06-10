@@ -1,4 +1,4 @@
-# HardKAS 0.9.0-alpha Release Claims
+# HardKAS 0.9.x-alpha Release Claims
 
 Date: 2026-06-09
 
@@ -12,6 +12,12 @@ Date: 2026-06-09
 - mainnet: `BLOCKED_BY_POLICY`
 - corpus verifier: `READY`
 - gauntlet: `READY`
+- SDK parity: `READY`
+- SilverScript builder surface: `SILVERSCRIPT_BUILDER_READY`
+- ZK corpus surface: `ZK_CORPUS_SURFACE_READY`
+- Groth16 fixture coherence: `READY_GROTH16_FIXTURE_COHERENCE`
+- RISC0 inspect surface: `RISC0_INSPECT_SURFACE_READY`
+- vProgs inspect surface: `VPROGS_INSPECT_SURFACE_READY`
 
 ## Not Claimed
 
@@ -22,6 +28,40 @@ Date: 2026-06-09
 - strict simulator-vs-Docker equivalence
 - trustless bridge
 - testnet/mainnet deployment readiness
+- on-chain ZK verification
+- proof generation correctness
+- full vProgs runtime
+- stable vProgs API
+
+## 0.9.1-alpha Programmability Surface Boundaries
+
+`0.9.1-alpha` adds local programmability surfaces without changing the stable
+release claims.
+
+Allowed surface claims:
+
+- SilverScript builder: `SILVERSCRIPT_BUILDER_READY`
+- ZK corpus: `ZK_CORPUS_SURFACE_READY`
+- Groth16 corpus fixture coherence: `READY_GROTH16_FIXTURE_COHERENCE`
+- RISC0 inspect-only: `RISC0_LOCAL_VERIFICATION_NOT_IMPLEMENTED`
+- vProgs artifact inspection: `VPROGS_INSPECT_SURFACE_READY`
+- zkOnchainVerification: `NOT_CLAIMED`
+- vProgsRuntime: `NOT_CLAIMED`
+- vProgsStableApi: `NOT_CLAIMED`
+- mainnet: `BLOCKED_BY_POLICY`
+
+Required lab errors:
+
+- `SDK_ZK_ONCHAIN_VERIFICATION_UNSUPPORTED`
+- `ZK_ONCHAIN_VERIFICATION_NOT_CLAIMED`
+- `ZK_VERIFIER_UNSUPPORTED`
+- `ZK_VERIFIER_UNAVAILABLE`
+- `ZK_CORPUS_MANIFEST_INVALID`
+- `ZK_CORPUS_HASH_MISMATCH`
+- `RISC0_VERIFIER_UNAVAILABLE`
+- `RISC0_LOCAL_VERIFICATION_NOT_IMPLEMENTED`
+- `VPROGS_RUNTIME_NOT_CLAIMED`
+- `VPROGS_STABLE_API_NOT_CLAIMED`
 
 ## Required Release Gates
 
@@ -29,6 +69,10 @@ Date: 2026-06-09
 pnpm build
 pnpm test
 pnpm corpus:toccata
+pnpm zk:corpus
+pnpm vprogs:check
+pnpm programmability:corpus
+pnpm programmability:surface
 pnpm gauntlet:toccata
 pnpm --filter @hardkas/cli test
 git diff --check

@@ -28,7 +28,7 @@ describe("silver deploy built CLI runtime", () => {
       deployPlanPath,
       `${JSON.stringify({
         schema: "hardkas.silver.deployPlan",
-        hardkasVersion: "0.9.0-alpha",
+        hardkasVersion: "0.9.1-alpha",
         version: "1.0.0-alpha",
         hashVersion: 4,
         networkId: "simnet",

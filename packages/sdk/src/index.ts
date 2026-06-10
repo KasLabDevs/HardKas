@@ -17,6 +17,12 @@ import { HardkasLineage } from "./lineage.js";
 import { HardkasWorkspace } from "./workspace.js";
 import { HardkasArtifactsManager } from "./artifacts-manager.js";
 import { HardkasWorkflow } from "./workflow.js";
+import { HardkasCapabilitiesApi, createHardkasCapabilities } from "./capabilities.js";
+import { HardkasCorpus } from "./corpus.js";
+import { HardkasSilver } from "./silver.js";
+import { HardkasZk } from "./zk.js";
+import { HardkasVprogs } from "./vprogs.js";
+import { HardkasProgrammability } from "./programmability.js";
 
 // Curated explicit exports only. No `export *`
 export { HardkasAccounts } from "./accounts.js";
@@ -28,6 +34,62 @@ export { HardkasReplay } from "./replay.js";
 export { HardkasLineage } from "./lineage.js";
 export { HardkasWorkspace } from "./workspace.js";
 export { HardkasArtifactsManager } from "./artifacts-manager.js";
+export { HardkasCapabilitiesApi, createHardkasCapabilities } from "./capabilities.js";
+export { HardkasCorpus, verifyToccataCorpus } from "./corpus.js";
+export { HardkasSilver } from "./silver.js";
+export {
+  HardkasZk,
+  createZkCapabilities,
+  inspectZkProof,
+  verifyZkProofLocal,
+  verifyZkCorpus
+} from "./zk.js";
+export {
+  HardkasVprogs,
+  createVprogsCapabilities,
+  createVprogsStatus,
+  inspectVprogsArtifact
+} from "./vprogs.js";
+export {
+  HardkasProgrammability,
+  createProgrammabilityCapabilities,
+  programmabilityClaims
+} from "./programmability.js";
+export type { HardkasCapabilities } from "./capabilities.js";
+export type { CorpusVerifyResult, CorpusIssue } from "./corpus.js";
+export type {
+  ZkCapabilities,
+  ZkCorpusVerifyResult,
+  ZkIssue,
+  ZkProofInspectResult,
+  ZkProofSystem,
+  ZkProofVerifyResult
+} from "./zk.js";
+export type {
+  VprogsCapabilitiesResult,
+  VprogsClaims,
+  VprogsInspectResult,
+  VprogsStatusResult
+} from "./vprogs.js";
+export type {
+  ProgrammabilityAppPlan,
+  ProgrammabilityCapabilitiesResult,
+  ProgrammabilityClaims,
+  ProgrammabilityCorpusReport,
+  ProgrammabilityInspectResult,
+  ProgrammabilityKind,
+  ProgrammabilityVerifyResult
+} from "./programmability.js";
+export type {
+  SilverCompareMode,
+  SilverCompareOptions,
+  SilverCompareReport,
+  SilverCompileOptions,
+  SilverDeployPlanOptions,
+  SilverSdkArtifactResult,
+  SilverSdkWriteOptions,
+  SilverSpendPlanOptions
+} from "./silver.js";
 export { defineHardkasConfig } from "@hardkas/config";
 export { defineTask, type TaskContext, type TaskArgs } from "./tasks.js";
 export { buildPaymentPlan } from "@hardkas/tx-builder";
@@ -94,6 +156,12 @@ export class Hardkas {
   public readonly replay: HardkasReplay;
   public readonly lineage: HardkasLineage;
   public readonly workflow: HardkasWorkflow;
+  public readonly capabilitiesApi: HardkasCapabilitiesApi;
+  public readonly corpus: HardkasCorpus;
+  public readonly silver: HardkasSilver;
+  public readonly zk: HardkasZk;
+  public readonly vprogs: HardkasVprogs;
+  public readonly programmability: HardkasProgrammability;
   public readonly signer?: ExternalHardkasSigner | undefined;
 
   public readonly mode: "developer" | "agent";
@@ -134,6 +202,12 @@ export class Hardkas {
     this.replay = new HardkasReplay(this);
     this.lineage = new HardkasLineage(this);
     this.workflow = new HardkasWorkflow(this);
+    this.capabilitiesApi = new HardkasCapabilitiesApi();
+    this.corpus = new HardkasCorpus(this);
+    this.silver = new HardkasSilver(this);
+    this.zk = new HardkasZk(this);
+    this.vprogs = new HardkasVprogs(this);
+    this.programmability = new HardkasProgrammability(this);
   }
 
   private resolveRpcUrl(): string {
@@ -222,6 +296,10 @@ export class Hardkas {
 
   get cwd() {
     return this.config.cwd;
+  }
+
+  async capabilities() {
+    return this.capabilitiesApi.get();
   }
 
   /**

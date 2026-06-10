@@ -24,7 +24,7 @@ function baseDeployPlan(
   const lock = createKaspaP2shBlake2bLock(OP_TRUE);
   return {
     schema: "hardkas.silver.deployPlan",
-    hardkasVersion: "0.9.0-alpha",
+    hardkasVersion: "0.9.1-alpha",
     version: "1.0.0-alpha",
     hashVersion: 4,
     networkId: "simnet",
@@ -49,7 +49,7 @@ function baseSpendPlan(
   const args: [] = [];
   return {
     schema: "hardkas.silver.spendPlan",
-    hardkasVersion: "0.9.0-alpha",
+    hardkasVersion: "0.9.1-alpha",
     version: "1.0.0-alpha",
     hashVersion: 4,
     networkId: "simnet",

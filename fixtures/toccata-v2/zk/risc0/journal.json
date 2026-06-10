@@ -1,0 +1,5 @@
+{
+  "schema": "hardkas.zk.risc0.journal.v1",
+  "bytesHex": "686172646b61732d72697363302d736d6f6b65",
+  "decoded": "hardkas-risc0-smoke"
+}

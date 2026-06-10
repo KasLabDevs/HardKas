@@ -6,8 +6,8 @@ HardKAS is distributed through npm packages and is developed against Node.js
 For deterministic projects, install the CLI and SDK locally:
 
 ```bash
-npm install @hardkas/sdk@0.9.0-alpha
-npm install -D @hardkas/cli@0.9.0-alpha
+npm install @hardkas/sdk@0.9.1-alpha
+npm install -D @hardkas/cli@0.9.1-alpha
 ```
 
 You can then run the CLI with:

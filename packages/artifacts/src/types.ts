@@ -562,3 +562,53 @@ export interface SilverSpendSimulationArtifact extends BaseArtifact<"silver.spen
   feeSompi: string;
   status: "SIMULATED_ACCEPTED";
 }
+
+export interface ProgrammabilityClaims {
+  artifactCoherence: "READY_MATCH";
+  silverScriptBuilder: "SILVERSCRIPT_BUILDER_READY";
+  zkCorpusSurface: "ZK_CORPUS_SURFACE_READY";
+  zkLocalVerification: "READY_GROTH16_FIXTURE_COHERENCE";
+  risc0InspectSurface: "RISC0_INSPECT_SURFACE_READY";
+  vProgsInspectSurface: "VPROGS_INSPECT_SURFACE_READY";
+  runtimeOutcome: "PARTIAL";
+  vmConsensusEquivalence: "NOT_CLAIMED";
+  zkOnchainVerification: "NOT_CLAIMED";
+  vProgsRuntime: "NOT_CLAIMED";
+  vProgsStableApi: "NOT_CLAIMED";
+  mainnet: "BLOCKED_BY_POLICY";
+}
+
+export interface ProgrammabilityCapabilitiesArtifact {
+  schema: "hardkas.programmability.capabilities.v1";
+  ok: true;
+  status: "PROGRAMMABILITY_SURFACE_READY";
+  claims: ProgrammabilityClaims;
+}
+
+export interface ProgrammabilityInspectArtifact {
+  schema: "hardkas.programmability.inspect.v1";
+  ok: boolean;
+  status: "PROGRAMMABILITY_ARTIFACT_INSPECTED" | "PROGRAMMABILITY_ARTIFACT_INVALID";
+  claims: ProgrammabilityClaims;
+}
+
+export interface ProgrammabilityVerifyArtifact {
+  schema: "hardkas.programmability.verify.v1";
+  ok: boolean;
+  status: "PROGRAMMABILITY_VERIFY_PASS" | "PROGRAMMABILITY_VERIFY_FAIL" | "PROGRAMMABILITY_VERIFY_PARTIAL";
+  claims: ProgrammabilityClaims;
+}
+
+export interface ProgrammabilityCorpusReportArtifact {
+  schema: "hardkas.programmability.corpusReport.v1";
+  ok: boolean;
+  status: "PROGRAMMABILITY_CORPUS_PASS" | "PROGRAMMABILITY_CORPUS_FAIL";
+  claims: ProgrammabilityClaims;
+}
+
+export interface ProgrammabilityAppPlanArtifact {
+  schema: "hardkas.programmability.appPlan.v1";
+  ok: true;
+  status: "PROGRAMMABILITY_APP_PLAN_READY";
+  claims: ProgrammabilityClaims;
+}

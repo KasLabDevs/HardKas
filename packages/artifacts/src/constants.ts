@@ -23,7 +23,13 @@ export const ARTIFACT_SCHEMAS = {
   SILVER_SPEND_PLAN: "hardkas.silver.spendPlan",
   SILVER_SPEND_RECEIPT: "hardkas.silver.spendReceipt",
   SILVER_DEPLOY_SIMULATION: "hardkas.silver.deploySimulation",
-  SILVER_SPEND_SIMULATION: "hardkas.silver.spendSimulation"
+  SILVER_SPEND_SIMULATION: "hardkas.silver.spendSimulation",
+  PROGRAMMABILITY_CAPABILITIES: "hardkas.programmability.capabilities.v1",
+  PROGRAMMABILITY_INSPECT: "hardkas.programmability.inspect.v1",
+  PROGRAMMABILITY_VERIFY: "hardkas.programmability.verify.v1",
+  PROGRAMMABILITY_CORPUS_REPORT: "hardkas.programmability.corpusReport.v1",
+  PROGRAMMABILITY_APP_PLAN: "hardkas.programmability.appPlan.v1",
+  TOCCATA_PROGRAMMABILITY_CORPUS: "hardkas.toccataProgrammabilityCorpus.v1"
 } as const;
 
 export type HardkasArtifactSchema =

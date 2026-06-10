@@ -510,3 +510,124 @@ export const SilverTestArtifactSchema = BaseArtifactSchema.extend({
 });
 
 export type SilverTestArtifact = z.infer<typeof SilverTestArtifactSchema>;
+
+export const ProgrammabilityClaimsSchema = z.object({
+  artifactCoherence: z.literal("READY_MATCH"),
+  silverScriptBuilder: z.literal("SILVERSCRIPT_BUILDER_READY"),
+  zkCorpusSurface: z.literal("ZK_CORPUS_SURFACE_READY"),
+  zkLocalVerification: z.literal("READY_GROTH16_FIXTURE_COHERENCE"),
+  risc0InspectSurface: z.literal("RISC0_INSPECT_SURFACE_READY"),
+  vProgsInspectSurface: z.literal("VPROGS_INSPECT_SURFACE_READY"),
+  runtimeOutcome: z.literal("PARTIAL"),
+  vmConsensusEquivalence: z.literal("NOT_CLAIMED"),
+  zkOnchainVerification: z.literal("NOT_CLAIMED"),
+  vProgsRuntime: z.literal("NOT_CLAIMED"),
+  vProgsStableApi: z.literal("NOT_CLAIMED"),
+  mainnet: z.literal("BLOCKED_BY_POLICY")
+});
+
+export const ProgrammabilityCapabilitiesSchema = z.object({
+  schema: z.literal("hardkas.programmability.capabilities.v1"),
+  ok: z.literal(true),
+  status: z.literal("PROGRAMMABILITY_SURFACE_READY"),
+  surfaces: z.object({
+    silverScript: z.literal("SILVERSCRIPT_BUILDER_READY"),
+    zkCorpus: z.literal("ZK_CORPUS_SURFACE_READY"),
+    groth16FixtureCoherence: z.literal("READY_GROTH16_FIXTURE_COHERENCE"),
+    risc0Inspect: z.literal("RISC0_INSPECT_SURFACE_READY"),
+    vProgsInspect: z.literal("VPROGS_INSPECT_SURFACE_READY")
+  }),
+  claims: ProgrammabilityClaimsSchema,
+  nonClaims: z.array(z.string())
+});
+
+export const ProgrammabilityInspectSchema = z.object({
+  schema: z.literal("hardkas.programmability.inspect.v1"),
+  ok: z.boolean(),
+  status: z.enum(["PROGRAMMABILITY_ARTIFACT_INSPECTED", "PROGRAMMABILITY_ARTIFACT_INVALID"]),
+  kind: z.enum(["silver", "zk", "vprog"]),
+  path: z.string(),
+  artifactSchema: z.string().optional(),
+  contentHash: z.string().optional(),
+  sourceStatus: z.string().optional(),
+  claims: ProgrammabilityClaimsSchema,
+  issues: z.array(z.object({
+    code: z.string(),
+    message: z.string(),
+    file: z.string().optional()
+  }))
+});
+
+export const ProgrammabilityVerifySchema = z.object({
+  schema: z.literal("hardkas.programmability.verify.v1"),
+  ok: z.boolean(),
+  status: z.enum(["PROGRAMMABILITY_VERIFY_PASS", "PROGRAMMABILITY_VERIFY_FAIL", "PROGRAMMABILITY_VERIFY_PARTIAL"]),
+  kind: z.enum(["silver", "zk", "vprog"]),
+  path: z.string(),
+  sourceStatus: z.string().optional(),
+  claims: ProgrammabilityClaimsSchema,
+  issues: z.array(z.object({
+    code: z.string(),
+    message: z.string(),
+    file: z.string().optional()
+  }))
+});
+
+export const ProgrammabilityCorpusReportSchema = z.object({
+  schema: z.literal("hardkas.programmability.corpusReport.v1"),
+  ok: z.boolean(),
+  path: z.string(),
+  status: z.enum(["PROGRAMMABILITY_CORPUS_PASS", "PROGRAMMABILITY_CORPUS_FAIL"]),
+  summary: z.object({
+    silver: z.enum(["PASS", "FAIL", "SKIPPED"]),
+    zk: z.enum(["PASS", "FAIL", "SKIPPED"]),
+    vprogs: z.enum(["PASS", "FAIL", "SKIPPED"]),
+    rootManifest: z.enum(["PASS", "FAIL"]),
+    knownLimitations: z.array(z.string())
+  }),
+  claims: ProgrammabilityClaimsSchema,
+  issues: z.array(z.object({
+    code: z.string(),
+    message: z.string(),
+    file: z.string().optional()
+  }))
+});
+
+export const ProgrammabilityAppPlanSchema = z.object({
+  schema: z.literal("hardkas.programmability.appPlan.v1"),
+  ok: z.literal(true),
+  status: z.literal("PROGRAMMABILITY_APP_PLAN_READY"),
+  kind: z.enum(["silver", "zk", "vprog", "full-lab"]),
+  template: z.string(),
+  commands: z.array(z.string()),
+  sdkSurfaces: z.array(z.string()),
+  claims: ProgrammabilityClaimsSchema,
+  nonClaims: z.array(z.string())
+});
+
+export const ToccataProgrammabilityCorpusSchema = z.object({
+  schema: z.literal("hardkas.toccataProgrammabilityCorpus.v1"),
+  version: z.string(),
+  network: z.literal("simnet"),
+  profile: z.literal("toccata-v2"),
+  status: z.literal("PROGRAMMABILITY_SURFACE_READY"),
+  components: z.record(z.any()),
+  claims: z.object({
+    artifactCoherence: z.literal("READY_MATCH"),
+    runtimeOutcome: z.literal("PARTIAL"),
+    vmConsensusEquivalence: z.literal("NOT_CLAIMED"),
+    zkOnchainVerification: z.literal("NOT_CLAIMED"),
+    vProgsRuntime: z.literal("NOT_CLAIMED"),
+    vProgsStableApi: z.literal("NOT_CLAIMED"),
+    mainnet: z.literal("BLOCKED_BY_POLICY")
+  }),
+  expectedKnownLimitations: z.array(z.string())
+});
+
+export type ProgrammabilityClaimsSchemaType = z.infer<typeof ProgrammabilityClaimsSchema>;
+export type ProgrammabilityCapabilitiesSchemaType = z.infer<typeof ProgrammabilityCapabilitiesSchema>;
+export type ProgrammabilityInspectSchemaType = z.infer<typeof ProgrammabilityInspectSchema>;
+export type ProgrammabilityVerifySchemaType = z.infer<typeof ProgrammabilityVerifySchema>;
+export type ProgrammabilityCorpusReportSchemaType = z.infer<typeof ProgrammabilityCorpusReportSchema>;
+export type ProgrammabilityAppPlanSchemaType = z.infer<typeof ProgrammabilityAppPlanSchema>;
+export type ToccataProgrammabilityCorpusSchemaType = z.infer<typeof ToccataProgrammabilityCorpusSchema>;
