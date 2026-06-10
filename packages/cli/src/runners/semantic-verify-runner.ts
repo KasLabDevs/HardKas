@@ -3,6 +3,7 @@ import path from "node:path";
 import crypto from "node:crypto";
 import pc from "picocolors";
 import { UI } from "../ui.js";
+import { HardkasSchemas } from "@hardkas/artifacts";
 
 export interface SemanticVerifyOptions {
   ciMode: boolean;
@@ -16,7 +17,7 @@ interface SemanticArtifact {
 }
 
 interface SemanticBundleV1 {
-  schemaVersion: "hardkas.semantic-bundle.v1";
+  schemaVersion: typeof HardkasSchemas.SemanticBundleV1;
   runtimeVersion: string;
   hashVersion: "sha256";
   globalSemanticHash?: string;
@@ -118,7 +119,7 @@ export async function runSemanticVerify(options: SemanticVerifyOptions) {
   );
 
   const bundle: SemanticBundleV1 = {
-    schemaVersion: "hardkas.semantic-bundle.v1",
+    schemaVersion: HardkasSchemas.SemanticBundleV1,
     runtimeVersion: "0.9.1-alpha",
     hashVersion: "sha256",
     invariantSummary: {

@@ -22,7 +22,7 @@ function setupFixtures() {
   }
 
   const planArtifact = {
-    schema: "hardkas.tx.plan.v1",
+    schema: HardkasSchemas.TxPlanV1,
     id: "plan-1234",
     from: { address: "kaspa:sim_alice" },
     to: { address: "kaspa:sim_bob" },
@@ -34,7 +34,7 @@ function setupFixtures() {
   );
 
   const signedArtifact = {
-    schema: "hardkas.tx.signed.v1",
+    schema: HardkasSchemas.SignedTxV1,
     id: "signed-1234",
     sourcePlanId: "plan-1234",
     from: { address: "kaspa:sim_alice" },
@@ -47,7 +47,7 @@ function setupFixtures() {
   );
 
   const receiptArtifact = {
-    schema: "hardkas.receipt.v1",
+    schema: HardkasSchemas.TxReceiptV1,
     txId: "tx-1234",
     sourceSignedId: "signed-1234",
     status: "confirmed"

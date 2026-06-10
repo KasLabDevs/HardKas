@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { HardkasSchemas } from "@hardkas/core";
 import {
   kaspaNetworkIdSchema,
   executionModeSchema,
@@ -65,7 +66,7 @@ export const AccountRefSchema = z.object({
 });
 
 export const PolicySchema = BaseArtifactSchema.extend({
-  schema: z.literal("hardkas.policy.v1"),
+  schema: z.literal(HardkasSchemas.PolicyV1),
   decision: z.enum(["ALLOW", "DENY"]),
   rules: z.array(
     z.object({
@@ -77,14 +78,14 @@ export const PolicySchema = BaseArtifactSchema.extend({
 });
 
 export const NetworkProfileSchema = BaseArtifactSchema.extend({
-  schema: z.literal("hardkas.networkProfile.v1"),
+  schema: z.literal(HardkasSchemas.NetworkProfileV1),
   networkProfileId: z.string(),
   layer: z.string(),
   capabilities: z.record(z.any())
 });
 
 export const AssumptionSchema = BaseArtifactSchema.extend({
-  schema: z.literal("hardkas.assumption.v1"),
+  schema: z.literal(HardkasSchemas.AssumptionV1),
   settlement: z.string().optional(),
   securityModel: z.string().optional(),
   bridgePhase: z.string().optional(),
@@ -93,7 +94,7 @@ export const AssumptionSchema = BaseArtifactSchema.extend({
 });
 
 export const MigrationReceiptSchema = BaseArtifactSchema.extend({
-  schema: z.literal("hardkas.migrationReceipt.v1"),
+  schema: z.literal(HardkasSchemas.MigrationReceiptV1),
   oldHash: z.string(),
   newHash: z.string(),
   fromSchema: z.string(),
@@ -104,7 +105,7 @@ export const MigrationReceiptSchema = BaseArtifactSchema.extend({
 });
 
 export const TxPlanSchema = BaseArtifactSchema.extend({
-  schema: z.literal("hardkas.txPlan"),
+  schema: z.literal(HardkasSchemas.TxPlan),
   networkId: kaspaNetworkIdSchema,
   mode: executionModeSchema,
   planId: z.string(),
@@ -173,7 +174,7 @@ export const LocalnetUtxoSchemaV2 = z.object({
 });
 
 export const SnapshotSchema = BaseArtifactSchema.extend({
-  schema: z.literal("hardkas.snapshot"),
+  schema: z.literal(HardkasSchemas.Snapshot),
   name: z.string().optional(),
   daaScore: z.string(),
   accountsHash: z.string().optional(),
@@ -189,7 +190,7 @@ export const SnapshotSchema = BaseArtifactSchema.extend({
 });
 
 export const TxReceiptSchema = BaseArtifactSchema.extend({
-  schema: z.literal("hardkas.txReceipt"),
+  schema: z.literal(HardkasSchemas.TxReceipt),
   txId: z.string(),
   status: z.enum(["pending", "submitted", "accepted", "confirmed", "failed"]),
   mode: executionModeSchema,
@@ -226,7 +227,7 @@ export const SignatureMetadataEntrySchema = z.object({
 });
 
 export const SignedTxSchema = BaseArtifactSchema.extend({
-  schema: z.literal("hardkas.signedTx"),
+  schema: z.literal(HardkasSchemas.SignedTx),
   status: z.enum(["partially_signed", "signed"]),
   signedId: z.string(),
   sourcePlanId: z.string(),
@@ -255,7 +256,7 @@ export const SignedTxSchema = BaseArtifactSchema.extend({
 });
 
 export const TxTraceSchema = BaseArtifactSchema.extend({
-  schema: z.literal("hardkas.txTrace"),
+  schema: z.literal(HardkasSchemas.TxTrace),
   txId: z.string(),
   networkId: kaspaNetworkIdSchema,
   mode: executionModeSchema,
@@ -271,7 +272,7 @@ export const TxTraceSchema = BaseArtifactSchema.extend({
 });
 
 export const WorkflowSchema = BaseArtifactSchema.extend({
-  schema: z.literal("hardkas.workflow.v1"),
+  schema: z.literal(HardkasSchemas.WorkflowV1),
   workflowId: z.string(),
   status: z.enum(["pending", "running", "completed", "failed"]),
   inputs: z.record(z.any()).optional(),
@@ -345,7 +346,7 @@ export const RuntimeSessionSchema = BaseArtifactSchema.extend({
 export type RuntimeSession = z.infer<typeof RuntimeSessionSchema>;
 
 export const SilverCompileArtifactSchema = BaseArtifactSchema.extend({
-  schema: z.literal("hardkas.silver.compile"),
+  schema: z.literal(HardkasSchemas.SilverCompile),
   sourcePath: z.string(),
   sourceHash: z.string(),
   compilerName: z.string(),
@@ -361,7 +362,7 @@ export const SilverCompileArtifactSchema = BaseArtifactSchema.extend({
 export type SilverCompileArtifact = z.infer<typeof SilverCompileArtifactSchema>;
 
 export const SilverDeployPlanArtifactSchema = BaseArtifactSchema.extend({
-  schema: z.literal("hardkas.silver.deployPlan"),
+  schema: z.literal(HardkasSchemas.SilverDeployPlan),
   compileArtifactHash: z.string(),
   compiledScriptHash: z.string(),
   redeemScriptHex: z.string(),
@@ -376,7 +377,7 @@ export const SilverDeployPlanArtifactSchema = BaseArtifactSchema.extend({
 export type SilverDeployPlanArtifact = z.infer<typeof SilverDeployPlanArtifactSchema>;
 
 export const SilverDeployArtifactSchema = BaseArtifactSchema.extend({
-  schema: z.literal("hardkas.silver.deploy"),
+  schema: z.literal(HardkasSchemas.SilverDeploy),
   deployPlanHash: z.string(),
   compileArtifactHash: z.string(),
   compiledScriptHash: z.string(),
@@ -399,7 +400,7 @@ export const SilverScriptArgSchema = z.object({
 });
 
 export const SilverSpendPlanArtifactSchema = BaseArtifactSchema.extend({
-  schema: z.literal("hardkas.silver.spendPlan"),
+  schema: z.literal(HardkasSchemas.SilverSpendPlan),
   deployArtifactHash: z.string(),
   compileArtifactHash: z.string(),
   redeemScriptHash: z.string(),
@@ -425,7 +426,7 @@ export const SilverSpendPlanArtifactSchema = BaseArtifactSchema.extend({
 export type SilverSpendPlanArtifact = z.infer<typeof SilverSpendPlanArtifactSchema>;
 
 export const SilverSpendReceiptArtifactSchema = BaseArtifactSchema.extend({
-  schema: z.literal("hardkas.silver.spendReceipt"),
+  schema: z.literal(HardkasSchemas.SilverSpendReceipt),
   spendPlanHash: z.string(),
   deployArtifactHash: z.string().optional(),
   redeemScriptHash: z.string().optional(),
@@ -453,7 +454,7 @@ export const SilverSpendReceiptArtifactSchema = BaseArtifactSchema.extend({
 export type SilverSpendReceiptArtifact = z.infer<typeof SilverSpendReceiptArtifactSchema>;
 
 export const SilverDeploySimulationArtifactSchema = BaseArtifactSchema.extend({
-  schema: z.literal("hardkas.silver.deploySimulation"),
+  schema: z.literal(HardkasSchemas.SilverDeploySimulation),
   deployPlanHash: z.string(),
   compileArtifactHash: z.string(),
   compiledScriptHash: z.string(),
@@ -476,7 +477,7 @@ export type SilverDeploySimulationArtifact = z.infer<
 >;
 
 export const SilverSpendSimulationArtifactSchema = BaseArtifactSchema.extend({
-  schema: z.literal("hardkas.silver.spendSimulation"),
+  schema: z.literal(HardkasSchemas.SilverSpendSimulation),
   deploySimulationHash: z.string(),
   spendPlanHash: z.string(),
   redeemScriptHash: z.string(),
@@ -503,7 +504,7 @@ export type SilverSpendSimulationArtifact = z.infer<
 >;
 
 export const SilverTestArtifactSchema = BaseArtifactSchema.extend({
-  schema: z.literal("hardkas.silver.test"),
+  schema: z.literal(HardkasSchemas.SilverTest),
   compileArtifactHash: z.string(),
   sourceHash: z.string(),
   compiledScriptHash: z.string(),
@@ -549,7 +550,7 @@ export const ProgrammabilityClaimsSchema = z.object({
 });
 
 export const ProgrammabilityCapabilitiesSchema = z.object({
-  schema: z.literal("hardkas.programmability.capabilities.v1"),
+  schema: z.literal(HardkasSchemas.ProgrammabilityCapabilitiesV1),
   ok: z.literal(true),
   status: z.literal("PROGRAMMABILITY_SURFACE_READY"),
   surfaces: z.object({
@@ -564,7 +565,7 @@ export const ProgrammabilityCapabilitiesSchema = z.object({
 });
 
 export const ProgrammabilityInspectSchema = z.object({
-  schema: z.literal("hardkas.programmability.inspect.v1"),
+  schema: z.literal(HardkasSchemas.ProgrammabilityInspectV1),
   ok: z.boolean(),
   status: z.enum([
     "PROGRAMMABILITY_ARTIFACT_INSPECTED",
@@ -586,7 +587,7 @@ export const ProgrammabilityInspectSchema = z.object({
 });
 
 export const ProgrammabilityVerifySchema = z.object({
-  schema: z.literal("hardkas.programmability.verify.v1"),
+  schema: z.literal(HardkasSchemas.ProgrammabilityVerifyV1),
   ok: z.boolean(),
   status: z.enum([
     "PROGRAMMABILITY_VERIFY_PASS",
@@ -607,7 +608,7 @@ export const ProgrammabilityVerifySchema = z.object({
 });
 
 export const ProgrammabilityCorpusReportSchema = z.object({
-  schema: z.literal("hardkas.programmability.corpusReport.v1"),
+  schema: z.literal(HardkasSchemas.ProgrammabilityCorpusReportV1),
   ok: z.boolean(),
   path: z.string(),
   status: z.enum(["PROGRAMMABILITY_CORPUS_PASS", "PROGRAMMABILITY_CORPUS_FAIL"]),
@@ -629,7 +630,7 @@ export const ProgrammabilityCorpusReportSchema = z.object({
 });
 
 export const ProgrammabilityAppPlanSchema = z.object({
-  schema: z.literal("hardkas.programmability.appPlan.v1"),
+  schema: z.literal(HardkasSchemas.ProgrammabilityAppPlanV1),
   ok: z.literal(true),
   status: z.literal("PROGRAMMABILITY_APP_PLAN_READY"),
   kind: z.enum(["silver", "zk", "vprog", "full-lab"]),
@@ -641,7 +642,7 @@ export const ProgrammabilityAppPlanSchema = z.object({
 });
 
 export const ToccataProgrammabilityCorpusSchema = z.object({
-  schema: z.literal("hardkas.toccataProgrammabilityCorpus.v1"),
+  schema: z.literal(HardkasSchemas.ToccataProgrammabilityCorpusV1),
   version: z.string(),
   network: z.literal("simnet"),
   profile: z.literal("toccata-v2"),

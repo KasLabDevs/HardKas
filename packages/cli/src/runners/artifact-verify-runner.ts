@@ -6,6 +6,7 @@
 import { UI } from "../ui.js";
 import path from "node:path";
 import fs from "node:fs";
+import { HardkasSchemas } from "@hardkas/artifacts";
 
 export interface ArtifactVerifyOptions {
   path: string;
@@ -191,7 +192,7 @@ async function runRecursiveVerify(dir: string, options: ArtifactVerifyOptions) {
     console.log(
       JSON.stringify(
         {
-          schema: "hardkas.queryVerify.v1",
+          schema: HardkasSchemas.QueryVerifyV1,
           ok: failCount === 0,
           scanned: files.length,
           successCount,

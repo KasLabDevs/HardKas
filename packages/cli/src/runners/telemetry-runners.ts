@@ -2,6 +2,7 @@
 import path from "node:path";
 import pc from "picocolors";
 import { UI } from "../ui.js";
+import { HardkasSchemas } from "@hardkas/artifacts";
 
 function telemetryPath(): string {
   return path.join(process.cwd(), ".hardkas", "telemetry", "telemetry.jsonl");
@@ -203,9 +204,9 @@ export async function runTelemetryVerify() {
 
     // Verify Contract Schema v1
     const errors: string[] = [];
-    if (event.schemaVersion !== "hardkas.telemetry.v1") {
+    if (event.schemaVersion !== HardkasSchemas.TelemetryV1) {
       errors.push(
-        `Invalid schemaVersion (Expected "hardkas.telemetry.v1", got "${event.schemaVersion}")`
+        `Invalid schemaVersion (Expected HardkasSchemas.TelemetryV1, got "${event.schemaVersion}")`
       );
     }
     if (!event.eventId) errors.push(`Missing eventId`);

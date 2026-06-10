@@ -1,4 +1,6 @@
 export * from "./constants.js";
+export { HardkasSchemas, ArtifactTypes, isKnownArtifactType, assertKnownArtifactType, describeArtifactType } from "@hardkas/core";
+export type { HardkasSchema, ArtifactType, SchemaMetadata } from "@hardkas/core";
 export * from "./types.js";
 export * from "./canonical.js";
 export * from "./schemas.js";

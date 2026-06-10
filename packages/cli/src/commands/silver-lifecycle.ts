@@ -5,6 +5,7 @@ import pc from "picocolors";
 import * as fs from "node:fs";
 import * as path from "node:path";
 import { createHash } from "node:crypto";
+import { HardkasSchemas } from "@hardkas/artifacts";
 
 export function getSilverDeployPlanCommand() {
   return new Command("deploy-plan")
@@ -49,7 +50,7 @@ export function getSilverDeployPlanCommand() {
       }
 
       const compileArtifact = JSON.parse(fs.readFileSync(compileArtifactPath, "utf8"));
-      if (compileArtifact.schema !== "hardkas.silver.compile") {
+      if (compileArtifact.schema !== HardkasSchemas.SilverCompile) {
         getOutput().error(pc.red(`Error: Expected hardkas.silver.compile artifact.`));
         throw new Error("Command failed");
       }
@@ -74,7 +75,7 @@ export function getSilverDeployPlanCommand() {
       const lock = createKaspaP2shBlake2bLock(scriptHex);
 
       const deployPlan = {
-        schema: "hardkas.silver.deployPlan",
+        schema: HardkasSchemas.SilverDeployPlan,
         hardkasVersion: HARDKAS_VERSION,
         version: "1.0.0-alpha",
         hashVersion: 4,
@@ -127,7 +128,7 @@ export function getSilverDeployCommand() {
       }
 
       const deployPlan = JSON.parse(fs.readFileSync(deployPlanPath, "utf8"));
-      if (deployPlan.schema !== "hardkas.silver.deployPlan") {
+      if (deployPlan.schema !== HardkasSchemas.SilverDeployPlan) {
         getOutput().error(pc.red(`Error: Expected hardkas.silver.deployPlan artifact.`));
         throw new Error("Command failed");
       }
@@ -313,7 +314,7 @@ export function getSilverDeployCommand() {
       const info = await sdk.rpc.getServerInfo();
 
       const deployArtifact = {
-        schema: "hardkas.silver.deploy",
+        schema: HardkasSchemas.SilverDeploy,
         hardkasVersion: HARDKAS_VERSION,
         version: "1.0.0-alpha",
         hashVersion: 4,
@@ -377,7 +378,7 @@ export function getSilverSpendPlanCommand() {
       }
 
       const deployArtifact = JSON.parse(fs.readFileSync(deployArtifactPath, "utf8"));
-      if (deployArtifact.schema !== "hardkas.silver.deploy") {
+      if (deployArtifact.schema !== HardkasSchemas.SilverDeploy) {
         getOutput().error(pc.red(`Error: Expected hardkas.silver.deploy artifact.`));
         throw new Error("Command failed");
       }
@@ -459,7 +460,7 @@ export function getSilverSpendPlanCommand() {
       }
 
       const spendPlan = {
-        schema: "hardkas.silver.spendPlan",
+        schema: HardkasSchemas.SilverSpendPlan,
         hardkasVersion: HARDKAS_VERSION,
         version: "1.0.0-alpha",
         hashVersion: 4,
@@ -519,7 +520,7 @@ export function getSilverSpendCommand() {
       }
 
       const spendPlan = JSON.parse(fs.readFileSync(spendPlanPath, "utf8"));
-      if (spendPlan.schema !== "hardkas.silver.spendPlan") {
+      if (spendPlan.schema !== HardkasSchemas.SilverSpendPlan) {
         getOutput().error(pc.red(`Error: Expected hardkas.silver.spendPlan artifact.`));
         throw new Error("Command failed");
       }
@@ -634,7 +635,7 @@ export function getSilverSpendCommand() {
       }
 
       const receipt = {
-        schema: "hardkas.silver.spendReceipt",
+        schema: HardkasSchemas.SilverSpendReceipt,
         hardkasVersion: HARDKAS_VERSION,
         version: "1.0.0-alpha",
         hashVersion: 4,
@@ -650,7 +651,7 @@ export function getSilverSpendCommand() {
         expectedOutputs: spendPlan.expectedOutputs,
         txId,
         status: "accepted",
-        lineage: createLineageTransition(spendPlan, "hardkas.silver.spendReceipt")
+        lineage: createLineageTransition(spendPlan, HardkasSchemas.SilverSpendReceipt)
       };
 
       const contentHash = calculateContentHash(receipt);

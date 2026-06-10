@@ -2,6 +2,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { calculateContentHash, verifyArtifactIntegritySync } from "@hardkas/artifacts";
 import type { Hardkas } from "./index.js";
+import { HardkasSchemas } from "@hardkas/artifacts";
 
 export type ProgrammabilityKind = "silver" | "zk" | "vprog" | "full-lab";
 
@@ -28,7 +29,7 @@ export interface ProgrammabilityIssue {
 
 export interface ProgrammabilityCapabilitiesResult {
   ok: boolean;
-  schema: "hardkas.programmability.capabilities.v1";
+  schema: typeof HardkasSchemas.ProgrammabilityCapabilitiesV1;
   status: "PROGRAMMABILITY_SURFACE_READY";
   surfaces: {
     silverScript: "SILVERSCRIPT_BUILDER_READY";
@@ -43,7 +44,7 @@ export interface ProgrammabilityCapabilitiesResult {
 
 export interface ProgrammabilityInspectResult {
   ok: boolean;
-  schema: "hardkas.programmability.inspect.v1";
+  schema: typeof HardkasSchemas.ProgrammabilityInspectV1;
   status: "PROGRAMMABILITY_ARTIFACT_INSPECTED" | "PROGRAMMABILITY_ARTIFACT_INVALID";
   kind: Exclude<ProgrammabilityKind, "full-lab">;
   path: string;
@@ -56,7 +57,7 @@ export interface ProgrammabilityInspectResult {
 
 export interface ProgrammabilityVerifyResult {
   ok: boolean;
-  schema: "hardkas.programmability.verify.v1";
+  schema: typeof HardkasSchemas.ProgrammabilityVerifyV1;
   status:
     | "PROGRAMMABILITY_VERIFY_PASS"
     | "PROGRAMMABILITY_VERIFY_FAIL"
@@ -70,7 +71,7 @@ export interface ProgrammabilityVerifyResult {
 
 export interface ProgrammabilityCorpusReport {
   ok: boolean;
-  schema: "hardkas.programmability.corpusReport.v1";
+  schema: typeof HardkasSchemas.ProgrammabilityCorpusReportV1;
   path: string;
   status: "PROGRAMMABILITY_CORPUS_PASS" | "PROGRAMMABILITY_CORPUS_FAIL";
   summary: {
@@ -86,7 +87,7 @@ export interface ProgrammabilityCorpusReport {
 
 export interface ProgrammabilityAppPlan {
   ok: boolean;
-  schema: "hardkas.programmability.appPlan.v1";
+  schema: typeof HardkasSchemas.ProgrammabilityAppPlanV1;
   status: "PROGRAMMABILITY_APP_PLAN_READY";
   kind: ProgrammabilityKind;
   template: string;
@@ -131,7 +132,7 @@ export class HardkasProgrammability {
       const result = await this.sdk.zk.proof.inspect(options.path);
       return {
         ok: result.ok,
-        schema: "hardkas.programmability.inspect.v1",
+        schema: HardkasSchemas.ProgrammabilityInspectV1,
         status: result.ok
           ? "PROGRAMMABILITY_ARTIFACT_INSPECTED"
           : "PROGRAMMABILITY_ARTIFACT_INVALID",
@@ -147,7 +148,7 @@ export class HardkasProgrammability {
       const result = await this.sdk.vprogs.inspect(options.path);
       return {
         ok: result.ok,
-        schema: "hardkas.programmability.inspect.v1",
+        schema: HardkasSchemas.ProgrammabilityInspectV1,
         status: result.ok
           ? "PROGRAMMABILITY_ARTIFACT_INSPECTED"
           : "PROGRAMMABILITY_ARTIFACT_INVALID",
@@ -172,7 +173,7 @@ export class HardkasProgrammability {
       const result = await this.sdk.zk.proof.verifyLocal(options.path);
       return {
         ok: result.ok,
-        schema: "hardkas.programmability.verify.v1",
+        schema: HardkasSchemas.ProgrammabilityVerifyV1,
         status: result.ok
           ? "PROGRAMMABILITY_VERIFY_PASS"
           : "PROGRAMMABILITY_VERIFY_PARTIAL",
@@ -188,7 +189,7 @@ export class HardkasProgrammability {
       const inspected = await this.sdk.vprogs.inspect(options.path);
       return {
         ok: inspected.ok,
-        schema: "hardkas.programmability.verify.v1",
+        schema: HardkasSchemas.ProgrammabilityVerifyV1,
         status: inspected.ok
           ? "PROGRAMMABILITY_VERIFY_PASS"
           : "PROGRAMMABILITY_VERIFY_FAIL",
@@ -204,7 +205,7 @@ export class HardkasProgrammability {
     const result = verifyArtifactIntegritySync(resolved, { strict: false });
     return {
       ok: result.ok,
-      schema: "hardkas.programmability.verify.v1",
+      schema: HardkasSchemas.ProgrammabilityVerifyV1,
       status: result.ok ? "PROGRAMMABILITY_VERIFY_PASS" : "PROGRAMMABILITY_VERIFY_FAIL",
       kind: "silver",
       path: path.relative(this.sdk.cwd, resolved).replace(/\\/g, "/"),
@@ -231,7 +232,7 @@ export class HardkasProgrammability {
     if (manifest) {
       expectEqual(
         manifest.schema,
-        "hardkas.toccataProgrammabilityCorpus.v1",
+        HardkasSchemas.ToccataProgrammabilityCorpusV1,
         issues,
         "PROGRAMMABILITY_CORPUS_SCHEMA_INVALID",
         manifestPath
@@ -321,7 +322,7 @@ export class HardkasProgrammability {
     const ok = issues.length === 0;
     return {
       ok,
-      schema: "hardkas.programmability.corpusReport.v1",
+      schema: HardkasSchemas.ProgrammabilityCorpusReportV1,
       path: path.relative(this.sdk.cwd, root).replace(/\\/g, "/"),
       status: ok ? "PROGRAMMABILITY_CORPUS_PASS" : "PROGRAMMABILITY_CORPUS_FAIL",
       summary: {
@@ -346,7 +347,7 @@ export class HardkasProgrammability {
     const template = options.template ?? defaultTemplate(kind);
     return {
       ok: true,
-      schema: "hardkas.programmability.appPlan.v1",
+      schema: HardkasSchemas.ProgrammabilityAppPlanV1,
       status: "PROGRAMMABILITY_APP_PLAN_READY",
       kind,
       template,
@@ -361,7 +362,7 @@ export class HardkasProgrammability {
 export function createProgrammabilityCapabilities(): ProgrammabilityCapabilitiesResult {
   return {
     ok: true,
-    schema: "hardkas.programmability.capabilities.v1",
+    schema: HardkasSchemas.ProgrammabilityCapabilitiesV1,
     status: "PROGRAMMABILITY_SURFACE_READY",
     surfaces: {
       silverScript: "SILVERSCRIPT_BUILDER_READY",
@@ -403,7 +404,7 @@ function inspectJsonArtifact(
   const ok = Boolean(artifact);
   return {
     ok,
-    schema: "hardkas.programmability.inspect.v1",
+    schema: HardkasSchemas.ProgrammabilityInspectV1,
     status: ok
       ? "PROGRAMMABILITY_ARTIFACT_INSPECTED"
       : "PROGRAMMABILITY_ARTIFACT_INVALID",

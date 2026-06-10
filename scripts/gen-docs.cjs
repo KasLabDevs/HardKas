@@ -338,6 +338,7 @@ Wrap your React application to inject the isomorphic SDK.
 
 \`\`\`jsx
 import { HardkasProvider } from '@hardkas/client';
+import { HardkasSchemas } from "@hardkas/artifacts";
 
 function App() {
   return (
@@ -356,8 +357,8 @@ function App() {
 Every artifact shares a common header:
 \`\`\`json
 {
-  "schema": "hardkas.txPlan",
-  "schemaVersion": "hardkas.artifact.v1",
+  "schema": HardkasSchemas.TxPlan,
+  "schemaVersion": HardkasSchemas.ArtifactV1,
   "hardkasVersion": "0.9.1-alpha",
   "hashVersion": 4,
   "createdAt": "2026-06-06T12:00:00Z"

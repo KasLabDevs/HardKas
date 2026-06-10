@@ -2,6 +2,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { calculateContentHash } from "@hardkas/artifacts";
 import type { Hardkas } from "./index.js";
+import { HardkasSchemas } from "@hardkas/artifacts";
 
 export interface VprogsClaims {
   vProgsArtifactInspection: "READY";
@@ -14,7 +15,7 @@ export interface VprogsClaims {
 
 export interface VprogsCapabilitiesResult {
   ok: boolean;
-  schema: "hardkas.vprogsCapabilities.v1";
+  schema: typeof HardkasSchemas.VProgsCapabilitiesV1;
   status: "VPROGS_INSPECT_SURFACE_READY";
   claims: VprogsClaims;
   errors: string[];
@@ -22,14 +23,14 @@ export interface VprogsCapabilitiesResult {
 
 export interface VprogsStatusResult {
   ok: boolean;
-  schema: "hardkas.vprogsStatus.v1";
+  schema: typeof HardkasSchemas.VProgsStatusV1;
   status: "VPROGS_INSPECT_SURFACE_READY";
   claims: VprogsClaims;
 }
 
 export interface VprogsInspectResult {
   ok: boolean;
-  schema: "hardkas.vprogsInspect.v1";
+  schema: typeof HardkasSchemas.VProgsInspectV1;
   status: "VPROGS_ARTIFACT_INSPECTED" | "VPROGS_ARTIFACT_INVALID";
   path: string;
   artifactHash?: string;
@@ -61,7 +62,7 @@ export function isVprogsEnabled(): boolean {
 export function createVprogsCapabilities(): VprogsCapabilitiesResult {
   return {
     ok: true,
-    schema: "hardkas.vprogsCapabilities.v1",
+    schema: HardkasSchemas.VProgsCapabilitiesV1,
     status: "VPROGS_INSPECT_SURFACE_READY",
     claims: vprogsClaims(),
     errors: [
@@ -75,7 +76,7 @@ export function createVprogsCapabilities(): VprogsCapabilitiesResult {
 export function createVprogsStatus(): VprogsStatusResult {
   return {
     ok: true,
-    schema: "hardkas.vprogsStatus.v1",
+    schema: HardkasSchemas.VProgsStatusV1,
     status: "VPROGS_INSPECT_SURFACE_READY",
     claims: vprogsClaims()
   };
@@ -89,7 +90,7 @@ export async function inspectVprogsArtifact(
   if (!fs.existsSync(resolved)) {
     return {
       ok: false,
-      schema: "hardkas.vprogsInspect.v1",
+      schema: HardkasSchemas.VProgsInspectV1,
       status: "VPROGS_ARTIFACT_INVALID",
       path: path.relative(workspaceRoot, resolved).replace(/\\/g, "/"),
       claims: vprogsClaims(),
@@ -107,7 +108,7 @@ export async function inspectVprogsArtifact(
     const artifact = JSON.parse(fs.readFileSync(resolved, "utf8"));
     return {
       ok: true,
-      schema: "hardkas.vprogsInspect.v1",
+      schema: HardkasSchemas.VProgsInspectV1,
       status: "VPROGS_ARTIFACT_INSPECTED",
       path: path.relative(workspaceRoot, resolved).replace(/\\/g, "/"),
       artifactHash: calculateContentHash(artifact),
@@ -118,7 +119,7 @@ export async function inspectVprogsArtifact(
   } catch (error: any) {
     return {
       ok: false,
-      schema: "hardkas.vprogsInspect.v1",
+      schema: HardkasSchemas.VProgsInspectV1,
       status: "VPROGS_ARTIFACT_INVALID",
       path: path.relative(workspaceRoot, resolved).replace(/\\/g, "/"),
       claims: vprogsClaims(),

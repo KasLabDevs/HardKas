@@ -4,6 +4,7 @@ import { runTxVerify } from "./tx-verify-runner.js";
 import fs from "node:fs";
 import path from "node:path";
 import { loadHardkasConfig } from "@hardkas/config";
+import { HardkasSchemas } from "@hardkas/artifacts";
 
 export async function runDevLast(options: {
   inspect: boolean;
@@ -42,16 +43,16 @@ export async function runDevLast(options: {
     .sort((a, b) => b.time - a.time);
 
   // Preference order: replay > receipt > signedTx > txPlan
-  const latestReplay = files.find((f) => f.schema.startsWith("hardkas.replay"));
+  const latestReplay = files.find((f) => f.schema.startsWith(HardkasSchemas.ReplayV1));
   const latestReceipt = files.find(
-    (f) => f.schema.startsWith("hardkas.txReceipt") || f.name.startsWith("receipt_")
+    (f) => f.schema.startsWith(HardkasSchemas.TxReceipt) || f.name.startsWith("receipt_")
   );
   const latestSigned = files.find(
-    (f) => f.schema.startsWith("hardkas.signedTx") || f.name.includes(".signed")
+    (f) => f.schema.startsWith(HardkasSchemas.SignedTx) || f.name.includes(".signed")
   );
   const latestPlan = files.find(
     (f) =>
-      f.schema.startsWith("hardkas.txPlan") ||
+      f.schema.startsWith(HardkasSchemas.TxPlan) ||
       f.name.startsWith("txPlan_") ||
       f.name.includes(".plan")
   );
@@ -89,7 +90,7 @@ export async function runDevLast(options: {
 
   if (options.replay) {
     if (
-      target.schema.startsWith("hardkas.txReceipt") ||
+      target.schema.startsWith(HardkasSchemas.TxReceipt) ||
       target.name.startsWith("receipt_")
     ) {
       // For receipt, we show it

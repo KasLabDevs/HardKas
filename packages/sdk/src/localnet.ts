@@ -1,12 +1,13 @@
 import { Hardkas } from "./index.js";
 import { execFileSync } from "node:child_process";
+import { HardkasSchemas } from "@hardkas/artifacts";
 
 export interface LocalnetProfileOptions {
   profile?: "simulated" | "toccata-v2" | string;
 }
 
 export interface LocalnetStatusResult {
-  schema: "hardkas.localnetStatus.v1";
+  schema: typeof HardkasSchemas.LocalnetStatusV1;
   profile: string;
   node: {
     ready: boolean;
@@ -32,14 +33,14 @@ export interface LocalnetStatusResult {
 }
 
 export interface LocalnetControlResult {
-  schema: "hardkas.localnetControl.v1";
+  schema: typeof HardkasSchemas.LocalnetControlV1;
   profile: string;
   status: "SIMULATED_LOCALNET_READY" | "SDK_LOCALNET_CONTROL_UNSUPPORTED";
   message: string;
 }
 
 export interface LocalnetFundingResult {
-  schema: "hardkas.localnetFunding.v1";
+  schema: typeof HardkasSchemas.LocalnetFundingV1;
   profile: string;
   identifier: string;
   status: "SIMULATED_ACCOUNT_FUNDED" | "SDK_TOCCATA_FUNDING_UNSUPPORTED";
@@ -72,7 +73,7 @@ export class HardkasLocalnet {
     const profile = options.profile || "toccata-v2";
     const node = await this.detectToccataNode();
     return {
-      schema: "hardkas.localnetStatus.v1",
+      schema: HardkasSchemas.LocalnetStatusV1,
       profile,
       node,
       miner: this.inspectDockerContainer("hardkas-toccata-stratum-v2"),
@@ -96,7 +97,7 @@ export class HardkasLocalnet {
       const { loadOrCreateLocalnetState } = await import("@hardkas/localnet");
       await loadOrCreateLocalnetState({ cwd: this.sdk.cwd });
       return {
-        schema: "hardkas.localnetControl.v1",
+        schema: HardkasSchemas.LocalnetControlV1,
         profile,
         status: "SIMULATED_LOCALNET_READY",
         message: "Simulated localnet state is ready."
@@ -104,7 +105,7 @@ export class HardkasLocalnet {
     }
 
     return {
-      schema: "hardkas.localnetControl.v1",
+      schema: HardkasSchemas.LocalnetControlV1,
       profile,
       status: "SDK_LOCALNET_CONTROL_UNSUPPORTED",
       message:
@@ -130,7 +131,7 @@ export class HardkasLocalnet {
       if (options.amount !== undefined) fundOptions.amount = options.amount;
       const receipt = await this.sdk.accounts.fund(identifier, fundOptions);
       return {
-        schema: "hardkas.localnetFunding.v1",
+        schema: HardkasSchemas.LocalnetFundingV1,
         profile,
         identifier,
         status: "SIMULATED_ACCOUNT_FUNDED",
@@ -140,7 +141,7 @@ export class HardkasLocalnet {
     }
 
     return {
-      schema: "hardkas.localnetFunding.v1",
+      schema: HardkasSchemas.LocalnetFundingV1,
       profile,
       identifier,
       status: "SDK_TOCCATA_FUNDING_UNSUPPORTED",

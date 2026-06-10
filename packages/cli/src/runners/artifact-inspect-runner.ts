@@ -4,6 +4,7 @@ import pc from "picocolors";
 import { UI, handleError } from "../ui.js";
 import { HardkasError } from "@hardkas/core";
 import { HardkasCliError } from "../cli-errors.js";
+import { HardkasSchemas } from "@hardkas/artifacts";
 
 export interface ArtifactInspectOptions {
   idOrPath: string;
@@ -116,19 +117,19 @@ export async function runArtifactInspect(options: ArtifactInspectOptions) {
     (type.includes("txPlan") ? `${artifact.txId}.receipt.json` : undefined);
 
   const isCoreArtifact = [
-    "hardkas.txPlan.v1",
-    "hardkas.signedTx.v1",
-    "hardkas.txReceipt.v1",
-    "hardkas.snapshot"
+    HardkasSchemas.TxPlanV1,
+    HardkasSchemas.SignedTxV1,
+    HardkasSchemas.TxReceiptV1,
+    HardkasSchemas.Snapshot
   ].includes(type);
-  const isWorkflow = type === "hardkas.workflow.v1";
+  const isWorkflow = type === HardkasSchemas.WorkflowV1;
   const replayability = isCoreArtifact || isWorkflow ? "supported" : "unknown";
 
   if (options.json) {
     console.log(
       JSON.stringify(
         {
-          schemaVersion: "hardkas.artifactInspect.v1",
+          schemaVersion: HardkasSchemas.ArtifactInspectV1,
           ok: true,
           artifact: {
             id,

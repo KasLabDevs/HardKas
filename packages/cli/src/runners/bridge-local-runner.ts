@@ -4,6 +4,7 @@ import { loadHardkasConfig } from "@hardkas/config";
 import { writeArtifact } from "@hardkas/artifacts";
 import path from "node:path";
 import fs from "node:fs";
+import { HardkasSchemas } from "@hardkas/artifacts";
 
 export async function runBridgeLocalPlan(options: {
   from?: string;
@@ -60,7 +61,7 @@ export async function runBridgeLocalPlan(options: {
       console.log(
         JSON.stringify(
           {
-            schema: "hardkas.bridge.localPlan.v1",
+            schema: HardkasSchemas.BridgeLocalPlanV1,
             session: {
               source: ctx.source,
               name: ctx.sessionName || null
@@ -94,7 +95,7 @@ export async function runBridgeLocalPlan(options: {
     const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
     const artifactPath = path.join(artifactsDir, `${timestamp}-bridge-local-plan.json`);
     const artifactData = {
-      schema: "hardkas.bridge.localPlan.v1",
+      schema: HardkasSchemas.BridgeLocalPlanV1,
       session: { source: ctx.source, name: ctx.sessionName || null },
       l1: { wallet: ctx.l1.walletName, address: ctx.l1.address },
       l2: { account: ctx.l2.accountName || null, address: ctx.l2.address },
@@ -193,7 +194,7 @@ export async function runBridgeLocalSimulate(options: {
       console.log(
         JSON.stringify(
           {
-            schema: "hardkas.bridge.localSimulation.v1",
+            schema: HardkasSchemas.BridgeLocalSimulationV1,
             status: "success",
             session: {
               source: ctx.source,
@@ -227,7 +228,7 @@ export async function runBridgeLocalSimulate(options: {
       `${timestamp}-bridge-local-simulate.json`
     );
     const artifactData = {
-      schema: "hardkas.bridge.localSimulation.v1",
+      schema: HardkasSchemas.BridgeLocalSimulationV1,
       status: "success",
       session: { source: ctx.source, name: ctx.sessionName || null },
       l1: { wallet: ctx.l1.walletName, address: ctx.l1.address },

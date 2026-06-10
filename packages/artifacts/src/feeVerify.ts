@@ -4,6 +4,7 @@ import {
   MassEstimateResult
 } from "@hardkas/tx-builder";
 import { TxPlan, SignedTx, TxReceipt } from "./schemas.js";
+import { HardkasSchemas } from "@hardkas/core";
 
 export interface FeeAuditResult {
   ok: boolean;
@@ -20,7 +21,7 @@ export interface FeeAuditResult {
  * Recomputes mass for a transaction artifact.
  */
 export function recomputeMass(artifact: TxPlan | SignedTx | TxReceipt): bigint {
-  if (artifact.schema === "hardkas.txPlan") {
+  if (artifact.schema === HardkasSchemas.TxPlan) {
     const plan = artifact as TxPlan;
     const result = estimateTransactionMass({
       inputCount: (plan.inputs || []).length,
@@ -31,7 +32,7 @@ export function recomputeMass(artifact: TxPlan | SignedTx | TxReceipt): bigint {
     return result.mass;
   }
 
-  if (artifact.schema === "hardkas.txReceipt") {
+  if (artifact.schema === HardkasSchemas.TxReceipt) {
     const receipt = artifact as TxReceipt;
     // For receipt, we check if we have enough info to recompute
     // Receipt artifacts usually store mass, but we can re-verify if inputs/outputs are present
@@ -54,7 +55,7 @@ export function verifyFeeSemantics(artifact: any): FeeAuditResult {
   let outputTotal = 0n;
   let feeRate = 1n; // Default
 
-  if (artifact.schema === "hardkas.txPlan") {
+  if (artifact.schema === HardkasSchemas.TxPlan) {
     const plan = artifact as TxPlan;
     artifactMass = BigInt(plan.estimatedMass || 0);
     artifactFee = BigInt(plan.estimatedFeeSompi || 0);
@@ -67,7 +68,7 @@ export function verifyFeeSemantics(artifact: any): FeeAuditResult {
       0n
     );
     if (plan.change) outputTotal += BigInt(plan.change.amountSompi || 0);
-  } else if (artifact.schema === "hardkas.txReceipt") {
+  } else if (artifact.schema === HardkasSchemas.TxReceipt) {
     const receipt = artifact as TxReceipt;
     artifactMass = BigInt(receipt.mass || 0);
     artifactFee = BigInt(receipt.feeSompi);
@@ -107,7 +108,7 @@ export function verifyFeeSemantics(artifact: any): FeeAuditResult {
   }
 
   // 5. Dust Check
-  if (artifact.schema === "hardkas.txPlan") {
+  if (artifact.schema === HardkasSchemas.TxPlan) {
     const plan = artifact as TxPlan;
     (plan.outputs || []).forEach((o, i) => {
       if (BigInt(o.amountSompi || 0) < 600n) {

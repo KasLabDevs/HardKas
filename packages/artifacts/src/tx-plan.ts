@@ -4,6 +4,7 @@ import { NetworkId, ExecutionMode } from "@hardkas/core";
 import { calculateContentHash, CURRENT_HASH_VERSION } from "./canonical.js";
 import { HARDKAS_VERSION } from "./constants.js";
 import type { RuntimeContext } from "@hardkas/core";
+import { HardkasSchemas } from "@hardkas/core";
 
 export interface CreateTxPlanArtifactOptions {
   networkId: NetworkId;
@@ -28,9 +29,9 @@ export interface CreateTxPlanArtifactOptions {
  */
 export function createTxPlanArtifact(options: CreateTxPlanArtifactOptions): TxPlan {
   const artifact: DraftArtifact<TxPlan, "planId" | "contentHash"> = {
-    schema: "hardkas.txPlan",
+    schema: HardkasSchemas.TxPlan,
     hardkasVersion: HARDKAS_VERSION,
-    schemaVersion: "hardkas.artifact.v1",
+    schemaVersion: HardkasSchemas.ArtifactV1,
     version: ARTIFACT_VERSION,
     hashVersion: CURRENT_HASH_VERSION,
     createdAt: new Date(options.ctx.clock.now()).toISOString(),

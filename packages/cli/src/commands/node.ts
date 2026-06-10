@@ -7,6 +7,7 @@ import { runNodeStop } from "../runners/node-stop-runner.js";
 import { runNodeRestart } from "../runners/node-restart-runner.js";
 import { runNodeReset } from "../runners/node-reset-runner.js";
 import { runNodeLogs } from "../runners/node-logs-runner.js";
+import { HardkasSchemas } from "@hardkas/artifacts";
 
 export function registerNodeCommands(program: Command) {
   const nodeCmd = program.command("node").description("Kaspa node management (Docker)");
@@ -151,7 +152,7 @@ export function registerNodeCommands(program: Command) {
           console.log(
             JSON.stringify(
               {
-                schema: "hardkas.nodeStatus.v1",
+                schema: HardkasSchemas.NodeStatusV1,
                 docker: {
                   available: true, // If we reached here, docker CLI at least worked in runner
                   daemonReady: result.status.statusText !== "not-found"

@@ -4,6 +4,7 @@ import { estimateTransactionMass, MassBreakdown } from "@hardkas/tx-builder";
 import { UI } from "../ui.js";
 import { formatSompiToKas } from "@hardkas/core";
 import path from "node:path";
+import { HardkasSchemas } from "@hardkas/artifacts";
 
 export interface TxProfileOptions {
   path: string;
@@ -17,7 +18,7 @@ export async function runTxProfile(options: TxProfileOptions) {
   const plan = (await readArtifact(absolutePath)) as TxPlanArtifact;
 
   const planObj = plan as unknown as Record<string, unknown>;
-  if (plan.schema !== "hardkas.txPlan" && planObj.schema !== "hardkas.txPlan.v1") {
+  if (plan.schema !== HardkasSchemas.TxPlan && planObj.schema !== HardkasSchemas.TxPlanV1) {
     throw new Error(`Artifact at ${options.path} is not a valid transaction plan.`);
   }
 

@@ -29,6 +29,7 @@ import {
 } from "@hardkas/accounts";
 import { parseKasToSompi, type NetworkId } from "@hardkas/core";
 import { TxPlanService, type UtxoProvider } from "@hardkas/tx-builder";
+import { HardkasSchemas } from "@hardkas/artifacts";
 
 function normalizeSimulatedPlanInput(target: any, fallbackId: string): TxPlanArtifact {
   if (target.schema === ARTIFACT_SCHEMAS.TX_PLAN && Array.isArray(target.inputs)) {
@@ -409,7 +410,7 @@ export class HardkasTx {
       });
     }
 
-    if (this.sdk.signer && plan.schema === "hardkas.txPlan") {
+    if (this.sdk.signer && plan.schema === HardkasSchemas.TxPlan) {
       const signedArtifact = await this.sdk.signer.signTransaction(
         plan as TxPlanArtifact
       );
@@ -459,7 +460,7 @@ export class HardkasTx {
 
     let signedArtifact: any;
 
-    if (plan.schema === "hardkas.signedTx") {
+    if (plan.schema === HardkasSchemas.SignedTx) {
       // 1. Validate append intention
       if (plan.status === "signed") {
         throw new Error(
@@ -535,7 +536,7 @@ export class HardkasTx {
           signatures: newSignatures
         },
         signatureMetadata: newMeta,
-        lineage: createLineageTransition(partialTx, "hardkas.signedTx")
+        lineage: createLineageTransition(partialTx, HardkasSchemas.SignedTx)
       };
 
       if (thresholdReached) {
@@ -556,7 +557,7 @@ export class HardkasTx {
       if (draft.lineage) draft.lineage.artifactId = hash;
 
       signedArtifact = draft;
-    } else if (plan.schema === "hardkas.txPlan") {
+    } else if (plan.schema === HardkasSchemas.TxPlan) {
       if (options?.append) {
         throw new Error(
           "Do not use --append for the first signature of a transaction plan."
@@ -606,8 +607,8 @@ export class HardkasTx {
         const { HARDKAS_VERSION, ARTIFACT_VERSION, CURRENT_HASH_VERSION } =
           await import("@hardkas/artifacts");
         const draft: any = {
-          schema: "hardkas.signedTx",
-          schemaVersion: "hardkas.artifact.v1",
+          schema: HardkasSchemas.SignedTx,
+          schemaVersion: HardkasSchemas.ArtifactV1,
           hardkasVersion: HARDKAS_VERSION,
           version: ARTIFACT_VERSION,
           hashVersion: CURRENT_HASH_VERSION,
@@ -626,7 +627,7 @@ export class HardkasTx {
             signatures
           },
           signatureMetadata,
-          lineage: createLineageTransition(plan, "hardkas.signedTx"),
+          lineage: createLineageTransition(plan, HardkasSchemas.SignedTx),
           ...(plan.workflowId ? { workflowId: plan.workflowId } : {})
         };
 
@@ -845,7 +846,7 @@ export class HardkasTx {
     // Create unified receipt
     const receiptBase: any = {
       schema: ARTIFACT_SCHEMAS.TX_RECEIPT,
-      schemaVersion: "hardkas.receipt.v1",
+      schemaVersion: HardkasSchemas.TxReceiptV1,
       hardkasVersion: HARDKAS_VERSION,
       version: ARTIFACT_VERSION,
       hashVersion: CURRENT_HASH_VERSION,
@@ -1134,7 +1135,7 @@ export class HardkasTx {
         ? { assumptionRef: signedArtifact.assumptionRef }
         : {}),
       tracePath: undefined,
-      lineage: createLineageTransition(signedArtifact, "hardkas.txReceipt")
+      lineage: createLineageTransition(signedArtifact, HardkasSchemas.TxReceipt)
     };
     realReceiptBase.contentHash = calculateContentHash(
       realReceiptBase,

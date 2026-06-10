@@ -1,5 +1,6 @@
 import { execFileSync } from "node:child_process";
 import fs from "node:fs";
+import { HardkasSchemas } from "@hardkas/artifacts";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
 
@@ -258,7 +259,7 @@ console.log(JSON.stringify({ app: ${JSON.stringify(appName)}, ok: true, sdkNetwo
     return `
 const { calculateContentHash } = await import(${JSON.stringify(pathToFileURL(artifactsDist).href)});
 const artifact = {
-  schema: "hardkas.postReleaseProbe",
+  schema: HardkasSchemas.PostReleaseProbe,
   hardkasVersion: "0.9.1-alpha",
   hashVersion: 4,
   networkId: "simulated",
@@ -381,7 +382,7 @@ async function runAdversarialCases() {
   const manifestCorruptPath = path.join(mutationsRoot, "manifest-corrupt");
   await copyCorpusFixture(manifestCorruptPath);
   writeJson(path.join(manifestCorruptPath, "op-true", "manifest.json"), {
-    schema: "hardkas.toccataGoldenManifest.v1",
+    schema : HardkasSchemas.ToccataGoldenManifestV1,
     network: "mainnet",
     profile: "toccata-v2",
     simulationLevel: {
@@ -739,7 +740,7 @@ function writeReports() {
       : "POST_RELEASE_BREAK_GAUNTLET_FINDINGS";
 
   const result = {
-    schema: "hardkas.postReleaseBreakGauntlet.v1",
+    schema : HardkasSchemas.PostReleaseBreakGauntletV1,
     release: "0.9.1-alpha",
     status,
     generatedAt: new Date().toISOString(),

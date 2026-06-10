@@ -1,5 +1,6 @@
 import { Command } from "commander";
 import { deterministicCompare } from "@hardkas/core";
+import { HardkasSchemas } from "@hardkas/artifacts";
 
 export interface CliOptionReference {
   flags: string;
@@ -21,7 +22,7 @@ export interface CliCommandReference {
 }
 
 export interface CliReference {
-  schema: "hardkas.cliReference.v1";
+  schema: typeof HardkasSchemas.CliReferenceV1;
   generatedAt: string;
   totalCommands: number;
   flatSurface: string[];
@@ -49,7 +50,7 @@ export function extractCliReference(
   walk(commands);
 
   return {
-    schema: "hardkas.cliReference.v1",
+    schema: HardkasSchemas.CliReferenceV1,
     generatedAt: options?.deterministic ? "deterministic" : new Date().toISOString(),
     totalCommands: flatSurface.length,
     flatSurface,

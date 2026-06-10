@@ -9,6 +9,7 @@ import { withLock } from "@hardkas/core";
 import { DockerKaspadRunner } from "@hardkas/node-runner";
 import { resolveHardkasAccountAddress } from "@hardkas/accounts";
 import { execa } from "execa";
+import { HardkasSchemas } from "@hardkas/artifacts";
 
 const TOCCATA_PROFILE = "toccata-v2";
 const TOCCATA_IMAGE = "kaspanet/rusty-kaspad:v2.0.0";
@@ -50,7 +51,7 @@ export async function runLocalnetStart(opts: LocalnetStartOptions): Promise<void
   const existing = await detectToccataNode(!!opts.json);
   if (existing.ready) {
     const payload = {
-      schema: "hardkas.localnetStatus.v1",
+      schema: HardkasSchemas.LocalnetStatusV1,
       profile,
       node: existing,
       status: "TOCCATA_NODE_READY"
@@ -76,7 +77,7 @@ export async function runLocalnetStart(opts: LocalnetStartOptions): Promise<void
   const status = await runner.start();
 
   const payload = {
-    schema: "hardkas.localnetStatus.v1",
+    schema: HardkasSchemas.LocalnetStatusV1,
     profile,
     status: status.rpcReady ? "TOCCATA_NODE_READY" : "TOCCATA_NODE_STARTING",
     node: status
@@ -97,7 +98,7 @@ export async function runLocalnetStatus(opts: LocalnetStatusOptions): Promise<vo
   const miner = await inspectDockerContainer(TOCCATA_MINER_CONTAINER);
 
   const payload = {
-    schema: "hardkas.localnetStatus.v1",
+    schema: HardkasSchemas.LocalnetStatusV1,
     profile: TOCCATA_PROFILE,
     node,
     miner,
@@ -160,7 +161,7 @@ export async function runLocalnetFund(opts: LocalnetFundOptions): Promise<void> 
       : "TOCCATA_FUNDING_PENDING_MATURITY";
 
   const payload = {
-    schema: "hardkas.localnetFunding.v1",
+    schema: HardkasSchemas.LocalnetFundingV1,
     profile,
     status,
     address,

@@ -10,6 +10,7 @@ import { calculateContentHash, CURRENT_HASH_VERSION } from "./canonical.js";
 import { createLineageTransition } from "./lineage.js";
 import { HARDKAS_VERSION } from "./constants.js";
 import type { RuntimeContext } from "@hardkas/core";
+import { HardkasSchemas } from "@hardkas/core";
 
 /**
  * Creates a canonical simulated signed transaction artifact.
@@ -20,8 +21,8 @@ export function createSimulatedSignedTxArtifact(
   ctx: RuntimeContext
 ): SignedTx {
   const artifact: DraftArtifact<SignedTx, "signedId" | "contentHash"> = {
-    schema: "hardkas.signedTx",
-    schemaVersion: "hardkas.artifact.v1",
+    schema: HardkasSchemas.SignedTx,
+    schemaVersion: HardkasSchemas.ArtifactV1,
     hardkasVersion: HARDKAS_VERSION,
     version: ARTIFACT_VERSION,
     hashVersion: CURRENT_HASH_VERSION,
@@ -38,7 +39,7 @@ export function createSimulatedSignedTxArtifact(
       format: "simulated",
       payload
     },
-    lineage: createLineageTransition(plan, "hardkas.signedTx"),
+    lineage: createLineageTransition(plan, HardkasSchemas.SignedTx),
     ...(plan.workflowId ? { workflowId: plan.workflowId } : {}),
     ...(plan.assumptionLevel ? { assumptionLevel: plan.assumptionLevel } : {})
   };
@@ -70,8 +71,8 @@ export function createSimulatedTxReceipt(
   }
 ): TxReceipt {
   const artifact: DraftArtifact<TxReceipt, "contentHash"> = {
-    schema: "hardkas.txReceipt",
-    schemaVersion: "hardkas.receipt.v1",
+    schema: HardkasSchemas.TxReceipt,
+    schemaVersion: HardkasSchemas.TxReceiptV1,
     hardkasVersion: HARDKAS_VERSION,
     version: ARTIFACT_VERSION,
     hashVersion: CURRENT_HASH_VERSION,
@@ -91,7 +92,7 @@ export function createSimulatedTxReceipt(
     preStateHash: extra?.preStateHash,
     postStateHash: extra?.postStateHash,
     dagContext: extra?.dagContext,
-    lineage: createLineageTransition(plan, "hardkas.txReceipt"),
+    lineage: createLineageTransition(plan, HardkasSchemas.TxReceipt),
     ...(plan.workflowId ? { workflowId: plan.workflowId } : {}),
     ...(plan.assumptionLevel ? { assumptionLevel: plan.assumptionLevel } : {})
   };

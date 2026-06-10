@@ -2,6 +2,7 @@ import { execFileSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
+import { HardkasSchemas } from "@hardkas/artifacts";
 
 const root = process.cwd();
 const cli = path.join(root, "packages", "cli", "dist", "index.js");
@@ -68,7 +69,7 @@ function runPnpm(args) {
 
 function writeReport(status, details = {}) {
   const report = {
-    schema: "hardkas.toccataGauntlet.v1",
+    schema : HardkasSchemas.ToccataGauntletV1,
     status,
     generatedAt: new Date().toISOString(),
     partialKnownLimitations: ["PARTIAL_VM_SIMULATION"],
@@ -106,7 +107,7 @@ async function ensureOpTrueCompileArtifact() {
   fs.writeFileSync(sourcePath, source, "utf8");
 
   const artifact = {
-    schema: "hardkas.silver.compile",
+    schema : HardkasSchemas.SilverCompile,
     hardkasVersion: artifacts.HARDKAS_VERSION,
     version: "1.0.0-alpha",
     hashVersion: 4,
@@ -364,7 +365,7 @@ async function main() {
   record("mainnet guard", "PASS");
 
   const report = {
-    schema: "hardkas.toccataGauntlet.v1",
+    schema : HardkasSchemas.ToccataGauntletV1,
     status: "HARDKAS_TOCCATA_BASELINE_READY",
     generatedAt: new Date().toISOString(),
     partialKnownLimitations: ["PARTIAL_VM_SIMULATION"],

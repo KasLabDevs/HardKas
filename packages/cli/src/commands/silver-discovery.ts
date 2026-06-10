@@ -5,6 +5,7 @@ import pc from "picocolors";
 import * as fs from "node:fs";
 import * as path from "node:path";
 import { createHash } from "node:crypto";
+import { HardkasSchemas } from "@hardkas/artifacts";
 
 export function getSilverDeployCommand() {
   const deployCmd = new Command("deploy-sweep")
@@ -34,7 +35,7 @@ export function getSilverDeployCommand() {
       }
 
       const compileArtifact = JSON.parse(fs.readFileSync(compileArtifactPath, "utf8"));
-      if (compileArtifact.schema !== "hardkas.silver.compile") {
+      if (compileArtifact.schema !== HardkasSchemas.SilverCompile) {
         getOutput().error(pc.red(`Error: Expected hardkas.silver.compile artifact.`));
         throw new Error("Command failed");
       }
@@ -324,7 +325,7 @@ export function getSilverSpendCommand() {
         throw new Error("Command failed");
       }
       const compileArtifact = JSON.parse(fs.readFileSync(spendPlanArtifactPath, "utf8"));
-      if (compileArtifact.schema !== "hardkas.silver.compile") {
+      if (compileArtifact.schema !== HardkasSchemas.SilverCompile) {
         getOutput().error(pc.red(`Error: Expected hardkas.silver.compile artifact.`));
         throw new Error("Command failed");
       }

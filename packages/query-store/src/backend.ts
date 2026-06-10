@@ -1,5 +1,6 @@
 import { HardkasStore } from "./db.js";
 import { ExecutionMode, NetworkId } from "@hardkas/core";
+import { HardkasSchemas } from "@hardkas/artifacts";
 
 // ---------------------------------------------------------------------------
 // Database Row definitions for typed SQLite mapping.
@@ -276,12 +277,12 @@ export class SqliteQueryBackend implements QueryBackend {
     status?: string;
     networkId?: string;
   }): Promise<ArtifactDocument[]> {
-    return this.findArtifacts({ schema: "hardkas.txReceipt", ...filters });
+    return this.findArtifacts({ schema: HardkasSchemas.TxReceipt, ...filters });
   }
 
   async findTraces(filters?: { txId?: string }): Promise<ArtifactDocument[]> {
     const db = this.store.getDatabase();
-    let query = "SELECT * FROM artifacts WHERE schema = 'hardkas.txTrace'";
+    let query = "SELECT * FROM artifacts WHERE schema = HardkasSchemas.TxTrace";
     const params: any[] = [];
 
     if (filters?.txId) {

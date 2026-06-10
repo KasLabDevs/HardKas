@@ -3,6 +3,7 @@ import { UI, handleError } from "../ui.js";
 import { loadHardkasConfig } from "@hardkas/config";
 
 import type { NetworkId } from "@hardkas/core";
+import { HardkasSchemas } from "@hardkas/artifacts";
 
 export interface DevDoctorCheck {
   name: string;
@@ -14,7 +15,7 @@ export interface DevDoctorCheck {
 }
 
 export interface DevDoctorResult {
-  schema: "hardkas.devDoctor.v1";
+  schema: typeof HardkasSchemas.DevDoctorV1;
   schemaVersion?: string;
   status: "ready" | "warning" | "failed";
   checks: DevDoctorCheck[];
@@ -657,8 +658,8 @@ export async function runDevDoctor(options: {
 
     if (options.json) {
       const result: DevDoctorResult = {
-        schema: "hardkas.devDoctor.v1",
-        schemaVersion: "hardkas.devDoctor.v1",
+        schema: HardkasSchemas.DevDoctorV1,
+        schemaVersion: HardkasSchemas.DevDoctorV1,
         status: finalStatus,
         checks
       };

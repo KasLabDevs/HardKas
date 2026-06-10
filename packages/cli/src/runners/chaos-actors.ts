@@ -2,6 +2,7 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import { execa } from "execa";
 import { ChaosExitCodes } from "../commands/chaos.js";
+import { HardkasSchemas } from "@hardkas/artifacts";
 
 export interface ChaosContext {
   workspaceDir: string;
@@ -33,7 +34,7 @@ export const LockHell: ChaosActor = async (ctx) => {
     await fd.close();
   } else {
     // Create stale lock
-    await fs.writeFile(lockPath, JSON.stringify({ pid, schema: "hardkas.lock.v1" }));
+    await fs.writeFile(lockPath, JSON.stringify({ pid, schema: HardkasSchemas.LockV1 }));
   }
 
   // Then spawn a rebuild to test how the system reacts

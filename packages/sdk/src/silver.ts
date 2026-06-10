@@ -15,6 +15,7 @@ import {
   type SilverSimulationState
 } from "@hardkas/simulator";
 import type { Hardkas } from "./index.js";
+import { HardkasSchemas } from "@hardkas/artifacts";
 
 export interface SilverSdkWriteOptions {
   write?: boolean;
@@ -117,7 +118,7 @@ export class HardkasSilver {
     }
 
     const artifact: any = {
-      schema: "hardkas.silver.compile",
+      schema: HardkasSchemas.SilverCompile,
       hardkasVersion: HARDKAS_VERSION,
       version: "1.0.0-alpha",
       hashVersion: 4,
@@ -150,14 +151,14 @@ export class HardkasSilver {
     assertSimnet(network);
     const compileArtifact = await this.resolveArtifact(
       options.artifact,
-      "hardkas.silver.compile"
+      HardkasSchemas.SilverCompile
     );
     const amountSompi = parseKasToSompi(String(options.amount ?? "1")).toString();
     const fromAccount = await this.sdk.accounts.resolve(options.from);
     const lock = createKaspaP2shBlake2bLock(compileArtifact.compiledScriptHex);
 
     const artifact: any = {
-      schema: "hardkas.silver.deployPlan",
+      schema: HardkasSchemas.SilverDeployPlan,
       hardkasVersion: HARDKAS_VERSION,
       version: "1.0.0-alpha",
       hashVersion: 4,
@@ -196,7 +197,7 @@ export class HardkasSilver {
   ): Promise<SilverSdkArtifactResult<any>> {
     const deployArtifact = await this.resolveArtifact(
       options.receipt,
-      "hardkas.silver.deploy"
+      HardkasSchemas.SilverDeploy
     );
     assertSimnet(deployArtifact.networkId);
     const args = options.args ?? readArgsFile(this.sdk.cwd, options.argsPath);
@@ -219,7 +220,7 @@ export class HardkasSilver {
     }
 
     const artifact: any = {
-      schema: "hardkas.silver.spendPlan",
+      schema: HardkasSchemas.SilverSpendPlan,
       hardkasVersion: HARDKAS_VERSION,
       version: "1.0.0-alpha",
       hashVersion: 4,
@@ -271,7 +272,7 @@ export class HardkasSilver {
     deployPlan: string | any,
     options: SilverSdkWriteOptions = {}
   ): Promise<SilverSdkArtifactResult<any>> {
-    const artifact = await this.resolveArtifact(deployPlan, "hardkas.silver.deployPlan");
+    const artifact = await this.resolveArtifact(deployPlan, HardkasSchemas.SilverDeployPlan);
     const result = simulateSilverDeploy(artifact);
     this.saveSimulationState(mergeState(this.loadSimulationState(), result.state));
     return this.writeSdkArtifact(result.receipt, options);
@@ -282,7 +283,7 @@ export class HardkasSilver {
     state: SilverSimulationState = this.loadSimulationState(),
     options: SilverSdkWriteOptions = {}
   ): Promise<SilverSdkArtifactResult<any>> {
-    const artifact = await this.resolveArtifact(spendPlan, "hardkas.silver.spendPlan");
+    const artifact = await this.resolveArtifact(spendPlan, HardkasSchemas.SilverSpendPlan);
     const result = simulateSilverSpend(artifact, state);
     this.saveSimulationState(result.state);
     return this.writeSdkArtifact(result.receipt, options);

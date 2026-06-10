@@ -3,6 +3,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { UI, handleError } from "../ui.js";
 import type { WorkflowArtifact } from "@hardkas/artifacts";
+import { HardkasSchemas } from "@hardkas/artifacts";
 
 export async function runWorkflowRun(
   file: string,
@@ -136,7 +137,7 @@ export async function runWorkflowInspect(
     if (id === "latest") {
       const allArtifacts = await sdk.artifacts.list();
       const workflows = allArtifacts
-        .filter((a: any) => a.schema === "hardkas.workflow.v1")
+        .filter((a: any) => a.schema === HardkasSchemas.WorkflowV1)
         .sort(
           (a: any, b: any) =>
             new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
@@ -149,7 +150,7 @@ export async function runWorkflowInspect(
 
     const artifact = (await sdk.artifacts.read(targetId)) as WorkflowArtifact;
 
-    if (artifact.schema !== "hardkas.workflow.v1") {
+    if (artifact.schema !== HardkasSchemas.WorkflowV1) {
       throw new Error(`Artifact ${id} is not a valid workflow artifact`);
     }
 
@@ -180,7 +181,7 @@ export async function runWorkflowReplay(id: string, options: any) {
     if (id === "latest") {
       const allArtifacts = await sdk.artifacts.list();
       const workflows = allArtifacts
-        .filter((a: any) => a.schema === "hardkas.workflow.v1")
+        .filter((a: any) => a.schema === HardkasSchemas.WorkflowV1)
         .sort(
           (a: any, b: any) =>
             new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
@@ -232,7 +233,7 @@ export async function runWorkflowDiff(
       if (id === "latest") {
         const allArtifacts = await sdk.artifacts.list();
         const workflows = allArtifacts
-          .filter((a: any) => a.schema === "hardkas.workflow.v1")
+          .filter((a: any) => a.schema === HardkasSchemas.WorkflowV1)
           .sort(
             (a: any, b: any) =>
               new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
@@ -252,7 +253,7 @@ export async function runWorkflowDiff(
     const wfA = (await sdk.artifacts.read(targetIdA)) as WorkflowArtifact;
     const wfB = (await sdk.artifacts.read(targetIdB)) as WorkflowArtifact;
 
-    if (wfA.schema !== "hardkas.workflow.v1" || wfB.schema !== "hardkas.workflow.v1") {
+    if (wfA.schema !== HardkasSchemas.WorkflowV1 || wfB.schema !== HardkasSchemas.WorkflowV1) {
       throw new Error("Both artifacts must be workflows");
     }
 

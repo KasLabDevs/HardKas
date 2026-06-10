@@ -2,6 +2,7 @@ import { UI } from "../ui.js";
 import path from "node:path";
 import { ReplayVerificationError } from "../cli-errors.js";
 import { Hardkas } from "@hardkas/sdk";
+import { HardkasSchemas } from "@hardkas/artifacts";
 
 export interface ReplayVerifyOptions {
   path: string;
@@ -56,7 +57,7 @@ export async function runReplayVerify(options: ReplayVerifyOptions) {
     console.log(
       JSON.stringify(
         {
-          schemaVersion: "hardkas.replayVerify.v1",
+          schemaVersion: HardkasSchemas.ReplayVerifyV1,
           workspace: options.path,
           artifacts: result.artifactsScanned,
           lineage: result.lineage,
@@ -89,7 +90,7 @@ export async function runReplayVerify(options: ReplayVerifyOptions) {
     }
     throw new ReplayVerificationError(
       result.report || {
-        schema: "hardkas.replayReport.v1",
+        schema: HardkasSchemas.ReplayReportV1,
         txId: "unknown",
         planOk: false,
         receiptOk: false,

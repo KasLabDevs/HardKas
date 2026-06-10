@@ -3,6 +3,7 @@ import { UI, handleError } from "../ui.js";
 import { loadHardkasConfig } from "@hardkas/config";
 import type { NetworkId, KaspaAddress, ContentHash } from "@hardkas/core";
 import type { TxPlanArtifact } from "@hardkas/artifacts";
+import { HardkasSchemas } from "@hardkas/artifacts";
 
 export async function runKaspaWalletCreate(name: string, options: { network: string }) {
   try {
@@ -189,7 +190,7 @@ export async function runKaspaWalletSend(
         ? (configObj.networkId as NetworkId)
         : config.config.defaultNetwork || "simnet";
     const planArtifact: TxPlanArtifact = {
-      schema: "hardkas.txPlan",
+      schema: HardkasSchemas.TxPlan,
       planId: `plan-${calculateContentHash({ from: sender.address, to: targetAddress, amount: amountSompi.toString() }).slice(0, 16)}`,
       hardkasVersion: HARDKAS_VERSION,
       version: "1.0.0-alpha",

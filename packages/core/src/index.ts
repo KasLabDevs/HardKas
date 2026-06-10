@@ -141,3 +141,5 @@ export * from "./semantics/index.js";
 export * from "./append-coordinator.js";
 export * from "./migrations.js";
 export * from "./silver.js";
+
+export * from "./registry.js";

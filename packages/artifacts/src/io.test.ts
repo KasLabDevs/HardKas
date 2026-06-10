@@ -3,6 +3,7 @@ import { writeArtifact } from "./io.js";
 import { writeFileAtomic } from "@hardkas/core";
 import fs from "node:fs/promises";
 import path from "node:path";
+import { HardkasSchemas } from "@hardkas/core";
 
 vi.mock("@hardkas/core", async (importOriginal) => {
   const actual = await importOriginal<typeof import("@hardkas/core")>();
@@ -26,7 +27,7 @@ describe("writeArtifact", () => {
   it("writes to exact file when a normal file path is provided", async () => {
     (fs.stat as any).mockRejectedValue(new Error("ENOENT"));
 
-    await writeArtifact("plan.json", { planId: "123", schema: "hardkas.txPlan" });
+    await writeArtifact("plan.json", { planId: "123", schema: HardkasSchemas.TxPlan });
 
     expect(writeFileAtomic).toHaveBeenCalledWith(
       "plan.json",
@@ -37,7 +38,7 @@ describe("writeArtifact", () => {
   it("auto-generates filename when an existing directory path is provided", async () => {
     (fs.stat as any).mockResolvedValue({ isDirectory: () => true });
 
-    await writeArtifact("somedir", { planId: "123", schema: "hardkas.txPlan" });
+    await writeArtifact("somedir", { planId: "123", schema: HardkasSchemas.TxPlan });
 
     expect(writeFileAtomic).toHaveBeenCalledWith(
       path.join("somedir", "txPlan-123.json"),
@@ -48,7 +49,7 @@ describe("writeArtifact", () => {
   it("auto-generates filename when a non-existing path ending with a slash is provided", async () => {
     (fs.stat as any).mockRejectedValue(new Error("ENOENT"));
 
-    await writeArtifact("somedir/", { planId: "123", schema: "hardkas.txPlan" });
+    await writeArtifact("somedir/", { planId: "123", schema: HardkasSchemas.TxPlan });
 
     expect(writeFileAtomic).toHaveBeenCalledWith(
       path.join("somedir/", "txPlan-123.json"),

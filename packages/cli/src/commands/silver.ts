@@ -55,6 +55,7 @@ import {
   getSilverSpendCommand
 } from "./silver-lifecycle.js";
 import { getSilverSimulateCommand } from "./silver-simulate.js";
+import { HardkasSchemas } from "@hardkas/artifacts";
 
 export function registerSilverCommand(program: Command) {
   const silverCmd = program
@@ -239,7 +240,7 @@ export function registerSilverCommand(program: Command) {
         await import("@hardkas/artifacts");
 
       const artifact = {
-        schema: "hardkas.silver.compile",
+        schema: HardkasSchemas.SilverCompile,
         hardkasVersion: HARDKAS_VERSION,
         version: "1.0.0-alpha",
         hashVersion: 4,
@@ -279,9 +280,9 @@ export function registerSilverCommand(program: Command) {
       const artifact = JSON.parse(content);
 
       if (
-        artifact.schema !== "hardkas.silver.compile" &&
-        artifact.schema !== "hardkas.silver.test" &&
-        artifact.schema !== "hardkas.silver.spendPlan"
+        artifact.schema !== HardkasSchemas.SilverCompile &&
+        artifact.schema !== HardkasSchemas.SilverTest &&
+        artifact.schema !== HardkasSchemas.SilverSpendPlan
       ) {
         getOutput().error(
           pc.red(`Error: Expected a SilverScript schema, got ${artifact.schema}`)
@@ -291,8 +292,8 @@ export function registerSilverCommand(program: Command) {
 
       getOutput().writeLine(pc.bold("\nSilverScript Artifact Inspector"));
       if (
-        artifact.schema === "hardkas.silver.compile" ||
-        artifact.schema === "hardkas.silver.test"
+        artifact.schema === HardkasSchemas.SilverCompile ||
+        artifact.schema === HardkasSchemas.SilverTest
       ) {
         getOutput().writeLine(`  Source Path:   ${artifact.sourcePath}`);
         getOutput().writeLine(`  Source Hash:   ${pc.cyan(artifact.sourceHash)}`);
@@ -310,7 +311,7 @@ export function registerSilverCommand(program: Command) {
           const size = Buffer.from(artifact.compiledScriptHex, "hex").length;
           getOutput().writeLine(`  Script Size:   ${size} bytes`);
         }
-      } else if (artifact.schema === "hardkas.silver.spendPlan") {
+      } else if (artifact.schema === HardkasSchemas.SilverSpendPlan) {
         getOutput().writeLine(`  Schema:        ${artifact.schema}`);
         getOutput().writeLine(`  Compiled Hash: ${pc.cyan(artifact.compiledScriptHash)}`);
         getOutput().writeLine(`  Locking Hash:  ${pc.cyan(artifact.scriptLockingHash)}`);
@@ -477,7 +478,7 @@ export function registerSilverCommand(program: Command) {
       }
 
       const testArtifact = {
-        schema: "hardkas.silver.test",
+        schema: HardkasSchemas.SilverTest,
         hardkasVersion: HARDKAS_VERSION,
         version: "1.0.0-alpha",
         hashVersion: 4,

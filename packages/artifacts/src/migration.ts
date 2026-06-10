@@ -2,6 +2,7 @@ import { calculateContentHash, CURRENT_HASH_VERSION } from "./canonical.js";
 import { ARTIFACT_VERSION } from "./schemas.js";
 import { sortUtxosByOutpoint } from "./verify.js";
 import { HARDKAS_VERSION } from "./constants.js";
+import { HardkasSchemas } from "@hardkas/core";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -121,7 +122,7 @@ registerMigrationStep({
     // 1. Strip .v1 suffix from schema names
     if (typeof migrated.schema === "string" && migrated.schema.endsWith(".v1")) {
       // Preserve workflow schema as-is (hardkas.workflow.v1 is the canonical name)
-      if (migrated.schema !== "hardkas.workflow.v1") {
+      if (migrated.schema !== HardkasSchemas.WorkflowV1) {
         migrated.schema = migrated.schema.replace(/\.v1$/, "");
       }
     }
@@ -130,13 +131,13 @@ registerMigrationStep({
     migrated.version = ARTIFACT_VERSION;
 
     // 3. Schema-specific field renames
-    if (migrated.schema === "hardkas.txPlan" && migrated.selectedUtxos !== undefined) {
+    if (migrated.schema === HardkasSchemas.TxPlan && migrated.selectedUtxos !== undefined) {
       migrated.inputs = migrated.selectedUtxos;
       delete migrated.selectedUtxos;
     }
 
     // 4. Sort UTXOs deterministically for snapshot artifacts
-    if (migrated.schema === "hardkas.snapshot" && Array.isArray(migrated.utxos)) {
+    if (migrated.schema === HardkasSchemas.Snapshot && Array.isArray(migrated.utxos)) {
       migrated.utxos = sortUtxosByOutpoint(migrated.utxos as unknown[]);
     }
 
@@ -413,7 +414,7 @@ export function generateMigrationReceipt(
     calculateContentHash(newArtifact, CURRENT_HASH_VERSION);
 
   const receipt: any = {
-    schema: "hardkas.migrationReceipt.v1",
+    schema: HardkasSchemas.MigrationReceiptV1,
     hardkasVersion: HARDKAS_VERSION,
     version: ARTIFACT_VERSION,
     hashVersion: CURRENT_HASH_VERSION,

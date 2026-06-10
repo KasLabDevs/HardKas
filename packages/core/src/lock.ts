@@ -1,3 +1,4 @@
+import { HardkasSchemas } from "./registry.js";
 import fs from "node:fs";
 import path from "node:path";
 import os from "node:os";
@@ -8,7 +9,7 @@ import { EnvironmentTelemetry } from "./telemetry.js";
  * HardKAS Lock Metadata schema v1
  */
 export interface LockMetadata {
-  schema: "hardkas.lock.v1";
+  schema: typeof HardkasSchemas.LockV1;
   name: string;
   pid: number;
   command: string;
@@ -67,7 +68,7 @@ export async function acquireLock(args: AcquireLockArgs): Promise<LockHandle> {
     try {
       // 1. Attempt atomic creation
       const metadata: LockMetadata = {
-        schema: "hardkas.lock.v1",
+        schema: HardkasSchemas.LockV1,
         name: args.name,
         pid: process.pid,
         command: args.command || process.argv.join(" "),

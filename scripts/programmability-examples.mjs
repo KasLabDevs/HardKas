@@ -1,5 +1,6 @@
 import fs from "node:fs";
 import path from "node:path";
+import { HardkasSchemas } from "@hardkas/artifacts";
 
 const root = process.cwd();
 const examples = [
@@ -23,7 +24,7 @@ for (const example of examples) {
 
 const result = {
   ok: missing.length === 0,
-  schema: "hardkas.programmability.examplesCheck.v1",
+  schema : HardkasSchemas.ProgrammabilityExamplesCheckV1,
   status:
     missing.length === 0
       ? "PROGRAMMABILITY_APPS_READY"

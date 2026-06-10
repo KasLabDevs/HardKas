@@ -1,5 +1,6 @@
 import fs from "node:fs";
 import path from "node:path";
+import { HardkasSchemas } from "@hardkas/artifacts";
 
 const root = process.cwd();
 const templates = [
@@ -20,7 +21,7 @@ for (const template of templates) {
 
 const result = {
   ok: missing.length === 0,
-  schema: "hardkas.programmability.templatesCheck.v1",
+  schema : HardkasSchemas.ProgrammabilityTemplatesCheckV1,
   status:
     missing.length === 0
       ? "PROGRAMMABILITY_TEMPLATES_READY"

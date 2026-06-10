@@ -2,6 +2,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { calculateContentHash } from "@hardkas/artifacts";
 import type { Hardkas } from "./index.js";
+import { HardkasSchemas } from "@hardkas/artifacts";
 
 export interface CorpusIssue {
   code: string;
@@ -11,7 +12,7 @@ export interface CorpusIssue {
 
 export interface CorpusVerifyResult {
   ok: boolean;
-  schema: "hardkas.toccataCorpus.v1";
+  schema: typeof HardkasSchemas.ToccataCorpusV1;
   path: string;
   summary: {
     happyPathFixtures: number;
@@ -59,7 +60,7 @@ export function verifyToccataCorpus(
   if (opManifest) {
     expectEqual(
       opManifest.schema,
-      "hardkas.toccataGoldenManifest.v1",
+      HardkasSchemas.ToccataGoldenManifestV1,
       issues,
       "OP_TRUE_SCHEMA_INVALID",
       opManifestPath
@@ -69,7 +70,7 @@ export function verifyToccataCorpus(
   if (failureManifest) {
     expectEqual(
       failureManifest.schema,
-      "hardkas.toccataGoldenFailureManifest.v1",
+      HardkasSchemas.ToccataGoldenFailureManifestV1,
       issues,
       "FAILURE_SCHEMA_INVALID",
       failureManifestPath
@@ -102,7 +103,7 @@ export function verifyToccataCorpus(
   if (compareReport) {
     expectEqual(
       compareReport.schema,
-      "hardkas.toccataGoldenCompare.v1",
+      HardkasSchemas.ToccataGoldenCompareV1,
       issues,
       "COMPARE_SCHEMA_INVALID",
       comparePath
@@ -148,7 +149,7 @@ export function verifyToccataCorpus(
       if (!fixture) continue;
       expectEqual(
         fixture.schema,
-        "hardkas.toccataGoldenFailureCase.v1",
+        HardkasSchemas.ToccataGoldenFailureCaseV1,
         issues,
         "FAILURE_CASE_SCHEMA_INVALID",
         filePath
@@ -180,7 +181,7 @@ export function verifyToccataCorpus(
   const ok = issues.length === 0;
   return {
     ok,
-    schema: "hardkas.toccataCorpus.v1",
+    schema: HardkasSchemas.ToccataCorpusV1,
     path: path.relative(workspaceRoot, corpusPath).replace(/\\/g, "/"),
     summary: {
       happyPathFixtures: opManifest ? 1 : 0,

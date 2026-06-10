@@ -8,6 +8,7 @@ import { runTxSign } from "../runners/tx-sign-runner.js";
 import { runTxSend } from "../runners/tx-send-runner.js";
 import { runTxFlow } from "../runners/tx-flow.js";
 import { runTxReceipt } from "../runners/tx-receipt-runner.js";
+import { HardkasSchemas } from "@hardkas/artifacts";
 
 export function registerTxCommands(program: Command) {
   const tx = program.command("tx").description("L1 Transaction commands");
@@ -197,7 +198,7 @@ export function registerTxCommands(program: Command) {
 
               const raw = (await readArtifact(planPath)) as any;
               let planArtifact;
-              if (raw && raw.schema === "hardkas.signedTx") {
+              if (raw && raw.schema === HardkasSchemas.SignedTx) {
                 planArtifact = await readSignedTxArtifact(planPath);
               } else {
                 planArtifact = await readTxPlanArtifact(planPath);
@@ -252,7 +253,7 @@ export function registerTxCommands(program: Command) {
         const raw = (await readArtifact(artifactPath)) as any;
         if (
           !raw ||
-          (raw.schema !== "hardkas.signedTx" && raw.schema !== "hardkas.txPlan")
+          (raw.schema !== HardkasSchemas.SignedTx && raw.schema !== HardkasSchemas.TxPlan)
         ) {
           throw new Error("Artifact is not a transaction plan or signed transaction.");
         }
@@ -271,7 +272,7 @@ export function registerTxCommands(program: Command) {
         getOutput().writeLine(`File:         ${artifactPath}`);
         getOutput().writeLine(`Schema:       ${raw.schema}`);
 
-        if (raw.schema === "hardkas.txPlan") {
+        if (raw.schema === HardkasSchemas.TxPlan) {
           getOutput().writeLine(`Status:       PLANNED`);
           getOutput().writeLine(`Plan ID:      ${raw.planId}`);
           getOutput().writeLine(`From:         ${raw.from.address}`);

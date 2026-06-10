@@ -1,5 +1,6 @@
 import fs from "node:fs";
 import path from "node:path";
+import { HardkasSchemas } from "@hardkas/artifacts";
 
 const root = process.cwd();
 const required = [
@@ -51,7 +52,7 @@ for (const file of listFiles(scanRoots)) {
 const ok = missing.length === 0 && forbiddenMatches.length === 0;
 const result = {
   ok,
-  schema: "hardkas.programmability.surfaceCheck.v1",
+  schema : HardkasSchemas.ProgrammabilitySurfaceCheckV1,
   status: ok ? "PROGRAMMABILITY_SURFACE_READY" : "PROGRAMMABILITY_SURFACE_INVALID",
   missing,
   forbiddenMatches,

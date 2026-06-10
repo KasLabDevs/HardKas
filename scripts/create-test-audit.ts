@@ -4,12 +4,13 @@ import {
 } from "../packages/artifacts/dist/index.js";
 import fs from "node:fs";
 import path from "node:path";
+import { HardkasSchemas } from "@hardkas/artifacts";
 
 const testDir = "test-audit";
 if (!fs.existsSync(testDir)) fs.mkdirSync(testDir);
 
 const createArtifact = (planId: string) => ({
-  schema: "hardkas.txPlan.v2",
+  schema: HardkasSchemas.TxPlanV2,
   hardkasVersion: "0.5.4-alpha",
   version: ARTIFACT_V2_VERSION,
   createdAt: new Date().toISOString(),

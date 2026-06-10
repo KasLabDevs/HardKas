@@ -2,6 +2,7 @@ import pc from "picocolors";
 import { UI, handleError } from "../ui.js";
 import path from "node:path";
 import fs from "node:fs";
+import { HardkasSchemas } from "@hardkas/artifacts";
 
 export async function runDevServer(options: {
   port: string;
@@ -102,7 +103,7 @@ export async function runDevServer(options: {
 
     if (options.json) {
       UI.writeJson({
-        schema: "hardkas.devServer.v1",
+        schema: HardkasSchemas.DevServerV1,
         status: "running",
         url: `http://${host}:${port}`,
         token,

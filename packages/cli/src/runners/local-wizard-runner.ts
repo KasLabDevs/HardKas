@@ -1,9 +1,10 @@
 import pc from "picocolors";
 import { UI, handleError } from "../ui.js";
 import { loadHardkasConfig } from "@hardkas/config";
+import { HardkasSchemas } from "@hardkas/artifacts";
 
 export interface LocalWizardResult {
-  schema: "hardkas.localWizard.v1";
+  schema: typeof HardkasSchemas.LocalWizardV1;
   step: string;
   status: "success" | "pending" | "failed";
   suggestion?: string;
@@ -34,7 +35,7 @@ export async function runLocalWizard(options: {
     }
 
     const result: LocalWizardResult = {
-      schema: "hardkas.localWizard.v1",
+      schema: HardkasSchemas.LocalWizardV1,
       step: "preflight",
       status: "pending"
     };

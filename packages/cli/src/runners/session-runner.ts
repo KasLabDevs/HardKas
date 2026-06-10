@@ -1,6 +1,7 @@
 import pc from "picocolors";
 import { UI, handleError } from "../ui.js";
 import { loadHardkasConfig } from "@hardkas/config";
+import { HardkasSchemas } from "@hardkas/artifacts";
 
 export async function runSessionCreate(
   name: string,
@@ -16,7 +17,7 @@ export async function runSessionCreate(
     const l2Address = await resolveHardkasAccountAddress(options.l2, config.config);
 
     await createSession({
-      schema: "hardkas.session.v1",
+      schema: HardkasSchemas.SessionV1,
       name,
       l1: { wallet: options.l1, address: l1Address },
       l2: { account: options.l2, address: l2Address },

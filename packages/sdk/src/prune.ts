@@ -10,6 +10,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { createRequire } from "node:module";
+import { HardkasSchemas } from "@hardkas/artifacts";
 const require = createRequire(import.meta.url);
 
 export interface PruneOptions {
@@ -26,7 +27,7 @@ export interface PruneOptions {
 }
 
 export interface PruneResult {
-  schema: "hardkas.pruneReport.v1";
+  schema: typeof HardkasSchemas.PruneReportV1;
   ok: boolean;
   dryRun: boolean;
   artifactsPruned: number;
@@ -157,7 +158,7 @@ export async function identifyPruneCandidates(
  */
 export async function pruneTraces(db: any, options: PruneOptions): Promise<PruneResult> {
   const result: PruneResult = {
-    schema: "hardkas.pruneReport.v1",
+    schema: HardkasSchemas.PruneReportV1,
     ok: true,
     dryRun: options.dryRun ?? false,
     artifactsPruned: 0,

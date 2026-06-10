@@ -2,6 +2,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { calculateContentHash } from "@hardkas/artifacts";
 import type { Hardkas } from "./index.js";
+import { HardkasSchemas } from "@hardkas/artifacts";
 
 export type ZkProofSystem = "groth16" | "risc0" | "unknown";
 
@@ -12,7 +13,7 @@ export interface ZkIssue {
 }
 
 export interface ZkCapabilities {
-  schema: "hardkas.zkCapabilities.v1";
+  schema: typeof HardkasSchemas.ZkCapabilitiesV1;
   experimental: true;
   proofSystems: {
     groth16: {
@@ -38,7 +39,7 @@ export interface ZkCapabilities {
 
 export interface ZkProofInspectResult {
   ok: boolean;
-  schema: "hardkas.zkProofInspect.v1";
+  schema: typeof HardkasSchemas.ZkProofInspectV1;
   path: string;
   proofSystem: ZkProofSystem;
   status: "ZK_PROOF_INSPECTED" | "ZK_PROOF_INSPECT_FAILED";
@@ -55,7 +56,7 @@ export interface ZkProofInspectResult {
 
 export interface ZkProofVerifyResult {
   ok: boolean;
-  schema: "hardkas.zkProofVerification.v1";
+  schema: typeof HardkasSchemas.ZkProofVerificationV1;
   path: string;
   proofSystem: ZkProofSystem;
   status:
@@ -76,7 +77,7 @@ export interface ZkProofVerifyResult {
 
 export interface ZkCorpusVerifyResult {
   ok: boolean;
-  schema: "hardkas.zkCorpusVerification.v1";
+  schema: typeof HardkasSchemas.ZkCorpusVerificationV1;
   path: string;
   experimental: true;
   status: "ZK_CORPUS_VERIFICATION_PASS" | "ZK_CORPUS_VERIFICATION_FAIL";
@@ -130,7 +131,7 @@ export class HardkasZk {
 
 export function createZkCapabilities(): ZkCapabilities {
   return {
-    schema: "hardkas.zkCapabilities.v1",
+    schema: HardkasSchemas.ZkCapabilitiesV1,
     experimental: true,
     proofSystems: {
       groth16: {
@@ -199,7 +200,7 @@ export async function inspectZkProof(
 
   return {
     ok,
-    schema: "hardkas.zkProofInspect.v1",
+    schema: HardkasSchemas.ZkProofInspectV1,
     path: path.relative(workspaceRoot, resolved).replace(/\\/g, "/"),
     proofSystem,
     status: ok ? "ZK_PROOF_INSPECTED" : "ZK_PROOF_INSPECT_FAILED",
@@ -229,7 +230,7 @@ export async function verifyZkProofLocal(
   if (proofSystem === "risc0") {
     return {
       ok: false,
-      schema: "hardkas.zkProofVerification.v1",
+      schema: HardkasSchemas.ZkProofVerificationV1,
       path: path.relative(workspaceRoot, resolved).replace(/\\/g, "/"),
       proofSystem,
       status: "RISC0_LOCAL_VERIFICATION_NOT_IMPLEMENTED",
@@ -268,7 +269,7 @@ export async function verifyZkProofLocal(
   const ok = issues.length === 0;
   return {
     ok,
-    schema: "hardkas.zkProofVerification.v1",
+    schema: HardkasSchemas.ZkProofVerificationV1,
     path: path.relative(workspaceRoot, resolved).replace(/\\/g, "/"),
     proofSystem,
     status: ok ? "ZK_FIXTURE_COHERENCE_PASS" : "ZK_FIXTURE_COHERENCE_FAIL",
@@ -298,7 +299,7 @@ export async function verifyZkCorpus(
   if (manifest) {
     expectEqual(
       manifest.schema,
-      "hardkas.zkCorpus.v1",
+      HardkasSchemas.ZkCorpusV1,
       issues,
       "ZK_CORPUS_MANIFEST_INVALID",
       manifestPath
@@ -397,7 +398,7 @@ export async function verifyZkCorpus(
   const ok = issues.length === 0;
   return {
     ok,
-    schema: "hardkas.zkCorpusVerification.v1",
+    schema: HardkasSchemas.ZkCorpusVerificationV1,
     path: path.relative(workspaceRoot, corpusPath).replace(/\\/g, "/"),
     experimental: true,
     status: ok ? "ZK_CORPUS_VERIFICATION_PASS" : "ZK_CORPUS_VERIFICATION_FAIL",
@@ -535,7 +536,7 @@ function unsupportedVerification(
 ): ZkProofVerifyResult {
   return {
     ok: false,
-    schema: "hardkas.zkProofVerification.v1",
+    schema: HardkasSchemas.ZkProofVerificationV1,
     path: path.relative(workspaceRoot, resolved).replace(/\\/g, "/"),
     proofSystem,
     status: "ZK_VERIFIER_UNSUPPORTED",

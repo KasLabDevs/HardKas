@@ -7,6 +7,7 @@ import pc from "picocolors";
 import { UI } from "../ui.js";
 import { getAllTortureBuckets, LcgPrng, TortureCaseResult } from "@hardkas/testing";
 import { EnvironmentTelemetry, AnomalyEvent, AppendCoordinator } from "@hardkas/core";
+import { HardkasSchemas } from "@hardkas/artifacts";
 
 export interface TortureMatrixOptions {
   iterations: number;
@@ -325,7 +326,7 @@ export async function runTortureMatrix(options: TortureMatrixOptions) {
       .slice(0, 32);
 
     const telemetryEvent = {
-      schemaVersion: "hardkas.telemetry.v1",
+      schemaVersion: HardkasSchemas.TelemetryV1,
       eventId,
       eventHash,
       timestamp,
@@ -469,7 +470,7 @@ export async function runTortureMatrix(options: TortureMatrixOptions) {
     }
 
     const finalReport = {
-      schemaVersion: "hardkas.tortureReport.v1",
+      schemaVersion: HardkasSchemas.TortureReportV1,
       seed,
       iterations,
       profile: options.profile || null,

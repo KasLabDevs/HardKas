@@ -1,5 +1,6 @@
 ﻿import pc from "picocolors";
 import { UI, handleError } from "../ui.js";
+import { HardkasSchemas } from "@hardkas/artifacts";
 
 export interface KaspaDoctorCheck {
   name: string;
@@ -8,7 +9,7 @@ export interface KaspaDoctorCheck {
 }
 
 export interface KaspaDoctorResult {
-  schema: "hardkas.kaspaDoctor.v1";
+  schema: typeof HardkasSchemas.KaspaDoctorV1;
   status: "ready" | "warning" | "failed";
   checks: KaspaDoctorCheck[];
 }
@@ -101,7 +102,7 @@ export async function runKaspaDoctor(options: { rpcUrl: string; json: boolean })
 
     if (options.json) {
       const result: KaspaDoctorResult = {
-        schema: "hardkas.kaspaDoctor.v1",
+        schema: HardkasSchemas.KaspaDoctorV1,
         status: finalStatus,
         checks
       };

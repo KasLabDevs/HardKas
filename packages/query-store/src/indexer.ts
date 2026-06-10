@@ -1,5 +1,6 @@
 import fs from "node:fs";
 import path from "node:path";
+import { HardkasSchemas } from "@hardkas/artifacts";
 import { createRequire } from "node:module";
 const require = createRequire(import.meta.url);
 const { DatabaseSync } = require("node:sqlite");
@@ -26,7 +27,7 @@ export interface SyncStats {
 }
 
 export interface SyncResult {
-  schema: "hardkas.queryRebuild.v1";
+  schema: typeof HardkasSchemas.QueryRebuildV1;
   ok: boolean;
   artifacts: SyncStats;
   events: SyncStats;
@@ -72,7 +73,7 @@ export class HardkasIndexer {
    */
   public async sync(): Promise<SyncResult> {
     const result: SyncResult = {
-      schema: "hardkas.queryRebuild.v1",
+      schema: HardkasSchemas.QueryRebuildV1,
       ok: true,
       artifacts: { scanned: 0, indexed: 0, duplicates: 0, corrupted: 0 },
       events: { scanned: 0, indexed: 0, duplicates: 0, corrupted: 0 },
@@ -143,7 +144,7 @@ export class HardkasIndexer {
    */
   public async syncPaths(paths: string[]): Promise<SyncResult> {
     const result: SyncResult = {
-      schema: "hardkas.queryRebuild.v1",
+      schema: HardkasSchemas.QueryRebuildV1,
       ok: true,
       artifacts: { scanned: 0, indexed: 0, duplicates: 0, corrupted: 0 },
       events: { scanned: 0, indexed: 0, duplicates: 0, corrupted: 0 },
@@ -179,7 +180,7 @@ export class HardkasIndexer {
    */
   public async rebuild(): Promise<SyncResult> {
     const result: SyncResult = {
-      schema: "hardkas.queryRebuild.v1",
+      schema: HardkasSchemas.QueryRebuildV1,
       ok: true,
       artifacts: { scanned: 0, indexed: 0, duplicates: 0, corrupted: 0 },
       events: { scanned: 0, indexed: 0, duplicates: 0, corrupted: 0 },
@@ -297,7 +298,7 @@ export class HardkasIndexer {
         `
       SELECT COUNT(*) as count FROM artifacts a
       LEFT JOIN artifacts target ON target.tx_id = json_extract(a.raw_json, '$.payload.txId')
-      WHERE a.schema = 'hardkas.replayReport.v1'
+      WHERE a.schema = HardkasSchemas.ReplayReportV1
       AND target.artifact_id IS NULL
     `
       )

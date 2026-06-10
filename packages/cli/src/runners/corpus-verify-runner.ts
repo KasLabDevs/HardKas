@@ -3,6 +3,7 @@ import fs from "node:fs";
 import path from "node:path";
 import pc from "picocolors";
 import { calculateContentHash } from "@hardkas/artifacts";
+import { HardkasSchemas } from "@hardkas/artifacts";
 
 export interface CorpusVerifyOptions {
   path: string;
@@ -18,7 +19,7 @@ interface CorpusIssue {
 
 interface CorpusVerifyResult {
   ok: boolean;
-  schema: "hardkas.toccataCorpus.v1";
+  schema: typeof HardkasSchemas.ToccataCorpusV1;
   path: string;
   summary: {
     happyPathFixtures: number;
@@ -58,7 +59,7 @@ export async function runCorpusVerify(
   if (opManifest) {
     expectEqual(
       opManifest.schema,
-      "hardkas.toccataGoldenManifest.v1",
+      HardkasSchemas.ToccataGoldenManifestV1,
       issues,
       "OP_TRUE_SCHEMA_INVALID",
       opManifestPath
@@ -69,7 +70,7 @@ export async function runCorpusVerify(
   if (failureManifest) {
     expectEqual(
       failureManifest.schema,
-      "hardkas.toccataGoldenFailureManifest.v1",
+      HardkasSchemas.ToccataGoldenFailureManifestV1,
       issues,
       "FAILURE_SCHEMA_INVALID",
       failureManifestPath
@@ -102,7 +103,7 @@ export async function runCorpusVerify(
   if (compareReport) {
     expectEqual(
       compareReport.schema,
-      "hardkas.toccataGoldenCompare.v1",
+      HardkasSchemas.ToccataGoldenCompareV1,
       issues,
       "COMPARE_SCHEMA_INVALID",
       comparePath
@@ -148,7 +149,7 @@ export async function runCorpusVerify(
       if (!fixture) continue;
       expectEqual(
         fixture.schema,
-        "hardkas.toccataGoldenFailureCase.v1",
+        HardkasSchemas.ToccataGoldenFailureCaseV1,
         issues,
         "FAILURE_CASE_SCHEMA_INVALID",
         filePath
@@ -181,7 +182,7 @@ export async function runCorpusVerify(
   const ok = issues.length === 0;
   const result: CorpusVerifyResult = {
     ok,
-    schema: "hardkas.toccataCorpus.v1",
+    schema: HardkasSchemas.ToccataCorpusV1,
     path: path.relative(workspaceRoot, corpusPath).replace(/\\/g, "/"),
     summary: {
       happyPathFixtures: opManifest ? 1 : 0,

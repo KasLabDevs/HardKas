@@ -3,6 +3,7 @@ import { UI, handleError } from "../ui.js";
 import { readArtifact } from "@hardkas/artifacts";
 import fs from "fs";
 import path from "path";
+import { HardkasSchemas } from "@hardkas/artifacts";
 
 export function registerWhyCommand(program: Command) {
   program
@@ -65,12 +66,12 @@ export function registerWhyCommand(program: Command) {
             );
 
             let role = "Unknown";
-            if (artifact.schema?.startsWith("hardkas.txPlan")) role = "Transaction Plan";
-            if (artifact.schema?.startsWith("hardkas.signedTx"))
+            if (artifact.schema?.startsWith(HardkasSchemas.TxPlan)) role = "Transaction Plan";
+            if (artifact.schema?.startsWith(HardkasSchemas.SignedTx))
               role = "Signed Transaction";
-            if (artifact.schema?.startsWith("hardkas.txReceipt"))
+            if (artifact.schema?.startsWith(HardkasSchemas.TxReceipt))
               role = "Transaction Receipt";
-            if (artifact.schema?.startsWith("hardkas.replay"))
+            if (artifact.schema?.startsWith(HardkasSchemas.ReplayV1))
               role = "Replay Verification";
 
             const node: any = {
@@ -83,14 +84,14 @@ export function registerWhyCommand(program: Command) {
             };
 
             // Extract useful details based on schema
-            if (artifact.schema?.startsWith("hardkas.signedTx") && artifact.signatures) {
+            if (artifact.schema?.startsWith(HardkasSchemas.SignedTx) && artifact.signatures) {
               node.details = `Signed by ${Object.keys(artifact.signatures).join(", ")}`;
-            } else if (artifact.schema?.startsWith("hardkas.txReceipt")) {
+            } else if (artifact.schema?.startsWith(HardkasSchemas.TxReceipt)) {
               node.details = `Included in block ${artifact.blockHash || "unknown"}`;
-            } else if (artifact.schema?.startsWith("hardkas.txPlan")) {
+            } else if (artifact.schema?.startsWith(HardkasSchemas.TxPlan)) {
               const outCount = artifact.transaction?.outputs?.length || 0;
               node.details = `Transfers to ${outCount} outputs`;
-            } else if (artifact.schema?.startsWith("hardkas.replay")) {
+            } else if (artifact.schema?.startsWith(HardkasSchemas.ReplayV1)) {
               node.details = `Verified: ${artifact.status}`;
             }
 
@@ -146,13 +147,13 @@ export function registerWhyCommand(program: Command) {
           const nextSteps = [];
           const targetNode = chain[0]; // The one requested
 
-          if (targetNode.schema === "hardkas.txPlan.v1") {
+          if (targetNode.schema === HardkasSchemas.TxPlanV1) {
             nextSteps.push("hardkas dev tx sign " + targetId);
-          } else if (targetNode.schema === "hardkas.signedTx.v1") {
+          } else if (targetNode.schema === HardkasSchemas.SignedTxV1) {
             nextSteps.push("hardkas dev tx send " + targetId);
-          } else if (targetNode.schema === "hardkas.txReceipt.v1") {
+          } else if (targetNode.schema === HardkasSchemas.TxReceiptV1) {
             nextSteps.push("hardkas dev last --replay");
-          } else if (targetNode.schema === "hardkas.replay.v1") {
+          } else if (targetNode.schema === HardkasSchemas.ReplayV1) {
             nextSteps.push("hardkas status");
           }
 
