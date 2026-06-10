@@ -282,8 +282,8 @@ export class SqliteQueryBackend implements QueryBackend {
 
   async findTraces(filters?: { txId?: string }): Promise<ArtifactDocument[]> {
     const db = this.store.getDatabase();
-    let query = "SELECT * FROM artifacts WHERE schema = HardkasSchemas.TxTrace";
-    const params: any[] = [];
+    let query = "SELECT * FROM artifacts WHERE schema = ?";
+    const params: any[] = [HardkasSchemas.TxTrace];
 
     if (filters?.txId) {
       query += " AND tx_id = ?";

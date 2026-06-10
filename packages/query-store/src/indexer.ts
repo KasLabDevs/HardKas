@@ -298,11 +298,11 @@ export class HardkasIndexer {
         `
       SELECT COUNT(*) as count FROM artifacts a
       LEFT JOIN artifacts target ON target.tx_id = json_extract(a.raw_json, '$.payload.txId')
-      WHERE a.schema = HardkasSchemas.ReplayReportV1
+      WHERE a.schema = ?
       AND target.artifact_id IS NULL
     `
       )
-      .get() as { count: number };
+      .get(HardkasSchemas.ReplayReportV1) as { count: number };
     report.brokenReplayDependencies = brokenReplayDeps.count;
 
     // Also check for corrupted artifacts in the database
