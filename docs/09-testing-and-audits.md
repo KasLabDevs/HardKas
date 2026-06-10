@@ -1,6 +1,6 @@
 # Testing And Audits
 
-HardKas makes local-first reliability and safety claims. The 0.9.0-alpha line should be judged by whether a developer can initialize a workspace, create local artifacts, replay them, query them, and detect obvious corruption without touching mainnet.
+HardKas makes local-first reliability and safety claims. The 0.9.1-alpha line should be judged by whether a developer can initialize a workspace, create local artifacts, replay them, query them, and detect obvious corruption without touching mainnet.
 
 ## 1. Local Cryptographic Audit
 
@@ -46,3 +46,22 @@ The SDK should be validated against the same happy path as the CLI:
 6. Rebuild/sync the query store.
 
 Mainnet and real-node tests are later-stage hardening work, not the default release gate.
+
+## 5. Toccata Gauntlet (`pnpm gauntlet:toccata`)
+
+The Toccata gauntlet is the live Docker simnet gate. It requires a running `hardkas-kaspad-simnet` container at `ws://127.0.0.1:18210`. It validates the full silver deploy/spend lifecycle, simulator-vs-Docker artifact coherence, and the mainnet guard.
+
+### Toccata gauntlet troubleshooting
+
+If funding appears stuck or transactions become orphaned:
+
+1. **Check node sync state** — `hardkas rpc health --provider rpc`. `isSynced: false` alone is not a blocker on a fresh chain (the kaspad simnet always reports this without peers); check virtual DAA instead.
+2. **Check virtual DAA progress** — use `getBlockDagInfo().virtualDaaScore` (not `getServerInfo()`, which returns the field as a BigInt that JSON.stringify cannot serialize). If the virtual DAA is 0 after mining, the virtual chain is frozen; reset the volume.
+3. **Ensure coinbase maturity is satisfied** — the SDK default `coinbaseMaturity` is `1000n` blocks of DAA (`packages/tx-builder/src/service.ts`). `tx plan` will report `No UTXOs found` if `virtualDaaScore - oldest_utxo_blockDaaScore < 1000`, even when `getBalanceByAddress` shows balance. Mine enough blocks first.
+4. **If the simnet volume is stale or frozen** — stop the kaspad container, delete `<kaspad-volume>/.rusty-kaspa`, and restart from genesis. A restarted node with thousands of accumulated blocks can freeze the virtual UTXO set; new blocks go into the UTXO index but orphan when spent.
+5. **Re-run gauntlet after mining beyond `coinbaseMaturity`** — confirm `getBlockDagInfo().virtualDaaScore >= 1001` before running. Starting a stratum-bridge (`hardkas/stratum-bridge:v2.0.0-local-simnet-unsynced`) with `--internal-cpu-miner-address <fixture>` for ~60 seconds reliably reaches sufficient DAA.
+
+### Known limitations
+
+- `isSynced: false` is the permanent state of a standalone kaspad simnet with no peers. It does not block operation on a fresh chain with `--enable-unsynced-mining`.
+- The simulator/Docker comparison reports `PARTIAL_VM_SIMULATION` as an expected known limitation; this reflects honest artifact-coherence checking only, not consensus or VM equivalence.

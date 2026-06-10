@@ -1,0 +1,5 @@
+{
+  "schema": "hardkas.zk.risc0.imageId.v1",
+  "imageId": "0x1111111111111111111111111111111111111111111111111111111111111111",
+  "note": "Experimental inspect-only image id fixture."
+}

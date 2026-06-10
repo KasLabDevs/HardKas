@@ -1,6 +1,6 @@
 # Version Guarantees
 
-HardKAS is currently in the `0.9.0-alpha` release cycle.
+HardKAS is currently in the `0.9.1-alpha` release cycle.
 
 The project is stable enough for local development workflows, but it is still an
 alpha. APIs, command names, and advanced integrations may change while the
@@ -17,7 +17,7 @@ These boundaries should change only with intentional release notes:
 - **Local simulated state:** `.hardkas/localnet.json` as the local UTXO state
   boundary.
 - **Core transaction lifecycle:** `plan -> inspect/verify -> sign -> send/simulate
-  -> receipt -> replay`.
+-> receipt -> replay`.
 - **Toccata v2 localnet baseline:** Docker simnet funding, standard transaction
   lifecycle, Silver OP_TRUE deploy/spend, and corpus verification through
   `pnpm gauntlet:toccata`.
@@ -40,9 +40,9 @@ These systems exist and are useful, but are still being hardened:
 These surfaces may change quickly:
 
 - Mainnet-related signing flags and RPC paths. Mainnet is blocked by policy for
-  the 0.9.0-alpha release claim.
+  the 0.9.1-alpha release claim.
 - L2, bridge, MetaMask, KasWare, and sandbox integrations.
 - Chaos, torture, and certification tooling.
 - SilverScript/Toccata behavior beyond the verified OP_TRUE localnet baseline.
 
-Mainnet is not part of the 0.9.0-alpha happy path.
+Mainnet is not part of the 0.9.1-alpha happy path.

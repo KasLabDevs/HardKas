@@ -1,3 +1,4 @@
+import { HardkasSchemas } from "./registry.js";
 import fs from "node:fs";
 import path from "node:path";
 import crypto from "node:crypto";
@@ -117,7 +118,7 @@ export class TelemetryManager {
       .slice(0, 32);
 
     const event = {
-      schemaVersion: "hardkas.telemetry.v1",
+      schemaVersion: HardkasSchemas.TelemetryV1,
       eventId,
       eventHash,
       timestamp: nowStr,

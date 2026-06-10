@@ -1,4 +1,12 @@
-import { TxPlanArtifact, SignedTxArtifact, ExternalHardkasSigner, calculateContentHash, HARDKAS_VERSION, ARTIFACT_VERSION, CURRENT_HASH_VERSION } from "@hardkas/artifacts";
+import {
+  TxPlanArtifact,
+  SignedTxArtifact,
+  ExternalHardkasSigner,
+  calculateContentHash,
+  HARDKAS_VERSION,
+  ARTIFACT_VERSION,
+  CURRENT_HASH_VERSION
+} from "@hardkas/artifacts";
 
 function toHex(arr: Uint8Array): string {
   return Buffer.from(arr).toString("hex");
@@ -11,7 +19,7 @@ function parseWasmTxToRpc(wasmTxStr: string): any {
   }
   const txInner = parsed.tx ? parsed.tx.inner : parsed.inner;
   if (!txInner) throw new Error("Could not find inner tx data");
-  
+
   return {
     version: txInner.version || 0,
     inputs: (txInner.inputs || []).map((i: any) => ({
@@ -45,7 +53,8 @@ function parseWasmTxToRpc(wasmTxStr: string): any {
 export class HardkasFixtureSigner implements ExternalHardkasSigner {
   private networkId: string;
   // A deterministic, known private key exclusively for Docker tests.
-  private readonly FIXTURE_PK = "b7e151628aed2a6abf7158809cf4f3c762e7160f38b4da56a784d9045190cfef";
+  private readonly FIXTURE_PK =
+    "b7e151628aed2a6abf7158809cf4f3c762e7160f38b4da56a784d9045190cfef";
 
   constructor(networkId: string = "simnet") {
     this.networkId = networkId;
@@ -59,7 +68,9 @@ export class HardkasFixtureSigner implements ExternalHardkasSigner {
       // @ts-ignore
       return await import("kaspa-wasm");
     } catch (e: any) {
-      const err = new Error("SIGNER_BACKEND_UNAVAILABLE: Official Kaspa WASM backend is required to sign transactions.\nInstall it via: npm install kaspa-wasm");
+      const err = new Error(
+        "SIGNER_BACKEND_UNAVAILABLE: Official Kaspa WASM backend is required to sign transactions.\nInstall it via: npm install kaspa-wasm"
+      );
       (err as any).code = "SIGNER_BACKEND_UNAVAILABLE";
       throw err;
     }
@@ -85,7 +96,9 @@ export class HardkasFixtureSigner implements ExternalHardkasSigner {
 
       const spk = (u as { scriptPublicKey?: string }).scriptPublicKey;
       if (!spk) {
-        throw new Error("UTXO is missing scriptPublicKey. Real signing flows must never fabricate cryptographic state.");
+        throw new Error(
+          "UTXO is missing scriptPublicKey. Real signing flows must never fabricate cryptographic state."
+        );
       }
 
       return {
@@ -113,9 +126,9 @@ export class HardkasFixtureSigner implements ExternalHardkasSigner {
 
     let changeAddress;
     if ((plan as any).change && (plan as any).change.address) {
-       changeAddress = new kaspa.Address((plan as any).change.address);
+      changeAddress = new kaspa.Address((plan as any).change.address);
     } else {
-       changeAddress = new kaspa.Address(plan.from.address); // fallback to sender
+      changeAddress = new kaspa.Address(plan.from.address); // fallback to sender
     }
 
     const priorityFee = BigInt(plan.estimatedFeeSompi || "0");
@@ -165,9 +178,7 @@ export class HardkasFixtureSigner implements ExternalHardkasSigner {
       ],
       lineage: {
         artifactId: "",
-        lineageId:
-          plan.lineage?.lineageId ||
-          plan.contentHash || "0".repeat(64),
+        lineageId: plan.lineage?.lineageId || plan.contentHash || "0".repeat(64),
         parentArtifactId: plan.contentHash || plan.planId,
         rootArtifactId: plan.lineage?.rootArtifactId || plan.contentHash || plan.planId
       }

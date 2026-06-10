@@ -41,8 +41,7 @@ export function registerReplayQueryCommands(queryCmd: Command) {
           printReplayList(result as any);
         }
       } catch (e) {
-        handleError(e);
-        process.exitCode = 1;
+        throw e;
       }
     });
 
@@ -69,8 +68,7 @@ export function registerReplayQueryCommands(queryCmd: Command) {
           printReplaySummary(result as any);
         }
       } catch (e) {
-        handleError(e);
-        process.exitCode = 1;
+        throw e;
       }
     });
 
@@ -98,8 +96,7 @@ export function registerReplayQueryCommands(queryCmd: Command) {
           printDivergences(result as any);
         }
       } catch (e) {
-        handleError(e);
-        process.exitCode = 1;
+        throw e;
       }
     });
 
@@ -128,8 +125,7 @@ export function registerReplayQueryCommands(queryCmd: Command) {
           printInvariants(result as any);
         }
       } catch (e) {
-        handleError(e);
-        process.exitCode = 1;
+        throw e;
       }
     });
 }

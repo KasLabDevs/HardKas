@@ -3,7 +3,7 @@ import { getTelemetry } from "./telemetry.js";
 import fs from "node:fs";
 import path from "node:path";
 
-export const CURRENT_RUNTIME_VERSION = "0.9.0-alpha";
+export const CURRENT_RUNTIME_VERSION = "0.9.1-alpha";
 export const MIN_SUPPORTED_VERSION = "0.5.0-alpha";
 
 export interface MigrationStatus {
@@ -69,7 +69,10 @@ export class MigrationManager {
     if (!status.needsMigration) return;
 
     if (dryRun) {
-      console.log(
+      getTelemetry().logAnomaly(
+        "EXTERNAL_MUTATION",
+        "low",
+        "projection",
         `[DRY-RUN] Would migrate workspace from ${status.currentVersion} to ${CURRENT_RUNTIME_VERSION}`
       );
       return;

@@ -4,6 +4,7 @@ import { loadHardkasConfig } from "@hardkas/config";
 import { writeArtifact } from "@hardkas/artifacts";
 import path from "node:path";
 import fs from "node:fs";
+import { HardkasSchemas } from "@hardkas/artifacts";
 
 export async function runBridgeLocalPlan(options: {
   from?: string;
@@ -17,6 +18,7 @@ export async function runBridgeLocalPlan(options: {
     const { planBridgeEntry, resolveBridgeLocalContext } =
       await import("@hardkas/bridge-local");
     const { MockKaspaRpcClient } = await import("@hardkas/kaspa-rpc");
+    const { parseKasToSompi, formatSompiToKas } = await import("@hardkas/core");
 
     // Resolve context
     const ctx = await resolveBridgeLocalContext({
@@ -26,7 +28,7 @@ export async function runBridgeLocalPlan(options: {
       ...(options.toIgra !== undefined && { toIgra: options.toIgra })
     });
 
-    const amountSompi = BigInt(Math.floor(parseFloat(options.amount) * 1e8));
+    const amountSompi = parseKasToSompi(options.amount);
 
     const rpc = new MockKaspaRpcClient();
     rpc.setUtxos(ctx.l1.address, [
@@ -59,7 +61,7 @@ export async function runBridgeLocalPlan(options: {
       console.log(
         JSON.stringify(
           {
-            schema: "hardkas.bridge.localPlan.v1",
+            schema: HardkasSchemas.BridgeLocalPlanV1,
             session: {
               source: ctx.source,
               name: ctx.sessionName || null
@@ -93,18 +95,18 @@ export async function runBridgeLocalPlan(options: {
     const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
     const artifactPath = path.join(artifactsDir, `${timestamp}-bridge-local-plan.json`);
     const artifactData = {
-      schema: "hardkas.bridge.localPlan.v1",
+      schema: HardkasSchemas.BridgeLocalPlanV1,
       session: { source: ctx.source, name: ctx.sessionName || null },
-        l1: { wallet: ctx.l1.walletName, address: ctx.l1.address },
-        l2: { account: ctx.l2.accountName || null, address: ctx.l2.address },
-        bridge: {
-          mode: ctx.bridgeMode,
-          amount: options.amount,
-          payload: plan.serializedPayload
-        },
-        plan: JSON.parse(
-          JSON.stringify(plan, (k, v) => (typeof v === "bigint" ? v.toString() : v))
-        ),
+      l1: { wallet: ctx.l1.walletName, address: ctx.l1.address },
+      l2: { account: ctx.l2.accountName || null, address: ctx.l2.address },
+      bridge: {
+        mode: ctx.bridgeMode,
+        amount: options.amount,
+        payload: plan.serializedPayload
+      },
+      plan: JSON.parse(
+        JSON.stringify(plan, (k, v) => (typeof v === "bigint" ? v.toString() : v))
+      ),
       createdAt: new Date().toISOString()
     };
     await writeArtifact(artifactPath, artifactData);
@@ -114,7 +116,7 @@ export async function runBridgeLocalPlan(options: {
     console.log(pc.bold("Local Bridge Entry Plan"));
     console.log(pc.dim("----------------------------------------"));
     console.log(
-      `Fee (est):       ${pc.yellow(Number(plan.estimatedFeeSompi) / 1e8)} KAS`
+      `Fee (est):       ${pc.yellow(formatSompiToKas(plan.estimatedFeeSompi))} KAS`
     );
     console.log(`Mass:            ${plan.estimatedMass}`);
     console.log(pc.dim("----------------------------------------\n"));
@@ -136,6 +138,7 @@ export async function runBridgeLocalSimulate(options: {
     const { planBridgeEntry, simulatePrefixMining, resolveBridgeLocalContext } =
       await import("@hardkas/bridge-local");
     const { MockKaspaRpcClient } = await import("@hardkas/kaspa-rpc");
+    const { parseKasToSompi } = await import("@hardkas/core");
 
     // Resolve context
     const bridgeOpts = {
@@ -147,7 +150,7 @@ export async function runBridgeLocalSimulate(options: {
 
     const ctx = await resolveBridgeLocalContext(bridgeOpts);
 
-    const amountSompi = BigInt(Math.floor(parseFloat(options.amount) * 1e8));
+    const amountSompi = parseKasToSompi(options.amount);
 
     const rpc = new MockKaspaRpcClient();
     rpc.setUtxos(ctx.l1.address, [
@@ -191,7 +194,7 @@ export async function runBridgeLocalSimulate(options: {
       console.log(
         JSON.stringify(
           {
-            schema: "hardkas.bridge.localSimulation.v1",
+            schema: HardkasSchemas.BridgeLocalSimulationV1,
             status: "success",
             session: {
               source: ctx.source,
@@ -225,16 +228,16 @@ export async function runBridgeLocalSimulate(options: {
       `${timestamp}-bridge-local-simulate.json`
     );
     const artifactData = {
-      schema: "hardkas.bridge.localSimulation.v1",
+      schema: HardkasSchemas.BridgeLocalSimulationV1,
       status: "success",
-        session: { source: ctx.source, name: ctx.sessionName || null },
-        l1: { wallet: ctx.l1.walletName, address: ctx.l1.address },
-        l2: { account: ctx.l2.accountName || null, address: ctx.l2.address },
-        miningResult,
-        plan: JSON.parse(
-          JSON.stringify(plan, (k, v) => (typeof v === "bigint" ? v.toString() : v))
-        ),
-        createdAt: new Date().toISOString()
+      session: { source: ctx.source, name: ctx.sessionName || null },
+      l1: { wallet: ctx.l1.walletName, address: ctx.l1.address },
+      l2: { account: ctx.l2.accountName || null, address: ctx.l2.address },
+      miningResult,
+      plan: JSON.parse(
+        JSON.stringify(plan, (k, v) => (typeof v === "bigint" ? v.toString() : v))
+      ),
+      createdAt: new Date().toISOString()
     };
     await writeArtifact(artifactPath, artifactData);
 

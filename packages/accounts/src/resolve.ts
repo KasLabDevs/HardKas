@@ -211,7 +211,7 @@ export async function resolveHardkasAccountAddress(
         `Invalid L2 address provided: ${accountOrAddress}. Expected EVM address or account alias.`
       );
     }
-    
+
     // Add runtime address validation, skip for simulated internal accounts
     if (!accountOrAddress.startsWith("kaspa:sim_")) {
       try {
@@ -222,21 +222,29 @@ export async function resolveHardkasAccountAddress(
             new kaspa.Address(accountOrAddress);
           }
         } catch (e) {
-          const err = new Error(`HARDKAS_INVALID_ADDRESS: Invalid Kaspa address format or checksum.`);
+          const err = new Error(
+            `HARDKAS_INVALID_ADDRESS: Invalid Kaspa address format or checksum.`
+          );
           (err as any).code = "HARDKAS_INVALID_ADDRESS";
           throw err;
         }
       } catch (e: any) {
         if (e.code === "HARDKAS_INVALID_ADDRESS") throw e;
-        if (e.code === "ERR_MODULE_NOT_FOUND" || e.message.includes("Cannot find module") || e.message.includes("kaspa-wasm")) {
-          const err = new Error("ADDRESS_VALIDATOR_UNAVAILABLE: The Kaspa address validator backend is not available.");
+        if (
+          e.code === "ERR_MODULE_NOT_FOUND" ||
+          e.message.includes("Cannot find module") ||
+          e.message.includes("kaspa-wasm")
+        ) {
+          const err = new Error(
+            "ADDRESS_VALIDATOR_UNAVAILABLE: The Kaspa address validator backend is not available."
+          );
           (err as any).code = "ADDRESS_VALIDATOR_UNAVAILABLE";
           throw err;
         }
         throw e;
       }
     }
-    
+
     return accountOrAddress;
   }
 

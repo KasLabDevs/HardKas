@@ -17,7 +17,7 @@ describe("Network-Agnostic Artifact Layer: Assumption", () => {
   it("should freeze trust assumptions and verify immutability", async () => {
     const assumption = {
       schema: "hardkas.assumption.v1",
-      hardkasVersion: "0.9.0-alpha",
+      hardkasVersion: "0.9.1-alpha",
       version: "1.0.0-alpha",
       networkId: "igra",
       mode: "real",
@@ -26,8 +26,11 @@ describe("Network-Agnostic Artifact Layer: Assumption", () => {
       bridgePhase: "mpc",
       exitModel: "federated"
     };
-    
-    (assumption as any).contentHash = calculateContentHash(assumption, CURRENT_HASH_VERSION);
+
+    (assumption as any).contentHash = calculateContentHash(
+      assumption,
+      CURRENT_HASH_VERSION
+    );
 
     const { absolutePath, contentHash } = await sdk.artifacts.write(assumption as any);
     expect(absolutePath).toBeDefined();
@@ -39,7 +42,7 @@ describe("Network-Agnostic Artifact Layer: Assumption", () => {
   it("should reject mutations to bridgePhase", async () => {
     const assumption = {
       schema: "hardkas.assumption.v1",
-      hardkasVersion: "0.9.0-alpha",
+      hardkasVersion: "0.9.1-alpha",
       version: "1.0.0-alpha",
       networkId: "igra",
       mode: "real",
@@ -48,8 +51,11 @@ describe("Network-Agnostic Artifact Layer: Assumption", () => {
       bridgePhase: "mpc",
       exitModel: "federated"
     };
-    (assumption as any).contentHash = calculateContentHash(assumption, CURRENT_HASH_VERSION);
-    
+    (assumption as any).contentHash = calculateContentHash(
+      assumption,
+      CURRENT_HASH_VERSION
+    );
+
     const mutated = {
       ...assumption,
       bridgePhase: "zk" // FUTURE STATE INJECTED

@@ -1,15 +1,15 @@
-import fs from 'fs';
-import path from 'path';
+import fs from "fs";
+import path from "path";
 
 const projectRoot = path.resolve(process.cwd());
-const templatePath = path.join(projectRoot, 'plantilla-docs.html');
-const outPath = path.join(projectRoot, 'docs', 'index.html');
+const templatePath = path.join(projectRoot, "plantilla-docs.html");
+const outPath = path.join(projectRoot, "docs", "index.html");
 
-const templateContent = fs.readFileSync(templatePath, 'utf8');
+const templateContent = fs.readFileSync(templatePath, "utf8");
 
-const headSplit = templateContent.indexOf('<body');
-const bodyStart = templateContent.indexOf('>', headSplit) + 1;
-const bodyEnd = templateContent.lastIndexOf('</body>');
+const headSplit = templateContent.indexOf("<body");
+const bodyStart = templateContent.indexOf(">", headSplit) + 1;
+const bodyEnd = templateContent.lastIndexOf("</body>");
 
 const head = templateContent.substring(0, bodyStart);
 const tail = templateContent.substring(bodyEnd);
@@ -350,5 +350,7 @@ run();</pre>
 </html>
 `;
 
-fs.writeFileSync(outPath, head + bodyContent, 'utf8');
-console.log('Successfully completely rewrote the HTML body while keeping all rich structure.');
+fs.writeFileSync(outPath, head + bodyContent, "utf8");
+console.log(
+  "Successfully completely rewrote the HTML body while keeping all rich structure."
+);

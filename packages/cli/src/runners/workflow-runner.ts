@@ -1,8 +1,9 @@
-import { Hardkas, HardkasOptions } from "@hardkas/sdk";
+﻿import { Hardkas, HardkasOptions } from "@hardkas/sdk";
 import fs from "node:fs";
 import path from "node:path";
 import { UI, handleError } from "../ui.js";
 import type { WorkflowArtifact } from "@hardkas/artifacts";
+import { HardkasSchemas } from "@hardkas/artifacts";
 
 export async function runWorkflowRun(
   file: string,
@@ -90,14 +91,17 @@ export async function runWorkflowRun(
     const result = await resultPromise;
 
     if (result.status === "failed") {
-      UI.error(`Workflow failed: ${result.errorEnvelope?.message}`);
       if (options.json) {
         UI.writeJson(result);
       } else {
         UI.warning(`Artifact generated but marked as failed: ${result.workflowId}`);
       }
-      process.exitCode = 1;
-      return;
+      const { HardkasCliError } = await import("../cli-errors.js");
+      throw new HardkasCliError(
+        "WORKFLOW_FAILED",
+        `Workflow failed: ${result.errorEnvelope?.message}`,
+        { exitCode: 1 }
+      );
     }
 
     if (options.json) {
@@ -108,9 +112,13 @@ export async function runWorkflowRun(
         UI.info(`Produced ${result.producedArtifacts.length} child artifacts.`);
       }
     }
-  } catch (e) {
-    handleError(e);
-    process.exitCode = 1;
+  } catch (e: any) {
+    if (e.name === "HardkasCliError") throw e;
+    const { HardkasCliError } = await import("../cli-errors.js");
+    throw new HardkasCliError("WORKFLOW_ERROR", e.message || "Unknown error", {
+      exitCode: 1,
+      cause: e
+    });
   }
 }
 
@@ -129,16 +137,20 @@ export async function runWorkflowInspect(
     if (id === "latest") {
       const allArtifacts = await sdk.artifacts.list();
       const workflows = allArtifacts
-        .filter((a: any) => a.schema === "hardkas.workflow.v1")
-        .sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-      if (workflows.length === 0) throw new Error("No workflow artifacts found to resolve 'latest'.");
+        .filter((a: any) => a.schema === HardkasSchemas.WorkflowV1)
+        .sort(
+          (a: any, b: any) =>
+            new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+        );
+      if (workflows.length === 0)
+        throw new Error("No workflow artifacts found to resolve 'latest'.");
       targetId = workflows[0].id || workflows[0].workflowId || workflows[0].contentHash;
       UI.info(`Resolved 'latest' to workflow: ${targetId}`);
     }
 
     const artifact = (await sdk.artifacts.read(targetId)) as WorkflowArtifact;
 
-    if (artifact.schema !== "hardkas.workflow.v1") {
+    if (artifact.schema !== HardkasSchemas.WorkflowV1) {
       throw new Error(`Artifact ${id} is not a valid workflow artifact`);
     }
 
@@ -151,9 +163,13 @@ export async function runWorkflowInspect(
     console.log(`  Status: ${artifact.status}`);
     console.log(`  Steps executed: ${artifact.steps.length}`);
     console.log(`  Produced artifacts: ${artifact.producedArtifacts.length}`);
-  } catch (e) {
-    handleError(e);
-    process.exitCode = 1;
+  } catch (e: any) {
+    if (e.name === "HardkasCliError") throw e;
+    const { HardkasCliError } = await import("../cli-errors.js");
+    throw new HardkasCliError("WORKFLOW_INSPECT_ERROR", e.message || "Unknown error", {
+      exitCode: 1,
+      cause: e
+    });
   }
 }
 
@@ -165,9 +181,13 @@ export async function runWorkflowReplay(id: string, options: any) {
     if (id === "latest") {
       const allArtifacts = await sdk.artifacts.list();
       const workflows = allArtifacts
-        .filter((a: any) => a.schema === "hardkas.workflow.v1")
-        .sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-      if (workflows.length === 0) throw new Error("No workflow artifacts found to resolve 'latest'.");
+        .filter((a: any) => a.schema === HardkasSchemas.WorkflowV1)
+        .sort(
+          (a: any, b: any) =>
+            new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+        );
+      if (workflows.length === 0)
+        throw new Error("No workflow artifacts found to resolve 'latest'.");
       targetId = workflows[0].id || workflows[0].workflowId || workflows[0].contentHash;
       UI.info(`Resolved 'latest' to workflow: ${targetId}`);
     }
@@ -177,20 +197,25 @@ export async function runWorkflowReplay(id: string, options: any) {
     const result = await sdk.replay.verify({ workflowId: targetId });
 
     if (!result.passed) {
-      UI.error(
-        `Workflow replay failed: ${result.error || "Integrity verification failed"}`
+      const { HardkasCliError } = await import("../cli-errors.js");
+      throw new HardkasCliError(
+        "WORKFLOW_REPLAY_FAILED",
+        `Workflow replay failed: ${result.error || "Integrity verification failed"}`,
+        { exitCode: 1 }
       );
-      process.exitCode = 1;
-      return;
     }
 
     UI.success("Workflow replay verification passed (cryptographically secured).");
     console.log(`  Artifacts scanned: ${result.artifactsScanned}`);
     console.log(`  Determinism: ${result.determinism}`);
     console.log(`  Contamination: ${result.contamination}`);
-  } catch (e) {
-    handleError(e);
-    process.exitCode = 1;
+  } catch (e: any) {
+    if (e.name === "HardkasCliError") throw e;
+    const { HardkasCliError } = await import("../cli-errors.js");
+    throw new HardkasCliError("WORKFLOW_REPLAY_ERROR", e.message || "Unknown error", {
+      exitCode: 1,
+      cause: e
+    });
   }
 }
 
@@ -208,9 +233,13 @@ export async function runWorkflowDiff(
       if (id === "latest") {
         const allArtifacts = await sdk.artifacts.list();
         const workflows = allArtifacts
-          .filter((a: any) => a.schema === "hardkas.workflow.v1")
-          .sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-        if (workflows.length === 0) throw new Error("No workflow artifacts found to resolve 'latest'.");
+          .filter((a: any) => a.schema === HardkasSchemas.WorkflowV1)
+          .sort(
+            (a: any, b: any) =>
+              new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+          );
+        if (workflows.length === 0)
+          throw new Error("No workflow artifacts found to resolve 'latest'.");
         return workflows[0].id || workflows[0].workflowId || workflows[0].contentHash;
       }
       return id;
@@ -224,7 +253,7 @@ export async function runWorkflowDiff(
     const wfA = (await sdk.artifacts.read(targetIdA)) as WorkflowArtifact;
     const wfB = (await sdk.artifacts.read(targetIdB)) as WorkflowArtifact;
 
-    if (wfA.schema !== "hardkas.workflow.v1" || wfB.schema !== "hardkas.workflow.v1") {
+    if (wfA.schema !== HardkasSchemas.WorkflowV1 || wfB.schema !== HardkasSchemas.WorkflowV1) {
       throw new Error("Both artifacts must be workflows");
     }
 
@@ -243,8 +272,12 @@ export async function runWorkflowDiff(
     UI.info("\n=== Steps Diff ===");
     console.log(`A: ${wfA.steps?.length || 0} steps executed`);
     console.log(`B: ${wfB.steps?.length || 0} steps executed`);
-  } catch (e) {
-    handleError(e);
-    process.exitCode = 1;
+  } catch (e: any) {
+    if (e.name === "HardkasCliError") throw e;
+    const { HardkasCliError } = await import("../cli-errors.js");
+    throw new HardkasCliError("WORKFLOW_DIFF_ERROR", e.message || "Unknown error", {
+      exitCode: 1,
+      cause: e
+    });
   }
 }

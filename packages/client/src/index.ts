@@ -22,7 +22,7 @@ export class HardKASClient {
   private timeout: number;
 
   constructor(config?: HardKASClientConfig) {
-    this.baseUrl = config?.baseUrl || 'http://127.0.0.1:3000';
+    this.baseUrl = config?.baseUrl || "http://127.0.0.1:3000";
     this.timeout = config?.timeout || 10000;
   }
 
@@ -33,7 +33,7 @@ export class HardKASClient {
     try {
       const response = await fetch(url, {
         ...options,
-        signal: controller.signal,
+        signal: controller.signal
       });
       clearTimeout(id);
       return response;
@@ -43,30 +43,33 @@ export class HardKASClient {
     }
   }
 
-  private async request<T>(path: string, options?: RequestInit): Promise<HardKASResponse<T>> {
+  private async request<T>(
+    path: string,
+    options?: RequestInit
+  ): Promise<HardKASResponse<T>> {
     try {
       const response = await this.fetchWithTimeout(`${this.baseUrl}${path}`, {
         ...options,
         headers: {
-          'Content-Type': 'application/json',
-          ...options?.headers,
-        },
+          "Content-Type": "application/json",
+          ...options?.headers
+        }
       });
 
       const data = await response.json();
       return data as HardKASResponse<T>;
     } catch (error: any) {
-      if (error.name === 'AbortError') {
+      if (error.name === "AbortError") {
         return {
           ok: false,
-          code: 'TIMEOUT_ERROR',
-          message: `Request to ${path} timed out after ${this.timeout}ms.`,
+          code: "TIMEOUT_ERROR",
+          message: `Request to ${path} timed out after ${this.timeout}ms.`
         };
       }
       return {
         ok: false,
-        code: 'NETWORK_ERROR',
-        message: error.message || 'Unknown network error',
+        code: "NETWORK_ERROR",
+        message: error.message || "Unknown network error"
       };
     }
   }
@@ -78,30 +81,30 @@ export class HardKASClient {
   }
 
   async txPlan(payload: any): Promise<HardKASResponse<any>> {
-    return this.request('/api/tx/plan', {
-      method: 'POST',
-      body: JSON.stringify(payload),
+    return this.request("/api/tx/plan", {
+      method: "POST",
+      body: JSON.stringify(payload)
     });
   }
 
   async txSimulate(payload: any): Promise<HardKASResponse<any>> {
-    return this.request('/api/tx/simulate', {
-      method: 'POST',
-      body: JSON.stringify(payload),
+    return this.request("/api/tx/simulate", {
+      method: "POST",
+      body: JSON.stringify(payload)
     });
   }
 
   async txSign(payload: any): Promise<HardKASResponse<any>> {
-    return this.request('/api/tx/sign', {
-      method: 'POST',
-      body: JSON.stringify(payload),
+    return this.request("/api/tx/sign", {
+      method: "POST",
+      body: JSON.stringify(payload)
     });
   }
 
   async txSend(payload: any): Promise<HardKASResponse<any>> {
-    return this.request('/api/tx/send', {
-      method: 'POST',
-      body: JSON.stringify(payload),
+    return this.request("/api/tx/send", {
+      method: "POST",
+      body: JSON.stringify(payload)
     });
   }
 }

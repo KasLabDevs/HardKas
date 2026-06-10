@@ -1,4 +1,4 @@
-import fs from "node:fs";
+﻿import fs from "node:fs";
 import path from "node:path";
 import os from "node:os";
 import pc from "picocolors";
@@ -48,7 +48,7 @@ export async function runSandbox(options: {
 
     // Main Sandbox Banner
     console.log(pc.bold("\nHardKAS Sandbox Runtime"));
-    console.log(pc.dim("━━━━━━━━━━━━━━━━━━━━━━━\n"));
+    console.log(pc.dim("â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”\n"));
 
     console.log(pc.bold("Workspace:"));
     console.log(`  ${sandboxRoot}\n`);
@@ -63,7 +63,7 @@ export async function runSandbox(options: {
     if (isNodeRunning) {
       console.log(`  ${pc.green("running")}\n`);
       console.log(pc.bold("Mining:"));
-      console.log(`  enabled → ${pc.blue(miningAlias)}\n`);
+      console.log(`  enabled â†’ ${pc.blue(miningAlias)}\n`);
     } else {
       console.log(`  not running`);
       console.log(
@@ -83,7 +83,7 @@ export async function runSandbox(options: {
     console.log(`  healthy\n`);
 
     console.log(pc.bold("Quick Start"));
-    console.log(pc.dim("━━━━━━━━━━━━━━━━━━━━━━━\n"));
+    console.log(pc.dim("â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”\n"));
 
     console.log(`cd ${sandboxRoot}\n`);
 
@@ -155,14 +155,19 @@ export async function runSandbox(options: {
         console.log(pc.red(`Remaining workspace:\n${sandboxRoot}`));
         console.log(pc.red(`You may remove it manually.`));
       }
-
-      process.exit(0);
+      process.removeAllListeners("SIGINT");
+      process.removeAllListeners("SIGTERM");
+      process.kill(process.pid, signal);
     };
 
     process.on("SIGINT", () => handleTeardown("SIGINT"));
     process.on("SIGTERM", () => handleTeardown("SIGTERM"));
-  } catch (e) {
-    handleError(e, "Sandbox initialization failed");
-    process.exit(1);
+  } catch (e: any) {
+    const { HardkasCliError } = await import("../cli-errors.js");
+    throw new HardkasCliError(
+      "SANDBOX_FAILED",
+      `Sandbox initialization failed: ${e.message}`,
+      { exitCode: 1, cause: e }
+    );
   }
 }

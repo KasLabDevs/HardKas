@@ -6,6 +6,7 @@ import {
 } from "./igra-artifacts.js";
 import { writeArtifact, readArtifact } from "./io.js";
 import { deterministicCompare } from "@hardkas/core";
+import { HardkasSchemas } from "@hardkas/core";
 
 export function getDefaultL2ReceiptsDir(cwd: string = process.cwd()): string {
   return path.join(cwd, ".hardkas", "l2-receipts");
@@ -53,7 +54,7 @@ export async function listIgraTxReceiptArtifacts(options?: {
         if (
           data &&
           typeof data === "object" &&
-          (data as Record<string, unknown>).schema === "hardkas.igraTxReceipt.v1"
+          (data as Record<string, unknown>).schema === HardkasSchemas.IgraTxReceiptV1
         ) {
           receipts.push(data as IgraTxReceiptArtifact);
         }

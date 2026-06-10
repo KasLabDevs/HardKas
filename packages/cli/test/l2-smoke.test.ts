@@ -26,6 +26,20 @@ vi.mock("@hardkas/l2", async (importOriginal) => {
   const actual = (await importOriginal()) as any;
   return {
     ...actual,
+    checkEvmRpcHealth: vi.fn().mockResolvedValue({
+      ready: true,
+      url: "http://localhost:8545",
+      chainId: 19416,
+      blockNumber: 100n,
+      gasPriceWei: 1000000000n
+    }),
+    waitForEvmRpcReady: vi.fn().mockResolvedValue({
+      ready: true,
+      url: "http://localhost:8545",
+      chainId: 19416,
+      blockNumber: 100n,
+      gasPriceWei: 1000000000n
+    }),
     EvmJsonRpcClient: vi.fn().mockImplementation(() => ({
       getChainId: vi.fn().mockResolvedValue(19416),
       getBlockNumber: vi.fn().mockResolvedValue(100n),
@@ -80,7 +94,7 @@ vi.mock("@hardkas/artifacts", async (importOriginal) => {
       if (p.includes(".plan.json"))
         return {
           schema: "hardkas.igraTxPlan.v1",
-          hardkasVersion: "0.9.0-alpha",
+          hardkasVersion: "0.9.1-alpha",
           networkId: "igra",
           mode: "l2-rpc",
           planId: "test-plan",
@@ -97,7 +111,7 @@ vi.mock("@hardkas/artifacts", async (importOriginal) => {
       if (p.includes(".signed.json"))
         return {
           schema: "hardkas.igraSignedTx.v1",
-          hardkasVersion: "0.9.0-alpha",
+          hardkasVersion: "0.9.1-alpha",
           networkId: "igra",
           mode: "l2-rpc",
           signedId: "test-signed",

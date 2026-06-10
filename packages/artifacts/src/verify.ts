@@ -1,5 +1,6 @@
 import fs from "node:fs";
 import path from "node:path";
+import { HardkasSchemas } from "@hardkas/core";
 import { calculateContentHash } from "./canonical.js";
 import {
   SnapshotSchema,
@@ -17,7 +18,7 @@ import {
 import { NetworkId, type CorruptionCode, type CorruptionSeverity } from "@hardkas/core";
 import { verifyFeeSemantics } from "./feeVerify.js";
 import { verifyLineage } from "./lineage.js";
-import { 
+import {
   SilverCompileArtifactSchema,
   SilverDeployArtifactSchema,
   SilverDeployPlanArtifactSchema,
@@ -139,7 +140,7 @@ export function verifyArtifactIntegritySync(
     result.version = v.version as string;
     result.expectedHash = v.contentHash as string;
 
-    if (v.schema === "hardkas.replayReport.v1") {
+    if (v.schema === HardkasSchemas.ReplayReportV1) {
       result.ok = true;
       return result;
     }
@@ -195,58 +196,58 @@ export function verifyArtifactIntegritySync(
     // 4. Zod Schema Validation
     let schema;
     switch (v.schema) {
-      case "hardkas.snapshot":
+      case HardkasSchemas.Snapshot:
         schema = SnapshotSchema;
         break;
-      case "hardkas.txPlan":
+      case HardkasSchemas.TxPlan:
         schema = TxPlanSchema;
         break;
-      case "hardkas.txReceipt":
+      case HardkasSchemas.TxReceipt:
         schema = TxReceiptSchema;
         break;
-      case "hardkas.txTrace":
+      case HardkasSchemas.TxTrace:
         schema = TxTraceSchema;
         break;
-      case "hardkas.signedTx":
+      case HardkasSchemas.SignedTx:
         schema = SignedTxSchema;
         break;
-      case "hardkas.workflow.v1":
+      case HardkasSchemas.WorkflowV1:
         schema = WorkflowSchema;
         break;
-      case "hardkas.policy.v1":
+      case HardkasSchemas.PolicyV1:
         schema = PolicySchema;
         break;
-      case "hardkas.networkProfile.v1":
+      case HardkasSchemas.NetworkProfileV1:
         schema = NetworkProfileSchema;
         break;
-      case "hardkas.assumption.v1":
+      case HardkasSchemas.AssumptionV1:
         schema = AssumptionSchema;
         break;
-      case "hardkas.migrationReceipt.v1":
+      case HardkasSchemas.MigrationReceiptV1:
         schema = MigrationReceiptSchema;
         break;
-      case "hardkas.silver.compile":
+      case HardkasSchemas.SilverCompile:
         schema = SilverCompileArtifactSchema;
         break;
-      case "hardkas.silver.deployPlan":
+      case HardkasSchemas.SilverDeployPlan:
         schema = SilverDeployPlanArtifactSchema;
         break;
-      case "hardkas.silver.deploy":
+      case HardkasSchemas.SilverDeploy:
         schema = SilverDeployArtifactSchema;
         break;
-      case "hardkas.silver.test":
+      case HardkasSchemas.SilverTest:
         schema = SilverTestArtifactSchema;
         break;
-      case "hardkas.silver.spendPlan":
+      case HardkasSchemas.SilverSpendPlan:
         schema = SilverSpendPlanArtifactSchema;
         break;
-      case "hardkas.silver.spendReceipt":
+      case HardkasSchemas.SilverSpendReceipt:
         schema = SilverSpendReceiptArtifactSchema;
         break;
-      case "hardkas.silver.deploySimulation":
+      case HardkasSchemas.SilverDeploySimulation:
         schema = SilverDeploySimulationArtifactSchema;
         break;
-      case "hardkas.silver.spendSimulation":
+      case HardkasSchemas.SilverSpendSimulation:
         schema = SilverSpendSimulationArtifactSchema;
         break;
     }
@@ -256,7 +257,8 @@ export function verifyArtifactIntegritySync(
       if (!validation.success) {
         // For legacy artifacts (hashVersion < 4), Zod schema mismatches are warnings
         // since they may not conform to the current schema but are still integrity-valid.
-        const zodSeverity: VerificationSeverity = (hashVersion < 4 && !context.strict) ? "warning" : "error";
+        const zodSeverity: VerificationSeverity =
+          hashVersion < 4 && !context.strict ? "warning" : "error";
         validation.error.issues.forEach((e) => {
           const pathStr = e.path.join(".");
           if (zodSeverity === "warning") {
@@ -306,7 +308,8 @@ export async function verifyArtifactIntegrity(
 }
 
 function findFileByHash(hash: string, dirs: string[]): string | null {
-  const shortHash = hash.startsWith("plan-") || hash.startsWith("signed-") ? hash : hash.slice(0, 16);
+  const shortHash =
+    hash.startsWith("plan-") || hash.startsWith("signed-") ? hash : hash.slice(0, 16);
   for (const dir of dirs) {
     if (!fs.existsSync(dir)) continue;
     try {
@@ -402,8 +405,6 @@ export function verifyArtifactSemantics(
       policyRefs.push(v.policyRef);
     }
 
-
-
     // Resolve policies
     for (const ref of policyRefs) {
       let refObj = context.resolveArtifact ? context.resolveArtifact(ref) : null;
@@ -447,7 +448,7 @@ export function verifyArtifactSemantics(
             });
           } else {
             // 2. Minimal Policy Evaluation
-            if (refObj.schema === "hardkas.policy.v1") {
+            if (refObj.schema === HardkasSchemas.PolicyV1) {
               if (refObj.decision === "DENY") {
                 addIssue({
                   code: "POLICY_VIOLATION",
@@ -461,7 +462,8 @@ export function verifyArtifactSemantics(
                   message: `Policy evaluation rejected: decision is invalid (${refObj.decision})`
                 });
               }
-              const failedRules = refObj.rules?.filter((r: any) => r.result === "FAIL") || [];
+              const failedRules =
+                refObj.rules?.filter((r: any) => r.result === "FAIL") || [];
               if (failedRules.length > 0) {
                 addIssue({
                   code: "POLICY_VIOLATION",
@@ -574,9 +576,9 @@ export function verifyArtifactSemantics(
     const lineage = v.lineage as any;
     if (lineage?.parentArtifactId && lineage?.parentArtifactId !== lineage?.artifactId) {
       parentId = lineage?.parentArtifactId as string;
-    } else if (v.schema === "hardkas.signedTx") {
+    } else if (v.schema === HardkasSchemas.SignedTx) {
       parentId = v.sourcePlanId as string;
-    } else if (v.schema === "hardkas.txReceipt") {
+    } else if (v.schema === HardkasSchemas.TxReceipt) {
       parentId = (v.sourceSignedId || lineage?.parentArtifactId) as string;
     }
 
@@ -606,9 +608,12 @@ export function verifyArtifactSemantics(
       } else {
         try {
           // Recursively verify parent semantic checks
-          const parentSem = verifyArtifactSemantics(parentObj, { ...context, strict: true });
+          const parentSem = verifyArtifactSemantics(parentObj, {
+            ...context,
+            strict: true
+          });
           if (!parentSem.ok) {
-            parentSem.issues.forEach(issue => addIssue(issue));
+            parentSem.issues.forEach((issue) => addIssue(issue));
           }
         } catch (e: any) {
           addIssue({
@@ -644,7 +649,7 @@ export function verifyArtifactSemantics(
 
   // 3. Lineage Audit (Harden and Harmonize)
   const lineageAudit = verifyLineage(v, parentObj || context.parent, { strict });
-  if (!lineageAudit.ok || (strict && !v.lineage && v.schema !== "hardkas.workflow.v1")) {
+  if (!lineageAudit.ok || (strict && !v.lineage && v.schema !== HardkasSchemas.WorkflowV1)) {
     lineageAudit.issues.forEach((issue) => {
       addIssue(issue);
     });
@@ -660,7 +665,7 @@ export function verifyArtifactSemantics(
           severity: "error",
           message: "Strict mode requires workflowId"
         });
-      if (!v.assumptionLevel && v.schema !== "hardkas.workflow.v1")
+      if (!v.assumptionLevel && v.schema !== HardkasSchemas.WorkflowV1)
         addIssue({
           code: "MISSING_ASSUMPTION_LEVEL",
           severity: "error",
@@ -679,7 +684,7 @@ export function verifyArtifactSemantics(
           severity: "warning",
           message: "Missing workflowId"
         });
-      if (!v.assumptionLevel && v.schema !== "hardkas.workflow.v1")
+      if (!v.assumptionLevel && v.schema !== HardkasSchemas.WorkflowV1)
         addIssue({
           code: "MISSING_ASSUMPTION_LEVEL",
           severity: "warning",
@@ -693,7 +698,7 @@ export function verifyArtifactSemantics(
         severity: "warning",
         message: "Missing workflowId"
       });
-    if (!v.assumptionLevel && v.schema !== "hardkas.workflow.v1")
+    if (!v.assumptionLevel && v.schema !== HardkasSchemas.WorkflowV1)
       addIssue({
         code: "MISSING_ASSUMPTION_LEVEL",
         severity: "warning",
@@ -718,7 +723,10 @@ export function verifyArtifactSemantics(
     if (addr && typeof addr === "string") {
       let mismatch = false;
       if (networkIdStr === "mainnet") {
-        mismatch = !addr.startsWith("kaspa:") || addr.startsWith("kaspasim:") || addr.startsWith("kaspa:sim_");
+        mismatch =
+          !addr.startsWith("kaspa:") ||
+          addr.startsWith("kaspasim:") ||
+          addr.startsWith("kaspa:sim_");
       } else if (networkIdStr.startsWith("testnet")) {
         mismatch = !addr.startsWith("kaspatest:");
       } else {

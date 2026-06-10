@@ -1,0 +1,34 @@
+{
+  "schema": "hardkas.toccataProgrammabilityCorpus.v1",
+  "version": "0.9.1-alpha",
+  "network": "simnet",
+  "profile": "toccata-v2",
+  "status": "PROGRAMMABILITY_SURFACE_READY",
+  "components": {
+    "silver": {
+      "path": "silver",
+      "status": "SILVERSCRIPT_BUILDER_READY"
+    },
+    "zk": {
+      "path": "zk",
+      "status": "ZK_CORPUS_SURFACE_READY",
+      "groth16": "READY_GROTH16_FIXTURE_COHERENCE",
+      "risc0": "RISC0_INSPECT_SURFACE_READY"
+    },
+    "vprogs": {
+      "path": "vprogs",
+      "artifact": "vprogs/inspect-only-artifact.json",
+      "status": "VPROGS_INSPECT_SURFACE_READY"
+    }
+  },
+  "claims": {
+    "artifactCoherence": "READY_MATCH",
+    "runtimeOutcome": "PARTIAL",
+    "vmConsensusEquivalence": "NOT_CLAIMED",
+    "zkOnchainVerification": "NOT_CLAIMED",
+    "vProgsRuntime": "NOT_CLAIMED",
+    "vProgsStableApi": "NOT_CLAIMED",
+    "mainnet": "BLOCKED_BY_POLICY"
+  },
+  "expectedKnownLimitations": ["PARTIAL_VM_SIMULATION"]
+}

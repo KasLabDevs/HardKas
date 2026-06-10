@@ -1,6 +1,6 @@
 {
   "name": "@hardkas/client",
-  "version": "0.9.0-alpha",
+  "version": "0.9.1-alpha",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",

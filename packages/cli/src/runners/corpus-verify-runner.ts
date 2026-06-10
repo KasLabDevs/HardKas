@@ -1,7 +1,9 @@
+import { getOutput } from "../output.js";
 import fs from "node:fs";
 import path from "node:path";
 import pc from "picocolors";
 import { calculateContentHash } from "@hardkas/artifacts";
+import { HardkasSchemas } from "@hardkas/artifacts";
 
 export interface CorpusVerifyOptions {
   path: string;
@@ -17,7 +19,7 @@ interface CorpusIssue {
 
 interface CorpusVerifyResult {
   ok: boolean;
-  schema: "hardkas.toccataCorpus.v1";
+  schema: typeof HardkasSchemas.ToccataCorpusV1;
   path: string;
   summary: {
     happyPathFixtures: number;
@@ -39,7 +41,9 @@ interface CorpusVerifyResult {
 
 const EXPECTED_LIMITATION = "PARTIAL_VM_SIMULATION";
 
-export async function runCorpusVerify(options: CorpusVerifyOptions): Promise<CorpusVerifyResult> {
+export async function runCorpusVerify(
+  options: CorpusVerifyOptions
+): Promise<CorpusVerifyResult> {
   const workspaceRoot = options.workspaceRoot ?? process.cwd();
   const corpusPath = path.resolve(workspaceRoot, options.path);
   const issues: CorpusIssue[] = [];
@@ -53,14 +57,20 @@ export async function runCorpusVerify(options: CorpusVerifyOptions): Promise<Cor
   const failureManifest = readRequiredJson(failureManifestPath, issues);
 
   if (opManifest) {
-    expectEqual(opManifest.schema, "hardkas.toccataGoldenManifest.v1", issues, "OP_TRUE_SCHEMA_INVALID", opManifestPath);
+    expectEqual(
+      opManifest.schema,
+      HardkasSchemas.ToccataGoldenManifestV1,
+      issues,
+      "OP_TRUE_SCHEMA_INVALID",
+      opManifestPath
+    );
     validateCommonClaims(opManifest, issues, opManifestPath);
   }
 
   if (failureManifest) {
     expectEqual(
       failureManifest.schema,
-      "hardkas.toccataGoldenFailureManifest.v1",
+      HardkasSchemas.ToccataGoldenFailureManifestV1,
       issues,
       "FAILURE_SCHEMA_INVALID",
       failureManifestPath
@@ -73,7 +83,11 @@ export async function runCorpusVerify(options: CorpusVerifyOptions): Promise<Cor
     for (const file of opManifest.files) {
       const filePath = path.join(opTrueDir, file);
       if (!fs.existsSync(filePath)) {
-        issues.push({ code: "CORPUS_FILE_MISSING", message: `Missing referenced OP_TRUE file ${file}.`, file: filePath });
+        issues.push({
+          code: "CORPUS_FILE_MISSING",
+          message: `Missing referenced OP_TRUE file ${file}.`,
+          file: filePath
+        });
         continue;
       }
       if (file === "manifest.json" || file === "compare-report.json") continue;
@@ -87,8 +101,20 @@ export async function runCorpusVerify(options: CorpusVerifyOptions): Promise<Cor
   const comparePath = path.join(opTrueDir, "compare-report.json");
   const compareReport = readRequiredJson(comparePath, issues);
   if (compareReport) {
-    expectEqual(compareReport.schema, "hardkas.toccataGoldenCompare.v1", issues, "COMPARE_SCHEMA_INVALID", comparePath);
-    expectEqual(compareReport.compareMode, "artifact-coherence", issues, "COMPARE_MODE_INVALID", comparePath);
+    expectEqual(
+      compareReport.schema,
+      HardkasSchemas.ToccataGoldenCompareV1,
+      issues,
+      "COMPARE_SCHEMA_INVALID",
+      comparePath
+    );
+    expectEqual(
+      compareReport.compareMode,
+      "artifact-coherence",
+      issues,
+      "COMPARE_MODE_INVALID",
+      comparePath
+    );
     expectEqual(
       compareReport.status,
       "SILVERSCRIPT_SIMULATION_MATCH",
@@ -123,7 +149,7 @@ export async function runCorpusVerify(options: CorpusVerifyOptions): Promise<Cor
       if (!fixture) continue;
       expectEqual(
         fixture.schema,
-        "hardkas.toccataGoldenFailureCase.v1",
+        HardkasSchemas.ToccataGoldenFailureCaseV1,
         issues,
         "FAILURE_CASE_SCHEMA_INVALID",
         filePath
@@ -136,7 +162,8 @@ export async function runCorpusVerify(options: CorpusVerifyOptions): Promise<Cor
         });
       }
       const expectedError =
-        fixture.expectedSimulator?.error || fixture.expectedSimulator?.secondAttempt?.error;
+        fixture.expectedSimulator?.error ||
+        fixture.expectedSimulator?.secondAttempt?.error;
       expectEqual(
         expectedError,
         entry.expectedSimulatorError,
@@ -155,16 +182,22 @@ export async function runCorpusVerify(options: CorpusVerifyOptions): Promise<Cor
   const ok = issues.length === 0;
   const result: CorpusVerifyResult = {
     ok,
-    schema: "hardkas.toccataCorpus.v1",
+    schema: HardkasSchemas.ToccataCorpusV1,
     path: path.relative(workspaceRoot, corpusPath).replace(/\\/g, "/"),
     summary: {
       happyPathFixtures: opManifest ? 1 : 0,
       failureFixtures,
       artifactsChecked,
-      contentHashes: issues.some((issue) => issue.code.includes("HASH")) ? "FAIL" : "PASS",
+      contentHashes: issues.some((issue) => issue.code.includes("HASH"))
+        ? "FAIL"
+        : "PASS",
       compareMode: compareReport?.compareMode ?? "unknown",
       simulationStatus: compareReport?.status ?? "unknown",
-      knownLimitations: collectKnownLimitations(opManifest, failureManifest, compareReport)
+      knownLimitations: collectKnownLimitations(
+        opManifest,
+        failureManifest,
+        compareReport
+      )
     },
     claims: {
       artifactCoherence: ok ? "READY_MATCH" : "INVALID",
@@ -176,27 +209,36 @@ export async function runCorpusVerify(options: CorpusVerifyOptions): Promise<Cor
   };
 
   if (options.json) {
-    console.log(JSON.stringify(result, null, 2));
+    getOutput().writeJson(result);
   } else if (ok) {
-    console.log(pc.green("TOCCATA_GOLDEN_CORPUS_VERIFY_PASS"));
-    console.log(`Path: ${result.path}`);
-    console.log(`Artifacts checked: ${artifactsChecked}`);
-    console.log(`Failure fixtures: ${failureFixtures}`);
-    console.log(pc.dim(EXPECTED_LIMITATION));
+    getOutput().writeLine(pc.green("TOCCATA_GOLDEN_CORPUS_VERIFY_PASS"));
+    getOutput().writeLine(`Path: ${result.path}`);
+    getOutput().writeLine(`Artifacts checked: ${artifactsChecked}`);
+    getOutput().writeLine(`Failure fixtures: ${failureFixtures}`);
+    getOutput().writeLine(pc.dim(EXPECTED_LIMITATION));
   } else {
-    console.error(pc.red("TOCCATA_GOLDEN_CORPUS_VERIFY_FAIL"));
+    getOutput().error(pc.red("TOCCATA_GOLDEN_CORPUS_VERIFY_FAIL"));
     for (const issue of issues) {
-      console.error(`- ${issue.code}: ${issue.message}`);
+      getOutput().error(`- ${issue.code}: ${issue.message}`);
     }
   }
 
-  if (!ok) process.exitCode = 1;
+  if (!ok) {
+    const { HardkasCliError } = await import("../cli-errors.js");
+    throw new HardkasCliError("CORPUS_VERIFY_FAILED", "Corpus verification failed.", {
+      exitCode: 1
+    });
+  }
   return result;
 }
 
 function readRequiredJson(filePath: string, issues: CorpusIssue[]) {
   if (!fs.existsSync(filePath)) {
-    issues.push({ code: "FILE_MISSING", message: `Missing required file ${filePath}.`, file: filePath });
+    issues.push({
+      code: "FILE_MISSING",
+      message: `Missing required file ${filePath}.`,
+      file: filePath
+    });
     return undefined;
   }
   try {
@@ -215,8 +257,20 @@ function validateCommonClaims(manifest: any, issues: CorpusIssue[], filePath: st
   expectEqual(manifest.network, "simnet", issues, "NETWORK_INVALID", filePath);
   expectEqual(manifest.profile, "toccata-v2", issues, "PROFILE_INVALID", filePath);
   const claim = manifest.simulationClaim || manifest.simulationLevel;
-  expectEqual(claim?.artifactCoherence, "READY", issues, "ARTIFACT_COHERENCE_CLAIM_INVALID", filePath);
-  expectEqual(claim?.runtimeOutcome, "PARTIAL", issues, "RUNTIME_OUTCOME_CLAIM_INVALID", filePath);
+  expectEqual(
+    claim?.artifactCoherence,
+    "READY",
+    issues,
+    "ARTIFACT_COHERENCE_CLAIM_INVALID",
+    filePath
+  );
+  expectEqual(
+    claim?.runtimeOutcome,
+    "PARTIAL",
+    issues,
+    "RUNTIME_OUTCOME_CLAIM_INVALID",
+    filePath
+  );
   expectEqual(
     claim?.vmConsensusEquivalence,
     "NOT_CLAIMED",
@@ -228,7 +282,8 @@ function validateCommonClaims(manifest: any, issues: CorpusIssue[], filePath: st
 }
 
 function expectKnownLimitation(value: any, issues: CorpusIssue[], filePath: string) {
-  const limitations = value.expectedKnownLimitations || [value.expectedCompareStatus].filter(Boolean);
+  const limitations =
+    value.expectedKnownLimitations || [value.expectedCompareStatus].filter(Boolean);
   if (!Array.isArray(limitations) || !limitations.includes(EXPECTED_LIMITATION)) {
     issues.push({
       code: "PARTIAL_VM_SIMULATION_NOT_DECLARED",
@@ -240,7 +295,11 @@ function expectKnownLimitation(value: any, issues: CorpusIssue[], filePath: stri
 
 function verifyContentHash(artifact: any, issues: CorpusIssue[], filePath: string) {
   if (typeof artifact.contentHash !== "string") {
-    issues.push({ code: "CONTENT_HASH_MISSING", message: "Artifact is missing contentHash.", file: filePath });
+    issues.push({
+      code: "CONTENT_HASH_MISSING",
+      message: "Artifact is missing contentHash.",
+      file: filePath
+    });
     return;
   }
   const actual = calculateContentHash(artifact, artifact.hashVersion ?? 4);
@@ -253,7 +312,12 @@ function verifyContentHash(artifact: any, issues: CorpusIssue[], filePath: strin
   }
 }
 
-function validateFailureReferences(fixture: any, issues: CorpusIssue[], filePath: string, corpusPath: string) {
+function validateFailureReferences(
+  fixture: any,
+  issues: CorpusIssue[],
+  filePath: string,
+  corpusPath: string
+) {
   for (const ref of collectFixtureRefs(fixture)) {
     const refPath = ref.split("#")[0];
     if (!refPath) {
@@ -287,13 +351,19 @@ function collectFixtureRefs(fixture: any): string[] {
   return [...refs, ...setupRefs].filter(Boolean);
 }
 
-function validateMainnetGuard(entry: any, fixture: any, issues: CorpusIssue[], filePath: string) {
+function validateMainnetGuard(
+  entry: any,
+  fixture: any,
+  issues: CorpusIssue[],
+  filePath: string
+) {
   const status = fixture.expectedReal?.status;
   const error = fixture.expectedReal?.error || entry.expectedRealError;
   if (status !== "BLOCKED_BY_POLICY" || error !== "SILVERSCRIPT_MAINNET_NOT_ENABLED") {
     issues.push({
       code: "MAINNET_GUARD_CLAIM_INVALID",
-      message: "mainnet-guard must declare BLOCKED_BY_POLICY / SILVERSCRIPT_MAINNET_NOT_ENABLED.",
+      message:
+        "mainnet-guard must declare BLOCKED_BY_POLICY / SILVERSCRIPT_MAINNET_NOT_ENABLED.",
       file: filePath
     });
   }
@@ -304,7 +374,8 @@ function collectKnownLimitations(...values: any[]): string[] {
     new Set(
       values.flatMap((value) => {
         if (!value) return [];
-        if (Array.isArray(value.expectedKnownLimitations)) return value.expectedKnownLimitations;
+        if (Array.isArray(value.expectedKnownLimitations))
+          return value.expectedKnownLimitations;
         return [value.expectedCompareStatus].filter(Boolean);
       })
     )

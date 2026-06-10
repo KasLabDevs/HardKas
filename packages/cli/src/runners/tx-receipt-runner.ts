@@ -1,5 +1,5 @@
 import { loadSimulatedReceipt, StoredSimulatedTxReceipt } from "@hardkas/localnet";
-import { formatSompi } from "@hardkas/core";
+import { formatSompiToKas } from "@hardkas/core";
 
 export interface TxReceiptRunnerInput {
   txId: string;
@@ -26,9 +26,9 @@ export async function runTxReceipt(
     `Network:   ${receipt.networkId}`,
     `From:      ${receipt.from.address}`,
     `To:        ${receipt.to.address}`,
-    `Amount:    ${formatSompi(BigInt(receipt.amountSompi))}`,
-    `Fee:       ${formatSompi(BigInt(receipt.feeSompi))}`,
-    `Change:    ${receipt.changeSompi ? formatSompi(BigInt(receipt.changeSompi)) : "none"}`,
+    `Amount:    ${formatSompiToKas(BigInt(receipt.amountSompi))}`,
+    `Fee:       ${formatSompiToKas(BigInt(receipt.feeSompi))}`,
+    `Change:    ${receipt.changeSompi ? formatSompiToKas(BigInt(receipt.changeSompi)) : "none"}`,
     `DAA score: ${receipt.daaScore}`,
     `Created:   ${receipt.createdAt}`,
     "",

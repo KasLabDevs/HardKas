@@ -2,7 +2,7 @@ import { Hardkas } from "@hardkas/sdk";
 
 async function run() {
   console.log("Starting Wallet Node...");
-  
+
   // Create SDK instance with autoBootstrap to initialize .hardkas/ in simulated mode
   const hardkas = await Hardkas.create({
     network: "simulated",

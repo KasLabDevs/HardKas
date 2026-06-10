@@ -1,6 +1,7 @@
 import { resolveL2Profile, L2BridgeAssumptions, L2NetworkProfile } from "@hardkas/l2";
 import { HARDKAS_VERSION } from "@hardkas/artifacts";
 import { loadHardkasConfig } from "@hardkas/config";
+import { HardkasSchemas } from "@hardkas/artifacts";
 
 export interface L2BridgeOptions {
   network?: string;
@@ -77,7 +78,7 @@ export async function runL2BridgeAssumptions(options: L2BridgeOptions): Promise<
 
 function mapProfileToAssumptions(profile: L2NetworkProfile): L2BridgeAssumptions {
   return {
-    schema: "hardkas.l2BridgeAssumptions.v1",
+    schema: HardkasSchemas.L2BridgeAssumptionsV1,
     hardkasVersion: HARDKAS_VERSION,
     l2Network: profile.name,
     bridgePhase: profile.security.bridgePhase,

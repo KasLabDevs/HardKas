@@ -17,7 +17,7 @@ describe("Network-Agnostic Artifact Layer: Policy", () => {
   it("should create, hash and verify a policy artifact", async () => {
     const policy = {
       schema: "hardkas.policy.v1",
-      hardkasVersion: "0.9.0-alpha",
+      hardkasVersion: "0.9.1-alpha",
       version: "1.0.0-alpha",
       networkId: "simnet",
       mode: "simulated",
@@ -31,7 +31,7 @@ describe("Network-Agnostic Artifact Layer: Policy", () => {
         }
       ]
     };
-    
+
     (policy as any).contentHash = calculateContentHash(policy, CURRENT_HASH_VERSION);
 
     // Write artifact via manager
@@ -47,7 +47,7 @@ describe("Network-Agnostic Artifact Layer: Policy", () => {
   it("should fail verification if decision is mutated (HASH_MISMATCH)", async () => {
     const policy = {
       schema: "hardkas.policy.v1",
-      hardkasVersion: "0.9.0-alpha",
+      hardkasVersion: "0.9.1-alpha",
       version: "1.0.0-alpha",
       networkId: "simnet",
       mode: "simulated",
@@ -56,13 +56,15 @@ describe("Network-Agnostic Artifact Layer: Policy", () => {
       rules: []
     };
     (policy as any).contentHash = calculateContentHash(policy, CURRENT_HASH_VERSION);
-    
+
     const mutatedPolicy = {
       ...policy,
       decision: "DENY" // MUTATION
     };
 
-    const verifyResult = await sdk.artifacts.verify(mutatedPolicy, { throwOnInvalid: false });
+    const verifyResult = await sdk.artifacts.verify(mutatedPolicy, {
+      throwOnInvalid: false
+    });
     expect(verifyResult.valid).toBe(false);
     expect(verifyResult.details[0].code).toBe("HASH_MISMATCH");
   });
@@ -70,15 +72,13 @@ describe("Network-Agnostic Artifact Layer: Policy", () => {
   it("should fail verification if a rule is removed", async () => {
     const policy = {
       schema: "hardkas.policy.v1",
-      hardkasVersion: "0.9.0-alpha",
+      hardkasVersion: "0.9.1-alpha",
       version: "1.0.0-alpha",
       networkId: "simnet",
       mode: "simulated",
       createdAt: new Date().toISOString(),
       decision: "ALLOW",
-      rules: [
-        { id: "max_amount", result: "PASS" }
-      ]
+      rules: [{ id: "max_amount", result: "PASS" }]
     };
     (policy as any).contentHash = calculateContentHash(policy, CURRENT_HASH_VERSION);
 
@@ -87,7 +87,9 @@ describe("Network-Agnostic Artifact Layer: Policy", () => {
       rules: [] // MUTATION: removed rule
     };
 
-    const verifyResult = await sdk.artifacts.verify(mutatedPolicy, { throwOnInvalid: false });
+    const verifyResult = await sdk.artifacts.verify(mutatedPolicy, {
+      throwOnInvalid: false
+    });
     expect(verifyResult.valid).toBe(false);
     expect(verifyResult.details[0].code).toBe("HASH_MISMATCH");
   });

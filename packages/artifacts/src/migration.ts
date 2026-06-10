@@ -2,6 +2,7 @@ import { calculateContentHash, CURRENT_HASH_VERSION } from "./canonical.js";
 import { ARTIFACT_VERSION } from "./schemas.js";
 import { sortUtxosByOutpoint } from "./verify.js";
 import { HARDKAS_VERSION } from "./constants.js";
+import { HardkasSchemas } from "@hardkas/core";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -51,8 +52,13 @@ export interface MigrationResult {
 }
 
 export class MigrationRequiredError extends Error {
-  constructor(public oldVersion: string, public targetVersion: string) {
-    super(`MIGRATION_REQUIRED: Artifact requires explicit migration from ${oldVersion} to ${targetVersion}`);
+  constructor(
+    public oldVersion: string,
+    public targetVersion: string
+  ) {
+    super(
+      `MIGRATION_REQUIRED: Artifact requires explicit migration from ${oldVersion} to ${targetVersion}`
+    );
     this.name = "MigrationRequiredError";
   }
 }
@@ -116,7 +122,7 @@ registerMigrationStep({
     // 1. Strip .v1 suffix from schema names
     if (typeof migrated.schema === "string" && migrated.schema.endsWith(".v1")) {
       // Preserve workflow schema as-is (hardkas.workflow.v1 is the canonical name)
-      if (migrated.schema !== "hardkas.workflow.v1") {
+      if (migrated.schema !== HardkasSchemas.WorkflowV1) {
         migrated.schema = migrated.schema.replace(/\.v1$/, "");
       }
     }
@@ -125,13 +131,13 @@ registerMigrationStep({
     migrated.version = ARTIFACT_VERSION;
 
     // 3. Schema-specific field renames
-    if (migrated.schema === "hardkas.txPlan" && migrated.selectedUtxos !== undefined) {
+    if (migrated.schema === HardkasSchemas.TxPlan && migrated.selectedUtxos !== undefined) {
       migrated.inputs = migrated.selectedUtxos;
       delete migrated.selectedUtxos;
     }
 
     // 4. Sort UTXOs deterministically for snapshot artifacts
-    if (migrated.schema === "hardkas.snapshot" && Array.isArray(migrated.utxos)) {
+    if (migrated.schema === HardkasSchemas.Snapshot && Array.isArray(migrated.utxos)) {
       migrated.utxos = sortUtxosByOutpoint(migrated.utxos as unknown[]);
     }
 
@@ -400,11 +406,15 @@ export function generateMigrationReceipt(
   newArtifact: ArtifactPayload,
   migrationId: string
 ): any {
-  const oldHash = oldArtifact.contentHash as string || calculateContentHash(oldArtifact, CURRENT_HASH_VERSION);
-  const newHash = newArtifact.contentHash as string || calculateContentHash(newArtifact, CURRENT_HASH_VERSION);
+  const oldHash =
+    (oldArtifact.contentHash as string) ||
+    calculateContentHash(oldArtifact, CURRENT_HASH_VERSION);
+  const newHash =
+    (newArtifact.contentHash as string) ||
+    calculateContentHash(newArtifact, CURRENT_HASH_VERSION);
 
   const receipt: any = {
-    schema: "hardkas.migrationReceipt.v1",
+    schema: HardkasSchemas.MigrationReceiptV1,
     hardkasVersion: HARDKAS_VERSION,
     version: ARTIFACT_VERSION,
     hashVersion: CURRENT_HASH_VERSION,
@@ -419,7 +429,9 @@ export function generateMigrationReceipt(
     decision: "MIGRATED_WITH_PROOF",
     lineage: {
       artifactId: "", // Filled after hash
-      lineageId: ((oldArtifact.lineage as any)?.lineageId as string) || ("migration" + oldHash).padEnd(64, "0").slice(0, 64),
+      lineageId:
+        ((oldArtifact.lineage as any)?.lineageId as string) ||
+        ("migration" + oldHash).padEnd(64, "0").slice(0, 64),
       parentArtifactId: oldHash,
       rootArtifactId: ((oldArtifact.lineage as any)?.rootArtifactId as string) || oldHash
     }
@@ -428,7 +440,7 @@ export function generateMigrationReceipt(
   receipt.contentHash = calculateContentHash(receipt, CURRENT_HASH_VERSION);
   receipt.lineage.artifactId = receipt.contentHash;
 
-  // We DO NOT mutate newArtifact to point to the receipt because that would 
+  // We DO NOT mutate newArtifact to point to the receipt because that would
   // create a circular hash dependency (receipt needs newArtifact hash, newArtifact needs receipt hash).
   // newArtifact's parent is simply oldArtifact.
 

@@ -20,10 +20,12 @@ export function registerCorrelateQueryCommands(queryCmd: Command) {
         UI.error(
           "Correlation queries are temporarily disabled while the query API stabilizes."
         );
-        process.exitCode = 1;
+        const { HardkasCliError } = await import("../../cli-errors.js");
+        throw new HardkasCliError("COMMAND_FAILED", "Correlation disabled", {
+          exitCode: 1
+        });
       } catch (e) {
-        handleError(e);
-        process.exitCode = 1;
+        throw e;
       }
     });
 }

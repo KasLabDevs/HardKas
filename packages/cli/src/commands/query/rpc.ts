@@ -38,8 +38,7 @@ export function registerRpcQueryCommands(queryCmd: Command) {
           );
         }
       } catch (e) {
-        handleError(e);
-        process.exitCode = 1;
+        throw e;
       }
     });
 
@@ -70,8 +69,7 @@ export function registerRpcQueryCommands(queryCmd: Command) {
           );
         }
       } catch (e) {
-        handleError(e);
-        process.exitCode = 1;
+        throw e;
       }
     });
 
@@ -102,8 +100,7 @@ export function registerRpcQueryCommands(queryCmd: Command) {
           );
         }
       } catch (e) {
-        handleError(e);
-        process.exitCode = 1;
+        throw e;
       }
     });
 }

@@ -1,4 +1,4 @@
-import { UI, handleError } from "../ui.js";
+﻿import { UI, handleError } from "../ui.js";
 import path from "node:path";
 import fs from "node:fs";
 import { dappReactTemplate } from "../templates/dapp-react.js";
@@ -10,12 +10,16 @@ export async function runDevCreate(name: string) {
 
   if (fs.existsSync(targetDir)) {
     if (fs.readdirSync(targetDir).length > 0) {
-      UI.error(`Directory '${name}' already exists and is not empty.`);
-      UI.info(
-        "To initialize an existing project, run 'hardkas dev init' inside the directory."
+      const { HardkasCliError } = await import("../cli-errors.js");
+      throw new HardkasCliError(
+        "DIR_NOT_EMPTY",
+        `Directory '${name}' already exists and is not empty.`,
+        {
+          exitCode: 1,
+          suggestion:
+            "To initialize an existing project, run 'hardkas dev init' inside the directory."
+        }
       );
-      process.exitCode = 1;
-      return;
     }
   } else {
     fs.mkdirSync(targetDir, { recursive: true });
@@ -32,8 +36,12 @@ export async function runDevCreate(name: string) {
     console.log(`  pnpm install`);
     console.log(`  hardkas dev`);
     console.log(`  pnpm dev (in another terminal)`);
-  } catch (e) {
-    handleError(e, "Template generation failed");
-    process.exitCode = 1;
+  } catch (e: any) {
+    const { HardkasCliError } = await import("../cli-errors.js");
+    throw new HardkasCliError(
+      "TEMPLATE_GENERATION_FAILED",
+      `Template generation failed: ${e.message}`,
+      { exitCode: 1 }
+    );
   }
 }

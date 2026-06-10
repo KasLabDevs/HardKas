@@ -13,11 +13,9 @@ describe("CLI dev namespace", () => {
     vi.mocked(fs.existsSync).mockReturnValue(true);
     vi.mocked(fs.readdirSync).mockReturnValue(["some-file.txt"] as any);
 
-    // Reset exitCode
-    process.exitCode = 0;
-    await runDevCreate("existing-dapp");
-    expect(process.exitCode).toBe(1);
-    process.exitCode = 0; // cleanup
+    await expect(runDevCreate("existing-dapp")).rejects.toMatchObject({
+      code: "DIR_NOT_EMPTY"
+    });
   });
 
   it("dev init creates hardkas.config.ts and client.ts", async () => {

@@ -1,3 +1,4 @@
+import { getOutput } from "../output.js";
 import { readTxPlanArtifact, verifyArtifactIntegrity } from "@hardkas/artifacts";
 import {
   verifyTxPlanSemantics,
@@ -5,7 +6,7 @@ import {
   TxPlan
 } from "@hardkas/tx-builder";
 import { UI } from "../ui.js";
-import { formatSompi } from "@hardkas/core";
+import { formatSompiToKas } from "@hardkas/core";
 import path from "node:path";
 
 export interface TxVerifyOptions {
@@ -28,12 +29,13 @@ export async function runTxVerify(options: TxVerifyOptions) {
     // 1. Integrity Check (Hardening)
     const integrityResult = await verifyArtifactIntegrity(absolutePath);
     if (!integrityResult.ok) {
-      UI.error("INTEGRITY VERIFICATION FAILED");
       integrityResult.issues.forEach((issue) => {
-        console.log(`  [!] [${issue.code}] ${issue.message}`);
+        getOutput().writeLine(`  [!] [${issue.code}] ${issue.message}`);
       });
-      process.exitCode = 1;
-      return;
+      const { HardkasCliError } = await import("../cli-errors.js");
+      throw new HardkasCliError("INTEGRITY_FAILED", "INTEGRITY VERIFICATION FAILED", {
+        exitCode: 1
+      });
     }
 
     // 2. Perform semantic verification
@@ -68,27 +70,27 @@ export async function runTxVerify(options: TxVerifyOptions) {
     }
 
     // Display Results
-    console.log(`Plan ID:      ${artifact.planId}`);
-    console.log(`Network:      ${artifact.networkId}`);
-    console.log(`Mode:         ${artifact.mode}`);
-    console.log("");
+    getOutput().writeLine(`Plan ID:      ${artifact.planId}`);
+    getOutput().writeLine(`Network:      ${artifact.networkId}`);
+    getOutput().writeLine(`Mode:         ${artifact.mode}`);
+    getOutput().writeLine("");
 
-    console.log("Economic Audit:");
-    console.log(`  Inputs:     ${formatSompi(result.inputTotalSompi)}`);
-    console.log(`  Outputs:    ${formatSompi(result.outputTotalSompi)}`);
-    console.log(`  Change:     ${formatSompi(result.changeAmountSompi)}`);
-    console.log(`  Fee (calc): ${formatSompi(result.recomputedFeeSompi)}`);
-    console.log(`  Mass:       ${result.recomputedMass}`);
-    console.log("");
+    getOutput().writeLine("Economic Audit:");
+    getOutput().writeLine(`  Inputs:     ${formatSompiToKas(result.inputTotalSompi)}`);
+    getOutput().writeLine(`  Outputs:    ${formatSompiToKas(result.outputTotalSompi)}`);
+    getOutput().writeLine(`  Change:     ${formatSompiToKas(result.changeAmountSompi)}`);
+    getOutput().writeLine(`  Fee (calc): ${formatSompiToKas(result.recomputedFeeSompi)}`);
+    getOutput().writeLine(`  Mass:       ${result.recomputedMass}`);
+    getOutput().writeLine("");
 
     if (result.issues.length > 0) {
-      console.log("Issues Found:");
+      getOutput().writeLine("Issues Found:");
       result.issues.forEach((issue) => {
         const prefix = getSeverityPrefix(issue.severity);
-        console.log(`  ${prefix} [${issue.code}] ${issue.message}`);
-        if (issue.path) console.log(`      Path: ${issue.path}`);
+        getOutput().writeLine(`  ${prefix} [${issue.code}] ${issue.message}`);
+        if (issue.path) getOutput().writeLine(`      Path: ${issue.path}`);
       });
-      console.log("");
+      getOutput().writeLine("");
     }
 
     if (result.ok) {
@@ -98,15 +100,23 @@ export async function runTxVerify(options: TxVerifyOptions) {
         `hardkas why ${artifact.planId}`
       ]);
     } else {
-      UI.error("SEMANTIC VERIFICATION FAILED");
       UI.printNextSteps([`hardkas why ${artifact.planId}`]);
-      process.exitCode = 1;
+      const { HardkasCliError } = await import("../cli-errors.js");
+      throw new HardkasCliError(
+        "SEMANTIC_VERIFICATION_FAILED",
+        "SEMANTIC VERIFICATION FAILED",
+        { exitCode: 1 }
+      );
     }
 
     return result;
   } catch (e: any) {
-    UI.error(`Verification error: ${e.message}`);
-    process.exitCode = 1;
+    if (e.name === "HardkasCliError") throw e;
+    const { HardkasCliError } = await import("../cli-errors.js");
+    throw new HardkasCliError("VERIFICATION_ERROR", `Verification error: ${e.message}`, {
+      exitCode: 1,
+      cause: e
+    });
   }
 }
 

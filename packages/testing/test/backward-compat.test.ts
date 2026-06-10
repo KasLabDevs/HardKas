@@ -1,11 +1,15 @@
 import { describe, it, expect } from "vitest";
 import { Hardkas } from "@hardkas/sdk";
-import { MigrationRequiredError, migrateArtifactPayload, verifyLineage } from "@hardkas/artifacts";
+import {
+  MigrationRequiredError,
+  migrateArtifactPayload,
+  verifyLineage
+} from "@hardkas/artifacts";
 
 describe("Phase 6B: Backward Compatibility (Vitest Layer 1)", () => {
   it("should enforce SAFE_REJECT_UNSUPPORTED for old schemas via MigrationRequiredError", async () => {
     const sdk = await Hardkas.open({ network: "simnet", autoBootstrap: true });
-    
+
     // Simulate a 0.8.2 artifact (e.g. without contentHash explicitly set to match new schemas, or old version)
     const legacyArtifact = {
       schema: "hardkas.txPlan.v1",
@@ -20,11 +24,14 @@ describe("Phase 6B: Backward Compatibility (Vitest Layer 1)", () => {
     try {
       await sdk.artifacts.verify(legacyArtifact, { throwOnInvalid: true });
     } catch (e: any) {
-      if (e.message.includes("corrupted or invalid") && e.message.includes("ARTIFACT_SCHEMA_INVALID")) {
+      if (
+        e.message.includes("corrupted or invalid") &&
+        e.message.includes("ARTIFACT_SCHEMA_INVALID")
+      ) {
         caughtSafeReject = true;
       }
     }
-    
+
     // Actually, migration engine strict mode
     let caughtMigrationError = false;
     try {
@@ -57,20 +64,26 @@ describe("Phase 6B: Backward Compatibility (Vitest Layer 1)", () => {
     };
 
     const { generateMigrationReceipt } = require("@hardkas/artifacts");
-    
+
     // Migrate
     const migrated = migrateArtifactPayload(legacyArtifact, "1.0.0-alpha");
     expect(migrated.migrated).toBe(true);
-    
-    const receipt = generateMigrationReceipt(legacyArtifact, migrated.artifact, "mig-6b-test");
-    
+
+    const receipt = generateMigrationReceipt(
+      legacyArtifact,
+      migrated.artifact,
+      "mig-6b-test"
+    );
+
     // Verify receipt links to legacy correctly
     const receiptLineageOk = verifyLineage(receipt, legacyArtifact, { strict: true });
     if (!receiptLineageOk.ok) console.log(receiptLineageOk.issues);
     expect(receiptLineageOk.ok).toBe(true);
 
     // Verify new artifact links directly to legacy correctly, NOT to receipt
-    const newArtifactLineageOk = verifyLineage(migrated.artifact, legacyArtifact, { strict: true });
+    const newArtifactLineageOk = verifyLineage(migrated.artifact, legacyArtifact, {
+      strict: true
+    });
     expect(newArtifactLineageOk.ok).toBe(true);
 
     // Explicit check: oldHash -> migrationReceipt
@@ -78,6 +91,8 @@ describe("Phase 6B: Backward Compatibility (Vitest Layer 1)", () => {
     expect(receipt.oldHash).toBe(legacyArtifact.contentHash);
     expect(receipt.newHash).toBe(migrated.artifact.contentHash);
     expect(receipt.lineage.parentArtifactId).toBe(legacyArtifact.contentHash);
-    expect((migrated.artifact.lineage as any).parentArtifactId).toBe(legacyArtifact.contentHash);
+    expect((migrated.artifact.lineage as any).parentArtifactId).toBe(
+      legacyArtifact.contentHash
+    );
   });
 });

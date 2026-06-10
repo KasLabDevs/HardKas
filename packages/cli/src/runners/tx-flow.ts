@@ -22,6 +22,7 @@ import {
 import crypto from "node:crypto";
 import path from "path";
 import fs from "fs";
+import { HardkasSchemas } from "@hardkas/artifacts";
 
 export interface TxFlowInput {
   from: string;
@@ -121,7 +122,7 @@ export async function runTxFlow(input: TxFlowInput): Promise<TxFlowResult> {
   };
 
   const intentPayload = {
-    type: "hardkas.workflow.intent",
+    type: HardkasSchemas.WorkflowIntent,
     schemaVersion: "v1",
     workflowSpec: [
       {
@@ -154,7 +155,7 @@ export async function runTxFlow(input: TxFlowInput): Promise<TxFlowResult> {
       network: network || config.defaultNetwork || "simnet"
     },
     runtimeVersion: HARDKAS_VERSION,
-    workspaceSchemaVersion: "hardkas.workflow.v1"
+    workspaceSchemaVersion: HardkasSchemas.WorkflowV1
   };
 
   const intentHash = calculateContentHash(intentPayload);

@@ -1,6 +1,6 @@
 import { loadRealAccountStore, getRealDevAccount } from "@hardkas/accounts";
 import { JsonWrpcKaspaClient } from "@hardkas/kaspa-rpc";
-import { formatSompi, type NetworkId } from "@hardkas/core";
+import { formatSompiToKas, type NetworkId } from "@hardkas/core";
 import { resolveRuntimeConfig, type KaspaRealNetwork } from "@hardkas/node-orchestrator";
 
 export interface AccountsRealBalanceOptions {
@@ -35,7 +35,7 @@ export async function runAccountsRealBalance(
   const balance = await client.getBalanceByAddress(account.address);
   await client.close();
 
-  const formatted = `${account.name} balance: ${formatSompi(balance.balanceSompi)} (${account.address})`;
+  const formatted = `${account.name} balance: ${formatSompiToKas(balance.balanceSompi)} (${account.address})`;
 
   return {
     balanceSompi: balance.balanceSompi,

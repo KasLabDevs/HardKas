@@ -2,15 +2,30 @@
 
 import { buildHardkasProgram } from "./program.js";
 import { attachLedgerAppender } from "@hardkas/core";
+import path from "node:path";
 
 import { HardkasCliError, HardkasExitCode } from "./cli-errors.js";
 
 async function main() {
-  attachLedgerAppender(process.cwd());
+  const isJson = process.argv.includes("--json");
+  const isSilent = process.argv.includes("--silent") || process.argv.includes("--quiet");
+
+  const { setGlobalOutput, createCommandOutput } = await import("./output.js");
+  const mode = isSilent ? "silent" : isJson ? "json" : "human";
+  setGlobalOutput(createCommandOutput({ mode }));
+
+  const wsArgIndex = process.argv.indexOf("--workspace");
+  const workspaceRoot =
+    wsArgIndex !== -1 && process.argv[wsArgIndex + 1]
+      ? path.resolve(process.argv[wsArgIndex + 1] as string)
+      : process.cwd();
+
+  attachLedgerAppender(workspaceRoot);
   const program = buildHardkasProgram();
 
   try {
     await program.parseAsync(process.argv);
+    process.exit(0);
   } catch (err: any) {
     const { handleError } = await import("./ui.js");
     handleError(err);
@@ -29,7 +44,8 @@ main().catch(async (err) => {
   handleError(err, "Fatal error");
   if (err.stack) {
     const { maskSecrets } = await import("@hardkas/core");
-    console.error(maskSecrets(err.stack));
+    const { getOutput } = await import("./output.js");
+    getOutput().error(maskSecrets(err.stack));
   }
   const exitCode =
     err instanceof HardkasCliError

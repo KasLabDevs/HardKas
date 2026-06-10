@@ -1,7 +1,7 @@
 import { Hono } from "hono";
 import { loadHardkasConfig } from "@hardkas/config";
 import { listHardkasAccounts } from "@hardkas/accounts";
-import { formatSompi } from "@hardkas/core";
+import { formatSompiToKas } from "@hardkas/core";
 
 export const accountsRoutes = new Hono();
 
@@ -51,7 +51,7 @@ accountsRoutes.get("/", async (c) => {
         balanceSompiStr = sumSompi.toString();
       }
 
-      const balanceKasStr = formatSompi(BigInt(balanceSompiStr)).replace(" KAS", "");
+      const balanceKasStr = formatSompiToKas(BigInt(balanceSompiStr)).replace(" KAS", "");
 
       return {
         alias: acc.name,

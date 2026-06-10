@@ -82,7 +82,13 @@ describe("Simnet Transaction Backend Mismatch Regression", () => {
     );
 
     // 1. Fund alice in the temporary workspace
-    const fundResult = await runCmd(["accounts", "fund", "kaspa:sim_alice", "--amount", "1000"]);
+    const fundResult = await runCmd([
+      "accounts",
+      "fund",
+      "kaspa:sim_alice",
+      "--amount",
+      "1000"
+    ]);
     if (fundResult.exitCode !== 0) {
       throw new Error(
         `Failed to fund alice. Output:\n${fundResult.stdout + fundResult.stderr}`

@@ -1,0 +1,19 @@
+[
+  "commands/accounts.ts",
+  "commands/programmability.ts",
+  "commands/silver-discovery.ts",
+  "commands/silver-lifecycle.ts",
+  "commands/silver-simulate.ts",
+  "commands/silver.ts",
+  "commands/tx.ts",
+  "commands/vprogs.ts",
+  "commands/zk.ts",
+  "runners/accounts-consolidate-runner.ts",
+  "runners/corpus-verify-runner.ts",
+  "runners/localnet-account-runners.ts",
+  "runners/localnet-runners.ts",
+  "runners/tx-batch-runner.ts",
+  "runners/tx-compare-runner.ts",
+  "runners/tx-profile-runner.ts",
+  "runners/tx-verify-runner.ts"
+]

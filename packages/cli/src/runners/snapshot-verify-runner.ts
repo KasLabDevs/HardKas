@@ -1,4 +1,4 @@
-import { UI } from "../ui.js";
+﻿import { UI } from "../ui.js";
 import { loadOrCreateLocalnetState, verifySnapshot } from "@hardkas/localnet";
 
 export interface SnapshotVerifyOptions {
@@ -20,9 +20,12 @@ export async function runSnapshotVerify(options: SnapshotVerifyOptions) {
     );
 
     if (!snapshot) {
-      UI.error(`Snapshot not found: ${options.idOrName}`);
-      process.exitCode = 1;
-      return;
+      const { HardkasCliError } = await import("../cli-errors.js");
+      throw new HardkasCliError(
+        "SNAPSHOT_NOT_FOUND",
+        `Snapshot not found: ${options.idOrName}`,
+        { exitCode: 1 }
+      );
     }
 
     UI.header(`Snapshot Verification: ${snapshot.name || snapshot.contentHash}`);
@@ -31,17 +34,32 @@ export async function runSnapshotVerify(options: SnapshotVerifyOptions) {
 
     if (result.ok) {
       UI.success("Snapshot Integrity Verified");
-      console.log(`  Accounts Hash:  ✓ MATCH (${snapshot.accountsHash?.slice(0, 8)}...)`);
-      console.log(`  UTXO Set Hash:  ✓ MATCH (${snapshot.utxoSetHash?.slice(0, 8)}...)`);
-      console.log(`  State Hash:     ✓ MATCH (${snapshot.stateHash?.slice(0, 8)}...)`);
-      console.log(`  Content Hash:   ✓ MATCH (${snapshot.contentHash?.slice(0, 8)}...)`);
+      console.log(
+        `  Accounts Hash:  âœ“ MATCH (${snapshot.accountsHash?.slice(0, 8)}...)`
+      );
+      console.log(
+        `  UTXO Set Hash:  âœ“ MATCH (${snapshot.utxoSetHash?.slice(0, 8)}...)`
+      );
+      console.log(`  State Hash:     âœ“ MATCH (${snapshot.stateHash?.slice(0, 8)}...)`);
+      console.log(
+        `  Content Hash:   âœ“ MATCH (${snapshot.contentHash?.slice(0, 8)}...)`
+      );
     } else {
-      UI.error("Snapshot Integrity Compromised");
       result.errors.forEach((err) => console.log(`  [!] ${err}`));
-      process.exitCode = 1;
+      const { HardkasCliError } = await import("../cli-errors.js");
+      throw new HardkasCliError(
+        "SNAPSHOT_COMPROMISED",
+        "Snapshot Integrity Compromised",
+        { exitCode: 1 }
+      );
     }
   } catch (e: any) {
-    UI.error(`Verification failed: ${e.message}`);
-    process.exitCode = 1;
+    if (e.name === "HardkasCliError") throw e;
+    const { HardkasCliError } = await import("../cli-errors.js");
+    throw new HardkasCliError(
+      "VERIFICATION_FAILED",
+      `Verification failed: ${e.message}`,
+      { exitCode: 1 }
+    );
   }
 }

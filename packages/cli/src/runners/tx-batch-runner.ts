@@ -1,3 +1,4 @@
+import { getOutput } from "../output.js";
 import fs from "node:fs/promises";
 import path from "node:path";
 import { runTxFlow } from "./tx-flow.js";
@@ -42,7 +43,9 @@ export async function runTxBatch(options: any) {
   let failCount = 0;
 
   if (!json) {
-    console.log(`Processing batch of ${payments.length} transactions sequentially...`);
+    getOutput().writeLine(
+      `Processing batch of ${payments.length} transactions sequentially...`
+    );
   }
 
   // Strictly sequential execution for 0.7.5 to avoid UTXO race conditions
@@ -51,7 +54,7 @@ export async function runTxBatch(options: any) {
 
     if (!payment.from || !payment.to || !payment.amount) {
       if (!json)
-        console.error(
+        getOutput().error(
           `[${i + 1}/${payments.length}] Skipping invalid payment object (missing from/to/amount).`
         );
       results.push({
@@ -65,7 +68,7 @@ export async function runTxBatch(options: any) {
 
     try {
       if (!json) {
-        console.log(
+        getOutput().writeLine(
           `[${i + 1}/${payments.length}] Flow: ${payment.from} -> ${payment.to} (${payment.amount} KAS) on ${network}`
         );
       }
@@ -94,11 +97,11 @@ export async function runTxBatch(options: any) {
       });
       if (flowResult.ok) {
         successCount++;
-        if (!json) console.log(`  ✓ Success`);
+        if (!json) getOutput().writeLine(`  ✓ Success`);
       } else {
         failCount++;
         if (!json)
-          console.log(
+          getOutput().writeLine(
             `  ✗ Failed: Flow did not complete ok. (plan: ${flowResult.steps.plan.error}, sign: ${flowResult.steps.sign.error}, send: ${flowResult.steps.send.error})`
           );
       }
@@ -106,7 +109,7 @@ export async function runTxBatch(options: any) {
       failCount++;
       const errorMsg = e instanceof Error ? e.message : String(e);
       results.push({ index: i, ok: false, error: errorMsg });
-      if (!json) console.error(`  ✗ Error: ${errorMsg}`);
+      if (!json) getOutput().error(`  ✗ Error: ${errorMsg}`);
     }
   }
 
@@ -118,8 +121,8 @@ export async function runTxBatch(options: any) {
       results
     });
   } else {
-    console.log(`\nBatch processing complete.`);
-    console.log(`Successful: ${successCount}`);
-    console.log(`Failed:     ${failCount}`);
+    getOutput().writeLine(`\nBatch processing complete.`);
+    getOutput().writeLine(`Successful: ${successCount}`);
+    getOutput().writeLine(`Failed:     ${failCount}`);
   }
 }

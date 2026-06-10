@@ -1,3 +1,4 @@
+import { getOutput } from "../output.js";
 // @ts-nocheck
 import { Command } from "commander";
 import pc from "picocolors";
@@ -13,10 +14,12 @@ import {
 const STATE_PATH = path.join(".hardkas", "silver-simulator", "state.json");
 
 export function getSilverSimulateCommand() {
-  const cmd = new Command("simulate")
-    .description("Local SilverScript/Toccata artifact lifecycle simulator");
+  const cmd = new Command("simulate").description(
+    "Local SilverScript/Toccata artifact lifecycle simulator"
+  );
 
-  cmd.command("deploy")
+  cmd
+    .command("deploy")
     .argument("<deploy-plan>")
     .description("Simulate a SilverScript deploy plan without RPC")
     .action(async (deployPlanPath) => {
@@ -31,15 +34,18 @@ export function getSilverSimulateCommand() {
         const outPath = path.resolve(process.cwd(), `${result.receipt.artifactId}.json`);
         await writeArtifact(outPath, result.receipt);
 
-        console.log(pc.green("SIMULATED_ACCEPTED"));
-        console.log(`Artifact: ${pc.bold(outPath)}`);
-        console.log(`State:    ${pc.dim(path.resolve(process.cwd(), STATE_PATH))}`);
+        getOutput().writeLine(pc.green("SIMULATED_ACCEPTED"));
+        getOutput().writeLine(`Artifact: ${pc.bold(outPath)}`);
+        getOutput().writeLine(
+          `State:    ${pc.dim(path.resolve(process.cwd(), STATE_PATH))}`
+        );
       } catch (error) {
         handleSilverSimulationError(error);
       }
     });
 
-  cmd.command("spend")
+  cmd
+    .command("spend")
     .argument("<spend-plan>")
     .description("Simulate spending a SilverScript synthetic UTXO")
     .action(async (spendPlanPath) => {
@@ -54,15 +60,18 @@ export function getSilverSimulateCommand() {
         const outPath = path.resolve(process.cwd(), `${result.receipt.artifactId}.json`);
         await writeArtifact(outPath, result.receipt);
 
-        console.log(pc.green("SIMULATED_ACCEPTED"));
-        console.log(`Artifact: ${pc.bold(outPath)}`);
-        console.log(`State:    ${pc.dim(path.resolve(process.cwd(), STATE_PATH))}`);
+        getOutput().writeLine(pc.green("SIMULATED_ACCEPTED"));
+        getOutput().writeLine(`Artifact: ${pc.bold(outPath)}`);
+        getOutput().writeLine(
+          `State:    ${pc.dim(path.resolve(process.cwd(), STATE_PATH))}`
+        );
       } catch (error) {
         handleSilverSimulationError(error);
       }
     });
 
-  cmd.command("compare")
+  cmd
+    .command("compare")
     .description("Compare simulated SilverScript receipt with Docker/node receipt")
     .requiredOption("--simulated <receipt>", "Simulated receipt artifact")
     .requiredOption("--docker <receipt>", "Docker/node receipt artifact")
@@ -79,22 +88,22 @@ export function getSilverSimulateCommand() {
       const report = compareSilverReceipts(simulated, docker, mode);
 
       if (report.drift.length === 0) {
-        console.log(pc.green("SILVERSCRIPT_SIMULATION_MATCH"));
+        getOutput().writeLine(pc.green("SILVERSCRIPT_SIMULATION_MATCH"));
       } else {
-        console.log(pc.yellow("SILVERSCRIPT_SIMULATION_DRIFT"));
+        getOutput().writeLine(pc.yellow("SILVERSCRIPT_SIMULATION_DRIFT"));
         for (const entry of report.drift) {
-          console.log(`- ${entry.field}: ${entry.reason}`);
+          getOutput().writeLine(`- ${entry.field}: ${entry.reason}`);
         }
       }
 
       if (report.notes.length > 0) {
-        console.log(pc.dim("Comparison notes:"));
+        getOutput().writeLine(pc.dim("Comparison notes:"));
         for (const note of report.notes) {
-          console.log(pc.dim(`- ${note.field}: ${note.reason}`));
+          getOutput().writeLine(pc.dim(`- ${note.field}: ${note.reason}`));
         }
       }
 
-      console.log(pc.dim("PARTIAL_VM_SIMULATION"));
+      getOutput().writeLine(pc.dim("PARTIAL_VM_SIMULATION"));
     });
 
   return cmd;
@@ -135,9 +144,9 @@ function mergeState(existing: any, next: any) {
 
 function handleSilverSimulationError(error: unknown): never {
   if (error instanceof SilverSimulationError) {
-    console.error(pc.red(error.code));
-    console.error(pc.dim(error.message));
-    process.exit(1);
+    getOutput().error(pc.red(error.code));
+    getOutput().error(pc.dim(error.message));
+    throw new Error("Command failed");
   }
   throw error;
 }
@@ -147,14 +156,20 @@ function stableJson(value: unknown): string {
   if (Array.isArray(value)) return `[${value.map(stableJson).join(",")}]`;
   return `{${Object.keys(value as Record<string, unknown>)
     .sort()
-    .map((key) => `${JSON.stringify(key)}:${stableJson((value as Record<string, unknown>)[key])}`)
+    .map(
+      (key) =>
+        `${JSON.stringify(key)}:${stableJson((value as Record<string, unknown>)[key])}`
+    )
     .join(",")}}`;
 }
 
 function valuesMatch(field: string, simulated: unknown, docker: unknown): boolean {
   if (field === "status") {
-    return simulated === docker ||
-      (simulated === "SIMULATED_ACCEPTED" && (docker === "accepted" || docker === "submitted"));
+    return (
+      simulated === docker ||
+      (simulated === "SIMULATED_ACCEPTED" &&
+        (docker === "accepted" || docker === "submitted"))
+    );
   }
   return stableJson(simulated) === stableJson(docker);
 }
@@ -211,7 +226,8 @@ function compareSilverReceipts(simulated: any, docker: any, mode: SilverCompareM
       notes.push({
         ...entry,
         classification: "SEMANTICALLY_DERIVED",
-        reason: "synthetic simulator runtime identifier differs from Docker-observed runtime identifier"
+        reason:
+          "synthetic simulator runtime identifier differs from Docker-observed runtime identifier"
       });
       continue;
     }
@@ -228,7 +244,11 @@ function compareSilverReceipts(simulated: any, docker: any, mode: SilverCompareM
   return { drift, notes };
 }
 
-function compareField(field: string, simulatedValue: unknown, dockerValue: unknown): SilverCompareEntry {
+function compareField(
+  field: string,
+  simulatedValue: unknown,
+  dockerValue: unknown
+): SilverCompareEntry {
   const simulatedMissing = simulatedValue === undefined;
   const dockerMissing = dockerValue === undefined;
   if (simulatedMissing) {
@@ -343,14 +363,16 @@ function compareLineageSemantics(simulated: any, docker: any, mode: SilverCompar
   if (simulated.simulatedSpendTxId || docker.txId) {
     notes.push({
       field: "lineage.runtime.txid",
-      reason: "simulatedSpendTxId and Docker txId are intentionally different runtime identifiers",
+      reason:
+        "simulatedSpendTxId and Docker txId are intentionally different runtime identifiers",
       classification: "IGNORED_NON_CONSENSUS"
     });
   }
   if (simulated.spentOutpoint || docker.spentOutpoint) {
     notes.push({
       field: "lineage.runtime.spentOutpoint",
-      reason: "synthetic simulator outpoint and Docker-observed outpoint are compared as runtime metadata, not consensus equivalence",
+      reason:
+        "synthetic simulator outpoint and Docker-observed outpoint are compared as runtime metadata, not consensus equivalence",
       classification: "IGNORED_NON_CONSENSUS"
     });
   }
@@ -358,7 +380,10 @@ function compareLineageSemantics(simulated: any, docker: any, mode: SilverCompar
   return { drift, notes };
 }
 
-function compareDeploySource(simulated: any, docker: any): SilverCompareEntry | undefined {
+function compareDeploySource(
+  simulated: any,
+  docker: any
+): SilverCompareEntry | undefined {
   if (!simulated.deploySimulationHash && !docker.deployArtifactHash) return undefined;
   if (!simulated.deploySimulationHash) {
     return {
@@ -376,12 +401,16 @@ function compareDeploySource(simulated: any, docker: any): SilverCompareEntry | 
   }
   return {
     field: "lineage.source.deploy",
-    reason: "simulator references deploySimulationHash; Docker references real deployArtifactHash",
+    reason:
+      "simulator references deploySimulationHash; Docker references real deployArtifactHash",
     classification: "SEMANTICALLY_DERIVED"
   };
 }
 
-function compareSpendPlanSource(simulated: any, docker: any): SilverCompareEntry | undefined {
+function compareSpendPlanSource(
+  simulated: any,
+  docker: any
+): SilverCompareEntry | undefined {
   if (!simulated.spendPlanHash && !docker.spendPlanHash) return undefined;
   if (!simulated.spendPlanHash) {
     return {
@@ -406,7 +435,8 @@ function compareSpendPlanSource(simulated: any, docker: any): SilverCompareEntry
   }
   return {
     field: "lineage.source.spendPlanHash",
-    reason: "simulator spend plan hash is derived from synthetic outpoint normalization; Docker spend plan hash is derived from real outpoint",
+    reason:
+      "simulator spend plan hash is derived from synthetic outpoint normalization; Docker spend plan hash is derived from real outpoint",
     classification: "SEMANTICALLY_DERIVED"
   };
 }

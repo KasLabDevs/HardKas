@@ -1,16 +1,19 @@
-import fs from 'node:fs';
-import path from 'node:path';
-import { execSync } from 'node:child_process';
-import os from 'node:os';
+import fs from "node:fs";
+import path from "node:path";
+import { execSync } from "node:child_process";
+import os from "node:os";
 
-const workspace = path.join(process.cwd(), '..', 'external-gauntlet-runs');
+const workspace = path.join(process.cwd(), "..", "external-gauntlet-runs");
 if (fs.existsSync(workspace)) {
   fs.rmSync(workspace, { recursive: true, force: true });
 }
 fs.mkdirSync(workspace, { recursive: true });
 
 const apps = [
-  { name: "01-wallet-backend", type: "node", code: `
+  {
+    name: "01-wallet-backend",
+    type: "node",
+    code: `
     import { Hardkas } from '@hardkas/sdk';
     async function run() {
       const sdk = await Hardkas.create({ cwd: process.cwd(), autoBootstrap: true, network: 'simulated' });
@@ -20,12 +23,20 @@ const apps = [
       console.log('SUCCESS', receipt.txId);
     }
     run();
-  `},
-  { name: "02-react-wallet", type: "react", code: `
+  `
+  },
+  {
+    name: "02-react-wallet",
+    type: "react",
+    code: `
     import { Hardkas } from '@hardkas/sdk';
     console.log(Hardkas);
-  `},
-  { name: "03-audit-explorer-node", type: "node", code: `
+  `
+  },
+  {
+    name: "03-audit-explorer-node",
+    type: "node",
+    code: `
     import { Hardkas } from '@hardkas/sdk';
     async function run() {
       const sdk = await Hardkas.create({ cwd: process.cwd(), autoBootstrap: true, network: 'simulated' });
@@ -33,12 +44,20 @@ const apps = [
       console.log('Artifacts:', artifacts.length);
     }
     run();
-  `},
-  { name: "04-audit-explorer-react", type: "react", code: `
+  `
+  },
+  {
+    name: "04-audit-explorer-react",
+    type: "react",
+    code: `
     import { Hardkas } from '@hardkas/sdk';
     console.log('React Explorer');
-  `},
-  { name: "05-document-notary-node", type: "node", code: `
+  `
+  },
+  {
+    name: "05-document-notary-node",
+    type: "node",
+    code: `
     import { Hardkas } from '@hardkas/sdk';
     async function run() {
       const sdk = await Hardkas.create({ cwd: process.cwd(), autoBootstrap: true, network: 'simulated' });
@@ -50,12 +69,20 @@ const apps = [
       }
     }
     run();
-  `},
-  { name: "06-document-notary-react", type: "react", code: `
+  `
+  },
+  {
+    name: "06-document-notary-react",
+    type: "react",
+    code: `
     import { useHardkas } from '@hardkas/react';
     console.log('Notary React');
-  `},
-  { name: "07-game-backend", type: "node", code: `
+  `
+  },
+  {
+    name: "07-game-backend",
+    type: "node",
+    code: `
     import { Hardkas } from '@hardkas/sdk';
     async function run() {
       const sdk = await Hardkas.create({ cwd: process.cwd(), autoBootstrap: true, network: 'simulated' });
@@ -63,12 +90,20 @@ const apps = [
       console.log('Balance:', b);
     }
     run();
-  `},
-  { name: "08-game-dashboard", type: "react", code: `
+  `
+  },
+  {
+    name: "08-game-dashboard",
+    type: "react",
+    code: `
     import { Hardkas } from '@hardkas/sdk';
     console.log('Game Dashboard');
-  `},
-  { name: "09-payroll-service", type: "node", code: `
+  `
+  },
+  {
+    name: "09-payroll-service",
+    type: "node",
+    code: `
     import { Hardkas } from '@hardkas/sdk';
     async function run() {
       const sdk = await Hardkas.create({ cwd: process.cwd(), autoBootstrap: true, network: 'simulated' });
@@ -77,12 +112,20 @@ const apps = [
       await sdk.tx.simulate(signed);
     }
     run();
-  `},
-  { name: "10-payroll-ui", type: "react", code: `
+  `
+  },
+  {
+    name: "10-payroll-ui",
+    type: "react",
+    code: `
     import { useHardkas } from '@hardkas/react';
     console.log('Payroll UI');
-  `},
-  { name: "11-dao-multisig-node", type: "node", code: `
+  `
+  },
+  {
+    name: "11-dao-multisig-node",
+    type: "node",
+    code: `
     import { Hardkas } from '@hardkas/sdk';
     async function run() {
       const sdk = await Hardkas.create({ cwd: process.cwd(), autoBootstrap: true, network: 'simulated' });
@@ -92,12 +135,20 @@ const apps = [
       await sdk.tx.simulate(sig2);
     }
     run();
-  `},
-  { name: "12-dao-dashboard", type: "react", code: `
+  `
+  },
+  {
+    name: "12-dao-dashboard",
+    type: "react",
+    code: `
     import { Hardkas } from '@hardkas/sdk';
     console.log('DAO React');
-  `},
-  { name: "13-backup-integrity", type: "node", code: `
+  `
+  },
+  {
+    name: "13-backup-integrity",
+    type: "node",
+    code: `
     import { Hardkas } from '@hardkas/sdk';
     async function run() {
       const sdk = await Hardkas.create({ cwd: process.cwd(), autoBootstrap: true, network: 'simulated' });
@@ -110,8 +161,12 @@ const apps = [
       console.log('Replay success');
     }
     run();
-  `},
-  { name: "14-ci-artifact-verifier", type: "node", code: `
+  `
+  },
+  {
+    name: "14-ci-artifact-verifier",
+    type: "node",
+    code: `
     import { Hardkas } from '@hardkas/sdk';
     async function run() {
       const sdk = await Hardkas.create({ cwd: process.cwd(), autoBootstrap: true, network: 'simulated' });
@@ -121,16 +176,24 @@ const apps = [
       if (!res.valid) throw new Error("Verification failed");
     }
     run();
-  `},
-  { name: "15-agent-wallet", type: "node", code: `
+  `
+  },
+  {
+    name: "15-agent-wallet",
+    type: "node",
+    code: `
     import { Hardkas } from '@hardkas/sdk';
     async function run() {
       const sdk = await Hardkas.create({ cwd: process.cwd(), autoBootstrap: true, network: 'simulated' });
       await sdk.accounts.list();
     }
     run();
-  `},
-  { name: "16-agent-approval-flow", type: "node", code: `
+  `
+  },
+  {
+    name: "16-agent-approval-flow",
+    type: "node",
+    code: `
     import { Hardkas } from '@hardkas/sdk';
     async function run() {
       const sdk = await Hardkas.create({ cwd: process.cwd(), autoBootstrap: true, network: 'simulated' });
@@ -138,8 +201,12 @@ const apps = [
       console.log(plan.planId);
     }
     run();
-  `},
-  { name: "17-mini-indexer", type: "node", code: `
+  `
+  },
+  {
+    name: "17-mini-indexer",
+    type: "node",
+    code: `
     import { Hardkas } from '@hardkas/sdk';
     async function run() {
       const sdk = await Hardkas.create({ cwd: process.cwd(), autoBootstrap: true, network: 'simulated' });
@@ -147,8 +214,12 @@ const apps = [
       console.log("Indexed:", res);
     }
     run();
-  `},
-  { name: "18-query-store-test", type: "node", code: `
+  `
+  },
+  {
+    name: "18-query-store-test",
+    type: "node",
+    code: `
     import { Hardkas } from '@hardkas/sdk';
     async function run() {
       const sdk = await Hardkas.create({ cwd: process.cwd(), autoBootstrap: true, network: 'simulated' });
@@ -156,12 +227,20 @@ const apps = [
       console.log("Sync success");
     }
     run();
-  `},
-  { name: "19-dashboard-integration", type: "react", code: `
+  `
+  },
+  {
+    name: "19-dashboard-integration",
+    type: "react",
+    code: `
     import { Hardkas } from '@hardkas/sdk';
     console.log('Integration');
-  `},
-  { name: "20-kastj-migration-spike", type: "node", code: `
+  `
+  },
+  {
+    name: "20-kastj-migration-spike",
+    type: "node",
+    code: `
     import { Hardkas } from '@hardkas/sdk';
     async function run() {
       const sdk = await Hardkas.create({ cwd: process.cwd(), autoBootstrap: true, network: 'simulated' });
@@ -174,101 +253,146 @@ const apps = [
       console.log('Kastj spike works');
     }
     run();
-  `}
+  `
+  }
 ];
 
 const results = [];
-let sdkApiGapMatrix = { missingApis: [], expectedBrowserBoundaries: [], cliFallbacks: [] };
+let sdkApiGapMatrix = {
+  missingApis: [],
+  expectedBrowserBoundaries: [],
+  cliFallbacks: []
+};
 
 async function main() {
   for (const app of apps) {
     console.log(`\n--- Running ${app.name} ---`);
     const appDir = path.join(workspace, app.name);
     fs.mkdirSync(appDir);
-    
+
     const start = Date.now();
-    let status = 'SUCCESSFUL';
-    let errorMessage = '';
+    let status = "SUCCESSFUL";
+    let errorMessage = "";
     let artifactsCount = 0;
-    
+
     try {
       // 1. Write Source
-      if (app.type === 'node') {
-        fs.writeFileSync(path.join(appDir, 'package.json'), JSON.stringify({ name: app.name, type: "module" }));
-        fs.writeFileSync(path.join(appDir, 'index.mjs'), app.code);
+      if (app.type === "node") {
+        fs.writeFileSync(
+          path.join(appDir, "package.json"),
+          JSON.stringify({ name: app.name, type: "module" })
+        );
+        fs.writeFileSync(path.join(appDir, "index.mjs"), app.code);
       } else {
-        fs.writeFileSync(path.join(appDir, 'package.json'), JSON.stringify({ name: app.name, type: "module" }));
+        fs.writeFileSync(
+          path.join(appDir, "package.json"),
+          JSON.stringify({ name: app.name, type: "module" })
+        );
         // Vite mock setup
-        fs.writeFileSync(path.join(appDir, 'vite.config.ts'), 'export default {}');
-        fs.writeFileSync(path.join(appDir, 'src.ts'), app.code);
+        fs.writeFileSync(path.join(appDir, "vite.config.ts"), "export default {}");
+        fs.writeFileSync(path.join(appDir, "src.ts"), app.code);
       }
 
       // 2. Install SDK from NPM
-      console.log('Installing @hardkas/sdk@0.7.11-alpha...');
-      execSync('npm install @hardkas/sdk@0.7.11-alpha @hardkas/cli@0.7.11-alpha', { cwd: appDir, stdio: 'ignore' });
-      if (app.code.includes('@hardkas/react')) {
-         try {
-           execSync('npm install @hardkas/react@0.7.11-alpha', { cwd: appDir, stdio: 'ignore' });
-         } catch(e) {
-           // Might not be published yet, ignore for now to let the import fail naturally
-         }
+      console.log("Installing @hardkas/sdk@0.7.11-alpha...");
+      execSync("npm install @hardkas/sdk@0.7.11-alpha @hardkas/cli@0.7.11-alpha", {
+        cwd: appDir,
+        stdio: "ignore"
+      });
+      if (app.code.includes("@hardkas/react")) {
+        try {
+          execSync("npm install @hardkas/react@0.7.11-alpha", {
+            cwd: appDir,
+            stdio: "ignore"
+          });
+        } catch (e) {
+          // Might not be published yet, ignore for now to let the import fail naturally
+        }
       }
 
       // 3. Init Workspace
-      execSync('npx @hardkas/cli init . --skip-install', { cwd: appDir, stdio: 'ignore' });
+      execSync("npx @hardkas/cli init . --skip-install", {
+        cwd: appDir,
+        stdio: "ignore"
+      });
 
       // 4. Execute
-      if (app.type === 'node') {
-        execSync('node index.mjs', { cwd: appDir, stdio: 'pipe' });
+      if (app.type === "node") {
+        execSync("node index.mjs", { cwd: appDir, stdio: "pipe" });
       } else {
         // We simulate a vite build by just running node or tsc
         // Because of direct imports, node will throw if it has fs inside React
-        execSync('node src.ts', { cwd: appDir, stdio: 'pipe' });
-      }
-      
-      if (app.fallback) {
-        status = 'PARTIAL';
-        sdkApiGapMatrix.cliFallbacks.push({ app: app.name, reason: "CLI fallback used for core operation" });
+        execSync("node src.ts", { cwd: appDir, stdio: "pipe" });
       }
 
+      if (app.fallback) {
+        status = "PARTIAL";
+        sdkApiGapMatrix.cliFallbacks.push({
+          app: app.name,
+          reason: "CLI fallback used for core operation"
+        });
+      }
     } catch (e) {
       errorMessage = e.stdout?.toString() || e.stderr?.toString() || e.message;
-      if (app.type === 'react' && (errorMessage.includes('fs') || errorMessage.includes('path') || errorMessage.includes('crypto'))) {
-        status = 'EXPECTED_BROWSER_BOUNDARY';
-        sdkApiGapMatrix.expectedBrowserBoundaries.push({ app: app.name, error: "fs/path/crypto browser boundary hit" });
-      } else if (app.type === 'react' && app.code.includes('@hardkas/react')) {
-        status = 'FAILED';
-        errorMessage = 'P1/P2 DX gap: @hardkas/react failed or missing';
-        sdkApiGapMatrix.missingApis.push({ app: app.name, missing: "@hardkas/react context/hooks" });
+      if (
+        app.type === "react" &&
+        (errorMessage.includes("fs") ||
+          errorMessage.includes("path") ||
+          errorMessage.includes("crypto"))
+      ) {
+        status = "EXPECTED_BROWSER_BOUNDARY";
+        sdkApiGapMatrix.expectedBrowserBoundaries.push({
+          app: app.name,
+          error: "fs/path/crypto browser boundary hit"
+        });
+      } else if (app.type === "react" && app.code.includes("@hardkas/react")) {
+        status = "FAILED";
+        errorMessage = "P1/P2 DX gap: @hardkas/react failed or missing";
+        sdkApiGapMatrix.missingApis.push({
+          app: app.name,
+          missing: "@hardkas/react context/hooks"
+        });
       } else {
-        status = 'FAILED';
-        sdkApiGapMatrix.missingApis.push({ app: app.name, missing: "Runtime error or missing export", error: errorMessage });
+        status = "FAILED";
+        sdkApiGapMatrix.missingApis.push({
+          app: app.name,
+          missing: "Runtime error or missing export",
+          error: errorMessage
+        });
       }
     }
-    
+
     // Count artifacts
-    const artifactsDir = path.join(appDir, '.hardkas', 'artifacts');
+    const artifactsDir = path.join(appDir, ".hardkas", "artifacts");
     if (fs.existsSync(artifactsDir)) {
-      artifactsCount = fs.readdirSync(artifactsDir).filter(f => f.endsWith('.json')).length;
+      artifactsCount = fs
+        .readdirSync(artifactsDir)
+        .filter((f) => f.endsWith(".json")).length;
     }
 
     const duration = Date.now() - start;
     console.log(`Status: ${status} | Artifacts: ${artifactsCount} | Time: ${duration}ms`);
-    
+
     results.push({
       name: app.name,
       type: app.type,
       status,
       artifacts: artifactsCount,
       durationMs: duration,
-      error: status === 'FAILED' ? errorMessage.substring(0, 100) : null
+      error: status === "FAILED" ? errorMessage.substring(0, 100) : null
     });
   }
 
   // Generate Reports
-  fs.writeFileSync(path.join(process.cwd(), 'results.json'), JSON.stringify(results, null, 2));
-  fs.writeFileSync(path.join(process.cwd(), 'sdk-api-gap-matrix.json'), JSON.stringify(sdkApiGapMatrix, null, 2));
-  console.log('DONE');
+  fs.writeFileSync(
+    path.join(process.cwd(), "results.json"),
+    JSON.stringify(results, null, 2)
+  );
+  fs.writeFileSync(
+    path.join(process.cwd(), "sdk-api-gap-matrix.json"),
+    JSON.stringify(sdkApiGapMatrix, null, 2)
+  );
+  console.log("DONE");
 }
 
 main();

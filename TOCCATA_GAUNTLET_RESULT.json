@@ -1,0 +1,87 @@
+{
+  "schema": "hardkas.toccataGauntlet.v1",
+  "status": "HARDKAS_TOCCATA_BASELINE_READY",
+  "generatedAt": "2026-06-10T15:51:19.826Z",
+  "partialKnownLimitations": [
+    "PARTIAL_VM_SIMULATION"
+  ],
+  "phases": [
+    {
+      "name": "package/build integrity",
+      "status": "PASS"
+    },
+    {
+      "name": "doctor",
+      "status": "PASS"
+    },
+    {
+      "name": "capabilities",
+      "status": "PASS"
+    },
+    {
+      "name": "localnet status",
+      "status": "PASS"
+    },
+    {
+      "name": "docker rpc health",
+      "status": "PASS"
+    },
+    {
+      "name": "standard tx lifecycle",
+      "status": "PASS"
+    },
+    {
+      "name": "silver compile fixture verify",
+      "status": "PASS"
+    },
+    {
+      "name": "silver deploy-plan",
+      "status": "PASS",
+      "artifact": "silverdeployplan-970f03ca97491a80.json"
+    },
+    {
+      "name": "silver deploy real",
+      "status": "PASS",
+      "artifact": "silverdeploy-5abaabe88e345ccc.json"
+    },
+    {
+      "name": "miner confirmation after deploy",
+      "status": "PASS"
+    },
+    {
+      "name": "silver spend-plan",
+      "status": "PASS",
+      "artifact": "silverspendplan-649bad63e77fe3a9.json"
+    },
+    {
+      "name": "silver spend real",
+      "status": "PASS",
+      "artifact": "silverreceipt-f6478240ce502ed0.json"
+    },
+    {
+      "name": "miner confirmation after spend",
+      "status": "PASS"
+    },
+    {
+      "name": "silver simulate deploy/spend",
+      "status": "PASS",
+      "deploySim": "silverdeploysim-ae169e512be48d44.json",
+      "spendSim": "silverspendsim-6f448aea1d84aa27.json"
+    },
+    {
+      "name": "simulator/docker compare",
+      "status": "PASS",
+      "compareMode": "artifact-coherence",
+      "expectedKnownLimitation": "PARTIAL_VM_SIMULATION"
+    },
+    {
+      "name": "toccata golden corpus verify",
+      "status": "PASS",
+      "path": "fixtures/toccata-v2/silver"
+    },
+    {
+      "name": "mainnet guard",
+      "status": "PASS"
+    }
+  ]
+}

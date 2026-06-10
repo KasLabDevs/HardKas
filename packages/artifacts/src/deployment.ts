@@ -3,6 +3,7 @@ import { ARTIFACT_VERSION } from "./schemas.js";
 import { calculateContentHash, CURRENT_HASH_VERSION } from "./canonical.js";
 import { DeploymentRecord, DeploymentSummary } from "./types.js";
 import { NetworkId, ArtifactId, TxId, ContentHash } from "@hardkas/core";
+import { HardkasSchemas } from "@hardkas/core";
 
 // SAFETY_LEVEL: SIMULATION_ONLY
 
@@ -21,7 +22,7 @@ export function createDeploymentRecord(opts: {
   notes?: string;
 }): DeploymentRecord {
   const recordDraft: Omit<DeploymentRecord, "contentHash"> = {
-    schema: "hardkas.deployment.v1",
+    schema: HardkasSchemas.DeploymentV1,
     label: opts.label,
     networkId: opts.networkId,
     status: opts.status || "planned",

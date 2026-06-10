@@ -1,3 +1,4 @@
+import { getOutput } from "../output.js";
 import { Command } from "commander";
 import { UI } from "../ui.js";
 import { runAccountsRealInit } from "../runners/accounts-real-init-runner.js";
@@ -24,22 +25,16 @@ export function registerAccountsCommands(program: Command) {
         const accounts = listHardkasAccounts(loaded.config);
 
         if (options.json) {
-          console.log(
-            JSON.stringify(
-              accounts.map((a) => describeAccount(a)),
-              null,
-              2
-            )
-          );
+          getOutput().writeJson(accounts.map((a) => describeAccount(a)));
           return;
         }
 
-        console.log("HardKAS accounts");
-        console.log("");
+        getOutput().writeLine("HardKAS accounts");
+        getOutput().writeLine("");
         for (const acc of accounts) {
           const encrypted =
             acc.kind === "kaspa-private-key" && !acc.privateKeyEnv ? " (encrypted)" : "";
-          console.log(
+          getOutput().writeLine(
             `${acc.name.padEnd(12)} ${acc.address?.padEnd(24)} (${acc.kind})${encrypted}`
           );
         }
@@ -81,8 +76,8 @@ export function registerAccountsCommands(program: Command) {
                 force: options.force,
                 workspaceRoot: process.cwd()
               });
-              if (options.json) console.log(JSON.stringify(result, null, 2));
-              else console.log(result.formatted);
+              if (options.json) getOutput().writeJson(result);
+              else getOutput().writeLine(result.formatted);
             }
           );
         } catch (e) {
@@ -135,8 +130,8 @@ export function registerAccountsCommands(program: Command) {
               ...options,
               workspaceRoot: process.cwd()
             });
-            if (options.json) console.log(JSON.stringify(result, null, 2));
-            else console.log(result.formatted);
+            if (options.json) getOutput().writeJson(result);
+            else getOutput().writeLine(result.formatted);
           }
         );
       } catch (e) {
@@ -185,8 +180,8 @@ export function registerAccountsCommands(program: Command) {
     .alias("lock")
     .description(`Clear the local dev signing session marker ${UI.maturity("internal")}`)
     .action(async (name: string) => {
-      console.log(`\n  ℹ Account '${name}' session clear (redundant).`);
-      console.log(
+      getOutput().writeLine(`\n  ℹ Account '${name}' session clear (redundant).`);
+      getOutput().writeLine(
         `    The CLI is already stateless. No secrets are stored in memory between commands.\n`
       );
     });
@@ -263,8 +258,8 @@ export function registerAccountsCommands(program: Command) {
               ...options,
               workspaceRoot: process.cwd()
             });
-            if (options.json) console.log(JSON.stringify(result.accounts, null, 2));
-            else console.log(result.formatted);
+            if (options.json) getOutput().writeJson(result.accounts);
+            else getOutput().writeLine(result.formatted);
           }
         );
       } catch (e) {
@@ -294,13 +289,21 @@ export function registerAccountsCommands(program: Command) {
           local: options.local
         });
         if (options.json) {
-          console.log(JSON.stringify(result, (k, v) => typeof v === "bigint" ? v.toString() : v, 2));
+          getOutput().writeLine(
+            JSON.stringify(
+              result,
+              (k, v) => (typeof v === "bigint" ? v.toString() : v),
+              2
+            )
+          );
         } else {
-          console.log(`\nAccount:  ${result.name}`);
-          console.log(`Address:  ${result.address}`);
-          console.log(`Balance:  ${Number(result.balanceSompi) / 100_000_000} KAS`);
-          console.log(`UTXOs:    ${result.utxoCount}`);
-          console.log(`Network:  ${result.network}`);
+          getOutput().writeLine(`\nAccount:  ${result.name}`);
+          getOutput().writeLine(`Address:  ${result.address}`);
+          getOutput().writeLine(
+            `Balance:  ${Number(result.balanceSompi) / 100_000_000} KAS`
+          );
+          getOutput().writeLine(`UTXOs:    ${result.utxoCount}`);
+          getOutput().writeLine(`Network:  ${result.network}`);
         }
       } catch (e) {
         throw e;
@@ -315,7 +318,7 @@ export function registerAccountsCommands(program: Command) {
       try {
         const amountSompi = BigInt(parseFloat(options.amount) * 100_000_000);
         const result = await runAccountsFund({ identifier, amountSompi });
-        console.log(result.formatted);
+        getOutput().writeLine(result.formatted);
       } catch (e) {
         throw e;
       }
@@ -328,7 +331,11 @@ export function registerAccountsCommands(program: Command) {
     .option("--provider <type>", "Provider mode (auto, rpc, simulated)", "auto")
     .option("--url <url>", "RPC URL (optional override)")
     .option("--target-utxos <n>", "Target number of UTXOs to leave behind", "20")
-    .option("--batch-size <n>", "Number of UTXOs to consolidate per batch (max 512)", "256")
+    .option(
+      "--batch-size <n>",
+      "Number of UTXOs to consolidate per batch (max 512)",
+      "256"
+    )
     .option("--min-utxo <sompi>", "Minimum UTXO size to consolidate in sompi")
     .option("--dry-run", "Only estimate batches (default if --execute is not provided)")
     .option("--execute", "Execute the consolidation (requires --yes to broadcast)")
@@ -337,7 +344,8 @@ export function registerAccountsCommands(program: Command) {
     .option("--json", "Output as JSON", false)
     .action(async (account: string, options: any) => {
       try {
-        const { runAccountsConsolidate } = await import("../runners/accounts-consolidate-runner.js");
+        const { runAccountsConsolidate } =
+          await import("../runners/accounts-consolidate-runner.js");
         await runAccountsConsolidate({
           account,
           network: options.network,
@@ -350,14 +358,16 @@ export function registerAccountsCommands(program: Command) {
           execute: options.execute === true,
           yes: options.yes === true,
           allowMainnet: options.allowMainnet === true,
-          json: options.json === true,
+          json: options.json === true
         });
       } catch (e: any) {
         if (e.code === "CONSOLIDATION_NOT_REQUIRED") {
           if (options.json) {
-             console.log(JSON.stringify({ status: "CONSOLIDATION_NOT_REQUIRED", message: e.message }));
+            getOutput().writeLine(
+              JSON.stringify({ status: "CONSOLIDATION_NOT_REQUIRED", message: e.message })
+            );
           } else {
-             console.log(`\n  ℹ ${e.message}\n`);
+            getOutput().writeLine(`\n  ℹ ${e.message}\n`);
           }
           return;
         }

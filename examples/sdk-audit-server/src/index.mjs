@@ -13,7 +13,7 @@ async function run() {
   await hardkas.query.sync();
 
   const app = express();
-  
+
   app.get("/artifacts", async (req, res) => {
     try {
       const list = await hardkas.artifacts.list();
@@ -47,7 +47,7 @@ async function run() {
     console.log(" - GET /artifacts");
     console.log(" - GET /lineage/:id");
     console.log(" - GET /verify/:id");
-    
+
     // Shut down gracefully after 5 seconds since it's just a demo
     setTimeout(() => {
       console.log("Shutting down demo server...");

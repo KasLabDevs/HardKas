@@ -3,20 +3,25 @@ import { UI, handleError } from "../ui.js";
 import { loadHardkasConfig } from "@hardkas/config";
 import type { NetworkId, KaspaAddress, ContentHash } from "@hardkas/core";
 import type { TxPlanArtifact } from "@hardkas/artifacts";
+import { HardkasSchemas } from "@hardkas/artifacts";
 
 export async function runKaspaWalletCreate(name: string, options: { network: string }) {
   try {
     const { createLocalKaspaWallet } = await import("@hardkas/accounts");
 
-    console.log(pc.bold("\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"));
-    console.log(pc.bold(`HardKAS • Kaspa Wallet Creation`));
-    console.log(pc.bold("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"));
+    console.log(
+      pc.bold("\nâ”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”")
+    );
+    console.log(pc.bold(`HardKAS â€¢ Kaspa Wallet Creation`));
+    console.log(
+      pc.bold("â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”\n")
+    );
 
     const wallet = await createLocalKaspaWallet({
       networkId: options.network as "mainnet" | "testnet-10" | "simnet"
     });
 
-    console.log(`  ${pc.green("✓")} New Kaspa L1 wallet generated:`);
+    console.log(`  ${pc.green("âœ“")} New Kaspa L1 wallet generated:`);
     console.log(`    Name:    ${pc.white(name)}`);
     console.log(`    Address: ${pc.white(wallet.address)}`);
     console.log(`    Network: ${pc.white(options.network)}`);
@@ -74,9 +79,13 @@ export async function runKaspaWalletAddress(name: string) {
     const { resolveHardkasAccountAddress } = await import("@hardkas/accounts");
     const address = await resolveHardkasAccountAddress(name, config.config);
     console.log(address);
-  } catch (e) {
-    handleError(e);
-    process.exitCode = 1;
+  } catch (e: any) {
+    if (e.name === "HardkasCliError") throw e;
+    const { HardkasCliError } = await import("../cli-errors.js");
+    throw new HardkasCliError("WALLET_ERROR", e.message || "Unknown error", {
+      exitCode: 1,
+      cause: e
+    });
   }
 }
 
@@ -88,6 +97,7 @@ export async function runKaspaWalletBalance(
     const config = await loadHardkasConfig();
     const { resolveHardkasAccountAddress } = await import("@hardkas/accounts");
     const { JsonWrpcKaspaClient } = await import("@hardkas/kaspa-rpc");
+    const { formatSompiToKas } = await import("@hardkas/core");
 
     const address = await resolveHardkasAccountAddress(name, config.config);
     const client = new JsonWrpcKaspaClient({ rpcUrl: options.rpcUrl });
@@ -102,10 +112,14 @@ export async function runKaspaWalletBalance(
 
     console.log(`\nWallet:  ${pc.white(name)}`);
     console.log(`Address: ${pc.dim(address)}`);
-    console.log(`Balance: ${pc.green(Number(balance.balanceSompi) / 1e8)} KAS\n`);
-  } catch (e) {
-    handleError(e);
-    process.exitCode = 1;
+    console.log(`Balance: ${pc.green(formatSompiToKas(balance.balanceSompi))} KAS\n`);
+  } catch (e: any) {
+    if (e.name === "HardkasCliError") throw e;
+    const { HardkasCliError } = await import("../cli-errors.js");
+    throw new HardkasCliError("WALLET_OPERATION_FAILED", e.message || "Unknown error", {
+      exitCode: 1,
+      cause: e
+    });
   }
 }
 
@@ -122,10 +136,11 @@ export async function runKaspaWalletSend(
     const { buildPaymentPlan } = await import("@hardkas/tx-builder");
     const { signTxPlanArtifact } = await import("@hardkas/accounts");
     const { HARDKAS_VERSION, calculateContentHash } = await import("@hardkas/artifacts");
+    const { parseKasToSompi, formatSompiToKas } = await import("@hardkas/core");
 
     const sender = resolveHardkasAccount({ nameOrAddress: from, config: config.config });
     const targetAddress = await resolveHardkasAccountAddress(to, config.config);
-    const amountSompi = BigInt(Math.floor(parseFloat(options.amount) * 1e8));
+    const amountSompi = parseKasToSompi(options.amount);
 
     const client = new JsonWrpcKaspaClient({ rpcUrl: options.rpcUrl });
     const utxos = await client.getUtxosByAddress(sender.address!);
@@ -148,8 +163,8 @@ export async function runKaspaWalletSend(
     console.log(pc.dim("----------------------------------------"));
     console.log(`From:    ${pc.white(from)} (${sender.address})`);
     console.log(`To:      ${pc.white(to)} (${targetAddress})`);
-    console.log(`Amount:  ${pc.green(Number(amountSompi) / 1e8)} KAS`);
-    console.log(`Fee:     ${pc.yellow(Number(plan.estimatedFeeSompi) / 1e8)} KAS`);
+    console.log(`Amount:  ${pc.green(formatSompiToKas(amountSompi))} KAS`);
+    console.log(`Fee:     ${pc.yellow(formatSompiToKas(plan.estimatedFeeSompi))} KAS`);
     console.log(`Mass:    ${plan.estimatedMass}`);
     console.log(`Inputs:  ${plan.inputs.length} UTXOs`);
     console.log(pc.dim("----------------------------------------\n"));
@@ -175,7 +190,7 @@ export async function runKaspaWalletSend(
         ? (configObj.networkId as NetworkId)
         : config.config.defaultNetwork || "simnet";
     const planArtifact: TxPlanArtifact = {
-      schema: "hardkas.txPlan",
+      schema: HardkasSchemas.TxPlan,
       planId: `plan-${calculateContentHash({ from: sender.address, to: targetAddress, amount: amountSompi.toString() }).slice(0, 16)}`,
       hardkasVersion: HARDKAS_VERSION,
       version: "1.0.0-alpha",
@@ -215,7 +230,7 @@ export async function runKaspaWalletSend(
       config: config.config
     });
 
-    console.log(`  ${pc.green("✓")} Transaction signed.`);
+    console.log(`  ${pc.green("âœ“")} Transaction signed.`);
 
     // 3. Broadcast
     if (!signedArtifact.signedTransaction) {
@@ -228,15 +243,22 @@ export async function runKaspaWalletSend(
     );
 
     if (submitResult.accepted) {
-      console.log(`  ${pc.green("✓")} Transaction accepted by node.`);
+      console.log(`  ${pc.green("âœ“")} Transaction accepted by node.`);
       console.log(`  TXID: ${pc.bold(pc.white(submitResult.transactionId))}\n`);
     } else {
-      console.log(`  ${pc.red("✗")} Transaction rejected by node.`);
-      console.log(`  Details: ${JSON.stringify(submitResult.raw)}\n`);
-      process.exitCode = 1;
+      const { HardkasCliError } = await import("../cli-errors.js");
+      throw new HardkasCliError(
+        "TX_REJECTED",
+        `Transaction rejected by node.\nDetails: ${JSON.stringify(submitResult.raw)}`,
+        { exitCode: 1 }
+      );
     }
-  } catch (e) {
-    handleError(e);
-    process.exitCode = 1;
+  } catch (e: any) {
+    if (e.name === "HardkasCliError") throw e;
+    const { HardkasCliError } = await import("../cli-errors.js");
+    throw new HardkasCliError("WALLET_OPERATION_FAILED", e.message || "Unknown error", {
+      exitCode: 1,
+      cause: e
+    });
   }
 }

@@ -38,7 +38,7 @@ interface AppResult {
   missingSdkApis: string[];
   durationMs: number;
   failureReason?: string;
-  
+
   // Ergonomic telemetry
   linesOfCode: number;
   numberOfManualFileReads: number;
@@ -76,14 +76,15 @@ function runCmd(command: string, cwd: string, timeoutMs = 90000): CommandResult 
   let stderr = "";
   let exitCode = 0;
   try {
-    stdout = execSync(command, {
-      cwd,
-      timeout: timeoutMs,
-      encoding: "utf-8",
-      stdio: ["pipe", "pipe", "pipe"],
-      env: { ...process.env, HARDKAS_EXPERIMENTAL: "1", FORCE_COLOR: "0" },
-      shell: "powershell.exe"
-    }) || "";
+    stdout =
+      execSync(command, {
+        cwd,
+        timeout: timeoutMs,
+        encoding: "utf-8",
+        stdio: ["pipe", "pipe", "pipe"],
+        env: { ...process.env, HARDKAS_EXPERIMENTAL: "1", FORCE_COLOR: "0" },
+        shell: "powershell.exe"
+      }) || "";
   } catch (e: any) {
     exitCode = e.status ?? 1;
     stdout = e.stdout || "";
@@ -672,7 +673,12 @@ main().catch(console.error);
     usedSdk: "yes",
     usedCliFallback: "yes",
     sdkImportsUsed: ["@hardkas/sdk"],
-    missingSdkApis: ["vault.createProposal", "vault.fund", "vault.finalize", "vault.withdraw"],
+    missingSdkApis: [
+      "vault.createProposal",
+      "vault.fund",
+      "vault.finalize",
+      "vault.withdraw"
+    ],
     linesOfCode: 154,
     numberOfManualFileReads: 8,
     numberOfShellCalls: 4, // Heavily reliant on CLI shell executions
@@ -718,16 +724,19 @@ async function main() {
   console.log("📦 Creating isolated registry-based template workspace...");
   runCmd("npm init -y", templateDir);
 
-  const installCmd = "npm install @hardkas/sdk@0.7.11-alpha @hardkas/cli@0.7.11-alpha @hardkas/react@0.7.11-alpha @hardkas/query-store@0.7.11-alpha react react-dom vite express --no-audit --no-fund --legacy-peer-deps";
+  const installCmd =
+    "npm install @hardkas/sdk@0.7.11-alpha @hardkas/cli@0.7.11-alpha @hardkas/react@0.7.11-alpha @hardkas/query-store@0.7.11-alpha react react-dom vite express --no-audit --no-fund --legacy-peer-deps";
   console.log(`   └─ Installing from public NPM registry: \`${installCmd}\`...`);
-  
+
   const installStart = Date.now();
   const installRes = runCmd(installCmd, templateDir);
   if (installRes.exitCode !== 0) {
     console.error("❌ Registry installation failed!", installRes.stderr);
     process.exit(1);
   }
-  console.log(`✅ Package installed successfully in ${(Date.now() - installStart) / 1000}s!\n`);
+  console.log(
+    `✅ Package installed successfully in ${(Date.now() - installStart) / 1000}s!\n`
+  );
 
   for (const app of APPS) {
     console.log(`\n🚀 [Executing ${app.id}] — "${app.name}"...`);
@@ -736,8 +745,15 @@ async function main() {
     fs.mkdirSync(appCwd, { recursive: true });
 
     // Link pre-installed dependencies instantly
-    fs.symlinkSync(path.join(templateDir, "node_modules"), path.join(appCwd, "node_modules"), "junction");
-    fs.copyFileSync(path.join(templateDir, "package.json"), path.join(appCwd, "package.json"));
+    fs.symlinkSync(
+      path.join(templateDir, "node_modules"),
+      path.join(appCwd, "node_modules"),
+      "junction"
+    );
+    fs.copyFileSync(
+      path.join(templateDir, "package.json"),
+      path.join(appCwd, "package.json")
+    );
 
     // Check version
     const verRes = runCmd("npx hardkas --version", appCwd);
@@ -772,40 +788,58 @@ async function main() {
 
     // Physical disk scan for anti-fake artifact verification
     const artifactsDir = path.join(appCwd, ".hardkas", "artifacts");
-    const artifactCount = fs.existsSync(artifactsDir) ? fs.readdirSync(artifactsDir).length : 0;
+    const artifactCount = fs.existsSync(artifactsDir)
+      ? fs.readdirSync(artifactsDir).length
+      : 0;
 
     let doctorPassed = false;
     let replayPassed: boolean | "N/A" = "N/A";
 
-    const doctorRes = commandResults.find(r => r.command.includes("doctor"));
+    const doctorRes = commandResults.find((r) => r.command.includes("doctor"));
     if (doctorRes && doctorRes.exitCode === 0) {
       doctorPassed = true;
     }
 
-    const replayRes = commandResults.find(r => r.command.includes("replay verify"));
+    const replayRes = commandResults.find((r) => r.command.includes("replay verify"));
     if (replayRes) {
       replayPassed = replayRes.exitCode === 0;
     }
 
     // Determine counts and exit codes
-    const hasFailures = commandResults.some(r => r.exitCode !== 0);
+    const hasFailures = commandResults.some((r) => r.exitCode !== 0);
 
     // Differentiate between SUCCESSFUL and PARTIAL strictly:
     // If usedCliFallback is yes, or numberOfShellCalls > 0, or numberOfManualFileReads > 0, it is PARTIAL.
-    let classification: "SUCCESSFUL" | "PARTIAL" | "FAILED" | "NOT_SUPPORTED" = "SUCCESSFUL";
+    let classification: "SUCCESSFUL" | "PARTIAL" | "FAILED" | "NOT_SUPPORTED" =
+      "SUCCESSFUL";
     let failureReason = "";
 
     if (hasFailures) {
       classification = "FAILED";
-      const failedStep = commandResults.find(r => r.exitCode !== 0);
-      failureReason = failedStep?.stderr || failedStep?.stdout || "Runtime command execution crash.";
-    } else if (app.usedCliFallback === "yes" || app.numberOfShellCalls > 0 || app.numberOfManualFileReads > 0 || app.missingSdkApis.length > 0) {
+      const failedStep = commandResults.find((r) => r.exitCode !== 0);
+      failureReason =
+        failedStep?.stderr || failedStep?.stdout || "Runtime command execution crash.";
+    } else if (
+      app.usedCliFallback === "yes" ||
+      app.numberOfShellCalls > 0 ||
+      app.numberOfManualFileReads > 0 ||
+      app.missingSdkApis.length > 0
+    ) {
       classification = "PARTIAL";
-      failureReason = "SDK Gaps Detected: Succeeded but forced manual file reads, CLI fallbacks, or lacks native SDK methods.";
-    } else if (app.id.includes("SDK-02") || app.id.includes("SDK-06") || app.id.includes("SDK-08") || app.id.includes("SDK-10") || app.id.includes("SDK-12") || app.id.includes("SDK-16")) {
+      failureReason =
+        "SDK Gaps Detected: Succeeded but forced manual file reads, CLI fallbacks, or lacks native SDK methods.";
+    } else if (
+      app.id.includes("SDK-02") ||
+      app.id.includes("SDK-06") ||
+      app.id.includes("SDK-08") ||
+      app.id.includes("SDK-10") ||
+      app.id.includes("SDK-12") ||
+      app.id.includes("SDK-16")
+    ) {
       // React apps are classified as PARTIAL/FAILED because the SDK fails to bundle client-side under Vite due to Node built-ins!
       classification = "FAILED";
-      failureReason = "Vite Bundler Error: SDK imports node-only filesystem and crypto bindings, blocking client-side browser compilations.";
+      failureReason =
+        "Vite Bundler Error: SDK imports node-only filesystem and crypto bindings, blocking client-side browser compilations.";
     }
 
     const durationMs = Date.now() - appStartMs;
@@ -827,15 +861,19 @@ async function main() {
       missingSdkApis: app.missingSdkApis,
       durationMs,
       failureReason,
-      
+
       linesOfCode: app.linesOfCode,
       numberOfManualFileReads: app.numberOfManualFileReads,
       numberOfShellCalls: app.numberOfShellCalls,
       sdkMissingAbstractions: app.sdkMissingAbstractions
     });
 
-    console.log(`  🎉 Final Status: ${classification === "SUCCESSFUL" ? "🟢 SUCCESSFUL" : classification === "PARTIAL" ? "🟡 PARTIAL" : classification === "FAILED" ? "🔴 FAILED" : "⚫ NOT_SUPPORTED"}`);
-    console.log(`     Artifacts: ${artifactCount} | Doctor: ${doctorPassed ? "PASS" : "FAIL"} | Replay: ${replayPassed}`);
+    console.log(
+      `  🎉 Final Status: ${classification === "SUCCESSFUL" ? "🟢 SUCCESSFUL" : classification === "PARTIAL" ? "🟡 PARTIAL" : classification === "FAILED" ? "🔴 FAILED" : "⚫ NOT_SUPPORTED"}`
+    );
+    console.log(
+      `     Artifacts: ${artifactCount} | Doctor: ${doctorPassed ? "PASS" : "FAIL"} | Replay: ${replayPassed}`
+    );
 
     // Write bug files on FAILED or PARTIAL (Strict Bug Reporting Requirements)
     if (classification === "FAILED" || classification === "PARTIAL") {
@@ -857,7 +895,7 @@ The application encountered severe SDK boundary limitations.
 
 ## Exact Command Log
 \`\`\`bash
-${commandResults.map(c => `> ${c.command}`).join("\n")}
+${commandResults.map((c) => `> ${c.command}`).join("\n")}
 \`\`/
 
 ## Error Logs / Failure Reason
@@ -873,9 +911,9 @@ ${failureReason}
 
   // ─── Generate Frozen Reports ─────────────────────────────────────────────────
 
-  const successCount = results.filter(r => r.classification === "SUCCESSFUL").length;
-  const partialCount = results.filter(r => r.classification === "PARTIAL").length;
-  const failedCount = results.filter(r => r.classification === "FAILED").length;
+  const successCount = results.filter((r) => r.classification === "SUCCESSFUL").length;
+  const partialCount = results.filter((r) => r.classification === "PARTIAL").length;
+  const failedCount = results.filter((r) => r.classification === "FAILED").length;
   const totalArtifacts = results.reduce((acc, r) => acc + r.artifactCount, 0);
 
   const sdkReport = `# SDK Gauntlet Report — 20 Apps
@@ -899,7 +937,7 @@ ${failureReason}
 
 | ID | Name | Classification | Artifacts | SDK Imports | CLI Fallback | LoC | File Reads | Shell Calls | Missing APIs |
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
-${results.map(r => `| ${r.id} | ${r.name} | ${r.classification} | ${r.artifactCount} | ${r.sdkImportsUsed.join(", ")} | ${r.usedCliFallback} | ${r.linesOfCode} | ${r.numberOfManualFileReads} | ${r.numberOfShellCalls} | ${r.missingSdkApis.join(", ") || "none"} |`).join("\n")}
+${results.map((r) => `| ${r.id} | ${r.name} | ${r.classification} | ${r.artifactCount} | ${r.sdkImportsUsed.join(", ")} | ${r.usedCliFallback} | ${r.linesOfCode} | ${r.numberOfManualFileReads} | ${r.numberOfShellCalls} | ${r.missingSdkApis.join(", ") || "none"} |`).join("\n")}
 `;
 
   fs.writeFileSync(path.join(REPORTS_DIR, "sdk-gauntlet.md"), sdkReport);
@@ -926,7 +964,7 @@ Based on empirical data collected across **20 automated, non-adapted sandboxed r
 
   // ─── Generate Dedicated SDK-20 Kastj Spike Report ─────────────────────────────
 
-  const kastjResult = results.find(r => r.id === "SDK-20")!;
+  const kastjResult = results.find((r) => r.id === "SDK-20")!;
 
   const kastjReport = `# Kastj SDK Migration Spike Report — SDK-20
 
@@ -982,7 +1020,10 @@ Currently, **no**. The SDK is too low-level and forces developers to shell out t
     ]
   };
 
-  fs.writeFileSync(path.join(ROOT, "sdk-api-gap-matrix.json"), JSON.stringify(gapMatrix, null, 2));
+  fs.writeFileSync(
+    path.join(ROOT, "sdk-api-gap-matrix.json"),
+    JSON.stringify(gapMatrix, null, 2)
+  );
 
   console.log("\n======================================================================");
   console.log("🛡️  Phase 7 SDK Real App Gauntlet Complete!");
@@ -993,7 +1034,7 @@ Currently, **no**. The SDK is too low-level and forces developers to shell out t
   console.log("======================================================================\n");
 }
 
-main().catch(err => {
+main().catch((err) => {
   console.error("❌ Gauntlet crashed:", err);
   process.exit(1);
 });

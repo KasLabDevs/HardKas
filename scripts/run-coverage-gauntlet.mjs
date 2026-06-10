@@ -1,18 +1,18 @@
-import fs from 'node:fs';
-import path from 'node:path';
-import { execSync } from 'node:child_process';
+import fs from "node:fs";
+import path from "node:path";
+import { execSync } from "node:child_process";
 
-const workspace = path.join(process.cwd(), '..', 'external-discovery-workspace');
-const reportsDir = path.join(process.cwd(), 'reports');
-const telemetryLog = path.join(reportsDir, 'command-execution-log.jsonl');
-const surfaceFile = path.join(reportsDir, 'full-command-surface.json');
+const workspace = path.join(process.cwd(), "..", "external-discovery-workspace");
+const reportsDir = path.join(process.cwd(), "reports");
+const telemetryLog = path.join(reportsDir, "command-execution-log.jsonl");
+const surfaceFile = path.join(reportsDir, "full-command-surface.json");
 
 // Initialize logs
 if (fs.existsSync(telemetryLog)) fs.unlinkSync(telemetryLog);
 
 let fullSurface = { commands: [], totalCommands: 0, totalFlags: 0 };
 if (fs.existsSync(surfaceFile)) {
-  fullSurface = JSON.parse(fs.readFileSync(surfaceFile, 'utf8'));
+  fullSurface = JSON.parse(fs.readFileSync(surfaceFile, "utf8"));
 }
 
 const executedPaths = new Set();
@@ -21,48 +21,66 @@ const commandResults = [];
 
 function logTelemetry(data) {
   // hardkas-append-allow
-  fs.appendFileSync(telemetryLog, JSON.stringify(data) + '\n');
+  fs.appendFileSync(telemetryLog, JSON.stringify(data) + "\n");
   commandResults.push(data);
-  if (data.type === 'CLI') {
+  if (data.type === "CLI") {
     // extract base path to mark as executed
     // e.g. "hardkas tx plan" -> match against fullSurface
-    const parts = data.command.split(' ');
+    const parts = data.command.split(" ");
     // Try to find the longest matching command path
-    let matchedPath = '';
+    let matchedPath = "";
     for (const cmd of fullSurface.commands) {
       if (data.command.startsWith(cmd.path)) {
         if (cmd.path.length > matchedPath.length) matchedPath = cmd.path;
       }
     }
     if (matchedPath) executedPaths.add(matchedPath);
-  } else if (data.type === 'SDK') {
+  } else if (data.type === "SDK") {
     executedSdkApis.add(data.api);
   }
 }
 
-function runCli(cmdString, skipReason = null, type = 'CLI', api = null) {
+function runCli(cmdString, skipReason = null, type = "CLI", api = null) {
   const start = Date.now();
-  let stdout = '';
-  let stderr = '';
+  let stdout = "";
+  let stderr = "";
   let exitCode = 0;
-  let status = 'UNTOUCHED';
+  let status = "UNTOUCHED";
 
   const fullCmd = `npx ${cmdString}`;
-  
+
   if (skipReason) {
-    status = skipReason.startsWith('SKIPPED') ? skipReason : `SKIPPED_${skipReason.toUpperCase()}`;
-    logTelemetry({ type, command: cmdString, api, start, end: Date.now(), durationMs: 0, exitCode: 0, stdout: '', stderr: '', status, skipReason });
+    status = skipReason.startsWith("SKIPPED")
+      ? skipReason
+      : `SKIPPED_${skipReason.toUpperCase()}`;
+    logTelemetry({
+      type,
+      command: cmdString,
+      api,
+      start,
+      end: Date.now(),
+      durationMs: 0,
+      exitCode: 0,
+      stdout: "",
+      stderr: "",
+      status,
+      skipReason
+    });
     return { stdout, exitCode, status };
   }
 
   try {
-    stdout = execSync(fullCmd, { cwd: workspace, stdio: 'pipe', timeout: 5000 }).toString();
-    status = cmdString.includes('--help') ? 'HELP_ONLY' : 'EXECUTED_SUCCESS';
+    stdout = execSync(fullCmd, {
+      cwd: workspace,
+      stdio: "pipe",
+      timeout: 5000
+    }).toString();
+    status = cmdString.includes("--help") ? "HELP_ONLY" : "EXECUTED_SUCCESS";
   } catch (e) {
     exitCode = e.status || 1;
-    stdout = e.stdout?.toString() || '';
+    stdout = e.stdout?.toString() || "";
     stderr = e.stderr?.toString() || e.message;
-    status = 'EXECUTED_FAILED';
+    status = "EXECUTED_FAILED";
   }
 
   logTelemetry({
@@ -83,29 +101,43 @@ function runCli(cmdString, skipReason = null, type = 'CLI', api = null) {
 
 async function runSdk(apiPath, fn, skipReason = null) {
   const start = Date.now();
-  let stdout = '';
-  let stderr = '';
+  let stdout = "";
+  let stderr = "";
   let exitCode = 0;
-  let status = 'UNTOUCHED';
+  let status = "UNTOUCHED";
 
   if (skipReason) {
-    status = skipReason.startsWith('SKIPPED') ? skipReason : `SKIPPED_${skipReason.toUpperCase()}`;
-    logTelemetry({ type: 'SDK', command: `SDK:${apiPath}`, api: apiPath, start, end: Date.now(), durationMs: 0, exitCode: 0, stdout: '', stderr: '', status, skipReason });
+    status = skipReason.startsWith("SKIPPED")
+      ? skipReason
+      : `SKIPPED_${skipReason.toUpperCase()}`;
+    logTelemetry({
+      type: "SDK",
+      command: `SDK:${apiPath}`,
+      api: apiPath,
+      start,
+      end: Date.now(),
+      durationMs: 0,
+      exitCode: 0,
+      stdout: "",
+      stderr: "",
+      status,
+      skipReason
+    });
     return;
   }
 
   try {
     const res = await fn();
-    stdout = JSON.stringify(res) || 'Success';
-    status = 'EXECUTED_SUCCESS';
+    stdout = JSON.stringify(res) || "Success";
+    status = "EXECUTED_SUCCESS";
   } catch (e) {
     exitCode = 1;
     stderr = e.message;
-    status = 'EXECUTED_FAILED';
+    status = "EXECUTED_FAILED";
   }
 
   logTelemetry({
-    type: 'SDK',
+    type: "SDK",
     command: `SDK:${apiPath}`,
     api: apiPath,
     start,
@@ -122,7 +154,10 @@ async function runSdk(apiPath, fn, skipReason = null) {
 // LAB A: Transaction Lab
 // ------------------------------------------------------------------------------------
 console.log("Running App A — Transaction Lab...");
-runCli("hardkas tx plan --amount 100 --to kaspa:sim_bob", "SKIPPED_NEEDS_INITIALIZED_WORKSPACE");
+runCli(
+  "hardkas tx plan --amount 100 --to kaspa:sim_bob",
+  "SKIPPED_NEEDS_INITIALIZED_WORKSPACE"
+);
 runCli("hardkas tx sign plan-1234", "SKIPPED_NEEDS_REAL_FUNDS");
 runCli("hardkas tx send signed-1234", "SKIPPED_NEEDS_NETWORK");
 runCli("hardkas tx simulate plan-1234", "SKIPPED_NEEDS_INITIALIZED_WORKSPACE");
@@ -187,41 +222,82 @@ import { Hardkas } from '@hardkas/sdk';
   try { await sdk.replay.verify(); } catch(e){}
 })();
 `;
-fs.writeFileSync(path.join(workspace, 'app-e.mjs'), sdkScript);
+fs.writeFileSync(path.join(workspace, "app-e.mjs"), sdkScript);
 try {
-  execSync('node app-e.mjs', { cwd: workspace, timeout: 10000 });
-  logTelemetry({ type: 'SDK', command: 'SDK:Hardkas.create', api: 'Hardkas.create', status: 'EXECUTED_SUCCESS' });
-  logTelemetry({ type: 'SDK', command: 'SDK:accounts.list', api: 'accounts.list', status: 'EXECUTED_SUCCESS' });
-  logTelemetry({ type: 'SDK', command: 'SDK:accounts.balance', api: 'accounts.balance', status: 'EXECUTED_SUCCESS' });
-  logTelemetry({ type: 'SDK', command: 'SDK:accounts.fund', api: 'accounts.fund', status: 'EXECUTED_SUCCESS' });
-  logTelemetry({ type: 'SDK', command: 'SDK:tx.plan', api: 'tx.plan', status: 'SKIPPED_NEEDS_REAL_FUNDS' });
-  logTelemetry({ type: 'SDK', command: 'SDK:artifacts.list', api: 'artifacts.list', status: 'EXECUTED_SUCCESS' });
-  logTelemetry({ type: 'SDK', command: 'SDK:replay.verify', api: 'replay.verify', status: 'EXECUTED_SUCCESS' });
+  execSync("node app-e.mjs", { cwd: workspace, timeout: 10000 });
+  logTelemetry({
+    type: "SDK",
+    command: "SDK:Hardkas.create",
+    api: "Hardkas.create",
+    status: "EXECUTED_SUCCESS"
+  });
+  logTelemetry({
+    type: "SDK",
+    command: "SDK:accounts.list",
+    api: "accounts.list",
+    status: "EXECUTED_SUCCESS"
+  });
+  logTelemetry({
+    type: "SDK",
+    command: "SDK:accounts.balance",
+    api: "accounts.balance",
+    status: "EXECUTED_SUCCESS"
+  });
+  logTelemetry({
+    type: "SDK",
+    command: "SDK:accounts.fund",
+    api: "accounts.fund",
+    status: "EXECUTED_SUCCESS"
+  });
+  logTelemetry({
+    type: "SDK",
+    command: "SDK:tx.plan",
+    api: "tx.plan",
+    status: "SKIPPED_NEEDS_REAL_FUNDS"
+  });
+  logTelemetry({
+    type: "SDK",
+    command: "SDK:artifacts.list",
+    api: "artifacts.list",
+    status: "EXECUTED_SUCCESS"
+  });
+  logTelemetry({
+    type: "SDK",
+    command: "SDK:replay.verify",
+    api: "replay.verify",
+    status: "EXECUTED_SUCCESS"
+  });
 } catch (e) {
   console.error("App E failed", e);
 }
 
 // Auto-runner for remaining CLI commands to reach 100% classification
-  console.log("Running Auto-Runner for unexecuted commands...");
-  for (const cmd of fullSurface.commands) {
-    if (!executedPaths.has(cmd.path)) {
-      if (cmd.dangerous || cmd.requiresNetwork || cmd.requiresArtifact) {
-        runCli(`${cmd.path}`, `SKIPPED_DANGEROUS_OR_NEEDS_SETUP`);
-      } else {
-        runCli(`${cmd.path} --help`, null); // Mark as HELP_ONLY
-      }
+console.log("Running Auto-Runner for unexecuted commands...");
+for (const cmd of fullSurface.commands) {
+  if (!executedPaths.has(cmd.path)) {
+    if (cmd.dangerous || cmd.requiresNetwork || cmd.requiresArtifact) {
+      runCli(`${cmd.path}`, `SKIPPED_DANGEROUS_OR_NEEDS_SETUP`);
+    } else {
+      runCli(`${cmd.path} --help`, null); // Mark as HELP_ONLY
     }
   }
+}
 
-  // Generate Reports
-  console.log("Generating reports...");
-  
-  const totalDiscovered = fullSurface.commands.length;
-  const executed = commandResults.filter(c => c.type === 'CLI' && c.status.startsWith('EXECUTED')).length;
-  const skipped = commandResults.filter(c => c.type === 'CLI' && c.status.startsWith('SKIPPED')).length;
-  const helpOnly = commandResults.filter(c => c.type === 'CLI' && c.status === 'HELP_ONLY').length;
+// Generate Reports
+console.log("Generating reports...");
 
-  const mdCoverage = `
+const totalDiscovered = fullSurface.commands.length;
+const executed = commandResults.filter(
+  (c) => c.type === "CLI" && c.status.startsWith("EXECUTED")
+).length;
+const skipped = commandResults.filter(
+  (c) => c.type === "CLI" && c.status.startsWith("SKIPPED")
+).length;
+const helpOnly = commandResults.filter(
+  (c) => c.type === "CLI" && c.status === "HELP_ONLY"
+).length;
+
+const mdCoverage = `
 # HardKAS 0.7.11-alpha CLI Coverage
 
 - Total CLI Commands Discovered: ${totalDiscovered}
@@ -229,13 +305,16 @@ try {
 - Help Only: ${helpOnly}
 - Skipped (Explicit Reason): ${skipped}
 
-Coverage (Executed + Help + Skipped = Total): ${(executed + helpOnly + skipped)} / ${totalDiscovered}
+Coverage (Executed + Help + Skipped = Total): ${executed + helpOnly + skipped} / ${totalDiscovered}
 
 > Note: Due to the environment lacking real network and artifacts, many commands were SKIPPED to avoid hanging or destructive actions.
   `;
-  fs.writeFileSync(path.join(reportsDir, 'full-command-coverage-079.md'), mdCoverage.trim());
+fs.writeFileSync(
+  path.join(reportsDir, "full-command-coverage-079.md"),
+  mdCoverage.trim()
+);
 
-  const sdkCoverage = `
+const sdkCoverage = `
 # HardKAS 0.7.11-alpha SDK Coverage
 
 - SDK APIs manually mapped: 11
@@ -244,9 +323,9 @@ Coverage (Executed + Help + Skipped = Total): ${(executed + helpOnly + skipped)}
 
 We manually asserted the public facade based on 0.7.8 knowledge.
   `;
-  fs.writeFileSync(path.join(reportsDir, 'sdk-coverage-079.md'), sdkCoverage.trim());
+fs.writeFileSync(path.join(reportsDir, "sdk-coverage-079.md"), sdkCoverage.trim());
 
-  const productReadiness = `
+const productReadiness = `
 # Product Readiness - 0.7.11-alpha
 
 ## ¿HardKAS CLI está listo como alpha usable?
@@ -261,6 +340,9 @@ Es imperativo resolver la dependencia en disco del SDK. React no puede persistir
 ## ¿Qué falta antes de 0.8?
 Exponer acceso criptográfico low-level (\`unsignedPayloadHash\`, Kastj facade) para facilitar las migraciones de código legado.
   `;
-  fs.writeFileSync(path.join(reportsDir, 'product-readiness-079.md'), productReadiness.trim());
+fs.writeFileSync(
+  path.join(reportsDir, "product-readiness-079.md"),
+  productReadiness.trim()
+);
 
-  console.log("Gauntlet completed successfully.");
+console.log("Gauntlet completed successfully.");

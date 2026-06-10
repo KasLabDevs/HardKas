@@ -8,6 +8,7 @@ import {
 } from "@hardkas/artifacts";
 import { deterministicCompare } from "@hardkas/core";
 import type { Hardkas } from "./index.js";
+import { HardkasSchemas } from "@hardkas/artifacts";
 
 export interface ReplayVerifyOptions {
   path?: string;
@@ -119,16 +120,20 @@ function resolveFromDirectory(
       const data = JSON.parse(raw);
       if (!data || !data.schema) continue;
 
-      if (data.schema === "hardkas.txPlan") {
+      if (data.schema === HardkasSchemas.TxPlan) {
         plans.push({
           file: f,
           planId: data.planId || "",
           createdAt: data.createdAt || ""
         });
-      } else if (data.schema === "hardkas.txReceipt") {
+      } else if (data.schema === HardkasSchemas.TxReceipt) {
         receipts.push({
           file: f,
-          sourcePlanId: data.sourcePlanId || data.lineage?.parentArtifactId || data.lineage?.rootArtifactId || "",
+          sourcePlanId:
+            data.sourcePlanId ||
+            data.lineage?.parentArtifactId ||
+            data.lineage?.rootArtifactId ||
+            "",
           txId: data.txId || "",
           createdAt: data.createdAt || ""
         });
@@ -190,7 +195,7 @@ function findReceiptByPlanId(dir: string, planId: string): string {
       const data = JSON.parse(raw);
       if (
         data &&
-        data.schema === "hardkas.txReceipt" &&
+        data.schema === HardkasSchemas.TxReceipt &&
         ((data.sourcePlanId && data.sourcePlanId === planId) ||
           (data.lineage?.parentArtifactId && data.lineage.parentArtifactId === planId) ||
           (data.lineage?.rootArtifactId && data.lineage.rootArtifactId === planId) ||
@@ -213,30 +218,40 @@ export class HardkasReplay {
    * against the mathematically reconstructed localnet state.
    */
   async verify(
-    targetOrOptions?: string | { schema?: string; artifactId?: string } | ReplayVerifyOptions,
+    targetOrOptions?:
+      | string
+      | { schema?: string; artifactId?: string }
+      | ReplayVerifyOptions,
     options?: ReplayVerifyOptions
   ): Promise<ReplayVerifyResult> {
     const throwOnInvalid = (options as any)?.throwOnInvalid !== false;
-    if (typeof targetOrOptions === "object" && targetOrOptions !== null && (targetOrOptions as any).contentHash) {
-       const verifyRes = await this.sdk.artifacts.verify(targetOrOptions, { throwOnInvalid, strict: true });
-       if (!verifyRes.valid && !throwOnInvalid) {
-         return {
-           passed: false,
-           artifactsScanned: 1,
-           lineage: "invalid",
-           determinism: "failed",
-           contamination: "clean",
-           report: null,
-           error: `Artifact verification failed: ${verifyRes.reason}`
-         };
-       }
+    if (
+      typeof targetOrOptions === "object" &&
+      targetOrOptions !== null &&
+      (targetOrOptions as any).contentHash
+    ) {
+      const verifyRes = await this.sdk.artifacts.verify(targetOrOptions, {
+        throwOnInvalid,
+        strict: true
+      });
+      if (!verifyRes.valid && !throwOnInvalid) {
+        return {
+          passed: false,
+          artifactsScanned: 1,
+          lineage: "invalid",
+          determinism: "failed",
+          contamination: "clean",
+          report: null,
+          error: `Artifact verification failed: ${verifyRes.reason}`
+        };
+      }
     }
 
     let opts: ReplayVerifyOptions = options || {};
-    
+
     if (typeof targetOrOptions === "string") {
       opts.path = targetOrOptions;
-    } else if (targetOrOptions && 'artifactId' in targetOrOptions) {
+    } else if (targetOrOptions && "artifactId" in targetOrOptions) {
       opts.path = (targetOrOptions as any).artifactId;
     } else if (targetOrOptions) {
       opts = { ...opts, ...(targetOrOptions as ReplayVerifyOptions) };
@@ -313,10 +328,10 @@ export class HardkasReplay {
           if (isContaminated(json)) contaminationOk = false;
 
           const isCoreArtifact = [
-            "hardkas.txPlan",
-            "hardkas.signedTx",
-            "hardkas.txReceipt",
-            "hardkas.snapshot"
+            HardkasSchemas.TxPlan,
+            HardkasSchemas.SignedTx,
+            HardkasSchemas.TxReceipt,
+            HardkasSchemas.Snapshot
           ].includes(json.schema);
           if (isCoreArtifact) {
             const integrity = await verifyArtifactIntegrity(json);
@@ -351,7 +366,7 @@ export class HardkasReplay {
         );
         const wfArtifact = JSON.parse(wfArtifactStr) as Record<string, unknown>;
 
-        if (wfArtifact.schema !== "hardkas.workflow.v1") {
+        if (wfArtifact.schema !== HardkasSchemas.WorkflowV1) {
           throw new Error(`Artifact ${opts.workflowId} is not a workflow artifact`);
         }
 

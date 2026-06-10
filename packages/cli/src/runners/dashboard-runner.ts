@@ -1,4 +1,4 @@
-import fs from "node:fs";
+﻿import fs from "node:fs";
 import path from "node:path";
 import http from "node:http";
 import { UI } from "../ui.js";
@@ -56,7 +56,7 @@ function tryReadJsonl(
 }
 
 // ---------------------------------------------------------------------------
-// /api/status – Real artifact truth statuses
+// /api/status â€“ Real artifact truth statuses
 // ---------------------------------------------------------------------------
 function handleStatus(_url: URL, res: http.ServerResponse) {
   const now = new Date().toISOString();
@@ -101,7 +101,7 @@ function handleStatus(_url: URL, res: http.ServerResponse) {
     return;
   }
 
-  // Priority 3: artifacts fallback – scan .hardkas/artifacts
+  // Priority 3: artifacts fallback â€“ scan .hardkas/artifacts
   const artifactsDir = path.join(hardkasDir(), "artifacts");
   if (fs.existsSync(artifactsDir)) {
     const files = fs.readdirSync(artifactsDir).filter((f) => f.endsWith(".json"));
@@ -120,7 +120,7 @@ function handleStatus(_url: URL, res: http.ServerResponse) {
       JSON.stringify({
         loaded: true,
         source: ".hardkas/artifacts (fallback)",
-        sourceNote: "PROJECTED / UNVERIFIED – no replay proof available.",
+        sourceNote: "PROJECTED / UNVERIFIED â€“ no replay proof available.",
         loadedAt: now,
         artifacts
       })
@@ -142,7 +142,7 @@ function handleStatus(_url: URL, res: http.ServerResponse) {
 }
 
 // ---------------------------------------------------------------------------
-// /api/telemetry – Real telemetry from .hardkas/telemetry/telemetry.jsonl
+// /api/telemetry â€“ Real telemetry from .hardkas/telemetry/telemetry.jsonl
 // ---------------------------------------------------------------------------
 function handleTelemetry(_url: URL, res: http.ServerResponse) {
   const now = new Date().toISOString();
@@ -238,7 +238,7 @@ function handleTelemetry(_url: URL, res: http.ServerResponse) {
     return;
   }
 
-  // No telemetry.jsonl – check if events.jsonl exists as fallback info
+  // No telemetry.jsonl â€“ check if events.jsonl exists as fallback info
   const eventsExist = fs.existsSync(eventsFile);
   res.writeHead(200);
   res.end(
@@ -263,7 +263,7 @@ function handleTelemetry(_url: URL, res: http.ServerResponse) {
 }
 
 // ---------------------------------------------------------------------------
-// /api/replay – Replay verification status
+// /api/replay â€“ Replay verification status
 // ---------------------------------------------------------------------------
 function handleReplay(_url: URL, res: http.ServerResponse) {
   const now = new Date().toISOString();
@@ -330,7 +330,7 @@ function handleReplay(_url: URL, res: http.ServerResponse) {
 }
 
 // ---------------------------------------------------------------------------
-// /api/lineage – Lineage graph from bundle / artifacts
+// /api/lineage â€“ Lineage graph from bundle / artifacts
 // ---------------------------------------------------------------------------
 function handleLineage(_url: URL, res: http.ServerResponse) {
   const now = new Date().toISOString();
@@ -432,7 +432,7 @@ function handleLineage(_url: URL, res: http.ServerResponse) {
         loaded: true,
         source: ".hardkas/artifacts (fallback)",
         sourceNote:
-          "PROJECTED / UNVERIFIED – raw filesystem scan, no lineage edges derived.",
+          "PROJECTED / UNVERIFIED â€“ raw filesystem scan, no lineage edges derived.",
         loadedAt: now,
         totalNodes: nodes.length,
         totalEdges: 0,
@@ -459,7 +459,7 @@ function handleLineage(_url: URL, res: http.ServerResponse) {
 }
 
 // ---------------------------------------------------------------------------
-// /api/quarantine – Real quarantine store
+// /api/quarantine â€“ Real quarantine store
 // ---------------------------------------------------------------------------
 function handleQuarantine(_url: URL, res: http.ServerResponse) {
   const now = new Date().toISOString();
@@ -515,7 +515,7 @@ function handleQuarantine(_url: URL, res: http.ServerResponse) {
 }
 
 // ---------------------------------------------------------------------------
-// /api/bundles – Enriched semantic bundle
+// /api/bundles â€“ Enriched semantic bundle
 // ---------------------------------------------------------------------------
 function handleBundles(_url: URL, res: http.ServerResponse) {
   const now = new Date().toISOString();
@@ -573,7 +573,7 @@ function handleBundles(_url: URL, res: http.ServerResponse) {
 }
 
 // ---------------------------------------------------------------------------
-// /api/dashboard-health – Self-check
+// /api/dashboard-health â€“ Self-check
 // ---------------------------------------------------------------------------
 function handleDashboardHealth(_url: URL, res: http.ServerResponse) {
   const now = new Date().toISOString();
@@ -688,10 +688,14 @@ export async function runDashboard() {
     });
     server.on("error", (err: any) => {
       if (err.code === "EADDRINUSE") {
-        UI.error(`Port ${port} is already in use.`);
         UI.info(`Try freeing the port or specify another one (if supported).`);
-        process.exitCode = 1;
-        resolve(null);
+        import("../cli-errors.js").then(({ HardkasCliError }) => {
+          reject(
+            new HardkasCliError("EADDRINUSE", `Port ${port} is already in use.`, {
+              exitCode: 1
+            })
+          );
+        });
       } else {
         reject(err);
       }

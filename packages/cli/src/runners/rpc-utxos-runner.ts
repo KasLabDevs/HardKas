@@ -1,5 +1,5 @@
 import { KaspaJsonRpcClient, KaspaRpcUtxo } from "@hardkas/kaspa-rpc";
-import { formatSompi } from "@hardkas/core";
+import { formatSompiToKas } from "@hardkas/core";
 
 export interface RpcUtxosOptions {
   address: string;
@@ -26,14 +26,14 @@ export async function runRpcUtxos(options: RpcUtxosOptions): Promise<{
 
     utxos.forEach((u) => {
       const id = `${u.outpoint.transactionId}:${u.outpoint.index}`.padEnd(40);
-      const amount = formatSompi(u.amountSompi).padStart(12);
+      const amount = formatSompiToKas(u.amountSompi).padStart(12);
       const score = (u.blockDaaScore?.toString() || "unknown").padStart(10);
       lines.push(`${id} | ${amount} | ${score}`);
     });
 
     const total = utxos.reduce((acc, u) => acc + u.amountSompi, 0n);
     lines.push("-".repeat(75));
-    lines.push(`Total balance: ${formatSompi(total)}`);
+    lines.push(`Total balance: ${formatSompiToKas(total)}`);
   }
 
   return {

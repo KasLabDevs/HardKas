@@ -1,4 +1,4 @@
-import { resolveL2Profile, validateL2Profile, EvmJsonRpcClient } from "@hardkas/l2";
+﻿import { resolveL2Profile, validateL2Profile, EvmJsonRpcClient } from "@hardkas/l2";
 import { loadHardkasConfig } from "@hardkas/config";
 
 export interface L2ProfileValidateOptions {
@@ -52,7 +52,7 @@ export async function runL2ProfileValidate(
   }
 
   if (finalOk) {
-    console.log(`✓ L2 profile '${profile.name}' (${profile.source}) is VALID.`);
+    console.log(`âœ“ L2 profile '${profile.name}' (${profile.source}) is VALID.`);
     if (rpcVerified) {
       console.log(`  RPC connectivity verified for chainId ${profile.chainId}`);
     } else if (profile.rpcUrl) {
@@ -61,10 +61,15 @@ export async function runL2ProfileValidate(
       );
     }
   } else {
-    console.log(`✗ L2 profile '${profile.name}' is INVALID:`);
+    console.log(`âœ— L2 profile '${profile.name}' is INVALID:`);
     for (const err of errors) {
       console.log(`  - ${err}`);
     }
-    process.exit(1);
+    const { HardkasCliError } = await import("../cli-errors.js");
+    throw new HardkasCliError(
+      "INVALID_PROFILE",
+      `L2 profile '${profile.name}' is INVALID`,
+      { exitCode: 1 }
+    );
   }
 }

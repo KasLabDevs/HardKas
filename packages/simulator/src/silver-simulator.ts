@@ -188,8 +188,14 @@ export interface SilverSimulationOptions {
   createdAt?: string;
 }
 
-type SilverDeploySimulationDraft = Omit<SilverDeploySimulationReceipt, "contentHash" | "artifactId">;
-type SilverSpendSimulationDraft = Omit<SilverSpendSimulationReceipt, "contentHash" | "artifactId">;
+type SilverDeploySimulationDraft = Omit<
+  SilverDeploySimulationReceipt,
+  "contentHash" | "artifactId"
+>;
+type SilverSpendSimulationDraft = Omit<
+  SilverSpendSimulationReceipt,
+  "contentHash" | "artifactId"
+>;
 
 export function createSilverSimulationState(): SilverSimulationState {
   return {
@@ -258,7 +264,8 @@ export function simulateSilverDeploy(
 
   const draft = {
     schema: "hardkas.silver.deploySimulation" as const,
-    hardkasVersion: options.hardkasVersion ?? deployPlanArtifact.hardkasVersion ?? "0.9.0-alpha",
+    hardkasVersion:
+      options.hardkasVersion ?? deployPlanArtifact.hardkasVersion ?? "0.9.1-alpha",
     version: SILVER_SIMULATOR_VERSION,
     hashVersion: CURRENT_HASH_VERSION,
     networkId: "simnet" as const,
@@ -324,7 +331,10 @@ export function simulateSilverSpend(
       "Silver/Toccata simulation state must be simnet."
     );
   }
-  if (!Array.isArray(spendPlanArtifact.expectedOutputs) || spendPlanArtifact.expectedOutputs.length === 0) {
+  if (
+    !Array.isArray(spendPlanArtifact.expectedOutputs) ||
+    spendPlanArtifact.expectedOutputs.length === 0
+  ) {
     throw new SilverSimulationError(
       "SILVERSCRIPT_EXPECTED_OUTPUTS_REQUIRED",
       "Spend simulation requires explicit expectedOutputs."
@@ -333,7 +343,8 @@ export function simulateSilverSpend(
 
   const key = outpointKey(spendPlanArtifact.contractUtxoRef);
   const utxo = simulatedState.utxos[key];
-  const deployReceipt = simulatedState.deployReceipts[spendPlanArtifact.deployArtifactHash] ??
+  const deployReceipt =
+    simulatedState.deployReceipts[spendPlanArtifact.deployArtifactHash] ??
     Object.values(simulatedState.deployReceipts).find((receipt) => {
       return outpointKey(receipt.syntheticOutpoint) === key;
     });
@@ -435,7 +446,8 @@ export function simulateSilverSpend(
 
   const draft = {
     schema: "hardkas.silver.spendSimulation" as const,
-    hardkasVersion: options.hardkasVersion ?? spendPlanArtifact.hardkasVersion ?? "0.9.0-alpha",
+    hardkasVersion:
+      options.hardkasVersion ?? spendPlanArtifact.hardkasVersion ?? "0.9.1-alpha",
     version: SILVER_SIMULATOR_VERSION as "1.0.0-alpha",
     hashVersion: CURRENT_HASH_VERSION,
     networkId: "simnet" as const,
@@ -467,7 +479,9 @@ export function simulateSilverSpend(
     spent: true,
     spentByTxId: simulatedSpendTxId
   };
-  nextState.spentOutpoints = Array.from(new Set([...nextState.spentOutpoints, key])).sort();
+  nextState.spentOutpoints = Array.from(
+    new Set([...nextState.spentOutpoints, key])
+  ).sort();
 
   return {
     receipt,
@@ -548,7 +562,9 @@ function assertHex(value: string, field: string): void {
 }
 
 function isHex(value: string): boolean {
-  return typeof value === "string" && value.length % 2 === 0 && /^[0-9a-fA-F]*$/.test(value);
+  return (
+    typeof value === "string" && value.length % 2 === 0 && /^[0-9a-fA-F]*$/.test(value)
+  );
 }
 
 function calculateContentHash(value: unknown, _version = CURRENT_HASH_VERSION): string {

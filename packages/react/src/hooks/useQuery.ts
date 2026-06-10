@@ -1,6 +1,6 @@
-import { useState, useEffect, useCallback } from 'react';
-import { useHardKAS } from '../provider.js';
-import type { HardKASResponse } from '@hardkas/client';
+import { useState, useEffect, useCallback } from "react";
+import { useHardKAS } from "../provider.js";
+import type { HardKASResponse } from "@hardkas/client";
 
 export interface UseQueryOptions {
   enabled?: boolean;

@@ -1,6 +1,7 @@
 import { Hardkas } from "./index.js";
 import { WorkflowArtifact, HARDKAS_VERSION } from "@hardkas/artifacts";
 import { HardkasError, deterministicCompare } from "@hardkas/core";
+import { HardkasSchemas } from "@hardkas/artifacts";
 
 export interface WorkflowRunOptions {
   steps: Array<{
@@ -20,7 +21,7 @@ export class HardkasWorkflow {
     const { calculateContentHash } = await import("@hardkas/artifacts");
 
     const intentPayload = {
-      type: "hardkas.workflow.intent",
+      type: HardkasSchemas.WorkflowIntent,
       schemaVersion: "v1",
       workflowSpec: options.steps,
       normalizedInputs: {},
@@ -36,7 +37,7 @@ export class HardkasWorkflow {
         network: this.sdk.network
       },
       runtimeVersion: HARDKAS_VERSION,
-      workspaceSchemaVersion: "hardkas.workflow.v1"
+      workspaceSchemaVersion: HardkasSchemas.WorkflowV1
     };
 
     const intentHash = calculateContentHash(intentPayload);
@@ -222,7 +223,6 @@ export class HardkasWorkflow {
         if (producedArtifactId) stepRecord.producedArtifactId = producedArtifactId;
         artifactSteps.push(stepRecord);
       } catch (e: any) {
-        console.error("DEBUG WORKFLOW ERROR:", e.stack);
         status = "failed";
         errorEnvelope = {
           code: e.code || "WORKFLOW_STEP_FAILED",
@@ -243,7 +243,7 @@ export class HardkasWorkflow {
     const executionMode = this.sdk.network === "simulated" ? "simulated" : "real";
 
     const artifact: any = {
-      schema: "hardkas.workflow.v1",
+      schema: HardkasSchemas.WorkflowV1,
       version: "1.0.0-alpha",
       hardkasVersion: HARDKAS_VERSION,
       networkId: this.sdk.network,

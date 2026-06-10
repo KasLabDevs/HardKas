@@ -16,7 +16,7 @@ export async function runDoctorSigner(options: { json?: boolean } = {}) {
     UI.logHuman(`Signer backend: ${pc.bold("kaspa-wasm")} ${pc.green("✅")}`);
     try {
       const kaspa = await loadKaspaWasm();
-      
+
       const checkExport = (name: string) => {
         const available = kaspa && kaspa[name] !== undefined;
         UI.logHuman(`${name}: ${available ? "available" : "missing"}`);
@@ -26,14 +26,15 @@ export async function runDoctorSigner(options: { json?: boolean } = {}) {
       checkExport("Address");
       checkExport("createTransaction");
       checkExport("signTransaction");
-      
+
       UI.logHuman("Networks:");
       UI.logHuman(`- simnet/local ${pc.green("✅")}`);
       UI.logHuman(`- testnet maybe`);
       UI.logHuman(`- mainnet disabled for fixture`);
-      
     } catch (e) {
-      UI.logHuman(`Failed to inspect exports: ${e instanceof Error ? e.message : String(e)}`);
+      UI.logHuman(
+        `Failed to inspect exports: ${e instanceof Error ? e.message : String(e)}`
+      );
     }
   } else {
     UI.logHuman(`Signer backend: ${pc.bold("unavailable")} ${pc.red("❌")}`);

@@ -30,12 +30,16 @@ HardKAS explicitly categorizes runtime behavior into two buckets:
 ## Filesystem Boundaries & Security
 
 ### Workspace Path Traversal Prevention
+
 HardKAS strictly restricts artifact reads and writes to the workspace boundary.
+
 - `sdk.artifacts.read()` and related methods must resolve absolute paths and verify they are prefixed with the workspace root.
 - Any attempt to access files outside the workspace (e.g., `../../../.ssh/id_rsa`) will throw a `HardkasError('PATH_TRAVERSAL')`.
 
 ### Canonical Directory Resolution
+
 Canonical directories (`artifacts`, `receipts`, `traces`, `deployments`) are resolved **directly from the workspace root** (`.hardkas/`).
+
 - They are not nested recursively (e.g., `.hardkas/artifacts/.hardkas/receipts` is invalid). Replay and query tools strictly adhere to this flat `.hardkas/` structure.
 
 ## Semantic Bundle v1
@@ -45,7 +49,7 @@ To prove cross-platform truth equivalence, the HardKAS CI pipeline exports a `ha
 ```json
 {
   "schemaVersion": "hardkas.semantic-bundle.v1",
-  "runtimeVersion": "0.9.0-alpha",
+  "runtimeVersion": "0.9.1-alpha",
   "hashVersion": "sha256",
   "globalSemanticHash": "...",
   "invariantSummary": { "totalChecks": 9000, "passedChecks": 9000, "failedChecks": 0 },

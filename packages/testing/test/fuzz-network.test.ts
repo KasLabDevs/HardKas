@@ -8,7 +8,7 @@ describe("Phase 6A: Network Fuzzing", () => {
     const sdk = await Hardkas.open({ network: "simnet", autoBootstrap: true });
     const original = {
       schema: "hardkas.networkProfile.v1",
-      hardkasVersion: "0.9.0-alpha",
+      hardkasVersion: "0.9.1-alpha",
       version: "1.0.0-alpha",
       networkId: "simnet",
       layer: "L1",
@@ -25,7 +25,9 @@ describe("Phase 6A: Network Fuzzing", () => {
     for (let i = 0; i < iterations; i++) {
       const mutated = mutateArtifact(original);
       try {
-        const verifyResult = await sdk.artifacts.verify(mutated, { throwOnInvalid: false });
+        const verifyResult = await sdk.artifacts.verify(mutated, {
+          throwOnInvalid: false
+        });
         if (verifyResult.valid === true) {
           acceptedInvalid++;
         }

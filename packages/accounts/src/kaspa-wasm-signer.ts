@@ -22,7 +22,7 @@ function parseWasmTxToRpc(wasmTxStr: string): any {
   }
   const txInner = parsed.tx ? parsed.tx.inner : parsed.inner;
   if (!txInner) throw new Error("Could not find inner tx data");
-  
+
   return {
     version: txInner.version || 0,
     inputs: (txInner.inputs || []).map((i: any) => ({
@@ -77,20 +77,22 @@ export class KaspaWasmPrivateKeySigner implements HardkasTxPlanSigner {
     });
 
     // 3. Resolve Private Key
-    let pkValue = account.privateKeyEnv
-      ? process.env[account.privateKeyEnv]
-      : undefined;
+    let pkValue = account.privateKeyEnv ? process.env[account.privateKeyEnv] : undefined;
 
     if (!pkValue && (account as any).privateKey) {
       if (plan.networkId === "mainnet") {
-        throw new Error(`Mainnet guard: Unsafe plaintext privateKey fallback is forbidden on mainnet for account '${account.name}'. Use privateKeyEnv instead.`);
+        throw new Error(
+          `Mainnet guard: Unsafe plaintext privateKey fallback is forbidden on mainnet for account '${account.name}'. Use privateKeyEnv instead.`
+        );
       }
       pkValue = (account as any).privateKey;
     }
 
     if (!pkValue && account.keystorePath) {
       try {
-        const keystore = await KeystoreManager.loadEncryptedKeystore(account.keystorePath);
+        const keystore = await KeystoreManager.loadEncryptedKeystore(
+          account.keystorePath
+        );
         const unlock = await KeystoreManager.decryptEncryptedKeystore(
           keystore,
           DEV_ACCOUNTS_PASSWORD
@@ -104,13 +106,21 @@ export class KaspaWasmPrivateKeySigner implements HardkasTxPlanSigner {
     }
 
     if (!pkValue) {
-      const err = new Error(`DEV_ACCOUNT_KEY_UNAVAILABLE: Missing required private key for account '${account.name}'.`);
+      const err = new Error(
+        `DEV_ACCOUNT_KEY_UNAVAILABLE: Missing required private key for account '${account.name}'.`
+      );
       (err as any).code = "DEV_ACCOUNT_KEY_UNAVAILABLE";
       throw err;
     }
 
-    if (typeof pkValue !== "string" || pkValue.trim() === "" || !/^[0-9a-fA-F]{64}$/.test(pkValue)) {
-      const err = new Error("INVALID_PRIVATE_KEY_MATERIAL: Private key must be a valid 64-character hex string.");
+    if (
+      typeof pkValue !== "string" ||
+      pkValue.trim() === "" ||
+      !/^[0-9a-fA-F]{64}$/.test(pkValue)
+    ) {
+      const err = new Error(
+        "INVALID_PRIVATE_KEY_MATERIAL: Private key must be a valid 64-character hex string."
+      );
       (err as any).code = "INVALID_PRIVATE_KEY_MATERIAL";
       throw err;
     }

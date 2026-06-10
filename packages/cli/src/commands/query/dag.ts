@@ -37,8 +37,7 @@ export function registerDagQueryCommands(queryCmd: Command) {
           printDagConflicts(result as any);
         }
       } catch (e) {
-        handleError(e);
-        process.exitCode = 1;
+        throw e;
       }
     });
 
@@ -62,8 +61,7 @@ export function registerDagQueryCommands(queryCmd: Command) {
           printDagDisplaced(result as any);
         }
       } catch (e) {
-        handleError(e);
-        process.exitCode = 1;
+        throw e;
       }
     });
 
@@ -96,8 +94,7 @@ export function registerDagQueryCommands(queryCmd: Command) {
           printDagHistory(result as any);
         }
       } catch (e) {
-        handleError(e);
-        process.exitCode = 1;
+        throw e;
       }
     });
 
@@ -118,8 +115,7 @@ export function registerDagQueryCommands(queryCmd: Command) {
           printSinkPath(result as any);
         }
       } catch (e) {
-        handleError(e);
-        process.exitCode = 1;
+        throw e;
       }
     });
 
@@ -143,8 +139,7 @@ export function registerDagQueryCommands(queryCmd: Command) {
           printDagAnomalies(result as any);
         }
       } catch (e) {
-        handleError(e);
-        process.exitCode = 1;
+        throw e;
       }
     });
 }

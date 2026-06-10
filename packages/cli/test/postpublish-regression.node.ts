@@ -23,38 +23,52 @@ describe("Postpublish CLI Surface Regression", () => {
   });
 
   it("should initialize a new workspace successfully", async () => {
-    const { exitCode, stdout, stderr } = await execa(TSX, [CLI_SRC, "init", "test-proj"], {
-      cwd: SANDBOX_DIR,
-      reject: false
-    });
-    
+    const { exitCode, stdout, stderr } = await execa(
+      TSX,
+      [CLI_SRC, "init", "test-proj"],
+      {
+        cwd: SANDBOX_DIR,
+        reject: false
+      }
+    );
+
     assert.strictEqual(exitCode, 0, `Init failed: ${stdout} ${stderr}`);
-    assert.ok(fs.existsSync(path.join(SANDBOX_DIR, "test-proj", "package.json")), "package.json should exist");
+    assert.ok(
+      fs.existsSync(path.join(SANDBOX_DIR, "test-proj", "package.json")),
+      "package.json should exist"
+    );
   });
 
   it("should boot the runtime environment unconditionally", async () => {
     const projDir = path.join(SANDBOX_DIR, "test-proj");
-    
+
     // We install dependencies just like a user would.
     await execa("npm", ["install"], { cwd: projDir, reject: false });
-    
+
     const { exitCode, stdout, stderr } = await execa(TSX, [CLI_SRC, "up"], {
       cwd: projDir,
       reject: false
     });
-    
+
     assert.strictEqual(exitCode, 0, `Up failed: ${stdout} ${stderr}`);
     assert.ok(stdout.includes("HardKAS Runtime Started"), "Runtime should start");
   });
 
   it("should generate a valid tx plan without strict mode crashing", async () => {
     const projDir = path.join(SANDBOX_DIR, "test-proj");
-    const { exitCode, stdout, stderr } = await execa(TSX, [CLI_SRC, "tx", "plan", "--from", "alice", "--to", "bob", "--amount", "10"], {
-      cwd: projDir,
-      reject: false
-    });
-    
+    const { exitCode, stdout, stderr } = await execa(
+      TSX,
+      [CLI_SRC, "tx", "plan", "--from", "alice", "--to", "bob", "--amount", "10"],
+      {
+        cwd: projDir,
+        reject: false
+      }
+    );
+
     assert.strictEqual(exitCode, 0, `Tx plan failed: ${stdout} ${stderr}`);
-    assert.ok(stdout.includes("HardKAS Transaction Plan Artifact"), "Should output plan artifact");
+    assert.ok(
+      stdout.includes("HardKAS Transaction Plan Artifact"),
+      "Should output plan artifact"
+    );
   });
 });

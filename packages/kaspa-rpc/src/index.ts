@@ -128,7 +128,11 @@ export class JsonWrpcKaspaClient implements KaspaRpcClient {
     return this.preflightPromise;
   }
 
-  private async callMethod(wrpcName: string, legacyName: string, params: any = {}): Promise<unknown> {
+  private async callMethod(
+    wrpcName: string,
+    legacyName: string,
+    params: any = {}
+  ): Promise<unknown> {
     await this.detectFlavor();
     const method = this.rpcFlavor === "legacy" ? legacyName : wrpcName;
     return this.requestRaw(method, params);
@@ -140,7 +144,10 @@ export class JsonWrpcKaspaClient implements KaspaRpcClient {
 
     if (info.virtualDaaScore === undefined) {
       try {
-        const dagResponse = await this.callMethod("getBlockDagInfo", "getBlockDagInfoRequest");
+        const dagResponse = await this.callMethod(
+          "getBlockDagInfo",
+          "getBlockDagInfoRequest"
+        );
         const dagData = (dagResponse as any)?.params || dagResponse;
         if (dagData && typeof dagData === "object" && "virtualDaaScore" in dagData) {
           info.virtualDaaScore = BigInt((dagData as any).virtualDaaScore);
@@ -175,19 +182,33 @@ export class JsonWrpcKaspaClient implements KaspaRpcClient {
     // For legacy, getBalanceByAddressRequest with { address } works
     let response;
     if (this.rpcFlavor === "legacy") {
-      response = await this.callMethod("getBalanceByAddress", "getBalanceByAddressRequest", { address });
+      response = await this.callMethod(
+        "getBalanceByAddress",
+        "getBalanceByAddressRequest",
+        { address }
+      );
     } else {
-      response = await this.callMethod("getBalancesByAddresses", "getBalancesByAddressesRequest", { addresses: [address] });
+      response = await this.callMethod(
+        "getBalancesByAddresses",
+        "getBalancesByAddressesRequest",
+        { addresses: [address] }
+      );
     }
     return mapKaspaAddressBalance(response, address);
   }
 
   async getUtxosByAddress(address: string): Promise<KaspaRpcUtxo[]> {
-    const response = await this.callMethod("getUtxosByAddresses", "getUtxosByAddressesRequest", { addresses: [address] });
+    const response = await this.callMethod(
+      "getUtxosByAddresses",
+      "getUtxosByAddressesRequest",
+      { addresses: [address] }
+    );
     return mapKaspaRpcUtxos(response, address);
   }
 
-  async submitTransaction(rawTransaction: unknown): Promise<KaspaSubmitTransactionResult> {
+  async submitTransaction(
+    rawTransaction: unknown
+  ): Promise<KaspaSubmitTransactionResult> {
     let txObj = rawTransaction;
     try {
       while (typeof txObj === "string" && txObj.startsWith("{")) {
@@ -200,38 +221,48 @@ export class JsonWrpcKaspaClient implements KaspaRpcClient {
           txObj = parsed;
         }
       }
-      
+
       // One final check for POJO nested inner/tx in case it wasn't a string at a nested level
-      while (txObj && typeof txObj === "object" && !Array.isArray(txObj) && ("tx" in txObj || "inner" in txObj)) {
-         if ("tx" in txObj) txObj = (txObj as any).tx;
-         else if ("inner" in txObj) txObj = (txObj as any).inner;
+      while (
+        txObj &&
+        typeof txObj === "object" &&
+        !Array.isArray(txObj) &&
+        ("tx" in txObj || "inner" in txObj)
+      ) {
+        if ("tx" in txObj) txObj = (txObj as any).tx;
+        else if ("inner" in txObj) txObj = (txObj as any).inner;
       }
-      
+
       // Fix types for wRPC (it expects numbers for amounts/values)
       const txAny = txObj as any;
       if (txAny && typeof txAny === "object") {
         if (txAny.mass === undefined) txAny.mass = 0;
         if (txAny.outputs && Array.isArray(txAny.outputs)) {
           txAny.outputs.forEach((output: any) => {
-             if (output.amount !== undefined && output.value === undefined) {
-               output.value = output.amount;
-               delete output.amount;
-             }
-             if (typeof output.amount === "string") output.amount = Number(output.amount);
-             if (typeof output.value === "string") output.value = Number(output.value);
-             
-             if (output.scriptPublicKey && typeof output.scriptPublicKey === "object") {
-               if (output.scriptPublicKey.scriptPublicKey !== undefined && output.scriptPublicKey.script === undefined) {
-                 output.scriptPublicKey.script = output.scriptPublicKey.scriptPublicKey;
-                 delete output.scriptPublicKey.scriptPublicKey;
-               }
-             }
+            if (output.amount !== undefined && output.value === undefined) {
+              output.value = output.amount;
+              delete output.amount;
+            }
+            if (typeof output.amount === "string") output.amount = Number(output.amount);
+            if (typeof output.value === "string") output.value = Number(output.value);
+
+            if (output.scriptPublicKey && typeof output.scriptPublicKey === "object") {
+              if (
+                output.scriptPublicKey.scriptPublicKey !== undefined &&
+                output.scriptPublicKey.script === undefined
+              ) {
+                output.scriptPublicKey.script = output.scriptPublicKey.scriptPublicKey;
+                delete output.scriptPublicKey.scriptPublicKey;
+              }
+            }
           });
         }
         if (txAny.inputs && Array.isArray(txAny.inputs)) {
           txAny.inputs.forEach((input: any) => {
-             if (typeof input.sequence === "string") input.sequence = Number(input.sequence);
-             if (typeof input.sigOpCount === "string") input.sigOpCount = Number(input.sigOpCount);
+            if (typeof input.sequence === "string")
+              input.sequence = Number(input.sequence);
+            if (typeof input.sigOpCount === "string")
+              input.sigOpCount = Number(input.sigOpCount);
           });
         }
       }
@@ -240,13 +271,21 @@ export class JsonWrpcKaspaClient implements KaspaRpcClient {
     }
 
     // Both flavors accept the transaction wrapped in an object
-    const response = await this.callMethod("submitTransaction", "submitTransactionRequest", { transaction: txObj, allowOrphan: false });
+    const response = await this.callMethod(
+      "submitTransaction",
+      "submitTransactionRequest",
+      { transaction: txObj, allowOrphan: false }
+    );
     return mapKaspaSubmitTransactionResult(response);
   }
 
   async getMempoolEntry(txId: string): Promise<MempoolEntry | null> {
     try {
-      const response = await this.callMethod("getMempoolEntry", "getMempoolEntryRequest", { transactionId: txId, includeOrphanPool: true, filterTransactionPool: false });
+      const response = await this.callMethod(
+        "getMempoolEntry",
+        "getMempoolEntryRequest",
+        { transactionId: txId, includeOrphanPool: true, filterTransactionPool: false }
+      );
       if (!response) return null;
       const resObj = response as Record<string, unknown>;
       return {
@@ -260,7 +299,9 @@ export class JsonWrpcKaspaClient implements KaspaRpcClient {
 
   async getTransaction(txId: string): Promise<unknown | null> {
     try {
-      return await this.callMethod("getTransaction", "getTransactionRequest", { transactionId: txId });
+      return await this.callMethod("getTransaction", "getTransactionRequest", {
+        transactionId: txId
+      });
     } catch (e) {
       return null;
     }
@@ -518,7 +559,12 @@ export function mapKaspaSubmitTransactionResult(
           ? result.isAccepted
           : result.success !== undefined
             ? result.success
-            : !!(result.transactionId || result.transaction_id || result.txId || result.tx_id),
+            : !!(
+                result.transactionId ||
+                result.transaction_id ||
+                result.txId ||
+                result.tx_id
+              ),
     raw: result
   };
 }
@@ -561,7 +607,9 @@ export class MockKaspaRpcClient implements KaspaRpcClient {
     this.utxosByAddress.set(address, utxos);
   }
 
-  async submitTransaction(rawTransaction: unknown): Promise<KaspaSubmitTransactionResult> {
+  async submitTransaction(
+    rawTransaction: unknown
+  ): Promise<KaspaSubmitTransactionResult> {
     return {
       transactionId: "mock-txid",
       accepted: true,

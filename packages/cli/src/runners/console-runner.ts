@@ -3,7 +3,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { createTestHarness } from "@hardkas/testing";
 import { calculateContentHash, canonicalStringify } from "@hardkas/artifacts";
-import { maskSecrets, formatSompi, parseKasToSompi } from "@hardkas/core";
+import { maskSecrets, formatSompiToKas, parseKasToSompi } from "@hardkas/core";
 
 interface REPLServerWithHistory extends repl.REPLServer {
   history?: string[];
@@ -22,7 +22,7 @@ export async function startConsole(opts: {
   });
 
   console.log(`\nHardKAS Console — ${opts.network}`);
-  console.log(`  ${opts.accounts} accounts, ${formatSompi(opts.balance)} each\n`);
+  console.log(`  ${opts.accounts} accounts, ${formatSompiToKas(opts.balance)} each\n`);
   console.log("  Available globals:");
   console.log(
     "    h              — test harness (send, balanceOf, accountNames, reset, snapshot)"
@@ -30,7 +30,7 @@ export async function startConsole(opts: {
   console.log("    hash(obj)      — calculateContentHash");
   console.log("    canonical(obj) — canonicalStringify");
   console.log("    kas(str)       — parseKasToSompi ('1.5' → 150000000n)");
-  console.log("    sompi(n)       — formatSompi (150000000n → '1.5 KAS')");
+  console.log("    sompi(n)       — formatSompiToKas (150000000n → '1.5 KAS')");
   console.log("    workspaceRoot  — current workspace root");
   console.log("");
   console.log("  Quick start:");
@@ -54,7 +54,7 @@ export async function startConsole(opts: {
   r.context.hash = calculateContentHash;
   r.context.canonical = canonicalStringify;
   r.context.kas = parseKasToSompi;
-  r.context.sompi = formatSompi;
+  r.context.sompi = formatSompiToKas;
   r.context.maskSecrets = maskSecrets;
 
   // Persistent history
@@ -79,6 +79,6 @@ export async function startConsole(opts: {
       fs.writeFileSync(historyPath, lines);
     } catch {}
     console.log("\nBye!");
-    process.exit(0);
+    return;
   });
 }

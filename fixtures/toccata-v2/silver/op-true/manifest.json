@@ -17,9 +17,7 @@
     "vmConsensusEquivalence": "NOT_CLAIMED"
   },
   "expectedCompareStatus": "PARTIAL_VM_SIMULATION",
-  "expectedKnownLimitations": [
-    "PARTIAL_VM_SIMULATION"
-  ],
+  "expectedKnownLimitations": ["PARTIAL_VM_SIMULATION"],
   "status": "P5_GOLDEN_CORPUS_STARTED",
   "files": [
     "compile-artifact.json",

@@ -82,7 +82,8 @@ dappTxRoutes.post("/sign", async (c) => {
     if (sdk.network === "mainnet") {
       return envelope(c, false, null, {
         code: "HTTP_SIGNING_NOT_ALLOWED",
-        message: "Signing transactions on mainnet via HTTP Dev Server is strictly prohibited for security reasons."
+        message:
+          "Signing transactions on mainnet via HTTP Dev Server is strictly prohibited for security reasons."
       });
     }
 
@@ -98,7 +99,7 @@ dappTxRoutes.post("/sign", async (c) => {
 
     const signed = await sdk.tx.sign(planArtifact, body.account);
     const response = envelope(c, true, signed);
-    // Note: The envelope doesn't directly expose adding warnings dynamically after creation, 
+    // Note: The envelope doesn't directly expose adding warnings dynamically after creation,
     // but the meta property indicates it's simulated/developer mode.
     return response;
   } catch (e: any) {

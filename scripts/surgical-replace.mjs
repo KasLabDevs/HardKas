@@ -1,14 +1,14 @@
-import fs from 'fs';
-import path from 'path';
+import fs from "fs";
+import path from "path";
 
 const projectRoot = path.resolve(process.cwd());
-const templatePath = path.join(projectRoot, 'plantilla-docs.html');
-const outPath = path.join(projectRoot, 'docs', 'index.html');
+const templatePath = path.join(projectRoot, "plantilla-docs.html");
+const outPath = path.join(projectRoot, "docs", "index.html");
 
-let html = fs.readFileSync(templatePath, 'utf8');
+let html = fs.readFileSync(templatePath, "utf8");
 
 // Replace versions
-html = html.replace(/0\.6\.1-alpha/g, '0.7.9-alpha');
+html = html.replace(/0\.6\.1-alpha/g, "0.7.9-alpha");
 
 // Replace Subtitle
 html = html.replace(
@@ -25,33 +25,30 @@ html = html.replace(
 // We need to keep the grid cols-3 and box classes intact.
 html = html.replace(
   /<h3>Protocol tooling<\/h3>\s*<p>.*?<\/p>/,
-  '<h3>Semantic Invariants</h3>\n<p>Byte-identical outputs across operating systems. Strict deterministic sorting ensures multisig arrays hash identically everywhere.</p>'
+  "<h3>Semantic Invariants</h3>\n<p>Byte-identical outputs across operating systems. Strict deterministic sorting ensures multisig arrays hash identically everywhere.</p>"
 );
 
 // Replace "What is HardKAS?" table contents to match new rules
 html = html.replace(
   /A bridge-aware local simulator with explicit assumptions\./,
-  'Strict deterministic artifact workflows.'
+  "Strict deterministic artifact workflows."
 );
 
 // Replace quickstart code blocks
 html = html.replace(
   /pnpm add -g @hardkas\/cli@alpha\nhardkas new my-kaspa-app\ncd my-kaspa-app\npnpm test\nhardkas console/,
-  'pnpm init\npnpm add @hardkas/sdk\npnpm add -D @hardkas/cli\npnpm hardkas init\npnpm hardkas dev server'
+  "pnpm init\npnpm add @hardkas/sdk\npnpm add -D @hardkas/cli\npnpm hardkas init\npnpm hardkas dev server"
 );
 
 // Replace L2 transaction plan details with Path traversal info
 html = html.replace(
   /<summary>Create and inspect an L2 transaction plan<\/summary>/,
-  '<summary>Inspect Path Traversal Boundaries (0.7.9 Update)</summary>'
+  "<summary>Inspect Path Traversal Boundaries (0.7.9 Update)</summary>"
 );
-html = html.replace(
-  /hardkas l2 tx build.*?--json/g,
-  'hardkas verify --strict'
-);
+html = html.replace(/hardkas l2 tx build.*?--json/g, "hardkas verify --strict");
 html = html.replace(
   /L2 transaction plan:[\s\S]*?planned/g,
-  'Lineage verification:\n  Strict mode: passed\n  Path integrity: locked'
+  "Lineage verification:\n  Strict mode: passed\n  Path integrity: locked"
 );
 
 // Left Side Nav replacement
@@ -86,6 +83,5 @@ html = html.replace(
 </aside>`
 );
 
-
-fs.writeFileSync(outPath, html, 'utf8');
-console.log('Successfully generated surgically replaced docs/index.html');
+fs.writeFileSync(outPath, html, "utf8");
+console.log("Successfully generated surgically replaced docs/index.html");

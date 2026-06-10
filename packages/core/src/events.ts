@@ -1,3 +1,4 @@
+import { HardkasSchemas } from "./registry.js";
 import {
   TxId,
   KaspaAddress,
@@ -146,7 +147,7 @@ export interface EventPayloadByKind {
  * Standardizes how events are captured and tracked across the system.
  */
 export interface EventEnvelope<K extends EventKind = EventKind> {
-  schema: "hardkas.event";
+  schema: typeof HardkasSchemas.Event;
   version: "1.0.0";
 
   eventId: EventId;
@@ -249,7 +250,7 @@ export function createEventEnvelope<K extends EventKind>(params: {
 }): EventEnvelope<K> {
   const timestamp = new Date().toISOString();
   return {
-    schema: "hardkas.event",
+    schema: HardkasSchemas.Event,
     version: "1.0.0",
     eventId: params.eventId || (crypto.randomUUID() as EventId),
     domain: params.domain,
@@ -274,7 +275,7 @@ export function createEventEnvelope<K extends EventKind>(params: {
  */
 export function validateEventEnvelope(event: any): boolean {
   if (!event || typeof event !== "object") return false;
-  if (event.schema !== "hardkas.event") return false;
+  if (event.schema !== HardkasSchemas.Event) return false;
   if (!event.eventId || !event.domain || !event.kind) return false;
   if (!event.workflowId || !event.correlationId || !event.networkId) return false;
   if (typeof event.payload !== "object") return false;

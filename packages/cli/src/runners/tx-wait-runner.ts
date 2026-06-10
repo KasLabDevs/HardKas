@@ -1,4 +1,4 @@
-import { UI } from "../ui.js";
+﻿import { UI } from "../ui.js";
 import { JsonWrpcKaspaClient } from "@hardkas/kaspa-rpc";
 import { resolveNetworkTarget, HardkasConfig } from "@hardkas/config";
 
@@ -29,7 +29,7 @@ export async function runTxWait(input: TxWaitRunnerInput): Promise<void> {
   });
 
   if (provider.mode === "simulated") {
-    UI.logHuman(`  ✅ Settlement: SIMULATED (Instant)`);
+    UI.logHuman(`  âœ… Settlement: SIMULATED (Instant)`);
     return;
   }
 
@@ -41,7 +41,7 @@ export async function runTxWait(input: TxWaitRunnerInput): Promise<void> {
 
   const client = new JsonWrpcKaspaClient({ rpcUrl });
 
-  UI.logHuman(`⏳ Waiting for settlement of ${txId.substring(0, 8)}... on ${rpcUrl}`);
+  UI.logHuman(`â³ Waiting for settlement of ${txId.substring(0, 8)}... on ${rpcUrl}`);
 
   const timeoutMs = input.timeoutMs || 30000;
   const start = Date.now();
@@ -52,13 +52,13 @@ export async function runTxWait(input: TxWaitRunnerInput): Promise<void> {
       // 1. Check if still in mempool
       const mempoolEntry = await client.getMempoolEntry(txId);
       if (mempoolEntry) {
-        await new Promise(r => setTimeout(r, 2000));
+        await new Promise((r) => setTimeout(r, 2000));
         continue;
       }
 
       // 2. If it disappeared from mempool, verify it is in the DAG
       let verified = false;
-      
+
       try {
         // Try getTransaction first (if node has txindex)
         const tx = await client.getTransaction(txId);
@@ -78,29 +78,36 @@ export async function runTxWait(input: TxWaitRunnerInput): Promise<void> {
         confirmed = true;
         break;
       }
-      
+
       // If not verified, wait a bit and hope the user provided an address,
       // or we just assume confirmed if they didn't provide address and getTransaction fails.
       if (!input.address) {
-         // Compromise: if no address provided and getTransaction unsupported, assume confirmed after leaving mempool
-         confirmed = true;
-         break;
+        // Compromise: if no address provided and getTransaction unsupported, assume confirmed after leaving mempool
+        confirmed = true;
+        break;
       }
 
-      await new Promise(r => setTimeout(r, 2000));
+      await new Promise((r) => setTimeout(r, 2000));
     }
 
     if (confirmed) {
-      UI.logHuman(`  ✅ Settlement Proof: PASS`);
+      UI.logHuman(`  âœ… Settlement Proof: PASS`);
       UI.logHuman(`  Status: CONFIRMED`);
     } else {
-      UI.logHuman(`  ❌ Settlement Proof: TIMEOUT`);
-      UI.logHuman(`  Status: PENDING in Mempool (Wait time: ${timeoutMs}ms)`);
-      process.exit(1);
+      const { HardkasCliError } = await import("../cli-errors.js");
+      throw new HardkasCliError(
+        "TIMEOUT",
+        `Settlement Proof: TIMEOUT\nStatus: PENDING in Mempool (Wait time: ${timeoutMs}ms)`,
+        { exitCode: 1 }
+      );
     }
   } catch (err: any) {
-    UI.logHuman(`  ❌ Error polling node: ${err.message}`);
-    process.exit(1);
+    if (err.name === "HardkasCliError") throw err;
+    const { HardkasCliError } = await import("../cli-errors.js");
+    throw new HardkasCliError("POLLING_ERROR", `Error polling node: ${err.message}`, {
+      exitCode: 1,
+      cause: err
+    });
   } finally {
     await client.close();
   }

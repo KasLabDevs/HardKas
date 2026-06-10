@@ -54,7 +54,7 @@ export async function getOrCreateDevAccount(
 
   const network = "simnet";
   const isSimnet = ["simnet", "kaspasim", "local"].includes(network);
-  
+
   let address = "";
   let privateKey = "";
   let publicKey = "";

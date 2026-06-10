@@ -1,8 +1,9 @@
-import fs from "node:fs";
+﻿import fs from "node:fs";
 import path from "node:path";
 import crypto from "node:crypto";
 import pc from "picocolors";
 import { UI } from "../ui.js";
+import { HardkasSchemas } from "@hardkas/artifacts";
 
 export interface SemanticVerifyOptions {
   ciMode: boolean;
@@ -16,7 +17,7 @@ interface SemanticArtifact {
 }
 
 interface SemanticBundleV1 {
-  schemaVersion: "hardkas.semantic-bundle.v1";
+  schemaVersion: typeof HardkasSchemas.SemanticBundleV1;
   runtimeVersion: string;
   hashVersion: "sha256";
   globalSemanticHash?: string;
@@ -32,18 +33,22 @@ interface SemanticBundleV1 {
 
 export async function runSemanticVerify(options: SemanticVerifyOptions) {
   if (!options.ciMode) {
-    UI.error(
-      "verify-semantics currently only supports --ci-mode for cross-platform validation."
+    const { HardkasCliError } = await import("../cli-errors.js");
+    throw new HardkasCliError(
+      "CI_MODE_REQUIRED",
+      "verify-semantics currently only supports --ci-mode for cross-platform validation.",
+      { exitCode: 1 }
     );
-    process.exitCode = 1;
-    return;
   }
 
   const reportsDir = path.join(process.cwd(), ".hardkas", "reports");
   if (!fs.existsSync(reportsDir)) {
-    UI.error(`No torture reports found in ${reportsDir}. Run torture matrix first.`);
-    process.exitCode = 1;
-    return;
+    const { HardkasCliError } = await import("../cli-errors.js");
+    throw new HardkasCliError(
+      "NO_REPORTS_FOUND",
+      `No torture reports found in ${reportsDir}. Run torture matrix first.`,
+      { exitCode: 1 }
+    );
   }
 
   const reportFiles = fs
@@ -51,9 +56,10 @@ export async function runSemanticVerify(options: SemanticVerifyOptions) {
     .filter((f) => f.startsWith("torture-") && f.endsWith(".json"));
 
   if (reportFiles.length === 0) {
-    UI.error("No torture report JSON files found.");
-    process.exitCode = 1;
-    return;
+    const { HardkasCliError } = await import("../cli-errors.js");
+    throw new HardkasCliError("NO_REPORTS_FOUND", "No torture report JSON files found.", {
+      exitCode: 1
+    });
   }
 
   let totalChecks = 0;
@@ -113,8 +119,8 @@ export async function runSemanticVerify(options: SemanticVerifyOptions) {
   );
 
   const bundle: SemanticBundleV1 = {
-    schemaVersion: "hardkas.semantic-bundle.v1",
-    runtimeVersion: "0.9.0-alpha",
+    schemaVersion: HardkasSchemas.SemanticBundleV1,
+    runtimeVersion: "0.9.1-alpha",
     hashVersion: "sha256",
     invariantSummary: {
       totalChecks,
@@ -146,12 +152,12 @@ export async function runSemanticVerify(options: SemanticVerifyOptions) {
       globalSemanticHash: semanticHash
     });
   } else {
-    UI.info(`\n${pc.bold(pc.cyan("🔬 CI Parity Semantic Bundle Export"))}`);
+    UI.info(`\n${pc.bold(pc.cyan("ðŸ”¬ CI Parity Semantic Bundle Export"))}`);
     UI.info(`  Total Reports Parsed: ${pc.yellow(reportFiles.length)}`);
     UI.info(`  Total Invariant Checks: ${pc.yellow(totalChecks)}`);
     UI.info(`  Unique Artifacts Bundled: ${pc.yellow(artifacts.length)}`);
 
-    UI.info(`\n${pc.bold(pc.green("✨ Semantic Bundle v1 Generated ✨"))}`);
+    UI.info(`\n${pc.bold(pc.green("âœ¨ Semantic Bundle v1 Generated âœ¨"))}`);
     UI.info(`  File: ${pc.cyan("hardkas.semantic-bundle.v1.json")}`);
 
     UI.info(`\n  ${pc.bold("GLOBAL_SEMANTIC_HASH:")} ${pc.magenta(semanticHash)}`);

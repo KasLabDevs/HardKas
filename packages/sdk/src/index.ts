@@ -17,6 +17,12 @@ import { HardkasLineage } from "./lineage.js";
 import { HardkasWorkspace } from "./workspace.js";
 import { HardkasArtifactsManager } from "./artifacts-manager.js";
 import { HardkasWorkflow } from "./workflow.js";
+import { HardkasCapabilitiesApi, createHardkasCapabilities } from "./capabilities.js";
+import { HardkasCorpus } from "./corpus.js";
+import { HardkasSilver } from "./silver.js";
+import { HardkasZk } from "./zk.js";
+import { HardkasVprogs } from "./vprogs.js";
+import { HardkasProgrammability } from "./programmability.js";
 
 // Curated explicit exports only. No `export *`
 export { HardkasAccounts } from "./accounts.js";
@@ -28,6 +34,62 @@ export { HardkasReplay } from "./replay.js";
 export { HardkasLineage } from "./lineage.js";
 export { HardkasWorkspace } from "./workspace.js";
 export { HardkasArtifactsManager } from "./artifacts-manager.js";
+export { HardkasCapabilitiesApi, createHardkasCapabilities } from "./capabilities.js";
+export { HardkasCorpus, verifyToccataCorpus } from "./corpus.js";
+export { HardkasSilver } from "./silver.js";
+export {
+  HardkasZk,
+  createZkCapabilities,
+  inspectZkProof,
+  verifyZkProofLocal,
+  verifyZkCorpus
+} from "./zk.js";
+export {
+  HardkasVprogs,
+  createVprogsCapabilities,
+  createVprogsStatus,
+  inspectVprogsArtifact
+} from "./vprogs.js";
+export {
+  HardkasProgrammability,
+  createProgrammabilityCapabilities,
+  programmabilityClaims
+} from "./programmability.js";
+export type { HardkasCapabilities } from "./capabilities.js";
+export type { CorpusVerifyResult, CorpusIssue } from "./corpus.js";
+export type {
+  ZkCapabilities,
+  ZkCorpusVerifyResult,
+  ZkIssue,
+  ZkProofInspectResult,
+  ZkProofSystem,
+  ZkProofVerifyResult
+} from "./zk.js";
+export type {
+  VprogsCapabilitiesResult,
+  VprogsClaims,
+  VprogsInspectResult,
+  VprogsStatusResult
+} from "./vprogs.js";
+export type {
+  ProgrammabilityAppPlan,
+  ProgrammabilityCapabilitiesResult,
+  ProgrammabilityClaims,
+  ProgrammabilityCorpusReport,
+  ProgrammabilityInspectResult,
+  ProgrammabilityKind,
+  ProgrammabilityVerifyResult
+} from "./programmability.js";
+export type {
+  SilverCompareMode,
+  SilverCompareOptions,
+  SilverCompareReport,
+  SilverCompileOptions,
+  SilverDeployPlanOptions,
+  SilverSdkArtifactResult,
+  SilverSdkWriteOptions,
+  SilverSpendPlanOptions
+} from "./silver.js";
 export { defineHardkasConfig } from "@hardkas/config";
 export { defineTask, type TaskContext, type TaskArgs } from "./tasks.js";
 export { buildPaymentPlan } from "@hardkas/tx-builder";
@@ -47,7 +109,7 @@ export {
   SOMPI_PER_KAS,
   HardkasError,
   parseKasToSompi,
-  formatSompi,
+  formatSompiToKas,
   type TxId,
   type KaspaAddress,
   type ArtifactId,
@@ -94,6 +156,12 @@ export class Hardkas {
   public readonly replay: HardkasReplay;
   public readonly lineage: HardkasLineage;
   public readonly workflow: HardkasWorkflow;
+  public readonly capabilitiesApi: HardkasCapabilitiesApi;
+  public readonly corpus: HardkasCorpus;
+  public readonly silver: HardkasSilver;
+  public readonly zk: HardkasZk;
+  public readonly vprogs: HardkasVprogs;
+  public readonly programmability: HardkasProgrammability;
   public readonly signer?: ExternalHardkasSigner | undefined;
 
   public readonly mode: "developer" | "agent";
@@ -134,6 +202,12 @@ export class Hardkas {
     this.replay = new HardkasReplay(this);
     this.lineage = new HardkasLineage(this);
     this.workflow = new HardkasWorkflow(this);
+    this.capabilitiesApi = new HardkasCapabilitiesApi();
+    this.corpus = new HardkasCorpus(this);
+    this.silver = new HardkasSilver(this);
+    this.zk = new HardkasZk(this);
+    this.vprogs = new HardkasVprogs(this);
+    this.programmability = new HardkasProgrammability(this);
   }
 
   private resolveRpcUrl(): string {
@@ -153,9 +227,11 @@ export class Hardkas {
     const options =
       typeof dirOrOptions === "string" ? { cwd: dirOrOptions } : dirOrOptions;
     const loaded = await loadConfig(options);
-    
+
     const activeNetwork = options.network || loaded.config.defaultNetwork || "simnet";
-    const isSimulated = activeNetwork === "simulated" || loaded.config.networks?.[activeNetwork]?.kind === "simulated";
+    const isSimulated =
+      activeNetwork === "simulated" ||
+      loaded.config.networks?.[activeNetwork]?.kind === "simulated";
     const autoBootstrap = options.autoBootstrap ?? (isSimulated ? true : false);
 
     const fs = await import("node:fs");
@@ -166,12 +242,14 @@ export class Hardkas {
     if (autoBootstrap) {
       if (!isSimulated) {
         if (options.logger) {
-           options.logger.warn("[HardKAS] autoBootstrap ignored for non-simulated network");
+          options.logger.warn(
+            "[HardKAS] autoBootstrap ignored for non-simulated network"
+          );
         }
       } else {
         if (!fs.existsSync(hardkasDir)) {
           if (options.logger) {
-             options.logger.info("[HardKAS] Auto-bootstrapping simulated workspace");
+            options.logger.info("[HardKAS] Auto-bootstrapping simulated workspace");
           }
           fs.mkdirSync(hardkasDir, { recursive: true });
         }
@@ -184,13 +262,16 @@ export class Hardkas {
       }
     } else {
       if (!fs.existsSync(hardkasDir)) {
-        throw new HardkasError("NOT_INITIALIZED", "Workspace not initialized. Run npx hardkas init . or pass autoBootstrap: true.");
+        throw new HardkasError(
+          "NOT_INITIALIZED",
+          "Workspace not initialized. Run npx hardkas init . or pass autoBootstrap: true."
+        );
       }
     }
 
     // Pass the overridden network back into config for downstream use if needed
     if (options.network) {
-       loaded.config.defaultNetwork = options.network;
+      loaded.config.defaultNetwork = options.network;
     }
 
     let provider: KaspaRpcClient | undefined;
@@ -222,6 +303,10 @@ export class Hardkas {
 
   get cwd() {
     return this.config.cwd;
+  }
+
+  async capabilities() {
+    return this.capabilitiesApi.get();
   }
 
   /**

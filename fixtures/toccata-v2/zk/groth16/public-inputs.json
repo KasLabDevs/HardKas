@@ -1,0 +1,6 @@
+{
+  "schema": "hardkas.zk.groth16.publicInputs.v1",
+  "statement": "hardkas-groth16-smoke: 2 + 2 = 4",
+  "publicSignals": ["4"],
+  "statementHash": "a5fd445015128b731689b317267b3db8ed6865ac3d52888940fdaaa06b48f40f"
+}

@@ -1,4 +1,4 @@
-import { formatSompi, ExecutionMode } from "@hardkas/core";
+import { ExecutionMode } from "@hardkas/core";
 import {
   verifyArtifactIntegrity,
   verifyArtifactSemantics,

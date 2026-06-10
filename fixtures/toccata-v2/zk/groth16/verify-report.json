@@ -1,0 +1,17 @@
+{
+  "schema": "hardkas.zk.groth16.verifyReport.v1",
+  "status": "ZK_FIXTURE_COHERENCE_PASS",
+  "verifierAdapter": "hardkas-groth16-fixture-coherence-v1",
+  "proofHash": "8b812fb7a9f8a307a7124e93b90fc1b4b332f79257a3ddbb611b397c5c2bdff9",
+  "publicInputsHash": "6ba532d5ac249cf432a8fc0136d570560dfa71c73d8865bf072059c2c4a97503",
+  "verificationKeyHash": "d4ea27e10db6705ada7ed2cb34abfca42c4af76deaa3f2990622132afd79d53a",
+  "coherenceDigest": "e996fc1d373ed7317197f939c2c4c0d017f0b073be616e65dd622e7c9266eb61",
+  "claims": {
+    "zkArtifactCoherence": "READY_MATCH",
+    "zkLocalVerification": "READY_GROTH16_FIXTURE_COHERENCE",
+    "zkOnchainVerification": "NOT_CLAIMED",
+    "vmConsensusEquivalence": "NOT_CLAIMED",
+    "mainnet": "BLOCKED_BY_POLICY"
+  },
+  "knownLimitations": ["ZK_ONCHAIN_VERIFICATION_NOT_CLAIMED", "PARTIAL_VM_SIMULATION"]
+}

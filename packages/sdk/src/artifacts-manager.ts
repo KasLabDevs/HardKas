@@ -64,7 +64,7 @@ export class HardkasArtifactsManager {
     options: WriteArtifactOptions = {}
   ): Promise<WriteArtifactResult> {
     const record = artifact as unknown as Record<string, any>;
-    
+
     // Ensure hashVersion is explicitly written to disk so readers don't fallback to v1
     if (!record.hashVersion) {
       const { CURRENT_HASH_VERSION } = await import("@hardkas/artifacts");
@@ -150,7 +150,6 @@ export class HardkasArtifactsManager {
    * Reads an artifact by path or ID/hash from the workspace.
    */
   async read(id: string, options?: { expectedSchema?: string }): Promise<any> {
-
     const { readArtifact } = await import("@hardkas/artifacts");
     let filePath = id;
 
@@ -168,7 +167,10 @@ export class HardkasArtifactsManager {
       (rootRel.startsWith("..") || path.isAbsolute(rootRel)) &&
       (artifactsRel.startsWith("..") || path.isAbsolute(artifactsRel))
     ) {
-      throw new HardkasError("PATH_TRAVERSAL", "Artifact path escapes workspace boundary");
+      throw new HardkasError(
+        "PATH_TRAVERSAL",
+        "Artifact path escapes workspace boundary"
+      );
     }
 
     if (!fs.existsSync(filePath)) {
@@ -178,23 +180,25 @@ export class HardkasArtifactsManager {
         // 2. Try prefix search in workspace artifacts directory
         if (fs.existsSync(this.workspace.artifactsDir)) {
           const files = fs.readdirSync(this.workspace.artifactsDir);
-          let found = files.find((f) => 
-            f === `${id}.json` || 
-            f.startsWith(`${id}-`) || 
-            f.startsWith(`${id}.`) || 
-            f.endsWith(`-${id}.json`) ||
-            f.endsWith(`-${id}.plan.json`) ||
-            f.endsWith(`-${id}.signed.json`) ||
-            f.endsWith(`-${id}.receipt.json`)
+          let found = files.find(
+            (f) =>
+              f === `${id}.json` ||
+              f.startsWith(`${id}-`) ||
+              f.startsWith(`${id}.`) ||
+              f.endsWith(`-${id}.json`) ||
+              f.endsWith(`-${id}.plan.json`) ||
+              f.endsWith(`-${id}.signed.json`) ||
+              f.endsWith(`-${id}.receipt.json`)
           );
-          
+
           if (!found) {
-            const shortId = id.startsWith("plan-") || id.startsWith("signed-") ? id : id.slice(0, 16);
+            const shortId =
+              id.startsWith("plan-") || id.startsWith("signed-") ? id : id.slice(0, 16);
             for (const file of files) {
               if (!file.endsWith(".json")) continue;
-              
+
               // Fast path: if the filename contains the ID, check it first.
-              // But we MUST check all files if the fast path fails, because sometimes 
+              // But we MUST check all files if the fast path fails, because sometimes
               // artifacts (like funding receipts) have filenames based on txId instead of contentHash.
               const fp = path.join(this.workspace.artifactsDir, file);
               try {
@@ -213,7 +217,7 @@ export class HardkasArtifactsManager {
               } catch {}
             }
           }
-          
+
           if (found) {
             filePath = path.join(this.workspace.artifactsDir, found);
           } else {
@@ -227,7 +231,9 @@ export class HardkasArtifactsManager {
 
     const artifact: any = await readArtifact(filePath);
     if (options?.expectedSchema && artifact.schema !== options.expectedSchema) {
-      throw new Error(`Artifact ${id} has schema '${artifact.schema}' but expected '${options.expectedSchema}'`);
+      throw new Error(
+        `Artifact ${id} has schema '${artifact.schema}' but expected '${options.expectedSchema}'`
+      );
     }
     return artifact;
   }
@@ -252,7 +258,9 @@ export class HardkasArtifactsManager {
     for (const file of files) {
       if (file.endsWith(".json")) {
         try {
-          const artifact = await readArtifact(path.join(this.workspace.artifactsDir, file));
+          const artifact = await readArtifact(
+            path.join(this.workspace.artifactsDir, file)
+          );
           artifacts.push(artifact);
         } catch (e) {
           // Skip invalid JSON
@@ -268,38 +276,53 @@ export class HardkasArtifactsManager {
    */
   async verify(
     target: any,
-    options: { throwOnInvalid?: boolean; strict?: boolean; enforceMetadata?: boolean } = {}
+    options: {
+      throwOnInvalid?: boolean;
+      strict?: boolean;
+      enforceMetadata?: boolean;
+    } = {}
   ): Promise<any> {
     const throwOnInvalid = options.throwOnInvalid ?? true;
     const strict = options.strict ?? false;
     const enforceMetadata = options.enforceMetadata ?? true;
-    
+
     let artifact: any;
     let id: string;
 
     if (typeof target === "string") {
       id = target;
       if (!id) {
-        if (throwOnInvalid) throw new Error("No artifact target provided for verification.");
-        return { valid: false, reason: "unknown", message: "No artifact target provided for verification." };
+        if (throwOnInvalid)
+          throw new Error("No artifact target provided for verification.");
+        return {
+          valid: false,
+          reason: "unknown",
+          message: "No artifact target provided for verification."
+        };
       }
       try {
         artifact = await this.read(id);
       } catch (e: any) {
         if (throwOnInvalid) throw e;
-        return { valid: false, reason: "missing_artifact", message: e.message, artifactId: id };
+        return {
+          valid: false,
+          reason: "missing_artifact",
+          message: e.message,
+          artifactId: id
+        };
       }
     } else {
       artifact = target;
       id = (artifact.artifactId || artifact.contentHash || "") as string;
     }
 
-    const { verifyArtifactIntegrity, verifyArtifactSemantics } = await import("@hardkas/artifacts");
-    
+    const { verifyArtifactIntegrity, verifyArtifactSemantics } =
+      await import("@hardkas/artifacts");
+
     const result = await verifyArtifactIntegrity(artifact);
     if (result.ok && strict) {
-      const semResult = verifyArtifactSemantics(artifact, { 
-        strict: true, 
+      const semResult = verifyArtifactSemantics(artifact, {
+        strict: true,
         artifactsDir: this.workspace.artifactsDir,
         enforceMetadata,
         resolveArtifact: (id: string) => this.cache.get(id)
@@ -312,28 +335,39 @@ export class HardkasArtifactsManager {
     }
 
     if (!result.ok) {
-       const mappedReason = 
-         result.issues[0]?.code === "HASH_MISMATCH" ? "content_hash_mismatch" : 
-         result.issues[0]?.code === "MISSING_CONTENT_HASH" ? "missing_content_hash" : 
-         result.issues[0]?.code === "MISSING_SIGNATURE" ? "missing_signature" : 
-         result.issues[0]?.code === "REFERENCE_MISSING" ? "reference_missing" :
-         result.issues[0]?.code === "REFERENCE_HASH_MISMATCH" ? "reference_hash_mismatch" :
-         result.issues[0]?.code === "POLICY_VIOLATION" ? "policy_violation" :
-         result.issues[0]?.code === "LEGACY_HASH_VERSION_UNSAFE" ? "legacy_hash_version_unsafe" :
-         result.issues[0]?.code === "PARENT_MISSING" ? "parent_missing" : "schema_invalid";
+      const mappedReason =
+        result.issues[0]?.code === "HASH_MISMATCH"
+          ? "content_hash_mismatch"
+          : result.issues[0]?.code === "MISSING_CONTENT_HASH"
+            ? "missing_content_hash"
+            : result.issues[0]?.code === "MISSING_SIGNATURE"
+              ? "missing_signature"
+              : result.issues[0]?.code === "REFERENCE_MISSING"
+                ? "reference_missing"
+                : result.issues[0]?.code === "REFERENCE_HASH_MISMATCH"
+                  ? "reference_hash_mismatch"
+                  : result.issues[0]?.code === "POLICY_VIOLATION"
+                    ? "policy_violation"
+                    : result.issues[0]?.code === "LEGACY_HASH_VERSION_UNSAFE"
+                      ? "legacy_hash_version_unsafe"
+                      : result.issues[0]?.code === "PARENT_MISSING"
+                        ? "parent_missing"
+                        : "schema_invalid";
 
-       if (throwOnInvalid) {
-         throw new Error(`Artifact ${id} corrupted or invalid: ` + JSON.stringify(result.issues, null, 2));
-       }
-       return { 
-         valid: false, 
-         reason: mappedReason,
-         message: result.issues.map((i: any) => i.message).join(", "),
-         artifactId: id,
-         expected: result.expectedHash,
-         actual: result.actualHash,
-         details: result.issues
-       };
+      if (throwOnInvalid) {
+        throw new Error(
+          `Artifact ${id} corrupted or invalid: ` + JSON.stringify(result.issues, null, 2)
+        );
+      }
+      return {
+        valid: false,
+        reason: mappedReason,
+        message: result.issues.map((i: any) => i.message).join(", "),
+        artifactId: id,
+        expected: result.expectedHash,
+        actual: result.actualHash,
+        details: result.issues
+      };
     }
 
     if (!throwOnInvalid) {
@@ -357,12 +391,15 @@ export class HardkasArtifactsManager {
       artifact = target;
     }
 
-    const { migrateArtifactPayload, generateMigrationReceipt } = await import("@hardkas/artifacts");
-    
+    const { migrateArtifactPayload, generateMigrationReceipt } =
+      await import("@hardkas/artifacts");
+
     // Perform in-memory migration
     const result = migrateArtifactPayload(artifact, undefined, { strictPolicy: false });
     if (!result.migrated) {
-      throw new Error(`Artifact ${artifact.artifactId || artifact.contentHash} is already at the target version or cannot be migrated.`);
+      throw new Error(
+        `Artifact ${artifact.artifactId || artifact.contentHash} is already at the target version or cannot be migrated.`
+      );
     }
 
     // Generate receipt

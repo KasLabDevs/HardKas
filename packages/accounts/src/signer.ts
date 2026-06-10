@@ -144,9 +144,13 @@ export async function signTxPlanArtifact(input: {
       },
       lineage: createLineageTransition(planArtifact, "hardkas.signedTx"),
       ...(planArtifact.workflowId ? { workflowId: planArtifact.workflowId } : {}),
-      ...(planArtifact.assumptionLevel ? { assumptionLevel: planArtifact.assumptionLevel } : {}),
+      ...(planArtifact.assumptionLevel
+        ? { assumptionLevel: planArtifact.assumptionLevel }
+        : {}),
       ...(planArtifact.policyRefs ? { policyRefs: planArtifact.policyRefs } : {}),
-      ...(planArtifact.networkProfileRef ? { networkProfileRef: planArtifact.networkProfileRef } : {}),
+      ...(planArtifact.networkProfileRef
+        ? { networkProfileRef: planArtifact.networkProfileRef }
+        : {}),
       ...(planArtifact.assumptionRef ? { assumptionRef: planArtifact.assumptionRef } : {})
     };
 

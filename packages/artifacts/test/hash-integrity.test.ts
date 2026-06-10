@@ -10,7 +10,7 @@ describe("Artifact Hash Integrity", () => {
       amountSompi: "100"
       // missing contentHash
     };
-    
+
     const result = await verifyArtifactIntegrity(artifact);
     expect(result.ok).toBe(false);
     expect(result.issues.at(0)?.code).toBe("MISSING_CONTENT_HASH");
@@ -24,13 +24,13 @@ describe("Artifact Hash Integrity", () => {
       from: { address: "kaspa:sim_alice" },
       to: { address: "kaspa:sim_bob" }
     };
-    
+
     // Set correct hash first
     artifact.contentHash = calculateContentHash(artifact);
-    
+
     // Tamper the payload
     artifact.amountSompi = "200";
-    
+
     const result = await verifyArtifactIntegrity(artifact);
     expect(result.ok).toBe(false);
     expect(result.issues.at(0)?.code).toBe("HASH_MISMATCH");
@@ -47,9 +47,9 @@ describe("Artifact Hash Integrity", () => {
       from: { address: "kaspa:sim_alice" },
       to: { address: "kaspa:sim_bob" }
     };
-    
+
     artifact.contentHash = calculateContentHash(artifact);
-    
+
     // Reorder keys
     const reordered: any = {
       to: artifact.to,
@@ -59,11 +59,11 @@ describe("Artifact Hash Integrity", () => {
       schema: artifact.schema,
       contentHash: artifact.contentHash
     };
-    
+
     const result = await verifyArtifactIntegrity(reordered);
     // Note: Zod schema validation might still fail if some fields are missing (like inputs/outputs),
     // but the HASH_MISMATCH should NOT be present.
-    const hasHashError = result.issues.some(i => i.code === "HASH_MISMATCH");
+    const hasHashError = result.issues.some((i) => i.code === "HASH_MISMATCH");
     expect(hasHashError).toBe(false);
   });
 
@@ -72,10 +72,10 @@ describe("Artifact Hash Integrity", () => {
       schema: "hardkas.txPlan",
       version: "1.0.0-alpha"
     };
-    
+
     const hash1 = calculateContentHash(artifact);
     artifact.contentHash = hash1;
-    
+
     const hash2 = calculateContentHash(artifact);
     expect(hash1).toBe(hash2);
   });

@@ -1,10 +1,10 @@
-import fs from 'fs';
-import path from 'path';
+import fs from "fs";
+import path from "path";
 
 const projectRoot = path.resolve(process.cwd());
-const outPath = path.join(projectRoot, 'docs', 'index.html');
+const outPath = path.join(projectRoot, "docs", "index.html");
 
-let html = fs.readFileSync(outPath, 'utf8');
+let html = fs.readFileSync(outPath, "utf8");
 
 const newExample = `</details>
 <details>
@@ -41,9 +41,9 @@ const targetRegex = /<\/details>\s*<\/div>\s*<\/section>\s*<section id="faq">/;
 const replacement = newExample + '\n<section id="faq">';
 
 if (targetRegex.test(html)) {
-    const replaced = html.replace(targetRegex, replacement);
-    fs.writeFileSync(outPath, replaced, 'utf8');
-    console.log('Successfully added query store example');
+  const replaced = html.replace(targetRegex, replacement);
+  fs.writeFileSync(outPath, replaced, "utf8");
+  console.log("Successfully added query store example");
 } else {
-    console.log('Failed to find target using regex');
+  console.log("Failed to find target using regex");
 }

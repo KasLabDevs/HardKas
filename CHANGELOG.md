@@ -2,11 +2,123 @@
 
 All notable changes to HardKAS will be documented in this file.
 
-## 0.9.0-alpha - Toccata Local-First Baseline - 2026-06-09
+## 0.9.1-alpha - SDK Parity + Programmability Builder Surface - 2026-06-10
+
+### SDK Parity
+
+`0.9.1-alpha` is a developer-experience patch for the previous Toccata
+local-first baseline. It does not add mainnet, testnet, new protocol claims, or
+VM/consensus equivalence.
+
+Added SDK parity surfaces:
+
+- `await hardkas.capabilities()`
+- `await hardkas.localnet.status({ profile: "toccata-v2" })`
+- `await hardkas.localnet.start({ profile })`
+- `await hardkas.localnet.fund("alice", { profile })`
+- `await hardkas.corpus.verify("fixtures/toccata-v2/silver")`
+- `await hardkas.silver.compile({ file })`
+- `await hardkas.silver.deployPlan({ artifact, from })`
+- `await hardkas.silver.deploy({ artifact })`
+- `await hardkas.silver.spendPlan({ receipt, args, to })`
+- `await hardkas.silver.spend({ artifact })`
+- `await hardkas.silver.simulate.deploy(...)`
+- `await hardkas.silver.simulate.spend(...)`
+- `await hardkas.silver.compare(...)`
+
+### Boundaries Kept
+
+- `artifactCoherence`: READY_MATCH
+- `runtimeOutcome`: PARTIAL
+- `vmConsensusEquivalence`: NOT_CLAIMED
+- `mainnet`: BLOCKED_BY_POLICY
+
+SDK Toccata Docker funding/start and real Silver RPC deploy/spend remain bounded
+in `0.9.1-alpha`; the SDK returns explicit unsupported statuses/errors for
+those host-runtime actions instead of pretending consensus or Docker control
+parity. CLI/localnet remains the certified path for Docker Toccata real
+lifecycle execution.
+
+SDK real Silver RPC/Docker execution remains explicitly unsupported in
+`0.9.1-alpha` via `SDK_SILVER_REAL_LIFECYCLE_UNSUPPORTED`; certified real
+lifecycle execution remains CLI/localnet bounded.
+
+### Programmability Builder Surface
+
+Added a local-only programmability builder surface with SDK parity. It covers
+SilverScript builder workflows, ZK corpus fixture coherence, and vProgs artifact
+inspection. It does not add stable protocol/runtime claims.
+
+Added CLI surfaces:
+
+- `hardkas zk capabilities --json`
+- `hardkas zk proof inspect <path> --json`
+- `hardkas zk proof verify-local <path> --json`
+- `hardkas zk corpus verify fixtures/toccata-v2/zk --json`
+- `hardkas vprogs capabilities --json`
+- `hardkas vprogs status --json`
+- `hardkas vprogs inspect <artifact> --json`
+- `hardkas programmability capabilities --json`
+- `hardkas programmability corpus verify fixtures/toccata-v2 --json`
+- `hardkas programmability inspect <path> --kind silver|zk|vprog --json`
+- `hardkas programmability app plan --kind full-lab --json`
+
+Added SDK surfaces:
+
+- `await hardkas.zk.capabilities()`
+- `await hardkas.zk.proof.inspect(path)`
+- `await hardkas.zk.proof.verifyLocal(path)`
+- `await hardkas.zk.corpus.verify(path)`
+- `await hardkas.vprogs.capabilities()`
+- `await hardkas.vprogs.status()`
+- `await hardkas.vprogs.inspect(path)`
+- `await hardkas.programmability.capabilities()`
+- `await hardkas.programmability.corpus.verify({ path })`
+- `await hardkas.programmability.inspect({ kind, path })`
+- `await hardkas.programmability.app.plan({ kind })`
+
+Added fixtures and scripts:
+
+- `fixtures/toccata-v2/zk` with Groth16 fixture-coherence corpus and RISC0
+  inspect-only corpus.
+- `fixtures/toccata-v2/vprogs/inspect-only-artifact.json`.
+- `pnpm zk:corpus`.
+- `pnpm vprogs:check`.
+- `pnpm programmability:corpus`.
+- `pnpm programmability:examples`.
+- `pnpm programmability:templates`.
+- `pnpm programmability:surface`.
+
+Builder surface boundaries:
+
+- SilverScript builder status is `SILVERSCRIPT_BUILDER_READY`.
+- ZK corpus status is `ZK_CORPUS_SURFACE_READY`.
+- Groth16 verification is local fixture coherence only, not a production
+  cryptographic setup or on-chain verifier claim.
+- RISC0 local verification returns
+  `RISC0_LOCAL_VERIFICATION_NOT_IMPLEMENTED` /
+  `RISC0_VERIFIER_UNAVAILABLE` in 0.9.1-alpha.
+- vProgs artifact inspection status is `VPROGS_INSPECT_SURFACE_READY`.
+- `ZK_ONCHAIN_VERIFICATION_NOT_CLAIMED`.
+- `VPROGS_STABLE_API_NOT_CLAIMED`.
+- No mainnet, bridge, trustless exit, full vProgs runtime, or VM/consensus
+  equivalence claim is added.
+
+### Validation
+
+- SDK parity tests added for capabilities, localnet status, corpus verify, and
+  Silver planning/simulation/compare.
+- `pnpm postrelease:break` reports CLI/SDK parity PASS for capabilities,
+  localnet status, accounts list, corpus verify, and Silver high-level
+  planning/simulation/compare.
+- No new mainnet, custody, VM simulation, consensus validation, or trustless
+  bridge claim is made.
+
+## 0.9.1-alpha - Toccata Local-First Baseline - 2026-06-09
 
 ### Toccata v2 Localnet Baseline
 
-HardKAS 0.9.0-alpha includes a normalized Toccata v2 localnet baseline with
+HardKAS 0.9.1-alpha includes a normalized Toccata v2 localnet baseline with
 Docker simnet funding, real standard transaction lifecycle, real Silver OP_TRUE
 deploy/spend, artifact-coherence simulator comparison, mainnet guard
 enforcement, and a machine-verifiable golden corpus integrated into the Toccata
@@ -67,12 +179,14 @@ Known limitations:
 This release converts HardKAS from a pure CLI-first runtime into a fully consumable SDK, resolving key frictions identified during the Phase 6 and Phase 7 Gauntlets.
 
 #### Public SDK Facade
+
 - **`Hardkas.create()`**: New programmatic entrypoint for seamless developer orchestration.
 - **`tx.*` API**: Added `plan()`, `sign()`, `send()`, and `status()` facade wrappers.
 - **`accounts.*` API**: Added `list()`, `balance()`, and `fund()`.
 - **`artifacts.*` API**: Added `list()` and `get()` for direct artifact access.
 
 #### Developer Experience (DX)
+
 - **Actionable Errors**: `tx.plan()` now intercepts `--amount 0` for value transfers and throws an actionable message regarding future anchoring capabilities.
 - **Alias Resolution**: `--required-signers` now supports clean account aliases (e.g., `alice,bob`) instead of requiring full addresses.
 - **Bridge Artifacts**: L2 bridge commands (`local plan` and `simulate`) now natively serialize and persist `hardkas.bridge.localPlan.v1` and `hardkas.bridge.localSimulation.v1` diagnostics, even in uninitialized workspaces.

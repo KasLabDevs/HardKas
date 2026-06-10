@@ -1,3 +1,4 @@
+import { HardkasSchemas } from "@hardkas/core";
 import { VerificationIssue } from "./verify.js";
 
 export interface LineageValidationResult {
@@ -31,7 +32,7 @@ export function verifyLineage(
 
   // 1. Structural Checks
   if (!lineage) {
-    const isWorkflow = artifact.schema === "hardkas.workflow.v1";
+    const isWorkflow = artifact.schema === HardkasSchemas.WorkflowV1;
     const severity = options.strict && !isWorkflow ? "error" : "warning";
     if (!isWorkflow || options.strict) {
       addIssue("MISSING_LINEAGE", "Artifact has no lineage metadata", severity);
@@ -141,18 +142,22 @@ export function verifyLineage(
   // 4. Transition Logic
   if (parent) {
     const validTransitions: Record<string, string[]> = {
-      "hardkas.snapshot": ["hardkas.txPlan", "hardkas.migrationReceipt.v1"],
-      "hardkas.txPlan": ["hardkas.signedTx", "hardkas.migrationReceipt.v1"],
-      "hardkas.signedTx": ["hardkas.txReceipt", "hardkas.signedTx", "hardkas.migrationReceipt.v1"],
-      "hardkas.txReceipt": ["hardkas.txTrace", "hardkas.migrationReceipt.v1"]
+      [HardkasSchemas.Snapshot]: [HardkasSchemas.TxPlan, HardkasSchemas.MigrationReceiptV1],
+      [HardkasSchemas.TxPlan]: [HardkasSchemas.SignedTx, HardkasSchemas.MigrationReceiptV1],
+      [HardkasSchemas.SignedTx]: [
+        HardkasSchemas.TxReceipt,
+        HardkasSchemas.SignedTx,
+        HardkasSchemas.MigrationReceiptV1
+      ],
+      [HardkasSchemas.TxReceipt]: [HardkasSchemas.TxTrace, HardkasSchemas.MigrationReceiptV1]
     };
 
     let isValidTransition = false;
-    
+
     // Migration receipt rules
-    if (parent.schema === "hardkas.migrationReceipt.v1") {
+    if (parent.schema === HardkasSchemas.MigrationReceiptV1) {
       isValidTransition = parent.toSchema === artifact.schema;
-    } else if (artifact.schema === "hardkas.migrationReceipt.v1") {
+    } else if (artifact.schema === HardkasSchemas.MigrationReceiptV1) {
       isValidTransition = artifact.fromSchema === parent.schema;
     } else {
       const allowed = validTransitions[parent.schema] || [];
@@ -187,9 +192,23 @@ export function verifyLineage(
  * Creates a valid lineage transition object for a new child artifact based on its parent.
  * This should be attached to the child artifact before calculating its final hash.
  */
-export function createLineageTransition(parent: any, childType: string): { artifactId: string; lineageId: string; parentArtifactId: string; rootArtifactId: string; sequence: number; } {
+export function createLineageTransition(
+  parent: any,
+  childType: string
+): {
+  artifactId: string;
+  lineageId: string;
+  parentArtifactId: string;
+  rootArtifactId: string;
+  sequence: number;
+} {
   const parentLineage = parent.lineage || {};
-  const parentId = parent.contentHash || parent.artifactId || parent.planId || parent.signedId || "0".repeat(64);
+  const parentId =
+    parent.contentHash ||
+    parent.artifactId ||
+    parent.planId ||
+    parent.signedId ||
+    "0".repeat(64);
 
   return {
     artifactId: "", // To be computed after the rest of the artifact is hashed

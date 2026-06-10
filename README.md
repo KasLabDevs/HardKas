@@ -31,7 +31,7 @@ hashed, signed, simulated, receipted, indexed, and replayed.
 
 ## Local-First Status
 
-HardKAS `0.9.0-alpha` is local-first deterministic transaction infrastructure
+HardKAS `0.9.1-alpha` is local-first deterministic transaction infrastructure
 for Kaspa/Toccata development.
 
 Current certified baseline:
@@ -50,7 +50,7 @@ Current certified baseline:
 
 ### Toccata v2 Alpha Baseline
 
-The `0.9.0-alpha` release line includes a normalized Toccata v2 localnet flow:
+The `0.9.1-alpha` release line includes a normalized Toccata v2 localnet flow:
 
 - Docker `rusty-kaspad` v2.0.0 simnet funding with a compatible miner companion.
 - Standard transaction lifecycle against the local node.
@@ -69,12 +69,76 @@ Official release claims:
 - `vmConsensusEquivalence`: `NOT_CLAIMED`
 - `mainnet`: `BLOCKED_BY_POLICY`
 
+### 0.9.1-alpha SDK Parity
+
+`0.9.1-alpha` is a SDK parity / developer experience patch. It adds high-level
+SDK surfaces for capabilities, localnet status/start/fund, corpus verification,
+and Silver planning/simulation/compare flows without changing the release
+claims above.
+
+SDK real Silver RPC/Docker execution remains explicitly unsupported in
+`0.9.1-alpha` via `SDK_SILVER_REAL_LIFECYCLE_UNSUPPORTED`; certified real
+lifecycle execution remains CLI/localnet bounded.
+
+### 0.9.1-alpha Programmability Builder Surface
+
+`0.9.1-alpha` also includes a local-only builder surface for SilverScript,
+ZK corpus fixtures, and vProgs artifact inspection. This is a programmability
+surface, not a protocol/runtime claim.
+
+Programmability surfaces:
+
+- `hardkas programmability capabilities --json`
+- `hardkas programmability corpus verify fixtures/toccata-v2 --json`
+- `hardkas programmability inspect <path> --kind silver|zk|vprog --json`
+- `hardkas programmability app plan --kind full-lab --json`
+- `await hardkas.programmability.capabilities()`
+- `await hardkas.programmability.corpus.verify({ path })`
+- `await hardkas.programmability.inspect({ kind, path })`
+
+ZK corpus surfaces:
+
+- `hardkas zk capabilities --json`
+- `hardkas zk proof inspect <path> --json`
+- `hardkas zk proof verify-local <path> --json`
+- `hardkas zk corpus verify fixtures/toccata-v2/zk --json`
+- `await hardkas.zk.capabilities()`
+- `await hardkas.zk.proof.inspect(path)`
+- `await hardkas.zk.proof.verifyLocal(path)`
+- `await hardkas.zk.corpus.verify(path)`
+
+vProgs inspect surfaces:
+
+- `hardkas vprogs capabilities --json`
+- `hardkas vprogs status --json`
+- `hardkas vprogs inspect <artifact> --json`
+- `await hardkas.vprogs.capabilities()`
+- `await hardkas.vprogs.status()`
+- `await hardkas.vprogs.inspect(path)`
+
+ZK/vProgs lab claims:
+
+- `SILVERSCRIPT_BUILDER_READY`
+- `ZK_CORPUS_SURFACE_READY`
+- `VPROGS_INSPECT_SURFACE_READY`
+- Groth16 corpus verification is local fixture coherence only.
+- RISC0 is inspect-only unless a future helper is bundled.
+- vProgs is inspect-only.
+- `ZK_ONCHAIN_VERIFICATION_NOT_CLAIMED`
+- `VPROGS_STABLE_API_NOT_CLAIMED`
+- `vmConsensusEquivalence`: `NOT_CLAIMED`
+- `mainnet`: `BLOCKED_BY_POLICY`
+
 ## Release Gates
 
 ```bash
 pnpm build
 pnpm test
 pnpm corpus:toccata
+pnpm zk:corpus
+pnpm vprogs:check
+pnpm programmability:corpus
+pnpm programmability:surface
 pnpm gauntlet:toccata
 ```
 

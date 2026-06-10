@@ -2,9 +2,11 @@ import pkg from "kaspa-wasm";
 const { PrivateKey, Address, createTransaction, signTransaction } = pkg;
 
 async function main() {
-  const privKey = new PrivateKey("b7e151628aed2a6abf7158809cf4f3c762e7160f38b4da56a784d9045190cfef");
+  const privKey = new PrivateKey(
+    "b7e151628aed2a6abf7158809cf4f3c762e7160f38b4da56a784d9045190cfef"
+  );
   const address = privKey.toKeypair().toAddress("simnet");
-  
+
   const utxos = [
     {
       address: address.toString(),
@@ -14,7 +16,8 @@ async function main() {
       },
       utxoEntry: {
         amount: 1000000000n,
-        scriptPublicKey: "20ddb3088e5816041ef04e6e0f6935a911fe3f35b8e43fb60cdb44df40d3ef8b22ac",
+        scriptPublicKey:
+          "20ddb3088e5816041ef04e6e0f6935a911fe3f35b8e43fb60cdb44df40d3ef8b22ac",
         blockDaaScore: 0n,
         isCoinbase: false
       }

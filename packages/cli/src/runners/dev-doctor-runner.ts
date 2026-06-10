@@ -1,8 +1,9 @@
-import pc from "picocolors";
+﻿import pc from "picocolors";
 import { UI, handleError } from "../ui.js";
 import { loadHardkasConfig } from "@hardkas/config";
 
 import type { NetworkId } from "@hardkas/core";
+import { HardkasSchemas } from "@hardkas/artifacts";
 
 export interface DevDoctorCheck {
   name: string;
@@ -14,7 +15,7 @@ export interface DevDoctorCheck {
 }
 
 export interface DevDoctorResult {
-  schema: "hardkas.devDoctor.v1";
+  schema: typeof HardkasSchemas.DevDoctorV1;
   schemaVersion?: string;
   status: "ready" | "warning" | "failed";
   checks: DevDoctorCheck[];
@@ -304,7 +305,7 @@ export async function runDevDoctor(options: {
             message: `Projection database is unavailable: ${e.message || "unknown error"}`,
             code: "PROJECTION_UNAVAILABLE",
             suggestion:
-              "Another process may be using the database. This is not critical — artifact checks passed."
+              "Another process may be using the database. This is not critical â€” artifact checks passed."
           });
           if (finalStatus === "ready") finalStatus = "warning";
         } finally {
@@ -652,38 +653,48 @@ export async function runDevDoctor(options: {
     }
 
     if (finalStatus === "failed") {
-      process.exitCode = 1;
+      // Exit code handled after printing results
     }
 
     if (options.json) {
       const result: DevDoctorResult = {
-        schema: "hardkas.devDoctor.v1",
-        schemaVersion: "hardkas.devDoctor.v1",
+        schema: HardkasSchemas.DevDoctorV1,
+        schemaVersion: HardkasSchemas.DevDoctorV1,
         status: finalStatus,
         checks
       };
       console.log(JSON.stringify(result, null, 2));
+      if (finalStatus === "failed") {
+        const { HardkasCliError } = await import("../cli-errors.js");
+        throw new HardkasCliError("DEV_DOCTOR_FAILED", "Dev doctor checks failed.", {
+          exitCode: 1
+        });
+      }
       return;
     }
 
     // Aesthetic Console Output
-    console.log(pc.bold("\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"));
-    console.log(pc.bold(`HardKAS • Dev Doctor`));
-    console.log(pc.bold("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"));
+    console.log(
+      pc.bold("\nâ”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”")
+    );
+    console.log(pc.bold(`HardKAS â€¢ Dev Doctor`));
+    console.log(
+      pc.bold("â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”\n")
+    );
 
     for (const check of checks) {
       const icon =
         check.status === "success"
-          ? pc.green("✓")
+          ? pc.green("âœ“")
           : check.status === "warning"
-            ? pc.yellow("⚠")
+            ? pc.yellow("âš ")
             : check.status === "info"
-              ? pc.blue("ℹ")
-              : pc.red("✗");
+              ? pc.blue("â„¹")
+              : pc.red("âœ—");
       console.log(`${icon} ${pc.bold(check.name)}: ${check.message}`);
       if (check.suggestion) {
         console.log(
-          `    ${pc.cyan("→")} ${pc.dim(check.suggestion)} ${check.code ? pc.dim(`[${check.code}]`) : ""}`
+          `    ${pc.cyan("â†’")} ${pc.dim(check.suggestion)} ${check.code ? pc.dim(`[${check.code}]`) : ""}`
         );
       }
     }
@@ -696,8 +707,14 @@ export async function runDevDoctor(options: {
             ? pc.yellow("WARNING")
             : pc.red("FAILED"))
     );
+
+    if (finalStatus === "failed") {
+      const { HardkasCliError } = await import("../cli-errors.js");
+      throw new HardkasCliError("DEV_DOCTOR_FAILED", "Dev doctor checks failed.", {
+        exitCode: 1
+      });
+    }
   } catch (e) {
-    process.exitCode = 1;
-    handleError(e);
+    throw e;
   }
 }

@@ -1,4 +1,4 @@
-import {
+﻿import {
   verifyArtifactIntegrity,
   verifyArtifactSemantics,
   verifyArtifactReplay
@@ -6,6 +6,7 @@ import {
 import { UI } from "../ui.js";
 import path from "node:path";
 import fs from "node:fs";
+import { HardkasSchemas } from "@hardkas/artifacts";
 
 export interface ArtifactVerifyOptions {
   path: string;
@@ -22,9 +23,10 @@ export async function runArtifactVerify(options: ArtifactVerifyOptions) {
   const absolutePath = sdk.workspace.resolvePath(options.path);
 
   if (!fs.existsSync(absolutePath)) {
-    UI.error(`Path not found: ${options.path}`);
-    process.exitCode = 1;
-    return;
+    const { HardkasCliError } = await import("../cli-errors.js");
+    throw new HardkasCliError("PATH_NOT_FOUND", `Path not found: ${options.path}`, {
+      exitCode: 1
+    });
   }
 
   const stats = fs.statSync(absolutePath);
@@ -34,11 +36,12 @@ export async function runArtifactVerify(options: ArtifactVerifyOptions) {
     if (options.recursive) {
       return runRecursiveVerify(absolutePath, options);
     } else {
-      UI.error(
-        `${options.path} is a directory. Use --recursive to verify all artifacts within it.`
+      const { HardkasCliError } = await import("../cli-errors.js");
+      throw new HardkasCliError(
+        "IS_DIRECTORY",
+        `${options.path} is a directory. Use --recursive to verify all artifacts within it.`,
+        { exitCode: 1 }
       );
-      process.exitCode = 1;
-      return;
     }
   }
 
@@ -84,29 +87,32 @@ export async function runArtifactVerify(options: ArtifactVerifyOptions) {
     if (options.strict) {
       console.log(`\nOperational Audit (STRICT):`);
       if (semanticResult.ok) {
-        UI.success("  ✓ Economic & Lineage invariants verified.");
+        UI.success("  âœ“ Economic & Lineage invariants verified.");
       } else {
-        UI.error("  ✗ Semantic invariants VIOLATED.");
+        UI.error("  âœ— Semantic invariants VIOLATED.");
       }
     }
 
     console.log(`\nReplay Verification:`);
     if (replayResult.ok) {
-      UI.success("  ✓ Replay verified.");
+      UI.success("  âœ“ Replay verified.");
     } else {
       const replayIssue = replayResult.issues.find(
         (i) => i.code === "REPLAY_UNSUPPORTED_CHECK"
       );
       if (replayIssue) {
-        UI.warning("  ⚠ REPLAY UNSUPPORTED (Consensus simulation skipped)");
+        UI.warning("  âš  REPLAY UNSUPPORTED (Consensus simulation skipped)");
       } else {
-        UI.error("  ✗ Replay verification FAILED.");
+        UI.error("  âœ— Replay verification FAILED.");
       }
     }
   } else {
     UI.error("VERIFICATION FAILED");
     renderErrors(result);
-    process.exitCode = 1;
+    const { HardkasCliError } = await import("../cli-errors.js");
+    throw new HardkasCliError("VERIFICATION_FAILED", "Artifact verification failed.", {
+      exitCode: 1
+    });
   }
 
   return result;
@@ -138,7 +144,13 @@ async function runRecursiveVerify(dir: string, options: ArtifactVerifyOptions) {
         for (const f of files) {
           try {
             const obj = JSON.parse(fs.readFileSync(f, "utf-8"));
-            if (obj.contentHash === id || obj.artifactId === id || obj.planId === id || obj.signedId === id || obj.txId === id) {
+            if (
+              obj.contentHash === id ||
+              obj.artifactId === id ||
+              obj.planId === id ||
+              obj.signedId === id ||
+              obj.txId === id
+            ) {
               return obj;
             }
           } catch {}
@@ -157,11 +169,11 @@ async function runRecursiveVerify(dir: string, options: ArtifactVerifyOptions) {
     }
 
     if (result.ok) {
-      if (!options.json) console.log(`  ✓ ${relativePath.padEnd(40)} [MATCH]`);
+      if (!options.json) console.log(`  âœ“ ${relativePath.padEnd(40)} [MATCH]`);
       successCount++;
     } else {
       if (!options.json) {
-        console.log(`  ✗ ${relativePath.padEnd(40)} [FAIL]`);
+        console.log(`  âœ— ${relativePath.padEnd(40)} [FAIL]`);
         result.issues.forEach((issue) => {
           const prefix =
             issue.severity === "critical"
@@ -177,11 +189,10 @@ async function runRecursiveVerify(dir: string, options: ArtifactVerifyOptions) {
   }
 
   if (options.json) {
-    if (failCount > 0) process.exitCode = 1;
     console.log(
       JSON.stringify(
         {
-          schema: "hardkas.queryVerify.v1",
+          schema: HardkasSchemas.QueryVerifyV1,
           ok: failCount === 0,
           scanned: files.length,
           successCount,
@@ -192,15 +203,24 @@ async function runRecursiveVerify(dir: string, options: ArtifactVerifyOptions) {
         2
       )
     );
+    if (failCount > 0) {
+      const { HardkasCliError } = await import("../cli-errors.js");
+      throw new HardkasCliError("VERIFICATION_FAILED", "Recursive verification failed.", {
+        exitCode: 1
+      });
+    }
     return;
   }
 
-  console.log("\n" + "═".repeat(50));
+  console.log("\n" + "â•".repeat(50));
   if (failCount === 0) {
     UI.success(`Audit Complete: All ${successCount} artifacts verified.`);
   } else {
     UI.error(`Audit Failed: ${failCount} artifact(s) corrupted or invalid.`);
-    process.exitCode = 1;
+    const { HardkasCliError } = await import("../cli-errors.js");
+    throw new HardkasCliError("VERIFICATION_FAILED", "Recursive verification failed.", {
+      exitCode: 1
+    });
   }
 }
 

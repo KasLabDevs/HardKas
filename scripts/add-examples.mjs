@@ -1,10 +1,10 @@
-import fs from 'fs';
-import path from 'path';
+import fs from "fs";
+import path from "path";
 
 const projectRoot = path.resolve(process.cwd());
-const outPath = path.join(projectRoot, 'docs', 'index.html');
+const outPath = path.join(projectRoot, "docs", "index.html");
 
-let html = fs.readFileSync(outPath, 'utf8');
+let html = fs.readFileSync(outPath, "utf8");
 
 const newContent = `</div>
 </div>
@@ -55,11 +55,14 @@ const newContent = `</div>
 </section>`;
 
 // Replace using regex to ignore any weird whitespace issues
-const replaced = html.replace(/<\/div>\s*<\/div>\s*<\/details>\s*<\/div>\s*<\/section>/, newContent);
+const replaced = html.replace(
+  /<\/div>\s*<\/div>\s*<\/details>\s*<\/div>\s*<\/section>/,
+  newContent
+);
 
 if (replaced !== html) {
-    fs.writeFileSync(outPath, replaced, 'utf8');
-    console.log('Successfully added examples using regex');
+  fs.writeFileSync(outPath, replaced, "utf8");
+  console.log("Successfully added examples using regex");
 } else {
-    console.log('Failed to find target using regex');
+  console.log("Failed to find target using regex");
 }

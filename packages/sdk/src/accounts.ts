@@ -1,6 +1,6 @@
 import { Hardkas } from "./index.js";
 import { HardkasAccount, resolveHardkasAccount } from "@hardkas/accounts";
-import { formatSompi } from "@hardkas/core";
+import { formatSompiToKas } from "@hardkas/core";
 
 /**
  * HardKAS Accounts Module
@@ -34,7 +34,7 @@ export class HardkasAccounts {
 
     return {
       sompi,
-      formatted: formatSompi(sompi)
+      formatted: formatSompiToKas(sompi)
     };
   }
 
@@ -46,10 +46,12 @@ export class HardkasAccounts {
   }
 
   /**
-   * Lists all configured account names.
+   * Lists all available HardKAS accounts.
    */
-  async list(): Promise<string[]> {
-    return Object.keys(this.sdk.config.config.accounts || {});
+  async list(): Promise<Record<string, unknown>[]> {
+    const { listHardkasAccounts, describeAccount } = await import("@hardkas/accounts");
+    const accounts = listHardkasAccounts({ ...this.sdk.config.config, cwd: this.sdk.workspace.root } as any);
+    return accounts.map((a) => describeAccount(a));
   }
 
   /**
@@ -63,15 +65,21 @@ export class HardkasAccounts {
     const amount = options?.amount || "1000000000"; // 10 KAS default
 
     if (!from) {
-      const accounts = await this.list();
+      const accountsList = await this.list();
+      const accounts = accountsList.map((a: any) => a.name);
       if (accounts.includes("faucet")) {
         from = "faucet";
       } else if (accounts.includes("simulated_faucet")) {
         from = "simulated_faucet";
-      } else if ((this.sdk.network as string) === "simulated" && accounts.includes("alice")) {
+      } else if (
+        (this.sdk.network as string) === "simulated" &&
+        accounts.includes("alice")
+      ) {
         from = "alice";
       } else {
-        throw new Error("No funding account available.\nFor simulated mode, run Hardkas.create({ network: 'simulated', autoBootstrap: true })\nor call accounts.fund(target, { from: 'alice' }).");
+        throw new Error(
+          "No funding account available.\nFor simulated mode, run Hardkas.create({ network: 'simulated', autoBootstrap: true })\nor call accounts.fund(target, { from: 'alice' })."
+        );
       }
     }
 

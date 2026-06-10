@@ -1,13 +1,13 @@
-import type { 
-  KaspaRpcClient, 
-  KaspaNodeInfo, 
-  KaspaRpcHealth, 
-  KaspaAddressBalance, 
-  KaspaRpcUtxo, 
-  KaspaSubmitTransactionResult, 
-  MempoolEntry, 
-  BlockDagInfo, 
-  ServerInfo 
+import type {
+  KaspaRpcClient,
+  KaspaNodeInfo,
+  KaspaRpcHealth,
+  KaspaAddressBalance,
+  KaspaRpcUtxo,
+  KaspaSubmitTransactionResult,
+  MempoolEntry,
+  BlockDagInfo,
+  ServerInfo
 } from "@hardkas/kaspa-rpc";
 import { getAddressBalanceSompi, getSpendableUtxos } from "./balance.js";
 import { loadLocalnetState, getDefaultLocalnetStatePath } from "./store.js";
@@ -54,9 +54,9 @@ export class LocalnetSimulatedProvider implements KaspaRpcClient {
     const statePath = getDefaultLocalnetStatePath(this.workspacePath);
     const state = await loadLocalnetState(statePath);
     if (!state) {
-      return addresses.map(address => ({ address, balanceSompi: 0n }));
+      return addresses.map((address) => ({ address, balanceSompi: 0n }));
     }
-    return addresses.map(address => ({
+    return addresses.map((address) => ({
       address,
       balanceSompi: getAddressBalanceSompi(state, address)
     }));
@@ -66,14 +66,14 @@ export class LocalnetSimulatedProvider implements KaspaRpcClient {
     const statePath = getDefaultLocalnetStatePath(this.workspacePath);
     const state = await loadLocalnetState(statePath);
     if (!state) return [];
-    
+
     const utxos = getSpendableUtxos(state, address);
-    return utxos.map(u => ({
+    return utxos.map((u) => ({
       address: u.address,
       amountSompi: BigInt(u.amountSompi),
       outpoint: {
-        transactionId: u.id.split(':')[1] || "unknown",
-        index: Number(u.id.split(':')[2]) || 0
+        transactionId: u.id.split(":")[1] || "unknown",
+        index: Number(u.id.split(":")[2]) || 0
       },
       blockDaaScore: u.createdAtDaaScore,
       isCoinbase: false,
@@ -91,7 +91,9 @@ export class LocalnetSimulatedProvider implements KaspaRpcClient {
   }
 
   async submitTransaction(rawTransaction: string): Promise<KaspaSubmitTransactionResult> {
-    throw new Error("submitTransaction not implemented on SimulatedProvider. Use sdk.tx.simulate instead.");
+    throw new Error(
+      "submitTransaction not implemented on SimulatedProvider. Use sdk.tx.simulate instead."
+    );
   }
 
   async getMempoolEntry(txId: string): Promise<MempoolEntry | null> {

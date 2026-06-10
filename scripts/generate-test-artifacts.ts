@@ -1,8 +1,9 @@
 import { calculateContentHash } from "./packages/artifacts/dist/index.js";
 import fs from "node:fs";
+import { HardkasSchemas } from "@hardkas/artifacts";
 
 const artifact = {
-  schema: "hardkas.txPlan.v2",
+  schema: HardkasSchemas.TxPlanV2,
   hardkasVersion: "0.5.4-alpha",
   version: "2.0.0",
   createdAt: new Date().toISOString(),

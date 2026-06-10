@@ -1,29 +1,23 @@
 import pc from "picocolors";
-import { formatSompi, maskSecrets } from "@hardkas/core";
+import { formatSompiToKas, maskSecrets } from "@hardkas/core";
 
-let jsonMode = false;
+import { getOutput } from "./output.js";
 
 export const UI = {
   setJsonMode(enabled: boolean) {
-    jsonMode = enabled;
+    // No-op. Output mode is now determined globally via createCommandOutput.
   },
 
   isJsonMode() {
-    return jsonMode;
+    return getOutput().mode === "json";
   },
 
   logHuman(msg: string) {
-    // In JSON mode, all human-readable text MUST go to stderr to prevent stdout corruption
-    if (jsonMode) {
-      console.error(msg);
-    } else {
-      console.log(msg);
-    }
+    getOutput().writeLine(msg);
   },
 
   writeJson(data: any) {
-    // Only ever written to stdout
-    console.log(JSON.stringify(data, null, 2));
+    getOutput().writeJson(data);
   },
 
   header(text: string) {
@@ -80,28 +74,28 @@ export const UI = {
 
   warning(text: string) {
     const masked = maskSecrets(text);
-    console.error(pc.yellow(`\n  ⚠️  WARNING:`));
-    console.error(pc.yellow(`     ${masked}`));
+    getOutput().error(pc.yellow(`\n  ⚠️  WARNING:`));
+    getOutput().error(pc.yellow(`     ${masked}`));
   },
 
   securityWarning(code: string, message: string, suggestion?: string) {
-    console.error(pc.yellow(`\n  ⚠️  SECURITY WARNING [${code}]:`));
-    console.error(pc.yellow(`     ${message}`));
+    getOutput().error(pc.yellow(`\n  ⚠️  SECURITY WARNING [${code}]:`));
+    getOutput().error(pc.yellow(`     ${message}`));
     if (suggestion) {
-      console.error(pc.cyan(`\n  💡 Suggestion:`));
-      console.error(pc.cyan(`     ${suggestion}`));
+      getOutput().error(pc.cyan(`\n  💡 Suggestion:`));
+      getOutput().error(pc.cyan(`     ${suggestion}`));
     }
-    console.error("");
+    getOutput().error("");
   },
 
   error(msg: string, suggestion?: string) {
     const maskedMsg = maskSecrets(msg);
     const maskedSuggestion = suggestion ? maskSecrets(suggestion) : undefined;
-    console.error(pc.red(`\n  ✗ Error:`));
-    console.error(pc.red(`    ${maskedMsg}`));
+    getOutput().error(pc.red(`\n  ✗ Error:`));
+    getOutput().error(pc.red(`    ${maskedMsg}`));
     if (maskedSuggestion) {
-      console.error(pc.cyan(`\n  💡 Suggestion:`));
-      console.error(pc.cyan(`    ${maskedSuggestion}`));
+      getOutput().error(pc.cyan(`\n  💡 Suggestion:`));
+      getOutput().error(pc.cyan(`    ${maskedSuggestion}`));
     }
   },
 
@@ -112,7 +106,7 @@ export const UI = {
   },
 
   kas(label: string, sompi: bigint | string) {
-    this.field(label, pc.cyan(formatSompi(BigInt(sompi))));
+    this.field(label, pc.cyan(formatSompiToKas(BigInt(sompi))));
   },
 
   maturity(label: string) {
@@ -160,7 +154,7 @@ export const UI = {
   },
 
   printNextSteps(steps: string[]) {
-    if (jsonMode) return;
+    if (getOutput().mode === "json") return;
     this.logHuman(`\n  💡 ${pc.bold("Next Steps:")}`);
     for (const step of steps) {
       this.logHuman(`     > ${pc.blue(step)}`);
@@ -175,22 +169,22 @@ export const UI = {
     consequence: string,
     remediation: string
   ) {
-    console.error(pc.red(`\n  ✗ ${title}\n`));
-    console.error(`  ${pc.dim("Cause:")}`);
-    console.error(`    ${pc.white(cause)}\n`);
-    console.error(`  ${pc.dim("Invariant Violated:")}`);
-    console.error(`    ${pc.yellow(invariant)}\n`);
-    console.error(`  ${pc.dim("Consequence:")}`);
-    console.error(`    ${pc.white(consequence)}\n`);
-    console.error(`  ${pc.dim("Remediation:")}`);
-    console.error(`    ${pc.cyan(remediation)}\n`);
+    getOutput().error(pc.red(`\n  ✗ ${title}\n`));
+    getOutput().error(`  ${pc.dim("Cause:")}`);
+    getOutput().error(`    ${pc.white(cause)}\n`);
+    getOutput().error(`  ${pc.dim("Invariant Violated:")}`);
+    getOutput().error(`    ${pc.yellow(invariant)}\n`);
+    getOutput().error(`  ${pc.dim("Consequence:")}`);
+    getOutput().error(`    ${pc.white(consequence)}\n`);
+    getOutput().error(`  ${pc.dim("Remediation:")}`);
+    getOutput().error(`    ${pc.cyan(remediation)}\n`);
   },
 
   dryRun(message?: string) {
     // Always write to stderr — must not pollute stdout (which may carry JSON)
-    console.error(pc.yellow(`\n  [DRY RUN]`));
-    console.error(pc.white(`  No persistent artifacts were written.`));
-    console.error(
+    getOutput().error(pc.yellow(`\n  [DRY RUN]`));
+    getOutput().error(pc.white(`  No persistent artifacts were written.`));
+    getOutput().error(
       pc.dim(
         `\n  Use:\n    ${pc.white("--yes")}\n  to persist deterministic artifacts.\n`
       )
@@ -199,7 +193,7 @@ export const UI = {
 
   writeError(msg: string) {
     // Unconditionally writes to stderr — safe in both JSON and human mode
-    console.error(msg);
+    getOutput().error(msg);
   }
 };
 
@@ -216,11 +210,11 @@ export function handleError(e: unknown, context?: string) {
 
     if (report && report.divergences && report.divergences.length > 0) {
       // Always use stderr — divergence output must not corrupt JSON stdout
-      console.error(pc.bold("\n  Divergences found:"));
+      getOutput().error(pc.bold("\n  Divergences found:"));
       for (const div of report.divergences) {
-        console.error(`    ${pc.cyan(div.path)}:`);
-        console.error(`      Expected: ${pc.green(JSON.stringify(div.expected))}`);
-        console.error(`      Actual:   ${pc.red(JSON.stringify(div.actual))}`);
+        getOutput().error(`    ${pc.cyan(div.path)}:`);
+        getOutput().error(`      Expected: ${pc.green(JSON.stringify(div.expected))}`);
+        getOutput().error(`      Actual:   ${pc.red(JSON.stringify(div.actual))}`);
       }
     }
     return;
@@ -234,10 +228,10 @@ export function handleError(e: unknown, context?: string) {
   let suggestion = maskSecrets ? maskSecrets(errorObj.suggestion) : errorObj.suggestion;
 
   if (msg === "Real transaction signing is not available") {
-    console.error(`\n${msg}`);
-    if (reason) console.error(`\nReason:\n  ${reason}`);
+    getOutput().error(`\n${msg}`);
+    if (reason) getOutput().error(`\nReason:\n  ${reason}`);
     if (suggestion)
-      console.error(`\nSuggestion:\n  ${suggestion}\n  No artifact was written.`);
+      getOutput().error(`\nSuggestion:\n  ${suggestion}\n  No artifact was written.`);
     return;
   }
 
@@ -268,10 +262,13 @@ export function handleError(e: unknown, context?: string) {
 
   if (e instanceof Error && (e as any).code && (e as any).context) {
     const ctx = (e as any).context;
-    console.error(`  ${pc.dim("Code:")}     ${pc.white((e as any).code)}`);
-    if (ctx.endpoint) console.error(`  ${pc.dim("Endpoint:")} ${pc.white(ctx.endpoint)}`);
-    if (ctx.network) console.error(`  ${pc.dim("Network:")}  ${pc.white(ctx.network)}`);
-    if (ctx.protocol) console.error(`  ${pc.dim("Protocol:")} ${pc.white(ctx.protocol)}`);
+    getOutput().error(`  ${pc.dim("Code:")}     ${pc.white((e as any).code)}`);
+    if (ctx.endpoint)
+      getOutput().error(`  ${pc.dim("Endpoint:")} ${pc.white(ctx.endpoint)}`);
+    if (ctx.network)
+      getOutput().error(`  ${pc.dim("Network:")}  ${pc.white(ctx.network)}`);
+    if (ctx.protocol)
+      getOutput().error(`  ${pc.dim("Protocol:")} ${pc.white(ctx.protocol)}`);
   }
 }
 
@@ -288,30 +285,30 @@ export function handleLockError(e: any) {
         ? "Stale Workspace Lock Detected"
         : "Workspace is locked by another HardKAS process";
 
-    console.error(pc.red(`\n  ✗ ${pc.bold(title)}`));
-    console.error(pc.red(`  ${"─".repeat(title.length + 4)}`));
+    getOutput().error(pc.red(`\n  ✗ ${pc.bold(title)}`));
+    getOutput().error(pc.red(`  ${"─".repeat(title.length + 4)}`));
 
     if (meta) {
-      console.error(`  ${pc.dim("Lock:")}    ${pc.white(meta.name)}`);
-      console.error(`  ${pc.dim("PID:")}     ${pc.white(meta.pid)}`);
-      console.error(`  ${pc.dim("Command:")} ${pc.white(meta.command)}`);
-      console.error(`  ${pc.dim("Created:")} ${pc.white(meta.createdAt)}`);
-      if (meta.path) console.error(`  ${pc.dim("Path:")}    ${pc.white(meta.path)}`);
+      getOutput().error(`  ${pc.dim("Lock:")}    ${pc.white(meta.name)}`);
+      getOutput().error(`  ${pc.dim("PID:")}     ${pc.white(meta.pid)}`);
+      getOutput().error(`  ${pc.dim("Command:")} ${pc.white(meta.command)}`);
+      getOutput().error(`  ${pc.dim("Created:")} ${pc.white(meta.createdAt)}`);
+      if (meta.path) getOutput().error(`  ${pc.dim("Path:")}    ${pc.white(meta.path)}`);
     }
 
-    console.error(pc.cyan(`\n  💡 Suggestion:`));
+    getOutput().error(pc.cyan(`\n  💡 Suggestion:`));
     if (code === "STALE_LOCK") {
-      console.error(`    The process (PID ${meta?.pid}) appears to be dead.`);
-      console.error(
+      getOutput().error(`    The process (PID ${meta?.pid}) appears to be dead.`);
+      getOutput().error(
         `    Run 'hardkas lock clear ${meta?.name} --if-dead' to release it safely.`
       );
     } else {
-      console.error(`    Wait for the process to finish, or run:`);
-      console.error(`    hardkas lock doctor`);
-      console.error(`\n    If you believe the process is dead:`);
-      console.error(`    hardkas lock clear ${meta?.name} --if-dead`);
+      getOutput().error(`    Wait for the process to finish, or run:`);
+      getOutput().error(`    hardkas lock doctor`);
+      getOutput().error(`\n    If you believe the process is dead:`);
+      getOutput().error(`    hardkas lock clear ${meta?.name} --if-dead`);
     }
-    console.error("");
+    getOutput().error("");
     return;
   }
 

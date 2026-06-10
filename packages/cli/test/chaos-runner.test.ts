@@ -50,15 +50,15 @@ describe("Chaos Runner Exit Code & Failure Logic", () => {
       expectedExitCodes: [1]
     });
 
-    await runChaosEngine({
-      runs: "1",
-      seed: "123",
-      profile: "smoke",
-      isolate: false,
-      actor: "HumanChaos"
-    });
-
-    expect(exitSpy).toHaveBeenCalledWith(ChaosExitCodes.NO_FINDINGS);
+    await expect(
+      runChaosEngine({
+        runs: "1",
+        seed: "123",
+        profile: "smoke",
+        isolate: false,
+        actor: "HumanChaos"
+      })
+    ).resolves.toBeUndefined();
   });
 
   it("should fail if exitCode is non-zero and not in expectedExitCodes", async () => {
@@ -70,15 +70,15 @@ describe("Chaos Runner Exit Code & Failure Logic", () => {
       // no expectedExitCodes returned
     });
 
-    await runChaosEngine({
-      runs: "1",
-      seed: "123",
-      profile: "smoke",
-      isolate: false,
-      actor: "RotBot"
-    });
-
-    expect(exitSpy).toHaveBeenCalledWith(ChaosExitCodes.INVARIANT_VIOLATION);
+    await expect(
+      runChaosEngine({
+        runs: "1",
+        seed: "123",
+        profile: "smoke",
+        isolate: false,
+        actor: "RotBot"
+      })
+    ).rejects.toMatchObject({ exitCode: ChaosExitCodes.INVARIANT_VIOLATION });
   });
 
   it("should succeed if exitCode is non-zero but listed in expectedExitCodes", async () => {
@@ -90,15 +90,15 @@ describe("Chaos Runner Exit Code & Failure Logic", () => {
       expectedExitCodes: [1]
     });
 
-    await runChaosEngine({
-      runs: "1",
-      seed: "123",
-      profile: "smoke",
-      isolate: false,
-      actor: "HumanChaos"
-    });
-
-    expect(exitSpy).toHaveBeenCalledWith(ChaosExitCodes.NO_FINDINGS);
+    await expect(
+      runChaosEngine({
+        runs: "1",
+        seed: "123",
+        profile: "smoke",
+        isolate: false,
+        actor: "HumanChaos"
+      })
+    ).resolves.toBeUndefined();
   });
 
   it("should fail if raw stack trace is detected, even if exitCode is 0", async () => {
@@ -109,14 +109,14 @@ describe("Chaos Runner Exit Code & Failure Logic", () => {
       action: "Mocked stack trace action"
     });
 
-    await runChaosEngine({
-      runs: "1",
-      seed: "123",
-      profile: "smoke",
-      isolate: false,
-      actor: "DriftHunter"
-    });
-
-    expect(exitSpy).toHaveBeenCalledWith(ChaosExitCodes.INVARIANT_VIOLATION);
+    await expect(
+      runChaosEngine({
+        runs: "1",
+        seed: "123",
+        profile: "smoke",
+        isolate: false,
+        actor: "DriftHunter"
+      })
+    ).rejects.toMatchObject({ exitCode: ChaosExitCodes.INVARIANT_VIOLATION });
   });
 });

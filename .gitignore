@@ -60,12 +60,14 @@ Thumbs.db
 /scratch/
 /scratch-*/
 /scratch-silverscript/
+/.post-release-gauntlet/
 /smoke-gauntlet-docs/
 /generated-apps/
 /temp-*/
 /temp-artifacts/
 /test-artifacts/
 /test-audit/
+/packages/cli/test-gauntlet/
 /runs/
 
 # Local generated source/build leftovers

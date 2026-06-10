@@ -30,9 +30,10 @@ export class HardkasCliError extends Error {
       exitCode?: HardkasExitCode;
       suggestion?: string;
       context?: Record<string, string>;
+      cause?: unknown;
     }
   ) {
-    super(message);
+    super(message, { cause: options?.cause });
     this.name = "HardkasCliError";
     this.code = code;
     this.exitCode = options?.exitCode ?? HardkasExitCode.RUNTIME_FAILURE;
@@ -111,7 +112,8 @@ export class RpcSchemaError extends HardkasCliError {
     rawError: string;
   }) {
     super("RPC_SCHEMA_ERROR", "The RPC node rejected the request payload schema.", {
-      suggestion: "Check for correct address formats, valid UTXOs, and compatibility with the node version.",
+      suggestion:
+        "Check for correct address formats, valid UTXOs, and compatibility with the node version.",
       context: {
         endpoint: options.endpoint,
         method: options.method,
@@ -148,8 +150,7 @@ export function classifyRpcError(error: Error | string): RpcErrorCode {
     msg.includes("certificate")
   )
     return "TLS_FAILURE";
-  if (msg.includes("request deserialization error"))
-    return "RPC_SCHEMA_ERROR";
+  if (msg.includes("request deserialization error")) return "RPC_SCHEMA_ERROR";
 
   return "UNKNOWN";
 }

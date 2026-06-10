@@ -10,6 +10,7 @@ import { HardkasStore } from "@hardkas/query-store";
 import { DockerKaspadRunner } from "@hardkas/node-runner";
 import { execa } from "execa";
 import { HARDKAS_VERSION } from "@hardkas/artifacts";
+import { HardkasSchemas } from "@hardkas/core";
 import readline from "node:readline";
 import fsSync from "node:fs";
 
@@ -324,7 +325,7 @@ export async function runDoctorChecks(
     await checkStream(
       "Events Ledger",
       path.join(process.cwd(), "events.jsonl"),
-      (p) => p && p.schema === "hardkas.event"
+      (p) => p && p.schema === HardkasSchemas.Event
     );
     await checkStream(
       "Telemetry",

@@ -21,7 +21,7 @@ export class SilverCompilerOutputAdapter {
 
     // For now, try to extract basic information if available in standard format.
     // The official compiler might output "Compiled script: <hex>" or "Script Hash: <hash>"
-    
+
     // Very rudimentary extraction based on what typical Kaspa script compilers might output
     const hexMatch = rawOutput.match(/Compiled script:\s*([a-fA-F0-9]+)/i);
     if (hexMatch && hexMatch[1]) {
@@ -36,21 +36,23 @@ export class SilverCompilerOutputAdapter {
     // Try to parse JSON if the compiler output is JSON-formatted
     try {
       const parsed = JSON.parse(rawOutput);
-      
+
       // `silverc` outputs `CompiledContract` where `script` is an array of numbers
       if (Array.isArray(parsed.script)) {
         normalized.scriptHex = Buffer.from(parsed.script).toString("hex");
       } else if (typeof parsed.scriptHex === "string") {
         normalized.scriptHex = parsed.scriptHex;
       }
-      
+
       if (typeof parsed.scriptHash === "string") {
         normalized.scriptHash = parsed.scriptHash;
       } else if (normalized.scriptHex) {
         // Calculate hash if not provided
-        normalized.scriptHash = createHash("sha256").update(Buffer.from(normalized.scriptHex, "hex")).digest("hex");
+        normalized.scriptHash = createHash("sha256")
+          .update(Buffer.from(normalized.scriptHex, "hex"))
+          .digest("hex");
       }
-      
+
       if (parsed.abi !== undefined) {
         normalized.abi = parsed.abi;
       }

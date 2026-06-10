@@ -13,13 +13,7 @@ describe("corpus verify", () => {
     const root = path.resolve(__dirname, "../../..");
     const output = execFileSync(
       process.execPath,
-      [
-        distCli,
-        "corpus",
-        "verify",
-        "fixtures/toccata-v2/silver",
-        "--json"
-      ],
+      [distCli, "corpus", "verify", "fixtures/toccata-v2/silver", "--json"],
       {
         cwd: root,
         encoding: "utf8",
@@ -27,8 +21,12 @@ describe("corpus verify", () => {
         timeout: 15_000
       }
     );
-    const result = JSON.parse(output);
-
+    let result: any;
+    try {
+        result = JSON.parse(output);
+    } catch(e) {
+        throw new Error("OUTPUT WAS: " + JSON.stringify(output) + "\nSTDERR MIGHT BE IN exec error, but it exited 0?");
+    }
     expect(result.ok).toBe(true);
     expect(result.schema).toBe("hardkas.toccataCorpus.v1");
     expect(result.summary).toMatchObject({

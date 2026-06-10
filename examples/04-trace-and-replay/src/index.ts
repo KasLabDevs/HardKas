@@ -1,6 +1,6 @@
 import {
   Hardkas,
-  formatSompi,
+  formatSompiToKas,
   parseKasToSompi,
   TxPlanArtifact,
   SignedTxArtifact,
@@ -42,7 +42,7 @@ async function main() {
   console.log("------------------------");
   console.log(`From:   ${alice.name} (${alice.address})`);
   console.log(`To:     ${bob.name} (${bob.address})`);
-  console.log(`Amount: ${formatSompi(amount)}\n`);
+  console.log(`Amount: ${formatSompiToKas(amount)}\n`);
 
   const traceSteps: TxTraceArtifact["steps"] = [];
 
@@ -151,7 +151,7 @@ async function main() {
     from: { address: alice.address!, accountName: alice.name },
     to: { address: bob.address! },
     amountSompi: amount.toString(),
-    amount: formatSompi(amount),
+    amount: formatSompiToKas(amount),
     feeSompi: planArtifact.estimatedFeeSompi,
     rpcUrl: "simulated"
   };

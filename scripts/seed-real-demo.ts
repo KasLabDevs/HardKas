@@ -2,6 +2,7 @@ import { getQueryBackend } from "../packages/dev-server/src/db.js";
 import path from "node:path";
 import fs from "node:fs";
 import crypto from "node:crypto";
+import { HardkasSchemas } from "@hardkas/artifacts";
 
 async function run() {
   const root = process.cwd();
@@ -58,7 +59,7 @@ async function run() {
 
     // Receipt Artifact
     const receipt = {
-      schema: "hardkas.txReceipt.v1",
+      schema: HardkasSchemas.TxReceiptV1,
       artifactId,
       createdAt: now,
       payload: {
@@ -80,7 +81,7 @@ async function run() {
 
     // Replay Artifact
     const replay = {
-      schema: "hardkas.replayReport.v1",
+      schema: HardkasSchemas.ReplayReportV1,
       artifactId: replayId,
       createdAt: now,
       payload: {

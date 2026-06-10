@@ -1,52 +1,61 @@
-import fs from 'node:fs';
-import path from 'node:path';
-import { execSync } from 'node:child_process';
+import fs from "node:fs";
+import path from "node:path";
+import { execSync } from "node:child_process";
 
-const workspace = path.join(process.cwd(), '..', 'external-discovery-workspace');
-const reportsDir = path.join(process.cwd(), 'reports');
-const telemetryLog = path.join(reportsDir, 'command-execution-log.jsonl');
-const surfaceFile = path.join(reportsDir, 'full-command-surface.json');
+const workspace = path.join(process.cwd(), "..", "external-discovery-workspace");
+const reportsDir = path.join(process.cwd(), "reports");
+const telemetryLog = path.join(reportsDir, "command-execution-log.jsonl");
+const surfaceFile = path.join(reportsDir, "full-command-surface.json");
 
 // Initialize logs
 if (fs.existsSync(telemetryLog)) fs.unlinkSync(telemetryLog);
 
 let fullSurface = { commands: [], totalCommands: 0, totalFlags: 0 };
 if (fs.existsSync(surfaceFile)) {
-  fullSurface = JSON.parse(fs.readFileSync(surfaceFile, 'utf8'));
+  fullSurface = JSON.parse(fs.readFileSync(surfaceFile, "utf8"));
 }
 
 function setupFixtures() {
-  const artifactsDir = path.join(workspace, '.hardkas', 'artifacts');
+  const artifactsDir = path.join(workspace, ".hardkas", "artifacts");
   if (!fs.existsSync(artifactsDir)) {
     fs.mkdirSync(artifactsDir, { recursive: true });
   }
 
   const planArtifact = {
-    schema: "hardkas.tx.plan.v1",
+    schema: HardkasSchemas.TxPlanV1,
     id: "plan-1234",
     from: { address: "kaspa:sim_alice" },
     to: { address: "kaspa:sim_bob" },
     amountSompi: "100"
   };
-  fs.writeFileSync(path.join(artifactsDir, 'plan-1234.json'), JSON.stringify(planArtifact, null, 2));
+  fs.writeFileSync(
+    path.join(artifactsDir, "plan-1234.json"),
+    JSON.stringify(planArtifact, null, 2)
+  );
 
   const signedArtifact = {
-    schema: "hardkas.tx.signed.v1",
+    schema: HardkasSchemas.SignedTxV1,
     id: "signed-1234",
     sourcePlanId: "plan-1234",
     from: { address: "kaspa:sim_alice" },
     to: { address: "kaspa:sim_bob" },
     amountSompi: "100"
   };
-  fs.writeFileSync(path.join(artifactsDir, 'signed-1234.json'), JSON.stringify(signedArtifact, null, 2));
+  fs.writeFileSync(
+    path.join(artifactsDir, "signed-1234.json"),
+    JSON.stringify(signedArtifact, null, 2)
+  );
 
   const receiptArtifact = {
-    schema: "hardkas.receipt.v1",
+    schema: HardkasSchemas.TxReceiptV1,
     txId: "tx-1234",
     sourceSignedId: "signed-1234",
     status: "confirmed"
   };
-  fs.writeFileSync(path.join(artifactsDir, 'tx-1234.json'), JSON.stringify(receiptArtifact, null, 2));
+  fs.writeFileSync(
+    path.join(artifactsDir, "tx-1234.json"),
+    JSON.stringify(receiptArtifact, null, 2)
+  );
 }
 
 setupFixtures();
@@ -55,50 +64,71 @@ const executedPaths = new Set();
 const executedSdkApis = new Set();
 const commandResults = [];
 
-function logTelemetry(data) { // hardkas-append-allow
-  fs.appendFileSync(telemetryLog, JSON.stringify(data) + '\n');
+function logTelemetry(data) {
+  // hardkas-append-allow
+  fs.appendFileSync(telemetryLog, JSON.stringify(data) + "\n");
   commandResults.push(data);
-  if (data.type === 'CLI') {
-    let matchedPath = '';
+  if (data.type === "CLI") {
+    let matchedPath = "";
     // Fix: the paths in fullSurface.commands don't have "hardkas" prefix
     // e.g. "tx plan".
     // data.command is "hardkas tx plan --amount 100"
-    const cmdWithoutPrefix = data.command.replace(/^hardkas\s+/, '').replace(/\s+--help$/, '');
-    
+    const cmdWithoutPrefix = data.command
+      .replace(/^hardkas\s+/, "")
+      .replace(/\s+--help$/, "");
+
     for (const cmd of fullSurface.commands) {
       if (cmdWithoutPrefix.startsWith(cmd.path)) {
         if (cmd.path.length > matchedPath.length) matchedPath = cmd.path;
       }
     }
     if (matchedPath) executedPaths.add(matchedPath);
-  } else if (data.type === 'SDK') {
+  } else if (data.type === "SDK") {
     executedSdkApis.add(data.api);
   }
 }
 
-function runCli(cmdString, skipReason = null, type = 'CLI', api = null) {
+function runCli(cmdString, skipReason = null, type = "CLI", api = null) {
   const start = Date.now();
-  let stdout = '';
-  let stderr = '';
+  let stdout = "";
+  let stderr = "";
   let exitCode = 0;
-  let status = 'UNTOUCHED';
+  let status = "UNTOUCHED";
 
   const fullCmd = `npx ${cmdString}`;
-  
+
   if (skipReason) {
-    status = skipReason.startsWith('SKIPPED') ? skipReason : `SKIPPED_${skipReason.toUpperCase()}`;
-    logTelemetry({ type, command: cmdString, api, start, end: Date.now(), durationMs: 0, exitCode: 0, stdout: '', stderr: '', status, skipReason });
+    status = skipReason.startsWith("SKIPPED")
+      ? skipReason
+      : `SKIPPED_${skipReason.toUpperCase()}`;
+    logTelemetry({
+      type,
+      command: cmdString,
+      api,
+      start,
+      end: Date.now(),
+      durationMs: 0,
+      exitCode: 0,
+      stdout: "",
+      stderr: "",
+      status,
+      skipReason
+    });
     return { stdout, exitCode, status };
   }
 
   try {
-    stdout = execSync(fullCmd, { cwd: workspace, stdio: 'pipe', timeout: 5000 }).toString();
-    status = cmdString.includes('--help') ? 'HELP_ONLY' : 'EXECUTED_SUCCESS';
+    stdout = execSync(fullCmd, {
+      cwd: workspace,
+      stdio: "pipe",
+      timeout: 5000
+    }).toString();
+    status = cmdString.includes("--help") ? "HELP_ONLY" : "EXECUTED_SUCCESS";
   } catch (e) {
     exitCode = e.status || 1;
-    stdout = e.stdout?.toString() || '';
+    stdout = e.stdout?.toString() || "";
     stderr = e.stderr?.toString() || e.message;
-    status = 'EXECUTED_FAILED';
+    status = "EXECUTED_FAILED";
   }
 
   logTelemetry({
@@ -202,14 +232,23 @@ import fs from 'fs';
   process.exit(0);
 })();
 `;
-fs.writeFileSync(path.join(workspace, 'app-e.mjs'), sdkScript);
+fs.writeFileSync(path.join(workspace, "app-e.mjs"), sdkScript);
 try {
-  execSync('node app-e.mjs', { cwd: workspace, timeout: 15000 });
-  const outPath = path.join(workspace, 'sdk-out.json');
+  execSync("node app-e.mjs", { cwd: workspace, timeout: 15000 });
+  const outPath = path.join(workspace, "sdk-out.json");
   if (fs.existsSync(outPath)) {
-    const sdkRes = JSON.parse(fs.readFileSync(outPath, 'utf8'));
+    const sdkRes = JSON.parse(fs.readFileSync(outPath, "utf8"));
     for (const r of sdkRes) {
-      logTelemetry({...r, start: Date.now(), end: Date.now(), durationMs: 0, exitCode: 0, stdout: '', stderr: '', skipReason: r.status.includes('SKIPPED') ? r.status : null});
+      logTelemetry({
+        ...r,
+        start: Date.now(),
+        end: Date.now(),
+        durationMs: 0,
+        exitCode: 0,
+        stdout: "",
+        stderr: "",
+        skipReason: r.status.includes("SKIPPED") ? r.status : null
+      });
     }
   }
 } catch (e) {
@@ -222,7 +261,13 @@ for (const cmd of fullSurface.commands) {
   if (!executedPaths.has(cmd.path)) {
     // FIX: Add hardkas prefix here
     const fullCmdStr = `hardkas ${cmd.path}`;
-    if (cmd.dangerous || cmd.requiresNetwork || cmd.requiresArtifact || cmd.requiresSecret || cmd.requiresMainnet) {
+    if (
+      cmd.dangerous ||
+      cmd.requiresNetwork ||
+      cmd.requiresArtifact ||
+      cmd.requiresSecret ||
+      cmd.requiresMainnet
+    ) {
       runCli(fullCmdStr, `SKIPPED_DANGEROUS_OR_NEEDS_SETUP`);
     } else {
       runCli(`${fullCmdStr} --help`, null); // Mark as HELP_ONLY
@@ -237,27 +282,35 @@ console.log("Generating fixed reports...");
 // Deduplicate CLI commands mapping to exactly 1 state per command from fullSurface
 const commandFinalStatus = {};
 for (const cmd of fullSurface.commands) {
-  commandFinalStatus[cmd.path] = 'UNTOUCHED';
+  commandFinalStatus[cmd.path] = "UNTOUCHED";
 }
 
 for (const res of commandResults) {
-  if (res.type === 'CLI') {
-    const cmdWithoutPrefix = res.command.replace(/^hardkas\s+/, '').replace(/\s+--help$/, '').trim();
+  if (res.type === "CLI") {
+    const cmdWithoutPrefix = res.command
+      .replace(/^hardkas\s+/, "")
+      .replace(/\s+--help$/, "")
+      .trim();
     // Find exact or longest prefix
-    let bestMatch = '';
+    let bestMatch = "";
     for (const c of fullSurface.commands) {
-      if (cmdWithoutPrefix === c.path || (cmdWithoutPrefix.startsWith(c.path + ' ') && c.path.length > bestMatch.length)) {
+      if (
+        cmdWithoutPrefix === c.path ||
+        (cmdWithoutPrefix.startsWith(c.path + " ") && c.path.length > bestMatch.length)
+      ) {
         bestMatch = c.path;
       }
     }
     if (bestMatch) {
       // Prioritize SUCCESS > FAILED > HELP_ONLY > SKIPPED > UNTOUCHED
       const current = commandFinalStatus[bestMatch];
-      if (current === 'UNTOUCHED' ||
-          (res.status === 'EXECUTED_SUCCESS') ||
-          (res.status === 'EXECUTED_FAILED' && current !== 'EXECUTED_SUCCESS') ||
-          (res.status === 'HELP_ONLY' && current.startsWith('SKIPPED')) ||
-          (res.status.startsWith('SKIPPED') && current === 'UNTOUCHED')) {
+      if (
+        current === "UNTOUCHED" ||
+        res.status === "EXECUTED_SUCCESS" ||
+        (res.status === "EXECUTED_FAILED" && current !== "EXECUTED_SUCCESS") ||
+        (res.status === "HELP_ONLY" && current.startsWith("SKIPPED")) ||
+        (res.status.startsWith("SKIPPED") && current === "UNTOUCHED")
+      ) {
         commandFinalStatus[bestMatch] = res.status;
       }
     }
@@ -271,10 +324,10 @@ let cFailed = 0;
 let cUntouched = 0;
 
 for (const [cmd, stat] of Object.entries(commandFinalStatus)) {
-  if (stat === 'EXECUTED_SUCCESS') cExecuted++;
-  else if (stat === 'EXECUTED_FAILED') cFailed++;
-  else if (stat === 'HELP_ONLY') cHelpOnly++;
-  else if (stat.startsWith('SKIPPED')) cSkipped++;
+  if (stat === "EXECUTED_SUCCESS") cExecuted++;
+  else if (stat === "EXECUTED_FAILED") cFailed++;
+  else if (stat === "HELP_ONLY") cHelpOnly++;
+  else if (stat.startsWith("SKIPPED")) cSkipped++;
   else cUntouched++;
 }
 
@@ -294,9 +347,12 @@ Coverage Check: ${cExecuted + cFailed + cHelpOnly + cSkipped + cUntouched} / ${t
 
 ### Execution metrics
 Classified Coverage: 100%
-Execution Coverage: ${Math.round((cExecuted + cFailed) / totalDiscovered * 100)}%
+Execution Coverage: ${Math.round(((cExecuted + cFailed) / totalDiscovered) * 100)}%
 `;
-fs.writeFileSync(path.join(reportsDir, 'full-command-coverage-0710-fixed.md'), mdCoverage.trim());
+fs.writeFileSync(
+  path.join(reportsDir, "full-command-coverage-0710-fixed.md"),
+  mdCoverage.trim()
+);
 
 const sdkCoverage = `
 # HardKAS 0.7.11-alpha SDK Coverage (Fixed)
@@ -305,9 +361,11 @@ const sdkCoverage = `
 - Executed: ${executedSdkApis.size}
 
 Covered APIs:
-${Array.from(executedSdkApis).map(a => '- ' + a).join('\n')}
+${Array.from(executedSdkApis)
+  .map((a) => "- " + a)
+  .join("\n")}
 `;
-fs.writeFileSync(path.join(reportsDir, 'sdk-coverage-079-fixed.md'), sdkCoverage.trim());
+fs.writeFileSync(path.join(reportsDir, "sdk-coverage-079-fixed.md"), sdkCoverage.trim());
 
 const normalizationNotes = `
 # Coverage Normalization Notes
@@ -316,6 +374,9 @@ const normalizationNotes = `
 2. Fixed npm alias bug: The Auto-runner was incorrectly invoking 'npx telemetry tail' instead of 'npx hardkas telemetry tail', which caused random npm packages to be fetched and inflated the failed command count.
 3. SDK Mini App: Implemented a robust Node script that successfully instantiates \`Hardkas.create\` via the SDK facade and calls the methods required for App E.
 `;
-fs.writeFileSync(path.join(reportsDir, 'coverage-normalization-notes.md'), normalizationNotes.trim());
+fs.writeFileSync(
+  path.join(reportsDir, "coverage-normalization-notes.md"),
+  normalizationNotes.trim()
+);
 
 console.log("Gauntlet completed successfully. Fixed metrics applied.");

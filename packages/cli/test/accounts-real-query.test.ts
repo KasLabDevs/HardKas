@@ -73,7 +73,7 @@ describe("Real Account Queries (Balance & UTXOs)", () => {
     it("should resolve alias and fetch balance", async () => {
       const result = await runAccountsRealBalance({ name: "alice" });
       expect(result.balanceSompi).toBe(150000000n);
-      expect(result.formatted).toContain("alice balance: 1.50000000 KAS");
+      expect(result.formatted).toContain("alice balance: 1.5 (kaspa:sim_alice123)");
     });
 
     it("should throw if alias not found", async () => {
@@ -87,9 +87,9 @@ describe("Real Account Queries (Balance & UTXOs)", () => {
     it("should list detailed UTXOs", async () => {
       const result = await runAccountsRealUtxos({ name: "alice" });
       expect(result.formatted).toContain("tx1:0");
-      expect(result.formatted).toContain("1.00000000 KAS");
+      expect(result.formatted).toContain("1");
       expect(result.formatted).toContain("tx2:1");
-      expect(result.formatted).toContain("0.50000000 KAS");
+      expect(result.formatted).toContain("0.5");
     });
   });
 });

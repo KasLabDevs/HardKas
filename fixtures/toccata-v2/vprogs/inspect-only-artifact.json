@@ -1,0 +1,15 @@
+{
+  "schema": "hardkas.vprogs.inspectFixture.v1",
+  "profile": "toccata-v2",
+  "network": "simnet",
+  "experimental": true,
+  "claims": {
+    "vProgsArtifactInspection": "READY",
+    "vProgsRuntime": "NOT_CLAIMED",
+    "vProgsStableApi": "NOT_CLAIMED",
+    "zkOnchainVerification": "NOT_CLAIMED",
+    "vmConsensusEquivalence": "NOT_CLAIMED",
+    "mainnet": "BLOCKED_BY_POLICY"
+  },
+  "note": "Inspect-only fixture for the 0.9.1-alpha experimental vProgs lab scaffold."
+}

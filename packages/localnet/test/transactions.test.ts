@@ -101,7 +101,10 @@ describe("Simulated Transactions", () => {
   });
 
   it("should handle address as recipient", () => {
-    const state = createInitialLocalnetState({ accounts: 2, initialBalanceSompi: 10000n });
+    const state = createInitialLocalnetState({
+      accounts: 2,
+      initialBalanceSompi: 10000n
+    });
     const bobAddr = state.accounts[1]!.address;
 
     const { state: nextState } = applySimulatedPayment(

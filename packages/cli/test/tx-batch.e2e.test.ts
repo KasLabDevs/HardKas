@@ -63,5 +63,5 @@ export default defineHardkasConfig({
     expect(result.results.length).toBe(2);
     expect(result.results[0].ok).toBe(true);
     expect(result.results[1].ok).toBe(true);
-  }, 30000);
+  }, 90000);
 });

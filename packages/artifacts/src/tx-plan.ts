@@ -4,7 +4,7 @@ import { NetworkId, ExecutionMode } from "@hardkas/core";
 import { calculateContentHash, CURRENT_HASH_VERSION } from "./canonical.js";
 import { HARDKAS_VERSION } from "./constants.js";
 import type { RuntimeContext } from "@hardkas/core";
-import { formatSompi } from "@hardkas/core";
+import { HardkasSchemas } from "@hardkas/core";
 
 export interface CreateTxPlanArtifactOptions {
   networkId: NetworkId;
@@ -29,9 +29,9 @@ export interface CreateTxPlanArtifactOptions {
  */
 export function createTxPlanArtifact(options: CreateTxPlanArtifactOptions): TxPlan {
   const artifact: DraftArtifact<TxPlan, "planId" | "contentHash"> = {
-    schema: "hardkas.txPlan",
+    schema: HardkasSchemas.TxPlan,
     hardkasVersion: HARDKAS_VERSION,
-    schemaVersion: "hardkas.artifact.v1",
+    schemaVersion: HardkasSchemas.ArtifactV1,
     version: ARTIFACT_VERSION,
     hashVersion: CURRENT_HASH_VERSION,
     createdAt: new Date(options.ctx.clock.now()).toISOString(),
@@ -57,7 +57,9 @@ export function createTxPlanArtifact(options: CreateTxPlanArtifactOptions): TxPl
       amountSompi: i.amountSompi.toString(),
       address: i.address,
       scriptPublicKey: i.scriptPublicKey,
-      ...(i.blockDaaScore !== undefined ? { blockDaaScore: i.blockDaaScore.toString() } : {}),
+      ...(i.blockDaaScore !== undefined
+        ? { blockDaaScore: i.blockDaaScore.toString() }
+        : {}),
       ...(i.isCoinbase !== undefined ? { isCoinbase: i.isCoinbase } : {})
     })),
     outputs: options.plan.outputs.map((o) => ({
@@ -73,8 +75,12 @@ export function createTxPlanArtifact(options: CreateTxPlanArtifactOptions): TxPl
       sequence: 1
     },
     ...(options.ctx.workflowId ? { workflowId: options.ctx.workflowId } : {}),
-    ...(options.ctx.utxoSelection ? { metadata: { utxoSelection: options.ctx.utxoSelection } } : {}),
-    assumptionLevel: options.ctx.assumptionLevel || (options.mode === "simulated" ? "local-simulated" : "local-dev")
+    ...(options.ctx.utxoSelection
+      ? { metadata: { utxoSelection: options.ctx.utxoSelection } }
+      : {}),
+    assumptionLevel:
+      options.ctx.assumptionLevel ||
+      (options.mode === "simulated" ? "local-simulated" : "local-dev")
   };
 
   if (options.plan.change) {
@@ -87,22 +93,22 @@ export function createTxPlanArtifact(options: CreateTxPlanArtifactOptions): TxPl
   const hash = calculateContentHash(artifact, CURRENT_HASH_VERSION);
   artifact.planId = `plan-${hash.slice(0, 16)}`;
   artifact.contentHash = hash;
-  
+
   // Deterministic workflowId derived from the intent hash
   if (!artifact.workflowId) {
     artifact.workflowId = `wf_${hash.slice(0, 16)}`;
   }
-  
+
   if (artifact.lineage) {
     // For a root plan, rootArtifactId = contentHash (the artifact's own identity).
     // Since lineage is included in hash computation, we use the contentHash as the
-    // canonical self-reference. Set lineageId/parentArtifactId to empty sentinels 
+    // canonical self-reference. Set lineageId/parentArtifactId to empty sentinels
     // during hashing, then fix them to contentHash.
     artifact.lineage.lineageId = hash;
     artifact.lineage.parentArtifactId = ""; // Root plans have no parent
     artifact.lineage.rootArtifactId = hash;
     artifact.lineage.artifactId = hash;
-    
+
     // Recalculate with the first-pass lineage values AND the derived workflowId
     const finalHash = calculateContentHash(artifact, CURRENT_HASH_VERSION);
     artifact.planId = `plan-${finalHash.slice(0, 16)}`;

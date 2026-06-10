@@ -1,6 +1,6 @@
 # HardKAS Formal Runtime Contract
 
-This document formally defines the operational semantics, guarantees, and failure modes of the HardKAS runtime (v0.9.0-alpha+). This is not a "best effort" guide; it is the strict operational contract that the runtime must uphold.
+This document formally defines the operational semantics, guarantees, and failure modes of the HardKAS runtime (v0.9.1-alpha+). This is not a "best effort" guide; it is the strict operational contract that the runtime must uphold.
 
 ## 1. Authority Hierarchy & Artifact Identity
 
@@ -13,7 +13,9 @@ HardKAS distinguishes between authoritative truth and observational projections.
 - **Dashboard Status**: Purely observational, derived from the watcher's reconciliation loop.
 
 ## 1.1 Zero-Trust Artifact Validation
+
 The SDK strictly enforces zero-trust artifact verification. Any artifact loaded into memory from an external source or created locally must be verified mathematically before consumption (`simulate`, `send`, `verify`).
+
 - `contentHash` is verified dynamically by recalculating the deterministic payload hash and comparing it strictly against the self-declared field.
 - The SDK **never** trusts self-declared metadata. If a tampered object is passed, it is rejected instantly. It does **not** rely on cache hits or canonical IDs to bypass memory validation.
 
@@ -22,7 +24,9 @@ The SDK strictly enforces zero-trust artifact verification. Any artifact loaded 
 Workflow Execution IDs (`workflowId`) are strictly deterministic cryptographic hashes, eliminating reliance on ambient time (`Date.now()`) or random placeholders.
 
 ### Strict Data Determinism
+
 To guarantee byte-identical outputs across operating systems and locales, HardKAS enforces strict deterministic sorting for all arrays that affect cryptographic hashes.
+
 - **Signature Sorting**: Signatures (e.g., in multisig transactions) are sorted using `deterministicCompare(a, b)` (byte-value comparison), **never** locale-dependent functions like `localeCompare`.
 
 ## 3. Visibility Semantics
@@ -44,6 +48,7 @@ Artifacts transition through strict visibility states to prevent ambiguous autho
 ## 5. Localnet State Contract
 
 The local simulated network uses a single file for state persistence to ensure proper bootstrap and indexer behavior.
+
 - **State File**: `.hardkas/localnet.json`
 - Forked states and new states must strictly use this filename. The indexer will exclude this file to prevent corrupted artifact warnings.
 

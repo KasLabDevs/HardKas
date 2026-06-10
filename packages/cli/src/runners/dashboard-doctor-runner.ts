@@ -3,6 +3,7 @@ import path from "node:path";
 import http from "node:http";
 import pc from "picocolors";
 import { UI } from "../ui.js";
+import { HardkasSchemas } from "@hardkas/artifacts";
 
 // Helper to fetch JSON from localhost API
 function fetchJson(url: string): Promise<any> {
@@ -187,7 +188,7 @@ export async function runDashboardDoctor() {
             try {
               const event = JSON.parse(trimmed);
               const hasMandatoryKeys =
-                event.schemaVersion === "hardkas.telemetry.v1" &&
+                event.schemaVersion === HardkasSchemas.TelemetryV1 &&
                 event.eventId &&
                 event.eventHash &&
                 event.timestamp &&

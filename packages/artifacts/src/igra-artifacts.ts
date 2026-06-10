@@ -1,5 +1,6 @@
 import { ARTIFACT_SCHEMAS, HARDKAS_VERSION } from "./constants.js";
 import { ArtifactValidationResult } from "./validate.js";
+import { HardkasSchemas } from "@hardkas/core";
 
 export interface IgraTxRequestArtifact {
   readonly from?: string;
@@ -12,7 +13,7 @@ export interface IgraTxRequestArtifact {
 }
 
 export interface IgraTxPlanArtifact {
-  readonly schema: "hardkas.igraTxPlan.v1";
+  readonly schema: typeof HardkasSchemas.IgraTxPlanV1;
   readonly hardkasVersion: string;
   readonly networkId: string;
   readonly mode: "l2-rpc";
@@ -28,7 +29,7 @@ export interface IgraTxPlanArtifact {
 }
 
 export interface IgraSignedTxArtifact {
-  readonly schema: "hardkas.igraSignedTx.v1";
+  readonly schema: typeof HardkasSchemas.IgraSignedTxV1;
   readonly hardkasVersion: string;
   readonly networkId: string;
   readonly mode: "l2-rpc";
@@ -44,7 +45,7 @@ export interface IgraSignedTxArtifact {
 }
 
 export interface IgraTxReceiptArtifact {
-  readonly schema: "hardkas.igraTxReceipt.v1";
+  readonly schema: typeof HardkasSchemas.IgraTxReceiptV1;
   readonly hardkasVersion: string;
   readonly networkId: string;
   readonly mode: "l2-rpc";

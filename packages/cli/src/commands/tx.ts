@@ -1,3 +1,4 @@
+import { getOutput } from "../output.js";
 import { Command } from "commander";
 import { handleError, UI } from "../ui.js";
 import { bigIntReplacer } from "@hardkas/artifacts";
@@ -7,6 +8,7 @@ import { runTxSign } from "../runners/tx-sign-runner.js";
 import { runTxSend } from "../runners/tx-send-runner.js";
 import { runTxFlow } from "../runners/tx-flow.js";
 import { runTxReceipt } from "../runners/tx-receipt-runner.js";
+import { HardkasSchemas } from "@hardkas/artifacts";
 
 export function registerTxCommands(program: Command) {
   const tx = program.command("tx").description("L1 Transaction commands");
@@ -99,7 +101,9 @@ export function registerTxCommands(program: Command) {
                 feeRate: options.feeRate || "1",
                 config: loaded.config,
                 ...(options.workflowId ? { workflowId: options.workflowId } : {}),
-                ...(options.assumptionLevel ? { assumptionLevel: options.assumptionLevel } : {}),
+                ...(options.assumptionLevel
+                  ? { assumptionLevel: options.assumptionLevel }
+                  : {}),
                 ...(options.url ? { url: options.url } : {})
               });
 
@@ -132,8 +136,8 @@ export function registerTxCommands(program: Command) {
               if (options.json) {
                 UI.writeJson(artifact);
               } else {
-                console.log(formatTxPlanArtifact(artifact));
-                if (outPath) console.log(`\nArtifact saved to: ${outPath}`);
+                getOutput().writeLine(formatTxPlanArtifact(artifact));
+                if (outPath) getOutput().writeLine(`\nArtifact saved to: ${outPath}`);
               }
             }
           );
@@ -194,7 +198,7 @@ export function registerTxCommands(program: Command) {
 
               const raw = (await readArtifact(planPath)) as any;
               let planArtifact;
-              if (raw && raw.schema === "hardkas.signedTx") {
+              if (raw && raw.schema === HardkasSchemas.SignedTx) {
                 planArtifact = await readSignedTxArtifact(planPath);
               } else {
                 planArtifact = await readTxPlanArtifact(planPath);
@@ -227,9 +231,9 @@ export function registerTxCommands(program: Command) {
               if (options.json) {
                 UI.writeJson(signedArtifact);
               } else {
-                console.log(formatSignedTxArtifact(signedArtifact));
+                getOutput().writeLine(formatSignedTxArtifact(signedArtifact));
                 if (options.out)
-                  console.log(`\nSigned artifact saved to: ${options.out}`);
+                  getOutput().writeLine(`\nSigned artifact saved to: ${options.out}`);
               }
             }
           );
@@ -249,7 +253,7 @@ export function registerTxCommands(program: Command) {
         const raw = (await readArtifact(artifactPath)) as any;
         if (
           !raw ||
-          (raw.schema !== "hardkas.signedTx" && raw.schema !== "hardkas.txPlan")
+          (raw.schema !== HardkasSchemas.SignedTx && raw.schema !== HardkasSchemas.TxPlan)
         ) {
           throw new Error("Artifact is not a transaction plan or signed transaction.");
         }
@@ -263,43 +267,43 @@ export function registerTxCommands(program: Command) {
           return;
         }
 
-        console.log(`\nHardKAS Transaction Status`);
-        console.log(`==========================`);
-        console.log(`File:         ${artifactPath}`);
-        console.log(`Schema:       ${raw.schema}`);
+        getOutput().writeLine(`\nHardKAS Transaction Status`);
+        getOutput().writeLine(`==========================`);
+        getOutput().writeLine(`File:         ${artifactPath}`);
+        getOutput().writeLine(`Schema:       ${raw.schema}`);
 
-        if (raw.schema === "hardkas.txPlan") {
-          console.log(`Status:       PLANNED`);
-          console.log(`Plan ID:      ${raw.planId}`);
-          console.log(`From:         ${raw.from.address}`);
-          console.log(`To:           ${raw.to.address}`);
-          console.log(`Amount:       ${raw.amountSompi} sompi`);
+        if (raw.schema === HardkasSchemas.TxPlan) {
+          getOutput().writeLine(`Status:       PLANNED`);
+          getOutput().writeLine(`Plan ID:      ${raw.planId}`);
+          getOutput().writeLine(`From:         ${raw.from.address}`);
+          getOutput().writeLine(`To:           ${raw.to.address}`);
+          getOutput().writeLine(`Amount:       ${raw.amountSompi} sompi`);
         } else {
-          console.log(`Status:       ${raw.status.toUpperCase()}`);
-          console.log(`Signed ID:    ${raw.signedId}`);
-          console.log(`Plan ID:      ${raw.sourcePlanId}`);
-          console.log(`From:         ${raw.from.address}`);
-          console.log(`To:           ${raw.to.address}`);
-          console.log(`Amount:       ${raw.amountSompi} sompi`);
+          getOutput().writeLine(`Status:       ${raw.status.toUpperCase()}`);
+          getOutput().writeLine(`Signed ID:    ${raw.signedId}`);
+          getOutput().writeLine(`Plan ID:      ${raw.sourcePlanId}`);
+          getOutput().writeLine(`From:         ${raw.from.address}`);
+          getOutput().writeLine(`To:           ${raw.to.address}`);
+          getOutput().writeLine(`Amount:       ${raw.amountSompi} sompi`);
 
           if (raw.multisig) {
-            console.log(
+            getOutput().writeLine(
               `Threshold:    ${raw.multisig.signatures.length} of ${raw.multisig.threshold} Required Signers`
             );
-            console.log(`\nSignatures Collected:`);
+            getOutput().writeLine(`\nSignatures Collected:`);
             const signatures = raw.multisig.signatures || [];
             const required = raw.multisig.requiredSigners || [];
             required.forEach((addr: string) => {
               const hasSigned = signatures.some((s: any) => s.signer === addr);
-              console.log(`  [${hasSigned ? "✓" : " "}] ${addr}`);
+              getOutput().writeLine(`  [${hasSigned ? "✓" : " "}] ${addr}`);
             });
           } else {
-            console.log(`Signers:      Single-signature transaction`);
+            getOutput().writeLine(`Signers:      Single-signature transaction`);
           }
         }
-        console.log();
+        getOutput().writeLine("");
       } catch (e) {
-        console.error(e instanceof Error ? e.message : String(e));
+        getOutput().error(e instanceof Error ? e.message : String(e));
         throw e;
       }
     });
@@ -482,7 +486,8 @@ export function registerTxCommands(program: Command) {
                   const { UI } = await import("../ui.js");
                   const sendResult = result.steps.send;
                   const isSimulated =
-                    sendResult?.artifact?.rpcUrl === "simulated://local" || options.network === "simulated";
+                    sendResult?.artifact?.rpcUrl === "simulated://local" ||
+                    options.network === "simulated";
 
                   UI.causality(
                     isSimulated
@@ -515,7 +520,7 @@ export function registerTxCommands(program: Command) {
                   );
                 }
               } else {
-                console.error(
+                getOutput().error(
                   "Provide a path to a signed artifact or use --from, --to, --amount."
                 );
                 throw new Error("Command failed");
@@ -534,8 +539,9 @@ export function registerTxCommands(program: Command) {
     .action(async (txId, options) => {
       try {
         const result = await runTxReceipt({ txId });
-        if (options.json) console.log(JSON.stringify(result.receipt, bigIntReplacer, 2));
-        else console.log(result.formatted);
+        if (options.json)
+          getOutput().writeLine(JSON.stringify(result.receipt, bigIntReplacer, 2));
+        else getOutput().writeLine(result.formatted);
       } catch (e) {
         throw e;
       }
@@ -552,8 +558,8 @@ export function registerTxCommands(program: Command) {
         const { loadHardkasConfig } = await import("@hardkas/config");
         const config = await loadHardkasConfig();
         const { runTxWait } = await import("../runners/tx-wait-runner.js");
-        await runTxWait({ 
-          txId, 
+        await runTxWait({
+          txId,
           config: config.config,
           url: options.url,
           network: options.network,
@@ -590,7 +596,9 @@ export function registerTxCommands(program: Command) {
     });
 
   tx.command("compare <simulatedPath> <realPath>")
-    .description(`Compare simulated vs real receipts for fidelity ${UI.maturity("stable")}`)
+    .description(
+      `Compare simulated vs real receipts for fidelity ${UI.maturity("stable")}`
+    )
     .action(async (simulatedPath, realPath) => {
       try {
         const { runTxCompare } = await import("../runners/tx-compare-runner.js");

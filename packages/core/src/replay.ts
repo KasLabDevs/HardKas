@@ -1,3 +1,4 @@
+import { HardkasSchemas } from "./registry.js";
 export interface StructuralDiff {
   missingArtifacts: string[];
   excludedArtifacts: string[];
@@ -18,7 +19,7 @@ export interface RuntimeNoiseDiff {
 }
 
 export interface LayeredReplayDiff {
-  schema: "hardkas.replayDiff.v1";
+  schema: typeof HardkasSchemas.ReplayDiffV1;
   structural: StructuralDiff;
   deterministic: DeterministicDiff;
   observational: RuntimeNoiseDiff;
@@ -26,7 +27,7 @@ export interface LayeredReplayDiff {
 
 export function diffReplays(replayA: any, replayB: any): LayeredReplayDiff {
   const diff: LayeredReplayDiff = {
-    schema: "hardkas.replayDiff.v1",
+    schema: HardkasSchemas.ReplayDiffV1,
     structural: {
       missingArtifacts: [],
       excludedArtifacts: [],

@@ -2,23 +2,55 @@ import { blake2b } from "@noble/hashes/blake2.js";
 import { HardkasError } from "./index.js";
 
 /**
+ * Validates and normalizes script hex into raw bytes.
+ * @param scriptHexOrBytes The compiled script hex string or Buffer
+ */
+function normalizeScriptBytes(scriptHexOrBytes: string | Buffer | Uint8Array): Buffer {
+  if (Buffer.isBuffer(scriptHexOrBytes)) return scriptHexOrBytes;
+  if (scriptHexOrBytes instanceof Uint8Array) return Buffer.from(scriptHexOrBytes);
+  if (typeof scriptHexOrBytes !== "string") {
+    throw new HardkasError("SILVERSCRIPT_INVALID_REDEEM_SCRIPT", "Must be hex string or buffer");
+  }
+  const hex = scriptHexOrBytes.trim();
+  if (hex === "") {
+    throw new HardkasError("SILVERSCRIPT_INVALID_REDEEM_SCRIPT", "Redeem script cannot be empty");
+  }
+  if (!/^[0-9a-fA-F]*$/.test(hex) || hex.length % 2 !== 0) {
+    throw new HardkasError("SILVERSCRIPT_INVALID_REDEEM_SCRIPT", "Redeem script must be valid even-length hex");
+  }
+  return Buffer.from(hex, "hex");
+}
+
+/**
+ * Calculates the Blake2b 32-byte hash of the raw redeem script bytes.
+ * This MUST ONLY be the raw bytes, never the artifact JSON or wrapper hex.
+ * 
+ * @param scriptHexOrBytes The compiled script hex string or Buffer
+ * @returns 32-byte hash as hex string
+ */
+export function createRedeemScriptHash(scriptHexOrBytes: string | Buffer | Uint8Array): string {
+  const scriptBytes = normalizeScriptBytes(scriptHexOrBytes);
+  const redeemScriptHashBytes = blake2b(scriptBytes, { dkLen: 32 });
+  return Buffer.from(redeemScriptHashBytes).toString("hex");
+}
+
+/**
  * Creates a Kaspa standard P2SH locking script (BIP16-like but with Blake2b).
  * Version is always 0 for standard script hashes in Kaspa currently,
  * although future VM versions might use 8.
  *
- * @param redeemScriptHex The compiled script hex string
+ * @param scriptHexOrBytes The compiled script hex string or Buffer
  */
-export function createKaspaP2shBlake2bLock(redeemScriptHex: string) {
-  // Hash the RAW binary bytes of the redeem script, NOT the JSON.
-  const scriptBytes = Buffer.from(redeemScriptHex, "hex");
-  const redeemScriptHashBytes = blake2b(scriptBytes, { dkLen: 32 });
-  const redeemScriptHash = Buffer.from(redeemScriptHashBytes).toString("hex");
+export function createKaspaP2shBlake2bLock(scriptHexOrBytes: string | Buffer | Uint8Array) {
+  const redeemScriptHash = createRedeemScriptHash(scriptHexOrBytes);
 
   // Format: aa20 <32-byte-hash> 87
   // aa = OP_BLAKE2B
   // 20 = OP_DATA_32
   // 87 = OP_EQUAL
   const lockingScriptHex = `aa20${redeemScriptHash}87`;
+
+  const redeemScriptHex = normalizeScriptBytes(scriptHexOrBytes).toString("hex");
 
   return {
     scriptPublicKeyVersion: 0,
@@ -53,7 +85,8 @@ function getPushDataPrefix(byteCount: number): string {
   }
   // Up to 4.29GB
   const hex = byteCount.toString(16).padStart(8, "0");
-  const le = hex.substring(6, 8) + hex.substring(4, 6) + hex.substring(2, 4) + hex.substring(0, 2);
+  const le =
+    hex.substring(6, 8) + hex.substring(4, 6) + hex.substring(2, 4) + hex.substring(0, 2);
   return `4e${le}`; // OP_DATA_4
 }
 
@@ -65,21 +98,33 @@ function getPushDataPrefix(byteCount: number): string {
  * @param args Array of hex strings representing the arguments to push
  * @param redeemScriptHex The compiled script hex string
  */
-export function createPushOnlySignatureScript(args: string[], redeemScriptHex: string): string {
+export function createPushOnlySignatureScript(
+  args: string[],
+  redeemScriptHex: string
+): string {
   if (!redeemScriptHex || redeemScriptHex.trim() === "") {
-    throw new HardkasError("SILVERSCRIPT_INVALID_REDEEM_SCRIPT", "Redeem script cannot be empty");
+    throw new HardkasError(
+      "SILVERSCRIPT_INVALID_REDEEM_SCRIPT",
+      "Redeem script cannot be empty"
+    );
   }
 
   // Ensure redeemScript is valid hex
   if (!/^[0-9a-fA-F]*$/.test(redeemScriptHex) || redeemScriptHex.length % 2 !== 0) {
-    throw new HardkasError("SILVERSCRIPT_INVALID_REDEEM_SCRIPT", "Redeem script must be valid hex");
+    throw new HardkasError(
+      "SILVERSCRIPT_INVALID_REDEEM_SCRIPT",
+      "Redeem script must be valid hex"
+    );
   }
 
   let signatureScript = "";
 
   for (const argHex of args) {
     if (!/^[0-9a-fA-F]*$/.test(argHex) || argHex.length % 2 !== 0) {
-      throw new HardkasError("SILVERSCRIPT_SIGNATURE_SCRIPT_NOT_PUSH_ONLY", `Argument must be valid hex: ${argHex}`);
+      throw new HardkasError(
+        "SILVERSCRIPT_SIGNATURE_SCRIPT_NOT_PUSH_ONLY",
+        `Argument must be valid hex: ${argHex}`
+      );
     }
     const byteCount = argHex.length / 2;
     const prefix = getPushDataPrefix(byteCount);

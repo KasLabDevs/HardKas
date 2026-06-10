@@ -1,4 +1,4 @@
-import { Hardkas, formatSompi } from "@hardkas/sdk";
+import { Hardkas, formatSompiToKas } from "@hardkas/sdk";
 
 /**
  * Example 06: RPC Node Health
@@ -80,7 +80,7 @@ async function main() {
       console.log(`\n  Recent UTXOs:`);
       utxos.slice(0, 3).forEach((u, i) => {
         console.log(
-          `    [${i}] ${u.outpoint.transactionId.slice(0, 8)}...:${u.outpoint.index} (${formatSompi(u.amountSompi)})`
+          `    [${i}] ${u.outpoint.transactionId.slice(0, 8)}...:${u.outpoint.index} (${formatSompiToKas(u.amountSompi)})`
         );
       });
     }

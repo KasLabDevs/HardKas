@@ -40,7 +40,9 @@ export async function loadLocalnetState(
       const legacyContent = await fs.readFile(legacyPath, "utf-8");
       // Migrate it over
       await fs.writeFile(targetPath, legacyContent, "utf-8");
-      console.warn(`[HardKAS] Migrated legacy localnet-state.json to localnet.json. The old file was kept for compatibility.`);
+      console.warn(
+        `[HardKAS] Migrated legacy localnet-state.json to localnet.json. The old file was kept for compatibility.`
+      );
       return JSON.parse(legacyContent) as LocalnetState;
     } catch {
       return null; // neither exists

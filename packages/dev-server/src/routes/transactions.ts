@@ -1,5 +1,6 @@
 import { Hono } from "hono";
 import { getQueryBackend } from "../db.js";
+import { formatSompiToKas } from "@hardkas/core";
 
 export const transactionsRoutes = new Hono();
 
@@ -69,9 +70,7 @@ transactionsRoutes.get("/", async (c) => {
         amountSompi: r.payload.amountSompi || "0",
         amount:
           r.payload.amount ||
-          (r.payload.amountSompi
-            ? (Number(r.payload.amountSompi) / 100_000_000).toString()
-            : "0"),
+          (r.payload.amountSompi ? formatSompiToKas(r.payload.amountSompi) : "0"),
         feeSompi: r.payload.feeSompi,
         timestamp: r.payload.submittedAt || r.createdAt || new Date().toISOString(),
         mode: r.mode,
@@ -111,9 +110,7 @@ transactionsRoutes.get("/", async (c) => {
         amountSompi: s.payload.amountSompi || "0",
         amount:
           s.payload.amount ||
-          (s.payload.amountSompi
-            ? (Number(s.payload.amountSompi) / 100_000_000).toString()
-            : "0"),
+          (s.payload.amountSompi ? formatSompiToKas(s.payload.amountSompi) : "0"),
         timestamp: s.createdAt || new Date().toISOString(),
         mode: s.mode,
         networkId: s.networkId,
@@ -150,9 +147,7 @@ transactionsRoutes.get("/", async (c) => {
         amountSompi: p.payload.amountSompi || "0",
         amount:
           p.payload.amount ||
-          (p.payload.amountSompi
-            ? (Number(p.payload.amountSompi) / 100_000_000).toString()
-            : "0"),
+          (p.payload.amountSompi ? formatSompiToKas(p.payload.amountSompi) : "0"),
         timestamp: p.createdAt || new Date().toISOString(),
         mode: p.mode,
         networkId: p.networkId,

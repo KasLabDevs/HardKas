@@ -272,8 +272,10 @@ export async function runL2TxSign(options: L2TxSignOptions): Promise<void> {
       } else {
         console.log("  Configure an EVM-compatible signer adapter in a future phase.");
       }
-      console.log("  No artifact was written.");
-      process.exit(1);
+      const { HardkasCliError } = await import("../cli-errors.js");
+      throw new HardkasCliError("SIGNER_ERROR", "No artifact was written.", {
+        exitCode: 1
+      });
     }
     throw e;
   }
@@ -387,12 +389,16 @@ export async function runL2TxSend(options: L2TxSendOptions): Promise<void> {
     artifact.chainId === 1 ||
     profile.chainId === 1;
   if (isMainnet) {
-    throw new Error("L2 mainnet broadcast is disabled in HardKAS 0.9.0-alpha.");
+    throw new Error("L2 mainnet broadcast is disabled in HardKAS 0.9.1-alpha.");
   }
 
   if (!options.yes) {
-    console.log("\n  L2 broadcast cancelled: --yes flag is required for this phase.");
-    process.exit(0);
+    const { HardkasCliError } = await import("../cli-errors.js");
+    throw new HardkasCliError(
+      "CANCELED",
+      "L2 broadcast cancelled: --yes flag is required for this phase.",
+      { exitCode: 1 }
+    );
   }
 
   const rpcUrl = options.url ?? profile.rpcUrl;
@@ -418,9 +424,10 @@ export async function runL2TxSend(options: L2TxSendOptions): Promise<void> {
     console.log(`Profile chainId: ${profile.chainId}`);
     console.log(`RPC chainId:      ${remoteChainId}`);
     console.log("");
-    console.log("Suggestion:");
-    console.log("  Check --url and --network.");
-    process.exit(1);
+    const { HardkasCliError } = await import("../cli-errors.js");
+    throw new HardkasCliError("NETWORK_ERROR", "Check --url and --network.", {
+      exitCode: 1
+    });
   }
 
   if (String(remoteChainId) !== String(artifact.chainId)) {
@@ -432,7 +439,12 @@ export async function runL2TxSend(options: L2TxSendOptions): Promise<void> {
     console.log(`Artifact chainId: ${artifact.chainId}`);
     console.log(`RPC chainId:      ${remoteChainId}`);
     console.log("");
-    process.exit(1);
+    const { HardkasCliError } = await import("../cli-errors.js");
+    throw new HardkasCliError(
+      "CHAIN_ID_MISMATCH",
+      "Artifact chain ID does not match remote RPC chain ID.",
+      { exitCode: 1 }
+    );
   }
 
   // 4. Send

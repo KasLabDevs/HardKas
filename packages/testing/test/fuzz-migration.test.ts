@@ -32,7 +32,9 @@ describe("Phase 6A: Migration Fuzzing", () => {
     for (let i = 0; i < iterations; i++) {
       const mutated = mutateArtifact(original);
       try {
-        const verifyResult = await sdk.artifacts.verify(mutated, { throwOnInvalid: false });
+        const verifyResult = await sdk.artifacts.verify(mutated, {
+          throwOnInvalid: false
+        });
         if (verifyResult.valid === true) {
           if (silentMigrations === 0) console.log("Silent migration accepted:", mutated);
           silentMigrations++;

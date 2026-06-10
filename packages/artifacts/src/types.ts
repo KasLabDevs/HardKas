@@ -1,4 +1,5 @@
 import { HardkasArtifactSchema } from "./constants.js";
+import { HardkasSchemas } from "@hardkas/core";
 import {
   NetworkId,
   ExecutionMode,
@@ -86,7 +87,7 @@ export interface TxOutputArtifact {
 }
 
 export interface TxPlanArtifactV1 extends HardkasArtifactBase {
-  readonly schema: "hardkas.txPlan.v1";
+  readonly schema: typeof HardkasSchemas.TxPlanV1;
   readonly status: "built" | "unsigned";
 
   readonly planId: string;
@@ -118,7 +119,7 @@ export interface TxPlanArtifactV1 extends HardkasArtifactBase {
 }
 
 export interface SignedTxArtifactV1 extends HardkasArtifactBase {
-  readonly schema: "hardkas.signedTx.v1";
+  readonly schema: typeof HardkasSchemas.SignedTxV1;
   readonly status: "signed";
 
   readonly signedId: string;
@@ -149,7 +150,7 @@ export interface SignedTxArtifactV1 extends HardkasArtifactBase {
 }
 
 export interface TxReceiptArtifactV1 extends HardkasArtifactBase {
-  readonly schema: "hardkas.txReceipt.v1";
+  readonly schema: typeof HardkasSchemas.TxReceiptV1;
   readonly status: "submitted" | "accepted" | "confirmed" | "finalized" | "failed";
 
   readonly txId: TxId;
@@ -183,7 +184,7 @@ export interface TxReceiptArtifactV1 extends HardkasArtifactBase {
 }
 
 export interface TxTraceArtifactV1 extends HardkasArtifactBase {
-  readonly schema: "hardkas.txTrace.v1";
+  readonly schema: typeof HardkasSchemas.TxTraceV1;
   readonly txId: TxId;
   readonly steps: Array<{
     phase: string;
@@ -388,7 +389,7 @@ export interface WorkflowArtifact extends BaseArtifact<"workflow.v1"> {
 }
 
 export interface DeploymentRecord extends HardkasArtifactBase {
-  schema: "hardkas.deployment.v1";
+  schema: typeof HardkasSchemas.DeploymentV1;
   /** Human-readable label (e.g., "initial-funding", "vault-covenant-v1") */
   label: string;
   /** Network where this was deployed */
@@ -418,7 +419,7 @@ export interface DeploymentRecord extends HardkasArtifactBase {
 }
 
 export interface DeploymentIndex extends HardkasArtifactBase {
-  schema: "hardkas.deploymentIndex.v1";
+  schema: typeof HardkasSchemas.DeploymentIndexV1;
   networkId: NetworkId;
   deployments: DeploymentSummary[];
   lastUpdated: string;
@@ -455,7 +456,12 @@ export interface SilverTestArtifact extends BaseArtifact<"silver.test"> {
   compilerVersion: string;
   results: Array<{
     name: string;
-    status: "PASS" | "FAIL" | "SKIPPED" | "EXPECTED_COMPILER_FAILURE" | "PARTIAL_TEST_VECTOR_SUPPORT";
+    status:
+      | "PASS"
+      | "FAIL"
+      | "SKIPPED"
+      | "EXPECTED_COMPILER_FAILURE"
+      | "PARTIAL_TEST_VECTOR_SUPPORT";
     reason?: string | undefined;
   }>;
   status: "PASS" | "FAIL" | "PARTIAL_TEST_VECTOR_SUPPORT" | "EXPECTED_COMPILER_FAILURE";
@@ -512,15 +518,19 @@ export interface SilverSpendReceiptArtifact extends BaseArtifact<"silver.spendRe
   redeemScriptHash?: string | undefined;
   lockingScriptHex?: string | undefined;
   signatureScriptHex?: string | undefined;
-  spentOutpoint?: {
-    transactionId: string;
-    index: number;
-  } | undefined;
-  expectedOutputs?: Array<{
-    address: string;
-    amountSompi: string;
-    scriptHash?: string | undefined;
-  }> | undefined;
+  spentOutpoint?:
+    | {
+        transactionId: string;
+        index: number;
+      }
+    | undefined;
+  expectedOutputs?:
+    | Array<{
+        address: string;
+        amountSompi: string;
+        scriptHash?: string | undefined;
+      }>
+    | undefined;
   txId: string;
   status: "simulated" | "submitted" | "accepted" | "rejected";
 }
@@ -561,4 +571,57 @@ export interface SilverSpendSimulationArtifact extends BaseArtifact<"silver.spen
   }>;
   feeSompi: string;
   status: "SIMULATED_ACCEPTED";
+}
+
+export interface ProgrammabilityClaims {
+  artifactCoherence: "READY_MATCH";
+  silverScriptBuilder: "SILVERSCRIPT_BUILDER_READY";
+  zkCorpusSurface: "ZK_CORPUS_SURFACE_READY";
+  zkLocalVerification: "READY_GROTH16_FIXTURE_COHERENCE";
+  risc0InspectSurface: "RISC0_INSPECT_SURFACE_READY";
+  vProgsInspectSurface: "VPROGS_INSPECT_SURFACE_READY";
+  runtimeOutcome: "PARTIAL";
+  vmConsensusEquivalence: "NOT_CLAIMED";
+  zkOnchainVerification: "NOT_CLAIMED";
+  vProgsRuntime: "NOT_CLAIMED";
+  vProgsStableApi: "NOT_CLAIMED";
+  mainnet: "BLOCKED_BY_POLICY";
+}
+
+export interface ProgrammabilityCapabilitiesArtifact {
+  schema: typeof HardkasSchemas.ProgrammabilityCapabilitiesV1;
+  ok: true;
+  status: "PROGRAMMABILITY_SURFACE_READY";
+  claims: ProgrammabilityClaims;
+}
+
+export interface ProgrammabilityInspectArtifact {
+  schema: typeof HardkasSchemas.ProgrammabilityInspectV1;
+  ok: boolean;
+  status: "PROGRAMMABILITY_ARTIFACT_INSPECTED" | "PROGRAMMABILITY_ARTIFACT_INVALID";
+  claims: ProgrammabilityClaims;
+}
+
+export interface ProgrammabilityVerifyArtifact {
+  schema: typeof HardkasSchemas.ProgrammabilityVerifyV1;
+  ok: boolean;
+  status:
+    | "PROGRAMMABILITY_VERIFY_PASS"
+    | "PROGRAMMABILITY_VERIFY_FAIL"
+    | "PROGRAMMABILITY_VERIFY_PARTIAL";
+  claims: ProgrammabilityClaims;
+}
+
+export interface ProgrammabilityCorpusReportArtifact {
+  schema: typeof HardkasSchemas.ProgrammabilityCorpusReportV1;
+  ok: boolean;
+  status: "PROGRAMMABILITY_CORPUS_PASS" | "PROGRAMMABILITY_CORPUS_FAIL";
+  claims: ProgrammabilityClaims;
+}
+
+export interface ProgrammabilityAppPlanArtifact {
+  schema: typeof HardkasSchemas.ProgrammabilityAppPlanV1;
+  ok: true;
+  status: "PROGRAMMABILITY_APP_PLAN_READY";
+  claims: ProgrammabilityClaims;
 }

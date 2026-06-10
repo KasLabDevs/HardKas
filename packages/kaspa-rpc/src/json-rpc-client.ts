@@ -275,11 +275,16 @@ export class KaspaJsonRpcClient implements KaspaRpcClient {
           txObj = parsed;
         }
       }
-      
+
       // One final check for POJO nested inner/tx in case it wasn't a string at a nested level
-      while (txObj && typeof txObj === "object" && !Array.isArray(txObj) && ("tx" in txObj || "inner" in txObj)) {
-         if ("tx" in txObj) txObj = (txObj as any).tx;
-         else if ("inner" in txObj) txObj = (txObj as any).inner;
+      while (
+        txObj &&
+        typeof txObj === "object" &&
+        !Array.isArray(txObj) &&
+        ("tx" in txObj || "inner" in txObj)
+      ) {
+        if ("tx" in txObj) txObj = (txObj as any).tx;
+        else if ("inner" in txObj) txObj = (txObj as any).inner;
       }
 
       const txAny = txObj as any;
@@ -304,8 +309,10 @@ export class KaspaJsonRpcClient implements KaspaRpcClient {
 
         if (txAny.inputs && Array.isArray(txAny.inputs)) {
           txAny.inputs.forEach((input: any) => {
-            if (typeof input.sequence === "string") input.sequence = Number(input.sequence);
-            if (typeof input.sigOpCount === "string") input.sigOpCount = Number(input.sigOpCount);
+            if (typeof input.sequence === "string")
+              input.sequence = Number(input.sequence);
+            if (typeof input.sigOpCount === "string")
+              input.sigOpCount = Number(input.sigOpCount);
           });
         }
       }

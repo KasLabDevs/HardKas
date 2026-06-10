@@ -1,0 +1,26 @@
+{
+  "schema": "hardkas.zkGroth16Fixture.v1",
+  "proofSystem": "groth16",
+  "curve": "bn128",
+  "verifierAdapter": "hardkas-groth16-fixture-coherence-v1",
+  "proof": "proof.json",
+  "publicInputs": "public-inputs.json",
+  "verificationKey": "verification-key.json",
+  "verifierMetadata": "verifier-metadata.json",
+  "verifyReport": "verify-report.json",
+  "contentHashes": {
+    "proof": "8b812fb7a9f8a307a7124e93b90fc1b4b332f79257a3ddbb611b397c5c2bdff9",
+    "publicInputs": "6ba532d5ac249cf432a8fc0136d570560dfa71c73d8865bf072059c2c4a97503",
+    "verificationKey": "d4ea27e10db6705ada7ed2cb34abfca42c4af76deaa3f2990622132afd79d53a",
+    "verifierMetadata": "40fa6900e528b151e85bbab337604d9053736bc7755c2e0297b8c8c9278a5a2c",
+    "verifyReport": "3a7da9fc361b51df6ab90b09ba1bea09f995705b0426e27558020894cb984ed1"
+  },
+  "expectedStatus": "ZK_FIXTURE_COHERENCE_PASS",
+  "claims": {
+    "cryptographicVerification": "NOT_CLAIMED",
+    "fixtureCoherence": "CLAIMED",
+    "zkOnchainVerification": "NOT_CLAIMED",
+    "vmConsensusEquivalence": "NOT_CLAIMED",
+    "mainnet": "BLOCKED_BY_POLICY"
+  }
+}

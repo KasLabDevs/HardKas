@@ -10,7 +10,7 @@ describe("TxPlanService", () => {
       amountSompi: 1000n, // very small
       scriptPublicKey: "mock"
     }));
-    
+
     // Add one large UTXO
     mockUtxos.push({
       outpoint: { transactionId: "tx-large", index: 0 },
@@ -24,11 +24,11 @@ describe("TxPlanService", () => {
     };
 
     const service = new TxPlanService(provider, { maxInputsPerTx: 512 });
-    
+
     const result = await service.planTransaction({
       fromAddress: "kaspa:qrcx...",
       toAddress: "kaspa:qrcx...",
-      amountSompi: 1000000n,
+      amountSompi: 1000000n
     });
 
     // Should only select the single large UTXO
@@ -71,11 +71,11 @@ describe("TxPlanService", () => {
     };
 
     const service = new TxPlanService(provider, { coinbaseMaturity: 1000n });
-    
+
     const result = await service.planTransaction({
       fromAddress: "kaspa:qrcx...",
       toAddress: "kaspa:qrcx...",
-      amountSompi: 6000000n,
+      amountSompi: 6000000n
     });
 
     // tx-coinbase-immature has 500 confirmations (10500 - 10000) -> filtered out
@@ -90,7 +90,7 @@ describe("TxPlanService", () => {
     const mockUtxos: Utxo[] = Array.from({ length: 600 }, (_, i) => ({
       outpoint: { transactionId: `tx-${i}`, index: 0 },
       address: "kaspa:qrcx...",
-      amountSompi: 1000n, 
+      amountSompi: 1000n,
       scriptPublicKey: "mock"
     }));
 
@@ -98,12 +98,17 @@ describe("TxPlanService", () => {
       getUtxos: async () => mockUtxos
     };
 
-    const service = new TxPlanService(provider, { maxInputsPerTx: 512, marginFeePerInput: 0n });
-    
-    await expect(service.planTransaction({
-      fromAddress: "kaspa:qrcx...",
-      toAddress: "kaspa:qrcx...",
-      amountSompi: 550000n, // needs 550 inputs
-    })).rejects.toThrow(/TOO_MANY_INPUTS_FOR_SINGLE_TX/);
+    const service = new TxPlanService(provider, {
+      maxInputsPerTx: 512,
+      marginFeePerInput: 0n
+    });
+
+    await expect(
+      service.planTransaction({
+        fromAddress: "kaspa:qrcx...",
+        toAddress: "kaspa:qrcx...",
+        amountSompi: 550000n // needs 550 inputs
+      })
+    ).rejects.toThrow(/TOO_MANY_INPUTS_FOR_SINGLE_TX/);
   });
 });

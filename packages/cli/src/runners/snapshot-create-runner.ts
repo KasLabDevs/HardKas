@@ -1,4 +1,4 @@
-import path from "node:path";
+﻿import path from "node:path";
 import pc from "picocolors";
 import { createSnapshot } from "@hardkas/core";
 import { UI, handleError } from "../ui.js";
@@ -44,7 +44,11 @@ export async function runSnapshotCreate(options: SnapshotCreateOptions) {
       Notice: "Snapshots are portable local deterministic captures, NOT consensus proofs"
     });
   } catch (err: any) {
-    if (!options.json) handleError(err);
-    process.exitCode = 1;
+    const { HardkasCliError } = await import("../cli-errors.js");
+    throw new HardkasCliError(
+      "SNAPSHOT_CREATE_FAILED",
+      `Snapshot creation failed: ${err.message}`,
+      { exitCode: 1, cause: err }
+    );
   }
 }

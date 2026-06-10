@@ -265,7 +265,7 @@ export function createDevServer(config: DevServerConfig) {
             console.error(
               `\nPort ${config.port} is already in use. Try: hardkas dev server --port ${config.port + 1}\n`
             );
-            process.exit(1);
+            throw new Error("Command failed");
           }
           throw err;
         });
@@ -275,7 +275,7 @@ export function createDevServer(config: DevServerConfig) {
           console.error(
             `\nPort ${config.port} is already in use. Try: hardkas dev server --port ${config.port + 1}\n`
           );
-          process.exit(1);
+          throw new Error("Command failed");
         }
         throw err;
       }
