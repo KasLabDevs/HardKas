@@ -1,4 +1,4 @@
-import { Hardkas, formatSompi, parseKasToSompi } from "@hardkas/sdk";
+import { Hardkas, formatSompiToKas, parseKasToSompi } from "@hardkas/sdk";
 import {
   createInitialLocalnetState,
   createLocalnetSnapshot,
@@ -36,8 +36,8 @@ async function main() {
     const aliceBal = getAccountBalanceSompi(s, alice);
     const bobBal = getAccountBalanceSompi(s, bob);
     console.log(`[${label.padEnd(15)}]`);
-    console.log(`  Alice: ${formatSompi(aliceBal)}`);
-    console.log(`  Bob:   ${formatSompi(bobBal)}`);
+    console.log(`  Alice: ${formatSompiToKas(aliceBal)}`);
+    console.log(`  Bob:   ${formatSompiToKas(bobBal)}`);
     console.log(`  DAA:   ${s.daaScore}\n`);
   };
 
@@ -51,7 +51,9 @@ async function main() {
 
   // 3. Simulate State Mutation (Transfer)
   const transferAmount = parseKasToSompi("250");
-  console.log(`# Simulating Transfer: Alice -> Bob (${formatSompi(transferAmount)})`);
+  console.log(
+    `# Simulating Transfer: Alice -> Bob (${formatSompiToKas(transferAmount)})`
+  );
 
   const result = applySimulatedPayment(state, {
     from: alice,
@@ -62,7 +64,7 @@ async function main() {
 
   state = result.state;
   console.log(`✓ Transfer successful (TxID: ${result.receipt.txId})`);
-  console.log(`  Fee: ${formatSompi(BigInt(result.receipt.feeSompi))}\n`);
+  console.log(`  Fee: ${formatSompiToKas(BigInt(result.receipt.feeSompi))}\n`);
 
   logBalances(state, "Modified State");
 

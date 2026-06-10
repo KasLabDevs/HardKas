@@ -1,4 +1,4 @@
-import { resolveL2Profile, checkEvmRpcHealth, waitForEvmRpcReady } from "@hardkas/l2";
+﻿import { resolveL2Profile, checkEvmRpcHealth, waitForEvmRpcReady } from "@hardkas/l2";
 import { loadHardkasConfig } from "@hardkas/config";
 
 export interface L2RpcHealthOptions {
@@ -97,6 +97,11 @@ export async function runL2RpcHealth(options: L2RpcHealthOptions): Promise<void>
   console.log("  This is L2 EVM state, not Kaspa L1 UTXO state.");
 
   if (!health.ready || chainIdMismatch) {
-    process.exitCode = 1;
+    const { HardkasCliError } = await import("../cli-errors.js");
+    throw new HardkasCliError(
+      "RPC_UNHEALTHY",
+      "RPC endpoint is not healthy or chain ID mismatches.",
+      { exitCode: 1 }
+    );
   }
 }

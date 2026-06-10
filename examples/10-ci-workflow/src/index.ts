@@ -1,6 +1,6 @@
 import {
   Hardkas,
-  formatSompi,
+  formatSompiToKas,
   parseKasToSompi,
   writeArtifact,
   createTxPlanArtifact,
@@ -44,7 +44,7 @@ async function main() {
   const alice = "alice";
   const bob = "bob";
   const initialAliceBal = getAccountBalanceSompi(state, alice);
-  console.log(`✓ Initial State created. Alice: ${formatSompi(initialAliceBal)}\n`);
+  console.log(`✓ Initial State created. Alice: ${formatSompiToKas(initialAliceBal)}\n`);
 
   // 2. Create Pre-Test Snapshot
   console.log("[CI] Phase 2: Create Baseline Snapshot");
@@ -69,7 +69,7 @@ async function main() {
 
   // Verify state change
   const aliceBalAfter = getAccountBalanceSompi(state, alice);
-  console.log(`✓ Transaction Simulated. Alice: ${formatSompi(aliceBalAfter)}`);
+  console.log(`✓ Transaction Simulated. Alice: ${formatSompiToKas(aliceBalAfter)}`);
 
   // Save receipt for CI logs
   await writeArtifact(path.join(artifactsDir, "ci-tx-receipt.json"), result.receipt);
@@ -108,7 +108,7 @@ async function main() {
   const aliceBalRestored = getAccountBalanceSompi(state, alice);
 
   if (aliceBalRestored === initialAliceBal) {
-    console.log(`✓ State Restored. Alice: ${formatSompi(aliceBalRestored)}`);
+    console.log(`✓ State Restored. Alice: ${formatSompiToKas(aliceBalRestored)}`);
   } else {
     console.error("✗ Restore Failure: State mismatch after recovery.");
     process.exit(1);

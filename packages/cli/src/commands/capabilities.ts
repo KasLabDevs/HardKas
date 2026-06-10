@@ -1,6 +1,7 @@
 import { Command } from "commander";
 import pc from "picocolors";
 import { HARDKAS_VERSION, CURRENT_HASH_VERSION } from "@hardkas/artifacts";
+import { getOutput } from "../output.js";
 
 export interface HardKasCapabilities {
   version: string;
@@ -63,7 +64,7 @@ export function registerCapabilitiesCommand(program: Command) {
 
   capsCmd.hook("preAction", () => {
     if (!process.env.HARDKAS_EXPERIMENTAL) {
-      console.warn(
+      getOutput().warn(
         "\n⚠️  WARNING: 'capabilities' command is internal/experimental. Set HARDKAS_EXPERIMENTAL=1 to acknowledge.\n"
       );
     }
@@ -119,7 +120,7 @@ export function registerCapabilitiesCommand(program: Command) {
     };
 
     if (opts.json) {
-      console.log(JSON.stringify(caps, null, 2));
+      getOutput().writeJson(caps);
     } else {
       renderHumanReadable(caps);
     }
@@ -127,18 +128,18 @@ export function registerCapabilitiesCommand(program: Command) {
 }
 
 function renderHumanReadable(caps: HardKasCapabilities) {
-  console.log(
+  getOutput().writeLine(
     `${pc.bold("HardKAS")} ${pc.cyan("v" + caps.version)} — ${pc.green("Hardened Alpha")}\n`
   );
 
   const printGroup = (title: string, items: [string, string, boolean][]) => {
-    console.log(`  ${pc.bold(title)}`);
+    getOutput().writeLine(`  ${pc.bold(title)}`);
     for (const [name, desc, enabled] of items) {
       const icon = enabled ? pc.green("✅") : pc.red("❌");
       const label = enabled ? pc.white(name.padEnd(16)) : pc.dim(name.padEnd(16));
-      console.log(`    ${icon} ${label} ${pc.dim(desc)}`);
+      getOutput().writeLine(`    ${icon} ${label} ${pc.dim(desc)}`);
     }
-    console.log("");
+    getOutput().writeLine("");
   };
 
   printGroup("Core", [
@@ -185,20 +186,20 @@ function renderHumanReadable(caps: HardKasCapabilities) {
     ["Differential DAG validation", "", false]
   ]);
 
-  console.log(`  ${pc.bold("Trust Boundaries")}`);
-  console.log(
+  getOutput().writeLine(`  ${pc.bold("Trust Boundaries")}`);
+  getOutput().writeLine(
     `    Replay:      ${pc.dim(caps.trustBoundaries.replay.replace(/-/g, " "))}`
   );
-  console.log(
+  getOutput().writeLine(
     `    Artifacts:   ${pc.dim(caps.trustBoundaries.artifacts.replace(/-/g, " "))}`
   );
-  console.log(
+  getOutput().writeLine(
     `    Simulator:   ${pc.dim(caps.trustBoundaries.simulator.replace(/-/g, " "))}`
   );
-  console.log(
+  getOutput().writeLine(
     `    Query store: ${pc.dim(caps.trustBoundaries.queryStore.replace(/-/g, " "))}`
   );
-  console.log(
+  getOutput().writeLine(
     `    L2 bridge:   ${pc.dim(caps.trustBoundaries.l2Bridge.replace(/-/g, " "))}`
   );
 }

@@ -6,9 +6,15 @@ const report = await hardkas.programmability.inspect({
   path: "fixtures/toccata-v2/silver/op-true/spend-plan.json"
 });
 
-console.log(JSON.stringify({
-  app: "silver-escrow-policy",
-  artifactSchema: report.artifactSchema,
-  status: report.status,
-  claims: report.claims
-}, null, 2));
+console.log(
+  JSON.stringify(
+    {
+      app: "silver-escrow-policy",
+      artifactSchema: report.artifactSchema,
+      status: report.status,
+      claims: report.claims
+    },
+    null,
+    2
+  )
+);

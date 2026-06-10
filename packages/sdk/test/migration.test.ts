@@ -1,6 +1,12 @@
 import { describe, it, expect, beforeAll } from "vitest";
 import { Hardkas } from "../src/index.js";
-import { calculateContentHash, CURRENT_HASH_VERSION, generateMigrationReceipt, migrateArtifactPayload, MigrationRequiredError } from "@hardkas/artifacts";
+import {
+  calculateContentHash,
+  CURRENT_HASH_VERSION,
+  generateMigrationReceipt,
+  migrateArtifactPayload,
+  MigrationRequiredError
+} from "@hardkas/artifacts";
 import * as fs from "node:fs";
 import * as path from "node:path";
 import * as os from "node:os";
@@ -40,14 +46,21 @@ describe("Network-Agnostic Artifact Layer: Migration", () => {
         rootArtifactId: "unknown"
       }
     };
-    (oldArtifact as any).contentHash = calculateContentHash(oldArtifact, CURRENT_HASH_VERSION);
+    (oldArtifact as any).contentHash = calculateContentHash(
+      oldArtifact,
+      CURRENT_HASH_VERSION
+    );
     (oldArtifact as any).lineage.artifactId = (oldArtifact as any).contentHash;
     (oldArtifact as any).lineage.rootArtifactId = (oldArtifact as any).contentHash;
 
     const migratedResult = migrateArtifactPayload(oldArtifact, "1.0.0-alpha");
     expect(migratedResult.migrated).toBe(true);
 
-    const receipt = generateMigrationReceipt(oldArtifact, migratedResult.artifact, "mig-084-test");
+    const receipt = generateMigrationReceipt(
+      oldArtifact,
+      migratedResult.artifact,
+      "mig-084-test"
+    );
 
     // The receipt must be valid
     expect(receipt.schema).toBe("hardkas.migrationReceipt.v1");
@@ -55,7 +68,9 @@ describe("Network-Agnostic Artifact Layer: Migration", () => {
     expect(receipt.newHash).toBe(migratedResult.artifact.contentHash);
 
     // The new artifact's parent must be the old artifact (to avoid circular hashes)
-    expect((migratedResult.artifact as any).lineage.parentArtifactId).toBe((oldArtifact as any).contentHash);
+    expect((migratedResult.artifact as any).lineage.parentArtifactId).toBe(
+      (oldArtifact as any).contentHash
+    );
 
     // The receipt's parent must be the old artifact
     expect(receipt.lineage.parentArtifactId).toBe((oldArtifact as any).contentHash);
@@ -65,7 +80,9 @@ describe("Network-Agnostic Artifact Layer: Migration", () => {
     const receiptLineageOk = verifyLineage(receipt, oldArtifact, { strict: true });
     expect(receiptLineageOk.ok).toBe(true);
 
-    const artifactLineageOk = verifyLineage(migratedResult.artifact, oldArtifact, { strict: true });
+    const artifactLineageOk = verifyLineage(migratedResult.artifact, oldArtifact, {
+      strict: true
+    });
     expect(artifactLineageOk.ok).toBe(true);
   });
 
@@ -81,10 +98,10 @@ describe("Network-Agnostic Artifact Layer: Migration", () => {
       amountSompi: "100"
     };
     (v3Artifact as any).contentHash = calculateContentHash(v3Artifact, 3);
-    
+
     const { verifyArtifactIntegritySync } = await import("@hardkas/artifacts");
     const result = verifyArtifactIntegritySync(v3Artifact);
-    
+
     // Normal verify passes
     expect(result.ok).toBe(true);
     // But logs an info issue
@@ -103,13 +120,15 @@ describe("Network-Agnostic Artifact Layer: Migration", () => {
       amountSompi: "100"
     };
     (v3Artifact as any).contentHash = calculateContentHash(v3Artifact, 3);
-    
+
     const { verifyArtifactIntegritySync } = await import("@hardkas/artifacts");
     const result = verifyArtifactIntegritySync(v3Artifact, { strict: true });
-    
+
     // Strict verify fails
     expect(result.ok).toBe(false);
-    expect(result.issues.some((i: any) => i.code === "LEGACY_HASH_VERSION_UNSAFE")).toBe(true);
+    expect(result.issues.some((i: any) => i.code === "LEGACY_HASH_VERSION_UNSAFE")).toBe(
+      true
+    );
   });
 
   it("should fail with HASH_MISMATCH when audit metadata is mutated in v4", async () => {
@@ -121,19 +140,20 @@ describe("Network-Agnostic Artifact Layer: Migration", () => {
       mode: "simulated",
       lineage: {
         sequence: 1,
-        rootArtifactId: "0000000000000000000000000000000000000000000000000000000000000000",
+        rootArtifactId:
+          "0000000000000000000000000000000000000000000000000000000000000000",
         lineageId: "0000000000000000000000000000000000000000000000000000000000000000"
       }
     };
     (v4Artifact as any).contentHash = calculateContentHash(v4Artifact, 4);
-    
+
     // Mutate the audit-critical metadata (previously excluded in v3, now included in v4)
     const mutated = JSON.parse(JSON.stringify(v4Artifact));
     mutated.lineage.sequence = 100;
-    
+
     const { verifyArtifactIntegritySync } = await import("@hardkas/artifacts");
     const result = verifyArtifactIntegritySync(mutated, { strict: true });
-    
+
     // Fails due to HASH_MISMATCH because lineage is no longer completely excluded in v4
     expect(result.ok).toBe(false);
     expect(result.issues.some((i: any) => i.code === "HASH_MISMATCH")).toBe(true);

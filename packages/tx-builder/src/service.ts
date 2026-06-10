@@ -33,6 +33,7 @@ export interface TxPlanResult {
     selectedUtxos: number;
     selectionStrategy: "largest-first" | "consolidation-smallest-first";
     purpose?: "wallet-consolidation";
+    warnings?: string[];
   };
 }
 
@@ -64,14 +65,15 @@ export class TxPlanService {
       }
     }
 
-    const matureUtxos = virtualDaaScore !== undefined
-      ? rpcUtxos.filter((u) => {
-          if (!u.isCoinbase) return true;
-          const score = u.blockDaaScore;
-          if (score === undefined) return true;
-          return (virtualDaaScore! - score) >= this.coinbaseMaturity;
-        })
-      : rpcUtxos;
+    const matureUtxos =
+      virtualDaaScore !== undefined
+        ? rpcUtxos.filter((u) => {
+            if (!u.isCoinbase) return true;
+            const score = u.blockDaaScore;
+            if (score === undefined) return true;
+            return virtualDaaScore! - score >= this.coinbaseMaturity;
+          })
+        : rpcUtxos;
 
     const allFetchedUtxos = matureUtxos;
 
@@ -96,28 +98,35 @@ export class TxPlanService {
       selectedAmount += utxo.amountSompi;
       selectedInputsCount++;
 
-      const requiredTotal = request.amountSompi + (BigInt(selectedInputsCount) * marginFee);
+      const requiredTotal = request.amountSompi + BigInt(selectedInputsCount) * marginFee;
       if (selectedAmount >= requiredTotal) {
         break;
       }
-      
+
       if (selectedInputsCount >= HARD_LIMIT) {
         break;
       }
     }
 
     if (selectedAmount < request.amountSompi) {
-      throw new Error(`Insufficient funds: needed ${request.amountSompi} sompi but only found ${selectedAmount} sompi across ${selectedInputsCount} UTXOs.`);
+      throw new Error(
+        `Insufficient funds: needed ${request.amountSompi} sompi but only found ${selectedAmount} sompi across ${selectedInputsCount} UTXOs.`
+      );
     }
 
     if (selectedInputsCount > this.maxInputsPerTx) {
-      const err = new Error(`TOO_MANY_INPUTS_FOR_SINGLE_TX: Transaction requires ${selectedInputsCount} inputs to cover the amount, which exceeds the safe limit of ${this.maxInputsPerTx} inputs.\nHint: Run 'hardkas accounts consolidate' to merge dust UTXOs.`);
+      const err = new Error(
+        `TOO_MANY_INPUTS_FOR_SINGLE_TX: Transaction requires ${selectedInputsCount} inputs to cover the amount, which exceeds the safe limit of ${this.maxInputsPerTx} inputs.\nHint: Run 'hardkas accounts consolidate' to merge dust UTXOs.`
+      );
       (err as any).code = "TOO_MANY_INPUTS_FOR_SINGLE_TX";
       throw err;
     }
 
+    const warnings: string[] = [];
     if (selectedInputsCount >= this.warnInputs) {
-      console.warn(`⚠️  WARNING: Transaction requires ${selectedInputsCount} inputs. Consider running 'hardkas accounts consolidate'.`);
+      warnings.push(
+        `Transaction requires ${selectedInputsCount} inputs. Consider running 'hardkas accounts consolidate'.`
+      );
     }
 
     const builderPlan = buildPaymentPlan({
@@ -137,7 +146,8 @@ export class TxPlanService {
       utxoSelection: {
         totalUtxosSeen: allFetchedUtxos.length,
         selectedUtxos: selectedInputsCount,
-        selectionStrategy: "largest-first"
+        selectionStrategy: "largest-first",
+        warnings
       }
     };
   }
@@ -156,7 +166,9 @@ export class TxPlanService {
     const expectedFee = estimatedMass * feeRate;
 
     if (totalAmount <= expectedFee) {
-      throw new Error(`Consolidation failed: Total selected UTXO amount (${totalAmount}) is less than or equal to the estimated fee (${expectedFee}).`);
+      throw new Error(
+        `Consolidation failed: Total selected UTXO amount (${totalAmount}) is less than or equal to the estimated fee (${expectedFee}).`
+      );
     }
 
     const outputAmount = totalAmount - expectedFee;

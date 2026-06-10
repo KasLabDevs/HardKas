@@ -36,7 +36,13 @@ describe("programmability CLI", () => {
   });
 
   it("verifies the root programmability corpus", () => {
-    const result = runHardkas(["programmability", "corpus", "verify", "fixtures/toccata-v2", "--json"]);
+    const result = runHardkas([
+      "programmability",
+      "corpus",
+      "verify",
+      "fixtures/toccata-v2",
+      "--json"
+    ]);
     expect(result.status).toBe(0);
     const json = parseStdout(result);
     expect(json.status).toBe("PROGRAMMABILITY_CORPUS_PASS");
@@ -46,7 +52,14 @@ describe("programmability CLI", () => {
   });
 
   it("plans an app", () => {
-    const result = runHardkas(["programmability", "app", "plan", "--kind", "full-lab", "--json"]);
+    const result = runHardkas([
+      "programmability",
+      "app",
+      "plan",
+      "--kind",
+      "full-lab",
+      "--json"
+    ]);
     expect(result.status).toBe(0);
     const json = parseStdout(result);
     expect(json.status).toBe("PROGRAMMABILITY_APP_PLAN_READY");

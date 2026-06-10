@@ -11,8 +11,18 @@ const ignoreDirs = new Set([
 ]);
 
 const ignoreExtensions = new Set([
-  ".png", ".jpg", ".jpeg", ".gif", ".ico", ".svg",
-  ".pack", ".idx", ".log", ".DS_Store", ".db", ".lock"
+  ".png",
+  ".jpg",
+  ".jpeg",
+  ".gif",
+  ".ico",
+  ".svg",
+  ".pack",
+  ".idx",
+  ".log",
+  ".DS_Store",
+  ".db",
+  ".lock"
 ]);
 
 const SEARCH = "0.9.1-alpha";
@@ -33,7 +43,7 @@ function walkAndReplace(dir) {
     } else if (entry.isFile()) {
       const ext = path.extname(entry.name);
       if (ignoreExtensions.has(ext)) continue;
-      
+
       try {
         const content = fs.readFileSync(fullPath, "utf8");
         if (content.includes(SEARCH)) {

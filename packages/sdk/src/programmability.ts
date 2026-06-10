@@ -57,7 +57,10 @@ export interface ProgrammabilityInspectResult {
 export interface ProgrammabilityVerifyResult {
   ok: boolean;
   schema: "hardkas.programmability.verify.v1";
-  status: "PROGRAMMABILITY_VERIFY_PASS" | "PROGRAMMABILITY_VERIFY_FAIL" | "PROGRAMMABILITY_VERIFY_PARTIAL";
+  status:
+    | "PROGRAMMABILITY_VERIFY_PASS"
+    | "PROGRAMMABILITY_VERIFY_FAIL"
+    | "PROGRAMMABILITY_VERIFY_PARTIAL";
   kind: Exclude<ProgrammabilityKind, "full-lab">;
   path: string;
   sourceStatus?: string;
@@ -95,10 +98,16 @@ export interface ProgrammabilityAppPlan {
 
 export class HardkasProgrammability {
   public readonly corpus: {
-    verify: (options?: { path?: string; include?: Array<"silver" | "zk" | "vprogs"> }) => Promise<ProgrammabilityCorpusReport>;
+    verify: (options?: {
+      path?: string;
+      include?: Array<"silver" | "zk" | "vprogs">;
+    }) => Promise<ProgrammabilityCorpusReport>;
   };
   public readonly app: {
-    plan: (options?: { kind?: ProgrammabilityKind; template?: string }) => ProgrammabilityAppPlan;
+    plan: (options?: {
+      kind?: ProgrammabilityKind;
+      template?: string;
+    }) => ProgrammabilityAppPlan;
   };
 
   constructor(private sdk: Hardkas) {
@@ -123,7 +132,9 @@ export class HardkasProgrammability {
       return {
         ok: result.ok,
         schema: "hardkas.programmability.inspect.v1",
-        status: result.ok ? "PROGRAMMABILITY_ARTIFACT_INSPECTED" : "PROGRAMMABILITY_ARTIFACT_INVALID",
+        status: result.ok
+          ? "PROGRAMMABILITY_ARTIFACT_INSPECTED"
+          : "PROGRAMMABILITY_ARTIFACT_INVALID",
         kind: "zk",
         path: result.path,
         sourceStatus: result.status,
@@ -137,7 +148,9 @@ export class HardkasProgrammability {
       return {
         ok: result.ok,
         schema: "hardkas.programmability.inspect.v1",
-        status: result.ok ? "PROGRAMMABILITY_ARTIFACT_INSPECTED" : "PROGRAMMABILITY_ARTIFACT_INVALID",
+        status: result.ok
+          ? "PROGRAMMABILITY_ARTIFACT_INSPECTED"
+          : "PROGRAMMABILITY_ARTIFACT_INVALID",
         kind: "vprog",
         path: result.path,
         ...(result.artifactSchema ? { artifactSchema: result.artifactSchema } : {}),
@@ -160,7 +173,9 @@ export class HardkasProgrammability {
       return {
         ok: result.ok,
         schema: "hardkas.programmability.verify.v1",
-        status: result.ok ? "PROGRAMMABILITY_VERIFY_PASS" : "PROGRAMMABILITY_VERIFY_PARTIAL",
+        status: result.ok
+          ? "PROGRAMMABILITY_VERIFY_PASS"
+          : "PROGRAMMABILITY_VERIFY_PARTIAL",
         kind: "zk",
         path: result.path,
         sourceStatus: result.status,
@@ -174,7 +189,9 @@ export class HardkasProgrammability {
       return {
         ok: inspected.ok,
         schema: "hardkas.programmability.verify.v1",
-        status: inspected.ok ? "PROGRAMMABILITY_VERIFY_PASS" : "PROGRAMMABILITY_VERIFY_FAIL",
+        status: inspected.ok
+          ? "PROGRAMMABILITY_VERIFY_PASS"
+          : "PROGRAMMABILITY_VERIFY_FAIL",
         kind: "vprog",
         path: inspected.path,
         sourceStatus: inspected.status,
@@ -212,14 +229,59 @@ export class HardkasProgrammability {
     const manifest = readJson(manifestPath, issues);
 
     if (manifest) {
-      expectEqual(manifest.schema, "hardkas.toccataProgrammabilityCorpus.v1", issues, "PROGRAMMABILITY_CORPUS_SCHEMA_INVALID", manifestPath);
-      expectEqual(manifest.network, "simnet", issues, "PROGRAMMABILITY_CORPUS_NETWORK_INVALID", manifestPath);
-      expectEqual(manifest.profile, "toccata-v2", issues, "PROGRAMMABILITY_CORPUS_PROFILE_INVALID", manifestPath);
-      expectEqual(manifest.claims?.artifactCoherence, "READY_MATCH", issues, "PROGRAMMABILITY_CLAIM_INVALID", manifestPath);
-      expectEqual(manifest.claims?.runtimeOutcome, "PARTIAL", issues, "PROGRAMMABILITY_CLAIM_INVALID", manifestPath);
-      expectEqual(manifest.claims?.vmConsensusEquivalence, "NOT_CLAIMED", issues, "PROGRAMMABILITY_CLAIM_INVALID", manifestPath);
-      expectEqual(manifest.claims?.mainnet, "BLOCKED_BY_POLICY", issues, "PROGRAMMABILITY_CLAIM_INVALID", manifestPath);
-      if (!Array.isArray(manifest.expectedKnownLimitations) || !manifest.expectedKnownLimitations.includes("PARTIAL_VM_SIMULATION")) {
+      expectEqual(
+        manifest.schema,
+        "hardkas.toccataProgrammabilityCorpus.v1",
+        issues,
+        "PROGRAMMABILITY_CORPUS_SCHEMA_INVALID",
+        manifestPath
+      );
+      expectEqual(
+        manifest.network,
+        "simnet",
+        issues,
+        "PROGRAMMABILITY_CORPUS_NETWORK_INVALID",
+        manifestPath
+      );
+      expectEqual(
+        manifest.profile,
+        "toccata-v2",
+        issues,
+        "PROGRAMMABILITY_CORPUS_PROFILE_INVALID",
+        manifestPath
+      );
+      expectEqual(
+        manifest.claims?.artifactCoherence,
+        "READY_MATCH",
+        issues,
+        "PROGRAMMABILITY_CLAIM_INVALID",
+        manifestPath
+      );
+      expectEqual(
+        manifest.claims?.runtimeOutcome,
+        "PARTIAL",
+        issues,
+        "PROGRAMMABILITY_CLAIM_INVALID",
+        manifestPath
+      );
+      expectEqual(
+        manifest.claims?.vmConsensusEquivalence,
+        "NOT_CLAIMED",
+        issues,
+        "PROGRAMMABILITY_CLAIM_INVALID",
+        manifestPath
+      );
+      expectEqual(
+        manifest.claims?.mainnet,
+        "BLOCKED_BY_POLICY",
+        issues,
+        "PROGRAMMABILITY_CLAIM_INVALID",
+        manifestPath
+      );
+      if (
+        !Array.isArray(manifest.expectedKnownLimitations) ||
+        !manifest.expectedKnownLimitations.includes("PARTIAL_VM_SIMULATION")
+      ) {
         issues.push({
           code: "PROGRAMMABILITY_LIMITATION_NOT_DECLARED",
           message: "Root corpus must declare PARTIAL_VM_SIMULATION.",
@@ -233,18 +295,25 @@ export class HardkasProgrammability {
     let vprogs: "PASS" | "FAIL" | "SKIPPED" = "SKIPPED";
 
     if (include.has("silver")) {
-      const result = await this.sdk.corpus.verify(path.join(path.relative(this.sdk.cwd, root), "silver"));
+      const result = await this.sdk.corpus.verify(
+        path.join(path.relative(this.sdk.cwd, root), "silver")
+      );
       silver = result.ok ? "PASS" : "FAIL";
       issues.push(...result.issues);
     }
     if (include.has("zk")) {
-      const result = await this.sdk.zk.corpus.verify(path.join(path.relative(this.sdk.cwd, root), "zk"));
+      const result = await this.sdk.zk.corpus.verify(
+        path.join(path.relative(this.sdk.cwd, root), "zk")
+      );
       zk = result.ok ? "PASS" : "FAIL";
       issues.push(...result.issues);
     }
     if (include.has("vprogs")) {
-      const artifact = manifest?.components?.vprogs?.artifact ?? "vprogs/inspect-only-artifact.json";
-      const result = await this.sdk.vprogs.inspect(path.join(path.relative(this.sdk.cwd, root), artifact));
+      const artifact =
+        manifest?.components?.vprogs?.artifact ?? "vprogs/inspect-only-artifact.json";
+      const result = await this.sdk.vprogs.inspect(
+        path.join(path.relative(this.sdk.cwd, root), artifact)
+      );
       vprogs = result.ok ? "PASS" : "FAIL";
       issues.push(...result.issues);
     }
@@ -335,11 +404,15 @@ function inspectJsonArtifact(
   return {
     ok,
     schema: "hardkas.programmability.inspect.v1",
-    status: ok ? "PROGRAMMABILITY_ARTIFACT_INSPECTED" : "PROGRAMMABILITY_ARTIFACT_INVALID",
+    status: ok
+      ? "PROGRAMMABILITY_ARTIFACT_INSPECTED"
+      : "PROGRAMMABILITY_ARTIFACT_INVALID",
     kind,
     path: path.relative(workspaceRoot, resolved).replace(/\\/g, "/"),
     ...(artifact?.schema ? { artifactSchema: artifact.schema } : {}),
-    ...(artifact ? { contentHash: calculateContentHash(artifact, artifact.hashVersion ?? 4) } : {}),
+    ...(artifact
+      ? { contentHash: calculateContentHash(artifact, artifact.hashVersion ?? 4) }
+      : {}),
     claims: programmabilityClaims(),
     issues
   };
@@ -347,7 +420,11 @@ function inspectJsonArtifact(
 
 function readJson(filePath: string, issues: ProgrammabilityIssue[]): any | undefined {
   if (!fs.existsSync(filePath)) {
-    issues.push({ code: "PROGRAMMABILITY_FILE_MISSING", message: `Missing ${filePath}.`, file: filePath });
+    issues.push({
+      code: "PROGRAMMABILITY_FILE_MISSING",
+      message: `Missing ${filePath}.`,
+      file: filePath
+    });
     return undefined;
   }
   try {
@@ -370,7 +447,11 @@ function expectEqual(
   file: string
 ) {
   if (actual !== expected) {
-    issues.push({ code, message: `Expected ${String(expected)}, got ${String(actual)}.`, file });
+    issues.push({
+      code,
+      message: `Expected ${String(expected)}, got ${String(actual)}.`,
+      file
+    });
   }
 }
 
@@ -387,7 +468,8 @@ function commandsForKind(kind: ProgrammabilityKind): string[] {
     "hardkas programmability corpus verify fixtures/toccata-v2 --json"
   ];
   if (kind === "silver") return [...common, "hardkas silver inspect <artifact>"];
-  if (kind === "zk") return [...common, "hardkas zk corpus verify fixtures/toccata-v2/zk --json"];
+  if (kind === "zk")
+    return [...common, "hardkas zk corpus verify fixtures/toccata-v2/zk --json"];
   if (kind === "vprog") return [...common, "hardkas vprogs inspect <artifact> --json"];
   return [
     ...common,
@@ -398,9 +480,13 @@ function commandsForKind(kind: ProgrammabilityKind): string[] {
 }
 
 function sdkSurfacesForKind(kind: ProgrammabilityKind): string[] {
-  const common = ["hardkas.programmability.capabilities()", "hardkas.programmability.corpus.verify()"];
+  const common = [
+    "hardkas.programmability.capabilities()",
+    "hardkas.programmability.corpus.verify()"
+  ];
   if (kind === "silver") return [...common, "hardkas.silver.*"];
-  if (kind === "zk") return [...common, "hardkas.zk.proof.*", "hardkas.zk.corpus.verify()"];
+  if (kind === "zk")
+    return [...common, "hardkas.zk.proof.*", "hardkas.zk.corpus.verify()"];
   if (kind === "vprog") return [...common, "hardkas.vprogs.inspect()"];
   return [...common, "hardkas.silver.*", "hardkas.zk.*", "hardkas.vprogs.*"];
 }

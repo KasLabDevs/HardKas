@@ -243,7 +243,8 @@ export async function verifyZkProofLocal(
       issues: [
         {
           code: "RISC0_VERIFIER_UNAVAILABLE",
-          message: "RISC0 local receipt verification helper is not bundled in 0.9.1-alpha."
+          message:
+            "RISC0 local receipt verification helper is not bundled in 0.9.1-alpha."
         },
         {
           code: "RISC0_LOCAL_VERIFICATION_NOT_IMPLEMENTED",
@@ -254,7 +255,13 @@ export async function verifyZkProofLocal(
   }
 
   if (proofSystem !== "groth16") {
-    return unsupportedVerification(resolved, workspaceRoot, proofSystem, issues, manifest?.verifierAdapter);
+    return unsupportedVerification(
+      resolved,
+      workspaceRoot,
+      proofSystem,
+      issues,
+      manifest?.verifierAdapter
+    );
   }
 
   verifyGroth16Fixture(dir, manifest, issues);
@@ -267,8 +274,11 @@ export async function verifyZkProofLocal(
     status: ok ? "ZK_FIXTURE_COHERENCE_PASS" : "ZK_FIXTURE_COHERENCE_FAIL",
     experimental: true,
     summary: {
-      verifierAdapter: manifest?.verifierAdapter ?? "hardkas-groth16-fixture-coherence-v1",
-      contentHashes: issues.some((issue) => issue.code.includes("HASH")) ? "FAIL" : "PASS",
+      verifierAdapter:
+        manifest?.verifierAdapter ?? "hardkas-groth16-fixture-coherence-v1",
+      contentHashes: issues.some((issue) => issue.code.includes("HASH"))
+        ? "FAIL"
+        : "PASS",
       localVerification: ok ? "PASS" : "FAIL"
     },
     claims: zkClaims(),
@@ -286,14 +296,53 @@ export async function verifyZkCorpus(
   const manifest = readJson(manifestPath, issues);
 
   if (manifest) {
-    expectEqual(manifest.schema, "hardkas.zkCorpus.v1", issues, "ZK_CORPUS_MANIFEST_INVALID", manifestPath);
-    expectEqual(manifest.network, "simnet", issues, "ZK_NETWORK_UNSUPPORTED", manifestPath);
-    expectEqual(manifest.profile, "toccata-v2", issues, "ZK_PROFILE_UNSUPPORTED", manifestPath);
-    expectEqual(manifest.claims?.zkOnchainVerification, "NOT_CLAIMED", issues, "ZK_ONCHAIN_VERIFICATION_NOT_CLAIMED", manifestPath);
-    expectEqual(manifest.claims?.vmConsensusEquivalence, "NOT_CLAIMED", issues, "ZK_VM_CONSENSUS_CLAIM_INVALID", manifestPath);
-    expectEqual(manifest.claims?.mainnet, "BLOCKED_BY_POLICY", issues, "ZK_MAINNET_GUARD_INVALID", manifestPath);
+    expectEqual(
+      manifest.schema,
+      "hardkas.zkCorpus.v1",
+      issues,
+      "ZK_CORPUS_MANIFEST_INVALID",
+      manifestPath
+    );
+    expectEqual(
+      manifest.network,
+      "simnet",
+      issues,
+      "ZK_NETWORK_UNSUPPORTED",
+      manifestPath
+    );
+    expectEqual(
+      manifest.profile,
+      "toccata-v2",
+      issues,
+      "ZK_PROFILE_UNSUPPORTED",
+      manifestPath
+    );
+    expectEqual(
+      manifest.claims?.zkOnchainVerification,
+      "NOT_CLAIMED",
+      issues,
+      "ZK_ONCHAIN_VERIFICATION_NOT_CLAIMED",
+      manifestPath
+    );
+    expectEqual(
+      manifest.claims?.vmConsensusEquivalence,
+      "NOT_CLAIMED",
+      issues,
+      "ZK_VM_CONSENSUS_CLAIM_INVALID",
+      manifestPath
+    );
+    expectEqual(
+      manifest.claims?.mainnet,
+      "BLOCKED_BY_POLICY",
+      issues,
+      "ZK_MAINNET_GUARD_INVALID",
+      manifestPath
+    );
     for (const limitation of ZK_KNOWN_LIMITATIONS) {
-      if (!Array.isArray(manifest.expectedKnownLimitations) || !manifest.expectedKnownLimitations.includes(limitation)) {
+      if (
+        !Array.isArray(manifest.expectedKnownLimitations) ||
+        !manifest.expectedKnownLimitations.includes(limitation)
+      ) {
         issues.push({
           code: "ZK_LIMITATION_NOT_DECLARED",
           message: `ZK corpus must declare ${limitation}.`,
@@ -319,10 +368,22 @@ export async function verifyZkCorpus(
       if (inspect.proofSystem === "groth16") {
         const verified = await verifyZkProofLocal(fixturePath, workspaceRoot);
         issues.push(...verified.issues);
-        expectEqual(verified.status, fixture.expectedStatus, issues, "ZK_FIXTURE_STATUS_MISMATCH", fixturePath);
+        expectEqual(
+          verified.status,
+          fixture.expectedStatus,
+          issues,
+          "ZK_FIXTURE_STATUS_MISMATCH",
+          fixturePath
+        );
       } else if (inspect.proofSystem === "risc0") {
         const verified = await verifyZkProofLocal(fixturePath, workspaceRoot);
-        expectEqual(verified.status, fixture.expectedStatus, issues, "ZK_FIXTURE_STATUS_MISMATCH", fixturePath);
+        expectEqual(
+          verified.status,
+          fixture.expectedStatus,
+          issues,
+          "ZK_FIXTURE_STATUS_MISMATCH",
+          fixturePath
+        );
       }
     }
   } else if (manifest) {
@@ -344,7 +405,9 @@ export async function verifyZkCorpus(
       proofSystems: Array.from(proofSystems).sort(),
       fixturesChecked,
       artifactsChecked,
-      contentHashes: issues.some((issue) => issue.code.includes("HASH")) ? "FAIL" : "PASS",
+      contentHashes: issues.some((issue) => issue.code.includes("HASH"))
+        ? "FAIL"
+        : "PASS",
       localVerification: ok ? "PARTIAL" : "FAIL",
       knownLimitations: Array.isArray(manifest?.expectedKnownLimitations)
         ? manifest.expectedKnownLimitations
@@ -367,7 +430,10 @@ function verifyGroth16Fixture(dir: string, manifest: any, issues: ZkIssue[]) {
   const proofPath = path.join(dir, manifest.proof ?? "proof.json");
   const inputsPath = path.join(dir, manifest.publicInputs ?? "public-inputs.json");
   const keyPath = path.join(dir, manifest.verificationKey ?? "verification-key.json");
-  const metadataPath = path.join(dir, manifest.verifierMetadata ?? "verifier-metadata.json");
+  const metadataPath = path.join(
+    dir,
+    manifest.verifierMetadata ?? "verifier-metadata.json"
+  );
   const reportPath = path.join(dir, manifest.verifyReport ?? "verify-report.json");
   const proof = readJson(proofPath, issues);
   const publicInputs = readJson(inputsPath, issues);
@@ -386,13 +452,55 @@ function verifyGroth16Fixture(dir: string, manifest: any, issues: ZkIssue[]) {
   const publicInputsHash = calculateContentHash(publicInputs);
   const verificationKeyHash = calculateContentHash(verificationKey);
   const proofHash = calculateContentHash(proof);
-  expectEqual(proof.publicInputsHash, publicInputsHash, issues, "ZK_GROTH16_PUBLIC_INPUTS_HASH_MISMATCH", proofPath);
-  expectEqual(proof.verificationKeyHash, verificationKeyHash, issues, "ZK_GROTH16_VERIFICATION_KEY_HASH_MISMATCH", proofPath);
-  expectEqual(metadata.proofHash, proofHash, issues, "ZK_GROTH16_PROOF_HASH_MISMATCH", metadataPath);
-  expectEqual(metadata.publicInputsHash, publicInputsHash, issues, "ZK_GROTH16_PUBLIC_INPUTS_HASH_MISMATCH", metadataPath);
-  expectEqual(metadata.verificationKeyHash, verificationKeyHash, issues, "ZK_GROTH16_VERIFICATION_KEY_HASH_MISMATCH", metadataPath);
-  expectEqual(report.status, "ZK_FIXTURE_COHERENCE_PASS", issues, "ZK_GROTH16_REPORT_STATUS_INVALID", reportPath);
-  expectEqual(report.claims?.zkOnchainVerification, "NOT_CLAIMED", issues, "ZK_ONCHAIN_VERIFICATION_NOT_CLAIMED", reportPath);
+  expectEqual(
+    proof.publicInputsHash,
+    publicInputsHash,
+    issues,
+    "ZK_GROTH16_PUBLIC_INPUTS_HASH_MISMATCH",
+    proofPath
+  );
+  expectEqual(
+    proof.verificationKeyHash,
+    verificationKeyHash,
+    issues,
+    "ZK_GROTH16_VERIFICATION_KEY_HASH_MISMATCH",
+    proofPath
+  );
+  expectEqual(
+    metadata.proofHash,
+    proofHash,
+    issues,
+    "ZK_GROTH16_PROOF_HASH_MISMATCH",
+    metadataPath
+  );
+  expectEqual(
+    metadata.publicInputsHash,
+    publicInputsHash,
+    issues,
+    "ZK_GROTH16_PUBLIC_INPUTS_HASH_MISMATCH",
+    metadataPath
+  );
+  expectEqual(
+    metadata.verificationKeyHash,
+    verificationKeyHash,
+    issues,
+    "ZK_GROTH16_VERIFICATION_KEY_HASH_MISMATCH",
+    metadataPath
+  );
+  expectEqual(
+    report.status,
+    "ZK_FIXTURE_COHERENCE_PASS",
+    issues,
+    "ZK_GROTH16_REPORT_STATUS_INVALID",
+    reportPath
+  );
+  expectEqual(
+    report.claims?.zkOnchainVerification,
+    "NOT_CLAIMED",
+    issues,
+    "ZK_ONCHAIN_VERIFICATION_NOT_CLAIMED",
+    reportPath
+  );
 
   const coherenceDigest = calculateContentHash({
     proofSystem: "groth16",
@@ -402,8 +510,20 @@ function verifyGroth16Fixture(dir: string, manifest: any, issues: ZkIssue[]) {
     statementHash: publicInputs.statementHash,
     verifierAdapter: manifest.verifierAdapter
   });
-  expectEqual(metadata.coherenceDigest, coherenceDigest, issues, "ZK_GROTH16_COHERENCE_MISMATCH", metadataPath);
-  expectEqual(report.coherenceDigest, coherenceDigest, issues, "ZK_GROTH16_COHERENCE_MISMATCH", reportPath);
+  expectEqual(
+    metadata.coherenceDigest,
+    coherenceDigest,
+    issues,
+    "ZK_GROTH16_COHERENCE_MISMATCH",
+    metadataPath
+  );
+  expectEqual(
+    report.coherenceDigest,
+    coherenceDigest,
+    issues,
+    "ZK_GROTH16_COHERENCE_MISMATCH",
+    reportPath
+  );
 }
 
 function unsupportedVerification(
@@ -422,7 +542,9 @@ function unsupportedVerification(
     experimental: true,
     summary: {
       ...(verifierAdapter ? { verifierAdapter } : {}),
-      contentHashes: issues.some((issue) => issue.code.includes("HASH")) ? "FAIL" : "PASS",
+      contentHashes: issues.some((issue) => issue.code.includes("HASH"))
+        ? "FAIL"
+        : "PASS",
       localVerification: "FAIL"
     },
     claims: zkClaims(),
@@ -438,7 +560,11 @@ function unsupportedVerification(
 
 function resolveManifestPath(resolved: string, issues: ZkIssue[]): string | undefined {
   if (!fs.existsSync(resolved)) {
-    issues.push({ code: "ZK_PROOF_FILE_MISSING", message: `Missing ${resolved}.`, file: resolved });
+    issues.push({
+      code: "ZK_PROOF_FILE_MISSING",
+      message: `Missing ${resolved}.`,
+      file: resolved
+    });
     return undefined;
   }
   const stat = fs.statSync(resolved);
@@ -499,7 +625,11 @@ function verifyManifestHash(
 
 function readJson(filePath: string, issues: ZkIssue[]): any | undefined {
   if (!fs.existsSync(filePath)) {
-    issues.push({ code: "ZK_FILE_MISSING", message: `Missing ${filePath}.`, file: filePath });
+    issues.push({
+      code: "ZK_FILE_MISSING",
+      message: `Missing ${filePath}.`,
+      file: filePath
+    });
     return undefined;
   }
   try {

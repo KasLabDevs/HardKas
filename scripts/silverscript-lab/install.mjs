@@ -39,7 +39,12 @@ async function main() {
   // We check if cargo is in PATH, or if it exists in the default ~/.cargo/bin directory.
   let cargoCmd = "cargo";
   if (!commandExists("cargo")) {
-    const defaultCargoPath = path.join(process.env.USERPROFILE || "", ".cargo", "bin", "cargo.exe");
+    const defaultCargoPath = path.join(
+      process.env.USERPROFILE || "",
+      ".cargo",
+      "bin",
+      "cargo.exe"
+    );
     if (fs.existsSync(defaultCargoPath)) {
       cargoCmd = `"${defaultCargoPath}"`;
     } else {
@@ -50,11 +55,13 @@ async function main() {
   }
 
   const repoDir = path.join(workDir, "silverscript");
-  
+
   if (!fs.existsSync(repoDir)) {
     console.log(`  \x1b[2mCloning kaspanet/silverscript...\x1b[0m`);
     try {
-      execSync(`git clone https://github.com/kaspanet/silverscript.git ${repoDir}`, { stdio: "inherit" });
+      execSync(`git clone https://github.com/kaspanet/silverscript.git ${repoDir}`, {
+        stdio: "inherit"
+      });
     } catch (e) {
       console.log(`  \x1b[31m❌\x1b[0m Failed to clone repo.`);
       console.log(`  \x1b[31mSILVERSCRIPT_BUILD_FAILED\x1b[0m`);
@@ -76,16 +83,16 @@ async function main() {
 
   const binaryPath = path.join(repoDir, "target", "release", "silverc.exe");
   const linuxBinaryPath = path.join(repoDir, "target", "release", "silverc");
-  
+
   let targetBinary = binaryPath;
   if (!fs.existsSync(targetBinary)) {
-      if (fs.existsSync(linuxBinaryPath)) {
-          targetBinary = linuxBinaryPath;
-      } else {
-          console.log(`  \x1b[31m❌\x1b[0m Compiled binary not found at expected location.`);
-          console.log(`  \x1b[31mSILVERSCRIPT_BUILD_FAILED\x1b[0m`);
-          process.exit(1);
-      }
+    if (fs.existsSync(linuxBinaryPath)) {
+      targetBinary = linuxBinaryPath;
+    } else {
+      console.log(`  \x1b[31m❌\x1b[0m Compiled binary not found at expected location.`);
+      console.log(`  \x1b[31mSILVERSCRIPT_BUILD_FAILED\x1b[0m`);
+      process.exit(1);
+    }
   }
 
   // Copy to a known path so HardKAS can find it reliably without relying on PATH

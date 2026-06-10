@@ -34,10 +34,12 @@ export class HardkasQuery {
   async sync(options?: { force?: boolean }): Promise<any> {
     const fs = await import("node:fs");
     const path = await import("node:path");
-    
+
     const hardkasDir = path.join(this.sdk.workspace.root, ".hardkas");
     if (!fs.existsSync(hardkasDir)) {
-      throw new Error("Workspace not initialized. Run hardkas init or Hardkas.create({ autoBootstrap:true }).");
+      throw new Error(
+        "Workspace not initialized. Run hardkas init or Hardkas.create({ autoBootstrap:true })."
+      );
     }
 
     let HardkasStore: any, HardkasIndexer: any;
@@ -46,14 +48,16 @@ export class HardkasQuery {
       HardkasStore = qs.HardkasStore;
       HardkasIndexer = qs.HardkasIndexer;
     } catch (e) {
-      throw new Error("Query store backend unavailable. Install @hardkas/query-store or run query.store.rebuild.");
+      throw new Error(
+        "Query store backend unavailable. Install @hardkas/query-store or run query.store.rebuild."
+      );
     }
 
     const { withLock } = await import("@hardkas/core");
-    
+
     const dbPath = path.join(hardkasDir, "store.db");
     const store = new HardkasStore({ dbPath });
-    
+
     let stats: any;
     try {
       await withLock(
@@ -67,15 +71,20 @@ export class HardkasQuery {
           store.connect({ autoMigrate: true });
           const indexer = new HardkasIndexer(store.getDatabase());
           if (options?.force) {
-             stats = await indexer.rebuild();
+            stats = await indexer.rebuild();
           } else {
-             stats = await indexer.sync();
+            stats = await indexer.sync();
           }
         }
       );
     } catch (e: any) {
-      if (e.message?.includes("SQLITE") || e.message?.includes("Cannot read properties")) {
-        throw new Error("Query store database is not configured correctly or corrupted. Try running query.sync({ force: true }).");
+      if (
+        e.message?.includes("SQLITE") ||
+        e.message?.includes("Cannot read properties")
+      ) {
+        throw new Error(
+          "Query store database is not configured correctly or corrupted. Try running query.sync({ force: true })."
+        );
       }
       throw e;
     }
@@ -85,17 +94,22 @@ export class HardkasQuery {
   /**
    * Fetches events from the query store.
    */
-  async events(filter?: { domain?: string; kind?: string; correlationId?: string; artifactId?: string }): Promise<readonly EventEnvelope[]> {
+  async events(filter?: {
+    domain?: string;
+    kind?: string;
+    correlationId?: string;
+    artifactId?: string;
+  }): Promise<readonly EventEnvelope[]> {
     const engine = await this.getEngine();
     const { createQueryRequest } = await import("@hardkas/query");
-    
+
     const filters = [];
     if (filter) {
       for (const [k, v] of Object.entries(filter)) {
         if (v) filters.push({ field: k, op: "eq", value: v });
       }
     }
-    
+
     const request = createQueryRequest({
       domain: "events",
       op: "list",

@@ -1,4 +1,4 @@
-// SAFETY_LEVEL: SIMULATION_ONLY
+﻿// SAFETY_LEVEL: SIMULATION_ONLY
 
 import fs from "node:fs";
 import path from "node:path";
@@ -88,7 +88,7 @@ export async function runTortureMatrix(options: TortureMatrixOptions) {
     } catch (e) {} // Clear before matrix
   }
 
-  UI.info(`\n${pc.bold(pc.cyan("⚡ HardKAS Torture Matrix OS ⚡"))}`);
+  UI.info(`\n${pc.bold(pc.cyan("âš¡ HardKAS Torture Matrix OS âš¡"))}`);
   UI.info(`  ${pc.dim("Global Seed:")}  ${pc.yellow(seed)}`);
   UI.info(`  ${pc.dim("Iterations:")}   ${pc.yellow(iterations)}`);
   UI.info(
@@ -156,7 +156,11 @@ export async function runTortureMatrix(options: TortureMatrixOptions) {
     const originalConsoleError = console.error;
     if (!options.debugStack) {
       console.error = (...args: any[]) => {
-        if (args.length > 0 && typeof args[0] === 'string' && args[0].startsWith("DEBUG WORKFLOW ERROR")) {
+        if (
+          args.length > 0 &&
+          typeof args[0] === "string" &&
+          args[0].startsWith("DEBUG WORKFLOW ERROR")
+        ) {
           return; // swallow the expected error and its associated stacktrace
         }
         originalConsoleError(...args);
@@ -276,7 +280,11 @@ export async function runTortureMatrix(options: TortureMatrixOptions) {
     }
 
     const eventSeverity =
-      status === "FAILED_CASE" ? "critical" : item.iteration % 10 === 0 ? "elevated" : "nominal";
+      status === "FAILED_CASE"
+        ? "critical"
+        : item.iteration % 10 === 0
+          ? "elevated"
+          : "nominal";
 
     const telemetryDir = path.join(process.cwd(), ".hardkas", "telemetry");
     if (!fs.existsSync(telemetryDir)) {
@@ -341,7 +349,7 @@ export async function runTortureMatrix(options: TortureMatrixOptions) {
 
     // Print progress
     const statusText = status === "pass" ? pc.green("PASS") : pc.red("FAIL");
-    const indicator = status === "pass" ? pc.green("✓") : pc.red("✗");
+    const indicator = status === "pass" ? pc.green("âœ“") : pc.red("âœ—");
 
     UI.info(
       `  ${indicator} [${pc.cyan(item.caseId)}] [${pc.blue(bucket.name.padEnd(28))}] -> ${statusText} ${pc.dim(`(${duration}ms)`)}`
@@ -366,7 +374,7 @@ export async function runTortureMatrix(options: TortureMatrixOptions) {
   }
 
   // 2. Report Summarization
-  UI.info(`\n${pc.bold("📊 Matrix Report Summary")}`);
+  UI.info(`\n${pc.bold("ðŸ“Š Matrix Report Summary")}`);
   UI.info(`  Total Cases: ${pc.yellow(results.length)}`);
   UI.info(`  Passed:      ${pc.green(passedCount)}`);
   UI.info(`  Failed:      ${pc.red(failedCount)}`);
@@ -398,7 +406,7 @@ export async function runTortureMatrix(options: TortureMatrixOptions) {
   }
 
   if (failedCount > 0) {
-    UI.info(`\n${pc.bold(pc.red("❌ Failed Cases & Replay Instructions:"))}`);
+    UI.info(`\n${pc.bold(pc.red("âŒ Failed Cases & Replay Instructions:"))}`);
     for (const r of results) {
       if (r.status === "FAILED_CASE") {
         UI.info(
@@ -408,7 +416,7 @@ export async function runTortureMatrix(options: TortureMatrixOptions) {
       }
     }
   } else {
-    UI.info(`\n  ${pc.bold(pc.green("✨ ALL SEMANTIC INVARIANTS SATISFIED! ✨"))}`);
+    UI.info(`\n  ${pc.bold(pc.green("âœ¨ ALL SEMANTIC INVARIANTS SATISFIED! âœ¨"))}`);
   }
 
   // 3. Output Telemetry Heatmap
@@ -431,7 +439,7 @@ export async function runTortureMatrix(options: TortureMatrixOptions) {
         typeAnomalies[evType] = (typeAnomalies[evType] || 0) + 1;
       }
 
-      UI.info(`\n${pc.bold(pc.cyan("🌡️  Environment Telemetry Heatmap"))}`);
+      UI.info(`\n${pc.bold(pc.cyan("ðŸŒ¡ï¸  Environment Telemetry Heatmap"))}`);
       UI.info(`  Total Anomalies / Near Misses: ${pc.yellow(events.length)}`);
 
       UI.info(`\n  ${pc.bold("Top Anomaly Types:")}`);
@@ -446,7 +454,7 @@ export async function runTortureMatrix(options: TortureMatrixOptions) {
         UI.info(`    - ${pc.blue(bName.padEnd(28))}: ${pc.yellow(count)}`);
       }
     } catch (e) {
-      UI.info(`\n⚠️  Failed to parse telemetry: ${e}`);
+      UI.info(`\nâš ï¸  Failed to parse telemetry: ${e}`);
     }
   }
 
@@ -479,9 +487,9 @@ export async function runTortureMatrix(options: TortureMatrixOptions) {
     };
 
     fs.writeFileSync(reportPath, JSON.stringify(finalReport, null, 2), "utf-8");
-    UI.info(`\n💾 Saved machine-readable JSON report to: ${pc.cyan(reportPath)}`);
+    UI.info(`\nðŸ’¾ Saved machine-readable JSON report to: ${pc.cyan(reportPath)}`);
   } catch (err: any) {
-    UI.info(`\n⚠️  Failed to save JSON report: ${err.message}`);
+    UI.info(`\nâš ï¸  Failed to save JSON report: ${err.message}`);
   }
 }
 
@@ -489,7 +497,7 @@ export async function runTortureReplay(options: TortureReplayOptions) {
   const seed = options.seed;
   const targetCaseId = options.caseId;
 
-  UI.info(`\n${pc.bold(pc.magenta("🔄 Replaying HardKAS Torture Case 🔄"))}`);
+  UI.info(`\n${pc.bold(pc.magenta("ðŸ”„ Replaying HardKAS Torture Case ðŸ”„"))}`);
   UI.info(`  ${pc.dim("Global Seed:")}  ${pc.yellow(seed)}`);
   UI.info(`  ${pc.dim("Target CaseId:")} ${pc.cyan(targetCaseId)}`);
 
@@ -520,7 +528,7 @@ export async function runTortureReplay(options: TortureReplayOptions) {
   try {
     const runResult = await bucket.run(ctx);
     const duration = Date.now() - startTime;
-    UI.info(`\n${pc.bold(pc.green("✓ CASE REPLAY SUCCESSFUL"))}`);
+    UI.info(`\n${pc.bold(pc.green("âœ“ CASE REPLAY SUCCESSFUL"))}`);
     UI.info(`  ${pc.dim("Flow:")}               ${pc.green(runResult.flow)}`);
     UI.info(`  ${pc.dim("Mutation:")}           ${pc.green(runResult.mutation)}`);
     UI.info(
@@ -529,11 +537,16 @@ export async function runTortureReplay(options: TortureReplayOptions) {
     UI.info(`  ${pc.dim("Duration:")}           ${duration}ms`);
   } catch (err: any) {
     const duration = Date.now() - startTime;
-    UI.info(`\n${pc.bold(pc.red("❌ CASE REPLAY INVARIANT VIOLATED"))}`);
+    UI.info(`\n${pc.bold(pc.red("âŒ CASE REPLAY INVARIANT VIOLATED"))}`);
     UI.info(`  ${pc.dim("Error Message:")}      ${pc.red(err.message || String(err))}`);
     UI.info(`  ${pc.dim("Stack Trace:")}`);
     console.error(err);
     UI.info(`  ${pc.dim("Duration:")}           ${duration}ms`);
-    process.exitCode = 1;
+    const { HardkasCliError } = await import("../cli-errors.js");
+    throw new HardkasCliError(
+      "TORTURE_REPLAY_FAILED",
+      "Case replay invariant violated.",
+      { exitCode: 1 }
+    );
   }
 }

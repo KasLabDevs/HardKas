@@ -53,10 +53,14 @@ function runPnpm(args) {
   } catch (error) {
     if (error.code !== "ENOENT") throw error;
     if (process.platform === "win32") {
-      return execFileSync("cmd.exe", ["/d", "/s", "/c", ["npx.cmd", "pnpm@9.15.4", ...args].join(" ")], {
-        cwd: root,
-        stdio: "inherit"
-      });
+      return execFileSync(
+        "cmd.exe",
+        ["/d", "/s", "/c", ["npx.cmd", "pnpm@9.15.4", ...args].join(" ")],
+        {
+          cwd: root,
+          stdio: "inherit"
+        }
+      );
     }
     return execFileSync("npx", ["pnpm@9.15.4", ...args], { cwd: root, stdio: "inherit" });
   }
@@ -75,7 +79,8 @@ function writeReport(status, details = {}) {
 }
 
 function latestFile(cwd, predicate) {
-  const matches = fs.readdirSync(cwd)
+  const matches = fs
+    .readdirSync(cwd)
     .filter(predicate)
     .map((name) => ({ name, mtimeMs: fs.statSync(path.join(cwd, name)).mtimeMs }))
     .sort((a, b) => b.mtimeMs - a.mtimeMs);
@@ -94,7 +99,9 @@ async function ensureOpTrueCompileArtifact() {
 
   if (fs.existsSync(artifactPath)) return artifactPath;
 
-  const artifacts = await import(pathToFileURL(path.join(root, "packages", "artifacts", "dist", "index.js")));
+  const artifacts = await import(
+    pathToFileURL(path.join(root, "packages", "artifacts", "dist", "index.js"))
+  );
   const { createHash } = await import("node:crypto");
   fs.writeFileSync(sourcePath, source, "utf8");
 
@@ -112,7 +119,9 @@ async function ensureOpTrueCompileArtifact() {
     compilerVersion: "toccata-baseline",
     compilerCommand: "manual OP_TRUE fixture",
     compiledScriptHex: "51",
-    compiledScriptHash: createHash("sha256").update(Buffer.from("51", "hex")).digest("hex"),
+    compiledScriptHash: createHash("sha256")
+      .update(Buffer.from("51", "hex"))
+      .digest("hex"),
     abi: {},
     network: "simnet",
     assumptions: ["toccata-v2", "mainnet-disabled", "manual-op-true-fixture"]
@@ -125,7 +134,11 @@ async function ensureOpTrueCompileArtifact() {
 
 function mineBriefly(address) {
   try {
-    tryDocker(["image", "inspect", "hardkas/stratum-bridge:v2.0.0-local-simnet-unsynced"]);
+    tryDocker([
+      "image",
+      "inspect",
+      "hardkas/stratum-bridge:v2.0.0-local-simnet-unsynced"
+    ]);
     try {
       tryDocker(["rm", "-f", "hardkas-toccata-stratum-v2"]);
     } catch {}
@@ -193,45 +206,99 @@ async function main() {
   runNode(["run-real-node.mjs"], { cwd: realNodeDir, stdio: "inherit" });
   record("standard tx lifecycle", "PASS");
 
-  const accounts = JSON.parse(fs.readFileSync(path.join(realNodeDir, ".hardkas", "accounts.real.json"), "utf8"));
+  const accounts = JSON.parse(
+    fs.readFileSync(path.join(realNodeDir, ".hardkas", "accounts.real.json"), "utf8")
+  );
   const bob = accounts.accounts.find((account) => account.name.startsWith("fresh_bob"));
-  if (!bob?.privateKey || !bob?.address) throw new Error("fresh_bob account missing after real-node gauntlet");
+  if (!bob?.privateKey || !bob?.address)
+    throw new Error("fresh_bob account missing after real-node gauntlet");
 
   const compileArtifact = await ensureOpTrueCompileArtifact();
   runHardkas(["silver", "verify", compileArtifact], { cwd: realNodeDir });
   record("silver compile fixture verify", "PASS");
 
   const beforeDeployPlans = new Set(fs.readdirSync(realNodeDir));
-  runHardkas(["silver", "deploy-plan", "silver-manual-optrue.json", "--from", bob.name, "--amount", "1", "--network", "simnet"], { cwd: realNodeDir });
-  const deployPlan = latestFile(realNodeDir, (name) => name.startsWith("silverdeployplan-") && name.endsWith(".json") && !beforeDeployPlans.has(name));
+  runHardkas(
+    [
+      "silver",
+      "deploy-plan",
+      "silver-manual-optrue.json",
+      "--from",
+      bob.name,
+      "--amount",
+      "1",
+      "--network",
+      "simnet"
+    ],
+    { cwd: realNodeDir }
+  );
+  const deployPlan = latestFile(
+    realNodeDir,
+    (name) =>
+      name.startsWith("silverdeployplan-") &&
+      name.endsWith(".json") &&
+      !beforeDeployPlans.has(name)
+  );
   record("silver deploy-plan", "PASS", { artifact: deployPlan });
 
-  runHardkas(["silver", "deploy", deployPlan, "--private-key", bob.privateKey], { cwd: realNodeDir });
-  const deployArtifact = latestFile(realNodeDir, (name) => name.startsWith("silverdeploy-") && name.endsWith(".json"));
+  runHardkas(["silver", "deploy", deployPlan, "--private-key", bob.privateKey], {
+    cwd: realNodeDir
+  });
+  const deployArtifact = latestFile(
+    realNodeDir,
+    (name) => name.startsWith("silverdeploy-") && name.endsWith(".json")
+  );
   record("silver deploy real", "PASS", { artifact: deployArtifact });
 
   mineBriefly(bob.address);
   record("miner confirmation after deploy", "PASS");
 
   const argsPath = path.join(realNodeDir, "args-empty.json");
-  if (!fs.existsSync(argsPath)) fs.writeFileSync(argsPath, '{\n  "args": []\n}\n', "utf8");
-  runHardkas(["silver", "spend-plan", deployArtifact, "--args", "args-empty.json", "--to", bob.address], { cwd: realNodeDir });
-  const spendPlan = latestFile(realNodeDir, (name) => name.startsWith("silverspendplan-") && name.endsWith(".json"));
+  if (!fs.existsSync(argsPath))
+    fs.writeFileSync(argsPath, '{\n  "args": []\n}\n', "utf8");
+  runHardkas(
+    [
+      "silver",
+      "spend-plan",
+      deployArtifact,
+      "--args",
+      "args-empty.json",
+      "--to",
+      bob.address
+    ],
+    { cwd: realNodeDir }
+  );
+  const spendPlan = latestFile(
+    realNodeDir,
+    (name) => name.startsWith("silverspendplan-") && name.endsWith(".json")
+  );
   record("silver spend-plan", "PASS", { artifact: spendPlan });
 
   runHardkas(["silver", "spend", spendPlan], { cwd: realNodeDir });
-  const realReceipt = latestFile(realNodeDir, (name) => name.startsWith("silverreceipt-") && name.endsWith(".json"));
+  const realReceipt = latestFile(
+    realNodeDir,
+    (name) => name.startsWith("silverreceipt-") && name.endsWith(".json")
+  );
   record("silver spend real", "PASS", { artifact: realReceipt });
 
   mineBriefly(bob.address);
   record("miner confirmation after spend", "PASS");
 
   runHardkas(["silver", "simulate", "deploy", deployPlan], { cwd: realNodeDir });
-  const deploySim = latestFile(realNodeDir, (name) => name.startsWith("silverdeploysim-") && name.endsWith(".json"));
+  const deploySim = latestFile(
+    realNodeDir,
+    (name) => name.startsWith("silverdeploysim-") && name.endsWith(".json")
+  );
 
-  const artifacts = await import(pathToFileURL(path.join(root, "packages", "artifacts", "dist", "index.js")));
-  const realSpendPlan = JSON.parse(fs.readFileSync(path.join(realNodeDir, spendPlan), "utf8"));
-  const deploySimArtifact = JSON.parse(fs.readFileSync(path.join(realNodeDir, deploySim), "utf8"));
+  const artifacts = await import(
+    pathToFileURL(path.join(root, "packages", "artifacts", "dist", "index.js"))
+  );
+  const realSpendPlan = JSON.parse(
+    fs.readFileSync(path.join(realNodeDir, spendPlan), "utf8")
+  );
+  const deploySimArtifact = JSON.parse(
+    fs.readFileSync(path.join(realNodeDir, deploySim), "utf8")
+  );
   delete realSpendPlan.contentHash;
   delete realSpendPlan.artifactId;
   realSpendPlan.deployArtifactHash = deploySimArtifact.contentHash;
@@ -240,13 +307,22 @@ async function main() {
   realSpendPlan.contentHash = artifacts.calculateContentHash(realSpendPlan, 4);
   realSpendPlan.artifactId = `silverspendplan-${realSpendPlan.contentHash.substring(0, 16)}`;
   const simulatedSpendPlan = `${realSpendPlan.artifactId}.json`;
-  await artifacts.writeArtifact(path.join(realNodeDir, simulatedSpendPlan), realSpendPlan);
+  await artifacts.writeArtifact(
+    path.join(realNodeDir, simulatedSpendPlan),
+    realSpendPlan
+  );
 
   runHardkas(["silver", "simulate", "spend", simulatedSpendPlan], { cwd: realNodeDir });
-  const spendSim = latestFile(realNodeDir, (name) => name.startsWith("silverspendsim-") && name.endsWith(".json"));
+  const spendSim = latestFile(
+    realNodeDir,
+    (name) => name.startsWith("silverspendsim-") && name.endsWith(".json")
+  );
   record("silver simulate deploy/spend", "PASS", { deploySim, spendSim });
 
-  const compareOut = runHardkas(["silver", "simulate", "compare", "--simulated", spendSim, "--docker", realReceipt], { cwd: realNodeDir });
+  const compareOut = runHardkas(
+    ["silver", "simulate", "compare", "--simulated", spendSim, "--docker", realReceipt],
+    { cwd: realNodeDir }
+  );
   if (compareOut.includes("SILVERSCRIPT_SIMULATION_MATCH")) {
     record("simulator/docker compare", "PASS", {
       compareMode: "artifact-coherence",
@@ -255,7 +331,9 @@ async function main() {
         : undefined
     });
   } else if (compareOut.includes("PARTIAL_VM_SIMULATION")) {
-    record("simulator/docker compare", "WARN", { expectedKnownLimitation: "PARTIAL_VM_SIMULATION" });
+    record("simulator/docker compare", "WARN", {
+      expectedKnownLimitation: "PARTIAL_VM_SIMULATION"
+    });
   } else {
     throw new Error(`Unexpected simulator compare output:\n${compareOut}`);
   }
@@ -264,7 +342,20 @@ async function main() {
   record("toccata golden corpus verify", "PASS", { path: "fixtures/toccata-v2/silver" });
 
   try {
-    runHardkas(["silver", "deploy-plan", "silver-manual-optrue.json", "--from", bob.name, "--amount", "1", "--network", "mainnet"], { cwd: realNodeDir });
+    runHardkas(
+      [
+        "silver",
+        "deploy-plan",
+        "silver-manual-optrue.json",
+        "--from",
+        bob.name,
+        "--amount",
+        "1",
+        "--network",
+        "mainnet"
+      ],
+      { cwd: realNodeDir }
+    );
     throw new Error("Mainnet guard did not fail");
   } catch (error) {
     const output = `${error.stdout || ""}${error.stderr || ""}${error.message || ""}`;

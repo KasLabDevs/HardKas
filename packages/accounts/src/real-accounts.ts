@@ -166,13 +166,19 @@ export function validateAddressPrefix(address: string): void {
   const validPrefixes = ["kaspa:", "kaspatest:", "kaspasim:"];
   const hasValidPrefix = validPrefixes.some((prefix) => address.startsWith(prefix));
   if (!hasValidPrefix) {
-    const err = new Error(`HARDKAS_INVALID_ADDRESS: Invalid address '${address}'. Must start with one of: ${validPrefixes.join(", ")}`);
+    const err = new Error(
+      `HARDKAS_INVALID_ADDRESS: Invalid address '${address}'. Must start with one of: ${validPrefixes.join(", ")}`
+    );
     (err as any).code = "HARDKAS_INVALID_ADDRESS";
     throw err;
   }
 }
 
-export function validateAddressNetwork(address: string, networkId: string, allowMainnet?: boolean): void {
+export function validateAddressNetwork(
+  address: string,
+  networkId: string,
+  allowMainnet?: boolean
+): void {
   // Simulated internal addresses skip validation
   if (address.startsWith("kaspa:sim_")) {
     return;
@@ -185,7 +191,11 @@ export function validateAddressNetwork(address: string, networkId: string, allow
     expectedPrefix = "kaspa:";
   } else if (networkId === "testnet-10" || networkId === "testnet-11") {
     expectedPrefix = "kaspatest:";
-  } else if (networkId === "simnet" || networkId === "devnet" || networkId === "simulated") {
+  } else if (
+    networkId === "simnet" ||
+    networkId === "devnet" ||
+    networkId === "simulated"
+  ) {
     expectedPrefix = "kaspasim:";
   } else {
     // Unknown network, fallback to default validation
@@ -198,12 +208,13 @@ export function validateAddressNetwork(address: string, networkId: string, allow
   }
 
   if (!address.startsWith(expectedPrefix)) {
-    const err = new Error(`NETWORK_ADDRESS_MISMATCH: Address '${address}' does not match the expected prefix '${expectedPrefix}' for network '${networkId}'.`);
+    const err = new Error(
+      `NETWORK_ADDRESS_MISMATCH: Address '${address}' does not match the expected prefix '${expectedPrefix}' for network '${networkId}'.`
+    );
     (err as any).code = "NETWORK_ADDRESS_MISMATCH";
     throw err;
   }
 }
-
 
 export function importRealDevAccount(
   store: RealAccountStore,

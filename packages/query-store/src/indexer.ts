@@ -423,8 +423,9 @@ export class HardkasIndexer {
           verification.issues.forEach((issue: any) => {
             let mappedCode = issue.code;
             if (mappedCode === "HASH_MISMATCH") mappedCode = "ARTIFACT_HASH_MISMATCH";
-            if (mappedCode === "MISSING_CONTENT_HASH") mappedCode = "ARTIFACT_SCHEMA_INVALID";
-            
+            if (mappedCode === "MISSING_CONTENT_HASH")
+              mappedCode = "ARTIFACT_SCHEMA_INVALID";
+
             const corruptionIssue: CorruptionIssue = {
               code: mappedCode as CorruptionCode,
               severity: issue.severity === "warning" ? "warning" : "error",

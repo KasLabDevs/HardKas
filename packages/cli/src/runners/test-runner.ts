@@ -1,4 +1,4 @@
-import { UI } from "../ui.js";
+﻿import { UI } from "../ui.js";
 import path from "node:path";
 import fs from "node:fs/promises";
 import { Hardkas } from "@hardkas/sdk";
@@ -81,8 +81,12 @@ export async function runTest(options: TestRunnerOptions): Promise<void> {
         UI.warning("Vitest is not installed in this project.");
         UI.info("Run 'pnpm add -D vitest' to enable real test execution.");
         UI.divider();
-        UI.info("Fallback: No real tests were executed because the engine is missing.");
-        process.exit(1);
+        const { HardkasCliError } = await import("../cli-errors.js");
+        throw new HardkasCliError(
+          "VITEST_MISSING",
+          "Fallback: No real tests were executed because the engine is missing.",
+          { exitCode: 1 }
+        );
       }
     }
     throw e;

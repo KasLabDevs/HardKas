@@ -29,7 +29,7 @@ describe("Metadata Propagation and Heritage Tests", () => {
       to: "bob",
       amount: "10"
     });
-    
+
     // Inject metadata manually to bypass reference checks during tests
     const plan = {
       ...planObj,
@@ -57,11 +57,15 @@ describe("Metadata Propagation and Heritage Tests", () => {
 
     // 4. mutate assumptionLevel in signed => HASH_MISMATCH
     const mutatedAssumption = { ...signed, assumptionLevel: "hacked" } as any;
-    await expect(sdk.artifacts.verify(mutatedAssumption, { strict: false })).rejects.toThrow(/HASH_MISMATCH/);
+    await expect(
+      sdk.artifacts.verify(mutatedAssumption, { strict: false })
+    ).rejects.toThrow(/HASH_MISMATCH/);
 
     // 5. mutate workflowId in signed => HASH_MISMATCH
     const mutatedWf = { ...signed, workflowId: "wf_hacked" } as any;
-    await expect(sdk.artifacts.verify(mutatedWf, { strict: false })).rejects.toThrow(/HASH_MISMATCH/);
+    await expect(sdk.artifacts.verify(mutatedWf, { strict: false })).rejects.toThrow(
+      /HASH_MISMATCH/
+    );
   });
 
   it("Full chain heritage and lineage tracking", async () => {

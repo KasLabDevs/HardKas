@@ -12,7 +12,7 @@ async function run() {
   await hardkas.accounts.fund("bob");
 
   console.log(`Executing payroll for ${employees.length} employees...`);
-  
+
   for (const employee of employees) {
     console.log(`Paying ${employee} 10 KAS...`);
     const plan = await hardkas.tx.plan({ from: "bob", to: employee, amount: 10 });

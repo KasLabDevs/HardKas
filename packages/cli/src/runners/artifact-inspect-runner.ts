@@ -3,6 +3,7 @@ import path from "node:path";
 import pc from "picocolors";
 import { UI, handleError } from "../ui.js";
 import { HardkasError } from "@hardkas/core";
+import { HardkasCliError } from "../cli-errors.js";
 
 export interface ArtifactInspectOptions {
   idOrPath: string;
@@ -65,9 +66,9 @@ export async function runArtifactInspect(options: ArtifactInspectOptions) {
     }
 
     if (matches.length === 0) {
-      throw new HardkasError(
-        "ARTIFACT_NOT_FOUND",
-        `Could not resolve '${options.idOrPath}' as a file or artifact ID.`
+      throw new HardkasCliError(
+        "INVALID_ARTIFACT",
+        `Artifact not found: Could not resolve '${options.idOrPath}' as a file or artifact ID.`
       );
     } else if (matches.length > 1) {
       matches.sort((a, b) => fs.statSync(b).mtimeMs - fs.statSync(a).mtimeMs);

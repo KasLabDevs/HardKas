@@ -6,7 +6,11 @@
   "publicInputsHash": "6ba532d5ac249cf432a8fc0136d570560dfa71c73d8865bf072059c2c4a97503",
   "verificationKeyHash": "d4ea27e10db6705ada7ed2cb34abfca42c4af76deaa3f2990622132afd79d53a",
   "pi_a": ["1", "2", "1"],
-  "pi_b": [["3", "4"], ["5", "6"], ["1", "0"]],
+  "pi_b": [
+    ["3", "4"],
+    ["5", "6"],
+    ["1", "0"]
+  ],
   "pi_c": ["7", "8", "1"],
   "note": "Experimental fixture coherence proof; not a production proof generation claim."
 }

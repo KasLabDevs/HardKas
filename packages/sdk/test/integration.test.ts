@@ -28,12 +28,15 @@ describe("Network-Agnostic Artifact Layer: Integration", () => {
       decision: "ALLOW",
       rules: []
     };
-    
-    const { calculateContentHash, CURRENT_HASH_VERSION } = await import("@hardkas/artifacts");
+
+    const { calculateContentHash, CURRENT_HASH_VERSION } =
+      await import("@hardkas/artifacts");
     (policy as any).contentHash = calculateContentHash(policy, CURRENT_HASH_VERSION);
-    
+
     // Save policy with a logical alias
-    const { absolutePath, contentHash } = await sdk.artifacts.write(policy as any, { fileName: "company-default.json" });
+    const { absolutePath, contentHash } = await sdk.artifacts.write(policy as any, {
+      fileName: "company-default.json"
+    });
 
     // Create a plan referencing the logical alias
     const plan = await sdk.tx.plan({

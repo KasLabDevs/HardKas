@@ -29,7 +29,7 @@ describe("Network-Agnostic Artifact Layer: NetworkProfile", () => {
         evm: false
       }
     };
-    
+
     (profile as any).contentHash = calculateContentHash(profile, CURRENT_HASH_VERSION);
 
     const { absolutePath, contentHash } = await sdk.artifacts.write(profile as any);
@@ -54,9 +54,11 @@ describe("Network-Agnostic Artifact Layer: NetworkProfile", () => {
         settlement: "kaspa"
       }
     };
-    
+
     const verifyResult = await sdk.artifacts.verify(profile, { throwOnInvalid: false });
     expect(verifyResult.valid).toBe(false);
-    expect(verifyResult.details.some((i: any) => i.message.includes("Required"))).toBe(true);
+    expect(verifyResult.details.some((i: any) => i.message.includes("Required"))).toBe(
+      true
+    );
   });
 });

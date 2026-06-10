@@ -1,4 +1,4 @@
-import { formatSompi } from "@hardkas/core";
+import { formatSompiToKas } from "@hardkas/core";
 
 /**
  * Formats a v2 TxPlan artifact for display.
@@ -18,11 +18,11 @@ export function formatTxPlanArtifact(artifact: any): string {
   lines.push("");
   lines.push(`From:         ${artifact.from.accountName || artifact.from.address}`);
   lines.push(`To:           ${artifact.to.address}`);
-  lines.push(`Amount:       ${formatSompi(BigInt(artifact.amountSompi))}`);
+  lines.push(`Amount:       ${formatSompiToKas(BigInt(artifact.amountSompi))}`);
   lines.push("");
   lines.push(`Inputs:       ${artifact.inputs.length}`);
   lines.push(`Outputs:      ${artifact.outputs.length}`);
-  lines.push(`Fee:          ${formatSompi(BigInt(artifact.estimatedFeeSompi))}`);
+  lines.push(`Fee:          ${formatSompiToKas(BigInt(artifact.estimatedFeeSompi))}`);
   lines.push(`Mass:         ${artifact.estimatedMass}`);
   lines.push("");
   lines.push("Deterministic Planning Specifications:");
@@ -53,8 +53,8 @@ export function formatTxReceiptArtifact(artifact: any): string {
   lines.push("");
   lines.push(`From:         ${artifact.from.address}`);
   lines.push(`To:           ${artifact.to.address}`);
-  lines.push(`Amount:       ${formatSompi(BigInt(artifact.amountSompi))}`);
-  lines.push(`Fee:          ${formatSompi(BigInt(artifact.feeSompi))}`);
+  lines.push(`Amount:       ${formatSompiToKas(BigInt(artifact.amountSompi))}`);
+  lines.push(`Fee:          ${formatSompiToKas(BigInt(artifact.feeSompi))}`);
 
   return lines.join("\n");
 }
@@ -77,7 +77,7 @@ export function formatSignedTxArtifact(artifact: any): string {
   lines.push("");
   lines.push(`From:         ${artifact.from.address}`);
   lines.push(`To:           ${artifact.to.address}`);
-  lines.push(`Amount:       ${formatSompi(BigInt(artifact.amountSompi))}`);
+  lines.push(`Amount:       ${formatSompiToKas(BigInt(artifact.amountSompi))}`);
   lines.push("");
 
   if (artifact.signedTransaction) {

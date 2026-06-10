@@ -3,7 +3,7 @@
 // Transaction mass profiling — breakdown and comparison.
 
 import { estimateTransactionMass, estimateFeeFromMass } from "@hardkas/tx-builder";
-import { SOMPI_PER_KAS } from "@hardkas/core";
+import { SOMPI_PER_KAS, formatSompiToKas } from "@hardkas/core";
 
 /**
  * Deterministic number formatting (adds commas without locale dependency).
@@ -135,7 +135,7 @@ export function compareMassProfiles(
  * Formats a mass breakdown into a readable report.
  */
 export function formatMassProfile(breakdown: MassBreakdown): string {
-  const kasAmount = Number(breakdown.estimatedFeeSompi) / 100_000_000;
+  const kasAmount = formatSompiToKas(breakdown.estimatedFeeSompi);
 
   return [
     "═══ Mass Profile ═══",
@@ -144,7 +144,7 @@ export function formatMassProfile(breakdown: MassBreakdown): string {
     `  Payload    : ${breakdown.payloadBytes} bytes → ${formatBigInt(breakdown.payloadMass)} mass`,
     `  Total mass : ${formatBigInt(breakdown.totalMass)}`,
     `  Fee rate   : ${formatBigInt(breakdown.feeRate)} sompi/mass`,
-    `  Est. fee   : ${formatBigInt(breakdown.estimatedFeeSompi)} sompi (${kasAmount.toFixed(8)} KAS)`
+    `  Est. fee   : ${formatBigInt(breakdown.estimatedFeeSompi)} sompi (${kasAmount} KAS)`
   ].join("\n");
 }
 

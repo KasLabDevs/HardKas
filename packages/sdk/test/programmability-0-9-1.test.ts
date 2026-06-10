@@ -15,7 +15,11 @@ function repoRoot(): string {
 
 describe("0.9.1-alpha programmability SDK surface", () => {
   it("reports builder-ready programmability capabilities", async () => {
-    const sdk = await Hardkas.create({ cwd: repoRoot(), network: "simulated", autoBootstrap: true });
+    const sdk = await Hardkas.create({
+      cwd: repoRoot(),
+      network: "simulated",
+      autoBootstrap: true
+    });
     const result = await sdk.programmability.capabilities();
 
     expect(result.ok).toBe(true);
@@ -28,8 +32,14 @@ describe("0.9.1-alpha programmability SDK surface", () => {
   });
 
   it("verifies the root programmability corpus", async () => {
-    const sdk = await Hardkas.create({ cwd: repoRoot(), network: "simulated", autoBootstrap: true });
-    const result = await sdk.programmability.corpus.verify({ path: "fixtures/toccata-v2" });
+    const sdk = await Hardkas.create({
+      cwd: repoRoot(),
+      network: "simulated",
+      autoBootstrap: true
+    });
+    const result = await sdk.programmability.corpus.verify({
+      path: "fixtures/toccata-v2"
+    });
 
     expect(result.ok).toBe(true);
     expect(result.status).toBe("PROGRAMMABILITY_CORPUS_PASS");
@@ -40,7 +50,11 @@ describe("0.9.1-alpha programmability SDK surface", () => {
   });
 
   it("plans builder apps without runtime claims", async () => {
-    const sdk = await Hardkas.create({ cwd: repoRoot(), network: "simulated", autoBootstrap: true });
+    const sdk = await Hardkas.create({
+      cwd: repoRoot(),
+      network: "simulated",
+      autoBootstrap: true
+    });
     const result = sdk.programmability.app.plan({ kind: "full-lab" });
 
     expect(result.ok).toBe(true);

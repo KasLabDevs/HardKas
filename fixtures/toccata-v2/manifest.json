@@ -30,7 +30,5 @@
     "vProgsStableApi": "NOT_CLAIMED",
     "mainnet": "BLOCKED_BY_POLICY"
   },
-  "expectedKnownLimitations": [
-    "PARTIAL_VM_SIMULATION"
-  ]
+  "expectedKnownLimitations": ["PARTIAL_VM_SIMULATION"]
 }

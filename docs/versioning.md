@@ -17,7 +17,7 @@ These boundaries should change only with intentional release notes:
 - **Local simulated state:** `.hardkas/localnet.json` as the local UTXO state
   boundary.
 - **Core transaction lifecycle:** `plan -> inspect/verify -> sign -> send/simulate
-  -> receipt -> replay`.
+-> receipt -> replay`.
 - **Toccata v2 localnet baseline:** Docker simnet funding, standard transaction
   lifecycle, Silver OP_TRUE deploy/spend, and corpus verification through
   `pnpm gauntlet:toccata`.

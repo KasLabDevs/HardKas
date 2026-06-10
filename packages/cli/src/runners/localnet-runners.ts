@@ -1,3 +1,4 @@
+import { getOutput } from "../output.js";
 import { UI, handleError } from "../ui.js";
 import { loadHardkasConfig, resolveNetworkTarget } from "@hardkas/config";
 import { JsonWrpcKaspaClient } from "@hardkas/kaspa-rpc";
@@ -55,7 +56,7 @@ export async function runLocalnetStart(opts: LocalnetStartOptions): Promise<void
       status: "TOCCATA_NODE_READY"
     };
     if (opts.json) {
-      console.log(JSON.stringify(payload, null, 2));
+      getOutput().writeJson(payload);
     } else {
       UI.success("TOCCATA_NODE_READY");
       UI.info(`RPC: ${TOCCATA_RPC_URL}`);
@@ -82,7 +83,7 @@ export async function runLocalnetStart(opts: LocalnetStartOptions): Promise<void
   };
 
   if (opts.json) {
-    console.log(JSON.stringify(payload, null, 2));
+    getOutput().writeJson(payload);
   } else {
     UI.success(payload.status);
     UI.info(`Image: ${status.image}`);
@@ -108,7 +109,7 @@ export async function runLocalnetStatus(opts: LocalnetStatusOptions): Promise<vo
   };
 
   if (opts.json) {
-    console.log(JSON.stringify(payload, null, 2));
+    getOutput().writeJson(payload);
     return;
   }
 
@@ -141,7 +142,10 @@ export async function runLocalnetFund(opts: LocalnetFundOptions): Promise<void> 
   while (Date.now() < deadline) {
     await sleep(5000);
     current = await getAddressFundingState(address, !!opts.json);
-    if (current.matureUtxoCount > before.matureUtxoCount || current.matureBalanceSompi > before.matureBalanceSompi) {
+    if (
+      current.matureUtxoCount > before.matureUtxoCount ||
+      current.matureBalanceSompi > before.matureBalanceSompi
+    ) {
       break;
     }
   }
@@ -166,7 +170,7 @@ export async function runLocalnetFund(opts: LocalnetFundOptions): Promise<void> 
   };
 
   if (opts.json) {
-    console.log(JSON.stringify(payload, bigintReplacer, 2));
+    getOutput().writeLine(JSON.stringify(payload, bigintReplacer, 2));
     return;
   }
 
@@ -234,9 +238,13 @@ export async function runLocalnetFork(opts: {
         UI.info(`UTXOs: ${state.utxos.length}`);
       }
     );
-  } catch (e) {
-    handleError(e, "Forking failed");
-    process.exit(1);
+  } catch (e: any) {
+    if (e.name === "HardkasCliError") throw e;
+    const { HardkasCliError } = await import("../cli-errors.js");
+    throw new HardkasCliError("FORKING_FAILED", `Forking failed: ${e.message}`, {
+      exitCode: 1,
+      cause: e
+    });
   } finally {
     await client.close();
   }
@@ -254,7 +262,10 @@ async function detectToccataNode(quiet = false) {
     return {
       ready: true,
       rpcUrl: TOCCATA_RPC_URL,
-      networkId: serverNetworkId === "unknown" ? "simnet" : server.networkId || info.networkId || "simnet",
+      networkId:
+        serverNetworkId === "unknown"
+          ? "simnet"
+          : server.networkId || info.networkId || "simnet",
       serverVersion: server.serverVersion || info.serverVersion,
       isSynced: server.isSynced ?? info.isSynced,
       virtualDaaScore: info.virtualDaaScore?.toString()
@@ -377,7 +388,10 @@ function bigintReplacer(_key: string, value: unknown) {
   return typeof value === "bigint" ? value.toString() : value;
 }
 
-async function withOptionalSilentConsole<T>(quiet: boolean, fn: () => Promise<T>): Promise<T> {
+async function withOptionalSilentConsole<T>(
+  quiet: boolean,
+  fn: () => Promise<T>
+): Promise<T> {
   if (!quiet) return fn();
   const originalLog = console.log;
   console.log = () => {};

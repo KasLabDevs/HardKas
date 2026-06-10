@@ -128,7 +128,11 @@ function resolveFromDirectory(
       } else if (data.schema === "hardkas.txReceipt") {
         receipts.push({
           file: f,
-          sourcePlanId: data.sourcePlanId || data.lineage?.parentArtifactId || data.lineage?.rootArtifactId || "",
+          sourcePlanId:
+            data.sourcePlanId ||
+            data.lineage?.parentArtifactId ||
+            data.lineage?.rootArtifactId ||
+            "",
           txId: data.txId || "",
           createdAt: data.createdAt || ""
         });
@@ -213,30 +217,40 @@ export class HardkasReplay {
    * against the mathematically reconstructed localnet state.
    */
   async verify(
-    targetOrOptions?: string | { schema?: string; artifactId?: string } | ReplayVerifyOptions,
+    targetOrOptions?:
+      | string
+      | { schema?: string; artifactId?: string }
+      | ReplayVerifyOptions,
     options?: ReplayVerifyOptions
   ): Promise<ReplayVerifyResult> {
     const throwOnInvalid = (options as any)?.throwOnInvalid !== false;
-    if (typeof targetOrOptions === "object" && targetOrOptions !== null && (targetOrOptions as any).contentHash) {
-       const verifyRes = await this.sdk.artifacts.verify(targetOrOptions, { throwOnInvalid, strict: true });
-       if (!verifyRes.valid && !throwOnInvalid) {
-         return {
-           passed: false,
-           artifactsScanned: 1,
-           lineage: "invalid",
-           determinism: "failed",
-           contamination: "clean",
-           report: null,
-           error: `Artifact verification failed: ${verifyRes.reason}`
-         };
-       }
+    if (
+      typeof targetOrOptions === "object" &&
+      targetOrOptions !== null &&
+      (targetOrOptions as any).contentHash
+    ) {
+      const verifyRes = await this.sdk.artifacts.verify(targetOrOptions, {
+        throwOnInvalid,
+        strict: true
+      });
+      if (!verifyRes.valid && !throwOnInvalid) {
+        return {
+          passed: false,
+          artifactsScanned: 1,
+          lineage: "invalid",
+          determinism: "failed",
+          contamination: "clean",
+          report: null,
+          error: `Artifact verification failed: ${verifyRes.reason}`
+        };
+      }
     }
 
     let opts: ReplayVerifyOptions = options || {};
-    
+
     if (typeof targetOrOptions === "string") {
       opts.path = targetOrOptions;
-    } else if (targetOrOptions && 'artifactId' in targetOrOptions) {
+    } else if (targetOrOptions && "artifactId" in targetOrOptions) {
       opts.path = (targetOrOptions as any).artifactId;
     } else if (targetOrOptions) {
       opts = { ...opts, ...(targetOrOptions as ReplayVerifyOptions) };

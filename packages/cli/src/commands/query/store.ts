@@ -38,8 +38,7 @@ export function registerStoreQueryCommands(queryCmd: Command) {
 
         store.disconnect();
       } catch (e) {
-        handleError(e);
-        process.exitCode = 1;
+        throw e;
       }
     });
 
@@ -72,8 +71,7 @@ export function registerStoreQueryCommands(queryCmd: Command) {
 
         store.disconnect();
       } catch (e) {
-        handleError(e);
-        process.exitCode = 1;
+        throw e;
       }
     });
 
@@ -105,8 +103,7 @@ export function registerStoreQueryCommands(queryCmd: Command) {
 
         store.disconnect();
       } catch (e) {
-        handleError(e);
-        process.exitCode = 1;
+        throw e;
       }
     });
 }

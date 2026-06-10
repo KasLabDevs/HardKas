@@ -13,7 +13,10 @@ export interface AccountsFundOptions {
 
 export async function runAccountsFund(options: AccountsFundOptions) {
   const loadedConfig = await loadHardkasConfig({});
-  const address = await resolveHardkasAccountAddress(options.identifier, loadedConfig.config);
+  const address = await resolveHardkasAccountAddress(
+    options.identifier,
+    loadedConfig.config
+  );
 
   // 1. Safety Check: Determine current network
   const networkId = loadedConfig.config.defaultNetwork || "simnet";
@@ -34,6 +37,7 @@ export async function runAccountsFund(options: AccountsFundOptions) {
 
   // 2. Handle Simulated Environment
   if (isSimulated) {
+    const { formatSompiToKas } = await import("@hardkas/core");
     const state = await loadOrCreateLocalnetState();
     const amount = options.amountSompi || 1000n * 100_000_000n; // Default 1000 KAS
     const newState = fundAddress(state, { address, amountSompi: amount });
@@ -44,7 +48,7 @@ export async function runAccountsFund(options: AccountsFundOptions) {
       address,
       amountSompi: amount,
       mode: "simulated",
-      formatted: `Successfully funded ${options.identifier} (${address}) with ${Number(amount) / 100_000_000} KAS (Simulated)`
+      formatted: `Successfully funded ${options.identifier} (${address}) with ${formatSompiToKas(amount)} KAS (Simulated)`
     };
   }
 

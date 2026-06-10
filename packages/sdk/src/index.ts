@@ -109,7 +109,7 @@ export {
   SOMPI_PER_KAS,
   HardkasError,
   parseKasToSompi,
-  formatSompi,
+  formatSompiToKas,
   type TxId,
   type KaspaAddress,
   type ArtifactId,
@@ -227,9 +227,11 @@ export class Hardkas {
     const options =
       typeof dirOrOptions === "string" ? { cwd: dirOrOptions } : dirOrOptions;
     const loaded = await loadConfig(options);
-    
+
     const activeNetwork = options.network || loaded.config.defaultNetwork || "simnet";
-    const isSimulated = activeNetwork === "simulated" || loaded.config.networks?.[activeNetwork]?.kind === "simulated";
+    const isSimulated =
+      activeNetwork === "simulated" ||
+      loaded.config.networks?.[activeNetwork]?.kind === "simulated";
     const autoBootstrap = options.autoBootstrap ?? (isSimulated ? true : false);
 
     const fs = await import("node:fs");
@@ -240,12 +242,14 @@ export class Hardkas {
     if (autoBootstrap) {
       if (!isSimulated) {
         if (options.logger) {
-           options.logger.warn("[HardKAS] autoBootstrap ignored for non-simulated network");
+          options.logger.warn(
+            "[HardKAS] autoBootstrap ignored for non-simulated network"
+          );
         }
       } else {
         if (!fs.existsSync(hardkasDir)) {
           if (options.logger) {
-             options.logger.info("[HardKAS] Auto-bootstrapping simulated workspace");
+            options.logger.info("[HardKAS] Auto-bootstrapping simulated workspace");
           }
           fs.mkdirSync(hardkasDir, { recursive: true });
         }
@@ -258,13 +262,16 @@ export class Hardkas {
       }
     } else {
       if (!fs.existsSync(hardkasDir)) {
-        throw new HardkasError("NOT_INITIALIZED", "Workspace not initialized. Run npx hardkas init . or pass autoBootstrap: true.");
+        throw new HardkasError(
+          "NOT_INITIALIZED",
+          "Workspace not initialized. Run npx hardkas init . or pass autoBootstrap: true."
+        );
       }
     }
 
     // Pass the overridden network back into config for downstream use if needed
     if (options.network) {
-       loaded.config.defaultNetwork = options.network;
+      loaded.config.defaultNetwork = options.network;
     }
 
     let provider: KaspaRpcClient | undefined;

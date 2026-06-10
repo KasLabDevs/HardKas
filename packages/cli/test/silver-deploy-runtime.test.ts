@@ -4,7 +4,8 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 
-const FIXTURE_PRIVATE_KEY = "b7e151628aed2a6abf7158809cf4f3c762e7160f38b4da56a784d9045190cfef";
+const FIXTURE_PRIVATE_KEY =
+  "b7e151628aed2a6abf7158809cf4f3c762e7160f38b4da56a784d9045190cfef";
 
 describe("silver deploy built CLI runtime", () => {
   let tmpDir = "";
@@ -26,24 +27,31 @@ describe("silver deploy built CLI runtime", () => {
     const deployPlanPath = path.join(tmpDir, "deploy-plan.json");
     fs.writeFileSync(
       deployPlanPath,
-      `${JSON.stringify({
-        schema: "hardkas.silver.deployPlan",
-        hardkasVersion: "0.9.1-alpha",
-        version: "1.0.0-alpha",
-        hashVersion: 4,
-        networkId: "simnet",
-        mode: "simulated",
-        createdAt: "2026-06-08T00:00:00.000Z",
-        contentHash: "silver-deploy-runtime-test-plan",
-        compileArtifactHash: "compile-hash-op-true",
-        compiledScriptHash: "compiled-script-hash-op-true",
-        redeemScriptHex: "51",
-        redeemScriptHash: "ce57216285125006ec18197bd8184221cefa559bb0798410d99a5bba5b07cd1d",
-        lockingScriptHex: "aa20ce57216285125006ec18197bd8184221cefa559bb0798410d99a5bba5b07cd1d87",
-        scriptPublicKeyVersion: 0,
-        amountSompi: "10000",
-        deployerAddress: "kaspasim:qr0lr4ml9fn3chekrqmjdkergxl93l4wrk3dankcgvjq776s9wn9jeadh9sjw"
-      }, null, 2)}\n`,
+      `${JSON.stringify(
+        {
+          schema: "hardkas.silver.deployPlan",
+          hardkasVersion: "0.9.1-alpha",
+          version: "1.0.0-alpha",
+          hashVersion: 4,
+          networkId: "simnet",
+          mode: "simulated",
+          createdAt: "2026-06-08T00:00:00.000Z",
+          contentHash: "silver-deploy-runtime-test-plan",
+          compileArtifactHash: "compile-hash-op-true",
+          compiledScriptHash: "compiled-script-hash-op-true",
+          redeemScriptHex: "51",
+          redeemScriptHash:
+            "ce57216285125006ec18197bd8184221cefa559bb0798410d99a5bba5b07cd1d",
+          lockingScriptHex:
+            "aa20ce57216285125006ec18197bd8184221cefa559bb0798410d99a5bba5b07cd1d87",
+          scriptPublicKeyVersion: 0,
+          amountSompi: "10000",
+          deployerAddress:
+            "kaspasim:qr0lr4ml9fn3chekrqmjdkergxl93l4wrk3dankcgvjq776s9wn9jeadh9sjw"
+        },
+        null,
+        2
+      )}\n`,
       "utf8"
     );
 

@@ -179,12 +179,14 @@ Known limitations:
 This release converts HardKAS from a pure CLI-first runtime into a fully consumable SDK, resolving key frictions identified during the Phase 6 and Phase 7 Gauntlets.
 
 #### Public SDK Facade
+
 - **`Hardkas.create()`**: New programmatic entrypoint for seamless developer orchestration.
 - **`tx.*` API**: Added `plan()`, `sign()`, `send()`, and `status()` facade wrappers.
 - **`accounts.*` API**: Added `list()`, `balance()`, and `fund()`.
 - **`artifacts.*` API**: Added `list()` and `get()` for direct artifact access.
 
 #### Developer Experience (DX)
+
 - **Actionable Errors**: `tx.plan()` now intercepts `--amount 0` for value transfers and throws an actionable message regarding future anchoring capabilities.
 - **Alias Resolution**: `--required-signers` now supports clean account aliases (e.g., `alice,bob`) instead of requiring full addresses.
 - **Bridge Artifacts**: L2 bridge commands (`local plan` and `simulate`) now natively serialize and persist `hardkas.bridge.localPlan.v1` and `hardkas.bridge.localSimulation.v1` diagnostics, even in uninitialized workspaces.

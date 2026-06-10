@@ -6,7 +6,7 @@ async function run() {
   const sdk = await Hardkas.create({
     cwd: process.cwd(),
     network: "simnet",
-    autoBootstrap: true,
+    autoBootstrap: true
   });
 
   const alice = await sdk.accounts.resolve("alice");
@@ -18,8 +18,15 @@ async function run() {
 
   // 1. Sync
   console.log("\n[1] Syncing node state...");
-  console.log("sdk.query keys:", Object.keys(sdk.query), sdk.query.sync ? "has sync" : "no sync");
-  console.log("sdk.query proto keys:", Object.getOwnPropertyNames(Object.getPrototypeOf(sdk.query)));
+  console.log(
+    "sdk.query keys:",
+    Object.keys(sdk.query),
+    sdk.query.sync ? "has sync" : "no sync"
+  );
+  console.log(
+    "sdk.query proto keys:",
+    Object.getOwnPropertyNames(Object.getPrototypeOf(sdk.query))
+  );
   await sdk.query.sync();
   let aliceBal = await sdk.accounts.balance("alice");
   console.log(`Alice initial balance: ${aliceBal.formatted}`);
@@ -33,7 +40,7 @@ async function run() {
       await sdk.tx.send(s);
     }
     console.log("Waiting for dust transactions to settle...");
-    await new Promise(resolve => setTimeout(resolve, 3000));
+    await new Promise((resolve) => setTimeout(resolve, 3000));
     await sdk.query.sync();
   }
 
@@ -45,12 +52,14 @@ async function run() {
     console.log("\n[3] Consolidating Alice...");
     const { execSync } = await import("child_process");
     // Run CLI consolidate directly using current tsx / pnpm workspace
-    execSync(`npx @hardkas/cli accounts consolidate alice --target-utxos 1 --yes`, { stdio: "inherit" });
-    
+    execSync(`npx @hardkas/cli accounts consolidate alice --target-utxos 1 --yes`, {
+      stdio: "inherit"
+    });
+
     console.log("Waiting for consolidation to settle...");
-    await new Promise(resolve => setTimeout(resolve, 3000));
+    await new Promise((resolve) => setTimeout(resolve, 3000));
     await sdk.query.sync();
-    
+
     const newUtxos = await sdk.query.findUtxosByAddress(alice.address);
     console.log(`Alice UTXOs after consolidation: ${newUtxos.length}`);
   } else {
@@ -74,9 +83,9 @@ async function run() {
 
   // 7. Wait & Receipt
   console.log("\n[7] Waiting for Network Acceptance...");
-  await new Promise(resolve => setTimeout(resolve, 1500));
+  await new Promise((resolve) => setTimeout(resolve, 1500));
   await sdk.query.sync();
-  
+
   const status = await sdk.query.getTransactionStatus(receipt.txId);
   console.log(`Status: ${status}`);
 
@@ -87,7 +96,7 @@ async function run() {
   const verifyResult = await sdk.tx.verify(persistedReceipt);
   console.log(`Replay verify OK? ${verifyResult.ok}`);
   if (!verifyResult.ok) {
-      console.log(`Verification failed:`, verifyResult.mismatches);
+    console.log(`Verification failed:`, verifyResult.mismatches);
   }
 
   console.log("\n=== FULL LIFECYCLE COMPLETE ===");

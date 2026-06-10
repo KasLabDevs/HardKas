@@ -12,14 +12,22 @@ function runCommand(command, expectedErrorString) {
     console.log(output);
     return output;
   } catch (err) {
-    const errorOutput = err.stderr ? err.stderr.toString() : (err.stdout ? err.stdout.toString() : err.message);
+    const errorOutput = err.stderr
+      ? err.stderr.toString()
+      : err.stdout
+        ? err.stdout.toString()
+        : err.message;
     console.log(`Exit code: ${err.status}`);
     console.log(errorOutput);
 
     if (expectedErrorString && errorOutput.includes(expectedErrorString)) {
-      console.log(`[PASS] Command failed exactly as expected with: ${expectedErrorString}\n`);
+      console.log(
+        `[PASS] Command failed exactly as expected with: ${expectedErrorString}\n`
+      );
     } else if (expectedErrorString) {
-      console.error(`[FAIL] Expected error containing '${expectedErrorString}', but got something else.\n`);
+      console.error(
+        `[FAIL] Expected error containing '${expectedErrorString}', but got something else.\n`
+      );
       process.exit(1);
     } else {
       console.error(`[FAIL] Unexpected error.\n`);
@@ -37,18 +45,23 @@ try {
   runCommand("npx hardkas silver doctor", null); // Should not throw, just prints diagnostic
 
   console.log("--- PHASE 1: COMPILATION (Expected to fail gracefully) ---");
-  runCommand("npx hardkas silver compile dummy.sil --network testnet-12", "SILVERSCRIPT_COMPILER_UNAVAILABLE");
+  runCommand(
+    "npx hardkas silver compile dummy.sil --network testnet-12",
+    "SILVERSCRIPT_COMPILER_UNAVAILABLE"
+  );
 
   console.log("--- PHASE 2: INSPECT (Expected to fail gracefully) ---");
   // We cannot inspect an artifact that failed to generate, so we skip or test a dummy artifact
-  
+
   console.log("--- PHASE 3: NETWORK ENFORCEMENT ---");
-  runCommand("npx hardkas silver compile dummy.sil --network mainnet", "SILVERSCRIPT_NETWORK_UNSUPPORTED");
+  runCommand(
+    "npx hardkas silver compile dummy.sil --network mainnet",
+    "SILVERSCRIPT_NETWORK_UNSUPPORTED"
+  );
 
   console.log("\n==========================================");
   console.log(" GAUNTLET PASSED (Readiness Confirmed)    ");
   console.log("==========================================");
-
 } finally {
   if (fs.existsSync("dummy.sil")) fs.unlinkSync("dummy.sil");
 }

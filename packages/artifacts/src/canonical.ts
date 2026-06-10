@@ -163,9 +163,7 @@ export function canonicalStringify(
 
   const sortedKeys = Object.keys(obj)
     .filter(
-      (key) =>
-        !exclusions.has(key) &&
-        (obj as Record<string, unknown>)[key] !== undefined
+      (key) => !exclusions.has(key) && (obj as Record<string, unknown>)[key] !== undefined
     )
     .sort(deterministicCompare);
 

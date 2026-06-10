@@ -2,11 +2,7 @@ import { execFileSync } from "node:child_process";
 import { createHash } from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
-import {
-  calculateContentHash,
-  HARDKAS_VERSION,
-  writeArtifact
-} from "@hardkas/artifacts";
+import { calculateContentHash, HARDKAS_VERSION, writeArtifact } from "@hardkas/artifacts";
 import {
   createKaspaP2shBlake2bLock,
   createPushOnlySignatureScript,
@@ -115,7 +111,9 @@ export class HardkasSilver {
     });
     const normalized = normalizeSilverCompilerOutput(compilerOutput);
     if (!normalized.scriptHex) {
-      throw new Error("SILVERSCRIPT_COMPILER_OUTPUT_INVALID: compiled script hex not found.");
+      throw new Error(
+        "SILVERSCRIPT_COMPILER_OUTPUT_INVALID: compiled script hex not found."
+      );
     }
 
     const artifact: any = {
@@ -134,7 +132,9 @@ export class HardkasSilver {
       compiledScriptHex: normalized.scriptHex,
       compiledScriptHash:
         normalized.scriptHash ||
-        createHash("sha256").update(Buffer.from(normalized.scriptHex, "hex")).digest("hex"),
+        createHash("sha256")
+          .update(Buffer.from(normalized.scriptHex, "hex"))
+          .digest("hex"),
       abi: normalized.abi,
       network,
       assumptions: ["toccata-v2", "mainnet-disabled"]
@@ -143,10 +143,15 @@ export class HardkasSilver {
     return this.writeSdkArtifact(artifact, options);
   }
 
-  async deployPlan(options: SilverDeployPlanOptions): Promise<SilverSdkArtifactResult<any>> {
+  async deployPlan(
+    options: SilverDeployPlanOptions
+  ): Promise<SilverSdkArtifactResult<any>> {
     const network = options.network || "simnet";
     assertSimnet(network);
-    const compileArtifact = await this.resolveArtifact(options.artifact, "hardkas.silver.compile");
+    const compileArtifact = await this.resolveArtifact(
+      options.artifact,
+      "hardkas.silver.compile"
+    );
     const amountSompi = parseKasToSompi(String(options.amount ?? "1")).toString();
     const fromAccount = await this.sdk.accounts.resolve(options.from);
     const lock = createKaspaP2shBlake2bLock(compileArtifact.compiledScriptHex);
@@ -173,7 +178,10 @@ export class HardkasSilver {
   }
 
   async deploy(
-    options: { artifact: string | any; mode?: "simulate" | "real" } & SilverSdkWriteOptions
+    options: {
+      artifact: string | any;
+      mode?: "simulate" | "real";
+    } & SilverSdkWriteOptions
   ): Promise<SilverSdkArtifactResult<any>> {
     if (options.mode === "real") {
       throw new Error(
@@ -183,8 +191,13 @@ export class HardkasSilver {
     return this.simulateDeploy(options.artifact, options);
   }
 
-  async spendPlan(options: SilverSpendPlanOptions): Promise<SilverSdkArtifactResult<any>> {
-    const deployArtifact = await this.resolveArtifact(options.receipt, "hardkas.silver.deploy");
+  async spendPlan(
+    options: SilverSpendPlanOptions
+  ): Promise<SilverSdkArtifactResult<any>> {
+    const deployArtifact = await this.resolveArtifact(
+      options.receipt,
+      "hardkas.silver.deploy"
+    );
     assertSimnet(deployArtifact.networkId);
     const args = options.args ?? readArgsFile(this.sdk.cwd, options.argsPath);
     const lock = createKaspaP2shBlake2bLock(deployArtifact.redeemScriptHex);
@@ -236,17 +249,28 @@ export class HardkasSilver {
   }
 
   async spend(
-    options: { artifact: string | any; state?: SilverSimulationState; mode?: "simulate" | "real" } & SilverSdkWriteOptions
+    options: {
+      artifact: string | any;
+      state?: SilverSimulationState;
+      mode?: "simulate" | "real";
+    } & SilverSdkWriteOptions
   ): Promise<SilverSdkArtifactResult<any>> {
     if (options.mode === "real") {
       throw new Error(
         "SDK_SILVER_REAL_LIFECYCLE_UNSUPPORTED: use `hardkas silver spend` for Docker/RPC execution in 0.9.1-alpha."
       );
     }
-    return this.simulateSpend(options.artifact, options.state ?? this.loadSimulationState(), options);
+    return this.simulateSpend(
+      options.artifact,
+      options.state ?? this.loadSimulationState(),
+      options
+    );
   }
 
-  async simulateDeploy(deployPlan: string | any, options: SilverSdkWriteOptions = {}): Promise<SilverSdkArtifactResult<any>> {
+  async simulateDeploy(
+    deployPlan: string | any,
+    options: SilverSdkWriteOptions = {}
+  ): Promise<SilverSdkArtifactResult<any>> {
     const artifact = await this.resolveArtifact(deployPlan, "hardkas.silver.deployPlan");
     const result = simulateSilverDeploy(artifact);
     this.saveSimulationState(mergeState(this.loadSimulationState(), result.state));
@@ -270,7 +294,10 @@ export class HardkasSilver {
     const mode = normalizeCompareMode(options.mode || "artifact-coherence");
     const { drift, notes } = compareSilverReceipts(simulated, docker, mode);
     return {
-      status: drift.length === 0 ? "SILVERSCRIPT_SIMULATION_MATCH" : "SILVERSCRIPT_SIMULATION_DRIFT",
+      status:
+        drift.length === 0
+          ? "SILVERSCRIPT_SIMULATION_MATCH"
+          : "SILVERSCRIPT_SIMULATION_DRIFT",
       mode,
       drift,
       notes,
@@ -278,10 +305,16 @@ export class HardkasSilver {
     };
   }
 
-  private async resolveArtifact(target: string | any, expectedSchema?: string): Promise<any> {
-    const artifact = typeof target === "string" ? await this.sdk.artifacts.read(target) : target;
+  private async resolveArtifact(
+    target: string | any,
+    expectedSchema?: string
+  ): Promise<any> {
+    const artifact =
+      typeof target === "string" ? await this.sdk.artifacts.read(target) : target;
     if (expectedSchema && artifact.schema !== expectedSchema) {
-      throw new Error(`SILVERSCRIPT_SCHEMA_INVALID: expected ${expectedSchema}, got ${artifact.schema}.`);
+      throw new Error(
+        `SILVERSCRIPT_SCHEMA_INVALID: expected ${expectedSchema}, got ${artifact.schema}.`
+      );
     }
     return artifact;
   }
@@ -318,12 +351,23 @@ export class HardkasSilver {
 
 function assertSimnet(network: string): void {
   if (network !== "simnet") {
-    throw new Error("SILVERSCRIPT_MAINNET_NOT_ENABLED: Only simnet is supported for SilverScript lifecycle.");
+    throw new Error(
+      "SILVERSCRIPT_MAINNET_NOT_ENABLED: Only simnet is supported for SilverScript lifecycle."
+    );
   }
 }
 
 function resolveCompilerPath(cwd: string, explicit?: string): string {
-  return explicit || process.env.HARDKAS_SILVERC_PATH || path.join(cwd, ".hardkas", "bin", process.platform === "win32" ? "silverc.exe" : "silverc");
+  return (
+    explicit ||
+    process.env.HARDKAS_SILVERC_PATH ||
+    path.join(
+      cwd,
+      ".hardkas",
+      "bin",
+      process.platform === "win32" ? "silverc.exe" : "silverc"
+    )
+  );
 }
 
 function isExecutableAvailable(command: string): boolean {
@@ -335,7 +379,11 @@ function isExecutableAvailable(command: string): boolean {
   }
 }
 
-function normalizeSilverCompilerOutput(rawOutput: string): { scriptHex?: string; scriptHash?: string; abi?: any } {
+function normalizeSilverCompilerOutput(rawOutput: string): {
+  scriptHex?: string;
+  scriptHash?: string;
+  abi?: any;
+} {
   const normalized: { scriptHex?: string; scriptHash?: string; abi?: any } = {};
   const hexMatch = rawOutput.match(/Compiled script:\s*([a-fA-F0-9]+)/i);
   if (hexMatch?.[1]) normalized.scriptHex = hexMatch[1];
@@ -358,14 +406,20 @@ function normalizeSilverCompilerOutput(rawOutput: string): { scriptHex?: string;
   return normalized;
 }
 
-function readArgsFile(cwd: string, argsPath?: string): Array<{ type: "hex"; value: string }> {
+function readArgsFile(
+  cwd: string,
+  argsPath?: string
+): Array<{ type: "hex"; value: string }> {
   if (!argsPath) return [];
   const parsed = JSON.parse(fs.readFileSync(path.resolve(cwd, argsPath), "utf8"));
   const args = parsed.args ?? parsed;
-  if (!Array.isArray(args)) throw new Error("SILVERSCRIPT_SPEND_PLAN_INVALID: args must be an array.");
+  if (!Array.isArray(args))
+    throw new Error("SILVERSCRIPT_SPEND_PLAN_INVALID: args must be an array.");
   return args.map((arg) => {
     if (arg.type !== "hex" || typeof arg.value !== "string") {
-      throw new Error("SILVERSCRIPT_SPEND_PLAN_INVALID: args must be { type: 'hex', value }.");
+      throw new Error(
+        "SILVERSCRIPT_SPEND_PLAN_INVALID: args must be { type: 'hex', value }."
+      );
     }
     return { type: "hex", value: arg.value };
   });
@@ -380,7 +434,10 @@ function finalizeArtifact(artifact: Record<string, any>, prefix: string): void {
   artifact.artifactId = `${prefix}-${artifact.contentHash.substring(0, 16)}`;
 }
 
-function mergeState(existing: SilverSimulationState, next: SilverSimulationState): SilverSimulationState {
+function mergeState(
+  existing: SilverSimulationState,
+  next: SilverSimulationState
+): SilverSimulationState {
   return {
     ...next,
     deployReceipts: {
@@ -391,13 +448,18 @@ function mergeState(existing: SilverSimulationState, next: SilverSimulationState
       ...existing.utxos,
       ...next.utxos
     },
-    spentOutpoints: Array.from(new Set([...existing.spentOutpoints, ...next.spentOutpoints])).sort()
+    spentOutpoints: Array.from(
+      new Set([...existing.spentOutpoints, ...next.spentOutpoints])
+    ).sort()
   };
 }
 
 function normalizeCompareMode(mode: unknown): SilverCompareMode {
-  if (mode === "artifact-coherence" || mode === "runtime-outcome" || mode === "strict") return mode;
-  throw new Error("SILVERSCRIPT_COMPARE_MODE_INVALID: Expected artifact-coherence, runtime-outcome, or strict.");
+  if (mode === "artifact-coherence" || mode === "runtime-outcome" || mode === "strict")
+    return mode;
+  throw new Error(
+    "SILVERSCRIPT_COMPARE_MODE_INVALID: Expected artifact-coherence, runtime-outcome, or strict."
+  );
 }
 
 function stableJson(value: unknown): string {
@@ -412,8 +474,11 @@ function stableJson(value: unknown): string {
 
 function valuesMatch(field: string, simulated: unknown, docker: unknown): boolean {
   if (field === "status") {
-    return simulated === docker ||
-      (simulated === "SIMULATED_ACCEPTED" && (docker === "accepted" || docker === "submitted"));
+    return (
+      simulated === docker ||
+      (simulated === "SIMULATED_ACCEPTED" &&
+        (docker === "accepted" || docker === "submitted"))
+    );
   }
   return stableJson(simulated) === stableJson(docker);
 }
@@ -421,9 +486,16 @@ function valuesMatch(field: string, simulated: unknown, docker: unknown): boolea
 function compareSilverReceipts(simulated: any, docker: any, mode: SilverCompareMode) {
   const drift: SilverCompareEntry[] = [];
   const notes: SilverCompareEntry[] = [];
-  const fields = ["redeemScriptHash", "lockingScriptHex", "signatureScriptHex", "expectedOutputs", "status"];
+  const fields = [
+    "redeemScriptHash",
+    "lockingScriptHex",
+    "signatureScriptHex",
+    "expectedOutputs",
+    "status"
+  ];
 
-  if (mode === "runtime-outcome" || mode === "strict") fields.push("networkId", "spentOutpoint");
+  if (mode === "runtime-outcome" || mode === "strict")
+    fields.push("networkId", "spentOutpoint");
   if (mode === "strict") fields.push("lineage", "txId", "simulatedSpendTxId");
 
   for (const field of fields) {
@@ -436,7 +508,8 @@ function compareSilverReceipts(simulated: any, docker: any, mode: SilverCompareM
       notes.push({
         ...entry,
         classification: "SEMANTICALLY_DERIVED",
-        reason: "synthetic simulator runtime identifier differs from Docker-observed runtime identifier"
+        reason:
+          "synthetic simulator runtime identifier differs from Docker-observed runtime identifier"
       });
       continue;
     }
@@ -452,12 +525,24 @@ function compareSilverReceipts(simulated: any, docker: any, mode: SilverCompareM
   return { drift, notes };
 }
 
-function compareField(field: string, simulatedValue: unknown, dockerValue: unknown): SilverCompareEntry {
+function compareField(
+  field: string,
+  simulatedValue: unknown,
+  dockerValue: unknown
+): SilverCompareEntry {
   if (simulatedValue === undefined) {
-    return { field, reason: "missing in simulated receipt", classification: "MISSING_IN_SIM" };
+    return {
+      field,
+      reason: "missing in simulated receipt",
+      classification: "MISSING_IN_SIM"
+    };
   }
   if (dockerValue === undefined) {
-    return { field, reason: "missing in docker receipt", classification: "MISSING_IN_REAL" };
+    return {
+      field,
+      reason: "missing in docker receipt",
+      classification: "MISSING_IN_REAL"
+    };
   }
   if (valuesMatch(field, simulatedValue, dockerValue)) {
     return { field, reason: "match", classification: "MATCH" };
@@ -469,19 +554,47 @@ function compareLineageSemantics(simulated: any, docker: any, mode: SilverCompar
   const drift: SilverCompareEntry[] = [];
   const notes: SilverCompareEntry[] = [];
   if (!simulated.lineage) {
-    drift.push({ field: "lineage", reason: "missing in simulated receipt", classification: "MISSING_IN_SIM" });
+    drift.push({
+      field: "lineage",
+      reason: "missing in simulated receipt",
+      classification: "MISSING_IN_SIM"
+    });
     return { drift, notes };
   }
   if (!docker.lineage) {
-    drift.push({ field: "lineage", reason: "missing in docker receipt", classification: "MISSING_IN_REAL" });
+    drift.push({
+      field: "lineage",
+      reason: "missing in docker receipt",
+      classification: "MISSING_IN_REAL"
+    });
     return { drift, notes };
   }
 
   for (const check of [
-    ["lineage.redeemScriptHash", simulated.redeemScriptHash, docker.redeemScriptHash, "redeem script hash anchors artifact coherence"],
-    ["lineage.lockingScriptHex", simulated.lockingScriptHex, docker.lockingScriptHex, "locking script anchors artifact coherence"],
-    ["lineage.signatureScriptHex", simulated.signatureScriptHex, docker.signatureScriptHex, "unlock script anchors artifact coherence"],
-    ["lineage.expectedOutputs", simulated.expectedOutputs, docker.expectedOutputs, "expected outputs anchor artifact coherence"],
+    [
+      "lineage.redeemScriptHash",
+      simulated.redeemScriptHash,
+      docker.redeemScriptHash,
+      "redeem script hash anchors artifact coherence"
+    ],
+    [
+      "lineage.lockingScriptHex",
+      simulated.lockingScriptHex,
+      docker.lockingScriptHex,
+      "locking script anchors artifact coherence"
+    ],
+    [
+      "lineage.signatureScriptHex",
+      simulated.signatureScriptHex,
+      docker.signatureScriptHex,
+      "unlock script anchors artifact coherence"
+    ],
+    [
+      "lineage.expectedOutputs",
+      simulated.expectedOutputs,
+      docker.expectedOutputs,
+      "expected outputs anchor artifact coherence"
+    ],
     ["lineage.network", simulated.networkId, docker.networkId, "network must match"]
   ] as const) {
     const entry = compareField(check[0], check[1], check[2]);
@@ -499,7 +612,8 @@ function compareLineageSemantics(simulated: any, docker: any, mode: SilverCompar
   if (simulated.simulatedSpendTxId || docker.txId) {
     notes.push({
       field: "lineage.runtime.txid",
-      reason: "simulatedSpendTxId and Docker txId are intentionally different runtime identifiers",
+      reason:
+        "simulatedSpendTxId and Docker txId are intentionally different runtime identifiers",
       classification: "IGNORED_NON_CONSENSUS"
     });
   }

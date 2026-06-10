@@ -17,7 +17,7 @@ npm install @hardkas/react @hardkas/client
 Wrap your application in the `HardKASProvider`. This initializes the underlying `@hardkas/client` instance.
 
 ```tsx
-import { HardKASProvider } from '@hardkas/react';
+import { HardKASProvider } from "@hardkas/react";
 
 function App() {
   return (
@@ -35,10 +35,10 @@ function App() {
 Fetch wallet details.
 
 ```tsx
-import { useWallet } from '@hardkas/react';
+import { useWallet } from "@hardkas/react";
 
 function WalletView() {
-  const { data, loading, error } = useWallet('alice');
+  const { data, loading, error } = useWallet("alice");
 
   if (loading) return <p>Loading...</p>;
   if (error) return <p>Error: {error.message}</p>;
@@ -52,16 +52,18 @@ function WalletView() {
 Generic hook for executing state-changing transactions against the Dev API.
 
 ```tsx
-import { useMutation } from '@hardkas/react';
+import { useMutation } from "@hardkas/react";
 
 function SendKas() {
-  const { execute, loading } = useMutation((client, vars: { to: string, amount: number }) => {
-    return client.txSimulate({ ...vars });
-  });
+  const { execute, loading } = useMutation(
+    (client, vars: { to: string; amount: number }) => {
+      return client.txSimulate({ ...vars });
+    }
+  );
 
   return (
-    <button onClick={() => execute({ to: 'bob', amount: 100 })} disabled={loading}>
-      {loading ? 'Sending...' : 'Send to Bob'}
+    <button onClick={() => execute({ to: "bob", amount: 100 })} disabled={loading}>
+      {loading ? "Sending..." : "Send to Bob"}
     </button>
   );
 }

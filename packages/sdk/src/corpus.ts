@@ -41,7 +41,10 @@ export class HardkasCorpus {
   }
 }
 
-export function verifyToccataCorpus(targetPath: string, workspaceRoot = process.cwd()): CorpusVerifyResult {
+export function verifyToccataCorpus(
+  targetPath: string,
+  workspaceRoot = process.cwd()
+): CorpusVerifyResult {
   const corpusPath = path.resolve(workspaceRoot, targetPath);
   const issues: CorpusIssue[] = [];
 
@@ -54,11 +57,23 @@ export function verifyToccataCorpus(targetPath: string, workspaceRoot = process.
   const failureManifest = readRequiredJson(failureManifestPath, issues);
 
   if (opManifest) {
-    expectEqual(opManifest.schema, "hardkas.toccataGoldenManifest.v1", issues, "OP_TRUE_SCHEMA_INVALID", opManifestPath);
+    expectEqual(
+      opManifest.schema,
+      "hardkas.toccataGoldenManifest.v1",
+      issues,
+      "OP_TRUE_SCHEMA_INVALID",
+      opManifestPath
+    );
     validateCommonClaims(opManifest, issues, opManifestPath);
   }
   if (failureManifest) {
-    expectEqual(failureManifest.schema, "hardkas.toccataGoldenFailureManifest.v1", issues, "FAILURE_SCHEMA_INVALID", failureManifestPath);
+    expectEqual(
+      failureManifest.schema,
+      "hardkas.toccataGoldenFailureManifest.v1",
+      issues,
+      "FAILURE_SCHEMA_INVALID",
+      failureManifestPath
+    );
     validateCommonClaims(failureManifest, issues, failureManifestPath);
   }
 
@@ -67,7 +82,11 @@ export function verifyToccataCorpus(targetPath: string, workspaceRoot = process.
     for (const file of opManifest.files) {
       const filePath = path.join(opTrueDir, file);
       if (!fs.existsSync(filePath)) {
-        issues.push({ code: "CORPUS_FILE_MISSING", message: `Missing referenced OP_TRUE file ${file}.`, file: filePath });
+        issues.push({
+          code: "CORPUS_FILE_MISSING",
+          message: `Missing referenced OP_TRUE file ${file}.`,
+          file: filePath
+        });
         continue;
       }
       if (file === "manifest.json" || file === "compare-report.json") continue;
@@ -81,9 +100,27 @@ export function verifyToccataCorpus(targetPath: string, workspaceRoot = process.
   const comparePath = path.join(opTrueDir, "compare-report.json");
   const compareReport = readRequiredJson(comparePath, issues);
   if (compareReport) {
-    expectEqual(compareReport.schema, "hardkas.toccataGoldenCompare.v1", issues, "COMPARE_SCHEMA_INVALID", comparePath);
-    expectEqual(compareReport.compareMode, "artifact-coherence", issues, "COMPARE_MODE_INVALID", comparePath);
-    expectEqual(compareReport.status, "SILVERSCRIPT_SIMULATION_MATCH", issues, "COMPARE_STATUS_INVALID", comparePath);
+    expectEqual(
+      compareReport.schema,
+      "hardkas.toccataGoldenCompare.v1",
+      issues,
+      "COMPARE_SCHEMA_INVALID",
+      comparePath
+    );
+    expectEqual(
+      compareReport.compareMode,
+      "artifact-coherence",
+      issues,
+      "COMPARE_MODE_INVALID",
+      comparePath
+    );
+    expectEqual(
+      compareReport.status,
+      "SILVERSCRIPT_SIMULATION_MATCH",
+      issues,
+      "COMPARE_STATUS_INVALID",
+      comparePath
+    );
     if (!Array.isArray(compareReport.drift) || compareReport.drift.length !== 0) {
       issues.push({
         code: "COMPARE_DRIFT_NOT_EMPTY",
@@ -109,7 +146,13 @@ export function verifyToccataCorpus(targetPath: string, workspaceRoot = process.
       const filePath = path.join(failuresDir, entry.file);
       const fixture = readRequiredJson(filePath, issues);
       if (!fixture) continue;
-      expectEqual(fixture.schema, "hardkas.toccataGoldenFailureCase.v1", issues, "FAILURE_CASE_SCHEMA_INVALID", filePath);
+      expectEqual(
+        fixture.schema,
+        "hardkas.toccataGoldenFailureCase.v1",
+        issues,
+        "FAILURE_CASE_SCHEMA_INVALID",
+        filePath
+      );
       if (!entry.expectedSimulatorError) {
         issues.push({
           code: "EXPECTED_SIMULATOR_ERROR_MISSING",
@@ -117,8 +160,16 @@ export function verifyToccataCorpus(targetPath: string, workspaceRoot = process.
           file: failureManifestPath
         });
       }
-      const expectedError = fixture.expectedSimulator?.error || fixture.expectedSimulator?.secondAttempt?.error;
-      expectEqual(expectedError, entry.expectedSimulatorError, issues, "EXPECTED_SIMULATOR_ERROR_MISMATCH", filePath);
+      const expectedError =
+        fixture.expectedSimulator?.error ||
+        fixture.expectedSimulator?.secondAttempt?.error;
+      expectEqual(
+        expectedError,
+        entry.expectedSimulatorError,
+        issues,
+        "EXPECTED_SIMULATOR_ERROR_MISMATCH",
+        filePath
+      );
       validateFailureReferences(fixture, issues, filePath, corpusPath);
       if (entry.caseId === "mainnet-guard") {
         validateMainnetGuard(entry, fixture, issues, filePath);
@@ -135,10 +186,16 @@ export function verifyToccataCorpus(targetPath: string, workspaceRoot = process.
       happyPathFixtures: opManifest ? 1 : 0,
       failureFixtures,
       artifactsChecked,
-      contentHashes: issues.some((issue) => issue.code.includes("HASH")) ? "FAIL" : "PASS",
+      contentHashes: issues.some((issue) => issue.code.includes("HASH"))
+        ? "FAIL"
+        : "PASS",
       compareMode: compareReport?.compareMode ?? "unknown",
       simulationStatus: compareReport?.status ?? "unknown",
-      knownLimitations: collectKnownLimitations(opManifest, failureManifest, compareReport)
+      knownLimitations: collectKnownLimitations(
+        opManifest,
+        failureManifest,
+        compareReport
+      )
     },
     claims: {
       artifactCoherence: ok ? "READY_MATCH" : "INVALID",
@@ -152,7 +209,11 @@ export function verifyToccataCorpus(targetPath: string, workspaceRoot = process.
 
 function readRequiredJson(filePath: string, issues: CorpusIssue[]): any | undefined {
   if (!fs.existsSync(filePath)) {
-    issues.push({ code: "FILE_MISSING", message: `Missing required file ${filePath}.`, file: filePath });
+    issues.push({
+      code: "FILE_MISSING",
+      message: `Missing required file ${filePath}.`,
+      file: filePath
+    });
     return undefined;
   }
   try {
@@ -171,14 +232,33 @@ function validateCommonClaims(manifest: any, issues: CorpusIssue[], filePath: st
   expectEqual(manifest.network, "simnet", issues, "NETWORK_INVALID", filePath);
   expectEqual(manifest.profile, "toccata-v2", issues, "PROFILE_INVALID", filePath);
   const claim = manifest.simulationClaim || manifest.simulationLevel;
-  expectEqual(claim?.artifactCoherence, "READY", issues, "ARTIFACT_COHERENCE_CLAIM_INVALID", filePath);
-  expectEqual(claim?.runtimeOutcome, "PARTIAL", issues, "RUNTIME_OUTCOME_CLAIM_INVALID", filePath);
-  expectEqual(claim?.vmConsensusEquivalence, "NOT_CLAIMED", issues, "VM_CONSENSUS_CLAIM_INVALID", filePath);
+  expectEqual(
+    claim?.artifactCoherence,
+    "READY",
+    issues,
+    "ARTIFACT_COHERENCE_CLAIM_INVALID",
+    filePath
+  );
+  expectEqual(
+    claim?.runtimeOutcome,
+    "PARTIAL",
+    issues,
+    "RUNTIME_OUTCOME_CLAIM_INVALID",
+    filePath
+  );
+  expectEqual(
+    claim?.vmConsensusEquivalence,
+    "NOT_CLAIMED",
+    issues,
+    "VM_CONSENSUS_CLAIM_INVALID",
+    filePath
+  );
   expectKnownLimitation(manifest, issues, filePath);
 }
 
 function expectKnownLimitation(value: any, issues: CorpusIssue[], filePath: string) {
-  const limitations = value.expectedKnownLimitations || [value.expectedCompareStatus].filter(Boolean);
+  const limitations =
+    value.expectedKnownLimitations || [value.expectedCompareStatus].filter(Boolean);
   if (!Array.isArray(limitations) || !limitations.includes(EXPECTED_LIMITATION)) {
     issues.push({
       code: "PARTIAL_VM_SIMULATION_NOT_DECLARED",
@@ -190,7 +270,11 @@ function expectKnownLimitation(value: any, issues: CorpusIssue[], filePath: stri
 
 function verifyContentHash(artifact: any, issues: CorpusIssue[], filePath: string) {
   if (typeof artifact.contentHash !== "string") {
-    issues.push({ code: "CONTENT_HASH_MISSING", message: "Artifact is missing contentHash.", file: filePath });
+    issues.push({
+      code: "CONTENT_HASH_MISSING",
+      message: "Artifact is missing contentHash.",
+      file: filePath
+    });
     return;
   }
   const actual = calculateContentHash(artifact, artifact.hashVersion ?? 4);
@@ -203,7 +287,12 @@ function verifyContentHash(artifact: any, issues: CorpusIssue[], filePath: strin
   }
 }
 
-function validateFailureReferences(fixture: any, issues: CorpusIssue[], filePath: string, corpusPath: string) {
+function validateFailureReferences(
+  fixture: any,
+  issues: CorpusIssue[],
+  filePath: string,
+  corpusPath: string
+) {
   for (const ref of collectFixtureRefs(fixture)) {
     const refPath = ref.split("#")[0];
     if (!refPath) {
@@ -237,13 +326,19 @@ function collectFixtureRefs(fixture: any): string[] {
   return [...refs, ...setupRefs].filter(Boolean);
 }
 
-function validateMainnetGuard(entry: any, fixture: any, issues: CorpusIssue[], filePath: string) {
+function validateMainnetGuard(
+  entry: any,
+  fixture: any,
+  issues: CorpusIssue[],
+  filePath: string
+) {
   const status = fixture.expectedReal?.status;
   const error = fixture.expectedReal?.error || entry.expectedRealError;
   if (status !== "BLOCKED_BY_POLICY" || error !== "SILVERSCRIPT_MAINNET_NOT_ENABLED") {
     issues.push({
       code: "MAINNET_GUARD_CLAIM_INVALID",
-      message: "mainnet-guard must declare BLOCKED_BY_POLICY / SILVERSCRIPT_MAINNET_NOT_ENABLED.",
+      message:
+        "mainnet-guard must declare BLOCKED_BY_POLICY / SILVERSCRIPT_MAINNET_NOT_ENABLED.",
       file: filePath
     });
   }
@@ -254,14 +349,21 @@ function collectKnownLimitations(...values: any[]): string[] {
     new Set(
       values.flatMap((value) => {
         if (!value) return [];
-        if (Array.isArray(value.expectedKnownLimitations)) return value.expectedKnownLimitations;
+        if (Array.isArray(value.expectedKnownLimitations))
+          return value.expectedKnownLimitations;
         return [value.expectedCompareStatus].filter(Boolean);
       })
     )
   ).sort();
 }
 
-function expectEqual(actual: unknown, expected: unknown, issues: CorpusIssue[], code: string, file: string) {
+function expectEqual(
+  actual: unknown,
+  expected: unknown,
+  issues: CorpusIssue[],
+  code: string,
+  file: string
+) {
   if (actual !== expected) {
     issues.push({
       code,

@@ -1,4 +1,4 @@
-import fs from "node:fs";
+﻿import fs from "node:fs";
 import path from "node:path";
 import pc from "picocolors";
 import { UI } from "../ui.js";
@@ -46,9 +46,17 @@ function tryReadJsonl(p: string): {
 export async function runTelemetryInspect(options: { limit: string }) {
   const p = telemetryPath();
 
-  console.log(pc.bold("\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"));
-  console.log(pc.bold(`HardKAS • Telemetry Source Inspector`));
-  console.log(pc.bold("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"));
+  console.log(
+    pc.bold(
+      "\nâ”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”"
+    )
+  );
+  console.log(pc.bold(`HardKAS â€¢ Telemetry Source Inspector`));
+  console.log(
+    pc.bold(
+      "â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”\n"
+    )
+  );
 
   if (!fs.existsSync(p)) {
     UI.warning(`No telemetry file found at ${p}`);
@@ -120,7 +128,7 @@ export async function runTelemetryInspect(options: { limit: string }) {
   const recent = events.slice(-limit);
   console.log(`\n${pc.bold(`Recent Events (Last ${recent.length}):`)}`);
   console.log(
-    "────────────────────────────────────────────────────────────────────────────────"
+    "â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€"
   );
   for (const ev of recent) {
     const time = new Date(ev.timestamp).toLocaleTimeString();
@@ -136,7 +144,7 @@ export async function runTelemetryInspect(options: { limit: string }) {
     );
   }
   console.log(
-    "────────────────────────────────────────────────────────────────────────────────\n"
+    "â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€\n"
   );
 }
 
@@ -146,14 +154,25 @@ export async function runTelemetryInspect(options: { limit: string }) {
 export async function runTelemetryVerify() {
   const p = telemetryPath();
 
-  console.log(pc.bold("\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"));
-  console.log(pc.bold(`HardKAS • Telemetry Source Schema Verifier`));
-  console.log(pc.bold("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"));
+  console.log(
+    pc.bold(
+      "\nâ”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”"
+    )
+  );
+  console.log(pc.bold(`HardKAS â€¢ Telemetry Source Schema Verifier`));
+  console.log(
+    pc.bold(
+      "â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”\n"
+    )
+  );
 
   if (!fs.existsSync(p)) {
-    UI.error(`Verification FAILED: Telemetry file does not exist at ${p}`);
-    process.exitCode = 1;
-    return;
+    const { HardkasCliError } = await import("../cli-errors.js");
+    throw new HardkasCliError(
+      "TELEMETRY_FILE_NOT_FOUND",
+      `Verification FAILED: Telemetry file does not exist at ${p}`,
+      { exitCode: 1 }
+    );
   }
 
   const raw = fs.readFileSync(p, "utf-8").trim();
@@ -175,7 +194,7 @@ export async function runTelemetryVerify() {
       event = JSON.parse(line);
     } catch (e: any) {
       console.log(
-        `${pc.red("✗ Line " + (i + 1) + ":")} Invalid JSON structure (${e.message})`
+        `${pc.red("âœ— Line " + (i + 1) + ":")} Invalid JSON structure (${e.message})`
       );
       console.log(`  Raw Content: ${pc.dim(line.slice(0, 100))}`);
       invalidCount++;
@@ -206,7 +225,7 @@ export async function runTelemetryVerify() {
     if (event.payload === undefined) errors.push(`Missing payload`);
 
     if (errors.length > 0) {
-      console.log(`${pc.red("✗ Line " + (i + 1) + ":")} Schema violation`);
+      console.log(`${pc.red("âœ— Line " + (i + 1) + ":")} Schema violation`);
       for (const err of errors) {
         console.log(`    - ${err}`);
       }
@@ -217,16 +236,24 @@ export async function runTelemetryVerify() {
   }
 
   console.log("\nVerification Summary:");
-  console.log("─────────────────────────────────────────────────");
+  console.log(
+    "â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€"
+  );
   console.log(`  Valid events checked:   ${pc.green(validCount)}`);
   console.log(
     `  Schema violations:      ${invalidCount > 0 ? pc.red(invalidCount) : pc.green(0)}`
   );
-  console.log("─────────────────────────────────────────────────");
+  console.log(
+    "â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€"
+  );
 
   if (invalidCount > 0) {
-    UI.error(`Telemetry verification FAILED with ${invalidCount} schema violations.`);
-    process.exitCode = 1;
+    const { HardkasCliError } = await import("../cli-errors.js");
+    throw new HardkasCliError(
+      "TELEMETRY_VERIFICATION_FAILED",
+      `Telemetry verification FAILED with ${invalidCount} schema violations.`,
+      { exitCode: 1 }
+    );
   } else {
     UI.success(
       "Telemetry verification PASSED. Stream strictly complies with Telemetry Source Contract v1."
@@ -242,9 +269,12 @@ export async function runTelemetryTail(options: { follow: boolean; lines: string
   const p = telemetryPath();
 
   if (!fs.existsSync(p)) {
-    UI.error(`Telemetry file does not exist at ${p}`);
-    process.exitCode = 1;
-    return;
+    const { HardkasCliError } = await import("../cli-errors.js");
+    throw new HardkasCliError(
+      "TELEMETRY_FILE_NOT_FOUND",
+      `Telemetry file does not exist at ${p}`,
+      { exitCode: 1 }
+    );
   }
 
   const printTail = (linesCount: number) => {

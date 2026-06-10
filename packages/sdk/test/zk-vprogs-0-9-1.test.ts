@@ -16,7 +16,9 @@ function repoRoot(): string {
 
 function copyZkCorpus(): string {
   const target = fs.mkdtempSync(path.join(os.tmpdir(), "hardkas-zk-corpus-"));
-  fs.cpSync(path.join(repoRoot(), "fixtures", "toccata-v2", "zk"), target, { recursive: true });
+  fs.cpSync(path.join(repoRoot(), "fixtures", "toccata-v2", "zk"), target, {
+    recursive: true
+  });
   return target;
 }
 
@@ -40,7 +42,11 @@ describe("0.9.1-alpha ZK corpus and vProgs inspect SDK parity", () => {
   });
 
   it("exposes ZK capabilities with bounded experimental claims", async () => {
-    const sdk = await Hardkas.create({ cwd: workspaceRoot, network: "simulated", autoBootstrap: true });
+    const sdk = await Hardkas.create({
+      cwd: workspaceRoot,
+      network: "simulated",
+      autoBootstrap: true
+    });
     const capabilities = await sdk.zk.capabilities();
 
     expect(capabilities.schema).toBe("hardkas.zkCapabilities.v1");
@@ -50,7 +56,11 @@ describe("0.9.1-alpha ZK corpus and vProgs inspect SDK parity", () => {
   });
 
   it("verifies the experimental Groth16/RISC0 corpus with partial local verification", async () => {
-    const sdk = await Hardkas.create({ cwd: repoRoot(), network: "simulated", autoBootstrap: true });
+    const sdk = await Hardkas.create({
+      cwd: repoRoot(),
+      network: "simulated",
+      autoBootstrap: true
+    });
     const result = await sdk.zk.corpus.verify("fixtures/toccata-v2/zk");
 
     expect(result.ok).toBe(true);
@@ -79,7 +89,9 @@ describe("0.9.1-alpha ZK corpus and vProgs inspect SDK parity", () => {
 
     const result = await verifyZkCorpus(corpus, path.dirname(corpus));
     expect(result.ok).toBe(false);
-    expect(result.issues.map((issue) => issue.code)).toContain("ZK_GROTH16_PUBLIC_INPUTS_HASH_MISMATCH");
+    expect(result.issues.map((issue) => issue.code)).toContain(
+      "ZK_GROTH16_PUBLIC_INPUTS_HASH_MISMATCH"
+    );
   });
 
   it("fails Groth16 verification key tampering", async () => {
@@ -90,7 +102,9 @@ describe("0.9.1-alpha ZK corpus and vProgs inspect SDK parity", () => {
 
     const result = await verifyZkCorpus(corpus, path.dirname(corpus));
     expect(result.ok).toBe(false);
-    expect(result.issues.map((issue) => issue.code)).toContain("ZK_GROTH16_VERIFICATION_KEY_HASH_MISMATCH");
+    expect(result.issues.map((issue) => issue.code)).toContain(
+      "ZK_GROTH16_VERIFICATION_KEY_HASH_MISMATCH"
+    );
   });
 
   it("fails ZK manifest tampering and mainnet corpus claims", async () => {
@@ -103,11 +117,17 @@ describe("0.9.1-alpha ZK corpus and vProgs inspect SDK parity", () => {
     const result = await verifyZkCorpus(corpus, path.dirname(corpus));
     expect(result.ok).toBe(false);
     expect(result.issues.map((issue) => issue.code)).toContain("ZK_NETWORK_UNSUPPORTED");
-    expect(result.issues.map((issue) => issue.code)).toContain("ZK_MAINNET_GUARD_INVALID");
+    expect(result.issues.map((issue) => issue.code)).toContain(
+      "ZK_MAINNET_GUARD_INVALID"
+    );
   });
 
   it("inspects RISC0 and returns explicit unsupported local verification", async () => {
-    const sdk = await Hardkas.create({ cwd: repoRoot(), network: "simulated", autoBootstrap: true });
+    const sdk = await Hardkas.create({
+      cwd: repoRoot(),
+      network: "simulated",
+      autoBootstrap: true
+    });
     const inspect = await sdk.zk.proof.inspect("fixtures/toccata-v2/zk/risc0");
     const verify = await sdk.zk.proof.verifyLocal("fixtures/toccata-v2/zk/risc0");
 
@@ -115,13 +135,21 @@ describe("0.9.1-alpha ZK corpus and vProgs inspect SDK parity", () => {
     expect(inspect.proofSystem).toBe("risc0");
     expect(verify.ok).toBe(false);
     expect(verify.status).toBe("RISC0_LOCAL_VERIFICATION_NOT_IMPLEMENTED");
-    expect(verify.issues.map((issue) => issue.code)).toContain("RISC0_VERIFIER_UNAVAILABLE");
+    expect(verify.issues.map((issue) => issue.code)).toContain(
+      "RISC0_VERIFIER_UNAVAILABLE"
+    );
   });
 
   it("exposes vProgs inspect-only surface with bounded claims", async () => {
-    const sdk = await Hardkas.create({ cwd: repoRoot(), network: "simulated", autoBootstrap: true });
+    const sdk = await Hardkas.create({
+      cwd: repoRoot(),
+      network: "simulated",
+      autoBootstrap: true
+    });
     const enabled = await sdk.vprogs.status();
-    const inspected = await sdk.vprogs.inspect("fixtures/toccata-v2/vprogs/inspect-only-artifact.json");
+    const inspected = await sdk.vprogs.inspect(
+      "fixtures/toccata-v2/vprogs/inspect-only-artifact.json"
+    );
 
     expect(enabled.ok).toBe(true);
     expect(enabled.status).toBe("VPROGS_INSPECT_SURFACE_READY");

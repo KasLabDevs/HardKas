@@ -1,4 +1,4 @@
-import { UI } from "../ui.js";
+﻿import { UI } from "../ui.js";
 import {
   loadOrCreateLocalnetState,
   restoreLocalnetSnapshot,
@@ -27,7 +27,10 @@ export async function runSnapshotRestore(options: SnapshotRestoreOptions) {
     console.log(`  New State Hash:      ${postHash.slice(0, 16)}...`);
     console.log(`  DAA Score:           ${nextState.daaScore}`);
   } catch (e: any) {
-    UI.error(`Restore failed: ${e.message}`);
-    process.exitCode = 1;
+    const { HardkasCliError } = await import("../cli-errors.js");
+    throw new HardkasCliError("RESTORE_FAILED", `Restore failed: ${e.message}`, {
+      exitCode: 1,
+      cause: e
+    });
   }
 }

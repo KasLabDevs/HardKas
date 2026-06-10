@@ -1,4 +1,4 @@
-import pc from "picocolors";
+﻿import pc from "picocolors";
 import { UI, handleError } from "../ui.js";
 
 export interface KaspaDoctorCheck {
@@ -106,22 +106,31 @@ export async function runKaspaDoctor(options: { rpcUrl: string; json: boolean })
         checks
       };
       console.log(JSON.stringify(result, null, 2));
-      if (finalStatus === "failed") process.exitCode = 1;
+      if (finalStatus === "failed") {
+        const { HardkasCliError } = await import("../cli-errors.js");
+        throw new HardkasCliError("DOCTOR_FAILED", "Doctor checks failed", {
+          exitCode: 1
+        });
+      }
       return;
     }
 
     // Aesthetic Output
-    console.log(pc.bold("\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"));
-    console.log(pc.bold(`HardKAS • Kaspa Doctor (L1)`));
-    console.log(pc.bold("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"));
+    console.log(
+      pc.bold("\nâ”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”")
+    );
+    console.log(pc.bold(`HardKAS â€¢ Kaspa Doctor (L1)`));
+    console.log(
+      pc.bold("â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”\n")
+    );
 
     for (const check of checks) {
       const icon =
         check.status === "success"
-          ? pc.green("✓")
+          ? pc.green("âœ“")
           : check.status === "warning"
-            ? pc.yellow("⚠")
-            : pc.red("✗");
+            ? pc.yellow("âš ")
+            : pc.red("âœ—");
       console.log(`${icon} ${pc.bold(check.name)}: ${check.message}`);
     }
 
@@ -143,10 +152,17 @@ export async function runKaspaDoctor(options: { rpcUrl: string; json: boolean })
       if (checks.some((c) => c.name === "UTXO Index" && c.status === "error")) {
         console.log(`  - Start kaspad with ${pc.white("--utxoindex")}.`);
       }
-      process.exitCode = 1;
+      const { HardkasCliError } = await import("../cli-errors.js");
+      throw new HardkasCliError("DOCTOR_FAILED", "Kaspa node doctor checks failed.", {
+        exitCode: 1
+      });
     }
-  } catch (e) {
-    process.exitCode = 1;
-    handleError(e);
+  } catch (e: any) {
+    if (e.name === "HardkasCliError") throw e;
+    const { HardkasCliError } = await import("../cli-errors.js");
+    throw new HardkasCliError("DOCTOR_ERROR", e.message || "Unknown error", {
+      exitCode: 1,
+      cause: e
+    });
   }
 }

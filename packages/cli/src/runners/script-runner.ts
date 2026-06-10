@@ -1,4 +1,4 @@
-// SAFETY_LEVEL: SIMULATION_ONLY
+﻿// SAFETY_LEVEL: SIMULATION_ONLY
 
 import { resolve, dirname } from "node:path";
 import { existsSync, unlinkSync } from "node:fs";
@@ -19,8 +19,10 @@ export async function runScript(
   const scriptPath = resolve(script);
 
   if (!existsSync(scriptPath)) {
-    console.error(`Script not found: ${scriptPath}`);
-    process.exit(1);
+    const { HardkasCliError } = await import("../cli-errors.js");
+    throw new HardkasCliError("SCRIPT_NOT_FOUND", `Script not found: ${scriptPath}`, {
+      exitCode: 1
+    });
   }
 
   const { config } = await loadHardkasConfig();
@@ -66,7 +68,7 @@ ${injectionCode}
     await import("file://${scriptPath.replace(/\\/g, "/")}");
   } catch (err) {
     console.error(err);
-    process.exit(1);
+    throw err;
   }
 })();
 `;

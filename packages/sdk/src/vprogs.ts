@@ -93,7 +93,13 @@ export async function inspectVprogsArtifact(
       status: "VPROGS_ARTIFACT_INVALID",
       path: path.relative(workspaceRoot, resolved).replace(/\\/g, "/"),
       claims: vprogsClaims(),
-      issues: [{ code: "VPROGS_ARTIFACT_MISSING", message: `Missing ${resolved}.`, file: resolved }]
+      issues: [
+        {
+          code: "VPROGS_ARTIFACT_MISSING",
+          message: `Missing ${resolved}.`,
+          file: resolved
+        }
+      ]
     };
   }
 

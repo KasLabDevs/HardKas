@@ -455,7 +455,12 @@ export interface SilverTestArtifact extends BaseArtifact<"silver.test"> {
   compilerVersion: string;
   results: Array<{
     name: string;
-    status: "PASS" | "FAIL" | "SKIPPED" | "EXPECTED_COMPILER_FAILURE" | "PARTIAL_TEST_VECTOR_SUPPORT";
+    status:
+      | "PASS"
+      | "FAIL"
+      | "SKIPPED"
+      | "EXPECTED_COMPILER_FAILURE"
+      | "PARTIAL_TEST_VECTOR_SUPPORT";
     reason?: string | undefined;
   }>;
   status: "PASS" | "FAIL" | "PARTIAL_TEST_VECTOR_SUPPORT" | "EXPECTED_COMPILER_FAILURE";
@@ -512,15 +517,19 @@ export interface SilverSpendReceiptArtifact extends BaseArtifact<"silver.spendRe
   redeemScriptHash?: string | undefined;
   lockingScriptHex?: string | undefined;
   signatureScriptHex?: string | undefined;
-  spentOutpoint?: {
-    transactionId: string;
-    index: number;
-  } | undefined;
-  expectedOutputs?: Array<{
-    address: string;
-    amountSompi: string;
-    scriptHash?: string | undefined;
-  }> | undefined;
+  spentOutpoint?:
+    | {
+        transactionId: string;
+        index: number;
+      }
+    | undefined;
+  expectedOutputs?:
+    | Array<{
+        address: string;
+        amountSompi: string;
+        scriptHash?: string | undefined;
+      }>
+    | undefined;
   txId: string;
   status: "simulated" | "submitted" | "accepted" | "rejected";
 }
@@ -595,7 +604,10 @@ export interface ProgrammabilityInspectArtifact {
 export interface ProgrammabilityVerifyArtifact {
   schema: "hardkas.programmability.verify.v1";
   ok: boolean;
-  status: "PROGRAMMABILITY_VERIFY_PASS" | "PROGRAMMABILITY_VERIFY_FAIL" | "PROGRAMMABILITY_VERIFY_PARTIAL";
+  status:
+    | "PROGRAMMABILITY_VERIFY_PASS"
+    | "PROGRAMMABILITY_VERIFY_FAIL"
+    | "PROGRAMMABILITY_VERIFY_PARTIAL";
   claims: ProgrammabilityClaims;
 }
 

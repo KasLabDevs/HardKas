@@ -107,7 +107,8 @@ export class HardkasLocalnet {
       schema: "hardkas.localnetControl.v1",
       profile,
       status: "SDK_LOCALNET_CONTROL_UNSUPPORTED",
-      message: "SDK Docker localnet start is not supported in 0.9.1-alpha. Use `hardkas localnet start --profile toccata-v2`."
+      message:
+        "SDK Docker localnet start is not supported in 0.9.1-alpha. Use `hardkas localnet start --profile toccata-v2`."
     };
   }
 
@@ -121,7 +122,8 @@ export class HardkasLocalnet {
     identifier: string,
     options: LocalnetProfileOptions & { from?: string; amount?: string | bigint } = {}
   ): Promise<LocalnetFundingResult> {
-    const profile = options.profile || (this.sdk.network === "simulated" ? "simulated" : "toccata-v2");
+    const profile =
+      options.profile || (this.sdk.network === "simulated" ? "simulated" : "toccata-v2");
     if (profile === "simulated") {
       const fundOptions: { from?: string; amount?: string | bigint } = {};
       if (options.from !== undefined) fundOptions.from = options.from;
@@ -142,7 +144,8 @@ export class HardkasLocalnet {
       profile,
       identifier,
       status: "SDK_TOCCATA_FUNDING_UNSUPPORTED",
-      message: "SDK Toccata funding is not supported in 0.9.1-alpha. Use `hardkas localnet fund <account> --profile toccata-v2`."
+      message:
+        "SDK Toccata funding is not supported in 0.9.1-alpha. Use `hardkas localnet fund <account> --profile toccata-v2`."
     };
   }
 
@@ -156,19 +159,27 @@ export class HardkasLocalnet {
 
   private async detectToccataNode(): Promise<LocalnetStatusResult["node"]> {
     const rpcUrl = "ws://127.0.0.1:18210";
+    const { JsonWrpcKaspaClient } = await import("@hardkas/kaspa-rpc");
+    const client = new JsonWrpcKaspaClient({ rpcUrl, timeoutMs: 3000 });
     try {
-      const server = await this.sdk.rpc.getServerInfo();
-      const info = await this.sdk.rpc.getInfo();
+      const server = await client.getServerInfo();
+      const info = await client.getInfo();
       const serverNetworkId = String((server as any).networkId || "");
-      return {
+      const result = {
         ready: true,
         rpcUrl,
-        networkId: serverNetworkId === "unknown" ? "simnet" : (server as any).networkId || (info as any).networkId || "simnet",
+        networkId:
+          serverNetworkId === "unknown"
+            ? "simnet"
+            : (server as any).networkId || (info as any).networkId || "simnet",
         serverVersion: (server as any).serverVersion || (info as any).serverVersion,
         isSynced: (server as any).isSynced ?? (info as any).isSynced,
         virtualDaaScore: (info as any).virtualDaaScore?.toString()
       };
+      await client.close();
+      return result;
     } catch (error: any) {
+      await client.close().catch(() => {});
       return {
         ready: false,
         rpcUrl,
@@ -180,15 +191,14 @@ export class HardkasLocalnet {
   private inspectDockerContainer(name: string): LocalnetStatusResult["miner"] {
     const image = "hardkas/stratum-bridge:v2.0.0-local-simnet-unsynced";
     try {
-      const stdout = execFileSync("docker", [
-        "inspect",
-        "--format",
-        "{{.State.Status}}|{{.Config.Image}}|{{.Name}}",
-        name
-      ], {
-        encoding: "utf8",
-        stdio: "pipe"
-      });
+      const stdout = execFileSync(
+        "docker",
+        ["inspect", "--format", "{{.State.Status}}|{{.Config.Image}}|{{.Name}}", name],
+        {
+          encoding: "utf8",
+          stdio: "pipe"
+        }
+      );
       const [status, detectedImage, rawName] = stdout.trim().split("|");
       return {
         exists: true,

@@ -574,9 +574,7 @@
             {
               "path": "hardkas accounts real session-close",
               "name": "session-close",
-              "aliases": [
-                "lock"
-              ],
+              "aliases": ["lock"],
               "description": "Clear the local dev signing session marker internal",
               "usage": "hardkas accounts real session-close [options] <name>",
               "arguments": [
@@ -591,9 +589,7 @@
             {
               "path": "hardkas accounts real session-open",
               "name": "session-open",
-              "aliases": [
-                "unlock"
-              ],
+              "aliases": ["unlock"],
               "description": "Verify keystore access and record signing intent internal",
               "usage": "hardkas accounts real session-open [options] <name>",
               "arguments": [
@@ -4067,9 +4063,7 @@
             {
               "path": "hardkas query store sync",
               "name": "sync",
-              "aliases": [
-                "index"
-              ],
+              "aliases": ["index"],
               "description": "Synchronize the filesystem artifacts with the query store index",
               "usage": "hardkas query store sync [options]",
               "arguments": [],

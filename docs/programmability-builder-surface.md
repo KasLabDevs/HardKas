@@ -22,7 +22,10 @@ hardkas programmability app plan --kind full-lab --json
 const hardkas = await Hardkas.create({ network: "simulated", autoBootstrap: true });
 await hardkas.programmability.capabilities();
 await hardkas.programmability.corpus.verify({ path: "fixtures/toccata-v2" });
-await hardkas.programmability.inspect({ kind: "zk", path: "fixtures/toccata-v2/zk/groth16" });
+await hardkas.programmability.inspect({
+  kind: "zk",
+  path: "fixtures/toccata-v2/zk/groth16"
+});
 ```
 
 Claims remain bounded:

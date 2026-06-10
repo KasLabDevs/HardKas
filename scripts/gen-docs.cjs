@@ -1,5 +1,5 @@
-const fs = require('fs');
-const path = require('path');
+const fs = require("fs");
+const path = require("path");
 
 const docs = {
   "docs/getting-started/installation.md": `# Installation
@@ -393,6 +393,9 @@ None. The documentation is gapless relative to the 12-Phase No-Regression Certif
 };
 
 for (const [filepath, content] of Object.entries(docs)) {
-  fs.writeFileSync(path.join('C:/Users/jrodr/Documents/kaslabdevs/GitHub/HardKas-repo', filepath), content);
+  fs.writeFileSync(
+    path.join("C:/Users/jrodr/Documents/kaslabdevs/GitHub/HardKas-repo", filepath),
+    content
+  );
   console.log(`Wrote ${filepath}`);
 }

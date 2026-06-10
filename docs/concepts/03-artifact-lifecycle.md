@@ -6,7 +6,7 @@ In HardKAS, state transitions are represented as immutable JSON files called **A
 
 The artifact pipeline represents a strict DAG (Directed Acyclic Graph) of operations.
 
-1. **Plan (`TxPlanArtifact`)**: 
+1. **Plan (`TxPlanArtifact`)**:
    The initial intent. You specify the sender, receiver, and amount. HardKAS normalizes this into a deterministically ordered JSON structure.
 2. **SignedTx (`SignedTxArtifact`)**:
    The plan is mathematically signed by the required parties (e.g., Alice). The signature is appended to the artifact, creating a new deterministic hash that points back to the parent `Plan`.
@@ -18,20 +18,26 @@ The artifact pipeline represents a strict DAG (Directed Acyclic Graph) of operat
 ## Core Concepts
 
 ### 1. The `contentHash`
+
 Every artifact contains a `contentHash` (usually SHA-256). This hash is the exact representation of the canonical serialization of the artifact's payload.
 
 ### 2. Canonical Serialization
+
 To guarantee that `hash(A)` equals `hash(B)` across different operating systems, HardKAS enforces strict JSON key sorting and Unicode normalization before generating the hash.
 
 ### 3. Lineage
+
 Artifacts point to their parents. A `SignedTx` contains the `artifactId` of its `Plan`. A `Receipt` contains the `artifactId` of its `SignedTx`. This creates an unbroken, auditable cryptographic chain. In strict mode, the runtime prevents sequence rollbacks, parent mismatches, and invalid path transitions (e.g., plans jumping directly to traces without a receipt).
 
 ### 4. Zero-Trust Verification
+
 When an artifact is loaded, the SDK ignores the `contentHash` in the file. It mathematically recalculates the hash from the payload. If the calculated hash does not match the stated hash, the artifact is rejected. This prevents manual tampering of amounts or signatures.
 
 ### 5. Policy & Reference Evaluation
-Artifacts declare external references such as `policyRefs` (plural array, with backward compatibility for the legacy singular `policyRef`), `networkProfileRef`, and `assumptionRef`. 
+
+Artifacts declare external references such as `policyRefs` (plural array, with backward compatibility for the legacy singular `policyRef`), `networkProfileRef`, and `assumptionRef`.
 Under **Strict Verification Mode**, HardKAS resolves these references to ensure:
+
 - All referenced artifacts exist in the workspace directory.
 - The content hashes of referenced files match their stated reference IDs.
 - The `hardkas.policy.v1` rules engine is evaluated against the artifact payload, requiring an explicit `ALLOW` decision. Any `DENY` decision or unresolved policy will fail execution.

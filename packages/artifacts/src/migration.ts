@@ -51,8 +51,13 @@ export interface MigrationResult {
 }
 
 export class MigrationRequiredError extends Error {
-  constructor(public oldVersion: string, public targetVersion: string) {
-    super(`MIGRATION_REQUIRED: Artifact requires explicit migration from ${oldVersion} to ${targetVersion}`);
+  constructor(
+    public oldVersion: string,
+    public targetVersion: string
+  ) {
+    super(
+      `MIGRATION_REQUIRED: Artifact requires explicit migration from ${oldVersion} to ${targetVersion}`
+    );
     this.name = "MigrationRequiredError";
   }
 }
@@ -400,8 +405,12 @@ export function generateMigrationReceipt(
   newArtifact: ArtifactPayload,
   migrationId: string
 ): any {
-  const oldHash = oldArtifact.contentHash as string || calculateContentHash(oldArtifact, CURRENT_HASH_VERSION);
-  const newHash = newArtifact.contentHash as string || calculateContentHash(newArtifact, CURRENT_HASH_VERSION);
+  const oldHash =
+    (oldArtifact.contentHash as string) ||
+    calculateContentHash(oldArtifact, CURRENT_HASH_VERSION);
+  const newHash =
+    (newArtifact.contentHash as string) ||
+    calculateContentHash(newArtifact, CURRENT_HASH_VERSION);
 
   const receipt: any = {
     schema: "hardkas.migrationReceipt.v1",
@@ -419,7 +428,9 @@ export function generateMigrationReceipt(
     decision: "MIGRATED_WITH_PROOF",
     lineage: {
       artifactId: "", // Filled after hash
-      lineageId: ((oldArtifact.lineage as any)?.lineageId as string) || ("migration" + oldHash).padEnd(64, "0").slice(0, 64),
+      lineageId:
+        ((oldArtifact.lineage as any)?.lineageId as string) ||
+        ("migration" + oldHash).padEnd(64, "0").slice(0, 64),
       parentArtifactId: oldHash,
       rootArtifactId: ((oldArtifact.lineage as any)?.rootArtifactId as string) || oldHash
     }
@@ -428,7 +439,7 @@ export function generateMigrationReceipt(
   receipt.contentHash = calculateContentHash(receipt, CURRENT_HASH_VERSION);
   receipt.lineage.artifactId = receipt.contentHash;
 
-  // We DO NOT mutate newArtifact to point to the receipt because that would 
+  // We DO NOT mutate newArtifact to point to the receipt because that would
   // create a circular hash dependency (receipt needs newArtifact hash, newArtifact needs receipt hash).
   // newArtifact's parent is simply oldArtifact.
 

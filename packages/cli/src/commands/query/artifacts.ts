@@ -57,8 +57,7 @@ export function registerArtifactQueryCommands(queryCmd: Command) {
           printArtifactList(result as any);
         }
       } catch (e) {
-        handleError(e);
-        process.exitCode = 1;
+        throw e;
       }
     });
 
@@ -88,8 +87,7 @@ export function registerArtifactQueryCommands(queryCmd: Command) {
           printInspectResult(result as any);
         }
       } catch (e) {
-        handleError(e);
-        process.exitCode = 1;
+        throw e;
       }
     });
 
@@ -117,8 +115,7 @@ export function registerArtifactQueryCommands(queryCmd: Command) {
           printDiffResult(result as any);
         }
       } catch (e) {
-        handleError(e);
-        process.exitCode = 1;
+        throw e;
       }
     });
 
@@ -148,8 +145,7 @@ export function registerArtifactQueryCommands(queryCmd: Command) {
           printInspectResult(result as any); // verify returns a similar structure to inspect
         }
       } catch (e) {
-        handleError(e);
-        process.exitCode = 1;
+        throw e;
       }
     });
 }

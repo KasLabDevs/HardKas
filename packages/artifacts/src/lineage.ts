@@ -143,12 +143,16 @@ export function verifyLineage(
     const validTransitions: Record<string, string[]> = {
       "hardkas.snapshot": ["hardkas.txPlan", "hardkas.migrationReceipt.v1"],
       "hardkas.txPlan": ["hardkas.signedTx", "hardkas.migrationReceipt.v1"],
-      "hardkas.signedTx": ["hardkas.txReceipt", "hardkas.signedTx", "hardkas.migrationReceipt.v1"],
+      "hardkas.signedTx": [
+        "hardkas.txReceipt",
+        "hardkas.signedTx",
+        "hardkas.migrationReceipt.v1"
+      ],
       "hardkas.txReceipt": ["hardkas.txTrace", "hardkas.migrationReceipt.v1"]
     };
 
     let isValidTransition = false;
-    
+
     // Migration receipt rules
     if (parent.schema === "hardkas.migrationReceipt.v1") {
       isValidTransition = parent.toSchema === artifact.schema;
@@ -187,9 +191,23 @@ export function verifyLineage(
  * Creates a valid lineage transition object for a new child artifact based on its parent.
  * This should be attached to the child artifact before calculating its final hash.
  */
-export function createLineageTransition(parent: any, childType: string): { artifactId: string; lineageId: string; parentArtifactId: string; rootArtifactId: string; sequence: number; } {
+export function createLineageTransition(
+  parent: any,
+  childType: string
+): {
+  artifactId: string;
+  lineageId: string;
+  parentArtifactId: string;
+  rootArtifactId: string;
+  sequence: number;
+} {
   const parentLineage = parent.lineage || {};
-  const parentId = parent.contentHash || parent.artifactId || parent.planId || parent.signedId || "0".repeat(64);
+  const parentId =
+    parent.contentHash ||
+    parent.artifactId ||
+    parent.planId ||
+    parent.signedId ||
+    "0".repeat(64);
 
   return {
     artifactId: "", // To be computed after the rest of the artifact is hashed

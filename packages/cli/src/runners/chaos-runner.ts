@@ -1,4 +1,4 @@
-import fs from "node:fs/promises";
+﻿import fs from "node:fs/promises";
 import path from "node:path";
 import { UI } from "../ui.js";
 import { ChaosExitCodes } from "../commands/chaos.js";
@@ -138,7 +138,7 @@ export async function runChaosEngine(options: any) {
       const failureReason = hasRawStack
         ? "Raw stack trace detected!"
         : `Unexpected exit code ${exitCode}!`;
-      console.log(pc.red(`✖ Run ${i} FAILED (${actorName}) - ${failureReason}`));
+      console.log(pc.red(`âœ– Run ${i} FAILED (${actorName}) - ${failureReason}`));
     } else {
       process.stdout.write(pc.green("."));
     }
@@ -165,15 +165,17 @@ ${results
   await fs.writeFile(summaryFile, summary);
 
   if (failedRuns > 0) {
-    UI.error(
-      `Chaos campaign completed with ${failedRuns} failures. See ${reportsDir} for details.`
+    const { HardkasCliError } = await import("../cli-errors.js");
+    throw new HardkasCliError(
+      "CHAOS_CAMPAIGN_FAILED",
+      `Chaos campaign completed with ${failedRuns} failures. See ${reportsDir} for details.`,
+      { exitCode: ChaosExitCodes.INVARIANT_VIOLATION }
     );
-    process.exit(ChaosExitCodes.INVARIANT_VIOLATION);
   } else {
     UI.success(
       `Chaos campaign completed successfully. 0 failures detected across ${runs} runs.`
     );
-    process.exit(ChaosExitCodes.NO_FINDINGS);
+    return;
   }
 }
 
@@ -231,10 +233,12 @@ export async function replayChaosRun(options: any) {
     const failureReason = hasRawStack
       ? "Raw stack trace detected."
       : `Unexpected exit code ${exitCode}.`;
-    UI.error(`Replay failed: ${failureReason}`);
-    process.exit(ChaosExitCodes.INVARIANT_VIOLATION);
+    const { HardkasCliError } = await import("../cli-errors.js");
+    throw new HardkasCliError("REPLAY_FAILED", `Replay failed: ${failureReason}`, {
+      exitCode: ChaosExitCodes.INVARIANT_VIOLATION
+    });
   } else {
     UI.success("Replay completed cleanly.");
-    process.exit(ChaosExitCodes.NO_FINDINGS);
+    return;
   }
 }

@@ -120,30 +120,7 @@ export function parseHardkasConfig(input: unknown): HardkasConfig {
   return result.data;
 }
 
-export function parseKasToSompi(input: string): bigint {
-  const trimmed = input.trim();
-
-  if (!/^\d+(\.\d{1,8})?$/.test(trimmed)) {
-    throw new HardkasError("AMOUNT_INVALID", `Invalid KAS amount: ${input}`);
-  }
-
-  const [whole, fractional = ""] = trimmed.split(".");
-  if (whole === undefined) {
-    throw new HardkasError("AMOUNT_INVALID", `Invalid KAS amount: ${input}`);
-  }
-
-  return BigInt(whole) * SOMPI_PER_KAS + BigInt(fractional.padEnd(8, "0"));
-}
-
-export function formatSompi(amountSompi: bigint): string {
-  const sign = amountSompi < 0n ? "-" : "";
-  const absolute = amountSompi < 0n ? -amountSompi : amountSompi;
-
-  const whole = absolute / SOMPI_PER_KAS;
-  const fractional = absolute % SOMPI_PER_KAS;
-
-  return `${sign}${whole}.${fractional.toString().padStart(8, "0")} KAS`;
-}
+export * from "./money.js";
 
 export * from "./events.js";
 export * from "./domain-types.js";

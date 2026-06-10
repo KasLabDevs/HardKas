@@ -13,13 +13,7 @@ describe("corpus verify", () => {
     const root = path.resolve(__dirname, "../../..");
     const output = execFileSync(
       process.execPath,
-      [
-        distCli,
-        "corpus",
-        "verify",
-        "fixtures/toccata-v2/silver",
-        "--json"
-      ],
+      [distCli, "corpus", "verify", "fixtures/toccata-v2/silver", "--json"],
       {
         cwd: root,
         encoding: "utf8",

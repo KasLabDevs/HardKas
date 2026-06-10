@@ -31,7 +31,11 @@ describe("Provider Resolution", () => {
 
   it("6. provider simulated + url EXPECT PROVIDER_CONFLICT", () => {
     expect(() => {
-      resolveProvider({ network: "simnet", provider: "simulated", url: "ws://127.0.0.1:18210" });
+      resolveProvider({
+        network: "simnet",
+        provider: "simulated",
+        url: "ws://127.0.0.1:18210"
+      });
     }).toThrow("PROVIDER_CONFLICT");
   });
 });

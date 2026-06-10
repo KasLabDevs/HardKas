@@ -48,9 +48,7 @@ export function registerVerifyCommand(program: Command) {
         } else {
           handleError(err);
         }
-        process.exit(
-          err instanceof HardkasCliError ? err.exitCode : HardkasExitCode.RUNTIME_FAILURE
-        );
+        throw err;
       }
     });
 

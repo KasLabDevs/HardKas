@@ -1,3 +1,4 @@
+import { getOutput } from "../output.js";
 import { UI } from "../ui.js";
 import { createHash } from "node:crypto";
 
@@ -16,7 +17,7 @@ export async function runLocalnetAccountCreate(name: string, options: { json: bo
   };
 
   if (options.json) {
-    console.log(JSON.stringify(accountInfo, null, 2));
+    getOutput().writeJson(accountInfo);
   } else {
     UI.success(`Simulated account created: ${name}`);
     UI.info(`Address: ${accountInfo.address}`);

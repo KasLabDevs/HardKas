@@ -136,7 +136,12 @@ function expectFailure(name, fn, expectedPatterns, collection = adversarialResul
   }
 }
 
-function expectGuardedDiagnostic(name, fn, expectedPatterns, collection = adversarialResults) {
+function expectGuardedDiagnostic(
+  name,
+  fn,
+  expectedPatterns,
+  collection = adversarialResults
+) {
   const startedAt = Date.now();
   try {
     const output = fn();
@@ -187,7 +192,10 @@ function sample(value) {
 }
 
 function slug(value) {
-  return value.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+  return value
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-|-$/g, "");
 }
 
 function resetDir(dir) {
@@ -301,17 +309,31 @@ function createApp(category, index) {
 }
 
 function runGeneratedApps() {
-  const categories = ["cli-only", "sdk-only", "cli-sdk", "failure-mutation", "dashboard-tool"];
+  const categories = [
+    "cli-only",
+    "sdk-only",
+    "cli-sdk",
+    "failure-mutation",
+    "dashboard-tool"
+  ];
   const apps = [];
   for (const category of categories) {
     for (let i = 1; i <= 4; i++) apps.push(createApp(category, i));
   }
 
   for (const app of apps) {
-    const build = tryCommand(`${app.name} build`, () => runNode(["--check", "app.mjs"], { cwd: app.dir }), []);
+    const build = tryCommand(
+      `${app.name} build`,
+      () => runNode(["--check", "app.mjs"], { cwd: app.dir }),
+      []
+    );
     let smoke = { ok: false, output: "" };
     if (build.ok) {
-      smoke = tryCommand(`${app.name} smoke`, () => runNode(["app.mjs"], { cwd: app.dir }), []);
+      smoke = tryCommand(
+        `${app.name} smoke`,
+        () => runNode(["app.mjs"], { cwd: app.dir }),
+        []
+      );
     }
     let parsed;
     try {
@@ -322,7 +344,10 @@ function runGeneratedApps() {
       category: app.category,
       build: build.ok ? "PASS" : "FAIL",
       smoke: smoke.ok ? "PASS" : "FAIL",
-      usesArtifactsCorrectly: app.category === "failure-mutation" ? parsed?.corruptionDetected === true : "not_applicable",
+      usesArtifactsCorrectly:
+        app.category === "failure-mutation"
+          ? parsed?.corruptionDetected === true
+          : "not_applicable",
       respectsMainnetGuard: true,
       hallucinatedCommands: false,
       useful: app.category !== "failure-mutation",
@@ -367,15 +392,36 @@ async function runAdversarialCases() {
     expectedKnownLimitations: []
   });
 
-  const deployPlan = path.join(root, "fixtures", "toccata-v2", "silver", "op-true", "deploy-plan.json");
+  const deployPlan = path.join(
+    root,
+    "fixtures",
+    "toccata-v2",
+    "silver",
+    "op-true",
+    "deploy-plan.json"
+  );
   expectFailure(
     "artifact hash corrupt",
-    () => runHardkas(["artifact", "verify", path.join(mutationsRoot, "wrong-network-compile.json"), "--strict"]),
+    () =>
+      runHardkas([
+        "artifact",
+        "verify",
+        path.join(mutationsRoot, "wrong-network-compile.json"),
+        "--strict"
+      ]),
     ["ARTIFACT_HASH_MISMATCH", "HASH_MISMATCH", "hash", "invalid"]
   );
   expectFailure(
     "manifest corrupt",
-    () => runHardkas(["corpus", "verify", manifestCorruptPath, "--json", "--workspace", root]),
+    () =>
+      runHardkas([
+        "corpus",
+        "verify",
+        manifestCorruptPath,
+        "--json",
+        "--workspace",
+        root
+      ]),
     ["INVALID", "PARTIAL_VM_SIMULATION", "NOT_CLAIMED"]
   );
   expectFailure(
@@ -385,7 +431,18 @@ async function runAdversarialCases() {
   );
   expectFailure(
     "mainnet silver deploy-plan attempt",
-    () => runHardkas(["silver", "deploy-plan", deployPlan, "--from", "alice", "--amount", "1", "--network", "mainnet"]),
+    () =>
+      runHardkas([
+        "silver",
+        "deploy-plan",
+        deployPlan,
+        "--from",
+        "alice",
+        "--amount",
+        "1",
+        "--network",
+        "mainnet"
+      ]),
     ["SILVERSCRIPT_MAINNET_NOT_ENABLED", "Only simnet is supported"]
   );
   expectFailure(
@@ -395,22 +452,59 @@ async function runAdversarialCases() {
   );
   expectGuardedDiagnostic(
     "compiler nonexistent",
-    () => runHardkas(["silver", "doctor", "--compiler-path", path.join(mutationsRoot, "missing-silverc")]),
+    () =>
+      runHardkas([
+        "silver",
+        "doctor",
+        "--compiler-path",
+        path.join(mutationsRoot, "missing-silverc")
+      ]),
     ["SILVERSCRIPT_COMPILER_UNAVAILABLE", "unavailable", "not found"]
   );
   expectFailure(
     "negative amount",
-    () => runHardkas(["tx", "plan", "--from", "alice", "--to", "bob", "--amount", "-1", "--network", "simulated"], { cwd: workspaceRoot }),
+    () =>
+      runHardkas(
+        [
+          "tx",
+          "plan",
+          "--from",
+          "alice",
+          "--to",
+          "bob",
+          "--amount",
+          "-1",
+          "--network",
+          "simulated"
+        ],
+        { cwd: workspaceRoot }
+      ),
     ["amount", "invalid", "positive"]
   );
   expectFailure(
     "invalid address",
-    () => runHardkas(["tx", "plan", "--from", "alice", "--to", "not-an-address", "--amount", "1", "--network", "simulated"], { cwd: workspaceRoot }),
+    () =>
+      runHardkas(
+        [
+          "tx",
+          "plan",
+          "--from",
+          "alice",
+          "--to",
+          "not-an-address",
+          "--amount",
+          "1",
+          "--network",
+          "simulated"
+        ],
+        { cwd: workspaceRoot }
+      ),
     ["address", "invalid", "Invalid"]
   );
   expectFailure(
     "path traversal artifact inspect",
-    () => runHardkas(["artifact", "inspect", "..\\..\\SECURITY.md"], { cwd: workspaceRoot }),
+    () =>
+      runHardkas(["artifact", "inspect", "..\\..\\SECURITY.md"], { cwd: workspaceRoot }),
     ["not found", "outside", "Artifact"]
   );
 }
@@ -422,7 +516,11 @@ async function runParityChecks() {
       name: "capabilities",
       cli: () => JSON.parse(runHardkas(["capabilities", "--json"])),
       sdk: async () => {
-        const instance = await sdk.Hardkas.create({ cwd: workspaceRoot, network: "simulated", autoBootstrap: true });
+        const instance = await sdk.Hardkas.create({
+          cwd: workspaceRoot,
+          network: "simulated",
+          autoBootstrap: true
+        });
         return instance.capabilities();
       }
     },
@@ -430,7 +528,11 @@ async function runParityChecks() {
       name: "localnet status",
       cli: () => JSON.parse(runHardkas(["localnet", "status", "--json"])),
       sdk: async () => {
-        const instance = await sdk.Hardkas.create({ cwd: workspaceRoot, network: "simulated", autoBootstrap: true });
+        const instance = await sdk.Hardkas.create({
+          cwd: workspaceRoot,
+          network: "simulated",
+          autoBootstrap: true
+        });
         return instance.localnet.status();
       }
     },
@@ -438,15 +540,33 @@ async function runParityChecks() {
       name: "accounts list",
       cli: () => runHardkas(["accounts", "list", "--json"], { cwd: workspaceRoot }),
       sdk: async () => {
-        const instance = await sdk.Hardkas.create({ cwd: workspaceRoot, network: "simulated", autoBootstrap: true });
+        const instance = await sdk.Hardkas.create({
+          cwd: workspaceRoot,
+          network: "simulated",
+          autoBootstrap: true
+        });
         return instance.accounts.list();
       }
     },
     {
       name: "corpus verify",
-      cli: () => JSON.parse(runHardkas(["corpus", "verify", "fixtures/toccata-v2/silver", "--json", "--workspace", root])),
+      cli: () =>
+        JSON.parse(
+          runHardkas([
+            "corpus",
+            "verify",
+            "fixtures/toccata-v2/silver",
+            "--json",
+            "--workspace",
+            root
+          ])
+        ),
       sdk: async () => {
-        const instance = await sdk.Hardkas.create({ cwd: root, network: "simulated", autoBootstrap: true });
+        const instance = await sdk.Hardkas.create({
+          cwd: root,
+          network: "simulated",
+          autoBootstrap: true
+        });
         return instance.corpus.verify("fixtures/toccata-v2/silver");
       }
     },
@@ -456,15 +576,49 @@ async function runParityChecks() {
       sdk: async () => {
         const fs = await import("node:fs");
         const path = await import("node:path");
-        const instance = await sdk.Hardkas.create({ cwd: workspaceRoot, network: "simulated", autoBootstrap: true });
+        const instance = await sdk.Hardkas.create({
+          cwd: workspaceRoot,
+          network: "simulated",
+          autoBootstrap: true
+        });
         const compileArtifact = JSON.parse(
-          fs.readFileSync(path.join(root, "fixtures", "toccata-v2", "silver", "op-true", "compile-artifact.json"), "utf8")
+          fs.readFileSync(
+            path.join(
+              root,
+              "fixtures",
+              "toccata-v2",
+              "silver",
+              "op-true",
+              "compile-artifact.json"
+            ),
+            "utf8"
+          )
         );
         const simulatedSpendReceipt = JSON.parse(
-          fs.readFileSync(path.join(root, "fixtures", "toccata-v2", "silver", "op-true", "spend-simulated.json"), "utf8")
+          fs.readFileSync(
+            path.join(
+              root,
+              "fixtures",
+              "toccata-v2",
+              "silver",
+              "op-true",
+              "spend-simulated.json"
+            ),
+            "utf8"
+          )
         );
         const dockerSpendReceipt = JSON.parse(
-          fs.readFileSync(path.join(root, "fixtures", "toccata-v2", "silver", "op-true", "spend-receipt-real.json"), "utf8")
+          fs.readFileSync(
+            path.join(
+              root,
+              "fixtures",
+              "toccata-v2",
+              "silver",
+              "op-true",
+              "spend-receipt-real.json"
+            ),
+            "utf8"
+          )
         );
         const deployPlan = await instance.silver.deployPlan({
           artifact: compileArtifact,
@@ -472,7 +626,10 @@ async function runParityChecks() {
           amount: "1",
           write: false
         });
-        const simulatedDeploy = await instance.silver.simulate.deploy(deployPlan.artifact, { write: false });
+        const simulatedDeploy = await instance.silver.simulate.deploy(
+          deployPlan.artifact,
+          { write: false }
+        );
         const compare = await instance.silver.compare({
           simulated: simulatedSpendReceipt,
           docker: dockerSpendReceipt,
@@ -516,7 +673,8 @@ async function runParityChecks() {
       sdkGaps.push({
         flow: flow.name,
         severity: flow.name.includes("silver") ? "P1" : "P2",
-        reason: "CLI flow exists but no equivalent high-level SDK API was found in 0.9.1-alpha."
+        reason:
+          "CLI flow exists but no equivalent high-level SDK API was found in 0.9.1-alpha."
       });
     }
     parityResults.push({
@@ -536,8 +694,12 @@ function runBaseline() {
   tryCommand("pnpm corpus:toccata", () => runPnpm(["corpus:toccata"]));
   tryCommand("pnpm gauntlet:toccata", () => runPnpm(["gauntlet:toccata"]));
   tryCommand("hardkas --version", () => runHardkas(["--version"]));
-  tryCommand("hardkas capabilities --json", () => JSON.parse(runHardkas(["capabilities", "--json"])));
-  tryCommand("hardkas localnet status --json", () => JSON.parse(runHardkas(["localnet", "status", "--json"])));
+  tryCommand("hardkas capabilities --json", () =>
+    JSON.parse(runHardkas(["capabilities", "--json"]))
+  );
+  tryCommand("hardkas localnet status --json", () =>
+    JSON.parse(runHardkas(["localnet", "status", "--json"]))
+  );
 }
 
 function writeReports() {
@@ -568,12 +730,13 @@ function writeReports() {
   const artifactCorruptionDetected = adversarialResults.some(
     (result) => result.name === "artifact hash corrupt" && result.status === "PASS"
   );
-  const status = baseline.every((entry) => entry.status === "PASS")
-    && appResults.every((entry) => entry.build === "PASS" && entry.smoke === "PASS")
-    && adversarialResults.every((entry) => entry.status === "PASS")
-    && parityResults.every((entry) => entry.parity !== "PARITY_FAIL")
-    ? "POST_RELEASE_BREAK_GAUNTLET_COMPLETE"
-    : "POST_RELEASE_BREAK_GAUNTLET_FINDINGS";
+  const status =
+    baseline.every((entry) => entry.status === "PASS") &&
+    appResults.every((entry) => entry.build === "PASS" && entry.smoke === "PASS") &&
+    adversarialResults.every((entry) => entry.status === "PASS") &&
+    parityResults.every((entry) => entry.parity !== "PARITY_FAIL")
+      ? "POST_RELEASE_BREAK_GAUNTLET_COMPLETE"
+      : "POST_RELEASE_BREAK_GAUNTLET_FINDINGS";
 
   const result = {
     schema: "hardkas.postReleaseBreakGauntlet.v1",
@@ -590,9 +753,13 @@ function writeReports() {
     appsGenerated,
     appsBuildPassed,
     appsSmokePassed,
-    appsUsingArtifactsCorrectly: appResults.filter((app) => app.usesArtifactsCorrectly === true).length,
-    appsRespectingMainnetGuard: appResults.filter((app) => app.respectsMainnetGuard).length,
-    appsWithHallucinatedCommands: appResults.filter((app) => app.hallucinatedCommands).length,
+    appsUsingArtifactsCorrectly: appResults.filter(
+      (app) => app.usesArtifactsCorrectly === true
+    ).length,
+    appsRespectingMainnetGuard: appResults.filter((app) => app.respectsMainnetGuard)
+      .length,
+    appsWithHallucinatedCommands: appResults.filter((app) => app.hallucinatedCommands)
+      .length,
     appsActuallyUseful: appResults.filter((app) => app.useful).length,
     mainnetBypasses,
     artifactCorruptionDetected,
@@ -609,8 +776,12 @@ function writeReports() {
   };
   writeJson(resultPath, result);
 
-  const failingAdversarial = adversarialResults.filter((entry) => entry.status !== "PASS");
-  const failingApps = appResults.filter((entry) => entry.build !== "PASS" || entry.smoke !== "PASS");
+  const failingAdversarial = adversarialResults.filter(
+    (entry) => entry.status !== "PASS"
+  );
+  const failingApps = appResults.filter(
+    (entry) => entry.build !== "PASS" || entry.smoke !== "PASS"
+  );
   const failingBaseline = baseline.filter((entry) => entry.status !== "PASS");
 
   const md = `# Post-Release Findings For 0.9.1-alpha
@@ -639,12 +810,14 @@ ${baseline.map((entry) => `- ${entry.status}: ${entry.name}`).join("\n")}
 
 ## Priority Findings
 
-${[
-  ...bugs.map((bug) => `- ${bug.severity}: ${bug.title} (${bug.id})`),
-  ...sdkGaps.map((gap) => `- ${gap.severity}: SDK gap for ${gap.flow} - ${gap.reason}`),
-  ...docsGaps.map((gap) => `- ${gap.severity}: ${gap.title} (${gap.id})`),
-  ...parityFailures.map((entry) => `- P1: CLI/SDK parity failed for ${entry.flow}`)
-].join("\n") || "- No P0/P1 product bugs found in this run."}
+${
+  [
+    ...bugs.map((bug) => `- ${bug.severity}: ${bug.title} (${bug.id})`),
+    ...sdkGaps.map((gap) => `- ${gap.severity}: SDK gap for ${gap.flow} - ${gap.reason}`),
+    ...docsGaps.map((gap) => `- ${gap.severity}: ${gap.title} (${gap.id})`),
+    ...parityFailures.map((entry) => `- P1: CLI/SDK parity failed for ${entry.flow}`)
+  ].join("\n") || "- No P0/P1 product bugs found in this run."
+}
 
 ## Resolved / Unresolved
 
@@ -668,12 +841,14 @@ ${parityResults.map((entry) => `- ${entry.flow}: CLI=${entry.cli}, SDK=${entry.s
 
 ## Recommended 0.9.1-alpha Backlog
 
-${[
-  ...sdkGaps.map((gap) => `- Add or document SDK parity for \`${gap.flow}\`.`),
-  ...parityFailures.map((entry) => `- Fix CLI/SDK parity for \`${entry.flow}\`.`),
-  ...docsGaps.map((gap) => `- Improve error/docs for ${gap.title}.`),
-  ...bugs.map((bug) => `- Fix ${bug.title}.`)
-].join("\n") || "- Keep running the break gauntlet after each release candidate."}
+${
+  [
+    ...sdkGaps.map((gap) => `- Add or document SDK parity for \`${gap.flow}\`.`),
+    ...parityFailures.map((entry) => `- Fix CLI/SDK parity for \`${entry.flow}\`.`),
+    ...docsGaps.map((gap) => `- Improve error/docs for ${gap.title}.`),
+    ...bugs.map((bug) => `- Fix ${bug.title}.`)
+  ].join("\n") || "- Keep running the break gauntlet after each release candidate."
+}
 
 ## Claims Kept
 

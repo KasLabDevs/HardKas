@@ -13,8 +13,5 @@
     "vmConsensusEquivalence": "NOT_CLAIMED",
     "mainnet": "BLOCKED_BY_POLICY"
   },
-  "knownLimitations": [
-    "ZK_ONCHAIN_VERIFICATION_NOT_CLAIMED",
-    "PARTIAL_VM_SIMULATION"
-  ]
+  "knownLimitations": ["ZK_ONCHAIN_VERIFICATION_NOT_CLAIMED", "PARTIAL_VM_SIMULATION"]
 }

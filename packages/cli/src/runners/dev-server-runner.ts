@@ -222,7 +222,9 @@ export async function runDevServer(options: {
       } catch (e) {
         // Safe skip on close
       }
-      process.exit(0);
+      process.removeAllListeners("SIGINT");
+      process.removeAllListeners("SIGTERM");
+      process.kill(process.pid, signal as NodeJS.Signals);
     };
 
     process.on("SIGINT", () => handleTeardown("SIGINT"));

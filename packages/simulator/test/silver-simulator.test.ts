@@ -1,8 +1,5 @@
 import { describe, expect, it } from "vitest";
-import {
-  createKaspaP2shBlake2bLock,
-  createPushOnlySignatureScript
-} from "@hardkas/core";
+import { createKaspaP2shBlake2bLock, createPushOnlySignatureScript } from "@hardkas/core";
 import {
   SilverDeploySimulationArtifactSchema,
   SilverSpendSimulationArtifactSchema
@@ -105,7 +102,9 @@ describe("Silver/Toccata minimal simulator", () => {
     expect(spent.receipt.status).toBe("SIMULATED_ACCEPTED");
     expect(spent.receipt.simulatedSpendTxId).toMatch(/^[0-9a-f]{64}$/);
     expect(spent.state.spentOutpoints).toHaveLength(1);
-    expect(SilverSpendSimulationArtifactSchema.safeParse(spent.receipt).success).toBe(true);
+    expect(SilverSpendSimulationArtifactSchema.safeParse(spent.receipt).success).toBe(
+      true
+    );
   });
 
   it("wrong redeem hash FAIL", () => {

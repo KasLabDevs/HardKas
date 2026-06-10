@@ -1,5 +1,5 @@
 import { getSimulatedReplaySummary, SimulatedReplaySummary } from "@hardkas/localnet";
-import { formatSompi } from "@hardkas/core";
+import { formatSompiToKas } from "@hardkas/core";
 
 export interface ReplayRunnerInput {
   txId: string;
@@ -25,9 +25,9 @@ export async function runReplay(input: ReplayRunnerInput): Promise<ReplayRunnerR
     "This transaction:",
     `- spent ${summary.spentCount} UTXO(s)`,
     `- created ${summary.createdCount} UTXO(s)`,
-    `- transferred ${formatSompi(summary.transferredSompi)}`,
-    `- paid ${formatSompi(summary.feeSompi)} fee`,
-    `- returned ${formatSompi(summary.changeSompi)} as change`,
+    `- transferred ${formatSompiToKas(summary.transferredSompi)}`,
+    `- paid ${formatSompiToKas(summary.feeSompi)} fee`,
+    `- returned ${formatSompiToKas(summary.changeSompi)} as change`,
     `- advanced local DAA score to ${summary.finalDaaScore}`,
     "",
     "Trace:"

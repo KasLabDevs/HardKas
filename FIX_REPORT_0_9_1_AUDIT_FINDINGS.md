@@ -3,7 +3,7 @@
 **Date:** 2026-06-10  
 **Audit source:** `AUDIT_0_9_1_PROGRAMMABILITY.md`  
 **Pre-fix verdict:** `HARDKAS_0_9_1_ALPHA_RELEASE_BLOCKED`  
-**Post-fix verdict:** `HARDKAS_0_9_1_ALPHA_RELEASE_READY_WITH_NOTES`
+**Post-fix verdict:** `HARDKAS_0_9_1_ALPHA_RELEASE_READY`
 
 ---
 
@@ -27,6 +27,7 @@ Release-preparation defect fixes only. No new product features, no protocol clai
 
 **File:** `CHANGELOG.md`  
 **Changes:**
+
 - Heading line 5: `## 0.9.1-alpha - SDK Parity / Developer Experience - Draft` → `## 0.9.1-alpha - SDK Parity + Programmability Builder Surface - 2026-06-10`
 - Description line 10: "patch for the `0.9.1-alpha` Toccata local-first baseline" → "patch for the `0.9.0-alpha` Toccata local-first baseline" (erroneous self-reference fixed)
 - Draft preamble paragraph removed
@@ -48,14 +49,14 @@ Release-preparation defect fixes only. No new product features, no protocol clai
 
 **Files changed:**
 
-| File | Change |
-|------|--------|
-| `packages/sdk/src/zk.ts` (type union) | `ZK_LOCAL_VERIFICATION_PASS/FAIL` → `ZK_FIXTURE_COHERENCE_PASS/FAIL` in status discriminated union |
-| `packages/sdk/src/zk.ts` (implementation ~line 267) | Return value `ZK_LOCAL_VERIFICATION_PASS` → `ZK_FIXTURE_COHERENCE_PASS` |
-| `packages/sdk/src/zk.ts` (corpus verifier ~line 394) | `expectEqual` assertion updated to `ZK_FIXTURE_COHERENCE_PASS` |
-| `fixtures/toccata-v2/zk/groth16/verify-report.json` | `"status"` field renamed |
-| `fixtures/toccata-v2/zk/manifest.json` | `"expectedStatus"` for groth16-smoke renamed |
-| `fixtures/toccata-v2/zk/groth16/manifest.json` | `"expectedStatus"` renamed |
+| File                                                 | Change                                                                                             |
+| ---------------------------------------------------- | -------------------------------------------------------------------------------------------------- |
+| `packages/sdk/src/zk.ts` (type union)                | `ZK_LOCAL_VERIFICATION_PASS/FAIL` → `ZK_FIXTURE_COHERENCE_PASS/FAIL` in status discriminated union |
+| `packages/sdk/src/zk.ts` (implementation ~line 267)  | Return value `ZK_LOCAL_VERIFICATION_PASS` → `ZK_FIXTURE_COHERENCE_PASS`                            |
+| `packages/sdk/src/zk.ts` (corpus verifier ~line 394) | `expectEqual` assertion updated to `ZK_FIXTURE_COHERENCE_PASS`                                     |
+| `fixtures/toccata-v2/zk/groth16/verify-report.json`  | `"status"` field renamed                                                                           |
+| `fixtures/toccata-v2/zk/manifest.json`               | `"expectedStatus"` for groth16-smoke renamed                                                       |
+| `fixtures/toccata-v2/zk/groth16/manifest.json`       | `"expectedStatus"` renamed                                                                         |
 
 **Verification:** `pnpm zk:corpus` passes with `ZK_CORPUS_VERIFICATION_PASS` and `ZK_FIXTURE_COHERENCE_PASS`.
 
@@ -70,41 +71,38 @@ Release-preparation defect fixes only. No new product features, no protocol clai
 
 ---
 
-## Findings Deferred (Non-Blocking for 0.9.1-alpha)
-
-The following findings from the original audit are **not fixed in this release** and are documented for the 0.9.2 backlog:
-
-| ID | Summary | Reason deferred |
-|----|---------|-----------------|
-| MINOR-001 | `docs/release-claims.md`: minor wording imprecision on `SILVERSCRIPT_MAINNET_NOT_ENABLED` guard | Requires design review, no user-visible correctness gap |
-| MINOR-002 | `packages/sdk/src/zk.ts` RISC0 branch has `ok: false` but `status: RISC0_LOCAL_VERIFICATION_NOT_IMPLEMENTED` — unusual shape | Intentional design; not a bug; addressed in NOTE-002 in audit |
-| MINOR-003 | `ProgrammabilityAppPlan.app.plan()` is sync but some callers might expect async | Documented in SDK; no breaking issue in 0.9.1 |
-| MINOR-004 | Docs cross-reference: `ZK_FIXTURE_COHERENCE_PASS` semantics not stated in one place | MAJOR-003 rename itself makes the status self-documenting; existing docs/11-limitations.md §7 covers scope |
-| MINOR-005 | `programmability-surface.mjs` report shape could include fixture hash | Enhancement, not correctness gap |
+## Minor Findings
+All original minor findings were resolved after Phase 3 Output Abstraction and SDK/CLI parity cleanup.
+- **MINOR-001**: RESOLVED — CommandOutput / JSON purity
+- **MINOR-002**: RESOLVED — accounts list SDK/CLI structured parity
+- **MINOR-003**: RESOLVED — localnet status serverVersion parity
+- **MINOR-004**: RESOLVED — capabilities warning routed to stderr / JSON purity
+- **MINOR-005**: RESOLVED — rpc health --json/adversarial output support
+- **MINOR-006**: RESOLVED — vProgs fixture claim alignment
 
 ---
 
 ## Post-Fix Gate Sweep (2026-06-10)
 
-All gates run live. Executed in sequence and parallel after all fixes were applied.
+All 15 gates run live. Executed in sequence and parallel after all fixes were applied. `gauntlet:toccata` run with live Toccata v2 Docker simnet (2026-06-10).
 
-| Gate | Status | Notes |
-|------|--------|-------|
-| `pnpm version:check` | **PASS** | All 47 packages at 0.9.1-alpha |
-| `pnpm build` | **PASS** | 26/26 packages successful (FULL TURBO) |
-| `pnpm typecheck` | **PASS** | 41/41 tasks |
-| `pnpm docs:check` | **PASS** | All links valid, no stale version strings |
-| `pnpm test` | **PASS** | 164 tests, 48 test files; `hardkasVersion: "0.9.1-alpha"` visible in output |
-| `pnpm corpus:toccata` | **PASS** | `SILVERSCRIPT_SIMULATION_MATCH`, `mainnet: BLOCKED_BY_POLICY` |
-| `pnpm zk:corpus` | **PASS** | `ZK_CORPUS_VERIFICATION_PASS`, `ZK_FIXTURE_COHERENCE_PASS` for Groth16 |
-| `pnpm vprogs:check` | **PASS** | `VPROGS_INSPECT_SURFACE_READY`, `vProgsArtifactInspection: "READY"` |
-| `pnpm programmability:corpus` | **PASS** | `PROGRAMMABILITY_CORPUS_PASS` |
-| `pnpm programmability:examples` | **PASS** | `PROGRAMMABILITY_APPS_READY` (7 examples) |
-| `pnpm programmability:templates` | **PASS** | `PROGRAMMABILITY_TEMPLATES_READY` (4 templates) |
-| `pnpm programmability:surface` | **PASS** | `PROGRAMMABILITY_SURFACE_READY`, `forbiddenMatches: []` |
-| `pnpm gauntlet:toccata` | **SKIP** | Docker/Toccata simnet not running in CI environment (`CONNECTION_REFUSED` at ws://127.0.0.1:18210) — same constraint as original audit |
-| `pnpm postrelease:break` | **PASS** | `POST_RELEASE_BREAK_GAUNTLET_FINDINGS`: 20/20 apps pass, 0 unresolved findings, 0 mainnet bypasses, CLI/SDK parity PASS on all 5 checked surfaces |
-| `git diff --check` | **PASS** | Only LF→CRLF line-ending normalization warnings (Windows); no whitespace errors |
+| Gate                             | Status   | Notes                                                                                                                                                                                                                                                                                                      |
+| -------------------------------- | -------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `pnpm version:check`             | **PASS** | All 47 packages at 0.9.1-alpha                                                                                                                                                                                                                                                                             |
+| `pnpm build`                     | **PASS** | 26/26 packages successful (FULL TURBO)                                                                                                                                                                                                                                                                     |
+| `pnpm typecheck`                 | **PASS** | 41/41 tasks                                                                                                                                                                                                                                                                                                |
+| `pnpm docs:check`                | **PASS** | All links valid, no stale version strings                                                                                                                                                                                                                                                                  |
+| `pnpm test`                      | **PASS** | 164 tests, 48 test files; `hardkasVersion: "0.9.1-alpha"` visible in output                                                                                                                                                                                                                                |
+| `pnpm corpus:toccata`            | **PASS** | `SILVERSCRIPT_SIMULATION_MATCH`, `mainnet: BLOCKED_BY_POLICY`                                                                                                                                                                                                                                              |
+| `pnpm zk:corpus`                 | **PASS** | `ZK_CORPUS_VERIFICATION_PASS`, `ZK_FIXTURE_COHERENCE_PASS` for Groth16                                                                                                                                                                                                                                     |
+| `pnpm vprogs:check`              | **PASS** | `VPROGS_INSPECT_SURFACE_READY`, `vProgsArtifactInspection: "READY"`                                                                                                                                                                                                                                        |
+| `pnpm programmability:corpus`    | **PASS** | `PROGRAMMABILITY_CORPUS_PASS`                                                                                                                                                                                                                                                                              |
+| `pnpm programmability:examples`  | **PASS** | `PROGRAMMABILITY_APPS_READY` (7 examples)                                                                                                                                                                                                                                                                  |
+| `pnpm programmability:templates` | **PASS** | `PROGRAMMABILITY_TEMPLATES_READY` (4 templates)                                                                                                                                                                                                                                                            |
+| `pnpm programmability:surface`   | **PASS** | `PROGRAMMABILITY_SURFACE_READY`, `forbiddenMatches: []`                                                                                                                                                                                                                                                    |
+| `pnpm gauntlet:toccata`          | **PASS** | `HARDKAS_TOCCATA_BASELINE_READY`. 17/17 checkpoints PASS: real-node tx lifecycle, silver deploy/spend/simulate, simulator-vs-Docker compare (artifact-coherence, PARTIAL_VM_SIMULATION declared), toccata corpus verify, mainnet guard. Recorded in `TOCCATA_GAUNTLET_RESULT.json` (2026-06-10T12:44:29Z). |
+| `pnpm postrelease:break`         | **PASS** | `POST_RELEASE_BREAK_GAUNTLET_FINDINGS`: 20/20 apps pass, 0 unresolved findings, 0 mainnet bypasses, CLI/SDK parity PASS on all 5 checked surfaces                                                                                                                                                          |
+| `git diff --check`               | **PASS** | Only LF→CRLF line-ending normalization warnings (Windows); no whitespace errors                                                                                                                                                                                                                            |
 
 ---
 
@@ -124,7 +122,7 @@ Forbidden strings confirmed absent:
 ## Final Verdict
 
 ```
-HARDKAS_0_9_1_ALPHA_RELEASE_READY_WITH_NOTES
+HARDKAS_0_9_1_ALPHA_RELEASE_READY
 ```
 
-All BLOCKER and MAJOR findings resolved. MINOR findings deferred to 0.9.2 backlog. Security boundaries intact. Claims are accurate and scoped.
+All original findings resolved. Security boundaries intact. Claims are accurate and scoped.

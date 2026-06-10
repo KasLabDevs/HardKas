@@ -411,11 +411,13 @@ export const SilverSpendPlanArtifactSchema = BaseArtifactSchema.extend({
   args: z.array(SilverScriptArgSchema),
   argsHash: z.string(),
   signatureScriptHex: z.string(),
-  expectedOutputs: z.array(z.object({
-    address: z.string(),
-    amountSompi: z.string(),
-    scriptHash: z.string().optional()
-  })),
+  expectedOutputs: z.array(
+    z.object({
+      address: z.string(),
+      amountSompi: z.string(),
+      scriptHash: z.string().optional()
+    })
+  ),
   networkId: kaspaNetworkIdSchema,
   assumptionLevel: z.string().optional()
 });
@@ -429,15 +431,21 @@ export const SilverSpendReceiptArtifactSchema = BaseArtifactSchema.extend({
   redeemScriptHash: z.string().optional(),
   lockingScriptHex: z.string().optional(),
   signatureScriptHex: z.string().optional(),
-  spentOutpoint: z.object({
-    transactionId: z.string(),
-    index: z.number()
-  }).optional(),
-  expectedOutputs: z.array(z.object({
-    address: z.string(),
-    amountSompi: z.string(),
-    scriptHash: z.string().optional()
-  })).optional(),
+  spentOutpoint: z
+    .object({
+      transactionId: z.string(),
+      index: z.number()
+    })
+    .optional(),
+  expectedOutputs: z
+    .array(
+      z.object({
+        address: z.string(),
+        amountSompi: z.string(),
+        scriptHash: z.string().optional()
+      })
+    )
+    .optional(),
   txId: z.string(),
   status: z.enum(["simulated", "submitted", "accepted", "rejected"])
 });
@@ -463,7 +471,9 @@ export const SilverDeploySimulationArtifactSchema = BaseArtifactSchema.extend({
   status: z.literal("SIMULATED_ACCEPTED")
 });
 
-export type SilverDeploySimulationArtifact = z.infer<typeof SilverDeploySimulationArtifactSchema>;
+export type SilverDeploySimulationArtifact = z.infer<
+  typeof SilverDeploySimulationArtifactSchema
+>;
 
 export const SilverSpendSimulationArtifactSchema = BaseArtifactSchema.extend({
   schema: z.literal("hardkas.silver.spendSimulation"),
@@ -477,16 +487,20 @@ export const SilverSpendSimulationArtifactSchema = BaseArtifactSchema.extend({
     transactionId: z.string(),
     index: z.number()
   }),
-  expectedOutputs: z.array(z.object({
-    address: z.string(),
-    amountSompi: z.string(),
-    scriptHash: z.string().optional()
-  })),
+  expectedOutputs: z.array(
+    z.object({
+      address: z.string(),
+      amountSompi: z.string(),
+      scriptHash: z.string().optional()
+    })
+  ),
   feeSompi: z.string(),
   status: z.literal("SIMULATED_ACCEPTED")
 });
 
-export type SilverSpendSimulationArtifact = z.infer<typeof SilverSpendSimulationArtifactSchema>;
+export type SilverSpendSimulationArtifact = z.infer<
+  typeof SilverSpendSimulationArtifactSchema
+>;
 
 export const SilverTestArtifactSchema = BaseArtifactSchema.extend({
   schema: z.literal("hardkas.silver.test"),
@@ -496,15 +510,23 @@ export const SilverTestArtifactSchema = BaseArtifactSchema.extend({
   testVectorsHash: z.string().optional().nullable(),
   compilerName: z.string(),
   compilerVersion: z.string(),
-  results: z.array(z.object({
-    name: z.string(),
-    status: z.enum(["PASS", "FAIL", "SKIPPED", "EXPECTED_COMPILER_FAILURE", "PARTIAL_TEST_VECTOR_SUPPORT"]),
-    reason: z.string().optional()
-  })),
+  results: z.array(
+    z.object({
+      name: z.string(),
+      status: z.enum([
+        "PASS",
+        "FAIL",
+        "SKIPPED",
+        "EXPECTED_COMPILER_FAILURE",
+        "PARTIAL_TEST_VECTOR_SUPPORT"
+      ]),
+      reason: z.string().optional()
+    })
+  ),
   status: z.enum([
-    "PASS", 
-    "FAIL", 
-    "PARTIAL_TEST_VECTOR_SUPPORT", 
+    "PASS",
+    "FAIL",
+    "PARTIAL_TEST_VECTOR_SUPPORT",
     "EXPECTED_COMPILER_FAILURE"
   ])
 });
@@ -544,33 +566,44 @@ export const ProgrammabilityCapabilitiesSchema = z.object({
 export const ProgrammabilityInspectSchema = z.object({
   schema: z.literal("hardkas.programmability.inspect.v1"),
   ok: z.boolean(),
-  status: z.enum(["PROGRAMMABILITY_ARTIFACT_INSPECTED", "PROGRAMMABILITY_ARTIFACT_INVALID"]),
+  status: z.enum([
+    "PROGRAMMABILITY_ARTIFACT_INSPECTED",
+    "PROGRAMMABILITY_ARTIFACT_INVALID"
+  ]),
   kind: z.enum(["silver", "zk", "vprog"]),
   path: z.string(),
   artifactSchema: z.string().optional(),
   contentHash: z.string().optional(),
   sourceStatus: z.string().optional(),
   claims: ProgrammabilityClaimsSchema,
-  issues: z.array(z.object({
-    code: z.string(),
-    message: z.string(),
-    file: z.string().optional()
-  }))
+  issues: z.array(
+    z.object({
+      code: z.string(),
+      message: z.string(),
+      file: z.string().optional()
+    })
+  )
 });
 
 export const ProgrammabilityVerifySchema = z.object({
   schema: z.literal("hardkas.programmability.verify.v1"),
   ok: z.boolean(),
-  status: z.enum(["PROGRAMMABILITY_VERIFY_PASS", "PROGRAMMABILITY_VERIFY_FAIL", "PROGRAMMABILITY_VERIFY_PARTIAL"]),
+  status: z.enum([
+    "PROGRAMMABILITY_VERIFY_PASS",
+    "PROGRAMMABILITY_VERIFY_FAIL",
+    "PROGRAMMABILITY_VERIFY_PARTIAL"
+  ]),
   kind: z.enum(["silver", "zk", "vprog"]),
   path: z.string(),
   sourceStatus: z.string().optional(),
   claims: ProgrammabilityClaimsSchema,
-  issues: z.array(z.object({
-    code: z.string(),
-    message: z.string(),
-    file: z.string().optional()
-  }))
+  issues: z.array(
+    z.object({
+      code: z.string(),
+      message: z.string(),
+      file: z.string().optional()
+    })
+  )
 });
 
 export const ProgrammabilityCorpusReportSchema = z.object({
@@ -586,11 +619,13 @@ export const ProgrammabilityCorpusReportSchema = z.object({
     knownLimitations: z.array(z.string())
   }),
   claims: ProgrammabilityClaimsSchema,
-  issues: z.array(z.object({
-    code: z.string(),
-    message: z.string(),
-    file: z.string().optional()
-  }))
+  issues: z.array(
+    z.object({
+      code: z.string(),
+      message: z.string(),
+      file: z.string().optional()
+    })
+  )
 });
 
 export const ProgrammabilityAppPlanSchema = z.object({
@@ -625,9 +660,19 @@ export const ToccataProgrammabilityCorpusSchema = z.object({
 });
 
 export type ProgrammabilityClaimsSchemaType = z.infer<typeof ProgrammabilityClaimsSchema>;
-export type ProgrammabilityCapabilitiesSchemaType = z.infer<typeof ProgrammabilityCapabilitiesSchema>;
-export type ProgrammabilityInspectSchemaType = z.infer<typeof ProgrammabilityInspectSchema>;
+export type ProgrammabilityCapabilitiesSchemaType = z.infer<
+  typeof ProgrammabilityCapabilitiesSchema
+>;
+export type ProgrammabilityInspectSchemaType = z.infer<
+  typeof ProgrammabilityInspectSchema
+>;
 export type ProgrammabilityVerifySchemaType = z.infer<typeof ProgrammabilityVerifySchema>;
-export type ProgrammabilityCorpusReportSchemaType = z.infer<typeof ProgrammabilityCorpusReportSchema>;
-export type ProgrammabilityAppPlanSchemaType = z.infer<typeof ProgrammabilityAppPlanSchema>;
-export type ToccataProgrammabilityCorpusSchemaType = z.infer<typeof ToccataProgrammabilityCorpusSchema>;
+export type ProgrammabilityCorpusReportSchemaType = z.infer<
+  typeof ProgrammabilityCorpusReportSchema
+>;
+export type ProgrammabilityAppPlanSchemaType = z.infer<
+  typeof ProgrammabilityAppPlanSchema
+>;
+export type ToccataProgrammabilityCorpusSchemaType = z.infer<
+  typeof ToccataProgrammabilityCorpusSchema
+>;

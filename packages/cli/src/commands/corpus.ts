@@ -2,9 +2,7 @@ import { Command } from "commander";
 import path from "node:path";
 
 export function registerCorpusCommands(program: Command) {
-  const corpus = program
-    .command("corpus")
-    .description("Verify release fixture corpora");
+  const corpus = program.command("corpus").description("Verify release fixture corpora");
 
   corpus
     .command("verify <path>")

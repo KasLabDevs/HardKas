@@ -22,7 +22,11 @@ import {
   getBroadcastableSignedTransaction
 } from "@hardkas/artifacts";
 import { coreEvents } from "@hardkas/core";
-import { HardkasAccount, signTxPlanArtifact, validateAddressNetwork } from "@hardkas/accounts";
+import {
+  HardkasAccount,
+  signTxPlanArtifact,
+  validateAddressNetwork
+} from "@hardkas/accounts";
 import { parseKasToSompi, type NetworkId } from "@hardkas/core";
 import { TxPlanService, type UtxoProvider } from "@hardkas/tx-builder";
 
@@ -30,35 +34,41 @@ function normalizeSimulatedPlanInput(target: any, fallbackId: string): TxPlanArt
   if (target.schema === ARTIFACT_SCHEMAS.TX_PLAN && Array.isArray(target.inputs)) {
     return target as TxPlanArtifact;
   }
-  
+
   if (target.from && target.to && target.amountSompi) {
-     if (target.mode !== "simulated") {
-       throw new Error("Cannot simulate real signed artifact without parent plan. Missing plan inputs data.");
-     }
-     
-     return {
-       schema: ARTIFACT_SCHEMAS.TX_PLAN,
-       planId: target.planId || target.sourcePlanId || fallbackId,
-       networkId: target.networkId || "simnet",
-       mode: "simulated",
-       from: target.from,
-       to: target.to,
-       amountSompi: target.amountSompi,
-       estimatedFeeSompi: "0",
-       estimatedMass: "0",
-       inputs: [],
-       outputs: [{ address: target.to.address, amountSompi: target.amountSompi || "0" }],
-       plan: {
-         inputs: [],
-         outputs: [{ address: target.to.address, amountSompi: BigInt(target.amountSompi || 0) }],
-         feeSompi: 0n,
-         mass: 0n,
-         changeSompi: 0n
-       }
-     } as any;
+    if (target.mode !== "simulated") {
+      throw new Error(
+        "Cannot simulate real signed artifact without parent plan. Missing plan inputs data."
+      );
+    }
+
+    return {
+      schema: ARTIFACT_SCHEMAS.TX_PLAN,
+      planId: target.planId || target.sourcePlanId || fallbackId,
+      networkId: target.networkId || "simnet",
+      mode: "simulated",
+      from: target.from,
+      to: target.to,
+      amountSompi: target.amountSompi,
+      estimatedFeeSompi: "0",
+      estimatedMass: "0",
+      inputs: [],
+      outputs: [{ address: target.to.address, amountSompi: target.amountSompi || "0" }],
+      plan: {
+        inputs: [],
+        outputs: [
+          { address: target.to.address, amountSompi: BigInt(target.amountSompi || 0) }
+        ],
+        feeSompi: 0n,
+        mass: 0n,
+        changeSompi: 0n
+      }
+    } as any;
   }
-  
-  throw new Error("Cannot simulate signed artifact without parent plan or embedded plan data.");
+
+  throw new Error(
+    "Cannot simulate signed artifact without parent plan or embedded plan data."
+  );
 }
 
 /**
@@ -103,11 +113,14 @@ export class HardkasTx {
           : options.amount;
 
     if (amountSompi === 0n) {
-      throw new Error("Kaspa value-transfer outputs require amount > 0.\nFor metadata/notary/DID marker transactions use --amount 1.\nFuture: hardkas tx anchor.");
+      throw new Error(
+        "Kaspa value-transfer outputs require amount > 0.\nFor metadata/notary/DID marker transactions use --amount 1.\nFuture: hardkas tx anchor."
+      );
     }
 
     const activeNetwork = this.sdk.config.config.defaultNetwork || "simnet";
-    const allowMainnet = (this.sdk.config.config.networks?.mainnet as any)?.allowMainnet === true;
+    const allowMainnet =
+      (this.sdk.config.config.networks?.mainnet as any)?.allowMainnet === true;
 
     // Address Preflight Validation
     validateAddressNetwork(fromAccount.address, activeNetwork, allowMainnet);
@@ -119,9 +132,15 @@ export class HardkasTx {
     // Create UtxoProvider
     const utxoProvider: UtxoProvider = {
       getUtxos: async (address: string) => {
-        if (activeNetwork === "simulated" || this.sdk.config.config.networks?.[activeNetwork]?.kind === "simulated") {
-          const { loadOrCreateLocalnetState, getSpendableUtxos } = await import("@hardkas/localnet");
-          const localState = await loadOrCreateLocalnetState({ cwd: this.sdk.workspace.root });
+        if (
+          activeNetwork === "simulated" ||
+          this.sdk.config.config.networks?.[activeNetwork]?.kind === "simulated"
+        ) {
+          const { loadOrCreateLocalnetState, getSpendableUtxos } =
+            await import("@hardkas/localnet");
+          const localState = await loadOrCreateLocalnetState({
+            cwd: this.sdk.workspace.root
+          });
           const unspent = getSpendableUtxos(localState, address);
           return unspent.map((u) => {
             const parts = u.id.split(":");
@@ -144,7 +163,8 @@ export class HardkasTx {
             address: u.address,
             amountSompi: BigInt(u.amountSompi),
             scriptPublicKey: u.scriptPublicKey || "",
-            blockDaaScore: u.blockDaaScore !== undefined ? BigInt(u.blockDaaScore) : undefined,
+            blockDaaScore:
+              u.blockDaaScore !== undefined ? BigInt(u.blockDaaScore) : undefined,
             isCoinbase: u.isCoinbase
           }));
         }
@@ -169,7 +189,9 @@ export class HardkasTx {
 
     const builderPlan = result.plan;
 
-    const isSimulated = activeNetwork === "simulated" || this.sdk.config.config.networks?.[activeNetwork]?.kind === "simulated";
+    const isSimulated =
+      activeNetwork === "simulated" ||
+      this.sdk.config.config.networks?.[activeNetwork]?.kind === "simulated";
     let resolvedAssumptionLevel = options.assumption;
     if (!resolvedAssumptionLevel) {
       if (isSimulated) {
@@ -195,17 +217,18 @@ export class HardkasTx {
       },
       amountSompi,
       plan: builderPlan,
-      ctx: { 
-        ...systemRuntimeContext, 
+      ctx: {
+        ...systemRuntimeContext,
         ...(options.workflowId ? { workflowId: options.workflowId } : {}),
         assumptionLevel: resolvedAssumptionLevel,
         utxoSelection: result.utxoSelection
       }
     }) as unknown as TxPlanArtifact;
-    
+
     // Resolve alias to immutable contentHash
     if (options.policy || (options as any).policies) {
-      const inputPolicies = (options as any).policies || (options.policy ? [options.policy] : []);
+      const inputPolicies =
+        (options as any).policies || (options.policy ? [options.policy] : []);
       const resolvedRefs: string[] = [];
       for (const p of inputPolicies) {
         try {
@@ -220,46 +243,53 @@ export class HardkasTx {
         (basePlan as any).policyRef = resolvedRefs[0]; // Legacy fallback
       }
     }
-    
+
     if (options.networkProfile) {
       try {
         const net = await this.sdk.artifacts.read(options.networkProfile);
-        (basePlan as any).networkProfileRef = net.contentHash || net.artifactId || options.networkProfile;
+        (basePlan as any).networkProfileRef =
+          net.contentHash || net.artifactId || options.networkProfile;
       } catch (e) {
         (basePlan as any).networkProfileRef = options.networkProfile;
       }
     }
-    
+
     if (options.assumption) {
       try {
         const asm = await this.sdk.artifacts.read(options.assumption);
-        (basePlan as any).assumptionRef = asm.contentHash || asm.artifactId || options.assumption;
+        (basePlan as any).assumptionRef =
+          asm.contentHash || asm.artifactId || options.assumption;
       } catch (e) {
         (basePlan as any).assumptionRef = options.assumption;
       }
     }
-    
+
     // Re-calculate hash now that references are injected
-    const { CURRENT_HASH_VERSION, calculateContentHash } = await import("@hardkas/artifacts");
+    const { CURRENT_HASH_VERSION, calculateContentHash } =
+      await import("@hardkas/artifacts");
     const newHash = calculateContentHash(basePlan, CURRENT_HASH_VERSION);
     (basePlan as any).contentHash = newHash;
     if ((basePlan as any).lineage) {
-        (basePlan as any).lineage.lineageId = newHash;
-        (basePlan as any).lineage.parentArtifactId = ""; // Root plans have no parent
-        (basePlan as any).lineage.rootArtifactId = newHash;
-        const finalHash = calculateContentHash(basePlan, CURRENT_HASH_VERSION);
-        (basePlan as any).contentHash = finalHash;
-        (basePlan as any).lineage.artifactId = finalHash;
-        (basePlan as any).planId = `plan-${finalHash.slice(0, 16)}`;
+      (basePlan as any).lineage.lineageId = newHash;
+      (basePlan as any).lineage.parentArtifactId = ""; // Root plans have no parent
+      (basePlan as any).lineage.rootArtifactId = newHash;
+      const finalHash = calculateContentHash(basePlan, CURRENT_HASH_VERSION);
+      (basePlan as any).contentHash = finalHash;
+      (basePlan as any).lineage.artifactId = finalHash;
+      (basePlan as any).planId = `plan-${finalHash.slice(0, 16)}`;
     }
 
     this.sdk.artifacts.cacheArtifact(basePlan);
 
     // Verify policy evaluation at planning time if policies are provided
     if ((basePlan as any).policyRefs && (basePlan as any).policyRefs.length > 0) {
-      await this.sdk.artifacts.verify(basePlan, { throwOnInvalid: true, strict: true, enforceMetadata: false });
+      await this.sdk.artifacts.verify(basePlan, {
+        throwOnInvalid: true,
+        strict: true,
+        enforceMetadata: false
+      });
     }
-    
+
     return basePlan;
   }
 
@@ -283,11 +313,16 @@ export class HardkasTx {
     }
 
     if (!resolvedAccount.address) {
-      throw new Error(`Account '${resolvedAccount.name || options.account}' has no address.`);
+      throw new Error(
+        `Account '${resolvedAccount.name || options.account}' has no address.`
+      );
     }
 
-    const activeNetwork = options.network || this.sdk.config.config.defaultNetwork || "simnet";
-    const isSimulated = activeNetwork === "simulated" || this.sdk.config.config.networks?.[activeNetwork]?.kind === "simulated";
+    const activeNetwork =
+      options.network || this.sdk.config.config.defaultNetwork || "simnet";
+    const isSimulated =
+      activeNetwork === "simulated" ||
+      this.sdk.config.config.networks?.[activeNetwork]?.kind === "simulated";
 
     const dummyProvider: UtxoProvider = {
       getUtxos: async () => []
@@ -335,17 +370,18 @@ export class HardkasTx {
       } as any
     }) as unknown as TxPlanArtifact;
 
-    const { CURRENT_HASH_VERSION, calculateContentHash } = await import("@hardkas/artifacts");
+    const { CURRENT_HASH_VERSION, calculateContentHash } =
+      await import("@hardkas/artifacts");
     const newHash = calculateContentHash(basePlan, CURRENT_HASH_VERSION);
     (basePlan as any).contentHash = newHash;
     if ((basePlan as any).lineage) {
-        (basePlan as any).lineage.lineageId = newHash;
-        (basePlan as any).lineage.parentArtifactId = "";
-        (basePlan as any).lineage.rootArtifactId = newHash;
-        const finalHash = calculateContentHash(basePlan, CURRENT_HASH_VERSION);
-        (basePlan as any).contentHash = finalHash;
-        (basePlan as any).lineage.artifactId = finalHash;
-        (basePlan as any).planId = `plan-${finalHash.slice(0, 16)}`;
+      (basePlan as any).lineage.lineageId = newHash;
+      (basePlan as any).lineage.parentArtifactId = "";
+      (basePlan as any).lineage.rootArtifactId = newHash;
+      const finalHash = calculateContentHash(basePlan, CURRENT_HASH_VERSION);
+      (basePlan as any).contentHash = finalHash;
+      (basePlan as any).lineage.artifactId = finalHash;
+      (basePlan as any).planId = `plan-${finalHash.slice(0, 16)}`;
     }
 
     this.sdk.artifacts.cacheArtifact(basePlan);
@@ -366,17 +402,24 @@ export class HardkasTx {
     }
   ): Promise<SignedTxArtifact> {
     if (typeof plan === "object" && plan !== null && (plan as any).contentHash) {
-      await this.sdk.artifacts.verify(plan, { throwOnInvalid: true, strict: true, enforceMetadata: false });
+      await this.sdk.artifacts.verify(plan, {
+        throwOnInvalid: true,
+        strict: true,
+        enforceMetadata: false
+      });
     }
 
     if (this.sdk.signer && plan.schema === "hardkas.txPlan") {
-      const signedArtifact = await this.sdk.signer.signTransaction(plan as TxPlanArtifact);
-      
+      const signedArtifact = await this.sdk.signer.signTransaction(
+        plan as TxPlanArtifact
+      );
+
       const { absolutePath } = await this.sdk.artifacts.write(signedArtifact);
       const { coreEvents } = await import("@hardkas/core");
       const signedRecord = signedArtifact as unknown as Record<string, string>;
-      const artifactId = signedRecord.artifactId || signedArtifact.signedId || signedRecord.contentHash;
-      
+      const artifactId =
+        signedRecord.artifactId || signedArtifact.signedId || signedRecord.contentHash;
+
       coreEvents.normalizeAndEmit({
         kind: "artifact.created",
         schema: signedArtifact.schema,
@@ -385,7 +428,7 @@ export class HardkasTx {
         mode: signedArtifact.mode,
         path: absolutePath
       } as unknown as Parameters<typeof coreEvents.normalizeAndEmit>[0]);
-  
+
       coreEvents.normalizeAndEmit({
         kind: "tx.signed",
         txId: signedArtifact.txId || artifactId,
@@ -393,7 +436,7 @@ export class HardkasTx {
         mode: signedArtifact.mode,
         amountSompi: signedArtifact.amountSompi
       } as unknown as Parameters<typeof coreEvents.normalizeAndEmit>[0]);
-  
+
       return signedArtifact;
     }
 
@@ -609,7 +652,9 @@ export class HardkasTx {
         signedArtifact = draft;
       } else {
         if (resolvedAccount.address !== plan.from.address) {
-          throw new Error(`Signer account '${resolvedAccount.address}' is not authorized to sign for '${plan.from.address}'.`);
+          throw new Error(
+            `Signer account '${resolvedAccount.address}' is not authorized to sign for '${plan.from.address}'.`
+          );
         }
         // Standard single-signature plan signing (maintains 100% backward compatibility)
         signedArtifact = await signTxPlanArtifact({
@@ -661,7 +706,11 @@ export class HardkasTx {
   ): Promise<{ receipt: TxReceiptArtifact; receiptPath?: string; tracePath?: string }> {
     if (typeof target === "object" && target !== null && (target as any).contentHash) {
       try {
-        await this.sdk.artifacts.verify(target, { throwOnInvalid: true, strict: true, enforceMetadata: false });
+        await this.sdk.artifacts.verify(target, {
+          throwOnInvalid: true,
+          strict: true,
+          enforceMetadata: false
+        });
       } catch (e: any) {
         if (e.message.includes("PARENT_MISSING")) {
           throw new Error("parent_plan_unresolved: Missing context plan for simulation.");
@@ -671,10 +720,16 @@ export class HardkasTx {
     }
     const persist = options.persist ?? true;
     if (typeof target === "object" && target !== null) {
-      const checkTxId = (target as any).txId || ((target as any).schema === ARTIFACT_SCHEMAS.SIGNED_TX ? `simulated-${(target as any).sourcePlanId || "unknown"}-tx` : `simulated-${(target as any).planId || (target as any).id || "unknown"}-tx`);
+      const checkTxId =
+        (target as any).txId ||
+        ((target as any).schema === ARTIFACT_SCHEMAS.SIGNED_TX
+          ? `simulated-${(target as any).sourcePlanId || "unknown"}-tx`
+          : `simulated-${(target as any).planId || (target as any).id || "unknown"}-tx`);
       if (checkTxId) {
         try {
-          const existingReceipt = await this.sdk.artifacts.read(checkTxId, { expectedSchema: ARTIFACT_SCHEMAS.TX_RECEIPT });
+          const existingReceipt = await this.sdk.artifacts.read(checkTxId, {
+            expectedSchema: ARTIFACT_SCHEMAS.TX_RECEIPT
+          });
           if (existingReceipt && existingReceipt.schema === ARTIFACT_SCHEMAS.TX_RECEIPT) {
             const receiptPath = getDefaultReceiptPath(checkTxId, this.sdk.config.cwd);
             return { receipt: existingReceipt, receiptPath };
@@ -709,9 +764,13 @@ export class HardkasTx {
 
     if (typeof target === "string") {
       try {
-        targetObj = await this.sdk.artifacts.read(target, { expectedSchema: ARTIFACT_SCHEMAS.TX_PLAN });
+        targetObj = await this.sdk.artifacts.read(target, {
+          expectedSchema: ARTIFACT_SCHEMAS.TX_PLAN
+        });
       } catch (e) {
-        throw new Error(`Artifact '${target}' not found. If you already have an in-memory artifact, pass the object directly to tx.simulate(artifact).`);
+        throw new Error(
+          `Artifact '${target}' not found. If you already have an in-memory artifact, pass the object directly to tx.simulate(artifact).`
+        );
       }
     }
 
@@ -722,7 +781,9 @@ export class HardkasTx {
       planArtifact = this.sdk.artifacts.getCached(sourcePlanId);
       if (!planArtifact) {
         try {
-          planArtifact = await this.sdk.artifacts.read(sourcePlanId, { expectedSchema: ARTIFACT_SCHEMAS.TX_PLAN });
+          planArtifact = await this.sdk.artifacts.read(sourcePlanId, {
+            expectedSchema: ARTIFACT_SCHEMAS.TX_PLAN
+          });
         } catch (e) {
           throw new Error("parent_plan_unresolved");
         }
@@ -731,16 +792,16 @@ export class HardkasTx {
       planArtifact = targetObj;
       sourcePlanId = planArtifact.planId || planArtifact.id || "unknown";
       txId = `simulated-${sourcePlanId}-tx`;
-      
+
       // If persist is true and it's a new in-memory plan (no ID), we write it
       if (persist && !planArtifact.planId) {
         const savedPlanResult = await this.sdk.artifacts.write(planArtifact);
         sourcePlanId = planArtifact.planId || "unknown";
       }
     }
-    
+
     const normalizedPlan = normalizeSimulatedPlanInput(planArtifact, sourcePlanId);
-    
+
     const simResult = applySimulatedPlan(
       state,
       normalizedPlan as any,
@@ -773,9 +834,13 @@ export class HardkasTx {
     }
 
     // Pre-determine trace path for immutability and hermetic sealing (VULN-03)
-    const tracePath = receiptPath ? receiptPath.replace(".json", ".trace.json") : undefined;
+    const tracePath = receiptPath
+      ? receiptPath.replace(".json", ".trace.json")
+      : undefined;
     const activeNetwork = this.sdk.config.config.defaultNetwork || "simnet";
-    const isSimulated = activeNetwork === "simulated" || this.sdk.config.config.networks?.[activeNetwork]?.kind === "simulated";
+    const isSimulated =
+      activeNetwork === "simulated" ||
+      this.sdk.config.config.networks?.[activeNetwork]?.kind === "simulated";
 
     // Create unified receipt
     const receiptBase: any = {
@@ -805,13 +870,20 @@ export class HardkasTx {
       rpcUrl: "simulated://local",
       tracePath,
       ...(planArtifact.workflowId ? { workflowId: planArtifact.workflowId } : {}),
-      ...(planArtifact.assumptionLevel ? { assumptionLevel: planArtifact.assumptionLevel } : {}),
+      ...(planArtifact.assumptionLevel
+        ? { assumptionLevel: planArtifact.assumptionLevel }
+        : {}),
       ...(planArtifact.policyRefs ? { policyRefs: planArtifact.policyRefs } : {}),
-      ...(planArtifact.networkProfileRef ? { networkProfileRef: planArtifact.networkProfileRef } : {}),
-      ...(planArtifact.assumptionRef ? { assumptionRef: planArtifact.assumptionRef } : {}),
+      ...(planArtifact.networkProfileRef
+        ? { networkProfileRef: planArtifact.networkProfileRef }
+        : {}),
+      ...(planArtifact.assumptionRef
+        ? { assumptionRef: planArtifact.assumptionRef }
+        : {}),
       lineage: {
         artifactId: "", // To be computed
-        lineageId: targetObj.lineage?.lineageId || targetObj.contentHash || "0".repeat(64),
+        lineageId:
+          targetObj.lineage?.lineageId || targetObj.contentHash || "0".repeat(64),
         parentArtifactId: targetObj.contentHash || "0".repeat(64),
         rootArtifactId: targetObj.lineage?.rootArtifactId || "0".repeat(64),
         sequence: (targetObj.lineage?.sequence || 1) + 1
@@ -884,7 +956,11 @@ export class HardkasTx {
       amountSompi: receipt.amountSompi,
       feeSompi: receipt.feeSompi
     } as unknown as Parameters<typeof coreEvents.normalizeAndEmit>[0]);
-    const result: { receipt: TxReceiptArtifact; receiptPath?: string; tracePath?: string } = { receipt };
+    const result: {
+      receipt: TxReceiptArtifact;
+      receiptPath?: string;
+      tracePath?: string;
+    } = { receipt };
     if (receiptPath) result.receiptPath = receiptPath;
     if (tracePath) result.tracePath = tracePath;
 
@@ -906,9 +982,17 @@ export class HardkasTx {
     submitted?: boolean;
     txId?: string;
   }> {
-    if (typeof signedArtifact === "object" && signedArtifact !== null && (signedArtifact as any).contentHash) {
+    if (
+      typeof signedArtifact === "object" &&
+      signedArtifact !== null &&
+      (signedArtifact as any).contentHash
+    ) {
       try {
-        await this.sdk.artifacts.verify(signedArtifact as any, { throwOnInvalid: true, strict: true, enforceMetadata: false });
+        await this.sdk.artifacts.verify(signedArtifact as any, {
+          throwOnInvalid: true,
+          strict: true,
+          enforceMetadata: false
+        });
       } catch (e: any) {
         if (e.message.includes("PARENT_MISSING")) {
           throw new Error("parent_plan_unresolved: Missing context plan for simulation.");
@@ -926,63 +1010,85 @@ export class HardkasTx {
     }
 
     const activeNetwork = this.sdk.config.config.defaultNetwork || "simnet";
-    const isExplicitRpc = typeof urlOrOptions === "string" && (urlOrOptions.startsWith("ws://") || urlOrOptions.startsWith("http://") || urlOrOptions.startsWith("wss://") || urlOrOptions.startsWith("https://"));
-    const isSimulated = !isExplicitRpc && (activeNetwork === "simulated" || this.sdk.config.config.networks?.[activeNetwork]?.kind === "simulated");
+    const isExplicitRpc =
+      typeof urlOrOptions === "string" &&
+      (urlOrOptions.startsWith("ws://") ||
+        urlOrOptions.startsWith("http://") ||
+        urlOrOptions.startsWith("wss://") ||
+        urlOrOptions.startsWith("https://"));
+    const isSimulated =
+      !isExplicitRpc &&
+      (activeNetwork === "simulated" ||
+        this.sdk.config.config.networks?.[activeNetwork]?.kind === "simulated");
 
     if (isSimulated) {
-      const persistOpt = typeof urlOrOptions === 'object' ? urlOrOptions.persist : true;
+      const persistOpt = typeof urlOrOptions === "object" ? urlOrOptions.persist : true;
       const simOpts = persistOpt !== undefined ? { persist: persistOpt } : {};
-      
+
       let simResult: any;
       try {
         simResult = await this.simulate(signedArtifact, simOpts);
       } catch (e: any) {
         if (e.message && e.message.includes("invalid simulated input")) {
-          // P1. Robust Idempotence: The UTXOs are already spent. 
+          // P1. Robust Idempotence: The UTXOs are already spent.
           // Check if they were spent by a previous simulation of this exact same transaction.
           try {
-            const { loadSimulatedReceipt, getReceiptPath } = await import("@hardkas/localnet");
-            const txIdToLoad = signedArtifact.txId || `simulated-${signedArtifact.sourcePlanId}-tx`;
-            const existingReceipt = await loadSimulatedReceipt(txIdToLoad, { cwd: this.sdk.workspace.root });
-            
+            const { loadSimulatedReceipt, getReceiptPath } =
+              await import("@hardkas/localnet");
+            const txIdToLoad =
+              signedArtifact.txId || `simulated-${signedArtifact.sourcePlanId}-tx`;
+            const existingReceipt = await loadSimulatedReceipt(txIdToLoad, {
+              cwd: this.sdk.workspace.root
+            });
+
             if (existingReceipt) {
-              if (existingReceipt.schema === ARTIFACT_SCHEMAS.TX_RECEIPT && (existingReceipt.status === "confirmed" || (existingReceipt.status as any) === "accepted")) {
+              if (
+                existingReceipt.schema === ARTIFACT_SCHEMAS.TX_RECEIPT &&
+                (existingReceipt.status === "confirmed" ||
+                  (existingReceipt.status as any) === "accepted")
+              ) {
                 return {
-                   mode: "simulated",
-                   simulated: true,
-                   submitted: false,
-                   txId: existingReceipt.txId,
-                   artifactId: existingReceipt.txId, // simulated receipts use txId as artifactId
-                   receipt: existingReceipt as any,
-                   receiptPath: getReceiptPath(existingReceipt.txId, this.sdk.workspace.root)
+                  mode: "simulated",
+                  simulated: true,
+                  submitted: false,
+                  txId: existingReceipt.txId,
+                  artifactId: existingReceipt.txId, // simulated receipts use txId as artifactId
+                  receipt: existingReceipt as any,
+                  receiptPath: getReceiptPath(
+                    existingReceipt.txId,
+                    this.sdk.workspace.root
+                  )
                 };
               }
             }
           } catch (err) {
-             // Silently ignore if receipt not found, re-throw the original error
+            // Silently ignore if receipt not found, re-throw the original error
           }
         }
         throw e; // Re-throw if it wasn't an idempotent double-spend
       }
-      
+
       const result: any = {
         mode: "simulated",
         simulated: true,
         submitted: false,
         txId: simResult.receipt.txId,
-        artifactId: (simResult.receipt as any).artifactId ?? (simResult as any).artifactId ?? (simResult.receipt as any).contentHash,
+        artifactId:
+          (simResult.receipt as any).artifactId ??
+          (simResult as any).artifactId ??
+          (simResult.receipt as any).contentHash,
         receipt: simResult.receipt
       };
-      
+
       if (simResult.receiptPath !== undefined) {
         result.receiptPath = simResult.receiptPath;
       }
-      
+
       return result;
     }
-    
-    const url = typeof urlOrOptions === 'string' ? urlOrOptions : undefined;
-    
+
+    const url = typeof urlOrOptions === "string" ? urlOrOptions : undefined;
+
     const broadcastable = getBroadcastableSignedTransaction(signedArtifact);
 
     // Attempt broadcast
@@ -1017,10 +1123,16 @@ export class HardkasTx {
       submittedAt: new Date().toISOString(),
       ...(url ? { rpcUrl: url } : {}),
       ...(signedArtifact.workflowId ? { workflowId: signedArtifact.workflowId } : {}),
-      ...(signedArtifact.assumptionLevel ? { assumptionLevel: signedArtifact.assumptionLevel } : {}),
+      ...(signedArtifact.assumptionLevel
+        ? { assumptionLevel: signedArtifact.assumptionLevel }
+        : {}),
       ...(signedArtifact.policyRefs ? { policyRefs: signedArtifact.policyRefs } : {}),
-      ...(signedArtifact.networkProfileRef ? { networkProfileRef: signedArtifact.networkProfileRef } : {}),
-      ...(signedArtifact.assumptionRef ? { assumptionRef: signedArtifact.assumptionRef } : {}),
+      ...(signedArtifact.networkProfileRef
+        ? { networkProfileRef: signedArtifact.networkProfileRef }
+        : {}),
+      ...(signedArtifact.assumptionRef
+        ? { assumptionRef: signedArtifact.assumptionRef }
+        : {}),
       tracePath: undefined,
       lineage: createLineageTransition(signedArtifact, "hardkas.txReceipt")
     };
@@ -1030,7 +1142,10 @@ export class HardkasTx {
     );
     if (realReceiptBase.lineage) {
       realReceiptBase.lineage.artifactId = realReceiptBase.contentHash;
-      realReceiptBase.contentHash = calculateContentHash(realReceiptBase, CURRENT_HASH_VERSION);
+      realReceiptBase.contentHash = calculateContentHash(
+        realReceiptBase,
+        CURRENT_HASH_VERSION
+      );
       realReceiptBase.lineage.artifactId = realReceiptBase.contentHash;
     }
     const receipt: TxReceiptArtifact = realReceiptBase;

@@ -65,7 +65,7 @@ async function loadConfigFile(
       const _dirname = path.dirname(fileURLToPath(import.meta.url));
       const resolvedSdk = path.resolve(_dirname, "../../sdk/src/index.ts");
       const rootPkgPath = path.resolve(_dirname, "../../../package.json");
-      
+
       let isMonorepoDev = false;
       if (fs.existsSync(resolvedSdk) && fs.existsSync(rootPkgPath)) {
         const rootPkg = JSON.parse(fs.readFileSync(rootPkgPath, "utf8"));

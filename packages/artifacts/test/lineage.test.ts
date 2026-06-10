@@ -183,7 +183,8 @@ describe("Artifact Lineage Hardening", () => {
       lineage: createLineageTransition(plan, "hardkas.signedTx")
     };
     // Simulate hashing the signedTx
-    const signedTxHash = "0000000000000000000000000000000000000000000000000000000000000022";
+    const signedTxHash =
+      "0000000000000000000000000000000000000000000000000000000000000022";
     signedTx.contentHash = signedTxHash;
     signedTx.lineage.artifactId = signedTxHash;
 
@@ -200,7 +201,8 @@ describe("Artifact Lineage Hardening", () => {
       lineage: createLineageTransition(signedTx, "hardkas.txReceipt")
     };
     // Simulate hashing the receipt
-    const receiptHash = "0000000000000000000000000000000000000000000000000000000000000033";
+    const receiptHash =
+      "0000000000000000000000000000000000000000000000000000000000000033";
     receipt.contentHash = receiptHash;
     receipt.lineage.artifactId = receiptHash;
 

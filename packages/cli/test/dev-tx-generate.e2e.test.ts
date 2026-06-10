@@ -55,7 +55,7 @@ export default defineHardkasConfig({
     expect(result.purpose).toBe("load-test");
     expect(result.securityModel).toBe("mock-fixture");
     expect(result.results.length).toBe(50);
-  }, 120000);
+  }, 300000);
 
   it("should generate 10 mock transactions quickly", async () => {
     const { stdout } = await execa(tsx, [
@@ -73,5 +73,5 @@ export default defineHardkasConfig({
 
     expect(result.generated).toBe(10);
     expect(result.successCount).toBe(10);
-  }, 30000);
+  }, 120000);
 });

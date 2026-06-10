@@ -1,4 +1,4 @@
-import { Hardkas, formatSompi } from "@hardkas/sdk";
+import { Hardkas, formatSompiToKas } from "@hardkas/sdk";
 
 async function main() {
   console.log("\x1b[35m╔══════════════════════════════╗\x1b[0m");

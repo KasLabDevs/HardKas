@@ -184,7 +184,7 @@ describe("L2 Tx Sign Runner", () => {
         planPath: "plan.json",
         account: "alice"
       })
-    ).rejects.toThrow("EXIT");
+    ).rejects.toThrow("No artifact was written");
 
     expect(consoleSpy).toHaveBeenCalledWith(
       expect.stringContaining("Igra L2 signing is not available")

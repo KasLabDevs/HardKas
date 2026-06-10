@@ -7,12 +7,12 @@ import { verifyLineage, calculateContentHash } from "@hardkas/artifacts";
 async function runSoak() {
   console.log("Starting FASE 6C: Compressed Soak Test (30 minutes)...");
   const sdk = await Hardkas.create();
-  
+
   const startTime = Date.now();
   const DURATION_MS = 30 * 60 * 1000;
   const CHECKPOINT_INTERVAL = 60 * 1000;
   let lastCheckpoint = startTime;
-  
+
   const metrics = {
     cycles: 0,
     policyRefsVerified: 0,
@@ -33,9 +33,9 @@ async function runSoak() {
   try {
     while (Date.now() - startTime < DURATION_MS) {
       if (criticalFailure) break;
-      
+
       const cycleId = crypto.randomBytes(8).toString("hex");
-      
+
       // 1. Context Artifacts
       const policy = {
         schema: "hardkas.policy.v1",
@@ -45,7 +45,7 @@ async function runSoak() {
         rules: [{ id: "cycle", result: true, inputHash: cycleId }],
         createdAt: new Date().toISOString()
       };
-      
+
       const netProfile = {
         schema: "hardkas.networkProfile.v1",
         hardkasVersion: "0.9.1-alpha",
@@ -55,7 +55,7 @@ async function runSoak() {
         capabilities: { supports_rbf: false, gas_model: "utxo" },
         createdAt: new Date().toISOString()
       };
-      
+
       const assumption = {
         schema: "hardkas.assumption.v1",
         hardkasVersion: "0.9.1-alpha",
@@ -67,7 +67,7 @@ async function runSoak() {
       const pHash = calculateContentHash(policy, 2);
       const nHash = calculateContentHash(netProfile, 2);
       const aHash = calculateContentHash(assumption, 2);
-      
+
       (policy as any).contentHash = pHash;
       (netProfile as any).contentHash = nHash;
       (assumption as any).contentHash = aHash;
@@ -77,7 +77,7 @@ async function runSoak() {
       sdk.artifacts.cacheArtifact(policy);
       sdk.artifacts.cacheArtifact(netProfile);
       sdk.artifacts.cacheArtifact(assumption);
-      
+
       // 2. Tx Plan
       const plan = await sdk.tx.plan({
         from: alice,
@@ -90,8 +90,19 @@ async function runSoak() {
 
       // Verification of Refs
       const anyPlan = plan as any;
-      if (anyPlan.policyRef !== pHash || anyPlan.networkProfileRef !== nHash || anyPlan.assumptionRef !== aHash) {
-        console.error("DEBUG:", { pHash, nHash, aHash, policyRef: anyPlan.policyRef, networkProfileRef: anyPlan.networkProfileRef, assumptionRef: anyPlan.assumptionRef });
+      if (
+        anyPlan.policyRef !== pHash ||
+        anyPlan.networkProfileRef !== nHash ||
+        anyPlan.assumptionRef !== aHash
+      ) {
+        console.error("DEBUG:", {
+          pHash,
+          nHash,
+          aHash,
+          policyRef: anyPlan.policyRef,
+          networkProfileRef: anyPlan.networkProfileRef,
+          assumptionRef: anyPlan.assumptionRef
+        });
         metrics.brokenRefs++;
         criticalFailure = "Broken Refs in TxPlan";
         break;
@@ -112,7 +123,7 @@ async function runSoak() {
 
       // 3. Sign
       const signed = await sdk.tx.sign(plan, alice);
-      
+
       // 4. Simulate/Send
       const result = await sdk.tx.send(signed);
       const receipt = result.receipt;
@@ -121,7 +132,12 @@ async function runSoak() {
       const r1 = verifyLineage(signed, plan, { strict: true });
       const r2 = verifyLineage(receipt, signed, { strict: true });
       if (!r1.ok || !r2.ok) {
-        console.error("DEBUG plan contentHash:", plan.contentHash, "signed parent:", signed.lineage?.parentArtifactId);
+        console.error(
+          "DEBUG plan contentHash:",
+          plan.contentHash,
+          "signed parent:",
+          signed.lineage?.parentArtifactId
+        );
         console.error("DEBUG receipt:", JSON.stringify(receipt, null, 2));
         console.error("DEBUG Lineage r1:", JSON.stringify(r1, null, 2));
         console.error("DEBUG Lineage r2:", JSON.stringify(r2, null, 2));
@@ -137,9 +153,11 @@ async function runSoak() {
         const elapsedMin = Math.floor((now - startTime) / 60000);
         const heap = process.memoryUsage().heapUsed;
         if (heap > metrics.memoryPeak) metrics.memoryPeak = heap;
-        console.log(`[Checkpoint ${elapsedMin}m] Cycles: ${metrics.cycles} | Heap: ${(heap/1024/1024).toFixed(2)} MB`);
+        console.log(
+          `[Checkpoint ${elapsedMin}m] Cycles: ${metrics.cycles} | Heap: ${(heap / 1024 / 1024).toFixed(2)} MB`
+        );
         lastCheckpoint = now;
-        
+
         // Memory leak sanity check (if heap grows beyond 1GB we stop)
         if (heap > 1024 * 1024 * 1024) {
           criticalFailure = "OOM / Memory Leak detected (Heap > 1GB)";
@@ -155,7 +173,7 @@ async function runSoak() {
   const reportsDir = path.join(process.cwd(), "reports");
   if (!fs.existsSync(reportsDir)) fs.mkdirSync(reportsDir, { recursive: true });
   fs.writeFileSync(
-    path.join(reportsDir, "soak-6c-084.json"), 
+    path.join(reportsDir, "soak-6c-084.json"),
     JSON.stringify(metrics, null, 2)
   );
 
@@ -171,7 +189,7 @@ async function runSoak() {
   }
 }
 
-runSoak().catch(e => {
+runSoak().catch((e) => {
   console.error("Fatal Crash:", e);
   process.exit(1);
 });

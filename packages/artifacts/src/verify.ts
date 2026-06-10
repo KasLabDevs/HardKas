@@ -17,7 +17,7 @@ import {
 import { NetworkId, type CorruptionCode, type CorruptionSeverity } from "@hardkas/core";
 import { verifyFeeSemantics } from "./feeVerify.js";
 import { verifyLineage } from "./lineage.js";
-import { 
+import {
   SilverCompileArtifactSchema,
   SilverDeployArtifactSchema,
   SilverDeployPlanArtifactSchema,
@@ -256,7 +256,8 @@ export function verifyArtifactIntegritySync(
       if (!validation.success) {
         // For legacy artifacts (hashVersion < 4), Zod schema mismatches are warnings
         // since they may not conform to the current schema but are still integrity-valid.
-        const zodSeverity: VerificationSeverity = (hashVersion < 4 && !context.strict) ? "warning" : "error";
+        const zodSeverity: VerificationSeverity =
+          hashVersion < 4 && !context.strict ? "warning" : "error";
         validation.error.issues.forEach((e) => {
           const pathStr = e.path.join(".");
           if (zodSeverity === "warning") {
@@ -306,7 +307,8 @@ export async function verifyArtifactIntegrity(
 }
 
 function findFileByHash(hash: string, dirs: string[]): string | null {
-  const shortHash = hash.startsWith("plan-") || hash.startsWith("signed-") ? hash : hash.slice(0, 16);
+  const shortHash =
+    hash.startsWith("plan-") || hash.startsWith("signed-") ? hash : hash.slice(0, 16);
   for (const dir of dirs) {
     if (!fs.existsSync(dir)) continue;
     try {
@@ -402,8 +404,6 @@ export function verifyArtifactSemantics(
       policyRefs.push(v.policyRef);
     }
 
-
-
     // Resolve policies
     for (const ref of policyRefs) {
       let refObj = context.resolveArtifact ? context.resolveArtifact(ref) : null;
@@ -461,7 +461,8 @@ export function verifyArtifactSemantics(
                   message: `Policy evaluation rejected: decision is invalid (${refObj.decision})`
                 });
               }
-              const failedRules = refObj.rules?.filter((r: any) => r.result === "FAIL") || [];
+              const failedRules =
+                refObj.rules?.filter((r: any) => r.result === "FAIL") || [];
               if (failedRules.length > 0) {
                 addIssue({
                   code: "POLICY_VIOLATION",
@@ -606,9 +607,12 @@ export function verifyArtifactSemantics(
       } else {
         try {
           // Recursively verify parent semantic checks
-          const parentSem = verifyArtifactSemantics(parentObj, { ...context, strict: true });
+          const parentSem = verifyArtifactSemantics(parentObj, {
+            ...context,
+            strict: true
+          });
           if (!parentSem.ok) {
-            parentSem.issues.forEach(issue => addIssue(issue));
+            parentSem.issues.forEach((issue) => addIssue(issue));
           }
         } catch (e: any) {
           addIssue({
@@ -718,7 +722,10 @@ export function verifyArtifactSemantics(
     if (addr && typeof addr === "string") {
       let mismatch = false;
       if (networkIdStr === "mainnet") {
-        mismatch = !addr.startsWith("kaspa:") || addr.startsWith("kaspasim:") || addr.startsWith("kaspa:sim_");
+        mismatch =
+          !addr.startsWith("kaspa:") ||
+          addr.startsWith("kaspasim:") ||
+          addr.startsWith("kaspa:sim_");
       } else if (networkIdStr.startsWith("testnet")) {
         mismatch = !addr.startsWith("kaspatest:");
       } else {

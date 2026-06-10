@@ -24,14 +24,19 @@ export function registerRpcCommands(program: Command) {
     .command("health")
     .description("Check RPC health")
     .option("--wait", "Wait until healthy")
-    .option("--timeout <ms>", "Wait timeout in ms", "60000")
-    .action(async (options: { wait?: boolean; timeout?: string }) => {
+    .option("--json", "Output as JSON", false)
+    .action(async (options: { wait?: boolean; timeout?: string; json: boolean }) => {
       try {
+        const { getOutput } = await import("../output.js");
         const res = await runRpcHealth({
           wait: options.wait ?? false,
           timeout: options.timeout ? parseInt(options.timeout, 10) / 1000 : 60
         });
-        console.log(res.formatted);
+        if (options.json) {
+          getOutput().writeJson(res.result);
+        } else {
+          getOutput().writeLine(res.formatted);
+        }
         if (!res.result.ready) {
           throw new Error("Command failed");
         }

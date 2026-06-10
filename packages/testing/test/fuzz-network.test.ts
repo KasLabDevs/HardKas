@@ -25,7 +25,9 @@ describe("Phase 6A: Network Fuzzing", () => {
     for (let i = 0; i < iterations; i++) {
       const mutated = mutateArtifact(original);
       try {
-        const verifyResult = await sdk.artifacts.verify(mutated, { throwOnInvalid: false });
+        const verifyResult = await sdk.artifacts.verify(mutated, {
+          throwOnInvalid: false
+        });
         if (verifyResult.valid === true) {
           acceptedInvalid++;
         }

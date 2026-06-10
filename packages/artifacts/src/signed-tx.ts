@@ -97,7 +97,9 @@ export function createSimulatedTxReceipt(
   };
 
   if (artifact.lineage) {
-    artifact.lineage.parentArtifactId = extra?.preStateHash || txId.replace("simulated-", "").replace("-tx", "").padEnd(64, '0').slice(0, 64);
+    artifact.lineage.parentArtifactId =
+      extra?.preStateHash ||
+      txId.replace("simulated-", "").replace("-tx", "").padEnd(64, "0").slice(0, 64);
   }
   const hash = calculateContentHash(artifact, CURRENT_HASH_VERSION);
   artifact.contentHash = hash;

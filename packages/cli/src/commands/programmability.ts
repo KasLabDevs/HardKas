@@ -1,19 +1,20 @@
 import { Command } from "commander";
+import { getOutput } from "../output.js";
 
 type ProgramKind = "silver" | "zk" | "vprog" | "full-lab";
 
 export function registerProgrammabilityCommands(program: Command) {
   const programmability = program
     .command("programmability")
-    .description("Builder-ready local programmability surface");
+    .description("Builder-ready local programmability surface (Outputs JSON by default)");
 
   programmability
     .command("capabilities")
     .description("Show local programmability capabilities")
     .option("--json", "Output as JSON", false)
-    .action(async (options) => {
+    .action(async () => {
       const sdk = await createSdk();
-      printResult(await sdk.programmability.capabilities(), options.json);
+      printResult(await sdk.programmability.capabilities());
     });
 
   programmability
@@ -25,8 +26,13 @@ export function registerProgrammabilityCommands(program: Command) {
       const sdk = await createSdk();
       const kind = normalizeInspectKind(options.kind);
       const result = await sdk.programmability.inspect({ kind, path: targetPath });
-      printResult(result, options.json);
-      if (!result.ok) process.exitCode = 1;
+      printResult(result);
+      if (!result.ok) {
+        const { HardkasCliError } = await import("../cli-errors.js");
+        throw new HardkasCliError("PROGRAMMABILITY_INSPECT_FAILED", "Inspect failed", {
+          exitCode: 1
+        });
+      }
     });
 
   programmability
@@ -38,8 +44,13 @@ export function registerProgrammabilityCommands(program: Command) {
       const sdk = await createSdk();
       const kind = normalizeInspectKind(options.kind);
       const result = await sdk.programmability.verify({ kind, path: targetPath });
-      printResult(result, options.json);
-      if (!result.ok && result.status !== "PROGRAMMABILITY_VERIFY_PARTIAL") process.exitCode = 1;
+      printResult(result);
+      if (!result.ok && result.status !== "PROGRAMMABILITY_VERIFY_PARTIAL") {
+        const { HardkasCliError } = await import("../cli-errors.js");
+        throw new HardkasCliError("PROGRAMMABILITY_VERIFY_FAILED", "Verify failed", {
+          exitCode: 1
+        });
+      }
     });
 
   const corpus = programmability
@@ -50,16 +61,19 @@ export function registerProgrammabilityCommands(program: Command) {
     .command("verify <path>")
     .description("Verify the root Toccata programmability corpus")
     .option("--json", "Output as JSON", false)
-    .action(async (targetPath: string, options) => {
+    .action(async (targetPath: string) => {
       const sdk = await createSdk();
       const result = await sdk.programmability.corpus.verify({ path: targetPath });
-      printResult(result, options.json);
-      if (!result.ok) process.exitCode = 1;
+      printResult(result);
+      if (!result.ok) {
+        const { HardkasCliError } = await import("../cli-errors.js");
+        throw new HardkasCliError("CORPUS_VERIFY_FAILED", "Corpus verify failed", {
+          exitCode: 1
+        });
+      }
     });
 
-  const app = programmability
-    .command("app")
-    .description("Plan builder app surfaces");
+  const app = programmability.command("app").description("Plan builder app surfaces");
 
   app
     .command("plan")
@@ -71,13 +85,17 @@ export function registerProgrammabilityCommands(program: Command) {
       const sdk = await createSdk();
       const kind = normalizeKind(options.kind, true) as ProgramKind;
       const result = sdk.programmability.app.plan({ kind, template: options.template });
-      printResult(result, options.json);
+      printResult(result);
     });
 }
 
 async function createSdk() {
   const { Hardkas } = await import("@hardkas/sdk");
-  return Hardkas.create({ cwd: process.cwd(), network: "simulated", autoBootstrap: true });
+  return Hardkas.create({
+    cwd: process.cwd(),
+    network: "simulated",
+    autoBootstrap: true
+  });
 }
 
 function normalizeInspectKind(kind: string): Exclude<ProgramKind, "full-lab"> {
@@ -85,12 +103,15 @@ function normalizeInspectKind(kind: string): Exclude<ProgramKind, "full-lab"> {
   throw new Error(`PROGRAMMABILITY_KIND_INVALID: ${kind}`);
 }
 
-function normalizeKind(kind: string, allowFullLab: boolean): Exclude<ProgramKind, "full-lab"> | ProgramKind {
+function normalizeKind(
+  kind: string,
+  allowFullLab: boolean
+): Exclude<ProgramKind, "full-lab"> | ProgramKind {
   if (kind === "silver" || kind === "zk" || kind === "vprog") return kind;
   if (allowFullLab && kind === "full-lab") return kind;
   throw new Error(`PROGRAMMABILITY_KIND_INVALID: ${kind}`);
 }
 
-function printResult(result: unknown, _json?: boolean) {
-  console.log(JSON.stringify(result, null, 2));
+function printResult(result: unknown) {
+  getOutput().writeJson(result);
 }

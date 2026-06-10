@@ -6,7 +6,15 @@ const pnpmCommand = process.env.npm_execpath
 const commands = [
   [
     pnpmCommand[0],
-    [...pnpmCommand[1], "exec", "tsx", "packages/cli/src/index.ts", "vprogs", "status", "--json"]
+    [
+      ...pnpmCommand[1],
+      "exec",
+      "tsx",
+      "packages/cli/src/index.ts",
+      "vprogs",
+      "status",
+      "--json"
+    ]
   ],
   [
     pnpmCommand[0],

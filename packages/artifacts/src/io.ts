@@ -24,9 +24,6 @@ export async function writeArtifact(filePath: string, artifact: unknown): Promis
         ? artifactObj.schema.split(".")[1] || "artifact"
         : "artifact";
       targetPath = path.join(filePath, `${prefix}-${id}.json`);
-      console.log(
-        `\nNote: Provided path is a directory. Auto-generating artifact filename: ${path.basename(targetPath)}`
-      );
     }
   } catch (e) {
     // Path does not exist, assume it's a file path unless it explicitly ends with a slash

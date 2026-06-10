@@ -6,8 +6,14 @@ const report = await hardkas.programmability.verify({
   path: "fixtures/toccata-v2/silver/op-true/deploy-plan.json"
 });
 
-console.log(JSON.stringify({
-  app: "silver-vault-policy",
-  status: report.ok ? "PASS" : "FAIL",
-  claims: report.claims
-}, null, 2));
+console.log(
+  JSON.stringify(
+    {
+      app: "silver-vault-policy",
+      status: report.ok ? "PASS" : "FAIL",
+      claims: report.claims
+    },
+    null,
+    2
+  )
+);

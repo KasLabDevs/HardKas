@@ -36,7 +36,13 @@ describe("ZK corpus and vProgs inspect CLI", () => {
   });
 
   it("verifies the ZK corpus", () => {
-    const result = runHardkas(["zk", "corpus", "verify", "fixtures/toccata-v2/zk", "--json"]);
+    const result = runHardkas([
+      "zk",
+      "corpus",
+      "verify",
+      "fixtures/toccata-v2/zk",
+      "--json"
+    ]);
     expect(result.status).toBe(0);
     const json = parseStdout(result);
     expect(json.status).toBe("ZK_CORPUS_VERIFICATION_PASS");
@@ -57,9 +63,12 @@ describe("ZK corpus and vProgs inspect CLI", () => {
     expect(statusJson.claims.vProgsRuntime).toBe("NOT_CLAIMED");
     expect(statusJson.claims.vProgsStableApi).toBe("NOT_CLAIMED");
 
-    const inspect = runHardkas(
-      ["vprogs", "inspect", "fixtures/toccata-v2/vprogs/inspect-only-artifact.json", "--json"]
-    );
+    const inspect = runHardkas([
+      "vprogs",
+      "inspect",
+      "fixtures/toccata-v2/vprogs/inspect-only-artifact.json",
+      "--json"
+    ]);
     expect(inspect.status).toBe(0);
     expect(parseStdout(inspect).status).toBe("VPROGS_ARTIFACT_INSPECTED");
   });

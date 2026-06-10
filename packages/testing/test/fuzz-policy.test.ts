@@ -24,7 +24,9 @@ describe("Phase 6A: Policy Fuzzing", () => {
     for (let i = 0; i < iterations; i++) {
       const mutated = mutateArtifact(original);
       try {
-        const verifyResult = await sdk.artifacts.verify(mutated, { throwOnInvalid: false });
+        const verifyResult = await sdk.artifacts.verify(mutated, {
+          throwOnInvalid: false
+        });
         // If it validly passes verification despite mutation, it's a failure
         // Actually, if we mutate something that doesn't change the hash (like adding a new field that gets ignored? canonical.ts includes all fields)
         if (verifyResult.valid === true) {

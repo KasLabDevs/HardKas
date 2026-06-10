@@ -10,7 +10,8 @@ import {
   asWorkflowId,
   asCorrelationId,
   asNetworkId,
-  asEventSequence
+  asEventSequence,
+  getTelemetry
 } from "@hardkas/core";
 
 export interface WatcherOptions {
@@ -64,7 +65,14 @@ export class InvariantWatcher {
           }
         } catch (e) {
           // Invariant check failure should not crash the watcher
-          console.error(`Invariant ${invariant.id} failed with error:`, e);
+          try {
+            getTelemetry().logAnomaly(
+              "EXTERNAL_MUTATION",
+              "low",
+              "unknown",
+              `Invariant ${invariant.id} failed with error: ${String(e)}`
+            );
+          } catch (telemetryError) {}
         }
       }
     });

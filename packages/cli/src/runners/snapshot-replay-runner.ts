@@ -1,4 +1,4 @@
-import path from "node:path";
+﻿import path from "node:path";
 import pc from "picocolors";
 import { readSnapshotManifest } from "@hardkas/core";
 import { UI, handleError } from "../ui.js";
@@ -94,7 +94,11 @@ export async function runSnapshotReplay(options: SnapshotReplayOptions) {
       );
     }
   } catch (err: any) {
-    if (!options.json) handleError(err);
-    process.exitCode = 1;
+    const { HardkasCliError } = await import("../cli-errors.js");
+    throw new HardkasCliError(
+      "SNAPSHOT_REPLAY_FAILED",
+      `Snapshot replay failed: ${err.message}`,
+      { exitCode: 1, cause: err }
+    );
   }
 }

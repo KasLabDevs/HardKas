@@ -21,7 +21,9 @@ export function resolveProvider(options: ResolveProviderOptions): ResolvedProvid
   const { network, provider, url } = options;
 
   if (provider === "simulated" && url) {
-    throw new Error("PROVIDER_CONFLICT: Simulated backend cannot be used with explicit RPC URL");
+    throw new Error(
+      "PROVIDER_CONFLICT: Simulated backend cannot be used with explicit RPC URL"
+    );
   }
 
   // 1. Explicit URL -> RPC mode
@@ -29,7 +31,7 @@ export function resolveProvider(options: ResolveProviderOptions): ResolvedProvid
     return {
       mode: "rpc",
       network,
-      endpoint: url,
+      endpoint: url
     };
   }
 
@@ -37,13 +39,13 @@ export function resolveProvider(options: ResolveProviderOptions): ResolvedProvid
   if (provider === "rpc") {
     return {
       mode: "rpc",
-      network,
+      network
     };
   }
   if (provider === "simulated") {
     return {
       mode: "simulated",
-      network,
+      network
     };
   }
 
@@ -51,7 +53,7 @@ export function resolveProvider(options: ResolveProviderOptions): ResolvedProvid
   if (network === "simnet" || network === "local" || network === "simulated") {
     return {
       mode: "simulated",
-      network,
+      network
     };
   }
 
@@ -59,13 +61,13 @@ export function resolveProvider(options: ResolveProviderOptions): ResolvedProvid
   if (options.configNetworkKind === "simulated") {
     return {
       mode: "simulated",
-      network,
+      network
     };
   }
 
   // Default to RPC for unknown or real networks
   return {
     mode: "rpc",
-    network,
+    network
   };
 }

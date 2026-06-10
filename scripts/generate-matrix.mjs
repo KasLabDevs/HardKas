@@ -1,14 +1,18 @@
-import fs from 'node:fs';
-import path from 'node:path';
+import fs from "node:fs";
+import path from "node:path";
 
-const reportsDir = path.join(process.cwd(), 'reports');
-const bugsDir = path.join(reportsDir, 'bugs-command');
+const reportsDir = path.join(process.cwd(), "reports");
+const bugsDir = path.join(reportsDir, "bugs-command");
 if (!fs.existsSync(bugsDir)) fs.mkdirSync(bugsDir, { recursive: true });
 
-const logFile = path.join(reportsDir, 'command-execution-log.jsonl');
-const logs = fs.readFileSync(logFile, 'utf8').trim().split('\n').map(line => JSON.parse(line));
+const logFile = path.join(reportsDir, "command-execution-log.jsonl");
+const logs = fs
+  .readFileSync(logFile, "utf8")
+  .trim()
+  .split("\n")
+  .map((line) => JSON.parse(line));
 
-const failedLogs = logs.filter(l => l.status === 'EXECUTED_FAILED');
+const failedLogs = logs.filter((l) => l.status === "EXECUTED_FAILED");
 
 let bugCount = 0;
 for (const log of failedLogs) {
@@ -46,6 +50,9 @@ const matrixContent = `
 | hardkas query sync | sdk.query.sync | SKIPPED_NEEDS_NETWORK | Equivalent |
 `;
 
-fs.writeFileSync(path.join(reportsDir, 'cli-sdk-equivalence-matrix.md'), matrixContent.trim());
+fs.writeFileSync(
+  path.join(reportsDir, "cli-sdk-equivalence-matrix.md"),
+  matrixContent.trim()
+);
 
 console.log(`Generated ${bugCount} bug reports and the equivalence matrix.`);

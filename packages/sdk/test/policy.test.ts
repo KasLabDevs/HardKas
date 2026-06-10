@@ -31,7 +31,7 @@ describe("Network-Agnostic Artifact Layer: Policy", () => {
         }
       ]
     };
-    
+
     (policy as any).contentHash = calculateContentHash(policy, CURRENT_HASH_VERSION);
 
     // Write artifact via manager
@@ -56,13 +56,15 @@ describe("Network-Agnostic Artifact Layer: Policy", () => {
       rules: []
     };
     (policy as any).contentHash = calculateContentHash(policy, CURRENT_HASH_VERSION);
-    
+
     const mutatedPolicy = {
       ...policy,
       decision: "DENY" // MUTATION
     };
 
-    const verifyResult = await sdk.artifacts.verify(mutatedPolicy, { throwOnInvalid: false });
+    const verifyResult = await sdk.artifacts.verify(mutatedPolicy, {
+      throwOnInvalid: false
+    });
     expect(verifyResult.valid).toBe(false);
     expect(verifyResult.details[0].code).toBe("HASH_MISMATCH");
   });
@@ -76,9 +78,7 @@ describe("Network-Agnostic Artifact Layer: Policy", () => {
       mode: "simulated",
       createdAt: new Date().toISOString(),
       decision: "ALLOW",
-      rules: [
-        { id: "max_amount", result: "PASS" }
-      ]
+      rules: [{ id: "max_amount", result: "PASS" }]
     };
     (policy as any).contentHash = calculateContentHash(policy, CURRENT_HASH_VERSION);
 
@@ -87,7 +87,9 @@ describe("Network-Agnostic Artifact Layer: Policy", () => {
       rules: [] // MUTATION: removed rule
     };
 
-    const verifyResult = await sdk.artifacts.verify(mutatedPolicy, { throwOnInvalid: false });
+    const verifyResult = await sdk.artifacts.verify(mutatedPolicy, {
+      throwOnInvalid: false
+    });
     expect(verifyResult.valid).toBe(false);
     expect(verifyResult.details[0].code).toBe("HASH_MISMATCH");
   });

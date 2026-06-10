@@ -1,6 +1,7 @@
 import fs from "node:fs";
 import { execSync } from "node:child_process";
 import path from "node:path";
+import { getDockerNetworkStrategy, waitForFundingConfirmation, getVirtualDaaScoreBestEffort } from "./helpers.mjs";
 
 function run(cmd) {
   try {
@@ -13,43 +14,91 @@ function run(cmd) {
   }
 }
 
-function mineBriefly(address, label) {
+async function ensureFundingConfirmed(minerAddress, targetAccountName, expectedSompi, label) {
   console.log(`  Mining confirmation blocks for ${label}...`);
+  const strategy = getDockerNetworkStrategy();
+  console.log(`  [Diagnostic] Docker Strategy: ${strategy.type}`);
+  console.log(`  [Diagnostic] Target Kaspad: ${strategy.kaspadAddress}`);
+
+  const stratumName = `hardkas-toccata-stratum-v2-${Date.now()}`;
+  let daaStart = await getVirtualDaaScoreBestEffort();
+
   try {
     execSync("docker image inspect hardkas/stratum-bridge:v2.0.0-local-simnet-unsynced", { stdio: "ignore" });
+
+    let dockerCmd = [
+      "docker run -d",
+      `--name ${stratumName}`
+    ];
+
+    if (strategy.addHost) {
+      dockerCmd.push(`--add-host=${strategy.addHost}`);
+    }
+    if (strategy.network && strategy.network !== "bridge" && strategy.network !== "host") {
+      dockerCmd.push(`--network=${strategy.network}`);
+    }
+
+    dockerCmd.push("hardkas/stratum-bridge:v2.0.0-local-simnet-unsynced");
+    dockerCmd.push("/app/stratum-bridge");
+    dockerCmd.push("--node-mode external");
+    dockerCmd.push(`--kaspad-address ${strategy.kaspadAddress}`);
+    dockerCmd.push("--web-dashboard-port :3031");
+    dockerCmd.push("--instance port=:16120,diff=1");
+    dockerCmd.push("--internal-cpu-miner");
+    dockerCmd.push(`--internal-cpu-miner-address ${minerAddress}`);
+    dockerCmd.push("--internal-cpu-miner-threads 1");
+    dockerCmd.push("--internal-cpu-miner-template-poll-ms 250");
+    dockerCmd.push("--print-stats true");
+    dockerCmd.push("--log-to-file false");
+
     try {
-      execSync("docker rm -f hardkas-toccata-stratum-v2", { stdio: "ignore" });
-    } catch {}
-    execSync(
-      [
-        "docker run -d",
-        "--name hardkas-toccata-stratum-v2",
-        "--add-host=host.docker.internal:host-gateway",
-        "hardkas/stratum-bridge:v2.0.0-local-simnet-unsynced",
-        "/app/stratum-bridge",
-        "--node-mode external",
-        "--kaspad-address host.docker.internal:16210",
-        "--web-dashboard-port :3031",
-        "--instance port=:16120,diff=1",
-        "--internal-cpu-miner",
-        `--internal-cpu-miner-address ${address}`,
-        "--internal-cpu-miner-threads 1",
-        "--internal-cpu-miner-template-poll-ms 250",
-        "--print-stats true",
-        "--log-to-file false"
-      ].join(" "),
-      { stdio: "ignore" }
-    );
-    execSync('node -e "setTimeout(()=>{}, 8000)"');
+      execSync(dockerCmd.join(" "), { stdio: "ignore" });
+    } catch (e) {
+      throw new Error(`TOCCATA_STRATUM_START_FAILED: Failed to start miner container. Check docker logs.`);
+    }
+
+    // Wait for balance using helper
+    const timeoutMs = parseInt(process.env.HARDKAS_TOCCATA_FUNDING_TIMEOUT_MS || "60000", 10);
+    const intervalMs = parseInt(process.env.HARDKAS_TOCCATA_POLL_INTERVAL_MS || "2000", 10);
+
+    const context = {
+      strategy,
+      stratumName,
+      daaStart
+    };
+
+    const result = await waitForFundingConfirmation({
+      runCmd: run,
+      accountName: targetAccountName,
+      expectedSompi,
+      timeoutMs,
+      intervalMs,
+      context
+    });
+
+    return result;
+
+  } catch (err) {
+    if (err.message.includes("TOCCATA_FUNDING_CONFIRMATION_TIMEOUT")) {
+      const daaEnd = await getVirtualDaaScoreBestEffort();
+      try {
+        const logs = execSync(`docker logs ${stratumName}`, { encoding: "utf8", stdio: "pipe" });
+        console.error(`\n=== Stratum Logs (${stratumName}) ===\n${logs}\n=========================\n`);
+      } catch (e) {
+        console.error(`Could not fetch logs for ${stratumName}`);
+      }
+      err.message = err.message.replace("DAA End: unavailable", `DAA End: ${daaEnd || "unavailable"}`);
+    }
+    throw err;
   } finally {
     try {
-      execSync("docker stop hardkas-toccata-stratum-v2", { stdio: "ignore" });
+      execSync(`docker rm -f ${stratumName}`, { stdio: "ignore" });
     } catch {}
   }
 }
 
 async function runRealNodeCert() {
-  console.log("=== Real Node 0.9.0-alpha Certification ===");
+  console.log("=== Real Node 0.9.1-alpha / Toccata Certification ===");
 
   // Clean state
   if (fs.existsSync(".hardkas")) {
@@ -92,7 +141,7 @@ async function runRealNodeCert() {
   console.log("  Signed: 1.signed.json");
 
   run(`tx send .hardkas/artifacts/1.signed.json --provider rpc`);
-  mineBriefly(fixtureAddress, "fixture -> Alice");
+  await ensureFundingConfirmed(fixtureAddress, alice.name, 100000000000n, "fixture -> Alice");
   console.log("  ✓ Transaction sent!");
 
   // [4] Verify receipt was created
@@ -121,7 +170,7 @@ async function runRealNodeCert() {
   console.log("  Signed: 2.signed.json");
 
   run(`tx send .hardkas/artifacts/2.signed.json --provider rpc`);
-  mineBriefly(fixtureAddress, "Alice -> Bob");
+  await ensureFundingConfirmed(fixtureAddress, bob.name, 50000000000n, "Alice -> Bob");
   console.log("  ✓ Transaction sent!");
 
   // [6] Final balances

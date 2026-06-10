@@ -1,7 +1,7 @@
 import { loadHardkasConfig } from "@hardkas/config";
 import { loadRealAccountStore, getRealDevAccount } from "@hardkas/accounts";
 import { JsonWrpcKaspaClient } from "@hardkas/kaspa-rpc";
-import { formatSompi, type NetworkId } from "@hardkas/core";
+import { formatSompiToKas, type NetworkId } from "@hardkas/core";
 import { resolveRuntimeConfig } from "@hardkas/node-orchestrator";
 
 export interface AccountBalanceResult {

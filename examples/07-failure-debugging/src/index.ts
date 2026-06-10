@@ -1,6 +1,6 @@
 import {
   Hardkas,
-  formatSompi,
+  formatSompiToKas,
   parseKasToSompi,
   writeArtifact,
   HARDKAS_VERSION,

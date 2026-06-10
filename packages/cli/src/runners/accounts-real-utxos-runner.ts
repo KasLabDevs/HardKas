@@ -1,6 +1,6 @@
 import { loadRealAccountStore, getRealDevAccount } from "@hardkas/accounts";
 import { JsonWrpcKaspaClient } from "@hardkas/kaspa-rpc";
-import { formatSompi, type NetworkId } from "@hardkas/core";
+import { formatSompiToKas, type NetworkId } from "@hardkas/core";
 import { resolveRuntimeConfig, type KaspaRealNetwork } from "@hardkas/node-orchestrator";
 
 export interface AccountsRealUtxosOptions {
@@ -44,7 +44,7 @@ export async function runAccountsRealUtxos(options: AccountsRealUtxosOptions): P
   } else {
     utxos.forEach((u) => {
       lines.push(`${u.outpoint.transactionId}:${u.outpoint.index}`);
-      lines.push(`  Amount: ${formatSompi(u.amountSompi)}`);
+      lines.push(`  Amount: ${formatSompiToKas(u.amountSompi)}`);
       lines.push("");
     });
   }

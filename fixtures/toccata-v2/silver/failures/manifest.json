@@ -11,9 +11,7 @@
     "runtimeOutcome": "PARTIAL",
     "vmConsensusEquivalence": "NOT_CLAIMED"
   },
-  "expectedKnownLimitations": [
-    "PARTIAL_VM_SIMULATION"
-  ],
+  "expectedKnownLimitations": ["PARTIAL_VM_SIMULATION"],
   "cases": [
     {
       "caseId": "wrong-redeem-hash",

@@ -95,7 +95,7 @@ describe("Igra L2 Transaction Runners", () => {
       });
       await expect(
         runL2TxSend({ signedPath: "signed.json", yes: false })
-      ).rejects.toThrow("EXIT");
+      ).rejects.toThrow("L2 broadcast cancelled");
     });
 
     it("should submit and write receipt on success", async () => {

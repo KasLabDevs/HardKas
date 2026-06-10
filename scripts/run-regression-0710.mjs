@@ -1,16 +1,19 @@
-import fs from 'node:fs';
-import path from 'node:path';
-import { execSync } from 'node:child_process';
-import os from 'node:os';
+import fs from "node:fs";
+import path from "node:path";
+import { execSync } from "node:child_process";
+import os from "node:os";
 
-const workspace = path.join(process.cwd(), '..', 'external-0710-regression');
+const workspace = path.join(process.cwd(), "..", "external-0710-regression");
 if (fs.existsSync(workspace)) {
   fs.rmSync(workspace, { recursive: true, force: true });
 }
 fs.mkdirSync(workspace, { recursive: true });
 
 const apps = [
-  { name: '01-wallet-backend', type: 'node', code: `
+  {
+    name: "01-wallet-backend",
+    type: "node",
+    code: `
     import { Hardkas } from '@hardkas/sdk';
     async function run() {
       const sdk = await Hardkas.create({ cwd: process.cwd(), autoBootstrap: true, network: 'simulated' });
@@ -21,8 +24,12 @@ const apps = [
       console.log('SUCCESS', receipt.txId);
     }
     run().catch(e => { console.error(e); process.exit(1); });
-  `},
-  { name: '07-game-backend', type: 'node', code: `
+  `
+  },
+  {
+    name: "07-game-backend",
+    type: "node",
+    code: `
     import { Hardkas } from '@hardkas/sdk';
     import fs from 'node:fs';
     async function run() {
@@ -32,8 +39,12 @@ const apps = [
       console.log('SUCCESS', balanceObj.sompi.toString());
     }
     run().catch(e => { console.error(e); process.exit(1); });
-  `},
-  { name: '09-payroll-service', type: 'node', code: `
+  `
+  },
+  {
+    name: "09-payroll-service",
+    type: "node",
+    code: `
     import { Hardkas } from '@hardkas/sdk';
     async function run() {
       const sdk = await Hardkas.create({ cwd: process.cwd(), autoBootstrap: true, network: 'simulated' });
@@ -46,8 +57,12 @@ const apps = [
       console.log('SUCCESS', sent.txId);
     }
     run().catch(e => { console.error(e); process.exit(1); });
-  `},
-  { name: '11-dao-multisig', type: 'node', code: `
+  `
+  },
+  {
+    name: "11-dao-multisig",
+    type: "node",
+    code: `
     import { Hardkas } from '@hardkas/sdk';
     async function run() {
       const sdk = await Hardkas.create({ cwd: process.cwd(), autoBootstrap: true, network: 'simulated' });
@@ -59,8 +74,12 @@ const apps = [
       console.log('SUCCESS', res.receipt.txId);
     }
     run().catch(e => { console.error(e); process.exit(1); });
-  `},
-  { name: '14-ci-verifier', type: 'node', code: `
+  `
+  },
+  {
+    name: "14-ci-verifier",
+    type: "node",
+    code: `
     import { Hardkas } from '@hardkas/sdk';
     async function run() {
       const sdk = await Hardkas.create({ cwd: process.cwd(), autoBootstrap: true, network: 'simulated' });
@@ -83,28 +102,41 @@ const apps = [
     import fs from 'node:fs';
     fs.writeFileSync('invalid-artifact.json', JSON.stringify({ type: "UNKNOWN", random: 123 }));
     run().catch(e => { console.error(e); process.exit(1); });
-  `}
+  `
+  }
 ];
 
-console.log('--- Targeted Regression 0.7.11-alpha ---');
-console.log('Workspace:', workspace);
+console.log("--- Targeted Regression 0.7.11-alpha ---");
+console.log("Workspace:", workspace);
 
 for (const app of apps) {
   const appDir = path.join(workspace, app.name);
   fs.mkdirSync(appDir, { recursive: true });
-  fs.writeFileSync(path.join(appDir, 'package.json'), JSON.stringify({
-    name: app.name,
-    type: 'module'
-  }, null, 2));
+  fs.writeFileSync(
+    path.join(appDir, "package.json"),
+    JSON.stringify(
+      {
+        name: app.name,
+        type: "module"
+      },
+      null,
+      2
+    )
+  );
 
   console.log(`[APP] ${app.name} - Init...`);
-  execSync('npm install @hardkas/sdk@0.7.11-alpha @hardkas/cli@0.7.11-alpha typescript @types/node tsx --no-fund --no-audit', { cwd: appDir, stdio: 'ignore' });
-  
-  if (app.type === 'node') {
-    fs.writeFileSync(path.join(appDir, 'index.ts'), app.code);
+  execSync(
+    "npm install @hardkas/sdk@0.7.11-alpha @hardkas/cli@0.7.11-alpha typescript @types/node tsx --no-fund --no-audit",
+    { cwd: appDir, stdio: "ignore" }
+  );
+
+  if (app.type === "node") {
+    fs.writeFileSync(path.join(appDir, "index.ts"), app.code);
     try {
-      const out = execSync('npx tsx index.ts', { cwd: appDir, stdio: 'pipe' }).toString().trim();
-      if (out.includes('SUCCESS')) {
+      const out = execSync("npx tsx index.ts", { cwd: appDir, stdio: "pipe" })
+        .toString()
+        .trim();
+      if (out.includes("SUCCESS")) {
         console.log(`✅ ${app.name}: PASSED`);
       } else {
         console.log(`❌ ${app.name}: FAILED (No SUCCESS printed)`);
@@ -119,4 +151,4 @@ for (const app of apps) {
     }
   }
 }
-console.log('--- All targeted regressions PASSED ---');
+console.log("--- All targeted regressions PASSED ---");

@@ -43,8 +43,7 @@ export function registerLineageQueryCommands(queryCmd: Command) {
           printLineageChain(result as any);
         }
       } catch (e) {
-        handleError(e);
-        process.exitCode = 1;
+        throw e;
       }
     });
 
@@ -82,8 +81,7 @@ export function registerLineageQueryCommands(queryCmd: Command) {
           printTransitions(result as any);
         }
       } catch (e) {
-        handleError(e);
-        process.exitCode = 1;
+        throw e;
       }
     });
 
@@ -112,8 +110,7 @@ export function registerLineageQueryCommands(queryCmd: Command) {
           printOrphans(result as any);
         }
       } catch (e) {
-        handleError(e);
-        process.exitCode = 1;
+        throw e;
       }
     });
 }

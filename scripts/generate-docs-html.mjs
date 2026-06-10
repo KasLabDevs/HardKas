@@ -1,11 +1,11 @@
-import fs from 'fs';
-import path from 'path';
+import fs from "fs";
+import path from "path";
 
 const projectRoot = path.resolve(process.cwd());
-const templatePath = path.join(projectRoot, 'plantilla-docs.html');
-const outPath = path.join(projectRoot, 'docs', 'index.html');
+const templatePath = path.join(projectRoot, "plantilla-docs.html");
+const outPath = path.join(projectRoot, "docs", "index.html");
 
-const templateContent = fs.readFileSync(templatePath, 'utf8');
+const templateContent = fs.readFileSync(templatePath, "utf8");
 
 // The body starts around line 2119. The <main> starts around 2185.
 // We will slice the file up to `<aside class="left side">` and inject our own new structure.
@@ -224,5 +224,5 @@ const rightNav = `
 
 const finalHTML = headerPart + leftNav + mainPart + rightNav;
 
-fs.writeFileSync(outPath, finalHTML, 'utf8');
-console.log('Successfully generated docs/index.html');
+fs.writeFileSync(outPath, finalHTML, "utf8");
+console.log("Successfully generated docs/index.html");

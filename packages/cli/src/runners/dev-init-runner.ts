@@ -1,4 +1,4 @@
-import { UI, handleError } from "../ui.js";
+﻿import { UI, handleError } from "../ui.js";
 import path from "node:path";
 import fs from "node:fs";
 
@@ -11,9 +11,12 @@ export async function runDevInit() {
   const clientFile = path.join(targetDir, "src", "hardkas", "client.ts");
 
   if (!fs.existsSync(pkgFile)) {
-    UI.error("No package.json found. Are you in a Node.js project?");
-    process.exitCode = 1;
-    return;
+    const { HardkasCliError } = await import("../cli-errors.js");
+    throw new HardkasCliError(
+      "NOT_NODE_PROJECT",
+      "No package.json found. Are you in a Node.js project?",
+      { exitCode: 1 }
+    );
   }
 
   UI.info("Checking configuration...");

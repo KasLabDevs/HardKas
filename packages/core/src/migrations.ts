@@ -69,7 +69,10 @@ export class MigrationManager {
     if (!status.needsMigration) return;
 
     if (dryRun) {
-      console.log(
+      getTelemetry().logAnomaly(
+        "EXTERNAL_MUTATION",
+        "low",
+        "projection",
         `[DRY-RUN] Would migrate workspace from ${status.currentVersion} to ${CURRENT_RUNTIME_VERSION}`
       );
       return;
