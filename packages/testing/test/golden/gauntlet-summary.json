@@ -5,7 +5,7 @@
   "acceptedTxCount": 85,
   "rejectedTxCount": 15,
   "finalStateHash": "edc83676d9429b8d0b5d8286ff195d339d72f33136bd39c8b3fb53c651bbeb23",
-  "queryResultHash": "607ea3a38622dac9370a0ded0ba5ecd62eba8dc63c997138439e0be64b6f6a11",
+  "queryResultHash": "1f9ece0e6d69d1cfd80cf4d7b6f0fd2a0720b45dbe7a926c7ffa069af65ed774",
   "dagMetricsHash": "877fd3e9752536ab945b888e035af4534834c5a4e24b06e1e8bbaf72ce375dcc",
   "massProfileHash": "7d7b88052db5842345a786085d98465e98b95d2a2aa6f7dc65353a0241f80393"
 }
