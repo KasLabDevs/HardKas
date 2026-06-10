@@ -300,7 +300,7 @@ export function registerTxCommands(program: Command) {
             getOutput().writeLine(`Signers:      Single-signature transaction`);
           }
         }
-        getOutput().writeLine();
+        getOutput().writeLine("");
       } catch (e) {
         getOutput().error(e instanceof Error ? e.message : String(e));
         throw e;

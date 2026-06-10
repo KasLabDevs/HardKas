@@ -267,6 +267,8 @@ export function registerQueryCommands(program: Command) {
     .command("sql <query>")
     .description("Run a raw SQL query against the query store")
     .option("--json", "Output as JSON", false)
+    .option("--unsafe-write", "Allow mutating SQL (DANGEROUS)", false)
+    .option("--yes", "Confirm mutating SQL (DANGEROUS)", false)
     .action(async (query: string, options) => {
       try {
         const engine = await getQueryEngine();
@@ -282,7 +284,10 @@ export function registerQueryCommands(program: Command) {
         if (typeof (engine.backend as any).executeRawSql !== "function") {
           throw new Error("Raw SQL execution not supported by current backend");
         }
-        const result = await (engine.backend as any).executeRawSql(query);
+        const result = await (engine.backend as any).executeRawSql(query, {
+            unsafeWrite: options.unsafeWrite,
+            yes: options.yes
+        });
 
         if (options.json) {
           console.log(JSON.stringify(result, null, 2));

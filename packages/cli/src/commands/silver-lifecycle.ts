@@ -143,8 +143,7 @@ export function getSilverDeployCommand() {
       const sdk = await Hardkas.create({
         cwd: process.cwd(),
         autoBootstrap: true,
-        network: deployPlan.networkId,
-        provider: "rpc"
+        network: deployPlan.networkId
       });
 
       getOutput().writeLine(pc.cyan(`\nDeploying script to UTXO...`));
@@ -209,7 +208,8 @@ export function getSilverDeployCommand() {
       }
 
       const kaspaUtxos = selectedInputs.map((u) => {
-        const rawUtxoEntry = u.raw.utxoEntry || u.raw.utxo_entry || u.raw;
+        const uRaw = (u as any).raw;
+        const rawUtxoEntry = uRaw.utxoEntry || uRaw.utxo_entry || uRaw;
         let spkScript: string;
         const rawSpk = rawUtxoEntry.scriptPublicKey || rawUtxoEntry.script_public_key;
         if (typeof rawSpk === "string") {
@@ -246,7 +246,10 @@ export function getSilverDeployCommand() {
         kaspaUtxos,
         outputs,
         changeAddress,
-        feeSompi
+        feeSompi,
+        undefined,
+        1,
+        1
       );
       txSignable.tx.outputs[0].scriptPublicKey = new kaspa.ScriptPublicKey(
         deployPlan.scriptPublicKeyVersion,
@@ -293,14 +296,14 @@ export function getSilverDeployCommand() {
       let txId = "";
       try {
         const res = await sdk.rpc.submitTransaction(rawTx);
-        txId = res.transactionId;
+        txId = res.transactionId ?? "";
       } catch (err: any) {
         const msg = err.message || String(err);
         const mempoolMatch = msg.match(
           /transaction ([0-9a-f]{64}) is already in the mempool/i
         );
         if (mempoolMatch?.[1]) {
-          txId = mempoolMatch[1];
+          txId = mempoolMatch[1]!
         } else {
           getOutput().error(pc.red(`Deployment failed: ${msg}`));
           throw new Error("Command failed");
@@ -532,8 +535,7 @@ export function getSilverSpendCommand() {
       const sdk = await Hardkas.create({
         cwd: process.cwd(),
         autoBootstrap: true,
-        network: spendPlan.networkId,
-        provider: "rpc"
+        network: spendPlan.networkId
       });
 
       getOutput().writeLine(
@@ -561,7 +563,10 @@ export function getSilverSpendCommand() {
           dummyUtxos,
           [{ address, amount: BigInt(amountSompi) }],
           new kaspa.Address(address),
-          2000n
+          2000n,
+          undefined,
+          1,
+          1
         );
         let parsed = JSON.parse(tx.toString());
         if (typeof parsed === "string") parsed = JSON.parse(parsed);
@@ -575,13 +580,13 @@ export function getSilverSpendCommand() {
       // Verify UTXO is not stale
       let utxoResponse;
       try {
-        utxoResponse = await sdk.rpc.requestRaw("getUtxosByAddressesRequest", {
+        utxoResponse = await (sdk.rpc as any).requestRaw("getUtxosByAddressesRequest", {
           addresses: [
-            new kaspa.Address(
+            (new (kaspa.Address as any)(
               "simnet",
-              kaspa.AddressVersion.ScriptHash,
+              (kaspa as any).AddressVersion.ScriptHash,
               spendPlan.redeemScriptHash
-            ).toString()
+            )).toString()
           ]
         });
       } catch (err) {
@@ -617,8 +622,8 @@ export function getSilverSpendCommand() {
       getOutput().writeLine(pc.cyan(`Submitting spend to node...`));
       let txId = "";
       try {
-        const res = await sdk.rpc.submitTransaction(rawTx, false);
-        txId = res.transactionId;
+        const res = await sdk.rpc.submitTransaction(rawTx);
+        txId = res.transactionId ?? "";
       } catch (err: any) {
         const msg = err.message || String(err);
         if (msg.includes("not push only")) {

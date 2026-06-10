@@ -42,8 +42,12 @@ export class QueryEngine {
     if (!backend) {
       // Auto-discovery: SQLite > FS Fallback
       const dbPath = path.join(options.artifactDir, ".hardkas", "store.db");
+      const forceSqlite = process.env.HARDKAS_PROJECTION_BACKEND === "sqlite";
 
-      if (fs.existsSync(dbPath)) {
+      if (fs.existsSync(dbPath) || forceSqlite) {
+        if (forceSqlite && !fs.existsSync(path.dirname(dbPath))) {
+            fs.mkdirSync(path.dirname(dbPath), { recursive: true });
+        }
         try {
           const { HardkasStore, SqliteQueryBackend, HardkasIndexer } =
             await import("@hardkas/query-store");

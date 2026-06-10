@@ -1,6 +1,6 @@
 # Post-Release Findings For 0.9.1-alpha
 
-Date: 2026-06-10T08:28:58.556Z
+Date: 2026-06-10T15:51:46.103Z
 
 Status: `POST_RELEASE_BREAK_GAUNTLET_FINDINGS`
 
@@ -21,9 +21,9 @@ Status: `POST_RELEASE_BREAK_GAUNTLET_FINDINGS`
 ## Baseline
 
 - PASS: pnpm build
-- PASS: pnpm test
+- FAIL: pnpm test
 - PASS: pnpm corpus:toccata
-- FAIL: pnpm gauntlet:toccata
+- PASS: pnpm gauntlet:toccata
 - PASS: hardkas --version
 - PASS: hardkas capabilities --json
 - PASS: hardkas localnet status --json

@@ -30,9 +30,10 @@ export class HardkasCliError extends Error {
       exitCode?: HardkasExitCode;
       suggestion?: string;
       context?: Record<string, string>;
+      cause?: unknown;
     }
   ) {
-    super(message);
+    super(message, { cause: options?.cause });
     this.name = "HardkasCliError";
     this.code = code;
     this.exitCode = options?.exitCode ?? HardkasExitCode.RUNTIME_FAILURE;

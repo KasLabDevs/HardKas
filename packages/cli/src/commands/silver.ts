@@ -111,19 +111,6 @@ export function registerSilverCommand(program: Command) {
       // Check node network support
       try {
         throw new Error("network-unknown");
-
-        if (SUPPORTED_SILVERSCRIPT_NETWORKS.includes(info.network)) {
-          getOutput().writeLine(
-            `  ${pc.green("✅")} Network: ${pc.bold("Supported")} (${info.network})`
-          );
-          if (info.network !== "simnet") {
-            getOutput().writeLine(
-              pc.dim(`     (Note: Using ${info.network} instead of simnet)`)
-            );
-          }
-        } else {
-          throw new Error("network-unknown"); // trigger Docker fallback
-        }
       } catch (err) {
         // Fallback: detect Docker node directly
         try {
@@ -166,18 +153,19 @@ export function registerSilverCommand(program: Command) {
           const { loadHardkasConfig } = await import("@hardkas/config");
           const config = await loadHardkasConfig();
           const rpcUrl =
-            config.config.networks["simnet"]?.rpcUrl || "ws://127.0.0.1:18210";
+            (config.config.networks?.["simnet"] as any)?.rpcUrl || "ws://127.0.0.1:18210";
           const client = new JsonWrpcKaspaClient({ rpcUrl });
-          await client.connect();
+          await (client as any).connect();
 
           const info = await client.getServerInfo();
           const blockdag = await client.getBlockDagInfo();
           await client.close();
 
-          getOutput().writeLine(`  Version:            ${info.serverVersion}`);
-          getOutput().writeLine(`  Network:            ${blockdag.networkName}`);
+          const version = info.serverVersion ?? "unknown";
+          getOutput().writeLine(`  Version:            ${version}`);
+          getOutput().writeLine(`  Network:            ${(blockdag as any).networkId || "unknown"}`);
           getOutput().writeLine(
-            `  Script Support:     ${info.serverVersion.includes("2.0") ? "TOCCATA_NODE_READY" : "UNKNOWN"}`
+            `  Script Support:     ${version.includes("2.0") ? "TOCCATA_NODE_READY" : "UNKNOWN"}`
           );
         } catch (e: any) {
           getOutput().writeLine(`  ${pc.red("❌")} Failed to query RPC: ${e.message}`);
@@ -382,11 +370,7 @@ export function registerSilverCommand(program: Command) {
       } = await import("@hardkas/artifacts");
 
       const results: any[] = [];
-      let status:
-        | "PASS"
-        | "FAIL"
-        | "PARTIAL_TEST_VECTOR_SUPPORT"
-        | "EXPECTED_COMPILER_FAILURE" = "PARTIAL_TEST_VECTOR_SUPPORT";
+      let status = "PARTIAL_TEST_VECTOR_SUPPORT" as string;
       let compileArtifactPath = "";
 
       const sourcePath = path.resolve(process.cwd(), file);
@@ -434,7 +418,7 @@ export function registerSilverCommand(program: Command) {
         const cleanStdout = compileStdout.replace(/\x1B\[[0-9;]*[a-zA-Z]/g, "");
         const match = cleanStdout.match(/Artifact generated:\s+(.+?\.json)/);
         if (match) {
-          compileArtifactPath = match[1].trim();
+          compileArtifactPath = match[1]!.trim();
         } else {
           throw new Error("Could not find artifact path in compile output");
         }
@@ -535,7 +519,7 @@ export function registerSilverCommand(program: Command) {
       let status = "SILVERSCRIPT_CERTIFICATION_PARTIAL_PASS";
 
       const runCliCommand = (args: string[]) => {
-        return execFileSync(process.execPath, [process.argv[1], ...args], {
+        return execFileSync(process.execPath, [process.argv[1]!, ...args], {
           encoding: "utf8",
           stdio: "inherit",
           shell: false,
@@ -544,7 +528,7 @@ export function registerSilverCommand(program: Command) {
       };
 
       const captureCliCommand = (args: string[]) => {
-        return execFileSync(process.execPath, [process.argv[1], ...args], {
+        return execFileSync(process.execPath, [process.argv[1]!, ...args], {
           encoding: "utf8",
           shell: false,
           timeout: 60000
@@ -562,7 +546,7 @@ export function registerSilverCommand(program: Command) {
         const cleanCompileOut = compileOut.replace(/\x1B\[[0-9;]*[a-zA-Z]/g, "");
         const match = cleanCompileOut.match(/Artifact generated:\s+(.+?\.json)/);
         if (!match) throw new Error("Could not find artifact path");
-        const artifactPath = match[1].trim();
+        const artifactPath = match[1]!.trim();
 
         getOutput().writeLine(pc.cyan(`\n[3/5] Running inspect...`));
         runCliCommand(["silver", "inspect", artifactPath]);

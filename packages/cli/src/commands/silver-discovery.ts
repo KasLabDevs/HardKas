@@ -161,7 +161,10 @@ export function getSilverDeployCommand() {
         utxos,
         outputs,
         changeAddress,
-        priorityFee
+        priorityFee,
+        undefined,
+        1,
+        1
       );
 
       getOutput().writeLine(pc.yellow(`  ⚠️ Applying wrapper: ${opts.wrapper}`));
@@ -287,7 +290,7 @@ export function getSilverDeployCommand() {
         const submitResult = await sdk.rpc.submitTransaction(rawTx);
         getOutput().writeLine(pc.green(`SILVERSCRIPT_STANDARD_LOCK_READY`));
         getOutput().writeLine(`Transaction ID: ${pc.bold(submitResult.transactionId)}`);
-        recordAttempt(null, submitResult.transactionId);
+        recordAttempt(null, submitResult.transactionId ?? null);
       } catch (err: any) {
         const errMsg = err.message || String(err);
         if (errMsg.includes("orphan")) {
@@ -421,7 +424,7 @@ export function getSilverSpendCommand() {
         tx.inputs[0].signatureScript = candidate.script;
 
         try {
-          const res = await sdk.rpc.submitTransaction(tx, false); // allowOrphan=false
+          const res = await sdk.rpc.submitTransaction(tx);
           getOutput().writeLine(pc.green(`SILVERSCRIPT_UNLOCK_SHAPE_FOUND!`));
           getOutput().writeLine(`Transaction ID: ${res.transactionId}`);
 

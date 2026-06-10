@@ -116,7 +116,7 @@ export interface QueryBackend {
    * que puede retornar `any[]` de forma intencional (SQLite devuelve filas genéricas).
    * Todos los llamadores DEBEN validar el output estrictamente en runtime mediante guards.
    */
-  executeRawSql(sql: string): Promise<any[]>;
+  executeRawSql(sql: string, options?: { unsafeWrite?: boolean; yes?: boolean }): Promise<any[]>;
   findReceipts(filters?: {
     status?: string;
     networkId?: string;
@@ -357,8 +357,94 @@ export class SqliteQueryBackend implements QueryBackend {
     return indexer.syncPaths(paths);
   }
 
-  async executeRawSql(sql: string): Promise<any[]> {
+  executeRawSql(sql: string, options?: { unsafeWrite?: boolean; yes?: boolean }): Promise<any[]> {
+    const classification = classifySqlSafety(sql);
+
+    if (classification.kind === "write" || classification.kind === "unknown") {
+      if (!options?.unsafeWrite && !options?.yes) {
+        throw new Error("QUERY_STORE_READ_ONLY_VIOLATION: Query store is a derived projection. Artifacts are the source of truth. Mutation may corrupt projections. Use --unsafe-write and --yes to intentionally proceed.");
+      }
+      if (options?.unsafeWrite && !options?.yes) {
+        throw new Error("QUERY_STORE_WRITE_REQUIRES_YES: Query store is a derived projection. Artifacts are the source of truth. Mutation may corrupt projections. Use --yes to intentionally proceed.");
+      }
+      if (!options?.unsafeWrite && options?.yes) {
+        throw new Error("QUERY_STORE_WRITE_REQUIRES_UNSAFE_WRITE: Query store is a derived projection. Artifacts are the source of truth. Mutation may corrupt projections. Use --unsafe-write to intentionally proceed.");
+      }
+    }
+
     const db = this.store.getDatabase();
-    return db.prepare(sql).all() as any[];
+
+    // SQLite has a readonly setting when opening the connection, but better-sqlite3
+    // opens a single connection for the whole app. We enforce lexical guards.
+    // To support multiple statements or writes, if unsafe is permitted, we use db.exec or db.prepare appropriately.
+
+    try {
+      if (classification.kind === "write" || classification.kind === "unknown") {
+         if (sql.includes(';')) {
+             db.exec(sql);
+             return Promise.resolve([]);
+         } else {
+             const stmt = db.prepare(sql);
+             return Promise.resolve(stmt.all() as any[]);
+         }
+      } else {
+         const stmt = db.prepare(sql);
+         return Promise.resolve(stmt.all() as any[]);
+      }
+    } catch (e: any) {
+        if (e.message.includes('cannot execute multiple statements')) {
+             throw new Error("QUERY_STORE_READ_ONLY_VIOLATION: Multiple statements detected and blocked by default.");
+        }
+        throw e;
+    }
   }
+}
+
+export function classifySqlSafety(sql: string): { kind: "read" | "write" | "unknown"; reason?: string; } {
+  // 1. Remove multi-line comments /* ... */
+  let cleanSql = sql.replace(new RegExp("/\\*[\\s\\S]*?\\*/", "g"), "");
+  // 2. Remove single-line comments -- ...
+  cleanSql = cleanSql.replace(/--.*$/gm, "");
+  // 3. Trim
+  cleanSql = cleanSql.trim().toUpperCase();
+
+  if (!cleanSql) {
+    return { kind: "unknown", reason: "Empty query" };
+  }
+
+  // 4. Multiple statements check
+  // Just a simple check for semicolons that aren't at the very end
+  const statements = cleanSql.split(';').map(s => s.trim()).filter(s => s.length > 0);
+  if (statements.length > 1) {
+    return { kind: "unknown", reason: "Multiple statements detected" };
+  }
+
+  const firstTokenMatch = cleanSql.match(/^([A-Z]+)/);
+  if (!firstTokenMatch) {
+    return { kind: "unknown", reason: "Could not identify first token" };
+  }
+
+  const firstToken = firstTokenMatch[1];
+
+  // Common safe read starts
+  if (firstToken === "SELECT" || firstToken === "EXPLAIN" || firstToken === "PRAGMA") {
+      // PRAGMA can be mutating (e.g. PRAGMA user_version = 1), but let's do a deeper check
+      if (cleanSql.includes("INSERT ") || cleanSql.includes("UPDATE ") || cleanSql.includes("DELETE ") ||
+          cleanSql.includes("DROP ") || cleanSql.includes("ALTER ") || cleanSql.includes("CREATE ") ||
+          cleanSql.includes("REPLACE ") || cleanSql.includes("TRUNCATE ") || cleanSql.includes("VACUUM ") ||
+          cleanSql.includes("ATTACH ") || cleanSql.includes("DETACH ") || cleanSql.includes("INTO ")) {
+          return { kind: "write", reason: "Found mutating keyword" };
+      }
+      return { kind: "read" };
+  }
+
+  if (firstToken === "WITH") {
+      // WITH ... SELECT ...
+      if (cleanSql.includes("INSERT ") || cleanSql.includes("UPDATE ") || cleanSql.includes("DELETE ")) {
+          return { kind: "write", reason: "Mutating CTE" };
+      }
+      return { kind: "read" };
+  }
+
+  return { kind: "write", reason: "Unrecognized or explicitly mutating first token" };
 }

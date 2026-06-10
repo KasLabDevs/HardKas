@@ -208,7 +208,7 @@ export async function runCorpusVerify(
   };
 
   if (options.json) {
-    getOutput().writeLine(JSON.stringify(result, null, 2));
+    getOutput().writeJson(result);
   } else if (ok) {
     getOutput().writeLine(pc.green("TOCCATA_GOLDEN_CORPUS_VERIFY_PASS"));
     getOutput().writeLine(`Path: ${result.path}`);

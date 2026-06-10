@@ -5,7 +5,7 @@ import * as path from "node:path";
 import {
   createRedeemScriptHash,
   createKaspaP2shBlake2bLock
-} from "@hardkas/core/src/silver.js";
+} from "@hardkas/core";
 
 const cliPath = path.resolve(__dirname, "../../dist/index.js");
 const tsx = "npx tsx";
@@ -72,8 +72,8 @@ describe("SilverScript Security Hardening", () => {
 
   it("4. Native redeem hash equals known blake2b32 vector for known script hex", () => {
     const rawScriptHex = "515293"; // OP_1 OP_2 OP_ADD
-    // Blake2b of 515293 with 32 bytes output
-    const expectedHash = "a6079ed5456434fc25ea1d07c080fc8dbbc6bf7b0c7201b1af75c40dd4e8e16e";
+    // Blake2b of 0x515293 with 32 bytes output
+    const expectedHash = "79cabcf6cb05e822e27a869f3d4e49f581a779440e826a36167014e6acc4210d";
     
     const hash = createRedeemScriptHash(rawScriptHex);
     expect(hash).toBe(expectedHash);
@@ -81,8 +81,8 @@ describe("SilverScript Security Hardening", () => {
 
   it("5. P2SH lock script equals aa20 <hash> 87", () => {
     const rawScriptHex = "515293";
-    const expectedHash = "a6079ed5456434fc25ea1d07c080fc8dbbc6bf7b0c7201b1af75c40dd4e8e16e";
-    const expectedLock = \`aa20\${expectedHash}87\`;
+    const expectedHash = "79cabcf6cb05e822e27a869f3d4e49f581a779440e826a36167014e6acc4210d";
+    const expectedLock = `aa20${expectedHash}87`;
 
     const lockResult = createKaspaP2shBlake2bLock(rawScriptHex);
     expect(lockResult.redeemScriptHash).toBe(expectedHash);
