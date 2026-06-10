@@ -24,6 +24,7 @@ export function registerRpcCommands(program: Command) {
     .command("health")
     .description("Check RPC health")
     .option("--wait", "Wait until healthy")
+    .option("--timeout <ms>", "Timeout in ms")
     .option("--json", "Output as JSON", false)
     .action(async (options: { wait?: boolean; timeout?: string; json: boolean }) => {
       try {
