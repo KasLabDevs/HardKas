@@ -50,7 +50,7 @@ async function runRepair(opts: { json?: boolean; force?: boolean }) {
       }
     }
   } catch (err: any) {
-    UI.logHuman(`${pc.red("❌")} Version check failed: ${err.message}`);
+    UI.logHuman(`${pc.red("❌")} Version check failed: ${((err instanceof Error) ? ((err instanceof Error) ? err.message : String(err)) : String(err))}`);
   }
 
   // 2. Clear Stale Locks

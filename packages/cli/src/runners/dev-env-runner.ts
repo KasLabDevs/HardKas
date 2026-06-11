@@ -11,11 +11,11 @@ export async function runDevEnv(options: any) {
     const loaded = await loadHardkasConfig();
     config = loaded.config;
     UI.success(`Workspace detected: ${loaded.cwd}`);
-  } catch (e: any) {
+  } catch (e: unknown) {
     const { HardkasCliError } = await import("../cli-errors.js");
     throw new HardkasCliError(
       "WORKSPACE_NOT_FOUND",
-      `Config load failed: Not a valid HardKAS workspace. (${e.message})`,
+      `Config load failed: Not a valid HardKAS workspace. (${((e instanceof Error) ? ((e instanceof Error) ? e.message : String(e)) : String(e))})`,
       {
         exitCode: 1,
         suggestion: "Run 'hardkas dev init' to initialize dApp support in this directory."

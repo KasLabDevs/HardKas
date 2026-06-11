@@ -392,8 +392,8 @@ export class SqliteQueryBackend implements QueryBackend {
          const stmt = db.prepare(sql);
          return Promise.resolve(stmt.all() as any[]);
       }
-    } catch (e: any) {
-        if (e.message.includes('cannot execute multiple statements')) {
+    } catch (e: unknown) {
+        if (e instanceof Error && ((e instanceof Error) ? ((e instanceof Error) ? e.message : String(e)) : String(e)).includes('cannot execute multiple statements')) {
              throw new Error("QUERY_STORE_READ_ONLY_VIOLATION: Multiple statements detected and blocked by default.");
         }
         throw e;

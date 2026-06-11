@@ -42,8 +42,8 @@ export function registerVerifyCommand(program: Command) {
         if (opts.json) {
           UI.writeJson({
             error: "VERIFY_FAILED",
-            message: err.message,
-            code: err.code || "UNKNOWN_ERROR"
+            message: ((err instanceof Error) ? ((err instanceof Error) ? err.message : String(err)) : String(err)),
+            code: ((err as any).code) || "UNKNOWN_ERROR"
           });
         } else {
           handleError(err);
@@ -68,9 +68,9 @@ export function registerVerifyCommand(program: Command) {
         });
       } catch (err: any) {
         if (opts.json) {
-          UI.writeJson({ error: "SEMANTIC_DRIFT", message: err.message });
+          UI.writeJson({ error: "SEMANTIC_DRIFT", message: ((err instanceof Error) ? ((err instanceof Error) ? err.message : String(err)) : String(err)) });
         } else {
-          UI.error(err.message);
+          UI.error(((err instanceof Error) ? ((err instanceof Error) ? err.message : String(err)) : String(err)));
         }
         throw new Error("Command failed");
       }

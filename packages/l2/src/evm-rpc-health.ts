@@ -40,7 +40,7 @@ export async function checkEvmRpcHealth(
       url: options.url,
       ready: false,
       checkedAt: new Date().toISOString(),
-      error: e instanceof Error ? e.message : String(e)
+      error: e instanceof Error ? ((e instanceof Error) ? ((e instanceof Error) ? e.message : String(e)) : String(e)) : String(e)
     };
   }
 }

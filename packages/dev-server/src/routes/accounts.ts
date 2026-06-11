@@ -23,11 +23,11 @@ accountsRoutes.get("/", async (c) => {
       if (fs.existsSync(statePath)) {
         localState = await loadLocalnetState(statePath);
       }
-    } catch (e: any) {
+    } catch (e: unknown) {
       // P3: Dev-server strictness. If state file exists but fails to load (corrupted/locked),
       // we must not fallback or invent state.
       throw new Error(
-        `Failed to read authoritative state from localnet.json: ${e.message}`
+        `Failed to read authoritative state from localnet.json: ${((e instanceof Error) ? ((e instanceof Error) ? e.message : String(e)) : String(e))}`
       );
     }
 
@@ -83,8 +83,8 @@ accountsRoutes.get("/", async (c) => {
     }
 
     return c.json(response);
-  } catch (e: any) {
+  } catch (e: unknown) {
     console.error("Failed to list accounts:", e);
-    return c.json({ error: e.message }, 500);
+    return c.json({ error: ((e instanceof Error) ? ((e instanceof Error) ? e.message : String(e)) : String(e)) }, 500);
   }
 });

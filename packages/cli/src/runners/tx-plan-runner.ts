@@ -36,8 +36,9 @@ export async function runTxPlan(input: TxPlanRunnerInput): Promise<TxPlanArtifac
     assumptionLevel
   } = input;
 
-  const fromAddress = await resolveHardkasAccountAddress(from, config);
-  const toAddress = await resolveHardkasAccountAddress(to, config);
+  const resolvedConfig = workspaceRoot ? { ...config, cwd: workspaceRoot } : config;
+  const fromAddress = await resolveHardkasAccountAddress(from, resolvedConfig);
+  const toAddress = await resolveHardkasAccountAddress(to, resolvedConfig);
   const amountSompi = parseKasToSompi(amount);
   const feeRateSompiPerMass = BigInt(feeRate);
 
@@ -126,18 +127,18 @@ export async function runTxPlan(input: TxPlanRunnerInput): Promise<TxPlanArtifac
           ...(u.isCoinbase !== undefined ? { isCoinbase: u.isCoinbase } : {})
         }));
       mode = "kaspa-rpc";
-    } catch (e: any) {
+    } catch (e: unknown) {
       const protocol = rpcUrl?.startsWith("ws") ? "WebSocket" : "JSON-RPC";
       const { RpcConnectionError, RpcSchemaError, classifyRpcError } =
         await import("../cli-errors.js");
-      const errCode = classifyRpcError(e);
+      const errCode = classifyRpcError(e instanceof Error ? e : String(e));
       if (errCode === "RPC_SCHEMA_ERROR") {
         throw new RpcSchemaError({
           endpoint: rpcUrl || "unknown",
           method: "getUtxosByAddress",
           suspectedCause:
             "Invalid Kaspa address format/checksum or incompatible node version",
-          rawError: e.message
+          rawError: ((e instanceof Error) ? ((e instanceof Error) ? e.message : String(e)) : String(e))
         });
       }
       throw new RpcConnectionError({
@@ -145,7 +146,7 @@ export async function runTxPlan(input: TxPlanRunnerInput): Promise<TxPlanArtifac
         network: resolvedNetwork,
         protocol,
         errorCode: errCode,
-        rawError: e.message
+        rawError: ((e instanceof Error) ? ((e instanceof Error) ? e.message : String(e)) : String(e))
       });
     }
   }

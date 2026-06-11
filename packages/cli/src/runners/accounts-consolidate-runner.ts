@@ -79,8 +79,8 @@ export async function runAccountsConsolidate(options: AccountsConsolidateOptions
         };
       });
     }
-  } catch (e: any) {
-    if (e.message && e.message.includes("connection error")) {
+  } catch (e: unknown) {
+    if (((e instanceof Error) ? ((e instanceof Error) ? e.message : String(e)) : String(e)) && ((e instanceof Error) ? ((e instanceof Error) ? e.message : String(e)) : String(e)).includes("connection error")) {
       const err = new Error(
         `RPC_CONNECTION_FAILED: Could not connect to RPC at ${provider.endpoint}`
       );

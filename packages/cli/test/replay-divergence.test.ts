@@ -27,7 +27,7 @@ describe("Adversarial Validation (Corpus Stress)", () => {
         "--recursive",
         "--strict"
       ]);
-    } catch (e: any) {
+    } catch (e: unknown) {
       return e;
     }
   }

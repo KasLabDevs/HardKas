@@ -77,10 +77,10 @@ export class HardkasQuery {
           }
         }
       );
-    } catch (e: any) {
+    } catch (e: unknown) {
       if (
-        e.message?.includes("SQLITE") ||
-        e.message?.includes("Cannot read properties")
+        ((e instanceof Error) ? ((e instanceof Error) ? ((e instanceof Error) ? e.message : String(e)) : String(e)) : String(e))?.includes("SQLITE") ||
+        ((e instanceof Error) ? ((e instanceof Error) ? ((e instanceof Error) ? e.message : String(e)) : String(e)) : String(e))?.includes("Cannot read properties")
       ) {
         throw new Error(
           "Query store database is not configured correctly or corrupted. Try running query.sync({ force: true })."

@@ -68,7 +68,7 @@ export async function runDevDoctor(options: {
         status: "success",
         message: "hardkas.config.ts parsed successfully"
       });
-    } catch (e: any) {
+    } catch (e: unknown) {
       checks.push({
         name: "Workspace Validity",
         status: "error",
@@ -115,7 +115,7 @@ export async function runDevDoctor(options: {
               message: "No events yet"
             });
           }
-        } catch (e: any) {
+        } catch (e: unknown) {
           checks.push({
             name: "Append Integrity",
             status: "error",
@@ -218,7 +218,7 @@ export async function runDevDoctor(options: {
 
               idToHash.set(id, { hash, path: fullPath });
               hashToId.set(hash, { id, path: fullPath });
-            } catch (err: any) {
+            } catch (err: unknown) {
               checks.push({
                 name: "Artifact Parse",
                 status: "error",
@@ -247,7 +247,7 @@ export async function runDevDoctor(options: {
               });
             }
           }
-        } catch (e: any) {
+        } catch (e: unknown) {
           checks.push({
             name: "Artifact Corruption",
             status: "error",
@@ -298,11 +298,11 @@ export async function runDevDoctor(options: {
             }
             if (finalStatus === "ready") finalStatus = "warning";
           }
-        } catch (e: any) {
+        } catch (e: unknown) {
           checks.push({
             name: "Projection Health",
             status: "warning",
-            message: `Projection database is unavailable: ${e.message || "unknown error"}`,
+            message: `Projection database is unavailable: ${((e instanceof Error) ? ((e instanceof Error) ? e.message : String(e)) : String(e)) || "unknown error"}`,
             code: "PROJECTION_UNAVAILABLE",
             suggestion:
               "Another process may be using the database. This is not critical â€” artifact checks passed."
@@ -406,8 +406,8 @@ export async function runDevDoctor(options: {
               networkId === "simnet" || networkId === "localnet" ? 19416 : undefined
           }
         });
-      } catch (e: any) {
-        checks.push({ name: "L2 Profile", status: "warning", message: e.message });
+      } catch (e: unknown) {
+        checks.push({ name: "L2 Profile", status: "warning", message: ((e instanceof Error) ? ((e instanceof Error) ? e.message : String(e)) : String(e)) });
       }
 
       if (profile) {
@@ -423,11 +423,11 @@ export async function runDevDoctor(options: {
               status: "success",
               message: `Reachable (Block #${block})`
             });
-          } catch (e: any) {
+          } catch (e: unknown) {
             checks.push({
               name: "Igra RPC Connectivity",
               status: "warning",
-              message: `Unreachable: ${e.message}`
+              message: `Unreachable: ${((e instanceof Error) ? ((e instanceof Error) ? e.message : String(e)) : String(e))}`
             });
           }
 

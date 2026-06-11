@@ -50,8 +50,8 @@ export const LockHell: ChaosActor = async (ctx) => {
     stdout = res.stdout;
     stderr = res.stderr;
     exitCode = res.exitCode || 0;
-  } catch (e: any) {
-    stderr = e.message;
+  } catch (e: unknown) {
+    stderr = ((e instanceof Error) ? ((e instanceof Error) ? e.message : String(e)) : String(e));
     exitCode = 1;
   }
 
@@ -83,8 +83,8 @@ export const RotBot: ChaosActor = async (ctx) => {
     stdout = res.stdout;
     stderr = res.stderr;
     exitCode = res.exitCode || 0;
-  } catch (e: any) {
-    stderr = e.message;
+  } catch (e: unknown) {
+    stderr = ((e instanceof Error) ? ((e instanceof Error) ? e.message : String(e)) : String(e));
     exitCode = 1;
   }
 
@@ -113,8 +113,8 @@ export const DriftHunter: ChaosActor = async (ctx) => {
     stdout = res.stdout;
     stderr = res.stderr;
     exitCode = res.exitCode || 0;
-  } catch (e: any) {
-    stderr = e.message;
+  } catch (e: unknown) {
+    stderr = ((e instanceof Error) ? ((e instanceof Error) ? e.message : String(e)) : String(e));
     exitCode = 1;
   }
 
@@ -136,8 +136,8 @@ export const HumanChaos: ChaosActor = async (ctx) => {
     stdout = res.stdout;
     stderr = res.stderr;
     exitCode = res.exitCode || 0;
-  } catch (e: any) {
-    stderr = e.message;
+  } catch (e: unknown) {
+    stderr = ((e instanceof Error) ? ((e instanceof Error) ? e.message : String(e)) : String(e));
     exitCode = 1;
   }
 

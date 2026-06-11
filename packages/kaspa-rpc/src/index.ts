@@ -116,8 +116,9 @@ export class JsonWrpcKaspaClient implements KaspaRpcClient {
         // If we sent getServerInfoRequest first, wrpc would close the connection.
         const res = await this.requestRaw("getServerInfo", {});
         this.rpcFlavor = "wrpc";
-      } catch (e: any) {
-        if (e.message && e.message.includes("Method not found")) {
+      } catch (e: unknown) {
+        const errMsg = e instanceof Error ? ((e instanceof Error) ? ((e instanceof Error) ? e.message : String(e)) : String(e)) : String(e);
+        if (errMsg.includes("Method not found")) {
           this.rpcFlavor = "legacy";
         } else {
           // If connection closed or timed out, default to wrpc and let it fail naturally later
@@ -365,7 +366,7 @@ export class JsonWrpcKaspaClient implements KaspaRpcClient {
             if (response.error) {
               const err = response.error;
               const msg =
-                err.message || (typeof err === "string" ? err : JSON.stringify(err));
+                ((err instanceof Error) ? ((err instanceof Error) ? err.message : String(err)) : String(err)) || (typeof err === "string" ? err : JSON.stringify(err));
               reject(new Error(msg));
             } else {
               resolve(response.result !== undefined ? response.result : response.params);
@@ -416,7 +417,7 @@ export class JsonWrpcKaspaClient implements KaspaRpcClient {
       ws.on("error", (err: any) => {
         clearTimeout(timeout);
         let message = `Cannot connect to Kaspa RPC at ${this.rpcUrl}. Is kaspad running with --rpclisten-json?`;
-        if (err.code === "ECONNREFUSED") {
+        if (((err as any).code) === "ECONNREFUSED") {
           message = `Connection refused at ${this.rpcUrl}. Ensure kaspad is running and --rpclisten-json is enabled.`;
         }
         reject(new Error(message));

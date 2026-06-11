@@ -29,10 +29,10 @@ describe("Repository Hygiene", () => {
       }
 
       expect(violations).toEqual([]);
-    } catch (e: any) {
+    } catch (e: unknown) {
       if (
-        e.message.includes("not a git repository") ||
-        e.message.includes("git: command not found")
+        ((e instanceof Error) ? ((e instanceof Error) ? e.message : String(e)) : String(e)).includes("not a git repository") ||
+        ((e instanceof Error) ? ((e instanceof Error) ? e.message : String(e)) : String(e)).includes("git: command not found")
       ) {
         console.warn("Skipping hygiene test: git not available or not a git repo");
       } else {

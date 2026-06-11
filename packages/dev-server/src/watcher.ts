@@ -35,7 +35,7 @@ export function startWatcherReconciliationSweep(intervalMs: number = 10000) {
         });
       }
     } catch (err: any) {
-      console.error("❌ [Watcher] Reconciliation sweep failed:", err.message);
+      console.error("❌ [Watcher] Reconciliation sweep failed:", ((err instanceof Error) ? ((err instanceof Error) ? err.message : String(err)) : String(err)));
     }
   }, intervalMs);
 }
@@ -84,9 +84,9 @@ export function startHardkasWatcher() {
     try {
       watcher = startChokidar(forcePolling);
     } catch (err: any) {
-      if (!forcePolling && (err.code === "ENOSPC" || err.code === "ENOTSUP")) {
+      if (!forcePolling && (((err as any).code) === "ENOSPC" || ((err as any).code) === "ENOTSUP")) {
         console.warn(
-          `[Watcher] Native watch failed (${err.code}). Falling back to polling...`
+          `[Watcher] Native watch failed (${((err as any).code)}). Falling back to polling...`
         );
         watcher = startChokidar(true);
       } else {
@@ -149,7 +149,7 @@ export function startHardkasWatcher() {
             stats: syncResult
           });
         } catch (err: any) {
-          console.error("❌ [Watcher] Auto-sync failed:", err.message);
+          console.error("❌ [Watcher] Auto-sync failed:", ((err instanceof Error) ? ((err instanceof Error) ? err.message : String(err)) : String(err)));
         }
       }, 200);
     };
@@ -160,9 +160,9 @@ export function startHardkasWatcher() {
 
     watcher.on("error", (err: any) => {
       // In chokidar, errors might be emitted via the 'error' event rather than thrown during setup
-      if (!forcePolling && (err.code === "ENOSPC" || err.code === "ENOTSUP")) {
+      if (!forcePolling && (((err as any).code) === "ENOSPC" || ((err as any).code) === "ENOTSUP")) {
         console.warn(
-          `[Watcher] Native watch error (${err.code}). Restarting with polling...`
+          `[Watcher] Native watch error (${((err as any).code)}). Restarting with polling...`
         );
         watcher.close().then(() => {
           watcher = startChokidar(true);
@@ -170,7 +170,7 @@ export function startHardkasWatcher() {
           setupEventHandlers(watcher);
         });
       } else {
-        console.error(`[Watcher] Error: ${err.message}`);
+        console.error(`[Watcher] Error: ${((err instanceof Error) ? ((err instanceof Error) ? err.message : String(err)) : String(err))}`);
       }
     });
 
@@ -180,7 +180,7 @@ export function startHardkasWatcher() {
     startWatcherReconciliationSweep();
   } catch (err: any) {
     console.warn(
-      `⚠️  [Watcher] Failed to start chokidar: ${err.message}. Auto-refresh on changes might be disabled.`
+      `⚠️  [Watcher] Failed to start chokidar: ${((err instanceof Error) ? ((err instanceof Error) ? err.message : String(err)) : String(err))}. Auto-refresh on changes might be disabled.`
     );
   }
 }

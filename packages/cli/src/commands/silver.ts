@@ -1,5 +1,4 @@
 import { getOutput } from "../output.js";
-// @ts-nocheck
 import { Command } from "commander";
 import pc from "picocolors";
 import { execFileSync } from "node:child_process";
@@ -39,8 +38,8 @@ function checkCompilerReady(compilerPath: string) {
   try {
     execFileSync(compilerPath, ["--help"], { stdio: "ignore" });
     return { ok: true as const };
-  } catch (error: any) {
-    return { ok: false as const, message: error?.message || String(error) };
+  } catch (error: unknown) {
+    return { ok: false as const, message: (error instanceof Error ? error.message : String(error)) };
   }
 }
 
@@ -168,8 +167,8 @@ export function registerSilverCommand(program: Command) {
           getOutput().writeLine(
             `  Script Support:     ${version.includes("2.0") ? "TOCCATA_NODE_READY" : "UNKNOWN"}`
           );
-        } catch (e: any) {
-          getOutput().writeLine(`  ${pc.red("❌")} Failed to query RPC: ${e.message}`);
+        } catch (e: unknown) {
+          getOutput().writeLine(`  ${pc.red("❌")} Failed to query RPC: ${((e instanceof Error) ? ((e instanceof Error) ? e.message : String(e)) : String(e))}`);
         }
       }
 
@@ -226,10 +225,10 @@ export function registerSilverCommand(program: Command) {
         compilerOutput = execFileSync(compilerCmd, [file, "-c"], {
           stdio: "pipe"
         }).toString();
-      } catch (err: any) {
+      } catch (err: unknown) {
         getOutput().error(pc.red(`Compiler Error:`));
         getOutput().error(
-          err.stdout?.toString() || err.stderr?.toString() || err.message
+          ((err as any).stdout)?.toString() || ((err as any).stderr)?.toString() || ((err instanceof Error) ? ((err instanceof Error) ? err.message : String(err)) : String(err))
         );
         throw new Error("Command failed");
       }
@@ -347,9 +346,9 @@ export function registerSilverCommand(program: Command) {
         getOutput().writeLine(
           pc.green(`✅ SilverScript Artifact Verified: ${artifactPath}`)
         );
-      } catch (err: any) {
+      } catch (err: unknown) {
         getOutput().error(pc.red(`❌ Verification failed for ${artifactPath}`));
-        getOutput().error(pc.dim(err.message));
+        getOutput().error(pc.dim(((err instanceof Error) ? ((err instanceof Error) ? err.message : String(err)) : String(err))));
         throw new Error("Command failed");
       }
     });
@@ -423,7 +422,7 @@ export function registerSilverCommand(program: Command) {
         } else {
           throw new Error("Could not find artifact path in compile output");
         }
-      } catch (err: any) {
+      } catch (err: unknown) {
         if (opts.expectedFail) {
           getOutput().writeLine(
             pc.yellow(`⚠️ Compilation failed as expected (--expected-fail)`)
@@ -432,8 +431,8 @@ export function registerSilverCommand(program: Command) {
           status = "EXPECTED_COMPILER_FAILURE";
         } else {
           getOutput().error(pc.red(`❌ Compilation failed`));
-          getOutput().error(err.stderr || err.message);
-          results.push({ name: "compile", status: "FAIL", reason: err.message });
+          getOutput().error(((err as any).stderr) || ((err instanceof Error) ? ((err instanceof Error) ? err.message : String(err)) : String(err)));
+          results.push({ name: "compile", status: "FAIL", reason: ((err instanceof Error) ? ((err instanceof Error) ? err.message : String(err)) : String(err)) });
           status = "FAIL";
           throw new Error("Command failed");
         }
@@ -462,9 +461,9 @@ export function registerSilverCommand(program: Command) {
           compileArtifactHash = compileArtifact.contentHash;
           compilerName = compileArtifact.compilerName;
           compilerVersion = compileArtifact.compilerVersion;
-        } catch (err: any) {
+        } catch (err: unknown) {
           getOutput().error(pc.red(`❌ Artifact verification failed`));
-          results.push({ name: "artifact-verify", status: "FAIL", reason: err.message });
+          results.push({ name: "artifact-verify", status: "FAIL", reason: ((err instanceof Error) ? ((err instanceof Error) ? err.message : String(err)) : String(err)) });
           status = "FAIL";
         }
       }
@@ -557,8 +556,8 @@ export function registerSilverCommand(program: Command) {
 
         getOutput().writeLine(pc.cyan(`\n[5/5] Running test...`));
         runCliCommand(["silver", "test", file]);
-      } catch (err: any) {
-        getOutput().error(pc.red(`\n❌ Pipeline failed at step. Error: ${err.message}`));
+      } catch (err: unknown) {
+        getOutput().error(pc.red(`\n❌ Pipeline failed at step. Error: ${((err instanceof Error) ? ((err instanceof Error) ? err.message : String(err)) : String(err))}`));
         status = "SILVERSCRIPT_CERTIFICATION_BLOCKED";
       }
 

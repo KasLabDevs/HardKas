@@ -36,10 +36,10 @@ export function createHardkasClient(options: HardkasClientOptions = {}) {
       });
       const data = await response.json();
       return data as ClientEnvelope<T>;
-    } catch (e: any) {
+    } catch (e: unknown) {
       return {
         ok: false,
-        error: { code: "FETCH_FAILED", message: e.message },
+        error: { code: "FETCH_FAILED", message: ((e instanceof Error) ? ((e instanceof Error) ? ((e instanceof Error) ? e.message : String(e)) : String(e)) : String(e)) },
         warnings: [],
         meta: {
           workspace: "unknown",

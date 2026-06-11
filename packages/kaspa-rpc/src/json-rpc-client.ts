@@ -135,7 +135,7 @@ export class KaspaJsonRpcClient implements KaspaRpcClient {
         retries: this.retriesCount,
         stale
       } as any;
-    } catch (e: any) {
+    } catch (e: unknown) {
       const resilience = calculateConfidence({
         latencyMs: null,
         successRate: this.getSuccessRate(),
@@ -158,8 +158,8 @@ export class KaspaJsonRpcClient implements KaspaRpcClient {
         reachable: false,
         rpcUrl: this.url,
         status: "unavailable",
-        error: e.message,
-        lastError: this.lastError || e.message,
+        error: e instanceof Error ? ((e instanceof Error) ? ((e instanceof Error) ? e.message : String(e)) : String(e)) : String(e),
+        lastError: this.lastError || (e instanceof Error ? ((e instanceof Error) ? ((e instanceof Error) ? e.message : String(e)) : String(e)) : String(e)),
         successRate: this.getSuccessRate(),
         circuitState: this.circuitState as any,
         confidence: resilience.confidence,
@@ -360,7 +360,7 @@ export class KaspaJsonRpcClient implements KaspaRpcClient {
         const result = await fn();
         this.onSuccess(Date.now() - start);
         return result;
-      } catch (e: any) {
+      } catch (e: unknown) {
         this.onFailure(e);
         lastErr = e;
 
@@ -368,7 +368,7 @@ export class KaspaJsonRpcClient implements KaspaRpcClient {
         coreEvents.normalizeAndEmit({
           kind: "rpc.error",
           endpoint: this.url,
-          error: e.message,
+          error: e instanceof Error ? ((e instanceof Error) ? ((e instanceof Error) ? e.message : String(e)) : String(e)) : String(e),
           retriable: isRetriable
         });
 
@@ -384,7 +384,8 @@ export class KaspaJsonRpcClient implements KaspaRpcClient {
 
         // Don't retry on deterministic protocol errors (e.g. invalid address, insufficient funds)
         if (this.isDeterministicError(e)) {
-          throw new RpcValidationError(e.message, e.code, e.data);
+          const err = e as any;
+          throw new RpcValidationError(((err instanceof Error) ? ((err instanceof Error) ? err.message : String(err)) : String(err)), ((err as any).code), err.data);
         }
 
         if (attempt === this.retry.maxRetries) break;
@@ -433,9 +434,9 @@ export class KaspaJsonRpcClient implements KaspaRpcClient {
       }
 
       return body.result;
-    } catch (e: any) {
+    } catch (e: unknown) {
       clearTimeout(id);
-      if (e.name === "AbortError") throw new RpcTimeoutError();
+      if (e instanceof Error && ((e as any).name) === "AbortError") throw new RpcTimeoutError();
       throw e;
     }
   }
@@ -457,7 +458,7 @@ export class KaspaJsonRpcClient implements KaspaRpcClient {
   }
 
   private onFailure(e: any) {
-    this.lastError = e.message;
+    this.lastError = ((e instanceof Error) ? ((e instanceof Error) ? e.message : String(e)) : String(e));
 
     // Only count as failure for circuit breaking if it's NOT a validation error
     if (e instanceof RpcValidationError || (e instanceof RpcError && !e.isRetriable)) {
@@ -473,7 +474,7 @@ export class KaspaJsonRpcClient implements KaspaRpcClient {
   }
 
   private isDeterministicError(e: any): boolean {
-    const msg = (e.message || "").toLowerCase();
+    const msg = (((e instanceof Error) ? ((e instanceof Error) ? e.message : String(e)) : String(e)) || "").toLowerCase();
     const deterministicMarkers = [
       "invalid address",
       "insufficient funds",

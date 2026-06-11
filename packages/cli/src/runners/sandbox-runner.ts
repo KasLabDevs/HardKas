@@ -111,8 +111,8 @@ export async function runSandbox(options: {
       if (recipeFn) {
         try {
           await recipeFn(sandboxRoot);
-        } catch (err: any) {
-          console.error(pc.red(`Recipe execution failed: ${err.message}`));
+        } catch (err: unknown) {
+          console.error(pc.red(`Recipe execution failed: ${((err instanceof Error) ? ((err instanceof Error) ? err.message : String(err)) : String(err))}`));
         }
       } else {
         console.log(pc.red(`Recipe '${options.recipe}' not found.`));
@@ -162,11 +162,11 @@ export async function runSandbox(options: {
 
     process.on("SIGINT", () => handleTeardown("SIGINT"));
     process.on("SIGTERM", () => handleTeardown("SIGTERM"));
-  } catch (e: any) {
+  } catch (e: unknown) {
     const { HardkasCliError } = await import("../cli-errors.js");
     throw new HardkasCliError(
       "SANDBOX_FAILED",
-      `Sandbox initialization failed: ${e.message}`,
+      `Sandbox initialization failed: ${((e instanceof Error) ? ((e instanceof Error) ? e.message : String(e)) : String(e))}`,
       { exitCode: 1, cause: e }
     );
   }

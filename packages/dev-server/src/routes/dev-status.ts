@@ -27,13 +27,13 @@ devStatusRoutes.use("*", async (c, next) => {
     const sdk = await Hardkas.create({ cwd: process.env.HARDKAS_ROOT || process.cwd() });
     c.set("sdk", sdk);
     await next();
-  } catch (e: any) {
+  } catch (e: unknown) {
     return c.json(
       {
         ok: false,
         error: {
           code: "HARDKAS_DEV_ERROR",
-          message: "Failed to initialize HardKAS SDK: " + e.message
+          message: "Failed to initialize HardKAS SDK: " + ((e instanceof Error) ? ((e instanceof Error) ? e.message : String(e)) : String(e))
         }
       },
       500
@@ -57,8 +57,8 @@ devStatusRoutes.get("/localnet/status", async (c) => {
     // Basic mock status since Localnet doesn't expose a unified status() yet
     const status = { running: true, network: sdk.network };
     return envelope(c, true, status);
-  } catch (e: any) {
-    return envelope(c, false, null, { code: "HARDKAS_DEV_ERROR", message: e.message });
+  } catch (e: unknown) {
+    return envelope(c, false, null, { code: "HARDKAS_DEV_ERROR", message: ((e instanceof Error) ? ((e instanceof Error) ? e.message : String(e)) : String(e)) });
   }
 });
 
@@ -67,7 +67,7 @@ devStatusRoutes.get("/accounts", async (c) => {
   try {
     const accounts = listHardkasAccounts(sdk.config.config);
     return envelope(c, true, accounts);
-  } catch (e: any) {
-    return envelope(c, false, null, { code: "HARDKAS_DEV_ERROR", message: e.message });
+  } catch (e: unknown) {
+    return envelope(c, false, null, { code: "HARDKAS_DEV_ERROR", message: ((e instanceof Error) ? ((e instanceof Error) ? e.message : String(e)) : String(e)) });
   }
 });

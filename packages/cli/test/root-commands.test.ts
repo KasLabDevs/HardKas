@@ -47,10 +47,10 @@ describe("Root Operational Commands", () => {
         stdio: "pipe"
       });
       return { stdout: output, stderr: "", status: 0 };
-    } catch (e: any) {
+    } catch (e: unknown) {
       return {
-        stdout: e.stdout?.toString() || "",
-        stderr: e.stderr?.toString() || "",
+        stdout: ((e as any).stdout)?.toString() || "",
+        stderr: ((e as any).stderr)?.toString() || "",
         status: e.status || 1
       };
     }

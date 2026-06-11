@@ -10,8 +10,8 @@ const tsx = path.resolve(__dirname, "../../../node_modules/.bin/tsx");
 function runHelp(args: string = "") {
   try {
     return execSync(`"${tsx}" "${cliPath}" ${args} --help`, { encoding: "utf8" });
-  } catch (e: any) {
-    return e.stdout + e.stderr;
+  } catch (e: unknown) {
+    return ((e as any).stdout) + ((e as any).stderr);
   }
 }
 

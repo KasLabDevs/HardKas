@@ -65,9 +65,9 @@ export class HardkasFixtureSigner implements ExternalHardkasSigner {
 
   private async loadKaspa(): Promise<any> {
     try {
-      // @ts-ignore
+      // @ts-ignore - Third party lib lacking types
       return await import("kaspa-wasm");
-    } catch (e: any) {
+    } catch (e: unknown) {
       const err = new Error(
         "SIGNER_BACKEND_UNAVAILABLE: Official Kaspa WASM backend is required to sign transactions.\nInstall it via: npm install kaspa-wasm"
       );

@@ -42,7 +42,7 @@ export class HardkasStore {
     } catch (err: any) {
       this.db = null;
       throw new HardkasError(
-        `Failed to open query projection: ${err.message}`,
+        `Failed to open query projection: ${((err instanceof Error) ? ((err instanceof Error) ? err.message : String(err)) : String(err))}`,
         "PROJECTION_BUSY"
       );
     }
@@ -92,8 +92,8 @@ export class HardkasStore {
     } catch (e) {
       // If auto-migration fails during connect, we log but don't crash
       // unless it's a critical error. The doctor will catch it.
-      if (e instanceof HardkasError && e.code === "STORE_MIGRATION_CHECKSUM_MISMATCH") {
-        console.error(`\n  ❌ ${e.message}`);
+      if (e instanceof HardkasError && ((e as any).code) === "STORE_MIGRATION_CHECKSUM_MISMATCH") {
+        console.error(`\n  ❌ ${((e instanceof Error) ? ((e instanceof Error) ? e.message : String(e)) : String(e))}`);
       }
     }
   }
@@ -130,7 +130,7 @@ export class HardkasStore {
       issues.push({
         code: "STORE_CORRUPT",
         severity: "error",
-        message: `Failed to access store database: ${e instanceof Error ? e.message : String(e)}`
+        message: `Failed to access store database: ${e instanceof Error ? ((e instanceof Error) ? ((e instanceof Error) ? e.message : String(e)) : String(e)) : String(e)}`
       });
     }
 

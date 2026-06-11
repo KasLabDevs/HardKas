@@ -302,12 +302,12 @@ export class HardkasArtifactsManager {
       }
       try {
         artifact = await this.read(id);
-      } catch (e: any) {
+      } catch (e: unknown) {
         if (throwOnInvalid) throw e;
         return {
           valid: false,
           reason: "missing_artifact",
-          message: e.message,
+          message: ((e instanceof Error) ? ((e instanceof Error) ? ((e instanceof Error) ? e.message : String(e)) : String(e)) : String(e)),
           artifactId: id
         };
       }

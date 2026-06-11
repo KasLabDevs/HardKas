@@ -360,14 +360,14 @@ export function registerAccountsCommands(program: Command) {
           allowMainnet: options.allowMainnet === true,
           json: options.json === true
         });
-      } catch (e: any) {
-        if (e.code === "CONSOLIDATION_NOT_REQUIRED") {
+      } catch (e: unknown) {
+        if (((e as any).code) === "CONSOLIDATION_NOT_REQUIRED") {
           if (options.json) {
             getOutput().writeLine(
-              JSON.stringify({ status: "CONSOLIDATION_NOT_REQUIRED", message: e.message })
+              JSON.stringify({ status: "CONSOLIDATION_NOT_REQUIRED", message: ((e instanceof Error) ? ((e instanceof Error) ? e.message : String(e)) : String(e)) })
             );
           } else {
-            getOutput().writeLine(`\n  ℹ ${e.message}\n`);
+            getOutput().writeLine(`\n  ℹ ${((e instanceof Error) ? ((e instanceof Error) ? e.message : String(e)) : String(e))}\n`);
           }
           return;
         }

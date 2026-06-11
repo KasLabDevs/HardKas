@@ -35,8 +35,8 @@ export function registerCiCommand(program: Command) {
           } else {
             UI.success("Environment checks passed.");
           }
-        } catch (e: any) {
-          UI.error(`Doctor failed: ${e.message}`);
+        } catch (e: unknown) {
+          UI.error(`Doctor failed: ${((e instanceof Error) ? ((e instanceof Error) ? e.message : String(e)) : String(e))}`);
           hasErrors = true;
         }
 
@@ -74,8 +74,8 @@ export function registerCiCommand(program: Command) {
             const backend = new SqliteQueryBackend(store);
             const projectionOk = !!backend; // Just a dummy check, HardkasStore connects cleanly
             UI.success(`Projection database is healthy and reachable.`);
-          } catch (e: any) {
-            UI.error(`Projection index is degraded or corrupted: ${e.message}`);
+          } catch (e: unknown) {
+            UI.error(`Projection index is degraded or corrupted: ${((e instanceof Error) ? ((e instanceof Error) ? e.message : String(e)) : String(e))}`);
             hasErrors = true;
           }
         }
@@ -93,10 +93,10 @@ export function registerCiCommand(program: Command) {
           UI.success("CI Verification Passed. Workspace is pristine.");
           return;
         }
-      } catch (e: any) {
-        if (e.name === "HardkasCliError") throw new Error("Command failed");
+      } catch (e: unknown) {
+        if (((e as any).name) === "HardkasCliError") throw new Error("Command failed");
         const { HardkasCliError, HardkasExitCode } = await import("../cli-errors.js");
-        throw new HardkasCliError("CI_ERROR", e.message || String(e), {
+        throw new HardkasCliError("CI_ERROR", ((e instanceof Error) ? ((e instanceof Error) ? e.message : String(e)) : String(e)) || String(e), {
           exitCode: HardkasExitCode.RUNTIME_FAILURE
         });
       }

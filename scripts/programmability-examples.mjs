@@ -1,7 +1,5 @@
 import fs from "node:fs";
 import path from "node:path";
-import { HardkasSchemas } from "@hardkas/artifacts";
-
 const root = process.cwd();
 const examples = [
   "silver-vault-policy",
@@ -24,7 +22,7 @@ for (const example of examples) {
 
 const result = {
   ok: missing.length === 0,
-  schema : HardkasSchemas.ProgrammabilityExamplesCheckV1,
+  schema : "hardkas.programmabilityExamples.v1",
   status:
     missing.length === 0
       ? "PROGRAMMABILITY_APPS_READY"

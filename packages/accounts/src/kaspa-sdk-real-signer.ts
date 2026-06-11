@@ -100,7 +100,7 @@ export class KaspaSdkRealTxSigner implements RealTxSigner {
         txId
       };
     } catch (e) {
-      const msg = e instanceof Error ? e.message : String(e);
+      const msg = e instanceof Error ? ((e instanceof Error) ? ((e instanceof Error) ? e.message : String(e)) : String(e)) : String(e);
       if (msg.includes("is not a constructor") || msg.includes("is not a function")) {
         throw new Error(
           `Kaspa SDK signer adapter could not find required transaction signing primitives: ${msg}`

@@ -101,7 +101,7 @@ export function loadRealAccountStoreSync(options?: {
     return store;
   } catch (e) {
     throw new Error(
-      `Failed to load real account store at ${filePath}: ${e instanceof Error ? e.message : String(e)}`
+      `Failed to load real account store at ${filePath}: ${e instanceof Error ? ((e instanceof Error) ? ((e instanceof Error) ? e.message : String(e)) : String(e)) : String(e)}`
     );
   }
 }
@@ -142,7 +142,7 @@ export async function saveRealAccountStore(
     });
   } catch (e) {
     throw new Error(
-      `Failed to save real account store at ${filePath}: ${e instanceof Error ? e.message : String(e)}`
+      `Failed to save real account store at ${filePath}: ${e instanceof Error ? ((e instanceof Error) ? ((e instanceof Error) ? e.message : String(e)) : String(e)) : String(e)}`
     );
   }
 }

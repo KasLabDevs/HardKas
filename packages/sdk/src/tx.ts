@@ -712,8 +712,8 @@ export class HardkasTx {
           strict: true,
           enforceMetadata: false
         });
-      } catch (e: any) {
-        if (e.message.includes("PARENT_MISSING")) {
+      } catch (e: unknown) {
+        if (((e instanceof Error) ? ((e instanceof Error) ? ((e instanceof Error) ? e.message : String(e)) : String(e)) : String(e)).includes("PARENT_MISSING")) {
           throw new Error("parent_plan_unresolved: Missing context plan for simulation.");
         }
         throw e;
@@ -994,8 +994,8 @@ export class HardkasTx {
           strict: true,
           enforceMetadata: false
         });
-      } catch (e: any) {
-        if (e.message.includes("PARENT_MISSING")) {
+      } catch (e: unknown) {
+        if (((e instanceof Error) ? ((e instanceof Error) ? ((e instanceof Error) ? e.message : String(e)) : String(e)) : String(e)).includes("PARENT_MISSING")) {
           throw new Error("parent_plan_unresolved: Missing context plan for simulation.");
         }
         throw e;
@@ -1029,8 +1029,8 @@ export class HardkasTx {
       let simResult: any;
       try {
         simResult = await this.simulate(signedArtifact, simOpts);
-      } catch (e: any) {
-        if (e.message && e.message.includes("invalid simulated input")) {
+      } catch (e: unknown) {
+        if (((e instanceof Error) ? ((e instanceof Error) ? ((e instanceof Error) ? e.message : String(e)) : String(e)) : String(e)) && ((e instanceof Error) ? ((e instanceof Error) ? ((e instanceof Error) ? e.message : String(e)) : String(e)) : String(e)).includes("invalid simulated input")) {
           // P1. Robust Idempotence: The UTXOs are already spent.
           // Check if they were spent by a previous simulation of this exact same transaction.
           try {

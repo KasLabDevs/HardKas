@@ -47,7 +47,7 @@ describe("hardkas run", () => {
       expect(true).toBe(false);
     } catch (err: any) {
       expect(err.status).toBe(1);
-      expect(err.stderr.toString()).toContain("Script not found");
+      expect(((err as any).stderr).toString()).toContain("Script not found");
     }
   });
 

@@ -61,7 +61,7 @@ describe("Watcher Fallback & Polling Contract", () => {
           const err: any = new Error(
             "ENOSPC: System limit for number of file watchers reached"
           );
-          err.code = "ENOSPC";
+          ((err as any).code) = "ENOSPC";
           throw err;
         })
         .mockReturnValueOnce({

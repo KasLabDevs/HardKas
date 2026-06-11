@@ -112,10 +112,10 @@ export async function runWorkflowRun(
         UI.info(`Produced ${result.producedArtifacts.length} child artifacts.`);
       }
     }
-  } catch (e: any) {
-    if (e.name === "HardkasCliError") throw e;
+  } catch (e: unknown) {
+    if (((e as any).name) === "HardkasCliError") throw e;
     const { HardkasCliError } = await import("../cli-errors.js");
-    throw new HardkasCliError("WORKFLOW_ERROR", e.message || "Unknown error", {
+    throw new HardkasCliError("WORKFLOW_ERROR", ((e instanceof Error) ? ((e instanceof Error) ? e.message : String(e)) : String(e)) || "Unknown error", {
       exitCode: 1,
       cause: e
     });
@@ -163,10 +163,10 @@ export async function runWorkflowInspect(
     console.log(`  Status: ${artifact.status}`);
     console.log(`  Steps executed: ${artifact.steps.length}`);
     console.log(`  Produced artifacts: ${artifact.producedArtifacts.length}`);
-  } catch (e: any) {
-    if (e.name === "HardkasCliError") throw e;
+  } catch (e: unknown) {
+    if (((e as any).name) === "HardkasCliError") throw e;
     const { HardkasCliError } = await import("../cli-errors.js");
-    throw new HardkasCliError("WORKFLOW_INSPECT_ERROR", e.message || "Unknown error", {
+    throw new HardkasCliError("WORKFLOW_INSPECT_ERROR", ((e instanceof Error) ? ((e instanceof Error) ? e.message : String(e)) : String(e)) || "Unknown error", {
       exitCode: 1,
       cause: e
     });
@@ -209,10 +209,10 @@ export async function runWorkflowReplay(id: string, options: any) {
     console.log(`  Artifacts scanned: ${result.artifactsScanned}`);
     console.log(`  Determinism: ${result.determinism}`);
     console.log(`  Contamination: ${result.contamination}`);
-  } catch (e: any) {
-    if (e.name === "HardkasCliError") throw e;
+  } catch (e: unknown) {
+    if (((e as any).name) === "HardkasCliError") throw e;
     const { HardkasCliError } = await import("../cli-errors.js");
-    throw new HardkasCliError("WORKFLOW_REPLAY_ERROR", e.message || "Unknown error", {
+    throw new HardkasCliError("WORKFLOW_REPLAY_ERROR", ((e instanceof Error) ? ((e instanceof Error) ? e.message : String(e)) : String(e)) || "Unknown error", {
       exitCode: 1,
       cause: e
     });
@@ -272,10 +272,10 @@ export async function runWorkflowDiff(
     UI.info("\n=== Steps Diff ===");
     console.log(`A: ${wfA.steps?.length || 0} steps executed`);
     console.log(`B: ${wfB.steps?.length || 0} steps executed`);
-  } catch (e: any) {
-    if (e.name === "HardkasCliError") throw e;
+  } catch (e: unknown) {
+    if (((e as any).name) === "HardkasCliError") throw e;
     const { HardkasCliError } = await import("../cli-errors.js");
-    throw new HardkasCliError("WORKFLOW_DIFF_ERROR", e.message || "Unknown error", {
+    throw new HardkasCliError("WORKFLOW_DIFF_ERROR", ((e instanceof Error) ? ((e instanceof Error) ? e.message : String(e)) : String(e)) || "Unknown error", {
       exitCode: 1,
       cause: e
     });

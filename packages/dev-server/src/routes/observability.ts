@@ -40,18 +40,18 @@ function tryReadJsonl(
       if (!line) continue;
       try {
         events.push(JSON.parse(line));
-      } catch (err: any) {
+      } catch (err: unknown) {
         return {
           events,
           errorLine: i + 1,
-          parseError: err.message
+          parseError: ((err instanceof Error) ? ((err instanceof Error) ? err.message : String(err)) : String(err))
         };
       }
     }
 
     return { events };
-  } catch (e: any) {
-    return { events: [], parseError: e.message };
+  } catch (e: unknown) {
+    return { events: [], parseError: ((e instanceof Error) ? ((e instanceof Error) ? e.message : String(e)) : String(e)) };
   }
 }
 

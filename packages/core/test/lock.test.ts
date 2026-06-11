@@ -89,8 +89,8 @@ describe("HardKAS Lock System", () => {
         pollMs: 100
       });
       assert.fail("Should have thrown LOCK_TIMEOUT");
-    } catch (e: any) {
-      expect(e.code).toBe("LOCK_TIMEOUT");
+    } catch (e: unknown) {
+      expect(((e as any).code)).toBe("LOCK_TIMEOUT");
     }
 
     await handle.release();
@@ -147,8 +147,8 @@ describe("HardKAS Lock System", () => {
     try {
       await acquireLock({ rootDir: testRoot, name: "stale-fail" });
       assert.fail("Should have thrown STALE_LOCK");
-    } catch (e: any) {
-      expect(e.code).toBe("STALE_LOCK");
+    } catch (e: unknown) {
+      expect(((e as any).code)).toBe("STALE_LOCK");
     } finally {
       fs.unlinkSync = originalUnlink;
       if (fs.existsSync(lockPath)) {

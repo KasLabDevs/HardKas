@@ -41,7 +41,7 @@ export async function runDoctorNode(opts: { json?: boolean; capabilities?: boole
     await signer.getAddress();
     UI.logHuman(`  âœ… Signer: kaspa-wasm READY`);
   } catch (err: any) {
-    UI.logHuman(`  âŒ Signer: UNAVAILABLE (${err.message})`);
+    UI.logHuman(`  âŒ Signer: UNAVAILABLE (${((err instanceof Error) ? ((err instanceof Error) ? err.message : String(err)) : String(err))})`);
   }
 
   // 4. Mining check (CHAIN_ADVANCING)
@@ -62,7 +62,7 @@ export async function runDoctorNode(opts: { json?: boolean; capabilities?: boole
       UI.logHuman(`  âŒ Miner: INACTIVE (DAA Score stalled at ${score1})`);
     }
   } catch (err: any) {
-    UI.logHuman(`  âŒ Miner: UNAVAILABLE (${err.message})`);
+    UI.logHuman(`  âŒ Miner: UNAVAILABLE (${((err instanceof Error) ? ((err instanceof Error) ? err.message : String(err)) : String(err))})`);
   } finally {
     if (client) await client.close();
   }
@@ -85,7 +85,7 @@ export async function runDoctorNode(opts: { json?: boolean; capabilities?: boole
     }
     await client.close();
   } catch (err: any) {
-    UI.logHuman(`  âŒ Fixture balance: ERROR (${err.message})`);
+    UI.logHuman(`  âŒ Fixture balance: ERROR (${((err instanceof Error) ? ((err instanceof Error) ? err.message : String(err)) : String(err))})`);
   }
 }
 

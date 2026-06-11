@@ -95,6 +95,23 @@ export function createDevServer(config: DevServerConfig) {
     await next();
   });
 
+  // Strict Origin Validation (Reject invalid origins with 403)
+  app.use("*", async (c, next) => {
+    if (!config.unsafeExternal) {
+      const origin = c.req.header("Origin") || c.req.header("origin");
+      if (origin) {
+         const resolved = resolveCorsOrigin(origin, {
+            unsafeExternal: !!config.unsafeExternal,
+            port: config.port
+         });
+         if (!resolved) {
+            return c.json({ error: `Forbidden: Origin '${origin}' is not allowed.` }, 403);
+         }
+      }
+    }
+    await next();
+  });
+
   // 2. Strict CORS Configuration
   app.use(
     "*",
@@ -261,7 +278,7 @@ export function createDevServer(config: DevServerConfig) {
           hostname: config.host
         });
         server.on("error", (err: any) => {
-          if (err.code === "EADDRINUSE") {
+          if (((err as any).code) === "EADDRINUSE") {
             console.error(
               `\nPort ${config.port} is already in use. Try: hardkas dev server --port ${config.port + 1}\n`
             );
@@ -271,7 +288,7 @@ export function createDevServer(config: DevServerConfig) {
         });
         return server;
       } catch (err: any) {
-        if (err.code === "EADDRINUSE") {
+        if (((err as any).code) === "EADDRINUSE") {
           console.error(
             `\nPort ${config.port} is already in use. Try: hardkas dev server --port ${config.port + 1}\n`
           );

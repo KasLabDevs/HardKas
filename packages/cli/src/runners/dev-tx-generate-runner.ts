@@ -71,7 +71,7 @@ export async function runDevTxGenerate(options: any) {
       results.push({
         index: i,
         ok: false,
-        error: e instanceof Error ? e.message : String(e)
+        error: e instanceof Error ? ((e instanceof Error) ? ((e instanceof Error) ? e.message : String(e)) : String(e)) : String(e)
       });
     }
   }

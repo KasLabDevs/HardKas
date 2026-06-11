@@ -77,7 +77,7 @@ export async function runTest(options: TestRunnerOptions): Promise<void> {
   } catch (e) {
     if (e instanceof Error) {
       const errCode = (e as unknown as Record<string, unknown>).code;
-      if (errCode === "ERR_MODULE_NOT_FOUND" || e.message.includes("vitest")) {
+      if (errCode === "ERR_MODULE_NOT_FOUND" || ((e instanceof Error) ? ((e instanceof Error) ? e.message : String(e)) : String(e)).includes("vitest")) {
         UI.warning("Vitest is not installed in this project.");
         UI.info("Run 'pnpm add -D vitest' to enable real test execution.");
         UI.divider();

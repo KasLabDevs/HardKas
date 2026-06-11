@@ -92,10 +92,10 @@ export class HardkasIndexer {
     try {
       await this._syncInternal(result);
       this.db.exec("COMMIT;");
-    } catch (e: any) {
+    } catch (e: unknown) {
       this.db.exec("ROLLBACK;");
       result.ok = false;
-      result.errors.push(`Sync failed: ${e.message}`);
+      result.errors.push(`Sync failed: ${e instanceof Error ? ((e instanceof Error) ? ((e instanceof Error) ? e.message : String(e)) : String(e)) : String(e)}`);
       if (this.strict) throw e;
     }
 
@@ -161,10 +161,10 @@ export class HardkasIndexer {
     try {
       await this._syncInternal(result, paths);
       this.db.exec("COMMIT;");
-    } catch (e: any) {
+    } catch (e: unknown) {
       this.db.exec("ROLLBACK;");
       result.ok = false;
-      result.errors.push(`Targeted Sync failed: ${e.message}`);
+      result.errors.push(`Targeted Sync failed: ${e instanceof Error ? ((e instanceof Error) ? ((e instanceof Error) ? e.message : String(e)) : String(e)) : String(e)}`);
       if (this.strict) throw e;
     }
 
@@ -206,10 +206,10 @@ export class HardkasIndexer {
       }
 
       this.db.exec("COMMIT;");
-    } catch (e: any) {
+    } catch (e: unknown) {
       this.db.exec("ROLLBACK;");
       result.ok = false;
-      result.errors.push(`Rebuild failed: ${e.message}`);
+      result.errors.push(`Rebuild failed: ${e instanceof Error ? ((e instanceof Error) ? ((e instanceof Error) ? e.message : String(e)) : String(e)) : String(e)}`);
       if (this.strict) throw e;
     }
 
@@ -501,14 +501,14 @@ export class HardkasIndexer {
         if (!isCorrupt && parsed.lineage && parsed.lineage.parentArtifactId) {
           artifactsToLink.push(parsed);
         }
-      } catch (e: any) {
+      } catch (e: unknown) {
         result.artifacts.corrupted++;
         const code: CorruptionCode =
           e instanceof SyntaxError ? "ARTIFACT_JSON_INVALID" : "ARTIFACT_ID_INVALID";
         const corruptionIssue: CorruptionIssue = {
           code,
           severity: "error",
-          message: e.message,
+          message: e instanceof Error ? ((e instanceof Error) ? ((e instanceof Error) ? e.message : String(e)) : String(e)) : String(e),
           path: file
         };
         result.issues.push(corruptionIssue);
@@ -527,9 +527,9 @@ export class HardkasIndexer {
           "derived",
           parsed.createdAt || null
         );
-      } catch (e: any) {
+      } catch (e: unknown) {
         result.warnings.push(
-          `Failed to link lineage for ${parsed.artifactId}: ${e.message}`
+          `Failed to link lineage for ${parsed.artifactId}: ${e instanceof Error ? ((e instanceof Error) ? ((e instanceof Error) ? e.message : String(e)) : String(e)) : String(e)}`
         );
       }
     }
@@ -604,7 +604,7 @@ export class HardkasIndexer {
       updateStat.run("closure_entries", String(closureCount), now);
       updateStat.run("direct_edges", String(edgeCount), now);
       updateStat.run("max_lineage_depth", String(maxLineageDepth), now);
-    } catch (e: any) {
+    } catch (e: unknown) {
       // lineage_closure table might not exist yet (pre-v3 migration)
       // Silently skip - this is non-critical
     }
@@ -687,12 +687,12 @@ export class HardkasIndexer {
           indexedAt
         );
         result.events.indexed++;
-      } catch (e: any) {
+      } catch (e: unknown) {
         result.events.corrupted++;
         const issue: CorruptionIssue = {
           code: e instanceof SyntaxError ? "EVENT_JSON_INVALID" : "EVENT_LINE_CORRUPT",
           severity: "error",
-          message: e.message,
+          message: e instanceof Error ? ((e instanceof Error) ? ((e instanceof Error) ? e.message : String(e)) : String(e)) : String(e),
           path: eventsPath,
           lineNumber: lineNum
         };
@@ -832,6 +832,7 @@ export class HardkasIndexer {
           file === "node_modules" ||
           file === ".git" ||
           file === "keystore" ||
+          file === "dev-accounts" ||
           file === "snapshots"
         )
           continue;

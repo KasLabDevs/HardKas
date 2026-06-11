@@ -26,9 +26,9 @@ export async function runSnapshotRestore(options: SnapshotRestoreOptions) {
     console.log(`  Previous State Hash: ${preHash.slice(0, 16)}...`);
     console.log(`  New State Hash:      ${postHash.slice(0, 16)}...`);
     console.log(`  DAA Score:           ${nextState.daaScore}`);
-  } catch (e: any) {
+  } catch (e: unknown) {
     const { HardkasCliError } = await import("../cli-errors.js");
-    throw new HardkasCliError("RESTORE_FAILED", `Restore failed: ${e.message}`, {
+    throw new HardkasCliError("RESTORE_FAILED", `Restore failed: ${((e instanceof Error) ? ((e instanceof Error) ? e.message : String(e)) : String(e))}`, {
       exitCode: 1,
       cause: e
     });

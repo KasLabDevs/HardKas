@@ -31,14 +31,14 @@ export async function runRpcInfo(options: RpcInfoOptions = {}): Promise<{
       url,
       formatted: lines.join("\n")
     };
-  } catch (e: any) {
+  } catch (e: unknown) {
     const lines = [
       "Kaspa RPC info",
       "",
       `URL:      ${url}`,
       `Protocol: ${protocol}`,
       `Status:   unreachable`,
-      `Error:    ${e.message}`
+      `Error:    ${((e instanceof Error) ? ((e instanceof Error) ? e.message : String(e)) : String(e))}`
     ];
     return {
       url,

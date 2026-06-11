@@ -39,7 +39,7 @@ describe("Phase 6A: Migration Fuzzing", () => {
           if (silentMigrations === 0) console.log("Silent migration accepted:", mutated);
           silentMigrations++;
         }
-      } catch (e: any) {
+      } catch (e: unknown) {
         stacktraces++;
       }
     }

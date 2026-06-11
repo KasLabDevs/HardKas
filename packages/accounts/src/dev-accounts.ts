@@ -76,7 +76,7 @@ export async function getOrCreateDevAccount(
     } else {
       let sdkModule: any;
       try {
-        // @ts-ignore
+        // @ts-ignore - Third party lib lacking types
         sdkModule = await import(/* @vite-ignore */ "@kaspa/core-lib");
       } catch (e) {
         console.warn(`\n[Warning] @kaspa/core-lib is not installed.`);
@@ -90,8 +90,8 @@ export async function getOrCreateDevAccount(
       const pubKey = privKey.toPublicKey();
       try {
         address = pubKey.toAddress(network).toString();
-      } catch (e: any) {
-        const msg = e instanceof Error ? e.message : String(e);
+      } catch (e: unknown) {
+        const msg = e instanceof Error ? ((e instanceof Error) ? ((e instanceof Error) ? e.message : String(e)) : String(e)) : String(e);
         if (msg.includes("Second argument must be") || msg.includes("Unsupported")) {
           const err = new Error("DEV_ACCOUNT_BACKEND_UNSUPPORTED_NETWORK");
           (err as any).code = "DEV_ACCOUNT_BACKEND_UNSUPPORTED_NETWORK";
@@ -102,11 +102,12 @@ export async function getOrCreateDevAccount(
       publicKey = pubKey.toString();
       privateKey = privKey.toString();
     }
-  } catch (e: any) {
-    if (e.message === "DEV_ACCOUNT_BACKEND_UNSUPPORTED_NETWORK") {
+  } catch (e: unknown) {
+    const msg = e instanceof Error ? ((e instanceof Error) ? ((e instanceof Error) ? e.message : String(e)) : String(e)) : String(e);
+    if (msg === "DEV_ACCOUNT_BACKEND_UNSUPPORTED_NETWORK") {
       throw e;
     }
-    console.warn(`\n[Warning] Could not generate dev account '${alias}'.\n${e.message}`);
+    console.warn(`\n[Warning] Could not generate dev account '${alias}'.\n${msg}`);
     return { address: "", privateKey: "", publicKey: "" };
   }
 

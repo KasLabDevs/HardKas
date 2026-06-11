@@ -1,5 +1,4 @@
 import { getOutput } from "../output.js";
-// @ts-nocheck
 import { Command } from "commander";
 import pc from "picocolors";
 import * as fs from "node:fs";
@@ -51,7 +50,7 @@ export function getSilverDeployCommand() {
       try {
         fromAccount = await sdk.accounts.resolve(opts.from);
       } catch (err: any) {
-        getOutput().error(pc.red(`Error resolving account: ${err.message}`));
+        getOutput().error(pc.red(`Error resolving account: ${((err instanceof Error) ? ((err instanceof Error) ? err.message : String(err)) : String(err))}`));
         throw new Error("Command failed");
       }
 
@@ -90,7 +89,7 @@ export function getSilverDeployCommand() {
           amount: opts.amount
         });
       } catch (err: any) {
-        if (err.message.includes("Insufficient funds")) {
+        if (((err instanceof Error) ? ((err instanceof Error) ? err.message : String(err)) : String(err)).includes("Insufficient funds")) {
           getOutput().writeLine(
             pc.yellow(
               `  ⚠️ Insufficient funds detected. Falling back to dummy UTXO for discovery.`
@@ -220,7 +219,7 @@ export function getSilverDeployCommand() {
         signedTx = kaspa.signTransaction(txSignable, [privateKey], true);
       } catch (err: any) {
         getOutput().error(pc.red(`SILVERSCRIPT_LOCK_REJECTED_BY_NODE`));
-        getOutput().error(`Sign error: ${err.message || err}`);
+        getOutput().error(`Sign error: ${((err instanceof Error) ? ((err instanceof Error) ? err.message : String(err)) : String(err)) || err}`);
         throw new Error("Command failed");
       }
 
@@ -293,7 +292,7 @@ export function getSilverDeployCommand() {
         getOutput().writeLine(`Transaction ID: ${pc.bold(submitResult.transactionId)}`);
         recordAttempt(null, submitResult.transactionId ?? null);
       } catch (err: any) {
-        const errMsg = err.message || String(err);
+        const errMsg = ((err instanceof Error) ? ((err instanceof Error) ? err.message : String(err)) : String(err)) || String(err);
         if (errMsg.includes("orphan")) {
           getOutput().writeLine(pc.green(`SILVERSCRIPT_STANDARD_LOCK_READY`));
           getOutput().writeLine(
@@ -439,7 +438,7 @@ export function getSilverSpendCommand() {
           found = true;
           break;
         } catch (err: any) {
-          const errMsg = err.message || String(err);
+          const errMsg = ((err instanceof Error) ? ((err instanceof Error) ? err.message : String(err)) : String(err)) || String(err);
           getOutput().writeLine(pc.red(`Rejected: ${errMsg}`));
           dump.spendAttempts.push({
             timestamp: new Date().toISOString(),

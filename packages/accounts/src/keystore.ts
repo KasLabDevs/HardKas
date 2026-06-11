@@ -187,7 +187,7 @@ export class KeystoreManager {
       return keystore as EncryptedKeystoreV2;
     } catch (e) {
       throw new Error(
-        `Failed to load keystore at ${filePath}: ${e instanceof Error ? e.message : String(e)}`
+        `Failed to load keystore at ${filePath}: ${e instanceof Error ? ((e instanceof Error) ? ((e instanceof Error) ? e.message : String(e)) : String(e)) : String(e)}`
       );
     }
   }
@@ -211,7 +211,7 @@ export class KeystoreManager {
       });
     } catch (e) {
       throw new Error(
-        `Failed to save keystore at ${filePath}: ${e instanceof Error ? e.message : String(e)}`
+        `Failed to save keystore at ${filePath}: ${e instanceof Error ? ((e instanceof Error) ? ((e instanceof Error) ? e.message : String(e)) : String(e)) : String(e)}`
       );
     }
   }

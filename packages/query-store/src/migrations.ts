@@ -97,7 +97,7 @@ export class MigrationRunner {
         this.db.exec("ROLLBACK;");
         throw new HardkasError(
           "STORE_MIGRATION_FAILED",
-          `Failed to apply migration ${m.version} (${m.name}): ${e instanceof Error ? e.message : String(e)}`,
+          `Failed to apply migration ${m.version} (${m.name}): ${e instanceof Error ? ((e instanceof Error) ? ((e instanceof Error) ? e.message : String(e)) : String(e)) : String(e)}`,
           { cause: e }
         );
       }
@@ -136,7 +136,7 @@ export class MigrationRunner {
 
 /**
  * Registry of all query-store migrations.
- * Version 1: Initial schema (Baseline 0.9.1-alpha).
+ * Version 1: Initial schema (Baseline 0.9.2-alpha).
  */
 export const MIGRATIONS: Migration[] = [
   {

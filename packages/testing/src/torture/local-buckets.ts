@@ -32,9 +32,9 @@ registerTortureBucket({
         stdio: "pipe",
         encoding: "utf-8"
       });
-    } catch (e: any) {
+    } catch (e: unknown) {
       throw new TortureInvariantError(
-        `hardkas dev init failed: ${e.message}\n${e.stdout}\n${e.stderr}`,
+        `hardkas dev init failed: ${((e instanceof Error) ? ((e instanceof Error) ? e.message : String(e)) : String(e))}\n${((e as any).stdout)}\n${((e as any).stderr)}`,
         "INIT_FAILED",
         "critical"
       );
@@ -95,10 +95,10 @@ registerTortureBucket({
         );
       }
       // SDK/L2/dev-server warnings are expected in a bare test workspace
-    } catch (e: any) {
+    } catch (e: unknown) {
       if (e instanceof TortureInvariantError) throw e;
       // dev doctor exits non-zero for "failed" status — parse stdout to check
-      const stdout = e.stdout || "";
+      const stdout = ((e as any).stdout) || "";
       try {
         const doctorResult = JSON.parse(stdout);
         const workspaceCheck = doctorResult.checks?.find(
@@ -115,7 +115,7 @@ registerTortureBucket({
       } catch (parseErr: any) {
         if (parseErr instanceof TortureInvariantError) throw parseErr;
         throw new TortureInvariantError(
-          `dev doctor failed and produced unparseable output: ${e.message}`,
+          `dev doctor failed and produced unparseable output: ${((e instanceof Error) ? ((e instanceof Error) ? e.message : String(e)) : String(e))}`,
           "DOCTOR_FAILED",
           "warning"
         );

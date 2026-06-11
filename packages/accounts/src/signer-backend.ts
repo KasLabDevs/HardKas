@@ -11,7 +11,7 @@ export interface KaspaSigningBackendStatus {
  */
 export async function loadKaspaWasm(): Promise<any> {
   try {
-    // @ts-ignore
+    // @ts-ignore - Third party lib lacking types
     return await import("kaspa-wasm");
   } catch (error) {
     const err = new Error(

@@ -304,8 +304,8 @@ export default function TxWorkflowDemo() {
       const trace = res.data;
       appendLog(\`Success! Receipt generated for tx \${trace.receipt?.txId || trace.signed?.txId}\`);
       setStep("success");
-    } catch (e: any) {
-      appendLog(\`Error: \${e.message}\`);
+    } catch (e: unknown) {
+      appendLog(\`Error: \${((e instanceof Error) ? ((e instanceof Error) ? e.message : String(e)) : String(e))}\`);
       setStep("idle");
     }
   };

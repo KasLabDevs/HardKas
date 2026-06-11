@@ -53,7 +53,7 @@ export async function runSnapshotReplay(options: SnapshotReplayOptions) {
         await fs.copyFile(path.join(snapArtifactsDir, f), path.join(wsArtifactsDir, f));
       }
     } catch (err: any) {
-      if (err.code !== "ENOENT") throw err;
+      if (((err as any).code) !== "ENOENT") throw err;
     }
 
     // 3. Rebuild query store index from restored artifacts
@@ -97,7 +97,7 @@ export async function runSnapshotReplay(options: SnapshotReplayOptions) {
     const { HardkasCliError } = await import("../cli-errors.js");
     throw new HardkasCliError(
       "SNAPSHOT_REPLAY_FAILED",
-      `Snapshot replay failed: ${err.message}`,
+      `Snapshot replay failed: ${((err instanceof Error) ? ((err instanceof Error) ? err.message : String(err)) : String(err))}`,
       { exitCode: 1, cause: err }
     );
   }

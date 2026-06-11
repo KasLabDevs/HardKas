@@ -41,7 +41,7 @@ describe("KaspaWrpcClient", () => {
     const mockPending = {
       resolve: () => {},
       reject: (err: Error) => {
-        expect(err.message).toContain("wRPC error code 500");
+        expect(((err instanceof Error) ? ((err instanceof Error) ? err.message : String(err)) : String(err))).toContain("wRPC error code 500");
       },
       timer: setTimeout(() => {}, 1000)
     };

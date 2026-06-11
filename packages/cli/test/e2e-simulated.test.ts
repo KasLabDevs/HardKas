@@ -19,15 +19,12 @@ describe("E2E Simulated Happy Path", () => {
     defaultNetwork: "simulated",
     networks: {
       simulated: { kind: "simulated" }
-    },
-    accounts: {
-      alice: { kind: "simulated", address: "kaspa:sim_alice" },
-      bob: { kind: "simulated", address: "kaspa:sim_bob" }
     }
   };
 
   beforeAll(async () => {
     tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), "e2e-sim-test-"));
+    (mockConfig as any).cwd = tmpDir;
     // Write dummy config so loadHardkasConfig resolves to tmpDir hermetically
     const configContent = `
 import { defineHardkasConfig } from "@hardkas/sdk";
@@ -38,10 +35,6 @@ export default defineHardkasConfig({
       kind: "simulated",
       description: "Pure local simulation"
     }
-  },
-  accounts: {
-    alice: { kind: "simulated", address: "kaspa:sim_alice" },
-    bob: { kind: "simulated", address: "kaspa:sim_bob" }
   }
 });
 `;

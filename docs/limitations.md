@@ -2,7 +2,7 @@
 
 This file mirrors the release-boundary summary in `docs/11-limitations.md`.
 
-`0.9.1-alpha` keeps the same stable safety claims:
+`0.9.2-alpha` keeps the same stable safety claims:
 
 - `artifactCoherence = READY_MATCH`
 - `runtimeOutcome = PARTIAL`

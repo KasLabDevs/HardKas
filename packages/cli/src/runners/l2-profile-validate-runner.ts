@@ -39,7 +39,7 @@ export async function runL2ProfileValidate(
       } else {
         rpcVerified = true;
       }
-    } catch (e: any) {
+    } catch (e: unknown) {
       // Not a hard failure for general validation, but we should inform
     }
   }

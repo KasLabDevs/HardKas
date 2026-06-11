@@ -1,5 +1,4 @@
 import { getOutput } from "../output.js";
-// @ts-nocheck
 import { Command } from "commander";
 import pc from "picocolors";
 import * as fs from "node:fs";
@@ -67,7 +66,7 @@ export function getSilverDeployPlanCommand() {
       try {
         fromAccount = await sdk.accounts.resolve(opts.from);
       } catch (err: any) {
-        getOutput().error(pc.red(`Error resolving account: ${err.message}`));
+        getOutput().error(pc.red(`Error resolving account: ${((err instanceof Error) ? ((err instanceof Error) ? err.message : String(err)) : String(err))}`));
         throw new Error("Command failed");
       }
 
@@ -181,7 +180,7 @@ export function getSilverDeployCommand() {
         });
         await client.close();
       } catch (err: any) {
-        getOutput().error(pc.red(`Failed to fetch UTXOs: ${err.message}`));
+        getOutput().error(pc.red(`Failed to fetch UTXOs: ${((err instanceof Error) ? ((err instanceof Error) ? err.message : String(err)) : String(err))}`));
         throw new Error("Command failed");
       }
 
@@ -261,7 +260,7 @@ export function getSilverDeployCommand() {
       try {
         signedTx = kaspa.signTransaction(txSignable, [privateKey], true);
       } catch (err: any) {
-        getOutput().error(pc.red(`Signing failed: ${err.message}`));
+        getOutput().error(pc.red(`Signing failed: ${((err instanceof Error) ? ((err instanceof Error) ? err.message : String(err)) : String(err))}`));
         throw new Error("Command failed");
       }
 
@@ -299,7 +298,7 @@ export function getSilverDeployCommand() {
         const res = await sdk.rpc.submitTransaction(rawTx);
         txId = res.transactionId ?? "";
       } catch (err: any) {
-        const msg = err.message || String(err);
+        const msg = ((err instanceof Error) ? ((err instanceof Error) ? err.message : String(err)) : String(err)) || String(err);
         const mempoolMatch = msg.match(
           /transaction ([0-9a-f]{64}) is already in the mempool/i
         );
@@ -443,7 +442,7 @@ export function getSilverSpendPlanCommand() {
           lock.redeemScriptHex
         );
       } catch (err: any) {
-        getOutput().error(pc.red(`Error building signature script: ${err.message}`));
+        getOutput().error(pc.red(`Error building signature script: ${((err instanceof Error) ? ((err instanceof Error) ? err.message : String(err)) : String(err))}`));
         throw new Error("Command failed");
       }
 
@@ -626,7 +625,7 @@ export function getSilverSpendCommand() {
         const res = await sdk.rpc.submitTransaction(rawTx);
         txId = res.transactionId ?? "";
       } catch (err: any) {
-        const msg = err.message || String(err);
+        const msg = ((err instanceof Error) ? ((err instanceof Error) ? err.message : String(err)) : String(err)) || String(err);
         if (msg.includes("not push only")) {
           getOutput().error(pc.red(`SILVERSCRIPT_SIGNATURE_SCRIPT_NOT_PUSH_ONLY`));
         }

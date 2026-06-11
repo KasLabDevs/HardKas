@@ -30,13 +30,13 @@ dappTxRoutes.use("*", async (c, next) => {
     const sdk = await Hardkas.create({ cwd: process.env.HARDKAS_ROOT || process.cwd() });
     c.set("sdk", sdk);
     await next();
-  } catch (e: any) {
+  } catch (e: unknown) {
     return c.json(
       {
         ok: false,
         error: {
           code: "HARDKAS_DEV_ERROR",
-          message: "Failed to initialize HardKAS SDK: " + e.message
+          message: "Failed to initialize HardKAS SDK: " + ((e instanceof Error) ? ((e instanceof Error) ? e.message : String(e)) : String(e))
         }
       },
       500
@@ -63,8 +63,8 @@ dappTxRoutes.post("/plan", async (c) => {
     });
 
     return envelope(c, true, plan);
-  } catch (e: any) {
-    return envelope(c, false, null, { code: "HARDKAS_DEV_ERROR", message: e.message });
+  } catch (e: unknown) {
+    return envelope(c, false, null, { code: "HARDKAS_DEV_ERROR", message: ((e instanceof Error) ? ((e instanceof Error) ? e.message : String(e)) : String(e)) });
   }
 });
 
@@ -102,8 +102,8 @@ dappTxRoutes.post("/sign", async (c) => {
     // Note: The envelope doesn't directly expose adding warnings dynamically after creation,
     // but the meta property indicates it's simulated/developer mode.
     return response;
-  } catch (e: any) {
-    return envelope(c, false, null, { code: "HARDKAS_DEV_ERROR", message: e.message });
+  } catch (e: unknown) {
+    return envelope(c, false, null, { code: "HARDKAS_DEV_ERROR", message: ((e instanceof Error) ? ((e instanceof Error) ? e.message : String(e)) : String(e)) });
   }
 });
 
@@ -180,8 +180,8 @@ dappTxRoutes.post("/send", async (c) => {
     };
 
     return envelope(c, true, data);
-  } catch (e: any) {
-    return envelope(c, false, null, { code: "HARDKAS_DEV_ERROR", message: e.message });
+  } catch (e: unknown) {
+    return envelope(c, false, null, { code: "HARDKAS_DEV_ERROR", message: ((e instanceof Error) ? ((e instanceof Error) ? e.message : String(e)) : String(e)) });
   }
 });
 
@@ -202,7 +202,7 @@ dappTxRoutes.get("/receipt/:id", async (c) => {
     }
 
     return envelope(c, true, receipt);
-  } catch (e: any) {
-    return envelope(c, false, null, { code: "HARDKAS_DEV_ERROR", message: e.message });
+  } catch (e: unknown) {
+    return envelope(c, false, null, { code: "HARDKAS_DEV_ERROR", message: ((e instanceof Error) ? ((e instanceof Error) ? e.message : String(e)) : String(e)) });
   }
 });

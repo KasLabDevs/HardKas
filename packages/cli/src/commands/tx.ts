@@ -303,7 +303,7 @@ export function registerTxCommands(program: Command) {
         }
         getOutput().writeLine("");
       } catch (e) {
-        getOutput().error(e instanceof Error ? e.message : String(e));
+        getOutput().error(e instanceof Error ? ((e instanceof Error) ? ((e instanceof Error) ? e.message : String(e)) : String(e)) : String(e));
         throw e;
       }
     });

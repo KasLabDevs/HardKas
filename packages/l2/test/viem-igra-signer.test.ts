@@ -5,7 +5,7 @@ import { IgraTxPlanArtifact } from "@hardkas/artifacts";
 describe("ViemIgraTxSigner", () => {
   const mockPlan: IgraTxPlanArtifact = {
     schema: "hardkas.igraTxPlan.v1",
-    hardkasVersion: "0.9.1-alpha",
+    hardkasVersion: "0.9.2-alpha",
     networkId: "igra",
     mode: "l2-rpc",
     createdAt: new Date().toISOString(),
@@ -125,9 +125,9 @@ describe("ViemIgraTxSigner", () => {
         plan: mockPlan,
         account: { ...mockAccount, privateKey: "invalid hex!" }
       });
-    } catch (e: any) {
-      expect(e.message).not.toContain(pk);
-      expect(e.message).toContain("Invalid EVM private key format");
+    } catch (e: unknown) {
+      expect(((e instanceof Error) ? ((e instanceof Error) ? e.message : String(e)) : String(e))).not.toContain(pk);
+      expect(((e instanceof Error) ? ((e instanceof Error) ? e.message : String(e)) : String(e))).toContain("Invalid EVM private key format");
     }
   });
 

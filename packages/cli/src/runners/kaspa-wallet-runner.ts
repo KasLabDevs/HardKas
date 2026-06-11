@@ -79,10 +79,10 @@ export async function runKaspaWalletAddress(name: string) {
     const { resolveHardkasAccountAddress } = await import("@hardkas/accounts");
     const address = await resolveHardkasAccountAddress(name, config.config);
     console.log(address);
-  } catch (e: any) {
-    if (e.name === "HardkasCliError") throw e;
+  } catch (e: unknown) {
+    if (((e as any).name) === "HardkasCliError") throw e;
     const { HardkasCliError } = await import("../cli-errors.js");
-    throw new HardkasCliError("WALLET_ERROR", e.message || "Unknown error", {
+    throw new HardkasCliError("WALLET_ERROR", ((e instanceof Error) ? ((e instanceof Error) ? e.message : String(e)) : String(e)) || "Unknown error", {
       exitCode: 1,
       cause: e
     });
@@ -113,10 +113,10 @@ export async function runKaspaWalletBalance(
     console.log(`\nWallet:  ${pc.white(name)}`);
     console.log(`Address: ${pc.dim(address)}`);
     console.log(`Balance: ${pc.green(formatSompiToKas(balance.balanceSompi))} KAS\n`);
-  } catch (e: any) {
-    if (e.name === "HardkasCliError") throw e;
+  } catch (e: unknown) {
+    if (((e as any).name) === "HardkasCliError") throw e;
     const { HardkasCliError } = await import("../cli-errors.js");
-    throw new HardkasCliError("WALLET_OPERATION_FAILED", e.message || "Unknown error", {
+    throw new HardkasCliError("WALLET_OPERATION_FAILED", ((e instanceof Error) ? ((e instanceof Error) ? e.message : String(e)) : String(e)) || "Unknown error", {
       exitCode: 1,
       cause: e
     });
@@ -253,10 +253,10 @@ export async function runKaspaWalletSend(
         { exitCode: 1 }
       );
     }
-  } catch (e: any) {
-    if (e.name === "HardkasCliError") throw e;
+  } catch (e: unknown) {
+    if (((e as any).name) === "HardkasCliError") throw e;
     const { HardkasCliError } = await import("../cli-errors.js");
-    throw new HardkasCliError("WALLET_OPERATION_FAILED", e.message || "Unknown error", {
+    throw new HardkasCliError("WALLET_OPERATION_FAILED", ((e instanceof Error) ? ((e instanceof Error) ? e.message : String(e)) : String(e)) || "Unknown error", {
       exitCode: 1,
       cause: e
     });

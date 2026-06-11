@@ -68,9 +68,13 @@ export async function runUtxoFuzzer(iterations = 50): Promise<FuzzResult> {
         (plan.change?.amountSompi || 0n);
       const fee = plan.estimatedFeeSompi;
 
-      if (inputSum !== outputSum + fee) {
+      const actualFee = inputSum - outputSum;
+
+      // The actual fee must be at least the estimated minimum fee.
+      // It can be higher if dust change was absorbed into the fee.
+      if (actualFee < fee) {
         violations.push(
-          `Iteration ${i}: Planning Invariant Violated! ${inputSum} != ${outputSum} + ${fee}`
+          `Iteration ${i}: Planning Invariant Violated! Actual fee ${actualFee} is less than minimum required fee ${fee} (inputs: ${inputSum}, outputs: ${outputSum})`
         );
       }
 
@@ -101,10 +105,10 @@ export async function runUtxoFuzzer(iterations = 50): Promise<FuzzResult> {
       if (utxoIds.length !== uniqueIds.size) {
         violations.push(`Iteration ${i}: Duplicate UTXO IDs detected in state!`);
       }
-    } catch (e: any) {
+    } catch (e: unknown) {
       // Some iterations might fail due to insufficient funds, which is fine
-      if (!e.message.includes("Insufficient funds")) {
-        violations.push(`Iteration ${i}: Unexpected Error: ${e.message}`);
+      if (!((e instanceof Error) ? ((e instanceof Error) ? e.message : String(e)) : String(e)).includes("Insufficient funds")) {
+        violations.push(`Iteration ${i}: Unexpected Error: ${((e instanceof Error) ? ((e instanceof Error) ? e.message : String(e)) : String(e))}`);
       }
     }
   }

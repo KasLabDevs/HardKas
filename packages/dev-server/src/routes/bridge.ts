@@ -14,7 +14,7 @@ bridgeRoutes.post("/simulate", async (c) => {
   try {
     const result = simulatePrefixMining(payload, prefix, { timeoutMs: 10000 });
     return c.json({ status: "success", result });
-  } catch (e: any) {
-    return c.json({ status: "error", error: e.message }, 500);
+  } catch (e: unknown) {
+    return c.json({ status: "error", error: ((e instanceof Error) ? ((e instanceof Error) ? e.message : String(e)) : String(e)) }, 500);
   }
 });
