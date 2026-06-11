@@ -430,15 +430,7 @@ export class HardkasTx {
     }
 
     if (typeof plan === "object" && plan !== null && (plan as any).contentHash) {
-      // Clean/normalize the plan object to prevent Zod strict validation errors
-      if (Array.isArray((plan as any).inputs)) {
-        (plan as any).inputs.forEach((input: any) => {
-          delete input.rawTransaction;
-          delete input.scriptPublicKey;
-        });
-      }
-      delete (plan as any).rawTransaction;
-      delete (plan as any).scriptPublicKey;
+
 
       await this.sdk.artifacts.verify(plan, {
         throwOnInvalid: true,
