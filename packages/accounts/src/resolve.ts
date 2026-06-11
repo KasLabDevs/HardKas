@@ -60,6 +60,24 @@ export function resolveHardkasAccount(options: ResolveAccountOptions): HardkasAc
     }
   }
 
+  // 2.5 Check unified keystore.json
+  const keystoreJsonPath = path.join(workspaceRoot, ".hardkas", "keystore.json");
+  if (fs.existsSync(keystoreJsonPath)) {
+    try {
+      const data = fs.readFileSync(keystoreJsonPath, "utf-8");
+      const ks = JSON.parse(data);
+      if (ks[alias]) {
+        return {
+          name: alias,
+          kind: ks[alias].type === "simulated" ? "simulated" : "kaspa-private-key",
+          address: ks[alias].address
+        } as HardkasAccount;
+      }
+    } catch(e) {
+      // Ignore
+    }
+  }
+
   // 3. Check config.accounts
   if (config?.accounts && config.accounts[alias]) {
     const accConfig = config.accounts[alias];
@@ -141,6 +159,32 @@ export function listHardkasAccounts(config?: HardkasConfig): HardkasAccount[] {
           // Ignore
         }
       }
+    }
+  }
+
+  // Add from unified keystore.json
+  const keystoreJsonPath = path.join(workspaceRoot, ".hardkas", "keystore.json");
+  if (fs.existsSync(keystoreJsonPath)) {
+    try {
+      const data = fs.readFileSync(keystoreJsonPath, "utf-8");
+      const ks = JSON.parse(data);
+      for (const [name, acc] of Object.entries(ks)) {
+        if ((acc as any).type === "simulated") {
+          accounts.set(name, {
+            name,
+            kind: "simulated",
+            address: (acc as any).address
+          });
+        } else {
+          accounts.set(name, {
+            name,
+            kind: "kaspa-private-key",
+            address: (acc as any).address
+          });
+        }
+      }
+    } catch(e) {
+      // Ignore
     }
   }
 

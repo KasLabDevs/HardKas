@@ -1,6 +1,6 @@
 {
   "schema": "hardkas.silver.spendReceipt",
-  "hardkasVersion": "0.9.4-alpha",
+  "hardkasVersion": "0.9.6-alpha",
   "version": "1.0.0-alpha",
   "hashVersion": 4,
   "networkId": "simnet",

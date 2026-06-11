@@ -1,10 +1,10 @@
-# HardKAS 0.9.4-alpha Release Notes
+# HardKAS 0.9.6-alpha Release Notes
 
 Date: 2026-06-09
 
 ## Summary
 
-HardKAS 0.9.4-alpha now includes a normalized Toccata v2 localnet baseline with
+HardKAS 0.9.6-alpha now includes a normalized Toccata v2 localnet baseline with
 Docker simnet funding, real standard transaction lifecycle, real Silver OP_TRUE
 deploy/spend, artifact-coherence simulator comparison, mainnet guard
 enforcement, and a machine-verifiable golden corpus integrated into the Toccata

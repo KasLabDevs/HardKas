@@ -27,7 +27,7 @@ describe("SDK High-level Client Facade", () => {
     const res = await client.localnet.status();
 
     expect(res.ok).toBe(false);
-    expect(res.error?.code).toBe("FETCH_FAILED");
+    expect(res.error?.code).toBe("LOCALNET_RPC_RETRY_EXHAUSTED");
     expect(res.meta.network).toBeDefined();
   });
 });

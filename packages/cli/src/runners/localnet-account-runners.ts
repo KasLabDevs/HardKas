@@ -1,6 +1,7 @@
 import { getOutput } from "../output.js";
 import { UI } from "../ui.js";
 import { createHash } from "node:crypto";
+import { appendToKeystoreJson } from "@hardkas/accounts";
 
 export async function runLocalnetAccountCreate(name: string, options: { json: boolean }) {
   const hash = createHash("sha256").update(name).digest("hex");
@@ -15,6 +16,11 @@ export async function runLocalnetAccountCreate(name: string, options: { json: bo
     rpc: "disabled",
     wasm: "disabled"
   };
+
+  await appendToKeystoreJson(process.cwd(), name, {
+    address: accountInfo.address,
+    type: "simulated"
+  });
 
   if (options.json) {
     getOutput().writeJson(accountInfo);

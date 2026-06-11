@@ -1,4 +1,4 @@
-# Post-Release Findings For 0.9.4-alpha
+# Post-Release Findings For 0.9.6-alpha
 
 Date: 2026-06-11T13:55:38.475Z
 
@@ -6,7 +6,7 @@ Status: `POST_RELEASE_BREAK_GAUNTLET_FINDINGS`
 
 ## Summary
 
-- Release tested: `0.9.4-alpha`
+- Release tested: `0.9.6-alpha`
 - Apps generated: 20
 - Apps build passed: 20
 - Apps smoke passed: 16
@@ -15,7 +15,7 @@ Status: `POST_RELEASE_BREAK_GAUNTLET_FINDINGS`
 - SDK gaps found: 0
 - Bugs found: 0
 - Docs/error-message gaps found: 0
-- Resolved 0.9.4-alpha findings: 4
+- Resolved 0.9.6-alpha findings: 4
 - Unresolved findings: 0
 
 ## Baseline
@@ -62,7 +62,7 @@ Unresolved:
 - corpus verify: CLI=PASS, SDK=PASS, parity=PARITY_PASS
 - silver compile/deploy/spend: CLI=PASS, SDK=PASS, parity=PARITY_PASS
 
-## Recommended 0.9.4-alpha Backlog
+## Recommended 0.9.6-alpha Backlog
 
 - Keep running the break gauntlet after each release candidate.
 

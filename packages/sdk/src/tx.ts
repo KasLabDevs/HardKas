@@ -402,6 +402,33 @@ export class HardkasTx {
       requiredSigners?: string[];
     }
   ): Promise<SignedTxArtifact> {
+    if (!plan || typeof plan !== "object") {
+      const e = new Error("TX_ARTIFACT_SCHEMA_INVALID: Input plan must be a valid artifact object.");
+      (e as any).code = "TX_ARTIFACT_SCHEMA_INVALID";
+      throw e;
+    }
+
+    // On-the-fly normalization for legacy artifacts
+    if (!plan.schema) {
+      if ((plan as any).metadata?.schema) {
+        (plan as any).schema = (plan as any).metadata.schema;
+      } else if ((plan as any).inputs && (plan as any).outputs) {
+        (plan as any).schema = HardkasSchemas.TxPlan;
+      }
+    }
+
+    if (!plan.schema) {
+      const e = new Error("TX_ARTIFACT_SCHEMA_INVALID: Artifact is missing the required 'schema' or 'metadata.schema' property.");
+      (e as any).code = "TX_ARTIFACT_SCHEMA_INVALID";
+      throw e;
+    }
+
+    if (plan.schema !== HardkasSchemas.TxPlan && plan.schema !== HardkasSchemas.SignedTx) {
+      const e = new Error(`TX_ARTIFACT_SCHEMA_INVALID: Unsupported artifact schema for signing: ${(plan as any).schema}`);
+      (e as any).code = "TX_ARTIFACT_SCHEMA_INVALID";
+      throw e;
+    }
+
     if (typeof plan === "object" && plan !== null && (plan as any).contentHash) {
       await this.sdk.artifacts.verify(plan, {
         throwOnInvalid: true,

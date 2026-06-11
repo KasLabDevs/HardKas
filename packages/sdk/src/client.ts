@@ -29,24 +29,34 @@ export function createHardkasClient(options: HardkasClientOptions = {}) {
     path: string,
     init?: RequestInit
   ): Promise<ClientEnvelope<T>> {
-    try {
-      const response = await fetch(`${baseUrl}${path}`, {
-        ...init,
-        headers: { ...defaultHeaders, ...init?.headers }
-      });
-      const data = await response.json();
-      return data as ClientEnvelope<T>;
-    } catch (e: unknown) {
-      return {
-        ok: false,
-        error: { code: "FETCH_FAILED", message: ((e instanceof Error) ? ((e instanceof Error) ? ((e instanceof Error) ? e.message : String(e)) : String(e)) : String(e)) },
-        warnings: [],
-        meta: {
-          workspace: "unknown",
-          network: options.network || "simulated",
-          mode: "unknown"
+    const maxRetries = 3;
+    let attempt = 0;
+    while (true) {
+      try {
+        const response = await fetch(`${baseUrl}${path}`, {
+          ...init,
+          headers: { ...defaultHeaders, ...init?.headers }
+        });
+        const data = await response.json();
+        return data as ClientEnvelope<T>;
+      } catch (e: unknown) {
+        attempt++;
+        if (attempt > maxRetries) {
+          return {
+            ok: false,
+            error: { code: "LOCALNET_RPC_RETRY_EXHAUSTED", message: ((e instanceof Error) ? ((e instanceof Error) ? e.message : String(e)) : String(e)) },
+            warnings: [],
+            meta: {
+              workspace: "unknown",
+              network: options.network || "simulated",
+              mode: "unknown"
+            }
+          };
         }
-      };
+        // Backoff with jitter
+        const jitter = Math.floor(Math.random() * 200) + 100;
+        await new Promise(r => setTimeout(r, attempt * jitter));
+      }
     }
   }
 
