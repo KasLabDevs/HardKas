@@ -10,9 +10,10 @@ const tempPackDir = path.join(consumerDir, 'tmp-packaging');
 if (!fs.existsSync(consumerDir)) {
   fs.mkdirSync(consumerDir, { recursive: true });
 }
-if (!fs.existsSync(tempPackDir)) {
-  fs.mkdirSync(tempPackDir, { recursive: true });
+if (fs.existsSync(tempPackDir)) {
+  fs.rmSync(tempPackDir, { recursive: true, force: true });
 }
+fs.mkdirSync(tempPackDir, { recursive: true });
 
 console.log('1. Packing tarballs...');
 const packagesDir = path.join(workspaceRoot, 'packages');

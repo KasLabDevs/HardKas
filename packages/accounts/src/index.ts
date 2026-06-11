@@ -14,4 +14,5 @@ export * from "./real-accounts.js";
 export * from "./real-keygen.js";
 export * from "./kaspa-sdk-keygen.js";
 export * from "./keystore.js";
+export * from "./keystore-lock.js";
 export * from "./dev-accounts.js";

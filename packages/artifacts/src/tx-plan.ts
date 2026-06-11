@@ -75,9 +75,10 @@ export function createTxPlanArtifact(options: CreateTxPlanArtifactOptions): TxPl
       sequence: 1
     },
     ...(options.ctx.workflowId ? { workflowId: options.ctx.workflowId } : {}),
-    ...(options.ctx.utxoSelection
-      ? { metadata: { utxoSelection: options.ctx.utxoSelection } }
-      : {}),
+    metadata: {
+      schema: HardkasSchemas.ArtifactV1,
+      ...(options.ctx.utxoSelection ? { utxoSelection: options.ctx.utxoSelection } : {})
+    },
     assumptionLevel:
       options.ctx.assumptionLevel ||
       (options.mode === "simulated" ? "local-simulated" : "local-dev")

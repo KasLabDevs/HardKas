@@ -189,28 +189,40 @@ export class HardkasIndexer {
       issues: []
     };
 
-    this.db.exec("BEGIN TRANSACTION;");
+    const lockFile = path.join(this.hardkasDir, "query-store-rebuild.lock");
     try {
-      // 1. Wipe
-      this._wipeInternal();
-      EnvironmentTelemetry.logAnomaly(
-        "REPLAY_RECONCILIATION",
-        "medium",
-        "replay",
-        "Full query rebuild executed"
-      );
-
-      // 2. Full Sync (using internal logic to avoid nested transaction)
-      if (fs.existsSync(this.hardkasDir)) {
-        await this._syncInternal(result);
+      if (!fs.existsSync(this.hardkasDir)) fs.mkdirSync(this.hardkasDir, { recursive: true });
+      fs.writeFileSync(lockFile, process.pid.toString(), { flag: "wx" });
+    } catch (e: any) {
+      if (e.code === "EEXIST") {
+        const stats = fs.statSync(lockFile, { throwIfNoEntry: false });
+        if (stats && Date.now() - stats.mtimeMs > 60000) {
+          try { fs.unlinkSync(lockFile); } catch (e) {}
+        }
+        const err = new Error("QUERY_STORE_REBUILD_IN_PROGRESS: Another rebuild is currently running.");
+        (err as any).code = "QUERY_STORE_REBUILD_IN_PROGRESS";
+        throw err;
       }
+      throw e;
+    }
 
-      this.db.exec("COMMIT;");
-    } catch (e: unknown) {
-      this.db.exec("ROLLBACK;");
-      result.ok = false;
-      result.errors.push(`Rebuild failed: ${e instanceof Error ? ((e instanceof Error) ? ((e instanceof Error) ? e.message : String(e)) : String(e)) : String(e)}`);
-      if (this.strict) throw e;
+    try {
+      this.db.exec("BEGIN TRANSACTION;");
+      try {
+        this._wipeInternal();
+        EnvironmentTelemetry.logAnomaly("REPLAY_RECONCILIATION", "medium", "replay", "Full query rebuild executed");
+        if (fs.existsSync(this.hardkasDir)) {
+          await this._syncInternal(result);
+        }
+        this.db.exec("COMMIT;");
+      } catch (e: unknown) {
+        this.db.exec("ROLLBACK;");
+        result.ok = false;
+        result.errors.push(`Rebuild failed: ${e instanceof Error ? ((e instanceof Error) ? ((e instanceof Error) ? e.message : String(e)) : String(e)) : String(e)}`);
+        if (this.strict) throw e;
+      }
+    } finally {
+      try { fs.unlinkSync(lockFile); } catch (e) {}
     }
 
     return result;
@@ -371,7 +383,14 @@ export class HardkasIndexer {
     const files = specificPaths
       ? specificPaths
           .filter(
-            (p) => fs.existsSync(p) && p.endsWith(".json") && !p.endsWith("events.jsonl")
+            (p) =>
+              fs.existsSync(p) &&
+              p.endsWith(".json") &&
+              !p.endsWith("events.jsonl") &&
+              !p.includes("dev-accounts") &&
+              !p.includes("keystore") &&
+              !p.includes("accounts.real.json") &&
+              !p.includes("sessions.json")
           )
           .sort()
       : this.walk(this.hardkasDir).sort();
@@ -841,6 +860,7 @@ export class HardkasIndexer {
         file.endsWith(".json") &&
         !file.endsWith("events.jsonl") &&
         file !== "state.json" &&
+        file !== "keystore.json" &&
         !file.endsWith("localnet.json") &&
         !file.endsWith("localnet-state.json") &&
         !file.endsWith("localnet-indexer.json") &&

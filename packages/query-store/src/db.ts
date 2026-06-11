@@ -37,8 +37,8 @@ export class HardkasStore {
 
       // Core SQLite tuning
       this.db.exec("PRAGMA journal_mode = WAL;");
-      this.db.exec("PRAGMA synchronous = FULL;");
-      this.db.exec("PRAGMA busy_timeout = 5000;"); // Prevent instant EBUSY crash
+      this.db.exec("PRAGMA synchronous = NORMAL;");
+      this.db.exec("PRAGMA busy_timeout = 15000;"); // Prevent EBUSY crash in high concurrency
     } catch (err: any) {
       this.db = null;
       throw new HardkasError(

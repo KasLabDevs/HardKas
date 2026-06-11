@@ -1,6 +1,6 @@
 {
   "name": "@examples/failure-debugging",
-  "version": "0.9.4-alpha",
+  "version": "0.9.6-alpha",
   "private": true,
   "type": "module",
   "scripts": {

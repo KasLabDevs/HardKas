@@ -56,7 +56,8 @@ export const BaseArtifactSchema = z.object({
   assumptionLevel: z.string().optional(),
   scriptProfile: z.enum(["standard", "experimental"]).optional(),
   scriptCapabilities: z.array(ScriptCapabilitySchema).optional(),
-  scriptMetadata: ScriptMetadataSchema.optional()
+  scriptMetadata: ScriptMetadataSchema.optional(),
+  metadata: z.any().optional()
 });
 
 export const AccountRefSchema = z.object({
