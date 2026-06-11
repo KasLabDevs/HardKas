@@ -1,0 +1,38 @@
+{
+  "name": "tmp-consumer-hardkas",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "@hardkas/accounts": "file:../tmp-packaging/hardkas-accounts-0.9.2-alpha.tgz",
+    "@hardkas/artifacts": "file:../tmp-packaging/hardkas-artifacts-0.9.2-alpha.tgz",
+    "@hardkas/bridge-local": "file:../tmp-packaging/hardkas-bridge-local-0.9.2-alpha.tgz",
+    "@hardkas/cli": "file:../tmp-packaging/hardkas-cli-0.9.2-alpha.tgz",
+    "@hardkas/client": "file:../tmp-packaging/hardkas-client-0.9.2-alpha.tgz",
+    "@hardkas/config": "file:../tmp-packaging/hardkas-config-0.9.2-alpha.tgz",
+    "@hardkas/core": "file:../tmp-packaging/hardkas-core-0.9.2-alpha.tgz",
+    "@hardkas/dev-server": "file:../tmp-packaging/hardkas-dev-server-0.9.2-alpha.tgz",
+    "@hardkas/kaspa-rpc": "file:../tmp-packaging/hardkas-kaspa-rpc-0.9.2-alpha.tgz",
+    "@hardkas/l2": "file:../tmp-packaging/hardkas-l2-0.9.2-alpha.tgz",
+    "@hardkas/localnet": "file:../tmp-packaging/hardkas-localnet-0.9.2-alpha.tgz",
+    "@hardkas/node-orchestrator": "file:../tmp-packaging/hardkas-node-orchestrator-0.9.2-alpha.tgz",
+    "@hardkas/node-runner": "file:../tmp-packaging/hardkas-node-runner-0.9.2-alpha.tgz",
+    "@hardkas/query": "file:../tmp-packaging/hardkas-query-0.9.2-alpha.tgz",
+    "@hardkas/query-store": "file:../tmp-packaging/hardkas-query-store-0.9.2-alpha.tgz",
+    "@hardkas/react": "file:../tmp-packaging/hardkas-react-0.9.2-alpha.tgz",
+    "@hardkas/sdk": "file:../tmp-packaging/hardkas-sdk-0.9.2-alpha.tgz",
+    "@hardkas/sessions": "file:../tmp-packaging/hardkas-sessions-0.9.2-alpha.tgz",
+    "@hardkas/simulator": "file:../tmp-packaging/hardkas-simulator-0.9.2-alpha.tgz",
+    "@hardkas/simulator-adapters": "file:../tmp-packaging/hardkas-simulator-adapters-0.9.2-alpha.tgz",
+    "@hardkas/testing": "file:../tmp-packaging/hardkas-testing-0.9.2-alpha.tgz",
+    "@hardkas/tx-builder": "file:../tmp-packaging/hardkas-tx-builder-0.9.2-alpha.tgz",
+    "@hardkas/wallet-adapter": "file:../tmp-packaging/hardkas-wallet-adapter-0.9.2-alpha.tgz"
+  }
+}

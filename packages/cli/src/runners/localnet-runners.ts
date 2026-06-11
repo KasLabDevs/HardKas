@@ -239,10 +239,10 @@ export async function runLocalnetFork(opts: {
         UI.info(`UTXOs: ${state.utxos.length}`);
       }
     );
-  } catch (e: any) {
-    if (e.name === "HardkasCliError") throw e;
+  } catch (e: unknown) {
+    if (((e as any).name) === "HardkasCliError") throw e;
     const { HardkasCliError } = await import("../cli-errors.js");
-    throw new HardkasCliError("FORKING_FAILED", `Forking failed: ${e.message}`, {
+    throw new HardkasCliError("FORKING_FAILED", `Forking failed: ${((e instanceof Error) ? ((e instanceof Error) ? e.message : String(e)) : String(e))}`, {
       exitCode: 1,
       cause: e
     });
@@ -271,12 +271,12 @@ async function detectToccataNode(quiet = false) {
       isSynced: server.isSynced ?? info.isSynced,
       virtualDaaScore: info.virtualDaaScore?.toString()
     };
-  } catch (error: any) {
+  } catch (error: unknown) {
     await client.close().catch(() => {});
     return {
       ready: false,
       rpcUrl: TOCCATA_RPC_URL,
-      lastError: error?.message || String(error)
+      lastError: (error instanceof Error ? error.message : String(error))
     };
   }
 }

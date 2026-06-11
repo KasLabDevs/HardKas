@@ -110,10 +110,10 @@ export async function runTxVerify(options: TxVerifyOptions) {
     }
 
     return result;
-  } catch (e: any) {
-    if (e.name === "HardkasCliError") throw e;
+  } catch (e: unknown) {
+    if (((e as any).name) === "HardkasCliError") throw e;
     const { HardkasCliError } = await import("../cli-errors.js");
-    throw new HardkasCliError("VERIFICATION_ERROR", `Verification error: ${e.message}`, {
+    throw new HardkasCliError("VERIFICATION_ERROR", `Verification error: ${((e instanceof Error) ? ((e instanceof Error) ? e.message : String(e)) : String(e))}`, {
       exitCode: 1,
       cause: e
     });

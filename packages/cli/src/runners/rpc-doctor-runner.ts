@@ -85,7 +85,7 @@ async function checkKaspaEndpoint(rpcUrl: string): Promise<LayeredHealthResult> 
       protocolReachable: false,
       rpcReachable: false,
       status: "protocol_error",
-      error: err instanceof Error ? err.message : String(err)
+      error: err instanceof Error ? ((err instanceof Error) ? ((err instanceof Error) ? err.message : String(err)) : String(err)) : String(err)
     };
   }
 
@@ -117,7 +117,7 @@ async function checkKaspaEndpoint(rpcUrl: string): Promise<LayeredHealthResult> 
       protocolReachable: true,
       rpcReachable: false,
       status: "rpc_error",
-      error: err instanceof Error ? err.message : String(err)
+      error: err instanceof Error ? ((err instanceof Error) ? ((err instanceof Error) ? err.message : String(err)) : String(err)) : String(err)
     };
   }
 }
@@ -158,7 +158,7 @@ async function checkHttpJsonRpcEndpoint(url: string): Promise<LayeredHealthResul
       protocolReachable: false,
       rpcReachable: false,
       status: "tcp_unreachable",
-      error: err instanceof Error ? err.message : String(err)
+      error: err instanceof Error ? ((err instanceof Error) ? ((err instanceof Error) ? err.message : String(err)) : String(err)) : String(err)
     };
   }
 }

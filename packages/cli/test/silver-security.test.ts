@@ -60,10 +60,10 @@ describe("SilverScript Security Hardening", () => {
         { encoding: "utf8", shell: false, timeout: 5000 }
       );
       // As long as it executed node or failed cleanly without parsing issues
-    } catch (e: any) {
+    } catch (e: unknown) {
       // It might fail because it doesn't output the expected compiler info,
       // but it should NOT fail with "is not recognized as an internal or external command" due to unquoted spaces.
-      expect(e.message).not.toMatch(/not recognized/i);
+      expect(((e instanceof Error) ? ((e instanceof Error) ? e.message : String(e)) : String(e))).not.toMatch(/not recognized/i);
     }
 
     fs.unlinkSync(dummyCompilerPath);

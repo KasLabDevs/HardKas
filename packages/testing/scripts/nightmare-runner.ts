@@ -73,7 +73,7 @@ async function runVector(
     console.log(`✅ [PASS] ${name}`);
     await cleanupTempWorkspace(workspace);
     return { vector: name, passed: true, severity: "blocker" };
-  } catch (error: any) {
+  } catch (error: unknown) {
     const isWarning = error.message.includes("[WARNING_ONLY]");
     const severity = isWarning ? "warning" : "blocker";
     console.log(`${severity === "blocker" ? "❌ [FAIL]" : "⚠️ [WARN]"} ${name}`);
@@ -251,14 +251,14 @@ async function parallelHell(workspace: string, cliPath: string) {
       while (Date.now() < endTime && !hasFailed) {
         try {
           await execa("node", [cliPath, ...args], { cwd: workspace });
-        } catch (e: any) {
+        } catch (e: unknown) {
           if (
-            !e.stderr?.includes("EBUSY") &&
-            !e.stderr?.includes("LOCKED") &&
+            !((e as any).stderr)?.includes("EBUSY") &&
+            !((e as any).stderr)?.includes("LOCKED") &&
             e.exitCode !== 1
           ) {
             hasFailed = true;
-            errString = `Process ${args.join(" ")} crashed fatally: ${e.message}`;
+            errString = `Process ${args.join(" ")} crashed fatally: ${((e instanceof Error) ? ((e instanceof Error) ? e.message : String(e)) : String(e))}`;
           }
         }
       }
@@ -317,10 +317,10 @@ async function filesystemFromHell(workspace: string, cliPath: string) {
     await fs.mkdir(deepDir, { recursive: true });
     await execa("node", [cliPath, "init"], { cwd: deepDir, reject: false });
     await execa("node", [cliPath, "dev", "doctor"], { cwd: deepDir, reject: false });
-  } catch (e: any) {
-    if (e.code === "ENAMETOOLONG" || e.message.includes("ENOENT")) {
+  } catch (e: unknown) {
+    if (((e as any).code) === "ENAMETOOLONG" || ((e instanceof Error) ? ((e instanceof Error) ? e.message : String(e)) : String(e)).includes("ENOENT")) {
       throw new Error(
-        `[WARNING_ONLY] Filesystem limits prevented execution: ${e.message}`
+        `[WARNING_ONLY] Filesystem limits prevented execution: ${((e instanceof Error) ? ((e instanceof Error) ? e.message : String(e)) : String(e))}`
       );
     }
     throw e;
@@ -530,14 +530,14 @@ async function sandboxNightmare(workspace: string, cliPath: string) {
         }, 500);
 
         await Promise.all([p1, p2, p3]);
-      } catch (e: any) {
+      } catch (e: unknown) {
         if (
-          !e.message.includes("ENOENT") &&
-          !e.message.includes("EBUSY") &&
-          !e.message.includes("EPERM")
+          !((e instanceof Error) ? ((e instanceof Error) ? e.message : String(e)) : String(e)).includes("ENOENT") &&
+          !((e instanceof Error) ? ((e instanceof Error) ? e.message : String(e)) : String(e)).includes("EBUSY") &&
+          !((e instanceof Error) ? ((e instanceof Error) ? e.message : String(e)) : String(e)).includes("EPERM")
         ) {
           failed = true;
-          failDetail = `Sandbox crashed unexpectedly: ${e.message}`;
+          failDetail = `Sandbox crashed unexpectedly: ${((e instanceof Error) ? ((e instanceof Error) ? e.message : String(e)) : String(e))}`;
         }
       } finally {
         try {

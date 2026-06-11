@@ -12,7 +12,7 @@ devAccountsRoutes.get("/", async (c) => {
       ok: true,
       data: accounts
     });
-  } catch (e: any) {
-    return c.json({ ok: false, error: e.message }, 500);
+  } catch (e: unknown) {
+    return c.json({ ok: false, error: ((e instanceof Error) ? ((e instanceof Error) ? e.message : String(e)) : String(e)) }, 500);
   }
 });

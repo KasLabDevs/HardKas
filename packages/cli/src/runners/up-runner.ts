@@ -19,7 +19,7 @@ export async function runUp() {
       const { createRequire } = await import("node:module");
       const req = createRequire(path.join(loaded.cwd, "package.json"));
       req.resolve("@kaspa/core-lib");
-    } catch (e: any) {
+    } catch (e: unknown) {
       UI.warning("Optional dependency @kaspa/core-lib is not installed.");
       UI.info(
         "Advanced cryptographic features may be unavailable. Run 'npm install @kaspa/core-lib' to enable."
@@ -63,7 +63,7 @@ export async function runUp() {
       }
     } catch (e) {
       console.log(
-        `  \x1b[33m⚠\x1b[0m RPC check failed: ${e instanceof Error ? e.message : String(e)}`
+        `  \x1b[33m⚠\x1b[0m RPC check failed: ${e instanceof Error ? ((e instanceof Error) ? ((e instanceof Error) ? e.message : String(e)) : String(e)) : String(e)}`
       );
     } finally {
       await client.close();

@@ -306,8 +306,8 @@ export async function verifyDeploymentStatus(opts: {
       }
 
       await client.close();
-    } catch (e: any) {
-      UI.error(`  RPC check failed: ${e.message}`);
+    } catch (e: unknown) {
+      UI.error(`  RPC check failed: ${((e instanceof Error) ? ((e instanceof Error) ? e.message : String(e)) : String(e))}`);
     }
   }
 }

@@ -23,10 +23,10 @@ describe("Phase 6B: Backward Compatibility (Vitest Layer 1)", () => {
     let caughtSafeReject = false;
     try {
       await sdk.artifacts.verify(legacyArtifact, { throwOnInvalid: true });
-    } catch (e: any) {
+    } catch (e: unknown) {
       if (
-        e.message.includes("corrupted or invalid") &&
-        e.message.includes("ARTIFACT_SCHEMA_INVALID")
+        ((e instanceof Error) ? ((e instanceof Error) ? e.message : String(e)) : String(e)).includes("corrupted or invalid") &&
+        ((e instanceof Error) ? ((e instanceof Error) ? e.message : String(e)) : String(e)).includes("ARTIFACT_SCHEMA_INVALID")
       ) {
         caughtSafeReject = true;
       }
@@ -36,7 +36,7 @@ describe("Phase 6B: Backward Compatibility (Vitest Layer 1)", () => {
     let caughtMigrationError = false;
     try {
       migrateArtifactPayload(legacyArtifact, "1.0.0-alpha", { strictPolicy: true });
-    } catch (e: any) {
+    } catch (e: unknown) {
       if (e instanceof MigrationRequiredError) {
         caughtMigrationError = true;
       }

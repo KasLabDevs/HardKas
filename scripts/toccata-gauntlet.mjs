@@ -2,9 +2,10 @@ import { execFileSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
-import { HardkasSchemas } from "@hardkas/artifacts";
 
 const root = process.cwd();
+const { HardkasSchemas } = await import(pathToFileURL(path.join(root, "packages", "artifacts", "dist", "index.js")));
+
 const cli = path.join(root, "packages", "cli", "dist", "index.js");
 const realNodeDir = path.join(root, "packages", "cli", "test-gauntlet", "real-node");
 const reportPath = path.join(root, "TOCCATA_GAUNTLET_RESULT.json");

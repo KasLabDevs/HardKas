@@ -20,8 +20,8 @@ describe("Deployment tracking", () => {
     } catch (err: any) {
       return {
         ok: false,
-        stdout: err.stdout?.toString(),
-        stderr: err.stderr?.toString()
+        stdout: ((err as any).stdout)?.toString(),
+        stderr: ((err as any).stderr)?.toString()
       };
     }
   }

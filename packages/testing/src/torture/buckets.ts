@@ -63,7 +63,7 @@ registerTortureBucket({
       for (let i = 0; i < artifactCount; i++) {
         const payload = {
           schema: "hardkas.txPlan" as const,
-          hardkasVersion: "0.9.1-alpha",
+          hardkasVersion: "0.9.2-alpha",
           version: ARTIFACT_VERSION,
           networkId: "simnet" as const,
           mode: "simulated" as const,
@@ -180,7 +180,7 @@ registerTortureBucket({
       // 1. Create a valid mock artifact
       const payload = {
         schema: "hardkas.txPlan" as const,
-        hardkasVersion: "0.9.1-alpha",
+        hardkasVersion: "0.9.2-alpha",
         version: ARTIFACT_VERSION,
         networkId: "simnet" as const,
         mode: "simulated" as const,
@@ -237,7 +237,7 @@ registerTortureBucket({
       let threwCorrectly = false;
       try {
         await backend.sync({ strict: true, cwd: sandboxDir });
-      } catch (err: any) {
+      } catch (err: unknown) {
         threwCorrectly = true;
       }
 
@@ -279,7 +279,7 @@ registerTortureBucket({
 
     const payloadA = {
       schema: "hardkas.txPlan",
-      version: "0.9.1-alpha",
+      version: "0.9.2-alpha",
       networkId: "simnet",
       mode: "simulated",
       amountSompi: amountSompiA,
@@ -296,7 +296,7 @@ registerTortureBucket({
 
     const payloadB = {
       schema: "hardkas.txPlan",
-      version: "0.9.1-alpha",
+      version: "0.9.2-alpha",
       networkId: "simnet",
       mode: "simulated",
       amountSompi: amountSompiB,
@@ -341,7 +341,7 @@ registerTortureBucket({
       // 1. Write initial artifact
       const payloadV1 = {
         schema: "hardkas.txPlan" as const,
-        hardkasVersion: "0.9.1-alpha",
+        hardkasVersion: "0.9.2-alpha",
         version: ARTIFACT_VERSION,
         networkId: "simnet" as const,
         mode: "simulated" as const,
@@ -470,7 +470,7 @@ registerTortureBucket({
       // Convert harness plan structure into fully conforming TxPlanSchema
       const planArtifact = {
         schema: "hardkas.txPlan" as const,
-        hardkasVersion: "0.9.1-alpha",
+        hardkasVersion: "0.9.2-alpha",
         version: ARTIFACT_VERSION,
         networkId: "simnet" as const,
         mode: "simulated" as const,
@@ -541,7 +541,7 @@ registerTortureBucket({
       // 5. Resume and Complete Flow: Produce signed receipt linked to recovered parent plan
       const receiptArtifact = {
         schema: "hardkas.txReceipt" as const,
-        hardkasVersion: "0.9.1-alpha",
+        hardkasVersion: "0.9.2-alpha",
         version: ARTIFACT_VERSION,
         networkId: "simnet" as const,
         mode: "simulated" as const,
@@ -626,7 +626,7 @@ registerTortureBucket({
       const planId = `plan-mock-${ctx.caseId}-${ctx.caseSeed}`;
       const payload = {
         schema: "hardkas.txPlan" as const,
-        hardkasVersion: "0.9.1-alpha",
+        hardkasVersion: "0.9.2-alpha",
         version: ARTIFACT_VERSION,
         networkId: "simnet" as const,
         mode: "simulated" as const,
@@ -724,7 +724,7 @@ registerTortureBucket({
           // missing parent artifact link (orphan receipt)
           const orphanReceipt = {
             schema: "hardkas.txReceipt" as const,
-            hardkasVersion: "0.9.1-alpha",
+            hardkasVersion: "0.9.2-alpha",
             version: ARTIFACT_VERSION,
             networkId: "simnet" as const,
             mode: "simulated" as const,
@@ -781,7 +781,7 @@ registerTortureBucket({
       let threw = false;
       try {
         await backend.sync({ strict: true, cwd: sandboxDir });
-      } catch (err: any) {
+      } catch (err: unknown) {
         threw = true;
       }
 
@@ -876,7 +876,7 @@ registerTortureBucket({
         const pId = `plan-race-${i}-${ctx.caseSeed}`;
         const payload = {
           schema: "hardkas.txPlan" as const,
-          hardkasVersion: "0.9.1-alpha",
+          hardkasVersion: "0.9.2-alpha",
           version: ARTIFACT_VERSION,
           networkId: "simnet" as const,
           mode: "simulated" as const,
@@ -977,7 +977,7 @@ registerTortureBucket({
       const planId = `plan-stale-${ctx.caseSeed}`;
       const payload = {
         schema: "hardkas.txPlan" as const,
-        hardkasVersion: "0.9.1-alpha",
+        hardkasVersion: "0.9.2-alpha",
         version: ARTIFACT_VERSION,
         networkId: "simnet" as const,
         mode: "simulated" as const,
@@ -1185,7 +1185,7 @@ registerTortureBucket({
       for (let i = 0; i < 10; i++) {
         const payload = {
           schema: "hardkas.txPlan" as const,
-          hardkasVersion: "0.9.1-alpha",
+          hardkasVersion: "0.9.2-alpha",
           version: ARTIFACT_VERSION,
           networkId: "simnet" as const,
           mode: "simulated" as const,
@@ -1298,7 +1298,7 @@ registerTortureBucket({
       const traverseArtId = "../../traversal-escape";
       const payload = {
         schema: "hardkas.txPlan" as const,
-        hardkasVersion: "0.9.1-alpha",
+        hardkasVersion: "0.9.2-alpha",
         version: ARTIFACT_VERSION,
         networkId: "simnet" as const,
         mode: "simulated" as const,
@@ -1442,8 +1442,8 @@ registerTortureBucket({
       let directWriteDenied = false;
       try {
         sdk.enforcePolicy("mutation", "Direct write in torture suite");
-      } catch (err: any) {
-        if (err.code === "POLICY_VIOLATION") {
+      } catch (err: unknown) {
+        if (((err as any).code) === "POLICY_VIOLATION") {
           directWriteDenied = true;
         }
       }
@@ -1462,8 +1462,8 @@ registerTortureBucket({
           ],
           dryRun: false // Prohibited direct mutation!
         });
-      } catch (err: any) {
-        if (err.code === "POLICY_VIOLATION" || err.code === "POLICY_DENIED") {
+      } catch (err: unknown) {
+        if (((err as any).code) === "POLICY_VIOLATION" || ((err as any).code) === "POLICY_DENIED") {
           workflowDenied = true;
         }
       }
@@ -1810,7 +1810,7 @@ registerTortureBucket({
           const idx = generatedIds.length;
           const payload: Record<string, any> = {
             schema: "hardkas.txPlan" as const,
-            hardkasVersion: "0.9.1-alpha",
+            hardkasVersion: "0.9.2-alpha",
             version: ARTIFACT_VERSION,
             networkId: "simnet" as const,
             mode: "simulated" as const,
@@ -1928,7 +1928,7 @@ registerTortureBucket({
             );
           }
         }
-      } catch (e: any) {
+      } catch (e: unknown) {
         if (e instanceof TortureInvariantError) throw e;
         // lineage_closure table might not exist (pre-v3 migration)
         // This is acceptable but should be noted
@@ -2012,7 +2012,7 @@ registerTortureBucket({
             for (let i = 0; i < artifactsPerWorker; i++) {
               const payload = {
                 schema: "hardkas.txPlan" as const,
-                hardkasVersion: "0.9.1-alpha",
+                hardkasVersion: "0.9.2-alpha",
                 version: ARTIFACT_VERSION,
                 networkId: "simnet" as const,
                 mode: "simulated" as const,
@@ -2194,10 +2194,10 @@ registerTortureBucket({
             });
             acquired = true;
             await handle.release();
-          } catch (err: any) {
+          } catch (err: unknown) {
             // If STALE_LOCK is thrown, that's also acceptable behavior
             // as long as it doesn't corrupt state
-            if (err.code === "STALE_LOCK") {
+            if (((err as any).code) === "STALE_LOCK") {
               acquired = true; // Lock was correctly detected as stale
               // Manual cleanup
               if (fs.existsSync(lockPath)) {
@@ -2232,8 +2232,8 @@ registerTortureBucket({
               command: "torture-contender",
               wait: false
             });
-          } catch (err: any) {
-            if (err.code === "LOCK_HELD") {
+          } catch (err: unknown) {
+            if (((err as any).code) === "LOCK_HELD") {
               lockHeldCorrectly = true;
             }
           }
@@ -2264,7 +2264,7 @@ registerTortureBucket({
             });
             recovered = true;
             await handle.release();
-          } catch (err: any) {
+          } catch (err: unknown) {
             // Even if it throws, the state should not be corrupted
             // Clean up manually
             if (fs.existsSync(corruptLockPath)) {
@@ -2344,7 +2344,7 @@ registerTortureBucket({
                 );
               }
             });
-          } catch (err: any) {
+          } catch (err: unknown) {
             if (err instanceof TortureInvariantError) throw err;
             // Lock ordering failures are acceptable error states
           }
@@ -2373,7 +2373,7 @@ registerTortureBucket({
 
       const payload = {
         schema: "hardkas.txPlan" as const,
-        hardkasVersion: "0.9.1-alpha",
+        hardkasVersion: "0.9.2-alpha",
         version: ARTIFACT_VERSION,
         networkId: "simnet" as const,
         mode: "simulated" as const,
@@ -2452,7 +2452,7 @@ registerTortureBucket({
           // Case-insensitive collision: write Plan.json and plan.json
           const payload1 = {
             schema: "hardkas.txPlan" as const,
-            hardkasVersion: "0.9.1-alpha",
+            hardkasVersion: "0.9.2-alpha",
             version: ARTIFACT_VERSION,
             networkId: "simnet" as const,
             mode: "simulated" as const,
@@ -2544,15 +2544,15 @@ registerTortureBucket({
             try {
               fs.unlinkSync(testPath);
             } catch {}
-          } catch (e: any) {
+          } catch (e: unknown) {
             reservedFailed = true;
-            errorType = e.code || e.message;
+            errorType = ((e as any).code) || ((e instanceof Error) ? ((e instanceof Error) ? e.message : String(e)) : String(e));
           }
 
           // Write a safe artifact to verify store is still functional
           const safePayload = {
             schema: "hardkas.txPlan" as const,
-            hardkasVersion: "0.9.1-alpha",
+            hardkasVersion: "0.9.2-alpha",
             version: ARTIFACT_VERSION,
             networkId: "simnet" as const,
             mode: "simulated" as const,
@@ -2602,7 +2602,7 @@ registerTortureBucket({
           // Backslash normalization: paths with \ vs / must not affect artifact identity
           const payload = {
             schema: "hardkas.txPlan" as const,
-            hardkasVersion: "0.9.1-alpha",
+            hardkasVersion: "0.9.2-alpha",
             version: ARTIFACT_VERSION,
             networkId: "simnet" as const,
             mode: "simulated" as const,
@@ -2670,7 +2670,7 @@ registerTortureBucket({
             try {
               fs.mkdirSync(newDir, { recursive: true });
               deepDir = newDir;
-            } catch (e: any) {
+            } catch (e: unknown) {
               // MAX_PATH hit — this IS the test
               pathTooLong = true;
               break;
@@ -2680,7 +2680,7 @@ registerTortureBucket({
           // Try to write an artifact at the deepest accessible level
           const payload = {
             schema: "hardkas.txPlan" as const,
-            hardkasVersion: "0.9.1-alpha",
+            hardkasVersion: "0.9.2-alpha",
             version: ARTIFACT_VERSION,
             networkId: "simnet" as const,
             mode: "simulated" as const,
@@ -2754,7 +2754,7 @@ registerTortureBucket({
           // CRLF in artifact content: verify hash stability across line endings
           const payloadWithCRLF = {
             schema: "hardkas.txPlan" as const,
-            hardkasVersion: "0.9.1-alpha",
+            hardkasVersion: "0.9.2-alpha",
             version: ARTIFACT_VERSION,
             networkId: "simnet" as const,
             mode: "simulated" as const,
@@ -2816,7 +2816,7 @@ registerTortureBucket({
           // Locked file during sync: hold file handle open
           const payload = {
             schema: "hardkas.txPlan" as const,
-            hardkasVersion: "0.9.1-alpha",
+            hardkasVersion: "0.9.2-alpha",
             version: ARTIFACT_VERSION,
             networkId: "simnet" as const,
             mode: "simulated" as const,
@@ -2920,7 +2920,7 @@ registerTortureBucket({
 
           const payload1 = {
             schema: "hardkas.txPlan" as const,
-            hardkasVersion: "0.9.1-alpha",
+            hardkasVersion: "0.9.2-alpha",
             version: ARTIFACT_VERSION,
             networkId: "simnet" as const,
             mode: "simulated" as const,
@@ -2980,7 +2980,7 @@ registerTortureBucket({
 
           const payload = {
             schema: "hardkas.txPlan" as const,
-            hardkasVersion: "0.9.1-alpha",
+            hardkasVersion: "0.9.2-alpha",
             version: ARTIFACT_VERSION,
             networkId: "simnet" as const,
             mode: "simulated" as const,
@@ -3047,7 +3047,7 @@ registerTortureBucket({
 
           const payload = {
             schema: "hardkas.txPlan" as const,
-            hardkasVersion: "0.9.1-alpha",
+            hardkasVersion: "0.9.2-alpha",
             version: ARTIFACT_VERSION,
             networkId: "simnet" as const,
             mode: "simulated" as const,
@@ -3111,7 +3111,7 @@ registerTortureBucket({
 
           const payloadLatin = {
             schema: "hardkas.txPlan" as const,
-            hardkasVersion: "0.9.1-alpha",
+            hardkasVersion: "0.9.2-alpha",
             version: ARTIFACT_VERSION,
             networkId: "simnet" as const,
             mode: "simulated" as const,
@@ -3194,7 +3194,7 @@ registerTortureBucket({
 
           const payload = {
             schema: "hardkas.txPlan" as const,
-            hardkasVersion: "0.9.1-alpha",
+            hardkasVersion: "0.9.2-alpha",
             version: ARTIFACT_VERSION,
             networkId: "simnet" as const,
             mode: "simulated" as const,
@@ -3280,7 +3280,7 @@ registerTortureBucket({
       function writeArtifact(suffix: string, amount: string): string {
         const payload = {
           schema: "hardkas.txPlan" as const,
-          hardkasVersion: "0.9.1-alpha",
+          hardkasVersion: "0.9.2-alpha",
           version: ARTIFACT_VERSION,
           networkId: "simnet" as const,
           mode: "simulated" as const,
@@ -3428,7 +3428,7 @@ registerTortureBucket({
           // Write DIFFERENT content (simulating a race)
           const newPayload = {
             schema: "hardkas.txPlan" as const,
-            hardkasVersion: "0.9.1-alpha",
+            hardkasVersion: "0.9.2-alpha",
             version: ARTIFACT_VERSION,
             networkId: "simnet" as const,
             mode: "simulated" as const,
@@ -3517,7 +3517,7 @@ registerTortureBucket({
       for (let i = 0; i < artifactCount; i++) {
         const payload = {
           schema: "hardkas.txPlan" as const,
-          hardkasVersion: "0.9.1-alpha",
+          hardkasVersion: "0.9.2-alpha",
           version: ARTIFACT_VERSION,
           networkId: "simnet" as const,
           mode: "simulated" as const,
@@ -3641,7 +3641,7 @@ registerTortureBucket({
           for (let i = 0; i < extraCount; i++) {
             const payload = {
               schema: "hardkas.txPlan" as const,
-              hardkasVersion: "0.9.1-alpha",
+              hardkasVersion: "0.9.2-alpha",
               version: ARTIFACT_VERSION,
               networkId: "simnet" as const,
               mode: "simulated" as const,
@@ -3724,7 +3724,7 @@ registerTortureBucket({
       for (let i = 0; i < 5; i++) {
         const payload = {
           schema: "hardkas.txPlan" as const,
-          hardkasVersion: "0.9.1-alpha",
+          hardkasVersion: "0.9.2-alpha",
           version: ARTIFACT_VERSION,
           networkId: "simnet" as const,
           mode: "simulated" as const,
@@ -3863,7 +3863,7 @@ registerTortureBucket({
           // Phantom artifact: valid JSON structure but wrong hash
           const phantomPayload = {
             schema: "hardkas.txPlan",
-            hardkasVersion: "0.9.1-alpha",
+            hardkasVersion: "0.9.2-alpha",
             version: ARTIFACT_VERSION,
             networkId: "simnet",
             mode: "simulated",
@@ -3958,7 +3958,7 @@ registerTortureBucket({
       ): { artId: string; file: string; payload: any } {
         const payload = {
           schema: "hardkas.txPlan" as const,
-          hardkasVersion: "0.9.1-alpha",
+          hardkasVersion: "0.9.2-alpha",
           version: ARTIFACT_VERSION,
           networkId: "simnet" as const,
           mode: "simulated" as const,
@@ -4178,7 +4178,7 @@ registerTortureBucket({
 
     const outsidePayload = {
       schema: "hardkas.txPlan" as const,
-      hardkasVersion: "0.9.1-alpha",
+      hardkasVersion: "0.9.2-alpha",
       version: ARTIFACT_VERSION,
       networkId: "simnet" as const,
       mode: "simulated" as const,
@@ -4250,7 +4250,7 @@ registerTortureBucket({
       function writePlan(id: string, amount: string): { artId: string; file: string } {
         const payload = {
           schema: "hardkas.txPlan" as const,
-          hardkasVersion: "0.9.1-alpha",
+          hardkasVersion: "0.9.2-alpha",
           version: ARTIFACT_VERSION,
           networkId: "simnet" as const,
           mode: "simulated" as const,
@@ -4343,7 +4343,7 @@ registerTortureBucket({
             }
             const payload = {
               schema: "hardkas.txPlan" as const,
-              hardkasVersion: "0.9.1-alpha",
+              hardkasVersion: "0.9.2-alpha",
               version: ARTIFACT_VERSION,
               networkId: "simnet" as const,
               mode: "simulated" as const,
@@ -4402,7 +4402,7 @@ registerTortureBucket({
             // Sync must not enter infinite loop or crash
             try {
               await backend.sync({ strict: false, cwd: sandboxDir });
-            } catch (err: any) {
+            } catch (err: unknown) {
               // Clean failure is acceptable, but hang/crash is not
             }
           } else {
@@ -4498,7 +4498,7 @@ registerTortureBucket({
       ): { artId: string; file: string; payload: any } {
         const payload = {
           schema: "hardkas.txPlan" as const,
-          hardkasVersion: "0.9.1-alpha",
+          hardkasVersion: "0.9.2-alpha",
           version: ARTIFACT_VERSION,
           networkId: "simnet" as const,
           mode: "simulated" as const,
@@ -4661,7 +4661,7 @@ registerTortureBucket({
       ): { artId: string; file: string; payload: any } {
         const payload = {
           schema: "hardkas.txPlan" as const,
-          hardkasVersion: "0.9.1-alpha",
+          hardkasVersion: "0.9.2-alpha",
           version: ARTIFACT_VERSION,
           networkId: "simnet" as const,
           mode: "simulated" as const,
@@ -4853,7 +4853,7 @@ registerTortureBucket({
       ): { artId: string; file: string; payload: any } {
         const payload = {
           schema: "hardkas.txPlan" as const,
-          hardkasVersion: "0.9.1-alpha",
+          hardkasVersion: "0.9.2-alpha",
           version: ARTIFACT_VERSION,
           networkId: "simnet" as const,
           mode: "simulated" as const,
@@ -4899,7 +4899,7 @@ registerTortureBucket({
           // Overwrite with different amount
           const payload = {
             schema: "hardkas.txPlan" as const,
-            hardkasVersion: "0.9.1-alpha",
+            hardkasVersion: "0.9.2-alpha",
             version: ARTIFACT_VERSION,
             networkId: "simnet" as const,
             mode: "simulated" as const,

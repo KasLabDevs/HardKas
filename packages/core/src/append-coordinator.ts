@@ -36,8 +36,8 @@ export class AppendCoordinator {
         try {
           fd = fs.openSync(lockPath, "wx");
           break;
-        } catch (e: any) {
-          if (e.code === "EEXIST") {
+        } catch (e: unknown) {
+          if ((e as NodeJS.ErrnoException).code === "EEXIST") {
             if (Date.now() - start > timeoutMs) {
               throw new Error(
                 `[AppendCoordinator] Timeout waiting for lock on ${lockPath}`
@@ -218,7 +218,7 @@ export class AppendCoordinator {
         JSON.parse(lastLine);
         // Valid JSON! No corruption.
         return defaultRes;
-      } catch (err: any) {
+      } catch (err: unknown) {
         // Invalid JSON! Truncate the file to lastLineStart
         const truncateTo = lastLineStart;
         const discardedBytes = stat.size - truncateTo;
@@ -229,7 +229,7 @@ export class AppendCoordinator {
           try {
             fs.truncateSync(filePath, truncateTo);
             truncated = true;
-          } catch (e: any) {
+          } catch (e: unknown) {
             lastError = e;
             retries--;
             if (retries > 0) {
@@ -246,7 +246,7 @@ export class AppendCoordinator {
           originalTail: lastLine,
           originalSize: stat.size,
           recoveredSize: truncateTo,
-          reason: err instanceof Error ? err.message : "Invalid JSON syntax"
+          reason: err instanceof Error ? ((err instanceof Error) ? ((err instanceof Error) ? err.message : String(err)) : String(err)) : "Invalid JSON syntax"
         };
       }
     } catch (e) {

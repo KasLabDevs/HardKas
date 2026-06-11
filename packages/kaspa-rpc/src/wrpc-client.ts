@@ -78,7 +78,7 @@ export class KaspaWrpcClient {
 
       this.ws.on("error", (err) => {
         clearTimeout(timer);
-        reject(new Error(`WebSocket error: ${err.message}`));
+        reject(new Error(`WebSocket error: ${((err instanceof Error) ? ((err instanceof Error) ? err.message : String(err)) : String(err))}`));
       });
 
       this.ws.on("message", (data) => {

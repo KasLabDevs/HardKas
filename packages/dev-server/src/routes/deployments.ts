@@ -28,8 +28,8 @@ deploymentsRoutes.get("/", async (c) => {
       );
 
     return c.json({ deployments: formatted });
-  } catch (e: any) {
+  } catch (e: unknown) {
     console.error("Failed to list deployments:", e);
-    return c.json({ error: e.message }, 500);
+    return c.json({ error: ((e instanceof Error) ? ((e instanceof Error) ? e.message : String(e)) : String(e)) }, 500);
   }
 });

@@ -3,7 +3,7 @@ import { getTelemetry } from "./telemetry.js";
 import fs from "node:fs";
 import path from "node:path";
 
-export const CURRENT_RUNTIME_VERSION = "0.9.1-alpha";
+export const CURRENT_RUNTIME_VERSION = "0.9.2-alpha";
 export const MIN_SUPPORTED_VERSION = "0.5.0-alpha";
 
 export interface MigrationStatus {
@@ -51,7 +51,7 @@ export class MigrationManager {
       if (err instanceof HardkasError) throw err;
       throw new HardkasError(
         "MIGRATION_ERROR",
-        `Failed to parse version.json: ${err.message}`
+        `Failed to parse version.json: ${((err instanceof Error) ? ((err instanceof Error) ? err.message : String(err)) : String(err))}`
       );
     }
   }
@@ -89,11 +89,11 @@ export class MigrationManager {
         "EXTERNAL_MUTATION",
         "critical",
         "projection",
-        `Migration failed: ${err.message}`
+        `Migration failed: ${((err instanceof Error) ? ((err instanceof Error) ? err.message : String(err)) : String(err))}`
       );
       throw new HardkasError(
         "MIGRATION_FAILED",
-        `Migration failed, workspace might be corrupted: ${err.message}`
+        `Migration failed, workspace might be corrupted: ${((err instanceof Error) ? ((err instanceof Error) ? err.message : String(err)) : String(err))}`
       );
     }
   }

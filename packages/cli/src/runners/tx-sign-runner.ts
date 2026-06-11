@@ -37,7 +37,8 @@ export async function runTxSign(input: TxSignRunnerInput): Promise<SignedTxArtif
     planArtifact.from?.accountName ||
     planArtifact.from?.input ||
     planArtifact.from?.address;
-  const account = resolveHardkasAccount({ nameOrAddress: targetAccountName, config });
+  const resolvedConfig = workspaceRoot ? { ...config, cwd: workspaceRoot } : config;
+  const account = resolveHardkasAccount({ nameOrAddress: targetAccountName, config: resolvedConfig });
 
   const artifactNetwork = planArtifact.networkId;
   const accountAddressNetwork = getNetworkFromAddress(account.address || "");

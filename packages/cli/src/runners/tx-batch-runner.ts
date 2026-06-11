@@ -32,9 +32,9 @@ export async function runTxBatch(options: any) {
       );
     }
   } catch (e) {
-    if (e instanceof Error && e.message.startsWith("Invalid batch file format")) throw e;
+    if (e instanceof Error && ((e instanceof Error) ? ((e instanceof Error) ? e.message : String(e)) : String(e)).startsWith("Invalid batch file format")) throw e;
     throw new Error(
-      `Failed to read or parse batch file ${file}: ${e instanceof Error ? e.message : String(e)}`
+      `Failed to read or parse batch file ${file}: ${e instanceof Error ? ((e instanceof Error) ? ((e instanceof Error) ? e.message : String(e)) : String(e)) : String(e)}`
     );
   }
 
@@ -107,7 +107,7 @@ export async function runTxBatch(options: any) {
       }
     } catch (e) {
       failCount++;
-      const errorMsg = e instanceof Error ? e.message : String(e);
+      const errorMsg = e instanceof Error ? ((e instanceof Error) ? ((e instanceof Error) ? e.message : String(e)) : String(e)) : String(e);
       results.push({ index: i, ok: false, error: errorMsg });
       if (!json) getOutput().error(`  ✗ Error: ${errorMsg}`);
     }

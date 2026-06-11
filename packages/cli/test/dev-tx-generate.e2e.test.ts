@@ -21,10 +21,6 @@ export default defineHardkasConfig({
       kind: "simulated",
       description: "Pure local simulation"
     }
-  },
-  accounts: {
-    alice: { kind: "simulated", address: "kaspa:sim_alice" },
-    bob: { kind: "simulated", address: "kaspa:sim_bob" }
   }
 });
 `;
@@ -48,6 +44,9 @@ export default defineHardkasConfig({
       "--json"
     ]);
     const result = JSON.parse(stdout);
+    if (result.generated !== 50) {
+      console.log("DEV TX GENERATE FAILED", result);
+    }
 
     expect(result.generated).toBe(50);
     expect(result.successCount).toBe(50);

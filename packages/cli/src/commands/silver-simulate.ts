@@ -1,5 +1,4 @@
 import { getOutput } from "../output.js";
-// @ts-nocheck
 import { Command } from "commander";
 import pc from "picocolors";
 import * as fs from "node:fs";

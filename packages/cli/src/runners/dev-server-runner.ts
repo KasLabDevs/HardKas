@@ -230,6 +230,9 @@ export async function runDevServer(options: {
 
     process.on("SIGINT", () => handleTeardown("SIGINT"));
     process.on("SIGTERM", () => handleTeardown("SIGTERM"));
+
+    // Block forever so the CLI doesn't exit immediately
+    await new Promise(() => {});
   } catch (e) {
     handleError(e);
   }

@@ -44,9 +44,9 @@ artifactsRoutes.get("/", async (c) => {
       );
 
     return c.json({ artifacts: list });
-  } catch (e: any) {
+  } catch (e: unknown) {
     console.error("Failed to list artifacts:", e);
-    return c.json({ error: e.message }, 500);
+    return c.json({ error: ((e instanceof Error) ? ((e instanceof Error) ? e.message : String(e)) : String(e)) }, 500);
   }
 });
 
@@ -60,9 +60,9 @@ artifactsRoutes.get("/:id", async (c) => {
       return c.json({ error: `Artifact with ID '${id}' not found` }, 404);
     }
     return c.json({ artifact });
-  } catch (e: any) {
+  } catch (e: unknown) {
     console.error(`Failed to get artifact detail for '${id}':`, e);
-    return c.json({ error: e.message }, 500);
+    return c.json({ error: ((e instanceof Error) ? ((e instanceof Error) ? e.message : String(e)) : String(e)) }, 500);
   }
 });
 
@@ -99,10 +99,10 @@ artifactsRoutes.get("/:id/explain", async (c) => {
         network: "simulated"
       }
     });
-  } catch (e: any) {
+  } catch (e: unknown) {
     console.error(`Failed to explain artifact '${id}':`, e);
     return c.json(
-      { ok: false, error: { code: "HARDKAS_DEV_ERROR", message: e.message } },
+      { ok: false, error: { code: "HARDKAS_DEV_ERROR", message: ((e instanceof Error) ? ((e instanceof Error) ? e.message : String(e)) : String(e)) } },
       500
     );
   }
@@ -133,9 +133,9 @@ artifactsRoutes.post("/:id/replay", async (c) => {
       warnings: [],
       meta: { workspace: process.cwd(), network: "simulated" }
     });
-  } catch (e: any) {
+  } catch (e: unknown) {
     return c.json(
-      { ok: false, error: { code: "HARDKAS_REPLAY_ERROR", message: e.message } },
+      { ok: false, error: { code: "HARDKAS_REPLAY_ERROR", message: ((e instanceof Error) ? ((e instanceof Error) ? e.message : String(e)) : String(e)) } },
       500
     );
   }

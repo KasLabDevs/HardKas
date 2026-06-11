@@ -28,8 +28,8 @@ describe("Config Commands", () => {
     execSync("node ../dist/index.js config init", { cwd: tempDir, stdio: "ignore" });
     try {
       execSync("node ../dist/index.js config init", { cwd: tempDir, encoding: "utf-8" });
-    } catch (e: any) {
-      expect(e.stdout || e.stderr || e.message).toContain("already exists");
+    } catch (e: unknown) {
+      expect(((e as any).stdout) || ((e as any).stderr) || ((e instanceof Error) ? ((e instanceof Error) ? e.message : String(e)) : String(e))).toContain("already exists");
     }
   });
 

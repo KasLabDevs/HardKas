@@ -220,7 +220,7 @@ export function handleError(e: unknown, context?: string) {
     return;
   }
 
-  const rawMsg = e instanceof Error ? e.message : String(e);
+  const rawMsg = e instanceof Error ? ((e instanceof Error) ? ((e instanceof Error) ? e.message : String(e)) : String(e)) : String(e);
   const msg = maskSecrets ? maskSecrets(rawMsg) : rawMsg;
   const errorObj = e as any;
 
@@ -276,7 +276,7 @@ export function handleError(e: unknown, context?: string) {
  * Specialized error handler for lock-related errors.
  */
 export function handleLockError(e: any) {
-  const code = e.code || "UNKNOWN_ERROR";
+  const code = ((e as any).code) || "UNKNOWN_ERROR";
   const meta = e.cause as any;
 
   if (code === "LOCK_HELD" || code === "LOCK_TIMEOUT" || code === "STALE_LOCK") {

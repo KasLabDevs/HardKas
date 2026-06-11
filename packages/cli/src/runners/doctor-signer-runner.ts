@@ -33,7 +33,7 @@ export async function runDoctorSigner(options: { json?: boolean } = {}) {
       UI.logHuman(`- mainnet disabled for fixture`);
     } catch (e) {
       UI.logHuman(
-        `Failed to inspect exports: ${e instanceof Error ? e.message : String(e)}`
+        `Failed to inspect exports: ${e instanceof Error ? ((e instanceof Error) ? ((e instanceof Error) ? e.message : String(e)) : String(e)) : String(e)}`
       );
     }
   } else {

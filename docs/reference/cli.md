@@ -16,7 +16,7 @@ This page is a human summary. The generated canonical command surface lives in
 - `tx verify <path>`: verify transaction artifact semantics.
 - `tx compare <simulatedPath> <realPath>`: compare simulated and real receipts.
 
-There is no top-level `tx simulate` command in the 0.9.1-alpha CLI. Use
+There is no top-level `tx simulate` command in the 0.9.2-alpha CLI. Use
 `tx send --network simulated` or the SDK `sdk.tx.simulate(...)`.
 
 ## `artifact`

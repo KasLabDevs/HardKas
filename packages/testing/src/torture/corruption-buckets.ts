@@ -56,7 +56,7 @@ registerTortureBucket({
     try {
       JSON.parse(lines[0]!);
       JSON.parse(lines[1]!);
-    } catch (e: any) {
+    } catch (e: unknown) {
       throw new TortureInvariantError(
         "Recovered JSON lines are invalid",
         "CORRUPTION_RECOVERY_JSON_PARSE",

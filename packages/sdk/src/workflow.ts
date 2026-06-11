@@ -222,11 +222,11 @@ export class HardkasWorkflow {
         };
         if (producedArtifactId) stepRecord.producedArtifactId = producedArtifactId;
         artifactSteps.push(stepRecord);
-      } catch (e: any) {
+      } catch (e: unknown) {
         status = "failed";
         errorEnvelope = {
-          code: e.code || "WORKFLOW_STEP_FAILED",
-          message: e.message,
+          code: ((e as any).code) || "WORKFLOW_STEP_FAILED",
+          message: ((e instanceof Error) ? ((e instanceof Error) ? ((e instanceof Error) ? e.message : String(e)) : String(e)) : String(e)),
           redacted: false
         };
         artifactSteps.push({
@@ -234,7 +234,7 @@ export class HardkasWorkflow {
           status: "failed",
           startedAt,
           completedAt: new Date().toISOString(), // hardkas-determinism-allow: step failed timestamp
-          error: e.message
+          error: ((e instanceof Error) ? ((e instanceof Error) ? ((e instanceof Error) ? e.message : String(e)) : String(e)) : String(e))
         });
         break; // Stop execution on first failure
       }

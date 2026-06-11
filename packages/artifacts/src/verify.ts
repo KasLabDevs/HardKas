@@ -265,11 +265,11 @@ export function verifyArtifactIntegritySync(
             result.issues.push({
               code: "ARTIFACT_SCHEMA_INVALID" as CorruptionCode,
               severity: zodSeverity,
-              message: `${pathStr}: ${e.message}`,
+              message: `${pathStr}: ${((e instanceof Error) ? ((e instanceof Error) ? e.message : String(e)) : String(e))}`,
               ...(pathStr ? { path: pathStr } : {})
             });
           } else {
-            addError("ARTIFACT_SCHEMA_INVALID", `${pathStr}: ${e.message}`, pathStr);
+            addError("ARTIFACT_SCHEMA_INVALID", `${pathStr}: ${((e instanceof Error) ? ((e instanceof Error) ? e.message : String(e)) : String(e))}`, pathStr);
           }
         });
       }
@@ -286,9 +286,9 @@ export function verifyArtifactIntegritySync(
     return result;
   } catch (e: unknown) {
     if (e instanceof SyntaxError) {
-      addError("ARTIFACT_JSON_INVALID", `Invalid JSON: ${e.message}`);
+      addError("ARTIFACT_JSON_INVALID", `Invalid JSON: ${((e instanceof Error) ? ((e instanceof Error) ? e.message : String(e)) : String(e))}`);
     } else if (e instanceof Error) {
-      addError("ARTIFACT_ID_INVALID", `Unexpected verification error: ${e.message}`);
+      addError("ARTIFACT_ID_INVALID", `Unexpected verification error: ${((e instanceof Error) ? ((e instanceof Error) ? e.message : String(e)) : String(e))}`);
     } else {
       addError("ARTIFACT_ID_INVALID", `Unexpected verification error: ${String(e)}`);
     }
@@ -414,11 +414,11 @@ export function verifyArtifactSemantics(
           try {
             const content = fs.readFileSync(refFile, "utf-8");
             refObj = JSON.parse(content);
-          } catch (e: any) {
+          } catch (e: unknown) {
             addIssue({
               code: "REFERENCE_CORRUPT",
               severity: "error",
-              message: `Failed to read policy ${ref}: ${e.message}`
+              message: `Failed to read policy ${ref}: ${(e as Error).message}`
             });
           }
         }
@@ -473,11 +473,11 @@ export function verifyArtifactSemantics(
               }
             }
           }
-        } catch (e: any) {
+        } catch (e: unknown) {
           addIssue({
             code: "REFERENCE_CORRUPT",
             severity: "error",
-            message: `Failed to read/verify policy ${ref}: ${e.message}`
+            message: `Failed to read/verify policy ${ref}: ${(e as Error).message}`
           });
         }
       }
@@ -517,7 +517,7 @@ export function verifyArtifactSemantics(
               message: `Profile reference mismatch: expected ${ref}, got ${refObj.contentHash}`
             });
           }
-        } catch (e: any) {
+        } catch (e: unknown) {
           addIssue({
             code: "REFERENCE_CORRUPT",
             severity: "error",
@@ -561,7 +561,7 @@ export function verifyArtifactSemantics(
               message: `Assumption reference mismatch: expected ${ref}, got ${refObj.contentHash}`
             });
           }
-        } catch (e: any) {
+        } catch (e: unknown) {
           addIssue({
             code: "REFERENCE_CORRUPT",
             severity: "error",
@@ -589,11 +589,11 @@ export function verifyArtifactSemantics(
         if (parentFile) {
           try {
             parentObj = JSON.parse(fs.readFileSync(parentFile, "utf-8"));
-          } catch (e: any) {
+          } catch (e: unknown) {
             addIssue({
               code: "PARENT_CORRUPT",
               severity: "error",
-              message: `Failed to read parent ${parentId}: ${e.message}`
+              message: `Failed to read parent ${parentId}: ${(e as Error).message}`
             });
           }
         }
@@ -615,11 +615,11 @@ export function verifyArtifactSemantics(
           if (!parentSem.ok) {
             parentSem.issues.forEach((issue) => addIssue(issue));
           }
-        } catch (e: any) {
+        } catch (e: unknown) {
           addIssue({
             code: "PARENT_CORRUPT",
             severity: "error",
-            message: `Failed to verify parent ${parentId}: ${e.message}`
+            message: `Failed to verify parent ${parentId}: ${(e as Error).message}`
           });
         }
       }

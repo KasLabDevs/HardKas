@@ -53,12 +53,12 @@ export async function runSnapshotVerify(options: SnapshotVerifyOptions) {
         { exitCode: 1 }
       );
     }
-  } catch (e: any) {
-    if (e.name === "HardkasCliError") throw e;
+  } catch (e: unknown) {
+    if (((e as any).name) === "HardkasCliError") throw e;
     const { HardkasCliError } = await import("../cli-errors.js");
     throw new HardkasCliError(
       "VERIFICATION_FAILED",
-      `Verification failed: ${e.message}`,
+      `Verification failed: ${((e instanceof Error) ? ((e instanceof Error) ? e.message : String(e)) : String(e))}`,
       { exitCode: 1 }
     );
   }

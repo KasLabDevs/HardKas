@@ -39,7 +39,7 @@ async function runSoak() {
       // 1. Context Artifacts
       const policy = {
         schema: "hardkas.policy.v1",
-        hardkasVersion: "0.9.1-alpha",
+        hardkasVersion: "0.9.2-alpha",
         version: "1.0.0-alpha",
         decision: "ALLOW",
         rules: [{ id: "cycle", result: true, inputHash: cycleId }],
@@ -48,7 +48,7 @@ async function runSoak() {
 
       const netProfile = {
         schema: "hardkas.networkProfile.v1",
-        hardkasVersion: "0.9.1-alpha",
+        hardkasVersion: "0.9.2-alpha",
         version: "1.0.0-alpha",
         networkId: "simnet",
         layer: "L1",
@@ -58,7 +58,7 @@ async function runSoak() {
 
       const assumption = {
         schema: "hardkas.assumption.v1",
-        hardkasVersion: "0.9.1-alpha",
+        hardkasVersion: "0.9.2-alpha",
         version: "1.0.0-alpha",
         conditions: [{ key: "cycle", value: cycleId }],
         createdAt: new Date().toISOString()
@@ -165,8 +165,8 @@ async function runSoak() {
         }
       }
     }
-  } catch (e: any) {
-    criticalFailure = `Exception: ${e.message}`;
+  } catch (e: unknown) {
+    criticalFailure = `Exception: ${((e instanceof Error) ? ((e instanceof Error) ? e.message : String(e)) : String(e))}`;
     console.error(e);
   }
 

@@ -187,8 +187,8 @@ export async function runTortureMatrix(options: TortureMatrixOptions) {
       passedCount++;
     } catch (err: any) {
       status = "FAILED_CASE" as any;
-      failureReason = err.message || String(err);
-      failureCode = err.code || "UNKNOWN_ERROR";
+      failureReason = ((err instanceof Error) ? ((err instanceof Error) ? err.message : String(err)) : String(err)) || String(err);
+      failureCode = ((err as any).code) || "UNKNOWN_ERROR";
       severity = err.severity || "critical";
       sandboxSnapshotPath = err.sandboxSnapshotPath;
       environmentMode = err.environmentMode;
@@ -490,7 +490,7 @@ export async function runTortureMatrix(options: TortureMatrixOptions) {
     fs.writeFileSync(reportPath, JSON.stringify(finalReport, null, 2), "utf-8");
     UI.info(`\nðŸ’¾ Saved machine-readable JSON report to: ${pc.cyan(reportPath)}`);
   } catch (err: any) {
-    UI.info(`\nâš ï¸  Failed to save JSON report: ${err.message}`);
+    UI.info(`\nâš ï¸  Failed to save JSON report: ${((err instanceof Error) ? ((err instanceof Error) ? err.message : String(err)) : String(err))}`);
   }
 }
 
@@ -539,7 +539,7 @@ export async function runTortureReplay(options: TortureReplayOptions) {
   } catch (err: any) {
     const duration = Date.now() - startTime;
     UI.info(`\n${pc.bold(pc.red("âŒ CASE REPLAY INVARIANT VIOLATED"))}`);
-    UI.info(`  ${pc.dim("Error Message:")}      ${pc.red(err.message || String(err))}`);
+    UI.info(`  ${pc.dim("Error Message:")}      ${pc.red(((err instanceof Error) ? ((err instanceof Error) ? err.message : String(err)) : String(err)) || String(err))}`);
     UI.info(`  ${pc.dim("Stack Trace:")}`);
     console.error(err);
     UI.info(`  ${pc.dim("Duration:")}           ${duration}ms`);

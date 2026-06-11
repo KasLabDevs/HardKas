@@ -74,11 +74,11 @@ export async function runDashboardDoctor() {
       status: "success",
       message: `Running at http://localhost:3333 (Active workspace: ${health.workspaceRoot})`
     });
-  } catch (e: any) {
+  } catch (e: unknown) {
     checks.push({
       name: "Dashboard API Server",
       status: "error",
-      message: `Offline/unreachable at http://localhost:3333 (Reason: ${e.message})`
+      message: `Offline/unreachable at http://localhost:3333 (Reason: ${((e instanceof Error) ? ((e instanceof Error) ? e.message : String(e)) : String(e))})`
     });
     hasErrors = true;
   }
@@ -122,11 +122,11 @@ export async function runDashboardDoctor() {
             message: `Active and operational ${sourceLabel}`
           });
         }
-      } catch (e: any) {
+      } catch (e: unknown) {
         checks.push({
           name: ep.name,
           status: "error",
-          message: `Divergent or broken payload: ${e.message}`
+          message: `Divergent or broken payload: ${((e instanceof Error) ? ((e instanceof Error) ? e.message : String(e)) : String(e))}`
         });
         hasErrors = true;
       }
@@ -225,11 +225,11 @@ export async function runDashboardDoctor() {
             });
           }
         }
-      } catch (err: any) {
+      } catch (err: unknown) {
         checks.push({
           name: "Telemetry Log",
           status: "error",
-          message: `Read Error - Failed to scan telemetry file: ${err.message}`
+          message: `Read Error - Failed to scan telemetry file: ${((err instanceof Error) ? ((err instanceof Error) ? err.message : String(err)) : String(err))}`
         });
         hasErrors = true;
       }

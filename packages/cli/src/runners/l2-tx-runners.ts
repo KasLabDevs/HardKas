@@ -253,7 +253,7 @@ export async function runL2TxSign(options: L2TxSignOptions): Promise<void> {
       account: accountInfo!
     });
   } catch (e) {
-    const msg = e instanceof Error ? e.message : String(e);
+    const msg = e instanceof Error ? ((e instanceof Error) ? ((e instanceof Error) ? e.message : String(e)) : String(e)) : String(e);
     if (
       msg.includes("not configured yet") ||
       msg.includes("dependency (viem) is not installed")
@@ -389,7 +389,7 @@ export async function runL2TxSend(options: L2TxSendOptions): Promise<void> {
     artifact.chainId === 1 ||
     profile.chainId === 1;
   if (isMainnet) {
-    throw new Error("L2 mainnet broadcast is disabled in HardKAS 0.9.1-alpha.");
+    throw new Error("L2 mainnet broadcast is disabled in HardKAS 0.9.2-alpha.");
   }
 
   if (!options.yes) {

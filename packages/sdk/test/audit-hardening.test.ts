@@ -5,7 +5,7 @@ import os from "node:os";
 import { Hardkas } from "@hardkas/sdk";
 import { deterministicCompare } from "@hardkas/core";
 
-describe("Audit Hardening Suite (0.9.1-alpha)", () => {
+describe("Audit Hardening Suite (0.9.2-alpha)", () => {
   let tmpDir: string;
   let sdk: Hardkas;
 
@@ -89,7 +89,7 @@ describe("Audit Hardening Suite (0.9.1-alpha)", () => {
       } catch (err: any) {
         // It will fail validation, but it should successfully find the files and not fail path resolution!
         // A missing receipt error is fine, but it shouldn't look in .hardkas/artifacts/.hardkas/receipts
-        expect(err.message).not.toContain(".hardkas/artifacts/.hardkas/receipts");
+        expect(((err instanceof Error) ? ((err instanceof Error) ? err.message : String(err)) : String(err))).not.toContain(".hardkas/artifacts/.hardkas/receipts");
       }
     });
   });

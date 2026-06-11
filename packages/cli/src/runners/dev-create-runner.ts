@@ -36,11 +36,11 @@ export async function runDevCreate(name: string) {
     console.log(`  pnpm install`);
     console.log(`  hardkas dev`);
     console.log(`  pnpm dev (in another terminal)`);
-  } catch (e: any) {
+  } catch (e: unknown) {
     const { HardkasCliError } = await import("../cli-errors.js");
     throw new HardkasCliError(
       "TEMPLATE_GENERATION_FAILED",
-      `Template generation failed: ${e.message}`,
+      `Template generation failed: ${((e instanceof Error) ? ((e instanceof Error) ? e.message : String(e)) : String(e))}`,
       { exitCode: 1 }
     );
   }

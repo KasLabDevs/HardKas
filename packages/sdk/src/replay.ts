@@ -397,8 +397,8 @@ export class HardkasReplay {
 
         // Mock invariants report for workflows
         report = { invariantsOk: determinismOk && contaminationOk };
-      } catch (e: any) {
-        verifyErrorMsg = `Workflow Replay failed: ${e.message}`;
+      } catch (e: unknown) {
+        verifyErrorMsg = `Workflow Replay failed: ${((e instanceof Error) ? ((e instanceof Error) ? ((e instanceof Error) ? e.message : String(e)) : String(e)) : String(e))}`;
         lineageOk = false;
         determinismOk = false;
       }
@@ -415,8 +415,8 @@ export class HardkasReplay {
           );
         plan = await readTxPlanArtifact(planPath);
         receipt = await readTxReceiptArtifact(receiptPath);
-      } catch (err: any) {
-        verifyErrorMsg = err.message;
+      } catch (err: unknown) {
+        verifyErrorMsg = ((err instanceof Error) ? ((err instanceof Error) ? ((err instanceof Error) ? err.message : String(err)) : String(err)) : String(err));
       }
 
       if (!verifyErrorMsg && plan && receipt) {
@@ -440,8 +440,8 @@ export class HardkasReplay {
           const reportFilename = `${new Date().toISOString().replace(/:/g, "-")}-${receipt.txId}.replay.json`; // hardkas-determinism-allow: timestamped report file naming
           const reportPath = path.join(this.sdk.workspace.artifactsDir, reportFilename);
           await writeArtifact(reportPath, report);
-        } catch (err: any) {
-          verifyErrorMsg = `Replay execution failed: ${err.message}`;
+        } catch (err: unknown) {
+          verifyErrorMsg = `Replay execution failed: ${((err instanceof Error) ? ((err instanceof Error) ? ((err instanceof Error) ? err.message : String(err)) : String(err)) : String(err))}`;
         }
       }
     } else {

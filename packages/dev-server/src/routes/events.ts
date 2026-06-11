@@ -35,8 +35,8 @@ eventsRoutes.get("/", async (c) => {
       observabilityDrift,
       reason: observabilityDrift ? "artifacts_exist_without_events" : undefined
     });
-  } catch (e: any) {
+  } catch (e: unknown) {
     console.error("Failed to fetch events:", e);
-    return c.json({ error: e.message }, 500);
+    return c.json({ error: ((e instanceof Error) ? ((e instanceof Error) ? e.message : String(e)) : String(e)) }, 500);
   }
 });

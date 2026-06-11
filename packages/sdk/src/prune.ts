@@ -266,14 +266,14 @@ export async function pruneTraces(db: any, options: PruneOptions): Promise<Prune
       }
 
       db.exec("COMMIT;");
-    } catch (e: any) {
+    } catch (e: unknown) {
       db.exec("ROLLBACK;");
       result.ok = false;
-      result.errors.push(`Pruning transaction failed: ${e.message}`);
+      result.errors.push(`Pruning transaction failed: ${((e instanceof Error) ? ((e instanceof Error) ? ((e instanceof Error) ? e.message : String(e)) : String(e)) : String(e))}`);
     }
-  } catch (e: any) {
+  } catch (e: unknown) {
     result.ok = false;
-    result.errors.push(`Pruning failed: ${e.message}`);
+    result.errors.push(`Pruning failed: ${((e instanceof Error) ? ((e instanceof Error) ? ((e instanceof Error) ? e.message : String(e)) : String(e)) : String(e))}`);
   }
 
   return result;

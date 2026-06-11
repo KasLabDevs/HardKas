@@ -21,7 +21,7 @@ export function registerReplayCommands(program: Command) {
           ? path.resolve(options.workspace)
           : process.cwd();
         await runReplayVerify({ path: targetPath || "", ...options, workspaceRoot });
-      } catch (e: any) {
+      } catch (e: unknown) {
         throw new Error("Command failed");
       }
     });
@@ -41,7 +41,7 @@ export function registerReplayCommands(program: Command) {
           network: "simnet",
           workspaceRoot: process.cwd()
         });
-      } catch (e: any) {
+      } catch (e: unknown) {
         throw new Error("Command failed");
       }
     });

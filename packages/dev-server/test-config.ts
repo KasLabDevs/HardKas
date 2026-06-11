@@ -10,8 +10,8 @@ async function main() {
   try {
     const content = await fs.readFile(statePath, "utf-8");
     console.log("FILE EXISTS AND IS READABLE! SIZE:", content.length);
-  } catch (e: any) {
-    console.error("ERROR READING FILE:", e.message);
+  } catch (e: unknown) {
+    console.error("ERROR READING FILE:", ((e instanceof Error) ? ((e instanceof Error) ? e.message : String(e)) : String(e)));
   }
 }
 main();

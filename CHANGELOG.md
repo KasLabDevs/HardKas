@@ -2,6 +2,22 @@
 
 All notable changes to HardKAS will be documented in this file.
 
+## 0.9.2-alpha - CI Fixes + Query-Store SQL Repair - 2026-06-11
+
+TypeScript typecheck fixes across CLI silver commands and query-store SQL
+parameter binding. No new features, no protocol claim expansion.
+
+Fixes:
+- `HardkasCliError` options now accept `cause?: unknown` (runners fix)
+- `silver.ts`, `silver-lifecycle.ts`, `silver-discovery.ts`: TS errors resolved
+  (dead code, `createTransaction` 7-arg signature, `requestRaw` private cast,
+  `provider` not in `HardkasOptions`, nullish guards)
+- `tx.ts`: `writeLine()` → `writeLine("")`
+- `query-store/indexer.ts`, `backend.ts`: `HardkasSchemas.*` in SQL strings
+  replaced with `?` parameterized queries
+- `core/test/registry.test.ts`: circular `@hardkas/artifacts` import removed
+- Golden `queryResultHash` updated to reflect correct `findTraces` output
+
 ## 0.9.1-alpha - SDK Parity + Programmability Builder Surface - 2026-06-10
 
 ### SDK Parity
@@ -114,11 +130,11 @@ Builder surface boundaries:
 - No new mainnet, custody, VM simulation, consensus validation, or trustless
   bridge claim is made.
 
-## 0.9.1-alpha - Toccata Local-First Baseline - 2026-06-09
+## 0.9.0-alpha - Toccata Local-First Baseline - 2026-06-09
 
 ### Toccata v2 Localnet Baseline
 
-HardKAS 0.9.1-alpha includes a normalized Toccata v2 localnet baseline with
+HardKAS 0.9.2-alpha includes a normalized Toccata v2 localnet baseline with
 Docker simnet funding, real standard transaction lifecycle, real Silver OP_TRUE
 deploy/spend, artifact-coherence simulator comparison, mainnet guard
 enforcement, and a machine-verifiable golden corpus integrated into the Toccata

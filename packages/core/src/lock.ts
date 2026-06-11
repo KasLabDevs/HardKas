@@ -100,8 +100,8 @@ export async function acquireLock(args: AcquireLockArgs): Promise<LockHandle> {
           }
         }
       };
-    } catch (e: any) {
-      if (e.code === "EEXIST") {
+    } catch (e: unknown) {
+      if ((e as NodeJS.ErrnoException).code === "EEXIST") {
         // Lock exists. Check liveness/staleness.
         let existingMetadata: LockMetadata | null = null;
         try {
@@ -265,9 +265,9 @@ export function isProcessAlive(pid: number): boolean {
     // signal 0 does not kill the process but performs error checking
     process.kill(pid, 0);
     return true; // 0 success -> alive
-  } catch (e: any) {
-    if (e.code === "EPERM") return true; // Permission denied -> alive
-    if (e.code === "ESRCH") return false; // Process not found -> dead
+  } catch (e: unknown) {
+    if ((e as NodeJS.ErrnoException).code === "EPERM") return true; // Permission denied -> alive
+    if ((e as NodeJS.ErrnoException).code === "ESRCH") return false; // Process not found -> dead
 
     // Windows might return other errors, treat as ambiguous (assume alive to prevent aggressive deletion)
     return true;

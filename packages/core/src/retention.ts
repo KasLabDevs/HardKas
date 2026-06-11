@@ -66,7 +66,7 @@ export class TelemetryRotator {
         bytesRotated: stats.size
       };
     } catch (err: any) {
-      return { rotated: false, reason: `Rename failed: ${err.message}` };
+      return { rotated: false, reason: `Rename failed: ${((err instanceof Error) ? ((err instanceof Error) ? err.message : String(err)) : String(err))}` };
     }
   }
 

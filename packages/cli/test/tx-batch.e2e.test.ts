@@ -22,10 +22,6 @@ export default defineHardkasConfig({
       kind: "simulated",
       description: "Pure local simulation"
     }
-  },
-  accounts: {
-    alice: { kind: "simulated", address: "kaspa:sim_alice" },
-    bob: { kind: "simulated", address: "kaspa:sim_bob" }
   }
 });
 `;

@@ -63,6 +63,7 @@ export function resolveHardkasAccount(options: ResolveAccountOptions): HardkasAc
   // 3. Check config.accounts
   if (config?.accounts && config.accounts[alias]) {
     const accConfig = config.accounts[alias];
+    // console.log("FOUND IN CONFIG", accConfig);
     return {
       name: alias,
       ...accConfig
@@ -70,7 +71,7 @@ export function resolveHardkasAccount(options: ResolveAccountOptions): HardkasAc
   }
 
   // 4. Check real account store
-  const realStore = loadRealAccountStoreSync();
+  const realStore = loadRealAccountStoreSync({ cwd: workspaceRoot });
   const realAcc = realStore ? getRealDevAccount(realStore, alias) : null;
   if (realAcc) {
     return {
@@ -144,7 +145,7 @@ export function listHardkasAccounts(config?: HardkasConfig): HardkasAccount[] {
   }
 
   // Add from real account store
-  const realStore = loadRealAccountStoreSync();
+  const realStore = loadRealAccountStoreSync({ cwd: workspaceRoot });
   if (realStore) {
     for (const realAcc of listRealDevAccounts(realStore)) {
       accounts.set(realAcc.name, {
@@ -215,7 +216,7 @@ export async function resolveHardkasAccountAddress(
     // Add runtime address validation, skip for simulated internal accounts
     if (!accountOrAddress.startsWith("kaspa:sim_")) {
       try {
-        // @ts-ignore
+        // @ts-ignore - Third party lib lacking types
         const kaspa = await import("kaspa-wasm");
         try {
           if (typeof kaspa.Address === "function" || kaspa.Address) {
@@ -228,12 +229,13 @@ export async function resolveHardkasAccountAddress(
           (err as any).code = "HARDKAS_INVALID_ADDRESS";
           throw err;
         }
-      } catch (e: any) {
-        if (e.code === "HARDKAS_INVALID_ADDRESS") throw e;
+      } catch (e: unknown) {
+        if (e instanceof Error && (e as any).code === "HARDKAS_INVALID_ADDRESS") throw e;
         if (
-          e.code === "ERR_MODULE_NOT_FOUND" ||
-          e.message.includes("Cannot find module") ||
-          e.message.includes("kaspa-wasm")
+          e instanceof Error &&
+          ((e as any).code === "ERR_MODULE_NOT_FOUND" ||
+          ((e instanceof Error) ? ((e instanceof Error) ? e.message : String(e)) : String(e)).includes("Cannot find module") ||
+          ((e instanceof Error) ? ((e instanceof Error) ? e.message : String(e)) : String(e)).includes("kaspa-wasm"))
         ) {
           const err = new Error(
             "ADDRESS_VALIDATOR_UNAVAILABLE: The Kaspa address validator backend is not available."

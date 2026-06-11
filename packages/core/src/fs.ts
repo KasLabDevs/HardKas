@@ -69,15 +69,15 @@ export async function writeFileAtomic(
       try {
         fs.renameSync(tempPath, targetPath);
         break;
-      } catch (e: any) {
+      } catch (e: unknown) {
         attempts++;
         if (attempts >= maxAttempts) throw e;
-        if (e.code === "EPERM" || e.code === "EBUSY") {
+        if ((e as any).code === "EPERM" || (e as any).code === "EBUSY") {
           EnvironmentTelemetry.logAnomaly(
             "FS_RETRY",
             "low",
             "fs",
-            `Retrying rename of ${targetPath} due to ${e.code}`
+            `Retrying rename of ${targetPath} due to ${(e as any).code}`
           );
           // Wait 10ms-50ms before retrying on Windows
           await new Promise((resolve) => setTimeout(resolve, 10 * attempts));
@@ -99,7 +99,7 @@ export async function writeFileAtomic(
         if (dirFd !== null) fs.closeSync(dirFd);
       }
     }
-  } catch (err: any) {
+  } catch (err: unknown) {
     throw new HardkasError("IO_ERROR", `Failed to write file atomically: ${targetPath}`, {
       cause: err
     });
@@ -156,15 +156,15 @@ export function writeFileAtomicSync(
       try {
         fs.renameSync(tempPath, targetPath);
         break;
-      } catch (e: any) {
+      } catch (e: unknown) {
         attempts++;
         if (attempts >= maxAttempts) throw e;
-        if (e.code === "EPERM" || e.code === "EBUSY") {
+        if ((e as any).code === "EPERM" || (e as any).code === "EBUSY") {
           EnvironmentTelemetry.logAnomaly(
             "FS_RETRY",
             "low",
             "fs",
-            `Retrying rename sync of ${targetPath} due to ${e.code}`
+            `Retrying rename sync of ${targetPath} due to ${(e as any).code}`
           );
           // Sync sleep (spin-wait) on Windows is nasty but sometimes needed in sync paths
           // For now, just retry immediately or throw if it's too much.
@@ -185,7 +185,7 @@ export function writeFileAtomicSync(
         if (dirFd !== null) fs.closeSync(dirFd);
       }
     }
-  } catch (err: any) {
+  } catch (err: unknown) {
     throw new HardkasError(
       "IO_ERROR",
       `Failed to write file atomically (sync): ${targetPath}`,

@@ -68,7 +68,7 @@ export async function checkKaspaRpcHealth(
         lastError: null,
         stale: !(info?.isSynced ?? true)
       };
-    } catch (e: any) {
+    } catch (e: unknown) {
       client.disconnect();
       return {
         endpoint: url,
@@ -76,8 +76,8 @@ export async function checkKaspaRpcHealth(
         status: "unreachable",
         ready: false,
         checkedAt,
-        error: e.message,
-        lastError: e.message
+        error: e instanceof Error ? ((e instanceof Error) ? ((e instanceof Error) ? e.message : String(e)) : String(e)) : String(e),
+        lastError: e instanceof Error ? ((e instanceof Error) ? ((e instanceof Error) ? e.message : String(e)) : String(e)) : String(e)
       };
     }
   }
@@ -109,15 +109,15 @@ export async function checkKaspaRpcHealth(
       ...(health.circuitState !== undefined ? { circuitState: health.circuitState } : {}),
       stale: health.stale
     };
-  } catch (e: any) {
+  } catch (e: unknown) {
     return {
       endpoint: url,
       protocol: "JSON-RPC",
       status: "unreachable",
       ready: false,
       checkedAt,
-      error: e.message,
-      lastError: e.message
+      error: e instanceof Error ? ((e instanceof Error) ? ((e instanceof Error) ? e.message : String(e)) : String(e)) : String(e),
+      lastError: e instanceof Error ? ((e instanceof Error) ? ((e instanceof Error) ? e.message : String(e)) : String(e)) : String(e)
     };
   }
 }

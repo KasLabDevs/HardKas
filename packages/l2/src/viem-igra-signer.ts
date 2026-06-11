@@ -135,7 +135,7 @@ export class ViemIgraTxSigner implements IgraTxSigner {
     } catch (e) {
       // Re-throw without leaking private key
       throw new Error(
-        `Igra signing failed: ${e instanceof Error ? e.message : String(e)}`
+        `Igra signing failed: ${e instanceof Error ? ((e instanceof Error) ? ((e instanceof Error) ? e.message : String(e)) : String(e)) : String(e)}`
       );
     }
   }

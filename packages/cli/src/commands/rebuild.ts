@@ -87,8 +87,8 @@ export function registerRebuildCommand(program: Command) {
         if (opts.json) {
           UI.writeJson({
             error: "REBUILD_FAILED",
-            message: err.message,
-            code: err.code || "UNKNOWN_ERROR"
+            message: ((err instanceof Error) ? ((err instanceof Error) ? err.message : String(err)) : String(err)),
+            code: ((err as any).code) || "UNKNOWN_ERROR"
           });
           throw err;
         } else {

@@ -128,7 +128,7 @@ export default defineHardkasConfig({
         await loadHardkasConfig();
         UI.success("Config file is valid. No repair needed.");
       } catch (err: any) {
-        UI.error(`Config file is invalid: ${err.message}`);
+        UI.error(`Config file is invalid: ${((err instanceof Error) ? ((err instanceof Error) ? err.message : String(err)) : String(err))}`);
         UI.warning("Backing up and generating a fresh config...");
         fs.copyFileSync(configPath, `${configPath}.backup`);
         fs.writeFileSync(configPath, template, "utf-8");

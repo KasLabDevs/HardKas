@@ -26,18 +26,18 @@ function tryReadJsonl(p: string): {
       if (!line) continue;
       try {
         events.push(JSON.parse(line));
-      } catch (err: any) {
+      } catch (err: unknown) {
         return {
           events,
           errorLine: i + 1,
-          parseError: err.message
+          parseError: ((err instanceof Error) ? ((err instanceof Error) ? err.message : String(err)) : String(err))
         };
       }
     }
 
     return { events };
-  } catch (e: any) {
-    return { events: [], parseError: e.message };
+  } catch (e: unknown) {
+    return { events: [], parseError: ((e instanceof Error) ? ((e instanceof Error) ? e.message : String(e)) : String(e)) };
   }
 }
 
@@ -193,9 +193,9 @@ export async function runTelemetryVerify() {
     let event: any;
     try {
       event = JSON.parse(line);
-    } catch (e: any) {
+    } catch (e: unknown) {
       console.log(
-        `${pc.red("âœ— Line " + (i + 1) + ":")} Invalid JSON structure (${e.message})`
+        `${pc.red("âœ— Line " + (i + 1) + ":")} Invalid JSON structure (${((e instanceof Error) ? ((e instanceof Error) ? e.message : String(e)) : String(e))})`
       );
       console.log(`  Raw Content: ${pc.dim(line.slice(0, 100))}`);
       invalidCount++;

@@ -71,11 +71,11 @@ export async function runKaspaDoctor(options: { rpcUrl: string; json: boolean })
           status: "success",
           message: `Network: ${dag.networkId}, DAA Score: ${dag.virtualDaaScore}`
         });
-      } catch (e: any) {
+      } catch (e: unknown) {
         checks.push({
           name: "DAG Status",
           status: "error",
-          message: `Failed to fetch DAG info: ${e.message}`
+          message: `Failed to fetch DAG info: ${((e instanceof Error) ? ((e instanceof Error) ? e.message : String(e)) : String(e))}`
         });
         finalStatus = "failed";
       }
@@ -91,11 +91,11 @@ export async function runKaspaDoctor(options: { rpcUrl: string; json: boolean })
       } catch (e) {
         // Ignore
       }
-    } catch (e: any) {
+    } catch (e: unknown) {
       checks.push({
         name: "RPC Reachability",
         status: "error",
-        message: `Failed to connect: ${e.message}`
+        message: `Failed to connect: ${((e instanceof Error) ? ((e instanceof Error) ? e.message : String(e)) : String(e))}`
       });
       finalStatus = "failed";
     }
@@ -158,10 +158,10 @@ export async function runKaspaDoctor(options: { rpcUrl: string; json: boolean })
         exitCode: 1
       });
     }
-  } catch (e: any) {
-    if (e.name === "HardkasCliError") throw e;
+  } catch (e: unknown) {
+    if (((e as any).name) === "HardkasCliError") throw e;
     const { HardkasCliError } = await import("../cli-errors.js");
-    throw new HardkasCliError("DOCTOR_ERROR", e.message || "Unknown error", {
+    throw new HardkasCliError("DOCTOR_ERROR", ((e instanceof Error) ? ((e instanceof Error) ? e.message : String(e)) : String(e)) || "Unknown error", {
       exitCode: 1,
       cause: e
     });

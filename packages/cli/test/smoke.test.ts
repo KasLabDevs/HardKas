@@ -12,8 +12,8 @@ function runHardkas(args: string) {
       stdio: "pipe"
     });
     return { ok: true, stdout };
-  } catch (e: any) {
-    return { ok: false, stdout: e.stdout, stderr: e.stderr, status: e.status };
+  } catch (e: unknown) {
+    return { ok: false, stdout: ((e as any).stdout), stderr: ((e as any).stderr), status: e.status };
   }
 }
 

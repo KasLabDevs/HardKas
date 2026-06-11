@@ -586,7 +586,7 @@ export async function runDoctorChecks(
         name: "Consistency Engine",
         category: "consistency",
         status: "fail",
-        message: `Failed to run consistency checks: ${err.message}`
+        message: `Failed to run consistency checks: ${((err instanceof Error) ? ((err instanceof Error) ? err.message : String(err)) : String(err))}`
       });
     }
 

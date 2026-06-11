@@ -23,8 +23,8 @@ describe("CLI JSON Contract", () => {
         maxRetries: 5,
         retryDelay: 200
       });
-    } catch (e: any) {
-      if (e.code !== "EBUSY" && e.code !== "ENOENT") {
+    } catch (e: unknown) {
+      if (((e as any).code) !== "EBUSY" && ((e as any).code) !== "ENOENT") {
         throw e;
       }
     }
@@ -55,9 +55,9 @@ describe("CLI JSON Contract", () => {
     let parsed: any;
     try {
       parsed = JSON.parse(stdout);
-    } catch (err: any) {
+    } catch (err: unknown) {
       throw new Error(
-        `Failed to parse stdout as JSON: ${err.message}\nStdout was:\n${stdout}`
+        `Failed to parse stdout as JSON: ${((err instanceof Error) ? ((err instanceof Error) ? err.message : String(err)) : String(err))}\nStdout was:\n${stdout}`
       );
     }
 
@@ -74,9 +74,9 @@ describe("CLI JSON Contract", () => {
     let parsed: any;
     try {
       parsed = JSON.parse(stdout);
-    } catch (err: any) {
+    } catch (err: unknown) {
       throw new Error(
-        `Failed to parse stdout as JSON: ${err.message}\nStdout was:\n${stdout}`
+        `Failed to parse stdout as JSON: ${((err instanceof Error) ? ((err instanceof Error) ? err.message : String(err)) : String(err))}\nStdout was:\n${stdout}`
       );
     }
 
@@ -99,9 +99,9 @@ describe("CLI JSON Contract", () => {
     let parsed: any;
     try {
       parsed = JSON.parse(stdout);
-    } catch (err: any) {
+    } catch (err: unknown) {
       throw new Error(
-        `Failed to parse stdout as JSON: ${err.message}\nStdout was:\n${stdout}`
+        `Failed to parse stdout as JSON: ${((err instanceof Error) ? ((err instanceof Error) ? err.message : String(err)) : String(err))}\nStdout was:\n${stdout}`
       );
     }
 
@@ -115,9 +115,9 @@ describe("CLI JSON Contract", () => {
     let parsed: any;
     try {
       parsed = JSON.parse(stdout);
-    } catch (err: any) {
+    } catch (err: unknown) {
       throw new Error(
-        `Failed to parse stdout as JSON: ${err.message}\nStdout was:\n${stdout}`
+        `Failed to parse stdout as JSON: ${((err instanceof Error) ? ((err instanceof Error) ? err.message : String(err)) : String(err))}\nStdout was:\n${stdout}`
       );
     }
 
@@ -132,9 +132,9 @@ describe("CLI JSON Contract", () => {
     let parsed: any;
     try {
       parsed = JSON.parse(stdout);
-    } catch (err: any) {
+    } catch (err: unknown) {
       throw new Error(
-        `Failed to parse stdout as JSON: ${err.message}\nStdout was:\n${stdout}`
+        `Failed to parse stdout as JSON: ${((err instanceof Error) ? ((err instanceof Error) ? err.message : String(err)) : String(err))}\nStdout was:\n${stdout}`
       );
     }
 

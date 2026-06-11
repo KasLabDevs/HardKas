@@ -18,7 +18,7 @@ export class KaspaSdkKeyGenerator implements KaspaKeyGenerator {
     const rawLoader =
       options?.sdkLoader ||
       (async () => {
-        // @ts-ignore
+        // @ts-ignore - Third party lib lacking types
         return await import("kaspa-wasm");
       });
 
@@ -72,7 +72,7 @@ export class KaspaSdkKeyGenerator implements KaspaKeyGenerator {
       );
     } catch (e) {
       throw new Error(
-        `Failed to generate account using SDK: ${e instanceof Error ? e.message : String(e)}`
+        `Failed to generate account using SDK: ${e instanceof Error ? ((e instanceof Error) ? ((e instanceof Error) ? e.message : String(e)) : String(e)) : String(e)}`
       );
     }
   }

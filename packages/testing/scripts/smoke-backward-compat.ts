@@ -33,11 +33,11 @@ async function runSmoke() {
       await sdk.artifacts.verify(artifact, { throwOnInvalid: true });
       console.log("❌ CRITICAL: Accepted legacy artifact without receipt!");
       criticalFailures++;
-    } catch (e: any) {
-      if (e.message.includes("invalid") || e.message.includes("schema")) {
+    } catch (e: unknown) {
+      if (((e instanceof Error) ? ((e instanceof Error) ? e.message : String(e)) : String(e)).includes("invalid") || ((e instanceof Error) ? ((e instanceof Error) ? e.message : String(e)) : String(e)).includes("schema")) {
         console.log("✅ SAFE_REJECT_UNSUPPORTED: Rejected successfully.");
       } else {
-        console.log("❌ Unhandled rejection type:", e.message);
+        console.log("❌ Unhandled rejection type:", ((e instanceof Error) ? ((e instanceof Error) ? e.message : String(e)) : String(e)));
         criticalFailures++;
       }
     }
@@ -67,8 +67,8 @@ async function runSmoke() {
       } else {
         console.log("✅ Artifact already at target version (no migration needed).");
       }
-    } catch (e: any) {
-      console.log("❌ Migration error:", e.message);
+    } catch (e: unknown) {
+      console.log("❌ Migration error:", ((e instanceof Error) ? ((e instanceof Error) ? e.message : String(e)) : String(e)));
       criticalFailures++;
     }
   }

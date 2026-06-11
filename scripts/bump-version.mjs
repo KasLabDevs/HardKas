@@ -25,8 +25,8 @@ const ignoreExtensions = new Set([
   ".lock"
 ]);
 
-const SEARCH = "0.9.1-alpha";
-const REPLACE = "0.9.1-alpha";
+const SEARCH = "0.9.2-alpha";
+const REPLACE = "0.9.2-alpha";
 
 let replacedCount = 0;
 

@@ -102,9 +102,9 @@ export async function runTxWait(input: TxWaitRunnerInput): Promise<void> {
       );
     }
   } catch (err: any) {
-    if (err.name === "HardkasCliError") throw err;
+    if (((err as any).name) === "HardkasCliError") throw err;
     const { HardkasCliError } = await import("../cli-errors.js");
-    throw new HardkasCliError("POLLING_ERROR", `Error polling node: ${err.message}`, {
+    throw new HardkasCliError("POLLING_ERROR", `Error polling node: ${((err instanceof Error) ? ((err instanceof Error) ? err.message : String(err)) : String(err))}`, {
       exitCode: 1,
       cause: err
     });

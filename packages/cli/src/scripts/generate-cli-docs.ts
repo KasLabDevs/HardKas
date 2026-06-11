@@ -35,8 +35,8 @@ async function main() {
         process.exit(1);
       }
       console.log("✓ CLI documentation is up to date.");
-    } catch (e: any) {
-      console.error(`\n[!] Error reading existing documentation: ${e.message}`);
+    } catch (e: unknown) {
+      console.error(`\n[!] Error reading existing documentation: ${((e instanceof Error) ? ((e instanceof Error) ? e.message : String(e)) : String(e))}`);
       console.error(
         "    Run 'pnpm docs:generate-cli' to generate them for the first time."
       );

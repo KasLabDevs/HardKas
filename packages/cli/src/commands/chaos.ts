@@ -42,10 +42,10 @@ export function registerChaosCommands(program: Command) {
         await enforceSafetyGuards(options);
         const { runChaosEngine } = await import("../runners/chaos-runner.js");
         await runChaosEngine(options);
-      } catch (err: any) {
-        if (err.exitCode !== undefined) {
-          if (err.exitCode !== ChaosExitCodes.NO_FINDINGS) {
-            UI.error(err.message);
+      } catch (err: unknown) {
+        if ((err as any).exitCode !== undefined) {
+          if ((err as any).exitCode !== ChaosExitCodes.NO_FINDINGS) {
+            UI.error(((err instanceof Error) ? err.message : String(err)));
           }
           throw err;
         }
@@ -63,8 +63,8 @@ export function registerChaosCommands(program: Command) {
       try {
         const { replayChaosRun } = await import("../runners/chaos-runner.js");
         await replayChaosRun(options);
-      } catch (err: any) {
-        if (err.exitCode !== undefined) throw err;
+      } catch (err: unknown) {
+        if ((err as any).exitCode !== undefined) throw err;
         handleError(err);
         throw new Error("Chaos Internal Failure");
       }
@@ -112,8 +112,8 @@ async function enforceSafetyGuards(options: any) {
             exitCode: ChaosExitCodes.UNSAFE_CONFIG_REFUSED
           };
         }
-      } catch (e: any) {
-        if (e.exitCode) throw new Error("Command failed"); // bubble up
+      } catch (e: unknown) {
+        if ((e as any).exitCode) throw new Error("Command failed"); // bubble up
         // File doesn't exist, which is good
       }
     }
