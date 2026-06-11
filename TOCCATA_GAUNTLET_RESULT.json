@@ -1,7 +1,7 @@
 {
   "schema": "hardkas.toccataGauntlet.v1",
-  "status": "TOCCATA_NORMALIZATION_BLOCKED_RELEASE_ENV",
-  "generatedAt": "2026-06-11T10:46:23.043Z",
+  "status": "HARDKAS_TOCCATA_BASELINE_READY",
+  "generatedAt": "2026-06-11T12:00:26.924Z",
   "partialKnownLimitations": [
     "PARTIAL_VM_SIMULATION"
   ],
@@ -27,11 +27,61 @@
       "status": "PASS"
     },
     {
-      "name": "gauntlet aborted",
-      "status": "FAIL",
-      "message": "Command failed: D:\\Program Files\\nodejs\\node.exe run-real-node.mjs"
+      "name": "standard tx lifecycle",
+      "status": "PASS"
+    },
+    {
+      "name": "silver compile fixture verify",
+      "status": "PASS"
+    },
+    {
+      "name": "silver deploy-plan",
+      "status": "PASS",
+      "artifact": "silverdeployplan-c9def790d6580b4f.json"
+    },
+    {
+      "name": "silver deploy real",
+      "status": "PASS",
+      "artifact": "silverdeploy-e35d52e5b4825c24.json"
+    },
+    {
+      "name": "miner confirmation after deploy",
+      "status": "PASS"
+    },
+    {
+      "name": "silver spend-plan",
+      "status": "PASS",
+      "artifact": "silverspendplan-fa3e7c599d03c734.json"
+    },
+    {
+      "name": "silver spend real",
+      "status": "PASS",
+      "artifact": "silverreceipt-6289ae2aaa3d9c34.json"
+    },
+    {
+      "name": "miner confirmation after spend",
+      "status": "PASS"
+    },
+    {
+      "name": "silver simulate deploy/spend",
+      "status": "PASS",
+      "deploySim": "silverdeploysim-956baf8f08983455.json",
+      "spendSim": "silverspendsim-ebe54defa539409b.json"
+    },
+    {
+      "name": "simulator/docker compare",
+      "status": "PASS",
+      "compareMode": "artifact-coherence",
+      "expectedKnownLimitation": "PARTIAL_VM_SIMULATION"
+    },
+    {
+      "name": "toccata golden corpus verify",
+      "status": "PASS",
+      "path": "fixtures/toccata-v2/silver"
+    },
+    {
+      "name": "mainnet guard",
+      "status": "PASS"
     }
-  ],
-  "blocker": "Command failed: D:\\Program Files\\nodejs\\node.exe run-real-node.mjs",
-  "nextRequiredCommand": "pnpm build && pnpm test && pnpm gauntlet:toccata"
+  ]
 }

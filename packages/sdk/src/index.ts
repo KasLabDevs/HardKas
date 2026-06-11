@@ -36,7 +36,7 @@ export { HardkasWorkspace } from "./workspace.js";
 export { HardkasArtifactsManager } from "./artifacts-manager.js";
 export { HardkasCapabilitiesApi, createHardkasCapabilities } from "./capabilities.js";
 export { HardkasCorpus, verifyToccataCorpus } from "./corpus.js";
-export { HardkasSilver } from "./silver.js";
+export { HardkasSilver, SilverScript } from "./silver.js";
 export {
   HardkasZk,
   createZkCapabilities,

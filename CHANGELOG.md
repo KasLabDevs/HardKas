@@ -2,7 +2,7 @@
 
 All notable changes to HardKAS will be documented in this file.
 
-## 0.9.2-alpha - CI Fixes + Query-Store SQL Repair - 2026-06-11
+## 0.9.3-alpha - CI Fixes + Query-Store SQL Repair - 2026-06-11
 
 TypeScript typecheck fixes across CLI silver commands and query-store SQL
 parameter binding. No new features, no protocol claim expansion.
@@ -17,6 +17,21 @@ Fixes:
   replaced with `?` parameterized queries
 - `core/test/registry.test.ts`: circular `@hardkas/artifacts` import removed
 - Golden `queryResultHash` updated to reflect correct `findTraces` output
+
+### Release Discipline Fixes
+- `bump-version.mjs` must not rewrite golden corpus fixtures or cryptographic artifact JSON.
+- Golden corpus artifacts remain content-addressed and version-stable unless an intentional hash migration is documented.
+- Gauntlet/test workspaces must generate their own `hardkas.config.ts` to avoid accidental parent-directory configuration discovery.
+
+### Final Audit State
+- `DEEP_AUDIT_COMPLETED`
+- `DOGFOODING_FINDINGS_TRIAGED`
+- `DOGFOODING_MINOR_FIX_APPLIED`
+- `DOGFOODING_REGRESSION_TESTS_READY`
+- `FULL_LOCAL_GAUNTLET_PASS`
+- `POSTRELEASE_BREAK_PASS`
+- `GIT_DIFF_CHECK_PASS`
+- `HARDKAS_0_9_3_ALPHA_DOGFOOD_READY`
 
 ## 0.9.1-alpha - SDK Parity + Programmability Builder Surface - 2026-06-10
 
@@ -134,7 +149,7 @@ Builder surface boundaries:
 
 ### Toccata v2 Localnet Baseline
 
-HardKAS 0.9.2-alpha includes a normalized Toccata v2 localnet baseline with
+HardKAS 0.9.3-alpha includes a normalized Toccata v2 localnet baseline with
 Docker simnet funding, real standard transaction lifecycle, real Silver OP_TRUE
 deploy/spend, artifact-coherence simulator comparison, mainnet guard
 enforcement, and a machine-verifiable golden corpus integrated into the Toccata

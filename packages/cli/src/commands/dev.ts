@@ -66,20 +66,12 @@ export function registerDevCommands(program: Command) {
 
   devCmd
     .command("server")
-    .description(`Start the local HardKas Dev Server ${UI.maturity("stable")}`)
+    .description(`Start the local HardKAS dev server ${UI.maturity("stable")}`)
     .option("--port <number>", "Port to bind to", "7420")
     .option("--host <string>", "Host to bind to", "127.0.0.1")
     .option("--open", "Open dashboard in browser automatically", false)
-    .option(
-      "--unsafe-external",
-      "Allow external access (binds to 0.0.0.0 if host not specified)",
-      false
-    )
-    .option(
-      "--show-token",
-      "Show the generated API session token for manual script integration",
-      false
-    )
+    .option("--unsafe-external", "Allow external access (binds to 0.0.0.0 if host not specified)", false)
+    .option("--show-token", "Show the generated API session token for manual script integration", false)
     .option("--with-node", "Spawn the localnet node and auto-fund simnet accounts", false)
     .option("--json", "Output status as JSON", false)
     .action(async (options: any) => {

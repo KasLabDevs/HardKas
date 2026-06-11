@@ -265,7 +265,7 @@ export function simulateSilverDeploy(
   const draft = {
     schema: "hardkas.silver.deploySimulation" as const,
     hardkasVersion:
-      options.hardkasVersion ?? deployPlanArtifact.hardkasVersion ?? "0.9.2-alpha",
+      options.hardkasVersion ?? deployPlanArtifact.hardkasVersion ?? "0.9.3-alpha",
     version: SILVER_SIMULATOR_VERSION,
     hashVersion: CURRENT_HASH_VERSION,
     networkId: "simnet" as const,
@@ -447,7 +447,7 @@ export function simulateSilverSpend(
   const draft = {
     schema: "hardkas.silver.spendSimulation" as const,
     hardkasVersion:
-      options.hardkasVersion ?? spendPlanArtifact.hardkasVersion ?? "0.9.2-alpha",
+      options.hardkasVersion ?? spendPlanArtifact.hardkasVersion ?? "0.9.3-alpha",
     version: SILVER_SIMULATOR_VERSION as "1.0.0-alpha",
     hashVersion: CURRENT_HASH_VERSION,
     networkId: "simnet" as const,
