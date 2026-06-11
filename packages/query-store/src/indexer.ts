@@ -395,12 +395,6 @@ export class HardkasIndexer {
           .sort()
       : this.walk(this.hardkasDir).sort();
 
-    console.log("DEBUG: _syncInternal called with specificPaths:", specificPaths);
-    console.log("DEBUG: _syncInternal files to process length:", files.length);
-    if (files.find(f => f.includes("dev-accounts"))) {
-      console.log("DEBUG: dev-accounts found in files array:", files.filter(f => f.includes("dev-accounts")));
-    }
-
     const indexedAt = new Date().toISOString(); // hardkas-determinism-allow: index time metadata
 
     const upsertArtifact = this.db.prepare(`
