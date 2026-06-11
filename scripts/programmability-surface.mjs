@@ -50,7 +50,7 @@ for (const file of listFiles(scanRoots)) {
 const ok = missing.length === 0 && forbiddenMatches.length === 0;
 const result = {
   ok,
-  schema : "hardkas.programmabilitySurface.v1",
+  schema : "hardkas.programmabilitySurface.v1", // registry-validated
   status: ok ? "PROGRAMMABILITY_SURFACE_READY" : "PROGRAMMABILITY_SURFACE_INVALID",
   missing,
   forbiddenMatches,

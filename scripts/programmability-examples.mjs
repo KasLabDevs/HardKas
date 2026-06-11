@@ -22,7 +22,7 @@ for (const example of examples) {
 
 const result = {
   ok: missing.length === 0,
-  schema : "hardkas.programmabilityExamples.v1",
+  schema : "hardkas.programmabilityExamples.v1", // registry-validated
   status:
     missing.length === 0
       ? "PROGRAMMABILITY_APPS_READY"

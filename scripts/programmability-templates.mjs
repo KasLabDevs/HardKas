@@ -19,7 +19,7 @@ for (const template of templates) {
 
 const result = {
   ok: missing.length === 0,
-  schema : "hardkas.programmabilityTemplates.v1",
+  schema : "hardkas.programmabilityTemplates.v1", // registry-validated
   status:
     missing.length === 0
       ? "PROGRAMMABILITY_TEMPLATES_READY"
