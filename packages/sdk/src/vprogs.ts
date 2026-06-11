@@ -106,6 +106,29 @@ export async function inspectVprogsArtifact(
 
   try {
     const artifact = JSON.parse(fs.readFileSync(resolved, "utf8"));
+
+    // Validate against known vProgs schemas from HardkasSchemas
+    const validSchemas = [
+      HardkasSchemas.VProgsInspectFixtureV1
+    ];
+
+    if (!artifact.schema || !validSchemas.includes(artifact.schema)) {
+      return {
+        ok: false,
+        schema: HardkasSchemas.VProgsInspectV1,
+        status: "VPROGS_ARTIFACT_INVALID",
+        path: path.relative(workspaceRoot, resolved).replace(/\\/g, "/"),
+        claims: vprogsClaims(),
+        issues: [
+          {
+            code: "VPROGS_ARTIFACT_SCHEMA_INVALID",
+            message: `Invalid or unknown vProgs schema: ${artifact.schema || "undefined"}`,
+            file: resolved
+          }
+        ]
+      };
+    }
+
     return {
       ok: true,
       schema: HardkasSchemas.VProgsInspectV1,

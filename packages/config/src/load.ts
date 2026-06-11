@@ -9,6 +9,7 @@ export interface LoadHardkasConfigOptions {
   cwd?: string;
   configPath?: string;
   ambientWorkspace?: boolean;
+  workspaceRoot?: string;
 }
 
 export async function loadHardkasConfig(
@@ -34,16 +35,17 @@ export async function loadHardkasConfig(
     "hardkas.config.mjs"
   ];
 
-  let current = cwd;
-  const root = path.parse(current).root;
+  let current = options.workspaceRoot ?? cwd;
+  const stopAt = options.workspaceRoot ? path.resolve(options.workspaceRoot) : path.parse(current).root;
 
-  while (current !== root) {
+  while (true) {
     for (const indicator of indicators) {
       const p = path.join(current, indicator);
       if (fs.existsSync(p)) {
         return loadConfigFile(p, current);
       }
     }
+    if (current === stopAt) break;
     const parent = path.dirname(current);
     if (parent === current) break;
     current = parent;
@@ -82,7 +84,7 @@ async function loadConfigFile(
     } catch (e) {
       // ignore
     }
-    const jiti = createJiti(import.meta.url, jitiOptions);
+    const jiti = createJiti(filePath, jitiOptions);
     const module = (await jiti.import(filePath)) as any;
     const userConfig = module.default || module.config || module;
 

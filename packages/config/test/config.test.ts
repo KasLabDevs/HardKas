@@ -81,4 +81,30 @@ export default {
       fs.rmSync(tempDir, { recursive: true, force: true });
     }
   });
+
+  it("loadHardkasConfig should correctly resolve an external consumer config", async () => {
+    const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), "hardkas-external-consumer-"));
+    const configPath = path.join(tempDir, "hardkas.config.ts");
+
+    fs.writeFileSync(
+      configPath,
+      `
+export default {
+  defaultNetwork: "consumer-net"
+};
+    `
+    );
+
+    try {
+      const loaded = await loadHardkasConfig({
+        cwd: tempDir,
+        workspaceRoot: tempDir
+      });
+
+      expect(loaded.config.defaultNetwork).toBe("consumer-net");
+      expect(loaded.path).toBe(configPath);
+    } finally {
+      fs.rmSync(tempDir, { recursive: true, force: true });
+    }
+  });
 });

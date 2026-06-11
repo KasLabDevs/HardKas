@@ -18,7 +18,7 @@ function readJson(filePath: string): any {
   return JSON.parse(fs.readFileSync(filePath, "utf8"));
 }
 
-describe("0.9.3-alpha SDK parity surface", () => {
+describe("0.9.4-alpha SDK parity surface", () => {
   let workspaceRoot: string;
 
   beforeEach(() => {
@@ -31,13 +31,13 @@ describe("0.9.3-alpha SDK parity surface", () => {
 
   it("exposes capabilities with the same bounded claims as the CLI JSON", async () => {
     const sdk = await Hardkas.create({
-      cwd: workspaceRoot,
+      cwd: repoRoot(),
       network: "simulated",
       autoBootstrap: true
     });
     const capabilities = await sdk.capabilities();
 
-    expect(capabilities.version).toBe("0.9.3-alpha");
+    expect(capabilities.version).toBe("0.9.4-alpha");
     expect(capabilities.capabilities.mainnetGuards).toBe(true);
     expect(capabilities.capabilities.consensusValidation).toBe(false);
     expect(capabilities.capabilities.productionWallet).toBe(false);

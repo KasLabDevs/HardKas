@@ -1,5 +1,6 @@
 import { Command } from "commander";
 import { getOutput } from "../output.js";
+import { UI } from "../ui.js";
 
 export function registerZkCommands(program: Command) {
   const zk = program
@@ -36,8 +37,9 @@ export function registerZkCommands(program: Command) {
     });
 
   proof
-    .command("verify-local <path>")
-    .description("Verify a local proof fixture without network or on-chain claims")
+    .command("verify <path>")
+    .alias("verify-local")
+    .description(`Verify a local proof fixture locally (No on-chain claims) ${UI.maturity("alpha")}`)
     .option("--json", "Output as JSON", false)
     .action(async (targetPath: string) => {
       const { verifyZkProofLocal } = await import("@hardkas/sdk");
@@ -45,7 +47,7 @@ export function registerZkCommands(program: Command) {
       printResult(result);
       if (!result.ok) {
         const { HardkasCliError } = await import("../cli-errors.js");
-        throw new HardkasCliError("ZK_VERIFY_LOCAL_FAILED", "Failed", { exitCode: 1 });
+        throw new HardkasCliError("ZK_VERIFY_LOCAL_FAILED", "Failed to cryptographically verify local ZK proof fixture", { exitCode: 1 });
       }
     });
 

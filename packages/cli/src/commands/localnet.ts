@@ -4,7 +4,8 @@ import {
   runLocalnetFork,
   runLocalnetFund,
   runLocalnetStart,
-  runLocalnetStatus
+  runLocalnetStatus,
+  runLocalnetStop
 } from "../runners/localnet-runners.js";
 import { parseKasToSompi } from "@hardkas/core";
 
@@ -22,6 +23,20 @@ export function registerLocalnetCommands(program: Command): void {
     .option("--json", "Output as JSON", false)
     .action(async (opts) => {
       await runLocalnetStart({
+        profile: opts.toccata ? "toccata-v2" : opts.profile,
+        json: opts.json,
+        workspaceRoot: process.cwd()
+      });
+    });
+
+  localnet
+    .command("stop")
+    .description(`Stop localnet profile ${UI.maturity("alpha")}`)
+    .option("--profile <name>", "Localnet profile", "simulated")
+    .option("--toccata", "Shortcut for --profile toccata-v2", false)
+    .option("--json", "Output as JSON", false)
+    .action(async (opts) => {
+      await runLocalnetStop({
         profile: opts.toccata ? "toccata-v2" : opts.profile,
         json: opts.json,
         workspaceRoot: process.cwd()
@@ -65,7 +80,7 @@ export function registerLocalnetCommands(program: Command): void {
 
   accountCmd
     .command("create <name>")
-    .description("Create a simulated localnet account")
+    .description(`Create a simulated localnet account ${UI.maturity("alpha")}`)
     .option("--json", "Output as JSON", false)
     .action(async (name: string, options: any) => {
       const { runLocalnetAccountCreate } =

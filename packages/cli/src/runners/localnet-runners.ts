@@ -7,7 +7,7 @@ import { resolve } from "node:path";
 import fs from "node:fs/promises";
 import { withLock } from "@hardkas/core";
 import { DockerKaspadRunner } from "@hardkas/node-runner";
-import { resolveHardkasAccountAddress } from "@hardkas/accounts";
+import { resolveHardkasAccountAddress, listHardkasAccounts } from "@hardkas/accounts";
 import { execa } from "execa";
 import { HardkasSchemas } from "@hardkas/artifacts";
 
@@ -93,6 +93,26 @@ export async function runLocalnetStart(opts: LocalnetStartOptions): Promise<void
   }
 }
 
+export async function runLocalnetStop(opts: { json?: boolean; profile?: string; workspaceRoot?: string }): Promise<void> {
+  const profile = opts.profile || TOCCATA_PROFILE;
+
+  if (profile !== TOCCATA_PROFILE) {
+    if (!opts.json) {
+      UI.info("Simulated localnet state is managed in-memory.");
+    }
+    return;
+  }
+
+  await execa("docker", ["stop", "hardkas-kaspad-toccata-v2"]).catch(() => {});
+  await stopToccataMiner();
+
+  if (opts.json) {
+    getOutput().writeJson({ schema: HardkasSchemas.LocalnetStatusV1, profile, status: "TOCCATA_NODE_STOPPED" });
+  } else {
+    UI.success("Localnet stopped");
+  }
+}
+
 export async function runLocalnetStatus(opts: LocalnetStatusOptions): Promise<void> {
   const node = await detectToccataNode(!!opts.json);
   const miner = await inspectDockerContainer(TOCCATA_MINER_CONTAINER);
@@ -128,7 +148,31 @@ export async function runLocalnetFund(opts: LocalnetFundOptions): Promise<void> 
   }
 
   const { config } = await loadHardkasConfig({});
-  const address = await resolveHardkasAccountAddress(opts.identifier, config);
+  let address: string | undefined;
+
+  const allAccounts = listHardkasAccounts(config);
+
+  // 1. Keychain profiles
+  const keychain = allAccounts.find((a: any) => a.name === opts.identifier && a.keystorePath?.includes("keystore"));
+  if (keychain?.address) address = keychain.address;
+
+  // 2. Fixture accounts
+  if (!address) {
+    const fixture = allAccounts.find((a: any) => a.name === opts.identifier && a.kind === "simulated");
+    if (fixture?.address) address = fixture.address;
+  }
+
+  // 3. Simnet dev accounts
+  if (!address) {
+    const devAccount = allAccounts.find((a: any) => a.name === opts.identifier && a.keystorePath?.includes("dev-accounts"));
+    if (devAccount?.address) address = devAccount.address;
+  }
+
+  // 4. Literal Kaspa address
+  if (!address) {
+    address = await resolveHardkasAccountAddress(opts.identifier, config);
+  }
+
   if (!address.startsWith("kaspasim:")) {
     throw new Error("TOCCATA_FUNDING_REQUIRES_SIMNET_ADDRESS");
   }

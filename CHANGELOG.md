@@ -2,7 +2,7 @@
 
 All notable changes to HardKAS will be documented in this file.
 
-## 0.9.3-alpha - CI Fixes + Query-Store SQL Repair - 2026-06-11
+## 0.9.4-alpha - CI Fixes + Query-Store SQL Repair - 2026-06-11
 
 TypeScript typecheck fixes across CLI silver commands and query-store SQL
 parameter binding. No new features, no protocol claim expansion.
@@ -149,7 +149,7 @@ Builder surface boundaries:
 
 ### Toccata v2 Localnet Baseline
 
-HardKAS 0.9.3-alpha includes a normalized Toccata v2 localnet baseline with
+HardKAS 0.9.0-alpha includes a normalized Toccata v2 localnet baseline with
 Docker simnet funding, real standard transaction lifecycle, real Silver OP_TRUE
 deploy/spend, artifact-coherence simulator comparison, mainnet guard
 enforcement, and a machine-verifiable golden corpus integrated into the Toccata

@@ -1,8 +1,8 @@
-# 0.9.3-alpha SDK parity / developer experience
+# 0.9.4-alpha SDK parity / developer experience
 
 ## Summary
 
-Closes the SDK parity gaps discovered by the 0.9.3-alpha post-release break
+Closes the SDK parity gaps discovered by the 0.9.4-alpha post-release break
 gauntlet.
 
 Adds high-level SDK surfaces for capabilities, localnet, corpus verification,
@@ -12,7 +12,7 @@ No mainnet, testnet, VM/consensus, custody, or trustless bridge claim is added.
 Certified real Docker/Toccata lifecycle execution remains CLI/localnet bounded.
 
 SDK real Silver RPC/Docker execution remains explicitly unsupported in
-0.9.3-alpha via `SDK_SILVER_REAL_LIFECYCLE_UNSUPPORTED`; certified real
+0.9.4-alpha via `SDK_SILVER_REAL_LIFECYCLE_UNSUPPORTED`; certified real
 lifecycle execution remains CLI/localnet bounded.
 
 ## Validation

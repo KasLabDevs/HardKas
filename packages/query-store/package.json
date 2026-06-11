@@ -1,6 +1,6 @@
 {
   "name": "@hardkas/query-store",
-  "version": "0.9.3-alpha",
+  "version": "0.9.4-alpha",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",

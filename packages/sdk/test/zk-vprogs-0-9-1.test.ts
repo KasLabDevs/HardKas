@@ -28,7 +28,7 @@ function mutateJson(filePath: string, mutate: (value: any) => void) {
   fs.writeFileSync(filePath, JSON.stringify(value, null, 2));
 }
 
-describe("0.9.2-alpha ZK corpus and vProgs inspect SDK parity", () => {
+describe("0.9.4-alpha ZK corpus and vProgs inspect SDK parity", () => {
   let workspaceRoot: string;
 
   beforeEach(() => {
@@ -157,5 +157,18 @@ describe("0.9.2-alpha ZK corpus and vProgs inspect SDK parity", () => {
     expect(enabled.claims.vProgsStableApi).toBe("NOT_CLAIMED");
     expect(inspected.ok).toBe(true);
     expect(inspected.status).toBe("VPROGS_ARTIFACT_INSPECTED");
+  });
+
+  it("fails to inspect an invalid vProgs schema like package.json", async () => {
+    const sdk = await Hardkas.create({
+      cwd: repoRoot(),
+      network: "simulated",
+      autoBootstrap: true
+    });
+
+    const inspected = await sdk.vprogs.inspect("package.json");
+    expect(inspected.ok).toBe(false);
+    expect(inspected.status).toBe("VPROGS_ARTIFACT_INVALID");
+    expect(inspected.issues[0].code).toBe("VPROGS_ARTIFACT_SCHEMA_INVALID");
   });
 });
