@@ -199,11 +199,13 @@ export function registerQueryCommands(program: Command) {
   storeCmd
     .command("rebuild")
     .description("Force a complete rebuild of the query store index")
+    .option("--backend <type>", "Backend to use (sqlite/filesystem)")
     .option("--strict", "Fail on any corrupted data", false)
     .option("--wait-lock", "Wait for workspace lock if held", false)
     .option("--lock-timeout <ms>", "Lock wait timeout in ms", "30000")
     .option("--json", "Output as JSON", false)
     .action(async (options) => {
+      if (options.backend) process.env.HARDKAS_PROJECTION_BACKEND = options.backend;
       if (options.json) UI.setJsonMode(true);
       const { withLock } = await import("@hardkas/core");
       try {

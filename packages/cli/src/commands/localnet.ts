@@ -17,10 +17,12 @@ export function registerLocalnetCommands(program: Command): void {
     .command("start")
     .description(`Start localnet profile ${UI.maturity("alpha")}`)
     .option("--profile <name>", "Localnet profile", "simulated")
+    .option("--toccata", "Shortcut for --profile toccata-v2", false)
+    .option("--detached", "Run in background", false)
     .option("--json", "Output as JSON", false)
     .action(async (opts) => {
       await runLocalnetStart({
-        profile: opts.profile,
+        profile: opts.toccata ? "toccata-v2" : opts.profile,
         json: opts.json,
         workspaceRoot: process.cwd()
       });

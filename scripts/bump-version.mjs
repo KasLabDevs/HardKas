@@ -1,63 +1,30 @@
-import fs from "node:fs";
-import path from "node:path";
+import fs from 'node:fs';
+import path from 'node:path';
 
-const ignoreDirs = new Set([
-  "node_modules",
-  "dist",
-  ".git",
-  ".pnpm-store",
-  ".turbo",
-  "build"
-]);
+const oldVer = '0.9.3-alpha';
+const newVer = '0.9.3-alpha';
+let count = 0;
 
-const ignoreExtensions = new Set([
-  ".png",
-  ".jpg",
-  ".jpeg",
-  ".gif",
-  ".ico",
-  ".svg",
-  ".pack",
-  ".idx",
-  ".log",
-  ".DS_Store",
-  ".db",
-  ".lock"
-]);
-
-const SEARCH = "0.9.2-alpha";
-const REPLACE = "0.9.2-alpha";
-
-let replacedCount = 0;
-
-function walkAndReplace(dir) {
-  const entries = fs.readdirSync(dir, { withFileTypes: true });
-
-  for (const entry of entries) {
-    if (ignoreDirs.has(entry.name)) continue;
-
-    const fullPath = path.join(dir, entry.name);
-
-    if (entry.isDirectory()) {
-      walkAndReplace(fullPath);
-    } else if (entry.isFile()) {
-      const ext = path.extname(entry.name);
-      if (ignoreExtensions.has(ext)) continue;
-
-      try {
-        const content = fs.readFileSync(fullPath, "utf8");
-        if (content.includes(SEARCH)) {
-          const newContent = content.replaceAll(SEARCH, REPLACE);
-          fs.writeFileSync(fullPath, newContent, "utf8");
-          console.log(`Updated: ${fullPath}`);
-          replacedCount++;
+function walk(dir) {
+  if (!fs.existsSync(dir)) return;
+  const files = fs.readdirSync(dir);
+  for (const file of files) {
+    if (file === 'node_modules' || file === 'dist' || file === '.turbo' || file === '.git' || file === 'tmp' || file.startsWith('.tmp')) continue;
+    const full = path.join(dir, file);
+    if (fs.statSync(full).isDirectory()) {
+      walk(full);
+    } else {
+      if (full.endsWith('.json') || full.endsWith('.ts') || full.endsWith('.mjs') || full.endsWith('.md')) {
+        let content = fs.readFileSync(full, 'utf8');
+        if (content.includes(oldVer)) {
+          fs.writeFileSync(full, content.replaceAll(oldVer, newVer), 'utf8');
+          console.log('Bumped:', full);
+          count++;
         }
-      } catch (e) {
-        // console.error(`Failed to read/write ${fullPath}`, e);
       }
     }
   }
 }
 
-walkAndReplace(process.cwd());
-console.log(`\nReplaced version in ${replacedCount} files.`);
+walk(process.cwd());
+console.log(`Bumped version in ${count} files.`);

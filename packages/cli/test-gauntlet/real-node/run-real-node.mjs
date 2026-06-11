@@ -98,13 +98,14 @@ async function ensureFundingConfirmed(minerAddress, targetAccountName, expectedS
 }
 
 async function runRealNodeCert() {
-  console.log("=== Real Node 0.9.2-alpha / Toccata Certification ===");
+  console.log("=== Real Node 0.9.3-alpha / Toccata Certification ===");
 
   // Clean state
   if (fs.existsSync(".hardkas")) {
     fs.rmSync(".hardkas", { recursive: true, force: true });
   }
   fs.writeFileSync("package.json", '{"name":"real-node-cert"}');
+  fs.writeFileSync("hardkas.config.ts", 'export default { network: "simnet" };');
 
   // [1] Generate fresh accounts
   console.log("\n[1] Generating Accounts...");
