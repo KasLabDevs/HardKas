@@ -8,7 +8,8 @@ export async function runDevServer(options: {
   port: string;
   host: string;
   unsafeExternal: boolean;
-  showToken: boolean;
+  unsafeNoAuth?: boolean;
+  showToken?: boolean;
   open: boolean;
   json: boolean;
   once?: boolean;
@@ -54,13 +55,19 @@ export async function runDevServer(options: {
       host = "0.0.0.0";
     }
 
-    // 3. Early Port Availability Check & Server Init (before mutating SQLite)
     const server = createDevServer({
       port,
       host,
       unsafeExternal: options.unsafeExternal,
+      unsafeNoAuth: options.unsafeNoAuth ?? false,
       open: options.open
     });
+
+    const serverObj = server as Record<string, unknown>;
+    const token = typeof serverObj.token === "string" ? serverObj.token : undefined;
+    if (token) {
+      fs.writeFileSync(path.join(hardkasDir, "dev-server-token"), token, { mode: 0o600 });
+    }
 
     // 4. SQLite Projection Rebuild: Atomically reconstruct index from filesystem artifacts
     const { HardkasStore, SqliteQueryBackend } = await import("@hardkas/query-store");
@@ -93,8 +100,6 @@ export async function runDevServer(options: {
       return;
     }
 
-    const serverObj = server as Record<string, unknown>;
-    const token = typeof serverObj.token === "string" ? serverObj.token : undefined;
 
     let isNodeRunning = false;
     let miningAlias = "";
@@ -223,6 +228,11 @@ export async function runDevServer(options: {
       } catch (e) {
         // Safe skip on close
       }
+      try {
+        if (fs.existsSync(path.join(hardkasDir, "dev-server-token"))) {
+          fs.unlinkSync(path.join(hardkasDir, "dev-server-token"));
+        }
+      } catch (e) {}
       process.removeAllListeners("SIGINT");
       process.removeAllListeners("SIGTERM");
       process.kill(process.pid, signal as NodeJS.Signals);
@@ -235,5 +245,19 @@ export async function runDevServer(options: {
     await new Promise(() => {});
   } catch (e) {
     handleError(e);
+  }
+}
+
+export async function runDevServerToken(options: { json?: boolean; workspaceRoot?: string }) {
+  const wsRoot = options.workspaceRoot || process.cwd();
+  const tokenPath = path.join(wsRoot, ".hardkas", "dev-server-token");
+  if (!fs.existsSync(tokenPath)) {
+    throw new Error("Dev server is not running or token file not found.");
+  }
+  const token = fs.readFileSync(tokenPath, "utf8").trim();
+  if (options.json) {
+    UI.writeJson({ token });
+  } else {
+    console.log(token);
   }
 }

@@ -339,6 +339,7 @@ export function registerQueryCommands(program: Command) {
 
   artifactsCmd
     .command("list")
+    .alias("ls")
     .description("List artifacts matching filters")
     .option("--schema <schema>", "Filter by artifact schema (e.g. txPlan, signedTx)")
     .option("--network <network>", "Filter by network ID")
@@ -577,6 +578,7 @@ export function registerQueryCommands(program: Command) {
 
   replayCmd
     .command("list")
+    .alias("ls")
     .description("List all stored receipts")
     .option("--status <status>", "Filter by status")
     .option("--json", "Output as JSON", false)

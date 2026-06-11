@@ -69,13 +69,13 @@ describe("CLI Help Integrity", () => {
   });
 
   it("should format dev server help properly (MINOR-001 regression)", () => {
-    const help = runHelp("dev server");
+    const help = runHelp("dev-server start");
     // Verify it does not crash and contains expected options
     expect(help).toContain("--port");
     expect(help).toContain("--unsafe-external");
-    expect(help).toContain("--show-token");
-    // Verify the casing fix
-    expect(help).toContain("HardKAS dev server");
+    expect(help).toContain("--unsafe-no-auth");
+    // Verify the description
+    expect(help).toContain("Start the dev server");
     // Ensure no raw Node.js errors leaked
     expect(help).not.toContain("TypeError");
     expect(help).not.toContain("stack trace");

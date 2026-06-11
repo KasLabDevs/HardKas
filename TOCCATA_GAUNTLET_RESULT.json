@@ -1,7 +1,7 @@
 {
   "schema": "hardkas.toccataGauntlet.v1",
   "status": "HARDKAS_TOCCATA_BASELINE_READY",
-  "generatedAt": "2026-06-11T12:00:26.924Z",
+  "generatedAt": "2026-06-11T13:55:13.789Z",
   "partialKnownLimitations": [
     "PARTIAL_VM_SIMULATION"
   ],
@@ -37,12 +37,12 @@
     {
       "name": "silver deploy-plan",
       "status": "PASS",
-      "artifact": "silverdeployplan-c9def790d6580b4f.json"
+      "artifact": "silverdeployplan-930ee287a2d6a1a1.json"
     },
     {
       "name": "silver deploy real",
       "status": "PASS",
-      "artifact": "silverdeploy-e35d52e5b4825c24.json"
+      "artifact": "silverdeploy-02f51cc8967eb333.json"
     },
     {
       "name": "miner confirmation after deploy",
@@ -51,12 +51,12 @@
     {
       "name": "silver spend-plan",
       "status": "PASS",
-      "artifact": "silverspendplan-fa3e7c599d03c734.json"
+      "artifact": "silverspendplan-c5fb762c9bc9b567.json"
     },
     {
       "name": "silver spend real",
       "status": "PASS",
-      "artifact": "silverreceipt-6289ae2aaa3d9c34.json"
+      "artifact": "silverreceipt-834694efd14b7c4b.json"
     },
     {
       "name": "miner confirmation after spend",
@@ -65,8 +65,8 @@
     {
       "name": "silver simulate deploy/spend",
       "status": "PASS",
-      "deploySim": "silverdeploysim-956baf8f08983455.json",
-      "spendSim": "silverspendsim-ebe54defa539409b.json"
+      "deploySim": "silverdeploysim-bcdec1a31c70eb54.json",
+      "spendSim": "silverspendsim-54c6c4c57beae3b3.json"
     },
     {
       "name": "simulator/docker compare",

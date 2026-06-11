@@ -44,6 +44,7 @@ import { registerCorpusCommands } from "./commands/corpus.js";
 import { registerZkCommands } from "./commands/zk.js";
 import { registerVprogsCommands } from "./commands/vprogs.js";
 import { registerProgrammabilityCommands } from "./commands/programmability.js";
+import { registerDevServerCommands } from "./commands/dev-server.js";
 
 import { HARDKAS_VERSION } from "@hardkas/artifacts";
 
@@ -106,6 +107,7 @@ export function buildHardkasProgram(options?: { forDocs?: boolean }): Command {
   registerZkCommands(program);
   registerVprogsCommands(program);
   registerProgrammabilityCommands(program);
+  registerDevServerCommands(program);
 
   // Programmable workflows & Agent Mode
   registerWorkflowCommands(program);

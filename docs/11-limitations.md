@@ -1,12 +1,12 @@
 # Limitations
 
-HardKAS is currently **0.9.3-alpha**. These limits are part of the product
+HardKAS is currently **0.9.4-alpha**. These limits are part of the product
 boundary, not footnotes.
 
 ## 1. Local-First Only For Now
 
 HardKAS is optimized for `network: "simulated"`. Toccata v2 `simnet` is now the
-certified local real-node baseline for 0.9.3-alpha, including Docker funding,
+certified local real-node baseline for 0.9.4-alpha, including Docker funding,
 standard transaction lifecycle, and Silver OP_TRUE deploy/spend. Testnet
 adapters, broader real RPC submission, dashboard views, and local node
 integration beyond that baseline are still being hardened.
@@ -57,13 +57,13 @@ SDK first.
 
 ## 7. ZK Corpus Surface Is Local-only
 
-The `0.9.3-alpha` ZK corpus surface verifies local fixture coherence for proof artifacts.
+The `0.9.4-alpha` ZK corpus surface verifies local fixture coherence for proof artifacts.
 The Groth16 corpus checks manifests, content hashes, public inputs, verification
 key metadata, and local fixture coherence. It does not claim production trusted
 setup hygiene, proof generation correctness, on-chain verification, bridge
 security, trustless exits, or Kaspa VM/consensus equivalence.
 
-RISC0 is inspect-only in `0.9.3-alpha`. Local receipt verification returns
+RISC0 is inspect-only in `0.9.4-alpha`. Local receipt verification returns
 `RISC0_LOCAL_VERIFICATION_NOT_IMPLEMENTED` / `RISC0_VERIFIER_UNAVAILABLE` until
 a pinned helper is bundled and tested.
 

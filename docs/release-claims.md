@@ -33,9 +33,9 @@ Date: 2026-06-09
 - full vProgs runtime
 - stable vProgs API
 
-## 0.9.3-alpha Programmability Surface Boundaries
+## 0.9.4-alpha Programmability Surface Boundaries
 
-`0.9.3-alpha` adds local programmability surfaces without changing the stable
+`0.9.4-alpha` adds local programmability surfaces without changing the stable
 release claims.
 
 Allowed surface claims:

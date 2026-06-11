@@ -6,7 +6,7 @@ Every artifact shares a common header:
 {
   "schema": "hardkas.txPlan",
   "schemaVersion": "hardkas.artifact.v1",
-  "hardkasVersion": "0.9.3-alpha",
+  "hardkasVersion": "0.9.4-alpha",
   "hashVersion": 4,
   "createdAt": "2026-06-06T12:00:00Z"
 }

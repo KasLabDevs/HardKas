@@ -34,6 +34,7 @@ export interface DevServerConfig {
   port: number;
   host: string;
   unsafeExternal?: boolean;
+  unsafeNoAuth?: boolean;
   open?: boolean;
 }
 
@@ -136,7 +137,7 @@ export function createDevServer(config: DevServerConfig) {
       token = queryToken;
     }
 
-    if (token !== devServerToken) {
+    if (!config.unsafeNoAuth && token !== devServerToken) {
       return c.json({ error: "Unauthorized: Invalid or missing bearer token." }, 401);
     }
     await next();
@@ -266,6 +267,9 @@ export function createDevServer(config: DevServerConfig) {
       console.log(`📡 SSE Stream: http://${config.host}:${config.port}/api/stream\n`);
       if (config.unsafeExternal) {
         console.log("⚠️  WARNING: External access enabled via --unsafe-external\n");
+      }
+      if (config.unsafeNoAuth) {
+        console.log("⚠️  CRITICAL: Authentication disabled via --unsafe-no-auth\n");
       }
       const url = `http://${config.host}:${config.port}`;
       if (config.open) {

@@ -120,6 +120,7 @@ export type { NetworkId } from "@hardkas/core";
 export interface HardkasOptions {
   cwd?: string;
   configPath?: string;
+  workspaceRoot?: string;
   mode?: "developer" | "agent";
   network?: string;
   autoBootstrap?: boolean;

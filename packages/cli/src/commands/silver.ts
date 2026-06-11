@@ -180,7 +180,10 @@ export function registerSilverCommand(program: Command) {
     .description("Compile a SilverScript source file (.sil or .silver)")
     .option("--network <network>", "Target network", DEFAULT_NETWORK)
     .option("--compiler-path <path>", "Path to silverc binary")
+    .option("--json", "Output as JSON", false)
     .action(async (file, opts) => {
+      const { UI } = await import("../ui.js");
+      if (opts.json) UI.setJsonMode(true);
       if (!file.endsWith(".sil") && !file.endsWith(".silver")) {
         getOutput().writeLine(
           pc.yellow(
@@ -212,12 +215,16 @@ export function registerSilverCommand(program: Command) {
 
       const compilerCheck = checkCompilerReady(compilerCmd);
       if (!compilerCheck.ok) {
-        getOutput().error(pc.red(`Error: SILVERSCRIPT_COMPILER_UNAVAILABLE.`));
-        getOutput().error(
-          pc.dim(
-            `Hint: pass --compiler-path, set HARDKAS_SILVERC_PATH, or install to .hardkas/bin/silverc.`
-          )
-        );
+        if (opts.json) {
+          UI.writeJson({ error: "SILVER_COMPILER_NOT_FOUND", hint: "pass --compiler-path, set HARDKAS_SILVERC_PATH, or install to .hardkas/bin/silverc" });
+        } else {
+          getOutput().error(pc.red(`Error: SILVERSCRIPT_COMPILER_UNAVAILABLE.`));
+          getOutput().error(
+            pc.dim(
+              `Hint: pass --compiler-path, set HARDKAS_SILVERC_PATH, or install to .hardkas/bin/silverc.`
+            )
+          );
+        }
         throw new Error("Command failed");
       }
 
@@ -267,8 +274,12 @@ export function registerSilverCommand(program: Command) {
         `${(artifact as any).artifactId}.json`
       );
       await writeArtifact(artifactPath, artifact as any);
-      getOutput().writeLine(pc.green(`✅ Compiled successfully!`));
-      getOutput().writeLine(`Artifact generated: ${pc.bold(artifactPath)}`);
+      if (opts.json) {
+        UI.writeJson({ status: "success", artifactPath, artifact });
+      } else {
+        getOutput().writeLine(pc.green(`✅ Compiled successfully!`));
+        getOutput().writeLine(`Artifact generated: ${pc.bold(artifactPath)}`);
+      }
     });
 
   silverCmd

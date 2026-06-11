@@ -1,6 +1,6 @@
 {
   "schema": "hardkas.audit.v1",
-  "release": "0.9.3-alpha",
+  "release": "0.9.4-alpha",
   "auditDate": "2026-06-10",
   "fixDate": "2026-06-10",
   "auditor": "external-senior-technical-auditor",
@@ -13,25 +13,25 @@
       "id": "BLOCKER-001",
       "severity": "BLOCKER",
       "status": "RESOLVED",
-      "summary": "packages/sdk/package/package.json was at 0.9.0-alpha while all other packages and docs claimed 0.9.3-alpha.",
+      "summary": "packages/sdk/package/package.json was at 0.9.0-alpha while all other packages and docs claimed 0.9.4-alpha.",
       "files": ["packages/sdk/package/package.json"],
-      "fix": "Bumped packages/sdk/package/package.json to 0.9.3-alpha. pnpm version:check now passes."
+      "fix": "Bumped packages/sdk/package/package.json to 0.9.4-alpha. pnpm version:check now passes."
     },
     {
       "id": "MAJOR-001",
       "severity": "MAJOR",
       "status": "RESOLVED",
-      "summary": "CHANGELOG 0.9.3-alpha section marked 'Draft' — not finalized for release.",
+      "summary": "CHANGELOG 0.9.4-alpha section marked 'Draft' — not finalized for release.",
       "files": ["CHANGELOG.md:5"],
-      "fix": "Removed 'Draft' label; added release date 2026-06-10; fixed erroneous self-reference '0.9.3-alpha baseline' → '0.9.0-alpha baseline'."
+      "fix": "Removed 'Draft' label; added release date 2026-06-10; fixed erroneous self-reference '0.9.4-alpha baseline' → '0.9.0-alpha baseline'."
     },
     {
       "id": "MAJOR-002",
       "severity": "MAJOR",
       "status": "RESOLVED",
-      "summary": "docs/11-limitations.md version string needed to be confirmed at 0.9.3-alpha.",
+      "summary": "docs/11-limitations.md version string needed to be confirmed at 0.9.4-alpha.",
       "files": ["docs/11-limitations.md:3"],
-      "fix": "Already updated by developer before fix phase. Confirmed current: 'HardKAS is currently **0.9.3-alpha**.'."
+      "fix": "Already updated by developer before fix phase. Confirmed current: 'HardKAS is currently **0.9.4-alpha**.'."
     },
     {
       "id": "MAJOR-003",
@@ -123,7 +123,7 @@
     {
       "id": "NOTE-004",
       "severity": "NOTE",
-      "summary": "POST_RELEASE_BREAK_GAUNTLET_RESULT.json 'release' field says '0.9.3-alpha' — consistent with BLOCKER-001. Must be regenerated after version bump.",
+      "summary": "POST_RELEASE_BREAK_GAUNTLET_RESULT.json 'release' field says '0.9.4-alpha' — consistent with BLOCKER-001. Must be regenerated after version bump.",
       "files": ["POST_RELEASE_BREAK_GAUNTLET_RESULT.json:4"]
     }
   ],
@@ -161,10 +161,10 @@
     "outputAbstraction": "PASS"
   },
   "gateNotes": {
-    "versionCheck": "All 47 packages at 0.9.3-alpha. Post-fix run confirms BLOCKER-001 resolved.",
+    "versionCheck": "All 47 packages at 0.9.4-alpha. Post-fix run confirms BLOCKER-001 resolved.",
     "docsCheck": "All links valid, no stale version strings.",
     "build": "26/26 packages successful (FULL TURBO cached).",
-    "test": "164 tests, 48 test files, all green. hardkasVersion '0.9.3-alpha' visible in workflow output.",
+    "test": "164 tests, 48 test files, all green. hardkasVersion '0.9.4-alpha' visible in workflow output.",
     "typecheck": "41/41 tasks successful. No type errors.",
     "corpusToccata": "7 artifacts. contentHashes PASS. SILVERSCRIPT_SIMULATION_MATCH. PARTIAL_VM_SIMULATION declared. mainnet BLOCKED_BY_POLICY.",
     "zkCorpus": "ZK_CORPUS_VERIFICATION_PASS. Groth16: ZK_FIXTURE_COHERENCE_PASS (MAJOR-003 fix confirmed). RISC0: RISC0_LOCAL_VERIFICATION_NOT_IMPLEMENTED. ZK_ONCHAIN_VERIFICATION_NOT_CLAIMED.",

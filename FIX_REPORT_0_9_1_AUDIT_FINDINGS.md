@@ -1,4 +1,4 @@
-# Fix Report — HardKAS 0.9.3-alpha Audit Findings
+# Fix Report — HardKAS 0.9.4-alpha Audit Findings
 
 **Date:** 2026-06-10  
 **Audit source:** `AUDIT_0_9_1_PROGRAMMABILITY.md`  
@@ -18,8 +18,8 @@ Release-preparation defect fixes only. No new product features, no protocol clai
 ### BLOCKER-001 — Version mismatch: `packages/sdk/package/package.json` still at 0.9.0-alpha
 
 **File:** `packages/sdk/package/package.json`  
-**Change:** `"version": "0.9.0-alpha"` → `"version": "0.9.3-alpha"`
-**Verification:** `pnpm version:check` now reports "All workspace packages match version 0.9.3-alpha!"
+**Change:** `"version": "0.9.0-alpha"` → `"version": "0.9.4-alpha"`
+**Verification:** `pnpm version:check` now reports "All workspace packages match version 0.9.4-alpha!"
 
 ---
 
@@ -28,8 +28,8 @@ Release-preparation defect fixes only. No new product features, no protocol clai
 **File:** `CHANGELOG.md`  
 **Changes:**
 
-- Heading line 5: `## 0.9.3-alpha - SDK Parity / Developer Experience - Draft` → `## 0.9.3-alpha - SDK Parity + Programmability Builder Surface - 2026-06-10`
-- Description line 10: "patch for the `0.9.3-alpha` Toccata local-first baseline" → "patch for the `0.9.0-alpha` Toccata local-first baseline" (erroneous self-reference fixed)
+- Heading line 5: `## 0.9.4-alpha - SDK Parity / Developer Experience - Draft` → `## 0.9.4-alpha - SDK Parity + Programmability Builder Surface - 2026-06-10`
+- Description line 10: "patch for the `0.9.4-alpha` Toccata local-first baseline" → "patch for the `0.9.0-alpha` Toccata local-first baseline" (erroneous self-reference fixed)
 - Draft preamble paragraph removed
 
 ---
@@ -37,7 +37,7 @@ Release-preparation defect fixes only. No new product features, no protocol clai
 ### MAJOR-002 — `docs/11-limitations.md` version string out of date
 
 **File:** `docs/11-limitations.md`  
-**Status:** Already updated to `0.9.3-alpha` by developer before audit fix phase. Confirmed current content: "HardKAS is currently **0.9.3-alpha**."
+**Status:** Already updated to `0.9.4-alpha` by developer before audit fix phase. Confirmed current content: "HardKAS is currently **0.9.4-alpha**."
 
 ---
 
@@ -88,11 +88,11 @@ All 15 gates run live. Executed in sequence and parallel after all fixes were ap
 
 | Gate                             | Status   | Notes                                                                                                                                                                                                                                                                                                      |
 | -------------------------------- | -------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `pnpm version:check`             | **PASS** | All 47 packages at 0.9.3-alpha                                                                                                                                                                                                                                                                             |
+| `pnpm version:check`             | **PASS** | All 47 packages at 0.9.4-alpha                                                                                                                                                                                                                                                                             |
 | `pnpm build`                     | **PASS** | 26/26 packages successful (FULL TURBO)                                                                                                                                                                                                                                                                     |
 | `pnpm typecheck`                 | **PASS** | 41/41 tasks                                                                                                                                                                                                                                                                                                |
 | `pnpm docs:check`                | **PASS** | All links valid, no stale version strings                                                                                                                                                                                                                                                                  |
-| `pnpm test`                      | **PASS** | 164 tests, 48 test files; `hardkasVersion: "0.9.3-alpha"` visible in output                                                                                                                                                                                                                                |
+| `pnpm test`                      | **PASS** | 164 tests, 48 test files; `hardkasVersion: "0.9.4-alpha"` visible in output                                                                                                                                                                                                                                |
 | `pnpm corpus:toccata`            | **PASS** | `SILVERSCRIPT_SIMULATION_MATCH`, `mainnet: BLOCKED_BY_POLICY`                                                                                                                                                                                                                                              |
 | `pnpm zk:corpus`                 | **PASS** | `ZK_CORPUS_VERIFICATION_PASS`, `ZK_FIXTURE_COHERENCE_PASS` for Groth16                                                                                                                                                                                                                                     |
 | `pnpm vprogs:check`              | **PASS** | `VPROGS_INSPECT_SURFACE_READY`, `vProgsArtifactInspection: "READY"`                                                                                                                                                                                                                                        |
