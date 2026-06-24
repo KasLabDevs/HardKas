@@ -1,7 +1,7 @@
-# HardKAS 0.9.6-alpha AppFlow Fix Sprint Report
+# HardKAS 0.9.7-alpha AppFlow Fix Sprint Report
 
 ## Executive Summary
-The 0.9.6-alpha Fix Sprint focused on addressing the MAJOR and MINOR friction points identified during the `APP FLOW DISCOVERY` phase. The fixes prioritize robust builder UX, strict adherence to established schemas, and safety-first default behaviors. No new protocol features, mainnet interactions, or unversioned artifact structural changes were introduced.
+The 0.9.7-alpha Fix Sprint focused on addressing the MAJOR and MINOR friction points identified during the `APP FLOW DISCOVERY` phase. The fixes prioritize robust builder UX, strict adherence to established schemas, and safety-first default behaviors. No new protocol features, mainnet interactions, or unversioned artifact structural changes were introduced.
 
 ## Fixes Implemented
 

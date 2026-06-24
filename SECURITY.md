@@ -1,8 +1,8 @@
 # Security Policy
 
-## HardKAS 0.9.6-alpha Security Posture
+## HardKAS 0.9.7-alpha Security Posture
 
-HardKAS 0.9.6-alpha is local-first tooling for the Kaspa/Toccata development
+HardKAS 0.9.7-alpha is local-first tooling for the Kaspa/Toccata development
 loop. It is currently in **Alpha / Pre-release** staging.
 
 ### 1. Developer Workflow Warning
@@ -38,7 +38,7 @@ HardKAS CLI commands that accept secrets (private keys, passwords) via command-l
 
 ### 5. Mainnet And SilverScript Policy
 
-Mainnet signing and broadcasting are outside the 0.9.6-alpha release claim.
+Mainnet signing and broadcasting are outside the 0.9.7-alpha release claim.
 SilverScript mainnet execution is disabled by policy.
 
 - SilverScript mainnet paths must fail with `SILVERSCRIPT_MAINNET_NOT_ENABLED`.

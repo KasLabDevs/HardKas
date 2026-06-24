@@ -32,7 +32,11 @@ describe("CLI JSON Contract", () => {
 
   const runCli = async (args: string[], options: any = {}) => {
     const bin = path.resolve(__dirname, "../dist/index.js");
-    return execa("node", [bin, ...args], { cwd: tmpDir, ...options });
+    return execa("node", [bin, ...args], {
+      cwd: tmpDir,
+      ...options,
+      env: { ...process.env, HARDKAS_TEST_IGNORE_STALENESS: "1", ...options.env }
+    });
   };
 
   it("tx plan --json produces strict parsable JSON with no stdout pollution", async () => {
@@ -101,7 +105,7 @@ describe("CLI JSON Contract", () => {
       parsed = JSON.parse(stdout);
     } catch (err: unknown) {
       throw new Error(
-        `Failed to parse stdout as JSON: ${((err instanceof Error) ? ((err instanceof Error) ? err.message : String(err)) : String(err))}\nStdout was:\n${stdout}`
+        `Failed to parse stdout as JSON: ${((err instanceof Error) ? err.message : String(err))}\nStdout was:\n${stdout}`
       );
     }
 

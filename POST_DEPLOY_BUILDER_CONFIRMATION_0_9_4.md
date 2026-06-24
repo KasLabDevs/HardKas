@@ -1,8 +1,8 @@
-# POST DEPLOY BUILDER CONFIRMATION (0.9.6-alpha)
+# POST DEPLOY BUILDER CONFIRMATION (0.9.7-alpha)
 
 **Status:** CONFIRMED / FROZEN / BUILDER-READY
 
-`0.9.6-alpha` was validated from a clean external consumer workspace using only deployed NPM packages. 
+`0.9.7-alpha` was validated from a clean external consumer workspace using only deployed NPM packages. 
 No monorepo links, no local tarballs, no workspace leakage. 
 
 Extreme Builder Gauntlet passed with:

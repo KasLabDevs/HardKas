@@ -27,7 +27,7 @@
     "test:fuzz:migration": "vitest run packages/testing/test/fuzz-migration.test.ts",
     "test:backward": "vitest run packages/testing/test/backward-compat.test.ts",
     "smoke:backward": "tsx packages/testing/scripts/smoke-backward-compat.ts",
-    "packaging:smoke": "node scripts/packaging-smoke.mjs",
+    "packaging:smoke": "node scripts/check-packaging-smoke.mjs",
     "typecheck": "turbo typecheck",
     "lint": "turbo lint",
     "format": "prettier --write .",
@@ -88,7 +88,7 @@
     "typescript-eslint": "^8.59.3",
     "vitest": "^2.1.9"
   },
-  "version": "0.9.6-alpha",
+  "version": "0.9.7-alpha",
   "dependencies": {
     "kaspa": "^0.13.0",
     "kaspa-wasm": "^0.13.0"

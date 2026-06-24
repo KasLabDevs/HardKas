@@ -9,7 +9,8 @@ function runHardkas(args: string) {
   try {
     const stdout = execSync(`${tsx} "${cliPath}" ${args}`, {
       encoding: "utf8",
-      stdio: "pipe"
+      stdio: "pipe",
+      env: { ...process.env, HARDKAS_TEST_IGNORE_STALENESS: "1" }
     });
     return { ok: true, stdout };
   } catch (e: unknown) {

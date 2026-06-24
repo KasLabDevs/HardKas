@@ -1,0 +1,24 @@
+# Reproducibility Gauntlet
+
+## Run Info
+- **Proof Version:** `repro-v0`
+- **HardKAS Version:** `0.9.7-alpha`
+- **Iterations Tested:** 10
+- **Status:** ✅ **PASS**
+
+## Verified Canonical Hashes
+
+These hashes proved deterministic across multiple memory and execution bounds.
+
+```json
+{
+  "l1Plan": "35c7e8377ce183957eded425952f02a67806475f077c6bfe2ffe6364484a4c3d",
+  "l1Signed": "a24ad0cae110f0ba62f63c6cf25bc5d8b04276fcd577925044525acbc44ba275",
+  "igraPlan": "00f9609c935ea81716b3d5350eaeed93aed41cad0164ce55fa050b7187242944",
+  "dagLinearScenario": "c79594bea61442d05676614949c8c1b1459cfbba38f32145550302611e3aa61a",
+  "dagWideScenario": "57e15373723cea2506edf7b19dfe2bb2862657e668e0446e75edf0ceb939f0e1",
+  "massProfile": "f048389e3220043b7632cd29f49601dcdfc7389b3c59848a31f89b8b4461185f",
+  "canonicalNested": "c4961b52af8f4c79fbe4795a36cdb4525ebb28cf6aa6acf549a4892d9b24e088",
+  "simulatedTxReceipt": "552da38806c55c5b9290f9b9d58b3bc1f5322cc1f39cb3a805c2d7017a3847c1"
+}
+```

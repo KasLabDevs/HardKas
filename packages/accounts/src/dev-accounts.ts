@@ -72,7 +72,7 @@ export async function getOrCreateDevAccount(
       const kp = privKey.toKeypair();
       address = kp.toAddress(network).toString();
       publicKey = kp.publicKey;
-      privateKey = kp.privateKey;
+      privateKey = privateKeyHex;
     } else {
       let sdkModule: any;
       try {

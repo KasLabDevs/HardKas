@@ -1,7 +1,7 @@
 import { defineHardkasConfig } from "@hardkas/config";
 
 export default defineHardkasConfig({
-  // HardKAS v0.9.6-alpha Configuration
+  // HardKAS v0.9.7-alpha Configuration
   defaultNetwork: "simulated",
 
   networks: {
@@ -27,7 +27,7 @@ export default defineHardkasConfig({
   accounts: {
     alice: {
       kind: "simulated",
-      address: "kaspasim:qzzm5spp0pd0vppkhpkthtux20fx4sa0mghwvqyyt2p85pgmlrnnsp2wtmh7z"
+      address: "kaspa:sim_alice"
     },
     bob: {
       kind: "simulated",

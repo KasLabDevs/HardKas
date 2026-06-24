@@ -18,6 +18,27 @@ export function registerProgrammabilityCommands(program: Command) {
     });
 
   programmability
+    .command("audit")
+    .description("Audit the boundaries and claims of programmability layers")
+    .option("--json", "Output as JSON", false)
+    .action(async (options) => {
+      const output = getOutput();
+      const auditResult = {
+        zk: { onchainVerification: false },
+        vprogs: { runtime: false },
+        l2: { realBridge: false, trustlessExit: false },
+        stableAssets: { realIssuer: false }
+      };
+      
+      if (options.json) {
+        output.writeJson(auditResult);
+      } else {
+        output.writeLine("Programmability Claims & Boundaries:");
+        output.writeLine(JSON.stringify(auditResult, null, 2));
+      }
+    });
+
+  programmability
     .command("inspect <path>")
     .description("Inspect a Silver, ZK, or vProgs artifact")
     .requiredOption("--kind <kind>", "Artifact kind: silver, zk, or vprog")

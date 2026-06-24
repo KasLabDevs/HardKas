@@ -1,10 +1,11 @@
 {
   "schema": "hardkas.cliReference.v1",
   "generatedAt": "deterministic",
-  "totalCommands": 197,
+  "totalCommands": 246,
   "flatSurface": [
     "hardkas accounts",
     "hardkas accounts balance",
+    "hardkas accounts consolidate",
     "hardkas accounts fund",
     "hardkas accounts list",
     "hardkas accounts real",
@@ -36,6 +37,8 @@
     "hardkas config repair",
     "hardkas config show",
     "hardkas console",
+    "hardkas corpus",
+    "hardkas corpus verify",
     "hardkas dag",
     "hardkas dag simulate-reorg",
     "hardkas dag status",
@@ -58,10 +61,12 @@
     "hardkas dev fixture generate",
     "hardkas dev init",
     "hardkas dev last",
-    "hardkas dev server",
     "hardkas dev tx",
     "hardkas dev tx generate",
     "hardkas dev tx send",
+    "hardkas dev-server",
+    "hardkas dev-server start",
+    "hardkas dev-server token",
     "hardkas doctor",
     "hardkas explain",
     "hardkas init",
@@ -100,10 +105,14 @@
     "hardkas localnet account",
     "hardkas localnet account create",
     "hardkas localnet fork",
+    "hardkas localnet fund",
     "hardkas localnet snapshot",
     "hardkas localnet snapshot create",
     "hardkas localnet snapshot replay",
     "hardkas localnet snapshot verify",
+    "hardkas localnet start",
+    "hardkas localnet status",
+    "hardkas localnet stop",
     "hardkas lock",
     "hardkas lock clear",
     "hardkas lock doctor",
@@ -120,6 +129,15 @@
     "hardkas node start",
     "hardkas node status",
     "hardkas node stop",
+    "hardkas programmability",
+    "hardkas programmability app",
+    "hardkas programmability app plan",
+    "hardkas programmability audit",
+    "hardkas programmability capabilities",
+    "hardkas programmability corpus",
+    "hardkas programmability corpus verify",
+    "hardkas programmability inspect",
+    "hardkas programmability verify",
     "hardkas query",
     "hardkas query artifacts",
     "hardkas query artifacts diff",
@@ -164,11 +182,31 @@
     "hardkas rpc utxos",
     "hardkas run",
     "hardkas sandbox",
+    "hardkas security",
+    "hardkas security audit",
     "hardkas session",
     "hardkas session create",
     "hardkas session list",
     "hardkas session status",
     "hardkas session use",
+    "hardkas silver",
+    "hardkas silver certify",
+    "hardkas silver compile",
+    "hardkas silver deploy",
+    "hardkas silver deploy-plan",
+    "hardkas silver discovery",
+    "hardkas silver discovery deploy-sweep",
+    "hardkas silver discovery unlock-sweep",
+    "hardkas silver doctor",
+    "hardkas silver inspect",
+    "hardkas silver simulate",
+    "hardkas silver simulate compare",
+    "hardkas silver simulate deploy",
+    "hardkas silver simulate spend",
+    "hardkas silver spend",
+    "hardkas silver spend-plan",
+    "hardkas silver test",
+    "hardkas silver verify",
     "hardkas status",
     "hardkas telemetry",
     "hardkas telemetry inspect",
@@ -193,13 +231,24 @@
     "hardkas up",
     "hardkas verify",
     "hardkas verify-semantics",
+    "hardkas vprogs",
+    "hardkas vprogs capabilities",
+    "hardkas vprogs inspect",
+    "hardkas vprogs status",
     "hardkas why",
     "hardkas workflow",
     "hardkas workflow create",
     "hardkas workflow diff",
     "hardkas workflow inspect",
     "hardkas workflow replay",
-    "hardkas workflow run"
+    "hardkas workflow run",
+    "hardkas zk",
+    "hardkas zk capabilities",
+    "hardkas zk corpus",
+    "hardkas zk corpus verify",
+    "hardkas zk proof",
+    "hardkas zk proof inspect",
+    "hardkas zk proof verify"
   ],
   "commands": [
     {
@@ -249,6 +298,99 @@
               "flags": "--local",
               "description": "Query local query-store instead of remote RPC (for simulated networks)",
               "default": false,
+              "required": false,
+              "mandatory": false
+            },
+            {
+              "flags": "--json",
+              "description": "Output as JSON",
+              "default": false,
+              "required": false,
+              "mandatory": false
+            }
+          ],
+          "subcommands": []
+        },
+        {
+          "path": "hardkas accounts consolidate",
+          "name": "consolidate",
+          "aliases": [],
+          "description": "Consolidate dust UTXOs into a single UTXO alpha",
+          "usage": "hardkas accounts consolidate [options] <account>",
+          "arguments": [
+            {
+              "name": "account",
+              "description": ""
+            }
+          ],
+          "options": [
+            {
+              "flags": "--network <name>",
+              "description": "Kaspa network name",
+              "default": null,
+              "required": true,
+              "mandatory": false
+            },
+            {
+              "flags": "--provider <type>",
+              "description": "Provider mode (auto, rpc, simulated)",
+              "default": "auto",
+              "required": true,
+              "mandatory": false
+            },
+            {
+              "flags": "--url <url>",
+              "description": "RPC URL (optional override)",
+              "default": null,
+              "required": true,
+              "mandatory": false
+            },
+            {
+              "flags": "--target-utxos <n>",
+              "description": "Target number of UTXOs to leave behind",
+              "default": "20",
+              "required": true,
+              "mandatory": false
+            },
+            {
+              "flags": "--batch-size <n>",
+              "description": "Number of UTXOs to consolidate per batch (max 512)",
+              "default": "256",
+              "required": true,
+              "mandatory": false
+            },
+            {
+              "flags": "--min-utxo <sompi>",
+              "description": "Minimum UTXO size to consolidate in sompi",
+              "default": null,
+              "required": true,
+              "mandatory": false
+            },
+            {
+              "flags": "--dry-run",
+              "description": "Only estimate batches (default if --execute is not provided)",
+              "default": null,
+              "required": false,
+              "mandatory": false
+            },
+            {
+              "flags": "--execute",
+              "description": "Execute the consolidation (requires --yes to broadcast)",
+              "default": null,
+              "required": false,
+              "mandatory": false
+            },
+            {
+              "flags": "--yes",
+              "description": "Confirm broadcast for execution",
+              "default": null,
+              "required": false,
+              "mandatory": false
+            },
+            {
+              "flags": "--allow-mainnet",
+              "description": "Allow consolidation on mainnet",
+              "default": null,
               "required": false,
               "mandatory": false
             },
@@ -574,7 +716,9 @@
             {
               "path": "hardkas accounts real session-close",
               "name": "session-close",
-              "aliases": ["lock"],
+              "aliases": [
+                "lock"
+              ],
               "description": "Clear the local dev signing session marker internal",
               "usage": "hardkas accounts real session-close [options] <name>",
               "arguments": [
@@ -589,7 +733,9 @@
             {
               "path": "hardkas accounts real session-open",
               "name": "session-open",
-              "aliases": ["unlock"],
+              "aliases": [
+                "unlock"
+              ],
               "description": "Verify keystore access and record signing intent internal",
               "usage": "hardkas accounts real session-open [options] <name>",
               "arguments": [
@@ -703,6 +849,13 @@
             {
               "flags": "--json",
               "description": "Output as JSON",
+              "default": false,
+              "required": false,
+              "mandatory": false
+            },
+            {
+              "flags": "--strict",
+              "description": "Perform deep semantic and operational safety verification",
               "default": false,
               "required": false,
               "mandatory": false
@@ -1214,6 +1367,47 @@
       "subcommands": []
     },
     {
+      "path": "hardkas corpus",
+      "name": "corpus",
+      "aliases": [],
+      "description": "Verify release fixture corpora",
+      "usage": "hardkas corpus [options] [command]",
+      "arguments": [],
+      "options": [],
+      "subcommands": [
+        {
+          "path": "hardkas corpus verify",
+          "name": "verify",
+          "aliases": [],
+          "description": "Verify a HardKAS golden corpus",
+          "usage": "hardkas corpus verify [options] <path>",
+          "arguments": [
+            {
+              "name": "path",
+              "description": ""
+            }
+          ],
+          "options": [
+            {
+              "flags": "--json",
+              "description": "Output results as JSON",
+              "default": false,
+              "required": false,
+              "mandatory": false
+            },
+            {
+              "flags": "--workspace <path>",
+              "description": "Override workspace root directory",
+              "default": null,
+              "required": true,
+              "mandatory": false
+            }
+          ],
+          "subcommands": []
+        }
+      ]
+    },
+    {
       "path": "hardkas dag",
       "name": "dag",
       "aliases": [],
@@ -1710,66 +1904,6 @@
           "subcommands": []
         },
         {
-          "path": "hardkas dev server",
-          "name": "server",
-          "aliases": [],
-          "description": "Start the local HardKas Dev Server stable",
-          "usage": "hardkas dev server [options]",
-          "arguments": [],
-          "options": [
-            {
-              "flags": "--port <number>",
-              "description": "Port to bind to",
-              "default": "7420",
-              "required": true,
-              "mandatory": false
-            },
-            {
-              "flags": "--host <string>",
-              "description": "Host to bind to",
-              "default": "127.0.0.1",
-              "required": true,
-              "mandatory": false
-            },
-            {
-              "flags": "--open",
-              "description": "Open dashboard in browser automatically",
-              "default": false,
-              "required": false,
-              "mandatory": false
-            },
-            {
-              "flags": "--unsafe-external",
-              "description": "Allow external access (binds to 0.0.0.0 if host not specified)",
-              "default": false,
-              "required": false,
-              "mandatory": false
-            },
-            {
-              "flags": "--show-token",
-              "description": "Show the generated API session token for manual script integration",
-              "default": false,
-              "required": false,
-              "mandatory": false
-            },
-            {
-              "flags": "--with-node",
-              "description": "Spawn the localnet node and auto-fund simnet accounts",
-              "default": false,
-              "required": false,
-              "mandatory": false
-            },
-            {
-              "flags": "--json",
-              "description": "Output status as JSON",
-              "default": false,
-              "required": false,
-              "mandatory": false
-            }
-          ],
-          "subcommands": []
-        },
-        {
           "path": "hardkas dev tx",
           "name": "tx",
           "aliases": [],
@@ -1861,6 +1995,102 @@
       ]
     },
     {
+      "path": "hardkas dev-server",
+      "name": "dev-server",
+      "aliases": [],
+      "description": "Manage the local HardKAS dev server stable",
+      "usage": "hardkas dev-server [options] [command]",
+      "arguments": [],
+      "options": [],
+      "subcommands": [
+        {
+          "path": "hardkas dev-server start",
+          "name": "start",
+          "aliases": [],
+          "description": "Start the dev server",
+          "usage": "hardkas dev-server start [options]",
+          "arguments": [],
+          "options": [
+            {
+              "flags": "--port <number>",
+              "description": "Port to bind to",
+              "default": "7420",
+              "required": true,
+              "mandatory": false
+            },
+            {
+              "flags": "--host <string>",
+              "description": "Host to bind to",
+              "default": "127.0.0.1",
+              "required": true,
+              "mandatory": false
+            },
+            {
+              "flags": "--dashboard",
+              "description": "Serve the local dashboard UI",
+              "default": false,
+              "required": false,
+              "mandatory": false
+            },
+            {
+              "flags": "--unsafe-external",
+              "description": "Allow external access (binds to 0.0.0.0 if host not specified)",
+              "default": false,
+              "required": false,
+              "mandatory": false
+            },
+            {
+              "flags": "--unsafe-no-auth",
+              "description": "Disable token authentication (requires --yes)",
+              "default": false,
+              "required": false,
+              "mandatory": false
+            },
+            {
+              "flags": "--yes",
+              "description": "Acknowledge unsafe flags",
+              "default": false,
+              "required": false,
+              "mandatory": false
+            },
+            {
+              "flags": "--with-node",
+              "description": "Spawn the localnet node and auto-fund simnet accounts",
+              "default": false,
+              "required": false,
+              "mandatory": false
+            },
+            {
+              "flags": "--json",
+              "description": "Output status as JSON",
+              "default": false,
+              "required": false,
+              "mandatory": false
+            }
+          ],
+          "subcommands": []
+        },
+        {
+          "path": "hardkas dev-server token",
+          "name": "token",
+          "aliases": [],
+          "description": "Print the current dev server token",
+          "usage": "hardkas dev-server token [options]",
+          "arguments": [],
+          "options": [
+            {
+              "flags": "--json",
+              "description": "Output as JSON",
+              "default": false,
+              "required": false,
+              "mandatory": false
+            }
+          ],
+          "subcommands": []
+        }
+      ]
+    },
+    {
       "path": "hardkas doctor",
       "name": "doctor",
       "aliases": [],
@@ -1876,6 +2106,13 @@
         {
           "flags": "--json",
           "description": "Output results as stable JSON schema",
+          "default": false,
+          "required": false,
+          "mandatory": false
+        },
+        {
+          "flags": "--capabilities",
+          "description": "Report local node capabilities (RPC, network, DAA)",
           "default": false,
           "required": false,
           "mandatory": false
@@ -2795,7 +3032,7 @@
               "path": "hardkas localnet account create",
               "name": "create",
               "aliases": [],
-              "description": "Create a simulated localnet account",
+              "description": "Create a simulated localnet account alpha",
               "usage": "hardkas localnet account create [options] <name>",
               "arguments": [
                 {
@@ -2850,6 +3087,57 @@
               "description": "Save fork snapshot to file",
               "default": null,
               "required": true,
+              "mandatory": false
+            },
+            {
+              "flags": "--json",
+              "description": "Output as JSON",
+              "default": false,
+              "required": false,
+              "mandatory": false
+            }
+          ],
+          "subcommands": []
+        },
+        {
+          "path": "hardkas localnet fund",
+          "name": "fund",
+          "aliases": [],
+          "description": "Fund a local Toccata/simnet account alpha",
+          "usage": "hardkas localnet fund [options] <identifier>",
+          "arguments": [
+            {
+              "name": "identifier",
+              "description": ""
+            }
+          ],
+          "options": [
+            {
+              "flags": "--profile <name>",
+              "description": "Funding profile",
+              "default": "toccata-v2",
+              "required": true,
+              "mandatory": false
+            },
+            {
+              "flags": "--amount <kas>",
+              "description": "Target mining amount hint in KAS",
+              "default": "1000",
+              "required": true,
+              "mandatory": false
+            },
+            {
+              "flags": "--timeout <ms>",
+              "description": "Funding/maturity wait timeout in ms",
+              "default": "300000",
+              "required": true,
+              "mandatory": false
+            },
+            {
+              "flags": "--keep-miner",
+              "description": "Leave the companion miner running",
+              "default": false,
+              "required": false,
               "mandatory": false
             },
             {
@@ -2948,6 +3236,95 @@
               "subcommands": []
             }
           ]
+        },
+        {
+          "path": "hardkas localnet start",
+          "name": "start",
+          "aliases": [],
+          "description": "Start localnet profile alpha",
+          "usage": "hardkas localnet start [options]",
+          "arguments": [],
+          "options": [
+            {
+              "flags": "--profile <name>",
+              "description": "Localnet profile",
+              "default": "simulated",
+              "required": true,
+              "mandatory": false
+            },
+            {
+              "flags": "--toccata",
+              "description": "Shortcut for --profile toccata-v2",
+              "default": false,
+              "required": false,
+              "mandatory": false
+            },
+            {
+              "flags": "--detached",
+              "description": "Run in background",
+              "default": false,
+              "required": false,
+              "mandatory": false
+            },
+            {
+              "flags": "--json",
+              "description": "Output as JSON",
+              "default": false,
+              "required": false,
+              "mandatory": false
+            }
+          ],
+          "subcommands": []
+        },
+        {
+          "path": "hardkas localnet status",
+          "name": "status",
+          "aliases": [],
+          "description": "Show localnet status alpha",
+          "usage": "hardkas localnet status [options]",
+          "arguments": [],
+          "options": [
+            {
+              "flags": "--json",
+              "description": "Output as JSON",
+              "default": false,
+              "required": false,
+              "mandatory": false
+            }
+          ],
+          "subcommands": []
+        },
+        {
+          "path": "hardkas localnet stop",
+          "name": "stop",
+          "aliases": [],
+          "description": "Stop localnet profile alpha",
+          "usage": "hardkas localnet stop [options]",
+          "arguments": [],
+          "options": [
+            {
+              "flags": "--profile <name>",
+              "description": "Localnet profile",
+              "default": "simulated",
+              "required": true,
+              "mandatory": false
+            },
+            {
+              "flags": "--toccata",
+              "description": "Shortcut for --profile toccata-v2",
+              "default": false,
+              "required": false,
+              "mandatory": false
+            },
+            {
+              "flags": "--json",
+              "description": "Output as JSON",
+              "default": false,
+              "required": false,
+              "mandatory": false
+            }
+          ],
+          "subcommands": []
         }
       ]
     },
@@ -3316,6 +3693,190 @@
       ]
     },
     {
+      "path": "hardkas programmability",
+      "name": "programmability",
+      "aliases": [],
+      "description": "Builder-ready local programmability surface (Outputs JSON by default)",
+      "usage": "hardkas programmability [options] [command]",
+      "arguments": [],
+      "options": [],
+      "subcommands": [
+        {
+          "path": "hardkas programmability app",
+          "name": "app",
+          "aliases": [],
+          "description": "Plan builder app surfaces",
+          "usage": "hardkas programmability app [options] [command]",
+          "arguments": [],
+          "options": [],
+          "subcommands": [
+            {
+              "path": "hardkas programmability app plan",
+              "name": "plan",
+              "aliases": [],
+              "description": "Return a local app plan for a programmable HardKAS app",
+              "usage": "hardkas programmability app plan [options]",
+              "arguments": [],
+              "options": [
+                {
+                  "flags": "--kind <kind>",
+                  "description": "silver, zk, vprog, or full-lab",
+                  "default": "full-lab",
+                  "required": true,
+                  "mandatory": false
+                },
+                {
+                  "flags": "--template <path>",
+                  "description": "Template path",
+                  "default": null,
+                  "required": true,
+                  "mandatory": false
+                },
+                {
+                  "flags": "--json",
+                  "description": "Output as JSON",
+                  "default": false,
+                  "required": false,
+                  "mandatory": false
+                }
+              ],
+              "subcommands": []
+            }
+          ]
+        },
+        {
+          "path": "hardkas programmability audit",
+          "name": "audit",
+          "aliases": [],
+          "description": "Audit the boundaries and claims of programmability layers",
+          "usage": "hardkas programmability audit [options]",
+          "arguments": [],
+          "options": [
+            {
+              "flags": "--json",
+              "description": "Output as JSON",
+              "default": false,
+              "required": false,
+              "mandatory": false
+            }
+          ],
+          "subcommands": []
+        },
+        {
+          "path": "hardkas programmability capabilities",
+          "name": "capabilities",
+          "aliases": [],
+          "description": "Show local programmability capabilities",
+          "usage": "hardkas programmability capabilities [options]",
+          "arguments": [],
+          "options": [
+            {
+              "flags": "--json",
+              "description": "Output as JSON",
+              "default": false,
+              "required": false,
+              "mandatory": false
+            }
+          ],
+          "subcommands": []
+        },
+        {
+          "path": "hardkas programmability corpus",
+          "name": "corpus",
+          "aliases": [],
+          "description": "Verify local programmability corpora",
+          "usage": "hardkas programmability corpus [options] [command]",
+          "arguments": [],
+          "options": [],
+          "subcommands": [
+            {
+              "path": "hardkas programmability corpus verify",
+              "name": "verify",
+              "aliases": [],
+              "description": "Verify the root Toccata programmability corpus",
+              "usage": "hardkas programmability corpus verify [options] <path>",
+              "arguments": [
+                {
+                  "name": "path",
+                  "description": ""
+                }
+              ],
+              "options": [
+                {
+                  "flags": "--json",
+                  "description": "Output as JSON",
+                  "default": false,
+                  "required": false,
+                  "mandatory": false
+                }
+              ],
+              "subcommands": []
+            }
+          ]
+        },
+        {
+          "path": "hardkas programmability inspect",
+          "name": "inspect",
+          "aliases": [],
+          "description": "Inspect a Silver, ZK, or vProgs artifact",
+          "usage": "hardkas programmability inspect [options] <path>",
+          "arguments": [
+            {
+              "name": "path",
+              "description": ""
+            }
+          ],
+          "options": [
+            {
+              "flags": "--kind <kind>",
+              "description": "Artifact kind: silver, zk, or vprog",
+              "default": null,
+              "required": true,
+              "mandatory": true
+            },
+            {
+              "flags": "--json",
+              "description": "Output as JSON",
+              "default": false,
+              "required": false,
+              "mandatory": false
+            }
+          ],
+          "subcommands": []
+        },
+        {
+          "path": "hardkas programmability verify",
+          "name": "verify",
+          "aliases": [],
+          "description": "Verify a local programmability artifact",
+          "usage": "hardkas programmability verify [options] <path>",
+          "arguments": [
+            {
+              "name": "path",
+              "description": ""
+            }
+          ],
+          "options": [
+            {
+              "flags": "--kind <kind>",
+              "description": "Artifact kind: silver, zk, or vprog",
+              "default": null,
+              "required": true,
+              "mandatory": true
+            },
+            {
+              "flags": "--json",
+              "description": "Output as JSON",
+              "default": false,
+              "required": false,
+              "mandatory": false
+            }
+          ],
+          "subcommands": []
+        }
+      ]
+    },
+    {
       "path": "hardkas query",
       "name": "query",
       "aliases": [],
@@ -3393,7 +3954,9 @@
             {
               "path": "hardkas query artifacts list",
               "name": "list",
-              "aliases": [],
+              "aliases": [
+                "ls"
+              ],
               "description": "List artifacts matching filters",
               "usage": "hardkas query artifacts list [options]",
               "arguments": [],
@@ -3860,7 +4423,9 @@
             {
               "path": "hardkas query replay list",
               "name": "list",
-              "aliases": [],
+              "aliases": [
+                "ls"
+              ],
               "description": "List all stored receipts",
               "usage": "hardkas query replay list [options]",
               "arguments": [],
@@ -4007,6 +4572,13 @@
               "arguments": [],
               "options": [
                 {
+                  "flags": "--backend <type>",
+                  "description": "Backend to use (sqlite/filesystem)",
+                  "default": null,
+                  "required": true,
+                  "mandatory": false
+                },
+                {
                   "flags": "--strict",
                   "description": "Fail on any corrupted data",
                   "default": false,
@@ -4056,6 +4628,20 @@
                   "default": false,
                   "required": false,
                   "mandatory": false
+                },
+                {
+                  "flags": "--unsafe-write",
+                  "description": "Allow mutating SQL (DANGEROUS)",
+                  "default": false,
+                  "required": false,
+                  "mandatory": false
+                },
+                {
+                  "flags": "--yes",
+                  "description": "Confirm mutating SQL (DANGEROUS)",
+                  "default": false,
+                  "required": false,
+                  "mandatory": false
                 }
               ],
               "subcommands": []
@@ -4063,7 +4649,9 @@
             {
               "path": "hardkas query store sync",
               "name": "sync",
-              "aliases": ["index"],
+              "aliases": [
+                "index"
+              ],
               "description": "Synchronize the filesystem artifacts with the query store index",
               "usage": "hardkas query store sync [options]",
               "arguments": [],
@@ -4330,9 +4918,16 @@
             },
             {
               "flags": "--timeout <ms>",
-              "description": "Wait timeout in ms",
-              "default": "60000",
+              "description": "Timeout in ms",
+              "default": null,
               "required": true,
+              "mandatory": false
+            },
+            {
+              "flags": "--json",
+              "description": "Output as JSON",
+              "default": false,
+              "required": false,
               "mandatory": false
             }
           ],
@@ -4464,6 +5059,42 @@
       "subcommands": []
     },
     {
+      "path": "hardkas security",
+      "name": "security",
+      "aliases": [],
+      "description": "Security DX and safety verification tools",
+      "usage": "hardkas security [options] [command]",
+      "arguments": [],
+      "options": [],
+      "subcommands": [
+        {
+          "path": "hardkas security audit",
+          "name": "audit",
+          "aliases": [],
+          "description": "Audit workspace for DX safety and secret leakage",
+          "usage": "hardkas security audit [options]",
+          "arguments": [],
+          "options": [
+            {
+              "flags": "--json",
+              "description": "Output as JSON",
+              "default": false,
+              "required": false,
+              "mandatory": false
+            },
+            {
+              "flags": "--include <path>",
+              "description": "Extra path to include in search",
+              "default": null,
+              "required": true,
+              "mandatory": false
+            }
+          ],
+          "subcommands": []
+        }
+      ]
+    },
+    {
       "path": "hardkas session",
       "name": "session",
       "aliases": [],
@@ -4531,6 +5162,445 @@
           "arguments": [
             {
               "name": "name",
+              "description": ""
+            }
+          ],
+          "options": [],
+          "subcommands": []
+        }
+      ]
+    },
+    {
+      "path": "hardkas silver",
+      "name": "silver",
+      "aliases": [],
+      "description": "SilverScript development tools (alpha)",
+      "usage": "hardkas silver [options] [command]",
+      "arguments": [],
+      "options": [],
+      "subcommands": [
+        {
+          "path": "hardkas silver certify",
+          "name": "certify",
+          "aliases": [],
+          "description": "Execute the full certification pipeline for a SilverScript contract",
+          "usage": "hardkas silver certify [options] <file.sil>",
+          "arguments": [
+            {
+              "name": "file.sil",
+              "description": ""
+            }
+          ],
+          "options": [],
+          "subcommands": []
+        },
+        {
+          "path": "hardkas silver compile",
+          "name": "compile",
+          "aliases": [],
+          "description": "Compile a SilverScript source file (.sil or .silver)",
+          "usage": "hardkas silver compile [options] <file>",
+          "arguments": [
+            {
+              "name": "file",
+              "description": ""
+            }
+          ],
+          "options": [
+            {
+              "flags": "--network <network>",
+              "description": "Target network",
+              "default": "simnet",
+              "required": true,
+              "mandatory": false
+            },
+            {
+              "flags": "--compiler-path <path>",
+              "description": "Path to silverc binary",
+              "default": null,
+              "required": true,
+              "mandatory": false
+            },
+            {
+              "flags": "--json",
+              "description": "Output as JSON",
+              "default": false,
+              "required": false,
+              "mandatory": false
+            }
+          ],
+          "subcommands": []
+        },
+        {
+          "path": "hardkas silver deploy",
+          "name": "deploy",
+          "aliases": [],
+          "description": "Execute a SilverScript deploy plan to create the UTXO on-chain",
+          "usage": "hardkas silver deploy [options] <deploy-plan-artifact>",
+          "arguments": [
+            {
+              "name": "deploy-plan-artifact",
+              "description": ""
+            }
+          ],
+          "options": [
+            {
+              "flags": "--private-key <hex>",
+              "description": "Private key for the deployer account",
+              "default": null,
+              "required": true,
+              "mandatory": false
+            }
+          ],
+          "subcommands": []
+        },
+        {
+          "path": "hardkas silver deploy-plan",
+          "name": "deploy-plan",
+          "aliases": [],
+          "description": "Plan a deployment of a compiled SilverScript on Kaspa",
+          "usage": "hardkas silver deploy-plan [options] <compile-artifact>",
+          "arguments": [
+            {
+              "name": "compile-artifact",
+              "description": ""
+            }
+          ],
+          "options": [
+            {
+              "flags": "--from <account>",
+              "description": "Deployer account or address",
+              "default": null,
+              "required": true,
+              "mandatory": false
+            },
+            {
+              "flags": "--amount <kas>",
+              "description": "Amount in KAS to fund the UTXO",
+              "default": null,
+              "required": true,
+              "mandatory": false
+            },
+            {
+              "flags": "--network <network>",
+              "description": "Network (must be simnet for now)",
+              "default": "simnet",
+              "required": true,
+              "mandatory": false
+            }
+          ],
+          "subcommands": []
+        },
+        {
+          "path": "hardkas silver discovery",
+          "name": "discovery",
+          "aliases": [],
+          "description": "Experimental SilverScript discovery tools",
+          "usage": "hardkas silver discovery [options] [command]",
+          "arguments": [],
+          "options": [],
+          "subcommands": [
+            {
+              "path": "hardkas silver discovery deploy-sweep",
+              "name": "deploy-sweep",
+              "aliases": [],
+              "description": "EXPERIMENTAL: Create a real UTXO locked by the compiled script on simnet",
+              "usage": "hardkas silver discovery deploy-sweep [options] <compile-artifact>",
+              "arguments": [
+                {
+                  "name": "compile-artifact",
+                  "description": ""
+                }
+              ],
+              "options": [
+                {
+                  "flags": "--from <account>",
+                  "description": "Sender account or address",
+                  "default": null,
+                  "required": true,
+                  "mandatory": false
+                },
+                {
+                  "flags": "--amount <kas>",
+                  "description": "Amount in KAS",
+                  "default": null,
+                  "required": true,
+                  "mandatory": false
+                },
+                {
+                  "flags": "--private-key <hex>",
+                  "description": "Private key hex for discovery mode",
+                  "default": null,
+                  "required": true,
+                  "mandatory": false
+                },
+                {
+                  "flags": "--network <network>",
+                  "description": "Network (must be simnet)",
+                  "default": "simnet",
+                  "required": true,
+                  "mandatory": false
+                },
+                {
+                  "flags": "--wrapper <type>",
+                  "description": "Locking script wrapper type: raw | kaspa-p2sh-blake2b | hash160 | compiler",
+                  "default": "kaspa-p2sh-blake2b",
+                  "required": true,
+                  "mandatory": false
+                },
+                {
+                  "flags": "--provider <type>",
+                  "description": "Provider type",
+                  "default": "rpc",
+                  "required": true,
+                  "mandatory": false
+                }
+              ],
+              "subcommands": []
+            },
+            {
+              "path": "hardkas silver discovery unlock-sweep",
+              "name": "unlock-sweep",
+              "aliases": [],
+              "description": "EXPERIMENTAL: Attempt to spend a SilverScript UTXO",
+              "usage": "hardkas silver discovery unlock-sweep [options] <spend-plan-artifact>",
+              "arguments": [
+                {
+                  "name": "spend-plan-artifact",
+                  "description": ""
+                }
+              ],
+              "options": [
+                {
+                  "flags": "--network <network>",
+                  "description": "Network (must be simnet)",
+                  "default": "simnet",
+                  "required": true,
+                  "mandatory": false
+                }
+              ],
+              "subcommands": []
+            }
+          ]
+        },
+        {
+          "path": "hardkas silver doctor",
+          "name": "doctor",
+          "aliases": [],
+          "description": "Diagnose if the local environment can work with SilverScript",
+          "usage": "hardkas silver doctor [options]",
+          "arguments": [],
+          "options": [
+            {
+              "flags": "--capabilities",
+              "description": "Report local node script capabilities",
+              "default": false,
+              "required": false,
+              "mandatory": false
+            },
+            {
+              "flags": "--compiler-path <path>",
+              "description": "Path to silverc binary",
+              "default": null,
+              "required": true,
+              "mandatory": false
+            }
+          ],
+          "subcommands": []
+        },
+        {
+          "path": "hardkas silver inspect",
+          "name": "inspect",
+          "aliases": [],
+          "description": "Inspect a SilverScript compiled artifact or spend plan",
+          "usage": "hardkas silver inspect [options] <artifact_path>",
+          "arguments": [
+            {
+              "name": "artifact_path",
+              "description": ""
+            }
+          ],
+          "options": [],
+          "subcommands": []
+        },
+        {
+          "path": "hardkas silver simulate",
+          "name": "simulate",
+          "aliases": [],
+          "description": "Local SilverScript/Toccata artifact lifecycle simulator",
+          "usage": "hardkas silver simulate [options] [command]",
+          "arguments": [],
+          "options": [],
+          "subcommands": [
+            {
+              "path": "hardkas silver simulate compare",
+              "name": "compare",
+              "aliases": [],
+              "description": "Compare simulated SilverScript receipt with Docker/node receipt",
+              "usage": "hardkas silver simulate compare [options]",
+              "arguments": [],
+              "options": [
+                {
+                  "flags": "--simulated <receipt>",
+                  "description": "Simulated receipt artifact",
+                  "default": null,
+                  "required": true,
+                  "mandatory": true
+                },
+                {
+                  "flags": "--docker <receipt>",
+                  "description": "Docker/node receipt artifact",
+                  "default": null,
+                  "required": true,
+                  "mandatory": true
+                },
+                {
+                  "flags": "--mode <mode>",
+                  "description": "Comparison mode: artifact-coherence, runtime-outcome, strict",
+                  "default": "artifact-coherence",
+                  "required": true,
+                  "mandatory": false
+                }
+              ],
+              "subcommands": []
+            },
+            {
+              "path": "hardkas silver simulate deploy",
+              "name": "deploy",
+              "aliases": [],
+              "description": "Simulate a SilverScript deploy plan without RPC",
+              "usage": "hardkas silver simulate deploy [options] <deploy-plan>",
+              "arguments": [
+                {
+                  "name": "deploy-plan",
+                  "description": ""
+                }
+              ],
+              "options": [],
+              "subcommands": []
+            },
+            {
+              "path": "hardkas silver simulate spend",
+              "name": "spend",
+              "aliases": [],
+              "description": "Simulate spending a SilverScript synthetic UTXO",
+              "usage": "hardkas silver simulate spend [options] <spend-plan>",
+              "arguments": [
+                {
+                  "name": "spend-plan",
+                  "description": ""
+                }
+              ],
+              "options": [],
+              "subcommands": []
+            }
+          ]
+        },
+        {
+          "path": "hardkas silver spend",
+          "name": "spend",
+          "aliases": [],
+          "description": "Execute a SilverScript spend plan to spend the UTXO on-chain",
+          "usage": "hardkas silver spend [options] <spend-plan-artifact>",
+          "arguments": [
+            {
+              "name": "spend-plan-artifact",
+              "description": ""
+            }
+          ],
+          "options": [],
+          "subcommands": []
+        },
+        {
+          "path": "hardkas silver spend-plan",
+          "name": "spend-plan",
+          "aliases": [],
+          "description": "Plan a spend of a deployed SilverScript UTXO",
+          "usage": "hardkas silver spend-plan [options] <deploy-artifact>",
+          "arguments": [
+            {
+              "name": "deploy-artifact",
+              "description": ""
+            }
+          ],
+          "options": [
+            {
+              "flags": "--args <json-file>",
+              "description": "JSON file with args array: [{type: 'hex', value: '...'}]",
+              "default": null,
+              "required": true,
+              "mandatory": false
+            },
+            {
+              "flags": "--to <address>",
+              "description": "Recipient address",
+              "default": null,
+              "required": true,
+              "mandatory": false
+            }
+          ],
+          "subcommands": []
+        },
+        {
+          "path": "hardkas silver test",
+          "name": "test",
+          "aliases": [],
+          "description": "Run deterministic test harness for a SilverScript contract",
+          "usage": "hardkas silver test [options] <file.sil>",
+          "arguments": [
+            {
+              "name": "file.sil",
+              "description": ""
+            }
+          ],
+          "options": [
+            {
+              "flags": "--vectors <path>",
+              "description": "Path to test vectors JSON",
+              "default": null,
+              "required": true,
+              "mandatory": false
+            },
+            {
+              "flags": "--out <path>",
+              "description": "Output path for the SilverTestArtifact",
+              "default": null,
+              "required": true,
+              "mandatory": false
+            },
+            {
+              "flags": "--expected-fail",
+              "description": "Mark as EXPECTED_COMPILER_FAILURE if compilation fails",
+              "default": null,
+              "required": false,
+              "mandatory": false
+            },
+            {
+              "flags": "--compiler <type>",
+              "description": "Compiler type (native|docker)",
+              "default": "native",
+              "required": true,
+              "mandatory": false
+            },
+            {
+              "flags": "--compiler-path <path>",
+              "description": "Path to silverc binary",
+              "default": null,
+              "required": true,
+              "mandatory": false
+            }
+          ],
+          "subcommands": []
+        },
+        {
+          "path": "hardkas silver verify",
+          "name": "verify",
+          "aliases": [],
+          "description": "Verify the deterministic hashes and metadata of a SilverScript artifact",
+          "usage": "hardkas silver verify [options] <artifact_path>",
+          "arguments": [
+            {
+              "name": "artifact_path",
               "description": ""
             }
           ],
@@ -4909,6 +5979,20 @@
             {
               "flags": "--save <path>",
               "description": "Alias for --out (Save plan as artifact JSON)",
+              "default": null,
+              "required": true,
+              "mandatory": false
+            },
+            {
+              "flags": "--workflow-id <id>",
+              "description": "Optional deterministic workflow ID override",
+              "default": null,
+              "required": true,
+              "mandatory": false
+            },
+            {
+              "flags": "--assumption-level <level>",
+              "description": "Optional assumption level override",
               "default": null,
               "required": true,
               "mandatory": false
@@ -5330,6 +6414,76 @@
       "subcommands": []
     },
     {
+      "path": "hardkas vprogs",
+      "name": "vprogs",
+      "aliases": [],
+      "description": "vProgs inspect-only builder surface (Outputs JSON by default)",
+      "usage": "hardkas vprogs [options] [command]",
+      "arguments": [],
+      "options": [],
+      "subcommands": [
+        {
+          "path": "hardkas vprogs capabilities",
+          "name": "capabilities",
+          "aliases": [],
+          "description": "Show vProgs inspect capabilities",
+          "usage": "hardkas vprogs capabilities [options]",
+          "arguments": [],
+          "options": [
+            {
+              "flags": "--json",
+              "description": "Output as JSON",
+              "default": false,
+              "required": false,
+              "mandatory": false
+            }
+          ],
+          "subcommands": []
+        },
+        {
+          "path": "hardkas vprogs inspect",
+          "name": "inspect",
+          "aliases": [],
+          "description": "Inspect a local vProgs artifact without runtime claims",
+          "usage": "hardkas vprogs inspect [options] <artifact>",
+          "arguments": [
+            {
+              "name": "artifact",
+              "description": ""
+            }
+          ],
+          "options": [
+            {
+              "flags": "--json",
+              "description": "Output as JSON",
+              "default": false,
+              "required": false,
+              "mandatory": false
+            }
+          ],
+          "subcommands": []
+        },
+        {
+          "path": "hardkas vprogs status",
+          "name": "status",
+          "aliases": [],
+          "description": "Show vProgs inspect status",
+          "usage": "hardkas vprogs status [options]",
+          "arguments": [],
+          "options": [
+            {
+              "flags": "--json",
+              "description": "Output as JSON",
+              "default": false,
+              "required": false,
+              "mandatory": false
+            }
+          ],
+          "subcommands": []
+        }
+      ]
+    },
+    {
       "path": "hardkas why",
       "name": "why",
       "aliases": [],
@@ -5519,6 +6673,128 @@
             }
           ],
           "subcommands": []
+        }
+      ]
+    },
+    {
+      "path": "hardkas zk",
+      "name": "zk",
+      "aliases": [],
+      "description": "Experimental local-only ZK proof artifact tools (Outputs JSON by default)",
+      "usage": "hardkas zk [options] [command]",
+      "arguments": [],
+      "options": [],
+      "subcommands": [
+        {
+          "path": "hardkas zk capabilities",
+          "name": "capabilities",
+          "aliases": [],
+          "description": "Show experimental ZK lab capabilities",
+          "usage": "hardkas zk capabilities [options]",
+          "arguments": [],
+          "options": [
+            {
+              "flags": "--json",
+              "description": "Output as JSON",
+              "default": false,
+              "required": false,
+              "mandatory": false
+            }
+          ],
+          "subcommands": []
+        },
+        {
+          "path": "hardkas zk corpus",
+          "name": "corpus",
+          "aliases": [],
+          "description": "Verify experimental ZK fixture corpora",
+          "usage": "hardkas zk corpus [options] [command]",
+          "arguments": [],
+          "options": [],
+          "subcommands": [
+            {
+              "path": "hardkas zk corpus verify",
+              "name": "verify",
+              "aliases": [],
+              "description": "Verify a local ZK corpus",
+              "usage": "hardkas zk corpus verify [options] <path>",
+              "arguments": [
+                {
+                  "name": "path",
+                  "description": ""
+                }
+              ],
+              "options": [
+                {
+                  "flags": "--json",
+                  "description": "Output as JSON",
+                  "default": false,
+                  "required": false,
+                  "mandatory": false
+                }
+              ],
+              "subcommands": []
+            }
+          ]
+        },
+        {
+          "path": "hardkas zk proof",
+          "name": "proof",
+          "aliases": [],
+          "description": "Inspect and verify local proof artifacts",
+          "usage": "hardkas zk proof [options] [command]",
+          "arguments": [],
+          "options": [],
+          "subcommands": [
+            {
+              "path": "hardkas zk proof inspect",
+              "name": "inspect",
+              "aliases": [],
+              "description": "Inspect a local proof fixture or artifact",
+              "usage": "hardkas zk proof inspect [options] <path>",
+              "arguments": [
+                {
+                  "name": "path",
+                  "description": ""
+                }
+              ],
+              "options": [
+                {
+                  "flags": "--json",
+                  "description": "Output as JSON",
+                  "default": false,
+                  "required": false,
+                  "mandatory": false
+                }
+              ],
+              "subcommands": []
+            },
+            {
+              "path": "hardkas zk proof verify",
+              "name": "verify",
+              "aliases": [
+                "verify-local"
+              ],
+              "description": "Verify a local proof fixture locally (No on-chain claims) alpha",
+              "usage": "hardkas zk proof verify [options] <path>",
+              "arguments": [
+                {
+                  "name": "path",
+                  "description": ""
+                }
+              ],
+              "options": [
+                {
+                  "flags": "--json",
+                  "description": "Output as JSON",
+                  "default": false,
+                  "required": false,
+                  "mandatory": false
+                }
+              ],
+              "subcommands": []
+            }
+          ]
         }
       ]
     }

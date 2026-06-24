@@ -18,7 +18,7 @@ function readJson(filePath: string): any {
   return JSON.parse(fs.readFileSync(filePath, "utf8"));
 }
 
-describe("0.9.6-alpha SDK parity surface", () => {
+describe("0.9.7-alpha SDK parity surface", () => {
   let workspaceRoot: string;
 
   beforeEach(() => {
@@ -37,11 +37,11 @@ describe("0.9.6-alpha SDK parity surface", () => {
     });
     const capabilities = await sdk.capabilities();
 
-    expect(capabilities.version).toBe("0.9.6-alpha");
+    expect(capabilities.version).toBe("0.9.7-alpha");
     expect(capabilities.capabilities.mainnetGuards).toBe(true);
     expect(capabilities.capabilities.consensusValidation).toBe(false);
     expect(capabilities.capabilities.productionWallet).toBe(false);
-    expect(capabilities.trustBoundaries.simulator).toBe("research-experimental");
+    expect(capabilities.trustBoundaries.simulator).toBe("local-simulation-only");
   });
 
   it("exposes localnet.status without requiring CLI shelling", async () => {

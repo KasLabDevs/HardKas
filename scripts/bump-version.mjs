@@ -1,8 +1,8 @@
 import fs from 'node:fs';
 import path from 'node:path';
 
-const oldVer = '0.9.6-alpha';
-const newVer = '0.9.6-alpha';
+const oldVer = '0.9.7-alpha';
+const newVer = '0.9.7-alpha';
 let count = 0;
 
 function walk(dir) {

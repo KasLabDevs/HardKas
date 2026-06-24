@@ -48,6 +48,7 @@ describe("Simulated Isolation", () => {
       to: "kaspa:sim_bob",
       amount: "10",
       networkId: "simnet",
+      provider: "simulated",
       feeRate: "1",
       config
     });
