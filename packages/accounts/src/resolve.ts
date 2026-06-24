@@ -231,6 +231,11 @@ export function listHardkasAccounts(config?: HardkasConfig): HardkasAccount[] {
   // Override/Add from config
   if (config?.accounts) {
     for (const [name, accConfig] of Object.entries(config.accounts)) {
+      const existing = accounts.get(name);
+      if (existing && existing.kind === "kaspa-private-key" && (accConfig as any).kind === "simulated") {
+        // Do not overwrite a real dev-account or keystore account with a simulated config default
+        continue;
+      }
       accounts.set(name, {
         name,
         ...accConfig

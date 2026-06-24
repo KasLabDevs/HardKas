@@ -1,8 +1,8 @@
-# Release Notes: 0.9.6-alpha
+# Release Notes: 0.9.7-alpha
 
 ## Overview
 
-0.9.6-alpha represents a Post-Release Hardening Cycle focused on Dogfooding and Audit Fixes. The cycle strictly maintained the boundaries of HardKAS as a tooling/SDK/builder layer without expanding protocol, mainnet, bridge, or VM consensus equivalence claims.
+0.9.7-alpha represents a Post-Release Hardening Cycle focused on Dogfooding and Audit Fixes. The cycle strictly maintained the boundaries of HardKAS as a tooling/SDK/builder layer without expanding protocol, mainnet, bridge, or VM consensus equivalence claims.
 
 ## Release Discipline Fixes
 

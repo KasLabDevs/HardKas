@@ -1,60 +1,30 @@
 # Quickstart
 
-The fastest way to feel HardKAS is deterministic `simulated` mode. It does not
-need Docker, a Kaspa node, faucet funds, or network access.
+The fastest way to experience HardKAS is in deterministic simulated mode.
 
-## 1. Initialize A Workspace
+1. **Initialize Workspace**
+   ```bash
+   hardkas dev fixture generate
+   ```
+   *This populates your localnet with simulated accounts and balances.*
 
-```bash
-hardkas init .
-```
+2. **Plan a Transaction**
+   ```bash
+   hardkas tx plan --from kaspa:sim_alice --to kaspa:sim_bob --amount 10
+   ```
+   *Outputs a deterministic `txPlan` artifact.*
 
-This creates `hardkas.config.ts`, `.hardkas/`, and default simulated accounts
-such as `alice` and `bob`.
+3. **Verify the Artifact**
+   ```bash
+   hardkas artifact verify .hardkas/artifacts/txPlan-*.json
+   ```
 
-## 2. Run The One-Command Local Transfer
+4. **Sign the Transaction**
+   ```bash
+   hardkas tx sign .hardkas/artifacts/txPlan-*.json --account kaspa:sim_alice
+   ```
 
-```bash
-hardkas tx send --from alice --to bob --amount 10 --network simulated --yes
-```
-
-This performs the full local lifecycle:
-
-```txt
-plan -> sign -> simulate -> receipt
-```
-
-## 3. Open The Dashboard
-
-```bash
-hardkas dashboard
-```
-
-The dashboard reads the same `.hardkas` workspace and shows transactions,
-artifacts, replay status, events, and lineage.
-
-## 4. Run The Explicit Artifact Flow
-
-Use this when you want to inspect the boundary before signing:
-
-```bash
-hardkas tx plan --from alice --to bob --amount 10 --network simulated --out tx-plan.json
-hardkas artifact inspect tx-plan.json
-hardkas artifact verify tx-plan.json --strict
-hardkas tx sign tx-plan.json --account alice --out tx-signed.json
-hardkas tx send tx-signed.json --network simulated --yes
-```
-
-`tx-plan.json` and `tx-signed.json` are local artifacts and should not be
-committed.
-
-## 5. Rebuild And Query
-
-If the SQLite projection is stale, rebuild it from artifacts:
-
-```bash
-hardkas query store sync
-hardkas query store doctor
-```
-
-The filesystem artifacts remain the source of truth.
+5. **Send and Settle**
+   ```bash
+   hardkas tx send .hardkas/artifacts/signedTx-*.json
+   ```

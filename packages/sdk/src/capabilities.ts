@@ -37,7 +37,7 @@ export interface HardkasCapabilities {
   trustBoundaries: {
     replay: "local-workflow-only";
     artifacts: "internal-integrity-only";
-    simulator: "research-experimental";
+    simulator: "local-simulation-only";
     queryStore: "rebuildable-read-model";
     l2Bridge: "pre-zk-assumptions";
   };
@@ -87,7 +87,7 @@ export function createHardkasCapabilities(): HardkasCapabilities {
     trustBoundaries: {
       replay: "local-workflow-only",
       artifacts: "internal-integrity-only",
-      simulator: "research-experimental",
+      simulator: "local-simulation-only",
       queryStore: "rebuildable-read-model",
       l2Bridge: "pre-zk-assumptions"
     }

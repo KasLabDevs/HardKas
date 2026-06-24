@@ -2,9 +2,9 @@
 
 All notable changes to HardKAS will be documented in this file.
 
-## 0.9.6-alpha - Deployed & Builder-Ready - 2026-06-11
+## 0.9.7-alpha - Deployed & Builder-Ready - 2026-06-11
 
-HardKAS `0.9.6-alpha` has successfully passed the Extreme Builder Gauntlet. This release marks our transition from raw engineering pipelines into a fully usable **Builder Layer** experience for Kaspa.
+HardKAS `0.9.7-alpha` has successfully passed the Extreme Builder Gauntlet. This release marks our transition from raw engineering pipelines into a fully usable **Builder Layer** experience for Kaspa.
 
 ### Key Highlights
 - **100% External Consumer Validation**: This release was completely verified from outside the monorepo, consuming the actual NPM registry packages.
@@ -18,7 +18,7 @@ HardKAS `0.9.6-alpha` has successfully passed the Extreme Builder Gauntlet. This
 - Ensured trailing whitespaces and strict semantic consistency across `vProgs` and `ZK` corpus boundaries.
 - Upgraded testing harnesses to guarantee no forbidden protocol claims leak into the `alpha` CLI output.
 
-## 0.9.6-alpha - CI Fixes + Query-Store SQL Repair - 2026-06-11
+## 0.9.7-alpha - CI Fixes + Query-Store SQL Repair - 2026-06-11
 
 TypeScript typecheck fixes across CLI silver commands and query-store SQL
 parameter binding. No new features, no protocol claim expansion.

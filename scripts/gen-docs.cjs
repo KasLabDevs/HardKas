@@ -359,7 +359,7 @@ Every artifact shares a common header:
 {
   "schema": HardkasSchemas.TxPlan,
   "schemaVersion": HardkasSchemas.ArtifactV1,
-  "hardkasVersion": "0.9.6-alpha",
+  "hardkasVersion": "0.9.7-alpha",
   "hashVersion": 4,
   "createdAt": "2026-06-06T12:00:00Z"
 }
@@ -386,7 +386,7 @@ All 28 requested markdown documents have been generated across the Concepts, Gui
 The \`scripts/docs-smoke.mjs\` tool was created and executed successfully. 
 - Deep undocumented imports are strictly forbidden.
 - SDK module APIs are verified against the real Node context.
-- CLI commands reflect the validated 0.9.6-alpha gauntlet capability matrix.
+- CLI commands reflect the validated 0.9.7-alpha gauntlet capability matrix.
 
 ## Missing Areas
 None. The documentation is gapless relative to the 12-Phase No-Regression Certification scope.

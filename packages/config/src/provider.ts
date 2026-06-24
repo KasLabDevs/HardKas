@@ -49,8 +49,8 @@ export function resolveProvider(options: ResolveProviderOptions): ResolvedProvid
     };
   }
 
-  // 3. Fallback to network alias logic (simnet defaults to simulated without an explicit URL/provider)
-  if (network === "simnet" || network === "local" || network === "simulated") {
+  // 3. Fallback to network alias logic
+  if (network === "local" || network === "simulated") {
     return {
       mode: "simulated",
       network

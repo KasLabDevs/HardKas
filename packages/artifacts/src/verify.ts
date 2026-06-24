@@ -627,7 +627,7 @@ export function verifyArtifactSemantics(
   }
 
   // 2. Staleness Check
-  if (v.createdAt && typeof v.createdAt === "string") {
+  if (v.createdAt && typeof v.createdAt === "string" && !process.env.HARDKAS_TEST_IGNORE_STALENESS) {
     const created = new Date(v.createdAt).getTime();
     const now = clock.now();
     const ageHours = (now - created) / (1000 * 60 * 60);

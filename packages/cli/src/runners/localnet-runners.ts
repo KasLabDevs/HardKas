@@ -156,16 +156,21 @@ export async function runLocalnetFund(opts: LocalnetFundOptions): Promise<void> 
   const keychain = allAccounts.find((a: any) => a.name === opts.identifier && a.keystorePath?.includes("keystore"));
   if (keychain?.address) address = keychain.address;
 
-  // 2. Fixture accounts
+  // 2. Simnet dev accounts (shadow accounts mapped from fixtures)
+  if (!address) {
+    const { ensureDevAccounts } = await import("@hardkas/accounts");
+    await ensureDevAccounts(opts.workspaceRoot || process.cwd());
+    const devAccounts = listHardkasAccounts(config);
+    console.error("DEBUG listHardkasAccounts:", devAccounts.map((a: any) => ({ name: a.name, kind: a.kind, keystorePath: a.keystorePath })));
+    const devAccount = devAccounts.find((a: any) => a.name === opts.identifier && a.keystorePath?.includes("dev-accounts"));
+    console.error("DEBUG devAccount found:", devAccount);
+    if (devAccount?.address) address = devAccount.address;
+  }
+
+  // 3. Fixture accounts
   if (!address) {
     const fixture = allAccounts.find((a: any) => a.name === opts.identifier && a.kind === "simulated");
     if (fixture?.address) address = fixture.address;
-  }
-
-  // 3. Simnet dev accounts
-  if (!address) {
-    const devAccount = allAccounts.find((a: any) => a.name === opts.identifier && a.keystorePath?.includes("dev-accounts"));
-    if (devAccount?.address) address = devAccount.address;
   }
 
   // 4. Literal Kaspa address
@@ -174,7 +179,7 @@ export async function runLocalnetFund(opts: LocalnetFundOptions): Promise<void> 
   }
 
   if (!address.startsWith("kaspasim:")) {
-    throw new Error("TOCCATA_FUNDING_REQUIRES_SIMNET_ADDRESS");
+    throw new Error("TOCCATA_FUNDING_REQUIRES_SIMNET_ADDRESS: " + address);
   }
 
   const before = await getAddressFundingState(address, !!opts.json);
