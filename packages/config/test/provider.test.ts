@@ -12,9 +12,9 @@ describe("Provider Resolution", () => {
     expect(res.mode).toBe("rpc");
   });
 
-  it("3. network simnet only EXPECT simulated", () => {
+  it("3. network simnet only EXPECT rpc", () => {
     const res = resolveProvider({ network: "simnet" });
-    expect(res.mode).toBe("simulated");
+    expect(res.mode).toBe("rpc");
   });
 
   it("4. kaspasim address + rpc provider EXPECT rpc", () => {
@@ -23,10 +23,10 @@ describe("Provider Resolution", () => {
     expect(res.mode).toBe("rpc");
   });
 
-  it("5. kaspasim address + no provider EXPECT simulated", () => {
+  it("5. kaspasim address + no provider EXPECT rpc", () => {
     // Fallback to network default
     const res = resolveProvider({ network: "simnet" });
-    expect(res.mode).toBe("simulated");
+    expect(res.mode).toBe("rpc");
   });
 
   it("6. provider simulated + url EXPECT PROVIDER_CONFLICT", () => {

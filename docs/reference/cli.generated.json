@@ -1,7 +1,7 @@
 {
   "schema": "hardkas.cliReference.v1",
   "generatedAt": "deterministic",
-  "totalCommands": 243,
+  "totalCommands": 246,
   "flatSurface": [
     "hardkas accounts",
     "hardkas accounts balance",
@@ -132,6 +132,7 @@
     "hardkas programmability",
     "hardkas programmability app",
     "hardkas programmability app plan",
+    "hardkas programmability audit",
     "hardkas programmability capabilities",
     "hardkas programmability corpus",
     "hardkas programmability corpus verify",
@@ -181,6 +182,8 @@
     "hardkas rpc utxos",
     "hardkas run",
     "hardkas sandbox",
+    "hardkas security",
+    "hardkas security audit",
     "hardkas session",
     "hardkas session create",
     "hardkas session list",
@@ -3742,6 +3745,24 @@
           ]
         },
         {
+          "path": "hardkas programmability audit",
+          "name": "audit",
+          "aliases": [],
+          "description": "Audit the boundaries and claims of programmability layers",
+          "usage": "hardkas programmability audit [options]",
+          "arguments": [],
+          "options": [
+            {
+              "flags": "--json",
+              "description": "Output as JSON",
+              "default": false,
+              "required": false,
+              "mandatory": false
+            }
+          ],
+          "subcommands": []
+        },
+        {
           "path": "hardkas programmability capabilities",
           "name": "capabilities",
           "aliases": [],
@@ -5036,6 +5057,42 @@
         }
       ],
       "subcommands": []
+    },
+    {
+      "path": "hardkas security",
+      "name": "security",
+      "aliases": [],
+      "description": "Security DX and safety verification tools",
+      "usage": "hardkas security [options] [command]",
+      "arguments": [],
+      "options": [],
+      "subcommands": [
+        {
+          "path": "hardkas security audit",
+          "name": "audit",
+          "aliases": [],
+          "description": "Audit workspace for DX safety and secret leakage",
+          "usage": "hardkas security audit [options]",
+          "arguments": [],
+          "options": [
+            {
+              "flags": "--json",
+              "description": "Output as JSON",
+              "default": false,
+              "required": false,
+              "mandatory": false
+            },
+            {
+              "flags": "--include <path>",
+              "description": "Extra path to include in search",
+              "default": null,
+              "required": true,
+              "mandatory": false
+            }
+          ],
+          "subcommands": []
+        }
+      ]
     },
     {
       "path": "hardkas session",

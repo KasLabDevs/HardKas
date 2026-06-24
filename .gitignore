@@ -106,3 +106,5 @@ fix-*.js
 /test_args.json
 /bin_wrapper/
 /snapshots/
+tmp-consumer-hardkas
+tmp-packaging

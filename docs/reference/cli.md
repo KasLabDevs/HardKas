@@ -3182,6 +3182,7 @@ No arguments.
 ### Subcommands
 
 - [hardkas programmability app](#hardkas-programmability-app)
+- [hardkas programmability audit](#hardkas-programmability-audit)
 - [hardkas programmability capabilities](#hardkas-programmability-capabilities)
 - [hardkas programmability corpus](#hardkas-programmability-corpus)
 - [hardkas programmability inspect](#hardkas-programmability-inspect)
@@ -3229,6 +3230,28 @@ hardkas programmability app plan [options]
 | :--- | :--- | :--- |
 | `--kind <kind>` | silver, zk, vprog, or full-lab | full-lab |
 | `--template <path>` | Template path |  |
+| `--json` | Output as JSON | false |
+
+### Arguments
+
+No arguments.
+
+---
+
+## hardkas programmability audit
+
+Audit the boundaries and claims of programmability layers
+
+### Usage
+
+```bash
+hardkas programmability audit [options]
+```
+
+### Options
+
+| Flag | Description | Default |
+| :--- | :--- | :--- |
 | `--json` | Output as JSON | false |
 
 ### Arguments
@@ -4445,6 +4468,53 @@ hardkas sandbox [options]
 | `--recipe <name>` | Run an initial recipe/template inside the sandbox |  |
 | `-p, --port <port>` | Port for dashboard | 3000 |
 | `-h, --host <host>` | Host for dashboard | localhost |
+
+### Arguments
+
+No arguments.
+
+---
+
+## hardkas security
+
+Security DX and safety verification tools
+
+### Usage
+
+```bash
+hardkas security [options] [command]
+```
+
+### Options
+
+No options.
+
+### Arguments
+
+No arguments.
+
+### Subcommands
+
+- [hardkas security audit](#hardkas-security-audit)
+
+---
+
+## hardkas security audit
+
+Audit workspace for DX safety and secret leakage
+
+### Usage
+
+```bash
+hardkas security audit [options]
+```
+
+### Options
+
+| Flag | Description | Default |
+| :--- | :--- | :--- |
+| `--json` | Output as JSON | false |
+| `--include <path>` | Extra path to include in search |  |
 
 ### Arguments
 

@@ -27,7 +27,7 @@
     "test:fuzz:migration": "vitest run packages/testing/test/fuzz-migration.test.ts",
     "test:backward": "vitest run packages/testing/test/backward-compat.test.ts",
     "smoke:backward": "tsx packages/testing/scripts/smoke-backward-compat.ts",
-    "packaging:smoke": "node scripts/packaging-smoke.mjs",
+    "packaging:smoke": "node scripts/check-packaging-smoke.mjs",
     "typecheck": "turbo typecheck",
     "lint": "turbo lint",
     "format": "prettier --write .",
