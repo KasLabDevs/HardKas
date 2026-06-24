@@ -8,7 +8,7 @@ describe("Phase 6A: Network Fuzzing", () => {
     const sdk = await Hardkas.open({ network: "simnet", autoBootstrap: true });
     const original = {
       schema: "hardkas.networkProfile.v1",
-      hardkasVersion: "0.9.6-alpha",
+      hardkasVersion: "0.9.7-alpha",
       version: "1.0.0-alpha",
       networkId: "simnet",
       layer: "L1",

@@ -1,4 +1,4 @@
-﻿import fs from "node:fs";
+import fs from "node:fs";
 import path from "node:path";
 import crypto from "node:crypto";
 import pc from "picocolors";
@@ -120,7 +120,7 @@ export async function runSemanticVerify(options: SemanticVerifyOptions) {
 
   const bundle: SemanticBundleV1 = {
     schemaVersion: HardkasSchemas.SemanticBundleV1,
-    runtimeVersion: "0.9.6-alpha",
+    runtimeVersion: "0.9.7-alpha",
     hashVersion: "sha256",
     invariantSummary: {
       totalChecks,
@@ -152,12 +152,12 @@ export async function runSemanticVerify(options: SemanticVerifyOptions) {
       globalSemanticHash: semanticHash
     });
   } else {
-    UI.info(`\n${pc.bold(pc.cyan("ðŸ”¬ CI Parity Semantic Bundle Export"))}`);
+    UI.info(`\n${pc.bold(pc.cyan("🔬 CI Parity Semantic Bundle Export"))}`);
     UI.info(`  Total Reports Parsed: ${pc.yellow(reportFiles.length)}`);
     UI.info(`  Total Invariant Checks: ${pc.yellow(totalChecks)}`);
     UI.info(`  Unique Artifacts Bundled: ${pc.yellow(artifacts.length)}`);
 
-    UI.info(`\n${pc.bold(pc.green("âœ¨ Semantic Bundle v1 Generated âœ¨"))}`);
+    UI.info(`\n${pc.bold(pc.green("✨ Semantic Bundle v1 Generated ✨"))}`);
     UI.info(`  File: ${pc.cyan("hardkas.semantic-bundle.v1.json")}`);
 
     UI.info(`\n  ${pc.bold("GLOBAL_SEMANTIC_HASH:")} ${pc.magenta(semanticHash)}`);
