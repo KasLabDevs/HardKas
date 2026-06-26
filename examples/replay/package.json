@@ -1,6 +1,6 @@
 {
   "name": "@examples/replay",
-  "version": "0.9.7-alpha",
+  "version": "0.10.0-alpha",
   "private": true,
   "type": "module",
   "scripts": {

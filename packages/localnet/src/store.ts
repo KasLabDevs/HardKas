@@ -4,12 +4,15 @@ import type { LocalnetState } from "./types.js";
 import { createInitialLocalnetState } from "./state.js";
 import { writeFileAtomic } from "@hardkas/core";
 
-export function getDefaultLocalnetDir(cwd: string = process.cwd()): string {
+export function getDefaultLocalnetDir(cwd: string = process.cwd(), overrideHardkasDir?: string): string {
+  if (overrideHardkasDir) {
+    return overrideHardkasDir;
+  }
   return path.join(cwd, ".hardkas");
 }
 
-export function getDefaultLocalnetStatePath(cwd: string = process.cwd()): string {
-  return path.join(getDefaultLocalnetDir(cwd), "localnet.json");
+export function getDefaultLocalnetStatePath(cwd: string = process.cwd(), overrideHardkasDir?: string): string {
+  return path.join(getDefaultLocalnetDir(cwd, overrideHardkasDir), "localnet.json");
 }
 
 export async function saveLocalnetState(
@@ -53,19 +56,20 @@ export async function loadLocalnetState(
 export async function loadOrCreateLocalnetState(
   options: {
     cwd?: string;
+    hardkasDir?: string;
     accounts?: number;
     initialBalanceSompi?: bigint;
   } = {}
 ): Promise<LocalnetState> {
-  const path = getDefaultLocalnetStatePath(options.cwd);
-  let state = await loadLocalnetState(path);
+  const statePath = getDefaultLocalnetStatePath(options.cwd, options.hardkasDir);
+  let state = await loadLocalnetState(statePath);
 
   if (!state) {
     state = createInitialLocalnetState({
       accounts: options.accounts,
       initialBalanceSompi: options.initialBalanceSompi
     });
-    await saveLocalnetState(state, path);
+    await saveLocalnetState(state, statePath);
   }
 
   return state;
@@ -74,15 +78,16 @@ export async function loadOrCreateLocalnetState(
 export async function resetLocalnetState(
   options: {
     cwd?: string;
+    hardkasDir?: string;
     accounts?: number;
     initialBalanceSompi?: bigint;
   } = {}
 ): Promise<LocalnetState> {
-  const path = getDefaultLocalnetStatePath(options.cwd);
+  const statePath = getDefaultLocalnetStatePath(options.cwd, options.hardkasDir);
   const state = createInitialLocalnetState({
     accounts: options.accounts,
     initialBalanceSompi: options.initialBalanceSompi
   });
-  await saveLocalnetState(state, path);
+  await saveLocalnetState(state, statePath);
   return state;
 }

@@ -45,7 +45,7 @@ function cleanupSandbox(sandboxDir: string, forcePreserve = false) {
 function createValidMockPayload(ctx: TortureBucketContext, suffix: string = "") {
   return {
     schema: "hardkas.txPlan" as const,
-    hardkasVersion: "0.9.7-alpha",
+    hardkasVersion: "0.10.0-alpha",
     version: ARTIFACT_VERSION,
     networkId: "simnet" as const,
     mode: "simulated" as const,

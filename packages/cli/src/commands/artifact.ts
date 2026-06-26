@@ -5,7 +5,7 @@ import { runArtifactExplain } from "../runners/artifact-explain-runner.js";
 import path from "node:path";
 
 export function registerArtifactCommands(program: Command) {
-  const artifactCmd = program.command("artifact").description("Manage HardKAS artifacts");
+  const artifactCmd = program.command("artifact").alias("artifacts").description("Manage HardKAS artifacts");
 
   artifactCmd
     .command("create <type>")

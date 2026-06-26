@@ -14,7 +14,8 @@ export function registerProgrammabilityCommands(program: Command) {
     .option("--json", "Output as JSON", false)
     .action(async () => {
       const sdk = await createSdk();
-      printResult(await sdk.programmability.capabilities());
+      const result = await sdk.programmability.capabilities();
+      getOutput().writeJson({ ok: true, command: "programmability capabilities", mode: "cli", result });
     });
 
   programmability
@@ -29,11 +30,12 @@ export function registerProgrammabilityCommands(program: Command) {
         l2: { realBridge: false, trustlessExit: false },
         stableAssets: { realIssuer: false }
       };
-      
+
       if (options.json) {
-        output.writeJson(auditResult);
+        output.writeJson({ ok: true, command: "programmability audit", mode: "cli", result: auditResult });
       } else {
         output.writeLine("Programmability Claims & Boundaries:");
+        // Keep stringify for human mode only
         output.writeLine(JSON.stringify(auditResult, null, 2));
       }
     });
@@ -47,7 +49,7 @@ export function registerProgrammabilityCommands(program: Command) {
       const sdk = await createSdk();
       const kind = normalizeInspectKind(options.kind);
       const result = await sdk.programmability.inspect({ kind, path: targetPath });
-      printResult(result);
+      getOutput().writeJson({ ok: result.ok, command: "programmability inspect", mode: "cli", result });
       if (!result.ok) {
         const { HardkasCliError } = await import("../cli-errors.js");
         throw new HardkasCliError("PROGRAMMABILITY_INSPECT_FAILED", "Inspect failed", {
@@ -65,7 +67,7 @@ export function registerProgrammabilityCommands(program: Command) {
       const sdk = await createSdk();
       const kind = normalizeInspectKind(options.kind);
       const result = await sdk.programmability.verify({ kind, path: targetPath });
-      printResult(result);
+      getOutput().writeJson({ ok: result.ok, command: "programmability verify", mode: "cli", result });
       if (!result.ok && result.status !== "PROGRAMMABILITY_VERIFY_PARTIAL") {
         const { HardkasCliError } = await import("../cli-errors.js");
         throw new HardkasCliError("PROGRAMMABILITY_VERIFY_FAILED", "Verify failed", {
@@ -85,7 +87,7 @@ export function registerProgrammabilityCommands(program: Command) {
     .action(async (targetPath: string) => {
       const sdk = await createSdk();
       const result = await sdk.programmability.corpus.verify({ path: targetPath });
-      printResult(result);
+      getOutput().writeJson({ ok: result.ok, command: "programmability corpus verify", mode: "cli", result });
       if (!result.ok) {
         const { HardkasCliError } = await import("../cli-errors.js");
         throw new HardkasCliError("CORPUS_VERIFY_FAILED", "Corpus verify failed", {
@@ -106,7 +108,7 @@ export function registerProgrammabilityCommands(program: Command) {
       const sdk = await createSdk();
       const kind = normalizeKind(options.kind, true) as ProgramKind;
       const result = sdk.programmability.app.plan({ kind, template: options.template });
-      printResult(result);
+      getOutput().writeJson({ ok: true, command: "programmability app plan", mode: "cli", result });
     });
 }
 
@@ -131,8 +133,4 @@ function normalizeKind(
   if (kind === "silver" || kind === "zk" || kind === "vprog") return kind;
   if (allowFullLab && kind === "full-lab") return kind;
   throw new Error(`PROGRAMMABILITY_KIND_INVALID: ${kind}`);
-}
-
-function printResult(result: unknown) {
-  getOutput().writeJson(result);
 }

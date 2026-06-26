@@ -8,6 +8,7 @@ export interface CommandOutputOptions {
 
 export interface CommandOutput {
   mode: OutputMode;
+  jsonWritten: boolean;
   write(message: string): void;
   writeLine(message: string): void;
   writeJson(value: unknown): void;
@@ -38,12 +39,15 @@ export function createCommandOutput(options: CommandOutputOptions): CommandOutpu
         stderr.write(message + "\n");
       }
     },
+    jsonWritten: false,
     writeJson(value: unknown): void {
+      const replacer = (k: string, v: unknown) => typeof v === "bigint" ? v.toString() : v;
       if (mode === "human") {
-        stdout.write(JSON.stringify(value, null, 2) + "\n");
+        stdout.write(JSON.stringify(value, replacer, 2) + "\n");
       } else if (mode === "json") {
-        stdout.write(JSON.stringify(value, null, 2) + "\n");
+        stdout.write(JSON.stringify(value, replacer, 2) + "\n");
       }
+      this.jsonWritten = true;
     },
     warn(message: string): void {
       if (mode !== "silent") {

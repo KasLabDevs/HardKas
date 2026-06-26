@@ -121,7 +121,7 @@ export function verifyLineage(
     // Network & Mode Consistency
     if (artifact.networkId !== parent.networkId) {
       addIssue(
-        "NETWORK_MISMATCH",
+        "LINEAGE_NETWORK_MISMATCH",
         `Network mismatch: parent is ${parent.networkId}, current is ${artifact.networkId}`
       );
     }

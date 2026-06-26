@@ -1,6 +1,6 @@
-﻿{
+{
   "name": "@hardkas/sdk",
-  "version": "0.9.7-alpha",
+  "version": "0.10.0-alpha",
   "type": "module",
   "files": [
     "dist",

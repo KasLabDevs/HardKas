@@ -1,0 +1,35 @@
+{
+  "schema": "hardkas.signedTx",
+  "schemaVersion": "hardkas.artifact.v1",
+  "hardkasVersion": "0.10.0-alpha",
+  "version": "1.0.0-alpha",
+  "hashVersion": 4,
+  "createdAt": "2026-06-26T09:26:21.714Z",
+  "status": "signed",
+  "sourcePlanId": "plan-20cb2b6f242b25e6",
+  "networkId": "simulated",
+  "mode": "simulated",
+  "from": {
+    "address": "kaspa:sim_alice"
+  },
+  "to": {
+    "address": "kaspa:sim_bob"
+  },
+  "amountSompi": "1000000000",
+  "txId": "simulated-plan-20cb2b6f242b25e6-tx",
+  "signedTransaction": {
+    "format": "simulated",
+    "payload": "simulated-signed-tx:plan-20cb2b6f242b25e6"
+  },
+  "lineage": {
+    "artifactId": "bdb86e78bfb2120ace634004d853dc548a6457a649bce42ab704b3c07aef9fdb",
+    "lineageId": "597f67abe0dc777f481a2bb0aa3e6f2021efa89d22709d3655b4388c73ec6a2c",
+    "parentArtifactId": "20cb2b6f242b25e6190d7e94cbcb4c0489e9f7bccca1656f31a3b6bae9de55e4",
+    "rootArtifactId": "597f67abe0dc777f481a2bb0aa3e6f2021efa89d22709d3655b4388c73ec6a2c",
+    "sequence": 2
+  },
+  "workflowId": "wf_597f67abe0dc777f",
+  "assumptionLevel": "local-simulated",
+  "signedId": "signed-bdb86e78bfb2120a",
+  "contentHash": "bdb86e78bfb2120ace634004d853dc548a6457a649bce42ab704b3c07aef9fdb"
+}

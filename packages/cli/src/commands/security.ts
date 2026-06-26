@@ -102,25 +102,25 @@ export function registerSecurityCommand(program: Command) {
         searchDirectory(path.join(workspaceRoot, sp));
       }
 
+      if (failed) {
+        const { HardkasCliError } = await import("../cli-errors.js");
+        throw new HardkasCliError("SECURITY_AUDIT_FAILED", "Security audit failed:\n" + issues.map(i => `- ${i}`).join("\n"), { exitCode: 1 });
+      }
+
       if (options.json) {
         output.writeJson({
-          mainnetFirewall,
-          issues,
-          status: failed ? "FAILED" : "PASS"
+          ok: true,
+          command: "security audit",
+          mode: "cli",
+          result: {
+            mainnetFirewall,
+            issues,
+            status: "PASS"
+          }
         });
       } else {
         output.writeLine(`Mainnet Firewall: ${JSON.stringify(mainnetFirewall)}`);
-        if (failed) {
-          output.error("Security audit failed due to the following issues:");
-          issues.forEach(i => output.error(`- ${i}`));
-        } else {
-          output.writeLine("Security audit passed. No secret leaks or policy violations detected.");
-        }
-      }
-
-      if (failed) {
-        const { HardkasCliError } = await import("../cli-errors.js");
-        throw new HardkasCliError("SECURITY_AUDIT_FAILED", "Security audit failed", { exitCode: 1 });
+        output.writeLine("Security audit passed. No secret leaks or policy violations detected.");
       }
     });
 }

@@ -45,12 +45,12 @@ export function registerChaosCommands(program: Command) {
       } catch (err: unknown) {
         if ((err as any).exitCode !== undefined) {
           if ((err as any).exitCode !== ChaosExitCodes.NO_FINDINGS) {
-            UI.error(((err instanceof Error) ? err.message : String(err)));
+            const { HardkasCliError } = await import("../cli-errors.js");
+            throw new HardkasCliError("CHAOS_FAILED", ((err instanceof Error) ? err.message : String(err)), { exitCode: (err as any).exitCode });
           }
-          throw err;
+          process.exit((err as any).exitCode);
         }
-        handleError(err);
-        throw new Error("Chaos Internal Failure");
+        throw err;
       }
     });
 

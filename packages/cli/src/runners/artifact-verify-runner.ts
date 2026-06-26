@@ -1,4 +1,4 @@
-﻿import {
+import {
   verifyArtifactIntegrity,
   verifyArtifactSemantics,
   verifyArtifactReplay
@@ -72,7 +72,8 @@ export async function runArtifactVerify(options: ArtifactVerifyOptions) {
   // Replay issues will show as warnings/errors.
 
   if (options.json) {
-    console.log(JSON.stringify(result, null, 2));
+    const { getOutput } = await import("../output.js");
+    getOutput().writeJson({ ok: true, command: "artifact verify", mode: "cli", result });
     return result;
   }
 
@@ -189,20 +190,20 @@ async function runRecursiveVerify(dir: string, options: ArtifactVerifyOptions) {
   }
 
   if (options.json) {
-    console.log(
-      JSON.stringify(
-        {
-          schema: HardkasSchemas.QueryVerifyV1,
-          ok: failCount === 0,
-          scanned: files.length,
-          successCount,
-          failCount,
-          results: jsonResults
-        },
-        null,
-        2
-      )
-    );
+    const { getOutput } = await import("../output.js");
+    const envelope = {
+      ok: failCount === 0,
+      command: "artifact verify",
+      mode: "cli" as const,
+      result: {
+        schema: HardkasSchemas.QueryVerifyV1,
+        scanned: files.length,
+        successCount,
+        failCount,
+        results: jsonResults
+      }
+    };
+    getOutput().writeJson(envelope);
     if (failCount > 0) {
       const { HardkasCliError } = await import("../cli-errors.js");
       throw new HardkasCliError("VERIFICATION_FAILED", "Recursive verification failed.", {

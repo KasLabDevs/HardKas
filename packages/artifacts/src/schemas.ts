@@ -678,3 +678,45 @@ export type ProgrammabilityAppPlanSchemaType = z.infer<
 export type ToccataProgrammabilityCorpusSchemaType = z.infer<
   typeof ToccataProgrammabilityCorpusSchema
 >;
+
+export const ScenarioResultSchema = BaseArtifactSchema.extend({
+  schema: z.literal(HardkasSchemas.ScenarioResultV1),
+  scenarioName: z.string(),
+  status: z.enum(["passed", "failed"]),
+  artifactsGenerated: z.array(z.string()),
+  error: z.object({
+    code: z.string(),
+    message: z.string(),
+    component: z.string().optional(),
+    recoverable: z.boolean().optional()
+  }).optional(),
+  claims: z.object({
+    mainnet: z.literal(false),
+    testnet: z.literal(false),
+    production: z.literal(false)
+  })
+});
+
+export type ScenarioResult = z.infer<typeof ScenarioResultSchema>;
+
+export const EvidencePackageSchema = BaseArtifactSchema.extend({
+  schema: z.literal(HardkasSchemas.EvidencePackageV1),
+  name: z.string(),
+  hardkasVersion: z.string(),
+  mode: executionModeSchema,
+  scenarioResult: z.any().optional(), // We'll keep it flexible initially to allow injecting the raw json
+  artifacts: z.array(z.any()), // Raw inline artifacts
+  hashes: z.record(z.string(), z.string()), // map artifactId -> blake2b or sha256 hash
+  claims: z.object({
+    mainnet: z.boolean(),
+    testnet: z.boolean(),
+    production: z.boolean(),
+    bridgeReady: z.boolean().optional(),
+    onchainZk: z.boolean().optional()
+  }),
+  artifactDiscovery: z.object({
+    source: z.string()
+  }).optional()
+});
+
+export type EvidencePackage = z.infer<typeof EvidencePackageSchema>;

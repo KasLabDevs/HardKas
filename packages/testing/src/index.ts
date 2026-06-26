@@ -32,6 +32,9 @@ export { generateReproducibilityReport } from "./reproducibility.js";
 // ── Adversarial Validation ──────────────────────────────────────────────────
 export { AdversarialFixtures } from "./adversarial-fixtures.js";
 
+// ── Scenarios ────────────────────────────────────────────────────────────────
+// Test scenarios are exported from "@hardkas/testing/scenarios" to avoid loading vitest in non-test contexts.
+
 // ── Torture Suite ────────────────────────────────────────────────────────────
 export type {
   TortureCaseResult,

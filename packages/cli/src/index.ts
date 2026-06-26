@@ -21,7 +21,17 @@ async function main() {
       : process.cwd();
 
   attachLedgerAppender(workspaceRoot);
-  const program = buildHardkasProgram();
+
+  const { loadHardkasConfig } = await import("@hardkas/config");
+  let loadedConfig;
+  try {
+    loadedConfig = await loadHardkasConfig({ workspaceRoot });
+  } catch (e) {
+    // Ignore config load errors during CLI initialization;
+    // commands will catch it when they try to use it if it's required.
+  }
+
+  const program = buildHardkasProgram({ loadedConfig });
 
   try {
     await program.parseAsync(process.argv);
@@ -29,6 +39,21 @@ async function main() {
   } catch (err: any) {
     const { handleError } = await import("./ui.js");
     handleError(err);
+
+    // For HardkasCliError in JSON mode, produce the structured error envelope
+    // ONLY if the command didn't already write one.
+    if (err instanceof HardkasCliError && isJson) {
+      const { getOutput } = await import("./output.js");
+      if (!getOutput().jsonWritten) {
+        getOutput().writeJson({
+          ok: false,
+          code: err.code,
+          message: err.message,
+          mode: "cli"
+        });
+      }
+    }
+
     const exitCode =
       err instanceof HardkasCliError
         ? err.exitCode

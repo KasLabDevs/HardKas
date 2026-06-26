@@ -45,3 +45,8 @@ export type {
   SilverDeploySimulationArtifact,
   SilverSpendSimulationArtifact
 } from "./types.js";
+
+export type {
+  ScenarioResult,
+  EvidencePackage
+} from "./schemas.js";

@@ -15,8 +15,10 @@ describe("Config Commands", () => {
     if (fs.existsSync(tempDir)) fs.rmSync(tempDir, { recursive: true });
   });
 
+  const cliPath = path.resolve(__dirname, "../dist/index.js");
+
   it("should init a config file", () => {
-    const output = execSync("node ../dist/index.js config init", {
+    const output = execSync(`node "${cliPath}" config init`, {
       cwd: tempDir,
       encoding: "utf-8"
     });
@@ -25,16 +27,16 @@ describe("Config Commands", () => {
   });
 
   it("should refuse to overwrite without --force", () => {
-    execSync("node ../dist/index.js config init", { cwd: tempDir, stdio: "ignore" });
+    execSync(`node "${cliPath}" config init`, { cwd: tempDir, stdio: "ignore" });
     try {
-      execSync("node ../dist/index.js config init", { cwd: tempDir, encoding: "utf-8" });
+      execSync(`node "${cliPath}" config init`, { cwd: tempDir, encoding: "utf-8" });
     } catch (e: unknown) {
       expect(((e as any).stdout) || ((e as any).stderr) || ((e instanceof Error) ? ((e instanceof Error) ? e.message : String(e)) : String(e))).toContain("already exists");
     }
   });
 
   it("should repair a missing config file", () => {
-    const output = execSync("node ../dist/index.js config repair", {
+    const output = execSync(`node "${cliPath}" config repair`, {
       cwd: tempDir,
       encoding: "utf-8"
     });
@@ -47,7 +49,7 @@ describe("Config Commands", () => {
       path.join(tempDir, "hardkas.config.ts"),
       "invalid typescript content"
     );
-    const output = execSync("node ../dist/index.js config repair", {
+    const output = execSync(`node "${cliPath}" config repair`, {
       cwd: tempDir,
       encoding: "utf-8"
     });

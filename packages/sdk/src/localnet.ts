@@ -89,7 +89,7 @@ export class HardkasLocalnet {
    * Initializes the in-memory simulated workspace.
    *
    * Docker Toccata process control remains a CLI/localnet responsibility in
-   * 0.9.7-alpha; the SDK reports that boundary instead of silently shelling out.
+   * 0.10.0-alpha; the SDK reports that boundary instead of silently shelling out.
    */
   async start(options: LocalnetProfileOptions = {}): Promise<LocalnetControlResult> {
     const profile = options.profile || "simulated";
@@ -109,14 +109,38 @@ export class HardkasLocalnet {
       profile,
       status: "SDK_LOCALNET_CONTROL_UNSUPPORTED",
       message:
-        "SDK Docker localnet start is not supported in 0.9.7-alpha. Use `hardkas localnet start --profile toccata-v2`."
+        "SDK Docker localnet start is not supported in 0.10.0-alpha. Use `hardkas localnet start --profile toccata-v2`."
+    };
+  }
+
+  /**
+   * Stops the localnet simulation or indicates lack of support for Docker termination.
+   */
+  async stop(options: LocalnetProfileOptions = {}): Promise<LocalnetControlResult> {
+    const profile = options.profile || "simulated";
+    if (profile === "simulated") {
+      // In-memory simulation doesn't run background processes, but we could clear the state here if needed
+      return {
+        schema: HardkasSchemas.LocalnetControlV1,
+        profile,
+        status: "SIMULATED_LOCALNET_READY",
+        message: "Simulated localnet stopped (in-memory state preserved)."
+      };
+    }
+
+    return {
+      schema: HardkasSchemas.LocalnetControlV1,
+      profile,
+      status: "SDK_LOCALNET_CONTROL_UNSUPPORTED",
+      message:
+        "SDK Docker localnet stop is not supported in 0.10.0-alpha. Use `hardkas localnet stop --profile toccata-v2`."
     };
   }
 
   /**
    * Funds a simulated account through the SDK transaction flow.
    *
-   * Toccata Docker mining/funding remains CLI-only in 0.9.7-alpha because it
+   * Toccata Docker mining/funding remains CLI-only in 0.10.0-alpha because it
    * depends on a local stratum/miner companion and host Docker state.
    */
   async fund(
@@ -146,7 +170,7 @@ export class HardkasLocalnet {
       identifier,
       status: "SDK_TOCCATA_FUNDING_UNSUPPORTED",
       message:
-        "SDK Toccata funding is not supported in 0.9.7-alpha. Use `hardkas localnet fund <account> --profile toccata-v2`."
+        "SDK Toccata funding is not supported in 0.10.0-alpha. Use `hardkas localnet fund <account> --profile toccata-v2`."
     };
   }
 

@@ -23,6 +23,7 @@ export function registerNodeCommands(program: Command) {
     )
     .option("--wait-lock", "Wait for workspace lock if held", false)
     .option("--lock-timeout <ms>", "Lock wait timeout in ms", "30000")
+    .option("--json", "Output results as JSON", false)
     .action(async (options) => {
       const { withLock } = await import("@hardkas/core");
       try {
@@ -50,6 +51,7 @@ export function registerNodeCommands(program: Command) {
     .description(`Stop local node ${UI.maturity("stable")}`)
     .option("--wait-lock", "Wait for workspace lock if held", false)
     .option("--lock-timeout <ms>", "Lock wait timeout in ms", "30000")
+    .option("--json", "Output results as JSON", false)
     .action(async (options) => {
       const { withLock } = await import("@hardkas/core");
       try {
@@ -76,6 +78,7 @@ export function registerNodeCommands(program: Command) {
     .description(`Restart local node ${UI.maturity("stable")}`)
     .option("--wait-lock", "Wait for workspace lock if held", false)
     .option("--lock-timeout <ms>", "Lock wait timeout in ms", "30000")
+    .option("--json", "Output results as JSON", false)
     .action(async (options) => {
       const { withLock } = await import("@hardkas/core");
       try {
@@ -104,6 +107,7 @@ export function registerNodeCommands(program: Command) {
     .option("--yes", "Skip confirmation prompt", false)
     .option("--wait-lock", "Wait for workspace lock if held", false)
     .option("--lock-timeout <ms>", "Lock wait timeout in ms", "30000")
+    .option("--json", "Output results as JSON", false)
     .action(async (options) => {
       const { withLock } = await import("@hardkas/core");
       try {
@@ -208,6 +212,7 @@ export function registerNodeCommands(program: Command) {
     .description(`View node logs ${UI.maturity("preview")}`)
     .option("--tail <n>", "Number of lines to show", "100")
     .option("--follow", "Follow log output", false)
+    .option("--json", "Output results as JSON", false)
     .action(async (options) => {
       try {
         const result = await runNodeLogs({

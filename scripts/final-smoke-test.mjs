@@ -28,7 +28,7 @@ async function smoke() {
   // 1. Install NPM package
   run("npm init -y");
   run(
-    "npm install C:/Users/jrodr/Documents/kaslabdevs/GitHub/HardKas-repo/packages/cli/hardkas-cli-0.9.7-alpha.tgz C:/Users/jrodr/Documents/kaslabdevs/GitHub/HardKas-repo/packages/sdk/hardkas-sdk-0.9.7-alpha.tgz"
+    "npm install C:/Users/jrodr/Documents/kaslabdevs/GitHub/HardKas-repo/packages/cli/hardkas-cli-0.10.0-alpha.tgz C:/Users/jrodr/Documents/kaslabdevs/GitHub/HardKas-repo/packages/sdk/hardkas-sdk-0.10.0-alpha.tgz"
   );
 
   console.log("=== SIMULATED_PASS ===");

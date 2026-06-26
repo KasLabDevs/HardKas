@@ -1,0 +1,45 @@
+{
+  "status": "success",
+  "events": [
+    {
+      "step": "insufficient_funds",
+      "ok": true,
+      "code": "NO_CODE",
+      "message": "Insufficient funds: needed 99999999900000000 sompi but only found 96999997900 sompi across 1 UTXOs.",
+      "isHardkasError": false
+    },
+    {
+      "step": "negative_amount",
+      "ok": true,
+      "code": "NO_CODE",
+      "message": "KAS_AMOUNT_NEGATIVE: negative money not allowed",
+      "isHardkasError": false
+    },
+    {
+      "step": "invalid_decimals",
+      "ok": true,
+      "code": "NO_CODE",
+      "message": "KAS_AMOUNT_TOO_MANY_DECIMALS: too many decimal places in '1.123456789'",
+      "isHardkasError": false
+    },
+    {
+      "step": "wrong_signer",
+      "ok": true,
+      "code": "NO_CODE",
+      "message": "Signer account 'kaspa:sim_bob' is not authorized to sign for 'kaspa:sim_alice'.",
+      "isHardkasError": false
+    },
+    {
+      "step": "simulate_plan",
+      "ok": true
+    },
+    {
+      "step": "simulate_invalid_object",
+      "ok": true,
+      "code": "NO_CODE",
+      "message": "Cannot simulate signed artifact without parent plan or embedded plan data.",
+      "isHardkasError": false
+    }
+  ],
+  "errors": []
+}

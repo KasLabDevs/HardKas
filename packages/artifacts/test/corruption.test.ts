@@ -19,14 +19,14 @@ describe("Corruption Corpus Hardening", () => {
     const fixturePath = path.join(corruptedDir, "broken-content-hash.json");
     const result = await verifyArtifactIntegrity(fixturePath);
     expect(result.ok).toBe(false);
-    expect(result.issues.some((i) => i.code === "HASH_MISMATCH")).toBe(true);
+    expect(result.issues.some((i) => i.code === "ARTIFACT_HASH_MISMATCH")).toBe(true);
   });
 
   it("should reject mutated semantic field", async () => {
     const fixturePath = path.join(corruptedDir, "mutated-signed-field.json");
     const result = await verifyArtifactIntegrity(fixturePath);
     expect(result.ok).toBe(false);
-    expect(result.issues.some((i) => i.code === "HASH_MISMATCH")).toBe(true);
+    expect(result.issues.some((i) => i.code === "ARTIFACT_HASH_MISMATCH")).toBe(true);
   });
 
   it("should reject network/address mismatch", () => {
@@ -157,7 +157,7 @@ describe("Corruption Corpus Hardening", () => {
 
     const result = verifyArtifactSemantics(child, { parent });
     expect(result.ok).toBe(false);
-    expect(result.issues.some((i) => i.code === "NETWORK_MISMATCH")).toBe(true);
+    expect(result.issues.some((i) => i.code === "LINEAGE_NETWORK_MISMATCH")).toBe(true);
   });
 
   it("should detect mode contamination between parent and child", () => {

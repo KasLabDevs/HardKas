@@ -77,7 +77,7 @@ describe("CLI Semantic Constraints", () => {
     ]);
     expect(res.status).toBe(0);
     const parsed = JSON.parse(res.stdout);
-    expect(parsed.config.defaultNetwork).toBe("kaspa-testnet-10");
+    expect(parsed.result.config.defaultNetwork).toBe("kaspa-testnet-10");
   });
 
   it("errors in JSON mode go strictly to stderr", () => {

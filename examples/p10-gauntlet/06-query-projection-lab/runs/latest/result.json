@@ -1,0 +1,65 @@
+{
+  "status": "success",
+  "events": [
+    {
+      "step": "traffic_generated",
+      "planId": "plan-78d314f99fad964a"
+    },
+    {
+      "step": "sync_normal",
+      "ok": true
+    },
+    {
+      "step": "direct_query",
+      "error": "no such table: utxos"
+    },
+    {
+      "step": "corrupt_artifact_created",
+      "file": "C:\\Users\\jrodr\\Documents\\kaslabdevs\\GitHub\\HardKas-repo\\examples\\p10-gauntlet\\06-query-projection-lab\\.hardkas\\artifacts\\signedTx-garbage12345.json"
+    },
+    {
+      "step": "force_rebuild",
+      "ok": true,
+      "stats": {
+        "schema": "hardkas.queryRebuild.v1",
+        "ok": true,
+        "artifacts": {
+          "scanned": 16,
+          "indexed": 15,
+          "duplicates": 0,
+          "corrupted": 1
+        },
+        "events": {
+          "scanned": 0,
+          "indexed": 0,
+          "duplicates": 0,
+          "corrupted": 0
+        },
+        "warnings": [
+          "❌ [ARTIFACT_JSON_INVALID] Invalid JSON: Expected double-quoted property name in JSON at position 51 (line 1 column 52)\n   Location: C:\\Users\\jrodr\\Documents\\kaslabdevs\\GitHub\\HardKas-repo\\examples\\p10-gauntlet\\06-query-projection-lab\\.hardkas\\artifacts\\signedTx-garbage12345.json",
+          "Failed to link lineage for undefined: FOREIGN KEY constraint failed",
+          "Failed to link lineage for undefined: FOREIGN KEY constraint failed",
+          "Failed to link lineage for undefined: FOREIGN KEY constraint failed",
+          "Failed to link lineage for undefined: FOREIGN KEY constraint failed",
+          "Failed to link lineage for undefined: FOREIGN KEY constraint failed",
+          "Failed to link lineage for undefined: FOREIGN KEY constraint failed",
+          "Failed to link lineage for undefined: FOREIGN KEY constraint failed",
+          "Failed to link lineage for undefined: FOREIGN KEY constraint failed",
+          "Failed to link lineage for undefined: FOREIGN KEY constraint failed",
+          "Failed to link lineage for undefined: FOREIGN KEY constraint failed"
+        ],
+        "errors": [],
+        "issues": [
+          {
+            "code": "ARTIFACT_JSON_INVALID",
+            "severity": "error",
+            "message": "Invalid JSON: Expected double-quoted property name in JSON at position 51 (line 1 column 52)",
+            "path": "C:\\Users\\jrodr\\Documents\\kaslabdevs\\GitHub\\HardKas-repo\\examples\\p10-gauntlet\\06-query-projection-lab\\.hardkas\\artifacts\\signedTx-garbage12345.json"
+          }
+        ],
+        "generationId": "f24cebe6-2572-4d3d-813f-88443ccb1174"
+      }
+    }
+  ],
+  "errors": []
+}

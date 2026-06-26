@@ -11,13 +11,13 @@ describe("Network-Agnostic Artifact Layer: Assumption", () => {
 
   beforeAll(async () => {
     workspaceRoot = fs.mkdtempSync(path.join(os.tmpdir(), "hardkas-test-"));
-    sdk = await Hardkas.open({ cwd: workspaceRoot, autoBootstrap: true });
+    sdk = await Hardkas.open({ cwd: workspaceRoot, autoBootstrap: true, policy: { allowPublic: true } });
   });
 
   it("should freeze trust assumptions and verify immutability", async () => {
     const assumption = {
       schema: "hardkas.assumption.v1",
-      hardkasVersion: "0.9.7-alpha",
+      hardkasVersion: "0.10.0-alpha",
       version: "1.0.0-alpha",
       networkId: "igra",
       mode: "real",
@@ -42,7 +42,7 @@ describe("Network-Agnostic Artifact Layer: Assumption", () => {
   it("should reject mutations to bridgePhase", async () => {
     const assumption = {
       schema: "hardkas.assumption.v1",
-      hardkasVersion: "0.9.7-alpha",
+      hardkasVersion: "0.10.0-alpha",
       version: "1.0.0-alpha",
       networkId: "igra",
       mode: "real",
@@ -63,6 +63,6 @@ describe("Network-Agnostic Artifact Layer: Assumption", () => {
 
     const verifyResult = await sdk.artifacts.verify(mutated, { throwOnInvalid: false });
     expect(verifyResult.valid).toBe(false);
-    expect(verifyResult.details[0].code).toBe("HASH_MISMATCH");
+    expect(verifyResult.details[0].code).toBe("ARTIFACT_HASH_MISMATCH");
   });
 });

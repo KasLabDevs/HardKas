@@ -4,8 +4,8 @@ import { execSync } from "node:child_process";
 import { existsSync } from "node:fs";
 
 describe("hardkas console", () => {
-  const cliPath = resolve("src/index.ts");
-  const tsxBin = resolve("../../node_modules/.bin/tsx");
+  const cliPath = resolve(__dirname, "../src/index.ts");
+  const tsxBin = resolve(__dirname, "../../../node_modules/.bin/tsx");
   const actualTsx = existsSync(tsxBin) ? tsxBin : "npx tsx";
 
   function runHardkas(args: string) {

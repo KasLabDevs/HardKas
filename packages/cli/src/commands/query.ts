@@ -154,8 +154,14 @@ export function registerQueryCommands(program: Command) {
             const start = Date.now();
             const result = await engine.backend.sync({ strict: options.strict });
 
+            if (!result.ok) {
+              const { HardkasCliError } = await import("../cli-errors.js");
+              throw new HardkasCliError("SYNC_CORRUPTION", "Synchronization encountered corruption. Use --strict for fail-fast behavior.");
+            }
+
             if (options.json) {
-              console.log(JSON.stringify(result, null, 2));
+              const { getOutput } = await import("../output.js");
+              getOutput().writeJson({ ok: true, command: "query store sync", mode: "cli", result });
             } else {
               const elapsed = Date.now() - start;
               console.log(`  ✓ Index synchronized in ${elapsed}ms.`);
@@ -181,12 +187,6 @@ export function registerQueryCommands(program: Command) {
                   console.log(`    ... and ${result.issues.length - 10} more.`);
               }
 
-              if (!result.ok) {
-                console.log(
-                  `\n  ${UI.error("Synchronization encountered corruption.")} Use --strict for fail-fast behavior.`
-                );
-                throw new Error("Command failed");
-              }
               console.log("");
             }
           }
@@ -223,8 +223,14 @@ export function registerQueryCommands(program: Command) {
             const start = Date.now();
             const result = await engine.backend.rebuild({ strict: options.strict });
 
+            if (!result.ok) {
+              const { HardkasCliError } = await import("../cli-errors.js");
+              throw new HardkasCliError("REBUILD_CORRUPTION", "Rebuild failed or encountered corruption. Use --strict for fail-fast behavior.");
+            }
+
             if (options.json) {
-              UI.writeJson(result);
+              const { getOutput } = await import("../output.js");
+              getOutput().writeJson({ ok: true, command: "query store rebuild", mode: "cli", result });
             } else {
               const elapsed = Date.now() - start;
               UI.logHuman(`  ✓ Index rebuilt successfully in ${elapsed}ms.`);
@@ -250,12 +256,6 @@ export function registerQueryCommands(program: Command) {
                   UI.logHuman(`    ... and ${result.issues.length - 10} more.`);
               }
 
-              if (!result.ok) {
-                UI.logHuman(
-                  `\n  ${UI.error("Rebuild failed or encountered corruption.")} Use --strict for fail-fast behavior.`
-                );
-                throw new Error("Command failed");
-              }
               UI.logHuman("");
             }
           }
@@ -292,7 +292,8 @@ export function registerQueryCommands(program: Command) {
         });
 
         if (options.json) {
-          console.log(JSON.stringify(result, null, 2));
+          const { getOutput } = await import("../output.js");
+          getOutput().writeJson({ ok: true, command: "query store sql", mode: "cli", result });
         } else {
           if (result.length === 0) {
             console.log("\n  No results.\n");
@@ -329,7 +330,8 @@ export function registerQueryCommands(program: Command) {
           fs.writeFileSync(options.output, json);
           UI.success(`Store exported to ${options.output}`);
         } else {
-          console.log(json);
+          const { getOutput } = await import("../output.js");
+          getOutput().writeJson({ ok: true, command: "query store export", mode: "cli", result: dump });
         }
         store.disconnect();
       } catch (e) {
@@ -384,8 +386,8 @@ export function registerQueryCommands(program: Command) {
         const result = await engine.execute(request);
 
         if (options.json) {
-          const { serializeQueryResult } = await import("@hardkas/query");
-          console.log(serializeQueryResult(result));
+          const { getOutput } = await import("../output.js");
+          getOutput().writeJson({ ok: true, command: "query artifacts list", mode: "cli", result });
         } else {
           printArtifactList(result);
         }
@@ -414,8 +416,8 @@ export function registerQueryCommands(program: Command) {
         const result = await engine.execute(request);
 
         if (options.json) {
-          const { serializeQueryResult } = await import("@hardkas/query");
-          console.log(serializeQueryResult(result));
+          const { getOutput } = await import("../output.js");
+          getOutput().writeJson({ ok: true, command: "query artifacts inspect", mode: "cli", result });
         } else {
           printInspectResult(result);
         }
@@ -442,8 +444,8 @@ export function registerQueryCommands(program: Command) {
         const result = await engine.execute(request);
 
         if (options.json) {
-          const { serializeQueryResult } = await import("@hardkas/query");
-          console.log(serializeQueryResult(result));
+          const { getOutput } = await import("../output.js");
+          getOutput().writeJson({ ok: true, command: "query artifacts diff", mode: "cli", result });
         } else {
           printDiffResult(result);
         }
@@ -492,8 +494,8 @@ export function registerQueryCommands(program: Command) {
         const result = await engine.execute(request);
 
         if (options.json) {
-          const { serializeQueryResult } = await import("@hardkas/query");
-          console.log(serializeQueryResult(result));
+          const { getOutput } = await import("../output.js");
+          getOutput().writeJson({ ok: true, command: "query lineage chain", mode: "cli", result });
         } else {
           printLineageChain(result);
         }
@@ -530,8 +532,8 @@ export function registerQueryCommands(program: Command) {
         const result = await engine.execute(request);
 
         if (options.json) {
-          const { serializeQueryResult } = await import("@hardkas/query");
-          console.log(serializeQueryResult(result));
+          const { getOutput } = await import("../output.js");
+          getOutput().writeJson({ ok: true, command: "query lineage transitions", mode: "cli", result });
         } else {
           printTransitions(result);
         }
@@ -559,8 +561,8 @@ export function registerQueryCommands(program: Command) {
         const result = await engine.execute(request);
 
         if (options.json) {
-          const { serializeQueryResult } = await import("@hardkas/query");
-          console.log(serializeQueryResult(result));
+          const { getOutput } = await import("../output.js");
+          getOutput().writeJson({ ok: true, command: "query lineage orphans", mode: "cli", result });
         } else {
           printOrphans(result);
         }
@@ -600,8 +602,8 @@ export function registerQueryCommands(program: Command) {
         const result = await engine.execute(request);
 
         if (options.json) {
-          const { serializeQueryResult } = await import("@hardkas/query");
-          console.log(serializeQueryResult(result));
+          const { getOutput } = await import("../output.js");
+          getOutput().writeJson({ ok: true, command: "query replay list", mode: "cli", result });
         } else {
           printReplayList(result);
         }
@@ -627,8 +629,8 @@ export function registerQueryCommands(program: Command) {
         const result = await engine.execute(request);
 
         if (options.json) {
-          const { serializeQueryResult } = await import("@hardkas/query");
-          console.log(serializeQueryResult(result));
+          const { getOutput } = await import("../output.js");
+          getOutput().writeJson({ ok: true, command: "query replay diff", mode: "cli", result });
         } else {
           printReplaySummary(result);
         }
@@ -655,8 +657,8 @@ export function registerQueryCommands(program: Command) {
         const result = await engine.execute(request);
 
         if (options.json) {
-          const { serializeQueryResult } = await import("@hardkas/query");
-          console.log(serializeQueryResult(result));
+          const { getOutput } = await import("../output.js");
+          getOutput().writeJson({ ok: true, command: "query events list", mode: "cli", result });
         } else {
           printDivergences(result);
         }
@@ -684,8 +686,8 @@ export function registerQueryCommands(program: Command) {
         const result = await engine.execute(request);
 
         if (options.json) {
-          const { serializeQueryResult } = await import("@hardkas/query");
-          console.log(serializeQueryResult(result));
+          const { getOutput } = await import("../output.js");
+          getOutput().writeJson({ ok: true, command: "query events inspect", mode: "cli", result });
         } else {
           printInvariants(result);
         }
@@ -720,8 +722,8 @@ export function registerQueryCommands(program: Command) {
         const request = createQueryRequest({ domain: "dag", op: "conflicts", explain });
         const result = await engine.execute(request);
         if (options.json) {
-          const { serializeQueryResult } = await import("@hardkas/query");
-          console.log(serializeQueryResult(result));
+          const { getOutput } = await import("../output.js");
+          getOutput().writeJson({ ok: true, command: "query stats summary", mode: "cli", result });
         } else {
           printDagConflicts(result);
         }
@@ -744,8 +746,8 @@ export function registerQueryCommands(program: Command) {
         const request = createQueryRequest({ domain: "dag", op: "displaced", explain });
         const result = await engine.execute(request);
         if (options.json) {
-          const { serializeQueryResult } = await import("@hardkas/query");
-          console.log(serializeQueryResult(result));
+          const { getOutput } = await import("../output.js");
+          getOutput().writeJson({ ok: true, command: "query dag displaced", mode: "cli", result });
         } else {
           printDagDisplaced(result);
         }
@@ -777,8 +779,8 @@ export function registerQueryCommands(program: Command) {
         });
         const result = await engine.execute(request);
         if (options.json) {
-          const { serializeQueryResult } = await import("@hardkas/query");
-          console.log(serializeQueryResult(result));
+          const { getOutput } = await import("../output.js");
+          getOutput().writeJson({ ok: true, command: "query dag history", mode: "cli", result });
         } else {
           printDagHistory(result);
         }
@@ -798,8 +800,8 @@ export function registerQueryCommands(program: Command) {
         const request = createQueryRequest({ domain: "dag", op: "sink-path" });
         const result = await engine.execute(request);
         if (options.json) {
-          const { serializeQueryResult } = await import("@hardkas/query");
-          console.log(serializeQueryResult(result));
+          const { getOutput } = await import("../output.js");
+          getOutput().writeJson({ ok: true, command: "query dag sink-path", mode: "cli", result });
         } else {
           printSinkPath(result);
         }
@@ -822,8 +824,8 @@ export function registerQueryCommands(program: Command) {
         const request = createQueryRequest({ domain: "dag", op: "anomalies", explain });
         const result = await engine.execute(request);
         if (options.json) {
-          const { serializeQueryResult } = await import("@hardkas/query");
-          console.log(serializeQueryResult(result));
+          const { getOutput } = await import("../output.js");
+          getOutput().writeJson({ ok: true, command: "query dag anomalies", mode: "cli", result });
         } else {
           printDagAnomalies(result);
         }
@@ -873,8 +875,8 @@ export function registerQueryCommands(program: Command) {
         const result = await engine.execute(request);
 
         if (options.json) {
-          const { serializeQueryResult } = await import("@hardkas/query");
-          console.log(serializeQueryResult(result));
+          const { getOutput } = await import("../output.js");
+          getOutput().writeJson({ ok: true, command: "query events", mode: "cli", result });
         } else {
           printEventList(result);
         }
@@ -907,8 +909,8 @@ export function registerQueryCommands(program: Command) {
         const result = await engine.execute(request);
 
         if (options.json) {
-          const { serializeQueryResult } = await import("@hardkas/query");
-          console.log(serializeQueryResult(result));
+          const { getOutput } = await import("../output.js");
+          getOutput().writeJson({ ok: true, command: "query tx", mode: "cli", result });
         } else {
           printTxAggregate(result);
         }

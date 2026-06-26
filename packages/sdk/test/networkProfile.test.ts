@@ -11,13 +11,13 @@ describe("Network-Agnostic Artifact Layer: NetworkProfile", () => {
 
   beforeAll(async () => {
     workspaceRoot = fs.mkdtempSync(path.join(os.tmpdir(), "hardkas-test-"));
-    sdk = await Hardkas.open({ cwd: workspaceRoot, autoBootstrap: true });
+    sdk = await Hardkas.open({ cwd: workspaceRoot, autoBootstrap: true, policy: { allowPublic: true } });
   });
 
   it("should create and verify a network profile", async () => {
     const profile = {
       schema: "hardkas.networkProfile.v1",
-      hardkasVersion: "0.9.7-alpha",
+      hardkasVersion: "0.10.0-alpha",
       version: "1.0.0-alpha",
       networkId: "mainnet",
       mode: "real",
@@ -42,7 +42,7 @@ describe("Network-Agnostic Artifact Layer: NetworkProfile", () => {
   it("should fail validation if capabilities mismatch schemas", async () => {
     const profile = {
       schema: "hardkas.networkProfile.v1",
-      hardkasVersion: "0.9.7-alpha",
+      hardkasVersion: "0.10.0-alpha",
       version: "1.0.0-alpha",
       networkId: "igra",
       mode: "real",

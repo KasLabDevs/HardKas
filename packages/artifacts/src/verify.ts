@@ -45,6 +45,7 @@ export interface VerificationContext {
   artifactsDir?: string;
   enforceMetadata?: boolean;
   resolveArtifact?: (id: string) => any;
+  visitedArtifacts?: Set<string>;
 }
 
 export type VerificationSeverity = CorruptionSeverity | "info" | "critical";
@@ -174,7 +175,7 @@ export function verifyArtifactIntegritySync(
       addError("MISSING_CONTENT_HASH", "Missing contentHash field");
     } else if (actualHash !== v.contentHash) {
       addError(
-        "HASH_MISMATCH",
+        "ARTIFACT_HASH_MISMATCH",
         `Hash mismatch: expected ${v.contentHash}, got ${actualHash}`
       );
     } else if (hashVersion < 4) {
@@ -372,6 +373,22 @@ export function verifyArtifactSemantics(
       result.errors.push(issue.message);
   };
 
+  const visitedArtifacts = context.visitedArtifacts || new Set<string>();
+  const v = artifact as Record<string, unknown>;
+  const currentId = (v.contentHash || v.artifactId || v.planId || v.signedId || v.txId) as string;
+
+  if (currentId) {
+    if (visitedArtifacts.has(currentId)) {
+      addIssue({
+        code: "CIRCULAR_LINEAGE_DETECTED",
+        severity: "error",
+        message: `Circular lineage detected: artifact ${currentId} was already visited`
+      });
+      return result;
+    }
+    visitedArtifacts.add(currentId);
+  }
+
   // 1. Fee & Economic Audit
   const feeAudit = verifyFeeSemantics(artifact);
   if (!feeAudit.ok) {
@@ -384,7 +401,6 @@ export function verifyArtifactSemantics(
     });
   }
 
-  const v = artifact as Record<string, unknown>;
 
   // Strict Reference and Policy Evaluation (HardKAS v0.8.4)
   let parentObj: any = null;
@@ -610,7 +626,8 @@ export function verifyArtifactSemantics(
           // Recursively verify parent semantic checks
           const parentSem = verifyArtifactSemantics(parentObj, {
             ...context,
-            strict: true
+            strict: true,
+            visitedArtifacts: new Set(visitedArtifacts)
           });
           if (!parentSem.ok) {
             parentSem.issues.forEach((issue) => addIssue(issue));

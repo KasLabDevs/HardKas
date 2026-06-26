@@ -5,8 +5,8 @@ import { execSync } from "node:child_process";
 import { tmpdir } from "node:os";
 
 describe("hardkas run", () => {
-  const cliPath = resolve("src/index.ts");
-  const tsxBin = resolve("../../node_modules/.bin/tsx");
+  const cliPath = resolve(__dirname, "../src/index.ts");
+  const tsxBin = resolve(__dirname, "../../../node_modules/.bin/tsx");
   const actualTsx = existsSync(tsxBin) ? tsxBin : "npx tsx";
 
   it("executes a basic script and injects hardkas harness", () => {

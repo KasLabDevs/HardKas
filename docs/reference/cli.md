@@ -344,6 +344,8 @@ hardkas accounts real session-open [options] <name>
 
 ## hardkas artifact
 
+**Aliases:** artifacts
+
 Manage HardKAS artifacts
 
 ### Usage
@@ -791,6 +793,7 @@ hardkas config init [options]
 | Flag | Description | Default |
 | :--- | :--- | :--- |
 | `--force` | Overwrite existing config | false |
+| `--json` | Output results as JSON | false |
 
 ### Arguments
 
@@ -832,7 +835,9 @@ hardkas config repair [options]
 
 ### Options
 
-No options.
+| Flag | Description | Default |
+| :--- | :--- | :--- |
+| `--json` | Output results as JSON | false |
 
 ### Arguments
 
@@ -933,6 +938,32 @@ hardkas corpus verify [options] <path>
 | Argument | Description |
 | :--- | :--- |
 | `path` |  |
+
+---
+
+## hardkas create
+
+Scaffold a new HardKAS project from a template stable
+
+### Usage
+
+```bash
+hardkas create [options] <template> <dest>
+```
+
+### Options
+
+| Flag | Description | Default |
+| :--- | :--- | :--- |
+| `--install` | Run npm install automatically after scaffolding | false |
+| `--json` | Output results as JSON | false |
+
+### Arguments
+
+| Argument | Description |
+| :--- | :--- |
+| `template` | Name of the template (e.g. payment-app, batch-payments) |
+| `dest` | Destination directory |
 
 ---
 
@@ -1647,6 +1678,106 @@ hardkas doctor [options] [module]
 
 ---
 
+## hardkas evidence
+
+Manage HardKAS Evidence Packages (.hke.json) alpha
+
+### Usage
+
+```bash
+hardkas evidence [options] [command]
+```
+
+### Options
+
+No options.
+
+### Arguments
+
+No arguments.
+
+### Subcommands
+
+- [hardkas evidence explain](#hardkas-evidence-explain)
+- [hardkas evidence pack](#hardkas-evidence-pack)
+- [hardkas evidence verify](#hardkas-evidence-verify)
+
+---
+
+## hardkas evidence explain
+
+Explain the contents and claims of an evidence package
+
+### Usage
+
+```bash
+hardkas evidence explain [options] <packagePath>
+```
+
+### Options
+
+| Flag | Description | Default |
+| :--- | :--- | :--- |
+| `--json` | Output results as JSON | false |
+
+### Arguments
+
+| Argument | Description |
+| :--- | :--- |
+| `packagePath` |  |
+
+---
+
+## hardkas evidence pack
+
+Pack a scenario result and its artifacts into an evidence package
+
+### Usage
+
+```bash
+hardkas evidence pack [options] <scenarioResultPath>
+```
+
+### Options
+
+| Flag | Description | Default |
+| :--- | :--- | :--- |
+| `--out <path>` | Output package file path |  |
+| `--workspace <path>` | Override workspace root directory |  |
+| `--json` | Output results as JSON | false |
+
+### Arguments
+
+| Argument | Description |
+| :--- | :--- |
+| `scenarioResultPath` |  |
+
+---
+
+## hardkas evidence verify
+
+Verify the integrity and policy compliance of an evidence package
+
+### Usage
+
+```bash
+hardkas evidence verify [options] <packagePath>
+```
+
+### Options
+
+| Flag | Description | Default |
+| :--- | :--- | :--- |
+| `--json` | Output results as JSON | false |
+
+### Arguments
+
+| Argument | Description |
+| :--- | :--- |
+| `packagePath` |  |
+
+---
+
 ## hardkas explain
 
 Provide a narrative causal explanation of a deterministic artifact, transaction, or replay stable
@@ -1687,7 +1818,8 @@ hardkas init [options] [name]
 | `--template <type>` | Project template for new projects | basic |
 | `--network <name>` | Default network for new projects | simulated |
 | `--accounts <n>` | Number of simulated accounts for new projects | 3 |
-| `--skip-install` | Skip pnpm install for new projects | false |
+| `--install` | Run pnpm/npm install automatically after scaffolding | false |
+| `--json` | Output results as JSON | false |
 
 ### Arguments
 
@@ -3036,6 +3168,7 @@ hardkas node logs [options]
 | :--- | :--- | :--- |
 | `--tail <n>` | Number of lines to show | 100 |
 | `--follow` | Follow log output | false |
+| `--json` | Output results as JSON | false |
 
 ### Arguments
 
@@ -3061,6 +3194,7 @@ hardkas node reset [options]
 | `--yes` | Skip confirmation prompt | false |
 | `--wait-lock` | Wait for workspace lock if held | false |
 | `--lock-timeout <ms>` | Lock wait timeout in ms | 30000 |
+| `--json` | Output results as JSON | false |
 
 ### Arguments
 
@@ -3084,6 +3218,7 @@ hardkas node restart [options]
 | :--- | :--- | :--- |
 | `--wait-lock` | Wait for workspace lock if held | false |
 | `--lock-timeout <ms>` | Lock wait timeout in ms | 30000 |
+| `--json` | Output results as JSON | false |
 
 ### Arguments
 
@@ -3109,6 +3244,7 @@ hardkas node start [options]
 | `--allow-floating-image` | Allow using a floating tag like 'latest' without warning | false |
 | `--wait-lock` | Wait for workspace lock if held | false |
 | `--lock-timeout <ms>` | Lock wait timeout in ms | 30000 |
+| `--json` | Output results as JSON | false |
 
 ### Arguments
 
@@ -3154,6 +3290,7 @@ hardkas node stop [options]
 | :--- | :--- | :--- |
 | `--wait-lock` | Wait for workspace lock if held | false |
 | `--lock-timeout <ms>` | Lock wait timeout in ms | 30000 |
+| `--json` | Output results as JSON | false |
 
 ### Arguments
 
@@ -4441,6 +4578,7 @@ hardkas run [options] <script>
 | `--accounts <n>` | Number of simulated accounts | 3 |
 | `--balance <sompi>` | Initial balance per account in sompi | 100000000000 |
 | `--no-harness` | Skip automatic harness creation |  |
+| `--json` | Output results as JSON | false |
 
 ### Arguments
 
@@ -4565,6 +4703,7 @@ hardkas session create [options] <name>
 | :--- | :--- | :--- |
 | `--l1 <wallet>` | Name of the Kaspa L1 wallet |  |
 | `--l2 <account>` | Name of the Igra L2 account |  |
+| `--json` | Output results as JSON | false |
 
 ### Arguments
 
@@ -4586,7 +4725,9 @@ hardkas session list [options]
 
 ### Options
 
-No options.
+| Flag | Description | Default |
+| :--- | :--- | :--- |
+| `--json` | Output results as JSON | false |
 
 ### Arguments
 
@@ -4606,7 +4747,9 @@ hardkas session status [options]
 
 ### Options
 
-No options.
+| Flag | Description | Default |
+| :--- | :--- | :--- |
+| `--json` | Output results as JSON | false |
 
 ### Arguments
 
@@ -4626,7 +4769,9 @@ hardkas session use [options] <name>
 
 ### Options
 
-No options.
+| Flag | Description | Default |
+| :--- | :--- | :--- |
+| `--json` | Output results as JSON | false |
 
 ### Arguments
 
@@ -5105,6 +5250,50 @@ No arguments.
 
 ---
 
+## hardkas task
+
+Execute an evidence-aware custom task
+
+### Usage
+
+```bash
+hardkas task [options] [command]
+```
+
+### Options
+
+No options.
+
+### Arguments
+
+No arguments.
+
+### Subcommands
+
+- [hardkas task <name>](#hardkas-task-<name>)
+
+---
+
+## hardkas task <name>
+
+Run a task
+
+### Usage
+
+```bash
+hardkas task <name> [options]
+```
+
+### Options
+
+No options.
+
+### Arguments
+
+No arguments.
+
+---
+
 ## hardkas telemetry
 
 Inspect, verify, and monitor the canonical runtime pressure telemetry stream
@@ -5212,10 +5401,13 @@ hardkas test [options] [files...]
 | :--- | :--- | :--- |
 | `--network <network>` | Network to test against | simnet |
 | `--watch` | Watch for changes | false |
-| `--json` | Output results as JSON | false |
-| `--mass-report` | Show mass/fee report after test run | false |
+| `--mass-report` | Show mass/fee report after scenario execution | false |
 | `--mass-snapshot <label>` | Save mass snapshot for regression detection |  |
 | `--mass-compare <label>` | Compare against saved mass snapshot |  |
+| `--json` | Output results as JSON | false |
+| `--keep-runs` | Keep temporary scenario workspaces for debugging | false |
+| `--evidence` | Automatically package evidence into .hke.json | false |
+| `--scenario <name>` | Run specific scenario by name |  |
 
 ### Arguments
 
@@ -5642,7 +5834,9 @@ hardkas up [options]
 
 ### Options
 
-No options.
+| Flag | Description | Default |
+| :--- | :--- | :--- |
+| `--json` | Output results as JSON | false |
 
 ### Arguments
 
@@ -5857,7 +6051,7 @@ hardkas workflow create [options] <name>
 
 | Flag | Description | Default |
 | :--- | :--- | :--- |
-| `--template <name>` | Embedded template name (basic, payroll, dao, escrow, marketplace) |  |
+| `--template <name>` | Embedded template name |  |
 | `--out <path>` | Output artifact file path |  |
 | `--json` | Output the final workflow artifact as JSON | false |
 | `--workspace <path>` | Override workspace root directory |  |

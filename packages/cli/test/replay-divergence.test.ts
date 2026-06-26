@@ -25,7 +25,8 @@ describe("Adversarial Validation (Corpus Stress)", () => {
         "verify",
         targetDir,
         "--recursive",
-        "--strict"
+        "--strict",
+        "--json"
       ]);
     } catch (e: unknown) {
       return e;
@@ -42,9 +43,13 @@ describe("Adversarial Validation (Corpus Stress)", () => {
         JSON.stringify(badArtifact)
       );
 
-      const result = await runVerify(tempDir);
+      const result = await runVerify(tempDir) as any;
       expect(result.exitCode).toBe(1);
-      expect(result.stderr + result.stdout).toContain("HASH_MISMATCH");
+
+      const parsed = JSON.parse(result.stdout);
+      expect(parsed.ok).toBe(false);
+      const allIssues = parsed.result.results.flatMap((r: any) => r.result.issues.map((i: any) => i.code));
+      expect(allIssues).toContain("ARTIFACT_HASH_MISMATCH");
 
       fs.rmSync(tempDir, { recursive: true, force: true });
     },
@@ -61,11 +66,13 @@ describe("Adversarial Validation (Corpus Stress)", () => {
       fs.writeFileSync(path.join(tempDir, "art-a.json"), JSON.stringify(artifactA));
       fs.writeFileSync(path.join(tempDir, "art-b.json"), JSON.stringify(artifactB));
 
-      const result = await runVerify(tempDir);
-      // Note: Circular lineage might be caught by verifyArtifactSemantics
+      const result = await runVerify(tempDir) as any;
       expect(result.exitCode).toBe(1);
-      // We expect a failure, but maybe the specific code is LINEAGE_CYCLE or similar
-      expect(result.stdout).toContain("FAIL");
+
+      const parsed = JSON.parse(result.stdout);
+      expect(parsed.ok).toBe(false);
+      const allIssues = parsed.result.results.flatMap((r: any) => r.result.issues.map((i: any) => i.code));
+      expect(allIssues).toContain("CIRCULAR_LINEAGE_DETECTED");
 
       fs.rmSync(tempDir, { recursive: true, force: true });
     },
@@ -82,9 +89,13 @@ describe("Adversarial Validation (Corpus Stress)", () => {
       fs.writeFileSync(path.join(tempDir, "parent.json"), JSON.stringify(parent));
       fs.writeFileSync(path.join(tempDir, "child.json"), JSON.stringify(child));
 
-      const result = await runVerify(tempDir);
+      const result = await runVerify(tempDir) as any;
       expect(result.exitCode).toBe(1);
-      expect(result.stdout).toMatch(/NETWORK_MISMATCH|FAIL/);
+
+      const parsed = JSON.parse(result.stdout);
+      expect(parsed.ok).toBe(false);
+      const allIssues = parsed.result.results.flatMap((r: any) => r.result.issues.map((i: any) => i.code));
+      expect(allIssues).toContain("LINEAGE_NETWORK_MISMATCH");
 
       fs.rmSync(tempDir, { recursive: true, force: true });
     },

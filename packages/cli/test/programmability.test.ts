@@ -23,7 +23,8 @@ function runHardkas(args: string[]) {
 }
 
 function parseStdout(result: ReturnType<typeof runHardkas>) {
-  return JSON.parse(result.stdout);
+  const envelope = JSON.parse(result.stdout);
+  return envelope.result ?? envelope;
 }
 
 describe("programmability CLI", () => {

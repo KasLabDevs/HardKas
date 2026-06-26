@@ -539,9 +539,11 @@ export function registerTxCommands(program: Command) {
     .action(async (txId, options) => {
       try {
         const result = await runTxReceipt({ txId });
-        if (options.json)
-          getOutput().writeLine(JSON.stringify(result.receipt, bigIntReplacer, 2));
-        else getOutput().writeLine(result.formatted);
+        if (options.json) {
+          getOutput().writeJson({ ok: true, command: "tx receipt", mode: "cli", result: result.receipt });
+        } else {
+          getOutput().writeLine(result.formatted);
+        }
       } catch (e) {
         throw e;
       }
@@ -590,9 +592,8 @@ export function registerTxCommands(program: Command) {
       `Reconstruct the full operational trace of a transaction ${UI.maturity("research")}`
     )
     .action(async (txId: string) => {
-      const { UI } = await import("../ui.js");
-      UI.error("Tracing is temporarily disabled while the query API stabilizes.");
-      throw new Error("Command failed");
+      const { HardkasCliError } = await import("../cli-errors.js");
+      throw new HardkasCliError("TX_TRACE_DISABLED", "Tracing is temporarily disabled while the query API stabilizes.");
     });
 
   tx.command("compare <simulatedPath> <realPath>")

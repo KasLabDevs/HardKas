@@ -100,6 +100,8 @@ export const HardkasSchemas = {
   VProgsInspectFixtureV1: "hardkas.vprogs.inspectFixture.v1",
 
   // --- Corpus & Testing ---
+  EvidencePackageV1: "hardkas.evidencePackage.v1",
+  ScenarioResultV1: "hardkas.scenarioResult.v1",
   ToccataProgrammabilityCorpusV1: "hardkas.toccataProgrammabilityCorpus.v1",
   ToccataGauntletV1: "hardkas.toccataGauntlet.v1",
   ToccataCorpusV1: "hardkas.toccataCorpus.v1",

@@ -1,6 +1,6 @@
 {
   "name": "sdk-payroll",
-  "version": "0.9.7-alpha",
+  "version": "0.10.0-alpha",
   "type": "module",
   "scripts": {
     "demo": "node src/index.mjs"

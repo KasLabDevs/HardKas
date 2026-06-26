@@ -1,0 +1,29 @@
+{
+  "status": "success",
+  "events": [
+    {
+      "step": "alice_initial_balance",
+      "sompi": "87999995800"
+    },
+    {
+      "step": "alice_to_bob_simulated",
+      "txId": "simulated-plan-9a906b932456e1bb-tx"
+    },
+    {
+      "step": "bob_balance_before_send",
+      "sompi": "106999995800"
+    },
+    {
+      "step": "bob_to_carol_simulated",
+      "txId": "simulated-plan-44e8af656ec84002-tx"
+    },
+    {
+      "step": "carol_final_balance",
+      "sompi": "106500000000"
+    },
+    {
+      "step": "receipt_verification"
+    }
+  ],
+  "errors": []
+}

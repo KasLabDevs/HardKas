@@ -111,7 +111,7 @@ describe("Artifact Lineage Hardening", () => {
     };
     const result = verifyLineage(crossNetwork, rootArtifact);
     expect(result.ok).toBe(false);
-    expect(result.issues.some((i) => i.code === "NETWORK_MISMATCH")).toBe(true);
+    expect(result.issues.some((i) => i.code === "LINEAGE_NETWORK_MISMATCH")).toBe(true);
   });
 
   it("should fail on mode mismatch", () => {

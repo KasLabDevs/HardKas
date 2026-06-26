@@ -19,7 +19,7 @@
   "scripts": {
     "build": "turbo build",
     "dev": "turbo dev",
-    "test": "pnpm -r test && pnpm test:workflows",
+    "test": "vitest run && pnpm test:workflows",
     "test:workflows": "vitest run packages/cli/test/workflow-corpus.test.ts",
     "test:fuzz": "vitest run packages/testing/test/fuzz-policy.test.ts packages/testing/test/fuzz-network.test.ts packages/testing/test/fuzz-migration.test.ts",
     "test:fuzz:policy": "vitest run packages/testing/test/fuzz-policy.test.ts",
@@ -65,15 +65,22 @@
     "programmability:examples": "node scripts/programmability-examples.mjs",
     "programmability:templates": "node scripts/programmability-templates.mjs",
     "programmability:surface": "node scripts/programmability-surface.mjs",
-    "postrelease:break": "node scripts/post-release-break-gauntlet.mjs"
+    "templates:verify": "node scripts/templates-verify.mjs",
+    "postrelease:break": "node scripts/post-release-break-gauntlet.mjs",
+    "docs:verify-book": "tsx scripts/verify-book.ts",
+    "api:check": "node scripts/api-check.mjs"
   },
   "devDependencies": {
     "@changesets/cli": "^2.31.0",
     "@eslint/js": "^10.0.1",
-    "@hardkas/config": "^0.1.0",
-    "@hardkas/core": "^0.1.0",
-    "@hardkas/sdk": "^0.1.0",
+    "@hardkas/cli": "workspace:*",
+    "@hardkas/config": "workspace:*",
+    "@hardkas/core": "workspace:*",
+    "@hardkas/sdk": "workspace:*",
+    "@hardkas/testing": "workspace:*",
     "@types/node": "^22.19.19",
+    "@vitest/coverage-v8": "^2.1.9",
+    "c8": "^11.0.0",
     "eslint": "^9.17.0",
     "eslint-plugin-react": "^7.37.5",
     "eslint-plugin-react-hooks": "^7.1.1",
@@ -81,6 +88,7 @@
     "fast-check": "^4.8.0",
     "globals": "^17.6.0",
     "prettier": "^3.4.2",
+    "ts-node": "^10.9.2",
     "tsup": "^8.3.5",
     "tsx": "^4.19.2",
     "turbo": "^2.3.3",
@@ -88,7 +96,7 @@
     "typescript-eslint": "^8.59.3",
     "vitest": "^2.1.9"
   },
-  "version": "0.9.7-alpha",
+  "version": "0.10.0-alpha",
   "dependencies": {
     "kaspa": "^0.13.0",
     "kaspa-wasm": "^0.13.0"

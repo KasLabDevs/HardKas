@@ -27,22 +27,22 @@ describe("Agent-Safe Mode Policies", () => {
     expect(() => sdk.enforcePolicy("network")).toThrowError(/allowNetwork/);
   });
 
-  it("should block mainnet actions if allowMainnet is false", async () => {
+  it("should block mainnet actions if allowPublic is false", async () => {
     const sdk = await Hardkas.open({
       cwd: tmpDir,
       mode: "agent",
-      policy: { allowMainnet: false }
+      policy: { allowPublic: false }
     });
 
     expect(() => sdk.enforcePolicy("mainnet")).toThrowError(HardkasError);
-    expect(() => sdk.enforcePolicy("mainnet")).toThrowError(/allowMainnet/);
+    expect(() => sdk.enforcePolicy("mainnet")).toThrowError(/allowPublic/);
   });
 
   it("should allow mainnet actions if explicitly allowed by policy", async () => {
     const sdk = await Hardkas.open({
       cwd: tmpDir,
       mode: "agent",
-      policy: { allowMainnet: true }
+      policy: { allowPublic: true }
     });
 
     expect(() => sdk.enforcePolicy("mainnet")).not.toThrow();

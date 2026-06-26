@@ -2,8 +2,9 @@ import path from "node:path";
 import fs from "node:fs";
 import { fileURLToPath } from "node:url";
 import { createJiti } from "jiti";
-import { DEFAULT_HARDKAS_CONFIG } from "./defaults";
-import type { LoadedHardkasConfig, HardkasConfig } from "./types";
+import { DEFAULT_HARDKAS_CONFIG } from "./defaults.js";
+import { validateHardkasConfig } from "./schema.js";
+import type { LoadedHardkasConfig, HardkasConfig } from "./types.js";
 
 export interface LoadHardkasConfigOptions {
   cwd?: string;
@@ -107,8 +108,15 @@ async function loadConfigFile(
         !Array.isArray(userConfig.accounts)
           ? userConfig.accounts
           : {})
-      }
+      },
+      // Merge tasks
+      tasks: {
+        ...(userConfig.tasks || {})
+      },
+      plugins: userConfig.plugins || []
     };
+
+    validateHardkasConfig(mergedConfig);
 
     return {
       path: filePath,

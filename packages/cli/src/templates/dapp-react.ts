@@ -563,7 +563,7 @@ VITE_HARDKAS_NETWORK=simulated
   writeFile(
     "hardkas.config.ts",
     `
-import { defineHardkasConfig } from "@hardkas/sdk";
+import { defineHardkasConfig } from "@hardkas/config";
 
 export default defineHardkasConfig({
   defaultNetwork: "simulated",

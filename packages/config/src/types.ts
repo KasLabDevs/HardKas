@@ -45,11 +45,21 @@ export type HardkasAccountConfig =
 
 export interface HardkasConfig {
   defaultNetwork?: HardkasNetworkName;
+  network?: {
+    default?: HardkasNetworkName;
+    allowPublic?: boolean;
+  };
   networks?: Record<HardkasNetworkName, HardkasNetworkTarget>;
   accounts?: Record<string, HardkasAccountConfig>;
   l2?: {
     networks?: Record<string, any>; // Will be refined in @hardkas/l2
   };
+  experimental?: boolean;
+  artifacts?: {
+    deterministic?: boolean;
+  };
+  tasks?: Record<string, any>;
+  plugins?: any[];
 }
 
 export interface LoadedHardkasConfig {

@@ -5,7 +5,7 @@ import os from "node:os";
 import { Hardkas } from "@hardkas/sdk";
 import { deterministicCompare } from "@hardkas/core";
 
-describe("Audit Hardening Suite (0.9.7-alpha)", () => {
+describe("Audit Hardening Suite (0.10.0-alpha)", () => {
   let tmpDir: string;
   let sdk: Hardkas;
 
@@ -121,10 +121,23 @@ describe("Audit Hardening Suite (0.9.7-alpha)", () => {
   });
 
   describe("P1.2: SDK Mode Resolution", () => {
-    it("should resolve to real mode for testnet/mainnet", async () => {
+    it("should reject public testnet/mainnet without allowPublic", async () => {
+      await expect(
+        Hardkas.open({
+          cwd: tmpDir,
+          network: "testnet-10",
+          autoBootstrap: false
+        })
+      ).rejects.toMatchObject({
+        code: "PUBLIC_NETWORK_BLOCKED"
+      });
+    });
+
+    it("should resolve to real mode for testnet/mainnet when allowPublic is true", async () => {
       const realSdk = await Hardkas.open({
         cwd: tmpDir,
         network: "testnet-10",
+        policy: { allowPublic: true },
         autoBootstrap: false
       });
 

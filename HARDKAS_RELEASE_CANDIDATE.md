@@ -1,4 +1,4 @@
-# HardKAS 0.9.7-alpha: Release Candidate Manifest
+# HardKAS 0.10.0-alpha: Release Candidate Manifest
 
 ## Objective
 Convert HardKAS from "works on my machine" to a third-party trusted local-first development runtime.
@@ -31,7 +31,7 @@ This release candidate passed the following rigorous gauntlet tests to ensure is
 - Confirmed correct permissions for keystore files.
 
 ## Official Capabilities Version
-`0.9.7-alpha`
+`0.10.0-alpha`
 
 ## Release Claims
 - **LOCAL_FIRST_DEVELOPER_RUNTIME_HARDENED**: ✅
@@ -41,4 +41,4 @@ This release candidate passed the following rigorous gauntlet tests to ensure is
 - **L2_READY**: ❌
 - **BRIDGE_READY**: ❌
 
-HardKAS `0.9.7-alpha` is strictly bounded as a robust, reproducible, local-first runtime. No false claims are made regarding network functionality.
+HardKAS `0.10.0-alpha` is strictly bounded as a robust, reproducible, local-first runtime. No false claims are made regarding network functionality.

@@ -1,0 +1,514 @@
+{
+  "version": "1.0.0-alpha",
+  "schema": "hardkas.evidencePackage.v1",
+  "name": "myfund",
+  "hardkasVersion": "0.10.0-alpha",
+  "networkId": "simulated",
+  "mode": "script",
+  "createdAt": "2026-06-26T12:59:59.938Z",
+  "scenarioResult": {
+    "type": "TaskResult",
+    "scenarioName": "myfund",
+    "status": "PASSED",
+    "networkId": "simulated",
+    "mode": "script",
+    "artifactsGenerated": [],
+    "metadata": {
+      "taskName": "myfund",
+      "args": {
+        "account": "alice",
+        "amount": 100
+      },
+      "timestamp": "2026-06-26T12:59:59.921Z"
+    },
+    "payload": {
+      "result": {
+        "success": true,
+        "address": "kaspa:sim_alice"
+      }
+    },
+    "hashVersion": 4
+  },
+  "artifacts": [
+    {
+      "schema": "hardkas.signedTx",
+      "schemaVersion": "hardkas.artifact.v1",
+      "hardkasVersion": "0.10.0-alpha",
+      "version": "1.0.0-alpha",
+      "hashVersion": 4,
+      "createdAt": "2026-06-26T12:58:46.238Z",
+      "status": "signed",
+      "sourcePlanId": "plan-f370aa286f9da510",
+      "networkId": "simulated",
+      "mode": "simulated",
+      "from": {
+        "address": "kaspa:sim_alice"
+      },
+      "to": {
+        "address": "kaspa:sim_alice"
+      },
+      "amountSompi": "10000000000",
+      "txId": "simulated-plan-f370aa286f9da510-tx",
+      "signedTransaction": {
+        "format": "simulated",
+        "payload": "simulated-signed-tx:plan-f370aa286f9da510"
+      },
+      "lineage": {
+        "artifactId": "226ec2a02da6b91eabdf4f93ca12994d1b9918636ad7dd583f03a59c616daf60",
+        "lineageId": "c5efc6ab5ebadca146cde05ba70d0be80297d60b05dd50fc76a5996f45eae6d5",
+        "parentArtifactId": "f370aa286f9da5102dbd4d6fafe8825e31a39adadae2d273ad36f3d64fe7dbde",
+        "rootArtifactId": "c5efc6ab5ebadca146cde05ba70d0be80297d60b05dd50fc76a5996f45eae6d5",
+        "sequence": 2
+      },
+      "workflowId": "wf_7f0ec6e98d38cef6",
+      "assumptionLevel": "local-simulated",
+      "signedId": "signed-226ec2a02da6b91e",
+      "contentHash": "226ec2a02da6b91eabdf4f93ca12994d1b9918636ad7dd583f03a59c616daf60"
+    },
+    {
+      "schema": "hardkas.signedTx",
+      "schemaVersion": "hardkas.artifact.v1",
+      "hardkasVersion": "0.10.0-alpha",
+      "version": "1.0.0-alpha",
+      "hashVersion": 4,
+      "createdAt": "2026-06-26T12:58:02.257Z",
+      "status": "signed",
+      "sourcePlanId": "plan-6f713a1ec9d8e5d5",
+      "networkId": "simulated",
+      "mode": "simulated",
+      "from": {
+        "address": "kaspa:sim_alice"
+      },
+      "to": {
+        "address": "kaspa:sim_alice"
+      },
+      "amountSompi": "10000000000",
+      "txId": "simulated-plan-6f713a1ec9d8e5d5-tx",
+      "signedTransaction": {
+        "format": "simulated",
+        "payload": "simulated-signed-tx:plan-6f713a1ec9d8e5d5"
+      },
+      "lineage": {
+        "artifactId": "89799cdc1dd637b450ed5026f3ef7bf672a6652cc9f9e1a190912fa326517fc1",
+        "lineageId": "2745c91ebc7c363c397ff927ec0e7d4774c221e94b4f7632d6315fcbad3d0907",
+        "parentArtifactId": "6f713a1ec9d8e5d5848a57623ab751edb867aed1b0e9331338864a250dc8e63d",
+        "rootArtifactId": "2745c91ebc7c363c397ff927ec0e7d4774c221e94b4f7632d6315fcbad3d0907",
+        "sequence": 2
+      },
+      "workflowId": "wf_d048765cde5d638a",
+      "assumptionLevel": "local-simulated",
+      "signedId": "signed-89799cdc1dd637b4",
+      "contentHash": "89799cdc1dd637b450ed5026f3ef7bf672a6652cc9f9e1a190912fa326517fc1"
+    },
+    {
+      "schema": "hardkas.signedTx",
+      "schemaVersion": "hardkas.artifact.v1",
+      "hardkasVersion": "0.10.0-alpha",
+      "version": "1.0.0-alpha",
+      "hashVersion": 4,
+      "createdAt": "2026-06-26T12:59:59.892Z",
+      "status": "signed",
+      "sourcePlanId": "plan-b8583d423149a4ce",
+      "networkId": "simulated",
+      "mode": "simulated",
+      "from": {
+        "address": "kaspa:sim_alice"
+      },
+      "to": {
+        "address": "kaspa:sim_alice"
+      },
+      "amountSompi": "10000000000",
+      "txId": "simulated-plan-b8583d423149a4ce-tx",
+      "signedTransaction": {
+        "format": "simulated",
+        "payload": "simulated-signed-tx:plan-b8583d423149a4ce"
+      },
+      "lineage": {
+        "artifactId": "c9f663c2bc295be41d067847fe4bd2644247bc8dc86e08b2147d023442f304af",
+        "lineageId": "7ede6e9882ca80889dd079c4db949c60e1193ad99751be99cd81f54849f940eb",
+        "parentArtifactId": "b8583d423149a4ce43f874f22121b25aa5a9a12c9fe133ecb686f14f20639b5a",
+        "rootArtifactId": "7ede6e9882ca80889dd079c4db949c60e1193ad99751be99cd81f54849f940eb",
+        "sequence": 2
+      },
+      "workflowId": "wf_ff3fa101257093ff",
+      "assumptionLevel": "local-simulated",
+      "signedId": "signed-c9f663c2bc295be4",
+      "contentHash": "c9f663c2bc295be41d067847fe4bd2644247bc8dc86e08b2147d023442f304af"
+    },
+    {
+      "schema": "hardkas.txReceipt",
+      "schemaVersion": "hardkas.txReceipt.v1",
+      "hardkasVersion": "0.10.0-alpha",
+      "version": "1.0.0-alpha",
+      "hashVersion": 4,
+      "createdAt": "2026-06-26T12:58:02.271Z",
+      "txId": "simulated-plan-6f713a1ec9d8e5d5-tx",
+      "status": "accepted",
+      "mode": "simulated",
+      "networkId": "simulated",
+      "from": {
+        "address": "kaspa:sim_alice"
+      },
+      "to": {
+        "address": "kaspa:sim_alice"
+      },
+      "amountSompi": "10000000000",
+      "feeSompi": "350",
+      "mass": "350",
+      "changeSompi": "89999999650",
+      "spentUtxoIds": [
+        "genesis:alice:0"
+      ],
+      "createdUtxoIds": [
+        "simulated-plan-6f713a1ec9d8e5d5-tx:0",
+        "simulated-plan-6f713a1ec9d8e5d5-tx:1"
+      ],
+      "daaScore": "1",
+      "preStateHash": "10e7c1553f95c1622ec17458915549a2b9b997c4637f04e7c230959393c39f0d",
+      "postStateHash": "d08770d9036ac9e9c0a67e82514f4390b8ca99c571228ad8ea53911cc44da266",
+      "dagContext": {
+        "mode": "linear",
+        "sink": "linear-pseudo-sink"
+      },
+      "lineage": {
+        "artifactId": "812e81c1b255b9e1ee68bf70764a775ab55db66ab45d36affbae7c74a480031c",
+        "lineageId": "2745c91ebc7c363c397ff927ec0e7d4774c221e94b4f7632d6315fcbad3d0907",
+        "parentArtifactId": "10e7c1553f95c1622ec17458915549a2b9b997c4637f04e7c230959393c39f0d",
+        "rootArtifactId": "2745c91ebc7c363c397ff927ec0e7d4774c221e94b4f7632d6315fcbad3d0907",
+        "sequence": 2
+      },
+      "workflowId": "wf_d048765cde5d638a",
+      "assumptionLevel": "local-simulated",
+      "contentHash": "812e81c1b255b9e1ee68bf70764a775ab55db66ab45d36affbae7c74a480031c"
+    },
+    {
+      "schema": "hardkas.txTrace",
+      "hardkasVersion": "0.10.0-alpha",
+      "version": "1.0.0-alpha",
+      "hashVersion": 4,
+      "createdAt": "2026-06-26T12:58:02.277Z",
+      "txId": "simulated-plan-6f713a1ec9d8e5d5-tx",
+      "mode": "simulated",
+      "networkId": "simulated",
+      "steps": [
+        {
+          "phase": "send",
+          "status": "started",
+          "timestamp": "2026-06-26T12:58:02.270Z"
+        },
+        {
+          "phase": "send",
+          "status": "completed",
+          "timestamp": "2026-06-26T12:58:02.271Z"
+        }
+      ],
+      "contentHash": "b7a198529c8d08ae50cb18c2aee42b14ba1640f412630186d24e838b830917d9",
+      "events": [
+        {
+          "type": "phase.started",
+          "phase": "send",
+          "timestamp": 1782478682270
+        },
+        {
+          "type": "phase.completed",
+          "phase": "send",
+          "timestamp": 1782478682271
+        }
+      ],
+      "receiptPath": "C:\\Users\\jrodr\\Documents\\kaslabdevs\\GitHub\\HardKas-repo\\packages\\cli\\templates\\payment-app\\.hardkas\\artifacts\\simulated-plan-6f713a1ec9d8e5d5-tx.json"
+    },
+    {
+      "schema": "hardkas.txTrace",
+      "hardkasVersion": "0.10.0-alpha",
+      "version": "1.0.0-alpha",
+      "hashVersion": 4,
+      "createdAt": "2026-06-26T12:58:02.277Z",
+      "txId": "simulated-plan-6f713a1ec9d8e5d5-tx",
+      "mode": "simulated",
+      "networkId": "simulated",
+      "steps": [
+        {
+          "phase": "send",
+          "status": "started",
+          "timestamp": "2026-06-26T12:58:02.270Z"
+        },
+        {
+          "phase": "send",
+          "status": "completed",
+          "timestamp": "2026-06-26T12:58:02.271Z"
+        }
+      ],
+      "contentHash": "b7a198529c8d08ae50cb18c2aee42b14ba1640f412630186d24e838b830917d9",
+      "events": [
+        {
+          "type": "phase.started",
+          "phase": "send",
+          "timestamp": 1782478682270
+        },
+        {
+          "type": "phase.completed",
+          "phase": "send",
+          "timestamp": 1782478682271
+        }
+      ],
+      "receiptPath": "C:\\Users\\jrodr\\Documents\\kaslabdevs\\GitHub\\HardKas-repo\\packages\\cli\\templates\\payment-app\\.hardkas\\artifacts\\simulated-plan-6f713a1ec9d8e5d5-tx.json"
+    },
+    {
+      "schema": "hardkas.txReceipt",
+      "schemaVersion": "hardkas.txReceipt.v1",
+      "hardkasVersion": "0.10.0-alpha",
+      "version": "1.0.0-alpha",
+      "hashVersion": 4,
+      "createdAt": "2026-06-26T12:59:59.906Z",
+      "txId": "simulated-plan-b8583d423149a4ce-tx",
+      "status": "accepted",
+      "mode": "simulated",
+      "networkId": "simulated",
+      "from": {
+        "address": "kaspa:sim_alice"
+      },
+      "to": {
+        "address": "kaspa:sim_alice"
+      },
+      "amountSompi": "10000000000",
+      "feeSompi": "350",
+      "mass": "350",
+      "changeSompi": "69999998950",
+      "spentUtxoIds": [
+        "simulated-plan-f370aa286f9da510-tx:1"
+      ],
+      "createdUtxoIds": [
+        "simulated-plan-b8583d423149a4ce-tx:0",
+        "simulated-plan-b8583d423149a4ce-tx:1"
+      ],
+      "daaScore": "3",
+      "preStateHash": "6f00a357a5ec71a8e03b2fdee194e4234dadadbaa3967eb78cc845f84fd66b1d",
+      "postStateHash": "20db3a5179c242cf76a5f0d1cc03c9a212681b9180806f2b2f37f74a6d3c0d70",
+      "dagContext": {
+        "mode": "linear",
+        "sink": "linear-pseudo-sink"
+      },
+      "lineage": {
+        "artifactId": "9ce9114ee89ecf88f28c2075c98ffefedf598b7526b438df31f173fd1c630a55",
+        "lineageId": "7ede6e9882ca80889dd079c4db949c60e1193ad99751be99cd81f54849f940eb",
+        "parentArtifactId": "6f00a357a5ec71a8e03b2fdee194e4234dadadbaa3967eb78cc845f84fd66b1d",
+        "rootArtifactId": "7ede6e9882ca80889dd079c4db949c60e1193ad99751be99cd81f54849f940eb",
+        "sequence": 2
+      },
+      "workflowId": "wf_ff3fa101257093ff",
+      "assumptionLevel": "local-simulated",
+      "contentHash": "9ce9114ee89ecf88f28c2075c98ffefedf598b7526b438df31f173fd1c630a55"
+    },
+    {
+      "schema": "hardkas.txTrace",
+      "hardkasVersion": "0.10.0-alpha",
+      "version": "1.0.0-alpha",
+      "hashVersion": 4,
+      "createdAt": "2026-06-26T12:59:59.912Z",
+      "txId": "simulated-plan-b8583d423149a4ce-tx",
+      "mode": "simulated",
+      "networkId": "simulated",
+      "steps": [
+        {
+          "phase": "send",
+          "status": "started",
+          "timestamp": "2026-06-26T12:59:59.905Z"
+        },
+        {
+          "phase": "send",
+          "status": "completed",
+          "timestamp": "2026-06-26T12:59:59.906Z"
+        }
+      ],
+      "contentHash": "d3d9a5742a39421631e36823bf6ddb8aa451e13bcd3a40da8362ca14974ea6da",
+      "events": [
+        {
+          "type": "phase.started",
+          "phase": "send",
+          "timestamp": 1782478799905
+        },
+        {
+          "type": "phase.completed",
+          "phase": "send",
+          "timestamp": 1782478799906
+        }
+      ],
+      "receiptPath": "C:\\Users\\jrodr\\Documents\\kaslabdevs\\GitHub\\HardKas-repo\\packages\\cli\\templates\\payment-app\\.hardkas\\artifacts\\simulated-plan-b8583d423149a4ce-tx.json"
+    },
+    {
+      "schema": "hardkas.txTrace",
+      "hardkasVersion": "0.10.0-alpha",
+      "version": "1.0.0-alpha",
+      "hashVersion": 4,
+      "createdAt": "2026-06-26T12:59:59.912Z",
+      "txId": "simulated-plan-b8583d423149a4ce-tx",
+      "mode": "simulated",
+      "networkId": "simulated",
+      "steps": [
+        {
+          "phase": "send",
+          "status": "started",
+          "timestamp": "2026-06-26T12:59:59.905Z"
+        },
+        {
+          "phase": "send",
+          "status": "completed",
+          "timestamp": "2026-06-26T12:59:59.906Z"
+        }
+      ],
+      "contentHash": "d3d9a5742a39421631e36823bf6ddb8aa451e13bcd3a40da8362ca14974ea6da",
+      "events": [
+        {
+          "type": "phase.started",
+          "phase": "send",
+          "timestamp": 1782478799905
+        },
+        {
+          "type": "phase.completed",
+          "phase": "send",
+          "timestamp": 1782478799906
+        }
+      ],
+      "receiptPath": "C:\\Users\\jrodr\\Documents\\kaslabdevs\\GitHub\\HardKas-repo\\packages\\cli\\templates\\payment-app\\.hardkas\\artifacts\\simulated-plan-b8583d423149a4ce-tx.json"
+    },
+    {
+      "schema": "hardkas.txReceipt",
+      "schemaVersion": "hardkas.txReceipt.v1",
+      "hardkasVersion": "0.10.0-alpha",
+      "version": "1.0.0-alpha",
+      "hashVersion": 4,
+      "createdAt": "2026-06-26T12:58:46.253Z",
+      "txId": "simulated-plan-f370aa286f9da510-tx",
+      "status": "accepted",
+      "mode": "simulated",
+      "networkId": "simulated",
+      "from": {
+        "address": "kaspa:sim_alice"
+      },
+      "to": {
+        "address": "kaspa:sim_alice"
+      },
+      "amountSompi": "10000000000",
+      "feeSompi": "350",
+      "mass": "350",
+      "changeSompi": "79999999300",
+      "spentUtxoIds": [
+        "simulated-plan-6f713a1ec9d8e5d5-tx:1"
+      ],
+      "createdUtxoIds": [
+        "simulated-plan-f370aa286f9da510-tx:0",
+        "simulated-plan-f370aa286f9da510-tx:1"
+      ],
+      "daaScore": "2",
+      "preStateHash": "d08770d9036ac9e9c0a67e82514f4390b8ca99c571228ad8ea53911cc44da266",
+      "postStateHash": "6f00a357a5ec71a8e03b2fdee194e4234dadadbaa3967eb78cc845f84fd66b1d",
+      "dagContext": {
+        "mode": "linear",
+        "sink": "linear-pseudo-sink"
+      },
+      "lineage": {
+        "artifactId": "f67db3e0acdf63b0d79c4a1d86e12ab0527ea30260552ea1ca39c008deca2b52",
+        "lineageId": "c5efc6ab5ebadca146cde05ba70d0be80297d60b05dd50fc76a5996f45eae6d5",
+        "parentArtifactId": "d08770d9036ac9e9c0a67e82514f4390b8ca99c571228ad8ea53911cc44da266",
+        "rootArtifactId": "c5efc6ab5ebadca146cde05ba70d0be80297d60b05dd50fc76a5996f45eae6d5",
+        "sequence": 2
+      },
+      "workflowId": "wf_7f0ec6e98d38cef6",
+      "assumptionLevel": "local-simulated",
+      "contentHash": "f67db3e0acdf63b0d79c4a1d86e12ab0527ea30260552ea1ca39c008deca2b52"
+    },
+    {
+      "schema": "hardkas.txTrace",
+      "hardkasVersion": "0.10.0-alpha",
+      "version": "1.0.0-alpha",
+      "hashVersion": 4,
+      "createdAt": "2026-06-26T12:58:46.259Z",
+      "txId": "simulated-plan-f370aa286f9da510-tx",
+      "mode": "simulated",
+      "networkId": "simulated",
+      "steps": [
+        {
+          "phase": "send",
+          "status": "started",
+          "timestamp": "2026-06-26T12:58:46.252Z"
+        },
+        {
+          "phase": "send",
+          "status": "completed",
+          "timestamp": "2026-06-26T12:58:46.253Z"
+        }
+      ],
+      "contentHash": "97c8a40c0ced83bd300d4592b21628b86a930085afe12085067b5885e5d020f4",
+      "events": [
+        {
+          "type": "phase.started",
+          "phase": "send",
+          "timestamp": 1782478726252
+        },
+        {
+          "type": "phase.completed",
+          "phase": "send",
+          "timestamp": 1782478726253
+        }
+      ],
+      "receiptPath": "C:\\Users\\jrodr\\Documents\\kaslabdevs\\GitHub\\HardKas-repo\\packages\\cli\\templates\\payment-app\\.hardkas\\artifacts\\simulated-plan-f370aa286f9da510-tx.json"
+    },
+    {
+      "schema": "hardkas.txTrace",
+      "hardkasVersion": "0.10.0-alpha",
+      "version": "1.0.0-alpha",
+      "hashVersion": 4,
+      "createdAt": "2026-06-26T12:58:46.259Z",
+      "txId": "simulated-plan-f370aa286f9da510-tx",
+      "mode": "simulated",
+      "networkId": "simulated",
+      "steps": [
+        {
+          "phase": "send",
+          "status": "started",
+          "timestamp": "2026-06-26T12:58:46.252Z"
+        },
+        {
+          "phase": "send",
+          "status": "completed",
+          "timestamp": "2026-06-26T12:58:46.253Z"
+        }
+      ],
+      "contentHash": "97c8a40c0ced83bd300d4592b21628b86a930085afe12085067b5885e5d020f4",
+      "events": [
+        {
+          "type": "phase.started",
+          "phase": "send",
+          "timestamp": 1782478726252
+        },
+        {
+          "type": "phase.completed",
+          "phase": "send",
+          "timestamp": 1782478726253
+        }
+      ],
+      "receiptPath": "C:\\Users\\jrodr\\Documents\\kaslabdevs\\GitHub\\HardKas-repo\\packages\\cli\\templates\\payment-app\\.hardkas\\artifacts\\simulated-plan-f370aa286f9da510-tx.json"
+    }
+  ],
+  "hashes": {
+    "signedTx-226ec2a02da6b91eabdf4f93ca12994d1b9918636ad7dd583f03a59c616daf60": "226ec2a02da6b91eabdf4f93ca12994d1b9918636ad7dd583f03a59c616daf60",
+    "signedTx-89799cdc1dd637b450ed5026f3ef7bf672a6652cc9f9e1a190912fa326517fc1": "89799cdc1dd637b450ed5026f3ef7bf672a6652cc9f9e1a190912fa326517fc1",
+    "signedTx-c9f663c2bc295be41d067847fe4bd2644247bc8dc86e08b2147d023442f304af": "c9f663c2bc295be41d067847fe4bd2644247bc8dc86e08b2147d023442f304af",
+    "simulated-plan-6f713a1ec9d8e5d5-tx": "812e81c1b255b9e1ee68bf70764a775ab55db66ab45d36affbae7c74a480031c",
+    "simulated-plan-6f713a1ec9d8e5d5-tx.trace": "b7a198529c8d08ae50cb18c2aee42b14ba1640f412630186d24e838b830917d9",
+    "simulated-plan-b8583d423149a4ce-tx": "9ce9114ee89ecf88f28c2075c98ffefedf598b7526b438df31f173fd1c630a55",
+    "simulated-plan-b8583d423149a4ce-tx.trace": "d3d9a5742a39421631e36823bf6ddb8aa451e13bcd3a40da8362ca14974ea6da",
+    "simulated-plan-f370aa286f9da510-tx": "f67db3e0acdf63b0d79c4a1d86e12ab0527ea30260552ea1ca39c008deca2b52",
+    "simulated-plan-f370aa286f9da510-tx.trace": "97c8a40c0ced83bd300d4592b21628b86a930085afe12085067b5885e5d020f4"
+  },
+  "claims": {
+    "mainnet": false,
+    "testnet": false,
+    "production": false,
+    "bridgeReady": false,
+    "onchainZk": false
+  },
+  "artifactDiscovery": {
+    "source": "scenarioResult+fallbackScan"
+  }
+}

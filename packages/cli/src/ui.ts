@@ -220,9 +220,30 @@ export function handleError(e: unknown, context?: string) {
     return;
   }
 
-  const rawMsg = e instanceof Error ? ((e instanceof Error) ? ((e instanceof Error) ? e.message : String(e)) : String(e)) : String(e);
+  const rawMsg = e instanceof Error ? e.message : String(e);
   const msg = maskSecrets ? maskSecrets(rawMsg) : rawMsg;
   const errorObj = e as any;
+
+  // HardkasCliError is structured — the top-level handler in index.ts
+  // produces the error envelope. Don't double-write JSON to stdout.
+  if (errorObj.name === "HardkasCliError") {
+    if (!UI.isJsonMode()) {
+      getOutput().error(`\n  ✗ [${errorObj.code}] ${msg}`);
+    }
+    return;
+  }
+
+  if (UI.isJsonMode()) {
+    if (!getOutput().jsonWritten) {
+      getOutput().writeJson({
+        ok: false,
+        code: errorObj.code || "UNKNOWN_ERROR",
+        message: context ? `${context}: ${msg}` : msg,
+        mode: "cli"
+      });
+    }
+    return;
+  }
 
   let reason = maskSecrets ? maskSecrets(errorObj.reason) : errorObj.reason;
   let suggestion = maskSecrets ? maskSecrets(errorObj.suggestion) : errorObj.suggestion;
@@ -278,6 +299,17 @@ export function handleError(e: unknown, context?: string) {
 export function handleLockError(e: any) {
   const code = ((e as any).code) || "UNKNOWN_ERROR";
   const meta = e.cause as any;
+
+  if (UI.isJsonMode()) {
+    getOutput().writeJson({
+      ok: false,
+      code,
+      message: e.message || "Lock error",
+      mode: "cli",
+      meta
+    });
+    return;
+  }
 
   if (code === "LOCK_HELD" || code === "LOCK_TIMEOUT" || code === "STALE_LOCK") {
     const title =
