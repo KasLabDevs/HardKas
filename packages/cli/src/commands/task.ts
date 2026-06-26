@@ -65,8 +65,9 @@ export function registerTaskCommands(program: Command, loadedConfig?: LoadedHard
     cmd.action(async (options) => {
       try {
         const { Hardkas } = await import("@hardkas/sdk");
-        const hk = await Hardkas.open(".", { 
-          mode: "script",
+        const hk = await Hardkas.open({ 
+          cwd: ".",
+          mode: "developer",
           network: options.network || loadedConfig?.config?.defaultNetwork || "simulated"
         });
 
@@ -117,7 +118,7 @@ export function registerTaskCommands(program: Command, loadedConfig?: LoadedHard
           scenarioName: name,
           status: "PASSED",
           networkId: hk.network,
-          mode: "script",
+          mode: "simulated",
           artifactsGenerated: [],
           metadata: {
             taskName: name,
@@ -127,7 +128,7 @@ export function registerTaskCommands(program: Command, loadedConfig?: LoadedHard
           payload: {
              result: resultData
           }
-        }, {
+        } as any, {
           fileName: `task-results/${runId}.task-result.json`
         });
         const taskResultPath = writeResult.absolutePath;
@@ -139,7 +140,7 @@ export function registerTaskCommands(program: Command, loadedConfig?: LoadedHard
           const { EvidenceManager } = await import("@hardkas/sdk");
           try {
             const outPath = await EvidenceManager.pack({
-              scenarioResultPath: taskResultPath, // Re-use the packer logic for TaskResult
+              scenarioResultPath: taskResultPath!, // Re-use the packer logic for TaskResult
               workspaceRoot: hk.cwd
             });
             UI.success(`Evidence packed: ${outPath}`);

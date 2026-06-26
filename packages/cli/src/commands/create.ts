@@ -89,9 +89,12 @@ export function registerCreateCommand(program: Command) {
       } catch (e: any) {
         if (options.json) {
           const { getOutput } = await import("../output.js");
-          getOutput().writeError({
-            code: "TEMPLATE_CREATE_FAILED",
-            message: e.message
+          getOutput().writeJson({
+            ok: false,
+            error: {
+              code: "TEMPLATE_CREATE_FAILED",
+              message: e.message
+            }
           });
         } else {
           handleError(e, "Create failed");
