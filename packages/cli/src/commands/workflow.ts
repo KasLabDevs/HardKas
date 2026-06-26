@@ -16,21 +16,15 @@ export function registerWorkflowCommands(program: Command) {
     );
 
   workflowCmd
-    .command("create <name>")
+    .command("create <name>", { hidden: true })
     .description("Create a deterministic workflow from a template")
-    .requiredOption(
-      "--template <name>",
-      "Embedded template name (basic, payroll, dao, escrow, marketplace)"
-    )
+    .option("--template <name>", "Embedded template name")
     .option("--out <path>", "Output artifact file path")
     .option("--json", "Output the final workflow artifact as JSON", false)
     .option("--workspace <path>", "Override workspace root directory")
     .action(async (name: string, options: any) => {
-      const { runWorkflowCreate } = await import("../runners/workflow-create-runner.js");
-      const workspaceRoot = options.workspace
-        ? path.resolve(options.workspace)
-        : process.cwd();
-      await runWorkflowCreate({ name, ...options, workspaceRoot });
+      const { HardkasCliError } = await import("../cli-errors.js");
+      throw new HardkasCliError("COMMAND_QUARANTINED", "workflow create is not part of the 0.10.0 local-first surface", { exitCode: 1 });
     });
 
   workflowCmd

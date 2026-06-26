@@ -1,0 +1,20 @@
+{
+  "name": "payment-app",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "vitest run",
+    "transfer": "tsx src/transfer.ts"
+  },
+  "dependencies": {
+    "@hardkas/sdk": "latest",
+    "@hardkas/core": "latest"
+  },
+  "devDependencies": {
+    "@hardkas/testing": "latest",
+    "tsx": "^4.0.0",
+    "typescript": "^5.0.0",
+    "vitest": "^2.0.0"
+  }
+}

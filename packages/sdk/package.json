@@ -1,6 +1,6 @@
 {
   "name": "@hardkas/sdk",
-  "version": "0.9.7-alpha",
+  "version": "0.10.0-alpha",
   "type": "module",
   "files": [
     "dist",
@@ -14,11 +14,13 @@
     ".": {
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js",
+      "require": "./dist/index.js",
       "default": "./dist/index.js"
     },
     "./client": {
       "types": "./dist/client.d.ts",
       "import": "./dist/client.js",
+      "require": "./dist/client.js",
       "default": "./dist/client.js"
     }
   },

@@ -289,13 +289,7 @@ export function registerAccountsCommands(program: Command) {
           local: options.local
         });
         if (options.json) {
-          getOutput().writeLine(
-            JSON.stringify(
-              result,
-              (k, v) => (typeof v === "bigint" ? v.toString() : v),
-              2
-            )
-          );
+          getOutput().writeJson({ ok: true, command: "accounts balance", mode: "cli", result });
         } else {
           getOutput().writeLine(`\nAccount:  ${result.name}`);
           getOutput().writeLine(`Address:  ${result.address}`);
@@ -363,9 +357,7 @@ export function registerAccountsCommands(program: Command) {
       } catch (e: unknown) {
         if (((e as any).code) === "CONSOLIDATION_NOT_REQUIRED") {
           if (options.json) {
-            getOutput().writeLine(
-              JSON.stringify({ status: "CONSOLIDATION_NOT_REQUIRED", message: ((e instanceof Error) ? ((e instanceof Error) ? e.message : String(e)) : String(e)) })
-            );
+            getOutput().writeJson({ ok: true, command: "accounts consolidate", mode: "cli", result: { status: "CONSOLIDATION_NOT_REQUIRED", message: e instanceof Error ? e.message : String(e) } });
           } else {
             getOutput().writeLine(`\n  ℹ ${((e instanceof Error) ? ((e instanceof Error) ? e.message : String(e)) : String(e))}\n`);
           }

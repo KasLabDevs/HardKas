@@ -85,6 +85,7 @@ export function createSimulatedTxReceipt(
     to: { address: plan.to.address },
     amountSompi: plan.amountSompi,
     feeSompi: plan.estimatedFeeSompi,
+    mass: plan.estimatedMass,
     changeSompi: plan.change?.amountSompi,
     spentUtxoIds: extra?.spentUtxoIds,
     createdUtxoIds: extra?.createdUtxoIds,

@@ -1,6 +1,6 @@
 {
   "name": "@hardkas/cli",
-  "version": "0.9.7-alpha",
+  "version": "0.10.0-alpha",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -15,6 +15,7 @@
   "files": [
     "dist",
     "dashboard-dist",
+    "templates",
     "README.md",
     "LICENSE"
   ],

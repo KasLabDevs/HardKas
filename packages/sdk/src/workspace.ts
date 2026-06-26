@@ -8,14 +8,18 @@ import fs from "node:fs";
  */
 export class HardkasWorkspace {
   public readonly root: string;
+  private readonly overrideHardkasDir?: string | undefined;
 
-  constructor(cwd: string) {
+  constructor(cwd: string, overrideHardkasDir?: string | undefined) {
     // Resolve absolute path immediately to freeze the boundary
     this.root = path.resolve(cwd);
+    if (overrideHardkasDir !== undefined) {
+      this.overrideHardkasDir = overrideHardkasDir;
+    }
   }
 
   get hardkasDir(): string {
-    return path.join(this.root, ".hardkas");
+    return this.overrideHardkasDir || path.join(this.root, ".hardkas");
   }
 
   get artifactsDir(): string {

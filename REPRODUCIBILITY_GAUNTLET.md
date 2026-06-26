@@ -2,7 +2,7 @@
 
 ## Run Info
 - **Proof Version:** `repro-v0`
-- **HardKAS Version:** `0.9.7-alpha`
+- **HardKAS Version:** `0.10.0-alpha`
 - **Iterations Tested:** 10
 - **Status:** ✅ **PASS**
 

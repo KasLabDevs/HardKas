@@ -429,6 +429,26 @@ export class HardkasTx {
       throw e;
     }
 
+    let resolvedAccount: HardkasAccount;
+    if (typeof account === "string") {
+      resolvedAccount = await this.sdk.accounts.resolve(account);
+    } else if (account) {
+      resolvedAccount = account;
+    } else {
+      const fromName =
+        (plan as any).from?.accountName ||
+        (plan as any).from?.input ||
+        (plan as any).from?.address;
+      if (!fromName)
+        throw new Error(
+          "Plan does not specify an account name and no account was provided for signing."
+        );
+      resolvedAccount = await this.sdk.accounts.resolve(fromName);
+    }
+
+    const planId = (plan as any).planId || (plan as any).sourcePlanId || "unknown";
+    await this.sdk.plugins.onBeforeTxSign({ planId, account: resolvedAccount.name || "unknown" });
+
     if (typeof plan === "object" && plan !== null && (plan as any).contentHash) {
 
 
@@ -468,23 +488,6 @@ export class HardkasTx {
       } as unknown as Parameters<typeof coreEvents.normalizeAndEmit>[0]);
 
       return signedArtifact;
-    }
-
-    let resolvedAccount: HardkasAccount;
-    if (typeof account === "string") {
-      resolvedAccount = await this.sdk.accounts.resolve(account);
-    } else if (account) {
-      resolvedAccount = account;
-    } else {
-      const fromName =
-        (plan as any).from?.accountName ||
-        (plan as any).from?.input ||
-        (plan as any).from?.address;
-      if (!fromName)
-        throw new Error(
-          "Plan does not specify an account name and no account was provided for signing."
-        );
-      resolvedAccount = await this.sdk.accounts.resolve(fromName);
     }
 
     let signedArtifact: any;
@@ -723,6 +726,10 @@ export class HardkasTx {
       amountSompi: signedArtifact.amountSompi
     } as unknown as Parameters<typeof coreEvents.normalizeAndEmit>[0]);
 
+    // Fire non-blocking after hook
+    // Do not await, or await but let plugin manager catch failure
+    await this.sdk.plugins.onTxSigned({ planId, account: resolvedAccount.name || "unknown", signedArtifact });
+
     return signedArtifact;
   }
 
@@ -832,6 +839,7 @@ export class HardkasTx {
 
     const normalizedPlan = normalizeSimulatedPlanInput(planArtifact, sourcePlanId);
 
+
     const simResult = applySimulatedPlan(
       state,
       normalizedPlan as any,
@@ -889,6 +897,7 @@ export class HardkasTx {
       to: { address: planArtifact.to?.address || "unknown" },
       amountSompi: planArtifact.amountSompi || "0",
       feeSompi: simResult.receipt.feeSompi?.toString() || "0",
+      mass: simResult.receipt.mass?.toString() || "0",
       changeSompi: simResult.receipt.changeSompi?.toString() || "0",
       spentUtxoIds: simResult.receipt.spentUtxoIds,
       createdUtxoIds: simResult.receipt.createdUtxoIds,
@@ -1039,6 +1048,9 @@ export class HardkasTx {
       );
     }
 
+    const signedTxId = signedArtifact.txId || signedArtifact.signedId || signedArtifact.contentHash || "unknown";
+    await this.sdk.plugins.onBeforeTxSend({ signedTxId, from: signedArtifact.from?.accountName || signedArtifact.from?.address || "unknown" });
+
     const activeNetwork = this.sdk.config.config.defaultNetwork || "simnet";
     const isExplicitRpc =
       typeof urlOrOptions === "string" &&
@@ -1183,9 +1195,16 @@ export class HardkasTx {
     const receiptPath = getDefaultReceiptPath(receipt.txId, this.sdk.config.cwd);
     await writeArtifact(receiptPath, receipt);
 
+    // Reuse the signedTxId from the start of the method
+    await this.sdk.plugins.onTxSent({ signedTxId, receiptArtifact: receipt });
+
     return {
       receipt,
-      receiptPath
+      receiptPath,
+      ...(receipt.contentHash ? { artifactId: receipt.contentHash } : {}),
+      mode: "real",
+      submitted: true,
+      txId: receipt.txId
     };
   }
 

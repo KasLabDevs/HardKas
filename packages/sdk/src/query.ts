@@ -118,4 +118,62 @@ export class HardkasQuery {
     const result = await engine.execute(request);
     return result.items as readonly EventEnvelope[];
   }
+
+  /**
+   * Direct SQL access to the internal Query Store.
+   */
+  get store() {
+    return {
+      query: async (sql: string, options?: { unsafeWrite?: boolean; yes?: boolean }) => {
+        const fs = await import("node:fs");
+        const path = await import("node:path");
+
+        const hardkasDir = path.join(this.sdk.workspace.root, ".hardkas");
+        if (!fs.existsSync(hardkasDir)) {
+          throw new Error("Workspace not initialized. Run hardkas init.");
+        }
+
+        const unsafeTokens = ["DROP", "UPDATE", "DELETE", "INSERT", "ALTER", "CREATE", "REPLACE"];
+        const upperSql = sql.toUpperCase();
+        const hasUnsafe = unsafeTokens.some(t => upperSql.includes(t));
+
+        if (hasUnsafe) {
+          if (!options?.unsafeWrite || !options?.yes) {
+            throw new Error(
+              `Raw mutation queries are blocked by default. Pass { unsafeWrite: true, yes: true } to override.`
+            );
+          }
+        }
+
+        let HardkasStore: any;
+        try {
+          const qs = await import("@hardkas/query-store");
+          HardkasStore = qs.HardkasStore;
+        } catch (e) {
+          throw new Error("Query store backend unavailable. Install @hardkas/query-store.");
+        }
+
+        const dbPath = path.join(hardkasDir, "store.db");
+        if (!fs.existsSync(dbPath)) {
+          throw new Error("store.db not found. Run sdk.query.sync() first.");
+        }
+
+        const store = new HardkasStore({ dbPath });
+        store.connect({ autoMigrate: false });
+        const db = store.getDatabase();
+
+        try {
+          // If it's a mutation, we should probably run it differently, but db.prepare(sql).all() works for read.
+          // For mutations, better to use .run()
+          if (hasUnsafe) {
+            return db.prepare(sql).run();
+          } else {
+            return db.prepare(sql).all();
+          }
+        } finally {
+          db.close();
+        }
+      }
+    };
+  }
 }

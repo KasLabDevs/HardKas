@@ -9,6 +9,7 @@ export function registerConfigCommands(program: Command) {
     .option("--config <path>", "Path to config file")
     .option("--json", "Output as JSON", false)
     .action(async (options: { config?: string; json: boolean }) => {
+
       const { loadHardkasConfig } = await import("@hardkas/config");
       try {
         const loaded = await loadHardkasConfig(
@@ -16,7 +17,8 @@ export function registerConfigCommands(program: Command) {
         );
 
         if (options.json) {
-          console.log(JSON.stringify(loaded, null, 2));
+          const { getOutput } = await import("../output.js");
+          getOutput().writeJson({ ok: true, command: "config show", mode: "cli", result: loaded });
           return;
         }
 
@@ -55,7 +57,8 @@ export function registerConfigCommands(program: Command) {
       const networks = config.networks || {};
 
       if (opts.json) {
-        console.log(JSON.stringify(networks, null, 2));
+        const { getOutput } = await import("../output.js");
+        getOutput().writeJson({ ok: true, command: "config networks", mode: "cli", result: networks });
         return;
       }
 
@@ -77,6 +80,7 @@ export function registerConfigCommands(program: Command) {
     .command("init")
     .description("Initialize a basic hardkas.config.ts in the current directory")
     .option("--force", "Overwrite existing config", false)
+    .option("--json", "Output results as JSON", false)
     .action(async (options) => {
       const { UI } = await import("../ui.js");
       const fs = await import("node:fs");
@@ -84,12 +88,11 @@ export function registerConfigCommands(program: Command) {
 
       const configPath = path.join(process.cwd(), "hardkas.config.ts");
       if (fs.existsSync(configPath) && !options.force) {
-        UI.error("hardkas.config.ts already exists. Use --force to overwrite.");
-        throw new Error("Command failed");
-        return;
+        const { HardkasCliError } = await import("../cli-errors.js");
+        throw new HardkasCliError("CONFIG_EXISTS", "hardkas.config.ts already exists. Use --force to overwrite.");
       }
 
-      const template = `import { defineHardkasConfig } from "@hardkas/sdk";
+      const template = `import { defineHardkasConfig } from "@hardkas/config";
 
 export default defineHardkasConfig({
   defaultNetwork: "simulated",
@@ -102,39 +105,65 @@ export default defineHardkasConfig({
 });
 `;
       fs.writeFileSync(configPath, template, "utf-8");
-      UI.success("Created hardkas.config.ts");
+      if (options.json) {
+        const { getOutput } = await import("../output.js");
+        getOutput().writeJson({ ok: true, command: "config init", mode: "cli", result: { path: configPath } });
+      } else {
+        UI.success("Created hardkas.config.ts");
+      }
     });
 
   configCmd
     .command("repair")
     .description("Repair an invalid or missing hardkas.config.ts")
-    .action(async () => {
+    .option("--json", "Output results as JSON", false)
+    .action(async (options: { json: boolean }) => {
       const { UI } = await import("../ui.js");
       const fs = await import("node:fs");
       const path = await import("node:path");
       const configPath = path.join(process.cwd(), "hardkas.config.ts");
 
-      const template = `import { defineHardkasConfig } from "@hardkas/sdk";\n\nexport default defineHardkasConfig({\n  defaultNetwork: "simulated",\n  networks: {\n    simulated: { kind: "simulated" }\n  }\n});\n`;
+      const template = `import { defineHardkasConfig } from "@hardkas/config";\n\nexport default defineHardkasConfig({\n  defaultNetwork: "simulated",\n  networks: {\n    simulated: { kind: "simulated" }\n  }\n});\n`;
 
       if (!fs.existsSync(configPath)) {
         UI.warning("Config file missing. Generating a new one...");
         fs.writeFileSync(configPath, template, "utf-8");
-        UI.success("Repaired: Created fresh hardkas.config.ts");
+        if (options.json) {
+          const { getOutput } = await import("../output.js");
+          getOutput().writeJson({ ok: true, command: "config repair", mode: "cli", result: { status: "repaired_missing" } });
+        } else {
+          UI.success("Repaired: Created fresh hardkas.config.ts");
+        }
         return;
       }
 
       const { loadHardkasConfig } = await import("@hardkas/config");
       try {
         await loadHardkasConfig();
-        UI.success("Config file is valid. No repair needed.");
+        if (options.json) {
+          const { getOutput } = await import("../output.js");
+          getOutput().writeJson({ ok: true, command: "config repair", mode: "cli", result: { status: "valid" } });
+        } else {
+          UI.success("Config file is valid. No repair needed.");
+        }
       } catch (err: any) {
-        UI.error(`Config file is invalid: ${((err instanceof Error) ? ((err instanceof Error) ? err.message : String(err)) : String(err))}`);
-        UI.warning("Backing up and generating a fresh config...");
-        fs.copyFileSync(configPath, `${configPath}.backup`);
-        fs.writeFileSync(configPath, template, "utf-8");
-        UI.success(
-          "Repaired: Created fresh hardkas.config.ts (backup saved to hardkas.config.ts.backup)"
-        );
+        const { HardkasCliError } = await import("../cli-errors.js");
+        if (options.json) {
+          // If in JSON mode, we shouldn't attempt an interactive backup/repair unless requested,
+          // but since this is a command we just throw the error or return success of repair.
+          fs.copyFileSync(configPath, `${configPath}.backup`);
+          fs.writeFileSync(configPath, template, "utf-8");
+          const { getOutput } = await import("../output.js");
+          getOutput().writeJson({ ok: true, command: "config repair", mode: "cli", result: { status: "repaired_invalid", backup: `${configPath}.backup` } });
+        } else {
+          UI.error(`Config file is invalid: ${((err instanceof Error) ? ((err instanceof Error) ? err.message : String(err)) : String(err))}`);
+          UI.warning("Backing up and generating a fresh config...");
+          fs.copyFileSync(configPath, `${configPath}.backup`);
+          fs.writeFileSync(configPath, template, "utf-8");
+          UI.success(
+            "Repaired: Created fresh hardkas.config.ts (backup saved to hardkas.config.ts.backup)"
+          );
+        }
       }
     });
 }

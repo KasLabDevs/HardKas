@@ -7,6 +7,7 @@ import { resolveHardkasAccount, HardkasAccount } from "@hardkas/accounts";
 import { ExternalHardkasSigner } from "@hardkas/artifacts";
 import { JsonWrpcKaspaClient, KaspaRpcClient } from "@hardkas/kaspa-rpc";
 import { NetworkId, HardkasError } from "@hardkas/core";
+import { assertPublicNetworkAllowed } from "./policy.js";
 import { HardkasAccounts } from "./accounts.js";
 import { HardkasTx } from "./tx.js";
 import { HardkasL2 } from "./l2.js";
@@ -23,6 +24,7 @@ import { HardkasSilver } from "./silver.js";
 import { HardkasZk } from "./zk.js";
 import { HardkasVprogs } from "./vprogs.js";
 import { HardkasProgrammability } from "./programmability.js";
+import { HardkasPluginManager } from "./plugin-manager.js";
 
 // Curated explicit exports only. No `export *`
 export { HardkasAccounts } from "./accounts.js";
@@ -121,6 +123,7 @@ export interface HardkasOptions {
   cwd?: string;
   configPath?: string;
   workspaceRoot?: string;
+  hardkasDir?: string;
   mode?: "developer" | "agent";
   network?: string;
   autoBootstrap?: boolean;
@@ -134,7 +137,7 @@ export interface HardkasOptions {
   };
   policy?: {
     allowNetwork?: boolean;
-    allowMainnet?: boolean;
+    allowPublic?: boolean;
     allowExternalWallet?: boolean;
     requireDryRun?: boolean;
   };
@@ -163,6 +166,7 @@ export class Hardkas {
   public readonly zk: HardkasZk;
   public readonly vprogs: HardkasVprogs;
   public readonly programmability: HardkasProgrammability;
+  public readonly plugins: HardkasPluginManager;
   public readonly signer?: ExternalHardkasSigner | undefined;
 
   public readonly mode: "developer" | "agent";
@@ -178,7 +182,7 @@ export class Hardkas {
     this.mode = options?.mode || "developer";
     this.policy = {
       allowNetwork: options?.policy?.allowNetwork ?? this.mode === "developer",
-      allowMainnet: options?.policy?.allowMainnet ?? false,
+      allowPublic: options?.policy?.allowPublic ?? this.config.config.network?.allowPublic ?? false,
       allowExternalWallet:
         options?.policy?.allowExternalWallet ?? this.mode === "developer",
       requireDryRun: options?.policy?.requireDryRun ?? this.mode === "agent"
@@ -191,8 +195,8 @@ export class Hardkas {
         rpcUrl: this.resolveRpcUrl()
       });
 
-    this.workspace = new HardkasWorkspace(this.config.cwd);
-    this.artifacts = new HardkasArtifactsManager(this.workspace);
+    this.workspace = new HardkasWorkspace(this.config.cwd, options?.hardkasDir);
+    this.artifacts = new HardkasArtifactsManager(this);
 
     this.accounts = new HardkasAccounts(this);
     this.tx = new HardkasTx(this);
@@ -209,6 +213,7 @@ export class Hardkas {
     this.zk = new HardkasZk(this);
     this.vprogs = new HardkasVprogs(this);
     this.programmability = new HardkasProgrammability(this);
+    this.plugins = new HardkasPluginManager(this);
   }
 
   private resolveRpcUrl(): string {
@@ -225,8 +230,9 @@ export class Hardkas {
    * Opens a HardKAS project in the given directory.
    */
   static async open(dirOrOptions: string | HardkasOptions = "."): Promise<Hardkas> {
-    const options =
-      typeof dirOrOptions === "string" ? { cwd: dirOrOptions } : dirOrOptions;
+    const path = await import("node:path");
+    const cwd = path.resolve(typeof dirOrOptions === "string" ? dirOrOptions : (dirOrOptions.cwd || process.cwd()));
+    const options = typeof dirOrOptions === "string" ? { cwd } : { ...dirOrOptions, cwd };
     const loaded = await loadConfig(options);
 
     const activeNetwork = options.network || loaded.config.defaultNetwork || "simnet";
@@ -235,10 +241,11 @@ export class Hardkas {
       loaded.config.networks?.[activeNetwork]?.kind === "simulated";
     const autoBootstrap = options.autoBootstrap ?? (isSimulated ? true : false);
 
+    const effectiveAllowPublic = options.policy?.allowPublic ?? loaded.config.network?.allowPublic;
+    assertPublicNetworkAllowed(activeNetwork, effectiveAllowPublic === true ? { allowPublic: true } : {});
+
     const fs = await import("node:fs");
-    const path = await import("node:path");
-    const cwd = options.cwd || process.cwd();
-    const hardkasDir = path.join(cwd, ".hardkas");
+    const hardkasDir = options.hardkasDir || path.join(cwd, ".hardkas");
 
     if (autoBootstrap) {
       if (!isSimulated) {
@@ -256,7 +263,10 @@ export class Hardkas {
         }
         try {
           const { loadOrCreateLocalnetState } = await import("@hardkas/localnet");
-          await loadOrCreateLocalnetState({ cwd });
+          await loadOrCreateLocalnetState({
+            cwd,
+            ...(options.hardkasDir ? { hardkasDir: options.hardkasDir } : {})
+          });
         } catch {
           // ignore error if it fails to init localnet
         }
@@ -281,7 +291,9 @@ export class Hardkas {
       provider = new LocalnetSimulatedProvider(cwd);
     }
 
-    return new Hardkas(loaded, options, provider);
+    const hk = new Hardkas(loaded, options, provider);
+    hk.plugins.loadPlugins();
+    return hk;
   }
 
   /**
@@ -329,8 +341,8 @@ export class Hardkas {
           throw new HardkasError("POLICY_VIOLATION", msg("allowNetwork"));
         break;
       case "mainnet":
-        if (!this.policy.allowMainnet)
-          throw new HardkasError("POLICY_VIOLATION", msg("allowMainnet"));
+        if (!this.policy.allowPublic)
+          throw new HardkasError("POLICY_VIOLATION", msg("allowPublic"));
         break;
       case "external-wallet":
         if (!this.policy.allowExternalWallet)
@@ -349,3 +361,12 @@ export {
   type HardkasClientOptions,
   type ClientEnvelope
 } from "./client.js";
+
+export {
+  createHardkasEnvironment,
+  type HardkasEnvironment,
+  type HardkasEnvironmentOptions,
+  type HardkasMode
+} from "./environment.js";
+
+export { EvidenceManager, type EvidencePackOptions, type EvidenceVerifyResult } from "./evidence.js";

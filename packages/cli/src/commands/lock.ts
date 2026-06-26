@@ -16,7 +16,8 @@ export function registerLockCommands(program: Command) {
       try {
         const locks = listLocks(process.cwd());
         if (options.json) {
-          console.log(JSON.stringify(locks, null, 2));
+          const { getOutput } = await import("../output.js");
+          getOutput().writeJson({ ok: true, command: "lock list", mode: "cli", result: locks });
           return;
         }
 
@@ -138,8 +139,8 @@ export function registerLockCommands(program: Command) {
         if (result.cleared) {
           UI.success(`Lock '${name}' cleared.`);
         } else {
-          UI.error(`Could not clear lock '${name}': ${result.reason}`);
-          throw new Error("Command failed");
+          const { HardkasCliError } = await import("../cli-errors.js");
+          throw new HardkasCliError("LOCK_CLEAR_FAILED", `Could not clear lock '${name}': ${result.reason}`);
         }
       } catch (e) {
         throw e;

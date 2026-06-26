@@ -1,7 +1,7 @@
 {
   "schema": "hardkas.cliReference.v1",
   "generatedAt": "deterministic",
-  "totalCommands": 246,
+  "totalCommands": 253,
   "flatSurface": [
     "hardkas accounts",
     "hardkas accounts balance",
@@ -39,6 +39,7 @@
     "hardkas console",
     "hardkas corpus",
     "hardkas corpus verify",
+    "hardkas create",
     "hardkas dag",
     "hardkas dag simulate-reorg",
     "hardkas dag status",
@@ -68,6 +69,10 @@
     "hardkas dev-server start",
     "hardkas dev-server token",
     "hardkas doctor",
+    "hardkas evidence",
+    "hardkas evidence explain",
+    "hardkas evidence pack",
+    "hardkas evidence verify",
     "hardkas explain",
     "hardkas init",
     "hardkas inspect",
@@ -208,6 +213,8 @@
     "hardkas silver test",
     "hardkas silver verify",
     "hardkas status",
+    "hardkas task",
+    "hardkas task <name>",
     "hardkas telemetry",
     "hardkas telemetry inspect",
     "hardkas telemetry tail",
@@ -783,7 +790,9 @@
     {
       "path": "hardkas artifact",
       "name": "artifact",
-      "aliases": [],
+      "aliases": [
+        "artifacts"
+      ],
       "description": "Manage HardKAS artifacts",
       "usage": "hardkas artifact [options] [command]",
       "arguments": [],
@@ -1275,6 +1284,13 @@
               "default": false,
               "required": false,
               "mandatory": false
+            },
+            {
+              "flags": "--json",
+              "description": "Output results as JSON",
+              "default": false,
+              "required": false,
+              "mandatory": false
             }
           ],
           "subcommands": []
@@ -1304,7 +1320,15 @@
           "description": "Repair an invalid or missing hardkas.config.ts",
           "usage": "hardkas config repair [options]",
           "arguments": [],
-          "options": [],
+          "options": [
+            {
+              "flags": "--json",
+              "description": "Output results as JSON",
+              "default": false,
+              "required": false,
+              "mandatory": false
+            }
+          ],
           "subcommands": []
         },
         {
@@ -1406,6 +1430,40 @@
           "subcommands": []
         }
       ]
+    },
+    {
+      "path": "hardkas create",
+      "name": "create",
+      "aliases": [],
+      "description": "Scaffold a new HardKAS project from a template stable",
+      "usage": "hardkas create [options] <template> <dest>",
+      "arguments": [
+        {
+          "name": "template",
+          "description": "Name of the template (e.g. payment-app, batch-payments)"
+        },
+        {
+          "name": "dest",
+          "description": "Destination directory"
+        }
+      ],
+      "options": [
+        {
+          "flags": "--install",
+          "description": "Run npm install automatically after scaffolding",
+          "default": false,
+          "required": false,
+          "mandatory": false
+        },
+        {
+          "flags": "--json",
+          "description": "Output results as JSON",
+          "default": false,
+          "required": false,
+          "mandatory": false
+        }
+      ],
+      "subcommands": []
     },
     {
       "path": "hardkas dag",
@@ -2135,6 +2193,100 @@
       "subcommands": []
     },
     {
+      "path": "hardkas evidence",
+      "name": "evidence",
+      "aliases": [],
+      "description": "Manage HardKAS Evidence Packages (.hke.json) alpha",
+      "usage": "hardkas evidence [options] [command]",
+      "arguments": [],
+      "options": [],
+      "subcommands": [
+        {
+          "path": "hardkas evidence explain",
+          "name": "explain",
+          "aliases": [],
+          "description": "Explain the contents and claims of an evidence package",
+          "usage": "hardkas evidence explain [options] <packagePath>",
+          "arguments": [
+            {
+              "name": "packagePath",
+              "description": ""
+            }
+          ],
+          "options": [
+            {
+              "flags": "--json",
+              "description": "Output results as JSON",
+              "default": false,
+              "required": false,
+              "mandatory": false
+            }
+          ],
+          "subcommands": []
+        },
+        {
+          "path": "hardkas evidence pack",
+          "name": "pack",
+          "aliases": [],
+          "description": "Pack a scenario result and its artifacts into an evidence package",
+          "usage": "hardkas evidence pack [options] <scenarioResultPath>",
+          "arguments": [
+            {
+              "name": "scenarioResultPath",
+              "description": ""
+            }
+          ],
+          "options": [
+            {
+              "flags": "--out <path>",
+              "description": "Output package file path",
+              "default": null,
+              "required": true,
+              "mandatory": false
+            },
+            {
+              "flags": "--workspace <path>",
+              "description": "Override workspace root directory",
+              "default": null,
+              "required": true,
+              "mandatory": false
+            },
+            {
+              "flags": "--json",
+              "description": "Output results as JSON",
+              "default": false,
+              "required": false,
+              "mandatory": false
+            }
+          ],
+          "subcommands": []
+        },
+        {
+          "path": "hardkas evidence verify",
+          "name": "verify",
+          "aliases": [],
+          "description": "Verify the integrity and policy compliance of an evidence package",
+          "usage": "hardkas evidence verify [options] <packagePath>",
+          "arguments": [
+            {
+              "name": "packagePath",
+              "description": ""
+            }
+          ],
+          "options": [
+            {
+              "flags": "--json",
+              "description": "Output results as JSON",
+              "default": false,
+              "required": false,
+              "mandatory": false
+            }
+          ],
+          "subcommands": []
+        }
+      ]
+    },
+    {
       "path": "hardkas explain",
       "name": "explain",
       "aliases": [],
@@ -2191,8 +2343,15 @@
           "mandatory": false
         },
         {
-          "flags": "--skip-install",
-          "description": "Skip pnpm install for new projects",
+          "flags": "--install",
+          "description": "Run pnpm/npm install automatically after scaffolding",
+          "default": false,
+          "required": false,
+          "mandatory": false
+        },
+        {
+          "flags": "--json",
+          "description": "Output results as JSON",
           "default": false,
           "required": false,
           "mandatory": false
@@ -3540,6 +3699,13 @@
               "default": false,
               "required": false,
               "mandatory": false
+            },
+            {
+              "flags": "--json",
+              "description": "Output results as JSON",
+              "default": false,
+              "required": false,
+              "mandatory": false
             }
           ],
           "subcommands": []
@@ -3579,6 +3745,13 @@
               "default": "30000",
               "required": true,
               "mandatory": false
+            },
+            {
+              "flags": "--json",
+              "description": "Output results as JSON",
+              "default": false,
+              "required": false,
+              "mandatory": false
             }
           ],
           "subcommands": []
@@ -3603,6 +3776,13 @@
               "description": "Lock wait timeout in ms",
               "default": "30000",
               "required": true,
+              "mandatory": false
+            },
+            {
+              "flags": "--json",
+              "description": "Output results as JSON",
+              "default": false,
+              "required": false,
               "mandatory": false
             }
           ],
@@ -3642,6 +3822,13 @@
               "description": "Lock wait timeout in ms",
               "default": "30000",
               "required": true,
+              "mandatory": false
+            },
+            {
+              "flags": "--json",
+              "description": "Output results as JSON",
+              "default": false,
+              "required": false,
               "mandatory": false
             }
           ],
@@ -3685,6 +3872,13 @@
               "description": "Lock wait timeout in ms",
               "default": "30000",
               "required": true,
+              "mandatory": false
+            },
+            {
+              "flags": "--json",
+              "description": "Output results as JSON",
+              "default": false,
+              "required": false,
               "mandatory": false
             }
           ],
@@ -5015,6 +5209,13 @@
           "default": null,
           "required": false,
           "mandatory": false
+        },
+        {
+          "flags": "--json",
+          "description": "Output results as JSON",
+          "default": false,
+          "required": false,
+          "mandatory": false
         }
       ],
       "subcommands": []
@@ -5129,6 +5330,13 @@
               "default": null,
               "required": true,
               "mandatory": true
+            },
+            {
+              "flags": "--json",
+              "description": "Output results as JSON",
+              "default": false,
+              "required": false,
+              "mandatory": false
             }
           ],
           "subcommands": []
@@ -5140,7 +5348,15 @@
           "description": "List all configured sessions alpha",
           "usage": "hardkas session list [options]",
           "arguments": [],
-          "options": [],
+          "options": [
+            {
+              "flags": "--json",
+              "description": "Output results as JSON",
+              "default": false,
+              "required": false,
+              "mandatory": false
+            }
+          ],
           "subcommands": []
         },
         {
@@ -5150,7 +5366,15 @@
           "description": "Show active session linkage alpha",
           "usage": "hardkas session status [options]",
           "arguments": [],
-          "options": [],
+          "options": [
+            {
+              "flags": "--json",
+              "description": "Output results as JSON",
+              "default": false,
+              "required": false,
+              "mandatory": false
+            }
+          ],
           "subcommands": []
         },
         {
@@ -5165,7 +5389,15 @@
               "description": ""
             }
           ],
-          "options": [],
+          "options": [
+            {
+              "flags": "--json",
+              "description": "Output results as JSON",
+              "default": false,
+              "required": false,
+              "mandatory": false
+            }
+          ],
           "subcommands": []
         }
       ]
@@ -5628,6 +5860,27 @@
       "subcommands": []
     },
     {
+      "path": "hardkas task",
+      "name": "task",
+      "aliases": [],
+      "description": "Execute an evidence-aware custom task",
+      "usage": "hardkas task [options] [command]",
+      "arguments": [],
+      "options": [],
+      "subcommands": [
+        {
+          "path": "hardkas task <name>",
+          "name": "<name>",
+          "aliases": [],
+          "description": "Run a task",
+          "usage": "hardkas task <name> [options]",
+          "arguments": [],
+          "options": [],
+          "subcommands": []
+        }
+      ]
+    },
+    {
       "path": "hardkas telemetry",
       "name": "telemetry",
       "aliases": [],
@@ -5719,15 +5972,8 @@
           "mandatory": false
         },
         {
-          "flags": "--json",
-          "description": "Output results as JSON",
-          "default": false,
-          "required": false,
-          "mandatory": false
-        },
-        {
           "flags": "--mass-report",
-          "description": "Show mass/fee report after test run",
+          "description": "Show mass/fee report after scenario execution",
           "default": false,
           "required": false,
           "mandatory": false
@@ -5742,6 +5988,34 @@
         {
           "flags": "--mass-compare <label>",
           "description": "Compare against saved mass snapshot",
+          "default": null,
+          "required": true,
+          "mandatory": false
+        },
+        {
+          "flags": "--json",
+          "description": "Output results as JSON",
+          "default": false,
+          "required": false,
+          "mandatory": false
+        },
+        {
+          "flags": "--keep-runs",
+          "description": "Keep temporary scenario workspaces for debugging",
+          "default": false,
+          "required": false,
+          "mandatory": false
+        },
+        {
+          "flags": "--evidence",
+          "description": "Automatically package evidence into .hke.json",
+          "default": false,
+          "required": false,
+          "mandatory": false
+        },
+        {
+          "flags": "--scenario <name>",
+          "description": "Run specific scenario by name",
           "default": null,
           "required": true,
           "mandatory": false
@@ -6360,7 +6634,15 @@
       "description": "Boot or validate the HardKAS developer runtime environment stable",
       "usage": "hardkas up [options]",
       "arguments": [],
-      "options": [],
+      "options": [
+        {
+          "flags": "--json",
+          "description": "Output results as JSON",
+          "default": false,
+          "required": false,
+          "mandatory": false
+        }
+      ],
       "subcommands": []
     },
     {
@@ -6537,10 +6819,10 @@
           "options": [
             {
               "flags": "--template <name>",
-              "description": "Embedded template name (basic, payroll, dao, escrow, marketplace)",
+              "description": "Embedded template name",
               "default": null,
               "required": true,
-              "mandatory": true
+              "mandatory": false
             },
             {
               "flags": "--out <path>",

@@ -1,5 +1,6 @@
 import { Command } from "commander";
 import { registerInitCommands } from "./commands/init.js";
+import { registerCreateCommand } from "./commands/create.js";
 import { registerTxCommands } from "./commands/tx.js";
 import { registerArtifactCommands } from "./commands/artifact.js";
 import { registerReplayCommands } from "./commands/replay.js";
@@ -46,14 +47,18 @@ import { registerVprogsCommands } from "./commands/vprogs.js";
 import { registerProgrammabilityCommands } from "./commands/programmability.js";
 import { registerDevServerCommands } from "./commands/dev-server.js";
 import { registerSecurityCommand } from "./commands/security.js";
+import { registerEvidenceCommands } from "./commands/evidence.js";
 
 import { HARDKAS_VERSION } from "@hardkas/artifacts";
+
+import { registerTaskCommands } from "./commands/task.js";
+import { LoadedHardkasConfig } from "@hardkas/config";
 
 /**
  * Builds the HardKAS Commander program tree.
  * Separated from execution to allow safe documentation generation and testing.
  */
-export function buildHardkasProgram(options?: { forDocs?: boolean }): Command {
+export function buildHardkasProgram(options?: { forDocs?: boolean, loadedConfig?: LoadedHardkasConfig | undefined }): Command {
   const program = new Command();
 
   program
@@ -65,6 +70,7 @@ export function buildHardkasProgram(options?: { forDocs?: boolean }): Command {
 
   // Register modular command groups
   registerInitCommands(program);
+  registerCreateCommand(program);
   registerTxCommands(program);
   registerArtifactCommands(program);
   registerReplayCommands(program);
@@ -110,9 +116,11 @@ export function buildHardkasProgram(options?: { forDocs?: boolean }): Command {
   registerProgrammabilityCommands(program);
   registerDevServerCommands(program);
   registerSecurityCommand(program);
+  registerTaskCommands(program, options?.loadedConfig);
 
   // Programmable workflows & Agent Mode
   registerWorkflowCommands(program);
+  registerEvidenceCommands(program);
 
   // Fallback / Catch-all: Add a docs command if we want to expose it via CLI
   // We only do this if requested and if it has no side effects.

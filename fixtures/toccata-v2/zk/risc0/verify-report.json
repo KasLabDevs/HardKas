@@ -1,7 +1,7 @@
 {
   "schema": "hardkas.zk.risc0.verifyReport.v1",
   "status": "RISC0_LOCAL_VERIFICATION_NOT_IMPLEMENTED",
-  "receiptHash": "425839ff1ebe4bdab8ded7a54a9c8c64138cfc47210e887e464cef690b3c948f",
+  "receiptHash": "912863bd1450db9a857af6c6cd8f4c82b0aa015aefdbc620575d574b3cc55225",
   "journalHash": "9e433eff335e310d835ef0fab8f063308323d3513d97192dfcd67faf57caa7ec",
   "imageIdHash": "59ea9122cbf6227d66ea03174b033cf70373ed606f6a8fcf1b6154e84411c6bc",
   "claims": {

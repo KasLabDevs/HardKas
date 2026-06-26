@@ -156,6 +156,6 @@ describe("Network-Agnostic Artifact Layer: Migration", () => {
 
     // Fails due to HASH_MISMATCH because lineage is no longer completely excluded in v4
     expect(result.ok).toBe(false);
-    expect(result.issues.some((i: any) => i.code === "HASH_MISMATCH")).toBe(true);
+    expect(result.issues.some((i: any) => i.code === "ARTIFACT_HASH_MISMATCH")).toBe(true);
   });
 });

@@ -1,0 +1,11 @@
+# AUDIT ENVIRONMENT BASELINE
+- Date: 2026-06-26T16:35:55.176Z
+- Commit: e31334923ccd6b9ae0beaa8b4d86b7661f4cea54
+- Branch: develop
+- Working Tree: Clean
+- Node: v24.15.0
+- npm: 11.12.1
+- pnpm: 9.15.4
+- Docker: Available (29.4.2)
+- HardKAS Version Claimed in package.json: 0.10.0-alpha (Mismatch with 0.10.0 claims in some docs)
+- Workspace: pnpm monorepo with 40+ packages.

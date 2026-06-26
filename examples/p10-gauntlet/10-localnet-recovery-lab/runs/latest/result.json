@@ -1,0 +1,23 @@
+{
+  "status": "success",
+  "events": [
+    {
+      "step": "localnet_status",
+      "ready": false
+    },
+    {
+      "step": "localnet_start",
+      "ok": true
+    },
+    {
+      "step": "corrupt_localnet",
+      "error": "state file not found"
+    },
+    {
+      "step": "localnet_start_after_corruption",
+      "ok": true,
+      "stateRecreated": false
+    }
+  ],
+  "errors": []
+}

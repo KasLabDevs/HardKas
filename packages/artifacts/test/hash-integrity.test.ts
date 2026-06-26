@@ -33,7 +33,7 @@ describe("Artifact Hash Integrity", () => {
 
     const result = await verifyArtifactIntegrity(artifact);
     expect(result.ok).toBe(false);
-    expect(result.issues.at(0)?.code).toBe("HASH_MISMATCH");
+    expect(result.issues.at(0)?.code).toBe("ARTIFACT_HASH_MISMATCH");
     expect(result.actualHash).toBeDefined();
     expect(result.expectedHash).toBeDefined();
     expect(result.actualHash).not.toBe(result.expectedHash);
@@ -63,7 +63,7 @@ describe("Artifact Hash Integrity", () => {
     const result = await verifyArtifactIntegrity(reordered);
     // Note: Zod schema validation might still fail if some fields are missing (like inputs/outputs),
     // but the HASH_MISMATCH should NOT be present.
-    const hasHashError = result.issues.some((i) => i.code === "HASH_MISMATCH");
+    const hasHashError = result.issues.some((i) => i.code === "ARTIFACT_HASH_MISMATCH");
     expect(hasHashError).toBe(false);
   });
 

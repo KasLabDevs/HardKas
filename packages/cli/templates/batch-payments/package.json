@@ -1,0 +1,19 @@
+{
+  "name": "batch-payments",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "vitest run",
+    "batch": "tsx src/batch.ts"
+  },
+  "dependencies": {
+    "@hardkas/sdk": "latest"
+  },
+  "devDependencies": {
+    "@hardkas/testing": "latest",
+    "tsx": "^4.0.0",
+    "typescript": "^5.0.0",
+    "vitest": "^2.0.0"
+  }
+}

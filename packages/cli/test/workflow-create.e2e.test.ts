@@ -18,11 +18,10 @@ describe("hardkas workflow create", () => {
     await fs.rm(tmpDir, { recursive: true, force: true });
   });
 
-  it("should create a workflow from a template offline", async () => {
+  it("should return COMMAND_QUARANTINED for basic template", async () => {
     const outPath = path.join(tmpDir, "wf-basic.json");
 
-    // Test basic template
-    await execa(tsx, [
+    const { stdout } = await execa(tsx, [
       ...runArgs,
       "workflow",
       "create",
@@ -32,27 +31,24 @@ describe("hardkas workflow create", () => {
       "--out",
       outPath,
       "--json"
-    ]);
+    ], { reject: false });
 
-    const wf = JSON.parse(await fs.readFile(outPath, "utf-8"));
-
-    expect(wf.workflowId).toMatch(/^wf_test-flow_/);
-    expect(wf.name).toBe("test-flow");
-    expect(wf.version).toBe("1.0.0-offline");
-    expect(wf.steps).toEqual([{ id: "step1", action: "noop" }]);
+    const wf = JSON.parse(stdout);
+    expect(wf.ok).toBe(false);
+    expect(wf.code).toBe("COMMAND_QUARANTINED");
   }, 30000);
 
-  it("should fail for invalid template", async () => {
-    await expect(
-      execa(tsx, [
-        ...runArgs,
-        "workflow",
-        "create",
-        "test-flow",
-        "--template",
-        "invalid-template",
-        "--json"
-      ])
-    ).rejects.toThrow(/Template 'invalid-template' not found/);
+  it("should return COMMAND_QUARANTINED for invalid template", async () => {
+    const { stdout } = await execa(tsx, [
+      ...runArgs,
+      "workflow",
+      "create",
+      "test-flow",
+      "--template",
+      "invalid-template",
+      "--json"
+    ], { reject: false });
+
+    expect(JSON.parse(stdout).code).toBe("COMMAND_QUARANTINED");
   }, 30000);
 });

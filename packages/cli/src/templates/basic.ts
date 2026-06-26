@@ -27,9 +27,9 @@ export function generateBasicTemplate(config: {
       2
     ),
 
-    "hardkas.config.ts": `import { defineConfig } from "@hardkas/cli";
+    "hardkas.config.ts": `import { defineHardkasConfig } from "@hardkas/config";
 
-export default defineConfig({
+export default defineHardkasConfig({
   defaultNetwork: "${config.network}",
 });
 `,
@@ -76,7 +76,7 @@ for (const name of h.accountNames()) {
 `,
 
     "test/transfer.test.ts": `import { describe, it, expect } from "vitest";
-import { createTestHarness } from "@hardkas/testing";
+import { createTestHarness } from "@hardkas/testing/harness";
 import "@hardkas/testing/setup";
 
 describe("Transfer workflow", () => {

@@ -1,0 +1,51 @@
+{
+  "status": "success",
+  "events": [
+    {
+      "step": "pay_bob",
+      "ok": true,
+      "txId": "simulated-plan-12b16aa0d1e8f725-tx"
+    },
+    {
+      "step": "pay_carol",
+      "ok": true,
+      "txId": "simulated-plan-9852c91167a4bd9a-tx"
+    },
+    {
+      "step": "pay_dave",
+      "ok": true,
+      "txId": "simulated-plan-fcff7fd95a4ec9ee-tx"
+    },
+    {
+      "step": "pay_eve",
+      "ok": true,
+      "txId": "simulated-plan-eda8cdbae74fcfce-tx"
+    },
+    {
+      "step": "pay_frank",
+      "ok": true,
+      "txId": "simulated-plan-32b5ed8153b67996-tx"
+    },
+    {
+      "step": "balance_bob",
+      "sompi": "100500000000"
+    },
+    {
+      "step": "balance_carol",
+      "sompi": "100500000000"
+    },
+    {
+      "step": "balance_dave",
+      "sompi": "100500000000"
+    },
+    {
+      "step": "balance_eve",
+      "sompi": "500000000"
+    },
+    {
+      "step": "balance_frank",
+      "sompi": "500000000"
+    }
+  ],
+  "errors": []
+}

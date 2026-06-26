@@ -28,7 +28,7 @@ export class HardkasWorkflow {
       parentArtifacts: [], // In v1, workflows do not accept explicit parent inputs yet
       policySnapshot: {
         allowNetwork: this.sdk.policy.allowNetwork,
-        allowMainnet: this.sdk.policy.allowMainnet,
+        allowMainnet: this.sdk.policy.allowPublic,
         allowExternalWallet: this.sdk.policy.allowExternalWallet,
         requireDryRun: this.sdk.policy.requireDryRun
       },
@@ -263,7 +263,7 @@ export class HardkasWorkflow {
       },
       policy: {
         allowNetwork: this.sdk.policy.allowNetwork,
-        allowMainnet: this.sdk.policy.allowMainnet,
+        allowMainnet: this.sdk.policy.allowPublic,
         allowExternalWallet: this.sdk.policy.allowExternalWallet,
         requireDryRun: this.sdk.policy.requireDryRun
       }

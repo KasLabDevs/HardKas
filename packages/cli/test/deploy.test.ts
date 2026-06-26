@@ -4,10 +4,10 @@ import { execSync } from "node:child_process";
 import { existsSync, rmSync, mkdirSync } from "node:fs";
 
 describe("Deployment tracking", () => {
-  const cliPath = resolve("src/index.ts");
-  const tsxBin = resolve("../../node_modules/.bin/tsx");
+  const cliPath = resolve(__dirname, "../src/index.ts");
+  const tsxBin = resolve(__dirname, "../../../node_modules/.bin/tsx");
   const actualTsx = existsSync(tsxBin) ? tsxBin : "npx tsx";
-  const testDir = resolve(`.tmp/test-deployments-${process.pid}`);
+  const testDir = resolve(__dirname, `../../../.tmp/test-deployments-${process.pid}`);
 
   function runHardkas(args: string) {
     try {

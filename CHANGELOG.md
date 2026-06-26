@@ -1,4 +1,82 @@
-# HardKAS 0.9.7-alpha Release Notes
+
+## [0.10.0-alpha] - 2026-06-26
+### Added
+- P24 API Freeze definitions for public, experimental, and deprecated surfaces.
+- Strict verifier gates for ecosystem templates.
+
+### Changed
+- Bumbed all package versions to 0.10.0-alpha.
+- Enforced strict artifact verification and encryption references (`keystoreRef`).
+
+### Removed
+- Legacy plaintext keystore support.
+
+
+## [0.10.0-alpha] - 2026-06-26
+### Added
+- P24 API Freeze definitions for public, experimental, and deprecated surfaces.
+- Strict verifier gates for ecosystem templates.
+
+### Changed
+- Bumbed all package versions to 0.10.0-alpha.
+- Enforced strict artifact verification and encryption references (`keystoreRef`).
+
+### Removed
+- Legacy plaintext keystore support.
+
+
+## [0.10.0-alpha] - 2026-06-26
+### Added
+- P24 API Freeze definitions for public, experimental, and deprecated surfaces.
+- Strict verifier gates for ecosystem templates.
+
+### Changed
+- Bumbed all package versions to 0.10.0-alpha.
+- Enforced strict artifact verification and encryption references (`keystoreRef`).
+
+### Removed
+- Legacy plaintext keystore support.
+
+
+## [0.10.0-alpha] - 2026-06-26
+### Added
+- P24 API Freeze definitions for public, experimental, and deprecated surfaces.
+- Strict verifier gates for ecosystem templates.
+
+### Changed
+- Bumbed all package versions to 0.10.0-alpha.
+- Enforced strict artifact verification and encryption references (`keystoreRef`).
+
+### Removed
+- Legacy plaintext keystore support.
+
+
+## [0.10.0-alpha] - 2026-06-26
+### Added
+- P24 API Freeze definitions for public, experimental, and deprecated surfaces.
+- Strict verifier gates for ecosystem templates.
+
+### Changed
+- Bumbed all package versions to 0.10.0-alpha.
+- Enforced strict artifact verification and encryption references (`keystoreRef`).
+
+### Removed
+- Legacy plaintext keystore support.
+
+
+## [0.10.0-alpha] - 2026-06-26
+### Added
+- P24 API Freeze definitions for public, experimental, and deprecated surfaces.
+- Strict verifier gates for ecosystem templates.
+
+### Changed
+- Bumbed all package versions to 0.10.0-alpha.
+- Enforced strict artifact verification and encryption references (`keystoreRef`).
+
+### Removed
+- Legacy plaintext keystore support.
+
+# HardKAS 0.10.0-alpha Release Notes
 
 **Status:** `LOCAL_FIRST_DEVELOPER_RUNTIME_HARDENED` (Release Candidate)
 
@@ -21,7 +99,7 @@ We explicitly do **NOT** claim `PRODUCTION_READY`, `TESTNET_READY`, `MAINNET_REA
 - **P6: Reproducible Install & Recovery**
   Hardened the system against sudden failures. The system cleanly manages state via a query store and correctly recovers gracefully from abrupt container terminations. Key handling enforces strict `0600` file permissions and redacts secrets from all JSON logs to prevent leakage in CI pipelines. 
 - **P7: Version Boundary Alignment**
-  A synchronized `0.9.7-alpha` version line across all packages, generated capabilities schemas, CLI help menus, and documentation.
+  A synchronized `0.10.0-alpha` version line across all packages, generated capabilities schemas, CLI help menus, and documentation.
 
 ## Core Commitments
 If you are building locally, HardKAS provides a safe and deterministic sandbox. If you are aiming for Mainnet or Testnet, those flows require custom guards and are deliberately outside the standard developer workflow provided by this release.
@@ -31,9 +109,9 @@ If you are building locally, HardKAS provides a safe and deterministic sandbox. 
 
 All notable changes to HardKAS will be documented in this file.
 
-## 0.9.7-alpha - Deployed & Builder-Ready - 2026-06-11
+## 0.10.0-alpha - Deployed & Builder-Ready - 2026-06-11
 
-HardKAS `0.9.7-alpha` has successfully passed the Extreme Builder Gauntlet. This release marks our transition from raw engineering pipelines into a fully usable **Builder Layer** experience for Kaspa.
+HardKAS `0.10.0-alpha` has successfully passed the Extreme Builder Gauntlet. This release marks our transition from raw engineering pipelines into a fully usable **Builder Layer** experience for Kaspa.
 
 ### Key Highlights
 - **100% External Consumer Validation**: This release was completely verified from outside the monorepo, consuming the actual NPM registry packages.
@@ -47,7 +125,7 @@ HardKAS `0.9.7-alpha` has successfully passed the Extreme Builder Gauntlet. This
 - Ensured trailing whitespaces and strict semantic consistency across `vProgs` and `ZK` corpus boundaries.
 - Upgraded testing harnesses to guarantee no forbidden protocol claims leak into the `alpha` CLI output.
 
-## 0.9.7-alpha - CI Fixes + Query-Store SQL Repair - 2026-06-11
+## 0.10.0-alpha - CI Fixes + Query-Store SQL Repair - 2026-06-11
 
 TypeScript typecheck fixes across CLI silver commands and query-store SQL
 parameter binding. No new features, no protocol claim expansion.

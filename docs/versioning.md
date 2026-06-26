@@ -1,6 +1,6 @@
 # Version Guarantees
 
-HardKAS is currently in the `0.9.7-alpha` release cycle.
+HardKAS is currently in the `0.10.0-alpha` release cycle.
 
 The project is stable enough for local development workflows, but it is still an
 alpha. APIs, command names, and advanced integrations may change while the
@@ -40,9 +40,9 @@ These systems exist and are useful, but are still being hardened:
 These surfaces may change quickly:
 
 - Mainnet-related signing flags and RPC paths. Mainnet is blocked by policy for
-  the 0.9.7-alpha release claim.
+  the 0.10.0-alpha release claim.
 - L2, bridge, MetaMask, KasWare, and sandbox integrations.
 - Chaos, torture, and certification tooling.
 - SilverScript/Toccata behavior beyond the verified OP_TRUE localnet baseline.
 
-Mainnet is not part of the 0.9.7-alpha happy path.
+Mainnet is not part of the 0.10.0-alpha happy path.

@@ -60,7 +60,7 @@ describe("PR 7: Adversarial Integrity Validation", () => {
     const result = await verifyArtifactIntegrity(artifact);
 
     expect(result.ok).toBe(false);
-    expect(result.issues.some((i) => i.code === "HASH_MISMATCH")).toBe(true);
+    expect(result.issues.some((i) => i.code === "ARTIFACT_HASH_MISMATCH")).toBe(true);
   });
 
   it("should detect cross-network contamination", () => {
@@ -68,7 +68,7 @@ describe("PR 7: Adversarial Integrity Validation", () => {
     const result = verifyArtifactSemantics(child, { parent });
 
     expect(result.ok).toBe(false);
-    expect(result.issues.some((i) => i.code === "NETWORK_MISMATCH")).toBe(true);
+    expect(result.issues.some((i) => i.code === "LINEAGE_NETWORK_MISMATCH")).toBe(true);
   });
 
   it("should detect self-parenting (simple cycle)", () => {

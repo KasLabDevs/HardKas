@@ -4,6 +4,8 @@ import type { HardkasWorkspace } from "./workspace.js";
 import { writeArtifact } from "@hardkas/artifacts";
 import type { HardkasArtifactBase } from "@hardkas/artifacts";
 import { HardkasError } from "@hardkas/core";
+import type { Hardkas } from "./index.js";
+import { assertPublicNetworkAllowed } from "./policy.js";
 
 export interface WriteArtifactOptions {
   /**
@@ -28,6 +30,10 @@ export interface WriteArtifactOptions {
   workflowId?: string;
   correlationId?: string;
   networkId?: string;
+
+  /** Internal properties */
+  internal?: boolean;
+  bypassHooks?: boolean;
 }
 
 export interface WriteArtifactResult {
@@ -42,7 +48,7 @@ export interface WriteArtifactResult {
 export class HardkasArtifactsManager {
   private cache = new Map<string, any>();
 
-  constructor(private workspace: HardkasWorkspace) {}
+  constructor(private sdk: Hardkas) {}
 
   /**
    * Caches an in-memory artifact.
@@ -65,6 +71,28 @@ export class HardkasArtifactsManager {
   ): Promise<WriteArtifactResult> {
     const record = artifact as unknown as Record<string, any>;
 
+    const maybePublicNetworks = [
+      record.networkId,
+      record.network,
+      record.execution?.network,
+      record.execution?.networkId,
+      record.mode === "public" ? "mainnet" : undefined,
+      record.claims?.mainnet ? "mainnet" : undefined,
+      record.claims?.testnet ? "testnet" : undefined
+    ].filter(Boolean);
+
+    for (const net of maybePublicNetworks) {
+      assertPublicNetworkAllowed(net, this.sdk.policy);
+    }
+
+    if (options.bypassHooks && !options.internal) {
+      throw new HardkasError("BYPASS_HOOKS_FORBIDDEN", "bypassHooks: true is restricted to internal system artifacts.");
+    }
+
+    if (!options.bypassHooks) {
+      await this.sdk.plugins.onBeforeArtifactWrite({ artifact, options });
+    }
+
     // Ensure hashVersion is explicitly written to disk so readers don't fallback to v1
     if (!record.hashVersion) {
       const { CURRENT_HASH_VERSION } = await import("@hardkas/artifacts");
@@ -84,7 +112,7 @@ export class HardkasArtifactsManager {
       };
     }
 
-    const outputDir = options.outputDir || this.workspace.artifactsDir;
+    const outputDir = options.outputDir || this.sdk.workspace.artifactsDir;
 
     if (!fs.existsSync(outputDir)) {
       fs.mkdirSync(outputDir, { recursive: true });
@@ -132,6 +160,11 @@ export class HardkasArtifactsManager {
       })
     );
 
+    if (!options.bypassHooks) {
+      // Intentionally not awaiting so it runs asynchronously/observational, or we await it but it's guaranteed to handle errors via plugin manager.
+      await this.sdk.plugins.onArtifactWritten({ artifact, absolutePath });
+    }
+
     return {
       absolutePath,
       dryRun: false,
@@ -154,13 +187,13 @@ export class HardkasArtifactsManager {
     let filePath = id;
 
     // Path Boundary Sandbox Enforcement
-    let resolvedPath = path.resolve(this.workspace.root, filePath);
+    let resolvedPath = path.resolve(this.sdk.workspace.root, filePath);
     if (fs.existsSync(resolvedPath)) {
       resolvedPath = fs.realpathSync(resolvedPath);
     }
 
-    const rootRel = path.relative(this.workspace.root, resolvedPath);
-    const artifactsRel = path.relative(this.workspace.artifactsDir, resolvedPath);
+    const rootRel = path.relative(this.sdk.workspace.root, resolvedPath);
+    const artifactsRel = path.relative(this.sdk.workspace.artifactsDir, resolvedPath);
 
     // Ensure it does NOT escape both root and artifactsDir
     if (
@@ -175,11 +208,11 @@ export class HardkasArtifactsManager {
 
     if (!fs.existsSync(filePath)) {
       // 1. Try in workspace artifacts directory
-      filePath = path.join(this.workspace.artifactsDir, `${id}.json`);
+      filePath = path.join(this.sdk.workspace.artifactsDir, `${id}.json`);
       if (!fs.existsSync(filePath)) {
         // 2. Try prefix search in workspace artifacts directory
-        if (fs.existsSync(this.workspace.artifactsDir)) {
-          const files = fs.readdirSync(this.workspace.artifactsDir);
+        if (fs.existsSync(this.sdk.workspace.artifactsDir)) {
+          const files = fs.readdirSync(this.sdk.workspace.artifactsDir);
           let found = files.find(
             (f) =>
               f === `${id}.json` ||
@@ -200,7 +233,7 @@ export class HardkasArtifactsManager {
               // Fast path: if the filename contains the ID, check it first.
               // But we MUST check all files if the fast path fails, because sometimes
               // artifacts (like funding receipts) have filenames based on txId instead of contentHash.
-              const fp = path.join(this.workspace.artifactsDir, file);
+              const fp = path.join(this.sdk.workspace.artifactsDir, file);
               try {
                 const content = fs.readFileSync(fp, "utf-8");
                 const obj = JSON.parse(content);
@@ -219,7 +252,7 @@ export class HardkasArtifactsManager {
           }
 
           if (found) {
-            filePath = path.join(this.workspace.artifactsDir, found);
+            filePath = path.join(this.sdk.workspace.artifactsDir, found);
           } else {
             throw new Error(`Artifact ${id} not found in workspace.`);
           }
@@ -249,17 +282,17 @@ export class HardkasArtifactsManager {
    * Lists all artifacts in the workspace.
    */
   async list(): Promise<any[]> {
-    if (!fs.existsSync(this.workspace.artifactsDir)) {
+    if (!fs.existsSync(this.sdk.workspace.artifactsDir)) {
       return [];
     }
     const { readArtifact } = await import("@hardkas/artifacts");
-    const files = fs.readdirSync(this.workspace.artifactsDir);
+    const files = fs.readdirSync(this.sdk.workspace.artifactsDir);
     const artifacts = [];
     for (const file of files) {
       if (file.endsWith(".json")) {
         try {
           const artifact = await readArtifact(
-            path.join(this.workspace.artifactsDir, file)
+            path.join(this.sdk.workspace.artifactsDir, file)
           );
           artifacts.push(artifact);
         } catch (e) {
@@ -323,7 +356,7 @@ export class HardkasArtifactsManager {
     if (result.ok && strict) {
       const semResult = verifyArtifactSemantics(artifact, {
         strict: true,
-        artifactsDir: this.workspace.artifactsDir,
+        artifactsDir: this.sdk.workspace.artifactsDir,
         enforceMetadata,
         resolveArtifact: (id: string) => this.cache.get(id)
       });
@@ -336,7 +369,7 @@ export class HardkasArtifactsManager {
 
     if (!result.ok) {
       const mappedReason =
-        result.issues[0]?.code === "HASH_MISMATCH"
+        result.issues[0]?.code === "HASH_MISMATCH" || result.issues[0]?.code === "ARTIFACT_HASH_MISMATCH"
           ? "content_hash_mismatch"
           : result.issues[0]?.code === "MISSING_CONTENT_HASH"
             ? "missing_content_hash"

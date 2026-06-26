@@ -1,4 +1,4 @@
-﻿import { UI, handleError } from "../ui.js";
+import { UI, handleError } from "../ui.js";
 import path from "node:path";
 import fs from "node:fs";
 
@@ -22,7 +22,7 @@ export async function runDevInit() {
   UI.info("Checking configuration...");
 
   if (!fs.existsSync(configFile)) {
-    const template = `import { defineHardkasConfig } from "@hardkas/sdk";
+    const template = `import { defineHardkasConfig } from "@hardkas/config";
 
 export default defineHardkasConfig({
   defaultNetwork: "simulated",

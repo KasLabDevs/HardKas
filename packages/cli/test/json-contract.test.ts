@@ -64,9 +64,10 @@ describe("CLI JSON Contract", () => {
         `Failed to parse stdout as JSON: ${((err instanceof Error) ? ((err instanceof Error) ? err.message : String(err)) : String(err))}\nStdout was:\n${stdout}`
       );
     }
+    const resultPayload = parsed.result ?? parsed;
 
-    expect(parsed.schema).toBe("hardkas.txPlan");
-    expect(parsed.networkId).toBe("simulated");
+    expect(resultPayload.schema).toBe("hardkas.txPlan");
+    expect(resultPayload.networkId).toBe("simulated");
 
     // All human logs (like "TxPlan generated") should be redirected or suppressed.
     // If they were output, they would either fail the JSON.parse or be in stderr.
@@ -83,10 +84,11 @@ describe("CLI JSON Contract", () => {
         `Failed to parse stdout as JSON: ${((err instanceof Error) ? ((err instanceof Error) ? err.message : String(err)) : String(err))}\nStdout was:\n${stdout}`
       );
     }
+    const resultPayload = parsed.result ?? parsed;
 
-    expect(parsed.summary).toBeDefined();
-    expect(parsed.checks).toBeDefined();
-    expect(Array.isArray(parsed.checks)).toBe(true);
+    expect(resultPayload.summary).toBeDefined();
+    expect(resultPayload.checks).toBeDefined();
+    expect(Array.isArray(resultPayload.checks)).toBe(true);
   }, 30000);
 
   it("verify --json produces strict parsable JSON", async () => {
@@ -108,8 +110,9 @@ describe("CLI JSON Contract", () => {
         `Failed to parse stdout as JSON: ${((err instanceof Error) ? err.message : String(err))}\nStdout was:\n${stdout}`
       );
     }
+    const resultPayload = parsed.result ?? parsed;
 
-    expect(parsed.schema).toBe("hardkas.queryVerify.v1");
+    expect(resultPayload.schema).toBe("hardkas.queryVerify.v1");
     expect(parsed.ok).toBe(true);
   }, 30000);
 
@@ -124,8 +127,9 @@ describe("CLI JSON Contract", () => {
         `Failed to parse stdout as JSON: ${((err instanceof Error) ? ((err instanceof Error) ? err.message : String(err)) : String(err))}\nStdout was:\n${stdout}`
       );
     }
+    const resultPayload = parsed.result ?? parsed;
 
-    expect(parsed.schema).toBe("hardkas.queryRebuild.v1");
+    expect(resultPayload.schema).toBe("hardkas.queryRebuild.v1");
     expect(parsed.ok).toBe(true);
   }, 30000);
 
@@ -141,8 +145,9 @@ describe("CLI JSON Contract", () => {
         `Failed to parse stdout as JSON: ${((err instanceof Error) ? ((err instanceof Error) ? err.message : String(err)) : String(err))}\nStdout was:\n${stdout}`
       );
     }
+    const resultPayload = parsed.result ?? parsed;
 
-    expect(parsed.version).toBeDefined();
-    expect(parsed.capabilities).toBeDefined();
+    expect(resultPayload.version).toBeDefined();
+    expect(resultPayload.capabilities).toBeDefined();
   }, 30000);
 });

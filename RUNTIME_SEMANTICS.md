@@ -49,7 +49,7 @@ To prove cross-platform truth equivalence, the HardKAS CI pipeline exports a `ha
 ```json
 {
   "schemaVersion": "hardkas.semantic-bundle.v1",
-  "runtimeVersion": "0.9.7-alpha",
+  "runtimeVersion": "0.10.0-alpha",
   "hashVersion": "sha256",
   "globalSemanticHash": "...",
   "invariantSummary": { "totalChecks": 9000, "passedChecks": 9000, "failedChecks": 0 },

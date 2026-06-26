@@ -23,7 +23,8 @@ export function registerVerifyCommand(program: Command) {
         const fs = await import("fs");
         if (!fs.existsSync(artifactsPath)) {
           if (opts.json) {
-            UI.writeJson({ ok: true, artifactsVerified: 0 });
+            const { getOutput } = await import("../output.js");
+            getOutput().writeJson({ ok: true, command: "verify", mode: "cli", result: { artifactsVerified: 0 } });
           } else {
             UI.success("No artifacts found to verify.");
           }
@@ -39,13 +40,7 @@ export function registerVerifyCommand(program: Command) {
           workspaceRoot: process.cwd()
         });
       } catch (err: any) {
-        if (opts.json) {
-          UI.writeJson({
-            error: "VERIFY_FAILED",
-            message: ((err instanceof Error) ? ((err instanceof Error) ? err.message : String(err)) : String(err)),
-            code: ((err as any).code) || "UNKNOWN_ERROR"
-          });
-        } else {
+        if (!opts.json) {
           handleError(err);
         }
         throw err;
@@ -67,12 +62,7 @@ export function registerVerifyCommand(program: Command) {
           ciMode: opts.ciMode
         });
       } catch (err: any) {
-        if (opts.json) {
-          UI.writeJson({ error: "SEMANTIC_DRIFT", message: ((err instanceof Error) ? ((err instanceof Error) ? err.message : String(err)) : String(err)) });
-        } else {
-          UI.error(((err instanceof Error) ? ((err instanceof Error) ? err.message : String(err)) : String(err)));
-        }
-        throw new Error("Command failed");
+        throw new HardkasCliError("SEMANTIC_DRIFT", ((err instanceof Error) ? err.message : String(err)), { exitCode: 1 });
       }
     });
 }

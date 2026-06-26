@@ -1,0 +1,139 @@
+{
+  "status": "success",
+  "events": [
+    {
+      "step": "capabilities",
+      "caps": {
+        "version": "0.10.0-alpha",
+        "maturity": "hardened-alpha",
+        "proofVersion": "repro-v0",
+        "hashVersion": 4,
+        "capabilities": {
+          "artifacts": true,
+          "lineageVerification": true,
+          "deterministicHashing": true,
+          "atomicPersistence": true,
+          "workspaceLocks": true,
+          "corruptionDetection": true,
+          "secretRedaction": true,
+          "mainnetGuards": true,
+          "localnetSimulation": true,
+          "ghostdagSimulation": true,
+          "dagConflictResolution": true,
+          "massProfiler": true,
+          "simulationScenarios": true,
+          "queryStore": true,
+          "replayVerification": true,
+          "schemaMigrations": true,
+          "dockerNode": true,
+          "scriptRunner": true,
+          "testingFramework": true,
+          "l2Profiles": true,
+          "l2BridgeAssumptions": true,
+          "consensusValidation": false,
+          "productionWallet": false,
+          "silverScript": false,
+          "covenants": false,
+          "trustlessExit": false,
+          "differentialDagValidation": false
+        },
+        "trustBoundaries": {
+          "replay": "local-workflow-only",
+          "artifacts": "internal-integrity-only",
+          "simulator": "local-simulation-only",
+          "queryStore": "rebuildable-read-model",
+          "l2Bridge": "pre-zk-assumptions"
+        }
+      }
+    },
+    {
+      "step": "l2_status",
+      "l2status": [
+        {
+          "schema": "hardkas.l2Profile.v1",
+          "hardkasVersion": "0.10.0-alpha",
+          "source": "built-in",
+          "name": "igra",
+          "displayName": "Igra",
+          "type": "evm-based-rollup",
+          "settlementLayer": "kaspa",
+          "executionLayer": "evm",
+          "gasToken": "iKAS",
+          "nativeTokenDecimals": 18,
+          "chainId": 19416,
+          "rpcUrl": "http://127.0.0.1:8545",
+          "security": {
+            "bridgePhase": "pre-zk",
+            "trustlessExit": false,
+            "custodyModel": "Phase-dependent bridge custody; verify live Igra bridge phase before use.",
+            "riskProfile": "high",
+            "notes": [
+              "Kaspa L1 does not execute EVM.",
+              "Igra execution occurs on L2.",
+              "Kaspa L1 provides sequencing, data availability, state commitment anchoring and finality.",
+              "Bridge security is phase-dependent: pre-ZK -> MPC -> ZK.",
+              "Trustless exit exists only in the ZK phase."
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "step": "silver_compile",
+      "error": "SILVERSCRIPT_SOURCE_NOT_FOUND: C:\\Users\\jrodr\\Documents\\kaslabdevs\\GitHub\\HardKas-repo\\examples\\p10-gauntlet\\08-programmability-boundary-lab\\non-existent.silver"
+    },
+    {
+      "step": "zk_capabilities",
+      "zkCaps": {
+        "schema": "hardkas.zkCapabilities.v1",
+        "experimental": true,
+        "proofSystems": {
+          "groth16": {
+            "inspect": true,
+            "verifyLocal": "FIXTURE_COHERENCE_ONLY",
+            "proofGeneration": "NOT_CLAIMED"
+          },
+          "risc0": {
+            "inspect": true,
+            "verifyLocal": "RISC0_LOCAL_VERIFICATION_NOT_IMPLEMENTED",
+            "proofGeneration": "NOT_CLAIMED"
+          }
+        },
+        "claims": {
+          "zkArtifactCoherence": "EXPERIMENTAL",
+          "zkLocalVerification": "EXPERIMENTAL_FIXTURE_ONLY",
+          "zkOnchainVerification": "NOT_CLAIMED",
+          "vmConsensusEquivalence": "NOT_CLAIMED",
+          "mainnet": "BLOCKED_BY_POLICY"
+        },
+        "errors": [
+          "SDK_ZK_ONCHAIN_VERIFICATION_UNSUPPORTED",
+          "ZK_ONCHAIN_VERIFICATION_NOT_CLAIMED",
+          "ZK_VERIFIER_UNSUPPORTED",
+          "ZK_VERIFIER_UNAVAILABLE",
+          "ZK_CORPUS_MANIFEST_INVALID",
+          "ZK_CORPUS_HASH_MISMATCH",
+          "RISC0_VERIFIER_UNAVAILABLE",
+          "RISC0_LOCAL_VERIFICATION_NOT_IMPLEMENTED"
+        ]
+      }
+    },
+    {
+      "step": "vprogs_status",
+      "vprogsStatus": {
+        "ok": true,
+        "schema": "hardkas.vprogsStatus.v1",
+        "status": "VPROGS_INSPECT_SURFACE_READY",
+        "claims": {
+          "vProgsArtifactInspection": "READY",
+          "vProgsRuntime": "NOT_CLAIMED",
+          "vProgsStableApi": "NOT_CLAIMED",
+          "zkOnchainVerification": "NOT_CLAIMED",
+          "vmConsensusEquivalence": "NOT_CLAIMED",
+          "mainnet": "BLOCKED_BY_POLICY"
+        }
+      }
+    }
+  ],
+  "errors": []
+}

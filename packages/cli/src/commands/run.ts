@@ -14,7 +14,18 @@ export function registerRunCommand(program: Command): void {
     .option("--accounts <n>", "Number of simulated accounts", "3")
     .option("--balance <sompi>", "Initial balance per account in sompi", "100000000000")
     .option("--no-harness", "Skip automatic harness creation")
+    .option("--json", "Output results as JSON", false)
     .action(async (script: string, opts: any) => {
-      await runScript(script, { ...opts, workspaceRoot: process.cwd() });
+      try {
+        await runScript(script, { ...opts, workspaceRoot: process.cwd() });
+        if (opts.json) {
+          const { getOutput } = await import("../output.js");
+          getOutput().writeJson({ ok: true, command: "run", mode: "cli", result: { script } });
+        }
+      } catch (e) {
+        const { handleError } = await import("../ui.js");
+        handleError(e, "Run failed");
+        process.exit(1);
+      }
     });
 }

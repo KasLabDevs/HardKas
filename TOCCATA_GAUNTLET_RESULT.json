@@ -1,7 +1,7 @@
 {
   "schema": "hardkas.toccataGauntlet.v1",
-  "status": "HARDKAS_TOCCATA_BASELINE_READY",
-  "generatedAt": "2026-06-23T10:47:38.236Z",
+  "status": "TOCCATA_NORMALIZATION_BLOCKED_RELEASE_ENV",
+  "generatedAt": "2026-06-26T11:35:41.819Z",
   "partialKnownLimitations": [
     "PARTIAL_VM_SIMULATION"
   ],
@@ -23,65 +23,11 @@
       "status": "PASS"
     },
     {
-      "name": "docker rpc health",
-      "status": "PASS"
-    },
-    {
-      "name": "standard tx lifecycle",
-      "status": "PASS"
-    },
-    {
-      "name": "silver compile fixture verify",
-      "status": "PASS"
-    },
-    {
-      "name": "silver deploy-plan",
-      "status": "PASS",
-      "artifact": "silverdeployplan-26674c4a74fb4f91.json"
-    },
-    {
-      "name": "silver deploy real",
-      "status": "PASS",
-      "artifact": "silverdeploy-3442ae2b8c4edcb5.json"
-    },
-    {
-      "name": "miner confirmation after deploy",
-      "status": "PASS"
-    },
-    {
-      "name": "silver spend-plan",
-      "status": "PASS",
-      "artifact": "silverspendplan-2eaa287da9b82936.json"
-    },
-    {
-      "name": "silver spend real",
-      "status": "PASS",
-      "artifact": "silverreceipt-94ae9db17c79cb1f.json"
-    },
-    {
-      "name": "miner confirmation after spend",
-      "status": "PASS"
-    },
-    {
-      "name": "silver simulate deploy/spend",
-      "status": "PASS",
-      "deploySim": "silverdeploysim-d3af6fcb3cad7a49.json",
-      "spendSim": "silverspendsim-9606fabf34e93fc4.json"
-    },
-    {
-      "name": "simulator/docker compare",
-      "status": "PASS",
-      "compareMode": "artifact-coherence",
-      "expectedKnownLimitation": "PARTIAL_VM_SIMULATION"
-    },
-    {
-      "name": "toccata golden corpus verify",
-      "status": "PASS",
-      "path": "fixtures/toccata-v2/silver"
-    },
-    {
-      "name": "mainnet guard",
-      "status": "PASS"
+      "name": "gauntlet aborted",
+      "status": "FAIL",
+      "message": "Command failed: D:\\Program Files\\nodejs\\node.exe C:\\Users\\jrodr\\Documents\\kaslabdevs\\GitHub\\HardKas-repo\\packages\\cli\\dist\\index.js rpc health --wait --timeout 10000\n\u001b[31m\n  ✗ Error:\u001b[39m\n\u001b[31m    Command failed\u001b[39m\n"
     }
-  ]
+  ],
+  "blocker": "Command failed: D:\\Program Files\\nodejs\\node.exe C:\\Users\\jrodr\\Documents\\kaslabdevs\\GitHub\\HardKas-repo\\packages\\cli\\dist\\index.js rpc health --wait --timeout 10000\n\u001b[31m\n  ✗ Error:\u001b[39m\n\u001b[31m    Command failed\u001b[39m\n",
+  "nextRequiredCommand": "pnpm build && pnpm test && pnpm gauntlet:toccata"
 }

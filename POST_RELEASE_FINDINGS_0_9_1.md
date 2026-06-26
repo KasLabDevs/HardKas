@@ -1,4 +1,4 @@
-# Post-Release Findings For 0.9.7-alpha
+# Post-Release Findings For 0.10.0-alpha
 
 Date: 2026-06-23T10:48:11.090Z
 
@@ -6,7 +6,7 @@ Status: `POST_RELEASE_BREAK_GAUNTLET_FINDINGS`
 
 ## Summary
 
-- Release tested: `0.9.7-alpha`
+- Release tested: `0.10.0-alpha`
 - Apps generated: 20
 - Apps build passed: 20
 - Apps smoke passed: 12
@@ -15,7 +15,7 @@ Status: `POST_RELEASE_BREAK_GAUNTLET_FINDINGS`
 - SDK gaps found: 0
 - Bugs found: 0
 - Docs/error-message gaps found: 0
-- Resolved 0.9.7-alpha findings: 4
+- Resolved 0.10.0-alpha findings: 4
 - Unresolved findings: 1
 
 ## Baseline
@@ -66,7 +66,7 @@ Unresolved:
 - corpus verify: CLI=FAIL, SDK=PASS, parity=PARITY_FAIL
 - silver compile/deploy/spend: CLI=PASS, SDK=PASS, parity=PARITY_PASS
 
-## Recommended 0.9.7-alpha Backlog
+## Recommended 0.10.0-alpha Backlog
 
 - Fix CLI/SDK parity for `corpus verify`.
 

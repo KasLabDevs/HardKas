@@ -62,7 +62,7 @@ export class HardkasAccounts {
     options?: { from?: string; amount?: string | bigint }
   ): Promise<any> {
     let from = options?.from;
-    const amount = options?.amount || "1000000000"; // 10 KAS default
+    const amount = options?.amount || "10"; // 10 KAS default
 
     if (!from) {
       const accountsList = await this.list();
