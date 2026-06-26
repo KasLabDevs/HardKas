@@ -76,6 +76,19 @@
 ### Removed
 - Legacy plaintext keystore support.
 
+
+## [0.10.0-alpha] - 2026-06-26
+### Added
+- P24 API Freeze definitions for public, experimental, and deprecated surfaces.
+- Strict verifier gates for ecosystem templates.
+
+### Changed
+- Bumbed all package versions to 0.10.0-alpha.
+- Enforced strict artifact verification and encryption references (`keystoreRef`).
+
+### Removed
+- Legacy plaintext keystore support.
+
 # HardKAS 0.10.0-alpha Release Notes
 
 **Status:** `LOCAL_FIRST_DEVELOPER_RUNTIME_HARDENED` (Release Candidate)

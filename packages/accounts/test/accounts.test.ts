@@ -19,7 +19,7 @@ describe("accounts", () => {
   it("resolveHardkasAccount should resolve 'alice'", () => {
     const acc = resolveHardkasAccount({ nameOrAddress: "alice" });
     expect(acc.name).toBe("alice");
-    expect(acc.address).toBe("kaspasim:qqlpk9rs7yag6eqj3lttzqd8vgvssz8l8fxlpdag4h7zx2rjjr8lkkerwkezn");
+    expect(acc.address).toBe("kaspa:sim_alice");
   });
 
   it("resolveHardkasAccount should resolve direct addresses", () => {

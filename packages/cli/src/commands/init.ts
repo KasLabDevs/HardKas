@@ -84,7 +84,7 @@ export default defineConfig({
               if (!options.json) UI.info("Created: vitest.config.ts");
             }
 
-            const template = `import { defineHardkasConfig } from "@hardkas/config";
+            const template = `import { defineHardkasConfig } from "@hardkas/sdk";
 
 export default defineHardkasConfig({
   // HardKAS v0.10.0 Configuration
