@@ -13,5 +13,6 @@
   "dependencies": {
     "@hardkas/sdk": "workspace:*",
     "tsx": "^4.22.4"
-  }
+  },
+  "private": true
 }

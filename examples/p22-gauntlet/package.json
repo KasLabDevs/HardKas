@@ -15,5 +15,6 @@
     "@hardkas/plugin-local-indexer": "workspace:0.11.1-alpha",
     "@hardkas/sdk": "workspace:0.11.1-alpha",
     "tsx": "^4.22.4"
-  }
+  },
+  "private": true
 }

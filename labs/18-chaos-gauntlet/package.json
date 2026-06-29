@@ -1,0 +1,24 @@
+{
+  "name": "lab-18-chaos-gauntlet",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "chaos": "tsx src/chaos.ts --minutes 10",
+    "chaos:smoke": "tsx src/chaos.ts --minutes 1 --seed 123"
+  },
+  "dependencies": {
+    "@hardkas/jobs": "workspace:*",
+    "@hardkas/kaspa-rpc": "workspace:*",
+    "@hardkas/plugin-rpc-backend": "workspace:*",
+    "@hardkas/sdk": "workspace:*",
+    "@hardkas/toolkit": "workspace:*",
+    "@types/ws": "^8.5.13",
+    "ws": "^8.18.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.19.19",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.2"
+  }
+}

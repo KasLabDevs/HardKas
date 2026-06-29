@@ -2,6 +2,7 @@ packages:
   - "apps/*"
   - "packages/*"
   - "examples/*"
+  - "examples/reference-apps/*"
   - "examples/p10-gauntlet/*"
   - "demo2"
   - "labs/*"

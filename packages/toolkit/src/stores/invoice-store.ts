@@ -11,7 +11,16 @@ export interface InvoiceRecord {
     updatedAt: string;
 }
 
-export class InvoiceStoreJson {
+export interface InvoiceStore {
+    save(invoice: InvoiceRecord): Promise<void> | void;
+    get(id: string): Promise<InvoiceRecord | undefined> | InvoiceRecord | undefined;
+    list(): Promise<InvoiceRecord[]> | InvoiceRecord[];
+    listByMerchant(merchantId: string): Promise<InvoiceRecord[]> | InvoiceRecord[];
+    listPaid(): Promise<InvoiceRecord[]> | InvoiceRecord[];
+    stats(merchantId?: string): Promise<{ totalInvoices: number; paidInvoices: number }> | { totalInvoices: number; paidInvoices: number };
+}
+
+export class InvoiceStoreJson implements InvoiceStore {
     private store: DomainStoreJson<InvoiceRecord>;
 
     constructor(options: { filePath: string }) {

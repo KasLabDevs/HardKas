@@ -1,16 +1,21 @@
-import { JobRunner, JobStoreJson, JobHandler, JobRecord } from '@hardkas/jobs';
+import { JobRunner, JobStoreJson, JobHandler, JobRecord, JobStore } from '@hardkas/jobs';
 import { SnapshotParticipant, SnapshotState } from './snapshot/types.js';
 
 export interface JobsToolkitOptions {
     storePath?: string;
+    storage?: any; // e.g. SqliteStorage
 }
 
 export class JobsToolkit implements SnapshotParticipant {
     private runner: JobRunner;
-    private store: JobStoreJson;
+    private store: JobStore;
 
     private constructor(options: JobsToolkitOptions) {
-        this.store = new JobStoreJson({ filePath: options.storePath || '.hardkas-data/jobs.json' });
+        if (options.storage) {
+            this.store = options.storage.createJobStore();
+        } else {
+            this.store = new JobStoreJson({ filePath: options.storePath || '.hardkas-data/jobs.json' });
+        }
         this.runner = new JobRunner({ store: this.store });
     }
 
@@ -26,12 +31,24 @@ export class JobsToolkit implements SnapshotParticipant {
         return this.runner.enqueue(type, args);
     }
 
+    public async resumePendingJobs(): Promise<void> {
+        return this.runner.resumePendingJobs();
+    }
+
     public async getJob(id: string): Promise<JobRecord | undefined> {
         return this.runner.getJob(id);
     }
 
     public async snapshot(): Promise<SnapshotState> {
         return this.store.getAll();
+    }
+
+    public resetAll() {
+        // Not all stores support this, but if we really need it, we should add clear() to JobStore.
+        // For now, it's a test utility.
+        if ('setAll' in this.store) {
+            (this.store as any).setAll({});
+        }
     }
 
     public async restore(state: SnapshotState): Promise<void> {

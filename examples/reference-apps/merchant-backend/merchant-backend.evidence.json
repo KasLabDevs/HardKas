@@ -1,0 +1,11 @@
+{
+  "realBroadcast": false,
+  "realFunding": false,
+  "fixtureUsed": true,
+  "simnetOnly": true,
+  "mainnetUsed": false,
+  "totalPayments": 500,
+  "merchantsReconciled": 10,
+  "receiptsGenerated": 442,
+  "timestamp": "2026-06-30T09:12:28.219Z"
+}

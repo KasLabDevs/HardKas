@@ -1,0 +1,23 @@
+{
+  "name": "@hardkas/storage-postgres",
+  "version": "0.11.1-alpha",
+  "description": "PostgreSQL persistence layer for HardKAS",
+  "type": "module",
+  "main": "dist/index.js",
+  "module": "dist/index.mjs",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsup",
+    "clean": "rimraf dist"
+  },
+  "dependencies": {
+    "postgres": "^3.4.4",
+    "@hardkas/jobs": "workspace:*",
+    "@hardkas/toolkit": "workspace:*"
+  },
+  "devDependencies": {
+    "tsup": "^8.3.5",
+    "typescript": "^5.6.3",
+    "rimraf": "^6.0.1"
+  }
+}

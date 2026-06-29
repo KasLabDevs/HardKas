@@ -7,5 +7,6 @@
   },
   "dependencies": {
     "@hardkas/sdk": "workspace:*"
-  }
+  },
+  "private": true
 }

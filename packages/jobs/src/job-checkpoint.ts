@@ -12,4 +12,8 @@ export class JobCheckpoint {
     load(): any {
         return this.currentCursor;
     }
+
+    async commit(): Promise<void> {
+        // Overridden by runner
+    }
 }

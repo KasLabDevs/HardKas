@@ -1,0 +1,24 @@
+{
+  "name": "merchant-backend-ref",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "tsx src/index.ts",
+    "check:imports": "tsx scripts/check-public-imports.ts"
+  },
+  "dependencies": {
+    "@hardkas/sync-daemon": "workspace:*",
+    "@hardkas/toolkit": "workspace:*",
+    "@hardkas/plugin-rpc-backend": "workspace:*",
+    "@hardkas/sdk": "workspace:*",
+    "@hardkas/kaspa-rpc": "workspace:*",
+    "@hardkas/storage-sqlite": "workspace:*",
+    "@hardkas/storage-postgres": "workspace:*"
+  },
+  "devDependencies": {
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.2",
+    "@types/node": "^22.19.19"
+  }
+}

@@ -8,5 +8,6 @@
   "dependencies": {
     "@hardkas/sdk": "workspace:*",
     "express": "^4.21.0"
-  }
+  },
+  "private": true
 }

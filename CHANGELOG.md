@@ -1,5 +1,7 @@
 
 ## [0.11.1-alpha] - 2026-06-29 — The First Local-First Application Runtime
+> **Notice:** `0.11.0-alpha` was published partially due to a registry collision and has been superseded by `0.11.1-alpha`. `0.11.1-alpha` is the official release.
+
 ### Added
 - **Backend Plugin Architecture**: Introduced `@hardkas/plugin-rpc-backend` (V1) to transparently connect `IndexerToolkit` to real Docker `simnet` and `testnet` nodes without altering the SDK facade.
 - **Native BigInt Standardization**: All monetary values (balances, fees, amounts) and consensus values (blue scores) are now strongly typed as `bigint` across all Toolkits to eliminate floating-point imprecision.
