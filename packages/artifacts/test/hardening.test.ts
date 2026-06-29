@@ -1,4 +1,3 @@
-import { systemRuntimeContext } from "@hardkas/core";
 import { describe, it, expect } from "vitest";
 import { calculateContentHash } from "../src/canonical.js";
 import { verifyArtifactSemantics, Clock } from "../src/verify.js";

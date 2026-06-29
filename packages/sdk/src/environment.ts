@@ -1,6 +1,11 @@
 import type { HardkasConfig } from "@hardkas/config";
 import type { HardkasOptions } from "./index.js";
 import { createHardkasClient } from "./client.js";
+import { selectCoins, estimateFee, buildKaspaUri } from "@hardkas/tx-builder";
+import { AddressManager, WalletManager } from "@hardkas/accounts";
+import { getRequiredConfirmations } from "@hardkas/core";
+import { WalletQuery, WalletQueryProvider, WalletHistoryPage, Utxo, checkPaymentStatus } from "@hardkas/query";
+import { createPaymentReceipt } from "@hardkas/artifacts";
 
 export type HardkasMode = "agent" | "script" | "test";
 export type Policy = Required<NonNullable<HardkasOptions["policy"]>>;
@@ -44,6 +49,55 @@ export interface HardkasEnvironment {
    * Available for convenience inside scenarios (e.g. `hk.expect(a).toBe(b)`).
    */
   expect: any;
+
+  /** Coin Selector API */
+  coinSelector: {
+    select: typeof selectCoins;
+  };
+
+  /** Fee Estimator API */
+  feeEstimator: {
+    estimate: typeof estimateFee;
+  };
+
+  /** Address Manager API */
+  addressManager: {
+    derive: any;
+    deriveReceive: any;
+    deriveChange: any;
+    path: any;
+  };
+
+  /** Wallet Manager API */
+  walletManager: {
+    create: any;
+    importMnemonic: any;
+    getSeedRef: any;
+    exportMetadata: any;
+  };
+
+  /** Wallet Query API */
+  walletQuery: WalletQuery;
+
+  /** Kaspa URI API */
+  kaspaUri: {
+    build: any;
+  };
+
+  /** Confirmation Policy API */
+  confirmationPolicy: {
+    getRequired: typeof getRequiredConfirmations;
+  };
+
+  /** Payment Tracker API */
+  paymentTracker: {
+    check: typeof checkPaymentStatus;
+  };
+
+  /** Payment Receipts API */
+  paymentReceipts: {
+    create: any;
+  };
 }
 
 export interface HardkasEnvironmentOptions {
@@ -89,6 +143,47 @@ export function createHardkasEnvironment(options: HardkasEnvironmentOptions): Ha
     // Dummy expect that throws if used outside of a test scenario
     expect: options.expectFn || function() {
       throw new Error("hk.expect is only available within a vitest scenario execution.");
+    },
+
+    coinSelector: {
+      select: selectCoins
+    },
+
+    feeEstimator: {
+      estimate: estimateFee
+    },
+
+    addressManager: AddressManager,
+    walletManager: WalletManager,
+    walletQuery: new WalletQuery({
+      provider: {
+        source: "mock-sdk-provider",
+        async getBalances(addresses: string[]) {
+          console.warn("[HardKAS] sdk.env.walletQuery is a stub — inject a real provider for payment flows.");
+          return {};
+        },
+        async getUtxos(addresses: string[]) {
+          console.warn("[HardKAS] sdk.env.walletQuery is a stub — inject a real provider for payment flows.");
+          return {};
+        },
+        async getHistory(args: any) { return { items: [] }; }
+      }
+    }),
+
+    kaspaUri: {
+      build: buildKaspaUri
+    },
+
+    confirmationPolicy: {
+      getRequired: getRequiredConfirmations
+    },
+
+    paymentTracker: {
+      check: checkPaymentStatus
+    },
+
+    paymentReceipts: {
+      create: createPaymentReceipt
     }
   };
 }

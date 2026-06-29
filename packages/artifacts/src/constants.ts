@@ -8,6 +8,7 @@ export const ARTIFACT_SCHEMAS = {
   TX_PLAN: HardkasSchemas.TxPlan,
   SIGNED_TX: HardkasSchemas.SignedTx,
   TX_RECEIPT: HardkasSchemas.TxReceipt,
+  PAYMENT_RECEIPT: HardkasSchemas.PaymentReceiptV1,
   TX_TRACE: HardkasSchemas.TxTrace,
   SNAPSHOT: HardkasSchemas.Snapshot,
   IGRA_TX_PLAN: HardkasSchemas.IgraTxPlanV1,

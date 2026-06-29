@@ -1,0 +1,22 @@
+{
+  "name": "lab-14-real-node-validation",
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "start": "tsx src/index.ts",
+    "dev": "tsx watch src/index.ts"
+  },
+  "dependencies": {
+    "@hardkas/kaspa-rpc": "workspace:*",
+    "@hardkas/node-runner": "workspace:*",
+    "@hardkas/toolkit": "workspace:*",
+    "execa": "^9.5.2",
+    "fs-extra": "^11.2.0"
+  },
+  "devDependencies": {
+    "@types/fs-extra": "^11.0.4",
+    "@types/node": "^20.11.24",
+    "tsx": "^4.7.1",
+    "typescript": "^5.3.3"
+  }
+}

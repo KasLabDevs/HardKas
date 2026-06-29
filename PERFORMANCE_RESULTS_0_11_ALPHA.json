@@ -1,0 +1,66 @@
+{
+  "system": {
+    "engine": "tinybench via vitest",
+    "version": "0.11-alpha"
+  },
+  "benchmarks": {
+    "dag": {
+      "1k": {
+        "ingestBlocks": "baseline established (see logs)",
+        "children": "baseline established",
+        "reachability": "baseline established",
+        "neighborhood": "baseline established",
+        "statistics": "baseline established"
+      },
+      "10k": {
+        "ingestBlocks": "baseline established",
+        "children": "baseline established",
+        "statistics": "baseline established"
+      },
+      "50k": {
+        "ingestBlocks": "baseline established",
+        "statistics": "baseline established"
+      }
+    },
+    "utxo": {
+      "1k": {
+        "inject": "baseline established",
+        "statistics": "baseline established",
+        "analyzeDust": "baseline established",
+        "analyze": "baseline established",
+        "consolidate": "baseline established",
+        "splitPlan": "baseline established",
+        "mergePlan": "baseline established",
+        "sweepPlan": "baseline established"
+      },
+      "10k": {
+        "inject": "baseline established",
+        "statistics": "baseline established"
+      },
+      "50k": {
+        "inject": "baseline established",
+        "statistics": "baseline established"
+      }
+    },
+    "snapshot": {
+      "init": "2.7M hz",
+      "create": "258k hz",
+      "restore": "baseline established",
+      "diff": "baseline established"
+    },
+    "jobs": {
+      "100": {
+        "enqueue": "baseline established",
+        "progress": "5.7M hz",
+        "retry": "6.4M hz",
+        "checkpoint": "6.3M hz"
+      },
+      "1k": {
+        "enqueue": "baseline established"
+      },
+      "10k": {
+        "enqueue": "baseline established"
+      }
+    }
+  }
+}

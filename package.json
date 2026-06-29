@@ -21,6 +21,9 @@
     "dev": "turbo dev",
     "test": "vitest run && pnpm test:workflows",
     "test:workflows": "vitest run packages/cli/test/workflow-corpus.test.ts",
+    "bench": "vitest bench --run",
+    "bench:docker": "tsx benchmarks/docker-long-run.ts --minutes 30",
+    "bench:docker:smoke": "tsx benchmarks/docker-long-run.ts --minutes 3",
     "test:fuzz": "vitest run packages/testing/test/fuzz-policy.test.ts packages/testing/test/fuzz-network.test.ts packages/testing/test/fuzz-migration.test.ts",
     "test:fuzz:policy": "vitest run packages/testing/test/fuzz-policy.test.ts",
     "test:fuzz:network": "vitest run packages/testing/test/fuzz-network.test.ts",
@@ -96,7 +99,7 @@
     "typescript-eslint": "^8.59.3",
     "vitest": "^2.1.9"
   },
-  "version": "0.10.0-alpha",
+  "version": "0.11.0-alpha",
   "dependencies": {
     "kaspa": "^0.13.0",
     "kaspa-wasm": "^0.13.0"

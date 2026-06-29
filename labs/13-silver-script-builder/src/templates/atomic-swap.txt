@@ -1,0 +1,7 @@
+OP_IF
+  OP_SHA256 <secret_hash> OP_EQUALVERIFY
+  <participant_b_pubkey> OP_CHECKSIG
+OP_ELSE
+  <locktime> OP_CHECKLOCKTIMEVERIFY OP_DROP
+  <participant_a_pubkey> OP_CHECKSIG
+OP_ENDIF

@@ -1,0 +1,7 @@
+OP_IF
+  <buyer_pubkey> OP_CHECKSIGVERIFY
+  <arbiter_pubkey> OP_CHECKSIG
+OP_ELSE
+  <seller_pubkey> OP_CHECKSIGVERIFY
+  <arbiter_pubkey> OP_CHECKSIG
+OP_ENDIF

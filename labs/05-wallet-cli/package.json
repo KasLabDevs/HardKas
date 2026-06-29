@@ -1,0 +1,28 @@
+{
+  "name": "wallet-cli",
+  "version": "1.0.0",
+  "description": "Lab 05 — Wallet CLI",
+  "main": "dist/cli.js",
+  "type": "module",
+  "bin": {
+    "wallet": "./dist/cli.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/cli.js",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@hardkas/accounts": "workspace:*",
+    "@hardkas/core": "workspace:*",
+    "@hardkas/query": "workspace:*",
+    "@hardkas/tx-builder": "workspace:*",
+    "@hardkas/artifacts": "workspace:*",
+    "commander": "^11.1.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.19.19",
+    "typescript": "^5.9.3",
+    "vitest": "^2.1.9"
+  }
+}

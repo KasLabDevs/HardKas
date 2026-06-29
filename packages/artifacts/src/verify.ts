@@ -768,7 +768,7 @@ export function verifyArtifactSemantics(
  * Honest implementation: reports as unsupported or not implemented.
  */
 export async function verifyArtifactReplay(
-  artifact: unknown,
+  _artifact: unknown,
   _context: VerificationContext = {}
 ): Promise<ArtifactVerificationResult> {
   return {

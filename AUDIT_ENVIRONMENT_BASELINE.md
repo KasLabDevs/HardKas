@@ -7,5 +7,5 @@
 - npm: 11.12.1
 - pnpm: 9.15.4
 - Docker: Available (29.4.2)
-- HardKAS Version Claimed in package.json: 0.10.0-alpha (Mismatch with 0.10.0 claims in some docs)
+- HardKAS Version Claimed in package.json: 0.11.0-alpha (Mismatch with 0.11.0 claims in some docs)
 - Workspace: pnpm monorepo with 40+ packages.

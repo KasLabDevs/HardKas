@@ -1,15 +1,13 @@
-import { systemRuntimeContext } from "@hardkas/core";
 import { describe, it, expect } from "vitest";
 import {
   calculateContentHash,
-  createTxPlanArtifact,
   createSimulatedSignedTxArtifact,
   validateSignedTxArtifact,
   HARDKAS_VERSION,
   ARTIFACT_SCHEMAS,
   ARTIFACT_VERSION
 } from "../src/index.js";
-import { asNetworkId } from "@hardkas/core";
+import { asNetworkId, systemRuntimeContext } from "@hardkas/core";
 
 describe("SignedTxArtifact", () => {
   const mockPlan: any = {

@@ -83,6 +83,8 @@ export interface KaspaRpcClient {
   healthCheck(): Promise<KaspaRpcHealth>;
   getBalanceByAddress(address: string): Promise<KaspaAddressBalance>;
   getUtxosByAddress(address: string): Promise<KaspaRpcUtxo[]>;
+  getUtxosByAddresses(addresses: string[]): Promise<any>;
+  getBlocks(options?: { includeBlocks?: boolean; includeTransactions?: boolean }): Promise<any>;
   submitTransaction(rawTransaction: unknown): Promise<KaspaSubmitTransactionResult>;
   getMempoolEntry(txId: string): Promise<MempoolEntry | null>;
   getTransaction(txId: string): Promise<unknown | null>;
@@ -203,13 +205,32 @@ export class JsonWrpcKaspaClient implements KaspaRpcClient {
       "getUtxosByAddresses",
       "getUtxosByAddressesRequest",
       { addresses: [address] }
-    );
+    ) as any;
+
+    if (!response || !response.entries) {
+      return [];
+    }
+
     return mapKaspaRpcUtxos(response, address);
   }
 
-  async submitTransaction(
-    rawTransaction: unknown
-  ): Promise<KaspaSubmitTransactionResult> {
+  async getUtxosByAddresses(addresses: string[]): Promise<any> {
+    return await this.callMethod(
+      "getUtxosByAddresses",
+      "getUtxosByAddressesRequest",
+      { addresses }
+    );
+  }
+
+  async getBlocks(options: { includeBlocks?: boolean; includeTransactions?: boolean } = {}): Promise<any> {
+    return await this.callMethod(
+      "getBlocks",
+      "getBlocksRequest",
+      options
+    );
+  }
+
+  async submitTransaction(rawTransaction: unknown): Promise<KaspaSubmitTransactionResult> {
     let txObj = rawTransaction;
     try {
       while (typeof txObj === "string" && txObj.startsWith("{")) {
@@ -602,6 +623,15 @@ export class MockKaspaRpcClient implements KaspaRpcClient {
 
   async getUtxosByAddress(address: string): Promise<KaspaRpcUtxo[]> {
     return this.utxosByAddress.get(address) || [];
+  }
+
+  async getUtxosByAddresses(addresses: string[]): Promise<any> {
+    const allUtxos = addresses.flatMap(a => this.utxosByAddress.get(a) || []);
+    return { entries: allUtxos };
+  }
+
+  async getBlocks(options?: { includeBlocks?: boolean; includeTransactions?: boolean }): Promise<any> {
+    return { blockHashes: [], blocks: [] };
   }
 
   setUtxos(address: string, utxos: KaspaRpcUtxo[]): void {

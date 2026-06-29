@@ -2,8 +2,7 @@ import { z } from "zod";
 import { HardkasSchemas } from "@hardkas/core";
 import {
   kaspaNetworkIdSchema,
-  executionModeSchema,
-  artifactTypeSchema
+  executionModeSchema
 } from "@hardkas/core";
 
 export const ARTIFACT_VERSION = "1.0.0-alpha";

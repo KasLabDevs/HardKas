@@ -17,6 +17,7 @@ export const HardkasSchemas = {
   SignedTxV1: "hardkas.signedTx.v1",
   TxReceipt: "hardkas.txReceipt",
   TxReceiptV1: "hardkas.txReceipt.v1",
+  PaymentReceiptV1: "hardkas.paymentReceipt.v1",
   TxTrace: "hardkas.txTrace",
   TxTraceV1: "hardkas.txTrace.v1",
   Snapshot: "hardkas.snapshot",

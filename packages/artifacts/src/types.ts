@@ -183,6 +183,33 @@ export interface TxReceiptArtifactV1 extends HardkasArtifactBase {
   readonly metadata?: Record<string, any> | undefined;
 }
 
+export interface PaymentReceiptArtifactV1 extends HardkasArtifactBase {
+  readonly schema: typeof HardkasSchemas.PaymentReceiptV1;
+  readonly invoiceId: string;
+  readonly merchantId: string;
+  readonly paymentAddress: string;
+  readonly expectedAmountSompi: string;
+  readonly amountFoundSompi: string;
+  readonly txId: string;
+  readonly confirmations: number;
+  readonly requiredConfirmations: number;
+  readonly status: "paid";
+  readonly paidAt: number;
+  readonly policy: {
+    readonly model: string;
+    readonly riskProfile: string;
+  };
+  readonly tracker: {
+    readonly model: string;
+  };
+  readonly claims: {
+    readonly mainnet: boolean;
+    readonly productionSettlement: boolean;
+    readonly absoluteFinality: boolean;
+    readonly economicSafetyGuarantee: boolean;
+  };
+}
+
 export interface TxTraceArtifactV1 extends HardkasArtifactBase {
   readonly schema: typeof HardkasSchemas.TxTraceV1;
   readonly txId: TxId;

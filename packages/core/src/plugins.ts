@@ -71,3 +71,15 @@ export interface TxSentContext extends BaseHookContext {
  * PLUGIN_HOOK_FAILED
  * BYPASS_HOOKS_FORBIDDEN
  */
+
+export interface BackendPlugin {
+  name: string;
+  type: string;
+  capabilities: {
+    snapshots: boolean;
+    deterministic: boolean;
+    externalState: boolean;
+  };
+  connect?(): Promise<void>;
+  disconnect?(): Promise<void>;
+}

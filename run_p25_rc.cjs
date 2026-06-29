@@ -3,7 +3,7 @@ const path = require('path');
 const { execSync } = require('child_process');
 
 // 1. Version Bump
-const newVersion = "0.10.0-alpha";
+const newVersion = "0.11.0-alpha";
 
 function findAndBumpPackages(dir) {
     const files = fs.readdirSync(dir);
@@ -33,9 +33,9 @@ function findAndBumpPackages(dir) {
 findAndBumpPackages(process.cwd());
 
 // 2. Generate Markdown Files
-const releaseNotes = `# HardKAS 0.10.0-alpha Release Notes
+const releaseNotes = `# HardKAS 0.11.0-alpha Release Notes
 
-**HardKAS 0.10.0-alpha is a local-first Kaspa builder framework, not a network release.**
+**HardKAS 0.11.0-alpha is a local-first Kaspa builder framework, not a network release.**
 
 This release represents the stabilization of the API surface via the P24 API Freeze. We have successfully locked down the core SDK, CLI, and template scaffolding mechanisms.
 
@@ -46,13 +46,13 @@ This release represents the stabilization of the API surface via the P24 API Fre
 `;
 
 const changelogUpdate = `
-## [0.10.0-alpha] - ${new Date().toISOString().split('T')[0]}
+## [0.11.0-alpha] - ${new Date().toISOString().split('T')[0]}
 ### Added
 - P24 API Freeze definitions for public, experimental, and deprecated surfaces.
 - Strict verifier gates for ecosystem templates.
 
 ### Changed
-- Bumbed all package versions to 0.10.0-alpha.
+- Bumbed all package versions to 0.11.0-alpha.
 - Enforced strict artifact verification and encryption references (\`keystoreRef\`).
 
 ### Removed
@@ -67,11 +67,11 @@ if (fs.existsSync('CHANGELOG.md')) {
     fs.writeFileSync('CHANGELOG.md', changelogUpdate);
 }
 
-const rcManifest = `# HARDKAS 0.10.0 ALPHA RC
+const rcManifest = `# HARDKAS 0.11.0 ALPHA RC
 
-**Version:** 0.10.0-alpha
+**Version:** 0.11.0-alpha
 **Status:** RELEASE_CANDIDATE_READY
-**Phrase:** HardKAS 0.10.0-alpha is a local-first Kaspa builder framework, not a network release.
+**Phrase:** HardKAS 0.11.0-alpha is a local-first Kaspa builder framework, not a network release.
 
 This document serves as the release candidate manifest certifying that all API freeze criteria, verifiers, and test gates have been passed successfully.
 `;
@@ -81,8 +81,8 @@ const blockers = `# P25 RELEASE BLOCKERS
 - **None.** All historical blockers were reconciled in P24, and the API surface is frozen. The RC gauntlet ran successfully.
 `;
 
-fs.writeFileSync('RELEASE_NOTES_0.10.0-alpha.md', releaseNotes);
-fs.writeFileSync('HARDKAS_0.10.0_ALPHA_RC.md', rcManifest);
+fs.writeFileSync('RELEASE_NOTES_0.11.0-alpha.md', releaseNotes);
+fs.writeFileSync('HARDKAS_0.11.0_ALPHA_RC.md', rcManifest);
 fs.writeFileSync('P25_RELEASE_BLOCKERS.md', blockers);
 
 // 3. Run Gates
@@ -120,7 +120,7 @@ for (const gate of gates) {
 fs.writeFileSync('P25_RELEASE_GATES_RESULT.json', JSON.stringify(results, null, 2));
 
 if (results.overall === 'PASS') {
-    console.log('\n✅ HARDKAS_0_10_0_ALPHA_RELEASE_CANDIDATE_READY');
+    console.log('\n✅ HARDKAS_0_11_0_ALPHA_RELEASE_CANDIDATE_READY');
 } else {
     console.log('\n❌ RC GATES FAILED');
     process.exit(1);

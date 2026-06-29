@@ -198,6 +198,14 @@ export class KaspaJsonRpcClient implements KaspaRpcClient {
     return dagInfo;
   }
 
+  async getUtxosByAddresses(addresses: string[]): Promise<any> {
+    return await this.callRpc("getUtxosByAddressesRequest", { addresses });
+  }
+
+  async getBlocks(options?: { includeBlocks?: boolean; includeTransactions?: boolean }): Promise<any> {
+    return await this.callRpc("getBlocksRequest", options || {});
+  }
+
   async getUtxosByAddress(address: string): Promise<KaspaRpcUtxo[]> {
     const data = (await this.callRpc("getUtxosByAddressesRequest", {
       addresses: [address]

@@ -19,6 +19,6 @@
 | Builder templates | DEGRADED | Some are just scaffolds |
 | Stablecoin toolkit | NOT_PROVEN | Simulated only |
 | Verifiers | PASS | Audit logs show verifiers catching tamper attempts |
-| Reports | DEGRADED | Some reports claim 0.10.0 readiness prematurely |
+| Reports | DEGRADED | Some reports claim 0.11.0 readiness prematurely |
 | Claims safety | FAIL | Found 'trustlessExit' hardcoded to false but some docs suggest otherwise |
 | Multi-user | DEGRADED | Local file-based isolation only |

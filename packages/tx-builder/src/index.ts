@@ -4,6 +4,10 @@ import { DUST_THRESHOLD_SOMPI } from "./verify.js";
 export * from "./mass.js";
 export * from "./verify.js";
 export * from "./service.js";
+export * from "./coin-selector.js";
+export * from "./fee-estimator.js";
+export * from "./kaspa-uri.js";
+export * from "./utxo-mapper.js";
 
 export interface Outpoint {
   readonly transactionId: string;

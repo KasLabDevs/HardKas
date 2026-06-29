@@ -205,7 +205,6 @@ export function listHardkasAccounts(config?: HardkasConfig): HardkasAccount[] {
   // Add from encrypted keystore directory
   const keystoreDir = path.join(process.cwd(), ".hardkas", "keystore");
   if (fs.existsSync(keystoreDir)) {
-    const cwd = (config as any)?.cwd || process.cwd();
     const files = fs.readdirSync(keystoreDir);
     for (const file of files) {
       if (file.endsWith(".json")) {

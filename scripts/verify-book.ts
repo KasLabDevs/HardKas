@@ -34,6 +34,21 @@ function main() {
     process.exit(1);
   }
 
+  // Pre-flight: ensure build artifacts exist (avoid false failures if run before pnpm build)
+  const criticalArtifacts = [
+    path.join(REPO_ROOT, "packages", "sdk", "dist", "index.js"),
+    path.join(REPO_ROOT, "packages", "cli", "dist", "index.js"),
+    path.join(REPO_ROOT, "packages", "core", "dist", "index.js"),
+  ];
+  for (const artifact of criticalArtifacts) {
+    if (!fs.existsSync(artifact)) {
+      console.error(`[Docs Verify] PREFLIGHT FAILED: Missing build artifact: ${artifact}`);
+      console.error(`[Docs Verify] Run 'pnpm build' before 'docs:verify-book'.`);
+      process.exit(1);
+    }
+  }
+  console.log(`[Docs Verify] Preflight passed: all critical build artifacts exist.`);
+
   // Find all .md files in docs/book and sort them
   const files = fs.readdirSync(BOOK_DIR)
     .filter(f => f.endsWith(".md"))

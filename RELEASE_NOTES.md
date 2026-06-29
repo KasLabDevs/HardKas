@@ -1,4 +1,4 @@
-# HardKAS 0.10.0-alpha Release Notes
+# HardKAS 0.11.0-alpha Release Notes
 
 **Status:** `LOCAL_FIRST_DEVELOPER_RUNTIME_HARDENED` (Release Candidate)
 
@@ -21,7 +21,7 @@ We explicitly do **NOT** claim `PRODUCTION_READY`, `TESTNET_READY`, `MAINNET_REA
 - **P6: Reproducible Install & Recovery**
   Hardened the system against sudden failures. The system cleanly manages state via a query store and correctly recovers gracefully from abrupt container terminations. Key handling enforces strict `0600` file permissions and redacts secrets from all JSON logs to prevent leakage in CI pipelines. 
 - **P7: Version Boundary Alignment**
-  A synchronized `0.10.0-alpha` version line across all packages, generated capabilities schemas, CLI help menus, and documentation.
+  A synchronized `0.11.0-alpha` version line across all packages, generated capabilities schemas, CLI help menus, and documentation.
 
 ## Core Commitments
 If you are building locally, HardKAS provides a safe and deterministic sandbox. If you are aiming for Mainnet or Testnet, those flows require custom guards and are deliberately outside the standard developer workflow provided by this release.

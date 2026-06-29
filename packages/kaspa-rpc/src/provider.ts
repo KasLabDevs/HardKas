@@ -61,6 +61,14 @@ export class LoadBalancedRpcProvider implements KaspaRpcClient {
     return this.withFailover((c) => c.getUtxosByAddress(address));
   }
 
+  async getUtxosByAddresses(addresses: string[]): Promise<any> {
+    return this.withFailover((c) => c.getUtxosByAddresses(addresses));
+  }
+
+  async getBlocks(options?: { includeBlocks?: boolean; includeTransactions?: boolean }): Promise<any> {
+    return this.withFailover((c) => c.getBlocks(options));
+  }
+
   async submitTransaction(rawTransaction: string): Promise<KaspaSubmitTransactionResult> {
     return this.withFailover((c) => c.submitTransaction(rawTransaction));
   }

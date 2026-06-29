@@ -108,3 +108,32 @@ fix-*.js
 /snapshots/
 tmp-consumer-hardkas
 tmp-packaging
+
+# logs
+*.log
+stdout.log
+stderr.log
+DEBUG_*.log
+ts-prune.log
+
+# temp workspaces
+.benchmark-workspace-*/
+.smoke-workspace/
+.crash-workspace/
+.fuzz-workspace/
+.post-release-gauntlet/
+.tmp*/
+tmp-audit/
+my-app/
+examples/my-test-project/
+
+# generated test outputs
+*.js.map
+*.d.ts.map
+
+# local evidence / run outputs
+docker-runtime-gauntlet.evidence.json
+artifacts/receipts/
+**/runs/latest/
+packages/cli/test-gauntlet/artifacts/receipts/
+packages/cli/test-gauntlet/real-node/*.json

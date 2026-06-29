@@ -81,13 +81,17 @@ export class LocalnetSimulatedProvider implements KaspaRpcClient {
     }));
   }
 
-  async getUtxosByAddresses(addresses: string[]): Promise<KaspaRpcUtxo[]> {
+  async getUtxosByAddresses(addresses: string[]): Promise<any> {
     const allUtxos: KaspaRpcUtxo[] = [];
     for (const address of addresses) {
       const utxos = await this.getUtxosByAddress(address);
       allUtxos.push(...utxos);
     }
-    return allUtxos;
+    return { entries: allUtxos };
+  }
+
+  async getBlocks(options?: { includeBlocks?: boolean; includeTransactions?: boolean }): Promise<any> {
+    return { blockHashes: [], blocks: [] };
   }
 
   async submitTransaction(rawTransaction: string): Promise<KaspaSubmitTransactionResult> {

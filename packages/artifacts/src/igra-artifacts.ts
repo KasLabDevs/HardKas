@@ -1,4 +1,4 @@
-import { ARTIFACT_SCHEMAS, HARDKAS_VERSION } from "./constants.js";
+import { ARTIFACT_SCHEMAS } from "./constants.js";
 import { ArtifactValidationResult } from "./validate.js";
 import { HardkasSchemas } from "@hardkas/core";
 
