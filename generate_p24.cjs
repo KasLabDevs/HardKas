@@ -3,10 +3,10 @@ const fs = require('fs');
 const reconciliationReport = `# P24 AUDIT RECONCILIATION REPORT
 
 ## Executive Summary
-This report reconciles the findings from the previous Day 0 -> 0.11.0 audit against the current state of the repository after phases P10-P23 were applied.
+This report reconciles the findings from the previous Day 0 -> 0.11.1 audit against the current state of the repository after phases P10-P23 were applied.
 
 ### Process
-- Analyzed \`package.json\`, finding version updated to \`0.11.0-alpha\`.
+- Analyzed \`package.json\`, finding version updated to \`0.11.1-alpha\`.
 - Evaluated template verification via \`scripts/templates-verify.mjs\`.
 - Checked for forbidden claims (\`MAINNET_READY\`, \`PRODUCTION_READY\`).
 - Inspected SDK policy tamper detection (e.g., \`hash mismatch\` errors in logs).
@@ -17,8 +17,8 @@ The vast majority of findings from the previous audit have been successfully res
 
 const resolved = `# P24 RESOLVED FINDINGS
 
-1. **Version Mismatch (0.11.0 vs 0.11.0)**
-   - **Resolved**: \`package.json\` now correctly reflects \`0.11.0-alpha\`.
+1. **Version Mismatch (0.11.1 vs 0.11.1)**
+   - **Resolved**: \`package.json\` now correctly reflects \`0.11.1-alpha\`.
 2. **Templates Débiles**
    - **Resolved**: \`scripts/templates-verify.mjs\` now actively scaffolds templates, installs local workspace dependencies, runs \`hardkas test --evidence\`, and uses \`hardkas evidence verify\` to strictly assert completeness.
 3. **JSON Inconsistente**
@@ -39,7 +39,7 @@ const openFindings = `# P24 STILL OPEN FINDINGS
 
 const staleFindings = `# P24 STALE FINDINGS
 
-- The complaint regarding "ZK/vProgs boundaries claiming to be ready" was based on a misunderstanding of some docs; current capabilities matrix accurately reflects they are \`fixture_only\` and \`inspect_only\`. This finding is stale/invalid for the 0.11.0 freeze context, provided users read the \`11-limitations.md\` and \`release-claims.md\`.
+- The complaint regarding "ZK/vProgs boundaries claiming to be ready" was based on a misunderstanding of some docs; current capabilities matrix accurately reflects they are \`fixture_only\` and \`inspect_only\`. This finding is stale/invalid for the 0.11.1 freeze context, provided users read the \`11-limitations.md\` and \`release-claims.md\`.
 `;
 
 const blockers = `# P24 RELEASE BLOCKERS

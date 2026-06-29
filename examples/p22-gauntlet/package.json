@@ -10,10 +10,10 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@hardkas/cli": "workspace:0.11.0-alpha",
-    "@hardkas/core": "workspace:0.11.0-alpha",
-    "@hardkas/plugin-local-indexer": "workspace:0.11.0-alpha",
-    "@hardkas/sdk": "workspace:0.11.0-alpha",
+    "@hardkas/cli": "workspace:0.11.1-alpha",
+    "@hardkas/core": "workspace:0.11.1-alpha",
+    "@hardkas/plugin-local-indexer": "workspace:0.11.1-alpha",
+    "@hardkas/sdk": "workspace:0.11.1-alpha",
     "tsx": "^4.22.4"
   }
 }

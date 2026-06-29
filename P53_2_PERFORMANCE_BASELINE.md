@@ -27,4 +27,4 @@ We scaled internal queues to **100**, **1k**, and **10k** concurrent jobs.
 A standalone test (`benchmarks/docker-long-run.ts`) ran against a live node for memory leak detection, issuing continuous RPC checks, background jobs, and snapshots over 30+ minutes.
 
 ---
-**Status**: Baselines successfully captured. Further optimizations in `0.12` will use `PERFORMANCE_RESULTS_0_11_ALPHA.json` as the point of comparison.
+**Status**: Baselines successfully captured. Further optimizations in `0.12` will use `PERFORMANCE_RESULTS_0_11_1_ALPHA.json` as the point of comparison.

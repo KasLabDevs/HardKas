@@ -7,7 +7,7 @@
 The HardKAS framework developer experience has been thoroughly audited and documented for the 0.11-alpha release. New developers can now effectively proceed from `hardkas init` to a working application with real RPC connectivity without needing to digest prior roadmap labs.
 
 ## Delivered Artifacts
-- `DX_AUDIT_0_11_ALPHA.md`: Audit of the initialization, template scaffolding, and toolkit API usages.
+- `DX_AUDIT_0_11_1_ALPHA.md`: Audit of the initialization, template scaffolding, and toolkit API usages.
 - `ZERO_TO_APP_WALKTHROUGH.md`: 10-minute Quickstart.
 - `docs/book/00-quickstart.md`: Builder Book introduction.
 - `docs/book/11-runtime-docker.md`: Builder Book chapter on Docker, Simnet, and RPC Plugins.

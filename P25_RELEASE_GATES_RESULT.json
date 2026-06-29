@@ -1,6 +1,6 @@
 {
   "timestamp": "2026-06-26T19:41:29.542Z",
-  "version": "0.11.0-alpha",
+  "version": "0.11.1-alpha",
   "overall": "FAIL",
   "gates": {
     "Install": "PASS",

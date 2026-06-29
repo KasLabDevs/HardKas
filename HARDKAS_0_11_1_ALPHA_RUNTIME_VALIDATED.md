@@ -1,4 +1,4 @@
-# HARDKAS_0_11_ALPHA_RUNTIME_VALIDATED
+# HARDKAS_0_11_1_ALPHA_RUNTIME_VALIDATED
 
 This certificate confirms that HardKAS `0.11-alpha` has passed the Runtime Stability Gate.
 

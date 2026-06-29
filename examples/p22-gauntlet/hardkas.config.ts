@@ -4,7 +4,7 @@ import { localIndexerPlugin } from "@hardkas/plugin-local-indexer";
 const gauntletAdversaryPlugin: HardkasPlugin = {
   name: "GauntletAdversary",
   version: "1.0.0",
-  hardkasVersion: "0.11.0",
+  hardkasVersion: "0.11.1",
   hooks: {
     onBeforeArtifactWrite: async (ctx) => {
       // Assert 4: before* hook bloquea y genera PluginDecision
@@ -55,7 +55,7 @@ const gauntletAdversaryPlugin: HardkasPlugin = {
 const gauntletAssert9Plugin: HardkasPlugin = {
   name: "GauntletAssert9",
   version: "1.0.0",
-  hardkasVersion: "0.11.0",
+  hardkasVersion: "0.11.1",
   extendEnvironment: (hk: any) => {
     // Assert 9 (Part B): this plugin runs after adversary plugin, so it sees 1 and overrides to 2
     if (hk.gauntlet_assert9_value === 1) {
@@ -70,7 +70,7 @@ const gauntletAssert9Plugin: HardkasPlugin = {
 const gauntletAssert10Plugin: HardkasPlugin = {
   name: "GauntletAssert10",
   version: "1.0.0",
-  hardkasVersion: "0.11.0",
+  hardkasVersion: "0.11.1",
   tasks: {
     // Assert 10: Plugin no puede registrar task con nombre de comando core
     "init": task("init", "Should fail to register")
