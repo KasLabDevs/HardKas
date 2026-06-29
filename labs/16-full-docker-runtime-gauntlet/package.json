@@ -1,0 +1,31 @@
+{
+  "name": "lab-16-full-docker-runtime-gauntlet",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "tsc",
+    "test": "vitest run",
+    "start": "tsx src/index.ts"
+  },
+  "dependencies": {
+    "@hardkas/artifacts": "workspace:*",
+    "@hardkas/client": "workspace:*",
+    "@hardkas/core": "workspace:*",
+    "@hardkas/jobs": "workspace:*",
+    "@hardkas/kaspa-rpc": "workspace:*",
+    "@hardkas/node-runner": "workspace:*",
+    "@hardkas/plugin-rpc-backend": "workspace:*",
+    "@hardkas/sdk": "workspace:*",
+    "@hardkas/toolkit": "workspace:*",
+    "kaspa": "^0.13.0"
+  },
+  "devDependencies": {
+    "@hardkas/testing": "workspace:*",
+    "@types/node": "^22.19.19",
+    "execa": "^8.0.1",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.2",
+    "vitest": "^2.1.9"
+  }
+}

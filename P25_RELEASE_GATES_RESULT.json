@@ -1,11 +1,11 @@
 {
-  "timestamp": "2026-06-26T19:11:27.188Z",
-  "version": "0.10.0-alpha",
-  "overall": "PASS",
+  "timestamp": "2026-06-26T19:41:29.542Z",
+  "version": "0.11.0-alpha",
+  "overall": "FAIL",
   "gates": {
     "Install": "PASS",
     "Build": "PASS",
-    "Test": "PASS",
+    "Test": "FAIL",
     "Docs CLI": "PASS",
     "Docs Book": "PASS",
     "Templates Verify": "PASS",

@@ -1,4 +1,3 @@
-import { systemRuntimeContext } from "@hardkas/core";
 import { describe, it, expect } from "vitest";
 import { canonicalStringify, calculateContentHash } from "../src/canonical.js";
 

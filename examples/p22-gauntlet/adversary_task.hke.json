@@ -2,7 +2,7 @@
   "version": "1.0.0-alpha",
   "schema": "hardkas.evidencePackage.v1",
   "name": "adversary-task",
-  "hardkasVersion": "0.10.0-alpha",
+  "hardkasVersion": "0.11.0-alpha",
   "networkId": "simnet",
   "mode": "script",
   "createdAt": "2026-06-26T14:00:14.434Z",

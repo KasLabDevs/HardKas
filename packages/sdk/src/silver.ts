@@ -78,7 +78,7 @@ export interface SilverCompareReport {
 export const SilverScript = {
   builder() {
     throw new Error(
-      "SILVERSCRIPT_MAINNET_NOT_ENABLED: SilverScript builder is experimental and requires simnet capability checks in 0.10.0-alpha."
+      "SILVERSCRIPT_MAINNET_NOT_ENABLED: SilverScript builder is experimental and requires simnet capability checks in 0.11.0-alpha."
     );
   }
 };
@@ -194,7 +194,7 @@ export class HardkasSilver {
   ): Promise<SilverSdkArtifactResult<any>> {
     if (options.mode === "real") {
       throw new Error(
-        "SDK_SILVER_REAL_LIFECYCLE_UNSUPPORTED: use `hardkas silver deploy` for Docker/RPC execution in 0.10.0-alpha."
+        "SDK_SILVER_REAL_LIFECYCLE_UNSUPPORTED: use `hardkas silver deploy` for Docker/RPC execution in 0.11.0-alpha."
       );
     }
     return this.simulateDeploy(options.artifact, options);
@@ -266,7 +266,7 @@ export class HardkasSilver {
   ): Promise<SilverSdkArtifactResult<any>> {
     if (options.mode === "real") {
       throw new Error(
-        "SDK_SILVER_REAL_LIFECYCLE_UNSUPPORTED: use `hardkas silver spend` for Docker/RPC execution in 0.10.0-alpha."
+        "SDK_SILVER_REAL_LIFECYCLE_UNSUPPORTED: use `hardkas silver spend` for Docker/RPC execution in 0.11.0-alpha."
       );
     }
     return this.simulateSpend(

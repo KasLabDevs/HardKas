@@ -1,8 +1,7 @@
 import type {
   TxPlan as TxPlanArtifact,
   SignedTx as SignedTxArtifact,
-  TxReceipt as TxReceiptArtifact,
-  TxTrace as TxTraceArtifact
+  TxReceipt as TxReceiptArtifact
 } from "./schemas.js";
 import { ARTIFACT_SCHEMAS } from "./constants.js";
 import {

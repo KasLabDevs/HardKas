@@ -1,4 +1,3 @@
-import { systemRuntimeContext } from "@hardkas/core";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import {
   saveIgraTxReceiptArtifact,

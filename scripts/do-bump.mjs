@@ -1,8 +1,8 @@
 import fs from "node:fs";
 import path from "node:path";
 
-const SEARCH = "0.10.0-alpha";
-const REPLACE = "0.10.0-alpha";
+const SEARCH = "0.11.0-alpha";
+const REPLACE = "0.11.0-alpha";
 
 const explicitFiles = [
   "lerna.json",

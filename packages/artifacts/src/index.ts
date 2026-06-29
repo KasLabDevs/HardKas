@@ -5,6 +5,7 @@ export * from "./types.js";
 export * from "./canonical.js";
 export * from "./schemas.js";
 export * from "./verify.js";
+export * from "./payment-receipts.js";
 export * from "./invariants/types.js";
 export * from "./invariants/definitions.js";
 export * from "./invariants/watcher.js";
@@ -24,6 +25,8 @@ export * from "./diff.js";
 export * from "./deployment.js";
 export * from "./deployment-store.js";
 export * from "./signer.js";
+export * from "./artifact-index.js";
+export * from "./evidence-batch.js";
 
 export type {
   TxPlanArtifact,

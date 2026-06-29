@@ -1,7 +1,5 @@
 import {
-  estimateTransactionMass,
-  estimateFeeFromMass,
-  MassEstimateResult
+  estimateTransactionMass
 } from "@hardkas/tx-builder";
 import { TxPlan, SignedTx, TxReceipt } from "./schemas.js";
 import { HardkasSchemas } from "@hardkas/core";
@@ -53,8 +51,6 @@ export function verifyFeeSemantics(artifact: any): FeeAuditResult {
   let artifactFee = 0n;
   let inputTotal = 0n;
   let outputTotal = 0n;
-  let feeRate = 1n; // Default
-
   if (artifact.schema === HardkasSchemas.TxPlan) {
     const plan = artifact as TxPlan;
     artifactMass = BigInt(plan.estimatedMass || 0);

@@ -194,7 +194,7 @@ export function verifyLineage(
  */
 export function createLineageTransition(
   parent: any,
-  childType: string
+  _childType: string
 ): {
   artifactId: string;
   lineageId: string;

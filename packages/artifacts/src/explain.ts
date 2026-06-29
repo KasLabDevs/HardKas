@@ -1,11 +1,10 @@
 import { ExecutionMode } from "@hardkas/core";
 import {
   verifyArtifactIntegrity,
-  verifyArtifactSemantics,
-  ArtifactVerificationResult
+  verifyArtifactSemantics
 } from "./verify.js";
-import { verifyFeeSemantics, FeeAuditResult } from "./feeVerify.js";
-import { verifyLineage, LineageValidationResult } from "./lineage.js";
+import { verifyFeeSemantics } from "./feeVerify.js";
+import { verifyLineage } from "./lineage.js";
 
 export interface ArtifactExplanation {
   summary: {

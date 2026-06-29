@@ -1,5 +1,5 @@
 import fs from "node:fs/promises";
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync } from "node:fs";
 import path from "node:path";
 import { writeFileAtomic } from "@hardkas/core";
 import { DeploymentRecord, DeploymentSummary } from "./deployment.js";

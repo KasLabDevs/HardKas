@@ -1,7 +1,6 @@
 import { systemRuntimeContext } from "@hardkas/core";
 import { describe, it, expect } from "vitest";
 import {
-  verifyArtifactSemantics,
   verifyFeeSemantics,
   recomputeMass
 } from "../src/index.js";

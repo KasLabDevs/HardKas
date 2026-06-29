@@ -17,7 +17,11 @@ describe("accounts", () => {
   });
 
   it("resolveHardkasAccount should resolve 'alice'", () => {
-    const acc = resolveHardkasAccount({ nameOrAddress: "alice" });
+    // Isolate cwd to prevent parallel test pollution from writing to root .hardkas
+    const acc = resolveHardkasAccount({
+      nameOrAddress: "alice",
+      config: { cwd: "/tmp/non-existent-isolated-dir" } as any
+    });
     expect(acc.name).toBe("alice");
     expect(acc.address).toBe("kaspa:sim_alice");
   });

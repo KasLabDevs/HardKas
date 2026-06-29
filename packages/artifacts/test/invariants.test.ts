@@ -1,10 +1,8 @@
-import { systemRuntimeContext } from "@hardkas/core";
 import { describe, it, expect } from "vitest";
 import {
   HashInvariant,
   SchemaInvariant,
   BasicCorrelationInvariant,
-  BasicLineageInvariant,
   InvariantWatcher
 } from "../src/index.js";
 import {
@@ -61,8 +59,7 @@ describe("Invariant System (Phase 5)", () => {
   it("InvariantWatcher should emit integrity.violation and stop correctly", async () => {
     const emitted: any[] = [];
     const eventBus = {
-      subscribe: (cb: any) => {
-        const handler = cb;
+      subscribe: (_cb: any) => {
         return () => {}; // Mock unsubscribe
       },
       emit: (ev: any) => {

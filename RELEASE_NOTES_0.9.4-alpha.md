@@ -1,8 +1,8 @@
-# HardKAS 0.10.0-alpha Release Notes
+# HardKAS 0.11.0-alpha Release Notes
 
 ## Deployed & Builder-Ready
 
-HardKAS `0.10.0-alpha` has successfully passed the Extreme Builder Gauntlet. This release marks our transition from raw engineering pipelines into a fully usable **Builder Layer** experience for Kaspa.
+HardKAS `0.11.0-alpha` has successfully passed the Extreme Builder Gauntlet. This release marks our transition from raw engineering pipelines into a fully usable **Builder Layer** experience for Kaspa.
 
 ### Key Highlights
 - **100% External Consumer Validation**: This release was completely verified from outside the monorepo, consuming the actual NPM registry packages.

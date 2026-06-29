@@ -322,3 +322,73 @@ export function attachLedgerAppender(workspaceRoot: string): () => void {
     }
   });
 }
+
+/**
+ * Basic Event Subscriber based on polling (V1).
+ * Abstracts the polling loop over a WalletQuery to emit events.
+ */
+export interface EventSubscribeOptions {
+    source: any; // e.g. WalletQuery
+    type: "payment";
+    intervalMs: number;
+    watchedAddresses: string[];
+    handler: (event: any) => void;
+    onError?: (err: Error) => void;
+}
+
+export class EventSubscriber {
+    private activeIntervals: Map<string, NodeJS.Timeout> = new Map();
+
+    /**
+     * Subscribes to events by polling the underlying source at the specified interval.
+     * Note: This is an initial V1 implementation purely based on polling.
+     */
+    public subscribe(options: EventSubscribeOptions): string {
+        const subId = crypto.randomUUID();
+        const lastSeen = new Set<string>();
+        const LAST_SEEN_MAX = 10_000;
+
+        if (options.type === "payment") {
+            const interval = setInterval(async () => {
+                if (!options.source.getUtxos) return;
+
+                try {
+                    const result = await options.source.getUtxos(options.watchedAddresses);
+                    if (!result.ok) return;
+
+                    for (const [address, utxos] of Object.entries(result.utxos as Record<string, any[]>)) {
+                        for (const utxo of utxos) {
+                            const utxoId = `${utxo.transactionId}:${utxo.outputIndex}`;
+                            if (!lastSeen.has(utxoId)) {
+                                if (lastSeen.size >= LAST_SEEN_MAX) lastSeen.clear();
+                                lastSeen.add(utxoId);
+                                options.handler({
+                                    type: "payment",
+                                    address,
+                                    transactionId: utxo.transactionId,
+                                    amountSompi: utxo.amountSompi
+                                });
+                            }
+                        }
+                    }
+                } catch (e) {
+                    options.onError?.(e instanceof Error ? e : new Error(String(e)));
+                }
+            }, options.intervalMs);
+
+            this.activeIntervals.set(subId, interval);
+        } else {
+            throw new Error(`Unsupported event type: ${options.type}`);
+        }
+
+        return subId;
+    }
+
+    public unsubscribe(subId: string): void {
+        const interval = this.activeIntervals.get(subId);
+        if (interval) {
+            clearInterval(interval);
+            this.activeIntervals.delete(subId);
+        }
+    }
+}

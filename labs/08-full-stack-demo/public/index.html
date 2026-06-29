@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HardKAS Full Stack Demo</title>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="background-blobs">
+        <div class="blob blob-1"></div>
+        <div class="blob blob-2"></div>
+    </div>
+
+    <div class="container">
+        <header>
+            <h1>Kaspa Hub <span>Powered by HardKAS</span></h1>
+        </header>
+
+        <main class="grid">
+            <!-- Kaspa Store -->
+            <section class="glass-panel">
+                <h2>🛍️ Kaspa Store (Payment Service)</h2>
+                <div class="panel-content">
+                    <button id="btnCreateInvoice" class="btn primary">Create Invoice (100 KAS)</button>
+                    <div id="invoiceList" class="item-list"></div>
+                </div>
+            </section>
+
+            <!-- Explorer -->
+            <section class="glass-panel">
+                <h2>🔍 Local Explorer</h2>
+                <div class="panel-content">
+                    <div class="metric-card">
+                        <span class="label">Store Balance</span>
+                        <span class="value" id="storeBalance">0 KAS</span>
+                    </div>
+                    <button id="btnRefreshBalance" class="btn secondary">Refresh Balance</button>
+                </div>
+            </section>
+
+            <!-- Oracle -->
+            <section class="glass-panel">
+                <h2>🔮 Oracle Metrics</h2>
+                <div class="panel-content">
+                    <div class="metric-grid">
+                        <div class="metric-card small">
+                            <span class="label">Total Invoices</span>
+                            <span class="value" id="oracleTotal">0</span>
+                        </div>
+                        <div class="metric-card small">
+                            <span class="label">Paid Invoices</span>
+                            <span class="value" id="oraclePaid">0</span>
+                        </div>
+                    </div>
+                    <button id="btnRefreshOracle" class="btn secondary mt-3">Refresh Metrics</button>
+                </div>
+            </section>
+
+            <!-- Batch Engine -->
+            <section class="glass-panel full-width">
+                <h2>⚙️ Batch Engine</h2>
+                <div class="panel-content batch-content">
+                    <p>Run end-of-day reconciliation to export evidence for all paid invoices.</p>
+                    <button id="btnRunReconcile" class="btn primary">Run Reconciliation Job</button>
+                    
+                    <div id="jobProgressContainer" class="progress-container hidden">
+                        <div class="job-status">
+                            <span id="jobStatusText">Starting...</span>
+                            <span id="jobPercentage">0%</span>
+                        </div>
+                        <div class="progress-bar-bg">
+                            <div class="progress-bar-fill" id="jobProgressBar"></div>
+                        </div>
+                        <div class="job-details" id="jobDetails">0 / 0 processed</div>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>

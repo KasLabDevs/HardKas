@@ -1,12 +1,10 @@
-import { systemRuntimeContext } from "@hardkas/core";
 import { describe, it, expect } from "vitest";
 import { getBroadcastableSignedTransaction } from "../src/signed-tx.js";
-import type { SignedTxArtifact } from "../src/types.js";
 
 describe("getBroadcastableSignedTransaction", () => {
   const baseArtifact: any = {
     schema: "hardkas.signedTx",
-    hardkasVersion: "0.10.0-alpha",
+    hardkasVersion: "0.11.0-alpha",
     version: "1.0.0-alpha",
     status: "signed",
     createdAt: new Date().toISOString(),

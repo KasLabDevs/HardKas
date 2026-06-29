@@ -1,0 +1,28 @@
+{
+  "release": "0.11-alpha",
+  "gates": {
+    "build": {
+      "status": "PASS",
+      "exitCode": 0
+    },
+    "test": {
+      "status": "PASS",
+      "exitCode": 0,
+      "details": "All integration, unit, and adversarial tests passed."
+    },
+    "docs:verify-book": {
+      "status": "PASS",
+      "exitCode": 0
+    },
+    "templates:verify": {
+      "status": "PASS",
+      "exitCode": 0
+    },
+    "packaging:smoke": {
+      "status": "PASS",
+      "exitCode": 0,
+      "details": "27 packages packed, installed in clean workspace, zero leaks detected."
+    }
+  },
+  "overall": "PASS"
+}

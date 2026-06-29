@@ -1,6 +1,5 @@
 import { RealTxSigner, RealTxSigningInput, RealTxSigningResult } from "./real-signer.js";
 import { loadKaspaWasm } from "./signer-backend.js";
-import { UtxoArtifact } from "@hardkas/artifacts";
 
 export interface KaspaSdkRealTxSignerOptions {
   readonly sdkLoader?: () => Promise<any>;

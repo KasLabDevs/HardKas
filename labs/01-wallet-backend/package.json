@@ -1,0 +1,28 @@
+{
+  "name": "wallet-backend",
+  "version": "1.0.0",
+  "private": true,
+  "description": "HardKAS Builder Lab 01 - Wallet Backend",
+  "type": "module",
+  "main": "dist/server.js",
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/server.js",
+    "dev": "tsx src/server.ts",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@hardkas/core": "workspace:*",
+    "@hardkas/kaspa-rpc": "workspace:*",
+    "@hardkas/accounts": "workspace:*",
+    "@hardkas/tx-builder": "workspace:*",
+    "@hardkas/query": "workspace:*",
+    "fastify": "^4.26.2"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "tsx": "^4.7.1",
+    "typescript": "^5.3.3",
+    "vitest": "^2.1.9"
+  }
+}

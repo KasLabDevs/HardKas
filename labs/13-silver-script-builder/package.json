@@ -1,0 +1,19 @@
+{
+  "name": "lab-13-silver-script-builder",
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "start": "tsx src/server.ts",
+    "dev": "tsx watch src/server.ts"
+  },
+  "dependencies": {
+    "fastify": "^4.26.1",
+    "fs-extra": "^11.2.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.24",
+    "@types/fs-extra": "^11.0.4",
+    "tsx": "^4.7.1",
+    "typescript": "^5.3.3"
+  }
+}

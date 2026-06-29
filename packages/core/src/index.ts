@@ -146,3 +146,4 @@ export * from "./migrations.js";
 export * from "./silver.js";
 
 export * from "./registry.js";
+export * from "./confirmation-policy.js";

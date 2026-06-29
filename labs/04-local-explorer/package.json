@@ -1,0 +1,23 @@
+{
+  "name": "local-explorer",
+  "version": "1.0.0",
+  "description": "Lab 04 — Local Explorer / Indexer",
+  "main": "dist/server.js",
+  "type": "module",
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/server.js",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@hardkas/artifacts": "workspace:*",
+    "@hardkas/core": "workspace:*",
+    "@hardkas/query": "workspace:*",
+    "fastify": "^4.26.2"
+  },
+  "devDependencies": {
+    "@types/node": "^22.19.19",
+    "typescript": "^5.9.3",
+    "vitest": "^2.1.9"
+  }
+}

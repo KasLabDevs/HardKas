@@ -1,11 +1,17 @@
-# Chapter 1: What is HardKAS?
+# Chapter 01: What is HardKAS?
 
-HardKAS is the premier Kaspa-native developer operating environment. It provides everything you need to build, test, and deploy applications on the Kaspa blockDAG.
+HardKAS is a local-first Kaspa builder framework.
 
-This book is executable. Every chapter provides a journey into the HardKAS ecosystem.
+Its differentiators are:
+- deterministic execution
+- reproducible artifacts
+- evidence packages
+- policy engine
+- scenario runner
+- plugin architecture
+- task system
+- local-first development
 
-You can verify that your HardKAS environment is available by simply running the `help` command.
+**Applications define the SDK. The SDK never defines applications.**
 
-```bash execute
-hardkas --help
-```
+In this Builder Book, we will walk through the core concepts of HardKAS by building real-world applications, from a simple wallet backend to a full-stack e-commerce checkout.

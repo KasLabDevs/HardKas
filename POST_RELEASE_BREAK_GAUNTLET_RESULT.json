@@ -1,6 +1,6 @@
 {
   "schema": "hardkas.postReleaseBreakGauntlet.v1",
-  "release": "0.10.0-alpha",
+  "release": "0.11.0-alpha",
   "status": "POST_RELEASE_BREAK_GAUNTLET_FINDINGS",
   "generatedAt": "2026-06-23T10:48:11.089Z",
   "claims": {
@@ -14,37 +14,37 @@
       "name": "pnpm build",
       "status": "PASS",
       "durationMs": 8395,
-      "outputSample": "\n> hardkas-monorepo@0.10.0-alpha build C:\\Users\\jrodr\\Documents\\kaslabdevs\\GitHub\\HardKas-repo\n> turbo build\n\n\n   • Packages in scope: @examples/audit-pipeline, @examples/backend-service, @examples/basic-transfer, @examples/bridge-assumptions, @examples/ci-workflow, @examples/dag-reorg-simulation, @examples/failure-debugging, @examples/igra-l2-readonly, @examples/policy, @examples/replay, @examples/rpc-node-health, @examples/snapshot-restore, @examples/trace-and-replay, @hardkas-examples/hello-kaspa, @hardkas/accounts, @hardkas/artifacts, @hardkas/bridge-local, @hardkas/cli, @hardkas/client, @hardkas/config, @hardkas/core, @hardkas/dashboard, @hardkas/dev-server, @hardkas/example-02-basic-transfer, @hardkas/example-03-localnet-demo, @hardkas/kaspa-rpc, @hardkas/l2, @hardkas/localnet, @hardk"
+      "outputSample": "\n> hardkas-monorepo@0.11.0-alpha build C:\\Users\\jrodr\\Documents\\kaslabdevs\\GitHub\\HardKas-repo\n> turbo build\n\n\n   • Packages in scope: @examples/audit-pipeline, @examples/backend-service, @examples/basic-transfer, @examples/bridge-assumptions, @examples/ci-workflow, @examples/dag-reorg-simulation, @examples/failure-debugging, @examples/igra-l2-readonly, @examples/policy, @examples/replay, @examples/rpc-node-health, @examples/snapshot-restore, @examples/trace-and-replay, @hardkas-examples/hello-kaspa, @hardkas/accounts, @hardkas/artifacts, @hardkas/bridge-local, @hardkas/cli, @hardkas/client, @hardkas/config, @hardkas/core, @hardkas/dashboard, @hardkas/dev-server, @hardkas/example-02-basic-transfer, @hardkas/example-03-localnet-demo, @hardkas/kaspa-rpc, @hardkas/l2, @hardkas/localnet, @hardk"
     },
     {
       "name": "pnpm test",
       "status": "FAIL",
       "durationMs": 160363,
-      "outputSample": "\n> hardkas-monorepo@0.10.0-alpha test C:\\Users\\jrodr\\Documents\\kaslabdevs\\GitHub\\HardKas-repo\n> pnpm -r test && pnpm test:workflows\n\nScope: 47 of 48 workspace projects\npackages/core test$ vitest run\npackages/core test:  RUN  v2.1.9 C:/Users/jrodr/Documents/kaslabdevs/GitHub/HardKas-repo/packages/core\npackages/core test:  ✓ test/money.test.ts (16 tests) 9ms\npackages/core test:  ✓ test/events.test.ts (6 tests) 8ms\npackages/core test:  ✓ test/abuse-multiprocess.test.ts (2 tests) 158ms\npackages/core test:  ✓ test/fs-atomic.test.ts (7 tests) 53ms\npackages/core test:  ✓ test/append-tail-safety.test.ts (3 tests) 15ms\npackages/core test:  ✓ test/silver.test.ts (10 tests) 9ms\npackages/core test:  ✓ test/fault-injection.test.ts (3 tests) 31ms\npackages/core test:  ✓ test/append-lint.test.ts (1 test) 3"
+      "outputSample": "\n> hardkas-monorepo@0.11.0-alpha test C:\\Users\\jrodr\\Documents\\kaslabdevs\\GitHub\\HardKas-repo\n> pnpm -r test && pnpm test:workflows\n\nScope: 47 of 48 workspace projects\npackages/core test$ vitest run\npackages/core test:  RUN  v2.1.9 C:/Users/jrodr/Documents/kaslabdevs/GitHub/HardKas-repo/packages/core\npackages/core test:  ✓ test/money.test.ts (16 tests) 9ms\npackages/core test:  ✓ test/events.test.ts (6 tests) 8ms\npackages/core test:  ✓ test/abuse-multiprocess.test.ts (2 tests) 158ms\npackages/core test:  ✓ test/fs-atomic.test.ts (7 tests) 53ms\npackages/core test:  ✓ test/append-tail-safety.test.ts (3 tests) 15ms\npackages/core test:  ✓ test/silver.test.ts (10 tests) 9ms\npackages/core test:  ✓ test/fault-injection.test.ts (3 tests) 31ms\npackages/core test:  ✓ test/append-lint.test.ts (1 test) 3"
     },
     {
       "name": "pnpm corpus:toccata",
       "status": "PASS",
       "durationMs": 2791,
-      "outputSample": "\n> hardkas-monorepo@0.10.0-alpha corpus:toccata C:\\Users\\jrodr\\Documents\\kaslabdevs\\GitHub\\HardKas-repo\n> tsx packages/cli/src/index.ts corpus verify fixtures/toccata-v2/silver --json --workspace .\n\nCORPUS VERIFY OPTS: { json: false, silent: false, workspace: '.' }\n{\n  \"ok\": true,\n  \"schema\": \"hardkas.toccataCorpus.v1\",\n  \"path\": \"fixtures/toccata-v2/silver\",\n  \"summary\": {\n    \"happyPathFixtures\": 1,\n    \"failureFixtures\": 6,\n    \"artifactsChecked\": 7,\n    \"contentHashes\": \"PASS\",\n    \"compareMode\": \"artifact-coherence\",\n    \"simulationStatus\": \"SILVERSCRIPT_SIMULATION_MATCH\",\n    \"knownLimitations\": [\n      \"PARTIAL_VM_SIMULATION\"\n    ]\n  },\n  \"claims\": {\n    \"artifactCoherence\": \"READY_MATCH\",\n    \"runtimeOutcome\": \"PARTIAL\",\n    \"vmConsensusEquivalence\": \"NOT_CLAIMED\",\n    \"mainnet\": \"B"
+      "outputSample": "\n> hardkas-monorepo@0.11.0-alpha corpus:toccata C:\\Users\\jrodr\\Documents\\kaslabdevs\\GitHub\\HardKas-repo\n> tsx packages/cli/src/index.ts corpus verify fixtures/toccata-v2/silver --json --workspace .\n\nCORPUS VERIFY OPTS: { json: false, silent: false, workspace: '.' }\n{\n  \"ok\": true,\n  \"schema\": \"hardkas.toccataCorpus.v1\",\n  \"path\": \"fixtures/toccata-v2/silver\",\n  \"summary\": {\n    \"happyPathFixtures\": 1,\n    \"failureFixtures\": 6,\n    \"artifactsChecked\": 7,\n    \"contentHashes\": \"PASS\",\n    \"compareMode\": \"artifact-coherence\",\n    \"simulationStatus\": \"SILVERSCRIPT_SIMULATION_MATCH\",\n    \"knownLimitations\": [\n      \"PARTIAL_VM_SIMULATION\"\n    ]\n  },\n  \"claims\": {\n    \"artifactCoherence\": \"READY_MATCH\",\n    \"runtimeOutcome\": \"PARTIAL\",\n    \"vmConsensusEquivalence\": \"NOT_CLAIMED\",\n    \"mainnet\": \"B"
     },
     {
       "name": "pnpm gauntlet:toccata",
       "status": "PASS",
       "durationMs": 49225,
-      "outputSample": "\n> hardkas-monorepo@0.10.0-alpha gauntlet:toccata C:\\Users\\jrodr\\Documents\\kaslabdevs\\GitHub\\HardKas-repo\n> node scripts/toccata-gauntlet.mjs\n\n=== TOCCATA FINAL BASELINE GAUNTLET ===\n\n> hardkas-monorepo@0.10.0-alpha build C:\\Users\\jrodr\\Documents\\kaslabdevs\\GitHub\\HardKas-repo\n> turbo build\n\n\n   • Packages in scope: @examples/audit-pipeline, @examples/backend-service, @examples/basic-transfer, @examples/bridge-assumptions, @examples/ci-workflow, @examples/dag-reorg-simulation, @examples/failure-debugging, @examples/igra-l2-readonly, @examples/policy, @examples/replay, @examples/rpc-node-health, @examples/snapshot-restore, @examples/trace-and-replay, @hardkas-examples/hello-kaspa, @hardkas/accounts, @hardkas/artifacts, @hardkas/bridge-local, @hardkas/cli, @hardkas/client, @hardkas/config, @ha"
+      "outputSample": "\n> hardkas-monorepo@0.11.0-alpha gauntlet:toccata C:\\Users\\jrodr\\Documents\\kaslabdevs\\GitHub\\HardKas-repo\n> node scripts/toccata-gauntlet.mjs\n\n=== TOCCATA FINAL BASELINE GAUNTLET ===\n\n> hardkas-monorepo@0.11.0-alpha build C:\\Users\\jrodr\\Documents\\kaslabdevs\\GitHub\\HardKas-repo\n> turbo build\n\n\n   • Packages in scope: @examples/audit-pipeline, @examples/backend-service, @examples/basic-transfer, @examples/bridge-assumptions, @examples/ci-workflow, @examples/dag-reorg-simulation, @examples/failure-debugging, @examples/igra-l2-readonly, @examples/policy, @examples/replay, @examples/rpc-node-health, @examples/snapshot-restore, @examples/trace-and-replay, @hardkas-examples/hello-kaspa, @hardkas/accounts, @hardkas/artifacts, @hardkas/bridge-local, @hardkas/cli, @hardkas/client, @hardkas/config, @ha"
     },
     {
       "name": "hardkas --version",
       "status": "PASS",
       "durationMs": 911,
-      "outputSample": "0.10.0-alpha\n"
+      "outputSample": "0.11.0-alpha\n"
     },
     {
       "name": "hardkas capabilities --json",
       "status": "PASS",
       "durationMs": 929,
-      "outputSample": "{\"ok\":true,\"command\":\"capabilities\",\"mode\":\"NOT_CLAIMED\",\"result\":{\"version\":\"0.10.0-alpha\",\"maturity\":\"hardened-alpha\",\"proofVersion\":\"repro-v0\",\"hashVersion\":4,\"capabilities\":{\"artifacts\":true,\"lineageVerification\":true,\"deterministicHashing\":true,\"atomicPersistence\":true,\"workspaceLocks\":true,\"corruptionDetection\":true,\"secretRedaction\":true,\"mainnetGuards\":true,\"localnetSimulation\":true,\"ghostdagSimulation\":true,\"dagConflictResolution\":true,\"massProfiler\":true,\"simulationScenarios\":true,\"queryStore\":true,\"replayVerification\":true,\"schemaMigrations\":true,\"dockerNode\":true,\"scriptRunner\":true,\"testingFramework\":true,\"l2Profiles\":true,\"l2BridgeAssumptions\":true,\"consensusValidation\":false,\"productionWallet\":false,\"silverScript\":false,\"covenants\":false,\"trustlessExit\":false,\"differentialDag"
+      "outputSample": "{\"ok\":true,\"command\":\"capabilities\",\"mode\":\"NOT_CLAIMED\",\"result\":{\"version\":\"0.11.0-alpha\",\"maturity\":\"hardened-alpha\",\"proofVersion\":\"repro-v0\",\"hashVersion\":4,\"capabilities\":{\"artifacts\":true,\"lineageVerification\":true,\"deterministicHashing\":true,\"atomicPersistence\":true,\"workspaceLocks\":true,\"corruptionDetection\":true,\"secretRedaction\":true,\"mainnetGuards\":true,\"localnetSimulation\":true,\"ghostdagSimulation\":true,\"dagConflictResolution\":true,\"massProfiler\":true,\"simulationScenarios\":true,\"queryStore\":true,\"replayVerification\":true,\"schemaMigrations\":true,\"dockerNode\":true,\"scriptRunner\":true,\"testingFramework\":true,\"l2Profiles\":true,\"l2BridgeAssumptions\":true,\"consensusValidation\":false,\"productionWallet\":false,\"silverScript\":false,\"covenants\":false,\"trustlessExit\":false,\"differentialDag"
     },
     {
       "name": "hardkas localnet status --json",
@@ -417,8 +417,8 @@
       "cli": "PASS",
       "sdk": "PASS",
       "parity": "PARITY_PASS",
-      "cliOutput": "{\"ok\":true,\"command\":\"capabilities\",\"mode\":\"NOT_CLAIMED\",\"result\":{\"version\":\"0.10.0-alpha\",\"maturity\":\"hardened-alpha\",\"proofVersion\":\"repro-v0\",\"hashVersion\":4,\"capabilities\":{\"artifacts\":true,\"lineageVerification\":true,\"deterministicHashing\":true,\"atomicPersistence\":true,\"workspaceLocks\":true,\"corruptionDetection\":true,\"secretRedaction\":true,\"mainnetGuards\":true,\"localnetSimulation\":true,\"ghostdagSimulation\":true,\"dagConflictResolution\":true,\"massProfiler\":true,\"simulationScenarios\":true,\"queryStore\":true,\"replayVerification\":true,\"schemaMigrations\":true,\"dockerNode\":true,\"scriptRunner\":true,\"testingFramework\":true,\"l2Profiles\":true,\"l2BridgeAssumptions\":true,\"consensusValidation\":false,\"productionWallet\":false,\"silverScript\":false,\"covenants\":false,\"trustlessExit\":false,\"differentialDag",
-      "sdkOutput": "{\"version\":\"0.10.0-alpha\",\"maturity\":\"hardened-alpha\",\"proofVersion\":\"repro-v0\",\"hashVersion\":4,\"capabilities\":{\"artifacts\":true,\"lineageVerification\":true,\"deterministicHashing\":true,\"atomicPersistence\":true,\"workspaceLocks\":true,\"corruptionDetection\":true,\"secretRedaction\":true,\"mainnetGuards\":true,\"localnetSimulation\":true,\"ghostdagSimulation\":true,\"dagConflictResolution\":true,\"massProfiler\":true,\"simulationScenarios\":true,\"queryStore\":true,\"replayVerification\":true,\"schemaMigrations\":true,\"dockerNode\":true,\"scriptRunner\":true,\"testingFramework\":true,\"l2Profiles\":true,\"l2BridgeAssumptions\":true,\"consensusValidation\":false,\"productionWallet\":false,\"silverScript\":false,\"covenants\":false,\"trustlessExit\":false,\"differentialDagValidation\":false},\"trustBoundaries\":{\"replay\":\"local-workflow-onl"
+      "cliOutput": "{\"ok\":true,\"command\":\"capabilities\",\"mode\":\"NOT_CLAIMED\",\"result\":{\"version\":\"0.11.0-alpha\",\"maturity\":\"hardened-alpha\",\"proofVersion\":\"repro-v0\",\"hashVersion\":4,\"capabilities\":{\"artifacts\":true,\"lineageVerification\":true,\"deterministicHashing\":true,\"atomicPersistence\":true,\"workspaceLocks\":true,\"corruptionDetection\":true,\"secretRedaction\":true,\"mainnetGuards\":true,\"localnetSimulation\":true,\"ghostdagSimulation\":true,\"dagConflictResolution\":true,\"massProfiler\":true,\"simulationScenarios\":true,\"queryStore\":true,\"replayVerification\":true,\"schemaMigrations\":true,\"dockerNode\":true,\"scriptRunner\":true,\"testingFramework\":true,\"l2Profiles\":true,\"l2BridgeAssumptions\":true,\"consensusValidation\":false,\"productionWallet\":false,\"silverScript\":false,\"covenants\":false,\"trustlessExit\":false,\"differentialDag",
+      "sdkOutput": "{\"version\":\"0.11.0-alpha\",\"maturity\":\"hardened-alpha\",\"proofVersion\":\"repro-v0\",\"hashVersion\":4,\"capabilities\":{\"artifacts\":true,\"lineageVerification\":true,\"deterministicHashing\":true,\"atomicPersistence\":true,\"workspaceLocks\":true,\"corruptionDetection\":true,\"secretRedaction\":true,\"mainnetGuards\":true,\"localnetSimulation\":true,\"ghostdagSimulation\":true,\"dagConflictResolution\":true,\"massProfiler\":true,\"simulationScenarios\":true,\"queryStore\":true,\"replayVerification\":true,\"schemaMigrations\":true,\"dockerNode\":true,\"scriptRunner\":true,\"testingFramework\":true,\"l2Profiles\":true,\"l2BridgeAssumptions\":true,\"consensusValidation\":false,\"productionWallet\":false,\"silverScript\":false,\"covenants\":false,\"trustlessExit\":false,\"differentialDagValidation\":false},\"trustBoundaries\":{\"replay\":\"local-workflow-onl"
     },
     {
       "flow": "localnet status",
@@ -454,5 +454,5 @@
     }
   ],
   "notes": [],
-  "recommendedNextRelease": "0.10.0-alpha"
+  "recommendedNextRelease": "0.11.0-alpha"
 }

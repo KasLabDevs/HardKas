@@ -1,4 +1,3 @@
-import { systemRuntimeContext } from "@hardkas/core";
 import { describe, it, expect } from "vitest";
 import {
   canonicalStringify,
@@ -71,7 +70,7 @@ describe("Artifacts - Determinism and Verification", () => {
 
     const artifact: any = {
       schema: "hardkas.txPlan",
-      hardkasVersion: "0.10.0-alpha",
+      hardkasVersion: "0.11.0-alpha",
       version: ARTIFACT_VERSION,
       hashVersion: CURRENT_HASH_VERSION,
       createdAt: new Date().toISOString(),
@@ -103,7 +102,7 @@ describe("Artifacts - Determinism and Verification", () => {
 
     const artifact: any = {
       schema: "hardkas.txPlan",
-      hardkasVersion: "0.10.0-alpha",
+      hardkasVersion: "0.11.0-alpha",
       version: ARTIFACT_VERSION,
       hashVersion: CURRENT_HASH_VERSION,
       createdAt: new Date().toISOString(),

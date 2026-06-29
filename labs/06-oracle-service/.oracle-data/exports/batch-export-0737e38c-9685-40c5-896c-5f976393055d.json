@@ -1,0 +1,10 @@
+{
+  "schema": "evidence-batch.v1",
+  "batchId": "0737e38c-9685-40c5-896c-5f976393055d",
+  "exportedAt": "2026-06-26T23:27:47.568Z",
+  "statsSnapshot": {
+    "totalVolumeSompi": "0",
+    "eventsProcessed": 0
+  },
+  "artifactsIncluded": 0
+}

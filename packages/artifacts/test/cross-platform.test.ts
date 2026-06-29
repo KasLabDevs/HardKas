@@ -1,6 +1,5 @@
-import { systemRuntimeContext } from "@hardkas/core";
 import { describe, it, expect } from "vitest";
-import { canonicalStringify, CURRENT_HASH_VERSION } from "../src/canonical.js";
+import { canonicalStringify } from "../src/canonical.js";
 
 describe("Cross-Platform Canonicalization", () => {
   it("should normalize newlines in version 3", () => {
