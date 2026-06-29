@@ -60,11 +60,11 @@ describe("FeeEstimator", () => {
   it("invalid fee rate (float, negative, NaN)", () => {
     const req = { inputs: 1, outputs: 1, policy: "minimal" as const };
     expect(() => estimateFee({ ...req, feeRateSompiPerMass: -1n })).toThrow(/FEE_ESTIMATOR_INVALID_RATE/);
-    expect(() => estimateFee({ ...req, feeRateSompiPerMass: 1.5 })).toThrow(/FEE_ESTIMATOR_INVALID_RATE/);
-    expect(() => estimateFee({ ...req, feeRateSompiPerMass: NaN })).toThrow(/FEE_ESTIMATOR_INVALID_RATE/);
-    expect(() => estimateFee({ ...req, feeRateSompiPerMass: Infinity })).toThrow(/FEE_ESTIMATOR_INVALID_RATE/);
-    expect(() => estimateFee({ ...req, feeRateSompiPerMass: "1.123" })).toThrow(/FEE_ESTIMATOR_INVALID_RATE/);
-    expect(() => estimateFee({ ...req, feeRateSompiPerMass: "abc" })).toThrow(/FEE_ESTIMATOR_INVALID_RATE/);
+    expect(() => estimateFee({ ...req, feeRateSompiPerMass: 1.5 as any })).toThrow(/FEE_ESTIMATOR_INVALID_RATE/);
+    expect(() => estimateFee({ ...req, feeRateSompiPerMass: NaN as any })).toThrow(/FEE_ESTIMATOR_INVALID_RATE/);
+    expect(() => estimateFee({ ...req, feeRateSompiPerMass: Infinity as any })).toThrow(/FEE_ESTIMATOR_INVALID_RATE/);
+    expect(() => estimateFee({ ...req, feeRateSompiPerMass: "1.123" as any })).toThrow(/FEE_ESTIMATOR_INVALID_RATE/);
+    expect(() => estimateFee({ ...req, feeRateSompiPerMass: "abc" as any })).toThrow(/FEE_ESTIMATOR_INVALID_RATE/);
   });
 
   it("deterministic output", () => {

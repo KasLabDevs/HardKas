@@ -27,9 +27,9 @@ describe("CoinSelector", () => {
     // base fee is 300. Conservative fee = (300 * 110 + 99)/100 = 330
     // If we want exact match with fee 330 and target 1000, we need exactly 1330n.
     const utxoExact = [createMockUtxo({ address: "kaspatest:ex", amountSompi: 1330n, index: 0 })];
-    request.utxos = utxoExact;
+    const requestExact: CoinSelectionRequest = { ...request, utxos: utxoExact };
 
-    const result = selectCoins(request);
+    const result = selectCoins(requestExact);
     expect(result.selectedUtxos.length).toBe(1);
     expect(result.changeSompi).toBe(0n); // Exact match
     expect(result.estimatedFeeSompi).toBe(330n);
@@ -49,10 +49,10 @@ describe("CoinSelector", () => {
     const result = selectCoins(request);
     expect(result.selectedUtxos.length).toBe(1);
     // Largest is 5000n. 
-    expect(result.selectedUtxos[0].amountSompi).toBe(5000n);
+    expect(result.selectedUtxos[0]!.amountSompi).toBe(5000n);
     expect(result.changeSompi).toBeGreaterThan(0n);
     expect(result.outputs.length).toBe(2); // main + change
-    expect(result.outputs[1].address).toBe("kaspatest:change");
+    expect(result.outputs[1]!.address).toBe("kaspatest:change");
   });
 
   it("insufficient funds", () => {
@@ -83,7 +83,7 @@ describe("CoinSelector", () => {
     const selectedAmounts = result.selectedUtxos.map(u => u.amountSompi);
     expect(selectedAmounts).not.toContain(50n);
     expect(result.dustRejected.length).toBe(1);
-    expect(result.dustRejected[0].amountSompi).toBe(50n);
+    expect(result.dustRejected[0]!.amountSompi).toBe(50n);
     expect(result.warnings.length).toBeGreaterThan(0);
   });
 
@@ -130,7 +130,7 @@ describe("CoinSelector", () => {
     const result1 = selectCoins(request1);
     const result2 = selectCoins(request2);
 
-    expect(result1.selectedUtxos[0].outpoint.transactionId).toBe(result2.selectedUtxos[0].outpoint.transactionId);
+    expect(result1.selectedUtxos[0]!.outpoint.transactionId).toBe(result2.selectedUtxos[0]!.outpoint.transactionId);
   });
 
   it("invalid amount blocked (negative, float, NaN, Infinity)", () => {
@@ -141,10 +141,10 @@ describe("CoinSelector", () => {
       };
 
       expect(() => selectCoins({ ...baseReq, targetSompi: -100n })).toThrow(/COIN_SELECTION_INVALID_AMOUNT/);
-      expect(() => selectCoins({ ...baseReq, targetSompi: 1.5 })).toThrow(/COIN_SELECTION_INVALID_AMOUNT/);
-      expect(() => selectCoins({ ...baseReq, targetSompi: NaN })).toThrow(/COIN_SELECTION_INVALID_AMOUNT/);
-      expect(() => selectCoins({ ...baseReq, targetSompi: Infinity })).toThrow(/COIN_SELECTION_INVALID_AMOUNT/);
-      expect(() => selectCoins({ ...baseReq, targetSompi: "1.123" })).toThrow(/COIN_SELECTION_INVALID_AMOUNT/);
-      expect(() => selectCoins({ ...baseReq, targetSompi: "abc" })).toThrow(/COIN_SELECTION_INVALID_AMOUNT/);
+      expect(() => selectCoins({ ...baseReq, targetSompi: 1.5 as any })).toThrow(/COIN_SELECTION_INVALID_AMOUNT/);
+      expect(() => selectCoins({ ...baseReq, targetSompi: NaN as any })).toThrow(/COIN_SELECTION_INVALID_AMOUNT/);
+      expect(() => selectCoins({ ...baseReq, targetSompi: Infinity as any })).toThrow(/COIN_SELECTION_INVALID_AMOUNT/);
+      expect(() => selectCoins({ ...baseReq, targetSompi: "1.123" as any })).toThrow(/COIN_SELECTION_INVALID_AMOUNT/);
+      expect(() => selectCoins({ ...baseReq, targetSompi: "abc" as any })).toThrow(/COIN_SELECTION_INVALID_AMOUNT/);
   });
 });
