@@ -1,4 +1,4 @@
-# API Surface — Toolkit Baseline (0.11.0-alpha)
+# API Surface — Toolkit Baseline (0.11.1-alpha)
 
 This document captures the public API surface of `@hardkas/toolkit` at the 0.10.x baseline.
 Any breaking changes in future versions must be documented against this snapshot.

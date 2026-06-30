@@ -1,6 +1,6 @@
 {
   "phase": "P43_0_10_X_TOOLKIT_BASELINE_RELEASE",
-  "version": "0.11.0-alpha",
+  "version": "0.11.1-alpha",
   "date": "2026-06-27",
   "gates": {
     "build": {
@@ -36,7 +36,7 @@
   },
   "packages": {
     "total": 26,
-    "allAtVersion": "0.11.0-alpha"
+    "allAtVersion": "0.11.1-alpha"
   },
   "toolkitSurface": {
     "WalletToolkit": ["open", "create", "address", "balance", "utxos", "history", "estimateFee", "sendSimulated"],

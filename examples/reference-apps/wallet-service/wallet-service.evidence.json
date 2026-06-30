@@ -1,0 +1,15 @@
+{
+  "totalWallets": 100,
+  "totalUtxos": 10000,
+  "operationsPlanned": 20,
+  "snapshots": [
+    null,
+    null
+  ],
+  "realBroadcast": false,
+  "realFunding": false,
+  "fixtureUsed": true,
+  "simnetOnly": true,
+  "mainnetUsed": false,
+  "timestamp": "2026-06-29T19:04:28.018Z"
+}

@@ -1,4 +1,4 @@
-# AUDIT BUILDER TEMPLATES 0.11.0
+# AUDIT BUILDER TEMPLATES 0.11.1
 
 Templates in `templates/` directory:
 - Most templates successfully initialize via `hardkas init`.

@@ -1,6 +1,6 @@
 # Phase 1C Certificate: Wallet UTXOs (P44.3)
 
-This certifies that **Phase 1C** of the `0.11.0-alpha` UTXO Toolkit roadmap has been completed, tested, and integrated.
+This certifies that **Phase 1C** of the `0.11.1-alpha` UTXO Toolkit roadmap has been completed, tested, and integrated.
 
 ## Validated Capabilities
 
@@ -21,4 +21,4 @@ The state is persisted locally inside the `.hardkas/` directory using the new `U
 - [x] Documentation updated (Builder Book Chapter 09 & `wallet-utxos.ts` example).
 - [x] Monorepo gauntlet checks (Build + Test).
 
-**Status**: UTXO Toolkit `0.11.0-alpha` implementation is complete. Ready for DAG Toolkit.
+**Status**: UTXO Toolkit `0.11.1-alpha` implementation is complete. Ready for DAG Toolkit.

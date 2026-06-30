@@ -1,5 +1,5 @@
 import { WalletManagerImpl, WalletStateStoreJson, AddressManager } from '@hardkas/accounts';
-import { WalletQuery } from '@hardkas/query';
+import { WalletQuery, WalletQueryProvider } from '@hardkas/query';
 import { selectCoins, estimateFee, buildPaymentPlan } from '@hardkas/tx-builder';
 import { WalletUtxoApi } from './utxos.js';
 import { UtxoControlStore } from './stores/utxo-control-store.js';
@@ -7,6 +7,7 @@ import { UtxoControlStore } from './stores/utxo-control-store.js';
 export interface WalletToolkitOptions {
     storePath?: string;
     network?: "simnet" | "testnet" | "mainnet";
+    provider?: WalletQueryProvider;
 }
 
 export class WalletToolkit {
@@ -23,7 +24,15 @@ export class WalletToolkit {
     ) {
         this.walletManager = new WalletManagerImpl();
         this.addressManager = AddressManager;
-        this.walletQuery = new WalletQuery({} as any);
+        
+        const dummyProvider: WalletQueryProvider = {
+            source: "dummy",
+            async getBalances() { return {}; },
+            async getUtxos() { return {}; },
+            async getHistory() { return { items: [] }; }
+        };
+
+        this.walletQuery = new WalletQuery({ provider: options.provider || dummyProvider, network: options.network || "simnet" });
         
         const utxoControlPath = options.storePath 
             ? options.storePath.replace('.json', '-utxo-control.json')
@@ -31,7 +40,12 @@ export class WalletToolkit {
         const utxoStore = new UtxoControlStore(utxoControlPath);
 
         this._utxosApi = new WalletUtxoApi(
-            async () => (await this.walletQuery.getUtxos([await this.address()])) as any,
+            async () => {
+                const addr = await this.address();
+                const res = await this.walletQuery.getUtxos([addr]);
+                if (!res.ok) throw new Error(res.error || "Degraded query result");
+                return res.utxos[addr] || [];
+            },
             async () => this.address(),
             async (inputs: number, outputs: number) => BigInt(inputs * 1000 + outputs * 1000), // Dummy fee estimation
             utxoStore

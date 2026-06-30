@@ -1,8 +1,8 @@
-# Release Notes — HardKAS 0.11.0-alpha (Toolkit Baseline)
+# Release Notes — HardKAS 0.11.1-alpha (Toolkit Baseline)
 
 ## Overview
 
-HardKAS 0.11.0-alpha marks the **Toolkit Baseline** release — the first version where developers can build complete Kaspa applications using only the `@hardkas/toolkit` facade, without importing internal helpers.
+HardKAS 0.11.1-alpha marks the **Toolkit Baseline** release — the first version where developers can build complete Kaspa applications using only the `@hardkas/toolkit` facade, without importing internal helpers.
 
 This release was shaped entirely by real applications (Labs 01–09.5), following HardKAS's core principle: **applications define the SDK**.
 
@@ -53,32 +53,32 @@ Available via `hardkas create --template <name>`:
 
 | Package | Version |
 |---|---|
-| `@hardkas/accounts` | 0.11.0-alpha |
-| `@hardkas/artifacts` | 0.11.0-alpha |
-| `@hardkas/bridge-local` | 0.11.0-alpha |
-| `@hardkas/cli` | 0.11.0-alpha |
-| `@hardkas/client` | 0.11.0-alpha |
-| `@hardkas/config` | 0.11.0-alpha |
-| `@hardkas/core` | 0.11.0-alpha |
-| `@hardkas/dev-server` | 0.11.0-alpha |
-| `@hardkas/jobs` | 0.11.0-alpha |
-| `@hardkas/kaspa-rpc` | 0.11.0-alpha |
-| `@hardkas/l2` | 0.11.0-alpha |
-| `@hardkas/localnet` | 0.11.0-alpha |
-| `@hardkas/node-orchestrator` | 0.11.0-alpha |
-| `@hardkas/node-runner` | 0.11.0-alpha |
-| `@hardkas/plugin-local-indexer` | 0.11.0-alpha |
-| `@hardkas/query` | 0.11.0-alpha |
-| `@hardkas/query-store` | 0.11.0-alpha |
-| `@hardkas/react` | 0.11.0-alpha |
-| `@hardkas/sdk` | 0.11.0-alpha |
-| `@hardkas/sessions` | 0.11.0-alpha |
-| `@hardkas/simulator` | 0.11.0-alpha |
-| `@hardkas/simulator-adapters` | 0.11.0-alpha |
-| `@hardkas/testing` | 0.11.0-alpha |
-| `@hardkas/toolkit` | 0.11.0-alpha |
-| `@hardkas/tx-builder` | 0.11.0-alpha |
-| `@hardkas/wallet-adapter` | 0.11.0-alpha |
+| `@hardkas/accounts` | 0.11.1-alpha |
+| `@hardkas/artifacts` | 0.11.1-alpha |
+| `@hardkas/bridge-local` | 0.11.1-alpha |
+| `@hardkas/cli` | 0.11.1-alpha |
+| `@hardkas/client` | 0.11.1-alpha |
+| `@hardkas/config` | 0.11.1-alpha |
+| `@hardkas/core` | 0.11.1-alpha |
+| `@hardkas/dev-server` | 0.11.1-alpha |
+| `@hardkas/jobs` | 0.11.1-alpha |
+| `@hardkas/kaspa-rpc` | 0.11.1-alpha |
+| `@hardkas/l2` | 0.11.1-alpha |
+| `@hardkas/localnet` | 0.11.1-alpha |
+| `@hardkas/node-orchestrator` | 0.11.1-alpha |
+| `@hardkas/node-runner` | 0.11.1-alpha |
+| `@hardkas/plugin-local-indexer` | 0.11.1-alpha |
+| `@hardkas/query` | 0.11.1-alpha |
+| `@hardkas/query-store` | 0.11.1-alpha |
+| `@hardkas/react` | 0.11.1-alpha |
+| `@hardkas/sdk` | 0.11.1-alpha |
+| `@hardkas/sessions` | 0.11.1-alpha |
+| `@hardkas/simulator` | 0.11.1-alpha |
+| `@hardkas/simulator-adapters` | 0.11.1-alpha |
+| `@hardkas/testing` | 0.11.1-alpha |
+| `@hardkas/toolkit` | 0.11.1-alpha |
+| `@hardkas/tx-builder` | 0.11.1-alpha |
+| `@hardkas/wallet-adapter` | 0.11.1-alpha |
 
 ---
 

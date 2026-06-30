@@ -11,7 +11,7 @@ All internal packages compile correctly. The templates, documentation examples, 
 ### Certifications
 - **Gauntlet Executed**: Build, Tests, Templates, Docs, Packaging Smoke.
 - **API Audit**: Zero internal symbol leaks. Zero TODO/FIXME API markers in public surfaces.
-- **Documentation**: Final Release Notes (`RELEASE_NOTES_0_11_ALPHA_FINAL.md`) generated.
+- **Documentation**: Final Release Notes (`RELEASE_NOTES_0_11_1_ALPHA_FINAL.md`) generated.
 - **Identity**: Confirmed status as the **First Local-First Application Runtime for Kaspa**.
 
 HardKAS 0.11-alpha is now officially **READY** for release.

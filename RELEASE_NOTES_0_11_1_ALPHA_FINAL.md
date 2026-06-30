@@ -1,4 +1,7 @@
-# HardKAS 0.11-alpha: The First Local-First Application Runtime for Kaspa
+# HardKAS 0.11.1-alpha: The First Local-First Application Runtime for Kaspa
+
+> [!NOTE]
+> **Version Notice**: `0.11.0-alpha` was a partial release due to a registry collision and has been superseded. `0.11.1-alpha` is the valid, recommended release for this milestone.
 
 HardKAS is **not** a Hardhat clone. While Hardhat focuses on smart-contract development for EVM chains, HardKAS focuses on the complete Kaspa application lifecycle. 
 

@@ -2,7 +2,7 @@
 
 ## BLOCKER
 - ZK/vProgs boundaries are missing actual execution runtimes. Must be explicitly labeled EXPERIMENTAL in all docs.
-- Version mismatch (0.11.0-alpha vs 0.11.0-alpha).
+- Version mismatch (0.11.1-alpha vs 0.11.1-alpha).
 
 ## CRITICAL
 - Some documentation implies trustless L2 bridges; capability matrix explicitly says `trustlessExit: false`.

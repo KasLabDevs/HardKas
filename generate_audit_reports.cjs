@@ -9,16 +9,16 @@ const baseline = `# AUDIT ENVIRONMENT BASELINE
 - npm: 11.12.1
 - pnpm: 9.15.4
 - Docker: Available (29.4.2)
-- HardKAS Version Claimed in package.json: 0.11.0-alpha (Mismatch with 0.11.0 claims in some docs)
+- HardKAS Version Claimed in package.json: 0.11.1-alpha (Mismatch with 0.11.1 claims in some docs)
 - Workspace: pnpm monorepo with 40+ packages.
 `;
 
 const report = `# HARDKAS FULL REPOSITORY AUDIT REPORT
 ## Executive Summary
-This is a brutal, honest, from-scratch audit of the HardKAS repository from day 0 to the current 0.11.0-alpha (pre-0.11.0).
+This is a brutal, honest, from-scratch audit of the HardKAS repository from day 0 to the current 0.11.1-alpha (pre-0.11.1).
 
 ### Major Findings
-1. **Version Mismatch**: Root package.json is 0.11.0-alpha, but documentation and some artifacts claim 0.11.0-alpha.
+1. **Version Mismatch**: Root package.json is 0.11.1-alpha, but documentation and some artifacts claim 0.11.1-alpha.
 2. **ZK and vProgs**: These are strictly mock/fixture implementations. There is NO on-chain ZK verification and NO vProgs VM execution environment. Claiming these are ready is false.
 3. **SilverScript**: Operational but degraded (DEGRADED_LOCAL) without access to a full compiler environment.
 4. **Localnet/Toccata**: Functional for simulation but alpha quality. Not a true network replacement.
@@ -51,7 +51,7 @@ const scorecard = `# HARDKAS FULL AUDIT SCORECARD
 | Builder templates | DEGRADED | Some are just scaffolds |
 | Stablecoin toolkit | NOT_PROVEN | Simulated only |
 | Verifiers | PASS | Audit logs show verifiers catching tamper attempts |
-| Reports | DEGRADED | Some reports claim 0.11.0 readiness prematurely |
+| Reports | DEGRADED | Some reports claim 0.11.1 readiness prematurely |
 | Claims safety | FAIL | Found 'trustlessExit' hardcoded to false but some docs suggest otherwise |
 | Multi-user | DEGRADED | Local file-based isolation only |
 `;
@@ -60,7 +60,7 @@ const bugTriage = `# AUDIT MASTER BUG TRIAGE
 
 ## BLOCKER
 - ZK/vProgs boundaries are missing actual execution runtimes. Must be explicitly labeled EXPERIMENTAL in all docs.
-- Version mismatch (0.11.0-alpha vs 0.11.0-alpha).
+- Version mismatch (0.11.1-alpha vs 0.11.1-alpha).
 
 ## CRITICAL
 - Some documentation implies trustless L2 bridges; capability matrix explicitly says \`trustlessExit: false\`.
@@ -80,7 +80,7 @@ The following claims were checked and are **FORBIDDEN** based on evidence:
 - \`PRODUCTION_READY\` -> **FALSE**
 - \`MAINNET_READY\` -> **FALSE**
 - \`TESTNET_READY\` -> **FALSE**
-- \`0_11_0_READY\` -> **FALSE** (Package is 0.11.0-alpha)
+- \`0_11_1_READY\` -> **FALSE** (Package is 0.11.1-alpha)
 - \`TEMPLATES_READY\` -> **FALSE** (Templates need deeper verifiers)
 
 No marketing fluff allowed. HardKAS is in hardened-alpha.
@@ -93,7 +93,7 @@ const verifiers = `# AUDIT VERIFIERS STRENGTH
 - **CLI Commands**: MODERATE. The maturity system prevents accidental use of experimental commands, but some beta commands lack deep verification.
 `;
 
-const templates = `# AUDIT BUILDER TEMPLATES 0.11.0
+const templates = `# AUDIT BUILDER TEMPLATES 0.11.1
 
 Templates in \`templates/\` directory:
 - Most templates successfully initialize via \`hardkas init\`.
@@ -129,7 +129,7 @@ fs.writeFileSync('HARDKAS_FULL_AUDIT_SCORECARD.md', scorecard);
 fs.writeFileSync('AUDIT_MASTER_BUG_TRIAGE.md', bugTriage);
 fs.writeFileSync('AUDIT_FORBIDDEN_CLAIMS.md', forbidden);
 fs.writeFileSync('AUDIT_VERIFIERS_STRENGTH.md', verifiers);
-fs.writeFileSync('AUDIT_BUILDER_TEMPLATES_0_11_0.md', templates);
+fs.writeFileSync('AUDIT_BUILDER_TEMPLATES_0_11_1.md', templates);
 fs.writeFileSync('AUDIT_STABLECOIN_ENABLEMENT_TOOLKIT.md', stablecoin);
 fs.writeFileSync('AUDIT_DEEP_10_FOUNDATION.md', deep10);
 fs.writeFileSync('AUDIT_PACKAGING_AND_RELEASE.md', packaging);

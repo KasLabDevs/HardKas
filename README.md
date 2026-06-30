@@ -31,7 +31,7 @@ hashed, signed, simulated, receipted, indexed, and replayed.
 
 ## Local-First Status
 
-HardKAS `0.11.0-alpha` is local-first deterministic transaction infrastructure
+HardKAS `0.11.1-alpha` is local-first deterministic transaction infrastructure
 for Kaspa/Toccata development.
 
 Current certified baseline:
@@ -50,7 +50,7 @@ Current certified baseline:
 
 ### Toccata v2 Alpha Baseline
 
-The `0.11.0-alpha` release line includes a normalized Toccata v2 localnet flow:
+The `0.11.1-alpha` release line includes a normalized Toccata v2 localnet flow:
 
 - Docker `rusty-kaspad` v2.0.0 simnet funding with a compatible miner companion.
 - Standard transaction lifecycle against the local node.
@@ -69,20 +69,20 @@ Official release claims:
 - `vmConsensusEquivalence`: `NOT_CLAIMED`
 - `mainnet`: `BLOCKED_BY_POLICY`
 
-### 0.11.0-alpha SDK Parity
+### 0.11.1-alpha SDK Parity
 
-`0.11.0-alpha` is a SDK parity / developer experience patch. It adds high-level
+`0.11.1-alpha` is a SDK parity / developer experience patch. It adds high-level
 SDK surfaces for capabilities, localnet status/start/fund, corpus verification,
 and Silver planning/simulation/compare flows without changing the release
 claims above.
 
 SDK real Silver RPC/Docker execution remains explicitly unsupported in
-`0.11.0-alpha` via `SDK_SILVER_REAL_LIFECYCLE_UNSUPPORTED`; certified real
+`0.11.1-alpha` via `SDK_SILVER_REAL_LIFECYCLE_UNSUPPORTED`; certified real
 lifecycle execution remains CLI/localnet bounded.
 
-### 0.11.0-alpha Programmability Builder Surface
+### 0.11.1-alpha Programmability Builder Surface
 
-`0.11.0-alpha` also includes a local-only builder surface for SilverScript,
+`0.11.1-alpha` also includes a local-only builder surface for SilverScript,
 ZK corpus fixtures, and vProgs artifact inspection. This is a programmability
 surface, not a protocol/runtime claim.
 

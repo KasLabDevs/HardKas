@@ -12,7 +12,7 @@ The 0.11-alpha runtime has been validated against all strict internal stability 
 - `pnpm packaging:smoke`: Successfully generated 27 internal tarballs and resolved dependency linkages within a smoke consumer environment.
 
 ## API Surface
-The Toolkit capabilities (Wallet, DAG, Snapshot, UTXO, Jobs, and Silver Phase 1A) have been locked. Their external API behavior is strictly defined and detailed in `API_SURFACE_0_11_ALPHA.md`.
+The Toolkit capabilities (Wallet, DAG, Snapshot, UTXO, Jobs, and Silver Phase 1A) have been locked. Their external API behavior is strictly defined and detailed in `API_SURFACE_0_11_1_ALPHA.md`.
 
 ## Next Steps
 The framework is now prepared for expansion into **P52 — Real Backend Plugin Expansion**.

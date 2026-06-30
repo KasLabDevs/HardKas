@@ -1,6 +1,6 @@
-# HardKAS 0.11.0-alpha Release Notes
+# HardKAS 0.11.1-alpha Release Notes
 
-**HardKAS 0.11.0-alpha is a local-first Kaspa builder framework, not a network release.**
+**HardKAS 0.11.1-alpha is a local-first Kaspa builder framework, not a network release.**
 
 This release represents the stabilization of the API surface via the P24 API Freeze. We have successfully locked down the core SDK, CLI, and template scaffolding mechanisms.
 

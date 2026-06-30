@@ -1,7 +1,7 @@
 # HARDKAS_0_10_X_TOOLKIT_BASELINE_READY
 
 ## Release Certification
-HardKAS version `0.11.0-alpha` has achieved the **Toolkit Baseline** milestone.
+HardKAS version `0.11.1-alpha` has achieved the **Toolkit Baseline** milestone.
 
 ## Validation Evidence
 - **Labs**: 01 through 09.5 successfully rebuilt real Kaspa applications using only `@hardkas/toolkit` (0 internal imports).
@@ -15,4 +15,4 @@ HardKAS version `0.11.0-alpha` has achieved the **Toolkit Baseline** milestone.
 - `P43_RELEASE_GATES_RESULT.json`
 
 ## Verdict
-The 0.10.x line is formally stabilized. HardKAS is ready to transition to 0.11.0-alpha planning.
+The 0.10.x line is formally stabilized. HardKAS is ready to transition to 0.11.1-alpha planning.

@@ -320,25 +320,6 @@ importers:
         specifier: workspace:*
         version: link:../../packages/sdk
 
-  examples/my-test-project:
-    dependencies:
-      '@hardkas/sdk':
-        specifier: workspace:*
-        version: link:../../packages/sdk
-      '@kaspa/core-lib':
-        specifier: ^1.6.5
-        version: 1.6.5
-    devDependencies:
-      '@hardkas/testing':
-        specifier: workspace:*
-        version: link:../../packages/testing
-      typescript:
-        specifier: ^5.0.0
-        version: 5.9.3
-      vitest:
-        specifier: ^2.0.0
-        version: 2.1.9(@types/node@25.9.1)(jsdom@29.1.1(@noble/hashes@2.2.0))(lightningcss@1.32.0)
-
   examples/p10-gauntlet/01-local-payment-flow:
     dependencies:
       '@hardkas/sdk':
@@ -435,16 +416,16 @@ importers:
   examples/p22-gauntlet:
     dependencies:
       '@hardkas/cli':
-        specifier: workspace:0.11.0-alpha
+        specifier: workspace:0.11.1-alpha
         version: link:../../packages/cli
       '@hardkas/core':
-        specifier: workspace:0.11.0-alpha
+        specifier: workspace:0.11.1-alpha
         version: link:../../packages/core
       '@hardkas/plugin-local-indexer':
-        specifier: workspace:0.11.0-alpha
+        specifier: workspace:0.11.1-alpha
         version: link:../../packages/plugin-local-indexer
       '@hardkas/sdk':
-        specifier: workspace:0.11.0-alpha
+        specifier: workspace:0.11.1-alpha
         version: link:../../packages/sdk
       tsx:
         specifier: ^4.22.4
@@ -523,6 +504,158 @@ importers:
       vite:
         specifier: ^6.0.3
         version: 6.4.2(@types/node@25.9.1)(jiti@2.7.0)(lightningcss@1.32.0)(tsx@4.22.4)
+
+  examples/reference-apps/exchange-backend:
+    dependencies:
+      '@hardkas/plugin-rpc-backend':
+        specifier: workspace:*
+        version: link:../../../packages/plugin-rpc-backend
+      '@hardkas/query':
+        specifier: workspace:*
+        version: link:../../../packages/query
+      '@hardkas/storage-sqlite':
+        specifier: workspace:*
+        version: link:../../../packages/storage-sqlite
+      '@hardkas/sync-daemon':
+        specifier: workspace:*
+        version: link:../../../packages/sync-daemon
+      '@hardkas/toolkit':
+        specifier: workspace:*
+        version: link:../../../packages/toolkit
+    devDependencies:
+      '@types/node':
+        specifier: ^22.19.19
+        version: 22.19.19
+      tsx:
+        specifier: ^4.19.2
+        version: 4.22.4
+      typescript:
+        specifier: ^5.7.2
+        version: 5.9.3
+
+  examples/reference-apps/explorer-backend:
+    dependencies:
+      '@hardkas/kaspa-rpc':
+        specifier: workspace:*
+        version: link:../../../packages/kaspa-rpc
+      '@hardkas/plugin-rpc-backend':
+        specifier: workspace:*
+        version: link:../../../packages/plugin-rpc-backend
+      '@hardkas/sdk':
+        specifier: workspace:*
+        version: link:../../../packages/sdk
+      '@hardkas/storage-sqlite':
+        specifier: workspace:*
+        version: link:../../../packages/storage-sqlite
+      '@hardkas/sync-daemon':
+        specifier: workspace:*
+        version: link:../../../packages/sync-daemon
+      '@hardkas/toolkit':
+        specifier: workspace:*
+        version: link:../../../packages/toolkit
+    devDependencies:
+      '@types/node':
+        specifier: ^22.19.19
+        version: 22.19.19
+      tsx:
+        specifier: ^4.19.2
+        version: 4.22.4
+      typescript:
+        specifier: ^5.7.2
+        version: 5.9.3
+
+  examples/reference-apps/merchant-backend:
+    dependencies:
+      '@hardkas/kaspa-rpc':
+        specifier: workspace:*
+        version: link:../../../packages/kaspa-rpc
+      '@hardkas/plugin-rpc-backend':
+        specifier: workspace:*
+        version: link:../../../packages/plugin-rpc-backend
+      '@hardkas/sdk':
+        specifier: workspace:*
+        version: link:../../../packages/sdk
+      '@hardkas/storage-postgres':
+        specifier: workspace:*
+        version: link:../../../packages/storage-postgres
+      '@hardkas/storage-sqlite':
+        specifier: workspace:*
+        version: link:../../../packages/storage-sqlite
+      '@hardkas/sync-daemon':
+        specifier: workspace:*
+        version: link:../../../packages/sync-daemon
+      '@hardkas/toolkit':
+        specifier: workspace:*
+        version: link:../../../packages/toolkit
+    devDependencies:
+      '@types/node':
+        specifier: ^22.19.19
+        version: 22.19.19
+      tsx:
+        specifier: ^4.19.2
+        version: 4.22.4
+      typescript:
+        specifier: ^5.7.2
+        version: 5.9.3
+
+  examples/reference-apps/treasury:
+    dependencies:
+      '@hardkas/plugin-rpc-backend':
+        specifier: workspace:*
+        version: link:../../../packages/plugin-rpc-backend
+      '@hardkas/query':
+        specifier: workspace:*
+        version: link:../../../packages/query
+      '@hardkas/storage-sqlite':
+        specifier: workspace:*
+        version: link:../../../packages/storage-sqlite
+      '@hardkas/sync-daemon':
+        specifier: workspace:*
+        version: link:../../../packages/sync-daemon
+      '@hardkas/toolkit':
+        specifier: workspace:*
+        version: link:../../../packages/toolkit
+    devDependencies:
+      '@types/node':
+        specifier: ^22.19.19
+        version: 22.19.19
+      tsx:
+        specifier: ^4.19.2
+        version: 4.22.4
+      typescript:
+        specifier: ^5.7.2
+        version: 5.9.3
+
+  examples/reference-apps/wallet-service:
+    dependencies:
+      '@hardkas/kaspa-rpc':
+        specifier: workspace:*
+        version: link:../../../packages/kaspa-rpc
+      '@hardkas/plugin-rpc-backend':
+        specifier: workspace:*
+        version: link:../../../packages/plugin-rpc-backend
+      '@hardkas/sdk':
+        specifier: workspace:*
+        version: link:../../../packages/sdk
+      '@hardkas/storage-sqlite':
+        specifier: workspace:*
+        version: link:../../../packages/storage-sqlite
+      '@hardkas/sync-daemon':
+        specifier: workspace:*
+        version: link:../../../packages/sync-daemon
+      '@hardkas/toolkit':
+        specifier: workspace:*
+        version: link:../../../packages/toolkit
+    devDependencies:
+      '@types/node':
+        specifier: ^22.19.19
+        version: 22.19.19
+      tsx:
+        specifier: ^4.19.2
+        version: 4.22.4
+      typescript:
+        specifier: ^5.7.2
+        version: 5.9.3
 
   examples/replay:
     dependencies:
@@ -1046,6 +1179,93 @@ importers:
       vitest:
         specifier: ^2.1.9
         version: 2.1.9(@types/node@22.19.19)(jsdom@29.1.1(@noble/hashes@2.2.0))(lightningcss@1.32.0)
+
+  labs/17-p57-test-matrix:
+    dependencies:
+      '@hardkas/plugin-rpc-backend':
+        specifier: workspace:*
+        version: link:../../packages/plugin-rpc-backend
+      '@hardkas/sdk':
+        specifier: workspace:*
+        version: link:../../packages/sdk
+      '@hardkas/toolkit':
+        specifier: workspace:*
+        version: link:../../packages/toolkit
+    devDependencies:
+      '@hardkas/testing':
+        specifier: workspace:*
+        version: link:../../packages/testing
+      '@types/node':
+        specifier: ^22.19.19
+        version: 22.19.19
+      typescript:
+        specifier: ^5.7.2
+        version: 5.9.3
+      vitest:
+        specifier: ^2.1.9
+        version: 2.1.9(@types/node@22.19.19)(jsdom@29.1.1(@noble/hashes@2.2.0))(lightningcss@1.32.0)
+
+  labs/18-chaos-gauntlet:
+    dependencies:
+      '@hardkas/jobs':
+        specifier: workspace:*
+        version: link:../../packages/jobs
+      '@hardkas/kaspa-rpc':
+        specifier: workspace:*
+        version: link:../../packages/kaspa-rpc
+      '@hardkas/plugin-rpc-backend':
+        specifier: workspace:*
+        version: link:../../packages/plugin-rpc-backend
+      '@hardkas/sdk':
+        specifier: workspace:*
+        version: link:../../packages/sdk
+      '@hardkas/toolkit':
+        specifier: workspace:*
+        version: link:../../packages/toolkit
+      '@types/ws':
+        specifier: ^8.5.13
+        version: 8.18.1
+      ws:
+        specifier: ^8.18.0
+        version: 8.20.0
+    devDependencies:
+      '@types/node':
+        specifier: ^22.19.19
+        version: 22.19.19
+      tsx:
+        specifier: ^4.19.2
+        version: 4.22.4
+      typescript:
+        specifier: ^5.7.2
+        version: 5.9.3
+
+  labs/19-sync-friction-lab:
+    dependencies:
+      '@hardkas/kaspa-rpc':
+        specifier: workspace:*
+        version: link:../../packages/kaspa-rpc
+      '@hardkas/plugin-rpc-backend':
+        specifier: workspace:*
+        version: link:../../packages/plugin-rpc-backend
+      '@hardkas/sdk':
+        specifier: workspace:*
+        version: link:../../packages/sdk
+      '@hardkas/sync-daemon':
+        specifier: workspace:*
+        version: link:../../packages/sync-daemon
+      '@hardkas/toolkit':
+        specifier: workspace:*
+        version: link:../../packages/toolkit
+    devDependencies:
+      '@types/node':
+        specifier: ^22.19.19
+        version: 22.19.19
+      tsx:
+        specifier: ^4.19.2
+        version: 4.22.4
+      typescript:
+        specifier: ^5.7.2
+        version: 5.9.3
 
   packages/accounts:
     dependencies:
@@ -1727,6 +1947,53 @@ importers:
       rimraf:
         specifier: ^6.0.1
         version: 6.1.3
+      typescript:
+        specifier: ^5.7.2
+        version: 5.9.3
+
+  packages/storage-postgres:
+    dependencies:
+      '@hardkas/jobs':
+        specifier: workspace:*
+        version: link:../jobs
+      '@hardkas/toolkit':
+        specifier: workspace:*
+        version: link:../toolkit
+      postgres:
+        specifier: ^3.4.4
+        version: 3.4.9
+    devDependencies:
+      rimraf:
+        specifier: ^6.0.1
+        version: 6.1.3
+      tsup:
+        specifier: ^8.3.5
+        version: 8.5.1(jiti@2.7.0)(postcss@8.5.15)(tsx@4.22.4)(typescript@5.9.3)
+      typescript:
+        specifier: ^5.6.3
+        version: 5.9.3
+
+  packages/storage-sqlite:
+    dependencies:
+      '@hardkas/jobs':
+        specifier: workspace:*
+        version: link:../jobs
+      '@hardkas/toolkit':
+        specifier: workspace:*
+        version: link:../toolkit
+
+  packages/sync-daemon:
+    dependencies:
+      '@hardkas/core':
+        specifier: workspace:*
+        version: link:../core
+      '@hardkas/toolkit':
+        specifier: workspace:*
+        version: link:../toolkit
+    devDependencies:
+      tsup:
+        specifier: ^8.5.1
+        version: 8.5.1(jiti@2.7.0)(postcss@8.5.15)(tsx@4.22.4)(typescript@5.9.3)
       typescript:
         specifier: ^5.7.2
         version: 5.9.3
@@ -3974,7 +4241,7 @@ packages:
 
   doctrine@2.1.0:
     resolution: {integrity: sha512-35mSku4ZXK0vfCuHEDAwt55dg2jNajHZ1odvF+8SSr82EsZY4QmXfuWso8oEd8zRhVObSN18aM0CjSdoBX7zIw==}
-    engines: {node: '>=0.11.0'}
+    engines: {node: '>=0.10.0'}
 
   dom-accessibility-api@0.5.16:
     resolution: {integrity: sha512-X7BJ2yElsnOJ30pZF4uIIDfBEVgF4XEBxL9Bxhy6dnrm5hkzqmsWHGTiHqRiITNhMyFLyAiWndIJP7Z1NTteDg==}
@@ -4155,7 +4422,7 @@ packages:
 
   esutils@2.0.3:
     resolution: {integrity: sha512-kVscqXk4OCp68SZ0dkgEKVi6/8ij300KBWTJq32P/dYeWTSwK41WyTxalN1eRmA5Z9UU/LX9D7FWSmV9SAYx6g==}
-    engines: {node: '>=0.11.0'}
+    engines: {node: '>=0.10.0'}
 
   etag@1.8.1:
     resolution: {integrity: sha512-aIL5Fx7mawVa300al2BnEE4iNvo1qETxLrPI/o05L7z6go7fCw1J6EQmbK4FmJ2AS7kgVF/KEZWufBfdClMcPg==}
@@ -4178,7 +4445,7 @@ packages:
 
   express@4.22.2:
     resolution: {integrity: sha512-IuL+Elrou2ZvCFHs18/CIzy2Nzvo25nZ1/D2eIZlz7c+QUayAcYoiM2BthCjs+EBHVpjYjcuLDAiCWgeIX3X1Q==}
-    engines: {node: '>= 0.11.0'}
+    engines: {node: '>= 0.10.0'}
 
   express@5.2.1:
     resolution: {integrity: sha512-hIS4idWWai69NezIdRt2xFVofaF4j+6INOpJlVOLDO8zXGpUVEVzIYk12UUi2JzjEzWL3IOAxcTubgz9Po0yXw==}
@@ -4497,11 +4764,11 @@ packages:
 
   iconv-lite@0.4.24:
     resolution: {integrity: sha512-v3MXnZAcvnywkTUEZomIActle7RXXeedOR31wwl7VlyoXO4Qi9arvSenNQWne1TcRwhCL1HwLI21bEqdpj8/rA==}
-    engines: {node: '>=0.11.0'}
+    engines: {node: '>=0.10.0'}
 
   iconv-lite@0.7.2:
     resolution: {integrity: sha512-im9DjEDQ55s9fL4EYzOAv0yMqmMBSZp6G0VvFyTMPKWxiSBHUj9NW/qqLmXUwXrrM7AvqSlTCfvqRb0cM8yYqw==}
-    engines: {node: '>=0.11.0'}
+    engines: {node: '>=0.10.0'}
 
   ignore@5.3.2:
     resolution: {integrity: sha512-hsBTNUqQTDwkWtcdYI2i06Y/nUBEsNEDJKjWdigLvegy8kDuJAS8uRlpkkcQpyEXL0Z/pjDy5HBmMjRCJ2gq+g==}
@@ -4584,7 +4851,7 @@ packages:
 
   is-extglob@2.1.1:
     resolution: {integrity: sha512-SbKbANkN603Vi4jEZv49LeVJMn4yGwsbzZworEoyEiutsN3nJYdbO36zfhGJ6QEDpOZIFkDtnq5JRxmvl3jsoQ==}
-    engines: {node: '>=0.11.0'}
+    engines: {node: '>=0.10.0'}
 
   is-finalizationregistry@1.1.1:
     resolution: {integrity: sha512-1pC6N8qWJbWoPtEjgcL2xyhQOP491EQjeUo3qTKcmV8YSDDJrOepfG8pcC7h/QgnQHYSv0mJ3Z/ZWxmatVrysg==}
@@ -4600,7 +4867,7 @@ packages:
 
   is-glob@4.0.3:
     resolution: {integrity: sha512-xelSayHH36ZgE7ZWhli7pW34hNbNl8Ojv5KVmkJD4hBdD3th8Tfk9vYasLM+mXWOZhFkgZfxhLSnrwRr4elSSg==}
-    engines: {node: '>=0.11.0'}
+    engines: {node: '>=0.10.0'}
 
   is-in-ssh@1.0.0:
     resolution: {integrity: sha512-jYa6Q9rH90kR1vKB6NM7qqd1mge3Fx4Dhw5TVlK1MUBqhEOuCagrEHMevNuCcbECmXZ0ThXkRm+Ymr51HwEPAw==}
@@ -4691,7 +4958,7 @@ packages:
 
   is-windows@1.0.2:
     resolution: {integrity: sha512-eXK1UInq2bPmjyX6e3VHIzMLobc4J94i4AWn+Hpq3OU5KkrRC96OAcR3PRJ/pGu6m8TRnBHP9dkXQVsT/COVIA==}
-    engines: {node: '>=0.11.0'}
+    engines: {node: '>=0.10.0'}
 
   is-wsl@3.1.1:
     resolution: {integrity: sha512-e6rvdUCiQCAuumZslxRJWR/Doq4VpPR82kqclvcS0efgt430SlGIk05vdCN58+VrzgtIcfNODjozVielycD4Sw==}
@@ -5094,7 +5361,7 @@ packages:
 
   normalize-path@3.0.0:
     resolution: {integrity: sha512-6eZs5Ls3WtCisHWp9S2GUy8dqkpGi4BVSz3GaqiE6ezub0512ESztXUwUB6C6IKbQkY2Pnb/mD4WYojCRwcwLA==}
-    engines: {node: '>=0.11.0'}
+    engines: {node: '>=0.10.0'}
 
   npm-run-path@5.3.0:
     resolution: {integrity: sha512-ppwTtiJZq0O/ai0z7yfudtBpWIoxM8yE6nHi1X47eFR2EWORqfbu6CnPlNsjeN683eT0qG6H/Pyf9fCcvjnnnQ==}
@@ -5106,7 +5373,7 @@ packages:
 
   object-assign@4.1.1:
     resolution: {integrity: sha512-rJgTQnkUnH1sFw8yT6VSU3zD3sWmu6sZhIseY8VX+GRu3P6F7Fu+JNDoXfklElbLJSnc3FUQHVe4cU5hj+BcUg==}
-    engines: {node: '>=0.11.0'}
+    engines: {node: '>=0.10.0'}
 
   object-inspect@1.13.4:
     resolution: {integrity: sha512-W67iLl4J2EXEGTbfeHCffrjDfitvLANg0UlX3wFUUSTx92KXRFegMHUVgSqE+wvhAbi4WqjGg9czysTV2Epbew==}
@@ -5341,6 +5608,10 @@ packages:
     resolution: {integrity: sha512-FfR8sjd4em2T6fb3I2MwAJU7HWVMr9zba+enmQeeWFfCbm+UOC/0X4DS8XtpUTMwWMGbjKYP7xjfNekzyGmB3A==}
     engines: {node: ^10 || ^12 || >=14}
 
+  postgres@3.4.9:
+    resolution: {integrity: sha512-GD3qdB0x1z9xgFI6cdRD6xu2Sp2WCOEoe3mtnyB5Ee0XrrL5Pe+e4CCnJrRMnL1zYtRDZmQQVbvOttLnKDLnaw==}
+    engines: {node: '>=12'}
+
   powershell-utils@0.1.0:
     resolution: {integrity: sha512-dM0jVuXJPsDN6DvRpea484tCUaMiXWjuCn++HGTqUWzGDjv5tZkEZldAJ/UMlqRYGFrD/etByo4/xOuC/snX2A==}
     engines: {node: '>=20'}
@@ -5444,11 +5715,11 @@ packages:
 
   react-refresh@0.14.2:
     resolution: {integrity: sha512-jCvmsr+1IUSMUyzOkRcvnVbX3ZYC6g9TDrDbFuFmRDq7PD4yaGbLKNQL6k2jnArV8hjYxh7hVhAZB6s9HDGpZA==}
-    engines: {node: '>=0.11.0'}
+    engines: {node: '>=0.10.0'}
 
   react-refresh@0.17.0:
     resolution: {integrity: sha512-z6F7K9bV85EfseRCp2bzrpyQ0Gkw1uLoCel9XBVWPg/TjRj94SkJzUTGfOa4bs7iJvBWtQG0Wq7wnI0syw3EBQ==}
-    engines: {node: '>=0.11.0'}
+    engines: {node: '>=0.10.0'}
 
   react-router-dom@7.15.1:
     resolution: {integrity: sha512-AzF62gjY6U9rkMq4RfP/r2EVtQ7DMfNMjyOp/flLTCrtRylLiK4wT4pSq6O8rOXZ2eXdZYJPEYe+ifomiv+Igg==}
@@ -5469,11 +5740,11 @@ packages:
 
   react@18.3.1:
     resolution: {integrity: sha512-wS+hAgJShR0KhEvPJArfuPVN1+Hz1t0Y6n5jLrGQbkb4urgPE/0Rve+1kMB1v/oWgHgm4WIcV+i7F2pTVj+2iQ==}
-    engines: {node: '>=0.11.0'}
+    engines: {node: '>=0.10.0'}
 
   react@19.2.6:
     resolution: {integrity: sha512-sfWGGfavi0xr8Pg0sVsyHMAOziVYKgPLNrS7ig+ivMNb3wbCBw3KxtflsGBAwD3gYQlE/AEZsTLgToRrSCjb0Q==}
-    engines: {node: '>=0.11.0'}
+    engines: {node: '>=0.10.0'}
 
   read-yaml-file@1.1.0:
     resolution: {integrity: sha512-VIMnQi/Z4HT2Fxuwg5KrY174U1VdUIASQVWXXyqtNRtxSr9IYkn1rsI6Tb6HsrHCmB7gVpNwX6JxPTHcH6IoTA==}
@@ -5505,11 +5776,11 @@ packages:
 
   require-directory@2.1.1:
     resolution: {integrity: sha512-fGxEI7+wsG9xrvdjsrlmL22OMTTiHRwAMroiEeMgq8gzoLC/PQr7RsRDSTLUg/bZAZtF+TVIkHc6/4RIKrui+Q==}
-    engines: {node: '>=0.11.0'}
+    engines: {node: '>=0.10.0'}
 
   require-from-string@2.0.2:
     resolution: {integrity: sha512-Xf0nWe6RseziFMu+Ap9biiUbmplq6S9/p+7w7YXP/JBHhrUDDUhwa+vANyubuqfZWTveU//DYVGsDG7RKL/vEw==}
-    engines: {node: '>=0.11.0'}
+    engines: {node: '>=0.10.0'}
 
   resolve-from@4.0.0:
     resolution: {integrity: sha512-pb/MYmXstAkysRFx8piNI1tGFNQIFA3vkE3Gq4EuA1dF6gHp/+vgZqsCGJapvy8N3Q+4o7FwvquPJcnZ7RYy4g==}
@@ -5537,7 +5808,7 @@ packages:
 
   reusify@1.1.0:
     resolution: {integrity: sha512-g6QUff04oZpHs0eG5p83rFLhHeV00ug/Yf9nZM6fLeUrPguBTkTQOdpAWWspMh55TZfVQDPaN3NQJfbVRAxdIw==}
-    engines: {iojs: '>=1.0.0', node: '>=0.11.0'}
+    engines: {iojs: '>=1.0.0', node: '>=0.10.0'}
 
   rfdc@1.4.1:
     resolution: {integrity: sha512-q1b3N5QkRUWUl7iyylaaj3kOpIT0N2i9MqIEQXP73GVsN9cw3fdx8X63cEmWhJGi2PPCF23Ijp7ktmd39rawIA==}
@@ -5694,7 +5965,7 @@ packages:
 
   source-map-js@1.2.1:
     resolution: {integrity: sha512-UXWMKhLOwVKb728IUtQPXxfYU+usdybtUrK/8uGE8CQMvrhOpwvzDBwj0QhSL7MQc7vIsISBG8VQ8+IDQxpfQA==}
-    engines: {node: '>=0.11.0'}
+    engines: {node: '>=0.10.0'}
 
   source-map@0.7.6:
     resolution: {integrity: sha512-i5uvt8C3ikiWeNZSVZNWcfZPItFQOsYTUAOkcUPGd8DqDy1uOUikjt5dG+uRlwyvR108Fb9DOd4GvXfT0N2/uQ==}
@@ -6199,7 +6470,7 @@ packages:
 
   word-wrap@1.2.5:
     resolution: {integrity: sha512-BN22B5eaMMI9UMtjrGd5g5eCYPpCPDUy0FJXbYsaT5zYxjFOckS53SQDE3pWkVoWpHXVb3BrYcEN4Twa55B5cA==}
-    engines: {node: '>=0.11.0'}
+    engines: {node: '>=0.10.0'}
 
   wrap-ansi@7.0.0:
     resolution: {integrity: sha512-YVGIj2kamLSTxw6NsZjoBxfSwsn0ycdesmc4p+Q21c5zPuZ1pl+NfxVdxPtdHvmNVOQ6XSYG4AUtyt/Fi7D16Q==}
@@ -7495,7 +7766,7 @@ snapshots:
   '@types/fs-extra@11.0.4':
     dependencies:
       '@types/jsonfile': 6.1.4
-      '@types/node': 22.19.19
+      '@types/node': 20.19.41
 
   '@types/http-errors@2.0.5': {}
 
@@ -9982,6 +10253,8 @@ snapshots:
       picocolors: 1.1.1
       source-map-js: 1.2.1
     optional: true
+
+  postgres@3.4.9: {}
 
   powershell-utils@0.1.0: {}
 

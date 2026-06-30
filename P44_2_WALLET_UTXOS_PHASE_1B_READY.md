@@ -1,6 +1,6 @@
 # Phase 1B Certificate: Wallet UTXOs (P44.2)
 
-This certifies that **Phase 1B** of the `0.11.0-alpha` UTXO Toolkit roadmap has been completed and formally integrated into the `@hardkas/toolkit` API surface.
+This certifies that **Phase 1B** of the `0.11.1-alpha` UTXO Toolkit roadmap has been completed and formally integrated into the `@hardkas/toolkit` API surface.
 
 ## Validated Capabilities
 The `WalletUtxoApi` successfully implements fine-grained transaction planners without polluting the core `WalletToolkit` facade, exposing:
@@ -11,7 +11,7 @@ The `WalletUtxoApi` successfully implements fine-grained transaction planners wi
 All planners are guaranteed to be side-effect free (no state mutation, no transaction broadcasting), adhering to the HardKAS deterministic philosophy.
 
 ## Type System Consolidation
-The public types for `0.11.0-alpha` UTXO features are strict and stabilized:
+The public types for `0.11.1-alpha` UTXO features are strict and stabilized:
 - `SplitPlan`
 - `MergePlan`
 - `SweepPlan`

@@ -1,7 +1,7 @@
 # P24 RESOLVED FINDINGS
 
-1. **Version Mismatch (0.11.0 vs 0.11.0)**
-   - **Resolved**: `package.json` now correctly reflects `0.11.0-alpha`.
+1. **Version Mismatch (0.11.1 vs 0.11.1)**
+   - **Resolved**: `package.json` now correctly reflects `0.11.1-alpha`.
 2. **Templates Débiles**
    - **Resolved**: `scripts/templates-verify.mjs` now actively scaffolds templates, installs local workspace dependencies, runs `hardkas test --evidence`, and uses `hardkas evidence verify` to strictly assert completeness.
 3. **JSON Inconsistente**
