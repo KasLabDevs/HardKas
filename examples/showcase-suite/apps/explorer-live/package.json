@@ -1,6 +1,7 @@
 {
   "name": "@showcase/explorer-live",
-  "version": "1.0.0",
+  "private": true,
+  "version": "0.11.2-alpha",
   "type": "module",
   "scripts": {
     "dev": "concurrently \"pnpm run dev:frontend\" \"pnpm run dev:backend\"",
@@ -35,3 +36,4 @@
     "vite": "^5.4.11"
   }
 }
+
