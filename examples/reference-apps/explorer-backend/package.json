@@ -1,6 +1,6 @@
 {
   "name": "explorer-backend-ref",
-  "version": "1.0.0",
+  "version": "0.11.2-alpha",
   "private": true,
   "type": "module",
   "scripts": {
@@ -21,3 +21,4 @@
     "@types/node": "^22.19.19"
   }
 }
+

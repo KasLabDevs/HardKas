@@ -1,6 +1,6 @@
 {
   "name": "lab-13-silver-script-builder",
-  "version": "1.0.0",
+  "version": "0.11.2-alpha",
   "type": "module",
   "scripts": {
     "start": "tsx src/server.ts",
@@ -18,3 +18,4 @@
   },
   "private": true
 }
+

@@ -1,6 +1,7 @@
 {
   "name": "@showcase/shared-ui",
-  "version": "1.0.0",
+  "private": true,
+  "version": "0.11.2-alpha",
   "type": "module",
   "main": "src/index.ts",
   "dependencies": {
@@ -12,3 +13,4 @@
     "@types/react-dom": "^19.2.3"
   }
 }
+

@@ -1,6 +1,6 @@
 {
   "name": "local-explorer",
-  "version": "1.0.0",
+  "version": "0.11.2-alpha",
   "description": "Lab 04 — Local Explorer / Indexer",
   "main": "dist/server.js",
   "type": "module",
@@ -22,3 +22,4 @@
   },
   "private": true
 }
+

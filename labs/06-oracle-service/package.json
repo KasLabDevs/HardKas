@@ -1,6 +1,6 @@
 {
   "name": "oracle-service",
-  "version": "1.0.0",
+  "version": "0.11.2-alpha",
   "description": "Lab 06 — Oracle Service",
   "main": "dist/server.js",
   "type": "module",
@@ -22,3 +22,4 @@
   },
   "private": true
 }
+
