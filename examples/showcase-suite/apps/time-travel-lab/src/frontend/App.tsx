@@ -11,7 +11,7 @@ export function App() {
   const createSnapshot = async () => {
     const res = await fetch('/api/snapshots/create', { method: 'POST' });
     const newSnap = await res.json();
-    setSnapshots(prev => [...prev, newSnap]);
+    setSnapshots((prev: any) => [...prev, newSnap]);
   };
 
   return (
@@ -21,7 +21,7 @@ export function App() {
           <CardHeader title="State Snapshots" subtitle="Deterministic network state captures" />
           <CardBody>
             <div className="space-y-3">
-              {snapshots.length === 0 ? <p>No snapshots found.</p> : snapshots.map(snap => (
+              {snapshots.length === 0 ? <p>No snapshots found.</p> : snapshots.map((snap: any) => (
                 <div key={snap.id} className="p-3 bg-gray-900 rounded-lg border border-gray-800 flex justify-between items-center">
                   <div>
                     <div className="font-mono text-sm text-white">{snap.name}</div>

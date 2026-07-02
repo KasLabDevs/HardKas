@@ -1,5 +1,5 @@
-import { initializeHardKAS } from '../../../../packages/shared-backend/src/setup.ts';
-import { writeEvidence } from '../../../../packages/shared-testkit/src/index.ts';
+import { initializeHardKAS } from '../../../../packages/shared-backend/src/setup';
+import { writeEvidence } from '../../../../packages/shared-testkit/src/index';
 import { SnapshotToolkit } from '@hardkas/toolkit';
 
 async function run() {
@@ -28,7 +28,7 @@ async function run() {
             const opType = i % 5;
             if (opType === 0 || snapshotIds.length === 0) {
                 const snap = await actor.create(`snap_${i}`);
-                snapshotIds.push({ aIdx, id: snap.id });
+                snapshotIds.push({ aIdx, id: snap.snapshotId });
             } else if (opType === 1) {
                 const target = snapshotIds[Math.floor(Math.random() * snapshotIds.length)];
                 await toolkits[target.aIdx].branch(target.id, `branch_${i}`);

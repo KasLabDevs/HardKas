@@ -53,7 +53,7 @@ async function runGauntlet() {
 }
 
 async function bootstrap() {
-    const { core, storage, queryStore, jobManager, artifactStore, dataPath } = await initializeHardKAS('time-travel-lab');
+    const { storage, dataPath } = await initializeHardKAS('time-travel-lab');
     
     // We instantiate SnapshotToolkit with the storage
     // Wait, SnapshotToolkit constructor args: (core, backend)
