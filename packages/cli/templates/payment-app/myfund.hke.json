@@ -2,7 +2,7 @@
   "version": "1.0.0-alpha",
   "schema": "hardkas.evidencePackage.v1",
   "name": "myfund",
-  "hardkasVersion": "0.11.0-alpha",
+  "hardkasVersion": "0.11.2-alpha",
   "networkId": "simulated",
   "mode": "script",
   "createdAt": "2026-06-26T12:59:59.938Z",
@@ -33,7 +33,7 @@
     {
       "schema": "hardkas.signedTx",
       "schemaVersion": "hardkas.artifact.v1",
-      "hardkasVersion": "0.11.0-alpha",
+      "hardkasVersion": "0.11.2-alpha",
       "version": "1.0.0-alpha",
       "hashVersion": 4,
       "createdAt": "2026-06-26T12:58:46.238Z",
@@ -68,7 +68,7 @@
     {
       "schema": "hardkas.signedTx",
       "schemaVersion": "hardkas.artifact.v1",
-      "hardkasVersion": "0.11.0-alpha",
+      "hardkasVersion": "0.11.2-alpha",
       "version": "1.0.0-alpha",
       "hashVersion": 4,
       "createdAt": "2026-06-26T12:58:02.257Z",
@@ -103,7 +103,7 @@
     {
       "schema": "hardkas.signedTx",
       "schemaVersion": "hardkas.artifact.v1",
-      "hardkasVersion": "0.11.0-alpha",
+      "hardkasVersion": "0.11.2-alpha",
       "version": "1.0.0-alpha",
       "hashVersion": 4,
       "createdAt": "2026-06-26T12:59:59.892Z",
@@ -138,7 +138,7 @@
     {
       "schema": "hardkas.txReceipt",
       "schemaVersion": "hardkas.txReceipt.v1",
-      "hardkasVersion": "0.11.0-alpha",
+      "hardkasVersion": "0.11.2-alpha",
       "version": "1.0.0-alpha",
       "hashVersion": 4,
       "createdAt": "2026-06-26T12:58:02.271Z",
@@ -183,7 +183,7 @@
     },
     {
       "schema": "hardkas.txTrace",
-      "hardkasVersion": "0.11.0-alpha",
+      "hardkasVersion": "0.11.2-alpha",
       "version": "1.0.0-alpha",
       "hashVersion": 4,
       "createdAt": "2026-06-26T12:58:02.277Z",
@@ -219,7 +219,7 @@
     },
     {
       "schema": "hardkas.txTrace",
-      "hardkasVersion": "0.11.0-alpha",
+      "hardkasVersion": "0.11.2-alpha",
       "version": "1.0.0-alpha",
       "hashVersion": 4,
       "createdAt": "2026-06-26T12:58:02.277Z",
@@ -256,7 +256,7 @@
     {
       "schema": "hardkas.txReceipt",
       "schemaVersion": "hardkas.txReceipt.v1",
-      "hardkasVersion": "0.11.0-alpha",
+      "hardkasVersion": "0.11.2-alpha",
       "version": "1.0.0-alpha",
       "hashVersion": 4,
       "createdAt": "2026-06-26T12:59:59.906Z",
@@ -301,7 +301,7 @@
     },
     {
       "schema": "hardkas.txTrace",
-      "hardkasVersion": "0.11.0-alpha",
+      "hardkasVersion": "0.11.2-alpha",
       "version": "1.0.0-alpha",
       "hashVersion": 4,
       "createdAt": "2026-06-26T12:59:59.912Z",
@@ -337,7 +337,7 @@
     },
     {
       "schema": "hardkas.txTrace",
-      "hardkasVersion": "0.11.0-alpha",
+      "hardkasVersion": "0.11.2-alpha",
       "version": "1.0.0-alpha",
       "hashVersion": 4,
       "createdAt": "2026-06-26T12:59:59.912Z",
@@ -374,7 +374,7 @@
     {
       "schema": "hardkas.txReceipt",
       "schemaVersion": "hardkas.txReceipt.v1",
-      "hardkasVersion": "0.11.0-alpha",
+      "hardkasVersion": "0.11.2-alpha",
       "version": "1.0.0-alpha",
       "hashVersion": 4,
       "createdAt": "2026-06-26T12:58:46.253Z",
@@ -419,7 +419,7 @@
     },
     {
       "schema": "hardkas.txTrace",
-      "hardkasVersion": "0.11.0-alpha",
+      "hardkasVersion": "0.11.2-alpha",
       "version": "1.0.0-alpha",
       "hashVersion": 4,
       "createdAt": "2026-06-26T12:58:46.259Z",
@@ -455,7 +455,7 @@
     },
     {
       "schema": "hardkas.txTrace",
-      "hardkasVersion": "0.11.0-alpha",
+      "hardkasVersion": "0.11.2-alpha",
       "version": "1.0.0-alpha",
       "hashVersion": 4,
       "createdAt": "2026-06-26T12:58:46.259Z",

@@ -1,5 +1,6 @@
 export * from './wallet.js';
 export * from './payment.js';
+export * from './stores/invoice-store.js';
 export * from './indexer.js';
 export * from './jobs.js';
 export * from './utxos.js';

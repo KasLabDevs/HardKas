@@ -89,7 +89,7 @@ export class HardkasLocalnet {
    * Initializes the in-memory simulated workspace.
    *
    * Docker Toccata process control remains a CLI/localnet responsibility in
-   * 0.11.0-alpha; the SDK reports that boundary instead of silently shelling out.
+   * 0.11.2-alpha; the SDK reports that boundary instead of silently shelling out.
    */
   async start(options: LocalnetProfileOptions = {}): Promise<LocalnetControlResult> {
     const profile = options.profile || "simulated";
@@ -109,7 +109,7 @@ export class HardkasLocalnet {
       profile,
       status: "SDK_LOCALNET_CONTROL_UNSUPPORTED",
       message:
-        "SDK Docker localnet start is not supported in 0.11.0-alpha. Use `hardkas localnet start --profile toccata-v2`."
+        "SDK Docker localnet start is not supported in 0.11.2-alpha. Use `hardkas localnet start --profile toccata-v2`."
     };
   }
 
@@ -133,14 +133,14 @@ export class HardkasLocalnet {
       profile,
       status: "SDK_LOCALNET_CONTROL_UNSUPPORTED",
       message:
-        "SDK Docker localnet stop is not supported in 0.11.0-alpha. Use `hardkas localnet stop --profile toccata-v2`."
+        "SDK Docker localnet stop is not supported in 0.11.2-alpha. Use `hardkas localnet stop --profile toccata-v2`."
     };
   }
 
   /**
    * Funds a simulated account through the SDK transaction flow.
    *
-   * Toccata Docker mining/funding remains CLI-only in 0.11.0-alpha because it
+   * Toccata Docker mining/funding remains CLI-only in 0.11.2-alpha because it
    * depends on a local stratum/miner companion and host Docker state.
    */
   async fund(
@@ -170,7 +170,7 @@ export class HardkasLocalnet {
       identifier,
       status: "SDK_TOCCATA_FUNDING_UNSUPPORTED",
       message:
-        "SDK Toccata funding is not supported in 0.11.0-alpha. Use `hardkas localnet fund <account> --profile toccata-v2`."
+        "SDK Toccata funding is not supported in 0.11.2-alpha. Use `hardkas localnet fund <account> --profile toccata-v2`."
     };
   }
 

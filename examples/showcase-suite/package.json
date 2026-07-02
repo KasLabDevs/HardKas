@@ -1,0 +1,25 @@
+{
+  "name": "showcase-suite",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "test": "vitest run",
+    "coverage": "vitest run --coverage",
+    "showcase:mission-control": "tsx apps/mission-control/src/backend/runner.ts",
+    "showcase:wallet-pro": "tsx apps/wallet-pro/src/backend/runner.ts",
+    "showcase:merchant-terminal": "tsx apps/merchant-terminal/src/backend/runner.ts",
+    "showcase:treasury-console": "tsx apps/treasury-console/src/backend/runner.ts",
+    "showcase:explorer-live": "tsx apps/explorer-live/src/backend/runner.ts",
+    "showcase:time-travel-lab": "tsx apps/time-travel-lab/src/backend/runner.ts",
+    "showcase:silver-playground": "tsx apps/silver-playground/src/backend/runner.ts",
+    "showcase:cli-studio": "tsx apps/cli-studio/src/backend/runner.ts",
+    "showcase:all": "pnpm showcase:mission-control && pnpm showcase:wallet-pro && pnpm showcase:merchant-terminal && pnpm showcase:treasury-console && pnpm showcase:explorer-live && pnpm showcase:time-travel-lab && pnpm showcase:silver-playground && pnpm showcase:cli-studio && tsx scripts/generate-reports.ts"
+  },
+  "devDependencies": {
+    "vitest": "^2.1.8",
+    "@vitest/coverage-v8": "^2.1.8",
+    "@hardkas/core": "workspace:*",
+    "@hardkas/kaspa-rpc": "workspace:*",
+    "@hardkas/toolkit": "workspace:*"
+  }
+}

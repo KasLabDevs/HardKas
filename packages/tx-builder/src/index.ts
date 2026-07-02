@@ -21,6 +21,7 @@ export interface Utxo {
   readonly scriptPublicKey: string;
   readonly blockDaaScore?: bigint;
   readonly isCoinbase?: boolean;
+  readonly covenantId?: string; // V1 Toccata capability
 }
 
 export interface TxOutput {
@@ -28,6 +29,7 @@ export interface TxOutput {
   readonly amountSompi: Sompi;
   /** Future: Silverscript / custom script support */
   readonly scriptPublicKey?: string;
+  readonly covenant?: string; // V1 Toccata capability
 }
 
 export interface TxBuildRequest {
@@ -37,6 +39,7 @@ export interface TxBuildRequest {
   readonly feeRateSompiPerMass: bigint;
   readonly changeAddress?: string;
   readonly payloadBytes?: number;
+  readonly computeBudget?: number; // V1 Toccata capability per tx? Or globally assigned to inputs. Let's make it global for the build request.
 }
 
 export interface TxPlan {
@@ -45,6 +48,7 @@ export interface TxPlan {
   readonly change?: TxOutput | undefined;
   readonly estimatedMass: bigint;
   readonly estimatedFeeSompi: bigint;
+  readonly computeBudget?: number; // Passed through to inputs
 }
 
 export function buildPaymentPlan(request: TxBuildRequest): TxPlan {
@@ -140,18 +144,22 @@ export function buildPaymentPlan(request: TxBuildRequest): TxPlan {
         return 0;
       });
 
-      return {
+      const planResult: any = {
         inputs: canonicalSelected,
         outputs: sortedOutputs,
-        change: hasActualChange
-          ? {
-              address: request.changeAddress ?? request.fromAddress,
-              amountSompi: changeAmount
-            }
-          : undefined,
         estimatedMass: finalMass,
         estimatedFeeSompi: finalFee
       };
+      if (hasActualChange) {
+        planResult.change = {
+          address: request.changeAddress ?? request.fromAddress,
+          amountSompi: changeAmount
+        };
+      }
+      if (request.computeBudget !== undefined) {
+        planResult.computeBudget = request.computeBudget;
+      }
+      return planResult as TxPlan;
     }
   }
 

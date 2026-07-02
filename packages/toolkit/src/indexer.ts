@@ -15,6 +15,8 @@ export interface IndexerToolkitOptions {
     backend?: IndexerBackendPlugin;
 }
 
+export type WatchHandler = (evt: any) => Promise<void> | void;
+
 export class IndexerToolkit implements SnapshotParticipant {
     private subscriber: EventSubscriber;
     private projection?: ProjectionStoreJson;
@@ -49,15 +51,19 @@ export class IndexerToolkit implements SnapshotParticipant {
         }
     }
 
-    public async watch(address: string): Promise<void> {
+    public async watch(address: string | string[], handler?: WatchHandler): Promise<void> {
+        const addresses = Array.isArray(address) ? address : [address];
         // Polling wrapper as per V1 rules.
         this.subscriber.subscribe({
             source: {}, // mock source for facade
             type: "payment",
             intervalMs: 1000,
-            watchedAddresses: [address],
+            watchedAddresses: addresses,
             handler: async (evt) => {
                 // Internally updates projections if address is involved
+                if (handler) {
+                    await handler(evt);
+                }
             }
         });
     }

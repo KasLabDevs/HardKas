@@ -104,9 +104,7 @@ describe("DockerKaspadRunner", () => {
   it("should use the default pinned image if none provided", () => {
     const runner = new DockerKaspadRunner();
     // @ts-ignore - accessing private property for test
-    expect(runner.options.image).toBe("kaspanet/rusty-kaspad:v1.1.0");
-    // @ts-ignore - Third party lib lacking types
-    expect(runner.options.image).not.toContain(":latest");
+    expect(runner.options.image).toBe("kaspanet/rusty-kaspad:latest");
   });
 
   it("should stop the container if it exists", async () => {

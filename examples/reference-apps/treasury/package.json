@@ -1,0 +1,23 @@
+{
+  "name": "treasury-ref",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start:phase1": "tsx src/index.ts --phase 1",
+    "start:phase2": "tsx src/index.ts --phase 2",
+    "check:imports": "tsx scripts/check-public-imports.ts"
+  },
+  "dependencies": {
+    "@hardkas/sync-daemon": "workspace:*",
+    "@hardkas/toolkit": "workspace:*",
+    "@hardkas/plugin-rpc-backend": "workspace:*",
+    "@hardkas/query": "workspace:*",
+    "@hardkas/storage-sqlite": "workspace:*"
+  },
+  "devDependencies": {
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.2",
+    "@types/node": "^22.19.19"
+  }
+}

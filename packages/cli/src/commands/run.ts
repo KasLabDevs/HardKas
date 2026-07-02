@@ -17,6 +17,23 @@ export function registerRunCommand(program: Command): void {
     .option("--json", "Output results as JSON", false)
     .action(async (script: string, opts: any) => {
       try {
+        const fs = await import("node:fs/promises");
+        const path = await import("node:path");
+        try {
+          const envContent = await fs.readFile(path.join(process.cwd(), ".env"), "utf8");
+          envContent.split("\n").forEach(line => {
+            const match = line.match(/^\s*([\w.-]+)\s*=\s*(.*)?\s*$/);
+            if (match && match[1] && !process.env[match[1]]) {
+               process.env[match[1]] = match[2] || "";
+            }
+          });
+        } catch (e) {
+          // ignore if .env doesn't exist
+        }
+
+        const { logger } = await import("@hardkas/observability");
+        logger.info(`Running script: ${script}`, { script, network: opts.network });
+
         await runScript(script, { ...opts, workspaceRoot: process.cwd() });
         if (opts.json) {
           const { getOutput } = await import("../output.js");

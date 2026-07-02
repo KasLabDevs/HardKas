@@ -60,7 +60,7 @@ interface DoctorReport {
 
 interface DoctorCheck {
   name: string;
-  category: "runtime" | "persistence" | "network" | "security" | "docker" | "consistency";
+  category: "runtime" | "persistence" | "network" | "security" | "docker" | "consistency" | "env";
   status: "pass" | "fail" | "warn" | "skip";
   message: string;
   suggestion?: string | undefined;
@@ -460,6 +460,59 @@ export async function runDoctorChecks(
     } catch {
       // skip
     }
+  }
+
+  // --- 4.5. Environment Checks ---
+  let envContent = "";
+  try {
+    envContent = await fs.readFile(path.join(process.cwd(), ".env"), "utf8");
+    addCheck({
+      name: ".env file",
+      category: "env",
+      status: "pass",
+      message: "Present in workspace"
+    });
+
+    const parsedEnv: Record<string, string> = {};
+    envContent.split("\n").forEach(line => {
+      const match = line.match(/^\s*([\w.-]+)\s*=\s*(.*)?\s*$/);
+      if (match && match[1]) {
+         parsedEnv[match[1]] = match[2] || "";
+      }
+    });
+
+    const mergedEnv = { ...process.env, ...parsedEnv };
+    const requiredVars = ["NETWORK", "KASPAD_URL", "HARDKAS_DATA_DIR", "HARDKAS_KASPAD_IMAGE", "LOG_LEVEL"];
+    const missing: string[] = [];
+    
+    for (const req of requiredVars) {
+      if (!mergedEnv[req] || mergedEnv[req].trim() === "") missing.push(req);
+    }
+
+    if (missing.length === 0) {
+      addCheck({
+        name: "Production .env variables",
+        category: "env",
+        status: "pass",
+        message: "All required variables present"
+      });
+    } else {
+      addCheck({
+        name: "Production .env variables",
+        category: "env",
+        status: "fail",
+        message: `Missing: ${missing.join(", ")}`,
+        suggestion: "Run 'hardkas env check' or configure .env correctly."
+      });
+    }
+  } catch {
+    addCheck({
+      name: ".env file",
+      category: "env",
+      status: "warn",
+      message: "No .env file found",
+      suggestion: "Create a .env file for production deployment."
+    });
   }
 
   // --- 5. Consistency Checks ---

@@ -13,7 +13,7 @@ function repoRoot(): string {
   throw new Error("repo root not found");
 }
 
-describe("0.11.0-alpha programmability SDK surface", () => {
+describe("0.11.2-alpha programmability SDK surface", () => {
   it("reports builder-ready programmability capabilities", async () => {
     const sdk = await Hardkas.create({
       cwd: repoRoot(),

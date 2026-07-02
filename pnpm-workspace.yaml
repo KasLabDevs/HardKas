@@ -1,8 +1,12 @@
 packages:
   - "apps/*"
   - "packages/*"
-  - "examples/*"
+  - 'examples/*'
+  - 'examples/showcase-suite/apps/*'
+  - 'examples/showcase-suite/packages/*'
+  - "examples/reference-apps/*"
   - "examples/p10-gauntlet/*"
+  - "examples/superapp-command-center/*"
   - "demo2"
   - "labs/*"
 

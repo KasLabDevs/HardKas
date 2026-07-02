@@ -1,0 +1,14 @@
+{
+  "frozen": {
+    "mock-tx-19-95": {
+      "reason": "Long term hold",
+      "timestamp": 1782759868017
+    }
+  },
+  "labels": {
+    "mock-tx-19-95": "Whale UTXO"
+  },
+  "notes": {
+    "mock-tx-19-95": "Do not touch until 2030"
+  }
+}

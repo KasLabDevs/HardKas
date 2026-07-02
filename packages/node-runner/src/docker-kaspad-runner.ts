@@ -7,7 +7,7 @@ import net from "node:net";
 import { checkKaspaRpcHealth, waitForKaspaRpcReady } from "@hardkas/kaspa-rpc";
 import { DockerKaspadOptions, KaspadNodeStatus, KaspadPorts } from "./types.js";
 
-export const DEFAULT_IMAGE = "kaspanet/rusty-kaspad:v1.1.0";
+export const DEFAULT_IMAGE = process.env.HARDKAS_KASPAD_IMAGE ?? "kaspanet/rusty-kaspad:latest";
 export const DEFAULT_CONTAINER_NAME = "hardkas-kaspad-simnet";
 export const DEFAULT_NETWORK = "simnet";
 export const DEFAULT_PORTS: KaspadPorts = {
@@ -59,9 +59,14 @@ export class DockerKaspadRunner {
 
     // Floating tag warning
     if (this.options.image.endsWith(":latest") && !this.options.allowFloatingImage) {
-      console.warn(
-        "\n  ⚠️  WARNING: Using a floating Docker tag (:latest) reduces reproducibility.\n"
-      );
+      // Latest tag is now permitted by default if it's the exact DEFAULT_IMAGE
+      if (this.options.image !== "kaspanet/rusty-kaspad:latest") {
+        throw new Error(
+          `DockerKaspadRunner: The image tag ':latest' is unsafe for reproducible environments. ` +
+          `Either pin a specific version (e.g., 'kaspanet/rusty-kaspad:v1.1.0') ` +
+          `or explicitly set allowFloatingImage: true.`
+        );
+      }
     }
 
     // Network Flag Resolution - FAIL FAST

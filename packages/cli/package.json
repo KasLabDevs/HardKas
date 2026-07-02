@@ -1,6 +1,6 @@
 {
   "name": "@hardkas/cli",
-  "version": "0.11.0-alpha",
+  "version": "0.11.2-alpha",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -9,6 +9,11 @@
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js",
       "default": "./dist/index.js"
+    },
+    "./public": {
+      "types": "./dist/public.d.ts",
+      "import": "./dist/public.js",
+      "default": "./dist/public.js"
     },
     "./bin": "./dist/index.js"
   },
@@ -46,6 +51,7 @@
     "@hardkas/localnet": "workspace:*",
     "@hardkas/node-orchestrator": "workspace:*",
     "@hardkas/node-runner": "workspace:*",
+    "@hardkas/observability": "workspace:*",
     "@hardkas/query": "workspace:*",
     "@hardkas/query-store": "workspace:*",
     "@hardkas/sdk": "workspace:*",

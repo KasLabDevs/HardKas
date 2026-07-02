@@ -230,13 +230,16 @@ export interface TxPlanArtifact extends BaseArtifact<"txPlan"> {
   amountSompi: string;
   estimatedFeeSompi: string;
   estimatedMass: string;
+  computeBudget?: number | undefined;
   inputs: Array<{
     outpoint: { transactionId: string; index: number };
     amountSompi: string;
+    covenantId?: string | undefined;
   }>;
   outputs: Array<{
     address: string;
     amountSompi: string;
+    covenant?: string | undefined;
   }>;
   change?:
     | {

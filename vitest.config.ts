@@ -6,13 +6,12 @@ mkdirSync("./coverage/internal/.tmp", { recursive: true });
 
 export default defineConfig({
   resolve: {
-    alias: {
-      '@hardkas/toolkit': new URL('./packages/toolkit/src/index.ts', import.meta.url).pathname,
-      '@hardkas/plugin-rpc-backend': new URL('./packages/plugin-rpc-backend/src/index.ts', import.meta.url).pathname
-    }
+    alias: [
+      { find: /^@hardkas\/(.*)$/, replacement: new URL('./packages/$1/src/index.ts', import.meta.url).pathname }
+    ]
   },
   test: {
-    include: ["packages/*/test/**/*.test.ts"],
+    include: ["packages/*/test/**/*.test.ts", "examples/superapp-command-center/tests/backend/**/*.test.ts"],
     coverage: {
       provider: "v8",
       enabled: true,

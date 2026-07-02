@@ -1,0 +1,14 @@
+{
+  "requestsStarted": 2100,
+  "requestsSucceeded": 987,
+  "requestsFailedStructured": 1113,
+  "unhandledRejections": 0,
+  "reconnects": 362,
+  "retries": 3603,
+  "timeouts": 393,
+  "corruptFramesInjected": 170,
+  "droppedFramesInjected": 166,
+  "peakHeapMb": 45,
+  "durationMs": 64713,
+  "seed": 123
+}

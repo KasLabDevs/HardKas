@@ -1,6 +1,0 @@
-{
-  "payments": [
-    { "from": "alice", "to": "bob", "amount": "1" },
-    { "from": "alice", "to": "bob", "amount": "2" }
-  ]
-}

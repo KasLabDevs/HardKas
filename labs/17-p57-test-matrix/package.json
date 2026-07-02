@@ -1,0 +1,20 @@
+{
+  "name": "lab-17-p57-test-matrix",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@hardkas/toolkit": "workspace:*",
+    "@hardkas/plugin-rpc-backend": "workspace:*",
+    "@hardkas/sdk": "workspace:*"
+  },
+  "devDependencies": {
+    "@hardkas/testing": "workspace:*",
+    "vitest": "^2.1.9",
+    "typescript": "^5.7.2",
+    "@types/node": "^22.19.19"
+  }
+}

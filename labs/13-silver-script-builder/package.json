@@ -15,5 +15,6 @@
     "@types/fs-extra": "^11.0.4",
     "tsx": "^4.7.1",
     "typescript": "^5.3.3"
-  }
+  },
+  "private": true
 }

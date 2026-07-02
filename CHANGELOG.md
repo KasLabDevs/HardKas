@@ -1,5 +1,7 @@
 
-## [0.11.0-alpha] - 2026-06-29 — The First Local-First Application Runtime
+## [0.11.2-alpha] - 2026-06-29 — The First Local-First Application Runtime
+> **Notice:** `0.11.0-alpha` was published partially due to a registry collision and has been superseded by `0.11.2-alpha`. `0.11.2-alpha` is the official release.
+
 ### Added
 - **Backend Plugin Architecture**: Introduced `@hardkas/plugin-rpc-backend` (V1) to transparently connect `IndexerToolkit` to real Docker `simnet` and `testnet` nodes without altering the SDK facade.
 - **Native BigInt Standardization**: All monetary values (balances, fees, amounts) and consensus values (blue scores) are now strongly typed as `bigint` across all Toolkits to eliminate floating-point imprecision.
@@ -14,7 +16,7 @@
 - Full gauntlet (build, test, docs, templates, packaging) successfully verified across 36 internal workspace packages.
 - Docker long-run continuous stress tests confirmed no major heap leaks in local orchestrations.
 
-## [0.11.0-alpha] - 2026-06-27 — Toolkit Baseline
+## [0.11.2-alpha] - 2026-06-27 — Toolkit Baseline
 ### Added
 - `@hardkas/toolkit` — High-level facade: WalletToolkit, PaymentToolkit, IndexerToolkit, JobsToolkit.
 - `@hardkas/jobs` — Local-first job runner with progress, checkpoints, and retry (no Redis/BullMQ).
@@ -33,110 +35,110 @@
 - Labs 01–09.5 validated the complete SDK lifecycle.
 - Full release gauntlet (build, test, docs, templates, packaging) passes with exit 0.
 
-## [0.11.0-alpha] - 2026-06-26
+## [0.11.2-alpha] - 2026-06-26
 ### Added
 - P24 API Freeze definitions for public, experimental, and deprecated surfaces.
 - Strict verifier gates for ecosystem templates.
 
 ### Changed
-- Bumbed all package versions to 0.11.0-alpha.
+- Bumbed all package versions to 0.11.2-alpha.
 - Enforced strict artifact verification and encryption references (`keystoreRef`).
 
 ### Removed
 - Legacy plaintext keystore support.
 
 
-## [0.11.0-alpha] - 2026-06-26
+## [0.11.2-alpha] - 2026-06-26
 ### Added
 - P24 API Freeze definitions for public, experimental, and deprecated surfaces.
 - Strict verifier gates for ecosystem templates.
 
 ### Changed
-- Bumbed all package versions to 0.11.0-alpha.
+- Bumbed all package versions to 0.11.2-alpha.
 - Enforced strict artifact verification and encryption references (`keystoreRef`).
 
 ### Removed
 - Legacy plaintext keystore support.
 
 
-## [0.11.0-alpha] - 2026-06-26
+## [0.11.2-alpha] - 2026-06-26
 ### Added
 - P24 API Freeze definitions for public, experimental, and deprecated surfaces.
 - Strict verifier gates for ecosystem templates.
 
 ### Changed
-- Bumbed all package versions to 0.11.0-alpha.
+- Bumbed all package versions to 0.11.2-alpha.
 - Enforced strict artifact verification and encryption references (`keystoreRef`).
 
 ### Removed
 - Legacy plaintext keystore support.
 
 
-## [0.11.0-alpha] - 2026-06-26
+## [0.11.2-alpha] - 2026-06-26
 ### Added
 - P24 API Freeze definitions for public, experimental, and deprecated surfaces.
 - Strict verifier gates for ecosystem templates.
 
 ### Changed
-- Bumbed all package versions to 0.11.0-alpha.
+- Bumbed all package versions to 0.11.2-alpha.
 - Enforced strict artifact verification and encryption references (`keystoreRef`).
 
 ### Removed
 - Legacy plaintext keystore support.
 
 
-## [0.11.0-alpha] - 2026-06-26
+## [0.11.2-alpha] - 2026-06-26
 ### Added
 - P24 API Freeze definitions for public, experimental, and deprecated surfaces.
 - Strict verifier gates for ecosystem templates.
 
 ### Changed
-- Bumbed all package versions to 0.11.0-alpha.
+- Bumbed all package versions to 0.11.2-alpha.
 - Enforced strict artifact verification and encryption references (`keystoreRef`).
 
 ### Removed
 - Legacy plaintext keystore support.
 
 
-## [0.11.0-alpha] - 2026-06-26
+## [0.11.2-alpha] - 2026-06-26
 ### Added
 - P24 API Freeze definitions for public, experimental, and deprecated surfaces.
 - Strict verifier gates for ecosystem templates.
 
 ### Changed
-- Bumbed all package versions to 0.11.0-alpha.
+- Bumbed all package versions to 0.11.2-alpha.
 - Enforced strict artifact verification and encryption references (`keystoreRef`).
 
 ### Removed
 - Legacy plaintext keystore support.
 
 
-## [0.11.0-alpha] - 2026-06-26
+## [0.11.2-alpha] - 2026-06-26
 ### Added
 - P24 API Freeze definitions for public, experimental, and deprecated surfaces.
 - Strict verifier gates for ecosystem templates.
 
 ### Changed
-- Bumbed all package versions to 0.11.0-alpha.
+- Bumbed all package versions to 0.11.2-alpha.
 - Enforced strict artifact verification and encryption references (`keystoreRef`).
 
 ### Removed
 - Legacy plaintext keystore support.
 
 
-## [0.11.0-alpha] - 2026-06-26
+## [0.11.2-alpha] - 2026-06-26
 ### Added
 - P24 API Freeze definitions for public, experimental, and deprecated surfaces.
 - Strict verifier gates for ecosystem templates.
 
 ### Changed
-- Bumbed all package versions to 0.11.0-alpha.
+- Bumbed all package versions to 0.11.2-alpha.
 - Enforced strict artifact verification and encryption references (`keystoreRef`).
 
 ### Removed
 - Legacy plaintext keystore support.
 
-# HardKAS 0.11.0-alpha Release Notes
+# HardKAS 0.11.2-alpha Release Notes
 
 **Status:** `LOCAL_FIRST_DEVELOPER_RUNTIME_HARDENED` (Release Candidate)
 
@@ -159,7 +161,7 @@ We explicitly do **NOT** claim `PRODUCTION_READY`, `TESTNET_READY`, `MAINNET_REA
 - **P6: Reproducible Install & Recovery**
   Hardened the system against sudden failures. The system cleanly manages state via a query store and correctly recovers gracefully from abrupt container terminations. Key handling enforces strict `0600` file permissions and redacts secrets from all JSON logs to prevent leakage in CI pipelines. 
 - **P7: Version Boundary Alignment**
-  A synchronized `0.11.0-alpha` version line across all packages, generated capabilities schemas, CLI help menus, and documentation.
+  A synchronized `0.11.2-alpha` version line across all packages, generated capabilities schemas, CLI help menus, and documentation.
 
 ## Core Commitments
 If you are building locally, HardKAS provides a safe and deterministic sandbox. If you are aiming for Mainnet or Testnet, those flows require custom guards and are deliberately outside the standard developer workflow provided by this release.
@@ -169,9 +171,9 @@ If you are building locally, HardKAS provides a safe and deterministic sandbox. 
 
 All notable changes to HardKAS will be documented in this file.
 
-## 0.11.0-alpha - Deployed & Builder-Ready - 2026-06-11
+## 0.11.2-alpha - Deployed & Builder-Ready - 2026-06-11
 
-HardKAS `0.11.0-alpha` has successfully passed the Extreme Builder Gauntlet. This release marks our transition from raw engineering pipelines into a fully usable **Builder Layer** experience for Kaspa.
+HardKAS `0.11.2-alpha` has successfully passed the Extreme Builder Gauntlet. This release marks our transition from raw engineering pipelines into a fully usable **Builder Layer** experience for Kaspa.
 
 ### Key Highlights
 - **100% External Consumer Validation**: This release was completely verified from outside the monorepo, consuming the actual NPM registry packages.
@@ -185,7 +187,7 @@ HardKAS `0.11.0-alpha` has successfully passed the Extreme Builder Gauntlet. Thi
 - Ensured trailing whitespaces and strict semantic consistency across `vProgs` and `ZK` corpus boundaries.
 - Upgraded testing harnesses to guarantee no forbidden protocol claims leak into the `alpha` CLI output.
 
-## 0.11.0-alpha - CI Fixes + Query-Store SQL Repair - 2026-06-11
+## 0.11.2-alpha - CI Fixes + Query-Store SQL Repair - 2026-06-11
 
 TypeScript typecheck fixes across CLI silver commands and query-store SQL
 parameter binding. No new features, no protocol claim expansion.

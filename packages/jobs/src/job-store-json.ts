@@ -1,25 +1,13 @@
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 
-export type JobStatus = 'pending' | 'running' | 'completed' | 'failed' | 'retrying';
-
-export interface JobRecord {
-    id: string;
-    type: string;
-    status: JobStatus;
-    progress: any;
-    checkpoint?: any;
-    attempts: number;
-    error?: string;
-    createdAt: string;
-    updatedAt: string;
-}
+import { JobRecord, JobStore } from './job-store.js';
 
 export interface JobStoreOptions {
     filePath?: string;
 }
 
-export class JobStoreJson {
+export class JobStoreJson implements JobStore {
     private readonly filePath: string;
 
     constructor(options?: JobStoreOptions) {
