@@ -1,5 +1,5 @@
-import { initializeHardKAS } from '../../../../packages/shared-backend/src/setup.ts';
-import { writeEvidence } from '../../../../packages/shared-testkit/src/index.ts';
+import { initializeHardKAS } from '@showcase/shared-backend';
+import { writeEvidence } from '@showcase/shared-testkit';
 import { SilverToolkit } from '@hardkas/toolkit';
 
 async function run() {

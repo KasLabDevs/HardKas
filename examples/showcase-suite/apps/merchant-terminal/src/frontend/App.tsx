@@ -11,7 +11,7 @@ export function App() {
   const createInvoice = async () => {
     const res = await fetch('/api/invoices/create', { method: 'POST' });
     const newInvoice = await res.json();
-    setInvoices(prev => [...prev, newInvoice]);
+    setInvoices((prev: any) => [...prev, newInvoice]);
   };
 
   return (
@@ -33,7 +33,7 @@ export function App() {
           <CardHeader title="Recent Invoices" subtitle="Live payment reconciliation status" />
           <CardBody>
             <div className="space-y-3">
-              {invoices.length === 0 ? <p>No invoices.</p> : invoices.map(inv => (
+              {invoices.length === 0 ? <p>No invoices.</p> : invoices.map((inv: any) => (
                 <div key={inv.id} className="p-3 bg-gray-900 rounded-lg border border-gray-800 flex justify-between items-center">
                   <div>
                     <div className="font-mono text-sm text-gray-300">{inv.id}</div>

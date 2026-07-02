@@ -21,7 +21,7 @@ export function App() {
           <CardHeader title="Silver Templates" subtitle="Pre-audited covenant abstractions" />
           <CardBody>
             <div className="space-y-3">
-              {templates.length === 0 ? <p>No templates loaded.</p> : templates.map(t => (
+              {templates.length === 0 ? <p>No templates loaded.</p> : templates.map((t: any) => (
                 <div key={t.id} className="p-3 bg-gray-900 rounded-lg border border-gray-800 hover:border-emerald-500/50 cursor-pointer">
                   <div className="font-bold text-white">{t.name}</div>
                   <div className="text-xs text-gray-500 mt-1">{t.description}</div>

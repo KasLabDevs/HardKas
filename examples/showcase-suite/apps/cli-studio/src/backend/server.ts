@@ -54,7 +54,7 @@ async function runGauntlet() {
 }
 
 async function bootstrap() {
-    const { core, storage, queryStore, jobManager, artifactStore, dataPath } = await initializeHardKAS('cli-studio');
+    const { storage, dataPath } = await initializeHardKAS('cli-studio');
     
     const server = http.createServer(async (req, res) => {
         res.setHeader('Access-Control-Allow-Origin', '*');
@@ -90,7 +90,7 @@ async function bootstrap() {
         if (req.method === 'POST' && req.url === '/api/cli/doctor') {
             try {
                 // Execute CLI runner directly
-                await runDoctorNode(core.config.mode);
+                await runDoctorNode({});
                 res.writeHead(200);
                 res.end(JSON.stringify({ success: true, message: 'HardKAS Doctor executed successfully.' }));
             } catch (e: any) {
@@ -103,7 +103,7 @@ async function bootstrap() {
         if (req.method === 'POST' && req.url === '/api/cli/env-check') {
             try {
                 // Execute CLI runner directly
-                await runDevEnv(core.config.mode);
+                await runDevEnv({});
                 res.writeHead(200);
                 res.end(JSON.stringify({ success: true, message: 'HardKAS Env Check executed successfully.' }));
             } catch (e: any) {

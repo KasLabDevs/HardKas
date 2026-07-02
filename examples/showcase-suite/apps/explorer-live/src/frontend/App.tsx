@@ -40,7 +40,7 @@ export function App() {
             <CardHeader title="Recent Blocks" subtitle="Live stream of DAG updates" />
             <CardBody>
               <div className="space-y-3">
-                {blocks.length === 0 ? <p>No blocks found.</p> : blocks.map(b => (
+                {blocks.length === 0 ? <p>No blocks found.</p> : blocks.map((b: any) => (
                   <div key={b.hash} className="p-3 bg-gray-900 rounded-lg border border-gray-800 flex justify-between items-center hover:border-emerald-500/50 transition-colors cursor-pointer">
                     <div>
                       <div className="font-mono text-sm text-emerald-400">{b.hash}</div>

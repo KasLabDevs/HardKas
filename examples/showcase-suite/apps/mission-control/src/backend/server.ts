@@ -1,5 +1,5 @@
 import http from 'http';
-import { initializeHardKAS } from '../../../../packages/shared-backend/src/setup.ts';
+import { initializeHardKAS } from '@showcase/shared-backend';
 import { JsonWrpcKaspaClient } from '@hardkas/kaspa-rpc';
 import { WalletToolkit } from '@hardkas/toolkit';
 

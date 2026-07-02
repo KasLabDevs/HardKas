@@ -3,8 +3,6 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "dev": "pnpm -r run dev",
-    "build": "pnpm -r run build",
     "test": "vitest run",
     "coverage": "vitest run --coverage",
     "showcase:mission-control": "tsx apps/mission-control/src/backend/runner.ts",

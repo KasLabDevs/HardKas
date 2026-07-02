@@ -1,8 +1,7 @@
-import { initializeHardKAS } from '../../../../packages/shared-backend/src/setup.ts';
-import { writeEvidence } from '../../../../packages/shared-testkit/src/index.ts';
-import { QueryStoreSqlite } from '../../../../../../packages/query-store/src/sqlite/index.ts';
-import { MetricsProvider } from '../../../../../../packages/observability/src/metrics.ts';
-import { LocalIndexerApi } from '../../../../../../packages/plugin-local-indexer/src/index.ts';
+import { initializeHardKAS } from '@showcase/shared-backend';
+import { writeEvidence } from '@showcase/shared-testkit';
+
+import { LocalIndexerApi } from '@hardkas/plugin-local-indexer';
 import { IndexerToolkit } from '@hardkas/toolkit';
 
 async function run() {

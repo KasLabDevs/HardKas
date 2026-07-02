@@ -8,3 +8,5 @@ export { runDevTxSend } from "./runners/dev-tx-runners.js";
 export { runTxFlow } from "./runners/tx-flow.js";
 export { runDashboard } from "./runners/dashboard-runner.js";
 
+
+export { buildHardkasProgram } from "./program.js";

@@ -1,6 +1,6 @@
 import http from 'http';
 import { initializeHardKAS } from '@showcase/shared-backend';
-import { KaspaRpcClient } from '@hardkas/kaspa-rpc';
+import { JsonWrpcKaspaClient } from '@hardkas/kaspa-rpc';
 import { IndexerToolkit } from '@hardkas/toolkit';
 
 const PORT = 4041;
@@ -56,12 +56,12 @@ async function runGauntlet() {
 }
 
 async function bootstrap() {
-    const { core, storage, queryStore, jobManager, artifactStore, dataPath } = await initializeHardKAS('explorer-live');
+    const { storage, dataPath } = await initializeHardKAS('explorer-live');
     
-    const rpc = new KaspaRpcClient({ url: 'ws://127.0.0.1:16110', mock: true });
-    await rpc.connect();
+    const rpc = new JsonWrpcKaspaClient({ rpcUrl: 'ws://127.0.0.1:16110' });
+    
 
-    const indexerToolkit = new IndexerToolkit(core, rpc, storage, queryStore);
+    const indexerToolkit = IndexerToolkit.open();
 
     const server = http.createServer(async (req, res) => {
         res.setHeader('Access-Control-Allow-Origin', '*');

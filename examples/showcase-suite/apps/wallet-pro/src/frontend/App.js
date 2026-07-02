@@ -1,0 +1,10 @@
+import { jsx as _jsx, jsxs as _jsxs } from "react/jsx-runtime";
+import { useEffect, useState } from 'react';
+import { Layout, Card, CardHeader, CardBody, Button, GauntletVisualizer } from '@showcase/shared-ui';
+export function App() {
+    const [wallets, setWallets] = useState([]);
+    useEffect(() => {
+        fetch('/api/wallets').then(r => r.json()).then(setWallets).catch(console.error);
+    }, []);
+    return (_jsxs(Layout, { title: "Wallet Pro", children: [_jsxs("div", { className: "grid grid-cols-1 md:grid-cols-2 gap-6", children: [_jsxs(Card, { children: [_jsx(CardHeader, { title: "My Wallets", subtitle: "Manage multiple HD wallets and keys" }), _jsxs(CardBody, { children: [_jsx("div", { className: "space-y-4", children: wallets.length === 0 ? _jsx("p", { children: "Loading..." }) : wallets.map(w => (_jsxs("div", { className: "p-4 bg-gray-900 rounded-lg border border-gray-800", children: [_jsxs("div", { className: "flex justify-between items-center mb-2", children: [_jsx("span", { className: "font-bold text-white", children: w.name }), _jsxs("span", { className: "text-emerald-400 font-mono font-bold", children: [w.balance, " KAS"] })] }), _jsx("span", { className: "text-xs text-gray-500 font-mono truncate block", children: w.address })] }, w.id))) }), _jsxs("div", { className: "mt-6 flex space-x-3", children: [_jsx(Button, { variant: "primary", children: "New Wallet" }), _jsx(Button, { variant: "secondary", children: "Import Keystore" })] })] })] }), _jsxs(Card, { children: [_jsx(CardHeader, { title: "Coin Control", subtitle: "UTXO Split, Merge & Sweep" }), _jsx(CardBody, { children: _jsxs("div", { className: "flex flex-col space-y-3", children: [_jsx(Button, { variant: "secondary", children: "Fetch UTXOs" }), _jsx(Button, { variant: "primary", children: "Create Split Plan" }), _jsx(Button, { variant: "primary", children: "Create Merge Plan" }), _jsx(Button, { variant: "danger", children: "Sweep All Funds" })] }) })] })] }), _jsx("div", { className: "mt-6", children: _jsx(GauntletVisualizer, {}) })] }));
+}

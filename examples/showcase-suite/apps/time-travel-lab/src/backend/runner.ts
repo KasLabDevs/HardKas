@@ -1,5 +1,5 @@
-import { initializeHardKAS } from '../../../../packages/shared-backend/src/setup';
-import { writeEvidence } from '../../../../packages/shared-testkit/src/index';
+import { initializeHardKAS } from '@showcase/shared-backend';
+import { writeEvidence } from '@showcase/shared-testkit';
 import { SnapshotToolkit } from '@hardkas/toolkit';
 
 async function run() {

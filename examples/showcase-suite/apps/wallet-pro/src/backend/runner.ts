@@ -1,7 +1,7 @@
-import { initializeHardKAS } from '../../../../packages/shared-backend/src/setup.ts';
-import { writeEvidence } from '../../../../packages/shared-testkit/src/index.ts';
+import { initializeHardKAS } from '@showcase/shared-backend';
+import { writeEvidence } from '@showcase/shared-testkit';
 import { WalletToolkit } from '@hardkas/toolkit';
-import { detectKaspaWallets, connectKaspaWallet } from '../../../../../../packages/wallet-adapter/src/index.ts';
+import { detectKaspaWallets, connectKaspaWallet } from '@hardkas/wallet-adapter';
 
 async function run() {
     console.log('[Wallet Pro] Starting Gauntlet Execution...');
@@ -43,7 +43,7 @@ async function run() {
     }
     
     try {
-        const adapters = [];
+        const adapters: any[] = [];
         const wallets = await detectKaspaWallets(adapters);
         if (wallets.adapters.length > 0) await connectKaspaWallet({ adapters });
     } catch(e) {}

@@ -1,6 +1,6 @@
 import http from 'http';
 import { initializeHardKAS } from '@showcase/shared-backend';
-import { KaspaRpcClient } from '@hardkas/kaspa-rpc';
+import { JsonWrpcKaspaClient } from '@hardkas/kaspa-rpc';
 import { PaymentToolkit } from '@hardkas/toolkit';
 
 const PORT = 4021;
@@ -13,7 +13,7 @@ function broadcastSSE(data: any) {
     }
 }
 
-async function runGauntlet(rpc: KaspaRpcClient) {
+async function runGauntlet(rpc: JsonWrpcKaspaClient) {
     broadcastSSE({ type: 'STATUS', message: 'Starting real simnet gauntlet...' });
 
     try {
@@ -59,12 +59,12 @@ async function runGauntlet(rpc: KaspaRpcClient) {
 }
 
 async function bootstrap() {
-    const { core, storage, queryStore, jobManager, artifactStore, dataPath } = await initializeHardKAS('merchant-terminal');
+    const { storage, dataPath } = await initializeHardKAS('merchant-terminal');
     
-    const rpc = new KaspaRpcClient({ url: 'ws://127.0.0.1:16110', mock: true });
-    await rpc.connect();
+    const rpc = new JsonWrpcKaspaClient({ rpcUrl: 'ws://127.0.0.1:16110' });
+    
 
-    const paymentToolkit = new PaymentToolkit(core, rpc, storage, artifactStore, queryStore, jobManager);
+    const paymentToolkit = PaymentToolkit.openMerchant('merchant-terminal');
 
     const server = http.createServer(async (req, res) => {
         res.setHeader('Access-Control-Allow-Origin', '*');
@@ -99,7 +99,7 @@ async function bootstrap() {
 
         if (req.method === 'GET' && req.url === '/api/invoices') {
             // Simulated fetch
-            const invoices = await paymentToolkit.listInvoices({ merchantId: 'm1' });
+            const invoices = await paymentToolkit.listInvoices();
             res.writeHead(200);
             res.end(JSON.stringify(invoices.length ? invoices : [
                 { id: 'inv_1', amountSompi: 15000000, status: 'pending', createdAt: Date.now() },
@@ -111,10 +111,7 @@ async function bootstrap() {
         if (req.method === 'POST' && req.url === '/api/invoices/create') {
             // Simulated create
             const invoice = await paymentToolkit.createInvoice({
-                merchantId: 'm1',
-                amountSompi: 100000000n,
-                paymentAddress: 'kaspasim:qzterminal123',
-                metadata: { item: 'Coffee' }
+                amountSompi: 100000000n
             });
             res.writeHead(200);
             // BigInt serialization fix

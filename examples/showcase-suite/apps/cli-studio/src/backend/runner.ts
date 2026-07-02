@@ -1,7 +1,7 @@
-import { initializeHardKAS } from '../../../../packages/shared-backend/src/setup.ts';
-import { writeEvidence } from '../../../../packages/shared-testkit/src/index.ts';
-import { buildHardkasProgram } from '../../../../../../packages/cli/src/program.ts';
-import { parseHardkasConfig } from '../../../../../../packages/core/src/index.ts';
+import { initializeHardKAS } from '@showcase/shared-backend';
+import { writeEvidence } from '@showcase/shared-testkit';
+import { buildHardkasProgram } from '@hardkas/cli/public';
+import { parseHardkasConfig } from '@hardkas/core';
 
 async function run() {
     console.log('[CLI Studio] Starting Gauntlet Execution...');

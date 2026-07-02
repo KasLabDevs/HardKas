@@ -54,10 +54,10 @@ async function runGauntlet() {
 }
 
 async function bootstrap() {
-    const { core, storage, queryStore, jobManager, artifactStore, dataPath } = await initializeHardKAS('silver-playground');
+    await initializeHardKAS('silver-playground');
     
-    // We instantiate SilverToolkit with the core
-    const silverToolkit = new SilverToolkit(core);
+    // We instantiate SilverToolkit
+    const silverToolkit = SilverToolkit.open();
 
     const server = http.createServer(async (req, res) => {
         res.setHeader('Access-Control-Allow-Origin', '*');

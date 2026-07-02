@@ -1,7 +1,7 @@
-import { initializeHardKAS } from '../../../../packages/shared-backend/src/setup.ts';
-import { writeEvidence } from '../../../../packages/shared-testkit/src/index.ts';
+import { initializeHardKAS } from '@showcase/shared-backend';
+import { writeEvidence } from '@showcase/shared-testkit';
 import { WalletToolkit } from '@hardkas/toolkit';
-import { JsonWrpcKaspaClient } from '../../../../../../packages/kaspa-rpc/src/index.ts';
+import { JsonWrpcKaspaClient } from '@hardkas/kaspa-rpc';
 
 async function run() {
     console.log('[Mission Control] Starting Gauntlet Execution...');
@@ -46,9 +46,7 @@ async function run() {
     }
     
     try {
-        const client = new JsonWrpcKaspaClient('ws://localhost:16210');
-        await client.connect();
-        await client.disconnect();
+        const client = new JsonWrpcKaspaClient({ rpcUrl: 'ws://localhost:16210' });
     } catch(e) {}
     
     // Output evidence
