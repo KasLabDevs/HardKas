@@ -23,7 +23,7 @@ export function registerRunCommand(program: Command): void {
           const envContent = await fs.readFile(path.join(process.cwd(), ".env"), "utf8");
           envContent.split("\n").forEach(line => {
             const match = line.match(/^\s*([\w.-]+)\s*=\s*(.*)?\s*$/);
-            if (match && !process.env[match[1]]) {
+            if (match && match[1] && !process.env[match[1]]) {
                process.env[match[1]] = match[2] || "";
             }
           });
