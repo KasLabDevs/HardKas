@@ -66,8 +66,16 @@ export class KaspaWasmPrivateKeySigner implements HardkasTxPlanSigner {
     const plan = input.planArtifact as TxPlanArtifact;
     const account = this.options.account;
 
-    // 1. Load SDK
+    // 1. Load SDK & Capabilities
     const sdk = await loadKaspaWasm();
+    const { detectCapabilities } = await import("./signer-backend.js");
+    const capabilities = detectCapabilities(sdk);
+
+    if (plan.computeBudget !== undefined || plan.outputs.some(o => o.covenant)) {
+      if (!capabilities.transactionV1Signing) {
+        throw new Error("Transaction V1 signing is not supported by the installed kaspa-wasm version");
+      }
+    }
 
     // 2. Mainnet guard
     assertSigningNetworkAllowed({

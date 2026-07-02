@@ -1,0 +1,28 @@
+{
+  "app": "Merchant Terminal",
+  "actors": 10,
+  "operations": 100,
+  "visualScenario": true,
+  "realRpcTouched": true,
+  "realBroadcast": false,
+  "domainOperationReal": true,
+  "networkSettlementReal": false,
+  "fallbackUsed": true,
+  "packagesExercised": [
+    "@hardkas/toolkit",
+    "@hardkas/accounts",
+    "@hardkas/tx-builder",
+    "@hardkas/core"
+  ],
+  "publicApisExercised": [
+    "PaymentToolkit.createInvoice",
+    "PaymentToolkit.listInvoices",
+    "PaymentToolkit.processPayment",
+    "buildPaymentPlan",
+    "estimateMass",
+    "createMockUtxo"
+  ],
+  "errors": [],
+  "expectedGuards": [],
+  "unsupportedCapabilities": []
+}

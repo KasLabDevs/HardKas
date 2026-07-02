@@ -137,3 +137,28 @@ artifacts/receipts/
 **/runs/latest/
 packages/cli/test-gauntlet/artifacts/receipts/
 packages/cli/test-gauntlet/real-node/*.json
+
+# Generated coverage and audit reports at root
+/coverage-summary.json
+/COVERAGE_*.md
+/PUBLIC_API_COVERAGE_MATRIX*.md
+/PRODUCTION_CHECKLIST.md
+/audit-full-results/
+
+# Compiled binary outputs
+/bin/
+/bin_go/
+
+# Rust/Go source downloads and zips
+/*.zip
+/rusty-kaspa-src/
+
+# Example app generated data and node_modules
+examples/**/coverage/
+examples/**/.hardkas/
+examples/**/.hardkas-data/
+examples/**/node_modules/
+examples/**/testnet.db
+examples/**/sync.json
+examples/**/jobs.json
+examples/**/TESTNET_SOAK_REPORT.json

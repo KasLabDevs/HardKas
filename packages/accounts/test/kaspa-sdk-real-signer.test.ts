@@ -53,6 +53,7 @@ describe("KaspaSdkRealTxSigner", () => {
       UtxoEntry: vi.fn(),
       Address: vi.fn().mockImplementation((a) => ({ addr: a })),
       PaymentOutput: vi.fn(),
+      ScriptPublicKey: vi.fn().mockImplementation((v, s) => ({ version: v, script: s })),
       createTransaction: vi.fn().mockReturnValue({ id: "txid123" }),
       signTransaction: vi.fn().mockReturnValue({
         id: "txid123",

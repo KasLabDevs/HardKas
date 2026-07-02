@@ -3,6 +3,23 @@ import { JobStore, JobRecord } from './job-store.js';
 import { ProgressReporter } from './progress-reporter.js';
 import { JobCheckpoint } from './job-checkpoint.js';
 import { RetryPolicy } from './retry-policy.js';
+import { logger, metrics, tracer } from '@hardkas/observability';
+
+metrics.register({
+    name: "jobs_enqueued_total",
+    help: "Total jobs enqueued",
+    type: "counter"
+});
+metrics.register({
+    name: "jobs_completed_total",
+    help: "Total jobs completed successfully",
+    type: "counter"
+});
+metrics.register({
+    name: "jobs_failed_total",
+    help: "Total jobs failed",
+    type: "counter"
+});
 
 export interface JobContext {
     progress: ProgressReporter;
@@ -51,9 +68,12 @@ export class JobRunner {
         };
         
         await this.store.save(record);
+        
+        metrics.inc("jobs_enqueued_total", { type });
+        logger.info("Job enqueued", { id, type });
 
         // Async execution starts
-        this.runJob(id, args).catch(console.error);
+        this.runJob(id, args).catch(err => logger.error("Job spawn error", { error: err.message }));
         return id;
     }
 
@@ -105,8 +125,10 @@ export class JobRunner {
                 rec.checkpoint = checkpoint.load();
                 rec.updatedAt = new Date().toISOString();
                 return rec;
-            })).catch(console.error);
+            })).catch(err => logger.warn("Job state sync error", { id, error: err.message }));
         }, 1000);
+
+        const span = tracer.start("job.run", { id, type: record.type, attempt: record.attempts });
 
         try {
             await handler(ctx, args);
@@ -120,6 +142,9 @@ export class JobRunner {
                 rec.updatedAt = new Date().toISOString();
                 return rec;
             });
+            metrics.inc("jobs_completed_total", { type: record.type });
+            logger.info("Job completed", { id, type: record.type });
+            span.end();
         } catch (err: any) {
             clearInterval(interval);
             
@@ -131,6 +156,9 @@ export class JobRunner {
                 rec.updatedAt = new Date().toISOString();
                 return rec;
             });
+            metrics.inc("jobs_failed_total", { type: record.type });
+            logger.error("Job failed", { id, type: record.type, error: err.message });
+            span.fail(err);
         }
     }
 

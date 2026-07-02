@@ -93,15 +93,28 @@ export function kaspaRpcBackendPlugin(options: KaspaRpcBackendOptions): KaspaRpc
         async utxos(address: string): Promise<unknown[]> {
             return engine.withRetry(async () => {
                 try {
+                    let entries: any[] = [];
                     if (wsClient) {
                         if (!isConnected) await reconnectWs();
                         const res: any = await wsClient.getUtxosByAddresses([address]);
-                        return res.entries || [];
+                        entries = res.entries || [];
                     } else if (httpClient) {
-                        const response = await httpClient.getUtxosByAddress(address);
-                        return response;
+                        entries = await httpClient.getUtxosByAddress(address);
                     }
-                    return [];
+                    
+                    // Normalize amounts to BigInt before TxBuilder touches them
+                    return entries.map((e: any) => {
+                        if (e && e.utxoEntry && typeof e.utxoEntry.amount === "string") {
+                            return {
+                                ...e,
+                                amountSompi: BigInt(e.utxoEntry.amount)
+                            };
+                        }
+                        if (e && typeof e.amountSompi === "string") {
+                            return { ...e, amountSompi: BigInt(e.amountSompi) };
+                        }
+                        return e;
+                    });
                 } catch (e: any) {
                     if (e?.message?.includes("request deserialization error") || e?.message?.includes("not have UTXO index")) {
                         throw new HardkasRpcSemanticError(`RPC Node at ${options.url} does not have UTXO index enabled. Expected for standard nodes. Error: ${e.message}`);

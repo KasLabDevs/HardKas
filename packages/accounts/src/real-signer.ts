@@ -1,8 +1,8 @@
-import { TxPlanArtifact } from "@hardkas/artifacts";
+import { TxPlan } from "@hardkas/tx-builder";
 import { RealDevAccount } from "./real-accounts.js";
 
 export interface RealTxSigningInput {
-  readonly plan: TxPlanArtifact;
+  readonly plan: TxPlan;
   readonly account: RealDevAccount;
 }
 

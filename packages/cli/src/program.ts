@@ -48,6 +48,7 @@ import { registerProgrammabilityCommands } from "./commands/programmability.js";
 import { registerDevServerCommands } from "./commands/dev-server.js";
 import { registerSecurityCommand } from "./commands/security.js";
 import { registerEvidenceCommands } from "./commands/evidence.js";
+import { registerEnvCommands } from "./commands/env.js";
 
 import { HARDKAS_VERSION } from "@hardkas/artifacts";
 
@@ -116,6 +117,7 @@ export function buildHardkasProgram(options?: { forDocs?: boolean, loadedConfig?
   registerProgrammabilityCommands(program);
   registerDevServerCommands(program);
   registerSecurityCommand(program);
+  registerEnvCommands(program);
   registerTaskCommands(program, options?.loadedConfig);
 
   // Programmable workflows & Agent Mode

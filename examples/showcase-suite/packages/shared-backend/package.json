@@ -1,0 +1,16 @@
+{
+  "name": "@showcase/shared-backend",
+  "version": "1.0.0",
+  "type": "module",
+  "main": "src/index.ts",
+  "dependencies": {
+    "@hardkas/core": "workspace:*",
+    "@hardkas/toolkit": "workspace:*",
+    "@hardkas/accounts": "workspace:*",
+    "@hardkas/artifacts": "workspace:*",
+    "@hardkas/storage-sqlite": "workspace:*",
+    "@hardkas/query-store": "workspace:*",
+    "@hardkas/jobs": "workspace:*",
+    "@hardkas/localnet": "workspace:*"
+  }
+}

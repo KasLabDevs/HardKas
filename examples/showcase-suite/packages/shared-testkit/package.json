@@ -1,0 +1,7 @@
+{
+  "name": "@showcase/shared-testkit",
+  "version": "1.0.0",
+  "type": "module",
+  "main": "src/index.ts",
+  "dependencies": {}
+}

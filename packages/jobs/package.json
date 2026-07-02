@@ -9,10 +9,12 @@
     "build": "tsc",
     "test": "vitest run"
   },
-  "dependencies": {},
+  "dependencies": {
+    "@hardkas/observability": "workspace:0.11.1-alpha"
+  },
   "devDependencies": {
+    "@types/node": "^20.12.7",
     "typescript": "^5.6.3",
-    "vitest": "^2.1.2",
-    "@types/node": "^20.12.7"
+    "vitest": "^2.1.2"
   }
 }

@@ -1,4 +1,26 @@
 import { HardkasRpcConnectionError, HardkasRpcTimeoutError, HardkasRpcSemanticError } from './errors.js';
+import { logger, metrics } from '@hardkas/observability';
+
+metrics.register({
+    name: "plugin_rpc_retries_total",
+    help: "Total retries by RPC backend plugin",
+    type: "counter"
+});
+metrics.register({
+    name: "plugin_rpc_reconnects_total",
+    help: "Total reconnects by RPC backend plugin",
+    type: "counter"
+});
+metrics.register({
+    name: "plugin_rpc_timeouts_total",
+    help: "Total timeouts in RPC backend plugin",
+    type: "counter"
+});
+metrics.register({
+    name: "plugin_rpc_failures_total",
+    help: "Total fatal failures in RPC backend plugin",
+    type: "counter"
+});
 
 export type RpcResilienceOptions = {
     maxRetries?: number;      // default 3
@@ -61,30 +83,42 @@ export class ResilienceEngine {
             } catch (error: any) {
                 if (error instanceof HardkasRpcTimeoutError) {
                     this._stats.timeouts++;
+                    metrics.inc("plugin_rpc_timeouts_total");
+                    logger.warn("RPC operation timeout", { attempt });
                 }
 
                 // Identify if it's a semantic error (should not retry)
                 if (error instanceof HardkasRpcSemanticError) {
                     this._stats.failures++;
+                    metrics.inc("plugin_rpc_failures_total");
+                    logger.error("RPC semantic error (fatal)", { error: error.message });
                     throw error;
                 }
                 
                 // For other errors, check if we've exhausted retries
                 if (attempt >= this.options.maxRetries) {
                     this._stats.failures++;
+                    metrics.inc("plugin_rpc_failures_total");
+                    logger.error("RPC max retries exhausted", { attempt, maxRetries: this.options.maxRetries, error: error.message });
                     if (error instanceof HardkasRpcTimeoutError) throw error;
                     throw new HardkasRpcConnectionError(`Operation failed after ${attempt} retries: ${error.message}`);
                 }
 
                 attempt++;
                 this._stats.retries++;
+                metrics.inc("plugin_rpc_retries_total");
+                logger.debug("RPC operation retrying", { attempt, delay: this.calculateDelay(attempt) });
                 
                 // Attempt reconnect if provided and it's a connection issue
                 if (reconnect) {
                     try {
+                        logger.debug("Attempting RPC reconnect");
                         await reconnect();
                         this._stats.reconnects++;
-                    } catch (e) {
+                        metrics.inc("plugin_rpc_reconnects_total");
+                        logger.info("RPC reconnected successfully");
+                    } catch (e: any) {
+                        logger.warn("RPC reconnect failed", { error: e.message });
                         // Ignore reconnect failures, just wait and retry the main operation
                     }
                 }

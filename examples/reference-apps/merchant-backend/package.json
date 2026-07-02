@@ -14,7 +14,8 @@
     "@hardkas/sdk": "workspace:*",
     "@hardkas/kaspa-rpc": "workspace:*",
     "@hardkas/storage-sqlite": "workspace:*",
-    "@hardkas/storage-postgres": "workspace:*"
+    "@hardkas/storage-postgres": "workspace:*",
+    "@hardkas/observability": "workspace:*"
   },
   "devDependencies": {
     "tsx": "^4.19.2",

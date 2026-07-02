@@ -2,6 +2,23 @@ import { IndexerToolkit, WalletToolkit, JobsToolkit } from '@hardkas/toolkit';
 import { BackendPlugin } from '@hardkas/core';
 import fs from 'fs';
 import path from 'path';
+import { logger, metrics, tracer } from '@hardkas/observability';
+
+metrics.register({
+    name: "sync_daemon_cycles_total",
+    help: "Total poll cycles executed by SyncDaemon",
+    type: "counter"
+});
+metrics.register({
+    name: "sync_daemon_blocks_processed_total",
+    help: "Total new blocks processed by SyncDaemon",
+    type: "counter"
+});
+metrics.register({
+    name: "sync_daemon_errors_total",
+    help: "Total errors encountered by SyncDaemon",
+    type: "counter"
+});
 
 export interface SyncDaemonOptions {
     backend: BackendPlugin;
@@ -52,8 +69,10 @@ export class SyncDaemon {
         this.isRunning = true;
         this.isShuttingDown = false;
 
+        logger.info("SyncDaemon starting");
+
         if (!this.backend.capabilities.externalState) {
-            console.warn("SyncDaemon: Provided backend does not appear to connect to external state.");
+            logger.warn("SyncDaemon: Provided backend does not appear to connect to external state.");
         }
 
         this.loopPromise = this.pollLoop();
@@ -110,6 +129,7 @@ export class SyncDaemon {
 
     private async pollLoop(): Promise<void> {
         while (!this.isShuttingDown) {
+            const span = tracer.start("sync_daemon.cycle");
             try {
                 // Ensure backend is connected
                 if (this.backend.connect) {
@@ -125,8 +145,18 @@ export class SyncDaemon {
                 const currentBlueScore = BigInt(response.blueScore);
 
                 if (currentBlueScore > this.lastProcessedBlueScore) {
+                    const blockSpan = tracer.start("sync_daemon.process_blocks", { 
+                        from: this.lastProcessedBlueScore.toString(),
+                        to: currentBlueScore.toString()
+                    });
+
                     // 1. We would fetch the blocks here
                     this.metrics.blocksProcessed++;
+                    metrics.inc("sync_daemon_blocks_processed_total");
+                    
+                    if (this.indexer) {
+                        await this.indexer.reload();
+                    }
                     
                     // 2. Batch address extraction
                     const addrs = new Set<string>();
@@ -148,14 +178,25 @@ export class SyncDaemon {
                         }
                     }
 
+                    // 4. Trigger jobs reconciliation
+                    if (this.jobs) {
+                        await this.jobs.resumePendingJobs();
+                    }
+
                     this.lastProcessedBlueScore = currentBlueScore;
                     this.saveCheckpoint();
+                    blockSpan.end();
                 }
                 
                 this.metrics.cycles++;
+                metrics.inc("sync_daemon_cycles_total");
+                span.end();
 
             } catch (err: any) {
+                logger.error('SyncDaemon error', { error: err.message });
+                span.fail(err);
                 this.metrics.errors++;
+                metrics.inc("sync_daemon_errors_total");
                 // Silently absorb structural connection errors and wait longer to retry
                 await new Promise(r => setTimeout(r, Math.max(5000, this.pollIntervalMs)));
                 continue;

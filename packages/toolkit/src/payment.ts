@@ -25,19 +25,27 @@ export class PaymentToolkit {
         return new PaymentToolkit(merchantId, options);
     }
 
-    public async createInvoice(opts: { amount: bigint; currency: string }): Promise<InvoiceRecord> {
+    public async createInvoice(opts: { amount?: bigint; amountSompi?: bigint; currency?: string }): Promise<InvoiceRecord> {
+        if (opts.amount === undefined && opts.amountSompi === undefined) {
+            throw new Error("Must provide either amount or amountSompi");
+        }
+
+        const sompi = opts.amountSompi ?? (opts.amount! * 100_000_000n);
+        const kas = opts.amount ?? (opts.amountSompi! / 100_000_000n);
+        const curr = opts.currency ?? 'KAS';
+
         const id = `inv_${Date.now()}`;
         const result = buildKaspaUri({
             address: `kaspa:${this.merchantId}`,
-            amountSompi: opts.amount * 100_000_000n, // convert to sompi
+            amountSompi: sompi,
             message: `Invoice ${id}`
         });
 
         const invoice: InvoiceRecord = {
             id,
             merchantId: this.merchantId,
-            amount: opts.amount,
-            currency: opts.currency,
+            amount: kas,
+            currency: curr,
             status: 'pending',
             uri: result.uri,
             createdAt: new Date().toISOString(),
@@ -66,12 +74,18 @@ export class PaymentToolkit {
     }
 
     public async receipt(invoiceId: string): Promise<any> {
+        const inv = await this.store.get(invoiceId);
+        if (!inv) throw new Error("Invoice not found");
+        if (inv.status !== "paid") throw new Error("Invoice is not paid");
+
         return {
             schema: "paymentReceipt.v1",
             invoiceId,
             merchantId: this.merchantId,
             status: "paid",
-            timestamp: new Date().toISOString()
+            timestamp: new Date().toISOString(),
+            amount: inv.amount,
+            currency: inv.currency
         };
     }
     

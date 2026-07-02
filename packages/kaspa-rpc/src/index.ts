@@ -47,7 +47,34 @@ export interface KaspaRpcUtxo {
   scriptPublicKey?: string;
   blockDaaScore?: bigint | string;
   isCoinbase?: boolean;
+  covenantId?: string; // V1 Toccata capability
   raw?: unknown;
+}
+
+export interface KaspaRpcTransactionInput {
+  previousOutpoint: KaspaRpcOutpoint;
+  signatureScript: string;
+  sequence: number;
+  sigOpCount: number;
+  computeBudget?: number; // V1 Toccata capability
+}
+
+export interface KaspaRpcTransactionOutput {
+  amount: bigint;
+  scriptPublicKey: string;
+  covenant?: string; // V1 Toccata capability
+}
+
+export interface KaspaRpcTransaction {
+  version: number;
+  inputs: KaspaRpcTransactionInput[];
+  outputs: KaspaRpcTransactionOutput[];
+  lockTime: number;
+  subnetworkId: string;
+  gas: number;
+  payload: string;
+  mass?: number;
+  storageMass?: number; // V1 Toccata capability
 }
 
 export interface JsonWrpcKaspaClientOptions {
@@ -561,6 +588,7 @@ export function mapKaspaRpcUtxos(result: any, address: string): KaspaRpcUtxo[] {
       ),
       blockDaaScore: utxoEntry.blockDaaScore || utxoEntry.block_daa_score,
       isCoinbase: Boolean(utxoEntry.isCoinbase || utxoEntry.is_coinbase),
+      covenantId: utxoEntry.covenantId || utxoEntry.covenant_id,
       raw: entry
     };
   });

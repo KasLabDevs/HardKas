@@ -8,10 +8,15 @@ async function run() {
 
     // 2. Create a new invoice
     const inv = await payment.createInvoice({ 
-        amount: 500, 
+        amount: 500n, 
         currency: 'KAS' 
     });
     console.log(`Created invoice ${inv.id} with URI: ${inv.uri}`);
+    
+    // 2b. Or using precise Sompi amounts:
+    const inv2 = await payment.createInvoice({
+        amountSompi: 100000000n // 1 KAS
+    });
 
     // 3. Check status
     const status = await payment.check(inv.id);
