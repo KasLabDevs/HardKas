@@ -1,24 +1,19 @@
 import { initializeHardKAS } from '../../../../packages/shared-backend/src/setup';
 import { writeEvidence } from '../../../../packages/shared-testkit/src/index';
 import { JobsToolkit } from '@hardkas/toolkit';
-
 async function run() {
     console.log('[Treasury Console] Starting Gauntlet Execution...');
     const { storage } = await initializeHardKAS('treasury-console-gauntlet');
-
-    const toolkits: JobsToolkit[] = [];
+    const toolkits = [];
     const operations = 100;
-    
     // Create 10 actors
     for (let i = 0; i < 10; i++) {
         const jt = JobsToolkit.open({ storage });
         toolkits.push(jt);
     }
-    
     let opsCount = 0;
-    const errors: string[] = [];
-    const jobIds: string[] = [];
-    
+    const errors = [];
+    const jobIds = [];
     // Do 100 operations distributed among the 10 actors
     for (let i = 0; i < operations; i++) {
         const actor = toolkits[i % toolkits.length];
@@ -27,22 +22,25 @@ async function run() {
             if (opType === 0) {
                 const id = await actor.enqueue('batch_payout', { targets: 100 });
                 jobIds.push(id);
-            } else if (opType === 1 && jobIds.length > 0) {
+            }
+            else if (opType === 1 && jobIds.length > 0) {
                 const target = jobIds[Math.floor(Math.random() * jobIds.length)];
                 await actor.getJob(target);
-            } else if (opType === 2) {
+            }
+            else if (opType === 2) {
                 await actor.resumePendingJobs();
-            } else {
+            }
+            else {
                 const target = jobIds.length > 0 ? jobIds[Math.floor(Math.random() * jobIds.length)] : `fake_${i}`;
                 // Simulated checkpoint logic (JobRunner would do this internally, but we fake it via enqueue for test)
                 await actor.enqueue('checkpoint.commit', { jobId: target, step: i });
             }
             opsCount++;
-        } catch (e: any) {
+        }
+        catch (e) {
             errors.push(e.message);
         }
     }
-    
     // Output evidence
     writeEvidence('treasury-console', {
         app: 'Treasury Console',
@@ -61,5 +59,4 @@ async function run() {
         unsupportedCapabilities: []
     });
 }
-
 run().catch(console.error);

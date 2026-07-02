@@ -35,7 +35,7 @@ export function App() {
           <CardHeader title="Job Execution Engine" subtitle="Resumable HardKAS tasks" />
           <CardBody>
             <div className="space-y-3">
-              {jobs.length === 0 ? <p>No active jobs.</p> : jobs.map(job => (
+              {jobs.length === 0 ? <p>No active jobs.</p> : jobs.map((job: any) => (
                 <div key={job.id} className="p-3 bg-gray-900 rounded-lg border border-gray-800">
                   <div className="flex justify-between">
                     <span className="font-mono text-sm text-white">{job.id}</span>
