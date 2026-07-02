@@ -1,0 +1,22 @@
+{
+  "name": "Mainnet Violation Test",
+  "description": "Attempts to interact with mainnet on an agent configured for localnet",
+  "allowNetwork": true,
+  "allowMainnet": false,
+  "steps": [
+    {
+      "type": "network.switch",
+      "args": {
+        "network": "mainnet"
+      }
+    },
+    {
+      "type": "tx.plan",
+      "args": {
+        "from": "alice",
+        "to": "bob",
+        "amount": "1"
+      }
+    }
+  ]
+}

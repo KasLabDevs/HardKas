@@ -56,8 +56,10 @@ describe("KaspaSdkRealTxSigner", () => {
       ScriptPublicKey: vi.fn().mockImplementation((v, s) => ({ version: v, script: s })),
       createTransaction: vi.fn().mockReturnValue({ id: "txid123" }),
       signTransaction: vi.fn().mockReturnValue({
-        id: "txid123",
-        serialize: () => "signed_payload_hex"
+        tx: {
+          id: "txid123",
+          toJSON: () => ({ payload: "mocked" })
+        }
       })
     };
 
@@ -68,7 +70,7 @@ describe("KaspaSdkRealTxSigner", () => {
     const result = await signer.sign({ plan: mockPlan, account: mockAccount });
 
     expect(result.txId).toBe("txid123");
-    expect(result.signedTransaction.payload).toBe("signed_payload_hex");
+    expect(result.signedTransaction.payload).toBe('{"payload":"mocked"}');
     expect(mockSdk.createTransaction).toHaveBeenCalled();
     expect(mockSdk.signTransaction).toHaveBeenCalled();
   });

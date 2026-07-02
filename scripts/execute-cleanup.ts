@@ -82,7 +82,7 @@ tmp/
 temp/
 `;
 
-fs.appendFileSync(path.join(repoRoot, '.gitignore'), gitignoreAdditions);
+fs.appendFileSync(path.join(repoRoot, '.gitignore'), gitignoreAdditions); // hardkas-append-allow
 fs.writeFileSync('cleanup-report-data.json', JSON.stringify(report, null, 2));
 
 console.log('Cleanup executed successfully.');
