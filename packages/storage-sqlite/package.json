@@ -1,6 +1,6 @@
 {
   "name": "@hardkas/storage-sqlite",
-  "version": "0.11.1-alpha",
+  "version": "0.11.2-alpha",
   "private": true,
   "main": "./dist/index.js",
   "module": "./dist/index.mjs",

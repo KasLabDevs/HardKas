@@ -1,6 +1,6 @@
 {
   "name": "@hardkas/jobs",
-  "version": "0.11.1-alpha",
+  "version": "0.11.2-alpha",
   "private": false,
   "type": "module",
   "main": "dist/index.js",
@@ -10,7 +10,7 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@hardkas/observability": "workspace:0.11.1-alpha"
+    "@hardkas/observability": "workspace:0.11.2-alpha"
   },
   "devDependencies": {
     "@types/node": "^20.12.7",

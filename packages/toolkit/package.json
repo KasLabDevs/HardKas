@@ -1,6 +1,6 @@
 {
   "name": "@hardkas/toolkit",
-  "version": "0.11.1-alpha",
+  "version": "0.11.2-alpha",
   "private": false,
   "type": "module",
   "main": "dist/index.js",
@@ -14,7 +14,7 @@
     "@hardkas/artifacts": "workspace:*",
     "@hardkas/core": "workspace:*",
     "@hardkas/jobs": "workspace:*",
-    "@hardkas/observability": "workspace:0.11.1-alpha",
+    "@hardkas/observability": "workspace:0.11.2-alpha",
     "@hardkas/query": "workspace:*",
     "@hardkas/query-store": "workspace:*",
     "@hardkas/tx-builder": "workspace:*",

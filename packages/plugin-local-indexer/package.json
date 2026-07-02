@@ -1,6 +1,6 @@
 {
   "name": "@hardkas/plugin-local-indexer",
-  "version": "0.11.1-alpha",
+  "version": "0.11.2-alpha",
   "description": "Local Indexer Plugin for HardKAS",
   "type": "module",
   "main": "./dist/index.js",

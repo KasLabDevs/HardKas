@@ -419,16 +419,16 @@ importers:
   examples/p22-gauntlet:
     dependencies:
       '@hardkas/cli':
-        specifier: workspace:0.11.1-alpha
+        specifier: workspace:0.11.2-alpha
         version: link:../../packages/cli
       '@hardkas/core':
-        specifier: workspace:0.11.1-alpha
+        specifier: workspace:0.11.2-alpha
         version: link:../../packages/core
       '@hardkas/plugin-local-indexer':
-        specifier: workspace:0.11.1-alpha
+        specifier: workspace:0.11.2-alpha
         version: link:../../packages/plugin-local-indexer
       '@hardkas/sdk':
-        specifier: workspace:0.11.1-alpha
+        specifier: workspace:0.11.2-alpha
         version: link:../../packages/sdk
       tsx:
         specifier: ^4.22.4
@@ -1137,7 +1137,7 @@ importers:
         version: 5.8.5
     devDependencies:
       '@hardkas/node-runner':
-        specifier: workspace:0.11.1-alpha
+        specifier: workspace:0.11.2-alpha
         version: link:../../packages/node-runner
       '@playwright/test':
         specifier: ^1.60.0
@@ -2064,7 +2064,7 @@ importers:
   packages/jobs:
     dependencies:
       '@hardkas/observability':
-        specifier: workspace:0.11.1-alpha
+        specifier: workspace:0.11.2-alpha
         version: link:../observability
     devDependencies:
       '@types/node':
@@ -2083,7 +2083,7 @@ importers:
         specifier: workspace:*
         version: link:../core
       '@hardkas/observability':
-        specifier: workspace:0.11.1-alpha
+        specifier: workspace:0.11.2-alpha
         version: link:../observability
       '@hardkas/tx-builder':
         specifier: workspace:*
@@ -2205,7 +2205,7 @@ importers:
   packages/observability:
     devDependencies:
       '@types/node':
-        specifier: ^20.11.16
+        specifier: ^20.11.26
         version: 20.19.41
       tsup:
         specifier: ^8.0.2
@@ -2239,7 +2239,7 @@ importers:
         specifier: workspace:*
         version: link:../kaspa-rpc
       '@hardkas/observability':
-        specifier: workspace:0.11.1-alpha
+        specifier: workspace:0.11.2-alpha
         version: link:../observability
       '@hardkas/toolkit':
         specifier: workspace:*
@@ -2509,7 +2509,7 @@ importers:
         specifier: workspace:*
         version: link:../core
       '@hardkas/observability':
-        specifier: workspace:0.11.1-alpha
+        specifier: workspace:0.11.2-alpha
         version: link:../observability
       '@hardkas/toolkit':
         specifier: workspace:*
@@ -2577,7 +2577,7 @@ importers:
         specifier: workspace:*
         version: link:../jobs
       '@hardkas/observability':
-        specifier: workspace:0.11.1-alpha
+        specifier: workspace:0.11.2-alpha
         version: link:../observability
       '@hardkas/query':
         specifier: workspace:*
