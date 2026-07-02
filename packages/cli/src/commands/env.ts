@@ -27,7 +27,7 @@ export function registerEnvCommands(program: Command) {
       const parsedEnv: Record<string, string> = {};
       envContent.split("\n").forEach(line => {
         const match = line.match(/^\s*([\w.-]+)\s*=\s*(.*)?\s*$/);
-        if (match) {
+        if (match && match[1]) {
            parsedEnv[match[1]] = match[2] || "";
         }
       });
@@ -58,7 +58,7 @@ export function registerEnvCommands(program: Command) {
       if (missing.length > 0) {
         out.error(`Missing required environment variables:\n  - ${missing.join("\n  - ")}`);
         out.writeLine("Ensure you have a .env file configured properly for deployment.");
-        throw new HardkasCliError("ENV_VALIDATION_FAILED", "Missing required environment variables", 1);
+        throw new HardkasCliError("ENV_VALIDATION_FAILED", "Missing required environment variables", { exitCode: 1 });
       }
 
       out.writeLine(`Environment is valid! Found ${present.length} variables.`);
