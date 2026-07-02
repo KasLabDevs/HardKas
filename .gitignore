@@ -162,3 +162,27 @@ examples/**/testnet.db
 examples/**/sync.json
 examples/**/jobs.json
 examples/**/TESTNET_SOAK_REPORT.json
+
+# P68 Cleanup Additions
+coverage/
+playwright-report/
+test-results/
+*.log
+*.tsbuildinfo
+*.evidence.json
+coverage-summary.json
+*_REPORT.md
+API_DEAD_ZONE_REPORT.md
+FULL_ECOSYSTEM_COVERAGE_REPORT.md
+PACKAGE_USAGE_MATRIX.md
+PUBLIC_API_COVERAGE_MATRIX.md
+SHOWCASE_EXECUTION_REPORT.md
+TESTNET_SOAK_REPORT.json
+.benchmark-workspace*
+.smoke-workspace*
+.crash-workspace*
+.fuzz-workspace*
+.post-release-gauntlet*
+.tmp*
+tmp/
+temp/
