@@ -476,7 +476,7 @@ export async function runDoctorChecks(
     const parsedEnv: Record<string, string> = {};
     envContent.split("\n").forEach(line => {
       const match = line.match(/^\s*([\w.-]+)\s*=\s*(.*)?\s*$/);
-      if (match) {
+      if (match && match[1]) {
          parsedEnv[match[1]] = match[2] || "";
       }
     });
