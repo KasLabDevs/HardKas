@@ -2,6 +2,35 @@
 ## [0.11.2-alpha] - 2026-06-29 — The First Local-First Application Runtime
 > **Notice:** `0.11.0-alpha` was published partially due to a registry collision and has been superseded by `0.11.2-alpha`. `0.11.2-alpha` is the official release.
 
+### Migration Note 0.11.2-alpha
+**Strict Separation of Concerns in the TX Pipeline:**
+The `tx.send` method no longer implicitly handles partial plan objects to enforce deterministic evidence paths.
+
+**Incorrect (0.10.x):**
+```ts
+const receipt = await hardkas.tx.send({
+  from: "dev-0",
+  to: receiverAddr,
+  amountSompi: "100000000"
+});
+```
+
+**Correct (0.11.2-alpha):**
+```ts
+// 1. Explicitly request the plan with strong typing (BigInt)
+const plan = await hardkas.tx.plan({
+    from: "dev-0",
+    to: receiverAddr,
+    amount: 100000000n // using native BigInt
+});
+
+// 2. Firm deterministic signatures
+const signedArtifact = await hardkas.tx.sign(plan);
+
+// 3. Broadcast the signed payload
+const receipt = await hardkas.tx.send(signedArtifact);
+```
+
 ### Added
 - **Backend Plugin Architecture**: Introduced `@hardkas/plugin-rpc-backend` (V1) to transparently connect `IndexerToolkit` to real Docker `simnet` and `testnet` nodes without altering the SDK facade.
 - **Native BigInt Standardization**: All monetary values (balances, fees, amounts) and consensus values (blue scores) are now strongly typed as `bigint` across all Toolkits to eliminate floating-point imprecision.
