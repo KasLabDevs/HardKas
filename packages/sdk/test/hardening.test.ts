@@ -80,14 +80,17 @@ describe("Core Hardening Sprint Regressions", () => {
 
     process.env.TEST_KEY = "1".repeat(64);
 
+    const { PrivateKey } = await import("kaspa-wasm");
+    const testAddress = (new PrivateKey(process.env.TEST_KEY) as any).toKeypair().toAddress("simnet").toString();
+
     const plan = {
       networkId: "simnet" as any,
       mode: "real",
       estimatedFeeSompi: "100",
-      from: { address: "kaspa:test" },
+      from: { address: testAddress },
       inputs: [
         {
-          address: "kaspa:mock_addr",
+          address: testAddress,
           amountSompi: "1000",
           outpoint: { transactionId: "123", index: 0 }
           // scriptPublicKey is omitted

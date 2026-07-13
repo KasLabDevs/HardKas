@@ -11,9 +11,6 @@ import { HardkasSilver } from "./silver.js";
 import { HardkasZk } from "./zk.js";
 import { HardkasVprogs } from "./vprogs.js";
 import { HardkasProgrammability } from "./programmability.js";
-import { HardkasToccata } from "./toccata.js";
-import { HardkasIgra } from "./igra.js";
-
 /**
  * HardKAS Experimental APIs
  * 
@@ -34,9 +31,6 @@ export class HardkasExperimental {
   public readonly vprogs: HardkasVprogs;
   public readonly programmability: HardkasProgrammability;
 
-  private _toccata?: HardkasToccata;
-  private _fees?: HardkasFees;
-  private _igra?: HardkasIgra;
 
   constructor(private sdk: Hardkas) {
     this.l2 = new HardkasL2(sdk);
@@ -52,31 +46,5 @@ export class HardkasExperimental {
     this.programmability = new HardkasProgrammability(sdk);
   }
 
-  /** @deprecated Use `hardkas.fees` instead. Fees are a core L1 capability. */
-  get fees(): HardkasFees {
-    if (!this._fees) {
-      console.warn("[HardKAS] hardkas.experimental.fees is deprecated. Use hardkas.fees instead.");
-      this._fees = this.sdk.fees;
-    }
-    return this._fees;
-  }
-
-  /** @deprecated Use `hardkas.covenants` instead. Toccata is no longer experimental; it is Kaspa L1 core. */
-  get toccata(): HardkasToccata {
-    if (!this._toccata) {
-      console.warn("[HardKAS] hardkas.experimental.toccata is deprecated. Use hardkas.covenants instead.");
-      this._toccata = new HardkasToccata(this.sdk);
-    }
-    return this._toccata;
-  }
-
-  /** @deprecated Use `hardkas.l2.igra` instead. Igra is an official L2 track. */
-  get igra(): HardkasIgra {
-    if (!this._igra) {
-      console.warn("[HardKAS] hardkas.experimental.igra is deprecated. Use hardkas.l2.igra instead.");
-      this._igra = this.sdk.l2.igra;
-    }
-    return this._igra;
-  }
 }
 

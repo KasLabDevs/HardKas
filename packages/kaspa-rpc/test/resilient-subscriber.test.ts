@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { ResilientSubscriptionClient } from '../src/resilient-subscriber.js';
+import { ResilientSubscriptionClient } from '../src/internal/resilient-subscriber.js';
 import { JsonWrpcKaspaClient } from '../src/json-rpc-client.js';
 
 // We mock JsonWrpcKaspaClient
@@ -14,14 +14,12 @@ vi.mock('../src/json-rpc-client.js', () => {
                     if (this.isClosed) throw new Error("Closed");
                     return { networkId: "simnet" };
                 },
-                async subscribe(topic: string, payload: any, cb: any) {
+                on(topic: string, cb: any) {
                     if (this.isClosed) throw new Error("Closed");
                     this.subs.add(cb);
-                    return {
-                        unsubscribe: async () => {
-                            this.subs.delete(cb);
-                        }
-                    };
+                },
+                off(topic: string, cb: any) {
+                    this.subs.delete(cb);
                 },
                 async close() {
                     this.isClosed = true;
@@ -63,7 +61,7 @@ describe('ResilientSubscriptionClient', () => {
         });
 
         let events = 0;
-        await client.subscribe("utxos-changed", {}, (data) => {
+        client.on("utxos-changed", (data) => {
             events++;
         });
 
@@ -102,7 +100,7 @@ describe('ResilientSubscriptionClient', () => {
         });
 
         let events = 0;
-        await client.subscribe("test-topic", {}, (data) => { events++; });
+        client.on("test-topic", (data) => { events++; });
 
         const mockInstances = vi.mocked(JsonWrpcKaspaClient).mock.results;
         let innerClient1 = mockInstances[0].value;

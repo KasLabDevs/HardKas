@@ -166,6 +166,9 @@ describe("0.11.3-alpha Lifecycle Integrity & Trust Boundary Tests", () => {
     content.decision = "DENY";
     fs.writeFileSync(policyFile, JSON.stringify(content, null, 2), "utf-8");
 
+    // Clear cache so it reads from the tampered disk file
+    sdk.artifacts.cache.clear();
+
     // Verifying policy itself must fail
     const result = await sdk.artifacts.verify(policy.contentHash, {
       throwOnInvalid: false

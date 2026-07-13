@@ -25,6 +25,9 @@ describe("Replay Invariants", () => {
       },
       systemRuntimeContext
     );
+    if (!result.ok) {
+        throw new Error("applySimulatedPayment failed: " + JSON.stringify(result.errors));
+    }
 
     const report = verifyReplay(
       state,
@@ -37,16 +40,19 @@ describe("Replay Invariants", () => {
   });
 
   it("should fail if plan is mutated (contentHash mismatch)", () => {
-    const state = createInitialLocalnetState({ accounts: 2, initialBalanceSompi: 1000n });
+    const state = createInitialLocalnetState({ accounts: 2, initialBalanceSompi: parseKasToSompi("10") });
     const result = applySimulatedPayment(
       state,
       {
         from: "alice",
         to: "bob",
-        amountSompi: 100n
+        amountSompi: parseKasToSompi("1")
       },
       systemRuntimeContext
     );
+    if (!result.ok) {
+        throw new Error("applySimulatedPayment failed in second test: " + JSON.stringify(result.errors));
+    }
 
     const plan = JSON.parse(JSON.stringify(result.planArtifact));
     plan.amountSompi = "9999"; // Mutate amount
@@ -57,18 +63,21 @@ describe("Replay Invariants", () => {
   });
 
   it("should fail if preStateHash mismatch", () => {
-    const state1 = createInitialLocalnetState({ initialBalanceSompi: 1000n });
-    const state2 = createInitialLocalnetState({ initialBalanceSompi: 2000n });
+    const state1 = createInitialLocalnetState({ initialBalanceSompi: parseKasToSompi("10") });
+    const state2 = createInitialLocalnetState({ initialBalanceSompi: parseKasToSompi("20") });
 
     const result = applySimulatedPayment(
       state1,
       {
         from: "alice",
         to: "bob",
-        amountSompi: 100n
+        amountSompi: parseKasToSompi("1")
       },
       systemRuntimeContext
     );
+    if (!result.ok) {
+        throw new Error("applySimulatedPayment failed in third test: " + JSON.stringify(result.errors));
+    }
 
     const report = verifyReplay(
       state2,

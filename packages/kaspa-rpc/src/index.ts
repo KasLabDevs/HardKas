@@ -1,5 +1,6 @@
 import type { NetworkId } from "@hardkas/core";
 import { WebSocket } from "ws";
+import { NOTIFY_UTXOS_CHANGED_REQUEST, STOP_NOTIFYING_UTXOS_CHANGED_REQUEST, UTXOS_CHANGED_NOTIFICATION } from "./internal/notifications.js";
 
 export interface KaspaNodeInfo {
   serverVersion?: string | undefined;
@@ -121,6 +122,10 @@ export interface KaspaSubscription {
   unsubscribe(): Promise<void>;
 }
 
+export interface SubmitTransactionOptions {
+  allowOrphan?: boolean;
+}
+
 export interface KaspaRpcClient {
   getInfo(): Promise<KaspaNodeInfo>;
   healthCheck(): Promise<KaspaRpcHealth>;
@@ -128,9 +133,9 @@ export interface KaspaRpcClient {
   getUtxosByAddress(address: string): Promise<KaspaRpcUtxo[]>;
   getUtxosByAddresses(addresses: string[]): Promise<any>;
   getBlocks(options?: { includeBlocks?: boolean; includeTransactions?: boolean }): Promise<any>;
-  submitTransaction(transaction: KaspaRpcTransaction | any, options?: any): Promise<KaspaSubmitTransactionResult>;
+  submitTransaction(transaction: KaspaRpcTransaction, options?: SubmitTransactionOptions): Promise<KaspaSubmitTransactionResult>;
   getMempoolEntry(txId: string): Promise<MempoolEntry | null>;
-  getMempoolEntries(options?: any): Promise<any>;
+  getMempoolEntries(options?: unknown): Promise<any>;
   getTransaction(txId: string): Promise<unknown | null>;
   getBlockDagInfo(): Promise<BlockDagInfo>;
   getServerInfo(): Promise<ServerInfo>;
@@ -143,8 +148,8 @@ export interface KaspaRpcClient {
   getHeaders(): Promise<any>;
   subscribeToUtxosChanged(addresses: readonly string[], handler: (event: UtxosChangedEvent) => void): Promise<KaspaSubscription>;
   call<TResponse = unknown>(method: string, params?: unknown): Promise<TResponse>;
-  on(event: string, handler: (data: any) => void): void;
-  off(event: string, handler: (data: any) => void): void;
+  on(event: string, handler: (data: unknown) => void): void;
+  off(event: string, handler: (data: unknown) => void): void;
   close(): void | Promise<void>;
 }
 
@@ -202,7 +207,7 @@ export class JsonWrpcKaspaClient implements KaspaRpcClient {
     let isClosed = false;
 
     // We use the JSON-RPC notify method
-    await this.callMethod("notifyUtxosChanged", "notifyUtxosChangedRequest", { addresses: [...addresses] });
+    await this.callMethod("notifyUtxosChanged", NOTIFY_UTXOS_CHANGED_REQUEST, { addresses: [...addresses] });
 
     const msgHandler = (data: any) => {
       if (isClosed) return;
@@ -214,7 +219,7 @@ export class JsonWrpcKaspaClient implements KaspaRpcClient {
       });
     };
 
-    this.on("utxosChangedNotification", msgHandler);
+    this.on(UTXOS_CHANGED_NOTIFICATION, msgHandler);
 
     return {
       id: subId,
@@ -222,10 +227,10 @@ export class JsonWrpcKaspaClient implements KaspaRpcClient {
       unsubscribe: async () => {
         if (isClosed) return;
         isClosed = true;
-        this.off("utxosChangedNotification", msgHandler);
+        this.off(UTXOS_CHANGED_NOTIFICATION, msgHandler);
         // Fire stop request
         try {
-            await this.callMethod("stopNotifyingUtxosChanged", "stopNotifyingUtxosChangedRequest", { addresses: [...addresses] });
+            await this.callMethod("stopNotifyingUtxosChanged", STOP_NOTIFYING_UTXOS_CHANGED_REQUEST, { addresses: [...addresses] });
         } catch(e) {
             // Ignore error if connection is dead
         }
@@ -359,8 +364,8 @@ export class JsonWrpcKaspaClient implements KaspaRpcClient {
     );
   }
 
-  async submitTransaction(rawTransaction: unknown): Promise<KaspaSubmitTransactionResult> {
-    let txObj = rawTransaction;
+  async submitTransaction(transaction: KaspaRpcTransaction, options?: SubmitTransactionOptions): Promise<KaspaSubmitTransactionResult> {
+    let txObj: any = transaction;
     try {
       while (typeof txObj === "string" && txObj.startsWith("{")) {
         const parsed = JSON.parse(txObj);
@@ -422,10 +427,13 @@ export class JsonWrpcKaspaClient implements KaspaRpcClient {
     }
 
     // Both flavors accept the transaction wrapped in an object
+    const req: any = { transaction: txObj };
+    if (options?.allowOrphan) req.allowOrphan = true;
+
     const response = await this.callMethod(
       "submitTransaction",
       "submitTransactionRequest",
-      { transaction: txObj, allowOrphan: false }
+      req
     );
     return mapKaspaSubmitTransactionResult(response);
   }
@@ -770,12 +778,12 @@ export class MockKaspaRpcClient implements KaspaRpcClient {
 
   constructor(private readonly networkId: NetworkId = "simnet" as NetworkId) {}
 
-  async call<TResponse = unknown>(method: string, params?: any): Promise<TResponse> {
+  async call<TResponse = unknown>(method: string, params?: unknown): Promise<TResponse> {
     return null as TResponse;
   }
   
-  on(event: string, handler: (data: any) => void): void {}
-  off(event: string, handler: (data: any) => void): void {}
+  on(event: string, handler: (data: unknown) => void): void {}
+  off(event: string, handler: (data: unknown) => void): void {}
 
   async subscribeToUtxosChanged(addresses: readonly string[], handler: (event: UtxosChangedEvent) => void): Promise<KaspaSubscription> {
     let closed = false;
@@ -838,12 +846,13 @@ export class MockKaspaRpcClient implements KaspaRpcClient {
   }
 
   async submitTransaction(
-    rawTransaction: unknown
+    transaction: KaspaRpcTransaction,
+    options?: SubmitTransactionOptions
   ): Promise<KaspaSubmitTransactionResult> {
     return {
       transactionId: "mock-txid",
       accepted: true,
-      raw: { rawTransaction }
+      raw: { transaction }
     };
   }
 

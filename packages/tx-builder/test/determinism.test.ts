@@ -169,7 +169,7 @@ describe("P1.12 Deterministic Transaction Canonicalization", () => {
 
     for (let i = 0; i < 100; i++) {
       const shuffledUtxos = shuffle(utxos);
-      const plan = buildPaymentPlan({
+      const plan = buildPaymentPlan({ coinbaseMaturity: 100n,
         fromAddress: mockFrom,
         outputs,
         availableUtxos: shuffledUtxos,
@@ -220,7 +220,7 @@ describe("P1.12 Deterministic Transaction Canonicalization", () => {
 
   it("Test B & C: Stable Plan Hash & Replay Stability", () => {
     // Construct base plan
-    const plan = buildPaymentPlan({
+    const plan = buildPaymentPlan({ coinbaseMaturity: 100n,
       fromAddress: mockFrom,
       outputs,
       availableUtxos: utxos,
@@ -400,7 +400,7 @@ describe("P1.12 Deterministic Transaction Canonicalization", () => {
       }
     ];
 
-    const plan = buildPaymentPlan({
+    const plan = buildPaymentPlan({ coinbaseMaturity: 100n,
       fromAddress: mockFrom,
       outputs: [{ address: mockTo, amountSompi: 1500n }],
       availableUtxos: equalUtxos,
@@ -436,7 +436,7 @@ describe("P1.12 Deterministic Transaction Canonicalization", () => {
     // Candidate UTXOs
     const availableUtxos = [createMockUtxo({ address: mockFrom, amountSompi: 10000n })];
 
-    const plan = buildPaymentPlan({
+    const plan = buildPaymentPlan({ coinbaseMaturity: 100n,
       fromAddress: mockFrom,
       outputs: recipientOutputs,
       availableUtxos,

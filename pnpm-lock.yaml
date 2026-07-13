@@ -1894,7 +1894,7 @@ importers:
         specifier: workspace:*
         version: link:../core
       '@hardkas/observability':
-        specifier: workspace:0.11.3-alpha
+        specifier: workspace:*
         version: link:../observability
       '@hardkas/tx-builder':
         specifier: workspace:*
@@ -2341,6 +2341,9 @@ importers:
 
   packages/testing:
     dependencies:
+      '@hardkas/accounts':
+        specifier: workspace:*
+        version: link:../accounts
       '@hardkas/artifacts':
         specifier: workspace:*
         version: link:../artifacts

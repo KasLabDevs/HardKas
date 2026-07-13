@@ -1,4 +1,4 @@
-import { systemRuntimeContext, deterministicCompare } from "@hardkas/core";
+import { systemRuntimeContext, deterministicCompare, getCoinbaseMaturity } from "@hardkas/core";
 import { Hardkas } from "./index.js";
 import {
   buildPaymentPlan,
@@ -208,7 +208,10 @@ export class HardkasTx {
       }
     };
 
-    const planService = new TxPlanService(utxoProvider);
+    const networkConfig = this.sdk.config.config.networks?.[activeNetwork];
+    const coinbaseMaturity = getCoinbaseMaturity(activeNetwork, networkConfig?.kind === "kaspa-node" || networkConfig?.kind === "kaspa-rpc" || networkConfig?.kind === "simulated" ? networkConfig.consensusParams : undefined);
+    
+    const planService = new TxPlanService(utxoProvider, { coinbaseMaturity });
     const result = await planService.planTransaction({
       fromAddress: fromAccount.address,
       toAddress: toAccount.address,
@@ -356,7 +359,10 @@ export class HardkasTx {
     const dummyProvider: UtxoProvider = {
       getUtxos: async () => []
     };
-    const planService = new TxPlanService(dummyProvider);
+    const networkConfig = this.sdk.config.config.networks?.[activeNetwork];
+    const coinbaseMaturity = getCoinbaseMaturity(activeNetwork, networkConfig?.kind === "kaspa-node" || networkConfig?.kind === "kaspa-rpc" || networkConfig?.kind === "simulated" ? networkConfig.consensusParams : undefined);
+    
+    const planService = new TxPlanService(dummyProvider, { coinbaseMaturity });
     const result = await planService.planConsolidation({
       fromAddress: resolvedAccount?.address as string,
       selectedUtxos: options.selectedUtxos,
@@ -465,8 +471,8 @@ export class HardkasTx {
     }
 
     if (
-      plan.schema === HardkasSchemas.TxPlanV1 ||
-      plan.schema === HardkasSchemas.SignedTxV1 ||
+      (plan as any).schema === HardkasSchemas.TxPlanV1 ||
+      (plan as any).schema === HardkasSchemas.SignedTxV1 ||
       (plan as any).txVersion === 1
     ) {
       // WASM v0.13 does not support V1 artifacts natively in our SDK adapters yet
@@ -1249,7 +1255,7 @@ export class HardkasTx {
       endpoint: url || "real"
     } as unknown as Parameters<typeof coreEvents.normalizeAndEmit>[0]);
 
-    const result = await this.sdk.rpc.submitTransaction(broadcastable.rawTransaction);
+    const result = await this.sdk.rpc.submitTransaction(broadcastable.rawTransaction as any);
 
     const realReceiptBase: any = {
       schema: ARTIFACT_SCHEMAS.TX_RECEIPT,

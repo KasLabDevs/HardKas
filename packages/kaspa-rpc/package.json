@@ -1,6 +1,6 @@
 {
   "name": "@hardkas/kaspa-rpc",
-  "version": "0.11.2-alpha",
+  "version": "0.11.3-alpha",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -14,17 +14,22 @@
       "types": "./dist/adapters/index.d.ts",
       "import": "./dist/adapters/index.js",
       "default": "./dist/adapters/index.js"
+    },
+    "./internal/*": {
+      "types": "./dist/internal/*.d.ts",
+      "import": "./dist/internal/*.js",
+      "default": "./dist/internal/*.js"
     }
   },
   "scripts": {
-    "build": "tsup src/index.ts src/adapters/index.ts --format esm --dts --clean",
+    "build": "tsup src/index.ts src/adapters/index.ts src/internal/notifications.ts src/internal/resilient-subscriber.ts --format esm --dts --clean",
     "test": "vitest run",
     "typecheck": "tsc --noEmit",
     "lint": "eslint ."
   },
   "dependencies": {
     "@hardkas/core": "workspace:*",
-    "@hardkas/observability": "workspace:0.11.2-alpha",
+    "@hardkas/observability": "workspace:*",
     "@hardkas/tx-builder": "workspace:*",
     "ws": "^8.18.0"
   },

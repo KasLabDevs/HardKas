@@ -52,9 +52,14 @@ async function main() {
     process.stdout.write("  [░░░░░░░░░░] 0% (Submitted)");
 
     // Poll for status
-    const finalized = await hardkas.tx.confirm(receipt.txId, { timeout: 30000 });
+    await new Promise(r => setTimeout(r, 2000));
+    const tx = await hardkas.rpc.getTransaction(receipt.txId);
 
-    process.stdout.write("\r  [\x1b[32m██████████\x1b[0m] 100% (Accepted by DAG)\n");
+    if (tx) {
+      process.stdout.write("\r  [\x1b[32m██████████\x1b[0m] 100% (Accepted by DAG)\n");
+    } else {
+      console.log("\r  [\x1b[33m██████████\x1b[0m] (Timeout waiting for confirmation)\n");
+    }
     console.log("");
 
     console.log("\x1b[32m✓\x1b[0m \x1b[1mTransfer complete!\x1b[0m");

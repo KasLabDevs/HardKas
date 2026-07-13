@@ -24,6 +24,7 @@
     "lint": "eslint ."
   },
   "dependencies": {
+    "@hardkas/accounts": "workspace:*",
     "@hardkas/artifacts": "workspace:*",
     "@hardkas/core": "workspace:*",
     "@hardkas/kaspa-rpc": "workspace:*",

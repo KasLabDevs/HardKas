@@ -190,8 +190,7 @@ export class HardkasArtifactsManager {
       }
       return cached;
     } else {
-      console.log("[ArtifactsManager.read] Cache MISS for:", id);
-      console.log("[ArtifactsManager.read] Cache keys:", Array.from(this.cache.keys()));
+
     }
 
     const { readArtifact } = await import("@hardkas/artifacts");
@@ -370,9 +369,7 @@ export class HardkasArtifactsManager {
         artifactsDir: this.sdk.workspace.artifactsDir,
         enforceMetadata,
         resolveArtifact: (id: string) => {
-          const cached = this.cache.get(id);
-          console.log("[resolveArtifact] id:", id, "cached:", !!cached, "keys:", Array.from(this.cache.keys()));
-          return cached;
+          return this.cache.get(id);
         }
       });
       if (!semResult.ok) {

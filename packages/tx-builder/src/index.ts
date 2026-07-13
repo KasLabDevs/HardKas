@@ -100,7 +100,10 @@ export function buildPaymentPlan(request: TxBuildRequest): TxPlan {
   }
 
   // 2. Filter immature coinbase UTXOs before selection
-  const COINBASE_MATURITY = request.coinbaseMaturity ?? (request.networkId ? getCoinbaseMaturity(request.networkId) : 1000n);
+  if (request.coinbaseMaturity === undefined) {
+    throw new Error("COINBASE_MATURITY_UNRESOLVED: coinbaseMaturity must be explicitly provided to TxBuilder");
+  }
+  const COINBASE_MATURITY = request.coinbaseMaturity;
   let candidateUtxos: readonly Utxo[] = request.availableUtxos;
 
   if (request.virtualDaaScore !== undefined) {
