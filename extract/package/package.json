@@ -1,0 +1,41 @@
+{
+  "name": "@hardkas/toolkit",
+  "version": "0.11.3-alpha",
+  "private": false,
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.js",
+      "default": "./dist/index.js"
+    }
+  },
+  "dependencies": {
+    "@hardkas/observability": "0.11.3-alpha",
+    "fs-extra": "^11.2.0",
+    "@hardkas/accounts": "0.11.3-alpha",
+    "@hardkas/jobs": "0.11.3-alpha",
+    "@hardkas/artifacts": "0.11.3-alpha",
+    "@hardkas/core": "0.11.3-alpha",
+    "@hardkas/query": "0.11.3-alpha",
+    "@hardkas/kaspa-rpc": "0.11.3-alpha",
+    "@hardkas/query-store": "0.11.3-alpha",
+    "@hardkas/tx-builder": "0.11.3-alpha"
+  },
+  "devDependencies": {
+    "@types/fs-extra": "^11.0.4",
+    "@types/node": "^20.12.7",
+    "typescript": "^5.6.3",
+    "vitest": "^2.1.2"
+  },
+  "scripts": {
+    "build": "tsc",
+    "test": "vitest run"
+  }
+}

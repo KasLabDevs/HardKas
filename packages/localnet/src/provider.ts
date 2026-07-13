@@ -7,7 +7,10 @@ import type {
   KaspaSubmitTransactionResult,
   MempoolEntry,
   BlockDagInfo,
-  ServerInfo
+  ServerInfo,
+  KaspaSubscription,
+  UtxosChangedEvent,
+  KaspaRpcTransaction
 } from "@hardkas/kaspa-rpc";
 import { getAddressBalanceSompi, getSpendableUtxos } from "./balance.js";
 import { loadLocalnetState, getDefaultLocalnetStatePath } from "./store.js";
@@ -15,6 +18,13 @@ import type { NetworkId } from "@hardkas/core";
 
 export class LocalnetSimulatedProvider implements KaspaRpcClient {
   constructor(private readonly workspacePath: string) {}
+
+  async call<TResponse = unknown>(method: string, params?: any): Promise<TResponse> {
+    return null as TResponse;
+  }
+
+  on(event: string, handler: (data: any) => void): void {}
+  off(event: string, handler: (data: any) => void): void {}
 
   async getInfo(): Promise<KaspaNodeInfo> {
     return {
@@ -75,9 +85,9 @@ export class LocalnetSimulatedProvider implements KaspaRpcClient {
         transactionId: u.id.split(":")[1] || "unknown",
         index: Number(u.id.split(":")[2]) || 0
       },
-      blockDaaScore: u.createdAtDaaScore,
-      isCoinbase: false,
-      scriptPublicKey: ""
+      blockDaaScore: u.createdAtDaaScore ? BigInt(u.createdAtDaaScore) : 0n,
+      isCoinbase: u.id.startsWith("coinbase:"),
+      scriptPublicKey: "200000000000000000000000000000000000000000000000000000000000000000ac"
     }));
   }
 
@@ -94,7 +104,7 @@ export class LocalnetSimulatedProvider implements KaspaRpcClient {
     return { blockHashes: [], blocks: [] };
   }
 
-  async submitTransaction(rawTransaction: string): Promise<KaspaSubmitTransactionResult> {
+  async submitTransaction(transaction: KaspaRpcTransaction | any, options?: any): Promise<KaspaSubmitTransactionResult> {
     throw new Error(
       "submitTransaction not implemented on SimulatedProvider. Use sdk.tx.simulate instead."
     );
@@ -118,11 +128,36 @@ export class LocalnetSimulatedProvider implements KaspaRpcClient {
 
   async getServerInfo(): Promise<ServerInfo> {
     return {
-      serverVersion: "simulated",
       networkId: "simnet" as NetworkId,
+      serverVersion: "hardkas-localnet-mock",
       isSynced: true
     };
   }
+
+  async subscribeToUtxosChanged(addresses: readonly string[], handler: (event: UtxosChangedEvent) => void): Promise<KaspaSubscription> {
+    let closed = false;
+    return {
+      id: "simulated_sub",
+      get closed() { return closed; },
+      unsubscribe: async () => { closed = true; }
+    };
+  }
+
+  async getFeeEstimate(): Promise<any> { throw new Error("Not implemented"); }
+  async getFeeEstimateExperimental(): Promise<any> { throw new Error("Not implemented"); }
+  async getMempoolEntries(): Promise<any> { return []; }
+  async getMempoolEntriesByAddresses(addresses: string[]): Promise<any> { return []; }
+  async getConnectedPeerInfo(): Promise<any[]> { return []; }
+  async getPeerAddresses(): Promise<any[]> { return []; }
+  async getCurrentNetwork(): Promise<any> { return { networkId: "simnet" }; }
+  async getSink(): Promise<any> { return { sink: "mock-sink" }; }
+  async getSinkBlueScore(): Promise<any> { return { blueScore: 0n }; }
+  async getVirtualSelectedParentChainFromBlock(startHash: string, includeAcceptedTransactionIds?: boolean): Promise<any> { return {}; }
+  async getVirtualSelectedParentBlueScore(): Promise<any> { return { blueScore: 0n }; }
+  async estimateNetworkHashesPerSecond(windowSize?: number, startHash?: string): Promise<any> { return { networkHashesPerSecond: 0n }; }
+  async getSyncStatus(): Promise<any> { return { isSynced: true }; }
+  async getCoinSupply(): Promise<any> { return { maxCoinSupply: 0n, circulatingCoinSupply: 0n }; }
+  async getHeaders(): Promise<any> { return { headers: [] }; }
 
   async close(): Promise<void> {
     // No-op

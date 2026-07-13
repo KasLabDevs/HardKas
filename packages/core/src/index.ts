@@ -17,6 +17,13 @@ export const kaspaNetworkIdSchema = z.enum([
 
 export type NetworkId = Brand<z.infer<typeof kaspaNetworkIdSchema>, "NetworkId">;
 
+export function getCoinbaseMaturity(networkId: string): bigint {
+  if (networkId === "mainnet") return 244n;
+  if (networkId === "testnet-10" || networkId === "testnet-11" || networkId === "testnet-12") return 100n;
+  if (networkId.startsWith("simnet") || networkId === "devnet" || networkId === "simulated") return 100n;
+  return 1000n; // Default fallback for unknown networks
+}
+
 export const executionModeSchema = z.enum(["simulated", "real", "readonly"]);
 
 export type ExecutionMode = z.infer<typeof executionModeSchema>;
@@ -147,3 +154,4 @@ export * from "./silver.js";
 
 export * from "./registry.js";
 export * from "./confirmation-policy.js";
+

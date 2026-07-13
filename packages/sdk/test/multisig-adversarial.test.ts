@@ -127,7 +127,7 @@ describe("Multisig Adversarial Suite", () => {
     );
 
     // Verify replay consistency of the signed transaction sequence
-    const verifyResult = await sdk.replay.verify({ path: "tx-plan.json" });
+    const verifyResult = await sdk.experimental.replay.verify({ path: "tx-plan.json" });
     if (!verifyResult.passed) {
       console.log("verifyResult:", JSON.stringify(verifyResult, null, 2));
     }

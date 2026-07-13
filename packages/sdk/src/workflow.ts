@@ -222,7 +222,7 @@ export class HardkasWorkflow {
         };
         if (producedArtifactId) stepRecord.producedArtifactId = producedArtifactId;
         artifactSteps.push(stepRecord);
-      } catch (e: unknown) {
+      } catch (e: any) {
         status = "failed";
         errorEnvelope = {
           code: ((e as any).code) || "WORKFLOW_STEP_FAILED",

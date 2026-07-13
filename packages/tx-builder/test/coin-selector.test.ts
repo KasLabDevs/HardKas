@@ -4,16 +4,16 @@ import { Utxo, createMockUtxo } from "../src/index.js";
 
 describe("CoinSelector", () => {
   const dummyUtxos: Utxo[] = [
-    createMockUtxo({ address: "kaspatest:1", amountSompi: 1000n, index: 0 }),
-    createMockUtxo({ address: "kaspatest:2", amountSompi: 2000n, index: 1 }),
+    createMockUtxo({ address: "kaspatest:1", amountSompi: 2000n, index: 0 }),
+    createMockUtxo({ address: "kaspatest:2", amountSompi: 3000n, index: 1 }),
     createMockUtxo({ address: "kaspatest:3", amountSompi: 5000n, index: 2 }),
     createMockUtxo({ address: "kaspatest:4", amountSompi: 50n, index: 3 }) // Dust
   ];
 
   it("exact match (if fees were zero, but fees exist, so needs more)", () => {
     // To get an exact match we need the UTXO to perfectly cover target + fee
-    const utxos = [createMockUtxo({ address: "kaspatest:ex", amountSompi: 1150n, index: 0 })];
-    // If target is 1000 and fee is 150
+    const utxos = [createMockUtxo({ address: "kaspatest:ex", amountSompi: 1660n, index: 0 })];
+    // If target is 1000 and fee is 660
     const request: CoinSelectionRequest = {
       utxos,
       targetSompi: 1000n,
@@ -23,16 +23,16 @@ describe("CoinSelector", () => {
       dustThresholdSompi: 100n
     };
     
-    // mass for 1 input + 1 output (no change) = 100 (base) + 150 (in) + 50 (out) = 300
-    // base fee is 300. Conservative fee = (300 * 110 + 99)/100 = 330
-    // If we want exact match with fee 330 and target 1000, we need exactly 1330n.
-    const utxoExact = [createMockUtxo({ address: "kaspatest:ex", amountSompi: 1330n, index: 0 })];
+    // mass for 1 input + 1 output (no change) = 100 (base) + 160 (in) + 400 (out) = 660
+    // base fee is 660. Conservative fee = (660 * 110 + 99)/100 = 726
+    // If we want exact match with fee 726 and target 1000, we need exactly 1726n.
+    const utxoExact = [createMockUtxo({ address: "kaspatest:ex", amountSompi: 1726n, index: 0 })];
     const requestExact: CoinSelectionRequest = { ...request, utxos: utxoExact };
 
     const result = selectCoins(requestExact);
     expect(result.selectedUtxos.length).toBe(1);
     expect(result.changeSompi).toBe(0n); // Exact match
-    expect(result.estimatedFeeSompi).toBe(330n);
+    expect(result.estimatedFeeSompi).toBe(726n);
     expect(result.outputs.length).toBe(1); // No change output
   });
 
@@ -79,7 +79,7 @@ describe("CoinSelector", () => {
     };
 
     const result = selectCoins(request);
-    // Should use 1000, 2000, 5000. It should ignore 50n (dust)
+    // Should use 2000, 3000, 5000. It should ignore 50n (dust)
     const selectedAmounts = result.selectedUtxos.map(u => u.amountSompi);
     expect(selectedAmounts).not.toContain(50n);
     expect(result.dustRejected.length).toBe(1);

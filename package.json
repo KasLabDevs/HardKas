@@ -20,6 +20,7 @@
     "build": "turbo build",
     "dev": "turbo dev",
     "test": "vitest run && pnpm test:workflows",
+    "test:e2e:docker": "vitest run --config vitest.e2e.config.ts --no-file-parallelism",
     "test:workflows": "vitest run packages/cli/test/workflow-corpus.test.ts",
     "bench": "vitest bench --run",
     "bench:docker": "tsx benchmarks/docker-long-run.ts --minutes 30",
@@ -58,6 +59,7 @@
     "example:bridge-assumptions": "pnpm --filter @examples/bridge-assumptions start",
     "example:ci": "pnpm --filter @examples/ci-workflow start",
     "example:dag-reorg": "pnpm --filter @examples/dag-reorg-simulation start",
+    "example:v1-demo": "tsx examples/07-v1-demo/main.ts",
     "examples:test": "pnpm --filter @examples/basic-transfer start && pnpm --filter @examples/backend-service start && pnpm --filter @examples/audit-pipeline start && pnpm --filter @examples/replay start && pnpm --filter @examples/policy start",
     "docs:check": "node scripts/docs-check.mjs",
     "gauntlet:toccata": "node scripts/toccata-gauntlet.mjs",
@@ -100,7 +102,7 @@
     "vitest": "^2.1.9",
     "ws": "^8.18.0"
   },
-  "version": "0.11.2-alpha",
+  "version": "0.11.3-alpha",
   "dependencies": {
     "kaspa": "^0.13.0",
     "kaspa-wasm": "^0.13.0"

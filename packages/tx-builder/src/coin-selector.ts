@@ -1,6 +1,7 @@
 import { Utxo, TxOutput } from "./index.js";
 import { estimateTransactionMass } from "./mass.js";
 import { estimateFee } from "./fee-estimator.js";
+import { getCoinbaseMaturity } from "@hardkas/core";
 
 export type CoinSelectionStrategy = "largest-first" | "smallest-first";
 
@@ -11,6 +12,12 @@ export interface CoinSelectionRequest {
   readonly strategy: CoinSelectionStrategy;
   readonly changeAddress?: string;
   readonly dustThresholdSompi?: bigint;
+  /** Current virtual DAA score from the node. When provided, immature coinbase UTXOs are filtered out. */
+  readonly virtualDaaScore?: bigint;
+  /** Coinbase maturity period in DAA blocks. Defaults to 1000. */
+  readonly coinbaseMaturity?: bigint;
+  /** Network ID to determine default coinbase maturity. */
+  readonly networkId?: string;
 }
 
 export interface CoinSelectionResult {
@@ -21,6 +28,7 @@ export interface CoinSelectionResult {
   readonly changeSompi: bigint;
   readonly outputs: TxOutput[];
   readonly dustRejected: Utxo[];
+  readonly immatureRejected: Utxo[];
   readonly warnings: string[];
   readonly feeModel: "estimated-v1";
 }
@@ -48,12 +56,36 @@ export function selectCoins(request: CoinSelectionRequest): CoinSelectionResult 
   const validUtxos: Utxo[] = [];
   const dustRejected: Utxo[] = [];
 
+  console.log("SELECT COINS RECEIVED UTXOS:", request.utxos);
+
   for (const utxo of request.utxos) {
     if (utxo.amountSompi < dustThreshold) {
       dustRejected.push(utxo);
     } else {
       validUtxos.push(utxo);
     }
+  }
+
+  // Filter immature coinbase UTXOs
+  const COINBASE_MATURITY = request.coinbaseMaturity ?? (request.networkId ? getCoinbaseMaturity(request.networkId) : 1000n);
+  const immatureRejected: Utxo[] = [];
+
+  if (request.virtualDaaScore !== undefined) {
+    for (let i = validUtxos.length - 1; i >= 0; i--) {
+      const utxo = validUtxos[i]!;
+      if (
+        utxo.isCoinbase &&
+        utxo.blockDaaScore !== undefined &&
+        (request.virtualDaaScore - utxo.blockDaaScore) < COINBASE_MATURITY
+      ) {
+        immatureRejected.push(utxo);
+        validUtxos.splice(i, 1);
+      }
+    }
+  }
+
+  if (immatureRejected.length > 0) {
+    warnings.push(`Filtered ${immatureRejected.length} immature coinbase UTXO(s). Coinbase maturity: ${COINBASE_MATURITY} DAA blocks.`);
   }
 
   if (dustRejected.length > 0) {
@@ -169,6 +201,7 @@ export function selectCoins(request: CoinSelectionRequest): CoinSelectionResult 
     changeSompi,
     outputs: finalOutputs,
     dustRejected,
+    immatureRejected,
     warnings,
     feeModel: "estimated-v1"
   };

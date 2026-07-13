@@ -1,6 +1,6 @@
 {
   "schema": "hardkas.silver.spendSimulation",
-  "hardkasVersion": "0.11.2-alpha",
+  "hardkasVersion": "0.11.3-alpha",
   "version": "1.0.0-alpha",
   "hashVersion": 4,
   "networkId": "simnet",

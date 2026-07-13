@@ -93,9 +93,12 @@ export type HardkasSignerKind =
   | "external-wallet"
   | "unsupported";
 
+import { TxInputAuthorizer } from "./authorizers.js";
+
 export interface SignTxPlanInput {
   planArtifact: any; // Using any here to avoid circular dependency with @hardkas/artifacts if needed, or cast later
-  accountName: string;
+  accountName?: string; // Made optional to support purely covenant transactions
+  authorizers?: Readonly<Record<number, TxInputAuthorizer>>;
 }
 
 export interface SignTxPlanResult {

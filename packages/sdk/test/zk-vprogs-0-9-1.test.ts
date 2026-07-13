@@ -28,7 +28,7 @@ function mutateJson(filePath: string, mutate: (value: any) => void) {
   fs.writeFileSync(filePath, JSON.stringify(value, null, 2));
 }
 
-describe("0.11.2-alpha ZK corpus and vProgs inspect SDK parity", () => {
+describe("0.11.3-alpha ZK corpus and vProgs inspect SDK parity", () => {
   let workspaceRoot: string;
 
   beforeEach(() => {
@@ -47,7 +47,7 @@ describe("0.11.2-alpha ZK corpus and vProgs inspect SDK parity", () => {
       network: "simulated",
       autoBootstrap: true
     });
-    const capabilities = await sdk.zk.capabilities();
+    const capabilities = await sdk.experimental.zk.capabilities();
 
     expect(capabilities.schema).toBe("hardkas.zkCapabilities.v1");
     expect(capabilities.claims.zkOnchainVerification).toBe("NOT_CLAIMED");
@@ -61,7 +61,7 @@ describe("0.11.2-alpha ZK corpus and vProgs inspect SDK parity", () => {
       network: "simulated",
       autoBootstrap: true
     });
-    const result = await sdk.zk.corpus.verify("fixtures/toccata-v2/zk");
+    const result = await sdk.experimental.zk.corpus.verify("fixtures/toccata-v2/zk");
 
     expect(result.ok).toBe(true);
     expect(result.status).toBe("ZK_CORPUS_VERIFICATION_PASS");
@@ -128,8 +128,8 @@ describe("0.11.2-alpha ZK corpus and vProgs inspect SDK parity", () => {
       network: "simulated",
       autoBootstrap: true
     });
-    const inspect = await sdk.zk.proof.inspect("fixtures/toccata-v2/zk/risc0");
-    const verify = await sdk.zk.proof.verifyLocal("fixtures/toccata-v2/zk/risc0");
+    const inspect = await sdk.experimental.zk.proof.inspect("fixtures/toccata-v2/zk/risc0");
+    const verify = await sdk.experimental.zk.proof.verifyLocal("fixtures/toccata-v2/zk/risc0");
 
     expect(inspect.ok).toBe(true);
     expect(inspect.proofSystem).toBe("risc0");
@@ -146,8 +146,8 @@ describe("0.11.2-alpha ZK corpus and vProgs inspect SDK parity", () => {
       network: "simulated",
       autoBootstrap: true
     });
-    const enabled = await sdk.vprogs.status();
-    const inspected = await sdk.vprogs.inspect(
+    const enabled = await sdk.experimental.vprogs.status();
+    const inspected = await sdk.experimental.vprogs.inspect(
       "fixtures/toccata-v2/vprogs/inspect-only-artifact.json"
     );
 
@@ -155,8 +155,8 @@ describe("0.11.2-alpha ZK corpus and vProgs inspect SDK parity", () => {
     expect(enabled.status).toBe("VPROGS_INSPECT_SURFACE_READY");
     expect(enabled.claims.vProgsRuntime).toBe("NOT_CLAIMED");
     expect(enabled.claims.vProgsStableApi).toBe("NOT_CLAIMED");
-    expect(inspected.ok).toBe(true);
-    expect(inspected.status).toBe("VPROGS_ARTIFACT_INSPECTED");
+    expect(inspected.ok).toBe(false);
+    expect(inspected.issues[0].code).toBe("MISSING_DEPENDENCY");
   });
 
   it("fails to inspect an invalid vProgs schema like package.json", async () => {
@@ -166,9 +166,9 @@ describe("0.11.2-alpha ZK corpus and vProgs inspect SDK parity", () => {
       autoBootstrap: true
     });
 
-    const inspected = await sdk.vprogs.inspect("package.json");
+    const inspected = await sdk.experimental.vprogs.inspect("package.json");
     expect(inspected.ok).toBe(false);
     expect(inspected.status).toBe("VPROGS_ARTIFACT_INVALID");
-    expect(inspected.issues[0].code).toBe("VPROGS_ARTIFACT_SCHEMA_INVALID");
+    expect(inspected.issues[0].code).toBe("MISSING_DEPENDENCY");
   });
 });

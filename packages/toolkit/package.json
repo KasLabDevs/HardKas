@@ -1,10 +1,21 @@
 {
   "name": "@hardkas/toolkit",
-  "version": "0.11.2-alpha",
+  "version": "0.11.3-alpha",
   "private": false,
   "type": "module",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.js",
+      "default": "./dist/index.js"
+    }
+  },
   "scripts": {
     "build": "tsc",
     "test": "vitest run"
@@ -14,7 +25,8 @@
     "@hardkas/artifacts": "workspace:*",
     "@hardkas/core": "workspace:*",
     "@hardkas/jobs": "workspace:*",
-    "@hardkas/observability": "workspace:0.11.2-alpha",
+    "@hardkas/observability": "workspace:0.11.3-alpha",
+    "@hardkas/kaspa-rpc": "workspace:*",
     "@hardkas/query": "workspace:*",
     "@hardkas/query-store": "workspace:*",
     "@hardkas/tx-builder": "workspace:*",

@@ -60,11 +60,14 @@ export function createTxPlanArtifact(options: CreateTxPlanArtifactOptions): TxPl
       ...(i.blockDaaScore !== undefined
         ? { blockDaaScore: i.blockDaaScore.toString() }
         : {}),
-      ...(i.isCoinbase !== undefined ? { isCoinbase: i.isCoinbase } : {})
+      ...(i.isCoinbase !== undefined ? { isCoinbase: i.isCoinbase } : {}),
+      ...(i.covenantId !== undefined ? { covenantId: i.covenantId } : {}),
+      ...(i.lane !== undefined ? { lane: i.lane } : {})
     })),
     outputs: options.plan.outputs.map((o) => ({
       address: o.address,
-      amountSompi: o.amountSompi.toString()
+      amountSompi: o.amountSompi.toString(),
+      ...(o.covenant !== undefined ? { covenant: { covenantId: o.covenant.covenantId, authorizingInput: o.covenant.authorizingInput } } : {})
     })),
     rpcUrl: options.rpcUrl,
     lineage: {
@@ -81,7 +84,11 @@ export function createTxPlanArtifact(options: CreateTxPlanArtifactOptions): TxPl
     },
     assumptionLevel:
       options.ctx.assumptionLevel ||
-      (options.mode === "simulated" ? "local-simulated" : "local-dev")
+      (options.mode === "simulated" ? "local-simulated" : "local-dev"),
+    ...(options.plan.computeBudget !== undefined ? { computeBudget: options.plan.computeBudget.toString() } : {}),
+    ...(options.plan.storageMass !== undefined ? { storageMass: options.plan.storageMass.toString() } : {}),
+    ...(options.plan.lane !== undefined ? { lane: options.plan.lane } : {}),
+    ...(options.plan.version !== undefined ? { txVersion: options.plan.version } : {})
   };
 
   if (options.plan.change) {

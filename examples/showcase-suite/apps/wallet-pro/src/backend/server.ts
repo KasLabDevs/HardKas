@@ -33,7 +33,7 @@ async function runGauntlet(rpc: JsonWrpcKaspaClient) {
             const wIdx = i % wallets.length;
             const wallet = wallets[wIdx];
             
-            const addr = await wallet.address();
+            const receiveAddress = await wallet.receive();
             
             try {
                 broadcastSSE({ type: 'OP_START', id: wIdx, op: `Fetching UTXOs` });

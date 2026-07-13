@@ -1,7 +1,7 @@
 # P61 — Audit Remediation Backlog
 
 **Estado:** ACTIVO  
-**Versión base auditada:** 0.11.2-alpha
+**Versión base auditada:** 0.11.3-alpha
 **Fecha de apertura:** 2026-06-30  
 **Criterio de cierre de P61:** todos los P0 cerrados con tests; todos los P1 cerrados o documentados como limitación explícita; auditoría repetida sin critical findings verificables; ningún READY.md con claims no demostradas; docs alineadas con API real.
 

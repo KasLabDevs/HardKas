@@ -39,8 +39,8 @@ describe("Deterministic Workflow Identity", () => {
   });
 
   it("identical workflow executions produce identical workflowId", async () => {
-    const w1 = await sdkDev.workflow.run(getSpec(10));
-    const w2 = await sdkDev.workflow.run(getSpec(10));
+    const w1 = await sdkDev.experimental.workflow.run(getSpec(10));
+    const w2 = await sdkDev.experimental.workflow.run(getSpec(10));
 
     expect(w1.workflowId).toBe(w2.workflowId);
     expect(w1.workflowId.startsWith("wf_")).toBe(true);
@@ -48,15 +48,15 @@ describe("Deterministic Workflow Identity", () => {
   });
 
   it("changed inputs change workflowId", async () => {
-    const w1 = await sdkDev.workflow.run(getSpec(10));
-    const w2 = await sdkDev.workflow.run(getSpec(20));
+    const w1 = await sdkDev.experimental.workflow.run(getSpec(10));
+    const w2 = await sdkDev.experimental.workflow.run(getSpec(20));
 
     expect(w1.workflowId).not.toBe(w2.workflowId);
   });
 
   it("changed policy/mode changes workflowId", async () => {
-    const wDev = await sdkDev.workflow.run(getSpec(10));
-    const wAgent = await sdkAgent.workflow.run(getSpec(10));
+    const wDev = await sdkDev.experimental.workflow.run(getSpec(10));
+    const wAgent = await sdkAgent.experimental.workflow.run(getSpec(10));
 
     expect(wDev.workflowId).not.toBe(wAgent.workflowId);
   });
@@ -79,10 +79,10 @@ describe("Deterministic Workflow Identity", () => {
     };
 
     try {
-      const w1 = await sdkDev.workflow.run(getSpec(10));
+      const w1 = await sdkDev.experimental.workflow.run(getSpec(10));
       Date.now = () => 2000000000000; // Change time
       Math.random = () => 0.9; // Change random
-      const w2 = await sdkDev.workflow.run(getSpec(10));
+      const w2 = await sdkDev.experimental.workflow.run(getSpec(10));
 
       expect(w1.workflowId).toBe(w2.workflowId);
 

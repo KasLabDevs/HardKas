@@ -1,0 +1,5577 @@
+{
+  "duplicates": [
+    {
+      "firstFile": {
+        "end": 34,
+        "endLoc": {
+          "column": 55,
+          "line": 34,
+          "position": 1059
+        },
+        "name": "accounts\\src\\fixture-signer.ts",
+        "start": 17,
+        "startLoc": {
+          "column": 8,
+          "line": 17,
+          "position": 390
+        }
+      },
+      "format": "typescript",
+      "fragment": "",
+      "lines": 18,
+      "secondFile": {
+        "end": 37,
+        "endLoc": {
+          "column": 55,
+          "line": 37,
+          "position": 1296
+        },
+        "name": "accounts\\src\\kaspa-wasm-signer.ts",
+        "start": 20,
+        "startLoc": {
+          "column": 5,
+          "line": 20,
+          "position": 627
+        }
+      },
+      "tokens": 160
+    },
+    {
+      "firstFile": {
+        "end": 45,
+        "endLoc": {
+          "column": 22,
+          "line": 45,
+          "position": 1533
+        },
+        "name": "accounts\\src\\fixture-signer.ts",
+        "start": 23,
+        "startLoc": {
+          "column": 9,
+          "line": 23,
+          "position": 601
+        }
+      },
+      "format": "typescript",
+      "fragment": "",
+      "lines": 23,
+      "secondFile": {
+        "end": 269,
+        "endLoc": {
+          "column": 8,
+          "line": 269,
+          "position": 10820
+        },
+        "name": "cli\\src\\commands\\silver-discovery.ts",
+        "start": 246,
+        "startLoc": {
+          "column": 20,
+          "line": 246,
+          "position": 9787
+        }
+      },
+      "tokens": 215
+    },
+    {
+      "firstFile": {
+        "end": 125,
+        "endLoc": {
+          "column": 7,
+          "line": 125,
+          "position": 4226
+        },
+        "name": "accounts\\src\\fixture-signer.ts",
+        "start": 90,
+        "startLoc": {
+          "column": 59,
+          "line": 90,
+          "position": 3125
+        }
+      },
+      "format": "typescript",
+      "fragment": "",
+      "lines": 36,
+      "secondFile": {
+        "end": 173,
+        "endLoc": {
+          "column": 9,
+          "line": 173,
+          "position": 5800
+        },
+        "name": "accounts\\src\\kaspa-wasm-signer.ts",
+        "start": 138,
+        "startLoc": {
+          "column": 51,
+          "line": 138,
+          "position": 4637
+        }
+      },
+      "tokens": 199
+    },
+    {
+      "firstFile": {
+        "end": 49,
+        "endLoc": {
+          "column": 1,
+          "line": 49,
+          "position": 1775
+        },
+        "name": "accounts\\src\\kaspa-wasm-signer.ts",
+        "start": 30,
+        "startLoc": {
+          "column": 67,
+          "line": 30,
+          "position": 1026
+        }
+      },
+      "format": "typescript",
+      "fragment": "",
+      "lines": 20,
+      "secondFile": {
+        "end": 271,
+        "endLoc": {
+          "column": 11,
+          "line": 271,
+          "position": 10835
+        },
+        "name": "cli\\src\\commands\\silver-discovery.ts",
+        "start": 250,
+        "startLoc": {
+          "column": 71,
+          "line": 250,
+          "position": 9991
+        }
+      },
+      "tokens": 171
+    },
+    {
+      "firstFile": {
+        "end": 47,
+        "endLoc": {
+          "column": 60,
+          "line": 47,
+          "position": 1738
+        },
+        "name": "accounts\\src\\kaspa-wasm-signer.ts",
+        "start": 33,
+        "startLoc": {
+          "column": 52,
+          "line": 33,
+          "position": 1144
+        }
+      },
+      "format": "typescript",
+      "fragment": "",
+      "lines": 15,
+      "secondFile": {
+        "end": 291,
+        "endLoc": {
+          "column": 13,
+          "line": 291,
+          "position": 11355
+        },
+        "name": "cli\\src\\commands\\silver-lifecycle.ts",
+        "start": 275,
+        "startLoc": {
+          "column": 78,
+          "line": 275,
+          "position": 10681
+        }
+      },
+      "tokens": 138
+    },
+    {
+      "firstFile": {
+        "end": 152,
+        "endLoc": {
+          "column": 90,
+          "line": 152,
+          "position": 5189
+        },
+        "name": "accounts\\src\\signer.ts",
+        "start": 143,
+        "startLoc": {
+          "column": 72,
+          "line": 143,
+          "position": 4688
+        }
+      },
+      "format": "typescript",
+      "fragment": "",
+      "lines": 10,
+      "secondFile": {
+        "end": 963,
+        "endLoc": {
+          "column": 13,
+          "line": 963,
+          "position": 34787
+        },
+        "name": "sdk\\src\\tx.ts",
+        "start": 952,
+        "startLoc": {
+          "column": 15,
+          "line": 952,
+          "position": 34268
+        }
+      },
+      "tokens": 90
+    },
+    {
+      "firstFile": {
+        "end": 28,
+        "endLoc": {
+          "column": 3,
+          "line": 28,
+          "position": 1010
+        },
+        "name": "artifacts\\src\\io.ts",
+        "start": 15,
+        "startLoc": {
+          "column": 26,
+          "line": 15,
+          "position": 553
+        }
+      },
+      "format": "typescript",
+      "fragment": "",
+      "lines": 14,
+      "secondFile": {
+        "end": 43,
+        "endLoc": {
+          "column": 3,
+          "line": 43,
+          "position": 1629
+        },
+        "name": "artifacts\\src\\io.ts",
+        "start": 30,
+        "startLoc": {
+          "column": 56,
+          "line": 30,
+          "position": 1172
+        }
+      },
+      "tokens": 90
+    },
+    {
+      "firstFile": {
+        "end": 518,
+        "endLoc": {
+          "column": 18,
+          "line": 518,
+          "position": 16927
+        },
+        "name": "artifacts\\src\\verify.ts",
+        "start": 504,
+        "startLoc": {
+          "column": 37,
+          "line": 504,
+          "position": 16481
+        }
+      },
+      "format": "typescript",
+      "fragment": "",
+      "lines": 15,
+      "secondFile": {
+        "end": 562,
+        "endLoc": {
+          "column": 18,
+          "line": 562,
+          "position": 18434
+        },
+        "name": "artifacts\\src\\verify.ts",
+        "start": 548,
+        "startLoc": {
+          "column": 33,
+          "line": 548,
+          "position": 17988
+        }
+      },
+      "tokens": 81
+    },
+    {
+      "firstFile": {
+        "end": 122,
+        "endLoc": {
+          "column": 20,
+          "line": 122,
+          "position": 4708
+        },
+        "name": "cli\\src\\commands\\accounts.ts",
+        "start": 110,
+        "startLoc": {
+          "column": 75,
+          "line": 110,
+          "position": 4206
+        }
+      },
+      "format": "typescript",
+      "fragment": "",
+      "lines": 13,
+      "secondFile": {
+        "end": 249,
+        "endLoc": {
+          "column": 20,
+          "line": 249,
+          "position": 9314
+        },
+        "name": "cli\\src\\commands\\accounts.ts",
+        "start": 237,
+        "startLoc": {
+          "column": 4,
+          "line": 237,
+          "position": 8812
+        }
+      },
+      "tokens": 79
+    },
+    {
+      "firstFile": {
+        "end": 60,
+        "endLoc": {
+          "column": 6,
+          "line": 60,
+          "position": 1610
+        },
+        "name": "cli\\src\\commands\\capabilities.ts",
+        "start": 6,
+        "startLoc": {
+          "column": 37,
+          "line": 6,
+          "position": 227
+        }
+      },
+      "format": "typescript",
+      "fragment": "",
+      "lines": 55,
+      "secondFile": {
+        "end": 46,
+        "endLoc": {
+          "column": 6,
+          "line": 46,
+          "position": 1364
+        },
+        "name": "sdk\\src\\capabilities.ts",
+        "start": 3,
+        "startLoc": {
+          "column": 37,
+          "line": 3,
+          "position": 116
+        }
+      },
+      "tokens": 163
+    },
+    {
+      "firstFile": {
+        "end": 120,
+        "endLoc": {
+          "column": 6,
+          "line": 120,
+          "position": 3533
+        },
+        "name": "cli\\src\\commands\\capabilities.ts",
+        "start": 74,
+        "startLoc": {
+          "column": 38,
+          "line": 74,
+          "position": 2201
+        }
+      },
+      "format": "typescript",
+      "fragment": "",
+      "lines": 47,
+      "secondFile": {
+        "end": 207,
+        "endLoc": {
+          "column": 4,
+          "line": 207,
+          "position": 6254
+        },
+        "name": "sdk\\src\\capabilities.ts",
+        "start": 166,
+        "startLoc": {
+          "column": 9,
+          "line": 166,
+          "position": 5014
+        }
+      },
+      "tokens": 154
+    },
+    {
+      "firstFile": {
+        "end": 486,
+        "endLoc": {
+          "column": 9,
+          "line": 486,
+          "position": 14855
+        },
+        "name": "cli\\src\\commands\\doctor.ts",
+        "start": 476,
+        "startLoc": {
+          "column": 4,
+          "line": 476,
+          "position": 14420
+        }
+      },
+      "format": "typescript",
+      "fragment": "",
+      "lines": 11,
+      "secondFile": {
+        "end": 39,
+        "endLoc": {
+          "column": 11,
+          "line": 39,
+          "position": 1362
+        },
+        "name": "cli\\src\\commands\\env.ts",
+        "start": 27,
+        "startLoc": {
+          "column": 6,
+          "line": 27,
+          "position": 886
+        }
+      },
+      "tokens": 93
+    },
+    {
+      "firstFile": {
+        "end": 34,
+        "endLoc": {
+          "column": 20,
+          "line": 34,
+          "position": 1429
+        },
+        "name": "cli\\src\\commands\\node.ts",
+        "start": 21,
+        "startLoc": {
+          "column": 64,
+          "line": 21,
+          "position": 982
+        }
+      },
+      "format": "typescript",
+      "fragment": "",
+      "lines": 14,
+      "secondFile": {
+        "end": 118,
+        "endLoc": {
+          "column": 20,
+          "line": 118,
+          "position": 4273
+        },
+        "name": "cli\\src\\commands\\node.ts",
+        "start": 107,
+        "startLoc": {
+          "column": 47,
+          "line": 107,
+          "position": 3839
+        }
+      },
+      "tokens": 70
+    },
+    {
+      "firstFile": {
+        "end": 62,
+        "endLoc": {
+          "column": 20,
+          "line": 62,
+          "position": 2355
+        },
+        "name": "cli\\src\\commands\\node.ts",
+        "start": 51,
+        "startLoc": {
+          "column": 36,
+          "line": 51,
+          "position": 1905
+        }
+      },
+      "format": "typescript",
+      "fragment": "",
+      "lines": 12,
+      "secondFile": {
+        "end": 89,
+        "endLoc": {
+          "column": 20,
+          "line": 89,
+          "position": 3257
+        },
+        "name": "cli\\src\\commands\\node.ts",
+        "start": 78,
+        "startLoc": {
+          "column": 39,
+          "line": 78,
+          "position": 2807
+        }
+      },
+      "tokens": 75
+    },
+    {
+      "firstFile": {
+        "end": 357,
+        "endLoc": {
+          "column": 15,
+          "line": 357,
+          "position": 14349
+        },
+        "name": "cli\\src\\commands\\query.ts",
+        "start": 344,
+        "startLoc": {
+          "column": 15,
+          "line": 344,
+          "position": 13627
+        }
+      },
+      "format": "typescript",
+      "fragment": "",
+      "lines": 14,
+      "secondFile": {
+        "end": 22,
+        "endLoc": {
+          "column": 15,
+          "line": 22,
+          "position": 1093
+        },
+        "name": "cli\\src\\commands\\query\\artifacts.ts",
+        "start": 9,
+        "startLoc": {
+          "column": 19,
+          "line": 9,
+          "position": 371
+        }
+      },
+      "tokens": 86
+    },
+    {
+      "firstFile": {
+        "end": 389,
+        "endLoc": {
+          "column": 17,
+          "line": 389,
+          "position": 15718
+        },
+        "name": "cli\\src\\commands\\query.ts",
+        "start": 358,
+        "startLoc": {
+          "column": 44,
+          "line": 358,
+          "position": 14450
+        }
+      },
+      "format": "typescript",
+      "fragment": "",
+      "lines": 32,
+      "secondFile": {
+        "end": 54,
+        "endLoc": {
+          "column": 17,
+          "line": 54,
+          "position": 2509
+        },
+        "name": "cli\\src\\commands\\query\\artifacts.ts",
+        "start": 23,
+        "startLoc": {
+          "column": 78,
+          "line": 23,
+          "position": 1241
+        }
+      },
+      "tokens": 289
+    },
+    {
+      "firstFile": {
+        "end": 390,
+        "endLoc": {
+          "column": 52,
+          "line": 390,
+          "position": 15816
+        },
+        "name": "cli\\src\\commands\\query.ts",
+        "start": 381,
+        "startLoc": {
+          "column": 14,
+          "line": 381,
+          "position": 15468
+        }
+      },
+      "format": "typescript",
+      "fragment": "",
+      "lines": 10,
+      "secondFile": {
+        "end": 879,
+        "endLoc": {
+          "column": 52,
+          "line": 879,
+          "position": 33244
+        },
+        "name": "cli\\src\\commands\\query.ts",
+        "start": 870,
+        "startLoc": {
+          "column": 16,
+          "line": 870,
+          "position": 32896
+        }
+      },
+      "tokens": 72
+    },
+    {
+      "firstFile": {
+        "end": 497,
+        "endLoc": {
+          "column": 17,
+          "line": 497,
+          "position": 19316
+        },
+        "name": "cli\\src\\commands\\query.ts",
+        "start": 479,
+        "startLoc": {
+          "column": 44,
+          "line": 479,
+          "position": 18829
+        }
+      },
+      "format": "typescript",
+      "fragment": "",
+      "lines": 19,
+      "secondFile": {
+        "end": 40,
+        "endLoc": {
+          "column": 17,
+          "line": 40,
+          "position": 1472
+        },
+        "name": "cli\\src\\commands\\query\\lineage.ts",
+        "start": 22,
+        "startLoc": {
+          "column": 78,
+          "line": 22,
+          "position": 985
+        }
+      },
+      "tokens": 83
+    },
+    {
+      "firstFile": {
+        "end": 516,
+        "endLoc": {
+          "column": 15,
+          "line": 516,
+          "position": 19978
+        },
+        "name": "cli\\src\\commands\\query.ts",
+        "start": 500,
+        "startLoc": {
+          "column": 34,
+          "line": 500,
+          "position": 19515
+        }
+      },
+      "format": "typescript",
+      "fragment": "",
+      "lines": 17,
+      "secondFile": {
+        "end": 59,
+        "endLoc": {
+          "column": 15,
+          "line": 59,
+          "position": 2107
+        },
+        "name": "cli\\src\\commands\\query\\lineage.ts",
+        "start": 43,
+        "startLoc": {
+          "column": 41,
+          "line": 43,
+          "position": 1644
+        }
+      },
+      "tokens": 70
+    },
+    {
+      "firstFile": {
+        "end": 526,
+        "endLoc": {
+          "column": 17,
+          "line": 526,
+          "position": 20331
+        },
+        "name": "cli\\src\\commands\\query.ts",
+        "start": 510,
+        "startLoc": {
+          "column": 57,
+          "line": 510,
+          "position": 19739
+        }
+      },
+      "format": "typescript",
+      "fragment": "",
+      "lines": 17,
+      "secondFile": {
+        "end": 722,
+        "endLoc": {
+          "column": 52,
+          "line": 722,
+          "position": 27133
+        },
+        "name": "cli\\src\\commands\\query.ts",
+        "start": 709,
+        "startLoc": {
+          "column": 54,
+          "line": 709,
+          "position": 26556
+        }
+      },
+      "tokens": 93
+    },
+    {
+      "firstFile": {
+        "end": 535,
+        "endLoc": {
+          "column": 17,
+          "line": 535,
+          "position": 20574
+        },
+        "name": "cli\\src\\commands\\query.ts",
+        "start": 517,
+        "startLoc": {
+          "column": 44,
+          "line": 517,
+          "position": 20079
+        }
+      },
+      "format": "typescript",
+      "fragment": "",
+      "lines": 19,
+      "secondFile": {
+        "end": 78,
+        "endLoc": {
+          "column": 17,
+          "line": 78,
+          "position": 2750
+        },
+        "name": "cli\\src\\commands\\query\\lineage.ts",
+        "start": 60,
+        "startLoc": {
+          "column": 78,
+          "line": 60,
+          "position": 2255
+        }
+      },
+      "tokens": 88
+    },
+    {
+      "firstFile": {
+        "end": 605,
+        "endLoc": {
+          "column": 17,
+          "line": 605,
+          "position": 23035
+        },
+        "name": "cli\\src\\commands\\query.ts",
+        "start": 591,
+        "startLoc": {
+          "column": 44,
+          "line": 591,
+          "position": 22561
+        }
+      },
+      "format": "typescript",
+      "fragment": "",
+      "lines": 15,
+      "secondFile": {
+        "end": 38,
+        "endLoc": {
+          "column": 17,
+          "line": 38,
+          "position": 1303
+        },
+        "name": "cli\\src\\commands\\query\\replay.ts",
+        "start": 24,
+        "startLoc": {
+          "column": 78,
+          "line": 24,
+          "position": 829
+        }
+      },
+      "tokens": 101
+    },
+    {
+      "firstFile": {
+        "end": 725,
+        "endLoc": {
+          "column": 17,
+          "line": 725,
+          "position": 27272
+        },
+        "name": "cli\\src\\commands\\query.ts",
+        "start": 716,
+        "startLoc": {
+          "column": 44,
+          "line": 716,
+          "position": 26896
+        }
+      },
+      "format": "typescript",
+      "fragment": "",
+      "lines": 10,
+      "secondFile": {
+        "end": 34,
+        "endLoc": {
+          "column": 17,
+          "line": 34,
+          "position": 1281
+        },
+        "name": "cli\\src\\commands\\query\\dag.ts",
+        "start": 25,
+        "startLoc": {
+          "column": 78,
+          "line": 25,
+          "position": 905
+        }
+      },
+      "tokens": 71
+    },
+    {
+      "firstFile": {
+        "end": 746,
+        "endLoc": {
+          "column": 63,
+          "line": 746,
+          "position": 28091
+        },
+        "name": "cli\\src\\commands\\query.ts",
+        "start": 737,
+        "startLoc": {
+          "column": 46,
+          "line": 737,
+          "position": 27628
+        }
+      },
+      "format": "typescript",
+      "fragment": "",
+      "lines": 10,
+      "secondFile": {
+        "end": 824,
+        "endLoc": {
+          "column": 63,
+          "line": 824,
+          "position": 30999
+        },
+        "name": "cli\\src\\commands\\query.ts",
+        "start": 815,
+        "startLoc": {
+          "column": 67,
+          "line": 815,
+          "position": 30536
+        }
+      },
+      "tokens": 80
+    },
+    {
+      "firstFile": {
+        "end": 782,
+        "endLoc": {
+          "column": 17,
+          "line": 782,
+          "position": 29391
+        },
+        "name": "cli\\src\\commands\\query.ts",
+        "start": 768,
+        "startLoc": {
+          "column": 44,
+          "line": 768,
+          "position": 28946
+        }
+      },
+      "format": "typescript",
+      "fragment": "",
+      "lines": 15,
+      "secondFile": {
+        "end": 91,
+        "endLoc": {
+          "column": 17,
+          "line": 91,
+          "position": 3440
+        },
+        "name": "cli\\src\\commands\\query\\dag.ts",
+        "start": 77,
+        "startLoc": {
+          "column": 78,
+          "line": 77,
+          "position": 2995
+        }
+      },
+      "tokens": 77
+    },
+    {
+      "firstFile": {
+        "end": 26,
+        "endLoc": {
+          "column": 20,
+          "line": 26,
+          "position": 1347
+        },
+        "name": "cli\\src\\commands\\query\\artifacts.ts",
+        "start": 19,
+        "startLoc": {
+          "column": 69,
+          "line": 19,
+          "position": 1028
+        }
+      },
+      "format": "typescript",
+      "fragment": "",
+      "lines": 8,
+      "secondFile": {
+        "end": 26,
+        "endLoc": {
+          "column": 20,
+          "line": 26,
+          "position": 933
+        },
+        "name": "cli\\src\\commands\\query\\replay.ts",
+        "start": 20,
+        "startLoc": {
+          "column": 47,
+          "line": 20,
+          "position": 616
+        }
+      },
+      "tokens": 71
+    },
+    {
+      "firstFile": {
+        "end": 76,
+        "endLoc": {
+          "column": 13,
+          "line": 76,
+          "position": 3323
+        },
+        "name": "cli\\src\\commands\\query\\artifacts.ts",
+        "start": 66,
+        "startLoc": {
+          "column": 80,
+          "line": 66,
+          "position": 2885
+        }
+      },
+      "format": "typescript",
+      "fragment": "",
+      "lines": 11,
+      "secondFile": {
+        "end": 134,
+        "endLoc": {
+          "column": 13,
+          "line": 134,
+          "position": 5246
+        },
+        "name": "cli\\src\\commands\\query\\artifacts.ts",
+        "start": 124,
+        "startLoc": {
+          "column": 60,
+          "line": 124,
+          "position": 4808
+        }
+      },
+      "tokens": 74
+    },
+    {
+      "firstFile": {
+        "end": 92,
+        "endLoc": {
+          "column": 7,
+          "line": 92,
+          "position": 3810
+        },
+        "name": "cli\\src\\commands\\query\\artifacts.ts",
+        "start": 76,
+        "startLoc": {
+          "column": 23,
+          "line": 76,
+          "position": 3333
+        }
+      },
+      "format": "typescript",
+      "fragment": "",
+      "lines": 17,
+      "secondFile": {
+        "end": 150,
+        "endLoc": {
+          "column": 7,
+          "line": 150,
+          "position": 5781
+        },
+        "name": "cli\\src\\commands\\query\\artifacts.ts",
+        "start": 134,
+        "startLoc": {
+          "column": 22,
+          "line": 134,
+          "position": 5255
+        }
+      },
+      "tokens": 88
+    },
+    {
+      "firstFile": {
+        "end": 31,
+        "endLoc": {
+          "column": 63,
+          "line": 31,
+          "position": 1153
+        },
+        "name": "cli\\src\\commands\\query\\dag.ts",
+        "start": 18,
+        "startLoc": {
+          "column": 54,
+          "line": 18,
+          "position": 518
+        }
+      },
+      "format": "typescript",
+      "fragment": "",
+      "lines": 14,
+      "secondFile": {
+        "end": 70,
+        "endLoc": {
+          "column": 13,
+          "line": 70,
+          "position": 2533
+        },
+        "name": "cli\\src\\commands\\query\\lineage.ts",
+        "start": 53,
+        "startLoc": {
+          "column": 57,
+          "line": 53,
+          "position": 1868
+        }
+      },
+      "tokens": 110
+    },
+    {
+      "firstFile": {
+        "end": 31,
+        "endLoc": {
+          "column": 63,
+          "line": 31,
+          "position": 1153
+        },
+        "name": "cli\\src\\commands\\query\\dag.ts",
+        "start": 22,
+        "startLoc": {
+          "column": 19,
+          "line": 22,
+          "position": 714
+        }
+      },
+      "format": "typescript",
+      "fragment": "",
+      "lines": 10,
+      "secondFile": {
+        "end": 85,
+        "endLoc": {
+          "column": 13,
+          "line": 85,
+          "position": 3265
+        },
+        "name": "cli\\src\\commands\\query\\dag.ts",
+        "start": 74,
+        "startLoc": {
+          "column": 25,
+          "line": 74,
+          "position": 2804
+        }
+      },
+      "tokens": 81
+    },
+    {
+      "firstFile": {
+        "end": 55,
+        "endLoc": {
+          "column": 63,
+          "line": 55,
+          "position": 2120
+        },
+        "name": "cli\\src\\commands\\query\\dag.ts",
+        "start": 46,
+        "startLoc": {
+          "column": 46,
+          "line": 46,
+          "position": 1610
+        }
+      },
+      "format": "typescript",
+      "fragment": "",
+      "lines": 10,
+      "secondFile": {
+        "end": 133,
+        "endLoc": {
+          "column": 63,
+          "line": 133,
+          "position": 5090
+        },
+        "name": "cli\\src\\commands\\query\\dag.ts",
+        "start": 124,
+        "startLoc": {
+          "column": 67,
+          "line": 124,
+          "position": 4580
+        }
+      },
+      "tokens": 93
+    },
+    {
+      "firstFile": {
+        "end": 84,
+        "endLoc": {
+          "column": 17,
+          "line": 84,
+          "position": 3243
+        },
+        "name": "cli\\src\\commands\\query\\dag.ts",
+        "start": 74,
+        "startLoc": {
+          "column": 23,
+          "line": 74,
+          "position": 2802
+        }
+      },
+      "format": "typescript",
+      "fragment": "",
+      "lines": 11,
+      "secondFile": {
+        "end": 31,
+        "endLoc": {
+          "column": 17,
+          "line": 31,
+          "position": 1237
+        },
+        "name": "cli\\src\\commands\\query\\lineage.ts",
+        "start": 19,
+        "startLoc": {
+          "column": 25,
+          "line": 19,
+          "position": 792
+        }
+      },
+      "tokens": 78
+    },
+    {
+      "firstFile": {
+        "end": 27,
+        "endLoc": {
+          "column": 13,
+          "line": 27,
+          "position": 1033
+        },
+        "name": "cli\\src\\commands\\query\\rpc.ts",
+        "start": 16,
+        "startLoc": {
+          "column": 62,
+          "line": 16,
+          "position": 480
+        }
+      },
+      "format": "typescript",
+      "fragment": "",
+      "lines": 12,
+      "secondFile": {
+        "end": 58,
+        "endLoc": {
+          "column": 13,
+          "line": 58,
+          "position": 2199
+        },
+        "name": "cli\\src\\commands\\query\\rpc.ts",
+        "start": 47,
+        "startLoc": {
+          "column": 47,
+          "line": 47,
+          "position": 1646
+        }
+      },
+      "tokens": 99
+    },
+    {
+      "firstFile": {
+        "end": 47,
+        "endLoc": {
+          "column": 48,
+          "line": 47,
+          "position": 1722
+        },
+        "name": "cli\\src\\commands\\silver-adapter.ts",
+        "start": 37,
+        "startLoc": {
+          "column": 4,
+          "line": 37,
+          "position": 1297
+        }
+      },
+      "format": "typescript",
+      "fragment": "",
+      "lines": 11,
+      "secondFile": {
+        "end": 410,
+        "endLoc": {
+          "column": 46,
+          "line": 410,
+          "position": 13917
+        },
+        "name": "sdk\\src\\silver.ts",
+        "start": 403,
+        "startLoc": {
+          "column": 2,
+          "line": 403,
+          "position": 13595
+        }
+      },
+      "tokens": 72
+    },
+    {
+      "firstFile": {
+        "end": 46,
+        "endLoc": {
+          "column": 16,
+          "line": 46,
+          "position": 1856
+        },
+        "name": "cli\\src\\commands\\silver-discovery.ts",
+        "start": 36,
+        "startLoc": {
+          "column": 76,
+          "line": 36,
+          "position": 1456
+        }
+      },
+      "format": "typescript",
+      "fragment": "",
+      "lines": 11,
+      "secondFile": {
+        "end": 336,
+        "endLoc": {
+          "column": 16,
+          "line": 336,
+          "position": 13619
+        },
+        "name": "cli\\src\\commands\\silver-discovery.ts",
+        "start": 326,
+        "startLoc": {
+          "column": 78,
+          "line": 326,
+          "position": 13219
+        }
+      },
+      "tokens": 72
+    },
+    {
+      "firstFile": {
+        "end": 57,
+        "endLoc": {
+          "column": 11,
+          "line": 57,
+          "position": 2238
+        },
+        "name": "cli\\src\\commands\\silver-discovery.ts",
+        "start": 42,
+        "startLoc": {
+          "column": 6,
+          "line": 42,
+          "position": 1688
+        }
+      },
+      "format": "typescript",
+      "fragment": "",
+      "lines": 16,
+      "secondFile": {
+        "end": 73,
+        "endLoc": {
+          "column": 11,
+          "line": 73,
+          "position": 2794
+        },
+        "name": "cli\\src\\commands\\silver-lifecycle.ts",
+        "start": 59,
+        "startLoc": {
+          "column": 6,
+          "line": 59,
+          "position": 2246
+        }
+      },
+      "tokens": 120
+    },
+    {
+      "firstFile": {
+        "end": 249,
+        "endLoc": {
+          "column": 27,
+          "line": 249,
+          "position": 9916
+        },
+        "name": "cli\\src\\commands\\silver-discovery.ts",
+        "start": 240,
+        "startLoc": {
+          "column": 46,
+          "line": 240,
+          "position": 9564
+        }
+      },
+      "format": "typescript",
+      "fragment": "",
+      "lines": 10,
+      "secondFile": {
+        "end": 274,
+        "endLoc": {
+          "column": 27,
+          "line": 274,
+          "position": 10569
+        },
+        "name": "cli\\src\\commands\\silver-lifecycle.ts",
+        "start": 264,
+        "startLoc": {
+          "column": 40,
+          "line": 264,
+          "position": 10215
+        }
+      },
+      "tokens": 85
+    },
+    {
+      "firstFile": {
+        "end": 301,
+        "endLoc": {
+          "column": 129,
+          "line": 301,
+          "position": 11801
+        },
+        "name": "cli\\src\\commands\\silver-lifecycle.ts",
+        "start": 295,
+        "startLoc": {
+          "column": 70,
+          "line": 295,
+          "position": 11502
+        }
+      },
+      "format": "typescript",
+      "fragment": "",
+      "lines": 7,
+      "secondFile": {
+        "end": 628,
+        "endLoc": {
+          "column": 129,
+          "line": 628,
+          "position": 23517
+        },
+        "name": "cli\\src\\commands\\silver-lifecycle.ts",
+        "start": 622,
+        "startLoc": {
+          "column": 65,
+          "line": 622,
+          "position": 23218
+        }
+      },
+      "tokens": 77
+    },
+    {
+      "firstFile": {
+        "end": 477,
+        "endLoc": {
+          "column": 12,
+          "line": 477,
+          "position": 18355
+        },
+        "name": "cli\\src\\commands\\silver-lifecycle.ts",
+        "start": 461,
+        "startLoc": {
+          "column": 22,
+          "line": 461,
+          "position": 17708
+        }
+      },
+      "format": "typescript",
+      "fragment": "",
+      "lines": 17,
+      "secondFile": {
+        "end": 247,
+        "endLoc": {
+          "column": 10,
+          "line": 247,
+          "position": 8318
+        },
+        "name": "sdk\\src\\silver.ts",
+        "start": 231,
+        "startLoc": {
+          "column": 24,
+          "line": 231,
+          "position": 7703
+        }
+      },
+      "tokens": 82
+    },
+    {
+      "firstFile": {
+        "end": 47,
+        "endLoc": {
+          "column": 13,
+          "line": 47,
+          "position": 1554
+        },
+        "name": "cli\\src\\commands\\silver-simulate.ts",
+        "start": 31,
+        "startLoc": {
+          "column": 29,
+          "line": 31,
+          "position": 1043
+        }
+      },
+      "format": "typescript",
+      "fragment": "",
+      "lines": 17,
+      "secondFile": {
+        "end": 73,
+        "endLoc": {
+          "column": 13,
+          "line": 73,
+          "position": 2482
+        },
+        "name": "cli\\src\\commands\\silver-simulate.ts",
+        "start": 57,
+        "startLoc": {
+          "column": 30,
+          "line": 57,
+          "position": 1971
+        }
+      },
+      "tokens": 110
+    },
+    {
+      "firstFile": {
+        "end": 174,
+        "endLoc": {
+          "column": 1,
+          "line": 174,
+          "position": 5836
+        },
+        "name": "cli\\src\\commands\\silver-simulate.ts",
+        "start": 160,
+        "startLoc": {
+          "column": 79,
+          "line": 160,
+          "position": 5459
+        }
+      },
+      "format": "typescript",
+      "fragment": "",
+      "lines": 15,
+      "secondFile": {
+        "end": 494,
+        "endLoc": {
+          "column": 1,
+          "line": 494,
+          "position": 16612
+        },
+        "name": "sdk\\src\\silver.ts",
+        "start": 481,
+        "startLoc": {
+          "column": 61,
+          "line": 481,
+          "position": 16241
+        }
+      },
+      "tokens": 75
+    },
+    {
+      "firstFile": {
+        "end": 250,
+        "endLoc": {
+          "column": 23,
+          "line": 250,
+          "position": 7976
+        },
+        "name": "cli\\src\\commands\\silver-simulate.ts",
+        "start": 217,
+        "startLoc": {
+          "column": 2,
+          "line": 217,
+          "position": 7002
+        }
+      },
+      "format": "typescript",
+      "fragment": "",
+      "lines": 34,
+      "secondFile": {
+        "end": 542,
+        "endLoc": {
+          "column": 23,
+          "line": 542,
+          "position": 18091
+        },
+        "name": "sdk\\src\\silver.ts",
+        "start": 511,
+        "startLoc": {
+          "column": 2,
+          "line": 511,
+          "position": 17121
+        }
+      },
+      "tokens": 157
+    },
+    {
+      "firstFile": {
+        "end": 283,
+        "endLoc": {
+          "column": 41,
+          "line": 283,
+          "position": 8831
+        },
+        "name": "cli\\src\\commands\\silver-simulate.ts",
+        "start": 260,
+        "startLoc": {
+          "column": 19,
+          "line": 260,
+          "position": 8262
+        }
+      },
+      "format": "typescript",
+      "fragment": "",
+      "lines": 24,
+      "secondFile": {
+        "end": 565,
+        "endLoc": {
+          "column": 41,
+          "line": 565,
+          "position": 18816
+        },
+        "name": "sdk\\src\\silver.ts",
+        "start": 550,
+        "startLoc": {
+          "column": 31,
+          "line": 550,
+          "position": 18291
+        }
+      },
+      "tokens": 92
+    },
+    {
+      "firstFile": {
+        "end": 80,
+        "endLoc": {
+          "column": 9,
+          "line": 80,
+          "position": 2837
+        },
+        "name": "cli\\src\\runners\\accounts-consolidate-runner.ts",
+        "start": 70,
+        "startLoc": {
+          "column": 15,
+          "line": 70,
+          "position": 2450
+        }
+      },
+      "format": "typescript",
+      "fragment": "",
+      "lines": 11,
+      "secondFile": {
+        "end": 90,
+        "endLoc": {
+          "column": 7,
+          "line": 90,
+          "position": 3043
+        },
+        "name": "cli\\src\\runners\\tx-plan-runner.ts",
+        "start": 80,
+        "startLoc": {
+          "column": 19,
+          "line": 80,
+          "position": 2676
+        }
+      },
+      "tokens": 88
+    },
+    {
+      "firstFile": {
+        "end": 81,
+        "endLoc": {
+          "column": 5,
+          "line": 81,
+          "position": 2844
+        },
+        "name": "cli\\src\\runners\\accounts-consolidate-runner.ts",
+        "start": 70,
+        "startLoc": {
+          "column": 17,
+          "line": 70,
+          "position": 2452
+        }
+      },
+      "format": "typescript",
+      "fragment": "",
+      "lines": 12,
+      "secondFile": {
+        "end": 199,
+        "endLoc": {
+          "column": 9,
+          "line": 199,
+          "position": 6576
+        },
+        "name": "sdk\\src\\tx.ts",
+        "start": 188,
+        "startLoc": {
+          "column": 17,
+          "line": 188,
+          "position": 6140
+        }
+      },
+      "tokens": 88
+    },
+    {
+      "firstFile": {
+        "end": 150,
+        "endLoc": {
+          "column": 3,
+          "line": 150,
+          "position": 4698
+        },
+        "name": "cli\\src\\runners\\accounts-keystore-runners.ts",
+        "start": 143,
+        "startLoc": {
+          "column": 64,
+          "line": 143,
+          "position": 4338
+        }
+      },
+      "format": "typescript",
+      "fragment": "",
+      "lines": 8,
+      "secondFile": {
+        "end": 97,
+        "endLoc": {
+          "column": 5,
+          "line": 97,
+          "position": 2970
+        },
+        "name": "cli\\src\\runners\\accounts-real-generate-runner.ts",
+        "start": 89,
+        "startLoc": {
+          "column": 66,
+          "line": 89,
+          "position": 2598
+        }
+      },
+      "tokens": 70
+    },
+    {
+      "firstFile": {
+        "end": 35,
+        "endLoc": {
+          "column": 7,
+          "line": 35,
+          "position": 1135
+        },
+        "name": "cli\\src\\runners\\accounts-real-balance-runner.ts",
+        "start": 17,
+        "startLoc": {
+          "column": 2,
+          "line": 17,
+          "position": 587
+        }
+      },
+      "format": "typescript",
+      "fragment": "",
+      "lines": 19,
+      "secondFile": {
+        "end": 32,
+        "endLoc": {
+          "column": 7,
+          "line": 32,
+          "position": 1098
+        },
+        "name": "cli\\src\\runners\\accounts-real-utxos-runner.ts",
+        "start": 14,
+        "startLoc": {
+          "column": 2,
+          "line": 14,
+          "position": 550
+        }
+      },
+      "tokens": 112
+    },
+    {
+      "firstFile": {
+        "end": 22,
+        "endLoc": {
+          "column": 3,
+          "line": 22,
+          "position": 615
+        },
+        "name": "cli\\src\\runners\\accounts-real-show-runner.ts",
+        "start": 13,
+        "startLoc": {
+          "column": 74,
+          "line": 13,
+          "position": 299
+        }
+      },
+      "format": "typescript",
+      "fragment": "",
+      "lines": 10,
+      "secondFile": {
+        "end": 22,
+        "endLoc": {
+          "column": 3,
+          "line": 22,
+          "position": 859
+        },
+        "name": "cli\\src\\runners\\accounts-real-utxos-runner.ts",
+        "start": 13,
+        "startLoc": {
+          "column": 76,
+          "line": 13,
+          "position": 534
+        }
+      },
+      "tokens": 70
+    },
+    {
+      "firstFile": {
+        "end": 27,
+        "endLoc": {
+          "column": 7,
+          "line": 27,
+          "position": 839
+        },
+        "name": "cli\\src\\runners\\artifact-explain-runner.ts",
+        "start": 15,
+        "startLoc": {
+          "column": 1,
+          "line": 15,
+          "position": 413
+        }
+      },
+      "format": "typescript",
+      "fragment": "",
+      "lines": 13,
+      "secondFile": {
+        "end": 23,
+        "endLoc": {
+          "column": 7,
+          "line": 23,
+          "position": 762
+        },
+        "name": "cli\\src\\runners\\artifact-lineage-runner.ts",
+        "start": 11,
+        "startLoc": {
+          "column": 72,
+          "line": 11,
+          "position": 336
+        }
+      },
+      "tokens": 87
+    },
+    {
+      "firstFile": {
+        "end": 22,
+        "endLoc": {
+          "column": 30,
+          "line": 22,
+          "position": 741
+        },
+        "name": "cli\\src\\runners\\artifact-explain-runner.ts",
+        "start": 15,
+        "startLoc": {
+          "column": 1,
+          "line": 15,
+          "position": 413
+        }
+      },
+      "format": "typescript",
+      "fragment": "",
+      "lines": 8,
+      "secondFile": {
+        "end": 27,
+        "endLoc": {
+          "column": 30,
+          "line": 27,
+          "position": 837
+        },
+        "name": "cli\\src\\runners\\artifact-verify-runner.ts",
+        "start": 20,
+        "startLoc": {
+          "column": 70,
+          "line": 20,
+          "position": 509
+        }
+      },
+      "tokens": 70
+    },
+    {
+      "firstFile": {
+        "end": 60,
+        "endLoc": {
+          "column": 8,
+          "line": 60,
+          "position": 2104
+        },
+        "name": "cli\\src\\runners\\bridge-local-runner.ts",
+        "start": 29,
+        "startLoc": {
+          "column": 5,
+          "line": 29,
+          "position": 1080
+        }
+      },
+      "format": "typescript",
+      "fragment": "",
+      "lines": 32,
+      "secondFile": {
+        "end": 182,
+        "endLoc": {
+          "column": 8,
+          "line": 182,
+          "position": 6320
+        },
+        "name": "cli\\src\\runners\\bridge-local-runner.ts",
+        "start": 151,
+        "startLoc": {
+          "column": 58,
+          "line": 151,
+          "position": 5296
+        }
+      },
+      "tokens": 195
+    },
+    {
+      "firstFile": {
+        "end": 82,
+        "endLoc": {
+          "column": 16,
+          "line": 82,
+          "position": 2774
+        },
+        "name": "cli\\src\\runners\\bridge-local-runner.ts",
+        "start": 63,
+        "startLoc": {
+          "column": 10,
+          "line": 63,
+          "position": 2176
+        }
+      },
+      "format": "typescript",
+      "fragment": "",
+      "lines": 20,
+      "secondFile": {
+        "end": 107,
+        "endLoc": {
+          "column": 10,
+          "line": 107,
+          "position": 3732
+        },
+        "name": "cli\\src\\runners\\bridge-local-runner.ts",
+        "start": 97,
+        "startLoc": {
+          "column": 25,
+          "line": 97,
+          "position": 3323
+        }
+      },
+      "tokens": 90
+    },
+    {
+      "firstFile": {
+        "end": 96,
+        "endLoc": {
+          "column": 61,
+          "line": 96,
+          "position": 3269
+        },
+        "name": "cli\\src\\runners\\bridge-local-runner.ts",
+        "start": 81,
+        "startLoc": {
+          "column": 13,
+          "line": 81,
+          "position": 2755
+        }
+      },
+      "format": "typescript",
+      "fragment": "",
+      "lines": 16,
+      "secondFile": {
+        "end": 228,
+        "endLoc": {
+          "column": 18,
+          "line": 228,
+          "position": 7868
+        },
+        "name": "cli\\src\\runners\\bridge-local-runner.ts",
+        "start": 211,
+        "startLoc": {
+          "column": 24,
+          "line": 211,
+          "position": 7333
+        }
+      },
+      "tokens": 108
+    },
+    {
+      "firstFile": {
+        "end": 212,
+        "endLoc": {
+          "column": 16,
+          "line": 212,
+          "position": 7352
+        },
+        "name": "cli\\src\\runners\\bridge-local-runner.ts",
+        "start": 196,
+        "startLoc": {
+          "column": 10,
+          "line": 196,
+          "position": 6851
+        }
+      },
+      "format": "typescript",
+      "fragment": "",
+      "lines": 17,
+      "secondFile": {
+        "end": 237,
+        "endLoc": {
+          "column": 10,
+          "line": 237,
+          "position": 8262
+        },
+        "name": "cli\\src\\runners\\bridge-local-runner.ts",
+        "start": 230,
+        "startLoc": {
+          "column": 25,
+          "line": 230,
+          "position": 7932
+        }
+      },
+      "tokens": 74
+    },
+    {
+      "firstFile": {
+        "end": 58,
+        "endLoc": {
+          "column": 43,
+          "line": 58,
+          "position": 1743
+        },
+        "name": "cli\\src\\runners\\chaos-actors.ts",
+        "start": 46,
+        "startLoc": {
+          "column": 85,
+          "line": 46,
+          "position": 1396
+        }
+      },
+      "format": "typescript",
+      "fragment": "",
+      "lines": 13,
+      "secondFile": {
+        "end": 91,
+        "endLoc": {
+          "column": 43,
+          "line": 91,
+          "position": 2768
+        },
+        "name": "cli\\src\\runners\\chaos-actors.ts",
+        "start": 79,
+        "startLoc": {
+          "column": 64,
+          "line": 79,
+          "position": 2421
+        }
+      },
+      "tokens": 89
+    },
+    {
+      "firstFile": {
+        "end": 58,
+        "endLoc": {
+          "column": 65,
+          "line": 58,
+          "position": 1765
+        },
+        "name": "cli\\src\\runners\\chaos-actors.ts",
+        "start": 46,
+        "startLoc": {
+          "column": 85,
+          "line": 46,
+          "position": 1396
+        }
+      },
+      "format": "typescript",
+      "fragment": "",
+      "lines": 13,
+      "secondFile": {
+        "end": 144,
+        "endLoc": {
+          "column": 65,
+          "line": 144,
+          "position": 4272
+        },
+        "name": "cli\\src\\runners\\chaos-actors.ts",
+        "start": 132,
+        "startLoc": {
+          "column": 77,
+          "line": 132,
+          "position": 3903
+        }
+      },
+      "tokens": 93
+    },
+    {
+      "firstFile": {
+        "end": 94,
+        "endLoc": {
+          "column": 12,
+          "line": 94,
+          "position": 2791
+        },
+        "name": "cli\\src\\runners\\chaos-actors.ts",
+        "start": 77,
+        "startLoc": {
+          "column": 2,
+          "line": 77,
+          "position": 2306
+        }
+      },
+      "format": "typescript",
+      "fragment": "",
+      "lines": 18,
+      "secondFile": {
+        "end": 124,
+        "endLoc": {
+          "column": 12,
+          "line": 124,
+          "position": 3600
+        },
+        "name": "cli\\src\\runners\\chaos-actors.ts",
+        "start": 107,
+        "startLoc": {
+          "column": 2,
+          "line": 107,
+          "position": 3115
+        }
+      },
+      "tokens": 123
+    },
+    {
+      "firstFile": {
+        "end": 44,
+        "endLoc": {
+          "column": 6,
+          "line": 44,
+          "position": 1105
+        },
+        "name": "cli\\src\\runners\\corpus-verify-runner.ts",
+        "start": 20,
+        "startLoc": {
+          "column": 0,
+          "line": 20,
+          "position": 440
+        }
+      },
+      "format": "typescript",
+      "fragment": "",
+      "lines": 25,
+      "secondFile": {
+        "end": 37,
+        "endLoc": {
+          "column": 6,
+          "line": 37,
+          "position": 982
+        },
+        "name": "sdk\\src\\corpus.ts",
+        "start": 13,
+        "startLoc": {
+          "column": 7,
+          "line": 13,
+          "position": 317
+        }
+      },
+      "tokens": 97
+    },
+    {
+      "firstFile": {
+        "end": 82,
+        "endLoc": {
+          "column": 6,
+          "line": 82,
+          "position": 2353
+        },
+        "name": "cli\\src\\runners\\corpus-verify-runner.ts",
+        "start": 48,
+        "startLoc": {
+          "column": 61,
+          "line": 48,
+          "position": 1331
+        }
+      },
+      "format": "typescript",
+      "fragment": "",
+      "lines": 35,
+      "secondFile": {
+        "end": 82,
+        "endLoc": {
+          "column": 6,
+          "line": 82,
+          "position": 2382
+        },
+        "name": "sdk\\src\\corpus.ts",
+        "start": 49,
+        "startLoc": {
+          "column": 59,
+          "line": 49,
+          "position": 1362
+        }
+      },
+      "tokens": 151
+    },
+    {
+      "firstFile": {
+        "end": 144,
+        "endLoc": {
+          "column": 6,
+          "line": 144,
+          "position": 4321
+        },
+        "name": "cli\\src\\runners\\corpus-verify-runner.ts",
+        "start": 82,
+        "startLoc": {
+          "column": 23,
+          "line": 82,
+          "position": 2370
+        }
+      },
+      "format": "typescript",
+      "fragment": "",
+      "lines": 63,
+      "secondFile": {
+        "end": 144,
+        "endLoc": {
+          "column": 6,
+          "line": 144,
+          "position": 4365
+        },
+        "name": "sdk\\src\\corpus.ts",
+        "start": 82,
+        "startLoc": {
+          "column": 38,
+          "line": 82,
+          "position": 2414
+        }
+      },
+      "tokens": 282
+    },
+    {
+      "firstFile": {
+        "end": 182,
+        "endLoc": {
+          "column": 33,
+          "line": 182,
+          "position": 5576
+        },
+        "name": "cli\\src\\runners\\corpus-verify-runner.ts",
+        "start": 144,
+        "startLoc": {
+          "column": 28,
+          "line": 144,
+          "position": 4343
+        }
+      },
+      "format": "typescript",
+      "fragment": "",
+      "lines": 39,
+      "secondFile": {
+        "end": 181,
+        "endLoc": {
+          "column": 33,
+          "line": 181,
+          "position": 5633
+        },
+        "name": "sdk\\src\\corpus.ts",
+        "start": 144,
+        "startLoc": {
+          "column": 43,
+          "line": 144,
+          "position": 4402
+        }
+      },
+      "tokens": 171
+    },
+    {
+      "firstFile": {
+        "end": 209,
+        "endLoc": {
+          "column": 4,
+          "line": 209,
+          "position": 6490
+        },
+        "name": "cli\\src\\runners\\corpus-verify-runner.ts",
+        "start": 183,
+        "startLoc": {
+          "column": 37,
+          "line": 183,
+          "position": 5615
+        }
+      },
+      "format": "typescript",
+      "fragment": "",
+      "lines": 27,
+      "secondFile": {
+        "end": 208,
+        "endLoc": {
+          "column": 4,
+          "line": 208,
+          "position": 6519
+        },
+        "name": "sdk\\src\\corpus.ts",
+        "start": 182,
+        "startLoc": {
+          "column": 9,
+          "line": 182,
+          "position": 5644
+        }
+      },
+      "tokens": 133
+    },
+    {
+      "firstFile": {
+        "end": 399,
+        "endLoc": {
+          "column": 1,
+          "line": 399,
+          "position": 12187
+        },
+        "name": "cli\\src\\runners\\corpus-verify-runner.ts",
+        "start": 235,
+        "startLoc": {
+          "column": 67,
+          "line": 235,
+          "position": 7380
+        }
+      },
+      "format": "typescript",
+      "fragment": "",
+      "lines": 165,
+      "secondFile": {
+        "end": 375,
+        "endLoc": {
+          "column": 1,
+          "line": 375,
+          "position": 11417
+        },
+        "name": "sdk\\src\\corpus.ts",
+        "start": 211,
+        "startLoc": {
+          "column": 84,
+          "line": 211,
+          "position": 6610
+        }
+      },
+      "tokens": 838
+    },
+    {
+      "firstFile": {
+        "end": 56,
+        "endLoc": {
+          "column": 1,
+          "line": 56,
+          "position": 1598
+        },
+        "name": "cli\\src\\runners\\dashboard-runner.ts",
+        "start": 15,
+        "startLoc": {
+          "column": 32,
+          "line": 15,
+          "position": 451
+        }
+      },
+      "format": "typescript",
+      "fragment": "",
+      "lines": 42,
+      "secondFile": {
+        "end": 56,
+        "endLoc": {
+          "column": 1,
+          "line": 56,
+          "position": 1595
+        },
+        "name": "dev-server\\src\\routes\\observability.ts",
+        "start": 15,
+        "startLoc": {
+          "column": 26,
+          "line": 15,
+          "position": 448
+        }
+      },
+      "tokens": 306
+    },
+    {
+      "firstFile": {
+        "end": 56,
+        "endLoc": {
+          "column": 1,
+          "line": 56,
+          "position": 1598
+        },
+        "name": "cli\\src\\runners\\dashboard-runner.ts",
+        "start": 31,
+        "startLoc": {
+          "column": 38,
+          "line": 31,
+          "position": 842
+        }
+      },
+      "format": "typescript",
+      "fragment": "",
+      "lines": 26,
+      "secondFile": {
+        "end": 42,
+        "endLoc": {
+          "column": 1,
+          "line": 42,
+          "position": 1220
+        },
+        "name": "cli\\src\\runners\\telemetry-runners.ts",
+        "start": 17,
+        "startLoc": {
+          "column": 48,
+          "line": 17,
+          "position": 464
+        }
+      },
+      "tokens": 209
+    },
+    {
+      "firstFile": {
+        "end": 112,
+        "endLoc": {
+          "column": 37,
+          "line": 112,
+          "position": 3594
+        },
+        "name": "cli\\src\\runners\\dashboard-runner.ts",
+        "start": 102,
+        "startLoc": {
+          "column": 2,
+          "line": 102,
+          "position": 3152
+        }
+      },
+      "format": "typescript",
+      "fragment": "",
+      "lines": 11,
+      "secondFile": {
+        "end": 124,
+        "endLoc": {
+          "column": 37,
+          "line": 124,
+          "position": 4057
+        },
+        "name": "dev-server\\src\\routes\\observability.ts",
+        "start": 114,
+        "startLoc": {
+          "column": 2,
+          "line": 114,
+          "position": 3620
+        }
+      },
+      "tokens": 86
+    },
+    {
+      "firstFile": {
+        "end": 224,
+        "endLoc": {
+          "column": 5,
+          "line": 224,
+          "position": 7309
+        },
+        "name": "cli\\src\\runners\\dashboard-runner.ts",
+        "start": 213,
+        "startLoc": {
+          "column": 12,
+          "line": 213,
+          "position": 6921
+        }
+      },
+      "format": "typescript",
+      "fragment": "",
+      "lines": 12,
+      "secondFile": {
+        "end": 410,
+        "endLoc": {
+          "column": 5,
+          "line": 410,
+          "position": 13352
+        },
+        "name": "dev-server\\src\\routes\\observability.ts",
+        "start": 399,
+        "startLoc": {
+          "column": 8,
+          "line": 399,
+          "position": 12964
+        }
+      },
+      "tokens": 98
+    },
+    {
+      "firstFile": {
+        "end": 288,
+        "endLoc": {
+          "column": 49,
+          "line": 288,
+          "position": 9596
+        },
+        "name": "cli\\src\\runners\\dashboard-runner.ts",
+        "start": 277,
+        "startLoc": {
+          "column": 20,
+          "line": 277,
+          "position": 8976
+        }
+      },
+      "format": "typescript",
+      "fragment": "",
+      "lines": 12,
+      "secondFile": {
+        "end": 501,
+        "endLoc": {
+          "column": 47,
+          "line": 501,
+          "position": 16547
+        },
+        "name": "dev-server\\src\\routes\\observability.ts",
+        "start": 490,
+        "startLoc": {
+          "column": 17,
+          "line": 490,
+          "position": 15949
+        }
+      },
+      "tokens": 86
+    },
+    {
+      "firstFile": {
+        "end": 379,
+        "endLoc": {
+          "column": 86,
+          "line": 379,
+          "position": 12597
+        },
+        "name": "cli\\src\\runners\\dashboard-runner.ts",
+        "start": 339,
+        "startLoc": {
+          "column": 41,
+          "line": 339,
+          "position": 11284
+        }
+      },
+      "format": "typescript",
+      "fragment": "",
+      "lines": 41,
+      "secondFile": {
+        "end": 196,
+        "endLoc": {
+          "column": 86,
+          "line": 196,
+          "position": 6279
+        },
+        "name": "dev-server\\src\\routes\\observability.ts",
+        "start": 157,
+        "startLoc": {
+          "column": 31,
+          "line": 157,
+          "position": 5063
+        }
+      },
+      "tokens": 300
+    },
+    {
+      "firstFile": {
+        "end": 383,
+        "endLoc": {
+          "column": 10,
+          "line": 383,
+          "position": 12650
+        },
+        "name": "cli\\src\\runners\\dashboard-runner.ts",
+        "start": 374,
+        "startLoc": {
+          "column": 4,
+          "line": 374,
+          "position": 12363
+        }
+      },
+      "format": "typescript",
+      "fragment": "",
+      "lines": 10,
+      "secondFile": {
+        "end": 242,
+        "endLoc": {
+          "column": 15,
+          "line": 242,
+          "position": 7715
+        },
+        "name": "dev-server\\src\\routes\\observability.ts",
+        "start": 233,
+        "startLoc": {
+          "column": 6,
+          "line": 233,
+          "position": 7406
+        }
+      },
+      "tokens": 83
+    },
+    {
+      "firstFile": {
+        "end": 396,
+        "endLoc": {
+          "column": 8,
+          "line": 396,
+          "position": 13091
+        },
+        "name": "cli\\src\\runners\\dashboard-runner.ts",
+        "start": 383,
+        "startLoc": {
+          "column": 20,
+          "line": 383,
+          "position": 12660
+        }
+      },
+      "format": "typescript",
+      "fragment": "",
+      "lines": 14,
+      "secondFile": {
+        "end": 211,
+        "endLoc": {
+          "column": 6,
+          "line": 211,
+          "position": 6705
+        },
+        "name": "dev-server\\src\\routes\\observability.ts",
+        "start": 198,
+        "startLoc": {
+          "column": 17,
+          "line": 198,
+          "position": 6300
+        }
+      },
+      "tokens": 84
+    },
+    {
+      "firstFile": {
+        "end": 397,
+        "endLoc": {
+          "column": 6,
+          "line": 397,
+          "position": 13099
+        },
+        "name": "cli\\src\\runners\\dashboard-runner.ts",
+        "start": 385,
+        "startLoc": {
+          "column": 49,
+          "line": 385,
+          "position": 12736
+        }
+      },
+      "format": "typescript",
+      "fragment": "",
+      "lines": 13,
+      "secondFile": {
+        "end": 255,
+        "endLoc": {
+          "column": 5,
+          "line": 255,
+          "position": 8170
+        },
+        "name": "dev-server\\src\\routes\\observability.ts",
+        "start": 243,
+        "startLoc": {
+          "column": 66,
+          "line": 243,
+          "position": 7807
+        }
+      },
+      "tokens": 77
+    },
+    {
+      "firstFile": {
+        "end": 428,
+        "endLoc": {
+          "column": 8,
+          "line": 428,
+          "position": 13945
+        },
+        "name": "cli\\src\\runners\\dashboard-runner.ts",
+        "start": 418,
+        "startLoc": {
+          "column": 2,
+          "line": 418,
+          "position": 13591
+        }
+      },
+      "format": "typescript",
+      "fragment": "",
+      "lines": 11,
+      "secondFile": {
+        "end": 268,
+        "endLoc": {
+          "column": 8,
+          "line": 268,
+          "position": 8608
+        },
+        "name": "dev-server\\src\\routes\\observability.ts",
+        "start": 258,
+        "startLoc": {
+          "column": 2,
+          "line": 258,
+          "position": 8254
+        }
+      },
+      "tokens": 93
+    },
+    {
+      "firstFile": {
+        "end": 495,
+        "endLoc": {
+          "column": 5,
+          "line": 495,
+          "position": 15865
+        },
+        "name": "cli\\src\\runners\\dashboard-runner.ts",
+        "start": 483,
+        "startLoc": {
+          "column": 10,
+          "line": 483,
+          "position": 15564
+        }
+      },
+      "format": "typescript",
+      "fragment": "",
+      "lines": 13,
+      "secondFile": {
+        "end": 324,
+        "endLoc": {
+          "column": 5,
+          "line": 324,
+          "position": 10258
+        },
+        "name": "dev-server\\src\\routes\\observability.ts",
+        "start": 312,
+        "startLoc": {
+          "column": 6,
+          "line": 312,
+          "position": 9957
+        }
+      },
+      "tokens": 76
+    },
+    {
+      "firstFile": {
+        "end": 571,
+        "endLoc": {
+          "column": 6,
+          "line": 571,
+          "position": 18229
+        },
+        "name": "cli\\src\\runners\\dashboard-runner.ts",
+        "start": 554,
+        "startLoc": {
+          "column": 18,
+          "line": 554,
+          "position": 17477
+        }
+      },
+      "format": "typescript",
+      "fragment": "",
+      "lines": 18,
+      "secondFile": {
+        "end": 595,
+        "endLoc": {
+          "column": 4,
+          "line": 595,
+          "position": 19541
+        },
+        "name": "dev-server\\src\\routes\\observability.ts",
+        "start": 578,
+        "startLoc": {
+          "column": 15,
+          "line": 578,
+          "position": 18823
+        }
+      },
+      "tokens": 115
+    },
+    {
+      "firstFile": {
+        "end": 150,
+        "endLoc": {
+          "column": 21,
+          "line": 150,
+          "position": 4245
+        },
+        "name": "cli\\src\\runners\\deployment-runners.ts",
+        "start": 110,
+        "startLoc": {
+          "column": 13,
+          "line": 110,
+          "position": 3131
+        }
+      },
+      "format": "typescript",
+      "fragment": "",
+      "lines": 41,
+      "secondFile": {
+        "end": 203,
+        "endLoc": {
+          "column": 21,
+          "line": 203,
+          "position": 5728
+        },
+        "name": "cli\\src\\runners\\deployment-runners.ts",
+        "start": 163,
+        "startLoc": {
+          "column": 10,
+          "line": 163,
+          "position": 4614
+        }
+      },
+      "tokens": 263
+    },
+    {
+      "firstFile": {
+        "end": 46,
+        "endLoc": {
+          "column": 17,
+          "line": 46,
+          "position": 1299
+        },
+        "name": "cli\\src\\runners\\dev-accounts-runners.ts",
+        "start": 31,
+        "startLoc": {
+          "column": 72,
+          "line": 31,
+          "position": 944
+        }
+      },
+      "format": "typescript",
+      "fragment": "",
+      "lines": 16,
+      "secondFile": {
+        "end": 71,
+        "endLoc": {
+          "column": 17,
+          "line": 71,
+          "position": 2167
+        },
+        "name": "cli\\src\\runners\\dev-accounts-runners.ts",
+        "start": 56,
+        "startLoc": {
+          "column": 75,
+          "line": 56,
+          "position": 1812
+        }
+      },
+      "tokens": 84
+    },
+    {
+      "firstFile": {
+        "end": 26,
+        "endLoc": {
+          "column": 38,
+          "line": 26,
+          "position": 866
+        },
+        "name": "cli\\src\\runners\\example-list-runner.ts",
+        "start": 9,
+        "startLoc": {
+          "column": 2,
+          "line": 9,
+          "position": 258
+        }
+      },
+      "format": "typescript",
+      "fragment": "",
+      "lines": 18,
+      "secondFile": {
+        "end": 22,
+        "endLoc": {
+          "column": 38,
+          "line": 22,
+          "position": 705
+        },
+        "name": "cli\\src\\runners\\example-run-runner.ts",
+        "start": 7,
+        "startLoc": {
+          "column": 2,
+          "line": 7,
+          "position": 229
+        }
+      },
+      "tokens": 100
+    },
+    {
+      "firstFile": {
+        "end": 124,
+        "endLoc": {
+          "column": 1,
+          "line": 124,
+          "position": 5224
+        },
+        "name": "cli\\src\\runners\\kaspa-wallet-runner.ts",
+        "start": 116,
+        "startLoc": {
+          "column": 2,
+          "line": 116,
+          "position": 4859
+        }
+      },
+      "format": "typescript",
+      "fragment": "",
+      "lines": 9,
+      "secondFile": {
+        "end": 264,
+        "endLoc": {
+          "column": 1,
+          "line": 264,
+          "position": 10730
+        },
+        "name": "cli\\src\\runners\\kaspa-wallet-runner.ts",
+        "start": 256,
+        "startLoc": {
+          "column": 2,
+          "line": 256,
+          "position": 10365
+        }
+      },
+      "tokens": 87
+    },
+    {
+      "firstFile": {
+        "end": 34,
+        "endLoc": {
+          "column": 3,
+          "line": 34,
+          "position": 873
+        },
+        "name": "cli\\src\\runners\\l2-account-runners.ts",
+        "start": 17,
+        "startLoc": {
+          "column": 52,
+          "line": 17,
+          "position": 374
+        }
+      },
+      "format": "typescript",
+      "fragment": "",
+      "lines": 18,
+      "secondFile": {
+        "end": 64,
+        "endLoc": {
+          "column": 3,
+          "line": 64,
+          "position": 1724
+        },
+        "name": "cli\\src\\runners\\l2-tx-runners.ts",
+        "start": 48,
+        "startLoc": {
+          "column": 77,
+          "line": 48,
+          "position": 1210
+        }
+      },
+      "tokens": 102
+    },
+    {
+      "firstFile": {
+        "end": 29,
+        "endLoc": {
+          "column": 41,
+          "line": 29,
+          "position": 895
+        },
+        "name": "cli\\src\\runners\\l2-bridge-runners.ts",
+        "start": 12,
+        "startLoc": {
+          "column": 39,
+          "line": 12,
+          "position": 390
+        }
+      },
+      "format": "typescript",
+      "fragment": "",
+      "lines": 18,
+      "secondFile": {
+        "end": 65,
+        "endLoc": {
+          "column": 41,
+          "line": 65,
+          "position": 2096
+        },
+        "name": "cli\\src\\runners\\l2-bridge-runners.ts",
+        "start": 48,
+        "startLoc": {
+          "column": 44,
+          "line": 48,
+          "position": 1591
+        }
+      },
+      "tokens": 112
+    },
+    {
+      "firstFile": {
+        "end": 33,
+        "endLoc": {
+          "column": 15,
+          "line": 33,
+          "position": 799
+        },
+        "name": "cli\\src\\runners\\l2-call-runners.ts",
+        "start": 14,
+        "startLoc": {
+          "column": 68,
+          "line": 14,
+          "position": 341
+        }
+      },
+      "format": "typescript",
+      "fragment": "",
+      "lines": 20,
+      "secondFile": {
+        "end": 28,
+        "endLoc": {
+          "column": 15,
+          "line": 28,
+          "position": 666
+        },
+        "name": "cli\\src\\runners\\l2-rpc-query-runners.ts",
+        "start": 9,
+        "startLoc": {
+          "column": 51,
+          "line": 9,
+          "position": 208
+        }
+      },
+      "tokens": 79
+    },
+    {
+      "firstFile": {
+        "end": 49,
+        "endLoc": {
+          "column": 7,
+          "line": 49,
+          "position": 1253
+        },
+        "name": "cli\\src\\runners\\l2-call-runners.ts",
+        "start": 38,
+        "startLoc": {
+          "column": 31,
+          "line": 38,
+          "position": 851
+        }
+      },
+      "format": "typescript",
+      "fragment": "",
+      "lines": 12,
+      "secondFile": {
+        "end": 97,
+        "endLoc": {
+          "column": 7,
+          "line": 97,
+          "position": 2626
+        },
+        "name": "cli\\src\\runners\\l2-call-runners.ts",
+        "start": 86,
+        "startLoc": {
+          "column": 38,
+          "line": 86,
+          "position": 2224
+        }
+      },
+      "tokens": 105
+    },
+    {
+      "firstFile": {
+        "end": 79,
+        "endLoc": {
+          "column": 14,
+          "line": 79,
+          "position": 2008
+        },
+        "name": "cli\\src\\runners\\l2-call-runners.ts",
+        "start": 70,
+        "startLoc": {
+          "column": 50,
+          "line": 70,
+          "position": 1676
+        }
+      },
+      "format": "typescript",
+      "fragment": "",
+      "lines": 10,
+      "secondFile": {
+        "end": 127,
+        "endLoc": {
+          "column": 14,
+          "line": 127,
+          "position": 3402
+        },
+        "name": "cli\\src\\runners\\l2-call-runners.ts",
+        "start": 118,
+        "startLoc": {
+          "column": 54,
+          "line": 118,
+          "position": 3070
+        }
+      },
+      "tokens": 88
+    },
+    {
+      "firstFile": {
+        "end": 55,
+        "endLoc": {
+          "column": 7,
+          "line": 55,
+          "position": 1257
+        },
+        "name": "cli\\src\\runners\\l2-contract-runners.ts",
+        "start": 38,
+        "startLoc": {
+          "column": 0,
+          "line": 38,
+          "position": 811
+        }
+      },
+      "format": "typescript",
+      "fragment": "",
+      "lines": 18,
+      "secondFile": {
+        "end": 32,
+        "endLoc": {
+          "column": 7,
+          "line": 32,
+          "position": 841
+        },
+        "name": "cli\\src\\runners\\l2-rpc-health-runner.ts",
+        "start": 13,
+        "startLoc": {
+          "column": 64,
+          "line": 13,
+          "position": 374
+        }
+      },
+      "tokens": 89
+    },
+    {
+      "firstFile": {
+        "end": 55,
+        "endLoc": {
+          "column": 55,
+          "line": 55,
+          "position": 1305
+        },
+        "name": "cli\\src\\runners\\l2-contract-runners.ts",
+        "start": 38,
+        "startLoc": {
+          "column": 0,
+          "line": 38,
+          "position": 811
+        }
+      },
+      "format": "typescript",
+      "fragment": "",
+      "lines": 18,
+      "secondFile": {
+        "end": 665,
+        "endLoc": {
+          "column": 55,
+          "line": 665,
+          "position": 20001
+        },
+        "name": "cli\\src\\runners\\l2-tx-runners.ts",
+        "start": 647,
+        "startLoc": {
+          "column": 62,
+          "line": 647,
+          "position": 19488
+        }
+      },
+      "tokens": 101
+    },
+    {
+      "firstFile": {
+        "end": 58,
+        "endLoc": {
+          "column": 18,
+          "line": 58,
+          "position": 1350
+        },
+        "name": "cli\\src\\runners\\l2-contract-runners.ts",
+        "start": 40,
+        "startLoc": {
+          "column": 35,
+          "line": 40,
+          "position": 909
+        }
+      },
+      "format": "typescript",
+      "fragment": "",
+      "lines": 19,
+      "secondFile": {
+        "end": 666,
+        "endLoc": {
+          "column": 7,
+          "line": 666,
+          "position": 20010
+        },
+        "name": "cli\\src\\runners\\l2-tx-runners.ts",
+        "start": 649,
+        "startLoc": {
+          "column": 35,
+          "line": 649,
+          "position": 19588
+        }
+      },
+      "tokens": 81
+    },
+    {
+      "firstFile": {
+        "end": 109,
+        "endLoc": {
+          "column": 12,
+          "line": 109,
+          "position": 2928
+        },
+        "name": "cli\\src\\runners\\l2-contract-runners.ts",
+        "start": 90,
+        "startLoc": {
+          "column": 2,
+          "line": 90,
+          "position": 2390
+        }
+      },
+      "format": "typescript",
+      "fragment": "",
+      "lines": 20,
+      "secondFile": {
+        "end": 115,
+        "endLoc": {
+          "column": 12,
+          "line": 115,
+          "position": 3237
+        },
+        "name": "cli\\src\\runners\\l2-tx-runners.ts",
+        "start": 96,
+        "startLoc": {
+          "column": 2,
+          "line": 96,
+          "position": 2680
+        }
+      },
+      "tokens": 105
+    },
+    {
+      "firstFile": {
+        "end": 137,
+        "endLoc": {
+          "column": 56,
+          "line": 137,
+          "position": 3707
+        },
+        "name": "cli\\src\\runners\\l2-contract-runners.ts",
+        "start": 126,
+        "startLoc": {
+          "column": 39,
+          "line": 126,
+          "position": 3338
+        }
+      },
+      "format": "typescript",
+      "fragment": "",
+      "lines": 12,
+      "secondFile": {
+        "end": 143,
+        "endLoc": {
+          "column": 56,
+          "line": 143,
+          "position": 4080
+        },
+        "name": "cli\\src\\runners\\l2-tx-runners.ts",
+        "start": 132,
+        "startLoc": {
+          "column": 33,
+          "line": 132,
+          "position": 3700
+        }
+      },
+      "tokens": 72
+    },
+    {
+      "firstFile": {
+        "end": 201,
+        "endLoc": {
+          "column": 1,
+          "line": 201,
+          "position": 5598
+        },
+        "name": "cli\\src\\runners\\l2-contract-runners.ts",
+        "start": 185,
+        "startLoc": {
+          "column": 0,
+          "line": 185,
+          "position": 5157
+        }
+      },
+      "format": "typescript",
+      "fragment": "",
+      "lines": 17,
+      "secondFile": {
+        "end": 715,
+        "endLoc": {
+          "column": 1,
+          "line": 715,
+          "position": 21436
+        },
+        "name": "cli\\src\\runners\\l2-tx-runners.ts",
+        "start": 699,
+        "startLoc": {
+          "column": 0,
+          "line": 699,
+          "position": 20979
+        }
+      },
+      "tokens": 73
+    },
+    {
+      "firstFile": {
+        "end": 296,
+        "endLoc": {
+          "column": 5,
+          "line": 296,
+          "position": 12917
+        },
+        "name": "cli\\src\\runners\\telemetry-runners.ts",
+        "start": 285,
+        "startLoc": {
+          "column": 6,
+          "line": 285,
+          "position": 12454
+        }
+      },
+      "format": "typescript",
+      "fragment": "",
+      "lines": 12,
+      "secondFile": {
+        "end": 332,
+        "endLoc": {
+          "column": 13,
+          "line": 332,
+          "position": 14280
+        },
+        "name": "cli\\src\\runners\\telemetry-runners.ts",
+        "start": 321,
+        "startLoc": {
+          "column": 14,
+          "line": 321,
+          "position": 13729
+        }
+      },
+      "tokens": 101
+    },
+    {
+      "firstFile": {
+        "end": 90,
+        "endLoc": {
+          "column": 7,
+          "line": 90,
+          "position": 3043
+        },
+        "name": "cli\\src\\runners\\tx-plan-runner.ts",
+        "start": 80,
+        "startLoc": {
+          "column": 4,
+          "line": 80,
+          "position": 2661
+        }
+      },
+      "format": "typescript",
+      "fragment": "",
+      "lines": 11,
+      "secondFile": {
+        "end": 123,
+        "endLoc": {
+          "column": 7,
+          "line": 123,
+          "position": 3957
+        },
+        "name": "localnet\\src\\transactions.ts",
+        "start": 113,
+        "startLoc": {
+          "column": 10,
+          "line": 113,
+          "position": 3585
+        }
+      },
+      "tokens": 89
+    },
+    {
+      "firstFile": {
+        "end": 149,
+        "endLoc": {
+          "column": 5,
+          "line": 149,
+          "position": 5076
+        },
+        "name": "cli\\src\\runners\\workflow-runner.ts",
+        "start": 134,
+        "startLoc": {
+          "column": 4,
+          "line": 134,
+          "position": 4446
+        }
+      },
+      "format": "typescript",
+      "fragment": "",
+      "lines": 16,
+      "secondFile": {
+        "end": 193,
+        "endLoc": {
+          "column": 5,
+          "line": 193,
+          "position": 6765
+        },
+        "name": "cli\\src\\runners\\workflow-runner.ts",
+        "start": 178,
+        "startLoc": {
+          "column": 64,
+          "line": 178,
+          "position": 6135
+        }
+      },
+      "tokens": 134
+    },
+    {
+      "firstFile": {
+        "end": 146,
+        "endLoc": {
+          "column": 76,
+          "line": 146,
+          "position": 4917
+        },
+        "name": "cli\\src\\runners\\workflow-runner.ts",
+        "start": 137,
+        "startLoc": {
+          "column": 4,
+          "line": 137,
+          "position": 4481
+        }
+      },
+      "format": "typescript",
+      "fragment": "",
+      "lines": 10,
+      "secondFile": {
+        "end": 242,
+        "endLoc": {
+          "column": 78,
+          "line": 242,
+          "position": 8620
+        },
+        "name": "cli\\src\\runners\\workflow-runner.ts",
+        "start": 233,
+        "startLoc": {
+          "column": 6,
+          "line": 233,
+          "position": 8166
+        }
+      },
+      "tokens": 93
+    },
+    {
+      "firstFile": {
+        "end": 133,
+        "endLoc": {
+          "column": 13,
+          "line": 133,
+          "position": 4321
+        },
+        "name": "cli\\templates\\merchant-checkout\\src\\domain\\CheckoutService.ts",
+        "start": 107,
+        "startLoc": {
+          "column": 12,
+          "line": 107,
+          "position": 3574
+        }
+      },
+      "format": "typescript",
+      "fragment": "",
+      "lines": 27,
+      "secondFile": {
+        "end": 103,
+        "endLoc": {
+          "column": 13,
+          "line": 103,
+          "position": 3649
+        },
+        "name": "cli\\templates\\payment-service\\src\\domain\\PaymentService.ts",
+        "start": 88,
+        "startLoc": {
+          "column": 48,
+          "line": 88,
+          "position": 3192
+        }
+      },
+      "tokens": 86
+    },
+    {
+      "firstFile": {
+        "end": 96,
+        "endLoc": {
+          "column": 44,
+          "line": 96,
+          "position": 2973
+        },
+        "name": "cli\\templates\\wallet-backend\\src\\domain\\WalletService.ts",
+        "start": 81,
+        "startLoc": {
+          "column": 61,
+          "line": 81,
+          "position": 2398
+        }
+      },
+      "format": "typescript",
+      "fragment": "",
+      "lines": 16,
+      "secondFile": {
+        "end": 122,
+        "endLoc": {
+          "column": 44,
+          "line": 122,
+          "position": 3863
+        },
+        "name": "cli\\templates\\wallet-backend\\src\\domain\\WalletService.ts",
+        "start": 107,
+        "startLoc": {
+          "column": 58,
+          "line": 107,
+          "position": 3288
+        }
+      },
+      "tokens": 94
+    },
+    {
+      "firstFile": {
+        "end": 122,
+        "endLoc": {
+          "column": 44,
+          "line": 122,
+          "position": 3863
+        },
+        "name": "cli\\templates\\wallet-backend\\src\\domain\\WalletService.ts",
+        "start": 107,
+        "startLoc": {
+          "column": 25,
+          "line": 107,
+          "position": 3255
+        }
+      },
+      "format": "typescript",
+      "fragment": "",
+      "lines": 16,
+      "secondFile": {
+        "end": 149,
+        "endLoc": {
+          "column": 44,
+          "line": 149,
+          "position": 4803
+        },
+        "name": "cli\\templates\\wallet-backend\\src\\domain\\WalletService.ts",
+        "start": 134,
+        "startLoc": {
+          "column": 27,
+          "line": 134,
+          "position": 4195
+        }
+      },
+      "tokens": 105
+    },
+    {
+      "firstFile": {
+        "end": 79,
+        "endLoc": {
+          "column": 17,
+          "line": 79,
+          "position": 2523
+        },
+        "name": "core\\src\\fs.ts",
+        "start": 34,
+        "startLoc": {
+          "column": 17,
+          "line": 34,
+          "position": 1136
+        }
+      },
+      "format": "typescript",
+      "fragment": "",
+      "lines": 46,
+      "secondFile": {
+        "end": 166,
+        "endLoc": {
+          "column": 17,
+          "line": 166,
+          "position": 5069
+        },
+        "name": "core\\src\\fs.ts",
+        "start": 132,
+        "startLoc": {
+          "column": 8,
+          "line": 132,
+          "position": 3996
+        }
+      },
+      "tokens": 239
+    },
+    {
+      "firstFile": {
+        "end": 103,
+        "endLoc": {
+          "column": 38,
+          "line": 103,
+          "position": 3362
+        },
+        "name": "core\\src\\fs.ts",
+        "start": 83,
+        "startLoc": {
+          "column": 75,
+          "line": 83,
+          "position": 2744
+        }
+      },
+      "format": "typescript",
+      "fragment": "",
+      "lines": 21,
+      "secondFile": {
+        "end": 190,
+        "endLoc": {
+          "column": 17,
+          "line": 190,
+          "position": 5783
+        },
+        "name": "core\\src\\fs.ts",
+        "start": 168,
+        "startLoc": {
+          "column": 10,
+          "line": 168,
+          "position": 5160
+        }
+      },
+      "tokens": 90
+    },
+    {
+      "firstFile": {
+        "end": 19,
+        "endLoc": {
+          "column": 44,
+          "line": 19,
+          "position": 558
+        },
+        "name": "dev-server\\src\\routes\\dapp-tx.ts",
+        "start": 6,
+        "startLoc": {
+          "column": 26,
+          "line": 6,
+          "position": 192
+        }
+      },
+      "format": "typescript",
+      "fragment": "",
+      "lines": 14,
+      "secondFile": {
+        "end": 18,
+        "endLoc": {
+          "column": 44,
+          "line": 18,
+          "position": 519
+        },
+        "name": "dev-server\\src\\routes\\dev-status.ts",
+        "start": 6,
+        "startLoc": {
+          "column": 29,
+          "line": 6,
+          "position": 208
+        }
+      },
+      "tokens": 80
+    },
+    {
+      "firstFile": {
+        "end": 45,
+        "endLoc": {
+          "column": 3,
+          "line": 45,
+          "position": 1234
+        },
+        "name": "dev-server\\src\\routes\\dapp-tx.ts",
+        "start": 28,
+        "startLoc": {
+          "column": 12,
+          "line": 28,
+          "position": 737
+        }
+      },
+      "format": "typescript",
+      "fragment": "",
+      "lines": 18,
+      "secondFile": {
+        "end": 42,
+        "endLoc": {
+          "column": 3,
+          "line": 42,
+          "position": 1119
+        },
+        "name": "dev-server\\src\\routes\\dev-status.ts",
+        "start": 25,
+        "startLoc": {
+          "column": 15,
+          "line": 25,
+          "position": 622
+        }
+      },
+      "tokens": 122
+    },
+    {
+      "firstFile": {
+        "end": 471,
+        "endLoc": {
+          "column": 62,
+          "line": 471,
+          "position": 15401
+        },
+        "name": "dev-server\\src\\routes\\observability.ts",
+        "start": 462,
+        "startLoc": {
+          "column": 6,
+          "line": 462,
+          "position": 14966
+        }
+      },
+      "format": "typescript",
+      "fragment": "",
+      "lines": 10,
+      "secondFile": {
+        "end": 19,
+        "endLoc": {
+          "column": 60,
+          "line": 19,
+          "position": 641
+        },
+        "name": "dev-server\\src\\routes\\replay.ts",
+        "start": 10,
+        "startLoc": {
+          "column": 10,
+          "line": 10,
+          "position": 222
+        }
+      },
+      "tokens": 72
+    },
+    {
+      "firstFile": {
+        "end": 83,
+        "endLoc": {
+          "column": 3,
+          "line": 83,
+          "position": 2946
+        },
+        "name": "kaspa-rpc\\src\\health.ts",
+        "start": 75,
+        "startLoc": {
+          "column": 53,
+          "line": 75,
+          "position": 2565
+        }
+      },
+      "format": "typescript",
+      "fragment": "",
+      "lines": 9,
+      "secondFile": {
+        "end": 123,
+        "endLoc": {
+          "column": 1,
+          "line": 123,
+          "position": 4528
+        },
+        "name": "kaspa-rpc\\src\\health.ts",
+        "start": 115,
+        "startLoc": {
+          "column": 14,
+          "line": 115,
+          "position": 4163
+        }
+      },
+      "tokens": 98
+    },
+    {
+      "firstFile": {
+        "end": 351,
+        "endLoc": {
+          "column": 47,
+          "line": 351,
+          "position": 10972
+        },
+        "name": "kaspa-rpc\\src\\index.ts",
+        "start": 325,
+        "startLoc": {
+          "column": 30,
+          "line": 325,
+          "position": 10044
+        }
+      },
+      "format": "typescript",
+      "fragment": "",
+      "lines": 27,
+      "secondFile": {
+        "end": 311,
+        "endLoc": {
+          "column": 47,
+          "line": 311,
+          "position": 9702
+        },
+        "name": "kaspa-rpc\\src\\json-rpc-client.ts",
+        "start": 286,
+        "startLoc": {
+          "column": 21,
+          "line": 286,
+          "position": 8843
+        }
+      },
+      "tokens": 156
+    },
+    {
+      "firstFile": {
+        "end": 387,
+        "endLoc": {
+          "column": 9,
+          "line": 387,
+          "position": 12461
+        },
+        "name": "kaspa-rpc\\src\\index.ts",
+        "start": 370,
+        "startLoc": {
+          "column": 12,
+          "line": 370,
+          "position": 11943
+        }
+      },
+      "format": "typescript",
+      "fragment": "",
+      "lines": 18,
+      "secondFile": {
+        "end": 343,
+        "endLoc": {
+          "column": 9,
+          "line": 343,
+          "position": 10957
+        },
+        "name": "kaspa-rpc\\src\\json-rpc-client.ts",
+        "start": 326,
+        "startLoc": {
+          "column": 12,
+          "line": 326,
+          "position": 10502
+        }
+      },
+      "tokens": 87
+    },
+    {
+      "firstFile": {
+        "end": 446,
+        "endLoc": {
+          "column": 16,
+          "line": 446,
+          "position": 14272
+        },
+        "name": "kaspa-rpc\\src\\index.ts",
+        "start": 432,
+        "startLoc": {
+          "column": 17,
+          "line": 432,
+          "position": 13836
+        }
+      },
+      "format": "typescript",
+      "fragment": "",
+      "lines": 15,
+      "secondFile": {
+        "end": 361,
+        "endLoc": {
+          "column": 16,
+          "line": 361,
+          "position": 11596
+        },
+        "name": "kaspa-rpc\\src\\json-rpc-client.ts",
+        "start": 347,
+        "startLoc": {
+          "column": 50,
+          "line": 347,
+          "position": 11160
+        }
+      },
+      "tokens": 90
+    },
+    {
+      "firstFile": {
+        "end": 234,
+        "endLoc": {
+          "column": 11,
+          "line": 234,
+          "position": 7269
+        },
+        "name": "localnet\\src\\dag.ts",
+        "start": 227,
+        "startLoc": {
+          "column": 6,
+          "line": 227,
+          "position": 6921
+        }
+      },
+      "format": "typescript",
+      "fragment": "",
+      "lines": 8,
+      "secondFile": {
+        "end": 270,
+        "endLoc": {
+          "column": 11,
+          "line": 270,
+          "position": 8458
+        },
+        "name": "localnet\\src\\dag.ts",
+        "start": 263,
+        "startLoc": {
+          "column": 6,
+          "line": 263,
+          "position": 8110
+        }
+      },
+      "tokens": 78
+    },
+    {
+      "firstFile": {
+        "end": 175,
+        "endLoc": {
+          "column": 40,
+          "line": 175,
+          "position": 5555
+        },
+        "name": "localnet\\src\\transactions.ts",
+        "start": 161,
+        "startLoc": {
+          "column": 17,
+          "line": 161,
+          "position": 5173
+        }
+      },
+      "format": "typescript",
+      "fragment": "",
+      "lines": 15,
+      "secondFile": {
+        "end": 295,
+        "endLoc": {
+          "column": 40,
+          "line": 295,
+          "position": 8965
+        },
+        "name": "localnet\\src\\transactions.ts",
+        "start": 286,
+        "startLoc": {
+          "column": 6,
+          "line": 286,
+          "position": 8649
+        }
+      },
+      "tokens": 70
+    },
+    {
+      "firstFile": {
+        "end": 258,
+        "endLoc": {
+          "column": 1,
+          "line": 258,
+          "position": 7832
+        },
+        "name": "localnet\\src\\transactions.ts",
+        "start": 193,
+        "startLoc": {
+          "column": 25,
+          "line": 193,
+          "position": 6034
+        }
+      },
+      "format": "typescript",
+      "fragment": "",
+      "lines": 66,
+      "secondFile": {
+        "end": 367,
+        "endLoc": {
+          "column": 1,
+          "line": 367,
+          "position": 11216
+        },
+        "name": "localnet\\src\\transactions.ts",
+        "start": 315,
+        "startLoc": {
+          "column": 33,
+          "line": 315,
+          "position": 9559
+        }
+      },
+      "tokens": 269
+    },
+    {
+      "firstFile": {
+        "end": 77,
+        "endLoc": {
+          "column": 10,
+          "line": 77,
+          "position": 2544
+        },
+        "name": "query-store\\src\\backend.ts",
+        "start": 59,
+        "startLoc": {
+          "column": 0,
+          "line": 59,
+          "position": 2037
+        }
+      },
+      "format": "typescript",
+      "fragment": "",
+      "lines": 19,
+      "secondFile": {
+        "end": 21,
+        "endLoc": {
+          "column": 10,
+          "line": 21,
+          "position": 567
+        },
+        "name": "query\\src\\backend.ts",
+        "start": 3,
+        "startLoc": {
+          "column": 0,
+          "line": 3,
+          "position": 78
+        }
+      },
+      "tokens": 84
+    },
+    {
+      "firstFile": {
+        "end": 110,
+        "endLoc": {
+          "column": 25,
+          "line": 110,
+          "position": 3592
+        },
+        "name": "query-store\\src\\backend.ts",
+        "start": 84,
+        "startLoc": {
+          "column": 27,
+          "line": 84,
+          "position": 2809
+        }
+      },
+      "format": "typescript",
+      "fragment": "",
+      "lines": 27,
+      "secondFile": {
+        "end": 73,
+        "endLoc": {
+          "column": 25,
+          "line": 73,
+          "position": 2099
+        },
+        "name": "query\\src\\backend.ts",
+        "start": 28,
+        "startLoc": {
+          "column": 23,
+          "line": 28,
+          "position": 821
+        }
+      },
+      "tokens": 166
+    },
+    {
+      "firstFile": {
+        "end": 191,
+        "endLoc": {
+          "column": 7,
+          "line": 191,
+          "position": 6070
+        },
+        "name": "query-store\\src\\backend.ts",
+        "start": 172,
+        "startLoc": {
+          "column": 35,
+          "line": 172,
+          "position": 5554
+        }
+      },
+      "format": "typescript",
+      "fragment": "",
+      "lines": 20,
+      "secondFile": {
+        "end": 309,
+        "endLoc": {
+          "column": 7,
+          "line": 309,
+          "position": 9608
+        },
+        "name": "query-store\\src\\backend.ts",
+        "start": 290,
+        "startLoc": {
+          "column": 30,
+          "line": 290,
+          "position": 9092
+        }
+      },
+      "tokens": 122
+    },
+    {
+      "firstFile": {
+        "end": 93,
+        "endLoc": {
+          "column": 37,
+          "line": 93,
+          "position": 2461
+        },
+        "name": "query-store\\src\\indexer.ts",
+        "start": 74,
+        "startLoc": {
+          "column": 20,
+          "line": 74,
+          "position": 1867
+        }
+      },
+      "format": "typescript",
+      "fragment": "",
+      "lines": 20,
+      "secondFile": {
+        "end": 162,
+        "endLoc": {
+          "column": 37,
+          "line": 162,
+          "position": 4677
+        },
+        "name": "query-store\\src\\indexer.ts",
+        "start": 145,
+        "startLoc": {
+          "column": 40,
+          "line": 145,
+          "position": 4175
+        }
+      },
+      "tokens": 113
+    },
+    {
+      "firstFile": {
+        "end": 83,
+        "endLoc": {
+          "column": 6,
+          "line": 83,
+          "position": 2201
+        },
+        "name": "query-store\\src\\indexer.ts",
+        "start": 74,
+        "startLoc": {
+          "column": 19,
+          "line": 74,
+          "position": 1866
+        }
+      },
+      "format": "typescript",
+      "fragment": "",
+      "lines": 10,
+      "secondFile": {
+        "end": 190,
+        "endLoc": {
+          "column": 6,
+          "line": 190,
+          "position": 5567
+        },
+        "name": "query-store\\src\\indexer.ts",
+        "start": 181,
+        "startLoc": {
+          "column": 22,
+          "line": 181,
+          "position": 5232
+        }
+      },
+      "tokens": 80
+    },
+    {
+      "firstFile": {
+        "end": 384,
+        "endLoc": {
+          "column": 3,
+          "line": 384,
+          "position": 11548
+        },
+        "name": "query\\src\\adapters\\artifact-adapter.ts",
+        "start": 345,
+        "startLoc": {
+          "column": 33,
+          "line": 345,
+          "position": 10422
+        }
+      },
+      "format": "typescript",
+      "fragment": "",
+      "lines": 40,
+      "secondFile": {
+        "end": 477,
+        "endLoc": {
+          "column": 3,
+          "line": 477,
+          "position": 15057
+        },
+        "name": "query\\src\\adapters\\lineage-adapter.ts",
+        "start": 440,
+        "startLoc": {
+          "column": 29,
+          "line": 440,
+          "position": 14074
+        }
+      },
+      "tokens": 231
+    },
+    {
+      "firstFile": {
+        "end": 368,
+        "endLoc": {
+          "column": 11,
+          "line": 368,
+          "position": 11725
+        },
+        "name": "query\\src\\adapters\\lineage-adapter.ts",
+        "start": 352,
+        "startLoc": {
+          "column": 23,
+          "line": 352,
+          "position": 11288
+        }
+      },
+      "format": "typescript",
+      "fragment": "",
+      "lines": 17,
+      "secondFile": {
+        "end": 412,
+        "endLoc": {
+          "column": 11,
+          "line": 412,
+          "position": 13107
+        },
+        "name": "query\\src\\adapters\\lineage-adapter.ts",
+        "start": 396,
+        "startLoc": {
+          "column": 25,
+          "line": 396,
+          "position": 12669
+        }
+      },
+      "tokens": 98
+    },
+    {
+      "firstFile": {
+        "end": 145,
+        "endLoc": {
+          "column": 9,
+          "line": 145,
+          "position": 4710
+        },
+        "name": "query\\src\\adapters\\rpc-adapter.ts",
+        "start": 130,
+        "startLoc": {
+          "column": 8,
+          "line": 130,
+          "position": 3991
+        }
+      },
+      "format": "typescript",
+      "fragment": "",
+      "lines": 16,
+      "secondFile": {
+        "end": 166,
+        "endLoc": {
+          "column": 5,
+          "line": 166,
+          "position": 5446
+        },
+        "name": "query\\src\\adapters\\rpc-adapter.ts",
+        "start": 151,
+        "startLoc": {
+          "column": 4,
+          "line": 151,
+          "position": 4787
+        }
+      },
+      "tokens": 158
+    },
+    {
+      "firstFile": {
+        "end": 63,
+        "endLoc": {
+          "column": 3,
+          "line": 63,
+          "position": 1830
+        },
+        "name": "sdk\\src\\artifacts-manager.ts",
+        "start": 58,
+        "startLoc": {
+          "column": 4,
+          "line": 58,
+          "position": 1548
+        }
+      },
+      "format": "typescript",
+      "fragment": "",
+      "lines": 6,
+      "secondFile": {
+        "end": 108,
+        "endLoc": {
+          "column": 6,
+          "line": 108,
+          "position": 3415
+        },
+        "name": "sdk\\src\\artifacts-manager.ts",
+        "start": 102,
+        "startLoc": {
+          "column": 4,
+          "line": 102,
+          "position": 3128
+        }
+      },
+      "tokens": 77
+    },
+    {
+      "firstFile": {
+        "end": 144,
+        "endLoc": {
+          "column": 26,
+          "line": 144,
+          "position": 4382
+        },
+        "name": "sdk\\src\\plugin-manager.ts",
+        "start": 138,
+        "startLoc": {
+          "column": 34,
+          "line": 138,
+          "position": 4060
+        }
+      },
+      "format": "typescript",
+      "fragment": "",
+      "lines": 7,
+      "secondFile": {
+        "end": 170,
+        "endLoc": {
+          "column": 26,
+          "line": 170,
+          "position": 5362
+        },
+        "name": "sdk\\src\\plugin-manager.ts",
+        "start": 164,
+        "startLoc": {
+          "column": 33,
+          "line": 164,
+          "position": 5040
+        }
+      },
+      "tokens": 85
+    },
+    {
+      "firstFile": {
+        "end": 325,
+        "endLoc": {
+          "column": 47,
+          "line": 325,
+          "position": 11214
+        },
+        "name": "sdk\\src\\tx.ts",
+        "start": 311,
+        "startLoc": {
+          "column": 4,
+          "line": 311,
+          "position": 10448
+        }
+      },
+      "format": "typescript",
+      "fragment": "",
+      "lines": 15,
+      "secondFile": {
+        "end": 430,
+        "endLoc": {
+          "column": 47,
+          "line": 430,
+          "position": 15060
+        },
+        "name": "sdk\\src\\tx.ts",
+        "start": 416,
+        "startLoc": {
+          "column": 4,
+          "line": 416,
+          "position": 14323
+        }
+      },
+      "tokens": 143
+    },
+    {
+      "firstFile": {
+        "end": 530,
+        "endLoc": {
+          "column": 73,
+          "line": 530,
+          "position": 18667
+        },
+        "name": "sdk\\src\\tx.ts",
+        "start": 509,
+        "startLoc": {
+          "column": 6,
+          "line": 509,
+          "position": 17687
+        }
+      },
+      "format": "typescript",
+      "fragment": "",
+      "lines": 22,
+      "secondFile": {
+        "end": 769,
+        "endLoc": {
+          "column": 71,
+          "line": 769,
+          "position": 27215
+        },
+        "name": "sdk\\src\\tx.ts",
+        "start": 747,
+        "startLoc": {
+          "column": 4,
+          "line": 747,
+          "position": 26271
+        }
+      },
+      "tokens": 157
+    },
+    {
+      "firstFile": {
+        "end": 800,
+        "endLoc": {
+          "column": 9,
+          "line": 800,
+          "position": 28475
+        },
+        "name": "sdk\\src\\tx.ts",
+        "start": 788,
+        "startLoc": {
+          "column": 46,
+          "line": 788,
+          "position": 28025
+        }
+      },
+      "format": "typescript",
+      "fragment": "",
+      "lines": 13,
+      "secondFile": {
+        "end": 1086,
+        "endLoc": {
+          "column": 9,
+          "line": 1086,
+          "position": 38893
+        },
+        "name": "sdk\\src\\tx.ts",
+        "start": 1072,
+        "startLoc": {
+          "column": 61,
+          "line": 1072,
+          "position": 38379
+        }
+      },
+      "tokens": 89
+    },
+    {
+      "firstFile": {
+        "end": 130,
+        "endLoc": {
+          "column": 15,
+          "line": 130,
+          "position": 5340
+        },
+        "name": "sdk\\src\\workflow.ts",
+        "start": 119,
+        "startLoc": {
+          "column": 44,
+          "line": 119,
+          "position": 4846
+        }
+      },
+      "format": "typescript",
+      "fragment": "",
+      "lines": 12,
+      "secondFile": {
+        "end": 143,
+        "endLoc": {
+          "column": 15,
+          "line": 143,
+          "position": 5941
+        },
+        "name": "sdk\\src\\workflow.ts",
+        "start": 132,
+        "startLoc": {
+          "column": 54,
+          "line": 132,
+          "position": 5447
+        }
+      },
+      "tokens": 74
+    },
+    {
+      "firstFile": {
+        "end": 199,
+        "endLoc": {
+          "column": 11,
+          "line": 199,
+          "position": 8541
+        },
+        "name": "sdk\\src\\workflow.ts",
+        "start": 192,
+        "startLoc": {
+          "column": 58,
+          "line": 192,
+          "position": 8105
+        }
+      },
+      "format": "typescript",
+      "fragment": "",
+      "lines": 8,
+      "secondFile": {
+        "end": 210,
+        "endLoc": {
+          "column": 11,
+          "line": 210,
+          "position": 9165
+        },
+        "name": "sdk\\src\\workflow.ts",
+        "start": 203,
+        "startLoc": {
+          "column": 40,
+          "line": 203,
+          "position": 8729
+        }
+      },
+      "tokens": 70
+    },
+    {
+      "firstFile": {
+        "end": 171,
+        "endLoc": {
+          "column": 60,
+          "line": 171,
+          "position": 5145
+        },
+        "name": "sdk\\src\\zk.ts",
+        "start": 165,
+        "startLoc": {
+          "column": 31,
+          "line": 165,
+          "position": 4761
+        }
+      },
+      "format": "typescript",
+      "fragment": "",
+      "lines": 7,
+      "secondFile": {
+        "end": 228,
+        "endLoc": {
+          "column": 60,
+          "line": 228,
+          "position": 7097
+        },
+        "name": "sdk\\src\\zk.ts",
+        "start": 222,
+        "startLoc": {
+          "column": 30,
+          "line": 222,
+          "position": 6713
+        }
+      },
+      "tokens": 77
+    },
+    {
+      "firstFile": {
+        "end": 95,
+        "endLoc": {
+          "column": 64,
+          "line": 95,
+          "position": 2967
+        },
+        "name": "simulator\\src\\scenarios.ts",
+        "start": 86,
+        "startLoc": {
+          "column": 49,
+          "line": 86,
+          "position": 2588
+        }
+      },
+      "format": "typescript",
+      "fragment": "",
+      "lines": 10,
+      "secondFile": {
+        "end": 135,
+        "endLoc": {
+          "column": 64,
+          "line": 135,
+          "position": 4356
+        },
+        "name": "simulator\\src\\scenarios.ts",
+        "start": 126,
+        "startLoc": {
+          "column": 0,
+          "line": 126,
+          "position": 3977
+        }
+      },
+      "tokens": 85
+    },
+    {
+      "firstFile": {
+        "end": 97,
+        "endLoc": {
+          "column": 7,
+          "line": 97,
+          "position": 2976
+        },
+        "name": "simulator\\src\\scenarios.ts",
+        "start": 86,
+        "startLoc": {
+          "column": 26,
+          "line": 86,
+          "position": 2565
+        }
+      },
+      "format": "typescript",
+      "fragment": "",
+      "lines": 12,
+      "secondFile": {
+        "end": 193,
+        "endLoc": {
+          "column": 5,
+          "line": 193,
+          "position": 6324
+        },
+        "name": "simulator\\src\\scenarios.ts",
+        "start": 182,
+        "startLoc": {
+          "column": 29,
+          "line": 182,
+          "position": 5915
+        }
+      },
+      "tokens": 90
+    },
+    {
+      "firstFile": {
+        "end": 39,
+        "endLoc": {
+          "column": 42,
+          "line": 39,
+          "position": 1126
+        },
+        "name": "testing\\src\\torture\\buckets.ts",
+        "start": 16,
+        "startLoc": {
+          "column": 71,
+          "line": 16,
+          "position": 404
+        }
+      },
+      "format": "typescript",
+      "fragment": "",
+      "lines": 24,
+      "secondFile": {
+        "end": 35,
+        "endLoc": {
+          "column": 42,
+          "line": 35,
+          "position": 1155
+        },
+        "name": "testing\\src\\torture\\environment-buckets.ts",
+        "start": 12,
+        "startLoc": {
+          "column": 52,
+          "line": 12,
+          "position": 415
+        }
+      },
+      "tokens": 119
+    },
+    {
+      "firstFile": {
+        "end": 367,
+        "endLoc": {
+          "column": 13,
+          "line": 367,
+          "position": 12574
+        },
+        "name": "testing\\src\\torture\\buckets.ts",
+        "start": 349,
+        "startLoc": {
+          "column": 39,
+          "line": 349,
+          "position": 11969
+        }
+      },
+      "format": "typescript",
+      "fragment": "",
+      "lines": 19,
+      "secondFile": {
+        "end": 68,
+        "endLoc": {
+          "column": 4,
+          "line": 68,
+          "position": 2364
+        },
+        "name": "testing\\src\\torture\\environment-buckets.ts",
+        "start": 53,
+        "startLoc": {
+          "column": 45,
+          "line": 53,
+          "position": 1862
+        }
+      },
+      "tokens": 72
+    },
+    {
+      "firstFile": {
+        "end": 532,
+        "endLoc": {
+          "column": 24,
+          "line": 532,
+          "position": 18938
+        },
+        "name": "testing\\src\\torture\\buckets.ts",
+        "start": 516,
+        "startLoc": {
+          "column": 78,
+          "line": 516,
+          "position": 18343
+        }
+      },
+      "format": "typescript",
+      "fragment": "",
+      "lines": 17,
+      "secondFile": {
+        "end": 1958,
+        "endLoc": {
+          "column": 24,
+          "line": 1958,
+          "position": 71194
+        },
+        "name": "testing\\src\\torture\\buckets.ts",
+        "start": 1943,
+        "startLoc": {
+          "column": 49,
+          "line": 1943,
+          "position": 70721
+        }
+      },
+      "tokens": 89
+    },
+    {
+      "firstFile": {
+        "end": 641,
+        "endLoc": {
+          "column": 38,
+          "line": 641,
+          "position": 23230
+        },
+        "name": "testing\\src\\torture\\buckets.ts",
+        "start": 626,
+        "startLoc": {
+          "column": 48,
+          "line": 626,
+          "position": 22557
+        }
+      },
+      "format": "typescript",
+      "fragment": "",
+      "lines": 16,
+      "secondFile": {
+        "end": 992,
+        "endLoc": {
+          "column": 38,
+          "line": 992,
+          "position": 36095
+        },
+        "name": "testing\\src\\torture\\buckets.ts",
+        "start": 977,
+        "startLoc": {
+          "column": 35,
+          "line": 977,
+          "position": 35431
+        }
+      },
+      "tokens": 85
+    },
+    {
+      "firstFile": {
+        "end": 651,
+        "endLoc": {
+          "column": 11,
+          "line": 651,
+          "position": 23485
+        },
+        "name": "testing\\src\\torture\\buckets.ts",
+        "start": 634,
+        "startLoc": {
+          "column": 14,
+          "line": 634,
+          "position": 22910
+        }
+      },
+      "format": "typescript",
+      "fragment": "",
+      "lines": 18,
+      "secondFile": {
+        "end": 69,
+        "endLoc": {
+          "column": 1,
+          "line": 69,
+          "position": 2367
+        },
+        "name": "testing\\src\\torture\\environment-buckets.ts",
+        "start": 53,
+        "startLoc": {
+          "column": 47,
+          "line": 53,
+          "position": 1864
+        }
+      },
+      "tokens": 71
+    },
+    {
+      "firstFile": {
+        "end": 1008,
+        "endLoc": {
+          "column": 8,
+          "line": 1008,
+          "position": 36637
+        },
+        "name": "testing\\src\\torture\\buckets.ts",
+        "start": 992,
+        "startLoc": {
+          "column": 42,
+          "line": 992,
+          "position": 36099
+        }
+      },
+      "format": "typescript",
+      "fragment": "",
+      "lines": 17,
+      "secondFile": {
+        "end": 2403,
+        "endLoc": {
+          "column": 8,
+          "line": 2403,
+          "position": 87482
+        },
+        "name": "testing\\src\\torture\\buckets.ts",
+        "start": 2388,
+        "startLoc": {
+          "column": 42,
+          "line": 2388,
+          "position": 86946
+        }
+      },
+      "tokens": 97
+    },
+    {
+      "firstFile": {
+        "end": 1387,
+        "endLoc": {
+          "column": 24,
+          "line": 1387,
+          "position": 50396
+        },
+        "name": "testing\\src\\torture\\buckets.ts",
+        "start": 1376,
+        "startLoc": {
+          "column": 6,
+          "line": 1376,
+          "position": 49937
+        }
+      },
+      "format": "typescript",
+      "fragment": "",
+      "lines": 12,
+      "secondFile": {
+        "end": 1703,
+        "endLoc": {
+          "column": 24,
+          "line": 1703,
+          "position": 61385
+        },
+        "name": "testing\\src\\torture\\buckets.ts",
+        "start": 1693,
+        "startLoc": {
+          "column": 6,
+          "line": 1693,
+          "position": 60967
+        }
+      },
+      "tokens": 78
+    },
+    {
+      "firstFile": {
+        "end": 2912,
+        "endLoc": {
+          "column": 52,
+          "line": 2912,
+          "position": 108071
+        },
+        "name": "testing\\src\\torture\\buckets.ts",
+        "start": 2904,
+        "startLoc": {
+          "column": 76,
+          "line": 2904,
+          "position": 107760
+        }
+      },
+      "format": "typescript",
+      "fragment": "",
+      "lines": 9,
+      "secondFile": {
+        "end": 3277,
+        "endLoc": {
+          "column": 52,
+          "line": 3277,
+          "position": 122166
+        },
+        "name": "testing\\src\\torture\\buckets.ts",
+        "start": 3269,
+        "startLoc": {
+          "column": 73,
+          "line": 3269,
+          "position": 121855
+        }
+      },
+      "tokens": 70
+    },
+    {
+      "firstFile": {
+        "end": 2914,
+        "endLoc": {
+          "column": 12,
+          "line": 2914,
+          "position": 108087
+        },
+        "name": "testing\\src\\torture\\buckets.ts",
+        "start": 2904,
+        "startLoc": {
+          "column": 76,
+          "line": 2904,
+          "position": 107760
+        }
+      },
+      "format": "typescript",
+      "fragment": "",
+      "lines": 11,
+      "secondFile": {
+        "end": 3955,
+        "endLoc": {
+          "column": 14,
+          "line": 3955,
+          "position": 148417
+        },
+        "name": "testing\\src\\torture\\buckets.ts",
+        "start": 3944,
+        "startLoc": {
+          "column": 82,
+          "line": 3944,
+          "position": 148056
+        }
+      },
+      "tokens": 71
+    },
+    {
+      "firstFile": {
+        "end": 3092,
+        "endLoc": {
+          "column": 64,
+          "line": 3092,
+          "position": 115243
+        },
+        "name": "testing\\src\\torture\\buckets.ts",
+        "start": 3085,
+        "startLoc": {
+          "column": 10,
+          "line": 3085,
+          "position": 114916
+        }
+      },
+      "format": "typescript",
+      "fragment": "",
+      "lines": 8,
+      "secondFile": {
+        "end": 3244,
+        "endLoc": {
+          "column": 64,
+          "line": 3244,
+          "position": 121067
+        },
+        "name": "testing\\src\\torture\\buckets.ts",
+        "start": 3238,
+        "startLoc": {
+          "column": 10,
+          "line": 3238,
+          "position": 120742
+        }
+      },
+      "tokens": 73
+    },
+    {
+      "firstFile": {
+        "end": 3348,
+        "endLoc": {
+          "column": 9,
+          "line": 3348,
+          "position": 125018
+        },
+        "name": "testing\\src\\torture\\buckets.ts",
+        "start": 3337,
+        "startLoc": {
+          "column": 52,
+          "line": 3337,
+          "position": 124559
+        }
+      },
+      "format": "typescript",
+      "fragment": "",
+      "lines": 12,
+      "secondFile": {
+        "end": 3481,
+        "endLoc": {
+          "column": 9,
+          "line": 3481,
+          "position": 129863
+        },
+        "name": "testing\\src\\torture\\buckets.ts",
+        "start": 3470,
+        "startLoc": {
+          "column": 50,
+          "line": 3470,
+          "position": 129399
+        }
+      },
+      "tokens": 80
+    },
+    {
+      "firstFile": {
+        "end": 3345,
+        "endLoc": {
+          "column": 71,
+          "line": 3345,
+          "position": 124955
+        },
+        "name": "testing\\src\\torture\\buckets.ts",
+        "start": 3337,
+        "startLoc": {
+          "column": 52,
+          "line": 3337,
+          "position": 124559
+        }
+      },
+      "format": "typescript",
+      "fragment": "",
+      "lines": 9,
+      "secondFile": {
+        "end": 3791,
+        "endLoc": {
+          "column": 71,
+          "line": 3791,
+          "position": 142213
+        },
+        "name": "testing\\src\\torture\\buckets.ts",
+        "start": 3783,
+        "startLoc": {
+          "column": 34,
+          "line": 3783,
+          "position": 141799
+        }
+      },
+      "tokens": 71
+    },
+    {
+      "firstFile": {
+        "end": 3350,
+        "endLoc": {
+          "column": 12,
+          "line": 3350,
+          "position": 125034
+        },
+        "name": "testing\\src\\torture\\buckets.ts",
+        "start": 3337,
+        "startLoc": {
+          "column": 52,
+          "line": 3337,
+          "position": 124559
+        }
+      },
+      "format": "typescript",
+      "fragment": "",
+      "lines": 14,
+      "secondFile": {
+        "end": 3848,
+        "endLoc": {
+          "column": 61,
+          "line": 3848,
+          "position": 144479
+        },
+        "name": "testing\\src\\torture\\buckets.ts",
+        "start": 3838,
+        "startLoc": {
+          "column": 10,
+          "line": 3838,
+          "position": 143993
+        }
+      },
+      "tokens": 81
+    },
+    {
+      "firstFile": {
+        "end": 3794,
+        "endLoc": {
+          "column": 15,
+          "line": 3794,
+          "position": 142295
+        },
+        "name": "testing\\src\\torture\\buckets.ts",
+        "start": 3786,
+        "startLoc": {
+          "column": 10,
+          "line": 3786,
+          "position": 141886
+        }
+      },
+      "format": "typescript",
+      "fragment": "",
+      "lines": 9,
+      "secondFile": {
+        "end": 3850,
+        "endLoc": {
+          "column": 12,
+          "line": 3850,
+          "position": 144495
+        },
+        "name": "testing\\src\\torture\\buckets.ts",
+        "start": 3841,
+        "startLoc": {
+          "column": 10,
+          "line": 3841,
+          "position": 144087
+        }
+      },
+      "tokens": 79
+    },
+    {
+      "firstFile": {
+        "end": 3974,
+        "endLoc": {
+          "column": 40,
+          "line": 3974,
+          "position": 149229
+        },
+        "name": "testing\\src\\torture\\buckets.ts",
+        "start": 3947,
+        "startLoc": {
+          "column": 41,
+          "line": 3947,
+          "position": 148202
+        }
+      },
+      "format": "typescript",
+      "fragment": "",
+      "lines": 28,
+      "secondFile": {
+        "end": 4514,
+        "endLoc": {
+          "column": 40,
+          "line": 4514,
+          "position": 169597
+        },
+        "name": "testing\\src\\torture\\buckets.ts",
+        "start": 4487,
+        "startLoc": {
+          "column": 41,
+          "line": 4487,
+          "position": 168570
+        }
+      },
+      "tokens": 143
+    },
+    {
+      "firstFile": {
+        "end": 3974,
+        "endLoc": {
+          "column": 40,
+          "line": 3974,
+          "position": 149229
+        },
+        "name": "testing\\src\\torture\\buckets.ts",
+        "start": 3958,
+        "startLoc": {
+          "column": 53,
+          "line": 3958,
+          "position": 148528
+        }
+      },
+      "format": "typescript",
+      "fragment": "",
+      "lines": 17,
+      "secondFile": {
+        "end": 4266,
+        "endLoc": {
+          "column": 40,
+          "line": 4266,
+          "position": 159822
+        },
+        "name": "testing\\src\\torture\\buckets.ts",
+        "start": 4250,
+        "startLoc": {
+          "column": 84,
+          "line": 4250,
+          "position": 159121
+        }
+      },
+      "tokens": 84
+    },
+    {
+      "firstFile": {
+        "end": 3992,
+        "endLoc": {
+          "column": 28,
+          "line": 3992,
+          "position": 149858
+        },
+        "name": "testing\\src\\torture\\buckets.ts",
+        "start": 3974,
+        "startLoc": {
+          "column": 44,
+          "line": 3974,
+          "position": 149233
+        }
+      },
+      "format": "typescript",
+      "fragment": "",
+      "lines": 19,
+      "secondFile": {
+        "end": 4284,
+        "endLoc": {
+          "column": 28,
+          "line": 4284,
+          "position": 160451
+        },
+        "name": "testing\\src\\torture\\buckets.ts",
+        "start": 4266,
+        "startLoc": {
+          "column": 44,
+          "line": 4266,
+          "position": 159826
+        }
+      },
+      "tokens": 102
+    },
+    {
+      "firstFile": {
+        "end": 3998,
+        "endLoc": {
+          "column": 15,
+          "line": 3998,
+          "position": 150036
+        },
+        "name": "testing\\src\\torture\\buckets.ts",
+        "start": 3974,
+        "startLoc": {
+          "column": 44,
+          "line": 3974,
+          "position": 149233
+        }
+      },
+      "format": "typescript",
+      "fragment": "",
+      "lines": 25,
+      "secondFile": {
+        "end": 4538,
+        "endLoc": {
+          "column": 15,
+          "line": 4538,
+          "position": 170418
+        },
+        "name": "testing\\src\\torture\\buckets.ts",
+        "start": 4514,
+        "startLoc": {
+          "column": 44,
+          "line": 4514,
+          "position": 169601
+        }
+      },
+      "tokens": 117
+    },
+    {
+      "firstFile": {
+        "end": 3996,
+        "endLoc": {
+          "column": 17,
+          "line": 3996,
+          "position": 149926
+        },
+        "name": "testing\\src\\torture\\buckets.ts",
+        "start": 3974,
+        "startLoc": {
+          "column": 44,
+          "line": 3974,
+          "position": 149233
+        }
+      },
+      "format": "typescript",
+      "fragment": "",
+      "lines": 23,
+      "secondFile": {
+        "end": 4699,
+        "endLoc": {
+          "column": 17,
+          "line": 4699,
+          "position": 176337
+        },
+        "name": "testing\\src\\torture\\buckets.ts",
+        "start": 4677,
+        "startLoc": {
+          "column": 44,
+          "line": 4677,
+          "position": 175644
+        }
+      },
+      "tokens": 116
+    },
+    {
+      "firstFile": {
+        "end": 3998,
+        "endLoc": {
+          "column": 33,
+          "line": 3998,
+          "position": 150054
+        },
+        "name": "testing\\src\\torture\\buckets.ts",
+        "start": 3974,
+        "startLoc": {
+          "column": 44,
+          "line": 3974,
+          "position": 149233
+        }
+      },
+      "format": "typescript",
+      "fragment": "",
+      "lines": 25,
+      "secondFile": {
+        "end": 4893,
+        "endLoc": {
+          "column": 37,
+          "line": 4893,
+          "position": 183257
+        },
+        "name": "testing\\src\\torture\\buckets.ts",
+        "start": 4869,
+        "startLoc": {
+          "column": 44,
+          "line": 4869,
+          "position": 182385
+        }
+      },
+      "tokens": 123
+    },
+    {
+      "firstFile": {
+        "end": 4514,
+        "endLoc": {
+          "column": 40,
+          "line": 4514,
+          "position": 169597
+        },
+        "name": "testing\\src\\torture\\buckets.ts",
+        "start": 4484,
+        "startLoc": {
+          "column": 73,
+          "line": 4484,
+          "position": 168424
+        }
+      },
+      "format": "typescript",
+      "fragment": "",
+      "lines": 31,
+      "secondFile": {
+        "end": 4677,
+        "endLoc": {
+          "column": 40,
+          "line": 4677,
+          "position": 175640
+        },
+        "name": "testing\\src\\torture\\buckets.ts",
+        "start": 4647,
+        "startLoc": {
+          "column": 71,
+          "line": 4647,
+          "position": 174467
+        }
+      },
+      "tokens": 178
+    },
+    {
+      "firstFile": {
+        "end": 4514,
+        "endLoc": {
+          "column": 40,
+          "line": 4514,
+          "position": 169597
+        },
+        "name": "testing\\src\\torture\\buckets.ts",
+        "start": 4484,
+        "startLoc": {
+          "column": 73,
+          "line": 4484,
+          "position": 168424
+        }
+      },
+      "format": "typescript",
+      "fragment": "",
+      "lines": 31,
+      "secondFile": {
+        "end": 4869,
+        "endLoc": {
+          "column": 40,
+          "line": 4869,
+          "position": 182381
+        },
+        "name": "testing\\src\\torture\\buckets.ts",
+        "start": 4839,
+        "startLoc": {
+          "column": 83,
+          "line": 4839,
+          "position": 181208
+        }
+      },
+      "tokens": 178
+    },
+    {
+      "firstFile": {
+        "end": 4973,
+        "endLoc": {
+          "column": 15,
+          "line": 4973,
+          "position": 186351
+        },
+        "name": "testing\\src\\torture\\buckets.ts",
+        "start": 4965,
+        "startLoc": {
+          "column": 10,
+          "line": 4965,
+          "position": 186004
+        }
+      },
+      "format": "typescript",
+      "fragment": "",
+      "lines": 9,
+      "secondFile": {
+        "end": 5041,
+        "endLoc": {
+          "column": 15,
+          "line": 5041,
+          "position": 189070
+        },
+        "name": "testing\\src\\torture\\buckets.ts",
+        "start": 5033,
+        "startLoc": {
+          "column": 10,
+          "line": 5033,
+          "position": 188723
+        }
+      },
+      "tokens": 70
+    },
+    {
+      "firstFile": {
+        "end": 363,
+        "endLoc": {
+          "column": 9,
+          "line": 363,
+          "position": 11723
+        },
+        "name": "testing\\src\\torture\\environment-buckets.ts",
+        "start": 351,
+        "startLoc": {
+          "column": 57,
+          "line": 351,
+          "position": 11318
+        }
+      },
+      "format": "typescript",
+      "fragment": "",
+      "lines": 13,
+      "secondFile": {
+        "end": 425,
+        "endLoc": {
+          "column": 9,
+          "line": 425,
+          "position": 13527
+        },
+        "name": "testing\\src\\torture\\environment-buckets.ts",
+        "start": 411,
+        "startLoc": {
+          "column": 54,
+          "line": 411,
+          "position": 13041
+        }
+      },
+      "tokens": 81
+    },
+    {
+      "firstFile": {
+        "end": 81,
+        "endLoc": {
+          "column": 7,
+          "line": 81,
+          "position": 2430
+        },
+        "name": "tx-builder\\src\\coin-selector.ts",
+        "start": 71,
+        "startLoc": {
+          "column": 45,
+          "line": 71,
+          "position": 2111
+        }
+      },
+      "format": "typescript",
+      "fragment": "",
+      "lines": 11,
+      "secondFile": {
+        "end": 91,
+        "endLoc": {
+          "column": 7,
+          "line": 91,
+          "position": 3074
+        },
+        "name": "tx-builder\\src\\index.ts",
+        "start": 78,
+        "startLoc": {
+          "column": 46,
+          "line": 78,
+          "position": 2695
+        }
+      },
+      "tokens": 79
+    },
+    {
+      "firstFile": {
+        "end": 79,
+        "endLoc": {
+          "column": 5,
+          "line": 79,
+          "position": 2421
+        },
+        "name": "tx-builder\\src\\coin-selector.ts",
+        "start": 74,
+        "startLoc": {
+          "column": 4,
+          "line": 74,
+          "position": 2152
+        }
+      },
+      "format": "typescript",
+      "fragment": "",
+      "lines": 6,
+      "secondFile": {
+        "end": 162,
+        "endLoc": {
+          "column": 5,
+          "line": 162,
+          "position": 5125
+        },
+        "name": "tx-builder\\src\\coin-selector.ts",
+        "start": 157,
+        "startLoc": {
+          "column": 6,
+          "line": 157,
+          "position": 4848
+        }
+      },
+      "tokens": 76
+    },
+    {
+      "firstFile": {
+        "end": 91,
+        "endLoc": {
+          "column": 7,
+          "line": 91,
+          "position": 3074
+        },
+        "name": "tx-builder\\src\\index.ts",
+        "start": 75,
+        "startLoc": {
+          "column": 48,
+          "line": 75,
+          "position": 2552
+        }
+      },
+      "format": "typescript",
+      "fragment": "",
+      "lines": 17,
+      "secondFile": {
+        "end": 147,
+        "endLoc": {
+          "column": 11,
+          "line": 147,
+          "position": 5327
+        },
+        "name": "tx-builder\\src\\index.ts",
+        "start": 137,
+        "startLoc": {
+          "column": 44,
+          "line": 137,
+          "position": 4881
+        }
+      },
+      "tokens": 115
+    }
+  ],
+  "statistics": {
+    "detectionDate": "2026-07-07T11:59:24.903Z",
+    "formats": {
+      "typescript": {
+        "clones": 154,
+        "duplicatedLines": 2741,
+        "duplicatedTokens": 17457,
+        "lines": 80041,
+        "newClones": 0,
+        "newDuplicatedLines": 0,
+        "percentage": 3.424494946340001,
+        "percentageTokens": 4.094312009231375,
+        "sources": 482,
+        "tokens": 426372
+      }
+    },
+    "total": {
+      "clones": 154,
+      "duplicatedLines": 2741,
+      "duplicatedTokens": 17457,
+      "lines": 80041,
+      "newClones": 0,
+      "newDuplicatedLines": 0,
+      "percentage": 3.424494946340001,
+      "percentageTokens": 4.094312009231375,
+      "sources": 482,
+      "tokens": 426372
+    }
+  }
+}

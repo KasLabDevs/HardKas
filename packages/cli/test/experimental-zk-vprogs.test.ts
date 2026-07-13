@@ -69,7 +69,7 @@ describe("ZK corpus and vProgs inspect CLI", () => {
       "fixtures/toccata-v2/vprogs/inspect-only-artifact.json",
       "--json"
     ]);
-    expect(inspect.status).toBe(0);
-    expect(parseStdout(inspect).status).toBe("VPROGS_ARTIFACT_INSPECTED");
+    expect(inspect.status).toBe(1);
+    expect(parseStdout(inspect).status).toBe("VPROGS_ARTIFACT_INVALID");
   });
 });

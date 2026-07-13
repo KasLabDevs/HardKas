@@ -76,6 +76,34 @@ function normalizeSimulatedPlanInput(target: any, fallbackId: string): TxPlanArt
  * HardKAS Transaction Module
  * @alpha
  */
+export interface SignTxOptions {
+  account?: HardkasAccount | string;
+  authorizers?: Record<number, any>; // Record<number, TxInputAuthorizer>
+  append?: boolean;
+  threshold?: number;
+  requiredSigners?: string[];
+}
+
+/**
+ * @deprecated Use SignTxOptions instead
+ */
+export interface LegacySignTxOptions {
+  append?: boolean;
+  threshold?: number;
+  requiredSigners?: string[];
+  authorizers?: any;
+}
+
+function isSignTxOptions(value: unknown): value is SignTxOptions {
+  return (
+    typeof value === "object" &&
+    value !== null &&
+    ("authorizers" in value ||
+      "account" in value ||
+      "requiredSigners" in value)
+  );
+}
+
 export class HardkasTx {
   constructor(private sdk: Hardkas) {}
 
@@ -313,9 +341,9 @@ export class HardkasTx {
       resolvedAccount = options.account;
     }
 
-    if (!resolvedAccount.address) {
+    if (!resolvedAccount?.address) {
       throw new Error(
-        `Account '${resolvedAccount.name || options.account}' has no address.`
+        `Account '${resolvedAccount?.name || options.account}' has no address.`
       );
     }
 
@@ -330,7 +358,7 @@ export class HardkasTx {
     };
     const planService = new TxPlanService(dummyProvider);
     const result = await planService.planConsolidation({
-      fromAddress: resolvedAccount.address as string,
+      fromAddress: resolvedAccount?.address as string,
       selectedUtxos: options.selectedUtxos,
       toAddress: options.destination,
       ...(options.feeRate !== undefined ? { feeRate: options.feeRate } : {})
@@ -349,9 +377,9 @@ export class HardkasTx {
       networkId: activeNetwork as any,
       mode: isSimulated ? "simulated" : "real",
       from: {
-        input: resolvedAccount.name || (resolvedAccount.address as string),
-        address: resolvedAccount.address as string,
-        accountName: resolvedAccount.name
+        input: resolvedAccount?.name || (resolvedAccount?.address as string),
+        address: resolvedAccount?.address as string,
+        accountName: resolvedAccount?.name
       },
       to: {
         input: options.destination,
@@ -390,17 +418,30 @@ export class HardkasTx {
     return basePlan;
   }
 
+
+
+
   /**
    * Signs a transaction plan.
    */
   async sign(
     plan: TxPlanArtifact | SignedTxArtifact,
-    account?: HardkasAccount | string,
-    options?: {
-      append?: boolean;
-      threshold?: number;
-      requiredSigners?: string[];
-    }
+    options?: SignTxOptions
+  ): Promise<SignedTxArtifact>;
+
+  /**
+   * @deprecated Pass options as the second argument instead.
+   */
+  async sign(
+    plan: TxPlanArtifact | SignedTxArtifact,
+    account: HardkasAccount | string | any,
+    options?: LegacySignTxOptions
+  ): Promise<SignedTxArtifact>;
+
+  async sign(
+    plan: TxPlanArtifact | SignedTxArtifact,
+    accountOrOptions?: HardkasAccount | string | any | SignTxOptions,
+    legacyOptions?: LegacySignTxOptions
   ): Promise<SignedTxArtifact> {
     if (!plan || typeof plan !== "object") {
       const e = new Error("TX_ARTIFACT_SCHEMA_INVALID: Input plan must be a valid artifact object.");
@@ -423,18 +464,87 @@ export class HardkasTx {
       throw e;
     }
 
-    if (plan.schema !== HardkasSchemas.TxPlan && plan.schema !== HardkasSchemas.SignedTx) {
+    if (
+      plan.schema === HardkasSchemas.TxPlanV1 ||
+      plan.schema === HardkasSchemas.SignedTxV1 ||
+      (plan as any).txVersion === 1
+    ) {
+      // WASM v0.13 does not support V1 artifacts natively in our SDK adapters yet
+      const wasmProvider = this.sdk.config.config.wasm?.provider || "npm";
+      if (wasmProvider !== "local") {
+        const e = new Error("The configured WASM runtime does not support TX V1 signing. Upgrade to WASM v2.x.");
+        (e as any).code = "BLOCKED_BY_DEPENDENCY";
+        throw e;
+      }
+    }
+
+    let resolvedAccount: HardkasAccount | undefined = undefined;
+    let actualOptions: SignTxOptions = {};
+
+    if (isSignTxOptions(accountOrOptions)) {
+      actualOptions = accountOrOptions;
+    } else {
+      actualOptions = { ...legacyOptions } as SignTxOptions;
+      if (accountOrOptions) {
+        if (typeof accountOrOptions === "object" && typeof accountOrOptions.authorize === "function") {
+          // Direct authorizer support
+          const actualAuthorizers: Record<number, any> = {};
+          for (let i = 0; i < (plan as any).inputs?.length || 0; i++) {
+            actualAuthorizers[i] = accountOrOptions;
+          }
+          actualOptions.authorizers = actualAuthorizers;
+        } else if (typeof accountOrOptions === "string") {
+          actualOptions.account = await this.sdk.accounts.resolve(accountOrOptions);
+        } else {
+          actualOptions.account = accountOrOptions;
+        }
+      }
+    }
+
+    if (
+      (plan as any).schema === HardkasSchemas.SignedTx ||
+      (plan as any).schema === HardkasSchemas.SignedTxV1
+    ) {
+      if (actualOptions.append === undefined && (plan as any).status === "partially_signed") {
+        // Auto-detect append
+        actualOptions = { ...actualOptions, append: true };
+      }
+    }
+
+    if (
+      !actualOptions.append &&
+      ((plan as any).schema === HardkasSchemas.SignedTx ||
+      (plan as any).signedTxId ||
+      (plan as any).transactionId ||
+      (plan as any).schema === HardkasSchemas.SignedTxV1)
+    ) {
+      const e = new Error(
+        "ALREADY_SIGNED_ARTIFACT: Already signed artifact passed to tx.sign. Multi-sig append is not yet supported."
+      );
+      (e as any).code = "ALREADY_SIGNED_ARTIFACT";
+      throw e;
+    }
+
+    if (
+      (plan as any).schema !== HardkasSchemas.TxPlan &&
+      (plan as any).schema !== HardkasSchemas.SignedTx &&
+      (plan as any).schema !== HardkasSchemas.TxPlanV1 &&
+      (plan as any).schema !== HardkasSchemas.SignedTxV1
+    ) {
       const e = new Error(`TX_ARTIFACT_SCHEMA_INVALID: Unsupported artifact schema for signing: ${(plan as any).schema}`);
       (e as any).code = "TX_ARTIFACT_SCHEMA_INVALID";
       throw e;
     }
 
-    let resolvedAccount: HardkasAccount;
-    if (typeof account === "string") {
-      resolvedAccount = await this.sdk.accounts.resolve(account);
-    } else if (account) {
-      resolvedAccount = account;
-    } else {
+    // Option parsing moved above
+
+    if (actualOptions.account) {
+      if (typeof actualOptions.account === "string") {
+        resolvedAccount = await this.sdk.accounts.resolve(actualOptions.account);
+      } else {
+        resolvedAccount = actualOptions.account;
+      }
+    } else if (!actualOptions.authorizers) {
       const fromName =
         (plan as any).from?.accountName ||
         (plan as any).from?.input ||
@@ -446,8 +556,10 @@ export class HardkasTx {
       resolvedAccount = await this.sdk.accounts.resolve(fromName);
     }
 
+    let actualAuthorizers = actualOptions.authorizers;
+
     const planId = (plan as any).planId || (plan as any).sourcePlanId || "unknown";
-    await this.sdk.plugins.onBeforeTxSign({ planId, account: resolvedAccount.name || "unknown" });
+    await this.sdk.plugins.onBeforeTxSign({ planId, account: resolvedAccount?.name || "unknown" });
 
     if (typeof plan === "object" && plan !== null && (plan as any).contentHash) {
 
@@ -499,11 +611,7 @@ export class HardkasTx {
           "Cannot append signature to an already completed signed transaction."
         );
       }
-      if (options?.append === undefined && plan.status === "partially_signed") {
-        // Auto-detect append
-        options = { ...options, append: true };
-      }
-      if (!options?.append) {
+      if (!actualOptions.append) {
         throw new Error(
           "Input file is a partially signed transaction. Use the --append flag to add your signature."
         );
@@ -516,9 +624,9 @@ export class HardkasTx {
         );
       }
 
-      const signerAddress = resolvedAccount.address;
+      const signerAddress = resolvedAccount?.address;
       if (!signerAddress) {
-        throw new Error(`Signer account '${resolvedAccount.name}' has no address.`);
+        throw new Error(`Signer account '${resolvedAccount?.name}' has no address.`);
       }
 
       // Check authorization
@@ -590,22 +698,22 @@ export class HardkasTx {
 
       signedArtifact = draft;
     } else if (plan.schema === HardkasSchemas.TxPlan) {
-      if (options?.append) {
+      if (actualOptions.append) {
         throw new Error(
           "Do not use --append for the first signature of a transaction plan."
         );
       }
 
-      const threshold = options?.threshold || 1;
+      const threshold = actualOptions.threshold || 1;
 
       if (threshold > 1) {
         // Multisig first signature
-        const signerAddress = resolvedAccount.address;
+        const signerAddress = resolvedAccount?.address;
         if (!signerAddress) {
-          throw new Error(`Signer account '${resolvedAccount.name}' has no address.`);
+          throw new Error(`Signer account '${resolvedAccount?.name}' has no address.`);
         }
 
-        const requiredSignersList = options?.requiredSigners || [signerAddress];
+        const requiredSignersList = actualOptions.requiredSigners || [signerAddress];
         const requiredSigners = [];
         for (const r of requiredSignersList) {
           const acc = await this.sdk.accounts.resolve(r);
@@ -684,15 +792,11 @@ export class HardkasTx {
 
         signedArtifact = draft;
       } else {
-        if (resolvedAccount.address !== plan.from.address) {
-          throw new Error(
-            `Signer account '${resolvedAccount.address}' is not authorized to sign for '${plan.from.address}'.`
-          );
-        }
         // Standard single-signature plan signing (maintains 100% backward compatibility)
         signedArtifact = await signTxPlanArtifact({
           planArtifact: plan,
-          account: resolvedAccount,
+          account: resolvedAccount as HardkasAccount,
+          ...(actualAuthorizers ? { authorizers: actualAuthorizers } : {}),
           config: this.sdk.config.config,
           allowMainnet: false
         });
@@ -728,7 +832,7 @@ export class HardkasTx {
 
     // Fire non-blocking after hook
     // Do not await, or await but let plugin manager catch failure
-    await this.sdk.plugins.onTxSigned({ planId, account: resolvedAccount.name || "unknown", signedArtifact });
+    await this.sdk.plugins.onTxSigned({ planId, account: resolvedAccount?.name || "unknown", signedArtifact });
 
     return signedArtifact;
   }

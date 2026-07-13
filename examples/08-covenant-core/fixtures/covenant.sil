@@ -1,0 +1,12 @@
+pragma silverscript ^0.1.0;
+
+contract SimpleCovenant() {
+    entrypoint function spend() {
+        // Hardcoded recipient pubkey corresponding to privkey '222...222'
+        pubkey recipient = pubkey(0x466d7fcae563e5cb09a0d1870bb580344804617879a14949cf22285f1bae3f27);
+        byte[] recipientScriptPubKey = byte[](new ScriptPubKeyP2PK(recipient));
+        
+        // Ensure that the first output sends to the recipient
+        require(tx.outputs[0].scriptPubKey == recipientScriptPubKey);
+    }
+}

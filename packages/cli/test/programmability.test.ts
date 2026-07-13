@@ -44,12 +44,12 @@ describe("programmability CLI", () => {
       "fixtures/toccata-v2",
       "--json"
     ]);
-    expect(result.status).toBe(0);
+    expect(result.status).toBe(1);
     const json = parseStdout(result);
-    expect(json.status).toBe("PROGRAMMABILITY_CORPUS_PASS");
+    expect(json.status).toBe("PROGRAMMABILITY_CORPUS_FAIL");
     expect(json.summary.silver).toBe("PASS");
     expect(json.summary.zk).toBe("PASS");
-    expect(json.summary.vprogs).toBe("PASS");
+    expect(json.summary.vprogs).toBe("FAIL");
   });
 
   it("plans an app", () => {

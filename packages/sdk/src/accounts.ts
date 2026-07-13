@@ -1,5 +1,5 @@
 import { Hardkas } from "./index.js";
-import { HardkasAccount, resolveHardkasAccount } from "@hardkas/accounts";
+import { HardkasAccount, resolveHardkasAccount, LazyAccountAuthorizer, StaticSignatureScriptAuthorizer } from "@hardkas/accounts";
 import { formatSompiToKas } from "@hardkas/core";
 
 /**
@@ -97,5 +97,28 @@ export class HardkasAccounts {
     } else {
       return this.sdk.tx.send(signed);
     }
+  }
+
+  /**
+   * Creates an explicit local dev signer for WalletToolkit.
+   * Do not use for production custody.
+   */
+  async createDevSigner(accountNameOrAddress: string) {
+    const { createDevSigner } = await import("@hardkas/accounts");
+    return createDevSigner(this.sdk.workspace.root, accountNameOrAddress);
+  }
+
+  /**
+   * Creates an authorizer that lazily resolves an account's private key for signing.
+   */
+  privateKeyAuthorizer(accountName: string) {
+    return new LazyAccountAuthorizer(accountName, this.sdk.workspace.root);
+  }
+
+  /**
+   * Creates an authorizer that injects a static signature script into an input.
+   */
+  staticSignatureScriptAuthorizer(signatureScript: string) {
+    return new StaticSignatureScriptAuthorizer(signatureScript);
   }
 }

@@ -17,9 +17,10 @@ export const DEFAULT_PORTS: KaspadPorts = {
 };
 
 interface InternalDockerKaspadOptions extends Required<
-  Omit<DockerKaspadOptions, "ports">
+  Omit<DockerKaspadOptions, "ports" | "mineTo">
 > {
   readonly ports: KaspadPorts;
+  readonly mineTo?: string | undefined;
 }
 
 export class DockerKaspadRunner {
@@ -38,8 +39,9 @@ export class DockerKaspadRunner {
         ...(options?.ports || {})
       } as KaspadPorts,
       detach: options?.detach ?? true,
-      allowFloatingImage: options?.allowFloatingImage ?? false
-    };
+      allowFloatingImage: options?.allowFloatingImage ?? false,
+      mineTo: options?.mineTo
+    } as InternalDockerKaspadOptions;
   }
 
   async start(): Promise<KaspadNodeStatus> {
@@ -53,7 +55,7 @@ export class DockerKaspadRunner {
       await execa("docker", ["version"]);
     } catch (e) {
       throw new Error(
-        "Docker is not available. Please install Docker to run a real Kaspa node."
+        "[DOCKER_UNAVAILABLE] Docker is not available. Please install Docker to run a real Kaspa node."
       );
     }
 
@@ -81,7 +83,7 @@ export class DockerKaspadRunner {
       networkFlag = "--devnet";
     } else if (network === "mainnet") {
       throw new Error(
-        "Local Docker node for 'mainnet' is currently unsupported by HardKAS.\n" +
+        "[NODE_MANAGEMENT_MAINNET_FORBIDDEN] Local Docker node for 'mainnet' is currently unsupported by HardKAS.\n" +
           "Please use a remote RPC provider or a manual kaspad setup for mainnet operations."
       );
     } else {
@@ -154,6 +156,29 @@ export class DockerKaspadRunner {
       );
     }
 
+    if (this.options.mineTo) {
+      const minerContainerName = `${this.options.containerName}-miner`;
+      try {
+        await execa("docker", ["rm", "-f", minerContainerName]);
+      } catch (e) {}
+
+      try {
+        await execa("docker", [
+          "run", "-d", "--rm",
+          "--name", minerContainerName,
+          "--network", `container:${this.options.containerName}`,
+          "kaspanet/cpuminer:latest",
+          "-a", this.options.mineTo,
+          "-s", "127.0.0.1",
+          "-p", this.options.ports.rpc.toString(),
+          "--mine-when-not-synced",
+          "-t", "1"
+        ]);
+      } catch (err: any) {
+        throw new Error(`MINER_UNAVAILABLE: Failed to start the Kaspa CPU Miner container. Ensure Docker can pull 'kaspanet/cpuminer:latest'. Details: ${err.message}`);
+      }
+    }
+
     return this.status();
   }
 
@@ -194,6 +219,14 @@ export class DockerKaspadRunner {
       await execa("docker", ["rm", this.options.containerName]);
     } catch (e) {
       // Ignore errors if container doesn't exist or is already stopped
+    }
+
+    if (this.options.mineTo) {
+      const minerContainerName = `${this.options.containerName}-miner`;
+      try {
+        await execa("docker", ["stop", minerContainerName]);
+        await execa("docker", ["rm", minerContainerName]);
+      } catch (e) {}
     }
     return this.status();
   }

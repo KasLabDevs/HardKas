@@ -22,7 +22,7 @@ export async function runReplayVerify(options: ReplayVerifyOptions) {
   if (effectivePath) {
     verifyOptions.path = effectivePath;
   }
-  const result = await sdk.replay.verify(verifyOptions);
+  const result = await sdk.experimental.replay.verify(verifyOptions);
 
   // Map result to requested literal status
   let finalStatus:

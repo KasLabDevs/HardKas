@@ -17,6 +17,7 @@ export interface PlanTransactionRequest {
   toAddress: string;
   amountSompi: bigint;
   feeRate?: bigint;
+  genesisCovenantGroups?: Array<{ authorizingInput: number; outputIndices: number[] }>;
 }
 
 export interface ConsolidationRequest {
@@ -138,7 +139,8 @@ export class TxPlanService {
           amountSompi: request.amountSompi
         }
       ],
-      feeRateSompiPerMass: feeRate
+      feeRateSompiPerMass: feeRate,
+      ...(request.genesisCovenantGroups ? { genesisCovenantGroups: request.genesisCovenantGroups.map(g => ({ ...g })) } : {})
     });
 
     return {

@@ -1,5 +1,5 @@
 export type Sompi = bigint;
-import { estimateTransactionMass } from "./mass.js";
+import { estimateTransactionMass, estimateToccataFee } from "./mass.js";
 import { DUST_THRESHOLD_SOMPI } from "./verify.js";
 export * from "./mass.js";
 export * from "./verify.js";
@@ -8,6 +8,12 @@ export * from "./coin-selector.js";
 export * from "./fee-estimator.js";
 export * from "./kaspa-uri.js";
 export * from "./utxo-mapper.js";
+import { getCoinbaseMaturity } from "@hardkas/core";
+
+export interface CovenantBindingInput {
+  covenantId: string;
+  authorizingInput: number;
+}
 
 export interface Outpoint {
   readonly transactionId: string;
@@ -22,6 +28,7 @@ export interface Utxo {
   readonly blockDaaScore?: bigint;
   readonly isCoinbase?: boolean;
   readonly covenantId?: string; // V1 Toccata capability
+  readonly lane?: string; // V1 Toccata capability
 }
 
 export interface TxOutput {
@@ -29,7 +36,7 @@ export interface TxOutput {
   readonly amountSompi: Sompi;
   /** Future: Silverscript / custom script support */
   readonly scriptPublicKey?: string;
-  readonly covenant?: string; // V1 Toccata capability
+  readonly covenant?: CovenantBindingInput; // V1 Toccata capability
 }
 
 export interface TxBuildRequest {
@@ -39,16 +46,37 @@ export interface TxBuildRequest {
   readonly feeRateSompiPerMass: bigint;
   readonly changeAddress?: string;
   readonly payloadBytes?: number;
-  readonly computeBudget?: number; // V1 Toccata capability per tx? Or globally assigned to inputs. Let's make it global for the build request.
+  
+  // V1 Toccata capabilities
+  readonly version?: 0 | 1;
+  readonly computeBudget?: bigint;
+  readonly computeGrams?: bigint; // Alias for internal use
+  readonly storageMass?: bigint;
+  readonly lane?: string;
+
+  /** Current virtual DAA score from the node. When provided, immature coinbase UTXOs are filtered out. */
+  readonly virtualDaaScore?: bigint;
+  /** Coinbase maturity period in DAA blocks. Defaults to network specific value or 1000. */
+  readonly coinbaseMaturity?: bigint;
+  /** Network ID to determine default coinbase maturity. */
+  readonly networkId?: string;
+  
+  /** Fee calculation policy. Auto uses toccata if version >= 1 or if node supports it. */
+  readonly feePolicy?: "legacy" | "toccata" | "auto";
+
+  readonly genesisCovenantGroups?: readonly { authorizingInput: number; outputIndices: number[] }[];
 }
 
 export interface TxPlan {
+  readonly version: 0 | 1;
   readonly inputs: readonly Utxo[];
   readonly outputs: readonly TxOutput[];
   readonly change?: TxOutput | undefined;
   readonly estimatedMass: bigint;
   readonly estimatedFeeSompi: bigint;
-  readonly computeBudget?: number; // Passed through to inputs
+  readonly computeBudget?: bigint; // Passed through to inputs
+  readonly storageMass?: bigint;
+  readonly lane?: string;
 }
 
 export function buildPaymentPlan(request: TxBuildRequest): TxPlan {
@@ -71,8 +99,25 @@ export function buildPaymentPlan(request: TxBuildRequest): TxPlan {
     throw new Error("Transaction amount must be positive.");
   }
 
-  // 2. Canonical Candidate UTXO Input Sorting (Pre-Selection)
-  const sortedUtxos = [...request.availableUtxos].sort((a, b) => {
+  // 2. Filter immature coinbase UTXOs before selection
+  const COINBASE_MATURITY = request.coinbaseMaturity ?? (request.networkId ? getCoinbaseMaturity(request.networkId) : 1000n);
+  let candidateUtxos: readonly Utxo[] = request.availableUtxos;
+
+  if (request.virtualDaaScore !== undefined) {
+    candidateUtxos = request.availableUtxos.filter(utxo => {
+      if (
+        utxo.isCoinbase &&
+        utxo.blockDaaScore !== undefined &&
+        (request.virtualDaaScore! - utxo.blockDaaScore) < COINBASE_MATURITY
+      ) {
+        return false; // Immature coinbase — exclude
+      }
+      return true;
+    });
+  }
+
+  // 3. Canonical Candidate UTXO Input Sorting (Pre-Selection)
+  const sortedUtxos = [...candidateUtxos].sort((a, b) => {
     // a.amountSompi ASC
     if (a.amountSompi < b.amountSompi) return -1;
     if (a.amountSompi > b.amountSompi) return 1;
@@ -90,6 +135,7 @@ export function buildPaymentPlan(request: TxBuildRequest): TxPlan {
 
   const selected: Utxo[] = [];
   let selectedAmount = 0n;
+  const isToccataFee = request.feePolicy === "toccata" || request.version === 1;
 
   for (const utxo of sortedUtxos) {
     selected.push(utxo);
@@ -107,7 +153,15 @@ export function buildPaymentPlan(request: TxBuildRequest): TxPlan {
     });
 
     const estimatedMass = result.mass;
-    const estimatedFeeSompi = estimatedMass * request.feeRateSompiPerMass;
+    let estimatedFeeSompi = estimatedMass * request.feeRateSompiPerMass;
+
+    if (isToccataFee) {
+      const computeBudget = request.computeBudget ?? request.computeGrams ?? 0n;
+      const minimumToccataFee = estimateToccataFee(computeBudget, result.mass, result.txBytes);
+      if (minimumToccataFee > estimatedFeeSompi) {
+        estimatedFeeSompi = minimumToccataFee;
+      }
+    }
 
     if (selectedAmount >= target + estimatedFeeSompi) {
       const changeAmount = selectedAmount - target - estimatedFeeSompi;
@@ -128,6 +182,13 @@ export function buildPaymentPlan(request: TxBuildRequest): TxPlan {
         });
         finalMass = noChangeResult.mass;
         finalFee = finalMass * request.feeRateSompiPerMass;
+        if (isToccataFee) {
+          const computeBudget = request.computeBudget ?? request.computeGrams ?? 0n;
+          const minimumToccataFee = estimateToccataFee(computeBudget, noChangeResult.mass, noChangeResult.txBytes);
+          if (minimumToccataFee > finalFee) {
+            finalFee = minimumToccataFee;
+          }
+        }
 
         // Re-check if still enough after potential fee change
         if (selectedAmount < target + finalFee) continue;
@@ -145,6 +206,7 @@ export function buildPaymentPlan(request: TxBuildRequest): TxPlan {
       });
 
       const planResult: any = {
+        version: request.version ?? 0,
         inputs: canonicalSelected,
         outputs: sortedOutputs,
         estimatedMass: finalMass,
@@ -158,6 +220,12 @@ export function buildPaymentPlan(request: TxBuildRequest): TxPlan {
       }
       if (request.computeBudget !== undefined) {
         planResult.computeBudget = request.computeBudget;
+      }
+      if (request.storageMass !== undefined) {
+        planResult.storageMass = request.storageMass;
+      }
+      if (request.lane !== undefined) {
+        planResult.lane = request.lane;
       }
       return planResult as TxPlan;
     }

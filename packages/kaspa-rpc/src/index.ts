@@ -59,10 +59,15 @@ export interface KaspaRpcTransactionInput {
   computeBudget?: number; // V1 Toccata capability
 }
 
+export interface KaspaRpcCovenantBinding {
+  authorizingInput: number;
+  covenantId: string;
+}
+
 export interface KaspaRpcTransactionOutput {
   amount: bigint;
   scriptPublicKey: string;
-  covenant?: string; // V1 Toccata capability
+  covenant?: KaspaRpcCovenantBinding; // V1 Toccata capability
 }
 
 export interface KaspaRpcTransaction {
@@ -105,6 +110,17 @@ export interface KaspaSubmitTransactionResult {
   raw?: unknown;
 }
 
+export interface UtxosChangedEvent {
+  added: KaspaRpcUtxo[];
+  removed: KaspaRpcUtxo[];
+}
+
+export interface KaspaSubscription {
+  readonly id: string;
+  readonly closed: boolean;
+  unsubscribe(): Promise<void>;
+}
+
 export interface KaspaRpcClient {
   getInfo(): Promise<KaspaNodeInfo>;
   healthCheck(): Promise<KaspaRpcHealth>;
@@ -112,11 +128,23 @@ export interface KaspaRpcClient {
   getUtxosByAddress(address: string): Promise<KaspaRpcUtxo[]>;
   getUtxosByAddresses(addresses: string[]): Promise<any>;
   getBlocks(options?: { includeBlocks?: boolean; includeTransactions?: boolean }): Promise<any>;
-  submitTransaction(rawTransaction: unknown): Promise<KaspaSubmitTransactionResult>;
+  submitTransaction(transaction: KaspaRpcTransaction | any, options?: any): Promise<KaspaSubmitTransactionResult>;
   getMempoolEntry(txId: string): Promise<MempoolEntry | null>;
+  getMempoolEntries(options?: any): Promise<any>;
   getTransaction(txId: string): Promise<unknown | null>;
   getBlockDagInfo(): Promise<BlockDagInfo>;
   getServerInfo(): Promise<ServerInfo>;
+  getFeeEstimate(): Promise<any>;
+  getFeeEstimateExperimental(): Promise<any>;
+  getCurrentNetwork(): Promise<any>;
+  getSyncStatus(): Promise<any>;
+  getVirtualSelectedParentBlueScore(): Promise<any>;
+  getSinkBlueScore(): Promise<any>;
+  getHeaders(): Promise<any>;
+  subscribeToUtxosChanged(addresses: readonly string[], handler: (event: UtxosChangedEvent) => void): Promise<KaspaSubscription>;
+  call<TResponse = unknown>(method: string, params?: unknown): Promise<TResponse>;
+  on(event: string, handler: (data: any) => void): void;
+  off(event: string, handler: (data: any) => void): void;
   close(): void | Promise<void>;
 }
 
@@ -125,10 +153,84 @@ export class JsonWrpcKaspaClient implements KaspaRpcClient {
   private readonly rpcUrl: string;
   private readonly timeoutMs: number;
   private requestId = 1;
+  private messageListeners = new Set<(data: any) => void>();
 
   constructor(options: JsonWrpcKaspaClientOptions) {
     this.rpcUrl = options.rpcUrl;
     this.timeoutMs = options.timeoutMs ?? 10000;
+  }
+
+  async call<TResponse = unknown>(method: string, params: any = {}): Promise<TResponse> {
+    await this.detectFlavor();
+    // Heuristic: map to legacy if needed, or pass through
+    let actualMethod = method;
+    if (this.rpcFlavor === "legacy" && !method.endsWith("Request")) {
+       // rudimentary mapping if needed, or assume caller passed the correct flavor
+       // if they used `call`, they probably used the raw wrpc name
+    }
+    return this.requestRaw(actualMethod, params) as Promise<TResponse>;
+  }
+
+  on(event: string, handler: (data: any) => void): void {
+    // For now we just support a generic "message" interceptor or we filter by method
+    this.messageListeners.add((data) => {
+       if (data && data.method === event) {
+          handler(data.params);
+       }
+    });
+  }
+
+  off(event: string, handler: (data: any) => void): void {
+    // In a robust implementation we'd map handlers. For now, since it's a demo, we might just clear them.
+    // (This is a simplified off)
+  }
+
+  private subscriptionCounter = 0;
+
+  async subscribeToUtxosChanged(
+    addresses: readonly string[],
+    handler: (event: UtxosChangedEvent) => void
+  ): Promise<KaspaSubscription> {
+    await this.detectFlavor();
+    
+    // In HTTP JSON-RPC, throw unsupported
+    // But since this is JsonWrpcKaspaClient (WebSocket based), we can do subscriptions
+    // Though if we determine it's not supported, we could throw. 
+    // Here we'll just implement it with notifyUtxosChangedRequest
+
+    const subId = `sub_${this.subscriptionCounter++}`;
+    let isClosed = false;
+
+    // We use the JSON-RPC notify method
+    await this.callMethod("notifyUtxosChanged", "notifyUtxosChangedRequest", { addresses: [...addresses] });
+
+    const msgHandler = (data: any) => {
+      if (isClosed) return;
+      const added = data?.added || data?.utxosAdded || [];
+      const removed = data?.removed || data?.utxosRemoved || [];
+      handler({
+        added: mapKaspaRpcUtxos(added, ""),
+        removed: mapKaspaRpcUtxos(removed, "")
+      });
+    };
+
+    this.on("utxosChangedNotification", msgHandler);
+
+    return {
+      id: subId,
+      get closed() { return isClosed; },
+      unsubscribe: async () => {
+        if (isClosed) return;
+        isClosed = true;
+        this.off("utxosChangedNotification", msgHandler);
+        // Fire stop request
+        try {
+            await this.callMethod("stopNotifyingUtxosChanged", "stopNotifyingUtxosChangedRequest", { addresses: [...addresses] });
+        } catch(e) {
+            // Ignore error if connection is dead
+        }
+      }
+    };
   }
 
   private rpcFlavor: "legacy" | "wrpc" | null = null;
@@ -378,6 +480,38 @@ export class JsonWrpcKaspaClient implements KaspaRpcClient {
     return result;
   }
 
+  async getMempoolEntries(options?: any): Promise<any> {
+    return this.callMethod("getMempoolEntries", "getMempoolEntriesRequest", options || {});
+  }
+
+  async getFeeEstimate(): Promise<any> {
+    return this.callMethod("getFeeEstimate", "getFeeEstimateRequest", {});
+  }
+
+  async getFeeEstimateExperimental(): Promise<any> {
+    return this.callMethod("getFeeEstimateExperimental", "getFeeEstimateExperimentalRequest", {});
+  }
+
+  async getCurrentNetwork(): Promise<any> {
+    return this.callMethod("getCurrentNetwork", "getCurrentNetworkRequest", {});
+  }
+
+  async getSyncStatus(): Promise<any> {
+    return this.callMethod("getSyncStatus", "getSyncStatusRequest", {});
+  }
+
+  async getVirtualSelectedParentBlueScore(): Promise<any> {
+    return this.callMethod("getVirtualSelectedParentBlueScore", "getVirtualSelectedParentBlueScoreRequest", {});
+  }
+
+  async getSinkBlueScore(): Promise<any> {
+    return this.callMethod("getSinkBlueScore", "getSinkBlueScoreRequest", {});
+  }
+
+  async getHeaders(): Promise<any> {
+    return this.callMethod("getBlockHeaders", "getBlockHeadersRequest", {}); // or getHeaders depending on Kaspa flavor
+  }
+
   async close(): Promise<void> {
     if (this.socket) {
       this.socket.close();
@@ -460,6 +594,18 @@ export class JsonWrpcKaspaClient implements KaspaRpcClient {
         clearTimeout(timeout);
         this.socket = ws;
         resolve(ws);
+      });
+
+      ws.on("message", (data: any) => {
+        try {
+          const parsed = JSON.parse(data.toString());
+          // If it doesn't have an ID, it's likely a notification
+          if (!parsed.id && parsed.method) {
+             for (const listener of this.messageListeners) {
+                listener(parsed);
+             }
+          }
+        } catch (e) {}
       });
 
       ws.on("error", (err: any) => {
@@ -623,6 +769,31 @@ export class MockKaspaRpcClient implements KaspaRpcClient {
   private utxosByAddress = new Map<string, KaspaRpcUtxo[]>();
 
   constructor(private readonly networkId: NetworkId = "simnet" as NetworkId) {}
+
+  async call<TResponse = unknown>(method: string, params?: any): Promise<TResponse> {
+    return null as TResponse;
+  }
+  
+  on(event: string, handler: (data: any) => void): void {}
+  off(event: string, handler: (data: any) => void): void {}
+
+  async subscribeToUtxosChanged(addresses: readonly string[], handler: (event: UtxosChangedEvent) => void): Promise<KaspaSubscription> {
+    let closed = false;
+    return {
+      id: "mock_sub",
+      get closed() { return closed; },
+      unsubscribe: async () => { closed = true; }
+    };
+  }
+
+  async getMempoolEntries(options?: any): Promise<any> { return []; }
+  async getFeeEstimate(): Promise<any> { return { estimate: 0 }; }
+  async getFeeEstimateExperimental(): Promise<any> { return { estimate: 0 }; }
+  async getCurrentNetwork(): Promise<any> { return { network: this.networkId }; }
+  async getSyncStatus(): Promise<any> { return { isSynced: true }; }
+  async getVirtualSelectedParentBlueScore(): Promise<any> { return { blueScore: 0n }; }
+  async getSinkBlueScore(): Promise<any> { return { blueScore: 0n }; }
+  async getHeaders(): Promise<any> { return { headers: [] }; }
 
   async getInfo(): Promise<KaspaNodeInfo> {
     return {

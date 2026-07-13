@@ -116,7 +116,7 @@ export class KaspaRuntimeGauntletApp {
   async runWallet() {
     console.log("Running Wallet...");
     // Wallet/UTXO
-    const address = await this.wallet.address();
+    const address = await this.wallet.receive();
     console.log("Address:", address);
     const balance = await this.indexer.balance(address).catch((e) => {
       console.log("Balance fetch error:", e.message);

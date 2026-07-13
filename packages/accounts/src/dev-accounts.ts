@@ -4,6 +4,9 @@ import crypto from "node:crypto";
 import { KeystoreManager } from "./keystore.js";
 import type { GeneratedKaspaDevAccount } from "./real-keygen.js";
 import { deterministicCompare } from "@hardkas/core";
+import { resolveHardkasAccount } from "./resolve.js";
+import { KaspaWasmPrivateKeySigner } from "./kaspa-wasm-signer.js";
+import type { HardkasTxPlanSigner } from "./types.js";
 
 // Hardcoded explicit dev password for simnet convenience, as requested.
 export const DEV_ACCOUNTS_PASSWORD = "hardkas-local-dev";
@@ -176,4 +179,23 @@ export function listDevAccountsSync(
   // Sort them so alice is generally first, bob second
   accounts.sort((a, b) => deterministicCompare(a.name, b.name));
   return accounts;
+}
+
+export async function createDevSigner(
+  workspaceDir: string,
+  accountNameOrAddress: string
+): Promise<HardkasTxPlanSigner> {
+  const account = resolveHardkasAccount({
+    nameOrAddress: accountNameOrAddress,
+    config: { cwd: workspaceDir } as any
+  });
+
+  if (account.kind !== "kaspa-private-key") {
+    throw new Error(`Account '${accountNameOrAddress}' is not a private key account, cannot create local dev signer.`);
+  }
+
+  return new KaspaWasmPrivateKeySigner({
+    account: account as any,
+    allowMainnet: false
+  });
 }

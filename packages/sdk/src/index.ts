@@ -10,6 +10,7 @@ import { NetworkId, HardkasError } from "@hardkas/core";
 import { assertPublicNetworkAllowed } from "./policy.js";
 import { HardkasAccounts } from "./accounts.js";
 import { HardkasTx } from "./tx.js";
+import { HardkasFees } from "./fees.js";
 import { HardkasL2 } from "./l2.js";
 import { HardkasQuery } from "./query.js";
 import { HardkasLocalnet } from "./localnet.js";
@@ -25,11 +26,19 @@ import { HardkasZk } from "./zk.js";
 import { HardkasVprogs } from "./vprogs.js";
 import { HardkasProgrammability } from "./programmability.js";
 import { HardkasPluginManager } from "./plugin-manager.js";
+import { HardkasIgra } from "./igra.js";
+import { HardkasExperimental } from "./experimental.js";
+import { HardkasCovenants } from "./covenants.js";
+import { WalletToolkit, WalletToolkitOptions } from "@hardkas/toolkit";
+import { HardkasNodeApi, FundDevWalletsOptions } from "./node.js";
+export type { FundDevWalletsOptions } from "./node.js";
 
 // Curated explicit exports only. No `export *`
 export { HardkasAccounts } from "./accounts.js";
 export { HardkasTx } from "./tx.js";
+export { HardkasFees } from "./fees.js";
 export { HardkasL2 } from "./l2.js";
+export { HardkasCovenants } from "./covenants.js";
 export { HardkasQuery } from "./query.js";
 export { HardkasLocalnet } from "./localnet.js";
 export { HardkasReplay } from "./replay.js";
@@ -57,6 +66,9 @@ export {
   createProgrammabilityCapabilities,
   programmabilityClaims
 } from "./programmability.js";
+export { HardkasToccata } from "./toccata.js";
+export { HardkasIgra } from "./igra.js";
+export { HardkasExperimental } from "./experimental.js";
 export type { HardkasCapabilities } from "./capabilities.js";
 export type { CorpusVerifyResult, CorpusIssue } from "./corpus.js";
 export type {
@@ -141,6 +153,10 @@ export interface HardkasOptions {
     allowExternalWallet?: boolean;
     requireDryRun?: boolean;
   };
+  wasm?: {
+    provider: "npm" | "local" | "release-asset";
+    path?: string;
+  };
 }
 
 /**
@@ -151,22 +167,30 @@ export interface HardkasOptions {
  */
 export class Hardkas {
   public readonly workspace: HardkasWorkspace;
+  public readonly node: HardkasNodeApi;
   public readonly artifacts: HardkasArtifactsManager;
   public readonly accounts: HardkasAccounts;
   public readonly tx: HardkasTx;
-  public readonly l2: HardkasL2;
-  public readonly query: HardkasQuery;
   public readonly localnet: HardkasLocalnet;
-  public readonly replay: HardkasReplay;
   public readonly lineage: HardkasLineage;
-  public readonly workflow: HardkasWorkflow;
-  public readonly capabilitiesApi: HardkasCapabilitiesApi;
-  public readonly corpus: HardkasCorpus;
-  public readonly silver: HardkasSilver;
-  public readonly zk: HardkasZk;
-  public readonly vprogs: HardkasVprogs;
-  public readonly programmability: HardkasProgrammability;
   public readonly plugins: HardkasPluginManager;
+  public readonly experimental: HardkasExperimental;
+  public readonly fees: HardkasFees;
+  public readonly covenants: HardkasCovenants;
+  public readonly l2: HardkasL2;
+  public readonly capabilities: HardkasCapabilitiesApi;
+  public readonly replay: HardkasReplay;
+
+  public readonly wallet = {
+    open: (name: string, opts?: Omit<WalletToolkitOptions, "rpc" | "signer">) => {
+      return WalletToolkit.open(name, {
+        rpc: this.rpc,
+        signer: this.signer,
+        ...opts
+      });
+    }
+  };
+
   public readonly signer?: ExternalHardkasSigner | undefined;
 
   public readonly mode: "developer" | "agent";
@@ -200,20 +224,17 @@ export class Hardkas {
 
     this.accounts = new HardkasAccounts(this);
     this.tx = new HardkasTx(this);
-    this.l2 = new HardkasL2();
-    this.query = new HardkasQuery(this);
     this.signer = options?.signer;
     this.localnet = new HardkasLocalnet(this);
-    this.replay = new HardkasReplay(this);
     this.lineage = new HardkasLineage(this);
-    this.workflow = new HardkasWorkflow(this);
-    this.capabilitiesApi = new HardkasCapabilitiesApi();
-    this.corpus = new HardkasCorpus(this);
-    this.silver = new HardkasSilver(this);
-    this.zk = new HardkasZk(this);
-    this.vprogs = new HardkasVprogs(this);
-    this.programmability = new HardkasProgrammability(this);
+    this.node = new HardkasNodeApi(this);
     this.plugins = new HardkasPluginManager(this);
+    this.experimental = new HardkasExperimental(this);
+    this.fees = new HardkasFees(this);
+    this.covenants = new HardkasCovenants(this);
+    this.l2 = new HardkasL2(this);
+    this.capabilities = new HardkasCapabilitiesApi(this);
+    this.replay = new HardkasReplay(this);
   }
 
   private resolveRpcUrl(): string {
@@ -244,6 +265,10 @@ export class Hardkas {
     const effectiveAllowPublic = options.policy?.allowPublic ?? loaded.config.network?.allowPublic;
     assertPublicNetworkAllowed(activeNetwork, effectiveAllowPublic === true ? { allowPublic: true } : {});
 
+    if (options.wasm) {
+      loaded.config.wasm = options.wasm;
+    }
+
     const fs = await import("node:fs");
     const hardkasDir = options.hardkasDir || path.join(cwd, ".hardkas");
 
@@ -267,6 +292,9 @@ export class Hardkas {
             cwd,
             ...(options.hardkasDir ? { hardkasDir: options.hardkasDir } : {})
           });
+
+          const { ensureDevAccounts } = await import("@hardkas/accounts");
+          await ensureDevAccounts(cwd);
         } catch {
           // ignore error if it fails to init localnet
         }
@@ -318,10 +346,6 @@ export class Hardkas {
     return this.config.cwd;
   }
 
-  async capabilities() {
-    return this.capabilitiesApi.get();
-  }
-
   /**
    * Validates an action against the active security policy.
    * Throws HardkasError if the policy is violated.
@@ -370,3 +394,6 @@ export {
 } from "./environment.js";
 
 export { EvidenceManager, type EvidencePackOptions, type EvidenceVerifyResult } from "./evidence.js";
+
+
+export { StaticSignatureScriptAuthorizer, PrivateKeyAuthorizer, type TxInputAuthorizer, type TxInputAuthorizationContext } from '@hardkas/accounts';

@@ -1,18 +1,67 @@
 import { Hardkas } from "./index.js";
 import { QueryEngine, createQueryRequest } from "@hardkas/query";
 import type { EventEnvelope } from "@hardkas/core";
+import { QueryToolkit, QueryResponse } from "@hardkas/toolkit";
 
 /**
  * HardKAS Operational Query Module
  *
- * Note: readEvents, correlate, and correlation types were removed from
- * @hardkas/query. These will be re-implemented when the query API stabilizes.
  * @alpha
  */
 export class HardkasQuery {
   private _engine: QueryEngine | null = null;
+  private _toolkit: QueryToolkit | null = null;
 
   constructor(private sdk: Hardkas) {}
+
+  private get toolkit(): QueryToolkit {
+    if (!this._toolkit) {
+      // Future integration: instantiate IndexerToolkit if configured in workspace
+      const indexer = undefined;
+      this._toolkit = new QueryToolkit(this.sdk.rpc, indexer);
+    }
+    return this._toolkit;
+  }
+
+  // --- High Level Query API ---
+
+  public async balance(address: string): Promise<QueryResponse<bigint>> {
+    return this.toolkit.balance(address);
+  }
+
+  public async utxos(address: string): Promise<QueryResponse<any[]>> {
+    return this.toolkit.utxos(address);
+  }
+
+  public async history(address: string): Promise<QueryResponse<any[]>> {
+    return this.toolkit.history(address);
+  }
+
+  public async transaction(txid: string): Promise<QueryResponse<any>> {
+    return this.toolkit.transaction(txid);
+  }
+
+  public async confirmations(txid: string): Promise<QueryResponse<number>> {
+    return this.toolkit.confirmations(txid);
+  }
+
+  public async mempool(txid?: string): Promise<QueryResponse<any>> {
+    return this.toolkit.mempool(txid);
+  }
+
+  public async block(hash: string): Promise<QueryResponse<any>> {
+    return this.toolkit.block(hash);
+  }
+
+  public async network(): Promise<QueryResponse<any>> {
+    return this.toolkit.network();
+  }
+
+  public async syncStatus(): Promise<QueryResponse<any>> {
+    return this.toolkit.sync();
+  }
+
+  // --- Legacy Query Store Methods ---
 
   /**
    * Internal lazy-loaded query engine.
@@ -30,6 +79,7 @@ export class HardkasQuery {
 
   /**
    * Synchronizes the query store with the filesystem artifacts.
+   * @deprecated use hardkas.events / hardkas.store in a future release.
    */
   async sync(options?: { force?: boolean }): Promise<any> {
     const fs = await import("node:fs");
@@ -93,6 +143,7 @@ export class HardkasQuery {
 
   /**
    * Fetches events from the query store.
+   * @deprecated use hardkas.events / hardkas.store in a future release.
    */
   async events(filter?: {
     domain?: string;
@@ -121,6 +172,7 @@ export class HardkasQuery {
 
   /**
    * Direct SQL access to the internal Query Store.
+   * @deprecated use hardkas.events / hardkas.store in a future release.
    */
   get store() {
     return {

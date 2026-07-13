@@ -1,0 +1,361 @@
+{
+  "contract_name": "SimpleCovenant",
+  "compiler_version": "0.1.0",
+  "script": [
+    0,
+    195,
+    32,
+    70,
+    109,
+    127,
+    202,
+    229,
+    99,
+    229,
+    203,
+    9,
+    160,
+    209,
+    135,
+    11,
+    181,
+    128,
+    52,
+    72,
+    4,
+    97,
+    120,
+    121,
+    161,
+    73,
+    73,
+    207,
+    34,
+    40,
+    95,
+    27,
+    174,
+    63,
+    39,
+    3,
+    0,
+    0,
+    32,
+    124,
+    126,
+    1,
+    172,
+    126,
+    135,
+    105,
+    81
+  ],
+  "ast": {
+    "pragma": {
+      "name": "silverscript",
+      "value": "^0.1.0",
+      "span": "pragma silverscript ^0.1.0;",
+      "name_span": "silverscript",
+      "value_span": "^0.1.0"
+    },
+    "name": "SimpleCovenant",
+    "params": [],
+    "constants": [],
+    "functions": [
+      {
+        "name": "spend",
+        "params": [],
+        "entrypoint": true,
+        "return_types": [],
+        "returns_tuple": false,
+        "body": [
+          {
+            "kind": "variable_definition",
+            "data": {
+              "type_ref": {
+                "base": "pubkey"
+              },
+              "modifiers": [],
+              "name": "recipient",
+              "expr": {
+                "kind": "call",
+                "data": {
+                  "name": "pubkey",
+                  "args": [
+                    {
+                      "kind": "array",
+                      "data": [
+                        {
+                          "kind": "byte",
+                          "data": 70,
+                          "span": "0x466d7fcae563e5cb09a0d1870bb580344804617879a14949cf22285f1bae3f27"
+                        },
+                        {
+                          "kind": "byte",
+                          "data": 109,
+                          "span": "0x466d7fcae563e5cb09a0d1870bb580344804617879a14949cf22285f1bae3f27"
+                        },
+                        {
+                          "kind": "byte",
+                          "data": 127,
+                          "span": "0x466d7fcae563e5cb09a0d1870bb580344804617879a14949cf22285f1bae3f27"
+                        },
+                        {
+                          "kind": "byte",
+                          "data": 202,
+                          "span": "0x466d7fcae563e5cb09a0d1870bb580344804617879a14949cf22285f1bae3f27"
+                        },
+                        {
+                          "kind": "byte",
+                          "data": 229,
+                          "span": "0x466d7fcae563e5cb09a0d1870bb580344804617879a14949cf22285f1bae3f27"
+                        },
+                        {
+                          "kind": "byte",
+                          "data": 99,
+                          "span": "0x466d7fcae563e5cb09a0d1870bb580344804617879a14949cf22285f1bae3f27"
+                        },
+                        {
+                          "kind": "byte",
+                          "data": 229,
+                          "span": "0x466d7fcae563e5cb09a0d1870bb580344804617879a14949cf22285f1bae3f27"
+                        },
+                        {
+                          "kind": "byte",
+                          "data": 203,
+                          "span": "0x466d7fcae563e5cb09a0d1870bb580344804617879a14949cf22285f1bae3f27"
+                        },
+                        {
+                          "kind": "byte",
+                          "data": 9,
+                          "span": "0x466d7fcae563e5cb09a0d1870bb580344804617879a14949cf22285f1bae3f27"
+                        },
+                        {
+                          "kind": "byte",
+                          "data": 160,
+                          "span": "0x466d7fcae563e5cb09a0d1870bb580344804617879a14949cf22285f1bae3f27"
+                        },
+                        {
+                          "kind": "byte",
+                          "data": 209,
+                          "span": "0x466d7fcae563e5cb09a0d1870bb580344804617879a14949cf22285f1bae3f27"
+                        },
+                        {
+                          "kind": "byte",
+                          "data": 135,
+                          "span": "0x466d7fcae563e5cb09a0d1870bb580344804617879a14949cf22285f1bae3f27"
+                        },
+                        {
+                          "kind": "byte",
+                          "data": 11,
+                          "span": "0x466d7fcae563e5cb09a0d1870bb580344804617879a14949cf22285f1bae3f27"
+                        },
+                        {
+                          "kind": "byte",
+                          "data": 181,
+                          "span": "0x466d7fcae563e5cb09a0d1870bb580344804617879a14949cf22285f1bae3f27"
+                        },
+                        {
+                          "kind": "byte",
+                          "data": 128,
+                          "span": "0x466d7fcae563e5cb09a0d1870bb580344804617879a14949cf22285f1bae3f27"
+                        },
+                        {
+                          "kind": "byte",
+                          "data": 52,
+                          "span": "0x466d7fcae563e5cb09a0d1870bb580344804617879a14949cf22285f1bae3f27"
+                        },
+                        {
+                          "kind": "byte",
+                          "data": 72,
+                          "span": "0x466d7fcae563e5cb09a0d1870bb580344804617879a14949cf22285f1bae3f27"
+                        },
+                        {
+                          "kind": "byte",
+                          "data": 4,
+                          "span": "0x466d7fcae563e5cb09a0d1870bb580344804617879a14949cf22285f1bae3f27"
+                        },
+                        {
+                          "kind": "byte",
+                          "data": 97,
+                          "span": "0x466d7fcae563e5cb09a0d1870bb580344804617879a14949cf22285f1bae3f27"
+                        },
+                        {
+                          "kind": "byte",
+                          "data": 120,
+                          "span": "0x466d7fcae563e5cb09a0d1870bb580344804617879a14949cf22285f1bae3f27"
+                        },
+                        {
+                          "kind": "byte",
+                          "data": 121,
+                          "span": "0x466d7fcae563e5cb09a0d1870bb580344804617879a14949cf22285f1bae3f27"
+                        },
+                        {
+                          "kind": "byte",
+                          "data": 161,
+                          "span": "0x466d7fcae563e5cb09a0d1870bb580344804617879a14949cf22285f1bae3f27"
+                        },
+                        {
+                          "kind": "byte",
+                          "data": 73,
+                          "span": "0x466d7fcae563e5cb09a0d1870bb580344804617879a14949cf22285f1bae3f27"
+                        },
+                        {
+                          "kind": "byte",
+                          "data": 73,
+                          "span": "0x466d7fcae563e5cb09a0d1870bb580344804617879a14949cf22285f1bae3f27"
+                        },
+                        {
+                          "kind": "byte",
+                          "data": 207,
+                          "span": "0x466d7fcae563e5cb09a0d1870bb580344804617879a14949cf22285f1bae3f27"
+                        },
+                        {
+                          "kind": "byte",
+                          "data": 34,
+                          "span": "0x466d7fcae563e5cb09a0d1870bb580344804617879a14949cf22285f1bae3f27"
+                        },
+                        {
+                          "kind": "byte",
+                          "data": 40,
+                          "span": "0x466d7fcae563e5cb09a0d1870bb580344804617879a14949cf22285f1bae3f27"
+                        },
+                        {
+                          "kind": "byte",
+                          "data": 95,
+                          "span": "0x466d7fcae563e5cb09a0d1870bb580344804617879a14949cf22285f1bae3f27"
+                        },
+                        {
+                          "kind": "byte",
+                          "data": 27,
+                          "span": "0x466d7fcae563e5cb09a0d1870bb580344804617879a14949cf22285f1bae3f27"
+                        },
+                        {
+                          "kind": "byte",
+                          "data": 174,
+                          "span": "0x466d7fcae563e5cb09a0d1870bb580344804617879a14949cf22285f1bae3f27"
+                        },
+                        {
+                          "kind": "byte",
+                          "data": 63,
+                          "span": "0x466d7fcae563e5cb09a0d1870bb580344804617879a14949cf22285f1bae3f27"
+                        },
+                        {
+                          "kind": "byte",
+                          "data": 39,
+                          "span": "0x466d7fcae563e5cb09a0d1870bb580344804617879a14949cf22285f1bae3f27"
+                        }
+                      ],
+                      "span": "0x466d7fcae563e5cb09a0d1870bb580344804617879a14949cf22285f1bae3f27"
+                    }
+                  ],
+                  "name_span": "pubkey"
+                },
+                "span": "pubkey(0x466d7fcae563e5cb09a0d1870bb580344804617879a14949cf22285f1bae3f27)"
+              },
+              "span": "pubkey recipient = pubkey(0x466d7fcae563e5cb09a0d1870bb580344804617879a14949cf22285f1bae3f27);",
+              "type_span": "pubkey ",
+              "modifier_spans": [],
+              "name_span": "recipient"
+            }
+          },
+          {
+            "kind": "variable_definition",
+            "data": {
+              "type_ref": {
+                "base": "byte",
+                "array_dims": [
+                  {
+                    "kind": "dynamic"
+                  }
+                ]
+              },
+              "modifiers": [],
+              "name": "recipientScriptPubKey",
+              "expr": {
+                "kind": "call",
+                "data": {
+                  "name": "byte[]",
+                  "args": [
+                    {
+                      "kind": "new",
+                      "data": {
+                        "name": "ScriptPubKeyP2PK",
+                        "args": [
+                          {
+                            "kind": "identifier",
+                            "data": "recipient",
+                            "span": "recipient"
+                          }
+                        ],
+                        "name_span": "ScriptPubKeyP2PK"
+                      },
+                      "span": "new ScriptPubKeyP2PK(recipient)"
+                    }
+                  ],
+                  "name_span": "byte[]"
+                },
+                "span": "byte[](new ScriptPubKeyP2PK(recipient))"
+              },
+              "span": "byte[] recipientScriptPubKey = byte[](new ScriptPubKeyP2PK(recipient));",
+              "type_span": "byte[]",
+              "modifier_spans": [],
+              "name_span": "recipientScriptPubKey"
+            }
+          },
+          {
+            "kind": "require",
+            "data": {
+              "expr": {
+                "kind": "binary",
+                "data": {
+                  "op": "eq",
+                  "left": {
+                    "kind": "introspection",
+                    "data": {
+                      "kind": "output_script_pub_key",
+                      "index": {
+                        "kind": "int",
+                        "data": 0,
+                        "span": "0"
+                      },
+                      "field_span": ".scriptPubKey"
+                    },
+                    "span": "tx.outputs[0].scriptPubKey"
+                  },
+                  "right": {
+                    "kind": "identifier",
+                    "data": "recipientScriptPubKey",
+                    "span": "recipientScriptPubKey"
+                  }
+                },
+                "span": "tx.outputs[0].scriptPubKey == recipientScriptPubKey"
+              },
+              "message": null,
+              "span": "require(tx.outputs[0].scriptPubKey == recipientScriptPubKey);",
+              "message_span": null
+            }
+          }
+        ],
+        "return_type_spans": [],
+        "span": "entrypoint function spend() {\n        // Hardcoded recipient pubkey corresponding to privkey '222...222'\n        pubkey recipient = pubkey(0x466d7fcae563e5cb09a0d1870bb580344804617879a14949cf22285f1bae3f27);\n        byte[] recipientScriptPubKey = byte[](new ScriptPubKeyP2PK(recipient));\n        \n        // Ensure that the first output sends to the recipient\n        require(tx.outputs[0].scriptPubKey == recipientScriptPubKey);\n    }",
+        "name_span": "spend",
+        "body_span": "pubkey recipient = pubkey(0x466d7fcae563e5cb09a0d1870bb580344804617879a14949cf22285f1bae3f27);\n        byte[] recipientScriptPubKey = byte[](new ScriptPubKeyP2PK(recipient));\n        \n        // Ensure that the first output sends to the recipient\n        require(tx.outputs[0].scriptPubKey == recipientScriptPubKey);"
+      }
+    ],
+    "span": "contract SimpleCovenant() {\n    entrypoint function spend() {\n        // Hardcoded recipient pubkey corresponding to privkey '222...222'\n        pubkey recipient = pubkey(0x466d7fcae563e5cb09a0d1870bb580344804617879a14949cf22285f1bae3f27);\n        byte[] recipientScriptPubKey = byte[](new ScriptPubKeyP2PK(recipient));\n        \n        // Ensure that the first output sends to the recipient\n        require(tx.outputs[0].scriptPubKey == recipientScriptPubKey);\n    }\n}",
+    "name_span": "SimpleCovenant"
+  },
+  "abi": [
+    {
+      "name": "spend",
+      "inputs": []
+    }
+  ],
+  "without_selector": true,
+  "state_layout": {
+    "start": 0,
+    "len": 0
+  },
+  "debug_info": null
+}

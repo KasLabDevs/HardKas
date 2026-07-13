@@ -18,7 +18,7 @@ function readJson(filePath: string): any {
   return JSON.parse(fs.readFileSync(filePath, "utf8"));
 }
 
-describe("0.11.2-alpha SDK parity surface", () => {
+describe("0.11.3-alpha SDK parity surface", () => {
   let workspaceRoot: string;
 
   beforeEach(() => {
@@ -35,9 +35,9 @@ describe("0.11.2-alpha SDK parity surface", () => {
       network: "simulated",
       autoBootstrap: true
     });
-    const capabilities = await sdk.capabilities();
+    const capabilities = await sdk.experimental.capabilitiesApi.get("hardkas-1.0-alpha");
 
-    expect(capabilities.version).toBe("0.11.2-alpha");
+    expect(capabilities.version).toBe("0.11.3-alpha");
     expect(capabilities.capabilities.mainnetGuards).toBe(true);
     expect(capabilities.capabilities.consensusValidation).toBe(false);
     expect(capabilities.capabilities.productionWallet).toBe(false);
@@ -66,7 +66,7 @@ describe("0.11.2-alpha SDK parity surface", () => {
       network: "simulated",
       autoBootstrap: true
     });
-    const result = await sdk.corpus.verify("fixtures/toccata-v2/silver");
+    const result = await sdk.experimental.corpus.verify("fixtures/toccata-v2/silver");
 
     expect(result.ok).toBe(true);
     expect(result.schema).toBe("hardkas.toccataCorpus.v1");
@@ -114,16 +114,16 @@ describe("0.11.2-alpha SDK parity surface", () => {
       )
     );
 
-    const deployPlan = await sdk.silver.deployPlan({
+    const deployPlan = await sdk.experimental.silver.deployPlan({
       artifact: compileArtifact,
       from: "alice",
       amount: "1",
       write: false
     });
-    const simulated = await sdk.silver.simulate.deploy(deployPlan.artifact, {
+    const simulated = await sdk.experimental.silver.simulate.deploy(deployPlan.artifact, {
       write: false
     });
-    const compare = await sdk.silver.compare({
+    const compare = await sdk.experimental.silver.compare({
       simulated: simulatedSpendReceipt,
       docker: dockerSpendReceipt,
       mode: "artifact-coherence"
@@ -142,7 +142,7 @@ describe("0.11.2-alpha SDK parity surface", () => {
       autoBootstrap: true
     });
     await expect(
-      sdk.silver.deploy({ artifact: {}, mode: "real", write: false })
+      sdk.experimental.silver.deploy({ artifact: {}, mode: "real", write: false })
     ).rejects.toThrow("SDK_SILVER_REAL_LIFECYCLE_UNSUPPORTED");
   });
 });

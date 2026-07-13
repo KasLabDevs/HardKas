@@ -8,3 +8,6 @@ export * from './dag/index.js';
 export * from './snapshot/index.js';
 export * from './silver/index.js';
 export * from './silver/types.js';
+export * from './subscriptions.js';
+export * from './fee-estimator.js';
+export * from './query-api.js';

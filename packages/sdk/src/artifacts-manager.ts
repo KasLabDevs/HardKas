@@ -183,6 +183,17 @@ export class HardkasArtifactsManager {
    * Reads an artifact by path or ID/hash from the workspace.
    */
   async read(id: string, options?: { expectedSchema?: string }): Promise<any> {
+    const cached = this.cache.get(id);
+    if (cached) {
+      if (options?.expectedSchema && cached.schema !== options.expectedSchema) {
+        throw new Error(`Schema mismatch. Expected ${options.expectedSchema}, got ${cached.schema}`);
+      }
+      return cached;
+    } else {
+      console.log("[ArtifactsManager.read] Cache MISS for:", id);
+      console.log("[ArtifactsManager.read] Cache keys:", Array.from(this.cache.keys()));
+    }
+
     const { readArtifact } = await import("@hardkas/artifacts");
     let filePath = id;
 
@@ -358,7 +369,11 @@ export class HardkasArtifactsManager {
         strict: true,
         artifactsDir: this.sdk.workspace.artifactsDir,
         enforceMetadata,
-        resolveArtifact: (id: string) => this.cache.get(id)
+        resolveArtifact: (id: string) => {
+          const cached = this.cache.get(id);
+          console.log("[resolveArtifact] id:", id, "cached:", !!cached, "keys:", Array.from(this.cache.keys()));
+          return cached;
+        }
       });
       if (!semResult.ok) {
         result.ok = false;

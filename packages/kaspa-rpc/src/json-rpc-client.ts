@@ -6,7 +6,11 @@ import {
   KaspaRpcUtxo,
   MempoolEntry,
   BlockDagInfo,
-  ServerInfo
+  ServerInfo,
+  UtxosChangedEvent,
+  KaspaSubscription,
+  KaspaRpcTransaction,
+  KaspaSubmitTransactionResult
 } from "./index.js";
 import { type NetworkId } from "@hardkas/core";
 import {
@@ -69,14 +73,26 @@ export class KaspaJsonRpcClient implements KaspaRpcClient {
     this.timeoutMs = options.timeoutMs || 10000;
     this.retry = {
       maxRetries: options.retry?.maxRetries ?? 3,
-      baseDelayMs: options.retry?.baseDelayMs ?? 500,
-      maxDelayMs: options.retry?.maxDelayMs ?? 5000
+      baseDelayMs: options.retry?.baseDelayMs ?? 100,
+      maxDelayMs: options.retry?.maxDelayMs ?? 5000,
     };
     this.circuitBreaker = {
       failureThreshold: options.circuitBreaker?.failureThreshold ?? 5,
-      resetTimeoutMs: options.circuitBreaker?.resetTimeoutMs ?? 30000
+      resetTimeoutMs: options.circuitBreaker?.resetTimeoutMs ?? 15000,
     };
-    this.fetcher = options.fetcher || globalThis.fetch;
+    this.fetcher = options.fetcher || fetch;
+  }
+
+  async call<TResponse = unknown>(method: string, params?: any): Promise<TResponse> {
+    return this.callRpc<TResponse>(method, params);
+  }
+
+  on(event: string, handler: (data: any) => void): void {
+    // HTTP client doesn't support push notifications
+  }
+
+  off(event: string, handler: (data: any) => void): void {
+    // HTTP client doesn't support push notifications
   }
 
   async healthCheck(): Promise<KaspaRpcHealth> {
@@ -206,6 +222,42 @@ export class KaspaJsonRpcClient implements KaspaRpcClient {
     return await this.callRpc("getBlocksRequest", options || {});
   }
 
+  async getMempoolEntries(options?: any): Promise<any> {
+    return await this.callRpc("getMempoolEntriesRequest", options || {});
+  }
+
+  async getFeeEstimate(): Promise<any> {
+    return await this.callRpc("getFeeEstimateRequest", {});
+  }
+
+  async getFeeEstimateExperimental(): Promise<any> {
+    return await this.callRpc("getFeeEstimateExperimentalRequest", {});
+  }
+
+  async getCurrentNetwork(): Promise<any> {
+    return await this.callRpc("getCurrentNetworkRequest", {});
+  }
+
+  async getSyncStatus(): Promise<any> {
+    return await this.callRpc("getSyncStatusRequest", {});
+  }
+
+  async getVirtualSelectedParentBlueScore(): Promise<any> {
+    return await this.callRpc("getVirtualSelectedParentBlueScoreRequest", {});
+  }
+
+  async getSinkBlueScore(): Promise<any> {
+    return await this.callRpc("getSinkBlueScoreRequest", {});
+  }
+
+  async getHeaders(): Promise<any> {
+    return await this.callRpc("getBlockHeadersRequest", {});
+  }
+
+  async subscribeToUtxosChanged(addresses: readonly string[], handler: (event: UtxosChangedEvent) => void): Promise<KaspaSubscription> {
+    throw new Error("RPC_SUBSCRIPTIONS_UNSUPPORTED");
+  }
+
   async getUtxosByAddress(address: string): Promise<KaspaRpcUtxo[]> {
     const data = (await this.callRpc("getUtxosByAddressesRequest", {
       addresses: [address]
@@ -270,8 +322,8 @@ export class KaspaJsonRpcClient implements KaspaRpcClient {
     }
   }
 
-  async submitTransaction(rawTx: unknown): Promise<{ transactionId: string }> {
-    let txObj = rawTx;
+  async submitTransaction(transaction: KaspaRpcTransaction | any, options?: any): Promise<KaspaSubmitTransactionResult> {
+    let txObj = transaction;
     try {
       while (typeof txObj === "string" && txObj.startsWith("{")) {
         const parsed = JSON.parse(txObj);

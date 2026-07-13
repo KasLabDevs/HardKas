@@ -114,6 +114,10 @@ export const TxPlanSchema = BaseArtifactSchema.extend({
   amountSompi: z.string(),
   estimatedFeeSompi: z.string(),
   estimatedMass: z.string(),
+  txVersion: z.union([z.literal(0), z.literal(1)]).optional(),
+  computeBudget: z.string().optional(),
+  storageMass: z.string().optional(),
+  lane: z.string().optional(),
   inputs: z.array(
     z.object({
       outpoint: z.object({
@@ -124,7 +128,9 @@ export const TxPlanSchema = BaseArtifactSchema.extend({
       address: z.string().optional(),
       scriptPublicKey: z.string().optional(),
       blockDaaScore: z.string().optional(),
-      isCoinbase: z.boolean().optional()
+      isCoinbase: z.boolean().optional(),
+      covenantId: z.string().optional(),
+      lane: z.string().optional()
     })
   ),
   outputs: z.array(
@@ -200,6 +206,10 @@ export const TxReceiptSchema = BaseArtifactSchema.extend({
   amountSompi: z.string(),
   feeSompi: z.string(),
   mass: z.string().optional(),
+  txVersion: z.union([z.literal(0), z.literal(1)]).optional(),
+  computeBudget: z.string().optional(),
+  storageMass: z.string().optional(),
+  lane: z.string().optional(),
   changeSompi: z.string().optional(),
   spentUtxoIds: z.array(z.string()).optional(),
   createdUtxoIds: z.array(z.string()).optional(),
@@ -236,6 +246,10 @@ export const SignedTxSchema = BaseArtifactSchema.extend({
   from: AccountRefSchema,
   to: AccountRefSchema,
   amountSompi: z.string(),
+  txVersion: z.union([z.literal(0), z.literal(1)]).optional(),
+  computeBudget: z.string().optional(),
+  storageMass: z.string().optional(),
+  lane: z.string().optional(),
   unsignedPayloadHash: z.string().optional(),
   signedTransaction: z
     .object({
@@ -629,11 +643,10 @@ export const ProgrammabilityCorpusReportSchema = z.object({
   )
 });
 
-export const ProgrammabilityAppPlanSchema = z.object({
+export const ProgrammabilityAppPlanSchema = BaseArtifactSchema.extend({
   schema: z.literal(HardkasSchemas.ProgrammabilityAppPlanV1),
-  ok: z.literal(true),
-  status: z.literal("PROGRAMMABILITY_APP_PLAN_READY"),
-  kind: z.enum(["silver", "zk", "vprog", "full-lab"]),
+  status: z.enum(["PROGRAMMABILITY_APP_PLAN_READY"]),
+  kind: z.string(),
   template: z.string(),
   commands: z.array(z.string()),
   sdkSurfaces: z.array(z.string()),
@@ -641,7 +654,32 @@ export const ProgrammabilityAppPlanSchema = z.object({
   nonClaims: z.array(z.string())
 });
 
-export const ToccataProgrammabilityCorpusSchema = z.object({
+export const CovenantSchema = BaseArtifactSchema.extend({
+  schema: z.literal(HardkasSchemas.CovenantV1),
+  scriptHash: z.string(),
+  userLane: z.string().optional(),
+  computeBudget: z.number().optional(),
+  covenant: z.object({ covenantId: z.string(), authorizingInput: z.number() }).optional(),
+  networkId: kaspaNetworkIdSchema,
+  isExperimental: z.literal(true)
+});
+
+export const ToccataCapabilitiesSchema = BaseArtifactSchema.extend({
+  schema: z.literal(HardkasSchemas.ToccataCapabilitiesV1),
+  available: z.boolean(),
+  version: z.string().optional(),
+  covenantsSupported: z.boolean(),
+  silverScriptSupported: z.boolean()
+});
+
+export const IgraStatusSchema = BaseArtifactSchema.extend({
+  schema: z.literal(HardkasSchemas.IgraStatusV1),
+  status: z.enum(["AVAILABLE", "MISSING_DEPENDENCY", "UNSUPPORTED_CAPABILITY"]),
+  rpcUrl: z.string().optional(),
+  version: z.string().optional()
+});
+
+export const ToccataProgrammabilityCorpusSchema = BaseArtifactSchema.extend({
   schema: z.literal(HardkasSchemas.ToccataProgrammabilityCorpusV1),
   version: z.string(),
   network: z.literal("simnet"),

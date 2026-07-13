@@ -87,6 +87,7 @@ describe("Core Hardening Sprint Regressions", () => {
       from: { address: "kaspa:test" },
       inputs: [
         {
+          address: "kaspa:mock_addr",
           amountSompi: "1000",
           outpoint: { transactionId: "123", index: 0 }
           // scriptPublicKey is omitted

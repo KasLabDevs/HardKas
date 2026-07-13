@@ -81,8 +81,8 @@ try {
   console.log("\\n5. Running CLI smoke tests...");
   const versionOut = run(`npx hardkas --version`, tempConsumerDir).trim();
   console.log(`Version output: ${versionOut}`);
-  if (!versionOut.includes("0.11.2-alpha")) {
-    throw new Error(`CLI version mismatch. Expected 0.11.2-alpha, got ${versionOut}`);
+  if (!versionOut.includes("0.11.3-alpha")) {
+    throw new Error(`CLI version mismatch. Expected 0.11.3-alpha, got ${versionOut}`);
   }
 
   const capabilitiesOut = run(`npx hardkas capabilities --json`, tempConsumerDir);

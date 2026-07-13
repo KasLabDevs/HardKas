@@ -7,7 +7,9 @@ import {
   KaspaSubmitTransactionResult,
   MempoolEntry,
   BlockDagInfo,
-  ServerInfo
+  ServerInfo,
+  UtxosChangedEvent,
+  KaspaSubscription
 } from "./index.js";
 import { RpcUnavailableError } from "./errors.js";
 
@@ -25,6 +27,18 @@ export class LoadBalancedRpcProvider implements KaspaRpcClient {
     if (clients.length === 0) {
       throw new Error("LoadBalancedRpcProvider requires at least one client");
     }
+  }
+
+  async call<TResponse = unknown>(method: string, params?: any): Promise<TResponse> {
+    return this.withFailover((c) => c.call<TResponse>(method, params));
+  }
+
+  on(event: string, handler: (data: any) => void): void {
+    this.clients.forEach(c => c.on(event, handler));
+  }
+
+  off(event: string, handler: (data: any) => void): void {
+    this.clients.forEach(c => c.off(event, handler));
   }
 
   async getInfo(): Promise<KaspaNodeInfo> {
@@ -87,6 +101,54 @@ export class LoadBalancedRpcProvider implements KaspaRpcClient {
 
   async getServerInfo(): Promise<ServerInfo> {
     return this.withFailover((c) => c.getServerInfo());
+  }
+
+  async getMempoolEntries(options?: any): Promise<any> {
+    return this.withFailover((c) => c.getMempoolEntries(options));
+  }
+
+  async getFeeEstimate(): Promise<any> {
+    return this.withFailover((c) => c.getFeeEstimate());
+  }
+
+  async getFeeEstimateExperimental(): Promise<any> {
+    return this.withFailover((c) => c.getFeeEstimateExperimental());
+  }
+
+  async getCurrentNetwork(): Promise<any> {
+    return this.withFailover((c) => c.getCurrentNetwork());
+  }
+
+  async getSyncStatus(): Promise<any> {
+    return this.withFailover((c) => c.getSyncStatus());
+  }
+
+  async getVirtualSelectedParentBlueScore(): Promise<any> {
+    return this.withFailover((c) => c.getVirtualSelectedParentBlueScore());
+  }
+
+  async getSinkBlueScore(): Promise<any> {
+    return this.withFailover((c) => c.getSinkBlueScore());
+  }
+
+  async getHeaders(): Promise<any> {
+    return this.withFailover((c) => c.getHeaders());
+  }
+
+  async subscribeToUtxosChanged(addresses: readonly string[], handler: (event: UtxosChangedEvent) => void): Promise<KaspaSubscription> {
+    // In a robust implementation, the LB would track active subscriptions and resubscribe upon failover.
+    // For now, we wrap the initial successful subscription.
+    let activeSub = await this.withFailover((c) => c.subscribeToUtxosChanged(addresses, handler));
+    let isClosed = false;
+    
+    return {
+      get id() { return "lb_" + activeSub.id; },
+      get closed() { return isClosed || activeSub.closed; },
+      unsubscribe: async () => {
+        isClosed = true;
+        await activeSub.unsubscribe().catch(() => {});
+      }
+    };
   }
 
   async close(): Promise<void> {

@@ -8,6 +8,7 @@ export interface MassBreakdown {
 
 export interface MassEstimateResult {
   mass: bigint;
+  txBytes: bigint;
   feeSompi: bigint;
   breakdown: MassBreakdown;
   assumptions: string[];
@@ -22,14 +23,14 @@ export const KASPA_MASS_CONSTANTS = {
   /** Base transaction overhead (version, locktime, subnetwork id, gas, etc.) */
   BASE_TRANSACTION: 100n,
 
-  /** Mass per input (Outpoint + Sequence + SigScript + SigOpCount) */
-  INPUT_P2PK: 150n,
+  /** Mass per input (Outpoint + Sequence + SigScript + ComputeBudget) */
+  INPUT_P2PK: 160n,
 
-  /** Mass per output (Amount + ScriptPublicKey length prefix + ScriptPublicKey) */
-  OUTPUT_P2PK: 50n,
+  /** Mass per output (Amount + SPK length prefix + SPK) + KIP-9 SPK mass multiplier (34 bytes * 10 = 340) */
+  OUTPUT_P2PK: 400n,
 
-  /** Fallback mass for unknown script types (P2SH, etc.) */
-  SCRIPT_FALLBACK: 150n,
+  /** Fallback mass for unknown script types */
+  SCRIPT_FALLBACK: 500n,
 
   /** Mass per byte of payload */
   PAYLOAD_BYTE: 1n
@@ -81,6 +82,7 @@ export function estimateTransactionMass(input: {
 
   return {
     mass: total,
+    txBytes: total, // For basic P2PK, tx bytes roughly equal estimated logical mass
     feeSompi: 0n, // Placeholder, calculated by caller
     breakdown: {
       base,
@@ -116,7 +118,20 @@ function isP2PK(addressOrScript: string): boolean {
 
 /**
  * Calculates fee from mass and fee rate.
+ * Used for V0 (legacy) transactions.
  */
 export function estimateFeeFromMass(mass: bigint, feeRateSompiPerMass: bigint): bigint {
   return mass * feeRateSompiPerMass;
+}
+
+/**
+ * Calculates the Toccata minimum fee based on compute grams and transaction bytes.
+ * Used for V1 (Toccata) transactions.
+ * Formula: 100 sompi * max(compute_grams, 2 * transaction_bytes)
+ */
+export function estimateToccataFee(computeBudget: bigint, txMass: bigint, txBytes: bigint): bigint {
+  const computeMass = txMass + (computeBudget * 100n);
+  const doubleBytes = txBytes * 2n;
+  const maxVal = computeMass > doubleBytes ? computeMass : doubleBytes;
+  return 100n * maxVal;
 }

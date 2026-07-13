@@ -15,6 +15,7 @@ export interface DockerKaspadOptions {
   readonly dataDir?: string;
   readonly detach?: boolean;
   readonly allowFloatingImage?: boolean;
+  readonly mineTo?: string | undefined;
 }
 
 export interface KaspadNodeStatus {

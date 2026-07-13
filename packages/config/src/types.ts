@@ -55,6 +55,10 @@ export interface HardkasConfig {
     networks?: Record<string, any>; // Will be refined in @hardkas/l2
   };
   experimental?: boolean;
+  wasm?: {
+    provider: "npm" | "local" | "release-asset";
+    path?: string;
+  };
   artifacts?: {
     deterministic?: boolean;
   };

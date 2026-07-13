@@ -1,10 +1,17 @@
 import { listL2Profiles, getL2Profile, L2NetworkProfile } from "@hardkas/l2";
+import type { Hardkas } from "./index.js";
+import { HardkasIgra } from "./igra.js";
 
 /**
  * HardKAS L2 Module
  * @alpha
  */
 export class HardkasL2 {
+  public readonly igra: HardkasIgra;
+
+  constructor(sdk: Hardkas) {
+    this.igra = new HardkasIgra(sdk);
+  }
   /**
    * Lists all available L2 network profiles.
    */

@@ -5,6 +5,14 @@ export interface HardkasAccount {
   readonly balanceSompi: bigint;
 }
 
+const DEFAULT_KASPA_ADDRESSES = [
+  "kaspasim:qqlpk9rs7yag6eqj3lttzqd8vgvssz8l8fxlpdag4h7zx2rjjr8lkkerwkezn", // alice
+  "kaspasim:qqa8l97scc2uavs6yxyh0lcvf0k69uylt3f7h48x8p0vps20y4gscavhsvktd", // bob
+  "kaspasim:qq656ys3h5z523k3275t4j5j5q3zsv6j393j6g0hscf3vshmcc9qqkplmsr9m", // carol
+  "kaspasim:qrufd2w3lpsnklrhl7369uuyq4sl537mngsqpxswh9csq3305y2j5nsw7qskp", // dave
+  "kaspasim:qz6y7z62d0svz5hllqq7nld0a2qskhvlscnsyfln7tmszcvp2yqg2g70v3cv3"  // erin
+];
+
 const DEFAULT_EVM_ADDRESSES = [
   "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266", // alice
   "0x70997970C51812dc3A010C7d01b50e0d17dc79C8", // bob
@@ -31,7 +39,7 @@ export function createDeterministicAccounts(
 
     return {
       name,
-      address: `kaspa:sim_${name}`,
+      address: DEFAULT_KASPA_ADDRESSES[index] || `kaspa:sim_${name}`,
       evmAddress:
         DEFAULT_EVM_ADDRESSES[index] ||
         `0x000000000000000000000000000000000000000${index}`,
@@ -45,11 +53,11 @@ export function resolveAccountAddress(input: string): string {
   }
 
   const aliases: Record<string, string> = {
-    alice: "kaspa:sim_alice",
-    bob: "kaspa:sim_bob",
-    carol: "kaspa:sim_carol",
-    dave: "kaspa:sim_dave",
-    erin: "kaspa:sim_erin"
+    alice: "kaspasim:qqlpk9rs7yag6eqj3lttzqd8vgvssz8l8fxlpdag4h7zx2rjjr8lkkerwkezn",
+    bob: "kaspasim:qqa8l97scc2uavs6yxyh0lcvf0k69uylt3f7h48x8p0vps20y4gscavhsvktd",
+    carol: "kaspasim:qq656ys3h5z523k3275t4j5j5q3zsv6j393j6g0hscf3vshmcc9qqkplmsr9m",
+    dave: "kaspasim:qrufd2w3lpsnklrhl7369uuyq4sl537mngsqpxswh9csq3305y2j5nsw7qskp",
+    erin: "kaspasim:qz6y7z62d0svz5hllqq7nld0a2qskhvlscnsyfln7tmszcvp2yqg2g70v3cv3"
   };
 
   const resolved = aliases[input.toLowerCase()];
