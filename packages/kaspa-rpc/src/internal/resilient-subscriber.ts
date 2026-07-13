@@ -1,4 +1,4 @@
-import { KaspaRpcClient, JsonWrpcKaspaClientOptions, JsonWrpcKaspaClient, KaspaNodeInfo, KaspaRpcHealth, KaspaAddressBalance, KaspaRpcUtxo, KaspaSubmitTransactionResult, MempoolEntry, BlockDagInfo, ServerInfo, KaspaSubscription, KaspaRpcTransaction, SubmitTransactionOptions } from "./index.js";
+import { KaspaRpcClient, JsonWrpcKaspaClientOptions, JsonWrpcKaspaClient, KaspaNodeInfo, KaspaRpcHealth, KaspaAddressBalance, KaspaRpcUtxo, KaspaSubmitTransactionResult, MempoolEntry, BlockDagInfo, ServerInfo, KaspaSubscription, KaspaRpcTransaction, SubmitTransactionOptions } from "../index.js";
 import { logger } from "@hardkas/observability";
 
 export interface ResilientSubscriptionClientOptions extends JsonWrpcKaspaClientOptions {

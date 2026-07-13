@@ -1,4 +1,4 @@
-import { calculateContentHash } from "./packages/artifacts/dist/index.js";
+import { calculateContentHash } from "../packages/artifacts/src/index.js";
 import fs from "node:fs";
 import { HardkasSchemas } from "@hardkas/artifacts";
 

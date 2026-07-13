@@ -20,7 +20,8 @@ describe("CoinSelector", () => {
       feeRateSompiPerMass: 1n, // small fee
       strategy: "largest-first",
       changeAddress: "kaspatest:change",
-      dustThresholdSompi: 100n
+      dustThresholdSompi: 100n,
+      coinbaseMaturity: 100n
     };
     
     // mass for 1 input + 1 output (no change) = 100 (base) + 160 (in) + 400 (out) = 660
@@ -43,7 +44,8 @@ describe("CoinSelector", () => {
       feeRateSompiPerMass: 1n,
       strategy: "largest-first",
       changeAddress: "kaspatest:change",
-      dustThresholdSompi: 100n
+      dustThresholdSompi: 100n,
+      coinbaseMaturity: 100n
     };
 
     const result = selectCoins(request);
@@ -62,7 +64,8 @@ describe("CoinSelector", () => {
       feeRateSompiPerMass: 1n,
       strategy: "largest-first",
       changeAddress: "kaspatest:change",
-      dustThresholdSompi: 100n
+      dustThresholdSompi: 100n,
+      coinbaseMaturity: 100n
     };
 
     expect(() => selectCoins(request)).toThrow(/Insufficient funds/);
@@ -75,7 +78,8 @@ describe("CoinSelector", () => {
       feeRateSompiPerMass: 1n,
       strategy: "smallest-first",
       changeAddress: "kaspatest:change",
-      dustThresholdSompi: 100n
+      dustThresholdSompi: 100n,
+      coinbaseMaturity: 100n
     };
 
     const result = selectCoins(request);
@@ -98,7 +102,8 @@ describe("CoinSelector", () => {
         feeRateSompiPerMass: 1n,
         strategy: "smallest-first",
         changeAddress: "kaspatest:change",
-        dustThresholdSompi: 100n
+        dustThresholdSompi: 100n,
+        coinbaseMaturity: 100n
     };
 
     const result = selectCoins(request);
@@ -117,14 +122,16 @@ describe("CoinSelector", () => {
         utxos: [utxoB, utxoA],
         targetSompi: 500n,
         feeRateSompiPerMass: 1n,
-        strategy: "largest-first"
+        strategy: "largest-first",
+        coinbaseMaturity: 100n
     };
 
     const request2: CoinSelectionRequest = {
         utxos: [utxoA, utxoB],
         targetSompi: 500n,
         feeRateSompiPerMass: 1n,
-        strategy: "largest-first"
+        strategy: "largest-first",
+        coinbaseMaturity: 100n
     };
 
     const result1 = selectCoins(request1);
@@ -137,7 +144,8 @@ describe("CoinSelector", () => {
       const baseReq = {
         utxos: dummyUtxos,
         feeRateSompiPerMass: 1n,
-        strategy: "largest-first" as const
+        strategy: "largest-first" as const,
+        coinbaseMaturity: 100n
       };
 
       expect(() => selectCoins({ coinbaseMaturity: 100n, ...baseReq, targetSompi: -100n })).toThrow(/COIN_SELECTION_INVALID_AMOUNT/);

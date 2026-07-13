@@ -30,8 +30,8 @@ describe("Simulated Isolation", () => {
 
     await expect(
       runTxPlan({
-        from: "kaspa:sim_alice",
-        to: "kaspa:sim_bob",
+        from: "alice",
+        to: "bob",
         amount: "10",
         networkId: "simnet",
         feeRate: "1",
@@ -44,8 +44,8 @@ describe("Simulated Isolation", () => {
   it("simulated mode never performs network fetches and sets rpcUrl to simulated://local", async () => {
     const { config } = await loadHardkasConfig();
     const artifact = await runTxPlan({
-      from: "kaspa:sim_alice",
-      to: "kaspa:sim_bob",
+      from: "alice",
+      to: "bob",
       amount: "10",
       networkId: "simnet",
       provider: "simulated",
@@ -59,8 +59,8 @@ describe("Simulated Isolation", () => {
     const { config } = await loadHardkasConfig();
     await expect(
       runTxPlan({
-        from: "kaspa:sim_alice",
-        to: "kaspa:sim_bob",
+        from: "alice",
+        to: "bob",
         amount: "10",
         networkId: "testnet-11",
         feeRate: "1",

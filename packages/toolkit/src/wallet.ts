@@ -201,6 +201,7 @@ export class WalletToolkit {
             availableUtxos: availableUtxos as any[],
             feeRateSompiPerMass: finalFeeRate || 1n,
             changeAddress: addr,
+            coinbaseMaturity: networkId === "mainnet" ? 1000n : 100n,
             ...(virtualDaaScore !== undefined ? { virtualDaaScore } : {}),
             ...(networkId !== undefined ? { networkId } : {})
         });
@@ -315,6 +316,7 @@ export class WalletToolkit {
             availableUtxos: mappedUtxos,
             feeRateSompiPerMass: finalFeeRate || 1n,
             changeAddress: addr,
+            coinbaseMaturity: networkId === "mainnet" ? 1000n : 100n,
             ...(virtualDaaScore !== undefined ? { virtualDaaScore } : {}),
             ...(networkId !== undefined ? { networkId } : {})
         });

@@ -39,7 +39,7 @@ describe("Accounts Balance Local", () => {
 
   it("should query local balance successfully without hitting RPC", async () => {
     const result = await runAccountsBalance({
-      identifier: "alice",
+      identifier: aliceAddress,
       local: true
     });
 

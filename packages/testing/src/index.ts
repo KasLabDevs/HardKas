@@ -18,6 +18,10 @@ export { createFixture } from "./fixtures.js";
 
 // ── Matchers ─────────────────────────────────────────────────────────────────
 export type { HardKasMatchers } from "./matchers.js";
+
+// ── Signers ──────────────────────────────────────────────────────────────────
+export { HardkasFixtureSigner } from "./fixture-signer.js";
+export { SimulatedTxPlanSigner } from "./simulated-tx-plan-signer.js";
 export { hardKasMatchers } from "./matchers.js";
 
 // ── Setup (side-effect import) ──────────────────────────────────────────────

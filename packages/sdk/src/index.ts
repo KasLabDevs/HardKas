@@ -66,7 +66,7 @@ export {
   createProgrammabilityCapabilities,
   programmabilityClaims
 } from "./programmability.js";
-export { HardkasToccata } from "./toccata.js";
+
 export { HardkasIgra } from "./igra.js";
 export { HardkasExperimental } from "./experimental.js";
 export type { HardkasCapabilities } from "./capabilities.js";

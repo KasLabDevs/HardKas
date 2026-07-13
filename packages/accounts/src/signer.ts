@@ -20,25 +20,7 @@ import { HardkasConfig } from "@hardkas/config";
 import { getKaspaSigningBackendStatus } from "./signer-backend.js";
 import { KaspaWasmPrivateKeySigner } from "./kaspa-wasm-signer.js";
 
-/**
- * Simulated signer for simnet development.
- * Produces deterministic signatures without real private keys.
- */
-export class SimulatedTxPlanSigner implements HardkasTxPlanSigner {
-  kind: HardkasSignerKind = "simulated";
 
-  async signTxPlan(input: SignTxPlanInput): Promise<SignTxPlanResult> {
-    const plan = input.planArtifact as TxPlanArtifact;
-    return {
-      signatureKind: "simulated",
-      signerAddress: plan.from.address,
-      signedTransaction: {
-        format: "simulated",
-        payload: `simulated-signed-tx:${plan.planId}`
-      }
-    };
-  }
-}
 
 /**
  * Placeholder for real Kaspa signing.

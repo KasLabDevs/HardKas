@@ -7,6 +7,7 @@ mkdirSync("./coverage/internal/.tmp", { recursive: true });
 export default defineConfig({
   resolve: {
     alias: [
+      { find: "@hardkas/accounts/internal/wasm-rpc-serialization.js", replacement: new URL('./packages/accounts/src/internal/wasm-rpc-serialization.ts', import.meta.url).pathname },
       { find: /^@hardkas\/(.*)$/, replacement: new URL('./packages/$1/src/index.ts', import.meta.url).pathname }
     ]
   },

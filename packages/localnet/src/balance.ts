@@ -16,6 +16,15 @@ function resolveMatchAddress(state: LocalnetState, address: string): string {
   const directMatch = state.utxos.some((u) => u.address === address && !u.spent);
   if (directMatch) return address;
 
+  // Handle legacy kaspa:sim_<name> addresses by extracting the account name
+  // and resolving through state accounts (which now use kaspasim:... addresses)
+  const simMatch = address.match(/^kaspa:sim_(\w+)$/);
+  if (simMatch) {
+    const name = simMatch[1]!;
+    const resolved = resolveAccountAddressFromState(state, name);
+    if (resolved !== name) return resolved;
+  }
+
   // Second try: resolve through account name lookup
   const resolved = resolveAccountAddressFromState(state, address);
   if (resolved !== address) return resolved;

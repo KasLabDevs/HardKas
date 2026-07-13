@@ -239,7 +239,7 @@ export async function runKaspaWalletSend(
       );
     }
     const submitResult = await client.submitTransaction(
-      signedArtifact.signedTransaction.payload
+      JSON.parse(signedArtifact.signedTransaction.payload)
     );
 
     if (submitResult.accepted) {

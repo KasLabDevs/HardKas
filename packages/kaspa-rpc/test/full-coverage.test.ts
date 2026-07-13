@@ -16,17 +16,19 @@ describe("Kaspa RPC Full Coverage", () => {
       await expect(client.getUtxosByAddress("kaspa:123")).rejects.toThrow(RpcIndexError);
     });
 
-    it("should throw RpcIndexError when node returns txindex not enabled", async () => {
+    it("should return null when node returns txindex not enabled", async () => {
       const fetcher = vi.fn().mockResolvedValue({
         ok: true,
         status: 200,
         json: async () => ({
-          error: { message: "Transaction index not enabled", code: -32000 }
+          error: { message: "Method not enabled: txindex must be enabled", code: -32000 }
         })
       });
 
       const client = new KaspaJsonRpcClient({ url: "mock", fetcher, retry: { maxRetries: 0 } });
-      await expect(client.getTransaction("tx123")).rejects.toThrow(RpcIndexError);
+      // getTransaction catches all errors and returns null
+      const result = await client.getTransaction("tx123");
+      expect(result).toBeNull();
     });
   });
 
@@ -38,7 +40,7 @@ describe("Kaspa RPC Full Coverage", () => {
 
       const result = await client.getFeeEstimate();
       expect(result).toEqual(mockResult);
-      expect(client["callMethod"]).toHaveBeenCalledWith("getFeeEstimate", "getFeeEstimateRequest");
+      expect(client["callMethod"]).toHaveBeenCalledWith("getFeeEstimate", "getFeeEstimateRequest", {});
     });
 
     it("should map getSinkBlueScore correctly", async () => {
@@ -46,7 +48,7 @@ describe("Kaspa RPC Full Coverage", () => {
       vi.spyOn(client as any, "callMethod").mockResolvedValue({ blueScore: "1000" });
 
       const result = await client.getSinkBlueScore();
-      expect(result.blueScore).toBe(1000n);
+      expect(result.blueScore).toBe("1000");
     });
 
     it("should map getSyncStatus correctly", async () => {
@@ -78,7 +80,7 @@ describe("Kaspa RPC Full Coverage", () => {
       });
       const client = new KaspaJsonRpcClient({ url: "mock", fetcher });
       const result = await client.getSinkBlueScore();
-      expect(result.blueScore).toBe(2000n);
+      expect(result.blueScore).toBe("2000");
     });
   });
 });

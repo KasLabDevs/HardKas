@@ -1,5 +1,6 @@
 import type { NetworkId } from "@hardkas/core";
 import { WebSocket } from "ws";
+import { NOTIFY_UTXOS_CHANGED_REQUEST, STOP_NOTIFYING_UTXOS_CHANGED_REQUEST, UTXOS_CHANGED_NOTIFICATION } from "./internal/notifications.js";
 
 export interface KaspaNodeInfo {
   serverVersion?: string | undefined;
@@ -206,7 +207,7 @@ export class JsonWrpcKaspaClient implements KaspaRpcClient {
     let isClosed = false;
 
     // We use the JSON-RPC notify method
-    await this.callMethod("notifyUtxosChanged", "notifyUtxosChangedRequest", { addresses: [...addresses] });
+    await this.callMethod("notifyUtxosChanged", NOTIFY_UTXOS_CHANGED_REQUEST, { addresses: [...addresses] });
 
     const msgHandler = (data: any) => {
       if (isClosed) return;
@@ -218,7 +219,7 @@ export class JsonWrpcKaspaClient implements KaspaRpcClient {
       });
     };
 
-    this.on("utxosChangedNotification", msgHandler);
+    this.on(UTXOS_CHANGED_NOTIFICATION, msgHandler);
 
     return {
       id: subId,
@@ -226,10 +227,10 @@ export class JsonWrpcKaspaClient implements KaspaRpcClient {
       unsubscribe: async () => {
         if (isClosed) return;
         isClosed = true;
-        this.off("utxosChangedNotification", msgHandler);
+        this.off(UTXOS_CHANGED_NOTIFICATION, msgHandler);
         // Fire stop request
         try {
-            await this.callMethod("stopNotifyingUtxosChanged", "stopNotifyingUtxosChangedRequest", { addresses: [...addresses] });
+            await this.callMethod("stopNotifyingUtxosChanged", STOP_NOTIFYING_UTXOS_CHANGED_REQUEST, { addresses: [...addresses] });
         } catch(e) {
             // Ignore error if connection is dead
         }

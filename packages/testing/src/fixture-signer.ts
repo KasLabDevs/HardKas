@@ -8,43 +8,7 @@ import {
   CURRENT_HASH_VERSION
 } from "@hardkas/artifacts";
 
-function toHex(arr: Uint8Array): string {
-  return Buffer.from(arr).toString("hex");
-}
-
-function parseWasmTxToRpc(wasmTxStr: string): any {
-  let parsed = JSON.parse(wasmTxStr);
-  while (typeof parsed === "string") {
-    parsed = JSON.parse(parsed);
-  }
-  const txInner = parsed.tx ? parsed.tx.inner : parsed.inner;
-  if (!txInner) throw new Error("Could not find inner tx data");
-
-  return {
-    version: txInner.version || 0,
-    inputs: (txInner.inputs || []).map((i: any) => ({
-      previousOutpoint: {
-        transactionId: i.inner.previousOutpoint.inner.transactionId,
-        index: i.inner.previousOutpoint.inner.index
-      },
-      signatureScript: toHex(i.inner.signatureScript),
-      sequence: i.inner.sequence || 0,
-      sigOpCount: i.inner.sigOpCount || 1
-    })),
-    outputs: (txInner.outputs || []).map((o: any) => ({
-      value: o.inner.value,
-      scriptPublicKey: {
-        version: parseInt(o.inner.scriptPublicKey.substring(0, 4), 16) || 0,
-        script: o.inner.scriptPublicKey.substring(4)
-      }
-    })),
-    lockTime: txInner.lockTime || 0,
-    subnetworkId: txInner.subnetworkId || "0000000000000000000000000000000000000000",
-    gas: txInner.gas || 0,
-    payload: txInner.payload && txInner.payload.length > 0 ? toHex(txInner.payload) : "",
-    mass: txInner.mass || 0
-  };
-}
+import { parseWasmTxToRpc } from "@hardkas/accounts/internal/wasm-rpc-serialization.js";
 
 /**
  * Deterministic fixture signer for Docker testing on simnet.

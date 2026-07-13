@@ -31,7 +31,7 @@ export async function runAccountsKeystoreImport(options: {
   let address = options.address;
 
   if (options.fixture) {
-    const { HardkasFixtureSigner } = await import("@hardkas/accounts");
+    const { HardkasFixtureSigner } = await import("@hardkas/testing");
     const signer = new HardkasFixtureSigner("simnet");
     address = await signer.getAddress();
     options.privateKey =
