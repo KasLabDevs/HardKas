@@ -30,6 +30,7 @@ export interface WalletToolkitOptions {
     provider?: WalletQueryProvider;
     rpc?: any; // To support subscriptions
     signer?: any; // HardkasTxPlanSigner instance
+    coinbaseMaturity?: bigint;
 }
 
 export class WalletToolkit {
@@ -338,7 +339,10 @@ export class WalletToolkit {
                 const dagInfo = await this.options.rpc.getBlockDagInfo();
                 const virtualDaaScore = dagInfo.virtualDaaScore;
                 if (virtualDaaScore !== undefined) {
-                    const COINBASE_MATURITY = getCoinbaseMaturity(dagInfo.networkId);
+                    if (this.options.coinbaseMaturity === undefined) {
+                        throw new Error("COINBASE_MATURITY_UNRESOLVED: WalletToolkit requires coinbaseMaturity to be explicitly provided");
+                    }
+                    const COINBASE_MATURITY = this.options.coinbaseMaturity;
                     availableUtxos = availableUtxos.filter((u: any) => {
                         if (u.isCoinbase && u.blockDaaScore !== undefined &&
                             (virtualDaaScore - BigInt(u.blockDaaScore)) < COINBASE_MATURITY) {

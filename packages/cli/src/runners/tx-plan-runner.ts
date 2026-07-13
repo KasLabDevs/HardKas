@@ -2,7 +2,7 @@ import { parseKasToSompi, systemRuntimeContext, NetworkId } from "@hardkas/core"
 import { resolveHardkasAccountAddress } from "@hardkas/accounts";
 import { buildPaymentPlan, createMockUtxo } from "@hardkas/tx-builder";
 import { createTxPlanArtifact, TxPlanArtifact } from "@hardkas/artifacts";
-import { coreEvents } from "@hardkas/core";
+import { coreEvents, getCoinbaseMaturity } from "@hardkas/core";
 import { resolveNetworkTarget, HardkasConfig } from "@hardkas/config";
 
 export interface TxPlanRunnerInput {
@@ -171,11 +171,19 @@ export async function runTxPlan(input: TxPlanRunnerInput): Promise<TxPlanArtifac
     );
   }
 
+  const coinbaseMaturity = getCoinbaseMaturity(
+    resolvedNetwork as NetworkId,
+    configNetworkKind === "kaspa-node" || configNetworkKind === "kaspa-rpc" || configNetworkKind === "simulated" 
+      ? (networkDef as any).consensusParams 
+      : undefined
+  );
+
   const plan = buildPaymentPlan({
     fromAddress,
     outputs: [{ address: toAddress, amountSompi }],
     availableUtxos,
     feeRateSompiPerMass,
+    coinbaseMaturity,
     ...(stateAddress && stateAddress !== fromAddress ? { changeAddress: stateAddress } : {})
   });
 

@@ -140,11 +140,11 @@ describe("CoinSelector", () => {
         strategy: "largest-first" as const
       };
 
-      expect(() => selectCoins({ ...baseReq, targetSompi: -100n })).toThrow(/COIN_SELECTION_INVALID_AMOUNT/);
-      expect(() => selectCoins({ ...baseReq, targetSompi: 1.5 as any })).toThrow(/COIN_SELECTION_INVALID_AMOUNT/);
-      expect(() => selectCoins({ ...baseReq, targetSompi: NaN as any })).toThrow(/COIN_SELECTION_INVALID_AMOUNT/);
-      expect(() => selectCoins({ ...baseReq, targetSompi: Infinity as any })).toThrow(/COIN_SELECTION_INVALID_AMOUNT/);
-      expect(() => selectCoins({ ...baseReq, targetSompi: "1.123" as any })).toThrow(/COIN_SELECTION_INVALID_AMOUNT/);
-      expect(() => selectCoins({ ...baseReq, targetSompi: "abc" as any })).toThrow(/COIN_SELECTION_INVALID_AMOUNT/);
+      expect(() => selectCoins({ coinbaseMaturity: 100n, ...baseReq, targetSompi: -100n })).toThrow(/COIN_SELECTION_INVALID_AMOUNT/);
+      expect(() => selectCoins({ coinbaseMaturity: 100n, ...baseReq, targetSompi: 1.5 as any })).toThrow(/COIN_SELECTION_INVALID_AMOUNT/);
+      expect(() => selectCoins({ coinbaseMaturity: 100n, ...baseReq, targetSompi: NaN as any })).toThrow(/COIN_SELECTION_INVALID_AMOUNT/);
+      expect(() => selectCoins({ coinbaseMaturity: 100n, ...baseReq, targetSompi: Infinity as any })).toThrow(/COIN_SELECTION_INVALID_AMOUNT/);
+      expect(() => selectCoins({ coinbaseMaturity: 100n, ...baseReq, targetSompi: "1.123" as any })).toThrow(/COIN_SELECTION_INVALID_AMOUNT/);
+      expect(() => selectCoins({ coinbaseMaturity: 100n, ...baseReq, targetSompi: "abc" as any })).toThrow(/COIN_SELECTION_INVALID_AMOUNT/);
   });
 });

@@ -1,5 +1,5 @@
 import { Hardkas } from "./index.js";
-import { HardkasError } from "@hardkas/core";
+import { HardkasError, getCoinbaseMaturity } from "@hardkas/core";
 import { DockerKaspadRunner, KaspadNodeStatus } from "@hardkas/node-runner";
 
 export interface HardkasNodeStartOptions {
@@ -128,7 +128,10 @@ export class HardkasNodeApi {
     if (!primaryInput) return;
     
     const timeoutMs = options?.timeoutMs ?? 180_000;
-    const defaultMaturity = 1000n;
+    
+    const activeNetwork = this.sdk.network;
+    const networkConfig = this.sdk.config.config.networks?.[activeNetwork];
+    const defaultMaturity = getCoinbaseMaturity(activeNetwork, networkConfig?.kind === "kaspa-node" || networkConfig?.kind === "kaspa-rpc" || networkConfig?.kind === "simulated" ? networkConfig.consensusParams : undefined);
     const coinbaseMaturity = options?.coinbaseMaturity ?? defaultMaturity;
     
     // Resolve alias to address

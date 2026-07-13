@@ -8,7 +8,7 @@ describe("tx-builder plan", () => {
     const balanceSompi = 1000n * SOMPI_PER_KAS;
     const feeRate = 1n;
 
-    const plan = buildPaymentPlan({
+    const plan = buildPaymentPlan({ coinbaseMaturity: 100n,
       fromAddress: "kaspa:sim_alice",
       outputs: [
         {

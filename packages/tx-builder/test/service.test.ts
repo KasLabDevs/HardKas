@@ -23,7 +23,7 @@ describe("TxPlanService", () => {
       getUtxos: async () => mockUtxos
     };
 
-    const service = new TxPlanService(provider, { maxInputsPerTx: 512 });
+    const service = new TxPlanService(provider, { maxInputsPerTx: 512, coinbaseMaturity: 1000n });
 
     const result = await service.planTransaction({
       fromAddress: "kaspa:qrcx...",
@@ -100,7 +100,8 @@ describe("TxPlanService", () => {
 
     const service = new TxPlanService(provider, {
       maxInputsPerTx: 512,
-      marginFeePerInput: 0n
+      marginFeePerInput: 0n,
+      coinbaseMaturity: 1000n
     });
 
     await expect(

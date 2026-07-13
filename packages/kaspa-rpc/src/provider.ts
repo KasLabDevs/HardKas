@@ -9,7 +9,9 @@ import {
   BlockDagInfo,
   ServerInfo,
   UtxosChangedEvent,
-  KaspaSubscription
+  KaspaSubscription,
+  KaspaRpcTransaction,
+  SubmitTransactionOptions
 } from "./index.js";
 import { RpcUnavailableError } from "./errors.js";
 
@@ -29,15 +31,20 @@ export class LoadBalancedRpcProvider implements KaspaRpcClient {
     }
   }
 
-  async call<TResponse = unknown>(method: string, params?: any): Promise<TResponse> {
+  private get primary(): KaspaRpcClient {
+    return this.clients[this.currentIndex]!;
+  }
+
+  async call<TResponse = unknown>(method: string, params?: unknown): Promise<TResponse> {
     return this.withFailover((c) => c.call<TResponse>(method, params));
   }
 
-  on(event: string, handler: (data: any) => void): void {
-    this.clients.forEach(c => c.on(event, handler));
+  on(event: string, handler: (data: unknown) => void): void {
+    // Only attaches to primary
+    this.primary.on(event, handler);
   }
 
-  off(event: string, handler: (data: any) => void): void {
+  off(event: string, handler: (data: unknown) => void): void {
     this.clients.forEach(c => c.off(event, handler));
   }
 
@@ -83,8 +90,8 @@ export class LoadBalancedRpcProvider implements KaspaRpcClient {
     return this.withFailover((c) => c.getBlocks(options));
   }
 
-  async submitTransaction(rawTransaction: string): Promise<KaspaSubmitTransactionResult> {
-    return this.withFailover((c) => c.submitTransaction(rawTransaction));
+  async submitTransaction(transaction: KaspaRpcTransaction, options?: SubmitTransactionOptions): Promise<KaspaSubmitTransactionResult> {
+    return this.withFailover((c) => c.submitTransaction(transaction, options));
   }
 
   async getMempoolEntry(txId: string): Promise<MempoolEntry | null> {

@@ -1,4 +1,4 @@
-import { KaspaRpcClient, JsonWrpcKaspaClientOptions, JsonWrpcKaspaClient, KaspaNodeInfo, KaspaRpcHealth, KaspaAddressBalance, KaspaRpcUtxo, KaspaSubmitTransactionResult, MempoolEntry, BlockDagInfo, ServerInfo } from "./index.js";
+import { KaspaRpcClient, JsonWrpcKaspaClientOptions, JsonWrpcKaspaClient, KaspaNodeInfo, KaspaRpcHealth, KaspaAddressBalance, KaspaRpcUtxo, KaspaSubmitTransactionResult, MempoolEntry, BlockDagInfo, ServerInfo, KaspaSubscription, KaspaRpcTransaction, SubmitTransactionOptions } from "./index.js";
 import { logger } from "@hardkas/observability";
 
 export interface ResilientSubscriptionClientOptions extends JsonWrpcKaspaClientOptions {
@@ -135,9 +135,9 @@ export class ResilientSubscriptionClient implements KaspaRpcClient {
     return this.client.getBlocks(options);
   }
 
-  async submitTransaction(rawTransaction: unknown): Promise<KaspaSubmitTransactionResult> {
+  async submitTransaction(transaction: KaspaRpcTransaction, options?: SubmitTransactionOptions): Promise<KaspaSubmitTransactionResult> {
     if (!this.client) throw new Error("Client is reconnecting");
-    return this.client.submitTransaction(rawTransaction);
+    return this.client.submitTransaction(transaction, options);
   }
 
   async getMempoolEntry(txId: string): Promise<MempoolEntry | null> {
@@ -160,34 +160,73 @@ export class ResilientSubscriptionClient implements KaspaRpcClient {
     return this.client.getServerInfo();
   }
 
-  async call(method: string, params?: any): Promise<any> {
+  async getMempoolEntries(options?: unknown): Promise<any> {
     if (!this.client) throw new Error("Client is reconnecting");
-    return this.client.call(method, params);
+    return this.client.getMempoolEntries(options);
   }
 
-  on(event: string, handler: (data: any) => void): void {
-    const safeCb = (data: any) => {
-       try { handler(data); } catch (e) { logger.error("Callback error", { error: e }); }
+  async getFeeEstimate(): Promise<any> {
+    if (!this.client) throw new Error("Client is reconnecting");
+    return this.client.getFeeEstimate();
+  }
+
+  async getFeeEstimateExperimental(): Promise<any> {
+    if (!this.client) throw new Error("Client is reconnecting");
+    return this.client.getFeeEstimateExperimental();
+  }
+
+  async getCurrentNetwork(): Promise<any> {
+    if (!this.client) throw new Error("Client is reconnecting");
+    return this.client.getCurrentNetwork();
+  }
+
+  async getSyncStatus(): Promise<any> {
+    if (!this.client) throw new Error("Client is reconnecting");
+    return this.client.getSyncStatus();
+  }
+
+  async getVirtualSelectedParentBlueScore(): Promise<any> {
+    if (!this.client) throw new Error("Client is reconnecting");
+    return this.client.getVirtualSelectedParentBlueScore();
+  }
+
+  async getSinkBlueScore(): Promise<any> {
+    if (!this.client) throw new Error("Client is reconnecting");
+    return this.client.getSinkBlueScore();
+  }
+
+  async getHeaders(): Promise<any> {
+    if (!this.client) throw new Error("Client is reconnecting");
+    return this.client.getHeaders();
+  }
+
+  async subscribeToUtxosChanged(addresses: readonly string[], handler: (event: any) => void): Promise<KaspaSubscription> {
+    if (!this.client) throw new Error("Client is reconnecting");
+    return this.client.subscribeToUtxosChanged(addresses, handler);
+  }
+
+  async call<TResponse = unknown>(method: string, params?: unknown): Promise<TResponse> {
+    if (!this.client) throw new Error("Client is reconnecting");
+    return this.client.call<TResponse>(method, params);
+  }
+
+  on(event: string, handler: (data: unknown) => void): void {
+    const record: SubscriptionRecord = {
+      topic: event,
+      payload: {},
+      cb: handler
     };
-    
-    const record: SubscriptionRecord = { topic: event, payload: null, cb: safeCb };
     this.subscriptions.add(record);
-
-    if (this.client && !this.reconnecting) {
-       this.client.on(event, safeCb);
-    }
+    if (this.client) this.client.on(event, handler);
   }
 
-  off(event: string, handler: (data: any) => void): void {
-    // Find the record and delete it
+  off(event: string, handler: (data: unknown) => void): void {
     for (const sub of this.subscriptions) {
-      if (sub.topic === event /* && sub.cb matches handler conceptually */) {
-         this.subscriptions.delete(sub);
+      if (sub.topic === event && sub.cb === handler) {
+        this.subscriptions.delete(sub);
       }
     }
-    if (this.client) {
-       this.client.off(event, handler);
-    }
+    if (this.client) this.client.off(event, handler);
   }
 
   async close(): Promise<void> {

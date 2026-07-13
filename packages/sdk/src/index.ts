@@ -6,7 +6,7 @@ import {
 import { resolveHardkasAccount, HardkasAccount } from "@hardkas/accounts";
 import { ExternalHardkasSigner } from "@hardkas/artifacts";
 import { JsonWrpcKaspaClient, KaspaRpcClient } from "@hardkas/kaspa-rpc";
-import { NetworkId, HardkasError } from "@hardkas/core";
+import { NetworkId, HardkasError, getCoinbaseMaturity } from "@hardkas/core";
 import { assertPublicNetworkAllowed } from "./policy.js";
 import { HardkasAccounts } from "./accounts.js";
 import { HardkasTx } from "./tx.js";
@@ -183,9 +183,13 @@ export class Hardkas {
 
   public readonly wallet = {
     open: (name: string, opts?: Omit<WalletToolkitOptions, "rpc" | "signer">) => {
+      const activeNetwork = this.network;
+      const networkConfig = this.config.config.networks?.[activeNetwork];
+      const coinbaseMaturity = getCoinbaseMaturity(activeNetwork, networkConfig?.kind === "kaspa-node" || networkConfig?.kind === "kaspa-rpc" || networkConfig?.kind === "simulated" ? networkConfig.consensusParams : undefined);
       return WalletToolkit.open(name, {
         rpc: this.rpc,
         signer: this.signer,
+        coinbaseMaturity,
         ...opts
       });
     }
@@ -335,7 +339,7 @@ export class Hardkas {
    * Current active network name.
    */
   get network(): NetworkId {
-    return (this.sdkConfig.defaultNetwork as NetworkId) || "simnet";
+    return (this.sdkConfig.defaultNetwork as NetworkId) || ("simnet" as NetworkId);
   }
 
   get sdkConfig() {

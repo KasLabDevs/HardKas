@@ -3,7 +3,7 @@ import { buildPaymentPlan, createMockUtxo } from "../src/index";
 
 describe("buildPaymentPlan", () => {
   test("selects UTXOs and creates change", () => {
-    const plan = buildPaymentPlan({
+    const plan = buildPaymentPlan({ coinbaseMaturity: 100n,
       fromAddress: "kaspa:alice",
       outputs: [{ address: "kaspa:bob", amountSompi: 100_000_000n }],
       availableUtxos: [

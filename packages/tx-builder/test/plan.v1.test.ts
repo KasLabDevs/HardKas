@@ -12,7 +12,7 @@ describe("P84: V1 Plan generation", () => {
       }
     ];
 
-    const plan = buildPaymentPlan({
+    const plan = buildPaymentPlan({ coinbaseMaturity: 100n,
       fromAddress: "kaspatest:qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqhg0eec5",
       availableUtxos: mockUtxos,
       outputs: [

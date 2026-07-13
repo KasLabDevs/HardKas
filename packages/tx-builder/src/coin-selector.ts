@@ -67,7 +67,10 @@ export function selectCoins(request: CoinSelectionRequest): CoinSelectionResult 
   }
 
   // Filter immature coinbase UTXOs
-  const COINBASE_MATURITY = request.coinbaseMaturity ?? (request.networkId ? getCoinbaseMaturity(request.networkId) : 1000n);
+  if (request.coinbaseMaturity === undefined) {
+    throw new Error("COINBASE_MATURITY_UNRESOLVED: coinbaseMaturity must be explicitly provided to TxBuilder");
+  }
+  const COINBASE_MATURITY = request.coinbaseMaturity;
   const immatureRejected: Utxo[] = [];
 
   if (request.virtualDaaScore !== undefined) {

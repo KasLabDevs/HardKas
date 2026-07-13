@@ -69,14 +69,14 @@ describe("Mass Estimation", () => {
   it("should maintain same mass after 1 sompi mutation if structure is unchanged", () => {
     const utxos = [createMockUtxo({ address: "kaspa:qalice", amountSompi: 5000n })];
 
-    const plan1 = buildPaymentPlan({
+    const plan1 = buildPaymentPlan({ coinbaseMaturity: 100n,
       fromAddress: "kaspa:qalice",
       outputs: [{ address: "kaspa:qbob", amountSompi: 500n }],
       availableUtxos: utxos,
       feeRateSompiPerMass: 1n
     });
 
-    const plan2 = buildPaymentPlan({
+    const plan2 = buildPaymentPlan({ coinbaseMaturity: 100n,
       fromAddress: "kaspa:qalice",
       outputs: [{ address: "kaspa:qbob", amountSompi: 501n }], // 1 sompi mutation
       availableUtxos: utxos,

@@ -48,7 +48,7 @@ export class EvidenceManager {
     const artifacts: any[] = [];
     const hashes: Record<string, string> = {};
 
-    for (const id of generatedIds) {
+    for (const id of Array.from(generatedIds)) {
       // Find the file. It could be `<id>.json` or `<id>.trace.json` etc
       const files = fs.readdirSync(artifactsDir).filter(f => f.includes(id) && f.endsWith(".json"));
       
