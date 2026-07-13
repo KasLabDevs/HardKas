@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from "vitest";
-import { KaspaJsonRpcClient, RpcIndexError, JsonWrpcKaspaClient } from "../src/index.js";
+import { KaspaJsonRpcClient, RpcIndexError, RpcConnectionError, RpcProtocolError, RpcNotFoundError, JsonWrpcKaspaClient } from "../src/index.js";
 
 describe("Kaspa RPC Full Coverage", () => {
   describe("RpcIndexError Integration", () => {
@@ -16,7 +16,7 @@ describe("Kaspa RPC Full Coverage", () => {
       await expect(client.getUtxosByAddress("kaspa:123")).rejects.toThrow(RpcIndexError);
     });
 
-    it("should return null when node returns txindex not enabled", async () => {
+    it("should throw RpcIndexError when node returns txindex not enabled", async () => {
       const fetcher = vi.fn().mockResolvedValue({
         ok: true,
         status: 200,
@@ -26,9 +26,51 @@ describe("Kaspa RPC Full Coverage", () => {
       });
 
       const client = new KaspaJsonRpcClient({ url: "mock", fetcher, retry: { maxRetries: 0 } });
-      // getTransaction catches all errors and returns null
+      await expect(client.getTransaction("tx123")).rejects.toThrow(RpcIndexError);
+    });
+
+    it("should return null when transaction is not found", async () => {
+      const fetcher = vi.fn().mockResolvedValue({
+        ok: true,
+        status: 200,
+        json: async () => ({
+          error: { message: "Transaction tx123 not found", code: -32601 }
+        })
+      });
+
+      const client = new KaspaJsonRpcClient({ url: "mock", fetcher, retry: { maxRetries: 0 } });
       const result = await client.getTransaction("tx123");
       expect(result).toBeNull();
+    });
+
+    it("should throw RpcConnectionError on fetch failure (e.g., ECONNREFUSED)", async () => {
+      const fetcher = vi.fn().mockRejectedValue(new Error("ECONNREFUSED"));
+      const client = new KaspaJsonRpcClient({ url: "mock", fetcher, retry: { maxRetries: 0 } });
+      await expect(client.getTransaction("tx123")).rejects.toThrow(RpcConnectionError);
+    });
+
+    it("should throw RpcProtocolError on malformed response", async () => {
+      const fetcher = vi.fn().mockResolvedValue({
+        ok: true,
+        status: 200,
+        json: async () => { throw new Error("Unexpected token < in JSON at position 0 (parse error)"); }
+      });
+      const client = new KaspaJsonRpcClient({ url: "mock", fetcher, retry: { maxRetries: 0 } });
+      await expect(client.getTransaction("tx123")).rejects.toThrow(RpcProtocolError);
+    });
+
+    it("should return [] when UTXOs are not found", async () => {
+      const fetcher = vi.fn().mockResolvedValue({
+        ok: true,
+        status: 200,
+        json: async () => ({
+          error: { message: "not found", code: -32601 }
+        })
+      });
+
+      const client = new KaspaJsonRpcClient({ url: "mock", fetcher, retry: { maxRetries: 0 } });
+      const result = await client.getUtxosByAddress("kaspa:123");
+      expect(result).toEqual([]);
     });
   });
 

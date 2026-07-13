@@ -6,8 +6,8 @@ import { Hardkas } from "@hardkas/sdk";
 // but we expect Docker in HardKAS development.
 describe("Programmatic Node Management (E2E)", () => {
   let sdk: Hardkas;
-  let devWallet1 = "kaspasim:qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqx0r8j";
-  let devWallet2 = "kaspasim:qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqx0r8k";
+  let devWallet1 = "kaspasim:qpumuen7l8wthtz45p3ftn58pvrs9xlumvkuu2xet8egzkcklqtes65ue9mw6";
+  let devWallet2 = "kaspasim:qrrqglu5g8kh6mfsg4qxa9wq0nv9cauwfwxw70984wkqnw2uwz0w27rvnw0sc";
 
   let isDockerAvailable = true;
 
@@ -69,7 +69,7 @@ describe("Programmatic Node Management (E2E)", () => {
     expect(status.running).toBe(true);
 
     const balance1 = await sdk.rpc.getBalanceByAddress(devWallet1);
-    expect(balance1 > 0n).toBe(true);
+    expect(balance1.balanceSompi > 0n).toBe(true);
     
     // We could do an actual transfer to devWallet2 here, but P78 just requires the 
     // API structure for now.
