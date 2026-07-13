@@ -6,11 +6,11 @@ import { SOMPI_PER_KAS } from "@hardkas/core";
 describe("localnet accounts", () => {
   describe("resolveAccountAddress", () => {
     it("should resolve alice alias", () => {
-      expect(resolveAccountAddress("alice")).toBe("kaspa:sim_alice");
+      expect(resolveAccountAddress("alice")).toBe("kaspasim:qqlpk9rs7yag6eqj3lttzqd8vgvssz8l8fxlpdag4h7zx2rjjr8lkkerwkezn");
     });
 
     it("should resolve bob alias case-insensitive", () => {
-      expect(resolveAccountAddress("BOB")).toBe("kaspa:sim_bob");
+      expect(resolveAccountAddress("BOB")).toBe("kaspasim:qqa8l97scc2uavs6yxyh0lcvf0k69uylt3f7h48x8p0vps20y4gscavhsvktd");
     });
 
     it("should return direct kaspa:sim_ addresses as-is", () => {

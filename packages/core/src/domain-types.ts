@@ -87,3 +87,34 @@ export const asEventSequence = (seq: number) => seq as EventSequence;
 export const asDaaScore = (score: number | bigint) => score as DaaScore;
 
 // TODO: Add validation rules for each type in future phases.
+
+/**
+ * Utility for converting between Kaspa script units and Compute Grams.
+ * Toccata's computeBudget requires values in Compute Grams, not raw script units.
+ */
+export const ComputeGrams = {
+  /**
+   * Converts script units to Compute Grams.
+   * 1 Compute Gram = 10,000 script units.
+   * Uses ceiling division to ensure we don't underfund the transaction.
+   */
+  fromScriptUnits(units: number | bigint): bigint {
+    const value = BigInt(units);
+    if (value < 0n) {
+      throw new RangeError("Script units cannot be negative");
+    }
+    return (value + 9_999n) / 10_000n;
+  },
+
+  /**
+   * Converts Compute Grams to raw script units.
+   * 1 Compute Gram = 10,000 script units.
+   */
+  toScriptUnits(grams: number | bigint): bigint {
+    const value = BigInt(grams);
+    if (value < 0n) {
+      throw new RangeError("Compute grams cannot be negative");
+    }
+    return value * 10_000n;
+  }
+};

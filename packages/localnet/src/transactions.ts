@@ -127,7 +127,8 @@ export function applySimulatedPayment(
       fromAddress,
       outputs: [{ address: toAddress, amountSompi }],
       availableUtxos,
-      feeRateSompiPerMass
+      feeRateSompiPerMass,
+      coinbaseMaturity: 100n
     });
 
     // 4. Double-Spend & Consistency Check

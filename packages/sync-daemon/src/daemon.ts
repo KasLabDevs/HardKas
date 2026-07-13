@@ -161,7 +161,7 @@ export class SyncDaemon {
                     // 2. Batch address extraction
                     const addrs = new Set<string>();
                     for (const w of this.wallets) {
-                        addrs.add(await w.address());
+                        addrs.add(await w.receive());
                     }
 
                     // 3. Batch UTXO queries

@@ -1,0 +1,8 @@
+{
+  "compiler": "silverscript",
+  "compilerVersion": "0.1.0",
+  "sourceSha256": "TBD",
+  "bytecodeSha256": "TBD",
+  "network": "simnet",
+  "purpose": "restrict-first-output-destination"
+}

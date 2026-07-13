@@ -5,6 +5,9 @@ export type HardkasNetworkName = string;
 export interface HardkasSimulatedTarget {
   kind: "simulated";
   description?: string;
+  consensusParams?: {
+    coinbaseMaturity?: bigint | number;
+  };
 }
 
 export interface HardkasKaspaNodeTarget {
@@ -14,6 +17,9 @@ export interface HardkasKaspaNodeTarget {
   dataDir?: string;
   binaryPath?: string;
   description?: string;
+  consensusParams?: {
+    coinbaseMaturity?: bigint | number;
+  };
 }
 
 export interface HardkasKaspaRpcTarget {
@@ -21,6 +27,9 @@ export interface HardkasKaspaRpcTarget {
   network: "mainnet" | "testnet-10" | "testnet-11" | "testnet-12" | "devnet" | "simnet";
   rpcUrl: string;
   description?: string;
+  consensusParams?: {
+    coinbaseMaturity?: bigint | number;
+  };
 }
 
 export interface HardkasIgraTarget {
@@ -55,6 +64,10 @@ export interface HardkasConfig {
     networks?: Record<string, any>; // Will be refined in @hardkas/l2
   };
   experimental?: boolean;
+  wasm?: {
+    provider: "npm" | "local" | "release-asset";
+    path?: string;
+  };
   artifacts?: {
     deterministic?: boolean;
   };

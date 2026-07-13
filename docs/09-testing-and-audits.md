@@ -1,6 +1,6 @@
 # Testing And Audits
 
-HardKas makes local-first reliability and safety claims. The 0.11.2-alpha line should be judged by whether a developer can initialize a workspace, create local artifacts, replay them, query them, and detect obvious corruption without touching mainnet.
+HardKas makes local-first reliability and safety claims. The 0.11.3-alpha line should be judged by whether a developer can initialize a workspace, create local artifacts, replay them, query them, and detect obvious corruption without touching mainnet.
 
 ## 1. Local Cryptographic Audit
 

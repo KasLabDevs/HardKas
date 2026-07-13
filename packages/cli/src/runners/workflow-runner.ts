@@ -1,4 +1,4 @@
-﻿import { Hardkas, HardkasOptions } from "@hardkas/sdk";
+import { Hardkas, HardkasOptions } from "@hardkas/sdk";
 import fs from "node:fs";
 import path from "node:path";
 import { UI, handleError } from "../ui.js";
@@ -70,7 +70,7 @@ export async function runWorkflowRun(
 
     UI.info(`Running ${def.steps.length} workflow steps...`);
 
-    let resultPromise = sdk.workflow.run({
+    let resultPromise = sdk.experimental.workflow.run({
       steps: def.steps,
       ...(options.dryRun !== undefined && { dryRun: options.dryRun })
     });
@@ -194,7 +194,7 @@ export async function runWorkflowReplay(id: string, options: any) {
 
     UI.info(`Replaying workflow lineage for ${targetId}...`);
 
-    const result = await sdk.replay.verify({ workflowId: targetId });
+    const result = await sdk.experimental.replay.verify({ workflowId: targetId });
 
     if (!result.passed) {
       const { HardkasCliError } = await import("../cli-errors.js");

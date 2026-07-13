@@ -223,6 +223,11 @@ export interface TxTraceArtifactV1 extends HardkasArtifactBase {
 
 // --- V2 Artifact Interfaces ---
 
+export interface CovenantBindingArtifact {
+  authorizingInput: number;
+  covenantId?: string | undefined;
+}
+
 export interface TxPlanArtifact extends BaseArtifact<"txPlan"> {
   planId: string;
   from: { address: string; accountName?: string | undefined; input?: string | undefined };
@@ -230,18 +235,22 @@ export interface TxPlanArtifact extends BaseArtifact<"txPlan"> {
   amountSompi: string;
   estimatedFeeSompi: string;
   estimatedMass: string;
-  computeBudget?: number | undefined;
+  computeBudget?: string | undefined;
+  storageMass?: string | undefined;
+  lane?: string | undefined;
+  txVersion?: number | undefined;
   inputs: Array<{
     outpoint: { transactionId: string; index: number };
     amountSompi: string;
     covenantId?: string | undefined;
   }>;
-  outputs: Array<{
-    address: string;
-    amountSompi: string;
-    covenant?: string | undefined;
-  }>;
-  change?:
+    outputs: Array<{
+      address: string;
+      amountSompi: string;
+      covenant?: CovenantBindingArtifact | undefined;
+    }>;
+    genesisCovenantGroups?: Array<{ authorizingInput: number; outputs: number[] }> | undefined;
+    change?:
     | {
         address: string;
         amountSompi: string;

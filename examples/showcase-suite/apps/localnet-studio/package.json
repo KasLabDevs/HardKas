@@ -1,0 +1,33 @@
+{
+  "name": "@showcase/localnet-studio",
+  "private": true,
+  "version": "0.11.3-alpha",
+  "type": "module",
+  "scripts": {
+    "dev": "concurrently \"pnpm run dev:frontend\" \"pnpm run dev:backend\"",
+    "dev:frontend": "vite --port 4015",
+    "dev:backend": "tsx watch src/backend/server.ts",
+    "build": "tsc && vite build"
+  },
+  "dependencies": {
+    "@hardkas/kaspa-rpc": "workspace:0.11.3-alpha",
+    "@hardkas/localnet": "workspace:0.11.3-alpha",
+    "@hardkas/node-runner": "workspace:0.11.3-alpha",
+    "@hardkas/toolkit": "workspace:0.11.3-alpha",
+    "express": "^4.21.1",
+    "cors": "^2.8.5",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  },
+  "devDependencies": {
+    "@types/cors": "^2.8.17",
+    "@types/express": "^5.0.0",
+    "@types/react": "^19.2.17",
+    "@types/react-dom": "^19.2.3",
+    "@vitejs/plugin-react": "^4.3.4",
+    "concurrently": "^9.1.0",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.2",
+    "vite": "^5.4.11"
+  }
+}

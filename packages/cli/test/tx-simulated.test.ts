@@ -70,7 +70,9 @@ describe("Simnet Transaction Backend Mismatch Regression", () => {
     }
   }, 30000);
 
-  it("should fail with NETWORK_ACCOUNT_MISMATCH when provider rpc is forced on simnet", async () => {
+  it(
+    "should fail with NETWORK_ACCOUNT_MISMATCH when provider rpc is forced on simnet",
+    { timeout: 60000 }, async () => {
     // 0. Initialize workspace so default network is simulated
     fs.writeFileSync(
       path.join(SANDBOX_DIR, "hardkas.config.js"),

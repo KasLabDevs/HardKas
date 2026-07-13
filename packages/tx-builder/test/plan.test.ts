@@ -8,7 +8,7 @@ describe("tx-builder plan", () => {
     const balanceSompi = 1000n * SOMPI_PER_KAS;
     const feeRate = 1n;
 
-    const plan = buildPaymentPlan({
+    const plan = buildPaymentPlan({ coinbaseMaturity: 100n,
       fromAddress: "kaspa:sim_alice",
       outputs: [
         {
@@ -31,10 +31,10 @@ describe("tx-builder plan", () => {
     expect(plan.outputs).toHaveLength(1);
     expect(plan.outputs[0]?.amountSompi).toBe(amountSompi);
 
-    // Estimated mass for 1 input, 2 outputs (1 recipient + 1 change) is 350
-    // Base(100) + Input(1*150) + Output(2*50) = 350
-    expect(plan.estimatedMass).toBe(350n);
-    expect(plan.estimatedFeeSompi).toBe(350n);
+    // Estimated mass for 1 input, 2 outputs (1 recipient + 1 change) is 1060
+    // Base(100) + Input(1*160) + Output(2*400) = 1060
+    expect(plan.estimatedMass).toBe(1060n);
+    expect(plan.estimatedFeeSompi).toBe(1060n);
 
     // Change = 1000 - 1 - 0.00000350 = 998.99999650
     const expectedChange = balanceSompi - amountSompi - plan.estimatedFeeSompi;

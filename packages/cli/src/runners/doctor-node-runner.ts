@@ -1,8 +1,8 @@
-﻿import { UI } from "../ui.js";
+import { UI } from "../ui.js";
 import { DockerKaspadRunner } from "@hardkas/node-runner";
 import { JsonWrpcKaspaClient } from "@hardkas/kaspa-rpc";
 import { execa } from "execa";
-import { HardkasFixtureSigner } from "@hardkas/accounts";
+import { HardkasFixtureSigner } from "@hardkas/testing";
 import { formatSompiToKas } from "@hardkas/core";
 
 export async function runDoctorNode(opts: { json?: boolean; capabilities?: boolean }) {

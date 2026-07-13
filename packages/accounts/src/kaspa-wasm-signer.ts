@@ -7,46 +7,12 @@ import {
   HardkasSignerKind
 } from "./types.js";
 import { NetworkId } from "@hardkas/core";
-import { loadKaspaWasm } from "./signer-backend.js";
+import { loadKaspaWasm, WasmProviderConfig } from "./signer-backend.js";
 import { KeystoreManager } from "./keystore.js";
 import { DEV_ACCOUNTS_PASSWORD } from "./dev-accounts.js";
+import { parseWasmTxToRpc } from "./internal/wasm-rpc-serialization.js";
 
-function toHex(arr: Uint8Array): string {
-  return Buffer.from(arr).toString("hex");
-}
 
-function parseWasmTxToRpc(wasmTxStr: string): any {
-  let parsed = JSON.parse(wasmTxStr);
-  if (typeof parsed === "string") {
-    parsed = JSON.parse(parsed);
-  }
-  const txInner = parsed.tx ? parsed.tx.inner : parsed.inner;
-  if (!txInner) throw new Error("Could not find inner tx data");
-
-  return {
-    version: txInner.version || 0,
-    inputs: (txInner.inputs || []).map((i: any) => ({
-      previousOutpoint: {
-        transactionId: i.inner.previousOutpoint.inner.transactionId,
-        index: i.inner.previousOutpoint.inner.index
-      },
-      signatureScript: toHex(i.inner.signatureScript),
-      sequence: i.inner.sequence || 0,
-      sigOpCount: i.inner.sigOpCount || 1
-    })),
-    outputs: (txInner.outputs || []).map((o: any) => ({
-      amount: o.inner.value.toString(),
-      scriptPublicKey: {
-        version: parseInt(o.inner.scriptPublicKey.substring(0, 4), 16) || 0,
-        scriptPublicKey: o.inner.scriptPublicKey.substring(4)
-      }
-    })),
-    lockTime: txInner.lockTime || 0,
-    subnetworkId: txInner.subnetworkId || "0000000000000000000000000000000000000000",
-    gas: txInner.gas || 0,
-    payload: txInner.payload && txInner.payload.length > 0 ? toHex(txInner.payload) : ""
-  };
-}
 
 /**
  * Real Kaspa signer using the official WASM SDK.
@@ -57,17 +23,17 @@ export class KaspaWasmPrivateKeySigner implements HardkasTxPlanSigner {
 
   constructor(
     private options: {
-      account: HardkasKaspaPrivateKeyAccount;
+      account?: HardkasKaspaPrivateKeyAccount;
       allowMainnet?: boolean | undefined;
+      wasmConfig?: WasmProviderConfig;
     }
   ) {}
 
   async signTxPlan(input: SignTxPlanInput): Promise<SignTxPlanResult> {
     const plan = input.planArtifact as TxPlanArtifact;
-    const account = this.options.account;
 
     // 1. Load SDK & Capabilities
-    const sdk = await loadKaspaWasm();
+    const sdk = await loadKaspaWasm(this.options.wasmConfig);
     const { detectCapabilities } = await import("./signer-backend.js");
     const capabilities = detectCapabilities(sdk);
 
@@ -84,60 +50,73 @@ export class KaspaWasmPrivateKeySigner implements HardkasTxPlanSigner {
       allowMainnet: this.options.allowMainnet
     });
 
-    // 3. Resolve Private Key
-    let pkValue = account.privateKeyEnv ? process.env[account.privateKeyEnv] : undefined;
+    // 3. Synthesize missing authorizers from account
+    let authorizers = input.authorizers ? { ...input.authorizers } : {};
+    const numInputs = plan.inputs?.length || (plan as any).selectedUtxos?.length || 0;
+    
+    if (this.options.account) {
+        const account = this.options.account;
+        let pkValue = account.privateKeyEnv ? process.env[account.privateKeyEnv] : undefined;
 
-    if (!pkValue && (account as any).privateKey) {
-      if (plan.networkId === "mainnet") {
-        throw new Error(
-          `Mainnet guard: Unsafe plaintext privateKey fallback is forbidden on mainnet for account '${account.name}'. Use privateKeyEnv instead.`
-        );
-      }
-      pkValue = (account as any).privateKey;
-    }
-
-    if (!pkValue && account.keystorePath) {
-      try {
-        const keystore = await KeystoreManager.loadEncryptedKeystore(
-          account.keystorePath
-        );
-        const unlock = await KeystoreManager.decryptEncryptedKeystore(
-          keystore,
-          DEV_ACCOUNTS_PASSWORD
-        );
-        if (unlock.success && unlock.payload) {
-          pkValue = unlock.payload.privateKey;
+        if (!pkValue && (account as any).privateKey) {
+          if (plan.networkId === "mainnet") {
+            throw new Error(
+              `Mainnet guard: Unsafe plaintext privateKey fallback is forbidden on mainnet for account '${account.name}'. Use privateKeyEnv instead.`
+            );
+          }
+          pkValue = (account as any).privateKey;
         }
-      } catch (e) {
-        // Fallthrough to the error below
-      }
+
+        if (!pkValue && account.keystorePath) {
+          try {
+            const KeystoreManager = (await import("./keystore.js")).KeystoreManager;
+            const DEV_ACCOUNTS_PASSWORD = (await import("./dev-accounts.js")).DEV_ACCOUNTS_PASSWORD;
+            const keystore = await KeystoreManager.loadEncryptedKeystore(account.keystorePath);
+            const unlock = await KeystoreManager.decryptEncryptedKeystore(keystore, DEV_ACCOUNTS_PASSWORD);
+            if (unlock.success && unlock.payload) {
+              pkValue = unlock.payload.privateKey;
+            }
+          } catch (e) {}
+        }
+
+        if (!pkValue) {
+          const err = new Error(`DEV_ACCOUNT_KEY_UNAVAILABLE: Missing required private key for account '${account.name}'.`);
+          (err as any).code = "DEV_ACCOUNT_KEY_UNAVAILABLE";
+          throw err;
+        }
+
+        if (typeof pkValue !== "string" || pkValue.trim() === "" || !/^[0-9a-fA-F]{64}$/.test(pkValue)) {
+          const err = new Error("INVALID_PRIVATE_KEY_MATERIAL: Private key must be a valid 64-character hex string.");
+          (err as any).code = "INVALID_PRIVATE_KEY_MATERIAL";
+          throw err;
+        }
+
+        const expectedAddress = (new sdk.PrivateKey(pkValue) as any).toKeypair().toAddress(plan.networkId || "simnet").toString();
+        const { PrivateKeyAuthorizer } = await import("./authorizers.js");
+        const sourceInputs = plan.inputs || (plan as any).selectedUtxos || [];
+        
+        for (let i = 0; i < numInputs; i++) {
+            if (!authorizers[i]) {
+                const inputAddress = (sourceInputs[i] as any)?.address;
+                if (inputAddress === expectedAddress) {
+                    authorizers[i] = new PrivateKeyAuthorizer(account.name, pkValue);
+                }
+            }
+        }
     }
 
-    if (!pkValue) {
-      const err = new Error(
-        `DEV_ACCOUNT_KEY_UNAVAILABLE: Missing required private key for account '${account.name}'.`
-      );
-      (err as any).code = "DEV_ACCOUNT_KEY_UNAVAILABLE";
-      throw err;
-    }
-
-    if (
-      typeof pkValue !== "string" ||
-      pkValue.trim() === "" ||
-      !/^[0-9a-fA-F]{64}$/.test(pkValue)
-    ) {
-      const err = new Error(
-        "INVALID_PRIVATE_KEY_MATERIAL: Private key must be a valid 64-character hex string."
-      );
-      (err as any).code = "INVALID_PRIVATE_KEY_MATERIAL";
-      throw err;
+    // 4. Verify all inputs have authorizers
+    for (let i = 0; i < numInputs; i++) {
+        if (!authorizers[i]) {
+            throw new Error(`MISSING_INPUT_AUTHORIZER: No authorizer was provided for input index ${i}.`);
+        }
     }
 
     try {
-      // 4. Map Artifact to SDK objects
-      const privateKey = new sdk.PrivateKey(pkValue);
+      console.log("DEBUG PLAN INPUTS:", JSON.stringify(plan.inputs || (plan as any).selectedUtxos, null, 2));
 
-      const utxos = plan.inputs.map((u) => {
+      const sourceInputs = plan.inputs || (plan as any).selectedUtxos || [];
+      const utxos = sourceInputs.map((u: any) => {
         if (!u.outpoint.transactionId || u.outpoint.index === undefined) {
           throw new Error(`UTXO is missing transactionId or index. Re-run tx plan.`);
         }
@@ -157,43 +136,180 @@ export class KaspaWasmPrivateKeySigner implements HardkasTxPlanSigner {
           },
           utxoEntry: {
             amount: BigInt(u.amountSompi),
-            scriptPublicKey: spk,
+            scriptPublicKey: new sdk.ScriptPublicKey(parseInt(spk.substring(0, 4), 16) || 0, spk.substring(4)),
             blockDaaScore: BigInt((u as any).blockDaaScore || "0"),
             isCoinbase: !!(u as any).isCoinbase
           }
         };
       });
 
-      const outputs = plan.outputs.map((o) => {
-        if (!o.address) throw new Error("Output is missing address.");
-        return {
-          address: o.address,
-          amount: BigInt(o.amountSompi)
-        };
-      });
-
-      const changeAddress = plan.change?.address
-        ? new sdk.Address(plan.change.address)
-        : undefined;
-
       const priorityFee = BigInt(plan.estimatedFeeSompi);
 
-      // 5. Create and Sign Transaction
-      const unsignedTx = sdk.createTransaction(
-        utxos,
-        outputs,
-        changeAddress,
-        priorityFee
-      );
+      const createFreshTx = () => {
+        let unsignedTx;
 
-      const signedTx = sdk.signTransaction(unsignedTx, [privateKey], true);
+        if (plan.txVersion === 1) {
+          if (!capabilities.transactionV1Signing) {
+            throw new Error("Transaction V1 signing is not supported by the installed kaspa-wasm version");
+          }
+
+          // V1 `createTransaction` requires the change to be explicitly in the outputs array
+          const allOutputs = [...plan.outputs];
+          if (plan.change) {
+            allOutputs.push({
+              address: plan.change.address,
+              amountSompi: plan.change.amountSompi
+            });
+          }
+
+          const wasmOutputs = allOutputs.map((o, idx) => {
+            if (!o.address) throw new Error("Output is missing address.");
+            
+            if (o.covenant && o.covenant.covenantId) {
+              const hash = new sdk.Hash(o.covenant.covenantId);
+              const binding = new sdk.CovenantBinding(o.covenant.authorizingInput, hash);
+              return sdk.PaymentOutput.withCovenant(new sdk.Address(o.address), BigInt(o.amountSompi), binding);
+            }
+            
+            return new sdk.PaymentOutput(new sdk.Address(o.address), BigInt(o.amountSompi));
+          });
+
+          console.log("DEBUG: Calling V1 createTransaction with:", { utxos: utxos.length, wasmOutputs: wasmOutputs.length, priorityFee });
+          console.log("DEBUG KASPA-WASM PATH:", import.meta.resolve("kaspa-wasm"));
+          console.log("DEBUG CREATE TRANSACTION FN:", sdk.createTransaction.toString());
+          unsignedTx = sdk.createTransaction(
+            utxos,
+            wasmOutputs,
+            priorityFee
+          );
+
+          // Group outputs with empty covenantId by authorizingInput to populate genesis covenants
+          const genesisGroups = new Map<number, number[]>();
+          allOutputs.forEach((o, idx) => {
+            if (o.covenant && !o.covenant.covenantId) {
+              const authIn = o.covenant.authorizingInput;
+              if (!genesisGroups.has(authIn)) genesisGroups.set(authIn, []);
+              genesisGroups.get(authIn)!.push(idx);
+            }
+          });
+
+          if (genesisGroups.size > 0) {
+            const groupsArray = Array.from(genesisGroups.entries()).map(([authIn, outIndices]) => {
+              return new sdk.GenesisCovenantGroup(authIn, outIndices);
+            });
+            unsignedTx.populateGenesisCovenants(groupsArray);
+          }
+          unsignedTx.version = 1;
+
+          if (plan.storageMass !== undefined) {
+            unsignedTx.storageMass = BigInt(plan.storageMass);
+          }
+
+        } else {
+          const allOutputs = [...plan.outputs];
+          if (plan.change) {
+            allOutputs.push({
+              address: plan.change.address,
+              amountSompi: plan.change.amountSompi
+            });
+          }
+
+          const wasmOutputs = allOutputs.map((o) => {
+            if (!o.address) throw new Error("Output is missing address.");
+            return {
+              address: o.address,
+              amount: BigInt(o.amountSompi)
+            };
+          });
+
+          console.log("DEBUG: Calling V0 createTransaction with:", { utxos: utxos.length, wasmOutputs: wasmOutputs.length, priorityFee });
+          unsignedTx = sdk.createTransaction(
+            utxos,
+            wasmOutputs,
+            priorityFee
+          );
+        }
+
+        const inputs = unsignedTx.inputs;
+        for (let i = 0; i < inputs.length; i++) {
+          if (plan.computeBudget !== undefined) {
+            const val = Number(plan.computeBudget);
+            inputs[i].computeBudget = val;
+          }
+          if (unsignedTx.version === 1) {
+            inputs[i].sigOpCount = 0;
+          }
+        }
+        unsignedTx.inputs = inputs;
+        console.log("DEBUG createFreshTx RETURNING:", unsignedTx?.constructor?.name);
+        return unsignedTx;
+      };
+
+      // 5. Execute authorizers per input
+      const inputOverrides: Record<number, { signatureScript: string }> = {};
+      
+      if (!authorizers || Object.keys(authorizers).length === 0) {
+        throw new Error("MISSING_INPUT_AUTHORIZER: No authorizers were provided for the transaction.");
+      }
+      
+      // Need a temporary transaction to get the number of inputs
+      const dummyTx = createFreshTx();
+      const numInputsWasm = dummyTx.inputs.length;
+      
+      for (let i = 0; i < numInputsWasm; i++) {
+        const authorizer = authorizers[i];
+        if (!authorizer) {
+           throw new Error(`MISSING_INPUT_AUTHORIZER: No authorizer was provided for input index ${i}.`);
+        }
+        
+        // Use a fresh transaction for each authorizer to avoid mutation side-effects
+        const txForAuth = createFreshTx();
+        
+        const authorization = await authorizer.authorize({
+          inputIndex: i,
+          plan: plan,
+          wasmTransaction: txForAuth,
+          wasm: sdk
+        });
+        
+        let sigScript: string | undefined;
+        
+        if (authorization.kind === "signature-script") {
+          sigScript = authorization.signatureScript;
+        } else if (authorization.kind === "wasm-signer") {
+          sigScript = await authorization.signer.signInput({
+            inputIndex: i,
+            plan: plan,
+            wasmTransaction: txForAuth,
+            wasm: sdk
+          });
+        }
+        
+        if (!sigScript || sigScript.trim() === "") {
+           throw new Error(`INVALID_SIGNATURE_SCRIPT: Authorizer for input ${i} failed to return a signatureScript.`);
+        }
+        
+        if (!/^[0-9a-fA-F]+$/.test(sigScript)) {
+           throw new Error(`INVALID_SIGNATURE_SCRIPT: Authorizer for input ${i} returned a non-hex signatureScript.`);
+        }
+        
+        inputOverrides[i] = { signatureScript: sigScript };
+      }
+      
+      // Final transaction for JSON serialization
+      const finalTx = createFreshTx();
+      const signedTx = finalTx;
 
       // 6. Serialize
-      const rawTx = JSON.stringify(parseWasmTxToRpc(signedTx.toString()));
+      const wasmTxStr = typeof (signedTx as any).serializeToJSON === "function" 
+        ? (signedTx as any).serializeToJSON() 
+        : signedTx.toString();
+      const rpcTx = parseWasmTxToRpc(wasmTxStr, signedTx, inputOverrides, plan);
+      const rawTx = JSON.stringify(rpcTx);
 
       return {
         signatureKind: "kaspa-private-key",
-        signerAddress: account.address || privateKey.toAddress(plan.networkId).toString(),
+        signerAddress: input.accountName || plan.from.address || "authorized",
         signedTransaction: {
           format: "hex",
           payload: rawTx
@@ -205,9 +321,10 @@ export class KaspaWasmPrivateKeySigner implements HardkasTxPlanSigner {
         }
       };
     } catch (error) {
-      // Never log the private key or pkValue
+      // Never log the private key
+      console.error("DEBUG SIGNING ERROR:", error);
       throw new Error(
-        `Kaspa WASM signing failed: ${error instanceof Error ? error.message : String(error)}`
+        `Kaspa WASM signing failed: ${error instanceof Error ? error.stack || error.message : JSON.stringify(error, Object.getOwnPropertyNames(error))}`
       );
     }
   }

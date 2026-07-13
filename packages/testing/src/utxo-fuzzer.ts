@@ -58,7 +58,8 @@ export async function runUtxoFuzzer(iterations = 50): Promise<FuzzResult> {
         fromAddress: fromAccount.address,
         availableUtxos: builderUtxos,
         outputs: [{ address: toAccount.address, amountSompi }],
-        feeRateSompiPerMass: 1n
+        feeRateSompiPerMass: 1n,
+        coinbaseMaturity: 100n
       });
 
       // 2. Invariant Check (Pre-Apply)

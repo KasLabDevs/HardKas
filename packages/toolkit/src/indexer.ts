@@ -84,6 +84,14 @@ export class IndexerToolkit implements SnapshotParticipant {
         return history[address] || [];
     }
 
+    public async utxos(address: string): Promise<any[]> {
+        if (this.backend?.utxos) {
+            return this.backend.utxos(address);
+        }
+        const utxos = this.projection?.get('utxos') || {};
+        return utxos[address] || [];
+    }
+
     public async findReceipts(opts: { tags: string[] }): Promise<any[]> {
         if (!this.artifactIndex) return [];
         return this.artifactIndex.find(opts);

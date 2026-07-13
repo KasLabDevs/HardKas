@@ -1,9 +1,12 @@
 import { WalletManagerImpl, WalletStateStoreJson, AddressManager } from '@hardkas/accounts';
 import { WalletQuery, WalletQueryProvider } from '@hardkas/query';
-import { selectCoins, estimateFee, buildPaymentPlan } from '@hardkas/tx-builder';
+import { selectCoins, estimateFee, buildPaymentPlan, toTxBuilderUtxo } from '@hardkas/tx-builder';
 import { WalletUtxoApi } from './utxos.js';
 import { UtxoControlStore } from './stores/utxo-control-store.js';
 import { logger, metrics, tracer } from '@hardkas/observability';
+import { WalletSubscriptionManager, WalletWatchHandler } from './subscriptions.js';
+import { calculateDynamicFeeRate, FeePriority } from './fee-estimator.js';
+import { getCoinbaseMaturity } from '@hardkas/core';
 
 metrics.register({
     name: "wallet_tx_generated_total",
@@ -25,6 +28,9 @@ export interface WalletToolkitOptions {
     storePath?: string;
     network?: "simnet" | "testnet" | "mainnet";
     provider?: WalletQueryProvider;
+    rpc?: any; // To support subscriptions
+    signer?: any; // HardkasTxPlanSigner instance
+    coinbaseMaturity?: bigint;
 }
 
 export class WalletToolkit {
@@ -33,6 +39,7 @@ export class WalletToolkit {
     private walletQuery: WalletQuery;
 
     private _utxosApi: WalletUtxoApi;
+    private _subscriptionManager?: WalletSubscriptionManager;
 
     private constructor(
         public readonly name: string,
@@ -41,29 +48,63 @@ export class WalletToolkit {
     ) {
         this.walletManager = new WalletManagerImpl();
         this.addressManager = AddressManager;
-        
-        const dummyProvider: WalletQueryProvider = {
-            source: "dummy",
-            async getBalances() { return {}; },
-            async getUtxos() { return {}; },
-            async getHistory() { return { items: [] }; }
-        };
 
-        this.walletQuery = new WalletQuery({ provider: options.provider || dummyProvider, network: options.network || "simnet" });
-        
-        const utxoControlPath = options.storePath 
+        let provider = options.provider;
+        if (!provider && options.rpc) {
+            provider = {
+                source: "rpc",
+                async getBalances(addresses: string[]) {
+                    const res: Record<string, bigint> = {};
+                    for (const addr of addresses) {
+                        const bal = await options.rpc.getBalanceByAddress(addr);
+                        res[addr] = bal.balanceSompi;
+                    }
+                    return res;
+                },
+                async getUtxos(addresses: string[]) {
+                    const res: Record<string, any[]> = {};
+                    for (const addr of addresses) {
+                        const utxos = await options.rpc.getUtxosByAddress(addr);
+                        res[addr] = utxos.map((u: any) => ({
+                            transactionId: u.outpoint.transactionId,
+                            outputIndex: u.outpoint.index,
+                            amountSompi: u.amountSompi,
+                            scriptPublicKey: u.scriptPublicKey,
+                            address: u.address,
+                            blockDaaScore: u.blockDaaScore,
+                            isCoinbase: u.isCoinbase
+                        }));
+                    }
+                    return res;
+                },
+                async getHistory() {
+                    return { items: [] };
+                }
+            };
+        } else if (!provider) {
+            provider = {
+                source: "dummy",
+                async getBalances() { return {}; },
+                async getUtxos() { return {}; },
+                async getHistory() { return { items: [] }; }
+            };
+        }
+
+        this.walletQuery = new WalletQuery({ provider, network: options.network || "simnet" });
+
+        const utxoControlPath = options.storePath
             ? options.storePath.replace('.json', '-utxo-control.json')
             : 'default-utxo-control.json';
         const utxoStore = new UtxoControlStore(utxoControlPath);
 
         this._utxosApi = new WalletUtxoApi(
             async () => {
-                const addr = await this.address();
+                const addr = await this.receive();
                 const res = await this.walletQuery.getUtxos([addr]);
                 if (!res.ok) throw new Error(res.error || "Degraded query result");
                 return res.utxos[addr] || [];
             },
-            async () => this.address(),
+            async () => this.receive(),
             async (inputs: number, outputs: number) => BigInt(inputs * 1000 + outputs * 1000), // Dummy fee estimation
             utxoStore
         );
@@ -78,20 +119,20 @@ export class WalletToolkit {
         this.walletManager.create({ walletId: this.name });
     }
 
-    public async address(): Promise<string> {
+    public async receive(): Promise<string> {
         // High level facade: gets receive address
         const seedRef = this.walletManager.getSeedRef(this.name);
-        return this.addressManager.derive({ 
-            seedRef, 
+        return this.addressManager.derive({
+            seedRef,
             accountIndex: 0,
-            chain: 'receive', 
-            addressIndex: 0, 
-            network: this.options.network || 'simnet' 
+            chain: 'receive',
+            addressIndex: 0,
+            network: this.options.network || 'simnet'
         }).address;
     }
 
     public async balance(): Promise<bigint> {
-        const addr = await this.address();
+        const addr = await this.receive();
         return (await this.walletQuery.getBalance([addr])) as any;
     }
 
@@ -100,59 +141,309 @@ export class WalletToolkit {
     }
 
     public async history(): Promise<any[]> {
-        const addr = await this.address();
-        return (await this.walletQuery.getHistory({ addresses: [addr] })) as any;
+        const addr = await this.receive();
+        // Return local observed history (best-effort locally + remote if available)
+        const remoteHistory = await this.walletQuery.getHistory({ addresses: [addr] }) as any;
+
+        // Enhance with local mock/artifacts if needed, but per specs:
+        // "txs enviadas por HardKAS, UTXO changes observados, receipts locales"
+        // For now, we return remoteHistory items + potentially local state from utxos store
+        const items = remoteHistory?.items || remoteHistory || [];
+        return items;
     }
 
-    public async estimateFee(opts: { to: string; amount: bigint; feeRate?: bigint }): Promise<{ fee: bigint; totalOut: bigint; plan: any }> {
-        const addr = await this.address();
+    public async watch(cb: WalletWatchHandler): Promise<{ unwatch: () => void }> {
+        if (!this.options.rpc || !this.options.rpc.subscribeToUtxosChanged) {
+            throw new Error("RPC client with subscription support is required for watch()");
+        }
+
+        if (!this._subscriptionManager) {
+            this._subscriptionManager = new WalletSubscriptionManager(
+                this.options.rpc,
+                async () => this.receive()
+            );
+        }
+
+        return this._subscriptionManager.watch(cb);
+    }
+
+    public async estimateFee(opts: { to: string; amount: bigint; priority?: FeePriority; feeRate?: bigint }): Promise<{ fee: bigint; feeRate: bigint; estimatedMass: bigint; estimatedFee: bigint; totalOut: bigint; plan: any; evidence: "dynamic" | "heuristic"; mempoolSize?: number }> {
+        const addr = await this.receive();
         const availableUtxos = await this.utxos.list();
-        
+
+        let finalFeeRate = opts.feeRate;
+        let evidence: "dynamic" | "heuristic" = "heuristic";
+        let mempoolSize: number | undefined;
+
+        if (!finalFeeRate) {
+            const dynamic = await calculateDynamicFeeRate(this.options.rpc, opts.priority || "normal");
+            finalFeeRate = dynamic.feeRate;
+            evidence = dynamic.evidence;
+            mempoolSize = dynamic.mempoolSize;
+        }
+
+        // Fetch current DAA score for coinbase maturity filtering
+        let virtualDaaScore: bigint | undefined;
+        let networkId: string | undefined;
+        if (this.options.rpc?.getBlockDagInfo) {
+            try {
+                const dagInfo = await this.options.rpc.getBlockDagInfo();
+                virtualDaaScore = dagInfo.virtualDaaScore;
+                networkId = dagInfo.networkId;
+            } catch {
+                // If DAG info unavailable, proceed without maturity filtering
+            }
+        }
+
         const plan = buildPaymentPlan({
             fromAddress: addr,
             outputs: [{ address: opts.to, amountSompi: opts.amount }],
             availableUtxos: availableUtxos as any[],
-            feeRateSompiPerMass: opts.feeRate || 1n,
-            changeAddress: addr
+            feeRateSompiPerMass: finalFeeRate || 1n,
+            changeAddress: addr,
+            coinbaseMaturity: networkId === "mainnet" ? 1000n : 100n,
+            ...(virtualDaaScore !== undefined ? { virtualDaaScore } : {}),
+            ...(networkId !== undefined ? { networkId } : {})
         });
+
+        const exactMass = BigInt(plan.estimatedMass);
 
         return {
             fee: plan.estimatedFeeSompi,
+            feeRate: finalFeeRate || 1n,
+            estimatedMass: exactMass,
+            estimatedFee: plan.estimatedFeeSompi,
             totalOut: opts.amount + plan.estimatedFeeSompi,
+            plan,
+            evidence,
+            ...(mempoolSize !== undefined ? { mempoolSize } : {})
+        };
+    }
+
+    /**
+     * @deprecated Use hardkas.tx.plan directly or the specific operation helpers like send() or consolidate()
+     */
+    public async planSend(opts: { to: string; amount: bigint; priority?: FeePriority; feeRate?: bigint }): Promise<any> {
+        return {
+            message: "This is a stub, as requested by P61 audit. Real planning requires UTXO orchestration."
+        };
+    }
+
+    /**
+     * @deprecated sendSimulated is moved to testing patterns. Use hardkas.localnet.mine() and standard send() flows.
+     */
+    public async sendSimulated(opts: { to: string; amount: bigint; priority?: FeePriority; feeRate?: bigint }): Promise<string> {
+        return `sim_tx_${Date.now()}`;
+    }
+
+    private async signAndBroadcast(plan: any): Promise<{ txId: string; plan: any }> {
+        if (!this.options.signer) {
+            const err = new Error("MISSING_SIGNER: WalletToolkit requires an explicit signer to sign transactions.");
+            (err as any).code = "MISSING_SIGNER";
+            throw err;
+        }
+        if (!this.options.rpc) {
+            throw new Error("RPC client is required for broadcast.");
+        }
+
+        const addr = await this.receive();
+        const fakeArtifact = {
+            schema: "hardkas.txPlan",
+            planId: "wallet-toolkit-inline",
+            networkId: this.options.network || "simnet",
+            mode: "real",
+            from: { address: addr },
+            to: { address: plan.outputs[0]?.address || addr },
+            amountSompi: plan.outputs.reduce((acc: bigint, out: any) => acc + BigInt(out.amountSompi), 0n).toString(),
+            estimatedFeeSompi: plan.estimatedFeeSompi.toString(),
+            inputs: plan.inputs,
+            outputs: plan.outputs,
+            change: plan.change,
+        };
+
+        const result = await (this.options.signer.signTxPlan
+            ? this.options.signer.signTxPlan({ planArtifact: fakeArtifact })
+            : this.options.signer.signTransaction(fakeArtifact));
+        const rawTx = JSON.parse(result.signedTransaction.payload);
+        const submitRes = await this.options.rpc.submitTransaction(rawTx);
+
+        metrics.inc("wallet_tx_submitted_total");
+        logger.info("Wallet tx submitted successfully", { txId: submitRes.transactionId || result.txId });
+
+        // Return full artifact/evidence format
+        return {
+            txId: submitRes.transactionId || result.txId,
             plan
         };
     }
 
-    public async planSend(opts: { to: string; amount: bigint; feeRate?: bigint }): Promise<any> {
-        try {
-            const { plan } = await this.estimateFee(opts);
-            metrics.inc("wallet_tx_generated_total");
-            logger.info("Wallet tx planned", { to: opts.to });
-            return plan;
-        } catch (e: any) {
-            metrics.inc("wallet_tx_failed_total");
-            logger.error("Wallet tx planning failed", { error: e.message });
-            throw e;
-        }
+    public async send(opts: { to: string; amount: bigint; priority?: FeePriority; feeRate?: bigint }) {
+        return this.payMany({
+            outputs: [{ address: opts.to, amount: opts.amount }],
+            ...(opts.priority !== undefined ? { priority: opts.priority } : {}),
+            ...(opts.feeRate !== undefined ? { feeRate: opts.feeRate } : {})
+        });
     }
 
-    public async sendSimulated(opts: { to: string; amount: bigint; feeRate?: bigint }): Promise<string> {
-        const span = tracer.start("wallet.send", { to: opts.to });
-        try {
-            const plan = await this.planSend(opts);
-            const hashStr = `sim_tx_${Date.now()}_${plan.inputs.length}_${plan.outputs.length}`;
-            for (const u of plan.inputs) {
-                await this.utxos.freeze(`${u.outpoint.transactionId}:${u.outpoint.index}`, 'simulated_send');
-            }
-            metrics.inc("wallet_tx_submitted_total");
-            logger.info("Wallet tx simulated successfully", { txid: hashStr });
-            span.end({ txid: hashStr });
-            return hashStr;
-        } catch (e: any) {
-            metrics.inc("wallet_tx_failed_total");
-            logger.error("Wallet sendSimulated failed", { error: e.message });
-            span.fail(e);
-            throw e;
+    public async payMany(opts: { outputs: { address: string; amount: bigint }[]; priority?: FeePriority; feeRate?: bigint }) {
+        const addr = await this.receive();
+        const availableUtxos = await this.utxos.list();
+
+        let finalFeeRate = opts.feeRate;
+        if (!finalFeeRate) {
+            const dynamic = await calculateDynamicFeeRate(this.options.rpc, opts.priority || "normal");
+            finalFeeRate = dynamic.feeRate;
         }
+
+        // Fetch current DAA score for coinbase maturity filtering
+        let virtualDaaScore: bigint | undefined;
+        let networkId: string | undefined;
+        if (this.options.rpc?.getBlockDagInfo) {
+            try {
+                const dagInfo = await this.options.rpc.getBlockDagInfo();
+                virtualDaaScore = dagInfo.virtualDaaScore;
+                networkId = dagInfo.networkId;
+            } catch {
+                // If DAG info unavailable, proceed without maturity filtering
+            }
+        }
+
+        const builderOutputs = opts.outputs.map(o => ({ address: o.address, amountSompi: o.amount }));
+        const mappedUtxos = availableUtxos.map(u => toTxBuilderUtxo(u));
+        const plan = buildPaymentPlan({
+            fromAddress: addr,
+            outputs: builderOutputs,
+            availableUtxos: mappedUtxos,
+            feeRateSompiPerMass: finalFeeRate || 1n,
+            changeAddress: addr,
+            coinbaseMaturity: networkId === "mainnet" ? 1000n : 100n,
+            ...(virtualDaaScore !== undefined ? { virtualDaaScore } : {}),
+            ...(networkId !== undefined ? { networkId } : {})
+        });
+
+        return this.signAndBroadcast(plan);
+    }
+
+    public async sweep(opts: { to: string; priority?: FeePriority; feeRate?: bigint }) {
+        const addr = await this.receive();
+        let availableUtxos = await this.utxos.list();
+        if (availableUtxos.length === 0) throw new Error("No UTXOs to sweep");
+
+        let finalFeeRate = opts.feeRate;
+        if (!finalFeeRate) {
+            const dynamic = await calculateDynamicFeeRate(this.options.rpc, opts.priority || "normal");
+            finalFeeRate = dynamic.feeRate;
+        }
+
+        // Filter immature coinbase UTXOs
+        if (this.options.rpc?.getBlockDagInfo) {
+            try {
+                const dagInfo = await this.options.rpc.getBlockDagInfo();
+                const virtualDaaScore = dagInfo.virtualDaaScore;
+                if (virtualDaaScore !== undefined) {
+                    if (this.options.coinbaseMaturity === undefined) {
+                        throw new Error("COINBASE_MATURITY_UNRESOLVED: WalletToolkit requires coinbaseMaturity to be explicitly provided");
+                    }
+                    const COINBASE_MATURITY = this.options.coinbaseMaturity;
+                    availableUtxos = availableUtxos.filter((u: any) => {
+                        if (u.isCoinbase && u.blockDaaScore !== undefined &&
+                            (virtualDaaScore - BigInt(u.blockDaaScore)) < COINBASE_MATURITY) {
+                            return false;
+                        }
+                        return true;
+                    });
+                    if (availableUtxos.length === 0) throw new Error("No mature UTXOs to sweep");
+                }
+            } catch (e: any) {
+                if (e.message?.includes("No mature UTXOs")) throw e;
+                // If DAG info unavailable, proceed without maturity filtering
+            }
+        }
+
+        const { estimateTransactionMass } = await import("@hardkas/tx-builder");
+        const massRes = estimateTransactionMass({
+            inputCount: availableUtxos.length,
+            outputs: [{ address: opts.to }],
+            payloadBytes: 0,
+            hasChange: false
+        });
+
+        const fee = massRes.mass * (finalFeeRate || 1n);
+        const totalValue = availableUtxos.reduce((acc: bigint, u: any) => acc + BigInt(u.amountSompi), 0n);
+        const sendValue = totalValue - fee;
+
+        if (sendValue <= 0n) {
+            throw new Error("Insufficient funds to cover sweep fee");
+        }
+
+        const plan = {
+            inputs: availableUtxos,
+            outputs: [{ address: opts.to, amountSompi: sendValue }],
+            estimatedMass: massRes.mass,
+            estimatedFeeSompi: fee
+        };
+
+        return this.signAndBroadcast(plan);
+    }
+
+    public async consolidate(opts: { to?: string; priority?: FeePriority; feeRate?: bigint; maxUtxos?: number }) {
+        const addr = await this.receive();
+        const availableUtxos = await this.utxos.list();
+        const maxUtxos = opts.maxUtxos || 100;
+
+        if (availableUtxos.length <= 1) {
+            throw new Error("Not enough UTXOs to consolidate");
+        }
+
+        // Sort by smallest first to consolidate dust
+        const sortedUtxos = [...availableUtxos].sort((a: any, b: any) => {
+            const diff = BigInt(a.amountSompi) - BigInt(b.amountSompi);
+            return diff < 0n ? -1 : diff > 0n ? 1 : 0;
+        });
+
+        const selectedUtxos = sortedUtxos.slice(0, maxUtxos);
+        const toAddress = opts.to || addr;
+
+        let finalFeeRate = opts.feeRate;
+        if (!finalFeeRate) {
+            const dynamic = await calculateDynamicFeeRate(this.options.rpc, opts.priority || "normal");
+            finalFeeRate = dynamic.feeRate;
+        }
+
+        const { estimateTransactionMass } = await import("@hardkas/tx-builder");
+        const massRes = estimateTransactionMass({
+            inputCount: selectedUtxos.length,
+            outputs: [{ address: toAddress }],
+            payloadBytes: 0,
+            hasChange: false
+        });
+
+        const fee = massRes.mass * (finalFeeRate || 1n);
+        const totalValue = selectedUtxos.reduce((acc: bigint, u: any) => acc + BigInt(u.amountSompi), 0n);
+        const sendValue = totalValue - fee;
+
+        if (sendValue <= 0n) {
+            throw new Error("Insufficient funds to cover consolidate fee");
+        }
+
+        const plan = {
+            inputs: selectedUtxos,
+            outputs: [{ address: toAddress, amountSompi: sendValue }],
+            estimatedMass: massRes.mass,
+            estimatedFeeSompi: fee
+        };
+
+        return this.signAndBroadcast(plan);
+    }
+
+    public async split(opts: { outputsCount: number; amountPerOutput: bigint; priority?: FeePriority; feeRate?: bigint }) {
+        if (opts.outputsCount <= 0) throw new Error("outputsCount must be greater than 0");
+        const addr = await this.receive();
+        const outputs = Array(opts.outputsCount).fill({ address: addr, amount: opts.amountPerOutput });
+        return this.payMany({
+            outputs,
+            ...(opts.priority !== undefined ? { priority: opts.priority } : {}),
+            ...(opts.feeRate !== undefined ? { feeRate: opts.feeRate } : {})
+        });
     }
 }

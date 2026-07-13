@@ -65,8 +65,8 @@ describe("P1 Multisig & Sequential Signing", () => {
     expect(sig2.status).toBe("signed");
     expect(sig2.signedTransaction).toBeDefined();
     expect(sig2.signedTransaction?.format).toBe("simulated");
-    expect(sig2.signedTransaction?.payload).toContain("alice");
-    expect(sig2.signedTransaction?.payload).toContain("bob");
+    expect(sig2.signedTransaction?.payload).toContain(alice.address);
+    expect(sig2.signedTransaction?.payload).toContain(bob.address);
     expect(sig2.multisig?.signatures.length).toBe(2);
     expect(sig2.signatureMetadata?.length).toBe(2);
 

@@ -5,7 +5,7 @@ import os from "node:os";
 import { Hardkas } from "@hardkas/sdk";
 import { deterministicCompare } from "@hardkas/core";
 
-describe("Audit Hardening Suite (0.11.2-alpha)", () => {
+describe("Audit Hardening Suite (0.11.3-alpha)", () => {
   let tmpDir: string;
   let sdk: Hardkas;
 
@@ -155,9 +155,16 @@ describe("Audit Hardening Suite (0.11.2-alpha)", () => {
       };
       realSdk.rpc.getBlockDagInfo = async () => ({ virtualDaaScore: 0n }) as any;
 
+      // Use explicit testnet addresses to avoid NETWORK_ADDRESS_MISMATCH
       const plan = await realSdk.tx.plan({
-        from: "alice",
-        to: "bob",
+        from: {
+          name: "alice",
+          address: "kaspatest:qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqhx0cg"
+        },
+        to: {
+          name: "bob",
+          address: "kaspatest:qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqkx9awp4e"
+        },
         amount: 10n
       });
       expect(plan.mode).toBe("real");

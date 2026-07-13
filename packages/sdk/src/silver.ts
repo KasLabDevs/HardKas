@@ -78,7 +78,7 @@ export interface SilverCompareReport {
 export const SilverScript = {
   builder() {
     throw new Error(
-      "SILVERSCRIPT_MAINNET_NOT_ENABLED: SilverScript builder is experimental and requires simnet capability checks in 0.11.2-alpha."
+      "SILVERSCRIPT_MAINNET_NOT_ENABLED: SilverScript builder is experimental and requires simnet capability checks in 0.11.3-alpha."
     );
   }
 };
@@ -107,9 +107,10 @@ export class HardkasSilver {
     }
 
     const compilerPath = resolveCompilerPath(this.sdk.cwd, options.compilerPath);
-    if (!isExecutableAvailable(compilerPath)) {
+    const env = await this.sdk.experimental.capabilitiesApi.probeEnvironment();
+    if (!env.silver.installed) {
       throw new Error(
-        "SILVERSCRIPT_COMPILER_UNAVAILABLE: pass compilerPath, set HARDKAS_SILVERC_PATH, or install .hardkas/bin/silverc."
+        env.silver.reason || "MISSING_DEPENDENCY: The 'silverscript' (or 'silverc') compiler is not available."
       );
     }
 
@@ -194,7 +195,7 @@ export class HardkasSilver {
   ): Promise<SilverSdkArtifactResult<any>> {
     if (options.mode === "real") {
       throw new Error(
-        "SDK_SILVER_REAL_LIFECYCLE_UNSUPPORTED: use `hardkas silver deploy` for Docker/RPC execution in 0.11.2-alpha."
+        "SDK_SILVER_REAL_LIFECYCLE_UNSUPPORTED: use `hardkas silver deploy` for Docker/RPC execution in 0.11.3-alpha."
       );
     }
     return this.simulateDeploy(options.artifact, options);
@@ -266,7 +267,7 @@ export class HardkasSilver {
   ): Promise<SilverSdkArtifactResult<any>> {
     if (options.mode === "real") {
       throw new Error(
-        "SDK_SILVER_REAL_LIFECYCLE_UNSUPPORTED: use `hardkas silver spend` for Docker/RPC execution in 0.11.2-alpha."
+        "SDK_SILVER_REAL_LIFECYCLE_UNSUPPORTED: use `hardkas silver spend` for Docker/RPC execution in 0.11.3-alpha."
       );
     }
     return this.simulateSpend(

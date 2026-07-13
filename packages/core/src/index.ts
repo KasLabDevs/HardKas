@@ -17,6 +17,20 @@ export const kaspaNetworkIdSchema = z.enum([
 
 export type NetworkId = Brand<z.infer<typeof kaspaNetworkIdSchema>, "NetworkId">;
 
+export function getCoinbaseMaturity(networkId?: string, overrideParams?: { coinbaseMaturity?: bigint | number }): bigint {
+  if (overrideParams?.coinbaseMaturity !== undefined) {
+    return BigInt(overrideParams.coinbaseMaturity);
+  }
+  
+  if (networkId === "mainnet") return 244n;
+  if (networkId === "testnet-10" || networkId === "testnet-11" || networkId === "testnet-12") return 100n;
+  if (networkId && (networkId.startsWith("simnet") || networkId === "devnet" || networkId === "simulated")) return 100n;
+  
+  const e = new Error(`COINBASE_MATURITY_UNRESOLVED: Cannot resolve canonical coinbase maturity for network: ${networkId || "unknown"}. Provide an explicit override.`);
+  (e as any).code = "COINBASE_MATURITY_UNRESOLVED";
+  throw e;
+}
+
 export const executionModeSchema = z.enum(["simulated", "real", "readonly"]);
 
 export type ExecutionMode = z.infer<typeof executionModeSchema>;
@@ -147,3 +161,4 @@ export * from "./silver.js";
 
 export * from "./registry.js";
 export * from "./confirmation-policy.js";
+

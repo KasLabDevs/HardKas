@@ -23,7 +23,7 @@ describe("accounts", () => {
       config: { cwd: "/tmp/non-existent-isolated-dir" } as any
     });
     expect(acc.name).toBe("alice");
-    expect(acc.address).toBe("kaspa:sim_alice");
+    expect(acc.address).toBe("kaspasim:qqlpk9rs7yag6eqj3lttzqd8vgvssz8l8fxlpdag4h7zx2rjjr8lkkerwkezn");
   });
 
   it("resolveHardkasAccount should resolve direct addresses", () => {

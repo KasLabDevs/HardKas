@@ -48,6 +48,9 @@ export default defineHardkasConfig({
       console.log("DEV TX GENERATE FAILED", result);
     }
 
+    if (result.successCount !== 50) {
+      console.error("Batch failed. Results:", JSON.stringify(result.results.slice(0, 3), null, 2));
+    }
     expect(result.generated).toBe(50);
     expect(result.successCount).toBe(50);
     expect(result.mode).toBe("simulated");

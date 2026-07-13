@@ -17,6 +17,7 @@ export interface PlanTransactionRequest {
   toAddress: string;
   amountSompi: bigint;
   feeRate?: bigint;
+  genesisCovenantGroups?: Array<{ authorizingInput: number; outputIndices: number[] }>;
 }
 
 export interface ConsolidationRequest {
@@ -50,7 +51,10 @@ export class TxPlanService {
     this.maxInputsPerTx = options.maxInputsPerTx ?? 512;
     this.warnInputs = options.warnInputs ?? 128;
     this.marginFeePerInput = options.marginFeePerInput ?? 1500n;
-    this.coinbaseMaturity = options.coinbaseMaturity ?? 1000n;
+    if (options.coinbaseMaturity === undefined) {
+      throw new Error("COINBASE_MATURITY_UNRESOLVED: TxPlanService requires coinbaseMaturity to be explicitly provided");
+    }
+    this.coinbaseMaturity = options.coinbaseMaturity;
   }
 
   async planTransaction(request: PlanTransactionRequest): Promise<TxPlanResult> {
@@ -138,7 +142,9 @@ export class TxPlanService {
           amountSompi: request.amountSompi
         }
       ],
-      feeRateSompiPerMass: feeRate
+      feeRateSompiPerMass: feeRate,
+      coinbaseMaturity: this.coinbaseMaturity,
+      ...(request.genesisCovenantGroups ? { genesisCovenantGroups: request.genesisCovenantGroups.map(g => ({ ...g })) } : {})
     });
 
     return {

@@ -2,7 +2,7 @@ import { parseKasToSompi, systemRuntimeContext, NetworkId } from "@hardkas/core"
 import { resolveHardkasAccountAddress } from "@hardkas/accounts";
 import { buildPaymentPlan, createMockUtxo } from "@hardkas/tx-builder";
 import { createTxPlanArtifact, TxPlanArtifact } from "@hardkas/artifacts";
-import { coreEvents } from "@hardkas/core";
+import { coreEvents, getCoinbaseMaturity } from "@hardkas/core";
 import { resolveNetworkTarget, HardkasConfig } from "@hardkas/config";
 
 export interface TxPlanRunnerInput {
@@ -69,13 +69,23 @@ export async function runTxPlan(input: TxPlanRunnerInput): Promise<TxPlanArtifac
   let mode: "simulated" | "kaspa-node" | "kaspa-rpc" = "simulated";
   let rpcUrl: string | undefined = providerConfig.endpoint;
 
+  let stateAddress: string | undefined;
   if (backend === "simulated") {
-    const { loadOrCreateLocalnetState, getSpendableUtxos } =
-      await import("@hardkas/localnet");
-    const localState = await loadOrCreateLocalnetState(
-      workspaceRoot ? { cwd: workspaceRoot } : {}
+    const { loadOrCreateLocalnetState, getSpendableUtxos, resolveAccountAddressFromState } = await import(
+      "@hardkas/localnet"
     );
-    const unspent = getSpendableUtxos(localState, fromAddress);
+    const localState = await loadOrCreateLocalnetState({
+      cwd: workspaceRoot || process.cwd()
+    });
+
+    // We must query using the account name to resolve to internal `kaspa:sim_*`
+    // since localnet state keys dev UTXOs using the kaspa:sim_<name> format.
+    let queryAddress = fromAddress;
+    if (fromAddress.startsWith("kaspasim:") && from !== fromAddress && !from.startsWith("kaspa")) {
+      queryAddress = from;
+    }
+    stateAddress = resolveAccountAddressFromState(localState, queryAddress);
+    const unspent = getSpendableUtxos(localState, queryAddress);
 
     availableUtxos = unspent.map((u) => {
       const parts = u.id.split(":");
@@ -83,7 +93,7 @@ export async function runTxPlan(input: TxPlanRunnerInput): Promise<TxPlanArtifac
       const transactionId = parts.slice(0, -1).join(":");
       return {
         outpoint: { transactionId, index },
-        address: u.address,
+        address: fromAddress, // Use fromAddress so it matches buildPaymentPlan's expectation
         amountSompi: BigInt(u.amountSompi),
         scriptPublicKey: "mock-script"
       };
@@ -161,11 +171,20 @@ export async function runTxPlan(input: TxPlanRunnerInput): Promise<TxPlanArtifac
     );
   }
 
+  const coinbaseMaturity = getCoinbaseMaturity(
+    resolvedNetwork as NetworkId,
+    configNetworkKind === "kaspa-node" || configNetworkKind === "kaspa-rpc" || configNetworkKind === "simulated" 
+      ? (networkDef as any).consensusParams 
+      : undefined
+  );
+
   const plan = buildPaymentPlan({
     fromAddress,
     outputs: [{ address: toAddress, amountSompi }],
     availableUtxos,
-    feeRateSompiPerMass
+    feeRateSompiPerMass,
+    coinbaseMaturity,
+    ...(stateAddress && stateAddress !== fromAddress ? { changeAddress: stateAddress } : {})
   });
 
   let resolvedAssumptionLevel = assumptionLevel;

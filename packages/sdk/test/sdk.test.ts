@@ -41,7 +41,7 @@ describe("Hardkas SDK", () => {
     const sdk = await Hardkas.open({ cwd: tmpDir });
     expect(sdk.accounts).toBeDefined();
     expect(sdk.tx).toBeDefined();
-    expect(sdk.l2).toBeDefined();
+    expect(sdk.experimental.l2).toBeDefined();
     expect(sdk.rpc).toBeDefined();
   });
 });

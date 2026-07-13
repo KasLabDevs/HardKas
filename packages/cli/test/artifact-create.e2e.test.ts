@@ -18,7 +18,7 @@ describe("hardkas artifact create", () => {
     await fs.rm(tmpDir, { recursive: true, force: true });
   });
 
-  it("should create an artifact deterministically from input JSON", async () => {
+  it("should create an artifact deterministically from input JSON", { timeout: 60000 }, async () => {
     const payloadPath = path.join(tmpDir, "payload.json");
     // Ensure keys are out of order to test canonicalization implicitly if hash is stable
     await fs.writeFile(

@@ -53,6 +53,9 @@ export default defineHardkasConfig({
     ]);
     const result = JSON.parse(stdout);
 
+    if (result.successCount !== 2) {
+      console.error("Batch failed. Results:", JSON.stringify(result.results, null, 2));
+    }
     expect(result.batchSize).toBe(2);
     expect(result.successCount).toBe(2);
     expect(result.failCount).toBe(0);

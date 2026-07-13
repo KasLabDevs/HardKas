@@ -45,6 +45,8 @@ export const HardkasSchemas = {
   // --- Deployment ---
   DeploymentV1: "hardkas.deployment.v1",
   DeploymentIndexV1: "hardkas.deploymentIndex.v1",
+  CovenantV1: "hardkas.covenant.v1",
+  ToccataCapabilitiesV1: "hardkas.toccataCapabilities.v1",
 
   // --- L2 & Igra ---
   IgraTxPlan: "hardkas.igraTxPlan",
@@ -54,6 +56,7 @@ export const HardkasSchemas = {
   IgraTxReceiptV1: "hardkas.igraTxReceipt.v1",
   L2ProfileV1: "hardkas.l2Profile.v1",
   L2BridgeAssumptionsV1: "hardkas.l2BridgeAssumptions.v1",
+  IgraStatusV1: "hardkas.igraStatus.v1",
 
   // --- SilverScript ---
   SilverCompile: "hardkas.silver.compile",

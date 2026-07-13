@@ -18,7 +18,7 @@ describe('@hardkas/toolkit V1', () => {
         it('should instantiate and return address', async () => {
             const wallet = WalletToolkit.open('alice', { storePath: path.join(tmpDir, 'wallets.json') });
             await wallet.create();
-            const addr = await wallet.address();
+            const addr = await wallet.receive();
             expect(addr).toBeDefined();
             expect(typeof addr).toBe('string');
             expect(addr.startsWith('kaspasim:') || addr.startsWith('kaspa:')).toBe(true);

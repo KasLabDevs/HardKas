@@ -207,7 +207,7 @@ export function registerTxCommands(program: Command) {
 
               let signer;
               if (options.fixture) {
-                const { HardkasFixtureSigner } = await import("@hardkas/accounts");
+                const { HardkasFixtureSigner } = await import("@hardkas/testing");
                 const networkId = (planArtifact as any).networkId || "simnet";
                 signer = new HardkasFixtureSigner(networkId);
               }

@@ -24,6 +24,11 @@ describe("Workflow Runtime & Adversarial Defense", () => {
     const mockState = {
       networkId: "simulated",
       daaScore: "1000",
+      accounts: [
+        { name: "alice", address: "kaspa:sim_alice" },
+        { name: "bob", address: "kaspa:sim_bob" },
+        { name: "carol", address: "kaspa:sim_carol" }
+      ],
       utxos: [
         {
           id: "mocktx:0",
@@ -50,6 +55,7 @@ describe("Workflow Runtime & Adversarial Defense", () => {
     sdk = await Hardkas.open({
       cwd: tmpDir,
       mode: "agent",
+      autoBootstrap: false,
       policy: { requireDryRun: false, allowNetwork: true, allowMainnet: false }
     });
 
@@ -57,6 +63,7 @@ describe("Workflow Runtime & Adversarial Defense", () => {
     strictSdk = await Hardkas.open({
       cwd: tmpDir,
       mode: "agent",
+      autoBootstrap: false,
       policy: {
         requireDryRun: true,
         allowNetwork: true,
@@ -123,7 +130,7 @@ describe("Workflow Runtime & Adversarial Defense", () => {
   it("should process a clean, declarative simple simulated payment", async () => {
     const def = loadWorkflow("simple-simulated-payment.json");
 
-    const wf = await sdk.workflow.run({ steps: def.steps, dryRun: false });
+    const wf = await sdk.experimental.workflow.run({ steps: def.steps, dryRun: false });
     if (wf.status === "failed") console.log(wf.errorEnvelope);
 
     expect(wf.status).toBe("completed");
@@ -131,7 +138,7 @@ describe("Workflow Runtime & Adversarial Defense", () => {
     expect(wf.producedArtifacts.length).toBeGreaterThan(0);
 
     // Verify Cryptographic Replay passes
-    const replay = await sdk.replay.verify({ workflowId: wf.workflowId });
+    const replay = await sdk.experimental.replay.verify({ workflowId: wf.workflowId });
     if (!replay.passed) console.log("REPLAY ERROR:", replay.error, replay.report);
     expect(replay.passed).toBe(true);
   });
@@ -139,7 +146,7 @@ describe("Workflow Runtime & Adversarial Defense", () => {
   it("should catch policy violations explicitly: agent attempting mainnet", async () => {
     const def = loadWorkflow("mainnet-policy-violation.json");
 
-    const wf = await sdk.workflow.run({ steps: def.steps, dryRun: false });
+    const wf = await sdk.experimental.workflow.run({ steps: def.steps, dryRun: false });
 
     expect(wf.status).toBe("failed");
     expect(wf.errorEnvelope).toBeDefined();
@@ -152,13 +159,13 @@ describe("Workflow Runtime & Adversarial Defense", () => {
 
     // The policy violation throws entirely, protecting the system at the deepest level
     await expect(
-      strictSdk.workflow.run({ steps: def.steps, dryRun: false })
+      strictSdk.experimental.workflow.run({ steps: def.steps, dryRun: false })
     ).rejects.toThrowError(/Agent Mode Policy Violation/);
   });
 
   it("should successfully orchestrate a multi-step workflow without failing", async () => {
     const def = loadWorkflow("multi-step-payment.json");
-    const wf = await sdk.workflow.run({ steps: def.steps, dryRun: false });
+    const wf = await sdk.experimental.workflow.run({ steps: def.steps, dryRun: false });
     if (wf.status === "failed") console.log(wf.errorEnvelope);
 
     expect(wf.status).toBe("completed");
@@ -168,7 +175,7 @@ describe("Workflow Runtime & Adversarial Defense", () => {
 
   it("adversarial: tampering with a produced artifact must instantly fail replay", async () => {
     const def = loadWorkflow("simple-simulated-payment.json");
-    const wf = await sdk.workflow.run({ steps: def.steps, dryRun: false });
+    const wf = await sdk.experimental.workflow.run({ steps: def.steps, dryRun: false });
 
     // Adversary modifies a child artifact directly on disk
     const targetId = wf.producedArtifacts[0];
@@ -176,6 +183,10 @@ describe("Workflow Runtime & Adversarial Defense", () => {
     const targetFile = fs
       .readdirSync(artifactsDir)
       .find((f) => f.includes(targetId) && f.endsWith(".json"));
+    if (!targetFile) {
+      console.log("targetId:", targetId);
+      console.log("artifactsDir contents:", fs.readdirSync(artifactsDir));
+    }
     const targetPath = path.join(artifactsDir, targetFile!);
 
     const childStr = fs.readFileSync(targetPath, "utf-8");
@@ -186,7 +197,7 @@ describe("Workflow Runtime & Adversarial Defense", () => {
     fs.writeFileSync(targetPath, tampered);
 
     // Run replay engine against the workflow lineage
-    const replay = await sdk.replay.verify({ workflowId: wf.workflowId });
+    const replay = await sdk.experimental.replay.verify({ workflowId: wf.workflowId });
 
     // MUST FAIL determinism check
     expect(replay.passed).toBe(false);

@@ -1,3 +1,4 @@
+import crypto from "node:crypto";
 import { SOMPI_PER_KAS, NetworkId, ExecutionMode } from "@hardkas/core";
 import {
   HardkasArtifactBase,
@@ -38,13 +39,16 @@ export function createInitialLocalnetState(
       name: a.name,
       address: a.address
     })),
-    utxos: accounts.map((a) => ({
-      id: `genesis:${a.name}:0`,
-      address: a.address,
-      amountSompi: a.balanceSompi.toString(),
-      spent: false,
-      createdAtDaaScore: "0"
-    })),
+    utxos: accounts.map((a) => {
+      const txId = crypto.createHash("sha256").update(`genesis:${a.name}`).digest("hex");
+      return {
+        id: `${txId}:0`,
+        address: a.address,
+        amountSompi: a.balanceSompi.toString(),
+        spent: false,
+        createdAtDaaScore: "0"
+      };
+    }),
     snapshots: []
   };
 }
@@ -59,7 +63,7 @@ export function resolveAccountAddressFromState(
   }
 
   // Search in accounts
-  const account = state.accounts.find((a) => a.name === nameOrAddress);
+  const account = state.accounts?.find((a) => a.name === nameOrAddress);
   if (account) {
     return account.address;
   }

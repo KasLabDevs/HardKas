@@ -1,0 +1,59 @@
+{
+  "version": "0.11.3-alpha",
+  "environment": {
+    "nodeVersion": "v24.15.0",
+    "platform": "win32",
+    "arch": "x64"
+  },
+  "timestamp": "2026-07-13T13:25:47.296Z",
+  "testSuite": {
+    "command": "pnpm test",
+    "startTime": "2026-07-13T13:17:35.795Z",
+    "endTime": "2026-07-13T13:21:21.218Z",
+    "exitCode": 1,
+    "stdoutPreview": "\n> hardkas-monorepo@0.11.3-alpha test C:\\Users\\jrodr\\Documents\\kaslabdevs\\GitHub\\HardKas-repo\n> vitest run && pnpm test:workflows\n\n\n\u001b[1m\u001b[7m\u001b[36m RUN \u001b[39m\u001b[27m\u001b[22m \u001b[36mv2.1.9 \u001b[39m\u001b[90mC:/Users/jrodr/Documents/kaslabdevs/GitHub/HardKas-repo\u001b[39m\n      \u001b[2mCoverage enabled with \u001b[22m\u001b[33mv8\u001b[39m\n\n\u001b[90mstdout\u001b[2m | packages/tx-builder/test/determinism.test.ts\u001b[2m > \u001b[22m\u001b[2mP1.12 Deterministic Transaction Canonicalization\u001b[2m > \u001b[22m\u001b[2mTest D: Hardcoded Cross-Platform Hash Fixture & Fixed Metadata Assertions\n\u001b[22m\u001b[39m[Test D Info] Node Version: v24.15.0\n[Test D Info] OS Platform: win32\n[Test D Info] Canonical Hash version: 3\n[Test D Info] Calculated Canonical Hash: 1cd118fdefc3afefdd176f96ef6a6de85d58dabede91bff0189d4dfc6bdb6bf4\n\n \u001b[32m✓\u001b[39m packages/tx-builder/test/determinism.test.ts \u001b[2m(\u001b[22m\u001b[2m5 tests\u001b[22m\u001b[2m)\u001b[22m\u001b[90m 24\u001b[2mms\u001b[22m\u001b[39m\n \u001b[32m✓\u001b[39m packages/simulator/test/ghostdag.test.ts \u001b[2m(\u001b[22m\u001b[2m23 tests\u001b[22m\u001b[2m)\u001b[22m\u001b[90m 17\u001b[2mms\u001b[22m\u001b[39m\n \u001b[32m✓\u001b[39m packages/\n...truncated",
+    "stderrPreview": "\u001b[90mstderr\u001b[2m | packages/sdk/test/audit-hardening.test.ts\u001b[2m > \u001b[22m\u001b[2mAudit Hardening Suite (0.11.3-alpha)\u001b[2m > \u001b[22m\u001b[2mP1.1: Localnet State Naming Compatibility\u001b[2m > \u001b[22m\u001b[2mshould migrate localnet-state.json to localnet.json\n\u001b[22m\u001b[39m[HardKAS] Migrated legacy localnet-state.json to localnet.json. The old file was kept for compatibility.\n\nnode:internal/modules/cjs/loader:1479\r\n  throw err;\r\n  ^\r\n\r\nError: Cannot find module 'C:\\Users\\jrodr\\Documents\\kaslabdevs\\GitHub\\HardKas-repo\\packages\\dist\\index.js'\r\n    at Module._resolveFilename (node:internal/modules/cjs/loader:1476:15)\r\n    at wrapResolveFilename (node:internal/modules/cjs/loader:1049:27)\r\n    at defaultResolveImplForCJSLoading (node:internal/modules/cjs/loader:1073:10)\r\n    at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1094:12)\r\n    at Module._load (node:internal/modules/cjs/loader:1262:25)\r\n    at wrapModuleLoad (node:internal/modules/cjs/loader:255:19)\r\n    at Module.executeUserEntryPoint [as runMain]\n...truncated"
+  },
+  "e2e": {
+    "command": "pnpm test:e2e:docker -- --runInBand",
+    "startTime": "2026-07-13T13:21:21.218Z",
+    "endTime": "2026-07-13T13:23:54.644Z",
+    "exitCode": 0,
+    "stdoutPreview": "\n> hardkas-monorepo@0.11.3-alpha test:e2e:docker C:\\Users\\jrodr\\Documents\\kaslabdevs\\GitHub\\HardKas-repo\n> vitest run --config vitest.e2e.config.ts --no-file-parallelism \"--\" \"--runInBand\"\n\n\n\u001b[1m\u001b[7m\u001b[36m RUN \u001b[39m\u001b[27m\u001b[22m \u001b[36mv2.1.9 \u001b[39m\u001b[90mC:/Users/jrodr/Documents/kaslabdevs/GitHub/HardKas-repo\u001b[39m\n\n \u001b[32m✓\u001b[39m packages/cli/test/node-programmatic.e2e.test.ts \u001b[2m(\u001b[22m\u001b[2m4 tests\u001b[22m\u001b[2m | \u001b[22m\u001b[33m4 skipped\u001b[39m\u001b[2m)\u001b[22m\u001b[33m 843\u001b[2mms\u001b[22m\u001b[39m\n \u001b[32m✓\u001b[39m packages/cli/test/dev-tx-generate.e2e.test.ts \u001b[2m(\u001b[22m\u001b[2m2 tests\u001b[22m\u001b[2m)\u001b[22m\u001b[33m 107235\u001b[2mms\u001b[22m\u001b[39m\n   \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m hardkas dev tx generate\u001b[2m > \u001b[22mshould generate 50 mock transactions \u001b[33m86411\u001b[2mms\u001b[22m\u001b[39m\n   \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m hardkas dev tx generate\u001b[2m > \u001b[22mshould generate 10 mock transactions quickly \u001b[33m20777\u001b[2mms\u001b[22m\u001b[39m\n \u001b[32m✓\u001b[39m packages/cli/test/tx-batch.e2e.test.ts \u001b[2m(\u001b[22m\u001b[2m1 test\u001b[22m\u001b[2m)\u001b[22m\u001b[33m 7376\u001b[2mms\u001b[22m\u001b[39m\n   \u001b[33m\u001b[2m✓\u001b[22m\u001b[39m hardkas tx batch\u001b[2m \n...truncated",
+    "stderrPreview": ""
+  },
+  "examples": {
+    "v0": {
+      "command": "pnpm example:v0-demo",
+      "startTime": "2026-07-13T13:23:54.644Z",
+      "endTime": "2026-07-13T13:24:01.444Z",
+      "exitCode": 0,
+      "stdoutPreview": "\n> hardkas-monorepo@0.11.3-alpha example:v0-demo C:\\Users\\jrodr\\Documents\\kaslabdevs\\GitHub\\HardKas-repo\n> tsx examples/02-basic-transfer/main.ts\n\n\u001b[35m╔══════════════════════════════╗\u001b[0m\n\u001b[35m║         \u001b[1mHardKAS\u001b[0m\u001b[35m              ║\u001b[0m\n\u001b[35m║      \u001b[3mBasic Transfer\u001b[0m\u001b[35m          ║\u001b[0m\n\u001b[35m╚══════════════════════════════╝\u001b[0m\n\n\u001b[1mProfiles:\u001b[0m\n  Sender:    \u001b[36malice\u001b[0m (kaspasim:qqlpk9rs7yag6eqj3lttzqd8vgvssz8l8fxlpdag4h7zx2rjjr8lkkerwkezn)\n  Recipient: \u001b[36mbob\u001b[0m (kaspasim:qryj23rch0n5rc7klfug58zcrnuc966qljwgzpu3mflqgxu6w2pjg6n575980)\n\n\u001b[1mAlice Balance:\u001b[0m 1000\n\n\u001b[1m[1/4] Planning:\u001b[0m 10 KAS -> Bob\n  \u001b[32m✔\u001b[0m Plan built (ID: plan-c352a2d42491cfb1)\n  Fee: 1060 sompi | Mass: 1060\n\n\u001b[1m[2/4] Signing...\u001b[0m\n  \u001b[32m✔\u001b[0m Signed with Alice\n\n\u001b[1m[3/4] Sending...\u001b[0m\n  \u001b[32m✔\u001b[0m Broadcast successful\n  TxID: \u001b[36msimulated-plan-c352a2d42491cfb1-tx\u001b[0m\n\n\u001b[1m[4/4] Confirming...\u001b[0m\n  [░░░░░░░░░░] 0% (Submitted)\r  [\u001b[33m██████████\u001b[0m] (Timeout waiting for confirmation)\n\n\n\n...truncated",
+      "stderrPreview": ""
+    },
+    "v1": {
+      "command": "pnpm example:v1-demo",
+      "startTime": "2026-07-13T13:24:01.444Z",
+      "endTime": "2026-07-13T13:24:07.268Z",
+      "exitCode": 0,
+      "stdoutPreview": "\n> hardkas-monorepo@0.11.3-alpha example:v1-demo C:\\Users\\jrodr\\Documents\\kaslabdevs\\GitHub\\HardKas-repo\n> tsx examples/07-v1-demo/main.ts\n\nStarting HardKAS V1 Tx Demo...\nUsing WASM path: C:\\Users\\jrodr\\Documents\\kaslabdevs\\GitHub\\HardKas-repo\\vendor\\kaspa-wasm\nCapabilities: {\n  \"wasm\": true,\n  \"rpc\": true,\n  \"v1\": true,\n  \"computeBudget\": true,\n  \"covenantOutputs\": true,\n  \"storageMass\": true,\n  \"signingV1\": true,\n  \"version\": \"2.0.1\"\n}\nFrom: alice → kaspasim:qqlpk9rs7yag6eqj3lttzqd8vgvssz8l8fxlpdag4h7zx2rjjr8lkkerwkezn\nTo:   bob → kaspasim:qryj23rch0n5rc7klfug58zcrnuc966qljwgzpu3mflqgxu6w2pjg6n575980\nResetting and starting node with miner...\nStopping node...\n",
+      "stderrPreview": ""
+    },
+    "covenant": {
+      "command": "pnpm example:covenant-demo",
+      "startTime": "2026-07-13T13:24:07.268Z",
+      "endTime": "2026-07-13T13:24:12.059Z",
+      "exitCode": 0,
+      "stdoutPreview": "\n> hardkas-monorepo@0.11.3-alpha example:covenant-demo C:\\Users\\jrodr\\Documents\\kaslabdevs\\GitHub\\HardKas-repo\n> tsx examples/08-covenant-core/main.ts\n\nStarting HardKAS Covenant Core Roundtrip Demo...\n",
+      "stderrPreview": ""
+    }
+  },
+  "smoke": {
+    "command": "pnpm smoke:external-tarball",
+    "startTime": "2026-07-13T13:24:12.059Z",
+    "endTime": "2026-07-13T13:25:47.296Z",
+    "exitCode": 0,
+    "stdoutPreview": "\n> hardkas-monorepo@0.11.3-alpha smoke:external-tarball C:\\Users\\jrodr\\Documents\\kaslabdevs\\GitHub\\HardKas-repo\n> node scripts/check-packaging-smoke.mjs\n\n=== PHASE 10: PACKAGING SMOKE ===\n\\n1. Packing tarballs...\nPacking @hardkas/accounts...\n> pnpm pack (in C:\\Users\\jrodr\\Documents\\kaslabdevs\\GitHub\\HardKas-repo\\packages\\accounts)\nPacking @hardkas/artifacts...\n> pnpm pack (in C:\\Users\\jrodr\\Documents\\kaslabdevs\\GitHub\\HardKas-repo\\packages\\artifacts)\nPacking @hardkas/bridge-local...\n> pnpm pack (in C:\\Users\\jrodr\\Documents\\kaslabdevs\\GitHub\\HardKas-repo\\packages\\bridge-local)\nPacking @hardkas/cli...\n> pnpm pack (in C:\\Users\\jrodr\\Documents\\kaslabdevs\\GitHub\\HardKas-repo\\packages\\cli)\nPacking @hardkas/client...\n> pnpm pack (in C:\\Users\\jrodr\\Documents\\kaslabdevs\\GitHub\\HardKas-repo\\packages\\client)\nPacking @hardkas/config...\n> pnpm pack (in C:\\Users\\jrodr\\Documents\\kaslabdevs\\GitHub\\HardKas-repo\\packages\\config)\nPacking @hardkas/core...\n> pnpm pack (in C:\\Users\\jrodr\\Documents\\kaslabdev\n...truncated",
+    "stderrPreview": ""
+  }
+}

@@ -6,7 +6,7 @@ describe("Transaction Semantic Verification", () => {
   const utxo = createMockUtxo({ address: "kaspa:address1", amountSompi: 1000000n });
 
   it("should pass for a valid plan", () => {
-    const plan = buildPaymentPlan({
+    const plan = buildPaymentPlan({ coinbaseMaturity: 100n,
       fromAddress: "kaspa:address1",
       availableUtxos: [utxo],
       outputs: [{ address: "kaspa:address2", amountSompi: 500000n }],
@@ -19,7 +19,7 @@ describe("Transaction Semantic Verification", () => {
   });
 
   it("should fail on mass mismatch", () => {
-    const plan = buildPaymentPlan({
+    const plan = buildPaymentPlan({ coinbaseMaturity: 100n,
       fromAddress: "kaspa:address1",
       availableUtxos: [utxo],
       outputs: [{ address: "kaspa:address2", amountSompi: 500000n }],
@@ -35,7 +35,7 @@ describe("Transaction Semantic Verification", () => {
   });
 
   it("should detect duplicate inputs", () => {
-    const plan = buildPaymentPlan({
+    const plan = buildPaymentPlan({ coinbaseMaturity: 100n,
       fromAddress: "kaspa:address1",
       availableUtxos: [utxo],
       outputs: [{ address: "kaspa:address2", amountSompi: 500000n }],
@@ -51,7 +51,7 @@ describe("Transaction Semantic Verification", () => {
   });
 
   it("should detect dust outputs as errors", () => {
-    const plan = buildPaymentPlan({
+    const plan = buildPaymentPlan({ coinbaseMaturity: 100n,
       fromAddress: "kaspa:address1",
       availableUtxos: [utxo],
       outputs: [{ address: "kaspa:address2", amountSompi: 100n }], // Dust

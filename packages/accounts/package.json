@@ -1,6 +1,6 @@
 {
   "name": "@hardkas/accounts",
-  "version": "0.11.2-alpha",
+  "version": "0.11.3-alpha",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -9,6 +9,11 @@
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js",
       "default": "./dist/index.js"
+    },
+    "./internal/wasm-rpc-serialization.js": {
+      "types": "./dist/internal/wasm-rpc-serialization.d.ts",
+      "import": "./dist/internal/wasm-rpc-serialization.js",
+      "default": "./dist/internal/wasm-rpc-serialization.js"
     }
   },
   "files": [
@@ -17,8 +22,8 @@
     "README.md"
   ],
   "scripts": {
-    "build": "tsup src/index.ts --format esm --dts --clean --external kaspa-wasm",
-    "dev": "tsup src/index.ts --format esm --watch --dts --external kaspa-wasm",
+    "build": "tsup src/index.ts src/internal/wasm-rpc-serialization.ts --format esm --dts --clean --external kaspa-wasm",
+    "dev": "tsup src/index.ts src/internal/wasm-rpc-serialization.ts --format esm --watch --dts --external kaspa-wasm",
     "test": "vitest run",
     "typecheck": "tsc --noEmit"
   },

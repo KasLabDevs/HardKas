@@ -48,7 +48,7 @@ export class EvidenceManager {
     const artifacts: any[] = [];
     const hashes: Record<string, string> = {};
 
-    for (const id of generatedIds) {
+    for (const id of Array.from(generatedIds)) {
       // Find the file. It could be `<id>.json` or `<id>.trace.json` etc
       const files = fs.readdirSync(artifactsDir).filter(f => f.includes(id) && f.endsWith(".json"));
       
@@ -68,7 +68,7 @@ export class EvidenceManager {
       version: "1.0.0-alpha",
       schema: HardkasSchemas.EvidencePackageV1 as any,
       name: scenarioResult.scenarioName,
-      hardkasVersion: "0.11.2-alpha",
+      hardkasVersion: "0.11.3-alpha",
       networkId: scenarioResult.networkId,
       mode: scenarioResult.mode,
       createdAt: new Date().toISOString(),

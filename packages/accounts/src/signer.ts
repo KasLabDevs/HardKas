@@ -20,25 +20,7 @@ import { HardkasConfig } from "@hardkas/config";
 import { getKaspaSigningBackendStatus } from "./signer-backend.js";
 import { KaspaWasmPrivateKeySigner } from "./kaspa-wasm-signer.js";
 
-/**
- * Simulated signer for simnet development.
- * Produces deterministic signatures without real private keys.
- */
-export class SimulatedTxPlanSigner implements HardkasTxPlanSigner {
-  kind: HardkasSignerKind = "simulated";
 
-  async signTxPlan(input: SignTxPlanInput): Promise<SignTxPlanResult> {
-    const plan = input.planArtifact as TxPlanArtifact;
-    return {
-      signatureKind: "simulated",
-      signerAddress: plan.from.address,
-      signedTransaction: {
-        format: "simulated",
-        payload: `simulated-signed-tx:${plan.planId}`
-      }
-    };
-  }
-}
 
 /**
  * Placeholder for real Kaspa signing.
@@ -54,16 +36,19 @@ export class UnsupportedRealKaspaSigner implements HardkasTxPlanSigner {
   }
 }
 
+import { TxInputAuthorizer } from "./authorizers.js";
+
 /**
  * Main entry point for signing transaction plan artifacts.
  */
 export async function signTxPlanArtifact(input: {
   planArtifact: TxPlanArtifact;
-  account: HardkasAccount;
+  account?: HardkasAccount;
+  authorizers?: Readonly<Record<number, TxInputAuthorizer>>;
   config?: HardkasConfig;
   allowMainnet?: boolean;
 }): Promise<SignedTxArtifact> {
-  const { planArtifact, account } = input;
+  const { planArtifact, account, authorizers } = input;
 
   // Security guardrails
   // In alpha, status might be missing if schema is used as the state marker
@@ -74,19 +59,12 @@ export async function signTxPlanArtifact(input: {
     throw new Error(`Cannot sign artifact with status: ${planRecord.status}`);
   }
 
-  // Account and plan mode matching
   if (planArtifact.mode === "simulated") {
-    if (account.kind !== "simulated") {
-      throw new Error(
-        `Simulated plans must be signed with simulated accounts (account '${account.name}' is '${account.kind}').`
-      );
-    }
-  } else {
-    if (account.kind === "simulated") {
-      throw new Error(
-        `Real Kaspa transaction plans (mode: ${planArtifact.mode}) cannot be signed with simulated accounts.`
-      );
-    }
+    return createSimulatedSignedTxArtifact(
+      planArtifact as TxPlan,
+      `simulated-signed-tx:${planArtifact.planId}`,
+      systemRuntimeContext
+    ) as SignedTxArtifact;
   }
 
   // Block mainnet by default for safety
@@ -96,16 +74,18 @@ export async function signTxPlanArtifact(input: {
     );
   }
 
-  if (account.kind === "simulated") {
-    return createSimulatedSignedTxArtifact(
-      planArtifact as TxPlan,
-      `simulated-signed-tx:${planArtifact.planId}`,
-      systemRuntimeContext
-    ) as SignedTxArtifact;
+  if (account && account.kind === "simulated") {
+    throw new Error(
+      `Real Kaspa transaction plans (mode: ${planArtifact.mode}) cannot be signed with simulated accounts.`
+    );
   }
 
-  if (account.kind === "kaspa-private-key") {
-    const status = await getKaspaSigningBackendStatus();
+    if (
+      !account || 
+      account.kind === "kaspa-private-key" || 
+      (typeof (account as any).authorize === "function")
+    ) {
+    const status = await getKaspaSigningBackendStatus(input.config?.wasm);
 
     if (!status.available) {
       throw new Error(
@@ -113,14 +93,20 @@ export async function signTxPlanArtifact(input: {
       );
     }
 
-    const signer = new KaspaWasmPrivateKeySigner({
+    const signerOptions: any = {
       account: account as HardkasKaspaPrivateKeyAccount,
       allowMainnet: input.allowMainnet
-    });
+    };
+    if (input.config?.wasm) {
+      signerOptions.wasmConfig = input.config.wasm;
+    }
+
+    const signer = new KaspaWasmPrivateKeySigner(signerOptions);
 
     const result = await signer.signTxPlan({
       planArtifact,
-      accountName: account.name
+      ...(account?.name ? { accountName: account.name } : {}),
+      ...(input.authorizers ? { authorizers: input.authorizers } : {})
     });
 
     const artifact: any = {
@@ -162,16 +148,16 @@ export async function signTxPlanArtifact(input: {
     return artifact;
   }
 
-  if (account.kind === "external-wallet") {
+  if (account && account.kind === "external-wallet") {
     throw new Error("External wallet signing is not implemented yet.");
   }
 
-  if (account.kind === "evm-private-key") {
+  if (account && account.kind === "evm-private-key") {
     throw new Error(
       "EVM accounts are reserved for future Igra support and cannot sign Kaspa L1 transactions."
     );
   }
 
   const accountRecord = account as unknown as Record<string, string>;
-  throw new Error(`Unsupported account kind for signing: ${accountRecord.kind}`);
+  throw new Error(`Unsupported account kind for signing: ${accountRecord ? accountRecord.kind : "unknown"}`);
 }

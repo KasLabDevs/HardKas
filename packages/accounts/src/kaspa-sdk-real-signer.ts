@@ -97,7 +97,7 @@ export class KaspaSdkRealTxSigner implements RealTxSigner {
 
       // 7. Extract result from SignableTransaction
       // signTransaction returns a SignableTransaction with .tx (Transaction) property
-      const innerTx = signedTx.tx;
+      const innerTx = signedTx.tx || signedTx;
       const txId = innerTx?.id;
       const payload = JSON.stringify(
         innerTx.toJSON(),

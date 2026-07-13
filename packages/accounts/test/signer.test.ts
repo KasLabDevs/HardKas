@@ -17,7 +17,7 @@ describe("signTxPlanArtifact", () => {
   const mockSimulatedPlan: any = {
     schema: "hardkas.txPlan",
     version: "1.0.0-alpha",
-    hardkasVersion: "0.11.2-alpha",
+    hardkasVersion: "0.11.3-alpha",
     createdAt: new Date().toISOString(),
     networkId: "simnet",
     mode: "simulated",
@@ -71,13 +71,13 @@ describe("signTxPlanArtifact", () => {
     );
   });
 
-  it("should throw error when signing simulated plan with real account", async () => {
-    await expect(
-      signTxPlanArtifact({
-        planArtifact: mockSimulatedPlan,
-        account: realAccount
-      })
-    ).rejects.toThrow(/Simulated plans must be signed with simulated accounts/);
+  it("should generate simulated signature for simulated plan even with real account", async () => {
+    const signed = await signTxPlanArtifact({
+      planArtifact: mockSimulatedPlan,
+      account: realAccount
+    });
+    expect(signed.status).toBe("signed");
+    expect(signed.signedTransaction?.format).toBe("simulated");
   });
 
   it("should throw error for real Kaspa signing if backend is unavailable", async () => {

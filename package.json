@@ -20,6 +20,7 @@
     "build": "turbo build",
     "dev": "turbo dev",
     "test": "vitest run && pnpm test:workflows",
+    "test:e2e:docker": "vitest run --config vitest.e2e.config.ts --no-file-parallelism",
     "test:workflows": "vitest run packages/cli/test/workflow-corpus.test.ts",
     "bench": "vitest bench --run",
     "bench:docker": "tsx benchmarks/docker-long-run.ts --minutes 30",
@@ -50,6 +51,9 @@
     "example:hello": "tsx examples/01-hello-kaspa/main.ts",
     "example:transfer": "tsx examples/02-basic-transfer/main.ts",
     "example:localnet": "tsx examples/03-localnet-demo/main.ts",
+    "example:v0-demo": "tsx examples/02-basic-transfer/main.ts",
+    "example:v1-demo": "tsx examples/07-v1-demo/main.ts",
+    "example:covenant-demo": "tsx examples/08-covenant-core/main.ts",
     "example:trace": "pnpm --filter @examples/trace-and-replay start",
     "example:snapshot": "pnpm --filter @examples/snapshot-restore start",
     "example:rpc-health": "pnpm --filter @examples/rpc-node-health start",
@@ -57,6 +61,7 @@
     "example:igra-readonly": "pnpm --filter @examples/igra-l2-readonly start",
     "example:bridge-assumptions": "pnpm --filter @examples/bridge-assumptions start",
     "example:ci": "pnpm --filter @examples/ci-workflow start",
+    "smoke:external-tarball": "node scripts/check-packaging-smoke.mjs",
     "example:dag-reorg": "pnpm --filter @examples/dag-reorg-simulation start",
     "examples:test": "pnpm --filter @examples/basic-transfer start && pnpm --filter @examples/backend-service start && pnpm --filter @examples/audit-pipeline start && pnpm --filter @examples/replay start && pnpm --filter @examples/policy start",
     "docs:check": "node scripts/docs-check.mjs",
@@ -100,7 +105,7 @@
     "vitest": "^2.1.9",
     "ws": "^8.18.0"
   },
-  "version": "0.11.2-alpha",
+  "version": "0.11.3-alpha",
   "dependencies": {
     "kaspa": "^0.13.0",
     "kaspa-wasm": "^0.13.0"
