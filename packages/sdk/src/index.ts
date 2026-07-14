@@ -399,5 +399,6 @@ export {
 
 export { EvidenceManager, type EvidencePackOptions, type EvidenceVerifyResult } from "./evidence.js";
 
-
 export { StaticSignatureScriptAuthorizer, PrivateKeyAuthorizer, type TxInputAuthorizer, type TxInputAuthorizationContext } from '@hardkas/accounts';
+
+export * as pskt from "./pskt.js";

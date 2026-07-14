@@ -5,19 +5,19 @@
     "platform": "win32",
     "arch": "x64"
   },
-  "timestamp": "2026-07-13T13:25:47.297Z",
+  "timestamp": "2026-07-14T14:56:54.127Z",
   "typecheck": {
     "command": "pnpm typecheck",
-    "startTime": "2026-07-13T13:15:28.232Z",
-    "endTime": "2026-07-13T13:16:26.726Z",
-    "exitCode": 2,
+    "startTime": "2026-07-14T14:41:50.096Z",
+    "endTime": "2026-07-14T14:42:21.407Z",
+    "exitCode": 0,
     "stdoutPreview": "\n> hardkas-monorepo@0.11.3-alpha typecheck C:\\Users\\jrodr\\Documents\\kaslabdevs\\GitHub\\HardKas-repo\n> turbo typecheck\n\n\n   • Packages in scope: 10-wallet-optimizer, 11-dag-explorer, 12-snapshot-frictions, @examples/rpc-node-health, @examples/snapshot-restore, @examples/trace-and-replay, @hardkas-examples/hello-kaspa, @hardkas/accounts, @hardkas/artifacts, @hardkas/bridge-local, @hardkas/cli, @hardkas/client, @hardkas/config, @hardkas/core, @hardkas/dashboard, @hardkas/dev-server, @hardkas/example-02-basic-transfer, @hardkas/example-03-localnet-demo, @hardkas/jobs, @hardkas/kaspa-rpc, @hardkas/l2, @hardkas/lab-07-batch-engine, @hardkas/lab-08-full-stack-demo, @hardkas/localnet, @hardkas/node-orchestrator, @hardkas/node-runner, @hardkas/observability, @hardkas/plugin-local-indexer, @hardkas/plugin-rpc-backend, @hardkas/query, @hardkas/query-store, @hardkas/react, @hardkas/sdk, @hardkas/sessions, @hardkas/simulator, @hardkas/simulator-adapters, @hardkas/storage-postgres, @hardkas/storage-s\n...truncated",
-    "stderrPreview": "• turbo 2.9.9\n ERROR  @hardkas/accounts#typecheck: command (C:\\Users\\jrodr\\Documents\\kaslabdevs\\GitHub\\HardKas-repo\\packages\\accounts) C:\\Users\\jrodr\\AppData\\Local\\pnpm\\store\\v11\\links\\@\\pnpm\\9.15.4\\e6a2d0dd119b7b1581d6bc6a677e4b12487c65f8fd1e7f9b26d6a481dbb2e654\\bin\\pnpm.CMD run typecheck exited (2)\n ERROR  run failed: command  exited (2)\n"
+    "stderrPreview": ""
   },
   "build": {
     "command": "pnpm build",
-    "startTime": "2026-07-13T13:16:26.726Z",
-    "endTime": "2026-07-13T13:17:35.795Z",
+    "startTime": "2026-07-14T14:42:21.407Z",
+    "endTime": "2026-07-14T14:42:24.187Z",
     "exitCode": 0,
     "stdoutPreview": "\n> hardkas-monorepo@0.11.3-alpha build C:\\Users\\jrodr\\Documents\\kaslabdevs\\GitHub\\HardKas-repo\n> turbo build\n\n\n   • Packages in scope: 10-wallet-optimizer, 11-dag-explorer, 12-snapshot-frictions, @examples/rpc-node-health, @examples/snapshot-restore, @examples/trace-and-replay, @hardkas-examples/hello-kaspa, @hardkas/accounts, @hardkas/artifacts, @hardkas/bridge-local, @hardkas/cli, @hardkas/client, @hardkas/config, @hardkas/core, @hardkas/dashboard, @hardkas/dev-server, @hardkas/example-02-basic-transfer, @hardkas/example-03-localnet-demo, @hardkas/jobs, @hardkas/kaspa-rpc, @hardkas/l2, @hardkas/lab-07-batch-engine, @hardkas/lab-08-full-stack-demo, @hardkas/localnet, @hardkas/node-orchestrator, @hardkas/node-runner, @hardkas/observability, @hardkas/plugin-local-indexer, @hardkas/plugin-rpc-backend, @hardkas/query, @hardkas/query-store, @hardkas/react, @hardkas/sdk, @hardkas/sessions, @hardkas/simulator, @hardkas/simulator-adapters, @hardkas/storage-postgres, @hardkas/storage-sqlite, @\n...truncated",
     "stderrPreview": ""

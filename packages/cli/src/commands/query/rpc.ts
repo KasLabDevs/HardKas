@@ -5,6 +5,7 @@ import {
   printRpcDegradations,
   printRpcCorrelation
 } from "./ui-helpers.js";
+import { getQueryEngine } from "./engine-factory.js";
 
 export function registerRpcQueryCommands(queryCmd: Command) {
   const rpcCmd = queryCmd
@@ -19,8 +20,8 @@ export function registerRpcQueryCommands(queryCmd: Command) {
     .option("--limit <number>", "Max events to return", "100")
     .action(async (options) => {
       try {
-        const { QueryEngine, createQueryRequest } = await import("@hardkas/query");
-        const engine = await QueryEngine.create({ artifactDir: process.cwd() });
+        const { createQueryRequest } = await import("@hardkas/query");
+        const engine = await getQueryEngine();
         const limit = parseInt(options.limit, 10) || 100;
         const request = createQueryRequest({
           domain: "rpc" as unknown as any,
@@ -50,8 +51,8 @@ export function registerRpcQueryCommands(queryCmd: Command) {
     .option("--limit <number>", "Max events to return", "100")
     .action(async (options) => {
       try {
-        const { QueryEngine, createQueryRequest } = await import("@hardkas/query");
-        const engine = await QueryEngine.create({ artifactDir: process.cwd() });
+        const { createQueryRequest } = await import("@hardkas/query");
+        const engine = await getQueryEngine();
         const limit = parseInt(options.limit, 10) || 100;
         const request = createQueryRequest({
           domain: "rpc" as unknown as any,
@@ -80,8 +81,8 @@ export function registerRpcQueryCommands(queryCmd: Command) {
     .option("--explain [level]", "Attach explain chains (brief|full)")
     .action(async (txId, options) => {
       try {
-        const { QueryEngine, createQueryRequest } = await import("@hardkas/query");
-        const engine = await QueryEngine.create({ artifactDir: process.cwd() });
+        const { createQueryRequest } = await import("@hardkas/query");
+        const engine = await getQueryEngine();
         const explain =
           options.explain === true ? ("brief" as const) : options.explain || false;
         const request = createQueryRequest({

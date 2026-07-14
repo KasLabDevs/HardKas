@@ -1,10 +1,10 @@
 {
   "version": "0.11.3-alpha",
-  "timestamp": "2026-07-13T13:25:47.685Z",
+  "timestamp": "2026-07-14T14:56:54.310Z",
   "apiCheck": {
     "command": "node scripts/api-check.mjs",
-    "startTime": "2026-07-13T13:25:47.298Z",
-    "endTime": "2026-07-13T13:25:47.685Z",
+    "startTime": "2026-07-14T14:56:54.127Z",
+    "endTime": "2026-07-14T14:56:54.310Z",
     "exitCode": 1,
     "stdoutPreview": "=== API Check ===\n",
     "stderrPreview": "Missing PUBLIC_API_SURFACE.md\nMissing EXPERIMENTAL_SURFACE.md\nMissing DEPRECATED_SURFACE.md\nMissing MIGRATION_GUIDE_0_9_TO_0_10.md\nMissing API_FREEZE_0_10.md\n"

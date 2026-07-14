@@ -1,6 +1,7 @@
 import { Command } from "commander";
 import { handleError, UI } from "../ui.js";
 import pc from "picocolors";
+import { getQueryEngine } from "./query/engine-factory.js";
 
 export function registerQueryCommands(program: Command) {
   const queryCmd = program
@@ -1283,12 +1284,3 @@ function printTxAggregate(result: any): void {
   if (result.explain) printExplain(result.explain);
 }
 
-/**
- * Shared helper to initialize the QueryEngine with the best available backend.
- */
-async function getQueryEngine() {
-  const { QueryEngine } = await import("@hardkas/query");
-  return QueryEngine.create({
-    artifactDir: process.cwd()
-  });
-}

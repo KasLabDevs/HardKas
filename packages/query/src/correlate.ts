@@ -322,7 +322,7 @@ function buildCorrelationExplain(bundle: CorrelationBundle): ExplainChain {
       order: order++,
       assertion: `RPC: ${bundle.rpc.assessment} at submission. Score: ${bundle.rpc.scoreAtSubmission}/100. Errors: ${bundle.rpc.errorCount}.`,
       evidence: `Endpoint: ${bundle.rpc.endpoint}, state: ${bundle.rpc.stateAtSubmission}`,
-      rule: "RPC confidence correlation (rpc-adapter.ts)"
+      rule: "RPC confidence correlation"
     });
   }
 

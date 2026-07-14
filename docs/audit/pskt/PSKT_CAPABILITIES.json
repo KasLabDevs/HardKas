@@ -1,0 +1,20 @@
+{
+  "wasmVersion": "0.13.0",
+  "raw": {
+    "wasmVersion": "0.13.0",
+    "psktClass": false,
+    "builderClass": false,
+    "bundleClass": false,
+    "methods": {
+      "pskt": [],
+      "builder": [],
+      "bundle": []
+    }
+  },
+  "pskt": {
+    "available": false,
+    "serialize": false,
+    "combine": false,
+    "finalize": false
+  }
+}

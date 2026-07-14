@@ -1,6 +1,7 @@
 import type { NetworkId } from "@hardkas/core";
 import { WebSocket } from "ws";
 import { NOTIFY_UTXOS_CHANGED_REQUEST, STOP_NOTIFYING_UTXOS_CHANGED_REQUEST, UTXOS_CHANGED_NOTIFICATION } from "./internal/notifications.js";
+import { normalizeRpcError, RpcError, RpcNotFoundError } from "./errors.js";
 
 export interface KaspaNodeInfo {
   serverVersion?: string | undefined;
@@ -335,11 +336,17 @@ export class JsonWrpcKaspaClient implements KaspaRpcClient {
   }
 
   async getUtxosByAddress(address: string): Promise<KaspaRpcUtxo[]> {
-    const response = await this.callMethod(
-      "getUtxosByAddresses",
-      "getUtxosByAddressesRequest",
-      { addresses: [address] }
-    ) as any;
+    let response: any;
+    try {
+      response = await this.callMethod(
+        "getUtxosByAddresses",
+        "getUtxosByAddressesRequest",
+        { addresses: [address] }
+      ) as any;
+    } catch (e) {
+      if (e instanceof RpcNotFoundError) return [];
+      throw e;
+    }
 
     if (!response || !response.entries) {
       return [];
@@ -462,7 +469,8 @@ export class JsonWrpcKaspaClient implements KaspaRpcClient {
         transactionId: txId
       });
     } catch (e) {
-      return null;
+      if (e instanceof RpcNotFoundError) return null;
+      throw e;
     }
   }
 
@@ -557,7 +565,7 @@ export class JsonWrpcKaspaClient implements KaspaRpcClient {
               const err = response.error;
               const msg =
                 ((err instanceof Error) ? ((err instanceof Error) ? err.message : String(err)) : String(err)) || (typeof err === "string" ? err : JSON.stringify(err));
-              reject(new Error(msg));
+              reject(normalizeRpcError(new RpcError(msg, err.code, err.data), { method, params }));
             } else {
               resolve(response.result !== undefined ? response.result : response.params);
             }
@@ -567,7 +575,7 @@ export class JsonWrpcKaspaClient implements KaspaRpcClient {
 
       const onError = (err: Error) => {
         cleanup();
-        reject(err);
+        reject(normalizeRpcError(err, { method, params }));
       };
 
       const cleanup = () => {

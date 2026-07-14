@@ -4,7 +4,7 @@ import { createKaspaP2shBlake2bLock } from "@hardkas/core";
 export const SILVER_SIMULATOR_FEE_SOMPI = 2000n;
 export const SILVER_SIMULATOR_CREATED_AT = "1970-01-01T00:00:00.000Z";
 export const SILVER_SIMULATOR_VERSION = "1.0.0-alpha";
-export const CURRENT_HASH_VERSION = 4;
+const CURRENT_HASH_VERSION = 4;
 
 export type SilverSimulationStatus = "SIMULATED_ACCEPTED";
 

@@ -13,6 +13,7 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import type { TxId } from "@hardkas/core";
 import { computeQueryHash } from "../serialize.js";
+import { paginateAndFormatResult } from "../format.js";
 import type {
   QueryAdapter,
   QueryRequest,
@@ -111,27 +112,26 @@ export class DagQueryAdapter implements QueryAdapter {
     }));
 
     items.sort((a, b) => deterministicCompare(a.outpoint, b.outpoint));
-    const paged = items.slice(request.offset, request.offset + request.limit);
-
     let why: WhyBlock[] | undefined;
     if (request.explain) {
-      why = paged.map((c) => explainConflict(c, dag));
+      const pagedForWhy = items.slice(
+        request.offset ?? 0,
+        (request.offset ?? 0) + (request.limit ?? items.length)
+      );
+      why = pagedForWhy.map((c) => explainConflict(c, dag));
     }
 
-    return {
+    return paginateAndFormatResult({
+      request,
+      items,
       domain: "dag",
       op: "conflicts",
-      items: paged,
-      total: items.length,
-      truncated: items.length > request.offset + request.limit,
       deterministic: true,
-      queryHash: computeQueryHash(paged),
       why,
       annotations: {
-        executedAt: new Date().toISOString(),
         executionMs: Date.now() - start
       }
-    };
+    });
   }
 
   // -------------------------------------------------------------------------
@@ -161,27 +161,26 @@ export class DagQueryAdapter implements QueryAdapter {
     });
 
     items.sort((a, b) => deterministicCompare(a.txId, b.txId));
-    const paged = items.slice(request.offset, request.offset + request.limit);
-
     let why: WhyBlock[] | undefined;
     if (request.explain) {
-      why = paged.map((d) => explainDisplacement(d, dag));
+      const pagedForWhy = items.slice(
+        request.offset ?? 0,
+        (request.offset ?? 0) + (request.limit ?? items.length)
+      );
+      why = pagedForWhy.map((d) => explainDisplacement(d, dag));
     }
 
-    return {
+    return paginateAndFormatResult({
+      request,
+      items,
       domain: "dag",
       op: "displaced",
-      items: paged,
-      total: items.length,
-      truncated: items.length > request.offset + request.limit,
       deterministic: true,
-      queryHash: computeQueryHash(paged),
       why,
       annotations: {
-        executedAt: new Date().toISOString(),
         executionMs: Date.now() - start
       }
-    };
+    });
   }
 
   // -------------------------------------------------------------------------
@@ -233,20 +232,17 @@ export class DagQueryAdapter implements QueryAdapter {
       why = entries.map((e) => explainTxHistory(e, dag));
     }
 
-    return {
+    return paginateAndFormatResult({
+      request,
+      items: entries,
       domain: "dag",
       op: "history",
-      items: entries,
-      total: entries.length,
-      truncated: false,
       deterministic: true,
-      queryHash: computeQueryHash(entries),
       why,
       annotations: {
-        executedAt: new Date().toISOString(),
         executionMs: Date.now() - start
       }
-    };
+    });
   }
 
   // -------------------------------------------------------------------------
@@ -277,19 +273,16 @@ export class DagQueryAdapter implements QueryAdapter {
       depth: nodes.length
     };
 
-    return {
+    return paginateAndFormatResult({
+      request,
+      items: [result],
       domain: "dag",
       op: "sink-path",
-      items: [result],
-      total: 1,
-      truncated: false,
       deterministic: true,
-      queryHash: computeQueryHash([result]),
       annotations: {
-        executedAt: new Date().toISOString(),
         executionMs: Date.now() - start
       }
-    };
+    });
   }
 
   // -------------------------------------------------------------------------
@@ -352,27 +345,26 @@ export class DagQueryAdapter implements QueryAdapter {
     }
 
     anomalies.sort((a, b) => deterministicCompare(a.kind, b.kind));
-    const paged = anomalies.slice(request.offset, request.offset + request.limit);
-
     let why: WhyBlock[] | undefined;
     if (request.explain) {
-      why = paged.map((a) => explainAnomaly(a, dag));
+      const pagedForWhy = anomalies.slice(
+        request.offset ?? 0,
+        (request.offset ?? 0) + (request.limit ?? anomalies.length)
+      );
+      why = pagedForWhy.map((a) => explainAnomaly(a, dag));
     }
 
-    return {
+    return paginateAndFormatResult({
+      request,
+      items: anomalies,
       domain: "dag",
       op: "anomalies",
-      items: paged,
-      total: anomalies.length,
-      truncated: anomalies.length > request.offset + request.limit,
       deterministic: true,
-      queryHash: computeQueryHash(paged),
       why,
       annotations: {
-        executedAt: new Date().toISOString(),
         executionMs: Date.now() - start
       }
-    };
+    });
   }
 
   // -------------------------------------------------------------------------

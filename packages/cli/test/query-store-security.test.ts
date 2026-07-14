@@ -1,16 +1,21 @@
-import { describe, it, expect, beforeAll, afterAll } from "vitest";
+import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import { execFileSync } from "node:child_process";
 import path from "node:path";
 import fs from "node:fs";
 
+import os from "node:os";
+
 const cliPath = path.resolve(__dirname, "../dist/index.js");
+
+let testDir: string;
+let dbPath: string;
 
 function runCli(args: string[]): { stdout: string; stderr: string; status: number | null } {
   try {
     const stdout = execFileSync("node", [cliPath, ...args], { 
         encoding: "utf8", 
         stdio: "pipe",
-        env: { ...process.env, HARDKAS_PROJECTION_BACKEND: "sqlite" }
+        env: { ...process.env, HARDKAS_PROJECTION_BACKEND: "sqlite", HARDKAS_QUERY_STORE_PATH: dbPath }
     });
     return { stdout, stderr: "", status: 0 };
   } catch (error: any) {
@@ -19,9 +24,14 @@ function runCli(args: string[]): { stdout: string; stderr: string; status: numbe
 }
 
 describe("Phase 8: Query Store Security", () => {
-  beforeAll(() => {
-      // ensure query store rebuild is done
+  beforeEach(async () => {
+      testDir = await fs.promises.mkdtemp(path.join(os.tmpdir(), "hardkas-query-store-"));
+      dbPath = path.join(testDir, "store.db");
       runCli(["query", "store", "rebuild"]);
+  });
+
+  afterEach(async () => {
+      await fs.promises.rm(testDir, { recursive: true, force: true });
   });
 
   it("1. SELECT succeeds by default", () => {

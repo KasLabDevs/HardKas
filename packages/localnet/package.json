@@ -22,7 +22,7 @@
     "@hardkas/artifacts": "workspace:*",
     "@hardkas/core": "workspace:*",
     "@hardkas/kaspa-rpc": "workspace:*",
-    "@hardkas/query": "workspace:*",
+
     "@hardkas/simulator": "workspace:*",
     "@hardkas/tx-builder": "workspace:*",
     "kaspa-wasm": "0.13.0"

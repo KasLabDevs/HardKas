@@ -57,33 +57,7 @@ export async function runL2RpcChainId(options: L2RpcQueryOptions): Promise<void>
   console.log("Warning: This is L2 state.");
 }
 
-export async function runL2RpcBlockNumber(options: L2RpcQueryOptions): Promise<void> {
-  const { client, profile, networkName } = await getClient(options);
-  const blockNumber = await client.getBlockNumber();
 
-  if (options.json) {
-    console.log(
-      JSON.stringify(
-        {
-          networkId: profile.name,
-          l2Network: networkName,
-          rpcUrl: profile.rpcUrl,
-          blockNumber: blockNumber.toString()
-        },
-        null,
-        2
-      )
-    );
-    return;
-  }
-
-  console.log(`${profile.displayName} L2 block`);
-  console.log("");
-  console.log(`Network:  ${networkName}`);
-  console.log(`Block:    ${blockNumber}`);
-  console.log("");
-  console.log("Warning: This is L2 state.");
-}
 
 export async function runL2RpcGasPrice(options: L2RpcQueryOptions): Promise<void> {
   const { client, profile, networkName } = await getClient(options);

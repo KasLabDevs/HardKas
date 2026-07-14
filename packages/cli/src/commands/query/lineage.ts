@@ -1,6 +1,7 @@
 import { Command } from "commander";
 import { handleError } from "../../ui.js";
 import { printLineageChain, printTransitions, printOrphans } from "./ui-helpers.js";
+import { getQueryEngine } from "./engine-factory.js";
 
 export function registerLineageQueryCommands(queryCmd: Command) {
   const lineageCmd = queryCmd.command("lineage").description("Traverse artifact lineage");
@@ -18,8 +19,8 @@ export function registerLineageQueryCommands(queryCmd: Command) {
     .option("--why", "Shorthand for --explain full")
     .action(async (anchor, options) => {
       try {
-        const { QueryEngine, createQueryRequest } = await import("@hardkas/query");
-        const engine = await QueryEngine.create({ artifactDir: process.cwd() });
+        const { createQueryRequest } = await import("@hardkas/query");
+        const engine = await getQueryEngine();
 
         const explain = options.why
           ? ("full" as const)
@@ -56,8 +57,8 @@ export function registerLineageQueryCommands(queryCmd: Command) {
     .option("--why", "Shorthand for --explain full")
     .action(async (options) => {
       try {
-        const { QueryEngine, createQueryRequest } = await import("@hardkas/query");
-        const engine = await QueryEngine.create({ artifactDir: process.cwd() });
+        const { createQueryRequest } = await import("@hardkas/query");
+        const engine = await getQueryEngine();
 
         const explain = options.why
           ? ("full" as const)
@@ -92,8 +93,8 @@ export function registerLineageQueryCommands(queryCmd: Command) {
     .option("--explain [level]", "Attach explain chains (brief|full)")
     .action(async (options) => {
       try {
-        const { QueryEngine, createQueryRequest } = await import("@hardkas/query");
-        const engine = await QueryEngine.create({ artifactDir: process.cwd() });
+        const { createQueryRequest } = await import("@hardkas/query");
+        const engine = await getQueryEngine();
 
         const request = createQueryRequest({
           domain: "lineage",

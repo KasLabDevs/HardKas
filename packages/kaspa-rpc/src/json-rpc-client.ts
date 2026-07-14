@@ -19,7 +19,10 @@ import {
   RpcUnavailableError,
   RpcCircuitOpenError,
   RpcRateLimitError,
-  RpcValidationError
+  RpcValidationError,
+  RpcIndexError,
+  RpcNotFoundError,
+  normalizeRpcError
 } from "./errors.js";
 import { calculateConfidence } from "./resilience.js";
 import { coreEvents } from "@hardkas/core";
@@ -259,10 +262,12 @@ export class KaspaJsonRpcClient implements KaspaRpcClient {
   }
 
   async getUtxosByAddress(address: string): Promise<KaspaRpcUtxo[]> {
-    const data = (await this.callRpc("getUtxosByAddressesRequest", {
-      addresses: [address]
-    })) as {
-      entries?: Array<{
+    let data: any;
+    try {
+      data = (await this.callRpc("getUtxosByAddressesRequest", {
+        addresses: [address]
+      })) as {
+        entries?: Array<{
         address: string;
         outpoint: { transactionId: string; index: number };
         utxoEntry: {
@@ -272,9 +277,13 @@ export class KaspaJsonRpcClient implements KaspaRpcClient {
           isCoinbase: boolean;
         };
       }>;
-    };
+      };
+    } catch (e) {
+      if (e instanceof RpcNotFoundError) return [];
+      throw e;
+    }
     const entries = data.entries || [];
-    return entries.map((e) => ({
+    return entries.map((e: any) => ({
       address: e.address,
       outpoint: {
         transactionId: e.outpoint.transactionId,
@@ -309,7 +318,8 @@ export class KaspaJsonRpcClient implements KaspaRpcClient {
         acceptedAt: String(result.entry.acceptedAt)
       };
     } catch (e) {
-      return null;
+      if (e instanceof RpcNotFoundError) return null;
+      throw e;
     }
   }
 
@@ -318,7 +328,8 @@ export class KaspaJsonRpcClient implements KaspaRpcClient {
       const result = await this.callRpc("getTransactionRequest", { transactionId: txId });
       return result;
     } catch (e) {
-      return null;
+      if (e instanceof RpcNotFoundError) return null;
+      throw e;
     }
   }
 
@@ -490,14 +501,14 @@ export class KaspaJsonRpcClient implements KaspaRpcClient {
 
       const body = await response.json();
       if (body.error) {
-        throw new RpcError(body.error.message, body.error.code, body.error.data);
+        throw normalizeRpcError(new RpcError(body.error.message, body.error.code, body.error.data), { method, params });
       }
 
       return body.result;
     } catch (e: unknown) {
       clearTimeout(id);
       if (e instanceof Error && ((e as any).name) === "AbortError") throw new RpcTimeoutError();
-      throw e;
+      throw normalizeRpcError(e, { method, params });
     }
   }
 

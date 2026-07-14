@@ -16,6 +16,7 @@ import {
 } from "@hardkas/artifacts";
 import { evaluateFilters } from "../filter.js";
 import { computeQueryHash } from "../serialize.js";
+import { paginateAndFormatResult } from "../format.js";
 import { explainIntegrity } from "../explain.js";
 import type {
   QueryAdapter,
@@ -120,14 +121,13 @@ export class ArtifactQueryAdapter implements QueryAdapter {
     // Sort
     const sorted = this.sortItems(items, request.sort);
 
-    // Paginate
-    const total = sorted.length;
-    const paged = sorted.slice(request.offset, request.offset + request.limit);
-
-    // Why (Causal Analysis)
     let why: WhyBlock[] | undefined;
     if (request.explain) {
-      why = paged.map((item) =>
+      const pagedForWhy = sorted.slice(
+        request.offset ?? 0,
+        (request.offset ?? 0) + (request.limit ?? sorted.length)
+      );
+      why = pagedForWhy.map((item) =>
         explainIntegrity(item, {
           ok: true,
           hashMatch: true,
@@ -139,21 +139,18 @@ export class ArtifactQueryAdapter implements QueryAdapter {
       );
     }
 
-    return {
+    return paginateAndFormatResult({
+      request,
+      items: sorted,
       domain: "artifacts",
       op: "list",
-      items: paged,
-      total,
-      truncated: total > request.offset + request.limit,
       deterministic: true,
-      queryHash: computeQueryHash(paged),
       why,
       annotations: {
-        executedAt: new Date().toISOString(),
         executionMs: Date.now() - start,
         filesScanned: docs.length
       }
-    };
+    });
   }
 
   // -------------------------------------------------------------------------

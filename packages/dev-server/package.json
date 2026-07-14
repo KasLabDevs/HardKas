@@ -25,7 +25,7 @@
     "@hardkas/core": "workspace:*",
     "@hardkas/kaspa-rpc": "workspace:*",
     "@hardkas/localnet": "workspace:*",
-    "@hardkas/query": "workspace:*",
+
     "@hardkas/query-store": "workspace:*",
     "@hardkas/sdk": "workspace:*",
     "@hardkas/sessions": "workspace:*",

@@ -18,9 +18,6 @@
   },
   "dependencies": {
     "@hardkas/bridge-local": "workspace:*",
-    "@hardkas/core": "workspace:*",
-    "@hardkas/react": "workspace:*",
-    "@hardkas/sdk": "workspace:*",
     "@tanstack/react-query": "^5.100.14",
     "react": "^19.2.6"
   },

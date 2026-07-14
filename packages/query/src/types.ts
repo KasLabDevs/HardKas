@@ -15,6 +15,21 @@ import {
 } from "@hardkas/core";
 
 // ---------------------------------------------------------------------------
+// Query Engine Configuration Types
+// ---------------------------------------------------------------------------
+
+export type QueryBackendMode = "auto" | "sqlite" | "filesystem";
+
+export interface QueryBackendSelection {
+  readonly requested: QueryBackendMode;
+  readonly selected: "sqlite" | "filesystem";
+  readonly fallback?: {
+    readonly code: "SQLITE_INITIALIZATION_FAILED" | "SQLITE_MISSING";
+    readonly causeName: string;
+  };
+}
+
+// ---------------------------------------------------------------------------
 // Query Domains & Operations
 // ---------------------------------------------------------------------------
 
@@ -96,6 +111,7 @@ export interface QueryResult<T = unknown> {
   readonly truncated: boolean;
   readonly deterministic: boolean;
   readonly queryHash: string;
+  readonly resultHash?: string | undefined;
   readonly annotations: QueryAnnotations;
   readonly explain?: ExplainBlock | undefined;
   readonly why?: readonly WhyBlock[] | undefined;

@@ -1,8 +1,10 @@
 // @hardkas/query — Public API
 export * from "./types.js";
+export * from "./errors.js";
 export * from "./engine.js";
 export * from "./filter.js";
 export * from "./serialize.js";
+export * from "./format.js";
 export * from "./wallet-query.js";
 export * from "./explain.js";
 export { ArtifactQueryAdapter } from "./adapters/artifact-adapter.js";

@@ -18,80 +18,136 @@ import { withLock } from "@hardkas/core";
 import fs from "node:fs";
 import path from "node:path";
 
+import type { QueryBackendSelection, QueryBackendMode } from "./types.js";
+import { QueryBackendInitializationError } from "./errors.js";
+
+export interface QueryBackendLoader {
+  loadSqlite(options: { databasePath?: string }): Promise<QueryBackend>;
+}
+
+const defaultLoader: QueryBackendLoader = {
+  async loadSqlite(options) {
+    if (!options.databasePath) {
+      throw new Error("databasePath is required when loading sqlite backend");
+    }
+    const { HardkasStore, SqliteQueryBackend } = await import("@hardkas/query-store");
+    const dbPath = options.databasePath;
+    
+    if (!fs.existsSync(path.dirname(dbPath))) {
+        fs.mkdirSync(path.dirname(dbPath), { recursive: true });
+    }
+
+    const store = new HardkasStore({ dbPath });
+    return new SqliteQueryBackend(store);
+  },
+};
+
 export interface QueryEngineOptions {
   /** Root directory for artifact/lineage scanning (typically .hardkas/ or project root). */
   readonly artifactDir: string;
-  /** Primary data backend. If not provided, defaults to auto-discovery (SQLite > Filesystem). */
+  /** Primary data backend. If not provided, defaults to filesystem. */
   readonly backend?: QueryBackend;
+  /** Explicit backend mode requested. */
+  readonly backendMode?: QueryBackendMode;
+  /** Explicit database path for sqlite backend. */
+  readonly databasePath?: string;
   /** Automatically synchronize the store before queries. Requires 'query-store' lock. */
   readonly autoSync?: boolean;
   /** Whether to wait for the lock if held. */
   readonly waitLock?: boolean;
+  /** Injected loader for testing. */
+  readonly loader?: QueryBackendLoader;
 }
 
 export class QueryEngine {
   private readonly adapters: Map<QueryDomain, QueryAdapter>;
   public readonly backend: QueryBackend;
 
+  public readonly backendSelection: QueryBackendSelection;
+
   /**
-   * Primary entry point for creating a QueryEngine with auto-discovery.
+   * Primary entry point for creating a QueryEngine with deterministic backend selection.
    */
   static async create(options: QueryEngineOptions): Promise<QueryEngine> {
     let backend = options.backend;
+    let backendSelection: QueryBackendSelection;
+    const mode = options.backendMode || "auto";
+    const loader = options.loader || defaultLoader;
 
-    if (!backend) {
-      // Auto-discovery: SQLite > FS Fallback
-      const dbPath = path.join(options.artifactDir, ".hardkas", "store.db");
-      const forceSqlite = process.env.HARDKAS_PROJECTION_BACKEND === "sqlite";
+    if (backend) {
+        // If a backend instance is directly provided, assume filesystem defaults for selection reporting
+        backendSelection = { requested: "filesystem", selected: "filesystem" };
+    } else {
+        const defaultDbPath = path.join(options.artifactDir, ".hardkas", "store.db");
+        const checkDbPath = options.databasePath ?? defaultDbPath;
 
-      if (fs.existsSync(dbPath) || forceSqlite) {
-        if (forceSqlite && !fs.existsSync(path.dirname(dbPath))) {
-            fs.mkdirSync(path.dirname(dbPath), { recursive: true });
-        }
+        if (mode === "auto" && !fs.existsSync(checkDbPath)) {
+            backend = new FilesystemQueryBackend(options.artifactDir);
+            backendSelection = { 
+                requested: mode, 
+                selected: "filesystem",
+                fallback: { code: "SQLITE_MISSING", causeName: "StoreNotFound" }
+            };
+        } else if (mode === "filesystem") {
+            backend = new FilesystemQueryBackend(options.artifactDir);
+            backendSelection = { requested: mode, selected: "filesystem" };
+        } else {
+        // mode is "sqlite" or "auto"
         try {
-          const { HardkasStore, SqliteQueryBackend, HardkasIndexer } =
-            await import("@hardkas/query-store");
-          const store = new HardkasStore({ dbPath });
+            backend = await loader.loadSqlite({ databasePath: checkDbPath });
+            
+            // Handle autoSync logic specifically for Sqlite backend
+            if (options.autoSync && 'store' in backend) {
+                await withLock(
+                  {
+                    rootDir: options.artifactDir,
+                    name: "query-store",
+                    command: "query-engine-auto-sync",
+                    wait: options.waitLock ?? false,
+                    timeoutMs: 5000 
+                  },
+                  async () => {
+                    const store = (backend as any).store;
+                    store.connect({ autoMigrate: true });
+                    // Requires dynamically importing HardkasIndexer for sync
+                    const { HardkasIndexer } = await import("@hardkas/query-store");
+                    const indexer = new HardkasIndexer(store.getDatabase());
+                    await indexer.sync();
+                  }
+                );
+            } else if ('store' in backend) {
+                ((backend as any).store).connect();
+            }
 
-          if (options.autoSync) {
-            // MUTATION PATH: Must be protected by lock
-            await withLock(
-              {
-                rootDir: options.artifactDir,
-                name: "query-store",
-                command: "query-engine-auto-sync",
-                wait: options.waitLock ?? false,
-                timeoutMs: 5000 // Short timeout for auto-sync
-              },
-              async () => {
-                store.connect({ autoMigrate: true });
-                const indexer = new HardkasIndexer(store.getDatabase());
-                await indexer.sync();
-              }
-            );
-          } else {
-            // READ-ONLY PATH: Connect but don't sync
-            // NOTE: store.connect() now defaults to autoMigrate: false
-            store.connect();
-          }
-
-          backend = new SqliteQueryBackend(store);
-        } catch (e) {
-          backend = new FilesystemQueryBackend(options.artifactDir);
+            backendSelection = { requested: mode, selected: "sqlite" };
+        } catch (error: any) {
+            if (mode === "sqlite") {
+                throw new QueryBackendInitializationError("sqlite", options.databasePath, { cause: error });
+            } else {
+                // auto mode fallback
+                backend = new FilesystemQueryBackend(options.artifactDir);
+                backendSelection = {
+                    requested: mode,
+                    selected: "filesystem",
+                    fallback: {
+                        code: "SQLITE_INITIALIZATION_FAILED",
+                        causeName: error?.name || "UnknownError"
+                    }
+                };
+            }
         }
-      } else {
-        backend = new FilesystemQueryBackend(options.artifactDir);
-      }
+    }
     }
 
     return new QueryEngine({
-      artifactDir: options.artifactDir,
+      ...options,
       backend: backend!
-    });
+    }, backendSelection!);
   }
 
-  constructor(options: QueryEngineOptions) {
+  constructor(options: QueryEngineOptions, backendSelection?: QueryBackendSelection) {
     this.backend = options.backend || new FilesystemQueryBackend(options.artifactDir);
+    this.backendSelection = backendSelection || { requested: "filesystem", selected: "filesystem" };
 
     this.adapters = new Map();
     this.adapters.set(
