@@ -1,0 +1,152 @@
+{
+  "contract_name": "FixedDestination",
+  "compiler_version": "0.1.0",
+  "script": [
+    180,
+    81,
+    156,
+    105,
+    0,
+    195,
+    2,
+    170,
+    0,
+    135,
+    105,
+    81
+  ],
+  "ast": {
+    "pragma": {
+      "name": "silverscript",
+      "value": "^0.1.0",
+      "span": "pragma silverscript ^0.1.0;",
+      "name_span": "silverscript",
+      "value_span": "^0.1.0"
+    },
+    "name": "FixedDestination",
+    "params": [],
+    "constants": [],
+    "functions": [
+      {
+        "name": "spend",
+        "params": [],
+        "entrypoint": true,
+        "return_types": [],
+        "returns_tuple": false,
+        "body": [
+          {
+            "kind": "variable_definition",
+            "data": {
+              "type_ref": {
+                "base": "byte",
+                "array_dims": [
+                  {
+                    "kind": "dynamic"
+                  }
+                ]
+              },
+              "modifiers": [],
+              "name": "expectedSpk",
+              "expr": {
+                "kind": "array",
+                "data": [
+                  {
+                    "kind": "byte",
+                    "data": 170,
+                    "span": "0xaa00"
+                  },
+                  {
+                    "kind": "byte",
+                    "data": 0,
+                    "span": "0xaa00"
+                  }
+                ],
+                "span": "0xaa00"
+              },
+              "span": "byte[] expectedSpk = 0xaa00;",
+              "type_span": "byte[]",
+              "modifier_spans": [],
+              "name_span": "expectedSpk"
+            }
+          },
+          {
+            "kind": "require",
+            "data": {
+              "expr": {
+                "kind": "binary",
+                "data": {
+                  "op": "eq",
+                  "left": {
+                    "kind": "nullary",
+                    "data": "tx_outputs_length",
+                    "span": "tx.outputs.length"
+                  },
+                  "right": {
+                    "kind": "int",
+                    "data": 1,
+                    "span": "1"
+                  }
+                },
+                "span": "tx.outputs.length == 1"
+              },
+              "message": null,
+              "span": "require(tx.outputs.length == 1);",
+              "message_span": null
+            }
+          },
+          {
+            "kind": "require",
+            "data": {
+              "expr": {
+                "kind": "binary",
+                "data": {
+                  "op": "eq",
+                  "left": {
+                    "kind": "introspection",
+                    "data": {
+                      "kind": "output_script_pub_key",
+                      "index": {
+                        "kind": "int",
+                        "data": 0,
+                        "span": "0"
+                      },
+                      "field_span": ".scriptPubKey"
+                    },
+                    "span": "tx.outputs[0].scriptPubKey"
+                  },
+                  "right": {
+                    "kind": "identifier",
+                    "data": "expectedSpk",
+                    "span": "expectedSpk"
+                  }
+                },
+                "span": "tx.outputs[0].scriptPubKey == expectedSpk"
+              },
+              "message": null,
+              "span": "require(tx.outputs[0].scriptPubKey == expectedSpk);",
+              "message_span": null
+            }
+          }
+        ],
+        "return_type_spans": [],
+        "span": "entrypoint function spend() {\n        byte[] expectedSpk = 0xaa00;\n        require(tx.outputs.length == 1);\n        require(tx.outputs[0].scriptPubKey == expectedSpk);\n    }",
+        "name_span": "spend",
+        "body_span": "byte[] expectedSpk = 0xaa00;\n        require(tx.outputs.length == 1);\n        require(tx.outputs[0].scriptPubKey == expectedSpk);"
+      }
+    ],
+    "span": "contract FixedDestination() {\n    entrypoint function spend() {\n        byte[] expectedSpk = 0xaa00;\n        require(tx.outputs.length == 1);\n        require(tx.outputs[0].scriptPubKey == expectedSpk);\n    }\n}",
+    "name_span": "FixedDestination"
+  },
+  "abi": [
+    {
+      "name": "spend",
+      "inputs": []
+    }
+  ],
+  "without_selector": true,
+  "state_layout": {
+    "start": 0,
+    "len": 0
+  },
+  "debug_info": null
+}

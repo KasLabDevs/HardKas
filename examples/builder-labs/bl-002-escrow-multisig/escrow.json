@@ -1,0 +1,1023 @@
+{
+  "contract_name": "Escrow",
+  "compiler_version": "0.1.0",
+  "script": [
+    107,
+    108,
+    118,
+    0,
+    156,
+    99,
+    117,
+    120,
+    32,
+    221,
+    193,
+    246,
+    38,
+    82,
+    96,
+    47,
+    103,
+    83,
+    245,
+    17,
+    127,
+    41,
+    41,
+    235,
+    54,
+    93,
+    138,
+    118,
+    14,
+    154,
+    133,
+    196,
+    44,
+    141,
+    63,
+    244,
+    211,
+    50,
+    46,
+    48,
+    198,
+    172,
+    105,
+    118,
+    32,
+    174,
+    159,
+    222,
+    210,
+    82,
+    254,
+    66,
+    32,
+    141,
+    172,
+    4,
+    72,
+    138,
+    155,
+    240,
+    135,
+    132,
+    46,
+    39,
+    53,
+    21,
+    207,
+    175,
+    203,
+    71,
+    245,
+    107,
+    81,
+    102,
+    246,
+    208,
+    199,
+    172,
+    105,
+    117,
+    117,
+    81,
+    103,
+    118,
+    81,
+    156,
+    99,
+    117,
+    120,
+    32,
+    221,
+    193,
+    246,
+    38,
+    82,
+    96,
+    47,
+    103,
+    83,
+    245,
+    17,
+    127,
+    41,
+    41,
+    235,
+    54,
+    93,
+    138,
+    118,
+    14,
+    154,
+    133,
+    196,
+    44,
+    141,
+    63,
+    244,
+    211,
+    50,
+    46,
+    48,
+    198,
+    172,
+    105,
+    118,
+    32,
+    224,
+    172,
+    49,
+    231,
+    231,
+    134,
+    218,
+    245,
+    219,
+    85,
+    52,
+    197,
+    23,
+    193,
+    71,
+    39,
+    161,
+    0,
+    14,
+    113,
+    73,
+    90,
+    64,
+    236,
+    118,
+    251,
+    118,
+    155,
+    65,
+    101,
+    182,
+    43,
+    172,
+    105,
+    180,
+    81,
+    156,
+    105,
+    0,
+    195,
+    36,
+    0,
+    0,
+    32,
+    246,
+    154,
+    89,
+    122,
+    118,
+    12,
+    45,
+    62,
+    221,
+    181,
+    230,
+    219,
+    36,
+    227,
+    158,
+    224,
+    179,
+    180,
+    41,
+    24,
+    142,
+    99,
+    204,
+    141,
+    129,
+    116,
+    248,
+    207,
+    181,
+    225,
+    27,
+    189,
+    172,
+    135,
+    105,
+    0,
+    194,
+    4,
+    0,
+    148,
+    53,
+    119,
+    156,
+    105,
+    117,
+    117,
+    81,
+    103,
+    118,
+    82,
+    156,
+    99,
+    117,
+    120,
+    32,
+    174,
+    159,
+    222,
+    210,
+    82,
+    254,
+    66,
+    32,
+    141,
+    172,
+    4,
+    72,
+    138,
+    155,
+    240,
+    135,
+    132,
+    46,
+    39,
+    53,
+    21,
+    207,
+    175,
+    203,
+    71,
+    245,
+    107,
+    81,
+    102,
+    246,
+    208,
+    199,
+    172,
+    105,
+    118,
+    32,
+    224,
+    172,
+    49,
+    231,
+    231,
+    134,
+    218,
+    245,
+    219,
+    85,
+    52,
+    197,
+    23,
+    193,
+    71,
+    39,
+    161,
+    0,
+    14,
+    113,
+    73,
+    90,
+    64,
+    236,
+    118,
+    251,
+    118,
+    155,
+    65,
+    101,
+    182,
+    43,
+    172,
+    105,
+    180,
+    81,
+    156,
+    105,
+    0,
+    195,
+    36,
+    0,
+    0,
+    32,
+    141,
+    31,
+    42,
+    54,
+    181,
+    236,
+    99,
+    37,
+    30,
+    215,
+    166,
+    155,
+    15,
+    166,
+    187,
+    120,
+    30,
+    106,
+    146,
+    132,
+    33,
+    201,
+    122,
+    91,
+    62,
+    238,
+    245,
+    43,
+    197,
+    218,
+    134,
+    105,
+    172,
+    135,
+    105,
+    0,
+    194,
+    4,
+    0,
+    148,
+    53,
+    119,
+    156,
+    105,
+    117,
+    117,
+    81,
+    103,
+    117,
+    0,
+    105,
+    104,
+    104,
+    104
+  ],
+  "ast": {
+    "pragma": {
+      "name": "silverscript",
+      "value": "^0.1.0",
+      "span": "pragma silverscript ^0.1.0;",
+      "name_span": "silverscript",
+      "value_span": "^0.1.0"
+    },
+    "name": "Escrow",
+    "params": [
+      {
+        "type_ref": {
+          "base": "byte",
+          "array_dims": [
+            {
+              "kind": "dynamic"
+            }
+          ]
+        },
+        "name": "buyerBytes",
+        "span": "byte[] buyerBytes",
+        "type_span": "byte[]",
+        "name_span": "buyerBytes"
+      },
+      {
+        "type_ref": {
+          "base": "byte",
+          "array_dims": [
+            {
+              "kind": "dynamic"
+            }
+          ]
+        },
+        "name": "sellerBytes",
+        "span": "byte[] sellerBytes",
+        "type_span": "byte[]",
+        "name_span": "sellerBytes"
+      },
+      {
+        "type_ref": {
+          "base": "byte",
+          "array_dims": [
+            {
+              "kind": "dynamic"
+            }
+          ]
+        },
+        "name": "arbiterBytes",
+        "span": "byte[] arbiterBytes",
+        "type_span": "byte[]",
+        "name_span": "arbiterBytes"
+      },
+      {
+        "type_ref": {
+          "base": "byte",
+          "array_dims": [
+            {
+              "kind": "dynamic"
+            }
+          ]
+        },
+        "name": "buyerSpk",
+        "span": "byte[] buyerSpk",
+        "type_span": "byte[]",
+        "name_span": "buyerSpk"
+      },
+      {
+        "type_ref": {
+          "base": "byte",
+          "array_dims": [
+            {
+              "kind": "dynamic"
+            }
+          ]
+        },
+        "name": "sellerSpk",
+        "span": "byte[] sellerSpk",
+        "type_span": "byte[]",
+        "name_span": "sellerSpk"
+      },
+      {
+        "type_ref": {
+          "base": "int"
+        },
+        "name": "refundAmount",
+        "span": "int refundAmount",
+        "type_span": "int ",
+        "name_span": "refundAmount"
+      },
+      {
+        "type_ref": {
+          "base": "int"
+        },
+        "name": "releaseAmount",
+        "span": "int releaseAmount",
+        "type_span": "int ",
+        "name_span": "releaseAmount"
+      }
+    ],
+    "constants": [],
+    "functions": [
+      {
+        "name": "mutualRelease",
+        "params": [
+          {
+            "type_ref": {
+              "base": "sig"
+            },
+            "name": "buyerSig",
+            "span": "sig buyerSig",
+            "type_span": "sig ",
+            "name_span": "buyerSig"
+          },
+          {
+            "type_ref": {
+              "base": "sig"
+            },
+            "name": "sellerSig",
+            "span": "sig sellerSig",
+            "type_span": "sig ",
+            "name_span": "sellerSig"
+          }
+        ],
+        "entrypoint": true,
+        "return_types": [],
+        "returns_tuple": false,
+        "body": [
+          {
+            "kind": "require",
+            "data": {
+              "expr": {
+                "kind": "call",
+                "data": {
+                  "name": "checkSig",
+                  "args": [
+                    {
+                      "kind": "identifier",
+                      "data": "buyerSig",
+                      "span": "buyerSig"
+                    },
+                    {
+                      "kind": "call",
+                      "data": {
+                        "name": "pubkey",
+                        "args": [
+                          {
+                            "kind": "identifier",
+                            "data": "buyerBytes",
+                            "span": "buyerBytes"
+                          }
+                        ],
+                        "name_span": "pubkey"
+                      },
+                      "span": "pubkey(buyerBytes)"
+                    }
+                  ],
+                  "name_span": "checkSig"
+                },
+                "span": "checkSig(buyerSig, pubkey(buyerBytes))"
+              },
+              "message": null,
+              "span": "require(checkSig(buyerSig, pubkey(buyerBytes)));",
+              "message_span": null
+            }
+          },
+          {
+            "kind": "require",
+            "data": {
+              "expr": {
+                "kind": "call",
+                "data": {
+                  "name": "checkSig",
+                  "args": [
+                    {
+                      "kind": "identifier",
+                      "data": "sellerSig",
+                      "span": "sellerSig"
+                    },
+                    {
+                      "kind": "call",
+                      "data": {
+                        "name": "pubkey",
+                        "args": [
+                          {
+                            "kind": "identifier",
+                            "data": "sellerBytes",
+                            "span": "sellerBytes"
+                          }
+                        ],
+                        "name_span": "pubkey"
+                      },
+                      "span": "pubkey(sellerBytes)"
+                    }
+                  ],
+                  "name_span": "checkSig"
+                },
+                "span": "checkSig(sellerSig, pubkey(sellerBytes))"
+              },
+              "message": null,
+              "span": "require(checkSig(sellerSig, pubkey(sellerBytes)));",
+              "message_span": null
+            }
+          }
+        ],
+        "return_type_spans": [],
+        "span": "entrypoint function mutualRelease(\n        sig buyerSig,\n        sig sellerSig\n    ) {\n        require(checkSig(buyerSig, pubkey(buyerBytes)));\n        require(checkSig(sellerSig, pubkey(sellerBytes)));\n        // Free destination, mutual agreement\n    }",
+        "name_span": "mutualRelease",
+        "body_span": "require(checkSig(buyerSig, pubkey(buyerBytes)));\n        require(checkSig(sellerSig, pubkey(sellerBytes)));"
+      },
+      {
+        "name": "refundBuyer",
+        "params": [
+          {
+            "type_ref": {
+              "base": "sig"
+            },
+            "name": "buyerSig",
+            "span": "sig buyerSig",
+            "type_span": "sig ",
+            "name_span": "buyerSig"
+          },
+          {
+            "type_ref": {
+              "base": "sig"
+            },
+            "name": "arbiterSig",
+            "span": "sig arbiterSig",
+            "type_span": "sig ",
+            "name_span": "arbiterSig"
+          }
+        ],
+        "entrypoint": true,
+        "return_types": [],
+        "returns_tuple": false,
+        "body": [
+          {
+            "kind": "require",
+            "data": {
+              "expr": {
+                "kind": "call",
+                "data": {
+                  "name": "checkSig",
+                  "args": [
+                    {
+                      "kind": "identifier",
+                      "data": "buyerSig",
+                      "span": "buyerSig"
+                    },
+                    {
+                      "kind": "call",
+                      "data": {
+                        "name": "pubkey",
+                        "args": [
+                          {
+                            "kind": "identifier",
+                            "data": "buyerBytes",
+                            "span": "buyerBytes"
+                          }
+                        ],
+                        "name_span": "pubkey"
+                      },
+                      "span": "pubkey(buyerBytes)"
+                    }
+                  ],
+                  "name_span": "checkSig"
+                },
+                "span": "checkSig(buyerSig, pubkey(buyerBytes))"
+              },
+              "message": null,
+              "span": "require(checkSig(buyerSig, pubkey(buyerBytes)));",
+              "message_span": null
+            }
+          },
+          {
+            "kind": "require",
+            "data": {
+              "expr": {
+                "kind": "call",
+                "data": {
+                  "name": "checkSig",
+                  "args": [
+                    {
+                      "kind": "identifier",
+                      "data": "arbiterSig",
+                      "span": "arbiterSig"
+                    },
+                    {
+                      "kind": "call",
+                      "data": {
+                        "name": "pubkey",
+                        "args": [
+                          {
+                            "kind": "identifier",
+                            "data": "arbiterBytes",
+                            "span": "arbiterBytes"
+                          }
+                        ],
+                        "name_span": "pubkey"
+                      },
+                      "span": "pubkey(arbiterBytes)"
+                    }
+                  ],
+                  "name_span": "checkSig"
+                },
+                "span": "checkSig(arbiterSig, pubkey(arbiterBytes))"
+              },
+              "message": null,
+              "span": "require(checkSig(arbiterSig, pubkey(arbiterBytes)));",
+              "message_span": null
+            }
+          },
+          {
+            "kind": "require",
+            "data": {
+              "expr": {
+                "kind": "binary",
+                "data": {
+                  "op": "eq",
+                  "left": {
+                    "kind": "nullary",
+                    "data": "tx_outputs_length",
+                    "span": "tx.outputs.length"
+                  },
+                  "right": {
+                    "kind": "int",
+                    "data": 1,
+                    "span": "1"
+                  }
+                },
+                "span": "tx.outputs.length == 1"
+              },
+              "message": null,
+              "span": "require(tx.outputs.length == 1);",
+              "message_span": null
+            }
+          },
+          {
+            "kind": "require",
+            "data": {
+              "expr": {
+                "kind": "binary",
+                "data": {
+                  "op": "eq",
+                  "left": {
+                    "kind": "introspection",
+                    "data": {
+                      "kind": "output_script_pub_key",
+                      "index": {
+                        "kind": "int",
+                        "data": 0,
+                        "span": "0"
+                      },
+                      "field_span": ".scriptPubKey"
+                    },
+                    "span": "tx.outputs[0].scriptPubKey"
+                  },
+                  "right": {
+                    "kind": "identifier",
+                    "data": "buyerSpk",
+                    "span": "buyerSpk"
+                  }
+                },
+                "span": "tx.outputs[0].scriptPubKey == buyerSpk"
+              },
+              "message": null,
+              "span": "require(tx.outputs[0].scriptPubKey == buyerSpk);",
+              "message_span": null
+            }
+          },
+          {
+            "kind": "require",
+            "data": {
+              "expr": {
+                "kind": "binary",
+                "data": {
+                  "op": "eq",
+                  "left": {
+                    "kind": "introspection",
+                    "data": {
+                      "kind": "output_value",
+                      "index": {
+                        "kind": "int",
+                        "data": 0,
+                        "span": "0"
+                      },
+                      "field_span": ".value"
+                    },
+                    "span": "tx.outputs[0].value"
+                  },
+                  "right": {
+                    "kind": "identifier",
+                    "data": "refundAmount",
+                    "span": "refundAmount"
+                  }
+                },
+                "span": "tx.outputs[0].value == refundAmount"
+              },
+              "message": null,
+              "span": "require(tx.outputs[0].value == refundAmount);",
+              "message_span": null
+            }
+          }
+        ],
+        "return_type_spans": [],
+        "span": "entrypoint function refundBuyer(\n        sig buyerSig,\n        sig arbiterSig\n    ) {\n        require(checkSig(buyerSig, pubkey(buyerBytes)));\n        require(checkSig(arbiterSig, pubkey(arbiterBytes)));\n\n        require(tx.outputs.length == 1);\n        require(tx.outputs[0].scriptPubKey == buyerSpk);\n        require(tx.outputs[0].value == refundAmount);\n    }",
+        "name_span": "refundBuyer",
+        "body_span": "require(checkSig(buyerSig, pubkey(buyerBytes)));\n        require(checkSig(arbiterSig, pubkey(arbiterBytes)));\n\n        require(tx.outputs.length == 1);\n        require(tx.outputs[0].scriptPubKey == buyerSpk);\n        require(tx.outputs[0].value == refundAmount);"
+      },
+      {
+        "name": "releaseToSeller",
+        "params": [
+          {
+            "type_ref": {
+              "base": "sig"
+            },
+            "name": "sellerSig",
+            "span": "sig sellerSig",
+            "type_span": "sig ",
+            "name_span": "sellerSig"
+          },
+          {
+            "type_ref": {
+              "base": "sig"
+            },
+            "name": "arbiterSig",
+            "span": "sig arbiterSig",
+            "type_span": "sig ",
+            "name_span": "arbiterSig"
+          }
+        ],
+        "entrypoint": true,
+        "return_types": [],
+        "returns_tuple": false,
+        "body": [
+          {
+            "kind": "require",
+            "data": {
+              "expr": {
+                "kind": "call",
+                "data": {
+                  "name": "checkSig",
+                  "args": [
+                    {
+                      "kind": "identifier",
+                      "data": "sellerSig",
+                      "span": "sellerSig"
+                    },
+                    {
+                      "kind": "call",
+                      "data": {
+                        "name": "pubkey",
+                        "args": [
+                          {
+                            "kind": "identifier",
+                            "data": "sellerBytes",
+                            "span": "sellerBytes"
+                          }
+                        ],
+                        "name_span": "pubkey"
+                      },
+                      "span": "pubkey(sellerBytes)"
+                    }
+                  ],
+                  "name_span": "checkSig"
+                },
+                "span": "checkSig(sellerSig, pubkey(sellerBytes))"
+              },
+              "message": null,
+              "span": "require(checkSig(sellerSig, pubkey(sellerBytes)));",
+              "message_span": null
+            }
+          },
+          {
+            "kind": "require",
+            "data": {
+              "expr": {
+                "kind": "call",
+                "data": {
+                  "name": "checkSig",
+                  "args": [
+                    {
+                      "kind": "identifier",
+                      "data": "arbiterSig",
+                      "span": "arbiterSig"
+                    },
+                    {
+                      "kind": "call",
+                      "data": {
+                        "name": "pubkey",
+                        "args": [
+                          {
+                            "kind": "identifier",
+                            "data": "arbiterBytes",
+                            "span": "arbiterBytes"
+                          }
+                        ],
+                        "name_span": "pubkey"
+                      },
+                      "span": "pubkey(arbiterBytes)"
+                    }
+                  ],
+                  "name_span": "checkSig"
+                },
+                "span": "checkSig(arbiterSig, pubkey(arbiterBytes))"
+              },
+              "message": null,
+              "span": "require(checkSig(arbiterSig, pubkey(arbiterBytes)));",
+              "message_span": null
+            }
+          },
+          {
+            "kind": "require",
+            "data": {
+              "expr": {
+                "kind": "binary",
+                "data": {
+                  "op": "eq",
+                  "left": {
+                    "kind": "nullary",
+                    "data": "tx_outputs_length",
+                    "span": "tx.outputs.length"
+                  },
+                  "right": {
+                    "kind": "int",
+                    "data": 1,
+                    "span": "1"
+                  }
+                },
+                "span": "tx.outputs.length == 1"
+              },
+              "message": null,
+              "span": "require(tx.outputs.length == 1);",
+              "message_span": null
+            }
+          },
+          {
+            "kind": "require",
+            "data": {
+              "expr": {
+                "kind": "binary",
+                "data": {
+                  "op": "eq",
+                  "left": {
+                    "kind": "introspection",
+                    "data": {
+                      "kind": "output_script_pub_key",
+                      "index": {
+                        "kind": "int",
+                        "data": 0,
+                        "span": "0"
+                      },
+                      "field_span": ".scriptPubKey"
+                    },
+                    "span": "tx.outputs[0].scriptPubKey"
+                  },
+                  "right": {
+                    "kind": "identifier",
+                    "data": "sellerSpk",
+                    "span": "sellerSpk"
+                  }
+                },
+                "span": "tx.outputs[0].scriptPubKey == sellerSpk"
+              },
+              "message": null,
+              "span": "require(tx.outputs[0].scriptPubKey == sellerSpk);",
+              "message_span": null
+            }
+          },
+          {
+            "kind": "require",
+            "data": {
+              "expr": {
+                "kind": "binary",
+                "data": {
+                  "op": "eq",
+                  "left": {
+                    "kind": "introspection",
+                    "data": {
+                      "kind": "output_value",
+                      "index": {
+                        "kind": "int",
+                        "data": 0,
+                        "span": "0"
+                      },
+                      "field_span": ".value"
+                    },
+                    "span": "tx.outputs[0].value"
+                  },
+                  "right": {
+                    "kind": "identifier",
+                    "data": "releaseAmount",
+                    "span": "releaseAmount"
+                  }
+                },
+                "span": "tx.outputs[0].value == releaseAmount"
+              },
+              "message": null,
+              "span": "require(tx.outputs[0].value == releaseAmount);",
+              "message_span": null
+            }
+          }
+        ],
+        "return_type_spans": [],
+        "span": "entrypoint function releaseToSeller(\n        sig sellerSig,\n        sig arbiterSig\n    ) {\n        require(checkSig(sellerSig, pubkey(sellerBytes)));\n        require(checkSig(arbiterSig, pubkey(arbiterBytes)));\n\n        require(tx.outputs.length == 1);\n        require(tx.outputs[0].scriptPubKey == sellerSpk);\n        require(tx.outputs[0].value == releaseAmount);\n    }",
+        "name_span": "releaseToSeller",
+        "body_span": "require(checkSig(sellerSig, pubkey(sellerBytes)));\n        require(checkSig(arbiterSig, pubkey(arbiterBytes)));\n\n        require(tx.outputs.length == 1);\n        require(tx.outputs[0].scriptPubKey == sellerSpk);\n        require(tx.outputs[0].value == releaseAmount);"
+      }
+    ],
+    "span": "contract Escrow(\n    byte[] buyerBytes,\n    byte[] sellerBytes,\n    byte[] arbiterBytes,\n    byte[] buyerSpk,\n    byte[] sellerSpk,\n    int refundAmount,\n    int releaseAmount\n) {\n    entrypoint function mutualRelease(\n        sig buyerSig,\n        sig sellerSig\n    ) {\n        require(checkSig(buyerSig, pubkey(buyerBytes)));\n        require(checkSig(sellerSig, pubkey(sellerBytes)));\n        // Free destination, mutual agreement\n    }\n\n    entrypoint function refundBuyer(\n        sig buyerSig,\n        sig arbiterSig\n    ) {\n        require(checkSig(buyerSig, pubkey(buyerBytes)));\n        require(checkSig(arbiterSig, pubkey(arbiterBytes)));\n\n        require(tx.outputs.length == 1);\n        require(tx.outputs[0].scriptPubKey == buyerSpk);\n        require(tx.outputs[0].value == refundAmount);\n    }\n\n    entrypoint function releaseToSeller(\n        sig sellerSig,\n        sig arbiterSig\n    ) {\n        require(checkSig(sellerSig, pubkey(sellerBytes)));\n        require(checkSig(arbiterSig, pubkey(arbiterBytes)));\n\n        require(tx.outputs.length == 1);\n        require(tx.outputs[0].scriptPubKey == sellerSpk);\n        require(tx.outputs[0].value == releaseAmount);\n    }\n}",
+    "name_span": "Escrow"
+  },
+  "abi": [
+    {
+      "name": "mutualRelease",
+      "inputs": [
+        {
+          "name": "buyerSig",
+          "type_name": "sig"
+        },
+        {
+          "name": "sellerSig",
+          "type_name": "sig"
+        }
+      ]
+    },
+    {
+      "name": "refundBuyer",
+      "inputs": [
+        {
+          "name": "buyerSig",
+          "type_name": "sig"
+        },
+        {
+          "name": "arbiterSig",
+          "type_name": "sig"
+        }
+      ]
+    },
+    {
+      "name": "releaseToSeller",
+      "inputs": [
+        {
+          "name": "sellerSig",
+          "type_name": "sig"
+        },
+        {
+          "name": "arbiterSig",
+          "type_name": "sig"
+        }
+      ]
+    }
+  ],
+  "without_selector": false,
+  "state_layout": {
+    "start": 1,
+    "len": 0
+  },
+  "debug_info": null
+}

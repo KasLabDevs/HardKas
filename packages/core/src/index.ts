@@ -24,7 +24,8 @@ export function getCoinbaseMaturity(networkId?: string, overrideParams?: { coinb
   
   if (networkId === "mainnet") return 244n;
   if (networkId === "testnet-10" || networkId === "testnet-11" || networkId === "testnet-12") return 100n;
-  if (networkId && (networkId.startsWith("simnet") || networkId === "devnet" || networkId === "simulated")) return 100n;
+  if (networkId && networkId.startsWith("simnet")) return 1000n;
+  if (networkId === "devnet" || networkId === "simulated") return 100n;
   
   const e = new Error(`COINBASE_MATURITY_UNRESOLVED: Cannot resolve canonical coinbase maturity for network: ${networkId || "unknown"}. Provide an explicit override.`);
   (e as any).code = "COINBASE_MATURITY_UNRESOLVED";
@@ -162,4 +163,6 @@ export * from "./silver.js";
 export * from "./registry.js";
 export * from "./confirmation-policy.js";
 export * from "./pskt.js";
+export * from "./pskt-adapter.js";
+export * from "./pskt-errors.js";
 

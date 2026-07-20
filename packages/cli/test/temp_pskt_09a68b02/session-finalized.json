@@ -1,0 +1,55 @@
+{
+  "kind": "hardkas-portable-signing-session",
+  "schemaVersion": 1,
+  "sessionId": "fa1e3da61445f979f251c272bd0298a3d8910d46340703141d250558fba2f229",
+  "revision": 3,
+  "planId": "test-plan",
+  "networkId": "simnet",
+  "unsignedTransactionId": "test-plan",
+  "state": "created",
+  "payload": {
+    "format": "pskt-binary-base64",
+    "encoding": "base64",
+    "data": "eyJzdGF0ZSI6ImZpbmFsaXplZCJ9",
+    "byteLength": 21,
+    "payloadHash": "23cba4751b3d3d9493aa0ec793c4574834b8b4f53d683a7594aae0292a946873"
+  },
+  "participants": [],
+  "requirements": [],
+  "attestations": [
+    {
+      "participantId": "cli-user",
+      "action": "sign",
+      "previousPayloadHash": "b94dffbd86e0ad2837913e776286766f2f822dacadc423c85485a326b7edb1e2",
+      "resultingPayloadHash": "85c210fbec2d10b940c80d3b76e698ae17fbfe76e06373be2470f017f34270f8",
+      "adapter": "test-fake-adapter",
+      "timestamp": "2026-07-15T10:58:25.869Z"
+    },
+    {
+      "participantId": "merger",
+      "action": "merge",
+      "previousPayloadHash": "85c210fbec2d10b940c80d3b76e698ae17fbfe76e06373be2470f017f34270f8",
+      "resultingPayloadHash": "95e9eaab19350076c4338065077fd6550c11a95d8842f9806685ac0bb8d4b92c",
+      "adapter": "test-fake-adapter",
+      "timestamp": "2026-07-15T10:59:32.904Z"
+    },
+    {
+      "participantId": "finalizer",
+      "action": "finalize",
+      "previousPayloadHash": "95e9eaab19350076c4338065077fd6550c11a95d8842f9806685ac0bb8d4b92c",
+      "resultingPayloadHash": "23cba4751b3d3d9493aa0ec793c4574834b8b4f53d683a7594aae0292a946873",
+      "adapter": "test-fake-adapter",
+      "timestamp": "2026-07-15T11:00:02.750Z"
+    }
+  ],
+  "runtimeBinding": {
+    "adapterId": "test-fake-adapter",
+    "adapterKind": "custom",
+    "capabilitiesHash": "d2265f3efbc73504c6a1776bd9f29bd00bf2344612cb6a4d9beeb97ecd5b5559",
+    "providerVersion": "1.0.0-test"
+  },
+  "createdAt": "2026-07-15T10:57:18.278Z",
+  "integrityHash": "28b94a1db8095d3aafbb2dc11918a5d3cd99a38ebf1959da5f69a835e21796e5",
+  "parentRevisionHash": "ee0825ede639a38fcab06545aa2d0f4e0948d98042f7a2447e7b6736e2cada0b",
+  "updatedAt": "2026-07-15T11:00:02.751Z"
+}

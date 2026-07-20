@@ -1,0 +1,8 @@
+pragma silverscript ^0.1.0;
+contract FixedDestination() {
+    entrypoint function spend() {
+        byte[] expectedSpk = 0xaa00;
+        require(tx.outputs.length == 1);
+        require(tx.outputs[0].scriptPubKey == expectedSpk);
+    }
+}

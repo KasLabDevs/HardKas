@@ -11,11 +11,9 @@ import {
   exportSession,
   mergeSessions,
   finalizeSession,
-  PsktRuntimeUnavailableError,
-  PsktExportUnsupportedError,
-  PsktMergeUnsupportedError,
-  PsktFinalizeUnsupportedError
+  computeCapabilitiesHash
 } from "../src/pskt.js";
+import { PsktOperationUnsupportedError } from "@hardkas/core";
 
 describe("Portable Signing Sessions (PSKT)", () => {
   const createValidBaseSession = (): PortableSigningSession => {
@@ -45,6 +43,12 @@ describe("Portable Signing Sessions (PSKT)", () => {
       participants: [],
       requirements: [],
       attestations: [],
+      runtimeBinding: {
+        adapterId: "kaspa-wasm-local",
+        adapterKind: "wasm",
+        providerVersion: "resolved-at-runtime",
+        capabilitiesHash: "mock-hash"
+      },
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString()
     };
@@ -133,13 +137,18 @@ describe("Portable Signing Sessions (PSKT)", () => {
     expect(() => deserializeSession(JSON.stringify(session2))).toThrowError(/Sensitive material/);
   });
 
-  it("should block operations on runtime 0.13.0", () => {
-    const caps = capabilities();
-    expect(caps.version).toBe("0.13.0");
-    expect(caps.available).toBe(false);
+  it("should throw blocked operations dynamically", async () => {
+    const session = createValidBaseSession();
+    const caps = await capabilities("kaspa-wasm-local");
+    const capsHash = computeCapabilitiesHash(caps);
+    session.runtimeBinding.capabilitiesHash = capsHash;
+    (session as any).integrityHash = computeIntegrityHash(session);
 
-    expect(() => exportSession({} as any)).toThrowError(PsktExportUnsupportedError);
-    expect(() => mergeSessions([])).toThrowError(PsktMergeUnsupportedError);
-    expect(() => finalizeSession({} as any)).toThrowError(PsktFinalizeUnsupportedError);
+    expect(caps.providerVersion).toBe("resolved-at-runtime");
+    expect(caps.operations.export).toBe(false);
+
+    await expect(exportSession({ networkId: "simnet", planId: "test", inputs: [], outputs: [], from: {}, to: {}, amountSompi: "0", estimatedFeeSompi: "0", estimatedMass: "0" } as any)).rejects.toThrowError(PsktOperationUnsupportedError);
+    await expect(mergeSessions([session])).rejects.toThrowError(PsktOperationUnsupportedError);
+    await expect(finalizeSession(session)).rejects.toThrowError(PsktOperationUnsupportedError);
   });
 });

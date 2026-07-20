@@ -1,7 +1,7 @@
 {
   "schema": "hardkas.cliReference.v1",
   "generatedAt": "deterministic",
-  "totalCommands": 253,
+  "totalCommands": 256,
   "flatSurface": [
     "hardkas accounts",
     "hardkas accounts balance",
@@ -47,6 +47,7 @@
     "hardkas dashboard doctor",
     "hardkas deploy",
     "hardkas deploy history",
+    "hardkas deploy init",
     "hardkas deploy inspect",
     "hardkas deploy list",
     "hardkas deploy status",
@@ -69,6 +70,8 @@
     "hardkas dev-server start",
     "hardkas dev-server token",
     "hardkas doctor",
+    "hardkas env",
+    "hardkas env check",
     "hardkas evidence",
     "hardkas evidence explain",
     "hardkas evidence pack",
@@ -1553,6 +1556,16 @@
           "subcommands": []
         },
         {
+          "path": "hardkas deploy init",
+          "name": "init",
+          "aliases": [],
+          "description": "Generate deployment profiles (Docker Compose, Dockerfile, .env.example) alpha",
+          "usage": "hardkas deploy init [options]",
+          "arguments": [],
+          "options": [],
+          "subcommands": []
+        },
+        {
           "path": "hardkas deploy inspect",
           "name": "inspect",
           "aliases": [],
@@ -2191,6 +2204,27 @@
         }
       ],
       "subcommands": []
+    },
+    {
+      "path": "hardkas env",
+      "name": "env",
+      "aliases": [],
+      "description": "Manage and validate environment configurations",
+      "usage": "hardkas env [options] [command]",
+      "arguments": [],
+      "options": [],
+      "subcommands": [
+        {
+          "path": "hardkas env check",
+          "name": "check",
+          "aliases": [],
+          "description": "Validate the .env file against known HardKAS production variables",
+          "usage": "hardkas env check [options]",
+          "arguments": [],
+          "options": [],
+          "subcommands": []
+        }
+      ]
     },
     {
       "path": "hardkas evidence",

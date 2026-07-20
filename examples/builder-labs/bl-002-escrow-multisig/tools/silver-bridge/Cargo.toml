@@ -1,0 +1,12 @@
+[package]
+name = "silver-bridge"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+hex = "0.4.3"
+silverscript-lang = { path = "../../../../../tmp_silverscript/silverscript-lang" }
+kaspa-txscript = { git = "https://github.com/kaspanet/rusty-kaspa", rev = "78257f273a26c4be085bab0f79437dee99ca8835", version = "2.0.1" }
+kaspa-consensus-core = { git = "https://github.com/kaspanet/rusty-kaspa", rev = "78257f273a26c4be085bab0f79437dee99ca8835", version = "2.0.1" }

@@ -1,0 +1,9 @@
+{
+  "compiledBytecodeHash": "1206fa7e58cd12fd86a3ce5c9c14fc2f980a5b48551f9a771d0f976689f7c302",
+  "redeemScriptHash": "1206fa7e58cd12fd86a3ce5c9c14fc2f980a5b48551f9a771d0f976689f7c302",
+  "enforcedRules": {
+    "outputCount": true,
+    "outputSpk": true
+  },
+  "compiledBytecodeHashMatchesRedeemScript": true
+}

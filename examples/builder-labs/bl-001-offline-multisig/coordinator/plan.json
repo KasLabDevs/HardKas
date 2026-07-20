@@ -1,0 +1,50 @@
+{
+  "schema": "hardkas.txPlan.v1",
+  "hardkasVersion": "0.11.3-alpha",
+  "version": "1.0.0-alpha",
+  "networkId": "simnet",
+  "mode": "developer",
+  "createdAt": "2026-07-16T11:02:39.275Z",
+  "status": "built",
+  "planId": "plan-mock-1234",
+  "from": {
+    "input": "0",
+    "address": "kaspa:ebcc82d7fd59be2b74116b0596633a4415aa478624"
+  },
+  "to": {
+    "input": "0",
+    "address": "ddc1f62652602f6753f5117f2929eb365d8a760e9a85c42c8d3ff4d3322e30c6"
+  },
+  "amountSompi": "490000000",
+  "amount": "4.9",
+  "selectedUtxos": [
+    {
+      "outpoint": {
+        "transactionId": "0000000000000000000000000000000000000000000000000000000000000000",
+        "index": 0
+      },
+      "address": "kaspa:ebcc82d7fd59be2b74116b0596633a4415aa478624",
+      "amountSompi": "500000000",
+      "scriptPublicKey": "aa20ebcc82d7fd59be2b74116b0596633a4415aa478624d8f1f5356ab1b6b503c27287"
+    }
+  ],
+  "outputs": [
+    {
+      "address": "ddc1f62652602f6753f5117f2929eb365d8a760e9a85c42c8d3ff4d3322e30c6",
+      "amountSompi": "490000000"
+    }
+  ],
+  "estimatedMass": "1000",
+  "estimatedFeeSompi": "10000000",
+  "estimatedFee": "0.1",
+  "multisig": {
+    "threshold": 2,
+    "requiredSigners": [
+      "ae9fded252fe42208dac04488a9bf087842e273515cfafcb47f56b5166f6d0c7",
+      "ddc1f62652602f6753f5117f2929eb365d8a760e9a85c42c8d3ff4d3322e30c6",
+      "e0ac31e7e786daf5db5534c517c14727a1000e71495a40ec76fb769b4165b62b"
+    ],
+    "redeemScript": "5220ae9fded252fe42208dac04488a9bf087842e273515cfafcb47f56b5166f6d0c720ddc1f62652602f6753f5117f2929eb365d8a760e9a85c42c8d3ff4d3322e30c620e0ac31e7e786daf5db5534c517c14727a1000e71495a40ec76fb769b4165b62b53ae",
+    "signatures": []
+  }
+}

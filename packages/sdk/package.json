@@ -25,7 +25,7 @@
     }
   },
   "scripts": {
-    "build": "tsup src/index.ts src/client.ts --format esm --dts --clean",
+    "build": "tsup src/index.ts src/client.ts --format esm --dts --clean --external @hardkas/pskt-native",
     "test": "vitest run --passWithNoTests",
     "typecheck": "tsc --noEmit",
     "lint": "eslint ."
@@ -46,6 +46,9 @@
     "@hardkas/wallet-adapter": "workspace:*",
     "@hardkas/node-runner": "workspace:*",
     "@kaspa/core-lib": "^1.6.5"
+  },
+  "optionalDependencies": {
+    "@hardkas/pskt-native": "workspace:*"
   },
   "devDependencies": {
     "@types/node": "^20.12.7",

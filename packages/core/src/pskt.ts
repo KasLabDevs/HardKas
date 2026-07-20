@@ -3,15 +3,35 @@
  * Defines the canonical HardKAS envelope for Portable Signing Sessions.
  */
 
+import type { PsktAdapterKind, PsktOperation } from "./pskt-adapter.js";
+
 export interface PsktRuntimeCapabilities {
-  readonly provider: string;
-  readonly version: string;
-  readonly available: boolean;
-  readonly serialize: boolean;
-  readonly deserialize: boolean;
-  readonly combine: boolean;
-  readonly finalize: boolean;
-  readonly extract: boolean;
+  readonly providerId: string;
+  readonly providerKind: PsktAdapterKind;
+  readonly providerVersion?: string;
+  readonly providerHash?: string;
+
+  readonly formats: readonly PsktEncoding[];
+
+  readonly operations: {
+    readonly export: boolean;
+    readonly import: boolean;
+    readonly inspect: boolean;
+    readonly sign: boolean;
+    readonly combine: boolean;
+    readonly finalize: boolean;
+    readonly extract: boolean;
+  };
+
+  readonly limitations?: readonly string[];
+}
+
+export interface PsktRuntimeBinding {
+  readonly adapterId: string;
+  readonly adapterKind: PsktAdapterKind;
+  readonly providerVersion?: string;
+  readonly providerHash?: string;
+  readonly capabilitiesHash: string;
 }
 
 export type PsktEncoding = "pskt-binary-base64" | "pskb-bundle-json";
@@ -85,7 +105,7 @@ export interface PortableSigningSession {
   readonly requirements: readonly InputSignatureRequirement[];
   readonly attestations: readonly SessionAttestation[];
 
-  readonly runtime: PsktRuntimeCapabilities;
+  readonly runtimeBinding: PsktRuntimeBinding;
 
   readonly metadata?: Readonly<Record<string, unknown>>;
   readonly createdAt?: string;
@@ -93,3 +113,4 @@ export interface PortableSigningSession {
 
   readonly integrityHash: string;
 }
+

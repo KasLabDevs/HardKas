@@ -17,6 +17,7 @@
   },
   "packageManager": "pnpm@9.15.4",
   "scripts": {
+    "certify": "tsx scripts/certification/runner.ts",
     "build": "turbo build",
     "dev": "turbo dev",
     "test": "vitest run && pnpm test:workflows",

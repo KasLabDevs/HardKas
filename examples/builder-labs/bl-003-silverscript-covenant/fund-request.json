@@ -1,0 +1,21 @@
+{
+  "private_key_hex": "44e6db6bf2e75d03c43df46e09b3cd6582ccb80bf7960144f2a861308e429ec3",
+  "utxo": {
+    "txid": "ada204c4c52a4f5c807932c664199341e55a00f4b9bddc4b1febf269facf0742",
+    "index": 5,
+    "amount": 5000000000,
+    "script_public_key_hex": "20ae9fded252fe42208dac04488a9bf087842e273515cfafcb47f56b5166f6d0c7ac",
+    "block_daa_score": 33506,
+    "is_coinbase": true
+  },
+  "outputs": [
+    {
+      "amount": 50000000,
+      "script_public_key_hex": "aa20f701efa53cbff936c7d7b88ff23f8f76295e8000335c72ac9bda187ac62a0ddb87"
+    },
+    {
+      "amount": 4949500000,
+      "script_public_key_hex": "20ae9fded252fe42208dac04488a9bf087842e273515cfafcb47f56b5166f6d0c7ac"
+    }
+  ]
+}

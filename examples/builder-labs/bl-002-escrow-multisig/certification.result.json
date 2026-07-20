@@ -1,0 +1,11 @@
+{
+  "status": "FAIL",
+  "generatedAt": "2026-07-20T16:55:05.067Z",
+  "claims": {
+    "simnetCertified": true,
+    "testnetCertified": false,
+    "mainnetCertified": false,
+    "productionAudited": false
+  },
+  "failedGate": "integrity"
+}

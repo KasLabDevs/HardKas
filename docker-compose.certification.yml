@@ -1,0 +1,25 @@
+services:
+  kaspad:
+    image: kaspanet/rusty-kaspa:v0.14.0@sha256:d84000bd93322fbdeab6d2a8b94cc8a5e82b7cd40b3c22be1b8c80d463b2f21f
+    command: ["--simnet", "--utxoindex", "--listen=0.0.0.0:16110", "--rpclisten=0.0.0.0:16110", "--loglevel=debug"]
+    ports:
+      - "16110:16110"
+    networks:
+      - hardkas-cert-net
+    volumes:
+      - kaspad-data:/app/data
+
+  cpuminer:
+    image: kaspanet/rusty-kaspa:v0.14.0@sha256:d84000bd93322fbdeab6d2a8b94cc8a5e82b7cd40b3c22be1b8c80d463b2f21f
+    command: ["--simnet", "--mine", "--miningaddr=kaspa:simnet:qztg7g0rckud34yq38g3y2507w3kfl7076t7nd5r98dkh2v9s8r6nnh2p3gzz", "--rpcserver=kaspad:16110"]
+    depends_on:
+      - kaspad
+    networks:
+      - hardkas-cert-net
+
+networks:
+  hardkas-cert-net:
+    driver: bridge
+
+volumes:
+  kaspad-data:

@@ -53,9 +53,9 @@ export class DockerKaspadRunner {
     // Check if docker is available
     try {
       await execa("docker", ["version"]);
-    } catch (e) {
+    } catch (e: any) {
       throw new Error(
-        "[DOCKER_UNAVAILABLE] Docker is not available. Please install Docker to run a real Kaspa node."
+        `[DOCKER_UNAVAILABLE] Docker is not available. Please install Docker to run a real Kaspa node. Details: ${e.message}`
       );
     }
 
@@ -146,13 +146,20 @@ export class DockerKaspadRunner {
     });
 
     if (!health.ready) {
+      let logs = "";
+      try {
+        const { stdout, stderr } = await execa("docker", ["logs", "--tail", "200", this.options.containerName]);
+        logs = `\nContainer Logs:\n${stdout}\n${stderr}`;
+      } catch (e) {
+        logs = `\nCould not fetch container logs: ${e}`;
+      }
       throw new Error(
         `Kaspad RPC failed to become ready within 60s.\n` +
           `  Container: ${this.options.containerName}\n` +
           `  Image: ${this.options.image}\n` +
           `  RPC: ${rpcUrl}\n` +
           `  Last Error: ${health.lastError || "Timeout"}\n\n` +
-          `  Try checking logs: hardkas node logs --tail 200`
+          `  Try checking logs: hardkas node logs --tail 200${logs}`
       );
     }
 

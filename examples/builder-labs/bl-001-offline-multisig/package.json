@@ -1,0 +1,24 @@
+{
+  "name": "@hardkas/example-bl-001-offline-multisig",
+  "version": "0.11.3-alpha",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@hardkas/sdk": "workspace:*",
+    "@hardkas/core": "workspace:*",
+    "@hardkas/accounts": "workspace:*",
+    "@hardkas/artifacts": "workspace:*",
+    "@hardkas/tx-builder": "workspace:*",
+    "@hardkas/kaspa-rpc": "workspace:*",
+    "@hardkas/cli": "workspace:*",
+    "@hardkas/pskt-native": "workspace:*",
+    "commander": "^12.0.0"
+  },
+  "devDependencies": {
+    "vitest": "^1.6.0",
+    "tsx": "^4.7.1"
+  }
+}

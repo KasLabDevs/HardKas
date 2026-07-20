@@ -399,9 +399,16 @@ export class JsonWrpcKaspaClient implements KaspaRpcClient {
       // Fix types for wRPC (it expects numbers for amounts/values)
       const txAny = txObj as any;
       if (txAny && typeof txAny === "object") {
+        // Normalize top-level numeric fields that may arrive as strings from the NAPI bridge
+        if (typeof txAny.version === "string") txAny.version = Number(txAny.version);
+        if (typeof txAny.mass === "string") txAny.mass = Number(txAny.mass);
         if (txAny.mass === undefined) txAny.mass = 0;
+        if (typeof txAny.lockTime === "string") txAny.lockTime = Number(txAny.lockTime);
+        if (typeof txAny.lock_time === "string") txAny.lock_time = Number(txAny.lock_time);
+        if (typeof txAny.gas === "string") txAny.gas = Number(txAny.gas);
         if (txAny.outputs && Array.isArray(txAny.outputs)) {
           txAny.outputs.forEach((output: any) => {
+            // Kaspad wRPC expects "value", not "amount"
             if (output.amount !== undefined && output.value === undefined) {
               output.value = output.amount;
               delete output.amount;
@@ -410,12 +417,11 @@ export class JsonWrpcKaspaClient implements KaspaRpcClient {
             if (typeof output.value === "string") output.value = Number(output.value);
 
             if (output.scriptPublicKey && typeof output.scriptPublicKey === "object") {
-              if (
-                output.scriptPublicKey.scriptPublicKey !== undefined &&
-                output.scriptPublicKey.script === undefined
-              ) {
-                output.scriptPublicKey.script = output.scriptPublicKey.scriptPublicKey;
-                delete output.scriptPublicKey.scriptPublicKey;
+              const spk = output.scriptPublicKey;
+              // kaspad wRPC expects the field as "script", not "scriptPublicKey"
+              if (spk.scriptPublicKey !== undefined && spk.script === undefined) {
+                spk.script = spk.scriptPublicKey;
+                delete spk.scriptPublicKey;
               }
             }
           });
@@ -434,8 +440,7 @@ export class JsonWrpcKaspaClient implements KaspaRpcClient {
     }
 
     // Both flavors accept the transaction wrapped in an object
-    const req: any = { transaction: txObj };
-    if (options?.allowOrphan) req.allowOrphan = true;
+    const req: any = { transaction: txObj, allowOrphan: options?.allowOrphan ?? false };
 
     const response = await this.callMethod(
       "submitTransaction",
@@ -475,25 +480,34 @@ export class JsonWrpcKaspaClient implements KaspaRpcClient {
   }
 
   async getBlockDagInfo(): Promise<BlockDagInfo> {
-    const info = await this.getInfo();
-    const result: any = {
-      networkId: (info.networkId as NetworkId) || "unknown",
-      tipHashes: []
+    const response = await this.callMethod("getBlockDagInfo", "getBlockDagInfoRequest");
+    const dagData: any = response;
+    return {
+      networkId: (dagData?.networkName || dagData?.network || "unknown") as NetworkId,
+      virtualDaaScore: dagData?.virtualDaaScore !== undefined ? BigInt(dagData.virtualDaaScore) : 0n,
+      tipHashes: dagData?.tipHashes || dagData?.blockTipHashes || []
     };
-    if (info.virtualDaaScore !== undefined) {
-      result.virtualDaaScore = BigInt(info.virtualDaaScore);
-    }
-    return result;
   }
 
   async getServerInfo(): Promise<ServerInfo> {
-    const info = await this.getInfo();
-    const result: any = {
-      networkId: (info.networkId as NetworkId) || "unknown"
-    };
-    if (info.serverVersion !== undefined) result.serverVersion = info.serverVersion;
-    if (info.isSynced !== undefined) result.isSynced = info.isSynced;
-    return result;
+    try {
+      const response: any = await this.callMethod("getServerInfo", "getServerInfoRequest");
+      const result: any = {
+        networkId: (response?.networkId || "unknown") as NetworkId
+      };
+      if (response?.serverVersion !== undefined) result.serverVersion = response.serverVersion;
+      if (response?.isSynced !== undefined) result.isSynced = response.isSynced;
+      return result as ServerInfo;
+    } catch (e) {
+      // Fallback to getInfo
+      const info: any = await this.getInfo();
+      const result: any = {
+        networkId: (info.networkId as NetworkId) || "unknown"
+      };
+      if (info.serverVersion !== undefined) result.serverVersion = info.serverVersion;
+      if (info.isSynced !== undefined) result.isSynced = info.isSynced;
+      return result as ServerInfo;
+    }
   }
 
   async getMempoolEntries(options?: any): Promise<any> {
@@ -563,9 +577,9 @@ export class JsonWrpcKaspaClient implements KaspaRpcClient {
             cleanup();
             if (response.error) {
               const err = response.error;
-              const msg =
-                ((err instanceof Error) ? ((err instanceof Error) ? err.message : String(err)) : String(err)) || (typeof err === "string" ? err : JSON.stringify(err));
-              reject(normalizeRpcError(new RpcError(msg, err.code, err.data), { method, params }));
+              let msg = typeof err === "string" ? err : (err.message || JSON.stringify(err));
+              if (err instanceof Error) msg = err.message;
+              reject(normalizeRpcError(new RpcError(msg, err.code || -32603, err.data), { method, params }));
             } else {
               resolve(response.result !== undefined ? response.result : response.params);
             }
@@ -755,28 +769,14 @@ export function mapKaspaRpcUtxos(result: any, address: string): KaspaRpcUtxo[] {
     };
   });
 }
-
-export function mapKaspaSubmitTransactionResult(
-  result: any
-): KaspaSubmitTransactionResult {
+export function mapKaspaSubmitTransactionResult(result: any): KaspaSubmitTransactionResult {
   if (!result) return { raw: result };
 
+  const txId = typeof result === "string" ? result : (result.transactionId || result.transaction_id || result.txId || result.tx_id);
+
   return {
-    transactionId:
-      result.transactionId || result.transaction_id || result.txId || result.tx_id,
-    accepted:
-      result.accepted !== undefined
-        ? result.accepted
-        : result.isAccepted !== undefined
-          ? result.isAccepted
-          : result.success !== undefined
-            ? result.success
-            : !!(
-                result.transactionId ||
-                result.transaction_id ||
-                result.txId ||
-                result.tx_id
-              ),
+    transactionId: txId,
+    accepted: result.accepted !== undefined ? result.accepted : (result.isAccepted || result.success || true),
     raw: result
   };
 }

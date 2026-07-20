@@ -1,0 +1,49 @@
+{
+  "node": {
+    "image": "kaspanet/rusty-kaspad",
+    "networkId": "kaspa-simnet",
+    "utxoIndexEnabled": true
+  },
+  "consensus": {
+    "coinbaseMaturity": "1000",
+    "toccataActive": true
+  },
+  "multisig": {
+    "threshold": 2,
+    "participants": 3,
+    "sigOpCount": 3,
+    "conventionStatus": "draft"
+  },
+  "integerFidelity": {
+    "u64MaxRoundtrip": "PASS"
+  },
+  "fundingTxId": "188aeb588987f9e99537bfd530f4b399e3a38971549ab4c1f486938948fa0fe0",
+  "spendTxId": "33009615c9c08874c6f1999b878b5629c1f2590ffb46b167c445dc933afd51b7",
+  "mempoolAccepted": true,
+  "acceptance": {
+    "acceptingBlockHash": "bfac868ee255fa92faea7f6bc811437a5f83b41c499a9cbe211beb1b406b98cd",
+    "acceptedTransactionId": "33009615c9c08874c6f1999b878b5629c1f2590ffb46b167c445dc933afd51b7",
+    "virtualChainObserved": true,
+    "rpcMethod": "getVirtualChainFromBlockV2"
+  },
+  "virtualChainQuery": {
+    "startHash": "b9f1e32e252ca84190a67d88aa421fd091017be6f3b552280153058ef552a7d1",
+    "removedChainBlockHashes": [
+      "b9f1e32e252ca84190a67d88aa421fd091017be6f3b552280153058ef552a7d1"
+    ],
+    "addedChainBlockHashes": [
+      "fc4fe2fcf00b233eac60b3fba83c34020fb517f6274aa8b5544e00687e249572",
+      "b34eea61f7c4b285b0ed367fad5c3c3f6a8d421b3e234ff316c5d166077a678d",
+      "bfac868ee255fa92faea7f6bc811437a5f83b41c499a9cbe211beb1b406b98cd",
+      "839140d2bfb59653f7a4110823768043deeb3a78d1d745abfa0b8f0c770b7089",
+      "97169901fff4c40c72cc3567588aa629d11381e7139b52ca9d0602e0733756d8",
+      "8626d543f53ecdd66724bb9c4228f416cbf5292f74ab2e2a00b6bc3592f0beb8",
+      "d761989dbe373098ea671806d6eb602eec786099773bb1bbf343727fbff34c2d",
+      "29e72cace060d05ff1971d25bbb1797596afa42c09ec844e72dbd0037bf681c0",
+      "348d3e4ce679cbf035962ff0cbb61524fc2c856db176168dfee1aa7d99f11c3c",
+      "bbe8ed4c7d6e24ebab6278dc149e3a7dfde18e12b951a6fdda3a088f3bd289c5"
+    ]
+  },
+  "rpcAccepted": true,
+  "confirmed": true
+}
