@@ -51,6 +51,17 @@ async function main() {
         }
     };
 
+    try {
+        const { execSync } = await import("node:child_process");
+        const env: any = {};
+        try { env.hardkasCommit = execSync("git rev-parse HEAD").toString().trim(); } catch(e) {}
+        try { env.nodeVersion = process.version; } catch(e) {}
+        try { env.rustcVersion = execSync("rustc --version").toString().trim(); } catch(e) {}
+        try { env.dockerVersion = execSync("docker --version").toString().trim(); } catch(e) {}
+        try { env.rustyKaspaImage = execSync("docker inspect --format='{{index .RepoDigests 0}}' kaspanet/rusty-kaspad:latest").toString().trim(); } catch(e) {}
+        ctx.result.environment = env;
+    } catch (e) {}
+
     const allGates: Record<string, CertificationGate> = {
         "integrity": new IntegrityGate(),
         "typescript": new TypescriptGate(),

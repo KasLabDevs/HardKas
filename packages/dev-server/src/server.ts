@@ -19,6 +19,7 @@ import { dappTxRoutes } from "./routes/dapp-tx.js";
 import { devStatusRoutes } from "./routes/dev-status.js";
 import { streamRoutes } from "./routes/stream.js";
 import { devAccountsRoutes } from "./routes/dev-accounts.js";
+import { escrowRoutes } from "./routes/escrow.js";
 import { serveStatic } from "@hono/node-server/serve-static";
 import path from "node:path";
 import fs from "node:fs";
@@ -192,6 +193,7 @@ export function createDevServer(config: DevServerConfig) {
   app.route("/api/overview", overviewRoutes);
   app.route("/api/tx", dappTxRoutes);
   app.route("/api/dev-accounts", devAccountsRoutes);
+  app.route("/api/escrow", escrowRoutes);
   app.route("/api", devStatusRoutes);
   app.route("/api", observabilityRoutes);
 

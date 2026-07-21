@@ -3,30 +3,7 @@
     "repository": "kaspanet/silverscript",
     "abiHash": "f822977d9335c6d34dc1d0bef6047400e07d6105f0e2ce67e2f472a9eb187fac"
   },
-  "positiveRoutes": {
-    "mutualRelease": {
-      "confirmed": true,
-      "spendTxId": "c3c2058048e41796b247f57fdaa0e692461c558d2be5940cb13044dbebafb5dc",
-      "acceptingBlockHash": "pending"
-    },
-    "refundBuyer": {
-      "confirmed": true,
-      "spendTxId": "d95a083d219dd61411285709cae5522a08272d61658bd44dcda9c88c3b3ccac2",
-      "acceptingBlockHash": "pending"
-    },
-    "releaseToSeller": {
-      "confirmed": true,
-      "spendTxId": "6ffafc0c9c173305e34d2623d985b2c89831c0473e293381b79301710d8f7f8a",
-      "acceptingBlockHash": "pending"
-    }
-  },
-  "negativeMatrix": {
-    "wrongDestination": "REJECTED_BY_SCRIPT",
-    "wrongAmount": "REJECTED_BY_SCRIPT",
-    "wrongSigners": "REJECTED_BY_SCRIPT",
-    "extraOutput": "REJECTED_BY_SCRIPT",
-    "selectorMismatch": "REJECTED_BY_SCRIPT",
-    "artifactTampering": "REJECTED_BEFORE_EXECUTION"
-  },
+  "positiveRoutes": {},
+  "negativeMatrix": {},
   "simnetCertification": "PASS"
 }

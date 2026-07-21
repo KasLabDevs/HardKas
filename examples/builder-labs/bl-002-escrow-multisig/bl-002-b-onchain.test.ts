@@ -11,7 +11,7 @@ import { hardkas } from "./tools/SilverBridge.js";
 import { DockerKaspadRunner } from "@hardkas/node-runner";
 import { createKaspaP2shBlake2bLock } from "@hardkas/core";
 import { sighashSigner } from "./tools/SighashSigner.js";
-
+import { createEscrow } from "@hardkas/escrow";
 const execAsync = util.promisify(exec);
 const ROOT_DIR = __dirname;
 const EVIDENCE_DIR = path.join(ROOT_DIR, "evidence");
@@ -65,22 +65,20 @@ describe("BL-002B - On-chain Escrow Constraints", () => {
         const releaseBuf = Buffer.alloc(8);
         releaseBuf.writeBigUInt64LE(releaseAmount, 0);
 
-        const ctorArgs = [
-            bytesExpr(identities.alice.publicKeyHex),
-            bytesExpr(identities.bob.publicKeyHex),
-            bytesExpr(identities.charlie.publicKeyHex),
-            bytesExpr("0000" + buyerSpk),
-            bytesExpr("0000" + sellerSpk),
-            { kind: "int", data: Number(refundAmount) },
-            { kind: "int", data: Number(releaseAmount) }
-        ];
-        
-        await fs.writeFile(ctorArgsPath, JSON.stringify(ctorArgs));
+        const config = {
+            buyer: { publicKeyHex: identities.alice.publicKeyHex },
+            seller: { publicKeyHex: identities.bob.publicKeyHex },
+            arbiter: { publicKeyHex: identities.charlie.publicKeyHex },
+            buyerDestinationSpk: buyerSpk,
+            sellerDestinationSpk: sellerSpk,
+            refundAmount,
+            releaseAmount
+        };
+
         const silvercPath = path.join(ROOT_DIR, "..", "..", "..", ".hardkas", "bin", "silverc.exe");
-        await execAsync(`"${silvercPath}" escrow.sil --constructor-args escrow-ctor.json -o escrow.json`, { cwd: ROOT_DIR });
-        
-        artifact = JSON.parse(await fs.readFile(outPath, "utf-8"));
-        covenantBytecodeHex = Buffer.from(artifact.script).toString("hex");
+        const res = await createEscrow(config, silvercPath, ROOT_DIR, path.join(ROOT_DIR, "escrow.sil"));
+        artifact = res.artifact;
+        covenantBytecodeHex = res.state.redeemScriptHex;
 
         evidence.compiler.repository = "kaspanet/silverscript";
         evidence.compiler.abiHash = crypto.createHash('sha256').update(JSON.stringify(artifact.abi)).digest('hex');
