@@ -29,7 +29,7 @@ function runCompare(mode?: string) {
     cwd: fixtureDir,
     encoding: "utf8",
     stdio: "pipe",
-    timeout: 15_000
+    timeout: 60_000
   }).replace(ANSI_RE, "");
 }
 

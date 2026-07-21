@@ -15,9 +15,9 @@ export async function loadSession(filePath: string): Promise<PortableSigningSess
     return pskt.deserializeSession(content);
   } catch (err: any) {
     if (err instanceof Error && err.message.includes("ENOENT")) {
-      throw new HardkasCliError(`Session file not found: ${filePath}`, HardkasExitCode.INVALID_ARGUMENT);
+      throw new HardkasCliError("FILE_NOT_FOUND", `Session file not found: ${filePath}`, { exitCode: HardkasExitCode.USAGE_ERROR });
     }
-    throw new HardkasCliError(`Invalid session file: ${err.message}`, HardkasExitCode.INVALID_ARGUMENT);
+    throw new HardkasCliError("INVALID_SESSION", `Invalid session file: ${err.message}`, { exitCode: HardkasExitCode.USAGE_ERROR });
   }
 }
 
@@ -31,7 +31,7 @@ export async function saveSession(session: PortableSigningSession, filePath: str
   if (!force) {
     try {
       await fs.access(absolutePath);
-      throw new HardkasCliError(`Output file already exists: ${filePath}. Use --force to overwrite.`, HardkasExitCode.INVALID_ARGUMENT);
+      throw new HardkasCliError("FILE_EXISTS", `Output file already exists: ${filePath}. Use --force to overwrite.`, { exitCode: HardkasExitCode.USAGE_ERROR });
     } catch (e: any) {
       if (e.code !== "ENOENT" && !(e instanceof HardkasCliError)) {
         throw e;
@@ -54,6 +54,6 @@ export async function saveSession(session: PortableSigningSession, filePath: str
     } catch (_) {
       // ignore
     }
-    throw new HardkasCliError(`Failed to save session: ${err.message}`, HardkasExitCode.RUNTIME_FAILURE);
+    throw new HardkasCliError("SAVE_FAILED", `Failed to save session: ${err.message}`, { exitCode: HardkasExitCode.RUNTIME_FAILURE });
   }
 }

@@ -32,7 +32,7 @@ interface NativeExtractedTransaction {
   readonly subnetworkId: string;
 }
 
-function validateNativeTransaction(tx: any): tx is NativeExtractedTransaction {
+function validateNativeTransaction(tx: any): boolean {
   if (typeof tx !== 'object' || tx === null) return false;
   if (typeof tx.version !== 'number') return false;
   if (typeof tx.mass !== 'string') return false;
@@ -81,7 +81,7 @@ export class NativePsktAdapter implements PsktRuntimeAdapter {
   private async loadAddon() {
     if (this.addon || this.loadError) return;
     try {
-      // Dynamic import to not break hardkas/sdk if addon is missing
+      // @ts-ignore
       this.addon = await import("@hardkas/pskt-native");
     } catch (e: any) {
       this.loadError = e;

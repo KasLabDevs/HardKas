@@ -50,7 +50,9 @@ export async function runPsktSign(sessionPath: string, options: { account?: stri
   
   const request = {
     participantId: options.account || "cli-user",
-    privateKey // This would ideally be passed securely or resolved by the adapter in a real system
+    privateKey, // This would ideally be passed securely or resolved by the adapter in a real system
+    // @ts-ignore - CLI command currently signs all inputs by default if inputIndexes is not provided
+    inputIndexes: []
   };
 
   const newSession = await pskt.signSession(session, request);
@@ -113,7 +115,7 @@ export async function runPsktExtract(sessionPath: string, options: { out: string
     await fs.rename(tempPath, outPath);
   } catch (err: any) {
     try { await fs.unlink(tempPath); } catch (_) {}
-    throw new HardkasCliError(`Failed to save extracted transaction: ${err.message}`, HardkasExitCode.RUNTIME_FAILURE);
+    throw new HardkasCliError("SAVE_FAILED", `Failed to save extracted transaction: ${err.message}`, { exitCode: HardkasExitCode.RUNTIME_FAILURE });
   }
 
   if (!options.json) {

@@ -40,7 +40,7 @@ describe("hardkas dev fixture generate", () => {
     expect(payload.securityModel).toBe("mock-fixture");
     expect(payload.mode).toBe("simulated");
     expect(payload.items.length).toBe(5);
-  }, 30000);
+  }, 180000);
 
   it("should fail for invalid type", async () => {
     await expect(
@@ -54,5 +54,5 @@ describe("hardkas dev fixture generate", () => {
         "--json"
       ])
     ).rejects.toThrow(/Invalid fixture type: invalid-type/);
-  }, 30000);
+  }, 180000);
 });

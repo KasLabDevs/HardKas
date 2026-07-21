@@ -1,10 +1,10 @@
 use kaspa_consensus_core::tx::{ScriptPublicKey, UtxoEntry};
 use kaspa_wallet_pskt::bundle::Bundle;
 use kaspa_wallet_pskt::pskt::Input;
-use std::env;
-use std::str::FromStr;
-use std::fs;
 use serde::Deserialize;
+use std::env;
+use std::fs;
+use std::str::FromStr;
 
 #[derive(Deserialize)]
 struct PsktInputDef {
@@ -15,7 +15,7 @@ struct PsktInputDef {
     sequence: u64,
     signers: Vec<String>, // hex pubkeys
     sig_op_count: u8,
-    redeem_script_hex: Option<String>
+    redeem_script_hex: Option<String>,
 }
 
 #[derive(Deserialize)]
@@ -45,44 +45,42 @@ fn main() {
     for in_def in def.inputs {
         let mut input = Input::default();
         let script_bytes = hex::decode(&in_def.script_hex).unwrap();
-        
+
         let spk = ScriptPublicKey::new(0, script_bytes.clone().into());
-        
-        input.utxo_entry = Some(UtxoEntry::new(
-            in_def.amount,
-            spk,
-            0,
-            false,
-            None,
-        ));
-        
+
+        input.utxo_entry = Some(UtxoEntry::new(in_def.amount, spk, 0, false, None));
+
         let txid = kaspa_consensus_core::tx::TransactionId::from_str(&in_def.txid).unwrap();
-        input.previous_outpoint = kaspa_consensus_core::tx::TransactionOutpoint::new(txid, in_def.index);
+        input.previous_outpoint =
+            kaspa_consensus_core::tx::TransactionOutpoint::new(txid, in_def.index);
         input.sequence = Some(in_def.sequence);
-        
+
         for signer_hex in in_def.signers {
             if let Ok(pk) = secp256k1::PublicKey::from_str(&signer_hex) {
                 input.bip32_derivations.insert(pk, None);
             }
         }
-        
+
         if let Some(rs_hex) = in_def.redeem_script_hex {
             input.redeem_script = Some(hex::decode(rs_hex).unwrap());
         }
-        
+
         input.sig_op_count = Some(in_def.sig_op_count);
         inner.inputs.push(input);
     }
 
     for out_def in def.outputs {
-        let mut out = kaspa_wallet_pskt::pskt::Output::default();
-        out.amount = out_def.amount;
         let script_bytes = hex::decode(&out_def.script_hex).unwrap();
-        out.script_public_key = ScriptPublicKey::new(0, script_bytes.into());
+        let out = kaspa_wallet_pskt::pskt::Output {
+            amount: out_def.amount,
+            script_public_key: ScriptPublicKey::new(0, script_bytes.into()),
+            ..Default::default()
+        };
         inner.outputs.push(out);
     }
 
-    let pskt: kaspa_wallet_pskt::pskt::PSKT<kaspa_wallet_pskt::pskt::Creator> = kaspa_wallet_pskt::pskt::PSKT::from(inner);
+    let pskt: kaspa_wallet_pskt::pskt::PSKT<kaspa_wallet_pskt::pskt::Creator> =
+        kaspa_wallet_pskt::pskt::PSKT::from(inner);
     let mut bundle = Bundle::new();
     bundle.add_pskt(pskt);
 

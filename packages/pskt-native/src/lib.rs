@@ -2,15 +2,12 @@
 
 use base64::{engine::general_purpose, Engine as _};
 use kaspa_consensus_core::config::params::Params;
-use kaspa_consensus_core::hashing::sighash::{
-    calc_schnorr_signature_hash, SigHashReusedValuesUnsync,
-};
+use kaspa_consensus_core::hashing::sighash::calc_schnorr_signature_hash;
 use kaspa_consensus_core::network::NetworkId;
 use kaspa_consensus_core::subnets::SUBNETWORK_ID_NATIVE;
 use kaspa_consensus_core::tx::{
-    ComputeCommit, MutableTransaction, SignableTransaction, Transaction, TransactionInput, TransactionOutput,
+    ComputeCommit, SignableTransaction, Transaction, TransactionInput, TransactionOutput,
 };
-use kaspa_wallet_core::account::pskb::finalize_pskt_one_or_more_sig_and_redeem_script;
 use kaspa_wallet_pskt::bundle::Bundle;
 use kaspa_wallet_pskt::pskt::{Creator, Inner, Signature, PSKT};
 use napi::bindgen_prelude::*;
@@ -395,7 +392,7 @@ pub fn pskt_combine(payloads_base64_json: String) -> Result<String> {
             }
 
             let mut combined_pskts = Vec::new();
-            for (b_inner, n_inner) in bb_inners.into_iter().zip(new_inners.into_iter()) {
+            for (b_inner, n_inner) in bb_inners.into_iter().zip(new_inners) {
                 let p1: PSKT<Creator> = PSKT::from(b_inner);
                 let p2: PSKT<Creator> = PSKT::from(n_inner);
 
@@ -539,15 +536,15 @@ pub fn pskt_finalize(payload_base64: String) -> Result<String> {
         }
 
         let p_finalizer = p.constructor().updater().signer().finalizer();
-        let finalized =
-            p_finalizer.finalize_sync(|inner| -> Result<Vec<Vec<u8>>, String> {
+        let finalized = p_finalizer
+            .finalize_sync(|inner| -> Result<Vec<Vec<u8>>, String> {
                 Ok(inner
                     .inputs
                     .iter()
                     .map(|i| {
                         let mut builder = kaspa_txscript::script_builder::ScriptBuilder::new();
                         i.partial_sigs.values().for_each(|s| {
-                            let mut sig_bytes = s.clone().into_bytes().to_vec();
+                            let mut sig_bytes = (*s).into_bytes().to_vec();
                             sig_bytes.push(i.sighash_type.to_u8());
                             builder.add_data(&sig_bytes).unwrap();
                         });
@@ -557,7 +554,8 @@ pub fn pskt_finalize(payload_base64: String) -> Result<String> {
                         builder.drain()
                     })
                     .collect::<Vec<Vec<u8>>>())
-            }).map_err(|e| {
+            })
+            .map_err(|e| {
                 to_napi_error(
                     "PSKT_FINALIZATION_FAILED",
                     "finalize",
@@ -720,22 +718,33 @@ pub fn pskt_extract(payload_base64: String, network_id_str: String) -> Result<St
         version: tx_res.tx.version,
         mass: tx_res.tx.storage_mass().to_string(),
         lock_time: tx_res.tx.lock_time.to_string(),
-        inputs: tx_res.tx.inputs.iter().enumerate().map(|(idx, i)| NativeInputJson {
-            previous_outpoint: NativeOutpointJson {
-                transaction_id: i.previous_outpoint.transaction_id.to_string(),
-                index: i.previous_outpoint.index,
-            },
-            signature_script: hex::encode(&i.signature_script),
-            sequence: i.sequence.to_string(),
-            sig_op_count: inner.inputs[idx].sig_op_count.unwrap_or(1),
-        }).collect(),
-        outputs: tx_res.tx.outputs.iter().map(|o| NativeOutputJson {
-            value: o.value.to_string(),
-            script_public_key: NativeScriptPublicKeyJson {
-                version: o.script_public_key.version(),
-                script: hex::encode(o.script_public_key.script()),
-            },
-        }).collect(),
+        inputs: tx_res
+            .tx
+            .inputs
+            .iter()
+            .enumerate()
+            .map(|(idx, i)| NativeInputJson {
+                previous_outpoint: NativeOutpointJson {
+                    transaction_id: i.previous_outpoint.transaction_id.to_string(),
+                    index: i.previous_outpoint.index,
+                },
+                signature_script: hex::encode(&i.signature_script),
+                sequence: i.sequence.to_string(),
+                sig_op_count: inner.inputs[idx].sig_op_count.unwrap_or(1),
+            })
+            .collect(),
+        outputs: tx_res
+            .tx
+            .outputs
+            .iter()
+            .map(|o| NativeOutputJson {
+                value: o.value.to_string(),
+                script_public_key: NativeScriptPublicKeyJson {
+                    version: o.script_public_key.version(),
+                    script: hex::encode(o.script_public_key.script()),
+                },
+            })
+            .collect(),
         payload: hex::encode(&tx_res.tx.payload),
         subnetwork_id: tx_res.tx.subnetwork_id.to_string(),
     };
@@ -925,9 +934,11 @@ pub fn pskt_sign(
                 ));
             }
         }
-        let mutable_tx = kaspa_consensus_core::tx::MutableTransaction::with_entries(unsigned_tx, entries);
+        let mutable_tx =
+            kaspa_consensus_core::tx::MutableTransaction::with_entries(unsigned_tx, entries);
         let sighashes: Vec<_> = inner.inputs.iter().map(|i| i.sighash_type).collect();
-        let mut reused_values = kaspa_consensus_core::hashing::sighash::SigHashReusedValuesUnsync::new();
+        let reused_values =
+            kaspa_consensus_core::hashing::sighash::SigHashReusedValuesUnsync::new();
 
         // Determine targets for signing
         let sign_targets = if let Some(ref idxs) = req.input_indexes {
@@ -983,7 +994,7 @@ pub fn pskt_sign(
                 // Remove the heuristic script_public_key check. Let the control check fail.
 
                 let mut controls = false;
-                for (pk, _) in &input.bip32_derivations {
+                for pk in input.bip32_derivations.keys() {
                     let pk_bytes = pk.serialize();
                     let xonly_bytes = xonly_pubkey.serialize();
                     if pk_bytes.len() >= 32
@@ -1028,7 +1039,7 @@ pub fn pskt_sign(
                     &reused_values,
                 );
 
-                let pubkey_key = pubkey.into();
+                let pubkey_key = pubkey;
                 if input.partial_sigs.contains_key(&pubkey_key) {
                     continue;
                 }
@@ -1047,9 +1058,7 @@ pub fn pskt_sign(
                 };
 
                 let sig = keypair.sign_schnorr(msg);
-                input
-                    .partial_sigs
-                    .insert(pubkey.into(), Signature::Schnorr(sig));
+                input.partial_sigs.insert(pubkey, Signature::Schnorr(sig));
             }
         }
         signed_inners.push(inner);
@@ -1116,7 +1125,7 @@ mod tests {
         ));
 
         // Setup Bip32 derivation to match our public key
-        input.bip32_derivations.insert(public_key.into(), None);
+        input.bip32_derivations.insert(public_key, None);
         inner.inputs.push(input);
 
         let mut bundle = Bundle::new();

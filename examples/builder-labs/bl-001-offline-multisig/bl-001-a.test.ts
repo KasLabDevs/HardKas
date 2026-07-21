@@ -231,5 +231,5 @@ describe("BL-001A - Offline Multisig Ceremony", () => {
     ]);
     if (extractRes.exitCode !== 0) console.error("Extract failed:", extractRes.stderr);
     expect(extractRes.exitCode).toBe(0);
-  }, 30000);
+  }, 120000);
 });

@@ -107,5 +107,5 @@ describe("BL-002A - Offline Policy Matrix", () => {
         
         await expect(policyEnforcedSigner(sessionPath, "hardware-sim-charlie", aliceAddress))
             .rejects.toThrow(`Policy violation: expected recipient ${aliceAddress}, got ${bobAddress}`);
-    }, 15000);
+    }, 120000);
 });

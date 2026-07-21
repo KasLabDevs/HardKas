@@ -1,9 +1,11 @@
-use kaspa_consensus_core::tx::{
-    ScriptPublicKey, Transaction, TransactionId, TransactionInput, TransactionOutpoint,
-    TransactionOutput, UtxoEntry, MutableTransaction,
+use kaspa_consensus_core::hashing::sighash::{
+    calc_schnorr_signature_hash, SigHashReusedValuesUnsync,
 };
-use kaspa_consensus_core::hashing::sighash::{SigHashReusedValuesUnsync, calc_schnorr_signature_hash};
 use kaspa_consensus_core::hashing::sighash_type::SIG_HASH_ALL;
+use kaspa_consensus_core::tx::{
+    MutableTransaction, ScriptPublicKey, Transaction, TransactionId, TransactionInput,
+    TransactionOutpoint, TransactionOutput, UtxoEntry,
+};
 use serde::{Deserialize, Serialize};
 use std::env;
 use std::fs;
@@ -73,18 +75,35 @@ fn main() {
     // Build UTXO entry
     let utxo_spk_bytes = hex::decode(&req.utxo.script_public_key_hex).unwrap();
     let utxo_spk = ScriptPublicKey::new(0, utxo_spk_bytes.into());
-    let utxo_entry = UtxoEntry::new(req.utxo.amount, utxo_spk, req.utxo.block_daa_score, req.utxo.is_coinbase, None);
+    let utxo_entry = UtxoEntry::new(
+        req.utxo.amount,
+        utxo_spk,
+        req.utxo.block_daa_score,
+        req.utxo.is_coinbase,
+        None,
+    );
 
     // Build Tx
-    let inputs: Vec<TransactionInput> = req.tx.inputs.into_iter().map(|i| {
-        let outpoint = TransactionOutpoint::new(TransactionId::from_str(&i.txid).unwrap(), i.index);
-        TransactionInput::new(outpoint, vec![], i.sequence, i.sig_op_count.unwrap_or(1))
-    }).collect();
+    let inputs: Vec<TransactionInput> = req
+        .tx
+        .inputs
+        .into_iter()
+        .map(|i| {
+            let outpoint =
+                TransactionOutpoint::new(TransactionId::from_str(&i.txid).unwrap(), i.index);
+            TransactionInput::new(outpoint, vec![], i.sequence, i.sig_op_count.unwrap_or(1))
+        })
+        .collect();
 
-    let outputs: Vec<TransactionOutput> = req.tx.outputs.into_iter().map(|o| {
-        let spk_bytes = hex::decode(&o.script_public_key_hex).unwrap();
-        TransactionOutput::new(o.amount, ScriptPublicKey::new(0, spk_bytes.into()))
-    }).collect();
+    let outputs: Vec<TransactionOutput> = req
+        .tx
+        .outputs
+        .into_iter()
+        .map(|o| {
+            let spk_bytes = hex::decode(&o.script_public_key_hex).unwrap();
+            TransactionOutput::new(o.amount, ScriptPublicKey::new(0, spk_bytes.into()))
+        })
+        .collect();
 
     let subnet_bytes = hex::decode(&req.tx.subnetwork_id).unwrap();
     let mut subnet_array = [0u8; 20];
@@ -103,10 +122,15 @@ fn main() {
     let mutable_tx = MutableTransaction::with_entries(tx, vec![utxo_entry]);
 
     let reused = SigHashReusedValuesUnsync::new();
-    let sighash = calc_schnorr_signature_hash(&mutable_tx.as_verifiable(), req.input_index, SIG_HASH_ALL, &reused);
+    let sighash = calc_schnorr_signature_hash(
+        &mutable_tx.as_verifiable(),
+        req.input_index,
+        SIG_HASH_ALL,
+        &reused,
+    );
     let msg = secp256k1::Message::from_digest_slice(sighash.as_bytes().as_slice()).unwrap();
     let sig = secp256k1::SECP256K1.sign_schnorr(&msg, &keypair);
-    
+
     // Convert signature to bytes and append sighash type
     let sig_bytes = sig.serialize();
     let mut final_sig = sig_bytes.to_vec();

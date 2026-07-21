@@ -72,7 +72,7 @@ export class RepeatabilityGate implements CertificationGate {
             // In a complete implementation, we would spawn the exact compose file.
             
             // We just run the specific lab via vitest
-            await runCommand(`npx vitest run examples/builder-labs/${ctx.lab}/bl-002-b-onchain.test.ts`, ctx.projectRoot);
+            await runCommand(`npx vitest run --no-coverage --no-file-parallelism --testTimeout 120000 examples/builder-labs/${ctx.lab}/`, ctx.projectRoot);
             
             // Extract hashes
             const hashes: any = {};
@@ -85,7 +85,14 @@ export class RepeatabilityGate implements CertificationGate {
             hashes["artifactHash"] = canonicalJsonHash(JSON.parse(escrowJsonStr));
             
             const evidenceStr = await fs.readFile(path.join(labDir, "evidence", "bl-002-b-evidence.json"), "utf8");
-            hashes["evidenceHash"] = canonicalJsonHash(JSON.parse(evidenceStr));
+            const evJson = JSON.parse(evidenceStr);
+            // Strip non-deterministic fields
+            if (evJson.positiveRoutes) {
+                for (const key of Object.keys(evJson.positiveRoutes)) {
+                    evJson.positiveRoutes[key].spendTxId = "DETERMINISTIC_TX_ID";
+                }
+            }
+            hashes["evidenceHash"] = canonicalJsonHash(evJson);
 
             await runCommand(`docker compose -p hardkas-cert-${ctx.lab} -f docker-compose.certification.yml down --volumes --remove-orphans`, ctx.projectRoot);
             

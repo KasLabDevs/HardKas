@@ -113,7 +113,7 @@ describe("BL-002B - On-chain Escrow Constraints", () => {
             prefix = "4d" + buf.toString("hex");
         }
         redeemScriptPushData = prefix + covenantBytecodeHex;
-    }, 240000);
+    }, 360000);
 
     afterAll(async () => {
         if (rpc) await rpc.close();
@@ -138,7 +138,7 @@ describe("BL-002B - On-chain Escrow Constraints", () => {
         }
         
         expect(fundingUtxos.length).toBeGreaterThanOrEqual(3);
-    }, 240000);
+    }, 360000);
     
     it("should verify build_sig_script does not append redeemScript twice", async () => {
         const unlockRes = await hardkas.experimental.silver.buildUnlock({

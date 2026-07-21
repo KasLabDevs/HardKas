@@ -2,6 +2,7 @@ import { CertificationContext, CertificationGate } from "./types.js";
 import { IntegrityGate } from "./gates/integrity.js";
 import { TypescriptGate } from "./gates/typescript.js";
 import { RustGate } from "./gates/rust.js";
+import { RuntimeGate } from "./gates/runtime.js";
 import { RepeatabilityGate } from "./gates/repeatability.js";
 import fs from "node:fs/promises";
 import path from "node:path";
@@ -26,7 +27,7 @@ async function main() {
     const manifestPath = path.join(projectRoot, `examples/builder-labs/${labId}/certification.manifest.json`);
     
     // Default manifest if not present
-    let manifest = { lab: labId, requiredGates: ["integrity", "typescript", "rust", "repeatability"] };
+    let manifest = { lab: labId, requiredGates: ["integrity", "typescript", "rust", "runtime", "repeatability"] };
     try {
         const manifestStr = await fs.readFile(manifestPath, "utf-8");
         manifest = JSON.parse(manifestStr);
@@ -54,6 +55,7 @@ async function main() {
         "integrity": new IntegrityGate(),
         "typescript": new TypescriptGate(),
         "rust": new RustGate(),
+        "runtime": new RuntimeGate(),
         "repeatability": new RepeatabilityGate()
     };
 

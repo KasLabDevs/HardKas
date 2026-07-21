@@ -1,10 +1,12 @@
+use kaspa_consensus_core::hashing::sighash::{
+    calc_schnorr_signature_hash, SigHashReusedValuesUnsync,
+};
+use kaspa_consensus_core::hashing::sighash_type::SIG_HASH_ALL;
 use kaspa_consensus_core::tx::{
     ScriptPublicKey, Transaction, TransactionId, TransactionInput, TransactionOutpoint,
     TransactionOutput, UtxoEntry,
 };
-use kaspa_consensus_core::hashing::sighash::{SigHashReusedValuesUnsync, calc_schnorr_signature_hash};
-use kaspa_consensus_core::hashing::sighash_type::SIG_HASH_ALL;
-use kaspa_txscript::opcodes::codes::OpData32;
+
 use serde::{Deserialize, Serialize};
 use std::env;
 use std::fs;
@@ -92,7 +94,7 @@ fn main() {
     let secret_key = secp256k1::SecretKey::from_slice(&secret_bytes).unwrap();
     let secp = secp256k1::Secp256k1::new();
     let keypair = secp256k1::Keypair::from_secret_key(&secp, &secret_key);
-    let (x_only, _parity) = keypair.x_only_public_key();
+    let _ = keypair.x_only_public_key();
 
     // Build UTXO entry
     let utxo_spk_bytes = hex::decode(&req.utxo.script_public_key_hex).unwrap();
@@ -123,20 +125,18 @@ fn main() {
         .collect();
 
     let mut tx = Transaction::new(
-        0,                       // version
-        vec![input],             // inputs
-        outputs,                 // outputs
-        0,                       // locktime
+        0,                                                   // version
+        vec![input],                                         // inputs
+        outputs,                                             // outputs
+        0,                                                   // locktime
         kaspa_consensus_core::subnets::SUBNETWORK_ID_NATIVE, // subnetwork
-        0,                       // gas
-        vec![],                  // payload
+        0,                                                   // gas
+        vec![],                                              // payload
     );
 
     // Build MutableTransaction for sighash computation
-    let mutable_tx = kaspa_consensus_core::tx::MutableTransaction::with_entries(
-        tx.clone(),
-        vec![utxo_entry],
-    );
+    let mutable_tx =
+        kaspa_consensus_core::tx::MutableTransaction::with_entries(tx.clone(), vec![utxo_entry]);
 
     // Compute sighash and sign
     let reused = SigHashReusedValuesUnsync::new();
@@ -152,7 +152,6 @@ fn main() {
 
     // Build signatureScript: <sig> <pubkey>
     let sig_bytes = sig.serialize();
-    let pub_bytes = x_only.serialize();
 
     // Kaspa signatureScript format for P2PK:
     // [sig_hash_type(1)] [sig(64)] => 65 bytes pushed

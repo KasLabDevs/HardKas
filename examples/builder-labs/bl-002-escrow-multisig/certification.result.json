@@ -1,11 +1,29 @@
 {
-  "status": "FAIL",
-  "generatedAt": "2026-07-20T16:55:05.067Z",
+  "status": "PASS",
+  "generatedAt": "2026-07-21T06:47:04.895Z",
   "claims": {
     "simnetCertified": true,
     "testnetCertified": false,
     "mainnetCertified": false,
     "productionAudited": false
   },
-  "failedGate": "integrity"
+  "hashes": {
+    "escrow.sil": "2e23b2748044b7c2d86a330d8a2d2725d8942b89a6a914894b1e026cc0403025",
+    "Cargo.lock": "01b1529a480b2e2b81211762a25808d4b949d5619c29a95df4e99d97dbf51cce",
+    "artifactHash": "2e29c2bc5350b0e09c8d25a1f85fab19cbca796f1e4eec32d1c92ecf5fe17596",
+    "evidenceHash": "4fa3d1f83699303f9dc3fddbb57b76dcfd05fa78c55421d2c4531fb32c3e213f"
+  },
+  "repeatability": {
+    "stable": {
+      "escrow.sil": true,
+      "Cargo.lock": true,
+      "artifactHash": true,
+      "evidenceHash": true
+    },
+    "variable": {
+      "txId": true,
+      "acceptingBlockHash": true,
+      "daaScore": true
+    }
+  }
 }

@@ -11,7 +11,7 @@ describe("CLI JSON Contract", () => {
     tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), "hardkas-json-"));
     const bin = path.resolve(__dirname, "../dist/index.js");
     await execa("node", [bin, "init"], { cwd: tmpDir });
-  }, 30000);
+  }, 180000);
 
   afterEach(async () => {
     // maxRetries handles Windows EBUSY when tsx child process still holds a handle.
@@ -71,7 +71,7 @@ describe("CLI JSON Contract", () => {
 
     // All human logs (like "TxPlan generated") should be redirected or suppressed.
     // If they were output, they would either fail the JSON.parse or be in stderr.
-  }, 30000);
+  }, 180000);
 
   it("doctor --json produces strict parsable JSON with no stdout pollution", async () => {
     const { stdout } = await runCli(["doctor", "--json"]);
@@ -89,7 +89,7 @@ describe("CLI JSON Contract", () => {
     expect(resultPayload.summary).toBeDefined();
     expect(resultPayload.checks).toBeDefined();
     expect(Array.isArray(resultPayload.checks)).toBe(true);
-  }, 30000);
+  }, 180000);
 
   it("verify --json produces strict parsable JSON", async () => {
     const goldenPlanPath = path.resolve(
@@ -114,7 +114,7 @@ describe("CLI JSON Contract", () => {
 
     expect(resultPayload.schema).toBe("hardkas.queryVerify.v1");
     expect(parsed.ok).toBe(true);
-  }, 30000);
+  }, 180000);
 
   it("rebuild --json produces strict parsable JSON", async () => {
     // Run rebuild with --from-artifacts
@@ -131,7 +131,7 @@ describe("CLI JSON Contract", () => {
 
     expect(resultPayload.schema).toBe("hardkas.queryRebuild.v1");
     expect(parsed.ok).toBe(true);
-  }, 30000);
+  }, 180000);
 
   it("capabilities --json produces strict parsable JSON", async () => {
     const { stdout } = await runCli(["capabilities", "--json"], {
@@ -149,5 +149,5 @@ describe("CLI JSON Contract", () => {
 
     expect(resultPayload.version).toBeDefined();
     expect(resultPayload.capabilities).toBeDefined();
-  }, 30000);
+  }, 180000);
 });

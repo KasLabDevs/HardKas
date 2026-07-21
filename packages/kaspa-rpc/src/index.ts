@@ -559,19 +559,15 @@ export class JsonWrpcKaspaClient implements KaspaRpcClient {
       params
     });
 
-    console.log(`[wRPC Debug] Sending payload: ${payload}`);
-
     return new Promise((resolve, reject) => {
       const timeout = setTimeout(() => {
         cleanup();
-        console.log(`[wRPC Debug] Timeout for method: ${method}`);
         reject(new Error(`RPC request timed out after ${this.timeoutMs}ms`));
       }, this.timeoutMs);
 
       const onMessage = (data: any) => {
         try {
           const raw = data.toString();
-          console.log(`[wRPC Debug] Received for ${method}: ${raw}`);
           const response = JSON.parse(raw);
           if (String(response.id) === String(id)) {
             cleanup();

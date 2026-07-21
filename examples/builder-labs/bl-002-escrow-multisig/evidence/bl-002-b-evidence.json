@@ -6,17 +6,17 @@
   "positiveRoutes": {
     "mutualRelease": {
       "confirmed": true,
-      "spendTxId": "6b8d65485c6eadfe92ea5c8cf439fdf88866db7651c54a38794b4e01994ead76",
+      "spendTxId": "c3c2058048e41796b247f57fdaa0e692461c558d2be5940cb13044dbebafb5dc",
       "acceptingBlockHash": "pending"
     },
     "refundBuyer": {
       "confirmed": true,
-      "spendTxId": "71c9513c2fe9e1c069d80b94755224121811a8aa8ba04ceb3ccb132acfcb0e47",
+      "spendTxId": "d95a083d219dd61411285709cae5522a08272d61658bd44dcda9c88c3b3ccac2",
       "acceptingBlockHash": "pending"
     },
     "releaseToSeller": {
       "confirmed": true,
-      "spendTxId": "8c5651149dd0e2ba16cf4bf2d10ebe52146774a61a41008e61a7fc614bcc380e",
+      "spendTxId": "6ffafc0c9c173305e34d2623d985b2c89831c0473e293381b79301710d8f7f8a",
       "acceptingBlockHash": "pending"
     }
   },

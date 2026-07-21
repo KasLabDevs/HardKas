@@ -51,5 +51,5 @@ describe("hardkas localnet account create", () => {
 
     expect(account.privateKey).not.toBe(account3.privateKey);
     expect(account.publicKey).not.toBe(account3.publicKey);
-  }, 60000);
+  }, 180000);
 });

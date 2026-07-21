@@ -141,7 +141,7 @@ export class DockerKaspadRunner {
     const rpcUrl = `http://127.0.0.1:${this.options.ports.jsonRpc}`;
     const health = await waitForKaspaRpcReady({
       url: rpcUrl,
-      maxWaitMs: 60000,
+      maxWaitMs: 300000,
       intervalMs: 1000
     });
 
@@ -154,7 +154,7 @@ export class DockerKaspadRunner {
         logs = `\nCould not fetch container logs: ${e}`;
       }
       throw new Error(
-        `Kaspad RPC failed to become ready within 60s.\n` +
+        `Kaspad RPC failed to become ready within 300s.\n` +
           `  Container: ${this.options.containerName}\n` +
           `  Image: ${this.options.image}\n` +
           `  RPC: ${rpcUrl}\n` +

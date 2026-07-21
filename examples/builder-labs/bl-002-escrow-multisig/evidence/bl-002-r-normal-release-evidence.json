@@ -1,0 +1,16 @@
+{
+  "scenario": "normal-release",
+  "authorizedSigners": [
+    "hardware-sim-alice",
+    "hardware-sim-bob"
+  ],
+  "expectedRecipient": "02ae9fded252fe42208dac04488a9bf087842e273515cfafcb47f56b5166f6d0c7",
+  "fundingTxId": "0000000000000000000000000000000000000000000000000000000000000000",
+  "escrowOutpoint": {
+    "transactionId": "0000000000000000000000000000000000000000000000000000000000000000",
+    "index": 0
+  },
+  "unsignedTransactionIdentity": "3bedbc1a3790c6a14a7cebf4d6bd4c77a8977c2bec0532bf08bd035cbb915ca7",
+  "acceptance": null,
+  "confirmed": false
+}

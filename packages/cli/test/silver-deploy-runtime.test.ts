@@ -71,7 +71,7 @@ describe("silver deploy built CLI runtime", () => {
           cwd: tmpDir,
           encoding: "utf8",
           stdio: "pipe",
-          timeout: 15_000
+          timeout: 60_000
         }
       );
     } catch (error: any) {

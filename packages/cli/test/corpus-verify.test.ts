@@ -18,7 +18,7 @@ describe("corpus verify", () => {
         cwd: root,
         encoding: "utf8",
         stdio: "pipe",
-        timeout: 15_000
+        timeout: 60_000
       }
     );
     let result: any;

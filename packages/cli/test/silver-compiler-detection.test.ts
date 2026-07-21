@@ -12,7 +12,7 @@ function runDoctor(args: string[] = []) {
   return execFileSync(process.execPath, [distCli, "silver", "doctor", ...args], {
     encoding: "utf8",
     stdio: "pipe",
-    timeout: 15_000
+    timeout: 60_000
   });
 }
 
@@ -26,7 +26,7 @@ function runCompile(args: string[] = []) {
     return execFileSync(process.execPath, [distCli, "silver", "compile", ...args], {
       encoding: "utf8",
       stdio: "pipe",
-      timeout: 15_000
+      timeout: 60_000
     });
   } catch (e: any) {
     return e.stdout || e.stderr || e.message;

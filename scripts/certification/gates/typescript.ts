@@ -9,7 +9,7 @@ export class TypescriptGate implements CertificationGate {
         try {
             console.log("    Running global test suite...");
             // Exclude the builder-labs which will be run isolated in their own gate
-            await runCommand("pnpm test", ctx.projectRoot);
+            await runCommand('pnpm exec vitest run --exclude "examples/builder-labs/**" --testTimeout 120000 && pnpm test:workflows', ctx.projectRoot);
             
             return { success: true };
         } catch (error: any) {

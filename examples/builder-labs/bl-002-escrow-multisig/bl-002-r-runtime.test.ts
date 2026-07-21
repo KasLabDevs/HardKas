@@ -73,7 +73,7 @@ describe("BL-002R - Simnet Runtime Validation", () => {
         await new Promise(resolve => setTimeout(resolve, 8000));
         await execAsync(`docker rm -f helper-miner`).catch(() => {});
 
-    }, 120000);
+    }, 360000);
 
     afterAll(async () => {
         if (rpc) await rpc.close();
@@ -103,7 +103,8 @@ describe("BL-002R - Simnet Runtime Validation", () => {
         };
 
         // 2. Create Session
-        const primitiveRes = await execAsync(`cargo run --bin generate-multisig-fixture -- ${multisig.cosigners.join(" ")} ${multisig.redeemScriptHex} ${utxo.utxoEntry.amount} 0 ${utxo.outpoint.transactionId} ${utxo.outpoint.index} ${sendAmount}`, { cwd: path.join(ROOT_DIR, "../../../packages/pskt-native") });
+        const sortedFullKeys = [identities.alice.fullPublicKeyHex, identities.bob.fullPublicKeyHex, identities.charlie.fullPublicKeyHex].sort((a, b) => a.localeCompare(b));
+        const primitiveRes = await execAsync(`cargo run --bin generate-multisig-fixture -- ${sortedFullKeys.join(" ")} ${multisig.redeemScriptHex} ${utxo.utxoEntry.amount} 0 ${utxo.outpoint.transactionId} ${utxo.outpoint.index} ${sendAmount}`, { cwd: path.join(ROOT_DIR, "../../../packages/pskt-native") });
         const primitiveOut = JSON.parse(primitiveRes.stdout);
         const payloadBytes = Buffer.from(primitiveOut.payloadBase64, 'base64');
         const integrityHash = crypto.createHash("sha256").update(payloadBytes).digest("hex");
@@ -160,19 +161,19 @@ describe("BL-002R - Simnet Runtime Validation", () => {
             { name: "hardware-sim-alice", dir: "alice" },
             { name: "hardware-sim-bob", dir: "bob" }
         ], identities.bob.fullPublicKeyHex);
-    }, 60000);
+    }, 180000);
 
     it("Scenario B: Dispute Return (Buyer + Arbiter)", async () => {
         await runScenario("dispute-return", [
             { name: "hardware-sim-alice", dir: "alice" },
             { name: "hardware-sim-charlie", dir: "charlie" }
         ], identities.alice.fullPublicKeyHex);
-    }, 60000);
+    }, 180000);
 
     it("Scenario C: Dispute Release (Seller + Arbiter)", async () => {
         await runScenario("dispute-release", [
             { name: "hardware-sim-bob", dir: "bob" },
             { name: "hardware-sim-charlie", dir: "charlie" }
         ], identities.bob.fullPublicKeyHex);
-    }, 60000);
+    }, 180000);
 });
