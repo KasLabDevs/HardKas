@@ -36,7 +36,7 @@ export async function connectKaspaWallet(options: ConnectWalletOptions): Promise
     throw new Error("No compatible Kaspa wallet provider was detected.");
   }
 
-  let selected = installed[0];
+  let selected = installed[0]!;
   if (options.preferredWalletId) {
     const found = installed.find((a) => a.id === options.preferredWalletId);
     if (!found) {

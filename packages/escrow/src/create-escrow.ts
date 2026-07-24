@@ -47,7 +47,8 @@ export async function createEscrow(
         artifact,
         state: {
             lockingScriptHex: p2shLock.lockingScriptHex,
-            redeemScriptHex: covenantBytecodeHex
+            redeemScriptHex: covenantBytecodeHex,
+            address: ""
         }
     };
 }

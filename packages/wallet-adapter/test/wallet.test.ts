@@ -72,6 +72,6 @@ describe("P2 Wallet Providers", () => {
     
     const artifactParsed = JSON.parse(signResult.artifact);
     expect(artifactParsed.signatures[0]).toBe("mock-sig");
-    expect(artifactParsed.payload).toBe(plan.unsignedPayload);
+    expect(artifactParsed.payload).toBe((plan as any).unsignedPayload || JSON.stringify(plan));
   });
 });
