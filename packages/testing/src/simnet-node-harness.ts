@@ -20,6 +20,7 @@ export interface SimnetNodeHarnessOptions {
   binaryPath?: string;
   rpcPort?: number;
   utxoIndex?: boolean;
+  txIndex?: boolean;
   startupTimeoutMs?: number;
 }
 
@@ -38,44 +39,52 @@ export class SimnetNodeHarness {
       const args = [
         "--simnet",
         "--rpclisten-json=127.0.0.1:" + rpcPort,
-        "--appdir=" + dataDir
+        "--appdir=" + dataDir,
+        "--reset-db"
       ];
       if (options.utxoIndex) args.push("--utxoindex");
+      if (options.txIndex) args.push("--txindex");
       child = spawn(binaryPath, args, { stdio: "ignore" });
     } else {
       // Fallback to docker
-      const dockerImage = "kaspanet/kaspad:v2.0.1"; // Default pinned version
+      const dockerImage = "supertypo/rusty-kaspad:latest"; // Valid image
       const args = [
         "run", "--rm", "-p", `${rpcPort}:${rpcPort}`,
         dockerImage,
+        "kaspad",
         "--simnet",
-        "--rpclisten-json=0.0.0.0:" + rpcPort
+        "--rpclisten-json=0.0.0.0:" + rpcPort,
+        "--enable-unsynced-mining",
+        "--reset-db"
       ];
       if (options.utxoIndex) args.push("--utxoindex");
+      if (options.txIndex) args.push("--txindex");
       child = spawn("docker", args, { stdio: "ignore" });
     }
 
     if (!child) throw new Error("Failed to start Simnet Node");
 
+    const client = new JsonWrpcKaspaClient({ rpcUrl });
+
     const handle: SimnetNodeHandle = {
       rpcUrl,
       dataDir,
       processId: child.pid,
-      mining: new SimnetMiningDriverImpl(new JsonWrpcTransport({ url: rpcUrl.replace("ws://", "http://") })),
+      mining: new SimnetMiningDriverImpl(client),
       waitUntilReady: async (waitOpts) => {
-        const timeoutMs = waitOpts?.timeoutMs || options.startupTimeoutMs || 30000;
+        const timeoutMs = waitOpts?.timeoutMs || options.startupTimeoutMs || 90000;
         const start = Date.now();
         while (Date.now() - start < timeoutMs) {
           try {
             const client = new JsonWrpcKaspaClient({ rpcUrl });
             const serverInfo = await client.getServerInfo();
             const network = await client.getCurrentNetwork();
-            const sync = await client.getSyncStatus();
+            const info = await client.getInfo();
             
             if (
               serverInfo && 
               network.network.includes("simnet") &&
-              sync.isSynced
+              (!options.utxoIndex || info.isUtxoIndexed)
             ) {
               await client.close();
               return; // Ready
@@ -105,10 +114,11 @@ export class SimnetNodeHarness {
   }
 
   static async attach(rpcUrl: string): Promise<SimnetNodeHandle> {
+    const client = new JsonWrpcKaspaClient({ rpcUrl });
     return {
       rpcUrl,
       dataDir: "external",
-      mining: new SimnetMiningDriverImpl(new JsonWrpcTransport({ url: rpcUrl.replace("ws://", "http://") })),
+      mining: new SimnetMiningDriverImpl(client),
       waitUntilReady: async (opts) => {
         // Just verify it's a real simnet
         const client = new JsonWrpcKaspaClient({ rpcUrl });

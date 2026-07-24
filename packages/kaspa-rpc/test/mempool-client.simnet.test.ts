@@ -29,7 +29,7 @@ describe("MempoolRpcClient (Simnet Certification)", () => {
   }, 120000); // More time since mining 100 blocks takes some time
 
   afterAll(async () => {
-    await transport.close();
+    if (transport) await transport.close();
     if (node) {
       await node.stop();
     }

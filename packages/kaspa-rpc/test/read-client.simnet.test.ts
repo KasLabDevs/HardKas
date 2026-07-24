@@ -27,7 +27,7 @@ describe("ReadRpcClient (Simnet Certification)", () => {
   }, 60000); // 60s timeout for node startup
 
   afterAll(async () => {
-    await transport.close();
+    if (transport) await transport.close();
     if (node) {
       await node.stop();
     }

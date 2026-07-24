@@ -43,7 +43,7 @@ export class CertificationReporter {
     this.report.operations[operation] = {
       passed: true,
       testSuite,
-      testedAt: new Date().toISOString().split("T")[0] || ""
+      testedAt: new Date().toISOString().split("T")[0] as string
     };
     this.save();
   }
@@ -53,7 +53,7 @@ export class CertificationReporter {
     this.report.operations[operation] = {
       passed: false,
       testSuite,
-      testedAt: new Date().toISOString().split("T")[0] || "",
+      testedAt: new Date().toISOString().split("T")[0] as string,
       layerFailures: layers
     };
     this.save();

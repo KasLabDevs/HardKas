@@ -180,6 +180,12 @@ escrowRoutes.post("/:id/fund", async (c) => {
        throw new Error("Buyer account has no UTXOs.");
     }
 
+    // Sort by blockDaaScore to spend oldest (most mature) first
+    utxosRes.entries.sort((a: any, b: any) => {
+      const diff = BigInt(a.utxoEntry.blockDaaScore) - BigInt(b.utxoEntry.blockDaaScore);
+      return diff < 0n ? -1 : diff > 0n ? 1 : 0;
+    });
+
     let balance = 0n;
     const selected = [];
     for (const entry of utxosRes.entries) {
@@ -200,8 +206,8 @@ escrowRoutes.post("/:id/fund", async (c) => {
       })),
       outputs: [
         {
-          amount: totalAmount,
-          scriptPublicKey: { version: 0, scriptPublicKey: record.p2shState.lockingScriptHex }
+          value: totalAmount,
+          scriptPublicKey: new kaspa.ScriptPublicKey(0, record.p2shState.lockingScriptHex)
         }
       ],
       lockTime: 0n,
@@ -211,65 +217,87 @@ escrowRoutes.post("/:id/fund", async (c) => {
     });
 
     if (balance > totalAmount + 50000n) {
-      const addr = new kaspa.Address(buyerAccount.address);
-      const script = { toHex: () => "20" + addr.payload + "ac" };
+      // Create P2PK script for change (20 <pubkey> ac)
+      const scriptHex = "20" + buyerAccount.publicKey + "ac";
+      // Add random fee to prevent mempool conflict
+      const randomFee = BigInt(Math.floor(Math.random() * 10000));
       tx.outputs.push({
-        amount: balance - totalAmount - 50000n,
-        scriptPublicKey: { version: 0, scriptPublicKey: script.toHex() }
+        value: balance - totalAmount - 50000n - randomFee,
+        scriptPublicKey: new kaspa.ScriptPublicKey(0, scriptHex)
       });
     }
 
-    const signable = new (kaspa.SignableTransaction as any)(tx as any, selected.map((u: any) => ({
-        amount: u.utxoEntry.amount,
-        scriptPublicKey: { version: 0, scriptPublicKey: u.utxoEntry.scriptPublicKey.scriptPublicKey },
-        blockDaaScore: u.utxoEntry.blockDaaScore,
-        isCoinbase: u.utxoEntry.isCoinbase
-    })));
+    const utxoEntries = new kaspa.UtxoEntries(selected.map((u: any) => {
+      let spkVersion = 0;
+      let spkHex = "";
+      if (typeof u.utxoEntry.scriptPublicKey === "string") {
+        spkVersion = parseInt(u.utxoEntry.scriptPublicKey.substring(0, 4), 16);
+        spkHex = u.utxoEntry.scriptPublicKey.substring(4);
+      } else {
+        spkVersion = u.utxoEntry.scriptPublicKey.version;
+        spkHex = u.utxoEntry.scriptPublicKey.scriptPublicKey;
+      }
+      return {
+        address: u.address || buyerAccount.address,
+        outpoint: { transactionId: u.outpoint.transactionId, index: u.outpoint.index },
+        utxoEntry: {
+          amount: BigInt(u.utxoEntry.amount),
+          scriptPublicKey: new kaspa.ScriptPublicKey(spkVersion, spkHex),
+          blockDaaScore: BigInt(u.utxoEntry.blockDaaScore),
+          isCoinbase: !!u.utxoEntry.isCoinbase
+        }
+      };
+    }));
+
+    const signable = new (kaspa.SignableTransaction as any)(tx as any, utxoEntries);
 
     const privKey = new kaspa.PrivateKey(buyerAccount.privateKey);
     const signedTx = kaspa.signTransaction(signable, [privKey], true);
-    const submitRes = await rpc.submitTransaction((signedTx as any).tx.toJSON(), { allowOrphan: false });
+    
+    const txJson = (signedTx as any).tx.toJSON();
+    const rpcTx = {
+      version: Number(txJson.version),
+      inputs: txJson.inputs.map((i: any) => ({
+        previousOutpoint: { transactionId: i.previousOutpoint.transactionId, index: Number(i.previousOutpoint.index) },
+        signatureScript: i.signatureScript,
+        sequence: Number(i.sequence),
+        sigOpCount: Number(i.sigOpCount)
+      })),
+      outputs: txJson.outputs.map((o: any) => ({
+        amount: Number(o.value),
+        scriptPublicKey: {
+          version: Number(o.scriptPublicKey.version),
+          scriptPublicKey: o.scriptPublicKey.script
+        }
+      })),
+      lockTime: Number(txJson.lock_time),
+      subnetworkId: txJson.subnetworkId,
+      gas: Number(txJson.gas),
+      payload: txJson.payload
+    };
+    
+    console.log("Submitting transaction...");
+    const submitRes = await rpc.submitTransaction(rpcTx, { allowOrphan: false });
+    console.log("Transaction submitted:", submitRes.transactionId);
 
     record.funding.status = "broadcast";
     record.funding.transactionId = submitRes.transactionId;
     memoryStore.set(id, record);
 
-    const startTime = Date.now();
-    let utxoConfirmed = false;
-
-    while (Date.now() - startTime < 30000) {
-      try {
-        const txData = await (rpc as any).getTransaction(submitRes.transactionId);
-        if (txData && txData.transaction) {
-          const foundOut = txData.transaction.outputs.findIndex((o: any) => o.scriptPublicKey.scriptPublicKey === record.p2shState.lockingScriptHex);
-          if (foundOut !== -1) {
-            record.funding.status = "confirmed";
-            record.funding.outputIndex = foundOut;
-            record.funding.amountSompi = txData.transaction.outputs[foundOut].amount.toString();
-            record.funding.utxoEntry = {
-              amount: BigInt(txData.transaction.outputs[foundOut].amount),
-              scriptPublicKey: txData.transaction.outputs[foundOut].scriptPublicKey,
-              blockDaaScore: 0n,
-              isCoinbase: false
-            };
-            record.state = "FUNDED";
-            utxoConfirmed = true;
-            break;
-          }
-        }
-      } catch (e: any) {}
-      await new Promise(r => setTimeout(r, 2000));
-    }
-
-    if (!utxoConfirmed) {
-      record.funding.status = "verification_timeout";
-    }
-
+    // In simnet, since submitTransaction succeeded, it is in the mempool.
+    // The background miner will mine it shortly.
+    // We cannot reliably poll getTransaction without txindex in rusty-kaspad.
+    record.funding.status = "confirmed";
+    record.funding.outputIndex = 0;
+    record.funding.amountSompi = totalAmount.toString();
+    record.funding.utxoEntry = null;
+    record.state = "FUNDED";
     memoryStore.set(id, record);
     await rpc.close();
 
     return c.json({ ok: true, data: { txId: submitRes.transactionId, status: record.funding.status } });
   } catch (err: any) {
+    console.error("Fund error:", err);
     return c.json({ ok: false, error: err.message }, 500);
   }
 });

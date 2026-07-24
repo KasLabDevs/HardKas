@@ -567,9 +567,9 @@
           }
         ],
         "return_type_spans": [],
-        "span": "entrypoint function mutualRelease(\n        sig buyerSig,\n        sig sellerSig\n    ) {\n        require(checkSig(buyerSig, pubkey(buyerBytes)));\n        require(checkSig(sellerSig, pubkey(sellerBytes)));\n        // Free destination, mutual agreement\n    }",
+        "span": "entrypoint function mutualRelease(\r\n        sig buyerSig,\r\n        sig sellerSig\r\n    ) {\r\n        require(checkSig(buyerSig, pubkey(buyerBytes)));\r\n        require(checkSig(sellerSig, pubkey(sellerBytes)));\r\n        // Free destination, mutual agreement\r\n    }",
         "name_span": "mutualRelease",
-        "body_span": "require(checkSig(buyerSig, pubkey(buyerBytes)));\n        require(checkSig(sellerSig, pubkey(sellerBytes)));"
+        "body_span": "require(checkSig(buyerSig, pubkey(buyerBytes)));\r\n        require(checkSig(sellerSig, pubkey(sellerBytes)));"
       },
       {
         "name": "refundBuyer",
@@ -766,9 +766,9 @@
           }
         ],
         "return_type_spans": [],
-        "span": "entrypoint function refundBuyer(\n        sig buyerSig,\n        sig arbiterSig\n    ) {\n        require(checkSig(buyerSig, pubkey(buyerBytes)));\n        require(checkSig(arbiterSig, pubkey(arbiterBytes)));\n\n        require(tx.outputs.length == 1);\n        require(tx.outputs[0].scriptPubKey == buyerSpk);\n        require(tx.outputs[0].value == refundAmount);\n    }",
+        "span": "entrypoint function refundBuyer(\r\n        sig buyerSig,\r\n        sig arbiterSig\r\n    ) {\r\n        require(checkSig(buyerSig, pubkey(buyerBytes)));\r\n        require(checkSig(arbiterSig, pubkey(arbiterBytes)));\r\n\r\n        require(tx.outputs.length == 1);\r\n        require(tx.outputs[0].scriptPubKey == buyerSpk);\r\n        require(tx.outputs[0].value == refundAmount);\r\n    }",
         "name_span": "refundBuyer",
-        "body_span": "require(checkSig(buyerSig, pubkey(buyerBytes)));\n        require(checkSig(arbiterSig, pubkey(arbiterBytes)));\n\n        require(tx.outputs.length == 1);\n        require(tx.outputs[0].scriptPubKey == buyerSpk);\n        require(tx.outputs[0].value == refundAmount);"
+        "body_span": "require(checkSig(buyerSig, pubkey(buyerBytes)));\r\n        require(checkSig(arbiterSig, pubkey(arbiterBytes)));\r\n\r\n        require(tx.outputs.length == 1);\r\n        require(tx.outputs[0].scriptPubKey == buyerSpk);\r\n        require(tx.outputs[0].value == refundAmount);"
       },
       {
         "name": "releaseToSeller",
@@ -965,12 +965,12 @@
           }
         ],
         "return_type_spans": [],
-        "span": "entrypoint function releaseToSeller(\n        sig sellerSig,\n        sig arbiterSig\n    ) {\n        require(checkSig(sellerSig, pubkey(sellerBytes)));\n        require(checkSig(arbiterSig, pubkey(arbiterBytes)));\n\n        require(tx.outputs.length == 1);\n        require(tx.outputs[0].scriptPubKey == sellerSpk);\n        require(tx.outputs[0].value == releaseAmount);\n    }",
+        "span": "entrypoint function releaseToSeller(\r\n        sig sellerSig,\r\n        sig arbiterSig\r\n    ) {\r\n        require(checkSig(sellerSig, pubkey(sellerBytes)));\r\n        require(checkSig(arbiterSig, pubkey(arbiterBytes)));\r\n\r\n        require(tx.outputs.length == 1);\r\n        require(tx.outputs[0].scriptPubKey == sellerSpk);\r\n        require(tx.outputs[0].value == releaseAmount);\r\n    }",
         "name_span": "releaseToSeller",
-        "body_span": "require(checkSig(sellerSig, pubkey(sellerBytes)));\n        require(checkSig(arbiterSig, pubkey(arbiterBytes)));\n\n        require(tx.outputs.length == 1);\n        require(tx.outputs[0].scriptPubKey == sellerSpk);\n        require(tx.outputs[0].value == releaseAmount);"
+        "body_span": "require(checkSig(sellerSig, pubkey(sellerBytes)));\r\n        require(checkSig(arbiterSig, pubkey(arbiterBytes)));\r\n\r\n        require(tx.outputs.length == 1);\r\n        require(tx.outputs[0].scriptPubKey == sellerSpk);\r\n        require(tx.outputs[0].value == releaseAmount);"
       }
     ],
-    "span": "contract Escrow(\n    byte[] buyerBytes,\n    byte[] sellerBytes,\n    byte[] arbiterBytes,\n    byte[] buyerSpk,\n    byte[] sellerSpk,\n    int refundAmount,\n    int releaseAmount\n) {\n    entrypoint function mutualRelease(\n        sig buyerSig,\n        sig sellerSig\n    ) {\n        require(checkSig(buyerSig, pubkey(buyerBytes)));\n        require(checkSig(sellerSig, pubkey(sellerBytes)));\n        // Free destination, mutual agreement\n    }\n\n    entrypoint function refundBuyer(\n        sig buyerSig,\n        sig arbiterSig\n    ) {\n        require(checkSig(buyerSig, pubkey(buyerBytes)));\n        require(checkSig(arbiterSig, pubkey(arbiterBytes)));\n\n        require(tx.outputs.length == 1);\n        require(tx.outputs[0].scriptPubKey == buyerSpk);\n        require(tx.outputs[0].value == refundAmount);\n    }\n\n    entrypoint function releaseToSeller(\n        sig sellerSig,\n        sig arbiterSig\n    ) {\n        require(checkSig(sellerSig, pubkey(sellerBytes)));\n        require(checkSig(arbiterSig, pubkey(arbiterBytes)));\n\n        require(tx.outputs.length == 1);\n        require(tx.outputs[0].scriptPubKey == sellerSpk);\n        require(tx.outputs[0].value == releaseAmount);\n    }\n}",
+    "span": "contract Escrow(\r\n    byte[] buyerBytes,\r\n    byte[] sellerBytes,\r\n    byte[] arbiterBytes,\r\n    byte[] buyerSpk,\r\n    byte[] sellerSpk,\r\n    int refundAmount,\r\n    int releaseAmount\r\n) {\r\n    entrypoint function mutualRelease(\r\n        sig buyerSig,\r\n        sig sellerSig\r\n    ) {\r\n        require(checkSig(buyerSig, pubkey(buyerBytes)));\r\n        require(checkSig(sellerSig, pubkey(sellerBytes)));\r\n        // Free destination, mutual agreement\r\n    }\r\n\r\n    entrypoint function refundBuyer(\r\n        sig buyerSig,\r\n        sig arbiterSig\r\n    ) {\r\n        require(checkSig(buyerSig, pubkey(buyerBytes)));\r\n        require(checkSig(arbiterSig, pubkey(arbiterBytes)));\r\n\r\n        require(tx.outputs.length == 1);\r\n        require(tx.outputs[0].scriptPubKey == buyerSpk);\r\n        require(tx.outputs[0].value == refundAmount);\r\n    }\r\n\r\n    entrypoint function releaseToSeller(\r\n        sig sellerSig,\r\n        sig arbiterSig\r\n    ) {\r\n        require(checkSig(sellerSig, pubkey(sellerBytes)));\r\n        require(checkSig(arbiterSig, pubkey(arbiterBytes)));\r\n\r\n        require(tx.outputs.length == 1);\r\n        require(tx.outputs[0].scriptPubKey == sellerSpk);\r\n        require(tx.outputs[0].value == releaseAmount);\r\n    }\r\n}",
     "name_span": "Escrow"
   },
   "abi": [

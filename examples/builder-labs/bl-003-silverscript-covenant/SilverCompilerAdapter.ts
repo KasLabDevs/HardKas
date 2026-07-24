@@ -33,7 +33,8 @@ export class SilverCompilerAdapter {
     private compilerCommit: string = "9aa70b0d0215e7395e2a95b78472eba0a5b103a5"; // Pinned commit
 
     constructor(binaryPath?: string) {
-        this.binaryPath = binaryPath || path.resolve(__dirname, "../../../.hardkas/bin/silverc.exe");
+        const ext = process.platform === "win32" ? ".exe" : "";
+        this.binaryPath = binaryPath || path.resolve(__dirname, `../../../.hardkas/bin/silverc${ext}`);
     }
 
     async probe(): Promise<SilverCompilerCapabilities> {

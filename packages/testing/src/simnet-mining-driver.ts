@@ -1,4 +1,4 @@
-import { JsonWrpcTransport } from "../../kaspa-rpc/src/transport/json-wrpc-transport.js";
+import { JsonWrpcKaspaClient } from "@hardkas/kaspa-rpc";
 
 export interface MinedBlockResult {
   hash: string;
@@ -21,28 +21,29 @@ export interface SimnetMiningDriver {
 }
 
 export class SimnetMiningDriverImpl implements SimnetMiningDriver {
-  constructor(private transport: JsonWrpcTransport) {}
+  constructor(private client: JsonWrpcKaspaClient) {}
 
   async mineBlock(options?: {
     payAddress?: string;
     includeTransactionIds?: readonly string[];
     timeoutMs?: number;
   }): Promise<MinedBlockResult> {
-    const payAddress = options?.payAddress || "simnet:qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqhx0cgpc";
+    const payAddress = options?.payAddress || "kaspasim:qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqx0r8j";
     
     // Obtenemos el template del bloque
-    const templateRes = await this.transport.send("getBlockTemplateRequest", {
+    // Note: rusty-kaspad wRPC JSON requires:
+    //   - kaspasim: prefix for simnet addresses (not simnet:)
+    //   - extraData as byte array [] (not string "")
+    const templateRes = await this.client.call("getBlockTemplateRequest", {
       payAddress,
-      extraData: ""
+      extraData: []
     }) as any;
     
     const blockMessage = templateRes.blockMessage || templateRes.block;
     
     // Modificamos el bloque si debemos forzar ciertas transacciones (simplificado para Simnet Testing)
-    // En la realidad, a menos que rehagamos el merkle root, solo podemos enviar el template tal cual
-    // Asumiremos que el nodo incluye las Tx automáticamente.
     
-    const submitRes = await this.transport.send("submitBlockRequest", {
+    const submitRes = await this.client.call("submitBlockRequest", {
       block: blockMessage,
       allowNonDAABlocks: false
     }) as any;
@@ -70,3 +71,4 @@ export class SimnetMiningDriverImpl implements SimnetMiningDriver {
     return results;
   }
 }
+

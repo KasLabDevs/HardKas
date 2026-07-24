@@ -190,7 +190,7 @@ export function buildTransaction(config: TransactionEngineConfig): TxPlan {
         change: changeOutput,
         mass: mass.toString(),
         fee: currentFee.toString(),
-        unsignedPayload: JSON.stringify(planSummary)
+        unsignedPayload: JSON.stringify(planSummary, (_, v) => typeof v === 'bigint' ? v.toString() : v)
     };
 
   } catch (error: any) {

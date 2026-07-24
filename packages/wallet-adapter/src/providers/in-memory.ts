@@ -53,7 +53,7 @@ export class InMemoryWalletProvider implements WalletProvider, TransactionSigner
 
     return {
         artifact: JSON.stringify({
-            payload: "",
+            payload: plan.unsignedPayload,
             signatures: ["mock-sig"]
         }),
         signedInputs,

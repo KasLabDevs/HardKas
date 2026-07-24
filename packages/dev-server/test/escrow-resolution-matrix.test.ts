@@ -15,8 +15,11 @@ let config = {
 
 describe("Resolution Matrix", () => {
     
-    async function executeBranch(branch: string, signers: string[]) {
-        const createRes = await fetch(`${BASE_URL}/api/escrows`, { method: "POST", headers, body: JSON.stringify(config) });
+    async function executeBranch(branch: string, signers: string[], offset: number) {
+        const testConfig = JSON.parse(JSON.stringify(config));
+        testConfig.releaseAmount = (BigInt(config.releaseAmount) + BigInt(offset)).toString();
+        
+        const createRes = await fetch(`${BASE_URL}/api/escrows`, { method: "POST", headers, body: JSON.stringify(testConfig) });
         const createData = await createRes.json();
         expect(createData.ok).toBe(true);
         const id = createData.data.id;
@@ -28,6 +31,9 @@ describe("Resolution Matrix", () => {
         // Prepare
         const prepRes = await fetch(`${BASE_URL}/api/escrows/${id}/release/prepare`, { method: "POST", headers, body: JSON.stringify({ branch }) });
         const prepData = await prepRes.json();
+        if (!prepData.ok) {
+            console.error("release/prepare failed:", prepData);
+        }
         expect(prepData.ok).toBe(true);
 
         // Sign
@@ -51,15 +57,15 @@ describe("Resolution Matrix", () => {
     }
 
     it("should execute Mutual Release (Buyer + Seller -> Buyer)", async () => {
-        await executeBranch("mutualRelease", ["buyer", "seller"]);
+        await executeBranch("mutualRelease", ["buyer", "seller"], 1);
     }, 60000);
 
     it("should execute Refund Buyer (Buyer + Arbiter -> Buyer)", async () => {
-        await executeBranch("refundBuyer", ["buyer", "arbiter"]);
+        await executeBranch("refundBuyer", ["buyer", "arbiter"], 2);
     }, 60000);
 
     it("should execute Release to Seller (Seller + Arbiter -> Seller)", async () => {
-        await executeBranch("releaseToSeller", ["seller", "arbiter"]);
+        await executeBranch("releaseToSeller", ["seller", "arbiter"], 3);
     }, 60000);
 
 });

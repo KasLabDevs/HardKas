@@ -20,4 +20,5 @@ export interface EscrowArtifact {
 export interface EscrowState {
     lockingScriptHex: string;
     redeemScriptHex: string;
+    address: string;
 }

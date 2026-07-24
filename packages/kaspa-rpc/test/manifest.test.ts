@@ -20,7 +20,7 @@ describe("CoverageEngine", () => {
     const getBlockEntry = report.find(r => r.operation === "getBlock");
     
     expect(getBlockEntry).toBeDefined();
-    expect(getBlockEntry?.status).toBe("covered");
+    expect(getBlockEntry?.coverageStatus).toBe("covered");
   });
 
   it("should evaluate getUtxosByAddresses as partial if rawWrapperAvailable is false", () => {
@@ -30,7 +30,6 @@ describe("CoverageEngine", () => {
         requestTyped: true,
         responseTyped: true,
         errorMapped: true,
-        simnetTested: true,
         rawWrapperAvailable: false,
         highLevelAbstractionAvailable: true,
         cancellationSupported: false
@@ -41,7 +40,7 @@ describe("CoverageEngine", () => {
     const utxosEntry = report.find(r => r.operation === "getUtxosByAddresses");
     
     expect(utxosEntry).toBeDefined();
-    expect(utxosEntry?.status).toBe("partial");
+    expect(utxosEntry?.coverageStatus).toBe("partial");
   });
 
   it("should output valid markdown", () => {
@@ -51,7 +50,6 @@ describe("CoverageEngine", () => {
         requestTyped: true,
         responseTyped: true,
         errorMapped: true,
-        simnetTested: true,
         rawWrapperAvailable: true,
         highLevelAbstractionAvailable: false,
         cancellationSupported: true
@@ -60,6 +58,6 @@ describe("CoverageEngine", () => {
     const report = CoverageEngine.generateReport(impls);
     const md = CoverageEngine.toMarkdown(report);
     expect(md).toContain("# Kaspa RPC Surface Coverage");
-    expect(md).toContain("`getBlock` | `getBlock` | COVERED | ✅");
+    expect(md).toContain("`getBlock` | `getBlock` | COVERED | unit-tested | ✅ | ❌ | ✅ | ✅ | ✅ |");
   });
 });
