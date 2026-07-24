@@ -8,7 +8,7 @@ export const simnetRoutes = new Hono();
 
 simnetRoutes.post("/mine", async (c) => {
   try {
-    const socketAddr = c.req.raw.headers.get("x-forwarded-for") || (c.env?.incoming?.socket?.remoteAddress);
+    const socketAddr = c.req.raw.headers.get("x-forwarded-for") || ((c.env as any)?.incoming?.socket?.remoteAddress);
     
     // Check if network is simnet
     // Normally dev-server uses HARDKAS_NETWORK or just assume if not explicitly mainnet.

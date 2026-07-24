@@ -44,5 +44,8 @@
   "bugs": {
     "url": "https://github.com/KasLabDevs/HardKas/issues"
   },
-  "homepage": "https://github.com/KasLabDevs/HardKas/tree/main/packages/bridge-local#readme"
+  "homepage": "https://github.com/KasLabDevs/HardKas/tree/main/packages/bridge-local#readme",
+  "publishConfig": {
+    "access": "public"
+  }
 }

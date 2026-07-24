@@ -55,5 +55,8 @@
   "bugs": {
     "url": "https://github.com/KasLabDevs/HardKas/issues"
   },
-  "homepage": "https://github.com/KasLabDevs/HardKas/tree/main/packages/react#readme"
+  "homepage": "https://github.com/KasLabDevs/HardKas/tree/main/packages/react#readme",
+  "publishConfig": {
+    "access": "public"
+  }
 }

@@ -34,9 +34,9 @@ export interface EscrowRecord {
 
   funding: {
     status: "none" | "broadcast" | "confirmed" | "failed" | "verification_timeout";
-    transactionId?: string;
-    outputIndex?: number;
-    amountSompi?: string;
+    transactionId?: string | undefined;
+    outputIndex?: number | undefined;
+    amountSompi?: string | undefined;
     utxoEntry?: any;
   };
 
@@ -61,7 +61,7 @@ export interface EscrowRecord {
     actualOutputsHash: string;
     feeSompi: string;
     status: "broadcast" | "confirmed" | "failed" | "verification_timeout";
-  };
+  } | undefined;
 }
 
 const memoryStore = new Map<string, EscrowRecord>();
@@ -155,9 +155,21 @@ escrowRoutes.post("/:id/fund", async (c) => {
 
     const kaspa = await import("kaspa-wasm");
     const rpc = new JsonWrpcKaspaClient({ rpcUrl: "ws://127.0.0.1:18210" });
-    const { listDevAccountsSync } = await import("@hardkas/accounts");
+    const { listDevAccountsSync, getOrCreateDevAccount } = await import("@hardkas/accounts");
     const accounts = listDevAccountsSync(process.cwd());
-    const buyerAccount = accounts.find((a: any) => a.publicKey === record.config.buyer.publicKeyHex) || accounts[0];
+    let buyerAccount: any = null;
+    for (let i = 0; i < accounts.length; i++) {
+        const acc = accounts[i];
+        if (!acc) continue;
+        const fullAcc = await getOrCreateDevAccount(process.cwd(), i, acc.name);
+        if (fullAcc.publicKey === record.config.buyer.publicKeyHex) {
+            buyerAccount = fullAcc;
+            break;
+        }
+    }
+    if (!buyerAccount) {
+        buyerAccount = await getOrCreateDevAccount(process.cwd(), 0, (accounts[0] && accounts[0].name) || "alice");
+    }
 
     if (!buyerAccount) throw new Error("No dev accounts found to fund the escrow");
 
@@ -200,14 +212,14 @@ escrowRoutes.post("/:id/fund", async (c) => {
 
     if (balance > totalAmount + 50000n) {
       const addr = new kaspa.Address(buyerAccount.address);
-      const script = kaspa.payToAddrScript(addr);
+      const script = { toHex: () => "20" + addr.payload + "ac" };
       tx.outputs.push({
         amount: balance - totalAmount - 50000n,
         scriptPublicKey: { version: 0, scriptPublicKey: script.toHex() }
       });
     }
 
-    const signable = kaspa.SignableTransaction.fromTransaction(tx, selected.map(u => new kaspa.UtxoEntry({
+    const signable = new (kaspa.SignableTransaction as any)(tx as any, selected.map((u: any) => ({
         amount: u.utxoEntry.amount,
         scriptPublicKey: { version: 0, scriptPublicKey: u.utxoEntry.scriptPublicKey.scriptPublicKey },
         blockDaaScore: u.utxoEntry.blockDaaScore,
@@ -215,8 +227,8 @@ escrowRoutes.post("/:id/fund", async (c) => {
     })));
 
     const privKey = new kaspa.PrivateKey(buyerAccount.privateKey);
-    const signedTx = signable.sign([privKey]);
-    const submitRes = await rpc.submitTransaction(signedTx.toRpcTransaction(), { allowOrphan: false });
+    const signedTx = kaspa.signTransaction(signable, [privKey], true);
+    const submitRes = await rpc.submitTransaction((signedTx as any).tx.toJSON(), { allowOrphan: false });
 
     record.funding.status = "broadcast";
     record.funding.transactionId = submitRes.transactionId;
@@ -225,23 +237,27 @@ escrowRoutes.post("/:id/fund", async (c) => {
     const startTime = Date.now();
     let utxoConfirmed = false;
 
-    const p2shAddrObj = kaspa.Address.fromScriptPublicKey({ version: 0, scriptPublicKey: record.p2shState.lockingScriptHex }, kaspa.NetworkType.Simnet);
-    const p2shAddrStr = p2shAddrObj.toString();
-
     while (Date.now() - startTime < 30000) {
-      const checkRes = await rpc.getUtxosByAddresses([p2shAddrStr]);
-      if (checkRes.entries && checkRes.entries.length > 0) {
-        const found = checkRes.entries.find((e: any) => e.outpoint.transactionId === submitRes.transactionId);
-        if (found) {
-          record.funding.status = "confirmed";
-          record.funding.outputIndex = found.outpoint.index;
-          record.funding.amountSompi = found.utxoEntry.amount.toString();
-          record.funding.utxoEntry = found.utxoEntry;
-          record.state = "FUNDED";
-          utxoConfirmed = true;
-          break;
+      try {
+        const txData = await (rpc as any).getTransaction(submitRes.transactionId);
+        if (txData && txData.transaction) {
+          const foundOut = txData.transaction.outputs.findIndex((o: any) => o.scriptPublicKey.scriptPublicKey === record.p2shState.lockingScriptHex);
+          if (foundOut !== -1) {
+            record.funding.status = "confirmed";
+            record.funding.outputIndex = foundOut;
+            record.funding.amountSompi = txData.transaction.outputs[foundOut].amount.toString();
+            record.funding.utxoEntry = {
+              amount: BigInt(txData.transaction.outputs[foundOut].amount),
+              scriptPublicKey: txData.transaction.outputs[foundOut].scriptPublicKey,
+              blockDaaScore: 0n,
+              isCoinbase: false
+            };
+            record.state = "FUNDED";
+            utxoConfirmed = true;
+            break;
+          }
         }
-      }
+      } catch (e: any) {}
       await new Promise(r => setTimeout(r, 2000));
     }
 
@@ -268,24 +284,30 @@ escrowRoutes.post("/:id/reconcile", async (c) => {
 
     // Check funding reconciliation
     if (record.funding.status === "verification_timeout" && record.funding.transactionId) {
-       const kaspa = await import("kaspa-wasm");
-       const p2shAddrObj = kaspa.Address.fromScriptPublicKey({ version: 0, scriptPublicKey: record.p2shState.lockingScriptHex }, kaspa.NetworkType.Simnet);
-       const p2shAddrStr = p2shAddrObj.toString();
-       const checkRes = await rpc.getUtxosByAddresses([p2shAddrStr]);
-       const found = checkRes.entries?.find((e: any) => e.outpoint.transactionId === record.funding.transactionId);
-       if (found) {
-          record.funding.status = "confirmed";
-          record.funding.outputIndex = found.outpoint.index;
-          record.funding.amountSompi = found.utxoEntry.amount.toString();
-          record.funding.utxoEntry = found.utxoEntry;
-          record.state = "FUNDED";
-       }
+       try {
+           const txData = await (rpc as any).getTransaction(record.funding.transactionId);
+           if (txData && txData.transaction) {
+              const foundOut = txData.transaction.outputs.findIndex((o: any) => o.scriptPublicKey.scriptPublicKey === record.p2shState.lockingScriptHex);
+              if (foundOut !== -1) {
+                record.funding.status = "confirmed";
+                record.funding.outputIndex = foundOut;
+                record.funding.amountSompi = txData.transaction.outputs[foundOut].amount.toString();
+                record.funding.utxoEntry = {
+                  amount: BigInt(txData.transaction.outputs[foundOut].amount),
+                  scriptPublicKey: txData.transaction.outputs[foundOut].scriptPublicKey,
+                  blockDaaScore: 0n,
+                  isCoinbase: false
+                };
+                record.state = "FUNDED";
+              }
+           }
+       } catch (e: any) {}
     }
 
     // Check release reconciliation
     if (record.release && record.release.status === "verification_timeout") {
        try {
-           const txData = await rpc.getTransactionByHash(record.release.transactionId);
+           const txData = await (rpc as any).getTransaction(record.release.transactionId);
            if (txData && txData.transaction) {
                record.release.status = "confirmed";
                record.state = "RELEASED";
@@ -370,10 +392,19 @@ escrowRoutes.post("/:id/sign", async (c) => {
        return c.json({ ok: false, error: `Role ${role} is not required for branch ${record.preparedRelease.branch}` }, 400);
     }
 
-    const { listDevAccountsSync } = await import("@hardkas/accounts");
+    const { listDevAccountsSync, getOrCreateDevAccount } = await import("@hardkas/accounts");
     const accounts = listDevAccountsSync(process.cwd());
     const pkHex = (record.config as any)[role].publicKeyHex;
-    const account = accounts.find((a: any) => a.publicKey === pkHex);
+    let account: any = null;
+    for (let i = 0; i < accounts.length; i++) {
+        const acc = accounts[i];
+        if (!acc) continue;
+        const fullAcc = await getOrCreateDevAccount(process.cwd(), i, acc.name);
+        if (fullAcc.publicKey === pkHex) {
+            account = fullAcc;
+            break;
+        }
+    }
 
     if (!account) throw new Error(`Dev account for ${role} not found`);
 
@@ -478,7 +509,7 @@ escrowRoutes.post("/:id/release", async (c) => {
     const feeSompi = inputAmount - outputAmount;
 
     record.release = {
-       transactionId: submitRes.transactionId,
+       transactionId: submitRes.transactionId || "",
        fundingOutpoint: `${record.funding.transactionId}:${record.funding.outputIndex}`,
        expectedOutputsHash: record.preparedRelease!.expectedOutputsHash,
        actualOutputsHash,
@@ -493,7 +524,7 @@ escrowRoutes.post("/:id/release", async (c) => {
     // If not found, it throws or returns undefined.
     while (Date.now() - startTime < 30000) {
       try {
-          const txData = await rpc.getTransactionByHash(submitRes.transactionId);
+          const txData = await (rpc as any).getTransaction(submitRes.transactionId);
           if (txData && txData.transaction) {
               isConfirmed = true;
               break;
@@ -507,14 +538,14 @@ escrowRoutes.post("/:id/release", async (c) => {
     await rpc.close();
 
     if (!isConfirmed) {
-      record.release.status = "verification_timeout";
+      record.release!.status = "verification_timeout";
     } else {
-      record.release.status = "confirmed";
+      record.release!.status = "confirmed";
       record.state = "RELEASED";
     }
     memoryStore.set(id, record);
 
-    return c.json({ ok: true, data: { spendTxId: submitRes.transactionId, status: record.release.status } });
+    return c.json({ ok: true, data: { spendTxId: submitRes.transactionId, status: record.release!.status } });
   } catch (err: any) {
     return c.json({ ok: false, error: err.message }, 500);
   }

@@ -10,7 +10,6 @@
     "dev": "tsup src/index.ts --format esm --watch"
   },
   "dependencies": {
-
     "@hardkas/kaspa-rpc": "workspace:*",
     "execa": "^9.5.2"
   },
@@ -42,5 +41,8 @@
       "import": "./dist/index.js",
       "default": "./dist/index.js"
     }
+  },
+  "publishConfig": {
+    "access": "public"
   }
 }

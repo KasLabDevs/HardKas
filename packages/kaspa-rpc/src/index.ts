@@ -159,7 +159,7 @@ export class JsonWrpcKaspaClient implements KaspaRpcClient {
   private readonly rpcUrl: string;
   private readonly timeoutMs: number;
   private requestId = 1;
-  private messageListeners = new Set<(data: any) => void>();
+  private messageListeners: Array<{ event: string, handler: (data: any) => void }> = [];
 
   constructor(options: JsonWrpcKaspaClientOptions) {
     this.rpcUrl = options.rpcUrl;
@@ -178,17 +178,16 @@ export class JsonWrpcKaspaClient implements KaspaRpcClient {
   }
 
   on(event: string, handler: (data: any) => void): void {
-    // For now we just support a generic "message" interceptor or we filter by method
-    this.messageListeners.add((data) => {
-       if (data && data.method === event) {
-          handler(data.params);
-       }
-    });
+    for (const listener of this.messageListeners) {
+      if (listener.event === event && listener.handler === handler) return;
+    }
+    this.messageListeners.push({ event, handler });
   }
 
   off(event: string, handler: (data: any) => void): void {
-    // In a robust implementation we'd map handlers. For now, since it's a demo, we might just clear them.
-    // (This is a simplified off)
+    this.messageListeners = this.messageListeners.filter(
+      (l) => !(l.event === event && l.handler === handler)
+    );
   }
 
   private subscriptionCounter = 0;
@@ -628,7 +627,9 @@ export class JsonWrpcKaspaClient implements KaspaRpcClient {
           // If it doesn't have an ID, it's likely a notification
           if (!parsed.id && parsed.method) {
              for (const listener of this.messageListeners) {
-                listener(parsed);
+                if (listener.event === parsed.method) {
+                   listener.handler(parsed.params);
+                }
              }
           }
         } catch (e) {}

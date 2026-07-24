@@ -42,5 +42,8 @@
   "bugs": {
     "url": "https://github.com/KasLabDevs/HardKas/issues"
   },
-  "homepage": "https://github.com/KasLabDevs/HardKas/tree/main/packages/config#readme"
+  "homepage": "https://github.com/KasLabDevs/HardKas/tree/main/packages/config#readme",
+  "publishConfig": {
+    "access": "public"
+  }
 }

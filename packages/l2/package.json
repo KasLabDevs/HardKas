@@ -41,5 +41,8 @@
     "LICENSE",
     "README.md"
   ],
-  "main": "./dist/index.js"
+  "main": "./dist/index.js",
+  "publishConfig": {
+    "access": "public"
+  }
 }
