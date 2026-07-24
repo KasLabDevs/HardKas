@@ -1,6 +1,6 @@
 {
   "name": "lab-13-silver-script-builder",
-  "version": "0.11.3-alpha",
+  "version": "0.11.4-alpha",
   "type": "module",
   "scripts": {
     "start": "tsx src/server.ts",
@@ -11,7 +11,7 @@
     "fs-extra": "^11.2.0"
   },
   "devDependencies": {
-    "@types/node": "^20.11.34",
+    "@types/node": "^20.11.44",
     "@types/fs-extra": "^11.0.4",
     "tsx": "^4.7.1",
     "typescript": "^5.3.3"

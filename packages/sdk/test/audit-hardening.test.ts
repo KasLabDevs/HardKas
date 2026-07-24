@@ -5,7 +5,7 @@ import os from "node:os";
 import { Hardkas } from "@hardkas/sdk";
 import { deterministicCompare } from "@hardkas/core";
 
-describe("Audit Hardening Suite (0.11.3-alpha)", () => {
+describe("Audit Hardening Suite (0.11.4-alpha)", () => {
   let tmpDir: string;
   let sdk: Hardkas;
 

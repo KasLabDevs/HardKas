@@ -1,7 +1,7 @@
 {
   "name": "@showcase/treasury-console",
   "private": true,
-  "version": "0.11.3-alpha",
+  "version": "0.11.4-alpha",
   "type": "module",
   "scripts": {
     "dev": "concurrently \"pnpm run dev:frontend\" \"pnpm run dev:backend\"",
@@ -10,10 +10,10 @@
     "build": "tsc && vite build"
   },
   "dependencies": {
-    "@hardkas/kaspa-rpc": "workspace:0.11.3-alpha",
-    "@hardkas/toolkit": "workspace:0.11.3-alpha",
-    "@hardkas/tx-builder": "workspace:0.11.3-alpha",
-    "@hardkas/wallet-adapter": "workspace:0.11.3-alpha",
+    "@hardkas/kaspa-rpc": "workspace:0.11.4-alpha",
+    "@hardkas/toolkit": "workspace:0.11.4-alpha",
+    "@hardkas/tx-builder": "workspace:0.11.4-alpha",
+    "@hardkas/wallet-adapter": "workspace:0.11.4-alpha",
     "@showcase/shared-backend": "workspace:*",
     "@showcase/shared-testkit": "workspace:^",
     "@showcase/shared-ui": "workspace:*",

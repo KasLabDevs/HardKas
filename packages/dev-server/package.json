@@ -1,6 +1,6 @@
 {
   "name": "@hardkas/dev-server",
-  "version": "0.11.3-alpha",
+  "version": "0.11.4-alpha",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -15,6 +15,7 @@
     "build": "tsup src/index.ts --format esm --dts --clean && pnpm build:dashboard",
     "build:dashboard": "node scripts/copy-dashboard.js",
     "test": "vitest run --passWithNoTests",
+    "verify:escrow": "npx tsx scripts/verify-escrow.ts",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
@@ -23,6 +24,7 @@
     "@hardkas/bridge-local": "workspace:*",
     "@hardkas/config": "workspace:*",
     "@hardkas/core": "workspace:*",
+    "kaspa-wasm": "^0.13.0",
     "@hardkas/kaspa-rpc": "workspace:*",
     "@hardkas/localnet": "workspace:*",
 

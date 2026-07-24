@@ -1,6 +1,6 @@
 {
   "name": "@hardkas/sync-daemon",
-  "version": "0.11.3-alpha",
+  "version": "0.11.4-alpha",
   "type": "module",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -21,7 +21,7 @@
   },
   "dependencies": {
     "@hardkas/core": "workspace:*",
-    "@hardkas/observability": "workspace:0.11.3-alpha",
+    "@hardkas/observability": "workspace:0.11.4-alpha",
     "@hardkas/toolkit": "workspace:*"
   },
   "devDependencies": {

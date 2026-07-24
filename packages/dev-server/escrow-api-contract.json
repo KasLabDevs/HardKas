@@ -1,0 +1,64 @@
+{
+  "version": "1.0",
+  "service": "Escrow P2SH Engine",
+  "endpoints": [
+    {
+      "path": "/api/escrows",
+      "method": "POST",
+      "body": "EscrowConfig",
+      "response": "{ ok, data: { id, p2shAddress, status } }"
+    },
+    {
+      "path": "/api/escrows/:id",
+      "method": "GET",
+      "response": "{ ok, data: EscrowRecord }"
+    },
+    {
+      "path": "/api/escrows/:id/fund",
+      "method": "POST",
+      "response": "{ ok, data: { txId, status } }"
+    },
+    {
+      "path": "/api/escrows/:id/reconcile",
+      "method": "POST",
+      "response": "{ ok, data: EscrowRecord }"
+    },
+    {
+      "path": "/api/escrows/:id/release/prepare",
+      "method": "POST",
+      "body": "{ branch }",
+      "response": "{ ok, data: PreparedRelease }"
+    },
+    {
+      "path": "/api/escrows/:id/sign",
+      "method": "POST",
+      "body": "{ role }",
+      "response": "{ ok }"
+    },
+    {
+      "path": "/api/escrows/:id/release",
+      "method": "POST",
+      "response": "{ ok, data: { spendTxId, status } }"
+    },
+    {
+      "path": "/api/simnet/mine",
+      "method": "POST",
+      "query": "?blocks=N",
+      "response": "{ ok, data: { status, address } }"
+    }
+  ],
+  "states": [
+    "CREATED",
+    "FUNDED",
+    "PARTIALLY_SIGNED",
+    "READY_TO_RELEASE",
+    "RELEASED"
+  ],
+  "subStates": [
+    "none",
+    "broadcast",
+    "confirmed",
+    "failed",
+    "verification_timeout"
+  ]
+}

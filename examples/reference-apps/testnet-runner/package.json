@@ -1,6 +1,6 @@
 {
   "name": "testnet-runner",
-  "version": "0.11.3-alpha",
+  "version": "0.11.4-alpha",
   "private": true,
   "type": "module",
   "scripts": {

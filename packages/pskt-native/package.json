@@ -1,6 +1,6 @@
 {
   "name": "@hardkas/pskt-native",
-  "version": "0.11.3-alpha",
+  "version": "0.11.4-alpha",
   "type": "module",
   "main": "index.js",
   "types": "index.d.ts",

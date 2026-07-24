@@ -1,6 +1,6 @@
 # Wallet Optimizer - Tooling Frictions (Lab 10)
 
-This document captures the frictions encountered when attempting to build a Wallet Optimizer application using only the existing `WalletToolkit` (v0.11.3-alpha).
+This document captures the frictions encountered when attempting to build a Wallet Optimizer application using only the existing `WalletToolkit` (v0.11.4-alpha).
 
 Building a professional Kaspa wallet requires extensive Coin Control and UTXO optimization capabilities. The current `WalletToolkit` provides none of these, making advanced wallet management impossible without dropping down to internal low-level SDK helpers.
 

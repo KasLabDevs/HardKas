@@ -1,6 +1,6 @@
 {
   "name": "@hardkas/escrow",
-  "version": "0.11.3-alpha",
+  "version": "0.11.4-alpha",
   "description": "HardKAS Escrow SDK (BL-002B certified)",
   "type": "module",
   "main": "./dist/index.js",

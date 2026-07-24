@@ -28,7 +28,7 @@ function mutateJson(filePath: string, mutate: (value: any) => void) {
   fs.writeFileSync(filePath, JSON.stringify(value, null, 2));
 }
 
-describe("0.11.3-alpha ZK corpus and vProgs inspect SDK parity", () => {
+describe("0.11.4-alpha ZK corpus and vProgs inspect SDK parity", () => {
   let workspaceRoot: string;
 
   beforeEach(() => {

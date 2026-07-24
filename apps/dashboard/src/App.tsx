@@ -8,7 +8,8 @@ import {
   ShieldCheck,
   Cpu,
   Layers,
-  Clock
+  Clock,
+  Store
 } from "lucide-react";
 import { DashboardHealth } from "./components/DashboardHealth";
 import { TruthStatus } from "./views/TruthStatus";
@@ -20,16 +21,15 @@ import { Telemetry } from "./views/Telemetry";
 import { ActivityTimelinePage } from "./views/ActivityTimelinePage";
 import { WorkflowGraph } from "./views/WorkflowGraph";
 import { Bundles } from "./views/Bundles";
-import { Marketplace } from "./views/Marketplace";
+import { Escrow } from "./views/Escrow";
 import { Merchant } from "./views/Merchant";
-import { ShoppingCart, Store } from "lucide-react";
 
 // Layout wrapper
 function Layout({ children }: { children: ReactNode }) {
   const location = useLocation();
 
   const appItems = [
-    { path: "/marketplace", label: "Escrow Marketplace", icon: ShoppingCart },
+    { path: "/escrow", label: "Escrow Test", icon: ShieldCheck },
     { path: "/merchant", label: "Merchant POS", icon: Store },
   ];
 
@@ -136,7 +136,7 @@ export default function App() {
       <Layout>
         <Routes>
           <Route path="/" element={<TruthStatus />} />
-          <Route path="/marketplace" element={<Marketplace />} />
+          <Route path="/escrow" element={<Escrow />} />
           <Route path="/merchant" element={<Merchant />} />
           <Route path="/activity" element={<ActivityTimelinePage />} />
           <Route path="/workflow" element={<WorkflowGraph />} />

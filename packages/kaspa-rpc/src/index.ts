@@ -198,10 +198,10 @@ export class JsonWrpcKaspaClient implements KaspaRpcClient {
     handler: (event: UtxosChangedEvent) => void
   ): Promise<KaspaSubscription> {
     await this.detectFlavor();
-    
+
     // In HTTP JSON-RPC, throw unsupported
     // But since this is JsonWrpcKaspaClient (WebSocket based), we can do subscriptions
-    // Though if we determine it's not supported, we could throw. 
+    // Though if we determine it's not supported, we could throw.
     // Here we'll just implement it with notifyUtxosChangedRequest
 
     const subId = `sub_${this.subscriptionCounter++}`;
@@ -785,7 +785,202 @@ export class MockKaspaRpcClient implements KaspaRpcClient {
   async call<TResponse = unknown>(method: string, params?: unknown): Promise<TResponse> {
     return null as TResponse;
   }
-  
+
+  on(event: string, handler: (data: unknown) => void): void {}
+  off(event: string, handler: (data: unknown) => void): void {}
+
+  async subscribeToUtxosChanged(addresses: readonly string[], handler: (event: UtxosChangedEvent) => void): Promise<KaspaSubscription> {
+    let closed = false;
+    return {
+      id: "mock_sub",
+      get closed() { return closed; },
+      unsubscribe: async () => { closed = true; }
+    };
+  }
+
+  async getMempoolEntries(options?: any): Promise<any> { return []; }
+  async getFeeEstimate(): Promise<any> { return { estimate: 0 }; }
+  async getFeeEstimateExperimental(): Promise<any> { return { estimate: 0 }; }
+  async getCurrentNetwork(): Promise<any> { return { network: this.networkId }; }
+  async getSyncStatus(): Promise<any> { return { isSynced: true }; }
+  async getVirtualSelectedParentBlueScore(): Promise<any> { return { blueScore: 0n }; }
+  async getSinkBlueScore(): Promise<any> { return { blueScore: 0n }; }
+  async getHeaders(): Promise<any> { return { headers: [] }; }
+
+  async getInfo(): Promise<KaspaNodeInfo> {
+    return {
+      networkId: this.networkId,
+      serverVersion: "mock",
+      isSynced: true,
+      virtualDaaScore: 0n,
+      raw: {}
+    };
+  }
+
+  async healthCheck(): Promise<KaspaRpcHealth> {
+    return {
+      endpoint: "mock://local",
+      status: "healthy",
+      info: await this.getInfo(),
+      reachable: true
+    };
+  }
+
+  async getBalanceByAddress(address: string): Promise<KaspaAddressBalance> {
+    const utxos = this.utxosByAddress.get(address) || [];
+    const balanceSompi = utxos.reduce((acc, u) => acc + u.amountSompi, 0n);
+    return { address, balanceSompi };
+  }
+
+  async getUtxosByAddress(address: string): Promise<KaspaRpcUtxo[]> {
+    return this.utxosByAddress.get(address) || [];
+  }
+
+  async getUtxosByAddresses(addresses: string[]): Promise<any> {
+    const allUtxos = addresses.flatMap(a => this.utxosByAddress.get(a) || []);
+    return { entries: allUtxos };
+  }
+
+  async getBlocks(options?: { includeBlocks?: boolean; includeTransactions?: boolean }): Promise<any> {
+    return { blockHashes: [], blocks: [] };
+  }
+
+  setUtxos(address: string, utxos: KaspaRpcUtxo[]): void {
+    this.utxosByAddress.set(address, utxos);
+  }
+
+  async submitTransaction(
+    transaction: KaspaRpcTransaction,
+    options?: SubmitTransactionOptions
+  ): Promise<KaspaSubmitTransactionResult> {
+    return {
+      transactionId: "mock-txid",
+      accepted: true,
+      raw: { transaction }
+    };
+  }
+
+  async getMempoolEntry(_txId: string): Promise<MempoolEntry | null> {
+    return null;
+  }
+
+  async getTransaction(_txId: string): Promise<unknown | null> {
+    return null;
+  }
+
+  async getBlockDagInfo(): Promise<BlockDagInfo> {
+    return { networkId: this.networkId, virtualDaaScore: 0n };
+  }
+
+  async getServerInfo(): Promise<ServerInfo> {
+    return { networkId: this.networkId, serverVersion: "mock", isSynced: true };
+  }
+
+  async close(): Promise<void> {}
+}
+
+export * from "./json-rpc-client.js";
+export * from "./health.js";
+  } else if (result.entries && Array.isArray(result.entries)) {
+    entry =
+      result.entries.find(
+        (e: any) => (e.address || e.addressString || e.address_string) === address
+      ) || result.entries[0];
+  }
+
+  const balance =
+    entry.balance !== undefined
+      ? entry.balance
+      : entry.balanceSompi !== undefined
+        ? entry.balanceSompi
+        : entry.amount;
+  const balanceSompi = balance !== undefined ? BigInt(balance) : 0n;
+
+  return {
+    address,
+    balanceSompi,
+    raw: result
+  };
+}
+
+export function mapKaspaRpcUtxos(result: any, address: string): KaspaRpcUtxo[] {
+  if (!result) return [];
+
+  let entries: any = null;
+
+  if (Array.isArray(result)) {
+    entries = result;
+  } else if (result.result && Array.isArray(result.result)) {
+    entries = result.result;
+  } else if (result.result && (result.result.entries || result.result.utxos)) {
+    entries = result.result.entries || result.result.utxos;
+  } else {
+    entries = result.entries || result.utxos || result;
+  }
+
+  if (!Array.isArray(entries)) return [];
+
+  return (entries as unknown[]).map((entryRaw) => {
+    const entry = entryRaw as Record<string, any>;
+    const utxoEntry = (entry.utxoEntry ||
+      entry.utxo_entry ||
+      entry.utxo ||
+      entry) as Record<string, any>;
+    const outpoint = (entry.outpoint || entry) as Record<string, any>;
+
+    return {
+      outpoint: {
+        transactionId: String(
+          outpoint.transactionId ||
+            outpoint.transaction_id ||
+            outpoint.txId ||
+            outpoint.tx_id ||
+            outpoint.transaction_hash ||
+            ""
+        ),
+        index: Number(
+          outpoint.index !== undefined
+            ? outpoint.index
+            : outpoint.outputIndex !== undefined
+              ? outpoint.outputIndex
+              : outpoint.output_index
+        )
+      },
+      address: entry.address || address,
+      amountSompi: BigInt(
+        utxoEntry.amount || utxoEntry.amountSompi || utxoEntry.amount_sompi || 0
+      ),
+      scriptPublicKey: String(
+        utxoEntry.scriptPublicKey || utxoEntry.script_public_key || ""
+      ),
+      blockDaaScore: utxoEntry.blockDaaScore || utxoEntry.block_daa_score,
+      isCoinbase: Boolean(utxoEntry.isCoinbase || utxoEntry.is_coinbase),
+      covenantId: utxoEntry.covenantId || utxoEntry.covenant_id,
+      raw: entry
+    };
+  });
+}
+export function mapKaspaSubmitTransactionResult(result: any): KaspaSubmitTransactionResult {
+  if (!result) return { raw: result };
+
+  const txId = typeof result === "string" ? result : (result.transactionId || result.transaction_id || result.txId || result.tx_id);
+
+  return {
+    transactionId: txId,
+    accepted: result.accepted !== undefined ? result.accepted : (result.isAccepted || result.success || true),
+    raw: result
+  };
+}
+
+export class MockKaspaRpcClient implements KaspaRpcClient {
+  private utxosByAddress = new Map<string, KaspaRpcUtxo[]>();
+
+  constructor(private readonly networkId: NetworkId = "simnet" as NetworkId) {}
+
+  async call<TResponse = unknown>(method: string, params?: unknown): Promise<TResponse> {
+    return null as TResponse;
+  }
+
   on(event: string, handler: (data: unknown) => void): void {}
   off(event: string, handler: (data: unknown) => void): void {}
 
@@ -885,3 +1080,14 @@ export * from "./errors.js";
 export * from "./provider.js";
 export * from "./resilience.js";
 export * from "./wrpc-client.js";
+
+// New RPC Architecture
+export * from "./transport/transport.js";
+export * from "./transport/json-wrpc-transport.js";
+export * from "./contracts/read.js";
+export * from "./clients/read-rpc-client.js";
+export * from "./contracts/mempool.js";
+export * from "./clients/mempool-rpc-client.js";
+export * from "./manifest/types.js";
+export * from "./manifest/snapshot.js";
+export * from "./manifest/coverage-report.js";

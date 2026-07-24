@@ -7,10 +7,10 @@
   "imageId": "image-id.json",
   "verifyReport": "verify-report.json",
   "contentHashes": {
-    "receipt": "300304ffe90593d0b3773815d2b6d84fe7d96a8f6c00abfaef36eab5c53a99e2",
+    "receipt": "7ad7fa5b6b6c9e93e7eda4b590364669412ce8af800860a00ddbe5ddae64447a",
     "journal": "9e433eff335e310d835ef0fab8f063308323d3513d97192dfcd67faf57caa7ec",
     "imageId": "59ea9122cbf6227d66ea03174b033cf70373ed606f6a8fcf1b6154e84411c6bc",
-    "verifyReport": "6e4951a06a99a19bb5cec8cd24f7e671deb7f2e83da005f2a94ed2c68403bf72"
+    "verifyReport": "f2ca32f49334930ffaad523a88119cd44416c434ef084580c40a6272223d5940"
   },
   "expectedStatus": "RISC0_LOCAL_VERIFICATION_NOT_IMPLEMENTED",
   "claims": {
