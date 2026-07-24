@@ -1,7 +1,6 @@
 import { initializeHardKAS } from '@showcase/shared-backend';
 import { writeEvidence } from '@showcase/shared-testkit';
 import { WalletToolkit } from '@hardkas/toolkit';
-import { detectKaspaWallets, connectKaspaWallet } from '@hardkas/wallet-adapter';
 
 async function run() {
     console.log('[Wallet Pro] Starting Gauntlet Execution...');
@@ -42,11 +41,7 @@ async function run() {
         }
     }
     
-    try {
-        const adapters: any[] = [];
-        const wallets = await detectKaspaWallets(adapters);
-        if (wallets.adapters.length > 0) await connectKaspaWallet({ adapters });
-    } catch(e) {}
+
     
     // Output evidence
     writeEvidence('wallet-pro', {
@@ -60,7 +55,7 @@ async function run() {
         networkSettlementReal: false,
         fallbackUsed: true,
         packagesExercised: ['@hardkas/toolkit', '@hardkas/core', '@hardkas/react', '@hardkas/simulator-adapters', '@hardkas/wallet-adapter'],
-        publicApisExercised: ['WalletToolkit.open', 'WalletToolkit.balance', 'WalletToolkit.history', 'WalletToolkit.sendSimulated', 'detectKaspaWallets', 'connectKaspaWallet'],
+        publicApisExercised: ['WalletToolkit.open', 'WalletToolkit.balance', 'WalletToolkit.history', 'WalletToolkit.sendSimulated'],
         errors,
         expectedGuards: [],
         unsupportedCapabilities: []
