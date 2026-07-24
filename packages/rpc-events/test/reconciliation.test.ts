@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { DefaultReactiveEventProvider } from "../src/provider/reactive-event-provider.js";
 import { SimulatedTransportAdapter } from "../src/adapters/simulated-transport.js";
-import { EventEnvelope } from "../contracts/events.js";
+import { EventEnvelope } from "../src/contracts/events.js";
 
 describe("P3: Reconciliation and Deduplication", () => {
   it("Deduplicates events with the same ID", async () => {

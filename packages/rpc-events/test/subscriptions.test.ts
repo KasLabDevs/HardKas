@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from "vitest";
 import { DefaultReactiveEventProvider } from "../src/provider/reactive-event-provider.js";
 import { SimulatedTransportAdapter } from "../src/adapters/simulated-transport.js";
-import { EventEnvelope } from "../contracts/events.js";
+import { EventEnvelope } from "../src/contracts/events.js";
 
 describe("P3: Subscriptions and Re-subscriptions", () => {
   it("Dispatches events correctly to subscribers", async () => {

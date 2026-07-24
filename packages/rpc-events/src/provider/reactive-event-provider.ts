@@ -32,7 +32,7 @@ export class DefaultReactiveEventProvider implements ReactiveEventProvider {
   private manager: SubscriptionManager;
   private reconciliation = new ReconciliationEngine();
   private subscriptions = new Map<string, ActiveSubscription>();
-  private transportMessageUnsubscribe?: () => void;
+  private transportMessageUnsubscribe?: (() => void) | undefined;
 
   constructor(private transport: TransportAdapter) {
     this.manager = new SubscriptionManager(

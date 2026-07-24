@@ -54,8 +54,8 @@ export interface ConnectionStateChangedEvent {
   readonly previous: ConnectionStatus;
   readonly current: ConnectionStatus;
   readonly attempt: number;
-  readonly retryInMs?: number;
-  readonly reason?: string;
+  readonly retryInMs?: number | undefined;
+  readonly reason?: string | undefined;
 }
 
 export type EventType = 

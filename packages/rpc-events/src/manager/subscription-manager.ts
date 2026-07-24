@@ -8,8 +8,8 @@ export class SubscriptionManager {
   private status: ConnectionStatus = "idle";
   private backoff: DeterministicBackoff;
   private stateListeners: Set<StateChangeHandler> = new Set();
-  private reconnectTimer?: NodeJS.Timeout;
-  private abortController?: AbortController;
+  private reconnectTimer?: NodeJS.Timeout | undefined;
+  private abortController?: AbortController | undefined;
   private cleanupFns: Array<() => void> = [];
 
   constructor(

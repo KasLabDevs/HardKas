@@ -1,12 +1,11 @@
 import { UTXO } from "@hardkas/core";
 import { estimateTransactionMass } from "./mass.js";
 import { estimateFee } from "./fee-estimator.js";
-import { selectUtxos } from "./coin-selector.js";
 
 const DUST_THRESHOLD_SOMPI = 600n;
 
 export type SelectionPolicy = "largest-first" | "oldest-first" | "exact-match";
-export type FeePolicy = "network-standard" | "network-priority" | { exact: number };
+export type EngineFeePolicy = "network-standard" | "network-priority" | { exact: number };
 
 export interface TransactionIntent {
   outputs: { address: string; amountSompi: string }[];
@@ -19,7 +18,7 @@ export interface TransactionContext {
 }
 
 export interface TransactionPolicies {
-  fee: FeePolicy;
+  fee: EngineFeePolicy;
   selection: SelectionPolicy;
 }
 
@@ -39,7 +38,7 @@ export interface TxPlan {
   error?: string;
   inputs: UTXO[];
   outputs: Output[];
-  change?: Output;
+  change?: Output | undefined;
   mass: string;
   fee: string;
   unsignedPayload: string;

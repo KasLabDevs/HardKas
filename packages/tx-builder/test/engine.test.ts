@@ -3,10 +3,10 @@ import { buildTransaction, TransactionEngineConfig } from "../src/engine.js";
 import { UTXO } from "@hardkas/core";
 
 // Mock UTXOs
-const utxo1: UTXO = { outpoint: { transactionId: "tx1", index: 0 }, amountSompi: "10000", scriptPublicKey: { scriptPublicKey: "spk", version: 0 }, blockDaaScore: 100n, isCoinbase: false };
-const utxo2: UTXO = { outpoint: { transactionId: "tx2", index: 1 }, amountSompi: "50000", scriptPublicKey: { scriptPublicKey: "spk", version: 0 }, blockDaaScore: 100n, isCoinbase: false };
-const utxo3: UTXO = { outpoint: { transactionId: "tx3", index: 0 }, amountSompi: "5000", scriptPublicKey: { scriptPublicKey: "spk", version: 0 }, blockDaaScore: 100n, isCoinbase: false };
-const utxo4: UTXO = { outpoint: { transactionId: "tx4", index: 0 }, amountSompi: "45000", scriptPublicKey: { scriptPublicKey: "spk", version: 0 }, blockDaaScore: 100n, isCoinbase: false };
+const utxo1: UTXO = { address: "kaspa:test", outpoint: { transactionId: "tx1", index: 0 }, amountSompi: 10000n, scriptPublicKey: "spk", blockDaaScore: 100n, isCoinbase: false };
+const utxo2: UTXO = { address: "kaspa:test", outpoint: { transactionId: "tx2", index: 1 }, amountSompi: 50000n, scriptPublicKey: "spk", blockDaaScore: 100n, isCoinbase: false };
+const utxo3: UTXO = { address: "kaspa:test", outpoint: { transactionId: "tx3", index: 0 }, amountSompi: 5000n, scriptPublicKey: "spk", blockDaaScore: 100n, isCoinbase: false };
+const utxo4: UTXO = { address: "kaspa:test", outpoint: { transactionId: "tx4", index: 0 }, amountSompi: 45000n, scriptPublicKey: "spk", blockDaaScore: 100n, isCoinbase: false };
 
 describe("Agnostic Transaction Engine", () => {
 
@@ -31,7 +31,7 @@ describe("Agnostic Transaction Engine", () => {
     expect(res.ok).toBe(true);
     // Needs 40k + fee. Largest is 50k. So it only needs utxo2.
     expect(res.inputs).toHaveLength(1);
-    expect(res.inputs[0].amountSompi).toBe("50000");
+    expect(res.inputs[0]?.amountSompi).toBe(50000n);
     expect(res.change).toBeDefined();
     // 50000 - 40000 - fee = change
     expect(BigInt(res.change!.amountSompi) + BigInt(res.fee) + 40000n).toBe(50000n);
@@ -127,7 +127,7 @@ describe("Agnostic Transaction Engine", () => {
     const originalLength = config.context.availableUtxos.length;
     buildTransaction(config);
     expect(config.context.availableUtxos.length).toBe(originalLength);
-    expect(config.intent.outputs[0].amountSompi).toBe("10000");
+    expect(config.intent.outputs[0]?.amountSompi).toBe("10000");
   });
 
 });
