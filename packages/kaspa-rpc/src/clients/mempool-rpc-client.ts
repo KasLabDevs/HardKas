@@ -23,7 +23,7 @@ import type {
  */
 export class MempoolError extends Error {
   public layer: "sdk-validation" | "serialization" | "transport" | "rpc" | "mempool-policy" | "consensus";
-  public code?: number;
+  public code?: number | undefined;
   public originalData?: any;
 
   constructor(
@@ -65,7 +65,7 @@ export class MempoolRpcClientImpl implements MempoolRpcClient {
 
   async getMempoolEntry(request: GetMempoolEntryRequest, options?: RpcOptions): Promise<GetMempoolEntryResponse> {
     try {
-      const res = await this.transport.call("getMempoolEntryRequest", request, options);
+      const res = await this.transport.send("getMempoolEntryRequest", request, options);
       return res as GetMempoolEntryResponse;
     } catch (e: any) {
       throw this.mapError(e);
@@ -74,7 +74,7 @@ export class MempoolRpcClientImpl implements MempoolRpcClient {
 
   async getMempoolEntries(request?: GetMempoolEntriesRequest, options?: RpcOptions): Promise<GetMempoolEntriesResponse> {
     try {
-      const res = await this.transport.call("getMempoolEntriesRequest", request || {}, options);
+      const res = await this.transport.send("getMempoolEntriesRequest", request || {}, options);
       return res as GetMempoolEntriesResponse;
     } catch (e: any) {
       throw this.mapError(e);
@@ -83,7 +83,7 @@ export class MempoolRpcClientImpl implements MempoolRpcClient {
 
   async getMempoolEntriesByAddresses(request: GetMempoolEntriesByAddressesRequest, options?: RpcOptions): Promise<GetMempoolEntriesByAddressesResponse> {
     try {
-      const res = await this.transport.call("getMempoolEntriesByAddressesRequest", request, options);
+      const res = await this.transport.send("getMempoolEntriesByAddressesRequest", request, options);
       return res as GetMempoolEntriesByAddressesResponse;
     } catch (e: any) {
       throw this.mapError(e);
@@ -95,7 +95,7 @@ export class MempoolRpcClientImpl implements MempoolRpcClient {
       if (!request.transaction) {
          throw new MempoolError("Missing transaction payload", "sdk-validation");
       }
-      const res = await this.transport.call("submitTransactionRequest", request, options);
+      const res = await this.transport.send("submitTransactionRequest", request, options);
       return res as SubmitTransactionResponse;
     } catch (e: any) {
       throw this.mapError(e);
@@ -107,7 +107,7 @@ export class MempoolRpcClientImpl implements MempoolRpcClient {
       if (!request.transaction) {
          throw new MempoolError("Missing transaction payload", "sdk-validation");
       }
-      const res = await this.transport.call("submitTransactionReplacementRequest", request, options);
+      const res = await this.transport.send("submitTransactionReplacementRequest", request, options);
       return res as SubmitTransactionReplacementResponse;
     } catch (e: any) {
       throw this.mapError(e);

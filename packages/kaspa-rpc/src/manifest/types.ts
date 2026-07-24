@@ -36,7 +36,7 @@ export interface RpcManifestEntry {
     readonly protocol: "wrpc-json" | "wrpc-borsh" | "grpc";
   };
 
-  readonly hardkasMethod?: string;
+  readonly hardkasMethod?: string | undefined;
 
   readonly requestTyped: boolean;
   readonly responseTyped: boolean;
@@ -51,5 +51,5 @@ export interface RpcManifestEntry {
 
   readonly coverageStatus: RpcCoverageStatus;
   readonly verificationLevel: RpcVerificationLevel;
-  readonly notes?: readonly string[];
+  readonly notes?: readonly string[] | undefined;
 }
