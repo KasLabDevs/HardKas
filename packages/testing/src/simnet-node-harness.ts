@@ -1,5 +1,5 @@
 import { ChildProcess, spawn } from "child_process";
-import { JsonWrpcKaspaClient } from "@hardkas/rpc";
+import { JsonWrpcKaspaClient } from "@hardkas/kaspa-rpc";
 import net from "net";
 import { SimnetMiningDriver, SimnetMiningDriverImpl } from "./simnet-mining-driver.js";
 import { JsonWrpcTransport } from "../../kaspa-rpc/src/transport/json-wrpc-transport.js";
@@ -7,7 +7,7 @@ import { JsonWrpcTransport } from "../../kaspa-rpc/src/transport/json-wrpc-trans
 export interface SimnetNodeHandle {
   readonly rpcUrl: string;
   readonly dataDir: string;
-  readonly processId?: number;
+  readonly processId?: number | undefined;
   readonly mining: SimnetMiningDriver;
 
   waitUntilReady(options?: { timeoutMs?: number }): Promise<void>;

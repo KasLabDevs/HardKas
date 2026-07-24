@@ -31,7 +31,7 @@ export class SimnetMiningDriverImpl implements SimnetMiningDriver {
     const payAddress = options?.payAddress || "simnet:qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqhx0cgpc";
     
     // Obtenemos el template del bloque
-    const templateRes = await this.transport.call("getBlockTemplateRequest", {
+    const templateRes = await this.transport.send("getBlockTemplateRequest", {
       payAddress,
       extraData: ""
     }) as any;
@@ -42,7 +42,7 @@ export class SimnetMiningDriverImpl implements SimnetMiningDriver {
     // En la realidad, a menos que rehagamos el merkle root, solo podemos enviar el template tal cual
     // Asumiremos que el nodo incluye las Tx automáticamente.
     
-    const submitRes = await this.transport.call("submitBlockRequest", {
+    const submitRes = await this.transport.send("submitBlockRequest", {
       block: blockMessage,
       allowNonDAABlocks: false
     }) as any;

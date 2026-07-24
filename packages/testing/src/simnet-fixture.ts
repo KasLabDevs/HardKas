@@ -18,14 +18,14 @@ export class SimnetFixtureGenerator {
     
     // Por simplicidad, retornaremos un fixture que inspecciona el estado actual.
     // En el futuro, esto usaría submitBlock para minar N bloques deterministas.
-    const { JsonWrpcKaspaClient } = await import("@hardkas/rpc");
+    const { JsonWrpcKaspaClient } = await import("@hardkas/kaspa-rpc");
     const client = new JsonWrpcKaspaClient({ rpcUrl });
     
     let genesisHash = "";
     let blockCount = 0n;
     
     try {
-      const info = await client.getBlockCount();
+      const info = await client.call("getBlockCountRequest", {});
       blockCount = BigInt((info as any).blockCount || (info as any).headerCount || 0);
       
       const tip = await client.getBlockDagInfo();
