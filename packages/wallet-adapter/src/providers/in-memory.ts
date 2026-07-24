@@ -1,4 +1,4 @@
-import { UTXO } from "@hardkas/core";
+import type { KaspaRpcUtxo as UTXO } from "@hardkas/kaspa-rpc";
 import { 
     WalletProvider, 
     WalletCapabilities, 
@@ -49,11 +49,11 @@ export class InMemoryWalletProvider implements WalletProvider, TransactionSigner
     // Let's pretend it can sign all inputs provided in the plan for this mock, 
     // unless the plan contains an input that we don't own (we'd need scriptPublicKey matching).
     // For test purposes, let's just return a signed artifact if all is well.
-    const signedInputs = plan.inputs.map((_, i) => i);
+    const signedInputs = plan.inputs.map((_: any, i: number) => i);
 
     return {
         artifact: JSON.stringify({
-            payload: plan.unsignedPayload,
+            payload: "",
             signatures: ["mock-sig"]
         }),
         signedInputs,

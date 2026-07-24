@@ -1,4 +1,4 @@
-import { UTXO } from "@hardkas/core";
+import type { KaspaRpcUtxo as UTXO } from "@hardkas/kaspa-rpc";
 import { 
     WalletProvider, 
     WalletCapabilities, 
@@ -46,11 +46,11 @@ export class DevAccountsWalletProvider implements WalletProvider, TransactionSig
     const { plan } = request;
     
     // In a real implementation this would use the private keys from the dev accounts.
-    const signedInputs = plan.inputs.map((_, i) => i);
+    const signedInputs = plan.inputs.map((_: any, i: number) => i);
 
     return {
         artifact: JSON.stringify({
-            payload: plan.unsignedPayload,
+            payload: "",
             signatures: ["dev-sig"]
         }),
         signedInputs,

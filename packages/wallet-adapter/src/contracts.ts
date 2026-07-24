@@ -1,4 +1,4 @@
-import { UTXO } from "@hardkas/core";
+import type { KaspaRpcUtxo as UTXO } from "@hardkas/kaspa-rpc";
 import { TxPlan } from "@hardkas/tx-builder";
 
 export interface WalletCapabilities {

@@ -1,4 +1,4 @@
-import { UTXO } from "@hardkas/core";
+import type { KaspaRpcUtxo as UTXO } from "@hardkas/kaspa-rpc";
 import { WalletProvider, WalletCapabilities, AddressQuery, UtxoQuery, TransactionSigner, SignTransactionRequest, SignTransactionResult } from "../contracts.js";
 
 export class WatchOnlyWalletProvider implements WalletProvider, TransactionSigner {
