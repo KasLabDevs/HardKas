@@ -52,7 +52,7 @@ describe("BL-001C - Integer Fidelity u64", () => {
   for (const testValue of TEST_VALUES) {
     it(`should preserve fidelity of value ${testValue}`, async () => {
       // 1. Generate PSKT primitive with amount=testValue and sequence=testValue
-      const primitiveRes = await execAsync(`cargo run --bin generate-multisig-fixture -- ${identities.alice.publicKeyHex} ${identities.bob.publicKeyHex} ${identities.charlie.publicKeyHex} ${multisig.redeemScriptHex} ${testValue} ${testValue}`, { cwd: path.join(ROOT_DIR, "../../../packages/pskt-native") });
+      const primitiveRes = await execAsync(`cargo run --bin generate-multisig-fixture -- ${identities.alice.fullPublicKeyHex} ${identities.bob.fullPublicKeyHex} ${identities.charlie.fullPublicKeyHex} ${multisig.redeemScriptHex} ${testValue} ${testValue}`, { cwd: path.join(ROOT_DIR, "../../../packages/pskt-native") });
       const psktData = JSON.parse(primitiveRes.stdout);
       
       const payloadHash = crypto.createHash("sha256").update(Buffer.from(psktData.payloadBase64, "base64")).digest("hex");

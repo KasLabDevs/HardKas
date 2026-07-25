@@ -26,6 +26,10 @@ export interface SimnetNodeHarnessOptions {
 
 export class SimnetNodeHarness {
   static async start(options: SimnetNodeHarnessOptions = {}): Promise<SimnetNodeHandle> {
+    if (options.rpcPort && await this.isPortInUse(options.rpcPort)) {
+      console.warn(`[SimnetNodeHarness] Port ${options.rpcPort} already in use. Attaching to existing instance without starting new container.`);
+      return this.attach(`ws://127.0.0.1:${options.rpcPort}`);
+    }
     const rpcPort = options.rpcPort ?? await this.getFreePort();
     const rpcUrl = `ws://127.0.0.1:${rpcPort}`;
     const dataDir = `/tmp/hardkas-simnet-${Date.now()}-${Math.random().toString(36).slice(2)}`;
@@ -148,6 +152,25 @@ export class SimnetNodeHarness {
       stop: async () => {},
       kill: async () => {}
     };
+  }
+
+  private static async isPortInUse(port: number): Promise<boolean> {
+    return new Promise((resolve) => {
+      const socket = new net.Socket();
+      socket.setTimeout(500);
+      socket.once("error", () => {
+        socket.destroy();
+        resolve(false);
+      });
+      socket.once("timeout", () => {
+        socket.destroy();
+        resolve(false);
+      });
+      socket.connect(port, "127.0.0.1", () => {
+        socket.destroy();
+        resolve(true);
+      });
+    });
   }
 
   private static async getFreePort(): Promise<number> {
