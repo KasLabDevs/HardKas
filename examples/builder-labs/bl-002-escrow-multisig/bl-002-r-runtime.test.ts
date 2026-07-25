@@ -8,6 +8,7 @@ import { generateIdentities, createCanonicalMultisig } from "../bl-001-offline-m
 import { DockerKaspadRunner } from "@hardkas/node-runner";
 import { JsonWrpcKaspaClient as RpcClient } from "@hardkas/kaspa-rpc";
 import { getCoinbaseMaturity } from "@hardkas/core";
+import { pskt } from "@hardkas/sdk";
 import { 
     createMultisigAddress, 
     fundAndConfirm, 
@@ -32,6 +33,7 @@ describe("BL-002R - Simnet Runtime Validation", () => {
     let coordinatorAddress: string;
 
     beforeAll(async () => {
+        await pskt.registerNativeAdapter();
         kaspa = await import("kaspa-wasm");
         identities = await generateIdentities();
         
@@ -107,11 +109,14 @@ describe("BL-002R - Simnet Runtime Validation", () => {
         const primitiveRes = await execAsync(`cargo run --bin generate-multisig-fixture -- ${sortedFullKeys.join(" ")} ${multisig.redeemScriptHex} ${utxo.utxoEntry.amount} 0 ${utxo.outpoint.transactionId} ${utxo.outpoint.index} ${sendAmount}`, { cwd: path.join(ROOT_DIR, "../../../packages/pskt-native") });
         const primitiveOut = JSON.parse(primitiveRes.stdout);
         const payloadBytes = Buffer.from(primitiveOut.payloadBase64, 'base64');
-        const integrityHash = crypto.createHash("sha256").update(payloadBytes).digest("hex");
+        const payloadHash = crypto.createHash("sha256").update(payloadBytes).digest("hex");
         
-        const unsignedSession = {
-            id: crypto.createHash("sha256").update(integrityHash).digest("hex"),
-            version: "0.2.0-draft",
+        const unsignedSession: any = {
+            kind: "hardkas-portable-signing-session",
+            schemaVersion: 1,
+            sessionId: "",
+            revision: 0,
+            planId: "plan-mock-" + scenarioName,
             networkId: "simnet",
             unsignedTransactionId: "plan-mock-" + scenarioName,
             state: "created",
@@ -119,21 +124,27 @@ describe("BL-002R - Simnet Runtime Validation", () => {
                 format: "pskt-binary-base64",
                 encoding: "base64",
                 data: primitiveOut.payloadBase64,
-                payloadHash: integrityHash,
+                payloadHash: payloadHash,
                 byteLength: payloadBytes.length
             },
             participants: [],
             requirements: [],
             attestations: [],
-            runtimeBinding: { adapterId: "rust-pskt-native", adapterKind: "native", capabilitiesHash: "fake" },
+            runtimeBinding: { 
+                adapterId: "rust-pskt-native", 
+                adapterKind: "native", 
+                capabilitiesHash: pskt.computeCapabilitiesHash(await pskt.capabilities("rust-pskt-native")) 
+            },
             createdAt: new Date().toISOString()
         };
+        unsignedSession.sessionId = pskt.computeSessionId(unsignedSession);
+        unsignedSession.integrityHash = pskt.computeIntegrityHash(unsignedSession);
 
         // 3. Signers
         for (const signer of signers) {
             const pskbPath = path.join(ROOT_DIR, signer.dir, `unsigned-${scenarioName}.json`);
             await fs.writeFile(pskbPath, JSON.stringify(unsignedSession, null, 2));
-            await runDetachedSigner(CLI_BIN, path.join(ROOT_DIR, signer.dir), unsignedSession.id, pskbPath, signer.name);
+            await runDetachedSigner(CLI_BIN, path.join(ROOT_DIR, signer.dir), unsignedSession.sessionId, pskbPath, signer.name);
         }
 
         // 4. Evidence
@@ -143,7 +154,7 @@ describe("BL-002R - Simnet Runtime Validation", () => {
             expectedRecipient: recipientPubkeyHex,
             fundingTxId: utxo.outpoint.transactionId,
             escrowOutpoint: utxo.outpoint,
-            unsignedTransactionIdentity: unsignedSession.id,
+            unsignedTransactionIdentity: unsignedSession.sessionId,
             acceptance: fundedUtxo ? {
                 acceptingBlockHash: "mock_block",
                 acceptedTransactionId: "mock_tx",

@@ -44,6 +44,7 @@ export class MempoolRpcClientImpl implements MempoolRpcClient {
   constructor(private transport: RpcTransport) {}
 
   private mapError(e: any): Error {
+    if (e instanceof MempoolError) return e;
     if (e.name === "AbortError" || e.name === "RpcTimeoutError") {
       return new MempoolError(e.message, "transport", undefined, e);
     }
