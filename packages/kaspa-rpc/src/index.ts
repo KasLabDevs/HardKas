@@ -163,7 +163,7 @@ export class JsonWrpcKaspaClient implements KaspaRpcClient {
 
   constructor(options: JsonWrpcKaspaClientOptions) {
     this.rpcUrl = options.rpcUrl;
-    this.timeoutMs = options.timeoutMs ?? 10000;
+    this.timeoutMs = options.timeoutMs ?? 30000;
   }
 
   async call<TResponse = unknown>(method: string, params: any = {}): Promise<TResponse> {

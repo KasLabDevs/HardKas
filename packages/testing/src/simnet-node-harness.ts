@@ -64,6 +64,16 @@ export class SimnetNodeHarness {
 
     if (!child) throw new Error("Failed to start Simnet Node");
 
+    let spawnError: Error | undefined = undefined;
+    let processExited = false;
+    child.on("error", (err: any) => {
+      console.warn("[SimnetNodeHarness] Child process error:", err.message);
+      spawnError = err;
+    });
+    child.on("exit", () => {
+      processExited = true;
+    });
+
     const client = new JsonWrpcKaspaClient({ rpcUrl });
 
     const handle: SimnetNodeHandle = {
@@ -75,6 +85,12 @@ export class SimnetNodeHarness {
         const timeoutMs = waitOpts?.timeoutMs || options.startupTimeoutMs || 90000;
         const start = Date.now();
         while (Date.now() - start < timeoutMs) {
+          if (spawnError) {
+            throw new Error(`Simnet Node spawn failed: ${spawnError.message}`);
+          }
+          if (processExited) {
+            throw new Error("Simnet Node process exited before becoming ready.");
+          }
           try {
             const client = new JsonWrpcKaspaClient({ rpcUrl });
             const serverInfo = await client.getServerInfo();
@@ -90,7 +106,7 @@ export class SimnetNodeHarness {
               return; // Ready
             }
             await client.close();
-          } catch (e) {
+          } catch (e: any) {
             // Ignored, retry
           }
           await new Promise(r => setTimeout(r, 500));
