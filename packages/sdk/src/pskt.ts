@@ -142,7 +142,7 @@ export function deserializeSession(json: string): PortableSigningSession {
     throw new Error("Invalid JSON");
   }
   
-  if (parsed.schemaVersion !== 1) throw new Error("Unsupported schema version");
+  if (parsed.schemaVersion !== 1 && parsed.schemaVersion !== "1" && parsed.schemaVersion !== "v1" && parsed.schemaVersion !== "hardkas.pskt.v1") throw new Error("Unsupported schema version");
   if (!parsed.payload || !["pskt-binary-base64", "pskb-bundle-json"].includes(parsed.payload.format)) {
     throw new Error("Unknown payload format");
   }

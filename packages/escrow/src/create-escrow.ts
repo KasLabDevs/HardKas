@@ -39,6 +39,7 @@ export async function createEscrow(
     try {
       await fs.mkdir(workDir, { recursive: true }).catch(() => {});
       await fs.writeFile(ctorArgsPath, JSON.stringify(ctorArgs));
+      await fs.access(silvercPath);
       await execAsync(`"${silvercPath}" "${escrowSilPath}" --constructor-args "${ctorArgsPath}" -o "${outPath}"`);
       const artifactStr = await fs.readFile(outPath, "utf-8");
       artifact = JSON.parse(artifactStr);
