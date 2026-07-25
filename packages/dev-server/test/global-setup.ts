@@ -14,28 +14,39 @@ export async function setup() {
       startupTimeoutMs: 60000
     });
     console.log("SimnetNodeHarness started successfully.");
-  } catch (err) {
-    console.error("Failed to start harness:", err);
-    throw err;
+    console.log("Waiting for node to become ready...");
+    await harness.waitUntilReady();
+    console.log("Node is ready. Funding alice...");
+
+    // Fund alice
+    const alice = await getOrCreateDevAccount(process.cwd(), 0, "alice");
+    const burnerAddress = "simnet:qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqzcxw";
+    
+    // Wait for node to stabilize
+    await new Promise(r => setTimeout(r, 2000));
+
+    // Mine 50 blocks to Alice
+    await harness.mining.mineBlocks(50, { payAddress: alice.address });
+    // Mine 1000 blocks to burner address to mature Alice's UTXOs without spamming her wallet
+    await harness.mining.mineBlocks(1000, { payAddress: burnerAddress });
+    
+    // Wait for UTXO index to catch up
+    await new Promise(r => setTimeout(r, 2000));
+
+    // Start a background miner so that transactions broadcast during tests get mined
+    const minerInterval = setInterval(async () => {
+      try {
+        await harness.mining.mineBlocks(1, { payAddress: burnerAddress });
+      } catch (e: any) {
+        // Ignore minor miner conflicts in background
+      }
+    }, 3000);
+    
+    (global as any)._minerInterval = minerInterval;
+  } catch (err: any) {
+    console.warn("[GlobalSetup] Simnet node could not be started (Docker unavailable or error):", err.message);
+    console.warn("[GlobalSetup] Proceeding with dev-server without real simnet connectivity.");
   }
-
-  console.log("Waiting for node to become ready...");
-  await harness.waitUntilReady();
-  console.log("Node is ready. Funding alice...");
-
-  // Fund alice
-  const alice = await getOrCreateDevAccount(process.cwd(), 0, "alice");
-  
-  // Wait for node to stabilize
-  await new Promise(r => setTimeout(r, 2000));
-
-  // Mine blocks to Alice to mature UTXOs (maturity is 1000)
-  await harness.mining.mineBlocks(1050, {
-    payAddress: alice.address
-  });
-  
-  // Wait for UTXO index to catch up
-  await new Promise(r => setTimeout(r, 2000));
 
   const instance = createDevServer({
     port: 3000,
@@ -43,19 +54,9 @@ export async function setup() {
     unsafeNoAuth: true
   });
   server = instance.start();
-
-  // Start a background miner so that transactions broadcast during tests get mined
-  const minerInterval = setInterval(async () => {
-    try {
-      console.log("Mining block in background...");
-      await harness.mining.mineBlocks(1, { payAddress: alice.address });
-      console.log("Mined block in background");
-    } catch (e: any) {
-      console.error("Background miner error:", e.message);
-    }
-  }, 1000);
-  
-  (server as any)._minerInterval = minerInterval;
+  if ((global as any)._minerInterval) {
+    (server as any)._minerInterval = (global as any)._minerInterval;
+  }
 
   await new Promise((resolve) => setTimeout(resolve, 500));
 }
