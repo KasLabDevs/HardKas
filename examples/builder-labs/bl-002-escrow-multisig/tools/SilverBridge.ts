@@ -37,7 +37,8 @@ export const hardkas = {
                 const cmd = `cargo run --release --manifest-path ${path.join(__dirname, "silver-bridge/Cargo.toml")} -- ${args.join(" ")}`;
                 
                 try {
-                    const { stdout } = await execAsync(cmd, { env: { ...process.env, RUSTFLAGS: "-C link-arg=/FORCE:MULTIPLE" } });
+                    const env = { ...process.env, ...(process.platform === "win32" ? { RUSTFLAGS: "-C link-arg=/FORCE:MULTIPLE" } : {}) };
+                    const { stdout } = await execAsync(cmd, { env });
                     // The output could contain cargo logs, so we parse the last line or find the JSON block.
                     const jsonLine = stdout.split('\n').filter(l => l.trim().startsWith('{')).pop();
                     if (!jsonLine) {

@@ -33,7 +33,7 @@ contract FixedDestination() {
 
     it("should successfully compile fixed-destination.sil", async () => {
         const probe = await adapter.probe();
-        if (probe.status === "BLOCKED_BY_COMPILER") {
+        if (!probe.compilerAvailable || probe.status === "BLOCKED_BY_COMPILER" || probe.status === "UNAVAILABLE") {
             console.warn("Compiler is not available or doesn't support needed opcodes. Skipping BL-003A tests.");
             return;
         }

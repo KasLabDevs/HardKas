@@ -32,7 +32,7 @@ describe("BL-003B - Covenant Positive Simnet Execution", () => {
     beforeAll(async () => {
         kaspa = await import("kaspa-wasm");
         identities = await generateIdentities();
-        adapter = new SilverCompilerAdapter(path.join(ROOT_DIR, "../../../.hardkas/bin/silverc.exe"));
+        adapter = new SilverCompilerAdapter();
 
         // 1. Compile the covenant
         // Destination is Charlie

@@ -64,6 +64,8 @@ async function main() {
     const sessionPath = args[1];
     const outPath = args[args.indexOf("--out") + 1];
     await runPsktExtract(sessionPath, { out: outPath, force: true, json: false });
+  } else {
+    throw new Error(`Unknown CLI command: ${command}`);
   }
 }
 

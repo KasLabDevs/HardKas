@@ -428,9 +428,10 @@ describe("BL-001B - Simnet Broadcast Validation", () => {
 
   it("should fail gracefully on negative gates", async () => {
     // These tests assume `bl-001-b` test ran, but they can be isolated
+    await fs.mkdir(path.join(ROOT_DIR, "coordinator_b"), { recursive: true }).catch(() => {});
     
     // 1. Single signature -> finalize rejected
-    await expect(runCli("coordinator_b", ["pskt", "finalize", "alice_signed.pskb", "--out", "bad.pskb"]))
+    await expect(runCli("coordinator_b", ["pskt-finalize", "alice_signed.json", "--out", "bad.json"]))
       .rejects.toThrow();
 
     // 2. Manipulated outpoint -> merge/finalize rejected

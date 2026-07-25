@@ -32,7 +32,7 @@ describe("BL-003C - Covenant Negative Consensus Matrix", () => {
     beforeAll(async () => {
         kaspa = await import("kaspa-wasm");
         identities = await generateIdentities();
-        adapter = new SilverCompilerAdapter(path.join(ROOT_DIR, "../../../.hardkas/bin/silverc.exe"));
+        adapter = new SilverCompilerAdapter();
 
         const charlieSpk = `000020${identities.charlie.publicKeyHex}ac`;
         const scriptSource = `
