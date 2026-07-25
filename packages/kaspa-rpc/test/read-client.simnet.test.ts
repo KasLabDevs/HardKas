@@ -17,7 +17,7 @@ describe("ReadRpcClient (Simnet Certification)", () => {
       node = await SimnetNodeHarness.attach(externalUrl);
     } else {
       // In CI, KASPAD_BIN will be set, or docker will be used
-      node = await SimnetNodeHarness.start({ rpcPort: 18210, utxoIndex: true });
+      node = await SimnetNodeHarness.start({ utxoIndex: true });
     }
     await node.waitUntilReady();
 

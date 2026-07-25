@@ -62,8 +62,15 @@ export async function setup() {
 }
 
 export async function teardown() {
+  if ((global as any)._minerInterval) {
+    clearInterval((global as any)._minerInterval);
+    (global as any)._minerInterval = undefined;
+  }
   if (server) {
     if ((server as any)._minerInterval) clearInterval((server as any)._minerInterval);
+    if (typeof server.closeAllConnections === "function") {
+      server.closeAllConnections();
+    }
     server.close();
   }
   if (harness) {

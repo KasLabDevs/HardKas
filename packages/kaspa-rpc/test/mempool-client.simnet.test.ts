@@ -18,7 +18,7 @@ describe("MempoolRpcClient (Simnet Certification)", () => {
     if (externalUrl) {
       node = await SimnetNodeHarness.attach(externalUrl);
     } else {
-      node = await SimnetNodeHarness.start({ rpcPort: 18210, utxoIndex: true });
+      node = await SimnetNodeHarness.start({ utxoIndex: true });
     }
     await node.waitUntilReady();
 
