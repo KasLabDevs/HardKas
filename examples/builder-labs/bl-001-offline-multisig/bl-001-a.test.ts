@@ -105,9 +105,17 @@ describe("BL-001A - Offline Multisig Ceremony", () => {
   };
 
   it("1. Coordinator exports PSKT (Manually using primitives)", async () => {
-    // Because HardKAS does not yet support `exportPlan` in any PSKT adapter,
-    // we construct the PSKB using primitives (a Rust helper simulating primitive construction).
-    const primitiveRes = await execAsync(`cargo run --bin generate-multisig-fixture -- ${identities.alice.fullPublicKeyHex} ${identities.bob.fullPublicKeyHex} ${identities.charlie.fullPublicKeyHex} ${multisig.redeemScriptHex} 1000 0`, { cwd: path.join(ROOT_DIR, "../../../packages/pskt-native") });
+    const psktDir = path.join(ROOT_DIR, "../../../packages/pskt-native");
+    const ext = process.platform === "win32" ? ".exe" : "";
+    const releaseBin = path.join(psktDir, `target/release/generate-multisig-fixture${ext}`);
+    const debugBin = path.join(psktDir, `target/debug/generate-multisig-fixture${ext}`);
+    let cmd = `cargo run --bin generate-multisig-fixture --`;
+    if (await fs.access(releaseBin).then(() => true).catch(() => false)) {
+      cmd = `"${releaseBin}"`;
+    } else if (await fs.access(debugBin).then(() => true).catch(() => false)) {
+      cmd = `"${debugBin}"`;
+    }
+    const primitiveRes = await execAsync(`${cmd} ${identities.alice.fullPublicKeyHex} ${identities.bob.fullPublicKeyHex} ${identities.charlie.fullPublicKeyHex} ${multisig.redeemScriptHex} 1000 0`, { cwd: psktDir });
     
     const psktData = JSON.parse(primitiveRes.stdout);
     

@@ -1,4 +1,5 @@
 import { createDevServer } from "../src/server.js";
+import { stopHardkasWatcher } from "../src/watcher.js";
 import { SimnetNodeHarness } from "../../testing/src/simnet-node-harness.js";
 import { getOrCreateDevAccount } from "@hardkas/accounts";
 
@@ -62,6 +63,7 @@ export async function setup() {
 }
 
 export async function teardown() {
+  stopHardkasWatcher();
   if ((global as any)._minerInterval) {
     clearInterval((global as any)._minerInterval);
     (global as any)._minerInterval = undefined;

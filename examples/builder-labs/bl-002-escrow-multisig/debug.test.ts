@@ -12,5 +12,5 @@ describe("Debug unlocking script", () => {
         });
         
         console.log("UNLOCK SCRIPT:", unlockRes.unlockingScriptHex);
-    });
+    }, 30000);
 });

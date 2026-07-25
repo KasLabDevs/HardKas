@@ -285,6 +285,11 @@ export function createDevServer(config: DevServerConfig) {
           port: config.port,
           hostname: config.host
         });
+        const origClose = server.close.bind(server);
+        (server as any).close = (cb?: any) => {
+          stopHardkasWatcher();
+          return origClose(cb);
+        };
         server.on("error", (err: any) => {
           if (((err as any).code) === "EADDRINUSE") {
             console.error(
