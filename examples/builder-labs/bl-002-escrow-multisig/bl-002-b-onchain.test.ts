@@ -75,7 +75,8 @@ describe("BL-002B - On-chain Escrow Constraints", () => {
             releaseAmount
         };
 
-        const silvercPath = path.join(ROOT_DIR, "..", "..", "..", ".hardkas", "bin", "silverc.exe");
+        const silvercExe = process.platform === "win32" ? "silverc.exe" : "silverc";
+        const silvercPath = path.join(ROOT_DIR, "..", "..", "..", ".hardkas", "bin", silvercExe);
         const res = await createEscrow(config, silvercPath, ROOT_DIR, path.join(ROOT_DIR, "escrow.sil"));
         artifact = res.artifact;
         covenantBytecodeHex = res.state.redeemScriptHex;

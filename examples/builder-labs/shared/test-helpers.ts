@@ -35,9 +35,13 @@ export async function fundAndConfirm(
     
     // We need at least the requested amount + some fee
     const requiredAmount = amount + 50000n;
+    const startMs = Date.now();
 
     while (true) {
-        const utxos = await rpc.getUtxosByAddresses([coordinatorAddress]);
+        if (Date.now() - startMs > 20000) {
+            throw new Error(`[fundAndConfirm] Timed out waiting for mature UTXO on ${coordinatorAddress}`);
+        }
+        const utxos = await rpc.getUtxosByAddresses([coordinatorAddress]).catch(() => ({ entries: [] }));
         if (utxos.entries && utxos.entries.length > 0) {
             const dagInfo = await rpc.getBlockDagInfo();
             virtualDaaScore = BigInt(dagInfo.virtualDaaScore);

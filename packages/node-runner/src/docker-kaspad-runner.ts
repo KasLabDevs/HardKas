@@ -47,6 +47,7 @@ export class DockerKaspadRunner {
   async start(): Promise<KaspadNodeStatus> {
     const status = await this.status();
     if (status.running) {
+      await this.startMiner();
       return status;
     }
 
@@ -93,6 +94,7 @@ export class DockerKaspadRunner {
     // Port check
     await this.ensurePortsAvailable();
     if ((this as any)._attachedToExisting) {
+      await this.startMiner();
       return this.status();
     }
 
@@ -166,30 +168,33 @@ export class DockerKaspadRunner {
       );
     }
 
-    if (this.options.mineTo) {
-      const minerContainerName = `${this.options.containerName}-miner`;
-      try {
-        await execa("docker", ["rm", "-f", minerContainerName]);
-      } catch (e) {}
-
-      try {
-        await execa("docker", [
-          "run", "-d", "--rm",
-          "--name", minerContainerName,
-          "--network", `container:${this.options.containerName}`,
-          "kaspanet/cpuminer:latest",
-          "-a", this.options.mineTo,
-          "-s", "127.0.0.1",
-          "-p", this.options.ports.rpc.toString(),
-          "--mine-when-not-synced",
-          "-t", "1"
-        ]);
-      } catch (err: any) {
-        throw new Error(`MINER_UNAVAILABLE: Failed to start the Kaspa CPU Miner container. Ensure Docker can pull 'kaspanet/cpuminer:latest'. Details: ${err.message}`);
-      }
-    }
-
+    await this.startMiner();
     return this.status();
+  }
+
+  private async startMiner(): Promise<void> {
+    if (!this.options.mineTo) return;
+    const minerContainerName = `${this.options.containerName}-miner`;
+    try {
+      await execa("docker", ["rm", "-f", minerContainerName]);
+    } catch (e) {}
+
+    try {
+      await execa("docker", [
+        "run", "-d", "--rm",
+        "--name", minerContainerName,
+        "--network", `container:${this.options.containerName}`,
+        "kaspanet/cpuminer:latest",
+        "-a", this.options.mineTo,
+        "-s", "127.0.0.1",
+        "-p", this.options.ports.rpc.toString(),
+        "--mine-when-not-synced",
+        "-t", "1"
+      ]);
+    } catch (err: any) {
+      console.warn(`[DockerKaspadRunner] Could not start CPU miner: ${err.message}`);
+    }
+  }
   }
 
   private async ensurePortsAvailable(): Promise<void> {

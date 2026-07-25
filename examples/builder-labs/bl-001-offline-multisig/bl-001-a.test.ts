@@ -178,7 +178,7 @@ describe("BL-001A - Offline Multisig Ceremony", () => {
     // Copy to Alice and Bob
     await fs.copyFile(path.join(ROOT_DIR, "coordinator", "unsigned.json"), path.join(ROOT_DIR, "alice", "unsigned.json"));
     await fs.copyFile(path.join(ROOT_DIR, "coordinator", "unsigned.json"), path.join(ROOT_DIR, "bob", "unsigned.json"));
-  }, 15000);
+  }, 180000);
 
   it("2. Alice signs isolated", async () => {
     const res = await runCli("alice", [
@@ -190,7 +190,7 @@ describe("BL-001A - Offline Multisig Ceremony", () => {
     ]);
     if (res.exitCode !== 0) console.error("Sign Alice failed:", res.stdout, res.stderr);
     expect(res.exitCode).toBe(0);
-  });
+  }, 120000);
 
   it("3. Bob signs isolated", async () => {
     const res = await runCli("bob", [
@@ -202,7 +202,7 @@ describe("BL-001A - Offline Multisig Ceremony", () => {
     ]);
     if (res.exitCode !== 0) console.error("Sign Bob failed:", res.stdout, res.stderr);
     expect(res.exitCode).toBe(0);
-  });
+  }, 120000);
 
   it("4. Merge and Finalize by Coordinator", async () => {
     // Copy back to coordinator

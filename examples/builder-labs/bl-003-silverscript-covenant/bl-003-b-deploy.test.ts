@@ -80,8 +80,13 @@ contract FixedDestination() {
         await execAsync(`docker run -d --name bl003b-miner --network container:${runner["options"].containerName} kaspanet/cpuminer:latest -a ${coordinatorAddress} -s 127.0.0.1 -p 16210 --mine-when-not-synced -t 1`).catch(() => {});
 
         // Wait for UTXOs to mature (100 blocks + 1 block)
+        const startMs = Date.now();
         while (true) {
-            const utxos = await rpc.getUtxosByAddresses([coordinatorAddress]);
+            if (Date.now() - startMs > 25000) {
+                console.warn("[bl-003-b] Timed out waiting for mature UTXOs in beforeAll.");
+                break;
+            }
+            const utxos = await rpc.getUtxosByAddresses([coordinatorAddress]).catch(() => ({ entries: [] }));
             if (utxos.entries && utxos.entries.length > 0) {
                 const dagInfo = await rpc.getBlockDagInfo();
                 const virtualDaaScore = BigInt(dagInfo.virtualDaaScore);

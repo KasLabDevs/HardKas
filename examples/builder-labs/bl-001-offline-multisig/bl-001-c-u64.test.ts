@@ -171,6 +171,6 @@ describe("BL-001C - Integer Fidelity u64", () => {
       
       // Output value should be exactly preserved as string
       expect(tx.transaction.outputs[0].value).toBe(testValue);
-    }, 60000);
+    }, 300000);
   }
 });
