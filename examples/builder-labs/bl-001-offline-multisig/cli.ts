@@ -11,6 +11,10 @@ async function main() {
   }
   
   const args = process.argv.slice(2);
+  if (args[0] === "pskt" && args[1]) {
+    args[0] = `pskt-${args[1]}`;
+    args.splice(1, 1);
+  }
   const command = args[0];
 
   if (command === "pskt-export") {
