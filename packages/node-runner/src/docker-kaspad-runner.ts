@@ -195,7 +195,6 @@ export class DockerKaspadRunner {
       console.warn(`[DockerKaspadRunner] Could not start CPU miner: ${err.message}`);
     }
   }
-  }
 
   private async ensurePortsAvailable(): Promise<void> {
     const ports = [
