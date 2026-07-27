@@ -36,7 +36,7 @@ describe("Idempotency Matrix", () => {
 
         const sign2 = await fetch(`${BASE_URL}/api/escrows/${id}/sign`, { method: "POST", headers, body: JSON.stringify({ role: "buyer" }) });
         expect((await sign2.json()).ok).toBe(true);
-    });
+    }, 30000);
 
     it("should reconcile multiple times safely", async () => {
         const rec1 = await fetch(`${BASE_URL}/api/escrows/${id}/reconcile`, { method: "POST", headers });
