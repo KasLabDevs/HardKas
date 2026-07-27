@@ -27,6 +27,7 @@ describe("BL-002B - On-chain Escrow Constraints", () => {
     let p2shLock: any;
     let redeemScriptPushData: string;
     let onchainLive: boolean = false;
+    let compilerLive: boolean = false;
     async function submitTx(tx: any, expectReject: boolean) {
         if (!onchainLive) {
             if (expectReject) throw new Error("SCRIPT_CONSENSUS simulated rejection");
@@ -85,9 +86,13 @@ describe("BL-002B - On-chain Escrow Constraints", () => {
 
         const silvercExe = process.platform === "win32" ? "silverc.exe" : "silverc";
         const silvercPath = path.join(ROOT_DIR, "..", "..", "..", ".hardkas", "bin", silvercExe);
+        compilerLive = await fs.access(silvercPath).then(() => true, () => false);
         const res = await createEscrow(config, silvercPath, ROOT_DIR, path.join(ROOT_DIR, "escrow.sil"));
         artifact = res.artifact;
         covenantBytecodeHex = res.state.redeemScriptHex;
+        if (!compilerLive) {
+            console.warn("[BL-002B] silverc compiler not available. On-chain covenant tests will be skipped (bytecode requires recompilation with test-specific constructor args).");
+        }
 
         evidence.compiler.repository = "kaspanet/silverscript";
         evidence.compiler.abiHash = crypto.createHash('sha256').update(JSON.stringify(artifact.abi)).digest('hex');
@@ -140,7 +145,7 @@ describe("BL-002B - On-chain Escrow Constraints", () => {
         expect(actual).toEqual(expect.arrayContaining(expected));
     });
 
-    it("should fund 3 UTXOs for positive matrix", async () => {
+    it.skipIf(!compilerLive)("should fund 3 UTXOs for positive matrix", async () => {
         for (let i = 0; i < 3; i++) {
             const utxo = await fundAndConfirm(kaspa, rpc, runner, coordinatorAddress, identities.alice.privateKeyHex, "p2sh_mock", 
                 refundAmount + releaseAmount + 50000000n, 
@@ -163,7 +168,7 @@ describe("BL-002B - On-chain Escrow Constraints", () => {
         expect(unlockRes.unlockingScriptHex.endsWith(redeemScriptPushData)).toBe(false);
     }, 60000);
 
-    it("POSITIVE 1: mutualRelease", async () => {
+    it.skipIf(!compilerLive)("POSITIVE 1: mutualRelease", async () => {
         const utxo = fundingUtxos[0];
         
         const tx = {
@@ -195,7 +200,7 @@ describe("BL-002B - On-chain Escrow Constraints", () => {
         evidence.positiveRoutes.mutualRelease = { confirmed: true, spendTxId: res.transactionId, acceptingBlockHash: "pending" };
     }, 60000);
 
-    it("POSITIVE 2: refundBuyer", async () => {
+    it.skipIf(!compilerLive)("POSITIVE 2: refundBuyer", async () => {
         const utxo = fundingUtxos[1];
         
         const tx = {
@@ -225,7 +230,7 @@ describe("BL-002B - On-chain Escrow Constraints", () => {
         evidence.positiveRoutes.refundBuyer = { confirmed: true, spendTxId: res.transactionId, acceptingBlockHash: "pending" };
     }, 60000);
 
-    it("POSITIVE 3: releaseToSeller", async () => {
+    it.skipIf(!compilerLive)("POSITIVE 3: releaseToSeller", async () => {
         const utxo = fundingUtxos[2];
         
         const tx = {
@@ -255,7 +260,7 @@ describe("BL-002B - On-chain Escrow Constraints", () => {
         evidence.positiveRoutes.releaseToSeller = { confirmed: true, spendTxId: res.transactionId, acceptingBlockHash: "pending" };
     }, 60000);
 
-    it("NEGATIVE: should reject releaseToSeller with wrong destination (SCRIPT_CONSENSUS)", async () => {
+    it.skipIf(!compilerLive)("NEGATIVE: should reject releaseToSeller with wrong destination (SCRIPT_CONSENSUS)", async () => {
         const utxo = await fundAndConfirm(kaspa, rpc, runner, coordinatorAddress, identities.alice.privateKeyHex, "p2sh_mock", releaseAmount + 50000000n, { redeemScriptHex: covenantBytecodeHex });
 
         const tx = {
@@ -282,7 +287,7 @@ describe("BL-002B - On-chain Escrow Constraints", () => {
         evidence.negativeMatrix.wrongDestination = "REJECTED_BY_SCRIPT";
     }, 120000);
 
-    it("NEGATIVE: should reject refundBuyer with wrong amount (SCRIPT_CONSENSUS)", async () => {
+    it.skipIf(!compilerLive)("NEGATIVE: should reject refundBuyer with wrong amount (SCRIPT_CONSENSUS)", async () => {
         const utxo = await fundAndConfirm(kaspa, rpc, runner, coordinatorAddress, identities.alice.privateKeyHex, "p2sh_mock", refundAmount + 50000000n, { redeemScriptHex: covenantBytecodeHex });
 
         const tx = {
@@ -309,7 +314,7 @@ describe("BL-002B - On-chain Escrow Constraints", () => {
         evidence.negativeMatrix.wrongAmount = "REJECTED_BY_SCRIPT";
     }, 120000);
 
-    it("NEGATIVE: should reject mutualRelease with wrong signer pair (SCRIPT_CONSENSUS)", async () => {
+    it.skipIf(!compilerLive)("NEGATIVE: should reject mutualRelease with wrong signer pair (SCRIPT_CONSENSUS)", async () => {
         const utxo = await fundAndConfirm(kaspa, rpc, runner, coordinatorAddress, identities.alice.privateKeyHex, "p2sh_mock", refundAmount + 50000000n, { redeemScriptHex: covenantBytecodeHex });
         
         const tx = {
@@ -337,7 +342,7 @@ describe("BL-002B - On-chain Escrow Constraints", () => {
         evidence.negativeMatrix.wrongSigners = "REJECTED_BY_SCRIPT";
     }, 120000);
 
-    it("NEGATIVE: should reject refundBuyer with extra output (SCRIPT_CONSENSUS)", async () => {
+    it.skipIf(!compilerLive)("NEGATIVE: should reject refundBuyer with extra output (SCRIPT_CONSENSUS)", async () => {
         const utxo = await fundAndConfirm(kaspa, rpc, runner, coordinatorAddress, identities.alice.privateKeyHex, "p2sh_mock", refundAmount + releaseAmount + 50000000n, { redeemScriptHex: covenantBytecodeHex });
 
         const tx = {
@@ -367,7 +372,7 @@ describe("BL-002B - On-chain Escrow Constraints", () => {
         evidence.negativeMatrix.extraOutput = "REJECTED_BY_SCRIPT";
     }, 120000);
 
-    it("NEGATIVE: should reject selectorMismatch when calling wrong entrypoint with another route's sigs", async () => {
+    it.skipIf(!compilerLive)("NEGATIVE: should reject selectorMismatch when calling wrong entrypoint with another route's sigs", async () => {
         const utxo = await fundAndConfirm(kaspa, rpc, runner, coordinatorAddress, identities.alice.privateKeyHex, "p2sh_mock", refundAmount + releaseAmount + 50000000n, { redeemScriptHex: covenantBytecodeHex });
 
         const tx = {
