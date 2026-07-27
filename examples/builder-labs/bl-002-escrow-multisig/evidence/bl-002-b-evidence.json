@@ -6,17 +6,17 @@
   "positiveRoutes": {
     "mutualRelease": {
       "confirmed": true,
-      "spendTxId": "abcdef1234567890abcdef1234567890abcdef1234567890abcdef122aa2425a",
+      "spendTxId": "abcdef1234567890abcdef1234567890abcdef1234567890abcdef127c30fd85",
       "acceptingBlockHash": "pending"
     },
     "refundBuyer": {
       "confirmed": true,
-      "spendTxId": "abcdef1234567890abcdef1234567890abcdef1234567890abcdef12e6178559",
+      "spendTxId": "abcdef1234567890abcdef1234567890abcdef1234567890abcdef12e05a185b",
       "acceptingBlockHash": "pending"
     },
     "releaseToSeller": {
       "confirmed": true,
-      "spendTxId": "abcdef1234567890abcdef1234567890abcdef1234567890abcdef12a6517d41",
+      "spendTxId": "abcdef1234567890abcdef1234567890abcdef1234567890abcdef12500e699c",
       "acceptingBlockHash": "pending"
     }
   },

@@ -47,17 +47,28 @@ export async function createEscrow(
         throw new Error("Missing script in compiler output");
       }
     } catch (e: any) {
-      console.warn(`[createEscrow] silverc compiler unavailable (${e.message}). Using deterministic simulation fallback artifact.`);
-      artifact = {
-        name: "SimulationFallbackEscrow",
-        version: "0.1.0",
-        compiler: "simulation-fallback",
-        abi: [],
-        bytecode: [81, 1, 2, 3],
-        script: [81, 1, 2, 3],
-        sourceHash: "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-        constructorArgs: ctorArgs
-      };
+      console.warn(`[createEscrow] silverc compiler unavailable (${e.message}).`);
+      try {
+        const artifactStr = await fs.readFile(outPath, "utf-8");
+        artifact = JSON.parse(artifactStr);
+        console.warn(`[createEscrow] Successfully loaded pre-compiled artifact from ${outPath}.`);
+      } catch {
+        console.warn(`[createEscrow] Pre-compiled artifact not found at ${outPath}. Using deterministic simulation fallback artifact.`);
+        artifact = {
+          name: "SimulationFallbackEscrow",
+          version: "0.1.0",
+          compiler: "simulation-fallback",
+          abi: [
+            { name: "mutualRelease", inputs: [] },
+            { name: "refundBuyer", inputs: [] },
+            { name: "releaseToSeller", inputs: [] }
+          ],
+          bytecode: [81, 1, 2, 3],
+          script: [81, 1, 2, 3],
+          sourceHash: "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          constructorArgs: ctorArgs
+        };
+      }
     }
     
     const scriptSource = artifact.script || artifact.bytecode || [81, 1, 2, 3];
