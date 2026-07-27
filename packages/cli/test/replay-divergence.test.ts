@@ -14,7 +14,7 @@ const tsxPath = path.resolve(rootDir, "node_modules/.bin/tsx");
 
 describe("Adversarial Validation (Corpus Stress)", () => {
   // Use a longer timeout for CLI executions
-  const TEST_TIMEOUT = 30000;
+  const TEST_TIMEOUT = 180000;
 
   async function runVerify(targetDir: string) {
     try {

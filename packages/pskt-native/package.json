@@ -1,0 +1,40 @@
+{
+  "name": "@hardkas/pskt-native",
+  "version": "0.11.4-alpha",
+  "type": "module",
+  "main": "index.js",
+  "types": "index.d.ts",
+  "napi": {
+    "name": "hardkas-pskt-native",
+    "triples": {
+      "additional": [
+        "x86_64-pc-windows-msvc"
+      ]
+    }
+  },
+  "engines": {
+    "node": ">= 22.5.0"
+  },
+  "scripts": {
+    "artifacts": "napi artifacts",
+    "build": "napi build --platform --release",
+    "build:debug": "napi build --platform",
+    "prepublishOnly": "napi prepublish -t npm",
+    "test": "vitest run",
+    "typecheck": "echo \"No typecheck needed for napi auto-gen\""
+  },
+  "devDependencies": {
+    "@napi-rs/cli": "^3.0.0",
+    "@types/node": "^22.19.19",
+    "typescript": "^5.7.2",
+    "vitest": "^2.1.8"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "files": [
+    "index.js",
+    "index.d.ts",
+    "*.node"
+  ]
+}

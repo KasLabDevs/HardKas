@@ -81,7 +81,7 @@ describe("DockerKaspadRunner", () => {
     expect(status.transports.json.ready).toBe(false);
   });
 
-  it("should fail if a port is already in use", async () => {
+  it("should attach without spawning new container if a port is already in use", async () => {
     const runner = new DockerKaspadRunner();
 
     // Mock port 16210 as busy
@@ -94,7 +94,8 @@ describe("DockerKaspadRunner", () => {
       close: vi.fn()
     } as any);
 
-    await expect(runner.start()).rejects.toThrow(/Port 16210 is already in use/);
+    const status = await runner.start();
+    expect(status).toBeDefined();
 
     // Should NOT have called docker run
     const runCall = vi.mocked(execa).mock.calls.find((c) => c[1]?.[0] === "run");

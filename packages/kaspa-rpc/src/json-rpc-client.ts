@@ -360,7 +360,13 @@ export class KaspaJsonRpcClient implements KaspaRpcClient {
 
       const txAny = txObj as any;
       if (txAny && typeof txAny === "object") {
+        // Normalize top-level numeric fields that may arrive as strings from the NAPI bridge
+        if (typeof txAny.version === "string") txAny.version = Number(txAny.version);
+        if (typeof txAny.mass === "string") txAny.mass = Number(txAny.mass);
         txAny.mass = txAny.mass || 0;
+        if (typeof txAny.lockTime === "string") txAny.lockTime = Number(txAny.lockTime);
+        if (typeof txAny.lock_time === "string") txAny.lock_time = Number(txAny.lock_time);
+        if (typeof txAny.gas === "string") txAny.gas = Number(txAny.gas);
         if (txAny.payload === undefined) txAny.payload = "";
 
         if (txAny.outputs && Array.isArray(txAny.outputs)) {

@@ -87,7 +87,7 @@ export default defineConfig({
             const template = `import { defineHardkasConfig } from "@hardkas/sdk";
 
 export default defineHardkasConfig({
-  // HardKAS v0.11.3 Configuration
+  // HardKAS v0.11.4 Configuration
   defaultNetwork: "simulated",
 
   // Strict execution policy
@@ -227,7 +227,7 @@ scenario("payment flow", async ({ hk }) => {
                 `HardKAS project '${name || "current"}' initialized successfully.`
               );
               if (name) UI.info(`Project folder: ${targetDir}`);
-              UI.info(`Created: hardkas.config.ts (0.11.3)`);
+              UI.info(`Created: hardkas.config.ts (0.11.4)`);
               UI.footer(`Next steps:\n  ` + (name ? `cd ${name}\n  ` : "") + (options.install ? "" : "npm install\n  ") + "npm test");
             }
           }

@@ -6,6 +6,7 @@ import {
   printDivergences,
   printInvariants
 } from "./ui-helpers.js";
+import { getQueryEngine } from "./engine-factory.js";
 
 export function registerReplayQueryCommands(queryCmd: Command) {
   const replayCmd = queryCmd
@@ -20,8 +21,8 @@ export function registerReplayQueryCommands(queryCmd: Command) {
     .option("--limit <n>", "Max results", "100")
     .action(async (options) => {
       try {
-        const { QueryEngine, createQueryRequest } = await import("@hardkas/query");
-        const engine = await QueryEngine.create({ artifactDir: process.cwd() });
+        const { createQueryRequest } = await import("@hardkas/query");
+        const engine = await getQueryEngine();
         const filters: Array<{ field: string; op: "eq"; value: string }> = [];
         if (options.status)
           filters.push({ field: "status", op: "eq", value: options.status });
@@ -51,8 +52,8 @@ export function registerReplayQueryCommands(queryCmd: Command) {
     .option("--json", "Output as JSON", false)
     .action(async (txId, options) => {
       try {
-        const { QueryEngine, createQueryRequest } = await import("@hardkas/query");
-        const engine = await QueryEngine.create({ artifactDir: process.cwd() });
+        const { createQueryRequest } = await import("@hardkas/query");
+        const engine = await getQueryEngine();
 
         const request = createQueryRequest({
           domain: "replay",
@@ -79,8 +80,8 @@ export function registerReplayQueryCommands(queryCmd: Command) {
     .option("--explain [level]", "Attach explain chains (brief|full)")
     .action(async (options) => {
       try {
-        const { QueryEngine, createQueryRequest } = await import("@hardkas/query");
-        const engine = await QueryEngine.create({ artifactDir: process.cwd() });
+        const { createQueryRequest } = await import("@hardkas/query");
+        const engine = await getQueryEngine();
 
         const request = createQueryRequest({
           domain: "replay",
@@ -107,8 +108,8 @@ export function registerReplayQueryCommands(queryCmd: Command) {
     .option("--explain [level]", "Attach explain chains (brief|full)")
     .action(async (txId, options) => {
       try {
-        const { QueryEngine, createQueryRequest } = await import("@hardkas/query");
-        const engine = await QueryEngine.create({ artifactDir: process.cwd() });
+        const { createQueryRequest } = await import("@hardkas/query");
+        const engine = await getQueryEngine();
 
         const request = createQueryRequest({
           domain: "replay",

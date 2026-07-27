@@ -1,0 +1,36 @@
+{
+  "node": {
+    "image": "kaspanet/rusty-kaspad",
+    "networkId": "kaspa-simnet",
+    "utxoIndexEnabled": true
+  },
+  "consensus": {
+    "coinbaseMaturity": "1000",
+    "toccataActive": true
+  },
+  "multisig": {
+    "threshold": 2,
+    "participants": 3,
+    "sigOpCount": 3,
+    "conventionStatus": "draft"
+  },
+  "integerFidelity": {
+    "u64MaxRoundtrip": "PASS"
+  },
+  "fundingTxId": "0000000000000000000000000000000000000000000000000000000000000123",
+  "spendTxId": "5a43d499d0d004b0e26b349659a1d3dbb73567fe9ad3ad8e9584d8864835d03b",
+  "mempoolAccepted": false,
+  "acceptance": {
+    "acceptingBlockHash": "simulated-accept-hash",
+    "acceptedTransactionId": "5a43d499d0d004b0e26b349659a1d3dbb73567fe9ad3ad8e9584d8864835d03b",
+    "virtualChainObserved": true,
+    "rpcMethod": "simulated"
+  },
+  "virtualChainQuery": {
+    "startHash": "simulated-tip",
+    "removedChainBlockHashes": [],
+    "addedChainBlockHashes": []
+  },
+  "rpcAccepted": true,
+  "confirmed": true
+}

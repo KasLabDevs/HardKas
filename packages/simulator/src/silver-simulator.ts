@@ -4,7 +4,7 @@ import { createKaspaP2shBlake2bLock } from "@hardkas/core";
 export const SILVER_SIMULATOR_FEE_SOMPI = 2000n;
 export const SILVER_SIMULATOR_CREATED_AT = "1970-01-01T00:00:00.000Z";
 export const SILVER_SIMULATOR_VERSION = "1.0.0-alpha";
-export const CURRENT_HASH_VERSION = 4;
+const CURRENT_HASH_VERSION = 4;
 
 export type SilverSimulationStatus = "SIMULATED_ACCEPTED";
 
@@ -265,7 +265,7 @@ export function simulateSilverDeploy(
   const draft = {
     schema: "hardkas.silver.deploySimulation" as const,
     hardkasVersion:
-      options.hardkasVersion ?? deployPlanArtifact.hardkasVersion ?? "0.11.3-alpha",
+      options.hardkasVersion ?? deployPlanArtifact.hardkasVersion ?? "0.11.4-alpha",
     version: SILVER_SIMULATOR_VERSION,
     hashVersion: CURRENT_HASH_VERSION,
     networkId: "simnet" as const,
@@ -447,7 +447,7 @@ export function simulateSilverSpend(
   const draft = {
     schema: "hardkas.silver.spendSimulation" as const,
     hardkasVersion:
-      options.hardkasVersion ?? spendPlanArtifact.hardkasVersion ?? "0.11.3-alpha",
+      options.hardkasVersion ?? spendPlanArtifact.hardkasVersion ?? "0.11.4-alpha",
     version: SILVER_SIMULATOR_VERSION as "1.0.0-alpha",
     hashVersion: CURRENT_HASH_VERSION,
     networkId: "simnet" as const,

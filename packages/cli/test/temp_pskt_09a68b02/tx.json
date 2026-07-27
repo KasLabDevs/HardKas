@@ -1,0 +1,5 @@
+{
+  "kind": "hardkas-transaction",
+  "txId": "fake-tx-id",
+  "raw": "00112233"
+}

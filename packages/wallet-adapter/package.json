@@ -1,6 +1,6 @@
 {
   "name": "@hardkas/wallet-adapter",
-  "version": "0.11.3-alpha",
+  "version": "0.11.4-alpha",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -18,7 +18,9 @@
     "lint": "eslint ."
   },
   "dependencies": {
-    "@hardkas/core": "workspace:*"
+    "@hardkas/core": "workspace:*",
+    "@hardkas/kaspa-rpc": "workspace:*",
+    "@hardkas/tx-builder": "workspace:*"
   },
   "devDependencies": {
     "tsup": "^8.3.5",
@@ -40,5 +42,8 @@
     "dist",
     "LICENSE",
     "README.md"
-  ]
+  ],
+  "publishConfig": {
+    "access": "public"
+  }
 }

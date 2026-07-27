@@ -1,0 +1,44 @@
+pragma silverscript ^0.1.0;
+
+contract Escrow(
+    byte[] buyerBytes,
+    byte[] sellerBytes,
+    byte[] arbiterBytes,
+    byte[] buyerSpk,
+    byte[] sellerSpk,
+    int refundAmount,
+    int releaseAmount
+) {
+    entrypoint function mutualRelease(
+        sig buyerSig,
+        sig sellerSig
+    ) {
+        require(checkSig(buyerSig, pubkey(buyerBytes)));
+        require(checkSig(sellerSig, pubkey(sellerBytes)));
+        // Free destination, mutual agreement
+    }
+
+    entrypoint function refundBuyer(
+        sig buyerSig,
+        sig arbiterSig
+    ) {
+        require(checkSig(buyerSig, pubkey(buyerBytes)));
+        require(checkSig(arbiterSig, pubkey(arbiterBytes)));
+
+        require(tx.outputs.length == 1);
+        require(tx.outputs[0].scriptPubKey == buyerSpk);
+        require(tx.outputs[0].value == refundAmount);
+    }
+
+    entrypoint function releaseToSeller(
+        sig sellerSig,
+        sig arbiterSig
+    ) {
+        require(checkSig(sellerSig, pubkey(sellerBytes)));
+        require(checkSig(arbiterSig, pubkey(arbiterBytes)));
+
+        require(tx.outputs.length == 1);
+        require(tx.outputs[0].scriptPubKey == sellerSpk);
+        require(tx.outputs[0].value == releaseAmount);
+    }
+}

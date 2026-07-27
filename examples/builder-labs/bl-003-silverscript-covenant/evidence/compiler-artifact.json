@@ -1,0 +1,9 @@
+{
+  "sourceHash": "3f80d0f38dca108367d8e4446f28b6ec90ac0fa7ab70dc25ffd3df4ad96571ae",
+  "compilerCommit": "9aa70b0d0215e7395e2a95b78472eba0a5b103a5",
+  "compilerBinaryHash": "9da084233f313ed80f5448d73fbd24a289d905ae110b1a973ceac95af9b465c4",
+  "bytecodeHash": "7b83539950a51b9067555f43726c18981b46c71d138d60386fa6077f4f59edb3",
+  "bytecodeHex": "b4519c6900c302aa00876951",
+  "artifactHash": "29783dc288a40d9ad23309a0766731cff0179c88b17782ed4080311b3195e628",
+  "deterministicRecompile": true
+}

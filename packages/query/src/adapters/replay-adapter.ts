@@ -11,6 +11,7 @@ import path from "node:path";
 import { calculateContentHash } from "@hardkas/artifacts";
 import type { TxId } from "@hardkas/core";
 import { computeQueryHash } from "../serialize.js";
+import { paginateAndFormatResult } from "../format.js";
 import { evaluateFilters } from "../filter.js";
 import type {
   QueryAdapter,
@@ -99,23 +100,17 @@ export class ReplayQueryAdapter implements QueryAdapter {
       return cmp !== 0 ? cmp : deterministicCompare(a.txId, b.txId);
     });
 
-    const total = items.length;
-    const paged = items.slice(request.offset, request.offset + request.limit);
-
-    return {
+    return paginateAndFormatResult({
+      request,
+      items,
       domain: "replay",
       op: "list",
-      items: paged,
-      total,
-      truncated: total > request.offset + request.limit,
       deterministic: true,
-      queryHash: computeQueryHash(paged),
       annotations: {
-        executedAt: new Date().toISOString(),
         executionMs: Date.now() - start,
         filesScanned: receipts.length + traces.length
       }
-    };
+    });
   }
 
   // -------------------------------------------------------------------------
@@ -135,20 +130,17 @@ export class ReplayQueryAdapter implements QueryAdapter {
     const trace = traces[0];
     const item = toSummary(receipt.payload, trace?.payload);
 
-    return {
+    return paginateAndFormatResult({
+      request,
+      items: [item],
       domain: "replay",
       op: "summary",
-      items: [item],
-      total: 1,
-      truncated: false,
       deterministic: true,
-      queryHash: computeQueryHash([item]),
       annotations: {
-        executedAt: new Date().toISOString(),
         executionMs: Date.now() - start,
         filesScanned: trace ? 2 : 1
       }
-    };
+    });
   }
 
   // -------------------------------------------------------------------------
@@ -238,28 +230,27 @@ export class ReplayQueryAdapter implements QueryAdapter {
     }
 
     divergences.sort((a, b) => deterministicCompare(a.txId, b.txId));
-    const paged = divergences.slice(request.offset, request.offset + request.limit);
-
     let why: WhyBlock[] | undefined;
     if (request.explain) {
-      why = paged.map((d) => explainDivergence(d));
+      const pagedForWhy = divergences.slice(
+        request.offset ?? 0,
+        (request.offset ?? 0) + (request.limit ?? divergences.length)
+      );
+      why = pagedForWhy.map((d) => explainDivergence(d));
     }
 
-    return {
+    return paginateAndFormatResult({
+      request,
+      items: divergences,
       domain: "replay",
       op: "divergences",
-      items: paged,
-      total: divergences.length,
-      truncated: divergences.length > request.offset + request.limit,
       deterministic: true,
-      queryHash: computeQueryHash(paged),
       why,
       annotations: {
-        executedAt: new Date().toISOString(),
         executionMs: Date.now() - start,
         filesScanned: receipts.length
       }
-    };
+    });
   }
 
   // -------------------------------------------------------------------------
@@ -339,21 +330,18 @@ export class ReplayQueryAdapter implements QueryAdapter {
       why = [explainInvariants(result)];
     }
 
-    return {
+    return paginateAndFormatResult({
+      request,
+      items: [result],
       domain: "replay",
       op: "invariants",
-      items: [result],
-      total: 1,
-      truncated: false,
       deterministic: true,
-      queryHash: computeQueryHash([result]),
       why,
       annotations: {
-        executedAt: new Date().toISOString(),
         executionMs: Date.now() - start,
         filesScanned: 1
       }
-    };
+    });
   }
 
   private async readJsonSafe(filePath: string): Promise<any | null> {

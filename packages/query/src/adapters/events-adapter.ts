@@ -8,7 +8,7 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import { validateEventEnvelope } from "@hardkas/core";
 import { evaluateFilters } from "../filter.js";
-import { computeQueryHash } from "../serialize.js";
+import { paginateAndFormatResult } from "../format.js";
 import type {
   QueryAdapter,
   QueryRequest,
@@ -88,20 +88,13 @@ export class EventsQueryAdapter implements QueryAdapter {
       return deterministicCompare(a.eventId, b.eventId);
     });
 
-    // Paginate
-    const total = sorted.length;
-    const paged = sorted.slice(request.offset, request.offset + request.limit);
-
-    return {
+    return paginateAndFormatResult({
+      request,
+      items: sorted,
       domain: "events",
       op: "list",
-      items: paged,
-      total,
-      truncated: total > request.offset + request.limit,
       deterministic: true,
-      queryHash: computeQueryHash(paged),
       annotations: {
-        executedAt: new Date().toISOString(),
         executionMs: Date.now() - start,
         filesScanned: backendUsed === "sqlite" ? 0 : 1
       },
@@ -109,7 +102,7 @@ export class EventsQueryAdapter implements QueryAdapter {
         ? [
             {
               question: "How were events loaded and linked?",
-              answer: `Loaded ${total} events matching filters. Causal links (correlation/causation) available in payload.`,
+              answer: `Loaded ${sorted.length} events matching filters. Causal links (correlation/causation) available in payload.`,
               evidence: [],
               causalChain: [
                 {
@@ -136,7 +129,7 @@ export class EventsQueryAdapter implements QueryAdapter {
             }
           ]
         : undefined
-    };
+    });
   }
 
   private async loadEvents(): Promise<EventItem[]> {

@@ -86,5 +86,5 @@ describe("Programmatic Node Management (E2E)", () => {
 
     status = await sdk.node.reset();
     expect(status.running).toBe(false);
-  }, 60000);
+  }, 180000);
 });

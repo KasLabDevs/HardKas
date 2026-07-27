@@ -118,3 +118,19 @@ export const ComputeGrams = {
     return value * 10_000n;
   }
 };
+
+export interface UTXORef {
+  transactionId: string;
+  index: number;
+}
+
+export interface UTXO {
+  outpoint: UTXORef;
+  address: string;
+  amountSompi: bigint;
+  scriptPublicKey?: string;
+  blockDaaScore?: bigint | string;
+  isCoinbase?: boolean;
+  covenantId?: string; // V1 Toccata capability
+  raw?: unknown;
+}

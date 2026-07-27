@@ -8,6 +8,7 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import { validateEventEnvelope } from "@hardkas/core";
 import { computeQueryHash } from "../serialize.js";
+import { paginateAndFormatResult } from "../format.js";
 import type { QueryAdapter, QueryRequest, QueryResult, WhyBlock } from "../types.js";
 import type { QueryBackend } from "../backend.js";
 import { deterministicCompare } from "@hardkas/core";
@@ -127,20 +128,17 @@ export class TxQueryAdapter implements QueryAdapter {
       ];
     }
 
-    return {
+    return paginateAndFormatResult({
+      request,
+      items: [result],
       domain: "tx",
       op: "aggregate",
-      items: [result],
-      total: 1,
-      truncated: false,
       deterministic: true,
-      queryHash: computeQueryHash([result]),
       why,
       annotations: {
-        executedAt: new Date().toISOString(),
         executionMs: Date.now() - start
       }
-    };
+    });
   }
 
   private async findArtifactsByTxId(txId: string): Promise<TxArtifactRef[]> {

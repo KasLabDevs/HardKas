@@ -218,15 +218,27 @@ export class KaspaWrpcClient {
         return inp;
       }),
       outputs: (tx.outputs || []).map((o: any) => {
-        let spk = o.scriptPublicKey;
-        if (typeof spk === "object") {
-          let v = spk.version !== undefined ? spk.version.toString(16).padStart(4, '0') : "0000";
-          spk = v + (spk.scriptPublicKey || spk.script);
+        let spkObj;
+        if (typeof o.scriptPublicKey === "object" && o.scriptPublicKey.scriptPublicKey !== undefined) {
+          spkObj = { version: Number(o.scriptPublicKey.version || 0), scriptPublicKey: o.scriptPublicKey.scriptPublicKey };
+        } else if (typeof o.scriptPublicKey === "string") {
+          // If it's a string, we assume the first 4 chars might be version if it came from kaspa-wasm
+          // Actually, let's just assume it's a hex string without version if length < 70, else extract version
+          let spk = o.scriptPublicKey;
+          let version = 0;
+          if (spk.length > 4 && /^[0-9a-fA-F]{4}/.test(spk) && spk.length % 2 === 0) {
+              // rough heuristic, but if caller provides string, it's safer to just strip first 4 chars
+              version = parseInt(spk.substring(0, 4), 16);
+              spk = spk.substring(4);
+          }
+          spkObj = { version: isNaN(version) ? 0 : version, scriptPublicKey: spk };
+        } else {
+          spkObj = { version: 0, scriptPublicKey: o.scriptPublicKey?.script || o.scriptPublicKey };
         }
         let val = o.amount !== undefined ? o.amount : o.value;
         const out: any = {
-          scriptPublicKey: spk,
-          value: Number(val)
+          scriptPublicKey: spkObj,
+          amount: Number(val)
         };
         if (Number(tx.version || 0) === 1 && o.covenant !== undefined) {
           out.covenant = o.covenant;

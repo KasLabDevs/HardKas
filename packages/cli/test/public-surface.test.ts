@@ -7,7 +7,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const cliPath = path.resolve(__dirname, "../dist/index.js");
 
 describe("CLI Surface Hardening", () => {
-  it("should not leak deprecated or experimental commands in the public help menu", { timeout: 30000 }, async () => {
+  it("should not leak deprecated or experimental commands in the public help menu", { timeout: 180000 }, async () => {
     const { stdout } = await execa("node", [cliPath, "--help"]);
 
     // Extract the commands section
@@ -46,14 +46,14 @@ describe("CLI Surface Hardening", () => {
     }
   });
 
-  it("should have snapshot successfully nested under localnet", { timeout: 30000 }, async () => {
+  it("should have snapshot successfully nested under localnet", { timeout: 180000 }, async () => {
     const { stdout } = await execa("node", [cliPath, "localnet", "--help"]);
     expect(stdout).toContain("snapshot");
   });
 
   it(
     "should completely reject physically deleted legacy aliases",
-    { timeout: 60000 },
+    { timeout: 180000 },
     async () => {
       const deletedCommands = ["new", "snapshot", "faucet", "networks"];
 

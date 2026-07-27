@@ -1,0 +1,25 @@
+{
+  "version": "0.11.4-alpha",
+  "environment": {
+    "nodeVersion": "v24.15.0",
+    "platform": "win32",
+    "arch": "x64"
+  },
+  "timestamp": "2026-07-14T14:56:54.127Z",
+  "typecheck": {
+    "command": "pnpm typecheck",
+    "startTime": "2026-07-14T14:41:50.096Z",
+    "endTime": "2026-07-14T14:42:21.407Z",
+    "exitCode": 0,
+    "stdoutPreview": "\n> hardkas-monorepo@0.11.4-alpha typecheck C:\\Users\\jrodr\\Documents\\kaslabdevs\\GitHub\\HardKas-repo\n> turbo typecheck\n\n\n   • Packages in scope: 10-wallet-optimizer, 11-dag-explorer, 12-snapshot-frictions, @examples/rpc-node-health, @examples/snapshot-restore, @examples/trace-and-replay, @hardkas-examples/hello-kaspa, @hardkas/accounts, @hardkas/artifacts, @hardkas/bridge-local, @hardkas/cli, @hardkas/client, @hardkas/config, @hardkas/core, @hardkas/dashboard, @hardkas/dev-server, @hardkas/example-02-basic-transfer, @hardkas/example-03-localnet-demo, @hardkas/jobs, @hardkas/kaspa-rpc, @hardkas/l2, @hardkas/lab-07-batch-engine, @hardkas/lab-08-full-stack-demo, @hardkas/localnet, @hardkas/node-orchestrator, @hardkas/node-runner, @hardkas/observability, @hardkas/plugin-local-indexer, @hardkas/plugin-rpc-backend, @hardkas/query, @hardkas/query-store, @hardkas/react, @hardkas/sdk, @hardkas/sessions, @hardkas/simulator, @hardkas/simulator-adapters, @hardkas/storage-postgres, @hardkas/storage-s\n...truncated",
+    "stderrPreview": ""
+  },
+  "build": {
+    "command": "pnpm build",
+    "startTime": "2026-07-14T14:42:21.407Z",
+    "endTime": "2026-07-14T14:42:24.187Z",
+    "exitCode": 0,
+    "stdoutPreview": "\n> hardkas-monorepo@0.11.4-alpha build C:\\Users\\jrodr\\Documents\\kaslabdevs\\GitHub\\HardKas-repo\n> turbo build\n\n\n   • Packages in scope: 10-wallet-optimizer, 11-dag-explorer, 12-snapshot-frictions, @examples/rpc-node-health, @examples/snapshot-restore, @examples/trace-and-replay, @hardkas-examples/hello-kaspa, @hardkas/accounts, @hardkas/artifacts, @hardkas/bridge-local, @hardkas/cli, @hardkas/client, @hardkas/config, @hardkas/core, @hardkas/dashboard, @hardkas/dev-server, @hardkas/example-02-basic-transfer, @hardkas/example-03-localnet-demo, @hardkas/jobs, @hardkas/kaspa-rpc, @hardkas/l2, @hardkas/lab-07-batch-engine, @hardkas/lab-08-full-stack-demo, @hardkas/localnet, @hardkas/node-orchestrator, @hardkas/node-runner, @hardkas/observability, @hardkas/plugin-local-indexer, @hardkas/plugin-rpc-backend, @hardkas/query, @hardkas/query-store, @hardkas/react, @hardkas/sdk, @hardkas/sessions, @hardkas/simulator, @hardkas/simulator-adapters, @hardkas/storage-postgres, @hardkas/storage-sqlite, @\n...truncated",
+    "stderrPreview": ""
+  }
+}

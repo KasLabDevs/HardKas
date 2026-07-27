@@ -1,7 +1,7 @@
 {
   "name": "@showcase/shared-testkit",
   "private": true,
-  "version": "0.11.3-alpha",
+  "version": "0.11.4-alpha",
   "type": "module",
   "main": "src/index.ts",
   "dependencies": {}

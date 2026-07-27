@@ -1,6 +1,7 @@
 import { Command } from "commander";
 import { handleError } from "../../ui.js";
 import { printArtifactList, printInspectResult, printDiffResult } from "./ui-helpers.js";
+import { getQueryEngine } from "./engine-factory.js";
 
 export function registerArtifactQueryCommands(queryCmd: Command) {
   const artifactsCmd = queryCmd.command("artifacts").description("Query artifact store");
@@ -19,8 +20,8 @@ export function registerArtifactQueryCommands(queryCmd: Command) {
     .option("--explain [level]", "Attach explain chains (brief|full)")
     .action(async (options) => {
       try {
-        const { QueryEngine, createQueryRequest } = await import("@hardkas/query");
-        const engine = await QueryEngine.create({ artifactDir: process.cwd() });
+        const { createQueryRequest } = await import("@hardkas/query");
+        const engine = await getQueryEngine();
 
         const filters: Array<{ field: string; op: "eq"; value: string }> = [];
         if (options.schema)
@@ -68,8 +69,8 @@ export function registerArtifactQueryCommands(queryCmd: Command) {
     .option("--explain [level]", "Attach explain chains (brief|full)")
     .action(async (target, options) => {
       try {
-        const { QueryEngine, createQueryRequest } = await import("@hardkas/query");
-        const engine = await QueryEngine.create({ artifactDir: process.cwd() });
+        const { createQueryRequest } = await import("@hardkas/query");
+        const engine = await getQueryEngine();
 
         const request = createQueryRequest({
           domain: "artifacts",
@@ -97,8 +98,8 @@ export function registerArtifactQueryCommands(queryCmd: Command) {
     .option("--json", "Output as JSON", false)
     .action(async (left, right, options) => {
       try {
-        const { QueryEngine, createQueryRequest } = await import("@hardkas/query");
-        const engine = await QueryEngine.create({ artifactDir: process.cwd() });
+        const { createQueryRequest } = await import("@hardkas/query");
+        const engine = await getQueryEngine();
 
         const request = createQueryRequest({
           domain: "artifacts",
@@ -126,8 +127,8 @@ export function registerArtifactQueryCommands(queryCmd: Command) {
     .option("--explain [level]", "Attach explain chains (brief|full)")
     .action(async (target, options) => {
       try {
-        const { QueryEngine, createQueryRequest } = await import("@hardkas/query");
-        const engine = await QueryEngine.create({ artifactDir: process.cwd() });
+        const { createQueryRequest } = await import("@hardkas/query");
+        const engine = await getQueryEngine();
 
         const request = createQueryRequest({
           domain: "artifacts",

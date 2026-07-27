@@ -1,0 +1,17 @@
+{
+  "status": "FAIL",
+  "generatedAt": "2026-07-21T09:07:44.926Z",
+  "claims": {
+    "simnetCertified": true,
+    "testnetCertified": false,
+    "mainnetCertified": false,
+    "productionAudited": false
+  },
+  "environment": {
+    "hardkasCommit": "388c898d56f969f20a9455319c9226099b4fd6cb",
+    "nodeVersion": "v24.15.0",
+    "rustcVersion": "rustc 1.96.0 (ac68faa20 2026-05-25)",
+    "dockerVersion": "Docker version 29.4.2, build 055a478"
+  },
+  "failedGate": "integrity"
+}

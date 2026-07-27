@@ -8,6 +8,7 @@ export * from "./coin-selector.js";
 export * from "./fee-estimator.js";
 export * from "./kaspa-uri.js";
 export * from "./utxo-mapper.js";
+export * from "./engine.js";
 import { getCoinbaseMaturity } from "@hardkas/core";
 
 export interface CovenantBindingInput {

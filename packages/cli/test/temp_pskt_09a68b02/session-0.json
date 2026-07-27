@@ -1,0 +1,28 @@
+{
+  "kind": "hardkas-portable-signing-session",
+  "schemaVersion": 1,
+  "sessionId": "fa1e3da61445f979f251c272bd0298a3d8910d46340703141d250558fba2f229",
+  "revision": 0,
+  "planId": "test-plan",
+  "networkId": "simnet",
+  "unsignedTransactionId": "test-plan",
+  "state": "created",
+  "payload": {
+    "format": "pskt-binary-base64",
+    "encoding": "base64",
+    "data": "eyJzdGF0ZSI6ImV4cG9ydGVkIiwicGxhbiI6InRlc3QtcGxhbiJ9",
+    "byteLength": 39,
+    "payloadHash": "b94dffbd86e0ad2837913e776286766f2f822dacadc423c85485a326b7edb1e2"
+  },
+  "participants": [],
+  "requirements": [],
+  "attestations": [],
+  "runtimeBinding": {
+    "adapterId": "test-fake-adapter",
+    "adapterKind": "custom",
+    "capabilitiesHash": "d2265f3efbc73504c6a1776bd9f29bd00bf2344612cb6a4d9beeb97ecd5b5559",
+    "providerVersion": "1.0.0-test"
+  },
+  "createdAt": "2026-07-15T10:57:18.278Z",
+  "integrityHash": "a9988f345ef7d7e0bbee30b29c3051d0d9fd2229bdcdbafaf55e43dceee15d69"
+}

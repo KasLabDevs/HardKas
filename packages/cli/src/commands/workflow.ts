@@ -24,7 +24,7 @@ export function registerWorkflowCommands(program: Command) {
     .option("--workspace <path>", "Override workspace root directory")
     .action(async (name: string, options: any) => {
       const { HardkasCliError } = await import("../cli-errors.js");
-      throw new HardkasCliError("COMMAND_QUARANTINED", "workflow create is not part of the 0.11.3 local-first surface", { exitCode: 1 });
+      throw new HardkasCliError("COMMAND_QUARANTINED", "workflow create is not part of the 0.11.4 local-first surface", { exitCode: 1 });
     });
 
   workflowCmd

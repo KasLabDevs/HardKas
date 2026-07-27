@@ -3,7 +3,7 @@ import { getTelemetry } from "./telemetry.js";
 import fs from "node:fs";
 import path from "node:path";
 
-export const CURRENT_RUNTIME_VERSION = "0.11.3-alpha";
+export const CURRENT_RUNTIME_VERSION = "0.11.4-alpha";
 export const MIN_SUPPORTED_VERSION = "0.5.0-alpha";
 
 export interface MigrationStatus {

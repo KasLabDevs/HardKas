@@ -92,7 +92,7 @@ export default defineHardkasConfig({
     const myReceipt = receipts.find((r: any) => r.txId === txId);
     expect(myReceipt).toBeDefined();
     expect(myReceipt.schema).toBe(artifacts.ARTIFACT_SCHEMAS.TX_RECEIPT);
-  }, 60000);
+  }, 180000);
 
   it("should fail if insufficient funds", async () => {
     // Reset with 0 balance

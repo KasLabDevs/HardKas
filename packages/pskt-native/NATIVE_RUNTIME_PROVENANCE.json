@@ -1,0 +1,15 @@
+{
+  "buildTime": "2026-07-15T08:44:12.947Z",
+  "toolchain": {
+    "rustc": "rustc 1.96.0 (ac68faa20 2026-05-25)",
+    "cargo": "cargo 1.96.0 (30a34c682 2026-05-25)",
+    "os": "win32",
+    "arch": "x64"
+  },
+  "dependencies": {
+    "kaspa-wallet-pskt": {
+      "repository": "kaspanet/rusty-kaspa",
+      "commit": "78257f273a26c4be085bab0f79437dee99ca8835"
+    }
+  }
+}

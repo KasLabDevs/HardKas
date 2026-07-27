@@ -55,9 +55,7 @@ export class HardkasVprogs {
   }
 }
 
-export function isVprogsEnabled(): boolean {
-  return true;
-}
+
 
 export function createVprogsCapabilities(): VprogsCapabilitiesResult {
   return {

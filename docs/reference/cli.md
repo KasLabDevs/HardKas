@@ -1099,6 +1099,7 @@ No arguments.
 ### Subcommands
 
 - [hardkas deploy history](#hardkas-deploy-history)
+- [hardkas deploy init](#hardkas-deploy-init)
 - [hardkas deploy inspect](#hardkas-deploy-inspect)
 - [hardkas deploy list](#hardkas-deploy-list)
 - [hardkas deploy status](#hardkas-deploy-status)
@@ -1121,6 +1122,26 @@ hardkas deploy history [options]
 | Flag | Description | Default |
 | :--- | :--- | :--- |
 | `--json` | Output as JSON | false |
+
+### Arguments
+
+No arguments.
+
+---
+
+## hardkas deploy init
+
+Generate deployment profiles (Docker Compose, Dockerfile, .env.example) alpha
+
+### Usage
+
+```bash
+hardkas deploy init [options]
+```
+
+### Options
+
+No options.
 
 ### Arguments
 
@@ -1675,6 +1696,50 @@ hardkas doctor [options] [module]
 | Argument | Description |
 | :--- | :--- |
 | `module` |  |
+
+---
+
+## hardkas env
+
+Manage and validate environment configurations
+
+### Usage
+
+```bash
+hardkas env [options] [command]
+```
+
+### Options
+
+No options.
+
+### Arguments
+
+No arguments.
+
+### Subcommands
+
+- [hardkas env check](#hardkas-env-check)
+
+---
+
+## hardkas env check
+
+Validate the .env file against known HardKAS production variables
+
+### Usage
+
+```bash
+hardkas env check [options]
+```
+
+### Options
+
+No options.
+
+### Arguments
+
+No arguments.
 
 ---
 

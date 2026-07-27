@@ -1,6 +1,6 @@
 {
   "name": "dummy-project",
-  "version": "0.11.3-alpha",
+  "version": "0.11.4-alpha",
   "private": true,
   "type": "module",
   "scripts": {
@@ -9,10 +9,10 @@
     "balance": "hardkas run scripts/check-balance.ts"
   },
   "devDependencies": {
-    "@hardkas/cli": "workspace:*",
-    "@hardkas/testing": "workspace:*",
-    "@hardkas/artifacts": "workspace:*",
-    "@hardkas/core": "workspace:*",
+    "@hardkas/cli": "^0.11.4-alpha",
+    "@hardkas/testing": "^0.11.4-alpha",
+    "@hardkas/artifacts": "^0.11.4-alpha",
+    "@hardkas/core": "^0.11.4-alpha",
     "vitest": "^2.0.0"
   }
 }

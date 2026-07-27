@@ -1,6 +1,6 @@
 {
   "name": "@hardkas/config",
-  "version": "0.11.3-alpha",
+  "version": "0.11.4-alpha",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -42,5 +42,8 @@
   "bugs": {
     "url": "https://github.com/KasLabDevs/HardKas/issues"
   },
-  "homepage": "https://github.com/KasLabDevs/HardKas/tree/main/packages/config#readme"
+  "homepage": "https://github.com/KasLabDevs/HardKas/tree/main/packages/config#readme",
+  "publishConfig": {
+    "access": "public"
+  }
 }

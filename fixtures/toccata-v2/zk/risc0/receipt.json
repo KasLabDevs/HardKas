@@ -4,5 +4,5 @@
   "receiptId": "hardkas-risc0-smoke-receipt",
   "journalHash": "9e433eff335e310d835ef0fab8f063308323d3513d97192dfcd67faf57caa7ec",
   "imageIdHash": "59ea9122cbf6227d66ea03174b033cf70373ed606f6a8fcf1b6154e84411c6bc",
-  "note": "Inspect-only fixture; no local RISC0 helper bundled in 0.11.3-alpha."
+  "note": "Inspect-only fixture; no local RISC0 helper bundled in 0.11.4-alpha."
 }

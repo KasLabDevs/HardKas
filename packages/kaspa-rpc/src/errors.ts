@@ -93,6 +93,9 @@ export function normalizeRpcError(
     params?: unknown;
   }
 ): RpcError {
+  if (error instanceof RpcError && error.name !== "RpcError") {
+    return error;
+  }
   const msg = ((error instanceof Error) ? error.message : String(error)).toLowerCase();
   const code = (error as any)?.code;
   

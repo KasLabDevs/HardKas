@@ -28,6 +28,7 @@ import { registerLocalCommands } from "./commands/local.js";
 import { registerKaspaCommands } from "./commands/kaspa.js";
 import { registerBridgeCommands } from "./commands/bridge.js";
 import { registerSessionCommands } from "./commands/session.js";
+import { registerPsktCommands } from "./commands/pskt/index.js";
 import { registerDashboardCommand } from "./commands/dashboard.js";
 import { registerExplainCommand } from "./commands/explain.js";
 import { registerTortureCommands } from "./commands/torture.js";
@@ -98,6 +99,7 @@ export function buildHardkasProgram(options?: { forDocs?: boolean, loadedConfig?
   registerKaspaCommands(program);
   registerBridgeCommands(program);
   registerSessionCommands(program);
+  registerPsktCommands(program);
   registerDashboardCommand(program);
   registerExplainCommand(program);
   registerTortureCommands(program);

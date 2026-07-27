@@ -17,27 +17,7 @@ import { JsonWrpcKaspaClient } from "@hardkas/kaspa-rpc";
 
 // SAFETY_LEVEL: SIMULATION_ONLY
 
-export async function runDeploymentInspect(options: {
-  label: string;
-  network?: string;
-  json?: boolean;
-  workspaceRoot: string;
-}) {
-  const { Hardkas } = await import("@hardkas/sdk");
-  const sdk = await Hardkas.open({ cwd: options.workspaceRoot });
-  const rootDir = sdk.workspace.root;
 
-  await withLock(
-    { rootDir, name: "artifacts", command: "hardkas deploy track" },
-    async () => {
-      await trackDeploymentInternal(rootDir, {
-        label: options.label,
-        network: options.network || "simnet",
-        silent: !!options.json
-      });
-    }
-  );
-}
 
 export async function trackDeployment(opts: {
   label: string;
@@ -92,60 +72,7 @@ export async function trackDeploymentInternal(
   }
 }
 
-export async function runDeploymentList(options: {
-  json?: boolean;
-  workspaceRoot: string;
-  network?: string;
-  status?: string;
-}) {
-  const { Hardkas } = await import("@hardkas/sdk");
-  const sdk = await Hardkas.open({ cwd: options.workspaceRoot });
-  const rootDir = sdk.workspace.root;
-  const deployments = await listDeployments(rootDir, options.network);
 
-  const filtered = options.status
-    ? deployments.filter((d) => d.status === options.status)
-    : deployments;
-
-  if (options.json) {
-    console.log(JSON.stringify(filtered, null, 2));
-    return;
-  }
-
-  if (filtered.length === 0) {
-    UI.info("No deployments found.");
-    return;
-  }
-
-  UI.header("Deployments");
-
-  // Group by network
-  const byNetwork: Record<string, DeploymentSummary[]> = {};
-  for (const d of filtered) {
-    const net = d.networkId || "unknown";
-    if (!byNetwork[net]) byNetwork[net] = [];
-    byNetwork[net].push(d);
-  }
-
-  let total = 0;
-  for (const [net, items] of Object.entries(byNetwork)) {
-    console.log(`\n  ${net}`);
-    for (const d of items) {
-      const statusIcon =
-        d.status === "confirmed" ? "✅" : d.status === "failed" ? "❌" : "⏳";
-      const txIdShort = d.txId ? d.txId.slice(0, 12) + "..." : "(none)";
-      const ago = formatAgo(d.deployedAt);
-      console.log(
-        `    ${statusIcon} ${d.label.padEnd(20)} ${d.status.padEnd(10)} ${txIdShort.padEnd(16)} ${ago}`
-      );
-      total++;
-    }
-  }
-
-  console.log(
-    `\n  Total: ${total} deployments across ${Object.keys(byNetwork).length} networks`
-  );
-}
 
 export async function listAllDeployments(opts: {
   network?: string;

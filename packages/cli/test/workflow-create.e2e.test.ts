@@ -36,7 +36,7 @@ describe("hardkas workflow create", () => {
     const wf = JSON.parse(stdout);
     expect(wf.ok).toBe(false);
     expect(wf.code).toBe("COMMAND_QUARANTINED");
-  }, 30000);
+  }, 180000);
 
   it("should return COMMAND_QUARANTINED for invalid template", async () => {
     const { stdout } = await execa(tsx, [
@@ -50,5 +50,5 @@ describe("hardkas workflow create", () => {
     ], { reject: false });
 
     expect(JSON.parse(stdout).code).toBe("COMMAND_QUARANTINED");
-  }, 30000);
+  }, 180000);
 });

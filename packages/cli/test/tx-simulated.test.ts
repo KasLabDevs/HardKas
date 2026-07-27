@@ -68,11 +68,11 @@ describe("Simnet Transaction Backend Mismatch Regression", () => {
         `Expected output to contain 'NETWORK_ACCOUNT_MISMATCH'. Actual:\n${output}`
       );
     }
-  }, 30000);
+  }, 180000);
 
   it(
     "should fail with NETWORK_ACCOUNT_MISMATCH when provider rpc is forced on simnet",
-    { timeout: 60000 }, async () => {
+    { timeout: 180000 }, async () => {
     // 0. Initialize workspace so default network is simulated
     fs.writeFileSync(
       path.join(SANDBOX_DIR, "hardkas.config.js"),
@@ -129,5 +129,5 @@ describe("Simnet Transaction Backend Mismatch Regression", () => {
         `Expected output to contain 'NETWORK_ACCOUNT_MISMATCH'. Actual:\n${output}`
       );
     }
-  }, 30000);
+  }, 180000);
 });

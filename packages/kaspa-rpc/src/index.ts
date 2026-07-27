@@ -159,11 +159,11 @@ export class JsonWrpcKaspaClient implements KaspaRpcClient {
   private readonly rpcUrl: string;
   private readonly timeoutMs: number;
   private requestId = 1;
-  private messageListeners = new Set<(data: any) => void>();
+  private messageListeners: Array<{ event: string, handler: (data: any) => void }> = [];
 
   constructor(options: JsonWrpcKaspaClientOptions) {
     this.rpcUrl = options.rpcUrl;
-    this.timeoutMs = options.timeoutMs ?? 10000;
+    this.timeoutMs = options.timeoutMs ?? 30000;
   }
 
   async call<TResponse = unknown>(method: string, params: any = {}): Promise<TResponse> {
@@ -178,17 +178,16 @@ export class JsonWrpcKaspaClient implements KaspaRpcClient {
   }
 
   on(event: string, handler: (data: any) => void): void {
-    // For now we just support a generic "message" interceptor or we filter by method
-    this.messageListeners.add((data) => {
-       if (data && data.method === event) {
-          handler(data.params);
-       }
-    });
+    for (const listener of this.messageListeners) {
+      if (listener.event === event && listener.handler === handler) return;
+    }
+    this.messageListeners.push({ event, handler });
   }
 
   off(event: string, handler: (data: any) => void): void {
-    // In a robust implementation we'd map handlers. For now, since it's a demo, we might just clear them.
-    // (This is a simplified off)
+    this.messageListeners = this.messageListeners.filter(
+      (l) => !(l.event === event && l.handler === handler)
+    );
   }
 
   private subscriptionCounter = 0;
@@ -198,10 +197,10 @@ export class JsonWrpcKaspaClient implements KaspaRpcClient {
     handler: (event: UtxosChangedEvent) => void
   ): Promise<KaspaSubscription> {
     await this.detectFlavor();
-    
+
     // In HTTP JSON-RPC, throw unsupported
     // But since this is JsonWrpcKaspaClient (WebSocket based), we can do subscriptions
-    // Though if we determine it's not supported, we could throw. 
+    // Though if we determine it's not supported, we could throw.
     // Here we'll just implement it with notifyUtxosChangedRequest
 
     const subId = `sub_${this.subscriptionCounter++}`;
@@ -399,9 +398,16 @@ export class JsonWrpcKaspaClient implements KaspaRpcClient {
       // Fix types for wRPC (it expects numbers for amounts/values)
       const txAny = txObj as any;
       if (txAny && typeof txAny === "object") {
+        // Normalize top-level numeric fields that may arrive as strings from the NAPI bridge
+        if (typeof txAny.version === "string") txAny.version = Number(txAny.version);
+        if (typeof txAny.mass === "string") txAny.mass = Number(txAny.mass);
         if (txAny.mass === undefined) txAny.mass = 0;
+        if (typeof txAny.lockTime === "string") txAny.lockTime = Number(txAny.lockTime);
+        if (typeof txAny.lock_time === "string") txAny.lock_time = Number(txAny.lock_time);
+        if (typeof txAny.gas === "string") txAny.gas = Number(txAny.gas);
         if (txAny.outputs && Array.isArray(txAny.outputs)) {
           txAny.outputs.forEach((output: any) => {
+            // Kaspad wRPC expects "value", not "amount"
             if (output.amount !== undefined && output.value === undefined) {
               output.value = output.amount;
               delete output.amount;
@@ -410,12 +416,11 @@ export class JsonWrpcKaspaClient implements KaspaRpcClient {
             if (typeof output.value === "string") output.value = Number(output.value);
 
             if (output.scriptPublicKey && typeof output.scriptPublicKey === "object") {
-              if (
-                output.scriptPublicKey.scriptPublicKey !== undefined &&
-                output.scriptPublicKey.script === undefined
-              ) {
-                output.scriptPublicKey.script = output.scriptPublicKey.scriptPublicKey;
-                delete output.scriptPublicKey.scriptPublicKey;
+              const spk = output.scriptPublicKey;
+              // kaspad wRPC expects the field as "script", not "scriptPublicKey"
+              if (spk.scriptPublicKey !== undefined && spk.script === undefined) {
+                spk.script = spk.scriptPublicKey;
+                delete spk.scriptPublicKey;
               }
             }
           });
@@ -434,8 +439,7 @@ export class JsonWrpcKaspaClient implements KaspaRpcClient {
     }
 
     // Both flavors accept the transaction wrapped in an object
-    const req: any = { transaction: txObj };
-    if (options?.allowOrphan) req.allowOrphan = true;
+    const req: any = { transaction: txObj, allowOrphan: options?.allowOrphan ?? false };
 
     const response = await this.callMethod(
       "submitTransaction",
@@ -475,25 +479,34 @@ export class JsonWrpcKaspaClient implements KaspaRpcClient {
   }
 
   async getBlockDagInfo(): Promise<BlockDagInfo> {
-    const info = await this.getInfo();
-    const result: any = {
-      networkId: (info.networkId as NetworkId) || "unknown",
-      tipHashes: []
+    const response = await this.callMethod("getBlockDagInfo", "getBlockDagInfoRequest");
+    const dagData: any = response;
+    return {
+      networkId: (dagData?.networkName || dagData?.network || "unknown") as NetworkId,
+      virtualDaaScore: dagData?.virtualDaaScore !== undefined ? BigInt(dagData.virtualDaaScore) : 0n,
+      tipHashes: dagData?.tipHashes || dagData?.blockTipHashes || []
     };
-    if (info.virtualDaaScore !== undefined) {
-      result.virtualDaaScore = BigInt(info.virtualDaaScore);
-    }
-    return result;
   }
 
   async getServerInfo(): Promise<ServerInfo> {
-    const info = await this.getInfo();
-    const result: any = {
-      networkId: (info.networkId as NetworkId) || "unknown"
-    };
-    if (info.serverVersion !== undefined) result.serverVersion = info.serverVersion;
-    if (info.isSynced !== undefined) result.isSynced = info.isSynced;
-    return result;
+    try {
+      const response: any = await this.callMethod("getServerInfo", "getServerInfoRequest");
+      const result: any = {
+        networkId: (response?.networkId || "unknown") as NetworkId
+      };
+      if (response?.serverVersion !== undefined) result.serverVersion = response.serverVersion;
+      if (response?.isSynced !== undefined) result.isSynced = response.isSynced;
+      return result as ServerInfo;
+    } catch (e) {
+      // Fallback to getInfo
+      const info: any = await this.getInfo();
+      const result: any = {
+        networkId: (info.networkId as NetworkId) || "unknown"
+      };
+      if (info.serverVersion !== undefined) result.serverVersion = info.serverVersion;
+      if (info.isSynced !== undefined) result.isSynced = info.isSynced;
+      return result as ServerInfo;
+    }
   }
 
   async getMempoolEntries(options?: any): Promise<any> {
@@ -545,27 +558,23 @@ export class JsonWrpcKaspaClient implements KaspaRpcClient {
       params
     });
 
-    console.log(`[wRPC Debug] Sending payload: ${payload}`);
-
     return new Promise((resolve, reject) => {
       const timeout = setTimeout(() => {
         cleanup();
-        console.log(`[wRPC Debug] Timeout for method: ${method}`);
         reject(new Error(`RPC request timed out after ${this.timeoutMs}ms`));
       }, this.timeoutMs);
 
       const onMessage = (data: any) => {
         try {
           const raw = data.toString();
-          console.log(`[wRPC Debug] Received for ${method}: ${raw}`);
           const response = JSON.parse(raw);
           if (String(response.id) === String(id)) {
             cleanup();
             if (response.error) {
               const err = response.error;
-              const msg =
-                ((err instanceof Error) ? ((err instanceof Error) ? err.message : String(err)) : String(err)) || (typeof err === "string" ? err : JSON.stringify(err));
-              reject(normalizeRpcError(new RpcError(msg, err.code, err.data), { method, params }));
+              let msg = typeof err === "string" ? err : (err.message || JSON.stringify(err));
+              if (err instanceof Error) msg = err.message;
+              reject(normalizeRpcError(new RpcError(msg, err.code || -32603, err.data), { method, params }));
             } else {
               resolve(response.result !== undefined ? response.result : response.params);
             }
@@ -618,7 +627,9 @@ export class JsonWrpcKaspaClient implements KaspaRpcClient {
           // If it doesn't have an ID, it's likely a notification
           if (!parsed.id && parsed.method) {
              for (const listener of this.messageListeners) {
-                listener(parsed);
+                if (listener.event === parsed.method) {
+                   listener.handler(parsed.params);
+                }
              }
           }
         } catch (e) {}
@@ -755,28 +766,14 @@ export function mapKaspaRpcUtxos(result: any, address: string): KaspaRpcUtxo[] {
     };
   });
 }
-
-export function mapKaspaSubmitTransactionResult(
-  result: any
-): KaspaSubmitTransactionResult {
+export function mapKaspaSubmitTransactionResult(result: any): KaspaSubmitTransactionResult {
   if (!result) return { raw: result };
 
+  const txId = typeof result === "string" ? result : (result.transactionId || result.transaction_id || result.txId || result.tx_id);
+
   return {
-    transactionId:
-      result.transactionId || result.transaction_id || result.txId || result.tx_id,
-    accepted:
-      result.accepted !== undefined
-        ? result.accepted
-        : result.isAccepted !== undefined
-          ? result.isAccepted
-          : result.success !== undefined
-            ? result.success
-            : !!(
-                result.transactionId ||
-                result.transaction_id ||
-                result.txId ||
-                result.tx_id
-              ),
+    transactionId: txId,
+    accepted: result.accepted !== undefined ? result.accepted : (result.isAccepted || result.success || true),
     raw: result
   };
 }
@@ -789,7 +786,7 @@ export class MockKaspaRpcClient implements KaspaRpcClient {
   async call<TResponse = unknown>(method: string, params?: unknown): Promise<TResponse> {
     return null as TResponse;
   }
-  
+
   on(event: string, handler: (data: unknown) => void): void {}
   off(event: string, handler: (data: unknown) => void): void {}
 
@@ -885,7 +882,19 @@ export class MockKaspaRpcClient implements KaspaRpcClient {
 
 export * from "./json-rpc-client.js";
 export * from "./health.js";
+
 export * from "./errors.js";
 export * from "./provider.js";
 export * from "./resilience.js";
 export * from "./wrpc-client.js";
+
+// New RPC Architecture
+export * from "./transport/transport.js";
+export * from "./transport/json-wrpc-transport.js";
+export * from "./contracts/read.js";
+export * from "./clients/read-rpc-client.js";
+export * from "./contracts/mempool.js";
+export * from "./clients/mempool-rpc-client.js";
+export * from "./manifest/types.js";
+export * from "./manifest/snapshot.js";
+export * from "./manifest/coverage-report.js";

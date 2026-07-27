@@ -6,7 +6,7 @@ import { TxPlanArtifact } from "@hardkas/artifacts";
 describe("PrivateKeyAuthorizer", () => {
   const mockPlan: TxPlanArtifact = {
     schema: "hardkas.txPlan",
-    hardkasVersion: "0.11.3-alpha",
+    hardkasVersion: "0.11.4-alpha",
     version: "1.0.0-alpha",
     createdAt: new Date().toISOString(),
     planId: "plan123",

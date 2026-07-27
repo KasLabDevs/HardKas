@@ -10,12 +10,14 @@ const virtualMocks = {
       "path",
       "crypto",
       "os",
+      "async_hooks",
       "fs/promises",
       "kaspa",
       "node:fs",
       "node:path",
       "node:crypto",
       "node:os",
+      "node:async_hooks",
       "node:fs/promises",
       "@hardkas/accounts",
       "@hardkas/localnet",
@@ -31,6 +33,9 @@ const virtualMocks = {
     if (id.startsWith("\0virtual:")) {
       if (id.includes("crypto")) {
         return 'export default {}; export const createHash = () => ({ update: () => ({ digest: () => "mock-hash" }) });';
+      }
+      if (id.includes("async_hooks")) {
+        return 'export default {}; export const AsyncLocalStorage = class { getStore() { return null; } run(store, callback) { return callback(); } };';
       }
       return "export default {}; export const planBridgeEntry = () => {}; export const simulatePrefixMining = () => {};";
     }

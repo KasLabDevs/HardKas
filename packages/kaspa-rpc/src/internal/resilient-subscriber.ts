@@ -211,6 +211,9 @@ export class ResilientSubscriptionClient implements KaspaRpcClient {
   }
 
   on(event: string, handler: (data: unknown) => void): void {
+    for (const sub of this.subscriptions) {
+      if (sub.topic === event && sub.cb === handler) return;
+    }
     const record: SubscriptionRecord = {
       topic: event,
       payload: {},

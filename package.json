@@ -17,6 +17,7 @@
   },
   "packageManager": "pnpm@9.15.4",
   "scripts": {
+    "certify": "tsx scripts/certification/runner.ts",
     "build": "turbo build",
     "dev": "turbo dev",
     "test": "vitest run && pnpm test:workflows",
@@ -95,6 +96,7 @@
     "eslint-plugin-react-refresh": "^0.5.2",
     "fast-check": "^4.8.0",
     "globals": "^17.6.0",
+    "knip": "^6.26.0",
     "prettier": "^3.4.2",
     "ts-node": "^10.9.2",
     "tsup": "^8.3.5",
@@ -105,7 +107,7 @@
     "vitest": "^2.1.9",
     "ws": "^8.18.0"
   },
-  "version": "0.11.3-alpha",
+  "version": "0.11.4-alpha",
   "dependencies": {
     "kaspa": "^0.13.0",
     "kaspa-wasm": "^0.13.0"

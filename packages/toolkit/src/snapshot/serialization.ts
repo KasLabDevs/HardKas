@@ -19,17 +19,3 @@ export function snapshotReviver(key: string, value: any): any {
     }
     return value;
 }
-
-/**
- * Serializes a SnapshotState map to a string safely supporting BigInt.
- */
-export function serializeState(state: Record<string, SnapshotState>): string {
-    return JSON.stringify(state, snapshotReplacer, 2);
-}
-
-/**
- * Deserializes a SnapshotState map from a string safely supporting BigInt.
- */
-export function deserializeState(data: string): Record<string, SnapshotState> {
-    return JSON.parse(data, snapshotReviver);
-}

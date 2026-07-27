@@ -56,7 +56,7 @@ class TaskRegistry {
   }
 }
 
-export const taskRegistry = new TaskRegistry();
+const taskRegistry = new TaskRegistry();
 
 /**
  * Defines a new HardKAS task.

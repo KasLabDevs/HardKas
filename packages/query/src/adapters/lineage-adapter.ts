@@ -7,6 +7,7 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import { computeQueryHash } from "../serialize.js";
+import { paginateAndFormatResult } from "../format.js";
 import { explainTransition, explainOrphan } from "../explain.js";
 import { deterministicCompare } from "@hardkas/core";
 import type {
@@ -135,21 +136,18 @@ export class LineageQueryAdapter implements QueryAdapter {
       why = transitions.map((t) => explainTransition(t));
     }
 
-    return {
+    return paginateAndFormatResult({
+      request,
+      items: [result],
       domain: "lineage",
       op: "chain",
-      items: [result],
-      total: 1,
-      truncated: false,
       deterministic: true,
-      queryHash: computeQueryHash([result]),
       why,
       annotations: {
-        executedAt: new Date().toISOString(),
         executionMs: Date.now() - start,
         filesScanned: graph.totalFiles
       }
-    };
+    });
   }
 
   // -------------------------------------------------------------------------
@@ -193,28 +191,27 @@ export class LineageQueryAdapter implements QueryAdapter {
       return deterministicCompare(a.from.contentHash, b.from.contentHash);
     });
 
-    const paged = transitions.slice(request.offset, request.offset + request.limit);
-
     let why: WhyBlock[] | undefined;
     if (request.explain) {
-      why = paged.map((t) => explainTransition(t));
+      const pagedForWhy = transitions.slice(
+        request.offset ?? 0,
+        (request.offset ?? 0) + (request.limit ?? transitions.length)
+      );
+      why = pagedForWhy.map((t) => explainTransition(t));
     }
 
-    return {
+    return paginateAndFormatResult({
+      request,
+      items: transitions,
       domain: "lineage",
       op: "transitions",
-      items: paged,
-      total: transitions.length,
-      truncated: transitions.length > request.offset + request.limit,
       deterministic: true,
-      queryHash: computeQueryHash(paged),
       why,
       annotations: {
-        executedAt: new Date().toISOString(),
         executionMs: Date.now() - start,
         filesScanned: graph.totalFiles
       }
-    };
+    });
   }
 
   // -------------------------------------------------------------------------
@@ -244,28 +241,27 @@ export class LineageQueryAdapter implements QueryAdapter {
     // Sort by contentHash for determinism
     orphans.sort((a, b) => deterministicCompare(a.node.contentHash, b.node.contentHash));
 
-    const paged = orphans.slice(request.offset, request.offset + request.limit);
-
     let why: WhyBlock[] | undefined;
     if (request.explain) {
-      why = paged.map((o) => explainOrphan(o.node, o.missingParentId));
+      const pagedForWhy = orphans.slice(
+        request.offset ?? 0,
+        (request.offset ?? 0) + (request.limit ?? orphans.length)
+      );
+      why = pagedForWhy.map((o) => explainOrphan(o.node, o.missingParentId));
     }
 
-    return {
+    return paginateAndFormatResult({
+      request,
+      items: orphans,
       domain: "lineage",
       op: "orphans",
-      items: paged,
-      total: orphans.length,
-      truncated: orphans.length > request.offset + request.limit,
       deterministic: true,
-      queryHash: computeQueryHash(paged),
       why,
       annotations: {
-        executedAt: new Date().toISOString(),
         executionMs: Date.now() - start,
         filesScanned: graph.totalFiles
       }
-    };
+    });
   }
 
   // -------------------------------------------------------------------------

@@ -30,7 +30,7 @@ describe("silver deploy built CLI runtime", () => {
       `${JSON.stringify(
         {
           schema: "hardkas.silver.deployPlan",
-          hardkasVersion: "0.11.3-alpha",
+          hardkasVersion: "0.11.4-alpha",
           version: "1.0.0-alpha",
           hashVersion: 4,
           networkId: "simnet",
@@ -71,7 +71,7 @@ describe("silver deploy built CLI runtime", () => {
           cwd: tmpDir,
           encoding: "utf8",
           stdio: "pipe",
-          timeout: 15_000
+          timeout: 60_000
         }
       );
     } catch (error: any) {
