@@ -113,7 +113,8 @@ async function main() {
     feeRateSompiPerMass: 1n,
     version: 1,
     feePolicy: "toccata",
-    computeBudget: 100n
+    computeBudget: 100n,
+    coinbaseMaturity: 100n
   });
 
   const mockCtx = { clock: { now: () => Date.now() } } as any;
@@ -196,7 +197,8 @@ async function main() {
     feeRateSompiPerMass: 1n,
     version: 1,
     feePolicy: "toccata",
-    computeBudget: ComputeGrams.fromScriptUnits(5_000_000n)
+    computeBudget: ComputeGrams.fromScriptUnits(5_000_000n),
+    coinbaseMaturity: 100n
   });
 
   console.log("DEBUG SCRIPT PUB KEY:", spendBuilderPlan.inputs[0].scriptPublicKey);

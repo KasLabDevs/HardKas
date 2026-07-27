@@ -1,42 +1,58 @@
 {
   "schema": "hardkas.txPlan",
   "hardkasVersion": "0.11.4-alpha",
+  "schemaVersion": "hardkas.artifact.v1",
   "version": "1.0.0-alpha",
-  "hashVersion": 3,
-  "createdAt": "2026-05-25T13:40:53.359Z",
+  "hashVersion": 4,
+  "createdAt": "2026-07-27T09:03:49.861Z",
   "networkId": "simulated",
   "mode": "simulated",
   "from": {
-    "address": "kaspa:sim_alice",
+    "address": "kaspasim:qqlpk9rs7yag6eqj3lttzqd8vgvssz8l8fxlpdag4h7zx2rjjr8lkkerwkezn",
     "accountName": "alice",
     "input": "alice"
   },
   "to": {
-    "address": "kaspa:sim_bob",
+    "address": "kaspasim:qryj23rch0n5rc7klfug58zcrnuc966qljwgzpu3mflqgxu6w2pjg6n575980",
     "input": "bob"
   },
   "amountSompi": "1000000000",
-  "estimatedFeeSompi": "350",
-  "estimatedMass": "350",
+  "estimatedFeeSompi": "1060",
+  "estimatedMass": "1060",
   "inputs": [
     {
       "outpoint": {
         "transactionId": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
         "index": 0
       },
-      "amountSompi": "10000000000"
+      "amountSompi": "10000000000",
+      "address": "kaspasim:qqlpk9rs7yag6eqj3lttzqd8vgvssz8l8fxlpdag4h7zx2rjjr8lkkerwkezn",
+      "scriptPublicKey": "20bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbac"
     }
   ],
   "outputs": [
     {
-      "address": "kaspa:sim_bob",
+      "address": "kaspasim:qryj23rch0n5rc7klfug58zcrnuc966qljwgzpu3mflqgxu6w2pjg6n575980",
       "amountSompi": "1000000000"
     }
   ],
-  "change": {
-    "address": "kaspa:sim_alice",
-    "amountSompi": "8999999650"
+  "lineage": {
+    "artifactId": "ea7545217050d754a3b0818cf84f26f56575055dc303a242a8aa4016f9eb353c",
+    "lineageId": "00c2ebe9b8d7017f7ec20048b1a44f95f15917dea1d913b50b9b36cf60c4dc37",
+    "parentArtifactId": "",
+    "rootArtifactId": "00c2ebe9b8d7017f7ec20048b1a44f95f15917dea1d913b50b9b36cf60c4dc37",
+    "sequence": 1
   },
-  "planId": "plan-b5856ae64f92a53d",
-  "contentHash": "b5856ae64f92a53da7d13463e2256f16d86845dfe07c82915f303561dcc8176f"
+  "metadata": {
+    "schema": "hardkas.artifact.v1"
+  },
+  "assumptionLevel": "local-simulated",
+  "txVersion": 0,
+  "change": {
+    "address": "kaspasim:qqlpk9rs7yag6eqj3lttzqd8vgvssz8l8fxlpdag4h7zx2rjjr8lkkerwkezn",
+    "amountSompi": "8999998940"
+  },
+  "planId": "plan-ea7545217050d754",
+  "contentHash": "ea7545217050d754a3b0818cf84f26f56575055dc303a242a8aa4016f9eb353c",
+  "workflowId": "wf_00c2ebe9b8d7017f"
 }

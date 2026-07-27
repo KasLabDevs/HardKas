@@ -4,20 +4,20 @@
   "networkId": "simulated",
   "mode": "simulated",
   "status": "accepted",
-  "createdAt": "2026-05-25T13:40:53.360Z",
-  "submittedAt": "2026-05-25T13:40:53.360Z",
-  "confirmedAt": "2026-05-25T13:40:53.360Z",
-  "txId": "simulated-plan-b5856ae64f92a53d-tx",
-  "sourceSignedId": "signed-7c6a7b235056e431",
+  "createdAt": "2026-07-27T09:03:49.862Z",
+  "submittedAt": "2026-07-27T09:03:49.862Z",
+  "confirmedAt": "2026-07-27T09:03:49.862Z",
+  "txId": "simulated-plan-ea7545217050d754-tx",
+  "sourceSignedId": "signed-9af2ac9d254e3ad1",
   "from": {
-    "address": "kaspa:sim_alice",
+    "address": "kaspasim:qqlpk9rs7yag6eqj3lttzqd8vgvssz8l8fxlpdag4h7zx2rjjr8lkkerwkezn",
     "accountName": "alice"
   },
   "to": {
-    "address": "kaspa:sim_bob"
+    "address": "kaspasim:qryj23rch0n5rc7klfug58zcrnuc966qljwgzpu3mflqgxu6w2pjg6n575980"
   },
   "amountSompi": "1000000000",
-  "amount": "10.00000000 KAS",
-  "feeSompi": "350",
+  "amount": "10",
+  "feeSompi": "1060",
   "rpcUrl": "simulated"
 }

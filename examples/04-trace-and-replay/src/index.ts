@@ -83,7 +83,8 @@ async function main() {
         amountSompi: amount
       }
     ],
-    feeRateSompiPerMass: 1n
+    feeRateSompiPerMass: 1n,
+    coinbaseMaturity: 100n
   });
 
   const planArtifact = createTxPlanArtifact({
@@ -187,7 +188,8 @@ async function main() {
         amountSompi: amount
       }
     ],
-    feeRateSompiPerMass: 1n
+    feeRateSompiPerMass: 1n,
+    coinbaseMaturity: 100n
   });
 
   const originalFee = BigInt(planArtifact.estimatedFeeSompi);
