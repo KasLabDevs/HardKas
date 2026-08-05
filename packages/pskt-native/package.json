@@ -1,6 +1,6 @@
 {
   "name": "@hardkas/pskt-native",
-  "version": "0.11.5-alpha",
+  "version": "0.11.6-alpha",
   "type": "module",
   "main": "index.js",
   "types": "index.d.ts",
@@ -19,7 +19,7 @@
     "artifacts": "napi artifacts",
     "build": "napi build --platform --release",
     "build:debug": "napi build --platform",
-    "prepublishOnly": "napi prepublish -t npm",
+    "prepublishOnly": "napi prepublish -t npm --skip-optional-publish",
     "test": "vitest run",
     "typecheck": "echo \"No typecheck needed for napi auto-gen\""
   },
@@ -30,7 +30,8 @@
     "vitest": "^2.1.8"
   },
   "publishConfig": {
-    "access": "public"
+    "access": "public",
+    "tag": "alpha"
   },
   "files": [
     "index.js",
@@ -38,6 +39,6 @@
     "*.node"
   ],
   "optionalDependencies": {
-    "@hardkas/pskt-native-win32-x64-msvc": "0.11.5-alpha"
+    "@hardkas/pskt-native-win32-x64-msvc": "0.11.6-alpha"
   }
 }
