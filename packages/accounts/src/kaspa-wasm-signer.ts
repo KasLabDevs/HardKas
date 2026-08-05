@@ -223,9 +223,15 @@ export class KaspaWasmPrivateKeySigner implements HardkasTxPlanSigner {
           });
 
           console.log("DEBUG: Calling V0 createTransaction with:", { utxos: utxos.length, wasmOutputs: wasmOutputs.length, priorityFee });
+          // Even though we manually push the change output above, kaspa-wasm's createTransaction
+          // still requires a valid address string or object for the change_address parameter.
+          // We can just pass the from address, as any leftover will just be sent there (though
+          // there shouldn't be any leftover since we calculated it ourselves).
+          const dummyChange = plan.change?.address || plan.from.address;
           unsignedTx = sdk.createTransaction(
             utxos,
             wasmOutputs,
+            dummyChange,
             priorityFee
           );
         }
@@ -240,7 +246,7 @@ export class KaspaWasmPrivateKeySigner implements HardkasTxPlanSigner {
             inputs[i].sigOpCount = 0;
           }
         }
-        unsignedTx.inputs = inputs;
+        // unsignedTx.inputs = inputs; // Removed: kaspa-wasm 0.13.0 exposes only a getter
         console.log("DEBUG createFreshTx RETURNING:", unsignedTx?.constructor?.name);
         return unsignedTx;
       };
@@ -304,6 +310,10 @@ export class KaspaWasmPrivateKeySigner implements HardkasTxPlanSigner {
       const wasmTxStr = typeof (signedTx as any).serializeToJSON === "function" 
         ? (signedTx as any).serializeToJSON() 
         : signedTx.toString();
+      
+      console.log("DEBUG wasmTxStr:", wasmTxStr);
+      
+      console.log("DEBUG: about to parseWasmTxToRpc");
       const rpcTx = parseWasmTxToRpc(wasmTxStr, signedTx, inputOverrides, plan);
       const rawTx = JSON.stringify(rpcTx);
 
@@ -320,9 +330,10 @@ export class KaspaWasmPrivateKeySigner implements HardkasTxPlanSigner {
           value: signedTx.id || calculateContentHash(plan)
         }
       };
-    } catch (error) {
+    } catch (error: any) {
       // Never log the private key
       console.error("DEBUG SIGNING ERROR:", error);
+      console.error("DEBUG STACK:", error?.stack || "NO STACK (raw panic)");
       throw new Error(
         `Kaspa WASM signing failed: ${error instanceof Error ? error.stack || error.message : JSON.stringify(error, Object.getOwnPropertyNames(error))}`
       );

@@ -35,7 +35,7 @@ export function parseWasmTxToRpc(wasmTxStr: string, signedTx?: any, inputOverrid
   return {
     version: version,
     inputs: (txInner.inputs || []).map((i: any, idx: number) => {
-      const isFlattened = !!txInner.outputs || !!i.previousOutpoint || !!i.transactionId;
+      const isFlattened = !!i.previousOutpoint || !!i.transactionId;
       const prevOut = isFlattened ? (i.previousOutpoint || i) : i.inner.previousOutpoint.inner;
       const originalSigScript = isFlattened ? (i.signatureScript || "") : toHex(i.inner.signatureScript);
       const originalSigOpCount = isFlattened ? i.sigOpCount : i.inner.sigOpCount;
@@ -69,9 +69,9 @@ export function parseWasmTxToRpc(wasmTxStr: string, signedTx?: any, inputOverrid
       };
     }),
     outputs: (txInner.outputs || []).map((o: any, idx: number) => {
-      const isFlattened = !!txInner.outputs || !!o.scriptPublicKey || !!o.value || !!o.amount;
+      const isFlattened = !!o.scriptPublicKey || !!o.script_public_key || !!o.value || !!o.amount;
       const innerOut = isFlattened ? o : o.inner;
-      const scriptObj = innerOut.scriptPublicKey;
+      const scriptObj = innerOut.scriptPublicKey || innerOut.script_public_key;
 
       const ret: any = {
         amount: (innerOut.value || innerOut.amount || 0).toString(),

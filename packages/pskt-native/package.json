@@ -36,5 +36,8 @@
     "index.js",
     "index.d.ts",
     "*.node"
-  ]
+  ],
+  "optionalDependencies": {
+    "@hardkas/pskt-native-win32-x64-msvc": "0.11.4-alpha"
+  }
 }

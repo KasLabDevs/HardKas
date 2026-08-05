@@ -65,7 +65,9 @@ export class PrivateKeyAuthorizer implements TxInputAuthorizer {
 
           const tx = wasmTransaction as any;
           try {
+            console.log("DEBUG: Calling signTransaction");
             const signedTx = wasm.signTransaction(tx, [privateKey], false);
+            console.log("DEBUG: signTransaction OK");
             const sigScript = (signedTx.inputs as any[])[inputIndex].signatureScript;
             
             if (!sigScript || sigScript.length === 0) {
