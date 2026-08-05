@@ -17,7 +17,7 @@ import { task, types, HardkasPlugin } from "@hardkas/core";
 const myPlugin: HardkasPlugin = {
   name: "MyCustomPlugin",
   version: "1.0.0",
-  hardkasVersion: "0.11.4",
+  hardkasVersion: "0.11.5",
   hooks: {
     onBeforeTxSign: async (ctx) => {
       console.log(`Plugin intercepting sign for account: ${ctx.account}`);

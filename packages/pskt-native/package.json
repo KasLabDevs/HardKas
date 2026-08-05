@@ -1,6 +1,6 @@
 {
   "name": "@hardkas/pskt-native",
-  "version": "0.11.4-alpha",
+  "version": "0.11.5-alpha",
   "type": "module",
   "main": "index.js",
   "types": "index.d.ts",
@@ -38,6 +38,6 @@
     "*.node"
   ],
   "optionalDependencies": {
-    "@hardkas/pskt-native-win32-x64-msvc": "0.11.4-alpha"
+    "@hardkas/pskt-native-win32-x64-msvc": "0.11.5-alpha"
   }
 }
