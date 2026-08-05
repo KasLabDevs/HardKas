@@ -1,7 +1,7 @@
-# HardKAS 0.11.5-alpha — Builder Labs Mode
+# HardKAS 0.11.6-alpha — Builder Labs Mode
 
 ## Context
-HardKAS has reached 0.11.5-alpha.
+HardKAS has reached 0.11.6-alpha.
 The framework is considered feature-complete enough to begin validating itself through real Kaspa applications.
 From this point forward, the primary objective is not adding features, but discovering missing SDK capabilities by building production-like applications.
 Every new SDK helper, plugin, template or CLI feature must originate from an actual application requirement.
