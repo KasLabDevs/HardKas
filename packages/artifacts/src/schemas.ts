@@ -6,7 +6,6 @@ import {
 } from "@hardkas/core";
 
 export const ARTIFACT_VERSION = "1.0.0-alpha";
-export const HARDKAS_VERSION = "0.12.0-rc.1";
 
 export type DraftArtifact<TFinal, THashFields extends keyof TFinal> = Omit<
   TFinal,
