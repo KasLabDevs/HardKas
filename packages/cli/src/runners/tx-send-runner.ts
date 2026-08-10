@@ -108,8 +108,12 @@ export async function runTxSend(input: TxSendRunnerInput): Promise<TxSendRunnerR
       replayId: `replay_${receipt.txId.substring(0, 8)}`
     };
   } finally {
-    if (rpcClient && typeof rpcClient.close === "function") {
-      await rpcClient.close();
+    if (rpcClient) {
+      if ("disconnect" in rpcClient && typeof (rpcClient as any).disconnect === "function") {
+        await (rpcClient as any).disconnect();
+      } else if ("close" in rpcClient && typeof (rpcClient as any).close === "function") {
+        await (rpcClient as any).close();
+      }
     }
   }
 }
