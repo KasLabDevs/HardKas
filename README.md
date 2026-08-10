@@ -29,16 +29,29 @@ Instead of submitting raw payloads and hoping the network accepts them, HardKAS
 turns intent into deterministic artifacts. Those artifacts can be inspected,
 hashed, signed, simulated, receipted, indexed, and replayed.
 
+## Execution Worlds
+
+HardKAS `0.12.0` introduces strictly partitioned Execution Worlds.
+
+- `simulator`: The JS-based, in-memory, synchronous transaction simulator. Accounts, UTXOs, and funds are strictly synthetic.
+- `localnet`: A real Kaspa node (`rusty-kaspad`) running locally via Docker on the Kaspa `simnet` network with real Proof-of-Work and local mining.
+- `rpc`: A remote connection to a configured Kaspa node (e.g. `mainnet` or `testnet-11`).
+
+> [!WARNING]
+> **Simulator != Kaspa simnet**
+> Simulator = synthetic HardKAS runtime
+> simnet = Kaspa network used by Localnet
+
 ## Local-First Status
 
-HardKAS `0.11.6-alpha` is local-first deterministic transaction infrastructure
+HardKAS `0.12.0` is local-first deterministic transaction infrastructure
 for Kaspa/Toccata development.
 
 Current certified baseline:
 
-- `simulated` is the recommended default.
-- Toccata v2 Docker `simnet` localnet baseline.
-- Real local funding through the Toccata miner/stratum companion.
+- `simulator` is the recommended default for fast, synchronous testing.
+- Toccata v2 Docker `localnet` baseline (`rusty-kaspad` on Kaspa `simnet`).
+- Real local funding through the Toccata miner/stratum companion in `localnet`.
 - Standard transaction lifecycle against the local node.
 - SilverScript local OP_TRUE deploy/spend.
 - Artifact-coherence simulation.
@@ -50,9 +63,9 @@ Current certified baseline:
 
 ### Toccata v2 Alpha Baseline
 
-The `0.11.6-alpha` release line includes a normalized Toccata v2 localnet flow:
+The `0.12.0` release line includes a normalized Toccata v2 localnet flow:
 
-- Docker `rusty-kaspad` v2.0.0 simnet funding with a compatible miner companion.
+- Docker `rusty-kaspad` v2.0.0 simnet funding with a compatible miner companion (`kaspanet/cpuminer`).
 - Standard transaction lifecycle against the local node.
 - Real Silver OP_TRUE deploy and spend receipts.
 - Silver simulator artifact-coherence comparison.
@@ -69,20 +82,20 @@ Official release claims:
 - `vmConsensusEquivalence`: `NOT_CLAIMED`
 - `mainnet`: `BLOCKED_BY_POLICY`
 
-### 0.11.6-alpha SDK Parity
+### 0.12.0 SDK Parity
 
-`0.11.6-alpha` is a SDK parity / developer experience patch. It adds high-level
+`0.12.0` is a SDK parity / developer experience patch. It adds high-level
 SDK surfaces for capabilities, localnet status/start/fund, corpus verification,
 and Silver planning/simulation/compare flows without changing the release
-claims above.
+claims above. It enforces strict separation of execution environments across Artifact lineage.
 
 SDK real Silver RPC/Docker execution remains explicitly unsupported in
-`0.11.6-alpha` via `SDK_SILVER_REAL_LIFECYCLE_UNSUPPORTED`; certified real
+`0.12.0` via `SDK_SILVER_REAL_LIFECYCLE_UNSUPPORTED`; certified real
 lifecycle execution remains CLI/localnet bounded.
 
-### 0.11.6-alpha Programmability Builder Surface
+### 0.12.0 Programmability Builder Surface
 
-`0.11.6-alpha` also includes a local-only builder surface for SilverScript,
+`0.12.0` also includes a local-only builder surface for SilverScript,
 ZK corpus fixtures, and vProgs artifact inspection. This is a programmability
 surface, not a protocol/runtime claim.
 
@@ -153,7 +166,7 @@ hardkas corpus verify fixtures/toccata-v2/silver --json
 import { Hardkas } from "@hardkas/sdk";
 
 const sdk = await Hardkas.create({
-  network: "simulated",
+  execution: { mode: "simulator", domain: "kaspa-l1", network: "simulated" },
   autoBootstrap: true
 });
 
@@ -166,13 +179,35 @@ await sdk.replay.verify();
 console.log(receipt.txId);
 ```
 
-## CLI Happy Path
+## CLI Reference
+
+HardKAS CLI commands are scoped to execution worlds:
+
+### Simulator
+Synthetic testing without real nodes. Uses JS-based synthetic state and accounts.
+
+HardKAS includes deterministic accounts (`alice`, `bob`, `carol`) by default, but you can create custom ones:
 
 ```bash
-hardkas init .
-hardkas accounts fund alice --amount 1000
-hardkas tx send --from alice --to bob --amount 10 --network simulated --yes
-hardkas dashboard
+hardkas simulator account create custom-wallet
+hardkas simulator fund custom-wallet --amount 1000
+hardkas tx send --from custom-wallet --to bob --amount 10 --network simulated --yes
+```
+
+### Localnet
+Real `rusty-kaspad` node testing with real mining (PoW), real Kaspa simnet UTXOs, and Kaspa-valid local accounts.
+
+```bash
+hardkas localnet start --profile toccata-v2
+hardkas localnet account create treasury
+hardkas localnet fund treasury
+```
+
+### Node
+Low-level process management for the Kaspa node binaries themselves.
+
+```bash
+hardkas node start
 ```
 
 For the explicit artifact boundary:

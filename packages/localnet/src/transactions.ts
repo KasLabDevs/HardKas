@@ -149,7 +149,7 @@ export function applySimulatedPayment(
     // 5. Create Artifacts
     const planArtifact = createTxPlanArtifact({
       networkId: (state.networkId || "simnet") as NetworkId,
-      mode: "simulated",
+      mode: "simulator",
       from: { input: input.from, address: fromAddress },
       to: { input: input.to, address: toAddress },
       amountSompi,
@@ -235,7 +235,7 @@ export function applySimulatedPayment(
       hardkasVersion: HARDKAS_VERSION,
       version: ARTIFACT_VERSION,
       status: "failed",
-      mode: "simulated",
+      mode: "simulator",
       networkId: state.networkId,
       txId: txId as TxId,
       createdAt: "1970-01-01T00:00:00.000Z",
@@ -246,7 +246,8 @@ export function applySimulatedPayment(
       from: { address: "" as KaspaAddress },
       to: { address: "" as KaspaAddress },
       amountSompi: "0",
-      feeSompi: "0"
+      feeSompi: "0",
+      execution: { mode: "simulator", domain: "kaspa-l1", network: state.networkId || "simnet" }
     };
 
     return {
@@ -349,7 +350,7 @@ export function applySimulatedPlan(
       hardkasVersion: HARDKAS_VERSION,
       version: ARTIFACT_VERSION,
       status: "failed",
-      mode: "simulated",
+      mode: "simulator",
       networkId: state.networkId,
       txId: txId as TxId,
       createdAt: "1970-01-01T00:00:00.000Z",
@@ -360,7 +361,8 @@ export function applySimulatedPlan(
       from: { address: "" as KaspaAddress },
       to: { address: "" as KaspaAddress },
       amountSompi: "0",
-      feeSompi: "0"
+      feeSompi: "0",
+      execution: { mode: "simulator", domain: "kaspa-l1", network: state.networkId || "simnet" }
     };
 
     return { ok: false, state: state, receipt, errors: [errorMessage] };

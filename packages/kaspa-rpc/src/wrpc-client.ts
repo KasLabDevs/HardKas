@@ -206,11 +206,19 @@ export class KaspaWrpcClient {
         const inp: any = {
           previousOutpoint: {
             transactionId: i.previousOutpoint.transactionId,
+            transaction_id: i.previousOutpoint.transactionId,
+            index: Number(i.previousOutpoint.index)
+          },
+          previous_outpoint: {
+            transactionId: i.previousOutpoint.transactionId,
+            transaction_id: i.previousOutpoint.transactionId,
             index: Number(i.previousOutpoint.index)
           },
           signatureScript: i.signatureScript,
+          signature_script: i.signatureScript,
           sequence: Number(i.sequence),
-          sigOpCount: Number(i.sigOpCount || 1)
+          sigOpCount: Number(i.sigOpCount || 1),
+          sig_op_count: Number(i.sigOpCount || 1)
         };
         if (Number(tx.version || 0) === 1 && i.computeBudget !== undefined) {
           inp.computeBudget = Number(i.computeBudget);
@@ -219,8 +227,8 @@ export class KaspaWrpcClient {
       }),
       outputs: (tx.outputs || []).map((o: any) => {
         let spkObj;
-        if (typeof o.scriptPublicKey === "object" && o.scriptPublicKey.scriptPublicKey !== undefined) {
-          spkObj = { version: Number(o.scriptPublicKey.version || 0), scriptPublicKey: o.scriptPublicKey.scriptPublicKey };
+        if (typeof o.scriptPublicKey === "object" && (o.scriptPublicKey.scriptPublicKey !== undefined || o.scriptPublicKey.script !== undefined)) {
+          spkObj = { version: Number(o.scriptPublicKey.version || 0), script: o.scriptPublicKey.script || o.scriptPublicKey.scriptPublicKey };
         } else if (typeof o.scriptPublicKey === "string") {
           // If it's a string, we assume the first 4 chars might be version if it came from kaspa-wasm
           // Actually, let's just assume it's a hex string without version if length < 70, else extract version
@@ -231,13 +239,15 @@ export class KaspaWrpcClient {
               version = parseInt(spk.substring(0, 4), 16);
               spk = spk.substring(4);
           }
-          spkObj = { version: isNaN(version) ? 0 : version, scriptPublicKey: spk };
+          spkObj = { version: isNaN(version) ? 0 : version, script: spk };
         } else {
-          spkObj = { version: 0, scriptPublicKey: o.scriptPublicKey?.script || o.scriptPublicKey };
+          spkObj = { version: 0, script: o.scriptPublicKey?.script || o.scriptPublicKey?.scriptPublicKey || o.scriptPublicKey };
         }
         let val = o.amount !== undefined ? o.amount : o.value;
         const out: any = {
           scriptPublicKey: spkObj,
+          script_public_key: spkObj,
+          value: Number(val),
           amount: Number(val)
         };
         if (Number(tx.version || 0) === 1 && o.covenant !== undefined) {
@@ -259,7 +269,13 @@ export class KaspaWrpcClient {
       normalizedTx.mass = Number(tx.mass || 0);
     }
 
-    return this.request("submitTransaction", { transaction: normalizedTx, allowOrphan });
+    const result = await this.request("submitTransaction", { transaction: normalizedTx, allowOrphan: true, allow_orphan: true }) as any;
+    // Normalize return to match SDK expectations (accepted + transactionId)
+    return {
+      accepted: true,
+      transactionId: result?.transactionId || result?.transactionID || "",
+      ...result
+    };
   }
 
   async ping(): Promise<boolean> {

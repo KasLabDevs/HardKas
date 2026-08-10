@@ -41,7 +41,7 @@ describe("accounts", () => {
   it("resolveHardkasAccountAddress should use config if provided", async () => {
     const config: HardkasConfig = {
       accounts: {
-        treasury: { kind: "simulated", address: "kaspasim:treasury" }
+        treasury: { kind: "synthetic", address: "kaspasim:treasury" }
       }
     };
     const addr = await resolveHardkasAccountAddress("treasury", config);

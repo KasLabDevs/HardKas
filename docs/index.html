@@ -2837,10 +2837,17 @@
         <section class="header" id="overview">
           <div class="hero-shell">
             <div class="hero-copy">
-              <div class="hero-kicker">HardKAS / local runtime docs</div>
+              <div class="hero-kicker">HardKAS / local</div>
               <h1>HardKAS Documentation</h1>
-              <p class="subtitle">
+              <p class="hero-desc">
                 HardKAS is a deterministic, local-first developer operating system for
+                Kaspa/Toccata.
+              </p>
+              <div class="note" style="margin-top: 1rem; border: 1px solid var(--accent); padding: 1rem; border-radius: 4px; background: rgba(var(--accent-rgb), 0.1);">
+                <strong>HardKAS has separate execution worlds.</strong><br/>
+                Synthetic simulation and Kaspa simnet are not the same environment.
+              </div>
+              <p>
                 Kaspa and Igra workflows. It gives developers a reproducible CLI, local
                 runtime, dashboard, artifact engine, RPC diagnostics, wallet adapters and
                 L1/L2 simulation tools without pretending to be a production wallet,
@@ -2859,7 +2866,7 @@
                 >
               </div>
               <div class="meta">
-                <span class="badge accent">0.11.6-alpha</span>
+                <span class="badge accent">0.12.0-alpha</span>
                 <span class="badge">Kaspa Native</span>
                 <span class="badge">Igra-aware</span>
                 <span class="badge">Local-first</span>
@@ -2899,7 +2906,7 @@ hardkas dev server --open"
                 </div>
               </div>
               <div class="warning">
-                <strong>Alpha boundary (0.11.6-alpha).</strong> HardKAS is developer
+                <strong>Alpha boundary (0.12.0-alpha).</strong> HardKAS is developer
                 infrastructure. It enforces strict path traversal sandboxing, rule
                 evaluation for <code>hardkas.policy.v1</code>, and strict lineage sequence
                 verification. It is not production custody software.
@@ -3056,28 +3063,26 @@ hardkas console"
               <h3>Existing repo</h3>
               <div class="codeblock">
                 <div class="codebar">
-                  init local runtime
+                  init localnet runtime
                   <button
                     class="copy"
                     data-copy="hardkas init
-hardkas local wizard --profile igra
-hardkas dev doctor --profile igra
-hardkas dev server --open"
+hardkas localnet start --profile toccata-v2
+hardkas localnet account create treasury
+hardkas localnet fund treasury --profile toccata-v2"
                   >
                     Copy
                   </button>
                 </div>
                 <pre><span class="cmd">hardkas</span> init
-<span class="cmd">hardkas</span> local wizard <span class="flag">--profile</span> igra
-<span class="cmd">hardkas</span> dev doctor <span class="flag">--profile</span> igra
-<span class="cmd">hardkas</span> dev server <span class="flag">--open</span></pre>
+<span class="cmd">hardkas</span> localnet start <span class="flag">--profile</span> toccata-v2
+<span class="cmd">hardkas</span> localnet account create treasury
+<span class="cmd">hardkas</span> localnet fund treasury <span class="flag">--profile</span> toccata-v2</pre>
               </div>
             </div>
           </div>
           <div class="note">
-            <strong>Recommended default.</strong> Use <code>simnet</code> or local
-            profiles while developing. Mainnet signing/funding paths are guarded and
-            should stay explicit.
+            <strong>Execution Isolation.</strong> Ensure you do not mix accounts or artifacts between Simulator and Localnet. Each execution mode enforces strict boundaries.
           </div>
         </section>
         <section id="mental-model">
@@ -3301,7 +3306,7 @@ hardkas dev server --open"
           </div>
         </section>
         <section id="status">
-          <h2>What actually works in 0.11.6-alpha</h2>
+          <h2>What actually works in 0.12.0-alpha</h2>
           <table>
             <thead>
               <tr>
@@ -3377,7 +3382,7 @@ hardkas dev server --open"
           <h2>Sessions</h2>
           <p>
             Sessions bind L1/L2 developer context: wallet names, EVM accounts, selected
-            profiles, bridge plans and local runtime state. In 0.11.6-alpha mutating
+            profiles, bridge plans and local runtime state. In 0.12.0-alpha mutating
             session paths fail closed on corrupt stores and canonical writes use atomic
             persistence with parent directory fsync.
           </p>
@@ -3486,7 +3491,7 @@ hardkas session status"
           </div>
           <div class="warning">
             <strong>SSE limitation.</strong> The dashboard supports reconnect/backoff, but
-            0.11.6-alpha does not yet provide durable replay cursors or monotonic event
+            0.12.0-alpha does not yet provide durable replay cursors or monotonic event
             IDs. If the dev server restarts, the event stream resets.
           </div>
           <h3>CLI ↔ Dashboard sync</h3>
@@ -4729,7 +4734,7 @@ hardkas config show --json"
                 <div class="codeblock" style="margin-top: 8px">
                   <div class="codebar">sample output (truncated)</div>
                   <pre>{
-  <span class="str">"version"</span>: <span class="str">"0.11.6-alpha"</span>,
+  <span class="str">"version"</span>: <span class="str">"0.12.0-alpha"</span>,
   <span class="str">"maturity"</span>: <span class="str">"hardened-alpha"</span>,
   <span class="str">"capabilities"</span>: {
     <span class="str">"artifacts"</span>: <span style="color:#72f2c3">true</span>,
@@ -4907,7 +4912,7 @@ hardkas query lineage chain &lt;artifactId&gt; --why"
           </div>
         </section>
         <footer class="footer">
-          HardKAS Documentation · 0.11.6-alpha · CLI · SDK · Examples · Security · GitHub ·
+          HardKAS Documentation · 0.12.0-alpha · CLI · SDK · Examples · Security · GitHub ·
           MIT License<br />
           HardKAS is local developer infrastructure in active alpha. It is provided
           without warranty and is not production custody software.

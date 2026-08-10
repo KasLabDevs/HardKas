@@ -1,6 +1,6 @@
 import { getOutput } from "../output.js";
 import { UI, handleError } from "../ui.js";
-import { loadHardkasConfig, resolveNetworkTarget } from "@hardkas/config";
+import { loadHardkasConfig, resolveExecutionTarget } from "@hardkas/config";
 import { JsonWrpcKaspaClient } from "@hardkas/kaspa-rpc";
 import { forkFromNetwork, saveLocalnetState } from "@hardkas/localnet";
 import { resolve } from "node:path";
@@ -13,7 +13,7 @@ import { HardkasSchemas } from "@hardkas/artifacts";
 
 const TOCCATA_PROFILE = "toccata-v2";
 const TOCCATA_IMAGE = "kaspanet/rusty-kaspad:v2.0.0";
-const TOCCATA_MINER_IMAGE = "hardkas/stratum-bridge:v2.0.0-local-simnet-unsynced";
+const OFFICIAL_MINER_IMAGE = "kaspanet/cpuminer@sha256:60f78ab2828ab24b249c99210eee5a2825303a5226154260dd021ff26d46748b";
 const TOCCATA_MINER_CONTAINER = "hardkas-toccata-stratum-v2";
 const TOCCATA_RPC_URL = "ws://127.0.0.1:18210";
 const TOCCATA_KASPAD_ADDRESS = "host.docker.internal:16210";
@@ -40,12 +40,15 @@ export interface LocalnetFundOptions {
 }
 
 export async function runLocalnetStart(opts: LocalnetStartOptions): Promise<void> {
-  const profile = opts.profile || "simulated";
+  const profile = opts.profile;
+
+  if (!profile || profile === "simulated") {
+    const { HardkasCliError } = await import("../cli-errors.js");
+    throw new HardkasCliError("LOCALNET_PROFILE_REQUIRED", "A profile is required to start localnet. Use --profile toccata-v2 for Docker Toccata v2 simnet.", { exitCode: 1 });
+  }
 
   if (profile !== TOCCATA_PROFILE) {
-    UI.info("Simulated localnet state is created lazily by HardKAS commands.");
-    UI.info(`Use --profile ${TOCCATA_PROFILE} for Docker Toccata v2 simnet.`);
-    return;
+    throw new Error(`Unsupported localnet profile: ${profile}`);
   }
 
   const existing = await detectToccataNode(!!opts.json);
@@ -148,42 +151,43 @@ export async function runLocalnetFund(opts: LocalnetFundOptions): Promise<void> 
   }
 
   const { config } = await loadHardkasConfig({});
-  let address: string | undefined;
+  let address: string;
 
-  const allAccounts = listHardkasAccounts(config);
-
-  // 1. Keychain profiles
-  const keychain = allAccounts.find((a: any) => a.name === opts.identifier && a.keystorePath?.includes("keystore"));
-  if (keychain?.address) address = keychain.address;
-
-  // 2. Simnet dev accounts (shadow accounts mapped from fixtures)
-  if (!address) {
-    const { ensureDevAccounts } = await import("@hardkas/accounts");
-    await ensureDevAccounts(opts.workspaceRoot || process.cwd());
-    const devAccounts = listHardkasAccounts(config);
-    console.error("DEBUG listHardkasAccounts:", devAccounts.map((a: any) => ({ name: a.name, kind: a.kind, keystorePath: a.keystorePath })));
-    const devAccount = devAccounts.find((a: any) => a.name === opts.identifier && a.keystorePath?.includes("dev-accounts"));
-    console.error("DEBUG devAccount found:", devAccount);
-    if (devAccount?.address) address = devAccount.address;
+  const { resolveHardkasAccount } = await import("@hardkas/accounts");
+  let account;
+  try {
+    account = resolveHardkasAccount({ nameOrAddress: opts.identifier, config });
+    address = account.address;
+  } catch {
+    address = opts.identifier;
   }
 
-  // 3. Fixture accounts
-  if (!address) {
-    const fixture = allAccounts.find((a: any) => a.name === opts.identifier && a.kind === "simulated");
-    if (fixture?.address) address = fixture.address;
-  }
+  // ENFORCE EXECUTION GUARD FOR FUNDING
+  const { assertExecutionCompatibility } = await import("@hardkas/core");
+  const target = {
+    mode: "localnet",
+    domain: "kaspa-l1",
+    network: "simnet"
+  } as const;
 
-  // 4. Literal Kaspa address
-  if (!address) {
-    address = await resolveHardkasAccountAddress(opts.identifier, config);
-  }
-
-  if (!address.startsWith("kaspasim:")) {
-    throw new Error("TOCCATA_FUNDING_REQUIRES_SIMNET_ADDRESS: " + address);
+  if (account) {
+    assertExecutionCompatibility({
+      operation: "fund",
+      target,
+      account: {
+        kind: account.kind,
+        network: (account as any).network,
+        executionMode: (account as any).executionMode
+      }
+    });
+  } else {
+    // If it was just a string literal that wasn't resolved to a HardkasAccount
+    if (!address.startsWith("kaspasim:")) {
+      throw new Error("TOCCATA_FUNDING_REQUIRES_SIMNET_ADDRESS: " + address);
+    }
   }
 
   const before = await getAddressFundingState(address, !!opts.json);
-  await ensureToccataMinerImage();
   await restartToccataMiner(address);
 
   const timeoutMs = opts.timeoutMs ?? 300000;
@@ -244,7 +248,7 @@ export async function runLocalnetFork(opts: {
   UI.header(`HardKAS Localnet Fork`);
 
   const { config } = await loadHardkasConfig();
-  const { target } = resolveNetworkTarget({ config, network: opts.network });
+  const { target } = resolveExecutionTarget({ config, network: opts.network });
 
   if (target.kind === "simulated") {
     throw new Error("Cannot fork from a simulated network.");
@@ -330,16 +334,7 @@ async function detectToccataNode(quiet = false) {
   }
 }
 
-async function ensureToccataMinerImage() {
-  try {
-    await execa("docker", ["image", "inspect", TOCCATA_MINER_IMAGE]);
-  } catch {
-    throw new Error(
-      `TOCCATA_MINER_COMPANION_UNAVAILABLE: Docker image '${TOCCATA_MINER_IMAGE}' was not found.\n` +
-        "Build the v2 stratum companion from kaspanet/rusty-kaspa v2.0.0 before running localnet fund."
-    );
-  }
-}
+
 
 async function restartToccataMiner(address: string) {
   await execa("docker", ["rm", "-f", TOCCATA_MINER_CONTAINER]).catch(() => {});
@@ -348,28 +343,18 @@ async function restartToccataMiner(address: string) {
     "-d",
     "--name",
     TOCCATA_MINER_CONTAINER,
-    "--add-host=host.docker.internal:host-gateway",
-    TOCCATA_MINER_IMAGE,
-    "/app/stratum-bridge",
-    "--node-mode",
-    "external",
-    "--kaspad-address",
-    TOCCATA_KASPAD_ADDRESS,
-    "--web-dashboard-port",
-    ":3031",
-    "--instance",
-    "port=:16120,diff=1",
-    "--internal-cpu-miner",
-    "--internal-cpu-miner-address",
+    "--network",
+    "container:hardkas-kaspad-toccata-v2",
+    OFFICIAL_MINER_IMAGE,
+    "-a",
     address,
-    "--internal-cpu-miner-threads",
-    "1",
-    "--internal-cpu-miner-template-poll-ms",
-    "250",
-    "--print-stats",
-    "true",
-    "--log-to-file",
-    "false"
+    "-s",
+    "127.0.0.1",
+    "-p",
+    "16210",
+    "--mine-when-not-synced",
+    "-t",
+    "1"
   ]);
 }
 
@@ -398,7 +383,7 @@ async function inspectDockerContainer(name: string) {
       exists: false,
       running: false,
       status: "not-found",
-      image: TOCCATA_MINER_IMAGE,
+      image: OFFICIAL_MINER_IMAGE,
       name
     };
   }

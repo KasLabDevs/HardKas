@@ -1,6 +1,6 @@
 {
   "name": "@hardkas/l2",
-  "version": "0.11.6-alpha",
+  "version": "0.12.0-alpha",
   "type": "module",
   "exports": {
     ".": {

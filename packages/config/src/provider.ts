@@ -5,6 +5,7 @@ export interface ResolveProviderOptions {
   provider?: string | undefined;
   url?: string | undefined;
   configNetworkKind?: "simulated" | "kaspa-node" | "kaspa-rpc" | string | undefined;
+  executionMode?: string | undefined;
 }
 
 export interface ResolvedProvider {
@@ -49,7 +50,17 @@ export function resolveProvider(options: ResolveProviderOptions): ResolvedProvid
     };
   }
 
-  // 3. Fallback to network alias logic
+  // 3. Fallback to executionMode logic
+  if (options.executionMode) {
+    if (options.executionMode === "simulator") {
+      return { mode: "simulated", network };
+    }
+    if (options.executionMode === "localnet") {
+      return { mode: "rpc", network, endpoint: "http://127.0.0.1:18210" };
+    }
+  }
+
+  // 4. Fallback to network alias logic
   if (network === "local" || network === "simulated") {
     return {
       mode: "simulated",

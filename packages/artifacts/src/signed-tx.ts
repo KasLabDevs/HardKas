@@ -40,6 +40,7 @@ export function createSimulatedSignedTxArtifact(
       payload
     },
     lineage: createLineageTransition(plan, HardkasSchemas.SignedTx),
+    execution: plan.execution || { mode: plan.mode as any, domain: "kaspa-l1", network: plan.networkId },
     ...(plan.workflowId ? { workflowId: plan.workflowId } : {}),
     ...(plan.assumptionLevel ? { assumptionLevel: plan.assumptionLevel } : {})
   };
@@ -79,7 +80,7 @@ export function createSimulatedTxReceipt(
     createdAt: new Date(ctx.clock.now()).toISOString(),
     txId,
     status: "accepted",
-    mode: "simulated",
+    mode: "simulator",
     networkId: plan.networkId,
     from: { address: plan.from.address },
     to: { address: plan.to.address },
@@ -94,6 +95,7 @@ export function createSimulatedTxReceipt(
     postStateHash: extra?.postStateHash,
     dagContext: extra?.dagContext,
     lineage: createLineageTransition(plan, HardkasSchemas.TxReceipt),
+    execution: plan.execution || { mode: plan.mode as any, domain: "kaspa-l1", network: plan.networkId },
     ...(plan.workflowId ? { workflowId: plan.workflowId } : {}),
     ...(plan.assumptionLevel ? { assumptionLevel: plan.assumptionLevel } : {})
   };

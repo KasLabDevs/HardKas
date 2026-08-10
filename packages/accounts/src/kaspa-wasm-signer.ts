@@ -1,6 +1,6 @@
 import { TxPlanArtifact, calculateContentHash } from "@hardkas/artifacts";
 import {
-  HardkasKaspaPrivateKeyAccount,
+  HardkasKaspaAccount,
   HardkasTxPlanSigner,
   SignTxPlanInput,
   SignTxPlanResult,
@@ -12,6 +12,11 @@ import { KeystoreManager } from "./keystore.js";
 import { DEV_ACCOUNTS_PASSWORD } from "./dev-accounts.js";
 import { parseWasmTxToRpc } from "./internal/wasm-rpc-serialization.js";
 
+export interface KaspaWasmSignerOptions {
+  account?: HardkasKaspaAccount;
+  allowMainnet?: boolean;
+  wasmConfig?: WasmProviderConfig;
+}
 
 
 /**
@@ -19,14 +24,10 @@ import { parseWasmTxToRpc } from "./internal/wasm-rpc-serialization.js";
  * Only works if the 'kaspa' package is installed.
  */
 export class KaspaWasmPrivateKeySigner implements HardkasTxPlanSigner {
-  kind: HardkasSignerKind = "kaspa-private-key";
+  kind: HardkasSignerKind = "kaspa";
 
   constructor(
-    private options: {
-      account?: HardkasKaspaPrivateKeyAccount;
-      allowMainnet?: boolean | undefined;
-      wasmConfig?: WasmProviderConfig;
-    }
+    private options: KaspaWasmSignerOptions
   ) {}
 
   async signTxPlan(input: SignTxPlanInput): Promise<SignTxPlanResult> {
@@ -318,7 +319,7 @@ export class KaspaWasmPrivateKeySigner implements HardkasTxPlanSigner {
       const rawTx = JSON.stringify(rpcTx);
 
       return {
-        signatureKind: "kaspa-private-key",
+        signatureKind: "kaspa",
         signerAddress: input.accountName || plan.from.address || "authorized",
         signedTransaction: {
           format: "hex",

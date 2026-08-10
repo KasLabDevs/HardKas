@@ -37,6 +37,11 @@ export function createTxPlanArtifact(options: CreateTxPlanArtifactOptions): TxPl
     createdAt: new Date(options.ctx.clock.now()).toISOString(),
     networkId: options.networkId,
     mode: options.mode,
+    execution: {
+      mode: options.mode as any,
+      domain: "kaspa-l1",
+      network: options.networkId
+    },
     from: {
       address: options.from.address,
       accountName: options.from.accountName,
@@ -84,7 +89,7 @@ export function createTxPlanArtifact(options: CreateTxPlanArtifactOptions): TxPl
     },
     assumptionLevel:
       options.ctx.assumptionLevel ||
-      (options.mode === "simulated" ? "local-simulated" : "local-dev"),
+      (options.mode === "simulator" ? "local-simulated" : "local-dev"),
     ...(options.plan.computeBudget !== undefined ? { computeBudget: options.plan.computeBudget.toString() } : {}),
     ...(options.plan.storageMass !== undefined ? { storageMass: options.plan.storageMass.toString() } : {}),
     ...(options.plan.lane !== undefined ? { lane: options.plan.lane } : {}),

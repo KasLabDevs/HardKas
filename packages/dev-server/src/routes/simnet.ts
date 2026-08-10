@@ -36,7 +36,7 @@ simnetRoutes.post("/mine", async (c) => {
     await execAsync(`docker rm -f hardkas-helper-miner`).catch(() => {});
     
     // Run cpuminer in background, it will mine some blocks
-    await execAsync(`docker run -d --name hardkas-helper-miner --network host kaspanet/cpuminer:latest -a ${address} -s 127.0.0.1 -p 16210 --mine-when-not-synced -t 1`).catch((e) => {
+    await execAsync(`docker run -d --name hardkas-helper-miner --network host kaspanet/cpuminer@sha256:60f78ab2828ab24b249c99210eee5a2825303a5226154260dd021ff26d46748b -a ${address} -s 127.0.0.1 -p 16210 --mine-when-not-synced -t 1`).catch((e) => {
       console.warn("Could not start helper-miner. Is docker running and network host working?", e.message);
     });
     

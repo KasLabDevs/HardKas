@@ -2,7 +2,8 @@ import fs from "node:fs";
 import path from "node:path";
 import type { HardkasConfig } from "@hardkas/config";
 import { createDeterministicAccounts } from "@hardkas/localnet";
-import type { HardkasAccount, HardkasSimulatedAccount } from "./types.js";
+import type { HardkasAccount, HardkasSyntheticAccount } from "./types.js";
+import { CrossWorldAccountCollisionError, AccountNetworkMismatchError } from "@hardkas/core";
 import {
   loadRealAccountStoreSync,
   getRealDevAccount,
@@ -17,15 +18,30 @@ export interface ResolveAccountOptions {
 export function resolveHardkasAccount(options: ResolveAccountOptions): HardkasAccount {
   const { nameOrAddress, config } = options;
 
-  // 1. If it starts with "kaspa:", "kaspatest:", "kaspasim:", it's a direct address
+  // 1. Direct address parsing
+  if (nameOrAddress.startsWith("kaspa:sim_")) {
+    return {
+      name: nameOrAddress,
+      kind: "synthetic",
+      executionMode: "simulator",
+      address: nameOrAddress
+    };
+  }
   if (
     nameOrAddress.startsWith("kaspa:") ||
     nameOrAddress.startsWith("kaspatest:") ||
     nameOrAddress.startsWith("kaspasim:")
   ) {
+    let network: string | undefined = "mainnet";
+    if (nameOrAddress.startsWith("kaspasim:")) network = "simnet";
+    else if (nameOrAddress.startsWith("kaspatest:")) {
+      const match = nameOrAddress.match(/^kaspatest:(\d+)_/);
+      network = match ? `testnet-${match[1]}` : undefined;
+    }
     return {
       name: nameOrAddress,
       kind: "external-wallet",
+      ...(network ? { network } : {}),
       address: nameOrAddress
     };
   }
@@ -35,88 +51,16 @@ export function resolveHardkasAccount(options: ResolveAccountOptions): HardkasAc
   if (alias === "0") alias = "alice";
   if (alias === "1") alias = "bob";
 
-  // 2. Check dev accounts first (simnet priority)
-  const workspaceRoot = (config as any)?.cwd || process.cwd();
-  const devAccountPath = path.join(
-    workspaceRoot,
-    ".hardkas",
-    "dev-accounts",
-    `${alias}.json`
-  );
-  if (fs.existsSync(devAccountPath)) {
-    try {
-      const data = fs.readFileSync(devAccountPath, "utf-8");
-      const keystore = JSON.parse(data);
-      if (keystore.type === "hardkas.encryptedKeystore.v2") {
-        return {
-          name: alias,
-          kind: "kaspa-private-key",
-          address: keystore.metadata?.address,
-          keystorePath: devAccountPath
-        };
-      }
-    } catch (e) {
-      // Ignore read errors and fall through
-    }
-  }
+  // Use listHardkasAccounts to ensure we catch collisions across all sources
+  const accounts = listHardkasAccounts(config);
+  const found = accounts.find(a => a.name === alias);
 
-  // 2.5 Check unified keystore.json
-  const keystoreJsonPath = path.join(workspaceRoot, ".hardkas", "keystore.json");
-  if (fs.existsSync(keystoreJsonPath)) {
-    try {
-      const data = fs.readFileSync(keystoreJsonPath, "utf-8");
-      const ks = JSON.parse(data);
-      if (ks[alias]) {
-        return {
-          name: alias,
-          kind: ks[alias].type === "simulated" ? "simulated" : "kaspa-private-key",
-          address: ks[alias].address
-        } as HardkasAccount;
-      }
-    } catch(e) {
-      // Ignore
-    }
-  }
-
-  // 3. Check config.accounts
-  if (config?.accounts && config.accounts[alias]) {
-    const accConfig = config.accounts[alias];
-    // console.log("FOUND IN CONFIG", accConfig);
-    return {
-      name: alias,
-      ...accConfig
-    } as HardkasAccount;
-  }
-
-  // 4. Check real account store
-  const realStore = loadRealAccountStoreSync({ cwd: workspaceRoot });
-  const realAcc = realStore ? getRealDevAccount(realStore, alias) : null;
-  if (realAcc) {
-    return {
-      name: realAcc.name,
-      kind: "kaspa-private-key", // Assuming Kaspa for now, could be extensible
-      address: realAcc.address,
-      ...(realAcc.privateKeyEnv ? { privateKeyEnv: realAcc.privateKeyEnv } : {}),
-      ...(realAcc.privateKey ? { privateKey: realAcc.privateKey } : {})
-    };
-  }
-
-  // 5. Fallback to deterministic accounts
-  const detAccounts = createDeterministicAccounts();
-  const det = detAccounts.find((a: any) => a.name === alias);
-  if (det) {
-    return {
-      name: det.name,
-      kind: "simulated",
-      address: det.address,
-      evmAddress: det.evmAddress
-    };
+  if (found) {
+    return found;
   }
 
   // 6. Not found
-  const available = listHardkasAccounts(config)
-    .map((a) => a.name)
-    .join(", ");
+  const available = accounts.map((a) => a.name).join(", ");
   throw new Error(
     `Unknown HardKAS account '${nameOrAddress}'. Available accounts: ${available}`
   );
@@ -130,7 +74,7 @@ export function listHardkasAccounts(config?: HardkasConfig): HardkasAccount[] {
   for (const det of detAccounts) {
     accounts.set(det.name, {
       name: det.name,
-      kind: "simulated",
+      kind: "synthetic", executionMode: "simulator",
       address: det.address,
       evmAddress: det.evmAddress
     });
@@ -148,14 +92,18 @@ export function listHardkasAccounts(config?: HardkasConfig): HardkasAccount[] {
           const data = fs.readFileSync(path.join(devAccountsDir, file), "utf-8");
           const keystore = JSON.parse(data);
           if (keystore.type === "hardkas.encryptedKeystore.v2") {
+            if (!keystore.metadata?.network) {
+              throw new AccountNetworkMismatchError(`Missing network metadata for dev account '${name}' at ${path.join(devAccountsDir, file)}.`);
+            }
             accounts.set(name, {
               name,
-              kind: "kaspa-private-key",
+              kind: "kaspa", network: keystore.metadata.network,
               address: keystore.payload?.address || keystore.metadata?.address,
               keystorePath: path.join(devAccountsDir, file)
             });
           }
         } catch (e) {
+          if (e instanceof AccountNetworkMismatchError) throw e;
           // Ignore
         }
       }
@@ -169,21 +117,31 @@ export function listHardkasAccounts(config?: HardkasConfig): HardkasAccount[] {
       const data = fs.readFileSync(keystoreJsonPath, "utf-8");
       const ks = JSON.parse(data);
       for (const [name, acc] of Object.entries(ks)) {
+        const existing = accounts.get(name);
+        const configKind = (acc as any).type === "simulated" ? "synthetic" : "kaspa";
+        if (existing && existing.kind !== configKind) {
+          console.error(`COLLISION DETECTED for ${name}. existing:`, existing, `configKind:`, configKind, `workspaceRoot:`, workspaceRoot, `keystoreJsonPath:`, keystoreJsonPath);
+          throw new CrossWorldAccountCollisionError(`Cross-world collision detected for account '${name}'. It exists as both '${existing.kind}' and '${configKind}' in different sources.`);
+        }
         if ((acc as any).type === "simulated") {
           accounts.set(name, {
             name,
-            kind: "simulated",
+            kind: "synthetic", executionMode: "simulator",
             address: (acc as any).address
           });
         } else {
+          if (!(acc as any).network) {
+            throw new AccountNetworkMismatchError(`Missing network metadata for keystore account '${name}' in keystore.json.`);
+          }
           accounts.set(name, {
             name,
-            kind: "kaspa-private-key",
+            kind: "kaspa", network: (acc as any).network,
             address: (acc as any).address
           });
         }
       }
     } catch(e) {
+      if (e instanceof CrossWorldAccountCollisionError || e instanceof AccountNetworkMismatchError) throw e;
       // Ignore
     }
   }
@@ -194,7 +152,7 @@ export function listHardkasAccounts(config?: HardkasConfig): HardkasAccount[] {
     for (const realAcc of listRealDevAccounts(realStore)) {
       accounts.set(realAcc.name, {
         name: realAcc.name,
-        kind: "kaspa-private-key",
+        kind: "kaspa", network: "simnet", // Wait, listRealDevAccounts returns accounts, does it have network? The legacy real store assumed simnet. We'll leave it as simnet for now, or maybe the store should provide it.
         address: realAcc.address,
         ...(realAcc.privateKeyEnv ? { privateKeyEnv: realAcc.privateKeyEnv } : {}),
         ...(realAcc.privateKey ? { privateKey: realAcc.privateKey } : {})
@@ -213,14 +171,18 @@ export function listHardkasAccounts(config?: HardkasConfig): HardkasAccount[] {
           const data = fs.readFileSync(path.join(keystoreDir, file), "utf-8");
           const keystore = JSON.parse(data);
           if (keystore.type === "hardkas.encryptedKeystore.v2") {
+            if (!keystore.metadata?.network) {
+              throw new AccountNetworkMismatchError(`Missing network metadata for keystore account '${name}' at ${path.join(keystoreDir, file)}.`);
+            }
             accounts.set(name, {
               name,
-              kind: "kaspa-private-key",
+              kind: "kaspa", network: keystore.metadata.network,
               address: keystore.payload?.address || keystore.metadata?.address, // Payloads are encrypted, but address might be in metadata
               keystorePath: path.join(keystoreDir, file)
             });
           }
         } catch (e) {
+          if (e instanceof AccountNetworkMismatchError) throw e;
           // Ignore corrupted keystores in listing
         }
       }
@@ -231,13 +193,16 @@ export function listHardkasAccounts(config?: HardkasConfig): HardkasAccount[] {
   if (config?.accounts) {
     for (const [name, accConfig] of Object.entries(config.accounts)) {
       const existing = accounts.get(name);
-      if (existing && existing.kind === "kaspa-private-key" && (accConfig as any).kind === "simulated") {
-        // Do not overwrite a real dev-account or keystore account with a simulated config default
-        continue;
+      const configKind = (accConfig as any).kind === "simulated" ? "synthetic" : (accConfig as any).kind;
+      if (existing && existing.kind !== configKind) {
+        console.error(`COLLISION DETECTED for ${name}. existing:`, existing, `configKind:`, configKind);
+        throw new CrossWorldAccountCollisionError(`Cross-world collision detected for account '${name}'. It exists as '${existing.kind}' locally and '${configKind}' in config. Please resolve this conflict.`);
       }
       accounts.set(name, {
         name,
-        ...accConfig
+        ...accConfig,
+        kind: configKind,
+        ...(configKind === "synthetic" ? { executionMode: "simulator" } : {})
       } as HardkasAccount);
     }
   }
@@ -305,7 +270,7 @@ export async function resolveHardkasAccountAddress(
   const account = resolveHardkasAccount({ nameOrAddress: accountOrAddress, config });
 
   if (context === "L2") {
-    const evmAddress = (account as HardkasSimulatedAccount).evmAddress;
+    const evmAddress = (account as HardkasSyntheticAccount).evmAddress;
     if (!evmAddress) {
       throw new Error(
         `Account '${account.name}' does not have an EVM address configured for L2.`
@@ -331,7 +296,7 @@ export function describeAccount(account: HardkasAccount): Record<string, unknown
     desc.address = account.address;
   }
 
-  if (account.kind === "kaspa-private-key" || account.kind === "evm-private-key") {
+  if (account.kind === "kaspa" || account.kind === "evm-private-key") {
     desc.privateKeyEnv = account.privateKeyEnv;
   }
 

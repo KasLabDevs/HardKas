@@ -224,7 +224,14 @@ export async function runKaspaWalletSend(
       contentHash: "synthetic-plan-hash" as ContentHash
     };
 
+    const { resolveExecutionTarget } = await import("@hardkas/config");
+    const { target } = resolveExecutionTarget({ config: config.config, network: networkId });
+
+    // Convert old mode to structural execution
+    planArtifact.execution = target;
+
     const signedArtifact = await signTxPlanArtifact({
+      target,
       planArtifact,
       account: sender,
       config: config.config

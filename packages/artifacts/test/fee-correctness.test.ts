@@ -27,7 +27,7 @@ describe("Fee Correctness (Fase 1 Hardening)", () => {
     const artifact = createTxPlanArtifact({
       ctx: systemRuntimeContext,
       networkId: asNetworkId("simnet") as any,
-      mode: "simulated",
+      mode: "simulator",
       from: { input: "alice", address: "kaspa:qalice" },
       to: { input: "bob", address: "kaspa:qbob" },
       amountSompi: 5000n,
@@ -42,7 +42,7 @@ describe("Fee Correctness (Fase 1 Hardening)", () => {
     const artifact = createTxPlanArtifact({
       ctx: systemRuntimeContext,
       networkId: asNetworkId("simnet") as any,
-      mode: "simulated",
+      mode: "simulator",
       from: { input: "alice", address: "kaspa:qalice" },
       to: { input: "bob", address: "kaspa:qbob" },
       amountSompi: 5000n,
@@ -58,7 +58,7 @@ describe("Fee Correctness (Fase 1 Hardening)", () => {
     const artifact = createTxPlanArtifact({
       ctx: systemRuntimeContext,
       networkId: asNetworkId("simnet") as any,
-      mode: "simulated",
+      mode: "simulator",
       from: { input: "alice", address: "kaspa:qalice" },
       to: { input: "bob", address: "kaspa:qbob" },
       amountSompi: 5000n,
@@ -74,7 +74,7 @@ describe("Fee Correctness (Fase 1 Hardening)", () => {
     const artifact = createTxPlanArtifact({
       ctx: systemRuntimeContext,
       networkId: asNetworkId("simnet") as any,
-      mode: "simulated",
+      mode: "simulator",
       from: { input: "alice", address: "kaspa:qalice" },
       to: { input: "bob", address: "kaspa:qbob" },
       amountSompi: 5000n,
@@ -91,7 +91,7 @@ describe("Fee Correctness (Fase 1 Hardening)", () => {
     const artifact = createTxPlanArtifact({
       ctx: systemRuntimeContext,
       networkId: asNetworkId("simnet") as any,
-      mode: "simulated",
+      mode: "simulator",
       from: { input: "alice", address: "kaspa:qalice" },
       to: { input: "bob", address: "kaspa:qbob" },
       amountSompi: 5000n,
@@ -112,7 +112,7 @@ describe("Fee Correctness (Fase 1 Hardening)", () => {
     const artifact = createTxPlanArtifact({
       ctx: systemRuntimeContext,
       networkId: asNetworkId("simnet") as any,
-      mode: "simulated",
+      mode: "simulator",
       from: { input: "alice", address: "kaspa:qalice" },
       to: { input: "bob", address: "kaspa:qbob" },
       amountSompi: 5000n,

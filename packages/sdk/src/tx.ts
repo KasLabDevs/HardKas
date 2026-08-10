@@ -237,7 +237,7 @@ export class HardkasTx {
 
     const basePlan = createTxPlanArtifact({
       networkId: activeNetwork as NetworkId,
-      mode: isSimulated ? "simulated" : "real",
+      mode: isSimulated ? "simulator" : (networkConfig?.kind === "kaspa-node" ? "localnet" : "rpc"),
       from: {
         input: fromAccount.name || fromAccount.address,
         address: fromAccount.address,
@@ -381,7 +381,7 @@ export class HardkasTx {
 
     const basePlan = createTxPlanArtifact({
       networkId: activeNetwork as any,
-      mode: isSimulated ? "simulated" : "real",
+      mode: isSimulated ? "simulator" : (networkConfig?.kind === "kaspa-node" ? "localnet" : "rpc"),
       from: {
         input: resolvedAccount?.name || (resolvedAccount?.address as string),
         address: resolvedAccount?.address as string,
@@ -798,8 +798,12 @@ export class HardkasTx {
 
         signedArtifact = draft;
       } else {
+        const { resolveExecutionTarget } = await import("@hardkas/config");
+        const target = (plan as any).execution || resolveExecutionTarget({ config: this.sdk.config.config, network: plan.networkId as string }).target;
+
         // Standard single-signature plan signing (maintains 100% backward compatibility)
         signedArtifact = await signTxPlanArtifact({
+          target,
           planArtifact: plan,
           account: resolvedAccount as HardkasAccount,
           ...(actualAuthorizers ? { authorizers: actualAuthorizers } : {}),
@@ -1285,6 +1289,7 @@ export class HardkasTx {
       ...(signedArtifact.assumptionRef
         ? { assumptionRef: signedArtifact.assumptionRef }
         : {}),
+      ...(signedArtifact.execution ? { execution: signedArtifact.execution } : {}),
       tracePath: undefined,
       lineage: createLineageTransition(signedArtifact, HardkasSchemas.TxReceipt)
     };

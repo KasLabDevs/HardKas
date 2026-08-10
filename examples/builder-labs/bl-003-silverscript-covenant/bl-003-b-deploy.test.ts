@@ -77,7 +77,7 @@ contract FixedDestination() {
 
         // 4. Start Mining to coordinator (use simple P2PK address, not P2SH)
         coordinatorAddress = new kaspa.PrivateKey(identities.bob.privateKeyHex).toKeypair().toAddress(kaspa.NetworkType.Simnet).toString();
-        await execAsync(`docker run -d --name bl003b-miner --network container:${runner["options"].containerName} kaspanet/cpuminer:latest -a ${coordinatorAddress} -s 127.0.0.1 -p 16210 --mine-when-not-synced -t 1`).catch(() => {});
+        await execAsync(`docker run -d --name bl003b-miner --network container:${runner["options"].containerName} kaspanet/cpuminer@sha256:60f78ab2828ab24b249c99210eee5a2825303a5226154260dd021ff26d46748b -a ${coordinatorAddress} -s 127.0.0.1 -p 16210 --mine-when-not-synced -t 1`).catch(() => {});
 
         // Wait for UTXOs to mature (100 blocks + 1 block)
         const startMs = Date.now();
@@ -252,7 +252,7 @@ contract FixedDestination() {
         expect(resSpend.transactionId).toBeDefined();
 
         await execAsync('docker rm -f bl003b-miner').catch(() => {});
-        await execAsync(`docker run -d --name bl003b-miner --network container:${runner["options"].containerName} kaspanet/cpuminer:latest -a ${coordinatorAddress} -s 127.0.0.1 -p 16210 --mine-when-not-synced -t 1`).catch(() => {});
+        await execAsync(`docker run -d --name bl003b-miner --network container:${runner["options"].containerName} kaspanet/cpuminer@sha256:60f78ab2828ab24b249c99210eee5a2825303a5226154260dd021ff26d46748b -a ${coordinatorAddress} -s 127.0.0.1 -p 16210 --mine-when-not-synced -t 1`).catch(() => {});
         let accepted = false;
         for (let i = 0; i < 15; i++) {
             await sleep(1000);

@@ -24,7 +24,7 @@ describe("TxPlanArtifact", () => {
     const artifact = createTxPlanArtifact({
       ctx: systemRuntimeContext,
       networkId: asNetworkId("simnet") as any,
-      mode: "simulated",
+      mode: "simulator",
       from: { input: "alice", address: "addr1", accountName: "Alice" },
       to: { input: "addr2", address: "addr2" },
       amountSompi: 500n,
@@ -64,7 +64,7 @@ describe("TxPlanArtifact", () => {
     const artifact1 = createTxPlanArtifact({
       ctx: systemRuntimeContext,
       networkId: asNetworkId("simnet") as any,
-      mode: "simulated",
+      mode: "simulator",
       from: { input: "alice", address: "addr1", accountName: "Alice" },
       to: { input: "addr2", address: "addr2" },
       amountSompi: 500n,
@@ -74,7 +74,7 @@ describe("TxPlanArtifact", () => {
     const artifact2 = createTxPlanArtifact({
       ctx: systemRuntimeContext,
       networkId: asNetworkId("simnet") as any,
-      mode: "simulated",
+      mode: "simulator",
       from: { input: "alice", address: "addr1", accountName: "Alice" },
       to: { input: "addr2", address: "addr2" },
       amountSompi: 500n,
@@ -119,7 +119,7 @@ describe("TxPlanArtifact", () => {
     const artifact1 = createTxPlanArtifact({
       ctx: systemRuntimeContext,
       networkId: asNetworkId("simnet") as any,
-      mode: "simulated",
+      mode: "simulator",
       from: { input: "alice", address: "addr1", accountName: "Alice" },
       to: { input: "addr2", address: "addr2" },
       amountSompi: 500n,
@@ -129,7 +129,7 @@ describe("TxPlanArtifact", () => {
     const artifact2 = createTxPlanArtifact({
       ctx: systemRuntimeContext,
       networkId: asNetworkId("simnet") as any,
-      mode: "simulated",
+      mode: "simulator",
       from: { input: "alice", address: "addr1", accountName: "Alice" },
       to: { input: "addr2", address: "addr2" },
       amountSompi: 501n,
@@ -162,7 +162,7 @@ describe("TxPlanArtifact", () => {
         assumptionLevel: "custom-level"
       },
       networkId: asNetworkId("simnet") as any,
-      mode: "simulated",
+      mode: "simulator",
       from: { input: "alice", address: "addr1", accountName: "Alice" },
       to: { input: "addr2", address: "addr2" },
       amountSompi: 500n,

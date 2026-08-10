@@ -1,7 +1,7 @@
-import type { HardkasSigner, HardkasSimulatedAccount } from "./types";
+import type { HardkasSigner, HardkasSyntheticAccount } from "./types.js";
 
 export class SimulatedSigner implements HardkasSigner {
-  constructor(public readonly account: HardkasSimulatedAccount) {}
+  constructor(public readonly account: HardkasSyntheticAccount) {}
 
   async signTransaction(tx: unknown): Promise<unknown> {
     return {

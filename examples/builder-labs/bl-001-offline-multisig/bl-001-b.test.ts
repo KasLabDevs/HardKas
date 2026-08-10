@@ -335,7 +335,7 @@ describe("BL-001B - Simnet Broadcast Validation", () => {
 
       // 12. Mine exact batches to confirm the transaction
       console.log("Mining block to confirm transaction...");
-      await execAsync(`docker run -d --name bl-001-miner-resume --network container:${runner["options"].containerName} kaspanet/cpuminer:latest -a ${coordinatorAddress} -s 127.0.0.1 -p 16210 --mine-when-not-synced -t 1`).catch(() => {});
+      await execAsync(`docker run -d --name bl-001-miner-resume --network container:${runner["options"].containerName} kaspanet/cpuminer@sha256:60f78ab2828ab24b249c99210eee5a2825303a5226154260dd021ff26d46748b -a ${coordinatorAddress} -s 127.0.0.1 -p 16210 --mine-when-not-synced -t 1`).catch(() => {});
       
       // Wait for the DAG to settle and confirm the tx
       await sleep(3000);

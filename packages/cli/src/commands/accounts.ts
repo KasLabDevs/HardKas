@@ -306,10 +306,21 @@ export function registerAccountsCommands(program: Command) {
 
   accountsCmd
     .command("fund <identifier>")
-    .description("Fund an account (Faucet)")
+    .description("Fund an account (Faucet) - DEPRECATED")
     .option("--amount <kas>", "Amount in KAS to fund", "1000")
     .action(async (identifier: string, options: { amount: string }) => {
       try {
+        const { getOutput } = await import("../output.js");
+
+        getOutput().writeLine(`\n  \x1b[33mDEPRECATED:\x1b[0m`);
+        getOutput().writeLine(`  This command performs synthetic funding only.`);
+        getOutput().writeLine(`  `);
+        getOutput().writeLine(`  Use:`);
+        getOutput().writeLine(`    hardkas simulator fund ${identifier}`);
+        getOutput().writeLine(`  `);
+        getOutput().writeLine(`  For real local UTXOs:`);
+        getOutput().writeLine(`    hardkas localnet fund ${identifier}\n`);
+
         const amountSompi = BigInt(parseFloat(options.amount) * 100_000_000);
         const result = await runAccountsFund({ identifier, amountSompi });
         getOutput().writeLine(result.formatted);

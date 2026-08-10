@@ -283,17 +283,25 @@ export class KaspaJsonRpcClient implements KaspaRpcClient {
       throw e;
     }
     const entries = data.entries || [];
-    return entries.map((e: any) => ({
-      address: e.address,
-      outpoint: {
-        transactionId: e.outpoint.transactionId,
-        index: e.outpoint.index
-      },
-      amountSompi: BigInt(e.utxoEntry.amount),
-      scriptPublicKey: e.utxoEntry.scriptPublicKey,
-      blockDaaScore: BigInt(e.utxoEntry.blockDaaScore),
-      isCoinbase: e.utxoEntry.isCoinbase
-    }));
+    return entries.map((e: any) => {
+      let spk = e.utxoEntry.scriptPublicKey;
+      if (spk && typeof spk === "object") {
+        const versionHex = (spk.version || 0).toString(16).padStart(4, "0");
+        const scriptHex = spk.script || spk.scriptPublicKey || "";
+        spk = versionHex + scriptHex;
+      }
+      return {
+        address: e.address,
+        outpoint: {
+          transactionId: e.outpoint.transactionId,
+          index: e.outpoint.index
+        },
+        amountSompi: BigInt(e.utxoEntry.amount),
+        scriptPublicKey: spk,
+        blockDaaScore: BigInt(e.utxoEntry.blockDaaScore),
+        isCoinbase: e.utxoEntry.isCoinbase
+      };
+    });
   }
 
   async getBalanceByAddress(address: string): Promise<KaspaAddressBalance> {
@@ -399,7 +407,8 @@ export class KaspaJsonRpcClient implements KaspaRpcClient {
 
     const result = (await this.callRpc("submitTransactionRequest", {
       transaction: txObj,
-      allowOrphan: false
+      allowOrphan: true,
+      allow_orphan: true
     })) as { transactionId: string };
     return { transactionId: result.transactionId };
   }

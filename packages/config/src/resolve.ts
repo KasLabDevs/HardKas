@@ -1,18 +1,21 @@
 import { DEFAULT_HARDKAS_CONFIG } from "./defaults";
-import type { HardkasConfig, HardkasNetworkTarget } from "./types";
+import type { HardkasConfig, HardkasNetworkTarget, HardkasExecutionTarget } from "./types";
 
-export interface ResolveNetworkTargetOptions {
+export interface ResolveExecutionTargetOptions {
   config: HardkasConfig;
   network?: string;
+  execution?: HardkasExecutionTarget;
 }
 
 import { NetworkId } from "@hardkas/core";
 
-export function resolveNetworkTarget(options: ResolveNetworkTargetOptions): {
+export function resolveExecutionTarget(options: ResolveExecutionTargetOptions): {
   name: NetworkId;
   target: HardkasNetworkTarget;
+  execution: HardkasExecutionTarget;
 } {
-  const { config, network } = options;
+  const { config, network, execution } = options;
+
   let name = network || config.defaultNetwork || "simulated";
 
   // P1: simnet deprecation and alias removed to allow real node testing
@@ -34,8 +37,28 @@ export function resolveNetworkTarget(options: ResolveNetworkTargetOptions): {
     );
   }
 
+  let finalExecution: HardkasExecutionTarget;
+  if (execution) {
+    finalExecution = execution;
+  } else if (config.execution) {
+    finalExecution = config.execution;
+  } else {
+    // Inference for backwards compatibility
+    if (config.defaultNetwork === "simulated" || name === "simulated") {
+      console.warn("DEPRECATED: defaultNetwork: 'simulated' is deprecated. Please migrate to defaultExecutionMode: 'simulator' in HardkasConfig.");
+      finalExecution = { mode: "simulator", domain: "kaspa-l1", network: "simulated" };
+    } else if (target.kind === "igra") {
+      finalExecution = { mode: "rpc", domain: "evm-l2", network: name };
+    } else if (name === "simnet" || name === "devnet") {
+      finalExecution = { mode: "localnet", domain: "kaspa-l1", network: name };
+    } else {
+      finalExecution = { mode: "rpc", domain: "kaspa-l1", network: name };
+    }
+  }
+
   return {
     name: name as NetworkId,
-    target
+    target,
+    execution: finalExecution
   };
 }

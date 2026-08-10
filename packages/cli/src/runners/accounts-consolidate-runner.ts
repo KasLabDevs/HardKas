@@ -1,6 +1,6 @@
 import { getOutput } from "../output.js";
 import { Hardkas } from "@hardkas/sdk";
-import { resolveNetworkTarget } from "@hardkas/config";
+import { resolveExecutionTarget } from "@hardkas/config";
 
 export interface AccountsConsolidateOptions {
   account: string;

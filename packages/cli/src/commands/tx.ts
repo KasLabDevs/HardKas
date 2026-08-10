@@ -397,7 +397,7 @@ export function registerTxCommands(program: Command) {
                 } else {
                   const { UI } = await import("../ui.js");
                   const isSimulated =
-                    result.networkName === "simulated" || result.networkName === "simnet";
+                    result.networkName === "simulated" || result.rpcUrl === "simulated://local";
 
                   UI.causality(
                     isSimulated

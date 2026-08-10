@@ -439,7 +439,11 @@ export class JsonWrpcKaspaClient implements KaspaRpcClient {
     }
 
     // Both flavors accept the transaction wrapped in an object
-    const req: any = { transaction: txObj, allowOrphan: options?.allowOrphan ?? false };
+    const req: any = { 
+      transaction: txObj, 
+      allowOrphan: options?.allowOrphan ?? false,
+      allow_orphan: options?.allowOrphan ?? false
+    };
 
     const response = await this.callMethod(
       "submitTransaction",
@@ -881,6 +885,7 @@ export class MockKaspaRpcClient implements KaspaRpcClient {
 }
 
 export * from "./json-rpc-client.js";
+export { KaspaWrpcClient } from "./wrpc-client.js";
 export * from "./health.js";
 
 export * from "./errors.js";

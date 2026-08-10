@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { defineHardkasConfig } from "../src/define";
-import { resolveNetworkTarget } from "../src/resolve";
+import { resolveExecutionTarget } from "../src/resolve";
 import { DEFAULT_HARDKAS_CONFIG } from "../src/defaults";
 import { loadHardkasConfig } from "../src/load";
 import fs from "node:fs";
@@ -13,32 +13,32 @@ describe("config", () => {
     expect(defineHardkasConfig(config)).toBe(config);
   });
 
-  it("resolveNetworkTarget should use defaultNetwork if no network is passed", () => {
+  it("resolveExecutionTarget should use defaultNetwork if no network is passed", () => {
     const config = {
       defaultNetwork: "devnet",
       networks: {
         devnet: { kind: "kaspa-node" as const, network: "devnet" as const }
       }
     };
-    const resolved = resolveNetworkTarget({ config });
+    const resolved = resolveExecutionTarget({ config });
     expect(resolved.name).toBe("devnet");
     expect(resolved.target.kind).toBe("kaspa-node");
   });
 
-  it("resolveNetworkTarget should use simulated as default fallback", () => {
-    const resolved = resolveNetworkTarget({ config: {} });
+  it("resolveExecutionTarget should use simulated as default fallback", () => {
+    const resolved = resolveExecutionTarget({ config: {} });
     expect(resolved.name).toBe("simulated");
     expect(resolved.target.kind).toBe("simulated");
   });
 
-  it("resolveNetworkTarget should support simulated network explicitly", () => {
-    const resolved = resolveNetworkTarget({ config: {}, network: "simulated" });
+  it("resolveExecutionTarget should support simulated network explicitly", () => {
+    const resolved = resolveExecutionTarget({ config: {}, network: "simulated" });
     expect(resolved.name).toBe("simulated");
     expect(resolved.target.kind).toBe("simulated");
   });
 
-  it("resolveNetworkTarget should throw for unknown network", () => {
-    expect(() => resolveNetworkTarget({ config: {}, network: "non-existent" })).toThrow(
+  it("resolveExecutionTarget should throw for unknown network", () => {
+    expect(() => resolveExecutionTarget({ config: {}, network: "non-existent" })).toThrow(
       /Unknown HardKAS network 'non-existent'/
     );
   });

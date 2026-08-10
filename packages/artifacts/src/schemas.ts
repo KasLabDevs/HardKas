@@ -6,6 +6,7 @@ import {
 } from "@hardkas/core";
 
 export const ARTIFACT_VERSION = "1.0.0-alpha";
+export const HARDKAS_VERSION = "0.12.0-rc.1";
 
 export type DraftArtifact<TFinal, THashFields extends keyof TFinal> = Omit<
   TFinal,
@@ -104,8 +105,63 @@ export const MigrationReceiptSchema = BaseArtifactSchema.extend({
   decision: z.literal("MIGRATED_WITH_PROOF")
 });
 
+export const TxPlanSchemaV2 = BaseArtifactSchema.extend({
+  schema: z.literal(HardkasSchemas.TxPlanV2),
+  networkId: kaspaNetworkIdSchema,
+  mode: executionModeSchema,
+  planId: z.string(),
+  from: AccountRefSchema,
+  to: AccountRefSchema,
+  amountSompi: z.string(),
+  estimatedFeeSompi: z.string(),
+  estimatedMass: z.string(),
+  txVersion: z.union([z.literal(0), z.literal(1)]).optional(),
+  computeBudget: z.string().optional(),
+  storageMass: z.string().optional(),
+  lane: z.string().optional(),
+  inputs: z.array(
+    z.object({
+      outpoint: z.object({
+        transactionId: z.string(),
+        index: z.number()
+      }),
+      amountSompi: z.string(),
+      address: z.string().optional(),
+      scriptPublicKey: z.string().optional(),
+      blockDaaScore: z.string().optional(),
+      isCoinbase: z.boolean().optional(),
+      covenantId: z.string().optional(),
+      lane: z.string().optional()
+    })
+  ),
+  outputs: z.array(
+    z.object({
+      address: z.string(),
+      amountSompi: z.string()
+    })
+  ),
+  change: z
+    .object({
+      address: z.string(),
+      amountSompi: z.string()
+    })
+    .optional(),
+  rpcUrl: z.string().optional(),
+  networkProfileRef: z.string().optional(),
+  policyRef: z.string().optional(),
+  policyRefs: z.array(z.string()).optional(),
+  assumptionRef: z.string().optional()
+});
+
+const executionTargetSchema = z.object({
+  mode: z.enum(["simulator", "localnet", "rpc", "l2-rpc"]),
+  domain: z.enum(["kaspa-l1", "evm-l2"]),
+  network: z.string()
+});
+
 export const TxPlanSchema = BaseArtifactSchema.extend({
   schema: z.literal(HardkasSchemas.TxPlan),
+  execution: executionTargetSchema,
   networkId: kaspaNetworkIdSchema,
   mode: executionModeSchema,
   planId: z.string(),
@@ -195,8 +251,40 @@ export const SnapshotSchema = BaseArtifactSchema.extend({
   utxos: z.array(LocalnetUtxoSchemaV2)
 });
 
+export const TxReceiptSchemaV2 = BaseArtifactSchema.extend({
+  schema: z.literal(HardkasSchemas.TxReceiptV2),
+  txId: z.string(),
+  status: z.enum(["pending", "submitted", "accepted", "confirmed", "failed"]),
+  mode: executionModeSchema,
+  networkId: kaspaNetworkIdSchema,
+  from: AccountRefSchema,
+  to: AccountRefSchema,
+  amountSompi: z.string(),
+  feeSompi: z.string(),
+  mass: z.string().optional(),
+  txVersion: z.union([z.literal(0), z.literal(1)]).optional(),
+  computeBudget: z.string().optional(),
+  storageMass: z.string().optional(),
+  lane: z.string().optional(),
+  changeSompi: z.string().optional(),
+  spentUtxoIds: z.array(z.string()).optional(),
+  createdUtxoIds: z.array(z.string()).optional(),
+  daaScore: z.string().optional(),
+  preStateHash: z.string().optional(),
+  postStateHash: z.string().optional(),
+  submittedAt: z.string().optional(),
+  confirmedAt: z.string().optional(),
+  dagContext: DagContextSchema.optional(),
+  tracePath: z.string().optional(),
+  rpcUrl: z.string().optional(),
+  sourceSignedId: z.string().optional(),
+  errors: z.array(z.string()).optional(),
+  metadata: z.any().optional()
+});
+
 export const TxReceiptSchema = BaseArtifactSchema.extend({
   schema: z.literal(HardkasSchemas.TxReceipt),
+  execution: executionTargetSchema,
   txId: z.string(),
   status: z.enum(["pending", "submitted", "accepted", "confirmed", "failed"]),
   mode: executionModeSchema,
@@ -236,8 +324,42 @@ export const SignatureMetadataEntrySchema = z.object({
   signedAt: z.string().datetime()
 });
 
+export const SignedTxSchemaV2 = BaseArtifactSchema.extend({
+  schema: z.literal(HardkasSchemas.SignedTxV2),
+  status: z.enum(["partially_signed", "signed"]),
+  signedId: z.string(),
+  sourcePlanId: z.string(),
+  networkId: kaspaNetworkIdSchema,
+  mode: executionModeSchema,
+  from: AccountRefSchema,
+  to: AccountRefSchema,
+  amountSompi: z.string(),
+  txVersion: z.union([z.literal(0), z.literal(1)]).optional(),
+  computeBudget: z.string().optional(),
+  storageMass: z.string().optional(),
+  lane: z.string().optional(),
+  unsignedPayloadHash: z.string().optional(),
+  signedTransaction: z
+    .object({
+      format: z.string(),
+      payload: z.string()
+    })
+    .optional(),
+  txId: z.string().optional(),
+  multisig: z
+    .object({
+      threshold: z.number(),
+      requiredSigners: z.array(z.string()),
+      signatures: z.array(SignatureEntrySchema)
+    })
+    .optional(),
+  signatureMetadata: z.array(SignatureMetadataEntrySchema).optional(),
+  metadata: z.any().optional()
+});
+
 export const SignedTxSchema = BaseArtifactSchema.extend({
   schema: z.literal(HardkasSchemas.SignedTx),
+  execution: executionTargetSchema,
   status: z.enum(["partially_signed", "signed"]),
   signedId: z.string(),
   sourcePlanId: z.string(),

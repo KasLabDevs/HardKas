@@ -109,7 +109,7 @@ describe("BL-002B - On-chain Escrow Constraints", () => {
         onchainLive = !((runner as any).simulated) && !!(await rpc.getCurrentNetwork({ timeoutMs: 2000 }).catch(() => null));
         if (onchainLive) {
             await execAsync(`docker rm -f helper-miner`).catch(() => {});
-            await execAsync(`docker run -d --name helper-miner --network container:${runner["options"].containerName} kaspanet/cpuminer:latest -a ${coordinatorAddress} -s 127.0.0.1 -p 16210 --mine-when-not-synced -t 1`).catch(() => {});
+            await execAsync(`docker run -d --name helper-miner --network container:${runner["options"].containerName} kaspanet/cpuminer@sha256:60f78ab2828ab24b249c99210eee5a2825303a5226154260dd021ff26d46748b -a ${coordinatorAddress} -s 127.0.0.1 -p 16210 --mine-when-not-synced -t 1`).catch(() => {});
             await new Promise(resolve => setTimeout(resolve, 8000));
             await execAsync(`docker rm -f helper-miner`).catch(() => {});
         } else {

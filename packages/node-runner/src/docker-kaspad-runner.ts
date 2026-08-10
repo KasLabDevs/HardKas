@@ -188,7 +188,7 @@ export class DockerKaspadRunner {
         "run", "-d", "--rm",
         "--name", minerContainerName,
         "--network", `container:${this.options.containerName}`,
-        "kaspanet/cpuminer:latest",
+        "kaspanet/cpuminer@sha256:60f78ab2828ab24b249c99210eee5a2825303a5226154260dd021ff26d46748b",
         "-a", this.options.mineTo,
         "-s", "127.0.0.1",
         "-p", this.options.ports.rpc.toString(),

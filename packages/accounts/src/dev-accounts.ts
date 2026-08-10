@@ -190,7 +190,7 @@ export async function createDevSigner(
     config: { cwd: workspaceDir } as any
   });
 
-  if (account.kind !== "kaspa-private-key") {
+  if (account.kind !== "kaspa") {
     throw new Error(`Account '${accountNameOrAddress}' is not a private key account, cannot create local dev signer.`);
   }
 
