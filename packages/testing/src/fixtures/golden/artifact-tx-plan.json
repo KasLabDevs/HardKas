@@ -1,43 +1,40 @@
 {
   "schema": "hardkas.txPlan",
-  "hardkasVersion": "0.12.0-rc.1",
   "schemaVersion": "hardkas.artifact.v1",
+  "hardkasVersion": "1.0.0-alpha",
   "version": "1.0.0-alpha",
-  "hashVersion": 3,
-  "createdAt": "2026-05-27T23:05:55.743Z",
-  "networkId": "simulated",
-  "mode": "simulated",
+  "networkId": "simnet",
+  "mode": "simulator",
+  "planId": "plan-golden-explain",
   "from": {
-    "address": "kaspa:sim_alice",
-    "input": "alice"
+    "address": "kaspatest:qqgolden1"
   },
   "to": {
-    "address": "kaspa:sim_bob",
-    "input": "bob"
+    "address": "kaspatest:qqgolden2"
   },
-  "amountSompi": "10000000000",
-  "estimatedFeeSompi": "350",
-  "estimatedMass": "350",
+  "amountSompi": "50000000",
+  "estimatedFeeSompi": "5000",
+  "estimatedMass": "2000",
   "inputs": [
     {
       "outpoint": {
-        "transactionId": "1234567890123456789012345678901234567890123456789012345678901234",
+        "transactionId": "prev123",
         "index": 0
       },
-      "amountSompi": "50000000000000"
+      "amountSompi": "50005000"
     }
   ],
   "outputs": [
     {
-      "address": "kaspa:sim_bob",
-      "amountSompi": "10000000000"
+      "address": "kaspatest:qqgolden2",
+      "amountSompi": "50000000"
     }
   ],
-  "rpcUrl": "simulated://local",
-  "change": {
-    "address": "kaspa:sim_alice",
-    "amountSompi": "49989999999650"
-  },
-  "planId": "plan-5ed6d8b9f4de644b",
-  "contentHash": "a2c8c0c8d21eeab7325f7720d4100a7e4da82dd7fba95727edf4b87ee8b4cbfd"
+  "createdAt": "2026-05-27T00:00:00.000Z",
+  "contentHash": "c550d5aee7ad5affce4b992677239226a8d9b9a5114e7298e7f5da042ee591d7",
+  "execution": {
+    "mode": "simulator",
+    "domain": "kaspa-l1",
+    "network": "simnet"
+  }
 }

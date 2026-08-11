@@ -20,7 +20,7 @@ describe("signTxPlanArtifact", () => {
     hardkasVersion: "0.12.0-rc.1",
     createdAt: new Date().toISOString(),
     networkId: "simnet",
-    mode: "simulated",
+    mode: "simulator",
     planId: "plan123",
     from: { address: "kaspa:sim_alice" },
     to: { address: "kaspa:sim_bob" },

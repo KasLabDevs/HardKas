@@ -66,7 +66,7 @@ registerTortureBucket({
           hardkasVersion: "0.12.0-rc.1",
           version: ARTIFACT_VERSION,
           networkId: "simnet" as const,
-          mode: "simulated" as const,
+          mode: "simulator" as const,
           createdAt: new Date().toISOString(),
           planId: `plan-mock-${ctx.caseId}-${i}`,
           from: { address: "kaspa:sim_qz0s9xrz5y5e8dq5azmpg756aeepm6fesq82ye7wv" },
@@ -183,7 +183,7 @@ registerTortureBucket({
         hardkasVersion: "0.12.0-rc.1",
         version: ARTIFACT_VERSION,
         networkId: "simnet" as const,
-        mode: "simulated" as const,
+        mode: "simulator" as const,
         createdAt: new Date().toISOString(),
         planId: `plan-mock-${ctx.caseId}`,
         from: { address: "kaspa:sim_qz0s9xrz5y5e8dq5azmpg756aeepm6fesq82ye7wv" },
@@ -281,7 +281,7 @@ registerTortureBucket({
       schema: "hardkas.txPlan",
       version: "0.12.0-rc.1",
       networkId: "simnet",
-      mode: "simulated",
+      mode: "simulator",
       amountSompi: amountSompiA,
       nonce: nonceA,
       signers: orderA
@@ -298,7 +298,7 @@ registerTortureBucket({
       schema: "hardkas.txPlan",
       version: "0.12.0-rc.1",
       networkId: "simnet",
-      mode: "simulated",
+      mode: "simulator",
       amountSompi: amountSompiB,
       nonce: nonceB,
       signers: orderB
@@ -344,7 +344,7 @@ registerTortureBucket({
         hardkasVersion: "0.12.0-rc.1",
         version: ARTIFACT_VERSION,
         networkId: "simnet" as const,
-        mode: "simulated" as const,
+        mode: "simulator" as const,
         createdAt: new Date().toISOString(),
         planId: `plan-mock-${ctx.caseId}`,
         from: { address: "kaspa:sim_qz0s9xrz5y5e8dq5azmpg756aeepm6fesq82ye7wv" },
@@ -473,7 +473,7 @@ registerTortureBucket({
         hardkasVersion: "0.12.0-rc.1",
         version: ARTIFACT_VERSION,
         networkId: "simnet" as const,
-        mode: "simulated" as const,
+        mode: "simulator" as const,
         createdAt: new Date().toISOString(),
         planId: `plan-${tx.plan.estimatedMass}-${ctx.caseSeed}`,
         from: { address: "kaspa:sim_qz0s9xrz5y5e8dq5azmpg756aeepm6fesq82ye7wv" },
@@ -544,7 +544,7 @@ registerTortureBucket({
         hardkasVersion: "0.12.0-rc.1",
         version: ARTIFACT_VERSION,
         networkId: "simnet" as const,
-        mode: "simulated" as const,
+        mode: "simulator" as const,
         createdAt: new Date().toISOString(),
         txId: tx.receipt.txId,
         status: "confirmed" as const,
@@ -629,7 +629,7 @@ registerTortureBucket({
         hardkasVersion: "0.12.0-rc.1",
         version: ARTIFACT_VERSION,
         networkId: "simnet" as const,
-        mode: "simulated" as const,
+        mode: "simulator" as const,
         createdAt: new Date().toISOString(), // hardkas-determinism-allow: mock creation timestamp
         planId,
         from: { address: "kaspa:sim_qz0s9xrz5y5e8dq5azmpg756aeepm6fesq82ye7wv" },
@@ -727,7 +727,7 @@ registerTortureBucket({
             hardkasVersion: "0.12.0-rc.1",
             version: ARTIFACT_VERSION,
             networkId: "simnet" as const,
-            mode: "simulated" as const,
+            mode: "simulator" as const,
             createdAt: new Date().toISOString(), // hardkas-determinism-allow: mock timestamp
             txId: "b".repeat(64),
             status: "confirmed" as const,
@@ -879,7 +879,7 @@ registerTortureBucket({
           hardkasVersion: "0.12.0-rc.1",
           version: ARTIFACT_VERSION,
           networkId: "simnet" as const,
-          mode: "simulated" as const,
+          mode: "simulator" as const,
           createdAt: new Date().toISOString(), // hardkas-determinism-allow: mock timestamp
           planId: pId,
           from: { address: `kaspa:sim_from_${i}` },
@@ -980,7 +980,7 @@ registerTortureBucket({
         hardkasVersion: "0.12.0-rc.1",
         version: ARTIFACT_VERSION,
         networkId: "simnet" as const,
-        mode: "simulated" as const,
+        mode: "simulator" as const,
         createdAt: new Date().toISOString(), // hardkas-determinism-allow: mock timestamp
         planId,
         from: { address: "kaspa:sim_qz0s9xrz5y5e8dq5azmpg756aeepm6fesq82ye7wv" },
@@ -1188,7 +1188,7 @@ registerTortureBucket({
           hardkasVersion: "0.12.0-rc.1",
           version: ARTIFACT_VERSION,
           networkId: "simnet" as const,
-          mode: "simulated" as const,
+          mode: "simulator" as const,
           createdAt: new Date().toISOString(), // hardkas-determinism-allow: mock timestamp
           planId: `plan-storm-${i}-${ctx.caseSeed}`,
           from: { address: "kaspa:sim_qz0s9xrz5y5e8dq5azmpg756aeepm6fesq82ye7wv" },
@@ -1301,7 +1301,7 @@ registerTortureBucket({
         hardkasVersion: "0.12.0-rc.1",
         version: ARTIFACT_VERSION,
         networkId: "simnet" as const,
-        mode: "simulated" as const,
+        mode: "simulator" as const,
         createdAt: new Date().toISOString(), // hardkas-determinism-allow: mock timestamp
         planId: "plan-traversal",
         from: { address: "kaspa:sim_qz0s9xrz5y5e8dq5azmpg756aeepm6fesq82ye7wv" },
@@ -1813,7 +1813,7 @@ registerTortureBucket({
             hardkasVersion: "0.12.0-rc.1",
             version: ARTIFACT_VERSION,
             networkId: "simnet" as const,
-            mode: "simulated" as const,
+            mode: "simulator" as const,
             createdAt: new Date().toISOString(), // hardkas-determinism-allow: mock timestamp
             planId: `plan-scale-${chain}-${depth}-${ctx.caseSeed}`,
             from: { address: "kaspa:sim_qz0s9xrz5y5e8dq5azmpg756aeepm6fesq82ye7wv" },
@@ -2015,7 +2015,7 @@ registerTortureBucket({
                 hardkasVersion: "0.12.0-rc.1",
                 version: ARTIFACT_VERSION,
                 networkId: "simnet" as const,
-                mode: "simulated" as const,
+                mode: "simulator" as const,
                 createdAt: new Date().toISOString(), // hardkas-determinism-allow: mock timestamp
                 planId: `plan-mp-w${w}-${i}-${ctx.caseSeed}`,
                 from: { address: `kaspa:sim_worker_${w}` },
@@ -2376,7 +2376,7 @@ registerTortureBucket({
         hardkasVersion: "0.12.0-rc.1",
         version: ARTIFACT_VERSION,
         networkId: "simnet" as const,
-        mode: "simulated" as const,
+        mode: "simulator" as const,
         createdAt: new Date().toISOString(), // hardkas-determinism-allow: mock timestamp
         planId: `plan-lock-verify-${ctx.caseSeed}`,
         from: { address: "kaspa:sim_qz0s9xrz5y5e8dq5azmpg756aeepm6fesq82ye7wv" },
@@ -2455,7 +2455,7 @@ registerTortureBucket({
             hardkasVersion: "0.12.0-rc.1",
             version: ARTIFACT_VERSION,
             networkId: "simnet" as const,
-            mode: "simulated" as const,
+            mode: "simulator" as const,
             createdAt: new Date().toISOString(), // hardkas-determinism-allow: mock timestamp
             planId: `plan-case-upper-${ctx.caseSeed}`,
             from: { address: "kaspa:sim_qz0s9xrz5y5e8dq5azmpg756aeepm6fesq82ye7wv" },
@@ -2555,7 +2555,7 @@ registerTortureBucket({
             hardkasVersion: "0.12.0-rc.1",
             version: ARTIFACT_VERSION,
             networkId: "simnet" as const,
-            mode: "simulated" as const,
+            mode: "simulator" as const,
             createdAt: new Date().toISOString(), // hardkas-determinism-allow: mock timestamp
             planId: `plan-reserved-safe-${ctx.caseSeed}`,
             from: { address: "kaspa:sim_qz0s9xrz5y5e8dq5azmpg756aeepm6fesq82ye7wv" },
@@ -2605,7 +2605,7 @@ registerTortureBucket({
             hardkasVersion: "0.12.0-rc.1",
             version: ARTIFACT_VERSION,
             networkId: "simnet" as const,
-            mode: "simulated" as const,
+            mode: "simulator" as const,
             createdAt: new Date().toISOString(), // hardkas-determinism-allow: mock timestamp
             planId: `plan-backslash-${ctx.caseSeed}`,
             from: { address: "kaspa:sim_qz0s9xrz5y5e8dq5azmpg756aeepm6fesq82ye7wv" },
@@ -2683,7 +2683,7 @@ registerTortureBucket({
             hardkasVersion: "0.12.0-rc.1",
             version: ARTIFACT_VERSION,
             networkId: "simnet" as const,
-            mode: "simulated" as const,
+            mode: "simulator" as const,
             createdAt: new Date().toISOString(), // hardkas-determinism-allow: mock timestamp
             planId: `plan-maxpath-${ctx.caseSeed}`,
             from: { address: "kaspa:sim_qz0s9xrz5y5e8dq5azmpg756aeepm6fesq82ye7wv" },
@@ -2757,7 +2757,7 @@ registerTortureBucket({
             hardkasVersion: "0.12.0-rc.1",
             version: ARTIFACT_VERSION,
             networkId: "simnet" as const,
-            mode: "simulated" as const,
+            mode: "simulator" as const,
             createdAt: new Date().toISOString(), // hardkas-determinism-allow: mock timestamp
             planId: `plan-crlf-test-${ctx.caseSeed}`,
             from: { address: "kaspa:sim_qz0s9xrz5y5e8dq5azmpg756aeepm6fesq82ye7wv" },
@@ -2819,7 +2819,7 @@ registerTortureBucket({
             hardkasVersion: "0.12.0-rc.1",
             version: ARTIFACT_VERSION,
             networkId: "simnet" as const,
-            mode: "simulated" as const,
+            mode: "simulator" as const,
             createdAt: new Date().toISOString(), // hardkas-determinism-allow: mock timestamp
             planId: `plan-locked-${ctx.caseSeed}`,
             from: { address: "kaspa:sim_qz0s9xrz5y5e8dq5azmpg756aeepm6fesq82ye7wv" },
@@ -2923,7 +2923,7 @@ registerTortureBucket({
             hardkasVersion: "0.12.0-rc.1",
             version: ARTIFACT_VERSION,
             networkId: "simnet" as const,
-            mode: "simulated" as const,
+            mode: "simulator" as const,
             createdAt: new Date().toISOString(), // hardkas-determinism-allow: mock timestamp
             planId: `plan-nfc-${nfcString}-${ctx.caseSeed}`,
             from: { address: "kaspa:sim_qz0s9xrz5y5e8dq5azmpg756aeepm6fesq82ye7wv" },
@@ -2983,7 +2983,7 @@ registerTortureBucket({
             hardkasVersion: "0.12.0-rc.1",
             version: ARTIFACT_VERSION,
             networkId: "simnet" as const,
-            mode: "simulated" as const,
+            mode: "simulator" as const,
             createdAt: new Date().toISOString(), // hardkas-determinism-allow: mock timestamp
             planId: `plan-emoji-${emoji}-${ctx.caseSeed}`,
             from: { address: "kaspa:sim_qz0s9xrz5y5e8dq5azmpg756aeepm6fesq82ye7wv" },
@@ -3050,7 +3050,7 @@ registerTortureBucket({
             hardkasVersion: "0.12.0-rc.1",
             version: ARTIFACT_VERSION,
             networkId: "simnet" as const,
-            mode: "simulated" as const,
+            mode: "simulator" as const,
             createdAt: new Date().toISOString(), // hardkas-determinism-allow: mock timestamp
             planId: `plan-invisible${invisible}char-${ctx.caseSeed}`,
             from: { address: "kaspa:sim_qz0s9xrz5y5e8dq5azmpg756aeepm6fesq82ye7wv" },
@@ -3114,7 +3114,7 @@ registerTortureBucket({
             hardkasVersion: "0.12.0-rc.1",
             version: ARTIFACT_VERSION,
             networkId: "simnet" as const,
-            mode: "simulated" as const,
+            mode: "simulator" as const,
             createdAt: new Date().toISOString(), // hardkas-determinism-allow: mock timestamp
             planId: `plan-homoglyph-latin-${ctx.caseSeed}`,
             from: { address: latinAddr },
@@ -3197,7 +3197,7 @@ registerTortureBucket({
             hardkasVersion: "0.12.0-rc.1",
             version: ARTIFACT_VERSION,
             networkId: "simnet" as const,
-            mode: "simulated" as const,
+            mode: "simulator" as const,
             createdAt: new Date().toISOString(), // hardkas-determinism-allow: mock timestamp
             planId: `plan-mixed-${mixedString}-${ctx.caseSeed}`,
             from: { address: "kaspa:sim_qz0s9xrz5y5e8dq5azmpg756aeepm6fesq82ye7wv" },
@@ -3283,7 +3283,7 @@ registerTortureBucket({
           hardkasVersion: "0.12.0-rc.1",
           version: ARTIFACT_VERSION,
           networkId: "simnet" as const,
-          mode: "simulated" as const,
+          mode: "simulator" as const,
           createdAt: new Date().toISOString(), // hardkas-determinism-allow: mock timestamp
           planId: `plan-clock-${suffix}-${ctx.caseSeed}`,
           from: { address: "kaspa:sim_qz0s9xrz5y5e8dq5azmpg756aeepm6fesq82ye7wv" },
@@ -3431,7 +3431,7 @@ registerTortureBucket({
             hardkasVersion: "0.12.0-rc.1",
             version: ARTIFACT_VERSION,
             networkId: "simnet" as const,
-            mode: "simulated" as const,
+            mode: "simulator" as const,
             createdAt: new Date().toISOString(), // hardkas-determinism-allow: mock timestamp
             planId: `plan-clock-flipped-${ctx.caseSeed}`,
             from: { address: "kaspa:sim_qz0s9xrz5y5e8dq5azmpg756aeepm6fesq82ye7wv" },
@@ -3520,7 +3520,7 @@ registerTortureBucket({
           hardkasVersion: "0.12.0-rc.1",
           version: ARTIFACT_VERSION,
           networkId: "simnet" as const,
-          mode: "simulated" as const,
+          mode: "simulator" as const,
           createdAt: new Date().toISOString(), // hardkas-determinism-allow: mock timestamp
           planId: `plan-order-${i}-${ctx.caseSeed}`,
           from: { address: "kaspa:sim_qz0s9xrz5y5e8dq5azmpg756aeepm6fesq82ye7wv" },
@@ -3644,7 +3644,7 @@ registerTortureBucket({
               hardkasVersion: "0.12.0-rc.1",
               version: ARTIFACT_VERSION,
               networkId: "simnet" as const,
-              mode: "simulated" as const,
+              mode: "simulator" as const,
               createdAt: new Date().toISOString(), // hardkas-determinism-allow: mock timestamp
               planId: `plan-extra-${i}-${ctx.caseSeed}`,
               from: { address: "kaspa:sim_qz0s9xrz5y5e8dq5azmpg756aeepm6fesq82ye7wv" },
@@ -3727,7 +3727,7 @@ registerTortureBucket({
           hardkasVersion: "0.12.0-rc.1",
           version: ARTIFACT_VERSION,
           networkId: "simnet" as const,
-          mode: "simulated" as const,
+          mode: "simulator" as const,
           createdAt: new Date().toISOString(), // hardkas-determinism-allow: mock timestamp
           planId: `plan-human-${i}-${ctx.caseSeed}`,
           from: { address: "kaspa:sim_qz0s9xrz5y5e8dq5azmpg756aeepm6fesq82ye7wv" },
@@ -3866,7 +3866,7 @@ registerTortureBucket({
             hardkasVersion: "0.12.0-rc.1",
             version: ARTIFACT_VERSION,
             networkId: "simnet",
-            mode: "simulated",
+            mode: "simulator",
             createdAt: new Date().toISOString(), // hardkas-determinism-allow: mock timestamp
             planId: `plan-phantom-${ctx.caseSeed}`,
             artifactId: "phantom-fake-id-12345",
@@ -3961,7 +3961,7 @@ registerTortureBucket({
           hardkasVersion: "0.12.0-rc.1",
           version: ARTIFACT_VERSION,
           networkId: "simnet" as const,
-          mode: "simulated" as const,
+          mode: "simulator" as const,
           createdAt: new Date().toISOString(), // hardkas-determinism-allow: mock timestamp
           planId: id,
           from: { address: "kaspa:sim_qz0s9xrz5y5e8dq5azmpg756aeepm6fesq82ye7wv" },
@@ -4181,7 +4181,7 @@ registerTortureBucket({
       hardkasVersion: "0.12.0-rc.1",
       version: ARTIFACT_VERSION,
       networkId: "simnet" as const,
-      mode: "simulated" as const,
+      mode: "simulator" as const,
       createdAt: new Date().toISOString(), // hardkas-determinism-allow: mock timestamp
       planId: `plan-outside-${ctx.caseSeed}`,
       from: { address: "kaspa:sim_qz0s9xrz5y5e8dq5azmpg756aeepm6fesq82ye7wv" },
@@ -4253,7 +4253,7 @@ registerTortureBucket({
           hardkasVersion: "0.12.0-rc.1",
           version: ARTIFACT_VERSION,
           networkId: "simnet" as const,
-          mode: "simulated" as const,
+          mode: "simulator" as const,
           createdAt: new Date().toISOString(), // hardkas-determinism-allow: mock timestamp
           planId: id,
           from: { address: "kaspa:sim_qz0s9xrz5y5e8dq5azmpg756aeepm6fesq82ye7wv" },
@@ -4346,7 +4346,7 @@ registerTortureBucket({
               hardkasVersion: "0.12.0-rc.1",
               version: ARTIFACT_VERSION,
               networkId: "simnet" as const,
-              mode: "simulated" as const,
+              mode: "simulator" as const,
               createdAt: new Date().toISOString(), // hardkas-determinism-allow: mock timestamp
               planId: `plan-deep-${ctx.caseSeed}`,
               from: { address: "kaspa:sim_qz0s9xrz5y5e8dq5azmpg756aeepm6fesq82ye7wv" },
@@ -4501,7 +4501,7 @@ registerTortureBucket({
           hardkasVersion: "0.12.0-rc.1",
           version: ARTIFACT_VERSION,
           networkId: "simnet" as const,
-          mode: "simulated" as const,
+          mode: "simulator" as const,
           createdAt: new Date().toISOString(), // hardkas-determinism-allow: mock timestamp
           planId: id,
           from: { address: "kaspa:sim_qz0s9xrz5y5e8dq5azmpg756aeepm6fesq82ye7wv" },
@@ -4664,7 +4664,7 @@ registerTortureBucket({
           hardkasVersion: "0.12.0-rc.1",
           version: ARTIFACT_VERSION,
           networkId: "simnet" as const,
-          mode: "simulated" as const,
+          mode: "simulator" as const,
           createdAt: new Date().toISOString(), // hardkas-determinism-allow: mock timestamp
           planId: id,
           from: { address: "kaspa:sim_qz0s9xrz5y5e8dq5azmpg756aeepm6fesq82ye7wv" },
@@ -4856,7 +4856,7 @@ registerTortureBucket({
           hardkasVersion: "0.12.0-rc.1",
           version: ARTIFACT_VERSION,
           networkId: "simnet" as const,
-          mode: "simulated" as const,
+          mode: "simulator" as const,
           createdAt: new Date().toISOString(), // hardkas-determinism-allow: mock timestamp
           planId: id,
           from: { address: "kaspa:sim_qz0s9xrz5y5e8dq5azmpg756aeepm6fesq82ye7wv" },
@@ -4902,7 +4902,7 @@ registerTortureBucket({
             hardkasVersion: "0.12.0-rc.1",
             version: ARTIFACT_VERSION,
             networkId: "simnet" as const,
-            mode: "simulated" as const,
+            mode: "simulator" as const,
             createdAt: new Date().toISOString(), // hardkas-determinism-allow: mock timestamp
             planId: `plan-stale-${ctx.caseSeed}`,
             from: { address: "kaspa:sim_qz0s9xrz5y5e8dq5azmpg756aeepm6fesq82ye7wv" },
