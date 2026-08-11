@@ -33,7 +33,7 @@ export function registerAccountsCommands(program: Command) {
         getOutput().writeLine("");
         for (const acc of accounts) {
           const encrypted =
-            acc.kind === "kaspa-private-key" && !acc.privateKeyEnv ? " (encrypted)" : "";
+            acc.kind === "kaspa" && !acc.privateKeyEnv ? " (encrypted)" : "";
           getOutput().writeLine(
             `${acc.name.padEnd(12)} ${acc.address?.padEnd(24)} (${acc.kind})${encrypted}`
           );

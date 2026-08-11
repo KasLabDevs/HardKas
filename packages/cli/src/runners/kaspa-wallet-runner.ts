@@ -52,7 +52,7 @@ export async function runKaspaWalletList(options: { json: boolean }) {
     const config = await loadHardkasConfig();
     const { listHardkasAccounts } = await import("@hardkas/accounts");
     const accounts = listHardkasAccounts(config.config).filter(
-      (a) => a.kind === "kaspa-private-key" || a.kind === "simulated"
+      (a) => a.kind === "kaspa" || a.kind === "synthetic"
     );
 
     if (options.json) {
@@ -183,12 +183,17 @@ export async function runKaspaWalletSend(
     }
 
     // 2. Sign
+    // 2. Sign
     // Map internal plan to Artifact format for the signer
     const configObj = config.config as Record<string, unknown>;
     const networkId =
       typeof configObj.networkId === "string"
         ? (configObj.networkId as NetworkId)
         : config.config.defaultNetwork || "simnet";
+        
+    const { resolveExecutionTarget } = await import("@hardkas/config");
+    const { execution } = resolveExecutionTarget({ config: config.config, network: networkId });
+
     const planArtifact: TxPlanArtifact = {
       schema: HardkasSchemas.TxPlan,
       planId: `plan-${calculateContentHash({ from: sender.address, to: targetAddress, amount: amountSompi.toString() }).slice(0, 16)}`,
@@ -196,7 +201,8 @@ export async function runKaspaWalletSend(
       version: "1.0.0-alpha",
       createdAt: new Date().toISOString(),
       networkId: networkId as NetworkId,
-      mode: sender.kind === "simulated" ? "simulated" : "real",
+      mode: execution.mode,
+      execution: execution as any,
       from: { address: sender.address as KaspaAddress },
       to: { address: targetAddress as KaspaAddress },
       amountSompi: amountSompi.toString(),
@@ -224,14 +230,8 @@ export async function runKaspaWalletSend(
       contentHash: "synthetic-plan-hash" as ContentHash
     };
 
-    const { resolveExecutionTarget } = await import("@hardkas/config");
-    const { target } = resolveExecutionTarget({ config: config.config, network: networkId });
-
-    // Convert old mode to structural execution
-    planArtifact.execution = target;
-
     const signedArtifact = await signTxPlanArtifact({
-      target,
+      target: execution as any,
       planArtifact,
       account: sender,
       config: config.config

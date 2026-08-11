@@ -42,7 +42,7 @@ export async function runTxVerify(options: TxVerifyOptions) {
     const artifactRecord = artifact as Record<string, unknown>;
 
     let result;
-    if (artifact.mode === "simulated") {
+    if (artifact.mode === "simulator") {
       result = {
         ok: true,
         inputTotalSompi: BigInt(artifact.amountSompi || 0),

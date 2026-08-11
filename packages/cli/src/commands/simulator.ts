@@ -74,7 +74,7 @@ export function registerSimulatorCommands(program: Command) {
         
         if (options.json) {
           const { getOutput } = await import("../output.js");
-          getOutput().writeJson({ ok: true, command: "simulator fund", result: result.status });
+          getOutput().writeJson({ ok: true, command: "simulator fund", result: result.success ? "success" : "failed" });
         } else {
           const { getOutput } = await import("../output.js");
           getOutput().writeLine(result.formatted);

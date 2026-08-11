@@ -161,7 +161,8 @@ export async function runTxPlan(input: TxPlanRunnerInput): Promise<TxPlanArtifac
           endpoint: rpcUrl || "unknown",
           method: "getUtxosByAddress",
           suspectedCause:
-            "This endpoint might be running a node version that uses a different response schema for UTXOs."
+            "This endpoint might be running a node version that uses a different response schema for UTXOs.",
+          rawError: e instanceof Error ? e.message : String(e)
         });
       }
       throw new RpcConnectionError({

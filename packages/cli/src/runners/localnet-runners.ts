@@ -157,7 +157,7 @@ export async function runLocalnetFund(opts: LocalnetFundOptions): Promise<void> 
   let account;
   try {
     account = resolveHardkasAccount({ nameOrAddress: opts.identifier, config });
-    address = account.address;
+    address = account.address || opts.identifier;
   } catch {
     address = opts.identifier;
   }
