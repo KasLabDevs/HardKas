@@ -13,7 +13,7 @@ describe("State Reconstruction (Time Travel)", () => {
       hardkasVersion: HARDKAS_VERSION,
       version: "1.0",
       createdAt: new Date().toISOString(),
-      mode: "simulated",
+      mode: "simulator",
       networkId: asNetworkId("simulated"),
       daaScore: "100",
       accounts: [],
