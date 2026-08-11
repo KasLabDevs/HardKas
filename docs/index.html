@@ -2866,7 +2866,7 @@
                 >
               </div>
               <div class="meta">
-                <span class="badge accent">0.12.0-alpha</span>
+                <span class="badge accent">0.12.0-rc.1</span>
                 <span class="badge">Kaspa Native</span>
                 <span class="badge">Igra-aware</span>
                 <span class="badge">Local-first</span>
@@ -2906,7 +2906,7 @@ hardkas dev server --open"
                 </div>
               </div>
               <div class="warning">
-                <strong>Alpha boundary (0.12.0-alpha).</strong> HardKAS is developer
+                <strong>Alpha boundary (0.12.0-rc.1).</strong> HardKAS is developer
                 infrastructure. It enforces strict path traversal sandboxing, rule
                 evaluation for <code>hardkas.policy.v1</code>, and strict lineage sequence
                 verification. It is not production custody software.
@@ -3306,7 +3306,7 @@ hardkas localnet fund treasury --profile toccata-v2"
           </div>
         </section>
         <section id="status">
-          <h2>What actually works in 0.12.0-alpha</h2>
+          <h2>What actually works in 0.12.0-rc.1</h2>
           <table>
             <thead>
               <tr>
@@ -3382,7 +3382,7 @@ hardkas localnet fund treasury --profile toccata-v2"
           <h2>Sessions</h2>
           <p>
             Sessions bind L1/L2 developer context: wallet names, EVM accounts, selected
-            profiles, bridge plans and local runtime state. In 0.12.0-alpha mutating
+            profiles, bridge plans and local runtime state. In 0.12.0-rc.1 mutating
             session paths fail closed on corrupt stores and canonical writes use atomic
             persistence with parent directory fsync.
           </p>
@@ -3491,7 +3491,7 @@ hardkas session status"
           </div>
           <div class="warning">
             <strong>SSE limitation.</strong> The dashboard supports reconnect/backoff, but
-            0.12.0-alpha does not yet provide durable replay cursors or monotonic event
+            0.12.0-rc.1 does not yet provide durable replay cursors or monotonic event
             IDs. If the dev server restarts, the event stream resets.
           </div>
           <h3>CLI ↔ Dashboard sync</h3>
@@ -4734,7 +4734,7 @@ hardkas config show --json"
                 <div class="codeblock" style="margin-top: 8px">
                   <div class="codebar">sample output (truncated)</div>
                   <pre>{
-  <span class="str">"version"</span>: <span class="str">"0.12.0-alpha"</span>,
+  <span class="str">"version"</span>: <span class="str">"0.12.0-rc.1"</span>,
   <span class="str">"maturity"</span>: <span class="str">"hardened-alpha"</span>,
   <span class="str">"capabilities"</span>: {
     <span class="str">"artifacts"</span>: <span style="color:#72f2c3">true</span>,
@@ -4912,7 +4912,7 @@ hardkas query lineage chain &lt;artifactId&gt; --why"
           </div>
         </section>
         <footer class="footer">
-          HardKAS Documentation · 0.12.0-alpha · CLI · SDK · Examples · Security · GitHub ·
+          HardKAS Documentation · 0.12.0-rc.1 · CLI · SDK · Examples · Security · GitHub ·
           MIT License<br />
           HardKAS is local developer infrastructure in active alpha. It is provided
           without warranty and is not production custody software.

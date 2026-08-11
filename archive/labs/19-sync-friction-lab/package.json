@@ -1,6 +1,6 @@
 {
   "name": "lab-19-sync-friction-lab",
-  "version": "0.12.0-alpha",
+  "version": "0.12.0-rc.1",
   "private": true,
   "type": "module",
   "scripts": {
