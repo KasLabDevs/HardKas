@@ -65,18 +65,18 @@ export async function runTxPlan(input: TxPlanRunnerInput): Promise<TxPlanArtifac
   // Guard: HardKAS simulated accounts (kaspa:sim_*) can only be used on simulated backends.
   const isHardkasSimulatedAccount = fromAddress.startsWith("kaspa:sim_");
 
-  if (isHardkasSimulatedAccount && backend !== "simulated") {
+  if (isHardkasSimulatedAccount && backend !== "simulator") {
     throw new Error(
       "NETWORK_ACCOUNT_MISMATCH: Cannot use a simulated account with a real network or RPC provider."
     );
   }
 
   let availableUtxos: any[] = [];
-  let mode: "simulator" | "kaspa-node" | "kaspa-rpc" = "simulated";
+  let mode: "simulator" | "kaspa-node" | "kaspa-rpc" = "simulator";
   let rpcUrl: string | undefined = providerConfig.endpoint;
 
   let stateAddress: string | undefined;
-  if (backend === "simulated") {
+  if (backend === "simulator") {
     const { loadOrCreateLocalnetState, getSpendableUtxos, resolveAccountAddressFromState } = await import(
       "@hardkas/localnet"
     );
@@ -105,7 +105,7 @@ export async function runTxPlan(input: TxPlanRunnerInput): Promise<TxPlanArtifac
       };
     });
 
-    mode = "simulated";
+    mode = "simulator";
     rpcUrl = "simulated://local";
   } else {
     try {
@@ -177,8 +177,8 @@ export async function runTxPlan(input: TxPlanRunnerInput): Promise<TxPlanArtifac
 
   if (availableUtxos.length === 0) {
     const hint =
-      backend === "simulated"
-        ? `\n  Hint: Run 'hardkas accounts fund ${from} --amount 1000' to create simulated UTXOs,\n  or re-initialize with 'hardkas init --force'.`
+      backend === "simulator"
+        ? `\n  Hint: Run 'hardkas simulator fund ${from} --amount 1000' to create simulated UTXOs,\n  or re-initialize with 'hardkas init --force'.`
         : `\n  Hint: Ensure the account has received funds on the '${resolvedNetwork}' network.`;
     throw new Error(
       `No UTXOs found for ${fromAddress} on network '${resolvedNetwork}'.${hint}`
@@ -203,7 +203,7 @@ export async function runTxPlan(input: TxPlanRunnerInput): Promise<TxPlanArtifac
 
   let resolvedAssumptionLevel = assumptionLevel;
   if (!resolvedAssumptionLevel) {
-    if (mode === "simulated") {
+    if (backend === "simulator") {
       resolvedAssumptionLevel = "local-simulated";
     } else if (mode === "kaspa-rpc" && resolvedNetwork === "simnet") {
       resolvedAssumptionLevel = "local-rpc";
@@ -218,7 +218,7 @@ export async function runTxPlan(input: TxPlanRunnerInput): Promise<TxPlanArtifac
 
   const artifact = createTxPlanArtifact({
     networkId: resolvedNetwork as NetworkId,
-    mode: mode === "simulated" ? "simulator" : (mode === "kaspa-rpc" ? "rpc" : "localnet"),
+    mode: mode === "simulator" ? "simulator" : (mode === "kaspa-rpc" ? "rpc" : "localnet"),
     ...(rpcUrl ? { rpcUrl } : {}),
     from: { input: from, address: fromAddress },
     to: { input: to, address: toAddress },

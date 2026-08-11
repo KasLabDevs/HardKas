@@ -29,6 +29,7 @@ import { HardkasPluginManager } from "./plugin-manager.js";
 import { HardkasIgra } from "./igra.js";
 import { HardkasExperimental } from "./experimental.js";
 import { HardkasCovenants } from "./covenants.js";
+import { HardkasUtxos } from "./utxos.js";
 import { WalletToolkit, WalletToolkitOptions } from "@hardkas/toolkit";
 import { HardkasNodeApi, FundDevWalletsOptions } from "./node.js";
 export type { FundDevWalletsOptions } from "./node.js";
@@ -171,6 +172,7 @@ export class Hardkas {
   public readonly artifacts: HardkasArtifactsManager;
   public readonly accounts: HardkasAccounts;
   public readonly tx: HardkasTx;
+  public readonly utxos: HardkasUtxos;
   public readonly localnet: HardkasLocalnet;
   public readonly lineage: HardkasLineage;
   public readonly plugins: HardkasPluginManager;
@@ -228,6 +230,7 @@ export class Hardkas {
 
     this.accounts = new HardkasAccounts(this);
     this.tx = new HardkasTx(this);
+    this.utxos = new HardkasUtxos(this);
     this.signer = options?.signer;
     this.localnet = new HardkasLocalnet(this);
     this.lineage = new HardkasLineage(this);

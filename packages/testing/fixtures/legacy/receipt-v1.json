@@ -1,0 +1,11 @@
+{
+  "schema": "hardkas.txReceipt.v1",
+  "version": "1.0.0",
+  "receiptId": "rec_098765",
+  "signedId": "stx_abcdef",
+  "txId": "mock-tx-1234",
+  "networkId": "simnet",
+  "mode": "simulated",
+  "blockHash": "mock-block-hash",
+  "generatedAt": "2026-05-20T12:02:00.000Z"
+}

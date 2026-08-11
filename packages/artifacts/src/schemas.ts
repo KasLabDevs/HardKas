@@ -253,7 +253,7 @@ export const SnapshotSchema = BaseArtifactSchema.extend({
 export const TxReceiptSchemaV2 = BaseArtifactSchema.extend({
   schema: z.literal(HardkasSchemas.TxReceiptV2),
   txId: z.string(),
-  status: z.enum(["pending", "submitted", "accepted", "confirmed", "failed"]),
+  status: z.enum(["submitted", "accepted", "confirmed", "failed"]),
   mode: executionModeSchema,
   networkId: kaspaNetworkIdSchema,
   from: AccountRefSchema,
@@ -278,14 +278,17 @@ export const TxReceiptSchemaV2 = BaseArtifactSchema.extend({
   rpcUrl: z.string().optional(),
   sourceSignedId: z.string().optional(),
   errors: z.array(z.string()).optional(),
-  metadata: z.any().optional()
+  metadata: z.any().optional(),
+  confirmations: z.number().optional(),
+  acceptingBlockHash: z.string().optional(),
+  observedAtDaaScore: z.string().optional()
 });
 
 export const TxReceiptSchema = BaseArtifactSchema.extend({
   schema: z.literal(HardkasSchemas.TxReceipt),
   execution: executionTargetSchema,
   txId: z.string(),
-  status: z.enum(["pending", "submitted", "accepted", "confirmed", "failed"]),
+  status: z.enum(["submitted", "accepted", "confirmed", "failed"]),
   mode: executionModeSchema,
   networkId: kaspaNetworkIdSchema,
   from: AccountRefSchema,

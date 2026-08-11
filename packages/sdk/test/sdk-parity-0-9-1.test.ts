@@ -142,7 +142,11 @@ describe("0.12.0-rc.1 SDK parity surface", () => {
       autoBootstrap: true
     });
     await expect(
-      sdk.experimental.silver.deploy({ artifact: {}, mode: "real", write: false })
+      sdk.experimental.silver.deploy({
+        artifact: { schema: "hardkas.silverscript.v1", name: "dummy", byteCode: "00", abi: [] },
+        mode: "rpc",
+        write: false
+      })
     ).rejects.toThrow("SDK_SILVER_REAL_LIFECYCLE_UNSUPPORTED");
   });
 });

@@ -1,4 +1,5 @@
 import { systemRuntimeContext, deterministicCompare, getCoinbaseMaturity } from "@hardkas/core";
+import { pollCondition } from "./waiters.js";
 import { Hardkas } from "./index.js";
 import {
   buildPaymentPlan,
@@ -106,6 +107,131 @@ function isSignTxOptions(value: unknown): value is SignTxOptions {
 
 export class HardkasTx {
   constructor(private sdk: Hardkas) {}
+
+  /**
+   * Waits for a transaction to be accepted into the DAG.
+   */
+  async waitForAccepted(options: {
+    txId: string;
+    timeoutMs?: number | undefined;
+    pollIntervalMs?: number | undefined;
+    signal?: AbortSignal | undefined;
+  }) {
+    // If the node has index enabled, we could query getTransaction.
+    // However, on standard nodes, we must monitor the virtual chain or mempool.
+    // For this primitive, if the tx is not in the mempool, we check if it is in the DAG
+    // by using a recent startHash.
+    
+    // 1. Snapshot a recent tip as our search boundary
+    let startHash = "00";
+    try {
+      const dagInfo = await this.sdk.rpc.getBlockDagInfo();
+      startHash = dagInfo.tipHashes?.[0] || "00";
+    } catch(e) {}
+
+    return pollCondition(
+      async () => {
+        // Try mempool first to see if it's still pending
+        try {
+          const mempool = await this.sdk.rpc.getMempoolEntry(options.txId);
+          if (mempool) {
+             return { ok: false, lastObservedState: { status: "mempool", txId: options.txId } };
+          }
+        } catch(e) {}
+
+        // Not in mempool, might be accepted. Let's traverse from startHash
+        try {
+          const vchain = await (this.sdk.rpc as any).call("getVirtualChainFromBlockV2", {
+            startHash,
+            includeAcceptedTransactionIds: true
+          });
+          
+          if (vchain && vchain.chainBlockAcceptedTransactions) {
+            for (const entry of vchain.chainBlockAcceptedTransactions) {
+              const txs = entry.acceptedTransactions ?? [];
+              if (txs.some((tx: any) => (tx.transactionId ?? tx.id ?? tx.verboseData?.transactionId) === options.txId)) {
+                // Update our search boundary so we don't re-scan next time if needed
+                startHash = (await this.sdk.rpc.getBlockDagInfo()).tipHashes?.[0] || startHash;
+                return { ok: true, value: { status: "accepted", txId: options.txId, acceptingBlockHash: entry.blockHash }, lastObservedState: { status: "accepted" } };
+              }
+            }
+          }
+          
+          // Update startHash to the tip of this vchain so we don't re-scan the same blocks next tick
+          if (vchain && vchain.addedChainBlocks && vchain.addedChainBlocks.length > 0) {
+             startHash = vchain.addedChainBlocks[vchain.addedChainBlocks.length - 1];
+          }
+        } catch(e) {}
+
+        return { ok: false, lastObservedState: { status: "not_found", txId: options.txId } };
+      },
+      "TX_ACCEPTANCE_TIMEOUT",
+      "Timeout waiting for transaction acceptance",
+      options
+    );
+  }
+
+  /**
+   * Waits for a transaction to reach a minimum number of confirmations.
+   */
+  async waitForConfirmations(options: {
+    txId: string;
+    minConfirmations: number;
+    timeoutMs?: number | undefined;
+    pollIntervalMs?: number | undefined;
+    signal?: AbortSignal | undefined;
+  }) {
+    let acceptingBlockHash: string | undefined;
+    let acceptedAtDaaScore: bigint | undefined;
+    
+    // First wait for it to be accepted
+    const accepted = await this.waitForAccepted({
+      txId: options.txId,
+      timeoutMs: options.timeoutMs,
+      pollIntervalMs: options.pollIntervalMs,
+      signal: options.signal
+    });
+    
+    acceptingBlockHash = (accepted as any).acceptingBlockHash;
+
+    return pollCondition(
+      async () => {
+        try {
+          // If we have the accepting block, we can fetch its DAA score
+          if (acceptingBlockHash && !acceptedAtDaaScore) {
+            const blockInfo = await (this.sdk.rpc as any).call("getBlock", { hash: acceptingBlockHash, includeTransactions: false });
+            if (blockInfo && blockInfo.block && blockInfo.block.header) {
+              acceptedAtDaaScore = BigInt(blockInfo.block.header.daaScore);
+            }
+          }
+
+          const dagInfo = await this.sdk.rpc.getBlockDagInfo();
+          const virtualDaaScore = BigInt(dagInfo.virtualDaaScore || 0);
+          
+          if (acceptedAtDaaScore) {
+             const confirmations = Number(virtualDaaScore - acceptedAtDaaScore);
+             if (confirmations >= options.minConfirmations) {
+               return { 
+                 ok: true, 
+                 value: { status: "confirmed", confirmations, acceptingBlockHash, observedAtDaaScore: virtualDaaScore.toString() },
+                 lastObservedState: { status: "confirmed", confirmations, required: options.minConfirmations }
+               };
+             } else {
+               return {
+                 ok: false,
+                 lastObservedState: { status: "accepted", confirmations, required: options.minConfirmations }
+               };
+             }
+          }
+        } catch(e) {}
+
+        return { ok: false, lastObservedState: { status: "checking_confirmations" } };
+      },
+      "TX_CONFIRMATION_TIMEOUT",
+      "Timeout waiting for transaction confirmations",
+      options
+    );
+  }
 
   /**
    * Plans a transaction.
@@ -994,6 +1120,8 @@ export class HardkasTx {
     const isSimulated =
       activeNetwork === "simulated" ||
       this.sdk.config.config.networks?.[activeNetwork]?.kind === "simulated";
+    const networkConfig = this.sdk.config.config.networks?.[activeNetwork];
+    const executionMode = isSimulated ? "simulator" : (networkConfig?.kind === "kaspa-node" ? "localnet" : "rpc");
 
     // Create unified receipt
     const receiptBase: any = {
@@ -1003,9 +1131,10 @@ export class HardkasTx {
       version: ARTIFACT_VERSION,
       hashVersion: CURRENT_HASH_VERSION,
       networkId: activeNetwork,
-      mode: isSimulated ? "simulated" : "real",
+      mode: executionMode,
+      execution: { mode: executionMode, domain: "kaspa-l1", network: activeNetwork },
       createdAt: new Date().toISOString(),
-      status: "confirmed",
+      status: "submitted",
       txId: simResult.receipt.txId,
       sourceSignedId: signedId,
       from: { address: planArtifact.from?.address || "unknown" },
@@ -1073,7 +1202,7 @@ export class HardkasTx {
       hashVersion: CURRENT_HASH_VERSION,
       createdAt: receipt.createdAt,
       txId: receipt.txId,
-      mode: isSimulated ? "simulated" : "real",
+      mode: executionMode,
       networkId: activeNetwork,
       steps: traceSteps
     };
@@ -1103,7 +1232,7 @@ export class HardkasTx {
     }
 
     coreEvents.normalizeAndEmit({
-      kind: "tx.confirmed",
+      kind: "tx.submitted",
       txId: receipt.txId,
       network: receipt.networkId,
       mode: receipt.mode,
@@ -1268,10 +1397,10 @@ export class HardkasTx {
       version: ARTIFACT_VERSION,
       hashVersion: CURRENT_HASH_VERSION,
       networkId: this.sdk.network,
-      mode: "real",
+      mode: isExplicitRpc ? "rpc" : "localnet",
       createdAt: new Date().toISOString(),
-      status: result.accepted ? "submitted" : "failed",
-      txId: result.transactionId || "failed",
+      status: "submitted",
+      txId: result.transactionId || "unknown",
       sourceSignedId: signedArtifact.signedId,
       from: { address: signedArtifact.from.address },
       to: { address: signedArtifact.to.address },

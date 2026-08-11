@@ -174,7 +174,7 @@ describe("Corruption Corpus Hardening", () => {
     const child = {
       schema: "hardkas.txPlan",
       networkId: "simnet",
-      mode: "real", // Contamination!
+      mode: "rpc", // Contamination!
       lineage: {
         artifactId: "child-hash",
         lineageId: "flow-1",

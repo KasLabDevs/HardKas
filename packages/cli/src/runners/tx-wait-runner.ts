@@ -28,8 +28,8 @@ export async function runTxWait(input: TxWaitRunnerInput): Promise<void> {
     url
   });
 
-  if (provider.mode === "simulated") {
-    UI.logHuman(`  âœ… Settlement: SIMULATED (Instant)`);
+  if (provider.mode === "simulator") {
+    UI.logHuman(`  ? Settlement: SIMULATED (Instant)`);
     return;
   }
 

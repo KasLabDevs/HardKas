@@ -27,9 +27,42 @@ export async function runDevAccountsList() {
 
 export async function runDevAccountsReveal(alias: string) {
   const loaded = await loadHardkasConfig();
-  if (loaded.config.defaultNetwork !== "simnet") {
-    UI.error("Reveal dev accounts is ONLY allowed on simnet for safety.");
-    return;
+  const exec = loaded.config.execution || { mode: "simulator", domain: "kaspa-l1", network: "simulated" };
+  const { assertExecutionCompatibility } = await import("@hardkas/core");
+  const { resolveHardkasAccount } = await import("@hardkas/accounts");
+
+  let accountMeta;
+  try {
+    accountMeta = resolveHardkasAccount({ nameOrAddress: alias, config: loaded.config });
+  } catch (e) {
+    // If resolution fails, it might not be properly mapped, but we'll try to find it in dev accounts
+  }
+
+  if (accountMeta) {
+    try {
+      assertExecutionCompatibility({
+        operation: "dev-reveal",
+        target: {
+          mode: exec.mode || "simulator",
+          domain: exec.domain || "kaspa-l1",
+          network: exec.network || "simulated"
+        },
+        account: {
+          kind: accountMeta.kind,
+          network: (accountMeta as any).network,
+          executionMode: (accountMeta as any).executionMode
+        }
+      });
+    } catch (e: any) {
+      UI.error(`Execution incompatibility: ${e.message}`);
+      return;
+    }
+  } else {
+    // Fallback if not mapped
+    if (exec.network !== "simnet" && exec.network !== "simulated") {
+      UI.error("Reveal dev accounts is ONLY allowed on simnet or simulated for safety.");
+      return;
+    }
   }
 
   const accounts = listDevAccountsSync(loaded.cwd);
@@ -52,9 +85,39 @@ export async function runDevAccountsReveal(alias: string) {
 
 export async function runDevAccountsExport(alias: string) {
   const loaded = await loadHardkasConfig();
-  if (loaded.config.defaultNetwork !== "simnet") {
-    UI.error("Exporting dev accounts is ONLY allowed on simnet for safety.");
-    return;
+  const exec = loaded.config.execution || { mode: "simulator", domain: "kaspa-l1", network: "simulated" };
+  const { assertExecutionCompatibility } = await import("@hardkas/core");
+  const { resolveHardkasAccount } = await import("@hardkas/accounts");
+
+  let accountMeta;
+  try {
+    accountMeta = resolveHardkasAccount({ nameOrAddress: alias, config: loaded.config });
+  } catch (e) {}
+
+  if (accountMeta) {
+    try {
+      assertExecutionCompatibility({
+        operation: "dev-export",
+        target: {
+          mode: exec.mode || "simulator",
+          domain: exec.domain || "kaspa-l1",
+          network: exec.network || "simulated"
+        },
+        account: {
+          kind: accountMeta.kind,
+          network: (accountMeta as any).network,
+          executionMode: (accountMeta as any).executionMode
+        }
+      });
+    } catch (e: any) {
+      UI.error(`Execution incompatibility: ${e.message}`);
+      return;
+    }
+  } else {
+    if (exec.network !== "simnet" && exec.network !== "simulated") {
+      UI.error("Exporting dev accounts is ONLY allowed on simnet or simulated for safety.");
+      return;
+    }
   }
 
   const accounts = listDevAccountsSync(loaded.cwd);

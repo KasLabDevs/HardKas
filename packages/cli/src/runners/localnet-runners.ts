@@ -190,19 +190,28 @@ export async function runLocalnetFund(opts: LocalnetFundOptions): Promise<void> 
   const before = await getAddressFundingState(address, !!opts.json);
   await restartToccataMiner(address);
 
+  const { Hardkas } = await import("@hardkas/sdk");
+  const sdk = await Hardkas.create({ config });
+  
   const timeoutMs = opts.timeoutMs ?? 300000;
-  const deadline = Date.now() + timeoutMs;
-  let current = before;
-  while (Date.now() < deadline) {
-    await sleep(5000);
-    current = await getAddressFundingState(address, !!opts.json);
-    if (
-      current.matureUtxoCount > before.matureUtxoCount ||
-      current.matureBalanceSompi > before.matureBalanceSompi
-    ) {
-      break;
+  const targetAmount = opts.amountSompi 
+    ? before.matureBalanceSompi + opts.amountSompi 
+    : before.matureBalanceSompi + 1n; // wait for any increase
+    
+  try {
+    await sdk.utxos.waitForCoinbaseSpendable({
+      address,
+      minAmount: targetAmount,
+      timeoutMs
+    });
+  } catch (e: any) {
+    if (e.code !== "COINBASE_MATURITY_TIMEOUT") {
+      throw e;
     }
+    // if it timed out, it will be caught below by the status check
   }
+
+  const current = await getAddressFundingState(address, !!opts.json);
 
   if (!opts.keepMiner) {
     await stopToccataMiner();

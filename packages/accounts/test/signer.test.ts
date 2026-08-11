@@ -35,7 +35,7 @@ describe("signTxPlanArtifact", () => {
   const mockRealPlan: any = {
     ...mockSimulatedPlan,
     networkId: "simnet",
-    mode: "real",
+    mode: "rpc",
     execution: { mode: "localnet", domain: "kaspa-l1", network: "simnet" }
   };
 

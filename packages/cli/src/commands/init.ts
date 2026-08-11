@@ -88,7 +88,11 @@ export default defineConfig({
 
 export default defineHardkasConfig({
   // HardKAS v0.12.0-rc.1 Configuration
-  defaultNetwork: "simulated",
+  execution: {
+    mode: "simulator",
+    domain: "kaspa-l1",
+    network: "simulated"
+  },
 
   // Strict execution policy
   network: {

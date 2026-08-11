@@ -46,7 +46,7 @@ export async function runTxSend(input: TxSendRunnerInput): Promise<TxSendRunnerR
   // ENFORCE EXECUTION COMPATIBILITY FOR BROADCASTING/SIMULATION
   const { assertExecutionCompatibility } = await import("@hardkas/core");
   assertExecutionCompatibility({
-    operation: provider.mode === "simulated" ? "simulate" : "send",
+    operation: provider.mode === "simulator" ? "simulate" : "send",
     target: execution,
     artifact: { execution: signedArtifact.execution }
   });
@@ -56,7 +56,7 @@ export async function runTxSend(input: TxSendRunnerInput): Promise<TxSendRunnerR
   sdk.config.config.defaultNetwork = resolvedName;
 
   // 1. Simulated Mode
-  if (provider.mode === "simulated" && signedArtifact.mode !== "real") {
+  if (provider.mode === "simulator" && signedArtifact.mode !== "real") {
     const { receipt, receiptPath } = await sdk.tx.simulate(signedArtifact);
 
     return {

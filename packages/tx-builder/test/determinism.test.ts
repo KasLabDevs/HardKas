@@ -367,14 +367,14 @@ describe("P1.12 Deterministic Transaction Canonicalization", () => {
       CURRENT_HASH_VERSION
     );
     const expectedStringRepresentation =
-      '{"amountSompi":"1000000","change":{"address":"kaspa:alice","amountSompi":"999650"},"estimatedFeeSompi":"350","estimatedMass":"350","from":{"address":"kaspa:alice"},"inputs":[{"amountSompi":"2000000","outpoint":{"index":0,"transactionId":"tx00000000000000000000000000000000000000000000000000000000000000"}}],"mode":"simulator","networkId":"simnet","outputs":[{"address":"kaspa:bob","amountSompi":"1000000"}],"schema":"hardkas.txPlan","to":{"address":"kaspa:bob"},"version":"1.0.0-alpha"}';
+      '{"amountSompi":"1000000","change":{"address":"kaspa:alice","amountSompi":"999650"},"estimatedFeeSompi":"350","estimatedMass":"350","from":{"address":"kaspa:alice"},"hardkasVersion":"0.12.0-rc.1","inputs":[{"amountSompi":"2000000","outpoint":{"index":0,"transactionId":"tx00000000000000000000000000000000000000000000000000000000000000"}}],"mode":"simulator","networkId":"simnet","outputs":[{"address":"kaspa:bob","amountSompi":"1000000"}],"schema":"hardkas.txPlan","to":{"address":"kaspa:bob"},"version":"1.0.0-alpha"}';
     expect(calculatedStringRepresentation).toBe(expectedStringRepresentation);
 
     const trueHash = createHash("sha256")
       .update(expectedStringRepresentation)
       .digest("hex");
     expect(hash).toBe(trueHash);
-    expect(hash).toBe("8710d0615951d8305c48b2ebda41bdba307cfc1f3ec67015099cb633c7a91176");
+    expect(hash).toBe("3616e7cfbbca6fcee8393d5b3d47f6fdb29d450caccd8c0fc71364bcac98a7e5");
   });
 
   it("Test E: Equal Amount Tie-Breaking", () => {

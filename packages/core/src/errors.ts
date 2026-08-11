@@ -1,12 +1,14 @@
 export class HardkasError extends Error {
   readonly code: string;
   readonly cause?: unknown;
+  readonly metadata?: Record<string, any> | undefined;
 
-  constructor(code: string, message: string, options?: { cause?: unknown }) {
+  constructor(code: string, message: string, options?: { cause?: unknown; metadata?: Record<string, any> | undefined }) {
     super(message);
     this.name = "HardkasError";
     this.code = code;
     this.cause = options?.cause;
+    this.metadata = options?.metadata;
   }
 }
 

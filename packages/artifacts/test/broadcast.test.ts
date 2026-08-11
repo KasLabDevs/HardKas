@@ -11,7 +11,7 @@ describe("getBroadcastableSignedTransaction", () => {
     signedId: "signed-123",
     sourcePlanId: "plan-123",
     networkId: "devnet",
-    mode: "real",
+    mode: "rpc",
     from: { address: "kaspa:from" },
     to: { address: "kaspa:to" },
     amountSompi: "1000",
@@ -26,7 +26,7 @@ describe("getBroadcastableSignedTransaction", () => {
   it("should allow simulated artifacts", () => {
     const simulated = { ...baseArtifact, mode: "simulator" as any };
     const result = getBroadcastableSignedTransaction(simulated);
-    expect(result.mode).toBe("simulated");
+    expect(result.mode).toBe("simulator");
     expect(result.rawTransaction).toBe("raw-tx-hex");
   });
 

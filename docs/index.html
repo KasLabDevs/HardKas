@@ -2866,7 +2866,7 @@
                 >
               </div>
               <div class="meta">
-                <span class="badge accent">0.12.0-rc.1</span>
+                <span class="badge accent"><span class="version-string">0.12.0-rc.1</span></span>
                 <span class="badge">Kaspa Native</span>
                 <span class="badge">Igra-aware</span>
                 <span class="badge">Local-first</span>
@@ -2906,7 +2906,7 @@ hardkas dev server --open"
                 </div>
               </div>
               <div class="warning">
-                <strong>Alpha boundary (0.12.0-rc.1).</strong> HardKAS is developer
+                <strong>Alpha boundary (<span class="version-string">0.12.0-rc.1</span>).</strong> HardKAS is developer
                 infrastructure. It enforces strict path traversal sandboxing, rule
                 evaluation for <code>hardkas.policy.v1</code>, and strict lineage sequence
                 verification. It is not production custody software.
@@ -2977,6 +2977,43 @@ hardkas dev server --open"
               </tr>
             </tbody>
           </table>
+          <h3 style="margin-top: 32px">Execution Worlds: Simulator vs Localnet</h3>
+          <table>
+            <thead>
+              <tr>
+                <th>Feature</th>
+                <th>Simulator</th>
+                <th>Localnet</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>Backend</strong></td>
+                <td>In-memory TS State Machine</td>
+                <td>Docker <code>rusty-kaspad</code></td>
+              </tr>
+              <tr>
+                <td><strong>Network</strong></td>
+                <td><code>simulated</code></td>
+                <td><code>localnet</code>, <code>devnet</code></td>
+              </tr>
+              <tr>
+                <td><strong>Accounts</strong></td>
+                <td>Synthetic (<code>hardkas simulator account create</code>)</td>
+                <td>Local-only (<code>hardkas localnet account create</code>)</td>
+              </tr>
+              <tr>
+                <td><strong>Funding</strong></td>
+                <td>Synthetic Injection (<code>hardkas accounts fund</code>)</td>
+                <td>Real CPU Miner (<code>hardkas localnet fund</code>)</td>
+              </tr>
+              <tr>
+                <td><strong>Speed</strong></td>
+                <td>Instant</td>
+                <td>Real-time Consensus</td>
+              </tr>
+            </tbody>
+          </table>
         </section>
         <section id="prerequisites">
           <h2>Prerequisites</h2>
@@ -3001,7 +3038,7 @@ hardkas dev server --open"
               </tr>
               <tr>
                 <td><strong>Docker</strong></td>
-                <td><code>hardkas node start/stop/reset/logs</code></td>
+                <td><code>hardkas localnet start/stop/reset/logs</code></td>
                 <td><a href="https://docker.com">docker.com</a></td>
               </tr>
               <tr>
@@ -3039,7 +3076,7 @@ hardkas dev server --open"
                     class="copy"
                     data-copy="pnpm add -D @hardkas/cli
 pnpm add @hardkas/sdk
-hardkas new my-kaspa-app
+hardkas init my-kaspa-app
 cd my-kaspa-app
 pnpm test
 hardkas console"
@@ -3056,7 +3093,7 @@ hardkas console"
               <p>
                 Creates a complete project with config, example scripts, tests, and
                 README. Optional flags: <code>--template basic</code>,
-                <code>--network simnet</code>, <code>--accounts 3</code> (all defaults).
+                <code>--network simulated</code>, <code>--accounts 3</code> (all defaults).
               </p>
             </div>
             <div class="box">
@@ -3162,7 +3199,7 @@ hardkas localnet fund treasury --profile toccata-v2"
             </thead>
             <tbody>
               <tr>
-                <td><strong>1. Local-Only (Simulated)</strong></td>
+                <td><strong>1. Local-Only (Simulator)</strong></td>
                 <td><code>network: 'simulated'</code></td>
                 <td>None. Auto-bootstrapped in-memory environment.</td>
                 <td>
@@ -3184,13 +3221,13 @@ hardkas localnet fund treasury --profile toccata-v2"
                   diagnostics.
                 </td>
                 <td>
-                  <code>hardkas node start</code><br /><code>hardkas faucet</code
-                  ><br /><code>hardkas node status</code>
+                  <code>hardkas localnet start</code><br /><code>hardkas localnet fund</code
+                  ><br /><code>hardkas localnet status</code>
                 </td>
               </tr>
               <tr>
                 <td><strong>3. Based Rollup (Igra L2)</strong></td>
-                <td>Simulated L2 EVM with <code>profile: igra</code></td>
+                <td>Local L2 EVM with <code>profile: igra</code></td>
                 <td>L2 config profiles pointing to an external Igra RPC node.</td>
                 <td>
                   Deploying L2 smart contracts, verifying exit/bridge assumptions, testing
@@ -3210,7 +3247,7 @@ hardkas localnet fund treasury --profile toccata-v2"
               <h3>1. Local-Only Flow</h3>
               <p>
                 In this mode, all state is simulated in memory. Txs are planned and
-                simulated instantly.
+                processed instantly.
               </p>
               <ul>
                 <li>
@@ -3262,14 +3299,14 @@ hardkas localnet fund treasury --profile toccata-v2"
                   node workflow
                   <button
                     class="copy"
-                    data-copy="hardkas node start&#10;hardkas node status --json&#10;hardkas faucet alice --amount 1000"
+                    data-copy="hardkas localnet start&#10;hardkas localnet status --json&#10;hardkas localnet fund alice --amount 1000"
                   >
                     Copy
                   </button>
                 </div>
-                <pre><span class="cmd">hardkas</span> node start
+                <pre><span class="cmd">hardkas</span> localnet start
 <span class="cmd">hardkas</span> node status <span class="flag">--json</span>
-<span class="cmd">hardkas</span> faucet alice <span class="flag">--amount</span> 1000</pre>
+<span class="cmd">hardkas</span> localnet fund alice <span class="flag">--amount</span> 1000</pre>
               </div>
             </div>
 
@@ -3306,7 +3343,7 @@ hardkas localnet fund treasury --profile toccata-v2"
           </div>
         </section>
         <section id="status">
-          <h2>What actually works in 0.12.0-rc.1</h2>
+          <h2>What actually works in <span class="version-string">0.12.0-rc.1</span></h2>
           <table>
             <thead>
               <tr>
@@ -3382,7 +3419,7 @@ hardkas localnet fund treasury --profile toccata-v2"
           <h2>Sessions</h2>
           <p>
             Sessions bind L1/L2 developer context: wallet names, EVM accounts, selected
-            profiles, bridge plans and local runtime state. In 0.12.0-rc.1 mutating
+            profiles, bridge plans and local runtime state. In <span class="version-string">0.12.0-rc.1</span> mutating
             session paths fail closed on corrupt stores and canonical writes use atomic
             persistence with parent directory fsync.
           </p>
@@ -3484,14 +3521,14 @@ hardkas session status"
             <div class="box">
               <h4>WalletConnect sandbox</h4>
               <p>
-                Simulated WalletConnect pairing for testing mobile wallet UX. Ephemeral
+                Mock WalletConnect pairing for testing mobile wallet UX. Ephemeral
                 sessions, no real relay traffic. Clearly labeled as laboratory-only.
               </p>
             </div>
           </div>
           <div class="warning">
             <strong>SSE limitation.</strong> The dashboard supports reconnect/backoff, but
-            0.12.0-rc.1 does not yet provide durable replay cursors or monotonic event
+            <span class="version-string">0.12.0-rc.1</span> does not yet provide durable replay cursors or monotonic event
             IDs. If the dev server restarts, the event stream resets.
           </div>
           <h3>CLI ↔ Dashboard sync</h3>
@@ -3533,15 +3570,15 @@ hardkas session use dev
           </p>
           <div class="command-grid">
             <div class="command">
-              <code>hardkas node start</code
+              <code>hardkas localnet start</code
               ><span>Start local node. Supports image override and lock wait flags.</span>
             </div>
             <div class="command">
-              <code>hardkas node status --json</code
+              <code>hardkas localnet status --json</code
               ><span>Check node status in machine-readable form.</span>
             </div>
             <div class="command">
-              <code>hardkas node logs --tail 100 --follow</code
+              <code>hardkas localnet logs --tail 100 --follow</code
               ><span>Inspect local node logs.</span>
             </div>
             <div class="command">
@@ -3549,7 +3586,7 @@ hardkas session use dev
               ><span>Restart local node with workspace lock protection.</span>
             </div>
             <div class="command">
-              <code>hardkas node stop</code><span>Stop local node.</span>
+              <code>hardkas localnet stop</code><span>Stop local node.</span>
             </div>
             <div class="command">
               <code>hardkas node reset --yes</code
@@ -3587,7 +3624,7 @@ hardkas session use dev
               <button
                 class="copy"
                 data-copy="hardkas accounts real init --json
-hardkas accounts real generate --name dev --count 1 --network simnet --password-stdin
+hardkas accounts real generate --name dev --count 1 --network simulated --password-stdin
 hardkas metamask network --profile igra --json
 hardkas metamask account bob --json"
               >
@@ -3595,7 +3632,7 @@ hardkas metamask account bob --json"
               </button>
             </div>
             <pre><span class="cmd">hardkas</span> accounts real init <span class="flag">--json</span>
-<span class="cmd">hardkas</span> accounts real generate <span class="flag">--name</span> dev <span class="flag">--count</span> 1 <span class="flag">--network</span> simnet <span class="flag">--password-stdin</span>
+<span class="cmd">hardkas</span> accounts real generate <span class="flag">--name</span> dev <span class="flag">--count</span> 1 <span class="flag">--network</span> localnet <span class="flag">--password-stdin</span>
 <span class="cmd">hardkas</span> metamask network <span class="flag">--profile</span> igra <span class="flag">--json</span>
 <span class="cmd">hardkas</span> metamask account bob <span class="flag">--json</span></pre>
           </div>
@@ -3744,7 +3781,7 @@ Artifact JSON
           <h2>Query store</h2>
           <p>
             The query store is a rebuildable SQLite read model over artifacts, lineage,
-            events, replay state and simulated DAG information.
+            events, replay state and simulator DAG information.
           </p>
           <div class="command-grid">
             <div class="command">
@@ -4133,7 +4170,7 @@ hardkas l2 bridge assumptions --json"
           <div class="command-grid">
             <div class="command">
               <code>hardkas dag status</code
-              ><span>View current local simulated DAG status.</span>
+              ><span>View current local simulator DAG status.</span>
             </div>
             <div class="command">
               <code>hardkas dag simulate-reorg --depth 1</code
@@ -4153,7 +4190,7 @@ hardkas l2 bridge assumptions --json"
             </div>
             <div class="command">
               <code>hardkas query dag history &lt;txId&gt; --why</code
-              ><span>Trace simulated DAG lifecycle for a transaction.</span>
+              ><span>Trace simulator DAG lifecycle for a transaction.</span>
             </div>
           </div>
         </section>
@@ -4192,7 +4229,7 @@ hardkas l2 bridge assumptions --json"
                   ><span>Initialize HardKAS config in a project.</span>
                 </div>
                 <div class="command">
-                  <code>hardkas new &lt;name&gt;</code
+                  <code>hardkas init &lt;name&gt;</code
                   ><span>Create project scaffolding.</span>
                   <table class="flags">
                     <tr>
@@ -4205,7 +4242,7 @@ hardkas l2 bridge assumptions --json"
                     </tr>
                     <tr>
                       <td><code>--accounts &lt;n&gt;</code></td>
-                      <td>Number of simulated accounts (default: 3)</td>
+                      <td>Number of Synthetic accounts (default: 3)</td>
                     </tr>
                     <tr>
                       <td><code>--skip-install</code></td>
@@ -4275,7 +4312,7 @@ hardkas l2 bridge assumptions --json"
                     </tr>
                     <tr>
                       <td><code>--accounts &lt;n&gt;</code></td>
-                      <td>Simulated accounts (default: 3)</td>
+                      <td>Synthetic accounts (default: 3)</td>
                     </tr>
                     <tr>
                       <td><code>--balance &lt;sompi&gt;</code></td>
@@ -4293,7 +4330,7 @@ hardkas l2 bridge assumptions --json"
                     </tr>
                     <tr>
                       <td><code>--accounts &lt;n&gt;</code></td>
-                      <td>Simulated accounts (default: 3)</td>
+                      <td>Synthetic accounts (default: 3)</td>
                     </tr>
                     <tr>
                       <td><code>--balance &lt;sompi&gt;</code></td>
@@ -4380,10 +4417,10 @@ hardkas l2 bridge assumptions --json"
               <summary>Kaspa L1 and node</summary>
               <div class="details-body command-grid">
                 <div class="command">
-                  <code>hardkas node start</code><span>Start Docker Kaspa node.</span>
+                  <code>hardkas localnet start</code><span>Start Docker Kaspa node.</span>
                 </div>
                 <div class="command">
-                  <code>hardkas node status --json</code><span>Check node status.</span>
+                  <code>hardkas localnet status --json</code><span>Check node status.</span>
                 </div>
                 <div class="command">
                   <code>hardkas kaspa doctor --json</code
@@ -4394,7 +4431,7 @@ hardkas l2 bridge assumptions --json"
                   ><span>Plan local wallet send.</span>
                 </div>
                 <div class="command">
-                  <code>hardkas faucet &lt;identifier&gt; --amount 1000</code
+                  <code>hardkas localnet fund &lt;identifier&gt; --amount 1000</code
                   ><span>Local-only funding helper.</span>
                 </div>
                 <div class="command">
@@ -4623,7 +4660,7 @@ hardkas l2 bridge assumptions --json"
                 <li>Workspace locks with stale detection.</li>
                 <li>Corruption diagnostics and strict mutation paths.</li>
                 <li>Secret redaction in CLI error paths.</li>
-                <li>Mainnet guards for signing/faucet/fund operations.</li>
+                <li>Mainnet guards for signing/localnet fund/fund operations.</li>
                 <li>Encrypted dev keystore using Argon2id + AES-GCM.</li>
                 <li>
                   Absolute path traversal sandboxing (restricts all artifact reads,
@@ -4676,7 +4713,7 @@ hardkas l2 bridge assumptions --json"
                 <td>Keeps machine workflows stable.</td>
               </tr>
               <tr>
-                <td>Default to simnet/local profiles.</td>
+                <td>Default to localnet/local profiles.</td>
                 <td>Avoids accidental mainnet mutation.</td>
               </tr>
               <tr>
@@ -4734,7 +4771,7 @@ hardkas config show --json"
                 <div class="codeblock" style="margin-top: 8px">
                   <div class="codebar">sample output (truncated)</div>
                   <pre>{
-  <span class="str">"version"</span>: <span class="str">"0.12.0-rc.1"</span>,
+  <span class="str">"version"</span>: <span class="str">"<span class="version-string">0.12.0-rc.1</span>"</span>,
   <span class="str">"maturity"</span>: <span class="str">"hardened-alpha"</span>,
   <span class="str">"capabilities"</span>: {
     <span class="str">"artifacts"</span>: <span style="color:#72f2c3">true</span>,
@@ -4912,7 +4949,7 @@ hardkas query lineage chain &lt;artifactId&gt; --why"
           </div>
         </section>
         <footer class="footer">
-          HardKAS Documentation · 0.12.0-rc.1 · CLI · SDK · Examples · Security · GitHub ·
+          HardKAS Documentation · <span class="version-string">0.12.0-rc.1</span> · CLI · SDK · Examples · Security · GitHub ·
           MIT License<br />
           HardKAS is local developer infrastructure in active alpha. It is provided
           without warranty and is not production custody software.
@@ -5002,6 +5039,29 @@ hardkas query lineage chain &lt;artifactId&gt; --why"
           });
         });
       }
+
+      // Dynamic version fetching
+      async function updateVersion() {
+        try {
+          const res = await fetch("https://registry.npmjs.org/@hardkas/cli/latest");
+          if (!res.ok) return;
+          const data = await res.json();
+          if (data && data.version) {
+            document.querySelectorAll(".version-string").forEach(el => {
+              el.textContent = data.version;
+            });
+          }
+        } catch (e) {
+          // Silent fallback to hardcoded version
+        }
+      }
+      updateVersion();
     </script>
   </body>
 </html>
+
+
+
+
+
+

@@ -25,7 +25,7 @@ describe("Network-Agnostic Artifact Layer: Migration", () => {
       schema: "hardkas.txPlan.v1",
       version: "0.1.0",
       networkId: "kaspa-mainnet",
-      mode: "real"
+      mode: "rpc"
     };
 
     expect(() => {

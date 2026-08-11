@@ -44,8 +44,11 @@ export function resolveExecutionTarget(options: ResolveExecutionTargetOptions): 
     finalExecution = config.execution;
   } else {
     // Inference for backwards compatibility
+    if (config.defaultNetwork !== undefined) {
+      console.warn(`DEPRECATED: 'defaultNetwork: "${config.defaultNetwork}"' is deprecated. Please migrate to the explicit 'execution' contract in HardkasConfig.`);
+    }
+
     if (config.defaultNetwork === "simulated" || name === "simulated") {
-      console.warn("DEPRECATED: defaultNetwork: 'simulated' is deprecated. Please migrate to defaultExecutionMode: 'simulator' in HardkasConfig.");
       finalExecution = { mode: "simulator", domain: "kaspa-l1", network: "simulated" };
     } else if (target.kind === "igra") {
       finalExecution = { mode: "rpc", domain: "evm-l2", network: name };

@@ -86,7 +86,7 @@ export const hardkasConfigSchema = z.object({
   }),
   localnet: z
     .object({
-      mode: z.enum(["simulated", "local-node"]).default("simulated"),
+      mode: z.enum(["simulator", "local-node"]).default("simulator"),
       dataDir: z.string().optional()
     })
     .default({ mode: "simulator" })

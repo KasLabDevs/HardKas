@@ -25,22 +25,35 @@ HardKAS:
 intent -> artifact -> verification -> execution -> replay
 ```
 
-Instead of submitting raw payloads and hoping the network accepts them, HardKAS
-turns intent into deterministic artifacts. Those artifacts can be inspected,
-hashed, signed, simulated, receipted, indexed, and replayed.
+The entire lifecycle of Kaspa UTXOs—from genesis injection to final signature submission—can be tracked, hashed, signed, processed in the simulator, receipted, indexed, and replayed.
 
-## Execution Worlds
+## The Execution Contract
 
-HardKAS `0.12.0-rc.1` introduces strictly partitioned Execution Worlds.
+HardKAS `0.12.0-rc.1` introduces the strictly partitioned Execution Contract.
+The Execution Contract is a tuple of `(mode, domain, network)` that unambiguously identifies the context in which an artifact was created, an execution target is connected, or an account exists.
 
-- `simulator`: The JS-based, in-memory, synchronous transaction simulator. Accounts, UTXOs, and funds are strictly synthetic.
-- `localnet`: A real Kaspa node (`rusty-kaspad`) running locally via Docker on the Kaspa `simnet` network with real Proof-of-Work and local mining.
-- `rpc`: A remote connection to a configured Kaspa node (e.g. `mainnet` or `testnet-11`).
+- **`mode`**: The environment topology (`simulator`, `localnet`, `rpc`, `l2-rpc`)
+- **`domain`**: The ledger semantics (`kaspa-l1`, `evm-l2`)
+- **`network`**: The network identifier (`simulated`, `simnet`, `testnet-10`, `mainnet`)
+
+Common targets:
+- **Simulator**: `{ mode: "simulator", domain: "kaspa-l1", network: "simulated" }`
+  The JS-based, in-memory, synchronous transaction simulator. Accounts, UTXOs, and funds are strictly synthetic.
+- **Localnet**: `{ mode: "localnet", domain: "kaspa-l1", network: "simnet" }`
+  A real Kaspa node (`rusty-kaspad`) running locally via Docker on `simnet` with real Proof-of-Work and local mining.
+- **RPC**: `{ mode: "rpc", domain: "kaspa-l1", network: "testnet-11" }`
+  A remote connection to a configured Kaspa node.
+
+**Compatibility Invariants:**
+- `artifact.execution` MUST be compatible with `target.execution`.
+- `account.network/identity` MUST be compatible with `target.execution`.
+- `receipt.execution` MUST be compatible with `artifact.execution` AND `target.execution`.
 
 > [!WARNING]
 > **Simulator != Kaspa simnet**
-> Simulator = synthetic HardKAS runtime
-> simnet = Kaspa network used by Localnet
+>
+> `simulated` (network) = In-memory synthetic Kaspa ruleset in HardKAS `simulator` mode.
+> `simnet` (network) = Official Kaspa network type used by HardKAS `localnet` mode.
 
 ## Local-First Status
 
@@ -50,7 +63,7 @@ for Kaspa/Toccata development.
 Current certified baseline:
 
 - `simulator` is the recommended default for fast, synchronous testing.
-- Toccata v2 Docker `localnet` baseline (`rusty-kaspad` on Kaspa `simnet`).
+  - Toccata v2 Docker `localnet` baseline (`rusty-kaspad` on Kaspa `testnet-11`).
 - Real local funding through the Toccata miner/stratum companion in `localnet`.
 - Standard transaction lifecycle against the local node.
 - SilverScript local OP_TRUE deploy/spend.
@@ -65,7 +78,7 @@ Current certified baseline:
 
 The `0.12.0-rc.1` release line includes a normalized Toccata v2 localnet flow:
 
-- Docker `rusty-kaspad` v2.0.0 simnet funding with a compatible miner companion (`kaspanet/cpuminer`).
+- Docker `rusty-kaspad` v2.0.0 localnet funding with a compatible miner companion (`kaspanet/cpuminer`).
 - Standard transaction lifecycle against the local node.
 - Real Silver OP_TRUE deploy and spend receipts.
 - Silver simulator artifact-coherence comparison.
@@ -194,8 +207,8 @@ hardkas simulator fund custom-wallet --amount 1000
 hardkas tx send --from custom-wallet --to bob --amount 10 --network simulated --yes
 ```
 
-### Localnet
-Real `rusty-kaspad` node testing with real mining (PoW), real Kaspa simnet UTXOs, and Kaspa-valid local accounts.
+### Localnet (Managed Environment)
+A complete managed developer environment wrapping a real `rusty-kaspad` node. It provides orchestration for local mining (PoW), real Kaspa simnet UTXOs, and developer-friendly local accounts.
 
 ```bash
 hardkas localnet start --profile toccata-v2
@@ -203,11 +216,11 @@ hardkas localnet account create treasury
 hardkas localnet fund treasury
 ```
 
-### Node
-Low-level process management for the Kaspa node binaries themselves.
+### Node Primitive (Bare Node)
+Low-level primitive for running the Kaspa node binary. It provides a bare `rusty-kaspad` with no funding orchestration, no account lifecycle, and no miner management.
 
 ```bash
-hardkas node start
+hardkas localnet start
 ```
 
 For the explicit artifact boundary:
@@ -263,3 +276,4 @@ source of truth.
 
 See [docs/](docs/) for architecture, limits, command references, and security
 claims.
+

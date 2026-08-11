@@ -201,7 +201,7 @@ export async function runAccountsConsolidate(options: AccountsConsolidateOptions
     const signed = await sdk.tx.sign(plan, resolvedAccount);
 
     let receipt;
-    if (provider.mode === "simulated") {
+    if (provider.mode === "simulator") {
       const simResult = await sdk.tx.simulate(signed, { persist: true });
       receipt = simResult.receipt;
     } else {

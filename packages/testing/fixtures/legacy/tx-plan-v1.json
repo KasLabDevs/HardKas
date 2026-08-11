@@ -1,0 +1,14 @@
+{
+  "schema": "hardkas.txPlan.v1",
+  "version": "1.0.0",
+  "planId": "txp_8c1b8c2",
+  "networkId": "simnet",
+  "generator": "hardkas/cli",
+  "generatedAt": "2026-05-20T12:00:00.000Z",
+  "txId": "mock-tx-1234",
+  "amountSompi": "100000000",
+  "feeSompi": "1000",
+  "from": "alice",
+  "to": "bob",
+  "mass": 1200
+}

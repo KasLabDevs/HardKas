@@ -22,7 +22,7 @@ export interface ExecutionAwareReceipt {
   execution?: HardkasExecutionTarget;
 }
 
-export type ExecutionOperation = "fund" | "plan" | "sign" | "simulate" | "send" | "replay";
+export type ExecutionOperation = "fund" | "plan" | "sign" | "simulate" | "send" | "replay" | "dev-reveal" | "dev-export";
 
 export interface ExecutionCompatibilityInput {
   target: HardkasExecutionTarget;
@@ -36,26 +36,26 @@ export function assertAccountCompatibleWithTarget(account: ExecutionAwareAccount
   // Domain mismatch
   if (target.domain === "evm-l2") {
     // Unconditional failure for EVM L2 as Kaspa accounts don't port over automatically
-    throw new ExecutionDomainMismatchError(`Domain 'evm-l2' is strictly isolated. Account kind '${account.kind}' cannot operate in this domain.`);
+    throw new ExecutionDomainMismatchError({ expected: "kaspa-l1", actual: "evm-l2", message: `Domain 'evm-l2' is strictly isolated. Account kind '${account.kind}' cannot operate in this domain.` });
   }
 
   if (target.mode === "simulator") {
     if (account.kind !== "synthetic") {
-      throw new ExecutionModeMismatchError(`Simulator targets require 'synthetic' accounts, got '${account.kind}'.`);
+      throw new ExecutionModeMismatchError({ expected: "synthetic", actual: account.kind });
     }
   } else if (target.mode === "localnet") {
     if (account.kind !== "kaspa") {
-      throw new ExecutionModeMismatchError(`Localnet targets require 'kaspa' accounts, got '${account.kind}'.`);
+      throw new ExecutionModeMismatchError({ expected: "kaspa", actual: account.kind });
     }
     if (account.network !== target.network) {
-      throw new ExecutionNetworkMismatchError(`Account network '${account.network || "undefined"}' does not match target network '${target.network}'.`);
+      throw new ExecutionNetworkMismatchError({ expected: target.network, actual: account.network || "undefined" });
     }
   } else if (target.mode === "rpc") {
     if (account.kind === "synthetic") {
-      throw new ExecutionModeMismatchError(`RPC targets cannot interact with 'synthetic' accounts.`);
+      throw new ExecutionModeMismatchError({ expected: "kaspa", actual: account.kind });
     }
     if (account.network !== target.network) {
-      throw new ExecutionNetworkMismatchError(`Account network '${account.network || "undefined"}' does not match target network '${target.network}'.`);
+      throw new ExecutionNetworkMismatchError({ expected: target.network, actual: account.network || "undefined" });
     }
   }
 }
@@ -67,15 +67,15 @@ export function assertArtifactCompatibleWithTarget(artifact: ExecutionAwareArtif
   }
   
   if (artifact.execution.domain !== target.domain) {
-    throw new ExecutionDomainMismatchError(`Artifact domain '${artifact.execution.domain}' does not match target domain '${target.domain}'.`);
+    throw new ExecutionDomainMismatchError({ expected: target.domain, actual: artifact.execution.domain });
   }
   
   if (artifact.execution.mode !== target.mode) {
-    throw new ExecutionModeMismatchError(`Artifact mode '${artifact.execution.mode}' does not match target mode '${target.mode}'.`);
+    throw new ExecutionModeMismatchError({ expected: target.mode, actual: artifact.execution.mode });
   }
   
   if (artifact.execution.network !== target.network) {
-    throw new ExecutionNetworkMismatchError(`Artifact network '${artifact.execution.network}' does not match target network '${target.network}'.`);
+    throw new ExecutionNetworkMismatchError({ expected: target.network, actual: artifact.execution.network });
   }
 }
 
@@ -83,15 +83,15 @@ export function assertReceiptCompatibleWithTarget(receipt: ExecutionAwareReceipt
   if (!receipt.execution) return;
 
   if (receipt.execution.domain !== target.domain) {
-    throw new ExecutionDomainMismatchError(`Receipt domain '${receipt.execution.domain}' does not match target domain '${target.domain}'.`);
+    throw new ExecutionDomainMismatchError({ expected: target.domain, actual: receipt.execution.domain });
   }
 
   if (receipt.execution.mode !== target.mode) {
-    throw new ExecutionModeMismatchError(`Receipt mode '${receipt.execution.mode}' does not match target mode '${target.mode}'.`);
+    throw new ExecutionModeMismatchError({ expected: target.mode, actual: receipt.execution.mode });
   }
 
   if (receipt.execution.network !== target.network) {
-    throw new ExecutionNetworkMismatchError(`Receipt network '${receipt.execution.network}' does not match target network '${target.network}'.`);
+    throw new ExecutionNetworkMismatchError({ expected: target.network, actual: receipt.execution.network });
   }
 }
 
@@ -100,14 +100,14 @@ export function assertArtifactAccountCompatibility(artifact: ExecutionAwareArtif
 
   if (artifact.execution.mode === "simulator") {
     if (account.kind !== "synthetic") {
-      throw new ExecutionModeMismatchError(`Simulator artifact requires 'synthetic' account, got '${account.kind}'.`);
+      throw new ExecutionModeMismatchError({ expected: "synthetic", actual: account.kind });
     }
   } else if (artifact.execution.mode === "localnet" || artifact.execution.mode === "rpc") {
     if (account.kind === "synthetic") {
-      throw new ExecutionModeMismatchError(`Artifact for ${artifact.execution.mode} cannot be processed by a 'synthetic' account.`);
+      throw new ExecutionModeMismatchError({ expected: "kaspa", actual: account.kind });
     }
     if (account.network && artifact.execution.network && account.network !== artifact.execution.network) {
-      throw new ExecutionNetworkMismatchError(`Account network '${account.network}' does not match artifact network '${artifact.execution.network}'.`);
+      throw new ExecutionNetworkMismatchError({ expected: artifact.execution.network, actual: account.network });
     }
   }
 }

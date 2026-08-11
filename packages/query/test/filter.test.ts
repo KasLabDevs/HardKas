@@ -48,7 +48,7 @@ describe("evaluateFilter", () => {
       evaluateFilter({ mode: "simulator" }, { field: "mode", op: "neq", value: "real" })
     ).toBe(true);
     expect(
-      evaluateFilter({ mode: "real" }, { field: "mode", op: "neq", value: "real" })
+      evaluateFilter({ mode: "rpc" }, { field: "mode", op: "neq", value: "real" })
     ).toBe(false);
   });
 

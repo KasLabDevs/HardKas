@@ -116,7 +116,7 @@ describe("Artifact Lineage Hardening", () => {
   it("should fail on mode mismatch", () => {
     const crossMode = {
       ...planArtifact,
-      mode: "real"
+      mode: "rpc"
     };
     const result = verifyLineage(crossMode, rootArtifact);
     expect(result.ok).toBe(false);

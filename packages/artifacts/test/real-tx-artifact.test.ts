@@ -64,7 +64,7 @@ describe("Real Transaction Artifacts", () => {
       version: ARTIFACT_VERSION,
       createdAt: new Date().toISOString(),
       networkId: "simnet",
-      mode: "real",
+      mode: "rpc",
       planId: "p123",
       from: { address: "addr1" },
       to: { address: "addr2" },

@@ -85,7 +85,7 @@ describe("Core Hardening Sprint Regressions", () => {
 
     const plan = {
       networkId: "simnet" as any,
-      mode: "real",
+      mode: "rpc",
       estimatedFeeSompi: "100",
       from: { address: testAddress },
       inputs: [

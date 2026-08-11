@@ -11,7 +11,7 @@
     "network": "simnet"
   },
   "txId": "abc123golden_unknown",
-  "status": "pending",
+  "status": "submitted",
   "from": {
     "address": "kaspatest:qqgolden1"
   },
