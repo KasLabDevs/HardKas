@@ -22,10 +22,5 @@
     "code": "DUST_WARNING",
     "message": "Transaction contains dust outputs",
     "redacted": false
-  },
-  "execution": {
-    "mode": "simulator",
-    "domain": "kaspa-l1",
-    "network": "simnet"
   }
 }

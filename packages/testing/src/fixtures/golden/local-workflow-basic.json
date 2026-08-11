@@ -17,10 +17,5 @@
   ],
   "producedArtifacts": [
     "plan-golden"
-  ],
-  "execution": {
-    "mode": "simulator",
-    "domain": "kaspa-l1",
-    "network": "simnet"
-  }
+  ]
 }

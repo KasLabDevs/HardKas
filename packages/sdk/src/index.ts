@@ -297,8 +297,8 @@ export class Hardkas {
             ...(options.hardkasDir ? { hardkasDir: options.hardkasDir } : {})
           });
 
-          const { ensureDevAccounts } = await import("@hardkas/accounts");
-          await ensureDevAccounts(cwd);
+          // We only need localnet state for simulator (e.g. UTXO snapshots).
+          // We do NOT need real dev-accounts (Kaspa keypairs) since simulator uses synthetic accounts.
         } catch {
           // ignore error if it fails to init localnet
         }
