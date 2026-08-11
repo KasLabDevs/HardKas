@@ -41,7 +41,7 @@ describe("accounts", () => {
   it("resolveHardkasAccountAddress should use config if provided", async () => {
     const config: HardkasConfig = {
       accounts: {
-        treasury: { kind: "synthetic", address: "kaspasim:treasury" }
+        treasury: { kind: "simulated", address: "kaspasim:treasury" }
       }
     };
     const addr = await resolveHardkasAccountAddress("treasury", config);
@@ -57,7 +57,8 @@ describe("accounts", () => {
   it("describeAccount should not leak secrets", () => {
     const acc = {
       name: "deployer",
-      kind: "kaspa-private-key" as const,
+      kind: "kaspa" as const,
+      network: "mainnet",
       privateKeyEnv: "SECRET_KEY",
       address: "kaspa:q...1"
     };

@@ -50,7 +50,8 @@ describe("signTxPlanArtifact", () => {
     name: "deployer",
     kind: "kaspa",
     network: "simnet",
-    privateKeyEnv: "KASPA_PRIVATE_KEY"
+    privateKeyEnv: "KASPA_PRIVATE_KEY",
+    address: "kaspa:sim_deployer"
   };
 
   const simTarget = { mode: "simulator", domain: "kaspa-l1", network: "simnet" } as const;
