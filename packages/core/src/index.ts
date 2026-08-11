@@ -89,7 +89,7 @@ export const hardkasConfigSchema = z.object({
       mode: z.enum(["simulated", "local-node"]).default("simulated"),
       dataDir: z.string().optional()
     })
-    .default({ mode: "simulated" })
+    .default({ mode: "simulator" })
 });
 
 export type HardkasConfig = z.infer<typeof hardkasConfigSchema>;

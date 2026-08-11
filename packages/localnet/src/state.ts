@@ -30,7 +30,7 @@ export function createInitialLocalnetState(
     hardkasVersion: HARDKAS_VERSION,
     version: "1.0.0-alpha",
     createdAt: new Date().toISOString(), // hardkas-determinism-allow: initial state creation timestamp
-    mode: "simulated" as ExecutionMode,
+    mode: "simulator" as ExecutionMode,
     networkId: "simnet" as NetworkId,
     workflowId: "wf_system_bootstrap",
     assumptionLevel: "default",

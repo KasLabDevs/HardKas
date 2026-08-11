@@ -22,7 +22,7 @@ describe("ReplayQueryAdapter", () => {
         schema: "hardkas.txReceipt",
         txId: "tx-abc",
         status: "confirmed",
-        mode: "simulated",
+        mode: "simulator",
         networkId: "simnet",
         from: { address: "kaspa:alice" },
         to: { address: "kaspa:bob" },
@@ -45,7 +45,7 @@ describe("ReplayQueryAdapter", () => {
         schema: "hardkas.txReceipt",
         txId: "tx-fail",
         status: "failed",
-        mode: "simulated",
+        mode: "simulator",
         networkId: "simnet",
         from: { address: "kaspa:alice" },
         to: { address: "kaspa:bob" },
@@ -66,7 +66,7 @@ describe("ReplayQueryAdapter", () => {
       JSON.stringify({
         schema: "hardkas.txTrace",
         txId: "tx-abc",
-        mode: "simulated",
+        mode: "simulator",
         networkId: "simnet",
         events: [
           { type: "phase.started", phase: "validation", timestamp: 1000 },

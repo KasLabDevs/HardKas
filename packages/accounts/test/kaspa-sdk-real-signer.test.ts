@@ -11,7 +11,7 @@ describe("KaspaSdkRealTxSigner", () => {
     createdAt: new Date().toISOString(),
     planId: "plan123",
     networkId: "simnet",
-    mode: "simulated",
+    mode: "simulator",
     from: { address: "kaspa:sim_alice123" },
     to: { address: "kaspa:sim_bob456" },
     amountSompi: "100000000",

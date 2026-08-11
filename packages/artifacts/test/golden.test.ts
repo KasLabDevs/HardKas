@@ -12,7 +12,7 @@ describe("Artifact Golden Fixtures (Cross-Runtime)", () => {
       schema: "hardkas.txPlan",
       version: "1.0.0-alpha",
       networkId: "simnet",
-      mode: "simulated",
+      mode: "simulator",
       amountSompi: "100000000"
     };
 

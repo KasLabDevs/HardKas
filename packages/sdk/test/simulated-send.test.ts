@@ -27,7 +27,7 @@ describe("Simulated Send Parity", () => {
 
     const result = await sdk.tx.send(signed, { persist: true });
 
-    expect(result.mode).toBe("simulated");
+    expect(result.mode).toBe("simulator");
     expect(result.simulated).toBe(true);
     expect(result.submitted).toBe(false);
     expect(result.txId).toBeTruthy();
@@ -47,7 +47,7 @@ describe("Simulated Send Parity", () => {
 
     const result = await sdk.tx.send(signed, { persist: false });
 
-    expect(result.mode).toBe("simulated");
+    expect(result.mode).toBe("simulator");
     expect(result.simulated).toBe(true);
     expect(result.submitted).toBe(false);
     expect(result.receiptPath).toBeUndefined();

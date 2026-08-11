@@ -20,7 +20,7 @@ describe("Network-Agnostic Artifact Layer: NetworkProfile", () => {
       hardkasVersion: "0.12.0-rc.1",
       version: "1.0.0-alpha",
       networkId: "mainnet",
-      mode: "real",
+      mode: "rpc",
       createdAt: new Date().toISOString(),
       networkProfileId: "kaspa-mainnet-v1",
       layer: "L1",
@@ -45,7 +45,7 @@ describe("Network-Agnostic Artifact Layer: NetworkProfile", () => {
       hardkasVersion: "0.12.0-rc.1",
       version: "1.0.0-alpha",
       networkId: "igra",
-      mode: "real",
+      mode: "rpc",
       createdAt: new Date().toISOString(),
       // Missing networkProfileId
       layer: "L2",

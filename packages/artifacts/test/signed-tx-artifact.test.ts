@@ -16,7 +16,7 @@ describe("SignedTxArtifact", () => {
     version: ARTIFACT_VERSION,
     createdAt: new Date().toISOString(),
     networkId: asNetworkId("simnet"),
-    mode: "simulated",
+    mode: "simulator",
     planId: "p123",
     from: { address: "addr1" },
     to: { address: "addr2" },

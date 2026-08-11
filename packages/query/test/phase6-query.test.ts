@@ -38,7 +38,7 @@ function makeArtifact(schema: string, overrides: Record<string, unknown> = {}) {
       schema,
       version: "2.0.0",
       networkId: "kaspa-testnet-11",
-      mode: "simulated",
+      mode: "simulator",
       createdAt: "2025-01-15T10:00:00.000Z",
       artifactId: `art-${Math.random().toString(36).slice(2, 10)}`,
       ...overrides

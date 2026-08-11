@@ -27,7 +27,7 @@ describe("traces store", () => {
     hardkasVersion: "0.12.0-rc.1",
     version: "1.0.0-alpha",
     txId: "simtx_trace_123",
-    mode: "simulated",
+    mode: "simulator",
     networkId: "simnet",
     createdAt: new Date().toISOString(),
     events: [
@@ -50,7 +50,7 @@ describe("traces store", () => {
       hardkasVersion: "0.12.0-rc.1",
       version: "1.0.0-alpha",
       txId: "t1",
-      mode: "simulated",
+      mode: "simulator",
       networkId: "simnet",
       createdAt: "2026-01-01T10:00:00Z",
       events: []
@@ -60,7 +60,7 @@ describe("traces store", () => {
       hardkasVersion: "0.12.0-rc.1",
       version: "1.0.0-alpha",
       txId: "t2",
-      mode: "simulated",
+      mode: "simulator",
       networkId: "simnet",
       createdAt: "2026-01-01T11:00:00Z",
       events: []

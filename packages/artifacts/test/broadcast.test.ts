@@ -24,7 +24,7 @@ describe("getBroadcastableSignedTransaction", () => {
   });
 
   it("should allow simulated artifacts", () => {
-    const simulated = { ...baseArtifact, mode: "simulated" as any };
+    const simulated = { ...baseArtifact, mode: "simulator" as any };
     const result = getBroadcastableSignedTransaction(simulated);
     expect(result.mode).toBe("simulated");
     expect(result.rawTransaction).toBe("raw-tx-hex");

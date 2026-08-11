@@ -144,7 +144,7 @@ describe("Core Hardening Sprint Regressions", () => {
     const mockPlan = {
       planId: "plan_123",
       networkId: "simnet",
-      mode: "simulated",
+      mode: "simulator",
       from: { address: "kaspa:sim_alice" },
       to: { address: "kaspa:sim_bob" },
       amountSompi: "1000",

@@ -33,7 +33,7 @@ describe("0.12.0-rc.1 Lifecycle Integrity & Trust Boundary Tests", () => {
       hardkasVersion: "0.12.0-rc.1",
       version: "1.0.0-alpha",
       networkId: "simnet",
-      mode: "simulated",
+      mode: "simulator",
       createdAt: new Date().toISOString(),
       decision: "ALLOW",
       rules: []
@@ -87,7 +87,7 @@ describe("0.12.0-rc.1 Lifecycle Integrity & Trust Boundary Tests", () => {
       hardkasVersion: "0.12.0-rc.1",
       version: "1.0.0-alpha",
       networkId: "simnet",
-      mode: "simulated",
+      mode: "simulator",
       createdAt: new Date().toISOString(),
       decision: "DENY",
       rules: []
@@ -149,7 +149,7 @@ describe("0.12.0-rc.1 Lifecycle Integrity & Trust Boundary Tests", () => {
       hardkasVersion: "0.12.0-rc.1",
       version: "1.0.0-alpha",
       networkId: "simnet",
-      mode: "simulated",
+      mode: "simulator",
       createdAt: new Date().toISOString(),
       decision: "ALLOW",
       rules: []
@@ -295,7 +295,7 @@ describe("0.12.0-rc.1 Lifecycle Integrity & Trust Boundary Tests", () => {
       createdAt: new Date().toISOString(),
       txId: "some-tx-id",
       networkId: "simnet",
-      mode: "simulated",
+      mode: "simulator",
       steps: [],
       lineage: {
         artifactId: "",

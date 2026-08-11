@@ -45,7 +45,7 @@ describe("evaluateFilter", () => {
 
   it("neq — matches inequality", () => {
     expect(
-      evaluateFilter({ mode: "simulated" }, { field: "mode", op: "neq", value: "real" })
+      evaluateFilter({ mode: "simulator" }, { field: "mode", op: "neq", value: "real" })
     ).toBe(true);
     expect(
       evaluateFilter({ mode: "real" }, { field: "mode", op: "neq", value: "real" })
@@ -116,7 +116,7 @@ describe("evaluateFilter", () => {
 
 describe("evaluateFilters (AND semantics)", () => {
   it("should return true when all filters pass", () => {
-    const item = { schema: "hardkas.txPlan", networkId: "simnet", mode: "simulated" };
+    const item = { schema: "hardkas.txPlan", networkId: "simnet", mode: "simulator" };
     const filters = [
       { field: "schema", op: "eq" as const, value: "hardkas.txPlan" },
       { field: "networkId", op: "eq" as const, value: "simnet" }

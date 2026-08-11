@@ -20,7 +20,7 @@ describe("Network-Agnostic Artifact Layer: Policy", () => {
       hardkasVersion: "0.12.0-rc.1",
       version: "1.0.0-alpha",
       networkId: "simnet",
-      mode: "simulated",
+      mode: "simulator",
       createdAt: new Date().toISOString(),
       decision: "ALLOW",
       rules: [
@@ -50,7 +50,7 @@ describe("Network-Agnostic Artifact Layer: Policy", () => {
       hardkasVersion: "0.12.0-rc.1",
       version: "1.0.0-alpha",
       networkId: "simnet",
-      mode: "simulated",
+      mode: "simulator",
       createdAt: new Date().toISOString(),
       decision: "ALLOW",
       rules: []
@@ -75,7 +75,7 @@ describe("Network-Agnostic Artifact Layer: Policy", () => {
       hardkasVersion: "0.12.0-rc.1",
       version: "1.0.0-alpha",
       networkId: "simnet",
-      mode: "simulated",
+      mode: "simulator",
       createdAt: new Date().toISOString(),
       decision: "ALLOW",
       rules: [{ id: "max_amount", result: "PASS" }]

@@ -235,7 +235,7 @@ describe("P1.12 Deterministic Transaction Canonicalization", () => {
       version: ARTIFACT_VERSION,
       hashVersion: CURRENT_HASH_VERSION,
       networkId: "simnet" as const,
-      mode: "simulated" as const,
+      mode: "simulator" as const,
       createdAt: "2026-05-24T14:24:46.000Z",
       planId: "txplan_stable_test_id",
       from: { address: mockFrom },
@@ -331,7 +331,7 @@ describe("P1.12 Deterministic Transaction Canonicalization", () => {
       version: "1.0.0-alpha",
       hashVersion: 3,
       networkId: "simnet" as const,
-      mode: "simulated" as const,
+      mode: "simulator" as const,
       createdAt: "2026-05-24T14:24:46.000Z",
       planId: "txplan_canonical_fixture_id",
       from: { address: "kaspa:alice" },
@@ -367,14 +367,14 @@ describe("P1.12 Deterministic Transaction Canonicalization", () => {
       CURRENT_HASH_VERSION
     );
     const expectedStringRepresentation =
-      '{"amountSompi":"1000000","change":{"address":"kaspa:alice","amountSompi":"999650"},"estimatedFeeSompi":"350","estimatedMass":"350","from":{"address":"kaspa:alice"},"inputs":[{"amountSompi":"2000000","outpoint":{"index":0,"transactionId":"tx00000000000000000000000000000000000000000000000000000000000000"}}],"mode":"simulated","networkId":"simnet","outputs":[{"address":"kaspa:bob","amountSompi":"1000000"}],"schema":"hardkas.txPlan","to":{"address":"kaspa:bob"},"version":"1.0.0-alpha"}';
+      '{"amountSompi":"1000000","change":{"address":"kaspa:alice","amountSompi":"999650"},"estimatedFeeSompi":"350","estimatedMass":"350","from":{"address":"kaspa:alice"},"inputs":[{"amountSompi":"2000000","outpoint":{"index":0,"transactionId":"tx00000000000000000000000000000000000000000000000000000000000000"}}],"mode":"simulator","networkId":"simnet","outputs":[{"address":"kaspa:bob","amountSompi":"1000000"}],"schema":"hardkas.txPlan","to":{"address":"kaspa:bob"},"version":"1.0.0-alpha"}';
     expect(calculatedStringRepresentation).toBe(expectedStringRepresentation);
 
     const trueHash = createHash("sha256")
       .update(expectedStringRepresentation)
       .digest("hex");
     expect(hash).toBe(trueHash);
-    expect(hash).toBe("1cd118fdefc3afefdd176f96ef6a6de85d58dabede91bff0189d4dfc6bdb6bf4");
+    expect(hash).toBe("8710d0615951d8305c48b2ebda41bdba307cfc1f3ec67015099cb633c7a91176");
   });
 
   it("Test E: Equal Amount Tie-Breaking", () => {

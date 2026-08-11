@@ -96,7 +96,7 @@ export interface SilverDeploySimulationReceipt {
   version: "1.0.0-alpha";
   hashVersion: number;
   networkId: "simnet";
-  mode: "simulated";
+  mode: "simulator";
   createdAt: string;
   deployPlanHash: string;
   compileArtifactHash: string;
@@ -127,7 +127,7 @@ export interface SilverSpendSimulationReceipt {
   version: "1.0.0-alpha";
   hashVersion: number;
   networkId: "simnet";
-  mode: "simulated";
+  mode: "simulator";
   createdAt: string;
   deploySimulationHash: string;
   spendPlanHash: string;
@@ -167,7 +167,7 @@ export interface SilverSimulationState {
   schema: "hardkas.silver.simulationState.v1";
   version: "1.0.0-alpha";
   networkId: "simnet";
-  mode: "simulated";
+  mode: "simulator";
   deployReceipts: Record<string, SilverDeploySimulationReceipt>;
   utxos: Record<string, SilverSimulatedUtxo>;
   spentOutpoints: string[];
@@ -202,7 +202,7 @@ export function createSilverSimulationState(): SilverSimulationState {
     schema: "hardkas.silver.simulationState.v1",
     version: SILVER_SIMULATOR_VERSION as "1.0.0-alpha",
     networkId: "simnet",
-    mode: "simulated",
+    mode: "simulator",
     deployReceipts: {},
     utxos: {},
     spentOutpoints: []
@@ -269,7 +269,7 @@ export function simulateSilverDeploy(
     version: SILVER_SIMULATOR_VERSION,
     hashVersion: CURRENT_HASH_VERSION,
     networkId: "simnet" as const,
-    mode: "simulated" as const,
+    mode: "simulator" as const,
     createdAt: options.createdAt ?? SILVER_SIMULATOR_CREATED_AT,
     deployPlanHash,
     compileArtifactHash: deployPlanArtifact.compileArtifactHash,
@@ -451,7 +451,7 @@ export function simulateSilverSpend(
     version: SILVER_SIMULATOR_VERSION as "1.0.0-alpha",
     hashVersion: CURRENT_HASH_VERSION,
     networkId: "simnet" as const,
-    mode: "simulated" as const,
+    mode: "simulator" as const,
     createdAt: options.createdAt ?? SILVER_SIMULATOR_CREATED_AT,
     deploySimulationHash: deployReceipt.contentHash,
     spendPlanHash,

@@ -47,7 +47,7 @@ function normalizeSimulatedPlanInput(target: any, fallbackId: string): TxPlanArt
       schema: ARTIFACT_SCHEMAS.TX_PLAN,
       planId: target.planId || target.sourcePlanId || fallbackId,
       networkId: target.networkId || "simnet",
-      mode: "simulated",
+      mode: "simulator",
       from: target.from,
       to: target.to,
       amountSompi: target.amountSompi,
@@ -763,6 +763,7 @@ export class HardkasTx {
           sourcePlanId: plan.planId,
           networkId: plan.networkId,
           mode: plan.mode,
+          execution: (plan as any).execution || { mode: plan.mode as any, domain: "kaspa-l1", network: plan.networkId },
           from: plan.from,
           to: plan.to,
           amountSompi: plan.amountSompi,
@@ -1204,7 +1205,7 @@ export class HardkasTx {
                   (existingReceipt.status as any) === "accepted")
               ) {
                 return {
-                  mode: "simulated",
+                  mode: "simulator",
                   simulated: true,
                   submitted: false,
                   txId: existingReceipt.txId,
@@ -1225,7 +1226,7 @@ export class HardkasTx {
       }
 
       const result: any = {
-        mode: "simulated",
+        mode: "simulator",
         simulated: true,
         submitted: false,
         txId: simResult.receipt.txId,

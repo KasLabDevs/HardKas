@@ -53,7 +53,7 @@ describe("Phase 6B: Backward Compatibility (Vitest Layer 1)", () => {
       inputs: [],
       outputs: [],
       networkId: "simnet",
-      mode: "simulated",
+      mode: "simulator",
       contentHash: "a".repeat(64),
       createdAt: new Date().toISOString(),
       lineage: {

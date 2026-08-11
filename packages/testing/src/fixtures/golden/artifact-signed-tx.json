@@ -5,6 +5,11 @@
   "version": "1.0.0-alpha",
   "networkId": "simnet",
   "mode": "simulator",
+  "execution": {
+    "mode": "simulator",
+    "domain": "kaspa-l1",
+    "network": "simnet"
+  },
   "status": "signed",
   "signedId": "signed-tx-golden",
   "sourcePlanId": "plan-golden-explain",

@@ -72,7 +72,7 @@ export async function runTxPlan(input: TxPlanRunnerInput): Promise<TxPlanArtifac
   }
 
   let availableUtxos: any[] = [];
-  let mode: "simulated" | "kaspa-node" | "kaspa-rpc" = "simulated";
+  let mode: "simulator" | "kaspa-node" | "kaspa-rpc" = "simulated";
   let rpcUrl: string | undefined = providerConfig.endpoint;
 
   let stateAddress: string | undefined;

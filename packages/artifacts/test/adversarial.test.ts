@@ -9,7 +9,7 @@ const AdversarialFixtures = {
       schema: "hardkas.txPlan",
       version: ARTIFACT_VERSION,
       networkId: "simnet",
-      mode: "simulated",
+      mode: "simulator",
       amountSompi: "1000",
       estimatedFeeSompi: "1",
       estimatedMass: "1",
@@ -41,7 +41,7 @@ const AdversarialFixtures = {
       artifactId: "child-simnet",
       contentHash: "hash-simnet",
       networkId: "simnet",
-      mode: "simulated",
+      mode: "simulator",
       lineage: {
         artifactId: "hash-simnet",
         parentArtifactId: "parent-mainnet",
@@ -75,7 +75,7 @@ describe("PR 7: Adversarial Integrity Validation", () => {
       schema: "hardkas.txPlan",
       contentHash: "a".repeat(64),
       networkId: "simnet",
-      mode: "simulated",
+      mode: "simulator",
       lineage: {
         artifactId: "a".repeat(64),
         parentArtifactId: "a".repeat(64),

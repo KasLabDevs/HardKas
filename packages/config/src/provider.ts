@@ -1,4 +1,4 @@
-export type ProviderMode = "simulated" | "rpc";
+export type ProviderMode = "simulator" | "rpc";
 
 export interface ResolveProviderOptions {
   network: string;
@@ -45,7 +45,7 @@ export function resolveProvider(options: ResolveProviderOptions): ResolvedProvid
   }
   if (provider === "simulated") {
     return {
-      mode: "simulated",
+      mode: "simulator",
       network
     };
   }
@@ -53,7 +53,7 @@ export function resolveProvider(options: ResolveProviderOptions): ResolvedProvid
   // 3. Fallback to executionMode logic
   if (options.executionMode) {
     if (options.executionMode === "simulator") {
-      return { mode: "simulated", network };
+      return { mode: "simulator", network };
     }
     if (options.executionMode === "localnet") {
       return { mode: "rpc", network, endpoint: "http://127.0.0.1:18210" };
@@ -63,7 +63,7 @@ export function resolveProvider(options: ResolveProviderOptions): ResolvedProvid
   // 4. Fallback to network alias logic
   if (network === "local" || network === "simulated") {
     return {
-      mode: "simulated",
+      mode: "simulator",
       network
     };
   }
@@ -71,7 +71,7 @@ export function resolveProvider(options: ResolveProviderOptions): ResolvedProvid
   // 4. Fallback to config kind
   if (options.configNetworkKind === "simulated") {
     return {
-      mode: "simulated",
+      mode: "simulator",
       network
     };
   }

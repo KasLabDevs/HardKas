@@ -5,9 +5,9 @@
     "hardware-sim-bob"
   ],
   "expectedRecipient": "02ae9fded252fe42208dac04488a9bf087842e273515cfafcb47f56b5166f6d0c7",
-  "fundingTxId": "1234567890abcdef1234567890abcdef1234567890abcdef123456787f478729",
+  "fundingTxId": "1234567890abcdef1234567890abcdef1234567890abcdef12345678c500ede7",
   "escrowOutpoint": {
-    "transactionId": "1234567890abcdef1234567890abcdef1234567890abcdef123456787f478729",
+    "transactionId": "1234567890abcdef1234567890abcdef1234567890abcdef12345678c500ede7",
     "index": 0
   },
   "unsignedTransactionIdentity": "8cf59e3dd462a7aae103d9e30ed9d51050aaabe56ccb3443674f95dbb9cc89b9",

@@ -43,7 +43,7 @@ describe("Corruption Corpus Hardening", () => {
     const parent = {
       schema: "hardkas.snapshot",
       networkId: "simnet",
-      mode: "simulated",
+      mode: "simulator",
       lineage: {
         artifactId: "parent-hash",
         lineageId: "flow-1",
@@ -54,7 +54,7 @@ describe("Corruption Corpus Hardening", () => {
     const child = {
       schema: "hardkas.txPlan",
       networkId: "simnet",
-      mode: "simulated",
+      mode: "simulator",
       lineage: {
         artifactId: "child-hash",
         lineageId: "flow-wrong",
@@ -73,7 +73,7 @@ describe("Corruption Corpus Hardening", () => {
     const parent = {
       schema: "hardkas.snapshot",
       networkId: "simnet",
-      mode: "simulated",
+      mode: "simulator",
       lineage: {
         artifactId: "parent-hash",
         lineageId: "flow-1",
@@ -84,7 +84,7 @@ describe("Corruption Corpus Hardening", () => {
     const child = {
       schema: "hardkas.txPlan",
       networkId: "simnet",
-      mode: "simulated",
+      mode: "simulator",
       lineage: {
         artifactId: "child-hash",
         lineageId: "flow-1",
@@ -103,7 +103,7 @@ describe("Corruption Corpus Hardening", () => {
     const parent = {
       schema: "hardkas.snapshot",
       networkId: "simnet",
-      mode: "simulated",
+      mode: "simulator",
       lineage: {
         artifactId: "parent-hash",
         lineageId: "flow-1",
@@ -114,7 +114,7 @@ describe("Corruption Corpus Hardening", () => {
     const child = {
       schema: "hardkas.txPlan",
       networkId: "simnet",
-      mode: "simulated",
+      mode: "simulator",
       lineage: {
         artifactId: "child-hash",
         lineageId: "flow-1",
@@ -133,7 +133,7 @@ describe("Corruption Corpus Hardening", () => {
     const parent = {
       schema: "hardkas.snapshot",
       networkId: "simnet",
-      mode: "simulated",
+      mode: "simulator",
       lineage: {
         artifactId: "parent-hash",
         lineageId: "flow-1",
@@ -144,7 +144,7 @@ describe("Corruption Corpus Hardening", () => {
     const child = {
       schema: "hardkas.txPlan",
       networkId: "mainnet", // Contamination!
-      mode: "simulated",
+      mode: "simulator",
       lineage: {
         artifactId: "child-hash",
         lineageId: "flow-1",
@@ -163,7 +163,7 @@ describe("Corruption Corpus Hardening", () => {
     const parent = {
       schema: "hardkas.snapshot",
       networkId: "simnet",
-      mode: "simulated",
+      mode: "simulator",
       lineage: {
         artifactId: "parent-hash",
         lineageId: "flow-1",
@@ -193,7 +193,7 @@ describe("Corruption Corpus Hardening", () => {
     const parent = {
       schema: "hardkas.snapshot",
       networkId: "simnet",
-      mode: "simulated",
+      mode: "simulator",
       lineage: {
         artifactId: "same-hash",
         lineageId: "flow-1",
@@ -204,7 +204,7 @@ describe("Corruption Corpus Hardening", () => {
     const child = {
       schema: "hardkas.txPlan",
       networkId: "simnet",
-      mode: "simulated",
+      mode: "simulator",
       lineage: {
         artifactId: "same-hash",
         lineageId: "flow-1",

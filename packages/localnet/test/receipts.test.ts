@@ -29,7 +29,7 @@ describe("receipts store", () => {
     version: "1.0.0-alpha",
     hashVersion: 1,
     txId: "simtx_test_123",
-    mode: "simulated",
+    mode: "simulator",
     networkId: "simnet",
     fromAddress: "alice",
     toAddress: "bob",

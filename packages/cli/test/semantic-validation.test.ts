@@ -112,7 +112,7 @@ describe("Semantic Validation - Network Contamination Protection", () => {
       hardkasVersion: "0.12.0-rc.1",
       version: "1.0.0-alpha",
       networkId: "simnet",
-      mode: "simulated",
+      mode: "simulator",
       createdAt: new Date().toISOString(),
       planId: "plan_parent",
       from: { address: "kaspa:sim_alice" },

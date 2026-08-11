@@ -47,7 +47,7 @@ export async function runAccountsFund(options: AccountsFundOptions) {
       success: true,
       address,
       amountSompi: amount,
-      mode: "simulated",
+      mode: "simulator",
       formatted: `Successfully funded ${options.identifier} (${address}) with ${formatSompiToKas(amount)} KAS (Simulated)`
     };
   }

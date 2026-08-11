@@ -10,7 +10,7 @@ describe("Artifact Lineage Hardening", () => {
     schema: "hardkas.snapshot",
     contentHash: rootHash,
     networkId: "simnet",
-    mode: "simulated",
+    mode: "simulator",
     lineage: {
       artifactId: rootHash,
       lineageId: flowId,
@@ -23,7 +23,7 @@ describe("Artifact Lineage Hardening", () => {
     schema: "hardkas.txPlan",
     contentHash: planHash,
     networkId: "simnet",
-    mode: "simulated",
+    mode: "simulator",
     lineage: {
       artifactId: planHash,
       lineageId: flowId,
@@ -137,13 +137,13 @@ describe("Artifact Lineage Hardening", () => {
     const receipt = {
       schema: "hardkas.txReceipt",
       networkId: "simnet",
-      mode: "simulated",
+      mode: "simulator",
       lineage: { artifactId: rootHash, lineageId: flowId, rootArtifactId: rootHash }
     };
     const plan = {
       schema: "hardkas.txPlan",
       networkId: "simnet",
-      mode: "simulated",
+      mode: "simulator",
       lineage: {
         artifactId: planHash,
         lineageId: flowId,
@@ -165,7 +165,7 @@ describe("Artifact Lineage Hardening", () => {
       schema: "hardkas.txPlan",
       contentHash: planHash,
       networkId: "simnet",
-      mode: "simulated",
+      mode: "simulator",
       lineage: {
         artifactId: planHash,
         lineageId: flowId,
@@ -178,7 +178,7 @@ describe("Artifact Lineage Hardening", () => {
     const signedTx: any = {
       schema: "hardkas.signedTx",
       networkId: "simnet",
-      mode: "simulated",
+      mode: "simulator",
       lineage: createLineageTransition(plan, "hardkas.signedTx")
     };
     // Simulate hashing the signedTx
@@ -196,7 +196,7 @@ describe("Artifact Lineage Hardening", () => {
     const receipt: any = {
       schema: "hardkas.txReceipt",
       networkId: "simnet",
-      mode: "simulated",
+      mode: "simulator",
       lineage: createLineageTransition(signedTx, "hardkas.txReceipt")
     };
     // Simulate hashing the receipt
