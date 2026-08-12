@@ -63,7 +63,7 @@ export function resolveExecutionTarget(options: ResolveExecutionTargetOptions): 
     }
   }
   
-  console.log("DEBUG: resolveExecutionTarget returning:", { name, execution: finalExecution, configExecution: config.execution });
+
 
   return {
     name: name as NetworkId,

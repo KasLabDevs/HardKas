@@ -61,7 +61,7 @@ export async function runTxPlan(input: TxPlanRunnerInput): Promise<TxPlanArtifac
 
   const resolvedNetwork = providerConfig.network;
   let backend = providerConfig.mode;
-  console.log("DEBUG BACKEND RESOLUTION:", { networkId, configNetworkKind, executionMode: execution.mode, backend });
+
 
   // Guard: HardKAS simulated accounts (kaspa:sim_*, kaspasim:*) can only be used on simulated backends.
   const isHardkasSimulatedAccount = fromAddress.startsWith("kaspa:sim_") || fromAddress.startsWith("kaspasim:");
@@ -193,7 +193,7 @@ export async function runTxPlan(input: TxPlanRunnerInput): Promise<TxPlanArtifac
       : undefined
   );
 
-  console.log("DEBUG: availableUtxos length =", availableUtxos.length, "amountSompi =", availableUtxos[0]?.amountSompi);
+
   const plan = buildPaymentPlan({
     fromAddress,
     outputs: [{ address: toAddress, amountSompi }],
