@@ -167,7 +167,7 @@ describe("Audit Hardening Suite (0.12.0-rc.1)", () => {
         },
         amount: 10n
       });
-      expect(plan.mode).toBe("real");
+      expect(plan.mode).toBe("rpc");
     });
   });
 });

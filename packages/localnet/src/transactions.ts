@@ -231,7 +231,7 @@ export function applySimulatedPayment(
     const txId = generateDeterministicFailedTxId(preStateHash, errorMessage, daaScore);
     const receipt: TxReceipt = {
       schema: "hardkas.txReceipt",
-      schemaVersion: "hardkas.receipt.v1",
+      schemaVersion: "hardkas.txReceipt.v1",
       hardkasVersion: HARDKAS_VERSION,
       version: ARTIFACT_VERSION,
       status: "failed",
@@ -346,7 +346,7 @@ export function applySimulatedPlan(
     const txId = generateDeterministicFailedTxId(preStateHash, errorMessage, daaScore);
     const receipt: TxReceipt = {
       schema: "hardkas.txReceipt",
-      schemaVersion: "hardkas.receipt.v1",
+      schemaVersion: "hardkas.txReceipt.v1",
       hardkasVersion: HARDKAS_VERSION,
       version: ARTIFACT_VERSION,
       status: "failed",

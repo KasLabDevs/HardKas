@@ -28,6 +28,7 @@ describe("Artifact Integrity Hardening (P1.1)", () => {
     createdAt: new Date().toISOString(),
     networkId: "simnet",
     mode: "simulator",
+    execution: { mode: "simulator", domain: "kaspa-l1", network: "simnet" },
     planId: "test-123",
     from: { address: "kaspa:sim_alice" },
     to: { address: "kaspa:sim_bob" },

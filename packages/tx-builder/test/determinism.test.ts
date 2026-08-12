@@ -236,6 +236,7 @@ describe("P1.12 Deterministic Transaction Canonicalization", () => {
       hashVersion: CURRENT_HASH_VERSION,
       networkId: "simnet" as const,
       mode: "simulator" as const,
+      execution: { mode: "simulator", domain: "kaspa-l1", network: "simnet" },
       createdAt: "2026-05-24T14:24:46.000Z",
       planId: "txplan_stable_test_id",
       from: { address: mockFrom },
@@ -332,6 +333,7 @@ describe("P1.12 Deterministic Transaction Canonicalization", () => {
       hashVersion: 3,
       networkId: "simnet" as const,
       mode: "simulator" as const,
+      execution: { mode: "simulator", domain: "kaspa-l1", network: "simnet" },
       createdAt: "2026-05-24T14:24:46.000Z",
       planId: "txplan_canonical_fixture_id",
       from: { address: "kaspa:alice" },
@@ -367,14 +369,14 @@ describe("P1.12 Deterministic Transaction Canonicalization", () => {
       CURRENT_HASH_VERSION
     );
     const expectedStringRepresentation =
-      '{"amountSompi":"1000000","change":{"address":"kaspa:alice","amountSompi":"999650"},"estimatedFeeSompi":"350","estimatedMass":"350","from":{"address":"kaspa:alice"},"hardkasVersion":"0.12.0-rc.1","inputs":[{"amountSompi":"2000000","outpoint":{"index":0,"transactionId":"tx00000000000000000000000000000000000000000000000000000000000000"}}],"mode":"simulator","networkId":"simnet","outputs":[{"address":"kaspa:bob","amountSompi":"1000000"}],"schema":"hardkas.txPlan","to":{"address":"kaspa:bob"},"version":"1.0.0-alpha"}';
+      '{"amountSompi":"1000000","change":{"address":"kaspa:alice","amountSompi":"999650"},"estimatedFeeSompi":"350","estimatedMass":"350","execution":{"domain":"kaspa-l1","mode":"simulator","network":"simnet"},"from":{"address":"kaspa:alice"},"inputs":[{"amountSompi":"2000000","outpoint":{"index":0,"transactionId":"tx00000000000000000000000000000000000000000000000000000000000000"}}],"mode":"simulator","networkId":"simnet","outputs":[{"address":"kaspa:bob","amountSompi":"1000000"}],"schema":"hardkas.txPlan","to":{"address":"kaspa:bob"},"version":"1.0.0-alpha"}';
     expect(calculatedStringRepresentation).toBe(expectedStringRepresentation);
 
     const trueHash = createHash("sha256")
       .update(expectedStringRepresentation)
       .digest("hex");
     expect(hash).toBe(trueHash);
-    expect(hash).toBe("3616e7cfbbca6fcee8393d5b3d47f6fdb29d450caccd8c0fc71364bcac98a7e5");
+    expect(hash).toBe("7aeb49fe1b07d0d8860c2b62cd72f882c550a1642974cbd7b0bedf7cf56d4469");
   });
 
   it("Test E: Equal Amount Tie-Breaking", () => {

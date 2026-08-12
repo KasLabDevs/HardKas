@@ -5,9 +5,14 @@
   "createdAt": "2026-07-13T17:42:29.147Z",
   "status": "signed",
   "signedId": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
-  "sourcePlanId": "11e764eb6c1a7f61070b7b0f681dbe05db010d2abaad42717927e357a39d2666",
+  "sourcePlanId": "6c5deb79a8b78e3925eeddd3d33162cd5b151fbdb18a1176f29aa378cc75fa5d",
   "networkId": "simnet",
-  "mode": "simulated",
+  "mode": "simulator",
+  "execution": {
+    "mode": "simulator",
+    "domain": "kaspa-l1",
+    "network": "simnet"
+  },
   "workflowId": "test-workflow",
   "assumptionLevel": "pessimistic",
   "executionMode": "isolated",
@@ -23,12 +28,12 @@
     "payload": "00"
   },
   "lineage": {
-    "artifactId": "b155f549eef2172c80e35252fcf8ed2312ec67121f86841742628e3b72284263",
+    "artifactId": "dbb29acc6372b3c9a2d7d48d1a3142dba2285e37c2bcc5bceffd3377785ae503",
     "lineageId": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
-    "parentArtifactId": "11e764eb6c1a7f61070b7b0f681dbe05db010d2abaad42717927e357a39d2666",
+    "parentArtifactId": "6c5deb79a8b78e3925eeddd3d33162cd5b151fbdb18a1176f29aa378cc75fa5d",
     "rootArtifactId": "2b4baed6aab94827f47c19195591a9f619be50882de2c564ca9fa1bd09d57fb5",
     "sequence": 2
   },
   "hashVersion": 4,
-  "contentHash": "b155f549eef2172c80e35252fcf8ed2312ec67121f86841742628e3b72284263"
+  "contentHash": "dbb29acc6372b3c9a2d7d48d1a3142dba2285e37c2bcc5bceffd3377785ae503"
 }

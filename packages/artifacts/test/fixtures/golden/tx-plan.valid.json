@@ -4,7 +4,12 @@
   "version": "1.0.0-alpha",
   "createdAt": "2026-07-13T17:42:29.151Z",
   "networkId": "simnet",
-  "mode": "simulated",
+  "mode": "simulator",
+  "execution": {
+    "mode": "simulator",
+    "domain": "kaspa-l1",
+    "network": "simnet"
+  },
   "workflowId": "test-workflow",
   "assumptionLevel": "pessimistic",
   "executionMode": "isolated",
@@ -26,12 +31,12 @@
     }
   ],
   "lineage": {
-    "artifactId": "11e764eb6c1a7f61070b7b0f681dbe05db010d2abaad42717927e357a39d2666",
+    "artifactId": "6c5deb79a8b78e3925eeddd3d33162cd5b151fbdb18a1176f29aa378cc75fa5d",
     "lineageId": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
     "parentArtifactId": "",
     "rootArtifactId": "2b4baed6aab94827f47c19195591a9f619be50882de2c564ca9fa1bd09d57fb5",
     "sequence": 1
   },
   "hashVersion": 4,
-  "contentHash": "11e764eb6c1a7f61070b7b0f681dbe05db010d2abaad42717927e357a39d2666"
+  "contentHash": "6c5deb79a8b78e3925eeddd3d33162cd5b151fbdb18a1176f29aa378cc75fa5d"
 }

@@ -38,7 +38,7 @@ function normalizeSimulatedPlanInput(target: any, fallbackId: string): TxPlanArt
   }
 
   if (target.from && target.to && target.amountSompi) {
-    if (target.mode !== "simulated") {
+    if (target.mode !== "simulator") {
       throw new Error(
         "Cannot simulate real signed artifact without parent plan. Missing plan inputs data."
       );

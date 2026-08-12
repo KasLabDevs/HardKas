@@ -3241,7 +3241,8 @@ hardkas query lineage chain &lt;artifactId&gt; --why">
 <code>hardkas query dag history &lt;txId&gt; --why</code><span>Trace simulator DAG lifecycle for a transaction.</span>
 </div>
 </div>
-</section>\n<section id="query-store">
+</section>
+<section id="query-store">
 <h2>Query store</h2>
 <p>
             The query store is a rebuildable SQLite read model over artifacts, lineage,
@@ -3267,7 +3268,8 @@ hardkas query lineage chain &lt;artifactId&gt; --why">
 <code>hardkas query events --domain tx --limit 50</code><span>Inspect event log entries.</span>
 </div>
 </div>
-</section>\n<section id="operator">
+</section>
+<section id="operator">
 <h2>Operator commands</h2>
 <p>
             HardKAS is designed to fail loudly and recover explicitly. Operator commands
@@ -3319,7 +3321,8 @@ hardkas query lineage chain &lt;artifactId&gt; --why">
             visible operator message. Quiet corruption handling is treated as a runtime
             bug.
           </div>
-</section>\n<section id="telemetry">
+</section>
+<section id="telemetry">
 <h2>Event ledger and telemetry</h2>
 <p>
             HardKAS separates two operational streams with different retention semantics:
@@ -3349,7 +3352,8 @@ hardkas query lineage chain &lt;artifactId&gt; --why">
             locks (<code>openSync("wx")</code>), spin-wait acquisition, automatic tail
             repair for corrupted JSON, and <code>fsync</code> after every write.
           </div>
-</section>\n<section id="chaos">
+</section>
+<section id="chaos">
 <h2>Chaos engine</h2>
 <p>
 <code>hardkas chaos</code> formalizes destructive behavior into deterministic,
@@ -3432,7 +3436,8 @@ hardkas chaos replay --run-seed 42">
 <strong>Isolation.</strong> Chaos runs in an isolated workspace by default and
             refuses unsafe current-directory destruction without explicit opt-in.
           </div>
-</section>\n<section id="l1l2">
+</section>
+<section id="l1l2">
 <h2>Kaspa L1 vs Igra L2</h2>
 <table>
 <thead>
@@ -3484,7 +3489,8 @@ hardkas chaos replay --run-seed 42">
 <strong>No EVM on Kaspa L1.</strong> HardKAS documentation and examples must
             preserve this boundary. Execution happens on L2, not on Kaspa L1.
           </div>
-</section>\n<section id="bridge">
+</section>
+<section id="bridge">
 <h2>Bridge local simulation</h2>
 <p>
             Bridge local commands model developer bridge-entry flows. They are
@@ -3528,7 +3534,8 @@ hardkas l2 bridge assumptions --json">
 </tr>
 </tbody>
 </table>
-</section>\n<section id="rpc">
+</section>
+<section id="rpc">
 <h2>RPC diagnostics</h2>
 <p>
             HardKAS includes L1 and L2 RPC diagnostics so tools and agents can inspect
@@ -3560,7 +3567,8 @@ hardkas l2 bridge assumptions --json">
 <code>hardkas l2 profile validate igra --json</code><span>Validate L2 profile configuration.</span>
 </div>
 </div>
-</section>\n<section id="cli">
+</section>
+<section id="cli">
 <h2>CLI reference</h2>
 <p>
             The CLI reference is generated from the Commander command tree. Do not
@@ -3911,7 +3919,8 @@ hardkas l2 bridge assumptions --json">
 </div>
 </details>
 </div>
-</section>\n<section id="packages">
+</section>
+<section id="packages">
 <h2>Package map</h2>
 <table>
 <thead>
@@ -3968,7 +3977,8 @@ hardkas l2 bridge assumptions --json">
 </tr>
 </tbody>
 </table>
-</section>\n<section id="agent">
+</section>
+<section id="agent">
 <h2>AGENT.md rules</h2>
 <p>
             HardKAS is designed to be readable by AI coding agents without letting them
@@ -4010,7 +4020,8 @@ hardkas l2 bridge assumptions --json">
 </tr>
 </tbody>
 </table>
-</section>\n<section id="faq">
+</section>
+<section id="faq">
 <h2>FAQ</h2>
 <div class="accordion">
 <details open="">
@@ -4060,7 +4071,8 @@ hardkas l2 bridge assumptions --json">
 </div>
 </details>
 </div>
-</section>\n
+</section>
+
 
 
 

@@ -17,6 +17,7 @@ describe("SignedTxArtifact", () => {
     createdAt: new Date().toISOString(),
     networkId: asNetworkId("simnet"),
     mode: "simulator",
+    execution: { mode: "simulator", domain: "kaspa-l1", network: "simnet" },
     planId: "p123",
     from: { address: "addr1" },
     to: { address: "addr2" },

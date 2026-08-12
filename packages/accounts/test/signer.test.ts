@@ -76,9 +76,7 @@ describe("signTxPlanArtifact", () => {
         planArtifact: mockRealPlan,
         account: aliceAccount
       })
-    ).rejects.toThrow(
-      /Localnet targets require 'kaspa' accounts, got 'synthetic'/
-    ); // Modified assertion to match the Guard which fires before the old synthetic account error
+    ).rejects.toThrow(/Execution mode mismatch. Expected: kaspa, Actual: synthetic/);
   });
 
   it("should generate simulated signature for simulated plan even with real account", async () => {
@@ -90,9 +88,7 @@ describe("signTxPlanArtifact", () => {
         planArtifact: mockSimulatedPlan,
         account: realAccount
       })
-    ).rejects.toThrow(
-      /Simulator targets require 'synthetic' accounts, got 'kaspa'/
-    );
+    ).rejects.toThrow(/Execution mode mismatch. Expected: synthetic, Actual: kaspa/);
   });
 
   it("should throw error for real Kaspa signing if backend is unavailable", async () => {

@@ -143,7 +143,7 @@ describe("0.12.0-rc.1 SDK parity surface", () => {
     });
     await expect(
       sdk.experimental.silver.deploy({
-        artifact: { schema: "hardkas.silverscript.v1", name: "dummy", byteCode: "00", abi: [] },
+        artifact: { schema: "hardkas.silver.deployPlan", name: "dummy", byteCode: "00", abi: [] },
         mode: "rpc",
         write: false
       })
