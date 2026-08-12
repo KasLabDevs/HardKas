@@ -127,4 +127,3 @@ flowchart TD
 
 ### 3. Artifact compatibility
 *   **SHOULD**: Artifacts (TxPlan, SignedTx, TxReceipt) SHOULD preserve execution identity and the fields required by their schema.
-*   **FUTURE**: A future schema/runtime revision may define explicit promotion semantics for artifact bridging from `simulator` -> `localnet` -> `rpc`.

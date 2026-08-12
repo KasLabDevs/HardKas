@@ -25,7 +25,7 @@ intent → artifact → verify → execute → replay
 HardKAS transforms transactions into reproducible workflows. Critical workflow stages produce versioned, verifiable artifacts with explicit lineage.
 
 ## 03 Execution Contract
-The **Execution Contract** ensures that your workflows never cross semantic boundaries by accident. 
+The **Execution Contract** makes the intended execution boundary explicit, allowing HardKAS to reject incompatible execution contexts.
 
 It is represented by a simple tuple that explicitly declares the target environment:
 
@@ -60,8 +60,8 @@ network = mainnet
 ## 05 Artifacts
 Transactions are not just API calls; they are **Artifacts** (`TxPlan`, `SignedTx`, `TxReceipt`).
 *   **Hashes:** Canonical hashing gives artifacts stable semantic identity independent of non-semantic representation details.
-*   **Lineage:** Every artifact points to its `parentArtifactId`, proving a clear sequence of events.
-*   **Provenance:** You know exactly how, when, and where a transaction was generated.
+*   **Lineage:** Artifacts can record parentArtifactId and rootArtifactId, making causal relationships between workflow stages verifiable.
+*   **Provenance:** Artifacts preserve the execution and lineage metadata defined by their schema.
 
 ## 06 Replay
 **Why did this transaction behave differently?**
