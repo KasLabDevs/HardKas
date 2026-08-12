@@ -191,7 +191,7 @@ export async function runLocalnetFund(opts: LocalnetFundOptions): Promise<void> 
   await restartToccataMiner(address);
 
   const { Hardkas } = await import("@hardkas/sdk");
-  const sdk = await Hardkas.create({ config });
+  const sdk = await Hardkas.create({ cwd: opts.workspaceRoot || process.cwd() });
   
   const timeoutMs = opts.timeoutMs ?? 300000;
   const targetAmount = opts.amountSompi 

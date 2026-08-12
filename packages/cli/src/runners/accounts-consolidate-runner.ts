@@ -37,7 +37,7 @@ export async function runAccountsConsolidate(options: AccountsConsolidateOptions
     url: options.url
   });
 
-  if (provider.mode !== "simulated") {
+  if (provider.mode !== "simulator") {
     const { JsonWrpcKaspaClient } = await import("@hardkas/kaspa-rpc");
     (sdk as any).rpc = new JsonWrpcKaspaClient({ rpcUrl: provider.endpoint! });
   }
@@ -51,7 +51,7 @@ export async function runAccountsConsolidate(options: AccountsConsolidateOptions
 
   let allUtxos: any[] = [];
   try {
-    if (provider.mode !== "simulated") {
+    if (provider.mode !== "simulator") {
       const rpcUtxos = await sdk.rpc.getUtxosByAddress(resolvedAccount.address!);
       allUtxos = rpcUtxos.map((u: any) => ({
         outpoint: {
