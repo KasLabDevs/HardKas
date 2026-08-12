@@ -20,32 +20,24 @@ describe("Workflow Runtime & Adversarial Defense", () => {
     );
     fs.mkdirSync(path.join(tmpDir, ".hardkas", "artifacts"), { recursive: true });
 
-    // Seed localnet state to pass strict simulated validation
-    const mockState = {
-      networkId: "simulated",
-      daaScore: "1000",
-      accounts: [
-        { name: "alice", address: "kaspa:sim_alice" },
-        { name: "bob", address: "kaspa:sim_bob" },
-        { name: "carol", address: "kaspa:sim_carol" }
-      ],
-      utxos: [
-        {
-          id: "mocktx:0",
-          address: "kaspa:sim_alice",
-          amountSompi: "900000000000000",
-          spent: false,
-          createdAtDaaScore: "100"
-        },
-        {
-          id: "mocktx:1",
-          address: "kaspa:sim_carol",
-          amountSompi: "900000000000000",
-          spent: false,
-          createdAtDaaScore: "100"
-        }
-      ]
-    };
+    const { createInitialLocalnetState } = require("@hardkas/localnet");
+    const mockState = createInitialLocalnetState();
+    mockState.daaScore = "1000";
+    // Fund alice and carol heavily
+    mockState.utxos.push({
+      id: "mocktx:0",
+      address: mockState.accounts.find(a => a.name === "alice").address,
+      amountSompi: "900000000000000",
+      spent: false,
+      createdAtDaaScore: "100"
+    });
+    mockState.utxos.push({
+      id: "mocktx:1",
+      address: mockState.accounts.find(a => a.name === "carol").address,
+      amountSompi: "900000000000000",
+      spent: false,
+      createdAtDaaScore: "100"
+    });
     fs.writeFileSync(
       path.join(tmpDir, ".hardkas", "localnet.json"),
       JSON.stringify(mockState)

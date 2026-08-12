@@ -48,16 +48,22 @@ export function resolveExecutionTarget(options: ResolveExecutionTargetOptions): 
       console.warn(`DEPRECATED: 'defaultNetwork: "${config.defaultNetwork}"' is deprecated. Please migrate to the explicit 'execution' contract in HardkasConfig.`);
     }
 
-    if (config.defaultNetwork === "simulated" || name === "simulated") {
+    if (name === "simulated") {
       finalExecution = { mode: "simulator", domain: "kaspa-l1", network: "simulated" };
+      console.log("DEBUG: resolved name === simulated", finalExecution);
     } else if (target.kind === "igra") {
       finalExecution = { mode: "rpc", domain: "evm-l2", network: name };
+      console.log("DEBUG: resolved target.kind === igra", finalExecution);
     } else if (name === "simnet" || name === "devnet") {
       finalExecution = { mode: "localnet", domain: "kaspa-l1", network: name };
+      console.log("DEBUG: resolved name === simnet|devnet", finalExecution);
     } else {
       finalExecution = { mode: "rpc", domain: "kaspa-l1", network: name };
+      console.log("DEBUG: resolved else", finalExecution);
     }
   }
+  
+  console.log("DEBUG: resolveExecutionTarget returning:", { name, execution: finalExecution, configExecution: config.execution });
 
   return {
     name: name as NetworkId,

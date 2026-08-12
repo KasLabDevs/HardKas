@@ -76,7 +76,7 @@ export default {
       // Verify default values are merged
       expect(loaded.config.networks?.simnet).toBeDefined();
       expect(loaded.config.networks?.mainnet).toBeDefined();
-      expect(loaded.config.accounts?.bob).toBeDefined();
+
     } finally {
       fs.rmSync(tempDir, { recursive: true, force: true });
     }

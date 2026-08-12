@@ -63,6 +63,7 @@ describe("SignedTxArtifact", () => {
     );
 
     const result = validateSignedTxArtifact(signed);
+    if (!result.ok) console.log(result.errors);
     expect(result.ok).toBe(true);
   });
 

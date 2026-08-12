@@ -91,7 +91,7 @@ export function registerTxCommands(program: Command) {
               const { writeArtifact, formatTxPlanArtifact } =
                 await import("@hardkas/artifacts");
 
-              const loaded = await loadHardkasConfig();
+              const loaded = await loadHardkasConfig({ workspaceRoot: process.cwd() });
               const artifact = await runTxPlan({
                 from: options.from || "alice",
                 to: options.to || "bob",
@@ -203,7 +203,7 @@ export function registerTxCommands(program: Command) {
               } else {
                 planArtifact = await readTxPlanArtifact(planPath);
               }
-              const loaded = await loadHardkasConfig();
+              const loaded = await loadHardkasConfig({ workspaceRoot: process.cwd() });
 
               let signer;
               if (options.fixture) {
@@ -353,7 +353,7 @@ export function registerTxCommands(program: Command) {
             },
             async () => {
               const { loadHardkasConfig } = await import("@hardkas/config");
-              const loaded = await loadHardkasConfig();
+              const loaded = await loadHardkasConfig({ workspaceRoot: process.cwd() });
 
               if (signedPath) {
                 const { readSignedTxArtifact } = await import("@hardkas/artifacts");

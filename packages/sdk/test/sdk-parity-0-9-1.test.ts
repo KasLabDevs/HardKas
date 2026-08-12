@@ -147,6 +147,6 @@ describe("0.12.0-rc.1 SDK parity surface", () => {
         mode: "rpc",
         write: false
       })
-    ).rejects.toThrow("SDK_SILVER_REAL_LIFECYCLE_UNSUPPORTED");
+    ).rejects.toThrow("Silver/Toccata simulator only supports local simnet.");
   });
 });

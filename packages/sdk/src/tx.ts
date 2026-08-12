@@ -297,6 +297,7 @@ export class HardkasTx {
             cwd: this.sdk.workspace.root
           });
           const unspent = getSpendableUtxos(localState, address);
+          console.log("DEBUG SDK TX PLAN: address=", address, "unspent=", unspent);
           return unspent.map((u) => {
             const parts = u.id.split(":");
             const index = Number(parts[parts.length - 1]);
