@@ -93,7 +93,7 @@ export function listHardkasAccounts(config?: HardkasConfig): HardkasAccount[] {
           const keystore = JSON.parse(data);
           if (keystore.type === "hardkas.encryptedKeystore.v2") {
             if (!keystore.metadata?.network) {
-              throw new AccountNetworkMismatchError(`Missing network metadata for dev account '${name}' at ${path.join(devAccountsDir, file)}.`);
+              throw new AccountNetworkMismatchError({ expected: "known network", actual: "undefined", detail: `at ${path.join(devAccountsDir, file)}` });
             }
             accounts.set(name, {
               name,
@@ -121,7 +121,7 @@ export function listHardkasAccounts(config?: HardkasConfig): HardkasAccount[] {
         const configKind = (acc as any).type === "simulated" ? "synthetic" : "kaspa";
         if (existing && existing.kind !== configKind) {
           console.error(`COLLISION DETECTED for ${name}. existing:`, existing, `configKind:`, configKind, `workspaceRoot:`, workspaceRoot, `keystoreJsonPath:`, keystoreJsonPath);
-          throw new CrossWorldAccountCollisionError(`Cross-world collision detected for account '${name}'. It exists as both '${existing.kind}' and '${configKind}' in different sources.`);
+          throw new CrossWorldAccountCollisionError({ accountId: name, worlds: [existing.kind, configKind] });
         }
         if ((acc as any).type === "simulated") {
           accounts.set(name, {
@@ -131,7 +131,7 @@ export function listHardkasAccounts(config?: HardkasConfig): HardkasAccount[] {
           });
         } else {
           if (!(acc as any).network) {
-            throw new AccountNetworkMismatchError(`Missing network metadata for keystore account '${name}' in keystore.json.`);
+            throw new AccountNetworkMismatchError({ expected: "known network", actual: "undefined", detail: "in keystore.json" });
           }
           accounts.set(name, {
             name,
@@ -172,7 +172,7 @@ export function listHardkasAccounts(config?: HardkasConfig): HardkasAccount[] {
           const keystore = JSON.parse(data);
           if (keystore.type === "hardkas.encryptedKeystore.v2") {
             if (!keystore.metadata?.network) {
-              throw new AccountNetworkMismatchError(`Missing network metadata for keystore account '${name}' at ${path.join(keystoreDir, file)}.`);
+              throw new AccountNetworkMismatchError({ expected: "known network", actual: "undefined", detail: `at ${path.join(keystoreDir, file)}` });
             }
             accounts.set(name, {
               name,
@@ -196,7 +196,7 @@ export function listHardkasAccounts(config?: HardkasConfig): HardkasAccount[] {
       const configKind = (accConfig as any).kind === "simulated" ? "synthetic" : (accConfig as any).kind;
       if (existing && existing.kind !== configKind) {
         console.error(`COLLISION DETECTED for ${name}. existing:`, existing, `configKind:`, configKind);
-        throw new CrossWorldAccountCollisionError(`Cross-world collision detected for account '${name}'. It exists as '${existing.kind}' locally and '${configKind}' in config. Please resolve this conflict.`);
+        throw new CrossWorldAccountCollisionError({ accountId: name, worlds: [existing.kind, configKind] });
       }
       accounts.set(name, {
         name,
