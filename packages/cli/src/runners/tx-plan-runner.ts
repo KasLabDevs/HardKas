@@ -63,8 +63,8 @@ export async function runTxPlan(input: TxPlanRunnerInput): Promise<TxPlanArtifac
   let backend = providerConfig.mode;
   console.log("DEBUG BACKEND RESOLUTION:", { networkId, configNetworkKind, executionMode: execution.mode, backend });
 
-  // Guard: HardKAS simulated accounts (kaspa:sim_*) can only be used on simulated backends.
-  const isHardkasSimulatedAccount = fromAddress.startsWith("kaspa:sim_");
+  // Guard: HardKAS simulated accounts (kaspa:sim_*, kaspasim:*) can only be used on simulated backends.
+  const isHardkasSimulatedAccount = fromAddress.startsWith("kaspa:sim_") || fromAddress.startsWith("kaspasim:");
 
   if (isHardkasSimulatedAccount && backend !== "simulator") {
     throw new Error(
