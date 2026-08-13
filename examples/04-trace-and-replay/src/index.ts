@@ -114,6 +114,7 @@ async function main() {
   // 5. Phase: Sign
   addTrace("sign", "start");
   const signedArtifact = await signTxPlanArtifact({
+    target: { mode: "simulator", domain: "kaspa-l1", network: hardkas.network as any },
     planArtifact,
     account: alice,
     config: hardkas.config.config

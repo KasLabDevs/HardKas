@@ -2,19 +2,19 @@
   "schema": "hardkas.txReceipt",
   "hardkasVersion": "0.12.0-rc.1",
   "networkId": "simulated",
-  "mode": "simulated",
+  "mode": "simulator",
   "status": "accepted",
-  "createdAt": "2026-07-27T09:03:49.862Z",
-  "submittedAt": "2026-07-27T09:03:49.862Z",
-  "confirmedAt": "2026-07-27T09:03:49.862Z",
-  "txId": "simulated-plan-ea7545217050d754-tx",
-  "sourceSignedId": "signed-9af2ac9d254e3ad1",
+  "createdAt": "2026-08-13T09:43:49.512Z",
+  "submittedAt": "2026-08-13T09:43:49.512Z",
+  "confirmedAt": "2026-08-13T09:43:49.512Z",
+  "txId": "simulated-plan-897ad54bdc7a9b51-tx",
+  "sourceSignedId": "signed-f09d4da92cadb4f0",
   "from": {
     "address": "kaspasim:qqlpk9rs7yag6eqj3lttzqd8vgvssz8l8fxlpdag4h7zx2rjjr8lkkerwkezn",
     "accountName": "alice"
   },
   "to": {
-    "address": "kaspasim:qryj23rch0n5rc7klfug58zcrnuc966qljwgzpu3mflqgxu6w2pjg6n575980"
+    "address": "kaspasim:qqa8l97scc2uavs6yxyh0lcvf0k69uylt3f7h48x8p0vps20y4gscavhsvktd"
   },
   "amountSompi": "1000000000",
   "amount": "10",

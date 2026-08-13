@@ -4,16 +4,21 @@
   "schemaVersion": "hardkas.artifact.v1",
   "version": "1.0.0-alpha",
   "hashVersion": 4,
-  "createdAt": "2026-07-27T09:03:49.861Z",
+  "createdAt": "2026-08-13T09:43:49.511Z",
   "networkId": "simulated",
-  "mode": "simulated",
+  "mode": "simulator",
+  "execution": {
+    "mode": "simulator",
+    "domain": "kaspa-l1",
+    "network": "simulated"
+  },
   "from": {
     "address": "kaspasim:qqlpk9rs7yag6eqj3lttzqd8vgvssz8l8fxlpdag4h7zx2rjjr8lkkerwkezn",
     "accountName": "alice",
     "input": "alice"
   },
   "to": {
-    "address": "kaspasim:qryj23rch0n5rc7klfug58zcrnuc966qljwgzpu3mflqgxu6w2pjg6n575980",
+    "address": "kaspasim:qqa8l97scc2uavs6yxyh0lcvf0k69uylt3f7h48x8p0vps20y4gscavhsvktd",
     "input": "bob"
   },
   "amountSompi": "1000000000",
@@ -32,15 +37,15 @@
   ],
   "outputs": [
     {
-      "address": "kaspasim:qryj23rch0n5rc7klfug58zcrnuc966qljwgzpu3mflqgxu6w2pjg6n575980",
+      "address": "kaspasim:qqa8l97scc2uavs6yxyh0lcvf0k69uylt3f7h48x8p0vps20y4gscavhsvktd",
       "amountSompi": "1000000000"
     }
   ],
   "lineage": {
-    "artifactId": "ea7545217050d754a3b0818cf84f26f56575055dc303a242a8aa4016f9eb353c",
-    "lineageId": "00c2ebe9b8d7017f7ec20048b1a44f95f15917dea1d913b50b9b36cf60c4dc37",
+    "artifactId": "897ad54bdc7a9b51abab25063f4044c097538336149e4223992979d7465e3839",
+    "lineageId": "3856fd63a052a464073310d7c4fdd0a8d184007ea6ab7611957456b29116ac23",
     "parentArtifactId": "",
-    "rootArtifactId": "00c2ebe9b8d7017f7ec20048b1a44f95f15917dea1d913b50b9b36cf60c4dc37",
+    "rootArtifactId": "3856fd63a052a464073310d7c4fdd0a8d184007ea6ab7611957456b29116ac23",
     "sequence": 1
   },
   "metadata": {
@@ -52,7 +57,7 @@
     "address": "kaspasim:qqlpk9rs7yag6eqj3lttzqd8vgvssz8l8fxlpdag4h7zx2rjjr8lkkerwkezn",
     "amountSompi": "8999998940"
   },
-  "planId": "plan-ea7545217050d754",
-  "contentHash": "ea7545217050d754a3b0818cf84f26f56575055dc303a242a8aa4016f9eb353c",
-  "workflowId": "wf_00c2ebe9b8d7017f"
+  "planId": "plan-897ad54bdc7a9b51",
+  "contentHash": "897ad54bdc7a9b51abab25063f4044c097538336149e4223992979d7465e3839",
+  "workflowId": "wf_3856fd63a052a464"
 }

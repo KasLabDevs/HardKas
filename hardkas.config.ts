@@ -22,16 +22,5 @@ export default defineHardkasConfig({
       rpcUrl: "ws://127.0.0.1:18210",
       description: "Local Toccata lab"
     }
-  },
-
-  accounts: {
-    alice: {
-      kind: "simulated",
-      address: "kaspa:sim_alice"
-    },
-    bob: {
-      kind: "simulated",
-      address: "kaspa:sim_bob"
-    }
   }
 });
