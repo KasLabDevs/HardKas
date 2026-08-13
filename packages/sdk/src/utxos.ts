@@ -49,11 +49,11 @@ export class HardkasUtxos {
   }
 
   /**
-   * Waits for a coinbase UTXO to mature on the specified address.
+   * Waits for a target spendable funding amount on the specified address.
    */
-  async waitForCoinbaseSpendable(options: {
+  async waitForSpendableFunding(options: {
     address: string;
-    minAmount?: bigint;
+    minSpendableSompi: bigint;
     timeoutMs?: number;
     pollIntervalMs?: number;
     signal?: AbortSignal;
@@ -64,33 +64,30 @@ export class HardkasUtxos {
           this.sdk.rpc.getUtxosByAddress(options.address),
           this.sdk.rpc.getInfo()
         ]);
-        
+
         const virtualDaaScore = BigInt((infoResult as any).virtualDaaScore || 0);
-        
-        // Find mature coinbase utxos
-        const matureUtxos = utxosResult.filter((u: any) => {
-          if (!u.isCoinbase) return false;
+
+        const { getCoinbaseMaturity } = await import("@hardkas/core");
+        // defaultNetwork should be populated by the runner/caller that constructed the SDK.
+        const network = this.sdk.config.config.defaultNetwork || "simnet";
+        const maturityThreshold = getCoinbaseMaturity(network);
+
+        const spendableUtxos = utxosResult.filter((u: any) => {
+          if (!u.isCoinbase) return true; // Normal UTXOs are immediately spendable
           if (u.blockDaaScore === undefined) return false;
-          return virtualDaaScore - BigInt(u.blockDaaScore) >= 100n; // Default maturity threshold. (Can be adjusted based on network)
+          return virtualDaaScore - BigInt(u.blockDaaScore) >= maturityThreshold;
         });
 
-        const total = matureUtxos.reduce((sum: bigint, u: any) => sum + BigInt(u.amountSompi), 0n);
+        const total = spendableUtxos.reduce((sum: bigint, u: any) => sum + BigInt(u.amountSompi), 0n);
 
-        if (options.minAmount !== undefined) {
-          if (total >= options.minAmount) {
-            return { ok: true, value: matureUtxos, lastObservedState: { matureValue: total.toString(), virtualDaaScore: virtualDaaScore.toString() } };
-          }
-          return { ok: false, lastObservedState: { matureValue: total.toString(), required: options.minAmount.toString(), virtualDaaScore: virtualDaaScore.toString() } };
+        if (total >= options.minSpendableSompi) {
+          return { ok: true, value: spendableUtxos, lastObservedState: { matureValue: total.toString(), virtualDaaScore: virtualDaaScore.toString() } };
         }
 
-        if (matureUtxos.length > 0) {
-          return { ok: true, value: matureUtxos, lastObservedState: { matureCount: matureUtxos.length, virtualDaaScore: virtualDaaScore.toString() } };
-        }
-
-        return { ok: false, lastObservedState: { matureCount: 0, virtualDaaScore: virtualDaaScore.toString() } };
+        return { ok: false, lastObservedState: { matureValue: total.toString(), required: options.minSpendableSompi.toString(), virtualDaaScore: virtualDaaScore.toString() } };
       },
-      "COINBASE_MATURITY_TIMEOUT",
-      "Timeout waiting for coinbase maturity",
+      "LOCALNET_FUND_MATURITY_TIMEOUT",
+      "Timeout waiting for spendable funding",
       options
     );
   }

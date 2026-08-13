@@ -1,7 +1,7 @@
 {
   "snapshotVersion": 1,
   "createdAt": "2026-05-22T15:40:39.205Z",
-  "hardkasVersion": "0.12.0-rc.1",
+  "hardkasVersion": "0.12.0-rc.2",
   "stateAuthority": "filesystem",
   "projectionAuthority": "sqlite",
   "deterministicScope": "local-only",

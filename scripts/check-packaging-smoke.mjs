@@ -79,8 +79,8 @@ try {
   console.log("\\n5. Running CLI smoke tests...");
   const versionOut = run(`npx hardkas --version`, tempConsumerDir).trim();
   console.log(`Version output: ${versionOut}`);
-  if (!versionOut.includes("0.12.0-rc.1")) {
-    throw new Error(`CLI version mismatch. Expected 0.12.0-rc.1, got ${versionOut}`);
+  if (!versionOut.includes("0.12.0-rc.2")) {
+    throw new Error(`CLI version mismatch. Expected 0.12.0-rc.2, got ${versionOut}`);
   }
 
   const capabilitiesOut = run(`npx hardkas capabilities --json`, tempConsumerDir);
@@ -99,7 +99,7 @@ console.log("SDK Version:", HARDKAS_VERSION);
 console.log("Core Schema TxPlan:", CoreSchemas.TxPlan);
 console.log("Artifact Schema TxPlan:", ArtifactSchemas.TxPlan);
 
-if (HARDKAS_VERSION !== "0.12.0-rc.1") throw new Error("SDK version mismatch");
+if (HARDKAS_VERSION !== "0.12.0-rc.2") throw new Error("SDK version mismatch");
 if (!CoreSchemas.TxPlan) throw new Error("CoreSchemas missing");
 if (!ArtifactSchemas.TxPlan) throw new Error("ArtifactSchemas missing");
 `);

@@ -29,7 +29,7 @@ The entire lifecycle of Kaspa UTXOs—from genesis injection to final signature 
 
 ## The Execution Contract
 
-HardKAS `0.12.0-rc.1` introduces the strictly partitioned Execution Contract.
+HardKAS `0.12.0-rc.2` introduces the strictly partitioned Execution Contract.
 The Execution Contract is a tuple of `(mode, domain, network)` that unambiguously identifies the context in which an artifact was created, an execution target is connected, or an account exists.
 
 - **`mode`**: The environment topology (`simulator`, `localnet`, `rpc`, `l2-rpc`)
@@ -57,7 +57,7 @@ Common targets:
 
 ## Local-First Status
 
-HardKAS `0.12.0-rc.1` is local-first deterministic transaction infrastructure
+HardKAS `0.12.0-rc.2` is local-first deterministic transaction infrastructure
 for Kaspa/Toccata development.
 
 Current certified baseline:
@@ -76,7 +76,7 @@ Current certified baseline:
 
 ### Toccata v2 Alpha Baseline
 
-The `0.12.0-rc.1` release line includes a normalized Toccata v2 localnet flow:
+The `0.12.0-rc.2` release line includes a normalized Toccata v2 localnet flow:
 
 - Docker `rusty-kaspad` v2.0.0 localnet funding with a compatible miner companion (`kaspanet/cpuminer`).
 - Standard transaction lifecycle against the local node.
@@ -95,20 +95,20 @@ Official release claims:
 - `vmConsensusEquivalence`: `NOT_CLAIMED`
 - `mainnet`: `BLOCKED_BY_POLICY`
 
-### 0.12.0-rc.1 SDK Parity
+### 0.12.0-rc.2 SDK Parity
 
-`0.12.0-rc.1` is a SDK parity / developer experience patch. It adds high-level
+`0.12.0-rc.2` is a SDK parity / developer experience patch. It adds high-level
 SDK surfaces for capabilities, localnet status/start/fund, corpus verification,
 and Silver planning/simulation/compare flows without changing the release
 claims above. It enforces strict separation of execution environments across Artifact lineage.
 
 SDK real Silver RPC/Docker execution remains explicitly unsupported in
-`0.12.0-rc.1` via `SDK_SILVER_REAL_LIFECYCLE_UNSUPPORTED`; certified real
+`0.12.0-rc.2` via `SDK_SILVER_REAL_LIFECYCLE_UNSUPPORTED`; certified real
 lifecycle execution remains CLI/localnet bounded.
 
-### 0.12.0-rc.1 Programmability Builder Surface
+### 0.12.0-rc.2 Programmability Builder Surface
 
-`0.12.0-rc.1` also includes a local-only builder surface for SilverScript,
+`0.12.0-rc.2` also includes a local-only builder surface for SilverScript,
 ZK corpus fixtures, and vProgs artifact inspection. This is a programmability
 surface, not a protocol/runtime claim.
 

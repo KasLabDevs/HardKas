@@ -6,6 +6,7 @@ import { coreEvents, getCoinbaseMaturity } from "@hardkas/core";
 import { resolveExecutionTarget, HardkasConfig } from "@hardkas/config";
 
 export interface TxPlanRunnerInput {
+  targetName?: string;
   from: string;
   to: string;
   amount: string;
@@ -24,6 +25,7 @@ export interface TxPlanRunnerInput {
  */
 export async function runTxPlan(input: TxPlanRunnerInput): Promise<TxPlanArtifact> {
   const {
+    targetName,
     from,
     to,
     amount,
@@ -48,7 +50,8 @@ export async function runTxPlan(input: TxPlanRunnerInput): Promise<TxPlanArtifac
   const { resolveExecutionTarget, resolveProvider } = await import("@hardkas/config");
   const { execution } = resolveExecutionTarget({
     config: resolvedConfig,
-    network: networkId
+    network: networkId,
+    ...(targetName !== undefined ? { targetName } : {})
   });
 
   const providerConfig = resolveProvider({
@@ -64,7 +67,7 @@ export async function runTxPlan(input: TxPlanRunnerInput): Promise<TxPlanArtifac
 
 
   // Guard: HardKAS simulated accounts (kaspa:sim_*, kaspasim:*) can only be used on simulated backends.
-  const isHardkasSimulatedAccount = fromAddress.startsWith("kaspa:sim_") || fromAddress.startsWith("kaspasim:");
+  const isHardkasSimulatedAccount = fromAddress.startsWith("kaspa:sim_");
 
   if (isHardkasSimulatedAccount && backend !== "simulator") {
     throw new Error(

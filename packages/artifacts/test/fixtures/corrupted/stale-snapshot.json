@@ -1,6 +1,6 @@
 {
   "schema": "hardkas.snapshot",
-  "hardkasVersion": "0.12.0-rc.1",
+  "hardkasVersion": "0.12.0-rc.2",
   "version": "1.0.0-alpha",
   "networkId": "simnet-1",
   "mode": "simulated",
