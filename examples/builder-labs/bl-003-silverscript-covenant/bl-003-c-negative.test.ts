@@ -10,18 +10,17 @@ import { JsonWrpcKaspaClient as RpcClient } from "@hardkas/kaspa-rpc";
 import { createKaspaP2shBlake2bLock } from "@hardkas/core";
 import { SilverCompilerAdapter } from "./SilverCompilerAdapter.js";
 
+import { Hardkas } from "@hardkas/sdk";
+
 const execAsync = util.promisify(exec);
 const ROOT_DIR = __dirname;
 const NETWORK_ID = "simnet";
-
-function sleep(ms: number) {
-  return new Promise(resolve => setTimeout(resolve, ms));
-}
 
 describe("BL-003C - Covenant Negative Consensus Matrix", () => {
     let identities: any;
     let runner: DockerKaspadRunner;
     let rpc: RpcClient;
+    let sdk: Hardkas;
     let kaspa: any;
     let coordinatorAddress: string;
     let adapter: SilverCompilerAdapter;
@@ -65,26 +64,26 @@ contract FixedDestination() {
         await runner.start();
 
         rpc = new RpcClient({ rpcUrl: "ws://127.0.0.1:18210", timeoutMs: 60000 });
+        sdk = await Hardkas.create({
+            config: {
+                networks: { simnet: { kind: "rpc", rpcUrl: "ws://127.0.0.1:18210", allowMainnet: false } },
+                defaultNetwork: "simnet",
+                directories: { workspace: ROOT_DIR, data: path.join(ROOT_DIR, "data") }
+            },
+            defaultNetwork: "simnet"
+        });
 
         coordinatorAddress = new kaspa.PrivateKey(identities.bob.privateKeyHex).toKeypair().toAddress(kaspa.NetworkType.Simnet).toString();
 
-        await execAsync(`docker run -d --name bl003c-miner --network container:${runner["options"].containerName} kaspanet/cpuminer:latest -a ${coordinatorAddress} -s 127.0.0.1 -p 16210 --mine-when-not-synced -t 1`).catch(() => {});
+        await execAsync(`docker run -d --name bl003c-miner --network container:${runner["options"].containerName} kaspanet/cpuminer@sha256:60f78ab2828ab24b249c99210eee5a2825303a5226154260dd021ff26d46748b -a ${coordinatorAddress} -s 127.0.0.1 -p 16210 --mine-when-not-synced -t 1`).catch(() => {});
         
-        const startMs = Date.now();
-        let mature = false;
-        while (!mature && Date.now() - startMs < 25000) {
-            try {
-                const utxos = await rpc.getUtxosByAddresses([coordinatorAddress]);
-                if (utxos.entries && utxos.entries.length > 0) {
-                    const dagInfo = await rpc.getBlockDagInfo();
-                    const virtualDaaScore = BigInt(dagInfo.virtualDaaScore);
-                    const isMature = utxos.entries.find((u: any) => virtualDaaScore - BigInt(u.utxoEntry.blockDaaScore) > 100n);
-                    if (isMature) {
-                        mature = true;
-                    }
-                }
-            } catch(e) {}
-            if (!mature) await sleep(2000);
+        try {
+            await sdk.utxos.waitForCoinbaseSpendable({
+                address: coordinatorAddress,
+                timeoutMs: 35000
+            });
+        } catch (e) {
+            console.warn("[bl-003-c] Timed out waiting for mature UTXOs in beforeAll.");
         }
         await execAsync(`docker rm -f bl003c-miner`).catch(() => {});
     }, 240000);

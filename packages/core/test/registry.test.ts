@@ -16,7 +16,7 @@ describe("Artifact Registry", () => {
 
   it("isKnownArtifactType rejects fake schemas", () => {
     expect(isKnownArtifactType("hardkas.fake.v1")).toBe(false);
-    expect(isKnownArtifactType("hardkas.txPlan.v3")).toBe(false);
+    expect(isKnownArtifactType("hardkas.txPlan.v99")).toBe(false);
   });
 
   it("assertKnownArtifactType throws for fake schemas", () => {

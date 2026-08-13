@@ -14,7 +14,7 @@ export async function runDevFixtureGenerate(options: any) {
     _is_fixture: true,
     description: `[MOCK FIXTURE] Generated payload for ${type}`,
     securityModel: "mock-fixture",
-    mode: "simulated",
+    mode: "simulator",
     type,
     items: []
   };

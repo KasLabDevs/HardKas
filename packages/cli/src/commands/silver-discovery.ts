@@ -64,7 +64,7 @@ export function getSilverDeployCommand() {
         throw new Error("Command failed");
       }
 
-      if (fromAccount.kind !== "kaspa-private-key" && !pkValue) {
+      if (fromAccount.kind !== "kaspa" && !pkValue) {
         getOutput().error(
           pc.red(`Error: Deploy requires a real kaspa-private-key account.`)
         );

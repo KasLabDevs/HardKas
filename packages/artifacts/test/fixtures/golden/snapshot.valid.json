@@ -3,7 +3,12 @@
   "hardkasVersion": "0.5.4-alpha",
   "version": "1.0.0-alpha",
   "networkId": "simnet",
-  "mode": "simulated",
+  "mode": "simulator",
+  "execution": {
+    "mode": "simulator",
+    "domain": "kaspa-l1",
+    "network": "simnet"
+  },
   "workflowId": "test-workflow",
   "assumptionLevel": "pessimistic",
   "executionMode": "isolated",
@@ -12,10 +17,10 @@
   "accounts": [],
   "utxos": [],
   "lineage": {
-    "artifactId": "3bdb468310adc4aa9321246b33667af4dd54c45b7a520cc87ed8734c4039e9ce",
+    "artifactId": "0123d0bed6ee815cbbbb91e2b2f11d7993056a6611939bf3ce106c989b973440",
     "lineageId": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
     "rootArtifactId": "2b4baed6aab94827f47c19195591a9f619be50882de2c564ca9fa1bd09d57fb5"
   },
   "hashVersion": 4,
-  "contentHash": "3bdb468310adc4aa9321246b33667af4dd54c45b7a520cc87ed8734c4039e9ce"
+  "contentHash": "0123d0bed6ee815cbbbb91e2b2f11d7993056a6611939bf3ce106c989b973440"
 }

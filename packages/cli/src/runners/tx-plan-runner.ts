@@ -3,7 +3,7 @@ import { resolveHardkasAccountAddress } from "@hardkas/accounts";
 import { buildPaymentPlan, createMockUtxo } from "@hardkas/tx-builder";
 import { createTxPlanArtifact, TxPlanArtifact } from "@hardkas/artifacts";
 import { coreEvents, getCoinbaseMaturity } from "@hardkas/core";
-import { resolveNetworkTarget, HardkasConfig } from "@hardkas/config";
+import { resolveExecutionTarget, HardkasConfig } from "@hardkas/config";
 
 export interface TxPlanRunnerInput {
   from: string;
@@ -45,32 +45,39 @@ export async function runTxPlan(input: TxPlanRunnerInput): Promise<TxPlanArtifac
   const networkDef = config.networks?.[networkId];
   const configNetworkKind = typeof networkDef === "object" ? networkDef?.kind : undefined;
 
-  const { resolveProvider } = await import("@hardkas/config");
+  const { resolveExecutionTarget, resolveProvider } = await import("@hardkas/config");
+  const { execution } = resolveExecutionTarget({
+    config: resolvedConfig,
+    network: networkId
+  });
+
   const providerConfig = resolveProvider({
     network: networkId,
     provider: input.provider,
     url,
-    configNetworkKind
+    configNetworkKind,
+    executionMode: execution.mode
   });
 
   const resolvedNetwork = providerConfig.network;
   let backend = providerConfig.mode;
 
-  // Guard: HardKAS simulated accounts (kaspa:sim_*) can only be used on simulated backends.
-  const isHardkasSimulatedAccount = fromAddress.startsWith("kaspa:sim_");
 
-  if (isHardkasSimulatedAccount && backend !== "simulated") {
+  // Guard: HardKAS simulated accounts (kaspa:sim_*, kaspasim:*) can only be used on simulated backends.
+  const isHardkasSimulatedAccount = fromAddress.startsWith("kaspa:sim_") || fromAddress.startsWith("kaspasim:");
+
+  if (isHardkasSimulatedAccount && backend !== "simulator") {
     throw new Error(
       "NETWORK_ACCOUNT_MISMATCH: Cannot use a simulated account with a real network or RPC provider."
     );
   }
 
   let availableUtxos: any[] = [];
-  let mode: "simulated" | "kaspa-node" | "kaspa-rpc" = "simulated";
+  let mode: "simulator" | "kaspa-node" | "kaspa-rpc" = "simulator";
   let rpcUrl: string | undefined = providerConfig.endpoint;
 
   let stateAddress: string | undefined;
-  if (backend === "simulated") {
+  if (backend === "simulator") {
     const { loadOrCreateLocalnetState, getSpendableUtxos, resolveAccountAddressFromState } = await import(
       "@hardkas/localnet"
     );
@@ -99,7 +106,7 @@ export async function runTxPlan(input: TxPlanRunnerInput): Promise<TxPlanArtifac
       };
     });
 
-    mode = "simulated";
+    mode = "simulator";
     rpcUrl = "simulated://local";
   } else {
     try {
@@ -119,12 +126,19 @@ export async function runTxPlan(input: TxPlanRunnerInput): Promise<TxPlanArtifac
       const rpcUtxos = await client.getUtxosByAddress(fromAddress);
       await client.close();
 
+      const coinbaseMaturity = getCoinbaseMaturity(
+        resolvedNetwork as NetworkId,
+        configNetworkKind === "kaspa-node" || configNetworkKind === "kaspa-rpc" || configNetworkKind === "simulated" 
+          ? (networkDef as any).consensusParams 
+          : undefined
+      );
+
       availableUtxos = rpcUtxos
         .filter((u) => {
           if (!u.isCoinbase) return true;
           if (info.virtualDaaScore === undefined || u.blockDaaScore === undefined)
             return false;
-          return info.virtualDaaScore - BigInt(u.blockDaaScore) >= 1000n;
+          return info.virtualDaaScore - BigInt(u.blockDaaScore) > (coinbaseMaturity + 10n);
         })
         .map((u) => ({
           outpoint: u.outpoint,
@@ -136,7 +150,8 @@ export async function runTxPlan(input: TxPlanRunnerInput): Promise<TxPlanArtifac
             : {}),
           ...(u.isCoinbase !== undefined ? { isCoinbase: u.isCoinbase } : {})
         }));
-      mode = "kaspa-rpc";
+        
+      mode = execution.mode === "localnet" ? "kaspa-node" : "kaspa-rpc";
     } catch (e: unknown) {
       const protocol = rpcUrl?.startsWith("ws") ? "WebSocket" : "JSON-RPC";
       const { RpcConnectionError, RpcSchemaError, classifyRpcError } =
@@ -147,8 +162,8 @@ export async function runTxPlan(input: TxPlanRunnerInput): Promise<TxPlanArtifac
           endpoint: rpcUrl || "unknown",
           method: "getUtxosByAddress",
           suspectedCause:
-            "Invalid Kaspa address format/checksum or incompatible node version",
-          rawError: ((e instanceof Error) ? ((e instanceof Error) ? e.message : String(e)) : String(e))
+            "This endpoint might be running a node version that uses a different response schema for UTXOs.",
+          rawError: e instanceof Error ? e.message : String(e)
         });
       }
       throw new RpcConnectionError({
@@ -163,44 +178,49 @@ export async function runTxPlan(input: TxPlanRunnerInput): Promise<TxPlanArtifac
 
   if (availableUtxos.length === 0) {
     const hint =
-      backend === "simulated"
-        ? `\n  Hint: Run 'hardkas accounts fund ${from} --amount 1000' to create simulated UTXOs,\n  or re-initialize with 'hardkas init --force'.`
+      backend === "simulator"
+        ? `\n  Hint: Run 'hardkas simulator fund ${from} --amount 1000' to create simulated UTXOs,\n  or re-initialize with 'hardkas init --force'.`
         : `\n  Hint: Ensure the account has received funds on the '${resolvedNetwork}' network.`;
     throw new Error(
       `No UTXOs found for ${fromAddress} on network '${resolvedNetwork}'.${hint}`
     );
   }
 
-  const coinbaseMaturity = getCoinbaseMaturity(
+  const planCoinbaseMaturity = getCoinbaseMaturity(
     resolvedNetwork as NetworkId,
     configNetworkKind === "kaspa-node" || configNetworkKind === "kaspa-rpc" || configNetworkKind === "simulated" 
       ? (networkDef as any).consensusParams 
       : undefined
   );
 
+
   const plan = buildPaymentPlan({
     fromAddress,
     outputs: [{ address: toAddress, amountSompi }],
     availableUtxos,
     feeRateSompiPerMass,
-    coinbaseMaturity,
+    coinbaseMaturity: planCoinbaseMaturity,
     ...(stateAddress && stateAddress !== fromAddress ? { changeAddress: stateAddress } : {})
   });
 
   let resolvedAssumptionLevel = assumptionLevel;
   if (!resolvedAssumptionLevel) {
-    if (mode === "simulated") {
+    if (backend === "simulator") {
       resolvedAssumptionLevel = "local-simulated";
     } else if (mode === "kaspa-rpc" && resolvedNetwork === "simnet") {
       resolvedAssumptionLevel = "local-rpc";
     } else {
-      resolvedAssumptionLevel = resolvedNetwork;
+      const { name: resolvedName, target } = resolveExecutionTarget({
+        network: resolvedNetwork,
+        config: resolvedConfig
+      });
+      resolvedAssumptionLevel = resolvedName;
     }
   }
 
   const artifact = createTxPlanArtifact({
     networkId: resolvedNetwork as NetworkId,
-    mode: mode === "simulated" ? "simulated" : "real",
+    mode: mode === "simulator" ? "simulator" : (mode === "kaspa-rpc" ? "rpc" : "localnet"),
     ...(rpcUrl ? { rpcUrl } : {}),
     from: { input: from, address: fromAddress },
     to: { input: to, address: toAddress },

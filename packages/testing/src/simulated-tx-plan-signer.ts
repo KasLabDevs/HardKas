@@ -6,12 +6,13 @@ import { HardkasTxPlanSigner, SignTxPlanInput, SignTxPlanResult, HardkasSignerKi
  * Produces deterministic signatures without real private keys.
  */
 export class SimulatedTxPlanSigner implements HardkasTxPlanSigner {
-  kind: HardkasSignerKind = "simulated";
+  kind: HardkasSignerKind = "synthetic";
 
   async signTxPlan(input: SignTxPlanInput): Promise<SignTxPlanResult> {
-    const plan = input.planArtifact as TxPlanArtifact;
+    const { planArtifact } = input;
+    const plan = planArtifact as TxPlanArtifact;
     return {
-      signatureKind: "simulated",
+      signatureKind: "synthetic",
       signerAddress: plan.from.address,
       signedTransaction: {
         format: "simulated",

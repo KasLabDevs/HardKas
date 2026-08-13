@@ -1,26 +1,29 @@
 {
   "schema": "hardkas.signedTx",
   "schemaVersion": "hardkas.artifact.v1",
-  "hardkasVersion": "0.11.6-alpha",
+  "hardkasVersion": "1.0.0-alpha",
   "version": "1.0.0-alpha",
-  "hashVersion": 3,
-  "createdAt": "2026-05-27T23:06:20.831Z",
+  "networkId": "simnet",
+  "mode": "simulator",
+  "execution": {
+    "mode": "simulator",
+    "domain": "kaspa-l1",
+    "network": "simnet"
+  },
   "status": "signed",
-  "sourcePlanId": "plan-5ed6d8b9f4de644b",
-  "networkId": "simulated",
-  "mode": "simulated",
+  "signedId": "signed-tx-golden",
+  "sourcePlanId": "plan-golden-explain",
   "from": {
-    "address": "kaspa:sim_alice"
+    "address": "kaspatest:qqgolden1"
   },
   "to": {
-    "address": "kaspa:sim_bob"
+    "address": "kaspatest:qqgolden2"
   },
-  "amountSompi": "10000000000",
-  "txId": "simulated-plan-5ed6d8b9f4de644b-tx",
+  "amountSompi": "50000000",
   "signedTransaction": {
-    "format": "simulated",
-    "payload": "simulated-signed-tx:plan-5ed6d8b9f4de644b"
+    "format": "kaspad-rpc",
+    "payload": "mock-signed-payload"
   },
-  "signedId": "signed-117142f456a1707b",
-  "contentHash": "117142f456a1707b30f5811d41288a86b6b6e6def7f2dedc76e85a49deb67eb3"
+  "createdAt": "2026-05-27T00:00:00.000Z",
+  "contentHash": "c550d5aee7ad5affce4b992677239226a8d9b9a5114e7298e7f5da042ee591d7"
 }

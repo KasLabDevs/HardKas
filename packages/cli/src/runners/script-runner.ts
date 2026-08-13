@@ -1,4 +1,4 @@
-﻿// SAFETY_LEVEL: SIMULATION_ONLY
+// SAFETY_LEVEL: SIMULATION_ONLY
 
 import { resolve, dirname } from "node:path";
 import { existsSync, unlinkSync } from "node:fs";

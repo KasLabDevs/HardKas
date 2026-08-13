@@ -1,3 +1,15 @@
+import type {
+  ExecutionMode,
+  ExecutionDomain,
+  HardkasExecutionTarget
+} from "@hardkas/core";
+
+export type {
+  ExecutionMode,
+  ExecutionDomain,
+  HardkasExecutionTarget
+};
+
 export type HardkasTargetKind = "simulated" | "kaspa-node" | "kaspa-rpc" | "igra";
 
 export type HardkasNetworkName = string;
@@ -53,6 +65,10 @@ export type HardkasAccountConfig =
   | { kind: "evm-private-key"; privateKeyEnv: string; address?: string };
 
 export interface HardkasConfig {
+  execution?: HardkasExecutionTarget;
+  /**
+   * @deprecated Use `execution` instead.
+   */
   defaultNetwork?: HardkasNetworkName;
   network?: {
     default?: HardkasNetworkName;

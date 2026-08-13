@@ -13,7 +13,7 @@ describe("Phase 6A: Migration Fuzzing", () => {
       inputs: [],
       outputs: [],
       networkId: "simnet",
-      mode: "simulated",
+      mode: "simulator",
       createdAt: new Date().toISOString(),
       lineage: {
         artifactId: "unknown",

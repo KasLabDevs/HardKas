@@ -4,14 +4,14 @@ import { getBroadcastableSignedTransaction } from "../src/signed-tx.js";
 describe("getBroadcastableSignedTransaction", () => {
   const baseArtifact: any = {
     schema: "hardkas.signedTx",
-    hardkasVersion: "0.11.6-alpha",
+    hardkasVersion: "0.12.0-rc.1",
     version: "1.0.0-alpha",
     status: "signed",
     createdAt: new Date().toISOString(),
     signedId: "signed-123",
     sourcePlanId: "plan-123",
     networkId: "devnet",
-    mode: "real",
+    mode: "rpc",
     from: { address: "kaspa:from" },
     to: { address: "kaspa:to" },
     amountSompi: "1000",
@@ -24,9 +24,9 @@ describe("getBroadcastableSignedTransaction", () => {
   });
 
   it("should allow simulated artifacts", () => {
-    const simulated = { ...baseArtifact, mode: "simulated" as any };
+    const simulated = { ...baseArtifact, mode: "simulator" as any };
     const result = getBroadcastableSignedTransaction(simulated);
-    expect(result.mode).toBe("simulated");
+    expect(result.mode).toBe("simulator");
     expect(result.rawTransaction).toBe("raw-tx-hex");
   });
 

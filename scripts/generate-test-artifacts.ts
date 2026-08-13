@@ -8,7 +8,7 @@ const artifact = {
   version: "2.0.0",
   createdAt: new Date().toISOString(),
   networkId: "simnet",
-  mode: "simulated",
+  mode: "simulator",
   planId: "test-plan",
   from: { address: "kaspa:alice" },
   to: { address: "kaspa:bob" },

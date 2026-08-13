@@ -21,11 +21,11 @@ function baseDeployPlan(
   const lock = createKaspaP2shBlake2bLock(OP_TRUE);
   return {
     schema: "hardkas.silver.deployPlan",
-    hardkasVersion: "0.11.6-alpha",
+    hardkasVersion: "0.12.0-rc.1",
     version: "1.0.0-alpha",
     hashVersion: 4,
     networkId: "simnet",
-    mode: "simulated",
+    mode: "simulator",
     createdAt: "2026-06-08T00:00:00.000Z",
     compileArtifactHash: "compile-hash-op-true",
     compiledScriptHash: "compiled-script-hash-op-true",
@@ -46,11 +46,11 @@ function baseSpendPlan(
   const args: [] = [];
   return {
     schema: "hardkas.silver.spendPlan",
-    hardkasVersion: "0.11.6-alpha",
+    hardkasVersion: "0.12.0-rc.1",
     version: "1.0.0-alpha",
     hashVersion: 4,
     networkId: "simnet",
-    mode: "simulated",
+    mode: "simulator",
     createdAt: "2026-06-08T00:00:00.000Z",
     deployArtifactHash: deployResult.receipt.contentHash,
     compileArtifactHash: deployResult.receipt.compileArtifactHash,

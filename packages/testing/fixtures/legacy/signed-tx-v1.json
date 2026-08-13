@@ -1,0 +1,14 @@
+{
+  "schema": "hardkas.signedTx.v1",
+  "version": "1.0.0",
+  "signedId": "stx_abcdef",
+  "planId": "txp_8c1b8c2",
+  "networkId": "simnet",
+  "from": "alice",
+  "to": "bob",
+  "signedTransaction": {
+    "format": "kaspa-sdk",
+    "payload": "mock-hex-payload"
+  },
+  "generatedAt": "2026-05-20T12:01:00.000Z"
+}

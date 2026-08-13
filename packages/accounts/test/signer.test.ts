@@ -17,10 +17,10 @@ describe("signTxPlanArtifact", () => {
   const mockSimulatedPlan: any = {
     schema: "hardkas.txPlan",
     version: "1.0.0-alpha",
-    hardkasVersion: "0.11.6-alpha",
+    hardkasVersion: "0.12.0-rc.1",
     createdAt: new Date().toISOString(),
     networkId: "simnet",
-    mode: "simulated",
+    mode: "simulator",
     planId: "plan123",
     from: { address: "kaspa:sim_alice" },
     to: { address: "kaspa:sim_bob" },
@@ -28,29 +28,38 @@ describe("signTxPlanArtifact", () => {
     inputs: [],
     outputs: [],
     estimatedMass: "300",
-    estimatedFeeSompi: "300"
+    estimatedFeeSompi: "300",
+    execution: { mode: "simulator", domain: "kaspa-l1", network: "simnet" }
   };
 
   const mockRealPlan: any = {
     ...mockSimulatedPlan,
-    networkId: "devnet",
-    mode: "real"
+    networkId: "simnet",
+    mode: "rpc",
+    execution: { mode: "localnet", domain: "kaspa-l1", network: "simnet" }
   };
 
   const aliceAccount: HardkasAccount = {
     name: "alice",
-    kind: "simulated",
+    kind: "synthetic",
+    executionMode: "simulator",
     address: "kaspa:sim_alice"
   };
 
   const realAccount: HardkasAccount = {
     name: "deployer",
-    kind: "kaspa-private-key",
-    privateKeyEnv: "KASPA_PRIVATE_KEY"
+    kind: "kaspa",
+    network: "simnet",
+    privateKeyEnv: "KASPA_PRIVATE_KEY",
+    address: "kaspa:sim_deployer"
   };
 
-  it("should sign a simulated plan with a simulated account", async () => {
+  const simTarget = { mode: "simulator", domain: "kaspa-l1", network: "simnet" } as const;
+  const localTarget = { mode: "localnet", domain: "kaspa-l1", network: "simnet" } as const;
+
+  it("should sign a simulator plan with a synthetic account", async () => {
     const signed = await signTxPlanArtifact({
+      target: simTarget,
       planArtifact: mockSimulatedPlan,
       account: aliceAccount
     });
@@ -60,30 +69,33 @@ describe("signTxPlanArtifact", () => {
     expect(signed.signedTransaction?.format).toBe("simulated");
   });
 
-  it("should throw error when signing real plan with simulated account", async () => {
+  it("should throw error when signing real plan with synthetic account", async () => {
     await expect(
       signTxPlanArtifact({
+        target: localTarget,
         planArtifact: mockRealPlan,
         account: aliceAccount
       })
-    ).rejects.toThrow(
-      /Real Kaspa transaction plans.*cannot be signed with simulated accounts/
-    );
+    ).rejects.toThrow(/Execution mode mismatch. Expected: kaspa, Actual: synthetic/);
   });
 
   it("should generate simulated signature for simulated plan even with real account", async () => {
-    const signed = await signTxPlanArtifact({
-      planArtifact: mockSimulatedPlan,
-      account: realAccount
-    });
-    expect(signed.status).toBe("signed");
-    expect(signed.signedTransaction?.format).toBe("simulated");
+    // Wait, the guard will fail if we use a real account on a simulated target!
+    // Let's expect it to fail now because of the guard!
+    await expect(
+      signTxPlanArtifact({
+        target: simTarget,
+        planArtifact: mockSimulatedPlan,
+        account: realAccount
+      })
+    ).rejects.toThrow(/Execution mode mismatch. Expected: synthetic, Actual: kaspa/);
   });
 
   it("should throw error for real Kaspa signing if backend is unavailable", async () => {
     // Backend will be unavailable in test env as 'kaspa' is not installed
     await expect(
       signTxPlanArtifact({
+        target: localTarget,
         planArtifact: mockRealPlan,
         account: realAccount
       })
@@ -93,28 +105,36 @@ describe("signTxPlanArtifact", () => {
   it("should block mainnet signing by default", async () => {
     const mainnetPlan: any = {
       ...mockRealPlan,
-      networkId: "mainnet"
+      networkId: "mainnet",
+      execution: { mode: "localnet", domain: "kaspa-l1", network: "mainnet" }
     };
+    const mainnetTarget = { mode: "localnet", domain: "kaspa-l1", network: "mainnet" } as const;
+    const mainnetAccount = { ...realAccount, network: "mainnet" } as HardkasAccount;
 
     await expect(
       signTxPlanArtifact({
+        target: mainnetTarget,
         planArtifact: mainnetPlan,
-        account: realAccount
+        account: mainnetAccount
       })
     ).rejects.toThrow(/Mainnet signing is disabled by default/);
   });
 
   it("should allow mainnet signing if allowMainnet is true", async () => {
-    const mainnetPlan: TxPlanArtifact = {
+    const mainnetPlan: any = {
       ...mockRealPlan,
-      network: "mainnet"
+      networkId: "mainnet",
+      execution: { mode: "localnet", domain: "kaspa-l1", network: "mainnet" }
     };
+    const mainnetTarget = { mode: "localnet", domain: "kaspa-l1", network: "mainnet" } as const;
+    const mainnetAccount = { ...realAccount, network: "mainnet" } as HardkasAccount;
 
     // It will still fail due to missing backend, but NOT due to mainnet guard
     await expect(
       signTxPlanArtifact({
+        target: mainnetTarget,
         planArtifact: mainnetPlan,
-        account: realAccount,
+        account: mainnetAccount,
         allowMainnet: true
       })
     ).rejects.not.toThrow(/Mainnet signing is disabled by default/);

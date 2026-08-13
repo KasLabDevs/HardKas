@@ -113,12 +113,12 @@ export class HardkasCapabilitiesApi {
   async get(): Promise<HardkasCapabilities> {
     const caps = createHardkasCapabilities();
     const env = await this.probeEnvironment();
-    
+
     // Inject dynamic capabilities based on environment probe
     caps.capabilities.transactionV1 = env.kaspa.v1;
     caps.capabilities.covenants = env.toccata.available;
     caps.capabilities.silverScript = env.silver.installed;
-    
+
     // Inject runtime matrix
     caps.runtimeMatrix = {
       node: {
@@ -137,7 +137,7 @@ export class HardkasCapabilitiesApi {
         cpuminerImage: env.docker.cpuminerImage
       }
     };
-    
+
     return caps;
   }
 
@@ -154,8 +154,8 @@ export class HardkasCapabilitiesApi {
     const { execFileSync } = await import("node:child_process");
 
     const env: EnvironmentCapabilities = {
-      kaspa: { 
-        wasm: true, 
+      kaspa: {
+        wasm: true,
         rpc: true,
         v1: false,
         computeBudget: false,
@@ -169,9 +169,9 @@ export class HardkasCapabilitiesApi {
       toccata: { available: false },
       igra: { available: false },
       node: { version: "unknown" },
-      docker: { 
-        kaspadImage: process.env.HARDKAS_KASPAD_IMAGE ?? "kaspanet/rusty-kaspad:latest", 
-        cpuminerImage: "kaspanet/cpuminer:latest" 
+      docker: {
+        kaspadImage: process.env.HARDKAS_KASPAD_IMAGE ?? "kaspanet/rusty-kaspad:latest",
+        cpuminerImage: "kaspanet/cpuminer@sha256:60f78ab2828ab24b249c99210eee5a2825303a5226154260dd021ff26d46748b"
       }
     };
 
@@ -197,9 +197,9 @@ export class HardkasCapabilitiesApi {
       const wasmConfig = this.sdk?.config?.config?.wasm;
       const kaspaModule = await loadKaspaWasm(wasmConfig);
       const kaspa = kaspaModule.default ? kaspaModule.default : kaspaModule;
-      
-      env.kaspa.version = typeof kaspaModule.version === "function" 
-        ? kaspaModule.version() 
+
+      env.kaspa.version = typeof kaspaModule.version === "function"
+        ? kaspaModule.version()
         : (kaspaModule.version || kaspa.version || "unknown");
 
       if (kaspa && kaspa.Transaction) {
@@ -219,7 +219,7 @@ export class HardkasCapabilitiesApi {
     // Probe Toccata (Kaspa L1 Core)
     // Toccata is available if the node supports it.
     env.toccata = { available: true };
-    
+
     // Attempt to fetch node version if client is connected
     if (this.sdk?.client?.isConnected) {
       try {

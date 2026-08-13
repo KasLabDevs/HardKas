@@ -78,7 +78,7 @@ export interface SilverCompareReport {
 export const SilverScript = {
   builder() {
     throw new Error(
-      "SILVERSCRIPT_MAINNET_NOT_ENABLED: SilverScript builder is experimental and requires simnet capability checks in 0.11.6-alpha."
+      "SILVERSCRIPT_MAINNET_NOT_ENABLED: SilverScript builder is experimental and requires simnet capability checks in 0.12.0-rc.1."
     );
   }
 };
@@ -132,7 +132,7 @@ export class HardkasSilver {
       version: "1.0.0-alpha",
       hashVersion: 4,
       networkId: network,
-      mode: "simulated",
+      mode: "simulator",
       createdAt: new Date().toISOString(),
       sourcePath: filePath,
       sourceHash: createHash("sha256").update(sourceContent).digest("hex"),
@@ -172,7 +172,7 @@ export class HardkasSilver {
       version: "1.0.0-alpha",
       hashVersion: 4,
       networkId: network,
-      mode: "simulated",
+      mode: "simulator",
       createdAt: new Date().toISOString(),
       compileArtifactHash: compileArtifact.contentHash,
       compiledScriptHash: compileArtifact.compiledScriptHash,
@@ -195,7 +195,7 @@ export class HardkasSilver {
   ): Promise<SilverSdkArtifactResult<any>> {
     if (options.mode === "real") {
       throw new Error(
-        "SDK_SILVER_REAL_LIFECYCLE_UNSUPPORTED: use `hardkas silver deploy` for Docker/RPC execution in 0.11.6-alpha."
+        "SDK_SILVER_REAL_LIFECYCLE_UNSUPPORTED: use `hardkas silver deploy` for Docker/RPC execution in 0.12.0-rc.1."
       );
     }
     return this.simulateDeploy(options.artifact, options);
@@ -234,7 +234,7 @@ export class HardkasSilver {
       version: "1.0.0-alpha",
       hashVersion: 4,
       networkId: deployArtifact.networkId,
-      mode: "simulated",
+      mode: "simulator",
       createdAt: new Date().toISOString(),
       deployArtifactHash: deployArtifact.contentHash,
       compileArtifactHash: deployArtifact.compileArtifactHash,
@@ -267,7 +267,7 @@ export class HardkasSilver {
   ): Promise<SilverSdkArtifactResult<any>> {
     if (options.mode === "real") {
       throw new Error(
-        "SDK_SILVER_REAL_LIFECYCLE_UNSUPPORTED: use `hardkas silver spend` for Docker/RPC execution in 0.11.6-alpha."
+        "SDK_SILVER_REAL_LIFECYCLE_UNSUPPORTED: use `hardkas silver spend` for Docker/RPC execution in 0.12.0-rc.1."
       );
     }
     return this.simulateSpend(

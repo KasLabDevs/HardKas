@@ -22,12 +22,13 @@ describe("Artifact Integrity Hardening (P1.1)", () => {
 
   const createValidArtifact = () => ({
     schema: "hardkas.txPlan",
-    hardkasVersion: "0.11.6-alpha",
+    hardkasVersion: "0.12.0-rc.1",
     version: ARTIFACT_VERSION,
     hashVersion: CURRENT_HASH_VERSION,
     createdAt: new Date().toISOString(),
     networkId: "simnet",
-    mode: "simulated",
+    mode: "simulator",
+    execution: { mode: "simulator", domain: "kaspa-l1", network: "simnet" },
     planId: "test-123",
     from: { address: "kaspa:sim_alice" },
     to: { address: "kaspa:sim_bob" },

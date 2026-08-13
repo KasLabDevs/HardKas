@@ -32,14 +32,26 @@ export function getCoinbaseMaturity(networkId?: string, overrideParams?: { coinb
   throw e;
 }
 
-export const executionModeSchema = z.enum(["simulated", "real", "readonly"]);
-
+export const executionModeSchema = z.enum(["simulator", "localnet", "rpc"]);
 export type ExecutionMode = z.infer<typeof executionModeSchema>;
+
+export const executionDomainSchema = z.enum(["kaspa-l1", "evm-l2"]);
+export type ExecutionDomain = z.infer<typeof executionDomainSchema>;
+
+export const hardkasExecutionTargetSchema = z.object({
+  mode: executionModeSchema,
+  domain: executionDomainSchema,
+  network: z.string(),
+});
+export type HardkasExecutionTarget = z.infer<typeof hardkasExecutionTargetSchema>;
 
 export const artifactTypeSchema = z.enum([
   "txPlan",
   "signedTx",
   "txReceipt",
+  "txPlan.v2",
+  "signedTx.v2",
+  "txReceipt.v2",
   "txTrace",
   "snapshot",
   "workflow.v1",
@@ -74,52 +86,16 @@ export const hardkasConfigSchema = z.object({
   }),
   localnet: z
     .object({
-      mode: z.enum(["simulated", "local-node"]).default("simulated"),
+      mode: z.enum(["simulator", "local-node"]).default("simulator"),
       dataDir: z.string().optional()
     })
-    .default({ mode: "simulated" })
+    .default({ mode: "simulator" })
 });
 
 export type HardkasConfig = z.infer<typeof hardkasConfigSchema>;
 
-export class HardkasError extends Error {
-  readonly code: string;
-  readonly cause?: unknown;
-
-  constructor(code: string, message: string, options?: { cause?: unknown }) {
-    super(message);
-    this.name = "HardkasError";
-    this.code = code;
-    this.cause = options?.cause;
-  }
-}
-
-export type InvariantDomain =
-  | "semantic"
-  | "replay"
-  | "provenance"
-  | "structural"
-  | "operational";
-
-export type InvariantSeverity = "warning" | "error" | "fatal";
-
-export class InvariantViolationError extends HardkasError {
-  readonly domain: InvariantDomain;
-  readonly severity: InvariantSeverity;
-
-  constructor(
-    domain: InvariantDomain,
-    message: string,
-    options?: { severity?: InvariantSeverity; cause?: unknown }
-  ) {
-    super(`INVARIANT_VIOLATION_${domain.toUpperCase()}`, message, {
-      cause: options?.cause
-    });
-    this.name = "InvariantViolationError";
-    this.domain = domain;
-    this.severity = options?.severity || "fatal";
-  }
-}
+import { HardkasError } from "./errors.js";
+export * from "./errors.js";
 
 export function parseHardkasConfig(input: unknown): HardkasConfig {
   const result = hardkasConfigSchema.safeParse(input);

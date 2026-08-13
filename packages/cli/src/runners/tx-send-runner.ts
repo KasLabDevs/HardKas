@@ -1,5 +1,5 @@
 import { SignedTxArtifact, TxReceiptArtifact } from "@hardkas/artifacts";
-import { resolveNetworkTarget, HardkasConfig } from "@hardkas/config";
+import { resolveExecutionTarget, HardkasConfig } from "@hardkas/config";
 import { assertBroadcastNetworkAllowed } from "../broadcast-guard.js";
 import { Hardkas } from "@hardkas/sdk";
 
@@ -31,7 +31,7 @@ export async function runTxSend(input: TxSendRunnerInput): Promise<TxSendRunnerR
   const { signedArtifact, network, config, url } = input;
 
   const networkName = network || signedArtifact.networkId;
-  const { name: resolvedName, target } = resolveNetworkTarget({
+  const { name: resolvedName, target, execution } = resolveExecutionTarget({
     network: networkName,
     config
   });
@@ -43,12 +43,20 @@ export async function runTxSend(input: TxSendRunnerInput): Promise<TxSendRunnerR
     url
   });
 
+  // ENFORCE EXECUTION COMPATIBILITY FOR BROADCASTING/SIMULATION
+  const { assertExecutionCompatibility } = await import("@hardkas/core");
+  assertExecutionCompatibility({
+    operation: provider.mode === "simulator" ? "simulate" : "send",
+    target: execution,
+    artifact: { execution: signedArtifact.execution }
+  });
+
   // Initialize the SDK
   const sdk = await Hardkas.open({ cwd: input.workspaceRoot || process.cwd() });
   sdk.config.config.defaultNetwork = resolvedName;
 
   // 1. Simulated Mode
-  if (provider.mode === "simulated" && signedArtifact.mode !== "real") {
+  if (provider.mode === "simulator" && signedArtifact.mode !== "real") {
     const { receipt, receiptPath } = await sdk.tx.simulate(signedArtifact);
 
     return {
@@ -76,8 +84,14 @@ export async function runTxSend(input: TxSendRunnerInput): Promise<TxSendRunnerR
   if (!rpcUrl) throw new Error(`No RPC URL found for network '${networkName}'.`);
 
   // Override the SDK RPC client for real mode since default simnet creates a simulated provider
-  const { JsonWrpcKaspaClient } = await import("@hardkas/kaspa-rpc");
-  const rpcClient = new JsonWrpcKaspaClient({ rpcUrl: rpcUrl });
+  const { JsonWrpcKaspaClient, KaspaWrpcClient } = await import("@hardkas/kaspa-rpc");
+  const isWebSocket = rpcUrl.startsWith("ws://") || rpcUrl.startsWith("wss://");
+  const rpcClient = isWebSocket
+    ? new KaspaWrpcClient(rpcUrl)
+    : new JsonWrpcKaspaClient({ rpcUrl: rpcUrl });
+  if (isWebSocket) {
+    await (rpcClient as InstanceType<typeof KaspaWrpcClient>).connect();
+  }
   (sdk as any).rpc = rpcClient;
 
   try {
@@ -94,8 +108,12 @@ export async function runTxSend(input: TxSendRunnerInput): Promise<TxSendRunnerR
       replayId: `replay_${receipt.txId.substring(0, 8)}`
     };
   } finally {
-    if (rpcClient && typeof rpcClient.close === "function") {
-      await rpcClient.close();
+    if (rpcClient) {
+      if ("disconnect" in rpcClient && typeof (rpcClient as any).disconnect === "function") {
+        await (rpcClient as any).disconnect();
+      } else if ("close" in rpcClient && typeof (rpcClient as any).close === "function") {
+        await (rpcClient as any).close();
+      }
     }
   }
 }

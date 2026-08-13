@@ -20,10 +20,10 @@ describe("Network-Agnostic Artifact Layer: Integration", () => {
     // Create a mock policy
     const policy = {
       schema: "hardkas.policy.v1",
-      hardkasVersion: "0.11.6-alpha",
+      hardkasVersion: "0.12.0-rc.1",
       version: "1.0.0-alpha",
       networkId: "simnet",
-      mode: "simulated",
+      mode: "simulator",
       createdAt: new Date().toISOString(),
       decision: "ALLOW",
       rules: []

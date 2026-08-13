@@ -1,6 +1,6 @@
 {
   "name": "@hardkas/lab-07-batch-engine",
-  "version": "0.11.6-alpha",
+  "version": "0.12.0-rc.1",
   "private": true,
   "type": "module",
   "scripts": {

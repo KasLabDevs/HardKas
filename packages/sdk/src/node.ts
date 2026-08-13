@@ -164,7 +164,7 @@ export class HardkasNodeApi {
         await execAsync(
           `docker run -d --name ${minerName} ` +
           `--network container:hardkas-kaspad-simnet ` +
-          `kaspanet/cpuminer:latest ` +
+          `kaspanet/cpuminer@sha256:60f78ab2828ab24b249c99210eee5a2825303a5226154260dd021ff26d46748b ` +
           `-a ${primaryAddress} -s 127.0.0.1 -p 16210 --mine-when-not-synced -t 1`
         );
       } catch (err: any) {

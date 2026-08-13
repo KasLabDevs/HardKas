@@ -27,10 +27,10 @@ describe("accounts", () => {
   });
 
   it("resolveHardkasAccount should resolve direct addresses", () => {
-    const acc = resolveHardkasAccount({ nameOrAddress: "kaspa:sim_custom" });
-    expect(acc.name).toBe("kaspa:sim_custom");
+    const acc = resolveHardkasAccount({ nameOrAddress: "kaspa:qqlpk9rs7yag6eqj3lttzqd8vgvssz8l8fxlpdag4h7zx2rjjr8lkkerwkezn" });
+    expect(acc.name).toBe("kaspa:qqlpk9rs7yag6eqj3lttzqd8vgvssz8l8fxlpdag4h7zx2rjjr8lkkerwkezn");
     expect(acc.kind).toBe("external-wallet");
-    expect(acc.address).toBe("kaspa:sim_custom");
+    expect(acc.address).toBe("kaspa:qqlpk9rs7yag6eqj3lttzqd8vgvssz8l8fxlpdag4h7zx2rjjr8lkkerwkezn");
   });
 
   it("resolveHardkasAccountAddress should return address for known account", async () => {
@@ -57,7 +57,8 @@ describe("accounts", () => {
   it("describeAccount should not leak secrets", () => {
     const acc = {
       name: "deployer",
-      kind: "kaspa-private-key" as const,
+      kind: "kaspa" as const,
+      network: "mainnet",
       privateKeyEnv: "SECRET_KEY",
       address: "kaspa:q...1"
     };

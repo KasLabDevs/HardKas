@@ -24,10 +24,10 @@ describe("traces store", () => {
 
   const mockTrace = {
     schema: ARTIFACT_SCHEMAS.TX_TRACE,
-    hardkasVersion: "0.11.6-alpha",
+    hardkasVersion: "0.12.0-rc.1",
     version: "1.0.0-alpha",
     txId: "simtx_trace_123",
-    mode: "simulated",
+    mode: "simulator",
     networkId: "simnet",
     createdAt: new Date().toISOString(),
     events: [
@@ -47,20 +47,20 @@ describe("traces store", () => {
   it("should list traces sorted by date", async () => {
     const t1: any = {
       schema: ARTIFACT_SCHEMAS.TX_TRACE,
-      hardkasVersion: "0.11.6-alpha",
+      hardkasVersion: "0.12.0-rc.1",
       version: "1.0.0-alpha",
       txId: "t1",
-      mode: "simulated",
+      mode: "simulator",
       networkId: "simnet",
       createdAt: "2026-01-01T10:00:00Z",
       events: []
     };
     const t2: any = {
       schema: ARTIFACT_SCHEMAS.TX_TRACE,
-      hardkasVersion: "0.11.6-alpha",
+      hardkasVersion: "0.12.0-rc.1",
       version: "1.0.0-alpha",
       txId: "t2",
-      mode: "simulated",
+      mode: "simulator",
       networkId: "simnet",
       createdAt: "2026-01-01T11:00:00Z",
       events: []

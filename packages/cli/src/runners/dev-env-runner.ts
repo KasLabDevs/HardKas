@@ -1,4 +1,4 @@
-﻿import { UI } from "../ui.js";
+import { UI } from "../ui.js";
 import { loadHardkasConfig } from "@hardkas/config";
 import { runDevServer } from "./dev-server-runner.js";
 

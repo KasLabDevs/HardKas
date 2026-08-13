@@ -8,14 +8,14 @@ describe("Artifact Hardening (Phase 4)", () => {
       schema: "hardkas.test",
       version: "1.0.0",
       payload: "hello",
-      mode: "simulated",
+      mode: "simulator",
       networkId: "simnet",
       createdAt: "2026-05-10T10:00:00Z"
     };
 
     const hash = calculateContentHash(artifact);
     // Fixed hash for this specific object structure (now includes version)
-    expect(hash).toBe("34c358ac44d0ff9f4cf6e11c57f54d3828de4f783815665926bf1cd51d36225f");
+    expect(hash).toBe("86e4d05f64e7e1acc3fbee30af01c6544f220df29910bfcebd88a60e8e63ac80");
   });
 
   it("should use injected clock for semantic validation", () => {
@@ -23,7 +23,7 @@ describe("Artifact Hardening (Phase 4)", () => {
       schema: "hardkas.test",
       version: "1.0.0",
       createdAt: "2026-05-10T10:00:00Z", // Fixed time
-      mode: "simulated",
+      mode: "simulator",
       networkId: "simnet"
     };
 
@@ -50,7 +50,7 @@ describe("Artifact Hardening (Phase 4)", () => {
     const artifactMissing = {
       schema: "hardkas.test",
       version: "1.0.0",
-      mode: "simulated",
+      mode: "simulator",
       networkId: "simnet",
       createdAt: new Date().toISOString()
     };
@@ -76,7 +76,7 @@ describe("Artifact Hardening (Phase 4)", () => {
     const artifact = {
       schema: "hardkas.test",
       version: "1.0.0",
-      mode: "simulated",
+      mode: "simulator",
       networkId: "mainnet",
       createdAt: new Date().toISOString(),
       from: { address: "kaspatest:qzhj..." } // Testnet address on mainnet

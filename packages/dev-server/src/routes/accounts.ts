@@ -39,7 +39,7 @@ accountsRoutes.get("/", async (c) => {
     const result = rawAccounts.map((acc) => {
       let balanceSompiStr = "0";
 
-      if (acc.kind === "simulated" && localState?.utxos) {
+      if (acc.kind === "synthetic" && localState?.utxos) {
         // Derive simulated balance by summing unspent UTXOs for this address
         const unspentUtxos = localState.utxos.filter(
           (u: any) => u.address === acc.address && !u.spent

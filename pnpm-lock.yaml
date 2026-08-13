@@ -406,22 +406,22 @@ importers:
   examples/showcase-suite/apps/cli-studio:
     dependencies:
       '@hardkas/cli':
-        specifier: workspace:0.11.6-alpha
+        specifier: workspace:0.12.0-rc.1
         version: link:../../../../packages/cli
       '@hardkas/core':
-        specifier: workspace:0.11.6-alpha
+        specifier: workspace:0.12.0-rc.1
         version: link:../../../../packages/core
       '@hardkas/kaspa-rpc':
-        specifier: workspace:0.11.6-alpha
+        specifier: workspace:0.12.0-rc.1
         version: link:../../../../packages/kaspa-rpc
       '@hardkas/toolkit':
-        specifier: workspace:0.11.6-alpha
+        specifier: workspace:0.12.0-rc.1
         version: link:../../../../packages/toolkit
       '@hardkas/tx-builder':
-        specifier: workspace:0.11.6-alpha
+        specifier: workspace:0.12.0-rc.1
         version: link:../../../../packages/tx-builder
       '@hardkas/wallet-adapter':
-        specifier: workspace:0.11.6-alpha
+        specifier: workspace:0.12.0-rc.1
         version: link:../../../../packages/wallet-adapter
       '@showcase/shared-backend':
         specifier: workspace:*
@@ -473,25 +473,25 @@ importers:
   examples/showcase-suite/apps/explorer-live:
     dependencies:
       '@hardkas/kaspa-rpc':
-        specifier: workspace:0.11.6-alpha
+        specifier: workspace:0.12.0-rc.1
         version: link:../../../../packages/kaspa-rpc
       '@hardkas/observability':
-        specifier: workspace:0.11.6-alpha
+        specifier: workspace:0.12.0-rc.1
         version: link:../../../../packages/observability
       '@hardkas/plugin-local-indexer':
-        specifier: workspace:0.11.6-alpha
+        specifier: workspace:0.12.0-rc.1
         version: link:../../../../packages/plugin-local-indexer
       '@hardkas/query-store':
-        specifier: workspace:0.11.6-alpha
+        specifier: workspace:0.12.0-rc.1
         version: link:../../../../packages/query-store
       '@hardkas/toolkit':
-        specifier: workspace:0.11.6-alpha
+        specifier: workspace:0.12.0-rc.1
         version: link:../../../../packages/toolkit
       '@hardkas/tx-builder':
-        specifier: workspace:0.11.6-alpha
+        specifier: workspace:0.12.0-rc.1
         version: link:../../../../packages/tx-builder
       '@hardkas/wallet-adapter':
-        specifier: workspace:0.11.6-alpha
+        specifier: workspace:0.12.0-rc.1
         version: link:../../../../packages/wallet-adapter
       '@showcase/shared-backend':
         specifier: workspace:*
@@ -543,16 +543,16 @@ importers:
   examples/showcase-suite/apps/localnet-studio:
     dependencies:
       '@hardkas/kaspa-rpc':
-        specifier: workspace:0.11.6-alpha
+        specifier: workspace:0.12.0-rc.1
         version: link:../../../../packages/kaspa-rpc
       '@hardkas/localnet':
-        specifier: workspace:0.11.6-alpha
+        specifier: workspace:0.12.0-rc.1
         version: link:../../../../packages/localnet
       '@hardkas/node-runner':
-        specifier: workspace:0.11.6-alpha
+        specifier: workspace:0.12.0-rc.1
         version: link:../../../../packages/node-runner
       '@hardkas/toolkit':
-        specifier: workspace:0.11.6-alpha
+        specifier: workspace:0.12.0-rc.1
         version: link:../../../../packages/toolkit
       cors:
         specifier: ^2.8.5
@@ -598,16 +598,16 @@ importers:
   examples/showcase-suite/apps/merchant-terminal:
     dependencies:
       '@hardkas/kaspa-rpc':
-        specifier: workspace:0.11.6-alpha
+        specifier: workspace:0.12.0-rc.1
         version: link:../../../../packages/kaspa-rpc
       '@hardkas/toolkit':
-        specifier: workspace:0.11.6-alpha
+        specifier: workspace:0.12.0-rc.1
         version: link:../../../../packages/toolkit
       '@hardkas/tx-builder':
-        specifier: workspace:0.11.6-alpha
+        specifier: workspace:0.12.0-rc.1
         version: link:../../../../packages/tx-builder
       '@hardkas/wallet-adapter':
-        specifier: workspace:0.11.6-alpha
+        specifier: workspace:0.12.0-rc.1
         version: link:../../../../packages/wallet-adapter
       '@showcase/shared-backend':
         specifier: workspace:*
@@ -659,16 +659,16 @@ importers:
   examples/showcase-suite/apps/mission-control:
     dependencies:
       '@hardkas/kaspa-rpc':
-        specifier: workspace:0.11.6-alpha
+        specifier: workspace:0.12.0-rc.1
         version: link:../../../../packages/kaspa-rpc
       '@hardkas/toolkit':
-        specifier: workspace:0.11.6-alpha
+        specifier: workspace:0.12.0-rc.1
         version: link:../../../../packages/toolkit
       '@hardkas/tx-builder':
-        specifier: workspace:0.11.6-alpha
+        specifier: workspace:0.12.0-rc.1
         version: link:../../../../packages/tx-builder
       '@hardkas/wallet-adapter':
-        specifier: workspace:0.11.6-alpha
+        specifier: workspace:0.12.0-rc.1
         version: link:../../../../packages/wallet-adapter
       '@showcase/shared-backend':
         specifier: workspace:*
@@ -720,16 +720,16 @@ importers:
   examples/showcase-suite/apps/silver-playground:
     dependencies:
       '@hardkas/kaspa-rpc':
-        specifier: workspace:0.11.6-alpha
+        specifier: workspace:0.12.0-rc.1
         version: link:../../../../packages/kaspa-rpc
       '@hardkas/toolkit':
-        specifier: workspace:0.11.6-alpha
+        specifier: workspace:0.12.0-rc.1
         version: link:../../../../packages/toolkit
       '@hardkas/tx-builder':
-        specifier: workspace:0.11.6-alpha
+        specifier: workspace:0.12.0-rc.1
         version: link:../../../../packages/tx-builder
       '@hardkas/wallet-adapter':
-        specifier: workspace:0.11.6-alpha
+        specifier: workspace:0.12.0-rc.1
         version: link:../../../../packages/wallet-adapter
       '@showcase/shared-backend':
         specifier: workspace:*
@@ -781,16 +781,16 @@ importers:
   examples/showcase-suite/apps/time-travel-lab:
     dependencies:
       '@hardkas/kaspa-rpc':
-        specifier: workspace:0.11.6-alpha
+        specifier: workspace:0.12.0-rc.1
         version: link:../../../../packages/kaspa-rpc
       '@hardkas/toolkit':
-        specifier: workspace:0.11.6-alpha
+        specifier: workspace:0.12.0-rc.1
         version: link:../../../../packages/toolkit
       '@hardkas/tx-builder':
-        specifier: workspace:0.11.6-alpha
+        specifier: workspace:0.12.0-rc.1
         version: link:../../../../packages/tx-builder
       '@hardkas/wallet-adapter':
-        specifier: workspace:0.11.6-alpha
+        specifier: workspace:0.12.0-rc.1
         version: link:../../../../packages/wallet-adapter
       '@showcase/shared-backend':
         specifier: workspace:*
@@ -842,16 +842,16 @@ importers:
   examples/showcase-suite/apps/treasury-console:
     dependencies:
       '@hardkas/kaspa-rpc':
-        specifier: workspace:0.11.6-alpha
+        specifier: workspace:0.12.0-rc.1
         version: link:../../../../packages/kaspa-rpc
       '@hardkas/toolkit':
-        specifier: workspace:0.11.6-alpha
+        specifier: workspace:0.12.0-rc.1
         version: link:../../../../packages/toolkit
       '@hardkas/tx-builder':
-        specifier: workspace:0.11.6-alpha
+        specifier: workspace:0.12.0-rc.1
         version: link:../../../../packages/tx-builder
       '@hardkas/wallet-adapter':
-        specifier: workspace:0.11.6-alpha
+        specifier: workspace:0.12.0-rc.1
         version: link:../../../../packages/wallet-adapter
       '@showcase/shared-backend':
         specifier: workspace:*
@@ -903,16 +903,16 @@ importers:
   examples/showcase-suite/apps/wallet-pro:
     dependencies:
       '@hardkas/kaspa-rpc':
-        specifier: workspace:0.11.6-alpha
+        specifier: workspace:0.12.0-rc.1
         version: link:../../../../packages/kaspa-rpc
       '@hardkas/toolkit':
-        specifier: workspace:0.11.6-alpha
+        specifier: workspace:0.12.0-rc.1
         version: link:../../../../packages/toolkit
       '@hardkas/tx-builder':
-        specifier: workspace:0.11.6-alpha
+        specifier: workspace:0.12.0-rc.1
         version: link:../../../../packages/tx-builder
       '@hardkas/wallet-adapter':
-        specifier: workspace:0.11.6-alpha
+        specifier: workspace:0.12.0-rc.1
         version: link:../../../../packages/wallet-adapter
       '@showcase/shared-backend':
         specifier: workspace:*
@@ -1372,7 +1372,7 @@ importers:
   packages/jobs:
     dependencies:
       '@hardkas/observability':
-        specifier: workspace:0.11.6-alpha
+        specifier: workspace:0.12.0-rc.1
         version: link:../observability
     devDependencies:
       '@types/node':
@@ -1507,7 +1507,7 @@ importers:
   packages/observability:
     devDependencies:
       '@types/node':
-        specifier: ^20.11.66
+        specifier: ^20.12.06
         version: 20.19.43
       tsup:
         specifier: ^8.0.2
@@ -1541,7 +1541,7 @@ importers:
         specifier: workspace:*
         version: link:../kaspa-rpc
       '@hardkas/observability':
-        specifier: workspace:0.11.6-alpha
+        specifier: workspace:0.12.0-rc.1
         version: link:../observability
       '@hardkas/toolkit':
         specifier: workspace:*
@@ -1840,7 +1840,7 @@ importers:
         specifier: workspace:*
         version: link:../core
       '@hardkas/observability':
-        specifier: workspace:0.11.6-alpha
+        specifier: workspace:0.12.0-rc.1
         version: link:../observability
       '@hardkas/toolkit':
         specifier: workspace:*
@@ -1914,7 +1914,7 @@ importers:
         specifier: workspace:*
         version: link:../kaspa-rpc
       '@hardkas/observability':
-        specifier: workspace:0.11.6-alpha
+        specifier: workspace:0.12.0-rc.1
         version: link:../observability
       '@hardkas/query':
         specifier: workspace:*
@@ -5584,7 +5584,7 @@ packages:
 
   is-number@7.0.0:
     resolution: {integrity: sha512-41Cifkg6e8TylSpdtTpeLVMqvSBEVzTttHvERD741+pnZ8ANv0004MRL43QKPDlK9cGvNp6NZWZUBlbGXYxxng==}
-    engines: {node: '>=0.12.0'}
+    engines: {node: '>=0.12.0-rc.1'}
 
   is-plain-obj@4.1.0:
     resolution: {integrity: sha512-+Pgi+vMuUNkJyExiMBt5IlFoMyKnr5zhJ4Uspz58WOhBF5QoIZkFyNHIbBAtHwzVAgk5RtndVNsDRN61/mmDqg==}
@@ -7115,7 +7115,7 @@ packages:
 
   v8-to-istanbul@9.3.0:
     resolution: {integrity: sha512-kiGUalWN+rgBJ/1OHZsBtU4rXZOfj/7rKQxULKlIzwzQSvMJUUNgPwJEEh7gU6xEVxC0ahoOBvN2YI8GH6FNgA==}
-    engines: {node: '>=10.12.0'}
+    engines: {node: '>=10.12.0-rc.1'}
 
   vary@1.1.2:
     resolution: {integrity: sha512-BNGbWLfd0eUPabhkXUVm0j8uuvREyTh5ovRa/dyow/BqAbZJyC+5fU+IzQOzmAKzYqYRAISoRhdQr3eIZ/PXqg==}

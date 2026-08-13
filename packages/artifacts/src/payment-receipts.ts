@@ -44,10 +44,10 @@ export function createPaymentReceipt(request: PaymentReceiptCreateRequest): Paym
 
   return {
     schema: HardkasSchemas.PaymentReceiptV1,
-    hardkasVersion: "0.11.6-alpha",
+    hardkasVersion: "0.12.0-rc.1",
     version: "v1",
     networkId: asNetworkId(request.networkId ?? "simnet") as unknown as NetworkId,
-    mode: "simulated",
+    mode: "simulator",
     createdAt: new Date().toISOString(),
     invoiceId: request.invoice.id,
     merchantId: request.invoice.merchantId,

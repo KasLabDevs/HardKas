@@ -36,9 +36,9 @@ describe("Query Store Rebuild Equivalence", () => {
     const artifact: any = {
       schema,
       version: "1.0.0-alpha",
-      hardkasVersion: "0.11.6-alpha",
+      hardkasVersion: "0.12.0-rc.1",
       networkId: "simnet",
-      mode: "real",
+      mode: "rpc",
       artifactId: id,
       createdAt: new Date().toISOString(),
       // Fields for txReceipt to satisfy Zod

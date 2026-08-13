@@ -14,7 +14,7 @@ import {
   SignTxPlanInput,
   SignTxPlanResult,
   HardkasSignerKind,
-  HardkasKaspaPrivateKeyAccount
+  HardkasKaspaAccount
 } from "./types.js";
 import { HardkasConfig } from "@hardkas/config";
 import { getKaspaSigningBackendStatus } from "./signer-backend.js";
@@ -42,13 +42,14 @@ import { TxInputAuthorizer } from "./authorizers.js";
  * Main entry point for signing transaction plan artifacts.
  */
 export async function signTxPlanArtifact(input: {
+  target: import("@hardkas/core").HardkasExecutionTarget;
   planArtifact: TxPlanArtifact;
   account?: HardkasAccount;
   authorizers?: Readonly<Record<number, TxInputAuthorizer>>;
   config?: HardkasConfig;
   allowMainnet?: boolean;
 }): Promise<SignedTxArtifact> {
-  const { planArtifact, account, authorizers } = input;
+  const { target, planArtifact, account, authorizers } = input;
 
   // Security guardrails
   // In alpha, status might be missing if schema is used as the state marker
@@ -59,7 +60,22 @@ export async function signTxPlanArtifact(input: {
     throw new Error(`Cannot sign artifact with status: ${planRecord.status}`);
   }
 
-  if (planArtifact.mode === "simulated") {
+  // ENFORCE EXECUTION COMPATIBILITY BEFORE ANY SIGNER UNLOCK
+  const { assertExecutionCompatibility } = await import("@hardkas/core");
+  assertExecutionCompatibility({
+    operation: "sign",
+    target,
+    ...(account ? {
+      account: {
+        kind: account.kind,
+        ...( (account as any).network ? { network: (account as any).network } : {} ),
+        ...( (account as any).executionMode ? { executionMode: (account as any).executionMode } : {} )
+      }
+    } : {}),
+    artifact: { execution: planArtifact.execution }
+  });
+
+  if (planArtifact.mode === "simulator") {
     return createSimulatedSignedTxArtifact(
       planArtifact as TxPlan,
       `simulated-signed-tx:${planArtifact.planId}`,
@@ -74,15 +90,15 @@ export async function signTxPlanArtifact(input: {
     );
   }
 
-  if (account && account.kind === "simulated") {
+  if (account && account.kind === "synthetic") {
     throw new Error(
-      `Real Kaspa transaction plans (mode: ${planArtifact.mode}) cannot be signed with simulated accounts.`
+      `Real Kaspa transaction plans (mode: ${planArtifact.mode}) cannot be signed with synthetic accounts.`
     );
   }
 
     if (
-      !account || 
-      account.kind === "kaspa-private-key" || 
+      !account ||
+      account.kind === "kaspa" ||
       (typeof (account as any).authorize === "function")
     ) {
     const status = await getKaspaSigningBackendStatus(input.config?.wasm);
@@ -94,7 +110,7 @@ export async function signTxPlanArtifact(input: {
     }
 
     const signerOptions: any = {
-      account: account as HardkasKaspaPrivateKeyAccount,
+      account: account as HardkasKaspaAccount,
       allowMainnet: input.allowMainnet
     };
     if (input.config?.wasm) {
@@ -127,6 +143,7 @@ export async function signTxPlanArtifact(input: {
         payload: result.signedTransaction?.payload || ""
       },
       lineage: createLineageTransition(planArtifact, "hardkas.signedTx"),
+      ...(planArtifact.execution ? { execution: planArtifact.execution } : {}),
       ...(planArtifact.workflowId ? { workflowId: planArtifact.workflowId } : {}),
       ...(planArtifact.assumptionLevel
         ? { assumptionLevel: planArtifact.assumptionLevel }

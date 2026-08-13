@@ -5,7 +5,7 @@ import os from "node:os";
 import { Hardkas } from "@hardkas/sdk";
 import { deterministicCompare } from "@hardkas/core";
 
-describe("Audit Hardening Suite (0.11.6-alpha)", () => {
+describe("Audit Hardening Suite (0.12.0-rc.1)", () => {
   let tmpDir: string;
   let sdk: Hardkas;
 
@@ -167,7 +167,7 @@ describe("Audit Hardening Suite (0.11.6-alpha)", () => {
         },
         amount: 10n
       });
-      expect(plan.mode).toBe("real");
+      expect(plan.mode).toBe("rpc");
     });
   });
 });

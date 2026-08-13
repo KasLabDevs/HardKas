@@ -81,7 +81,7 @@ export async function runDevTxGenerate(options: any) {
       generated: numCount,
       successCount,
       failCount,
-      mode: "simulated",
+      mode: "simulator",
       purpose: "load-test",
       securityModel: "mock-fixture",
       results

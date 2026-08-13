@@ -1,7 +1,7 @@
 import { defineHardkasConfig } from "@hardkas/config";
 
 export default defineHardkasConfig({
-  // HardKAS v0.11.6-alpha Configuration
+  // HardKAS v0.12.0-rc.1 Configuration
   defaultNetwork: "simulated",
 
   networks: {
@@ -21,17 +21,6 @@ export default defineHardkasConfig({
       network: "testnet-12",
       rpcUrl: "ws://127.0.0.1:18210",
       description: "Local Toccata lab"
-    }
-  },
-
-  accounts: {
-    alice: {
-      kind: "simulated",
-      address: "kaspa:sim_alice"
-    },
-    bob: {
-      kind: "simulated",
-      address: "kaspa:sim_bob"
     }
   }
 });

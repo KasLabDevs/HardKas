@@ -9,7 +9,6 @@ describe("SimulatedProvider Integration", () => {
 
   it("should not make any wRPC calls when simulating transactions or fetching balances in simulated network", async () => {
     const wrpcSpy = vi.spyOn(JsonWrpcKaspaClient.prototype, "getBalanceByAddress");
-
     const sdk = await Hardkas.create({
       autoBootstrap: true,
       network: "simulated",

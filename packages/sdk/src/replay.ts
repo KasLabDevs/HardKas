@@ -421,6 +421,17 @@ export class HardkasReplay {
 
       if (!verifyErrorMsg && plan && receipt) {
         try {
+          const { resolveExecutionTarget } = await import("@hardkas/config");
+          const target = (receipt as any).execution || resolveExecutionTarget({ config: this.sdk.config.config, network: receipt.networkId as string }).target;
+
+          const { assertExecutionCompatibility } = await import("@hardkas/core");
+          assertExecutionCompatibility({
+            operation: "replay",
+            target,
+            artifact: { execution: (plan as any).execution },
+            receipt: { execution: (receipt as any).execution }
+          });
+
           const { loadOrCreateLocalnetState, reconstructStateAtDaa, verifyReplay } =
             await import("@hardkas/localnet");
           const { systemRuntimeContext } = await import("@hardkas/core");

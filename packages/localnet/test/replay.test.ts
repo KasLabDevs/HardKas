@@ -23,11 +23,11 @@ describe("replay summary", () => {
     const txId = "simtx_replay_123";
     const receipt: any = {
       schema: ARTIFACT_SCHEMAS.TX_RECEIPT,
-      hardkasVersion: "0.11.6-alpha",
+      hardkasVersion: "0.12.0-rc.1",
       version: "1.0.0-alpha",
       hashVersion: 1,
       txId,
-      mode: "simulated" as const,
+      mode: "simulator" as const,
       networkId: "simnet" as const,
       fromAddress: "alice",
       toAddress: "bob",
@@ -42,10 +42,10 @@ describe("replay summary", () => {
 
     const trace: any = {
       schema: ARTIFACT_SCHEMAS.TX_TRACE,
-      hardkasVersion: "0.11.6-alpha",
+      hardkasVersion: "0.12.0-rc.1",
       version: "1.0.0-alpha",
       txId,
-      mode: "simulated" as const,
+      mode: "simulator" as const,
       networkId: "simnet" as const,
       createdAt: receipt.createdAt,
       events: [{ type: "phase.completed" as const, phase: "send", timestamp: Date.now() }]

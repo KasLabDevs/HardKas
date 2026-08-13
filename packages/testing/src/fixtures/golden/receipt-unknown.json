@@ -4,9 +4,14 @@
   "hardkasVersion": "1.0.0-alpha",
   "version": "1.0.0-alpha",
   "networkId": "simnet",
-  "mode": "simulated",
+  "mode": "simulator",
+  "execution": {
+    "mode": "simulator",
+    "domain": "kaspa-l1",
+    "network": "simnet"
+  },
   "txId": "abc123golden_unknown",
-  "status": "pending",
+  "status": "submitted",
   "from": {
     "address": "kaspatest:qqgolden1"
   },

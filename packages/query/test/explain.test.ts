@@ -21,7 +21,7 @@ const mockNode = (schema: string, overrides: Partial<LineageNode> = {}): Lineage
   lineageId: "d".repeat(64),
   filePath: "/test/artifact.json",
   networkId: "simnet",
-  mode: "simulated",
+  mode: "simulator",
   createdAt: "2026-01-01T00:00:00Z",
   ...overrides
 });
@@ -33,7 +33,7 @@ describe("explainIntegrity", () => {
       schema: "hardkas.txPlan",
       version: "1.0.0-alpha",
       networkId: "simnet",
-      mode: "simulated",
+      mode: "simulator",
       createdAt: "2026-01-01T00:00:00Z",
       contentHash: "abc123"
     };
@@ -59,7 +59,7 @@ describe("explainIntegrity", () => {
       schema: "hardkas.unknown",
       version: "1.0.0-alpha",
       networkId: "simnet",
-      mode: "simulated",
+      mode: "simulator",
       createdAt: "2026-01-01T00:00:00Z",
       contentHash: "foo"
     };
@@ -160,7 +160,7 @@ describe("formatting", () => {
         schema: "hardkas.txPlan",
         version: "1.0.0-alpha",
         networkId: "simnet",
-        mode: "simulated",
+        mode: "simulator",
         createdAt: ""
       },
       { ok: true, hashMatch: true, schemaValid: true, errors: [] }

@@ -118,7 +118,7 @@ export function registerTaskCommands(program: Command, loadedConfig?: LoadedHard
           scenarioName: name,
           status: "PASSED",
           networkId: hk.network,
-          mode: "simulated",
+          mode: "simulator",
           artifactsGenerated: [],
           metadata: {
             taskName: name,

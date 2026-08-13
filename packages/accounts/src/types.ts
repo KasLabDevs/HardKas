@@ -1,6 +1,6 @@
 export type HardkasAccountKind =
-  | "simulated"
-  | "kaspa-private-key"
+  | "synthetic"
+  | "kaspa"
   | "external-wallet"
   | "evm-private-key";
 
@@ -56,40 +56,44 @@ export interface HardkasBaseAccount {
   address?: string;
 }
 
-export interface HardkasSimulatedAccount extends HardkasBaseAccount {
-  kind: "simulated";
+export interface HardkasSyntheticAccount extends HardkasBaseAccount {
+  kind: "synthetic";
+  executionMode: "simulator";
   address: string;
   evmAddress?: string;
 }
 
-export interface HardkasKaspaPrivateKeyAccount extends HardkasBaseAccount {
-  kind: "kaspa-private-key";
-  privateKeyEnv?: string | undefined;
-  keystorePath?: string | undefined;
-  address?: string;
+export interface HardkasKaspaAccount extends HardkasBaseAccount {
+  kind: "kaspa";
+  network: "simnet" | "testnet-10" | "testnet-11" | "mainnet" | string;
+  privateKeyEnv?: string;
+  privateKey?: string;
+  keystorePath?: string;
+  address: string;
 }
 
 export interface HardkasExternalWalletAccount extends HardkasBaseAccount {
   kind: "external-wallet";
+  network?: "simnet" | "testnet-10" | "testnet-11" | "mainnet" | string;
   walletId?: string;
   address?: string;
 }
 
 export interface HardkasEvmPrivateKeyAccount extends HardkasBaseAccount {
   kind: "evm-private-key";
-  privateKeyEnv?: string | undefined;
+  privateKeyEnv?: string;
   address?: string;
 }
 
 export type HardkasAccount =
-  | HardkasSimulatedAccount
-  | HardkasKaspaPrivateKeyAccount
+  | HardkasSyntheticAccount
+  | HardkasKaspaAccount
   | HardkasExternalWalletAccount
   | HardkasEvmPrivateKeyAccount;
 
 export type HardkasSignerKind =
-  | "simulated"
-  | "kaspa-private-key"
+  | "synthetic"
+  | "kaspa"
   | "external-wallet"
   | "unsupported";
 

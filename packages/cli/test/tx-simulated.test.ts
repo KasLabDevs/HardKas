@@ -20,6 +20,16 @@ describe("Simnet Transaction Backend Mismatch Regression", () => {
       }
     }
     fs.mkdirSync(SANDBOX_DIR, { recursive: true });
+    // Write an isolated config to prevent cosmiconfig from resolving the repo's root config
+    // which has an explicit execution block that forces simulator mode.
+    fs.writeFileSync(
+      path.join(SANDBOX_DIR, "hardkas.config.js"),
+      `
+      export default {
+        defaultNetwork: "simulated"
+      };
+      `
+    );
   });
 
   afterAll(() => {
@@ -73,16 +83,6 @@ describe("Simnet Transaction Backend Mismatch Regression", () => {
   it(
     "should fail with NETWORK_ACCOUNT_MISMATCH when provider rpc is forced on simnet",
     { timeout: 180000 }, async () => {
-    // 0. Initialize workspace so default network is simulated
-    fs.writeFileSync(
-      path.join(SANDBOX_DIR, "hardkas.config.js"),
-      `
-      export default {
-        defaultNetwork: "simulated"
-      };
-    `
-    );
-
     // 1. Fund alice in the temporary workspace
     const fundResult = await runCmd([
       "accounts",

@@ -45,10 +45,10 @@ function cleanupSandbox(sandboxDir: string, forcePreserve = false) {
 function createValidMockPayload(ctx: TortureBucketContext, suffix: string = "") {
   return {
     schema: "hardkas.txPlan" as const,
-    hardkasVersion: "0.11.6-alpha",
+    hardkasVersion: "0.12.0-rc.1",
     version: ARTIFACT_VERSION,
     networkId: "simnet" as const,
-    mode: "simulated" as const,
+    mode: "simulator" as const,
     createdAt: new Date().toISOString(), // hardkas-determinism-allow
     planId: `plan-mock-${ctx.caseId}-${suffix}`,
     from: { address: "kaspa:sim_qz0s9xrz5y5e8dq5azmpg756aeepm6fesq82ye7wv" },

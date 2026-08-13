@@ -36,10 +36,10 @@ describe("Semantic Validation - Network Contamination Protection", () => {
   it("simulated -> mainnet contamination detection (verifyArtifactSemantics fails)", () => {
     const plan = {
       schema: "hardkas.txPlan",
-      hardkasVersion: "0.11.6-alpha",
+      hardkasVersion: "0.12.0-rc.1",
       version: "1.0.0-alpha",
       networkId: "mainnet",
-      mode: "real",
+      mode: "rpc",
       createdAt: new Date().toISOString(),
       planId: "plan_123",
       from: { address: "kaspa:sim_alice" },
@@ -59,10 +59,10 @@ describe("Semantic Validation - Network Contamination Protection", () => {
   it("simulated -> testnet contamination detection (verifyArtifactSemantics fails)", () => {
     const plan = {
       schema: "hardkas.txPlan",
-      hardkasVersion: "0.11.6-alpha",
+      hardkasVersion: "0.12.0-rc.1",
       version: "1.0.0-alpha",
       networkId: "testnet-10",
-      mode: "real",
+      mode: "rpc",
       createdAt: new Date().toISOString(),
       planId: "plan_123",
       from: { address: "kaspa:sim_alice" },
@@ -82,10 +82,10 @@ describe("Semantic Validation - Network Contamination Protection", () => {
   it("mixed-network artifact lineage rejection (parent on simnet, child on testnet)", () => {
     const child = {
       schema: "hardkas.txPlan",
-      hardkasVersion: "0.11.6-alpha",
+      hardkasVersion: "0.12.0-rc.1",
       version: "1.0.0-alpha",
       networkId: "testnet-10",
-      mode: "real",
+      mode: "rpc",
       createdAt: new Date().toISOString(),
       planId: "plan_child",
       from: {
@@ -109,10 +109,10 @@ describe("Semantic Validation - Network Contamination Protection", () => {
 
     const parent = {
       schema: "hardkas.txPlan",
-      hardkasVersion: "0.11.6-alpha",
+      hardkasVersion: "0.12.0-rc.1",
       version: "1.0.0-alpha",
       networkId: "simnet",
-      mode: "simulated",
+      mode: "simulator",
       createdAt: new Date().toISOString(),
       planId: "plan_parent",
       from: { address: "kaspa:sim_alice" },

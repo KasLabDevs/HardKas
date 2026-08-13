@@ -38,7 +38,7 @@ describe("Workflow Runtime Contract", () => {
   });
 
   it("should orchestrate a workflow and produce a deterministic artifact", async () => {
-    const sdk = await Hardkas.open({ cwd: tmpDir, mode: "developer" });
+    const sdk = await Hardkas.open({ cwd: tmpDir, mode: "developer", network: "simulated" });
 
     const artifact = await sdk.experimental.workflow.run({
       steps: [
@@ -60,7 +60,7 @@ describe("Workflow Runtime Contract", () => {
   });
 
   it("should catch errors in steps and mark the workflow as failed", async () => {
-    const sdk = await Hardkas.open({ cwd: tmpDir, mode: "developer" });
+    const sdk = await Hardkas.open({ cwd: tmpDir, mode: "developer", network: "simulated" });
 
     const artifact = await sdk.experimental.workflow.run({
       steps: [
@@ -80,7 +80,7 @@ describe("Workflow Runtime Contract", () => {
   });
 
   it("should reject simulate-failure unconditionally in agent mode", async () => {
-    const sdk = await Hardkas.open({ cwd: tmpDir, mode: "agent" });
+    const sdk = await Hardkas.open({ cwd: tmpDir, mode: "agent", network: "simulated" });
 
     const artifact = await sdk.experimental.workflow.run({
       steps: [{ type: "simulate-failure" }],
@@ -100,6 +100,7 @@ describe("Workflow Runtime Contract", () => {
     const sdk = await Hardkas.open({
       cwd: tmpDir,
       mode: "agent",
+      network: "simulated",
       policy: { requireDryRun: true }
     });
 

@@ -30,11 +30,11 @@ describe("silver deploy built CLI runtime", () => {
       `${JSON.stringify(
         {
           schema: "hardkas.silver.deployPlan",
-          hardkasVersion: "0.11.6-alpha",
+          hardkasVersion: "0.12.0-rc.1",
           version: "1.0.0-alpha",
           hashVersion: 4,
           networkId: "simnet",
-          mode: "simulated",
+          mode: "simulator",
           createdAt: "2026-06-08T00:00:00.000Z",
           contentHash: "silver-deploy-runtime-test-plan",
           compileArtifactHash: "compile-hash-op-true",

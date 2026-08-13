@@ -1,6 +1,6 @@
-﻿import { UI } from "../ui.js";
+import { UI } from "../ui.js";
 import { JsonWrpcKaspaClient } from "@hardkas/kaspa-rpc";
-import { resolveNetworkTarget, HardkasConfig } from "@hardkas/config";
+import { resolveExecutionTarget, HardkasConfig } from "@hardkas/config";
 
 export interface TxWaitRunnerInput {
   txId: string;
@@ -16,7 +16,7 @@ export async function runTxWait(input: TxWaitRunnerInput): Promise<void> {
   const { txId, config, url, network } = input;
 
   const networkName = network || config.defaultNetwork || "simnet";
-  const { name: resolvedName, target } = resolveNetworkTarget({
+  const { name: resolvedName, target } = resolveExecutionTarget({
     network: networkName,
     config
   });
@@ -28,8 +28,8 @@ export async function runTxWait(input: TxWaitRunnerInput): Promise<void> {
     url
   });
 
-  if (provider.mode === "simulated") {
-    UI.logHuman(`  âœ… Settlement: SIMULATED (Instant)`);
+  if (provider.mode === "simulator") {
+    UI.logHuman(`  ? Settlement: SIMULATED (Instant)`);
     return;
   }
 

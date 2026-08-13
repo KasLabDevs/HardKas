@@ -18,7 +18,7 @@ export const AdversarialFixtures = {
       artifactId: "art-a",
       contentHash: "hash-a",
       networkId: "simnet",
-      mode: "simulated",
+      mode: "simulator",
       lineage: { parentArtifactId: "art-b" }
     };
     const artifactB: any = {
@@ -27,7 +27,7 @@ export const AdversarialFixtures = {
       artifactId: "art-b",
       contentHash: "hash-b",
       networkId: "simnet",
-      mode: "simulated",
+      mode: "simulator",
       lineage: { parentArtifactId: "art-a" }
     };
     return { artifactA, artifactB };
@@ -41,7 +41,7 @@ export const AdversarialFixtures = {
       schema: "hardkas.txPlan",
       version: ARTIFACT_VERSION,
       networkId: "simnet",
-      mode: "simulated",
+      mode: "simulator",
       amountSompi: "1000",
       estimatedFeeSompi: "1",
       estimatedMass: "1",
@@ -76,7 +76,7 @@ export const AdversarialFixtures = {
       artifactId: "child-simnet",
       contentHash: "hash-simnet",
       networkId: "simnet",
-      mode: "simulated",
+      mode: "simulator",
       lineage: {
         artifactId: "hash-simnet",
         parentArtifactId: "parent-mainnet",
@@ -116,7 +116,7 @@ export const AdversarialFixtures = {
       schema: "hardkas.txPlan",
       version: ARTIFACT_VERSION,
       networkId: "simnet",
-      mode: "simulated"
+      mode: "simulator"
     };
     return [
       {
@@ -149,7 +149,7 @@ export const AdversarialFixtures = {
       artifactId: "art-future",
       contentHash: "hash-future",
       networkId: "simnet",
-      mode: "simulated",
+      mode: "simulator",
       createdAt: farFuture
     };
   },
@@ -164,7 +164,7 @@ export const AdversarialFixtures = {
       artifactId: "art-vnext",
       contentHash: "hash-vnext",
       networkId: "simnet",
-      mode: "simulated"
+      mode: "simulator"
     };
   }
 };

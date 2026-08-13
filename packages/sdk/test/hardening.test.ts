@@ -85,7 +85,7 @@ describe("Core Hardening Sprint Regressions", () => {
 
     const plan = {
       networkId: "simnet" as any,
-      mode: "real",
+      mode: "rpc",
       estimatedFeeSompi: "100",
       from: { address: testAddress },
       inputs: [
@@ -136,6 +136,7 @@ describe("Core Hardening Sprint Regressions", () => {
       sourcePlanId: "plan_123",
       amountSompi: "1000",
       networkId: "simnet",
+      mode: "simulator",
       from: { address: "kaspa:sim_alice" },
       to: { address: "kaspa:sim_bob" },
       signedTransaction: { payload: "signed-payload" }
@@ -144,7 +145,7 @@ describe("Core Hardening Sprint Regressions", () => {
     const mockPlan = {
       planId: "plan_123",
       networkId: "simnet",
-      mode: "simulated",
+      mode: "simulator",
       from: { address: "kaspa:sim_alice" },
       to: { address: "kaspa:sim_bob" },
       amountSompi: "1000",

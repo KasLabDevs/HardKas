@@ -1,7 +1,7 @@
 {
   "name": "@showcase/localnet-studio",
   "private": true,
-  "version": "0.11.6-alpha",
+  "version": "0.12.0-rc.1",
   "type": "module",
   "scripts": {
     "dev": "concurrently \"pnpm run dev:frontend\" \"pnpm run dev:backend\"",
@@ -10,10 +10,10 @@
     "build": "tsc && vite build"
   },
   "dependencies": {
-    "@hardkas/kaspa-rpc": "workspace:0.11.6-alpha",
-    "@hardkas/localnet": "workspace:0.11.6-alpha",
-    "@hardkas/node-runner": "workspace:0.11.6-alpha",
-    "@hardkas/toolkit": "workspace:0.11.6-alpha",
+    "@hardkas/kaspa-rpc": "workspace:0.12.0-rc.1",
+    "@hardkas/localnet": "workspace:0.12.0-rc.1",
+    "@hardkas/node-runner": "workspace:0.12.0-rc.1",
+    "@hardkas/toolkit": "workspace:0.12.0-rc.1",
     "express": "^4.21.1",
     "cors": "^2.8.5",
     "react": "^18.3.1",

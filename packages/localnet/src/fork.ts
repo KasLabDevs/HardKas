@@ -43,7 +43,7 @@ export async function forkFromNetwork(
     hardkasVersion: HARDKAS_VERSION,
     version: ARTIFACT_VERSION,
     hashVersion: "sha256-canonical",
-    mode: "simulated" as ExecutionMode,
+    mode: "simulator" as ExecutionMode,
     createdAt: new Date().toISOString(), // hardkas-determinism-allow: fork state creation timestamp
     networkId,
     workflowId: "wf_system_bootstrap",

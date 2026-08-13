@@ -2,7 +2,7 @@ import { createDeterministicAccounts, type HardkasAccount } from "./accounts";
 import { SimulatedKaspaChain } from "./simulated-chain";
 
 export interface HardkasDevnet {
-  readonly mode: "simulated";
+  readonly mode: "simulator";
   readonly accounts: readonly HardkasAccount[];
   readonly chain: SimulatedKaspaChain;
   stop(): Promise<void>;
@@ -24,7 +24,7 @@ export async function startSimulatedDevnet(
   const chain = new SimulatedKaspaChain(accounts);
 
   return {
-    mode: "simulated",
+    mode: "simulator",
     accounts,
     chain,
     async stop(): Promise<void> {

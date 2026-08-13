@@ -142,7 +142,7 @@ export function validateArtifact(data: unknown): ArtifactValidationResult {
 function validateCommon(v: Record<string, unknown>, errors: string[]): void {
   if (!v.hardkasVersion) errors.push("Missing hardkasVersion");
   if (typeof v.networkId !== "string" || !v.networkId) errors.push("Missing networkId");
-  if (!["simulated", "node", "rpc", "l2-rpc", "real"].includes(v.mode as string))
+  if (!["simulated", "node", "rpc", "l2-rpc", "real", "simulator", "localnet"].includes(v.mode as string))
     errors.push("Invalid mode");
   if (!v.createdAt) errors.push("Missing createdAt");
 }

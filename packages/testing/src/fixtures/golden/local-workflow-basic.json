@@ -4,7 +4,7 @@
   "hardkasVersion": "1.0.0-alpha",
   "version": "1.0.0-alpha",
   "networkId": "simnet",
-  "mode": "simulated",
+  "mode": "simulator",
   "workflowId": "wf-golden-basic",
   "status": "completed",
   "createdAt": "2026-05-27T00:00:00.000Z",
@@ -15,5 +15,7 @@
       "status": "success"
     }
   ],
-  "producedArtifacts": ["plan-golden"]
+  "producedArtifacts": [
+    "plan-golden"
+  ]
 }

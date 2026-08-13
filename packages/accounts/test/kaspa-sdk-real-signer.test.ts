@@ -6,12 +6,12 @@ import { RealDevAccount } from "../src/real-accounts.js";
 describe("KaspaSdkRealTxSigner", () => {
   const mockPlan: any = {
     schema: "hardkas.txPlan",
-    hardkasVersion: "0.11.6-alpha",
+    hardkasVersion: "0.12.0-rc.1",
     version: "1.0.0-alpha",
     createdAt: new Date().toISOString(),
     planId: "plan123",
     networkId: "simnet",
-    mode: "simulated",
+    mode: "simulator",
     from: { address: "kaspa:sim_alice123" },
     to: { address: "kaspa:sim_bob456" },
     amountSompi: "100000000",

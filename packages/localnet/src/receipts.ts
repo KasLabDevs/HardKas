@@ -6,7 +6,7 @@ import {
   HARDKAS_VERSION,
   ARTIFACT_SCHEMAS
 } from "@hardkas/artifacts";
-import { NetworkId, ExecutionMode, writeFileAtomic } from "@hardkas/core";
+import { NetworkId, ExecutionMode, HardkasExecutionTarget, writeFileAtomic } from "@hardkas/core";
 import { deterministicCompare } from "@hardkas/core";
 
 export interface StoredSimulatedTxReceipt extends HardkasArtifactBase {
@@ -17,6 +17,7 @@ export interface StoredSimulatedTxReceipt extends HardkasArtifactBase {
   status: "confirmed" | "failed";
   mode: ExecutionMode;
   networkId: NetworkId;
+  execution: HardkasExecutionTarget;
   from: { address: string };
   to: { address: string };
   amountSompi: string;

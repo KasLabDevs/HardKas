@@ -15,6 +15,9 @@ import {
 
 export type AssumptionLevel = "dev" | "trusted" | "network-observed";
 
+export type LegacyExecutionMode = "simulated" | "real" | "readonly" | "node" | "rpc" | "l2-rpc";
+export type AnyExecutionMode = ExecutionMode | LegacyExecutionMode;
+
 export interface HardkasArtifactBase {
   schema: HardkasArtifactSchema;
   schemaVersion?: string;
@@ -22,7 +25,7 @@ export interface HardkasArtifactBase {
   version: string;
   hashVersion?: number | string;
   networkId: NetworkId;
-  mode: ExecutionMode;
+  mode: AnyExecutionMode;
   createdAt: string;
 }
 
@@ -33,13 +36,14 @@ export interface BaseArtifact<T extends ArtifactType> {
   version: string; // usually "1.0.0-alpha" or "1.0.0"
   hashVersion?: number | string;
   networkId: NetworkId;
-  mode: ExecutionMode;
+  mode: AnyExecutionMode;
   createdAt: string;
 
   contentHash?: ContentHash | undefined;
   workflowId?: WorkflowId | undefined;
   assumptionLevel?: AssumptionLevel | undefined;
-  executionMode?: ExecutionMode | undefined; // Align with mode or specify deeper
+  executionMode?: AnyExecutionMode | undefined; // Align with mode or specify deeper
+  execution?: import("@hardkas/core").HardkasExecutionTarget | undefined;
 
   lineage?:
     | {
@@ -228,7 +232,7 @@ export interface CovenantBindingArtifact {
   covenantId?: string | undefined;
 }
 
-export interface TxPlanArtifact extends BaseArtifact<"txPlan"> {
+export interface TxPlanArtifactV2 extends BaseArtifact<"txPlan.v2"> {
   planId: string;
   from: { address: string; accountName?: string | undefined; input?: string | undefined };
   to: { address: string; accountName?: string | undefined; input?: string | undefined };
@@ -262,7 +266,42 @@ export interface TxPlanArtifact extends BaseArtifact<"txPlan"> {
   assumptionRef?: string | undefined;
 }
 
-export interface SignedTxArtifact extends BaseArtifact<"signedTx"> {
+export interface TxPlanArtifact extends BaseArtifact<"txPlan"> {
+  execution: import("@hardkas/core").HardkasExecutionTarget;
+  planId: string;
+  from: { address: string; accountName?: string | undefined; input?: string | undefined };
+  to: { address: string; accountName?: string | undefined; input?: string | undefined };
+  amountSompi: string;
+  estimatedFeeSompi: string;
+  estimatedMass: string;
+  computeBudget?: string | undefined;
+  storageMass?: string | undefined;
+  lane?: string | undefined;
+  txVersion?: number | undefined;
+  inputs: Array<{
+    outpoint: { transactionId: string; index: number };
+    amountSompi: string;
+    covenantId?: string | undefined;
+  }>;
+    outputs: Array<{
+      address: string;
+      amountSompi: string;
+      covenant?: CovenantBindingArtifact | undefined;
+    }>;
+    genesisCovenantGroups?: Array<{ authorizingInput: number; outputs: number[] }> | undefined;
+    change?:
+    | {
+        address: string;
+        amountSompi: string;
+      }
+    | undefined;
+  networkProfileRef?: string | undefined;
+  policyRef?: string | undefined;
+  policyRefs?: string[] | undefined;
+  assumptionRef?: string | undefined;
+}
+
+export interface SignedTxArtifactV2 extends BaseArtifact<"signedTx.v2"> {
   status: "partially_signed" | "signed";
   signedId: ArtifactId;
   sourcePlanId: string;
@@ -308,7 +347,78 @@ export interface SignedTxArtifact extends BaseArtifact<"signedTx"> {
   metadata?: any | undefined;
 }
 
+export interface SignedTxArtifact extends BaseArtifact<"signedTx"> {
+  execution: import("@hardkas/core").HardkasExecutionTarget;
+  status: "partially_signed" | "signed";
+  signedId: ArtifactId;
+  sourcePlanId: string;
+  from: {
+    address: KaspaAddress;
+    accountName?: string | undefined;
+    input?: string | undefined;
+  };
+  to: {
+    address: KaspaAddress;
+    accountName?: string | undefined;
+    input?: string | undefined;
+  };
+  amountSompi: string;
+  unsignedPayloadHash?: string | undefined;
+  signedTransaction?:
+    | {
+        format: string;
+        payload: string;
+      }
+    | undefined;
+  txId?: TxId | undefined;
+  multisig?:
+    | {
+        threshold: number;
+        requiredSigners: string[];
+        signatures: Array<{
+          signer: string;
+          signature: string;
+        }>;
+      }
+    | undefined;
+  signatureMetadata?:
+    | Array<{
+        signer: string;
+        signedAt: string;
+      }>
+    | undefined;
+  networkProfileRef?: string | undefined;
+  policyRef?: string | undefined;
+  policyRefs?: string[] | undefined;
+  assumptionRef?: string | undefined;
+  metadata?: any | undefined;
+}
+
+export interface TxReceiptArtifactV2 extends BaseArtifact<"txReceipt.v2"> {
+  txId: TxId;
+  status: "pending" | "submitted" | "accepted" | "confirmed" | "failed";
+  from: { address: KaspaAddress };
+  to: { address: KaspaAddress };
+  amountSompi: string;
+  feeSompi: string;
+  mass?: string | undefined;
+  daaScore?: string | undefined;
+  submittedAt?: string | undefined;
+  confirmedAt?: string | undefined;
+  preStateHash?: string | undefined;
+  postStateHash?: string | undefined;
+  tracePath?: string | undefined;
+  rpcUrl?: string | undefined;
+  sourceSignedId?: ArtifactId | undefined;
+  networkProfileRef?: string | undefined;
+  policyRef?: string | undefined;
+  policyRefs?: string[] | undefined;
+  assumptionRef?: string | undefined;
+  metadata?: any | undefined;
+}
+
 export interface TxReceiptArtifact extends BaseArtifact<"txReceipt"> {
+  execution: import("@hardkas/core").HardkasExecutionTarget;
   txId: TxId;
   status: "pending" | "submitted" | "accepted" | "confirmed" | "failed";
   from: { address: KaspaAddress };

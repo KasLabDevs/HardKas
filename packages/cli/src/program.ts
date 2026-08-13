@@ -21,6 +21,7 @@ import { registerCapabilitiesCommand } from "./commands/capabilities.js";
 import { registerWorkflowCommands } from "./commands/workflow.js";
 import { registerConsoleCommand } from "./commands/console.js";
 import { registerLocalnetCommands } from "./commands/localnet.js";
+import { registerSimulatorCommands } from "./commands/simulator.js";
 import { registerDeployCommands } from "./commands/deploy.js";
 import { registerMetamaskCommands } from "./commands/metamask.js";
 import { registerDevCommands } from "./commands/dev.js";
@@ -92,6 +93,7 @@ export function buildHardkasProgram(options?: { forDocs?: boolean, loadedConfig?
   registerCapabilitiesCommand(program);
   registerConsoleCommand(program);
   registerLocalnetCommands(program);
+  registerSimulatorCommands(program);
   registerDeployCommands(program);
   registerMetamaskCommands(program);
   registerDevCommands(program);

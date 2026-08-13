@@ -1,4 +1,4 @@
-﻿import pc from "picocolors";
+import pc from "picocolors";
 import { UI, handleError } from "../ui.js";
 import { loadHardkasConfig } from "@hardkas/config";
 
@@ -305,7 +305,7 @@ export async function runDevDoctor(options: {
             message: `Projection database is unavailable: ${((e instanceof Error) ? ((e instanceof Error) ? e.message : String(e)) : String(e)) || "unknown error"}`,
             code: "PROJECTION_UNAVAILABLE",
             suggestion:
-              "Another process may be using the database. This is not critical â€” artifact checks passed."
+              "Another process may be using the database. This is not critical — artifact checks passed."
           });
           if (finalStatus === "ready") finalStatus = "warning";
         } finally {
@@ -675,26 +675,26 @@ export async function runDevDoctor(options: {
 
     // Aesthetic Console Output
     console.log(
-      pc.bold("\nâ”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”")
+      pc.bold("\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
     );
-    console.log(pc.bold(`HardKAS â€¢ Dev Doctor`));
+    console.log(pc.bold(`HardKAS • Dev Doctor`));
     console.log(
-      pc.bold("â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”\n")
+      pc.bold("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n")
     );
 
     for (const check of checks) {
       const icon =
         check.status === "success"
-          ? pc.green("âœ“")
+          ? pc.green("✓")
           : check.status === "warning"
-            ? pc.yellow("âš ")
+            ? pc.yellow("⚠")
             : check.status === "info"
-              ? pc.blue("â„¹")
-              : pc.red("âœ—");
+              ? pc.blue("ℹ")
+              : pc.red("✗");
       console.log(`${icon} ${pc.bold(check.name)}: ${check.message}`);
       if (check.suggestion) {
         console.log(
-          `    ${pc.cyan("â†’")} ${pc.dim(check.suggestion)} ${check.code ? pc.dim(`[${check.code}]`) : ""}`
+          `    ${pc.cyan("→")} ${pc.dim(check.suggestion)} ${check.code ? pc.dim(`[${check.code}]`) : ""}`
         );
       }
     }

@@ -25,20 +25,46 @@ HardKAS:
 intent -> artifact -> verification -> execution -> replay
 ```
 
-Instead of submitting raw payloads and hoping the network accepts them, HardKAS
-turns intent into deterministic artifacts. Those artifacts can be inspected,
-hashed, signed, simulated, receipted, indexed, and replayed.
+The entire lifecycle of Kaspa UTXOs—from genesis injection to final signature submission—can be tracked, hashed, signed, processed in the simulator, receipted, indexed, and replayed.
+
+## The Execution Contract
+
+HardKAS `0.12.0-rc.1` introduces the strictly partitioned Execution Contract.
+The Execution Contract is a tuple of `(mode, domain, network)` that unambiguously identifies the context in which an artifact was created, an execution target is connected, or an account exists.
+
+- **`mode`**: The environment topology (`simulator`, `localnet`, `rpc`, `l2-rpc`)
+- **`domain`**: The ledger semantics (`kaspa-l1`, `evm-l2`)
+- **`network`**: The network identifier (`simulated`, `simnet`, `testnet-10`, `mainnet`)
+
+Common targets:
+- **Simulator**: `{ mode: "simulator", domain: "kaspa-l1", network: "simulated" }`
+  The JS-based, in-memory, synchronous transaction simulator. Accounts, UTXOs, and funds are strictly synthetic.
+- **Localnet**: `{ mode: "localnet", domain: "kaspa-l1", network: "simnet" }`
+  A real Kaspa node (`rusty-kaspad`) running locally via Docker on `simnet` with real Proof-of-Work and local mining.
+- **RPC**: `{ mode: "rpc", domain: "kaspa-l1", network: "testnet-11" }`
+  A remote connection to a configured Kaspa node.
+
+**Compatibility Invariants:**
+- `artifact.execution` MUST be compatible with `target.execution`.
+- `account.network/identity` MUST be compatible with `target.execution`.
+- `receipt.execution` MUST be compatible with `artifact.execution` AND `target.execution`.
+
+> [!WARNING]
+> **Simulator != Kaspa simnet**
+>
+> `simulated` (network) = In-memory synthetic Kaspa ruleset in HardKAS `simulator` mode.
+> `simnet` (network) = Official Kaspa network type used by HardKAS `localnet` mode.
 
 ## Local-First Status
 
-HardKAS `0.11.6-alpha` is local-first deterministic transaction infrastructure
+HardKAS `0.12.0-rc.1` is local-first deterministic transaction infrastructure
 for Kaspa/Toccata development.
 
 Current certified baseline:
 
-- `simulated` is the recommended default.
-- Toccata v2 Docker `simnet` localnet baseline.
-- Real local funding through the Toccata miner/stratum companion.
+- `simulator` is the recommended default for fast, synchronous testing.
+  - Toccata v2 Docker `localnet` baseline (`rusty-kaspad` on Kaspa `testnet-11`).
+- Real local funding through the Toccata miner/stratum companion in `localnet`.
 - Standard transaction lifecycle against the local node.
 - SilverScript local OP_TRUE deploy/spend.
 - Artifact-coherence simulation.
@@ -50,9 +76,9 @@ Current certified baseline:
 
 ### Toccata v2 Alpha Baseline
 
-The `0.11.6-alpha` release line includes a normalized Toccata v2 localnet flow:
+The `0.12.0-rc.1` release line includes a normalized Toccata v2 localnet flow:
 
-- Docker `rusty-kaspad` v2.0.0 simnet funding with a compatible miner companion.
+- Docker `rusty-kaspad` v2.0.0 localnet funding with a compatible miner companion (`kaspanet/cpuminer`).
 - Standard transaction lifecycle against the local node.
 - Real Silver OP_TRUE deploy and spend receipts.
 - Silver simulator artifact-coherence comparison.
@@ -69,20 +95,20 @@ Official release claims:
 - `vmConsensusEquivalence`: `NOT_CLAIMED`
 - `mainnet`: `BLOCKED_BY_POLICY`
 
-### 0.11.6-alpha SDK Parity
+### 0.12.0-rc.1 SDK Parity
 
-`0.11.6-alpha` is a SDK parity / developer experience patch. It adds high-level
+`0.12.0-rc.1` is a SDK parity / developer experience patch. It adds high-level
 SDK surfaces for capabilities, localnet status/start/fund, corpus verification,
 and Silver planning/simulation/compare flows without changing the release
-claims above.
+claims above. It enforces strict separation of execution environments across Artifact lineage.
 
 SDK real Silver RPC/Docker execution remains explicitly unsupported in
-`0.11.6-alpha` via `SDK_SILVER_REAL_LIFECYCLE_UNSUPPORTED`; certified real
+`0.12.0-rc.1` via `SDK_SILVER_REAL_LIFECYCLE_UNSUPPORTED`; certified real
 lifecycle execution remains CLI/localnet bounded.
 
-### 0.11.6-alpha Programmability Builder Surface
+### 0.12.0-rc.1 Programmability Builder Surface
 
-`0.11.6-alpha` also includes a local-only builder surface for SilverScript,
+`0.12.0-rc.1` also includes a local-only builder surface for SilverScript,
 ZK corpus fixtures, and vProgs artifact inspection. This is a programmability
 surface, not a protocol/runtime claim.
 
@@ -153,7 +179,7 @@ hardkas corpus verify fixtures/toccata-v2/silver --json
 import { Hardkas } from "@hardkas/sdk";
 
 const sdk = await Hardkas.create({
-  network: "simulated",
+  execution: { mode: "simulator", domain: "kaspa-l1", network: "simulated" },
   autoBootstrap: true
 });
 
@@ -166,13 +192,35 @@ await sdk.replay.verify();
 console.log(receipt.txId);
 ```
 
-## CLI Happy Path
+## CLI Reference
+
+HardKAS CLI commands are scoped to execution worlds:
+
+### Simulator
+Synthetic testing without real nodes. Uses JS-based synthetic state and accounts.
+
+HardKAS includes deterministic accounts (`alice`, `bob`, `carol`) by default, but you can create custom ones:
 
 ```bash
-hardkas init .
-hardkas accounts fund alice --amount 1000
-hardkas tx send --from alice --to bob --amount 10 --network simulated --yes
-hardkas dashboard
+hardkas simulator account create custom-wallet
+hardkas simulator fund custom-wallet --amount 1000
+hardkas tx send --from custom-wallet --to bob --amount 10 --network simulated --yes
+```
+
+### Localnet (Managed Environment)
+A complete managed developer environment wrapping a real `rusty-kaspad` node. It provides orchestration for local mining (PoW), real Kaspa simnet UTXOs, and developer-friendly local accounts.
+
+```bash
+hardkas localnet start --profile toccata-v2
+hardkas localnet account create treasury
+hardkas localnet fund treasury
+```
+
+### Node Primitive (Bare Node)
+Low-level primitive for running the Kaspa node binary. It provides a bare `rusty-kaspad` with no funding orchestration, no account lifecycle, and no miner management.
+
+```bash
+hardkas localnet start
 ```
 
 For the explicit artifact boundary:
@@ -228,3 +276,4 @@ source of truth.
 
 See [docs/](docs/) for architecture, limits, command references, and security
 claims.
+

@@ -53,7 +53,7 @@ export async function runAccountsBalance(
   });
 
   const network = provider.network;
-  const isSimulated = options.local || provider.mode === "simulated";
+  const isSimulated = options.local || provider.mode === "simulator";
 
   if (isSimulated) {
     const { loadOrCreateLocalnetState, getSpendableUtxos } =

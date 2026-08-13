@@ -13,6 +13,15 @@ describe("Simulated Isolation", () => {
       fs.rmSync(tempDir, { recursive: true, force: true });
     }
     fs.mkdirSync(tempDir, { recursive: true });
+    // Write an isolated config to prevent cosmiconfig from resolving the repo's root config
+    fs.writeFileSync(
+      path.join(tempDir, "hardkas.config.js"),
+      `
+      export default {
+        defaultNetwork: "simulated"
+      };
+      `
+    );
     process.chdir(tempDir);
   });
 

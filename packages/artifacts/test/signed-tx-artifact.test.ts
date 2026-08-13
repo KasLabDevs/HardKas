@@ -16,7 +16,8 @@ describe("SignedTxArtifact", () => {
     version: ARTIFACT_VERSION,
     createdAt: new Date().toISOString(),
     networkId: asNetworkId("simnet"),
-    mode: "simulated",
+    mode: "simulator",
+    execution: { mode: "simulator", domain: "kaspa-l1", network: "simnet" },
     planId: "p123",
     from: { address: "addr1" },
     to: { address: "addr2" },
@@ -62,6 +63,7 @@ describe("SignedTxArtifact", () => {
     );
 
     const result = validateSignedTxArtifact(signed);
+    if (!result.ok) console.log(result.errors);
     expect(result.ok).toBe(true);
   });
 

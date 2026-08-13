@@ -34,9 +34,5 @@ export const DEFAULT_HARDKAS_CONFIG: HardkasConfig = {
       rpcUrl: "wss://kaspa.stream:443"
     }
   },
-  accounts: {
-    alice: { kind: "simulated", address: "kaspa:sim_alice" },
-    bob: { kind: "simulated", address: "kaspa:sim_bob" },
-    carol: { kind: "simulated", address: "kaspa:sim_carol" }
-  }
+  accounts: {}
 };

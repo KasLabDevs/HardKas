@@ -240,7 +240,11 @@ export class HardkasWorkflow {
       }
     }
 
-    const executionMode = this.sdk.network === "simulated" ? "simulated" : "real";
+    const isSimulated =
+      this.sdk.network === "simulated" ||
+      this.sdk.config.config.networks?.[this.sdk.network]?.kind === "simulated";
+    const networkConfig = this.sdk.config.config.networks?.[this.sdk.network];
+    const executionMode = isSimulated ? "simulator" : (networkConfig?.kind === "kaspa-node" ? "localnet" : "rpc");
 
     const artifact: any = {
       schema: HardkasSchemas.WorkflowV1,

@@ -15,7 +15,7 @@ const createArtifact = (planId: string) => ({
   version: ARTIFACT_V2_VERSION,
   createdAt: new Date().toISOString(),
   networkId: "simnet",
-  mode: "simulated",
+  mode: "simulator",
   planId,
   from: { address: "kaspa:alice" },
   to: { address: "kaspa:bob" },

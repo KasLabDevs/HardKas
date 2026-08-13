@@ -5,9 +5,9 @@
     "hardware-sim-charlie"
   ],
   "expectedRecipient": "02ae9fded252fe42208dac04488a9bf087842e273515cfafcb47f56b5166f6d0c7",
-  "fundingTxId": "1234567890abcdef1234567890abcdef1234567890abcdef123456780fdcc93f",
+  "fundingTxId": "1234567890abcdef1234567890abcdef1234567890abcdef1234567862b98439",
   "escrowOutpoint": {
-    "transactionId": "1234567890abcdef1234567890abcdef1234567890abcdef123456780fdcc93f",
+    "transactionId": "1234567890abcdef1234567890abcdef1234567890abcdef1234567862b98439",
     "index": 0
   },
   "unsignedTransactionIdentity": "417455a06adbf5d22b4b2cb5451e8b3a5f3c84a556ca324ce5c66821884442ba",

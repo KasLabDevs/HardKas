@@ -79,7 +79,7 @@ describe("Account Hardening & Security Guards", () => {
     const planArtifact: any = {
       planId: "test-plan",
       networkId: "mainnet",
-      mode: "real",
+      mode: "rpc",
       from: { address: "kaspa:qrh60m5zv98m5l855l855l855l855l855l855l855l855l85sxtunx" },
       to: { address: "kaspa:qrh60m5zv98m5l855l855l855l855l855l855l855l855l85sxtunx" },
       amountSompi: 100000000n
@@ -104,7 +104,7 @@ describe("Account Hardening & Security Guards", () => {
     const planArtifact: any = {
       planId: "test-plan",
       networkId: "mainnet",
-      mode: "real",
+      mode: "rpc",
       from: {
         address: "kaspatest:qrh60m5zv98m5l855l855l855l855l855l855l855l855l85sxtunx"
       }, // Testnet address

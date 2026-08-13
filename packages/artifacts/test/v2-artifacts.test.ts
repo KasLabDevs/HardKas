@@ -70,12 +70,13 @@ describe("Artifacts - Determinism and Verification", () => {
 
     const artifact: any = {
       schema: "hardkas.txPlan",
-      hardkasVersion: "0.11.6-alpha",
+      hardkasVersion: "0.12.0-rc.1",
       version: ARTIFACT_VERSION,
       hashVersion: CURRENT_HASH_VERSION,
       createdAt: new Date().toISOString(),
       networkId: "simnet",
-      mode: "simulated",
+      mode: "simulator",
+      execution: { mode: "simulator", domain: "kaspa-l1", network: "simnet" },
       planId: "test-plan",
       from: { address: "addr1" },
       to: { address: "addr2" },
@@ -102,12 +103,13 @@ describe("Artifacts - Determinism and Verification", () => {
 
     const artifact: any = {
       schema: "hardkas.txPlan",
-      hardkasVersion: "0.11.6-alpha",
+      hardkasVersion: "0.12.0-rc.1",
       version: ARTIFACT_VERSION,
       hashVersion: CURRENT_HASH_VERSION,
       createdAt: new Date().toISOString(),
       networkId: "simnet",
-      mode: "simulated",
+      mode: "simulator",
+      execution: { mode: "simulator", domain: "kaspa-l1", network: "simnet" },
       planId: "test-plan",
       from: { address: "addr1" },
       to: { address: "addr2" },

@@ -25,7 +25,7 @@ describe("Network-Agnostic Artifact Layer: Migration", () => {
       schema: "hardkas.txPlan.v1",
       version: "0.1.0",
       networkId: "kaspa-mainnet",
-      mode: "real"
+      mode: "rpc"
     };
 
     expect(() => {
@@ -38,7 +38,7 @@ describe("Network-Agnostic Artifact Layer: Migration", () => {
       schema: "hardkas.txPlan.v1",
       version: "0.1.0",
       networkId: "simnet",
-      mode: "simulated",
+      mode: "simulator",
       createdAt: new Date().toISOString(),
       lineage: {
         artifactId: "unknown",
@@ -92,7 +92,7 @@ describe("Network-Agnostic Artifact Layer: Migration", () => {
       version: "1.0.0-alpha",
       hashVersion: 3,
       networkId: "simnet",
-      mode: "simulated",
+      mode: "simulator",
       from: "alice",
       to: "bob",
       amountSompi: "100"
@@ -114,7 +114,7 @@ describe("Network-Agnostic Artifact Layer: Migration", () => {
       version: "1.0.0-alpha",
       hashVersion: 3,
       networkId: "simnet",
-      mode: "simulated",
+      mode: "simulator",
       from: "alice",
       to: "bob",
       amountSompi: "100"
@@ -137,7 +137,7 @@ describe("Network-Agnostic Artifact Layer: Migration", () => {
       version: "1.0.0-alpha",
       hashVersion: 4,
       networkId: "simnet",
-      mode: "simulated",
+      mode: "simulator",
       lineage: {
         sequence: 1,
         rootArtifactId:

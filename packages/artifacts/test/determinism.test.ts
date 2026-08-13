@@ -25,7 +25,7 @@ describe("Artifact Determinism", () => {
   it("should generate deterministic planId from semantic content", () => {
     const options: any = {
       networkId: "simnet",
-      mode: "simulated",
+      mode: "simulator",
       from: { address: "alice", input: "alice" },
       to: { address: "bob", input: "bob" },
       amountSompi: 100000000n,

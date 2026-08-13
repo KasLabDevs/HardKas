@@ -75,7 +75,7 @@ export class TxPlanService {
             if (!u.isCoinbase) return true;
             const score = u.blockDaaScore;
             if (score === undefined) return true;
-            return virtualDaaScore! - score >= this.coinbaseMaturity;
+            return virtualDaaScore! - score > (this.coinbaseMaturity + 10n);
           })
         : rpcUtxos;
 

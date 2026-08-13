@@ -89,7 +89,7 @@ async function main() {
 
   const planArtifact = createTxPlanArtifact({
     networkId: hardkas.network,
-    mode: "simulated",
+    mode: "simulator",
     from: {
       input: alice.name,
       address: alice.address!,
@@ -114,6 +114,7 @@ async function main() {
   // 5. Phase: Sign
   addTrace("sign", "start");
   const signedArtifact = await signTxPlanArtifact({
+    target: { mode: "simulator", domain: "kaspa-l1", network: hardkas.network as any },
     planArtifact,
     account: alice,
     config: hardkas.config.config
@@ -132,7 +133,7 @@ async function main() {
     schema: ARTIFACT_SCHEMAS.TX_TRACE || ("hardkas.txTrace.v1" as any),
     hardkasVersion: HARDKAS_VERSION,
     networkId: hardkas.network,
-    mode: "simulated",
+    mode: "simulator",
     createdAt: new Date().toISOString(),
     txId,
     steps: traceSteps
@@ -142,7 +143,7 @@ async function main() {
     schema: ARTIFACT_SCHEMAS.TX_RECEIPT,
     hardkasVersion: HARDKAS_VERSION,
     networkId: hardkas.network,
-    mode: "simulated",
+    mode: "simulator",
     status: "accepted",
     createdAt: new Date().toISOString(),
     submittedAt: new Date().toISOString(),

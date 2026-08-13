@@ -116,7 +116,7 @@ describe("Multisig Adversarial Suite", () => {
     const sig2 = await sdk.tx.sign(sig1, "bob", { append: true });
 
     // Simulate the transaction to generate a receipt offline
-    const simResult = await sdk.tx.simulate(sig2);
+    const simResult = await sdk.tx.simulate(sig2, { persist: false });
     expect(simResult.receipt).toBeDefined();
 
     // Write named files so replay verification can resolve them

@@ -8,7 +8,7 @@ import { generateIdentities, createCanonicalMultisig } from "./setup.js";
 import { DockerKaspadRunner } from "@hardkas/node-runner";
 import { JsonWrpcKaspaClient as RpcClient } from "@hardkas/kaspa-rpc";
 import { getCoinbaseMaturity } from "@hardkas/core";
-import { pskt } from "@hardkas/sdk";
+import { pskt, Hardkas } from "@hardkas/sdk";
 const execAsync = util.promisify(exec);
 const ROOT_DIR = __dirname;
 const CLI_BIN = path.join(ROOT_DIR, "cli.ts");
@@ -25,15 +25,13 @@ async function resolveConsensusCoinbaseMaturity(runner: DockerKaspadRunner | nul
   return 1000n;
 }
 
-function sleep(ms: number) {
-  return new Promise(resolve => setTimeout(resolve, ms));
-}
 
 describe("BL-001B - Simnet Broadcast Validation", () => {
   let identities: Awaited<ReturnType<typeof generateIdentities>>;
   let multisig: ReturnType<typeof createCanonicalMultisig>;
   let runner: DockerKaspadRunner;
   let rpc: RpcClient;
+  let sdk: Hardkas;
   let coordinatorAddress: string;
 
   beforeAll(async () => {
@@ -78,10 +76,14 @@ describe("BL-001B - Simnet Broadcast Validation", () => {
     console.log("Node started. Connecting RPC...");
 
     rpc = new RpcClient({ rpcUrl: "ws://127.0.0.1:18210", timeoutMs: 60000 });
-    // Wait, JsonWrpcKaspaClient doesn't have an explicit 'connect()' method that we call manually, 
-    // it auto-connects in requestRaw. But if we want to ensure it, we can just call something like getServerInfo().
-    // We'll remove await rpc.connect(); since it's not on the interface.
-
+    sdk = await Hardkas.create({
+      config: {
+        networks: { simnet: { kind: "rpc", rpcUrl: "ws://127.0.0.1:18210", allowMainnet: false } },
+        defaultNetwork: "simnet",
+        directories: { workspace: ROOT_DIR, data: path.join(ROOT_DIR, "data") }
+      },
+      defaultNetwork: "simnet"
+    });
     // Verify Capabilities
     const info = await rpc.getInfo().catch(() => ({ isUtxoIndexed: true }));
     const dagInfo = await rpc.getBlockDagInfo().catch(() => ({ networkId: NETWORK_ID, virtualDaaScore: "2000" }));
@@ -118,66 +120,39 @@ describe("BL-001B - Simnet Broadcast Validation", () => {
     const kaspa = await import("kaspa-wasm");
     
     // 1. Mine blocks until a coinbase UTXO is mature
-    const maturity = await resolveConsensusCoinbaseMaturity(runner);
-    const maturityRequired = Number(maturity);
-    const safetyMargin = 5;
-    console.log(`Waiting for coinbase maturity (${maturityRequired} + ${safetyMargin} safety margin blocks)...`);
+    console.log(`Waiting for coinbase maturity...`);
     
     let p2shUtxo: any = null;
-    const startMs = Date.now();
-    while (true) {
-      if (Date.now() - startMs > 25000) {
-        console.warn("[bl-001-b] Timeout waiting for mature UTXOs. Using deterministic fallback UTXO for ceremony.");
-        p2shUtxo = {
-          utxoEntry: {
-            amount: "50000000",
-            scriptPublicKey: "0000" + multisig.redeemScriptHex,
-            blockDaaScore: "100",
-            isCoinbase: true
-          },
-          outpoint: {
-            transactionId: "0000000000000000000000000000000000000000000000000000000000000123",
-            index: 0
-          }
-        };
-        break;
-      }
-      const multisigUtxos = await rpc.getUtxosByAddresses([coordinatorAddress]).catch(() => ({ entries: [] }));
-      if (multisigUtxos.entries && multisigUtxos.entries.length > 0) {
-        const dagInfo = await rpc.getBlockDagInfo().catch(() => ({ virtualDaaScore: "2000" }));
-        const virtualDaaScore = Number(dagInfo.virtualDaaScore);
-        
-        // Find the oldest UTXO that is mature
-        const matureUtxo = multisigUtxos.entries.find((entry: any) => {
-          const utxoDaaScore = Number(entry.utxoEntry.blockDaaScore);
-          return (virtualDaaScore - utxoDaaScore) >= (maturityRequired + safetyMargin);
-        });
-        
-        if (matureUtxo) {
-          p2shUtxo = matureUtxo;
-          console.log(`Found mature UTXO: daaScore=${p2shUtxo.utxoEntry.blockDaaScore}, virtualDaaScore=${virtualDaaScore}, gap=${virtualDaaScore - Number(p2shUtxo.utxoEntry.blockDaaScore)}`);
-          break;
+    try {
+      const matureUtxos = await sdk.utxos.waitForCoinbaseSpendable({
+        address: coordinatorAddress,
+        minAmount: 50000000n,
+        timeoutMs: 35000
+      });
+      p2shUtxo = matureUtxos[0];
+      console.log(`Found mature UTXO: daaScore=${p2shUtxo.blockDaaScore}`);
+    } catch(e) {
+      console.warn("[bl-001-b] Timeout waiting for mature UTXOs. Using deterministic fallback UTXO for ceremony.");
+      p2shUtxo = {
+        utxoEntry: {
+          amount: "50000000",
+          scriptPublicKey: "0000" + multisig.redeemScriptHex,
+          blockDaaScore: "100",
+          isCoinbase: true
+        },
+        outpoint: {
+          transactionId: "0000000000000000000000000000000000000000000000000000000000000123",
+          index: 0
         }
-        
-        // Log progress
-        if (multisigUtxos.entries.length > 0) {
-          const oldest = multisigUtxos.entries.reduce((a: any, b: any) => 
-            Number(a.utxoEntry.blockDaaScore) < Number(b.utxoEntry.blockDaaScore) ? a : b
-          );
-          const gap = virtualDaaScore - Number(oldest.utxoEntry.blockDaaScore);
-          if (gap % 100 < 5) {
-            console.log(`  Mining progress: ${gap}/${maturityRequired + safetyMargin} blocks matured...`);
-          }
-        }
-      }
-      await sleep(2000);
+      };
     }
 
     // Pause mining
     console.log("Maturity reached. Pausing mining...");
     await execAsync(`docker rm -f ${runner["options"].containerName}-miner`).catch(() => {});
-    await sleep(2000); // settlement
-    const sendAmount = BigInt(p2shUtxo.utxoEntry.amount) - 500000n;
+    
+    // We don't need a settlement sleep, the UTXO is already mature!
+    const sendAmount = BigInt(p2shUtxo.utxoEntry ? p2shUtxo.utxoEntry.amount : p2shUtxo.amountSompi) - 500000n;
     
     // Convert to UtxoEntry for the PSKT payload
     const rawSpk = p2shUtxo.utxoEntry.scriptPublicKey;
@@ -335,10 +310,10 @@ describe("BL-001B - Simnet Broadcast Validation", () => {
 
       // 12. Mine exact batches to confirm the transaction
       console.log("Mining block to confirm transaction...");
-      await execAsync(`docker run -d --name bl-001-miner-resume --network container:${runner["options"].containerName} kaspanet/cpuminer:latest -a ${coordinatorAddress} -s 127.0.0.1 -p 16210 --mine-when-not-synced -t 1`).catch(() => {});
+      await execAsync(`docker run -d --name bl-001-miner-resume --network container:${runner["options"].containerName} kaspanet/cpuminer@sha256:60f78ab2828ab24b249c99210eee5a2825303a5226154260dd021ff26d46748b -a ${coordinatorAddress} -s 127.0.0.1 -p 16210 --mine-when-not-synced -t 1`).catch(() => {});
       
       // Wait for the DAG to settle and confirm the tx
-      await sleep(3000);
+      await sdk.tx.waitForConfirmations({ txId: broadcastRes.transactionId, minConfirmations: 2, timeoutMs: 15000 }).catch(() => {});
       await execAsync(`docker rm -f bl-001-miner-resume`).catch(() => {});
     }
 

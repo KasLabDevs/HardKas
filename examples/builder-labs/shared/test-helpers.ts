@@ -91,7 +91,7 @@ export async function fundAndConfirm(
 
     console.log("Found mature UTXO for funding");
     // Resume miner momentarily just in case
-    await execAsync(`docker run -d --name helper-miner --network container:${runner["options"].containerName} kaspanet/cpuminer:latest -a ${coordinatorAddress} -s 127.0.0.1 -p 16210 --mine-when-not-synced -t 1`).catch(() => {});
+    await execAsync(`docker run -d --name helper-miner --network container:${runner["options"].containerName} kaspanet/cpuminer@sha256:60f78ab2828ab24b249c99210eee5a2825303a5226154260dd021ff26d46748b -a ${coordinatorAddress} -s 127.0.0.1 -p 16210 --mine-when-not-synced -t 1`).catch(() => {});
 
     // 2. Build the funding transaction as raw JSON (bypass kaspa-wasm Transaction which has "Invalid address" issues)
     const { createKaspaP2shBlake2bLock } = require("@hardkas/core");

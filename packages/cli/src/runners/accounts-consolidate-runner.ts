@@ -1,6 +1,6 @@
 import { getOutput } from "../output.js";
 import { Hardkas } from "@hardkas/sdk";
-import { resolveNetworkTarget } from "@hardkas/config";
+import { resolveExecutionTarget } from "@hardkas/config";
 
 export interface AccountsConsolidateOptions {
   account: string;
@@ -37,7 +37,7 @@ export async function runAccountsConsolidate(options: AccountsConsolidateOptions
     url: options.url
   });
 
-  if (provider.mode !== "simulated") {
+  if (provider.mode !== "simulator") {
     const { JsonWrpcKaspaClient } = await import("@hardkas/kaspa-rpc");
     (sdk as any).rpc = new JsonWrpcKaspaClient({ rpcUrl: provider.endpoint! });
   }
@@ -51,7 +51,7 @@ export async function runAccountsConsolidate(options: AccountsConsolidateOptions
 
   let allUtxos: any[] = [];
   try {
-    if (provider.mode !== "simulated") {
+    if (provider.mode !== "simulator") {
       const rpcUtxos = await sdk.rpc.getUtxosByAddress(resolvedAccount.address!);
       allUtxos = rpcUtxos.map((u: any) => ({
         outpoint: {
@@ -201,7 +201,7 @@ export async function runAccountsConsolidate(options: AccountsConsolidateOptions
     const signed = await sdk.tx.sign(plan, resolvedAccount);
 
     let receipt;
-    if (provider.mode === "simulated") {
+    if (provider.mode === "simulator") {
       const simResult = await sdk.tx.simulate(signed, { persist: true });
       receipt = simResult.receipt;
     } else {

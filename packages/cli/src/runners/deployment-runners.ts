@@ -11,7 +11,7 @@ import {
   createDeploymentRecord,
   updateDeploymentStatus
 } from "@hardkas/artifacts";
-import { loadHardkasConfig, resolveNetworkTarget } from "@hardkas/config";
+import { loadHardkasConfig, resolveExecutionTarget } from "@hardkas/config";
 import { NetworkId, ArtifactId, TxId } from "@hardkas/core";
 import { JsonWrpcKaspaClient } from "@hardkas/kaspa-rpc";
 
@@ -185,7 +185,7 @@ export async function verifyDeploymentStatus(opts: {
 
   UI.info(`Checking ${record.label} on ${record.networkId}...`);
   const { config } = await loadHardkasConfig();
-  const netTarget = resolveNetworkTarget({ config, network: record.networkId });
+  const netTarget = resolveExecutionTarget({ config, network: record.networkId });
   const netTargetObj = netTarget.target as unknown as Record<string, unknown>;
   const rpcUrl =
     typeof netTargetObj.rpcUrl === "string" ? netTargetObj.rpcUrl : undefined;
