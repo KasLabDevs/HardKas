@@ -5,6 +5,7 @@ export interface ResolveExecutionTargetOptions {
   config: HardkasConfig;
   network?: string;
   execution?: HardkasExecutionTarget;
+  targetName?: string;
 }
 
 import { NetworkId } from "@hardkas/core";
@@ -41,7 +42,19 @@ export function resolveExecutionTarget(options: ResolveExecutionTargetOptions): 
   if (execution) {
     finalExecution = execution;
   } else if (config.execution) {
-    finalExecution = config.execution;
+    if ("default" in config.execution && "targets" in config.execution) {
+      const tName = options.targetName || config.execution.default;
+      const targetObj = (config.execution.targets as any)[tName];
+      if (!targetObj) {
+        throw new Error(`Execution target '${tName}' not found in hardkas.config.ts`);
+      }
+      finalExecution = targetObj;
+    } else {
+      if (options.targetName) {
+        throw new Error(`Cannot select --target '${options.targetName}' because hardkas.config.ts uses legacy single-target execution mode.`);
+      }
+      finalExecution = config.execution as HardkasExecutionTarget;
+    }
   } else {
     // Inference for backwards compatibility
     if (config.defaultNetwork !== undefined) {

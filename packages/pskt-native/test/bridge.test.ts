@@ -7,7 +7,7 @@ describe('pskt-native bridge', () => {
   it('should probe correctly', () => {
     const capsStr = psktProbe();
     const caps = JSON.parse(capsStr);
-    expect(caps.bridgeVersion).toBe('0.12.0-rc.1');
+    expect(caps.bridgeVersion).toBe('0.12.0-rc.2');
     expect(caps.operations.decode).toBe(true);
   });
 

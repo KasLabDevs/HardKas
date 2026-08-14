@@ -4,12 +4,14 @@ import { assertBroadcastNetworkAllowed } from "../broadcast-guard.js";
 import { Hardkas } from "@hardkas/sdk";
 
 export interface TxSendRunnerInput {
+  targetName?: string;
   signedArtifact: SignedTxArtifact;
   network?: string;
   config: HardkasConfig;
   url?: string;
   provider?: string;
   workspaceRoot?: string;
+  sync?: boolean;
 }
 
 export interface TxSendRunnerResult {
@@ -28,12 +30,13 @@ export interface TxSendRunnerResult {
  * Delegates core logic to the HardKAS SDK.
  */
 export async function runTxSend(input: TxSendRunnerInput): Promise<TxSendRunnerResult> {
-  const { signedArtifact, network, config, url } = input;
+  const { targetName, signedArtifact, network, config, url } = input;
 
   const networkName = network || signedArtifact.networkId;
   const { name: resolvedName, target, execution } = resolveExecutionTarget({
     network: networkName,
-    config
+    config,
+    ...(targetName !== undefined ? { targetName } : {})
   });
 
   const { resolveProvider } = await import("@hardkas/config");

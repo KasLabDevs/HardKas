@@ -119,7 +119,7 @@ export const scenario = isVitest ? vitestTest.extend<{ hk: HardkasEnvironment }>
 
       const scenarioResult = {
         schema: (HardkasSchemas as any).ScenarioResultV1 || "hardkas.scenarioResult.v1",
-        hardkasVersion: "0.12.0-rc.1",
+        hardkasVersion: "0.12.0-rc.2",
         version: "1.0.0-alpha",
         networkId: hardkas.network || "simnet",
         mode: "agent",

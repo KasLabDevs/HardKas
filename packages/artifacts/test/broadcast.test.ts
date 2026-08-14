@@ -4,7 +4,7 @@ import { getBroadcastableSignedTransaction } from "../src/signed-tx.js";
 describe("getBroadcastableSignedTransaction", () => {
   const baseArtifact: any = {
     schema: "hardkas.signedTx",
-    hardkasVersion: "0.12.0-rc.1",
+    hardkasVersion: "0.12.0-rc.2",
     version: "1.0.0-alpha",
     status: "signed",
     createdAt: new Date().toISOString(),

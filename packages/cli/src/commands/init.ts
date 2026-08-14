@@ -87,11 +87,21 @@ export default defineConfig({
             const template = `import { defineHardkasConfig } from "@hardkas/sdk";
 
 export default defineHardkasConfig({
-  // HardKAS v0.12.0-rc.1 Configuration
+  // HardKAS v0.12.0-rc.2 Configuration
   execution: {
-    mode: "simulator",
-    domain: "kaspa-l1",
-    network: "simulated"
+    default: "simulator",
+    targets: {
+      simulator: {
+        mode: "simulator",
+        domain: "kaspa-l1",
+        network: "simulated"
+      },
+      localnet: {
+        mode: "localnet",
+        domain: "kaspa-l1",
+        network: "simnet"
+      }
+    }
   },
 
   // Strict execution policy
@@ -231,7 +241,7 @@ scenario("payment flow", async ({ hk }) => {
                 `HardKAS project '${name || "current"}' initialized successfully.`
               );
               if (name) UI.info(`Project folder: ${targetDir}`);
-              UI.info(`Created: hardkas.config.ts (0.12.0-rc.1)`);
+              UI.info(`Created: hardkas.config.ts (0.12.0-rc.2)`);
               UI.footer(`Next steps:\n  ` + (name ? `cd ${name}\n  ` : "") + (options.install ? "" : "npm install\n  ") + "npm test");
             }
           }

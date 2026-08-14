@@ -12,7 +12,7 @@ export function assertBroadcastNetworkAllowed(input: {
   // Mainnet block
   if (isMainnetArtifact || isMainnetSelected) {
     throw new Error(
-      "Mainnet broadcast is disabled in HardKAS 0.12.0-rc.1.\n\n" +
+      "Mainnet broadcast is disabled in HardKAS 0.12.0-rc.2.\n\n" +
         "Reason:\n" +
         "  Production transaction submission is intentionally unavailable in this development release.\n\n" +
         "Use:\n" +

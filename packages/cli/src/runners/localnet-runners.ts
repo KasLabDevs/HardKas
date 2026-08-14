@@ -192,30 +192,30 @@ export async function runLocalnetFund(opts: LocalnetFundOptions): Promise<void> 
 
   const { Hardkas } = await import("@hardkas/sdk");
   const sdk = await Hardkas.create({ cwd: opts.workspaceRoot || process.cwd() });
-  
+
   const timeoutMs = opts.timeoutMs ?? 300000;
-  const targetAmount = opts.amountSompi 
-    ? before.matureBalanceSompi + opts.amountSompi 
+  const targetAmount = opts.amountSompi
+    ? before.matureBalanceSompi + opts.amountSompi
     : before.matureBalanceSompi + 1n; // wait for any increase
-    
+
   try {
-    await sdk.utxos.waitForCoinbaseSpendable({
+    await sdk.utxos.waitForSpendableFunding({
       address,
-      minAmount: targetAmount,
+      minSpendableSompi: targetAmount,
       timeoutMs
     });
   } catch (e: any) {
-    if (e.code !== "COINBASE_MATURITY_TIMEOUT") {
+    if (e.code !== "LOCALNET_FUND_MATURITY_TIMEOUT") {
+      if (!opts.keepMiner) await stopToccataMiner();
       throw e;
     }
-    // if it timed out, it will be caught below by the status check
+  } finally {
+    if (!opts.keepMiner) {
+      await stopToccataMiner();
+    }
   }
 
   const current = await getAddressFundingState(address, !!opts.json);
-
-  if (!opts.keepMiner) {
-    await stopToccataMiner();
-  }
 
   const status =
     current.matureBalanceSompi > before.matureBalanceSompi
@@ -400,6 +400,9 @@ async function inspectDockerContainer(name: string) {
 
 async function getAddressFundingState(address: string, quiet = false) {
   const client = new JsonWrpcKaspaClient({ rpcUrl: TOCCATA_RPC_URL, timeoutMs: 10000 });
+  const { getCoinbaseMaturity } = await import("@hardkas/core");
+  const maturityThreshold = getCoinbaseMaturity("simnet");
+
   try {
     const { info, utxos } = await withOptionalSilentConsole(quiet, async () => ({
       info: await client.getInfo(),
@@ -409,7 +412,7 @@ async function getAddressFundingState(address: string, quiet = false) {
     const matureUtxos = utxos.filter((utxo) => {
       if (!utxo.isCoinbase) return true;
       if (utxo.blockDaaScore === undefined) return false;
-      return virtualDaaScore - BigInt(utxo.blockDaaScore) >= 1000n;
+      return virtualDaaScore - BigInt(utxo.blockDaaScore) >= maturityThreshold;
     });
     await client.close();
     return {

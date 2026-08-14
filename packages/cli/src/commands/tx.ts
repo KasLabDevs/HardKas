@@ -44,6 +44,7 @@ export function registerTxCommands(program: Command) {
 
   tx.command("plan")
     .description(`Build a transaction plan artifact ${UI.maturity("stable")}`)
+    .option("--target <name>", "Named execution target from hardkas.config.ts")
     .option("--from <accountOrAddress>", "Sender account name or address")
     .option("--to <address>", "Recipient address")
     .option("--amount <kas>", "Amount in KAS")
@@ -60,6 +61,7 @@ export function registerTxCommands(program: Command) {
     .option("--json", "Output as JSON", false)
     .action(
       async (options: {
+        target?: string;
         from?: string;
         to?: string;
         amount?: string;
@@ -93,6 +95,7 @@ export function registerTxCommands(program: Command) {
 
               const loaded = await loadHardkasConfig({ workspaceRoot: process.cwd() });
               const artifact = await runTxPlan({
+                ...(options.target ? { targetName: options.target } : {}),
                 from: options.from || "alice",
                 to: options.to || "bob",
                 amount: options.amount || "1",
@@ -312,6 +315,7 @@ export function registerTxCommands(program: Command) {
     .description(
       `Broadcast a signed transaction or send directly ${UI.maturity("stable")}`
     )
+    .option("--target <name>", "Named execution target from hardkas.config.ts")
     .option("--from <accountOrAddress>", "Sender (shortcut mode)")
     .option("--to <address>", "Recipient (shortcut mode)")
     .option("--amount <kas>", "Amount in KAS (shortcut mode)")
@@ -327,6 +331,7 @@ export function registerTxCommands(program: Command) {
       async (
         signedPath: string | undefined,
         options: {
+          target?: string;
           from?: string;
           to?: string;
           amount?: string;
@@ -370,6 +375,7 @@ export function registerTxCommands(program: Command) {
                 }
 
                 const result = await runTxSend({
+                  ...(options.target ? { targetName: options.target } : {}),
                   signedArtifact: signedArtifact as any,
                   network: options.network,
                   provider: options.provider,

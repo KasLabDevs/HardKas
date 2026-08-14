@@ -65,7 +65,10 @@ export type HardkasAccountConfig =
   | { kind: "evm-private-key"; privateKeyEnv: string; address?: string };
 
 export interface HardkasConfig {
-  execution?: HardkasExecutionTarget;
+  execution?: HardkasExecutionTarget | {
+    default: string;
+    targets: Record<string, HardkasExecutionTarget>;
+  };
   /**
    * @deprecated Use `execution` instead.
    */
