@@ -95,7 +95,7 @@ export function registerTxCommands(program: Command) {
 
               const loaded = await loadHardkasConfig({ workspaceRoot: process.cwd() });
               const artifact = await runTxPlan({
-                targetName: options.target,
+                ...(options.target ? { targetName: options.target } : {}),
                 from: options.from || "alice",
                 to: options.to || "bob",
                 amount: options.amount || "1",
@@ -375,7 +375,7 @@ export function registerTxCommands(program: Command) {
                 }
 
                 const result = await runTxSend({
-                  targetName: options.target,
+                  ...(options.target ? { targetName: options.target } : {}),
                   signedArtifact: signedArtifact as any,
                   network: options.network,
                   provider: options.provider,

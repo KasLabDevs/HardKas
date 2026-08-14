@@ -27,7 +27,8 @@ export async function runDevAccountsList() {
 
 export async function runDevAccountsReveal(alias: string) {
   const loaded = await loadHardkasConfig();
-  const exec = loaded.config.execution || { mode: "simulator", domain: "kaspa-l1", network: "simulated" };
+  const { resolveExecutionTarget } = await import("@hardkas/config");
+  const { execution } = resolveExecutionTarget({ config: loaded.config });
   const { assertExecutionCompatibility } = await import("@hardkas/core");
   const { resolveHardkasAccount } = await import("@hardkas/accounts");
 
@@ -43,9 +44,9 @@ export async function runDevAccountsReveal(alias: string) {
       assertExecutionCompatibility({
         operation: "dev-reveal",
         target: {
-          mode: exec.mode || "simulator",
-          domain: exec.domain || "kaspa-l1",
-          network: exec.network || "simulated"
+          mode: execution.mode || "simulator",
+          domain: execution.domain || "kaspa-l1",
+          network: execution.network || "simulated"
         },
         account: {
           kind: accountMeta.kind,
@@ -59,7 +60,7 @@ export async function runDevAccountsReveal(alias: string) {
     }
   } else {
     // Fallback if not mapped
-    if (exec.network !== "simnet" && exec.network !== "simulated") {
+    if (execution.network !== "simnet" && execution.network !== "simulated") {
       UI.error("Reveal dev accounts is ONLY allowed on simnet or simulated for safety.");
       return;
     }
@@ -85,7 +86,8 @@ export async function runDevAccountsReveal(alias: string) {
 
 export async function runDevAccountsExport(alias: string) {
   const loaded = await loadHardkasConfig();
-  const exec = loaded.config.execution || { mode: "simulator", domain: "kaspa-l1", network: "simulated" };
+  const { resolveExecutionTarget } = await import("@hardkas/config");
+  const { execution } = resolveExecutionTarget({ config: loaded.config });
   const { assertExecutionCompatibility } = await import("@hardkas/core");
   const { resolveHardkasAccount } = await import("@hardkas/accounts");
 
@@ -99,9 +101,9 @@ export async function runDevAccountsExport(alias: string) {
       assertExecutionCompatibility({
         operation: "dev-export",
         target: {
-          mode: exec.mode || "simulator",
-          domain: exec.domain || "kaspa-l1",
-          network: exec.network || "simulated"
+          mode: execution.mode || "simulator",
+          domain: execution.domain || "kaspa-l1",
+          network: execution.network || "simulated"
         },
         account: {
           kind: accountMeta.kind,
@@ -114,7 +116,7 @@ export async function runDevAccountsExport(alias: string) {
       return;
     }
   } else {
-    if (exec.network !== "simnet" && exec.network !== "simulated") {
+    if (execution.network !== "simnet" && execution.network !== "simulated") {
       UI.error("Exporting dev accounts is ONLY allowed on simnet or simulated for safety.");
       return;
     }
