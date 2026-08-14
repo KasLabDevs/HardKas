@@ -66,7 +66,7 @@ export async function runTxPlan(input: TxPlanRunnerInput): Promise<TxPlanArtifac
   let backend = providerConfig.mode;
 
 
-  // Guard: HardKAS simulated accounts (kaspa:sim_*, kaspasim:*) can only be used on simulated backends.
+  // Guard: HardKAS simulated accounts (kaspa:sim_*) can only be used on simulated backends.
   const isHardkasSimulatedAccount = fromAddress.startsWith("kaspa:sim_");
 
   if (isHardkasSimulatedAccount && backend !== "simulator") {

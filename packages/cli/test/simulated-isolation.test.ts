@@ -39,7 +39,7 @@ describe("Simulated Isolation", () => {
 
     await expect(
       runTxPlan({
-        from: "alice",
+        from: "kaspa:sim_qqqxxx",
         to: "bob",
         amount: "10",
         networkId: "simnet",
@@ -68,7 +68,7 @@ describe("Simulated Isolation", () => {
     const { config } = await loadHardkasConfig();
     await expect(
       runTxPlan({
-        from: "alice",
+        from: "kaspa:sim_qqqxxx",
         to: "bob",
         amount: "10",
         networkId: "testnet-11",
