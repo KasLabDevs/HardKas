@@ -1,4 +1,4 @@
-import { loadSimulatedReceipt, StoredSimulatedTxReceipt } from "@hardkas/localnet";
+import { ProjectArtifactStore } from "@hardkas/artifacts";
 import { formatSompiToKas } from "@hardkas/core";
 
 export interface TxReceiptRunnerInput {
@@ -7,7 +7,7 @@ export interface TxReceiptRunnerInput {
 }
 
 export interface TxReceiptRunnerResult {
-  receipt: StoredSimulatedTxReceipt;
+  receipt: any;
   formatted: string;
 }
 
@@ -16,26 +16,31 @@ export async function runTxReceipt(
 ): Promise<TxReceiptRunnerResult> {
   const { txId, cwd } = input;
 
-  const receipt = await loadSimulatedReceipt(txId, cwd ? { cwd } : undefined);
+  const store = new ProjectArtifactStore(cwd || process.cwd());
+  const receipt = await store.findReceiptByTxId(txId) as any;
 
   const lines = [
     "Transaction receipt",
     "",
     `Tx ID:     ${receipt.txId}`,
-    `Mode:      ${receipt.mode}`,
-    `Network:   ${receipt.networkId}`,
-    `From:      ${receipt.from.address}`,
-    `To:        ${receipt.to.address}`,
-    `Amount:    ${formatSompiToKas(BigInt(receipt.amountSompi))}`,
-    `Fee:       ${formatSompiToKas(BigInt(receipt.feeSompi))}`,
+    `Mode:      ${receipt.mode || "unknown"}`,
+    `Network:   ${receipt.networkId || "unknown"}`,
+    `From:      ${receipt.from?.address || "unknown"}`,
+    `To:        ${receipt.to?.address || "unknown"}`,
+    `Amount:    ${receipt.amountSompi ? formatSompiToKas(BigInt(receipt.amountSompi)) : "unknown"}`,
+    `Fee:       ${receipt.feeSompi ? formatSompiToKas(BigInt(receipt.feeSompi)) : "unknown"}`,
     `Change:    ${receipt.changeSompi ? formatSompiToKas(BigInt(receipt.changeSompi)) : "none"}`,
-    `DAA score: ${receipt.daaScore}`,
-    `Created:   ${receipt.createdAt}`,
+    `Created:   ${receipt.createdAt || receipt.submittedAt || "unknown"}`,
     "",
-    "State:",
-    `  Spent UTXOs:   ${receipt.spentUtxoIds.length}`,
-    `  Created UTXOs: ${receipt.createdUtxoIds.length}`
+    "State:"
   ];
+
+  if (receipt.spentUtxoIds) {
+    lines.push(`  Spent UTXOs:   ${receipt.spentUtxoIds.length}`);
+  }
+  if (receipt.createdUtxoIds) {
+    lines.push(`  Created UTXOs: ${receipt.createdUtxoIds.length}`);
+  }
 
   return {
     receipt,

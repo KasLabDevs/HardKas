@@ -32,12 +32,35 @@ export interface TxSendRunnerResult {
 export async function runTxSend(input: TxSendRunnerInput): Promise<TxSendRunnerResult> {
   const { targetName, signedArtifact, network, config, url } = input;
 
-  const networkName = network || signedArtifact.networkId;
-  const { name: resolvedName, target, execution } = resolveExecutionTarget({
-    network: networkName,
-    config,
-    ...(targetName !== undefined ? { targetName } : {})
-  });
+  const { resolveExecutionTarget } = await import("@hardkas/config");
+
+  let resolvedName: string;
+  let execution: any;
+  let target: any;
+
+  if (targetName) {
+    const res = resolveExecutionTarget({ config, targetName });
+    resolvedName = res.name;
+    execution = res.execution;
+    target = res.target;
+  } else if (signedArtifact.execution) {
+    resolvedName = "artifact_execution";
+    execution = signedArtifact.execution;
+    target = {}; // Cannot infer full config target from execution alone, but execution has what we need
+  } else if (config.defaultNetwork) {
+    const res = resolveExecutionTarget({ config }); // Uses defaultNetwork internally
+    resolvedName = res.name;
+    execution = res.execution;
+    target = res.target;
+  } else {
+    throw new Error("EXECUTION_NETWORK_MISMATCH: No target specified, artifact lacks execution metadata, and no default target found in config.");
+  }
+
+  if (network && execution.network !== network) {
+    throw new Error(`EXECUTION_NETWORK_MISMATCH: Target specifies network '${execution.network}', but command was called with legacy --network '${network}'.`);
+  }
+
+  const networkName = execution.network;
 
   const { resolveProvider } = await import("@hardkas/config");
   const provider = resolveProvider({

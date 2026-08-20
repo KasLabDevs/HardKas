@@ -31,7 +31,8 @@ export const ARTIFACT_SCHEMAS = {
   PROGRAMMABILITY_VERIFY: HardkasSchemas.ProgrammabilityVerifyV1,
   PROGRAMMABILITY_CORPUS_REPORT: HardkasSchemas.ProgrammabilityCorpusReportV1,
   PROGRAMMABILITY_APP_PLAN: HardkasSchemas.ProgrammabilityAppPlanV1,
-  TOCCATA_PROGRAMMABILITY_CORPUS: HardkasSchemas.ToccataProgrammabilityCorpusV1
+  TOCCATA_PROGRAMMABILITY_CORPUS: HardkasSchemas.ToccataProgrammabilityCorpusV1,
+  ADDRESS_OBSERVATION: HardkasSchemas.AddressObservationV1
 } as const;
 
 export type HardkasArtifactSchema = HardkasSchema | string;

@@ -5,7 +5,7 @@ import { JsonWrpcKaspaClient } from "@hardkas/kaspa-rpc";
 import { forkFromNetwork, saveLocalnetState } from "@hardkas/localnet";
 import { resolve } from "node:path";
 import fs from "node:fs/promises";
-import { withLock } from "@hardkas/core";
+import { withLock, sha256hex, UtxoSetNotStableError } from "@hardkas/core";
 import { DockerKaspadRunner } from "@hardkas/node-runner";
 import { resolveHardkasAccountAddress, listHardkasAccounts } from "@hardkas/accounts";
 import { execa } from "execa";
@@ -191,7 +191,10 @@ export async function runLocalnetFund(opts: LocalnetFundOptions): Promise<void> 
   await restartToccataMiner(address);
 
   const { Hardkas } = await import("@hardkas/sdk");
-  const sdk = await Hardkas.create({ cwd: opts.workspaceRoot || process.cwd() });
+  const sdk = await Hardkas.create({
+    cwd: opts.workspaceRoot || process.cwd(),
+    network: "simnet"
+  });
 
   const timeoutMs = opts.timeoutMs ?? 300000;
   const targetAmount = opts.amountSompi
@@ -206,12 +209,16 @@ export async function runLocalnetFund(opts: LocalnetFundOptions): Promise<void> 
     });
   } catch (e: any) {
     if (e.code !== "LOCALNET_FUND_MATURITY_TIMEOUT") {
-      if (!opts.keepMiner) await stopToccataMiner();
+      if (!opts.keepMiner) {
+        await stopToccataMiner();
+        await waitForFundingSpendability(sdk.rpc, { address, minSpendableSompi: targetAmount });
+      }
       throw e;
     }
   } finally {
     if (!opts.keepMiner) {
       await stopToccataMiner();
+      await waitForFundingSpendability(sdk.rpc, { address, minSpendableSompi: targetAmount });
     }
   }
 
@@ -244,6 +251,144 @@ export async function runLocalnetFund(opts: LocalnetFundOptions): Promise<void> 
   }
   UI.info(`Address: ${address}`);
   UI.info(`Mature balance: ${current.matureBalanceSompi.toString()} sompi`);
+}
+
+interface VirtualFingerprint {
+  virtualDaaScore: bigint;
+  virtualParentHashes: string[];
+  sink: string;
+  hash: string;
+}
+
+async function getVirtualFingerprint(rpc: any): Promise<VirtualFingerprint> {
+  const dagInfo = await rpc.getBlockDagInfo();
+  const virtualDaaScore = BigInt(dagInfo.virtualDaaScore || 0);
+  const virtualParentHashes = [...(dagInfo.virtualParentHashes || [])].sort();
+  const sink = dagInfo.sink || dagInfo.sinkHash || "";
+
+  const canonical = JSON.stringify({
+    virtualDaaScore: virtualDaaScore.toString(),
+    virtualParentHashes,
+    sink
+  });
+  const hash = sha256hex(canonical);
+
+  return { virtualDaaScore, virtualParentHashes, sink, hash };
+}
+
+function computeUtxoSetHash(utxos: any[]): string {
+  const keys = utxos
+    .map(u => [
+      u.outpoint.transactionId,
+      u.outpoint.index,
+      u.amountSompi.toString(),
+      u.blockDaaScore?.toString() ?? "",
+      u.isCoinbase ? "1" : "0"
+    ].join(":"))
+    .sort();
+
+  return sha256hex(keys.join("|"));
+}
+
+async function waitForVirtualDagSettle(
+  rpc: any,
+  opts?: { stablePolls?: number; pollIntervalMs?: number }
+): Promise<VirtualFingerprint> {
+  const REQUIRED = opts?.stablePolls ?? 3;
+  const INTERVAL = opts?.pollIntervalMs ?? 300;
+
+  let lastHash = "";
+  let stableCount = 0;
+  let lastFingerprint: VirtualFingerprint | null = null;
+
+  while (stableCount < REQUIRED) {
+    const fp = await getVirtualFingerprint(rpc);
+    if (fp.hash === lastHash && fp.virtualDaaScore > 0n) {
+      stableCount++;
+    } else {
+      lastHash = fp.hash;
+      stableCount = 0;
+    }
+    lastFingerprint = fp;
+    await new Promise(r => setTimeout(r, INTERVAL));
+  }
+
+  return lastFingerprint!;
+}
+
+async function waitForFundingSpendability(
+  rpc: any,
+  opts: {
+    address: string;
+    minSpendableSompi?: bigint;
+    stablePolls?: number;
+    pollIntervalMs?: number;
+  }
+): Promise<{ virtualFingerprint: VirtualFingerprint; spendableCount: number; spendableSompi: bigint }> {
+  const REQUIRED = opts.stablePolls ?? 3;
+  const INTERVAL = opts.pollIntervalMs ?? 500;
+
+  let utxoStableCount = 0;
+  let lastUtxoHash = "";
+  let lastUtxos: any[] = [];
+
+  // Phase 1: Virtual DAG convergence (initial)
+  let vfp = await waitForVirtualDagSettle(rpc);
+
+  // Phase 2: UTXO set convergence for this address
+  while (utxoStableCount < REQUIRED) {
+    lastUtxos = await rpc.getUtxosByAddress(opts.address);
+    const hash = computeUtxoSetHash(lastUtxos);
+
+    if (hash === lastUtxoHash && lastUtxos.length > 0) {
+      utxoStableCount++;
+    } else {
+      lastUtxoHash = hash;
+      utxoStableCount = 0;
+    }
+
+    // Check if virtual state shifted during UTXO convergence
+    const currentVfp = await waitForVirtualDagSettle(rpc);
+    if (currentVfp.hash !== vfp.hash) {
+      // Restart convergence cycle
+      vfp = currentVfp;
+      lastUtxoHash = "";
+      utxoStableCount = 0;
+    }
+
+    if (utxoStableCount < REQUIRED) {
+      await new Promise(r => setTimeout(r, INTERVAL));
+    }
+  }
+
+  // Phase 3: Maturity check on converged set using the stable virtualDaaScore
+  const { getCoinbaseMaturity } = await import("@hardkas/core");
+  const maturityThreshold = getCoinbaseMaturity("simnet");
+
+  const spendable = lastUtxos.filter(u => {
+    if (!u.isCoinbase) return true;
+    if (u.blockDaaScore === undefined) return false;
+    return vfp.virtualDaaScore - BigInt(u.blockDaaScore) >= maturityThreshold;
+  });
+
+  const spendableSompi = spendable.reduce((sum, u) => sum + BigInt(u.amountSompi), 0n);
+
+  if (opts.minSpendableSompi && spendableSompi < opts.minSpendableSompi) {
+    throw new UtxoSetNotStableError({
+      address: opts.address,
+      utxoCount: lastUtxos.length,
+      spendableCount: spendable.length,
+      spendableSompi: spendableSompi.toString(),
+      required: opts.minSpendableSompi.toString(),
+      virtualDaaScore: vfp.virtualDaaScore.toString()
+    });
+  }
+
+  return {
+    virtualFingerprint: vfp,
+    spendableCount: spendable.length,
+    spendableSompi
+  };
 }
 
 export async function runLocalnetFork(opts: {

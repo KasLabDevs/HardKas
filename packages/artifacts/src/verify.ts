@@ -311,7 +311,11 @@ export async function verifyArtifactIntegrity(
 function findFileByHash(hash: string, dirs: string[]): string | null {
   const shortHash =
     hash.startsWith("plan-") || hash.startsWith("signed-") ? hash : hash.slice(0, 16);
+  const allDirs = [...dirs];
   for (const dir of dirs) {
+    allDirs.push(path.join(dir, 'plans'), path.join(dir, 'signed'), path.join(dir, 'receipts'), path.join(dir, 'lineage'), path.join(dir, 'misc'));
+  }
+  for (const dir of allDirs) {
     if (!fs.existsSync(dir)) continue;
     try {
       const files = fs.readdirSync(dir);

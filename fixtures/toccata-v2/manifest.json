@@ -1,6 +1,6 @@
 {
   "schema": "hardkas.toccataProgrammabilityCorpus.v1",
-  "version": "0.12.0-rc.2",
+  "version": "0.12.0-rc.10",
   "network": "simnet",
   "profile": "toccata-v2",
   "status": "PROGRAMMABILITY_SURFACE_READY",

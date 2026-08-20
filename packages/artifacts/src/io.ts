@@ -5,53 +5,21 @@ import { verifyArtifact } from "./verify.js";
 
 import { writeFileAtomic } from "@hardkas/core";
 
+import { ProjectArtifactStore } from "./store.js";
+
 export const bigIntReplacer = (_key: string, value: unknown) =>
   typeof value === "bigint" ? value.toString() : value;
 
 export async function writeArtifact(filePath: string, artifact: unknown): Promise<void> {
-  let targetPath = filePath;
-  try {
-    const stats = await fs.stat(filePath);
-    if (stats.isDirectory()) {
-      const artifactObj =
-        typeof artifact === "string" ? JSON.parse(artifact) : (artifact as any);
-      const id =
-        artifactObj.planId ||
-        artifactObj.signedId ||
-        artifactObj.txId ||
-        Date.now().toString(36);
-      const prefix = artifactObj.schema
-        ? artifactObj.schema.split(".")[1] || "artifact"
-        : "artifact";
-      targetPath = path.join(filePath, `${prefix}-${id}.json`);
-    }
-  } catch (e) {
-    // Path does not exist, assume it's a file path unless it explicitly ends with a slash
-    if (filePath.endsWith("/") || filePath.endsWith("\\")) {
-      const artifactObj =
-        typeof artifact === "string" ? JSON.parse(artifact) : (artifact as any);
-      const id =
-        artifactObj.planId ||
-        artifactObj.signedId ||
-        artifactObj.txId ||
-        Date.now().toString(36);
-      const prefix = artifactObj.schema
-        ? artifactObj.schema.split(".")[1] || "artifact"
-        : "artifact";
-      targetPath = path.join(filePath, `${prefix}-${id}.json`);
-    }
-  }
-
-  const content =
-    typeof artifact === "string"
-      ? artifact
-      : JSON.stringify(artifact, bigIntReplacer, 2) + "\n";
-
-  await writeFileAtomic(targetPath, content);
+  const store = new ProjectArtifactStore(process.cwd());
+  // Determine if filePath is an absolute directory (old signature compatibility)
+  // But ideally, everything just uses writeArtifact directly without paths.
+  await store.writeArtifact(artifact);
 }
 
 export function getDefaultReceiptPath(txId: string, cwd: string = process.cwd()): string {
-  return path.join(cwd, "artifacts", "receipts", `${txId}.json`);
+  // Deprecated. We just return a mock path for backwards compatibility until refactored out.
+  return path.join(cwd, ".hardkas", "artifacts", "receipts", `${txId}.json`);
 }
 
 export async function readArtifact(filePath: string): Promise<unknown> {

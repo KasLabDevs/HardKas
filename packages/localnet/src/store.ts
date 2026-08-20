@@ -26,6 +26,43 @@ export async function saveLocalnetState(
   await writeFileAtomic(targetPath, JSON.stringify(state, null, 2), {
     encoding: "utf-8"
   });
+
+  // Also persist as canonical snapshot artifact for lineage resolution
+  const workspaceRoot = path.dirname(dir); // Typically dir is .hardkas so workspaceRoot is its parent
+  const { ProjectArtifactStore, calculateContentHash, CURRENT_HASH_VERSION, sortUtxosByOutpoint } = await import("@hardkas/artifacts");
+
+  try {
+    const store = new ProjectArtifactStore(workspaceRoot);
+    const snapshotArtifact: any = {
+      schema: "hardkas.snapshot.v1",
+      createdAt: new Date().toISOString(),
+      daaScore: state.daaScore,
+      accountsHash: (await import("./snapshot.js")).calculateAccountsHash(state.accounts),
+      utxoSetHash: (await import("./snapshot.js")).calculateUtxoSetHash(state.utxos),
+      hardkasVersion: state.hardkasVersion,
+      version: state.version,
+      networkId: state.networkId,
+      mode: state.mode,
+      accounts: [...state.accounts].sort((a, b) => {
+        if (a.address > b.address) return 1;
+        if (a.address < b.address) return -1;
+        return 0;
+      }),
+      utxos: sortUtxosByOutpoint(state.utxos)
+    };
+
+    const stateHash = (await import("./snapshot.js")).calculateStateHash(state);
+    snapshotArtifact.stateHash = stateHash;
+
+    const contentHash = calculateContentHash(snapshotArtifact, CURRENT_HASH_VERSION);
+    snapshotArtifact.artifactId = contentHash;
+    snapshotArtifact.contentHash = contentHash;
+
+    // Write it as an artifact so the resolver can find it via lineage
+    await store.writeArtifact(snapshotArtifact);
+  } catch (e) {
+    // Ignore if not in a full HardKAS project workspace
+  }
 }
 
 export async function loadLocalnetState(

@@ -22,8 +22,8 @@ describe("Simulated Send Parity", () => {
   });
 
   it("send(signed, { persist: true }) -> artifact exists on disk", async () => {
-    const plan = await sdk.tx.plan({ from: "alice", to: "bob", amount: "5" });
-    const signed = await sdk.tx.sign(plan, "alice", { persist: false });
+    const plan = await sdk.tx.plan({ from: "kaspa:sim_alice", to: "kaspa:sim_bob", amount: "5" });
+    const signed = await sdk.tx.sign(plan, "kaspa:sim_alice", { persist: false });
 
     const result = await sdk.tx.send(signed, { persist: true });
 
@@ -42,8 +42,8 @@ describe("Simulated Send Parity", () => {
   });
 
   it("send(signed, { persist: false }) -> no disk write and no crash", async () => {
-    const plan = await sdk.tx.plan({ from: "alice", to: "bob", amount: "5" });
-    const signed = await sdk.tx.sign(plan, "alice", { persist: false });
+    const plan = await sdk.tx.plan({ from: "kaspa:sim_alice", to: "kaspa:sim_bob", amount: "5" });
+    const signed = await sdk.tx.sign(plan, "kaspa:sim_alice", { persist: false });
 
     const result = await sdk.tx.send(signed, { persist: false });
 

@@ -235,7 +235,7 @@ export const LocalnetUtxoSchemaV2 = z.object({
 });
 
 export const SnapshotSchema = BaseArtifactSchema.extend({
-  schema: z.literal(HardkasSchemas.Snapshot),
+  schema: z.literal(HardkasSchemas.SnapshotV1),
   name: z.string().optional(),
   daaScore: z.string(),
   accountsHash: z.string().optional(),
@@ -881,3 +881,38 @@ export const EvidencePackageSchema = BaseArtifactSchema.extend({
 });
 
 export type EvidencePackage = z.infer<typeof EvidencePackageSchema>;
+
+export const ObservedTransactionSchema = z.object({
+  txId: z.string(),
+  amount: z.string(),
+  fee: z.string().optional()
+});
+
+export const ObservedUtxoSchema = z.object({
+  txId: z.string(),
+  index: z.number(),
+  amount: z.string()
+});
+
+export const AddressObservationSchema = BaseArtifactSchema.extend({
+  schema: z.literal(HardkasSchemas.AddressObservationV1),
+  type: z.literal("address_observation"),
+  execution: z.object({
+    mode: executionModeSchema,
+    network: kaspaNetworkIdSchema
+  }),
+  address: z.string(),
+  mempool: z.object({
+    incoming: z.array(ObservedTransactionSchema),
+    outgoing: z.array(ObservedTransactionSchema)
+  }),
+  utxos: z.array(ObservedUtxoSchema),
+  totals: z.object({
+    mempoolIncomingSompi: z.string(),
+    acceptedUtxoSompi: z.string()
+  }),
+  virtual: z.object({
+    daaScore: z.string().optional()
+  }),
+  observedAt: z.string().datetime()
+});

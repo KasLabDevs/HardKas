@@ -406,22 +406,22 @@ importers:
   examples/showcase-suite/apps/cli-studio:
     dependencies:
       '@hardkas/cli':
-        specifier: workspace:0.12.0-rc.2
+        specifier: workspace:*
         version: link:../../../../packages/cli
       '@hardkas/core':
-        specifier: workspace:0.12.0-rc.2
+        specifier: workspace:*
         version: link:../../../../packages/core
       '@hardkas/kaspa-rpc':
-        specifier: workspace:0.12.0-rc.2
+        specifier: workspace:*
         version: link:../../../../packages/kaspa-rpc
       '@hardkas/toolkit':
-        specifier: workspace:0.12.0-rc.2
+        specifier: workspace:*
         version: link:../../../../packages/toolkit
       '@hardkas/tx-builder':
-        specifier: workspace:0.12.0-rc.2
+        specifier: workspace:*
         version: link:../../../../packages/tx-builder
       '@hardkas/wallet-adapter':
-        specifier: workspace:0.12.0-rc.2
+        specifier: workspace:*
         version: link:../../../../packages/wallet-adapter
       '@showcase/shared-backend':
         specifier: workspace:*
@@ -473,25 +473,25 @@ importers:
   examples/showcase-suite/apps/explorer-live:
     dependencies:
       '@hardkas/kaspa-rpc':
-        specifier: workspace:0.12.0-rc.2
+        specifier: workspace:*
         version: link:../../../../packages/kaspa-rpc
       '@hardkas/observability':
-        specifier: workspace:0.12.0-rc.2
+        specifier: workspace:*
         version: link:../../../../packages/observability
       '@hardkas/plugin-local-indexer':
-        specifier: workspace:0.12.0-rc.2
+        specifier: workspace:*
         version: link:../../../../packages/plugin-local-indexer
       '@hardkas/query-store':
-        specifier: workspace:0.12.0-rc.2
+        specifier: workspace:*
         version: link:../../../../packages/query-store
       '@hardkas/toolkit':
-        specifier: workspace:0.12.0-rc.2
+        specifier: workspace:*
         version: link:../../../../packages/toolkit
       '@hardkas/tx-builder':
-        specifier: workspace:0.12.0-rc.2
+        specifier: workspace:*
         version: link:../../../../packages/tx-builder
       '@hardkas/wallet-adapter':
-        specifier: workspace:0.12.0-rc.2
+        specifier: workspace:*
         version: link:../../../../packages/wallet-adapter
       '@showcase/shared-backend':
         specifier: workspace:*
@@ -543,16 +543,16 @@ importers:
   examples/showcase-suite/apps/localnet-studio:
     dependencies:
       '@hardkas/kaspa-rpc':
-        specifier: workspace:0.12.0-rc.2
+        specifier: workspace:*
         version: link:../../../../packages/kaspa-rpc
       '@hardkas/localnet':
-        specifier: workspace:0.12.0-rc.2
+        specifier: workspace:*
         version: link:../../../../packages/localnet
       '@hardkas/node-runner':
-        specifier: workspace:0.12.0-rc.2
+        specifier: workspace:*
         version: link:../../../../packages/node-runner
       '@hardkas/toolkit':
-        specifier: workspace:0.12.0-rc.2
+        specifier: workspace:*
         version: link:../../../../packages/toolkit
       cors:
         specifier: ^2.8.5
@@ -598,16 +598,16 @@ importers:
   examples/showcase-suite/apps/merchant-terminal:
     dependencies:
       '@hardkas/kaspa-rpc':
-        specifier: workspace:0.12.0-rc.2
+        specifier: workspace:*
         version: link:../../../../packages/kaspa-rpc
       '@hardkas/toolkit':
-        specifier: workspace:0.12.0-rc.2
+        specifier: workspace:*
         version: link:../../../../packages/toolkit
       '@hardkas/tx-builder':
-        specifier: workspace:0.12.0-rc.2
+        specifier: workspace:*
         version: link:../../../../packages/tx-builder
       '@hardkas/wallet-adapter':
-        specifier: workspace:0.12.0-rc.2
+        specifier: workspace:*
         version: link:../../../../packages/wallet-adapter
       '@showcase/shared-backend':
         specifier: workspace:*
@@ -659,16 +659,16 @@ importers:
   examples/showcase-suite/apps/mission-control:
     dependencies:
       '@hardkas/kaspa-rpc':
-        specifier: workspace:0.12.0-rc.2
+        specifier: workspace:*
         version: link:../../../../packages/kaspa-rpc
       '@hardkas/toolkit':
-        specifier: workspace:0.12.0-rc.2
+        specifier: workspace:*
         version: link:../../../../packages/toolkit
       '@hardkas/tx-builder':
-        specifier: workspace:0.12.0-rc.2
+        specifier: workspace:*
         version: link:../../../../packages/tx-builder
       '@hardkas/wallet-adapter':
-        specifier: workspace:0.12.0-rc.2
+        specifier: workspace:*
         version: link:../../../../packages/wallet-adapter
       '@showcase/shared-backend':
         specifier: workspace:*
@@ -720,16 +720,16 @@ importers:
   examples/showcase-suite/apps/silver-playground:
     dependencies:
       '@hardkas/kaspa-rpc':
-        specifier: workspace:0.12.0-rc.2
+        specifier: workspace:*
         version: link:../../../../packages/kaspa-rpc
       '@hardkas/toolkit':
-        specifier: workspace:0.12.0-rc.2
+        specifier: workspace:*
         version: link:../../../../packages/toolkit
       '@hardkas/tx-builder':
-        specifier: workspace:0.12.0-rc.2
+        specifier: workspace:*
         version: link:../../../../packages/tx-builder
       '@hardkas/wallet-adapter':
-        specifier: workspace:0.12.0-rc.2
+        specifier: workspace:*
         version: link:../../../../packages/wallet-adapter
       '@showcase/shared-backend':
         specifier: workspace:*
@@ -781,16 +781,16 @@ importers:
   examples/showcase-suite/apps/time-travel-lab:
     dependencies:
       '@hardkas/kaspa-rpc':
-        specifier: workspace:0.12.0-rc.2
+        specifier: workspace:*
         version: link:../../../../packages/kaspa-rpc
       '@hardkas/toolkit':
-        specifier: workspace:0.12.0-rc.2
+        specifier: workspace:*
         version: link:../../../../packages/toolkit
       '@hardkas/tx-builder':
-        specifier: workspace:0.12.0-rc.2
+        specifier: workspace:*
         version: link:../../../../packages/tx-builder
       '@hardkas/wallet-adapter':
-        specifier: workspace:0.12.0-rc.2
+        specifier: workspace:*
         version: link:../../../../packages/wallet-adapter
       '@showcase/shared-backend':
         specifier: workspace:*
@@ -842,16 +842,16 @@ importers:
   examples/showcase-suite/apps/treasury-console:
     dependencies:
       '@hardkas/kaspa-rpc':
-        specifier: workspace:0.12.0-rc.2
+        specifier: workspace:*
         version: link:../../../../packages/kaspa-rpc
       '@hardkas/toolkit':
-        specifier: workspace:0.12.0-rc.2
+        specifier: workspace:*
         version: link:../../../../packages/toolkit
       '@hardkas/tx-builder':
-        specifier: workspace:0.12.0-rc.2
+        specifier: workspace:*
         version: link:../../../../packages/tx-builder
       '@hardkas/wallet-adapter':
-        specifier: workspace:0.12.0-rc.2
+        specifier: workspace:*
         version: link:../../../../packages/wallet-adapter
       '@showcase/shared-backend':
         specifier: workspace:*
@@ -903,16 +903,16 @@ importers:
   examples/showcase-suite/apps/wallet-pro:
     dependencies:
       '@hardkas/kaspa-rpc':
-        specifier: workspace:0.12.0-rc.2
+        specifier: workspace:*
         version: link:../../../../packages/kaspa-rpc
       '@hardkas/toolkit':
-        specifier: workspace:0.12.0-rc.2
+        specifier: workspace:*
         version: link:../../../../packages/toolkit
       '@hardkas/tx-builder':
-        specifier: workspace:0.12.0-rc.2
+        specifier: workspace:*
         version: link:../../../../packages/tx-builder
       '@hardkas/wallet-adapter':
-        specifier: workspace:0.12.0-rc.2
+        specifier: workspace:*
         version: link:../../../../packages/wallet-adapter
       '@showcase/shared-backend':
         specifier: workspace:*
@@ -1266,6 +1266,9 @@ importers:
       '@noble/hashes':
         specifier: ^2.2.0
         version: 2.2.0
+      '@types/node':
+        specifier: ^20.0.0
+        version: 20.19.43
       pino:
         specifier: ^9.5.0
         version: 9.14.0
@@ -1281,7 +1284,7 @@ importers:
         version: 5.9.3
       vitest:
         specifier: ^2.1.8
-        version: 2.1.9(@types/node@26.1.2)(jsdom@29.1.1(@noble/hashes@2.2.0))(lightningcss@1.32.0)
+        version: 2.1.9(@types/node@20.19.43)(jsdom@29.1.1(@noble/hashes@2.2.0))(lightningcss@1.32.0)
 
   packages/dev-server:
     dependencies:
@@ -1372,7 +1375,7 @@ importers:
   packages/jobs:
     dependencies:
       '@hardkas/observability':
-        specifier: workspace:0.12.0-rc.2
+        specifier: workspace:*
         version: link:../observability
     devDependencies:
       '@types/node':
@@ -1541,7 +1544,7 @@ importers:
         specifier: workspace:*
         version: link:../kaspa-rpc
       '@hardkas/observability':
-        specifier: workspace:0.12.0-rc.2
+        specifier: workspace:*
         version: link:../observability
       '@hardkas/toolkit':
         specifier: workspace:*
@@ -1561,7 +1564,7 @@ importers:
     devDependencies:
       '@napi-rs/cli':
         specifier: ^3.0.0
-        version: 3.8.2(@emnapi/runtime@1.11.2)(@types/node@22.20.1)
+        version: 3.8.2(@emnapi/runtime@1.9.2)(@types/node@22.20.1)
       '@types/node':
         specifier: ^22.19.19
         version: 22.20.1
@@ -1840,7 +1843,7 @@ importers:
         specifier: workspace:*
         version: link:../core
       '@hardkas/observability':
-        specifier: workspace:0.12.0-rc.2
+        specifier: workspace:*
         version: link:../observability
       '@hardkas/toolkit':
         specifier: workspace:*
@@ -1914,7 +1917,7 @@ importers:
         specifier: workspace:*
         version: link:../kaspa-rpc
       '@hardkas/observability':
-        specifier: workspace:0.12.0-rc.2
+        specifier: workspace:*
         version: link:../observability
       '@hardkas/query':
         specifier: workspace:*
@@ -5584,7 +5587,7 @@ packages:
 
   is-number@7.0.0:
     resolution: {integrity: sha512-41Cifkg6e8TylSpdtTpeLVMqvSBEVzTttHvERD741+pnZ8ANv0004MRL43QKPDlK9cGvNp6NZWZUBlbGXYxxng==}
-    engines: {node: '>=0.12.0-rc.2'}
+    engines: {node: '>=0.12.0'}
 
   is-plain-obj@4.1.0:
     resolution: {integrity: sha512-+Pgi+vMuUNkJyExiMBt5IlFoMyKnr5zhJ4Uspz58WOhBF5QoIZkFyNHIbBAtHwzVAgk5RtndVNsDRN61/mmDqg==}
@@ -7115,7 +7118,7 @@ packages:
 
   v8-to-istanbul@9.3.0:
     resolution: {integrity: sha512-kiGUalWN+rgBJ/1OHZsBtU4rXZOfj/7rKQxULKlIzwzQSvMJUUNgPwJEEh7gU6xEVxC0ahoOBvN2YI8GH6FNgA==}
-    engines: {node: '>=10.12.0-rc.2'}
+    engines: {node: '>=10.12.0'}
 
   vary@1.1.2:
     resolution: {integrity: sha512-BNGbWLfd0eUPabhkXUVm0j8uuvREyTh5ovRa/dyow/BqAbZJyC+5fU+IzQOzmAKzYqYRAISoRhdQr3eIZ/PXqg==}
@@ -8385,7 +8388,7 @@ snapshots:
       globby: 11.1.0
       read-yaml-file: 1.1.0
 
-  '@napi-rs/cli@3.8.2(@emnapi/runtime@1.11.2)(@types/node@22.20.1)':
+  '@napi-rs/cli@3.8.2(@emnapi/runtime@1.9.2)(@types/node@22.20.1)':
     dependencies:
       '@inquirer/prompts': 8.5.2(@types/node@22.20.1)
       '@napi-rs/cross-toolchain': 1.0.3
@@ -8401,7 +8404,7 @@ snapshots:
       typanion: 3.14.0
       typescript: 6.0.3
     optionalDependencies:
-      '@emnapi/runtime': 1.11.2
+      '@emnapi/runtime': 1.9.2
     transitivePeerDependencies:
       - '@napi-rs/cross-toolchain-arm64-target-aarch64'
       - '@napi-rs/cross-toolchain-arm64-target-armv7'
@@ -9133,11 +9136,11 @@ snapshots:
   '@types/body-parser@1.19.6':
     dependencies:
       '@types/connect': 3.4.38
-      '@types/node': 26.1.2
+      '@types/node': 20.19.43
 
   '@types/connect@3.4.38':
     dependencies:
-      '@types/node': 26.1.2
+      '@types/node': 20.19.43
 
   '@types/cors@2.8.19':
     dependencies:
@@ -9168,7 +9171,7 @@ snapshots:
 
   '@types/express-serve-static-core@5.1.3':
     dependencies:
-      '@types/node': 26.1.2
+      '@types/node': 20.19.43
       '@types/qs': 6.15.1
       '@types/range-parser': 1.2.7
       '@types/send': 1.2.1
@@ -9233,16 +9236,16 @@ snapshots:
 
   '@types/send@1.2.1':
     dependencies:
-      '@types/node': 26.1.2
+      '@types/node': 20.19.43
 
   '@types/serve-static@2.2.0':
     dependencies:
       '@types/http-errors': 2.0.5
-      '@types/node': 26.1.2
+      '@types/node': 20.19.43
 
   '@types/ws@8.18.1':
     dependencies:
-      '@types/node': 26.1.2
+      '@types/node': 20.19.43
 
   '@typescript-eslint/eslint-plugin@8.66.0(@typescript-eslint/parser@8.66.0(eslint@9.39.5(jiti@2.7.0))(typescript@5.9.3))(eslint@9.39.5(jiti@2.7.0))(typescript@5.9.3)':
     dependencies:
@@ -9408,6 +9411,14 @@ snapshots:
       chai: 5.3.3
       tinyrainbow: 1.2.0
 
+  '@vitest/mocker@2.1.9(vite@5.4.21(@types/node@20.19.43)(lightningcss@1.32.0))':
+    dependencies:
+      '@vitest/spy': 2.1.9
+      estree-walker: 3.0.3
+      magic-string: 0.30.21
+    optionalDependencies:
+      vite: 5.4.21(@types/node@20.19.43)(lightningcss@1.32.0)
+
   '@vitest/mocker@2.1.9(vite@5.4.21(@types/node@22.20.1)(lightningcss@1.32.0))':
     dependencies:
       '@vitest/spy': 2.1.9
@@ -9415,6 +9426,14 @@ snapshots:
       magic-string: 0.30.21
     optionalDependencies:
       vite: 5.4.21(@types/node@22.20.1)(lightningcss@1.32.0)
+
+  '@vitest/mocker@2.1.9(vite@5.4.21(@types/node@26.1.2)(lightningcss@1.32.0))':
+    dependencies:
+      '@vitest/spy': 2.1.9
+      estree-walker: 3.0.3
+      magic-string: 0.30.21
+    optionalDependencies:
+      vite: 5.4.21(@types/node@26.1.2)(lightningcss@1.32.0)
 
   '@vitest/pretty-format@2.1.9':
     dependencies:
@@ -12893,7 +12912,7 @@ snapshots:
   vitest@2.1.9(@types/node@20.19.43)(jsdom@29.1.1(@noble/hashes@2.2.0))(lightningcss@1.32.0):
     dependencies:
       '@vitest/expect': 2.1.9
-      '@vitest/mocker': 2.1.9(vite@5.4.21(@types/node@22.20.1)(lightningcss@1.32.0))
+      '@vitest/mocker': 2.1.9(vite@5.4.21(@types/node@20.19.43)(lightningcss@1.32.0))
       '@vitest/pretty-format': 2.1.9
       '@vitest/runner': 2.1.9
       '@vitest/snapshot': 2.1.9
@@ -12965,7 +12984,7 @@ snapshots:
   vitest@2.1.9(@types/node@26.1.2)(jsdom@29.1.1(@noble/hashes@2.2.0))(lightningcss@1.32.0):
     dependencies:
       '@vitest/expect': 2.1.9
-      '@vitest/mocker': 2.1.9(vite@5.4.21(@types/node@22.20.1)(lightningcss@1.32.0))
+      '@vitest/mocker': 2.1.9(vite@5.4.21(@types/node@26.1.2)(lightningcss@1.32.0))
       '@vitest/pretty-format': 2.1.9
       '@vitest/runner': 2.1.9
       '@vitest/snapshot': 2.1.9

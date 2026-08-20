@@ -343,7 +343,17 @@ export class HardkasTx {
       fromAddress: fromAccount.address,
       toAddress: toAccount.address,
       amountSompi,
-      ...(options.feeRate !== undefined ? { feeRate: options.feeRate } : {})
+      ...(options.feeRate !== undefined ? { feeRate: options.feeRate } : {}),
+      feeEstimator: async (inputs: number, outputs: number) => {
+        const { estimatedFee } = await this.sdk.fees.estimate({
+          priority: "normal",
+          inputs,
+          outputs,
+          version: 1,
+          network: activeNetwork as NetworkId
+        });
+        return estimatedFee;
+      }
     });
 
     const builderPlan = result.plan;
@@ -1320,7 +1330,7 @@ export class HardkasTx {
           // P1. Robust Idempotence: The UTXOs are already spent.
           // Check if they were spent by a previous simulation of this exact same transaction.
           try {
-            const { loadSimulatedReceipt, getReceiptPath } =
+            const { loadSimulatedReceipt } =
               await import("@hardkas/localnet");
             const txIdToLoad =
               signedArtifact.txId || `simulated-${signedArtifact.sourcePlanId}-tx`;
@@ -1340,11 +1350,7 @@ export class HardkasTx {
                   submitted: false,
                   txId: existingReceipt.txId,
                   artifactId: existingReceipt.txId, // simulated receipts use txId as artifactId
-                  receipt: existingReceipt as any,
-                  receiptPath: getReceiptPath(
-                    existingReceipt.txId,
-                    this.sdk.workspace.root
-                  )
+                  receipt: existingReceipt as any
                 };
               }
             }
@@ -1438,15 +1444,15 @@ export class HardkasTx {
     }
     const receipt: TxReceiptArtifact = realReceiptBase;
 
-    const receiptPath = getDefaultReceiptPath(receipt.txId, this.sdk.config.cwd);
-    await writeArtifact(receiptPath, receipt);
+    const { absolutePath } = await this.sdk.artifacts.write(receipt);
+    const receiptPath = absolutePath;
 
     // Reuse the signedTxId from the start of the method
     await this.sdk.plugins.onTxSent({ signedTxId, receiptArtifact: receipt });
 
     return {
       receipt,
-      receiptPath,
+      ...(receiptPath ? { receiptPath } : {}),
       ...(receipt.contentHash ? { artifactId: receipt.contentHash } : {}),
       mode: "real",
       submitted: true,

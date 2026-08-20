@@ -69,15 +69,41 @@ export function resolveHardkasAccount(options: ResolveAccountOptions): HardkasAc
 export function listHardkasAccounts(config?: HardkasConfig): HardkasAccount[] {
   const accounts: Map<string, HardkasAccount> = new Map();
 
+  let targetMode = "localnet";
+  const execConfig: any = config?.execution;
+  if (execConfig) {
+    if (execConfig.mode) {
+      targetMode = execConfig.mode;
+    } else if (execConfig.default) {
+      const targetName = execConfig.default;
+      const target = execConfig.targets?.[targetName];
+      if (target?.mode) {
+        targetMode = target.mode;
+      } else if (targetName === "simulator") {
+        targetMode = "simulator";
+      }
+    }
+  }
+
   // Add deterministic accounts first (defaults)
   const detAccounts = createDeterministicAccounts();
   for (const det of detAccounts) {
-    accounts.set(det.name, {
-      name: det.name,
-      kind: "synthetic", executionMode: "simulator",
-      address: det.address,
-      evmAddress: det.evmAddress
-    });
+    if (targetMode === "simulator") {
+      accounts.set(det.name, {
+        name: det.name,
+        kind: "synthetic",
+        executionMode: "simulator",
+        address: det.address,
+        evmAddress: det.evmAddress
+      });
+    } else {
+      accounts.set(det.name, {
+        name: det.name,
+        kind: "kaspa",
+        network: "simnet",
+        address: det.address
+      });
+    }
   }
 
   // Add dev-accounts (simnet deterministic)

@@ -24,6 +24,7 @@ import { HardkasCorpus } from "./corpus.js";
 import { HardkasSilver } from "./silver.js";
 import { HardkasZk } from "./zk.js";
 import { HardkasVprogs } from "./vprogs.js";
+import { HardkasObserve } from "./observe/index.js";
 import { HardkasProgrammability } from "./programmability.js";
 import { HardkasPluginManager } from "./plugin-manager.js";
 import { HardkasIgra } from "./igra.js";
@@ -182,6 +183,7 @@ export class Hardkas {
   public readonly l2: HardkasL2;
   public readonly capabilities: HardkasCapabilitiesApi;
   public readonly replay: HardkasReplay;
+  public readonly observe: HardkasObserve;
 
   public readonly wallet = {
     open: (name: string, opts?: Omit<WalletToolkitOptions, "rpc" | "signer">) => {
@@ -242,6 +244,7 @@ export class Hardkas {
     this.l2 = new HardkasL2(this);
     this.capabilities = new HardkasCapabilitiesApi(this);
     this.replay = new HardkasReplay(this);
+    this.observe = new HardkasObserve(this);
   }
 
   private resolveRpcUrl(): string {

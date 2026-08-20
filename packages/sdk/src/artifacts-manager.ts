@@ -112,20 +112,24 @@ export class HardkasArtifactsManager {
       };
     }
 
-    const outputDir = options.outputDir || this.sdk.workspace.artifactsDir;
+    const { ProjectArtifactStore, writeArtifact } = await import("@hardkas/artifacts");
 
-    if (!fs.existsSync(outputDir)) {
-      fs.mkdirSync(outputDir, { recursive: true });
+    let absolutePath: string;
+    if (options.outputDir) {
+      // Explicit export
+      if (!fs.existsSync(options.outputDir)) {
+        fs.mkdirSync(options.outputDir, { recursive: true });
+      }
+      const schema = record.schema || "artifact";
+      const shortSchema = schema.replace("hardkas.", "");
+      const fileName = options.fileName || `${shortSchema}-${hash}.json`;
+      absolutePath = path.join(options.outputDir, fileName);
+      await writeArtifact(absolutePath, artifact);
+    } else {
+      // Canonical store
+      const store = new ProjectArtifactStore(this.sdk.workspace.root);
+      absolutePath = await store.writeArtifact(artifact);
     }
-
-    const schema = record.schema || "artifact";
-    const shortSchema = schema.replace("hardkas.", "");
-
-    const fileName = options.fileName || `${shortSchema}-${hash}.json`;
-    const absolutePath = path.join(outputDir, fileName);
-
-    const { writeArtifact } = await import("@hardkas/artifacts");
-    await writeArtifact(absolutePath, artifact);
 
     // Emit the event so localnet and query-store can index it.
     const {
@@ -189,90 +193,12 @@ export class HardkasArtifactsManager {
         throw new Error(`Schema mismatch. Expected ${options.expectedSchema}, got ${cached.schema}`);
       }
       return cached;
-    } else {
-
     }
 
-    const { readArtifact } = await import("@hardkas/artifacts");
-    let filePath = id;
+    const { ProjectArtifactStore } = await import("@hardkas/artifacts");
+    const store = new ProjectArtifactStore(this.sdk.workspace.root);
 
-    // Path Boundary Sandbox Enforcement
-    let resolvedPath = path.resolve(this.sdk.workspace.root, filePath);
-    if (fs.existsSync(resolvedPath)) {
-      resolvedPath = fs.realpathSync(resolvedPath);
-    }
-
-    const rootRel = path.relative(this.sdk.workspace.root, resolvedPath);
-    const artifactsRel = path.relative(this.sdk.workspace.artifactsDir, resolvedPath);
-
-    // Ensure it does NOT escape both root and artifactsDir
-    if (
-      (rootRel.startsWith("..") || path.isAbsolute(rootRel)) &&
-      (artifactsRel.startsWith("..") || path.isAbsolute(artifactsRel))
-    ) {
-      throw new HardkasError(
-        "PATH_TRAVERSAL",
-        "Artifact path escapes workspace boundary"
-      );
-    }
-
-    if (!fs.existsSync(filePath)) {
-      // 1. Try in workspace artifacts directory
-      filePath = path.join(this.sdk.workspace.artifactsDir, `${id}.json`);
-      if (!fs.existsSync(filePath)) {
-        // 2. Try prefix search in workspace artifacts directory
-        if (fs.existsSync(this.sdk.workspace.artifactsDir)) {
-          const files = fs.readdirSync(this.sdk.workspace.artifactsDir);
-          let found = files.find(
-            (f) =>
-              f === `${id}.json` ||
-              f.startsWith(`${id}-`) ||
-              f.startsWith(`${id}.`) ||
-              f.endsWith(`-${id}.json`) ||
-              f.endsWith(`-${id}.plan.json`) ||
-              f.endsWith(`-${id}.signed.json`) ||
-              f.endsWith(`-${id}.receipt.json`)
-          );
-
-          if (!found) {
-            const shortId =
-              id.startsWith("plan-") || id.startsWith("signed-") ? id : id.slice(0, 16);
-            for (const file of files) {
-              if (!file.endsWith(".json")) continue;
-
-              // Fast path: if the filename contains the ID, check it first.
-              // But we MUST check all files if the fast path fails, because sometimes
-              // artifacts (like funding receipts) have filenames based on txId instead of contentHash.
-              const fp = path.join(this.sdk.workspace.artifactsDir, file);
-              try {
-                const content = fs.readFileSync(fp, "utf-8");
-                const obj = JSON.parse(content);
-                if (
-                  obj.contentHash === id ||
-                  obj.artifactId === id ||
-                  obj.planId === id ||
-                  obj.signedId === id ||
-                  obj.txId === id
-                ) {
-                  found = file;
-                  break;
-                }
-              } catch {}
-            }
-          }
-
-          if (found) {
-            filePath = path.join(this.sdk.workspace.artifactsDir, found);
-          } else {
-            throw new Error(`Artifact ${id} not found in workspace.`);
-          }
-        } else {
-          throw new Error(`Artifact ${id} not found in workspace.`);
-        }
-      }
-    }
-
-    const artifact: any = await readArtifact(filePath);
+    const artifact: any = await store.readArtifact(id);
     if (options?.expectedSchema && artifact.schema !== options.expectedSchema) {
       throw new Error(
         `Artifact ${id} has schema '${artifact.schema}' but expected '${options.expectedSchema}'`
