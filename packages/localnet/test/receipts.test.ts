@@ -7,7 +7,6 @@ import {
   saveSimulatedReceipt,
   loadSimulatedReceipt,
   listSimulatedReceipts,
-  getReceiptPath,
   StoredSimulatedTxReceipt
 } from "../src/receipts";
 import { ARTIFACT_SCHEMAS } from "@hardkas/artifacts";

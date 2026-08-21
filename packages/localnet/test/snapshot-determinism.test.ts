@@ -3,6 +3,7 @@ import { createLocalnetSnapshot } from "../src/snapshot.js";
 import { saveLocalnetState } from "../src/store.js";
 import { LocalnetState } from "../src/types.js";
 import { ProjectArtifactStore } from "@hardkas/artifacts";
+import { asNetworkId } from "@hardkas/core";
 import fs from "node:fs/promises";
 import path from "node:path";
 import os from "node:os";
@@ -13,11 +14,13 @@ function createMockState(
   utxos: Array<any>
 ): LocalnetState {
   return {
+    schema: "hardkas.localnetState.v1",
     hardkasVersion: "1.0.0",
     version: "1.0.0-alpha",
     mode: "simulator",
-    networkId: "simnet",
+    networkId: asNetworkId("simnet"),
     daaScore: "100",
+    createdAt: "2026-08-21T00:00:00.000Z",
     accounts,
     utxos
   };
