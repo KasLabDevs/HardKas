@@ -99,9 +99,9 @@ export function registerTxCommands(program: Command) {
                 from: options.from || "alice",
                 to: options.to || "bob",
                 amount: options.amount || "1",
-                networkId: options.network,
+                ...(options.network ? { networkId: options.network } : {}),
                 provider: options.provider,
-                feeRate: options.feeRate,
+                ...(options.feeRate ? { feeRate: options.feeRate } : {}),
                 config: loaded.config,
                 ...(options.workflowId ? { workflowId: options.workflowId } : {}),
                 ...(options.assumptionLevel
@@ -379,7 +379,7 @@ export function registerTxCommands(program: Command) {
                 const result = await runTxSend({
                   ...(options.target ? { targetName: options.target } : {}),
                   signedArtifact: signedArtifact as any,
-                  network: options.network,
+                  ...(options.network ? { network: options.network } : {}),
                   provider: options.provider,
                   config: loaded.config,
                   ...(options.url ? { url: options.url } : {})
@@ -454,14 +454,14 @@ export function registerTxCommands(program: Command) {
                 }
 
                 const result = await runTxFlow({
-                  ...options,
                   amount: options.amount!,
                   from: options.from!,
                   to: options.to!,
                   send: true,
-                  feeRate: options.feeRate,
                   provider: options.provider,
                   config: loaded.config,
+                  ...(options.network ? { network: options.network } : {}),
+                  ...(options.feeRate ? { feeRate: options.feeRate } : {}),
                   ...(options.url ? { url: options.url } : {})
                 });
 

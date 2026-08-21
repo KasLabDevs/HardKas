@@ -31,7 +31,7 @@ export interface TxFlowInput {
   network?: string;
   config: HardkasConfig;
   url?: string;
-  feeRate: string;
+  feeRate?: string;
   provider?: string;
 
   planOnly?: boolean;

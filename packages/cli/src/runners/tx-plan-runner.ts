@@ -46,7 +46,7 @@ export async function runTxPlan(input: TxPlanRunnerInput): Promise<TxPlanArtifac
 
   const { resolveExecutionTarget, resolveProvider } = await import("@hardkas/config");
 
-  if (!targetName && !networkId && !resolvedConfig.defaultTarget) {
+  if (!targetName && !networkId && !(resolvedConfig as any).defaultTarget) {
     throw new Error("EXECUTION_NETWORK_MISMATCH: No target or network specified, and no default target found in config.");
   }
 
@@ -87,7 +87,7 @@ export async function runTxPlan(input: TxPlanRunnerInput): Promise<TxPlanArtifac
 
   let availableUtxos: any[] = [];
   let mode: "simulator" | "kaspa-node" | "kaspa-rpc" = "simulator";
-  let plan: ReturnType<typeof buildPaymentPlan>;
+  let plan: ReturnType<typeof buildPaymentPlan> = null as any;
   let rpcUrl: string | undefined = providerConfig.endpoint;
 
   const planCoinbaseMaturity = getCoinbaseMaturity(
@@ -200,7 +200,7 @@ export async function runTxPlan(input: TxPlanRunnerInput): Promise<TxPlanArtifac
         let actualFeeRate = feeRateSompiPerMass;
         if (actualFeeRate === undefined) {
           const { HardkasFees } = await import("@hardkas/sdk");
-          const tempFees = new HardkasFees({ provider: { rpcUrl: rpcUrl! }, config: resolvedConfig });
+          const tempFees = new HardkasFees({ provider: { rpcUrl: rpcUrl! }, config: { cwd: workspaceRoot || process.cwd(), config: resolvedConfig } } as any);
           const { feeRate: estimated } = await tempFees.estimate({
             priority: "normal",
             inputs: matureUtxos.length,
