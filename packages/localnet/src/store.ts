@@ -75,8 +75,8 @@ export async function loadLocalnetState(
     return JSON.parse(content) as LocalnetState;
   } catch (error) {
     // If localnet.json not found, try migrating localnet-state.json
-    const legacyPath = path.join(path.dirname(targetPath), "localnet-state.json");
     try {
+      const legacyPath = path.join(path.dirname(targetPath), "localnet-state.json");
       const legacyContent = await fs.readFile(legacyPath, "utf-8");
       // Migrate it over
       await fs.writeFile(targetPath, legacyContent, "utf-8");

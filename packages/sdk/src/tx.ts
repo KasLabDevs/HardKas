@@ -1074,6 +1074,7 @@ export class HardkasTx {
             expectedSchema: ARTIFACT_SCHEMAS.TX_PLAN
           });
         } catch (e) {
+          console.error("[sdk.tx.simulate] parent_plan_unresolved due to error:", e);
           throw new Error("parent_plan_unresolved");
         }
       }

@@ -44,10 +44,22 @@ export async function runTxSend(input: TxSendRunnerInput): Promise<TxSendRunnerR
     execution = res.execution;
     target = res.target;
   } else if (signedArtifact.execution) {
-    resolvedName = "artifact_execution";
-    execution = signedArtifact.execution;
-    target = {}; // Cannot infer full config target from execution alone, but execution has what we need
-  } else if (config.defaultNetwork) {
+    const targets = config.execution?.targets || {};
+    const matchingTarget = Object.entries(targets).find(([_, t]) => {
+      const e = signedArtifact.execution!;
+      return t.domain === e.domain && t.mode === e.mode && t.network === e.network;
+    });
+
+    if (matchingTarget) {
+      resolvedName = matchingTarget[0];
+      execution = signedArtifact.execution;
+      target = matchingTarget[1];
+    } else {
+      resolvedName = signedArtifact.networkId || "artifact_execution";
+      execution = signedArtifact.execution;
+      target = {};
+    }
+  } else if (config.execution?.default) {
     const res = resolveExecutionTarget({ config }); // Uses defaultNetwork internally
     resolvedName = res.name;
     execution = res.execution;
@@ -66,7 +78,8 @@ export async function runTxSend(input: TxSendRunnerInput): Promise<TxSendRunnerR
   const provider = resolveProvider({
     network: resolvedName,
     provider: input.provider,
-    url
+    url,
+    executionMode: execution.mode
   });
 
   // ENFORCE EXECUTION COMPATIBILITY FOR BROADCASTING/SIMULATION

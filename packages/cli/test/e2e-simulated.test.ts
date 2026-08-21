@@ -16,9 +16,18 @@ describe("E2E Simulated Happy Path", () => {
   let tmpDir: string;
 
   const mockConfig: HardkasConfig = {
-    defaultNetwork: "simulated",
     networks: {
       simulated: { kind: "simulated" }
+    },
+    execution: {
+      default: "simulated",
+      targets: {
+        simulated: {
+          domain: "kaspa-l1",
+          mode: "simulator",
+          network: "simnet"
+        }
+      }
     }
   };
 
@@ -29,11 +38,20 @@ describe("E2E Simulated Happy Path", () => {
     const configContent = `
 import { defineHardkasConfig } from "@hardkas/sdk";
 export default defineHardkasConfig({
-  defaultNetwork: "simulated",
   networks: {
     simulated: {
       kind: "simulated",
       description: "Pure local simulation"
+    }
+  },
+  execution: {
+    default: "simulated",
+    targets: {
+      simulated: {
+        domain: "kaspa-l1",
+        mode: "simulator",
+        network: "simnet"
+      }
     }
   }
 });
@@ -63,7 +81,6 @@ export default defineHardkasConfig({
       config: mockConfig,
       send: true,
       yes: true,
-      network: "simulated",
       workspaceRoot: tmpDir
     });
 
@@ -106,7 +123,6 @@ export default defineHardkasConfig({
       config: mockConfig,
       send: true,
       yes: true,
-      network: "simulated",
       workspaceRoot: tmpDir
     });
 

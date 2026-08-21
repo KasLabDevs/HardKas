@@ -65,7 +65,7 @@ describe("Simnet Transaction Backend Mismatch Regression", () => {
       "--amount",
       "10",
       "--network",
-      "testnet-11"
+      "simulated"
     ]);
 
     const output = stdout + stderr;
@@ -109,7 +109,7 @@ describe("Simnet Transaction Backend Mismatch Regression", () => {
       "--amount",
       "10",
       "--network",
-      "simnet",
+      "simulated",
       "--provider",
       "rpc",
       "--url",
