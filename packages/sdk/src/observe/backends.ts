@@ -84,10 +84,10 @@ export class RpcObserverBackend implements HardkasObserverBackend {
       address,
       execution: this.execution,
       mempool: {
-        incoming,
-        outgoing
+        incoming: incoming as any,
+        outgoing: outgoing as any
       },
-      utxos,
+      utxos: utxos as any,
       totals: {
         mempoolIncomingSompi,
         acceptedUtxoSompi
@@ -108,7 +108,7 @@ export class SimulatorObserverBackend implements HardkasObserverBackend {
 
   async observeAddress(address: string): Promise<AddressObservationSnapshot> {
     // For simulator, we rely on the Localnet state just like tx.ts does for planning
-    const { loadOrCreateLocalnetState, getSpendableUtxos, getMempoolTxs } = await import("@hardkas/localnet");
+    const { loadOrCreateLocalnetState, getSpendableUtxos, getMempoolTxs } = await import("@hardkas/localnet") as any;
     const localState = await loadOrCreateLocalnetState({ cwd: this.sdk.workspace.root });
     
     const unspent = getSpendableUtxos(localState, address);
@@ -124,7 +124,7 @@ export class SimulatorObserverBackend implements HardkasObserverBackend {
        // Filter for address... (mocked)
     }
 
-    const utxos = unspent.map(u => {
+    const utxos = unspent.map((u: any) => {
       const parts = u.id.split(":");
       const index = Number(parts[parts.length - 1]);
       const transactionId = parts.slice(0, -1).join(":");
@@ -141,8 +141,8 @@ export class SimulatorObserverBackend implements HardkasObserverBackend {
     return {
       address,
       execution: this.execution,
-      mempool: { incoming, outgoing },
-      utxos,
+      mempool: { incoming: incoming as any, outgoing: outgoing as any },
+      utxos: utxos as any,
       totals: {
         mempoolIncomingSompi,
         acceptedUtxoSompi
@@ -172,7 +172,7 @@ export function resolveObserverBackend(
     mode = "localnet";
   }
 
-  const execution = { mode: mode as any, domain: domain as any, network };
+  const execution = { mode: mode as any, domain: domain as any, network: network as any };
 
   if (mode === "simulator") {
     return new SimulatorObserverBackend(sdk, execution);
