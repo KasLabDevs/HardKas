@@ -1,6 +1,6 @@
 {
   "name": "full-stack-demo",
-  "version": "0.12.0-rc.2",
+  "version": "0.12.0-rc.10",
   "type": "module",
   "scripts": {
     "dev": "tsx watch src/index.ts",
@@ -8,8 +8,8 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@hardkas/jobs": "^0.12.0-rc.2",
-    "@hardkas/toolkit": "^0.12.0-rc.2",
+    "@hardkas/jobs": "^0.12.0-rc.10",
+    "@hardkas/toolkit": "^0.12.0-rc.10",
     "@fastify/static": "^7.0.4",
     "fastify": "^4.26.2"
   },

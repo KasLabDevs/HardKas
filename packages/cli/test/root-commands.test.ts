@@ -74,6 +74,7 @@ describe("Root Operational Commands", () => {
 
   it("hardkas rebuild --from-artifacts --json returns success on empty workspace", () => {
     const res = run(["rebuild", "--from-artifacts", "--json"]);
+    if (res.status !== 0) console.error("Rebuild failed:", res.stdout, res.stderr);
     expect(res.status).toBe(0);
     const parsed = JSON.parse(res.stdout);
     expect(parsed.artifacts.indexed).toBeDefined();
@@ -87,6 +88,7 @@ describe("Root Operational Commands", () => {
 
   it("hardkas verify --deep --json validates the workspace", () => {
     const res = run(["verify", "--deep", "--json"]);
+    if (res.status !== 0) console.error("Verify failed:", res.stdout, res.stderr);
     expect(res.status).toBe(0);
     const parsed = JSON.parse(res.stdout);
     // Should pass since it's an empty workspace or has no corruptions

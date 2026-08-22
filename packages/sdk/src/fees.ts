@@ -30,7 +30,11 @@ export class HardkasFees {
     evidence: "dynamic" | "heuristic";
     mempoolSize?: number | undefined;
   }> {
-      const dynamic = await calculateDynamicFeeRate(this.sdk.rpc, options.priority);
+      // Standard mempool relay policy floor (100 sompi per mass/compute gram)
+      // We apply standard relay fee of 100 as minimum for all networks, as required by nodes.
+      const minimumNetworkFeeRate = 100n;
+
+      const dynamic = await calculateDynamicFeeRate(this.sdk.rpc, options.priority, minimumNetworkFeeRate);
       
       const massResult = estimateTransactionMass({
           inputCount: typeof options.inputs === "number" ? options.inputs : options.inputs.length,
@@ -46,16 +50,18 @@ export class HardkasFees {
       if (version === 1) {
         // Toccata fee path
         const internalComputeGrams = options.computeGrams ?? options.computeBudget ?? 0n;
-        const minimumToccataFee = estimateToccataFee(internalComputeGrams, massResult.mass, massResult.txBytes);
+        // Strict policy formula: 100 sompi * max(compute_grams, 2 * transaction_bytes)
+        const computeMassForFloor = internalComputeGrams > (massResult.txBytes * 2n) ? internalComputeGrams : (massResult.txBytes * 2n);
+        const minimumToccataFee = minimumNetworkFeeRate * computeMassForFloor;
         
-        // Fee rate in Toccata applies to the compute budget/mass, but for now we enforce the minimum floor policy
-        // If the priority-driven legacy dynamic fee is higher, we might take the max of both,
-        // but the strict policy says: 100 sompi * max(compute_grams, 2 * transaction_bytes)
         const priorityFee = estimateFeeFromMass(massResult.mass, dynamic.feeRate);
         estimatedFee = minimumToccataFee > priorityFee ? minimumToccataFee : priorityFee;
       } else {
         // V0 legacy fee path
-        estimatedFee = estimateFeeFromMass(massResult.mass, dynamic.feeRate);
+        const computeMassForFloor = massResult.mass;
+        const minimumV0Fee = minimumNetworkFeeRate * computeMassForFloor;
+        const priorityFee = estimateFeeFromMass(massResult.mass, dynamic.feeRate);
+        estimatedFee = minimumV0Fee > priorityFee ? minimumV0Fee : priorityFee;
       }
 
       return {

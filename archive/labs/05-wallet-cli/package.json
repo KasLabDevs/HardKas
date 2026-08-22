@@ -1,6 +1,6 @@
 {
   "name": "wallet-cli",
-  "version": "0.12.0-rc.2",
+  "version": "0.12.0-rc.10",
   "description": "Lab 05 — Wallet CLI",
   "main": "dist/cli.js",
   "type": "module",

@@ -26,7 +26,7 @@ function expectThrows(cmd, expectedError) {
 }
 
 async function testHotfix() {
-  console.log("=== Testing 0.12.0-rc.2 Serialization Hotfix ===");
+  console.log("=== Testing 0.12.0-rc.10 Serialization Hotfix ===");
 
   const accountsFile = path.join(process.cwd(), ".hardkas", "accounts.real.json");
   if (fs.existsSync(accountsFile)) {
@@ -54,7 +54,7 @@ async function testHotfix() {
   // We can just create a dummy plan artifact to pass to `tx sign`
   const dummyPlanContent = {
     schema: "hardkas.txPlan",
-    hardkasVersion: "0.12.0-rc.2",
+    hardkasVersion: "0.12.0-rc.10",
     version: "1.0.0-alpha",
     hashVersion: 4,
     createdAt: new Date().toISOString(),

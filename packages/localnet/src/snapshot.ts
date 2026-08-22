@@ -57,10 +57,10 @@ export function createLocalnetSnapshot(
   const stateHash = calculateStateHash(state);
 
   const snapshotDraft: Omit<Snapshot, "contentHash"> = {
-    schema: "hardkas.snapshot",
+    schema: "hardkas.snapshot.v1",
+    createdAt: new Date().toISOString(),
     hardkasVersion: HARDKAS_VERSION,
     version: ARTIFACT_VERSION,
-    createdAt: new Date().toISOString(), // hardkas-determinism-allow: snapshot creation timestamp
     name,
     daaScore: state.daaScore,
     accountsHash,

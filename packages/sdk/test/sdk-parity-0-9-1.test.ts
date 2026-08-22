@@ -18,7 +18,7 @@ function readJson(filePath: string): any {
   return JSON.parse(fs.readFileSync(filePath, "utf8"));
 }
 
-describe("0.12.0-rc.2 SDK parity surface", () => {
+describe("0.12.0-rc.10 SDK parity surface", () => {
   let workspaceRoot: string;
 
   beforeEach(() => {
@@ -37,7 +37,7 @@ describe("0.12.0-rc.2 SDK parity surface", () => {
     });
     const capabilities = await sdk.experimental.capabilitiesApi.get("hardkas-1.0-alpha");
 
-    expect(capabilities.version).toBe("0.12.0-rc.2");
+    expect(capabilities.version).toBe("0.12.0-rc.10");
     expect(capabilities.capabilities.mainnetGuards).toBe(true);
     expect(capabilities.capabilities.consensusValidation).toBe(false);
     expect(capabilities.capabilities.productionWallet).toBe(false);

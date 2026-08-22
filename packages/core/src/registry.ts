@@ -37,6 +37,7 @@ export const HardkasSchemas = {
   ReplayDiffV1: "hardkas.replayDiff.v1",
   ReplayReportV1: "hardkas.replayReport.v1",
   ReplayVerifyV1: "hardkas.replayVerify.v1",
+  AddressObservationV1: "hardkas.observation.address.v1",
 
   // --- Localnet & Realnet Infra ---
   LocalnetStateV1: "hardkas.localnetState.v1",

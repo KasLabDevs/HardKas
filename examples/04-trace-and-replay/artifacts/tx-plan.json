@@ -1,6 +1,6 @@
 {
   "schema": "hardkas.txPlan",
-  "hardkasVersion": "0.12.0-rc.2",
+  "hardkasVersion": "0.12.0-rc.10",
   "schemaVersion": "hardkas.artifact.v1",
   "version": "1.0.0-alpha",
   "hashVersion": 4,

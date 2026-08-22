@@ -17,6 +17,7 @@ export interface PlanTransactionRequest {
   toAddress: string;
   amountSompi: bigint;
   feeRate?: bigint;
+  feeEstimator?: (inputs: number, outputs: number) => Promise<bigint>;
   genesisCovenantGroups?: Array<{ authorizingInput: number; outputIndices: number[] }>;
 }
 
@@ -89,33 +90,62 @@ export class TxPlanService {
     });
 
     const feeRate = request.feeRate ?? 1n;
-    const marginFee = this.marginFeePerInput * feeRate;
-
+    let estimatedFee = 0n;
     let selectedAmount = 0n;
     let selectedInputsCount = 0;
     const builderUtxos: Utxo[] = [];
 
-    const HARD_LIMIT = 1000;
+    const MAX_FEE_SELECTION_PASSES = 5;
+    let converged = false;
 
-    for (const utxo of sortedUtxos) {
-      builderUtxos.push(utxo);
-      selectedAmount += utxo.amountSompi;
-      selectedInputsCount++;
+    for (let pass = 0; pass < MAX_FEE_SELECTION_PASSES; pass++) {
+      selectedAmount = 0n;
+      selectedInputsCount = 0;
+      builderUtxos.length = 0;
 
-      const requiredTotal = request.amountSompi + BigInt(selectedInputsCount) * marginFee;
-      if (selectedAmount >= requiredTotal) {
+      const HARD_LIMIT = 1000;
+
+      for (const utxo of sortedUtxos) {
+        builderUtxos.push(utxo);
+        selectedAmount += utxo.amountSompi;
+        selectedInputsCount++;
+
+        const requiredTotal = request.amountSompi + estimatedFee;
+        if (selectedAmount >= requiredTotal) {
+          break;
+        }
+
+        if (selectedInputsCount >= HARD_LIMIT) {
+          break;
+        }
+      }
+
+      if (selectedAmount < request.amountSompi + estimatedFee) {
+        throw new Error(
+          `Insufficient funds: needed ${request.amountSompi + estimatedFee} sompi (including fee) but only found ${selectedAmount} sompi across ${selectedInputsCount} UTXOs.`
+        );
+      }
+
+      const expectedOutputs = 2; // to + change
+      let nextFee = 0n;
+
+      if (request.feeEstimator) {
+        nextFee = await request.feeEstimator(selectedInputsCount, expectedOutputs);
+      } else {
+        const estimatedMass = BigInt(selectedInputsCount) * this.marginFeePerInput + 500n;
+        nextFee = estimatedMass * feeRate;
+      }
+
+      if (nextFee === estimatedFee) {
+        converged = true;
         break;
       }
 
-      if (selectedInputsCount >= HARD_LIMIT) {
-        break;
-      }
+      estimatedFee = nextFee;
     }
 
-    if (selectedAmount < request.amountSompi) {
-      throw new Error(
-        `Insufficient funds: needed ${request.amountSompi} sompi but only found ${selectedAmount} sompi across ${selectedInputsCount} UTXOs.`
-      );
+    if (!converged) {
+      throw new Error("FeeSelectionDidNotConvergeError: Could not find a stable UTXO selection for the required fee.");
     }
 
     if (selectedInputsCount > this.maxInputsPerTx) {
@@ -133,6 +163,8 @@ export class TxPlanService {
       );
     }
 
+    const planFeeRate = request.feeEstimator ? 1n : feeRate;
+
     const builderPlan = buildPaymentPlan({
       fromAddress: request.fromAddress,
       availableUtxos: builderUtxos,
@@ -142,8 +174,9 @@ export class TxPlanService {
           amountSompi: request.amountSompi
         }
       ],
-      feeRateSompiPerMass: feeRate,
+      feeRateSompiPerMass: planFeeRate,
       coinbaseMaturity: this.coinbaseMaturity,
+      ...(request.feeEstimator ? { feeOverrideSompi: estimatedFee } : {}),
       ...(request.genesisCovenantGroups ? { genesisCovenantGroups: request.genesisCovenantGroups.map(g => ({ ...g })) } : {})
     });
 

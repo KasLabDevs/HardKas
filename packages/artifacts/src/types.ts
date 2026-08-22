@@ -1,4 +1,4 @@
-import { HardkasArtifactSchema } from "./constants.js";
+import { HardkasArtifactSchema, HardkasArtifactMode } from "./constants.js";
 import { HardkasSchemas } from "@hardkas/core";
 import {
   NetworkId,
@@ -441,7 +441,7 @@ export interface TxReceiptArtifact extends BaseArtifact<"txReceipt"> {
   metadata?: any | undefined;
 }
 
-export interface SnapshotArtifact extends BaseArtifact<"snapshot"> {
+export interface SnapshotArtifact extends BaseArtifact<"snapshot.v1"> {
   name?: string | undefined;
   daaScore: string;
   accounts: Array<{ name: string; address: string }>;
@@ -773,4 +773,39 @@ export interface ProgrammabilityAppPlanArtifact {
   ok: true;
   status: "PROGRAMMABILITY_APP_PLAN_READY";
   claims: ProgrammabilityClaims;
+}
+
+export interface ObservedTransaction {
+  txId: string;
+  amount: string;
+  fee?: string;
+}
+
+export interface ObservedUtxo {
+  txId: string;
+  index: number;
+  amount: string;
+}
+
+export interface AddressObservationArtifact extends HardkasArtifactBase {
+  schema: typeof HardkasSchemas.AddressObservationV1;
+  type: "address_observation";
+  execution: {
+    mode: HardkasArtifactMode;
+    network: NetworkId;
+  };
+  address: string;
+  mempool: {
+    incoming: ObservedTransaction[];
+    outgoing: ObservedTransaction[];
+  };
+  utxos: ObservedUtxo[];
+  totals: {
+    mempoolIncomingSompi: string;
+    acceptedUtxoSompi: string;
+  };
+  virtual: {
+    daaScore?: string;
+  };
+  observedAt: string;
 }

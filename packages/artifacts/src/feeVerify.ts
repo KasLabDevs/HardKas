@@ -91,10 +91,17 @@ export function verifyFeeSemantics(artifact: any): FeeAuditResult {
   const hasComputeBudget = (artifact as any).computeBudget && BigInt((artifact as any).computeBudget) > 0n;
   const isToccataFee = hasComputeBudget && artifactFee >= 100n * (BigInt((artifact as any).computeBudget) / 100n);
 
-  if (!isToccataFee && recomputedFee !== artifactFee && artifactFee !== 0n) {
-    issues.push(
-      `Fee mismatch: artifact reports ${artifactFee}, recomputed ${recomputedFee} (at rate ${impliedFeeRate})`
-    );
+  if (!isToccataFee && artifactFee !== 0n) {
+    // When fee is computed externally (e.g. via feeEstimator), the artifact fee
+    // may not be exactly mass * rate due to integer division truncation.
+    // The truncation error is at most artifactMass - 1.
+    const tolerance = artifactMass > 0n ? artifactMass : 1n;
+    const delta = artifactFee > recomputedFee ? artifactFee - recomputedFee : recomputedFee - artifactFee;
+    if (delta > tolerance) {
+      issues.push(
+        `Fee mismatch: artifact reports ${artifactFee}, recomputed ${recomputedFee} (at rate ${impliedFeeRate})`
+      );
+    }
   }
 
   // 3. Economic Invariant: Input >= Output + Fee

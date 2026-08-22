@@ -75,7 +75,8 @@ export class HardkasUtxos {
         const spendableUtxos = utxosResult.filter((u: any) => {
           if (!u.isCoinbase) return true; // Normal UTXOs are immediately spendable
           if (u.blockDaaScore === undefined) return false;
-          return virtualDaaScore - BigInt(u.blockDaaScore) >= maturityThreshold;
+          // Add a safety margin to ensure DAG has fully merged the block, preventing "orphan" rejections
+          return virtualDaaScore - BigInt(u.blockDaaScore) >= (maturityThreshold + 10n);
         });
 
         const total = spendableUtxos.reduce((sum: bigint, u: any) => sum + BigInt(u.amountSompi), 0n);
