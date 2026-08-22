@@ -83,6 +83,8 @@ export function listHardkasAccounts(config?: HardkasConfig): HardkasAccount[] {
         targetMode = "simulator";
       }
     }
+  } else if (config?.defaultNetwork === "simulated") {
+    targetMode = "simulator";
   }
 
   // Add deterministic accounts first (defaults)

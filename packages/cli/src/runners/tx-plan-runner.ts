@@ -55,7 +55,12 @@ export async function runTxPlan(input: TxPlanRunnerInput): Promise<TxPlanArtifac
     ...(targetName !== undefined ? { targetName } : {})
   });
 
-  if (networkId && execution.network !== networkId) {
+  let effectiveNetworkId = networkId;
+  if (networkId === "simnet" && resolvedConfig.networks?.simnet?.kind === "simulated") {
+    effectiveNetworkId = "simulated";
+  }
+
+  if (effectiveNetworkId && execution.network !== effectiveNetworkId) {
     throw new Error(`EXECUTION_NETWORK_MISMATCH: Target '${resolvedTargetName}' specifies network '${execution.network}', but command was called with legacy --network '${networkId}'.`);
   }
 

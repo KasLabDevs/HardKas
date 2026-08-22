@@ -21,7 +21,7 @@ export class ProjectArtifactStore {
   }
 
   async writeArtifact(artifact: any): Promise<string> {
-    const id = artifact.planId || artifact.signedId || artifact.txId || Date.now().toString(36);
+    const id = artifact.artifactId || artifact.contentHash || artifact.planId || artifact.signedId || artifact.txId || Date.now().toString(36);
     const prefix = artifact.schema ? artifact.schema.split(".")[1] || "artifact" : "artifact";
     let subDir = "misc";
     if (artifact.schema) {
@@ -54,11 +54,19 @@ export class ProjectArtifactStore {
     try {
       const stats = await fs.stat(id);
       if (stats.isFile()) {
+         const resolvedPath = path.resolve(process.cwd(), id);
+         const workspaceRoot = path.resolve(this.artifactsDir, "../..");
+         if (!resolvedPath.startsWith(workspaceRoot)) {
+           const err = new Error(`Artifact with ID ${id} is outside the workspace boundary`);
+           (err as any).code = "PATH_TRAVERSAL";
+           throw err;
+         }
          let content = await fs.readFile(id, "utf-8");
          if (content.charCodeAt(0) === 0xfeff) content = content.slice(1);
          return JSON.parse(content);
       }
-    } catch (e) {
+    } catch (e: any) {
+      if (e.code === "PATH_TRAVERSAL") throw e;
       // Not a valid path, continue to ID resolution
     }
 
@@ -102,8 +110,9 @@ export class ProjectArtifactStore {
     const lineage = [artifact];
     let current = artifact as any;
 
-    while (current.parentArtifactId || current.planId) {
-      const parentId = current.parentArtifactId || current.planId;
+    const getParentId = (c: any) => c.lineage?.parentArtifactId || c.parentArtifactId || c.planId || c.sourceSignedId || c.sourcePlanId;
+    let parentId = getParentId(current);
+    while (parentId) {
       if (parentId === current.planId && current.schema?.includes("TxPlan")) {
         break; // planId on a plan refers to itself
       }
@@ -113,6 +122,7 @@ export class ProjectArtifactStore {
       try {
         current = await this.readArtifact(parentId);
         lineage.unshift(current);
+        parentId = getParentId(current);
       } catch (e) {
         // Break if parent not found
         break;

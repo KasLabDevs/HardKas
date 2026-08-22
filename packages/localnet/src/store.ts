@@ -28,7 +28,14 @@ export async function saveLocalnetState(
   });
 
   // Also persist as canonical snapshot artifact for lineage resolution
-  const workspaceRoot = path.dirname(dir); // Typically dir is .hardkas so workspaceRoot is its parent
+  let workspaceRoot = dir;
+  while(workspaceRoot !== path.dirname(workspaceRoot)) {
+    if (path.basename(workspaceRoot) === ".hardkas") {
+      workspaceRoot = path.dirname(workspaceRoot);
+      break;
+    }
+    workspaceRoot = path.dirname(workspaceRoot);
+  }
   const { ProjectArtifactStore, calculateContentHash, CURRENT_HASH_VERSION, sortUtxosByOutpoint } = await import("@hardkas/artifacts");
 
   try {
