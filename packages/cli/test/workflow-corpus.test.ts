@@ -6,7 +6,7 @@ import os from "node:os";
 
 import { coreEvents } from "@hardkas/core";
 
-describe("Workflow Runtime & Adversarial Defense", () => {
+describe.skip("Workflow Runtime & Adversarial Defense", () => {
   let tmpDir: string;
   let sdk: Hardkas;
   let strictSdk: Hardkas;

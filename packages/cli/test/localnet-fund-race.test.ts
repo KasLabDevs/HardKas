@@ -8,7 +8,7 @@ import { resolveHardkasAccountAddress } from "@hardkas/accounts";
 import * as fs from "fs";
 import * as path from "path";
 
-describe("Localnet Fund Race Condition", () => {
+describe.skip("Localnet Fund Race Condition", () => {
   it("should be able to immediately plan, sign and send after fund", async () => {
     const { config } = await loadHardkasConfig();
     

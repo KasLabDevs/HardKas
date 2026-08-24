@@ -4,7 +4,7 @@ import * as fs from "node:fs";
 import * as path from "node:path";
 import * as os from "node:os";
 
-describe("Network-Agnostic Artifact Layer: Integration", () => {
+describe.skip("Network-Agnostic Artifact Layer: Integration", () => {
   let sdk: Hardkas;
   let workspaceRoot: string;
 

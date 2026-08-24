@@ -91,10 +91,12 @@ export class ProjectArtifactStore {
       try {
         const files = await fs.readdir(dirPath);
         for (const file of files) {
-          if (file.includes(id)) {
+          const lowerFile = file.toLowerCase();
+          const lowerId = id.toLowerCase();
+          if (lowerFile.includes(lowerId)) {
             return path.join(dirPath, file);
           }
-          if (id.length === 64 && file.includes(id.slice(0, 16))) {
+          if (id.length === 64 && lowerFile.includes(lowerId.slice(0, 16))) {
             return path.join(dirPath, file);
           }
         }

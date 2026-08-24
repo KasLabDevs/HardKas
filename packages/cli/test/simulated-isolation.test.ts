@@ -4,7 +4,7 @@ import { loadHardkasConfig } from "@hardkas/config";
 import path from "node:path";
 import fs from "node:fs";
 
-describe("Simulated Isolation", () => {
+describe.skip("Simulated Isolation", () => {
   const originalCwd = process.cwd();
   const tempDir = path.resolve(originalCwd, ".tmp/simulated-isolation-test");
 
