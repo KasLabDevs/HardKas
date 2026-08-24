@@ -44,8 +44,8 @@ export async function runTxSend(input: TxSendRunnerInput): Promise<TxSendRunnerR
     execution = res.execution;
     target = res.target;
   } else if (signedArtifact.execution) {
-    const targets = (config.execution && "targets" in config.execution) ? (config.execution as any).targets : {};
-    const matchingTarget = Object.entries(targets).find(([_, t]) => {
+    const targets: Record<string, any> = (config.execution && "targets" in (config.execution as any)) ? (config.execution as any).targets : {};
+    const matchingTarget = Object.entries(targets).find(([_, t]: [string, any]) => {
       const e = signedArtifact.execution!;
       const typedT = t as any;
       return typedT.domain === e.domain && typedT.mode === e.mode && typedT.network === e.network;
@@ -60,7 +60,7 @@ export async function runTxSend(input: TxSendRunnerInput): Promise<TxSendRunnerR
       execution = signedArtifact.execution;
       target = {};
     }
-  } else if (config.execution && "default" in config.execution && (config.execution as any).default) {
+  } else if (config.execution && "default" in (config.execution as any) && (config.execution as any).default) {
     const res = resolveExecutionTarget({ config }); // Uses defaultNetwork internally
     resolvedName = res.name;
     execution = res.execution;
