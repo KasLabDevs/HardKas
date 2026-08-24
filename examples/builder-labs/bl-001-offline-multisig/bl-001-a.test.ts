@@ -43,7 +43,7 @@ describe("BL-001A - Offline Multisig Ceremony", () => {
     // Create a real TxPlan in coordinator conforming to TxPlanArtifactV1
     const mockTxPlan: TxPlanArtifactV1 = {
       schema: HardkasSchemas.TxPlanV1,
-      hardkasVersion: "0.12.0-rc.2",
+      hardkasVersion: "0.12.0-rc.10",
       version: "1.0.0-alpha",
       networkId: "simnet",
       mode: "developer",

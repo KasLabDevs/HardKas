@@ -66,6 +66,9 @@ export interface TxBuildRequest {
   readonly feePolicy?: "legacy" | "toccata" | "auto";
 
   readonly genesisCovenantGroups?: readonly { authorizingInput: number; outputIndices: number[] }[];
+
+  /** When provided, overrides the mass-based fee calculation with this exact fee. Used by the convergence loop when an external feeEstimator has already determined the fee. */
+  readonly feeOverrideSompi?: bigint;
 }
 
 export interface TxPlan {
@@ -157,13 +160,17 @@ export function buildPaymentPlan(request: TxBuildRequest): TxPlan {
     });
 
     const estimatedMass = result.mass;
-    let estimatedFeeSompi = estimatedMass * request.feeRateSompiPerMass;
-
-    if (isToccataFee) {
-      const computeBudget = request.computeBudget ?? request.computeGrams ?? 0n;
-      const minimumToccataFee = estimateToccataFee(computeBudget, result.mass, result.txBytes);
-      if (minimumToccataFee > estimatedFeeSompi) {
-        estimatedFeeSompi = minimumToccataFee;
+    let estimatedFeeSompi: bigint;
+    if (request.feeOverrideSompi !== undefined) {
+      estimatedFeeSompi = request.feeOverrideSompi;
+    } else {
+      estimatedFeeSompi = estimatedMass * request.feeRateSompiPerMass;
+      if (isToccataFee) {
+        const computeBudget = request.computeBudget ?? request.computeGrams ?? 0n;
+        const minimumToccataFee = estimateToccataFee(computeBudget, result.mass, result.txBytes);
+        if (minimumToccataFee > estimatedFeeSompi) {
+          estimatedFeeSompi = minimumToccataFee;
+        }
       }
     }
 
@@ -178,21 +185,27 @@ export function buildPaymentPlan(request: TxBuildRequest): TxPlan {
       let finalFee = estimatedFeeSompi;
 
       if (!hasActualChange) {
-        const noChangeResult = estimateTransactionMass({
-          inputCount: selected.length,
-          outputs: sortedOutputs,
-          payloadBytes: request.payloadBytes ?? 0,
-          hasChange: false
-        });
-        finalMass = noChangeResult.mass;
-        finalFee = finalMass * request.feeRateSompiPerMass;
-        if (isToccataFee) {
-          const computeBudget = request.computeBudget ?? request.computeGrams ?? 0n;
-          const minimumToccataFee = estimateToccataFee(computeBudget, noChangeResult.mass, noChangeResult.txBytes);
-          if (minimumToccataFee > finalFee) {
-            finalFee = minimumToccataFee;
+        let finalFeeRecalc: bigint;
+        if (request.feeOverrideSompi !== undefined) {
+          finalFeeRecalc = request.feeOverrideSompi;
+        } else {
+          const noChangeResult = estimateTransactionMass({
+            inputCount: selected.length,
+            outputs: sortedOutputs,
+            payloadBytes: request.payloadBytes ?? 0,
+            hasChange: false
+          });
+          finalMass = noChangeResult.mass;
+          finalFeeRecalc = finalMass * request.feeRateSompiPerMass;
+          if (isToccataFee) {
+            const computeBudget = request.computeBudget ?? request.computeGrams ?? 0n;
+            const minimumToccataFee = estimateToccataFee(computeBudget, noChangeResult.mass, noChangeResult.txBytes);
+            if (minimumToccataFee > finalFeeRecalc) {
+              finalFeeRecalc = minimumToccataFee;
+            }
           }
         }
+        finalFee = finalFeeRecalc;
 
         // Re-check if still enough after potential fee change
         if (selectedAmount < target + finalFee) continue;

@@ -1,10 +1,10 @@
 {
   "schema": "hardkas.txPlan.v1",
-  "hardkasVersion": "0.12.0-rc.2",
+  "hardkasVersion": "0.12.0-rc.10",
   "version": "1.0.0-alpha",
   "networkId": "simnet",
   "mode": "developer",
-  "createdAt": "2026-08-13T20:17:36.080Z",
+  "createdAt": "2026-08-24T11:32:39.846Z",
   "status": "built",
   "planId": "plan-mock-1234",
   "from": {

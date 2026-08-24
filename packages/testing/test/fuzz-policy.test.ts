@@ -8,7 +8,7 @@ describe("Phase 6A: Policy Fuzzing", () => {
     const sdk = await Hardkas.open({ network: "simnet", autoBootstrap: true });
     const original = {
       schema: "hardkas.policy.v1",
-      hardkasVersion: "0.12.0-rc.2",
+      hardkasVersion: "0.12.0-rc.10",
       version: "1.0.0-alpha",
       decision: "ALLOW",
       rules: [{ id: "rule-1", result: true, inputHash: "dummy" }],

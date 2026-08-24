@@ -53,7 +53,7 @@ export const artifactTypeSchema = z.enum([
   "signedTx.v2",
   "txReceipt.v2",
   "txTrace",
-  "snapshot",
+  "snapshot.v1",
   "workflow.v1",
   "policy.v1",
   "networkProfile.v1",
@@ -141,4 +141,7 @@ export * from "./confirmation-policy.js";
 export * from "./pskt.js";
 export * from "./pskt-adapter.js";
 export * from "./pskt-errors.js";
+
+export * from "./utxo-errors.js";
+export * from "./utxo-utils.js";
 

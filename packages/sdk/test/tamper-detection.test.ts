@@ -25,8 +25,8 @@ describe("SDK Tamper Detection & Forensic Regression", () => {
   });
 
   it("should reject tampered signedTx during verify, simulate, and send", async () => {
-    const plan = await sdk.tx.plan({ from: "alice", to: "bob", amount: "10" });
-    const signed = await sdk.tx.sign(plan, "alice");
+    const plan = await sdk.tx.plan({ from: "kaspa:sim_alice", to: "kaspa:sim_bob", amount: "10" });
+    const signed = await sdk.tx.sign(plan, "kaspa:sim_alice");
 
     // Tamper the amount without updating contentHash
     const tampered = JSON.parse(JSON.stringify(signed));
@@ -50,7 +50,7 @@ describe("SDK Tamper Detection & Forensic Regression", () => {
   });
 
   it("should reject tampered plan during verify and sign", async () => {
-    const plan = await sdk.tx.plan({ from: "alice", to: "bob", amount: "10" });
+    const plan = await sdk.tx.plan({ from: "kaspa:sim_alice", to: "kaspa:sim_bob", amount: "10" });
 
     const tampered = JSON.parse(JSON.stringify(plan));
     tampered.to.address = "kaspa:fake";
@@ -58,14 +58,14 @@ describe("SDK Tamper Detection & Forensic Regression", () => {
     const verResult = await sdk.artifacts.verify(tampered, { throwOnInvalid: false });
     expect(verResult.valid).toBe(false);
 
-    await expect(sdk.tx.sign(tampered as any, "alice")).rejects.toThrow(
+    await expect(sdk.tx.sign(tampered as any, "kaspa:sim_alice")).rejects.toThrow(
       /content_hash_mismatch|corrupted or invalid/
     );
   });
 
   it("should reject tampered receipt during replay verify", async () => {
-    const plan = await sdk.tx.plan({ from: "alice", to: "bob", amount: "10" });
-    const signed = await sdk.tx.sign(plan, "alice");
+    const plan = await sdk.tx.plan({ from: "kaspa:sim_alice", to: "kaspa:sim_bob", amount: "10" });
+    const signed = await sdk.tx.sign(plan, "kaspa:sim_alice");
     const { receipt } = await sdk.tx.simulate(signed);
 
     const tampered = JSON.parse(JSON.stringify(receipt));

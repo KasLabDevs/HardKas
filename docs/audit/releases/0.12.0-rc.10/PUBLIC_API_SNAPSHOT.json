@@ -1,5 +1,5 @@
 {
-  "version": "0.12.0-rc.2",
+  "version": "0.12.0-rc.10",
   "timestamp": "2026-07-14T14:56:54.310Z",
   "apiCheck": {
     "command": "node scripts/api-check.mjs",

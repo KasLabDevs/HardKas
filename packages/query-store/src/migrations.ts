@@ -136,7 +136,7 @@ export class MigrationRunner {
 
 /**
  * Registry of all query-store migrations.
- * Version 1: Initial schema (Baseline 0.12.0-rc.2).
+ * Version 1: Initial schema (Baseline 0.12.0-rc.10).
  */
 export const MIGRATIONS: Migration[] = [
   {

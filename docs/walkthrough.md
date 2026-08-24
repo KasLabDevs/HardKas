@@ -1,6 +1,6 @@
 # HardKAS Escrow Module - Canonical Record
 
-Este documento representa el registro final del diseño y estabilización del módulo Escrow P2SH dentro del framework HardKAS (versión 0.12.0-rc.2). A partir de este Gate, el módulo se considera congelado funcionalmente, marcando la separación oficial entre el motor de escrow y los laboratorios que lo consumen.
+Este documento representa el registro final del diseño y estabilización del módulo Escrow P2SH dentro del framework HardKAS (versión 0.12.0-rc.10). A partir de este Gate, el módulo se considera congelado funcionalmente, marcando la separación oficial entre el motor de escrow y los laboratorios que lo consumen.
 
 ---
 

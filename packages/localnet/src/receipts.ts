@@ -28,74 +28,43 @@ export interface StoredSimulatedTxReceipt extends HardkasArtifactBase {
   daaScore: string;
 }
 
-export function getDefaultReceiptsDir(cwd: string = process.cwd()): string {
-  return path.join(cwd, ".hardkas", "artifacts");
-}
-
-export function getReceiptPath(txId: string, cwd?: string): string {
-  validateTxId(txId);
-  return path.join(getDefaultReceiptsDir(cwd), `${txId}.json`);
-}
-
-function validateTxId(txId: string): void {
-  if (txId.includes("/") || txId.includes("\\") || txId.includes("..")) {
-    throw new Error(`Invalid txId: ${txId}`);
-  }
-}
+import { ProjectArtifactStore } from "@hardkas/artifacts";
 
 export async function saveSimulatedReceipt(
   receipt: StoredSimulatedTxReceipt,
   options?: { cwd?: string }
 ): Promise<string> {
-  const dir = getDefaultReceiptsDir(options?.cwd);
-  if (!existsSync(dir)) {
-    await fs.mkdir(dir, { recursive: true });
-  }
-
-  const filePath = getReceiptPath(receipt.txId, options?.cwd);
-  await writeFileAtomic(filePath, JSON.stringify(receipt, null, 2), {
-    encoding: "utf-8"
-  });
-  return filePath;
+  const store = new ProjectArtifactStore(options?.cwd || process.cwd());
+  const absolutePath = await store.writeArtifact(receipt as any);
+  return absolutePath;
 }
 
 export async function loadSimulatedReceipt(
   txId: string,
   options?: { cwd?: string }
 ): Promise<StoredSimulatedTxReceipt> {
-  const filePath = getReceiptPath(txId, options?.cwd);
-  if (!existsSync(filePath)) {
+  const store = new ProjectArtifactStore(options?.cwd || process.cwd());
+  // The simulator might have written it with txId as artifactId, or we can find it by txId.
+  // Let's first try direct read in case artifactId === txId (or receipt-txId).
+  try {
+    const direct = await store.readArtifact(txId);
+    if (direct && (direct as any).txId === txId) {
+      return direct as any;
+    }
+  } catch(e) {}
+
+  const artifacts = await store.queryArtifacts({ schema: ARTIFACT_SCHEMAS.TX_RECEIPT });
+  const found = artifacts.find((a: any) => a.txId === txId);
+  if (!found) {
     throw new Error(`Receipt not found: ${txId}`);
   }
-
-  const data = await fs.readFile(filePath, "utf-8");
-  return JSON.parse(data);
+  return found as any;
 }
 
 export async function listSimulatedReceipts(options?: {
   cwd?: string;
 }): Promise<StoredSimulatedTxReceipt[]> {
-  const dir = getDefaultReceiptsDir(options?.cwd);
-  if (!existsSync(dir)) {
-    return [];
-  }
-
-  const files = await fs.readdir(dir);
-  const receipts: StoredSimulatedTxReceipt[] = [];
-
-  for (const file of files) {
-    if (file.endsWith(".json")) {
-      try {
-        const txId = path.basename(file, ".json");
-        const receipt = await loadSimulatedReceipt(txId, options);
-        if (receipt.schema === ARTIFACT_SCHEMAS.TX_RECEIPT) {
-          receipts.push(receipt);
-        }
-      } catch (e) {
-        // Skip invalid receipts
-      }
-    }
-  }
-
-  return receipts.sort((a, b) => deterministicCompare(b.createdAt, a.createdAt));
+  const store = new ProjectArtifactStore(options?.cwd || process.cwd());
+  const artifacts = await store.queryArtifacts({ schema: ARTIFACT_SCHEMAS.TX_RECEIPT });
+  return artifacts.sort((a: any, b: any) => deterministicCompare(b.createdAt, a.createdAt)) as any[];
 }

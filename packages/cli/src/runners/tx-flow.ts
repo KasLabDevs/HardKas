@@ -31,7 +31,7 @@ export interface TxFlowInput {
   network?: string;
   config: HardkasConfig;
   url?: string;
-  feeRate: string;
+  feeRate?: string;
   provider?: string;
 
   planOnly?: boolean;
@@ -441,6 +441,7 @@ export async function runTxFlow(input: TxFlowInput): Promise<TxFlowResult> {
   } catch (error) {
     flowResult.ok = false;
     const msg = error instanceof Error ? error.message : String(error);
+    console.error("[runTxFlow catch]", error);
     // Find where it failed
     if (flowResult.steps.plan.status !== "ok") {
       flowResult.steps.plan = { status: "error", error: msg };
@@ -486,7 +487,12 @@ async function saveArtifact(
 
   const fullPath = path.join(outDir, fileName);
   if (sdk && sdk.artifacts && typeof sdk.artifacts.write === "function") {
-    await sdk.artifacts.write(artifact, { outputDir: outDir, fileName });
+    const canonicalRes = await sdk.artifacts.write(artifact);
+    if (outDir !== sdk.workspace.artifactsDir || baseName) {
+      await sdk.artifacts.write(artifact, { outputDir: outDir, fileName });
+      return path.join(outDir, fileName);
+    }
+    return canonicalRes.absolutePath;
   } else {
     // Fallback: write artifact directly without SDK
     fs.writeFileSync(fullPath, JSON.stringify(artifact, null, 2), "utf-8");

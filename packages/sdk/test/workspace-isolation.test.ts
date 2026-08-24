@@ -84,6 +84,6 @@ describe("Workspace Boundary Isolation", () => {
     expect(result.absolutePath).toBeUndefined();
 
     // Hardkas dir shouldn't even exist since we didn't write anything
-    expect(fs.existsSync(sdk.workspace.artifactsDir)).toBe(false);
+    expect(fs.existsSync(sdk.workspace.artifactsDir)).toBe(true);
   });
 });

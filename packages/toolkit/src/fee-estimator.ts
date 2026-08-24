@@ -10,15 +10,30 @@ export interface DynamicFeeRateResult {
 
 export async function calculateDynamicFeeRate(
     rpc: KaspaRpcClient | undefined,
-    priority: FeePriority
+    priority: FeePriority,
+    minimumNetworkFeeRate: bigint = 0n // E.g., 100n for Toccata standardness policy
 ): Promise<DynamicFeeRateResult> {
     const feeFloor = priority === "slow" ? 1n : priority === "normal" ? 2n : 5n;
     let dynamicMempoolMultiplier = 1n;
     let evidence: "dynamic" | "heuristic" = "heuristic";
     let mempoolSize: number | undefined = undefined;
+    let rpcFeeRate: bigint | undefined = undefined;
 
     if (rpc && rpc.getInfo) {
         try {
+            // First check if node has explicit fee estimate API (e.g. GetFeeEstimate)
+            if (typeof (rpc as any).getFeeEstimate === 'function') {
+                const estimate = await (rpc as any).getFeeEstimate();
+                if (estimate && estimate.priorityBucket && estimate.priorityBucket.feerate) {
+                    rpcFeeRate = BigInt(Math.floor(estimate.priorityBucket.feerate));
+                }
+            } else if (typeof (rpc as any).getFeeEstimateExperimental === 'function') {
+                const estimate = await (rpc as any).getFeeEstimateExperimental();
+                if (estimate && estimate.priorityBucket && estimate.priorityBucket.feerate) {
+                    rpcFeeRate = BigInt(Math.floor(estimate.priorityBucket.feerate));
+                }
+            }
+
             const info = await rpc.getInfo();
             mempoolSize = info.mempoolSize;
             
@@ -38,8 +53,19 @@ export async function calculateDynamicFeeRate(
         }
     }
 
+    let computedRate = rpcFeeRate;
+    if (computedRate === undefined) {
+        computedRate = feeFloor * dynamicMempoolMultiplier;
+    }
+
+    // Clamp against the mempool/standardness network policy (not consensus).
+    // E.g., Toccata localnet requires 100 sompi/mass minimum standardness relay fee.
+    if (computedRate < minimumNetworkFeeRate) {
+        computedRate = minimumNetworkFeeRate;
+    }
+
     return {
-        feeRate: feeFloor * dynamicMempoolMultiplier,
+        feeRate: computedRate,
         evidence,
         ...(mempoolSize !== undefined ? { mempoolSize } : {})
     };

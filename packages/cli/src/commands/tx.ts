@@ -29,7 +29,7 @@ export function registerTxCommands(program: Command) {
   tx.command("batch")
     .description(`Process a batch of transactions sequentially ${UI.maturity("stable")}`)
     .requiredOption("--file <path>", "Path to JSON file containing batch payments")
-    .option("--network <name>", "Network name", "simulated")
+    .option("--network <name>", "Network name")
     .option("--workspace <path>", "Override workspace root directory")
     .option("--json", "Output as JSON", false)
     .action(async (options: any) => {
@@ -48,8 +48,8 @@ export function registerTxCommands(program: Command) {
     .option("--from <accountOrAddress>", "Sender account name or address")
     .option("--to <address>", "Recipient address")
     .option("--amount <kas>", "Amount in KAS")
-    .option("--network <name>", "Kaspa network name", "simnet")
-    .option("--fee-rate <sompiPerMass>", "Fee rate in sompi per mass", "1")
+    .option("--network <name>", "Kaspa network name")
+    .option("--fee-rate <sompiPerMass>", "Fee rate in sompi per mass")
     .option("--provider <type>", "Provider mode (auto, rpc, simulated)", "auto")
     .option("--url <url>", "RPC URL (optional override)")
     .option("--out <path>", "Save plan as artifact JSON")
@@ -65,7 +65,7 @@ export function registerTxCommands(program: Command) {
         from?: string;
         to?: string;
         amount?: string;
-        network: string;
+        network?: string;
         provider: string;
         feeRate?: string;
         url?: string;
@@ -99,9 +99,9 @@ export function registerTxCommands(program: Command) {
                 from: options.from || "alice",
                 to: options.to || "bob",
                 amount: options.amount || "1",
-                networkId: options.network,
+                ...(options.network ? { networkId: options.network } : {}),
                 provider: options.provider,
-                feeRate: options.feeRate || "1",
+                ...(options.feeRate ? { feeRate: options.feeRate } : {}),
                 config: loaded.config,
                 ...(options.workflowId ? { workflowId: options.workflowId } : {}),
                 ...(options.assumptionLevel
@@ -319,7 +319,8 @@ export function registerTxCommands(program: Command) {
     .option("--from <accountOrAddress>", "Sender (shortcut mode)")
     .option("--to <address>", "Recipient (shortcut mode)")
     .option("--amount <kas>", "Amount in KAS (shortcut mode)")
-    .option("--network <name>", "Network name", "simnet")
+    .option("--network <name>", "Network name")
+    .option("--fee-rate <sompiPerMass>", "Fee rate in sompi per mass (shortcut mode)")
     .option("--provider <type>", "Provider mode (auto, rpc, simulated)", "auto")
     .option("--url <url>", "RPC URL (optional override)")
     .option("--yes", "Confirm broadcast", false)
@@ -335,7 +336,8 @@ export function registerTxCommands(program: Command) {
           from?: string;
           to?: string;
           amount?: string;
-          network: string;
+          network?: string;
+          feeRate?: string;
           provider: string;
           url?: string;
           yes: boolean;
@@ -377,7 +379,7 @@ export function registerTxCommands(program: Command) {
                 const result = await runTxSend({
                   ...(options.target ? { targetName: options.target } : {}),
                   signedArtifact: signedArtifact as any,
-                  network: options.network,
+                  ...(options.network ? { network: options.network } : {}),
                   provider: options.provider,
                   config: loaded.config,
                   ...(options.url ? { url: options.url } : {})
@@ -452,14 +454,14 @@ export function registerTxCommands(program: Command) {
                 }
 
                 const result = await runTxFlow({
-                  ...options,
                   amount: options.amount!,
                   from: options.from!,
                   to: options.to!,
                   send: true,
-                  feeRate: "1", // Default fee rate for shortcut
                   provider: options.provider,
                   config: loaded.config,
+                  ...(options.network ? { network: options.network } : {}),
+                  ...(options.feeRate ? { feeRate: options.feeRate } : {}),
                   ...(options.url ? { url: options.url } : {})
                 });
 

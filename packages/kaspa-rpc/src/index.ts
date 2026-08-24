@@ -93,6 +93,8 @@ export interface BlockDagInfo {
   readonly networkId: NetworkId;
   readonly virtualDaaScore?: bigint;
   readonly tipHashes?: readonly string[];
+  readonly virtualParentHashes?: readonly string[];
+  readonly sink?: string;
 }
 
 export interface ServerInfo {
@@ -488,7 +490,9 @@ export class JsonWrpcKaspaClient implements KaspaRpcClient {
     return {
       networkId: (dagData?.networkName || dagData?.network || "unknown") as NetworkId,
       virtualDaaScore: dagData?.virtualDaaScore !== undefined ? BigInt(dagData.virtualDaaScore) : 0n,
-      tipHashes: dagData?.tipHashes || dagData?.blockTipHashes || []
+      tipHashes: dagData?.tipHashes || dagData?.blockTipHashes || [],
+      virtualParentHashes: dagData?.virtualParentHashes || [],
+      sink: dagData?.sink || dagData?.sinkHash || ""
     };
   }
 

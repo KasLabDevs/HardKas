@@ -198,6 +198,7 @@ export function verifyArtifactIntegritySync(
     let schema;
     switch (v.schema) {
       case HardkasSchemas.Snapshot:
+      case HardkasSchemas.SnapshotV1:
         schema = SnapshotSchema;
         break;
       case HardkasSchemas.TxPlan:
@@ -311,7 +312,11 @@ export async function verifyArtifactIntegrity(
 function findFileByHash(hash: string, dirs: string[]): string | null {
   const shortHash =
     hash.startsWith("plan-") || hash.startsWith("signed-") ? hash : hash.slice(0, 16);
+  const allDirs = [...dirs];
   for (const dir of dirs) {
+    allDirs.push(path.join(dir, 'plans'), path.join(dir, 'signed'), path.join(dir, 'receipts'), path.join(dir, 'lineage'), path.join(dir, 'misc'));
+  }
+  for (const dir of allDirs) {
     if (!fs.existsSync(dir)) continue;
     try {
       const files = fs.readdirSync(dir);
@@ -665,8 +670,9 @@ export function verifyArtifactSemantics(
   }
 
   // 3. Lineage Audit (Harden and Harmonize)
+  const isSnapshot = v.schema === HardkasSchemas.Snapshot || v.schema === HardkasSchemas.SnapshotV1;
   const lineageAudit = verifyLineage(v, parentObj || context.parent, { strict });
-  if (!lineageAudit.ok || (strict && !v.lineage && v.schema !== HardkasSchemas.WorkflowV1)) {
+  if (!lineageAudit.ok || (strict && !v.lineage && v.schema !== HardkasSchemas.WorkflowV1 && !isSnapshot)) {
     lineageAudit.issues.forEach((issue) => {
       addIssue(issue);
     });
@@ -676,13 +682,13 @@ export function verifyArtifactSemantics(
   if (strict) {
     const enforceMetadata = context.enforceMetadata ?? true;
     if (enforceMetadata) {
-      if (!v.workflowId)
+      if (!v.workflowId && !isSnapshot)
         addIssue({
           code: "MISSING_WORKFLOW_ID",
           severity: "error",
           message: "Strict mode requires workflowId"
         });
-      if (!v.assumptionLevel && v.schema !== HardkasSchemas.WorkflowV1)
+      if (!v.assumptionLevel && v.schema !== HardkasSchemas.WorkflowV1 && !isSnapshot)
         addIssue({
           code: "MISSING_ASSUMPTION_LEVEL",
           severity: "error",
@@ -695,13 +701,13 @@ export function verifyArtifactSemantics(
           message: "Strict mode requires executionMode"
         });
     } else {
-      if (!v.workflowId)
+      if (!v.workflowId && !isSnapshot)
         addIssue({
           code: "MISSING_WORKFLOW_ID",
           severity: "warning",
           message: "Missing workflowId"
         });
-      if (!v.assumptionLevel && v.schema !== HardkasSchemas.WorkflowV1)
+      if (!v.assumptionLevel && v.schema !== HardkasSchemas.WorkflowV1 && !isSnapshot)
         addIssue({
           code: "MISSING_ASSUMPTION_LEVEL",
           severity: "warning",
@@ -709,13 +715,13 @@ export function verifyArtifactSemantics(
         });
     }
   } else {
-    if (!v.workflowId)
+    if (!v.workflowId && !isSnapshot)
       addIssue({
         code: "MISSING_WORKFLOW_ID",
         severity: "warning",
         message: "Missing workflowId"
       });
-    if (!v.assumptionLevel && v.schema !== HardkasSchemas.WorkflowV1)
+    if (!v.assumptionLevel && v.schema !== HardkasSchemas.WorkflowV1 && !isSnapshot)
       addIssue({
         code: "MISSING_ASSUMPTION_LEVEL",
         severity: "warning",

@@ -33,9 +33,12 @@ export function verifyLineage(
   // 1. Structural Checks
   if (!lineage) {
     const isWorkflow = artifact.schema === HardkasSchemas.WorkflowV1;
-    const severity = options.strict && !isWorkflow ? "error" : "warning";
-    if (!isWorkflow || options.strict) {
-      addIssue("MISSING_LINEAGE", "Artifact has no lineage metadata", severity);
+    const isSnapshot = artifact.schema === HardkasSchemas.Snapshot || artifact.schema === HardkasSchemas.SnapshotV1;
+    const severity = options.strict && !isWorkflow && !isSnapshot ? "error" : "warning";
+    if (!isWorkflow && !isSnapshot || options.strict) {
+      if (severity === "error" || !isSnapshot) {
+        addIssue("MISSING_LINEAGE", "Artifact has no lineage metadata", severity);
+      }
     }
     return {
       ok: issues.every((i) => i.severity !== "error"),
