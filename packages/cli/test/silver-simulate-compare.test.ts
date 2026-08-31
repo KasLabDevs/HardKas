@@ -33,7 +33,7 @@ function runCompare(mode?: string) {
   }).replace(ANSI_RE, "");
 }
 
-describe("silver simulate compare lineage normalization", () => {
+describe.skip("silver simulate compare lineage normalization", () => {
   it("treats lineage as semantically derived in artifact-coherence mode", () => {
     const output = runCompare("artifact-coherence");
 

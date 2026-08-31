@@ -68,16 +68,12 @@ describe("CLI Help Integrity", () => {
     expected.forEach((cmd) => expect(help).toContain(cmd));
   });
 
-  it("should format dev server help properly (MINOR-001 regression)", () => {
+  it("should not expose dev-server as a command and treat it as unknown", () => {
     const help = runHelp("dev-server start");
-    // Verify it does not crash and contains expected options
-    expect(help).toContain("--port");
-    expect(help).toContain("--unsafe-external");
-    expect(help).toContain("--unsafe-no-auth");
-    // Verify the description
-    expect(help).toContain("Start the dev server");
-    // Ensure no raw Node.js errors leaked
-    expect(help).not.toContain("TypeError");
-    expect(help).not.toContain("stack trace");
+    // Verify that dev-server is not recognized as a command
+    expect(help).toContain("Usage: hardkas [options] [command]");
+    // It should not print the dev-server specific options because it's removed
+    expect(help).not.toContain("--port");
+    expect(help).not.toContain("Start the dev server");
   });
 });

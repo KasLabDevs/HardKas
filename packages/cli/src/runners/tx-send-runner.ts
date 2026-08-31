@@ -32,42 +32,28 @@ export interface TxSendRunnerResult {
 export async function runTxSend(input: TxSendRunnerInput): Promise<TxSendRunnerResult> {
   const { targetName, signedArtifact, network, config, url } = input;
 
-  const { resolveExecutionTarget } = await import("@hardkas/config");
+  const { resolveArtifactTarget, resolveLegacyArtifactTarget, resolveProvider } = await import("@hardkas/config");
+  const { LegacyArtifactRequiresExplicitResolutionError } = await import("@hardkas/core");
 
   let resolvedName: string;
   let execution: any;
   let target: any;
 
-  if (targetName) {
-    const res = resolveExecutionTarget({ config, targetName });
-    resolvedName = res.name;
-    execution = res.execution;
-    target = res.target;
-  } else if (signedArtifact.execution) {
-    const targets: Record<string, any> = (config.execution && "targets" in (config.execution as any)) ? (config.execution as any).targets : {};
-    const matchingTarget = Object.entries(targets).find(([_, t]: [string, any]) => {
-      const e = signedArtifact.execution!;
-      const typedT = t as any;
-      return typedT.domain === e.domain && typedT.mode === e.mode && typedT.network === e.network;
-    });
-
-    if (matchingTarget) {
-      resolvedName = matchingTarget[0];
-      execution = signedArtifact.execution;
-      target = matchingTarget[1];
+  try {
+    const { target: artifactTarget } = resolveArtifactTarget({ artifact: signedArtifact as any });
+    execution = artifactTarget;
+  } catch (e: any) {
+    if (e.name === "LegacyArtifactRequiresExplicitResolutionError") {
+      console.warn("⚠️ [Legacy] Artifact lacks execution identity. Inferring target from configuration.");
+      const { target: legacyTarget } = resolveLegacyArtifactTarget({ artifact: signedArtifact as any, config });
+      execution = legacyTarget;
     } else {
-      resolvedName = signedArtifact.networkId || "artifact_execution";
-      execution = signedArtifact.execution;
-      target = {};
+      throw e;
     }
-  } else if (config.execution && "default" in (config.execution as any) && (config.execution as any).default) {
-    const res = resolveExecutionTarget({ config }); // Uses defaultNetwork internally
-    resolvedName = res.name;
-    execution = res.execution;
-    target = res.target;
-  } else {
-    throw new Error("EXECUTION_NETWORK_MISMATCH: No target specified, artifact lacks execution metadata, and no default target found in config.");
   }
+
+  resolvedName = execution.network;
+  target = config.networks?.[resolvedName] || {};
 
   if (network && execution.network !== network) {
     throw new Error(`EXECUTION_NETWORK_MISMATCH: Target specifies network '${execution.network}', but command was called with legacy --network '${network}'.`);
@@ -75,7 +61,6 @@ export async function runTxSend(input: TxSendRunnerInput): Promise<TxSendRunnerR
 
   const networkName = execution.network;
 
-  const { resolveProvider } = await import("@hardkas/config");
   const provider = resolveProvider({
     network: resolvedName,
     provider: input.provider,
@@ -92,8 +77,7 @@ export async function runTxSend(input: TxSendRunnerInput): Promise<TxSendRunnerR
   });
 
   // Initialize the SDK
-  const sdk = await Hardkas.open({ cwd: input.workspaceRoot || process.cwd() });
-  sdk.config.config.defaultNetwork = resolvedName;
+  const sdk = await Hardkas.open({ cwd: input.workspaceRoot || process.cwd(), network: resolvedName });
 
   // 1. Simulated Mode
   if (provider.mode === "simulator" && signedArtifact.mode !== "real") {
@@ -136,6 +120,7 @@ export async function runTxSend(input: TxSendRunnerInput): Promise<TxSendRunnerR
 
   try {
     const { receipt, receiptPath } = await sdk.tx.send(signedArtifact, rpcUrl);
+
 
     return {
       accepted: receipt.status === "submitted" || receipt.status === "confirmed",

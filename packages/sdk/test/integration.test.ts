@@ -20,7 +20,7 @@ describe.skip("Network-Agnostic Artifact Layer: Integration", () => {
     // Create a mock policy
     const policy = {
       schema: "hardkas.policy.v1",
-      hardkasVersion: "0.12.0-rc.10",
+      hardkasVersion: "0.12.0-rc.12",
       version: "1.0.0-alpha",
       networkId: "simnet",
       mode: "simulator",

@@ -1,0 +1,502 @@
+import { getOutput } from "../output.js";
+import { UI } from "../ui.js";
+import { runTxProfile } from "../runners/tx-profile-runner.js";
+import { runTxPlan } from "../runners/tx-plan-runner.js";
+import { runTxSign } from "../runners/tx-sign-runner.js";
+import { runTxSend } from "../runners/tx-send-runner.js";
+import { runTxFlow } from "../runners/tx-flow.js";
+import { runTxReceipt } from "../runners/tx-receipt-runner.js";
+import { HardkasSchemas } from "@hardkas/artifacts";
+export function registerTxCommands(program) {
+    const tx = program.command("tx").description("L1 Transaction commands");
+    tx.command("profile <path>")
+        .description(`Show detailed mass and fee breakdown for a transaction plan ${UI.maturity("stable")}`)
+        .option("--json", "Output as JSON", false)
+        .action(async (path, options) => {
+        try {
+            await runTxProfile({ path, ...options, workspaceRoot: process.cwd() });
+        }
+        catch (e) {
+            throw e;
+        }
+    });
+    tx.command("batch")
+        .description(`Process a batch of transactions sequentially ${UI.maturity("stable")}`)
+        .requiredOption("--file <path>", "Path to JSON file containing batch payments")
+        .option("--network <name>", "Network name")
+        .option("--workspace <path>", "Override workspace root directory")
+        .option("--json", "Output as JSON", false)
+        .action(async (options) => {
+        try {
+            const { runTxBatch } = await import("../runners/tx-batch-runner.js");
+            if (options.json)
+                UI.setJsonMode(true);
+            await runTxBatch(options);
+        }
+        catch (e) {
+            throw e;
+        }
+    });
+    tx.command("plan")
+        .description(`Build a transaction plan artifact ${UI.maturity("stable")}`)
+        .option("--target <name>", "Named execution target from hardkas.config.ts")
+        .option("--from <accountOrAddress>", "Sender account name or address")
+        .option("--to <address>", "Recipient address")
+        .option("--amount <kas>", "Amount in KAS")
+        .option("--network <name>", "Kaspa network name")
+        .option("--fee-rate <sompiPerMass>", "Fee rate in sompi per mass")
+        .option("--provider <type>", "Provider mode (auto, rpc, simulated)", "auto")
+        .option("--url <url>", "RPC URL (optional override)")
+        .option("--out <path>", "Save plan as artifact JSON")
+        .option("--save <path>", "Alias for --out (Save plan as artifact JSON)")
+        .option("--workflow-id <id>", "Optional deterministic workflow ID override")
+        .option("--assumption-level <level>", "Optional assumption level override")
+        .option("--wait-lock", "Wait for workspace lock if held", false)
+        .option("--lock-timeout <ms>", "Lock wait timeout in ms", "30000")
+        .option("--json", "Output as JSON", false)
+        .action(async (options) => {
+        const { withLock } = await import("@hardkas/core");
+        try {
+            if (options.json)
+                UI.setJsonMode(true);
+            await withLock({
+                rootDir: process.cwd(),
+                name: "artifacts",
+                command: "hardkas tx plan",
+                wait: options.waitLock,
+                timeoutMs: parseInt(options.lockTimeout)
+            }, async () => {
+                const { loadHardkasConfig } = await import("@hardkas/config");
+                const { writeArtifact, formatTxPlanArtifact } = await import("@hardkas/artifacts");
+                const loaded = await loadHardkasConfig({ workspaceRoot: process.cwd() });
+                const artifact = await runTxPlan({
+                    ...(options.target ? { targetName: options.target } : {}),
+                    from: options.from || "alice",
+                    to: options.to || "bob",
+                    amount: options.amount || "1",
+                    ...(options.network ? { networkId: options.network } : {}),
+                    provider: options.provider,
+                    ...(options.feeRate ? { feeRate: options.feeRate } : {}),
+                    config: loaded.config,
+                    ...(options.workflowId ? { workflowId: options.workflowId } : {}),
+                    ...(options.assumptionLevel
+                        ? { assumptionLevel: options.assumptionLevel }
+                        : {}),
+                    ...(options.url ? { url: options.url } : {})
+                });
+                const outPath = options.out || options.save;
+                if (outPath)
+                    await writeArtifact(outPath, artifact);
+                // Always persist to .hardkas/artifacts/ for lattice indexing
+                const artifactsDir = (await import("node:path")).join(process.cwd(), ".hardkas", "artifacts");
+                const fsNode = await import("node:fs");
+                if (fsNode.existsSync((await import("node:path")).join(process.cwd(), ".hardkas"))) {
+                    if (!fsNode.existsSync(artifactsDir))
+                        fsNode.mkdirSync(artifactsDir, { recursive: true });
+                    const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
+                    const planId = artifact.planId || "unknown";
+                    const latticeFile = (await import("node:path")).join(artifactsDir, `${timestamp}-${planId}.plan.json`);
+                    await writeArtifact(latticeFile, artifact);
+                }
+                if (options.json) {
+                    UI.writeJson(artifact);
+                }
+                else {
+                    getOutput().writeLine(formatTxPlanArtifact(artifact));
+                    if (outPath)
+                        getOutput().writeLine(`\nArtifact saved to: ${outPath}`);
+                }
+            });
+        }
+        catch (e) {
+            throw e;
+        }
+    });
+    tx.command("sign <planPath>")
+        .description(`Sign a transaction plan artifact ${UI.maturity("stable")}`)
+        .option("--account <name>", "Account name to sign with")
+        .option("--out <path>", "Save signed artifact JSON")
+        .option("--fixture", "Use fixture signer for Docker testing on simnet", false)
+        .option("--allow-mainnet-signing", "Allow signing for mainnet", false)
+        .option("--threshold <number>", "Multisig threshold")
+        .option("--required-signers <list>", "Comma-separated list of required signers")
+        .option("--append", "Append signature to a partially signed transaction", false)
+        .option("--target <name>", "Named execution target from hardkas.config.ts")
+        .option("--wait-lock", "Wait for workspace lock if held", false)
+        .option("--lock-timeout <ms>", "Lock wait timeout in ms", "30000")
+        .option("--json", "Output as JSON", false)
+        .action(async (planPath, options) => {
+        const { withLock } = await import("@hardkas/core");
+        try {
+            if (options.json)
+                UI.setJsonMode(true);
+            await withLock({
+                rootDir: process.cwd(),
+                name: "artifacts",
+                command: "hardkas tx sign",
+                wait: options.waitLock,
+                timeoutMs: parseInt(options.lockTimeout)
+            }, async () => {
+                const { readArtifact, readTxPlanArtifact, readSignedTxArtifact, writeArtifact, formatSignedTxArtifact } = await import("@hardkas/artifacts");
+                const { loadHardkasConfig } = await import("@hardkas/config");
+                const raw = (await readArtifact(planPath));
+                let planArtifact;
+                if (raw && raw.schema === HardkasSchemas.SignedTx) {
+                    planArtifact = await readSignedTxArtifact(planPath);
+                }
+                else {
+                    planArtifact = await readTxPlanArtifact(planPath);
+                }
+                const loaded = await loadHardkasConfig({ workspaceRoot: process.cwd() });
+                let signer;
+                if (options.fixture) {
+                    const { HardkasFixtureSigner } = await import("@hardkas/testing");
+                    const networkId = planArtifact.networkId || "simnet";
+                    signer = new HardkasFixtureSigner(networkId);
+                }
+                const signedArtifact = await runTxSign({
+                    planArtifact: planArtifact,
+                    ...(options.account ? { accountName: options.account } : {}),
+                    config: loaded.config,
+                    targetName: options.target,
+                    signer,
+                    allowMainnetSigning: options.allowMainnetSigning,
+                    append: options.append,
+                    ...(options.threshold !== undefined
+                        ? { threshold: parseInt(options.threshold) }
+                        : {}),
+                    ...(options.requiredSigners !== undefined
+                        ? { requiredSigners: options.requiredSigners.split(",") }
+                        : {})
+                });
+                if (options.out)
+                    await writeArtifact(options.out, signedArtifact);
+                if (options.json) {
+                    UI.writeJson(signedArtifact);
+                }
+                else {
+                    getOutput().writeLine(formatSignedTxArtifact(signedArtifact));
+                    if (options.out)
+                        getOutput().writeLine(`\nSigned artifact saved to: ${options.out}`);
+                }
+            });
+        }
+        catch (e) {
+            throw e;
+        }
+    });
+    tx.command("status <path>")
+        .description("Show the signature coverage and status of a transaction artifact")
+        .option("--json", "Output as JSON", false)
+        .action(async (artifactPath, options) => {
+        try {
+            if (options.json)
+                UI.setJsonMode(true);
+            const { readArtifact } = await import("@hardkas/artifacts");
+            const raw = (await readArtifact(artifactPath));
+            if (!raw ||
+                (raw.schema !== HardkasSchemas.SignedTx && raw.schema !== HardkasSchemas.TxPlan)) {
+                throw new Error("Artifact is not a transaction plan or signed transaction.");
+            }
+            if (options.json) {
+                UI.writeJson({
+                    schema: raw.schema,
+                    status: raw.status || "planned",
+                    multisig: raw.multisig || null
+                });
+                return;
+            }
+            getOutput().writeLine(`\nHardKAS Transaction Status`);
+            getOutput().writeLine(`==========================`);
+            getOutput().writeLine(`File:         ${artifactPath}`);
+            getOutput().writeLine(`Schema:       ${raw.schema}`);
+            if (raw.schema === HardkasSchemas.TxPlan) {
+                getOutput().writeLine(`Status:       PLANNED`);
+                getOutput().writeLine(`Plan ID:      ${raw.planId}`);
+                getOutput().writeLine(`From:         ${raw.from.address}`);
+                getOutput().writeLine(`To:           ${raw.to.address}`);
+                getOutput().writeLine(`Amount:       ${raw.amountSompi} sompi`);
+            }
+            else {
+                getOutput().writeLine(`Status:       ${raw.status.toUpperCase()}`);
+                getOutput().writeLine(`Signed ID:    ${raw.signedId}`);
+                getOutput().writeLine(`Plan ID:      ${raw.sourcePlanId}`);
+                getOutput().writeLine(`From:         ${raw.from.address}`);
+                getOutput().writeLine(`To:           ${raw.to.address}`);
+                getOutput().writeLine(`Amount:       ${raw.amountSompi} sompi`);
+                if (raw.multisig) {
+                    getOutput().writeLine(`Threshold:    ${raw.multisig.signatures.length} of ${raw.multisig.threshold} Required Signers`);
+                    getOutput().writeLine(`\nSignatures Collected:`);
+                    const signatures = raw.multisig.signatures || [];
+                    const required = raw.multisig.requiredSigners || [];
+                    required.forEach((addr) => {
+                        const hasSigned = signatures.some((s) => s.signer === addr);
+                        getOutput().writeLine(`  [${hasSigned ? "✓" : " "}] ${addr}`);
+                    });
+                }
+                else {
+                    getOutput().writeLine(`Signers:      Single-signature transaction`);
+                }
+            }
+            getOutput().writeLine("");
+        }
+        catch (e) {
+            getOutput().error(e instanceof Error ? ((e instanceof Error) ? ((e instanceof Error) ? e.message : String(e)) : String(e)) : String(e));
+            throw e;
+        }
+    });
+    tx.command("send [signedPath]")
+        .description(`Broadcast a signed transaction or send directly ${UI.maturity("stable")}`)
+        .option("--target <name>", "Named execution target from hardkas.config.ts")
+        .option("--from <accountOrAddress>", "Sender (shortcut mode)")
+        .option("--to <address>", "Recipient (shortcut mode)")
+        .option("--amount <kas>", "Amount in KAS (shortcut mode)")
+        .option("--network <name>", "Network name")
+        .option("--fee-rate <sompiPerMass>", "Fee rate in sompi per mass (shortcut mode)")
+        .option("--provider <type>", "Provider mode (auto, rpc, simulated)", "auto")
+        .option("--url <url>", "RPC URL (optional override)")
+        .option("--yes", "Confirm broadcast", false)
+        .option("--wait-lock", "Wait for workspace lock if held", false)
+        .option("--lock-timeout <ms>", "Lock wait timeout in ms", "30000")
+        .option("--json", "Output as JSON", false)
+        .option("--track <label>", "Auto-track deployment with this label")
+        .action(async (signedPath, options) => {
+        const { withLock } = await import("@hardkas/core");
+        try {
+            if (options.json)
+                UI.setJsonMode(true);
+            await withLock({
+                rootDir: process.cwd(),
+                name: "artifacts",
+                command: "hardkas tx send",
+                wait: options.waitLock,
+                timeoutMs: parseInt(options.lockTimeout)
+            }, async () => {
+                const { loadHardkasConfig } = await import("@hardkas/config");
+                const loaded = await loadHardkasConfig({ workspaceRoot: process.cwd() });
+                if (signedPath) {
+                    const { readSignedTxArtifact } = await import("@hardkas/artifacts");
+                    const signedArtifact = await readSignedTxArtifact(signedPath);
+                    if (!options.yes &&
+                        signedArtifact.networkId !== "simulated" &&
+                        signedArtifact.networkId !== "simnet") {
+                        const { UI } = await import("../ui.js");
+                        UI.dryRun();
+                        return;
+                    }
+                    const result = await runTxSend({
+                        ...(options.target ? { targetName: options.target } : {}),
+                        signedArtifact: signedArtifact,
+                        ...(options.network ? { network: options.network } : {}),
+                        provider: options.provider,
+                        config: loaded.config,
+                        ...(options.url ? { url: options.url } : {})
+                    });
+                    if (options.json) {
+                        UI.writeJson({
+                            ok: true,
+                            data: {
+                                plan: undefined,
+                                signed: signedArtifact,
+                                receipt: result.receipt,
+                                artifacts: [signedArtifact, result.receipt],
+                                warnings: [],
+                                explanation: { available: true, artifactId: result.receipt.txId }
+                            },
+                            meta: {
+                                network: result.networkName,
+                                workspace: process.cwd(),
+                                mode: "developer"
+                            }
+                        });
+                    }
+                    else {
+                        const { UI } = await import("../ui.js");
+                        const isSimulated = result.networkName === "simulated" || result.rpcUrl === "simulated://local";
+                        UI.causality(isSimulated
+                            ? "Transaction simulated successfully"
+                            : "Transaction broadcast successfully", {
+                            "Execution ID": result.executionId,
+                            "Artifact ID": result.txId,
+                            "Replay ID": result.replayId,
+                            Network: result.networkName,
+                            "Execution Scope": isSimulated
+                                ? "local deterministic replay"
+                                : "network broadcast",
+                            "Artifact Written": result.receiptPath || ".hardkas/artifacts/...",
+                            "Projection Updated": "SQLite query-store",
+                            "Replay Status": isSimulated
+                                ? "deterministic reproducible"
+                                : "network state dependent",
+                            "Consensus Validated": isSimulated ? "NO" : "YES"
+                        }, ["hardkas dashboard", `hardkas explain ${result.txId}`]);
+                    }
+                    if (options.track && result.accepted) {
+                        const { trackDeploymentInternal } = await import("../runners/deployment-runners.js");
+                        await trackDeploymentInternal(process.cwd(), {
+                            label: options.track,
+                            network: result.networkName,
+                            txId: result.txId,
+                            plan: signedArtifact.sourcePlanId,
+                            status: result.receipt.status === "confirmed" ? "confirmed" : "sent",
+                            silent: options.json
+                        });
+                    }
+                }
+                else if (options.from && options.to && options.amount) {
+                    if (!options.yes &&
+                        options.network !== "simulated" &&
+                        options.network !== "simnet") {
+                        const { UI } = await import("../ui.js");
+                        UI.dryRun();
+                        return;
+                    }
+                    const result = await runTxFlow({
+                        amount: options.amount,
+                        from: options.from,
+                        to: options.to,
+                        send: true,
+                        provider: options.provider,
+                        config: loaded.config,
+                        ...(options.network ? { network: options.network } : {}),
+                        ...(options.feeRate ? { feeRate: options.feeRate } : {}),
+                        ...(options.url ? { url: options.url } : {})
+                    });
+                    if (options.json) {
+                        const sendResult = result.steps.send;
+                        UI.writeJson({
+                            ok: true,
+                            data: {
+                                plan: result.steps.plan.artifact,
+                                signed: result.steps.sign.artifact,
+                                receipt: sendResult?.artifact?.receipt,
+                                artifacts: [
+                                    result.steps.plan.artifact,
+                                    result.steps.sign.artifact,
+                                    sendResult?.artifact?.receipt
+                                ].filter(Boolean),
+                                warnings: [],
+                                explanation: {
+                                    available: true,
+                                    artifactId: sendResult?.artifact?.receipt?.txId
+                                }
+                            },
+                            meta: {
+                                network: options.network || "simulated",
+                                workspace: process.cwd(),
+                                mode: "developer"
+                            }
+                        });
+                    }
+                    else {
+                        const { UI } = await import("../ui.js");
+                        const sendResult = result.steps.send;
+                        const isSimulated = sendResult?.artifact?.rpcUrl === "simulated://local" ||
+                            options.network === "simulated";
+                        UI.causality(isSimulated
+                            ? "Transaction simulated successfully"
+                            : "Transaction broadcast successfully", {
+                            "Execution ID": `exec_${Date.now().toString(36)}`,
+                            "Artifact ID": sendResult?.artifact?.receipt?.lineage?.artifactId ||
+                                sendResult?.artifact?.txId ||
+                                "unknown",
+                            "Replay ID": `replay_${(sendResult?.artifact?.txId || "unknown").substring(0, 8)}`,
+                            Network: options.network || "simulated",
+                            "Execution Scope": isSimulated
+                                ? "local deterministic replay"
+                                : "network broadcast",
+                            "Artifact Written": sendResult?.artifact?.receiptPath || ".hardkas/artifacts/...",
+                            "Projection Updated": "SQLite query-store",
+                            "Replay Status": isSimulated
+                                ? "deterministic reproducible"
+                                : "network state dependent",
+                            "Consensus Validated": isSimulated ? "NO" : "YES"
+                        }, [
+                            `hardkas why ${sendResult?.artifact?.receipt?.lineage?.artifactId || sendResult?.artifact?.txId || "unknown"}`,
+                            "hardkas dev last --replay",
+                            "hardkas status"
+                        ]);
+                    }
+                }
+                else {
+                    getOutput().error("Provide a path to a signed artifact or use --from, --to, --amount.");
+                    throw new Error("Command failed");
+                }
+            });
+        }
+        catch (e) {
+            throw e;
+        }
+    });
+    tx.command("receipt <txId>")
+        .description(`Show transaction receipt ${UI.maturity("stable")}`)
+        .option("--json", "Output as JSON", false)
+        .action(async (txId, options) => {
+        try {
+            const result = await runTxReceipt({ txId });
+            if (options.json) {
+                getOutput().writeJson({ ok: true, command: "tx receipt", mode: "cli", result: result.receipt });
+            }
+            else {
+                getOutput().writeLine(result.formatted);
+            }
+        }
+        catch (e) {
+            throw e;
+        }
+    });
+    tx.command("wait <txId>")
+        .description(`Wait for transaction to be confirmed ${UI.maturity("stable")}`)
+        .option("--timeout <seconds>", "Timeout in seconds", "60")
+        .option("--url <url>", "Override RPC URL")
+        .option("-n, --network <network>", "Network to use")
+        .option("--address <address>", "Recipient address to verify UTXO maturity")
+        .action(async (txId, options) => {
+        try {
+            const { loadHardkasConfig } = await import("@hardkas/config");
+            const config = await loadHardkasConfig();
+            const { runTxWait } = await import("../runners/tx-wait-runner.js");
+            await runTxWait({
+                txId,
+                config: config.config,
+                url: options.url,
+                network: options.network,
+                timeoutMs: parseInt(options.timeout) * 1000,
+                address: options.address
+            });
+        }
+        catch (e) {
+            throw e;
+        }
+    });
+    tx.command("verify <path>")
+        .description(`Perform deep semantic verification of a transaction plan ${UI.maturity("preview")}`)
+        .option("--json", "Output as JSON", false)
+        .action(async (path, options) => {
+        try {
+            const { runTxVerify } = await import("../runners/tx-verify-runner.js");
+            await runTxVerify({ path, json: options.json, workspaceRoot: process.cwd() });
+        }
+        catch (e) {
+            throw e;
+        }
+    });
+    tx.command("trace <txId>")
+        .description(`Reconstruct the full operational trace of a transaction ${UI.maturity("research")}`)
+        .action(async (txId) => {
+        const { HardkasCliError } = await import("../cli-errors.js");
+        throw new HardkasCliError("TX_TRACE_DISABLED", "Tracing is temporarily disabled while the query API stabilizes.");
+    });
+    tx.command("compare <simulatedPath> <realPath>")
+        .description(`Compare simulated vs real receipts for fidelity ${UI.maturity("stable")}`)
+        .action(async (simulatedPath, realPath) => {
+        try {
+            const { runTxCompare } = await import("../runners/tx-compare-runner.js");
+            await runTxCompare({ simulatedPath, realPath });
+        }
+        catch (e) {
+            throw e;
+        }
+    });
+}
+//# sourceMappingURL=tx.js.map

@@ -5,7 +5,7 @@ import { IgraTxPlanArtifact } from "@hardkas/artifacts";
 describe("ViemIgraTxSigner", () => {
   const mockPlan: IgraTxPlanArtifact = {
     schema: "hardkas.igraTxPlan.v1",
-    hardkasVersion: "0.12.0-rc.10",
+    hardkasVersion: "0.12.0-rc.12",
     networkId: "igra",
     mode: "l2-rpc",
     createdAt: new Date().toISOString(),

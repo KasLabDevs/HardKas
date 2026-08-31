@@ -1,6 +1,6 @@
 {
   "name": "merchant-backend-ref",
-  "version": "0.12.0-rc.10",
+  "version": "0.12.0-rc.12",
   "private": true,
   "type": "module",
   "scripts": {

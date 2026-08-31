@@ -80,13 +80,14 @@ describe("Account Hardening & Security Guards", () => {
       planId: "test-plan",
       networkId: "mainnet",
       mode: "rpc",
+      execution: { mode: "rpc", domain: "kaspa-l1", network: "mainnet" },
       from: { address: "kaspa:qrh60m5zv98m5l855l855l855l855l855l855l855l855l85sxtunx" },
       to: { address: "kaspa:qrh60m5zv98m5l855l855l855l855l855l855l855l855l85sxtunx" },
       amountSompi: 100000000n
     };
 
     const config: any = {
-      network: { id: "mainnet" },
+      defaultNetwork: "mainnet",
       accounts: {}
     };
 
@@ -105,6 +106,7 @@ describe("Account Hardening & Security Guards", () => {
       planId: "test-plan",
       networkId: "mainnet",
       mode: "rpc",
+      execution: { mode: "rpc", domain: "kaspa-l1", network: "mainnet" },
       from: {
         address: "kaspatest:qrh60m5zv98m5l855l855l855l855l855l855l855l855l85sxtunx"
       }, // Testnet address
@@ -113,7 +115,7 @@ describe("Account Hardening & Security Guards", () => {
     };
 
     const config: any = {
-      network: { id: "mainnet" },
+      defaultNetwork: "mainnet",
       accounts: {}
     };
 

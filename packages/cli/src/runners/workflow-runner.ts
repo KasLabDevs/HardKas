@@ -55,6 +55,7 @@ export async function runWorkflowRun(
     // We instantiate HardKAS explicitly in agent mode to sandbox the execution.
     const sdk = await Hardkas.open({
       ...(options.workspaceRoot ? { cwd: options.workspaceRoot } : {}),
+      network: options.network,
       mode: "agent",
       policy: {
         requireDryRun: options.dryRun || false,
@@ -63,14 +64,9 @@ export async function runWorkflowRun(
       }
     } as HardkasOptions);
 
-    if (options.network) {
-      // Temporarily override the SDK's network just for this workflow instance
-      (sdk as any).config.config.defaultNetwork = options.network;
-    }
-
     UI.info(`Running ${def.steps.length} workflow steps...`);
 
-    let resultPromise = sdk.experimental.workflow.run({
+    let resultPromise = sdk.workflow.run({
       steps: def.steps,
       ...(options.dryRun !== undefined && { dryRun: options.dryRun })
     });
@@ -194,7 +190,7 @@ export async function runWorkflowReplay(id: string, options: any) {
 
     UI.info(`Replaying workflow lineage for ${targetId}...`);
 
-    const result = await sdk.experimental.replay.verify({ workflowId: targetId });
+    const result = await sdk.replay.verify({ workflowId: targetId });
 
     if (!result.passed) {
       const { HardkasCliError } = await import("../cli-errors.js");

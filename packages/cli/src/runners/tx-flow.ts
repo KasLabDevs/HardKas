@@ -88,6 +88,16 @@ export async function runTxFlow(input: TxFlowInput): Promise<TxFlowResult> {
     workspaceRoot
   } = input;
 
+  // Resolve effective network from execution contract
+  const resolvedNetwork = (() => {
+    if (network) return network;
+    const exec = config.execution as any;
+    if (exec?.default && exec?.targets?.[exec.default]?.network) {
+      return exec.targets[exec.default].network;
+    }
+    return config.defaultNetwork || "simnet";
+  })();
+
   const { Hardkas } = await import("@hardkas/sdk");
   let sdk: any = null;
   let actualOutDir: string;
@@ -152,7 +162,7 @@ export async function runTxFlow(input: TxFlowInput): Promise<TxFlowResult> {
     },
     capabilitySnapshot: {
       mode: configExt.mode ?? "developer",
-      network: network || config.defaultNetwork || "simnet"
+      network: resolvedNetwork
     },
     runtimeVersion: HARDKAS_VERSION,
     workspaceSchemaVersion: HardkasSchemas.WorkflowV1
@@ -162,7 +172,7 @@ export async function runTxFlow(input: TxFlowInput): Promise<TxFlowResult> {
   const workflowId = asWorkflowId(`wf_${intentHash.slice(0, 16)}`);
   let globalOffset = 0;
 
-  const netId = asNetworkId(network || config.defaultNetwork || "simnet");
+  const netId = asNetworkId(resolvedNetwork);
 
   coreEvents.emit(
     createEventEnvelope({
@@ -180,7 +190,7 @@ export async function runTxFlow(input: TxFlowInput): Promise<TxFlowResult> {
 
   const flowResult: TxFlowResult = {
     ok: true,
-    networkId: network || config.defaultNetwork || "simnet",
+    networkId: resolvedNetwork,
     mode: "unknown",
     steps: {
       plan: { status: "skipped" },

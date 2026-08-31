@@ -183,7 +183,9 @@ export class Hardkas {
   public readonly l2: HardkasL2;
   public readonly capabilities: HardkasCapabilitiesApi;
   public readonly replay: HardkasReplay;
+  public readonly workflow: HardkasWorkflow;
   public readonly observe: HardkasObserve;
+  public readonly query: HardkasQuery;
 
   public readonly wallet = {
     open: (name: string, opts?: Omit<WalletToolkitOptions, "rpc" | "signer">) => {
@@ -244,7 +246,9 @@ export class Hardkas {
     this.l2 = new HardkasL2(this);
     this.capabilities = new HardkasCapabilitiesApi(this);
     this.replay = new HardkasReplay(this);
+    this.workflow = new HardkasWorkflow(this);
     this.observe = new HardkasObserve(this);
+    this.query = new HardkasQuery(this);
   }
 
   private resolveRpcUrl(): string {

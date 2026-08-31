@@ -66,6 +66,28 @@ export function resolveHardkasAccount(options: ResolveAccountOptions): HardkasAc
   );
 }
 
+export function assertAccountCompatible(account: HardkasAccount, target: import("@hardkas/core").HardkasExecutionTarget): void {
+  // If the account specifies an execution mode explicitly, it must match the target's domain and mode.
+  // Note: we're lenient with 'kaspa' kinds not explicitly pinning mode since they could be used across node and simulator
+  // depending on configuration, but we enforce strict checks on 'synthetic' accounts.
+  if (account.kind === "synthetic" && target.mode !== "simulator") {
+    throw new AccountNetworkMismatchError({
+      expected: `Execution mode 'simulator'`,
+      actual: `Execution mode '${target.mode}'`,
+      detail: `Account '${account.name}' is a synthetic simulator account and cannot be used with mode '${target.mode}'.`
+    });
+  }
+
+  if ("network" in account && account.network && target.network && account.network !== target.network) {
+    // If the account is explicitly bound to a network, it must match the execution target.
+    throw new AccountNetworkMismatchError({
+      expected: target.network,
+      actual: account.network,
+      detail: `Account '${account.name}' is bound to network '${account.network}' but execution target is '${target.network}'.`
+    });
+  }
+}
+
 export function listHardkasAccounts(config?: HardkasConfig): HardkasAccount[] {
   const accounts: Map<string, HardkasAccount> = new Map();
 
@@ -123,12 +145,15 @@ export function listHardkasAccounts(config?: HardkasConfig): HardkasAccount[] {
             if (!keystore.metadata?.network) {
               throw new AccountNetworkMismatchError({ expected: "known network", actual: "undefined", detail: `at ${path.join(devAccountsDir, file)}` });
             }
+            const accountKind = targetMode === "simulator" ? "synthetic" : "kaspa";
             accounts.set(name, {
               name,
-              kind: "kaspa", network: keystore.metadata.network,
+              kind: accountKind,
+              network: keystore.metadata.network,
               address: keystore.payload?.address || keystore.metadata?.address,
-              keystorePath: path.join(devAccountsDir, file)
-            });
+              keystorePath: path.join(devAccountsDir, file),
+              ...(accountKind === "synthetic" ? { executionMode: "simulator" } : {})
+            } as HardkasAccount);
           }
         } catch (e) {
           if (e instanceof AccountNetworkMismatchError) throw e;

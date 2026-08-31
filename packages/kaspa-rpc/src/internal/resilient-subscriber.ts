@@ -145,6 +145,11 @@ export class ResilientSubscriptionClient implements KaspaRpcClient {
     return this.client.getMempoolEntry(txId);
   }
 
+  async checkMempoolPresence(txId: string): Promise<{ status: 'present' } | { status: 'absent' }> {
+    if (!this.client) throw new Error("Client is reconnecting");
+    return this.client.checkMempoolPresence(txId);
+  }
+
   async getTransaction(txId: string): Promise<unknown | null> {
     if (!this.client) throw new Error("Client is reconnecting");
     return this.client.getTransaction(txId);

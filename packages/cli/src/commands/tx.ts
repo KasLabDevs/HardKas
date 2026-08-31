@@ -159,6 +159,7 @@ export function registerTxCommands(program: Command) {
     .option("--threshold <number>", "Multisig threshold")
     .option("--required-signers <list>", "Comma-separated list of required signers")
     .option("--append", "Append signature to a partially signed transaction", false)
+    .option("--target <name>", "Named execution target from hardkas.config.ts")
     .option("--wait-lock", "Wait for workspace lock if held", false)
     .option("--lock-timeout <ms>", "Lock wait timeout in ms", "30000")
     .option("--json", "Output as JSON", false)
@@ -173,6 +174,7 @@ export function registerTxCommands(program: Command) {
           threshold?: string;
           requiredSigners?: string;
           append: boolean;
+          target?: string;
           waitLock: boolean;
           lockTimeout: string;
           json: boolean;
@@ -219,7 +221,8 @@ export function registerTxCommands(program: Command) {
                 planArtifact: planArtifact as any,
                 ...(options.account ? { accountName: options.account } : {}),
                 config: loaded.config,
-                signer,
+                ...(options.target ? { targetName: options.target } : {}),
+                ...(signer ? { signer } : {}),
                 allowMainnetSigning: options.allowMainnetSigning,
                 append: options.append,
                 ...(options.threshold !== undefined

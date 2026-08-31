@@ -114,6 +114,10 @@ export class LocalnetSimulatedProvider implements KaspaRpcClient {
     return null;
   }
 
+  async checkMempoolPresence(txId: string): Promise<{ status: 'present' } | { status: 'absent' }> {
+    return { status: 'absent' };
+  }
+
   async getTransaction(txId: string): Promise<unknown | null> {
     return null;
   }

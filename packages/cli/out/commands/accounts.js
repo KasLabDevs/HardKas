@@ -1,0 +1,315 @@
+import { getOutput } from "../output.js";
+import { UI } from "../ui.js";
+import { runAccountsRealInit } from "../runners/accounts-real-init-runner.js";
+import { runAccountsRealGenerate } from "../runners/accounts-real-generate-runner.js";
+import { runAccountsBalance } from "../runners/accounts-balance-runner.js";
+import { runAccountsFund } from "../runners/accounts-fund-runner.js";
+export function registerAccountsCommands(program) {
+    const accountsCmd = program.command("accounts").description("Manage HardKAS accounts");
+    accountsCmd
+        .command("list")
+        .description(`List available HardKAS accounts ${UI.maturity("stable")}`)
+        .option("--config <path>", "Path to config file")
+        .option("--json", "Output as JSON", false)
+        .action(async (options) => {
+        const { loadHardkasConfig } = await import("@hardkas/config");
+        const { listHardkasAccounts, describeAccount } = await import("@hardkas/accounts");
+        try {
+            const loaded = await loadHardkasConfig(options.config ? { configPath: options.config } : {});
+            const accounts = listHardkasAccounts(loaded.config);
+            if (options.json) {
+                getOutput().writeJson(accounts.map((a) => describeAccount(a)));
+                return;
+            }
+            getOutput().writeLine("HardKAS accounts");
+            getOutput().writeLine("");
+            for (const acc of accounts) {
+                const encrypted = acc.kind === "kaspa" && !acc.privateKeyEnv ? " (encrypted)" : "";
+                getOutput().writeLine(`${acc.name.padEnd(12)} ${acc.address?.padEnd(24)} (${acc.kind})${encrypted}`);
+            }
+        }
+        catch (e) {
+            throw e;
+        }
+    });
+    const realAccountsCmd = accountsCmd
+        .command("real")
+        .description("Persistent dev account store (L1)");
+    realAccountsCmd
+        .command("init")
+        .description(`Initialize real dev account store ${UI.maturity("stable")}`)
+        .option("--force", "Overwrite existing store", false)
+        .option("--wait-lock", "Wait for workspace lock if held", false)
+        .option("--lock-timeout <ms>", "Lock wait timeout in ms", "30000")
+        .option("--json", "Output as JSON", false)
+        .action(async (options) => {
+        const { withLock } = await import("@hardkas/core");
+        try {
+            await withLock({
+                rootDir: process.cwd(),
+                name: "accounts",
+                command: "hardkas accounts real init",
+                wait: options.waitLock,
+                timeoutMs: parseInt(options.lockTimeout)
+            }, async () => {
+                const result = await runAccountsRealInit({
+                    force: options.force,
+                    workspaceRoot: process.cwd()
+                });
+                if (options.json)
+                    getOutput().writeJson(result);
+                else
+                    getOutput().writeLine(result.formatted);
+            });
+        }
+        catch (e) {
+            throw e;
+        }
+    });
+    realAccountsCmd
+        .command("import")
+        .description(`Import an account into the persistent store ${UI.maturity("stable")}`)
+        .option("--name <name>", "Account name")
+        .option("--address <address>", "Kaspa address")
+        .option("--private-key <hex>", "Deprecated. Unsafe: may leak through shell history. Prefer --private-key-stdin or --private-key-env.")
+        .option("--private-key-stdin", "Read private key from stdin", false)
+        .option("--private-key-env <env>", "Read private key from environment variable")
+        .option("--password-stdin", "Read keystore password from stdin (safe)", false)
+        .option("--password-env <env>", "Read keystore password from environment variable (safe)")
+        .option("--unsafe-plaintext", "Store private key in plaintext (legacy/discouraged)", false)
+        .option("--fixture <name>", "Import deterministic fixture test account")
+        .option("--yes", "Skip confirmation for unsafe operations", false)
+        .option("--wait-lock", "Wait for workspace lock if held", false)
+        .option("--lock-timeout <ms>", "Lock wait timeout in ms", "30000")
+        .option("--json", "Output as JSON", false)
+        .action(async (options) => {
+        const { withLock } = await import("@hardkas/core");
+        try {
+            await withLock({
+                rootDir: process.cwd(),
+                name: "accounts",
+                command: "hardkas accounts real import",
+                wait: options.waitLock,
+                timeoutMs: parseInt(options.lockTimeout)
+            }, async () => {
+                const { runAccountsKeystoreImport } = await import("../runners/accounts-keystore-runners.js");
+                const result = await runAccountsKeystoreImport({
+                    ...options,
+                    workspaceRoot: process.cwd()
+                });
+                if (options.json)
+                    getOutput().writeJson(result);
+                else
+                    getOutput().writeLine(result.formatted);
+            });
+        }
+        catch (e) {
+            throw e;
+        }
+    });
+    realAccountsCmd
+        .command("session-open <name>")
+        .alias("unlock")
+        .description(`Verify keystore access and record signing intent ${UI.maturity("internal")}`)
+        .option("--password-stdin", "Read password from stdin", false)
+        .option("--password-env <env>", "Read password from environment variable")
+        .option("--wait-lock", "Wait for workspace lock if held", false)
+        .option("--lock-timeout <ms>", "Lock wait timeout in ms", "30000")
+        .action(async (name, options) => {
+        const { withLock } = await import("@hardkas/core");
+        try {
+            await withLock({
+                rootDir: process.cwd(),
+                name: "accounts",
+                command: `hardkas accounts real session-open ${name}`,
+                wait: options.waitLock,
+                timeoutMs: parseInt(options.lockTimeout)
+            }, async () => {
+                const { runAccountsSessionOpen } = await import("../runners/accounts-keystore-runners.js");
+                await runAccountsSessionOpen({
+                    name,
+                    ...options,
+                    workspaceRoot: process.cwd()
+                });
+            });
+        }
+        catch (e) {
+            throw e;
+        }
+    });
+    realAccountsCmd
+        .command("session-close <name>")
+        .alias("lock")
+        .description(`Clear the local dev signing session marker ${UI.maturity("internal")}`)
+        .action(async (name) => {
+        getOutput().writeLine(`\n  ℹ Account '${name}' session clear (redundant).`);
+        getOutput().writeLine(`    The CLI is already stateless. No secrets are stored in memory between commands.\n`);
+    });
+    realAccountsCmd
+        .command("change-password <name>")
+        .description(`Change password for an encrypted account ${UI.maturity("stable")}`)
+        .option("--wait-lock", "Wait for workspace lock if held", false)
+        .option("--lock-timeout <ms>", "Lock wait timeout in ms", "30000")
+        .action(async (name, options) => {
+        const { withLock } = await import("@hardkas/core");
+        try {
+            await withLock({
+                rootDir: process.cwd(),
+                name: "accounts",
+                command: `hardkas accounts real change-password ${name}`,
+                wait: options.waitLock,
+                timeoutMs: parseInt(options.lockTimeout)
+            }, async () => {
+                const { runAccountsKeystoreChangePassword } = await import("../runners/accounts-keystore-runners.js");
+                await runAccountsKeystoreChangePassword({
+                    name,
+                    workspaceRoot: process.cwd()
+                });
+            });
+        }
+        catch (e) {
+            throw e;
+        }
+    });
+    realAccountsCmd
+        .command("generate")
+        .description(`Generate new real dev account(s) using Kaspa SDK ${UI.maturity("stable")}`)
+        .option("--name <name>", "Base name for account(s)")
+        .option("--count <number>", "Number of accounts to generate", "1")
+        .option("--network <network>", "Kaspa network (simnet, testnet-10, mainnet)", "simnet")
+        .option("--password-stdin", "Read keystore password from stdin", false)
+        .option("--password-env <env>", "Read password from environment variable")
+        .option("--unsafe-plaintext", "Generate accounts in plaintext (legacy/discouraged)", false)
+        .option("--yes", "Skip confirmation for unsafe operations", false)
+        .option("--wait-lock", "Wait for workspace lock if held", false)
+        .option("--lock-timeout <ms>", "Lock wait timeout in ms", "30000")
+        .option("--json", "Output as JSON", false)
+        .action(async (options) => {
+        const { withLock } = await import("@hardkas/core");
+        try {
+            await withLock({
+                rootDir: process.cwd(),
+                name: "accounts",
+                command: "hardkas accounts real generate",
+                wait: options.waitLock,
+                timeoutMs: parseInt(options.lockTimeout)
+            }, async () => {
+                const result = await runAccountsRealGenerate({
+                    ...(options.name ? { name: options.name } : {}),
+                    count: parseInt(options.count, 10),
+                    networkId: options.network,
+                    ...options,
+                    workspaceRoot: process.cwd()
+                });
+                if (options.json)
+                    getOutput().writeJson(result.accounts);
+                else
+                    getOutput().writeLine(result.formatted);
+            });
+        }
+        catch (e) {
+            throw e;
+        }
+    });
+    accountsCmd
+        .command("balance <identifier>")
+        .description(`Show account balance ${UI.maturity("stable")}`)
+        .option("--network <name>", "Kaspa network name", "simnet")
+        .option("--provider <type>", "Provider mode (auto, rpc, simulated)", "auto")
+        .option("--url <url>", "RPC URL (optional override)")
+        .option("--local", "Query local query-store instead of remote RPC (for simulated networks)", false)
+        .option("--json", "Output as JSON", false)
+        .action(async (identifier, options) => {
+        try {
+            const result = await runAccountsBalance({
+                identifier,
+                network: options.network ?? "simnet",
+                provider: options.provider ?? "auto",
+                url: options.url ?? "",
+                local: options.local
+            });
+            if (options.json) {
+                getOutput().writeJson({ ok: true, command: "accounts balance", mode: "cli", result });
+            }
+            else {
+                getOutput().writeLine(`\nAccount:  ${result.name}`);
+                getOutput().writeLine(`Address:  ${result.address}`);
+                getOutput().writeLine(`Balance:  ${Number(result.balanceSompi) / 100_000_000} KAS`);
+                getOutput().writeLine(`UTXOs:    ${result.utxoCount}`);
+                getOutput().writeLine(`Network:  ${result.network}`);
+            }
+        }
+        catch (e) {
+            throw e;
+        }
+    });
+    accountsCmd
+        .command("fund <identifier>")
+        .description("Fund an account (Faucet) - DEPRECATED")
+        .option("--amount <kas>", "Amount in KAS to fund", "1000")
+        .action(async (identifier, options) => {
+        try {
+            const { getOutput } = await import("../output.js");
+            getOutput().writeLine(`\n  \x1b[33mDEPRECATED:\x1b[0m`);
+            getOutput().writeLine(`  This command performs synthetic funding only.`);
+            getOutput().writeLine(`  `);
+            getOutput().writeLine(`  Use:`);
+            getOutput().writeLine(`    hardkas simulator fund ${identifier}`);
+            getOutput().writeLine(`  `);
+            getOutput().writeLine(`  For real local UTXOs:`);
+            getOutput().writeLine(`    hardkas localnet fund ${identifier}\n`);
+            const amountSompi = BigInt(parseFloat(options.amount) * 100_000_000);
+            const result = await runAccountsFund({ identifier, amountSompi });
+            getOutput().writeLine(result.formatted);
+        }
+        catch (e) {
+            throw e;
+        }
+    });
+    accountsCmd
+        .command("consolidate <account>")
+        .description(`Consolidate dust UTXOs into a single UTXO ${UI.maturity("alpha")}`)
+        .option("--network <name>", "Kaspa network name")
+        .option("--provider <type>", "Provider mode (auto, rpc, simulated)", "auto")
+        .option("--url <url>", "RPC URL (optional override)")
+        .option("--target-utxos <n>", "Target number of UTXOs to leave behind", "20")
+        .option("--batch-size <n>", "Number of UTXOs to consolidate per batch (max 512)", "256")
+        .option("--min-utxo <sompi>", "Minimum UTXO size to consolidate in sompi")
+        .option("--dry-run", "Only estimate batches (default if --execute is not provided)")
+        .option("--execute", "Execute the consolidation (requires --yes to broadcast)")
+        .option("--yes", "Confirm broadcast for execution")
+        .option("--allow-mainnet", "Allow consolidation on mainnet")
+        .option("--json", "Output as JSON", false)
+        .action(async (account, options) => {
+        try {
+            const { runAccountsConsolidate } = await import("../runners/accounts-consolidate-runner.js");
+            await runAccountsConsolidate({
+                account,
+                network: options.network,
+                provider: options.provider,
+                url: options.url,
+                targetUtxos: parseInt(options.targetUtxos, 10),
+                batchSize: parseInt(options.batchSize, 10),
+                minUtxo: options.minUtxo ? BigInt(options.minUtxo) : undefined,
+                dryRun: !options.execute || options.dryRun,
+                execute: options.execute === true,
+                yes: options.yes === true,
+                allowMainnet: options.allowMainnet === true,
+                json: options.json === true
+            });
+        }
+        catch (e) {
+            if ((e.code) === "CONSOLIDATION_NOT_REQUIRED") {
+                if (options.json) {
+                    getOutput().writeJson({ ok: true, command: "accounts consolidate", mode: "cli", result: { status: "CONSOLIDATION_NOT_REQUIRED", message: e instanceof Error ? e.message : String(e) } });
+                }
+                else {
+                    getOutput().writeLine(`\n  ℹ ${((e instanceof Error) ? ((e instanceof Error) ? e.message : String(e)) : String(e))}\n`);
+                }
+                return;
+            }
+            throw e;
+        }
+    });
+}
+//# sourceMappingURL=accounts.js.map

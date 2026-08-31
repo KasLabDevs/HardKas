@@ -1,6 +1,6 @@
 export * from "./types.js";
 export * from "./simulated.js";
-export * from "./resolve.js";
+export { resolveHardkasAccount, resolveHardkasAccountAddress, listHardkasAccounts, describeAccount, assertAccountCompatible } from "./resolve.js";
 export * from "./evm-export.js";
 export * from "./env.js";
 export * from "./signer.js";

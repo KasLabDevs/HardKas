@@ -138,6 +138,7 @@ export interface KaspaRpcClient {
   getBlocks(options?: { includeBlocks?: boolean; includeTransactions?: boolean }): Promise<any>;
   submitTransaction(transaction: KaspaRpcTransaction, options?: SubmitTransactionOptions): Promise<KaspaSubmitTransactionResult>;
   getMempoolEntry(txId: string): Promise<MempoolEntry | null>;
+  checkMempoolPresence(txId: string): Promise<{ status: 'present' } | { status: 'absent' }>;
   getMempoolEntries(options?: unknown): Promise<any>;
   getTransaction(txId: string): Promise<unknown | null>;
   getBlockDagInfo(): Promise<BlockDagInfo>;
@@ -170,11 +171,11 @@ export class JsonWrpcKaspaClient implements KaspaRpcClient {
 
   async call<TResponse = unknown>(method: string, params: any = {}): Promise<TResponse> {
     await this.detectFlavor();
-    // Heuristic: map to legacy if needed, or pass through
     let actualMethod = method;
     if (this.rpcFlavor === "legacy" && !method.endsWith("Request")) {
-       // rudimentary mapping if needed, or assume caller passed the correct flavor
-       // if they used `call`, they probably used the raw wrpc name
+       actualMethod = method + "Request";
+    } else if (this.rpcFlavor === "wrpc" && method.endsWith("Request")) {
+       actualMethod = method.slice(0, -"Request".length);
     }
     return this.requestRaw(actualMethod, params) as Promise<TResponse>;
   }
@@ -470,6 +471,36 @@ export class JsonWrpcKaspaClient implements KaspaRpcClient {
       };
     } catch (e) {
       return null;
+    }
+  }
+
+  /**
+   * Checks if a transaction is present in the mempool.
+   * Unlike getMempoolEntry, this method distinguishes between:
+   * - 'present': tx is in the mempool
+   * - 'absent': tx is definitively NOT in the mempool
+   * - throws: RPC error (timeout, connection, protocol error) — caller must handle
+   *
+   * This is a safety-critical method used by PendingSpendService reconciliation.
+   * A timeout or connection error MUST propagate as an exception, never as 'absent'.
+   */
+  async checkMempoolPresence(txId: string): Promise<{ status: 'present' } | { status: 'absent' }> {
+    try {
+      const response = await this.callMethod(
+        "getMempoolEntry",
+        "getMempoolEntryRequest",
+        { transactionId: txId, includeOrphanPool: true, filterTransactionPool: false }
+      );
+      return { status: 'present' };
+    } catch (e: any) {
+      // Distinguish 'not found' from real errors
+      const msg = (e?.message || '').toLowerCase();
+      console.log(`[DEBUG] checkMempoolPresence caught error:`, e.message);
+      if (msg.includes('not found') || msg.includes('no_data') || msg.includes('entry not found')) {
+        return { status: 'absent' };
+      }
+      // Transport/timeout/connection errors must propagate
+      throw e;
     }
   }
 
@@ -871,6 +902,10 @@ export class MockKaspaRpcClient implements KaspaRpcClient {
 
   async getMempoolEntry(_txId: string): Promise<MempoolEntry | null> {
     return null;
+  }
+
+  async checkMempoolPresence(_txId: string): Promise<{ status: 'present' } | { status: 'absent' }> {
+    return { status: 'absent' };
   }
 
   async getTransaction(_txId: string): Promise<unknown | null> {

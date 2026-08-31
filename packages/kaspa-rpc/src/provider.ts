@@ -98,6 +98,10 @@ export class LoadBalancedRpcProvider implements KaspaRpcClient {
     return this.withFailover((c) => c.getMempoolEntry(txId));
   }
 
+  async checkMempoolPresence(txId: string): Promise<{ status: 'present' } | { status: 'absent' }> {
+    return this.withFailover((c) => c.checkMempoolPresence(txId));
+  }
+
   async getTransaction(txId: string): Promise<unknown | null> {
     return this.withFailover((c) => c.getTransaction(txId));
   }

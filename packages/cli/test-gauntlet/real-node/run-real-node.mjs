@@ -98,7 +98,7 @@ async function ensureFundingConfirmed(minerAddress, targetAccountName, expectedS
 }
 
 async function runRealNodeCert() {
-  console.log("=== Real Node 0.12.0-rc.10 / Toccata Certification ===");
+  console.log("=== Real Node 0.12.0-rc.12 / Toccata Certification ===");
 
   // Clean state
   if (fs.existsSync(".hardkas")) {

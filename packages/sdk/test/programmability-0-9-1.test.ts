@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { Hardkas } from "../src/index.js";
+import { Hardkas, HardkasProgrammability } from "../src/index.js";
 
 function repoRoot(): string {
   let current = path.dirname(fileURLToPath(import.meta.url));
@@ -13,14 +13,15 @@ function repoRoot(): string {
   throw new Error("repo root not found");
 }
 
-describe("0.12.0-rc.10 programmability SDK surface", () => {
+describe("0.12.0-rc.12 programmability SDK surface", () => {
   it("reports builder-ready programmability capabilities", async () => {
     const sdk = await Hardkas.create({
       cwd: repoRoot(),
       network: "simulated",
       autoBootstrap: true
     });
-    const result = await sdk.experimental.programmability.capabilities();
+    const prog = new HardkasProgrammability(sdk);
+    const result = await prog.capabilities();
 
     expect(result.ok).toBe(true);
     expect(result.status).toBe("PROGRAMMABILITY_SURFACE_READY");
@@ -37,7 +38,8 @@ describe("0.12.0-rc.10 programmability SDK surface", () => {
       network: "simulated",
       autoBootstrap: true
     });
-    const result = await sdk.experimental.programmability.corpus.verify({
+    const prog = new HardkasProgrammability(sdk);
+    const result = await prog.corpus.verify({
       path: "fixtures/toccata-v2"
     });
 
@@ -55,7 +57,8 @@ describe("0.12.0-rc.10 programmability SDK surface", () => {
       network: "simulated",
       autoBootstrap: true
     });
-    const result = sdk.experimental.programmability.app.plan({ kind: "full-lab" });
+    const prog = new HardkasProgrammability(sdk);
+    const result = prog.app.plan({ kind: "full-lab" });
 
     expect(result.ok).toBe(true);
     expect(result.status).toBe("PROGRAMMABILITY_APP_PLAN_READY");

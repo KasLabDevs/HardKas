@@ -80,7 +80,6 @@ export function buildHardkasProgram(options?: { forDocs?: boolean, loadedConfig?
   registerRpcCommands(program);
   registerDagCommands(program);
   registerAccountsCommands(program);
-  registerL2Commands(program);
   registerNodeCommands(program);
   registerConfigCommands(program);
   registerQueryCommands(program);
@@ -95,14 +94,11 @@ export function buildHardkasProgram(options?: { forDocs?: boolean, loadedConfig?
   registerLocalnetCommands(program);
   registerSimulatorCommands(program);
   registerDeployCommands(program);
-  registerMetamaskCommands(program);
   registerDevCommands(program);
   registerLocalCommands(program);
   registerKaspaCommands(program);
-  registerBridgeCommands(program);
   registerSessionCommands(program);
   registerPsktCommands(program);
-  registerDashboardCommand(program);
   registerExplainCommand(program);
   registerTortureCommands(program);
   registerTelemetryCommands(program);
@@ -114,12 +110,8 @@ export function buildHardkasProgram(options?: { forDocs?: boolean, loadedConfig?
   registerWhyCommand(program);
   registerCiCommand(program);
   registerSandboxCommand(program);
-  registerSilverCommand(program);
   registerCorpusCommands(program);
-  registerZkCommands(program);
-  registerVprogsCommands(program);
   registerProgrammabilityCommands(program);
-  registerDevServerCommands(program);
   registerSecurityCommand(program);
   registerEnvCommands(program);
   registerTaskCommands(program, options?.loadedConfig);

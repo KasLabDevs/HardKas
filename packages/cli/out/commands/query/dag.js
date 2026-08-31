@@ -1,0 +1,141 @@
+import { printDagConflicts, printDagDisplaced, printDagHistory, printSinkPath, printDagAnomalies } from "./ui-helpers.js";
+import { getQueryEngine } from "./engine-factory.js";
+export function registerDagQueryCommands(queryCmd) {
+    const dagCmd = queryCmd
+        .command("dag")
+        .description("Query simulated DAG state (deterministic-light-model, NOT GHOSTDAG)");
+    dagCmd
+        .command("conflicts")
+        .description("Show double-spend conflict analysis")
+        .option("--json", "Output as JSON", false)
+        .option("--explain [level]", "Attach explain chains (brief|full)")
+        .option("--why", "Shorthand for --explain full")
+        .action(async (options) => {
+        try {
+            const { createQueryRequest } = await import("@hardkas/query");
+            const engine = await getQueryEngine();
+            const explain = options.why
+                ? "full"
+                : options.explain === true
+                    ? "brief"
+                    : options.explain || false;
+            const request = createQueryRequest({ domain: "dag", op: "conflicts", explain });
+            const result = await engine.execute(request);
+            if (options.json) {
+                const { serializeQueryResult } = await import("@hardkas/query");
+                console.log(serializeQueryResult(result));
+            }
+            else {
+                printDagConflicts(result);
+            }
+        }
+        catch (e) {
+            throw e;
+        }
+    });
+    dagCmd
+        .command("displaced")
+        .description("Show displaced transactions")
+        .option("--json", "Output as JSON", false)
+        .option("--explain [level]", "Attach explain chains (brief|full)")
+        .action(async (options) => {
+        try {
+            const { createQueryRequest } = await import("@hardkas/query");
+            const engine = await getQueryEngine();
+            const explain = options.explain === true ? "brief" : options.explain || false;
+            const request = createQueryRequest({ domain: "dag", op: "displaced", explain });
+            const result = await engine.execute(request);
+            if (options.json) {
+                const { serializeQueryResult } = await import("@hardkas/query");
+                console.log(serializeQueryResult(result));
+            }
+            else {
+                printDagDisplaced(result);
+            }
+        }
+        catch (e) {
+            throw e;
+        }
+    });
+    dagCmd
+        .command("history <txId>")
+        .description("Full lifecycle of a transaction through the DAG")
+        .option("--json", "Output as JSON", false)
+        .option("--explain [level]", "Attach explain chains (brief|full)")
+        .option("--why", "Shorthand for --explain full")
+        .action(async (txId, options) => {
+        try {
+            const { createQueryRequest } = await import("@hardkas/query");
+            const engine = await getQueryEngine();
+            const explain = options.why
+                ? "full"
+                : options.explain === true
+                    ? "brief"
+                    : options.explain || false;
+            const request = createQueryRequest({
+                domain: "dag",
+                op: "history",
+                params: { txId },
+                explain
+            });
+            const result = await engine.execute(request);
+            if (options.json) {
+                const { serializeQueryResult } = await import("@hardkas/query");
+                console.log(serializeQueryResult(result));
+            }
+            else {
+                printDagHistory(result);
+            }
+        }
+        catch (e) {
+            throw e;
+        }
+    });
+    dagCmd
+        .command("sink-path")
+        .description("Show current selected path from genesis to sink")
+        .option("--json", "Output as JSON", false)
+        .action(async (options) => {
+        try {
+            const { createQueryRequest } = await import("@hardkas/query");
+            const engine = await getQueryEngine();
+            const request = createQueryRequest({ domain: "dag", op: "sink-path" });
+            const result = await engine.execute(request);
+            if (options.json) {
+                const { serializeQueryResult } = await import("@hardkas/query");
+                console.log(serializeQueryResult(result));
+            }
+            else {
+                printSinkPath(result);
+            }
+        }
+        catch (e) {
+            throw e;
+        }
+    });
+    dagCmd
+        .command("anomalies")
+        .description("Find transactions or blocks in unexpected states")
+        .option("--json", "Output as JSON", false)
+        .option("--explain [level]", "Attach explain chains (brief|full)")
+        .action(async (options) => {
+        try {
+            const { createQueryRequest } = await import("@hardkas/query");
+            const engine = await getQueryEngine();
+            const explain = options.explain === true ? "brief" : options.explain || false;
+            const request = createQueryRequest({ domain: "dag", op: "anomalies", explain });
+            const result = await engine.execute(request);
+            if (options.json) {
+                const { serializeQueryResult } = await import("@hardkas/query");
+                console.log(serializeQueryResult(result));
+            }
+            else {
+                printDagAnomalies(result);
+            }
+        }
+        catch (e) {
+            throw e;
+        }
+    });
+}
+//# sourceMappingURL=dag.js.map

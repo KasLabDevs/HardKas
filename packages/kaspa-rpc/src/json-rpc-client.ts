@@ -331,6 +331,23 @@ export class KaspaJsonRpcClient implements KaspaRpcClient {
     }
   }
 
+  async checkMempoolPresence(txId: string): Promise<{ status: 'present' } | { status: 'absent' }> {
+    try {
+      await this.callRpc("getMempoolEntryRequest", {
+        txId,
+        includeOrphanPool: true
+      });
+      return { status: 'present' };
+    } catch (e: any) {
+      if (e instanceof RpcNotFoundError) return { status: 'absent' };
+      const msg = (e?.message || '').toLowerCase();
+      if (msg.includes('not found') || msg.includes('no_data') || msg.includes('entry not found')) {
+        return { status: 'absent' };
+      }
+      throw e;
+    }
+  }
+
   async getTransaction(txId: string): Promise<unknown | null> {
     try {
       const result = await this.callRpc("getTransactionRequest", { transactionId: txId });

@@ -40,7 +40,7 @@ describe("Workflow Runtime Contract", () => {
   it("should orchestrate a workflow and produce a deterministic artifact", async () => {
     const sdk = await Hardkas.open({ cwd: tmpDir, mode: "developer", network: "simulated" });
 
-    const artifact = await sdk.experimental.workflow.run({
+    const artifact = await sdk.workflow.run({
       steps: [
         { type: "tx.plan", from: "alice", to: "bob", amount: 100 },
         { type: "tx.simulate" }
@@ -62,7 +62,7 @@ describe("Workflow Runtime Contract", () => {
   it("should catch errors in steps and mark the workflow as failed", async () => {
     const sdk = await Hardkas.open({ cwd: tmpDir, mode: "developer", network: "simulated" });
 
-    const artifact = await sdk.experimental.workflow.run({
+    const artifact = await sdk.workflow.run({
       steps: [
         { type: "tx.plan", from: "alice", to: "bob", amount: 100 },
         { type: "simulate-failure" }, // This should trigger the failure mock
@@ -82,7 +82,7 @@ describe("Workflow Runtime Contract", () => {
   it("should reject simulate-failure unconditionally in agent mode", async () => {
     const sdk = await Hardkas.open({ cwd: tmpDir, mode: "agent", network: "simulated" });
 
-    const artifact = await sdk.experimental.workflow.run({
+    const artifact = await sdk.workflow.run({
       steps: [{ type: "simulate-failure" }],
       dryRun: true
     });
@@ -106,7 +106,7 @@ describe("Workflow Runtime Contract", () => {
 
     // If we pass dryRun: false, it should throw because policy enforces dryRun: true
     await expect(
-      sdk.experimental.workflow.run({
+      sdk.workflow.run({
         steps: [{ type: "dummy" }],
         dryRun: false
       })
