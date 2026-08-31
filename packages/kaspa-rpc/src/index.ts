@@ -1,6 +1,6 @@
 import type { NetworkId } from "@hardkas/core";
 import { WebSocket } from "ws";
-import { NOTIFY_UTXOS_CHANGED_REQUEST, STOP_NOTIFYING_UTXOS_CHANGED_REQUEST, UTXOS_CHANGED_NOTIFICATION } from "./internal/notifications.js";
+import { NOTIFY_UTXOS_CHANGED_REQUEST, STOP_NOTIFYING_UTXOS_CHANGED_REQUEST, UTXOS_CHANGED_NOTIFICATION, NOTIFY_VIRTUAL_CHAIN_CHANGED_REQUEST, VIRTUAL_CHAIN_CHANGED_NOTIFICATION } from "./internal/notifications.js";
 import { normalizeRpcError, RpcError, RpcNotFoundError } from "./errors.js";
 
 export interface KaspaNodeInfo {
@@ -119,6 +119,18 @@ export interface UtxosChangedEvent {
   removed: KaspaRpcUtxo[];
 }
 
+export interface RpcAcceptedTransactionIds {
+  acceptingBlockHash: string;
+  acceptedTransactionIds: string[];
+}
+
+export interface VirtualChainChangedEvent {
+  removedChainBlockHashes: string[];
+  addedChainBlockHashes: string[];
+  acceptedTransactionIds?: RpcAcceptedTransactionIds[];
+}
+
+
 export interface KaspaSubscription {
   readonly id: string;
   readonly closed: boolean;
@@ -148,9 +160,11 @@ export interface KaspaRpcClient {
   getCurrentNetwork(): Promise<any>;
   getSyncStatus(): Promise<any>;
   getVirtualSelectedParentBlueScore(): Promise<any>;
+  getVirtualChainFromBlockV2(options: { startHash: string; dataVerbosityLevel?: "NONE"|"HEADERS"|"FULL"; minConfirmationCount?: string }): Promise<any>;
   getSinkBlueScore(): Promise<any>;
   getHeaders(): Promise<any>;
   subscribeToUtxosChanged(addresses: readonly string[], handler: (event: UtxosChangedEvent) => void): Promise<KaspaSubscription>;
+  subscribeToVirtualChainChanged(options: { includeAcceptedTransactionIds: boolean }, handler: (event: VirtualChainChangedEvent) => void): Promise<KaspaSubscription>;
   call<TResponse = unknown>(method: string, params?: unknown): Promise<TResponse>;
   on(event: string, handler: (data: unknown) => void): void;
   off(event: string, handler: (data: unknown) => void): void;
@@ -163,6 +177,10 @@ export class JsonWrpcKaspaClient implements KaspaRpcClient {
   private readonly timeoutMs: number;
   private requestId = 1;
   private messageListeners: Array<{ event: string, handler: (data: any) => void }> = [];
+
+  public readonly capabilities = {
+    virtualChainFromBlockV2: 'compatibility' as const
+  };
 
   constructor(options: JsonWrpcKaspaClientOptions) {
     this.rpcUrl = options.rpcUrl;
@@ -237,6 +255,64 @@ export class JsonWrpcKaspaClient implements KaspaRpcClient {
         } catch(e) {
             // Ignore error if connection is dead
         }
+      }
+    };
+  }
+
+  async subscribeToVirtualChainChanged(
+    options: { includeAcceptedTransactionIds: boolean },
+    handler: (event: VirtualChainChangedEvent) => void
+  ): Promise<KaspaSubscription> {
+    await this.detectFlavor();
+
+    const subId = `sub_${this.subscriptionCounter++}`;
+    let isClosed = false;
+
+    await this.callMethod(
+      "notifyVirtualChainChanged",
+      NOTIFY_VIRTUAL_CHAIN_CHANGED_REQUEST,
+      { includeAcceptedTransactionIds: options.includeAcceptedTransactionIds }
+    );
+
+    const msgHandler = (data: any) => {
+      if (isClosed) return;
+      
+      const removed = data?.removedChainBlockHashes || [];
+      const added = data?.addedChainBlockHashes || [];
+      const acceptedRaw = data?.acceptedTransactionIds || [];
+      
+      let accepted: RpcAcceptedTransactionIds[] | undefined = undefined;
+      
+      if (options.includeAcceptedTransactionIds && Array.isArray(acceptedRaw)) {
+        accepted = acceptedRaw.map((a: any) => ({
+          acceptingBlockHash: a.acceptingBlockHash || "",
+          acceptedTransactionIds: a.acceptedTransactionIds || []
+        }));
+      }
+
+      let payload: VirtualChainChangedEvent = {
+        removedChainBlockHashes: removed,
+        addedChainBlockHashes: added
+      };
+      
+      if (accepted !== undefined) {
+        payload.acceptedTransactionIds = accepted;
+      }
+
+      handler(payload);
+    };
+
+    this.on(VIRTUAL_CHAIN_CHANGED_NOTIFICATION, msgHandler);
+
+    return {
+      id: subId,
+      get closed() { return isClosed; },
+      unsubscribe: async () => {
+        if (isClosed) return;
+        isClosed = true;
+        this.off(VIRTUAL_CHAIN_CHANGED_NOTIFICATION, msgHandler);
+        // Unlike UtxosChanged, there doesn't seem to be a stopNotifyingVirtualChainChangedRequest in kaspa proto.
+        // It's a connection-wide subscription. Just removing the listener is sufficient for the client wrapper.
       }
     };
   }
@@ -572,6 +648,20 @@ export class JsonWrpcKaspaClient implements KaspaRpcClient {
     return this.callMethod("getVirtualSelectedParentBlueScore", "getVirtualSelectedParentBlueScoreRequest", {});
   }
 
+  async getVirtualChainFromBlockV2(options: { startHash: string; dataVerbosityLevel?: "NONE"|"HEADERS"|"FULL"; minConfirmationCount?: string }): Promise<any> {
+    if (options.dataVerbosityLevel === "HEADERS") {
+      throw new RpcError("dataVerbosityLevel 'HEADERS' is not supported by the current transport binding", "RPC_CAPABILITY_UNSUPPORTED");
+    }
+    if (options.minConfirmationCount !== undefined && options.minConfirmationCount !== "0") {
+      throw new RpcError("minConfirmationCount is not supported by the current transport binding", "RPC_CAPABILITY_UNSUPPORTED");
+    }
+    const payload = {
+      startHash: options.startHash,
+      includeAcceptedTransactionIds: options.dataVerbosityLevel === "FULL"
+    };
+    return this.callMethod("getVirtualChainFromBlockV2", "getVirtualChainFromBlockV2Request", payload);
+  }
+
   async getSinkBlueScore(): Promise<any> {
     return this.callMethod("getSinkBlueScore", "getSinkBlueScoreRequest", {});
   }
@@ -838,12 +928,22 @@ export class MockKaspaRpcClient implements KaspaRpcClient {
     };
   }
 
+  async subscribeToVirtualChainChanged(options: { includeAcceptedTransactionIds: boolean }, handler: (event: VirtualChainChangedEvent) => void): Promise<KaspaSubscription> {
+    let closed = false;
+    return {
+      id: "mock_sub_vc",
+      get closed() { return closed; },
+      unsubscribe: async () => { closed = true; }
+    };
+  }
+
   async getMempoolEntries(options?: any): Promise<any> { return []; }
   async getFeeEstimate(): Promise<any> { return { estimate: 0 }; }
   async getFeeEstimateExperimental(): Promise<any> { return { estimate: 0 }; }
   async getCurrentNetwork(): Promise<any> { return { network: this.networkId }; }
   async getSyncStatus(): Promise<any> { return { isSynced: true }; }
   async getVirtualSelectedParentBlueScore(): Promise<any> { return { blueScore: 0n }; }
+  async getVirtualChainFromBlockV2(): Promise<any> { return { removedChainBlockHashes: [], addedChainBlockHashes: [] }; }
   async getSinkBlueScore(): Promise<any> { return { blueScore: 0n }; }
   async getHeaders(): Promise<any> { return { headers: [] }; }
 

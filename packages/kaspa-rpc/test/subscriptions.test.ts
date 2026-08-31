@@ -57,9 +57,24 @@ describe("RPC Subscription Contract", () => {
         expect(sub2.closed).toBe(true);
     });
 
+    it("JsonWrpcKaspaClient: subscribeToVirtualChainChanged lifecycle works", async () => {
+        const client = new JsonWrpcKaspaClient({ rpcUrl: "ws://localhost:12345" });
+        vi.spyOn(client as any, "callMethod").mockResolvedValue({});
+        vi.spyOn(client as any, "detectFlavor").mockResolvedValue(undefined);
+        
+        const sub = await client.subscribeToVirtualChainChanged({ includeAcceptedTransactionIds: true }, () => {});
+        expect(sub.closed).toBe(false);
+        
+        await sub.unsubscribe();
+        expect(sub.closed).toBe(true);
+        
+        await expect(sub.unsubscribe()).resolves.toBeUndefined();
+    });
+
     it("KaspaJsonRpcClient (HTTP): throws RPC_SUBSCRIPTIONS_UNSUPPORTED", async () => {
         const client = new KaspaJsonRpcClient({ url: "http://localhost:12345" });
         await expect(client.subscribeToUtxosChanged(["kaspa:test"], () => {})).rejects.toThrow("RPC_SUBSCRIPTIONS_UNSUPPORTED");
+        await expect(client.subscribeToVirtualChainChanged({ includeAcceptedTransactionIds: true }, () => {})).rejects.toThrow("RPC_SUBSCRIPTIONS_UNSUPPORTED");
     });
 
     it("LoadBalancedRpcProvider: preserves subscriptions across failover (wrapper)", async () => {

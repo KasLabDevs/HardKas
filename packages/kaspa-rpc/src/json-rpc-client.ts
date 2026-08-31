@@ -8,6 +8,7 @@ import {
   BlockDagInfo,
   ServerInfo,
   UtxosChangedEvent,
+  VirtualChainChangedEvent,
   KaspaSubscription,
   KaspaRpcTransaction,
   KaspaSubmitTransactionResult
@@ -249,6 +250,10 @@ export class KaspaJsonRpcClient implements KaspaRpcClient {
     return await this.callRpc("getVirtualSelectedParentBlueScoreRequest", {});
   }
 
+  async getVirtualChainFromBlockV2(options: { startHash: string; dataVerbosityLevel?: "NONE"|"HEADERS"|"FULL"; minConfirmationCount?: string }): Promise<any> {
+    return await this.callRpc("getVirtualChainFromBlockV2Request", options);
+  }
+
   async getSinkBlueScore(): Promise<any> {
     return await this.callRpc("getSinkBlueScoreRequest", {});
   }
@@ -258,6 +263,10 @@ export class KaspaJsonRpcClient implements KaspaRpcClient {
   }
 
   async subscribeToUtxosChanged(addresses: readonly string[], handler: (event: UtxosChangedEvent) => void): Promise<KaspaSubscription> {
+    throw new Error("RPC_SUBSCRIPTIONS_UNSUPPORTED");
+  }
+
+  async subscribeToVirtualChainChanged(options: { includeAcceptedTransactionIds: boolean }, handler: (event: VirtualChainChangedEvent) => void): Promise<KaspaSubscription> {
     throw new Error("RPC_SUBSCRIPTIONS_UNSUPPORTED");
   }
 

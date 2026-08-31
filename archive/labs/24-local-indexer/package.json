@@ -12,7 +12,8 @@
   "dependencies": {
     "@hardkas/core": "workspace:*",
     "@hardkas/sdk": "workspace:*",
-    "@hardkas/storage-sqlite": "workspace:*"
+    "@hardkas/storage-sqlite": "workspace:*",
+    "@hardkas/kaspa-rpc": "workspace:*"
   },
   "devDependencies": {
     "@types/better-sqlite3": "^9.6.0",

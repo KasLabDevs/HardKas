@@ -44,6 +44,7 @@
     "@hardkas/tx-builder": "workspace:*",
     "@hardkas/toolkit": "workspace:*",
     "@hardkas/node-runner": "workspace:*",
+    "@hardkas/rpc-events": "workspace:*",
     "@kaspa/core-lib": "^1.6.5"
   },
   "optionalDependencies": {

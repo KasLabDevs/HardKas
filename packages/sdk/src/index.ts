@@ -33,6 +33,8 @@ import { HardkasCovenants } from "./covenants.js";
 import { HardkasUtxos } from "./utxos.js";
 import { WalletToolkit, WalletToolkitOptions } from "@hardkas/toolkit";
 import { HardkasNodeApi, FundDevWalletsOptions } from "./node.js";
+import { DefaultReactiveEventProvider, ReactiveEventProvider } from "@hardkas/rpc-events";
+import { KaspaRpcTransportAdapter } from "./observe/transport.js";
 export type { FundDevWalletsOptions } from "./node.js";
 
 // Curated explicit exports only. No `export *`
@@ -186,6 +188,7 @@ export class Hardkas {
   public readonly workflow: HardkasWorkflow;
   public readonly observe: HardkasObserve;
   public readonly query: HardkasQuery;
+  public readonly events: ReactiveEventProvider;
 
   public readonly wallet = {
     open: (name: string, opts?: Omit<WalletToolkitOptions, "rpc" | "signer">) => {
@@ -249,6 +252,7 @@ export class Hardkas {
     this.workflow = new HardkasWorkflow(this);
     this.observe = new HardkasObserve(this);
     this.query = new HardkasQuery(this);
+    this.events = new DefaultReactiveEventProvider(new KaspaRpcTransportAdapter(this.rpc));
   }
 
   private resolveRpcUrl(): string {

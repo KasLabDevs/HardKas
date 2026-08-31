@@ -10,6 +10,8 @@ import type {
   GetSelectedTipHashResponse,
   GetVirtualChainFromBlockRequest,
   GetVirtualChainFromBlockResponse,
+  GetVirtualChainFromBlockV2Request,
+  GetVirtualChainFromBlockV2Response,
   GetCoinSupplyResponse,
   GetSyncStatusResponse,
   GetCurrentNetworkResponse
@@ -45,6 +47,10 @@ export class ReadRpcClientImpl implements ReadRpcClient {
 
   async getVirtualChainFromBlock(request: GetVirtualChainFromBlockRequest, options?: RpcOptions): Promise<GetVirtualChainFromBlockResponse> {
     return this.transport.send<GetVirtualChainFromBlockRequest, GetVirtualChainFromBlockResponse>("getVirtualChainFromBlockRequest", request, options);
+  }
+
+  async getVirtualChainFromBlockV2(request: GetVirtualChainFromBlockV2Request, options?: RpcOptions): Promise<GetVirtualChainFromBlockV2Response> {
+    return this.transport.send<GetVirtualChainFromBlockV2Request, GetVirtualChainFromBlockV2Response>("getVirtualChainFromBlockV2Request", request, options);
   }
 
   async getCoinSupply(options?: RpcOptions): Promise<GetCoinSupplyResponse> {

@@ -200,3 +200,30 @@ extract/
 target/
 
 node_modules/
+# HardKAS Local State
+.hardkas/
+indexer.db
+live-indexer.db
+verdaccio-storage/
+
+# Temporary and Output Directories
+.tmp/
+tmp_foo/
+tmp-audit-pack/
+tmp-consumer-hardkas/
+tmp-packaging/
+pack-dir/
+packs/
+reports/
+artifacts/
+plans/
+signed/
+scratch/
+
+# Archives and Binaries
+*.tgz
+*.zip
+kaspa-wallet.exe
+kaspad.exe
+rothschild.exe
+stratum-bridge.exe
