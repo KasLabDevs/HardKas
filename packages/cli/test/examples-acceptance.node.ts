@@ -20,7 +20,7 @@ const SANDBOX_DIR = path.resolve(__dirname, "../.tmp/examples-suite");
 
 const TEST_PASS = "gauntlet-pass-123";
 const ARTIFACT_VERSION = "1.0.0-alpha";
-const HARDKAS_VERSION = "0.12.0-rc.12";
+const HARDKAS_VERSION = "0.12.0-rc.16";
 
 // Verification Metrics
 let commandsRun = 0;

@@ -1,0 +1,152 @@
+{
+	"name": "@hardkas/node-orchestrator",
+	"versions": {
+		"0.12.0-rc.16": {
+			"name": "@hardkas/node-orchestrator",
+			"version": "0.12.0-rc.16",
+			"type": "module",
+			"main": "./dist/index.js",
+			"types": "./dist/index.d.ts",
+			"exports": {
+				".": {
+					"types": "./dist/index.d.ts",
+					"import": "./dist/index.js",
+					"default": "./dist/index.js"
+				}
+			},
+			"dependencies": {
+				"@hardkas/core": "0.12.0-rc.16"
+			},
+			"devDependencies": {
+				"tsup": "^8.3.5",
+				"typescript": "^5.7.2",
+				"vitest": "^2.1.8"
+			},
+			"license": "MIT",
+			"author": {
+				"name": "Javier Rodriguez"
+			},
+			"repository": {
+				"type": "git",
+				"url": "git+https://github.com/KasLabDevs/HardKas.git",
+				"directory": "packages/node-orchestrator"
+			},
+			"bugs": {
+				"url": "https://github.com/KasLabDevs/HardKas/issues"
+			},
+			"homepage": "https://github.com/KasLabDevs/HardKas/tree/main/packages/node-orchestrator#readme",
+			"files": [
+				"dist",
+				"LICENSE",
+				"README.md"
+			],
+			"publishConfig": {
+				"access": "public"
+			},
+			"scripts": {
+				"build": "tsup src/index.ts --format esm --dts --clean",
+				"test": "vitest run",
+				"typecheck": "tsc --noEmit",
+				"lint": "eslint ."
+			},
+			"_id": "@hardkas/node-orchestrator@0.12.0-rc.16",
+			"_integrity": "sha512-PkH+fdAabENUiP6AqqLsRWyvP0HQJOsQ28PAceFbT0SGP4VgaZyovH+J40R6Sht7FF5xOF/fJYuFrGjxu7WUpg==",
+			"_resolved": "C:\\Users\\jrodr\\AppData\\Local\\Temp\\0823dd7aa3b316b462192d0eb9dba7ca\\hardkas-node-orchestrator-0.12.0-rc.16.tgz",
+			"_from": "file:hardkas-node-orchestrator-0.12.0-rc.16.tgz",
+			"_nodeVersion": "24.15.0",
+			"_npmVersion": "11.12.1",
+			"dist": {
+				"integrity": "sha512-PkH+fdAabENUiP6AqqLsRWyvP0HQJOsQ28PAceFbT0SGP4VgaZyovH+J40R6Sht7FF5xOF/fJYuFrGjxu7WUpg==",
+				"shasum": "b7c98e42699a928fd76ddcffdb42bae989ea269c",
+				"tarball": "http://localhost:4873/@hardkas/node-orchestrator/-/@hardkas/node-orchestrator-0.12.0-rc.16.tgz"
+			},
+			"contributors": []
+		},
+		"0.12.0-rc.16": {
+			"name": "@hardkas/node-orchestrator",
+			"version": "0.12.0-rc.16",
+			"type": "module",
+			"main": "./dist/index.js",
+			"types": "./dist/index.d.ts",
+			"exports": {
+				".": {
+					"types": "./dist/index.d.ts",
+					"import": "./dist/index.js",
+					"default": "./dist/index.js"
+				}
+			},
+			"dependencies": {
+				"@hardkas/core": "0.12.0-rc.16"
+			},
+			"devDependencies": {
+				"tsup": "^8.3.5",
+				"typescript": "^5.7.2",
+				"vitest": "^2.1.8"
+			},
+			"license": "MIT",
+			"author": {
+				"name": "Javier Rodriguez"
+			},
+			"repository": {
+				"type": "git",
+				"url": "git+https://github.com/KasLabDevs/HardKas.git",
+				"directory": "packages/node-orchestrator"
+			},
+			"bugs": {
+				"url": "https://github.com/KasLabDevs/HardKas/issues"
+			},
+			"homepage": "https://github.com/KasLabDevs/HardKas/tree/main/packages/node-orchestrator#readme",
+			"files": [
+				"dist",
+				"LICENSE",
+				"README.md"
+			],
+			"publishConfig": {
+				"access": "public"
+			},
+			"scripts": {
+				"build": "tsup src/index.ts --format esm --dts --clean",
+				"test": "vitest run",
+				"typecheck": "tsc --noEmit",
+				"lint": "eslint ."
+			},
+			"_id": "@hardkas/node-orchestrator@0.12.0-rc.16",
+			"_integrity": "sha512-XmMlkbQWDyM3WDGLWFjrDIeT3iz6vi3En61Rx5Ct9KgQ+z9jvBEWIE5ygIFwUobyRmnxFtE7xu5hkxq3+SlI2A==",
+			"_resolved": "C:\\Users\\jrodr\\AppData\\Local\\Temp\\3e0ef1c8c56ef97d9317a4881a692e09\\hardkas-node-orchestrator-0.12.0-rc.16.tgz",
+			"_from": "file:hardkas-node-orchestrator-0.12.0-rc.16.tgz",
+			"_nodeVersion": "24.15.0",
+			"_npmVersion": "11.12.1",
+			"dist": {
+				"integrity": "sha512-XmMlkbQWDyM3WDGLWFjrDIeT3iz6vi3En61Rx5Ct9KgQ+z9jvBEWIE5ygIFwUobyRmnxFtE7xu5hkxq3+SlI2A==",
+				"shasum": "27d5ab78942099bc7e3bb61a2cea78f766cbb318",
+				"tarball": "http://localhost:4873/@hardkas/node-orchestrator/-/@hardkas/node-orchestrator-0.12.0-rc.16.tgz"
+			},
+			"contributors": []
+		}
+	},
+	"time": {
+		"modified": "2026-08-31T09:57:35.736Z",
+		"created": "2026-08-31T09:54:33.789Z",
+		"0.12.0-rc.16": "2026-08-31T09:54:33.789Z",
+		"0.12.0-rc.16": "2026-08-31T09:57:35.736Z"
+	},
+	"users": {},
+	"dist-tags": {
+		"latest": "0.12.0-rc.16"
+	},
+	"_uplinks": {},
+	"_distfiles": {},
+	"_attachments": {
+		"node-orchestrator-0.12.0-rc.16.tgz": {
+			"shasum": "b7c98e42699a928fd76ddcffdb42bae989ea269c",
+			"version": "0.12.0-rc.16"
+		},
+		"node-orchestrator-0.12.0-rc.16.tgz": {
+			"shasum": "27d5ab78942099bc7e3bb61a2cea78f766cbb318",
+			"version": "0.12.0-rc.16"
+		}
+	},
+	"_rev": "6-dde80457dbfdc3b6",
+	"_id": "@hardkas/node-orchestrator",
+	"readme": "ERROR: No README data found!"
+}

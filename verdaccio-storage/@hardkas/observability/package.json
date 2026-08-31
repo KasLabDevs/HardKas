@@ -1,0 +1,116 @@
+{
+	"name": "@hardkas/observability",
+	"versions": {
+		"0.12.0-rc.16": {
+			"name": "@hardkas/observability",
+			"version": "0.12.0-rc.16",
+			"description": "Zero-dependency telemetry, logging, and metrics for HardKAS",
+			"type": "module",
+			"main": "./dist/index.js",
+			"types": "./dist/index.d.ts",
+			"exports": {
+				".": {
+					"import": "./dist/index.js",
+					"require": "./dist/index.js",
+					"types": "./dist/index.d.ts"
+				}
+			},
+			"files": [
+				"dist"
+			],
+			"devDependencies": {
+				"@types/node": "^20.12.06",
+				"tsup": "^8.0.2",
+				"typescript": "^5.3.3"
+			},
+			"publishConfig": {
+				"access": "public"
+			},
+			"scripts": {
+				"build": "tsup src/index.ts --format esm --dts --clean",
+				"dev": "tsup src/index.ts --format esm --watch",
+				"clean": "rm -rf dist"
+			},
+			"_id": "@hardkas/observability@0.12.0-rc.16",
+			"_integrity": "sha512-sB2u3lmo3zwPF27yzDA4SZRDnl2YoM8v97mmg8/KC5rBvPMl/LR7LdT3oCAqOzLKRdIuIqM6r0ofbgsZK8vYzQ==",
+			"_resolved": "C:\\Users\\jrodr\\AppData\\Local\\Temp\\135d9115471abebde1a5416c0553034f\\hardkas-observability-0.12.0-rc.16.tgz",
+			"_from": "file:hardkas-observability-0.12.0-rc.16.tgz",
+			"_nodeVersion": "24.15.0",
+			"_npmVersion": "11.12.1",
+			"dist": {
+				"integrity": "sha512-sB2u3lmo3zwPF27yzDA4SZRDnl2YoM8v97mmg8/KC5rBvPMl/LR7LdT3oCAqOzLKRdIuIqM6r0ofbgsZK8vYzQ==",
+				"shasum": "4da0236c62930edbcdcce7ab1b6bab7c8fcb90e8",
+				"tarball": "http://localhost:4873/@hardkas/observability/-/@hardkas/observability-0.12.0-rc.16.tgz"
+			},
+			"contributors": []
+		},
+		"0.12.0-rc.16": {
+			"name": "@hardkas/observability",
+			"version": "0.12.0-rc.16",
+			"description": "Zero-dependency telemetry, logging, and metrics for HardKAS",
+			"type": "module",
+			"main": "./dist/index.js",
+			"types": "./dist/index.d.ts",
+			"exports": {
+				".": {
+					"import": "./dist/index.js",
+					"require": "./dist/index.js",
+					"types": "./dist/index.d.ts"
+				}
+			},
+			"files": [
+				"dist"
+			],
+			"devDependencies": {
+				"@types/node": "^20.12.06",
+				"tsup": "^8.0.2",
+				"typescript": "^5.3.3"
+			},
+			"publishConfig": {
+				"access": "public"
+			},
+			"scripts": {
+				"build": "tsup src/index.ts --format esm --dts --clean",
+				"dev": "tsup src/index.ts --format esm --watch",
+				"clean": "rm -rf dist"
+			},
+			"_id": "@hardkas/observability@0.12.0-rc.16",
+			"_integrity": "sha512-G4R1iopBG5v1nmKEqIEhGJyd7+rcE81CC8OD7IYzhRzwdgeJXjx+uEi9ZCPxNIQVTdNMRoYYIcqcwALfHVC5kg==",
+			"_resolved": "C:\\Users\\jrodr\\AppData\\Local\\Temp\\6ca0845ed9bb62190d6337764d4381f1\\hardkas-observability-0.12.0-rc.16.tgz",
+			"_from": "file:hardkas-observability-0.12.0-rc.16.tgz",
+			"_nodeVersion": "24.15.0",
+			"_npmVersion": "11.12.1",
+			"dist": {
+				"integrity": "sha512-G4R1iopBG5v1nmKEqIEhGJyd7+rcE81CC8OD7IYzhRzwdgeJXjx+uEi9ZCPxNIQVTdNMRoYYIcqcwALfHVC5kg==",
+				"shasum": "0b20c4173f9e627acbd29ec295321d0c75447885",
+				"tarball": "http://localhost:4873/@hardkas/observability/-/@hardkas/observability-0.12.0-rc.16.tgz"
+			},
+			"contributors": []
+		}
+	},
+	"time": {
+		"modified": "2026-08-31T09:57:23.302Z",
+		"created": "2026-08-31T09:54:23.506Z",
+		"0.12.0-rc.16": "2026-08-31T09:54:23.506Z",
+		"0.12.0-rc.16": "2026-08-31T09:57:23.302Z"
+	},
+	"users": {},
+	"dist-tags": {
+		"latest": "0.12.0-rc.16"
+	},
+	"_uplinks": {},
+	"_distfiles": {},
+	"_attachments": {
+		"observability-0.12.0-rc.16.tgz": {
+			"shasum": "4da0236c62930edbcdcce7ab1b6bab7c8fcb90e8",
+			"version": "0.12.0-rc.16"
+		},
+		"observability-0.12.0-rc.16.tgz": {
+			"shasum": "0b20c4173f9e627acbd29ec295321d0c75447885",
+			"version": "0.12.0-rc.16"
+		}
+	},
+	"_rev": "6-a84226ef4cebc0a6",
+	"_id": "@hardkas/observability",
+	"readme": "ERROR: No README data found!"
+}

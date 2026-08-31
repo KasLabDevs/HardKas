@@ -242,40 +242,6 @@ export async function runTxPlan(input: TxPlanRunnerInput): Promise<TxPlanArtifac
         // Load registry (always stale), reconcile against live mempool + fresh UTXOs,
         // then filter out pending-spent outpoints before coin selection.
         let spendableUtxos = matureUtxos;
-        try {
-          const { PendingSpendService } = await import("@hardkas/sdk");
-          const pendingRegistry = await PendingSpendService.load(workspaceRoot || process.cwd());
-          const pendingScope = {
-            mode: execution.mode as "localnet" | "rpc",
-            domain: "kaspa-l1" as const,
-            network: resolvedNetwork
-          };
-
-          // Reconcile: check each pending spend against mempool presence.
-          // checkMempoolPresence MUST distinguish "absent" from "RPC error".
-          // On RPC error, reconciliation sets state = 'stale' → planning will fail safely.
-          const checkPresence = async (txId: string) => {
-            if ("checkMempoolPresence" in client && typeof (client as any).checkMempoolPresence === "function") {
-              const res = await (client as any).checkMempoolPresence(txId);
-              return res;
-            }
-            // Fallback: if checkMempoolPresence not available, treat as stale
-            throw new Error("RPC_MEMPOOL_CHECK_UNAVAILABLE");
-          };
-
-          await pendingRegistry.reconcile(pendingScope, checkPresence, matureUtxos);
-          spendableUtxos = pendingRegistry.filterSpendableOrFail(pendingScope, matureUtxos);
-
-          // Persist reconciled state (releases confirmed/evicted spends)
-          await pendingRegistry.persist(workspaceRoot || process.cwd());
-        } catch (e: unknown) {
-          // If UTXO_STATE_STALE, propagate — planning must not proceed
-          if (e instanceof Error && e.message.includes("UTXO_STATE_STALE")) {
-            throw e;
-          }
-          // Other errors (e.g. PendingSpendService not found in SDK):
-          // fall through gracefully for backwards compatibility
-        }
 
         let actualFeeRate = feeRateSompiPerMass;
         if (actualFeeRate === undefined) {

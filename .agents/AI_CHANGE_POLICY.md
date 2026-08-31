@@ -2,6 +2,17 @@
 
 This policy governs autonomous modifications to the HardKAS repository by AI agents.
 
+## Public Contract Compatibility
+
+- Refactoring an implementation behind a public function must not silently
+  change the function's observable contract.
+- A parameter accepted by a public API must not become ignored without an
+  explicit breaking-version decision.
+- When migrating to a new internal abstraction, add a compatibility regression
+  test before removing or altering legacy public semantics.
+
+## Anti-Patterns to Avoid
+
 ## Core Directives
 
 1. **Identify a real Builder Lab blocker.** Do not add speculative features or primitives.

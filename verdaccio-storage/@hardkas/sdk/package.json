@@ -1,0 +1,206 @@
+{
+	"name": "@hardkas/sdk",
+	"versions": {
+		"0.12.0-rc.16": {
+			"name": "@hardkas/sdk",
+			"version": "0.12.0-rc.16",
+			"type": "module",
+			"files": [
+				"dist",
+				"README.md",
+				"LICENSE"
+			],
+			"main": "./dist/index.js",
+			"types": "./dist/index.d.ts",
+			"sideEffects": false,
+			"exports": {
+				".": {
+					"types": "./dist/index.d.ts",
+					"import": "./dist/index.js",
+					"require": "./dist/index.js",
+					"default": "./dist/index.js"
+				},
+				"./client": {
+					"types": "./dist/client.d.ts",
+					"import": "./dist/client.js",
+					"require": "./dist/client.js",
+					"default": "./dist/client.js"
+				}
+			},
+			"dependencies": {
+				"@kaspa/core-lib": "^1.6.5",
+				"@hardkas/accounts": "0.12.0-rc.16",
+				"@hardkas/artifacts": "0.12.0-rc.16",
+				"@hardkas/l2": "0.12.0-rc.16",
+				"@hardkas/config": "0.12.0-rc.16",
+				"@hardkas/kaspa-rpc": "0.12.0-rc.16",
+				"@hardkas/query": "0.12.0-rc.16",
+				"@hardkas/core": "0.12.0-rc.16",
+				"@hardkas/localnet": "0.12.0-rc.16",
+				"@hardkas/tx-builder": "0.12.0-rc.16",
+				"@hardkas/simulator": "0.12.0-rc.16",
+				"@hardkas/query-store": "0.12.0-rc.16",
+				"@hardkas/toolkit": "0.12.0-rc.16",
+				"@hardkas/node-runner": "0.12.0-rc.16"
+			},
+			"optionalDependencies": {
+				"@hardkas/pskt-native": "0.12.0-rc.16"
+			},
+			"devDependencies": {
+				"@types/node": "^20.12.7",
+				"tsup": "^8.3.5",
+				"typescript": "^5.7.2",
+				"vitest": "^2.1.8"
+			},
+			"license": "MIT",
+			"author": {
+				"name": "Javier Rodriguez"
+			},
+			"repository": {
+				"type": "git",
+				"url": "git+https://github.com/KasLabDevs/HardKas.git",
+				"directory": "packages/sdk"
+			},
+			"bugs": {
+				"url": "https://github.com/KasLabDevs/HardKas/issues"
+			},
+			"homepage": "https://github.com/KasLabDevs/HardKas/tree/main/packages/sdk#readme",
+			"publishConfig": {
+				"access": "public"
+			},
+			"scripts": {
+				"build": "tsup src/index.ts src/client.ts --format esm --dts --clean --external @hardkas/pskt-native",
+				"test": "vitest run --passWithNoTests",
+				"typecheck": "tsc --noEmit",
+				"lint": "eslint ."
+			},
+			"readmeFilename": "README.md",
+			"_id": "@hardkas/sdk@0.12.0-rc.16",
+			"description": "The HardKas SDK is the programmatic API for local-first transaction workflows. It exposes the same core model as the CLI: plan, sign, simulate or send, then inspect artifacts and lineage.",
+			"_integrity": "sha512-z98dBeokpbIJ4qAUm1YS6sG85G8mpOA/BIxRsCPNsdYMZmTD06Glw89+pmp6hg/bt3aTNFIUqdFg+wd7YKBFRA==",
+			"_resolved": "C:\\Users\\jrodr\\AppData\\Local\\Temp\\45f73443f6e272ba6dd65198a89c1283\\hardkas-sdk-0.12.0-rc.16.tgz",
+			"_from": "file:hardkas-sdk-0.12.0-rc.16.tgz",
+			"_nodeVersion": "24.15.0",
+			"_npmVersion": "11.12.1",
+			"dist": {
+				"integrity": "sha512-z98dBeokpbIJ4qAUm1YS6sG85G8mpOA/BIxRsCPNsdYMZmTD06Glw89+pmp6hg/bt3aTNFIUqdFg+wd7YKBFRA==",
+				"shasum": "b266cd2b2a7dbb90558ce1e56c827dd2a47e976a",
+				"tarball": "http://localhost:4873/@hardkas/sdk/-/@hardkas/sdk-0.12.0-rc.16.tgz"
+			},
+			"contributors": []
+		},
+		"0.12.0-rc.16": {
+			"name": "@hardkas/sdk",
+			"version": "0.12.0-rc.16",
+			"type": "module",
+			"files": [
+				"dist",
+				"README.md",
+				"LICENSE"
+			],
+			"main": "./dist/index.js",
+			"types": "./dist/index.d.ts",
+			"sideEffects": false,
+			"exports": {
+				".": {
+					"types": "./dist/index.d.ts",
+					"import": "./dist/index.js",
+					"require": "./dist/index.js",
+					"default": "./dist/index.js"
+				},
+				"./client": {
+					"types": "./dist/client.d.ts",
+					"import": "./dist/client.js",
+					"require": "./dist/client.js",
+					"default": "./dist/client.js"
+				}
+			},
+			"dependencies": {
+				"@kaspa/core-lib": "^1.6.5",
+				"@hardkas/artifacts": "0.12.0-rc.16",
+				"@hardkas/accounts": "0.12.0-rc.16",
+				"@hardkas/core": "0.12.0-rc.16",
+				"@hardkas/kaspa-rpc": "0.12.0-rc.16",
+				"@hardkas/l2": "0.12.0-rc.16",
+				"@hardkas/localnet": "0.12.0-rc.16",
+				"@hardkas/query": "0.12.0-rc.16",
+				"@hardkas/config": "0.12.0-rc.16",
+				"@hardkas/query-store": "0.12.0-rc.16",
+				"@hardkas/simulator": "0.12.0-rc.16",
+				"@hardkas/tx-builder": "0.12.0-rc.16",
+				"@hardkas/toolkit": "0.12.0-rc.16",
+				"@hardkas/node-runner": "0.12.0-rc.16"
+			},
+			"optionalDependencies": {
+				"@hardkas/pskt-native": "0.12.0-rc.16"
+			},
+			"devDependencies": {
+				"@types/node": "^20.12.7",
+				"tsup": "^8.3.5",
+				"typescript": "^5.7.2",
+				"vitest": "^2.1.8"
+			},
+			"license": "MIT",
+			"author": {
+				"name": "Javier Rodriguez"
+			},
+			"repository": {
+				"type": "git",
+				"url": "git+https://github.com/KasLabDevs/HardKas.git",
+				"directory": "packages/sdk"
+			},
+			"bugs": {
+				"url": "https://github.com/KasLabDevs/HardKas/issues"
+			},
+			"homepage": "https://github.com/KasLabDevs/HardKas/tree/main/packages/sdk#readme",
+			"publishConfig": {
+				"access": "public"
+			},
+			"scripts": {
+				"build": "tsup src/index.ts src/client.ts --format esm --dts --clean --external @hardkas/pskt-native",
+				"test": "vitest run --passWithNoTests",
+				"typecheck": "tsc --noEmit",
+				"lint": "eslint ."
+			},
+			"readmeFilename": "README.md",
+			"_id": "@hardkas/sdk@0.12.0-rc.16",
+			"description": "The HardKas SDK is the programmatic API for local-first transaction workflows. It exposes the same core model as the CLI: plan, sign, simulate or send, then inspect artifacts and lineage.",
+			"_integrity": "sha512-mXeH1m6G20sEVcKV4jA+Q7XeuxxipFZ0YHZo9gR5kEuqwMewUib6IaMs5oH+9TamJAiZeXv7WUyJYenYVtUpPg==",
+			"_resolved": "C:\\Users\\jrodr\\AppData\\Local\\Temp\\e4670f729c570cdd2e06381debb57353\\hardkas-sdk-0.12.0-rc.16.tgz",
+			"_from": "file:hardkas-sdk-0.12.0-rc.16.tgz",
+			"_nodeVersion": "24.15.0",
+			"_npmVersion": "11.12.1",
+			"dist": {
+				"integrity": "sha512-mXeH1m6G20sEVcKV4jA+Q7XeuxxipFZ0YHZo9gR5kEuqwMewUib6IaMs5oH+9TamJAiZeXv7WUyJYenYVtUpPg==",
+				"shasum": "eb60d2a1f2452287742a843145e0f327df0b0600",
+				"tarball": "http://localhost:4873/@hardkas/sdk/-/@hardkas/sdk-0.12.0-rc.16.tgz"
+			},
+			"contributors": []
+		}
+	},
+	"time": {
+		"modified": "2026-08-31T09:58:03.389Z",
+		"created": "2026-08-31T09:55:01.047Z",
+		"0.12.0-rc.16": "2026-08-31T09:55:01.047Z",
+		"0.12.0-rc.16": "2026-08-31T09:58:03.389Z"
+	},
+	"users": {},
+	"dist-tags": {
+		"latest": "0.12.0-rc.16"
+	},
+	"_uplinks": {},
+	"_distfiles": {},
+	"_attachments": {
+		"sdk-0.12.0-rc.16.tgz": {
+			"shasum": "b266cd2b2a7dbb90558ce1e56c827dd2a47e976a",
+			"version": "0.12.0-rc.16"
+		},
+		"sdk-0.12.0-rc.16.tgz": {
+			"shasum": "eb60d2a1f2452287742a843145e0f327df0b0600",
+			"version": "0.12.0-rc.16"
+		}
+	},
+	"_rev": "6-86815b2ac8bd7e9f",
+	"_id": "@hardkas/sdk",
+	"readme": "# `@hardkas/sdk`\r\n\r\nThe HardKas SDK is the programmatic API for local-first transaction workflows. It exposes the same core model as the CLI: plan, sign, simulate or send, then inspect artifacts and lineage.\r\n\r\n## 1. Create A Local SDK\r\n\r\n```typescript\r\nimport { Hardkas } from \"@hardkas/sdk\";\r\n\r\nconst sdk = await Hardkas.create({\r\n  cwd: process.cwd(),\r\n  autoBootstrap: true,\r\n  network: \"simulated\"\r\n});\r\n```\r\n\r\n`autoBootstrap: true` is the easiest local path. It creates or loads the workspace data needed for simulated accounts, artifacts, and local execution.\r\n\r\n## 2. Transaction Flow\r\n\r\n```typescript\r\nconst plan = await sdk.tx.plan({\r\n  from: \"alice\",\r\n  to: \"bob\",\r\n  amount: \"1\",\r\n  network: \"simulated\"\r\n});\r\n\r\nconst signed = await sdk.tx.sign(plan, {\r\n  account: \"alice\"\r\n});\r\n\r\nconst receipt = await sdk.tx.simulate(signed);\r\n```\r\n\r\nFor a real RPC-backed node, create the SDK with an explicit network/provider configuration and treat the send step as network-state dependent. Mainnet should remain outside the default local development flow.\r\n\r\n## 3. Artifacts And Queries\r\n\r\nThe SDK can read artifacts, trace lineage, replay local records, and query the local projection:\r\n\r\n```typescript\r\nconst artifacts = await sdk.query.artifacts.list();\r\nconst trace = await sdk.lineage.trace(receipt.txId);\r\n```\r\n\r\nThe SQLite query store is rebuildable. The durable source of truth is the workspace artifact and event data.\r\n\r\n## 4. Boundary\r\n\r\nThe SDK should be used from Node.js. Browser applications should talk to the dev server through `@hardkas/client`, not import `@hardkas/sdk` directly.\r\n"
+}

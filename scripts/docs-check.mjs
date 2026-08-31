@@ -35,7 +35,7 @@ const mdFiles = [...rootMdFiles, ...getDocsFiles(path.join(projectRoot, "docs"))
 let hasErrors = false;
 
 // Current valid version
-const CURRENT_VERSION = "0.12.0-rc.12";
+const CURRENT_VERSION = "0.12.0-rc.16";
 
 for (const file of mdFiles) {
   const content = fs.readFileSync(file, "utf8");

@@ -1,6 +1,6 @@
 ---
 Status: DRAFT
-Source baseline: HardKAS 0.12.0-rc.12
+Source baseline: HardKAS 0.12.0-rc.16
 Audience: Public documentation / product architecture
 Claims policy: Code-backed only
 ---

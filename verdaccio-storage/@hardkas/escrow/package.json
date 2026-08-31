@@ -1,0 +1,162 @@
+{
+	"name": "@hardkas/escrow",
+	"versions": {
+		"0.12.0-rc.16": {
+			"name": "@hardkas/escrow",
+			"version": "0.12.0-rc.16",
+			"description": "HardKAS Escrow SDK (BL-002B certified)",
+			"type": "module",
+			"main": "./dist/index.js",
+			"types": "./dist/index.d.ts",
+			"exports": {
+				".": {
+					"types": "./dist/index.d.ts",
+					"import": "./dist/index.js",
+					"require": "./dist/index.js",
+					"default": "./dist/index.js"
+				}
+			},
+			"dependencies": {
+				"@noble/hashes": "^2.2.0",
+				"pino": "^9.5.0",
+				"zod": "^3.24.1",
+				"@hardkas/core": "0.12.0-rc.16"
+			},
+			"devDependencies": {
+				"tsup": "^8.3.5",
+				"typescript": "^5.7.2",
+				"vitest": "^2.1.8"
+			},
+			"license": "MIT",
+			"author": {
+				"name": "Javier Rodriguez"
+			},
+			"repository": {
+				"type": "git",
+				"url": "git+https://github.com/KasLabDevs/HardKas.git",
+				"directory": "packages/core"
+			},
+			"bugs": {
+				"url": "https://github.com/KasLabDevs/HardKas/issues"
+			},
+			"homepage": "https://github.com/KasLabDevs/HardKas/tree/main/packages/core#readme",
+			"files": [
+				"dist",
+				"LICENSE",
+				"README.md"
+			],
+			"publishConfig": {
+				"access": "public"
+			},
+			"scripts": {
+				"build": "tsup src/index.ts --format esm --dts --clean",
+				"test": "vitest run",
+				"typecheck": "tsc --noEmit",
+				"lint": "eslint ."
+			},
+			"_id": "@hardkas/escrow@0.12.0-rc.16",
+			"_integrity": "sha512-OnLUjNKVY6hzMvzBotC/NDOmTjYzJKk6kanHdHzsG01eNaVTSf8+Yay/yMK3m2hxkdMgsuXlnZw9jQxx1uRlKA==",
+			"_resolved": "C:\\Users\\jrodr\\AppData\\Local\\Temp\\7c772bf37b368dc97851d5b9ba004de7\\hardkas-escrow-0.12.0-rc.16.tgz",
+			"_from": "file:hardkas-escrow-0.12.0-rc.16.tgz",
+			"_nodeVersion": "24.15.0",
+			"_npmVersion": "11.12.1",
+			"dist": {
+				"integrity": "sha512-OnLUjNKVY6hzMvzBotC/NDOmTjYzJKk6kanHdHzsG01eNaVTSf8+Yay/yMK3m2hxkdMgsuXlnZw9jQxx1uRlKA==",
+				"shasum": "9e85865cd903be208397059db77cbba1ba25c325",
+				"tarball": "http://localhost:4873/@hardkas/escrow/-/@hardkas/escrow-0.12.0-rc.16.tgz"
+			},
+			"contributors": []
+		},
+		"0.12.0-rc.16": {
+			"name": "@hardkas/escrow",
+			"version": "0.12.0-rc.16",
+			"description": "HardKAS Escrow SDK (BL-002B certified)",
+			"type": "module",
+			"main": "./dist/index.js",
+			"types": "./dist/index.d.ts",
+			"exports": {
+				".": {
+					"types": "./dist/index.d.ts",
+					"import": "./dist/index.js",
+					"require": "./dist/index.js",
+					"default": "./dist/index.js"
+				}
+			},
+			"dependencies": {
+				"@noble/hashes": "^2.2.0",
+				"pino": "^9.5.0",
+				"zod": "^3.24.1",
+				"@hardkas/core": "0.12.0-rc.16"
+			},
+			"devDependencies": {
+				"tsup": "^8.3.5",
+				"typescript": "^5.7.2",
+				"vitest": "^2.1.8"
+			},
+			"license": "MIT",
+			"author": {
+				"name": "Javier Rodriguez"
+			},
+			"repository": {
+				"type": "git",
+				"url": "git+https://github.com/KasLabDevs/HardKas.git",
+				"directory": "packages/core"
+			},
+			"bugs": {
+				"url": "https://github.com/KasLabDevs/HardKas/issues"
+			},
+			"homepage": "https://github.com/KasLabDevs/HardKas/tree/main/packages/core#readme",
+			"files": [
+				"dist",
+				"LICENSE",
+				"README.md"
+			],
+			"publishConfig": {
+				"access": "public"
+			},
+			"scripts": {
+				"build": "tsup src/index.ts --format esm --dts --clean",
+				"test": "vitest run",
+				"typecheck": "tsc --noEmit",
+				"lint": "eslint ."
+			},
+			"_id": "@hardkas/escrow@0.12.0-rc.16",
+			"_integrity": "sha512-1ZLnCF89IJkSM0TNUl9I0VlBhw4gilMFrXH0XGNzPC8l8N3XI9DoaVLNFE1GgXjZt6EKCyRchyeHSl+MumTjEw==",
+			"_resolved": "C:\\Users\\jrodr\\AppData\\Local\\Temp\\6bafa722b455a6477716680f57134c31\\hardkas-escrow-0.12.0-rc.16.tgz",
+			"_from": "file:hardkas-escrow-0.12.0-rc.16.tgz",
+			"_nodeVersion": "24.15.0",
+			"_npmVersion": "11.12.1",
+			"dist": {
+				"integrity": "sha512-1ZLnCF89IJkSM0TNUl9I0VlBhw4gilMFrXH0XGNzPC8l8N3XI9DoaVLNFE1GgXjZt6EKCyRchyeHSl+MumTjEw==",
+				"shasum": "5bfacce1403c3d6a67ffd196a76a6bfcf6834a08",
+				"tarball": "http://localhost:4873/@hardkas/escrow/-/@hardkas/escrow-0.12.0-rc.16.tgz"
+			},
+			"contributors": []
+		}
+	},
+	"time": {
+		"modified": "2026-08-31T09:57:32.705Z",
+		"created": "2026-08-31T09:54:31.076Z",
+		"0.12.0-rc.16": "2026-08-31T09:54:31.076Z",
+		"0.12.0-rc.16": "2026-08-31T09:57:32.705Z"
+	},
+	"users": {},
+	"dist-tags": {
+		"latest": "0.12.0-rc.16"
+	},
+	"_uplinks": {},
+	"_distfiles": {},
+	"_attachments": {
+		"escrow-0.12.0-rc.16.tgz": {
+			"shasum": "9e85865cd903be208397059db77cbba1ba25c325",
+			"version": "0.12.0-rc.16"
+		},
+		"escrow-0.12.0-rc.16.tgz": {
+			"shasum": "5bfacce1403c3d6a67ffd196a76a6bfcf6834a08",
+			"version": "0.12.0-rc.16"
+		}
+	},
+	"_rev": "6-e2e7247dc7e82312",
+	"_id": "@hardkas/escrow",
+	"readme": "ERROR: No README data found!"
+}

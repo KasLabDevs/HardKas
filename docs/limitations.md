@@ -2,7 +2,7 @@
 
 This file mirrors the release-boundary summary in `docs/11-limitations.md`.
 
-`0.12.0-rc.12` keeps the same stable safety claims:
+`0.12.0-rc.16` keeps the same stable safety claims:
 
 - `artifactCoherence = READY_MATCH`
 - `runtimeOutcome = PARTIAL`

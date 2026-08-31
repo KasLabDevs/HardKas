@@ -1,0 +1,128 @@
+{
+	"name": "@hardkas/plugin-rpc-backend",
+	"versions": {
+		"0.12.0-rc.16": {
+			"name": "@hardkas/plugin-rpc-backend",
+			"version": "0.12.0-rc.16",
+			"type": "module",
+			"main": "./dist/index.cjs",
+			"module": "./dist/index.js",
+			"types": "./dist/index.d.ts",
+			"exports": {
+				".": {
+					"import": "./dist/index.js",
+					"require": "./dist/index.cjs",
+					"types": "./dist/index.d.ts"
+				}
+			},
+			"files": [
+				"dist"
+			],
+			"dependencies": {
+				"@hardkas/core": "0.12.0-rc.16",
+				"@hardkas/toolkit": "0.12.0-rc.16",
+				"@hardkas/kaspa-rpc": "0.12.0-rc.16",
+				"@hardkas/observability": "0.12.0-rc.16"
+			},
+			"devDependencies": {
+				"tsup": "^8.3.5",
+				"typescript": "^5.7.2",
+				"vitest": "^2.1.9"
+			},
+			"publishConfig": {
+				"access": "public"
+			},
+			"scripts": {
+				"build": "tsup",
+				"clean": "rm -rf dist",
+				"test": "vitest run"
+			},
+			"_id": "@hardkas/plugin-rpc-backend@0.12.0-rc.16",
+			"_integrity": "sha512-kecA54RYvC8LuLVHo+2JRCPiEUa2OfUIDpeCVc9PVNWfbXkoPyZH4nQiXtyJPwBL3yMaOobftD9AlcwKXTFjQw==",
+			"_resolved": "C:\\Users\\jrodr\\AppData\\Local\\Temp\\1387f5f682c062805a3c66b43f350d28\\hardkas-plugin-rpc-backend-0.12.0-rc.16.tgz",
+			"_from": "file:hardkas-plugin-rpc-backend-0.12.0-rc.16.tgz",
+			"_nodeVersion": "24.15.0",
+			"_npmVersion": "11.12.1",
+			"dist": {
+				"integrity": "sha512-kecA54RYvC8LuLVHo+2JRCPiEUa2OfUIDpeCVc9PVNWfbXkoPyZH4nQiXtyJPwBL3yMaOobftD9AlcwKXTFjQw==",
+				"shasum": "1c7b52a4a44e2a260f512aa711322e339a61094c",
+				"tarball": "http://localhost:4873/@hardkas/plugin-rpc-backend/-/@hardkas/plugin-rpc-backend-0.12.0-rc.16.tgz"
+			},
+			"contributors": []
+		},
+		"0.12.0-rc.16": {
+			"name": "@hardkas/plugin-rpc-backend",
+			"version": "0.12.0-rc.16",
+			"type": "module",
+			"main": "./dist/index.cjs",
+			"module": "./dist/index.js",
+			"types": "./dist/index.d.ts",
+			"exports": {
+				".": {
+					"import": "./dist/index.js",
+					"require": "./dist/index.cjs",
+					"types": "./dist/index.d.ts"
+				}
+			},
+			"files": [
+				"dist"
+			],
+			"dependencies": {
+				"@hardkas/core": "0.12.0-rc.16",
+				"@hardkas/toolkit": "0.12.0-rc.16",
+				"@hardkas/kaspa-rpc": "0.12.0-rc.16",
+				"@hardkas/observability": "0.12.0-rc.16"
+			},
+			"devDependencies": {
+				"tsup": "^8.3.5",
+				"typescript": "^5.7.2",
+				"vitest": "^2.1.9"
+			},
+			"publishConfig": {
+				"access": "public"
+			},
+			"scripts": {
+				"build": "tsup",
+				"clean": "rm -rf dist",
+				"test": "vitest run"
+			},
+			"_id": "@hardkas/plugin-rpc-backend@0.12.0-rc.16",
+			"_integrity": "sha512-jh5KuYyOjXqfBVzZM3uMMByK4BQNawI0s5hNZSAM09fM+itzg/8+uuKgmrWnja94hpVnHetD4xD+126xdg2FOA==",
+			"_resolved": "C:\\Users\\jrodr\\AppData\\Local\\Temp\\6b680215dd4116bb8fd9bda42a9b538b\\hardkas-plugin-rpc-backend-0.12.0-rc.16.tgz",
+			"_from": "file:hardkas-plugin-rpc-backend-0.12.0-rc.16.tgz",
+			"_nodeVersion": "24.15.0",
+			"_npmVersion": "11.12.1",
+			"dist": {
+				"integrity": "sha512-jh5KuYyOjXqfBVzZM3uMMByK4BQNawI0s5hNZSAM09fM+itzg/8+uuKgmrWnja94hpVnHetD4xD+126xdg2FOA==",
+				"shasum": "641d51a2fe83ebbba653b9f139f50bef557da9f8",
+				"tarball": "http://localhost:4873/@hardkas/plugin-rpc-backend/-/@hardkas/plugin-rpc-backend-0.12.0-rc.16.tgz"
+			},
+			"contributors": []
+		}
+	},
+	"time": {
+		"modified": "2026-08-31T09:58:01.818Z",
+		"created": "2026-08-31T09:54:59.631Z",
+		"0.12.0-rc.16": "2026-08-31T09:54:59.631Z",
+		"0.12.0-rc.16": "2026-08-31T09:58:01.818Z"
+	},
+	"users": {},
+	"dist-tags": {
+		"latest": "0.12.0-rc.16"
+	},
+	"_uplinks": {},
+	"_distfiles": {},
+	"_attachments": {
+		"plugin-rpc-backend-0.12.0-rc.16.tgz": {
+			"shasum": "1c7b52a4a44e2a260f512aa711322e339a61094c",
+			"version": "0.12.0-rc.16"
+		},
+		"plugin-rpc-backend-0.12.0-rc.16.tgz": {
+			"shasum": "641d51a2fe83ebbba653b9f139f50bef557da9f8",
+			"version": "0.12.0-rc.16"
+		}
+	},
+	"_rev": "6-fe3060a947c3a915",
+	"_id": "@hardkas/plugin-rpc-backend",
+	"readme": "ERROR: No README data found!"
+}

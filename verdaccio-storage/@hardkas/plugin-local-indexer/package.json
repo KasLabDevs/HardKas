@@ -1,0 +1,120 @@
+{
+	"name": "@hardkas/plugin-local-indexer",
+	"versions": {
+		"0.12.0-rc.16": {
+			"name": "@hardkas/plugin-local-indexer",
+			"version": "0.12.0-rc.16",
+			"description": "Local Indexer Plugin for HardKAS",
+			"type": "module",
+			"main": "./dist/index.js",
+			"types": "./dist/index.d.ts",
+			"exports": {
+				".": {
+					"import": "./dist/index.js",
+					"require": "./dist/index.js",
+					"types": "./dist/index.d.ts"
+				}
+			},
+			"dependencies": {
+				"@hardkas/core": "0.12.0-rc.16"
+			},
+			"devDependencies": {
+				"tsup": "^8.3.5",
+				"typescript": "^5.7.2",
+				"vitest": "^2.1.8"
+			},
+			"publishConfig": {
+				"access": "public"
+			},
+			"files": [
+				"dist"
+			],
+			"scripts": {
+				"build": "tsup",
+				"test": "vitest run"
+			},
+			"_id": "@hardkas/plugin-local-indexer@0.12.0-rc.16",
+			"_integrity": "sha512-RIuKpOr5hGjE8b5Mv9TZNfCIWHrTURdfgOm85bJT6AsDPbjX9cQcuAGAz1tTPxKdJxQRWXILH7Z/2GtpAdHXXw==",
+			"_resolved": "C:\\Users\\jrodr\\AppData\\Local\\Temp\\ee9c93afbf4af6574d3b7e41c222b52d\\hardkas-plugin-local-indexer-0.12.0-rc.16.tgz",
+			"_from": "file:hardkas-plugin-local-indexer-0.12.0-rc.16.tgz",
+			"_nodeVersion": "24.15.0",
+			"_npmVersion": "11.12.1",
+			"dist": {
+				"integrity": "sha512-RIuKpOr5hGjE8b5Mv9TZNfCIWHrTURdfgOm85bJT6AsDPbjX9cQcuAGAz1tTPxKdJxQRWXILH7Z/2GtpAdHXXw==",
+				"shasum": "6e78dc0979bdd54c16a8866d3eb2e6964840d578",
+				"tarball": "http://localhost:4873/@hardkas/plugin-local-indexer/-/@hardkas/plugin-local-indexer-0.12.0-rc.16.tgz"
+			},
+			"contributors": []
+		},
+		"0.12.0-rc.16": {
+			"name": "@hardkas/plugin-local-indexer",
+			"version": "0.12.0-rc.16",
+			"description": "Local Indexer Plugin for HardKAS",
+			"type": "module",
+			"main": "./dist/index.js",
+			"types": "./dist/index.d.ts",
+			"exports": {
+				".": {
+					"import": "./dist/index.js",
+					"require": "./dist/index.js",
+					"types": "./dist/index.d.ts"
+				}
+			},
+			"dependencies": {
+				"@hardkas/core": "0.12.0-rc.16"
+			},
+			"devDependencies": {
+				"tsup": "^8.3.5",
+				"typescript": "^5.7.2",
+				"vitest": "^2.1.8"
+			},
+			"publishConfig": {
+				"access": "public"
+			},
+			"files": [
+				"dist"
+			],
+			"scripts": {
+				"build": "tsup",
+				"test": "vitest run"
+			},
+			"_id": "@hardkas/plugin-local-indexer@0.12.0-rc.16",
+			"_integrity": "sha512-FLXBF7iU3FvsFv42Nb8E6jpM5MeD+UsuXYcUZrfp8IXK8jkhd2TZbr7234cG2KEcflRlVuvR4dLYgUkBa87uyw==",
+			"_resolved": "C:\\Users\\jrodr\\AppData\\Local\\Temp\\aad9c5f60cb92d68808120d4f0b58c50\\hardkas-plugin-local-indexer-0.12.0-rc.16.tgz",
+			"_from": "file:hardkas-plugin-local-indexer-0.12.0-rc.16.tgz",
+			"_nodeVersion": "24.15.0",
+			"_npmVersion": "11.12.1",
+			"dist": {
+				"integrity": "sha512-FLXBF7iU3FvsFv42Nb8E6jpM5MeD+UsuXYcUZrfp8IXK8jkhd2TZbr7234cG2KEcflRlVuvR4dLYgUkBa87uyw==",
+				"shasum": "35e3b1033f802a7df42ee7fb2a805b5a23ac942a",
+				"tarball": "http://localhost:4873/@hardkas/plugin-local-indexer/-/@hardkas/plugin-local-indexer-0.12.0-rc.16.tgz"
+			},
+			"contributors": []
+		}
+	},
+	"time": {
+		"modified": "2026-08-31T09:57:37.027Z",
+		"created": "2026-08-31T09:54:35.267Z",
+		"0.12.0-rc.16": "2026-08-31T09:54:35.267Z",
+		"0.12.0-rc.16": "2026-08-31T09:57:37.027Z"
+	},
+	"users": {},
+	"dist-tags": {
+		"latest": "0.12.0-rc.16"
+	},
+	"_uplinks": {},
+	"_distfiles": {},
+	"_attachments": {
+		"plugin-local-indexer-0.12.0-rc.16.tgz": {
+			"shasum": "6e78dc0979bdd54c16a8866d3eb2e6964840d578",
+			"version": "0.12.0-rc.16"
+		},
+		"plugin-local-indexer-0.12.0-rc.16.tgz": {
+			"shasum": "35e3b1033f802a7df42ee7fb2a805b5a23ac942a",
+			"version": "0.12.0-rc.16"
+		}
+	},
+	"_rev": "6-4e8ff1f0bd0869c1",
+	"_id": "@hardkas/plugin-local-indexer",
+	"readme": "ERROR: No README data found!"
+}

@@ -17,7 +17,7 @@ describe("Network-Agnostic Artifact Layer: NetworkProfile", () => {
   it("should create and verify a network profile", async () => {
     const profile = {
       schema: "hardkas.networkProfile.v1",
-      hardkasVersion: "0.12.0-rc.12",
+      hardkasVersion: "0.12.0-rc.16",
       version: "1.0.0-alpha",
       networkId: "mainnet",
       mode: "rpc",
@@ -42,7 +42,7 @@ describe("Network-Agnostic Artifact Layer: NetworkProfile", () => {
   it("should fail validation if capabilities mismatch schemas", async () => {
     const profile = {
       schema: "hardkas.networkProfile.v1",
-      hardkasVersion: "0.12.0-rc.12",
+      hardkasVersion: "0.12.0-rc.16",
       version: "1.0.0-alpha",
       networkId: "igra",
       mode: "rpc",

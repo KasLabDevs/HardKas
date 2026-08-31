@@ -162,7 +162,7 @@ export class PaymentService {
         invoice.txId = txId;
         invoice.confirmations = confirmations;
 
-        await fs.promises.writeFile(path.join(this.artifactsDir, `payment-receipt-${invoice.id}.json`), JSON.stringify(receipt, null, 2));
+        await writeArtifact(path.join(this.artifactsDir, `payment-receipt-${invoice.id}.json`), receipt);
         
         const merchant = this.merchants.get(invoice.merchantId);
         if (merchant?.webhookUrl) {

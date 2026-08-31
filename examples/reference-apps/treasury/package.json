@@ -1,6 +1,6 @@
 {
   "name": "treasury-ref",
-  "version": "0.12.0-rc.12",
+  "version": "0.12.0-rc.16",
   "private": true,
   "type": "module",
   "scripts": {

@@ -1,0 +1,186 @@
+{
+	"name": "@hardkas/react",
+	"versions": {
+		"0.12.0-rc.16": {
+			"name": "@hardkas/react",
+			"version": "0.12.0-rc.16",
+			"type": "module",
+			"main": "./dist/index.js",
+			"types": "./dist/index.d.ts",
+			"sideEffects": false,
+			"exports": {
+				".": {
+					"types": "./dist/index.d.ts",
+					"import": "./dist/index.js",
+					"default": "./dist/index.js"
+				}
+			},
+			"peerDependencies": {
+				"react": ">=18",
+				"react-dom": ">=18"
+			},
+			"dependencies": {
+				"@hardkas/client": "0.12.0-rc.16"
+			},
+			"devDependencies": {
+				"@testing-library/dom": "^10.4.1",
+				"@testing-library/jest-dom": "^6.9.1",
+				"@testing-library/react": "^16.3.2",
+				"@testing-library/user-event": "^14.6.1",
+				"@types/react": "^18.3.12",
+				"@types/react-dom": "^18.3.1",
+				"@vitejs/plugin-react": "^4.7.0",
+				"jsdom": "^29.1.1",
+				"react": "^18.3.1",
+				"react-dom": "^18.3.1",
+				"tsup": "^8.3.5",
+				"typescript": "^5.7.2",
+				"vite": "^5.0.0",
+				"vitest": "^2.1.8"
+			},
+			"license": "MIT",
+			"author": {
+				"name": "Javier Rodriguez"
+			},
+			"files": [
+				"dist",
+				"README.md",
+				"LICENSE"
+			],
+			"repository": {
+				"type": "git",
+				"url": "git+https://github.com/KasLabDevs/HardKas.git",
+				"directory": "packages/react"
+			},
+			"bugs": {
+				"url": "https://github.com/KasLabDevs/HardKas/issues"
+			},
+			"homepage": "https://github.com/KasLabDevs/HardKas/tree/main/packages/react#readme",
+			"publishConfig": {
+				"access": "public"
+			},
+			"scripts": {
+				"build": "tsup src/index.ts --format esm --dts --clean",
+				"test": "vitest run --passWithNoTests",
+				"typecheck": "tsc --noEmit"
+			},
+			"readmeFilename": "README.md",
+			"_id": "@hardkas/react@0.12.0-rc.16",
+			"description": "Zero-dependency React hooks for HardKAS.",
+			"_integrity": "sha512-4x8RFTZ4ag72Wl754H48xQ7dlGdvC9I+EVwTzikzZvH+fL2Proo1deTvKGXsAYkZhcEaT/KAmc/9PUHyAq7ovg==",
+			"_resolved": "C:\\Users\\jrodr\\AppData\\Local\\Temp\\c4a16dbe2e43f963a4d320c10725170e\\hardkas-react-0.12.0-rc.16.tgz",
+			"_from": "file:hardkas-react-0.12.0-rc.16.tgz",
+			"_nodeVersion": "24.15.0",
+			"_npmVersion": "11.12.1",
+			"dist": {
+				"integrity": "sha512-4x8RFTZ4ag72Wl754H48xQ7dlGdvC9I+EVwTzikzZvH+fL2Proo1deTvKGXsAYkZhcEaT/KAmc/9PUHyAq7ovg==",
+				"shasum": "e9b06449a770418f52606c9d29e14af25117ce54",
+				"tarball": "http://localhost:4873/@hardkas/react/-/@hardkas/react-0.12.0-rc.16.tgz"
+			},
+			"contributors": []
+		},
+		"0.12.0-rc.16": {
+			"name": "@hardkas/react",
+			"version": "0.12.0-rc.16",
+			"type": "module",
+			"main": "./dist/index.js",
+			"types": "./dist/index.d.ts",
+			"sideEffects": false,
+			"exports": {
+				".": {
+					"types": "./dist/index.d.ts",
+					"import": "./dist/index.js",
+					"default": "./dist/index.js"
+				}
+			},
+			"peerDependencies": {
+				"react": ">=18",
+				"react-dom": ">=18"
+			},
+			"dependencies": {
+				"@hardkas/client": "0.12.0-rc.16"
+			},
+			"devDependencies": {
+				"@testing-library/dom": "^10.4.1",
+				"@testing-library/jest-dom": "^6.9.1",
+				"@testing-library/react": "^16.3.2",
+				"@testing-library/user-event": "^14.6.1",
+				"@types/react": "^18.3.12",
+				"@types/react-dom": "^18.3.1",
+				"@vitejs/plugin-react": "^4.7.0",
+				"jsdom": "^29.1.1",
+				"react": "^18.3.1",
+				"react-dom": "^18.3.1",
+				"tsup": "^8.3.5",
+				"typescript": "^5.7.2",
+				"vite": "^5.0.0",
+				"vitest": "^2.1.8"
+			},
+			"license": "MIT",
+			"author": {
+				"name": "Javier Rodriguez"
+			},
+			"files": [
+				"dist",
+				"README.md",
+				"LICENSE"
+			],
+			"repository": {
+				"type": "git",
+				"url": "git+https://github.com/KasLabDevs/HardKas.git",
+				"directory": "packages/react"
+			},
+			"bugs": {
+				"url": "https://github.com/KasLabDevs/HardKas/issues"
+			},
+			"homepage": "https://github.com/KasLabDevs/HardKas/tree/main/packages/react#readme",
+			"publishConfig": {
+				"access": "public"
+			},
+			"scripts": {
+				"build": "tsup src/index.ts --format esm --dts --clean",
+				"test": "vitest run --passWithNoTests",
+				"typecheck": "tsc --noEmit"
+			},
+			"readmeFilename": "README.md",
+			"_id": "@hardkas/react@0.12.0-rc.16",
+			"description": "Zero-dependency React hooks for HardKAS.",
+			"_integrity": "sha512-e8ksJGBGC+0Fdlv4FEmPDO+jB8E9fG/Ube30qRXHQ0ZiMZ39DxzSt9AQTvSoNbqv4/LjXdTA0I/BUlQnVkI1rA==",
+			"_resolved": "C:\\Users\\jrodr\\AppData\\Local\\Temp\\93b0ed8ffb4671b665db7fd9568f68c6\\hardkas-react-0.12.0-rc.16.tgz",
+			"_from": "file:hardkas-react-0.12.0-rc.16.tgz",
+			"_nodeVersion": "24.15.0",
+			"_npmVersion": "11.12.1",
+			"dist": {
+				"integrity": "sha512-e8ksJGBGC+0Fdlv4FEmPDO+jB8E9fG/Ube30qRXHQ0ZiMZ39DxzSt9AQTvSoNbqv4/LjXdTA0I/BUlQnVkI1rA==",
+				"shasum": "6af9496e521daa4d14ff0f58e98948e08a121639",
+				"tarball": "http://localhost:4873/@hardkas/react/-/@hardkas/react-0.12.0-rc.16.tgz"
+			},
+			"contributors": []
+		}
+	},
+	"time": {
+		"modified": "2026-08-31T09:57:38.316Z",
+		"created": "2026-08-31T09:54:36.536Z",
+		"0.12.0-rc.16": "2026-08-31T09:54:36.536Z",
+		"0.12.0-rc.16": "2026-08-31T09:57:38.316Z"
+	},
+	"users": {},
+	"dist-tags": {
+		"latest": "0.12.0-rc.16"
+	},
+	"_uplinks": {},
+	"_distfiles": {},
+	"_attachments": {
+		"react-0.12.0-rc.16.tgz": {
+			"shasum": "e9b06449a770418f52606c9d29e14af25117ce54",
+			"version": "0.12.0-rc.16"
+		},
+		"react-0.12.0-rc.16.tgz": {
+			"shasum": "6af9496e521daa4d14ff0f58e98948e08a121639",
+			"version": "0.12.0-rc.16"
+		}
+	},
+	"_rev": "6-ccdb8512be49f8ea",
+	"_id": "@hardkas/react",
+	"readme": "# @hardkas/react\r\n\r\nZero-dependency React hooks for HardKAS.\r\n\r\n> [!WARNING]\r\n> **DO NOT import `@hardkas/sdk` in the browser!**\r\n> The main SDK package contains Node.js specific libraries. Use `@hardkas/react` for your web UI.\r\n\r\n## Installation\r\n\r\n```bash\r\nnpm install @hardkas/react @hardkas/client\r\n```\r\n\r\n## Setup Provider\r\n\r\nWrap your application in the `HardKASProvider`. This initializes the underlying `@hardkas/client` instance.\r\n\r\n```tsx\r\nimport { HardKASProvider } from \"@hardkas/react\";\r\n\r\nfunction App() {\r\n  return (\r\n    <HardKASProvider baseUrl=\"http://127.0.0.1:7420\" timeout={10000}>\r\n      <MyDApp />\r\n    </HardKASProvider>\r\n  );\r\n}\r\n```\r\n\r\n## Hooks\r\n\r\n### `useWallet`\r\n\r\nFetch wallet details.\r\n\r\n```tsx\r\nimport { useWallet } from \"@hardkas/react\";\r\n\r\nfunction WalletView() {\r\n  const { data, loading, error } = useWallet(\"alice\");\r\n\r\n  if (loading) return <p>Loading...</p>;\r\n  if (error) return <p>Error: {error.message}</p>;\r\n\r\n  return <pre>{JSON.stringify(data, null, 2)}</pre>;\r\n}\r\n```\r\n\r\n### `useMutation`\r\n\r\nGeneric hook for executing state-changing transactions against the Dev API.\r\n\r\n```tsx\r\nimport { useMutation } from \"@hardkas/react\";\r\n\r\nfunction SendKas() {\r\n  const { execute, loading } = useMutation(\r\n    (client, vars: { to: string; amount: number }) => {\r\n      return client.txSimulate({ ...vars });\r\n    }\r\n  );\r\n\r\n  return (\r\n    <button onClick={() => execute({ to: \"bob\", amount: 100 })} disabled={loading}>\r\n      {loading ? \"Sending...\" : \"Send to Bob\"}\r\n    </button>\r\n  );\r\n}\r\n```\r\n"
+}

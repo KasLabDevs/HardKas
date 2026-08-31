@@ -1,0 +1,162 @@
+{
+	"name": "@hardkas/query-store",
+	"versions": {
+		"0.12.0-rc.16": {
+			"name": "@hardkas/query-store",
+			"version": "0.12.0-rc.16",
+			"type": "module",
+			"main": "./dist/index.js",
+			"types": "./dist/index.d.ts",
+			"exports": {
+				".": {
+					"types": "./dist/index.d.ts",
+					"import": "./dist/index.js",
+					"default": "./dist/index.js"
+				}
+			},
+			"dependencies": {
+				"@hardkas/core": "0.12.0-rc.16",
+				"@hardkas/artifacts": "0.12.0-rc.16"
+			},
+			"devDependencies": {
+				"@types/node": "^22.10.0",
+				"tsup": "^8.3.5",
+				"tsx": "^4.19.2",
+				"typescript": "^5.7.2",
+				"vitest": "^2.1.8"
+			},
+			"license": "MIT",
+			"author": {
+				"name": "Javier Rodriguez"
+			},
+			"repository": {
+				"type": "git",
+				"url": "git+https://github.com/KasLabDevs/HardKas.git",
+				"directory": "packages/query-store"
+			},
+			"bugs": {
+				"url": "https://github.com/KasLabDevs/HardKas/issues"
+			},
+			"homepage": "https://github.com/KasLabDevs/HardKas/tree/main/packages/query-store#readme",
+			"files": [
+				"dist",
+				"LICENSE",
+				"README.md"
+			],
+			"publishConfig": {
+				"access": "public"
+			},
+			"scripts": {
+				"build": "tsc",
+				"test": "vitest run",
+				"typecheck": "tsc --noEmit",
+				"lint": "eslint ."
+			},
+			"readmeFilename": "README.md",
+			"_id": "@hardkas/query-store@0.12.0-rc.16",
+			"description": "The Query Store is a rebuildable, heavily indexed SQLite projection of the `.hardkas/` workspace. It provides fast reads for CLI and Dashboard interactions without scanning thousands of JSON files.",
+			"_integrity": "sha512-CtHkzFHObjT98xnNusqUA54bT7HuC2RvKCdwiXzXT5J8Xz0hXCETuclMGYALBK3Vkc17kxhMNhNo+PXENeUbBQ==",
+			"_resolved": "C:\\Users\\jrodr\\AppData\\Local\\Temp\\32371f2e8522a959d3a9f260eebf3d0f\\hardkas-query-store-0.12.0-rc.16.tgz",
+			"_from": "file:hardkas-query-store-0.12.0-rc.16.tgz",
+			"_nodeVersion": "24.15.0",
+			"_npmVersion": "11.12.1",
+			"dist": {
+				"integrity": "sha512-CtHkzFHObjT98xnNusqUA54bT7HuC2RvKCdwiXzXT5J8Xz0hXCETuclMGYALBK3Vkc17kxhMNhNo+PXENeUbBQ==",
+				"shasum": "e89473f1e173ae9df0d85d93e3b53d89c9650700",
+				"tarball": "http://localhost:4873/@hardkas/query-store/-/@hardkas/query-store-0.12.0-rc.16.tgz"
+			},
+			"contributors": []
+		},
+		"0.12.0-rc.16": {
+			"name": "@hardkas/query-store",
+			"version": "0.12.0-rc.16",
+			"type": "module",
+			"main": "./dist/index.js",
+			"types": "./dist/index.d.ts",
+			"exports": {
+				".": {
+					"types": "./dist/index.d.ts",
+					"import": "./dist/index.js",
+					"default": "./dist/index.js"
+				}
+			},
+			"dependencies": {
+				"@hardkas/core": "0.12.0-rc.16",
+				"@hardkas/artifacts": "0.12.0-rc.16"
+			},
+			"devDependencies": {
+				"@types/node": "^22.10.0",
+				"tsup": "^8.3.5",
+				"tsx": "^4.19.2",
+				"typescript": "^5.7.2",
+				"vitest": "^2.1.8"
+			},
+			"license": "MIT",
+			"author": {
+				"name": "Javier Rodriguez"
+			},
+			"repository": {
+				"type": "git",
+				"url": "git+https://github.com/KasLabDevs/HardKas.git",
+				"directory": "packages/query-store"
+			},
+			"bugs": {
+				"url": "https://github.com/KasLabDevs/HardKas/issues"
+			},
+			"homepage": "https://github.com/KasLabDevs/HardKas/tree/main/packages/query-store#readme",
+			"files": [
+				"dist",
+				"LICENSE",
+				"README.md"
+			],
+			"publishConfig": {
+				"access": "public"
+			},
+			"scripts": {
+				"build": "tsc",
+				"test": "vitest run",
+				"typecheck": "tsc --noEmit",
+				"lint": "eslint ."
+			},
+			"readmeFilename": "README.md",
+			"_id": "@hardkas/query-store@0.12.0-rc.16",
+			"description": "The Query Store is a rebuildable, heavily indexed SQLite projection of the `.hardkas/` workspace. It provides fast reads for CLI and Dashboard interactions without scanning thousands of JSON files.",
+			"_integrity": "sha512-dpVxi2uHhF3jWlLmf3x6bd8QXkqFSHe2zB3FOpy68ZMAc4fjcyODBxyzZDJRgWB6+apawbEhe2AyyW4AhJf7oQ==",
+			"_resolved": "C:\\Users\\jrodr\\AppData\\Local\\Temp\\5eceffe415e7877bfe4267d6ff132737\\hardkas-query-store-0.12.0-rc.16.tgz",
+			"_from": "file:hardkas-query-store-0.12.0-rc.16.tgz",
+			"_nodeVersion": "24.15.0",
+			"_npmVersion": "11.12.1",
+			"dist": {
+				"integrity": "sha512-dpVxi2uHhF3jWlLmf3x6bd8QXkqFSHe2zB3FOpy68ZMAc4fjcyODBxyzZDJRgWB6+apawbEhe2AyyW4AhJf7oQ==",
+				"shasum": "25ce4933ca6150e2cb9624e0964ee438ab143361",
+				"tarball": "http://localhost:4873/@hardkas/query-store/-/@hardkas/query-store-0.12.0-rc.16.tgz"
+			},
+			"contributors": []
+		}
+	},
+	"time": {
+		"modified": "2026-08-31T09:57:52.537Z",
+		"created": "2026-08-31T09:54:50.538Z",
+		"0.12.0-rc.16": "2026-08-31T09:54:50.538Z",
+		"0.12.0-rc.16": "2026-08-31T09:57:52.537Z"
+	},
+	"users": {},
+	"dist-tags": {
+		"latest": "0.12.0-rc.16"
+	},
+	"_uplinks": {},
+	"_distfiles": {},
+	"_attachments": {
+		"query-store-0.12.0-rc.16.tgz": {
+			"shasum": "e89473f1e173ae9df0d85d93e3b53d89c9650700",
+			"version": "0.12.0-rc.16"
+		},
+		"query-store-0.12.0-rc.16.tgz": {
+			"shasum": "25ce4933ca6150e2cb9624e0964ee438ab143361",
+			"version": "0.12.0-rc.16"
+		}
+	},
+	"_rev": "6-dbbb398df3d35321",
+	"_id": "@hardkas/query-store",
+	"readme": "# `@hardkas/query-store`\r\n\r\nThe Query Store is a rebuildable, heavily indexed SQLite projection of the `.hardkas/` workspace. It provides fast reads for CLI and Dashboard interactions without scanning thousands of JSON files.\r\n\r\n## 1. Indexing Architecture\r\n\r\nThe query store relies _entirely_ on the filesystem (`artifacts/` and `events.jsonl`). The SQLite database itself is treated as ephemeral and rebuildable.\r\n\r\n### Flow: Incremental Sync (`hardkas query store sync`)\r\n\r\n1. The engine queries the current `MAX(eventId)` in the SQLite `events` table.\r\n2. It opens `events.jsonl` and streams only lines where `id > MAX`.\r\n3. It batch-inserts the new events in a single SQLite transaction to prevent corruption on crash.\r\n4. It scans `artifacts/` for files newer than the last sync timestamp and updates the `artifacts` table.\r\n\r\n### Variant: Full Rebuild (`hardkas rebuild --from-artifacts`)\r\n\r\nIf the SQLite file is deleted, corrupted, or schema migrations fail:\r\n\r\n1. The SQLite file is purged.\r\n2. `events.jsonl` is streamed from line 1.\r\n3. `artifacts/` is traversed deeply.\r\n4. The database is rebuilt from scratch, proving the mathematical determinism of the runtime.\r\n\r\n## 2. Diagnostic Flows\r\n\r\nBecause the SQLite file is an ephemeral projection, it can diverge from the artifacts layer if a process is violently killed.\r\n\r\n### Flow: Store Doctor (`hardkas query store doctor`)\r\n\r\n1. Verifies the SQLite schema version against the current SDK version.\r\n2. Runs `PRAGMA integrity_check`.\r\n3. Counts rows in SQLite and compares them against the line count in `events.jsonl`.\r\n4. If discrepancies are found, it prompts the user to run `sync` or `rebuild`.\r\n\r\n### Variant: Silent Migration (`--migrate`)\r\n\r\nIf the schema is outdated (e.g., v3 to v4 after updating the HardKAS package), the `--migrate` flag triggers deterministic SQL `ALTER TABLE` statements. If a migration fails mid-way, the transaction rolls back, and the `Store Doctor` automatically triggers a Full Rebuild to ensure consistency.\r\n"
+}

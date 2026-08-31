@@ -1,0 +1,150 @@
+{
+	"name": "@hardkas/sessions",
+	"versions": {
+		"0.12.0-rc.16": {
+			"name": "@hardkas/sessions",
+			"version": "0.12.0-rc.16",
+			"type": "module",
+			"main": "./dist/index.js",
+			"types": "./dist/index.d.ts",
+			"exports": {
+				".": {
+					"types": "./dist/index.d.ts",
+					"import": "./dist/index.js",
+					"default": "./dist/index.js"
+				}
+			},
+			"dependencies": {
+				"@hardkas/core": "0.12.0-rc.16"
+			},
+			"devDependencies": {
+				"tsup": "^8.3.5",
+				"typescript": "^5.7.2",
+				"vitest": "^2.1.8"
+			},
+			"license": "MIT",
+			"author": {
+				"name": "Javier Rodriguez"
+			},
+			"files": [
+				"dist",
+				"README.md",
+				"LICENSE"
+			],
+			"repository": {
+				"type": "git",
+				"url": "git+https://github.com/KasLabDevs/HardKas.git",
+				"directory": "packages/sessions"
+			},
+			"bugs": {
+				"url": "https://github.com/KasLabDevs/HardKas/issues"
+			},
+			"homepage": "https://github.com/KasLabDevs/HardKas/tree/main/packages/sessions#readme",
+			"publishConfig": {
+				"access": "public"
+			},
+			"scripts": {
+				"build": "tsup src/index.ts --format esm --dts --clean",
+				"test": "vitest run --passWithNoTests",
+				"typecheck": "tsc --noEmit"
+			},
+			"_id": "@hardkas/sessions@0.12.0-rc.16",
+			"_integrity": "sha512-rUpF9iSHSvPoF76aVSXxQHlOuETDeEM8d0ONr5GSk6e0RoGDzHio75nGOuQ1pIU41TeEa1AJU0bgD5vhndWCjQ==",
+			"_resolved": "C:\\Users\\jrodr\\AppData\\Local\\Temp\\4035eb33b8c02d0cdf0b07d76ad5f652\\hardkas-sessions-0.12.0-rc.16.tgz",
+			"_from": "file:hardkas-sessions-0.12.0-rc.16.tgz",
+			"_nodeVersion": "24.15.0",
+			"_npmVersion": "11.12.1",
+			"dist": {
+				"integrity": "sha512-rUpF9iSHSvPoF76aVSXxQHlOuETDeEM8d0ONr5GSk6e0RoGDzHio75nGOuQ1pIU41TeEa1AJU0bgD5vhndWCjQ==",
+				"shasum": "67379b1405473652d0ca5a3461d76326f89fc871",
+				"tarball": "http://localhost:4873/@hardkas/sessions/-/@hardkas/sessions-0.12.0-rc.16.tgz"
+			},
+			"contributors": []
+		},
+		"0.12.0-rc.16": {
+			"name": "@hardkas/sessions",
+			"version": "0.12.0-rc.16",
+			"type": "module",
+			"main": "./dist/index.js",
+			"types": "./dist/index.d.ts",
+			"exports": {
+				".": {
+					"types": "./dist/index.d.ts",
+					"import": "./dist/index.js",
+					"default": "./dist/index.js"
+				}
+			},
+			"dependencies": {
+				"@hardkas/core": "0.12.0-rc.16"
+			},
+			"devDependencies": {
+				"tsup": "^8.3.5",
+				"typescript": "^5.7.2",
+				"vitest": "^2.1.8"
+			},
+			"license": "MIT",
+			"author": {
+				"name": "Javier Rodriguez"
+			},
+			"files": [
+				"dist",
+				"README.md",
+				"LICENSE"
+			],
+			"repository": {
+				"type": "git",
+				"url": "git+https://github.com/KasLabDevs/HardKas.git",
+				"directory": "packages/sessions"
+			},
+			"bugs": {
+				"url": "https://github.com/KasLabDevs/HardKas/issues"
+			},
+			"homepage": "https://github.com/KasLabDevs/HardKas/tree/main/packages/sessions#readme",
+			"publishConfig": {
+				"access": "public"
+			},
+			"scripts": {
+				"build": "tsup src/index.ts --format esm --dts --clean",
+				"test": "vitest run --passWithNoTests",
+				"typecheck": "tsc --noEmit"
+			},
+			"_id": "@hardkas/sessions@0.12.0-rc.16",
+			"_integrity": "sha512-Qu/w5ZHhy6QwMlDfknNb4ztRUw0Bco28ST1MjU+hF/gkvatQf5mknha+WrIQhbf1sjUXU+QjbYZrMzidtbVyCA==",
+			"_resolved": "C:\\Users\\jrodr\\AppData\\Local\\Temp\\2d23c54eb7b7f6ad968851b81d1d9bb1\\hardkas-sessions-0.12.0-rc.16.tgz",
+			"_from": "file:hardkas-sessions-0.12.0-rc.16.tgz",
+			"_nodeVersion": "24.15.0",
+			"_npmVersion": "11.12.1",
+			"dist": {
+				"integrity": "sha512-Qu/w5ZHhy6QwMlDfknNb4ztRUw0Bco28ST1MjU+hF/gkvatQf5mknha+WrIQhbf1sjUXU+QjbYZrMzidtbVyCA==",
+				"shasum": "b9cd23fcaf04356e2e34b44f75445159cf71d48f",
+				"tarball": "http://localhost:4873/@hardkas/sessions/-/@hardkas/sessions-0.12.0-rc.16.tgz"
+			},
+			"contributors": []
+		}
+	},
+	"time": {
+		"modified": "2026-08-31T09:57:40.899Z",
+		"created": "2026-08-31T09:54:39.476Z",
+		"0.12.0-rc.16": "2026-08-31T09:54:39.476Z",
+		"0.12.0-rc.16": "2026-08-31T09:57:40.899Z"
+	},
+	"users": {},
+	"dist-tags": {
+		"latest": "0.12.0-rc.16"
+	},
+	"_uplinks": {},
+	"_distfiles": {},
+	"_attachments": {
+		"sessions-0.12.0-rc.16.tgz": {
+			"shasum": "67379b1405473652d0ca5a3461d76326f89fc871",
+			"version": "0.12.0-rc.16"
+		},
+		"sessions-0.12.0-rc.16.tgz": {
+			"shasum": "b9cd23fcaf04356e2e34b44f75445159cf71d48f",
+			"version": "0.12.0-rc.16"
+		}
+	},
+	"_rev": "6-886e9cafeb44e2c4",
+	"_id": "@hardkas/sessions",
+	"readme": "ERROR: No README data found!"
+}

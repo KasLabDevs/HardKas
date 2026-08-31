@@ -1,0 +1,156 @@
+{
+	"name": "@hardkas/config",
+	"versions": {
+		"0.12.0-rc.16": {
+			"name": "@hardkas/config",
+			"version": "0.12.0-rc.16",
+			"type": "module",
+			"main": "./dist/index.js",
+			"types": "./dist/index.d.ts",
+			"exports": {
+				".": {
+					"types": "./dist/index.d.ts",
+					"import": "./dist/index.js",
+					"require": "./dist/index.js",
+					"default": "./dist/index.js"
+				}
+			},
+			"files": [
+				"dist",
+				"LICENSE",
+				"README.md"
+			],
+			"dependencies": {
+				"jiti": "^2.4.2",
+				"@hardkas/core": "0.12.0-rc.16"
+			},
+			"devDependencies": {
+				"tsup": "^8.3.5",
+				"typescript": "^5.7.2",
+				"vitest": "^2.1.8"
+			},
+			"license": "MIT",
+			"author": {
+				"name": "Javier Rodriguez"
+			},
+			"repository": {
+				"type": "git",
+				"url": "git+https://github.com/KasLabDevs/HardKas.git",
+				"directory": "packages/config"
+			},
+			"bugs": {
+				"url": "https://github.com/KasLabDevs/HardKas/issues"
+			},
+			"homepage": "https://github.com/KasLabDevs/HardKas/tree/main/packages/config#readme",
+			"publishConfig": {
+				"access": "public"
+			},
+			"scripts": {
+				"build": "tsup src/index.ts --format esm --dts --clean",
+				"dev": "tsup src/index.ts --format esm --watch --dts",
+				"test": "vitest run",
+				"typecheck": "tsc --noEmit"
+			},
+			"_id": "@hardkas/config@0.12.0-rc.16",
+			"_integrity": "sha512-UojS3adP32jg7mmw6QU0xSC2lo4o7aZsoNpI837dQkiQZK6gpr9P606W0UoUA6t3FdGwo/CBKdgPZECZF7aQzg==",
+			"_resolved": "C:\\Users\\jrodr\\AppData\\Local\\Temp\\d64990169961d8149e4d135551d1ace6\\hardkas-config-0.12.0-rc.16.tgz",
+			"_from": "file:hardkas-config-0.12.0-rc.16.tgz",
+			"_nodeVersion": "24.15.0",
+			"_npmVersion": "11.12.1",
+			"dist": {
+				"integrity": "sha512-UojS3adP32jg7mmw6QU0xSC2lo4o7aZsoNpI837dQkiQZK6gpr9P606W0UoUA6t3FdGwo/CBKdgPZECZF7aQzg==",
+				"shasum": "d5aa8072345b98ef9b11ecd7fbdd53520c3e1512",
+				"tarball": "http://localhost:4873/@hardkas/config/-/@hardkas/config-0.12.0-rc.16.tgz"
+			},
+			"contributors": []
+		},
+		"0.12.0-rc.16": {
+			"name": "@hardkas/config",
+			"version": "0.12.0-rc.16",
+			"type": "module",
+			"main": "./dist/index.js",
+			"types": "./dist/index.d.ts",
+			"exports": {
+				".": {
+					"types": "./dist/index.d.ts",
+					"import": "./dist/index.js",
+					"require": "./dist/index.js",
+					"default": "./dist/index.js"
+				}
+			},
+			"files": [
+				"dist",
+				"LICENSE",
+				"README.md"
+			],
+			"dependencies": {
+				"jiti": "^2.4.2",
+				"@hardkas/core": "0.12.0-rc.16"
+			},
+			"devDependencies": {
+				"tsup": "^8.3.5",
+				"typescript": "^5.7.2",
+				"vitest": "^2.1.8"
+			},
+			"license": "MIT",
+			"author": {
+				"name": "Javier Rodriguez"
+			},
+			"repository": {
+				"type": "git",
+				"url": "git+https://github.com/KasLabDevs/HardKas.git",
+				"directory": "packages/config"
+			},
+			"bugs": {
+				"url": "https://github.com/KasLabDevs/HardKas/issues"
+			},
+			"homepage": "https://github.com/KasLabDevs/HardKas/tree/main/packages/config#readme",
+			"publishConfig": {
+				"access": "public"
+			},
+			"scripts": {
+				"build": "tsup src/index.ts --format esm --dts --clean",
+				"dev": "tsup src/index.ts --format esm --watch --dts",
+				"test": "vitest run",
+				"typecheck": "tsc --noEmit"
+			},
+			"_id": "@hardkas/config@0.12.0-rc.16",
+			"_integrity": "sha512-jLjU54mAASVD9R9aS7QtRzAXHLG3h+ChQj5GwejeJ30v+D0in8VWGnOjXvMvq2t5O3rfqIk+93TvAphLYIu3MA==",
+			"_resolved": "C:\\Users\\jrodr\\AppData\\Local\\Temp\\469d621f40c71038c0eb897dc273c514\\hardkas-config-0.12.0-rc.16.tgz",
+			"_from": "file:hardkas-config-0.12.0-rc.16.tgz",
+			"_nodeVersion": "24.15.0",
+			"_npmVersion": "11.12.1",
+			"dist": {
+				"integrity": "sha512-jLjU54mAASVD9R9aS7QtRzAXHLG3h+ChQj5GwejeJ30v+D0in8VWGnOjXvMvq2t5O3rfqIk+93TvAphLYIu3MA==",
+				"shasum": "53e5587d3b77e6cf1d8ddb162480913a3f281238",
+				"tarball": "http://localhost:4873/@hardkas/config/-/@hardkas/config-0.12.0-rc.16.tgz"
+			},
+			"contributors": []
+		}
+	},
+	"time": {
+		"modified": "2026-08-31T09:57:31.420Z",
+		"created": "2026-08-31T09:54:29.593Z",
+		"0.12.0-rc.16": "2026-08-31T09:54:29.593Z",
+		"0.12.0-rc.16": "2026-08-31T09:57:31.420Z"
+	},
+	"users": {},
+	"dist-tags": {
+		"latest": "0.12.0-rc.16"
+	},
+	"_uplinks": {},
+	"_distfiles": {},
+	"_attachments": {
+		"config-0.12.0-rc.16.tgz": {
+			"shasum": "d5aa8072345b98ef9b11ecd7fbdd53520c3e1512",
+			"version": "0.12.0-rc.16"
+		},
+		"config-0.12.0-rc.16.tgz": {
+			"shasum": "53e5587d3b77e6cf1d8ddb162480913a3f281238",
+			"version": "0.12.0-rc.16"
+		}
+	},
+	"_rev": "6-ce4194a665844e03",
+	"_id": "@hardkas/config",
+	"readme": "ERROR: No README data found!"
+}

@@ -23,7 +23,7 @@ export async function dappReactTemplate(targetDir: string, projectName: string) 
         dependencies: {
           react: "^18.2.0",
           "react-dom": "^18.2.0",
-          "@hardkas/sdk": "^0.12.0-rc.12" // Placeholder, actual installation will resolve to latest
+          "@hardkas/sdk": "^0.12.0-rc.16" // Placeholder, actual installation will resolve to latest
         },
         devDependencies: {
           "@types/react": "^18.2.66",

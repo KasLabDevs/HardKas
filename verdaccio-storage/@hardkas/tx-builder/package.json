@@ -1,0 +1,152 @@
+{
+	"name": "@hardkas/tx-builder",
+	"versions": {
+		"0.12.0-rc.16": {
+			"name": "@hardkas/tx-builder",
+			"version": "0.12.0-rc.16",
+			"type": "module",
+			"main": "./dist/index.js",
+			"types": "./dist/index.d.ts",
+			"exports": {
+				".": {
+					"types": "./dist/index.d.ts",
+					"import": "./dist/index.js",
+					"default": "./dist/index.js"
+				}
+			},
+			"dependencies": {
+				"@hardkas/core": "0.12.0-rc.16"
+			},
+			"devDependencies": {
+				"tsup": "^8.3.5",
+				"typescript": "^5.7.2",
+				"vitest": "^2.1.8"
+			},
+			"license": "MIT",
+			"author": {
+				"name": "Javier Rodriguez"
+			},
+			"repository": {
+				"type": "git",
+				"url": "git+https://github.com/KasLabDevs/HardKas.git",
+				"directory": "packages/tx-builder"
+			},
+			"bugs": {
+				"url": "https://github.com/KasLabDevs/HardKas/issues"
+			},
+			"homepage": "https://github.com/KasLabDevs/HardKas/tree/main/packages/tx-builder#readme",
+			"files": [
+				"dist",
+				"LICENSE",
+				"README.md"
+			],
+			"publishConfig": {
+				"access": "public"
+			},
+			"scripts": {
+				"build": "tsup src/index.ts --format esm --dts --clean",
+				"test": "vitest run",
+				"typecheck": "tsc --noEmit",
+				"lint": "eslint ."
+			},
+			"_id": "@hardkas/tx-builder@0.12.0-rc.16",
+			"_integrity": "sha512-tQ512Y2ndFke7PQzj0eqSlnbzQSAYkFN37tIhLFYFhWUpktZ1W7W/DwmV1bk6sxu87mG9a1VQZM1hEn0765o6g==",
+			"_resolved": "C:\\Users\\jrodr\\AppData\\Local\\Temp\\1309edfe0c465656bcc3624a7d7b0174\\hardkas-tx-builder-0.12.0-rc.16.tgz",
+			"_from": "file:hardkas-tx-builder-0.12.0-rc.16.tgz",
+			"_nodeVersion": "24.15.0",
+			"_npmVersion": "11.12.1",
+			"dist": {
+				"integrity": "sha512-tQ512Y2ndFke7PQzj0eqSlnbzQSAYkFN37tIhLFYFhWUpktZ1W7W/DwmV1bk6sxu87mG9a1VQZM1hEn0765o6g==",
+				"shasum": "adf4780ebca0b3389eb5ca1b246d49e600bac25f",
+				"tarball": "http://localhost:4873/@hardkas/tx-builder/-/@hardkas/tx-builder-0.12.0-rc.16.tgz"
+			},
+			"contributors": []
+		},
+		"0.12.0-rc.16": {
+			"name": "@hardkas/tx-builder",
+			"version": "0.12.0-rc.16",
+			"type": "module",
+			"main": "./dist/index.js",
+			"types": "./dist/index.d.ts",
+			"exports": {
+				".": {
+					"types": "./dist/index.d.ts",
+					"import": "./dist/index.js",
+					"default": "./dist/index.js"
+				}
+			},
+			"dependencies": {
+				"@hardkas/core": "0.12.0-rc.16"
+			},
+			"devDependencies": {
+				"tsup": "^8.3.5",
+				"typescript": "^5.7.2",
+				"vitest": "^2.1.8"
+			},
+			"license": "MIT",
+			"author": {
+				"name": "Javier Rodriguez"
+			},
+			"repository": {
+				"type": "git",
+				"url": "git+https://github.com/KasLabDevs/HardKas.git",
+				"directory": "packages/tx-builder"
+			},
+			"bugs": {
+				"url": "https://github.com/KasLabDevs/HardKas/issues"
+			},
+			"homepage": "https://github.com/KasLabDevs/HardKas/tree/main/packages/tx-builder#readme",
+			"files": [
+				"dist",
+				"LICENSE",
+				"README.md"
+			],
+			"publishConfig": {
+				"access": "public"
+			},
+			"scripts": {
+				"build": "tsup src/index.ts --format esm --dts --clean",
+				"test": "vitest run",
+				"typecheck": "tsc --noEmit",
+				"lint": "eslint ."
+			},
+			"_id": "@hardkas/tx-builder@0.12.0-rc.16",
+			"_integrity": "sha512-1bp8nJDWKWun9IwmB7jO+MHOAbPBUwz5ylFfqbcdhSnGkssu5KeJBQa8VT5r723NMR4YLxCmJE9ELugYGaSqWg==",
+			"_resolved": "C:\\Users\\jrodr\\AppData\\Local\\Temp\\9dcf5cbf7b326da4dc003259b527900d\\hardkas-tx-builder-0.12.0-rc.16.tgz",
+			"_from": "file:hardkas-tx-builder-0.12.0-rc.16.tgz",
+			"_nodeVersion": "24.15.0",
+			"_npmVersion": "11.12.1",
+			"dist": {
+				"integrity": "sha512-1bp8nJDWKWun9IwmB7jO+MHOAbPBUwz5ylFfqbcdhSnGkssu5KeJBQa8VT5r723NMR4YLxCmJE9ELugYGaSqWg==",
+				"shasum": "438449e25aa2d64ee1cb34b23b7f3976331e5198",
+				"tarball": "http://localhost:4873/@hardkas/tx-builder/-/@hardkas/tx-builder-0.12.0-rc.16.tgz"
+			},
+			"contributors": []
+		}
+	},
+	"time": {
+		"modified": "2026-08-31T09:57:42.348Z",
+		"created": "2026-08-31T09:54:40.938Z",
+		"0.12.0-rc.16": "2026-08-31T09:54:40.938Z",
+		"0.12.0-rc.16": "2026-08-31T09:57:42.348Z"
+	},
+	"users": {},
+	"dist-tags": {
+		"latest": "0.12.0-rc.16"
+	},
+	"_uplinks": {},
+	"_distfiles": {},
+	"_attachments": {
+		"tx-builder-0.12.0-rc.16.tgz": {
+			"shasum": "adf4780ebca0b3389eb5ca1b246d49e600bac25f",
+			"version": "0.12.0-rc.16"
+		},
+		"tx-builder-0.12.0-rc.16.tgz": {
+			"shasum": "438449e25aa2d64ee1cb34b23b7f3976331e5198",
+			"version": "0.12.0-rc.16"
+		}
+	},
+	"_rev": "6-68c632f6473ccad3",
+	"_id": "@hardkas/tx-builder",
+	"readme": "ERROR: No README data found!"
+}

@@ -1,0 +1,152 @@
+{
+	"name": "@hardkas/simulator-adapters",
+	"versions": {
+		"0.12.0-rc.16": {
+			"name": "@hardkas/simulator-adapters",
+			"version": "0.12.0-rc.16",
+			"type": "module",
+			"main": "./dist/index.js",
+			"types": "./dist/index.d.ts",
+			"exports": {
+				".": {
+					"types": "./dist/index.d.ts",
+					"import": "./dist/index.js",
+					"default": "./dist/index.js"
+				}
+			},
+			"dependencies": {
+				"@tanstack/react-query": "^5.100.14",
+				"react": "^19.2.6",
+				"@hardkas/bridge-local": "0.12.0-rc.16"
+			},
+			"devDependencies": {
+				"rimraf": "^6.0.1",
+				"typescript": "^5.7.2"
+			},
+			"license": "MIT",
+			"author": {
+				"name": "Javier Rodriguez"
+			},
+			"repository": {
+				"type": "git",
+				"url": "git+https://github.com/KasLabDevs/HardKas.git",
+				"directory": "packages/simulator-adapters"
+			},
+			"bugs": {
+				"url": "https://github.com/KasLabDevs/HardKas/issues"
+			},
+			"homepage": "https://github.com/KasLabDevs/HardKas/tree/main/packages/simulator-adapters#readme",
+			"files": [
+				"dist",
+				"LICENSE",
+				"README.md"
+			],
+			"publishConfig": {
+				"access": "public"
+			},
+			"scripts": {
+				"build": "tsc",
+				"clean": "rimraf dist tsconfig.tsbuildinfo",
+				"typecheck": "tsc --noEmit"
+			},
+			"_id": "@hardkas/simulator-adapters@0.12.0-rc.16",
+			"_integrity": "sha512-oiYthBahO2/sXSMFylKKT9PvPmjUV+2eXUP9P8ZKQo0TjhDiOY4cTXjo7NfYUJ+1ICKnpDRSkayxjvTzPEoJ0g==",
+			"_resolved": "C:\\Users\\jrodr\\AppData\\Local\\Temp\\debbe6065461fbaa840119d8d32a5768\\hardkas-simulator-adapters-0.12.0-rc.16.tgz",
+			"_from": "file:hardkas-simulator-adapters-0.12.0-rc.16.tgz",
+			"_nodeVersion": "24.15.0",
+			"_npmVersion": "11.12.1",
+			"dist": {
+				"integrity": "sha512-oiYthBahO2/sXSMFylKKT9PvPmjUV+2eXUP9P8ZKQo0TjhDiOY4cTXjo7NfYUJ+1ICKnpDRSkayxjvTzPEoJ0g==",
+				"shasum": "5ff372872e5436e40a5de03cbf9561f5611be750",
+				"tarball": "http://localhost:4873/@hardkas/simulator-adapters/-/@hardkas/simulator-adapters-0.12.0-rc.16.tgz"
+			},
+			"contributors": []
+		},
+		"0.12.0-rc.16": {
+			"name": "@hardkas/simulator-adapters",
+			"version": "0.12.0-rc.16",
+			"type": "module",
+			"main": "./dist/index.js",
+			"types": "./dist/index.d.ts",
+			"exports": {
+				".": {
+					"types": "./dist/index.d.ts",
+					"import": "./dist/index.js",
+					"default": "./dist/index.js"
+				}
+			},
+			"dependencies": {
+				"@tanstack/react-query": "^5.100.14",
+				"react": "^19.2.6",
+				"@hardkas/bridge-local": "0.12.0-rc.16"
+			},
+			"devDependencies": {
+				"rimraf": "^6.0.1",
+				"typescript": "^5.7.2"
+			},
+			"license": "MIT",
+			"author": {
+				"name": "Javier Rodriguez"
+			},
+			"repository": {
+				"type": "git",
+				"url": "git+https://github.com/KasLabDevs/HardKas.git",
+				"directory": "packages/simulator-adapters"
+			},
+			"bugs": {
+				"url": "https://github.com/KasLabDevs/HardKas/issues"
+			},
+			"homepage": "https://github.com/KasLabDevs/HardKas/tree/main/packages/simulator-adapters#readme",
+			"files": [
+				"dist",
+				"LICENSE",
+				"README.md"
+			],
+			"publishConfig": {
+				"access": "public"
+			},
+			"scripts": {
+				"build": "tsc",
+				"clean": "rimraf dist tsconfig.tsbuildinfo",
+				"typecheck": "tsc --noEmit"
+			},
+			"_id": "@hardkas/simulator-adapters@0.12.0-rc.16",
+			"_integrity": "sha512-A5amk+lxhYlbz0umV8HNLMwMQnLGyQWGyivcjuE64Um36dq0aMMm2VBexwSsbhBclpWRv/W9Jf8qvc5MWDFauA==",
+			"_resolved": "C:\\Users\\jrodr\\AppData\\Local\\Temp\\44d08ad05f517b385582d4df9fc63bf9\\hardkas-simulator-adapters-0.12.0-rc.16.tgz",
+			"_from": "file:hardkas-simulator-adapters-0.12.0-rc.16.tgz",
+			"_nodeVersion": "24.15.0",
+			"_npmVersion": "11.12.1",
+			"dist": {
+				"integrity": "sha512-A5amk+lxhYlbz0umV8HNLMwMQnLGyQWGyivcjuE64Um36dq0aMMm2VBexwSsbhBclpWRv/W9Jf8qvc5MWDFauA==",
+				"shasum": "8b5c1445940bd72fabbdb05be60ac03fb0675461",
+				"tarball": "http://localhost:4873/@hardkas/simulator-adapters/-/@hardkas/simulator-adapters-0.12.0-rc.16.tgz"
+			},
+			"contributors": []
+		}
+	},
+	"time": {
+		"modified": "2026-08-31T09:58:04.695Z",
+		"created": "2026-08-31T09:55:02.704Z",
+		"0.12.0-rc.16": "2026-08-31T09:55:02.704Z",
+		"0.12.0-rc.16": "2026-08-31T09:58:04.695Z"
+	},
+	"users": {},
+	"dist-tags": {
+		"latest": "0.12.0-rc.16"
+	},
+	"_uplinks": {},
+	"_distfiles": {},
+	"_attachments": {
+		"simulator-adapters-0.12.0-rc.16.tgz": {
+			"shasum": "5ff372872e5436e40a5de03cbf9561f5611be750",
+			"version": "0.12.0-rc.16"
+		},
+		"simulator-adapters-0.12.0-rc.16.tgz": {
+			"shasum": "8b5c1445940bd72fabbdb05be60ac03fb0675461",
+			"version": "0.12.0-rc.16"
+		}
+	},
+	"_rev": "6-cbc9426f8b932469",
+	"_id": "@hardkas/simulator-adapters",
+	"readme": "ERROR: No README data found!"
+}

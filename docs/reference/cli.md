@@ -100,7 +100,7 @@ hardkas accounts consolidate [options] <account>
 
 ## hardkas accounts fund
 
-Fund an account (Faucet)
+Fund an account (Faucet) - DEPRECATED
 
 ### Usage
 
@@ -502,133 +502,6 @@ hardkas artifact verify [options] <path>
 
 ---
 
-## hardkas bridge
-
-Kaspa -> Igra bridge developer tools
-
-### Usage
-
-```bash
-hardkas bridge [options] [command]
-```
-
-### Options
-
-No options.
-
-### Arguments
-
-No arguments.
-
-### Subcommands
-
-- [hardkas bridge local](#hardkas-bridge-local)
-
----
-
-## hardkas bridge local
-
-Local bridge entry simulation (deterministic)
-
-### Usage
-
-```bash
-hardkas bridge local [options] [command]
-```
-
-### Options
-
-No options.
-
-### Arguments
-
-No arguments.
-
-### Subcommands
-
-- [hardkas bridge local inspect](#hardkas-bridge-local-inspect)
-- [hardkas bridge local plan](#hardkas-bridge-local-plan)
-- [hardkas bridge local simulate](#hardkas-bridge-local-simulate)
-
----
-
-## hardkas bridge local inspect
-
-Inspect a local bridge transaction artifact stable
-
-### Usage
-
-```bash
-hardkas bridge local inspect [options] <txid>
-```
-
-### Options
-
-| Flag | Description | Default |
-| :--- | :--- | :--- |
-| `--json` | Output as JSON | false |
-
-### Arguments
-
-| Argument | Description |
-| :--- | :--- |
-| `txid` |  |
-
----
-
-## hardkas bridge local plan
-
-Plan a local bridge entry transaction stable
-
-### Usage
-
-```bash
-hardkas bridge local plan [options]
-```
-
-### Options
-
-| Flag | Description | Default |
-| :--- | :--- | :--- |
-| `--session <name>` | Link to a specific developer session |  |
-| `--from <name>` | Source Kaspa wallet name (overrides session) |  |
-| `--to-igra <address>` | Target Igra EVM address (overrides session) |  |
-| `--amount <kas>` | Amount in KAS to bridge |  |
-| `--json` | Output as JSON | false |
-
-### Arguments
-
-No arguments.
-
----
-
-## hardkas bridge local simulate
-
-Simulate a bridge entry with prefix mining stable
-
-### Usage
-
-```bash
-hardkas bridge local simulate [options]
-```
-
-### Options
-
-| Flag | Description | Default |
-| :--- | :--- | :--- |
-| `--session <name>` | Link to a specific developer session |  |
-| `--from <name>` | Source Kaspa wallet name (overrides session) |  |
-| `--to-igra <address>` | Target Igra EVM address (overrides session) |  |
-| `--amount <kas>` | Amount in KAS to bridge |  |
-| `--prefix <hex>` | Prefix to mine for | abc |
-| `--json` | Output as JSON | false |
-
-### Arguments
-
-No arguments.
-
----
-
 ## hardkas capabilities
 
 Show HardKAS capabilities and maturity level
@@ -1022,50 +895,6 @@ View current DAG status
 
 ```bash
 hardkas dag status [options]
-```
-
-### Options
-
-No options.
-
-### Arguments
-
-No arguments.
-
----
-
-## hardkas dashboard
-
-Open the HardKAS Semantic Observability Dashboard alpha
-
-### Usage
-
-```bash
-hardkas dashboard [options] [command]
-```
-
-### Options
-
-No options.
-
-### Arguments
-
-No arguments.
-
-### Subcommands
-
-- [hardkas dashboard doctor](#hardkas-dashboard-doctor)
-
----
-
-## hardkas dashboard doctor
-
-Verify dashboard endpoints and diagnostic health status
-
-### Usage
-
-```bash
-hardkas dashboard doctor [options]
 ```
 
 ### Options
@@ -1596,82 +1425,6 @@ No arguments.
 
 ---
 
-## hardkas dev-server
-
-Manage the local HardKAS dev server stable
-
-### Usage
-
-```bash
-hardkas dev-server [options] [command]
-```
-
-### Options
-
-No options.
-
-### Arguments
-
-No arguments.
-
-### Subcommands
-
-- [hardkas dev-server start](#hardkas-dev-server-start)
-- [hardkas dev-server token](#hardkas-dev-server-token)
-
----
-
-## hardkas dev-server start
-
-Start the dev server
-
-### Usage
-
-```bash
-hardkas dev-server start [options]
-```
-
-### Options
-
-| Flag | Description | Default |
-| :--- | :--- | :--- |
-| `--port <number>` | Port to bind to | 7420 |
-| `--host <string>` | Host to bind to | 127.0.0.1 |
-| `--dashboard` | Serve the local dashboard UI | false |
-| `--unsafe-external` | Allow external access (binds to 0.0.0.0 if host not specified) | false |
-| `--unsafe-no-auth` | Disable token authentication (requires --yes) | false |
-| `--yes` | Acknowledge unsafe flags | false |
-| `--with-node` | Spawn the localnet node and auto-fund simnet accounts | false |
-| `--json` | Output status as JSON | false |
-
-### Arguments
-
-No arguments.
-
----
-
-## hardkas dev-server token
-
-Print the current dev server token
-
-### Usage
-
-```bash
-hardkas dev-server token [options]
-```
-
-### Options
-
-| Flag | Description | Default |
-| :--- | :--- | :--- |
-| `--json` | Output as JSON | false |
-
-### Arguments
-
-No arguments.
-
----
-
 ## hardkas doctor
 
 Perform a full system diagnostic and health report stable
@@ -2109,517 +1862,6 @@ hardkas kaspa wallet send [options] <from> <to>
 | :--- | :--- |
 | `from` |  |
 | `to` |  |
-
----
-
-## hardkas l2
-
-Layer 2 (Igra) management
-
-### Usage
-
-```bash
-hardkas l2 [options] [command]
-```
-
-### Options
-
-No options.
-
-### Arguments
-
-No arguments.
-
-### Subcommands
-
-- [hardkas l2 balance](#hardkas-l2-balance)
-- [hardkas l2 bridge](#hardkas-l2-bridge)
-- [hardkas l2 contract](#hardkas-l2-contract)
-- [hardkas l2 networks](#hardkas-l2-networks)
-- [hardkas l2 nonce](#hardkas-l2-nonce)
-- [hardkas l2 profile](#hardkas-l2-profile)
-- [hardkas l2 rpc](#hardkas-l2-rpc)
-- [hardkas l2 tx](#hardkas-l2-tx)
-
----
-
-## hardkas l2 balance
-
-Check Igra L2 balance
-
-### Usage
-
-```bash
-hardkas l2 balance [options] <address>
-```
-
-### Options
-
-| Flag | Description | Default |
-| :--- | :--- | :--- |
-| `--network <name>` | L2 network name |  |
-| `--url <url>` | RPC URL override |  |
-| `--chain-id <id>` | Chain ID override |  |
-| `--json` | Output as JSON |  |
-
-### Arguments
-
-| Argument | Description |
-| :--- | :--- |
-| `address` |  |
-
----
-
-## hardkas l2 bridge
-
-Igra bridge awareness
-
-### Usage
-
-```bash
-hardkas l2 bridge [options] [command]
-```
-
-### Options
-
-No options.
-
-### Arguments
-
-No arguments.
-
-### Subcommands
-
-- [hardkas l2 bridge assumptions](#hardkas-l2-bridge-assumptions)
-- [hardkas l2 bridge status](#hardkas-l2-bridge-status)
-
----
-
-## hardkas l2 bridge assumptions
-
-Show bridge security assumptions
-
-### Usage
-
-```bash
-hardkas l2 bridge assumptions [options]
-```
-
-### Options
-
-| Flag | Description | Default |
-| :--- | :--- | :--- |
-| `--json` | Output as JSON |  |
-
-### Arguments
-
-No arguments.
-
----
-
-## hardkas l2 bridge status
-
-Show bridge security status
-
-### Usage
-
-```bash
-hardkas l2 bridge status [options]
-```
-
-### Options
-
-| Flag | Description | Default |
-| :--- | :--- | :--- |
-| `--network <name>` | L2 network name |  |
-| `--url <url>` | RPC URL override |  |
-| `--json` | Output as JSON |  |
-
-### Arguments
-
-No arguments.
-
----
-
-## hardkas l2 contract
-
-Igra contract management
-
-### Usage
-
-```bash
-hardkas l2 contract [options] [command]
-```
-
-### Options
-
-No options.
-
-### Arguments
-
-No arguments.
-
-### Subcommands
-
-- [hardkas l2 contract deploy-plan](#hardkas-l2-contract-deploy-plan)
-
----
-
-## hardkas l2 contract deploy-plan
-
-Build L2 contract deployment plan
-
-### Usage
-
-```bash
-hardkas l2 contract deploy-plan [options]
-```
-
-### Options
-
-| Flag | Description | Default |
-| :--- | :--- | :--- |
-| `--network <name>` | L2 network name |  |
-| `--url <url>` | RPC URL override |  |
-| `--chain-id <id>` | Chain ID override |  |
-| `--bytecode <hex>` | Contract bytecode |  |
-| `--constructor <sig>` | Constructor signature |  |
-| `--args <csv>` | Constructor arguments |  |
-| `--json` | Output as JSON |  |
-
-### Arguments
-
-No arguments.
-
----
-
-## hardkas l2 networks
-
-List available L2 network profiles
-
-### Usage
-
-```bash
-hardkas l2 networks [options]
-```
-
-### Options
-
-| Flag | Description | Default |
-| :--- | :--- | :--- |
-| `--json` | Output results in JSON format |  |
-
-### Arguments
-
-No arguments.
-
----
-
-## hardkas l2 nonce
-
-Check Igra L2 nonce
-
-### Usage
-
-```bash
-hardkas l2 nonce [options] <address>
-```
-
-### Options
-
-| Flag | Description | Default |
-| :--- | :--- | :--- |
-| `--network <name>` | L2 network name |  |
-| `--url <url>` | RPC URL override |  |
-| `--chain-id <id>` | Chain ID override |  |
-| `--json` | Output as JSON |  |
-
-### Arguments
-
-| Argument | Description |
-| :--- | :--- |
-| `address` |  |
-
----
-
-## hardkas l2 profile
-
-L2 profile management
-
-### Usage
-
-```bash
-hardkas l2 profile [options] [command]
-```
-
-### Options
-
-No options.
-
-### Arguments
-
-No arguments.
-
-### Subcommands
-
-- [hardkas l2 profile show](#hardkas-l2-profile-show)
-- [hardkas l2 profile validate](#hardkas-l2-profile-validate)
-
----
-
-## hardkas l2 profile show
-
-Show L2 profile details
-
-### Usage
-
-```bash
-hardkas l2 profile show [options] [name]
-```
-
-### Options
-
-| Flag | Description | Default |
-| :--- | :--- | :--- |
-| `--network <name>` | L2 network name |  |
-| `--url <url>` | RPC URL override |  |
-| `--chain-id <id>` | Chain ID override |  |
-| `--json` | Output results in JSON format |  |
-
-### Arguments
-
-| Argument | Description |
-| :--- | :--- |
-| `name` |  |
-
----
-
-## hardkas l2 profile validate
-
-Validate L2 profile
-
-### Usage
-
-```bash
-hardkas l2 profile validate [options] [name]
-```
-
-### Options
-
-| Flag | Description | Default |
-| :--- | :--- | :--- |
-| `--network <name>` | L2 network name |  |
-| `--url <url>` | Override RPC URL for validation |  |
-| `--json` | Output results in JSON format |  |
-
-### Arguments
-
-| Argument | Description |
-| :--- | :--- |
-| `name` |  |
-
----
-
-## hardkas l2 rpc
-
-Igra RPC diagnostics
-
-### Usage
-
-```bash
-hardkas l2 rpc [options] [command]
-```
-
-### Options
-
-No options.
-
-### Arguments
-
-No arguments.
-
-### Subcommands
-
-- [hardkas l2 rpc health](#hardkas-l2-rpc-health)
-
----
-
-## hardkas l2 rpc health
-
-Check L2 RPC health
-
-### Usage
-
-```bash
-hardkas l2 rpc health [options]
-```
-
-### Options
-
-| Flag | Description | Default |
-| :--- | :--- | :--- |
-| `--network <name>` | L2 network name |  |
-| `--url <url>` | RPC URL override |  |
-| `--json` | Output as JSON |  |
-
-### Arguments
-
-No arguments.
-
----
-
-## hardkas l2 tx
-
-Igra transaction management
-
-### Usage
-
-```bash
-hardkas l2 tx [options] [command]
-```
-
-### Options
-
-No options.
-
-### Arguments
-
-No arguments.
-
-### Subcommands
-
-- [hardkas l2 tx build](#hardkas-l2-tx-build)
-- [hardkas l2 tx receipt](#hardkas-l2-tx-receipt)
-- [hardkas l2 tx send](#hardkas-l2-tx-send)
-- [hardkas l2 tx sign](#hardkas-l2-tx-sign)
-- [hardkas l2 tx status](#hardkas-l2-tx-status)
-
----
-
-## hardkas l2 tx build
-
-Build L2 transaction plan
-
-### Usage
-
-```bash
-hardkas l2 tx build [options]
-```
-
-### Options
-
-| Flag | Description | Default |
-| :--- | :--- | :--- |
-| `--network <name>` | L2 network name |  |
-| `--url <url>` | RPC URL override |  |
-| `--chain-id <id>` | Chain ID override |  |
-| `--from <address>` | From address |  |
-| `--to <address>` | To address |  |
-| `--value <wei>` | Value in wei | 0 |
-| `--data <hex>` | Call data | 0x |
-| `--json` | Output as JSON |  |
-
-### Arguments
-
-No arguments.
-
----
-
-## hardkas l2 tx receipt
-
-Get L2 transaction receipt
-
-### Usage
-
-```bash
-hardkas l2 tx receipt [options] <txHash>
-```
-
-### Options
-
-| Flag | Description | Default |
-| :--- | :--- | :--- |
-| `--json` | Output as JSON |  |
-
-### Arguments
-
-| Argument | Description |
-| :--- | :--- |
-| `txHash` |  |
-
----
-
-## hardkas l2 tx send
-
-Send L2 transaction
-
-### Usage
-
-```bash
-hardkas l2 tx send [options] <signedPath>
-```
-
-### Options
-
-| Flag | Description | Default |
-| :--- | :--- | :--- |
-| `--yes` | Confirm submission |  |
-| `--json` | Output as JSON |  |
-
-### Arguments
-
-| Argument | Description |
-| :--- | :--- |
-| `signedPath` |  |
-
----
-
-## hardkas l2 tx sign
-
-Sign L2 transaction plan
-
-### Usage
-
-```bash
-hardkas l2 tx sign [options] <planPath>
-```
-
-### Options
-
-| Flag | Description | Default |
-| :--- | :--- | :--- |
-| `--account <name>` | Account to sign with |  |
-| `--json` | Output as JSON |  |
-
-### Arguments
-
-| Argument | Description |
-| :--- | :--- |
-| `planPath` |  |
-
----
-
-## hardkas l2 tx status
-
-Check L2 transaction status via RPC
-
-### Usage
-
-```bash
-hardkas l2 tx status [options] <txHash>
-```
-
-### Options
-
-| Flag | Description | Default |
-| :--- | :--- | :--- |
-| `--json` | Output as JSON |  |
-
-### Arguments
-
-| Argument | Description |
-| :--- | :--- |
-| `txHash` |  |
 
 ---
 
@@ -3091,103 +2333,6 @@ No options.
 
 ---
 
-## hardkas metamask
-
-MetaMask onboarding and account export (local-dev only)
-
-### Usage
-
-```bash
-hardkas metamask [options] [command]
-```
-
-### Options
-
-No options.
-
-### Arguments
-
-No arguments.
-
-### Subcommands
-
-- [hardkas metamask account](#hardkas-metamask-account)
-- [hardkas metamask network](#hardkas-metamask-network)
-- [hardkas metamask snippet](#hardkas-metamask-snippet)
-
----
-
-## hardkas metamask account
-
-Export a local EVM account for MetaMask import stable
-
-### Usage
-
-```bash
-hardkas metamask account [options] <name>
-```
-
-### Options
-
-| Flag | Description | Default |
-| :--- | :--- | :--- |
-| `--show-private-key` | Reveal the private key (LOCAL DEV ONLY) | false |
-| `--json` | Output as JSON | false |
-| `--include-secret` | Include secret in JSON output (UNSAFE) | false |
-
-### Arguments
-
-| Argument | Description |
-| :--- | :--- |
-| `name` |  |
-
----
-
-## hardkas metamask network
-
-Show local Igra network parameters for MetaMask stable
-
-### Usage
-
-```bash
-hardkas metamask network [options]
-```
-
-### Options
-
-| Flag | Description | Default |
-| :--- | :--- | :--- |
-| `--profile <name>` | L2 network profile name | igra |
-| `--json` | Output as JSON | false |
-
-### Arguments
-
-No arguments.
-
----
-
-## hardkas metamask snippet
-
-Generate JS snippet to add local network to MetaMask stable
-
-### Usage
-
-```bash
-hardkas metamask snippet [options]
-```
-
-### Options
-
-| Flag | Description | Default |
-| :--- | :--- | :--- |
-| `--profile <name>` | L2 network profile name | igra |
-
-### Arguments
-
-No arguments.
-
----
-
 ## hardkas node
 
 Kaspa node management (Docker)
@@ -3579,6 +2724,270 @@ hardkas programmability verify [options] <path>
 | Argument | Description |
 | :--- | :--- |
 | `path` |  |
+
+---
+
+## hardkas pskt
+
+Portable Signing Sessions (PSKT) offline coordination
+
+### Usage
+
+```bash
+hardkas pskt [options] [command]
+```
+
+### Options
+
+No options.
+
+### Arguments
+
+No arguments.
+
+### Subcommands
+
+- [hardkas pskt capabilities](#hardkas-pskt-capabilities)
+- [hardkas pskt export](#hardkas-pskt-export)
+- [hardkas pskt extract](#hardkas-pskt-extract)
+- [hardkas pskt finalize](#hardkas-pskt-finalize)
+- [hardkas pskt import](#hardkas-pskt-import)
+- [hardkas pskt inspect](#hardkas-pskt-inspect)
+- [hardkas pskt merge](#hardkas-pskt-merge)
+- [hardkas pskt sign](#hardkas-pskt-sign)
+- [hardkas pskt verify](#hardkas-pskt-verify)
+
+---
+
+## hardkas pskt capabilities
+
+Show PSKT adapter capabilities alpha
+
+### Usage
+
+```bash
+hardkas pskt capabilities [options]
+```
+
+### Options
+
+| Flag | Description | Default |
+| :--- | :--- | :--- |
+| `--adapter <adapterId>` | Specific adapter ID to query (default: kaspa-wasm-local) |  |
+| `--json` | Output results as JSON | false |
+
+### Arguments
+
+No arguments.
+
+---
+
+## hardkas pskt export
+
+Export a TxPlan as a Portable Signing Session alpha
+
+### Usage
+
+```bash
+hardkas pskt export [options]
+```
+
+### Options
+
+| Flag | Description | Default |
+| :--- | :--- | :--- |
+| `--plan <planPath>` | Path to the TxPlan JSON artifact |  |
+| `--out <sessionPath>` | Path to write the new PSKT session JSON |  |
+| `--adapter <adapterId>` | Specific adapter ID to bind to (default: kaspa-wasm-local) |  |
+| `--force` | Overwrite the output file if it exists | false |
+| `--json` | Output results as JSON | false |
+
+### Arguments
+
+No arguments.
+
+---
+
+## hardkas pskt extract
+
+Extract KaspaRpcTransaction from a finalized PSKT session alpha
+
+### Usage
+
+```bash
+hardkas pskt extract [options] <sessionPath>
+```
+
+### Options
+
+| Flag | Description | Default |
+| :--- | :--- | :--- |
+| `--out <outputPath>` | Path to write the Kaspa transaction JSON |  |
+| `--force` | Overwrite the output file if it exists | false |
+| `--json` | Output results as JSON | false |
+
+### Arguments
+
+| Argument | Description |
+| :--- | :--- |
+| `sessionPath` |  |
+
+---
+
+## hardkas pskt finalize
+
+Finalize a PSKT session alpha
+
+### Usage
+
+```bash
+hardkas pskt finalize [options] <sessionPath>
+```
+
+### Options
+
+| Flag | Description | Default |
+| :--- | :--- | :--- |
+| `--out <outputPath>` | Path to write the finalized PSKT session JSON |  |
+| `--force` | Overwrite the output file if it exists | false |
+| `--json` | Output results as JSON | false |
+
+### Arguments
+
+| Argument | Description |
+| :--- | :--- |
+| `sessionPath` |  |
+
+---
+
+## hardkas pskt import
+
+Import a raw payload into a PSKT session alpha
+
+### Usage
+
+```bash
+hardkas pskt import [options]
+```
+
+### Options
+
+| Flag | Description | Default |
+| :--- | :--- | :--- |
+| `--file <sessionPath>` | Path to the PSKT session JSON |  |
+| `--payload <payloadPath>` | Path to the raw payload file |  |
+| `--out <outputPath>` | Path to write the updated PSKT session JSON |  |
+| `--force` | Overwrite the output file if it exists | false |
+| `--json` | Output results as JSON | false |
+
+### Arguments
+
+No arguments.
+
+---
+
+## hardkas pskt inspect
+
+Inspect a PSKT session payload and metadata alpha
+
+### Usage
+
+```bash
+hardkas pskt inspect [options] <sessionPath>
+```
+
+### Options
+
+| Flag | Description | Default |
+| :--- | :--- | :--- |
+| `--json` | Output results as JSON | false |
+
+### Arguments
+
+| Argument | Description |
+| :--- | :--- |
+| `sessionPath` |  |
+
+---
+
+## hardkas pskt merge
+
+Merge two PSKT sessions alpha
+
+### Usage
+
+```bash
+hardkas pskt merge [options] <sessionA> <sessionB>
+```
+
+### Options
+
+| Flag | Description | Default |
+| :--- | :--- | :--- |
+| `--out <outputPath>` | Path to write the merged PSKT session JSON |  |
+| `--force` | Overwrite the output file if it exists | false |
+| `--json` | Output results as JSON | false |
+
+### Arguments
+
+| Argument | Description |
+| :--- | :--- |
+| `sessionA` |  |
+| `sessionB` |  |
+
+---
+
+## hardkas pskt sign
+
+Sign a PSKT session payload alpha
+
+### Usage
+
+```bash
+hardkas pskt sign [options] <sessionPath>
+```
+
+### Options
+
+| Flag | Description | Default |
+| :--- | :--- | :--- |
+| `--account <name>` | Name of the HardKAS L1 account to sign with |  |
+| `--keystore <path>` | Path to a HardKAS keystore JSON file |  |
+| `--key-stdin` | Read private key from standard input |  |
+| `--private-key-file <path>` | Path to file containing raw private key (TEST ONLY) |  |
+| `--out <outputPath>` | Path to write the updated PSKT session JSON |  |
+| `--force` | Overwrite the output file if it exists | false |
+| `--json` | Output results as JSON | false |
+
+### Arguments
+
+| Argument | Description |
+| :--- | :--- |
+| `sessionPath` |  |
+
+---
+
+## hardkas pskt verify
+
+Verify integrity and lineage of a PSKT session alpha
+
+### Usage
+
+```bash
+hardkas pskt verify [options] <sessionPath>
+```
+
+### Options
+
+| Flag | Description | Default |
+| :--- | :--- | :--- |
+| `--json` | Output results as JSON | false |
+
+### Arguments
+
+| Argument | Description |
+| :--- | :--- |
+| `sessionPath` |  |
 
 ---
 
@@ -4846,14 +4255,14 @@ hardkas session use [options] <name>
 
 ---
 
-## hardkas silver
+## hardkas simulator
 
-SilverScript development tools (alpha)
+HardKAS Simulator management
 
 ### Usage
 
 ```bash
-hardkas silver [options] [command]
+hardkas simulator [options] [command]
 ```
 
 ### Options
@@ -4866,29 +4275,19 @@ No arguments.
 
 ### Subcommands
 
-- [hardkas silver certify](#hardkas-silver-certify)
-- [hardkas silver compile](#hardkas-silver-compile)
-- [hardkas silver deploy](#hardkas-silver-deploy)
-- [hardkas silver deploy-plan](#hardkas-silver-deploy-plan)
-- [hardkas silver discovery](#hardkas-silver-discovery)
-- [hardkas silver doctor](#hardkas-silver-doctor)
-- [hardkas silver inspect](#hardkas-silver-inspect)
-- [hardkas silver simulate](#hardkas-silver-simulate)
-- [hardkas silver spend](#hardkas-silver-spend)
-- [hardkas silver spend-plan](#hardkas-silver-spend-plan)
-- [hardkas silver test](#hardkas-silver-test)
-- [hardkas silver verify](#hardkas-silver-verify)
+- [hardkas simulator account](#hardkas-simulator-account)
+- [hardkas simulator fund](#hardkas-simulator-fund)
 
 ---
 
-## hardkas silver certify
+## hardkas simulator account
 
-Execute the full certification pipeline for a SilverScript contract
+Manage synthetic simulated accounts
 
 ### Usage
 
 ```bash
-hardkas silver certify [options] <file.sil>
+hardkas simulator account [options] [command]
 ```
 
 ### Options
@@ -4897,399 +4296,60 @@ No options.
 
 ### Arguments
 
-| Argument | Description |
-| :--- | :--- |
-| `file.sil` |  |
+No arguments.
+
+### Subcommands
+
+- [hardkas simulator account create](#hardkas-simulator-account-create)
 
 ---
 
-## hardkas silver compile
+## hardkas simulator account create
 
-Compile a SilverScript source file (.sil or .silver)
+Create a synthetic simulated account stable
 
 ### Usage
 
 ```bash
-hardkas silver compile [options] <file>
+hardkas simulator account create [options] <name>
 ```
 
 ### Options
 
 | Flag | Description | Default |
 | :--- | :--- | :--- |
-| `--network <network>` | Target network | simnet |
-| `--compiler-path <path>` | Path to silverc binary |  |
 | `--json` | Output as JSON | false |
 
 ### Arguments
 
 | Argument | Description |
 | :--- | :--- |
-| `file` |  |
+| `name` |  |
 
 ---
 
-## hardkas silver deploy
+## hardkas simulator fund
 
-Execute a SilverScript deploy plan to create the UTXO on-chain
+Fund a synthetic simulated account stable
 
 ### Usage
 
 ```bash
-hardkas silver deploy [options] <deploy-plan-artifact>
+hardkas simulator fund [options] <identifier>
 ```
 
 ### Options
 
 | Flag | Description | Default |
 | :--- | :--- | :--- |
-| `--private-key <hex>` | Private key for the deployer account |  |
+| `--amount <kas>` | Amount in KAS to fund | 1000 |
+| `--json` | Output as JSON | false |
 
 ### Arguments
 
 | Argument | Description |
 | :--- | :--- |
-| `deploy-plan-artifact` |  |
-
----
-
-## hardkas silver deploy-plan
-
-Plan a deployment of a compiled SilverScript on Kaspa
-
-### Usage
-
-```bash
-hardkas silver deploy-plan [options] <compile-artifact>
-```
-
-### Options
-
-| Flag | Description | Default |
-| :--- | :--- | :--- |
-| `--from <account>` | Deployer account or address |  |
-| `--amount <kas>` | Amount in KAS to fund the UTXO |  |
-| `--network <network>` | Network (must be simnet for now) | simnet |
-
-### Arguments
-
-| Argument | Description |
-| :--- | :--- |
-| `compile-artifact` |  |
-
----
-
-## hardkas silver discovery
-
-Experimental SilverScript discovery tools
-
-### Usage
-
-```bash
-hardkas silver discovery [options] [command]
-```
-
-### Options
-
-No options.
-
-### Arguments
-
-No arguments.
-
-### Subcommands
-
-- [hardkas silver discovery deploy-sweep](#hardkas-silver-discovery-deploy-sweep)
-- [hardkas silver discovery unlock-sweep](#hardkas-silver-discovery-unlock-sweep)
-
----
-
-## hardkas silver discovery deploy-sweep
-
-EXPERIMENTAL: Create a real UTXO locked by the compiled script on simnet
-
-### Usage
-
-```bash
-hardkas silver discovery deploy-sweep [options] <compile-artifact>
-```
-
-### Options
-
-| Flag | Description | Default |
-| :--- | :--- | :--- |
-| `--from <account>` | Sender account or address |  |
-| `--amount <kas>` | Amount in KAS |  |
-| `--private-key <hex>` | Private key hex for discovery mode |  |
-| `--network <network>` | Network (must be simnet) | simnet |
-| `--wrapper <type>` | Locking script wrapper type: raw | kaspa-p2sh-blake2b | hash160 | compiler | kaspa-p2sh-blake2b |
-| `--provider <type>` | Provider type | rpc |
-
-### Arguments
-
-| Argument | Description |
-| :--- | :--- |
-| `compile-artifact` |  |
-
----
-
-## hardkas silver discovery unlock-sweep
-
-EXPERIMENTAL: Attempt to spend a SilverScript UTXO
-
-### Usage
-
-```bash
-hardkas silver discovery unlock-sweep [options] <spend-plan-artifact>
-```
-
-### Options
-
-| Flag | Description | Default |
-| :--- | :--- | :--- |
-| `--network <network>` | Network (must be simnet) | simnet |
-
-### Arguments
-
-| Argument | Description |
-| :--- | :--- |
-| `spend-plan-artifact` |  |
-
----
-
-## hardkas silver doctor
-
-Diagnose if the local environment can work with SilverScript
-
-### Usage
-
-```bash
-hardkas silver doctor [options]
-```
-
-### Options
-
-| Flag | Description | Default |
-| :--- | :--- | :--- |
-| `--capabilities` | Report local node script capabilities | false |
-| `--compiler-path <path>` | Path to silverc binary |  |
-
-### Arguments
-
-No arguments.
-
----
-
-## hardkas silver inspect
-
-Inspect a SilverScript compiled artifact or spend plan
-
-### Usage
-
-```bash
-hardkas silver inspect [options] <artifact_path>
-```
-
-### Options
-
-No options.
-
-### Arguments
-
-| Argument | Description |
-| :--- | :--- |
-| `artifact_path` |  |
-
----
-
-## hardkas silver simulate
-
-Local SilverScript/Toccata artifact lifecycle simulator
-
-### Usage
-
-```bash
-hardkas silver simulate [options] [command]
-```
-
-### Options
-
-No options.
-
-### Arguments
-
-No arguments.
-
-### Subcommands
-
-- [hardkas silver simulate compare](#hardkas-silver-simulate-compare)
-- [hardkas silver simulate deploy](#hardkas-silver-simulate-deploy)
-- [hardkas silver simulate spend](#hardkas-silver-simulate-spend)
-
----
-
-## hardkas silver simulate compare
-
-Compare simulated SilverScript receipt with Docker/node receipt
-
-### Usage
-
-```bash
-hardkas silver simulate compare [options]
-```
-
-### Options
-
-| Flag | Description | Default |
-| :--- | :--- | :--- |
-| `--simulated <receipt>` | Simulated receipt artifact |  |
-| `--docker <receipt>` | Docker/node receipt artifact |  |
-| `--mode <mode>` | Comparison mode: artifact-coherence, runtime-outcome, strict | artifact-coherence |
-
-### Arguments
-
-No arguments.
-
----
-
-## hardkas silver simulate deploy
-
-Simulate a SilverScript deploy plan without RPC
-
-### Usage
-
-```bash
-hardkas silver simulate deploy [options] <deploy-plan>
-```
-
-### Options
-
-No options.
-
-### Arguments
-
-| Argument | Description |
-| :--- | :--- |
-| `deploy-plan` |  |
-
----
-
-## hardkas silver simulate spend
-
-Simulate spending a SilverScript synthetic UTXO
-
-### Usage
-
-```bash
-hardkas silver simulate spend [options] <spend-plan>
-```
-
-### Options
-
-No options.
-
-### Arguments
-
-| Argument | Description |
-| :--- | :--- |
-| `spend-plan` |  |
-
----
-
-## hardkas silver spend
-
-Execute a SilverScript spend plan to spend the UTXO on-chain
-
-### Usage
-
-```bash
-hardkas silver spend [options] <spend-plan-artifact>
-```
-
-### Options
-
-No options.
-
-### Arguments
-
-| Argument | Description |
-| :--- | :--- |
-| `spend-plan-artifact` |  |
-
----
-
-## hardkas silver spend-plan
-
-Plan a spend of a deployed SilverScript UTXO
-
-### Usage
-
-```bash
-hardkas silver spend-plan [options] <deploy-artifact>
-```
-
-### Options
-
-| Flag | Description | Default |
-| :--- | :--- | :--- |
-| `--args <json-file>` | JSON file with args array: [{type: 'hex', value: '...'}] |  |
-| `--to <address>` | Recipient address |  |
-
-### Arguments
-
-| Argument | Description |
-| :--- | :--- |
-| `deploy-artifact` |  |
-
----
-
-## hardkas silver test
-
-Run deterministic test harness for a SilverScript contract
-
-### Usage
-
-```bash
-hardkas silver test [options] <file.sil>
-```
-
-### Options
-
-| Flag | Description | Default |
-| :--- | :--- | :--- |
-| `--vectors <path>` | Path to test vectors JSON |  |
-| `--out <path>` | Output path for the SilverTestArtifact |  |
-| `--expected-fail` | Mark as EXPECTED_COMPILER_FAILURE if compilation fails |  |
-| `--compiler <type>` | Compiler type (native|docker) | native |
-| `--compiler-path <path>` | Path to silverc binary |  |
-
-### Arguments
-
-| Argument | Description |
-| :--- | :--- |
-| `file.sil` |  |
-
----
-
-## hardkas silver verify
-
-Verify the deterministic hashes and metadata of a SilverScript artifact
-
-### Usage
-
-```bash
-hardkas silver verify [options] <artifact_path>
-```
-
-### Options
-
-No options.
-
-### Arguments
-
-| Argument | Description |
-| :--- | :--- |
-| `artifact_path` |  |
+| `identifier` |  |
 
 ---
 
@@ -5607,7 +4667,7 @@ hardkas tx batch [options]
 | Flag | Description | Default |
 | :--- | :--- | :--- |
 | `--file <path>` | Path to JSON file containing batch payments |  |
-| `--network <name>` | Network name | simulated |
+| `--network <name>` | Network name |  |
 | `--workspace <path>` | Override workspace root directory |  |
 | `--json` | Output as JSON | false |
 
@@ -5654,11 +4714,12 @@ hardkas tx plan [options]
 
 | Flag | Description | Default |
 | :--- | :--- | :--- |
+| `--target <name>` | Named execution target from hardkas.config.ts |  |
 | `--from <accountOrAddress>` | Sender account name or address |  |
 | `--to <address>` | Recipient address |  |
 | `--amount <kas>` | Amount in KAS |  |
-| `--network <name>` | Kaspa network name | simnet |
-| `--fee-rate <sompiPerMass>` | Fee rate in sompi per mass | 1 |
+| `--network <name>` | Kaspa network name |  |
+| `--fee-rate <sompiPerMass>` | Fee rate in sompi per mass |  |
 | `--provider <type>` | Provider mode (auto, rpc, simulated) | auto |
 | `--url <url>` | RPC URL (optional override) |  |
 | `--out <path>` | Save plan as artifact JSON |  |
@@ -5737,10 +4798,12 @@ hardkas tx send [options] [signedPath]
 
 | Flag | Description | Default |
 | :--- | :--- | :--- |
+| `--target <name>` | Named execution target from hardkas.config.ts |  |
 | `--from <accountOrAddress>` | Sender (shortcut mode) |  |
 | `--to <address>` | Recipient (shortcut mode) |  |
 | `--amount <kas>` | Amount in KAS (shortcut mode) |  |
-| `--network <name>` | Network name | simnet |
+| `--network <name>` | Network name |  |
+| `--fee-rate <sompiPerMass>` | Fee rate in sompi per mass (shortcut mode) |  |
 | `--provider <type>` | Provider mode (auto, rpc, simulated) | auto |
 | `--url <url>` | RPC URL (optional override) |  |
 | `--yes` | Confirm broadcast | false |
@@ -5778,6 +4841,7 @@ hardkas tx sign [options] <planPath>
 | `--threshold <number>` | Multisig threshold |  |
 | `--required-signers <list>` | Comma-separated list of required signers |  |
 | `--append` | Append signature to a partially signed transaction | false |
+| `--target <name>` | Named execution target from hardkas.config.ts |  |
 | `--wait-lock` | Wait for workspace lock if held | false |
 | `--lock-timeout <ms>` | Lock wait timeout in ms | 30000 |
 | `--json` | Output as JSON | false |
@@ -5948,100 +5012,6 @@ hardkas verify-semantics [options]
 | :--- | :--- | :--- |
 | `--json` | Output machine-readable JSON | false |
 | `--ci-mode` | Verify semantic truth equivalence across OS boundaries | false |
-
-### Arguments
-
-No arguments.
-
----
-
-## hardkas vprogs
-
-vProgs inspect-only builder surface (Outputs JSON by default)
-
-### Usage
-
-```bash
-hardkas vprogs [options] [command]
-```
-
-### Options
-
-No options.
-
-### Arguments
-
-No arguments.
-
-### Subcommands
-
-- [hardkas vprogs capabilities](#hardkas-vprogs-capabilities)
-- [hardkas vprogs inspect](#hardkas-vprogs-inspect)
-- [hardkas vprogs status](#hardkas-vprogs-status)
-
----
-
-## hardkas vprogs capabilities
-
-Show vProgs inspect capabilities
-
-### Usage
-
-```bash
-hardkas vprogs capabilities [options]
-```
-
-### Options
-
-| Flag | Description | Default |
-| :--- | :--- | :--- |
-| `--json` | Output as JSON | false |
-
-### Arguments
-
-No arguments.
-
----
-
-## hardkas vprogs inspect
-
-Inspect a local vProgs artifact without runtime claims
-
-### Usage
-
-```bash
-hardkas vprogs inspect [options] <artifact>
-```
-
-### Options
-
-| Flag | Description | Default |
-| :--- | :--- | :--- |
-| `--json` | Output as JSON | false |
-
-### Arguments
-
-| Argument | Description |
-| :--- | :--- |
-| `artifact` |  |
-
----
-
-## hardkas vprogs status
-
-Show vProgs inspect status
-
-### Usage
-
-```bash
-hardkas vprogs status [options]
-```
-
-### Options
-
-| Flag | Description | Default |
-| :--- | :--- | :--- |
-| `--json` | Output as JSON | false |
 
 ### Arguments
 
@@ -6223,175 +5193,4 @@ hardkas workflow run [options] <file>
 | Argument | Description |
 | :--- | :--- |
 | `file` |  |
-
----
-
-## hardkas zk
-
-Experimental local-only ZK proof artifact tools (Outputs JSON by default)
-
-### Usage
-
-```bash
-hardkas zk [options] [command]
-```
-
-### Options
-
-No options.
-
-### Arguments
-
-No arguments.
-
-### Subcommands
-
-- [hardkas zk capabilities](#hardkas-zk-capabilities)
-- [hardkas zk corpus](#hardkas-zk-corpus)
-- [hardkas zk proof](#hardkas-zk-proof)
-
----
-
-## hardkas zk capabilities
-
-Show experimental ZK lab capabilities
-
-### Usage
-
-```bash
-hardkas zk capabilities [options]
-```
-
-### Options
-
-| Flag | Description | Default |
-| :--- | :--- | :--- |
-| `--json` | Output as JSON | false |
-
-### Arguments
-
-No arguments.
-
----
-
-## hardkas zk corpus
-
-Verify experimental ZK fixture corpora
-
-### Usage
-
-```bash
-hardkas zk corpus [options] [command]
-```
-
-### Options
-
-No options.
-
-### Arguments
-
-No arguments.
-
-### Subcommands
-
-- [hardkas zk corpus verify](#hardkas-zk-corpus-verify)
-
----
-
-## hardkas zk corpus verify
-
-Verify a local ZK corpus
-
-### Usage
-
-```bash
-hardkas zk corpus verify [options] <path>
-```
-
-### Options
-
-| Flag | Description | Default |
-| :--- | :--- | :--- |
-| `--json` | Output as JSON | false |
-
-### Arguments
-
-| Argument | Description |
-| :--- | :--- |
-| `path` |  |
-
----
-
-## hardkas zk proof
-
-Inspect and verify local proof artifacts
-
-### Usage
-
-```bash
-hardkas zk proof [options] [command]
-```
-
-### Options
-
-No options.
-
-### Arguments
-
-No arguments.
-
-### Subcommands
-
-- [hardkas zk proof inspect](#hardkas-zk-proof-inspect)
-- [hardkas zk proof verify](#hardkas-zk-proof-verify)
-
----
-
-## hardkas zk proof inspect
-
-Inspect a local proof fixture or artifact
-
-### Usage
-
-```bash
-hardkas zk proof inspect [options] <path>
-```
-
-### Options
-
-| Flag | Description | Default |
-| :--- | :--- | :--- |
-| `--json` | Output as JSON | false |
-
-### Arguments
-
-| Argument | Description |
-| :--- | :--- |
-| `path` |  |
-
----
-
-## hardkas zk proof verify
-
-**Aliases:** verify-local
-
-Verify a local proof fixture locally (No on-chain claims) alpha
-
-### Usage
-
-```bash
-hardkas zk proof verify [options] <path>
-```
-
-### Options
-
-| Flag | Description | Default |
-| :--- | :--- | :--- |
-| `--json` | Output as JSON | false |
-
-### Arguments
-
-| Argument | Description |
-| :--- | :--- |
-| `path` |  |
 

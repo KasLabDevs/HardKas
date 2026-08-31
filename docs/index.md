@@ -1,6 +1,6 @@
 # HardKAS Technical Documentation
 
-Welcome to the technical documentation for **HardKAS 0.12.0-rc.12**.
+Welcome to the technical documentation for **HardKAS 0.12.0-rc.16**.
 
 HardKAS is a deterministic, local-first developer environment for Kaspa
 transaction workflows. It helps builders plan, sign, simulate, inspect, replay,
@@ -32,7 +32,7 @@ HardKAS is **local-first**:
 HardKAS does not replace Kaspa consensus and is not production custody software.
 The real network remains the final validator for real transactions.
 
-## 0.12.0-rc.12 Toccata Status
+## 0.12.0-rc.16 Toccata Status
 
 The current alpha includes Docker `rusty-kaspad` v2.0.0 simnet funding, a real
 standard transaction lifecycle, real Silver OP_TRUE deploy/spend, simulator

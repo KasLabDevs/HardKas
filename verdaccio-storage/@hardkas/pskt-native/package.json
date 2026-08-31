@@ -1,0 +1,140 @@
+{
+	"name": "@hardkas/pskt-native",
+	"versions": {
+		"0.12.0-rc.16": {
+			"name": "@hardkas/pskt-native",
+			"version": "0.12.0-rc.16",
+			"type": "module",
+			"main": "index.js",
+			"types": "index.d.ts",
+			"napi": {
+				"name": "hardkas-pskt-native",
+				"triples": {
+					"additional": [
+						"x86_64-pc-windows-msvc"
+					]
+				}
+			},
+			"engines": {
+				"node": ">= 22.5.0"
+			},
+			"devDependencies": {
+				"@napi-rs/cli": "^3.0.0",
+				"@types/node": "^22.19.19",
+				"typescript": "^5.7.2",
+				"vitest": "^2.1.8"
+			},
+			"publishConfig": {
+				"access": "public",
+				"tag": "alpha"
+			},
+			"files": [
+				"index.js",
+				"index.d.ts",
+				"*.node"
+			],
+			"optionalDependencies": {
+				"@hardkas/pskt-native-win32-x64-msvc": "0.12.0-rc.16"
+			},
+			"scripts": {
+				"artifacts": "napi artifacts",
+				"build": "napi build --platform --release",
+				"build:debug": "napi build --platform",
+				"test": "vitest run",
+				"typecheck": "echo \"No typecheck needed for napi auto-gen\""
+			},
+			"_id": "@hardkas/pskt-native@0.12.0-rc.16",
+			"_integrity": "sha512-HOq2yWCUkfmUuVUCAQeio0o9zX5oP/hdahoXijq4EvAF5trvnzxj7KPDdE/cVbZFAe6OdCoiCZ20i2AZaIg2aQ==",
+			"_resolved": "C:\\Users\\jrodr\\AppData\\Local\\Temp\\52371e280b6daed3e3a040c750218342\\hardkas-pskt-native-0.12.0-rc.16.tgz",
+			"_from": "file:hardkas-pskt-native-0.12.0-rc.16.tgz",
+			"_nodeVersion": "24.15.0",
+			"_npmVersion": "11.12.1",
+			"dist": {
+				"integrity": "sha512-HOq2yWCUkfmUuVUCAQeio0o9zX5oP/hdahoXijq4EvAF5trvnzxj7KPDdE/cVbZFAe6OdCoiCZ20i2AZaIg2aQ==",
+				"shasum": "5054dcaef3d325a7fa3a2f12c6f37f2c924e8c85",
+				"tarball": "http://localhost:4873/@hardkas/pskt-native/-/@hardkas/pskt-native-0.12.0-rc.16.tgz"
+			},
+			"contributors": []
+		},
+		"0.12.0-rc.16": {
+			"name": "@hardkas/pskt-native",
+			"version": "0.12.0-rc.16",
+			"type": "module",
+			"main": "index.js",
+			"types": "index.d.ts",
+			"napi": {
+				"name": "hardkas-pskt-native",
+				"triples": {
+					"additional": [
+						"x86_64-pc-windows-msvc"
+					]
+				}
+			},
+			"engines": {
+				"node": ">= 22.5.0"
+			},
+			"devDependencies": {
+				"@napi-rs/cli": "^3.0.0",
+				"@types/node": "^22.19.19",
+				"typescript": "^5.7.2",
+				"vitest": "^2.1.8"
+			},
+			"publishConfig": {
+				"access": "public",
+				"tag": "alpha"
+			},
+			"files": [
+				"index.js",
+				"index.d.ts",
+				"*.node"
+			],
+			"optionalDependencies": {
+				"@hardkas/pskt-native-win32-x64-msvc": "0.12.0-rc.16"
+			},
+			"scripts": {
+				"artifacts": "napi artifacts",
+				"build": "napi build --platform --release",
+				"build:debug": "napi build --platform",
+				"test": "vitest run",
+				"typecheck": "echo \"No typecheck needed for napi auto-gen\""
+			},
+			"_id": "@hardkas/pskt-native@0.12.0-rc.16",
+			"_integrity": "sha512-RZdJsijnlLK9+LV29uBYFF+kbRQW05VBA2IRzK9YlT2SxzuPsez2DNCR8KCxe5yumPZ7YLnoWc6OJUjeBgvbgA==",
+			"_resolved": "C:\\Users\\jrodr\\AppData\\Local\\Temp\\69d9f7f47984add9919598810294d642\\hardkas-pskt-native-0.12.0-rc.16.tgz",
+			"_from": "file:hardkas-pskt-native-0.12.0-rc.16.tgz",
+			"_nodeVersion": "24.15.0",
+			"_npmVersion": "11.12.1",
+			"dist": {
+				"integrity": "sha512-RZdJsijnlLK9+LV29uBYFF+kbRQW05VBA2IRzK9YlT2SxzuPsez2DNCR8KCxe5yumPZ7YLnoWc6OJUjeBgvbgA==",
+				"shasum": "50becd431d6a2b891fdbd1fd3dc0325b21313696",
+				"tarball": "http://localhost:4873/@hardkas/pskt-native/-/@hardkas/pskt-native-0.12.0-rc.16.tgz"
+			},
+			"contributors": []
+		}
+	},
+	"time": {
+		"modified": "2026-08-31T09:57:30.142Z",
+		"created": "2026-08-31T09:54:28.159Z",
+		"0.12.0-rc.16": "2026-08-31T09:54:28.159Z",
+		"0.12.0-rc.16": "2026-08-31T09:57:30.142Z"
+	},
+	"users": {},
+	"dist-tags": {
+		"latest": "0.12.0-rc.16"
+	},
+	"_uplinks": {},
+	"_distfiles": {},
+	"_attachments": {
+		"pskt-native-0.12.0-rc.16.tgz": {
+			"shasum": "5054dcaef3d325a7fa3a2f12c6f37f2c924e8c85",
+			"version": "0.12.0-rc.16"
+		},
+		"pskt-native-0.12.0-rc.16.tgz": {
+			"shasum": "50becd431d6a2b891fdbd1fd3dc0325b21313696",
+			"version": "0.12.0-rc.16"
+		}
+	},
+	"_rev": "6-c384a53b95a72478",
+	"_id": "@hardkas/pskt-native",
+	"readme": "ERROR: No README data found!"
+}

@@ -1,0 +1,154 @@
+{
+	"name": "@hardkas/node-runner",
+	"versions": {
+		"0.12.0-rc.16": {
+			"name": "@hardkas/node-runner",
+			"version": "0.12.0-rc.16",
+			"type": "module",
+			"main": "./dist/index.js",
+			"types": "./dist/index.d.ts",
+			"dependencies": {
+				"execa": "^9.5.2",
+				"@hardkas/kaspa-rpc": "0.12.0-rc.16"
+			},
+			"devDependencies": {
+				"tsup": "^8.3.5",
+				"typescript": "^5.7.2",
+				"vitest": "^2.1.8",
+				"@hardkas/config": "0.12.0-rc.16"
+			},
+			"license": "MIT",
+			"author": {
+				"name": "Javier Rodriguez"
+			},
+			"repository": {
+				"type": "git",
+				"url": "git+https://github.com/KasLabDevs/HardKas.git",
+				"directory": "packages/node-runner"
+			},
+			"bugs": {
+				"url": "https://github.com/KasLabDevs/HardKas/issues"
+			},
+			"homepage": "https://github.com/KasLabDevs/HardKas/tree/main/packages/node-runner#readme",
+			"files": [
+				"dist",
+				"LICENSE",
+				"README.md"
+			],
+			"exports": {
+				".": {
+					"types": "./dist/index.d.ts",
+					"import": "./dist/index.js",
+					"default": "./dist/index.js"
+				}
+			},
+			"publishConfig": {
+				"access": "public"
+			},
+			"scripts": {
+				"build": "tsup src/index.ts --format esm --dts --clean",
+				"test": "vitest run",
+				"dev": "tsup src/index.ts --format esm --watch"
+			},
+			"_id": "@hardkas/node-runner@0.12.0-rc.16",
+			"_integrity": "sha512-92aL24u1/bG3NJwr1RA+nFA4aZNer9LwdgxbkMhCP9AYxZCz215/k5Vx5N4D45Wg43ZBQ2qfKfxsQ232/1Nl9g==",
+			"_resolved": "C:\\Users\\jrodr\\AppData\\Local\\Temp\\ea700e2b8c96946f27d79793c6ace168\\hardkas-node-runner-0.12.0-rc.16.tgz",
+			"_from": "file:hardkas-node-runner-0.12.0-rc.16.tgz",
+			"_nodeVersion": "24.15.0",
+			"_npmVersion": "11.12.1",
+			"dist": {
+				"integrity": "sha512-92aL24u1/bG3NJwr1RA+nFA4aZNer9LwdgxbkMhCP9AYxZCz215/k5Vx5N4D45Wg43ZBQ2qfKfxsQ232/1Nl9g==",
+				"shasum": "2c35a4a7e5c471012f67b1dba592592ef0ddf7cd",
+				"tarball": "http://localhost:4873/@hardkas/node-runner/-/@hardkas/node-runner-0.12.0-rc.16.tgz"
+			},
+			"contributors": []
+		},
+		"0.12.0-rc.16": {
+			"name": "@hardkas/node-runner",
+			"version": "0.12.0-rc.16",
+			"type": "module",
+			"main": "./dist/index.js",
+			"types": "./dist/index.d.ts",
+			"dependencies": {
+				"execa": "^9.5.2",
+				"@hardkas/kaspa-rpc": "0.12.0-rc.16"
+			},
+			"devDependencies": {
+				"tsup": "^8.3.5",
+				"typescript": "^5.7.2",
+				"vitest": "^2.1.8",
+				"@hardkas/config": "0.12.0-rc.16"
+			},
+			"license": "MIT",
+			"author": {
+				"name": "Javier Rodriguez"
+			},
+			"repository": {
+				"type": "git",
+				"url": "git+https://github.com/KasLabDevs/HardKas.git",
+				"directory": "packages/node-runner"
+			},
+			"bugs": {
+				"url": "https://github.com/KasLabDevs/HardKas/issues"
+			},
+			"homepage": "https://github.com/KasLabDevs/HardKas/tree/main/packages/node-runner#readme",
+			"files": [
+				"dist",
+				"LICENSE",
+				"README.md"
+			],
+			"exports": {
+				".": {
+					"types": "./dist/index.d.ts",
+					"import": "./dist/index.js",
+					"default": "./dist/index.js"
+				}
+			},
+			"publishConfig": {
+				"access": "public"
+			},
+			"scripts": {
+				"build": "tsup src/index.ts --format esm --dts --clean",
+				"test": "vitest run",
+				"dev": "tsup src/index.ts --format esm --watch"
+			},
+			"_id": "@hardkas/node-runner@0.12.0-rc.16",
+			"_integrity": "sha512-gU6RXuajARFdGcVyAqQjMIfTGsKIV3kZfpEhqYlx4o0BGQKSMtAIsWXlEiwA6YIHO2O0kHxkYvORA/xA3DBYuw==",
+			"_resolved": "C:\\Users\\jrodr\\AppData\\Local\\Temp\\318d1367887992918e0f7274cd01c57a\\hardkas-node-runner-0.12.0-rc.16.tgz",
+			"_from": "file:hardkas-node-runner-0.12.0-rc.16.tgz",
+			"_nodeVersion": "24.15.0",
+			"_npmVersion": "11.12.1",
+			"dist": {
+				"integrity": "sha512-gU6RXuajARFdGcVyAqQjMIfTGsKIV3kZfpEhqYlx4o0BGQKSMtAIsWXlEiwA6YIHO2O0kHxkYvORA/xA3DBYuw==",
+				"shasum": "69d86a0351da9e5f16086b8e80eef5dba849b81e",
+				"tarball": "http://localhost:4873/@hardkas/node-runner/-/@hardkas/node-runner-0.12.0-rc.16.tgz"
+			},
+			"contributors": []
+		}
+	},
+	"time": {
+		"modified": "2026-08-31T09:57:51.071Z",
+		"created": "2026-08-31T09:54:48.982Z",
+		"0.12.0-rc.16": "2026-08-31T09:54:48.982Z",
+		"0.12.0-rc.16": "2026-08-31T09:57:51.071Z"
+	},
+	"users": {},
+	"dist-tags": {
+		"latest": "0.12.0-rc.16"
+	},
+	"_uplinks": {},
+	"_distfiles": {},
+	"_attachments": {
+		"node-runner-0.12.0-rc.16.tgz": {
+			"shasum": "2c35a4a7e5c471012f67b1dba592592ef0ddf7cd",
+			"version": "0.12.0-rc.16"
+		},
+		"node-runner-0.12.0-rc.16.tgz": {
+			"shasum": "69d86a0351da9e5f16086b8e80eef5dba849b81e",
+			"version": "0.12.0-rc.16"
+		}
+	},
+	"_rev": "6-ec3a7465bbdd7af6",
+	"_id": "@hardkas/node-runner",
+	"readme": "ERROR: No README data found!"
+}

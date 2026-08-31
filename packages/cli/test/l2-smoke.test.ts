@@ -94,7 +94,7 @@ vi.mock("@hardkas/artifacts", async (importOriginal) => {
       if (p.includes(".plan.json"))
         return {
           schema: "hardkas.igraTxPlan.v1",
-          hardkasVersion: "0.12.0-rc.12",
+          hardkasVersion: "0.12.0-rc.16",
           networkId: "igra",
           mode: "l2-rpc",
           planId: "test-plan",
@@ -111,7 +111,7 @@ vi.mock("@hardkas/artifacts", async (importOriginal) => {
       if (p.includes(".signed.json"))
         return {
           schema: "hardkas.igraSignedTx.v1",
-          hardkasVersion: "0.12.0-rc.12",
+          hardkasVersion: "0.12.0-rc.16",
           networkId: "igra",
           mode: "l2-rpc",
           signedId: "test-signed",

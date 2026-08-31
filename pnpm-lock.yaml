@@ -707,6 +707,34 @@ importers:
         specifier: ^5.7.2
         version: 5.9.3
 
+  archive/labs/24-local-indexer:
+    dependencies:
+      '@hardkas/core':
+        specifier: workspace:*
+        version: link:../../../packages/core
+      '@hardkas/sdk':
+        specifier: workspace:*
+        version: link:../../../packages/sdk
+      '@hardkas/storage-sqlite':
+        specifier: workspace:*
+        version: link:../../../packages/storage-sqlite
+    devDependencies:
+      '@types/better-sqlite3':
+        specifier: ^9.6.0
+        version: 9.6.0
+      '@types/node':
+        specifier: ^20.0.0
+        version: 20.19.43
+      tsx:
+        specifier: ^4.7.1
+        version: 4.23.7
+      typescript:
+        specifier: ^5.3.3
+        version: 5.9.3
+      vitest:
+        specifier: ^2.1.9
+        version: 2.1.9(@types/node@20.19.43)(jsdom@29.1.1(@noble/hashes@2.2.0))(lightningcss@1.32.0)
+
   examples/01-hello-kaspa:
     dependencies:
       '@hardkas/sdk':
@@ -2073,7 +2101,7 @@ importers:
     devDependencies:
       '@napi-rs/cli':
         specifier: ^3.0.0
-        version: 3.8.2(@emnapi/runtime@1.9.2)(@types/node@22.20.1)
+        version: 3.8.2(@emnapi/runtime@1.11.2)(@types/node@22.20.1)(node-addon-api@8.9.2)
       '@types/node':
         specifier: ^22.19.19
         version: 22.20.1
@@ -4632,6 +4660,9 @@ packages:
   '@types/babel__traverse@7.28.0':
     resolution: {integrity: sha512-8PvcXf70gTDZBgt9ptxJ8elBeBjcLOAcOtoO/mPJjtji1+CdGbHgm77om1GrsPxsiE+uXIpNSK64UYaIwQXd4Q==}
 
+  '@types/better-sqlite3@9.6.0':
+    resolution: {integrity: sha512-ZEEwBSgMu7GYJOynoagg5X9JbxfL6dTJDsgViJIqh67jV44kyOr9RXfmFjLK5rzC4MWssP06t9hu/JwGDnUbCg==}
+
   '@types/body-parser@1.19.6':
     resolution: {integrity: sha512-HLFeCYgz89uk22N5Qg3dvGvsv46B8GLvKKo1zKG4NybA8U2DiEO3w9lqGg29t/tfLRJpJ6iQxnVw4OnB7MoM9g==}
 
@@ -6641,6 +6672,10 @@ packages:
   negotiator@1.0.0:
     resolution: {integrity: sha512-8Ofs/AUQh8MaEcrlq5xOX0CQ9ypTF5dl78mjlMNfOK08fzpgTHQRQPBxcPlEtIw0yRpws+Zo/3r+5WRby7u3Gg==}
     engines: {node: '>= 0.6'}
+
+  node-addon-api@8.9.2:
+    resolution: {integrity: sha512-VijLXbi3UACN69I0JVXJsX4tjACjNoQDgv2gTF6sx2wWEi8tkSg2eX8p5gSIFi8z2+DL3oHmY6OyKce38SDolg==}
+    engines: {node: ^18 || ^20 || >= 21}
 
   node-exports-info@1.6.2:
     resolution: {integrity: sha512-kXs9Go0cah0qHVV2v389IXQLdLCeE1xfFtjOAF+iobu0OIoG1pje8At2vMHyaPMiPMnG/LWP50twML21eMcAag==}
@@ -9030,7 +9065,7 @@ snapshots:
       globby: 11.1.0
       read-yaml-file: 1.1.0
 
-  '@napi-rs/cli@3.8.2(@emnapi/runtime@1.9.2)(@types/node@22.20.1)':
+  '@napi-rs/cli@3.8.2(@emnapi/runtime@1.11.2)(@types/node@22.20.1)(node-addon-api@8.9.2)':
     dependencies:
       '@inquirer/prompts': 8.5.2(@types/node@22.20.1)
       '@napi-rs/cross-toolchain': 1.0.3
@@ -9038,7 +9073,7 @@ snapshots:
       '@octokit/rest': 22.0.1
       clipanion: 4.0.0-rc.4(typanion@3.14.0)
       colorette: 2.0.20
-      emnapi: 2.0.0-alpha.3
+      emnapi: 2.0.0-alpha.3(node-addon-api@8.9.2)
       es-toolkit: 1.50.0
       js-yaml: 4.3.1
       obug: 2.1.4
@@ -9046,7 +9081,7 @@ snapshots:
       typanion: 3.14.0
       typescript: 6.0.3
     optionalDependencies:
-      '@emnapi/runtime': 1.9.2
+      '@emnapi/runtime': 1.11.2
     transitivePeerDependencies:
       - '@napi-rs/cross-toolchain-arm64-target-aarch64'
       - '@napi-rs/cross-toolchain-arm64-target-armv7'
@@ -9774,6 +9809,10 @@ snapshots:
   '@types/babel__traverse@7.28.0':
     dependencies:
       '@babel/types': 7.29.8
+
+  '@types/better-sqlite3@9.6.0':
+    dependencies:
+      '@types/node': 20.19.43
 
   '@types/body-parser@1.19.6':
     dependencies:
@@ -10771,7 +10810,9 @@ snapshots:
       minimalistic-assert: 1.0.1
       minimalistic-crypto-utils: 1.0.1
 
-  emnapi@2.0.0-alpha.3: {}
+  emnapi@2.0.0-alpha.3(node-addon-api@8.9.2):
+    optionalDependencies:
+      node-addon-api: 8.9.2
 
   emoji-regex@8.0.0: {}
 
@@ -12214,6 +12255,9 @@ snapshots:
   negotiator@0.6.3: {}
 
   negotiator@1.0.0: {}
+
+  node-addon-api@8.9.2:
+    optional: true
 
   node-exports-info@1.6.2:
     dependencies:

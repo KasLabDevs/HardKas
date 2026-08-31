@@ -2,7 +2,7 @@ import { ArtifactPayload } from "@hardkas/artifacts";
 import fc from "fast-check";
 
 /**
- * Fuzzing utilities for HardKAS 0.12.0-rc.12
+ * Fuzzing utilities for HardKAS 0.12.0-rc.16
  */
 
 export function mutateArtifact(artifact: any): any {

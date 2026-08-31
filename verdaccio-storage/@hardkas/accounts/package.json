@@ -1,0 +1,174 @@
+{
+	"name": "@hardkas/accounts",
+	"versions": {
+		"0.12.0-rc.16": {
+			"name": "@hardkas/accounts",
+			"version": "0.12.0-rc.16",
+			"type": "module",
+			"main": "./dist/index.js",
+			"types": "./dist/index.d.ts",
+			"exports": {
+				".": {
+					"types": "./dist/index.d.ts",
+					"import": "./dist/index.js",
+					"default": "./dist/index.js"
+				},
+				"./internal/wasm-rpc-serialization.js": {
+					"types": "./dist/internal/wasm-rpc-serialization.d.ts",
+					"import": "./dist/internal/wasm-rpc-serialization.js",
+					"default": "./dist/internal/wasm-rpc-serialization.js"
+				}
+			},
+			"files": [
+				"dist",
+				"LICENSE",
+				"README.md"
+			],
+			"dependencies": {
+				"hash-wasm": "^4.12.0",
+				"kaspa-wasm": "0.13.0",
+				"@hardkas/tx-builder": "0.12.0-rc.16",
+				"@hardkas/config": "0.12.0-rc.16",
+				"@hardkas/artifacts": "0.12.0-rc.16",
+				"@hardkas/core": "0.12.0-rc.16",
+				"@hardkas/localnet": "0.12.0-rc.16"
+			},
+			"devDependencies": {
+				"tsup": "^8.3.5",
+				"typescript": "^5.7.2",
+				"vitest": "^2.1.8"
+			},
+			"license": "MIT",
+			"author": {
+				"name": "Javier Rodriguez"
+			},
+			"repository": {
+				"type": "git",
+				"url": "git+https://github.com/KasLabDevs/HardKas.git",
+				"directory": "packages/accounts"
+			},
+			"bugs": {
+				"url": "https://github.com/KasLabDevs/HardKas/issues"
+			},
+			"homepage": "https://github.com/KasLabDevs/HardKas/tree/main/packages/accounts#readme",
+			"publishConfig": {
+				"access": "public"
+			},
+			"scripts": {
+				"build": "tsup src/index.ts src/internal/wasm-rpc-serialization.ts --format esm --dts --clean --external kaspa-wasm",
+				"dev": "tsup src/index.ts src/internal/wasm-rpc-serialization.ts --format esm --watch --dts --external kaspa-wasm",
+				"test": "vitest run",
+				"typecheck": "tsc --noEmit"
+			},
+			"_id": "@hardkas/accounts@0.12.0-rc.16",
+			"_integrity": "sha512-2V9m4Xpl1Vl9+Iv49445aZrG2YsmiWXzX5IMy3oouIC4Vwj29ZClPMs+YMmxm6+hxRAET6Qi5OwywpfO3Y/Tug==",
+			"_resolved": "C:\\Users\\jrodr\\AppData\\Local\\Temp\\1e4927de06ecaac8bbc2e7d524d5e698\\hardkas-accounts-0.12.0-rc.16.tgz",
+			"_from": "file:hardkas-accounts-0.12.0-rc.16.tgz",
+			"_nodeVersion": "24.15.0",
+			"_npmVersion": "11.12.1",
+			"dist": {
+				"integrity": "sha512-2V9m4Xpl1Vl9+Iv49445aZrG2YsmiWXzX5IMy3oouIC4Vwj29ZClPMs+YMmxm6+hxRAET6Qi5OwywpfO3Y/Tug==",
+				"shasum": "31e16384562922af7e5cc470eb81777289978d89",
+				"tarball": "http://localhost:4873/@hardkas/accounts/-/@hardkas/accounts-0.12.0-rc.16.tgz"
+			},
+			"contributors": []
+		},
+		"0.12.0-rc.16": {
+			"name": "@hardkas/accounts",
+			"version": "0.12.0-rc.16",
+			"type": "module",
+			"main": "./dist/index.js",
+			"types": "./dist/index.d.ts",
+			"exports": {
+				".": {
+					"types": "./dist/index.d.ts",
+					"import": "./dist/index.js",
+					"default": "./dist/index.js"
+				},
+				"./internal/wasm-rpc-serialization.js": {
+					"types": "./dist/internal/wasm-rpc-serialization.d.ts",
+					"import": "./dist/internal/wasm-rpc-serialization.js",
+					"default": "./dist/internal/wasm-rpc-serialization.js"
+				}
+			},
+			"files": [
+				"dist",
+				"LICENSE",
+				"README.md"
+			],
+			"dependencies": {
+				"hash-wasm": "^4.12.0",
+				"kaspa-wasm": "0.13.0",
+				"@hardkas/artifacts": "0.12.0-rc.16",
+				"@hardkas/config": "0.12.0-rc.16",
+				"@hardkas/tx-builder": "0.12.0-rc.16",
+				"@hardkas/localnet": "0.12.0-rc.16",
+				"@hardkas/core": "0.12.0-rc.16"
+			},
+			"devDependencies": {
+				"tsup": "^8.3.5",
+				"typescript": "^5.7.2",
+				"vitest": "^2.1.8"
+			},
+			"license": "MIT",
+			"author": {
+				"name": "Javier Rodriguez"
+			},
+			"repository": {
+				"type": "git",
+				"url": "git+https://github.com/KasLabDevs/HardKas.git",
+				"directory": "packages/accounts"
+			},
+			"bugs": {
+				"url": "https://github.com/KasLabDevs/HardKas/issues"
+			},
+			"homepage": "https://github.com/KasLabDevs/HardKas/tree/main/packages/accounts#readme",
+			"publishConfig": {
+				"access": "public"
+			},
+			"scripts": {
+				"build": "tsup src/index.ts src/internal/wasm-rpc-serialization.ts --format esm --dts --clean --external kaspa-wasm",
+				"dev": "tsup src/index.ts src/internal/wasm-rpc-serialization.ts --format esm --watch --dts --external kaspa-wasm",
+				"test": "vitest run",
+				"typecheck": "tsc --noEmit"
+			},
+			"_id": "@hardkas/accounts@0.12.0-rc.16",
+			"_integrity": "sha512-YS/3T7rVLEiZ/qRY6VDsMGmyDhPhjn131zoO3JDpNtvNjUw1ojfFUziA7LD4c4sfp9B7qkpXGR0COTUXQEZYFg==",
+			"_resolved": "C:\\Users\\jrodr\\AppData\\Local\\Temp\\65edff6bbb13a3272492028ee838d0b4\\hardkas-accounts-0.12.0-rc.16.tgz",
+			"_from": "file:hardkas-accounts-0.12.0-rc.16.tgz",
+			"_nodeVersion": "24.15.0",
+			"_npmVersion": "11.12.1",
+			"dist": {
+				"integrity": "sha512-YS/3T7rVLEiZ/qRY6VDsMGmyDhPhjn131zoO3JDpNtvNjUw1ojfFUziA7LD4c4sfp9B7qkpXGR0COTUXQEZYFg==",
+				"shasum": "f010c130c1d1a7286ddc91aa43eb49a42bf46fb2",
+				"tarball": "http://localhost:4873/@hardkas/accounts/-/@hardkas/accounts-0.12.0-rc.16.tgz"
+			},
+			"contributors": []
+		}
+	},
+	"time": {
+		"modified": "2026-08-31T09:57:55.451Z",
+		"created": "2026-08-31T09:54:53.201Z",
+		"0.12.0-rc.16": "2026-08-31T09:54:53.201Z",
+		"0.12.0-rc.16": "2026-08-31T09:57:55.451Z"
+	},
+	"users": {},
+	"dist-tags": {
+		"latest": "0.12.0-rc.16"
+	},
+	"_uplinks": {},
+	"_distfiles": {},
+	"_attachments": {
+		"accounts-0.12.0-rc.16.tgz": {
+			"shasum": "31e16384562922af7e5cc470eb81777289978d89",
+			"version": "0.12.0-rc.16"
+		},
+		"accounts-0.12.0-rc.16.tgz": {
+			"shasum": "f010c130c1d1a7286ddc91aa43eb49a42bf46fb2",
+			"version": "0.12.0-rc.16"
+		}
+	},
+	"_rev": "6-820bdbc933a636bf",
+	"_id": "@hardkas/accounts",
+	"readme": "ERROR: No README data found!"
+}
