@@ -2516,6 +2516,9 @@ importers:
         specifier: workspace:*
         version: link:../core
     devDependencies:
+      '@hardkas/sdk':
+        specifier: workspace:*
+        version: link:../sdk
       tsup:
         specifier: ^8.3.5
         version: 8.5.1(jiti@2.7.0)(postcss@8.5.25)(tsx@4.23.7)(typescript@5.9.3)(yaml@2.9.0)
