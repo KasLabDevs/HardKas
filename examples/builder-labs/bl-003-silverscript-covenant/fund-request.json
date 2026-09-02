@@ -1,11 +1,11 @@
 {
   "private_key_hex": "44e6db6bf2e75d03c43df46e09b3cd6582ccb80bf7960144f2a861308e429ec3",
   "utxo": {
-    "txid": "0000000000000000000000000000000000000000000000000000000000000001",
-    "index": 0,
-    "amount": 10000000000,
+    "txid": "49b53f6fb89441b2f25684f36d7c14f5bd042491841e1faaf5b1ea860b0a4983",
+    "index": 8,
+    "amount": 5000000000,
     "script_public_key_hex": "20ae9fded252fe42208dac04488a9bf087842e273515cfafcb47f56b5166f6d0c7ac",
-    "block_daa_score": 0,
+    "block_daa_score": 49,
     "is_coinbase": true
   },
   "outputs": [
@@ -14,7 +14,7 @@
       "script_public_key_hex": "aa20ce57216285125006ec18197bd8184221cefa559bb0798410d99a5bba5b07cd1d87"
     },
     {
-      "amount": 9949500000,
+      "amount": 4949500000,
       "script_public_key_hex": "20ae9fded252fe42208dac04488a9bf087842e273515cfafcb47f56b5166f6d0c7ac"
     }
   ]

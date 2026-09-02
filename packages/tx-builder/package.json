@@ -13,7 +13,8 @@
   },
   "scripts": {
     "build": "tsup src/index.ts --format esm --dts --clean",
-    "test": "vitest run",
+    "test": "vitest run --exclude test/**/*.localnet.test.ts",
+    "test:localnet": "vitest run test/**/*.localnet.test.ts",
     "typecheck": "tsc --noEmit",
     "lint": "eslint ."
   },

@@ -5,17 +5,12 @@
     "hardware-sim-bob"
   ],
   "expectedRecipient": "02ae9fded252fe42208dac04488a9bf087842e273515cfafcb47f56b5166f6d0c7",
-  "fundingTxId": "1234567890abcdef1234567890abcdef1234567890abcdef12345678b6bb1ceb",
+  "fundingTxId": "0000000000000000000000000000000000000000000000000000000000000000",
   "escrowOutpoint": {
-    "transactionId": "1234567890abcdef1234567890abcdef1234567890abcdef12345678b6bb1ceb",
+    "transactionId": "0000000000000000000000000000000000000000000000000000000000000000",
     "index": 0
   },
   "unsignedTransactionIdentity": "8cf59e3dd462a7aae103d9e30ed9d51050aaabe56ccb3443674f95dbb9cc89b9",
-  "acceptance": {
-    "acceptingBlockHash": "mock_block",
-    "acceptedTransactionId": "mock_tx",
-    "virtualChainObserved": true,
-    "rpcMethod": "getVirtualChainFromBlockV2"
-  },
-  "confirmed": true
+  "acceptance": null,
+  "confirmed": false
 }

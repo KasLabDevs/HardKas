@@ -18,7 +18,7 @@ export default defineConfig({
     teardownTimeout: 120000,
     hookTimeout: 120000,
     include: ["packages/*/test/**/*.test.ts", "examples/superapp-command-center/tests/backend/**/*.test.ts", "examples/builder-labs/**/*.test.ts"],
-    exclude: ["**/node_modules/**", "**/dist/**", "**/*.e2e.test.ts"],
+    exclude: ["**/node_modules/**", "**/dist/**", "**/*.e2e.test.ts", "**/*.localnet.test.ts"],
     coverage: {
       provider: "v8",
       enabled: true,

@@ -1,5 +1,11 @@
 # Phase 9: Wallet Backend Lab — Blocker
 
+Status: RESOLVED BY CONTRACT
+Resolution:
+Application Ownership / Optimistic Concurrency
+
+No SDK reservation mechanism required by current evidence.
+
 **Condition Triggered**: W2 (Concurrent Planner Collision - Read Only) revealed reproducible UTXO collisions.
 
 ## Description

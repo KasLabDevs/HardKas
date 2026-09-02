@@ -21,6 +21,7 @@
     "build": "turbo build",
     "dev": "turbo dev",
     "test": "vitest run && pnpm test:workflows",
+    "test:localnet": "vitest run --config vitest.localnet.config.ts",
     "test:e2e:docker": "vitest run --config vitest.e2e.config.ts --no-file-parallelism",
     "test:workflows": "vitest run packages/cli/test/workflow-corpus.test.ts",
     "bench": "vitest bench --run",
