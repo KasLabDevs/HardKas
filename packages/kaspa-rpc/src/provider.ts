@@ -13,7 +13,7 @@ import {
   KaspaRpcTransaction,
   SubmitTransactionOptions
 } from "./index.js";
-import { RpcUnavailableError } from "./errors.js";
+import { RpcUnavailableError, RpcError } from "./errors.js";
 
 export interface LoadBalancerOptions {
   strategy: "round-robin" | "failover";
