@@ -250,7 +250,7 @@ export class KaspaJsonRpcClient implements KaspaRpcClient {
     return await this.callRpc("getVirtualSelectedParentBlueScoreRequest", {});
   }
 
-  async getVirtualChainFromBlockV2(options: { startHash: string; dataVerbosityLevel?: "NONE"|"HEADERS"|"FULL"; minConfirmationCount?: string }): Promise<any> {
+  async getVirtualChainFromBlockV2(options: { startHash: string; dataVerbosityLevel?: import("./contracts/read").RpcDataVerbosityLevel; minConfirmationCount?: string }): Promise<any> {
     return await this.callRpc("getVirtualChainFromBlockV2Request", options);
   }
 

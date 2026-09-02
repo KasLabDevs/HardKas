@@ -1,0 +1,22 @@
+{
+  "name": "wallet-backend-lab",
+  "version": "1.0.0",
+  "description": "HardKAS Wallet Backend Discovery Lab",
+  "type": "module",
+  "scripts": {
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@hardkas/sdk": "0.12.0-rc.16",
+    "better-sqlite3": "^11.0.0"
+  },
+  "devDependencies": {
+    "@types/better-sqlite3": "^9.6.0",
+    "@types/node": "^20.0.0",
+    "tsx": "^4.7.1",
+    "vitest": "^2.1.9"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": ["better-sqlite3", "esbuild"]
+  }
+}

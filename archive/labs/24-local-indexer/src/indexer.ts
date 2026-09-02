@@ -107,7 +107,7 @@ export class LocalIndexer {
         try {
           const v2Response = await this.sdk.rpc.getVirtualChainFromBlockV2({
             startHash: cursor.anchorHash,
-            dataVerbosityLevel: "FULL"
+            dataVerbosityLevel: "LEGACY_RECOVERY"
           });
           
           await this.applyCatchUpEvidence(v2Response, currentNetworkInfo);

@@ -143,16 +143,16 @@ export class LoadBalancedRpcProvider implements KaspaRpcClient {
     return this.withFailover((c) => c.getVirtualSelectedParentBlueScore());
   }
 
-  async getVirtualChainFromBlockV2(options: { startHash: string; dataVerbosityLevel?: "NONE"|"HEADERS"|"FULL"; minConfirmationCount?: string }): Promise<any> {
-    if (options.dataVerbosityLevel === "HEADERS") {
-      throw new RpcError("dataVerbosityLevel 'HEADERS' is not supported by the current transport binding", "RPC_CAPABILITY_UNSUPPORTED");
+  async getVirtualChainFromBlockV2(options: { startHash: string; dataVerbosityLevel?: import("./contracts/read").RpcDataVerbosityLevel; minConfirmationCount?: string }): Promise<any> {
+    if (options.dataVerbosityLevel !== "NONE" && options.dataVerbosityLevel !== "LEGACY_RECOVERY" && options.dataVerbosityLevel !== undefined) {
+      throw new RpcError(`dataVerbosityLevel '${options.dataVerbosityLevel}' is not supported by the legacy compatibility transport binding. Supported subsets: 'NONE' | 'LEGACY_RECOVERY'`, "RPC_CAPABILITY_UNSUPPORTED");
     }
     if (options.minConfirmationCount !== undefined && options.minConfirmationCount !== "0") {
       throw new RpcError("minConfirmationCount is not supported by the current transport binding", "RPC_CAPABILITY_UNSUPPORTED");
     }
     const payload = {
       startHash: options.startHash,
-      includeAcceptedTransactionIds: options.dataVerbosityLevel === "FULL"
+      includeAcceptedTransactionIds: options.dataVerbosityLevel === "LEGACY_RECOVERY"
     } as any;
     console.log("[DEBUG] getVirtualChainFromBlockV2 payload:", payload);
     return this.withFailover((c) => c.getVirtualChainFromBlockV2(payload));

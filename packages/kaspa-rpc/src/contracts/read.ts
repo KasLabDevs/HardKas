@@ -89,7 +89,7 @@ export interface GetVirtualChainFromBlockResponse {
   acceptedTransactionIds?: any[];
 }
 
-export type RpcDataVerbosityLevel = "NONE" | "HEADERS" | "FULL";
+export type RpcDataVerbosityLevel = "NONE" | "LOW" | "HIGH" | "FULL" | "LEGACY_RECOVERY";
 
 export interface GetVirtualChainFromBlockV2Request {
   startHash: string;

@@ -160,7 +160,7 @@ export interface KaspaRpcClient {
   getCurrentNetwork(): Promise<any>;
   getSyncStatus(): Promise<any>;
   getVirtualSelectedParentBlueScore(): Promise<any>;
-  getVirtualChainFromBlockV2(options: { startHash: string; dataVerbosityLevel?: "NONE"|"HEADERS"|"FULL"; minConfirmationCount?: string }): Promise<any>;
+  getVirtualChainFromBlockV2(options: { startHash: string; dataVerbosityLevel?: import("./contracts/read").RpcDataVerbosityLevel; minConfirmationCount?: string }): Promise<any>;
   getSinkBlueScore(): Promise<any>;
   getHeaders(): Promise<any>;
   subscribeToUtxosChanged(addresses: readonly string[], handler: (event: UtxosChangedEvent) => void): Promise<KaspaSubscription>;
@@ -648,16 +648,16 @@ export class JsonWrpcKaspaClient implements KaspaRpcClient {
     return this.callMethod("getVirtualSelectedParentBlueScore", "getVirtualSelectedParentBlueScoreRequest", {});
   }
 
-  async getVirtualChainFromBlockV2(options: { startHash: string; dataVerbosityLevel?: "NONE"|"HEADERS"|"FULL"; minConfirmationCount?: string }): Promise<any> {
-    if (options.dataVerbosityLevel === "HEADERS") {
-      throw new RpcError("dataVerbosityLevel 'HEADERS' is not supported by the current transport binding", "RPC_CAPABILITY_UNSUPPORTED");
+  async getVirtualChainFromBlockV2(options: { startHash: string; dataVerbosityLevel?: import("./contracts/read").RpcDataVerbosityLevel; minConfirmationCount?: string }): Promise<any> {
+    if (options.dataVerbosityLevel !== "NONE" && options.dataVerbosityLevel !== "LEGACY_RECOVERY" && options.dataVerbosityLevel !== undefined) {
+      throw new RpcError(`dataVerbosityLevel '${options.dataVerbosityLevel}' is not supported by the legacy compatibility transport binding. Supported subsets: 'NONE' | 'LEGACY_RECOVERY'`, "RPC_CAPABILITY_UNSUPPORTED");
     }
     if (options.minConfirmationCount !== undefined && options.minConfirmationCount !== "0") {
       throw new RpcError("minConfirmationCount is not supported by the current transport binding", "RPC_CAPABILITY_UNSUPPORTED");
     }
     const payload = {
       startHash: options.startHash,
-      includeAcceptedTransactionIds: options.dataVerbosityLevel === "FULL"
+      includeAcceptedTransactionIds: options.dataVerbosityLevel === "LEGACY_RECOVERY"
     };
     return this.callMethod("getVirtualChainFromBlockV2", "getVirtualChainFromBlockV2Request", payload);
   }
