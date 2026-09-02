@@ -1,20 +1,20 @@
 import { describe, it, expect, beforeAll, afterAll } from "vitest";
-import { KaspaRpcProvider, KaspaSubscription } from "@hardkas/kaspa-rpc";
-import { HardKAS } from "@hardkas/sdk";
-import { MemoryStore } from "@hardkas/core";
+import { Hardkas } from "@hardkas/sdk";
+import { MockRpcProvider } from "./mock-rpc";
 
 describe("W2 - Concurrent Planner Collision (Read Only)", () => {
-  let hk: HardKAS;
+  let hk: Hardkas;
+  let provider: MockRpcProvider;
 
   beforeAll(async () => {
-    hk = new HardKAS({
+    provider = new MockRpcProvider();
+    hk = await Hardkas.create({
       network: "simnet",
-      store: new MemoryStore(),
+      autoBootstrap: true,
       rpc: {
-        provider: new KaspaRpcProvider(["127.0.0.1:16210"])
+        provider: provider as any
       }
     });
-    await hk.start();
   });
 
   afterAll(async () => {
@@ -22,12 +22,46 @@ describe("W2 - Concurrent Planner Collision (Read Only)", () => {
   });
 
   it("should trigger a UTXO collision when planning concurrently", async () => {
-    // 1. We need a funded account/address. We'll generate one or use a well-known dev account.
     const wallet = await hk.accounts.createWallet();
     const address = await wallet.deriveReceiveAddress();
 
-    // Fund the address (we assume a localnet miner or we use a pre-funded dev account)
-    // For this lab, we'll first ensure it has a single UTXO by mining to it or sending to it.
-    // ...
+    // Mock the UTXO
+    provider.setUtxos(address.toString(), [
+      {
+        address: address.toString(),
+        outpoint: { transactionId: "0000000000000000000000000000000000000000000000000000000000000001", index: 0 },
+        amountSompi: "5000000000", // 50 KAS
+        scriptPublicKey: { scriptPublicKey: "00" }
+      }
+    ]);
+
+    // Two independent planners hit the SDK at the exact same time
+    const [intentA, intentB] = await Promise.all([
+      hk.tx.plan({
+        account: wallet,
+        amount: "100",
+        destination: "simnet:qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqkx9awp4e"
+      }),
+      hk.tx.plan({
+        account: wallet,
+        amount: "150",
+        destination: "simnet:qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqkx9awp4e"
+      })
+    ]);
+
+    const inputsA = intentA.transaction.inputs.map(i => `${i.previousOutpoint.transactionId}:${i.previousOutpoint.index}`);
+    const inputsB = intentB.transaction.inputs.map(i => `${i.previousOutpoint.transactionId}:${i.previousOutpoint.index}`);
+
+    console.log(`[W2] Plan A selected outpoints:`, inputsA);
+    console.log(`[W2] Plan B selected outpoints:`, inputsB);
+
+    const collision = inputsA.some(a => inputsB.includes(a));
+    console.log(`[W2] Collision occurred? ${collision}`);
+    
+    if (collision) {
+      console.log(`[W2] BLOCKER IDENTIFIED: The planner is stateless and read-only. Concurrent requests successfully planned over the same authoritative UTXO state.`);
+    }
+
+    expect(collision).toBe(true);
   });
 });
