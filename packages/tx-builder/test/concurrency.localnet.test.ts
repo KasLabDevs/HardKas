@@ -1,4 +1,5 @@
 import { describe, test, expect, beforeAll, afterAll } from "vitest";
+// @ts-ignore
 import { Hardkas } from "@hardkas/sdk";
 
 // This test suite runs against a real localnet and asserts the optimistic concurrency model

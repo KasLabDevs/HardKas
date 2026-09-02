@@ -1,9 +1,4 @@
 {
   "extends": "../../tsconfig.base.json",
-  "include": ["src/**/*.ts", "test/**/*.ts"],
-  "compilerOptions": {
-    "paths": {
-      "@hardkas/sdk": ["../sdk/src/index.ts"]
-    }
-  }
+  "include": ["src/**/*.ts", "test/**/*.ts"]
 }
