@@ -1,0 +1,85 @@
+import { loadOrCreateRealAccountStore, saveRealAccountStore, importRealDevAccount, KaspaSdkKeyGenerator, KeystoreManager } from "@hardkas/accounts";
+import fs from "node:fs";
+import { acquirePassword } from "./secrets.js";
+import { UI } from "../ui.js";
+export async function runAccountsRealGenerate(options) {
+    const generator = new KaspaSdkKeyGenerator(options.networkId ? { networkId: options.networkId } : {});
+    const count = options.count || 1;
+    const cwd = options.workspaceRoot || process.cwd();
+    let store = await loadOrCreateRealAccountStore({ cwd });
+    const generatedAccounts = [];
+    let password = "";
+    if (!options.unsafePlaintext) {
+        password = await acquirePassword({
+            stdin: options.passwordStdin,
+            env: options.passwordEnv,
+            message: `Enter password to encrypt ${count} new account(s):`
+        });
+        if (!password)
+            throw new Error("Password is required for encrypted storage.");
+    }
+    else {
+        UI.warning("LEGACY MODE: Generating accounts in plaintext is unsafe.");
+        if (!options.yes) {
+            const confirmed = await UI.confirm("Are you sure you want to store these keys in plaintext?");
+            if (!confirmed)
+                throw new Error("Generation cancelled.");
+        }
+    }
+    for (let i = 0; i < count; i++) {
+        const name = count === 1 && options.name
+            ? options.name
+            : options.name
+                ? `${options.name}${i + 1}`
+                : `account${i}`;
+        // Attempt generation
+        const generated = await generator.generateAccount(options.networkId ? { networkId: options.networkId } : {});
+        let keystoreRef;
+        if (!options.unsafePlaintext) {
+            const keystore = await KeystoreManager.createEncryptedKeystore({
+                address: generated.address,
+                privateKey: generated.privateKey,
+                network: options.networkId || "simnet"
+            }, password, {
+                label: name,
+                network: options.networkId || "simnet"
+            });
+            const { Hardkas } = await import("@hardkas/sdk");
+            const sdk = await Hardkas.open(options.workspaceRoot ? { cwd: options.workspaceRoot } : {});
+            const keystoreDir = sdk.workspace.keystoreDir;
+            if (!fs.existsSync(keystoreDir))
+                fs.mkdirSync(keystoreDir, { recursive: true });
+            const filePath = sdk.workspace.resolvePath(".hardkas", "keystore", `${name}.json`);
+            await KeystoreManager.saveEncryptedKeystore(filePath, keystore);
+            keystoreRef = `.hardkas/keystore/${name}.json`;
+        }
+        store = importRealDevAccount(store, {
+            name,
+            address: generated.address,
+            ...(generated.publicKey ? { publicKey: generated.publicKey } : {}),
+            ...(options.unsafePlaintext && generated.privateKey
+                ? { privateKey: generated.privateKey }
+                : {}),
+            ...(keystoreRef ? { keystoreRef } : {})
+        });
+        generatedAccounts.push(store.accounts[store.accounts.length - 1]);
+    }
+    await saveRealAccountStore(store);
+    const lines = [
+        `Generated ${count} real dev account(s, { cwd })`,
+        "",
+        "WARNING: Development keys only. Do not use on mainnet.",
+        ""
+    ];
+    generatedAccounts.forEach((a) => {
+        lines.push(`Name:    ${a.name}`);
+        lines.push(`Address: ${a.address}`);
+        lines.push(`Private: yes (masked)`);
+        lines.push("");
+    });
+    return {
+        accounts: generatedAccounts,
+        formatted: lines.join("\n")
+    };
+}
+//# sourceMappingURL=accounts-real-generate-runner.js.map

@@ -44,16 +44,52 @@ export async function runTxPlan(input: TxPlanRunnerInput): Promise<TxPlanArtifac
   const amountSompi = parseKasToSompi(amount);
   const feeRateSompiPerMass = feeRate ? BigInt(feeRate) : undefined;
 
-  const { resolveExecutionTarget, resolveProvider } = await import("@hardkas/config");
+  const { resolveNewIntentTarget, resolveProvider } = await import("@hardkas/config");
+  const { assertAccountCompatible, resolveHardkasAccount } = await import("@hardkas/accounts");
 
-  if (!targetName && !networkId && !(resolvedConfig as any).defaultTarget) {
+  if (!targetName && !networkId && !resolvedConfig.execution && !(resolvedConfig as any).defaultNetwork && !(resolvedConfig as any).defaultTarget) {
     throw new Error("EXECUTION_NETWORK_MISMATCH: No target or network specified, and no default target found in config.");
   }
 
-  const { execution, name: resolvedTargetName } = resolveExecutionTarget({
+  let explicitTarget: import("@hardkas/core").HardkasExecutionTarget | undefined = undefined;
+  if (targetName) {
+    if (resolvedConfig.execution && "targets" in resolvedConfig.execution) {
+      explicitTarget = (resolvedConfig.execution.targets as any)[targetName];
+    }
+    if (!explicitTarget) {
+      throw new Error(`Execution target '${targetName}' not found in hardkas.config.ts`);
+    }
+  } else if (networkId) {
+    // If config has execution targets, find the target matching this networkId
+    const execConfig = resolvedConfig.execution as any;
+    if (execConfig?.targets) {
+      const matchingTarget = Object.values(execConfig.targets).find(
+        (t: any) => t.network === networkId
+      ) as import("@hardkas/core").HardkasExecutionTarget | undefined;
+      if (matchingTarget) {
+        explicitTarget = matchingTarget;
+      }
+    }
+    // Legacy fallback: infer mode from networkId name
+    if (!explicitTarget) {
+      let mode: "simulator" | "localnet" | "rpc" = "rpc";
+      let domain: "kaspa-l1" | "evm-l2" = "kaspa-l1";
+      if (networkId === "simulated") mode = "simulator";
+      else if (networkId === "simnet" || networkId === "devnet") mode = "localnet";
+      explicitTarget = { mode, domain, network: networkId };
+    }
+  }
+
+  const execution = resolveNewIntentTarget({
     config: resolvedConfig,
-    ...(targetName !== undefined ? { targetName } : {})
+    ...(explicitTarget ? { explicitTarget } : {})
   });
+
+  const resolvedTargetName = targetName || execution.network;
+
+  // Resolve and assert account compatibility BEFORE doing address validation
+  const fromAccount = resolveHardkasAccount({ nameOrAddress: from, config: resolvedConfig });
+  assertAccountCompatible(fromAccount, execution);
 
   let effectiveNetworkId = networkId;
   if (networkId === "simnet" && resolvedConfig.networks?.simnet?.kind === "simulated") {
@@ -202,13 +238,18 @@ export async function runTxPlan(input: TxPlanRunnerInput): Promise<TxPlanArtifac
           throw new Error(`No UTXOs found for ${fromAddress} on network '${resolvedNetwork}'.`);
         }
 
+        // --- Pending-Spend Safety (rc.12) ---
+        // Load registry (always stale), reconcile against live mempool + fresh UTXOs,
+        // then filter out pending-spent outpoints before coin selection.
+        let spendableUtxos = matureUtxos;
+
         let actualFeeRate = feeRateSompiPerMass;
         if (actualFeeRate === undefined) {
           const { HardkasFees } = await import("@hardkas/sdk");
           const tempFees = new HardkasFees({ provider: { rpcUrl: rpcUrl! }, config: { cwd: workspaceRoot || process.cwd(), config: resolvedConfig } } as any);
           const { feeRate: estimated } = await tempFees.estimate({
             priority: "normal",
-            inputs: matureUtxos.length,
+            inputs: spendableUtxos.length,
             outputs: 2,
             version: 1,
             network: resolvedNetwork as NetworkId
@@ -219,7 +260,7 @@ export async function runTxPlan(input: TxPlanRunnerInput): Promise<TxPlanArtifac
         const candidatePlan = buildPaymentPlan({
           fromAddress,
           outputs: [{ address: toAddress, amountSompi }],
-          availableUtxos: matureUtxos,
+          availableUtxos: spendableUtxos,
           feeRateSompiPerMass: actualFeeRate,
           coinbaseMaturity: planCoinbaseMaturity,
           virtualDaaScore: vBefore.virtualDaaScore,

@@ -8,6 +8,7 @@ import {
   BlockDagInfo,
   ServerInfo,
   UtxosChangedEvent,
+  VirtualChainChangedEvent,
   KaspaSubscription,
   KaspaRpcTransaction,
   KaspaSubmitTransactionResult
@@ -249,6 +250,10 @@ export class KaspaJsonRpcClient implements KaspaRpcClient {
     return await this.callRpc("getVirtualSelectedParentBlueScoreRequest", {});
   }
 
+  async getVirtualChainFromBlockV2(options: { startHash: string; dataVerbosityLevel?: import("./contracts/read").RpcDataVerbosityLevel; minConfirmationCount?: string }): Promise<any> {
+    return await this.callRpc("getVirtualChainFromBlockV2Request", options);
+  }
+
   async getSinkBlueScore(): Promise<any> {
     return await this.callRpc("getSinkBlueScoreRequest", {});
   }
@@ -258,6 +263,10 @@ export class KaspaJsonRpcClient implements KaspaRpcClient {
   }
 
   async subscribeToUtxosChanged(addresses: readonly string[], handler: (event: UtxosChangedEvent) => void): Promise<KaspaSubscription> {
+    throw new Error("RPC_SUBSCRIPTIONS_UNSUPPORTED");
+  }
+
+  async subscribeToVirtualChainChanged(options: { includeAcceptedTransactionIds: boolean }, handler: (event: VirtualChainChangedEvent) => void): Promise<KaspaSubscription> {
     throw new Error("RPC_SUBSCRIPTIONS_UNSUPPORTED");
   }
 
@@ -327,6 +336,23 @@ export class KaspaJsonRpcClient implements KaspaRpcClient {
       };
     } catch (e) {
       if (e instanceof RpcNotFoundError) return null;
+      throw e;
+    }
+  }
+
+  async checkMempoolPresence(txId: string): Promise<{ status: 'present' } | { status: 'absent' }> {
+    try {
+      await this.callRpc("getMempoolEntryRequest", {
+        txId,
+        includeOrphanPool: true
+      });
+      return { status: 'present' };
+    } catch (e: any) {
+      if (e instanceof RpcNotFoundError) return { status: 'absent' };
+      const msg = (e?.message || '').toLowerCase();
+      if (msg.includes('not found') || msg.includes('no_data') || msg.includes('entry not found')) {
+        return { status: 'absent' };
+      }
       throw e;
     }
   }

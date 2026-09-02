@@ -41,7 +41,7 @@ export function attachLedgerAppender(options: LedgerAppenderOptions = {}): () =>
   };
 
   appenderUnsubscribe = coreEvents.on(listener);
-  return appenderUnsubscribe;
+  return appenderUnsubscribe!;
 }
 
 /**

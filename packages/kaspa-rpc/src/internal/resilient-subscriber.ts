@@ -145,6 +145,11 @@ export class ResilientSubscriptionClient implements KaspaRpcClient {
     return this.client.getMempoolEntry(txId);
   }
 
+  async checkMempoolPresence(txId: string): Promise<{ status: 'present' } | { status: 'absent' }> {
+    if (!this.client) throw new Error("Client is reconnecting");
+    return this.client.checkMempoolPresence(txId);
+  }
+
   async getTransaction(txId: string): Promise<unknown | null> {
     if (!this.client) throw new Error("Client is reconnecting");
     return this.client.getTransaction(txId);
@@ -190,6 +195,11 @@ export class ResilientSubscriptionClient implements KaspaRpcClient {
     return this.client.getVirtualSelectedParentBlueScore();
   }
 
+  async getVirtualChainFromBlockV2(options: { startHash: string; dataVerbosityLevel?: import("../contracts/read").RpcDataVerbosityLevel; minConfirmationCount?: string }): Promise<any> {
+    if (!this.client) throw new Error("Client is reconnecting");
+    return this.client.getVirtualChainFromBlockV2(options);
+  }
+
   async getSinkBlueScore(): Promise<any> {
     if (!this.client) throw new Error("Client is reconnecting");
     return this.client.getSinkBlueScore();
@@ -203,6 +213,11 @@ export class ResilientSubscriptionClient implements KaspaRpcClient {
   async subscribeToUtxosChanged(addresses: readonly string[], handler: (event: any) => void): Promise<KaspaSubscription> {
     if (!this.client) throw new Error("Client is reconnecting");
     return this.client.subscribeToUtxosChanged(addresses, handler);
+  }
+
+  async subscribeToVirtualChainChanged(options: { includeAcceptedTransactionIds: boolean }, handler: (event: any) => void): Promise<KaspaSubscription> {
+    if (!this.client) throw new Error("Client is reconnecting");
+    return this.client.subscribeToVirtualChainChanged(options, handler);
   }
 
   async call<TResponse = unknown>(method: string, params?: unknown): Promise<TResponse> {

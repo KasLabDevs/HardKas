@@ -1,6 +1,6 @@
 {
   "name": "@hardkas/rpc-events",
-  "version": "0.12.0-rc.10",
+  "version": "0.12.0-rc.16",
   "description": "HardKAS Reactive Event Layer for Kaspa subscriptions",
   "type": "module",
   "main": "dist/index.js",

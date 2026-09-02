@@ -1,7 +1,7 @@
-# HardKAS 0.12.0-rc.10 — Builder Labs Mode
+# HardKAS 0.12.0-rc.16 — Builder Labs Mode
 
 ## Context
-HardKAS has reached 0.12.0-rc.10.
+HardKAS has reached 0.12.0-rc.16.
 The framework is considered feature-complete enough to begin validating itself through real Kaspa applications.
 From this point forward, the primary objective is not adding features, but discovering missing SDK capabilities by building production-like applications.
 Every new SDK helper, plugin, template or CLI feature must originate from an actual application requirement.
@@ -128,3 +128,27 @@ These applications define the future of the SDK.
 ## Success Metric
 HardKAS succeeds when developers can build real Kaspa applications with minimal friction.
 The framework should evolve from real-world usage rather than hypothetical requirements.
+
+## Stabilized Architectural Decisions (Phases 3-5)
+The following decisions are stabilized and must be respected in all future work to prevent architectural regression:
+
+### 1. Dependency Graph Levels
+- **Level 0 (Foundations)**: `core`, `config`, `observability` (logging/metrics).
+- **Level 1 (Core Primitives / Execution)**: `artifacts`, `accounts`, `tx-builder`, `kaspa-rpc`, `simulator`, `localnet`. These must NEVER depend on higher levels.
+- **Level 2 (Composition / Product API)**: `sdk`. The SDK is a composition layer that orchestrates primitives and may optionally expose/bundle extensions for convenience.
+- **Level 3 (Extensions)**: `query`, `query-store`, `jobs`, `wallet-adapter`, `node-runner`, `l2`, etc.
+- **Level 4 (Presentation)**: `cli`, `react`, `client`, and builder labs.
+
+### 2. State Ownership & UTXOs
+- **State Truth**: HardKAS relies on (1) Artifacts (Durable/History), (2) RPC/Node (Authoritative Live), (3) Localnet/Simulator (Execution Context), and (4) Projections (Read-only indexes like `query-store`).
+- **query-store**: Validated as a `CORE-ADJACENT / READ MODEL`. It projects state but does not own it.
+- **UTXO Spendability**: RPC UTXO visibility (`getUtxosByAddresses`) is DAG-based and ignores mempool-spent inputs. `UtxoProvider` adapters for RPC must explicitly handle mempool semantics to prevent double-spend errors during planning.
+
+### 3. Public Surface
+- **Experimental Facades**: `zk`, `l2`, `vprogs`, `covenants`, and `dev-server` are NOT part of the default public CLI/SDK surface. They must be explicitly imported or used as separate tools.
+- **Workflow**: Promoted to Core-Adjacent. It operates exclusively on the central transactional pipeline without experimental contamination.
+
+## AI Directives
+See the following root documents for strict autonomous agent guidelines:
+- `AI_ARCHITECTURE_RULES.md`
+- `AI_CHANGE_POLICY.md`

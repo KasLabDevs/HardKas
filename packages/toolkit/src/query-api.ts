@@ -42,6 +42,90 @@ export class QueryToolkit {
     return { data, source: "rpc" };
   }
 
+  /**
+   * Filters DAG UTXOs against currently observed mempool spends and explicit exclusions.
+   * It does not provide cross-process or pre-submit reservations.
+   */
+  public async spendableUtxos(request: {
+    address: string;
+    excludePending?: boolean;
+    excludeOutpoints?: Set<string>;
+  }): Promise<QueryResponse<any[]>> {
+    const { address, excludePending = true, excludeOutpoints } = request;
+
+    // 1. Get base DAG UTXOs
+    const utxoRes = await this.utxos(address);
+    const baseUtxos = utxoRes.data;
+
+    const excluded = new Set<string>();
+
+    // Add explicitly excluded outpoints
+    if (excludeOutpoints) {
+      for (const op of excludeOutpoints) {
+        excluded.add(op);
+      }
+    }
+
+    // 2. Fetch mempool entries if requested
+    if (excludePending) {
+      if ("getMempoolEntriesByAddresses" in this.rpc && typeof (this.rpc as any).getMempoolEntriesByAddresses === "function") {
+        try {
+          const mempoolRes = await (this.rpc as any).getMempoolEntriesByAddresses({
+            addresses: [address],
+            includeOrphanPool: false,
+            filterTransactionPool: false
+          });
+
+          if (mempoolRes && mempoolRes.entries) {
+            for (const entry of mempoolRes.entries) {
+              // Only intersect sending transactions to avoid locking on incoming payments
+              if (entry.sending && entry.sending.length > 0) {
+                // Determine if this address is among the sending ones
+                const isSendingFromUs = entry.sending.some((s: any) => s.address === address);
+                if (isSendingFromUs && entry.transaction && entry.transaction.inputs) {
+                  for (const input of entry.transaction.inputs) {
+                    if (input.previousOutpoint) {
+                      excluded.add(`${input.previousOutpoint.transactionId}:${input.previousOutpoint.index}`);
+                    }
+                  }
+                }
+              }
+            }
+          }
+        } catch (e) {
+          // If RPC method is missing or fails, we might just continue or throw.
+          // Since it's a safety feature, bubbling it up is safer.
+          throw e;
+        }
+      }
+    }
+
+    // 3. Filter UTXOs
+    if (excluded.size > 0) {
+      const filtered = baseUtxos.filter(u => {
+        let txId = "";
+        let index = -1;
+        // Handle both rpc and localnet object shapes
+        if (u.outpoint) {
+          txId = u.outpoint.transactionId;
+          index = u.outpoint.index;
+        } else if (u.id) {
+          const parts = u.id.split(":");
+          index = Number(parts[parts.length - 1]);
+          txId = parts.slice(0, -1).join(":");
+        } else if (u.transactionId !== undefined && u.outputIndex !== undefined) {
+          txId = u.transactionId;
+          index = u.outputIndex;
+        }
+        const opKey = `${txId}:${index}`;
+        return !excluded.has(opKey);
+      });
+      return { data: filtered, source: utxoRes.source };
+    }
+
+    return utxoRes;
+  }
+
   public async history(address: string): Promise<QueryResponse<any[]>> {
     if (this.indexer) {
       try {
@@ -62,7 +146,7 @@ export class QueryToolkit {
   public async transaction(txid: string): Promise<QueryResponse<any>> {
     // If indexer had a transaction endpoint, we'd use it here.
     // For now, we fallback to RPC.
-    
+
     // Will throw if the node doesn't have txindex enabled.
     // We let this bubble up as designed.
     const data = await this.rpc.getTransaction(txid);
@@ -122,15 +206,15 @@ export class QueryToolkit {
     const info = await this.rpc.getInfo();
     const dag = await this.rpc.getBlockDagInfo();
     const net = await this.rpc.getCurrentNetwork() as any;
-    
-    return { 
+
+    return {
       data: {
         serverVersion: info.serverVersion,
         isSynced: info.isSynced,
         networkId: net.currentNetwork || dag.networkId,
         mempoolSize: info.mempoolSize
-      }, 
-      source: "rpc" 
+      },
+      source: "rpc"
     };
   }
 

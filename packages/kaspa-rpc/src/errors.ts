@@ -1,7 +1,7 @@
 export class RpcError extends Error {
   constructor(
     message: string,
-    public readonly code?: number,
+    public readonly code?: number | string,
     public readonly data?: unknown,
     public readonly isRetriable: boolean = true
   ) {
@@ -18,7 +18,7 @@ export class RpcTimeoutError extends RpcError {
 }
 
 export class RpcUnavailableError extends RpcError {
-  constructor(message: string = "RPC service unavailable", code?: number) {
+  constructor(message: string = "RPC service unavailable", code?: number | string) {
     super(message, code, undefined, true);
     this.name = "RpcUnavailableError";
   }
@@ -45,7 +45,7 @@ export class RpcRateLimitError extends RpcError {
  * Errors that should NOT be retried (Deterministic/Validation)
  */
 export class RpcValidationError extends RpcError {
-  constructor(message: string, code?: number, data?: unknown) {
+  constructor(message: string, code?: number | string, data?: unknown) {
     super(message, code, data, false);
     this.name = "RpcValidationError";
   }
@@ -66,21 +66,21 @@ export class RpcIndexError extends RpcError {
 }
 
 export class RpcConnectionError extends RpcError {
-  constructor(message: string = "RPC connection failed", code?: number) {
+  constructor(message: string = "RPC connection failed", code?: number | string) {
     super(message, code, undefined, true);
     this.name = "RpcConnectionError";
   }
 }
 
 export class RpcProtocolError extends RpcError {
-  constructor(message: string = "Invalid RPC protocol response", code?: number) {
+  constructor(message: string = "Invalid RPC protocol response", code?: number | string) {
     super(message, code, undefined, false);
     this.name = "RpcProtocolError";
   }
 }
 
 export class RpcNotFoundError extends RpcError {
-  constructor(message: string = "Resource not found", code?: number) {
+  constructor(message: string = "Resource not found", code?: number | string) {
     super(message, code, undefined, false);
     this.name = "RpcNotFoundError";
   }

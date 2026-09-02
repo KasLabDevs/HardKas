@@ -13,7 +13,7 @@ import {
   KaspaRpcTransaction,
   SubmitTransactionOptions
 } from "./index.js";
-import { RpcUnavailableError } from "./errors.js";
+import { RpcUnavailableError, RpcError } from "./errors.js";
 
 export interface LoadBalancerOptions {
   strategy: "round-robin" | "failover";
@@ -21,6 +21,11 @@ export interface LoadBalancerOptions {
 
 export class LoadBalancedRpcProvider implements KaspaRpcClient {
   private currentIndex = 0;
+  private checkHealthInterval?: NodeJS.Timeout;
+
+  public readonly capabilities = {
+    virtualChainFromBlockV2: 'compatibility' as const
+  };
 
   constructor(
     private readonly clients: KaspaRpcClient[],
@@ -98,6 +103,10 @@ export class LoadBalancedRpcProvider implements KaspaRpcClient {
     return this.withFailover((c) => c.getMempoolEntry(txId));
   }
 
+  async checkMempoolPresence(txId: string): Promise<{ status: 'present' } | { status: 'absent' }> {
+    return this.withFailover((c) => c.checkMempoolPresence(txId));
+  }
+
   async getTransaction(txId: string): Promise<unknown | null> {
     return this.withFailover((c) => c.getTransaction(txId));
   }
@@ -134,6 +143,21 @@ export class LoadBalancedRpcProvider implements KaspaRpcClient {
     return this.withFailover((c) => c.getVirtualSelectedParentBlueScore());
   }
 
+  async getVirtualChainFromBlockV2(options: { startHash: string; dataVerbosityLevel?: import("./contracts/read").RpcDataVerbosityLevel; minConfirmationCount?: string }): Promise<any> {
+    if (options.dataVerbosityLevel !== "NONE" && options.dataVerbosityLevel !== "LEGACY_RECOVERY" && options.dataVerbosityLevel !== undefined) {
+      throw new RpcError(`dataVerbosityLevel '${options.dataVerbosityLevel}' is not supported by the legacy compatibility transport binding. Supported subsets: 'NONE' | 'LEGACY_RECOVERY'`, "RPC_CAPABILITY_UNSUPPORTED");
+    }
+    if (options.minConfirmationCount !== undefined && options.minConfirmationCount !== "0") {
+      throw new RpcError("minConfirmationCount is not supported by the current transport binding", "RPC_CAPABILITY_UNSUPPORTED");
+    }
+    const payload = {
+      startHash: options.startHash,
+      includeAcceptedTransactionIds: options.dataVerbosityLevel === "LEGACY_RECOVERY"
+    } as any;
+    console.log("[DEBUG] getVirtualChainFromBlockV2 payload:", payload);
+    return this.withFailover((c) => c.getVirtualChainFromBlockV2(payload));
+  }
+
   async getSinkBlueScore(): Promise<any> {
     return this.withFailover((c) => c.getSinkBlueScore());
   }
@@ -146,6 +170,20 @@ export class LoadBalancedRpcProvider implements KaspaRpcClient {
     // In a robust implementation, the LB would track active subscriptions and resubscribe upon failover.
     // For now, we wrap the initial successful subscription.
     let activeSub = await this.withFailover((c) => c.subscribeToUtxosChanged(addresses, handler));
+    let isClosed = false;
+    
+    return {
+      get id() { return "lb_" + activeSub.id; },
+      get closed() { return isClosed || activeSub.closed; },
+      unsubscribe: async () => {
+        isClosed = true;
+        await activeSub.unsubscribe().catch(() => {});
+      }
+    };
+  }
+
+  async subscribeToVirtualChainChanged(options: { includeAcceptedTransactionIds: boolean }, handler: (event: any) => void): Promise<KaspaSubscription> {
+    let activeSub = await this.withFailover((c) => c.subscribeToVirtualChainChanged(options, handler));
     let isClosed = false;
     
     return {

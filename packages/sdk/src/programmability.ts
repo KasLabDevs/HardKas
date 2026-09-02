@@ -3,7 +3,9 @@ import path from "node:path";
 import { calculateContentHash, verifyArtifactIntegritySync } from "@hardkas/artifacts";
 import type { Hardkas } from "./index.js";
 import { HardkasSchemas } from "@hardkas/artifacts";
-
+import { HardkasZk } from "./zk.js";
+import { HardkasVprogs } from "./vprogs.js";
+import { HardkasCorpus } from "./corpus.js";
 export type ProgrammabilityKind = "silver" | "zk" | "vprog" | "full-lab";
 
 export interface ProgrammabilityClaims {
@@ -129,7 +131,8 @@ export class HardkasProgrammability {
     path: string;
   }): Promise<ProgrammabilityInspectResult> {
     if (options.kind === "zk") {
-      const result = await this.sdk.experimental.zk.proof.inspect(options.path);
+      const zk = new HardkasZk(this.sdk);
+      const result = await zk.proof.inspect(options.path);
       return {
         ok: result.ok,
         schema: HardkasSchemas.ProgrammabilityInspectV1,
@@ -145,7 +148,8 @@ export class HardkasProgrammability {
     }
 
     if (options.kind === "vprog") {
-      const result = await this.sdk.experimental.vprogs.inspect(options.path);
+      const vprogs = new HardkasVprogs(this.sdk);
+      const result = await vprogs.inspect(options.path);
       return {
         ok: result.ok,
         schema: HardkasSchemas.ProgrammabilityInspectV1,
@@ -170,7 +174,8 @@ export class HardkasProgrammability {
     path: string;
   }): Promise<ProgrammabilityVerifyResult> {
     if (options.kind === "zk") {
-      const result = await this.sdk.experimental.zk.proof.verifyLocal(options.path);
+      const zk = new HardkasZk(this.sdk);
+      const result = await zk.proof.verifyLocal(options.path);
       return {
         ok: result.ok,
         schema: HardkasSchemas.ProgrammabilityVerifyV1,
@@ -186,7 +191,8 @@ export class HardkasProgrammability {
     }
 
     if (options.kind === "vprog") {
-      const inspected = await this.sdk.experimental.vprogs.inspect(options.path);
+      const vprogs = new HardkasVprogs(this.sdk);
+      const inspected = await vprogs.inspect(options.path);
       return {
         ok: inspected.ok,
         schema: HardkasSchemas.ProgrammabilityVerifyV1,
@@ -296,14 +302,16 @@ export class HardkasProgrammability {
     let vprogs: "PASS" | "FAIL" | "SKIPPED" = "SKIPPED";
 
     if (include.has("silver")) {
-      const result = await this.sdk.experimental.corpus.verify(
+      const corpus = new HardkasCorpus(this.sdk);
+      const result = await corpus.verify(
         path.join(path.relative(this.sdk.cwd, root), "silver")
       );
       silver = result.ok ? "PASS" : "FAIL";
       issues.push(...result.issues);
     }
     if (include.has("zk")) {
-      const result = await this.sdk.experimental.zk.corpus.verify(
+      const zkApi = new HardkasZk(this.sdk);
+      const result = await zkApi.corpus.verify(
         path.join(path.relative(this.sdk.cwd, root), "zk")
       );
       zk = result.ok ? "PASS" : "FAIL";
@@ -312,7 +320,8 @@ export class HardkasProgrammability {
     if (include.has("vprogs")) {
       const artifact =
         manifest?.components?.vprogs?.artifact ?? "vprogs/inspect-only-artifact.json";
-      const result = await this.sdk.experimental.vprogs.inspect(
+      const vprogsApi = new HardkasVprogs(this.sdk);
+      const result = await vprogsApi.inspect(
         path.join(path.relative(this.sdk.cwd, root), artifact)
       );
       vprogs = result.ok ? "PASS" : "FAIL";

@@ -310,19 +310,24 @@ export class HardkasTx {
             };
           });
         } else {
-          const rpcUtxos = await this.sdk.rpc.getUtxosByAddress(address);
-          return rpcUtxos.map((u) => ({
-            outpoint: {
-              transactionId: u.outpoint.transactionId,
-              index: u.outpoint.index
-            },
-            address: u.address,
-            amountSompi: BigInt(u.amountSompi),
-            scriptPublicKey: u.scriptPublicKey || "",
-            blockDaaScore:
-              u.blockDaaScore !== undefined ? BigInt(u.blockDaaScore) : undefined,
-            isCoinbase: u.isCoinbase
-          }));
+          const res = await this.sdk.query.getSpendableUtxos({ address, excludePending: true });
+          const rpcUtxos = res.data;
+          return rpcUtxos.map((u: any) => {
+            const utxo: any = {
+              outpoint: {
+                transactionId: u.outpoint.transactionId,
+                index: u.outpoint.index
+              },
+              address: u.address,
+              amountSompi: BigInt(u.amountSompi),
+              scriptPublicKey: u.scriptPublicKey || "",
+              isCoinbase: u.isCoinbase
+            };
+            if (u.blockDaaScore !== undefined) {
+              utxo.blockDaaScore = BigInt(u.blockDaaScore);
+            }
+            return utxo;
+          });
         }
       },
       getVirtualDaaScore: async () => {

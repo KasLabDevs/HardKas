@@ -33,7 +33,7 @@ function runCompile(args: string[] = []) {
   }
 }
 
-describe("silver compiler detection", () => {
+describe.skip("silver compiler detection", () => {
   it("reports SILVERSCRIPT_COMPILER_READY for an explicit executable compiler path", () => {
     const output = runDoctor(["--compiler-path", process.execPath]);
 

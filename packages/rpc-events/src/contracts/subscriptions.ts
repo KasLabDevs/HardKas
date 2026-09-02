@@ -6,6 +6,7 @@ export type SubscriptionRequest<T extends EventType> =
   T extends "transactionObserved" ? { type: T; txIds: readonly string[] } :
   T extends "transactionAcceptanceChanged" ? { type: T; txIds: readonly string[] } :
   T extends "transactionFinalityChanged" ? { type: T; txIds: readonly string[] } :
+  T extends "virtualChainChanged" ? { type: T; includeAcceptedTransactionIds?: boolean } :
   never;
 
 export interface Subscription<T> {

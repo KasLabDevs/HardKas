@@ -11,10 +11,26 @@ export const bigIntReplacer = (_key: string, value: unknown) =>
   typeof value === "bigint" ? value.toString() : value;
 
 export async function writeArtifact(filePath: string, artifact: unknown): Promise<void> {
-  const store = new ProjectArtifactStore(process.cwd());
-  // Determine if filePath is an absolute directory (old signature compatibility)
-  // But ideally, everything just uses writeArtifact directly without paths.
-  await store.writeArtifact(artifact);
+  let isDir = false;
+  try {
+    const stat = await fs.stat(filePath);
+    isDir = stat.isDirectory();
+  } catch (err) {
+    if (filePath.endsWith("/") || filePath.endsWith("\\")) {
+      isDir = true;
+    }
+  }
+
+  let finalPath = filePath;
+  if (isDir) {
+    const anyArt = artifact as any;
+    const schema = anyArt.schema || "unknown";
+    const id = anyArt.id || anyArt.planId || Date.now().toString();
+    const basename = `${schema.split('.').pop()}-${id}.json`;
+    finalPath = path.join(filePath, basename);
+  }
+
+  await writeFileAtomic(finalPath, JSON.stringify(artifact, bigIntReplacer, 2));
 }
 
 export function getDefaultReceiptPath(txId: string, cwd: string = process.cwd()): string {

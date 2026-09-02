@@ -9,10 +9,18 @@ export class RpcObserverBackend implements HardkasObserverBackend {
   ) {}
 
   async observeAddress(address: string): Promise<AddressObservationSnapshot> {
-    const mempoolRes = await this.sdk.rpc.call("getMempoolEntriesByAddressesRequest", {
-      addresses: [address],
-      includeOrphanPool: false
-    }) as any;
+    let mempoolRes: any = null;
+    try {
+      mempoolRes = await Promise.race([
+        this.sdk.rpc.call("getMempoolEntriesRequest", {
+          includeOrphanPool: false,
+          filterTransactionPool: false
+        }).catch(e => null),
+        new Promise((_, reject) => setTimeout(() => reject(new Error("Mempool timeout")), 2000))
+      ]);
+    } catch (e) {
+      // Ignore mempool timeouts or unsupported errors
+    }
 
     const utxosRes = await this.sdk.rpc.call("getUtxosByAddressesRequest", {
       addresses: [address]
@@ -26,8 +34,9 @@ export class RpcObserverBackend implements HardkasObserverBackend {
     let mempoolIncomingSompi = 0n;
     let acceptedUtxoSompi = 0n;
 
-    if (mempoolRes && mempoolRes.entries) {
-      for (const entry of mempoolRes.entries) {
+    const mEntries = mempoolRes ? (mempoolRes.entries || mempoolRes.mempoolEntries) : null;
+    if (mEntries && Array.isArray(mEntries)) {
+      for (const entry of mEntries) {
         const tx = entry.transaction;
         let isIncoming = false;
         let isOutgoing = false;
@@ -42,7 +51,7 @@ export class RpcObserverBackend implements HardkasObserverBackend {
            for (const out of (tx.outputs || [])) {
              if (out.verboseData?.scriptPublicKeyAddress === address) {
                 isIncoming = true;
-                incomingSompi += BigInt(out.amount || 0);
+                incomingSompi += BigInt(out.value || out.amount || 0);
              }
            }
 
@@ -175,10 +184,12 @@ export function resolveObserverBackend(
   const execution = { mode: mode as any, domain: domain as any, network: network as any };
 
   if (mode === "simulator") {
+    console.log("[DEBUG] Using SimulatorObserverBackend for network", network);
     return new SimulatorObserverBackend(sdk, execution);
   } else {
     // Both localnet and external RPC use the RpcObserverBackend, 
     // because localnet runs a real rusty-kaspad node accessible via RPC.
+    console.log("[DEBUG] Using RpcObserverBackend for network", network);
     return new RpcObserverBackend(sdk, execution);
   }
 }

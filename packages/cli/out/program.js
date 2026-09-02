@@ -1,0 +1,130 @@
+import { Command } from "commander";
+import { registerInitCommands } from "./commands/init.js";
+import { registerCreateCommand } from "./commands/create.js";
+import { registerTxCommands } from "./commands/tx.js";
+import { registerArtifactCommands } from "./commands/artifact.js";
+import { registerReplayCommands } from "./commands/replay.js";
+import { registerRpcCommands } from "./commands/rpc.js";
+import { registerDagCommands } from "./commands/dag.js";
+import { registerAccountsCommands } from "./commands/accounts.js";
+import { registerL2Commands } from "./commands/l2.js";
+import { registerNodeCommands } from "./commands/node.js";
+import { registerConfigCommands } from "./commands/config.js";
+import { registerQueryCommands } from "./commands/query.js";
+import { registerTestCommands } from "./commands/test.js";
+import { registerDoctorCommand } from "./commands/doctor.js";
+import { registerVerifyCommand } from "./commands/verify.js";
+import { registerRebuildCommand } from "./commands/rebuild.js";
+import { registerRunCommand } from "./commands/run.js";
+import { registerLockCommands } from "./commands/lock.js";
+import { registerCapabilitiesCommand } from "./commands/capabilities.js";
+import { registerWorkflowCommands } from "./commands/workflow.js";
+import { registerConsoleCommand } from "./commands/console.js";
+import { registerLocalnetCommands } from "./commands/localnet.js";
+import { registerSimulatorCommands } from "./commands/simulator.js";
+import { registerDeployCommands } from "./commands/deploy.js";
+import { registerMetamaskCommands } from "./commands/metamask.js";
+import { registerDevCommands } from "./commands/dev.js";
+import { registerLocalCommands } from "./commands/local.js";
+import { registerKaspaCommands } from "./commands/kaspa.js";
+import { registerBridgeCommands } from "./commands/bridge.js";
+import { registerSessionCommands } from "./commands/session.js";
+import { registerPsktCommands } from "./commands/pskt/index.js";
+import { registerDashboardCommand } from "./commands/dashboard.js";
+import { registerExplainCommand } from "./commands/explain.js";
+import { registerTortureCommands } from "./commands/torture.js";
+import { registerTelemetryCommands } from "./commands/telemetry.js";
+import { registerRepairCommand } from "./commands/repair.js";
+import { registerRotateCommand } from "./commands/rotate.js";
+import { registerInspectCommand } from "./commands/inspect.js";
+import { registerChaosCommands } from "./commands/chaos.js";
+import { registerStatusCommands } from "./commands/status.js";
+import { registerWhyCommand } from "./commands/why.js";
+import { registerCiCommand } from "./commands/ci.js";
+import { registerSandboxCommand } from "./commands/sandbox.js";
+import { registerSilverCommand } from "./commands/silver.js";
+import { registerCorpusCommands } from "./commands/corpus.js";
+import { registerZkCommands } from "./commands/zk.js";
+import { registerVprogsCommands } from "./commands/vprogs.js";
+import { registerProgrammabilityCommands } from "./commands/programmability.js";
+import { registerDevServerCommands } from "./commands/dev-server.js";
+import { registerSecurityCommand } from "./commands/security.js";
+import { registerEvidenceCommands } from "./commands/evidence.js";
+import { registerEnvCommands } from "./commands/env.js";
+import { HARDKAS_VERSION } from "@hardkas/artifacts";
+import { registerTaskCommands } from "./commands/task.js";
+/**
+ * Builds the HardKAS Commander program tree.
+ * Separated from execution to allow safe documentation generation and testing.
+ */
+export function buildHardkasProgram(options) {
+    const program = new Command();
+    program
+        .name("hardkas")
+        .description("HardKAS: Kaspa-native developer operating environment")
+        .version(HARDKAS_VERSION)
+        .showHelpAfterError(true)
+        .showSuggestionAfterError(true);
+    // Register modular command groups
+    registerInitCommands(program);
+    registerCreateCommand(program);
+    registerTxCommands(program);
+    registerArtifactCommands(program);
+    registerReplayCommands(program);
+    registerRpcCommands(program);
+    registerDagCommands(program);
+    registerAccountsCommands(program);
+    registerL2Commands(program);
+    registerNodeCommands(program);
+    registerConfigCommands(program);
+    registerQueryCommands(program);
+    registerTestCommands(program);
+    registerDoctorCommand(program);
+    registerVerifyCommand(program);
+    registerRebuildCommand(program);
+    registerRunCommand(program);
+    registerLockCommands(program);
+    registerCapabilitiesCommand(program);
+    registerConsoleCommand(program);
+    registerLocalnetCommands(program);
+    registerSimulatorCommands(program);
+    registerDeployCommands(program);
+    registerMetamaskCommands(program);
+    registerDevCommands(program);
+    registerLocalCommands(program);
+    registerKaspaCommands(program);
+    registerBridgeCommands(program);
+    registerSessionCommands(program);
+    registerPsktCommands(program);
+    registerDashboardCommand(program);
+    registerExplainCommand(program);
+    registerTortureCommands(program);
+    registerTelemetryCommands(program);
+    registerRepairCommand(program);
+    registerRotateCommand(program);
+    registerInspectCommand(program);
+    registerChaosCommands(program);
+    registerStatusCommands(program);
+    registerWhyCommand(program);
+    registerCiCommand(program);
+    registerSandboxCommand(program);
+    registerSilverCommand(program);
+    registerCorpusCommands(program);
+    registerZkCommands(program);
+    registerVprogsCommands(program);
+    registerProgrammabilityCommands(program);
+    registerDevServerCommands(program);
+    registerSecurityCommand(program);
+    registerEnvCommands(program);
+    registerTaskCommands(program, options?.loadedConfig);
+    // Programmable workflows & Agent Mode
+    registerWorkflowCommands(program);
+    registerEvidenceCommands(program);
+    // Fallback / Catch-all: Add a docs command if we want to expose it via CLI
+    // We only do this if requested and if it has no side effects.
+    if (options?.forDocs) {
+        // We can add hidden doc-only commands here if needed
+    }
+    return program;
+}
+//# sourceMappingURL=program.js.map

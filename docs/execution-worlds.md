@@ -1,6 +1,6 @@
 # Execution Worlds
 
-HardKAS 0.12.0-rc.10 introduces the concept of **Execution Worlds** to guarantee deterministic execution and strict isolation between synthetic (simulated) data and real Kaspa networks.
+HardKAS 0.12.0-rc.16 introduces the concept of **Execution Worlds** to guarantee deterministic execution and strict isolation between synthetic (simulated) data and real Kaspa networks.
 
 You must never conflate the Simulator with Localnet (Kaspa simnet). They are distinct execution environments with different backends, funding mechanisms, and states.
 

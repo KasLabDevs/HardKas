@@ -190,6 +190,9 @@ export class KaspaWrpcClient {
   async getVirtualSelectedParentBlueScore(): Promise<unknown> {
     return this.request("getVirtualSelectedParentBlueScore");
   }
+  async getVirtualChainFromBlockV2(options: { startHash: string; dataVerbosityLevel?: import("./contracts/read").RpcDataVerbosityLevel; minConfirmationCount?: string }): Promise<any> {
+    return this.request("getVirtualChainFromBlockV2", options);
+  }
   async getUtxosByAddresses(addresses: string[]): Promise<unknown> {
     return this.request("getUtxosByAddresses", { addresses });
   }

@@ -13,6 +13,7 @@ export interface TxSignRunnerInput {
   threshold?: number;
   requiredSigners?: string[];
   workspaceRoot?: string;
+  targetName?: string;
   signer?: any;
 }
 
@@ -29,6 +30,7 @@ export async function runTxSign(input: TxSignRunnerInput): Promise<SignedTxArtif
     threshold,
     requiredSigners,
     workspaceRoot,
+    targetName,
     signer
   } = input;
 
@@ -37,8 +39,54 @@ export async function runTxSign(input: TxSignRunnerInput): Promise<SignedTxArtif
     planArtifact.from?.accountName ||
     planArtifact.from?.input ||
     planArtifact.from?.address;
-  const resolvedConfig = workspaceRoot ? { ...config, cwd: workspaceRoot } : config;
+
+  const { resolveArtifactTarget, resolveLegacyArtifactTarget } = await import("@hardkas/config");
+  const { assertAccountCompatible, resolveHardkasAccount } = await import("@hardkas/accounts");
+  const { LegacyArtifactRequiresExplicitResolutionError } = await import("@hardkas/core");
+
+  let executionTarget: any;
+  try {
+    const { target: artifactTarget } = resolveArtifactTarget({ artifact: planArtifact as any });
+    executionTarget = artifactTarget;
+  } catch (e: any) {
+    if (e.name === "LegacyArtifactRequiresExplicitResolutionError") {
+      console.warn("⚠️ [Legacy] Artifact lacks execution identity. Inferring target from configuration.");
+      const { target: legacyTarget } = resolveLegacyArtifactTarget({ artifact: planArtifact as any, config });
+      executionTarget = legacyTarget;
+    } else {
+      throw e;
+    }
+  }
+
+  if (targetName) {
+    const { resolveNewIntentTarget } = await import("@hardkas/config");
+    let explicitTarget: import("@hardkas/core").HardkasExecutionTarget | undefined = undefined;
+    if (config.execution && "targets" in config.execution) {
+      explicitTarget = (config.execution.targets as any)[targetName];
+    }
+    if (!explicitTarget) {
+      throw new Error(`Execution target '${targetName}' not found in hardkas.config.ts`);
+    }
+
+    if (
+      executionTarget.domain !== explicitTarget.domain ||
+      executionTarget.mode !== explicitTarget.mode ||
+      executionTarget.network !== explicitTarget.network
+    ) {
+      throw new Error(`Execution target mismatch. Plan requires ${executionTarget.mode} on ${executionTarget.network}, but --target specified ${explicitTarget.mode} on ${explicitTarget.network}.`);
+    }
+    executionTarget = explicitTarget;
+  }
+
+  const resolvedConfig: any = workspaceRoot ? { ...config, cwd: workspaceRoot } : { ...config };
+
+  // Inject execution context into config so resolveHardkasAccount can yield the appropriate account kind
+  if (executionTarget) {
+    resolvedConfig.execution = executionTarget;
+  }
+
   const account = resolveHardkasAccount({ nameOrAddress: targetAccountName, config: resolvedConfig });
+  assertAccountCompatible(account, executionTarget);
 
   const artifactNetwork = planArtifact.networkId;
   const accountAddressNetwork = getNetworkFromAddress(account.address || "");

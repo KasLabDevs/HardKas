@@ -1,6 +1,6 @@
 {
   "name": "@hardkas/tx-builder",
-  "version": "0.12.0-rc.10",
+  "version": "0.12.0-rc.16",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -13,7 +13,8 @@
   },
   "scripts": {
     "build": "tsup src/index.ts --format esm --dts --clean",
-    "test": "vitest run",
+    "test": "vitest run --exclude test/**/*.localnet.test.ts",
+    "test:localnet": "vitest run test/**/*.localnet.test.ts",
     "typecheck": "tsc --noEmit",
     "lint": "eslint ."
   },

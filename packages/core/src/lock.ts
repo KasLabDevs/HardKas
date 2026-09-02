@@ -45,6 +45,7 @@ export const LOCK_ORDER = [
   "accounts",
   "artifacts",
   "events",
+  "pending-spends",
   "query-store"
 ];
 

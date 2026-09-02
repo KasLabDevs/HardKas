@@ -4,7 +4,6 @@ import { HardkasL2 } from "./l2.js";
 import { HardkasQuery } from "./query.js";
 import { HardkasReplay } from "./replay.js";
 import { HardkasLineage } from "./lineage.js";
-import { HardkasWorkflow } from "./workflow.js";
 import { HardkasCapabilitiesApi } from "./capabilities.js";
 import { HardkasCorpus } from "./corpus.js";
 import { HardkasSilver } from "./silver.js";
@@ -23,7 +22,6 @@ export class HardkasExperimental {
   public readonly query: HardkasQuery;
   public readonly replay: HardkasReplay;
   public readonly lineage: HardkasLineage;
-  public readonly workflow: HardkasWorkflow;
   public readonly capabilitiesApi: HardkasCapabilitiesApi;
   public readonly corpus: HardkasCorpus;
   public readonly silver: HardkasSilver;
@@ -37,7 +35,6 @@ export class HardkasExperimental {
     this.query = new HardkasQuery(sdk);
     this.replay = new HardkasReplay(sdk);
     this.lineage = new HardkasLineage(sdk);
-    this.workflow = new HardkasWorkflow(sdk);
     this.capabilitiesApi = new HardkasCapabilitiesApi(sdk);
     this.corpus = new HardkasCorpus(sdk);
     this.silver = new HardkasSilver(sdk);

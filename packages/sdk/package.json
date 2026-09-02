@@ -1,6 +1,6 @@
 {
   "name": "@hardkas/sdk",
-  "version": "0.12.0-rc.10",
+  "version": "0.12.0-rc.16",
   "type": "module",
   "files": [
     "dist",
@@ -43,8 +43,8 @@
     "@hardkas/simulator": "workspace:*",
     "@hardkas/tx-builder": "workspace:*",
     "@hardkas/toolkit": "workspace:*",
-    "@hardkas/wallet-adapter": "workspace:*",
     "@hardkas/node-runner": "workspace:*",
+    "@hardkas/rpc-events": "workspace:*",
     "@kaspa/core-lib": "^1.6.5"
   },
   "optionalDependencies": {

@@ -62,3 +62,31 @@ export class LegacyExecutionContextRequiredError extends HardkasError {
     this.name = "LegacyExecutionContextRequiredError";
   }
 }
+
+export class ExecutionCompatibilityUndefinedError extends HardkasError {
+  constructor(metadata?: Record<string, any>, options?: { cause?: unknown }) {
+    super("EXECUTION_COMPATIBILITY_UNDEFINED", "Execution compatibility is undefined for the given target and runtime combination. A specific capability rule is required.", { ...options, metadata });
+    this.name = "ExecutionCompatibilityUndefinedError";
+  }
+}
+
+export class ExecutionTargetConflictError extends HardkasError {
+  constructor(metadata?: Record<string, any>, options?: { cause?: unknown }) {
+    super("EXECUTION_TARGET_CONFLICT", "Execution targets conflict and cannot be resolved safely.", { ...options, metadata });
+    this.name = "ExecutionTargetConflictError";
+  }
+}
+
+export class LegacyArtifactRequiresExplicitResolutionError extends HardkasError {
+  constructor(metadata?: Record<string, any>, options?: { cause?: unknown }) {
+    super("LEGACY_ARTIFACT_REQUIRES_EXPLICIT_RESOLUTION", "Modern execution resolution was requested, but the artifact lacks execution identity. Legacy resolution must be used explicitly.", { ...options, metadata });
+    this.name = "LegacyArtifactRequiresExplicitResolutionError";
+  }
+}
+
+export class ExecutionTargetUnresolvedError extends HardkasError {
+  constructor(metadata?: Record<string, any>, options?: { cause?: unknown }) {
+    super("EXECUTION_TARGET_UNRESOLVED", "Execution target could not be resolved from CLI arguments, config default, or legacy default.", { ...options, metadata });
+    this.name = "ExecutionTargetUnresolvedError";
+  }
+}

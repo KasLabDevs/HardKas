@@ -2,10 +2,12 @@ import {
   ExecutionModeMismatchError,
   ExecutionDomainMismatchError,
   ExecutionNetworkMismatchError,
+  ExecutionCompatibilityUndefinedError
 } from "./compatibility-errors.js";
 import type { HardkasExecutionTarget } from "../index.js";
+import { classifyExecutionCompatibility, type ExecutionOperation } from "./compatibility.js";
 
-// We use structural interfaces so @hardkas/core doesn't need to depend on concrete types 
+// We use structural interfaces so @hardkas/core doesn't need to depend on concrete types
 // from higher-level packages like @hardkas/accounts or @hardkas/artifacts.
 
 export interface ExecutionAwareAccount {
@@ -22,7 +24,7 @@ export interface ExecutionAwareReceipt {
   execution?: HardkasExecutionTarget;
 }
 
-export type ExecutionOperation = "fund" | "plan" | "sign" | "simulate" | "send" | "replay" | "dev-reveal" | "dev-export";
+export type { ExecutionOperation };
 
 export interface ExecutionCompatibilityInput {
   target: HardkasExecutionTarget;
@@ -60,38 +62,58 @@ export function assertAccountCompatibleWithTarget(account: ExecutionAwareAccount
   }
 }
 
-export function assertArtifactCompatibleWithTarget(artifact: ExecutionAwareArtifact, target: HardkasExecutionTarget): void {
+export function assertArtifactCompatibleWithTarget(artifact: ExecutionAwareArtifact, target: HardkasExecutionTarget, operation?: ExecutionOperation): void {
   if (!artifact.execution) {
     // Legacy V1/V2 artifacts won't have this. We allow them to pass the guard.
     return;
   }
-  
-  if (artifact.execution.domain !== target.domain) {
-    throw new ExecutionDomainMismatchError({ expected: target.domain, actual: artifact.execution.domain });
+
+  const classification = classifyExecutionCompatibility(artifact.execution, target, operation);
+
+  if (classification === "incompatible") {
+    if (artifact.execution.domain !== target.domain) {
+      throw new ExecutionDomainMismatchError({ expected: target.domain, actual: artifact.execution.domain });
+    }
+    if (artifact.execution.network !== target.network) {
+      throw new ExecutionNetworkMismatchError({ expected: target.network, actual: artifact.execution.network });
+    }
+    if (artifact.execution.mode !== target.mode) {
+      throw new ExecutionModeMismatchError({ expected: target.mode, actual: artifact.execution.mode });
+    }
   }
-  
-  if (artifact.execution.mode !== target.mode) {
-    throw new ExecutionModeMismatchError({ expected: target.mode, actual: artifact.execution.mode });
-  }
-  
-  if (artifact.execution.network !== target.network) {
-    throw new ExecutionNetworkMismatchError({ expected: target.network, actual: artifact.execution.network });
+
+  if (classification === "undefined") {
+    throw new ExecutionCompatibilityUndefinedError({
+      artifactExecution: artifact.execution,
+      target,
+      operation
+    });
   }
 }
 
-export function assertReceiptCompatibleWithTarget(receipt: ExecutionAwareReceipt, target: HardkasExecutionTarget): void {
+export function assertReceiptCompatibleWithTarget(receipt: ExecutionAwareReceipt, target: HardkasExecutionTarget, operation?: ExecutionOperation): void {
   if (!receipt.execution) return;
 
-  if (receipt.execution.domain !== target.domain) {
-    throw new ExecutionDomainMismatchError({ expected: target.domain, actual: receipt.execution.domain });
+  const classification = classifyExecutionCompatibility(receipt.execution, target, operation);
+
+  if (classification === "incompatible") {
+    if (receipt.execution.domain !== target.domain) {
+      throw new ExecutionDomainMismatchError({ expected: target.domain, actual: receipt.execution.domain });
+    }
+    if (receipt.execution.network !== target.network) {
+      throw new ExecutionNetworkMismatchError({ expected: target.network, actual: receipt.execution.network });
+    }
+    if (receipt.execution.mode !== target.mode) {
+      throw new ExecutionModeMismatchError({ expected: target.mode, actual: receipt.execution.mode });
+    }
   }
 
-  if (receipt.execution.mode !== target.mode) {
-    throw new ExecutionModeMismatchError({ expected: target.mode, actual: receipt.execution.mode });
-  }
-
-  if (receipt.execution.network !== target.network) {
-    throw new ExecutionNetworkMismatchError({ expected: target.network, actual: receipt.execution.network });
+  if (classification === "undefined") {
+    throw new ExecutionCompatibilityUndefinedError({
+      receiptExecution: receipt.execution,
+      target,
+      operation
+    });
   }
 }
 
@@ -113,10 +135,10 @@ export function assertArtifactAccountCompatibility(artifact: ExecutionAwareArtif
 }
 
 export function assertExecutionCompatibility(input: ExecutionCompatibilityInput): void {
-  const { target, account, artifact, receipt } = input;
-  
+  const { target, account, artifact, receipt, operation } = input;
+
   if (account) assertAccountCompatibleWithTarget(account, target);
-  if (artifact) assertArtifactCompatibleWithTarget(artifact, target);
-  if (receipt) assertReceiptCompatibleWithTarget(receipt, target);
+  if (artifact) assertArtifactCompatibleWithTarget(artifact, target, operation);
+  if (receipt) assertReceiptCompatibleWithTarget(receipt, target, operation);
   if (artifact && account) assertArtifactAccountCompatibility(artifact, account);
 }

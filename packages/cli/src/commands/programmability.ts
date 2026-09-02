@@ -14,7 +14,9 @@ export function registerProgrammabilityCommands(program: Command) {
     .option("--json", "Output as JSON", false)
     .action(async () => {
       const sdk = await createSdk();
-      const result = await sdk.experimental.programmability.capabilities();
+      const { HardkasProgrammability } = await import("@hardkas/sdk");
+      const prog = new HardkasProgrammability(sdk);
+      const result = await prog.capabilities();
       getOutput().writeJson({ ok: true, command: "programmability capabilities", mode: "cli", result });
     });
 
@@ -48,7 +50,9 @@ export function registerProgrammabilityCommands(program: Command) {
     .action(async (targetPath: string, options) => {
       const sdk = await createSdk();
       const kind = normalizeInspectKind(options.kind);
-      const result = await sdk.experimental.programmability.inspect({ kind, path: targetPath });
+      const { HardkasProgrammability } = await import("@hardkas/sdk");
+      const prog = new HardkasProgrammability(sdk);
+      const result = await prog.inspect({ kind, path: targetPath });
       getOutput().writeJson({ ok: result.ok, command: "programmability inspect", mode: "cli", result });
       if (!result.ok) {
         const { HardkasCliError } = await import("../cli-errors.js");
@@ -66,7 +70,9 @@ export function registerProgrammabilityCommands(program: Command) {
     .action(async (targetPath: string, options) => {
       const sdk = await createSdk();
       const kind = normalizeInspectKind(options.kind);
-      const result = await sdk.experimental.programmability.verify({ kind, path: targetPath });
+      const { HardkasProgrammability } = await import("@hardkas/sdk");
+      const prog = new HardkasProgrammability(sdk);
+      const result = await prog.verify({ kind, path: targetPath });
       getOutput().writeJson({ ok: result.ok, command: "programmability verify", mode: "cli", result });
       if (!result.ok && result.status !== "PROGRAMMABILITY_VERIFY_PARTIAL") {
         const { HardkasCliError } = await import("../cli-errors.js");
@@ -86,7 +92,9 @@ export function registerProgrammabilityCommands(program: Command) {
     .option("--json", "Output as JSON", false)
     .action(async (targetPath: string) => {
       const sdk = await createSdk();
-      const result = await sdk.experimental.programmability.corpus.verify({ path: targetPath });
+      const { HardkasProgrammability } = await import("@hardkas/sdk");
+      const prog = new HardkasProgrammability(sdk);
+      const result = await prog.corpus.verify({ path: targetPath });
       getOutput().writeJson({ ok: result.ok, command: "programmability corpus verify", mode: "cli", result });
       if (!result.ok) {
         const { HardkasCliError } = await import("../cli-errors.js");
@@ -107,7 +115,9 @@ export function registerProgrammabilityCommands(program: Command) {
     .action(async (options) => {
       const sdk = await createSdk();
       const kind = normalizeKind(options.kind, true) as ProgramKind;
-      const result = sdk.experimental.programmability.app.plan({ kind, template: options.template });
+      const { HardkasProgrammability } = await import("@hardkas/sdk");
+      const prog = new HardkasProgrammability(sdk);
+      const result = prog.app.plan({ kind, template: options.template });
       getOutput().writeJson({ ok: true, command: "programmability app plan", mode: "cli", result });
     });
 }

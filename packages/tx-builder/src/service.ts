@@ -19,6 +19,8 @@ export interface PlanTransactionRequest {
   feeRate?: bigint;
   feeEstimator?: (inputs: number, outputs: number) => Promise<bigint>;
   genesisCovenantGroups?: Array<{ authorizingInput: number; outputIndices: number[] }>;
+  /** Outpoint keys ("txId:index") to exclude from coin selection (e.g. pending-spent UTXOs). */
+  excludeOutpoints?: Set<string>;
 }
 
 export interface ConsolidationRequest {
@@ -80,7 +82,11 @@ export class TxPlanService {
           })
         : rpcUtxos;
 
-    const allFetchedUtxos = matureUtxos;
+    // Exclude pending-spent outpoints if provided
+    const allFetchedUtxos = request.excludeOutpoints
+      ? matureUtxos.filter(u =>
+          !request.excludeOutpoints!.has(`${u.outpoint.transactionId}:${u.outpoint.index}`))
+      : matureUtxos;
 
     // Largest-first sorting
     const sortedUtxos = [...allFetchedUtxos].sort((a, b) => {

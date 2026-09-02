@@ -3,7 +3,7 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { Hardkas, verifyZkCorpus, verifyZkProofLocal } from "../src/index.js";
+import { Hardkas, HardkasZk, HardkasVprogs, verifyZkCorpus, verifyZkProofLocal } from "../src/index.js";
 
 function repoRoot(): string {
   let current = path.dirname(fileURLToPath(import.meta.url));
@@ -28,7 +28,7 @@ function mutateJson(filePath: string, mutate: (value: any) => void) {
   fs.writeFileSync(filePath, JSON.stringify(value, null, 2));
 }
 
-describe("0.12.0-rc.10 ZK corpus and vProgs inspect SDK parity", () => {
+describe("0.12.0-rc.16 ZK corpus and vProgs inspect SDK parity", () => {
   let workspaceRoot: string;
 
   beforeEach(() => {
@@ -47,7 +47,8 @@ describe("0.12.0-rc.10 ZK corpus and vProgs inspect SDK parity", () => {
       network: "simulated",
       autoBootstrap: true
     });
-    const capabilities = await sdk.experimental.zk.capabilities();
+    const zk = new HardkasZk(sdk);
+    const capabilities = await zk.capabilities();
 
     expect(capabilities.schema).toBe("hardkas.zkCapabilities.v1");
     expect(capabilities.claims.zkOnchainVerification).toBe("NOT_CLAIMED");
@@ -61,7 +62,8 @@ describe("0.12.0-rc.10 ZK corpus and vProgs inspect SDK parity", () => {
       network: "simulated",
       autoBootstrap: true
     });
-    const result = await sdk.experimental.zk.corpus.verify("fixtures/toccata-v2/zk");
+    const zk = new HardkasZk(sdk);
+    const result = await zk.corpus.verify("fixtures/toccata-v2/zk");
 
     expect(result.ok).toBe(true);
     expect(result.status).toBe("ZK_CORPUS_VERIFICATION_PASS");
@@ -128,8 +130,9 @@ describe("0.12.0-rc.10 ZK corpus and vProgs inspect SDK parity", () => {
       network: "simulated",
       autoBootstrap: true
     });
-    const inspect = await sdk.experimental.zk.proof.inspect("fixtures/toccata-v2/zk/risc0");
-    const verify = await sdk.experimental.zk.proof.verifyLocal("fixtures/toccata-v2/zk/risc0");
+    const zk = new HardkasZk(sdk);
+    const inspect = await zk.proof.inspect("fixtures/toccata-v2/zk/risc0");
+    const verify = await zk.proof.verifyLocal("fixtures/toccata-v2/zk/risc0");
 
     expect(inspect.ok).toBe(true);
     expect(inspect.proofSystem).toBe("risc0");
@@ -146,8 +149,9 @@ describe("0.12.0-rc.10 ZK corpus and vProgs inspect SDK parity", () => {
       network: "simulated",
       autoBootstrap: true
     });
-    const enabled = await sdk.experimental.vprogs.status();
-    const inspected = await sdk.experimental.vprogs.inspect(
+    const vprogs = new HardkasVprogs(sdk);
+    const enabled = await vprogs.status();
+    const inspected = await vprogs.inspect(
       "fixtures/toccata-v2/vprogs/inspect-only-artifact.json"
     );
 
@@ -166,7 +170,8 @@ describe("0.12.0-rc.10 ZK corpus and vProgs inspect SDK parity", () => {
       autoBootstrap: true
     });
 
-    const inspected = await sdk.experimental.vprogs.inspect("package.json");
+    const vprogs = new HardkasVprogs(sdk);
+    const inspected = await vprogs.inspect("package.json");
     expect(inspected.ok).toBe(false);
     expect(inspected.status).toBe("VPROGS_ARTIFACT_INVALID");
     expect(inspected.issues[0].code).toBe("MISSING_DEPENDENCY");

@@ -89,6 +89,25 @@ export interface GetVirtualChainFromBlockResponse {
   acceptedTransactionIds?: any[];
 }
 
+export type RpcDataVerbosityLevel = "NONE" | "LOW" | "HIGH" | "FULL" | "LEGACY_RECOVERY";
+
+export interface GetVirtualChainFromBlockV2Request {
+  startHash: string;
+  dataVerbosityLevel?: RpcDataVerbosityLevel;
+  minConfirmationCount?: string;
+}
+
+export interface RpcChainBlockAcceptedTransactions {
+  blockHash: string;
+  acceptedTransactions: any[];
+}
+
+export interface GetVirtualChainFromBlockV2Response {
+  removedChainBlockHashes: string[];
+  addedChainBlockHashes: string[];
+  chainBlockAcceptedTransactions?: RpcChainBlockAcceptedTransactions[];
+}
+
 export interface GetCoinSupplyResponse {
   maxSompi: string;
   circulatingSompi: string;
@@ -112,6 +131,7 @@ export interface ReadRpcClient {
   getBlockCount(options?: RpcOptions): Promise<GetBlockCountResponse>;
   getSelectedTipHash(options?: RpcOptions): Promise<GetSelectedTipHashResponse>;
   getVirtualChainFromBlock(request: GetVirtualChainFromBlockRequest, options?: RpcOptions): Promise<GetVirtualChainFromBlockResponse>;
+  getVirtualChainFromBlockV2(request: GetVirtualChainFromBlockV2Request, options?: RpcOptions): Promise<GetVirtualChainFromBlockV2Response>;
   getCoinSupply(options?: RpcOptions): Promise<GetCoinSupplyResponse>;
   getSyncStatus(options?: RpcOptions): Promise<GetSyncStatusResponse>;
   getCurrentNetwork(options?: RpcOptions): Promise<GetCurrentNetworkResponse>;

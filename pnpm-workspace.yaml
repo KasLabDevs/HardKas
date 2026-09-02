@@ -8,6 +8,7 @@ packages:
   - "examples/p10-gauntlet/*"
   - "examples/superapp-command-center/*"
   - "examples/builder-labs/*"
+  - "archive/labs/*"
   - "demo2"
   - "labs/*"
 

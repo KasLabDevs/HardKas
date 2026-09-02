@@ -51,6 +51,9 @@ export async function runLocalnetStart(opts: LocalnetStartOptions): Promise<void
     throw new Error(`Unsupported localnet profile: ${profile}`);
   }
 
+  const { ensureDevAccounts } = await import("@hardkas/accounts");
+  await ensureDevAccounts(opts.workspaceRoot || process.cwd());
+
   const existing = await detectToccataNode(!!opts.json);
   if (existing.ready) {
     const payload = {

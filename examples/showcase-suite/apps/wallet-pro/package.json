@@ -1,7 +1,7 @@
 {
   "name": "@showcase/wallet-pro",
   "private": true,
-  "version": "0.12.0-rc.10",
+  "version": "0.12.0-rc.16",
   "type": "module",
   "scripts": {
     "dev": "concurrently \"pnpm run dev:frontend\" \"pnpm run dev:backend\"",

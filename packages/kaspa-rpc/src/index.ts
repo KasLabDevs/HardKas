@@ -1,6 +1,6 @@
 import type { NetworkId } from "@hardkas/core";
 import { WebSocket } from "ws";
-import { NOTIFY_UTXOS_CHANGED_REQUEST, STOP_NOTIFYING_UTXOS_CHANGED_REQUEST, UTXOS_CHANGED_NOTIFICATION } from "./internal/notifications.js";
+import { NOTIFY_UTXOS_CHANGED_REQUEST, STOP_NOTIFYING_UTXOS_CHANGED_REQUEST, UTXOS_CHANGED_NOTIFICATION, NOTIFY_VIRTUAL_CHAIN_CHANGED_REQUEST, VIRTUAL_CHAIN_CHANGED_NOTIFICATION } from "./internal/notifications.js";
 import { normalizeRpcError, RpcError, RpcNotFoundError } from "./errors.js";
 
 export interface KaspaNodeInfo {
@@ -119,6 +119,18 @@ export interface UtxosChangedEvent {
   removed: KaspaRpcUtxo[];
 }
 
+export interface RpcAcceptedTransactionIds {
+  acceptingBlockHash: string;
+  acceptedTransactionIds: string[];
+}
+
+export interface VirtualChainChangedEvent {
+  removedChainBlockHashes: string[];
+  addedChainBlockHashes: string[];
+  acceptedTransactionIds?: RpcAcceptedTransactionIds[];
+}
+
+
 export interface KaspaSubscription {
   readonly id: string;
   readonly closed: boolean;
@@ -138,6 +150,7 @@ export interface KaspaRpcClient {
   getBlocks(options?: { includeBlocks?: boolean; includeTransactions?: boolean }): Promise<any>;
   submitTransaction(transaction: KaspaRpcTransaction, options?: SubmitTransactionOptions): Promise<KaspaSubmitTransactionResult>;
   getMempoolEntry(txId: string): Promise<MempoolEntry | null>;
+  checkMempoolPresence(txId: string): Promise<{ status: 'present' } | { status: 'absent' }>;
   getMempoolEntries(options?: unknown): Promise<any>;
   getTransaction(txId: string): Promise<unknown | null>;
   getBlockDagInfo(): Promise<BlockDagInfo>;
@@ -147,9 +160,11 @@ export interface KaspaRpcClient {
   getCurrentNetwork(): Promise<any>;
   getSyncStatus(): Promise<any>;
   getVirtualSelectedParentBlueScore(): Promise<any>;
+  getVirtualChainFromBlockV2(options: { startHash: string; dataVerbosityLevel?: import("./contracts/read").RpcDataVerbosityLevel; minConfirmationCount?: string }): Promise<any>;
   getSinkBlueScore(): Promise<any>;
   getHeaders(): Promise<any>;
   subscribeToUtxosChanged(addresses: readonly string[], handler: (event: UtxosChangedEvent) => void): Promise<KaspaSubscription>;
+  subscribeToVirtualChainChanged(options: { includeAcceptedTransactionIds: boolean }, handler: (event: VirtualChainChangedEvent) => void): Promise<KaspaSubscription>;
   call<TResponse = unknown>(method: string, params?: unknown): Promise<TResponse>;
   on(event: string, handler: (data: unknown) => void): void;
   off(event: string, handler: (data: unknown) => void): void;
@@ -163,6 +178,10 @@ export class JsonWrpcKaspaClient implements KaspaRpcClient {
   private requestId = 1;
   private messageListeners: Array<{ event: string, handler: (data: any) => void }> = [];
 
+  public readonly capabilities = {
+    virtualChainFromBlockV2: 'compatibility' as const
+  };
+
   constructor(options: JsonWrpcKaspaClientOptions) {
     this.rpcUrl = options.rpcUrl;
     this.timeoutMs = options.timeoutMs ?? 30000;
@@ -170,11 +189,11 @@ export class JsonWrpcKaspaClient implements KaspaRpcClient {
 
   async call<TResponse = unknown>(method: string, params: any = {}): Promise<TResponse> {
     await this.detectFlavor();
-    // Heuristic: map to legacy if needed, or pass through
     let actualMethod = method;
     if (this.rpcFlavor === "legacy" && !method.endsWith("Request")) {
-       // rudimentary mapping if needed, or assume caller passed the correct flavor
-       // if they used `call`, they probably used the raw wrpc name
+       actualMethod = method + "Request";
+    } else if (this.rpcFlavor === "wrpc" && method.endsWith("Request")) {
+       actualMethod = method.slice(0, -"Request".length);
     }
     return this.requestRaw(actualMethod, params) as Promise<TResponse>;
   }
@@ -236,6 +255,64 @@ export class JsonWrpcKaspaClient implements KaspaRpcClient {
         } catch(e) {
             // Ignore error if connection is dead
         }
+      }
+    };
+  }
+
+  async subscribeToVirtualChainChanged(
+    options: { includeAcceptedTransactionIds: boolean },
+    handler: (event: VirtualChainChangedEvent) => void
+  ): Promise<KaspaSubscription> {
+    await this.detectFlavor();
+
+    const subId = `sub_${this.subscriptionCounter++}`;
+    let isClosed = false;
+
+    await this.callMethod(
+      "notifyVirtualChainChanged",
+      NOTIFY_VIRTUAL_CHAIN_CHANGED_REQUEST,
+      { includeAcceptedTransactionIds: options.includeAcceptedTransactionIds }
+    );
+
+    const msgHandler = (data: any) => {
+      if (isClosed) return;
+      
+      const removed = data?.removedChainBlockHashes || [];
+      const added = data?.addedChainBlockHashes || [];
+      const acceptedRaw = data?.acceptedTransactionIds || [];
+      
+      let accepted: RpcAcceptedTransactionIds[] | undefined = undefined;
+      
+      if (options.includeAcceptedTransactionIds && Array.isArray(acceptedRaw)) {
+        accepted = acceptedRaw.map((a: any) => ({
+          acceptingBlockHash: a.acceptingBlockHash || "",
+          acceptedTransactionIds: a.acceptedTransactionIds || []
+        }));
+      }
+
+      let payload: VirtualChainChangedEvent = {
+        removedChainBlockHashes: removed,
+        addedChainBlockHashes: added
+      };
+      
+      if (accepted !== undefined) {
+        payload.acceptedTransactionIds = accepted;
+      }
+
+      handler(payload);
+    };
+
+    this.on(VIRTUAL_CHAIN_CHANGED_NOTIFICATION, msgHandler);
+
+    return {
+      id: subId,
+      get closed() { return isClosed; },
+      unsubscribe: async () => {
+        if (isClosed) return;
+        isClosed = true;
+        this.off(VIRTUAL_CHAIN_CHANGED_NOTIFICATION, msgHandler);
+        // Unlike UtxosChanged, there doesn't seem to be a stopNotifyingVirtualChainChangedRequest in kaspa proto.
+        // It's a connection-wide subscription. Just removing the listener is sufficient for the client wrapper.
       }
     };
   }
@@ -473,6 +550,36 @@ export class JsonWrpcKaspaClient implements KaspaRpcClient {
     }
   }
 
+  /**
+   * Checks if a transaction is present in the mempool.
+   * Unlike getMempoolEntry, this method distinguishes between:
+   * - 'present': tx is in the mempool
+   * - 'absent': tx is definitively NOT in the mempool
+   * - throws: RPC error (timeout, connection, protocol error) — caller must handle
+   *
+   * This is a safety-critical method used by PendingSpendService reconciliation.
+   * A timeout or connection error MUST propagate as an exception, never as 'absent'.
+   */
+  async checkMempoolPresence(txId: string): Promise<{ status: 'present' } | { status: 'absent' }> {
+    try {
+      const response = await this.callMethod(
+        "getMempoolEntry",
+        "getMempoolEntryRequest",
+        { transactionId: txId, includeOrphanPool: true, filterTransactionPool: false }
+      );
+      return { status: 'present' };
+    } catch (e: any) {
+      // Distinguish 'not found' from real errors
+      const msg = (e?.message || '').toLowerCase();
+      console.log(`[DEBUG] checkMempoolPresence caught error:`, e.message);
+      if (msg.includes('not found') || msg.includes('no_data') || msg.includes('entry not found')) {
+        return { status: 'absent' };
+      }
+      // Transport/timeout/connection errors must propagate
+      throw e;
+    }
+  }
+
   async getTransaction(txId: string): Promise<unknown | null> {
     try {
       return await this.callMethod("getTransaction", "getTransactionRequest", {
@@ -539,6 +646,20 @@ export class JsonWrpcKaspaClient implements KaspaRpcClient {
 
   async getVirtualSelectedParentBlueScore(): Promise<any> {
     return this.callMethod("getVirtualSelectedParentBlueScore", "getVirtualSelectedParentBlueScoreRequest", {});
+  }
+
+  async getVirtualChainFromBlockV2(options: { startHash: string; dataVerbosityLevel?: import("./contracts/read").RpcDataVerbosityLevel; minConfirmationCount?: string }): Promise<any> {
+    if (options.dataVerbosityLevel !== "NONE" && options.dataVerbosityLevel !== "LEGACY_RECOVERY" && options.dataVerbosityLevel !== undefined) {
+      throw new RpcError(`dataVerbosityLevel '${options.dataVerbosityLevel}' is not supported by the legacy compatibility transport binding. Supported subsets: 'NONE' | 'LEGACY_RECOVERY'`, "RPC_CAPABILITY_UNSUPPORTED");
+    }
+    if (options.minConfirmationCount !== undefined && options.minConfirmationCount !== "0") {
+      throw new RpcError("minConfirmationCount is not supported by the current transport binding", "RPC_CAPABILITY_UNSUPPORTED");
+    }
+    const payload = {
+      startHash: options.startHash,
+      includeAcceptedTransactionIds: options.dataVerbosityLevel === "LEGACY_RECOVERY"
+    };
+    return this.callMethod("getVirtualChainFromBlockV2", "getVirtualChainFromBlockV2Request", payload);
   }
 
   async getSinkBlueScore(): Promise<any> {
@@ -807,12 +928,22 @@ export class MockKaspaRpcClient implements KaspaRpcClient {
     };
   }
 
+  async subscribeToVirtualChainChanged(options: { includeAcceptedTransactionIds: boolean }, handler: (event: VirtualChainChangedEvent) => void): Promise<KaspaSubscription> {
+    let closed = false;
+    return {
+      id: "mock_sub_vc",
+      get closed() { return closed; },
+      unsubscribe: async () => { closed = true; }
+    };
+  }
+
   async getMempoolEntries(options?: any): Promise<any> { return []; }
   async getFeeEstimate(): Promise<any> { return { estimate: 0 }; }
   async getFeeEstimateExperimental(): Promise<any> { return { estimate: 0 }; }
   async getCurrentNetwork(): Promise<any> { return { network: this.networkId }; }
   async getSyncStatus(): Promise<any> { return { isSynced: true }; }
   async getVirtualSelectedParentBlueScore(): Promise<any> { return { blueScore: 0n }; }
+  async getVirtualChainFromBlockV2(): Promise<any> { return { removedChainBlockHashes: [], addedChainBlockHashes: [] }; }
   async getSinkBlueScore(): Promise<any> { return { blueScore: 0n }; }
   async getHeaders(): Promise<any> { return { headers: [] }; }
 
@@ -871,6 +1002,10 @@ export class MockKaspaRpcClient implements KaspaRpcClient {
 
   async getMempoolEntry(_txId: string): Promise<MempoolEntry | null> {
     return null;
+  }
+
+  async checkMempoolPresence(_txId: string): Promise<{ status: 'present' } | { status: 'absent' }> {
+    return { status: 'absent' };
   }
 
   async getTransaction(_txId: string): Promise<unknown | null> {

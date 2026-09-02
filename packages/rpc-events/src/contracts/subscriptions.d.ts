@@ -13,6 +13,9 @@ export type SubscriptionRequest<T extends EventType> = T extends "blockAdded" ? 
 } : T extends "transactionFinalityChanged" ? {
     type: T;
     txIds: readonly string[];
+} : T extends "virtualChainChanged" ? {
+    type: T;
+    includeAcceptedTransactionIds?: boolean;
 } : never;
 export interface Subscription<T> {
     readonly id: string;

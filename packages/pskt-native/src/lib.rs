@@ -81,7 +81,7 @@ struct NativePsktOperations {
 #[napi]
 pub fn pskt_probe() -> Result<String> {
     let probe = NativePsktProbe {
-        bridge_version: "0.12.0-rc.10".to_string(),
+        bridge_version: "0.12.0-rc.16".to_string(),
         rusty_kaspa_commit: "78257f273a26c4be085bab0f79437dee99ca8835".to_string(),
         crate_version: "0.15.0".to_string(),
         operations: NativePsktOperations {

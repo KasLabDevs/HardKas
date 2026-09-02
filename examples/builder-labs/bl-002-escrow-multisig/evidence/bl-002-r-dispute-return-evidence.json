@@ -5,17 +5,12 @@
     "hardware-sim-charlie"
   ],
   "expectedRecipient": "03ddc1f62652602f6753f5117f2929eb365d8a760e9a85c42c8d3ff4d3322e30c6",
-  "fundingTxId": "1234567890abcdef1234567890abcdef1234567890abcdef123456786b1173a9",
+  "fundingTxId": "0000000000000000000000000000000000000000000000000000000000000000",
   "escrowOutpoint": {
-    "transactionId": "1234567890abcdef1234567890abcdef1234567890abcdef123456786b1173a9",
+    "transactionId": "0000000000000000000000000000000000000000000000000000000000000000",
     "index": 0
   },
   "unsignedTransactionIdentity": "ddfe0db87a45e62ff910be9895233d606a2871f7221e3fdd458b03a8e1d2f4ef",
-  "acceptance": {
-    "acceptingBlockHash": "mock_block",
-    "acceptedTransactionId": "mock_tx",
-    "virtualChainObserved": true,
-    "rpcMethod": "getVirtualChainFromBlockV2"
-  },
-  "confirmed": true
+  "acceptance": null,
+  "confirmed": false
 }

@@ -33,6 +33,14 @@ export class HardkasQuery {
     return this.toolkit.utxos(address);
   }
 
+  public async getSpendableUtxos(request: {
+    address: string;
+    excludePending?: boolean;
+    excludeOutpoints?: Set<string>;
+  }): Promise<QueryResponse<any[]>> {
+    return this.toolkit.spendableUtxos(request);
+  }
+
   public async history(address: string): Promise<QueryResponse<any[]>> {
     return this.toolkit.history(address);
   }

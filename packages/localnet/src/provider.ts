@@ -10,6 +10,7 @@ import type {
   ServerInfo,
   KaspaSubscription,
   UtxosChangedEvent,
+  VirtualChainChangedEvent,
   KaspaRpcTransaction
 } from "@hardkas/kaspa-rpc";
 import { getAddressBalanceSompi, getSpendableUtxos } from "./balance.js";
@@ -114,6 +115,10 @@ export class LocalnetSimulatedProvider implements KaspaRpcClient {
     return null;
   }
 
+  async checkMempoolPresence(txId: string): Promise<{ status: 'present' } | { status: 'absent' }> {
+    return { status: 'absent' };
+  }
+
   async getTransaction(txId: string): Promise<unknown | null> {
     return null;
   }
@@ -122,7 +127,9 @@ export class LocalnetSimulatedProvider implements KaspaRpcClient {
     return {
       networkId: "simnet" as NetworkId,
       virtualDaaScore: 1n,
-      tipHashes: []
+      tipHashes: [],
+      virtualParentHashes: [],
+      sink: "0000000000000000000000000000000000000000000000000000000000000000"
     };
   }
 
@@ -143,6 +150,15 @@ export class LocalnetSimulatedProvider implements KaspaRpcClient {
     };
   }
 
+  async subscribeToVirtualChainChanged(options: { includeAcceptedTransactionIds: boolean }, handler: (event: VirtualChainChangedEvent) => void): Promise<KaspaSubscription> {
+    let closed = false;
+    return {
+      id: "simulated_sub_vc",
+      get closed() { return closed; },
+      unsubscribe: async () => { closed = true; }
+    };
+  }
+
   async getFeeEstimate(): Promise<any> { throw new Error("Not implemented"); }
   async getFeeEstimateExperimental(): Promise<any> { throw new Error("Not implemented"); }
   async getMempoolEntries(): Promise<any> { return []; }
@@ -154,6 +170,7 @@ export class LocalnetSimulatedProvider implements KaspaRpcClient {
   async getSinkBlueScore(): Promise<any> { return { blueScore: 0n }; }
   async getVirtualSelectedParentChainFromBlock(startHash: string, includeAcceptedTransactionIds?: boolean): Promise<any> { return {}; }
   async getVirtualSelectedParentBlueScore(): Promise<any> { return { blueScore: 0n }; }
+  async getVirtualChainFromBlockV2(): Promise<any> { return { removedChainBlockHashes: [], addedChainBlockHashes: [] }; }
   async estimateNetworkHashesPerSecond(windowSize?: number, startHash?: string): Promise<any> { return { networkHashesPerSecond: 0n }; }
   async getSyncStatus(): Promise<any> { return { isSynced: true }; }
   async getCoinSupply(): Promise<any> { return { maxCoinSupply: 0n, circulatingCoinSupply: 0n }; }

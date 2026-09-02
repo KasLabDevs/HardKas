@@ -19,6 +19,15 @@ export interface UtxoChangedEvent {
     readonly added: UTXO[];
     readonly removed: UTXORef[];
 }
+export interface AcceptedTransactionIds {
+    readonly acceptingBlockHash: string;
+    readonly acceptedTransactionIds: string[];
+}
+export interface VirtualChainChangedEvent {
+    readonly removedChainBlockHashes: string[];
+    readonly addedChainBlockHashes: string[];
+    readonly acceptedTransactionIds?: AcceptedTransactionIds[];
+}
 export interface TransactionObservedEvent {
     readonly txId: string;
     readonly blockHash?: string;
@@ -40,10 +49,11 @@ export interface ConnectionStateChangedEvent {
     readonly retryInMs?: number | undefined;
     readonly reason?: string | undefined;
 }
-export type EventType = "blockAdded" | "utxosChanged" | "transactionObserved" | "transactionAcceptanceChanged" | "transactionFinalityChanged";
+export type EventType = "blockAdded" | "utxosChanged" | "virtualChainChanged" | "transactionObserved" | "transactionAcceptanceChanged" | "transactionFinalityChanged";
 export interface EventMap {
     blockAdded: BlockAddedEvent;
     utxosChanged: UtxoChangedEvent;
+    virtualChainChanged: VirtualChainChangedEvent;
     transactionObserved: TransactionObservedEvent;
     transactionAcceptanceChanged: TransactionAcceptanceChangedEvent;
     transactionFinalityChanged: TransactionFinalityChangedEvent;

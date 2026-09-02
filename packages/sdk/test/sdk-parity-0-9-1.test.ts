@@ -3,7 +3,7 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { Hardkas } from "../src/index.js";
+import { Hardkas, HardkasCorpus, HardkasSilver } from "../src/index.js";
 
 function repoRoot(): string {
   let current = path.dirname(fileURLToPath(import.meta.url));
@@ -18,7 +18,7 @@ function readJson(filePath: string): any {
   return JSON.parse(fs.readFileSync(filePath, "utf8"));
 }
 
-describe("0.12.0-rc.10 SDK parity surface", () => {
+describe("0.12.0-rc.16 SDK parity surface", () => {
   let workspaceRoot: string;
 
   beforeEach(() => {
@@ -35,9 +35,9 @@ describe("0.12.0-rc.10 SDK parity surface", () => {
       network: "simulated",
       autoBootstrap: true
     });
-    const capabilities = await sdk.experimental.capabilitiesApi.get("hardkas-1.0-alpha");
+    const capabilities = await sdk.capabilities.get("hardkas-1.0-alpha");
 
-    expect(capabilities.version).toBe("0.12.0-rc.10");
+    expect(capabilities.version).toBe("0.12.0-rc.16");
     expect(capabilities.capabilities.mainnetGuards).toBe(true);
     expect(capabilities.capabilities.consensusValidation).toBe(false);
     expect(capabilities.capabilities.productionWallet).toBe(false);
@@ -66,7 +66,8 @@ describe("0.12.0-rc.10 SDK parity surface", () => {
       network: "simulated",
       autoBootstrap: true
     });
-    const result = await sdk.experimental.corpus.verify("fixtures/toccata-v2/silver");
+    const corpus = new HardkasCorpus(sdk);
+    const result = await corpus.verify("fixtures/toccata-v2/silver");
 
     expect(result.ok).toBe(true);
     expect(result.schema).toBe("hardkas.toccataCorpus.v1");
@@ -114,16 +115,17 @@ describe("0.12.0-rc.10 SDK parity surface", () => {
       )
     );
 
-    const deployPlan = await sdk.experimental.silver.deployPlan({
+    const silver = new HardkasSilver(sdk);
+    const deployPlan = await silver.deployPlan({
       artifact: compileArtifact,
       from: "alice",
       amount: "1",
       write: false
     });
-    const simulated = await sdk.experimental.silver.simulate.deploy(deployPlan.artifact, {
+    const simulated = await silver.simulate.deploy(deployPlan.artifact, {
       write: false
     });
-    const compare = await sdk.experimental.silver.compare({
+    const compare = await silver.compare({
       simulated: simulatedSpendReceipt,
       docker: dockerSpendReceipt,
       mode: "artifact-coherence"
@@ -141,8 +143,9 @@ describe("0.12.0-rc.10 SDK parity surface", () => {
       network: "simulated",
       autoBootstrap: true
     });
+    const silver = new HardkasSilver(sdk);
     await expect(
-      sdk.experimental.silver.deploy({
+      silver.deploy({
         artifact: { schema: "hardkas.silver.deployPlan", name: "dummy", byteCode: "00", abi: [] },
         mode: "rpc",
         write: false
