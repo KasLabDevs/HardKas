@@ -21,7 +21,13 @@ As a result, both Plan A and Plan B deterministically selected the exact same un
 ```
 
 ## Implication
-Without an application-level ledger, the SDK cannot safely build concurrent transaction plans for a wallet backend. If these plans are executed, one of them will inevitably result in a double-spend rejection by the network or mempool conflict.
+The SDK cannot guarantee conflict-free concurrent transaction plans when multiple planners observe the same spendable UTXO state before either spend becomes visible in mempool. Coordination between competing send intents is currently outside the planner contract.
 
 ## Status
-Phase 9 is BLOCKED pending resolution of this architectural gap (e.g. implementing SDK-native UTXO reservations or locks).
+**CONCURRENCY CHARACTERIZATION IN PROGRESS**
+
+- **W2**: Confirmed concurrent plans may select the same outpoint.
+- **W3 controlled**: Confirmed application/SDK flow can represent one accepted submission and one INPUT_CONFLICT without silent replan, false receipt, or state corruption.
+- **Pending**: Real localnet same-process W3. Cross-process W2/W3 qualification.
+
+No reservation mechanism approved.
