@@ -6,7 +6,8 @@ import { appendToKeystoreJson } from "@hardkas/accounts";
 export async function runSimulatorAccountCreate(name: string, options: { json: boolean }) {
   const { resolveHardkasAccount } = await import("@hardkas/accounts");
   try {
-    const existing = resolveHardkasAccount({ nameOrAddress: name });
+    const target = { mode: "simulator", domain: "kaspa-l1", network: "simnet" } as const;
+    const existing = resolveHardkasAccount({ nameOrAddress: name, executionTarget: target });
     if (existing) {
       throw new Error(`Account '${name}' already exists (kind: ${existing.kind}). Cannot overwrite existing accounts.`);
     }

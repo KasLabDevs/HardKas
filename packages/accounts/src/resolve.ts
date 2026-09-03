@@ -13,6 +13,7 @@ import {
 export interface ResolveAccountOptions {
   nameOrAddress: string;
   config?: HardkasConfig | undefined;
+  executionTarget?: import("@hardkas/core").HardkasExecutionTarget | undefined;
 }
 
 export function resolveHardkasAccount(options: ResolveAccountOptions): HardkasAccount {
@@ -52,7 +53,7 @@ export function resolveHardkasAccount(options: ResolveAccountOptions): HardkasAc
   if (alias === "1") alias = "bob";
 
   // Use listHardkasAccounts to ensure we catch collisions across all sources
-  const accounts = listHardkasAccounts(config);
+  const accounts = listHardkasAccounts(config, options.executionTarget);
   const found = accounts.find(a => a.name === alias);
 
   if (found) {
@@ -88,25 +89,30 @@ export function assertAccountCompatible(account: HardkasAccount, target: import(
   }
 }
 
-export function listHardkasAccounts(config?: HardkasConfig): HardkasAccount[] {
+export function listHardkasAccounts(config?: HardkasConfig, executionTarget?: import("@hardkas/core").HardkasExecutionTarget): HardkasAccount[] {
   const accounts: Map<string, HardkasAccount> = new Map();
 
   let targetMode = "localnet";
-  const execConfig: any = config?.execution;
-  if (execConfig) {
-    if (execConfig.mode) {
-      targetMode = execConfig.mode;
-    } else if (execConfig.default) {
-      const targetName = execConfig.default;
-      const target = execConfig.targets?.[targetName];
-      if (target?.mode) {
-        targetMode = target.mode;
-      } else if (targetName === "simulator") {
-        targetMode = "simulator";
+
+  if (executionTarget) {
+    targetMode = executionTarget.mode;
+  } else {
+    const execConfig: any = config?.execution;
+    if (execConfig) {
+      if (execConfig.mode) {
+        targetMode = execConfig.mode;
+      } else if (execConfig.default) {
+        const targetName = execConfig.default;
+        const target = execConfig.targets?.[targetName];
+        if (target?.mode) {
+          targetMode = target.mode;
+        } else if (targetName === "simulator") {
+          targetMode = "simulator";
+        }
       }
+    } else if (config?.defaultNetwork === "simulated") {
+      targetMode = "simulator";
     }
-  } else if (config?.defaultNetwork === "simulated") {
-    targetMode = "simulator";
   }
 
   // Add deterministic accounts first (defaults)

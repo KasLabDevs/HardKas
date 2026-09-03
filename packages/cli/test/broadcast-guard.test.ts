@@ -11,13 +11,13 @@ describe("assertBroadcastNetworkAllowed", () => {
     ).not.toThrow();
   });
 
-  it("should block mainnet (always rejected in 0.12.0-rc.16)", () => {
+  it("should block mainnet (always rejected in 0.12.0-rc.17)", () => {
     expect(() =>
       assertBroadcastNetworkAllowed({
         artifactNetworkId: "mainnet",
         selectedNetwork: "mainnet"
       })
-    ).toThrow(/Mainnet broadcast is disabled in HardKAS 0.12.0-rc.16/);
+    ).toThrow(/Mainnet broadcast is disabled in HardKAS 0.12.0-rc.17/);
   });
 
   it("should block mainnet even if only artifact is mainnet", () => {
@@ -26,7 +26,7 @@ describe("assertBroadcastNetworkAllowed", () => {
         artifactNetworkId: "kaspa",
         selectedNetwork: "devnet"
       })
-    ).toThrow(/Mainnet broadcast is disabled in HardKAS 0.12.0-rc.16/);
+    ).toThrow(/Mainnet broadcast is disabled in HardKAS 0.12.0-rc.17/);
   });
 
   it("should block mainnet-like aliases", () => {
@@ -35,7 +35,7 @@ describe("assertBroadcastNetworkAllowed", () => {
         artifactNetworkId: "kaspa-mainnet",
         selectedNetwork: "kaspa-mainnet"
       })
-    ).toThrow(/Mainnet broadcast is disabled in HardKAS 0.12.0-rc.16/);
+    ).toThrow(/Mainnet broadcast is disabled in HardKAS 0.12.0-rc.17/);
   });
 
   it("should fail on network mismatch", () => {

@@ -10,4 +10,4 @@ The Wallet Backend Lab verified that HardKAS preserves integrity under optimisti
 - **No Implicit Replans**: The SDK does not silently re-plan or re-sign failed intents. Coordination of conflicting reads is explicitly delegated to the application layer.
 
 ## Qualification
-This behavior was formally qualified externally against historical baseline `0.12.0-rc.16` over a live localnet execution using multiple processes, demonstrating that the design model was natively supported by the foundational architecture.
+This behavior was formally qualified externally against historical baseline `0.12.0-rc.17` over a live localnet execution using multiple processes, demonstrating that the design model was natively supported by the foundational architecture.

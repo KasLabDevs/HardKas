@@ -88,7 +88,7 @@ export async function runTxPlan(input: TxPlanRunnerInput): Promise<TxPlanArtifac
   const resolvedTargetName = targetName || execution.network;
 
   // Resolve and assert account compatibility BEFORE doing address validation
-  const fromAccount = resolveHardkasAccount({ nameOrAddress: from, config: resolvedConfig });
+  const fromAccount = resolveHardkasAccount({ nameOrAddress: from, config: resolvedConfig, executionTarget: execution });
   assertAccountCompatible(fromAccount, execution);
 
   let effectiveNetworkId = networkId;

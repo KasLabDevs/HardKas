@@ -72,4 +72,55 @@ describe("accounts", () => {
     const pk = "1".repeat(64);
     expect(maskSecrets(pk)).toBe("111111...1111 [REDACTED]");
   });
+
+  describe("Execution Target Authority", () => {
+    it("should resolve explicit localnet target without config to kaspa/simnet", () => {
+      const acc = resolveHardkasAccount({
+        nameOrAddress: "alice",
+        executionTarget: { mode: "localnet", network: "simnet", domain: "kaspa-l1" },
+        config: { cwd: "/tmp/non-existent-isolated-dir" } as any
+      });
+      expect(acc.kind).toBe("kaspa");
+      expect((acc as any).network).toBe("simnet");
+    });
+
+    it("should resolve explicit rpc target to kaspa/simnet and ignore global simulated config", () => {
+      const acc = resolveHardkasAccount({
+        nameOrAddress: "alice",
+        executionTarget: { mode: "rpc", network: "simnet", domain: "kaspa-l1" },
+        config: { defaultNetwork: "simulated", cwd: "/tmp/non-existent-isolated-dir" } as any
+      });
+      expect(acc.kind).toBe("kaspa");
+      expect((acc as any).network).toBe("simnet");
+    });
+
+    it("should allow synthetic account if no explicit target and config is simulated", () => {
+      const acc = resolveHardkasAccount({
+        nameOrAddress: "alice",
+        config: { defaultNetwork: "simulated", cwd: "/tmp/non-existent-isolated-dir" } as any
+      });
+      expect(acc.kind).toBe("synthetic");
+      expect((acc as any).executionMode).toBe("simulator");
+    });
+
+    it("MUST NOT mutate config during resolution, preventing state leakage between targets", () => {
+      const sharedConfig = { defaultNetwork: "simulated", cwd: "/tmp/isolated-dir" };
+
+      const acc1 = resolveHardkasAccount({
+        nameOrAddress: "alice",
+        executionTarget: { mode: "localnet", network: "simnet", domain: "kaspa-l1" },
+        config: sharedConfig as any
+      });
+
+      const acc2 = resolveHardkasAccount({
+        nameOrAddress: "alice",
+        executionTarget: { mode: "simulator", network: "simnet", domain: "kaspa-l1" },
+        config: sharedConfig as any
+      });
+
+      expect(acc1.kind).toBe("kaspa");
+      expect(acc2.kind).toBe("synthetic");
+      expect(sharedConfig).toEqual({ defaultNetwork: "simulated", cwd: "/tmp/isolated-dir" }); // Must remain unchanged
+    });
+  });
 });

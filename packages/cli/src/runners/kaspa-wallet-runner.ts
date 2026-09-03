@@ -137,8 +137,21 @@ export async function runKaspaWalletSend(
     const { signTxPlanArtifact } = await import("@hardkas/accounts");
     const { HARDKAS_VERSION, calculateContentHash } = await import("@hardkas/artifacts");
     const { parseKasToSompi, formatSompiToKas } = await import("@hardkas/core");
+    const configObj = config.config as Record<string, unknown>;
+    const networkId =
+      typeof configObj.networkId === "string"
+        ? (configObj.networkId)
+        : config.config.defaultNetwork || "simnet";
 
-    const sender = resolveHardkasAccount({ nameOrAddress: from, config: config.config });
+    const { resolveExecutionTarget } = await import("@hardkas/config");
+    const { execution } = resolveExecutionTarget({ config: config.config, network: networkId });
+    const target = {
+      mode: execution.mode || "rpc",
+      domain: execution.domain || "kaspa-l1",
+      network: execution.network || networkId
+    } as const;
+
+    const sender = resolveHardkasAccount({ nameOrAddress: from, config: config.config, executionTarget: target });
     const targetAddress = await resolveHardkasAccountAddress(to, config.config);
     const amountSompi = parseKasToSompi(options.amount);
 
@@ -185,14 +198,6 @@ export async function runKaspaWalletSend(
     // 2. Sign
     // 2. Sign
     // Map internal plan to Artifact format for the signer
-    const configObj = config.config as Record<string, unknown>;
-    const networkId =
-      typeof configObj.networkId === "string"
-        ? (configObj.networkId as NetworkId)
-        : config.config.defaultNetwork || "simnet";
-        
-    const { resolveExecutionTarget } = await import("@hardkas/config");
-    const { execution } = resolveExecutionTarget({ config: config.config, network: networkId });
 
     const planArtifact: TxPlanArtifact = {
       schema: HardkasSchemas.TxPlan,
