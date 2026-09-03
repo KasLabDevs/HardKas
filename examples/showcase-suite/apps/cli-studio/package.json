@@ -1,7 +1,7 @@
 {
   "name": "@showcase/cli-studio",
   "private": true,
-  "version": "0.12.0-rc.16",
+  "version": "0.12.0-rc.17",
   "type": "module",
   "scripts": {
     "dev": "concurrently \"pnpm run dev:frontend\" \"pnpm run dev:backend\"",

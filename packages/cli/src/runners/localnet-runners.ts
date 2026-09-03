@@ -156,15 +156,6 @@ export async function runLocalnetFund(opts: LocalnetFundOptions): Promise<void> 
   const { config } = await loadHardkasConfig({});
   let address: string;
 
-  const { resolveHardkasAccount } = await import("@hardkas/accounts");
-  let account;
-  try {
-    account = resolveHardkasAccount({ nameOrAddress: opts.identifier, config });
-    address = account.address || opts.identifier;
-  } catch {
-    address = opts.identifier;
-  }
-
   // ENFORCE EXECUTION GUARD FOR FUNDING
   const { assertExecutionCompatibility } = await import("@hardkas/core");
   const target = {
@@ -172,6 +163,15 @@ export async function runLocalnetFund(opts: LocalnetFundOptions): Promise<void> 
     domain: "kaspa-l1",
     network: "simnet"
   } as const;
+
+  const { resolveHardkasAccount } = await import("@hardkas/accounts");
+  let account;
+  try {
+    account = resolveHardkasAccount({ nameOrAddress: opts.identifier, config, executionTarget: target });
+    address = account.address || opts.identifier;
+  } catch {
+    address = opts.identifier;
+  }
 
   if (account) {
     assertExecutionCompatibility({

@@ -78,7 +78,8 @@
     "templates:verify": "node scripts/templates-verify.mjs",
     "postrelease:break": "node scripts/post-release-break-gauntlet.mjs",
     "docs:verify-book": "tsx scripts/verify-book.ts",
-    "api:check": "node scripts/api-check.mjs"
+    "api:check": "node scripts/api-check.mjs",
+    "qualification:public-npm": "tsx scripts/qualification/public-npm-torture.ts"
   },
   "devDependencies": {
     "@changesets/cli": "^2.31.0",
@@ -108,7 +109,7 @@
     "vitest": "^2.1.9",
     "ws": "^8.18.0"
   },
-  "version": "0.12.0-rc.16",
+  "version": "0.12.0-rc.17",
   "dependencies": {
     "kaspa": "^0.13.0",
     "kaspa-wasm": "^0.13.0"

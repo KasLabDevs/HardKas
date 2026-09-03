@@ -46,9 +46,11 @@ export function registerSimulatorCommands(program: Command) {
         const { config } = await loadHardkasConfig({});
         const { resolveHardkasAccount } = await import("@hardkas/accounts");
         
+        const target = { mode: "simulator", domain: "kaspa-l1", network: "simnet" } as const;
+
         let account;
         try {
-          account = resolveHardkasAccount({ nameOrAddress: identifier, config });
+          account = resolveHardkasAccount({ nameOrAddress: identifier, config, executionTarget: target });
         } catch {
           // If it fails to resolve, let accounts fund logic handle it,
           // but we can enforce kaspa:sim_ prefix here
@@ -58,12 +60,8 @@ export function registerSimulatorCommands(program: Command) {
           const { assertExecutionCompatibility } = await import("@hardkas/core");
           assertExecutionCompatibility({
             operation: "fund",
-            target: { mode: "simulator", domain: "kaspa-l1", network: "simnet" },
-            account: {
-              kind: account.kind,
-              network: (account as any).network,
-              executionMode: (account as any).executionMode
-            }
+            target,
+            account
           });
         }
 

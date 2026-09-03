@@ -46,7 +46,14 @@ export class HardkasAccounts {
   }
 
   /**
-   * Lists all available HardKAS accounts.
+   * Derives a new random account on the fly.
+   */
+  async derive(name: string): Promise<HardkasAccount> {
+    throw new Error("derive not implemented yet");
+  }
+
+  /**
+   * Lists available accounts in the current context.
    */
   async list(): Promise<Record<string, unknown>[]> {
     const { listHardkasAccounts, describeAccount } = await import("@hardkas/accounts");

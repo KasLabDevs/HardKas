@@ -1,6 +1,6 @@
 {
   "name": "@hardkas/example-03-localnet-demo",
-  "version": "0.12.0-rc.16",
+  "version": "0.12.0-rc.17",
   "private": true,
   "type": "module",
   "scripts": {

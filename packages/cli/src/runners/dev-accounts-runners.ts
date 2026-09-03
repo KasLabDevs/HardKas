@@ -32,9 +32,15 @@ export async function runDevAccountsReveal(alias: string) {
   const { assertExecutionCompatibility } = await import("@hardkas/core");
   const { resolveHardkasAccount } = await import("@hardkas/accounts");
 
+  const target = {
+    mode: execution.mode || "simulator",
+    domain: execution.domain || "kaspa-l1",
+    network: execution.network || "simulated"
+  } as const;
+
   let accountMeta;
   try {
-    accountMeta = resolveHardkasAccount({ nameOrAddress: alias, config: loaded.config });
+    accountMeta = resolveHardkasAccount({ nameOrAddress: alias, config: loaded.config, executionTarget: target });
   } catch (e) {
     // If resolution fails, it might not be properly mapped, but we'll try to find it in dev accounts
   }
@@ -43,11 +49,7 @@ export async function runDevAccountsReveal(alias: string) {
     try {
       assertExecutionCompatibility({
         operation: "dev-reveal",
-        target: {
-          mode: execution.mode || "simulator",
-          domain: execution.domain || "kaspa-l1",
-          network: execution.network || "simulated"
-        },
+        target,
         account: {
           kind: accountMeta.kind,
           network: (accountMeta as any).network,
@@ -91,20 +93,22 @@ export async function runDevAccountsExport(alias: string) {
   const { assertExecutionCompatibility } = await import("@hardkas/core");
   const { resolveHardkasAccount } = await import("@hardkas/accounts");
 
+  const target = {
+    mode: execution.mode || "simulator",
+    domain: execution.domain || "kaspa-l1",
+    network: execution.network || "simulated"
+  } as const;
+
   let accountMeta;
   try {
-    accountMeta = resolveHardkasAccount({ nameOrAddress: alias, config: loaded.config });
+    accountMeta = resolveHardkasAccount({ nameOrAddress: alias, config: loaded.config, executionTarget: target });
   } catch (e) {}
 
   if (accountMeta) {
     try {
       assertExecutionCompatibility({
         operation: "dev-export",
-        target: {
-          mode: execution.mode || "simulator",
-          domain: execution.domain || "kaspa-l1",
-          network: execution.network || "simulated"
-        },
+        target,
         account: {
           kind: accountMeta.kind,
           network: (accountMeta as any).network,

@@ -51,6 +51,6 @@ export async function runTxProfile(options) {
     if (plan.change) {
         getOutput().writeLine(`    [C] ${plan.change.address.substring(0, 20)}... (${formatSompiToKas(BigInt(plan.change.amountSompi))}) [CHANGE]`);
     }
-    getOutput().writeLine("\nNote: Mass estimation is protocol-aware (0.12.0-rc.16 best-effort).");
+    getOutput().writeLine("\nNote: Mass estimation is protocol-aware (0.12.0-rc.17 best-effort).");
 }
 //# sourceMappingURL=tx-profile-runner.js.map

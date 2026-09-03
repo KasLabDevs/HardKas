@@ -80,12 +80,7 @@ export async function runTxSign(input: TxSignRunnerInput): Promise<SignedTxArtif
 
   const resolvedConfig: any = workspaceRoot ? { ...config, cwd: workspaceRoot } : { ...config };
 
-  // Inject execution context into config so resolveHardkasAccount can yield the appropriate account kind
-  if (executionTarget) {
-    resolvedConfig.execution = executionTarget;
-  }
-
-  const account = resolveHardkasAccount({ nameOrAddress: targetAccountName, config: resolvedConfig });
+  const account = resolveHardkasAccount({ nameOrAddress: targetAccountName, config: resolvedConfig, executionTarget });
   assertAccountCompatible(account, executionTarget);
 
   const artifactNetwork = planArtifact.networkId;
