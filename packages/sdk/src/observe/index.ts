@@ -58,7 +58,7 @@ export class HardkasObserve {
 
     while (true) {
       if (options.signal?.aborted) {
-        break;
+        throw options.signal.reason || new Error("Operation aborted");
       }
 
       try {
@@ -93,7 +93,20 @@ export class HardkasObserve {
         throw err;
       }
 
-      await new Promise(resolve => setTimeout(resolve, pollInterval));
+      if (options.signal?.aborted) {
+        throw options.signal.reason || new Error("Operation aborted");
+      }
+
+      await new Promise((resolve, reject) => {
+        const timer = setTimeout(resolve, pollInterval);
+        if (options.signal) {
+          const onAbort = () => {
+            clearTimeout(timer);
+            reject(options.signal?.reason || new Error("Operation aborted"));
+          };
+          options.signal.addEventListener("abort", onAbort, { once: true });
+        }
+      });
     }
   }
 
@@ -131,7 +144,7 @@ export class HardkasObserve {
       }
     } catch (e: any) {
       clearTimeout(timeoutId);
-      if (e.name === "AbortError" || e.message?.includes("Timeout")) {
+      if (e.name === "AbortError" || e.message?.includes("Timeout") || e.message?.includes("aborted") || e.message?.includes("Aborted") || e.message?.includes("Operation")) {
         const error = new Error(e.message || "Timeout waiting for address state");
         (error as any).code = "OBSERVATION_TIMEOUT";
         throw error;
@@ -175,21 +188,19 @@ export class HardkasObserve {
       observedAt: snapshot.observedAt.toISOString(),
       networkId: snapshot.execution.network,
       mode: snapshot.execution.mode,
-      hardkasVersion: "0.12.0-rc.17", // We should import HARDKAS_VERSION ideally
+      hardkasVersion: "0.12.0-rc.18", // We should import HARDKAS_VERSION ideally
       version: "1.0.0-alpha",
       createdAt: new Date().toISOString()
     };
 
     // Cast it to any because the exact schema requires base fields
-    const { writeArtifact } = await import("@hardkas/artifacts");
+    const { ProjectArtifactStore } = await import("@hardkas/artifacts");
     
     // Hash it for lineage
     const contentHash = calculateContentHash(artifactData, CURRENT_HASH_VERSION);
     (artifactData as any).contentHash = contentHash;
 
-    await writeArtifact(artifactData as any, { 
-      cwd: this.sdk.workspace.root,
-      dryRun: false 
-    });
+    const store = new ProjectArtifactStore(this.sdk.workspace?.root || process.cwd());
+    await store.writeArtifact(artifactData as any);
   }
 }

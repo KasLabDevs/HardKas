@@ -133,24 +133,96 @@ export class ProjectArtifactStore {
     return lineage;
   }
 
-  async queryArtifacts(query: { schema?: string }): Promise<any[]> {
-    const subDirs = ["plans", "signed", "receipts", "lineage", "misc"];
-    const results: any[] = [];
-    for (const sub of subDirs) {
-      const dirPath = path.join(this.artifactsDir, sub);
+  async enumerateCanonicalArtifacts(): Promise<Array<{
+    path: string;
+    relativeSubpath: string;
+    subDir: string;
+    artifact: any;
+    id: string;
+    schema?: string;
+    contentHash?: string;
+  }>> {
+    const subDirs = ["plans", "signed", "receipts", "lineage", "evidences", "misc"];
+    const entries: Array<{
+      path: string;
+      relativeSubpath: string;
+      subDir: string;
+      artifact: any;
+      id: string;
+      schema?: string;
+      contentHash?: string;
+    }> = [];
+    const seenPaths = new Set<string>();
+
+    let resolvedBase: string;
+    try {
+      resolvedBase = await fs.realpath(this.artifactsDir);
+    } catch (e) {
+      resolvedBase = path.resolve(this.artifactsDir);
+    }
+
+    const scanDirectory = async (dirPath: string, subName: string) => {
       try {
         const files = await fs.readdir(dirPath);
         for (const file of files) {
           if (!file.endsWith(".json")) continue;
+
+          const filePath = path.join(dirPath, file);
+          let realPath: string;
           try {
-            const content = await fs.readFile(path.join(dirPath, file), "utf-8");
+            realPath = await fs.realpath(filePath);
+          } catch (e) {
+            realPath = path.resolve(filePath);
+          }
+
+          const normalizedReal = path.resolve(realPath);
+
+          // Boundary-based containment check (prevents sibling prefix escape like artifacts-evil while allowing files like ..metadata.json)
+          const rel = path.relative(resolvedBase, normalizedReal);
+          const isContained =
+            rel !== "" &&
+            rel !== ".." &&
+            !rel.startsWith(`..${path.sep}`) &&
+            !path.isAbsolute(rel);
+
+          if (!isContained) continue;
+          if (seenPaths.has(normalizedReal)) continue;
+
+          try {
+            const content = await fs.readFile(normalizedReal, "utf-8");
             const artifact = JSON.parse(content);
-            if (query.schema && artifact.schema !== query.schema) continue;
-            results.push(artifact);
+
+            const id = artifact.artifactId || artifact.contentHash || artifact.planId || artifact.signedId || artifact.txId || file.replace(".json", "");
+            const relPath = rel.replace(/\\/g, "/");
+
+            seenPaths.add(normalizedReal);
+
+            entries.push({
+              path: normalizedReal,
+              relativeSubpath: relPath,
+              subDir: subName,
+              artifact,
+              id,
+              schema: artifact.schema,
+              contentHash: artifact.contentHash
+            });
           } catch (e) {}
         }
       } catch (e) {}
+    };
+
+    await scanDirectory(this.artifactsDir, "root");
+    for (const sub of subDirs) {
+      await scanDirectory(path.join(this.artifactsDir, sub), sub);
     }
-    return results;
+
+    entries.sort((a, b) => a.relativeSubpath.localeCompare(b.relativeSubpath));
+    return entries;
+  }
+
+  async queryArtifacts(query: { schema?: string }): Promise<any[]> {
+    const entries = await this.enumerateCanonicalArtifacts();
+    if (!query.schema) return entries.map(e => e.artifact);
+    return entries.filter(e => e.schema === query.schema).map(e => e.artifact);
   }
 }

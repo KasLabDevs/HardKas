@@ -245,7 +245,7 @@ export async function verifyZkProofLocal(
         {
           code: "RISC0_VERIFIER_UNAVAILABLE",
           message:
-            "RISC0 local receipt verification helper is not bundled in 0.12.0-rc.17."
+            "RISC0 local receipt verification helper is not bundled in 0.12.0-rc.18."
         },
         {
           code: "RISC0_LOCAL_VERIFICATION_NOT_IMPLEMENTED",

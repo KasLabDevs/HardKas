@@ -4,7 +4,18 @@ export type QualificationStatus =
   | "SKIPPED"
   | "UNIMPLEMENTED"
   | "ENVIRONMENT_NOT_QUALIFIED"
-  | "BLOCKED_BY_PREVIOUS_FAILURE";
+  | "BLOCKED_BY_PREVIOUS_FAILURE"
+  | "QUALIFICATION_HARNESS_VIOLATION";
+
+export type QualificationTrack =
+  | "DOCKER_REAL"
+  | "SIMULATOR"
+  | "PACKAGING";
+
+export type SurfaceStatus =
+  | "PUBLIC"
+  | "EXPERIMENTAL"
+  | "INTERNAL";
 
 export interface AssertionResult {
   name: string;
@@ -57,6 +68,18 @@ export interface RunManifest {
   decision: "PASS" | "PARTIAL" | "FAIL" | "PENDING";
 }
 
+export interface EnvironmentManifest {
+  runId: string;
+  hardkasVersion: string;
+  distribution: string;
+  nodeVersion: string;
+  dockerContainers: string[];
+  dockerImages: string[];
+  rpcUrl: string;
+  startVirtualDaa: string;
+  endVirtualDaa: string;
+}
+
 export type Capability =
   | "publicNpmConsumer"
   | "dockerAvailable"
@@ -91,9 +114,18 @@ export interface ExecutionContext {
 export interface GateDefinition {
   id: string;
   name: string;
+  title?: string;
+  track?: QualificationTrack;
+  surface?: SurfaceStatus;
   mandatory: boolean;
   implemented: boolean;
   requires: Capability[];
   provides?: Capability[];
   run: (ctx: ExecutionContext) => Promise<Omit<GateResult, "id" | "name" | "mandatory" | "implemented" | "startedAt" | "endedAt">>;
+}
+
+export interface QualificationScenario extends GateDefinition {
+  title: string;
+  track: QualificationTrack;
+  surface: SurfaceStatus;
 }

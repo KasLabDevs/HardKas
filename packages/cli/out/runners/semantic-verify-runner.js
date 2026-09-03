@@ -73,7 +73,7 @@ export async function runSemanticVerify(options) {
     const artifacts = Array.from(artifactMap.values()).sort((a, b) => deterministicCompare(a.artifactId, b.artifactId));
     const bundle = {
         schemaVersion: HardkasSchemas.SemanticBundleV1,
-        runtimeVersion: "0.12.0-rc.17",
+        runtimeVersion: "0.12.0-rc.18",
         hashVersion: "sha256",
         invariantSummary: {
             totalChecks,

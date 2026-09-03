@@ -192,13 +192,37 @@ export class KaspaJsonRpcClient implements KaspaRpcClient {
   async getInfo(): Promise<KaspaNodeInfo> {
     const data = (await this.callRpc("getInfoRequest")) as Record<string, unknown>;
     const info: KaspaNodeInfo = {
-      serverVersion: String(data.serverVersion),
-      networkId: String(data.networkId),
-      isSynced: Boolean(data.isSynced)
+      serverVersion: data.serverVersion ? String(data.serverVersion) : undefined,
+      networkId: data.networkId && data.networkId !== "undefined" ? String(data.networkId) : undefined,
+      isSynced: data.isSynced !== undefined ? Boolean(data.isSynced) : undefined
     };
     if (data.virtualDaaScore !== undefined)
       info.virtualDaaScore = BigInt(data.virtualDaaScore as string | number);
     if (data.mempoolSize !== undefined) info.mempoolSize = Number(data.mempoolSize);
+
+    // QF-004: Single authoritative enrichment call to getServerInfoRequest if networkId missing natively
+    if (info.networkId === undefined) {
+      try {
+        const serverData = (await this.callRpc("getServerInfoRequest")) as Record<string, unknown>;
+        if (serverData?.networkId && String(serverData.networkId) !== "undefined") {
+          info.networkId = String(serverData.networkId);
+        }
+      } catch (e) {
+        throw new RpcError(
+          `Failed to enrich authoritative networkId from getServerInfo: ${e instanceof Error ? e.message : String(e)}`,
+          "RPC_NODE_INFO_ENRICHMENT_FAILED"
+        );
+      }
+    }
+
+    if (info.virtualDaaScore === undefined) {
+      try {
+        const dagData = (await this.callRpc("getBlockDagInfoRequest")) as Record<string, unknown>;
+        if (dagData?.virtualDaaScore !== undefined) {
+          info.virtualDaaScore = BigInt(dagData.virtualDaaScore as string | number);
+        }
+      } catch (e) {}
+    }
     return info;
   }
 

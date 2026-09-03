@@ -12,21 +12,39 @@ export class RpcObserverBackend implements HardkasObserverBackend {
     let mempoolRes: any = null;
     try {
       mempoolRes = await Promise.race([
-        this.sdk.rpc.call("getMempoolEntriesRequest", {
+        this.sdk.rpc.call("getMempoolEntriesByAddressesRequest", {
+          addresses: [address],
           includeOrphanPool: false,
           filterTransactionPool: false
-        }).catch(e => null),
+        }).catch(() => null),
         new Promise((_, reject) => setTimeout(() => reject(new Error("Mempool timeout")), 2000))
       ]);
     } catch (e) {
       // Ignore mempool timeouts or unsupported errors
     }
 
-    const utxosRes = await this.sdk.rpc.call("getUtxosByAddressesRequest", {
-      addresses: [address]
-    }) as any;
+    let utxosRes: any;
+    let dagInfo: any;
+    try {
+      utxosRes = await this.sdk.rpc.call("getUtxosByAddressesRequest", {
+        addresses: [address]
+      }) as any;
 
-    const dagInfo = await this.sdk.rpc.getBlockDagInfo();
+      dagInfo = await this.sdk.rpc.getBlockDagInfo();
+    } catch (e: any) {
+      if (
+        e.message?.includes("fetch failed") ||
+        e.message?.includes("ECONNREFUSED") ||
+        e.message?.includes("closed") ||
+        e.message?.includes("WebSocket") ||
+        e.code === "ECONNREFUSED"
+      ) {
+        const error = new Error("RPC node is unavailable.");
+        (error as any).code = "OBSERVATION_RPC_UNAVAILABLE";
+        throw error;
+      }
+      throw e;
+    }
 
     const incoming: any[] = [];
     const outgoing: any[] = [];
@@ -36,33 +54,55 @@ export class RpcObserverBackend implements HardkasObserverBackend {
 
     const mEntries = mempoolRes ? (mempoolRes.entries || mempoolRes.mempoolEntries) : null;
     if (mEntries && Array.isArray(mEntries)) {
-      for (const entry of mEntries) {
-        const tx = entry.transaction;
+      for (const item of mEntries) {
+        if (!item) continue;
+
+        // 1. Handle address-scoped RpcMempoolEntryByAddress structure ({ address, receiving, sending })
+        if (Array.isArray(item.receiving) || Array.isArray(item.sending)) {
+          for (const rxItem of (item.receiving || [])) {
+            const tx = rxItem?.transaction || rxItem;
+            const txId = tx?.verboseData?.transactionId || tx?.id || rxItem?.transactionId || "unknown";
+            let sompi = 0n;
+            for (const out of (tx?.outputs || [])) {
+              if (out.verboseData?.scriptPublicKeyAddress === address) {
+                sompi += BigInt(out.value || out.amount || 0);
+              }
+            }
+            incoming.push({ transactionId: txId, sompi: sompi.toString() });
+            mempoolIncomingSompi += sompi;
+          }
+
+          for (const txItem of (item.sending || [])) {
+            const tx = txItem?.transaction || txItem;
+            const txId = tx?.verboseData?.transactionId || tx?.id || txItem?.transactionId || "unknown";
+            outgoing.push({ transactionId: txId, sompi: "0" });
+          }
+          continue;
+        }
+
+        // 2. Handle global getMempoolEntries structure ({ transaction })
+        const tx = item.transaction || item;
+        if (!tx) continue;
+
         let isIncoming = false;
         let isOutgoing = false;
         let incomingSompi = 0n;
 
-        if (tx.inputs) {
-           // Without full tx info it's hard to know if we are sending,
-           // but the Kaspa RPC getMempoolEntriesByAddresses returns entries related to the address.
-           // In Rusty Kaspa, if it's in the response, it's either sending or receiving.
-           // We will map based on outputs. If we find our address in outputs, it's incoming.
-           // If we don't, it must be outgoing.
-           for (const out of (tx.outputs || [])) {
-             if (out.verboseData?.scriptPublicKeyAddress === address) {
-                isIncoming = true;
-                incomingSompi += BigInt(out.value || out.amount || 0);
-             }
-           }
-
-           if (!isIncoming) {
-             isOutgoing = true;
-           }
+        if (tx.inputs || tx.outputs) {
+          for (const out of (tx.outputs || [])) {
+            if (out.verboseData?.scriptPublicKeyAddress === address) {
+              isIncoming = true;
+              incomingSompi += BigInt(out.value || out.amount || 0);
+            }
+          }
+          if (!isIncoming) {
+            isOutgoing = true;
+          }
         }
 
         const observedTx = {
-          transactionId: tx.verboseData?.transactionId || tx.id,
-          sompi: incomingSompi.toString() // We store the received amount or 0 for outgoing
+          transactionId: tx.verboseData?.transactionId || tx.id || "unknown",
+          sompi: incomingSompi.toString()
         };
 
         if (isIncoming) {
