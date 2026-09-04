@@ -67,7 +67,6 @@ describe("Fee Correctness (Fase 1 Hardening)", () => {
 
     const audit = verifyFeeSemantics(artifact);
     expect(audit.ok).toBe(false);
-    console.log("AUDIT ISSUES", audit.issues);
     expect(audit.issues).toContain("Mass mismatch: artifact reports 500, recomputed 2036");
   });
 

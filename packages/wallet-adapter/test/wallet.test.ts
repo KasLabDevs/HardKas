@@ -7,7 +7,7 @@ import { InMemoryWalletProvider } from "../src/providers/in-memory.js";
 const mockUtxos: UTXO[] = [
   { 
       outpoint: { transactionId: "tx1", index: 0 }, 
-      amountSompi: "100000", 
+      amountSompi: "10000000", 
       scriptPublicKey: { scriptPublicKey: "spk1", version: 0 }, 
       blockDaaScore: 100n, 
       isCoinbase: false 
@@ -38,7 +38,7 @@ describe("P2 Wallet Providers", () => {
     
     expect(utxos1).toEqual(utxos2);
     expect(utxos1.length).toBe(1);
-    expect(utxos1[0].amountSompi).toBe("100000");
+    expect(utxos1[0].amountSompi).toBe("10000000");
   });
 
   it("Provider without UTXOs returns an empty array, not an error", async () => {
@@ -56,7 +56,7 @@ describe("P2 Wallet Providers", () => {
     
     // 2. Build Transaction via P1
     const config: TransactionEngineConfig = {
-        intent: { outputs: [{ address: "kaspa:receiver", amountSompi: "50000" }] },
+        intent: { outputs: [{ address: "kaspa:receiver", amountSompi: "5000000" }] },
         context: { availableUtxos: utxos, changeAddress: "kaspa:test" },
         policies: { fee: { exact: 1 }, selection: "largest-first" }
     };

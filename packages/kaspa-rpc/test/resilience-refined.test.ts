@@ -93,6 +93,7 @@ describe("RPC Resilience Refined (P1.2)", () => {
       });
 
       const client = new KaspaJsonRpcClient({
+        url: "http://unique-health-node:18210",
         fetcher: mockFetcher,
         retry: { maxRetries: 1, baseDelayMs: 1 }
       });

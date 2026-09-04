@@ -52,6 +52,7 @@ describe("Optimistic Concurrency & Integrity Semantics", () => {
     // Outpoints should be distinct because mempool-aware spendability filtered the pending one
     const outpointsA = intentA.inputs.map((i: any) => `${i.outpoint.transactionId}:${i.outpoint.index}`);
     const outpointsB = intentB.inputs.map((i: any) => `${i.outpoint.transactionId}:${i.outpoint.index}`);
+    // @ts-ignore
     expect(outpointsA.join(",")).not.toBe(outpointsB.join(","));
   });
 

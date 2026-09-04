@@ -31,12 +31,12 @@
     }
   ],
   "lineage": {
-    "artifactId": "6c5deb79a8b78e3925eeddd3d33162cd5b151fbdb18a1176f29aa378cc75fa5d",
+    "artifactId": "24a0d9f4e24eb3da4dcc64303d7c30f40d12799c920f0f3dc9842407d57db945",
     "lineageId": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
     "parentArtifactId": "",
     "rootArtifactId": "2b4baed6aab94827f47c19195591a9f619be50882de2c564ca9fa1bd09d57fb5",
     "sequence": 1
   },
   "hashVersion": 4,
-  "contentHash": "6c5deb79a8b78e3925eeddd3d33162cd5b151fbdb18a1176f29aa378cc75fa5d"
+  "contentHash": "24a0d9f4e24eb3da4dcc64303d7c30f40d12799c920f0f3dc9842407d57db945"
 }

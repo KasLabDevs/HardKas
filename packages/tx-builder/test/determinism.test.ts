@@ -385,26 +385,26 @@ describe("P1.12 Deterministic Transaction Canonicalization", () => {
       {
         outpoint: { transactionId: "txB", index: 0 },
         address: mockFrom,
-        amountSompi: 1000n,
+        amountSompi: 1000000n,
         scriptPublicKey: "spk"
       },
       {
         outpoint: { transactionId: "txA", index: 1 },
         address: mockFrom,
-        amountSompi: 1000n,
+        amountSompi: 1000000n,
         scriptPublicKey: "spk"
       },
       {
         outpoint: { transactionId: "txA", index: 0 },
         address: mockFrom,
-        amountSompi: 1000n,
+        amountSompi: 1000000n,
         scriptPublicKey: "spk"
       }
     ];
 
     const plan = buildPaymentPlan({ coinbaseMaturity: 100n,
       fromAddress: mockFrom,
-      outputs: [{ address: mockTo, amountSompi: 1500n }],
+      outputs: [{ address: mockTo, amountSompi: 1500000n }],
       availableUtxos: equalUtxos,
       feeRateSompiPerMass: 1n,
       changeAddress: mockFrom

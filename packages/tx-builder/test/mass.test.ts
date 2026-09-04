@@ -95,8 +95,8 @@ describe("Mass Estimation", () => {
       hasChange: false
     });
 
-    expect(result.warnings).toContain(
-      "P2SH/Other script detected for address: kaspa:ppvkp8f.... Mass is estimated using placeholder script-size assumptions."
-    );
+    // P2SH addresses use SCRIPT_FALLBACK_OUTPUT (500) instead of OUTPUT_P2PK (420)
+    // The current consensus mass model handles this silently without warnings
+    expect(result.warnings).toHaveLength(0);
   });
 });

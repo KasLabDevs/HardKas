@@ -7,7 +7,7 @@ describe('pskt-native bridge', () => {
   it('should probe correctly', () => {
     const capsStr = psktProbe();
     const caps = JSON.parse(capsStr);
-    expect(caps.bridgeVersion).toMatch(/^0\.12\.0-rc\.(2|10|11|12|16|17)$/);
+    expect(caps.bridgeVersion).toMatch(/^0\.12\.0-rc\.(2|10|11|12|16|17|18)$/);
     expect(caps.operations.decode).toBe(true);
   });
 

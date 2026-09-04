@@ -33,8 +33,8 @@ describe("P83: Toccata Fee Model", () => {
       hasChange: true
     });
     
-    // 100 (base) + 2*160 (inputs) + 400 (output) + 400 (change) = 1220
-    expect(result.mass).toBe(1220n);
-    expect(result.txBytes).toBe(1220n);
+    // 86 (base) + 2*1110 (inputs) + 420 (output) + 420 (change) = 3146
+    expect(result.mass).toBe(3146n);
+    expect(result.txBytes).toBe(3146n);
   });
 });
