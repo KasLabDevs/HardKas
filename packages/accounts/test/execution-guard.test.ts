@@ -14,6 +14,7 @@ describe("Execution Guard - Accounts", () => {
 
     expect(() => {
       assertAccountCompatible(account, { mode: "rpc", domain: "kaspa-l1", network: "testnet-10" });
+    // @ts-ignore
     }).not.toThrow();
   });
 
@@ -40,6 +41,7 @@ describe("Execution Guard - Accounts", () => {
 
     expect(() => {
       assertAccountCompatible(account, { mode: "simulator", domain: "kaspa-l1", network: "simulated" });
+    // @ts-ignore
     }).not.toThrow();
   });
 
@@ -65,6 +67,7 @@ describe("Execution Guard - Accounts", () => {
 
     expect(() => {
       assertAccountCompatible(account, { mode: "rpc", domain: "kaspa-l1", network: "mainnet" });
+    // @ts-ignore
     }).not.toThrow();
 
     expect(() => {
@@ -72,3 +75,4 @@ describe("Execution Guard - Accounts", () => {
     }).toThrowError(AccountNetworkMismatchError);
   });
 });
+

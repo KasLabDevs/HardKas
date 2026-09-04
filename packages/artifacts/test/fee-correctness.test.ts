@@ -18,9 +18,9 @@ describe("Fee Correctness (Fase 1 Hardening)", () => {
       }
     ],
     outputs: [{ address: "kaspa:qbob", amountSompi: 5000n }],
-    change: { address: "kaspa:qalice", amountSompi: 3940n },
-    estimatedFeeSompi: 1060n,
-    estimatedMass: 1060n // 100 + (1 × 160) + 400 + 400 = 1060
+    change: { address: "kaspa:qalice", amountSompi: 2964n },
+    estimatedFeeSompi: 2036n,
+    estimatedMass: 2036n
   };
 
   it("should recompute correct mass for a standard plan", () => {
@@ -35,7 +35,7 @@ describe("Fee Correctness (Fase 1 Hardening)", () => {
     });
 
     const mass = recomputeMass(artifact);
-    expect(mass).toBe(1060n);
+    expect(mass).toBe(2036n);
   });
 
   it("should pass verification for a valid fee artifact", () => {
@@ -67,7 +67,7 @@ describe("Fee Correctness (Fase 1 Hardening)", () => {
 
     const audit = verifyFeeSemantics(artifact);
     expect(audit.ok).toBe(false);
-    expect(audit.issues).toContain("Mass mismatch: artifact reports 500, recomputed 1060");
+    expect(audit.issues).toContain("Mass mismatch: artifact reports 500, recomputed 2036");
   });
 
   it("should fail on negative fee", () => {

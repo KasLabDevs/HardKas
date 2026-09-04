@@ -1,4 +1,5 @@
 import { TxPlanArtifact } from "@hardkas/artifacts";
+import { getNetworkPrefix } from "@hardkas/core";
 
 export interface TxInputAuthorizationContext {
   readonly inputIndex: number;
@@ -55,7 +56,7 @@ export class PrivateKeyAuthorizer implements TxInputAuthorizer {
           const { wasm, wasmTransaction, inputIndex } = ctx;
           const privateKey = new wasm.PrivateKey(this.privateKeyHex);
           const networkId = context.plan.networkId || "simnet";
-          const expectedAddress = (privateKey as any).toKeypair().toAddress(networkId).toString();
+          const expectedAddress = (privateKey as any).toKeypair().toAddress(getNetworkPrefix(networkId)).toString();
           
           if ((planInput as any).address && expectedAddress !== (planInput as any).address) {
             throw new Error(

@@ -39,8 +39,6 @@ export async function runTxPlan(input: TxPlanRunnerInput): Promise<TxPlanArtifac
   } = input;
 
   const resolvedConfig = workspaceRoot ? { ...config, cwd: workspaceRoot } : config;
-  const fromAddress = await resolveHardkasAccountAddress(from, resolvedConfig);
-  const toAddress = await resolveHardkasAccountAddress(to, resolvedConfig);
   const amountSompi = parseKasToSompi(amount);
   const feeRateSompiPerMass = feeRate ? BigInt(feeRate) : undefined;
 
@@ -90,6 +88,12 @@ export async function runTxPlan(input: TxPlanRunnerInput): Promise<TxPlanArtifac
   // Resolve and assert account compatibility BEFORE doing address validation
   const fromAccount = resolveHardkasAccount({ nameOrAddress: from, config: resolvedConfig, executionTarget: execution });
   assertAccountCompatible(fromAccount, execution);
+
+  const toAccount = resolveHardkasAccount({ nameOrAddress: to, config: resolvedConfig, executionTarget: execution });
+  assertAccountCompatible(toAccount, execution);
+
+  const fromAddress = fromAccount.address as string;
+  const toAddress = toAccount.address as string;
 
   let effectiveNetworkId = networkId;
   if (networkId === "simnet" && resolvedConfig.networks?.simnet?.kind === "simulated") {
@@ -303,7 +307,7 @@ export async function runTxPlan(input: TxPlanRunnerInput): Promise<TxPlanArtifac
 
     } catch (e: unknown) {
       if (e instanceof UtxoVirtualStateUnstableError) throw e;
-      if (e instanceof Error && e.message.includes("No UTXOs found")) throw e;
+      if (e instanceof Error && (e.message.includes("No UTXOs found") || e.message.includes("Insufficient funds"))) throw e;
 
       const protocol = rpcUrl?.startsWith("ws") ? "WebSocket" : "JSON-RPC";
       const { RpcConnectionError, RpcSchemaError, classifyRpcError } =

@@ -17,7 +17,7 @@ describe("signTxPlanArtifact", () => {
   const mockSimulatedPlan: any = {
     schema: "hardkas.txPlan",
     version: "1.0.0-alpha",
-    hardkasVersion: "0.12.0-rc.17",
+    hardkasVersion: "0.12.0-rc.18",
     createdAt: new Date().toISOString(),
     networkId: "simnet",
     mode: "simulator",
@@ -137,6 +137,8 @@ describe("signTxPlanArtifact", () => {
         account: mainnetAccount,
         allowMainnet: true
       })
+    // @ts-ignore
     ).rejects.not.toThrow(/Mainnet signing is disabled by default/);
   });
 });
+

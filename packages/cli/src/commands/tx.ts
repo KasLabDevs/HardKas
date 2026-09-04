@@ -42,7 +42,7 @@ export function registerTxCommands(program: Command) {
       }
     });
 
-  tx.command("plan")
+  tx.command("plan [from] [to]")
     .description(`Build a transaction plan artifact ${UI.maturity("stable")}`)
     .option("--target <name>", "Named execution target from hardkas.config.ts")
     .option("--from <accountOrAddress>", "Sender account name or address")
@@ -60,23 +60,24 @@ export function registerTxCommands(program: Command) {
     .option("--lock-timeout <ms>", "Lock wait timeout in ms", "30000")
     .option("--json", "Output as JSON", false)
     .action(
-      async (options: {
-        target?: string;
-        from?: string;
-        to?: string;
-        amount?: string;
-        network?: string;
-        provider: string;
-        feeRate?: string;
-        url?: string;
-        out?: string;
-        save?: string;
-        workflowId?: string;
-        assumptionLevel?: string;
-        waitLock: boolean;
-        lockTimeout: string;
-        json: boolean;
-      }) => {
+      async (
+        fromArg?: string,
+        toArg?: string,
+        rawOptions?: any
+      ) => {
+        let positionalFrom: string | undefined = undefined;
+        let positionalTo: string | undefined = undefined;
+        let options = rawOptions;
+
+        if (typeof fromArg === "object" && fromArg !== null) {
+          options = fromArg;
+        } else {
+          positionalFrom = fromArg;
+          positionalTo = toArg;
+        }
+
+        options = options || {};
+
         const { withLock } = await import("@hardkas/core");
         try {
           if (options.json) UI.setJsonMode(true);
@@ -86,7 +87,7 @@ export function registerTxCommands(program: Command) {
               name: "artifacts",
               command: "hardkas tx plan",
               wait: options.waitLock,
-              timeoutMs: parseInt(options.lockTimeout)
+              timeoutMs: parseInt(options.lockTimeout || "30000")
             },
             async () => {
               const { loadHardkasConfig } = await import("@hardkas/config");
@@ -96,11 +97,11 @@ export function registerTxCommands(program: Command) {
               const loaded = await loadHardkasConfig({ workspaceRoot: process.cwd() });
               const artifact = await runTxPlan({
                 ...(options.target ? { targetName: options.target } : {}),
-                from: options.from || "alice",
-                to: options.to || "bob",
+                from: options.from || positionalFrom || "alice",
+                to: options.to || positionalTo || "bob",
                 amount: options.amount || "1",
                 ...(options.network ? { networkId: options.network } : {}),
-                provider: options.provider,
+                provider: options.provider || "auto",
                 ...(options.feeRate ? { feeRate: options.feeRate } : {}),
                 config: loaded.config,
                 ...(options.workflowId ? { workflowId: options.workflowId } : {}),

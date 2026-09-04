@@ -16,8 +16,9 @@ export const gateB1: GateDefinition = {
     
     const cliPath = getHardkasCliPath(ctx.consumerDir);
 
-    // 1. Start the localnet via CLI (Launch in background because it blocks)
-    runCommand(`"${cliPath}" localnet start --profile toccata-v2`, ctx.consumerDir).catch(() => {});
+    // 1. Start the localnet via CLI
+    const startRes = await runCommand(`"${cliPath}" localnet start --profile toccata-v2`, ctx.consumerDir);
+    evidence.push("LOCALNET START OUTPUT:\n" + startRes.stdout + "\n" + startRes.stderr);
     
     // 2. Poll status via CLI
     let isHealthy = false;
@@ -55,7 +56,7 @@ export const gateB1: GateDefinition = {
       return { status, assertions, evidence };
     }
 
-    const rpcUrl = statusParsed.node?.rpcUrl || "ws://127.0.0.1:16210";
+    const rpcUrl = statusParsed.node?.rpcUrl || "ws://127.0.0.1:18210";
 
     // 3. Probe RPC with SDK
     const code = `

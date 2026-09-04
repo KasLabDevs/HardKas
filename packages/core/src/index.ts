@@ -32,6 +32,16 @@ export function getCoinbaseMaturity(networkId?: string, overrideParams?: { coinb
   throw e;
 }
 
+export function getNetworkPrefix(networkId?: string): string {
+  if (!networkId) return "simnet";
+  const net = networkId.toLowerCase();
+  if (net === "simnet" || net === "simnet-1" || net === "simulated" || net === "kaspasim") return "simnet";
+  if (net === "mainnet" || net === "kaspa") return "mainnet";
+  if (net.startsWith("testnet") || net === "kaspatest") return "testnet-10";
+  if (net === "devnet" || net === "kaspadev") return "devnet";
+  return net;
+}
+
 export const executionModeSchema = z.enum(["simulator", "localnet", "rpc"]);
 export type ExecutionMode = z.infer<typeof executionModeSchema>;
 

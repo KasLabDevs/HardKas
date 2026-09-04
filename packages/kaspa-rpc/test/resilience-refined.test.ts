@@ -88,11 +88,12 @@ describe("RPC Resilience Refined (P1.2)", () => {
           throw new Error("Fail once");
         }
         return new Response(
-          JSON.stringify({ jsonrpc: "2.0", id: 1, result: { isSynced: true } })
+          JSON.stringify({ jsonrpc: "2.0", id: 1, result: { isSynced: true, networkId: "testnet-1", virtualDaaScore: 100 } })
         );
       });
 
       const client = new KaspaJsonRpcClient({
+        url: "http://unique-health-node:18210",
         fetcher: mockFetcher,
         retry: { maxRetries: 1, baseDelayMs: 1 }
       });

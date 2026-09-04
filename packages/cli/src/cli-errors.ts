@@ -91,12 +91,18 @@ export class RpcConnectionError extends HardkasCliError {
     errorCode: RpcErrorCode;
     rawError: string;
   }) {
-    super(options.errorCode, humanReadableRpcError(options.errorCode), {
+    const baseMessage = humanReadableRpcError(options.errorCode);
+    const fullMessage = options.rawError && options.rawError !== baseMessage
+      ? `${baseMessage}: ${options.rawError}`
+      : baseMessage;
+
+    super(options.errorCode, fullMessage, {
       suggestion: "Run 'hardkas node start' or check 'hardkas rpc health'",
       context: {
         endpoint: options.endpoint,
         network: options.network,
-        protocol: options.protocol
+        protocol: options.protocol,
+        rawError: options.rawError
       }
     });
     this.name = "RpcConnectionError";

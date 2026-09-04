@@ -32,7 +32,9 @@ describe("AddressManager", () => {
             addressIndex: 0
         });
 
+        // @ts-ignore
         expect(addrReceive.address).not.toBe(addrChange.address);
+        // @ts-ignore
         expect(addrReceive.path).not.toBe(addrChange.path);
         expect(addrReceive.path).toContain("/0/0");
         expect(addrChange.path).toContain("/1/0");
@@ -60,8 +62,11 @@ describe("AddressManager", () => {
         });
 
         const json = JSON.stringify(addr);
+        // @ts-ignore
         expect(json).not.toContain("privateKey");
+        // @ts-ignore
         expect(json).not.toContain("mnemonic");
+        // @ts-ignore
         expect(json).not.toContain("super-secret-seed"); // Ensure seed isn't leaked
         
         expect(addr.claims.realBip39).toBe(false);
@@ -78,3 +83,4 @@ describe("AddressManager", () => {
         expect(path).toBe("m/44'/111111'/2'/1/15");
     });
 });
+

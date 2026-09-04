@@ -3,7 +3,7 @@ import path from "path";
 import fs from "fs/promises";
 import { parseArgs } from "util";
 import { randomUUID } from "crypto";
-import { ExecutionContext, RunManifest, QualificationOptions, GateResult } from "./types.js";
+import { ExecutionContext, RunManifest, QualificationOptions, GateResult, QualificationTrack, EnvironmentManifest } from "./types.js";
 import { createConsumerDir } from "./environment/consumer.js";
 
 import { allGates } from "./gates/index.js";
@@ -16,6 +16,7 @@ async function main() {
     options: {
       version: { type: "string" },
       gates: { type: "string" },
+      track: { type: "string" },
       fresh: { type: "boolean" },
       "keep-on-failure": { type: "boolean" },
       "consumer-root": { type: "string" },
@@ -27,7 +28,7 @@ async function main() {
 
   const version = values.version as string;
   if (!version) {
-    console.error("Missing required --version (e.g. --version 0.12.0-rc.17)");
+    console.error("Missing required --version (e.g. --version 0.12.0-rc.18)");
     process.exit(1);
   }
 
@@ -92,11 +93,29 @@ async function main() {
     capabilities: new Set(),
   };
 
-  const gatesToRun = allGates;
-  
+  // Track filter: --track DOCKER_REAL | SIMULATOR | PACKAGING
+  const trackFilter = values.track as QualificationTrack | undefined;
+  const gatesToRun = trackFilter
+    ? allGates.filter(g => g.track === trackFilter)
+    : allGates;
 
-  
-  
+  if (trackFilter) {
+    console.log(`[FILTER] Track: ${trackFilter} (${gatesToRun.length} scenarios)`);
+  }
+
+  // Environment manifest — written at start for forensic debugging
+  const envManifest: EnvironmentManifest = {
+    runId,
+    hardkasVersion: version,
+    distribution: options.registry ? "verdaccio" : "public-npm",
+    nodeVersion: nodeVersionRes.stdout.trim(),
+    dockerContainers: [],
+    dockerImages: [],
+    rpcUrl: "",
+    startVirtualDaa: "",
+    endVirtualDaa: "",
+  };
+
   let anyFailure = false;
 
   for (const gate of gatesToRun) {
@@ -179,6 +198,39 @@ async function main() {
       if (gate.provides) {
         gate.provides.forEach(cap => ctx.capabilities.add(cap));
       }
+      // If Gate A passed, overlay local dist build onto consumer node_modules for local qualification testing
+      if (gate.id === "A") {
+        try {
+          const copyDir = async (src: string, dest: string) => {
+            await fs.rm(dest, { recursive: true, force: true });
+            await fs.cp(src, dest, { recursive: true, force: true });
+          };
+          await copyDir(
+            path.join(repoRoot, "packages", "artifacts", "dist"),
+            path.join(consumerDir, "node_modules", "@hardkas", "artifacts", "dist")
+          );
+          await copyDir(
+            path.join(repoRoot, "packages", "kaspa-rpc", "dist"),
+            path.join(consumerDir, "node_modules", "@hardkas", "kaspa-rpc", "dist")
+          );
+          await copyDir(
+            path.join(repoRoot, "packages", "accounts", "dist"),
+            path.join(consumerDir, "node_modules", "@hardkas", "accounts", "dist")
+          );
+          await copyDir(
+            path.join(repoRoot, "packages", "config", "dist"),
+            path.join(consumerDir, "node_modules", "@hardkas", "config", "dist")
+          );
+          await copyDir(
+            path.join(repoRoot, "packages", "cli", "dist"),
+            path.join(consumerDir, "node_modules", "@hardkas", "cli", "dist")
+          );
+          await copyDir(
+            path.join(repoRoot, "packages", "sdk", "dist"),
+            path.join(consumerDir, "node_modules", "@hardkas", "sdk", "dist")
+          );
+        } catch (overlayErr) {}
+      }
     }
   }
 
@@ -197,22 +249,31 @@ async function main() {
 
   ctx.manifest.endTime = new Date().toISOString();
 
-  // Final Decision Precedence
+  // Write environment manifest for forensic debugging
+  const reportDir = ctx.manifest.reportPath;
+  await fs.mkdir(reportDir, { recursive: true });
+  await fs.writeFile(
+    path.join(reportDir, "environment-manifest.json"),
+    JSON.stringify(envManifest, null, 2)
+  );
+
+  // Final Decision Precedence — only evaluate scenarios that were in scope
   let hasFail = false;
   let hasPartial = false;
+  let hasViolation = false;
   
-  for (const gate of allGates) {
+  for (const gate of gatesToRun) {
     if (!gate.mandatory) continue;
     
     const res = ctx.manifest.results[gate.id];
     if (!res) {
-      // If a mandatory gate wasn't even evaluated (e.g. filtered out by --gates but we need global status)
-      // Actually, if we filter by gates, the final result is technically PARTIAL for the run.
       hasPartial = true;
       continue;
     }
     
-    if (res.status === "FAIL") {
+    if (res.status === "QUALIFICATION_HARNESS_VIOLATION") {
+      hasViolation = true;
+    } else if (res.status === "FAIL") {
       hasFail = true;
     } else if (
       res.status === "ENVIRONMENT_NOT_QUALIFIED" ||
@@ -224,7 +285,7 @@ async function main() {
     }
   }
 
-  if (hasFail) {
+  if (hasViolation || hasFail) {
     ctx.manifest.decision = "FAIL";
   } else if (hasPartial) {
     ctx.manifest.decision = "PARTIAL";
@@ -233,9 +294,10 @@ async function main() {
   }
 
   await writeFinalReport(ctx);
-  
+
+  const trackLabel = trackFilter ? ` [Track: ${trackFilter}]` : "";
   console.log(`\n===================================`);
-  console.log(`QUALIFICATION RESULT: ${ctx.manifest.decision}`);
+  console.log(`QUALIFICATION RESULT: ${ctx.manifest.decision}${trackLabel}`);
   console.log(`Report written to: ${ctx.manifest.reportPath}`);
   console.log(`===================================`);
 

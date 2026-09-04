@@ -10,14 +10,14 @@ describe("FeeEstimator", () => {
         policy: "minimal",
         hasChange: false
     });
-    // Base: 100
-    // 1 Input P2PK: 160
-    // 1 Output P2PK: 400
-    // Total Mass: 660
-    // FeeRate: 1
-    // Fee: 660
-    expect(result.estimatedMass).toBe(660n);
-    expect(result.estimatedFeeSompi).toBe(660n);
+    // Base: 86
+    // 1 Input P2PK: 1110
+    // 1 Output P2PK: 420
+    // Total Mass: 1616
+    // FeeRate: 1 (bumped to 100 floor)
+    // Fee: 161600
+    expect(result.estimatedMass).toBe(1616n);
+    expect(result.estimatedFeeSompi).toBe(161600n);
     expect(result.estimated).toBe(true);
     expect(result.claims.exactNetworkFee).toBe(false);
   });
@@ -29,14 +29,14 @@ describe("FeeEstimator", () => {
         feeRateSompiPerMass: 2n,
         policy: "minimal"
     });
-    // Base: 100
-    // 10 Inputs: 1600
-    // 2 Outputs: 800
-    // Total Mass: 2500
-    // FeeRate: 2
-    // Fee: 5000
-    expect(result.estimatedMass).toBe(2500n);
-    expect(result.estimatedFeeSompi).toBe(5000n);
+    // Base: 86
+    // 10 Inputs: 11100
+    // 2 Outputs: 840
+    // Total Mass: 12026
+    // FeeRate: 2 (bumped to 100)
+    // Fee: 1202600
+    expect(result.estimatedMass).toBe(12026n);
+    expect(result.estimatedFeeSompi).toBe(1202600n);
   });
 
   it("with change output", () => {
@@ -47,14 +47,14 @@ describe("FeeEstimator", () => {
         policy: "minimal",
         hasChange: true
     });
-    // Base: 100
-    // 2 Inputs: 320
-    // 1 Output: 400
-    // Change Output: 400
-    // Total Mass: 1220
-    // Fee: 1220
-    expect(result.estimatedMass).toBe(1220n);
-    expect(result.estimatedFeeSompi).toBe(1220n);
+    // Base: 86
+    // 2 Inputs: 2220
+    // 1 Output: 420
+    // Change Output: 420
+    // Total Mass: 3146
+    // Fee: 314600
+    expect(result.estimatedMass).toBe(3146n);
+    expect(result.estimatedFeeSompi).toBe(314600n);
   });
 
   it("invalid fee rate (float, negative, NaN)", () => {

@@ -1,5 +1,6 @@
 import { createHash } from "node:crypto";
 import { createRequire } from "node:module";
+import { getNetworkPrefix } from "@hardkas/core";
 const require = createRequire(import.meta.url);
 
 export type NetworkType = "simnet" | "testnet" | "mainnet" | "local-docker-simnet";
@@ -78,7 +79,7 @@ export const AddressManager = {
             // Using Kaspa WASM synchronously since it's available in Node context
             const kaspa = require("kaspa-wasm");
             const priv = new kaspa.PrivateKey(hash);
-            address = priv.toKeypair().toAddress(network).toString();
+            address = priv.toKeypair().toAddress(getNetworkPrefix(network)).toString();
         } catch (e) {
             // Fallback just in case Kaspa WASM is totally unavailable in environment, though we require it for Toccata
             const prefix = network.includes("sim") ? "kaspasim" : "kaspatest";

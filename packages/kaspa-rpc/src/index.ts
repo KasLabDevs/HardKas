@@ -101,6 +101,8 @@ export interface ServerInfo {
   readonly networkId: NetworkId;
   readonly serverVersion?: string;
   readonly isSynced?: boolean;
+  readonly hasUtxoIndex?: boolean;
+  readonly virtualDaaScore?: bigint;
 }
 
 export interface MempoolEntry {
@@ -358,18 +360,30 @@ export class JsonWrpcKaspaClient implements KaspaRpcClient {
     const response = await this.callMethod("getInfo", "getInfoRequest");
     const info = mapKaspaNodeInfo(response);
 
+    // QF-004: Enrich networkId authoritatively from getServerInfo if missing natively
+    if (info.networkId === undefined) {
+      try {
+        const serverInfo = await this.getServerInfo();
+        if (serverInfo?.networkId) {
+          info.networkId = serverInfo.networkId as NetworkId;
+        }
+      } catch (e) {
+        throw new RpcError(
+          `Failed to enrich authoritative networkId from getServerInfo: ${e instanceof Error ? e.message : String(e)}`,
+          "RPC_NODE_INFO_ENRICHMENT_FAILED"
+        );
+      }
+    }
+
     if (info.virtualDaaScore === undefined) {
       try {
-        const dagResponse = await this.callMethod(
-          "getBlockDagInfo",
-          "getBlockDagInfoRequest"
-        );
-        const dagData = (dagResponse as any)?.params || dagResponse;
-        if (dagData && typeof dagData === "object" && "virtualDaaScore" in dagData) {
-          info.virtualDaaScore = BigInt((dagData as any).virtualDaaScore);
+        const dagInfo = await this.getBlockDagInfo();
+        if (dagInfo?.virtualDaaScore !== undefined) {
+          info.virtualDaaScore = dagInfo.virtualDaaScore;
         }
       } catch (e) {}
     }
+
     return info;
   }
 

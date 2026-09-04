@@ -260,7 +260,7 @@ console.log(JSON.stringify({ app: ${JSON.stringify(appName)}, ok: true, sdkNetwo
 const { calculateContentHash } = await import(${JSON.stringify(pathToFileURL(artifactsDist).href)});
 const artifact = {
   schema: HardkasSchemas.PostReleaseProbe,
-  hardkasVersion: "0.12.0-rc.17",
+  hardkasVersion: "0.12.0-rc.18",
   hashVersion: 4,
   networkId: "simulated",
   amountSompi: "1"
@@ -675,7 +675,7 @@ async function runParityChecks() {
         flow: flow.name,
         severity: flow.name.includes("silver") ? "P1" : "P2",
         reason:
-          "CLI flow exists but no equivalent high-level SDK API was found in 0.12.0-rc.17."
+          "CLI flow exists but no equivalent high-level SDK API was found in 0.12.0-rc.18."
       });
     }
     parityResults.push({
@@ -741,7 +741,7 @@ function writeReports() {
 
   const result = {
     schema : HardkasSchemas.PostReleaseBreakGauntletV1,
-    release: "0.12.0-rc.17",
+    release: "0.12.0-rc.18",
     status,
     generatedAt: new Date().toISOString(),
     claims: {
@@ -773,7 +773,7 @@ function writeReports() {
     adversarialResults,
     parityResults,
     notes,
-    recommendedNextRelease: "0.12.0-rc.17"
+    recommendedNextRelease: "0.12.0-rc.18"
   };
   writeJson(resultPath, result);
 
@@ -785,7 +785,7 @@ function writeReports() {
   );
   const failingBaseline = baseline.filter((entry) => entry.status !== "PASS");
 
-  const md = `# Post-Release Findings For 0.12.0-rc.17
+  const md = `# Post-Release Findings For 0.12.0-rc.18
 
 Date: ${new Date().toISOString()}
 
@@ -793,7 +793,7 @@ Status: \`${status}\`
 
 ## Summary
 
-- Release tested: \`0.12.0-rc.17\`
+- Release tested: \`0.12.0-rc.18\`
 - Apps generated: ${appsGenerated}
 - Apps build passed: ${appsBuildPassed}
 - Apps smoke passed: ${appsSmokePassed}
@@ -802,7 +802,7 @@ Status: \`${status}\`
 - SDK gaps found: ${sdkGaps.length}
 - Bugs found: ${bugs.length}
 - Docs/error-message gaps found: ${docsGaps.length}
-- Resolved 0.12.0-rc.17 findings: ${resolvedFindings.length}
+- Resolved 0.12.0-rc.18 findings: ${resolvedFindings.length}
 - Unresolved findings: ${unresolvedFindings.length}
 
 ## Baseline
@@ -840,7 +840,7 @@ ${failingAdversarial.map((entry) => `- ${entry.name}: ${entry.reason} - ${entry.
 
 ${parityResults.map((entry) => `- ${entry.flow}: CLI=${entry.cli}, SDK=${entry.sdk}, parity=${entry.parity}`).join("\n")}
 
-## Recommended 0.12.0-rc.17 Backlog
+## Recommended 0.12.0-rc.18 Backlog
 
 ${
   [

@@ -231,7 +231,7 @@ describe("P1.12 Deterministic Transaction Canonicalization", () => {
     // Create an artifact-like structure
     const baseArtifact = {
       schema: "hardkas.txPlan" as const,
-      hardkasVersion: "0.12.0-rc.17",
+      hardkasVersion: "0.12.0-rc.18",
       version: ARTIFACT_VERSION,
       hashVersion: CURRENT_HASH_VERSION,
       networkId: "simnet" as const,
@@ -328,7 +328,7 @@ describe("P1.12 Deterministic Transaction Canonicalization", () => {
     // Hardcode an exact fixed test artifact
     const fixedArtifact = {
       schema: "hardkas.txPlan" as const,
-      hardkasVersion: "0.12.0-rc.17",
+      hardkasVersion: "0.12.0-rc.18",
       version: "1.0.0-alpha",
       hashVersion: 3,
       networkId: "simnet" as const,
@@ -385,26 +385,26 @@ describe("P1.12 Deterministic Transaction Canonicalization", () => {
       {
         outpoint: { transactionId: "txB", index: 0 },
         address: mockFrom,
-        amountSompi: 1000n,
+        amountSompi: 1000000n,
         scriptPublicKey: "spk"
       },
       {
         outpoint: { transactionId: "txA", index: 1 },
         address: mockFrom,
-        amountSompi: 1000n,
+        amountSompi: 1000000n,
         scriptPublicKey: "spk"
       },
       {
         outpoint: { transactionId: "txA", index: 0 },
         address: mockFrom,
-        amountSompi: 1000n,
+        amountSompi: 1000000n,
         scriptPublicKey: "spk"
       }
     ];
 
     const plan = buildPaymentPlan({ coinbaseMaturity: 100n,
       fromAddress: mockFrom,
-      outputs: [{ address: mockTo, amountSompi: 1500n }],
+      outputs: [{ address: mockTo, amountSompi: 2500000n }],
       availableUtxos: equalUtxos,
       feeRateSompiPerMass: 1n,
       changeAddress: mockFrom

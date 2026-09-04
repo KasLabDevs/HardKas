@@ -24,6 +24,7 @@ describe("loadHardkasConfig INIT_CWD safety", () => {
     process.env.INIT_CWD = saved;
 
     expect(loadedDefault.cwd).toBe(loadedControl.cwd);
+    // @ts-ignore
     expect(loadedDefault.cwd).not.toBe(saved);
   });
 

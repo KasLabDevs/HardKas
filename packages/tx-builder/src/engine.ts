@@ -1,8 +1,17 @@
 import { UTXO } from "@hardkas/core";
 import { estimateTransactionMass } from "./mass.js";
-import { estimateFee } from "./fee-estimator.js";
+import { estimateFee, DEFAULT_MINIMUM_RELAY_RATE_SOMPI_PER_MASS } from "./fee-estimator.js";
 
 const DUST_THRESHOLD_SOMPI = 600n;
+export const MAX_FEE_SELECTION_PASSES = 10;
+
+export class FeeConvergenceError extends Error {
+  readonly code = "FEE_CONVERGENCE_ERROR";
+  constructor(message: string) {
+    super(message);
+    this.name = "FeeConvergenceError";
+  }
+}
 
 export type SelectionPolicy = "largest-first" | "oldest-first" | "exact-match";
 export type EngineFeePolicy = "network-standard" | "network-priority" | { exact: number };
@@ -74,24 +83,18 @@ export function buildTransaction(config: TransactionEngineConfig): TxPlan {
         throw new Error("No available UTXOs provided in context.");
     }
 
-    // Prepare iterations for re-selection loop
-    let feeRate = 1n; // Default network standard
+    let feeRate = DEFAULT_MINIMUM_RELAY_RATE_SOMPI_PER_MASS; // 100 sompi/gram default
     if (typeof config.policies.fee === "object" && config.policies.fee.exact !== undefined) {
        feeRate = BigInt(config.policies.fee.exact);
     } else if (config.policies.fee === "network-priority") {
-       feeRate = 5n;
+       feeRate = 200n;
     }
 
-    // 1. Normalize Outputs (done during validation)
-    // 2 & 5. Coin Selection & Re-selection loop
-    // We iteratively add inputs if the fee pushes us over the limit.
-    
     // Sort available utxos based on policy
     let pool = [...config.context.availableUtxos];
     if (config.policies.selection === "largest-first") {
        pool.sort((a, b) => (BigInt(b.amountSompi) > BigInt(a.amountSompi) ? 1 : -1));
     } else if (config.policies.selection === "exact-match") {
-       // Just basic sort for exact match, logic will pick best fitting
        pool.sort((a, b) => (BigInt(a.amountSompi) > BigInt(b.amountSompi) ? 1 : -1));
     }
     
@@ -103,11 +106,11 @@ export function buildTransaction(config: TransactionEngineConfig): TxPlan {
     let hasChange = false;
     let iter = 0;
 
-    // Loop at most pool.length + 1 times
-    while (iter < pool.length + 1) {
+    const maxPasses = Math.min(pool.length + 2, MAX_FEE_SELECTION_PASSES);
+
+    while (iter < maxPasses) {
         iter++;
         
-        // Pick minimum UTXOs to cover target + currentFee
         const needed = targetSompi + currentFee;
         inputsTotal = 0n;
         selectedUtxos = [];
@@ -124,8 +127,6 @@ export function buildTransaction(config: TransactionEngineConfig): TxPlan {
              throw new Error(`Insufficient funds. Required: ${needed}, Available: ${inputsTotal}`);
         }
 
-        // 3. Mass Estimation
-        // Re-estimate mass with newly selected inputs
         hasChange = inputsTotal > needed; 
         const massResult = estimateTransactionMass({
             inputCount: selectedUtxos.length,
@@ -134,34 +135,32 @@ export function buildTransaction(config: TransactionEngineConfig): TxPlan {
         });
         mass = massResult.mass;
 
-        // 4. Fee Engine
         const estimatedFeeRes = estimateFee({
             inputs: selectedUtxos.length,
             outputs: config.intent.outputs.length,
             feeRateSompiPerMass: feeRate,
-            policy: "minimal", // Default to exact calculated minimal based on rate
+            policy: "minimal",
             hasChange: hasChange
         });
 
         const recomputedFee = estimatedFeeRes.estimatedFeeSompi;
 
-        // 5. Check if re-selection is needed
         if (recomputedFee <= currentFee || inputsTotal >= targetSompi + recomputedFee) {
-            // Stable state achieved
             currentFee = recomputedFee;
             changeAmount = inputsTotal - targetSompi - currentFee;
             break;
         }
 
-        // Needs more inputs to cover the fee increase
         currentFee = recomputedFee;
+
+        if (iter === maxPasses && recomputedFee > currentFee) {
+          throw new FeeConvergenceError(`Fee and UTXO selection failed to converge after ${maxPasses} passes.`);
+        }
     }
 
-    // 6. Change Calculation
     let changeOutput: Output | undefined = undefined;
     if (changeAmount > 0n) {
         if (changeAmount < DUST_THRESHOLD_SOMPI) {
-            // Dust absorption: Add to miner fee
             currentFee += changeAmount;
             changeAmount = 0n;
         } else {
@@ -172,8 +171,6 @@ export function buildTransaction(config: TransactionEngineConfig): TxPlan {
         }
     }
 
-    // 7. Assemble TxPlan
-    // Generating a basic unsigned payload summary JSON for now
     const planSummary = {
         version: 1,
         inputs: selectedUtxos.map(u => ({ txId: u.outpoint.transactionId, index: u.outpoint.index, amount: u.amountSompi })),

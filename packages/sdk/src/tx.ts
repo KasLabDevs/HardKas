@@ -642,7 +642,7 @@ export class HardkasTx {
           }
           actualOptions.authorizers = actualAuthorizers;
         } else if (typeof accountOrOptions === "string") {
-          actualOptions.account = await this.sdk.accounts.resolve(accountOrOptions);
+          actualOptions.account = await this.sdk.accounts.resolve(accountOrOptions, (plan as any).execution);
         } else {
           actualOptions.account = accountOrOptions;
         }
@@ -686,9 +686,10 @@ export class HardkasTx {
 
     // Option parsing moved above
 
+    const planExecutionTarget = (plan as any).execution;
     if (actualOptions.account) {
       if (typeof actualOptions.account === "string") {
-        resolvedAccount = await this.sdk.accounts.resolve(actualOptions.account);
+        resolvedAccount = await this.sdk.accounts.resolve(actualOptions.account, planExecutionTarget);
       } else {
         resolvedAccount = actualOptions.account;
       }
@@ -701,7 +702,7 @@ export class HardkasTx {
         throw new Error(
           "Plan does not specify an account name and no account was provided for signing."
         );
-      resolvedAccount = await this.sdk.accounts.resolve(fromName);
+      resolvedAccount = await this.sdk.accounts.resolve(fromName, planExecutionTarget);
     }
 
     let actualAuthorizers = actualOptions.authorizers;

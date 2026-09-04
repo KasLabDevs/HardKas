@@ -6,7 +6,7 @@ import {
   SignTxPlanResult,
   HardkasSignerKind
 } from "./types.js";
-import { NetworkId } from "@hardkas/core";
+import { NetworkId, getNetworkPrefix } from "@hardkas/core";
 import { loadKaspaWasm, WasmProviderConfig } from "./signer-backend.js";
 import { KeystoreManager } from "./keystore.js";
 import { DEV_ACCOUNTS_PASSWORD } from "./dev-accounts.js";
@@ -92,7 +92,7 @@ export class KaspaWasmPrivateKeySigner implements HardkasTxPlanSigner {
           throw err;
         }
 
-        const expectedAddress = (new sdk.PrivateKey(pkValue) as any).toKeypair().toAddress(plan.networkId || "simnet").toString();
+        const expectedAddress = (new sdk.PrivateKey(pkValue) as any).toKeypair().toAddress(getNetworkPrefix(plan.networkId || "simnet")).toString();
         const { PrivateKeyAuthorizer } = await import("./authorizers.js");
         const sourceInputs = plan.inputs || (plan as any).selectedUtxos || [];
         
@@ -114,30 +114,47 @@ export class KaspaWasmPrivateKeySigner implements HardkasTxPlanSigner {
     }
 
     try {
-      console.log("DEBUG PLAN INPUTS:", JSON.stringify(plan.inputs || (plan as any).selectedUtxos, null, 2));
-
       const sourceInputs = plan.inputs || (plan as any).selectedUtxos || [];
       const utxos = sourceInputs.map((u: any) => {
         if (!u.outpoint.transactionId || u.outpoint.index === undefined) {
           throw new Error(`UTXO is missing transactionId or index. Re-run tx plan.`);
         }
 
-        const spk = (u as { scriptPublicKey?: string }).scriptPublicKey;
+        const spk = (u as { scriptPublicKey?: any }).scriptPublicKey;
         if (!spk) {
           throw new Error(
             "UTXO is missing scriptPublicKey. Real signing flows must never fabricate cryptographic state."
           );
         }
 
+        // ADJ-002 Transport Rule:
+        // preferred: { version, scriptPublicKey } -> use version explicitly -> preserve script bytes exactly
+        // legacy/transport-packed: 0000 + 34-byte script -> decode only when transport string is 72-char hex starting with version 0000
+        let spkHex = "";
+        let spkVersion = 0;
+
+        if (typeof spk === "object" && spk !== null) {
+          // Preferred structural representation: explicit version and script fields
+          spkVersion = Number(spk.version ?? 0);
+          spkHex = String(spk.scriptPublicKey || spk.script || "");
+        } else {
+          spkHex = String(spk);
+          // Legacy/Transport-packed representation: 0000 (uint16 version 0) + 34-byte script (72 hex chars)
+          if (/^[0-9a-fA-F]{72}$/.test(spkHex) && spkHex.startsWith("0000")) {
+            spkVersion = parseInt(spkHex.slice(0, 4), 16) || 0;
+            spkHex = spkHex.slice(4);
+          }
+        }
+
         return {
-          address: plan.from.address,
+          address: (u as any).address || plan.from.address,
           outpoint: {
             transactionId: u.outpoint.transactionId,
             index: u.outpoint.index
           },
           utxoEntry: {
             amount: BigInt(u.amountSompi),
-            scriptPublicKey: new sdk.ScriptPublicKey(parseInt(spk.substring(0, 4), 16) || 0, spk.substring(4)),
+            scriptPublicKey: new sdk.ScriptPublicKey(spkVersion, spkHex),
             blockDaaScore: BigInt((u as any).blockDaaScore || "0"),
             isCoinbase: !!(u as any).isCoinbase
           }
@@ -175,9 +192,6 @@ export class KaspaWasmPrivateKeySigner implements HardkasTxPlanSigner {
             return new sdk.PaymentOutput(new sdk.Address(o.address), BigInt(o.amountSompi));
           });
 
-          console.log("DEBUG: Calling V1 createTransaction with:", { utxos: utxos.length, wasmOutputs: wasmOutputs.length, priorityFee });
-          console.log("DEBUG KASPA-WASM PATH:", import.meta.resolve("kaspa-wasm"));
-          console.log("DEBUG CREATE TRANSACTION FN:", sdk.createTransaction.toString());
           unsignedTx = sdk.createTransaction(
             utxos,
             wasmOutputs,
@@ -223,12 +237,10 @@ export class KaspaWasmPrivateKeySigner implements HardkasTxPlanSigner {
             };
           });
 
-          console.log("DEBUG: Calling V0 createTransaction with:", { utxos: utxos.length, wasmOutputs: wasmOutputs.length, priorityFee });
-          // Even though we manually push the change output above, kaspa-wasm's createTransaction
-          // still requires a valid address string or object for the change_address parameter.
-          // We can just pass the from address, as any leftover will just be sent there (though
-          // there shouldn't be any leftover since we calculated it ourselves).
-          const dummyChange = plan.change?.address || plan.from.address;
+          const dummyChange =
+            (plan.change && plan.change.address) ||
+            (typeof plan.from === "string" ? plan.from : (plan.from as any)?.address) ||
+            (plan.outputs && plan.outputs[0] && plan.outputs[0].address);
           unsignedTx = sdk.createTransaction(
             utxos,
             wasmOutputs,
@@ -248,7 +260,6 @@ export class KaspaWasmPrivateKeySigner implements HardkasTxPlanSigner {
           }
         }
         // unsignedTx.inputs = inputs; // Removed: kaspa-wasm 0.13.0 exposes only a getter
-        console.log("DEBUG createFreshTx RETURNING:", unsignedTx?.constructor?.name);
         return unsignedTx;
       };
 
@@ -312,9 +323,6 @@ export class KaspaWasmPrivateKeySigner implements HardkasTxPlanSigner {
         ? (signedTx as any).serializeToJSON() 
         : signedTx.toString();
       
-      console.log("DEBUG wasmTxStr:", wasmTxStr);
-      
-      console.log("DEBUG: about to parseWasmTxToRpc");
       const rpcTx = parseWasmTxToRpc(wasmTxStr, signedTx, inputOverrides, plan);
       const rawTx = JSON.stringify(rpcTx);
 
@@ -333,8 +341,6 @@ export class KaspaWasmPrivateKeySigner implements HardkasTxPlanSigner {
       };
     } catch (error: any) {
       // Never log the private key
-      console.error("DEBUG SIGNING ERROR:", error);
-      console.error("DEBUG STACK:", error?.stack || "NO STACK (raw panic)");
       throw new Error(
         `Kaspa WASM signing failed: ${error instanceof Error ? error.stack || error.message : JSON.stringify(error, Object.getOwnPropertyNames(error))}`
       );

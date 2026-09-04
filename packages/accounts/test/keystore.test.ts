@@ -23,6 +23,7 @@ describe("KeystoreManager", () => {
     // Keystore format version (separate from ARTIFACT_VERSION)
     expect(keystore.version).toBe("2.0.0");
     expect(keystore.metadata.label).toBe("test-account");
+    // @ts-ignore
     expect(keystore.encryptedPayload).not.toBe(JSON.stringify(mockPayload));
 
     const result = await KeystoreManager.decryptEncryptedKeystore(keystore, password);
@@ -96,8 +97,11 @@ describe("KeystoreManager", () => {
       network: "devnet"
     });
 
+    // @ts-ignore
     expect(k1.kdf.salt).not.toBe(k2.kdf.salt);
+    // @ts-ignore
     expect(k1.cipher.nonce).not.toBe(k2.cipher.nonce);
+    // @ts-ignore
     expect(k1.encryptedPayload).not.toBe(k2.encryptedPayload);
   });
 
@@ -118,6 +122,7 @@ describe("KeystoreManager", () => {
       newPassword
     );
 
+    // @ts-ignore
     expect(updatedKeystore.encryptedPayload).not.toBe(keystore.encryptedPayload);
 
     const oldResult = await KeystoreManager.decryptEncryptedKeystore(
@@ -145,6 +150,7 @@ describe("KeystoreManager", () => {
     );
 
     const json = JSON.stringify(keystore);
+    // @ts-ignore
     expect(json).not.toContain(mockPayload.privateKey);
   });
 
@@ -197,3 +203,4 @@ describe("KeystoreManager", () => {
     expect(result.error).toContain("Unsupported keystore version");
   });
 });
+

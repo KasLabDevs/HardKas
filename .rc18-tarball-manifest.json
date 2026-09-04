@@ -1,0 +1,274 @@
+[
+  {
+    "package": "@hardkas/accounts",
+    "version": "0.12.0-rc.18",
+    "filename": "hardkas-accounts-0.12.0-rc.18.tgz",
+    "sizeBytes": 24255,
+    "sha256": "6f80c4a110e26e4990e03c05e2a21f59946b90bd8a8e9251e960526f9b12de36",
+    "path": "C:\\Users\\jrodr\\AppData\\Local\\Temp\\hardkas-rc18-exact-tarballs-1788519001053\\hardkas-accounts-0.12.0-rc.18.tgz"
+  },
+  {
+    "package": "@hardkas/artifacts",
+    "version": "0.12.0-rc.18",
+    "filename": "hardkas-artifacts-0.12.0-rc.18.tgz",
+    "sizeBytes": 48922,
+    "sha256": "09020964e69b0c6cf799f86a5939bbfde7c5e3b031b8f81d1f01b7979aeb10db",
+    "path": "C:\\Users\\jrodr\\AppData\\Local\\Temp\\hardkas-rc18-exact-tarballs-1788519001053\\hardkas-artifacts-0.12.0-rc.18.tgz"
+  },
+  {
+    "package": "@hardkas/bridge-local",
+    "version": "0.12.0-rc.18",
+    "filename": "hardkas-bridge-local-0.12.0-rc.18.tgz",
+    "sizeBytes": 3891,
+    "sha256": "27ab513f4eaea410b5e26b7faeb6c9e4a113ded11bd0a5670622016e22901df5",
+    "path": "C:\\Users\\jrodr\\AppData\\Local\\Temp\\hardkas-rc18-exact-tarballs-1788519001053\\hardkas-bridge-local-0.12.0-rc.18.tgz"
+  },
+  {
+    "package": "@hardkas/cli",
+    "version": "0.12.0-rc.18",
+    "filename": "hardkas-cli-0.12.0-rc.18.tgz",
+    "sizeBytes": 269988,
+    "sha256": "ab4e940e56d47af2e44b69dd1a5c849400a9274d00d047c6b79260e01cb566c0",
+    "path": "C:\\Users\\jrodr\\AppData\\Local\\Temp\\hardkas-rc18-exact-tarballs-1788519001053\\hardkas-cli-0.12.0-rc.18.tgz"
+  },
+  {
+    "package": "@hardkas/client",
+    "version": "0.12.0-rc.18",
+    "filename": "hardkas-client-0.12.0-rc.18.tgz",
+    "sizeBytes": 2658,
+    "sha256": "5671ea830c098f06343313f5070a318697b9fe83d8d6d447080af128e2f7b0cf",
+    "path": "C:\\Users\\jrodr\\AppData\\Local\\Temp\\hardkas-rc18-exact-tarballs-1788519001053\\hardkas-client-0.12.0-rc.18.tgz"
+  },
+  {
+    "package": "@hardkas/config",
+    "version": "0.12.0-rc.18",
+    "filename": "hardkas-config-0.12.0-rc.18.tgz",
+    "sizeBytes": 5006,
+    "sha256": "84da60997228ab07631ee8e7502df39dbc16ee5463289c1607ff1345cbb4408b",
+    "path": "C:\\Users\\jrodr\\AppData\\Local\\Temp\\hardkas-rc18-exact-tarballs-1788519001053\\hardkas-config-0.12.0-rc.18.tgz"
+  },
+  {
+    "package": "@hardkas/core",
+    "version": "0.12.0-rc.18",
+    "filename": "hardkas-core-0.12.0-rc.18.tgz",
+    "sizeBytes": 37034,
+    "sha256": "05b681c56393c94f3a9d414c3ef63758581324e07cd91f400c10cac0eaaa20c6",
+    "path": "C:\\Users\\jrodr\\AppData\\Local\\Temp\\hardkas-rc18-exact-tarballs-1788519001053\\hardkas-core-0.12.0-rc.18.tgz"
+  },
+  {
+    "package": "@hardkas/dev-server",
+    "version": "0.12.0-rc.18",
+    "filename": "hardkas-dev-server-0.12.0-rc.18.tgz",
+    "sizeBytes": 127152,
+    "sha256": "fe838bd6300b327ccf24092a9abef005ff3bec053f98746ff2b49d47b442c2bd",
+    "path": "C:\\Users\\jrodr\\AppData\\Local\\Temp\\hardkas-rc18-exact-tarballs-1788519001053\\hardkas-dev-server-0.12.0-rc.18.tgz"
+  },
+  {
+    "package": "@hardkas/escrow",
+    "version": "0.12.0-rc.18",
+    "filename": "hardkas-escrow-0.12.0-rc.18.tgz",
+    "sizeBytes": 2350,
+    "sha256": "a7bb19c6af37a3b371206e7cde267bd943a632f4fa3d0c9beb243d498bb2b9a5",
+    "path": "C:\\Users\\jrodr\\AppData\\Local\\Temp\\hardkas-rc18-exact-tarballs-1788519001053\\hardkas-escrow-0.12.0-rc.18.tgz"
+  },
+  {
+    "package": "@hardkas/jobs",
+    "version": "0.12.0-rc.18",
+    "filename": "hardkas-jobs-0.12.0-rc.18.tgz",
+    "sizeBytes": 7365,
+    "sha256": "336439960890c01a3bf4a9cb46b67c4b451b91618a72bcc984214e579f13f8b8",
+    "path": "C:\\Users\\jrodr\\AppData\\Local\\Temp\\hardkas-rc18-exact-tarballs-1788519001053\\hardkas-jobs-0.12.0-rc.18.tgz"
+  },
+  {
+    "package": "@hardkas/kaspa-rpc",
+    "version": "0.12.0-rc.18",
+    "filename": "hardkas-kaspa-rpc-0.12.0-rc.18.tgz",
+    "sizeBytes": 25984,
+    "sha256": "c50d4963ddc1003cdad2911994c7107394e5cfbcd75f4a1c3a39d06bf2f06027",
+    "path": "C:\\Users\\jrodr\\AppData\\Local\\Temp\\hardkas-rc18-exact-tarballs-1788519001053\\hardkas-kaspa-rpc-0.12.0-rc.18.tgz"
+  },
+  {
+    "package": "@hardkas/l2",
+    "version": "0.12.0-rc.18",
+    "filename": "hardkas-l2-0.12.0-rc.18.tgz",
+    "sizeBytes": 8531,
+    "sha256": "9515cf514777c7335cb3a561181efdf7551a4b2bf215c7db0d498a613359dbde",
+    "path": "C:\\Users\\jrodr\\AppData\\Local\\Temp\\hardkas-rc18-exact-tarballs-1788519001053\\hardkas-l2-0.12.0-rc.18.tgz"
+  },
+  {
+    "package": "@hardkas/localnet",
+    "version": "0.12.0-rc.18",
+    "filename": "hardkas-localnet-0.12.0-rc.18.tgz",
+    "sizeBytes": 17020,
+    "sha256": "dde7168f6f7009875048dd846d659e3b7568c9d84635f65fc6d7d0629dacbb32",
+    "path": "C:\\Users\\jrodr\\AppData\\Local\\Temp\\hardkas-rc18-exact-tarballs-1788519001053\\hardkas-localnet-0.12.0-rc.18.tgz"
+  },
+  {
+    "package": "@hardkas/node-orchestrator",
+    "version": "0.12.0-rc.18",
+    "filename": "hardkas-node-orchestrator-0.12.0-rc.18.tgz",
+    "sizeBytes": 4101,
+    "sha256": "15611d36ec45fd7487e3280fc0f5a6f8291b045b5129b0399ff623336d036b17",
+    "path": "C:\\Users\\jrodr\\AppData\\Local\\Temp\\hardkas-rc18-exact-tarballs-1788519001053\\hardkas-node-orchestrator-0.12.0-rc.18.tgz"
+  },
+  {
+    "package": "@hardkas/node-runner",
+    "version": "0.12.0-rc.18",
+    "filename": "hardkas-node-runner-0.12.0-rc.18.tgz",
+    "sizeBytes": 4890,
+    "sha256": "004d3e6acb360d77dbd8f4d9602bb9fc2a0e3351d311f24ae921437b1ba0c84c",
+    "path": "C:\\Users\\jrodr\\AppData\\Local\\Temp\\hardkas-rc18-exact-tarballs-1788519001053\\hardkas-node-runner-0.12.0-rc.18.tgz"
+  },
+  {
+    "package": "@hardkas/observability",
+    "version": "0.12.0-rc.18",
+    "filename": "hardkas-observability-0.12.0-rc.18.tgz",
+    "sizeBytes": 2966,
+    "sha256": "58ab79b4d9739c5894ae82bfb08ed3bd045b45521c9fd6912b698a06b2150790",
+    "path": "C:\\Users\\jrodr\\AppData\\Local\\Temp\\hardkas-rc18-exact-tarballs-1788519001053\\hardkas-observability-0.12.0-rc.18.tgz"
+  },
+  {
+    "package": "@hardkas/plugin-local-indexer",
+    "version": "0.12.0-rc.18",
+    "filename": "hardkas-plugin-local-indexer-0.12.0-rc.18.tgz",
+    "sizeBytes": 1330,
+    "sha256": "a4c810af4f34cff6132d86d465d9f30b9188e4df3f7c1d53646c7a52894d190f",
+    "path": "C:\\Users\\jrodr\\AppData\\Local\\Temp\\hardkas-rc18-exact-tarballs-1788519001053\\hardkas-plugin-local-indexer-0.12.0-rc.18.tgz"
+  },
+  {
+    "package": "@hardkas/plugin-rpc-backend",
+    "version": "0.12.0-rc.18",
+    "filename": "hardkas-plugin-rpc-backend-0.12.0-rc.18.tgz",
+    "sizeBytes": 7037,
+    "sha256": "19382dc5e756736f6ef1f483c4195cb4210d64e9908a13bf77261adcd8599a71",
+    "path": "C:\\Users\\jrodr\\AppData\\Local\\Temp\\hardkas-rc18-exact-tarballs-1788519001053\\hardkas-plugin-rpc-backend-0.12.0-rc.18.tgz"
+  },
+  {
+    "package": "@hardkas/pskt-native",
+    "version": "0.12.0-rc.18",
+    "filename": "hardkas-pskt-native-0.12.0-rc.18.tgz",
+    "sizeBytes": 2116737,
+    "sha256": "efbd1244b0a8309d12a1b9b4a075266cdafc187a52c7d403e902a2358a11aca5",
+    "path": "C:\\Users\\jrodr\\AppData\\Local\\Temp\\hardkas-rc18-exact-tarballs-1788519001053\\hardkas-pskt-native-0.12.0-rc.18.tgz"
+  },
+  {
+    "package": "@hardkas/query",
+    "version": "0.12.0-rc.18",
+    "filename": "hardkas-query-0.12.0-rc.18.tgz",
+    "sizeBytes": 23128,
+    "sha256": "6f7e494a766ee4329cf4e3378d46a9d528514bd7e5e6fb34a9b758271b6a8bc4",
+    "path": "C:\\Users\\jrodr\\AppData\\Local\\Temp\\hardkas-rc18-exact-tarballs-1788519001053\\hardkas-query-0.12.0-rc.18.tgz"
+  },
+  {
+    "package": "@hardkas/query-store",
+    "version": "0.12.0-rc.18",
+    "filename": "hardkas-query-store-0.12.0-rc.18.tgz",
+    "sizeBytes": 28621,
+    "sha256": "d8d343458491972cfc34cf6ee46cba055345c8d776e5c7bae3d48548055ff270",
+    "path": "C:\\Users\\jrodr\\AppData\\Local\\Temp\\hardkas-rc18-exact-tarballs-1788519001053\\hardkas-query-store-0.12.0-rc.18.tgz"
+  },
+  {
+    "package": "@hardkas/react",
+    "version": "0.12.0-rc.18",
+    "filename": "hardkas-react-0.12.0-rc.18.tgz",
+    "sizeBytes": 2628,
+    "sha256": "42fcd05ff14e182212c48023676a9850ce3841c95d7c6b2d2db7d40ebd5d0183",
+    "path": "C:\\Users\\jrodr\\AppData\\Local\\Temp\\hardkas-rc18-exact-tarballs-1788519001053\\hardkas-react-0.12.0-rc.18.tgz"
+  },
+  {
+    "package": "@hardkas/rpc-events",
+    "version": "0.12.0-rc.18",
+    "filename": "hardkas-rpc-events-0.12.0-rc.18.tgz",
+    "sizeBytes": 15017,
+    "sha256": "fd4cfe6915b9ef5d2853126981bc155b6fbb3b05cb1b7b9d2fab240d9493dfe2",
+    "path": "C:\\Users\\jrodr\\AppData\\Local\\Temp\\hardkas-rc18-exact-tarballs-1788519001053\\hardkas-rpc-events-0.12.0-rc.18.tgz"
+  },
+  {
+    "package": "@hardkas/sdk",
+    "version": "0.12.0-rc.18",
+    "filename": "hardkas-sdk-0.12.0-rc.18.tgz",
+    "sizeBytes": 97676,
+    "sha256": "979985fb0cf6f24238e41b8b53d2d68bbb1ec5059e404ca26ef323a27c8f83b2",
+    "path": "C:\\Users\\jrodr\\AppData\\Local\\Temp\\hardkas-rc18-exact-tarballs-1788519001053\\hardkas-sdk-0.12.0-rc.18.tgz"
+  },
+  {
+    "package": "@hardkas/sessions",
+    "version": "0.12.0-rc.18",
+    "filename": "hardkas-sessions-0.12.0-rc.18.tgz",
+    "sizeBytes": 1950,
+    "sha256": "cfe553462eaf2c7524b2f5b9b156fbcc4e7f6ace578b239399c16ecdb5e41d26",
+    "path": "C:\\Users\\jrodr\\AppData\\Local\\Temp\\hardkas-rc18-exact-tarballs-1788519001053\\hardkas-sessions-0.12.0-rc.18.tgz"
+  },
+  {
+    "package": "@hardkas/simulator",
+    "version": "0.12.0-rc.18",
+    "filename": "hardkas-simulator-0.12.0-rc.18.tgz",
+    "sizeBytes": 15420,
+    "sha256": "8d133d279410082a588a90fc860042ea97ae9ad474b5e06d576d4f9159487017",
+    "path": "C:\\Users\\jrodr\\AppData\\Local\\Temp\\hardkas-rc18-exact-tarballs-1788519001053\\hardkas-simulator-0.12.0-rc.18.tgz"
+  },
+  {
+    "package": "@hardkas/simulator-adapters",
+    "version": "0.12.0-rc.18",
+    "filename": "hardkas-simulator-adapters-0.12.0-rc.18.tgz",
+    "sizeBytes": 2230,
+    "sha256": "e1b1067d5bcc617460e08f25fef76a1ba3a2bff1348d1c3f2face6a6f6322372",
+    "path": "C:\\Users\\jrodr\\AppData\\Local\\Temp\\hardkas-rc18-exact-tarballs-1788519001053\\hardkas-simulator-adapters-0.12.0-rc.18.tgz"
+  },
+  {
+    "package": "@hardkas/storage-postgres",
+    "version": "0.12.0-rc.18",
+    "filename": "hardkas-storage-postgres-0.12.0-rc.18.tgz",
+    "sizeBytes": 3376,
+    "sha256": "1fd47bad239c6a23a5b3e46487ad3b2c260751429c2d886d60c00f1871040ede",
+    "path": "C:\\Users\\jrodr\\AppData\\Local\\Temp\\hardkas-rc18-exact-tarballs-1788519001053\\hardkas-storage-postgres-0.12.0-rc.18.tgz"
+  },
+  {
+    "package": "@hardkas/storage-sqlite",
+    "version": "0.12.0-rc.18",
+    "filename": "hardkas-storage-sqlite-0.12.0-rc.18.tgz",
+    "sizeBytes": 4835,
+    "sha256": "801928c58ee02666f964e6942755fc3ad8eb90206bac86d5d3c077ce8c6dec03",
+    "path": "C:\\Users\\jrodr\\AppData\\Local\\Temp\\hardkas-rc18-exact-tarballs-1788519001053\\hardkas-storage-sqlite-0.12.0-rc.18.tgz"
+  },
+  {
+    "package": "@hardkas/sync-daemon",
+    "version": "0.12.0-rc.18",
+    "filename": "hardkas-sync-daemon-0.12.0-rc.18.tgz",
+    "sizeBytes": 5965,
+    "sha256": "87b4fd84bcfabfafa2adafd00b51706e0fe9b36f4320c91ef0bf1ff692f18453",
+    "path": "C:\\Users\\jrodr\\AppData\\Local\\Temp\\hardkas-rc18-exact-tarballs-1788519001053\\hardkas-sync-daemon-0.12.0-rc.18.tgz"
+  },
+  {
+    "package": "@hardkas/testing",
+    "version": "0.12.0-rc.18",
+    "filename": "hardkas-testing-0.12.0-rc.18.tgz",
+    "sizeBytes": 63102,
+    "sha256": "3f92f1a2c4c0274b6670d776e7e69d0b1284ee09dbb0bc646ab1844b7f897398",
+    "path": "C:\\Users\\jrodr\\AppData\\Local\\Temp\\hardkas-rc18-exact-tarballs-1788519001053\\hardkas-testing-0.12.0-rc.18.tgz"
+  },
+  {
+    "package": "@hardkas/toolkit",
+    "version": "0.12.0-rc.18",
+    "filename": "hardkas-toolkit-0.12.0-rc.18.tgz",
+    "sizeBytes": 42555,
+    "sha256": "f4a1b1fab4aeae83b12cd4922e7e5095d7b110e27922fd8c8433bfa92cea514d",
+    "path": "C:\\Users\\jrodr\\AppData\\Local\\Temp\\hardkas-rc18-exact-tarballs-1788519001053\\hardkas-toolkit-0.12.0-rc.18.tgz"
+  },
+  {
+    "package": "@hardkas/tx-builder",
+    "version": "0.12.0-rc.18",
+    "filename": "hardkas-tx-builder-0.12.0-rc.18.tgz",
+    "sizeBytes": 13555,
+    "sha256": "4cbd2a1ceed5e9d4831fa9627c78d35fb425cb4b745f43299d7d7eca80aa8c2a",
+    "path": "C:\\Users\\jrodr\\AppData\\Local\\Temp\\hardkas-rc18-exact-tarballs-1788519001053\\hardkas-tx-builder-0.12.0-rc.18.tgz"
+  },
+  {
+    "package": "@hardkas/wallet-adapter",
+    "version": "0.12.0-rc.18",
+    "filename": "hardkas-wallet-adapter-0.12.0-rc.18.tgz",
+    "sizeBytes": 3056,
+    "sha256": "39e41e492bce132cc5115583712c5dbb2cbcd4a8c37e8a84773cd126e0b6faac",
+    "path": "C:\\Users\\jrodr\\AppData\\Local\\Temp\\hardkas-rc18-exact-tarballs-1788519001053\\hardkas-wallet-adapter-0.12.0-rc.18.tgz"
+  }
+]

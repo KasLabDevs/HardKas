@@ -28,47 +28,51 @@ export class EvidenceManager {
     const rawResult = fs.readFileSync(options.scenarioResultPath, "utf-8");
     const scenarioResult = JSON.parse(rawResult) as ScenarioResult;
 
-    const artifactsDir = path.join(options.workspaceRoot, ".hardkas", "artifacts");
-    const generatedIds = new Set(scenarioResult.artifactsGenerated || []);
-
-    // Fallback scan
-    if (fs.existsSync(artifactsDir)) {
-      const files = fs.readdirSync(artifactsDir);
-      for (const file of files) {
-        if (file.endsWith(".json")) {
-          const id = file.replace(".json", "");
-          // Exclude the scenario result itself or other scenario results from being bundled as sub-artifacts
-          if (!file.includes("scenario-result") && !file.includes(".hke.json")) {
-            generatedIds.add(id);
-          }
-        }
-      }
-    }
+    const { ProjectArtifactStore } = await import("@hardkas/artifacts");
+    const store = new ProjectArtifactStore(options.workspaceRoot);
+    const canonicalEntries = await store.enumerateCanonicalArtifacts();
 
     const artifacts: any[] = [];
     const hashes: Record<string, string> = {};
+    const seenHashes = new Set<string>();
 
-    for (const id of Array.from(generatedIds)) {
-      // Find the file. It could be `<id>.json` or `<id>.trace.json` etc
-      const files = fs.readdirSync(artifactsDir).filter(f => f.includes(id) && f.endsWith(".json"));
-      
-      for (const file of files) {
-        const filePath = path.join(artifactsDir, file);
-        const raw = fs.readFileSync(filePath, "utf-8");
-        const artifactObj = JSON.parse(raw);
-        artifacts.push(artifactObj);
+    const generatedIds = new Set(scenarioResult.artifactsGenerated || []);
 
-        const fileKey = file.replace(".json", "");
-        
-        hashes[fileKey] = calculateContentHash(artifactObj);
+    for (const entry of canonicalEntries) {
+      const art = entry.artifact;
+      if (!art || typeof art !== "object") continue;
+
+      // Exclude scenario results or .hke packages from being bundled inside evidence packages
+      if (
+        art.schema?.includes("scenarioResult") ||
+        entry.relativeSubpath.includes("scenario-result") ||
+        entry.relativeSubpath.endsWith(".hke.json")
+      ) {
+        continue;
       }
+
+      // If scenarioResult specified explicit generatedIds, filter by them; otherwise include all canonical artifacts
+      if (
+        generatedIds.size > 0 &&
+        !generatedIds.has(entry.id) &&
+        !Array.from(generatedIds).some(gId => entry.id.includes(gId) || entry.relativeSubpath.includes(gId))
+      ) {
+        continue;
+      }
+
+      const hashKey = entry.contentHash || entry.id || entry.relativeSubpath;
+      if (seenHashes.has(hashKey)) continue;
+      seenHashes.add(hashKey);
+
+      artifacts.push(art);
+      hashes[hashKey] = entry.contentHash || calculateContentHash(art);
     }
 
     const pkg: EvidencePackage = {
       version: "1.0.0-alpha",
       schema: HardkasSchemas.EvidencePackageV1 as any,
       name: scenarioResult.scenarioName,
-      hardkasVersion: "0.12.0-rc.17",
+      hardkasVersion: "0.12.0-rc.18",
       networkId: scenarioResult.networkId,
       mode: scenarioResult.mode,
       createdAt: new Date().toISOString(),

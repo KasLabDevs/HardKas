@@ -6,7 +6,7 @@ import { TxPlanArtifact } from "@hardkas/artifacts";
 describe("PrivateKeyAuthorizer", () => {
   const mockPlan: TxPlanArtifact = {
     schema: "hardkas.txPlan",
-    hardkasVersion: "0.12.0-rc.17",
+    hardkasVersion: "0.12.0-rc.18",
     version: "1.0.0-alpha",
     createdAt: new Date().toISOString(),
     planId: "plan123",
@@ -97,3 +97,4 @@ describe("PrivateKeyAuthorizer", () => {
     })).rejects.toThrow(/Kaspa WASM failed to generate a signature script/);
   });
 });
+

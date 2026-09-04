@@ -4,36 +4,34 @@ import { Utxo, createMockUtxo } from "../src/index.js";
 
 describe("CoinSelector", () => {
   const dummyUtxos: Utxo[] = [
-    createMockUtxo({ address: "kaspatest:1", amountSompi: 2000n, index: 0 }),
-    createMockUtxo({ address: "kaspatest:2", amountSompi: 3000n, index: 1 }),
-    createMockUtxo({ address: "kaspatest:3", amountSompi: 5000n, index: 2 }),
+    createMockUtxo({ address: "kaspatest:1", amountSompi: 2000000n, index: 0 }),
+    createMockUtxo({ address: "kaspatest:2", amountSompi: 3000000n, index: 1 }),
+    createMockUtxo({ address: "kaspatest:3", amountSompi: 5000000n, index: 2 }),
     createMockUtxo({ address: "kaspatest:4", amountSompi: 50n, index: 3 }) // Dust
   ];
 
   it("exact match (if fees were zero, but fees exist, so needs more)", () => {
     // To get an exact match we need the UTXO to perfectly cover target + fee
-    const utxos = [createMockUtxo({ address: "kaspatest:ex", amountSompi: 1660n, index: 0 })];
-    // If target is 1000 and fee is 660
-    const request: CoinSelectionRequest = {
-      utxos,
+    // If target is 1000, fee rate 1 (floors to 100).
+    // Mass: 86 + 1110 + 420 = 1616.
+    // Fee = 161600.
+    // Conservative fee = (161600 * 110 + 99)/100 = 177760n.
+    // Target 1000 + 177760 = 178760n.
+    const utxoExact = [createMockUtxo({ address: "kaspatest:ex", amountSompi: 178760n, index: 0 })];
+    const requestExact: CoinSelectionRequest = {
+      utxos: utxoExact,
       targetSompi: 1000n,
-      feeRateSompiPerMass: 1n, // small fee
+      feeRateSompiPerMass: 1n,
       strategy: "largest-first",
       changeAddress: "kaspatest:change",
       dustThresholdSompi: 100n,
       coinbaseMaturity: 100n
     };
-    
-    // mass for 1 input + 1 output (no change) = 100 (base) + 160 (in) + 400 (out) = 660
-    // base fee is 660. Conservative fee = (660 * 110 + 99)/100 = 726
-    // If we want exact match with fee 726 and target 1000, we need exactly 1726n.
-    const utxoExact = [createMockUtxo({ address: "kaspatest:ex", amountSompi: 1726n, index: 0 })];
-    const requestExact: CoinSelectionRequest = { ...request, utxos: utxoExact };
 
     const result = selectCoins(requestExact);
     expect(result.selectedUtxos.length).toBe(1);
     expect(result.changeSompi).toBe(0n); // Exact match
-    expect(result.estimatedFeeSompi).toBe(726n);
+    expect(result.estimatedFeeSompi).toBe(177760n);
     expect(result.outputs.length).toBe(1); // No change output
   });
 
@@ -50,8 +48,8 @@ describe("CoinSelector", () => {
 
     const result = selectCoins(request);
     expect(result.selectedUtxos.length).toBe(1);
-    // Largest is 5000n. 
-    expect(result.selectedUtxos[0]!.amountSompi).toBe(5000n);
+    // Largest is 5000000n. 
+    expect(result.selectedUtxos[0]!.amountSompi).toBe(5000000n);
     expect(result.changeSompi).toBeGreaterThan(0n);
     expect(result.outputs.length).toBe(2); // main + change
     expect(result.outputs[1]!.address).toBe("kaspatest:change");
@@ -60,7 +58,7 @@ describe("CoinSelector", () => {
   it("insufficient funds", () => {
     const request: CoinSelectionRequest = {
       utxos: dummyUtxos,
-      targetSompi: 10000n,
+      targetSompi: 15000000n,
       feeRateSompiPerMass: 1n,
       strategy: "largest-first",
       changeAddress: "kaspatest:change",
@@ -74,7 +72,7 @@ describe("CoinSelector", () => {
   it("dust UTXOs ignored", () => {
     const request: CoinSelectionRequest = {
       utxos: dummyUtxos,
-      targetSompi: 7000n, // requires 5000 + 2000
+      targetSompi: 7000000n, // requires 5000000 + 3000000 (since strategy smallest-first starts with 2000000)
       feeRateSompiPerMass: 1n,
       strategy: "smallest-first",
       changeAddress: "kaspatest:change",
@@ -83,8 +81,9 @@ describe("CoinSelector", () => {
     };
 
     const result = selectCoins(request);
-    // Should use 2000, 3000, 5000. It should ignore 50n (dust)
+    // Should use 2000000, 3000000, 5000000. It should ignore 50n (dust)
     const selectedAmounts = result.selectedUtxos.map(u => u.amountSompi);
+    // @ts-ignore - Vitest .not typing issue
     expect(selectedAmounts).not.toContain(50n);
     expect(result.dustRejected.length).toBe(1);
     expect(result.dustRejected[0]!.amountSompi).toBe(50n);
@@ -94,11 +93,11 @@ describe("CoinSelector", () => {
   it("many small UTXOs", () => {
     const manyUtxos: Utxo[] = [];
     for(let i=0; i<100; i++) {
-        manyUtxos.push(createMockUtxo({ address: `kaspatest:${i}`, amountSompi: 500n, index: i }));
+        manyUtxos.push(createMockUtxo({ address: `kaspatest:${i}`, amountSompi: 300000n, index: i }));
     }
     const request: CoinSelectionRequest = {
         utxos: manyUtxos,
-        targetSompi: 20000n, // Needs 40 UTXOs + fees
+        targetSompi: 8000000n, // Needs 40 UTXOs + fees
         feeRateSompiPerMass: 1n,
         strategy: "smallest-first",
         changeAddress: "kaspatest:change",
@@ -108,13 +107,13 @@ describe("CoinSelector", () => {
 
     const result = selectCoins(request);
     expect(result.selectedUtxos.length).toBeGreaterThanOrEqual(40);
-    expect(result.totalInputSompi).toBeGreaterThanOrEqual(20000n + result.estimatedFeeSompi);
+    expect(result.totalInputSompi).toBeGreaterThanOrEqual(8000000n + result.estimatedFeeSompi);
   });
 
   it("deterministic output", () => {
     // Two UTXOs with exact same amount. Order in array should not matter for tie-breaking.
-    const utxoA = createMockUtxo({ address: "kaspatest:A", amountSompi: 1000n, index: 1 }); // txId mock-kaspatest:A-1
-    const utxoB = createMockUtxo({ address: "kaspatest:B", amountSompi: 1000n, index: 0 }); // txId mock-kaspatest:B-0
+    const utxoA = createMockUtxo({ address: "kaspatest:A", amountSompi: 1000000n, index: 1 }); // txId mock-kaspatest:A-1
+    const utxoB = createMockUtxo({ address: "kaspatest:B", amountSompi: 1000000n, index: 0 }); // txId mock-kaspatest:B-0
 
     // B has lower txId than A because 'mock-kaspatest:A-1' vs 'mock-kaspatest:B-0'. 
     // Wait, 'A' comes before 'B' in string comparison. So A has lower txId.
