@@ -92,8 +92,8 @@ export async function runTxPlan(input: TxPlanRunnerInput): Promise<TxPlanArtifac
   const toAccount = resolveHardkasAccount({ nameOrAddress: to, config: resolvedConfig, executionTarget: execution });
   assertAccountCompatible(toAccount, execution);
 
-  const fromAddress = fromAccount.address;
-  const toAddress = toAccount.address;
+  const fromAddress = fromAccount.address as string;
+  const toAddress = toAccount.address as string;
 
   let effectiveNetworkId = networkId;
   if (networkId === "simnet" && resolvedConfig.networks?.simnet?.kind === "simulated") {
