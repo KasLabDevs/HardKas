@@ -93,7 +93,7 @@ describe("CoinSelector", () => {
   it("many small UTXOs", () => {
     const manyUtxos: Utxo[] = [];
     for(let i=0; i<100; i++) {
-        manyUtxos.push(createMockUtxo({ address: `kaspatest:${i}`, amountSompi: 200000n, index: i }));
+        manyUtxos.push(createMockUtxo({ address: `kaspatest:${i}`, amountSompi: 300000n, index: i }));
     }
     const request: CoinSelectionRequest = {
         utxos: manyUtxos,

@@ -162,7 +162,9 @@ describe("Reachability", () => {
     const bBlock = blocks.get(b)!;
     const mergeset = unorderedMergesetWithoutSelectedParent(bBlock, a, blocks);
     expect(mergeset).toContain(c);
+    // @ts-ignore
     expect(mergeset).not.toContain(a);
+    // @ts-ignore
     expect(mergeset).not.toContain(g);
   });
 

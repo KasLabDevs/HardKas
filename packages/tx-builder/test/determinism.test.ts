@@ -404,7 +404,7 @@ describe("P1.12 Deterministic Transaction Canonicalization", () => {
 
     const plan = buildPaymentPlan({ coinbaseMaturity: 100n,
       fromAddress: mockFrom,
-      outputs: [{ address: mockTo, amountSompi: 1500000n }],
+      outputs: [{ address: mockTo, amountSompi: 2500000n }],
       availableUtxos: equalUtxos,
       feeRateSompiPerMass: 1n,
       changeAddress: mockFrom
