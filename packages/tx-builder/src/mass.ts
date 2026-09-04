@@ -8,6 +8,9 @@ export interface MassBreakdown {
 
 export interface MassEstimateResult {
   mass: bigint;
+  computeMass: bigint;
+  transientMass: bigint;
+  feeMass: bigint;
   txBytes: bigint;
   feeSompi: bigint;
   breakdown: MassBreakdown;
@@ -15,120 +18,132 @@ export interface MassEstimateResult {
   warnings: string[];
 }
 
-/**
- * Protocol-aware mass estimation constants for Kaspa (approximate).
- * These values align with standard P2PK/Schnorr transactions.
- */
-export const KASPA_MASS_CONSTANTS = {
-  /** Base transaction overhead (version, locktime, subnetwork id, gas, etc.) */
-  BASE_TRANSACTION: 100n,
-
-  /** Mass per input (Outpoint + Sequence + SigScript + ComputeBudget) */
-  INPUT_P2PK: 160n,
-
-  /** Mass per output (Amount + SPK length prefix + SPK) + KIP-9 SPK mass multiplier (34 bytes * 10 = 340) */
-  OUTPUT_P2PK: 400n,
-
-  /** Fallback mass for unknown script types */
-  SCRIPT_FALLBACK: 500n,
-
-  /** Mass per byte of payload */
-  PAYLOAD_BYTE: 1n
-} as const;
-
-/**
- * Estimates the mass of a transaction based on its structure and script types.
- *
- * Note: alpha mass estimation is protocol-aware but still validated
- * as best-effort until parity tests with kaspad/rusty-kaspa are complete.
- */
-export function estimateTransactionMass(input: {
+export interface ConsensusMassInput {
   inputCount: number;
   outputs: readonly { address: string; scriptPublicKey?: string }[];
   payloadBytes?: number;
+  signatureScriptBytes?: number;
   hasChange?: boolean;
-}): MassEstimateResult {
-  const assumptions: string[] = [];
-  const warnings: string[] = [];
+}
 
-  const base = KASPA_MASS_CONSTANTS.BASE_TRANSACTION;
+export interface ConsensusMassResult {
+  computeMass: bigint;
+  transientMass: bigint;
+  feeMass: bigint;
+  storageMass: bigint; // Note: Strictly excluded from relay fee floor
+}
 
-  // All inputs are assumed P2PK/Schnorr for now in this version
-  const inputs = BigInt(input.inputCount) * KASPA_MASS_CONSTANTS.INPUT_P2PK;
-  assumptions.push(`Inputs assumed P2PK/Schnorr (${input.inputCount})`);
+/**
+ * Protocol constants aligning with rusty-kaspa consensus mass calculation
+ * (consensus/core/src/mass/mod.rs)
+ */
+export const KASPA_CONSENSUS_MASS = {
+  BASE_TRANSACTION: 86n,
+  INPUT_OUTPOINT_AND_SEQ: 450n, // 36b outpoint (360) + 8b seq (80) + 1b sigOpCount (10)
+  SIG_SCRIPT_BYTE_MULTIPLIER: 10n,
+  OUTPUT_P2PK: 420n, // 8b amount (80) + 34b SPK (340)
+  SCRIPT_FALLBACK_OUTPUT: 500n,
+  PAYLOAD_TRANSIENT_MULTIPLIER: 10n
+} as const;
 
-  // Calculate output mass based on script types
-  let outputs = 0n;
+/**
+ * Legacy alias constants for backward compatibility
+ */
+export const KASPA_MASS_CONSTANTS = {
+  BASE_TRANSACTION: 86n,
+  INPUT_P2PK: 1110n,
+  OUTPUT_P2PK: 420n,
+  SCRIPT_FALLBACK: 500n,
+  PAYLOAD_BYTE: 10n
+} as const;
 
-  for (const out of input.outputs) {
+/**
+ * Calculates official rusty-kaspa consensus non-contextual mass.
+ *
+ * Formula:
+ *   feeMass = max(computeMass, normalizedTransientMass)
+ *   storageMass is excluded from relay fee floor.
+ */
+export function calculateConsensusNonContextualMass(input: ConsensusMassInput): ConsensusMassResult {
+  const sigScriptLen = BigInt(input.signatureScriptBytes ?? 66);
+  const inputComputeMass = KASPA_CONSENSUS_MASS.INPUT_OUTPOINT_AND_SEQ + (sigScriptLen * KASPA_CONSENSUS_MASS.SIG_SCRIPT_BYTE_MULTIPLIER);
+
+  let outputsCompute = 0n;
+  const outputList = input.outputs || [];
+  for (const out of outputList) {
     if (isP2PK(out.scriptPublicKey || out.address)) {
-      outputs += KASPA_MASS_CONSTANTS.OUTPUT_P2PK;
+      outputsCompute += KASPA_CONSENSUS_MASS.OUTPUT_P2PK;
     } else {
-      outputs += KASPA_MASS_CONSTANTS.SCRIPT_FALLBACK;
-      warnings.push(
-        `P2SH/Other script detected for address: ${out.address}. Mass is estimated using placeholder script-size assumptions.`
-      );
+      outputsCompute += KASPA_CONSENSUS_MASS.SCRIPT_FALLBACK_OUTPUT;
     }
   }
 
-  // Add change output if applicable (assumed P2PK)
   if (input.hasChange) {
-    outputs += KASPA_MASS_CONSTANTS.OUTPUT_P2PK;
+    outputsCompute += KASPA_CONSENSUS_MASS.OUTPUT_P2PK;
   }
 
-  const payload = BigInt(input.payloadBytes || 0) * KASPA_MASS_CONSTANTS.PAYLOAD_BYTE;
+  const computeMass = KASPA_CONSENSUS_MASS.BASE_TRANSACTION + (BigInt(input.inputCount) * inputComputeMass) + outputsCompute;
 
-  const total = base + inputs + outputs + payload;
+  const payloadBytes = BigInt(input.payloadBytes || 0);
+  const transientMass = payloadBytes * KASPA_CONSENSUS_MASS.PAYLOAD_TRANSIENT_MULTIPLIER;
+
+  const feeMass = computeMass > transientMass ? computeMass : transientMass;
 
   return {
-    mass: total,
-    txBytes: total, // For basic P2PK, tx bytes roughly equal estimated logical mass
-    feeSompi: 0n, // Placeholder, calculated by caller
+    computeMass,
+    transientMass,
+    feeMass,
+    storageMass: 0n // Explicitly 0n for relay floor purposes
+  };
+}
+
+/**
+ * Estimates the mass of a transaction based on its structure and script types.
+ */
+export function estimateTransactionMass(input: ConsensusMassInput): MassEstimateResult {
+  const assumptions: string[] = [];
+  const warnings: string[] = [];
+
+  const consensus = calculateConsensusNonContextualMass(input);
+
+  assumptions.push(`Inputs assumed P2PK/Schnorr (${input.inputCount})`);
+
+  return {
+    mass: consensus.feeMass,
+    computeMass: consensus.computeMass,
+    transientMass: consensus.transientMass,
+    feeMass: consensus.feeMass,
+    txBytes: consensus.feeMass,
+    feeSompi: 0n,
     breakdown: {
-      base,
-      inputs,
-      outputs,
-      payload,
-      total
+      base: KASPA_CONSENSUS_MASS.BASE_TRANSACTION,
+      inputs: BigInt(input.inputCount) * 1110n,
+      outputs: BigInt((input.outputs?.length || 0) + (input.hasChange ? 1 : 0)) * 420n,
+      payload: BigInt(input.payloadBytes || 0) * 10n,
+      total: consensus.feeMass
     },
     assumptions,
     warnings
   };
 }
 
-/**
- * Heuristic to detect P2PK vs P2SH/Other.
- * In Kaspa, addresses starting with 'kaspa:' followed by 'q' are usually P2PK (Schnorr).
- */
 function isP2PK(addressOrScript: string): boolean {
-  // If it's a script (hex), check length for standard P2PK (34 bytes usually)
+  if (!addressOrScript) return true;
   if (/^[0-9a-fA-F]+$/.test(addressOrScript)) {
-    return addressOrScript.length === 68; // 34 bytes * 2
+    return addressOrScript.length === 68;
   }
-
-  // If it's an address
   if (addressOrScript.includes(":")) {
     const parts = addressOrScript.split(":");
     const body = parts[1];
     return !!body && (body.startsWith("q") || body.startsWith("sim_"));
   }
-
-  return true; // Default to P2PK for simplicity
+  return true;
 }
 
-/**
- * Calculates fee from mass and fee rate.
- * Used for V0 (legacy) transactions.
- */
 export function estimateFeeFromMass(mass: bigint, feeRateSompiPerMass: bigint): bigint {
   return mass * feeRateSompiPerMass;
 }
 
-/**
- * Calculates the Toccata minimum fee based on compute grams and transaction bytes.
- * Used for V1 (Toccata) transactions.
- * Formula: 100 sompi * max(compute_grams, 2 * transaction_bytes)
- */
 export function estimateToccataFee(computeBudget: bigint, txMass: bigint, txBytes: bigint): bigint {
   const computeMass = txMass + (computeBudget * 100n);
   const doubleBytes = txBytes * 2n;

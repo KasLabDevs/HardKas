@@ -3,7 +3,7 @@ import { runCommand, getHardkasCliPath } from "../environment/commands.js";
 import { runConsumerScript } from "../environment/consumer-script.js";
 
 /**
- * REC-01B — Consumer Crash During Submit Window & Node Evidence Recovery
+ * REC-01B ï¿½ Consumer Crash During Submit Window & Node Evidence Recovery
  *
  * Authority: Node RPC (Authoritative) + Artifact Engine (History)
  * Track: DOCKER_REAL
@@ -28,7 +28,7 @@ export const scenarioRec01b: GateDefinition = {
 
     const cliPath = getHardkasCliPath(ctx.consumerDir);
     const statusRes = await runCommand(`"${cliPath}" localnet status --json`, ctx.consumerDir);
-    let rpcUrl = "127.0.0.1:16210";
+    let rpcUrl = "127.0.0.1:18210";
     try {
       const statusData = JSON.parse(statusRes.stdout.trim());
       if (statusData.node?.rpcUrl) {

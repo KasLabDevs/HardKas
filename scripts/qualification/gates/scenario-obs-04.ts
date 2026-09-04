@@ -3,7 +3,7 @@ import { runCommand, getHardkasCliPath } from "../environment/commands.js";
 import { runConsumerScript } from "../environment/consumer-script.js";
 
 /**
- * OBS-04 — AbortSignal Cancellation (Docker Real)
+ * OBS-04 ï¿½ AbortSignal Cancellation (Docker Real)
  *
  * Authority: HardKAS Async Observation Control
  * Track: DOCKER_REAL
@@ -26,7 +26,7 @@ export const scenarioObs04: GateDefinition = {
 
     const cliPath = getHardkasCliPath(ctx.consumerDir);
     const statusRes = await runCommand(`"${cliPath}" localnet status --json`, ctx.consumerDir);
-    let rpcUrl = "127.0.0.1:16210";
+    let rpcUrl = "127.0.0.1:18210";
     try {
       const statusData = JSON.parse(statusRes.stdout.trim());
       if (statusData.node?.rpcUrl) {

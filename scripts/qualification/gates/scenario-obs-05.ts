@@ -3,7 +3,7 @@ import { runCommand, getHardkasCliPath } from "../environment/commands.js";
 import { runConsumerScript } from "../environment/consumer-script.js";
 
 /**
- * OBS-05 — Watcher Recovery Across Node Restart (Docker Real)
+ * OBS-05 ï¿½ Watcher Recovery Across Node Restart (Docker Real)
  *
  * Authority: node RPC + Docker container lifecycle + HardKAS Observation Engine
  * Track: DOCKER_REAL
@@ -28,7 +28,7 @@ export const scenarioObs05: GateDefinition = {
 
     const cliPath = getHardkasCliPath(ctx.consumerDir);
     const statusRes = await runCommand(`"${cliPath}" localnet status --json`, ctx.consumerDir);
-    let rpcUrl = "127.0.0.1:16210";
+    let rpcUrl = "127.0.0.1:18210";
     let containerName = "hardkas-kaspad-toccata-v2"; try { const psRes = await runCommand(`docker ps --format "{{.Names}}"`, ctx.repoRoot); if (psRes.stdout.trim()) { containerName = psRes.stdout.trim().split(/\r?\n/)[0].trim(); } } catch (e) {}
     try {
       const statusData = JSON.parse(statusRes.stdout.trim());

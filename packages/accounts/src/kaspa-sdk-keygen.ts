@@ -1,4 +1,5 @@
 import { KaspaKeyGenerator, GeneratedKaspaDevAccount } from "./real-keygen.js";
+import { getNetworkPrefix } from "@hardkas/core";
 
 export interface KaspaSdkKeyGeneratorOptions {
   readonly networkId?: "simnet" | "testnet-10" | "mainnet";
@@ -49,7 +50,7 @@ export class KaspaSdkKeyGenerator implements KaspaKeyGenerator {
         const hex = randomBytes.toString("hex");
         const privKey = new sdk.PrivateKey(hex);
         const kp = privKey.toKeypair();
-        const address = kp.toAddress(network).toString();
+        const address = kp.toAddress(getNetworkPrefix(network)).toString();
         const privateKeyStr = typeof kp.privateKey === "object" ? hex : kp.privateKey;
         const publicKeyStr =
           typeof kp.publicKey === "object" ? kp.publicKey.toString() : kp.publicKey;

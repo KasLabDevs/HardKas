@@ -39,7 +39,7 @@ export const gateB2: GateDefinition = {
 
     // 1.5 Get RPC URL from status
     const statusRes = await runCommand(`"${cliPath}" localnet status --json`, ctx.consumerDir);
-    let rpcUrl = "127.0.0.1:16210";
+    let rpcUrl = "127.0.0.1:18210";
     try {
       const statusData = JSON.parse(statusRes.stdout.trim());
       if (statusData.node?.rpcUrl) {

@@ -3,7 +3,7 @@ import { runCommand, getHardkasCliPath } from "../environment/commands.js";
 import { runConsumerScript } from "../environment/consumer-script.js";
 
 /**
- * REC-02 — Node Restart Before Mining (Mempool Flush Recovery)
+ * REC-02 ï¿½ Node Restart Before Mining (Mempool Flush Recovery)
  *
  * Authority: rusty-kaspad Mempool + Docker lifecycle + HardKAS TX Module
  * Track: DOCKER_REAL
@@ -30,7 +30,7 @@ export const scenarioRec02: GateDefinition = {
 
     const cliPath = getHardkasCliPath(ctx.consumerDir);
     const statusRes = await runCommand(`"${cliPath}" localnet status --json`, ctx.consumerDir);
-    let rpcUrl = "127.0.0.1:16210";
+    let rpcUrl = "127.0.0.1:18210";
     let containerName = "hardkas-kaspad-toccata-v2";
     try {
       const statusData = JSON.parse(statusRes.stdout.trim());

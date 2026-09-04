@@ -3,7 +3,7 @@ import { runCommand, getHardkasCliPath } from "../environment/commands.js";
 import { runConsumerScript } from "../environment/consumer-script.js";
 
 /**
- * TX-02 — Multi-Input / Change / Fees (Docker Real)
+ * TX-02 ï¿½ Multi-Input / Change / Fees (Docker Real)
  *
  * Authority: rusty-kaspad RPC + HardKAS TX Builder
  * Track: DOCKER_REAL
@@ -26,7 +26,7 @@ export const scenarioTx02: GateDefinition = {
 
     const cliPath = getHardkasCliPath(ctx.consumerDir);
     const statusRes = await runCommand(`"${cliPath}" localnet status --json`, ctx.consumerDir);
-    let rpcUrl = "127.0.0.1:16210";
+    let rpcUrl = "127.0.0.1:18210";
     try {
       const statusData = JSON.parse(statusRes.stdout.trim());
       if (statusData.node?.rpcUrl) {
@@ -45,7 +45,7 @@ export const scenarioTx02: GateDefinition = {
         const alice = await hk.accounts.resolve("alice");
         const bob = await hk.accounts.resolve("bob");
 
-        // Spend 1,200 KAS (120,000,000,000 sompi) — exceeds single coinbase UTXO (~500 KAS)
+        // Spend 1,200 KAS (120,000,000,000 sompi) ï¿½ exceeds single coinbase UTXO (~500 KAS)
         const amountSompi = 120000000000n;
 
         // 1. Plan
@@ -58,7 +58,7 @@ export const scenarioTx02: GateDefinition = {
         // Extract plan metrics
         const inputCount = plan.inputs ? plan.inputs.length : (plan.plan?.inputs?.length || 0);
         const outputs = plan.outputs || plan.plan?.outputs || [];
-        const changeOutput = outputs.find(o => o.address === alice.address);
+        const changeOutput = plan.change || plan.plan?.change || outputs.find(o => o.address === alice.address);
         const feeSompi = plan.estimatedFeeSompi || plan.plan?.feeSompi?.toString() || "0";
         const changeSompi = changeOutput ? (changeOutput.amountSompi || "0").toString() : "0";
 
@@ -83,7 +83,7 @@ export const scenarioTx02: GateDefinition = {
       } catch (e) {
         __emitEvidence({
           success: false,
-          error: e.message,
+          error: String(e.message || e), code: String(e.code || "ERR"),
           code: e.code,
           stack: e.stack
         });

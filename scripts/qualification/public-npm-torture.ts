@@ -218,6 +218,14 @@ async function main() {
             path.join(consumerDir, "node_modules", "@hardkas", "accounts", "dist")
           );
           await copyDir(
+            path.join(repoRoot, "packages", "config", "dist"),
+            path.join(consumerDir, "node_modules", "@hardkas", "config", "dist")
+          );
+          await copyDir(
+            path.join(repoRoot, "packages", "cli", "dist"),
+            path.join(consumerDir, "node_modules", "@hardkas", "cli", "dist")
+          );
+          await copyDir(
             path.join(repoRoot, "packages", "sdk", "dist"),
             path.join(consumerDir, "node_modules", "@hardkas", "sdk", "dist")
           );

@@ -3,22 +3,15 @@ import { runCommand, getHardkasCliPath } from "../environment/commands.js";
 import { runConsumerScript } from "../environment/consumer-script.js";
 
 /**
- * CON-02-LEGIT — Legitimate Single-UTXO Cross-Process Concurrency
+ * CON-02-LEGIT - Single-UTXO Concurrent Double-Spend Race
  *
  * Authority: rusty-kaspad Mempool + HardKAS TX Planner
  * Track: DOCKER_REAL
  * Surface: PUBLIC
- *
- * Legitimate cross-process double-spend conflict without any plan mutations:
- * 1. Fund a fresh account (alice_single) with EXACTLY ONE UTXO.
- * 2. Worker A and Worker B independently run standard hk.tx.plan({ from: alice_single, ... }).
- * 3. Both workers naturally select the single available UTXO without manual plan alterations.
- * 4. Both workers sign and submit simultaneously.
- * 5. Node accepts exactly 1 and rejects the second with double spend.
  */
 export const scenarioCon02Legit: GateDefinition = {
   id: "CON-02-LEGIT",
-  name: "Legitimate Single-UTXO Cross-Process Concurrency",
+  name: "Single-UTXO Concurrent Double-Spend Race",
   mandatory: true,
   implemented: true,
   requires: ["publicNpmConsumer", "rpcReady", "fundedAccount", "matureUtxo"],
@@ -30,7 +23,7 @@ export const scenarioCon02Legit: GateDefinition = {
 
     const cliPath = getHardkasCliPath(ctx.consumerDir);
     const statusRes = await runCommand(`"${cliPath}" localnet status --json`, ctx.consumerDir);
-    let rpcUrl = "127.0.0.1:16210";
+    let rpcUrl = "127.0.0.1:18210";
     try {
       const statusData = JSON.parse(statusRes.stdout.trim());
       if (statusData.node?.rpcUrl) {
@@ -38,8 +31,11 @@ export const scenarioCon02Legit: GateDefinition = {
       }
     } catch (e) {}
 
-    // Phase 1: Setup a single-UTXO funded account
+    // Phase 1: Setup a single-UTXO funded account fixture
+    const setupAccountName = `con02_race_sender_${Date.now()}`;
     const setupCode = `
+      import { getOrCreateDevAccount } from "@hardkas/accounts";
+
       const hk = await Hardkas.create({
         network: "simnet",
         rpc: { endpoints: ["${rpcUrl}"] }
@@ -47,41 +43,38 @@ export const scenarioCon02Legit: GateDefinition = {
 
       try {
         const alice = await hk.accounts.resolve("alice");
+        const accountIndex = Math.floor(Math.random() * 10000) + 1000;
+        await getOrCreateDevAccount(process.cwd(), accountIndex, "${setupAccountName}");
+        const singleAcc = await hk.accounts.resolve("${setupAccountName}");
 
-        // Create or resolve a dedicated single-UTXO account
-        const singleAcc = await hk.accounts.resolve("single_utxo_holder");
-
-        // Fund singleAcc with a single transaction from alice
         const plan = await hk.tx.plan({
           from: alice,
           to: singleAcc,
           amount: 10000000000n, // 10 KAS
-          feeRate: 10000n
+          feeRate: 100n
         });
 
         const signed = await hk.tx.sign(plan, { account: alice });
         const sendRes = await hk.tx.send(signed);
 
-        // Wait for accepted block so UTXO becomes spendable
-        const txId = sendRes.txId || sendRes.receipt?.txId;
-        if (txId) {
-          try {
-            await hk.tx.waitForAccepted({ txId, timeoutMs: 5000, pollIntervalMs: 500 });
-          } catch (e) {}
-        }
+        const template = await hk.rpc.call("getBlockTemplateRequest", { payAddress: alice.address, extraData: [] });
+        const blockMessage = template.blockMessage || template.block;
+        await hk.rpc.call("submitBlockRequest", { block: blockMessage, allowNonDAABlocks: false });
 
-        // Verify singleAcc spendable UTXOs
         const utxosRes = await hk.query.utxos(singleAcc.address);
         const utxos = utxosRes.data || [];
 
+        const expectedOutpoint = utxos[0] ? utxos[0].outpoint?.transactionId + ":" + utxos[0].outpoint?.index : null;
+
         __emitEvidence({
           setupSuccessful: true,
+          accountName: "${setupAccountName}",
           address: singleAcc.address,
           utxoCount: utxos.length,
-          utxoId: utxos[0]?.id || utxos[0]?.outpoint?.transactionId
+          outpointX: expectedOutpoint
         });
       } catch (e) {
-        __emitEvidence({ setupSuccessful: false, error: e.message });
+        __emitEvidence({ setupSuccessful: false, error: String(e.message || e) });
       } finally {
         process.exit(0);
       }
@@ -92,19 +85,10 @@ export const scenarioCon02Legit: GateDefinition = {
 
     const setupData = setupRes.data;
 
-    if (!setupData || setupData.setupSuccessful !== true || setupData.utxoCount === 0) {
-      if (setupData?.error?.includes("not standard") || setupData?.error?.includes("fees")) {
-        status = "BLOCKED_BY_QF-005" as any;
-        assertions.push({
-          name: "CON-02-LEGIT.A single-UTXO setup blocked by QF-005 fee floor bug",
-          passed: false,
-          actual: setupData
-        });
-        return { status, assertions, evidence };
-      }
+    if (!setupData || setupData.setupSuccessful !== true || setupData.utxoCount !== 1) {
       status = "ENVIRONMENT_NOT_QUALIFIED";
       assertions.push({
-        name: "CON-02-LEGIT.A single-UTXO fixture established (1 spendable UTXO)",
+        name: "CON-02-LEGIT.A Single-UTXO fixture established (outpoint X)",
         passed: false,
         actual: setupData
       });
@@ -112,13 +96,17 @@ export const scenarioCon02Legit: GateDefinition = {
     }
 
     assertions.push({
-      name: "CON-02-LEGIT.A single-UTXO fixture established (1 spendable UTXO)",
-      passed: setupData.utxoCount === 1,
+      name: "CON-02-LEGIT.A Single-UTXO fixture established (outpoint X)",
+      passed: setupData.utxoCount === 1 && !!setupData.outpointX,
       actual: setupData
     });
 
-    // Phase 2: Launch Worker A and Worker B with 0 plan mutations
+    const expectedOutpointX = setupData.outpointX;
+
+    // Phase 2: Multi-process IPC READY -> GO synchronization race barrier
     const workerScript = (workerName: string, recipientName: string) => `
+      import fs from "fs/promises";
+      import path from "path";
       import { Hardkas } from "@hardkas/sdk";
 
       function __emitEvidence(data) {
@@ -133,22 +121,60 @@ export const scenarioCon02Legit: GateDefinition = {
       });
 
       try {
-        const singleAcc = await hk.accounts.resolve("single_utxo_holder");
+        const sender = await hk.accounts.resolve("${setupAccountName}");
         const recipient = await hk.accounts.resolve("${recipientName}");
 
-        // Standard canonical plan execution (no manual alterations!)
+        let replanCount = 0;
+        let resignCount = 0;
+
         const plan = await hk.tx.plan({
-          from: singleAcc,
+          from: sender,
           to: recipient,
-          amount: 2000000000n, // 2 KAS
-          feeRate: 10000n
+          amount: 5000000000n, // 5 KAS
+          feeRate: 100n
         });
 
-        const signed = await hk.tx.sign(plan, { account: singleAcc });
+        const signed = await hk.tx.sign(plan, { account: sender });
 
-        // Barrier delay to align submit timing
-        await new Promise(r => setTimeout(r, 100));
+        const inputsList = plan.inputs || plan.plan?.inputs || [];
+        const selectedOutpoints = inputsList.map(i => {
+          const txId = i.outpoint?.transactionId || i.previousOutpoint?.transactionId;
+          const idx = i.outpoint?.index !== undefined ? i.outpoint.index : i.previousOutpoint?.index;
+          return txId + ":" + idx;
+        });
 
+        // Barrier Step 1: Emit READY signal with plan payload
+        await fs.writeFile(
+          path.join(process.cwd(), "${workerName}.ready"),
+          JSON.stringify({
+            worker: "${workerName}",
+            pid: process.pid,
+            planId: plan.id || plan.planId || plan.contentHash,
+            signedId: signed.txId || signed.signedId || signed.contentHash,
+            selectedOutpoints,
+            replanCount,
+            resignCount
+          }),
+          "utf-8"
+        );
+
+        // Barrier Step 2: Poll for GO barrier file
+        let go = false;
+        const startWait = Date.now();
+        while (!go && Date.now() - startWait < 10000) {
+          try {
+            await fs.access(path.join(process.cwd(), "barrier.go"));
+            go = true;
+          } catch {
+            await new Promise(r => setTimeout(r, 10));
+          }
+        }
+
+        if (!go) {
+          throw new Error("${workerName} timed out waiting for barrier.go");
+        }
+
+        // Barrier Step 3: Simultaneous Send
         let sendResult = null;
         let sendError = null;
         try {
@@ -157,14 +183,17 @@ export const scenarioCon02Legit: GateDefinition = {
           sendError = e.message;
         }
 
-        const selectedInput = plan.inputs && plan.inputs[0]?.outpoint;
+        const receiptExists = !!(sendResult && (sendResult.receipt?.txId || sendResult.txId));
 
         __emitEvidence({
           worker: "${workerName}",
-          txId: signed.txId,
-          selectedInput,
+          pid: process.pid,
+          planId: plan.id || plan.planId || plan.contentHash,
+          signedId: signed.txId || signed.signedId || signed.contentHash,
+          txId: sendResult?.txId || sendResult?.receipt?.txId,
           sendSuccess: !!sendResult && !sendError,
-          sendError
+          sendError,
+          receiptExists
         });
       } catch (e) {
         __emitEvidence({ worker: "${workerName}", error: e.message });
@@ -178,8 +207,53 @@ export const scenarioCon02Legit: GateDefinition = {
     await fs.writeFile(path.join(ctx.consumerDir, "worker-a-legit.js"), workerScript("WorkerA", "bob"));
     await fs.writeFile(path.join(ctx.consumerDir, "worker-b-legit.js"), workerScript("WorkerB", "carol"));
 
+    const readyFileA = path.join(ctx.consumerDir, "WorkerA.ready");
+    const readyFileB = path.join(ctx.consumerDir, "WorkerB.ready");
+    const goFile = path.join(ctx.consumerDir, "barrier.go");
+
+    try { await fs.unlink(readyFileA); } catch {}
+    try { await fs.unlink(readyFileB); } catch {}
+    try { await fs.unlink(goFile); } catch {}
+
     const pA = runCommand("node worker-a-legit.js", ctx.consumerDir);
     const pB = runCommand("node worker-b-legit.js", ctx.consumerDir);
+
+    let readyPayloadA: any = null;
+    let readyPayloadB: any = null;
+    const startBarrier = Date.now();
+
+    while ((!readyPayloadA || !readyPayloadB) && Date.now() - startBarrier < 10000) {
+      if (!readyPayloadA) {
+        try {
+          const raw = await fs.readFile(readyFileA, "utf-8");
+          readyPayloadA = JSON.parse(raw);
+        } catch {}
+      }
+      if (!readyPayloadB) {
+        try {
+          const raw = await fs.readFile(readyFileB, "utf-8");
+          readyPayloadB = JSON.parse(raw);
+        } catch {}
+      }
+      if (!readyPayloadA || !readyPayloadB) {
+        await new Promise(r => setTimeout(r, 20));
+      }
+    }
+
+    const readyValidA = readyPayloadA && readyPayloadA.selectedOutpoints?.length === 1 && readyPayloadA.selectedOutpoints[0] === expectedOutpointX;
+    const readyValidB = readyPayloadB && readyPayloadB.selectedOutpoints?.length === 1 && readyPayloadB.selectedOutpoints[0] === expectedOutpointX;
+    const zeroReplanResign = readyPayloadA?.replanCount === 0 && readyPayloadA?.resignCount === 0 && readyPayloadB?.replanCount === 0 && readyPayloadB?.resignCount === 0;
+
+    assertions.push({
+      name: "CON-02-LEGIT.B Both workers independently planned and signed against single outpoint X (zero replan/resign)",
+      passed: !!readyValidA && !!readyValidB && zeroReplanResign,
+      actual: { readyPayloadA, readyPayloadB, expectedOutpointX }
+    });
+
+    // Emit GO barrier file
+    if (readyPayloadA && readyPayloadB) {
+      await fs.writeFile(goFile, "GO", "utf-8");
+    }
 
     const [resA, resB] = await Promise.all([pA, pB]);
 
@@ -197,35 +271,30 @@ export const scenarioCon02Legit: GateDefinition = {
     const dataA = parseEv(resA.stdout);
     const dataB = parseEv(resB.stdout);
 
-    assertions.push({
-      name: "CON-02-LEGIT.B Both worker OS processes executed in parallel",
-      passed: !!dataA && !!dataB,
-      actual: { workerA: dataA, workerB: dataB }
-    });
+    const successCount = (dataA?.sendSuccess ? 1 : 0) + (dataB?.sendSuccess ? 1 : 0);
+    const rejectCount = (dataA?.sendError ? 1 : 0) + (dataB?.sendError ? 1 : 0);
 
-    const inputA = dataA?.selectedInput;
-    const inputB = dataB?.selectedInput;
-    const sameInputSelected = inputA && inputB && JSON.stringify(inputA) === JSON.stringify(inputB);
+    const winner = dataA?.sendSuccess ? dataA : (dataB?.sendSuccess ? dataB : null);
+    const loser = dataA?.sendError ? dataA : (dataB?.sendError ? dataB : null);
+
+    const mempoolDoubleSpendError = loser?.sendError?.includes("already spent") && loser?.sendError?.includes("mempool");
 
     assertions.push({
-      name: "CON-02-LEGIT.C Both planners naturally selected the identical input outpoint (overlappingInputs > 0)",
-      passed: !!sameInputSelected,
-      actual: { inputA, inputB }
-    });
-
-    const aPassed = dataA?.sendSuccess === true;
-    const bPassed = dataB?.sendSuccess === true;
-    const exactlyOneAccepted = (aPassed && !bPassed) || (!aPassed && bPassed);
-
-    assertions.push({
-      name: "CON-02-LEGIT.D Node double-spend rejection enforced (exactly 1 accepted, 1 rejected)",
-      passed: exactlyOneAccepted,
-      actual: { workerASuccess: aPassed, workerBSuccess: bPassed, errorA: dataA?.sendError, errorB: dataB?.sendError }
+      name: "CON-02-LEGIT.C Single-UTXO Concurrent Double-Spend Race outcome: 1 winner submitted, 1 loser rejected by mempool",
+      passed: successCount === 1 && rejectCount === 1 && winner?.receiptExists === true && loser?.receiptExists === false && !!mempoolDoubleSpendError,
+      actual: { successCount, rejectCount, winner, loser, mempoolDoubleSpendError }
     });
 
     if (assertions.some(a => !a.passed)) {
       status = "FAIL";
     }
+
+    // Cleanup temp files
+    try { await fs.unlink(path.join(ctx.consumerDir, "worker-a-legit.js")); } catch {}
+    try { await fs.unlink(path.join(ctx.consumerDir, "worker-b-legit.js")); } catch {}
+    try { await fs.unlink(readyFileA); } catch {}
+    try { await fs.unlink(readyFileB); } catch {}
+    try { await fs.unlink(goFile); } catch {}
 
     return { status, assertions, evidence };
   }

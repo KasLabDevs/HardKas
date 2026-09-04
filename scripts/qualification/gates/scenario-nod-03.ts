@@ -3,7 +3,7 @@ import { runCommand, getHardkasCliPath } from "../environment/commands.js";
 import { runConsumerScript } from "../environment/consumer-script.js";
 
 /**
- * NOD-03 — RPC Failure / Recovery
+ * NOD-03 ï¿½ RPC Failure / Recovery
  *
  * Authority: node RPC + Docker container lifecycle
  * Track: DOCKER_REAL
@@ -29,7 +29,7 @@ export const scenarioNod03: GateDefinition = {
 
     // Get RPC URL & container name
     const statusRes = await runCommand(`"${cliPath}" localnet status --json`, ctx.consumerDir);
-    let rpcUrl = "127.0.0.1:16210";
+    let rpcUrl = "127.0.0.1:18210";
     let containerName = "hardkas-kaspad-toccata-v2";
     try {
       const statusData = JSON.parse(statusRes.stdout.trim());

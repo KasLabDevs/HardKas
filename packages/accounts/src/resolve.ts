@@ -123,7 +123,7 @@ export function listHardkasAccounts(config?: HardkasConfig, executionTarget?: im
         name: det.name,
         kind: "synthetic",
         executionMode: "simulator",
-        address: det.address,
+        address: `kaspa:sim_${det.name}`,
         evmAddress: det.evmAddress
       });
     } else {
@@ -151,15 +151,23 @@ export function listHardkasAccounts(config?: HardkasConfig, executionTarget?: im
             if (!keystore.metadata?.network) {
               throw new AccountNetworkMismatchError({ expected: "known network", actual: "undefined", detail: `at ${path.join(devAccountsDir, file)}` });
             }
-            const accountKind = targetMode === "simulator" ? "synthetic" : "kaspa";
-            accounts.set(name, {
-              name,
-              kind: accountKind,
-              network: keystore.metadata.network,
-              address: keystore.payload?.address || keystore.metadata?.address,
-              keystorePath: path.join(devAccountsDir, file),
-              ...(accountKind === "synthetic" ? { executionMode: "simulator" } : {})
-            } as HardkasAccount);
+            if (targetMode === "simulator") {
+              accounts.set(name, {
+                name,
+                kind: "synthetic",
+                executionMode: "simulator",
+                address: `kaspa:sim_${name}`,
+                keystorePath: path.join(devAccountsDir, file)
+              } as HardkasAccount);
+            } else {
+              accounts.set(name, {
+                name,
+                kind: "kaspa",
+                network: keystore.metadata.network,
+                address: keystore.payload?.address || keystore.metadata?.address,
+                keystorePath: path.join(devAccountsDir, file)
+              } as HardkasAccount);
+            }
           }
         } catch (e) {
           if (e instanceof AccountNetworkMismatchError) throw e;
@@ -176,25 +184,23 @@ export function listHardkasAccounts(config?: HardkasConfig, executionTarget?: im
       const data = fs.readFileSync(keystoreJsonPath, "utf-8");
       const ks = JSON.parse(data);
       for (const [name, acc] of Object.entries(ks)) {
-        const existing = accounts.get(name);
-        const configKind = (acc as any).type === "simulated" ? "synthetic" : "kaspa";
-        if (existing && existing.kind !== configKind) {
-          console.error(`COLLISION DETECTED for ${name}. existing:`, existing, `configKind:`, configKind, `workspaceRoot:`, workspaceRoot, `keystoreJsonPath:`, keystoreJsonPath);
-          throw new CrossWorldAccountCollisionError({ accountId: name, worlds: [existing.kind, configKind] });
-        }
         if ((acc as any).type === "simulated") {
-          accounts.set(name, {
-            name,
-            kind: "synthetic", executionMode: "simulator",
-            address: (acc as any).address
-          });
+          if (targetMode === "simulator") {
+            accounts.set(name, {
+              name,
+              kind: "synthetic",
+              executionMode: "simulator",
+              address: (acc as any).address
+            });
+          }
         } else {
           if (!(acc as any).network) {
             throw new AccountNetworkMismatchError({ expected: "known network", actual: "undefined", detail: "in keystore.json" });
           }
           accounts.set(name, {
             name,
-            kind: "kaspa", network: (acc as any).network,
+            kind: "kaspa",
+            network: (acc as any).network,
             address: (acc as any).address
           });
         }

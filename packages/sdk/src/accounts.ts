@@ -12,10 +12,14 @@ export class HardkasAccounts {
   /**
    * Resolves an account by name or address.
    */
-  async resolve(nameOrAddress: string): Promise<HardkasAccount> {
+  async resolve(
+    nameOrAddress: string,
+    executionTarget?: import("@hardkas/core").HardkasExecutionTarget
+  ): Promise<HardkasAccount> {
     return resolveHardkasAccount({
       nameOrAddress,
-      config: { ...this.sdk.config.config, cwd: this.sdk.workspace.root } as any
+      config: { ...this.sdk.config.config, cwd: this.sdk.workspace.root } as any,
+      ...(executionTarget ? { executionTarget } : {})
     });
   }
 

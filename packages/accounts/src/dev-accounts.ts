@@ -3,7 +3,7 @@ import path from "node:path";
 import crypto from "node:crypto";
 import { KeystoreManager } from "./keystore.js";
 import type { GeneratedKaspaDevAccount } from "./real-keygen.js";
-import { deterministicCompare } from "@hardkas/core";
+import { deterministicCompare, getNetworkPrefix } from "@hardkas/core";
 import { resolveHardkasAccount } from "./resolve.js";
 import { KaspaWasmPrivateKeySigner } from "./kaspa-wasm-signer.js";
 import type { HardkasTxPlanSigner } from "./types.js";
@@ -20,9 +20,11 @@ export async function ensureDevAccounts(workspaceDir: string): Promise<void> {
     await fs.promises.mkdir(devAccountsDir, { recursive: true });
   }
 
-  // Pre-generate alice (0) and bob (1)
+  // Pre-generate alice (0), bob (1), carol (2), dave (3)
   await getOrCreateDevAccount(workspaceDir, 0, "alice");
   await getOrCreateDevAccount(workspaceDir, 1, "bob");
+  await getOrCreateDevAccount(workspaceDir, 2, "carol");
+  await getOrCreateDevAccount(workspaceDir, 3, "dave");
 }
 
 export async function getOrCreateDevAccount(
@@ -64,16 +66,11 @@ export async function getOrCreateDevAccount(
 
   try {
     if (isSimnet) {
-      let kaspaWasm: any;
-      try {
-        kaspaWasm = await import(/* @vite-ignore */ "kaspa-wasm");
-      } catch (e) {
-        console.warn(`\n[Warning] kaspa-wasm is not installed. Required for simnet.`);
-        return { address: "", privateKey: "", publicKey: "" };
-      }
+      const { loadKaspaWasm } = await import("./signer-backend.js");
+      const kaspaWasm = await loadKaspaWasm();
       const privKey = new kaspaWasm.PrivateKey(privateKeyHex);
       const kp = privKey.toKeypair();
-      address = kp.toAddress(network).toString();
+      address = kp.toAddress(getNetworkPrefix(network)).toString();
       publicKey = kp.publicKey;
       privateKey = privateKeyHex;
     } else {
@@ -92,7 +89,7 @@ export async function getOrCreateDevAccount(
       const privKey = new sdk.PrivateKey(privateKeyHex);
       const pubKey = privKey.toPublicKey();
       try {
-        address = pubKey.toAddress(network).toString();
+        address = pubKey.toAddress(getNetworkPrefix(network)).toString();
       } catch (e: unknown) {
         const msg = e instanceof Error ? ((e instanceof Error) ? ((e instanceof Error) ? e.message : String(e)) : String(e)) : String(e);
         if (msg.includes("Second argument must be") || msg.includes("Unsupported")) {

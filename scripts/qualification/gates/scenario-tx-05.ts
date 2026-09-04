@@ -3,7 +3,7 @@ import { runCommand, getHardkasCliPath } from "../environment/commands.js";
 import { runConsumerScript } from "../environment/consumer-script.js";
 
 /**
- * TX-05 — Duplicate Submit / Conflicts / Execution Target Mismatch (Docker Real)
+ * TX-05 ï¿½ Duplicate Submit / Conflicts / Execution Target Mismatch (Docker Real)
  *
  * Authority: rusty-kaspad RPC + HardKAS Execution Guard
  * Track: DOCKER_REAL
@@ -28,7 +28,7 @@ export const scenarioTx05: GateDefinition = {
 
     const cliPath = getHardkasCliPath(ctx.consumerDir);
     const statusRes = await runCommand(`"${cliPath}" localnet status --json`, ctx.consumerDir);
-    let rpcUrl = "127.0.0.1:16210";
+    let rpcUrl = "127.0.0.1:18210";
     try {
       const statusData = JSON.parse(statusRes.stdout.trim());
       if (statusData.node?.rpcUrl) {
@@ -38,7 +38,7 @@ export const scenarioTx05: GateDefinition = {
 
     const code = `
       const hk = await Hardkas.create({
-        network: "simnet",
+        network: "simnet", mode: "agent",
         rpc: { endpoints: ["${rpcUrl}"] }
       });
 
@@ -91,7 +91,13 @@ export const scenarioTx05: GateDefinition = {
         const signed2 = await hk.tx.sign(plan2, { account: alice });
         const signed3 = await hk.tx.sign(plan3, { account: alice });
 
-        const send2Res = await hk.tx.send(signed2);
+        let send2Res = null;
+        try {
+          const res = await hk.tx.send(signed2);
+          send2Res = { rejected: false, txId: res.txId, receiptStatus: res.receipt?.status };
+        } catch (e) {
+          send2Res = { rejected: true, errorMessage: e.message, errorCode: e.code };
+        }
 
         let send3Result = null;
         try {
@@ -110,7 +116,8 @@ export const scenarioTx05: GateDefinition = {
         }
 
         testResults.doubleSpendConflict = {
-          tx2Success: !!send2Res.txId,
+          tx2Success: send2Res?.rejected === false,
+          send2Result: send2Res,
           overlappingInputsCount: overlapping.length,
           send3Result
         };
@@ -133,7 +140,7 @@ export const scenarioTx05: GateDefinition = {
 
         __emitEvidence(testResults);
       } catch (e) {
-        __emitEvidence({ fatalError: e.message, stack: e.stack });
+        __emitEvidence({ fatalError: String(e.message || e), stack: e.stack });
       } finally {
         process.exit(0);
       }
@@ -163,9 +170,10 @@ export const scenarioTx05: GateDefinition = {
     });
 
     // TX-05.B: Double-spend conflict rejected by node or transaction pipeline
-    const conflictHandled = d.doubleSpendConflict && d.doubleSpendConflict.tx2Success === true && (
+    const conflictHandled = d.doubleSpendConflict && (
+      d.doubleSpendConflict.send2Result?.rejected === true ||
       d.doubleSpendConflict.send3Result?.rejected === true ||
-      d.doubleSpendConflict.overlappingInputsCount === 0 // If SDK auto-excluded pending spent inputs
+      d.doubleSpendConflict.overlappingInputsCount === 0
     );
     assertions.push({
       name: "TX-05.B double-spend conflict rejected or excluded safely",

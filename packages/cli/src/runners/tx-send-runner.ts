@@ -52,6 +52,25 @@ export async function runTxSend(input: TxSendRunnerInput): Promise<TxSendRunnerR
     }
   }
 
+  if (targetName) {
+    let explicitTarget: import("@hardkas/core").HardkasExecutionTarget | undefined = undefined;
+    if (config.execution && "targets" in config.execution) {
+      explicitTarget = (config.execution.targets as any)[targetName];
+    }
+    if (!explicitTarget) {
+      throw new Error(`Execution target '${targetName}' not found in hardkas.config.ts`);
+    }
+
+    if (
+      execution.domain !== explicitTarget.domain ||
+      execution.mode !== explicitTarget.mode ||
+      execution.network !== explicitTarget.network
+    ) {
+      throw new Error(`EXECUTION_TARGET_MISMATCH: Execution target mismatch. Signed artifact requires ${execution.mode} on ${execution.network}, but --target specified ${explicitTarget.mode} on ${explicitTarget.network}.`);
+    }
+    execution = explicitTarget;
+  }
+
   resolvedName = execution.network;
   target = config.networks?.[resolvedName] || {};
 

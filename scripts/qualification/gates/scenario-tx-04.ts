@@ -3,7 +3,7 @@ import { runCommand, getHardkasCliPath } from "../environment/commands.js";
 import { runConsumerScript } from "../environment/consumer-script.js";
 
 /**
- * TX-04 — Insufficient Funds / Dust Limits (Docker Real)
+ * TX-04 ï¿½ Insufficient Funds / Dust Limits (Docker Real)
  *
  * Authority: HardKAS Tx Builder + Policy Engine
  * Track: DOCKER_REAL
@@ -28,7 +28,7 @@ export const scenarioTx04: GateDefinition = {
 
     const cliPath = getHardkasCliPath(ctx.consumerDir);
     const statusRes = await runCommand(`"${cliPath}" localnet status --json`, ctx.consumerDir);
-    let rpcUrl = "127.0.0.1:16210";
+    let rpcUrl = "127.0.0.1:18210";
     try {
       const statusData = JSON.parse(statusRes.stdout.trim());
       if (statusData.node?.rpcUrl) {
