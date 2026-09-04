@@ -127,15 +127,19 @@ export class KaspaWasmPrivateKeySigner implements HardkasTxPlanSigner {
           );
         }
 
+        // ADJ-002 Transport Rule:
+        // preferred: { version, scriptPublicKey } -> use version explicitly -> preserve script bytes exactly
+        // legacy/transport-packed: 0000 + 34-byte script -> decode only when transport string is 72-char hex starting with version 0000
         let spkHex = "";
         let spkVersion = 0;
 
         if (typeof spk === "object" && spk !== null) {
+          // Preferred structural representation: explicit version and script fields
           spkVersion = Number(spk.version ?? 0);
           spkHex = String(spk.scriptPublicKey || spk.script || "");
         } else {
           spkHex = String(spk);
-          // If RPC returned a 72-character hex string with 2-byte version prefix (0000 + 34-byte script)
+          // Legacy/Transport-packed representation: 0000 (uint16 version 0) + 34-byte script (72 hex chars)
           if (/^[0-9a-fA-F]{72}$/.test(spkHex) && spkHex.startsWith("0000")) {
             spkVersion = parseInt(spkHex.slice(0, 4), 16) || 0;
             spkHex = spkHex.slice(4);

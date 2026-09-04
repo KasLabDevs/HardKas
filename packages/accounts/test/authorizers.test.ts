@@ -97,3 +97,4 @@ describe("PrivateKeyAuthorizer", () => {
     })).rejects.toThrow(/Kaspa WASM failed to generate a signature script/);
   });
 });
+

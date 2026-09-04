@@ -13,7 +13,7 @@ describe("QF-007: ExecutionTarget Authority Governing Account Resolution", () =>
     });
 
     expect(account.kind).toBe("synthetic");
-    expect(account.executionMode).toBe("simulator");
+    expect((account as any).executionMode).toBe("simulator");
     expect(account.address).toBe("kaspa:sim_alice");
   });
 
@@ -24,7 +24,7 @@ describe("QF-007: ExecutionTarget Authority Governing Account Resolution", () =>
     });
 
     expect(account.kind).toBe("kaspa");
-    expect(account.network).toBe("simnet");
+    expect((account as any).network).toBe("simnet");
     expect(account.address).toBe("kaspasim:qqlpk9rs7yag6eqj3lttzqd8vgvssz8l8fxlpdag4h7zx2rjjr8lkkerwkezn");
   });
 
@@ -36,6 +36,7 @@ describe("QF-007: ExecutionTarget Authority Governing Account Resolution", () =>
     });
 
     expect(account.kind).toBe("external-wallet");
+    // @ts-ignore
     expect(account.kind).not.toBe("synthetic");
     expect(account.address).toBe(rawAddr);
   });
@@ -50,3 +51,4 @@ describe("QF-007: ExecutionTarget Authority Governing Account Resolution", () =>
     expect(() => assertAccountCompatible(syntheticAccount, rpcTarget)).toThrow();
   });
 });
+

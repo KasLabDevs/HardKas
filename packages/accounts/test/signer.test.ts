@@ -137,6 +137,8 @@ describe("signTxPlanArtifact", () => {
         account: mainnetAccount,
         allowMainnet: true
       })
+    // @ts-ignore
     ).rejects.not.toThrow(/Mainnet signing is disabled by default/);
   });
 });
+

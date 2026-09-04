@@ -93,3 +93,4 @@ describe("KaspaSdkRealTxSigner", () => {
     ).rejects.toThrow(/missing scriptPublicKey/);
   });
 });
+

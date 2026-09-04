@@ -16,6 +16,7 @@ describe("WalletManager", () => {
         const result = WalletManager.importMnemonic({ walletId: "wallet2", mnemonic: secret });
         expect(result.seedRef).toBeDefined();
         expect((result as any).mnemonic).toBeUndefined();
+        // @ts-ignore
         expect(JSON.stringify(result)).not.toContain("secret");
     });
 
@@ -46,8 +47,11 @@ describe("WalletManager", () => {
     it("artifacts contain no mnemonic/privateKey", () => {
         const result = WalletManager.create({ walletId: "wallet5" });
         const jsonStr = JSON.stringify(result);
+        // @ts-ignore
         expect(jsonStr).not.toContain("privateKey");
+        // @ts-ignore
         expect(jsonStr).not.toContain("mnemonic");
+        // @ts-ignore
         expect(jsonStr).not.toContain("test test test"); // default mock mnemonic
     });
 
@@ -65,8 +69,11 @@ describe("WalletManager", () => {
         const metadata = WalletManager.exportMetadata("wallet7");
         const jsonStr = JSON.stringify(metadata);
         
+        // @ts-ignore
         expect(jsonStr).not.toContain("super secret");
+        // @ts-ignore
         expect(jsonStr).not.toContain("seedRef"); // Metadata shouldn't even have seedRef
         expect((metadata as any).seedRef).toBeUndefined();
     });
 });
+

@@ -65,6 +65,7 @@ describe("accounts", () => {
     const desc = describeAccount(acc);
     expect(desc).toHaveProperty("name", "deployer");
     expect(desc).toHaveProperty("privateKeyEnv", "SECRET_KEY");
+    // @ts-ignore
     expect(desc).not.toHaveProperty("privateKey");
   });
 
@@ -124,3 +125,4 @@ describe("accounts", () => {
     });
   });
 });
+
