@@ -227,3 +227,7 @@ kaspa-wallet.exe
 kaspad.exe
 rothschild.exe
 stratum-bridge.exe
+
+# napi-rs lockfiles
+*.swp
+.napi-rs-*
