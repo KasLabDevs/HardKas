@@ -51,7 +51,7 @@ async function runQF005Scenarios() {
 
   const ctx: ExecutionContext = {
     options: {
-      version: "0.12.0-rc.18",
+      version: "0.12.0-rc.19",
       gates: [],
       fresh: false,
       keepOnFailure: false,
@@ -68,7 +68,7 @@ async function runQF005Scenarios() {
       npmVersion: "10.0.0",
       packageSource: "local",
       registry: "local",
-      hardkasVersion: "0.12.0-rc.18",
+      hardkasVersion: "0.12.0-rc.19",
       consumerPath: consumerDir,
       logPath: "",
       artifactPath: "",

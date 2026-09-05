@@ -42,7 +42,7 @@ export async function runDagSimulateReorg(options) {
         state.dag = createSimulatedDag();
     }
     UI.info(`Simulating reorg at depth ${options.depth}...`);
-    // Minimal 0.12.0-rc.18 implementation:
+    // Minimal 0.12.0-rc.19 implementation:
     // 1. Create a side-branch starting 'depth' blocks back.
     // 2. Move sink to that side-branch.
     const currentPath = state.dag.selectedPathToSink;
