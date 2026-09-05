@@ -1,6 +1,6 @@
 {
   "name": "merchant-checkout",
-  "version": "0.12.0-rc.18",
+  "version": "0.12.0-rc.19",
   "private": true,
   "description": "HardKAS Builder Lab 02 - Merchant Checkout",
   "type": "module",

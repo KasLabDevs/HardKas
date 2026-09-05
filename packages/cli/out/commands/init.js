@@ -78,7 +78,7 @@ export default defineConfig({
                 const template = `import { defineHardkasConfig } from "@hardkas/sdk";
 
 export default defineHardkasConfig({
-  // HardKAS v0.12.0-rc.18 Configuration
+  // HardKAS v0.12.0-rc.19 Configuration
   execution: {
     default: "simulator",
     targets: {
@@ -228,7 +228,7 @@ scenario("payment flow", async ({ hk }) => {
                     UI.success(`HardKAS project '${name || "current"}' initialized successfully.`);
                     if (name)
                         UI.info(`Project folder: ${targetDir}`);
-                    UI.info(`Created: hardkas.config.ts (0.12.0-rc.18)`);
+                    UI.info(`Created: hardkas.config.ts (0.12.0-rc.19)`);
                     UI.footer(`Next steps:\n  ` + (name ? `cd ${name}\n  ` : "") + (options.install ? "" : "npm install\n  ") + "npm test");
                 }
             });

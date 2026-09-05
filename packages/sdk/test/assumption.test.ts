@@ -17,7 +17,7 @@ describe("Network-Agnostic Artifact Layer: Assumption", () => {
   it("should freeze trust assumptions and verify immutability", async () => {
     const assumption = {
       schema: "hardkas.assumption.v1",
-      hardkasVersion: "0.12.0-rc.18",
+      hardkasVersion: "0.12.0-rc.19",
       version: "1.0.0-alpha",
       networkId: "igra",
       mode: "rpc",
@@ -42,7 +42,7 @@ describe("Network-Agnostic Artifact Layer: Assumption", () => {
   it("should reject mutations to bridgePhase", async () => {
     const assumption = {
       schema: "hardkas.assumption.v1",
-      hardkasVersion: "0.12.0-rc.18",
+      hardkasVersion: "0.12.0-rc.19",
       version: "1.0.0-alpha",
       networkId: "igra",
       mode: "rpc",

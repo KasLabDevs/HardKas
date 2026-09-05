@@ -17,7 +17,7 @@ describe("Network-Agnostic Artifact Layer: Policy", () => {
   it("should create, hash and verify a policy artifact", async () => {
     const policy = {
       schema: "hardkas.policy.v1",
-      hardkasVersion: "0.12.0-rc.18",
+      hardkasVersion: "0.12.0-rc.19",
       version: "1.0.0-alpha",
       networkId: "simnet",
       mode: "simulator",
@@ -47,7 +47,7 @@ describe("Network-Agnostic Artifact Layer: Policy", () => {
   it("should fail verification if decision is mutated (HASH_MISMATCH)", async () => {
     const policy = {
       schema: "hardkas.policy.v1",
-      hardkasVersion: "0.12.0-rc.18",
+      hardkasVersion: "0.12.0-rc.19",
       version: "1.0.0-alpha",
       networkId: "simnet",
       mode: "simulator",
@@ -72,7 +72,7 @@ describe("Network-Agnostic Artifact Layer: Policy", () => {
   it("should fail verification if a rule is removed", async () => {
     const policy = {
       schema: "hardkas.policy.v1",
-      hardkasVersion: "0.12.0-rc.18",
+      hardkasVersion: "0.12.0-rc.19",
       version: "1.0.0-alpha",
       networkId: "simnet",
       mode: "simulator",
