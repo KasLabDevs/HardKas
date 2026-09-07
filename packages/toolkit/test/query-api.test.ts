@@ -30,11 +30,15 @@ describe("QueryToolkit - spendableUtxos", () => {
     mockRpc.getMempoolEntriesByAddresses.mockResolvedValueOnce({
       entries: [
         {
-          sending: [{ address: dummyAddress }],
-          receiving: [],
-          transaction: {
-            inputs: [{ previousOutpoint: { transactionId: "txA", index: 0 } }]
-          }
+          address: dummyAddress,
+          sending: [
+            {
+              transaction: {
+                inputs: [{ previousOutpoint: { transactionId: "txA", index: 0 } }]
+              }
+            }
+          ],
+          receiving: []
         }
       ]
     });
@@ -51,11 +55,15 @@ describe("QueryToolkit - spendableUtxos", () => {
     mockRpc.getMempoolEntriesByAddresses.mockResolvedValueOnce({
       entries: [
         {
-          sending: [{ address: "kaspatest:another_address" }],
-          receiving: [{ address: dummyAddress }],
-          transaction: {
-            inputs: [{ previousOutpoint: { transactionId: "txC", index: 2 } }] // completely unrelated
-          }
+          address: dummyAddress,
+          sending: [],
+          receiving: [
+            {
+              transaction: {
+                inputs: [{ previousOutpoint: { transactionId: "txC", index: 2 } }] // completely unrelated
+              }
+            }
+          ]
         }
       ]
     });

@@ -344,11 +344,18 @@ export class HardkasTx {
         }
       },
       getVirtualDaaScore: async () => {
-        try {
-          const dagInfo = await this.sdk.rpc.getBlockDagInfo();
-          return dagInfo.virtualDaaScore;
-        } catch {
-          return undefined as any;
+        if (
+          activeNetwork === "simulated" ||
+          this.sdk.config.config.networks?.[activeNetwork]?.kind === "simulated"
+        ) {
+          return 1000000n; // Arbitrary high score for simulator
+        } else {
+          try {
+            const info = await this.sdk.rpc.getBlockDagInfo();
+            return info.virtualDaaScore !== undefined ? BigInt(info.virtualDaaScore) : 0n;
+          } catch {
+            return undefined as any;
+          }
         }
       }
     };
