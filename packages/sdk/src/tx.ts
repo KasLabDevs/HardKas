@@ -260,6 +260,19 @@ export class HardkasTx {
     if (!toAccount.address)
       throw new Error(`To account ${toAccount.name} has no address.`);
 
+    const activeNetwork = options.networkProfile || this.sdk.config.config.defaultNetwork || "simnet";
+
+    if (typeof options.amount === "string" && options.amount.toLowerCase() === "all") {
+      const res = await this.sdk.query.getSpendableUtxos({ address: fromAccount.address, excludePending: true });
+      return this.createConsolidationPlan({
+         account: fromAccount,
+         selectedUtxos: res.data,
+         destination: toAccount.address,
+         network: activeNetwork,
+         ...(options.feeRate !== undefined ? { feeRate: options.feeRate } : {})
+      });
+    }
+
     const amountSompi =
       typeof options.amount === "string"
         ? parseKasToSompi(options.amount)
@@ -273,7 +286,7 @@ export class HardkasTx {
       );
     }
 
-    const activeNetwork = this.sdk.config.config.defaultNetwork || "simnet";
+    
     const allowMainnet =
       (this.sdk.config.config.networks?.mainnet as any)?.allowMainnet === true;
 

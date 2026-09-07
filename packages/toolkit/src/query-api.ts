@@ -78,18 +78,18 @@ export class QueryToolkit {
 
           if (mempoolRes && mempoolRes.entries) {
             for (const entry of mempoolRes.entries) {
-              // Only intersect sending transactions to avoid locking on incoming payments
-              if (entry.sending && entry.sending.length > 0) {
-                // Determine if this address is among the sending ones
-                const isSendingFromUs = entry.sending.some((s: any) => s.address === address);
-                if (isSendingFromUs && entry.transaction && entry.transaction.inputs) {
-                  for (const input of entry.transaction.inputs) {
-                    if (input.previousOutpoint) {
-                      excluded.add(`${input.previousOutpoint.transactionId}:${input.previousOutpoint.index}`);
+                // Only intersect sending transactions to avoid locking on incoming payments
+                if (entry.address === address && entry.sending && entry.sending.length > 0) {
+                  for (const s of entry.sending) {
+                    if (s.transaction && s.transaction.inputs) {
+                      for (const input of s.transaction.inputs) {
+                        if (input.previousOutpoint) {
+                          excluded.add(`${input.previousOutpoint.transactionId}:${input.previousOutpoint.index}`);
+                        }
+                      }
                     }
                   }
                 }
-              }
             }
           }
         } catch (e) {
