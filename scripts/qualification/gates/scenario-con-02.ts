@@ -27,6 +27,17 @@ export const scenarioCon02: GateDefinition = {
     let status: QualificationStatus = "PASS";
 
     const cliPath = getHardkasCliPath(ctx.consumerDir);
+    
+    // Phase 0: Infrastructure Isolation - fresh node, volume, and funding
+    const fs = await import("fs/promises");
+    const path = await import("path");
+    await runCommand(`"${cliPath}" localnet stop --toccata`, ctx.consumerDir);
+    try {
+      await fs.rm(path.join(ctx.consumerDir, ".hardkas", "localnet", "toccata-v2", "kaspad-data"), { recursive: true, force: true });
+    } catch {}
+    await runCommand(`"${cliPath}" localnet start --toccata --detached`, ctx.consumerDir);
+    await runCommand(`"${cliPath}" localnet fund alice`, ctx.consumerDir);
+
     const statusRes = await runCommand(`"${cliPath}" localnet status --json`, ctx.consumerDir);
     let rpcUrl = "127.0.0.1:18210";
     try {

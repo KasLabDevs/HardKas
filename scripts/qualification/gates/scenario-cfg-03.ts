@@ -46,6 +46,13 @@ export const scenarioCfg03: GateDefinition = {
         const alice = await hk.accounts.resolve("alice");
         const bob = await hk.accounts.resolve("bob");
 
+        // Baseline plan with default config feeRate
+        const baselinePlan = await hk.tx.plan({
+          from: alice,
+          to: bob,
+          amount: 1000000n
+        });
+
         // Plan transaction passing explicit feeRate override
         const plan = await hk.tx.plan({
           from: alice,
@@ -54,10 +61,13 @@ export const scenarioCfg03: GateDefinition = {
           feeRate: 15000n
         });
 
+        const baselineFee = BigInt(baselinePlan.estimatedFeeSompi || "0");
+        const overrideFee = BigInt(plan.estimatedFeeSompi || "0");
+
         __emitEvidence({
           networkMatches: hk.network === "simnet",
-          explicitFeeRate: plan.feeRate === "15000" || plan.feeRate === 15000 || plan.feeRateSompi === "15000",
-          rawFeeRate: plan.feeRate || plan.feeRateSompi
+          explicitFeeRate: overrideFee > baselineFee,
+          rawFeeRate: { baseline: baselineFee.toString(), override: overrideFee.toString() }
         });
       } catch (e) {
         __emitEvidence({
