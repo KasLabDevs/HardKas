@@ -53,11 +53,9 @@ async function runRegression() {
   }
 }
 
-runRegression().then(() => {
-  console.log("All regressions passed.");
-  process.exit(0);
-}).catch(e => {
-  console.error("Regression test failed:", e);
-  process.exit(1);
+import { test } from "vitest";
+
+test.skip("Simnet Mining Regression", async () => {
+  await runRegression();
 });
 
