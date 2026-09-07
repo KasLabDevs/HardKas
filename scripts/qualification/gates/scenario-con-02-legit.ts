@@ -24,11 +24,11 @@ export const scenarioCon02Legit: GateDefinition = {
     const cliPath = getHardkasCliPath(ctx.consumerDir);
 
     // Phase 0: Infrastructure Isolation - fresh node, volume, and funding
-    const fs = await import("fs/promises");
-    const path = await import("path");
+    const fsLib = await import("fs/promises");
+    const pathLib = await import("path");
     await runCommand(`"${cliPath}" localnet stop --toccata`, ctx.consumerDir);
     try {
-      await fs.rm(path.join(ctx.consumerDir, ".hardkas", "localnet", "toccata-v2", "kaspad-data"), { recursive: true, force: true });
+      await fsLib.rm(pathLib.join(ctx.consumerDir, ".hardkas", "localnet", "toccata-v2", "kaspad-data"), { recursive: true, force: true });
     } catch {}
     await runCommand(`"${cliPath}" localnet start --toccata --detached`, ctx.consumerDir);
     await runCommand(`"${cliPath}" localnet fund alice`, ctx.consumerDir);

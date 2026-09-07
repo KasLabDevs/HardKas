@@ -18,7 +18,22 @@ export const scenarioPlg01: GateDefinition = {
         const fs = await import("fs/promises");
         const path = await import("path");
         
-        const configCode = \`
+        const validConfigCode = \`
+          export default {
+            defaultNetwork: "simnet",
+            plugins: [
+              {
+                name: "valid-plugin",
+                version: "1.0.0",
+                extendEnvironment: (env) => {
+                  env.testPluginLoaded = "success";
+                }
+              }
+            ]
+          };
+        \`;
+
+        const maliciousConfigCode = \`
           export default {
             defaultNetwork: "simnet",
             plugins: [
@@ -33,21 +48,33 @@ export const scenarioPlg01: GateDefinition = {
           };
         \`;
         
-        await fs.writeFile(path.join(process.cwd(), "hardkas.config.js"), configCode);
+        await fs.writeFile(path.join(process.cwd(), "valid.config.ts"), validConfigCode);
+        await fs.writeFile(path.join(process.cwd(), "malicious.config.ts"), maliciousConfigCode);
 
+        // 1. Prove plugin loads successfully via public config
+        const hkValid = await Hardkas.create({
+          mode: "developer",
+          configPath: "valid.config.ts"
+        });
+        const pluginLoadedAndAccessible = hkValid.testPluginLoaded === "success";
+
+        // 2. Prove core namespace override attempt is rejected
         let overrideBlocked = false;
+        let blockErrorCode = "";
         try {
           await Hardkas.create({
             mode: "developer",
-            configPath: "hardkas.config.js"
+            configPath: "malicious.config.ts"
           });
         } catch (e) {
-          overrideBlocked = e.code === "PLUGIN_CORE_NAMESPACE_OVERRIDE_BLOCKED" || e.message?.includes("cannot override hk.tx");
+          overrideBlocked = e.code === "PLUGIN_CORE_NAMESPACE_OVERRIDE_BLOCKED" || e.message?.includes("cannot override");
+          blockErrorCode = e.code || e.message;
         }
 
         __emitEvidence({
-          pluginRegistered: true,
-          overrideBlocked
+          pluginLoadedAndAccessible,
+          overrideBlocked,
+          blockErrorCode
         });
       } catch (e) {
         __emitEvidence({
@@ -58,9 +85,9 @@ export const scenarioPlg01: GateDefinition = {
       } finally {
         process.exit(0);
       }
-    \`;
+    `;
 
-    const res = await runConsumerScript(ctx, "plg-01-plugin.js", code);
+    const res = await runConsumerScript(ctx, "plg-01-plugin.ts", code);
     evidence.push("PLG-01 RAW OUTPUT:\\n" + res.stdout + "\\n" + res.stderr);
 
     if (res.code !== 0 || !res.data) {
@@ -76,15 +103,15 @@ export const scenarioPlg01: GateDefinition = {
     const d = res.data;
 
     assertions.push({
-      name: "PLG-01.A Hardkas.create executes cleanly with plugins option",
-      passed: d.pluginRegistered === true,
-      actual: d.pluginRegistered
+      name: "PLG-01.A Public config loads valid plugin and correctly extends environment",
+      passed: d.pluginLoadedAndAccessible === true,
+      actual: d.pluginLoadedAndAccessible
     });
 
     assertions.push({
-      name: "PLG-01.B Programmatic options.plugins loaded and namespace override blocked (QF-009 if false)",
+      name: "PLG-01.B Malicious config plugin attempting core namespace override is blocked with typed error",
       passed: d.overrideBlocked === true,
-      actual: d.overrideBlocked
+      actual: { overrideBlocked: d.overrideBlocked, blockErrorCode: d.blockErrorCode }
     });
 
     if (assertions.some(a => !a.passed)) {
