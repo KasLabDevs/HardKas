@@ -35,11 +35,9 @@ export const scenarioCfg03: GateDefinition = {
         const alice = await hk.accounts.resolve("alice");
         const bob = await hk.accounts.resolve("bob");
 
-        // Use a tiny amount so exactly 1 input and 1 change output are used in both cases
-        // (Since Alice has large UTXOs from mining)
         const amount = 1000n;
 
-        // 1. Baseline plan with default config feeRate
+        // 1. Baseline plan with standard dynamic estimator
         const baselinePlan = await hk.tx.plan({
           from: alice,
           to: bob,
@@ -58,15 +56,27 @@ export const scenarioCfg03: GateDefinition = {
         const baselineFee = BigInt(baselinePlan.estimatedFeeSompi || "0");
         const overrideFee = BigInt(plan.estimatedFeeSompi || "0");
         
+        const baselineMass = BigInt(baselinePlan.estimatedMass || "0");
+        const overrideMass = BigInt(plan.estimatedMass || "0");
+
         const baselineInputs = baselinePlan.inputs?.length || 0;
         const overrideInputs = plan.inputs?.length || 0;
+
+        // B is consistent with Y applied to the final transaction shape subject to the relay floor
+        const expectedFee = overrideMass * explicitFeeRate;
+        const relayFloor = overrideMass * 100n;
+        const boundedExpectedFee = expectedFee > relayFloor ? expectedFee : relayFloor;
+
+        const isConsistent = overrideFee === boundedExpectedFee;
 
         __emitEvidence({
           networkMatches: hk.network === "simnet",
           sameTxShape: baselineInputs > 0 && baselineInputs === overrideInputs,
           overrideFeeIsLarger: overrideFee > baselineFee,
+          isConsistent,
           rawFee: { baseline: baselineFee.toString(), override: overrideFee.toString() },
-          rawInputs: { baseline: baselineInputs, override: overrideInputs }
+          rawInputs: { baseline: baselineInputs, override: overrideInputs },
+          math: { expected: expectedFee.toString(), actual: overrideFee.toString(), floor: relayFloor.toString() }
         });
       } catch (e) {
         __emitEvidence({
@@ -102,8 +112,8 @@ export const scenarioCfg03: GateDefinition = {
 
     assertions.push({
       name: "CFG-03.B Explicit feeRate method override produces larger fee matching expected policy (same tx shape)",
-      passed: d.sameTxShape === true && d.overrideFeeIsLarger === true,
-      actual: { sameTxShape: d.sameTxShape, overrideFeeIsLarger: d.overrideFeeIsLarger, rawFee: d.rawFee, rawInputs: d.rawInputs }
+      passed: d.sameTxShape === true && d.overrideFeeIsLarger === true && d.isConsistent === true,
+      actual: { sameTxShape: d.sameTxShape, overrideFeeIsLarger: d.overrideFeeIsLarger, isConsistent: d.isConsistent, math: d.math, rawFee: d.rawFee }
     });
 
     if (assertions.some(a => !a.passed)) {

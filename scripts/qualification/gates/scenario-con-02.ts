@@ -68,11 +68,11 @@ export const scenarioCon02: GateDefinition = {
         const alice = await hk.accounts.resolve("alice");
         const targetAcc = await hk.accounts.resolve(recipient);
 
-        // Plan spend
+        // Plan spend (use all funds to guarantee full UTXO overlap between concurrent processes)
         const plan = await hk.tx.plan({
           from: alice,
           to: targetAcc,
-          amount: 50000000000n
+          amount: "all"
         });
 
         const inputs = (plan.inputs || plan.plan?.inputs || []).map(i => {
