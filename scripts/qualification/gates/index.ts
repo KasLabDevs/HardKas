@@ -12,7 +12,6 @@ import { scenarioTx02 } from "./scenario-tx-02.js";
 import { scenarioTx04 } from "./scenario-tx-04.js";
 import { scenarioTx05 } from "./scenario-tx-05.js";
 import { scenarioCon02 } from "./scenario-con-02.js";
-import { scenarioCon02Legit } from "./scenario-con-02-legit.js";
 import { scenarioObs01 } from "./scenario-obs-01.js";
 import { scenarioObs04 } from "./scenario-obs-04.js";
 import { scenarioObs05 } from "./scenario-obs-05.js";
@@ -119,12 +118,6 @@ export const allGates: QualificationScenario[] = [
   {
     ...scenarioCon02,
     title: "Cross-Process Concurrency",
-    track: "DOCKER_REAL",
-    surface: "PUBLIC",
-  },
-  {
-    ...scenarioCon02Legit,
-    title: "Legitimate Single-UTXO Cross-Process Concurrency",
     track: "DOCKER_REAL",
     surface: "PUBLIC",
   },

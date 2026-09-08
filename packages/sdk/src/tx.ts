@@ -369,16 +369,18 @@ export class HardkasTx {
       toAddress: toAccount.address,
       amountSompi,
       ...(options.feeRate !== undefined ? { feeRate: options.feeRate } : {}),
-      feeEstimator: async (inputs: number, outputs: number) => {
-        const { estimatedFee } = await this.sdk.fees.estimate({
-          priority: "normal",
-          inputs,
-          outputs,
-          version: 1,
-          network: activeNetwork as NetworkId
-        });
-        return estimatedFee;
-      }
+      ...(options.feeRate === undefined ? {
+        feeEstimator: async (inputs: number, outputs: number) => {
+          const { estimatedFee } = await this.sdk.fees.estimate({
+            priority: "normal",
+            inputs,
+            outputs,
+            version: 1,
+            network: activeNetwork as NetworkId
+          });
+          return estimatedFee;
+        }
+      } : {})
     });
 
     const builderPlan = result.plan;

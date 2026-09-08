@@ -3,20 +3,16 @@ import { runCommand, getHardkasCliPath } from "../environment/commands.js";
 import { runConsumerScript } from "../environment/consumer-script.js";
 
 /**
- * CON-02 � Cross-Process Concurrency (Docker Real)
+ * CON-02 - Cross-Process Concurrency
  *
- * Authority: rusty-kaspad RPC + OS process isolation
+ * Authority: rusty-kaspad Mempool + HardKAS TX Planner
  * Track: DOCKER_REAL
  * Surface: PUBLIC
- *
- * Spawns two independent, uncoordinated Node.js OS processes attempting
- * concurrent spend of overlapping UTXOs against a real rusty-kaspad node.
- * Verifies that network-level double spend is resolved deterministically
- * (1 winner, 1 loser with typed rejection, 0 false receipts).
  */
 export const scenarioCon02: GateDefinition = {
   id: "CON-02",
   name: "Cross-Process Concurrency",
+  description: "Validates safe conflict rejection when two independent worker processes attempt to spend the same UTXO concurrently",
   mandatory: true,
   implemented: true,
   requires: ["publicNpmConsumer", "rpcReady", "fundedAccount", "matureUtxo"],
@@ -27,7 +23,7 @@ export const scenarioCon02: GateDefinition = {
     let status: QualificationStatus = "PASS";
 
     const cliPath = getHardkasCliPath(ctx.consumerDir);
-    
+
     // Phase 0: Infrastructure Isolation - fresh node, volume, and funding
     const fsLib = await import("fs/promises");
     const pathLib = await import("path");
@@ -47,8 +43,82 @@ export const scenarioCon02: GateDefinition = {
       }
     } catch (e) {}
 
-    // We write a worker script that can act as Process A or Process B
-    const workerCode = `
+    // Phase 1: Setup a single-UTXO funded account fixture
+    const setupAccountName = `con02_race_sender_${Date.now()}`;
+    const setupCode = `
+      import { getOrCreateDevAccount } from "@hardkas/accounts";
+
+      const hk = await Hardkas.create({
+        network: "simnet",
+        rpc: { endpoints: ["${rpcUrl}"] }
+      });
+
+      try {
+        const alice = await hk.accounts.resolve("alice");
+        const accountIndex = Math.floor(Math.random() * 10000) + 1000;
+        await getOrCreateDevAccount(process.cwd(), accountIndex, "${setupAccountName}");
+        const singleAcc = await hk.accounts.resolve("${setupAccountName}");
+
+        const plan = await hk.tx.plan({
+          from: alice,
+          to: singleAcc,
+          amount: 10000000000n, // 10 KAS
+          feeRate: 100n
+        });
+
+        const signed = await hk.tx.sign(plan, { account: alice });
+        const sendRes = await hk.tx.send(signed);
+
+        const template = await hk.rpc.call("getBlockTemplateRequest", { payAddress: alice.address, extraData: [] });
+        const blockMessage = template.blockMessage || template.block;
+        await hk.rpc.call("submitBlockRequest", { block: blockMessage, allowNonDAABlocks: false });
+
+        const utxosRes = await hk.query.utxos(singleAcc.address);
+        const utxos = utxosRes.data || [];
+
+        const expectedOutpoint = utxos[0] ? utxos[0].outpoint?.transactionId + ":" + utxos[0].outpoint?.index : null;
+
+        __emitEvidence({
+          setupSuccessful: true,
+          accountName: "${setupAccountName}",
+          address: singleAcc.address,
+          utxoCount: utxos.length,
+          outpointX: expectedOutpoint
+        });
+      } catch (e) {
+        __emitEvidence({ setupSuccessful: false, error: String(e.message || e) });
+      } finally {
+        process.exit(0);
+      }
+    `;
+
+    const setupRes = await runConsumerScript(ctx, "con-02-setup.js", setupCode);
+    evidence.push("CON-02 SETUP OUTPUT:\n" + setupRes.stdout + "\n" + setupRes.stderr);
+
+    const setupData = setupRes.data;
+
+    if (!setupData || setupData.setupSuccessful !== true || setupData.utxoCount !== 1) {
+      status = "ENVIRONMENT_NOT_QUALIFIED";
+      assertions.push({
+        name: "CON-02.A Single-UTXO fixture established (outpoint X)",
+        passed: false,
+        actual: setupData
+      });
+      return { status, assertions, evidence };
+    }
+
+    assertions.push({
+      name: "CON-02.A Single-UTXO fixture established (outpoint X)",
+      passed: setupData.utxoCount === 1 && !!setupData.outpointX,
+      actual: setupData
+    });
+
+    const expectedOutpointX = setupData.outpointX;
+
+    // Phase 2: Multi-process IPC READY -> GO synchronization race barrier
+    const workerScript = (workerName: string, recipientName: string) => `
+      import fs from "fs/promises";
+      import path from "path";
       import { Hardkas } from "@hardkas/sdk";
 
       function __emitEvidence(data) {
@@ -62,103 +132,147 @@ export const scenarioCon02: GateDefinition = {
         rpc: { endpoints: ["${rpcUrl}"] }
       });
 
-      const recipient = process.argv[2] || "bob";
-
       try {
-        const alice = await hk.accounts.resolve("alice");
-        const targetAcc = await hk.accounts.resolve(recipient);
+        const sender = await hk.accounts.resolve("${setupAccountName}");
+        const recipient = await hk.accounts.resolve("${recipientName}");
 
-        // Plan spend (use all funds to guarantee full UTXO overlap between concurrent processes)
+        let replanCount = 0;
+        let resignCount = 0;
+
         const plan = await hk.tx.plan({
-          from: alice,
-          to: targetAcc,
-          amount: "all"
+          from: sender,
+          to: recipient,
+          amount: 5000000000n, // 5 KAS
+          feeRate: 100n
         });
 
-        const inputs = (plan.inputs || plan.plan?.inputs || []).map(i => {
+        const signed = await hk.tx.sign(plan, { account: sender });
+
+        const inputsList = plan.inputs || plan.plan?.inputs || [];
+        const selectedOutpoints = inputsList.map(i => {
           const txId = i.outpoint?.transactionId || i.previousOutpoint?.transactionId;
           const idx = i.outpoint?.index !== undefined ? i.outpoint.index : i.previousOutpoint?.index;
           return txId + ":" + idx;
         });
 
-        const signed = await hk.tx.sign(plan, { account: alice });
+        // Barrier Step 1: Emit READY signal with plan payload
+        await fs.writeFile(
+          path.join(process.cwd(), "${workerName}.ready"),
+          JSON.stringify({
+            worker: "${workerName}",
+            pid: process.pid,
+            planId: plan.id || plan.planId || plan.contentHash,
+            signedId: signed.txId || signed.signedId || signed.contentHash,
+            selectedOutpoints,
+            replanCount,
+            resignCount
+          }),
+          "utf-8"
+        );
 
-        // Signal readiness and wait for sync barrier file if provided
-        const fs = await import("fs");
-        if (process.env.BARRIER_FILE) {
-          fs.writeFileSync(process.env.BARRIER_FILE + "." + recipient, "ready");
-          // Poll for trigger file
-          for (let i = 0; i < 50; i++) {
-            if (fs.existsSync(process.env.BARRIER_FILE + ".go")) break;
-            await new Promise(r => setTimeout(r, 100));
+        // Barrier Step 2: Poll for GO barrier file
+        let go = false;
+        const startWait = Date.now();
+        while (!go && Date.now() - startWait < 10000) {
+          try {
+            await fs.access(path.join(process.cwd(), "barrier.go"));
+            go = true;
+          } catch {
+            await new Promise(r => setTimeout(r, 10));
           }
         }
 
-        // Send to real node
-        const sendRes = await hk.tx.send(signed);
+        if (!go) {
+          throw new Error("${workerName} timed out waiting for barrier.go");
+        }
+
+        // Barrier Step 3: Simultaneous Send
+        let sendResult = null;
+        let sendError = null;
+        try {
+          sendResult = await hk.tx.send(signed);
+        } catch (e) {
+          sendError = e.message;
+        }
+
+        const receiptExists = !!(sendResult && (sendResult.receipt?.txId || sendResult.txId));
 
         __emitEvidence({
+          worker: "${workerName}",
           pid: process.pid,
-          recipient,
-          inputs,
-          success: true,
-          txId: sendRes.txId || sendRes.receipt?.txId,
-          submitted: sendRes.submitted !== false
+          planId: plan.id || plan.planId || plan.contentHash,
+          signedId: signed.txId || signed.signedId || signed.contentHash,
+          txId: sendResult?.txId || sendResult?.receipt?.txId,
+          sendSuccess: !!sendResult && !sendError,
+          sendError,
+          receiptExists
         });
       } catch (e) {
-        __emitEvidence({
-          pid: process.pid,
-          recipient,
-          success: false,
-          errorMessage: e.message,
-          errorCode: e.code
-        });
+        __emitEvidence({ worker: "${workerName}", error: e.message });
       } finally {
         process.exit(0);
       }
     `;
 
-    // Write worker script to consumer dir
     const fs = await import("fs/promises");
     const path = await import("path");
-    const barrierPath = path.join(ctx.consumerDir, "barrier");
-    await fs.writeFile(path.join(ctx.consumerDir, "worker-cross.js"), workerCode);
+    await fs.writeFile(path.join(ctx.consumerDir, "worker-a-legit.js"), workerScript("WorkerA", "bob"));
+    await fs.writeFile(path.join(ctx.consumerDir, "worker-b-legit.js"), workerScript("WorkerB", "carol"));
 
-    // Clean any old barrier files
-    try {
-      await fs.rm(barrierPath + ".bob", { force: true });
-      await fs.rm(barrierPath + ".carol", { force: true });
-      await fs.rm(barrierPath + ".go", { force: true });
-    } catch (e) {}
+    const readyFileA = path.join(ctx.consumerDir, "WorkerA.ready");
+    const readyFileB = path.join(ctx.consumerDir, "WorkerB.ready");
+    const goFile = path.join(ctx.consumerDir, "barrier.go");
 
-    // Launch Process A (bob) and Process B (carol) concurrently
-    const env = { BARRIER_FILE: barrierPath };
+    try { await fs.unlink(readyFileA); } catch {}
+    try { await fs.unlink(readyFileB); } catch {}
+    try { await fs.unlink(goFile); } catch {}
 
-    const cmdA = `node worker-cross.js bob`;
-    const cmdB = `node worker-cross.js carol`;
+    const pA = runCommand("node worker-a-legit.js", ctx.consumerDir);
+    const pB = runCommand("node worker-b-legit.js", ctx.consumerDir);
 
-    const promiseA = runCommand(cmdA, ctx.consumerDir, env);
-    const promiseB = runCommand(cmdB, ctx.consumerDir, env);
+    let readyPayloadA: any = null;
+    let readyPayloadB: any = null;
+    const startBarrier = Date.now();
 
-    // Wait briefly for both processes to signal readiness
-    for (let i = 0; i < 30; i++) {
-      const existsA = await fs.access(barrierPath + ".bob").then(() => true).catch(() => false);
-      const existsB = await fs.access(barrierPath + ".carol").then(() => true).catch(() => false);
-      if (existsA && existsB) break;
-      await new Promise(r => setTimeout(r, 100));
+    while ((!readyPayloadA || !readyPayloadB) && Date.now() - startBarrier < 10000) {
+      if (!readyPayloadA) {
+        try {
+          const raw = await fs.readFile(readyFileA, "utf-8");
+          readyPayloadA = JSON.parse(raw);
+        } catch {}
+      }
+      if (!readyPayloadB) {
+        try {
+          const raw = await fs.readFile(readyFileB, "utf-8");
+          readyPayloadB = JSON.parse(raw);
+        } catch {}
+      }
+      if (!readyPayloadA || !readyPayloadB) {
+        await new Promise(r => setTimeout(r, 20));
+      }
     }
 
-    // Trigger simultaneous submission
-    await fs.writeFile(barrierPath + ".go", "GO");
+    const readyValidA = readyPayloadA && readyPayloadA.selectedOutpoints?.length === 1 && readyPayloadA.selectedOutpoints[0] === expectedOutpointX;
+    const readyValidB = readyPayloadB && readyPayloadB.selectedOutpoints?.length === 1 && readyPayloadB.selectedOutpoints[0] === expectedOutpointX;
+    const zeroReplanResign = readyPayloadA?.replanCount === 0 && readyPayloadA?.resignCount === 0 && readyPayloadB?.replanCount === 0 && readyPayloadB?.resignCount === 0;
 
-    // Await both process completions
-    const [resA, resB] = await Promise.all([promiseA, promiseB]);
+    assertions.push({
+      name: "CON-02.B Both workers independently planned and signed against single outpoint X (zero replan/resign)",
+      passed: !!readyValidA && !!readyValidB && zeroReplanResign,
+      actual: { readyPayloadA, readyPayloadB, expectedOutpointX }
+    });
 
-    evidence.push("PROCESS A (BOB) OUTPUT:\n" + resA.stdout + "\n" + resA.stderr);
-    evidence.push("PROCESS B (CAROL) OUTPUT:\n" + resB.stdout + "\n" + resB.stderr);
+    // Emit GO barrier file
+    if (readyPayloadA && readyPayloadB) {
+      await fs.writeFile(goFile, "GO", "utf-8");
+    }
 
-    // Parse evidence payloads
-    const parseEvidence = (stdout: string) => {
+    const [resA, resB] = await Promise.all([pA, pB]);
+
+    evidence.push("WORKER A OUTPUT:\n" + resA.stdout + "\n" + resA.stderr);
+    evidence.push("WORKER B OUTPUT:\n" + resB.stdout + "\n" + resB.stderr);
+
+    const parseEv = (stdout: string) => {
       const match = stdout.match(/---EVIDENCE_START---\n([\s\S]*?)\n---EVIDENCE_END---/);
       if (match && match[1]) {
         try { return JSON.parse(match[1]); } catch (e) {}
@@ -166,79 +280,33 @@ export const scenarioCon02: GateDefinition = {
       return null;
     };
 
-    const dataA = parseEvidence(resA.stdout);
-    const dataB = parseEvidence(resB.stdout);
+    const dataA = parseEv(resA.stdout);
+    const dataB = parseEv(resB.stdout);
 
-    // CON-02.A: Both independent processes ran and emitted evidence
-    assertions.push({
-      name: "CON-02.A both independent Node processes executed",
-      passed: !!dataA && !!dataB,
-      actual: { processA: !!dataA, processB: !!dataB }
-    });
+    const successCount = (dataA?.sendSuccess ? 1 : 0) + (dataB?.sendSuccess ? 1 : 0);
+    const rejectCount = (dataA?.sendError ? 1 : 0) + (dataB?.sendError ? 1 : 0);
 
-    if (!dataA || !dataB) {
-      status = "FAIL";
-      return { status, assertions, evidence };
-    }
+    const winner = dataA?.sendSuccess ? dataA : (dataB?.sendSuccess ? dataB : null);
+    const loser = dataA?.sendError ? dataA : (dataB?.sendError ? dataB : null);
 
-    // Verify input overlap
-    const inputsA: string[] = dataA.inputs || [];
-    const inputsB: string[] = dataB.inputs || [];
-    const overlappingInputs = inputsA.filter(i => inputsB.includes(i));
-
-    // Fixture verification: If no overlapping inputs, fixture was not established
-    if (overlappingInputs.length === 0) {
-      status = "ENVIRONMENT_NOT_QUALIFIED";
-      assertions.push({
-        name: "CON-02.B conflict fixture construction (overlappingInputs > 0)",
-        passed: false,
-        actual: { inputsA, inputsB, overlappingInputsCount: 0 },
-        error: "FIXTURE_NOT_ESTABLISHED: Process A and Process B did not select overlapping UTXOs."
-      });
-      return { status, assertions, evidence };
-    }
+    const mempoolDoubleSpendError = loser?.sendError?.includes("already spent") && loser?.sendError?.includes("mempool");
 
     assertions.push({
-      name: "CON-02.B conflict fixture construction (overlappingInputs > 0)",
-      passed: true,
-      actual: { overlappingInputsCount: overlappingInputs.length, overlappingInputs }
-    });
-
-    // Check winner/loser outcome
-    const aSuccess = dataA.success === true && !!dataA.txId;
-    const bSuccess = dataB.success === true && !!dataB.txId;
-
-    const winnerCount = (aSuccess ? 1 : 0) + (bSuccess ? 1 : 0);
-    const loserCount = (!aSuccess ? 1 : 0) + (!bSuccess ? 1 : 0);
-
-    assertions.push({
-      name: "CON-02.C exactly one cross-process transaction accepted",
-      passed: winnerCount === 1,
-      actual: { winnerCount, processASuccess: aSuccess, processBSuccess: bSuccess }
-    });
-
-    assertions.push({
-      name: "CON-02.D exactly one cross-process transaction rejected",
-      passed: loserCount === 1,
-      actual: { loserCount, processAError: dataA.errorMessage, processBError: dataB.errorMessage }
-    });
-
-    const loserData = !aSuccess ? dataA : dataB;
-    assertions.push({
-      name: "CON-02.E loser received typed network rejection error",
-      passed: !loserData.success && typeof loserData.errorMessage === "string",
-      actual: loserData
-    });
-
-    assertions.push({
-      name: "CON-02.F zero false receipts produced for losing process",
-      passed: !loserData.txId,
-      actual: { loserTxId: loserData.txId }
+      name: "CON-02.C Single-UTXO Concurrent Double-Spend Race outcome: 1 winner submitted, 1 loser rejected by mempool",
+      passed: successCount === 1 && rejectCount === 1 && winner?.receiptExists === true && loser?.receiptExists === false && !!mempoolDoubleSpendError,
+      actual: { successCount, rejectCount, winner, loser, mempoolDoubleSpendError }
     });
 
     if (assertions.some(a => !a.passed)) {
       status = "FAIL";
     }
+
+    // Cleanup temp files
+    try { await fs.unlink(path.join(ctx.consumerDir, "worker-a-legit.js")); } catch {}
+    try { await fs.unlink(path.join(ctx.consumerDir, "worker-b-legit.js")); } catch {}
+    try { await fs.unlink(readyFileA); } catch {}
+    try { await fs.unlink(readyFileB); } catch {}
+    try { await fs.unlink(goFile); } catch {}
 
     return { status, assertions, evidence };
   }

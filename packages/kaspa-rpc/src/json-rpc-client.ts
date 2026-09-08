@@ -253,6 +253,9 @@ export class KaspaJsonRpcClient implements KaspaRpcClient {
   async getMempoolEntries(options?: any): Promise<any> {
     return await this.callRpc("getMempoolEntriesRequest", options || {});
   }
+  async getMempoolEntriesByAddresses(options: any): Promise<any> {
+    return await this.callRpc("getMempoolEntriesByAddressesRequest", options);
+  }
 
   async getFeeEstimate(): Promise<any> {
     return await this.callRpc("getFeeEstimateRequest", {});

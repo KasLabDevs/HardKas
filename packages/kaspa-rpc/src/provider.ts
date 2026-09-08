@@ -123,6 +123,10 @@ export class LoadBalancedRpcProvider implements KaspaRpcClient {
     return this.withFailover((c) => c.getMempoolEntries(options));
   }
 
+  async getMempoolEntriesByAddresses(options: any): Promise<any> {
+    return this.withFailover((c) => c.getMempoolEntriesByAddresses(options));
+  }
+
   async getFeeEstimate(): Promise<any> {
     return this.withFailover((c) => c.getFeeEstimate());
   }

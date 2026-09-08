@@ -232,7 +232,8 @@ export class TxPlanService {
           amountSompi: outputAmount
         }
       ],
-      feeRateSompiPerMass: feeRate
+      feeRateSompiPerMass: feeRate,
+      coinbaseMaturity: this.coinbaseMaturity
     });
 
     return {
