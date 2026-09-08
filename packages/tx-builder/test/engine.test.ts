@@ -53,10 +53,10 @@ describe("Agnostic Transaction Engine", () => {
     // We want a change < 600, e.g., 500.
     // So output + fee = 10000000 - 500 = 9999500.
     // Let's force an exact fee policy (rate 1), and then fix the intent.
-    // 1 in, 2 out (temporary) = mass 2036. Minimum fee = 203600.
-    // So output should be 10000000 - 203600 - 500 = 9795900.
+    // 1 in, 2 out (temporary) = mass 2052. Minimum fee = 205200.
+    // So output should be 10000000 - 205200 - 500 = 9794300.
     const config: TransactionEngineConfig = {
-      intent: { outputs: [{ address: "kaspa:test", amountSompi: "9795900" }] },
+      intent: { outputs: [{ address: "kaspa:test", amountSompi: "9794300" }] },
       context: { availableUtxos: [utxo1], changeAddress: "kaspa:change" },
       policies: { fee: { exact: 1 }, selection: "largest-first" }
     };
@@ -67,7 +67,7 @@ describe("Agnostic Transaction Engine", () => {
        expect(BigInt(res.change.amountSompi)).toBeGreaterThanOrEqual(600n);
     } else {
        expect(BigInt(res.fee)).toBeGreaterThan(0n);
-       expect(BigInt(res.fee) + 9795900n).toBe(10000000n);
+       expect(BigInt(res.fee) + 9794300n).toBe(10000000n);
     }
   });
 

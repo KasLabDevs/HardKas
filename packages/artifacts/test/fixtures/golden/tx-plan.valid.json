@@ -21,8 +21,8 @@
     "address": "kaspa:sim_456"
   },
   "amountSompi": "1000000",
-  "estimatedFeeSompi": "506",
-  "estimatedMass": "506",
+  "estimatedFeeSompi": "522",
+  "estimatedMass": "522",
   "inputs": [],
   "outputs": [
     {
@@ -31,12 +31,12 @@
     }
   ],
   "lineage": {
-    "artifactId": "7ded2c2a66d672d7b30b0988924e8f133f56f3b1f47fe510faaff5e796c6d75d",
+    "artifactId": "37665f100c16f5a7ef293c744c47f5bbd56644cedf6b6e7be31bbb96ef207231",
     "lineageId": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
     "parentArtifactId": "",
     "rootArtifactId": "2b4baed6aab94827f47c19195591a9f619be50882de2c564ca9fa1bd09d57fb5",
     "sequence": 1
   },
   "hashVersion": 4,
-  "contentHash": "7ded2c2a66d672d7b30b0988924e8f133f56f3b1f47fe510faaff5e796c6d75d"
+  "contentHash": "37665f100c16f5a7ef293c744c47f5bbd56644cedf6b6e7be31bbb96ef207231"
 }
