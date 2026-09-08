@@ -460,8 +460,8 @@ export class KaspaJsonRpcClient implements KaspaRpcClient {
 
     const result = (await this.callRpc("submitTransactionRequest", {
       transaction: txObj,
-      allowOrphan: true,
-      allow_orphan: true
+      allowOrphan: options?.allowOrphan ?? false,
+      allow_orphan: options?.allowOrphan ?? false
     })) as { transactionId: string };
     return { transactionId: result.transactionId };
   }
