@@ -1,0 +1,37 @@
+{
+  "schema": "hardkas.toccataGauntlet.v1",
+  "status": "TOCCATA_NORMALIZATION_BLOCKED_RELEASE_ENV",
+  "generatedAt": "2026-09-08T21:35:33.852Z",
+  "partialKnownLimitations": [
+    "PARTIAL_VM_SIMULATION"
+  ],
+  "phases": [
+    {
+      "name": "package/build integrity",
+      "status": "PASS"
+    },
+    {
+      "name": "doctor",
+      "status": "PASS"
+    },
+    {
+      "name": "capabilities",
+      "status": "PASS"
+    },
+    {
+      "name": "localnet status",
+      "status": "PASS"
+    },
+    {
+      "name": "docker rpc health",
+      "status": "PASS"
+    },
+    {
+      "name": "gauntlet aborted",
+      "status": "FAIL",
+      "message": "Command failed: D:\\Program Files\\nodejs\\node.exe run-real-node.mjs"
+    }
+  ],
+  "blocker": "Command failed: D:\\Program Files\\nodejs\\node.exe run-real-node.mjs",
+  "nextRequiredCommand": "pnpm build && pnpm test && pnpm gauntlet:toccata"
+}
