@@ -67,11 +67,15 @@ describe("Mempool-Aware UTXO Selection (Regression)", () => {
     mockRpc.getMempoolEntriesByAddresses.mockResolvedValue({
       entries: [
         {
-          sending: [{ address: fromAddress }],
-          receiving: [{ address: toAddress }, { address: fromAddress }], // Change
-          transaction: {
-            inputs: [{ previousOutpoint: { transactionId: "txA", index: 0 } }] // txA is locked by this pending tx
-          }
+          address: fromAddress,
+          sending: [
+            {
+              transaction: {
+                inputs: [{ previousOutpoint: { transactionId: "txA", index: 0 } }] // txA is locked by this pending tx
+              }
+            }
+          ],
+          receiving: []
         }
       ]
     });

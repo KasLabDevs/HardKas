@@ -18,7 +18,7 @@
   "packageManager": "pnpm@9.15.4",
   "scripts": {
     "certify": "tsx scripts/certification/runner.ts",
-    "build": "turbo build",
+    "build": "turbo build --concurrency 1",
     "dev": "turbo dev",
     "test": "vitest run && pnpm test:workflows",
     "test:localnet": "vitest run --config vitest.localnet.config.ts",
@@ -109,8 +109,9 @@
     "vitest": "^2.1.9",
     "ws": "^8.18.0"
   },
-  "version": "0.12.0-rc.18",
+  "version": "0.12.0-rc.19",
   "dependencies": {
+    "@kaspa/core-lib": "^1.6.5",
     "kaspa": "^0.13.0",
     "kaspa-wasm": "^0.13.0"
   }

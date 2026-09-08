@@ -272,7 +272,7 @@ export class KaspaWrpcClient {
       normalizedTx.mass = Number(tx.mass || 0);
     }
 
-    const result = await this.request("submitTransaction", { transaction: normalizedTx, allowOrphan: true, allow_orphan: true }) as any;
+    const result = await this.request("submitTransaction", { transaction: normalizedTx, allowOrphan: allowOrphan, allow_orphan: allowOrphan }) as any;
     // Normalize return to match SDK expectations (accepted + transactionId)
     return {
       accepted: true,

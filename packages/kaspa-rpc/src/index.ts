@@ -154,6 +154,7 @@ export interface KaspaRpcClient {
   getMempoolEntry(txId: string): Promise<MempoolEntry | null>;
   checkMempoolPresence(txId: string): Promise<{ status: 'present' } | { status: 'absent' }>;
   getMempoolEntries(options?: unknown): Promise<any>;
+  getMempoolEntriesByAddresses(options: any): Promise<any>;
   getTransaction(txId: string): Promise<unknown | null>;
   getBlockDagInfo(): Promise<BlockDagInfo>;
   getServerInfo(): Promise<ServerInfo>;
@@ -641,6 +642,9 @@ export class JsonWrpcKaspaClient implements KaspaRpcClient {
   async getMempoolEntries(options?: any): Promise<any> {
     return this.callMethod("getMempoolEntries", "getMempoolEntriesRequest", options || {});
   }
+  async getMempoolEntriesByAddresses(options: any): Promise<any> {
+    return this.callMethod("getMempoolEntriesByAddresses", "getMempoolEntriesByAddressesRequest", options);
+  }
 
   async getFeeEstimate(): Promise<any> {
     return this.callMethod("getFeeEstimate", "getFeeEstimateRequest", {});
@@ -952,6 +956,7 @@ export class MockKaspaRpcClient implements KaspaRpcClient {
   }
 
   async getMempoolEntries(options?: any): Promise<any> { return []; }
+  async getMempoolEntriesByAddresses(options: any): Promise<any> { return { entries: [] }; }
   async getFeeEstimate(): Promise<any> { return { estimate: 0 }; }
   async getFeeEstimateExperimental(): Promise<any> { return { estimate: 0 }; }
   async getCurrentNetwork(): Promise<any> { return { network: this.networkId }; }

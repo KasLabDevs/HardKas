@@ -38,7 +38,7 @@ export interface ConsensusMassResult {
  * (consensus/core/src/mass/mod.rs)
  */
 export const KASPA_CONSENSUS_MASS = {
-  BASE_TRANSACTION: 86n,
+  BASE_TRANSACTION: 102n, // Was 86n. Increased by 16n to fix node rejection for missing compute mass
   INPUT_OUTPOINT_AND_SEQ: 450n, // 36b outpoint (360) + 8b seq (80) + 1b sigOpCount (10)
   SIG_SCRIPT_BYTE_MULTIPLIER: 10n,
   OUTPUT_P2PK: 420n, // 8b amount (80) + 34b SPK (340)

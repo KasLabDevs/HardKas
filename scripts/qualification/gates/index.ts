@@ -1,18 +1,14 @@
 import { gateA } from "./gate-a-distribution.js";
 import { gateB1 } from "./gate-b1-docker.js";
 import { gateB2 } from "./gate-b2-funding.js";
-import { gateC } from "./gate-c-execution.js";
-import { gateD } from "./gate-d-transaction.js";
-import { gateE } from "./gate-e-w1.js";
-import { gateF } from "./gate-f-w2.js";
-import { gateG } from "./gate-g-w3.js";
 import { scenarioNod01 } from "./scenario-nod-01.js";
+import { scenarioNod02 } from "./scenario-nod-02.js";
 import { scenarioNod03 } from "./scenario-nod-03.js";
 import { scenarioTx02 } from "./scenario-tx-02.js";
+import { scenarioTx03 } from "./scenario-tx-03.js";
 import { scenarioTx04 } from "./scenario-tx-04.js";
 import { scenarioTx05 } from "./scenario-tx-05.js";
 import { scenarioCon02 } from "./scenario-con-02.js";
-import { scenarioCon02Legit } from "./scenario-con-02-legit.js";
 import { scenarioObs01 } from "./scenario-obs-01.js";
 import { scenarioObs04 } from "./scenario-obs-04.js";
 import { scenarioObs05 } from "./scenario-obs-05.js";
@@ -24,6 +20,7 @@ import { scenarioQry03 } from "./scenario-qry-03.js";
 import { scenarioCli04 } from "./scenario-cli-04.js";
 import { scenarioCfg03 } from "./scenario-cfg-03.js";
 import { scenarioCfg04 } from "./scenario-cfg-04.js";
+import { scenarioEvi01 } from "./scenario-evi-01.js";
 import { scenarioEvi02 } from "./scenario-evi-02.js";
 import { scenarioEvi03 } from "./scenario-evi-03.js";
 import { scenarioAdv01 } from "./scenario-adv-01.js";
@@ -54,41 +51,18 @@ export const allGates: QualificationScenario[] = [
     track: "DOCKER_REAL",
     surface: "PUBLIC",
   },
-  {
-    ...gateC,
-    title: "Execution Contract",
-    track: "DOCKER_REAL",
-    surface: "PUBLIC",
-  },
-  {
-    ...gateD,
-    title: "Core Transaction Integrity",
-    track: "DOCKER_REAL",
-    surface: "PUBLIC",
-  },
-  {
-    ...gateE,
-    title: "W1 Sequential Spend",
-    track: "DOCKER_REAL",
-    surface: "PUBLIC",
-  },
-  {
-    ...gateF,
-    title: "W2 Concurrent Planning",
-    track: "DOCKER_REAL",
-    surface: "PUBLIC",
-  },
-  {
-    ...gateG,
-    title: "W3 Concurrent Submission",
-    track: "DOCKER_REAL",
-    surface: "PUBLIC",
-  },
+  // Mocks C/D/E/F/G removed to restore oracle authority
 
   // -- V2 Scenarios ----------------------------------
   {
     ...scenarioNod01,
     title: "Real Node Read Surface",
+    track: "DOCKER_REAL",
+    surface: "PUBLIC",
+  },
+  {
+    ...scenarioNod02,
+    title: "Coinbase Maturity / Execution Isolation",
     track: "DOCKER_REAL",
     surface: "PUBLIC",
   },
@@ -101,6 +75,12 @@ export const allGates: QualificationScenario[] = [
   {
     ...scenarioTx02,
     title: "Multi-Input / Change / Fees",
+    track: "DOCKER_REAL",
+    surface: "PUBLIC",
+  },
+  {
+    ...scenarioTx03,
+    title: "Pending / Mempool-Spend Exclusion",
     track: "DOCKER_REAL",
     surface: "PUBLIC",
   },
@@ -119,12 +99,6 @@ export const allGates: QualificationScenario[] = [
   {
     ...scenarioCon02,
     title: "Cross-Process Concurrency",
-    track: "DOCKER_REAL",
-    surface: "PUBLIC",
-  },
-  {
-    ...scenarioCon02Legit,
-    title: "Legitimate Single-UTXO Cross-Process Concurrency",
     track: "DOCKER_REAL",
     surface: "PUBLIC",
   },
@@ -191,6 +165,12 @@ export const allGates: QualificationScenario[] = [
   {
     ...scenarioCfg04,
     title: "Policy Engine Limits",
+    track: "DOCKER_REAL",
+    surface: "PUBLIC",
+  },
+  {
+    ...scenarioEvi01,
+    title: "Evidence Lineage and Integrity",
     track: "DOCKER_REAL",
     surface: "PUBLIC",
   },

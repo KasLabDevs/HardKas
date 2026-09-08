@@ -253,6 +253,9 @@ export class KaspaJsonRpcClient implements KaspaRpcClient {
   async getMempoolEntries(options?: any): Promise<any> {
     return await this.callRpc("getMempoolEntriesRequest", options || {});
   }
+  async getMempoolEntriesByAddresses(options: any): Promise<any> {
+    return await this.callRpc("getMempoolEntriesByAddressesRequest", options);
+  }
 
   async getFeeEstimate(): Promise<any> {
     return await this.callRpc("getFeeEstimateRequest", {});
@@ -457,8 +460,8 @@ export class KaspaJsonRpcClient implements KaspaRpcClient {
 
     const result = (await this.callRpc("submitTransactionRequest", {
       transaction: txObj,
-      allowOrphan: true,
-      allow_orphan: true
+      allowOrphan: options?.allowOrphan ?? false,
+      allow_orphan: options?.allowOrphan ?? false
     })) as { transactionId: string };
     return { transactionId: result.transactionId };
   }

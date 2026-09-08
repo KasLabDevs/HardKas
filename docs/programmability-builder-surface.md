@@ -1,6 +1,6 @@
-# HardKAS 0.12.0-rc.18 Programmability Builder Surface
+# HardKAS 0.12.0-rc.19 Programmability Builder Surface
 
-HardKAS 0.12.0-rc.18 exposes a local-first programmability surface for app builders:
+HardKAS 0.12.0-rc.19 exposes a local-first programmability surface for app builders:
 
 - SilverScript builder lifecycle: `SILVERSCRIPT_BUILDER_READY`
 - ZK corpus verification surface: `ZK_CORPUS_SURFACE_READY`
@@ -35,4 +35,4 @@ Claims remain bounded:
 - `vmConsensusEquivalence = NOT_CLAIMED`
 - `mainnet = BLOCKED_BY_POLICY`
 
-HardKAS 0.12.0-rc.18 does not claim on-chain ZK verification, full vProgs runtime, bridge behavior, trustless exits, testnet readiness, mainnet readiness, or Kaspa VM/consensus equivalence.
+HardKAS 0.12.0-rc.19 does not claim on-chain ZK verification, full vProgs runtime, bridge behavior, trustless exits, testnet readiness, mainnet readiness, or Kaspa VM/consensus equivalence.

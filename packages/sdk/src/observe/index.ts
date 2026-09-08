@@ -188,7 +188,7 @@ export class HardkasObserve {
       observedAt: snapshot.observedAt.toISOString(),
       networkId: snapshot.execution.network,
       mode: snapshot.execution.mode,
-      hardkasVersion: "0.12.0-rc.18", // We should import HARDKAS_VERSION ideally
+      hardkasVersion: "0.12.0-rc.19", // We should import HARDKAS_VERSION ideally
       version: "1.0.0-alpha",
       createdAt: new Date().toISOString()
     };

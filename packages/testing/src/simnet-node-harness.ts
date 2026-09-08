@@ -59,25 +59,8 @@ export class SimnetNodeHarness {
           check.on("error", reject);
           check.on("exit", (code) => code === 0 ? resolve(true) : reject(new Error(`exit ${code}`)));
         });
-        dockerAvailable = true;
       } catch (e: any) {
-        console.warn(`[SimnetNodeHarness] Docker not available (${e.message}). Using simulated SimnetNodeHandle.`);
-      }
-
-      if (!dockerAvailable) {
-        return {
-          rpcUrl,
-          dataDir: "/tmp/simulated-simnet",
-          simulated: true,
-          mining: {
-            mineBlock: async () => ({ hash: "simulated-block-hash" }),
-            mineBlocks: async (count: number) => Array.from({ length: count }, () => ({ hash: "simulated-block-hash" }))
-          } as any,
-          waitUntilReady: async () => {},
-          restart: async () => {},
-          stop: async () => {},
-          kill: async () => {}
-        };
+        throw new Error(`ENVIRONMENT_NOT_QUALIFIED: Docker not available or command failed.`);
       }
 
       const dockerImage = "supertypo/rusty-kaspad:latest"; // Valid image
@@ -119,9 +102,7 @@ export class SimnetNodeHarness {
         const start = Date.now();
         while (Date.now() - start < timeoutMs) {
           if (spawnError || processExited) {
-            console.warn(`[SimnetNodeHarness] Spawn error (${spawnError?.message}) or process exited. Switching to simulated mode.`);
-            (handle as any).simulated = true;
-            return;
+            throw new Error(`ENVIRONMENT_NOT_QUALIFIED: Spawn error (${spawnError?.message}) or process exited. Node failed to start.`);
           }
           try {
             const client = new JsonWrpcKaspaClient({ rpcUrl });
@@ -143,9 +124,7 @@ export class SimnetNodeHarness {
           }
           await new Promise(r => setTimeout(r, 500));
         }
-        console.warn(`[SimnetNodeHarness] Node did not become ready within ${timeoutMs}ms. Continuing in simulated mode.`);
-        (handle as any).simulated = true;
-        return;
+        throw new Error(`ENVIRONMENT_NOT_QUALIFIED: Node did not become ready within ${timeoutMs}ms.`);
       },
       restart: async () => {
         // Simple restart logic, mock for now
@@ -178,8 +157,7 @@ export class SimnetNodeHarness {
             throw new Error("Attached node is not on simnet");
           }
         } catch (e: any) {
-          console.warn(`[SimnetNodeHarness] Could not verify attached node (${e.message}). Continuing in simulated mode.`);
-          (handle as any).simulated = true;
+          throw new Error(`ENVIRONMENT_NOT_QUALIFIED: Could not verify attached node (${e.message}). Node is not qualified.`);
         }
       },
       restart: async () => {},

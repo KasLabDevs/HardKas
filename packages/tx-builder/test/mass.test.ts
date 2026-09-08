@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import {
   estimateTransactionMass,
-  KASPA_MASS_CONSTANTS,
+  KASPA_CONSENSUS_MASS,
   buildPaymentPlan,
   createMockUtxo
 } from "../src/index.js";
@@ -15,9 +15,9 @@ describe("Mass Estimation", () => {
     });
 
     const expected =
-      KASPA_MASS_CONSTANTS.BASE_TRANSACTION +
-      KASPA_MASS_CONSTANTS.INPUT_P2PK +
-      KASPA_MASS_CONSTANTS.OUTPUT_P2PK;
+      KASPA_CONSENSUS_MASS.BASE_TRANSACTION +
+      KASPA_CONSENSUS_MASS.INPUT_OUTPOINT_AND_SEQ + (66n * KASPA_CONSENSUS_MASS.SIG_SCRIPT_BYTE_MULTIPLIER) +
+      KASPA_CONSENSUS_MASS.OUTPUT_P2PK;
 
     expect(result.mass).toBe(expected);
   });
@@ -30,9 +30,9 @@ describe("Mass Estimation", () => {
     });
 
     const expected =
-      KASPA_MASS_CONSTANTS.BASE_TRANSACTION +
-      KASPA_MASS_CONSTANTS.INPUT_P2PK +
-      KASPA_MASS_CONSTANTS.OUTPUT_P2PK * 2n;
+      KASPA_CONSENSUS_MASS.BASE_TRANSACTION +
+      KASPA_CONSENSUS_MASS.INPUT_OUTPOINT_AND_SEQ + (66n * KASPA_CONSENSUS_MASS.SIG_SCRIPT_BYTE_MULTIPLIER) +
+      KASPA_CONSENSUS_MASS.OUTPUT_P2PK * 2n;
 
     expect(result.mass).toBe(expected);
   });
@@ -45,9 +45,9 @@ describe("Mass Estimation", () => {
     });
 
     const expected =
-      KASPA_MASS_CONSTANTS.BASE_TRANSACTION +
-      KASPA_MASS_CONSTANTS.INPUT_P2PK +
-      KASPA_MASS_CONSTANTS.SCRIPT_FALLBACK;
+      KASPA_CONSENSUS_MASS.BASE_TRANSACTION +
+      KASPA_CONSENSUS_MASS.INPUT_OUTPOINT_AND_SEQ + (66n * KASPA_CONSENSUS_MASS.SIG_SCRIPT_BYTE_MULTIPLIER) +
+      KASPA_CONSENSUS_MASS.SCRIPT_FALLBACK_OUTPUT;
 
     expect(result.mass).toBe(expected);
   });

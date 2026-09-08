@@ -39,12 +39,16 @@ describe("Reproducibility Proof v0", () => {
     expect(actual.artifacts.massProfile).toBe(golden.artifacts.massProfile);
   });
 
-  it("Canonical nested hash is reproducible", () => {
-    expect(actual.artifacts.canonicalNested).toBe(golden.artifacts.canonicalNested);
+  it("L1 plan hash is reproducible", () => {
+    expect(actual.artifacts.l1Plan).toBe(golden.artifacts.l1Plan);
   });
 
   it("Simulated tx receipt hash is reproducible", () => {
     expect(actual.artifacts.simulatedTxReceipt).toBe(golden.artifacts.simulatedTxReceipt);
+  });
+
+  it("Canonical nested hash is reproducible", () => {
+    expect(actual.artifacts.canonicalNested).toBe(golden.artifacts.canonicalNested);
   });
 
   it("all artifact hashes match golden", () => {

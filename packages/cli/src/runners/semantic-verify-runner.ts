@@ -120,7 +120,7 @@ export async function runSemanticVerify(options: SemanticVerifyOptions) {
 
   const bundle: SemanticBundleV1 = {
     schemaVersion: HardkasSchemas.SemanticBundleV1,
-    runtimeVersion: "0.12.0-rc.18",
+    runtimeVersion: "0.12.0-rc.19",
     hashVersion: "sha256",
     invariantSummary: {
       totalChecks,

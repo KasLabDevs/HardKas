@@ -28,12 +28,15 @@ export class SimnetMiningDriverImpl implements SimnetMiningDriver {
     includeTransactionIds?: readonly string[];
     timeoutMs?: number;
   }): Promise<MinedBlockResult> {
-    const payAddress = options?.payAddress || "kaspasim:qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqx0r8j";
+    const payAddress = options?.payAddress || "kaspasim:qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqn648kfwc";
     
     // Obtenemos el template del bloque
     // Note: rusty-kaspad wRPC JSON requires:
     //   - kaspasim: prefix for simnet addresses (not simnet:)
     //   - extraData as byte array [] (not string "")
+    const infoBefore = await this.client.getBlockDagInfo() as any;
+    const daaBefore = infoBefore.virtualDaaScore ?? 0;
+
     const templateRes = await this.client.call("getBlockTemplateRequest", {
       payAddress,
       extraData: []
@@ -50,6 +53,15 @@ export class SimnetMiningDriverImpl implements SimnetMiningDriver {
     
     if (submitRes.rejectReason) {
       throw new Error(`Block rejected: ${submitRes.rejectReason}`);
+    }
+
+    // Wait a brief moment to allow DAG integration
+    await new Promise(r => setTimeout(r, 200));
+    const infoAfter = await this.client.getBlockDagInfo() as any;
+    const daaAfter = infoAfter.virtualDaaScore ?? 0;
+
+    if (daaAfter <= daaBefore) {
+      throw new Error(`HARNESS_VIOLATION: Node accepted block but DAG did not advance! (before: ${daaBefore}, after: ${daaAfter})`);
     }
 
     return {

@@ -2,17 +2,6 @@ import { ExecutionContext, GateDefinition, QualificationStatus } from "../types.
 import { runCommand, getHardkasCliPath } from "../environment/commands.js";
 import { runConsumerScript } from "../environment/consumer-script.js";
 
-/**
- * CFG-03 � Config & Precedence Resolution (Method Overrides > Config)
- *
- * Authority: HardKAS Config Engine
- * Track: DOCKER_REAL
- * Surface: PUBLIC
- *
- * Validates precedence resolution:
- * 1. Method arguments (e.g. feeRate: 15000n) take precedence over default config.
- * 2. Explicit network option in Hardkas.create takes precedence over defaultNetwork.
- */
 export const scenarioCfg03: GateDefinition = {
   id: "CFG-03",
   name: "Config Precedence Resolution",
@@ -46,18 +35,48 @@ export const scenarioCfg03: GateDefinition = {
         const alice = await hk.accounts.resolve("alice");
         const bob = await hk.accounts.resolve("bob");
 
-        // Plan transaction passing explicit feeRate override
+        const amount = 1000n;
+
+        // 1. Baseline plan with standard dynamic estimator
+        const baselinePlan = await hk.tx.plan({
+          from: alice,
+          to: bob,
+          amount
+        });
+
+        // 2. Plan passing explicit feeRate override
+        const explicitFeeRate = 15000n;
         const plan = await hk.tx.plan({
           from: alice,
           to: bob,
-          amount: 1000000n,
-          feeRate: 15000n
+          amount,
+          feeRate: explicitFeeRate
         });
+
+        const baselineFee = BigInt(baselinePlan.estimatedFeeSompi || "0");
+        const overrideFee = BigInt(plan.estimatedFeeSompi || "0");
+        
+        const baselineMass = BigInt(baselinePlan.estimatedMass || "0");
+        const overrideMass = BigInt(plan.estimatedMass || "0");
+
+        const baselineInputs = baselinePlan.inputs?.length || 0;
+        const overrideInputs = plan.inputs?.length || 0;
+
+        // B is consistent with Y applied to the final transaction shape subject to the relay floor
+        const expectedFee = overrideMass * explicitFeeRate;
+        const relayFloor = overrideMass * 100n;
+        const boundedExpectedFee = expectedFee > relayFloor ? expectedFee : relayFloor;
+
+        const isConsistent = overrideFee === boundedExpectedFee;
 
         __emitEvidence({
           networkMatches: hk.network === "simnet",
-          explicitFeeRate: plan.feeRate === "15000" || plan.feeRate === 15000 || plan.feeRateSompi === "15000",
-          rawFeeRate: plan.feeRate || plan.feeRateSompi
+          sameTxShape: baselineInputs > 0 && baselineInputs === overrideInputs,
+          overrideFeeIsLarger: overrideFee > baselineFee,
+          isConsistent,
+          rawFee: { baseline: baselineFee.toString(), override: overrideFee.toString() },
+          rawInputs: { baseline: baselineInputs, override: overrideInputs },
+          math: { expected: expectedFee.toString(), actual: overrideFee.toString(), floor: relayFloor.toString() }
         });
       } catch (e) {
         __emitEvidence({
@@ -70,8 +89,8 @@ export const scenarioCfg03: GateDefinition = {
       }
     `;
 
-    const res = await runConsumerScript(ctx, "cfg-03-precedence.js", code);
-    evidence.push("CFG-03 RAW OUTPUT:\n" + res.stdout + "\n" + res.stderr);
+    const res = await runConsumerScript(ctx, "cfg-03-precedence.ts", code);
+    evidence.push("CFG-03 RAW OUTPUT:\\n" + res.stdout + "\\n" + res.stderr);
 
     if (res.code !== 0 || !res.data) {
       status = "FAIL";
@@ -92,9 +111,9 @@ export const scenarioCfg03: GateDefinition = {
     });
 
     assertions.push({
-      name: "CFG-03.B Explicit feeRate method override takes precedence in generated plan",
-      passed: d.explicitFeeRate === true,
-      actual: { explicitFeeRate: d.explicitFeeRate, rawFeeRate: d.rawFeeRate }
+      name: "CFG-03.B Explicit feeRate method override produces larger fee matching expected policy (same tx shape)",
+      passed: d.sameTxShape === true && d.overrideFeeIsLarger === true && d.isConsistent === true,
+      actual: { sameTxShape: d.sameTxShape, overrideFeeIsLarger: d.overrideFeeIsLarger, isConsistent: d.isConsistent, math: d.math, rawFee: d.rawFee }
     });
 
     if (assertions.some(a => !a.passed)) {

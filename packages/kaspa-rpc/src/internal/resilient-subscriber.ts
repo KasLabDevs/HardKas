@@ -170,6 +170,11 @@ export class ResilientSubscriptionClient implements KaspaRpcClient {
     return this.client.getMempoolEntries(options);
   }
 
+  async getMempoolEntriesByAddresses(options: any): Promise<any> {
+    if (!this.client) throw new Error("Client is reconnecting");
+    return this.client.getMempoolEntriesByAddresses(options);
+  }
+
   async getFeeEstimate(): Promise<any> {
     if (!this.client) throw new Error("Client is reconnecting");
     return this.client.getFeeEstimate();

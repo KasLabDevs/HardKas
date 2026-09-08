@@ -28,8 +28,8 @@ describe("P84: V1 Plan generation", () => {
 
     expect(plan.version).toBe(1);
     expect(plan.lane).toBe("LANE1");
-    // txMass is ~2036. computeBudget = 0. doubleBytes = 4072. maxVal = 4072.
-    // fee = 100 * 4072 = 407200n
-    expect(plan.estimatedFeeSompi).toBe(407200n);
+    // txMass is ~2052. computeBudget = 0. doubleBytes = 4104. maxVal = 4104.
+    // fee = 100 * 4104 = 410400n
+    expect(plan.estimatedFeeSompi).toBe(410400n);
   });
 });

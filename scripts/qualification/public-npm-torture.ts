@@ -28,7 +28,7 @@ async function main() {
 
   const version = values.version as string;
   if (!version) {
-    console.error("Missing required --version (e.g. --version 0.12.0-rc.18)");
+    console.error("Missing required --version (e.g. --version 0.12.0-rc.19)");
     process.exit(1);
   }
 
@@ -198,39 +198,8 @@ async function main() {
       if (gate.provides) {
         gate.provides.forEach(cap => ctx.capabilities.add(cap));
       }
-      // If Gate A passed, overlay local dist build onto consumer node_modules for local qualification testing
-      if (gate.id === "A") {
-        try {
-          const copyDir = async (src: string, dest: string) => {
-            await fs.rm(dest, { recursive: true, force: true });
-            await fs.cp(src, dest, { recursive: true, force: true });
-          };
-          await copyDir(
-            path.join(repoRoot, "packages", "artifacts", "dist"),
-            path.join(consumerDir, "node_modules", "@hardkas", "artifacts", "dist")
-          );
-          await copyDir(
-            path.join(repoRoot, "packages", "kaspa-rpc", "dist"),
-            path.join(consumerDir, "node_modules", "@hardkas", "kaspa-rpc", "dist")
-          );
-          await copyDir(
-            path.join(repoRoot, "packages", "accounts", "dist"),
-            path.join(consumerDir, "node_modules", "@hardkas", "accounts", "dist")
-          );
-          await copyDir(
-            path.join(repoRoot, "packages", "config", "dist"),
-            path.join(consumerDir, "node_modules", "@hardkas", "config", "dist")
-          );
-          await copyDir(
-            path.join(repoRoot, "packages", "cli", "dist"),
-            path.join(consumerDir, "node_modules", "@hardkas", "cli", "dist")
-          );
-          await copyDir(
-            path.join(repoRoot, "packages", "sdk", "dist"),
-            path.join(consumerDir, "node_modules", "@hardkas", "sdk", "dist")
-          );
-        } catch (overlayErr) {}
-      }
+      // If Gate A passed, consumer environment is set up. No local dist overlays allowed (P0-012).
+      // Proceed with execution using ONLY packages installed from registry.
     }
   }
 

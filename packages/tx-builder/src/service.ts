@@ -17,6 +17,8 @@ export interface PlanTransactionRequest {
   toAddress: string;
   amountSompi: bigint;
   feeRate?: bigint;
+  version?: 0 | 1;
+  feePolicy?: "legacy" | "toccata" | "auto";
   feeEstimator?: (inputs: number, outputs: number) => Promise<bigint>;
   genesisCovenantGroups?: Array<{ authorizingInput: number; outputIndices: number[] }>;
   /** Outpoint keys ("txId:index") to exclude from coin selection (e.g. pending-spent UTXOs). */
@@ -181,6 +183,9 @@ export class TxPlanService {
         }
       ],
       feeRateSompiPerMass: planFeeRate,
+        ...(request.version !== undefined ? { version: request.version } : {}),
+        ...(request.feePolicy ? { feePolicy: request.feePolicy } : {}),
+        ...(request.feePolicy ? { feePolicy: request.feePolicy } : {}),
       coinbaseMaturity: this.coinbaseMaturity,
       ...(request.feeEstimator ? { feeOverrideSompi: estimatedFee } : {}),
       ...(request.genesisCovenantGroups ? { genesisCovenantGroups: request.genesisCovenantGroups.map(g => ({ ...g })) } : {})
@@ -227,7 +232,8 @@ export class TxPlanService {
           amountSompi: outputAmount
         }
       ],
-      feeRateSompiPerMass: feeRate
+      feeRateSompiPerMass: feeRate,
+      coinbaseMaturity: this.coinbaseMaturity
     });
 
     return {

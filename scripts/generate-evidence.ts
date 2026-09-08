@@ -2,7 +2,7 @@ import { execSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
 
-const version = "0.12.0-rc.18";
+const version = "0.12.0-rc.19";
 const auditDir = path.join(process.cwd(), "docs", "audit", "releases", version);
 
 if (!fs.existsSync(auditDir)) {

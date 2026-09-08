@@ -29,8 +29,8 @@ describe("QF-005: Node Relay Fee Floor Oracle Suite", () => {
     };
 
     const massResult = calculateConsensusNonContextualMass(computeDominatedTx);
-    expect(massResult.computeMass).toBe(2036n);
-    expect(massResult.feeMass).toBe(2036n);
+    expect(massResult.computeMass).toBe(2052n);
+    expect(massResult.feeMass).toBe(2052n);
 
     const feeResult = estimateFee({
       inputs: 1,
@@ -39,7 +39,7 @@ describe("QF-005: Node Relay Fee Floor Oracle Suite", () => {
       txDetails: computeDominatedTx
     });
 
-    expect(feeResult.estimatedFeeSompi).toBe(203600n);
+    expect(feeResult.estimatedFeeSompi).toBe(205200n);
   });
 
   it("QF-005-A2: Transient/Byte-Dominated Fixture (normalizedTransientMass > computeMass)", () => {

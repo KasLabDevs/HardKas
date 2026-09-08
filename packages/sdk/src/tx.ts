@@ -260,6 +260,19 @@ export class HardkasTx {
     if (!toAccount.address)
       throw new Error(`To account ${toAccount.name} has no address.`);
 
+    const activeNetwork = options.networkProfile || this.sdk.config.config.defaultNetwork || "simnet";
+
+    if (typeof options.amount === "string" && options.amount.toLowerCase() === "all") {
+      const res = await this.sdk.query.getSpendableUtxos({ address: fromAccount.address, excludePending: true });
+      return this.createConsolidationPlan({
+         account: fromAccount,
+         selectedUtxos: res.data,
+         destination: toAccount.address,
+         network: activeNetwork,
+         ...(options.feeRate !== undefined ? { feeRate: options.feeRate } : {})
+      });
+    }
+
     const amountSompi =
       typeof options.amount === "string"
         ? parseKasToSompi(options.amount)
@@ -273,7 +286,7 @@ export class HardkasTx {
       );
     }
 
-    const activeNetwork = this.sdk.config.config.defaultNetwork || "simnet";
+    
     const allowMainnet =
       (this.sdk.config.config.networks?.mainnet as any)?.allowMainnet === true;
 
@@ -331,11 +344,18 @@ export class HardkasTx {
         }
       },
       getVirtualDaaScore: async () => {
-        try {
-          const dagInfo = await this.sdk.rpc.getBlockDagInfo();
-          return dagInfo.virtualDaaScore;
-        } catch {
-          return undefined as any;
+        if (
+          activeNetwork === "simulated" ||
+          this.sdk.config.config.networks?.[activeNetwork]?.kind === "simulated"
+        ) {
+          return 1000000n; // Arbitrary high score for simulator
+        } else {
+          try {
+            const info = await this.sdk.rpc.getBlockDagInfo();
+            return info.virtualDaaScore !== undefined ? BigInt(info.virtualDaaScore) : 0n;
+          } catch {
+            return undefined as any;
+          }
         }
       }
     };
@@ -349,16 +369,18 @@ export class HardkasTx {
       toAddress: toAccount.address,
       amountSompi,
       ...(options.feeRate !== undefined ? { feeRate: options.feeRate } : {}),
-      feeEstimator: async (inputs: number, outputs: number) => {
-        const { estimatedFee } = await this.sdk.fees.estimate({
-          priority: "normal",
-          inputs,
-          outputs,
-          version: 1,
-          network: activeNetwork as NetworkId
-        });
-        return estimatedFee;
-      }
+      ...(options.feeRate === undefined ? {
+        feeEstimator: async (inputs: number, outputs: number) => {
+          const { estimatedFee } = await this.sdk.fees.estimate({
+            priority: "normal",
+            inputs,
+            outputs,
+            version: 1,
+            network: activeNetwork as NetworkId
+          });
+          return estimatedFee;
+        }
+      } : {})
     });
 
     const builderPlan = result.plan;
@@ -1490,3 +1512,4 @@ export class HardkasTx {
     return result;
   }
 }
+

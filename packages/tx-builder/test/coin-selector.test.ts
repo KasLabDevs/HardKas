@@ -13,11 +13,11 @@ describe("CoinSelector", () => {
   it("exact match (if fees were zero, but fees exist, so needs more)", () => {
     // To get an exact match we need the UTXO to perfectly cover target + fee
     // If target is 1000, fee rate 1 (floors to 100).
-    // Mass: 86 + 1110 + 420 = 1616.
-    // Fee = 161600.
-    // Conservative fee = (161600 * 110 + 99)/100 = 177760n.
-    // Target 1000 + 177760 = 178760n.
-    const utxoExact = [createMockUtxo({ address: "kaspatest:ex", amountSompi: 178760n, index: 0 })];
+    // Mass: 102 + 1110 + 420 = 1632.
+    // Fee = 163200.
+    // Conservative fee = (163200 * 110 + 99)/100 = 179520n.
+    // Target 1000 + 179520 = 180520n.
+    const utxoExact = [createMockUtxo({ address: "kaspatest:ex", amountSompi: 180520n, index: 0 })];
     const requestExact: CoinSelectionRequest = {
       utxos: utxoExact,
       targetSompi: 1000n,
@@ -31,7 +31,7 @@ describe("CoinSelector", () => {
     const result = selectCoins(requestExact);
     expect(result.selectedUtxos.length).toBe(1);
     expect(result.changeSompi).toBe(0n); // Exact match
-    expect(result.estimatedFeeSompi).toBe(177760n);
+    expect(result.estimatedFeeSompi).toBe(179520n);
     expect(result.outputs.length).toBe(1); // No change output
   });
 

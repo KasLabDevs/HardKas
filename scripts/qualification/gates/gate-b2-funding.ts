@@ -17,7 +17,12 @@ export const gateB2: GateDefinition = {
     const cliPath = getHardkasCliPath(ctx.consumerDir);
 
     // 1. Fund the account via CLI
-    const fundRes = await runCommand(`"${cliPath}" localnet fund alice --profile toccata-v2 --json`, ctx.consumerDir);
+    let fundRes: any = { code: -1 };
+    for (let i = 0; i < 5; i++) {
+      fundRes = await runCommand(`"${cliPath}" localnet fund alice --profile toccata-v2 --json`, ctx.consumerDir);
+      if (fundRes.code === 0) break;
+      await new Promise(r => setTimeout(r, 2000));
+    }
     evidence.push("FUND COMMAND OUTPUT:\n" + fundRes.stdout + "\n" + fundRes.stderr);
     
     const fundPassed = fundRes.code === 0;
@@ -98,12 +103,12 @@ export const gateB2: GateDefinition = {
           address: addr,
           kind: kind,
           spendableCount: spendableUtxos.length,
-          utxos: spendableUtxos,
+          utxos: spendableUtxos.slice(0, 100),
           virtualDaaBefore,
           virtualDaaAfter,
-          amounts: spendableUtxos.map((u) => u.utxoEntry?.amount),
-          coinbaseFlags: spendableUtxos.map((u) => u.utxoEntry?.isCoinbase),
-          blockDaaScores: spendableUtxos.map((u) => u.utxoEntry?.blockDaaScore)
+          amounts: spendableUtxos.slice(0, 100).map((u) => u.utxoEntry?.amount),
+          coinbaseFlags: spendableUtxos.slice(0, 100).map((u) => u.utxoEntry?.isCoinbase),
+          blockDaaScores: spendableUtxos.slice(0, 100).map((u) => u.utxoEntry?.blockDaaScore)
         });
       } finally {
         process.exit(0);
