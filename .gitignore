@@ -217,9 +217,12 @@ tmp-packaging/
 pack-dir/
 packs/
 reports/
-artifacts/
-plans/
-signed/
+# Anchored to the repo root on purpose. Unanchored, these also matched
+# packages/artifacts/ and silently dropped new files there. Workspace output
+# under .hardkas/artifacts/{plans,signed} is already covered by `.hardkas/`.
+/artifacts/
+/plans/
+/signed/
 scratch/
 
 # Archives and Binaries
