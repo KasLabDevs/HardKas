@@ -267,32 +267,66 @@ importers:
         specifier: ^5.7.2
         version: 5.9.3
 
-  examples/builder-labs/bl-001-offline-multisig:
+  labs/02-merchant-checkout:
     dependencies:
       '@hardkas/accounts':
         specifier: workspace:*
-        version: link:../../../packages/accounts
+        version: link:../../packages/accounts
       '@hardkas/artifacts':
         specifier: workspace:*
-        version: link:../../../packages/artifacts
-      '@hardkas/cli':
-        specifier: workspace:*
-        version: link:../../../packages/cli
+        version: link:../../packages/artifacts
       '@hardkas/core':
         specifier: workspace:*
-        version: link:../../../packages/core
-      '@hardkas/kaspa-rpc':
+        version: link:../../packages/core
+      '@hardkas/query':
         specifier: workspace:*
-        version: link:../../../packages/kaspa-rpc
-      '@hardkas/pskt-native':
-        specifier: workspace:*
-        version: link:../../../packages/pskt-native
-      '@hardkas/sdk':
-        specifier: workspace:*
-        version: link:../../../packages/sdk
+        version: link:../../packages/query
       '@hardkas/tx-builder':
         specifier: workspace:*
-        version: link:../../../packages/tx-builder
+        version: link:../../packages/tx-builder
+      fastify:
+        specifier: ^4.26.2
+        version: 4.29.1
+    devDependencies:
+      '@types/node':
+        specifier: ^20.0.0
+        version: 20.19.43
+      tsx:
+        specifier: ^4.7.1
+        version: 4.23.7
+      typescript:
+        specifier: ^5.3.3
+        version: 5.9.3
+      vitest:
+        specifier: ^2.1.9
+        version: 2.1.9(@types/node@20.19.43)(jsdom@29.1.1(@noble/hashes@2.2.0))(lightningcss@1.32.0)
+
+  labs/bl-001-offline-multisig:
+    dependencies:
+      '@hardkas/accounts':
+        specifier: workspace:*
+        version: link:../../packages/accounts
+      '@hardkas/artifacts':
+        specifier: workspace:*
+        version: link:../../packages/artifacts
+      '@hardkas/cli':
+        specifier: workspace:*
+        version: link:../../packages/cli
+      '@hardkas/core':
+        specifier: workspace:*
+        version: link:../../packages/core
+      '@hardkas/kaspa-rpc':
+        specifier: workspace:*
+        version: link:../../packages/kaspa-rpc
+      '@hardkas/pskt-native':
+        specifier: workspace:*
+        version: link:../../packages/pskt-native
+      '@hardkas/sdk':
+        specifier: workspace:*
+        version: link:../../packages/sdk
+      '@hardkas/tx-builder':
+        specifier: workspace:*
+        version: link:../../packages/tx-builder
       commander:
         specifier: ^12.0.0
         version: 12.1.0
@@ -304,23 +338,23 @@ importers:
         specifier: ^1.6.0
         version: 1.6.1(@types/node@26.1.2)(jsdom@29.1.1(@noble/hashes@2.2.0))(lightningcss@1.32.0)
 
-  examples/reference-apps/exchange-backend:
+  labs/exchange-backend:
     dependencies:
       '@hardkas/plugin-rpc-backend':
         specifier: workspace:*
-        version: link:../../../packages/plugin-rpc-backend
+        version: link:../../packages/plugin-rpc-backend
       '@hardkas/query':
         specifier: workspace:*
-        version: link:../../../packages/query
+        version: link:../../packages/query
       '@hardkas/storage-sqlite':
         specifier: workspace:*
-        version: link:../../../packages/storage-sqlite
+        version: link:../../packages/storage-sqlite
       '@hardkas/sync-daemon':
         specifier: workspace:*
-        version: link:../../../packages/sync-daemon
+        version: link:../../packages/sync-daemon
       '@hardkas/toolkit':
         specifier: workspace:*
-        version: link:../../../packages/toolkit
+        version: link:../../packages/toolkit
     devDependencies:
       '@types/node':
         specifier: ^22.19.19
@@ -332,63 +366,7 @@ importers:
         specifier: ^5.7.2
         version: 5.9.3
 
-  examples/reference-apps/testnet-runner:
-    dependencies:
-      '@hardkas/observability':
-        specifier: workspace:*
-        version: link:../../../packages/observability
-      '@hardkas/plugin-rpc-backend':
-        specifier: workspace:*
-        version: link:../../../packages/plugin-rpc-backend
-      '@hardkas/storage-sqlite':
-        specifier: workspace:*
-        version: link:../../../packages/storage-sqlite
-      '@hardkas/sync-daemon':
-        specifier: workspace:*
-        version: link:../../../packages/sync-daemon
-      '@hardkas/toolkit':
-        specifier: workspace:*
-        version: link:../../../packages/toolkit
-    devDependencies:
-      '@types/node':
-        specifier: ^22.19.19
-        version: 22.20.1
-      tsx:
-        specifier: ^4.19.2
-        version: 4.23.7
-      typescript:
-        specifier: ^5.7.2
-        version: 5.9.3
-
-  examples/reference-apps/treasury:
-    dependencies:
-      '@hardkas/plugin-rpc-backend':
-        specifier: workspace:*
-        version: link:../../../packages/plugin-rpc-backend
-      '@hardkas/query':
-        specifier: workspace:*
-        version: link:../../../packages/query
-      '@hardkas/storage-sqlite':
-        specifier: workspace:*
-        version: link:../../../packages/storage-sqlite
-      '@hardkas/sync-daemon':
-        specifier: workspace:*
-        version: link:../../../packages/sync-daemon
-      '@hardkas/toolkit':
-        specifier: workspace:*
-        version: link:../../../packages/toolkit
-    devDependencies:
-      '@types/node':
-        specifier: ^22.19.19
-        version: 22.20.1
-      tsx:
-        specifier: ^4.19.2
-        version: 4.23.7
-      typescript:
-        specifier: ^5.7.2
-        version: 5.9.3
-
-  examples/showcase-suite:
+  labs/showcase-suite:
     devDependencies:
       '@hardkas/core':
         specifier: workspace:*
@@ -406,7 +384,7 @@ importers:
         specifier: ^2.1.8
         version: 2.1.9(@types/node@26.1.2)(jsdom@29.1.1(@noble/hashes@2.2.0))(lightningcss@1.32.0)
 
-  examples/showcase-suite/apps/cli-studio:
+  labs/showcase-suite/apps/cli-studio:
     dependencies:
       '@hardkas/cli':
         specifier: workspace:*
@@ -473,7 +451,7 @@ importers:
         specifier: ^5.4.11
         version: 5.4.21(@types/node@26.1.2)(lightningcss@1.32.0)
 
-  examples/showcase-suite/apps/explorer-live:
+  labs/showcase-suite/apps/explorer-live:
     dependencies:
       '@hardkas/kaspa-rpc':
         specifier: workspace:*
@@ -543,7 +521,7 @@ importers:
         specifier: ^5.4.11
         version: 5.4.21(@types/node@26.1.2)(lightningcss@1.32.0)
 
-  examples/showcase-suite/apps/localnet-studio:
+  labs/showcase-suite/apps/localnet-studio:
     dependencies:
       '@hardkas/kaspa-rpc':
         specifier: workspace:*
@@ -598,7 +576,7 @@ importers:
         specifier: ^5.4.11
         version: 5.4.21(@types/node@26.1.2)(lightningcss@1.32.0)
 
-  examples/showcase-suite/apps/merchant-terminal:
+  labs/showcase-suite/apps/merchant-terminal:
     dependencies:
       '@hardkas/kaspa-rpc':
         specifier: workspace:*
@@ -659,7 +637,7 @@ importers:
         specifier: ^5.4.11
         version: 5.4.21(@types/node@26.1.2)(lightningcss@1.32.0)
 
-  examples/showcase-suite/apps/mission-control:
+  labs/showcase-suite/apps/mission-control:
     dependencies:
       '@hardkas/kaspa-rpc':
         specifier: workspace:*
@@ -720,7 +698,7 @@ importers:
         specifier: ^5.4.11
         version: 5.4.21(@types/node@26.1.2)(lightningcss@1.32.0)
 
-  examples/showcase-suite/apps/silver-playground:
+  labs/showcase-suite/apps/silver-playground:
     dependencies:
       '@hardkas/kaspa-rpc':
         specifier: workspace:*
@@ -781,7 +759,7 @@ importers:
         specifier: ^5.4.11
         version: 5.4.21(@types/node@26.1.2)(lightningcss@1.32.0)
 
-  examples/showcase-suite/apps/time-travel-lab:
+  labs/showcase-suite/apps/time-travel-lab:
     dependencies:
       '@hardkas/kaspa-rpc':
         specifier: workspace:*
@@ -842,7 +820,7 @@ importers:
         specifier: ^5.4.11
         version: 5.4.21(@types/node@26.1.2)(lightningcss@1.32.0)
 
-  examples/showcase-suite/apps/treasury-console:
+  labs/showcase-suite/apps/treasury-console:
     dependencies:
       '@hardkas/kaspa-rpc':
         specifier: workspace:*
@@ -903,7 +881,7 @@ importers:
         specifier: ^5.4.11
         version: 5.4.21(@types/node@26.1.2)(lightningcss@1.32.0)
 
-  examples/showcase-suite/apps/wallet-pro:
+  labs/showcase-suite/apps/wallet-pro:
     dependencies:
       '@hardkas/kaspa-rpc':
         specifier: workspace:*
@@ -964,7 +942,7 @@ importers:
         specifier: ^5.4.11
         version: 5.4.21(@types/node@26.1.2)(lightningcss@1.32.0)
 
-  examples/showcase-suite/packages/shared-backend:
+  labs/showcase-suite/packages/shared-backend:
     dependencies:
       '@hardkas/accounts':
         specifier: workspace:*
@@ -991,9 +969,9 @@ importers:
         specifier: workspace:*
         version: link:../../../../packages/toolkit
 
-  examples/showcase-suite/packages/shared-testkit: {}
+  labs/showcase-suite/packages/shared-testkit: {}
 
-  examples/showcase-suite/packages/shared-ui:
+  labs/showcase-suite/packages/shared-ui:
     dependencies:
       react:
         specifier: ^18.3.1
@@ -1009,39 +987,61 @@ importers:
         specifier: ^19.2.3
         version: 19.2.4(@types/react@19.2.18)
 
-  labs/02-merchant-checkout:
+  labs/testnet-runner:
     dependencies:
-      '@hardkas/accounts':
+      '@hardkas/observability':
         specifier: workspace:*
-        version: link:../../packages/accounts
-      '@hardkas/artifacts':
+        version: link:../../packages/observability
+      '@hardkas/plugin-rpc-backend':
         specifier: workspace:*
-        version: link:../../packages/artifacts
-      '@hardkas/core':
+        version: link:../../packages/plugin-rpc-backend
+      '@hardkas/storage-sqlite':
         specifier: workspace:*
-        version: link:../../packages/core
+        version: link:../../packages/storage-sqlite
+      '@hardkas/sync-daemon':
+        specifier: workspace:*
+        version: link:../../packages/sync-daemon
+      '@hardkas/toolkit':
+        specifier: workspace:*
+        version: link:../../packages/toolkit
+    devDependencies:
+      '@types/node':
+        specifier: ^22.19.19
+        version: 22.20.1
+      tsx:
+        specifier: ^4.19.2
+        version: 4.23.7
+      typescript:
+        specifier: ^5.7.2
+        version: 5.9.3
+
+  labs/treasury:
+    dependencies:
+      '@hardkas/plugin-rpc-backend':
+        specifier: workspace:*
+        version: link:../../packages/plugin-rpc-backend
       '@hardkas/query':
         specifier: workspace:*
         version: link:../../packages/query
-      '@hardkas/tx-builder':
+      '@hardkas/storage-sqlite':
         specifier: workspace:*
-        version: link:../../packages/tx-builder
-      fastify:
-        specifier: ^4.26.2
-        version: 4.29.1
+        version: link:../../packages/storage-sqlite
+      '@hardkas/sync-daemon':
+        specifier: workspace:*
+        version: link:../../packages/sync-daemon
+      '@hardkas/toolkit':
+        specifier: workspace:*
+        version: link:../../packages/toolkit
     devDependencies:
       '@types/node':
-        specifier: ^20.0.0
-        version: 20.19.43
+        specifier: ^22.19.19
+        version: 22.20.1
       tsx:
-        specifier: ^4.7.1
+        specifier: ^4.19.2
         version: 4.23.7
       typescript:
-        specifier: ^5.3.3
+        specifier: ^5.7.2
         version: 5.9.3
-      vitest:
-        specifier: ^2.1.9
-        version: 2.1.9(@types/node@20.19.43)(jsdom@29.1.1(@noble/hashes@2.2.0))(lightningcss@1.32.0)
 
   packages/accounts:
     dependencies:

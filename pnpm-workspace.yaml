@@ -1,15 +1,10 @@
 packages:
   - "apps/*"
   - "packages/*"
-  - 'examples/*'
-  - 'examples/showcase-suite/apps/*'
-  - 'examples/showcase-suite/packages/*'
-  - "examples/reference-apps/*"
-  - "examples/p10-gauntlet/*"
-  - "examples/superapp-command-center/*"
-  - "examples/builder-labs/*"
-  - "demo2"
   - "labs/*"
+  - "labs/showcase-suite/apps/*"
+  - "labs/showcase-suite/packages/*"
+  - "examples/*"
 
 supportedArchitectures:
   os:
