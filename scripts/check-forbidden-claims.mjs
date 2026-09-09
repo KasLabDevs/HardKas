@@ -34,7 +34,13 @@ const ignoredFiles = [
   'task.md',
   'implementation_plan.md',
   'programmability-surface.mjs',
-  '11-limitations.md',
+  // These state the boundaries by negating them ("does not claim a stable
+  // vProgs API"), which the line-level scanner cannot distinguish from a claim.
+  // Renamed from 11-limitations.md / limitations.md during the docs
+  // restructure; matched by basename, so keep these in sync with docs/status/.
+  'limitations.md',
+  'limitations-mirror.md',
+  'known-limitations.md',
   'release-claims.md'
 ];
 
