@@ -39,9 +39,12 @@
     "format": "prettier --write .",
     "docs:generate-cli": "pnpm --filter @hardkas/cli docs:generate-cli",
     "docs:check-cli": "pnpm --filter @hardkas/cli docs:check-cli",
+    "docs:generate-claims": "node scripts/generate-claims-docs.mjs",
+    "docs:check-claims": "node scripts/generate-claims-docs.mjs --check",
+    "docs:check-site": "node scripts/check-site-map.mjs",
     "hardkas": "pnpm --filter @hardkas/cli run dev",
     "cli": "pnpm --filter @hardkas/cli run dev",
-    "check": "pnpm typecheck && pnpm build && pnpm version:check && pnpm docs:check-cli && pnpm check:docs && pnpm test",
+    "check": "pnpm typecheck && pnpm build && pnpm version:check && pnpm docs:check-cli && pnpm docs:check-claims && pnpm check:docs && pnpm test",
     "test:repro": "pnpm --filter @hardkas/testing test",
     "version:check": "node scripts/check-versions.mjs",
     "release:dry-run": "pnpm version:check && pnpm build && pnpm test && pnpm changeset status",
@@ -109,7 +112,7 @@
     "vitest": "^2.1.9",
     "ws": "^8.18.0"
   },
-  "version": "0.12.0-rc.19",
+  "version": "0.12.0-rc.20",
   "dependencies": {
     "@kaspa/core-lib": "^1.6.5",
     "kaspa": "^0.13.0",

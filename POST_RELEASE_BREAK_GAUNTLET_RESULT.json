@@ -1,6 +1,6 @@
 {
   "schema": "hardkas.postReleaseBreakGauntlet.v1",
-  "release": "0.12.0-rc.19",
+  "release": "0.12.0-rc.20",
   "status": "POST_RELEASE_BREAK_GAUNTLET_FINDINGS",
   "generatedAt": "2026-09-08T21:54:27.297Z",
   "claims": {
@@ -14,37 +14,37 @@
       "name": "pnpm build",
       "status": "PASS",
       "durationMs": 164751,
-      "outputSample": "\n> hardkas-monorepo@0.12.0-rc.19 build C:\\Users\\jrodr\\Documents\\kaslabdevs\\GitHub\\HardKas-repo\n> turbo build --concurrency 1\n\n\n   • Packages in scope: @examples/rpc-node-health, @examples/snapshot-restore, @examples/trace-and-replay, @hardkas-examples/hello-kaspa, @hardkas/accounts, @hardkas/artifacts, @hardkas/bridge-local, @hardkas/cli, @hardkas/client, @hardkas/config, @hardkas/core, @hardkas/dashboard, @hardkas/dev-server, @hardkas/escrow, @hardkas/example-02-basic-transfer, @hardkas/example-03-localnet-demo, @hardkas/example-bl-001-offline-multisig, @hardkas/jobs, @hardkas/kaspa-rpc, @hardkas/l2, @hardkas/localnet, @hardkas/node-orchestrator, @hardkas/node-runner, @hardkas/observability, @hardkas/plugin-local-indexer, @hardkas/plugin-rpc-backend, @hardkas/pskt-native, @hardkas/query, "
+      "outputSample": "\n> hardkas-monorepo@0.12.0-rc.20 build C:\\Users\\jrodr\\Documents\\kaslabdevs\\GitHub\\HardKas-repo\n> turbo build --concurrency 1\n\n\n   • Packages in scope: @examples/rpc-node-health, @examples/snapshot-restore, @examples/trace-and-replay, @hardkas-examples/hello-kaspa, @hardkas/accounts, @hardkas/artifacts, @hardkas/bridge-local, @hardkas/cli, @hardkas/client, @hardkas/config, @hardkas/core, @hardkas/dashboard, @hardkas/dev-server, @hardkas/escrow, @hardkas/example-02-basic-transfer, @hardkas/example-03-localnet-demo, @hardkas/example-bl-001-offline-multisig, @hardkas/jobs, @hardkas/kaspa-rpc, @hardkas/l2, @hardkas/localnet, @hardkas/node-orchestrator, @hardkas/node-runner, @hardkas/observability, @hardkas/plugin-local-indexer, @hardkas/plugin-rpc-backend, @hardkas/pskt-native, @hardkas/query, "
     },
     {
       "name": "pnpm test",
       "status": "FAIL",
       "durationMs": 725782,
-      "outputSample": "\n> hardkas-monorepo@0.12.0-rc.19 test C:\\Users\\jrodr\\Documents\\kaslabdevs\\GitHub\\HardKas-repo\n> vitest run && pnpm test:workflows\n\n\n RUN  v2.1.9 C:/Users/jrodr/Documents/kaslabdevs/GitHub/HardKas-repo\n      Coverage enabled with v8\n\nStarting SimnetNodeHarness...\nSimnetNodeHarness started successfully.\nWaiting for node to become ready...\nNode is ready. Funding alice...\n📡 [Watcher] Monitoring C:\\Users\\jrodr\\Documents\\kaslabdevs\\GitHub\\HardKas-repo\\.hardkas for changes...\n\n🚀 HardKas Dev Server running at http://127.0.0.1:3000\n📡 SSE Stream: http://127.0.0.1:3000/api/stream\n\n⚠️  CRITICAL: Authentication disabled via --unsafe-no-auth\n\n ❯ examples/builder-labs/bl-002-escrow-multisig/bl-002-b-onchain.test.ts (11 tests | 11 skipped) 2413ms\n ❯ examples/builder-labs/bl-003-silverscript-covenant/bl"
+      "outputSample": "\n> hardkas-monorepo@0.12.0-rc.20 test C:\\Users\\jrodr\\Documents\\kaslabdevs\\GitHub\\HardKas-repo\n> vitest run && pnpm test:workflows\n\n\n RUN  v2.1.9 C:/Users/jrodr/Documents/kaslabdevs/GitHub/HardKas-repo\n      Coverage enabled with v8\n\nStarting SimnetNodeHarness...\nSimnetNodeHarness started successfully.\nWaiting for node to become ready...\nNode is ready. Funding alice...\n📡 [Watcher] Monitoring C:\\Users\\jrodr\\Documents\\kaslabdevs\\GitHub\\HardKas-repo\\.hardkas for changes...\n\n🚀 HardKas Dev Server running at http://127.0.0.1:3000\n📡 SSE Stream: http://127.0.0.1:3000/api/stream\n\n⚠️  CRITICAL: Authentication disabled via --unsafe-no-auth\n\n ❯ examples/builder-labs/bl-002-escrow-multisig/bl-002-b-onchain.test.ts (11 tests | 11 skipped) 2413ms\n ❯ examples/builder-labs/bl-003-silverscript-covenant/bl"
     },
     {
       "name": "pnpm corpus:toccata",
       "status": "PASS",
       "durationMs": 2699,
-      "outputSample": "\n> hardkas-monorepo@0.12.0-rc.19 corpus:toccata C:\\Users\\jrodr\\Documents\\kaslabdevs\\GitHub\\HardKas-repo\n> tsx packages/cli/src/index.ts corpus verify fixtures/toccata-v2/silver --json --workspace .\n\n{\n  \"ok\": true,\n  \"schema\": \"hardkas.toccataCorpus.v1\",\n  \"path\": \"fixtures/toccata-v2/silver\",\n  \"summary\": {\n    \"happyPathFixtures\": 1,\n    \"failureFixtures\": 6,\n    \"artifactsChecked\": 7,\n    \"contentHashes\": \"PASS\",\n    \"compareMode\": \"artifact-coherence\",\n    \"simulationStatus\": \"SILVERSCRIPT_SIMULATION_MATCH\",\n    \"knownLimitations\": [\n      \"PARTIAL_VM_SIMULATION\"\n    ]\n  },\n  \"claims\": {\n    \"artifactCoherence\": \"READY_MATCH\",\n    \"runtimeOutcome\": \"PARTIAL\",\n    \"vmConsensusEquivalence\": \"NOT_CLAIMED\",\n    \"mainnet\": \"BLOCKED_BY_POLICY\"\n  },\n  \"issues\": []\n}\n"
+      "outputSample": "\n> hardkas-monorepo@0.12.0-rc.20 corpus:toccata C:\\Users\\jrodr\\Documents\\kaslabdevs\\GitHub\\HardKas-repo\n> tsx packages/cli/src/index.ts corpus verify fixtures/toccata-v2/silver --json --workspace .\n\n{\n  \"ok\": true,\n  \"schema\": \"hardkas.toccataCorpus.v1\",\n  \"path\": \"fixtures/toccata-v2/silver\",\n  \"summary\": {\n    \"happyPathFixtures\": 1,\n    \"failureFixtures\": 6,\n    \"artifactsChecked\": 7,\n    \"contentHashes\": \"PASS\",\n    \"compareMode\": \"artifact-coherence\",\n    \"simulationStatus\": \"SILVERSCRIPT_SIMULATION_MATCH\",\n    \"knownLimitations\": [\n      \"PARTIAL_VM_SIMULATION\"\n    ]\n  },\n  \"claims\": {\n    \"artifactCoherence\": \"READY_MATCH\",\n    \"runtimeOutcome\": \"PARTIAL\",\n    \"vmConsensusEquivalence\": \"NOT_CLAIMED\",\n    \"mainnet\": \"BLOCKED_BY_POLICY\"\n  },\n  \"issues\": []\n}\n"
     },
     {
       "name": "pnpm gauntlet:toccata",
       "status": "FAIL",
       "durationMs": 201740,
-      "outputSample": "\n> hardkas-monorepo@0.12.0-rc.19 gauntlet:toccata C:\\Users\\jrodr\\Documents\\kaslabdevs\\GitHub\\HardKas-repo\n> node scripts/toccata-gauntlet.mjs\n\n=== TOCCATA FINAL BASELINE GAUNTLET ===\n\n> hardkas-monorepo@0.12.0-rc.19 build C:\\Users\\jrodr\\Documents\\kaslabdevs\\GitHub\\HardKas-repo\n> turbo build --concurrency 1\n\n\n   • Packages in scope: @examples/rpc-node-health, @examples/snapshot-restore, @examples/trace-and-replay, @hardkas-examples/hello-kaspa, @hardkas/accounts, @hardkas/artifacts, @hardkas/bridge-local, @hardkas/cli, @hardkas/client, @hardkas/config, @hardkas/core, @hardkas/dashboard, @hardkas/dev-server, @hardkas/escrow, @hardkas/example-02-basic-transfer, @hardkas/example-03-localnet-demo, @hardkas/example-bl-001-offline-multisig, @hardkas/jobs, @hardkas/kaspa-rpc, @hardkas/l2, @hardkas"
+      "outputSample": "\n> hardkas-monorepo@0.12.0-rc.20 gauntlet:toccata C:\\Users\\jrodr\\Documents\\kaslabdevs\\GitHub\\HardKas-repo\n> node scripts/toccata-gauntlet.mjs\n\n=== TOCCATA FINAL BASELINE GAUNTLET ===\n\n> hardkas-monorepo@0.12.0-rc.20 build C:\\Users\\jrodr\\Documents\\kaslabdevs\\GitHub\\HardKas-repo\n> turbo build --concurrency 1\n\n\n   • Packages in scope: @examples/rpc-node-health, @examples/snapshot-restore, @examples/trace-and-replay, @hardkas-examples/hello-kaspa, @hardkas/accounts, @hardkas/artifacts, @hardkas/bridge-local, @hardkas/cli, @hardkas/client, @hardkas/config, @hardkas/core, @hardkas/dashboard, @hardkas/dev-server, @hardkas/escrow, @hardkas/example-02-basic-transfer, @hardkas/example-03-localnet-demo, @hardkas/example-bl-001-offline-multisig, @hardkas/jobs, @hardkas/kaspa-rpc, @hardkas/l2, @hardkas"
     },
     {
       "name": "hardkas --version",
       "status": "PASS",
       "durationMs": 844,
-      "outputSample": "0.12.0-rc.19\n"
+      "outputSample": "0.12.0-rc.20\n"
     },
     {
       "name": "hardkas capabilities --json",
       "status": "PASS",
       "durationMs": 922,
-      "outputSample": "{\"version\":\"0.12.0-rc.19\",\"maturity\":\"hardened-alpha\",\"proofVersion\":\"repro-v0\",\"hashVersion\":4,\"capabilities\":{\"artifacts\":true,\"lineageVerification\":true,\"deterministicHashing\":true,\"atomicPersistence\":true,\"workspaceLocks\":true,\"corruptionDetection\":true,\"secretRedaction\":true,\"mainnetGuards\":true,\"localnetSimulation\":true,\"ghostdagSimulation\":true,\"dagConflictResolution\":true,\"massProfiler\":true,\"simulationScenarios\":true,\"queryStore\":true,\"replayVerification\":true,\"schemaMigrations\":true,\"dockerNode\":true,\"scriptRunner\":true,\"testingFramework\":true,\"l2Profiles\":true,\"l2BridgeAssumptions\":true,\"consensusValidation\":false,\"productionWallet\":false,\"silverScript\":false,\"covenants\":false,\"trustlessExit\":false,\"differentialDagValidation\":false},\"trustBoundaries\":{\"replay\":\"local-workflow-on"
+      "outputSample": "{\"version\":\"0.12.0-rc.20\",\"maturity\":\"hardened-alpha\",\"proofVersion\":\"repro-v0\",\"hashVersion\":4,\"capabilities\":{\"artifacts\":true,\"lineageVerification\":true,\"deterministicHashing\":true,\"atomicPersistence\":true,\"workspaceLocks\":true,\"corruptionDetection\":true,\"secretRedaction\":true,\"mainnetGuards\":true,\"localnetSimulation\":true,\"ghostdagSimulation\":true,\"dagConflictResolution\":true,\"massProfiler\":true,\"simulationScenarios\":true,\"queryStore\":true,\"replayVerification\":true,\"schemaMigrations\":true,\"dockerNode\":true,\"scriptRunner\":true,\"testingFramework\":true,\"l2Profiles\":true,\"l2BridgeAssumptions\":true,\"consensusValidation\":false,\"productionWallet\":false,\"silverScript\":false,\"covenants\":false,\"trustlessExit\":false,\"differentialDagValidation\":false},\"trustBoundaries\":{\"replay\":\"local-workflow-on"
     },
     {
       "name": "hardkas localnet status --json",
@@ -485,7 +485,7 @@
       "cli": "PASS",
       "sdk": "FAIL",
       "parity": "PARITY_FAIL",
-      "cliOutput": "{\"version\":\"0.12.0-rc.19\",\"maturity\":\"hardened-alpha\",\"proofVersion\":\"repro-v0\",\"hashVersion\":4,\"capabilities\":{\"artifacts\":true,\"lineageVerification\":true,\"deterministicHashing\":true,\"atomicPersistence\":true,\"workspaceLocks\":true,\"corruptionDetection\":true,\"secretRedaction\":true,\"mainnetGuards\":true,\"localnetSimulation\":true,\"ghostdagSimulation\":true,\"dagConflictResolution\":true,\"massProfiler\":true,\"simulationScenarios\":true,\"queryStore\":true,\"replayVerification\":true,\"schemaMigrations\":true,\"dockerNode\":true,\"scriptRunner\":true,\"testingFramework\":true,\"l2Profiles\":true,\"l2BridgeAssumptions\":true,\"consensusValidation\":false,\"productionWallet\":false,\"silverScript\":false,\"covenants\":false,\"trustlessExit\":false,\"differentialDagValidation\":false},\"trustBoundaries\":{\"replay\":\"local-workflow-on",
+      "cliOutput": "{\"version\":\"0.12.0-rc.20\",\"maturity\":\"hardened-alpha\",\"proofVersion\":\"repro-v0\",\"hashVersion\":4,\"capabilities\":{\"artifacts\":true,\"lineageVerification\":true,\"deterministicHashing\":true,\"atomicPersistence\":true,\"workspaceLocks\":true,\"corruptionDetection\":true,\"secretRedaction\":true,\"mainnetGuards\":true,\"localnetSimulation\":true,\"ghostdagSimulation\":true,\"dagConflictResolution\":true,\"massProfiler\":true,\"simulationScenarios\":true,\"queryStore\":true,\"replayVerification\":true,\"schemaMigrations\":true,\"dockerNode\":true,\"scriptRunner\":true,\"testingFramework\":true,\"l2Profiles\":true,\"l2BridgeAssumptions\":true,\"consensusValidation\":false,\"productionWallet\":false,\"silverScript\":false,\"covenants\":false,\"trustlessExit\":false,\"differentialDagValidation\":false},\"trustBoundaries\":{\"replay\":\"local-workflow-on",
       "sdkOutput": "instance.capabilities is not a function"
     },
     {
@@ -522,5 +522,5 @@
     }
   ],
   "notes": [],
-  "recommendedNextRelease": "0.12.0-rc.19"
+  "recommendedNextRelease": "0.12.0-rc.20"
 }

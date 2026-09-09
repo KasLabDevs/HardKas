@@ -1,4 +1,4 @@
-# Post-Release Findings For 0.12.0-rc.19
+# Post-Release Findings For 0.12.0-rc.20
 
 Date: 2026-09-08T21:54:27.299Z
 
@@ -6,7 +6,7 @@ Status: `POST_RELEASE_BREAK_GAUNTLET_FINDINGS`
 
 ## Summary
 
-- Release tested: `0.12.0-rc.19`
+- Release tested: `0.12.0-rc.20`
 - Apps generated: 20
 - Apps build passed: 20
 - Apps smoke passed: 16
@@ -15,7 +15,7 @@ Status: `POST_RELEASE_BREAK_GAUNTLET_FINDINGS`
 - SDK gaps found: 3
 - Bugs found: 0
 - Docs/error-message gaps found: 2
-- Resolved 0.12.0-rc.19 findings: 4
+- Resolved 0.12.0-rc.20 findings: 4
 - Unresolved findings: 8
 
 ## Baseline
@@ -113,7 +113,7 @@ Commands:
 - corpus verify: CLI=PASS, SDK=FAIL, parity=PARITY_FAIL
 - silver compile/deploy/spend: CLI=PASS, SDK=FAIL, parity=PARITY_FAIL
 
-## Recommended 0.12.0-rc.19 Backlog
+## Recommended 0.12.0-rc.20 Backlog
 
 - Add or document SDK parity for `capabilities`.
 - Add or document SDK parity for `corpus verify`.

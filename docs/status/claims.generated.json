@@ -1,0 +1,82 @@
+{
+  "version": "0.12.0-rc.20",
+  "maturity": "hardened-alpha",
+  "proofVersion": "repro-v0",
+  "hashVersion": 4,
+  "releaseStatus": "LOCAL_FIRST_DEVELOPER_RUNTIME_HARDENED",
+  "certified": {
+    "localFirst": "READY",
+    "toccataV2Localnet": "READY",
+    "corpusVerifier": "READY",
+    "gauntlet": "READY",
+    "sdkParity": "READY"
+  },
+  "blocked": {
+    "productionReady": "NOT_CLAIMED",
+    "testnetReady": "BLOCKED_BY_POLICY",
+    "mainnetReady": "BLOCKED_BY_POLICY",
+    "l2Ready": "NOT_CLAIMED",
+    "bridgeReady": "NOT_CLAIMED"
+  },
+  "notClaimed": [
+    "consensus validation",
+    "full VM simulation",
+    "strict simulator-vs-Docker equivalence",
+    "trustless bridge",
+    "on-chain ZK verification",
+    "proof generation correctness",
+    "full vProgs runtime",
+    "vProgs API stability"
+  ],
+  "programmability": {
+    "artifactCoherence": "READY_MATCH",
+    "silverScriptBuilder": "SILVERSCRIPT_BUILDER_READY",
+    "zkCorpusSurface": "ZK_CORPUS_SURFACE_READY",
+    "zkLocalVerification": "READY_GROTH16_FIXTURE_COHERENCE",
+    "risc0InspectSurface": "RISC0_INSPECT_SURFACE_READY",
+    "vProgsInspectSurface": "VPROGS_INSPECT_SURFACE_READY",
+    "runtimeOutcome": "PARTIAL",
+    "vmConsensusEquivalence": "NOT_CLAIMED",
+    "zkOnchainVerification": "NOT_CLAIMED",
+    "vProgsRuntime": "NOT_CLAIMED",
+    "vProgsStableApi": "NOT_CLAIMED",
+    "mainnet": "BLOCKED_BY_POLICY"
+  },
+  "capabilities": {
+    "artifacts": true,
+    "lineageVerification": true,
+    "deterministicHashing": true,
+    "atomicPersistence": true,
+    "workspaceLocks": true,
+    "corruptionDetection": true,
+    "secretRedaction": true,
+    "mainnetGuards": true,
+    "localnetSimulation": true,
+    "ghostdagSimulation": true,
+    "dagConflictResolution": true,
+    "massProfiler": true,
+    "simulationScenarios": true,
+    "queryStore": true,
+    "replayVerification": true,
+    "schemaMigrations": true,
+    "dockerNode": true,
+    "scriptRunner": true,
+    "testingFramework": true,
+    "l2Profiles": true,
+    "l2BridgeAssumptions": true,
+    "consensusValidation": false,
+    "productionWallet": false,
+    "silverScript": false,
+    "covenants": false,
+    "transactionV1": false,
+    "trustlessExit": false,
+    "differentialDagValidation": false
+  },
+  "trustBoundaries": {
+    "replay": "local-workflow-only",
+    "artifacts": "internal-integrity-only",
+    "simulator": "local-simulation-only",
+    "queryStore": "rebuildable-read-model",
+    "l2Bridge": "pre-zk-assumptions"
+  }
+}

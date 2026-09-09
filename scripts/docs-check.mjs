@@ -34,20 +34,34 @@ function getDocsFiles(dir, filelist = []) {
 const mdFiles = [...rootMdFiles, ...getDocsFiles(path.join(projectRoot, "docs"))];
 let hasErrors = false;
 
-// Current valid version
-const CURRENT_VERSION = "0.12.0-rc.19";
+// Current valid version, read from the root package.json so this guard cannot
+// itself go stale.
+const CURRENT_VERSION = JSON.parse(
+  fs.readFileSync(path.join(projectRoot, "package.json"), "utf8")
+).version;
+
+// Docs that are *about* older releases legitimately name them.
+const VERSION_EXEMPT_DIRS = [
+  path.join(projectRoot, "docs", "migrations"),
+  path.join(projectRoot, "docs", "internal")
+];
 
 for (const file of mdFiles) {
   const content = fs.readFileSync(file, "utf8");
   const dir = path.dirname(file);
 
-  // Check old versions (e.g. 0.7.x, 0.8.x)
-  const oldVersionMatches = content.match(/0\.(?:6|7|8)(?:\.\d+)?-alpha/g);
-  if (oldVersionMatches) {
-    console.error(
-      `\u274c [${path.relative(projectRoot, file)}] Contains old version reference: ${oldVersionMatches[0]}`
+  // Check old versions (e.g. 0.7.x, 0.11-alpha). Prose must not pin a version:
+  // the authoritative one is emitted by scripts/generate-claims-docs.mjs.
+  if (!VERSION_EXEMPT_DIRS.some((d) => file.startsWith(d + path.sep))) {
+    const oldVersionMatches = content.match(
+      /0\.(?:6|7|8|9|10|11)(?:\.\d+)?-alpha/g
     );
-    hasErrors = true;
+    if (oldVersionMatches) {
+      console.error(
+        `\u274c [${path.relative(projectRoot, file)}] Contains old version reference: ${oldVersionMatches[0]} (current is ${CURRENT_VERSION})`
+      );
+      hasErrors = true;
+    }
   }
 
   // Check local links [text](path/to/file)

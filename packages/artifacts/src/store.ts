@@ -85,19 +85,31 @@ export class ProjectArtifactStore {
   }
 
   private async findArtifactPathById(id: string): Promise<string | null> {
-    const subdirs = ["plans", "signed", "receipts", "lineage", "misc"];
-    for (const sub of subdirs) {
-      const dirPath = path.join(this.artifactsDir, sub);
+    // Canonical subdirectories first, then the artifacts root. Not every writer
+    // goes through writeArtifact(): `tx plan --out` persists the plan at the
+    // root as `<timestamp>-<planId>.plan.json`, and the torture harness writes
+    // there too. Without searching the root, a signed transaction can never
+    // resolve its parent plan.
+    const searchDirs = [
+      ...["plans", "signed", "receipts", "lineage", "misc"].map((sub) =>
+        path.join(this.artifactsDir, sub)
+      ),
+      this.artifactsDir
+    ];
+
+    const lowerId = id.toLowerCase();
+
+    for (const dirPath of searchDirs) {
       try {
-        const files = await fs.readdir(dirPath);
-        for (const file of files) {
-          const lowerFile = file.toLowerCase();
-          const lowerId = id.toLowerCase();
+        const entries = await fs.readdir(dirPath, { withFileTypes: true });
+        for (const entry of entries) {
+          if (!entry.isFile()) continue;
+          const lowerFile = entry.name.toLowerCase();
           if (lowerFile.includes(lowerId)) {
-            return path.join(dirPath, file);
+            return path.join(dirPath, entry.name);
           }
           if (id.length === 64 && lowerFile.includes(lowerId.slice(0, 16))) {
-            return path.join(dirPath, file);
+            return path.join(dirPath, entry.name);
           }
         }
       } catch (e) {
