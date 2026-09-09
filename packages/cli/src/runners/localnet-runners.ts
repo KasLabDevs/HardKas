@@ -14,7 +14,7 @@ import { HardkasSchemas } from "@hardkas/artifacts";
 const TOCCATA_PROFILE = "toccata-v2";
 const TOCCATA_IMAGE = "kaspanet/rusty-kaspad:v2.0.0";
 const OFFICIAL_MINER_IMAGE = "kaspanet/cpuminer@sha256:60f78ab2828ab24b249c99210eee5a2825303a5226154260dd021ff26d46748b";
-const TOCCATA_MINER_CONTAINER = "hardkas-toccata-stratum-v2";
+const TOCCATA_MINER_CONTAINER = "hardkas-toccata-miner";
 const TOCCATA_NODE_CONTAINER = "hardkas-kaspad-toccata-v2";
 const TOCCATA_RPC_URL = "ws://127.0.0.1:18210";
 const TOCCATA_KASPAD_ADDRESS = "host.docker.internal:16210";

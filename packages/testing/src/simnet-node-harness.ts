@@ -10,6 +10,14 @@ export interface SimnetNodeHandle {
   readonly processId?: number | undefined;
   readonly mining: SimnetMiningDriver;
   readonly simulated?: boolean;
+  /**
+   * Name of the container backing this node, when one was started via Docker.
+   *
+   * Callers need this to address the node they just raised: a miner reaches
+   * kaspad by joining its network namespace (`--network container:<name>`),
+   * because kaspad binds gRPC to loopback inside its own container.
+   */
+  readonly containerName?: string | undefined;
 
   waitUntilReady(options?: { timeoutMs?: number }): Promise<void>;
   restart(): Promise<void>;
@@ -39,6 +47,7 @@ export class SimnetNodeHarness {
     const binaryPath = options.binaryPath || process.env.KASPAD_BIN;
     
     let child: ChildProcess | undefined;
+    let containerName: string | undefined;
 
     if (binaryPath) {
       const args = [
@@ -64,8 +73,17 @@ export class SimnetNodeHarness {
       }
 
       const dockerImage = "supertypo/rusty-kaspad:latest"; // Valid image
+      // Name the container. Without a name Docker assigns a random one, which
+      // leaves the node unaddressable (nothing can join its network namespace)
+      // and unkillable by anything but the `docker run` client process.
+      containerName = `hardkas-simnet-${rpcPort}`;
+      await new Promise((resolve) => {
+        const rm = spawn("docker", ["rm", "-f", containerName!], { stdio: "ignore" });
+        rm.on("exit", () => resolve(true));
+        rm.on("error", () => resolve(true));
+      });
       const args = [
-        "run", "--rm", "-p", `${rpcPort}:${rpcPort}`,
+        "run", "--rm", "--name", containerName, "-p", `${rpcPort}:${rpcPort}`,
         dockerImage,
         "kaspad",
         "--simnet",
@@ -96,6 +114,7 @@ export class SimnetNodeHarness {
       rpcUrl,
       dataDir,
       processId: child.pid,
+      containerName,
       mining: new SimnetMiningDriverImpl(client),
       waitUntilReady: async (waitOpts) => {
         const timeoutMs = waitOpts?.timeoutMs || options.startupTimeoutMs || 90000;

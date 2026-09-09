@@ -18,7 +18,7 @@ Runs the local Toccata v2 baseline gauntlet.
 
 Preconditions:
   - Docker Toccata v2 simnet node reachable on ws://127.0.0.1:18210
-  - v2 stratum/miner companion image available as hardkas/stratum-bridge:v2.0.0-local-simnet-unsynced
+  - upstream CPU miner image available as kaspanet/cpuminer:latest (docker pull kaspanet/cpuminer)
   - fixture account has mature simnet funds, or localnet fund has been run
 
 Known accepted warning:
@@ -134,49 +134,56 @@ async function ensureOpTrueCompileArtifact() {
   return artifactPath;
 }
 
+const MINER_IMAGE = "kaspanet/cpuminer:latest";
+const MINER_CONTAINER = "hardkas-toccata-miner";
+const NODE_CONTAINER = "hardkas-kaspad-toccata-v2";
+const NODE_GRPC_PORT = "16210";
+
+/**
+ * Mines a short burst of blocks to `address` using the upstream Kaspa CPU miner.
+ *
+ * The miner joins the node's network namespace rather than talking to it over
+ * the host: kaspad binds its gRPC server to loopback inside its own container,
+ * so no other container can reach it by host address.
+ *
+ * The miner is stopped before returning, and the DAG is given a moment to
+ * settle. Planning against a node that is still accepting blocks fails with
+ * UTXO_VIRTUAL_STATE_UNSTABLE, because the virtual state moves underneath UTXO
+ * selection.
+ */
 function mineBriefly(address) {
   try {
-    tryDocker([
-      "image",
-      "inspect",
-      "hardkas/stratum-bridge:v2.0.0-local-simnet-unsynced"
-    ]);
+    tryDocker(["image", "inspect", MINER_IMAGE]);
     try {
-      tryDocker(["rm", "-f", "hardkas-toccata-stratum-v2"]);
+      tryDocker(["rm", "-f", MINER_CONTAINER]);
     } catch {}
     tryDocker([
       "run",
       "-d",
       "--name",
-      "hardkas-toccata-stratum-v2",
-      "--add-host=host.docker.internal:host-gateway",
-      "hardkas/stratum-bridge:v2.0.0-local-simnet-unsynced",
-      "/app/stratum-bridge",
-      "--node-mode",
-      "external",
-      "--kaspad-address",
-      "host.docker.internal:16210",
-      "--web-dashboard-port",
-      ":3031",
-      "--instance",
-      "port=:16120,diff=1",
-      "--internal-cpu-miner",
-      "--internal-cpu-miner-address",
+      MINER_CONTAINER,
+      `--network=container:${NODE_CONTAINER}`,
+      MINER_IMAGE,
+      "--mining-address",
       address,
-      "--internal-cpu-miner-threads",
+      "--kaspad-address",
+      "127.0.0.1",
+      "--port",
+      NODE_GRPC_PORT,
+      "--threads",
       "1",
-      "--internal-cpu-miner-template-poll-ms",
-      "250",
-      "--print-stats",
-      "true",
-      "--log-to-file",
-      "false"
+      "--mine-when-not-synced"
     ]);
     runNode(["-e", "setTimeout(()=>{}, 6000)"]);
   } finally {
     try {
-      tryDocker(["stop", "hardkas-toccata-stratum-v2"]);
+      tryDocker(["stop", MINER_CONTAINER]);
     } catch {}
+    try {
+      tryDocker(["rm", "-f", MINER_CONTAINER]);
+    } catch {}
+    // Let the DAG settle before anything selects UTXOs.
+    runNode(["-e", "setTimeout(()=>{}, 5000)"]);
   }
 }
 

@@ -63,8 +63,8 @@ for Kaspa/Toccata development.
 Current certified baseline:
 
 - `simulator` is the recommended default for fast, synchronous testing.
-  - Toccata v2 Docker `localnet` baseline (`rusty-kaspad` on Kaspa `testnet-11`).
-- Real local funding through the Toccata miner/stratum companion in `localnet`.
+  - Toccata v2 Docker `localnet` baseline (`rusty-kaspad` on Kaspa `simnet`).
+- Real local funding by mining with the upstream `kaspanet/cpuminer` image in `localnet`.
 - Standard transaction lifecycle against the local node.
 - SilverScript local OP_TRUE deploy/spend.
 - Artifact-coherence simulation.

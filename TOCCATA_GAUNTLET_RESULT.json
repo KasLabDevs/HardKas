@@ -1,7 +1,7 @@
 {
   "schema": "hardkas.toccataGauntlet.v1",
   "status": "TOCCATA_NORMALIZATION_BLOCKED_RELEASE_ENV",
-  "generatedAt": "2026-09-08T22:25:04.394Z",
+  "generatedAt": "2026-09-09T07:24:08.552Z",
   "partialKnownLimitations": [
     "PARTIAL_VM_SIMULATION"
   ],
@@ -23,11 +23,15 @@
       "status": "PASS"
     },
     {
+      "name": "docker rpc health",
+      "status": "PASS"
+    },
+    {
       "name": "gauntlet aborted",
       "status": "FAIL",
-      "message": "Command failed: D:\\Program Files\\nodejs\\node.exe C:\\Users\\jrodr\\Documents\\kaslabdevs\\GitHub\\HardKas-repo\\packages\\cli\\dist\\index.js rpc health --wait --timeout 10000\n\n  ✗ Error:\n    Command failed\n"
+      "message": "Command failed: D:\\Program Files\\nodejs\\node.exe run-real-node.mjs"
     }
   ],
-  "blocker": "Command failed: D:\\Program Files\\nodejs\\node.exe C:\\Users\\jrodr\\Documents\\kaslabdevs\\GitHub\\HardKas-repo\\packages\\cli\\dist\\index.js rpc health --wait --timeout 10000\n\n  ✗ Error:\n    Command failed\n",
+  "blocker": "Command failed: D:\\Program Files\\nodejs\\node.exe run-real-node.mjs",
   "nextRequiredCommand": "pnpm build && pnpm test && pnpm gauntlet:toccata"
 }

@@ -63,7 +63,7 @@ node packages/cli/dist/index.js capabilities --json
 ## Certified Baseline
 
 - Docker `rusty-kaspad` v2.0.0 simnet local node.
-- Toccata v2 miner/stratum companion.
+- Upstream `kaspanet/cpuminer` miner, joined to the node's network namespace.
 - Local funding fixture.
 - Standard transaction lifecycle against the local node.
 - SilverScript OP_TRUE deploy real.

@@ -4,5 +4,12 @@
 
 dashboard-dist/
 events.jsonl
+
+# Configs generated inside scratch projects must stay out...
 hardkas.config.ts
+# ...but the scaffolding templates we ship are source, not scratch. They are
+# listed in package.json "files" and reach npm regardless; without this the
+# repo does not carry them and a clean clone publishes templates with no config.
+!templates/**/hardkas.config.ts
+
 *.semantic-bundle.*.json

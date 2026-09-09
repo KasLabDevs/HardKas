@@ -76,7 +76,7 @@ export class HardkasLocalnet {
       schema: HardkasSchemas.LocalnetStatusV1,
       profile,
       node,
-      miner: this.inspectDockerContainer("hardkas-toccata-stratum-v2"),
+      miner: this.inspectDockerContainer("hardkas-toccata-miner"),
       simulationLevels: {
         artifactCoherence: "READY",
         runtimeOutcome: "PARTIAL",
@@ -140,8 +140,9 @@ export class HardkasLocalnet {
   /**
    * Funds a simulated account through the SDK transaction flow.
    *
-   * Toccata Docker mining/funding remains CLI-only in 0.12.0-rc.20 because it
-   * depends on a local stratum/miner companion and host Docker state.
+   * Toccata Docker mining/funding remains CLI-only because it shells out to
+   * Docker: it runs the upstream Kaspa CPU miner inside the node container's
+   * network namespace, which is host state the SDK does not own.
    */
   async fund(
     identifier: string,
