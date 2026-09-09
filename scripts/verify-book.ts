@@ -5,8 +5,11 @@ import { execSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 
 const REPO_ROOT = process.cwd();
-const BOOK_DIR = path.join(REPO_ROOT, "docs", "book");
+const DOCS_DIR = path.join(REPO_ROOT, "docs");
 const TMP_DIR = path.join(REPO_ROOT, ".tmp", "docs-verify");
+
+// Not user-facing documentation: audit evidence, historical validation records.
+const EXCLUDED_DIRS = new Set(["internal"]);
 
 // Ensures `hardkas` command works inside the snippets
 const env = {
@@ -28,9 +31,24 @@ function extractExecuteBlocks(content: string): string[] {
   return blocks;
 }
 
+// Collect every .md under docs/, as posix-style paths relative to DOCS_DIR.
+function collectDocs(dir: string, base = ""): string[] {
+  const found: string[] = [];
+  for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+    const rel = base ? `${base}/${entry.name}` : entry.name;
+    if (entry.isDirectory()) {
+      if (EXCLUDED_DIRS.has(entry.name)) continue;
+      found.push(...collectDocs(path.join(dir, entry.name), rel));
+    } else if (entry.name.endsWith(".md")) {
+      found.push(rel);
+    }
+  }
+  return found;
+}
+
 function main() {
-  if (!fs.existsSync(BOOK_DIR)) {
-    console.error(`[Docs Verify] Directory not found: ${BOOK_DIR}`);
+  if (!fs.existsSync(DOCS_DIR)) {
+    console.error(`[Docs Verify] Directory not found: ${DOCS_DIR}`);
     process.exit(1);
   }
 
@@ -49,10 +67,8 @@ function main() {
   }
   console.log(`[Docs Verify] Preflight passed: all critical build artifacts exist.`);
 
-  // Find all .md files in docs/book and sort them
-  const files = fs.readdirSync(BOOK_DIR)
-    .filter(f => f.endsWith(".md"))
-    .sort();
+  // Find all .md files under docs/ and sort them
+  const files = collectDocs(DOCS_DIR).sort();
 
   if (files.length === 0) {
     console.log("[Docs Verify] No markdown files found.");
@@ -68,7 +84,7 @@ function main() {
 
   for (const file of files) {
     console.log(`\n=== Verifying ${file} ===`);
-    const filePath = path.join(BOOK_DIR, file);
+    const filePath = path.join(DOCS_DIR, file);
     const content = fs.readFileSync(filePath, "utf-8");
     const blocks = extractExecuteBlocks(content);
 
@@ -77,8 +93,8 @@ function main() {
       continue;
     }
 
-    // Isolate workspace per chapter
-    const chapterName = file.replace(".md", "");
+    // Isolate workspace per document (flatten the relative path into one dir name)
+    const chapterName = file.replace(/\.md$/, "").replace(/\//g, "__");
     const chapterTmpDir = path.join(TMP_DIR, chapterName);
     fs.mkdirSync(chapterTmpDir, { recursive: true });
 

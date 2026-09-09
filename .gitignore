@@ -208,7 +208,9 @@ verdaccio-storage/
 
 # Temporary and Output Directories
 .tmp/
+tmp2/
 tmp_foo/
+tmp_test/
 tmp-audit-pack/
 tmp-consumer-hardkas/
 tmp-packaging/

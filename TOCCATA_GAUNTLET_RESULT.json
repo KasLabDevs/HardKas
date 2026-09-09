@@ -1,0 +1,33 @@
+{
+  "schema": "hardkas.toccataGauntlet.v1",
+  "status": "TOCCATA_NORMALIZATION_BLOCKED_RELEASE_ENV",
+  "generatedAt": "2026-09-08T22:25:04.394Z",
+  "partialKnownLimitations": [
+    "PARTIAL_VM_SIMULATION"
+  ],
+  "phases": [
+    {
+      "name": "package/build integrity",
+      "status": "PASS"
+    },
+    {
+      "name": "doctor",
+      "status": "PASS"
+    },
+    {
+      "name": "capabilities",
+      "status": "PASS"
+    },
+    {
+      "name": "localnet status",
+      "status": "PASS"
+    },
+    {
+      "name": "gauntlet aborted",
+      "status": "FAIL",
+      "message": "Command failed: D:\\Program Files\\nodejs\\node.exe C:\\Users\\jrodr\\Documents\\kaslabdevs\\GitHub\\HardKas-repo\\packages\\cli\\dist\\index.js rpc health --wait --timeout 10000\n\n  ✗ Error:\n    Command failed\n"
+    }
+  ],
+  "blocker": "Command failed: D:\\Program Files\\nodejs\\node.exe C:\\Users\\jrodr\\Documents\\kaslabdevs\\GitHub\\HardKas-repo\\packages\\cli\\dist\\index.js rpc health --wait --timeout 10000\n\n  ✗ Error:\n    Command failed\n",
+  "nextRequiredCommand": "pnpm build && pnpm test && pnpm gauntlet:toccata"
+}

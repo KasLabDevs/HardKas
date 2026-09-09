@@ -1,0 +1,526 @@
+{
+  "schema": "hardkas.postReleaseBreakGauntlet.v1",
+  "release": "0.12.0-rc.19",
+  "status": "POST_RELEASE_BREAK_GAUNTLET_FINDINGS",
+  "generatedAt": "2026-09-08T21:54:27.297Z",
+  "claims": {
+    "artifactCoherence": "READY_MATCH",
+    "runtimeOutcome": "PARTIAL",
+    "vmConsensusEquivalence": "NOT_CLAIMED",
+    "mainnet": "BLOCKED_BY_POLICY"
+  },
+  "baseline": [
+    {
+      "name": "pnpm build",
+      "status": "PASS",
+      "durationMs": 164751,
+      "outputSample": "\n> hardkas-monorepo@0.12.0-rc.19 build C:\\Users\\jrodr\\Documents\\kaslabdevs\\GitHub\\HardKas-repo\n> turbo build --concurrency 1\n\n\n   • Packages in scope: @examples/rpc-node-health, @examples/snapshot-restore, @examples/trace-and-replay, @hardkas-examples/hello-kaspa, @hardkas/accounts, @hardkas/artifacts, @hardkas/bridge-local, @hardkas/cli, @hardkas/client, @hardkas/config, @hardkas/core, @hardkas/dashboard, @hardkas/dev-server, @hardkas/escrow, @hardkas/example-02-basic-transfer, @hardkas/example-03-localnet-demo, @hardkas/example-bl-001-offline-multisig, @hardkas/jobs, @hardkas/kaspa-rpc, @hardkas/l2, @hardkas/localnet, @hardkas/node-orchestrator, @hardkas/node-runner, @hardkas/observability, @hardkas/plugin-local-indexer, @hardkas/plugin-rpc-backend, @hardkas/pskt-native, @hardkas/query, "
+    },
+    {
+      "name": "pnpm test",
+      "status": "FAIL",
+      "durationMs": 725782,
+      "outputSample": "\n> hardkas-monorepo@0.12.0-rc.19 test C:\\Users\\jrodr\\Documents\\kaslabdevs\\GitHub\\HardKas-repo\n> vitest run && pnpm test:workflows\n\n\n RUN  v2.1.9 C:/Users/jrodr/Documents/kaslabdevs/GitHub/HardKas-repo\n      Coverage enabled with v8\n\nStarting SimnetNodeHarness...\nSimnetNodeHarness started successfully.\nWaiting for node to become ready...\nNode is ready. Funding alice...\n📡 [Watcher] Monitoring C:\\Users\\jrodr\\Documents\\kaslabdevs\\GitHub\\HardKas-repo\\.hardkas for changes...\n\n🚀 HardKas Dev Server running at http://127.0.0.1:3000\n📡 SSE Stream: http://127.0.0.1:3000/api/stream\n\n⚠️  CRITICAL: Authentication disabled via --unsafe-no-auth\n\n ❯ examples/builder-labs/bl-002-escrow-multisig/bl-002-b-onchain.test.ts (11 tests | 11 skipped) 2413ms\n ❯ examples/builder-labs/bl-003-silverscript-covenant/bl"
+    },
+    {
+      "name": "pnpm corpus:toccata",
+      "status": "PASS",
+      "durationMs": 2699,
+      "outputSample": "\n> hardkas-monorepo@0.12.0-rc.19 corpus:toccata C:\\Users\\jrodr\\Documents\\kaslabdevs\\GitHub\\HardKas-repo\n> tsx packages/cli/src/index.ts corpus verify fixtures/toccata-v2/silver --json --workspace .\n\n{\n  \"ok\": true,\n  \"schema\": \"hardkas.toccataCorpus.v1\",\n  \"path\": \"fixtures/toccata-v2/silver\",\n  \"summary\": {\n    \"happyPathFixtures\": 1,\n    \"failureFixtures\": 6,\n    \"artifactsChecked\": 7,\n    \"contentHashes\": \"PASS\",\n    \"compareMode\": \"artifact-coherence\",\n    \"simulationStatus\": \"SILVERSCRIPT_SIMULATION_MATCH\",\n    \"knownLimitations\": [\n      \"PARTIAL_VM_SIMULATION\"\n    ]\n  },\n  \"claims\": {\n    \"artifactCoherence\": \"READY_MATCH\",\n    \"runtimeOutcome\": \"PARTIAL\",\n    \"vmConsensusEquivalence\": \"NOT_CLAIMED\",\n    \"mainnet\": \"BLOCKED_BY_POLICY\"\n  },\n  \"issues\": []\n}\n"
+    },
+    {
+      "name": "pnpm gauntlet:toccata",
+      "status": "FAIL",
+      "durationMs": 201740,
+      "outputSample": "\n> hardkas-monorepo@0.12.0-rc.19 gauntlet:toccata C:\\Users\\jrodr\\Documents\\kaslabdevs\\GitHub\\HardKas-repo\n> node scripts/toccata-gauntlet.mjs\n\n=== TOCCATA FINAL BASELINE GAUNTLET ===\n\n> hardkas-monorepo@0.12.0-rc.19 build C:\\Users\\jrodr\\Documents\\kaslabdevs\\GitHub\\HardKas-repo\n> turbo build --concurrency 1\n\n\n   • Packages in scope: @examples/rpc-node-health, @examples/snapshot-restore, @examples/trace-and-replay, @hardkas-examples/hello-kaspa, @hardkas/accounts, @hardkas/artifacts, @hardkas/bridge-local, @hardkas/cli, @hardkas/client, @hardkas/config, @hardkas/core, @hardkas/dashboard, @hardkas/dev-server, @hardkas/escrow, @hardkas/example-02-basic-transfer, @hardkas/example-03-localnet-demo, @hardkas/example-bl-001-offline-multisig, @hardkas/jobs, @hardkas/kaspa-rpc, @hardkas/l2, @hardkas"
+    },
+    {
+      "name": "hardkas --version",
+      "status": "PASS",
+      "durationMs": 844,
+      "outputSample": "0.12.0-rc.19\n"
+    },
+    {
+      "name": "hardkas capabilities --json",
+      "status": "PASS",
+      "durationMs": 922,
+      "outputSample": "{\"version\":\"0.12.0-rc.19\",\"maturity\":\"hardened-alpha\",\"proofVersion\":\"repro-v0\",\"hashVersion\":4,\"capabilities\":{\"artifacts\":true,\"lineageVerification\":true,\"deterministicHashing\":true,\"atomicPersistence\":true,\"workspaceLocks\":true,\"corruptionDetection\":true,\"secretRedaction\":true,\"mainnetGuards\":true,\"localnetSimulation\":true,\"ghostdagSimulation\":true,\"dagConflictResolution\":true,\"massProfiler\":true,\"simulationScenarios\":true,\"queryStore\":true,\"replayVerification\":true,\"schemaMigrations\":true,\"dockerNode\":true,\"scriptRunner\":true,\"testingFramework\":true,\"l2Profiles\":true,\"l2BridgeAssumptions\":true,\"consensusValidation\":false,\"productionWallet\":false,\"silverScript\":false,\"covenants\":false,\"trustlessExit\":false,\"differentialDagValidation\":false},\"trustBoundaries\":{\"replay\":\"local-workflow-on"
+    },
+    {
+      "name": "hardkas localnet status --json",
+      "status": "PASS",
+      "durationMs": 1069,
+      "outputSample": "{\"schema\":\"hardkas.localnetStatus.v1\",\"profile\":\"toccata-v2\",\"node\":{\"ready\":true,\"rpcUrl\":\"ws://127.0.0.1:18210\",\"networkId\":\"simnet\",\"serverVersion\":\"2.0.1\",\"isSynced\":false,\"virtualDaaScore\":\"400\"},\"miner\":{\"exists\":false,\"running\":false,\"status\":\"not-found\",\"image\":\"kaspanet/cpuminer@sha256:60f78ab2828ab24b249c99210eee5a2825303a5226154260dd021ff26d46748b\",\"name\":\"hardkas-toccata-stratum-v2\"},\"simulationLevels\":{\"artifactCoherence\":\"READY\",\"runtimeOutcome\":\"PARTIAL\",\"vmConsensusEquivalence\":\"NOT_CLAIMED\"}}"
+    }
+  ],
+  "appsGenerated": 20,
+  "appsBuildPassed": 20,
+  "appsSmokePassed": 16,
+  "appsUsingArtifactsCorrectly": 0,
+  "appsRespectingMainnetGuard": 20,
+  "appsWithHallucinatedCommands": 0,
+  "appsActuallyUseful": 16,
+  "mainnetBypasses": 1,
+  "artifactCorruptionDetected": true,
+  "sdkGaps": [
+    {
+      "flow": "capabilities",
+      "severity": "P2",
+      "reason": "CLI flow passed but SDK parity failed: instance.capabilities is not a function"
+    },
+    {
+      "flow": "corpus verify",
+      "severity": "P2",
+      "reason": "CLI flow passed but SDK parity failed: Cannot read properties of undefined (reading 'verify')"
+    },
+    {
+      "flow": "silver compile/deploy/spend",
+      "severity": "P2",
+      "reason": "CLI flow passed but SDK parity failed: Cannot read properties of undefined (reading 'deployPlan')"
+    }
+  ],
+  "bugs": [],
+  "docsGaps": [
+    {
+      "id": "mainnet-silver-deploy-plan-attempt",
+      "severity": "P2",
+      "title": "mainnet silver deploy-plan attempt failed with unclear or unexpected error",
+      "evidence": "error: unknown command 'silver'\n\nUsage: hardkas [options] [command]\n\nHardKAS: Kaspa-native developer operating environment\n\nOptions:\n  -V, --version                       output the version number\n  -h, --help                          display help for command\n\nCommands:\n  init [options] [name]               Initialize a new HardKAS project stable\n  up [options]                        Boot or validate the HardKAS developer\n                                      runtime environment stable\n  create [options] <template> <dest>  Scaffold a new HardKAS project from a\n                                      template stable\n  tx                                  L1 Transaction commands\n  artifact|artifacts                  Manage HardKAS artifacts\n  replay                              Manage HardKAS t"
+    },
+    {
+      "id": "compiler-nonexistent",
+      "severity": "P2",
+      "title": "compiler nonexistent failed with unclear or unexpected error",
+      "evidence": "error: unknown command 'silver'\n\nUsage: hardkas [options] [command]\n\nHardKAS: Kaspa-native developer operating environment\n\nOptions:\n  -V, --version                       output the version number\n  -h, --help                          display help for command\n\nCommands:\n  init [options] [name]               Initialize a new HardKAS project stable\n  up [options]                        Boot or validate the HardKAS developer\n                                      runtime environment stable\n  create [options] <template> <dest>  Scaffold a new HardKAS project from a\n                                      template stable\n  tx                                  L1 Transaction commands\n  artifact|artifacts                  Manage HardKAS artifacts\n  replay                              Manage HardKAS t"
+    }
+  ],
+  "resolvedFindings": [
+    "P1 SDK localnet status parity",
+    "P1 SDK Silver high-level deploy planning/simulation/compare surface",
+    "P2 SDK capabilities API",
+    "P2 SDK corpus verify API"
+  ],
+  "unresolvedFindings": [
+    {
+      "flow": "capabilities",
+      "severity": "P2",
+      "reason": "CLI flow passed but SDK parity failed: instance.capabilities is not a function"
+    },
+    {
+      "flow": "corpus verify",
+      "severity": "P2",
+      "reason": "CLI flow passed but SDK parity failed: Cannot read properties of undefined (reading 'verify')"
+    },
+    {
+      "flow": "silver compile/deploy/spend",
+      "severity": "P2",
+      "reason": "CLI flow passed but SDK parity failed: Cannot read properties of undefined (reading 'deployPlan')"
+    },
+    {
+      "id": "mainnet-silver-deploy-plan-attempt",
+      "severity": "P2",
+      "title": "mainnet silver deploy-plan attempt failed with unclear or unexpected error",
+      "evidence": "error: unknown command 'silver'\n\nUsage: hardkas [options] [command]\n\nHardKAS: Kaspa-native developer operating environment\n\nOptions:\n  -V, --version                       output the version number\n  -h, --help                          display help for command\n\nCommands:\n  init [options] [name]               Initialize a new HardKAS project stable\n  up [options]                        Boot or validate the HardKAS developer\n                                      runtime environment stable\n  create [options] <template> <dest>  Scaffold a new HardKAS project from a\n                                      template stable\n  tx                                  L1 Transaction commands\n  artifact|artifacts                  Manage HardKAS artifacts\n  replay                              Manage HardKAS t"
+    },
+    {
+      "id": "compiler-nonexistent",
+      "severity": "P2",
+      "title": "compiler nonexistent failed with unclear or unexpected error",
+      "evidence": "error: unknown command 'silver'\n\nUsage: hardkas [options] [command]\n\nHardKAS: Kaspa-native developer operating environment\n\nOptions:\n  -V, --version                       output the version number\n  -h, --help                          display help for command\n\nCommands:\n  init [options] [name]               Initialize a new HardKAS project stable\n  up [options]                        Boot or validate the HardKAS developer\n                                      runtime environment stable\n  create [options] <template> <dest>  Scaffold a new HardKAS project from a\n                                      template stable\n  tx                                  L1 Transaction commands\n  artifact|artifacts                  Manage HardKAS artifacts\n  replay                              Manage HardKAS t"
+    },
+    {
+      "id": "parity-capabilities",
+      "severity": "P1",
+      "title": "CLI/SDK parity failed for capabilities",
+      "evidence": "instance.capabilities is not a function"
+    },
+    {
+      "id": "parity-corpus-verify",
+      "severity": "P1",
+      "title": "CLI/SDK parity failed for corpus verify",
+      "evidence": "Cannot read properties of undefined (reading 'verify')"
+    },
+    {
+      "id": "parity-silver-compile-deploy-spend",
+      "severity": "P1",
+      "title": "CLI/SDK parity failed for silver compile/deploy/spend",
+      "evidence": "Cannot read properties of undefined (reading 'deployPlan')"
+    }
+  ],
+  "appResults": [
+    {
+      "name": "cli-only-01",
+      "category": "cli-only",
+      "build": "PASS",
+      "smoke": "PASS",
+      "usesArtifactsCorrectly": "not_applicable",
+      "respectsMainnetGuard": true,
+      "hallucinatedCommands": false,
+      "useful": true,
+      "outputSample": "{\"app\":\"cli-only-01\",\"ok\":true,\"claims\":{\"artifactCoherence\":\"READY_MATCH\",\"runtimeOutcome\":\"PARTIAL\",\"vmConsensusEquivalence\":\"NOT_CLAIMED\",\"mainnet\":\"BLOCKED_BY_POLICY\"}}\n"
+    },
+    {
+      "name": "cli-only-02",
+      "category": "cli-only",
+      "build": "PASS",
+      "smoke": "PASS",
+      "usesArtifactsCorrectly": "not_applicable",
+      "respectsMainnetGuard": true,
+      "hallucinatedCommands": false,
+      "useful": true,
+      "outputSample": "{\"app\":\"cli-only-02\",\"ok\":true,\"claims\":{\"artifactCoherence\":\"READY_MATCH\",\"runtimeOutcome\":\"PARTIAL\",\"vmConsensusEquivalence\":\"NOT_CLAIMED\",\"mainnet\":\"BLOCKED_BY_POLICY\"}}\n"
+    },
+    {
+      "name": "cli-only-03",
+      "category": "cli-only",
+      "build": "PASS",
+      "smoke": "PASS",
+      "usesArtifactsCorrectly": "not_applicable",
+      "respectsMainnetGuard": true,
+      "hallucinatedCommands": false,
+      "useful": true,
+      "outputSample": "{\"app\":\"cli-only-03\",\"ok\":true,\"claims\":{\"artifactCoherence\":\"READY_MATCH\",\"runtimeOutcome\":\"PARTIAL\",\"vmConsensusEquivalence\":\"NOT_CLAIMED\",\"mainnet\":\"BLOCKED_BY_POLICY\"}}\n"
+    },
+    {
+      "name": "cli-only-04",
+      "category": "cli-only",
+      "build": "PASS",
+      "smoke": "PASS",
+      "usesArtifactsCorrectly": "not_applicable",
+      "respectsMainnetGuard": true,
+      "hallucinatedCommands": false,
+      "useful": true,
+      "outputSample": "{\"app\":\"cli-only-04\",\"ok\":true,\"claims\":{\"artifactCoherence\":\"READY_MATCH\",\"runtimeOutcome\":\"PARTIAL\",\"vmConsensusEquivalence\":\"NOT_CLAIMED\",\"mainnet\":\"BLOCKED_BY_POLICY\"}}\n"
+    },
+    {
+      "name": "sdk-only-01",
+      "category": "sdk-only",
+      "build": "PASS",
+      "smoke": "PASS",
+      "usesArtifactsCorrectly": "not_applicable",
+      "respectsMainnetGuard": true,
+      "hallucinatedCommands": false,
+      "useful": true,
+      "outputSample": "{\"app\":\"sdk-only-01\",\"ok\":true,\"network\":\"simulated\",\"accounts\":14,\"claims\":{\"artifactCoherence\":\"READY_MATCH\",\"runtimeOutcome\":\"PARTIAL\",\"vmConsensusEquivalence\":\"NOT_CLAIMED\",\"mainnet\":\"BLOCKED_BY_POLICY\"}}\n"
+    },
+    {
+      "name": "sdk-only-02",
+      "category": "sdk-only",
+      "build": "PASS",
+      "smoke": "PASS",
+      "usesArtifactsCorrectly": "not_applicable",
+      "respectsMainnetGuard": true,
+      "hallucinatedCommands": false,
+      "useful": true,
+      "outputSample": "{\"app\":\"sdk-only-02\",\"ok\":true,\"network\":\"simulated\",\"accounts\":14,\"claims\":{\"artifactCoherence\":\"READY_MATCH\",\"runtimeOutcome\":\"PARTIAL\",\"vmConsensusEquivalence\":\"NOT_CLAIMED\",\"mainnet\":\"BLOCKED_BY_POLICY\"}}\n"
+    },
+    {
+      "name": "sdk-only-03",
+      "category": "sdk-only",
+      "build": "PASS",
+      "smoke": "PASS",
+      "usesArtifactsCorrectly": "not_applicable",
+      "respectsMainnetGuard": true,
+      "hallucinatedCommands": false,
+      "useful": true,
+      "outputSample": "{\"app\":\"sdk-only-03\",\"ok\":true,\"network\":\"simulated\",\"accounts\":14,\"claims\":{\"artifactCoherence\":\"READY_MATCH\",\"runtimeOutcome\":\"PARTIAL\",\"vmConsensusEquivalence\":\"NOT_CLAIMED\",\"mainnet\":\"BLOCKED_BY_POLICY\"}}\n"
+    },
+    {
+      "name": "sdk-only-04",
+      "category": "sdk-only",
+      "build": "PASS",
+      "smoke": "PASS",
+      "usesArtifactsCorrectly": "not_applicable",
+      "respectsMainnetGuard": true,
+      "hallucinatedCommands": false,
+      "useful": true,
+      "outputSample": "{\"app\":\"sdk-only-04\",\"ok\":true,\"network\":\"simulated\",\"accounts\":14,\"claims\":{\"artifactCoherence\":\"READY_MATCH\",\"runtimeOutcome\":\"PARTIAL\",\"vmConsensusEquivalence\":\"NOT_CLAIMED\",\"mainnet\":\"BLOCKED_BY_POLICY\"}}\n"
+    },
+    {
+      "name": "cli-sdk-01",
+      "category": "cli-sdk",
+      "build": "PASS",
+      "smoke": "PASS",
+      "usesArtifactsCorrectly": "not_applicable",
+      "respectsMainnetGuard": true,
+      "hallucinatedCommands": false,
+      "useful": true,
+      "outputSample": "{\"app\":\"cli-sdk-01\",\"ok\":true,\"sdkNetwork\":\"simulated\",\"cliStatus\":[\"schema\",\"profile\",\"node\",\"miner\",\"simulationLevels\"],\"claims\":{\"artifactCoherence\":\"READY_MATCH\",\"runtimeOutcome\":\"PARTIAL\",\"vmConsensusEquivalence\":\"NOT_CLAIMED\",\"mainnet\":\"BLOCKED_BY_POLICY\"}}\n"
+    },
+    {
+      "name": "cli-sdk-02",
+      "category": "cli-sdk",
+      "build": "PASS",
+      "smoke": "PASS",
+      "usesArtifactsCorrectly": "not_applicable",
+      "respectsMainnetGuard": true,
+      "hallucinatedCommands": false,
+      "useful": true,
+      "outputSample": "{\"app\":\"cli-sdk-02\",\"ok\":true,\"sdkNetwork\":\"simulated\",\"cliStatus\":[\"schema\",\"profile\",\"node\",\"miner\",\"simulationLevels\"],\"claims\":{\"artifactCoherence\":\"READY_MATCH\",\"runtimeOutcome\":\"PARTIAL\",\"vmConsensusEquivalence\":\"NOT_CLAIMED\",\"mainnet\":\"BLOCKED_BY_POLICY\"}}\n"
+    },
+    {
+      "name": "cli-sdk-03",
+      "category": "cli-sdk",
+      "build": "PASS",
+      "smoke": "PASS",
+      "usesArtifactsCorrectly": "not_applicable",
+      "respectsMainnetGuard": true,
+      "hallucinatedCommands": false,
+      "useful": true,
+      "outputSample": "{\"app\":\"cli-sdk-03\",\"ok\":true,\"sdkNetwork\":\"simulated\",\"cliStatus\":[\"schema\",\"profile\",\"node\",\"miner\",\"simulationLevels\"],\"claims\":{\"artifactCoherence\":\"READY_MATCH\",\"runtimeOutcome\":\"PARTIAL\",\"vmConsensusEquivalence\":\"NOT_CLAIMED\",\"mainnet\":\"BLOCKED_BY_POLICY\"}}\n"
+    },
+    {
+      "name": "cli-sdk-04",
+      "category": "cli-sdk",
+      "build": "PASS",
+      "smoke": "PASS",
+      "usesArtifactsCorrectly": "not_applicable",
+      "respectsMainnetGuard": true,
+      "hallucinatedCommands": false,
+      "useful": true,
+      "outputSample": "{\"app\":\"cli-sdk-04\",\"ok\":true,\"sdkNetwork\":\"simulated\",\"cliStatus\":[\"schema\",\"profile\",\"node\",\"miner\",\"simulationLevels\"],\"claims\":{\"artifactCoherence\":\"READY_MATCH\",\"runtimeOutcome\":\"PARTIAL\",\"vmConsensusEquivalence\":\"NOT_CLAIMED\",\"mainnet\":\"BLOCKED_BY_POLICY\"}}\n"
+    },
+    {
+      "name": "failure-mutation-01",
+      "category": "failure-mutation",
+      "build": "PASS",
+      "smoke": "FAIL",
+      "usesArtifactsCorrectly": false,
+      "respectsMainnetGuard": true,
+      "hallucinatedCommands": false,
+      "useful": false,
+      "outputSample": "file:///C:/Users/jrodr/Documents/kaslabdevs/GitHub/HardKas-repo/.post-release-gauntlet/apps/failure-mutation-01/app.mjs:4\r\n  schema: HardkasSchemas.PostReleaseProbe,\r\n          ^\r\n\r\nReferenceError: HardkasSchemas is not defined\r\n    at file:///C:/Users/jrodr/Documents/kaslabdevs/GitHub/HardKas-repo/.post-release-gauntlet/apps/failure-mutation-01/app.mjs:4:11\r\n\r\nNode.js v24.15.0\r\nCommand failed: D:\\Program Files\\nodejs\\node.exe app.mjs\nfile:///C:/Users/jrodr/Documents/kaslabdevs/GitHub/HardKas-repo/.post-release-gauntlet/apps/failure-mutation-01/app.mjs:4\r\n  schema: HardkasSchemas.PostReleaseProbe,\r\n          ^\r\n\r\nReferenceError: HardkasSchemas is not defined\r\n    at file:///C:/Users/jrodr/Documents/kaslabdevs/GitHub/HardKas-repo/.post-release-gauntlet/apps/failure-mutation-01/app.mjs:4:11\r"
+    },
+    {
+      "name": "failure-mutation-02",
+      "category": "failure-mutation",
+      "build": "PASS",
+      "smoke": "FAIL",
+      "usesArtifactsCorrectly": false,
+      "respectsMainnetGuard": true,
+      "hallucinatedCommands": false,
+      "useful": false,
+      "outputSample": "file:///C:/Users/jrodr/Documents/kaslabdevs/GitHub/HardKas-repo/.post-release-gauntlet/apps/failure-mutation-02/app.mjs:4\r\n  schema: HardkasSchemas.PostReleaseProbe,\r\n          ^\r\n\r\nReferenceError: HardkasSchemas is not defined\r\n    at file:///C:/Users/jrodr/Documents/kaslabdevs/GitHub/HardKas-repo/.post-release-gauntlet/apps/failure-mutation-02/app.mjs:4:11\r\n\r\nNode.js v24.15.0\r\nCommand failed: D:\\Program Files\\nodejs\\node.exe app.mjs\nfile:///C:/Users/jrodr/Documents/kaslabdevs/GitHub/HardKas-repo/.post-release-gauntlet/apps/failure-mutation-02/app.mjs:4\r\n  schema: HardkasSchemas.PostReleaseProbe,\r\n          ^\r\n\r\nReferenceError: HardkasSchemas is not defined\r\n    at file:///C:/Users/jrodr/Documents/kaslabdevs/GitHub/HardKas-repo/.post-release-gauntlet/apps/failure-mutation-02/app.mjs:4:11\r"
+    },
+    {
+      "name": "failure-mutation-03",
+      "category": "failure-mutation",
+      "build": "PASS",
+      "smoke": "FAIL",
+      "usesArtifactsCorrectly": false,
+      "respectsMainnetGuard": true,
+      "hallucinatedCommands": false,
+      "useful": false,
+      "outputSample": "file:///C:/Users/jrodr/Documents/kaslabdevs/GitHub/HardKas-repo/.post-release-gauntlet/apps/failure-mutation-03/app.mjs:4\r\n  schema: HardkasSchemas.PostReleaseProbe,\r\n          ^\r\n\r\nReferenceError: HardkasSchemas is not defined\r\n    at file:///C:/Users/jrodr/Documents/kaslabdevs/GitHub/HardKas-repo/.post-release-gauntlet/apps/failure-mutation-03/app.mjs:4:11\r\n\r\nNode.js v24.15.0\r\nCommand failed: D:\\Program Files\\nodejs\\node.exe app.mjs\nfile:///C:/Users/jrodr/Documents/kaslabdevs/GitHub/HardKas-repo/.post-release-gauntlet/apps/failure-mutation-03/app.mjs:4\r\n  schema: HardkasSchemas.PostReleaseProbe,\r\n          ^\r\n\r\nReferenceError: HardkasSchemas is not defined\r\n    at file:///C:/Users/jrodr/Documents/kaslabdevs/GitHub/HardKas-repo/.post-release-gauntlet/apps/failure-mutation-03/app.mjs:4:11\r"
+    },
+    {
+      "name": "failure-mutation-04",
+      "category": "failure-mutation",
+      "build": "PASS",
+      "smoke": "FAIL",
+      "usesArtifactsCorrectly": false,
+      "respectsMainnetGuard": true,
+      "hallucinatedCommands": false,
+      "useful": false,
+      "outputSample": "file:///C:/Users/jrodr/Documents/kaslabdevs/GitHub/HardKas-repo/.post-release-gauntlet/apps/failure-mutation-04/app.mjs:4\r\n  schema: HardkasSchemas.PostReleaseProbe,\r\n          ^\r\n\r\nReferenceError: HardkasSchemas is not defined\r\n    at file:///C:/Users/jrodr/Documents/kaslabdevs/GitHub/HardKas-repo/.post-release-gauntlet/apps/failure-mutation-04/app.mjs:4:11\r\n\r\nNode.js v24.15.0\r\nCommand failed: D:\\Program Files\\nodejs\\node.exe app.mjs\nfile:///C:/Users/jrodr/Documents/kaslabdevs/GitHub/HardKas-repo/.post-release-gauntlet/apps/failure-mutation-04/app.mjs:4\r\n  schema: HardkasSchemas.PostReleaseProbe,\r\n          ^\r\n\r\nReferenceError: HardkasSchemas is not defined\r\n    at file:///C:/Users/jrodr/Documents/kaslabdevs/GitHub/HardKas-repo/.post-release-gauntlet/apps/failure-mutation-04/app.mjs:4:11\r"
+    },
+    {
+      "name": "dashboard-tool-01",
+      "category": "dashboard-tool",
+      "build": "PASS",
+      "smoke": "PASS",
+      "usesArtifactsCorrectly": "not_applicable",
+      "respectsMainnetGuard": true,
+      "hallucinatedCommands": false,
+      "useful": true,
+      "outputSample": "{\"app\":\"dashboard-tool-01\",\"ok\":true,\"dashboardLike\":true,\"panels\":[\"claims\",\"gauntlet\",\"corpus\",\"mainnetGuard\"],\"claims\":{\"artifactCoherence\":\"READY_MATCH\",\"runtimeOutcome\":\"PARTIAL\",\"vmConsensusEquivalence\":\"NOT_CLAIMED\",\"mainnet\":\"BLOCKED_BY_POLICY\"}}\n"
+    },
+    {
+      "name": "dashboard-tool-02",
+      "category": "dashboard-tool",
+      "build": "PASS",
+      "smoke": "PASS",
+      "usesArtifactsCorrectly": "not_applicable",
+      "respectsMainnetGuard": true,
+      "hallucinatedCommands": false,
+      "useful": true,
+      "outputSample": "{\"app\":\"dashboard-tool-02\",\"ok\":true,\"dashboardLike\":true,\"panels\":[\"claims\",\"gauntlet\",\"corpus\",\"mainnetGuard\"],\"claims\":{\"artifactCoherence\":\"READY_MATCH\",\"runtimeOutcome\":\"PARTIAL\",\"vmConsensusEquivalence\":\"NOT_CLAIMED\",\"mainnet\":\"BLOCKED_BY_POLICY\"}}\n"
+    },
+    {
+      "name": "dashboard-tool-03",
+      "category": "dashboard-tool",
+      "build": "PASS",
+      "smoke": "PASS",
+      "usesArtifactsCorrectly": "not_applicable",
+      "respectsMainnetGuard": true,
+      "hallucinatedCommands": false,
+      "useful": true,
+      "outputSample": "{\"app\":\"dashboard-tool-03\",\"ok\":true,\"dashboardLike\":true,\"panels\":[\"claims\",\"gauntlet\",\"corpus\",\"mainnetGuard\"],\"claims\":{\"artifactCoherence\":\"READY_MATCH\",\"runtimeOutcome\":\"PARTIAL\",\"vmConsensusEquivalence\":\"NOT_CLAIMED\",\"mainnet\":\"BLOCKED_BY_POLICY\"}}\n"
+    },
+    {
+      "name": "dashboard-tool-04",
+      "category": "dashboard-tool",
+      "build": "PASS",
+      "smoke": "PASS",
+      "usesArtifactsCorrectly": "not_applicable",
+      "respectsMainnetGuard": true,
+      "hallucinatedCommands": false,
+      "useful": true,
+      "outputSample": "{\"app\":\"dashboard-tool-04\",\"ok\":true,\"dashboardLike\":true,\"panels\":[\"claims\",\"gauntlet\",\"corpus\",\"mainnetGuard\"],\"claims\":{\"artifactCoherence\":\"READY_MATCH\",\"runtimeOutcome\":\"PARTIAL\",\"vmConsensusEquivalence\":\"NOT_CLAIMED\",\"mainnet\":\"BLOCKED_BY_POLICY\"}}\n"
+    }
+  ],
+  "adversarialResults": [
+    {
+      "name": "artifact hash corrupt",
+      "status": "PASS",
+      "reason": "expected_failure_detected",
+      "durationMs": 940,
+      "expectedPatterns": [
+        "ARTIFACT_HASH_MISMATCH",
+        "HASH_MISMATCH",
+        "hash",
+        "invalid"
+      ],
+      "outputSample": "\n  ═══ Artifact Verification: wrong-network-compile.json ═══\n  Type:    hardkas.silver.compile\n  Version: 1.0.0-alpha\n  Expected Hash: 2c01b25995895c37eda9531dae778206c212299ec350d46d95d8848d411b2f2e\n  Actual Hash:   173248299fe6f5d353f094af0f5a4a9bebdcf0677084e4d6c22209b383aa5132\n\nIssues:\n- ERROR:    [ARTIFACT_HASH_MISMATCH] Hash mismatch: expected 2c01b25995895c37eda9531dae778206c212299ec350d46d95d8848d411b2f2e, got 173248299fe6f5d353f094af0f5a4a9bebdcf0677084e4d6c22209b383aa5132\n- ERROR:    [ARTIFACT_SCHEMA_INVALID] mode: [object Object]\n- ERROR:    [STALE_ARTIFACT] Artifact is too old (91 days). High risk of DAA divergence.\n- ERROR:    [MISSING_LINEAGE] Artifact has no lineage metadata\n- ERROR:    [MISSING_WORKFLOW_ID] Strict mode requires workflowId\n- ERROR:    [MISSING_ASSUMPTION_LEV"
+    },
+    {
+      "name": "manifest corrupt",
+      "status": "PASS",
+      "reason": "expected_failure_detected",
+      "durationMs": 1108,
+      "expectedPatterns": [
+        "INVALID",
+        "PARTIAL_VM_SIMULATION",
+        "NOT_CLAIMED"
+      ],
+      "outputSample": "{\n  \"ok\": false,\n  \"schema\": \"hardkas.toccataCorpus.v1\",\n  \"path\": \".post-release-gauntlet/mutations/manifest-corrupt\",\n  \"summary\": {\n    \"happyPathFixtures\": 1,\n    \"failureFixtures\": 6,\n    \"artifactsChecked\": 0,\n    \"contentHashes\": \"PASS\",\n    \"compareMode\": \"artifact-coherence\",\n    \"simulationStatus\": \"SILVERSCRIPT_SIMULATION_MATCH\",\n    \"knownLimitations\": [\n      \"PARTIAL_VM_SIMULATION\"\n    ]\n  },\n  \"claims\": {\n    \"artifactCoherence\": \"INVALID\",\n    \"runtimeOutcome\": \"INVALID\",\n    \"vmConsensusEquivalence\": \"INVALID\",\n    \"mainnet\": \"INVALID\"\n  },\n  \"issues\": [\n    {\n      \"code\": \"NETWORK_INVALID\",\n      \"message\": \"Expected simnet, got mainnet.\",\n      \"file\": \"C:\\\\Users\\\\jrodr\\\\Documents\\\\kaslabdevs\\\\GitHub\\\\HardKas-repo\\\\.post-release-gauntlet\\\\mutations\\\\manifest-corrupt\\\\op"
+    },
+    {
+      "name": "compare report manipulated",
+      "status": "PASS",
+      "reason": "expected_failure_detected",
+      "durationMs": 1165,
+      "expectedPatterns": [
+        "COMPARE_STATUS_INVALID",
+        "SILVERSCRIPT_SIMULATION_MATCH"
+      ],
+      "outputSample": "{\n  \"ok\": false,\n  \"schema\": \"hardkas.toccataCorpus.v1\",\n  \"path\": \".post-release-gauntlet/mutations/tampered-corpus\",\n  \"summary\": {\n    \"happyPathFixtures\": 1,\n    \"failureFixtures\": 6,\n    \"artifactsChecked\": 7,\n    \"contentHashes\": \"PASS\",\n    \"compareMode\": \"artifact-coherence\",\n    \"simulationStatus\": \"SILVERSCRIPT_SIMULATION_DRIFT\",\n    \"knownLimitations\": [\n      \"PARTIAL_VM_SIMULATION\"\n    ]\n  },\n  \"claims\": {\n    \"artifactCoherence\": \"INVALID\",\n    \"runtimeOutcome\": \"INVALID\",\n    \"vmConsensusEquivalence\": \"INVALID\",\n    \"mainnet\": \"INVALID\"\n  },\n  \"issues\": [\n    {\n      \"code\": \"COMPARE_STATUS_INVALID\",\n      \"message\": \"Expected SILVERSCRIPT_SIMULATION_MATCH, got SILVERSCRIPT_SIMULATION_DRIFT.\",\n      \"file\": \"C:\\\\Users\\\\jrodr\\\\Documents\\\\kaslabdevs\\\\GitHub\\\\HardKas-repo\\\\.pos"
+    },
+    {
+      "name": "mainnet silver deploy-plan attempt",
+      "status": "FAIL",
+      "reason": "wrong_error",
+      "durationMs": 872,
+      "expectedPatterns": [
+        "SILVERSCRIPT_MAINNET_NOT_ENABLED",
+        "Only simnet is supported"
+      ],
+      "outputSample": "error: unknown command 'silver'\n\nUsage: hardkas [options] [command]\n\nHardKAS: Kaspa-native developer operating environment\n\nOptions:\n  -V, --version                       output the version number\n  -h, --help                          display help for command\n\nCommands:\n  init [options] [name]               Initialize a new HardKAS project stable\n  up [options]                        Boot or validate the HardKAS developer\n                                      runtime environment stable\n  create [options] <template> <dest>  Scaffold a new HardKAS project from a\n                                      template stable\n  tx                                  L1 Transaction commands\n  artifact|artifacts                  Manage HardKAS artifacts\n  replay                              Manage HardKAS t"
+    },
+    {
+      "name": "rpc down",
+      "status": "PASS",
+      "reason": "expected_failure_detected",
+      "durationMs": 942,
+      "expectedPatterns": [
+        "ECONNREFUSED",
+        "timeout",
+        "failed",
+        "RPC"
+      ],
+      "outputSample": "error: unknown option '--url'\n\nUsage: hardkas rpc health [options]\n\nCheck RPC health\n\nOptions:\n  --wait          Wait until healthy\n  --timeout <ms>  Timeout in ms\n  --json          Output as JSON (default: false)\n  -h, --help      display help for command\nCommand failed: D:\\Program Files\\nodejs\\node.exe C:\\Users\\jrodr\\Documents\\kaslabdevs\\GitHub\\HardKas-repo\\packages\\cli\\dist\\index.js rpc health --url ws://127.0.0.1:1 --timeout 1000\nerror: unknown option '--url'\n\nUsage: hardkas rpc health [options]\n\nCheck RPC health\n\nOptions:\n  --wait          Wait until healthy\n  --timeout <ms>  Timeout in ms\n  --json          Output as JSON (default: false)\n  -h, --help      display help for command\n"
+    },
+    {
+      "name": "compiler nonexistent",
+      "status": "FAIL",
+      "reason": "wrong_error",
+      "durationMs": 857,
+      "expectedPatterns": [
+        "SILVERSCRIPT_COMPILER_UNAVAILABLE",
+        "unavailable",
+        "not found"
+      ],
+      "outputSample": "error: unknown command 'silver'\n\nUsage: hardkas [options] [command]\n\nHardKAS: Kaspa-native developer operating environment\n\nOptions:\n  -V, --version                       output the version number\n  -h, --help                          display help for command\n\nCommands:\n  init [options] [name]               Initialize a new HardKAS project stable\n  up [options]                        Boot or validate the HardKAS developer\n                                      runtime environment stable\n  create [options] <template> <dest>  Scaffold a new HardKAS project from a\n                                      template stable\n  tx                                  L1 Transaction commands\n  artifact|artifacts                  Manage HardKAS artifacts\n  replay                              Manage HardKAS t"
+    },
+    {
+      "name": "negative amount",
+      "status": "PASS",
+      "reason": "expected_failure_detected",
+      "durationMs": 819,
+      "expectedPatterns": [
+        "amount",
+        "invalid",
+        "positive"
+      ],
+      "outputSample": "\n  ✗ Error:\n    KAS_AMOUNT_NEGATIVE: negative money not allowed\nCommand failed: D:\\Program Files\\nodejs\\node.exe C:\\Users\\jrodr\\Documents\\kaslabdevs\\GitHub\\HardKas-repo\\packages\\cli\\dist\\index.js tx plan --from alice --to bob --amount -1 --network simulated\n\n  ✗ Error:\n    KAS_AMOUNT_NEGATIVE: negative money not allowed\n"
+    },
+    {
+      "name": "invalid address",
+      "status": "PASS",
+      "reason": "expected_failure_detected",
+      "durationMs": 1020,
+      "expectedPatterns": [
+        "address",
+        "invalid",
+        "Invalid"
+      ],
+      "outputSample": "\n  ✗ Error:\n    Unknown HardKAS account 'not-an-address'. Available accounts: alice, bob, carol, dave, erin\nCommand failed: D:\\Program Files\\nodejs\\node.exe C:\\Users\\jrodr\\Documents\\kaslabdevs\\GitHub\\HardKas-repo\\packages\\cli\\dist\\index.js tx plan --from alice --to not-an-address --amount 1 --network simulated\n\n  ✗ Error:\n    Unknown HardKAS account 'not-an-address'. Available accounts: alice, bob, carol, dave, erin\n"
+    },
+    {
+      "name": "path traversal artifact inspect",
+      "status": "PASS",
+      "reason": "expected_failure_detected",
+      "durationMs": 990,
+      "expectedPatterns": [
+        "not found",
+        "outside",
+        "Artifact"
+      ],
+      "outputSample": "\n  ✗ [INVALID_ARTIFACT] Artifact not found: Could not resolve '..\\..\\SECURITY.md' as a file or artifact ID.\nCommand failed: D:\\Program Files\\nodejs\\node.exe C:\\Users\\jrodr\\Documents\\kaslabdevs\\GitHub\\HardKas-repo\\packages\\cli\\dist\\index.js artifact inspect ..\\..\\SECURITY.md\n\n  ✗ [INVALID_ARTIFACT] Artifact not found: Could not resolve '..\\..\\SECURITY.md' as a file or artifact ID.\n"
+    }
+  ],
+  "parityResults": [
+    {
+      "flow": "capabilities",
+      "cli": "PASS",
+      "sdk": "FAIL",
+      "parity": "PARITY_FAIL",
+      "cliOutput": "{\"version\":\"0.12.0-rc.19\",\"maturity\":\"hardened-alpha\",\"proofVersion\":\"repro-v0\",\"hashVersion\":4,\"capabilities\":{\"artifacts\":true,\"lineageVerification\":true,\"deterministicHashing\":true,\"atomicPersistence\":true,\"workspaceLocks\":true,\"corruptionDetection\":true,\"secretRedaction\":true,\"mainnetGuards\":true,\"localnetSimulation\":true,\"ghostdagSimulation\":true,\"dagConflictResolution\":true,\"massProfiler\":true,\"simulationScenarios\":true,\"queryStore\":true,\"replayVerification\":true,\"schemaMigrations\":true,\"dockerNode\":true,\"scriptRunner\":true,\"testingFramework\":true,\"l2Profiles\":true,\"l2BridgeAssumptions\":true,\"consensusValidation\":false,\"productionWallet\":false,\"silverScript\":false,\"covenants\":false,\"trustlessExit\":false,\"differentialDagValidation\":false},\"trustBoundaries\":{\"replay\":\"local-workflow-on",
+      "sdkOutput": "instance.capabilities is not a function"
+    },
+    {
+      "flow": "localnet status",
+      "cli": "PASS",
+      "sdk": "PASS",
+      "parity": "PARITY_PASS",
+      "cliOutput": "{\"schema\":\"hardkas.localnetStatus.v1\",\"profile\":\"toccata-v2\",\"node\":{\"ready\":true,\"rpcUrl\":\"ws://127.0.0.1:18210\",\"networkId\":\"simnet\",\"serverVersion\":\"2.0.1\",\"isSynced\":false,\"virtualDaaScore\":\"400\"},\"miner\":{\"exists\":false,\"running\":false,\"status\":\"not-found\",\"image\":\"kaspanet/cpuminer@sha256:60f78ab2828ab24b249c99210eee5a2825303a5226154260dd021ff26d46748b\",\"name\":\"hardkas-toccata-stratum-v2\"},\"simulationLevels\":{\"artifactCoherence\":\"READY\",\"runtimeOutcome\":\"PARTIAL\",\"vmConsensusEquivalence\":\"NOT_CLAIMED\"}}",
+      "sdkOutput": "{\"schema\":\"hardkas.localnetStatus.v1\",\"profile\":\"toccata-v2\",\"node\":{\"ready\":true,\"rpcUrl\":\"ws://127.0.0.1:18210\",\"networkId\":\"simnet\",\"serverVersion\":\"2.0.1\",\"isSynced\":false,\"virtualDaaScore\":\"400\"},\"miner\":{\"exists\":false,\"running\":false,\"status\":\"not-found\",\"image\":\"kaspanet/cpuminer@sha256:60f78ab2828ab24b249c99210eee5a2825303a5226154260dd021ff26d46748b\",\"name\":\"hardkas-toccata-stratum-v2\"},\"simulationLevels\":{\"artifactCoherence\":\"READY\",\"runtimeOutcome\":\"PARTIAL\",\"vmConsensusEquivalence\":\"NOT_CLAIMED\"}}"
+    },
+    {
+      "flow": "accounts list",
+      "cli": "PASS",
+      "sdk": "PASS",
+      "parity": "PARITY_PASS",
+      "cliOutput": "[\n  {\n    \"name\": \"alice\",\n    \"kind\": \"synthetic\",\n    \"address\": \"kaspa:sim_alice\"\n  },\n  {\n    \"name\": \"bob\",\n    \"kind\": \"synthetic\",\n    \"address\": \"kaspa:sim_bob\"\n  },\n  {\n    \"name\": \"carol\",\n    \"kind\": \"synthetic\",\n    \"address\": \"kaspa:sim_carol\"\n  },\n  {\n    \"name\": \"dave\",\n    \"kind\": \"synthetic\",\n    \"address\": \"kaspa:sim_dave\"\n  },\n  {\n    \"name\": \"erin\",\n    \"kind\": \"synthetic\",\n    \"address\": \"kaspa:sim_erin\"\n  }\n]\n",
+      "sdkOutput": "[{\"name\":\"alice\",\"kind\":\"synthetic\",\"address\":\"kaspa:sim_alice\"},{\"name\":\"bob\",\"kind\":\"synthetic\",\"address\":\"kaspa:sim_bob\"},{\"name\":\"carol\",\"kind\":\"synthetic\",\"address\":\"kaspa:sim_carol\"},{\"name\":\"dave\",\"kind\":\"synthetic\",\"address\":\"kaspa:sim_dave\"},{\"name\":\"erin\",\"kind\":\"synthetic\",\"address\":\"kaspa:sim_erin\"},{\"name\":\"con02_race_sender\",\"kind\":\"synthetic\",\"address\":\"kaspa:sim_con02_race_sender\"},{\"name\":\"con02_race_sender_1788515255361\",\"kind\":\"synthetic\",\"address\":\"kaspa:sim_con02_race_sender_1788515255361\"},{\"name\":\"con02_race_sender_1788515261252\",\"kind\":\"synthetic\",\"address\":\"kaspa:sim_con02_race_sender_1788515261252\"},{\"name\":\"con02_race_sender_1788515280639\",\"kind\":\"synthetic\",\"address\":\"kaspa:sim_con02_race_sender_1788515280639\"},{\"name\":\"con02_race_sender_1788515439115\",\"kind\":\"s"
+    },
+    {
+      "flow": "corpus verify",
+      "cli": "PASS",
+      "sdk": "FAIL",
+      "parity": "PARITY_FAIL",
+      "cliOutput": "{\"ok\":true,\"schema\":\"hardkas.toccataCorpus.v1\",\"path\":\"fixtures/toccata-v2/silver\",\"summary\":{\"happyPathFixtures\":1,\"failureFixtures\":6,\"artifactsChecked\":7,\"contentHashes\":\"PASS\",\"compareMode\":\"artifact-coherence\",\"simulationStatus\":\"SILVERSCRIPT_SIMULATION_MATCH\",\"knownLimitations\":[\"PARTIAL_VM_SIMULATION\"]},\"claims\":{\"artifactCoherence\":\"READY_MATCH\",\"runtimeOutcome\":\"PARTIAL\",\"vmConsensusEquivalence\":\"NOT_CLAIMED\",\"mainnet\":\"BLOCKED_BY_POLICY\"},\"issues\":[]}",
+      "sdkOutput": "Cannot read properties of undefined (reading 'verify')"
+    },
+    {
+      "flow": "silver compile/deploy/spend",
+      "cli": "PASS",
+      "sdk": "FAIL",
+      "parity": "PARITY_FAIL",
+      "cliOutput": "CLI_PASS",
+      "sdkOutput": "Cannot read properties of undefined (reading 'deployPlan')"
+    }
+  ],
+  "notes": [],
+  "recommendedNextRelease": "0.12.0-rc.19"
+}
