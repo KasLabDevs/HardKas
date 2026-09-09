@@ -1,6 +1,9 @@
 # Certification Capability Matrix
+> **Claims are generated.** The authoritative values live in
+> [claims.generated.md](./claims.generated.md), produced from `packages/sdk` by
+> `pnpm docs:generate-claims`. Anything restated below is prose, not the source.
 
-This matrix describes the capabilities HardKas should prove before a release is treated as stable. For 0.12.0-rc.19, the priority is the local-first development loop.
+This matrix describes the capabilities HardKas should prove before a release is treated as stable. For 0.12.0-rc.20, the priority is the local-first development loop.
 
 ## Local Transaction Lifecycle
 
@@ -113,6 +116,6 @@ That drift is expected and does not block the alpha localnet gate.
 
 ## Mainnet
 
-Status: out of scope for the 0.12.0-rc.19 happy path
+Status: out of scope for the 0.12.0-rc.20 happy path
 
 Any future mainnet certification must be separate from local simulation and simnet tests. It needs stronger UX guards, signing policy, documentation, and operational review.

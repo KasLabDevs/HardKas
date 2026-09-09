@@ -1,6 +1,6 @@
 # HardKAS Technical Documentation
 
-Welcome to the technical documentation for **HardKAS 0.12.0-rc.19**.
+Welcome to the technical documentation for **HardKAS 0.12.0-rc.20**.
 
 HardKAS is a deterministic, local-first developer environment for Kaspa
 transaction workflows. It helps builders plan, sign, simulate, inspect, replay,
@@ -32,7 +32,7 @@ HardKAS is **local-first**:
 HardKAS does not replace Kaspa consensus and is not production custody software.
 The real network remains the final validator for real transactions.
 
-## 0.12.0-rc.19 Toccata Status
+## 0.12.0-rc.20 Toccata Status
 
 The current alpha includes Docker `rusty-kaspad` v2.0.0 simnet funding, a real
 standard transaction lifecycle, real Silver OP_TRUE deploy/spend, simulator
@@ -157,11 +157,13 @@ by `pnpm docs:generate-cli`; do not edit them by hand.
 
 Every release boundary, limitation, and claim lives here.
 
-[Limitations](./status/limitations.md) ·
-[Limitations (mirror)](./status/limitations-mirror.md) ·
-[Known Limitations](./status/known-limitations.md) ·
-[What HardKAS Is NOT](./status/what-hardkas-is-not.md) ·
-[Release Claims](./status/release-claims.md) ·
+**[Release Claims (generated)](./status/claims.generated.md)** is authoritative:
+it is produced from `packages/sdk` by `pnpm docs:generate-claims`, and
+`pnpm docs:check-claims` fails the build if the committed copy drifts from the
+code. The pages below are prose around those values, not a second source.
+
+[Limitations and Boundaries](./status/limitations.md) ·
+[Release Claims and Gates](./status/release-claims.md) ·
 [Security Claims](./status/security-claims.md) ·
 [Threat Model](./status/threat-model.md) ·
 [Capability Matrix](./status/capability-matrix.md) ·

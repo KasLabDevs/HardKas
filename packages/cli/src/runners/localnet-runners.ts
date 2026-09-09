@@ -14,7 +14,8 @@ import { HardkasSchemas } from "@hardkas/artifacts";
 const TOCCATA_PROFILE = "toccata-v2";
 const TOCCATA_IMAGE = "kaspanet/rusty-kaspad:v2.0.0";
 const OFFICIAL_MINER_IMAGE = "kaspanet/cpuminer@sha256:60f78ab2828ab24b249c99210eee5a2825303a5226154260dd021ff26d46748b";
-const TOCCATA_MINER_CONTAINER = "hardkas-toccata-stratum-v2";
+const TOCCATA_MINER_CONTAINER = "hardkas-toccata-miner";
+const TOCCATA_NODE_CONTAINER = "hardkas-kaspad-toccata-v2";
 const TOCCATA_RPC_URL = "ws://127.0.0.1:18210";
 const TOCCATA_KASPAD_ADDRESS = "host.docker.internal:16210";
 
@@ -55,6 +56,19 @@ export async function runLocalnetStart(opts: LocalnetStartOptions): Promise<void
   await ensureDevAccounts(opts.workspaceRoot || process.cwd());
 
   const existing = await detectToccataNode(!!opts.json);
+
+  if (existing.ready && !(await isManagedNodeRunning())) {
+    const { HardkasCliError } = await import("../cli-errors.js");
+    throw new HardkasCliError(
+      "LOCALNET_PORT_CONFLICT",
+      `${TOCCATA_RPC_URL} is already served by a node HardKAS does not manage ` +
+        `(container ${TOCCATA_NODE_CONTAINER} is not running). Refusing to adopt it: ` +
+        `localnet fund attaches the miner by container name and would fail. ` +
+        `Stop the other node, or run 'hardkas localnet stop --profile ${TOCCATA_PROFILE}' first.`,
+      { exitCode: 1 }
+    );
+  }
+
   if (existing.ready) {
     const payload = {
       schema: HardkasSchemas.LocalnetStatusV1,
@@ -76,7 +90,7 @@ export async function runLocalnetStart(opts: LocalnetStartOptions): Promise<void
   const runner = new DockerKaspadRunner({
     cwd: opts.workspaceRoot || process.cwd(),
     image: TOCCATA_IMAGE,
-    containerName: "hardkas-kaspad-toccata-v2",
+    containerName: TOCCATA_NODE_CONTAINER,
     network: "simnet",
     allowFloatingImage: false
   });
@@ -109,7 +123,7 @@ export async function runLocalnetStop(opts: { json?: boolean; profile?: string; 
     return;
   }
 
-  await execa("docker", ["stop", "hardkas-kaspad-toccata-v2"]).catch(() => {});
+  await execa("docker", ["stop", TOCCATA_NODE_CONTAINER]).catch(() => {});
   await stopToccataMiner();
 
   if (opts.json) {
@@ -461,6 +475,28 @@ export async function runLocalnetFork(opts: {
   }
 }
 
+/**
+ * True only when the Toccata node container HardKAS manages is actually running.
+ *
+ * A live RPC on the Toccata port is not proof of ownership: any kaspad bound to it
+ * answers identically. Ownership must be asserted against Docker, otherwise
+ * `localnet start` reports READY for a node it did not start and cannot fund,
+ * since `localnet fund` attaches the miner by container name.
+ */
+async function isManagedNodeRunning(): Promise<boolean> {
+  try {
+    const { stdout } = await execa("docker", [
+      "inspect",
+      "-f",
+      "{{.State.Running}}",
+      TOCCATA_NODE_CONTAINER
+    ]);
+    return stdout.trim() === "true";
+  } catch {
+    return false;
+  }
+}
+
 async function detectToccataNode(quiet = false) {
   const client = new JsonWrpcKaspaClient({ rpcUrl: TOCCATA_RPC_URL, timeoutMs: 3000 });
   try {
@@ -501,7 +537,7 @@ async function restartToccataMiner(address: string) {
     "--name",
     TOCCATA_MINER_CONTAINER,
     "--network",
-    "container:hardkas-kaspad-toccata-v2",
+    `container:${TOCCATA_NODE_CONTAINER}`,
     OFFICIAL_MINER_IMAGE,
     "-a",
     address,

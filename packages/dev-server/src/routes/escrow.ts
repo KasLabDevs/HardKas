@@ -70,7 +70,7 @@ export const escrowRoutes = new Hono();
 
 async function calcSignature(req: any) {
     const rootDir = process.cwd();
-    const rustToolDir = path.join(rootDir, "examples", "builder-labs", "bl-002-escrow-multisig", "tools", "calc-signature");
+    const rustToolDir = path.join(rootDir, "labs", "bl-002-escrow-multisig", "tools", "calc-signature");
     const tmpFile = path.join(rustToolDir, `req-${Date.now()}-${Math.random().toString(36).substring(7)}.json`);
     await fs.writeFile(tmpFile, JSON.stringify(req));
 
@@ -98,7 +98,7 @@ async function calcSignature(req: any) {
 
 async function buildUnlock(artifactPath: string, entrypoint: string, args: string[]) {
     const rootDir = process.cwd();
-    const rustToolDir = path.join(rootDir, "examples", "builder-labs", "bl-002-escrow-multisig", "tools", "silver-bridge");
+    const rustToolDir = path.join(rootDir, "labs", "bl-002-escrow-multisig", "tools", "silver-bridge");
     const ext = process.platform === "win32" ? ".exe" : "";
     const releaseBin = path.join(rustToolDir, `target/release/silver-bridge${ext}`);
     const debugBin = path.join(rustToolDir, `target/debug/silver-bridge${ext}`);
@@ -140,7 +140,7 @@ escrowRoutes.post("/", async (c) => {
     const rootDir = process.cwd();
     const binName = process.platform === "win32" ? "silverc.exe" : "silverc";
     const silvercPath = path.join(rootDir, ".hardkas", "bin", binName);
-    const escrowSilPath = path.join(rootDir, "examples", "builder-labs", "bl-002-escrow-multisig", "escrow.sil");
+    const escrowSilPath = path.join(rootDir, "labs", "bl-002-escrow-multisig", "escrow.sil");
 
     const result = await createEscrow(config, silvercPath, workDir, escrowSilPath);
     await fs.rm(workDir, { recursive: true, force: true }).catch(() => {});

@@ -1,0 +1,33 @@
+{
+  "transaction": {
+    "version": 0,
+    "mass": "3805",
+    "lockTime": "0",
+    "inputs": [
+      {
+        "previousOutpoint": {
+          "transactionId": "0000000000000000000000000000000000000000000000000000000000000000",
+          "index": 0
+        },
+        "signatureScript": "41a83c044a6768bbc1784dc2533050e00d945e1eebdac48abb3ba4de4686e0bee38bebaf485c207cfe6790c654ca821320fed06c25b698023d4738d043e7831dbe0141852853b50e653aacd00cf287f1d84c93c6086155cfd9f49bdc67f8b7c85975c9cf1cb365407a4a601bfa7081b1c39bad15aa1bbe7497181c952b9884818f45f4014c665220ae9fded252fe42208dac04488a9bf087842e273515cfafcb47f56b5166f6d0c720ddc1f62652602f6753f5117f2929eb365d8a760e9a85c42c8d3ff4d3322e30c620e0ac31e7e786daf5db5534c517c14727a1000e71495a40ec76fb769b4165b62b53ae",
+        "sequence": "0",
+        "sigOpCount": 3
+      }
+    ],
+    "outputs": [
+      {
+        "value": "1000",
+        "scriptPublicKey": {
+          "version": 0,
+          "script": "aa20b55e6b3a3730493af524c0735bff65ae0f589c6d906850f40d55fc9564298ec387"
+        }
+      }
+    ],
+    "payload": "",
+    "subnetworkId": "0000000000000000000000000000000000000000"
+  },
+  "transactionId": "9e83b2649012dd1418296f273265a1e8cd7e8266e121ac5611c0c14d1902185b",
+  "transactionVersion": 0,
+  "networkId": "simnet",
+  "sourcePayloadHash": "0aba468f4cd68aeec48027ebd65d258812ef14057bba1074ab259dd89c80ac24"
+}

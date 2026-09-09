@@ -1,5 +1,4 @@
-# HardKAS 0.10.x — Transaction Version Compatibility
-
+# Transaction Version Compatibility
 This document outlines the compatibility between HardKAS transaction abstractions and Kaspa's transaction versions.
 
 ## Current Support Matrix

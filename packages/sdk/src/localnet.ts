@@ -76,7 +76,7 @@ export class HardkasLocalnet {
       schema: HardkasSchemas.LocalnetStatusV1,
       profile,
       node,
-      miner: this.inspectDockerContainer("hardkas-toccata-stratum-v2"),
+      miner: this.inspectDockerContainer("hardkas-toccata-miner"),
       simulationLevels: {
         artifactCoherence: "READY",
         runtimeOutcome: "PARTIAL",
@@ -89,7 +89,7 @@ export class HardkasLocalnet {
    * Initializes the in-memory simulated workspace.
    *
    * Docker Toccata process control remains a CLI/localnet responsibility in
-   * 0.12.0-rc.19; the SDK reports that boundary instead of silently shelling out.
+   * 0.12.0-rc.20; the SDK reports that boundary instead of silently shelling out.
    */
   async start(options: LocalnetProfileOptions = {}): Promise<LocalnetControlResult> {
     const profile = options.profile || "simulated";
@@ -109,7 +109,7 @@ export class HardkasLocalnet {
       profile,
       status: "SDK_LOCALNET_CONTROL_UNSUPPORTED",
       message:
-        "SDK Docker localnet start is not supported in 0.12.0-rc.19. Use `hardkas localnet start --profile toccata-v2`."
+        "SDK Docker localnet start is not supported in 0.12.0-rc.20. Use `hardkas localnet start --profile toccata-v2`."
     };
   }
 
@@ -133,15 +133,16 @@ export class HardkasLocalnet {
       profile,
       status: "SDK_LOCALNET_CONTROL_UNSUPPORTED",
       message:
-        "SDK Docker localnet stop is not supported in 0.12.0-rc.19. Use `hardkas localnet stop --profile toccata-v2`."
+        "SDK Docker localnet stop is not supported in 0.12.0-rc.20. Use `hardkas localnet stop --profile toccata-v2`."
     };
   }
 
   /**
    * Funds a simulated account through the SDK transaction flow.
    *
-   * Toccata Docker mining/funding remains CLI-only in 0.12.0-rc.19 because it
-   * depends on a local stratum/miner companion and host Docker state.
+   * Toccata Docker mining/funding remains CLI-only because it shells out to
+   * Docker: it runs the upstream Kaspa CPU miner inside the node container's
+   * network namespace, which is host state the SDK does not own.
    */
   async fund(
     identifier: string,
@@ -170,7 +171,7 @@ export class HardkasLocalnet {
       identifier,
       status: "SDK_TOCCATA_FUNDING_UNSUPPORTED",
       message:
-        "SDK Toccata funding is not supported in 0.12.0-rc.19. Use `hardkas localnet fund <account> --profile toccata-v2`."
+        "SDK Toccata funding is not supported in 0.12.0-rc.20. Use `hardkas localnet fund <account> --profile toccata-v2`."
     };
   }
 

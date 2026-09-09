@@ -3,6 +3,16 @@ import { execSync } from "node:child_process";
 import path from "node:path";
 import { getDockerNetworkStrategy, waitForFundingConfirmation, getVirtualDaaScoreBestEffort } from "./helpers.mjs";
 
+// Upstream Kaspa CPU miner. Do not swap this for a bespoke image: funding must
+// be reproducible from public artifacts on any machine.
+const MINER_IMAGE = process.env.HARDKAS_TOCCATA_MINER_IMAGE || "kaspanet/cpuminer:latest";
+// kaspad's gRPC port, reached inside the node's own network namespace.
+const MINER_GRPC_PORT = process.env.HARDKAS_TOCCATA_KASPAD_PORT || "16210";
+// How long to let the DAG settle after mining, before selecting UTXOs.
+const SETTLE_MS = parseInt(process.env.HARDKAS_TOCCATA_SETTLE_MS || "5000", 10);
+// wRPC endpoint the CLI connects to for the simnet target.
+const RPC_URL = process.env.HARDKAS_TOCCATA_RPC_URL || "ws://127.0.0.1:18210";
+
 function run(cmd) {
   try {
     console.log(`Running: ${cmd}`);
@@ -20,41 +30,38 @@ async function ensureFundingConfirmed(minerAddress, targetAccountName, expectedS
   console.log(`  [Diagnostic] Docker Strategy: ${strategy.type}`);
   console.log(`  [Diagnostic] Target Kaspad: ${strategy.kaspadAddress}`);
 
-  const stratumName = `hardkas-toccata-stratum-v2-${Date.now()}`;
+  const minerName = `hardkas-toccata-miner-${Date.now()}`;
   let daaStart = await getVirtualDaaScoreBestEffort();
 
   try {
-    execSync("docker image inspect hardkas/stratum-bridge:v2.0.0-local-simnet-unsynced", { stdio: "ignore" });
+    execSync(`docker image inspect ${MINER_IMAGE}`, { stdio: "ignore" });
 
-    let dockerCmd = [
+    if (!strategy.containerName) {
+      throw new Error(
+        `TOCCATA_NODE_CONTAINER_NOT_FOUND: Could not identify the kaspad container. ` +
+          `Set HARDKAS_TOCCATA_NODE_CONTAINER or start the node before funding.`
+      );
+    }
+
+    // Join the node's network namespace. kaspad binds gRPC to loopback inside
+    // its own container, so a miner on the bridge network cannot reach it by
+    // host address no matter how the ports are published.
+    const dockerCmd = [
       "docker run -d",
-      `--name ${stratumName}`
+      `--name ${minerName}`,
+      `--network=container:${strategy.containerName}`,
+      MINER_IMAGE,
+      `--mining-address ${minerAddress}`,
+      "--kaspad-address 127.0.0.1",
+      `--port ${MINER_GRPC_PORT}`,
+      "--threads 1",
+      "--mine-when-not-synced"
     ];
-
-    if (strategy.addHost) {
-      dockerCmd.push(`--add-host=${strategy.addHost}`);
-    }
-    if (strategy.network && strategy.network !== "bridge" && strategy.network !== "host") {
-      dockerCmd.push(`--network=${strategy.network}`);
-    }
-
-    dockerCmd.push("hardkas/stratum-bridge:v2.0.0-local-simnet-unsynced");
-    dockerCmd.push("/app/stratum-bridge");
-    dockerCmd.push("--node-mode external");
-    dockerCmd.push(`--kaspad-address ${strategy.kaspadAddress}`);
-    dockerCmd.push("--web-dashboard-port :3031");
-    dockerCmd.push("--instance port=:16120,diff=1");
-    dockerCmd.push("--internal-cpu-miner");
-    dockerCmd.push(`--internal-cpu-miner-address ${minerAddress}`);
-    dockerCmd.push("--internal-cpu-miner-threads 1");
-    dockerCmd.push("--internal-cpu-miner-template-poll-ms 250");
-    dockerCmd.push("--print-stats true");
-    dockerCmd.push("--log-to-file false");
 
     try {
       execSync(dockerCmd.join(" "), { stdio: "ignore" });
     } catch (e) {
-      throw new Error(`TOCCATA_STRATUM_START_FAILED: Failed to start miner container. Check docker logs.`);
+      throw new Error(`TOCCATA_MINER_START_FAILED: Failed to start miner container. Check docker logs.`);
     }
 
     // Wait for balance using helper
@@ -63,7 +70,7 @@ async function ensureFundingConfirmed(minerAddress, targetAccountName, expectedS
 
     const context = {
       strategy,
-      stratumName,
+      minerName,
       daaStart
     };
 
@@ -82,30 +89,51 @@ async function ensureFundingConfirmed(minerAddress, targetAccountName, expectedS
     if (err.message.includes("TOCCATA_FUNDING_CONFIRMATION_TIMEOUT")) {
       const daaEnd = await getVirtualDaaScoreBestEffort();
       try {
-        const logs = execSync(`docker logs ${stratumName}`, { encoding: "utf8", stdio: "pipe" });
-        console.error(`\n=== Stratum Logs (${stratumName}) ===\n${logs}\n=========================\n`);
+        const logs = execSync(`docker logs ${minerName}`, { encoding: "utf8", stdio: "pipe" });
+        console.error(`\n=== Miner Logs (${minerName}) ===\n${logs}\n=========================\n`);
       } catch (e) {
-        console.error(`Could not fetch logs for ${stratumName}`);
+        console.error(`Could not fetch logs for ${minerName}`);
       }
       err.message = err.message.replace("DAA End: unavailable", `DAA End: ${daaEnd || "unavailable"}`);
     }
     throw err;
   } finally {
     try {
-      execSync(`docker rm -f ${stratumName}`, { stdio: "ignore" });
+      execSync(`docker rm -f ${minerName}`, { stdio: "ignore" });
     } catch {}
+    // Planning against a node that is still accepting blocks fails with
+    // UTXO_VIRTUAL_STATE_UNSTABLE, so let the DAG settle before returning.
+    await new Promise((resolve) => setTimeout(resolve, SETTLE_MS));
   }
 }
 
 async function runRealNodeCert() {
-  console.log("=== Real Node 0.12.0-rc.19 / Toccata Certification ===");
+  console.log("=== Real Node 0.12.0-rc.20 / Toccata Certification ===");
 
   // Clean state
   if (fs.existsSync(".hardkas")) {
     fs.rmSync(".hardkas", { recursive: true, force: true });
   }
   fs.writeFileSync("package.json", '{"name":"real-node-cert"}');
-  fs.writeFileSync("hardkas.config.ts", 'export default { network: "simnet" };');
+  // `network` is the policy block, not the target selector. Writing
+  // `{ network: "simnet" }` leaves the default target at `simulated`, and every
+  // command against a kaspasim: account then fails with "Account network
+  // mismatch". Declare the execution target explicitly instead.
+  fs.writeFileSync(
+    "hardkas.config.ts",
+    `export default {
+  execution: {
+    default: "localnet",
+    targets: {
+      localnet: { mode: "localnet", domain: "kaspa-l1", network: "simnet" }
+    }
+  },
+  networks: {
+    simnet: { kind: "kaspa-node", network: "simnet", rpcUrl: "${RPC_URL}" }
+  }
+};
+`
+  );
 
   // [1] Generate fresh accounts
   console.log("\n[1] Generating Accounts...");
@@ -130,9 +158,17 @@ async function runRealNodeCert() {
   const balanceOut = run("accounts balance fixture --provider rpc");
   console.log("  Fixture balance:", balanceOut.trim().split("\n").filter(l => l.includes("Balance")).join(""));
 
+  // Cold start: on a fresh node nothing has mined to the fixture yet, so mine
+  // coinbase to it rather than assuming a pre-funded node. Coinbase needs to
+  // mature before it is spendable, which is why this mines rather than waits.
+  if (/Balance:\s*0(\D|$)/.test(balanceOut)) {
+    console.log("  Fixture is empty — mining coinbase to it first...");
+    await ensureFundingConfirmed(fixtureAddress, "fixture", 100000000000n, "coinbase -> fixture");
+  }
+
   // [3] Fund Alice from fixture (using mature UTXOs only — coinbase maturity filter is active)
   console.log("\n[3] Funding Alice from fixture...");
-  run(`tx plan --from fixture --to ${alice.address} --amount 1000 --provider rpc`);
+  run(`tx plan --from fixture --to ${alice.address} --amount 1000 --network simnet --provider rpc`);
 
   const plans = fs.readdirSync(".hardkas/artifacts").filter(f => f.endsWith(".plan.json"));
   if (!plans.length) throw new Error("No plan artifact generated!");
@@ -141,7 +177,7 @@ async function runRealNodeCert() {
   run(`tx sign .hardkas/artifacts/${plans[0]} --account fixture --out .hardkas/artifacts/1.signed.json`);
   console.log("  Signed: 1.signed.json");
 
-  run(`tx send .hardkas/artifacts/1.signed.json --provider rpc`);
+  run(`tx send .hardkas/artifacts/1.signed.json --network simnet --provider rpc --yes`);
   await ensureFundingConfirmed(fixtureAddress, alice.name, 100000000000n, "fixture -> Alice");
   console.log("  ✓ Transaction sent!");
 
@@ -162,7 +198,7 @@ async function runRealNodeCert() {
   const aliceBalance = run(`accounts balance ${alice.name} --provider rpc`);
   console.log("  Alice balance:", aliceBalance.trim().split("\n").filter(l => l.includes("Balance")).join(""));
 
-  run(`tx plan --from ${alice.name} --to ${bob.address} --amount 500 --provider rpc`);
+  run(`tx plan --from ${alice.name} --to ${bob.address} --amount 500 --network simnet --provider rpc`);
   const plans2 = fs.readdirSync(".hardkas/artifacts").filter(f => f.endsWith(".plan.json") && !plans.includes(f));
   if (!plans2.length) throw new Error("No second plan artifact!");
   console.log(`  Plan: ${plans2[0]}`);
@@ -170,7 +206,7 @@ async function runRealNodeCert() {
   run(`tx sign .hardkas/artifacts/${plans2[0]} --account ${alice.name} --out .hardkas/artifacts/2.signed.json`);
   console.log("  Signed: 2.signed.json");
 
-  run(`tx send .hardkas/artifacts/2.signed.json --provider rpc`);
+  run(`tx send .hardkas/artifacts/2.signed.json --network simnet --provider rpc --yes`);
   await ensureFundingConfirmed(fixtureAddress, bob.name, 50000000000n, "Alice -> Bob");
   console.log("  ✓ Transaction sent!");
 
