@@ -360,21 +360,18 @@ export class WalletToolkit {
             }
         }
 
-        const { estimateTransactionMass } = await import("@hardkas/tx-builder");
-        const massRes = estimateTransactionMass({
-            inputCount: availableUtxos.length,
-            outputs: [{ address: opts.to }],
-            payloadBytes: 0,
-            hasChange: false
-        });
-
-        const fee = massRes.mass * (finalFeeRate || 1n);
-        const totalValue = availableUtxos.reduce((acc: bigint, u: any) => acc + BigInt(u.amountSompi), 0n);
-        const sendValue = totalValue - fee;
-
-        if (sendValue <= 0n) {
-            throw new Error("Insufficient funds to cover sweep fee");
+        // Mass and minimum fee from the pinned SDK for the sweep as built.
+        const { planSingleOutputSpend } = await import("@hardkas/tx-builder");
+        let spend;
+        try {
+            spend = planSingleOutputSpend({ inputs: availableUtxos, toAddress: opts.to, feeRateSompiPerMass: finalFeeRate || 1n });
+        } catch (e: any) {
+            if (e?.message?.startsWith("Insufficient funds")) throw new Error("Insufficient funds to cover sweep fee");
+            throw e;
         }
+        const massRes = { mass: spend.mass };
+        const fee = spend.feeSompi;
+        const sendValue = spend.sendSompi;
 
         const plan = {
             inputs: availableUtxos,
@@ -410,21 +407,18 @@ export class WalletToolkit {
             finalFeeRate = dynamic.feeRate;
         }
 
-        const { estimateTransactionMass } = await import("@hardkas/tx-builder");
-        const massRes = estimateTransactionMass({
-            inputCount: selectedUtxos.length,
-            outputs: [{ address: toAddress }],
-            payloadBytes: 0,
-            hasChange: false
-        });
-
-        const fee = massRes.mass * (finalFeeRate || 1n);
-        const totalValue = selectedUtxos.reduce((acc: bigint, u: any) => acc + BigInt(u.amountSompi), 0n);
-        const sendValue = totalValue - fee;
-
-        if (sendValue <= 0n) {
-            throw new Error("Insufficient funds to cover consolidate fee");
+        // Mass and minimum fee from the pinned SDK for the consolidation as built.
+        const { planSingleOutputSpend } = await import("@hardkas/tx-builder");
+        let spend;
+        try {
+            spend = planSingleOutputSpend({ inputs: selectedUtxos, toAddress, feeRateSompiPerMass: finalFeeRate || 1n });
+        } catch (e: any) {
+            if (e?.message?.startsWith("Insufficient funds")) throw new Error("Insufficient funds to cover consolidate fee");
+            throw e;
         }
+        const massRes = { mass: spend.mass };
+        const fee = spend.feeSompi;
+        const sendValue = spend.sendSompi;
 
         const plan = {
             inputs: selectedUtxos,

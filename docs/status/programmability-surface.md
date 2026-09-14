@@ -2,7 +2,9 @@
 
 HardKAS 0.12.0-rc.20 exposes a local-first programmability surface for app builders:
 
-- SilverScript builder lifecycle: `SILVERSCRIPT_BUILDER_READY`
+- SilverScript v1 lifecycle: `SILVERSCRIPT_V1_LIFECYCLE` (official silverc v1.0.0 and the Kaspa SDK,
+  orchestrated by `hardkas silver`; per-capability evidence in `fixtures/toccata-v2/silver`, see
+  [release claims](release-claims.md))
 - ZK corpus verification surface: `ZK_CORPUS_SURFACE_READY`
 - Groth16 fixture coherence: `READY_GROTH16_FIXTURE_COHERENCE`
 - RISC0 receipt inspection: `RISC0_INSPECT_SURFACE_READY`

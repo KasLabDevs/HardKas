@@ -1,6 +1,7 @@
 import { ExecutionContext, GateDefinition, QualificationStatus } from "../types.js";
 import { runCommand, getHardkasCliPath } from "../environment/commands.js";
 import { runConsumerScript } from "../environment/consumer-script.js";
+import { resolveCanonicalNode } from "../environment/canonical-node.js";
 
 /**
  * REC-02 � Node Restart Before Mining (Mempool Flush Recovery)
@@ -29,18 +30,11 @@ export const scenarioRec02: GateDefinition = {
     let status: QualificationStatus = "PASS";
 
     const cliPath = getHardkasCliPath(ctx.consumerDir);
-    const statusRes = await runCommand(`"${cliPath}" localnet status --json`, ctx.consumerDir);
-    let rpcUrl = "127.0.0.1:18210";
-    let containerName = "hardkas-kaspad-toccata-v2";
-    try {
-      const statusData = JSON.parse(statusRes.stdout.trim());
-      if (statusData.node?.rpcUrl) {
-        rpcUrl = statusData.node.rpcUrl.replace("ws://", "");
-      }
-      if (statusData.node?.containerName) {
-        containerName = statusData.node.containerName;
-      }
-    } catch (e) {}
+    // The node this scenario restarts: the canonical localnet, proven by identity.
+    const node = await resolveCanonicalNode();
+    const rpcUrl = node.rpcEndpoint;
+    const containerName = node.containerName;
+    evidence.push(`node identity verified: ${containerName} rusty-kaspad ${node.identity.observed.server?.serverVersion} ${node.identity.expected.imageDigest}`);
 
     // Phase 1: Submit tx to mempool with custom high fee (feeRate: 10000n to bypass QF-005)
     const submitCode = `

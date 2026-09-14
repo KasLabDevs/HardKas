@@ -1,14 +1,93 @@
 {
   "schema": "hardkas.toccataGauntlet.v1",
-  "status": "TOCCATA_NORMALIZATION_BLOCKED_RELEASE_ENV",
-  "generatedAt": "2026-09-09T07:24:08.552Z",
-  "partialKnownLimitations": [
-    "PARTIAL_VM_SIMULATION"
-  ],
+  "status": "HARDKAS_TOCCATA_BASELINE_READY",
+  "generatedAt": "2026-09-12T10:55:21.156Z",
+  "nodeIdentity": {
+    "schema": "hardkas.nodeIdentity.v1",
+    "verified": true,
+    "problems": [],
+    "expected": {
+      "containerName": "hardkas-kaspad-toccata-v2",
+      "image": "kaspanet/rusty-kaspad:v2.0.1@sha256:db36449e2f41cf33ab7c26683ce390cb71bdea9c403eefd2e740a7d5605bcd8b",
+      "imageDigest": "sha256:db36449e2f41cf33ab7c26683ce390cb71bdea9c403eefd2e740a7d5605bcd8b",
+      "network": "simnet",
+      "serverVersion": "2.0.1",
+      "host": "127.0.0.1",
+      "rpcPort": 18210
+    },
+    "observed": {
+      "container": {
+        "name": "hardkas-kaspad-toccata-v2",
+        "id": "6c2fcfd32a1c9f61adf1160c4aff5958435def2eb11d3364d4298284f47c0528",
+        "running": true,
+        "imageId": "sha256:db36449e2f41cf33ab7c26683ce390cb71bdea9c403eefd2e740a7d5605bcd8b",
+        "repoDigests": [
+          "kaspanet/rusty-kaspad@sha256:db36449e2f41cf33ab7c26683ce390cb71bdea9c403eefd2e740a7d5605bcd8b",
+          "supertypo/rusty-kaspad@sha256:db36449e2f41cf33ab7c26683ce390cb71bdea9c403eefd2e740a7d5605bcd8b"
+        ],
+        "publishedPorts": [
+          {
+            "containerPort": "16210/tcp",
+            "hostIp": "127.0.0.1",
+            "hostPort": 16210
+          },
+          {
+            "containerPort": "17210/tcp",
+            "hostIp": "127.0.0.1",
+            "hostPort": 17210
+          },
+          {
+            "containerPort": "18210/tcp",
+            "hostIp": "127.0.0.1",
+            "hostPort": 18210
+          }
+        ]
+      },
+      "server": {
+        "url": "ws://127.0.0.1:18210",
+        "networkId": "simnet",
+        "serverVersion": "2.0.1",
+        "isSynced": true
+      },
+      "probeErrors": []
+    },
+    "checkedAt": "2026-09-12T10:54:24.363Z"
+  },
+  "capabilities": {
+    "silver.compile.v1": "PASS",
+    "silver.p2sh.deploy-spend.v1": "PASS",
+    "toccata.covenant.auth-1to1-transition.v1": "PASS"
+  },
   "phases": [
     {
       "name": "package/build integrity",
       "status": "PASS"
+    },
+    {
+      "name": "managed toolchains",
+      "status": "PASS",
+      "toolchains": {
+        "kaspa-wasm": {
+          "ok": true,
+          "detail": "2.0.1"
+        },
+        "silverc": {
+          "ok": true,
+          "detail": "silverc-windows-x86_64.zip ce1e0ef5f1f415f371d3d2426e788597a388635da8cbe93e72e95a4f754b29af"
+        }
+      },
+      "silverscript": {
+        "releaseTag": "v1.0.0",
+        "languageVersion": "0.1.0"
+      }
+    },
+    {
+      "name": "node identity",
+      "status": "PASS",
+      "container": "hardkas-kaspad-toccata-v2",
+      "imageDigest": "sha256:db36449e2f41cf33ab7c26683ce390cb71bdea9c403eefd2e740a7d5605bcd8b",
+      "serverVersion": "2.0.1",
+      "network": "simnet"
     },
     {
       "name": "doctor",
@@ -27,11 +106,78 @@
       "status": "PASS"
     },
     {
-      "name": "gauntlet aborted",
-      "status": "FAIL",
-      "message": "Command failed: D:\\Program Files\\nodejs\\node.exe run-real-node.mjs"
+      "name": "standard tx lifecycle",
+      "status": "PASS"
+    },
+    {
+      "name": "silver compile",
+      "status": "PASS",
+      "capability": "silver.compile.v1",
+      "compiler": "silverc v1.0.0 ce1e0ef5f1f415f371d3d2426e788597a388635da8cbe93e72e95a4f754b29af",
+      "artifactSha256": "e99fe69ab254ab2fef9debbc6debf915edd7514d11a2ffadd49c39780c25282a"
+    },
+    {
+      "name": "silver compile reproduced",
+      "status": "PASS",
+      "artifactSha256": "e99fe69ab254ab2fef9debbc6debf915edd7514d11a2ffadd49c39780c25282a"
+    },
+    {
+      "name": "mainnet guard",
+      "status": "PASS"
+    },
+    {
+      "name": "silver deploy real",
+      "status": "PASS",
+      "capability": "silver.p2sh.deploy-spend.v1",
+      "txId": "bede8e75c803f62c1e671d23cf286130cd26378a0468310853bd9bad265fb26a",
+      "address": "kaspasim:pz772hlp0sj463hutxd9z6wtyt3acdw00alkqxyv66z9z7eykm2uk228sqa5m",
+      "confirmedAtBlockDaaScore": "64041"
+    },
+    {
+      "name": "silver spend real",
+      "status": "PASS",
+      "capability": "silver.p2sh.deploy-spend.v1",
+      "txId": "619f0b9d2deaf36532e66365c00a5e7fd53ca456aecaa192d4a826715e0bbd04",
+      "entry": "release",
+      "dispatchTag": "388ad0b4",
+      "confirmedAtBlockDaaScore": "64129"
+    },
+    {
+      "name": "covenant genesis",
+      "status": "PASS",
+      "capability": "toccata.covenant.auth-1to1-transition.v1",
+      "covenantId": "75003948548e34302ec93dc404c7dcaefd3b4cfd4250f8fc00f6a175d9348484",
+      "txId": "23ba4d8eba50a93cede165cb29b1014472e464868e9e4f47e2d49daa8fd4f108",
+      "computeBudget": 10
+    },
+    {
+      "name": "covenant transition",
+      "status": "PASS",
+      "capability": "toccata.covenant.auth-1to1-transition.v1",
+      "covenantId": "75003948548e34302ec93dc404c7dcaefd3b4cfd4250f8fc00f6a175d9348484",
+      "txId": "99b4d8981b2acb2936949d5c26665566917ce5e766680d3fab691bfb0abcf66e",
+      "entry": "__covenant_entrypoint_auth_bump",
+      "stateGuard": {
+        "templateHash": "12e80a77d386245a8a8db422137333918b3d6bbbb482e39f8e45302244e9bd95",
+        "span": {
+          "offset": 1,
+          "currentLen": 9,
+          "successorLen": 9
+        }
+      }
+    },
+    {
+      "name": "silver golden corpus verify",
+      "status": "PASS",
+      "path": "fixtures/toccata-v2/silver",
+      "cases": 4,
+      "recompiled": 5,
+      "capabilities": {
+        "silver.compile.v1": "PASS",
+        "toccata.covenant.auth-1to1-transition.v1": "PASS",
+        "silver.p2sh.deploy-spend.v1": "PASS",
+        "silver.p2sh.relative-timelock.v1": "PASS"
+      }
     }
-  ],
-  "blocker": "Command failed: D:\\Program Files\\nodejs\\node.exe run-real-node.mjs",
-  "nextRequiredCommand": "pnpm build && pnpm test && pnpm gauntlet:toccata"
+  ]
 }

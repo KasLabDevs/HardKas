@@ -1,11 +1,22 @@
 import { describe, expect, it } from "vitest";
-import { createKaspaP2shBlake2bLock, createPushOnlySignatureScript } from "@hardkas/core";
+import fs from "node:fs";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
+import {
+  encodeSilverEntryArgs,
+  getSilContract,
+  parseSilAbiArtifact,
+  silContractBytecodeHex,
+  silverP2shLock,
+  silverUnlockScript
+} from "@hardkas/core";
 import {
   SilverDeploySimulationArtifactSchema,
   SilverSpendSimulationArtifactSchema
 } from "../../artifacts/src/schemas.js";
 import {
   calculateSilverArgsHash,
+  parsePushOnlyScript,
   simulateSilverDeploy,
   simulateSilverSpend,
   SilverSimulationError,
@@ -13,12 +24,20 @@ import {
   type SilverSpendPlanArtifactLike
 } from "../src/index.js";
 
-const OP_TRUE = "51";
+// A real SilverScript v1 contract (from the golden corpus); the unlock is the SDK's.
+const CASE = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../../fixtures/toccata-v2/silver/p2sh-signed-release");
+const artifact = parseSilAbiArtifact(JSON.parse(fs.readFileSync(path.join(CASE, "contract.artifact.json"), "utf8")));
+const BYTECODE = silContractBytecodeHex(getSilContract(artifact).contract);
+const UNLOCK = silverUnlockScript(
+  BYTECODE,
+  encodeSilverEntryArgs({ artifact, entry: "release", args: [{ kind: "bytes", value: new Uint8Array(65).fill(7) }] })
+);
+const ENTRY_PUSHES = parsePushOnlyScript(UNLOCK).slice(0, -1).map((value) => ({ type: "hex" as const, value }));
 
 function baseDeployPlan(
   overrides: Partial<SilverDeployPlanArtifactLike> = {}
 ): SilverDeployPlanArtifactLike {
-  const lock = createKaspaP2shBlake2bLock(OP_TRUE);
+  const lock = silverP2shLock(BYTECODE);
   return {
     schema: "hardkas.silver.deployPlan",
     hardkasVersion: "0.12.0-rc.20",
@@ -27,11 +46,11 @@ function baseDeployPlan(
     networkId: "simnet",
     mode: "simulator",
     createdAt: "2026-06-08T00:00:00.000Z",
-    compileArtifactHash: "compile-hash-op-true",
-    compiledScriptHash: "compiled-script-hash-op-true",
-    redeemScriptHex: OP_TRUE,
-    redeemScriptHash: lock.redeemScriptHash,
-    lockingScriptHex: lock.lockingScriptHex,
+    compileArtifactHash: "compile-hash-signed-release",
+    compiledScriptHash: "compiled-script-hash-signed-release",
+    redeemScriptHex: BYTECODE,
+    redeemScriptHash: lock.script.slice(4, 68),
+    lockingScriptHex: lock.script,
     scriptPublicKeyVersion: 0,
     amountSompi: "10000",
     deployerAddress: "kaspa:sim_alice",
@@ -43,7 +62,7 @@ function baseSpendPlan(
   deployResult: ReturnType<typeof simulateSilverDeploy>,
   overrides: Partial<SilverSpendPlanArtifactLike> = {}
 ): SilverSpendPlanArtifactLike {
-  const args: [] = [];
+  const args = ENTRY_PUSHES;
   return {
     schema: "hardkas.silver.spendPlan",
     hardkasVersion: "0.12.0-rc.20",
@@ -59,7 +78,7 @@ function baseSpendPlan(
     contractUtxoRef: deployResult.receipt.syntheticOutpoint,
     args,
     argsHash: calculateSilverArgsHash(args),
-    signatureScriptHex: createPushOnlySignatureScript([], OP_TRUE),
+    signatureScriptHex: UNLOCK,
     expectedOutputs: [
       {
         address: "kaspa:sim_bob",
@@ -81,8 +100,8 @@ function expectSilverError(fn: () => unknown, code: string) {
   throw new Error(`Expected ${code}`);
 }
 
-describe("Silver/Toccata minimal simulator", () => {
-  it("OP_TRUE deploy simulation PASS", () => {
+describe("Silver P2SH bookkeeping simulator (experimental, never evidence)", () => {
+  it("deploy simulation PASS", () => {
     const a = simulateSilverDeploy(baseDeployPlan());
     const b = simulateSilverDeploy(baseDeployPlan());
 
@@ -93,7 +112,7 @@ describe("Silver/Toccata minimal simulator", () => {
     expect(SilverDeploySimulationArtifactSchema.safeParse(a.receipt).success).toBe(true);
   });
 
-  it("OP_TRUE spend simulation PASS", () => {
+  it("spend simulation PASS", () => {
     const deployed = simulateSilverDeploy(baseDeployPlan());
     const spendPlan = baseSpendPlan(deployed);
     const spent = simulateSilverSpend(spendPlan, deployed.state);

@@ -1,5 +1,5 @@
 export type Sompi = bigint;
-import { estimateTransactionMass, estimateToccataFee } from "./mass.js";
+import { estimateTransactionMass, calculateUpstreamMass } from "./mass.js";
 import { DUST_THRESHOLD_SOMPI } from "./verify.js";
 export * from "./mass.js";
 export * from "./verify.js";
@@ -142,7 +142,50 @@ export function buildPaymentPlan(request: TxBuildRequest): TxPlan {
 
   const selected: Utxo[] = [];
   let selectedAmount = 0n;
-  const isToccataFee = request.feePolicy === "toccata" || request.version === 1;
+  const changeAddress = request.changeAddress ?? request.fromAddress;
+
+  // Mass and the node's minimum fee come from the pinned SDK, over the real
+  // unsigned candidate (inputs, outputs, change). The fee rate is policy on
+  // top of that and can raise the fee, never lower it below the minimum.
+  // The standard-mass error, reported only if it is what stopped the final
+  // attempt (every candidate UTXO, no change); otherwise funds are the cause.
+  let nonStandard: Error | undefined;
+  let lastAttemptNonStandard = false;
+
+  // Returns undefined when the transaction as built would exceed the maximum
+  // standard mass: that shape is not viable, and the planner tries another.
+  const feeFor = (inputs: readonly Utxo[], change: bigint | undefined): { mass: bigint; fee: bigint } | undefined => {
+    let upstream;
+    try {
+      upstream = calculateUpstreamMass({
+        networkId: request.networkId,
+        version: request.version ?? 0,
+        payloadBytes: request.payloadBytes ?? 0,
+        inputs: inputs.map((u) => ({ amountSompi: u.amountSompi, outpoint: u.outpoint, scriptPublicKey: u.scriptPublicKey })),
+        outputs: [
+          ...sortedOutputs.map((o) => ({ amountSompi: o.amountSompi, address: o.address, scriptPublicKey: o.scriptPublicKey })),
+          ...(change !== undefined ? [{ amountSompi: change, address: changeAddress }] : [])
+        ]
+      });
+    } catch (e: any) {
+      if (e?.code !== "TX_MASS_ABOVE_STANDARD_LIMIT") throw e;
+      nonStandard = e;
+      return undefined;
+    }
+    if (request.feeOverrideSompi !== undefined) {
+      if (request.feeOverrideSompi < upstream.minimumFeeSompi) {
+        const err = new Error(
+          `FEE_BELOW_NETWORK_MINIMUM: fee override ${request.feeOverrideSompi} sompi is below the ${upstream.minimumFeeSompi} ` +
+            `sompi the node requires for mass ${upstream.mass} (${upstream.authority})`
+        );
+        (err as any).code = "FEE_BELOW_NETWORK_MINIMUM";
+        throw err;
+      }
+      return { mass: upstream.mass, fee: request.feeOverrideSompi };
+    }
+    const atRate = upstream.mass * request.feeRateSompiPerMass;
+    return { mass: upstream.mass, fee: atRate > upstream.minimumFeeSompi ? atRate : upstream.minimumFeeSompi };
+  };
 
   for (const utxo of sortedUtxos) {
     selected.push(utxo);
@@ -151,65 +194,36 @@ export function buildPaymentPlan(request: TxBuildRequest): TxPlan {
     // Preliminary check if we have enough to even consider fees
     if (selectedAmount < target) continue;
 
-    // Estimate mass with change output assumed
-    const result = estimateTransactionMass({
-      inputCount: selected.length,
-      outputs: sortedOutputs,
-      payloadBytes: request.payloadBytes ?? 0,
-      hasChange: true // Optimistic assumption for the loop
-    });
-
-    const estimatedMass = result.mass;
-    let estimatedFeeSompi: bigint;
-    if (request.feeOverrideSompi !== undefined) {
-      estimatedFeeSompi = request.feeOverrideSompi;
-    } else {
-      estimatedFeeSompi = estimatedMass * request.feeRateSompiPerMass;
-      if (isToccataFee) {
-        const computeBudget = request.computeBudget ?? request.computeGrams ?? 0n;
-        const minimumToccataFee = estimateToccataFee(computeBudget, result.mass, result.txBytes);
-        if (minimumToccataFee > estimatedFeeSompi) {
-          estimatedFeeSompi = minimumToccataFee;
-        }
+    // With a change output: the change amount affects storage mass and the fee
+    // affects the change, so settle on a fee that covers the transaction as built.
+    let chosen: { mass: bigint; fee: bigint; change?: bigint } | undefined;
+    let fee = selectedAmount - target >= DUST_THRESHOLD_SOMPI ? feeFor(selected, selectedAmount - target)?.fee : undefined;
+    for (let pass = 0; fee !== undefined && pass < 8; pass++) {
+      const change = selectedAmount - target - fee;
+      // Sub-dust change is absorbed into the fee (matching rusty-kaspa wallet behavior).
+      if (change < DUST_THRESHOLD_SOMPI) break;
+      const required = feeFor(selected, change);
+      if (!required) break;
+      if (required.fee <= fee) {
+        chosen = { mass: required.mass, fee, change };
+        break;
       }
+      fee = required.fee;
     }
 
-    if (selectedAmount >= target + estimatedFeeSompi) {
-      const changeAmount = selectedAmount - target - estimatedFeeSompi;
-      // Sub-dust change is absorbed into the fee (matching rusty-kaspa wallet behavior).
-      // This prevents creating plans with dust change outputs that the node would reject.
-      const hasActualChange = changeAmount >= DUST_THRESHOLD_SOMPI;
+    // Without a change output: everything above the target is the fee.
+    if (!chosen) {
+      const required = feeFor(selected, undefined);
+      lastAttemptNonStandard = !required;
+      if (!required || selectedAmount < target + required.fee) continue;
+      chosen = { mass: required.mass, fee: selectedAmount - target };
+    }
 
-      // Recalculate mass if no change output is actually needed
-      let finalMass = estimatedMass;
-      let finalFee = estimatedFeeSompi;
-
-      if (!hasActualChange) {
-        let finalFeeRecalc: bigint;
-        if (request.feeOverrideSompi !== undefined) {
-          finalFeeRecalc = request.feeOverrideSompi;
-        } else {
-          const noChangeResult = estimateTransactionMass({
-            inputCount: selected.length,
-            outputs: sortedOutputs,
-            payloadBytes: request.payloadBytes ?? 0,
-            hasChange: false
-          });
-          finalMass = noChangeResult.mass;
-          finalFeeRecalc = finalMass * request.feeRateSompiPerMass;
-          if (isToccataFee) {
-            const computeBudget = request.computeBudget ?? request.computeGrams ?? 0n;
-            const minimumToccataFee = estimateToccataFee(computeBudget, noChangeResult.mass, noChangeResult.txBytes);
-            if (minimumToccataFee > finalFeeRecalc) {
-              finalFeeRecalc = minimumToccataFee;
-            }
-          }
-        }
-        finalFee = finalFeeRecalc;
-
-        // Re-check if still enough after potential fee change
-        if (selectedAmount < target + finalFee) continue;
-      }
+    {
+      const hasActualChange = chosen.change !== undefined;
+      const changeAmount = chosen.change ?? 0n;
+      const finalMass = chosen.mass;
+      const finalFee = chosen.fee;
 
       // 3. Canonical Selected Input Sorting (Post-Selection)
       const canonicalSelected = [...selected].sort((a, b) => {
@@ -231,7 +245,7 @@ export function buildPaymentPlan(request: TxBuildRequest): TxPlan {
       };
       if (hasActualChange) {
         planResult.change = {
-          address: request.changeAddress ?? request.fromAddress,
+          address: changeAddress,
           amountSompi: changeAmount
         };
       }
@@ -248,7 +262,46 @@ export function buildPaymentPlan(request: TxBuildRequest): TxPlan {
     }
   }
 
+  if (lastAttemptNonStandard && nonStandard) throw nonStandard;
   throw new Error("Insufficient funds for transaction amount plus estimated fee.");
+}
+
+/**
+ * Fee for spending `inputs` entirely into one output (sweep/consolidation):
+ * the output is the inputs minus the fee, and its amount feeds storage mass,
+ * so the fee is settled against the SDK for the transaction as built.
+ */
+export function planSingleOutputSpend(input: {
+  readonly networkId?: string | undefined;
+  readonly inputs: readonly { readonly amountSompi: bigint | string; readonly outpoint?: Outpoint; readonly scriptPublicKey?: unknown }[];
+  readonly toAddress: string;
+  readonly feeRateSompiPerMass: bigint;
+}): { mass: bigint; feeSompi: bigint; sendSompi: bigint } {
+  const inputs = input.inputs.map((u) => ({
+    amountSompi: BigInt(u.amountSompi),
+    outpoint: u.outpoint,
+    scriptPublicKey: u.scriptPublicKey
+  }));
+  const total = inputs.reduce((sum, u) => sum + u.amountSompi, 0n);
+  const feeAt = (send: bigint) => {
+    const upstream = calculateUpstreamMass({
+      networkId: input.networkId,
+      inputs,
+      outputs: [{ amountSompi: send, address: input.toAddress }]
+    });
+    const atRate = upstream.mass * input.feeRateSompiPerMass;
+    return { mass: upstream.mass, fee: atRate > upstream.minimumFeeSompi ? atRate : upstream.minimumFeeSompi };
+  };
+
+  let fee = feeAt(total).fee;
+  for (let pass = 0; pass < 8; pass++) {
+    const send = total - fee;
+    if (send <= 0n) break;
+    const required = feeAt(send);
+    if (required.fee <= fee) return { mass: required.mass, feeSompi: fee, sendSompi: send };
+    fee = required.fee;
+  }
+  throw new Error("Insufficient funds to cover the network fee for this spend.");
 }
 
 // Legacy support or internal use

@@ -11,7 +11,7 @@ import {
 } from "../src/receipts";
 import { ARTIFACT_SCHEMAS } from "@hardkas/artifacts";
 
-describe.skip("receipts store", () => {
+describe("receipts store", () => {
   let tempDir: string;
 
   beforeEach(async () => {

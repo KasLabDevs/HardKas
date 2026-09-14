@@ -15,7 +15,7 @@ describe("TxPlanService", () => {
     mockUtxos.push({
       outpoint: { transactionId: "tx-large", index: 0 },
       address: "kaspa:qrcx...",
-      amountSompi: 5000000n,
+      amountSompi: 50_000_000_000n,
       scriptPublicKey: "mock"
     });
 
@@ -28,13 +28,13 @@ describe("TxPlanService", () => {
     const result = await service.planTransaction({
       fromAddress: "kaspa:qrcx...",
       toAddress: "kaspa:qrcx...",
-      amountSompi: 1000000n
+      amountSompi: 10_000_000_000n
     });
 
     // Should only select the single large UTXO
     expect(result.utxoSelection.selectedUtxos).toBe(1);
     expect(result.plan.inputs.length).toBe(1);
-    expect(result.plan.inputs[0]?.amountSompi).toBe(5000000n);
+    expect(result.plan.inputs[0]?.amountSompi).toBe(50_000_000_000n);
   });
 
   it("should filter out immature coinbase UTXOs", async () => {
@@ -42,7 +42,7 @@ describe("TxPlanService", () => {
       {
         outpoint: { transactionId: "tx-coinbase-immature", index: 0 },
         address: "kaspa:qrcx...",
-        amountSompi: 5000000n,
+        amountSompi: 50_000_000_000n,
         scriptPublicKey: "mock",
         isCoinbase: true,
         blockDaaScore: 10000n
@@ -50,7 +50,7 @@ describe("TxPlanService", () => {
       {
         outpoint: { transactionId: "tx-coinbase-mature", index: 0 },
         address: "kaspa:qrcx...",
-        amountSompi: 5000000n,
+        amountSompi: 50_000_000_000n,
         scriptPublicKey: "mock",
         isCoinbase: true,
         blockDaaScore: 5000n
@@ -58,7 +58,7 @@ describe("TxPlanService", () => {
       {
         outpoint: { transactionId: "tx-normal", index: 0 },
         address: "kaspa:qrcx...",
-        amountSompi: 5000000n,
+        amountSompi: 50_000_000_000n,
         scriptPublicKey: "mock",
         isCoinbase: false,
         blockDaaScore: 10500n
@@ -75,13 +75,13 @@ describe("TxPlanService", () => {
     const result = await service.planTransaction({
       fromAddress: "kaspa:qrcx...",
       toAddress: "kaspa:qrcx...",
-      amountSompi: 6000000n
+      amountSompi: 60_000_000_000n
     });
 
     // tx-coinbase-immature has 500 confirmations (10500 - 10000) -> filtered out
     // tx-coinbase-mature has 5500 confirmations -> kept
     // tx-normal -> kept
-    // We need 6M, so both kept UTXOs will be used
+    // We need 600 KAS, so both kept UTXOs will be used
     expect(result.utxoSelection.selectedUtxos).toBe(2);
     expect(result.utxoSelection.totalUtxosSeen).toBe(2); // After filter
   });

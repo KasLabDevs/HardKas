@@ -1,6 +1,7 @@
 import { ExecutionContext, GateDefinition, QualificationStatus } from "../types.js";
 import { runCommand, getHardkasCliPath } from "../environment/commands.js";
 import { runConsumerScript } from "../environment/consumer-script.js";
+import { resolveCanonicalNode } from "../environment/canonical-node.js";
 
 /**
  * OBS-05 � Watcher Recovery Across Node Restart (Docker Real)
@@ -27,18 +28,12 @@ export const scenarioObs05: GateDefinition = {
     let status: QualificationStatus = "PASS";
 
     const cliPath = getHardkasCliPath(ctx.consumerDir);
-    const statusRes = await runCommand(`"${cliPath}" localnet status --json`, ctx.consumerDir);
-    let rpcUrl = "127.0.0.1:18210";
-    let containerName = "hardkas-kaspad-toccata-v2"; try { const psRes = await runCommand(`docker ps --format "{{.Names}}"`, ctx.repoRoot); if (psRes.stdout.trim()) { containerName = psRes.stdout.trim().split(/\r?\n/)[0].trim(); } } catch (e) {}
-    try {
-      const statusData = JSON.parse(statusRes.stdout.trim());
-      if (statusData.node?.rpcUrl) {
-        rpcUrl = statusData.node.rpcUrl.replace("ws://", "");
-      }
-      if (statusData.node?.containerName) {
-        containerName = statusData.node.containerName;
-      }
-    } catch (e) {}
+    // The node this scenario stops and restarts: the canonical localnet, proven
+    // by identity (never the first container listed by `docker ps`).
+    const node = await resolveCanonicalNode();
+    const rpcUrl = node.rpcEndpoint;
+    const containerName = node.containerName;
+    evidence.push(`node identity verified: ${containerName} rusty-kaspad ${node.identity.observed.server?.serverVersion} ${node.identity.expected.imageDigest}`);
 
     // Phase 1: Read on healthy node
     const phase1Code = `

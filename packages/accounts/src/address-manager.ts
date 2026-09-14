@@ -1,7 +1,6 @@
 import { createHash } from "node:crypto";
-import { createRequire } from "node:module";
 import { getNetworkPrefix } from "@hardkas/core";
-const require = createRequire(import.meta.url);
+import { loadKaspaWasmSync } from "./signer-backend.js";
 
 export type NetworkType = "simnet" | "testnet" | "mainnet" | "local-docker-simnet";
 export type ChainType = "receive" | "change" | 0 | 1;
@@ -74,16 +73,21 @@ export const AddressManager = {
         const payload = `${opts.seedRef}:${derivationPath}:${network}`;
         const hash = createHash("sha256").update(payload).digest("hex");
         
+        // Synchronous API, so this uses the synchronous loader (same pin, same
+        // integrity check). It never invents an address: without the SDK there
+        // is no valid address to return.
         let address: string;
         try {
-            // Using Kaspa WASM synchronously since it's available in Node context
-            const kaspa = require("kaspa-wasm");
+            const kaspa = loadKaspaWasmSync();
             const priv = new kaspa.PrivateKey(hash);
             address = priv.toKeypair().toAddress(getNetworkPrefix(network)).toString();
         } catch (e) {
-            // Fallback just in case Kaspa WASM is totally unavailable in environment, though we require it for Toccata
-            const prefix = network.includes("sim") ? "kaspasim" : "kaspatest";
-            address = `${prefix}:q${hash.slice(0, 42)}`;
+            if (typeof (e as any)?.code === "string" && (e as any).code.startsWith("WASM_TOOLCHAIN_")) throw e;
+            const err = new Error(
+                `ADDRESS_DERIVATION_UNAVAILABLE: the Kaspa WASM SDK could not derive an address: ${e instanceof Error ? e.message : String(e)}`
+            );
+            (err as any).code = "ADDRESS_DERIVATION_UNAVAILABLE";
+            throw err;
         }
 
         return {

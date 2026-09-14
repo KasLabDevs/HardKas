@@ -2,6 +2,7 @@ import type { NetworkId } from "@hardkas/core";
 import { WebSocket } from "ws";
 import { NOTIFY_UTXOS_CHANGED_REQUEST, STOP_NOTIFYING_UTXOS_CHANGED_REQUEST, UTXOS_CHANGED_NOTIFICATION, NOTIFY_VIRTUAL_CHAIN_CHANGED_REQUEST, VIRTUAL_CHAIN_CHANGED_NOTIFICATION } from "./internal/notifications.js";
 import { normalizeRpcError, RpcError, RpcNotFoundError } from "./errors.js";
+import { normalizeRpcStorageMass } from "./internal/storage-mass.js";
 
 export interface KaspaNodeInfo {
   serverVersion?: string | undefined;
@@ -494,8 +495,6 @@ export class JsonWrpcKaspaClient implements KaspaRpcClient {
       if (txAny && typeof txAny === "object") {
         // Normalize top-level numeric fields that may arrive as strings from the NAPI bridge
         if (typeof txAny.version === "string") txAny.version = Number(txAny.version);
-        if (typeof txAny.mass === "string") txAny.mass = Number(txAny.mass);
-        if (txAny.mass === undefined) txAny.mass = 0;
         if (typeof txAny.lockTime === "string") txAny.lockTime = Number(txAny.lockTime);
         if (typeof txAny.lock_time === "string") txAny.lock_time = Number(txAny.lock_time);
         if (typeof txAny.gas === "string") txAny.gas = Number(txAny.gas);
@@ -531,6 +530,8 @@ export class JsonWrpcKaspaClient implements KaspaRpcClient {
     } catch (e) {
       // Ignored
     }
+    // Outside the lenient block above: a bad mass commitment must not be swallowed.
+    if (txObj && typeof txObj === "object") normalizeRpcStorageMass(txObj as Record<string, unknown>);
 
     // Both flavors accept the transaction wrapped in an object
     const req: any = { 

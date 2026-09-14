@@ -1,0 +1,11 @@
+pragma silverscript ^0.1.0;
+
+contract Counter(int init_value) {
+    int value = init_value;
+
+    #[covenant(binding = auth, from = 1, to = 1, mode = transition)]
+    function bump(State prev_state, int delta) : (State) {
+        require(delta > 0);
+        return(State { value: prev_state.value + delta });
+    }
+}

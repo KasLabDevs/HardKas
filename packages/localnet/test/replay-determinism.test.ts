@@ -36,7 +36,7 @@ describe("Deterministic Replay Injection", () => {
       {
         id: "tx1:0",
         address: "kaspa:sim_q1",
-        amountSompi: "100000",
+        amountSompi: "100000000000", // relayable: 1000 KAS
         spent: false,
         createdAtDaaScore: "0"
       }
@@ -45,7 +45,7 @@ describe("Deterministic Replay Injection", () => {
     const input = {
       from: "kaspa:sim_q1",
       to: "kaspa:sim_q2",
-      amountSompi: 50000n
+      amountSompi: 50_000_000_000n
     };
 
     // Replay 1

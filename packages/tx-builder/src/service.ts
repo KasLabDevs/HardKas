@@ -1,4 +1,4 @@
-import { buildPaymentPlan, type Utxo, type TxOutput, type TxPlan } from "./index.js";
+import { buildPaymentPlan, planSingleOutputSpend, type Utxo, type TxOutput, type TxPlan } from "./index.js";
 
 export interface UtxoProvider {
   getUtxos(address: string): Promise<Utxo[]>;
@@ -17,6 +17,8 @@ export interface PlanTransactionRequest {
   toAddress: string;
   amountSompi: bigint;
   feeRate?: bigint;
+  /** Network whose mass parameters the SDK applies (defaults to simnet). */
+  networkId?: string;
   version?: 0 | 1;
   feePolicy?: "legacy" | "toccata" | "auto";
   feeEstimator?: (inputs: number, outputs: number) => Promise<bigint>;
@@ -173,23 +175,41 @@ export class TxPlanService {
 
     const planFeeRate = request.feeEstimator ? 1n : feeRate;
 
-    const builderPlan = buildPaymentPlan({
-      fromAddress: request.fromAddress,
-      availableUtxos: builderUtxos,
-      outputs: [
-        {
-          address: request.toAddress,
-          amountSompi: request.amountSompi
-        }
-      ],
-      feeRateSompiPerMass: planFeeRate,
+    const build = () =>
+      buildPaymentPlan({
+        fromAddress: request.fromAddress,
+        availableUtxos: builderUtxos,
+        outputs: [
+          {
+            address: request.toAddress,
+            amountSompi: request.amountSompi
+          }
+        ],
+        feeRateSompiPerMass: planFeeRate,
+        ...(request.networkId !== undefined ? { networkId: request.networkId } : {}),
         ...(request.version !== undefined ? { version: request.version } : {}),
         ...(request.feePolicy ? { feePolicy: request.feePolicy } : {}),
-        ...(request.feePolicy ? { feePolicy: request.feePolicy } : {}),
-      coinbaseMaturity: this.coinbaseMaturity,
-      ...(request.feeEstimator ? { feeOverrideSompi: estimatedFee } : {}),
-      ...(request.genesisCovenantGroups ? { genesisCovenantGroups: request.genesisCovenantGroups.map(g => ({ ...g })) } : {})
-    });
+        coinbaseMaturity: this.coinbaseMaturity,
+        ...(request.feeEstimator ? { feeOverrideSompi: estimatedFee } : {}),
+        ...(request.genesisCovenantGroups ? { genesisCovenantGroups: request.genesisCovenantGroups.map(g => ({ ...g })) } : {})
+      });
+
+    // The pre-selection above only picks UTXOs; the fee is decided by
+    // buildPaymentPlan with the SDK (storage mass included). If that fee needs
+    // more than was pre-selected, add the next largest UTXO and plan again.
+    let builderPlan: TxPlan;
+    for (;;) {
+      try {
+        builderPlan = build();
+        break;
+      } catch (e: any) {
+        const short = typeof e?.message === "string" && e.message.startsWith("Insufficient funds");
+        const next = sortedUtxos[builderUtxos.length];
+        if (!short || request.feeEstimator || !next || builderUtxos.length >= this.maxInputsPerTx) throw e;
+        builderUtxos.push(next);
+        selectedInputsCount = builderUtxos.length;
+      }
+    }
 
     return {
       plan: builderPlan,
@@ -210,18 +230,23 @@ export class TxPlanService {
       return u;
     });
 
+    // Fee settled against the SDK for the consolidation as built (single output).
     const feeRate = request.feeRate ?? 1n;
-    const massPerInput = 1500n;
-    const estimatedMass = BigInt(request.selectedUtxos.length) * massPerInput + 500n;
-    const expectedFee = estimatedMass * feeRate;
-
-    if (totalAmount <= expectedFee) {
-      throw new Error(
-        `Consolidation failed: Total selected UTXO amount (${totalAmount}) is less than or equal to the estimated fee (${expectedFee}).`
-      );
+    let outputAmount: bigint;
+    try {
+      outputAmount = planSingleOutputSpend({
+        inputs: builderUtxos,
+        toAddress: request.toAddress,
+        feeRateSompiPerMass: feeRate
+      }).sendSompi;
+    } catch (e: any) {
+      if (typeof e?.message === "string" && e.message.startsWith("Insufficient funds")) {
+        throw new Error(
+          `Consolidation failed: Total selected UTXO amount (${totalAmount}) does not cover the network fee for this consolidation.`
+        );
+      }
+      throw e;
     }
-
-    const outputAmount = totalAmount - expectedFee;
 
     const builderPlan = buildPaymentPlan({
       fromAddress: request.fromAddress,

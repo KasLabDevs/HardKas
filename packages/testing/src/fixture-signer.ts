@@ -8,7 +8,13 @@ import {
   CURRENT_HASH_VERSION
 } from "@hardkas/artifacts";
 
-import { parseWasmTxToRpc } from "@hardkas/accounts/internal/wasm-rpc-serialization.js";
+import {
+  createBalancedTransaction,
+  loadKaspaWasm,
+  parseWasmTxToRpc,
+  planOutputsWithChange,
+  toWasmScriptPublicKey
+} from "@hardkas/accounts";
 
 /**
  * Deterministic fixture signer for Docker testing on simnet.
@@ -28,16 +34,8 @@ export class HardkasFixtureSigner implements ExternalHardkasSigner {
   }
 
   private async loadKaspa(): Promise<any> {
-    try {
-      // @ts-ignore - Third party lib lacking types
-      return await import("kaspa-wasm");
-    } catch (e: unknown) {
-      const err = new Error(
-        "SIGNER_BACKEND_UNAVAILABLE: Official Kaspa WASM backend is required to sign transactions.\nInstall it via: npm install kaspa-wasm"
-      );
-      (err as any).code = "SIGNER_BACKEND_UNAVAILABLE";
-      throw err;
-    }
+    // The pinned managed SDK; WASM_TOOLCHAIN_NOT_INSTALLED / _INTEGRITY_FAILED propagate as is.
+    return loadKaspaWasm();
   }
 
   async getAddress(): Promise<string> {
@@ -73,41 +71,23 @@ export class HardkasFixtureSigner implements ExternalHardkasSigner {
         },
         utxoEntry: {
           amount: BigInt(u.amountSompi),
-          scriptPublicKey: spk,
+          scriptPublicKey: toWasmScriptPublicKey(kaspa, spk),
           blockDaaScore: BigInt((u as any).blockDaaScore || "0"),
           isCoinbase: !!(u as any).isCoinbase
         }
       };
     });
 
-    const outputs = plan.outputs.map((o) => {
-      if (!o.address) throw new Error("Output is missing address.");
-      return {
-        address: o.address,
-        amount: BigInt(o.amountSompi)
-      };
-    });
-
-    let changeAddress;
-    if ((plan as any).change && (plan as any).change.address) {
-      changeAddress = new kaspa.Address((plan as any).change.address);
-    } else {
-      changeAddress = new kaspa.Address(plan.from.address); // fallback to sender
-    }
-
-    const priorityFee = BigInt(plan.estimatedFeeSompi || "0");
-
-    const unsignedTx = kaspa.createTransaction(
+    // Change is an explicit output and the values must balance (kaspa-wasm 2.x adds no change).
+    const unsignedTx = createBalancedTransaction(kaspa, {
       utxos,
-      outputs,
-      changeAddress,
-      priorityFee
-    );
+      outputs: planOutputsWithChange(plan as any),
+      feeSompi: BigInt(plan.estimatedFeeSompi || "0")
+    });
 
     const signedTx = kaspa.signTransaction(unsignedTx, [privateKey], true);
 
-    console.log("SIGNED TX TOSTRING:", signedTx.toString());
-    const rawTx = JSON.stringify(parseWasmTxToRpc(signedTx.toString()));
+    const rawTx = JSON.stringify(parseWasmTxToRpc(signedTx.serializeToObject()));
 
     const draft: any = {
       schema: "hardkas.signedTx",

@@ -9,7 +9,7 @@ import * as fs from "node:fs";
 import * as path from "node:path";
 import * as os from "node:os";
 
-describe.skip("0.12.0-rc.20 Lifecycle Integrity & Trust Boundary Tests", () => {
+describe("0.12.0-rc.20 Lifecycle Integrity & Trust Boundary Tests", () => {
   let sdk: Hardkas;
   let workspaceRoot: string;
 
@@ -155,16 +155,12 @@ describe.skip("0.12.0-rc.20 Lifecycle Integrity & Trust Boundary Tests", () => {
       rules: []
     };
     (policy as any).contentHash = calculateContentHash(policy, CURRENT_HASH_VERSION);
-    await sdk.artifacts.write(policy as any);
+    const { absolutePath: policyFile } = await sdk.artifacts.write(policy as any);
 
-    // Tamper policy file directly
-    const policyFile = path.join(
-      sdk.workspace.artifactsDir,
-      `policy.v1-${policy.contentHash}.json`
-    );
-    const content = JSON.parse(fs.readFileSync(policyFile, "utf-8"));
+    // Tamper policy file directly, wherever the store chose to put it
+    const content = JSON.parse(fs.readFileSync(policyFile!, "utf-8"));
     content.decision = "DENY";
-    fs.writeFileSync(policyFile, JSON.stringify(content, null, 2), "utf-8");
+    fs.writeFileSync(policyFile!, JSON.stringify(content, null, 2), "utf-8");
 
     // Clear cache so it reads from the tampered disk file
     sdk.artifacts.cache.clear();

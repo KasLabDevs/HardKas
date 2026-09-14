@@ -1,0 +1,150 @@
+{
+  "schema": "hardkas.silver.e2eEvidence.v1",
+  "scenario": "Escrow (2-of-3 SilverScript v1 P2SH): refundBuyer",
+  "scope": "SilverScript L1/P2SH execution — not evidence of covenant or stateful Toccata semantics",
+  "capabilities": [
+    "silver.compile.v1",
+    "silver.p2sh.deploy-spend.v1"
+  ],
+  "node": {
+    "schema": "hardkas.nodeIdentity.v1",
+    "verified": true,
+    "problems": [],
+    "expected": {
+      "containerName": "hardkas-kaspad-toccata-v2",
+      "image": "kaspanet/rusty-kaspad:v2.0.1@sha256:db36449e2f41cf33ab7c26683ce390cb71bdea9c403eefd2e740a7d5605bcd8b",
+      "imageDigest": "sha256:db36449e2f41cf33ab7c26683ce390cb71bdea9c403eefd2e740a7d5605bcd8b",
+      "network": "simnet",
+      "serverVersion": "2.0.1",
+      "host": "127.0.0.1",
+      "rpcPort": 18210
+    },
+    "observed": {
+      "container": {
+        "name": "hardkas-kaspad-toccata-v2",
+        "id": "6c2fcfd32a1c9f61adf1160c4aff5958435def2eb11d3364d4298284f47c0528",
+        "running": true,
+        "imageId": "sha256:db36449e2f41cf33ab7c26683ce390cb71bdea9c403eefd2e740a7d5605bcd8b",
+        "repoDigests": [
+          "kaspanet/rusty-kaspad@sha256:db36449e2f41cf33ab7c26683ce390cb71bdea9c403eefd2e740a7d5605bcd8b",
+          "supertypo/rusty-kaspad@sha256:db36449e2f41cf33ab7c26683ce390cb71bdea9c403eefd2e740a7d5605bcd8b"
+        ],
+        "publishedPorts": [
+          {
+            "containerPort": "16210/tcp",
+            "hostIp": "127.0.0.1",
+            "hostPort": 16210
+          },
+          {
+            "containerPort": "17210/tcp",
+            "hostIp": "127.0.0.1",
+            "hostPort": 17210
+          },
+          {
+            "containerPort": "18210/tcp",
+            "hostIp": "127.0.0.1",
+            "hostPort": 18210
+          }
+        ]
+      },
+      "server": {
+        "url": "ws://127.0.0.1:18210",
+        "networkId": "simnet",
+        "serverVersion": "2.0.1",
+        "isSynced": true
+      },
+      "probeErrors": []
+    },
+    "checkedAt": "2026-09-14T11:25:59.625Z"
+  },
+  "compile": {
+    "schema": "hardkas.silver.compileProvenance.v1",
+    "compiler": {
+      "id": "silverc",
+      "repository": "kaspanet/silverscript",
+      "releaseTag": "v1.0.0",
+      "commit": "3ed973335b59269293564805cc2c58a14595ec03",
+      "assetName": "silverc-windows-x86_64.zip",
+      "assetSha256": "3e0d660c15a9e7ac90f3960da24d348b076b1891481bfe758db18accc8a102e1",
+      "binarySha256": "ce1e0ef5f1f415f371d3d2426e788597a388635da8cbe93e72e95a4f754b29af",
+      "languageVersion": "0.1.0"
+    },
+    "sourceSha256": "3e499912ad084aaf0eece3bdea7e6c51f4e3ce6c0f7fd25b1c0a07676f85aaad",
+    "constructorArgsSha256": "68a443e505aa136aa4cfa7674b6cfa3990bddaf9a7da7e66885025d7316c1ccc",
+    "artifactSha256": "bea47214c98de797b3d9c0804a9fc16d4203002814bfd957926ad3e342b8d29f",
+    "abiSchemaVersion": 1,
+    "contracts": [
+      {
+        "name": "Escrow",
+        "bytecodeSha256": "d9941e3d301d1acd1ae2cd7c86ac2af2510024bcef892cdc39c5ca27f8a0dc0d",
+        "templateHash": "5400aa29ba85183f9e66c30c4992aef91334119d4cea8c46b4ce642cc081de2a",
+        "entries": [
+          {
+            "name": "mutualRelease",
+            "dispatchTag": "62d1e28b"
+          },
+          {
+            "name": "refundBuyer",
+            "dispatchTag": "c1ea669a"
+          },
+          {
+            "name": "releaseToSeller",
+            "dispatchTag": "cf20b70a"
+          }
+        ]
+      }
+    ],
+    "contractName": "Escrow",
+    "lockingScriptHex": "aa20fac79ff256fe9e5a9e55f007e5b0cfc3eef0bfcd58c94582333fd5db4197dbe287"
+  },
+  "escrow": {
+    "address": "kaspasim:prav08lj2mlfuk572hcq0edselp7au9le4vvj3vzxvlatk6pjld7yzupp0u9u",
+    "lockingScript": "aa20fac79ff256fe9e5a9e55f007e5b0cfc3eef0bfcd58c94582333fd5db4197dbe287",
+    "refundAmount": "1000000000",
+    "releaseAmount": "1500000000"
+  },
+  "funding": {
+    "txId": "e642eb49be9caadb6fc21b919bffc95da5b8562646201f0d3f02f15bb8891f08",
+    "valueSompi": "1001000000",
+    "feeSompi": "204700",
+    "confirmedAtBlockDaaScore": "65341"
+  },
+  "resolution": {
+    "branch": "refundBuyer",
+    "signers": [
+      "buyer",
+      "arbiter"
+    ],
+    "txId": "49aca3d4141230420af73ec1b6d103febe0d9ab576df02a988facbbee0e189e6",
+    "feeSompi": "1000000",
+    "signatureScriptSha256": "f656dd6336add4c681a4c593f74267842e761666604e9b2e3fb839bc7bb2e072",
+    "refundedSompi": "1000000000",
+    "confirmedAtBlockDaaScore": "65365"
+  },
+  "controls": {
+    "wrongSecondSigner": {
+      "name": "refund-signed-by-buyer-and-seller",
+      "accepted": false,
+      "rejectionClass": "script-verify",
+      "nodeError": "Rejected transaction 49aca3d4141230420af73ec1b6d103febe0d9ab576df02a988facbbee0e189e6: failed to verify the signature script: script ran, but verification failed",
+      "expectedClass": "script-verify",
+      "note": "the seller's valid signature in the arbiter's slot; distinguished by constructed mutation"
+    },
+    "wrongAmount": {
+      "name": "refund-of-a-different-amount",
+      "accepted": false,
+      "rejectionClass": "script-verify",
+      "nodeError": "Rejected transaction 30611348fee8b5f14c7f6c1c691cbfc7f1576fcb7d4f6c95bd4defd00517c53b: failed to verify the signature script: script ran, but verification failed",
+      "expectedClass": "script-verify",
+      "note": "refund of refundAmount-1, validly signed; distinguished by constructed mutation"
+    }
+  },
+  "harness": {
+    "minerThrottle": {
+      "environment": "HARDKAS_TOCCATA_MINER_THROTTLE_MS",
+      "valueMs": "5",
+      "purpose": "harness-local rate limit (not a consensus parameter)"
+    }
+  },
+  "result": "PASS"
+}

@@ -90,6 +90,7 @@
     "@hardkas/cli": "workspace:*",
     "@hardkas/config": "workspace:*",
     "@hardkas/core": "workspace:*",
+    "@hardkas/node-runner": "workspace:*",
     "@hardkas/sdk": "workspace:*",
     "@hardkas/testing": "workspace:*",
     "@types/node": "^22.19.19",
@@ -114,8 +115,6 @@
   },
   "version": "0.12.0-rc.20",
   "dependencies": {
-    "@kaspa/core-lib": "^1.6.5",
-    "kaspa": "^0.13.0",
-    "kaspa-wasm": "^0.13.0"
+    "@kaspa/core-lib": "^1.6.5"
   }
 }

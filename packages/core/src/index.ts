@@ -106,6 +106,14 @@ export type HardkasConfig = z.infer<typeof hardkasConfigSchema>;
 
 import { HardkasError } from "./errors.js";
 export * from "./errors.js";
+export * from "./node-images.js";
+export * from "./node-identity.js";
+export * from "./toolchains.js";
+export * from "./kaspa-wasm.js";
+export * from "./silverscript.js";
+export * from "./silverscript-abi.js";
+export * from "./silverscript-covenant.js";
+export * from "./silverscript-corpus.js";
 
 export function parseHardkasConfig(input: unknown): HardkasConfig {
   const result = hardkasConfigSchema.safeParse(input);
@@ -144,7 +152,6 @@ export * from "./runtime-context.js";
 export * from "./semantics/index.js";
 export * from "./append-coordinator.js";
 export * from "./migrations.js";
-export * from "./silver.js";
 
 export * from "./registry.js";
 export * from "./confirmation-policy.js";

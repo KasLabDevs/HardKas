@@ -249,11 +249,15 @@ export async function runTxPlan(input: TxPlanRunnerInput): Promise<TxPlanArtifac
 
         let actualFeeRate = feeRateSompiPerMass;
         if (actualFeeRate === undefined) {
+          // Only the priority rate is taken from here; the plan's mass and fee are
+          // computed by buildPaymentPlan with the SDK over the real transaction. The
+          // shape is therefore a representative one, not every spendable UTXO (which
+          // would describe a transaction far above the standard mass limit).
           const { HardkasFees } = await import("@hardkas/sdk");
           const tempFees = new HardkasFees({ provider: { rpcUrl: rpcUrl! }, config: { cwd: workspaceRoot || process.cwd(), config: resolvedConfig } } as any);
           const { feeRate: estimated } = await tempFees.estimate({
             priority: "normal",
-            inputs: spendableUtxos.length,
+            inputs: 1,
             outputs: 2,
             version: 1,
             network: resolvedNetwork as NetworkId

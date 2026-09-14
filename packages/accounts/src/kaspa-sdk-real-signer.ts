@@ -1,5 +1,6 @@
 import { RealTxSigner, RealTxSigningInput, RealTxSigningResult } from "./real-signer.js";
 import { loadKaspaWasm } from "./signer-backend.js";
+import { createBalancedTransaction, planOutputsWithChange, toWasmScriptPublicKey } from "./wasm-transaction.js";
 
 export interface KaspaSdkRealTxSignerOptions {
   readonly sdkLoader?: () => Promise<any>;
@@ -18,7 +19,8 @@ export class KaspaSdkRealTxSigner implements RealTxSigner {
     let sdk;
     try {
       sdk = await this.sdkLoader();
-    } catch (e) {
+    } catch (e: any) {
+      if (typeof e?.code === "string" && e.code.startsWith("WASM_TOOLCHAIN_")) throw e;
       throw new Error(
         "Kaspa SDK real transaction signer dependency is not installed. Install/configure the supported Kaspa WASM SDK adapter."
       );
@@ -39,22 +41,12 @@ export class KaspaSdkRealTxSigner implements RealTxSigner {
       // 1. Prepare Private Key
       const privateKey = new sdk.PrivateKey(account.privateKey);
 
-      // 2. Prepare UTXOs as POJOs (kaspa-wasm 0.13 expects plain objects, not UtxoEntry instances)
+      // 2. Prepare UTXOs as plain objects carrying a ScriptPublicKey instance
       const utxos = plan.inputs.map((u: any) => {
         if (!u.scriptPublicKey) {
           throw new Error(
             `UTXO ${u.outpoint.transactionId}:${u.outpoint.index} is missing scriptPublicKey required for signing.`
           );
-        }
-
-        // The RPC adapter prepends a 4-char version hex (e.g. "0000") to the script.
-        // ScriptPublicKey constructor expects (version: number, script: hex_string_without_version).
-        let spkHex = String(u.scriptPublicKey);
-        let spkVersion = 0;
-        if (spkHex.length >= 68) {
-          // First 4 chars = version in hex (e.g. "0000" = version 0)
-          spkVersion = parseInt(spkHex.slice(0, 4), 16) || 0;
-          spkHex = spkHex.slice(4);
         }
 
         return {
@@ -65,39 +57,25 @@ export class KaspaSdkRealTxSigner implements RealTxSigner {
           },
           utxoEntry: {
             amount: BigInt(u.amountSompi),
-            scriptPublicKey: new sdk.ScriptPublicKey(spkVersion, spkHex),
+            scriptPublicKey: toWasmScriptPublicKey(sdk, u.scriptPublicKey),
             blockDaaScore: BigInt(u.blockDaaScore ?? 0),
             isCoinbase: u.isCoinbase ?? false
           }
         };
       });
 
-      // 3. Prepare Outputs from plan.outputs
-      const outputs = plan.outputs.map((o: any) =>
-        new sdk.PaymentOutput(new sdk.Address(o.address), BigInt(o.amountSompi))
-      );
-
-      // 4. Change Address — createTransaction expects a string, not an Address instance
-      const changeAddress = plan.change
-        ? plan.change.address
-        : account.address;
-
-      // 5. Build unsigned transaction
-      const priorityFee = BigInt(plan.estimatedFeeSompi);
-
-      const unsignedTx = sdk.createTransaction(
+      // 3-5. Outputs plus explicit change; the SDK adds none, and the values must balance.
+      const unsignedTx = createBalancedTransaction(sdk, {
         utxos,
-        outputs,
-        changeAddress,
-        priorityFee
-      );
+        outputs: planOutputsWithChange(plan),
+        feeSompi: BigInt(plan.estimatedFeeSompi)
+      });
 
       // 6. Sign
       const signedTx = sdk.signTransaction(unsignedTx, [privateKey], true);
 
-      // 7. Extract result from SignableTransaction
-      // signTransaction returns a SignableTransaction with .tx (Transaction) property
-      const innerTx = signedTx.tx || signedTx;
+      // 7. kaspa-wasm 2.x returns the signed Transaction itself
+      const innerTx = signedTx;
       const txId = innerTx?.id;
       const payload = JSON.stringify(
         innerTx.toJSON(),

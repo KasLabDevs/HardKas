@@ -1,102 +1,87 @@
 import { describe, it, expect } from "vitest";
 import {
   estimateTransactionMass,
-  KASPA_CONSENSUS_MASS,
+  calculateUpstreamMass,
   buildPaymentPlan,
-  createMockUtxo
+  createMockUtxo,
+  MASS_AUTHORITY
 } from "../src/index.js";
 
-describe("Mass Estimation", () => {
-  it("should calculate mass for a single input/single output P2PK transaction", () => {
-    const result = estimateTransactionMass({
-      inputCount: 1,
-      outputs: [{ address: "kaspa:qpvkp8f..." }],
-      hasChange: false
-    });
+// Addresses the SDK accepts, so no placeholder is involved.
+const ALICE = "kaspasim:qr0lr4ml9fn3chekrqmjdkergxl93l4wrk3dankcgvjq776s9wn9jeadh9sjw";
+const BOB = "kaspasim:qzgh3e6qqe6jfevf0dc652uszm0lnhvhzmasga5lka4kcl5udget5065p52eh";
 
-    const expected =
-      KASPA_CONSENSUS_MASS.BASE_TRANSACTION +
-      KASPA_CONSENSUS_MASS.INPUT_OUTPOINT_AND_SEQ + (66n * KASPA_CONSENSUS_MASS.SIG_SCRIPT_BYTE_MULTIPLIER) +
-      KASPA_CONSENSUS_MASS.OUTPUT_P2PK;
-
-    expect(result.mass).toBe(expected);
+describe("Mass Estimation (shape only, computed by the pinned SDK)", () => {
+  it("names the SDK as the authority", () => {
+    expect(MASS_AUTHORITY).toBe("kaspa-wasm 2.0.1");
+    const result = estimateTransactionMass({ inputCount: 1, outputs: [{ address: BOB }] });
+    expect(result.assumptions[0]).toMatch(/kaspa-wasm 2\.0\.1/);
   });
 
-  it("should calculate mass with change output", () => {
-    const result = estimateTransactionMass({
-      inputCount: 1,
-      outputs: [{ address: "kaspa:qpvkp8f..." }],
-      hasChange: true
-    });
-
-    const expected =
-      KASPA_CONSENSUS_MASS.BASE_TRANSACTION +
-      KASPA_CONSENSUS_MASS.INPUT_OUTPOINT_AND_SEQ + (66n * KASPA_CONSENSUS_MASS.SIG_SCRIPT_BYTE_MULTIPLIER) +
-      KASPA_CONSENSUS_MASS.OUTPUT_P2PK * 2n;
-
-    expect(result.mass).toBe(expected);
+  it("single input / single P2PK output", () => {
+    const result = estimateTransactionMass({ inputCount: 1, outputs: [{ address: BOB }], hasChange: false });
+    expect(result.mass).toBe(1624n);
+    expect(result.feeSompi).toBe(162400n);
   });
 
-  it("should identify non-P2PK addresses as scripts and use fallback mass", () => {
-    const result = estimateTransactionMass({
-      inputCount: 1,
-      outputs: [{ address: "kaspa:ppvkp8f..." }], // Starts with 'p' -> P2SH
-      hasChange: false
-    });
+  it("a change output makes it the rc17 shape the node priced at 2036", () => {
+    const result = estimateTransactionMass({ inputCount: 1, outputs: [{ address: BOB }], hasChange: true });
+    expect(result.mass).toBe(2036n);
+  });
 
-    const expected =
-      KASPA_CONSENSUS_MASS.BASE_TRANSACTION +
-      KASPA_CONSENSUS_MASS.INPUT_OUTPOINT_AND_SEQ + (66n * KASPA_CONSENSUS_MASS.SIG_SCRIPT_BYTE_MULTIPLIER) +
-      KASPA_CONSENSUS_MASS.SCRIPT_FALLBACK_OUTPUT;
+  it("an identity the SDK cannot parse is sized as P2PK and reported", () => {
+    const real = estimateTransactionMass({ inputCount: 1, outputs: [{ address: BOB }] });
+    const invalid = estimateTransactionMass({ inputCount: 1, outputs: [{ address: "kaspa:ppvkp8f..." }] });
+    expect(invalid.mass).toBe(real.mass);
+    expect(invalid.assumptions.join(" ")).toMatch(/not a Kaspa address/);
+  });
 
-    expect(result.mass).toBe(expected);
+  it("breakdown is derived from SDK totals and adds up", () => {
+    const r = estimateTransactionMass({ inputCount: 3, outputs: [{ address: BOB }], hasChange: true, payloadBytes: 40 });
+    const b = r.breakdown;
+    expect(b.base + b.inputs + b.outputs + b.payload).toBe(b.total);
+    expect(b.total).toBe(r.mass);
+    expect(b.payload).toBeGreaterThan(0n);
   });
 
   it("should be deterministic across runs", () => {
-    const params = {
-      inputCount: 5,
-      outputs: [{ address: "addr1" }, { address: "addr2" }],
-      hasChange: true
-    };
-
+    const params = { inputCount: 5, outputs: [{ address: "addr1" }, { address: "addr2" }], hasChange: true };
     const res1 = estimateTransactionMass(params);
     const res2 = estimateTransactionMass(params);
-
-    expect(res1.mass).toBe(res2.mass);
     expect(res1).toEqual(res2);
   });
 
-  it("should maintain same mass after 1 sompi mutation if structure is unchanged", () => {
-    const utxos = [createMockUtxo({ address: "kaspa:qalice", amountSompi: 5000n })];
+  it("keeps mass and fee after a 1 sompi output change when storage mass is negligible", () => {
+    // At hundreds of KAS, storage mass (~C/amount) is far below compute mass.
+    const utxos = [createMockUtxo({ address: ALICE, amountSompi: 50_000_000_000n })];
+    const base = { coinbaseMaturity: 100n, fromAddress: ALICE, availableUtxos: utxos, feeRateSompiPerMass: 1n };
 
-    const plan1 = buildPaymentPlan({ coinbaseMaturity: 100n,
-      fromAddress: "kaspa:qalice",
-      outputs: [{ address: "kaspa:qbob", amountSompi: 500n }],
-      availableUtxos: utxos,
-      feeRateSompiPerMass: 1n
-    });
-
-    const plan2 = buildPaymentPlan({ coinbaseMaturity: 100n,
-      fromAddress: "kaspa:qalice",
-      outputs: [{ address: "kaspa:qbob", amountSompi: 501n }], // 1 sompi mutation
-      availableUtxos: utxos,
-      feeRateSompiPerMass: 1n
-    });
+    const plan1 = buildPaymentPlan({ ...base, outputs: [{ address: BOB, amountSompi: 20_000_000_000n }] });
+    const plan2 = buildPaymentPlan({ ...base, outputs: [{ address: BOB, amountSompi: 20_000_000_001n }] });
 
     expect(plan1.estimatedMass).toBe(plan2.estimatedMass);
     expect(plan1.estimatedFeeSompi).toBe(plan2.estimatedFeeSompi);
-    // Note: In a real artifact test, we would check that contentHash is different
   });
 
-  it("should emit explicit best-effort warning for P2SH", () => {
-    const result = estimateTransactionMass({
-      inputCount: 1,
-      outputs: [{ address: "kaspa:ppvkp8f..." }], // P2SH
-      hasChange: false
+  it("the plan's mass is the SDK mass of the plan's own transaction", () => {
+    const utxos = [createMockUtxo({ address: ALICE, amountSompi: 500_000_000n })];
+    const plan = buildPaymentPlan({
+      coinbaseMaturity: 100n,
+      fromAddress: ALICE,
+      availableUtxos: utxos,
+      feeRateSompiPerMass: 1n,
+      outputs: [{ address: BOB, amountSompi: 100_000_000n }]
     });
-
-    // P2SH addresses use SCRIPT_FALLBACK_OUTPUT (500) instead of OUTPUT_P2PK (420)
-    // The current consensus mass model handles this silently without warnings
-    expect(result.warnings).toHaveLength(0);
+    const direct = calculateUpstreamMass({
+      networkId: "simnet",
+      inputs: plan.inputs.map((u) => ({ amountSompi: u.amountSompi, outpoint: u.outpoint, scriptPublicKey: u.scriptPublicKey })),
+      outputs: [
+        ...plan.outputs.map((o) => ({ amountSompi: o.amountSompi, address: o.address })),
+        ...(plan.change ? [{ amountSompi: plan.change.amountSompi, address: plan.change.address }] : [])
+      ]
+    });
+    expect(plan.estimatedMass).toBe(direct.mass);
+    // A rate below the node's minimum cannot lower the fee below it.
+    expect(plan.estimatedFeeSompi).toBe(direct.minimumFeeSompi);
   });
 });

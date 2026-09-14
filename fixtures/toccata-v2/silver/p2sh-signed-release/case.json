@@ -1,0 +1,56 @@
+{
+  "schema": "hardkas.silverCorpusCase.v1",
+  "id": "p2sh-signed-release",
+  "scenario": "M8-B1 plain signed SilverScript contract",
+  "scope": "SilverScript L1/P2SH execution — not evidence of covenant or stateful Toccata semantics",
+  "capabilities": [
+    "silver.compile.v1",
+    "silver.p2sh.deploy-spend.v1"
+  ],
+  "network": "simnet",
+  "compiles": [
+    {
+      "name": "contract",
+      "source": "contract.sil",
+      "constructorArgs": "contract.constructor-args.json",
+      "artifact": "contract.artifact.json",
+      "contract": "SignedRelease",
+      "provenance": {
+        "schema": "hardkas.silver.compileProvenance.v1",
+        "compiler": {
+          "id": "silverc",
+          "repository": "kaspanet/silverscript",
+          "releaseTag": "v1.0.0",
+          "commit": "3ed973335b59269293564805cc2c58a14595ec03",
+          "assetName": "silverc-windows-x86_64.zip",
+          "assetSha256": "3e0d660c15a9e7ac90f3960da24d348b076b1891481bfe758db18accc8a102e1",
+          "binarySha256": "ce1e0ef5f1f415f371d3d2426e788597a388635da8cbe93e72e95a4f754b29af",
+          "languageVersion": "0.1.0"
+        },
+        "sourceSha256": "b0ea5f3e9452c72f9369d25512c4bcf9ff885c48b84b61377d1a70905fb7dc0a",
+        "constructorArgsSha256": "cea2a7a04b1dc33eb463aed31286de618522c8af9aba5e50c81e4f810b4a4641",
+        "artifactSha256": "3d24ee4ea564cbd2e9ca0bd65fc01179797950cc412f981dae1f29e47fb27c46",
+        "abiSchemaVersion": 1,
+        "contracts": [
+          {
+            "name": "SignedRelease",
+            "bytecodeSha256": "99657145901ea9711a058615729a5da9d1d862556773cb7fd4094803a126b172",
+            "templateHash": "13a61e36a15fe81498ef7335b83db1215632fc9190b35de76b5df750ca66687c",
+            "entries": [
+              {
+                "name": "release",
+                "dispatchTag": "388ad0b4"
+              }
+            ]
+          }
+        ]
+      },
+      "lockingScript": {
+        "version": 0,
+        "script": "aa209ca5df6e9e9c699cbbb2995cfaad950d2ccb15a5ac11cea4dbb6bde02175288487"
+      },
+      "address": "kaspasim:pzw2thmwn6wxn89mk2v4e74dj5xjejc45kkprn4ymwmtmcppw55gg0uv38za9"
+    }
+  ],
+  "evidence": "evidence.json"
+}

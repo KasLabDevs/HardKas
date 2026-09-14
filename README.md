@@ -142,9 +142,13 @@ vProgs inspect surfaces:
 - `await hardkas.vprogs.status()`
 - `await hardkas.vprogs.inspect(path)`
 
+SilverScript v1 (`hardkas silver`): the official silverc v1.0.0 and the Kaspa SDK,
+with real-node evidence per capability in `fixtures/toccata-v2/silver` — P2SH
+execution, relative timelock, and a Toccata tx-v1 1:1 auth-bound covenant
+transition. General covenant support is not claimed.
+
 ZK/vProgs lab claims:
 
-- `SILVERSCRIPT_BUILDER_READY`
 - `ZK_CORPUS_SURFACE_READY`
 - `VPROGS_INSPECT_SURFACE_READY`
 - Groth16 corpus verification is local fixture coherence only.

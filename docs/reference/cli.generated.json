@@ -1,7 +1,7 @@
 {
   "schema": "hardkas.cliReference.v1",
   "generatedAt": "deterministic",
-  "totalCommands": 207,
+  "totalCommands": 210,
   "flatSurface": [
     "hardkas accounts",
     "hardkas accounts balance",
@@ -185,6 +185,9 @@
     "hardkas telemetry tail",
     "hardkas telemetry verify",
     "hardkas test",
+    "hardkas toolchain",
+    "hardkas toolchain install",
+    "hardkas toolchain status",
     "hardkas torture",
     "hardkas torture matrix",
     "hardkas torture replay",
@@ -5079,6 +5082,72 @@
       "subcommands": []
     },
     {
+      "path": "hardkas toolchain",
+      "name": "toolchain",
+      "aliases": [],
+      "description": "Install and verify the upstream toolchains HardKAS pins (official Kaspa release assets)",
+      "usage": "hardkas toolchain [options] [command]",
+      "arguments": [],
+      "options": [],
+      "subcommands": [
+        {
+          "path": "hardkas toolchain install",
+          "name": "install",
+          "aliases": [],
+          "description": "Install a pinned toolchain, verifying the release asset and every file against the pin",
+          "usage": "hardkas toolchain install [options] <id>",
+          "arguments": [
+            {
+              "name": "id",
+              "description": ""
+            }
+          ],
+          "options": [
+            {
+              "flags": "--from-file <zip>",
+              "description": "Use a release asset already on disk instead of downloading it",
+              "default": null,
+              "required": true,
+              "mandatory": false
+            },
+            {
+              "flags": "--force",
+              "description": "Reinstall even if a verified install is present",
+              "default": false,
+              "required": false,
+              "mandatory": false
+            },
+            {
+              "flags": "--json",
+              "description": "Output as JSON",
+              "default": false,
+              "required": false,
+              "mandatory": false
+            }
+          ],
+          "subcommands": []
+        },
+        {
+          "path": "hardkas toolchain status",
+          "name": "status",
+          "aliases": [],
+          "description": "Show whether each pinned toolchain is installed and matches its pin",
+          "usage": "hardkas toolchain status [options]",
+          "arguments": [],
+          "options": [
+            {
+              "flags": "--json",
+              "description": "Output as JSON",
+              "default": false,
+              "required": false,
+              "mandatory": false
+            }
+          ],
+          "subcommands": []
+        }
+      ]
+    },
+    {
       "path": "hardkas torture",
       "name": "torture",
       "aliases": [],
@@ -5246,8 +5315,17 @@
           "name": "plan",
           "aliases": [],
           "description": "Build a transaction plan artifact stable",
-          "usage": "hardkas tx plan [options]",
-          "arguments": [],
+          "usage": "hardkas tx plan [options] [from] [to]",
+          "arguments": [
+            {
+              "name": "from",
+              "description": ""
+            },
+            {
+              "name": "to",
+              "description": ""
+            }
+          ],
           "options": [
             {
               "flags": "--target <name>",

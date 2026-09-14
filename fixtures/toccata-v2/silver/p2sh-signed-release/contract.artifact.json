@@ -1,0 +1,35 @@
+{
+  "schema_version": 1,
+  "compiler_version": "0.1.0",
+  "structs": {},
+  "contracts": {
+    "SignedRelease": {
+      "source_path": "sil/SignedRelease.sil",
+      "runtime_state": {
+        "source": "State",
+        "fields": []
+      },
+      "entries": {
+        "release": {
+          "dispatch_tag": "388ad0b4",
+          "params": [
+            {
+              "name": "ownerSig",
+              "type": {
+                "kind": "sig"
+              }
+            }
+          ]
+        }
+      },
+      "compiled": {
+        "bytecode": [118, 4, 56, 138, 208, 180, 135, 99, 117, 118, 130, 1, 65, 157, 117, 118, 32, 40, 55, 246, 56, 14, 186, 74, 7, 207, 179, 87, 63, 120, 184, 194, 80, 69, 246, 15, 75, 93, 0, 214, 90, 39, 22, 88, 29, 195, 49, 171, 102, 172, 105, 117, 81, 103, 106, 104],
+        "template_hash": [19, 166, 30, 54, 161, 95, 232, 20, 152, 239, 115, 53, 184, 61, 177, 33, 86, 50, 252, 145, 144, 179, 93, 231, 107, 93, 247, 80, 202, 102, 104, 124],
+        "state_span": {
+          "offset": 0,
+          "len": 0
+        }
+      }
+    }
+  }
+}

@@ -26,7 +26,11 @@ import {
   SilverSpendReceiptArtifactSchema,
   SilverSpendSimulationArtifactSchema,
   SilverTestArtifactSchema,
-  SilverSpendPlanArtifactSchema
+  SilverSpendPlanArtifactSchema,
+  SilverCompileV1Schema,
+  SilverDeployV1Schema,
+  SilverSpendV1Schema,
+  SilverCovenantV1Schema
 } from "./schemas.js";
 
 export interface Clock {
@@ -251,6 +255,18 @@ export function verifyArtifactIntegritySync(
         break;
       case HardkasSchemas.SilverSpendSimulation:
         schema = SilverSpendSimulationArtifactSchema;
+        break;
+      case HardkasSchemas.SilverCompileV1:
+        schema = SilverCompileV1Schema;
+        break;
+      case HardkasSchemas.SilverDeployV1:
+        schema = SilverDeployV1Schema;
+        break;
+      case HardkasSchemas.SilverSpendV1:
+        schema = SilverSpendV1Schema;
+        break;
+      case HardkasSchemas.SilverCovenantV1:
+        schema = SilverCovenantV1Schema;
         break;
     }
 

@@ -1,88 +1,119 @@
-import { EscrowConfig, EscrowState, EscrowArtifact } from "./types.js";
-import { exec } from "node:child_process";
-import util from "node:util";
-import fs from "node:fs/promises";
-import path from "node:path";
-import { createKaspaP2shBlake2bLock } from "@hardkas/core";
+import {
+  compileSilverScript,
+  getSilContract,
+  silContractBytecodeHex,
+  silverP2shAddress,
+  silverP2shLock,
+  type SilArtifactValue
+} from "@hardkas/core";
+import { ESCROW_CONTRACT_NAME, ESCROW_SOURCE } from "./escrow-source.js";
+import type { EscrowArtifact, EscrowCompileProvenance, EscrowConfig, EscrowState } from "./types.js";
 
-const execAsync = util.promisify(exec);
+export { ESCROW_CONTRACT_NAME } from "./escrow-source.js";
 
+export type EscrowErrorCode =
+  | "ESCROW_CONFIG_INVALID"
+  | "ESCROW_SILVERC_UNAVAILABLE"
+  | "ESCROW_SILVERC_FAILED"
+  | "ESCROW_ARTIFACT_INVALID";
+
+export class EscrowError extends Error {
+  constructor(readonly code: EscrowErrorCode, message: string, readonly cause?: unknown) {
+    super(`${code}: ${message}`);
+    this.name = "EscrowError";
+  }
+}
+
+const HEX = /^(?:[0-9a-fA-F]{2})+$/;
+
+function pubkeyArg(role: string, hex: unknown): SilArtifactValue {
+  const h = typeof hex === "string" ? hex.replace(/^0x/, "") : "";
+  if (!/^[0-9a-fA-F]{64}$/.test(h)) {
+    throw new EscrowError("ESCROW_CONFIG_INVALID", `${role} public key must be a 32-byte x-only Schnorr key (64 hex characters)`);
+  }
+  return { kind: "bytes", value: Buffer.from(h, "hex") };
+}
+
+/** A destination as the contract compares it: version 0 followed by the script. */
+function destinationArg(name: string, spk: unknown): SilArtifactValue {
+  const h = typeof spk === "string" ? spk.replace(/^0x/, "") : "";
+  if (!HEX.test(h)) throw new EscrowError("ESCROW_CONFIG_INVALID", `${name} must be a script public key in hex`);
+  return { kind: "bytes", value: Buffer.concat([Buffer.from([0, 0]), Buffer.from(h, "hex")]) };
+}
+
+function amountArg(name: string, value: unknown): SilArtifactValue {
+  let n: bigint;
+  try {
+    n = BigInt(value as any);
+  } catch {
+    throw new EscrowError("ESCROW_CONFIG_INVALID", `${name} is not an integer amount`);
+  }
+  if (n <= 0n) throw new EscrowError("ESCROW_CONFIG_INVALID", `${name} must be positive`);
+  return { kind: "int", value: n };
+}
+
+export interface CreateEscrowOptions {
+  /** Network the P2SH address is derived for (default simnet). */
+  readonly networkId?: string | undefined;
+  /** HARDKAS_HOME override for locating the managed silverc. */
+  readonly home?: string | undefined;
+}
+
+/**
+ * Compiles the escrow contract for these parties with the managed silverc
+ * v1.0.0 and derives its P2SH lock from the SDK.
+ *
+ * Fails closed: an invalid configuration, a missing or unverified compiler, a
+ * compiler error or an unexpected artifact is an error, never a substitute
+ * script. The provenance records the constructor arguments by digest only.
+ */
 export async function createEscrow(
-    config: EscrowConfig, 
-    silvercPath: string, 
-    workDir: string,
-    escrowSilPath: string
-): Promise<{ state: EscrowState, artifact: EscrowArtifact }> {
-    const bytesExpr = (hexStr: string | undefined) => {
-        if (!hexStr || typeof hexStr !== "string") return { kind: "array", data: [] };
-        const bytes = Buffer.from(hexStr.replace(/^0x/, ""), "hex");
-        return {
-            kind: "array",
-            data: Array.from(bytes).map(b => ({ kind: "byte", data: b }))
-        };
-    };
+  config: EscrowConfig,
+  options: CreateEscrowOptions = {}
+): Promise<{
+  state: EscrowState;
+  artifact: EscrowArtifact;
+  provenance: EscrowCompileProvenance;
+  /** What was compiled, for reproduction: the arguments passed to silverc and its exact output. */
+  compiled: { constructorArgs: readonly SilArtifactValue[]; artifactBytes: Uint8Array };
+}> {
+  const constructorArgs: SilArtifactValue[] = [
+    pubkeyArg("buyer", config?.buyer?.publicKeyHex),
+    pubkeyArg("seller", config?.seller?.publicKeyHex),
+    pubkeyArg("arbiter", config?.arbiter?.publicKeyHex),
+    destinationArg("buyerDestinationSpk", config?.buyerDestinationSpk),
+    destinationArg("sellerDestinationSpk", config?.sellerDestinationSpk),
+    amountArg("refundAmount", config?.refundAmount),
+    amountArg("releaseAmount", config?.releaseAmount)
+  ];
 
-    const ctorArgs = [
-        bytesExpr(config?.buyer?.publicKeyHex),
-        bytesExpr(config?.seller?.publicKeyHex),
-        bytesExpr(config?.arbiter?.publicKeyHex),
-        bytesExpr("0000" + (config?.buyerDestinationSpk || "")),
-        bytesExpr("0000" + (config?.sellerDestinationSpk || "")),
-        { kind: "int", data: Number(config?.refundAmount || 0) },
-        { kind: "int", data: Number(config?.releaseAmount || 0) }
-    ];
-
-    const ctorArgsPath = path.join(workDir, "escrow-ctor.json");
-    const outPath = path.join(workDir, "escrow.json");
-
-    let artifact: any;
-    try {
-      await fs.mkdir(workDir, { recursive: true }).catch(() => {});
-      await fs.writeFile(ctorArgsPath, JSON.stringify(ctorArgs));
-      await fs.access(silvercPath);
-      await execAsync(`"${silvercPath}" "${escrowSilPath}" --constructor-args "${ctorArgsPath}" -o "${outPath}"`);
-      const artifactStr = await fs.readFile(outPath, "utf-8");
-      artifact = JSON.parse(artifactStr);
-      if (!artifact.script && !artifact.bytecode) {
-        throw new Error("Missing script in compiler output");
-      }
-    } catch (e: any) {
-      console.warn(`[createEscrow] silverc compiler unavailable (${e.message}).`);
-      try {
-        const artifactStr = await fs.readFile(outPath, "utf-8");
-        artifact = JSON.parse(artifactStr);
-        console.warn(`[createEscrow] Successfully loaded pre-compiled artifact from ${outPath}.`);
-      } catch {
-        console.warn(`[createEscrow] Pre-compiled artifact not found at ${outPath}. Using deterministic simulation fallback artifact.`);
-        artifact = {
-          name: "SimulationFallbackEscrow",
-          version: "0.1.0",
-          compiler: "simulation-fallback",
-          abi: [
-            { name: "mutualRelease", inputs: [] },
-            { name: "refundBuyer", inputs: [] },
-            { name: "releaseToSeller", inputs: [] }
-          ],
-          bytecode: [81, 1, 2, 3],
-          script: [81, 1, 2, 3],
-          sourceHash: "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-          constructorArgs: ctorArgs
-        };
-      }
+  let compiled: Awaited<ReturnType<typeof compileSilverScript>>;
+  try {
+    compiled = await compileSilverScript({ source: ESCROW_SOURCE, constructorArgs, home: options.home });
+  } catch (e: any) {
+    const code = String(e?.code ?? "");
+    if (code.startsWith("SILVERC_TOOLCHAIN") || code === "SILVERC_PLATFORM_UNSUPPORTED") {
+      throw new EscrowError("ESCROW_SILVERC_UNAVAILABLE", e.message, e);
     }
-    
-    const scriptSource = artifact.script || artifact.bytecode || [81, 1, 2, 3];
-    const covenantBytecodeHex = Buffer.isBuffer(scriptSource) || Array.isArray(scriptSource) || typeof scriptSource === "string" 
-        ? Buffer.from(scriptSource as any, typeof scriptSource === "string" ? "hex" : undefined).toString("hex")
-        : "51010203";
-    const p2shLock = createKaspaP2shBlake2bLock(Buffer.from(covenantBytecodeHex, "hex"));
+    if (code === "SILVERC_COMPILE_FAILED") throw new EscrowError("ESCROW_SILVERC_FAILED", e.message, e);
+    if (code.startsWith("SILVER_ARTIFACT")) throw new EscrowError("ESCROW_ARTIFACT_INVALID", e.message, e);
+    throw e;
+  }
 
-    return {
-        artifact,
-        state: {
-            lockingScriptHex: p2shLock.lockingScriptHex,
-            redeemScriptHex: covenantBytecodeHex,
-            address: ""
-        }
-    };
+  let contract;
+  try {
+    contract = getSilContract(compiled.artifact, ESCROW_CONTRACT_NAME).contract;
+  } catch (e: any) {
+    throw new EscrowError("ESCROW_ARTIFACT_INVALID", e.message, e);
+  }
+  const redeemScriptHex = silContractBytecodeHex(contract);
+  const lock = silverP2shLock(redeemScriptHex);
+  const address = silverP2shAddress(redeemScriptHex, options.networkId ?? "simnet");
+
+  return {
+    artifact: compiled.artifact,
+    provenance: { ...compiled.provenance, contractName: ESCROW_CONTRACT_NAME, lockingScriptHex: lock.script },
+    state: { lockingScriptHex: lock.script, redeemScriptHex, address },
+    compiled: { constructorArgs, artifactBytes: compiled.artifactBytes }
+  };
 }

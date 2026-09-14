@@ -49,6 +49,7 @@
     "@hardkas/core": "workspace:*",
     "@hardkas/kaspa-rpc": "workspace:*",
     "@hardkas/localnet": "workspace:*",
+    "@hardkas/node-runner": "workspace:*",
     "@hardkas/query-store": "workspace:*",
     "@hardkas/sdk": "workspace:*",
     "@hardkas/simulator": "workspace:*",

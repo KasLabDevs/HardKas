@@ -1,8 +1,11 @@
 {
-  "compiler": "silverscript",
-  "compilerVersion": "0.1.0",
-  "sourceSha256": "TBD",
-  "bytecodeSha256": "TBD",
+  "compiler": "silverc",
+  "releaseTag": "v1.0.0",
+  "languageVersion": "0.1.0",
+  "sourceSha256": "4d0c55669d9df0808960fd3d1c7acd08602d4890b4a03a79dfc8023b0d9a052e",
+  "artifactSha256": "22253edb6c001345b7cad56c0b2263b2edce5fae3d653f34a6e34f85e18735d7",
+  "bytecodeSha256": "4dadad70a865eac0b8c90540cc38d3238fb29b2bf5adff08012b58a08d05bb75",
   "network": "simnet",
-  "purpose": "restrict-first-output-destination"
+  "purpose": "restrict-first-output-destination (SilverScript P2SH, not a Toccata covenant)",
+  "regenerate": "silverc covenant.sil --constructor-args [] -o covenant.json (managed silverc v1.0.0)"
 }

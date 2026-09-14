@@ -3,15 +3,49 @@ import path from "node:path";
 import { TxPlan, SignedTx, TxReceipt } from "./schemas.js";
 import { verifyArtifact } from "./verify.js";
 import { writeFileAtomic } from "@hardkas/core";
+import { assertSafeFileId, codedError as storeError, schemaFilePrefix } from "./file-id.js";
 
 const bigIntReplacer = (_key: string, value: unknown) =>
   typeof value === "bigint" ? value.toString() : value;
 
+const STORE_ID_FIELDS = ["artifactId", "contentHash", "planId", "signedId", "txId"] as const;
+
+/** True when `candidate` is `root` itself or lies beneath it. */
+function isWithin(root: string, candidate: string): boolean {
+  const rel = path.relative(root, candidate);
+  return rel !== ".." && !rel.startsWith(`..${path.sep}`) && !path.isAbsolute(rel);
+}
+
+function resolveStoreId(artifact: any): string {
+  for (const field of STORE_ID_FIELDS) {
+    const value = artifact?.[field];
+    if (value === undefined || value === null || value === "") continue;
+    return assertSafeFileId(field, value);
+  }
+  return Date.now().toString(36);
+}
+
 export class ProjectArtifactStore {
   private artifactsDir: string;
+  private workspaceRoot: string;
 
   constructor(workspaceRoot: string) {
+    this.workspaceRoot = path.resolve(workspaceRoot);
     this.artifactsDir = path.join(workspaceRoot, ".hardkas", "artifacts");
+  }
+
+  /** Refuses any path outside the workspace, following symlinks when the path exists. */
+  private async assertInsideWorkspace(id: string, candidate: string): Promise<void> {
+    const roots = [this.workspaceRoot];
+    try {
+      roots.push(await fs.realpath(this.workspaceRoot));
+    } catch (e) {}
+    let target = candidate;
+    try {
+      target = await fs.realpath(candidate);
+    } catch (e) {}
+    if (roots.some((root) => isWithin(root, target))) return;
+    throw storeError("PATH_TRAVERSAL", `Artifact with ID ${id} is outside the workspace boundary`);
   }
 
   private async ensureDir(dirPath: string): Promise<void> {
@@ -21,10 +55,10 @@ export class ProjectArtifactStore {
   }
 
   async writeArtifact(artifact: any): Promise<string> {
-    const id = artifact.artifactId || artifact.contentHash || artifact.planId || artifact.signedId || artifact.txId || Date.now().toString(36);
-    const prefix = artifact.schema ? artifact.schema.split(".")[1] || "artifact" : "artifact";
+    const id = resolveStoreId(artifact);
+    const prefix = schemaFilePrefix(artifact.schema, 1, "artifact");
     let subDir = "misc";
-    if (artifact.schema) {
+    if (typeof artifact.schema === "string") {
       const s = artifact.schema.toLowerCase();
       if (s.includes("txplan")) subDir = "plans";
       else if (s.includes("signedtx")) subDir = "signed";
@@ -37,6 +71,9 @@ export class ProjectArtifactStore {
 
     const filename = `${prefix}-${id}.json`;
     const targetPath = path.join(dirPath, filename);
+    if (path.dirname(targetPath) !== dirPath) {
+      throw storeError("PATH_TRAVERSAL", `Artifact file name ${filename} escapes ${dirPath}`);
+    }
 
     const content = JSON.stringify(artifact, bigIntReplacer, 2) + "\n";
     await writeFileAtomic(targetPath, content);
@@ -49,25 +86,27 @@ export class ProjectArtifactStore {
   }
 
   async readArtifact(id: string): Promise<unknown> {
-    // If it's an absolute or relative path that actually exists, just read it directly
-    // This allows fallback for people passing paths (e.g. `tx receipt ./my-receipt.json`)
+    // Paths are accepted as well as IDs (e.g. `tx receipt ./my-receipt.json`),
+    // but only inside the workspace. Anything that names a path is checked
+    // against the boundary whether or not it exists, so a traversal attempt is
+    // reported as such instead of as a missing artifact.
+    const candidate = path.resolve(process.cwd(), id);
+    let isFile = false;
     try {
-      const stats = await fs.stat(id);
-      if (stats.isFile()) {
-         const resolvedPath = path.resolve(process.cwd(), id);
-         const workspaceRoot = path.resolve(this.artifactsDir, "../..");
-         if (!resolvedPath.startsWith(workspaceRoot)) {
-           const err = new Error(`Artifact with ID ${id} is outside the workspace boundary`);
-           (err as any).code = "PATH_TRAVERSAL";
-           throw err;
-         }
-         let content = await fs.readFile(id, "utf-8");
-         if (content.charCodeAt(0) === 0xfeff) content = content.slice(1);
-         return JSON.parse(content);
-      }
-    } catch (e: any) {
-      if (e.code === "PATH_TRAVERSAL") throw e;
-      // Not a valid path, continue to ID resolution
+      isFile = (await fs.stat(candidate)).isFile();
+    } catch (e) {}
+    const looksLikePath = path.isAbsolute(id) || /[\\/]/.test(id) || id === "." || id === "..";
+
+    if (isFile || looksLikePath) {
+      await this.assertInsideWorkspace(id, candidate);
+    }
+    if (isFile) {
+      let content = await fs.readFile(candidate, "utf-8");
+      if (content.charCodeAt(0) === 0xfeff) content = content.slice(1);
+      return JSON.parse(content);
+    }
+    if (looksLikePath) {
+      throw new Error(`Artifact with ID ${id} not found in store`);
     }
 
     const filePath = await this.findArtifactPathById(id);

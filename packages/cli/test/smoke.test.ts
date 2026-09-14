@@ -18,7 +18,7 @@ function runHardkas(args: string) {
   }
 }
 
-describe.skip("CLI Smoke Tests", () => {
+describe("CLI Smoke Tests", () => {
   it("should show help", () => {
     const result = runHardkas("--help");
     expect(result.ok).toBe(true);
@@ -48,7 +48,7 @@ describe.skip("CLI Smoke Tests", () => {
     expect(result.stdout).toContain("TXPLAN");
   });
 
-  it("should verify golden fixtures in strict mode", () => {
+  it.skip("[known gap: strict verify rejects golden fixtures (PARENT_MISSING, snapshot ARTIFACT_SCHEMA_INVALID) -> evidence core] should verify golden fixtures in strict mode", () => {
     const fixtureDir = path.resolve(
       __dirname,
       "../../../packages/artifacts/test/fixtures/golden"

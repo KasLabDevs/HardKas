@@ -11,6 +11,7 @@ import { loadKaspaWasm, WasmProviderConfig } from "./signer-backend.js";
 import { KeystoreManager } from "./keystore.js";
 import { DEV_ACCOUNTS_PASSWORD } from "./dev-accounts.js";
 import { parseWasmTxToRpc } from "./internal/wasm-rpc-serialization.js";
+import { createBalancedTransaction } from "./wasm-transaction.js";
 
 export interface KaspaWasmSignerOptions {
   account?: HardkasKaspaAccount;
@@ -20,8 +21,7 @@ export interface KaspaWasmSignerOptions {
 
 
 /**
- * Real Kaspa signer using the official WASM SDK.
- * Only works if the 'kaspa' package is installed.
+ * Real Kaspa signer using the official WASM SDK (the pinned managed toolchain).
  */
 export class KaspaWasmPrivateKeySigner implements HardkasTxPlanSigner {
   kind: HardkasSignerKind = "kaspa";
@@ -164,40 +164,35 @@ export class KaspaWasmPrivateKeySigner implements HardkasTxPlanSigner {
       const priorityFee = BigInt(plan.estimatedFeeSompi);
 
       const createFreshTx = () => {
-        let unsignedTx;
+        const isV1 = plan.txVersion === 1;
+        if (isV1 && !capabilities.transactionV1Signing) {
+          throw new Error("Transaction V1 signing is not supported by the installed kaspa-wasm version");
+        }
 
-        if (plan.txVersion === 1) {
-          if (!capabilities.transactionV1Signing) {
-            throw new Error("Transaction V1 signing is not supported by the installed kaspa-wasm version");
-          }
-
-          // V1 `createTransaction` requires the change to be explicitly in the outputs array
-          const allOutputs = [...plan.outputs];
-          if (plan.change) {
-            allOutputs.push({
-              address: plan.change.address,
-              amountSompi: plan.change.amountSompi
-            });
-          }
-
-          const wasmOutputs = allOutputs.map((o, idx) => {
-            if (!o.address) throw new Error("Output is missing address.");
-            
-            if (o.covenant && o.covenant.covenantId) {
-              const hash = new sdk.Hash(o.covenant.covenantId);
-              const binding = new sdk.CovenantBinding(o.covenant.authorizingInput, hash);
-              return sdk.PaymentOutput.withCovenant(new sdk.Address(o.address), BigInt(o.amountSompi), binding);
-            }
-            
-            return new sdk.PaymentOutput(new sdk.Address(o.address), BigInt(o.amountSompi));
+        // kaspa-wasm 2.x adds no change output: change is an explicit output, and
+        // createBalancedTransaction refuses plans whose values do not balance.
+        const allOutputs = [...plan.outputs];
+        if (plan.change && BigInt(plan.change.amountSompi) > 0n) {
+          allOutputs.push({
+            address: plan.change.address,
+            amountSompi: plan.change.amountSompi
           });
+        }
 
-          unsignedTx = sdk.createTransaction(
-            utxos,
-            wasmOutputs,
-            priorityFee
-          );
+        // WASM objects are consumed when passed by value, so each call builds fresh ones.
+        const outputs = allOutputs.map((o) => {
+          if (!o.address) throw new Error("Output is missing address.");
+          const amount = BigInt(o.amountSompi);
+          if (isV1 && o.covenant && o.covenant.covenantId) {
+            const binding = new sdk.CovenantBinding(o.covenant.authorizingInput, new sdk.Hash(o.covenant.covenantId));
+            return { amountSompi: amount, output: sdk.PaymentOutput.withCovenant(new sdk.Address(o.address), amount, binding) };
+          }
+          return { amountSompi: amount, output: new sdk.PaymentOutput(new sdk.Address(o.address), amount) };
+        });
 
+        const unsignedTx = createBalancedTransaction(sdk, { utxos, outputs, feeSompi: priorityFee });
+
+        if (isV1) {
           // Group outputs with empty covenantId by authorizingInput to populate genesis covenants
           const genesisGroups = new Map<number, number[]>();
           allOutputs.forEach((o, idx) => {
@@ -219,34 +214,6 @@ export class KaspaWasmPrivateKeySigner implements HardkasTxPlanSigner {
           if (plan.storageMass !== undefined) {
             unsignedTx.storageMass = BigInt(plan.storageMass);
           }
-
-        } else {
-          const allOutputs = [...plan.outputs];
-          if (plan.change) {
-            allOutputs.push({
-              address: plan.change.address,
-              amountSompi: plan.change.amountSompi
-            });
-          }
-
-          const wasmOutputs = allOutputs.map((o) => {
-            if (!o.address) throw new Error("Output is missing address.");
-            return {
-              address: o.address,
-              amount: BigInt(o.amountSompi)
-            };
-          });
-
-          const dummyChange =
-            (plan.change && plan.change.address) ||
-            (typeof plan.from === "string" ? plan.from : (plan.from as any)?.address) ||
-            (plan.outputs && plan.outputs[0] && plan.outputs[0].address);
-          unsignedTx = sdk.createTransaction(
-            utxos,
-            wasmOutputs,
-            dummyChange,
-            priorityFee
-          );
         }
 
         const inputs = unsignedTx.inputs;
@@ -259,7 +226,6 @@ export class KaspaWasmPrivateKeySigner implements HardkasTxPlanSigner {
             inputs[i].sigOpCount = 0;
           }
         }
-        // unsignedTx.inputs = inputs; // Removed: kaspa-wasm 0.13.0 exposes only a getter
         return unsignedTx;
       };
 
@@ -318,12 +284,8 @@ export class KaspaWasmPrivateKeySigner implements HardkasTxPlanSigner {
       const finalTx = createFreshTx();
       const signedTx = finalTx;
 
-      // 6. Serialize
-      const wasmTxStr = typeof (signedTx as any).serializeToJSON === "function" 
-        ? (signedTx as any).serializeToJSON() 
-        : signedTx.toString();
-      
-      const rpcTx = parseWasmTxToRpc(wasmTxStr, signedTx, inputOverrides, plan);
+      // 6. Serialize (serializeToObject keeps amounts as exact bigints)
+      const rpcTx = parseWasmTxToRpc(signedTx.serializeToObject(), signedTx, inputOverrides, plan);
       const rawTx = JSON.stringify(rpcTx);
 
       return {

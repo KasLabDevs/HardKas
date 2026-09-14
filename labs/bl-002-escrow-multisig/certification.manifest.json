@@ -1,9 +1,0 @@
-{
-  "lab": "bl-002-escrow-multisig",
-  "requiredGates": [
-    "integrity",
-    "typescript",
-    "rust",
-    "repeatability"
-  ]
-}

@@ -363,24 +363,26 @@ export class HardkasTx {
     const networkConfig = this.sdk.config.config.networks?.[activeNetwork];
     const coinbaseMaturity = getCoinbaseMaturity(activeNetwork, networkConfig?.kind === "kaspa-node" || networkConfig?.kind === "kaspa-rpc" || networkConfig?.kind === "simulated" ? networkConfig.consensusParams : undefined);
     
+    // Priority is a fee RATE; the fee itself is computed by the planner with the
+    // SDK over the real transaction (amounts included, so storage mass counts).
+    // A fixed fee estimated from the shape alone cannot know that.
+    let feeRate = options.feeRate;
+    if (feeRate === undefined) {
+      ({ feeRate } = await this.sdk.fees.estimate({
+        priority: "normal",
+        inputs: 1,
+        outputs: 2,
+        network: activeNetwork as NetworkId
+      }));
+    }
+
     const planService = new TxPlanService(utxoProvider, { coinbaseMaturity });
     const result = await planService.planTransaction({
       fromAddress: fromAccount.address,
       toAddress: toAccount.address,
       amountSompi,
-      ...(options.feeRate !== undefined ? { feeRate: options.feeRate } : {}),
-      ...(options.feeRate === undefined ? {
-        feeEstimator: async (inputs: number, outputs: number) => {
-          const { estimatedFee } = await this.sdk.fees.estimate({
-            priority: "normal",
-            inputs,
-            outputs,
-            version: 1,
-            network: activeNetwork as NetworkId
-          });
-          return estimatedFee;
-        }
-      } : {})
+      feeRate,
+      networkId: activeNetwork
     });
 
     const builderPlan = result.plan;

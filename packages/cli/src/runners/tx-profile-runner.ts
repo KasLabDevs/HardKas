@@ -1,6 +1,6 @@
 import { getOutput } from "../output.js";
 import { readArtifact, TxPlanArtifact } from "@hardkas/artifacts";
-import { estimateTransactionMass, MassBreakdown } from "@hardkas/tx-builder";
+import { estimateTransactionMass, calculateUpstreamMass, MassBreakdown } from "@hardkas/tx-builder";
 import { UI } from "../ui.js";
 import { formatSompiToKas } from "@hardkas/core";
 import path from "node:path";
@@ -22,11 +22,23 @@ export async function runTxProfile(options: TxProfileOptions) {
     throw new Error(`Artifact at ${options.path} is not a valid transaction plan.`);
   }
 
+  // Breakdown by shape (SDK totals, differenced); the total is the SDK's mass
+  // for the plan's own transaction, amounts included.
   const result = estimateTransactionMass({
     inputCount: plan.inputs.length,
     outputs: plan.outputs,
-    hasChange: !!plan.change
+    hasChange: !!plan.change,
+    networkId: plan.networkId
   });
+  const upstream = calculateUpstreamMass({
+    networkId: plan.networkId,
+    inputs: plan.inputs.map((i: any) => ({ amountSompi: BigInt(i.amountSompi), outpoint: i.outpoint, scriptPublicKey: i.scriptPublicKey })),
+    outputs: [
+      ...plan.outputs.map((o: any) => ({ amountSompi: BigInt(o.amountSompi), address: o.address })),
+      ...(plan.change ? [{ amountSompi: BigInt(plan.change.amountSompi), address: plan.change.address }] : [])
+    ]
+  });
+  result.mass = upstream.mass;
 
   UI.header(`Transaction Profile: ${path.basename(options.path)}`);
 

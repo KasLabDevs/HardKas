@@ -36,7 +36,7 @@ describe("BL-001B - Simnet Broadcast Validation", () => {
 
   beforeAll(async () => {
     // Dynamically import kaspa-wasm to avoid top-level load errors in some environments
-    const kaspa = await import("kaspa-wasm");
+    const kaspa = (await (await import("@hardkas/accounts")).loadKaspaWasm());
     identities = await generateIdentities();
     multisig = createCanonicalMultisig([identities.alice, identities.bob, identities.charlie], 2);
     
@@ -117,7 +117,7 @@ describe("BL-001B - Simnet Broadcast Validation", () => {
 
   const runCeremony = async () => {
     // Dynamically import kaspa-wasm to avoid top-level load errors in some environments
-    const kaspa = await import("kaspa-wasm");
+    const kaspa = (await (await import("@hardkas/accounts")).loadKaspaWasm());
     
     // 1. Mine blocks until a coinbase UTXO is mature
     console.log(`Waiting for coinbase maturity...`);

@@ -1,6 +1,5 @@
 import http from 'http';
 import { initializeHardKAS } from '@showcase/shared-backend';
-import { SilverToolkit } from '@hardkas/toolkit';
 const PORT = 4061;
 const SSE_CLIENTS = [];
 function broadcastSSE(data) {
@@ -10,9 +9,9 @@ function broadcastSSE(data) {
     }
 }
 async function runGauntlet() {
-    broadcastSSE({ type: 'STATUS', message: 'Starting real simnet gauntlet...' });
+    broadcastSSE({ type: 'STATUS', message: 'Starting mock showcase run (no SilverScript compiler, no script execution)...' });
     try {
-        broadcastSSE({ type: 'STATUS', message: `Connected to Kaspa Node: 1.1.0 (Virtual Sync)` });
+        broadcastSSE({ type: 'STATUS', message: `Mock run: no node is contacted` });
         const actors = [];
         for (let i = 0; i < 10; i++) {
             actors.push(`Compiler_${i}`);
@@ -23,9 +22,9 @@ async function runGauntlet() {
             const wIdx = i % actors.length;
             const gas = Math.floor(Math.random() * 500) + 100;
             try {
-                broadcastSSE({ type: 'OP_START', id: wIdx, op: `Compiling SilverScript...` });
+                broadcastSSE({ type: 'OP_START', id: wIdx, op: `Mock compile (source hex, no compiler)...` });
                 await new Promise(r => setTimeout(r, 150));
-                broadcastSSE({ type: 'OP_START', id: wIdx, op: `Simulating execution (Gas: ${gas})...` });
+                broadcastSSE({ type: 'OP_START', id: wIdx, op: `Mock simulation (nothing executes, gas figure is random: ${gas})...` });
                 await new Promise(r => setTimeout(r, 150));
                 const artifactHash = `art_${Math.random().toString(36).substring(2, 9)}`;
                 broadcastSSE({ type: 'OP_DONE', id: wIdx, op: `Artifact Built: ${artifactHash}` });
@@ -37,7 +36,7 @@ async function runGauntlet() {
             operations++;
             await new Promise(r => setTimeout(r, 250));
         }
-        broadcastSSE({ type: 'STATUS', message: `Gauntlet complete. Executed ${operations} real operations.` });
+        broadcastSSE({ type: 'STATUS', message: `Mock run complete: ${operations} mock operations.` });
     }
     catch (e) {
         broadcastSSE({ type: 'STATUS', message: `Gauntlet failed: ${e.message}` });
@@ -45,8 +44,6 @@ async function runGauntlet() {
 }
 async function bootstrap() {
     await initializeHardKAS('silver-playground');
-    // We instantiate SilverToolkit
-    const silverToolkit = SilverToolkit.open();
     const server = http.createServer(async (req, res) => {
         res.setHeader('Access-Control-Allow-Origin', '*');
         res.setHeader('Content-Type', 'application/json');
@@ -87,9 +84,9 @@ async function bootstrap() {
             res.writeHead(200);
             res.end(JSON.stringify({
                 success: true,
-                computeBudget: 1500,
-                v1GuardPassed: true,
-                message: 'Simulation successful. Covenant constraints met.'
+                mock: true,
+                computeBudget: 'n/a (mock)',
+                message: 'Mock response: no script was executed and no covenant was checked. Real SilverScript: hardkas silver.'
             }));
             return;
         }

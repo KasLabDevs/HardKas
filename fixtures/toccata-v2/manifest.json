@@ -7,7 +7,13 @@
   "components": {
     "silver": {
       "path": "silver",
-      "status": "SILVERSCRIPT_BUILDER_READY"
+      "schema": "hardkas.silverCorpus.v1",
+      "capabilities": [
+        "silver.compile.v1",
+        "silver.p2sh.deploy-spend.v1",
+        "silver.p2sh.relative-timelock.v1",
+        "toccata.covenant.auth-1to1-transition.v1"
+      ]
     },
     "zk": {
       "path": "zk",

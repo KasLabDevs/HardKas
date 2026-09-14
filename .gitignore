@@ -67,7 +67,12 @@ Thumbs.db
 /temp-artifacts/
 /test-artifacts/
 /test-audit/
-/packages/cli/test-gauntlet/
+/packages/cli/test-gauntlet/*
+!/packages/cli/test-gauntlet/real-node/
+/packages/cli/test-gauntlet/real-node/*
+# SilverScript real-node runners: the golden corpus names them as its generator.
+!/packages/cli/test-gauntlet/real-node/silver-e2e.mjs
+!/packages/cli/test-gauntlet/real-node/run-silver-*.mjs
 /runs/
 
 # Local generated source/build leftovers

@@ -5,6 +5,9 @@ import { pathToFileURL } from "node:url";
 
 const root = process.cwd();
 const { HardkasSchemas } = await import(pathToFileURL(path.join(root, "packages", "artifacts", "dist", "index.js")));
+const { KASPAD_REFERENCE_IMAGE, CPUMINER_REFERENCE_IMAGE, CANONICAL_LOCALNET } = await import(
+  pathToFileURL(path.join(root, "packages", "core", "dist", "index.js"))
+);
 
 const cli = path.join(root, "packages", "cli", "dist", "index.js");
 const realNodeDir = path.join(root, "packages", "cli", "test-gauntlet", "real-node");
@@ -18,11 +21,14 @@ Runs the local Toccata v2 baseline gauntlet.
 
 Preconditions:
   - Docker Toccata v2 simnet node reachable on ws://127.0.0.1:18210
-  - upstream CPU miner image available as kaspanet/cpuminer:latest (docker pull kaspanet/cpuminer)
+    (reference image: ${KASPAD_REFERENCE_IMAGE})
+  - upstream CPU miner image available locally (docker pull ${CPUMINER_REFERENCE_IMAGE})
   - fixture account has mature simnet funds, or localnet fund has been run
+  - managed toolchains installed: hardkas toolchain install kaspa-wasm && hardkas toolchain install silverc
 
-Known accepted warning:
-  - PARTIAL_VM_SIMULATION`);
+SilverScript capabilities, each reported on its own:
+  silver.compile.v1, silver.p2sh.deploy-spend.v1, toccata.covenant.auth-1to1-transition.v1
+  (and the golden corpus: fixtures/toccata-v2/silver). No simulated step counts.`);
   process.exit(0);
 }
 
@@ -73,118 +79,72 @@ function writeReport(status, details = {}) {
     schema : HardkasSchemas.ToccataGauntletV1,
     status,
     generatedAt: new Date().toISOString(),
-    partialKnownLimitations: ["PARTIAL_VM_SIMULATION"],
     phases,
     ...details
   };
   fs.writeFileSync(reportPath, `${JSON.stringify(report, null, 2)}\n`, "utf8");
 }
 
-function latestFile(cwd, predicate) {
-  const matches = fs
-    .readdirSync(cwd)
-    .filter(predicate)
-    .map((name) => ({ name, mtimeMs: fs.statSync(path.join(cwd, name)).mtimeMs }))
-    .sort((a, b) => b.mtimeMs - a.mtimeMs);
-  if (!matches.length) throw new Error(`No matching artifact found in ${cwd}`);
-  return matches[0].name;
-}
-
 function tryDocker(args, stdio = "ignore") {
   execFileSync("docker", args, { cwd: root, stdio });
 }
 
-async function ensureOpTrueCompileArtifact() {
-  const artifactPath = path.join(realNodeDir, "silver-manual-optrue.json");
-  const sourcePath = path.join(realNodeDir, "op_true.sil");
-  const source = "op_true();";
-
-  if (fs.existsSync(artifactPath)) return artifactPath;
-
-  const artifacts = await import(
-    pathToFileURL(path.join(root, "packages", "artifacts", "dist", "index.js"))
-  );
-  const { createHash } = await import("node:crypto");
-  fs.writeFileSync(sourcePath, source, "utf8");
-
-  const artifact = {
-    schema : HardkasSchemas.SilverCompile,
-    hardkasVersion: artifacts.HARDKAS_VERSION,
-    version: "1.0.0-alpha",
-    hashVersion: 4,
-    networkId: "simnet",
-    mode: "simulated",
-    createdAt: new Date().toISOString(),
-    sourcePath,
-    sourceHash: createHash("sha256").update(source).digest("hex"),
-    compilerName: "manual-op-true-fixture",
-    compilerVersion: "toccata-baseline",
-    compilerCommand: "manual OP_TRUE fixture",
-    compiledScriptHex: "51",
-    compiledScriptHash: createHash("sha256")
-      .update(Buffer.from("51", "hex"))
-      .digest("hex"),
-    abi: {},
-    network: "simnet",
-    assumptions: ["toccata-v2", "mainnet-disabled", "manual-op-true-fixture"]
-  };
-  artifact.contentHash = artifacts.calculateContentHash(artifact, 4);
-  artifact.artifactId = "silver-manual-optrue";
-  await artifacts.writeArtifact(artifactPath, artifact);
-  return artifactPath;
+/** `hardkas silver ... --json` in the real-node workspace: the record it wrote. */
+function silverJson(args) {
+  const out = runHardkas(["silver", ...args, "--json"], { cwd: realNodeDir });
+  return JSON.parse(out.slice(out.indexOf("{")));
 }
 
-const MINER_IMAGE = "kaspanet/cpuminer:latest";
-const MINER_CONTAINER = "hardkas-toccata-miner";
-const NODE_CONTAINER = "hardkas-kaspad-toccata-v2";
+/** The expected refusal of a `hardkas` command, by error code. */
+function expectHardkasFailure(args, code) {
+  try {
+    runHardkas(args, { cwd: realNodeDir });
+  } catch (error) {
+    const output = `${error.stdout || ""}${error.stderr || ""}${error.message || ""}`;
+    if (output.includes(code)) return;
+    throw error;
+  }
+  throw new Error(`expected ${code}, the command succeeded`);
+}
+
+const MINER_IMAGE = process.env.HARDKAS_TOCCATA_MINER_IMAGE || CPUMINER_REFERENCE_IMAGE;
+const MINER_CONTAINER = CANONICAL_LOCALNET.minerContainerName;
+const NODE_CONTAINER = CANONICAL_LOCALNET.containerName;
+// Set by the "node identity" phase and written into every report.
+let nodeIdentity;
 const NODE_GRPC_PORT = "16210";
 
 /**
- * Mines a short burst of blocks to `address` using the upstream Kaspa CPU miner.
+ * The upstream Kaspa CPU miner, kept running while `--wait` commands poll for
+ * their outputs.
  *
  * The miner joins the node's network namespace rather than talking to it over
  * the host: kaspad binds its gRPC server to loopback inside its own container,
  * so no other container can reach it by host address.
  *
- * The miner is stopped before returning, and the DAG is given a moment to
- * settle. Planning against a node that is still accepting blocks fails with
- * UTXO_VIRTUAL_STATE_UNSTABLE, because the virtual state moves underneath UTXO
- * selection.
+ * `--throttle` is a HARNESS-LOCAL knob (`HARDKAS_TOCCATA_MINER_THROTTLE_MS`,
+ * default 5 ms): it keeps the local miner from outrunning the node's UTXO
+ * validation on this machine. It is not a Kaspa or Toccata protocol parameter,
+ * is not evidence of anything about consensus, and does not belong in any
+ * capability claim. The value used in a run is recorded in the report.
  */
-function mineBriefly(address) {
+function startMiner(address) {
+  tryDocker(["image", "inspect", MINER_IMAGE]);
   try {
-    tryDocker(["image", "inspect", MINER_IMAGE]);
-    try {
-      tryDocker(["rm", "-f", MINER_CONTAINER]);
-    } catch {}
-    tryDocker([
-      "run",
-      "-d",
-      "--name",
-      MINER_CONTAINER,
-      `--network=container:${NODE_CONTAINER}`,
-      MINER_IMAGE,
-      "--mining-address",
-      address,
-      "--kaspad-address",
-      "127.0.0.1",
-      "--port",
-      NODE_GRPC_PORT,
-      "--threads",
-      "1",
-      "--mine-when-not-synced"
-    ]);
-    runNode(["-e", "setTimeout(()=>{}, 6000)"]);
-  } finally {
-    try {
-      tryDocker(["stop", MINER_CONTAINER]);
-    } catch {}
-    try {
-      tryDocker(["rm", "-f", MINER_CONTAINER]);
-    } catch {}
-    // Let the DAG settle before anything selects UTXOs.
-    runNode(["-e", "setTimeout(()=>{}, 5000)"]);
-  }
+    tryDocker(["rm", "-f", MINER_CONTAINER]);
+  } catch {}
+  const throttle = process.env.HARDKAS_TOCCATA_MINER_THROTTLE_MS ?? "5";
+  tryDocker([
+    "run", "-d", "--name", MINER_CONTAINER, `--network=container:${NODE_CONTAINER}`, MINER_IMAGE,
+    "--mining-address", address, "--kaspad-address", "127.0.0.1", "--port", NODE_GRPC_PORT,
+    "--threads", "1", "--mine-when-not-synced", ...(throttle !== "0" ? ["--throttle", throttle] : [])
+  ]);
+}
+
+function stopMiner() {
+  try {
+    tryDocker(["rm", "-f", MINER_CONTAINER]);
+  } catch {}
 }
 
 async function main() {
@@ -199,6 +159,33 @@ async function main() {
     });
     throw error;
   }
+
+  // Managed toolchains: the pinned Kaspa SDK and the pinned silverc release,
+  // verified file by file. Nothing from PATH, nothing built locally.
+  const doctor = JSON.parse(runHardkas(["silver", "doctor", "--json"]));
+  const toolchains = doctor.toolchains;
+  if (!toolchains?.["kaspa-wasm"]?.ok || !toolchains?.silverc?.ok) {
+    record("managed toolchains", "FAIL", { toolchains });
+    throw new Error(`MANAGED_TOOLCHAINS_UNAVAILABLE: ${JSON.stringify(toolchains)}`);
+  }
+  record("managed toolchains", "PASS", { toolchains, silverscript: doctor.silverscript });
+
+  // Which rusty-kaspad this run is validated against. Not the name on a port:
+  // container identity + image digest + endpoint ownership + network/version.
+  const { verifyNodeIdentity } = await import(
+    pathToFileURL(path.join(root, "packages", "node-runner", "dist", "index.js"))
+  );
+  nodeIdentity = await verifyNodeIdentity();
+  if (!nodeIdentity.verified) {
+    record("node identity", "FAIL", { problems: nodeIdentity.problems });
+    throw new Error(`NODE_IDENTITY_UNVERIFIED: ${nodeIdentity.problems.join("; ")}`);
+  }
+  record("node identity", "PASS", {
+    container: nodeIdentity.observed.container?.name,
+    imageDigest: nodeIdentity.expected.imageDigest,
+    serverVersion: nodeIdentity.observed.server?.serverVersion,
+    network: nodeIdentity.observed.server?.networkId
+  });
 
   runHardkas(["doctor", "--json"]);
   record("doctor", "PASS");
@@ -222,173 +209,156 @@ async function main() {
   if (!bob?.privateKey || !bob?.address)
     throw new Error("fresh_bob account missing after real-node gauntlet");
 
-  const compileArtifact = await ensureOpTrueCompileArtifact();
-  runHardkas(["silver", "verify", compileArtifact], { cwd: realNodeDir });
-  record("silver compile fixture verify", "PASS");
+  // ---- SilverScript v1 against the verified node. Each capability is reported on its own.
+  const core = await import(pathToFileURL(path.join(root, "packages", "core", "dist", "index.js")));
+  const k = core.loadManagedKaspaWasmSync();
+  const bobXOnly = String(new k.PrivateKey(bob.privateKey).toPublicKey().toXOnlyPublicKey().toString());
+  const work = path.join(realNodeDir, ".hardkas", "gauntlet-silver");
+  fs.rmSync(work, { recursive: true, force: true });
+  fs.mkdirSync(work, { recursive: true });
+  const corpusDir = path.join(root, "fixtures", "toccata-v2", "silver");
+  const writeWork = (name, content) => {
+    fs.writeFileSync(path.join(work, name), content);
+    return path.relative(realNodeDir, path.join(work, name));
+  };
+  const capabilities = {};
 
-  const beforeDeployPlans = new Set(fs.readdirSync(realNodeDir));
-  runHardkas(
-    [
-      "silver",
-      "deploy-plan",
-      "silver-manual-optrue.json",
-      "--from",
-      bob.name,
-      "--amount",
-      "1",
-      "--network",
-      "simnet"
-    ],
-    { cwd: realNodeDir }
-  );
-  const deployPlan = latestFile(
-    realNodeDir,
-    (name) =>
-      name.startsWith("silverdeployplan-") &&
-      name.endsWith(".json") &&
-      !beforeDeployPlans.has(name)
-  );
-  record("silver deploy-plan", "PASS", { artifact: deployPlan });
-
-  runHardkas(["silver", "deploy", deployPlan, "--private-key", bob.privateKey], {
-    cwd: realNodeDir
+  // silver.compile.v1: a SignedRelease owned by bob (the golden case's source), reproduced byte for byte.
+  const releaseSource = writeWork("signed-release.sil", fs.readFileSync(path.join(corpusDir, "p2sh-signed-release", "contract.sil")));
+  const ownerArgs = writeWork("signed-release.args.json", JSON.stringify([{ kind: "bytes", value: [...Buffer.from(bobXOnly, "hex")] }]));
+  const compiled = silverJson(["compile", releaseSource, "--args", ownerArgs]);
+  record("silver compile", "PASS", {
+    capability: "silver.compile.v1",
+    compiler: `silverc ${compiled.provenance.compiler.releaseTag} ${compiled.provenance.compiler.binarySha256}`,
+    artifactSha256: compiled.provenance.artifactSha256
   });
-  const deployArtifact = latestFile(
-    realNodeDir,
-    (name) => name.startsWith("silverdeploy-") && name.endsWith(".json")
-  );
-  record("silver deploy real", "PASS", { artifact: deployArtifact });
+  const reproduced = silverJson(["verify", compiled.recordPath, "--args", ownerArgs]);
+  if (!reproduced.reproduced) throw new Error(`SILVER_NOT_REPRODUCED: ${reproduced.problems.join("; ")}`);
+  record("silver compile reproduced", "PASS", { artifactSha256: reproduced.artifactSha256 });
+  capabilities["silver.compile.v1"] = "PASS";
 
-  mineBriefly(bob.address);
-  record("miner confirmation after deploy", "PASS");
-
-  const argsPath = path.join(realNodeDir, "args-empty.json");
-  if (!fs.existsSync(argsPath))
-    fs.writeFileSync(argsPath, '{\n  "args": []\n}\n', "utf8");
-  runHardkas(
-    [
-      "silver",
-      "spend-plan",
-      deployArtifact,
-      "--args",
-      "args-empty.json",
-      "--to",
-      bob.address
-    ],
-    { cwd: realNodeDir }
+  expectHardkasFailure(
+    ["silver", "deploy", compiled.recordPath, "--from", bob.name, "--amount", "1", "--network", "mainnet"],
+    "SILVERSCRIPT_MAINNET_NOT_ENABLED"
   );
-  const spendPlan = latestFile(
-    realNodeDir,
-    (name) => name.startsWith("silverspendplan-") && name.endsWith(".json")
-  );
-  record("silver spend-plan", "PASS", { artifact: spendPlan });
-
-  runHardkas(["silver", "spend", spendPlan], { cwd: realNodeDir });
-  const realReceipt = latestFile(
-    realNodeDir,
-    (name) => name.startsWith("silverreceipt-") && name.endsWith(".json")
-  );
-  record("silver spend real", "PASS", { artifact: realReceipt });
-
-  mineBriefly(bob.address);
-  record("miner confirmation after spend", "PASS");
-
-  runHardkas(["silver", "simulate", "deploy", deployPlan], { cwd: realNodeDir });
-  const deploySim = latestFile(
-    realNodeDir,
-    (name) => name.startsWith("silverdeploysim-") && name.endsWith(".json")
-  );
-
-  const artifacts = await import(
-    pathToFileURL(path.join(root, "packages", "artifacts", "dist", "index.js"))
-  );
-  const realSpendPlan = JSON.parse(
-    fs.readFileSync(path.join(realNodeDir, spendPlan), "utf8")
-  );
-  const deploySimArtifact = JSON.parse(
-    fs.readFileSync(path.join(realNodeDir, deploySim), "utf8")
-  );
-  delete realSpendPlan.contentHash;
-  delete realSpendPlan.artifactId;
-  realSpendPlan.deployArtifactHash = deploySimArtifact.contentHash;
-  realSpendPlan.contractUtxoRef = deploySimArtifact.syntheticOutpoint;
-  realSpendPlan.createdAt = new Date().toISOString();
-  realSpendPlan.contentHash = artifacts.calculateContentHash(realSpendPlan, 4);
-  realSpendPlan.artifactId = `silverspendplan-${realSpendPlan.contentHash.substring(0, 16)}`;
-  const simulatedSpendPlan = `${realSpendPlan.artifactId}.json`;
-  await artifacts.writeArtifact(
-    path.join(realNodeDir, simulatedSpendPlan),
-    realSpendPlan
-  );
-
-  runHardkas(["silver", "simulate", "spend", simulatedSpendPlan], { cwd: realNodeDir });
-  const spendSim = latestFile(
-    realNodeDir,
-    (name) => name.startsWith("silverspendsim-") && name.endsWith(".json")
-  );
-  record("silver simulate deploy/spend", "PASS", { deploySim, spendSim });
-
-  const compareOut = runHardkas(
-    ["silver", "simulate", "compare", "--simulated", spendSim, "--docker", realReceipt],
-    { cwd: realNodeDir }
-  );
-  if (compareOut.includes("SILVERSCRIPT_SIMULATION_MATCH")) {
-    record("simulator/docker compare", "PASS", {
-      compareMode: "artifact-coherence",
-      expectedKnownLimitation: compareOut.includes("PARTIAL_VM_SIMULATION")
-        ? "PARTIAL_VM_SIMULATION"
-        : undefined
-    });
-  } else if (compareOut.includes("PARTIAL_VM_SIMULATION")) {
-    record("simulator/docker compare", "WARN", {
-      expectedKnownLimitation: "PARTIAL_VM_SIMULATION"
-    });
-  } else {
-    throw new Error(`Unexpected simulator compare output:\n${compareOut}`);
-  }
-
-  runHardkas(["corpus", "verify", "fixtures/toccata-v2/silver", "--json"]);
-  record("toccata golden corpus verify", "PASS", { path: "fixtures/toccata-v2/silver" });
-
-  try {
-    runHardkas(
-      [
-        "silver",
-        "deploy-plan",
-        "silver-manual-optrue.json",
-        "--from",
-        bob.name,
-        "--amount",
-        "1",
-        "--network",
-        "mainnet"
-      ],
-      { cwd: realNodeDir }
-    );
-    throw new Error("Mainnet guard did not fail");
-  } catch (error) {
-    const output = `${error.stdout || ""}${error.stderr || ""}${error.message || ""}`;
-    if (!output.includes("SILVERSCRIPT_MAINNET_NOT_ENABLED")) throw error;
-  }
   record("mainnet guard", "PASS");
+
+  startMiner(bob.address);
+  try {
+    // silver.p2sh.deploy-spend.v1: the node accepts the funding and the signed entry call.
+    const deployed = silverJson(["deploy", compiled.recordPath, "--from", bob.name, "--amount", "1", "--wait"]);
+    record("silver deploy real", "PASS", {
+      capability: "silver.p2sh.deploy-spend.v1",
+      txId: deployed.txId,
+      address: deployed.address,
+      confirmedAtBlockDaaScore: deployed.confirmedAtBlockDaaScore
+    });
+    const spendArgs = writeWork("release.args.json", JSON.stringify([{ kind: "signature", account: bob.name }]));
+    const spent = silverJson(["spend", deployed.recordPath, "--entry", "release", "--to", bob.address, "--args", spendArgs, "--wait"]);
+    record("silver spend real", "PASS", {
+      capability: "silver.p2sh.deploy-spend.v1",
+      txId: spent.txId,
+      entry: spent.entry,
+      dispatchTag: spent.dispatchTag,
+      confirmedAtBlockDaaScore: spent.confirmedAtBlockDaaScore
+    });
+    capabilities["silver.p2sh.deploy-spend.v1"] = "PASS";
+
+    // toccata.covenant.auth-1to1-transition.v1: genesis bound to the SDK-derived
+    // covenant id (reported back by the node), then one state transition.
+    const counterSource = writeWork("counter.sil", fs.readFileSync(path.join(corpusDir, "covenant-counter-transition", "current.sil")));
+    const counterArgs = writeWork("counter.args.json", JSON.stringify([{ kind: "int", value: 7 }]));
+    const counter = silverJson(["compile", counterSource, "--args", counterArgs]);
+    // Budget 10 covers the P2PK funding input's Schnorr check (certified by the node in the corpus run).
+    // The fee is explicit (the SDK does not price v1 budgets) and must clear the SDK minimum, which
+    // storage mass drives: 10 KAS keeps it near 0.004 KAS (a 1 KAS output needs 0.04 KAS).
+    const genesis = silverJson([
+      "covenant", "genesis", counter.recordPath, "--from", bob.name, "--amount", "10",
+      "--compute-budget", "10", "--fee", "1000000", "--wait"
+    ]);
+    if (genesis.covenantIdFromNode !== genesis.covenantId) {
+      throw new Error(`COVENANT_ID_MISMATCH: node ${genesis.covenantIdFromNode}, SDK ${genesis.covenantId}`);
+    }
+    record("covenant genesis", "PASS", {
+      capability: "toccata.covenant.auth-1to1-transition.v1",
+      covenantId: genesis.covenantId,
+      txId: genesis.txId,
+      computeBudget: genesis.computeBudget
+    });
+    const nextState = writeWork("counter.next-state.json", JSON.stringify({ value: { kind: "int", value: 12 } }));
+    const bumpArgs = writeWork("bump.args.json", JSON.stringify([{ kind: "int", value: 5 }]));
+    const transition = silverJson([
+      "covenant", "transition", genesis.recordPath, "--policy", "bump", "--constructor-args", counterArgs,
+      "--state-map", JSON.stringify({ value: 0 }), "--next-state", nextState, "--args", bumpArgs,
+      "--compute-budget", "0", "--wait"
+    ]);
+    if (transition.covenantIdFromNode !== genesis.covenantId) {
+      throw new Error(`COVENANT_LINEAGE_BROKEN: successor carries ${transition.covenantIdFromNode}`);
+    }
+    record("covenant transition", "PASS", {
+      capability: "toccata.covenant.auth-1to1-transition.v1",
+      covenantId: transition.covenantId,
+      txId: transition.txId,
+      entry: transition.entry,
+      stateGuard: transition.stateGuard
+    });
+    capabilities["toccata.covenant.auth-1to1-transition.v1"] = "PASS";
+  } finally {
+    stopMiner();
+  }
+
+  // Evidence/replay: the golden corpus, recompiled and re-derived offline, per capability.
+  const corpus = JSON.parse(runHardkas(["corpus", "verify", "fixtures/toccata-v2/silver", "--json"]));
+  if (!corpus.ok) throw new Error(`SILVER_CORPUS_VERIFY_FAIL: ${JSON.stringify(corpus.issues)}`);
+  record("silver golden corpus verify", "PASS", {
+    path: "fixtures/toccata-v2/silver",
+    cases: corpus.summary.cases,
+    recompiled: corpus.summary.compilesRecompiled,
+    capabilities: corpus.capabilities
+  });
 
   const report = {
     schema : HardkasSchemas.ToccataGauntletV1,
     status: "HARDKAS_TOCCATA_BASELINE_READY",
     generatedAt: new Date().toISOString(),
-    partialKnownLimitations: ["PARTIAL_VM_SIMULATION"],
+    nodeIdentity,
+    // Independent claims: one failing never voids the others.
+    capabilities,
+    harness: {
+      minerThrottle: {
+        environment: "HARDKAS_TOCCATA_MINER_THROTTLE_MS",
+        valueMs: process.env.HARDKAS_TOCCATA_MINER_THROTTLE_MS ?? "5",
+        purpose: "harness-local rate limit (not a consensus parameter)"
+      }
+    },
     phases
   };
   fs.writeFileSync(reportPath, `${JSON.stringify(report, null, 2)}\n`, "utf8");
   console.log("HARDKAS_TOCCATA_BASELINE_READY");
 }
 
+// The failing real-node command and its output, when run-real-node.mjs recorded one.
+function readRealNodeFailure() {
+  const failurePath = path.join(realNodeDir, ".hardkas", "real-node-failure.json");
+  try {
+    const failure = JSON.parse(fs.readFileSync(failurePath, "utf8"));
+    const tail = (s) => String(s || "").trim().split("\n").slice(-12).join("\n");
+    return { cmd: failure.cmd, stderrTail: tail(failure.stderr), stdoutTail: tail(failure.stdout) };
+  } catch {
+    return undefined;
+  }
+}
+
 main().catch((error) => {
+  const failure = readRealNodeFailure();
   record("gauntlet aborted", "FAIL", {
-    message: error?.message || String(error)
+    message: error?.message || String(error),
+    ...(failure ? { failure } : {})
   });
   writeReport("TOCCATA_NORMALIZATION_BLOCKED_RELEASE_ENV", {
     blocker: error?.message || String(error),
+    ...(nodeIdentity ? { nodeIdentity } : {}),
+    ...(failure ? { failure } : {}),
     nextRequiredCommand: "pnpm build && pnpm test && pnpm gauntlet:toccata"
   });
   console.error(error);

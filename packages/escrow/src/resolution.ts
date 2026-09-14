@@ -1,37 +1,39 @@
-import { EscrowState, EscrowArtifact } from "./types.js";
-// We import sighash signer dynamically or it should be injected.
-// In a full implementation, this package would rely on @hardkas/sdk for building unlocking scripts
+import { ESCROW_BRANCHES, type EscrowBranch, type EscrowRole } from "./escrow-source.js";
+import type { EscrowConfig } from "./types.js";
 
-export async function buildResolutionTx(
-    artifactPath: string,
-    state: EscrowState,
-    utxo: any,
-    destinationSpk: string,
-    amount: bigint,
-    entrypoint: "mutualRelease" | "refundBuyer" | "releaseToSeller",
-    signatures: string[]
-): Promise<any> {
-    const tx = {
-        version: 0,
-        inputs: [{ 
-            previousOutpoint: { transactionId: utxo.outpoint.transactionId, index: utxo.outpoint.index }, 
-            signatureScript: "", 
-            sequence: 0, 
-            sigOpCount: 2 
-        }],
-        outputs: [{ 
-            amount: Number(amount), 
-            scriptPublicKey: { version: 0, scriptPublicKey: destinationSpk } 
-        }],
-        lockTime: 0, 
-        subnetworkId: "0000000000000000000000000000000000000000", 
-        gas: 0, 
-        payload: ""
-    };
+export { ESCROW_BRANCHES, type EscrowBranch, type EscrowRole } from "./escrow-source.js";
 
-    // The actual integration with SilverScript via @hardkas/core or hardkas tool
-    // We mock this slightly since @hardkas/escrow encapsulates the domain rules.
-    // In production, `hardkas.experimental.silver.buildUnlock` would be used here.
+/**
+ * What resolving an escrow through a branch requires, in the contract's terms.
+ *
+ * The spend itself is an ordinary SilverScript P2SH spend: prepare it with
+ * `prepareSilverSpend` (@hardkas/accounts) using these signer slots and
+ * outputs, have each signer `signSilverSpend`, then `finalizeSilverSpend`.
+ * Nothing here signs or builds scripts.
+ */
+export interface EscrowResolution {
+    readonly branch: EscrowBranch;
+    /** The entry's `sig` arguments, as named signer slots in parameter order. */
+    readonly args: readonly { readonly kind: "signer"; readonly signer: EscrowRole }[];
+    /**
+     * The outputs the contract enforces for this branch, or undefined when the
+     * branch leaves the destination to the signers (mutualRelease).
+     */
+    readonly requiredOutputs?: readonly { readonly amountSompi: bigint; readonly scriptPublicKey: { readonly version: 0; readonly script: string } }[];
+}
 
-    return tx;
+export function escrowResolution(config: EscrowConfig, branch: EscrowBranch): EscrowResolution {
+    const spec = ESCROW_BRANCHES[branch];
+    if (!spec) throw new Error(`ESCROW_BRANCH_UNKNOWN: '${branch}' is not an escrow branch`);
+    const args = spec.signers.map((signer) => ({ kind: "signer" as const, signer }));
+    const pay = (amount: bigint | string, spk: string) => [
+        { amountSompi: BigInt(amount), scriptPublicKey: { version: 0 as const, script: spk.replace(/^0x/, "").toLowerCase() } }
+    ];
+    if (branch === "refundBuyer") return { branch, args, requiredOutputs: pay(config.refundAmount, config.buyerDestinationSpk) };
+    if (branch === "releaseToSeller") return { branch, args, requiredOutputs: pay(config.releaseAmount, config.sellerDestinationSpk) };
+    return { branch, args };
+}
+
+export function escrowSigners(branch: EscrowBranch): readonly EscrowRole[] {
+    return ESCROW_BRANCHES[branch].signers;
 }

@@ -15,6 +15,12 @@ export interface DockerKaspadOptions {
   readonly dataDir?: string;
   readonly detach?: boolean;
   readonly allowFloatingImage?: boolean;
+  /**
+   * Opt-in: when Docker is unavailable, report a simulated node instead of
+   * failing. Also enabled by HARDKAS_ALLOW_SIMULATED_NODE=1. Never implied by
+   * a test environment: a simulated node is not a real node.
+   */
+  readonly allowSimulatedFallback?: boolean;
   readonly mineTo?: string | undefined;
 }
 

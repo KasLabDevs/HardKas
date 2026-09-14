@@ -1,6 +1,4 @@
-import {
-  estimateTransactionMass
-} from "@hardkas/tx-builder";
+import { measureUpstreamMass } from "@hardkas/tx-builder";
 import { TxPlan, SignedTx, TxReceipt } from "./schemas.js";
 import { HardkasSchemas } from "@hardkas/core";
 
@@ -15,19 +13,33 @@ export interface FeeAuditResult {
   issues: string[];
 }
 
+/** SDK mass of the plan's own transaction; undefined for a plan without inputs (it has no mass). */
+function planMass(plan: TxPlan) {
+  if (!plan.inputs || plan.inputs.length === 0) return undefined;
+  return measureUpstreamMass({
+    networkId: plan.networkId,
+    version: (plan as any).txVersion === 1 ? 1 : 0,
+    inputs: (plan.inputs || []).map((i: any) => ({
+      amountSompi: BigInt(i.amountSompi || 0),
+      outpoint: i.outpoint,
+      scriptPublicKey: i.scriptPublicKey
+    })),
+    outputs: [
+      ...(plan.outputs || []).map((o: any) => ({ amountSompi: BigInt(o.amountSompi || 0), address: o.address, scriptPublicKey: o.scriptPublicKey })),
+      ...(plan.change ? [{ amountSompi: BigInt(plan.change.amountSompi || 0), address: plan.change.address }] : [])
+    ]
+  });
+}
+
 /**
- * Recomputes mass for a transaction artifact.
+ * Recomputes mass for a transaction artifact with the pinned SDK, over the
+ * plan's own unsigned transaction (real amounts, so storage mass is included).
  */
 export function recomputeMass(artifact: TxPlan | SignedTx | TxReceipt): bigint {
   if (artifact.schema === HardkasSchemas.TxPlan) {
     const plan = artifact as TxPlan;
-    const result = estimateTransactionMass({
-      inputCount: (plan.inputs || []).length,
-      outputs: plan.outputs || [],
-      hasChange: !!plan.change,
-      payloadBytes: 0 // Default for now
-    });
-    return result.mass;
+    // Without inputs there is nothing to price; report the plan's own figure.
+    return planMass(plan)?.mass ?? BigInt(plan.estimatedMass || 0);
   }
 
   if (artifact.schema === HardkasSchemas.TxReceipt) {
@@ -85,13 +97,19 @@ export function verifyFeeSemantics(artifact: any): FeeAuditResult {
   const impliedFeeRate = artifactMass > 0n ? artifactFee / artifactMass : 1n;
   const recomputedFee = recomputedMass * impliedFeeRate;
 
-  // For V1 transactions using Toccata, the fee might be determined by the compute floor
-  // (e.g. 100 * computeGrams) rather than mass * feeRate, which causes rounding issues
-  // when naively recalculating the implied fee rate from mass.
-  const hasComputeBudget = (artifact as any).computeBudget && BigInt((artifact as any).computeBudget) > 0n;
-  const isToccataFee = hasComputeBudget && artifactFee >= 100n * (BigInt((artifact as any).computeBudget) / 100n);
+  // The node's minimum for this exact transaction, from the pinned SDK.
+  if (artifact.schema === HardkasSchemas.TxPlan) {
+    const upstream = planMass(artifact as TxPlan);
+    if (!upstream) {
+      // No inputs: nothing to price (the economic checks below still apply).
+    } else if (!upstream.standard) {
+      issues.push(`Mass ${upstream.mass} exceeds the maximum standard mass ${upstream.maximumStandardMass}: the node will not relay it`);
+    } else if (artifactFee < upstream.minimumFeeSompi) {
+      issues.push(`Fee below network minimum: artifact pays ${artifactFee}, the node requires ${upstream.minimumFeeSompi}`);
+    }
+  }
 
-  if (!isToccataFee && artifactFee !== 0n) {
+  if (artifactFee !== 0n) {
     // When fee is computed externally (e.g. via feeEstimator), the artifact fee
     // may not be exactly mass * rate due to integer division truncation.
     // The truncation error is at most artifactMass - 1.

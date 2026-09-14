@@ -1,9 +1,36 @@
-export function parseWasmTxToRpc(wasmTxStr: string, signedTx?: any, inputOverrides?: Record<number, { signatureScript: string }>, plan?: any): any {
+/** Integer fields the RPC expects as JSON numbers; bigint values above 2^53 are refused, not rounded. */
+function toRpcNumber(value: unknown, field: string): number {
+  if (typeof value === "bigint") {
+    if (value > BigInt(Number.MAX_SAFE_INTEGER)) {
+      throw new Error(`RPC_SERIALIZATION_UNSAFE_INTEGER: ${field} ${value} exceeds 2^53`);
+    }
+    return Number(value);
+  }
+  return typeof value === "number" ? value : Number(value || 0);
+}
+
+function storageMassOf(txInner: any): number {
+  const value = txInner.storageMass ?? txInner.mass;
+  if (value === undefined || value === null) {
+    throw new Error("RPC_STORAGE_MASS_MISSING: the serialized transaction carries no storageMass commitment");
+  }
+  return toRpcNumber(value, "storageMass");
+}
+
+/**
+ * Maps a WASM transaction to the RPC shape. Accepts `tx.serializeToObject()`
+ * (preferred: amounts stay exact bigints) or a JSON string.
+ */
+export function parseWasmTxToRpc(wasmTx: string | object, signedTx?: any, inputOverrides?: Record<number, { signatureScript: string }>, plan?: any): any {
   let parsed: any;
-  try {
-    parsed = JSON.parse(wasmTxStr);
-  } catch (e) {
-    throw new Error("Failed to parse WASM transaction JSON: " + String(e));
+  if (typeof wasmTx === "string") {
+    try {
+      parsed = JSON.parse(wasmTx);
+    } catch (e) {
+      throw new Error("Failed to parse WASM transaction JSON: " + String(e));
+    }
+  } else {
+    parsed = wasmTx;
   }
 
   // Handle both flattened `outputs` and wrapped `{ tx: { inner: ... } }` representations
@@ -15,7 +42,7 @@ export function parseWasmTxToRpc(wasmTxStr: string, signedTx?: any, inputOverrid
   const txInner = parsed.outputs ? parsed : (parsed.tx ? parsed.tx.inner : parsed.inner);
   if (!txInner) throw new Error("Could not find inner tx data");
 
-  const version = txInner.version || 0;
+  const version = toRpcNumber(txInner.version || 0, "version");
   const numInputs = txInner.inputs ? txInner.inputs.length : 0;
 
   if (inputOverrides) {
@@ -48,22 +75,22 @@ export function parseWasmTxToRpc(wasmTxStr: string, signedTx?: any, inputOverrid
         throw new Error(`INVALID_SIGNATURE_SCRIPT: Missing or invalid hex signature script at input ${idx}`);
       }
 
-      const sigOpCount = version === 1 ? 0 : (originalSigOpCount !== undefined ? originalSigOpCount : 1);
+      const sigOpCount = version === 1 ? 0 : (originalSigOpCount !== undefined ? toRpcNumber(originalSigOpCount, "sigOpCount") : 1);
       
       if (version === 1 && sigOpCount !== 0) {
         throw new Error("INVALID_V1_SIG_OP_COUNT: V1 transactions must have sigOpCount = 0.");
       }
       
       const overrideBudget = plan?.computeBudget;
-      const finalComputeBudget = overrideBudget !== undefined ? Number(overrideBudget) : ((computeBudget !== undefined && computeBudget !== 0) ? computeBudget : 0);
+      const finalComputeBudget = overrideBudget !== undefined ? Number(overrideBudget) : toRpcNumber(computeBudget ?? 0, "computeBudget");
 
       return {
         previousOutpoint: {
-          transactionId: prevOut.transactionId || prevOut.transactionId,
-          index: prevOut.index || prevOut.index
+          transactionId: prevOut.transactionId,
+          index: toRpcNumber(prevOut.index ?? 0, "index")
         },
         signatureScript: finalSigScript,
-        sequence: isFlattened ? (i.sequence || 0) : (i.inner.sequence || 0),
+        sequence: toRpcNumber(isFlattened ? (i.sequence || 0) : (i.inner.sequence || 0), "sequence"),
         sigOpCount: sigOpCount,
         computeBudget: finalComputeBudget
       };
@@ -104,11 +131,13 @@ export function parseWasmTxToRpc(wasmTxStr: string, signedTx?: any, inputOverrid
       }
       return ret;
     }),
-    lockTime: txInner.lockTime || 0,
+    lockTime: toRpcNumber(txInner.lockTime || 0, "lockTime"),
     subnetworkId: txInner.subnetworkId || "0000000000000000000000000000000000000000",
-    gas: txInner.gas || 0,
-    mass: txInner.mass || 0,
-    storageMass: txInner.storageMass || 0,
+    gas: toRpcNumber(txInner.gas || 0, "gas"),
+    // The transaction's storage mass commitment, under its Toccata name only. The
+    // node refuses a `mass` that differs from `storageMass`, so the deprecated
+    // field is read (older serializations) but never written.
+    storageMass: storageMassOf(txInner),
     payload: txInner.payload && txInner.payload.length > 0 ? (typeof txInner.payload === 'string' ? txInner.payload : toHex(txInner.payload)) : ""
   };
 }

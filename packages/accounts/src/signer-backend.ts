@@ -1,6 +1,7 @@
 import path from "node:path";
 import fs from "node:fs";
 import { pathToFileURL } from "node:url";
+import { loadManagedKaspaWasmSync } from "@hardkas/core";
 
 export interface KaspaSigningBackendStatus {
   available: boolean;
@@ -13,28 +14,33 @@ export interface KaspaSigningBackendStatus {
 }
 
 export interface WasmProviderConfig {
-  provider: "npm" | "local" | "release-asset";
+  /**
+   * - `managed` (default): the official rusty-kaspa release SDK installed by
+   *   `hardkas toolchain install kaspa-wasm`, verified against the pin in
+   *   @hardkas/core on every load. There is no fallback to any other SDK.
+   * - `local` / `release-asset`: an explicit path chosen by the user (unverified).
+   */
+  provider: "managed" | "local" | "release-asset";
   path?: string;
 }
 
 /**
- * Loads the official Kaspa WASM SDK dynamically.
- * This ensures the toolkit remains usable even if the SDK is not installed.
+ * Loads the pinned official SDK (see loadManagedKaspaWasmSync in @hardkas/core).
+ * Synchronous because some callers (AddressManager) expose synchronous APIs.
+ */
+export function loadKaspaWasmSync(): any {
+  return loadManagedKaspaWasmSync();
+}
+
+/**
+ * Loads the official Kaspa WASM SDK. Every HardKAS component loads the SDK
+ * through here, so the pin and the integrity check apply everywhere.
  */
 export async function loadKaspaWasm(config?: WasmProviderConfig): Promise<any> {
-  const provider = config?.provider || "npm";
-  
-  if (provider === "npm") {
-    try {
-      // @ts-ignore - Third party lib lacking types
-      return await import("kaspa-wasm");
-    } catch (error) {
-      const err = new Error(
-        "SIGNER_BACKEND_UNAVAILABLE: Official Kaspa WASM backend is required to sign transactions.\nInstall it via: npm install kaspa-wasm"
-      );
-      (err as any).code = "SIGNER_BACKEND_UNAVAILABLE";
-      throw err;
-    }
+  const provider = config?.provider || "managed";
+
+  if (provider === "managed") {
+    return loadKaspaWasmSync();
   }
 
   if (provider === "local" || provider === "release-asset") {
@@ -77,20 +83,12 @@ export async function loadKaspaWasm(config?: WasmProviderConfig): Promise<any> {
 }
 
 /**
- * Detects the specific capabilities supported by the installed kaspa-wasm SDK.
+ * Detects the specific capabilities supported by the loaded kaspa-wasm SDK.
+ * Transaction v1 (Toccata) is present when `Transaction` carries `storageMass`,
+ * as in the pinned 2.0.x SDK.
  */
 export function detectCapabilities(sdk: any): { transactionV1Signing: boolean } {
-  // Typical heuristic: if the SDK's Transaction constructor takes version as an explicit field,
-  // or if there is a 'createTransactionV1' method, or if createTransaction accepts 8 args.
-  // For now, if 'Transaction' has a known V1 property or 'createTransaction' length > 7 we guess V1.
-  // Since kaspa-wasm@0.13.0 does not support V1, we return false unless detected.
-  let v1 = false;
-  if (sdk.createTransaction && sdk.createTransaction.length >= 8) {
-     v1 = true;
-  }
-  if (sdk.createV1Transaction || (sdk.Transaction && sdk.Transaction.prototype && !!Object.getOwnPropertyDescriptor(sdk.Transaction.prototype, 'storageMass'))) {
-     v1 = true;
-  }
+  const v1 = !!(sdk?.Transaction?.prototype && Object.getOwnPropertyDescriptor(sdk.Transaction.prototype, "storageMass"));
   return { transactionV1Signing: v1 };
 }
 
@@ -103,12 +101,12 @@ export async function getKaspaSigningBackendStatus(config?: WasmProviderConfig):
     return {
       available: true,
       name: "Kaspa WASM SDK",
-      version: sdk.version || "unknown",
+      version: typeof sdk.version === "function" ? String(sdk.version()) : "unknown",
       capabilities: detectCapabilities(sdk)
     };
   } catch (error: any) {
-    if (error.code === "WASM_RELEASE_ASSET_NOT_FOUND") {
-      throw error; // Bubble this up
+    if (error.code === "WASM_RELEASE_ASSET_NOT_FOUND" || error.code === "WASM_TOOLCHAIN_INTEGRITY_FAILED") {
+      throw error; // Bubble this up: a tampered or misconfigured SDK is not "unavailable"
     }
     return {
       available: false,

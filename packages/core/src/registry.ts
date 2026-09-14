@@ -75,6 +75,15 @@ export const HardkasSchemas = {
   SilverSpendSimulation: "hardkas.silver.spendSimulation",
   SilverSimulationStateV1: "hardkas.silver.simulationState.v1",
 
+  // --- SilverScript v1 (managed silverc v1.0.0, real execution) ---
+  SilverCompileV1: "hardkas.silverCompile.v1",
+  SilverDeployV1: "hardkas.silverDeploy.v1",
+  SilverSpendV1: "hardkas.silverSpend.v1",
+  SilverCovenantV1: "hardkas.silverCovenant.v1",
+  SilverCorpusV1: "hardkas.silverCorpus.v1",
+  SilverCorpusCaseV1: "hardkas.silverCorpusCase.v1",
+  SilverCorpusVerifyV1: "hardkas.silverCorpusVerify.v1",
+
   // --- Programmability Surface ---
   ProgrammabilityCapabilitiesV1: "hardkas.programmability.capabilities.v1",
   ProgrammabilityInspectV1: "hardkas.programmability.inspect.v1",

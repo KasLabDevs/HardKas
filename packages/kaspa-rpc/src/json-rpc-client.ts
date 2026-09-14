@@ -13,6 +13,7 @@ import {
   KaspaRpcTransaction,
   KaspaSubmitTransactionResult
 } from "./index.js";
+import { normalizeRpcStorageMass } from "./internal/storage-mass.js";
 import { type NetworkId } from "@hardkas/core";
 import {
   RpcError,
@@ -423,8 +424,6 @@ export class KaspaJsonRpcClient implements KaspaRpcClient {
       if (txAny && typeof txAny === "object") {
         // Normalize top-level numeric fields that may arrive as strings from the NAPI bridge
         if (typeof txAny.version === "string") txAny.version = Number(txAny.version);
-        if (typeof txAny.mass === "string") txAny.mass = Number(txAny.mass);
-        txAny.mass = txAny.mass || 0;
         if (typeof txAny.lockTime === "string") txAny.lockTime = Number(txAny.lockTime);
         if (typeof txAny.lock_time === "string") txAny.lock_time = Number(txAny.lock_time);
         if (typeof txAny.gas === "string") txAny.gas = Number(txAny.gas);
@@ -457,6 +456,8 @@ export class KaspaJsonRpcClient implements KaspaRpcClient {
     } catch (e) {
       // Ignored
     }
+    // Outside the lenient block above: a bad mass commitment must not be swallowed.
+    if (txObj && typeof txObj === "object") normalizeRpcStorageMass(txObj as Record<string, unknown>);
 
     const result = (await this.callRpc("submitTransactionRequest", {
       transaction: txObj,

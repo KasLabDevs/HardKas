@@ -5,18 +5,20 @@ import { JsonWrpcKaspaClient } from "@hardkas/kaspa-rpc";
 import { forkFromNetwork, saveLocalnetState } from "@hardkas/localnet";
 import { resolve } from "node:path";
 import fs from "node:fs/promises";
-import { withLock, sha256hex, UtxoSetNotStableError } from "@hardkas/core";
-import { DockerKaspadRunner } from "@hardkas/node-runner";
+import { withLock, sha256hex, UtxoSetNotStableError, CPUMINER_REFERENCE_IMAGE, CANONICAL_LOCALNET, nodeRpcUrl } from "@hardkas/core";
+import { DockerKaspadRunner, verifyNodeIdentity, requireNodeIdentity } from "@hardkas/node-runner";
 import { resolveHardkasAccountAddress, listHardkasAccounts } from "@hardkas/accounts";
 import { execa } from "execa";
 import { HardkasSchemas } from "@hardkas/artifacts";
 
-const TOCCATA_PROFILE = "toccata-v2";
-const TOCCATA_IMAGE = "kaspanet/rusty-kaspad:v2.0.0";
-const OFFICIAL_MINER_IMAGE = "kaspanet/cpuminer@sha256:60f78ab2828ab24b249c99210eee5a2825303a5226154260dd021ff26d46748b";
-const TOCCATA_MINER_CONTAINER = "hardkas-toccata-miner";
-const TOCCATA_NODE_CONTAINER = "hardkas-kaspad-toccata-v2";
-const TOCCATA_RPC_URL = "ws://127.0.0.1:18210";
+// The canonical real localnet (@hardkas/core). The container name only locates
+// the node; before using it, localnet proves its identity (verifyNodeIdentity).
+const TOCCATA_PROFILE = CANONICAL_LOCALNET.profile;
+const TOCCATA_IMAGE = CANONICAL_LOCALNET.image;
+const OFFICIAL_MINER_IMAGE = CPUMINER_REFERENCE_IMAGE;
+const TOCCATA_MINER_CONTAINER = CANONICAL_LOCALNET.minerContainerName;
+const TOCCATA_NODE_CONTAINER = CANONICAL_LOCALNET.containerName;
+const TOCCATA_RPC_URL = nodeRpcUrl();
 const TOCCATA_KASPAD_ADDRESS = "host.docker.internal:16210";
 
 export interface LocalnetStartOptions {
@@ -70,10 +72,14 @@ export async function runLocalnetStart(opts: LocalnetStartOptions): Promise<void
   }
 
   if (existing.ready) {
+    // Running under the canonical name is not enough: it must prove digest,
+    // endpoint ownership, network and version before it is reported READY.
+    const identity = await requireNodeIdentity();
     const payload = {
       schema: HardkasSchemas.LocalnetStatusV1,
       profile,
       node: existing,
+      identity,
       status: "TOCCATA_NODE_READY"
     };
     if (opts.json) {
@@ -94,13 +100,16 @@ export async function runLocalnetStart(opts: LocalnetStartOptions): Promise<void
     network: "simnet",
     allowFloatingImage: false
   });
+  // start() verifies the identity of the node it starts or adopts.
   const status = await runner.start();
+  const identity = await runner.identity();
 
   const payload = {
     schema: HardkasSchemas.LocalnetStatusV1,
     profile,
     status: status.rpcReady ? "TOCCATA_NODE_READY" : "TOCCATA_NODE_STARTING",
-    node: status
+    node: status,
+    identity
   };
 
   if (opts.json) {
@@ -136,11 +145,13 @@ export async function runLocalnetStop(opts: { json?: boolean; profile?: string; 
 export async function runLocalnetStatus(opts: LocalnetStatusOptions): Promise<void> {
   const node = await detectToccataNode(!!opts.json);
   const miner = await inspectDockerContainer(TOCCATA_MINER_CONTAINER);
+  const identity = await verifyNodeIdentity();
 
   const payload = {
     schema: HardkasSchemas.LocalnetStatusV1,
     profile: TOCCATA_PROFILE,
     node,
+    identity,
     miner,
     simulationLevels: {
       artifactCoherence: "READY",
@@ -157,6 +168,8 @@ export async function runLocalnetStatus(opts: LocalnetStatusOptions): Promise<vo
   UI.header("HardKAS Toccata Localnet");
   UI.info(`Node:  ${node.ready ? "TOCCATA_NODE_READY" : "TOCCATA_NODE_UNAVAILABLE"}`);
   UI.info(`Miner: ${miner.running ? "TOCCATA_MINER_RUNNING" : "TOCCATA_MINER_STOPPED"}`);
+  UI.info(`Identity: ${identity.verified ? "VERIFIED" : "UNVERIFIED"} (${TOCCATA_NODE_CONTAINER}, ${identity.expected.imageDigest.slice(0, 19)}…)`);
+  for (const problem of identity.problems) UI.info(`  - ${problem}`);
   if (node.serverVersion) UI.info(`Version: ${node.serverVersion}`);
   if (node.virtualDaaScore) UI.info(`DAA: ${node.virtualDaaScore}`);
 }
@@ -204,6 +217,9 @@ export async function runLocalnetFund(opts: LocalnetFundOptions): Promise<void> 
     }
   }
 
+  // The miner joins the node's namespace by container name, so the node must
+  // first prove it is the canonical one.
+  await requireNodeIdentity();
   const before = await getAddressFundingState(address, !!opts.json);
   await restartToccataMiner(address);
 
@@ -544,7 +560,7 @@ async function restartToccataMiner(address: string) {
     "-s",
     "127.0.0.1",
     "-p",
-    "16210",
+    String(CANONICAL_LOCALNET.ports.rpc),
     "--mine-when-not-synced",
     "-t",
     "1"

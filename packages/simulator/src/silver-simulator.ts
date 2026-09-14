@@ -1,5 +1,18 @@
 import { createHash } from "node:crypto";
-import { createKaspaP2shBlake2bLock } from "@hardkas/core";
+import { silverP2shLock } from "@hardkas/core";
+
+/*
+ * EXPERIMENTAL bookkeeping simulator for SilverScript P2SH outputs. It checks
+ * structure (the SDK's P2SH lock, a push-only unlock ending in the redeem
+ * script, no double spend) and executes no script. SIMULATED_ACCEPTED is never
+ * evidence: it satisfies no compile/deploy/spend/verify step and no capability.
+ */
+
+/** The SDK's P2SH lock for a redeem script: OP_BLAKE2B OP_DATA_32 <hash> OP_EQUAL. */
+function sdkP2shLock(redeemScriptHex: string): { lockingScriptHex: string; redeemScriptHash: string } {
+  const lock = silverP2shLock(redeemScriptHex);
+  return { lockingScriptHex: lock.script, redeemScriptHash: lock.script.slice(4, 68) };
+}
 
 export const SILVER_SIMULATOR_FEE_SOMPI = 2000n;
 export const SILVER_SIMULATOR_CREATED_AT = "1970-01-01T00:00:00.000Z";
@@ -230,17 +243,17 @@ export function simulateSilverDeploy(
     );
   }
 
-  const lock = createKaspaP2shBlake2bLock(deployPlanArtifact.redeemScriptHex);
+  const lock = sdkP2shLock(deployPlanArtifact.redeemScriptHex);
   if (lock.redeemScriptHash !== deployPlanArtifact.redeemScriptHash) {
     throw new SilverSimulationError(
       "SILVERSCRIPT_REDEEM_HASH_MISMATCH",
-      "redeemScriptHash must equal blake2b32(raw redeem script bytes)."
+      "redeemScriptHash must be the hash in the SDK's P2SH lock."
     );
   }
   if (lock.lockingScriptHex !== deployPlanArtifact.lockingScriptHex) {
     throw new SilverSimulationError(
       "SILVERSCRIPT_LOCKING_SCRIPT_MISMATCH",
-      "lockingScriptHex must equal aa20 + redeemScriptHash + 87."
+      "lockingScriptHex must be the SDK's P2SH lock for the redeem script."
     );
   }
   if (deployPlanArtifact.scriptPublicKeyVersion !== 0) {
@@ -386,7 +399,7 @@ export function simulateSilverSpend(
     );
   }
 
-  const lock = createKaspaP2shBlake2bLock(redeemScriptHex);
+  const lock = sdkP2shLock(redeemScriptHex);
   if (lock.redeemScriptHash !== spendPlanArtifact.redeemScriptHash) {
     throw new SilverSimulationError(
       "SILVERSCRIPT_REDEEM_HASH_MISMATCH",

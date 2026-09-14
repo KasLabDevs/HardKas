@@ -1,6 +1,7 @@
 import { ExecutionContext, GateDefinition, QualificationStatus } from "../types.js";
 import { runCommand, getHardkasCliPath } from "../environment/commands.js";
 import { runConsumerScript } from "../environment/consumer-script.js";
+import { resolveCanonicalNode } from "../environment/canonical-node.js";
 
 /**
  * NOD-03 � RPC Failure / Recovery
@@ -27,19 +28,11 @@ export const scenarioNod03: GateDefinition = {
 
     const cliPath = getHardkasCliPath(ctx.consumerDir);
 
-    // Get RPC URL & container name
-    const statusRes = await runCommand(`"${cliPath}" localnet status --json`, ctx.consumerDir);
-    let rpcUrl = "127.0.0.1:18210";
-    let containerName = "hardkas-kaspad-toccata-v2";
-    try {
-      const statusData = JSON.parse(statusRes.stdout.trim());
-      if (statusData.node?.rpcUrl) {
-        rpcUrl = statusData.node.rpcUrl.replace("ws://", "");
-      }
-      if (statusData.node?.containerName) {
-        containerName = statusData.node.containerName;
-      }
-    } catch (e) {}
+    // The node this scenario stops and starts: the canonical localnet, proven by identity.
+    const node = await resolveCanonicalNode();
+    const rpcUrl = node.rpcEndpoint;
+    const containerName = node.containerName;
+    evidence.push(`node identity verified: ${containerName} rusty-kaspad ${node.identity.observed.server?.serverVersion} ${node.identity.expected.imageDigest}`);
 
     // Script Phase 1: Healthy Read & Initial State
     const phase1Code = `

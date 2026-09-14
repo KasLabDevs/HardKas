@@ -151,7 +151,7 @@ describe("EvmJsonRpcClient", () => {
     expect(gas).toBe(21000n);
   });
 
-  it.skip("should reject invalid call requests", async () => {
+  it.skip("[known gap: request is sent before it is validated -> Labs/L2] should reject invalid call requests", async () => {
     const client = new EvmJsonRpcClient({ url: "http://localhost:8545" });
 
     // Missing to

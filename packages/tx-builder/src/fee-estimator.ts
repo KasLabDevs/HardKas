@@ -1,4 +1,4 @@
-import { estimateTransactionMass, calculateConsensusNonContextualMass, ConsensusMassInput } from "./mass.js";
+import { estimateTransactionMass, ConsensusMassInput } from "./mass.js";
 
 export type FeePolicy = "conservative" | "minimal";
 export type NetworkType = "simulated" | "local-docker-simnet" | string;
@@ -78,9 +78,11 @@ export function estimateFee(request: FeeEstimationRequest): FeeEstimationResult 
         ...(request.hasChange !== undefined ? { hasChange: request.hasChange } : {})
       };
 
-  const consensusMass = calculateConsensusNonContextualMass(massArgs);
+  // Mass and the node's minimum fee come from the pinned SDK (shape only: amounts unknown).
+  const upstream = estimateTransactionMass(massArgs);
+  const consensusMass = { feeMass: upstream.feeMass, computeMass: upstream.computeMass, transientMass: upstream.transientMass };
 
-  const relayFloorSompi = consensusMass.feeMass * DEFAULT_MINIMUM_RELAY_RATE_SOMPI_PER_MASS;
+  const relayFloorSompi = upstream.feeSompi;
   const calculatedFee = consensusMass.feeMass * feeRate;
 
   let estimatedFeeSompi = calculatedFee > relayFloorSompi ? calculatedFee : relayFloorSompi;

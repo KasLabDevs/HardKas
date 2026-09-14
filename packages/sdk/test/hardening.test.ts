@@ -80,7 +80,7 @@ describe("Core Hardening Sprint Regressions", () => {
 
     process.env.TEST_KEY = "1".repeat(64);
 
-    const { PrivateKey } = await import("kaspa-wasm");
+    const { PrivateKey } = await (await import("@hardkas/accounts")).loadKaspaWasm();
     const testAddress = (new PrivateKey(process.env.TEST_KEY) as any).toKeypair().toAddress("simnet").toString();
 
     const plan = {

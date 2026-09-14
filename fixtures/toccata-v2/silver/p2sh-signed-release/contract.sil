@@ -1,0 +1,7 @@
+pragma silverscript ^0.1.0;
+
+contract SignedRelease(pubkey owner) {
+    entry release(sig ownerSig) {
+        require(checkSig(ownerSig, owner));
+    }
+}

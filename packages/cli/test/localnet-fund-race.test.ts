@@ -8,7 +8,7 @@ import { resolveHardkasAccountAddress } from "@hardkas/accounts";
 import * as fs from "fs";
 import * as path from "path";
 
-describe.skip("Localnet Fund Race Condition", () => {
+describe.skip("[known gap: needs a 'localnet' execution target in hardkas.config.ts -> M2-B] Localnet Fund Race Condition", () => {
   it("should be able to immediately plan, sign and send after fund", async () => {
     const { config } = await loadHardkasConfig();
     

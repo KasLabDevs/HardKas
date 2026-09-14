@@ -1,6 +1,6 @@
 import { Hardkas } from "./index.js";
-import { HardkasError, getCoinbaseMaturity } from "@hardkas/core";
-import { DockerKaspadRunner, KaspadNodeStatus } from "@hardkas/node-runner";
+import { HardkasError, getCoinbaseMaturity, CPUMINER_REFERENCE_IMAGE, CANONICAL_LOCALNET } from "@hardkas/core";
+import { DockerKaspadRunner, KaspadNodeStatus, minerContainerNameFor, requireNodeIdentity } from "@hardkas/node-runner";
 
 export interface HardkasNodeStartOptions {
   /**
@@ -154,19 +154,22 @@ export class HardkasNodeApi {
       // Start it with mining enabled to the first wallet
       await this.start({ mineTo: primaryAddress });
     } else {
-      // Node is already running — ensure a miner sidecar is attached
-      const { exec: execCb } = await import("child_process");
+      // Node is already running: it must prove it is the canonical node before
+      // the (single, canonical) miner joins its network namespace.
+      await requireNodeIdentity();
+      const { execFile } = await import("child_process");
       const util = await import("util");
-      const execAsync = util.promisify(execCb);
-      const minerName = "hardkas-kaspad-simnet-miner";
-      try { await execAsync(`docker rm -f ${minerName}`); } catch {}
+      const execFileAsync = util.promisify(execFile);
+      const minerName = minerContainerNameFor(CANONICAL_LOCALNET.containerName);
+      try { await execFileAsync("docker", ["rm", "-f", minerName]); } catch {}
       try {
-        await execAsync(
-          `docker run -d --name ${minerName} ` +
-          `--network container:hardkas-kaspad-simnet ` +
-          `kaspanet/cpuminer@sha256:60f78ab2828ab24b249c99210eee5a2825303a5226154260dd021ff26d46748b ` +
-          `-a ${primaryAddress} -s 127.0.0.1 -p 16210 --mine-when-not-synced -t 1`
-        );
+        await execFileAsync("docker", [
+          "run", "-d", "--name", minerName,
+          "--network", `container:${CANONICAL_LOCALNET.containerName}`,
+          CPUMINER_REFERENCE_IMAGE,
+          "-a", primaryAddress, "-s", "127.0.0.1", "-p", String(CANONICAL_LOCALNET.ports.rpc),
+          "--mine-when-not-synced", "-t", "1"
+        ]);
       } catch (err: any) {
         throw new HardkasError("MINER_NOT_RUNNING", `Failed to start miner sidecar: ${err.message}`, { cause: err });
       }
@@ -214,7 +217,7 @@ export class HardkasNodeApi {
     const execAsync = util.promisify(exec);
 
     try {
-      await execAsync("docker pause hardkas-kaspad-simnet-miner");
+      await execAsync(`docker pause ${CANONICAL_LOCALNET.minerContainerName}`);
     } catch (e: any) {
       throw new HardkasError("MINER_NOT_RUNNING", `Failed to pause miner: ${e.message}`, { cause: e });
     }
@@ -229,7 +232,7 @@ export class HardkasNodeApi {
     const execAsync = util.promisify(exec);
 
     try {
-      await execAsync("docker unpause hardkas-kaspad-simnet-miner");
+      await execAsync(`docker unpause ${CANONICAL_LOCALNET.minerContainerName}`);
     } catch (e: any) {
       throw new HardkasError("MINER_RESUME_FAILED", `Failed to resume miner: ${e.message}`, { cause: e });
     }

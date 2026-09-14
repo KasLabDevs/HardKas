@@ -8,9 +8,20 @@ import { HardkasVprogs } from "./vprogs.js";
 import { HardkasCorpus } from "./corpus.js";
 export type ProgrammabilityKind = "silver" | "zk" | "vprog" | "full-lab";
 
+/**
+ * SilverScript claims are per capability. The three REAL_NODE_EVIDENCE values
+ * are backed by the golden corpus (fixtures/toccata-v2/silver, re-checked by
+ * `hardkas corpus verify`) recorded against a verified rusty-kaspad 2.0.1.
+ * Covenant support is exactly the 1:1 auth-bound transition; leader/cov-bound,
+ * N:M, derived state mappings and signed covenant metering are not claimed.
+ */
 export interface ProgrammabilityClaims {
   artifactCoherence: "READY_MATCH";
-  silverScriptBuilder: "SILVERSCRIPT_BUILDER_READY";
+  silverScriptCompiler: "OFFICIAL_SILVERC_V1_0_0_MANAGED";
+  silverScriptP2shExecution: "REAL_NODE_EVIDENCE";
+  silverScriptRelativeTimelock: "REAL_NODE_EVIDENCE";
+  toccataCovenantAuth1to1Transition: "REAL_NODE_EVIDENCE";
+  generalCovenantSupport: "NOT_CLAIMED";
   zkCorpusSurface: "ZK_CORPUS_SURFACE_READY";
   zkLocalVerification: "READY_GROTH16_FIXTURE_COHERENCE";
   risc0InspectSurface: "RISC0_INSPECT_SURFACE_READY";
@@ -34,7 +45,7 @@ export interface ProgrammabilityCapabilitiesResult {
   schema: typeof HardkasSchemas.ProgrammabilityCapabilitiesV1;
   status: "PROGRAMMABILITY_SURFACE_READY";
   surfaces: {
-    silverScript: "SILVERSCRIPT_BUILDER_READY";
+    silverScript: "SILVERSCRIPT_V1_LIFECYCLE";
     zkCorpus: "ZK_CORPUS_SURFACE_READY";
     groth16FixtureCoherence: "READY_GROTH16_FIXTURE_COHERENCE";
     risc0Inspect: "RISC0_INSPECT_SURFACE_READY";
@@ -307,7 +318,13 @@ export class HardkasProgrammability {
         path.join(path.relative(this.sdk.cwd, root), "silver")
       );
       silver = result.ok ? "PASS" : "FAIL";
-      issues.push(...result.issues);
+      issues.push(
+        ...result.issues.map((i) => ({
+          code: i.code,
+          message: i.case ? `[${i.case}] ${i.message}` : i.message,
+          ...(i.file ? { file: i.file } : {})
+        }))
+      );
     }
     if (include.has("zk")) {
       const zkApi = new HardkasZk(this.sdk);
@@ -374,7 +391,7 @@ export function createProgrammabilityCapabilities(): ProgrammabilityCapabilities
     schema: HardkasSchemas.ProgrammabilityCapabilitiesV1,
     status: "PROGRAMMABILITY_SURFACE_READY",
     surfaces: {
-      silverScript: "SILVERSCRIPT_BUILDER_READY",
+      silverScript: "SILVERSCRIPT_V1_LIFECYCLE",
       zkCorpus: "ZK_CORPUS_SURFACE_READY",
       groth16FixtureCoherence: "READY_GROTH16_FIXTURE_COHERENCE",
       risc0Inspect: "RISC0_INSPECT_SURFACE_READY",
@@ -388,7 +405,11 @@ export function createProgrammabilityCapabilities(): ProgrammabilityCapabilities
 export function programmabilityClaims(): ProgrammabilityClaims {
   return {
     artifactCoherence: "READY_MATCH",
-    silverScriptBuilder: "SILVERSCRIPT_BUILDER_READY",
+    silverScriptCompiler: "OFFICIAL_SILVERC_V1_0_0_MANAGED",
+    silverScriptP2shExecution: "REAL_NODE_EVIDENCE",
+    silverScriptRelativeTimelock: "REAL_NODE_EVIDENCE",
+    toccataCovenantAuth1to1Transition: "REAL_NODE_EVIDENCE",
+    generalCovenantSupport: "NOT_CLAIMED",
     zkCorpusSurface: "ZK_CORPUS_SURFACE_READY",
     zkLocalVerification: "READY_GROTH16_FIXTURE_COHERENCE",
     risc0InspectSurface: "RISC0_INSPECT_SURFACE_READY",
@@ -494,11 +515,11 @@ function sdkSurfacesForKind(kind: ProgrammabilityKind): string[] {
     "hardkas.programmability.capabilities()",
     "hardkas.programmability.corpus.verify()"
   ];
-  if (kind === "silver") return [...common, "hardkas.silver.*"];
+  if (kind === "silver") return [...common, "hardkas.experimental.silver.*"];
   if (kind === "zk")
     return [...common, "hardkas.zk.proof.*", "hardkas.zk.corpus.verify()"];
   if (kind === "vprog") return [...common, "hardkas.vprogs.inspect()"];
-  return [...common, "hardkas.silver.*", "hardkas.zk.*", "hardkas.vprogs.*"];
+  return [...common, "hardkas.experimental.silver.*", "hardkas.zk.*", "hardkas.vprogs.*"];
 }
 
 function nonClaims(): string[] {
@@ -509,6 +530,8 @@ function nonClaims(): string[] {
     "no trustless exit",
     "no on-chain ZK verification",
     "no full vProgs runtime",
-    "no VM/consensus equivalence"
+    "no VM/consensus equivalence",
+    "no general covenant support (leader/cov-bound, N:M, derived state mappings, signed covenant metering)",
+    "no production or audited SilverScript contracts"
   ];
 }

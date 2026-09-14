@@ -8,6 +8,7 @@
 
 import WebSocket from "ws";
 import { logger, metrics } from "@hardkas/observability";
+import { normalizeRpcStorageMass } from "./internal/storage-mass.js";
 
 metrics.register({
   name: "rpc_requests_total",
@@ -220,8 +221,9 @@ export class KaspaWrpcClient {
           signatureScript: i.signatureScript,
           signature_script: i.signatureScript,
           sequence: Number(i.sequence),
-          sigOpCount: Number(i.sigOpCount || 1),
-          sig_op_count: Number(i.sigOpCount || 1)
+          // v1 inputs commit a compute budget and must declare 0 sig ops (SigopCountInV1).
+          sigOpCount: Number(i.sigOpCount ?? (Number(tx.version || 0) >= 1 ? 0 : 1)),
+          sig_op_count: Number(i.sigOpCount ?? (Number(tx.version || 0) >= 1 ? 0 : 1))
         };
         if (Number(tx.version || 0) === 1 && i.computeBudget !== undefined) {
           inp.computeBudget = Number(i.computeBudget);
@@ -264,13 +266,12 @@ export class KaspaWrpcClient {
       payload: tx.payload || ""
     };
 
-    if (normalizedTx.version === 1) {
-      if (tx.storageMass !== undefined) normalizedTx.storageMass = Number(tx.storageMass);
-      else if (tx.storage_mass !== undefined) normalizedTx.storageMass = Number(tx.storage_mass);
-      else normalizedTx.storageMass = Number(tx.mass || 0); // fallback mapping if provided as mass
-    } else {
-      normalizedTx.mass = Number(tx.mass || 0);
-    }
+    // Every version: the storage mass commitment travels as `storageMass` only.
+    normalizedTx.storageMass = tx.storageMass;
+    normalizedTx.storage_mass = tx.storage_mass;
+    normalizedTx.mass = tx.mass;
+    for (const k of ["storageMass", "storage_mass", "mass"]) if (normalizedTx[k] === undefined) delete normalizedTx[k];
+    normalizeRpcStorageMass(normalizedTx);
 
     const result = await this.request("submitTransaction", { transaction: normalizedTx, allowOrphan: allowOrphan, allow_orphan: allowOrphan }) as any;
     // Normalize return to match SDK expectations (accepted + transactionId)

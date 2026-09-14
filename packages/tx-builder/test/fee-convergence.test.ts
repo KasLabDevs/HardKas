@@ -20,23 +20,27 @@ class MockProvider implements UtxoProvider {
   }
 }
 
+// Relayable scale: amounts and estimator fees in units of 10^7 sompi (0.1 KAS), so
+// every override clears the node's minimum fee and no output is storage-mass bound.
+const F = 10_000_000n;
+
 describe("TxPlanService - Fee Convergence Loop", () => {
   const defaultOptions = { coinbaseMaturity: 100n };
 
   it("Case A: 1 input sufficient initially -> fee rises -> needs 2 inputs -> converges", async () => {
-    const utxos = [createUtxo(1010n), createUtxo(1000n)];
+    const utxos = [createUtxo(1010n * F), createUtxo(1000n * F)];
     const service = new TxPlanService(new MockProvider(utxos), defaultOptions);
     
     let callCount = 0;
     const mockFeeEstimator = async (inputs: number, outputs: number) => {
       callCount++;
-      return BigInt(inputs * 20);
+      return BigInt(inputs * 20) * F;
     };
 
     const result = await service.planTransaction({
       fromAddress: "kaspatest:foo",
       toAddress: "kaspatest:bar",
-      amountSompi: 1000n,
+      amountSompi: 1000n * F,
       feeEstimator: mockFeeEstimator
     });
 
@@ -45,17 +49,17 @@ describe("TxPlanService - Fee Convergence Loop", () => {
   });
 
   it("Case B: Many small UTXOs -> 3 -> 4 -> 5 inputs -> converges", async () => {
-    const utxos = Array(6).fill(createUtxo(30n));
+    const utxos = Array(6).fill(createUtxo(30n * F));
     const service = new TxPlanService(new MockProvider(utxos), defaultOptions);
     
     const mockFeeEstimator = async (inputs: number, outputs: number) => {
-      return BigInt(inputs * 10);
+      return BigInt(inputs * 10) * F;
     };
 
     const result = await service.planTransaction({
       fromAddress: "kaspatest:foo",
       toAddress: "kaspatest:bar",
-      amountSompi: 100n,
+      amountSompi: 100n * F,
       feeEstimator: mockFeeEstimator
     });
 
@@ -63,17 +67,17 @@ describe("TxPlanService - Fee Convergence Loop", () => {
   });
 
   it("Case C: Change output logic causes shape change (simulated via fee estimator)", async () => {
-    const utxos = [createUtxo(500n), createUtxo(500n)];
+    const utxos = [createUtxo(500n * F), createUtxo(500n * F)];
     const service = new TxPlanService(new MockProvider(utxos), defaultOptions);
     
     const mockFeeEstimator = async (inputs: number, outputs: number) => {
-      return inputs === 1 ? 100n : 200n;
+      return (inputs === 1 ? 100n : 200n) * F;
     };
 
     const result = await service.planTransaction({
       fromAddress: "kaspatest:foo",
       toAddress: "kaspatest:bar",
-      amountSompi: 450n,
+      amountSompi: 450n * F,
       feeEstimator: mockFeeEstimator
     });
 
@@ -81,17 +85,17 @@ describe("TxPlanService - Fee Convergence Loop", () => {
   });
 
   it("Case D: Truly insufficient funds after fee recalculation (clean failure)", async () => {
-    const utxos = [createUtxo(1010n)];
+    const utxos = [createUtxo(1010n * F)];
     const service = new TxPlanService(new MockProvider(utxos), defaultOptions);
     
     const mockFeeEstimator = async (inputs: number, outputs: number) => {
-      return 20n;
+      return 20n * F;
     };
 
     await expect(service.planTransaction({
       fromAddress: "kaspatest:foo",
       toAddress: "kaspatest:bar",
-      amountSompi: 1000n,
+      amountSompi: 1000n * F,
       feeEstimator: mockFeeEstimator
     })).rejects.toThrow(/Insufficient funds/);
   });

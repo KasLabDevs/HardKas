@@ -39,6 +39,11 @@ jobs:
       - name: Build Monorepo
         run: pnpm build
 
+      # HardKAS loads only the pinned official Kaspa WASM SDK; the install
+      # verifies the release asset and every file against the pin.
+      - name: Install pinned Kaspa WASM toolchain
+        run: node packages/cli/dist/index.js toolchain install kaspa-wasm
+
       - name: Run Torture Matrix (Seed 42)
         run: pnpm hardkas torture matrix --iterations 300 --seed 42
 

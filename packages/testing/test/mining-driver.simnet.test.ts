@@ -55,7 +55,7 @@ async function runRegression() {
 
 import { test } from "vitest";
 
-test.skip("Simnet Mining Regression", async () => {
+test("Simnet Mining Regression", async () => {
   await runRegression();
 });
 

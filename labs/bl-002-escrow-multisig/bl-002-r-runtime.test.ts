@@ -34,7 +34,7 @@ describe("BL-002R - Simnet Runtime Validation", () => {
 
     beforeAll(async () => {
         await pskt.registerNativeAdapter();
-        kaspa = await import("kaspa-wasm");
+        kaspa = (await (await import("@hardkas/accounts")).loadKaspaWasm());
         identities = await generateIdentities();
         
         multisig = createCanonicalMultisig([identities.alice, identities.bob, identities.charlie], 2, "simnet");

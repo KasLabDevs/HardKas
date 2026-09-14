@@ -32,6 +32,16 @@ jobs:
       - name: Build packages
         run: pnpm build
 
+      # HardKAS loads only the pinned official Kaspa WASM SDK; the install
+      # verifies the release asset and every file against the pin.
+      - name: Install pinned Kaspa WASM toolchain
+        run: node packages/cli/dist/index.js toolchain install kaspa-wasm
+
+      # SilverScript is compiled only by the pinned official silverc release
+      # (kaspanet/silverscript v1.0.0), verified the same way.
+      - name: Install pinned silverc toolchain
+        run: node packages/cli/dist/index.js toolchain install silverc
+
       - name: Run unit tests
         run: pnpm test
 

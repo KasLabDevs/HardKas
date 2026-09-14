@@ -1,7 +1,8 @@
 import { parseKasToSompi } from "@hardkas/core";
 import crypto from "node:crypto";
 // @ts-ignore
-import kaspaWasm from "kaspa-wasm";
+import { loadKaspaWasmSync } from "@hardkas/accounts";
+const kaspaWasm = loadKaspaWasmSync();
 
 export interface MultisigIdentity {
   name: string;

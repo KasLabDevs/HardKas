@@ -25,7 +25,9 @@ describe("0.12.0-rc.20 programmability SDK surface", () => {
 
     expect(result.ok).toBe(true);
     expect(result.status).toBe("PROGRAMMABILITY_SURFACE_READY");
-    expect(result.surfaces.silverScript).toBe("SILVERSCRIPT_BUILDER_READY");
+    expect(result.surfaces.silverScript).toBe("SILVERSCRIPT_V1_LIFECYCLE");
+    expect(result.claims.toccataCovenantAuth1to1Transition).toBe("REAL_NODE_EVIDENCE");
+    expect(result.claims.generalCovenantSupport).toBe("NOT_CLAIMED");
     expect(result.surfaces.zkCorpus).toBe("ZK_CORPUS_SURFACE_READY");
     expect(result.surfaces.vProgsInspect).toBe("VPROGS_INSPECT_SURFACE_READY");
     expect(result.claims.mainnet).toBe("BLOCKED_BY_POLICY");

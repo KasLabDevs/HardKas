@@ -56,7 +56,11 @@ compile error.
 | Claim | Value |
 | :---- | :---- |
 | Artifact coherence | `READY_MATCH` |
-| SilverScript builder | `SILVERSCRIPT_BUILDER_READY` |
+| SilverScript compiler (official silverc, managed) | `OFFICIAL_SILVERC_V1_0_0_MANAGED` |
+| SilverScript P2SH execution | `REAL_NODE_EVIDENCE` |
+| SilverScript P2SH relative timelock | `REAL_NODE_EVIDENCE` |
+| Toccata tx-v1 covenant, 1:1 auth-bound transition | `REAL_NODE_EVIDENCE` |
+| General covenant support | `NOT_CLAIMED` |
 | ZK corpus surface | `ZK_CORPUS_SURFACE_READY` |
 | Groth16 fixture coherence | `READY_GROTH16_FIXTURE_COHERENCE` |
 | RISC0 inspect surface | `RISC0_INSPECT_SURFACE_READY` |

@@ -30,7 +30,11 @@
   ],
   "programmability": {
     "artifactCoherence": "READY_MATCH",
-    "silverScriptBuilder": "SILVERSCRIPT_BUILDER_READY",
+    "silverScriptCompiler": "OFFICIAL_SILVERC_V1_0_0_MANAGED",
+    "silverScriptP2shExecution": "REAL_NODE_EVIDENCE",
+    "silverScriptRelativeTimelock": "REAL_NODE_EVIDENCE",
+    "toccataCovenantAuth1to1Transition": "REAL_NODE_EVIDENCE",
+    "generalCovenantSupport": "NOT_CLAIMED",
     "zkCorpusSurface": "ZK_CORPUS_SURFACE_READY",
     "zkLocalVerification": "READY_GROTH16_FIXTURE_COHERENCE",
     "risc0InspectSurface": "RISC0_INSPECT_SURFACE_READY",
