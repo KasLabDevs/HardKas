@@ -261,7 +261,7 @@ console.log(JSON.stringify({ app: ${JSON.stringify(appName)}, ok: true, sdkNetwo
 const { calculateContentHash } = await import(${JSON.stringify(pathToFileURL(artifactsDist).href)});
 const artifact = {
   schema: HardkasSchemas.PostReleaseProbe,
-  hardkasVersion: "0.12.0-rc.20",
+  hardkasVersion: "0.12.0-rc.21",
   hashVersion: 4,
   networkId: "simulated",
   amountSompi: "1"
@@ -366,15 +366,21 @@ async function copyCorpusFixture(targetDir) {
 async function runAdversarialCases() {
   resetDir(mutationsRoot);
   // An artifact mutated after hashing (network flipped to mainnet).
-  const { calculateContentHash } = await import(pathToFileURL(artifactsDist).href);
+  // Every field `verify` requires (BaseArtifactSchema needs `version`; strict mode wants lineage/workflowId/etc),
+  // so the hash mutation is caught by the hash check, not by a missing-field check.
+  const artifacts = await import(pathToFileURL(artifactsDist).href);
+  const rootPkg = JSON.parse(fs.readFileSync(path.join(root, "package.json"), "utf8"));
   const probe = {
     schema: HardkasSchemas.PostReleaseProbe,
-    hardkasVersion: "0.12.0-rc.20",
+    hardkasVersion: rootPkg.version,
+    version: artifacts.ARTIFACT_VERSION,
     hashVersion: 4,
     networkId: "simnet",
+    mode: "simulator",
+    createdAt: "2026-01-01T00:00:00.000Z",
     amountSompi: "1"
   };
-  probe.contentHash = calculateContentHash(probe, 4);
+  probe.contentHash = artifacts.calculateContentHash(probe, 4);
   probe.networkId = "mainnet";
   writeJson(path.join(mutationsRoot, "wrong-network-artifact.json"), probe);
 
@@ -521,7 +527,7 @@ async function runParityChecks() {
           network: "simulated",
           autoBootstrap: true
         });
-        return instance.capabilities();
+        return instance.capabilities.get();
       }
     },
     {
@@ -636,7 +642,7 @@ async function runParityChecks() {
         flow: flow.name,
         severity: flow.name.includes("silver") ? "P1" : "P2",
         reason:
-          "CLI flow exists but no equivalent high-level SDK API was found in 0.12.0-rc.20."
+          "CLI flow exists but no equivalent high-level SDK API was found in 0.12.0-rc.21."
       });
     }
     parityResults.push({
@@ -702,7 +708,7 @@ function writeReports() {
 
   const result = {
     schema : HardkasSchemas.PostReleaseBreakGauntletV1,
-    release: "0.12.0-rc.20",
+    release: "0.12.0-rc.21",
     status,
     generatedAt: new Date().toISOString(),
     claims: {
@@ -734,7 +740,7 @@ function writeReports() {
     adversarialResults,
     parityResults,
     notes,
-    recommendedNextRelease: "0.12.0-rc.20"
+    recommendedNextRelease: "0.12.0-rc.21"
   };
   writeJson(resultPath, result);
 
@@ -746,7 +752,7 @@ function writeReports() {
   );
   const failingBaseline = baseline.filter((entry) => entry.status !== "PASS");
 
-  const md = `# Post-Release Findings For 0.12.0-rc.20
+  const md = `# Post-Release Findings For 0.12.0-rc.21
 
 Date: ${new Date().toISOString()}
 
@@ -754,7 +760,7 @@ Status: \`${status}\`
 
 ## Summary
 
-- Release tested: \`0.12.0-rc.20\`
+- Release tested: \`0.12.0-rc.21\`
 - Apps generated: ${appsGenerated}
 - Apps build passed: ${appsBuildPassed}
 - Apps smoke passed: ${appsSmokePassed}
@@ -763,7 +769,7 @@ Status: \`${status}\`
 - SDK gaps found: ${sdkGaps.length}
 - Bugs found: ${bugs.length}
 - Docs/error-message gaps found: ${docsGaps.length}
-- Resolved 0.12.0-rc.20 findings: ${resolvedFindings.length}
+- Resolved 0.12.0-rc.21 findings: ${resolvedFindings.length}
 - Unresolved findings: ${unresolvedFindings.length}
 
 ## Baseline
@@ -801,7 +807,7 @@ ${failingAdversarial.map((entry) => `- ${entry.name}: ${entry.reason} - ${entry.
 
 ${parityResults.map((entry) => `- ${entry.flow}: CLI=${entry.cli}, SDK=${entry.sdk}, parity=${entry.parity}`).join("\n")}
 
-## Recommended 0.12.0-rc.20 Backlog
+## Recommended 0.12.0-rc.21 Backlog
 
 ${
   [

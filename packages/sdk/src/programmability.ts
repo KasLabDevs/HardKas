@@ -9,18 +9,22 @@ import { HardkasCorpus } from "./corpus.js";
 export type ProgrammabilityKind = "silver" | "zk" | "vprog" | "full-lab";
 
 /**
- * SilverScript claims are per capability. The three REAL_NODE_EVIDENCE values
- * are backed by the golden corpus (fixtures/toccata-v2/silver, re-checked by
- * `hardkas corpus verify`) recorded against a verified rusty-kaspad 2.0.1.
+ * SilverScript claims mirror the exact capability IDs used across the corpus,
+ * evidence records and `hardkas corpus verify`. Each REAL_NODE_EVIDENCE value
+ * is backed by fixtures/toccata-v2/silver (recompiled by the managed silverc,
+ * re-derived by the Kaspa SDK, evidenced by a verified rusty-kaspad 2.0.1).
  * Covenant support is exactly the 1:1 auth-bound transition; leader/cov-bound,
  * N:M, derived state mappings and signed covenant metering are not claimed.
  */
 export interface ProgrammabilityClaims {
   artifactCoherence: "READY_MATCH";
-  silverScriptCompiler: "OFFICIAL_SILVERC_V1_0_0_MANAGED";
-  silverScriptP2shExecution: "REAL_NODE_EVIDENCE";
-  silverScriptRelativeTimelock: "REAL_NODE_EVIDENCE";
-  toccataCovenantAuth1to1Transition: "REAL_NODE_EVIDENCE";
+  silverCapabilities: {
+    "silver.compile.v1": "REAL_NODE_EVIDENCE";
+    "silver.p2sh.deploy-spend.v1": "REAL_NODE_EVIDENCE";
+    "silver.p2sh.relative-timelock.v1": "REAL_NODE_EVIDENCE";
+    "toccata.covenant.auth-1to1-transition.v1": "REAL_NODE_EVIDENCE";
+  };
+  silverCompiler: "OFFICIAL_SILVERC_V1_0_0_MANAGED";
   generalCovenantSupport: "NOT_CLAIMED";
   zkCorpusSurface: "ZK_CORPUS_SURFACE_READY";
   zkLocalVerification: "READY_GROTH16_FIXTURE_COHERENCE";
@@ -405,10 +409,13 @@ export function createProgrammabilityCapabilities(): ProgrammabilityCapabilities
 export function programmabilityClaims(): ProgrammabilityClaims {
   return {
     artifactCoherence: "READY_MATCH",
-    silverScriptCompiler: "OFFICIAL_SILVERC_V1_0_0_MANAGED",
-    silverScriptP2shExecution: "REAL_NODE_EVIDENCE",
-    silverScriptRelativeTimelock: "REAL_NODE_EVIDENCE",
-    toccataCovenantAuth1to1Transition: "REAL_NODE_EVIDENCE",
+    silverCapabilities: {
+      "silver.compile.v1": "REAL_NODE_EVIDENCE",
+      "silver.p2sh.deploy-spend.v1": "REAL_NODE_EVIDENCE",
+      "silver.p2sh.relative-timelock.v1": "REAL_NODE_EVIDENCE",
+      "toccata.covenant.auth-1to1-transition.v1": "REAL_NODE_EVIDENCE"
+    },
+    silverCompiler: "OFFICIAL_SILVERC_V1_0_0_MANAGED",
     generalCovenantSupport: "NOT_CLAIMED",
     zkCorpusSurface: "ZK_CORPUS_SURFACE_READY",
     zkLocalVerification: "READY_GROTH16_FIXTURE_COHERENCE",

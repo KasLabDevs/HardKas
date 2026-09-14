@@ -1,4 +1,5 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, beforeAll } from "vitest";
+import { resolveEscrowIntegrationConfig } from "./escrow-integration-config.js";
 
 const BASE_URL = process.env.HARDKAS_DEV_SERVER_URL ?? "http://127.0.0.1:3000";
 const headers = { "Content-Type": "application/json", "X-Hardkas-Request": "true" };
@@ -18,6 +19,7 @@ let config = {
 const INTEGRATION = process.env.HARDKAS_ESCROW_INTEGRATION === "1";
 
 describe.runIf(INTEGRATION)("[conditional integration] Idempotency Matrix", () => {
+    beforeAll(async () => { Object.assign(config, await resolveEscrowIntegrationConfig()); }, 30000);
     let id = "";
 
     it("setup idempotent test", async () => {

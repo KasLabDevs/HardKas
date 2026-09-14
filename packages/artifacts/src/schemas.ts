@@ -753,10 +753,13 @@ export const SilverCovenantV1Schema = SilverOnChainSchema.extend({
 
 export const ProgrammabilityClaimsSchema = z.object({
   artifactCoherence: z.literal("READY_MATCH"),
-  silverScriptCompiler: z.literal("OFFICIAL_SILVERC_V1_0_0_MANAGED"),
-  silverScriptP2shExecution: z.literal("REAL_NODE_EVIDENCE"),
-  silverScriptRelativeTimelock: z.literal("REAL_NODE_EVIDENCE"),
-  toccataCovenantAuth1to1Transition: z.literal("REAL_NODE_EVIDENCE"),
+  silverCapabilities: z.object({
+    "silver.compile.v1": z.literal("REAL_NODE_EVIDENCE"),
+    "silver.p2sh.deploy-spend.v1": z.literal("REAL_NODE_EVIDENCE"),
+    "silver.p2sh.relative-timelock.v1": z.literal("REAL_NODE_EVIDENCE"),
+    "toccata.covenant.auth-1to1-transition.v1": z.literal("REAL_NODE_EVIDENCE")
+  }),
+  silverCompiler: z.literal("OFFICIAL_SILVERC_V1_0_0_MANAGED"),
   generalCovenantSupport: z.literal("NOT_CLAIMED"),
   zkCorpusSurface: z.literal("ZK_CORPUS_SURFACE_READY"),
   zkLocalVerification: z.literal("READY_GROTH16_FIXTURE_COHERENCE"),

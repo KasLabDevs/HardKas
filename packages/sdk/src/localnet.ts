@@ -94,7 +94,7 @@ export class HardkasLocalnet {
    * Initializes the in-memory simulated workspace.
    *
    * Docker Toccata process control remains a CLI/localnet responsibility in
-   * 0.12.0-rc.20; the SDK reports that boundary instead of silently shelling out.
+   * 0.12.0-rc.21; the SDK reports that boundary instead of silently shelling out.
    */
   async start(options: LocalnetProfileOptions = {}): Promise<LocalnetControlResult> {
     const profile = options.profile || "simulated";
@@ -114,7 +114,7 @@ export class HardkasLocalnet {
       profile,
       status: "SDK_LOCALNET_CONTROL_UNSUPPORTED",
       message:
-        "SDK Docker localnet start is not supported in 0.12.0-rc.20. Use `hardkas localnet start --profile toccata-v2`."
+        "SDK Docker localnet start is not supported in 0.12.0-rc.21. Use `hardkas localnet start --profile toccata-v2`."
     };
   }
 
@@ -138,7 +138,7 @@ export class HardkasLocalnet {
       profile,
       status: "SDK_LOCALNET_CONTROL_UNSUPPORTED",
       message:
-        "SDK Docker localnet stop is not supported in 0.12.0-rc.20. Use `hardkas localnet stop --profile toccata-v2`."
+        "SDK Docker localnet stop is not supported in 0.12.0-rc.21. Use `hardkas localnet stop --profile toccata-v2`."
     };
   }
 
@@ -176,7 +176,7 @@ export class HardkasLocalnet {
       identifier,
       status: "SDK_TOCCATA_FUNDING_UNSUPPORTED",
       message:
-        "SDK Toccata funding is not supported in 0.12.0-rc.20. Use `hardkas localnet fund <account> --profile toccata-v2`."
+        "SDK Toccata funding is not supported in 0.12.0-rc.21. Use `hardkas localnet fund <account> --profile toccata-v2`."
     };
   }
 

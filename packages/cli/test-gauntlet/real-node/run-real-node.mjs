@@ -133,7 +133,7 @@ async function ensureFundingConfirmed(minerAddress, targetAccountName, expectedS
 }
 
 async function runRealNodeCert() {
-  console.log("=== Real Node 0.12.0-rc.20 / Toccata Certification ===");
+  console.log("=== Real Node 0.12.0-rc.21 / Toccata Certification ===");
 
   // Fail before touching anything if the node is not the canonical one.
   const identity = await requireNodeIdentity();
