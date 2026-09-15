@@ -167,6 +167,12 @@ escrowRoutes.post("/:id/fund", async (c) => {
       // Without this, a buyer whose only UTXOs are unmatured coinbases would
       // get a node rejection at submitTransaction.
       const dag = await rpc.getBlockDagInfo();
+      // Fail-closed if the node did not report virtualDaaScore: without it
+      // we cannot enforce coinbase maturity (M10-D2), and silently defaulting
+      // would treat immature coinbases as spendable. Never silence.
+      if (dag.virtualDaaScore === undefined) {
+        throw new Error("ESCROW_FUND_VIRTUAL_DAA_MISSING: node did not report virtualDaaScore; cannot enforce coinbase maturity.");
+      }
       const virtualDaaScore = BigInt(dag.virtualDaaScore);
       const { filterMatureUtxos } = await import("@hardkas/tx-builder");
       const { mature } = filterMatureUtxos<any>({
