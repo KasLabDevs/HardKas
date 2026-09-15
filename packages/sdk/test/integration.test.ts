@@ -4,7 +4,7 @@ import * as fs from "node:fs";
 import * as path from "node:path";
 import * as os from "node:os";
 
-describe.skip("Network-Agnostic Artifact Layer: Integration", () => {
+describe.skip("[known gap: TxPlan with policy refs fails the integrity check -> evidence core] Network-Agnostic Artifact Layer: Integration", () => {
   let sdk: Hardkas;
   let workspaceRoot: string;
 
@@ -20,7 +20,7 @@ describe.skip("Network-Agnostic Artifact Layer: Integration", () => {
     // Create a mock policy
     const policy = {
       schema: "hardkas.policy.v1",
-      hardkasVersion: "0.12.0-rc.20",
+      hardkasVersion: "0.12.0-rc.21",
       version: "1.0.0-alpha",
       networkId: "simnet",
       mode: "simulator",

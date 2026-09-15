@@ -1,0 +1,145 @@
+{
+  "schema": "hardkas.silver.e2eEvidence.v1",
+  "scenario": "M8-B1 plain signed SilverScript contract",
+  "scope": "SilverScript L1/P2SH execution — not evidence of covenant or stateful Toccata semantics",
+  "capabilities": [
+    "silver.compile.v1",
+    "silver.p2sh.deploy-spend.v1"
+  ],
+  "node": {
+    "schema": "hardkas.nodeIdentity.v1",
+    "verified": true,
+    "problems": [],
+    "expected": {
+      "containerName": "hardkas-kaspad-toccata-v2",
+      "image": "kaspanet/rusty-kaspad:v2.0.1@sha256:db36449e2f41cf33ab7c26683ce390cb71bdea9c403eefd2e740a7d5605bcd8b",
+      "imageDigest": "sha256:db36449e2f41cf33ab7c26683ce390cb71bdea9c403eefd2e740a7d5605bcd8b",
+      "network": "simnet",
+      "serverVersion": "2.0.1",
+      "host": "127.0.0.1",
+      "rpcPort": 18210
+    },
+    "observed": {
+      "container": {
+        "name": "hardkas-kaspad-toccata-v2",
+        "id": "6c2fcfd32a1c9f61adf1160c4aff5958435def2eb11d3364d4298284f47c0528",
+        "running": true,
+        "imageId": "sha256:db36449e2f41cf33ab7c26683ce390cb71bdea9c403eefd2e740a7d5605bcd8b",
+        "repoDigests": [
+          "kaspanet/rusty-kaspad@sha256:db36449e2f41cf33ab7c26683ce390cb71bdea9c403eefd2e740a7d5605bcd8b",
+          "supertypo/rusty-kaspad@sha256:db36449e2f41cf33ab7c26683ce390cb71bdea9c403eefd2e740a7d5605bcd8b"
+        ],
+        "publishedPorts": [
+          {
+            "containerPort": "16210/tcp",
+            "hostIp": "127.0.0.1",
+            "hostPort": 16210
+          },
+          {
+            "containerPort": "17210/tcp",
+            "hostIp": "127.0.0.1",
+            "hostPort": 17210
+          },
+          {
+            "containerPort": "18210/tcp",
+            "hostIp": "127.0.0.1",
+            "hostPort": 18210
+          }
+        ]
+      },
+      "server": {
+        "url": "ws://127.0.0.1:18210",
+        "networkId": "simnet",
+        "serverVersion": "2.0.1",
+        "isSynced": true
+      },
+      "probeErrors": []
+    },
+    "checkedAt": "2026-09-14T11:24:54.253Z"
+  },
+  "compile": {
+    "schema": "hardkas.silver.compileProvenance.v1",
+    "compiler": {
+      "id": "silverc",
+      "repository": "kaspanet/silverscript",
+      "releaseTag": "v1.0.0",
+      "commit": "3ed973335b59269293564805cc2c58a14595ec03",
+      "assetName": "silverc-windows-x86_64.zip",
+      "assetSha256": "3e0d660c15a9e7ac90f3960da24d348b076b1891481bfe758db18accc8a102e1",
+      "binarySha256": "ce1e0ef5f1f415f371d3d2426e788597a388635da8cbe93e72e95a4f754b29af",
+      "languageVersion": "0.1.0"
+    },
+    "sourceSha256": "b0ea5f3e9452c72f9369d25512c4bcf9ff885c48b84b61377d1a70905fb7dc0a",
+    "constructorArgsSha256": "cea2a7a04b1dc33eb463aed31286de618522c8af9aba5e50c81e4f810b4a4641",
+    "artifactSha256": "3d24ee4ea564cbd2e9ca0bd65fc01179797950cc412f981dae1f29e47fb27c46",
+    "abiSchemaVersion": 1,
+    "contracts": [
+      {
+        "name": "SignedRelease",
+        "bytecodeSha256": "99657145901ea9711a058615729a5da9d1d862556773cb7fd4094803a126b172",
+        "templateHash": "13a61e36a15fe81498ef7335b83db1215632fc9190b35de76b5df750ca66687c",
+        "entries": [
+          {
+            "name": "release",
+            "dispatchTag": "388ad0b4"
+          }
+        ]
+      }
+    ]
+  },
+  "contract": {
+    "name": "SignedRelease",
+    "entry": "release",
+    "dispatchTag": "388ad0b4",
+    "bytecodeSha256": "99657145901ea9711a058615729a5da9d1d862556773cb7fd4094803a126b172",
+    "lockingScript": {
+      "version": 0,
+      "script": "aa209ca5df6e9e9c699cbbb2995cfaad950d2ccb15a5ac11cea4dbb6bde02175288487"
+    },
+    "p2shAddress": "kaspasim:pzw2thmwn6wxn89mk2v4e74dj5xjejc45kkprn4ymwmtmcppw55gg0uv38za9"
+  },
+  "deploy": {
+    "txId": "fc89dec7e42099c45be118f2c720d2ac69a0a2d69af8a0ddf6a40ec7206dc22d",
+    "outpoint": {
+      "transactionId": "fc89dec7e42099c45be118f2c720d2ac69a0a2d69af8a0ddf6a40ec7206dc22d",
+      "index": 0
+    },
+    "amountSompi": "1000000000",
+    "confirmedAtDaaScore": "64548",
+    "via": "hardkas tx plan/sign/send"
+  },
+  "negativeControls": [
+    {
+      "name": "legacy-unlock-without-dispatch-tag",
+      "rejected": true,
+      "nodeError": "Rejected transaction 1ad9231fc23ac4e4b22e4da359e625b592e02c8e60e057b90e3ed983f4ed8b86: failed to verify the signature script: script returned early"
+    },
+    {
+      "name": "signature-by-non-owner",
+      "rejected": true,
+      "nodeError": "Rejected transaction 1ad9231fc23ac4e4b22e4da359e625b592e02c8e60e057b90e3ed983f4ed8b86: failed to verify the signature script: script ran, but verification failed"
+    }
+  ],
+  "spend": {
+    "txId": "1ad9231fc23ac4e4b22e4da359e625b592e02c8e60e057b90e3ed983f4ed8b86",
+    "entry": "release",
+    "feeSompi": "175200",
+    "mass": "1752",
+    "storageMass": "0",
+    "signatureScriptSha256": "17273f6a8f4c75ea0ba4d1ef996c1ecd4e0b3651a443687f5b2abd944f6a9fb8",
+    "outputSompi": "999824800",
+    "confirmedAtDaaScore": "64574",
+    "assumptions": [
+      "signature scripts measured at their final length; the SDK adds one signature allowance per input on top",
+      "sigOpCount 1"
+    ]
+  },
+  "harness": {
+    "minerThrottle": {
+      "environment": "HARDKAS_TOCCATA_MINER_THROTTLE_MS",
+      "valueMs": "5",
+      "purpose": "harness-local rate limit (not a consensus parameter)"
+    }
+  },
+  "result": "PASS"
+}

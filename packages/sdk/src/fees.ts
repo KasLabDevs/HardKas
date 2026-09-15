@@ -1,6 +1,6 @@
 import { Hardkas } from "./index.js";
 import { calculateDynamicFeeRate, FeePriority } from "@hardkas/toolkit";
-import { estimateTransactionMass, estimateFeeFromMass, estimateToccataFee } from "@hardkas/tx-builder";
+import { estimateTransactionMass, estimateFeeFromMass } from "@hardkas/tx-builder";
 
 /**
  * HardKAS Fees Module
@@ -30,39 +30,26 @@ export class HardkasFees {
     evidence: "dynamic" | "heuristic";
     mempoolSize?: number | undefined;
   }> {
-      // Standard mempool relay policy floor (100 sompi per mass/compute gram)
-      // We apply standard relay fee of 100 as minimum for all networks, as required by nodes.
+      // Floor for the dynamic rate (sompi per gram); the fee itself can never go
+      // below the minimum the SDK computes for the transaction's mass.
       const minimumNetworkFeeRate = 100n;
 
       const dynamic = await calculateDynamicFeeRate(this.sdk.rpc, options.priority, minimumNetworkFeeRate);
-      
+
+      // Mass and minimum fee from the pinned SDK (v0 and v1 alike). kaspa-wasm
+      // 2.0.x does not charge computeBudget, so no HardKAS compute formula is applied.
       const massResult = estimateTransactionMass({
           inputCount: typeof options.inputs === "number" ? options.inputs : options.inputs.length,
-          outputs: typeof options.outputs === "number" 
+          outputs: typeof options.outputs === "number"
                     ? Array(options.outputs).fill({ address: "kaspatest:qdummy" })
                     : options.outputs,
-          hasChange: true 
+          hasChange: true,
+          version: options.version ?? 0,
+          ...(options.network ? { networkId: options.network } : {})
       });
 
-      const version = options.version ?? 0;
-      let estimatedFee: bigint;
-
-      if (version === 1) {
-        // Toccata fee path
-        const internalComputeGrams = options.computeGrams ?? options.computeBudget ?? 0n;
-        // Strict policy formula: 100 sompi * max(compute_grams, 2 * transaction_bytes)
-        const computeMassForFloor = internalComputeGrams > (massResult.txBytes * 2n) ? internalComputeGrams : (massResult.txBytes * 2n);
-        const minimumToccataFee = minimumNetworkFeeRate * computeMassForFloor;
-        
-        const priorityFee = estimateFeeFromMass(massResult.mass, dynamic.feeRate);
-        estimatedFee = minimumToccataFee > priorityFee ? minimumToccataFee : priorityFee;
-      } else {
-        // V0 legacy fee path
-        const computeMassForFloor = massResult.mass;
-        const minimumV0Fee = minimumNetworkFeeRate * computeMassForFloor;
-        const priorityFee = estimateFeeFromMass(massResult.mass, dynamic.feeRate);
-        estimatedFee = minimumV0Fee > priorityFee ? minimumV0Fee : priorityFee;
-      }
+      const priorityFee = estimateFeeFromMass(massResult.mass, dynamic.feeRate);
+      const estimatedFee = priorityFee > massResult.feeSompi ? priorityFee : massResult.feeSompi;
 
       return {
           feeRate: dynamic.feeRate,

@@ -6,7 +6,7 @@ import { RealDevAccount } from "../src/real-accounts.js";
 describe("KaspaSdkRealTxSigner", () => {
   const mockPlan: any = {
     schema: "hardkas.txPlan",
-    hardkasVersion: "0.12.0-rc.20",
+    hardkasVersion: "0.12.0-rc.21",
     version: "1.0.0-alpha",
     createdAt: new Date().toISOString(),
     planId: "plan123",
@@ -23,7 +23,8 @@ describe("KaspaSdkRealTxSigner", () => {
         scriptPublicKey: "script123"
       }
     ],
-    outputs: [],
+    outputs: [{ address: "kaspa:sim_bob456", amountSompi: "100000000" }],
+    change: { address: "kaspa:sim_alice123", amountSompi: "99999500" },
     estimatedMass: "500",
     estimatedFeeSompi: "500"
   };
@@ -55,11 +56,10 @@ describe("KaspaSdkRealTxSigner", () => {
       PaymentOutput: vi.fn(),
       ScriptPublicKey: vi.fn().mockImplementation((v, s) => ({ version: v, script: s })),
       createTransaction: vi.fn().mockReturnValue({ id: "txid123" }),
+      // kaspa-wasm 2.x returns the signed Transaction itself
       signTransaction: vi.fn().mockReturnValue({
-        tx: {
-          id: "txid123",
-          toJSON: () => ({ payload: "mocked" })
-        }
+        id: "txid123",
+        toJSON: () => ({ payload: "mocked" })
       })
     };
 
@@ -71,8 +71,29 @@ describe("KaspaSdkRealTxSigner", () => {
 
     expect(result.txId).toBe("txid123");
     expect(result.signedTransaction.payload).toBe('{"payload":"mocked"}');
-    expect(mockSdk.createTransaction).toHaveBeenCalled();
+    // 2.x signature: (utxos, outputs including change, fee); no change address argument
+    const call = mockSdk.createTransaction.mock.calls[0]!;
+    expect(call).toHaveLength(3);
+    expect(call[1]).toHaveLength(2);
+    expect(call[2]).toBe(500n);
     expect(mockSdk.signTransaction).toHaveBeenCalled();
+  });
+
+  it("refuses a plan whose values do not balance instead of paying the difference as fee", async () => {
+    const createTransaction = vi.fn();
+    const signer = new KaspaSdkRealTxSigner({
+      sdkLoader: async () => ({
+        PrivateKey: vi.fn().mockImplementation((k) => ({ key: k })),
+        ScriptPublicKey: vi.fn().mockImplementation((v, s) => ({ version: v, script: s })),
+        PaymentOutput: vi.fn(),
+        Address: vi.fn(),
+        createTransaction
+      })
+    });
+    const unbalanced = { ...mockPlan, change: undefined };
+
+    await expect(signer.sign({ plan: unbalanced, account: mockAccount })).rejects.toThrow(/TX_VALUE_NOT_CONSERVED/);
+    expect(createTransaction).toHaveBeenCalledTimes(0);
   });
 
   it("should fail if UTXO is missing scriptPublicKey", async () => {

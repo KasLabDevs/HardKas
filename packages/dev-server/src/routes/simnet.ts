@@ -1,8 +1,9 @@
 import { Hono } from "hono";
-import { exec } from "node:child_process";
+import { execFile } from "node:child_process";
 import util from "node:util";
+import { CPUMINER_REFERENCE_IMAGE, CANONICAL_LOCALNET } from "@hardkas/core";
 
-const execAsync = util.promisify(exec);
+const execFileAsync = util.promisify(execFile);
 
 export const simnetRoutes = new Hono();
 
@@ -24,29 +25,44 @@ simnetRoutes.post("/mine", async (c) => {
     }
     
     const blocks = c.req.query("blocks") || "10";
-    
-    // We assume there's a runner running locally or a docker container.
-    // In HardKas simnet, we just spin up cpuminer for a brief moment.
-    // We can use a random dev account to mine into.
+
+    // Mine into the first dev account; there is no fallback address to invent.
     const { listDevAccountsSync } = await import("@hardkas/accounts");
     const accounts = listDevAccountsSync(process.cwd());
-    const address = accounts[0]?.address || "simnet:qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqzcxw";
-    
-    // Clean up any old miner
-    await execAsync(`docker rm -f hardkas-helper-miner`).catch(() => {});
-    
-    // Run cpuminer in background, it will mine some blocks
-    await execAsync(`docker run -d --name hardkas-helper-miner --network host kaspanet/cpuminer@sha256:60f78ab2828ab24b249c99210eee5a2825303a5226154260dd021ff26d46748b -a ${address} -s 127.0.0.1 -p 16210 --mine-when-not-synced -t 1`).catch((e) => {
-      console.warn("Could not start helper-miner. Is docker running and network host working?", e.message);
-    });
-    
+    const address = accounts[0]?.address;
+    if (!address) {
+      return c.json({ ok: false, error: "NO_DEV_ACCOUNT: create a dev account to mine into" }, 409);
+    }
+
+    // Only the canonical node is mined into, and only once it proves its identity.
+    const { requireNodeIdentity } = await import("@hardkas/node-runner");
+    try {
+      await requireNodeIdentity();
+    } catch (e: any) {
+      return c.json({ ok: false, error: e.message }, 409);
+    }
+
+    // The single canonical miner, inside the node's network namespace.
+    const miner = CANONICAL_LOCALNET.minerContainerName;
+    await execFileAsync("docker", ["rm", "-f", miner]).catch(() => {});
+    try {
+      await execFileAsync("docker", [
+        "run", "-d", "--name", miner,
+        "--network", `container:${CANONICAL_LOCALNET.containerName}`,
+        CPUMINER_REFERENCE_IMAGE,
+        "-a", address, "-s", "127.0.0.1", "-p", String(CANONICAL_LOCALNET.ports.rpc),
+        "--mine-when-not-synced", "-t", "1"
+      ]);
+    } catch (e: any) {
+      return c.json({ ok: false, error: `MINER_START_FAILED: ${e.message}` }, 502);
+    }
+
     // Wait for approx time to mine requested blocks (simnet mines very fast)
-    // 5 seconds should mine dozens of blocks.
     await new Promise(r => setTimeout(r, parseInt(blocks) * 500));
-    
+
     // Stop miner
-    await execAsync(`docker rm -f hardkas-helper-miner`).catch(() => {});
-    
+    await execFileAsync("docker", ["rm", "-f", miner]).catch(() => {});
+
     return c.json({ ok: true, data: { status: "mined", address } });
   } catch (err: any) {
     return c.json({ ok: false, error: err.message }, 500);

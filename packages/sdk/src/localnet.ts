@@ -1,6 +1,7 @@
 import { Hardkas } from "./index.js";
 import { execFileSync } from "node:child_process";
 import { HardkasSchemas } from "@hardkas/artifacts";
+import { CPUMINER_REFERENCE_IMAGE, CANONICAL_LOCALNET, nodeRpcUrl, type NodeIdentityRecord } from "@hardkas/core";
 
 export interface LocalnetProfileOptions {
   profile?: "simulated" | "toccata-v2" | string;
@@ -25,6 +26,8 @@ export interface LocalnetStatusResult {
     image: string;
     name: string;
   };
+  /** Proof of which node answers (container + image digest + endpoint + network/version). */
+  identity: NodeIdentityRecord;
   simulationLevels: {
     artifactCoherence: "READY";
     runtimeOutcome: "PARTIAL";
@@ -72,11 +75,13 @@ export class HardkasLocalnet {
   async status(options: LocalnetProfileOptions = {}): Promise<LocalnetStatusResult> {
     const profile = options.profile || "toccata-v2";
     const node = await this.detectToccataNode();
+    const { verifyNodeIdentity } = await import("@hardkas/node-runner");
     return {
       schema: HardkasSchemas.LocalnetStatusV1,
       profile,
       node,
-      miner: this.inspectDockerContainer("hardkas-toccata-miner"),
+      miner: this.inspectDockerContainer(CANONICAL_LOCALNET.minerContainerName),
+      identity: await verifyNodeIdentity(),
       simulationLevels: {
         artifactCoherence: "READY",
         runtimeOutcome: "PARTIAL",
@@ -89,7 +94,7 @@ export class HardkasLocalnet {
    * Initializes the in-memory simulated workspace.
    *
    * Docker Toccata process control remains a CLI/localnet responsibility in
-   * 0.12.0-rc.20; the SDK reports that boundary instead of silently shelling out.
+   * 0.12.0-rc.21; the SDK reports that boundary instead of silently shelling out.
    */
   async start(options: LocalnetProfileOptions = {}): Promise<LocalnetControlResult> {
     const profile = options.profile || "simulated";
@@ -109,7 +114,7 @@ export class HardkasLocalnet {
       profile,
       status: "SDK_LOCALNET_CONTROL_UNSUPPORTED",
       message:
-        "SDK Docker localnet start is not supported in 0.12.0-rc.20. Use `hardkas localnet start --profile toccata-v2`."
+        "SDK Docker localnet start is not supported in 0.12.0-rc.21. Use `hardkas localnet start --profile toccata-v2`."
     };
   }
 
@@ -133,7 +138,7 @@ export class HardkasLocalnet {
       profile,
       status: "SDK_LOCALNET_CONTROL_UNSUPPORTED",
       message:
-        "SDK Docker localnet stop is not supported in 0.12.0-rc.20. Use `hardkas localnet stop --profile toccata-v2`."
+        "SDK Docker localnet stop is not supported in 0.12.0-rc.21. Use `hardkas localnet stop --profile toccata-v2`."
     };
   }
 
@@ -171,7 +176,7 @@ export class HardkasLocalnet {
       identifier,
       status: "SDK_TOCCATA_FUNDING_UNSUPPORTED",
       message:
-        "SDK Toccata funding is not supported in 0.12.0-rc.20. Use `hardkas localnet fund <account> --profile toccata-v2`."
+        "SDK Toccata funding is not supported in 0.12.0-rc.21. Use `hardkas localnet fund <account> --profile toccata-v2`."
     };
   }
 
@@ -184,7 +189,7 @@ export class HardkasLocalnet {
   }
 
   private async detectToccataNode(): Promise<LocalnetStatusResult["node"]> {
-    const rpcUrl = "ws://127.0.0.1:18210";
+    const rpcUrl = nodeRpcUrl();
     const { JsonWrpcKaspaClient } = await import("@hardkas/kaspa-rpc");
     const client = new JsonWrpcKaspaClient({ rpcUrl, timeoutMs: 3000 });
     try {
@@ -215,7 +220,7 @@ export class HardkasLocalnet {
   }
 
   private inspectDockerContainer(name: string): LocalnetStatusResult["miner"] {
-    const image = "kaspanet/cpuminer@sha256:60f78ab2828ab24b249c99210eee5a2825303a5226154260dd021ff26d46748b";
+    const image = CPUMINER_REFERENCE_IMAGE;
     try {
       const stdout = execFileSync(
         "docker",

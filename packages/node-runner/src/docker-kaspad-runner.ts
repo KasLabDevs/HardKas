@@ -5,16 +5,32 @@ import { existsSync } from "node:fs";
 import net from "node:net";
 // Using relative paths to avoid resolution issues in restricted environments
 import { checkKaspaRpcHealth, waitForKaspaRpcReady } from "@hardkas/kaspa-rpc";
+import {
+  CANONICAL_LOCALNET,
+  CANONICAL_NODE_EXPECTATION,
+  KASPAD_REFERENCE_VERSION,
+  CPUMINER_REFERENCE_IMAGE,
+  assertNodeIdentityVerified,
+  type NodeIdentityExpectation,
+  type NodeIdentityRecord
+} from "@hardkas/core";
 import { DockerKaspadOptions, KaspadNodeStatus, KaspadPorts } from "./types.js";
+import { verifyNodeIdentity } from "./identity.js";
 
-export const DEFAULT_IMAGE = process.env.HARDKAS_KASPAD_IMAGE ?? "kaspanet/rusty-kaspad:latest";
-export const DEFAULT_CONTAINER_NAME = "hardkas-kaspad-simnet";
-export const DEFAULT_NETWORK = "simnet";
-export const DEFAULT_PORTS: KaspadPorts = {
-  rpc: 16210,
-  borshRpc: 17210,
-  jsonRpc: 18210
-};
+// The canonical real localnet (see CANONICAL_LOCALNET in @hardkas/core). Every
+// HardKAS entry point that manages a node uses these defaults, so there is one
+// node lifecycle, one container and one miner.
+export const DEFAULT_IMAGE = process.env.HARDKAS_KASPAD_IMAGE ?? CANONICAL_LOCALNET.image;
+export const DEFAULT_CONTAINER_NAME = CANONICAL_LOCALNET.containerName;
+export const DEFAULT_NETWORK = CANONICAL_LOCALNET.network;
+export const DEFAULT_PORTS: KaspadPorts = { ...CANONICAL_LOCALNET.ports };
+
+/** The miner always runs in the node's network namespace, under one name per node. */
+export function minerContainerNameFor(nodeContainerName: string): string {
+  return nodeContainerName === CANONICAL_LOCALNET.containerName
+    ? CANONICAL_LOCALNET.minerContainerName
+    : `${nodeContainerName}-miner`;
+}
 
 interface InternalDockerKaspadOptions extends Required<
   Omit<DockerKaspadOptions, "ports" | "mineTo">
@@ -40,13 +56,48 @@ export class DockerKaspadRunner {
       } as KaspadPorts,
       detach: options?.detach ?? true,
       allowFloatingImage: options?.allowFloatingImage ?? false,
+      allowSimulatedFallback: options?.allowSimulatedFallback ?? process.env.HARDKAS_ALLOW_SIMULATED_NODE === "1",
       mineTo: options?.mineTo
     } as InternalDockerKaspadOptions;
+  }
+
+  /**
+   * The identity this runner's node must prove, or undefined when it is not
+   * the canonical node (a custom image has no known version to verify).
+   */
+  expectedIdentity(): NodeIdentityExpectation | undefined {
+    if (this.options.image !== CANONICAL_LOCALNET.image) return undefined;
+    return {
+      ...CANONICAL_NODE_EXPECTATION,
+      containerName: this.options.containerName,
+      rpcPort: this.options.ports.jsonRpc
+    };
+  }
+
+  /** Proves the running node is the one this runner manages (see verifyNodeIdentity). */
+  async identity(): Promise<NodeIdentityRecord | undefined> {
+    const expected = this.expectedIdentity();
+    return expected ? verifyNodeIdentity({ expected }) : undefined;
+  }
+
+  private async requireIdentity(context: string): Promise<void> {
+    const expected = this.expectedIdentity();
+    if (!expected) return;
+    const record = await verifyNodeIdentity({ expected });
+    try {
+      assertNodeIdentityVerified(record);
+    } catch (e: any) {
+      e.message = `${context}: ${e.message}`;
+      throw e;
+    }
   }
 
   async start(): Promise<KaspadNodeStatus> {
     const status = await this.status();
     if (status.running) {
+      // A running container with the expected name is not trusted on its name:
+      // it must prove digest, endpoint ownership, network and version.
+      await this.requireIdentity(`Refusing to adopt the running '${this.options.containerName}'`);
       await this.startMiner();
       return status;
     }
@@ -54,8 +105,11 @@ export class DockerKaspadRunner {
     try {
       await execa("docker", ["version"]);
     } catch (e: any) {
-      if (process.env.VITEST || process.env.NODE_ENV === "test") {
-        console.warn(`[DockerKaspadRunner] Docker unavailable in test environment (${e.message}). Switching to simulated node runner.`);
+      if (this.options.allowSimulatedFallback) {
+        console.warn(
+          `[DockerKaspadRunner] Docker unavailable (${e.message}). SIMULATED node runner explicitly allowed ` +
+            `(allowSimulatedFallback / HARDKAS_ALLOW_SIMULATED_NODE=1): this is not a real node.`
+        );
         (this as any)._simulated = true;
         return this.status();
       }
@@ -64,16 +118,13 @@ export class DockerKaspadRunner {
       );
     }
 
-    // Floating tag warning
+    // Floating tag guard
     if (this.options.image.endsWith(":latest") && !this.options.allowFloatingImage) {
-      // Latest tag is now permitted by default if it's the exact DEFAULT_IMAGE
-      if (this.options.image !== "kaspanet/rusty-kaspad:latest") {
-        throw new Error(
-          `DockerKaspadRunner: The image tag ':latest' is unsafe for reproducible environments. ` +
-          `Either pin a specific version (e.g., 'kaspanet/rusty-kaspad:v1.1.0') ` +
-          `or explicitly set allowFloatingImage: true.`
-        );
-      }
+      throw new Error(
+        `DockerKaspadRunner: The image tag ':latest' is unsafe for reproducible environments. ` +
+        `Either pin a specific version (e.g., 'kaspanet/rusty-kaspad:${KASPAD_REFERENCE_VERSION}') ` +
+        `or explicitly set allowFloatingImage: true.`
+      );
     }
 
     // Network Flag Resolution - FAIL FAST
@@ -95,12 +146,8 @@ export class DockerKaspadRunner {
       throw new Error(`Unsupported network for Docker runner: ${network}`);
     }
 
-    // Port check
+    // Port check: an occupied port is never adopted (its owner is not our container).
     await this.ensurePortsAvailable();
-    if ((this as any)._attachedToExisting) {
-      await this.startMiner();
-      return this.status();
-    }
 
     // Ensure data directory exists
     const absoluteDataDir = path.isAbsolute(this.options.dataDir)
@@ -172,13 +219,14 @@ export class DockerKaspadRunner {
       );
     }
 
+    await this.requireIdentity(`The node started as '${this.options.containerName}' does not match its expected identity`);
     await this.startMiner();
     return this.status();
   }
 
   private async startMiner(): Promise<void> {
     if (!this.options.mineTo) return;
-    const minerContainerName = `${this.options.containerName}-miner`;
+    const minerContainerName = minerContainerNameFor(this.options.containerName);
     try {
       await execa("docker", ["rm", "-f", minerContainerName]);
     } catch (e) {}
@@ -188,7 +236,7 @@ export class DockerKaspadRunner {
         "run", "-d", "--rm",
         "--name", minerContainerName,
         "--network", `container:${this.options.containerName}`,
-        "kaspanet/cpuminer@sha256:60f78ab2828ab24b249c99210eee5a2825303a5226154260dd021ff26d46748b",
+        CPUMINER_REFERENCE_IMAGE,
         "-a", this.options.mineTo,
         "-s", "127.0.0.1",
         "-p", this.options.ports.rpc.toString(),
@@ -209,17 +257,17 @@ export class DockerKaspadRunner {
     for (const port of ports) {
       const available = await this.isPortAvailable(port);
       if (!available) {
-        if (process.env.VITEST || process.env.NODE_ENV === "test" || process.env.HARDKAS_ATTACH_EXISTING === "true") {
-          console.warn(`[DockerKaspadRunner] Port ${port} is already active. Attaching to existing instance without restarting.`);
-          (this as any)._attachedToExisting = true;
-          return;
-        }
-        throw new Error(
-          `Port ${port} is already in use on the host. Cannot start node.\n` +
-            `  - Stop any existing process using this port.\n` +
+        // Our container is not running (start() checked), so whatever holds the
+        // port is something else. It is reported, never attached to.
+        const err = new Error(
+          `NODE_PORT_OCCUPIED: port ${port} is already in use by something other than '${this.options.containerName}'. ` +
+            `HardKAS does not attach to a node whose identity it cannot prove.\n` +
+            `  - Stop the process or container using this port.\n` +
             `  - Or change the port in hardkas.config.ts.\n` +
             `  - Or run 'hardkas node reset --yes' if it's a stale container.`
         );
+        (err as any).code = "NODE_PORT_OCCUPIED";
+        throw err;
       }
     }
   }
@@ -237,9 +285,9 @@ export class DockerKaspadRunner {
   }
 
   async stop(): Promise<KaspadNodeStatus> {
-    if ((this as any)._simulated || (this as any)._attachedToExisting) {
+    if ((this as any)._simulated) {
       const stat = await this.status();
-      if ((this as any)._simulated) (this as any)._simulated = false;
+      (this as any)._simulated = false;
       return stat;
     }
     try {
@@ -250,7 +298,7 @@ export class DockerKaspadRunner {
     }
 
     if (this.options.mineTo) {
-      const minerContainerName = `${this.options.containerName}-miner`;
+      const minerContainerName = minerContainerNameFor(this.options.containerName);
       try {
         await execa("docker", ["stop", minerContainerName]);
         await execa("docker", ["rm", minerContainerName]);

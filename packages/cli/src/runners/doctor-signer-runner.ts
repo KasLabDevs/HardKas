@@ -13,7 +13,7 @@ export async function runDoctorSigner(options: { json?: boolean } = {}) {
   UI.box("HardKAS System Doctor", "Signer Backend Diagnostics");
 
   if (status.available) {
-    UI.logHuman(`Signer backend: ${pc.bold("kaspa-wasm")} ${pc.green("✅")}`);
+    UI.logHuman(`Signer backend: ${pc.bold(`kaspa-wasm ${status.version ?? ""}`.trim())} ${pc.green("✅")}`);
     try {
       const kaspa = await loadKaspaWasm();
 
@@ -38,7 +38,7 @@ export async function runDoctorSigner(options: { json?: boolean } = {}) {
     }
   } else {
     UI.logHuman(`Signer backend: ${pc.bold("unavailable")} ${pc.red("❌")}`);
-    UI.logHuman(`Reason: kaspa-wasm not installed`);
+    UI.logHuman(`Reason: ${status.error ?? "kaspa-wasm toolchain unavailable"}`);
     UI.logHuman(`Real node tx lifecycle: blocked`);
   }
   console.log();

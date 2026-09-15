@@ -1,6 +1,6 @@
 # Post-Release Findings For 0.12.0-rc.20
 
-Date: 2026-09-08T21:54:27.299Z
+Date: 2026-09-14T11:49:14.086Z
 
 Status: `POST_RELEASE_BREAK_GAUNTLET_FINDINGS`
 
@@ -10,20 +10,20 @@ Status: `POST_RELEASE_BREAK_GAUNTLET_FINDINGS`
 - Apps generated: 20
 - Apps build passed: 20
 - Apps smoke passed: 16
-- Mainnet bypasses: 1
-- Artifact corruption detected: yes
-- SDK gaps found: 3
+- Mainnet bypasses: 0
+- Artifact corruption detected: no
+- SDK gaps found: 1
 - Bugs found: 0
-- Docs/error-message gaps found: 2
+- Docs/error-message gaps found: 1
 - Resolved 0.12.0-rc.20 findings: 4
-- Unresolved findings: 8
+- Unresolved findings: 3
 
 ## Baseline
 
 - PASS: pnpm build
-- FAIL: pnpm test
+- PASS: pnpm test
 - PASS: pnpm corpus:toccata
-- FAIL: pnpm gauntlet:toccata
+- PASS: pnpm gauntlet:toccata
 - PASS: hardkas --version
 - PASS: hardkas capabilities --json
 - PASS: hardkas localnet status --json
@@ -31,31 +31,21 @@ Status: `POST_RELEASE_BREAK_GAUNTLET_FINDINGS`
 ## Priority Findings
 
 - P2: SDK gap for capabilities - CLI flow passed but SDK parity failed: instance.capabilities is not a function
-- P2: SDK gap for corpus verify - CLI flow passed but SDK parity failed: Cannot read properties of undefined (reading 'verify')
-- P2: SDK gap for silver compile/deploy/spend - CLI flow passed but SDK parity failed: Cannot read properties of undefined (reading 'deployPlan')
-- P2: mainnet silver deploy-plan attempt failed with unclear or unexpected error (mainnet-silver-deploy-plan-attempt)
-- P2: compiler nonexistent failed with unclear or unexpected error (compiler-nonexistent)
+- P2: artifact hash corrupt failed with unclear or unexpected error (artifact-hash-corrupt)
 - P1: CLI/SDK parity failed for capabilities
-- P1: CLI/SDK parity failed for corpus verify
-- P1: CLI/SDK parity failed for silver compile/deploy/spend
 
 ## Resolved / Unresolved
 
 Resolved:
 - P1 SDK localnet status parity
-- P1 SDK Silver high-level deploy planning/simulation/compare surface
+- P1 SDK Silver v1 compile surface (managed silverc, no simulated path)
 - P2 SDK capabilities API
 - P2 SDK corpus verify API
 
 Unresolved:
 - P2: capabilities
-- P2: corpus verify
-- P2: silver compile/deploy/spend
-- P2: mainnet silver deploy-plan attempt failed with unclear or unexpected error
-- P2: compiler nonexistent failed with unclear or unexpected error
+- P2: artifact hash corrupt failed with unclear or unexpected error
 - P1: CLI/SDK parity failed for capabilities
-- P1: CLI/SDK parity failed for corpus verify
-- P1: CLI/SDK parity failed for silver compile/deploy/spend
 
 ## Failing Apps
 
@@ -66,63 +56,38 @@ Unresolved:
 
 ## Failing Adversarial Cases
 
-- mainnet silver deploy-plan attempt: wrong_error - error: unknown command 'silver'
+- artifact hash corrupt: wrong_error - 
+  ═══ Artifact Verification: wrong-network-artifact.json ═══
+  Type:    hardkas.postReleaseProbe
+  Expected Hash: bbaa40b8f7f305e177694feec4fad4032a82bb0dd3da5ac236ffe2cfaa2f9245
+  Actual Hash:   N/A
 
-Usage: hardkas [options] [command]
+Issues:
+- ERROR:    [ARTIFACT_SCHEMA_MISSING] Missing version or schema (Artifact might be v1 or legacy)
+- ERROR:    [MISSING_LINEAGE] Artifact has no lineage metadata
+- ERROR:    [MISSING_WORKFLOW_ID] Strict mode requires workflowId
+- ERROR:    [MISSING_ASSUMPTION_LEVEL] Strict mode requires assumptionLevel
+- ERROR:    [MISSING_EXECUTION_MODE] Strict mode requires executionMode
+- WARNING:  [REPLAY_UNSUPPORTED_CHECK] Replay verification (full consensus simulation) is currently unsupported in this build.
 
-HardKAS: Kaspa-native developer operating environment
+  ✗ Error:
+    VERIFICATION FAILED
 
-Options:
-  -V, --version                       output the version number
-  -h, --help                          display help for command
-
-Commands:
-  init [options] [name]               Initialize a new HardKAS project stable
-  up [options]                        Boot or validate the HardKAS developer
-                                      runtime environment stable
-  create [options] <template> <dest>  Scaffold a new HardKAS project from a
-                                      template stable
-  tx                                  L1 Transaction commands
-  artifact|artifacts                  Manage HardKAS artifacts
-  replay                              Manage HardKAS t
-- compiler nonexistent: wrong_error - error: unknown command 'silver'
-
-Usage: hardkas [options] [command]
-
-HardKAS: Kaspa-native developer operating environment
-
-Options:
-  -V, --version                       output the version number
-  -h, --help                          display help for command
-
-Commands:
-  init [options] [name]               Initialize a new HardKAS project stable
-  up [options]                        Boot or validate the HardKAS developer
-                                      runtime environment stable
-  create [options] <template> <dest>  Scaffold a new HardKAS project from a
-                                      template stable
-  tx                                  L1 Transaction commands
-  artifact|artifacts                  Manage HardKAS artifacts
-  replay                              Manage HardKAS t
+  ✗ [VERIFICATION_FAILED] Artifact verification fail
 
 ## CLI vs SDK Parity
 
 - capabilities: CLI=PASS, SDK=FAIL, parity=PARITY_FAIL
 - localnet status: CLI=PASS, SDK=PASS, parity=PARITY_PASS
 - accounts list: CLI=PASS, SDK=PASS, parity=PARITY_PASS
-- corpus verify: CLI=PASS, SDK=FAIL, parity=PARITY_FAIL
-- silver compile/deploy/spend: CLI=PASS, SDK=FAIL, parity=PARITY_FAIL
+- corpus verify: CLI=PASS, SDK=PASS, parity=PARITY_PASS
+- silver compile: CLI=PASS, SDK=PASS, parity=PARITY_PASS
 
 ## Recommended 0.12.0-rc.20 Backlog
 
 - Add or document SDK parity for `capabilities`.
-- Add or document SDK parity for `corpus verify`.
-- Add or document SDK parity for `silver compile/deploy/spend`.
 - Fix CLI/SDK parity for `capabilities`.
-- Fix CLI/SDK parity for `corpus verify`.
-- Fix CLI/SDK parity for `silver compile/deploy/spend`.
-- Improve error/docs for mainnet silver deploy-plan attempt failed with unclear or unexpected error.
-- Improve error/docs for compiler nonexistent failed with unclear or unexpected error.
+- Improve error/docs for artifact hash corrupt failed with unclear or unexpected error.
 
 ## Claims Kept
 

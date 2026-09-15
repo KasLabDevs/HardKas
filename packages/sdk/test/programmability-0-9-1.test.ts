@@ -13,7 +13,7 @@ function repoRoot(): string {
   throw new Error("repo root not found");
 }
 
-describe("0.12.0-rc.20 programmability SDK surface", () => {
+describe("0.12.0-rc.21 programmability SDK surface", () => {
   it("reports builder-ready programmability capabilities", async () => {
     const sdk = await Hardkas.create({
       cwd: repoRoot(),
@@ -25,7 +25,12 @@ describe("0.12.0-rc.20 programmability SDK surface", () => {
 
     expect(result.ok).toBe(true);
     expect(result.status).toBe("PROGRAMMABILITY_SURFACE_READY");
-    expect(result.surfaces.silverScript).toBe("SILVERSCRIPT_BUILDER_READY");
+    expect(result.surfaces.silverScript).toBe("SILVERSCRIPT_V1_LIFECYCLE");
+    expect(result.claims.silverCapabilities["silver.compile.v1"]).toBe("REAL_NODE_EVIDENCE");
+    expect(result.claims.silverCapabilities["silver.p2sh.deploy-spend.v1"]).toBe("REAL_NODE_EVIDENCE");
+    expect(result.claims.silverCapabilities["silver.p2sh.relative-timelock.v1"]).toBe("REAL_NODE_EVIDENCE");
+    expect(result.claims.silverCapabilities["toccata.covenant.auth-1to1-transition.v1"]).toBe("REAL_NODE_EVIDENCE");
+    expect(result.claims.generalCovenantSupport).toBe("NOT_CLAIMED");
     expect(result.surfaces.zkCorpus).toBe("ZK_CORPUS_SURFACE_READY");
     expect(result.surfaces.vProgsInspect).toBe("VPROGS_INSPECT_SURFACE_READY");
     expect(result.claims.mainnet).toBe("BLOCKED_BY_POLICY");

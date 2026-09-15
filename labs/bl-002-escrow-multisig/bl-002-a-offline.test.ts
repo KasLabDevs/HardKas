@@ -17,7 +17,7 @@ describe("BL-002A - Offline Policy Matrix", () => {
     let kaspa: any;
 
     beforeAll(async () => {
-        kaspa = await import("kaspa-wasm");
+        kaspa = (await (await import("@hardkas/accounts")).loadKaspaWasm());
         identities = await generateIdentities();
         multisig = createCanonicalMultisig([identities.alice, identities.bob, identities.charlie], 2);
 

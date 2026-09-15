@@ -37,13 +37,20 @@ describe("Mempool-Aware UTXO Selection (Regression)", () => {
   });
 
   it("tx2 must not reuse input from tx1 if tx1 is pending in mempool", async () => {
-    const fromAddress = "kaspasim:qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqkx9awp4e";
-    const toAddress = "kaspasim:qrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrx9awp4f";
+    // Real bech32 fixtures with valid checksums — required now that the
+    // upstream Generator (post M10-B-completion) owns address parsing.
+    // Send-to-self keeps scriptPublicKey stable across shapes.
+    const fromAddress = "kaspasim:qr0lr4ml9fn3chekrqmjdkergxl93l4wrk3dankcgvjq776s9wn9jeadh9sjw";
+    const toAddress = fromAddress;
+    const { loadManagedKaspaWasmSync } = await import("@hardkas/core");
+    const k = loadManagedKaspaWasmSync();
+    const spk = String(k.payToAddressScript(fromAddress).script);
+    const txAId = "0".repeat(64);
 
 
     // 1. Initial State: Address has one UTXO (txA:0)
     mockRpc.getUtxosByAddress.mockResolvedValue([
-      { outpoint: { transactionId: "txA", index: 0 }, amountSompi: 100000000n, scriptPublicKey: "00", isCoinbase: false }
+      { outpoint: { transactionId: txAId, index: 0 }, amountSompi: 500_000_000_000n, scriptPublicKey: spk, isCoinbase: false }
     ]);
     mockRpc.getMempoolEntriesByAddresses.mockResolvedValue({ entries: [] });
 
@@ -51,7 +58,7 @@ describe("Mempool-Aware UTXO Selection (Regression)", () => {
     const plan1: TxPlanArtifact = await sdk.tx.plan({
       from: fromAddress,
       to: toAddress,
-      amount: 10000000n // 0.1 KAS
+      amount: 1_000_000_000n // 0.1 KAS
     });
 
     // (We assume plan1 successfully created a plan that uses txA)
@@ -61,9 +68,9 @@ describe("Mempool-Aware UTXO Selection (Regression)", () => {
     // 3. Tx1 is broadcasted and enters the mempool.
     // The node now reports txA as pending in the mempool.
     mockRpc.getUtxosByAddress.mockResolvedValue([
-      { outpoint: { transactionId: "txA", index: 0 }, amountSompi: 100000000n, scriptPublicKey: "00", isCoinbase: false }
+      { outpoint: { transactionId: txAId, index: 0 }, amountSompi: 500_000_000_000n, scriptPublicKey: spk, isCoinbase: false }
     ]); // Node DAG still shows it as unspent
-    
+
     mockRpc.getMempoolEntriesByAddresses.mockResolvedValue({
       entries: [
         {
@@ -71,7 +78,7 @@ describe("Mempool-Aware UTXO Selection (Regression)", () => {
           sending: [
             {
               transaction: {
-                inputs: [{ previousOutpoint: { transactionId: "txA", index: 0 } }] // txA is locked by this pending tx
+                inputs: [{ previousOutpoint: { transactionId: txAId, index: 0 } }] // txA is locked by this pending tx
               }
             }
           ],
@@ -84,7 +91,7 @@ describe("Mempool-Aware UTXO Selection (Regression)", () => {
     await expect(sdk.tx.plan({
       from: fromAddress,
       to: toAddress,
-      amount: 10000000n
+      amount: 1_000_000_000n
     })).rejects.toThrow(/Insufficient funds/i); // Should fail because txA is filtered out!
 
   });

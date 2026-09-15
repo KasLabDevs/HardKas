@@ -1,0 +1,61 @@
+{
+  "schema": "hardkas.silverCorpusCase.v1",
+  "id": "p2sh-transfer-with-timeout",
+  "scenario": "M8-B1b TransferWithTimeout (relative DAA lock, this.ageDaa)",
+  "scope": "SilverScript L1/P2SH execution — not evidence of covenant or stateful Toccata semantics",
+  "capabilities": [
+    "silver.compile.v1",
+    "silver.p2sh.deploy-spend.v1",
+    "silver.p2sh.relative-timelock.v1"
+  ],
+  "network": "simnet",
+  "compiles": [
+    {
+      "name": "contract",
+      "source": "contract.sil",
+      "constructorArgs": "contract.constructor-args.json",
+      "artifact": "contract.artifact.json",
+      "contract": "TransferWithTimeout",
+      "provenance": {
+        "schema": "hardkas.silver.compileProvenance.v1",
+        "compiler": {
+          "id": "silverc",
+          "repository": "kaspanet/silverscript",
+          "releaseTag": "v1.0.0",
+          "commit": "3ed973335b59269293564805cc2c58a14595ec03",
+          "assetName": "silverc-windows-x86_64.zip",
+          "assetSha256": "3e0d660c15a9e7ac90f3960da24d348b076b1891481bfe758db18accc8a102e1",
+          "binarySha256": "ce1e0ef5f1f415f371d3d2426e788597a388635da8cbe93e72e95a4f754b29af",
+          "languageVersion": "0.1.0"
+        },
+        "sourceSha256": "fabadb59dbcb4b6b5ef577b65cd21a636b9e2de695aa64178d4bff39d30d84f6",
+        "constructorArgsSha256": "b4c4d2899a5b7a1a5066d642a49ed240d149ded39d7f3aacaaa53aeeb16b18e3",
+        "artifactSha256": "9befceb11d7f667bad7bd3c7daa60acfa583808cf1e1ba31d214ab292fca6546",
+        "abiSchemaVersion": 1,
+        "contracts": [
+          {
+            "name": "TransferWithTimeout",
+            "bytecodeSha256": "f19031a6c409376ee017f8764b4456c8da29cf704cad6fa67740753091fe9d16",
+            "templateHash": "a9b4336c95ddd75fd0ce38e8c35d676753d42a07e5dbc6d40a0467db4fe8e08a",
+            "entries": [
+              {
+                "name": "reclaim",
+                "dispatchTag": "35eecca6"
+              },
+              {
+                "name": "transfer",
+                "dispatchTag": "de5ac30f"
+              }
+            ]
+          }
+        ]
+      },
+      "lockingScript": {
+        "version": 0,
+        "script": "aa20e3ef75ef165db2360be29f2a42391879d2dbb1fc27855d39ca56180012320c4b87"
+      },
+      "address": "kaspasim:pr377a00zewmydstu20j5s3erpua9ka3lsnc2hfeeftpsqqjxgxykqp7ptv9p"
+    }
+  ],
+  "evidence": "evidence.json"
+}

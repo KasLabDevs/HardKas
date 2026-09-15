@@ -1,0 +1,358 @@
+{
+  "schema": "hardkas.silver.e2eEvidence.v1",
+  "scenario": "M8-B2-B Counter: 1:1 auth-bound covenant transition (Toccata tx v1)",
+  "scope": "Toccata tx-v1 covenant/state-transition execution (1:1 auth-bound singleton transition) against verified rusty-kaspad 2.0.1 — not vProgs, L2, EVM, multi-input/leader covenants, or production/audited contracts",
+  "capabilities": [
+    "silver.compile.v1",
+    "toccata.covenant.auth-1to1-transition.v1"
+  ],
+  "node": {
+    "schema": "hardkas.nodeIdentity.v1",
+    "verified": true,
+    "problems": [],
+    "expected": {
+      "containerName": "hardkas-kaspad-toccata-v2",
+      "image": "kaspanet/rusty-kaspad:v2.0.1@sha256:db36449e2f41cf33ab7c26683ce390cb71bdea9c403eefd2e740a7d5605bcd8b",
+      "imageDigest": "sha256:db36449e2f41cf33ab7c26683ce390cb71bdea9c403eefd2e740a7d5605bcd8b",
+      "network": "simnet",
+      "serverVersion": "2.0.1",
+      "host": "127.0.0.1",
+      "rpcPort": 18210
+    },
+    "observed": {
+      "container": {
+        "name": "hardkas-kaspad-toccata-v2",
+        "id": "6c2fcfd32a1c9f61adf1160c4aff5958435def2eb11d3364d4298284f47c0528",
+        "running": true,
+        "imageId": "sha256:db36449e2f41cf33ab7c26683ce390cb71bdea9c403eefd2e740a7d5605bcd8b",
+        "repoDigests": [
+          "kaspanet/rusty-kaspad@sha256:db36449e2f41cf33ab7c26683ce390cb71bdea9c403eefd2e740a7d5605bcd8b",
+          "supertypo/rusty-kaspad@sha256:db36449e2f41cf33ab7c26683ce390cb71bdea9c403eefd2e740a7d5605bcd8b"
+        ],
+        "publishedPorts": [
+          {
+            "containerPort": "16210/tcp",
+            "hostIp": "127.0.0.1",
+            "hostPort": 16210
+          },
+          {
+            "containerPort": "17210/tcp",
+            "hostIp": "127.0.0.1",
+            "hostPort": 17210
+          },
+          {
+            "containerPort": "18210/tcp",
+            "hostIp": "127.0.0.1",
+            "hostPort": 18210
+          }
+        ]
+      },
+      "server": {
+        "url": "ws://127.0.0.1:18210",
+        "networkId": "simnet",
+        "serverVersion": "2.0.1",
+        "isSynced": true
+      },
+      "probeErrors": []
+    },
+    "checkedAt": "2026-09-14T11:26:09.582Z"
+  },
+  "compile": {
+    "current": {
+      "schema": "hardkas.silver.compileProvenance.v1",
+      "compiler": {
+        "id": "silverc",
+        "repository": "kaspanet/silverscript",
+        "releaseTag": "v1.0.0",
+        "commit": "3ed973335b59269293564805cc2c58a14595ec03",
+        "assetName": "silverc-windows-x86_64.zip",
+        "assetSha256": "3e0d660c15a9e7ac90f3960da24d348b076b1891481bfe758db18accc8a102e1",
+        "binarySha256": "ce1e0ef5f1f415f371d3d2426e788597a388635da8cbe93e72e95a4f754b29af",
+        "languageVersion": "0.1.0"
+      },
+      "sourceSha256": "a3432f1bb81df367da5e3d16412379945fda8a51ea040296d79308377927facd",
+      "constructorArgsSha256": "048082fac63d3d36e45c63d213d079d8980d1f1a0439703e76491fa6e23308b8",
+      "artifactSha256": "e72250b3be50bb0f7f54b1a51e1ff6ba2aa6f5be6de6a91d584c519df930aef3",
+      "abiSchemaVersion": 1,
+      "contracts": [
+        {
+          "name": "Counter",
+          "bytecodeSha256": "f2dcc69ed8cdcaf3b78d53fd7bc3fe4a31c0bb4ee83338b972c944b3d33d9f39",
+          "templateHash": "12e80a77d386245a8a8db422137333918b3d6bbbb482e39f8e45302244e9bd95",
+          "entries": [
+            {
+              "name": "__covenant_entrypoint_auth_bump",
+              "dispatchTag": "f3489a39"
+            }
+          ]
+        }
+      ]
+    },
+    "successor": {
+      "schema": "hardkas.silver.compileProvenance.v1",
+      "compiler": {
+        "id": "silverc",
+        "repository": "kaspanet/silverscript",
+        "releaseTag": "v1.0.0",
+        "commit": "3ed973335b59269293564805cc2c58a14595ec03",
+        "assetName": "silverc-windows-x86_64.zip",
+        "assetSha256": "3e0d660c15a9e7ac90f3960da24d348b076b1891481bfe758db18accc8a102e1",
+        "binarySha256": "ce1e0ef5f1f415f371d3d2426e788597a388635da8cbe93e72e95a4f754b29af",
+        "languageVersion": "0.1.0"
+      },
+      "sourceSha256": "a3432f1bb81df367da5e3d16412379945fda8a51ea040296d79308377927facd",
+      "constructorArgsSha256": "b28aa4e7eeb9c3ecbf283b2db203ac3a9113b5521e10455409225d55fe24c3f6",
+      "artifactSha256": "fb9b122142c1f6244360df72ee687820d52b4c894b1938e8ac379d8a11a206c7",
+      "abiSchemaVersion": 1,
+      "contracts": [
+        {
+          "name": "Counter",
+          "bytecodeSha256": "0d519aa40ad99fc302790e0939471b3cfd016a6c95a4afba8efc9a23d0421140",
+          "templateHash": "12e80a77d386245a8a8db422137333918b3d6bbbb482e39f8e45302244e9bd95",
+          "entries": [
+            {
+              "name": "__covenant_entrypoint_auth_bump",
+              "dispatchTag": "f3489a39"
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "declaration": {
+    "policy": "bump",
+    "form": "covenant",
+    "binding": "auth",
+    "from": 1,
+    "to": 1,
+    "mode": "transition",
+    "entry": "__covenant_entrypoint_auth_bump",
+    "dispatchTag": "f3489a39"
+  },
+  "state": {
+    "mapping": {
+      "value": 0
+    },
+    "verifiedAgainst": "silverc --ast-only: each State field initialized directly by the mapped constructor parameter",
+    "guard": "same template_hash + same prefix + same suffix + changed state_span",
+    "span": {
+      "offset": 1,
+      "currentLen": 9,
+      "successorLen": 9
+    },
+    "templateHash": "12e80a77d386245a8a8db422137333918b3d6bbbb482e39f8e45302244e9bd95",
+    "current": {
+      "value": "7",
+      "stateBytes": "080700000000000000"
+    },
+    "successor": {
+      "value": "12",
+      "stateBytes": "080c00000000000000"
+    }
+  },
+  "genesis": {
+    "txId": "cc2fe7bfc30d4bc9a3d31c2dda66eb7b04fddc40116eb851f1a4326f59d85a6f",
+    "version": 1,
+    "covenantIdComputedBySdk": "0e70fe2d400e373bd38ebc0c5c1608dff7e035d0a902be1608273e762f5def95",
+    "covenantIdObservedFromNode": "0e70fe2d400e373bd38ebc0c5c1608dff7e035d0a902be1608273e762f5def95",
+    "authorizingInput": 0,
+    "fundingOutpoint": {
+      "transactionId": "e642eb49be9caadb6fc21b919bffc95da5b8562646201f0d3f02f15bb8891f08",
+      "index": 1
+    },
+    "lockingScript": {
+      "version": 0,
+      "script": "aa2016735d1eb816fee81dadb3a4d0a56adb0c9d0f54bb8ec604bcf017ed5db5f87f87"
+    },
+    "address": "kaspasim:pqt8xhg7hqt0a6qa4ke6f599dtdse8g02jaca3syhncp0m2akhu8737p5jrg8",
+    "valueSompi": "1000000000",
+    "feeSompi": "408400",
+    "storageMass": "1084",
+    "confirmedAtBlockDaaScore": "65379",
+    "computeBudgetCertification": {
+      "certifiedBudget": 10,
+      "attempts": [
+        {
+          "budget": 0,
+          "feeSompi": "408400",
+          "accepted": false,
+          "rejectionClass": "compute-budget-exceeded",
+          "nodeError": "Rejected transaction cc2fe7bfc30d4bc9a3d31c2dda66eb7b04fddc40116eb851f1a4326f59d85a6f: failed to verify the signature script: script units exceeded the amount committed in the input: used=100000, limit=9999"
+        },
+        {
+          "budget": 1,
+          "feeSompi": "408400",
+          "accepted": false,
+          "rejectionClass": "compute-budget-exceeded",
+          "nodeError": "Rejected transaction cc2fe7bfc30d4bc9a3d31c2dda66eb7b04fddc40116eb851f1a4326f59d85a6f: failed to verify the signature script: script units exceeded the amount committed in the input: used=100000, limit=19999"
+        },
+        {
+          "budget": 2,
+          "feeSompi": "408400",
+          "accepted": false,
+          "rejectionClass": "compute-budget-exceeded",
+          "nodeError": "Rejected transaction cc2fe7bfc30d4bc9a3d31c2dda66eb7b04fddc40116eb851f1a4326f59d85a6f: failed to verify the signature script: script units exceeded the amount committed in the input: used=100000, limit=29999"
+        },
+        {
+          "budget": 3,
+          "feeSompi": "408400",
+          "accepted": false,
+          "rejectionClass": "compute-budget-exceeded",
+          "nodeError": "Rejected transaction cc2fe7bfc30d4bc9a3d31c2dda66eb7b04fddc40116eb851f1a4326f59d85a6f: failed to verify the signature script: script units exceeded the amount committed in the input: used=100000, limit=39999"
+        },
+        {
+          "budget": 4,
+          "feeSompi": "408400",
+          "accepted": false,
+          "rejectionClass": "compute-budget-exceeded",
+          "nodeError": "Rejected transaction cc2fe7bfc30d4bc9a3d31c2dda66eb7b04fddc40116eb851f1a4326f59d85a6f: failed to verify the signature script: script units exceeded the amount committed in the input: used=100000, limit=49999"
+        },
+        {
+          "budget": 5,
+          "feeSompi": "408400",
+          "accepted": false,
+          "rejectionClass": "compute-budget-exceeded",
+          "nodeError": "Rejected transaction cc2fe7bfc30d4bc9a3d31c2dda66eb7b04fddc40116eb851f1a4326f59d85a6f: failed to verify the signature script: script units exceeded the amount committed in the input: used=100000, limit=59999"
+        },
+        {
+          "budget": 6,
+          "feeSompi": "408400",
+          "accepted": false,
+          "rejectionClass": "compute-budget-exceeded",
+          "nodeError": "Rejected transaction cc2fe7bfc30d4bc9a3d31c2dda66eb7b04fddc40116eb851f1a4326f59d85a6f: failed to verify the signature script: script units exceeded the amount committed in the input: used=100000, limit=69999"
+        },
+        {
+          "budget": 7,
+          "feeSompi": "408400",
+          "accepted": false,
+          "rejectionClass": "compute-budget-exceeded",
+          "nodeError": "Rejected transaction cc2fe7bfc30d4bc9a3d31c2dda66eb7b04fddc40116eb851f1a4326f59d85a6f: failed to verify the signature script: script units exceeded the amount committed in the input: used=100000, limit=79999"
+        },
+        {
+          "budget": 8,
+          "feeSompi": "408400",
+          "accepted": false,
+          "rejectionClass": "compute-budget-exceeded",
+          "nodeError": "Rejected transaction cc2fe7bfc30d4bc9a3d31c2dda66eb7b04fddc40116eb851f1a4326f59d85a6f: failed to verify the signature script: script units exceeded the amount committed in the input: used=100000, limit=89999"
+        },
+        {
+          "budget": 9,
+          "feeSompi": "408400",
+          "accepted": false,
+          "rejectionClass": "compute-budget-exceeded",
+          "nodeError": "Rejected transaction cc2fe7bfc30d4bc9a3d31c2dda66eb7b04fddc40116eb851f1a4326f59d85a6f: failed to verify the signature script: script units exceeded the amount committed in the input: used=100000, limit=99999"
+        },
+        {
+          "budget": 10,
+          "feeSompi": "408400",
+          "accepted": true
+        }
+      ],
+      "mechanism": "certification probe against the verified node; not an estimator"
+    }
+  },
+  "transition": {
+    "txId": "4d46055d809fb92e0371275fde3e806df9fa46a998dd8000f0694e144c14da73",
+    "version": 1,
+    "entry": "__covenant_entrypoint_auth_bump",
+    "args": {
+      "delta": "5"
+    },
+    "computeBudget": 0,
+    "computeBudgetCertification": {
+      "lowerBoundFromWrongState": [
+        {
+          "budget": 0,
+          "feeSompi": "300100",
+          "accepted": false,
+          "rejectionClass": "script-verify",
+          "nodeError": "Rejected transaction 0cf1b5ad267043040c6c531ce1e7217dfd092c9464246239cc0d9252afe4c07b: failed to verify the signature script: script ran, but verification failed"
+        }
+      ],
+      "attempts": [
+        {
+          "budget": 0,
+          "feeSompi": "300100",
+          "accepted": true
+        }
+      ]
+    },
+    "feeSompi": "300100",
+    "storageMass": "0",
+    "signatureScriptSha256": "d03f34c3a0a33d8c5470fa08c492809c198dfa9187f505218a4ea99a28d5ed20",
+    "successor": {
+      "outpoint": {
+        "transactionId": "4d46055d809fb92e0371275fde3e806df9fa46a998dd8000f0694e144c14da73",
+        "index": 0
+      },
+      "lockingScript": {
+        "version": 0,
+        "script": "aa209a21b4329548b2d67f62942d65eb32dfd25227d7df7afccb3a5e9bb922e21ac487"
+      },
+      "address": "kaspasim:pzdzrdpjj4yt94nlv22z6e0txt0ay5386l0h4lxt8f0fhwfzugdvg7qze9dl5",
+      "valueSompi": "999699900",
+      "covenantIdObservedFromNode": "0e70fe2d400e373bd38ebc0c5c1608dff7e035d0a902be1608273e762f5def95",
+      "confirmedAtBlockDaaScore": "65403"
+    },
+    "lineage": {
+      "genesisCovenantId": "0e70fe2d400e373bd38ebc0c5c1608dff7e035d0a902be1608273e762f5def95",
+      "successorCovenantId": "0e70fe2d400e373bd38ebc0c5c1608dff7e035d0a902be1608273e762f5def95",
+      "preserved": true,
+      "genesisOutputConsumed": true
+    }
+  },
+  "controls": {
+    "bindingInV0": {
+      "name": "covenant-binding-in-tx-v0",
+      "accepted": false,
+      "rejectionClass": "tx-version-rule",
+      "nodeError": "Rejected transaction 40014ee3b2e0f9c9550e378bebd94b4792d14be614ca84e13a46c0d9738563dc: transaction output #0 has covenant field but transaction version is 0",
+      "expectedClass": "tx-version-rule"
+    },
+    "insufficientComputeBudget": {
+      "name": "genesis-funding-input-under-budget",
+      "expectedClass": "compute-budget-exceeded",
+      "budget": 9,
+      "feeSompi": "408400",
+      "accepted": false,
+      "rejectionClass": "compute-budget-exceeded",
+      "nodeError": "Rejected transaction cc2fe7bfc30d4bc9a3d31c2dda66eb7b04fddc40116eb851f1a4326f59d85a6f: failed to verify the signature script: script units exceeded the amount committed in the input: used=100000, limit=99999",
+      "note": "on the genesis P2PK input (the Counter covenant input needs no budget); a signed covenant (B2-C) would meter the covenant input itself"
+    },
+    "successorWithoutBinding": {
+      "name": "successor-without-covenant-binding",
+      "accepted": false,
+      "rejectionClass": "script-verify",
+      "nodeError": "Rejected transaction 67309804809c41e79508195b40fe81683b72b5aaaf6dfc30ed1e027f595c4b79: failed to verify the signature script: script ran, but verification failed",
+      "expectedClass": "script-verify",
+      "note": "distinguished by constructed mutation (the accepted transaction minus the binding), not by a distinct node diagnostic"
+    },
+    "wrongCovenantId": {
+      "name": "successor-bound-to-another-covenant-id",
+      "accepted": false,
+      "rejectionClass": "covenant-rule",
+      "nodeError": "Rejected transaction 21e99a1e432d04991708fb809b630f4154adbff11b1e1b18bcb4fa78fded7ec1: covenants error: input #0 and outputs with covenant id 4a378c1e0d70e8e29fee9d8e6205bfa8b51261064decfdd4fd6f843894377043 do not correspond to the expected genesis hashing",
+      "expectedClass": "covenant-rule"
+    },
+    "wrongState": {
+      "name": "successor-with-wrong-state",
+      "accepted": false,
+      "rejectionClass": "script-verify",
+      "nodeError": "Rejected transaction 0cf1b5ad267043040c6c531ce1e7217dfd092c9464246239cc0d9252afe4c07b: failed to verify the signature script: script ran, but verification failed",
+      "expectedClass": "script-verify",
+      "note": "distinguished by constructed mutation (successor state value+delta-1), not by a distinct node diagnostic"
+    }
+  },
+  "upstreamGaps": [
+    "kaspa-wasm 2.0.1 mass calculator ignores v1 compute budgets (wallet/core/src/tx/mass.rs TODO): fees for inputs with computeBudget > 0 are explicit",
+    "no compute-budget estimator in the SDK: budgets here are certified by the node, not estimated by HardKAS"
+  ],
+  "harness": {
+    "minerThrottle": {
+      "environment": "HARDKAS_TOCCATA_MINER_THROTTLE_MS",
+      "valueMs": "5",
+      "purpose": "harness-local rate limit (not a consensus parameter)"
+    }
+  },
+  "result": "PASS"
+}

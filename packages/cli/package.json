@@ -1,6 +1,6 @@
 {
   "name": "@hardkas/cli",
-  "version": "0.12.0-rc.20",
+  "version": "0.12.0-rc.21",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -65,6 +65,7 @@
     "enquirer": "^2.4.1",
     "execa": "^9.5.2",
     "express": "^5.2.1",
+    "fflate": "^0.8.3",
     "open": "^10.1.0",
     "picocolors": "^1.1.1",
     "viem": "^2.21.32",

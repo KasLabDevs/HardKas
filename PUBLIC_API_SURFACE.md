@@ -1,6 +1,6 @@
 ﻿# HardKAS Public API Surface
 
-Generado desde los `dist/**/*.d.ts` publicados de la version `0.12.0-rc.20`.
+Generado desde los `dist/**/*.d.ts` publicados de la version `0.12.0-rc.21`.
 Este fichero es el **inventario** de lo que se exporta, no una promesa de estabilidad:
 las garantias por nivel viven en `EXPERIMENTAL_SURFACE.md` y `DEPRECATED_SURFACE.md`.
 
@@ -544,9 +544,6 @@ La columna *Ejercitado* cuenta si el identificador aparece en el corpus de prueb
 - [ ] `CorruptionIssue`
 - [ ] `CorruptionSeverity`
 - [x] `createEventEnvelope`
-- [x] `createKaspaP2shBlake2bLock`
-- [x] `createPushOnlySignatureScript`
-- [x] `createRedeemScriptHash`
 - [ ] `createSnapshot`
 - [ ] `CreateSnapshotOptions`
 - [ ] `CrossWorldAccountCollisionError`
@@ -1321,15 +1318,7 @@ La columna *Ejercitado* cuenta si el identificador aparece en el corpus de prueb
 - [x] `SignedTxArtifact`
 - [ ] `signSession`
 - [x] `signTxPlanArtifact`
-- [ ] `SilverCompareMode`
-- [ ] `SilverCompareOptions`
-- [ ] `SilverCompareReport`
 - [ ] `SilverCompileOptions`
-- [ ] `SilverDeployPlanOptions`
-- [x] `SilverScript`
-- [ ] `SilverSdkArtifactResult`
-- [ ] `SilverSdkWriteOptions`
-- [ ] `SilverSpendPlanOptions`
 - [x] `SOMPI_PER_KAS`
 - [ ] `StaticSignatureScriptAuthorizer`
 - [ ] `TaskArgs`
@@ -1540,14 +1529,6 @@ La columna *Ejercitado* cuenta si el identificador aparece en el corpus de prueb
 - [ ] `QueryResponse`
 - [x] `QueryToolkit`
 - [ ] `Recommendation`
-- [ ] `SILVER_TEMPLATES`
-- [ ] `SilverArtifact`
-- [ ] `SilverBuildResult`
-- [ ] `SilverClaims`
-- [ ] `SilverEvidence`
-- [ ] `SilverSimulationResult`
-- [ ] `SilverTemplate`
-- [x] `SilverToolkit`
 - [ ] `SnapshotBackend`
 - [ ] `SnapshotManifest`
 - [ ] `SnapshotParticipant`

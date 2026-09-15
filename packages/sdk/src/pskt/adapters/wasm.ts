@@ -25,28 +25,25 @@ export class WasmPsktAdapter implements PsktRuntimeAdapter {
     this.id = id;
   }
 
+  /**
+   * Reports what this adapter implements, not what the SDK exposes. The SDK
+   * (kaspa-wasm >= 2.0) ships a PSKT class, but none of the mappings below are
+   * implemented yet, so advertising them would promise operations that fail.
+   */
   async probe(): Promise<PsktRuntimeCapabilities> {
-    let hasPskt = false;
-    try {
-      const kaspaWasm = await import("kaspa-wasm");
-      hasPskt = "PSKT" in kaspaWasm;
-    } catch (e) {
-      // Wasm runtime not available or failed to load
-    }
-
     return {
       providerId: this.id,
       providerKind: this.kind,
       providerVersion: "resolved-at-runtime",
       formats: ["pskt-binary-base64"],
       operations: {
-        export: hasPskt, // mapped directly if available
-        import: hasPskt,
-        inspect: hasPskt,
-        sign: hasPskt,
-        combine: hasPskt,
-        finalize: hasPskt,
-        extract: hasPskt
+        export: false,
+        import: false,
+        inspect: false,
+        sign: false,
+        combine: false,
+        finalize: false,
+        extract: false
       }
     };
   }

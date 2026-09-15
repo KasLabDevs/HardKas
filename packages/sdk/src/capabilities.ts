@@ -1,4 +1,5 @@
 import { CURRENT_HASH_VERSION, HARDKAS_VERSION } from "@hardkas/artifacts";
+import { KASPAD_REFERENCE_IMAGE, CPUMINER_REFERENCE_IMAGE } from "@hardkas/core";
 
 export interface HardkasCapabilities {
   version: string;
@@ -170,17 +171,18 @@ export class HardkasCapabilitiesApi {
       igra: { available: false },
       node: { version: "unknown" },
       docker: {
-        kaspadImage: process.env.HARDKAS_KASPAD_IMAGE ?? "kaspanet/rusty-kaspad:latest",
-        cpuminerImage: "kaspanet/cpuminer@sha256:60f78ab2828ab24b249c99210eee5a2825303a5226154260dd021ff26d46748b"
+        kaspadImage: process.env.HARDKAS_KASPAD_IMAGE ?? KASPAD_REFERENCE_IMAGE,
+        cpuminerImage: CPUMINER_REFERENCE_IMAGE
       }
     };
 
-    // Probe SilverScript
+    // Probe SilverScript: only the managed, verified silverc counts (never PATH).
     try {
-      execFileSync("silverscript", ["--version"], { stdio: "ignore" });
-      env.silver = { installed: true, version: "unknown" };
-    } catch {
-      env.silver = { installed: false, reason: "MISSING_DEPENDENCY: 'silverscript' CLI not found" };
+      const { resolveManagedSilverc, SILVERSCRIPT_RELEASE } = await import("@hardkas/core");
+      resolveManagedSilverc();
+      env.silver = { installed: true, version: `silverc ${SILVERSCRIPT_RELEASE.releaseTag}` };
+    } catch (e: any) {
+      env.silver = { installed: false, reason: `${e?.code ?? "SILVERC_UNAVAILABLE"}: ${e?.message ?? e}` };
     }
 
     // Probe vProgs

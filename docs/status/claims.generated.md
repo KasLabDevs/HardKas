@@ -8,7 +8,7 @@ description: What HardKAS claims, what it explicitly does not claim, and the cap
 
 # Release Claims
 
-HardKAS `0.12.0-rc.20` (`hardened-alpha`, proof `repro-v0`, hash version `4`).
+HardKAS `0.12.0-rc.21` (`hardened-alpha`, proof `repro-v0`, hash version `4`).
 
 This page is generated from the code that enforces these claims. Every value
 below is read from `packages/sdk` at generation time, so prose elsewhere in
@@ -56,7 +56,12 @@ compile error.
 | Claim | Value |
 | :---- | :---- |
 | Artifact coherence | `READY_MATCH` |
-| SilverScript builder | `SILVERSCRIPT_BUILDER_READY` |
+| `silver.compile.v1` | `REAL_NODE_EVIDENCE` |
+| `silver.p2sh.deploy-spend.v1` | `REAL_NODE_EVIDENCE` |
+| `silver.p2sh.relative-timelock.v1` | `REAL_NODE_EVIDENCE` |
+| `toccata.covenant.auth-1to1-transition.v1` | `REAL_NODE_EVIDENCE` |
+| SilverScript compiler (official silverc, managed) | `OFFICIAL_SILVERC_V1_0_0_MANAGED` |
+| General covenant support | `NOT_CLAIMED` |
 | ZK corpus surface | `ZK_CORPUS_SURFACE_READY` |
 | Groth16 fixture coherence | `READY_GROTH16_FIXTURE_COHERENCE` |
 | RISC0 inspect surface | `RISC0_INSPECT_SURFACE_READY` |

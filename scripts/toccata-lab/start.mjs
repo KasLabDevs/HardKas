@@ -1,9 +1,15 @@
 import { execSync, spawn } from "node:child_process";
 import * as fs from "node:fs";
 import * as path from "node:path";
+import { pathToFileURL } from "node:url";
+
+const { KASPAD_REFERENCE_VERSION, KASPAD_REFERENCE_IMAGE } = await import(
+  pathToFileURL(path.join(process.cwd(), "packages", "core", "dist", "index.js"))
+);
 
 // ── Version Selection ──────────────────────────────────────────────
-// v2.0.0: Mainnet Toccata Release. Supports --testnet (TN10), --simnet, --devnet.
+// Reference release (KASPAD_REFERENCE_VERSION in @hardkas/core): Toccata mainnet line.
+//         Supports --testnet (TN10), --simnet, --devnet.
 //         Does NOT support --netsuffix=12 (TN12 was dropped).
 // v1.3.0-toc.5: Legacy pre-release. Supports --testnet=12 (TN12).
 //         Kept as explicit fallback via --legacy-toc5 flag.
@@ -12,12 +18,12 @@ const buildFromSource = args.includes("--build-from-source");
 const useLegacy = args.includes("--legacy-toc5");
 const useTestnet = args.includes("--testnet");
 
-const TOCCATA_VERSION = useLegacy ? "v1.3.0-toc.5" : "v2.0.0";
-const TOCCATA_IMAGE = `kaspanet/rusty-kaspad:${TOCCATA_VERSION}`;
+const TOCCATA_VERSION = useLegacy ? "v1.3.0-toc.5" : KASPAD_REFERENCE_VERSION;
+const TOCCATA_IMAGE = useLegacy ? `kaspanet/rusty-kaspad:${TOCCATA_VERSION}` : KASPAD_REFERENCE_IMAGE;
 
 // Network selection:
-// - v2.0.0 default: --simnet (isolated local lab, no external peers)
-// - v2.0.0 --testnet: --testnet (TN10, connects to public testnet)
+// - reference default: --simnet (isolated local lab, no external peers)
+// - reference --testnet: --testnet (TN10, connects to public testnet)
 // - v1.3.0-toc.5: --testnet --netsuffix=12 (TN12)
 let NETWORK_LABEL;
 let KASPAD_NETWORK_ARGS;
@@ -28,10 +34,10 @@ if (useLegacy) {
   NETWORK_LABEL = "testnet-12 (legacy v1.3.0-toc.5)";
   KASPAD_NETWORK_ARGS = ["--testnet", "--netsuffix=12"];
 } else if (useTestnet) {
-  NETWORK_LABEL = "testnet-10 (v2.0.0)";
+  NETWORK_LABEL = `testnet-10 (${TOCCATA_VERSION})`;
   KASPAD_NETWORK_ARGS = ["--testnet"];
 } else {
-  NETWORK_LABEL = "simnet (v2.0.0 isolated)";
+  NETWORK_LABEL = `simnet (${TOCCATA_VERSION} isolated)`;
   KASPAD_NETWORK_ARGS = ["--simnet", "--enable-unsynced-mining"];
 }
 
@@ -46,7 +52,7 @@ console.log(
 
 if (!useLegacy) {
   console.log("\x1b[33m⚠ TOCCATA_MAINNET_RELEASE_DETECTED\x1b[0m");
-  console.log("\x1b[2m  rusty-kaspa v2.0.0 is the Mainnet Toccata Release.\x1b[0m");
+  console.log(`\x1b[2m  rusty-kaspa ${TOCCATA_VERSION} is on the Mainnet Toccata release line.\x1b[0m`);
   console.log(
     "\x1b[2m  TN12 (--netsuffix=12) is no longer supported in this version.\x1b[0m"
   );
@@ -70,6 +76,22 @@ function commandExists(cmd) {
 }
 
 async function main() {
+  // The default lab is the canonical real localnet: one lifecycle, owned by
+  // `hardkas localnet start --toccata` (container, miner and identity check).
+  if (!buildFromSource && !useLegacy && !useTestnet) {
+    console.log(`[1] Starting the canonical localnet via: hardkas localnet start --toccata`);
+    try {
+      execSync(`node "${path.join(process.cwd(), "packages", "cli", "dist", "index.js")}" localnet start --toccata --detached`, {
+        stdio: "inherit"
+      });
+      console.log(`  \x1b[32mTOCCATA_LAB_READY\x1b[0m`);
+      return;
+    } catch {
+      console.log(`  \x1b[31mTOCCATA_LAB_BLOCKED\x1b[0m`);
+      process.exit(1);
+    }
+  }
+
   if (!buildFromSource) {
     console.log(`[1] Attempting to use Docker image: \x1b[36m${TOCCATA_IMAGE}\x1b[0m`);
 
@@ -108,10 +130,14 @@ async function main() {
 
       console.log(`[2] Starting Toccata Node on ${NETWORK_LABEL}...`);
 
+      // Non-canonical lab node (public testnet or legacy build): named, so it
+      // is identifiable and never mistaken for the canonical localnet.
       const dockerArgs = [
         "run",
         "--rm",
         "-d",
+        "--name",
+        useLegacy ? "hardkas-toccata-lab-legacy" : "hardkas-toccata-lab-testnet",
         "-p",
         `${RPC_PORT}:${RPC_PORT}`,
         "-p",

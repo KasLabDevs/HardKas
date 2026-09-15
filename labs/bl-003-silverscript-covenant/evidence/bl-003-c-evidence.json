@@ -1,9 +1,0 @@
-{
-  "compiledBytecodeHash": "4ae81572f06e1b88fd5ced7a1a000945432e83e1551e6f721ee9c00b8cc33260",
-  "redeemScriptHash": "4ae81572f06e1b88fd5ced7a1a000945432e83e1551e6f721ee9c00b8cc33260",
-  "enforcedRules": {
-    "outputCount": true,
-    "outputSpk": true
-  },
-  "compiledBytecodeHashMatchesRedeemScript": true
-}

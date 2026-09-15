@@ -1,4 +1,5 @@
-import { describe, it, expect, vi } from "vitest";
+import { describe, it, expect } from "vitest";
+import { loadKaspaWasm } from "@hardkas/accounts";
 import { HardkasCapabilitiesApi } from "../src/capabilities.js";
 
 describe("P82: TX V1 Capabilities Probe", () => {
@@ -6,21 +7,24 @@ describe("P82: TX V1 Capabilities Probe", () => {
     const api = new HardkasCapabilitiesApi();
     const env = await api.probeEnvironment();
 
-    // Since our local kaspa-wasm is 0.13.0, it does not support V1.
-    // The probe should gracefully catch the error and set V1 flags to false.
+    // HardKAS loads only the pinned managed SDK (rusty-kaspa 2.0.x), which supports Toccata.
+    const sdk = await loadKaspaWasm();
+    expect(String(sdk.version())).toMatch(/^2\./);
+    const expectV1 = true;
+
     expect(env.kaspa.wasm).toBe(true); // Base wasm is available
-    expect(env.kaspa.v1).toBe(false);
-    expect(env.kaspa.computeBudget).toBe(false);
-    expect(env.kaspa.covenantOutputs).toBe(false);
-    expect(env.kaspa.storageMass).toBe(false);
-    expect(env.kaspa.signingV1).toBe(false);
+    expect(env.kaspa.v1).toBe(expectV1);
+    expect(env.kaspa.computeBudget).toBe(expectV1);
+    expect(env.kaspa.covenantOutputs).toBe(expectV1);
+    expect(env.kaspa.storageMass).toBe(expectV1);
+    expect(env.kaspa.signingV1).toBe(expectV1);
   });
 
   it("should cascade env flags to capabilities", async () => {
     const api = new HardkasCapabilitiesApi();
+    const env = await api.probeEnvironment();
     const caps = await api.get();
 
-    // The capability should be false if env is false
-    expect(caps.capabilities.transactionV1).toBe(false);
+    expect(caps.capabilities.transactionV1).toBe(env.kaspa.v1);
   });
 });

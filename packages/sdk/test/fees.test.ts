@@ -2,8 +2,8 @@ import { describe, it, expect, vi } from 'vitest';
 import { Hardkas } from '../src/index.js';
 import { KaspaRpcClient } from '@hardkas/kaspa-rpc';
 
-describe.skip('HardkasFees', () => {
-    it('should return dynamic fees when mempool size is low', async () => {
+describe('HardkasFees', () => {
+    it.skip('[known gap: fee model diverges from node -> M4 upstream mass/fees] should return dynamic fees when mempool size is low', async () => {
         const mockRpc = {
             getInfo: vi.fn().mockResolvedValue({ mempoolSize: 0 })
         } as unknown as KaspaRpcClient;
@@ -22,7 +22,7 @@ describe.skip('HardkasFees', () => {
         expect(res.estimatedFee).toBe(res.estimatedMass * 2n);
     });
 
-    it('should scale fee rates dynamically when mempool is congested', async () => {
+    it.skip('[known gap: fee model diverges from node -> M4 upstream mass/fees] should scale fee rates dynamically when mempool is congested', async () => {
         const mockRpc = {
             getInfo: vi.fn().mockResolvedValue({ mempoolSize: 60000 })
         } as unknown as KaspaRpcClient;

@@ -1,6 +1,6 @@
 {
   "name": "@hardkas/testing",
-  "version": "0.12.0-rc.20",
+  "version": "0.12.0-rc.21",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -49,6 +49,7 @@
     "@hardkas/core": "workspace:*",
     "@hardkas/kaspa-rpc": "workspace:*",
     "@hardkas/localnet": "workspace:*",
+    "@hardkas/node-runner": "workspace:*",
     "@hardkas/query-store": "workspace:*",
     "@hardkas/sdk": "workspace:*",
     "@hardkas/simulator": "workspace:*",

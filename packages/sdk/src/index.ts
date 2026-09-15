@@ -51,7 +51,7 @@ export { HardkasWorkspace } from "./workspace.js";
 export { HardkasArtifactsManager } from "./artifacts-manager.js";
 export { HardkasCapabilitiesApi, createHardkasCapabilities } from "./capabilities.js";
 export { HardkasCorpus, verifyToccataCorpus } from "./corpus.js";
-export { HardkasSilver, SilverScript } from "./silver.js";
+export { HardkasSilver } from "./silver.js";
 export {
   HardkasZk,
   createZkCapabilities,
@@ -98,16 +98,7 @@ export type {
   ProgrammabilityKind,
   ProgrammabilityVerifyResult
 } from "./programmability.js";
-export type {
-  SilverCompareMode,
-  SilverCompareOptions,
-  SilverCompareReport,
-  SilverCompileOptions,
-  SilverDeployPlanOptions,
-  SilverSdkArtifactResult,
-  SilverSdkWriteOptions,
-  SilverSpendPlanOptions
-} from "./silver.js";
+export type { SilverCompileOptions, SilverP2sh } from "./silver.js";
 export { defineHardkasConfig } from "@hardkas/config";
 export { defineTask, type TaskContext, type TaskArgs } from "./tasks.js";
 export { buildPaymentPlan } from "@hardkas/tx-builder";
@@ -158,7 +149,7 @@ export interface HardkasOptions {
     requireDryRun?: boolean;
   };
   wasm?: {
-    provider: "npm" | "local" | "release-asset";
+    provider: "managed" | "local" | "release-asset";
     path?: string;
   };
 }

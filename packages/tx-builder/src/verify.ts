@@ -1,5 +1,5 @@
 import { TxPlan, TxOutput } from "./index.js";
-import { estimateTransactionMass } from "./mass.js";
+import { measureUpstreamMass } from "./mass.js";
 
 /**
  * Kaspa dust threshold in sompi.
@@ -127,19 +127,45 @@ export function verifyTxPlanSemantics(
     );
   }
 
-  // 3. Mass & Fee Consistency
-  const massResult = estimateTransactionMass({
-    inputCount: plan.inputs.length,
-    outputs: plan.outputs,
-    hasChange: !!plan.change
+  // 3. Mass & Fee Consistency: recomputed by the pinned SDK over the plan's own
+  //    unsigned transaction (real amounts, so storage mass is included). A plan
+  //    without inputs has no mass; ZERO_INPUTS above already reports it.
+  const upstream = plan.inputs.length === 0 ? undefined : measureUpstreamMass({
+    networkId: ePlan.networkId,
+    version: plan.version,
+    inputs: plan.inputs.map((i) => ({
+      amountSompi: BigInt(i.amountSompi),
+      outpoint: i.outpoint,
+      scriptPublicKey: i.scriptPublicKey
+    })),
+    outputs: [
+      ...plan.outputs.map((o) => ({ amountSompi: BigInt(o.amountSompi), address: o.address, scriptPublicKey: o.scriptPublicKey })),
+      ...(plan.change ? [{ amountSompi: BigInt(plan.change.amountSompi), address: plan.change.address }] : [])
+    ]
   });
-  const recomputedMass = massResult.mass;
+  const recomputedMass = upstream ? upstream.mass : 0n;
 
-  if (recomputedMass !== BigInt(plan.estimatedMass)) {
+  if (upstream && recomputedMass !== BigInt(plan.estimatedMass)) {
     addIssue(
       "MASS_MISMATCH",
       "critical",
-      `Mass mismatch: plan says ${plan.estimatedMass}, recomputed ${recomputedMass}`
+      `Mass mismatch: plan says ${plan.estimatedMass}, ${upstream.authority} computes ${recomputedMass}`
+    );
+  }
+
+  if (!upstream) {
+    // Nothing to price: ZERO_INPUTS carries the finding.
+  } else if (!upstream.standard) {
+    addIssue(
+      "MASS_ABOVE_STANDARD_LIMIT",
+      "critical",
+      `Mass ${recomputedMass} exceeds the maximum standard transaction mass ${upstream.maximumStandardMass}: the node will not relay it`
+    );
+  } else if (recomputedFeeSompi < upstream.minimumFeeSompi) {
+    addIssue(
+      "FEE_BELOW_NETWORK_MINIMUM",
+      "critical",
+      `Fee ${recomputedFeeSompi} sompi is below the ${upstream.minimumFeeSompi} sompi the node requires for mass ${recomputedMass}`
     );
   }
 

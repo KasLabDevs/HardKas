@@ -57,59 +57,15 @@ export async function getOrCreateDevAccount(
   const seedString = `${SIMNET_DETERMINISTIC_SEED}-${index}`;
   const privateKeyHex = crypto.createHash("sha256").update(seedString).digest("hex");
 
+  // Dev accounts are simnet-only. Derivation uses the pinned SDK; if it cannot
+  // load, there is no account to return (never an empty placeholder).
   const network = "simnet";
-  const isSimnet = ["simnet", "kaspasim", "local"].includes(network);
-
-  let address = "";
-  let privateKey = "";
-  let publicKey = "";
-
-  try {
-    if (isSimnet) {
-      const { loadKaspaWasm } = await import("./signer-backend.js");
-      const kaspaWasm = await loadKaspaWasm();
-      const privKey = new kaspaWasm.PrivateKey(privateKeyHex);
-      const kp = privKey.toKeypair();
-      address = kp.toAddress(getNetworkPrefix(network)).toString();
-      publicKey = kp.publicKey;
-      privateKey = privateKeyHex;
-    } else {
-      let sdkModule: any;
-      try {
-        // @ts-ignore - Third party lib lacking types
-        sdkModule = await import(/* @vite-ignore */ "@kaspa/core-lib");
-      } catch (e) {
-        console.warn(`\n[Warning] @kaspa/core-lib is not installed.`);
-        return { address: "", privateKey: "", publicKey: "" };
-      }
-      const sdk = sdkModule.default || sdkModule;
-      if (typeof sdk.initRuntime === "function") {
-        await sdk.initRuntime();
-      }
-      const privKey = new sdk.PrivateKey(privateKeyHex);
-      const pubKey = privKey.toPublicKey();
-      try {
-        address = pubKey.toAddress(getNetworkPrefix(network)).toString();
-      } catch (e: unknown) {
-        const msg = e instanceof Error ? ((e instanceof Error) ? ((e instanceof Error) ? e.message : String(e)) : String(e)) : String(e);
-        if (msg.includes("Second argument must be") || msg.includes("Unsupported")) {
-          const err = new Error("DEV_ACCOUNT_BACKEND_UNSUPPORTED_NETWORK");
-          (err as any).code = "DEV_ACCOUNT_BACKEND_UNSUPPORTED_NETWORK";
-          throw err;
-        }
-        throw e;
-      }
-      publicKey = pubKey.toString();
-      privateKey = privKey.toString();
-    }
-  } catch (e: unknown) {
-    const msg = e instanceof Error ? ((e instanceof Error) ? ((e instanceof Error) ? e.message : String(e)) : String(e)) : String(e);
-    if (msg === "DEV_ACCOUNT_BACKEND_UNSUPPORTED_NETWORK") {
-      throw e;
-    }
-    console.warn(`\n[Warning] Could not generate dev account '${alias}'.\n${msg}`);
-    return { address: "", privateKey: "", publicKey: "" };
-  }
+  const { loadKaspaWasm } = await import("./signer-backend.js");
+  const kaspaWasm = await loadKaspaWasm();
+  const kp = new kaspaWasm.PrivateKey(privateKeyHex).toKeypair();
+  const address = kp.toAddress(getNetworkPrefix(network)).toString();
+  const publicKey = kp.publicKey;
+  const privateKey = privateKeyHex;
 
   const accountData: GeneratedKaspaDevAccount = {
     address,

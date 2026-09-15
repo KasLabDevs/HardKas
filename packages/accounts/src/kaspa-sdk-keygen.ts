@@ -19,8 +19,8 @@ export class KaspaSdkKeyGenerator implements KaspaKeyGenerator {
     const rawLoader =
       options?.sdkLoader ||
       (async () => {
-        // @ts-ignore - Third party lib lacking types
-        return await import("kaspa-wasm");
+        const { loadKaspaWasm } = await import("./signer-backend.js");
+        return await loadKaspaWasm();
       });
 
     this.sdkLoader = async () => {

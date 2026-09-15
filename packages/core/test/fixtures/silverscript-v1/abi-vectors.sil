@@ -1,0 +1,24 @@
+pragma silverscript ^0.1.0;
+
+contract AbiVectors(pubkey owner) {
+    entry scalars(int n, bool flag, byte b, byte[] data, string label) {
+        require(n == n);
+        require(flag == flag);
+        require(b == b);
+        require(data == data);
+        require(label == label);
+    }
+
+    entry keys(pubkey pk, sig s, datasig ds, byte[32] digest) {
+        require(checkSig(s, pk));
+        require(checkMsgSig(ds, digest, pk));
+    }
+
+    entry timed(temporal t) {
+        require(tx.time >= t);
+    }
+
+    entry list(int[] xs) {
+        require(xs.length >= 0);
+    }
+}

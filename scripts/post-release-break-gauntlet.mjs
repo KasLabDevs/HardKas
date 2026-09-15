@@ -31,7 +31,8 @@ function runNode(args, options = {}) {
     maxBuffer: 100 * 1024 * 1024,
     env: {
       ...process.env,
-      HARDKAS_EXPERIMENTAL: "1"
+      HARDKAS_EXPERIMENTAL: "1",
+      ...(options.env ?? {})
     }
   });
 }
@@ -260,7 +261,7 @@ console.log(JSON.stringify({ app: ${JSON.stringify(appName)}, ok: true, sdkNetwo
 const { calculateContentHash } = await import(${JSON.stringify(pathToFileURL(artifactsDist).href)});
 const artifact = {
   schema: HardkasSchemas.PostReleaseProbe,
-  hardkasVersion: "0.12.0-rc.20",
+  hardkasVersion: "0.12.0-rc.21",
   hashVersion: 4,
   networkId: "simulated",
   amountSompi: "1"
@@ -364,53 +365,65 @@ async function copyCorpusFixture(targetDir) {
 
 async function runAdversarialCases() {
   resetDir(mutationsRoot);
-  const corpusCopy = path.join(mutationsRoot, "silver");
-  await copyCorpusFixture(corpusCopy);
+  // An artifact mutated after hashing (network flipped to mainnet).
+  // Every field `verify` requires (BaseArtifactSchema needs `version`; strict mode wants lineage/workflowId/etc),
+  // so the hash mutation is caught by the hash check, not by a missing-field check.
+  const artifacts = await import(pathToFileURL(artifactsDist).href);
+  const rootPkg = JSON.parse(fs.readFileSync(path.join(root, "package.json"), "utf8"));
+  const probe = {
+    schema: HardkasSchemas.PostReleaseProbe,
+    hardkasVersion: rootPkg.version,
+    version: artifacts.ARTIFACT_VERSION,
+    hashVersion: 4,
+    networkId: "simnet",
+    mode: "simulator",
+    createdAt: "2026-01-01T00:00:00.000Z",
+    amountSompi: "1"
+  };
+  probe.contentHash = artifacts.calculateContentHash(probe, 4);
+  probe.networkId = "mainnet";
+  writeJson(path.join(mutationsRoot, "wrong-network-artifact.json"), probe);
 
-  const compileArtifact = path.join(corpusCopy, "op-true", "compile-artifact.json");
-  const compile = JSON.parse(fs.readFileSync(compileArtifact, "utf8"));
-  compile.networkId = "mainnet";
-  writeJson(path.join(mutationsRoot, "wrong-network-compile.json"), compile);
+  // The SilverScript golden corpus, mutated three ways.
+  const artifactCorrupt = path.join(mutationsRoot, "artifact-corrupt");
+  await copyCorpusFixture(artifactCorrupt);
+  fs.appendFileSync(path.join(artifactCorrupt, "p2sh-signed-release", "contract.artifact.json"), " "); // hardkas-append-allow: tampering a scratch copy
 
-  const tamperedCorpus = path.join(mutationsRoot, "tampered-corpus");
-  await copyCorpusFixture(tamperedCorpus);
-  const compareReportPath = path.join(tamperedCorpus, "op-true", "compare-report.json");
-  const compareReport = JSON.parse(fs.readFileSync(compareReportPath, "utf8"));
-  compareReport.status = "SILVERSCRIPT_SIMULATION_DRIFT";
-  writeJson(compareReportPath, compareReport);
+  const evidenceTampered = path.join(mutationsRoot, "evidence-tampered");
+  await copyCorpusFixture(evidenceTampered);
+  const evidencePath = path.join(evidenceTampered, "covenant-counter-transition", "evidence.json");
+  const evidence = JSON.parse(fs.readFileSync(evidencePath, "utf8"));
+  evidence.controls.wrongCovenantId.accepted = true;
+  writeJson(evidencePath, evidence);
 
   const manifestCorruptPath = path.join(mutationsRoot, "manifest-corrupt");
   await copyCorpusFixture(manifestCorruptPath);
-  writeJson(path.join(manifestCorruptPath, "op-true", "manifest.json"), {
-    schema : HardkasSchemas.ToccataGoldenManifestV1,
+  writeJson(path.join(manifestCorruptPath, "manifest.json"), {
+    schema: "hardkas.toccataGoldenManifest.v1",
     network: "mainnet",
-    profile: "toccata-v2",
-    simulationLevel: {
-      artifactCoherence: "READY",
-      runtimeOutcome: "READY",
-      vmConsensusEquivalence: "CLAIMED"
-    },
-    expectedKnownLimitations: []
+    cases: []
   });
 
-  const deployPlan = path.join(
-    root,
-    "fixtures",
-    "toccata-v2",
-    "silver",
-    "op-true",
-    "deploy-plan.json"
-  );
   expectFailure(
     "artifact hash corrupt",
     () =>
       runHardkas([
         "artifact",
         "verify",
-        path.join(mutationsRoot, "wrong-network-compile.json"),
+        path.join(mutationsRoot, "wrong-network-artifact.json"),
         "--strict"
       ]),
     ["ARTIFACT_HASH_MISMATCH", "HASH_MISMATCH", "hash", "invalid"]
+  );
+  expectFailure(
+    "silver corpus artifact corrupt",
+    () => runHardkas(["corpus", "verify", artifactCorrupt, "--json", "--workspace", root]),
+    ["ARTIFACT_DIGEST_MISMATCH", "CORPUS_VERIFY_FAILED"]
+  );
+  expectFailure(
+    "silver corpus evidence tampered",
+    () => runHardkas(["corpus", "verify", evidenceTampered, "--json", "--workspace", root]),
+    ["CONTROL_NOT_REJECTED", "CORPUS_VERIFY_FAILED"]
   );
   expectFailure(
     "manifest corrupt",
@@ -423,20 +436,15 @@ async function runAdversarialCases() {
         "--workspace",
         root
       ]),
-    ["INVALID", "PARTIAL_VM_SIMULATION", "NOT_CLAIMED"]
+    ["CORPUS_SCHEMA_INVALID", "CORPUS_EMPTY", "CORPUS_VERIFY_FAILED"]
   );
   expectFailure(
-    "compare report manipulated",
-    () => runHardkas(["corpus", "verify", tamperedCorpus, "--json", "--workspace", root]),
-    ["COMPARE_STATUS_INVALID", "SILVERSCRIPT_SIMULATION_MATCH"]
-  );
-  expectFailure(
-    "mainnet silver deploy-plan attempt",
+    "mainnet silver deploy attempt",
     () =>
       runHardkas([
         "silver",
-        "deploy-plan",
-        deployPlan,
+        "deploy",
+        path.join(mutationsRoot, "any-compile-record.json"),
         "--from",
         "alice",
         "--amount",
@@ -444,23 +452,20 @@ async function runAdversarialCases() {
         "--network",
         "mainnet"
       ]),
-    ["SILVERSCRIPT_MAINNET_NOT_ENABLED", "Only simnet is supported"]
+    ["SILVERSCRIPT_MAINNET_NOT_ENABLED"]
   );
   expectFailure(
     "rpc down",
     () => runHardkas(["rpc", "health", "--url", "ws://127.0.0.1:1", "--timeout", "1000"]),
     ["ECONNREFUSED", "timeout", "failed", "RPC"]
   );
+  // No managed silverc: doctor reports it, and nothing else is picked up instead.
+  const emptyHome = path.join(mutationsRoot, "empty-hardkas-home");
+  resetDir(emptyHome);
   expectGuardedDiagnostic(
-    "compiler nonexistent",
-    () =>
-      runHardkas([
-        "silver",
-        "doctor",
-        "--compiler-path",
-        path.join(mutationsRoot, "missing-silverc")
-      ]),
-    ["SILVERSCRIPT_COMPILER_UNAVAILABLE", "unavailable", "not found"]
+    "compiler not installed",
+    () => runHardkas(["silver", "doctor", "--json"], { env: { HARDKAS_HOME: emptyHome } }),
+    ["SILVERC_TOOLCHAIN_NOT_INSTALLED"]
   );
   expectFailure(
     "negative amount",
@@ -522,7 +527,7 @@ async function runParityChecks() {
           network: "simulated",
           autoBootstrap: true
         });
-        return instance.capabilities();
+        return instance.capabilities.get();
       }
     },
     {
@@ -568,81 +573,43 @@ async function runParityChecks() {
           network: "simulated",
           autoBootstrap: true
         });
-        return instance.corpus.verify("fixtures/toccata-v2/silver");
+        return new sdk.HardkasCorpus(instance).verify("fixtures/toccata-v2/silver");
       }
     },
     {
-      name: "silver compile/deploy/spend",
-      cli: () => "CLI_PASS",
+      // Same source and constructor arguments: CLI and SDK must get the same silverc artifact.
+      name: "silver compile",
+      cli: () => {
+        const caseDir = path.join(root, "fixtures", "toccata-v2", "silver", "p2sh-signed-release");
+        const record = JSON.parse(
+          runHardkas([
+            "silver",
+            "compile",
+            path.join(caseDir, "contract.sil"),
+            "--args",
+            path.join(caseDir, "contract.constructor-args.json"),
+            "--out",
+            path.join(workspaceRoot, "silver-compile.json"),
+            "--json"
+          ], { cwd: workspaceRoot })
+        );
+        return { artifactSha256: record.provenance.artifactSha256 };
+      },
       sdk: async () => {
-        const fs = await import("node:fs");
-        const path = await import("node:path");
+        const caseDir = path.join(root, "fixtures", "toccata-v2", "silver", "p2sh-signed-release");
+        const core = await import(pathToFileURL(path.join(root, "packages", "core", "dist", "index.js")).href);
         const instance = await sdk.Hardkas.create({
           cwd: workspaceRoot,
           network: "simulated",
           autoBootstrap: true
         });
-        const compileArtifact = JSON.parse(
-          fs.readFileSync(
-            path.join(
-              root,
-              "fixtures",
-              "toccata-v2",
-              "silver",
-              "op-true",
-              "compile-artifact.json"
-            ),
-            "utf8"
+        const compiled = await new sdk.HardkasSilver(instance).compile({
+          file: path.join(caseDir, "contract.sil"),
+          constructorArgs: core.parseSilArtifactValuesJson(
+            fs.readFileSync(path.join(caseDir, "contract.constructor-args.json"), "utf8")
           )
-        );
-        const simulatedSpendReceipt = JSON.parse(
-          fs.readFileSync(
-            path.join(
-              root,
-              "fixtures",
-              "toccata-v2",
-              "silver",
-              "op-true",
-              "spend-simulated.json"
-            ),
-            "utf8"
-          )
-        );
-        const dockerSpendReceipt = JSON.parse(
-          fs.readFileSync(
-            path.join(
-              root,
-              "fixtures",
-              "toccata-v2",
-              "silver",
-              "op-true",
-              "spend-receipt-real.json"
-            ),
-            "utf8"
-          )
-        );
-        const deployPlan = await instance.silver.deployPlan({
-          artifact: compileArtifact,
-          from: "alice",
-          amount: "1",
-          write: false
         });
-        const simulatedDeploy = await instance.silver.simulate.deploy(
-          deployPlan.artifact,
-          { write: false }
-        );
-        const compare = await instance.silver.compare({
-          simulated: simulatedSpendReceipt,
-          docker: dockerSpendReceipt,
-          mode: "artifact-coherence"
-        });
-        return {
-          deployPlanSchema: deployPlan.artifact.schema,
-          simulatedDeployStatus: simulatedDeploy.artifact.status,
-          compareStatus: compare.status,
-          knownLimitations: compare.expectedKnownLimitations,
-          realLifecycle: "SDK_SILVER_REAL_LIFECYCLE_UNSUPPORTED"
-        };
+        return { artifactSha256: compiled.provenance.artifactSha256 };
       }
     }
   ];
@@ -675,7 +642,7 @@ async function runParityChecks() {
         flow: flow.name,
         severity: flow.name.includes("silver") ? "P1" : "P2",
         reason:
-          "CLI flow exists but no equivalent high-level SDK API was found in 0.12.0-rc.20."
+          "CLI flow exists but no equivalent high-level SDK API was found in 0.12.0-rc.21."
       });
     }
     parityResults.push({
@@ -721,7 +688,7 @@ function writeReports() {
   ];
   const resolvedFindings = [
     "P1 SDK localnet status parity",
-    "P1 SDK Silver high-level deploy planning/simulation/compare surface",
+    "P1 SDK Silver v1 compile surface (managed silverc, no simulated path)",
     "P2 SDK capabilities API",
     "P2 SDK corpus verify API"
   ];
@@ -741,7 +708,7 @@ function writeReports() {
 
   const result = {
     schema : HardkasSchemas.PostReleaseBreakGauntletV1,
-    release: "0.12.0-rc.20",
+    release: "0.12.0-rc.21",
     status,
     generatedAt: new Date().toISOString(),
     claims: {
@@ -773,7 +740,7 @@ function writeReports() {
     adversarialResults,
     parityResults,
     notes,
-    recommendedNextRelease: "0.12.0-rc.20"
+    recommendedNextRelease: "0.12.0-rc.21"
   };
   writeJson(resultPath, result);
 
@@ -785,7 +752,7 @@ function writeReports() {
   );
   const failingBaseline = baseline.filter((entry) => entry.status !== "PASS");
 
-  const md = `# Post-Release Findings For 0.12.0-rc.20
+  const md = `# Post-Release Findings For 0.12.0-rc.21
 
 Date: ${new Date().toISOString()}
 
@@ -793,7 +760,7 @@ Status: \`${status}\`
 
 ## Summary
 
-- Release tested: \`0.12.0-rc.20\`
+- Release tested: \`0.12.0-rc.21\`
 - Apps generated: ${appsGenerated}
 - Apps build passed: ${appsBuildPassed}
 - Apps smoke passed: ${appsSmokePassed}
@@ -802,7 +769,7 @@ Status: \`${status}\`
 - SDK gaps found: ${sdkGaps.length}
 - Bugs found: ${bugs.length}
 - Docs/error-message gaps found: ${docsGaps.length}
-- Resolved 0.12.0-rc.20 findings: ${resolvedFindings.length}
+- Resolved 0.12.0-rc.21 findings: ${resolvedFindings.length}
 - Unresolved findings: ${unresolvedFindings.length}
 
 ## Baseline
@@ -840,7 +807,7 @@ ${failingAdversarial.map((entry) => `- ${entry.name}: ${entry.reason} - ${entry.
 
 ${parityResults.map((entry) => `- ${entry.flow}: CLI=${entry.cli}, SDK=${entry.sdk}, parity=${entry.parity}`).join("\n")}
 
-## Recommended 0.12.0-rc.20 Backlog
+## Recommended 0.12.0-rc.21 Backlog
 
 ${
   [

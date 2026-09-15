@@ -1,0 +1,66 @@
+{
+  "schema": "hardkas.silverCorpusCase.v1",
+  "id": "p2sh-escrow-refund",
+  "scenario": "Escrow (2-of-3 SilverScript v1 P2SH): refundBuyer",
+  "scope": "SilverScript L1/P2SH execution — not evidence of covenant or stateful Toccata semantics",
+  "capabilities": [
+    "silver.compile.v1",
+    "silver.p2sh.deploy-spend.v1"
+  ],
+  "network": "simnet",
+  "compiles": [
+    {
+      "name": "escrow",
+      "source": "escrow.sil",
+      "constructorArgs": "escrow.constructor-args.json",
+      "artifact": "escrow.artifact.json",
+      "contract": "Escrow",
+      "provenance": {
+        "schema": "hardkas.silver.compileProvenance.v1",
+        "compiler": {
+          "id": "silverc",
+          "repository": "kaspanet/silverscript",
+          "releaseTag": "v1.0.0",
+          "commit": "3ed973335b59269293564805cc2c58a14595ec03",
+          "assetName": "silverc-windows-x86_64.zip",
+          "assetSha256": "3e0d660c15a9e7ac90f3960da24d348b076b1891481bfe758db18accc8a102e1",
+          "binarySha256": "ce1e0ef5f1f415f371d3d2426e788597a388635da8cbe93e72e95a4f754b29af",
+          "languageVersion": "0.1.0"
+        },
+        "sourceSha256": "3e499912ad084aaf0eece3bdea7e6c51f4e3ce6c0f7fd25b1c0a07676f85aaad",
+        "constructorArgsSha256": "68a443e505aa136aa4cfa7674b6cfa3990bddaf9a7da7e66885025d7316c1ccc",
+        "artifactSha256": "bea47214c98de797b3d9c0804a9fc16d4203002814bfd957926ad3e342b8d29f",
+        "abiSchemaVersion": 1,
+        "contracts": [
+          {
+            "name": "Escrow",
+            "bytecodeSha256": "d9941e3d301d1acd1ae2cd7c86ac2af2510024bcef892cdc39c5ca27f8a0dc0d",
+            "templateHash": "5400aa29ba85183f9e66c30c4992aef91334119d4cea8c46b4ce642cc081de2a",
+            "entries": [
+              {
+                "name": "mutualRelease",
+                "dispatchTag": "62d1e28b"
+              },
+              {
+                "name": "refundBuyer",
+                "dispatchTag": "c1ea669a"
+              },
+              {
+                "name": "releaseToSeller",
+                "dispatchTag": "cf20b70a"
+              }
+            ]
+          }
+        ],
+        "contractName": "Escrow",
+        "lockingScriptHex": "aa20fac79ff256fe9e5a9e55f007e5b0cfc3eef0bfcd58c94582333fd5db4197dbe287"
+      },
+      "lockingScript": {
+        "version": 0,
+        "script": "aa20fac79ff256fe9e5a9e55f007e5b0cfc3eef0bfcd58c94582333fd5db4197dbe287"
+      },
+      "address": "kaspasim:prav08lj2mlfuk572hcq0edselp7au9le4vvj3vzxvlatk6pjld7yzupp0u9u"
+    }
+  ],
+  "evidence": "evidence.json"
+}

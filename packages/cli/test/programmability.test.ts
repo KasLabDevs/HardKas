@@ -27,7 +27,7 @@ function parseStdout(result: ReturnType<typeof runHardkas>) {
   return envelope.result ?? envelope;
 }
 
-describe.skip("programmability CLI", () => {
+describe("programmability CLI", () => {
   it("prints programmability capabilities", () => {
     const result = runHardkas(["programmability", "capabilities", "--json"]);
     expect(result.status).toBe(0);

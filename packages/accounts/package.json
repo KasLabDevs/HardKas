@@ -1,6 +1,6 @@
 {
   "name": "@hardkas/accounts",
-  "version": "0.12.0-rc.20",
+  "version": "0.12.0-rc.21",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -31,10 +31,9 @@
     "@hardkas/artifacts": "workspace:*",
     "@hardkas/config": "workspace:*",
     "@hardkas/core": "workspace:*",
-    "@hardkas/tx-builder": "workspace:*",
     "@hardkas/localnet": "workspace:*",
-    "hash-wasm": "^4.12.0",
-    "kaspa-wasm": "0.13.0"
+    "@hardkas/tx-builder": "workspace:*",
+    "hash-wasm": "^4.12.0"
   },
   "devDependencies": {
     "tsup": "^8.3.5",

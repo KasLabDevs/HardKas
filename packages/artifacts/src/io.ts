@@ -6,6 +6,7 @@ import { verifyArtifact } from "./verify.js";
 import { writeFileAtomic } from "@hardkas/core";
 
 import { ProjectArtifactStore } from "./store.js";
+import { assertSafeFileId, schemaFilePrefix } from "./file-id.js";
 
 export const bigIntReplacer = (_key: string, value: unknown) =>
   typeof value === "bigint" ? value.toString() : value;
@@ -24,9 +25,12 @@ export async function writeArtifact(filePath: string, artifact: unknown): Promis
   let finalPath = filePath;
   if (isDir) {
     const anyArt = artifact as any;
-    const schema = anyArt.schema || "unknown";
-    const id = anyArt.id || anyArt.planId || Date.now().toString();
-    const basename = `${schema.split('.').pop()}-${id}.json`;
+    const id = anyArt.id
+      ? assertSafeFileId("id", typeof anyArt.id === "number" ? String(anyArt.id) : anyArt.id)
+      : anyArt.planId
+        ? assertSafeFileId("planId", anyArt.planId)
+        : Date.now().toString();
+    const basename = `${schemaFilePrefix(anyArt.schema, -1, "unknown")}-${id}.json`;
     finalPath = path.join(filePath, basename);
   }
 

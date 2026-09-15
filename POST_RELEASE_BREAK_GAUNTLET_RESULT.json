@@ -2,7 +2,7 @@
   "schema": "hardkas.postReleaseBreakGauntlet.v1",
   "release": "0.12.0-rc.20",
   "status": "POST_RELEASE_BREAK_GAUNTLET_FINDINGS",
-  "generatedAt": "2026-09-08T21:54:27.297Z",
+  "generatedAt": "2026-09-14T11:49:14.084Z",
   "claims": {
     "artifactCoherence": "READY_MATCH",
     "runtimeOutcome": "PARTIAL",
@@ -13,44 +13,44 @@
     {
       "name": "pnpm build",
       "status": "PASS",
-      "durationMs": 164751,
+      "durationMs": 194386,
       "outputSample": "\n> hardkas-monorepo@0.12.0-rc.20 build C:\\Users\\jrodr\\Documents\\kaslabdevs\\GitHub\\HardKas-repo\n> turbo build --concurrency 1\n\n\n   • Packages in scope: @examples/rpc-node-health, @examples/snapshot-restore, @examples/trace-and-replay, @hardkas-examples/hello-kaspa, @hardkas/accounts, @hardkas/artifacts, @hardkas/bridge-local, @hardkas/cli, @hardkas/client, @hardkas/config, @hardkas/core, @hardkas/dashboard, @hardkas/dev-server, @hardkas/escrow, @hardkas/example-02-basic-transfer, @hardkas/example-03-localnet-demo, @hardkas/example-bl-001-offline-multisig, @hardkas/jobs, @hardkas/kaspa-rpc, @hardkas/l2, @hardkas/localnet, @hardkas/node-orchestrator, @hardkas/node-runner, @hardkas/observability, @hardkas/plugin-local-indexer, @hardkas/plugin-rpc-backend, @hardkas/pskt-native, @hardkas/query, "
     },
     {
       "name": "pnpm test",
-      "status": "FAIL",
-      "durationMs": 725782,
-      "outputSample": "\n> hardkas-monorepo@0.12.0-rc.20 test C:\\Users\\jrodr\\Documents\\kaslabdevs\\GitHub\\HardKas-repo\n> vitest run && pnpm test:workflows\n\n\n RUN  v2.1.9 C:/Users/jrodr/Documents/kaslabdevs/GitHub/HardKas-repo\n      Coverage enabled with v8\n\nStarting SimnetNodeHarness...\nSimnetNodeHarness started successfully.\nWaiting for node to become ready...\nNode is ready. Funding alice...\n📡 [Watcher] Monitoring C:\\Users\\jrodr\\Documents\\kaslabdevs\\GitHub\\HardKas-repo\\.hardkas for changes...\n\n🚀 HardKas Dev Server running at http://127.0.0.1:3000\n📡 SSE Stream: http://127.0.0.1:3000/api/stream\n\n⚠️  CRITICAL: Authentication disabled via --unsafe-no-auth\n\n ❯ examples/builder-labs/bl-002-escrow-multisig/bl-002-b-onchain.test.ts (11 tests | 11 skipped) 2413ms\n ❯ examples/builder-labs/bl-003-silverscript-covenant/bl"
+      "status": "PASS",
+      "durationMs": 785633,
+      "outputSample": "\n> hardkas-monorepo@0.12.0-rc.20 test C:\\Users\\jrodr\\Documents\\kaslabdevs\\GitHub\\HardKas-repo\n> vitest run && pnpm test:workflows\n\n\n RUN  v2.1.9 C:/Users/jrodr/Documents/kaslabdevs/GitHub/HardKas-repo\n      Coverage enabled with v8\n\nStarting SimnetNodeHarness...\nSimnetNodeHarness started successfully.\nWaiting for node to become ready...\nNode is ready. Funding alice...\n📡 [Watcher] Monitoring C:\\Users\\jrodr\\Documents\\kaslabdevs\\GitHub\\HardKas-repo\\.hardkas for changes...\n\n🚀 HardKas Dev Server running at http://127.0.0.1:3000\n📡 SSE Stream: http://127.0.0.1:3000/api/stream\n\n⚠️  CRITICAL: Authentication disabled via --unsafe-no-auth\n\nstdout | packages/tx-builder/test/determinism.test.ts > P1.12 Deterministic Transaction Canonicalization > Test D: Hardcoded Cross-Platform Hash Fixture & Fixed"
     },
     {
       "name": "pnpm corpus:toccata",
       "status": "PASS",
-      "durationMs": 2699,
-      "outputSample": "\n> hardkas-monorepo@0.12.0-rc.20 corpus:toccata C:\\Users\\jrodr\\Documents\\kaslabdevs\\GitHub\\HardKas-repo\n> tsx packages/cli/src/index.ts corpus verify fixtures/toccata-v2/silver --json --workspace .\n\n{\n  \"ok\": true,\n  \"schema\": \"hardkas.toccataCorpus.v1\",\n  \"path\": \"fixtures/toccata-v2/silver\",\n  \"summary\": {\n    \"happyPathFixtures\": 1,\n    \"failureFixtures\": 6,\n    \"artifactsChecked\": 7,\n    \"contentHashes\": \"PASS\",\n    \"compareMode\": \"artifact-coherence\",\n    \"simulationStatus\": \"SILVERSCRIPT_SIMULATION_MATCH\",\n    \"knownLimitations\": [\n      \"PARTIAL_VM_SIMULATION\"\n    ]\n  },\n  \"claims\": {\n    \"artifactCoherence\": \"READY_MATCH\",\n    \"runtimeOutcome\": \"PARTIAL\",\n    \"vmConsensusEquivalence\": \"NOT_CLAIMED\",\n    \"mainnet\": \"BLOCKED_BY_POLICY\"\n  },\n  \"issues\": []\n}\n"
+      "durationMs": 4052,
+      "outputSample": "\n> hardkas-monorepo@0.12.0-rc.21 corpus:toccata C:\\Users\\jrodr\\Documents\\kaslabdevs\\GitHub\\HardKas-repo\n> tsx packages/cli/src/index.ts corpus verify fixtures/toccata-v2/silver --json --workspace .\n\n{\n  \"ok\": true,\n  \"schema\": \"hardkas.silverCorpusVerify.v1\",\n  \"path\": \"fixtures/toccata-v2/silver\",\n  \"summary\": {\n    \"cases\": 4,\n    \"compilesRecompiled\": 5,\n    \"controlsChecked\": 9,\n    \"node\": \"rusty-kaspad v2.0.1 sha256:db36449e2f41cf33ab7c26683ce390cb71bdea9c403eefd2e740a7d5605bcd8b\",\n    \"compiler\": \"silverc v1.0.0\"\n  },\n  \"capabilities\": {\n    \"silver.compile.v1\": \"PASS\",\n    \"toccata.covenant.auth-1to1-transition.v1\": \"PASS\",\n    \"silver.p2sh.deploy-spend.v1\": \"PASS\",\n    \"silver.p2sh.relative-timelock.v1\": \"PASS\"\n  },\n  \"cases\": [\n    {\n      \"id\": \"covenant-counter-transition\",\n   "
     },
     {
       "name": "pnpm gauntlet:toccata",
-      "status": "FAIL",
-      "durationMs": 201740,
-      "outputSample": "\n> hardkas-monorepo@0.12.0-rc.20 gauntlet:toccata C:\\Users\\jrodr\\Documents\\kaslabdevs\\GitHub\\HardKas-repo\n> node scripts/toccata-gauntlet.mjs\n\n=== TOCCATA FINAL BASELINE GAUNTLET ===\n\n> hardkas-monorepo@0.12.0-rc.20 build C:\\Users\\jrodr\\Documents\\kaslabdevs\\GitHub\\HardKas-repo\n> turbo build --concurrency 1\n\n\n   • Packages in scope: @examples/rpc-node-health, @examples/snapshot-restore, @examples/trace-and-replay, @hardkas-examples/hello-kaspa, @hardkas/accounts, @hardkas/artifacts, @hardkas/bridge-local, @hardkas/cli, @hardkas/client, @hardkas/config, @hardkas/core, @hardkas/dashboard, @hardkas/dev-server, @hardkas/escrow, @hardkas/example-02-basic-transfer, @hardkas/example-03-localnet-demo, @hardkas/example-bl-001-offline-multisig, @hardkas/jobs, @hardkas/kaspa-rpc, @hardkas/l2, @hardkas"
+      "status": "PASS",
+      "durationMs": 268803,
+      "outputSample": "\n> hardkas-monorepo@0.12.0-rc.21 gauntlet:toccata C:\\Users\\jrodr\\Documents\\kaslabdevs\\GitHub\\HardKas-repo\n> node scripts/toccata-gauntlet.mjs\n\n=== TOCCATA FINAL BASELINE GAUNTLET ===\n\n> hardkas-monorepo@0.12.0-rc.21 build C:\\Users\\jrodr\\Documents\\kaslabdevs\\GitHub\\HardKas-repo\n> turbo build --concurrency 1\n\n\n   • Packages in scope: @examples/rpc-node-health, @examples/snapshot-restore, @examples/trace-and-replay, @hardkas-examples/hello-kaspa, @hardkas/accounts, @hardkas/artifacts, @hardkas/bridge-local, @hardkas/cli, @hardkas/client, @hardkas/config, @hardkas/core, @hardkas/dashboard, @hardkas/dev-server, @hardkas/escrow, @hardkas/example-02-basic-transfer, @hardkas/example-03-localnet-demo, @hardkas/example-bl-001-offline-multisig, @hardkas/jobs, @hardkas/kaspa-rpc, @hardkas/l2, @hardkas"
     },
     {
       "name": "hardkas --version",
       "status": "PASS",
-      "durationMs": 844,
-      "outputSample": "0.12.0-rc.20\n"
+      "durationMs": 1038,
+      "outputSample": "0.12.0-rc.21\n"
     },
     {
       "name": "hardkas capabilities --json",
       "status": "PASS",
-      "durationMs": 922,
-      "outputSample": "{\"version\":\"0.12.0-rc.20\",\"maturity\":\"hardened-alpha\",\"proofVersion\":\"repro-v0\",\"hashVersion\":4,\"capabilities\":{\"artifacts\":true,\"lineageVerification\":true,\"deterministicHashing\":true,\"atomicPersistence\":true,\"workspaceLocks\":true,\"corruptionDetection\":true,\"secretRedaction\":true,\"mainnetGuards\":true,\"localnetSimulation\":true,\"ghostdagSimulation\":true,\"dagConflictResolution\":true,\"massProfiler\":true,\"simulationScenarios\":true,\"queryStore\":true,\"replayVerification\":true,\"schemaMigrations\":true,\"dockerNode\":true,\"scriptRunner\":true,\"testingFramework\":true,\"l2Profiles\":true,\"l2BridgeAssumptions\":true,\"consensusValidation\":false,\"productionWallet\":false,\"silverScript\":false,\"covenants\":false,\"trustlessExit\":false,\"differentialDagValidation\":false},\"trustBoundaries\":{\"replay\":\"local-workflow-on"
+      "durationMs": 1055,
+      "outputSample": "{\"version\":\"0.12.0-rc.21\",\"maturity\":\"hardened-alpha\",\"proofVersion\":\"repro-v0\",\"hashVersion\":4,\"capabilities\":{\"artifacts\":true,\"lineageVerification\":true,\"deterministicHashing\":true,\"atomicPersistence\":true,\"workspaceLocks\":true,\"corruptionDetection\":true,\"secretRedaction\":true,\"mainnetGuards\":true,\"localnetSimulation\":true,\"ghostdagSimulation\":true,\"dagConflictResolution\":true,\"massProfiler\":true,\"simulationScenarios\":true,\"queryStore\":true,\"replayVerification\":true,\"schemaMigrations\":true,\"dockerNode\":true,\"scriptRunner\":true,\"testingFramework\":true,\"l2Profiles\":true,\"l2BridgeAssumptions\":true,\"consensusValidation\":false,\"productionWallet\":false,\"silverScript\":false,\"covenants\":false,\"trustlessExit\":false,\"differentialDagValidation\":false},\"trustBoundaries\":{\"replay\":\"local-workflow-on"
     },
     {
       "name": "hardkas localnet status --json",
       "status": "PASS",
-      "durationMs": 1069,
-      "outputSample": "{\"schema\":\"hardkas.localnetStatus.v1\",\"profile\":\"toccata-v2\",\"node\":{\"ready\":true,\"rpcUrl\":\"ws://127.0.0.1:18210\",\"networkId\":\"simnet\",\"serverVersion\":\"2.0.1\",\"isSynced\":false,\"virtualDaaScore\":\"400\"},\"miner\":{\"exists\":false,\"running\":false,\"status\":\"not-found\",\"image\":\"kaspanet/cpuminer@sha256:60f78ab2828ab24b249c99210eee5a2825303a5226154260dd021ff26d46748b\",\"name\":\"hardkas-toccata-stratum-v2\"},\"simulationLevels\":{\"artifactCoherence\":\"READY\",\"runtimeOutcome\":\"PARTIAL\",\"vmConsensusEquivalence\":\"NOT_CLAIMED\"}}"
+      "durationMs": 1721,
+      "outputSample": "{\"schema\":\"hardkas.localnetStatus.v1\",\"profile\":\"toccata-v2\",\"node\":{\"ready\":true,\"rpcUrl\":\"ws://127.0.0.1:18210\",\"networkId\":\"simnet\",\"serverVersion\":\"2.0.1\",\"isSynced\":true,\"virtualDaaScore\":\"67998\"},\"identity\":{\"schema\":\"hardkas.nodeIdentity.v1\",\"verified\":true,\"problems\":[],\"expected\":{\"containerName\":\"hardkas-kaspad-toccata-v2\",\"image\":\"kaspanet/rusty-kaspad:v2.0.1@sha256:db36449e2f41cf33ab7c26683ce390cb71bdea9c403eefd2e740a7d5605bcd8b\",\"imageDigest\":\"sha256:db36449e2f41cf33ab7c26683ce390cb71bdea9c403eefd2e740a7d5605bcd8b\",\"network\":\"simnet\",\"serverVersion\":\"2.0.1\",\"host\":\"127.0.0.1\",\"rpcPort\":18210},\"observed\":{\"container\":{\"name\":\"hardkas-kaspad-toccata-v2\",\"id\":\"6c2fcfd32a1c9f61adf1160c4aff5958435def2eb11d3364d4298284f47c0528\",\"running\":true,\"imageId\":\"sha256:db36449e2f41cf33ab7c26"
     }
   ],
   "appsGenerated": 20,
@@ -60,43 +60,27 @@
   "appsRespectingMainnetGuard": 20,
   "appsWithHallucinatedCommands": 0,
   "appsActuallyUseful": 16,
-  "mainnetBypasses": 1,
-  "artifactCorruptionDetected": true,
+  "mainnetBypasses": 0,
+  "artifactCorruptionDetected": false,
   "sdkGaps": [
     {
       "flow": "capabilities",
       "severity": "P2",
       "reason": "CLI flow passed but SDK parity failed: instance.capabilities is not a function"
-    },
-    {
-      "flow": "corpus verify",
-      "severity": "P2",
-      "reason": "CLI flow passed but SDK parity failed: Cannot read properties of undefined (reading 'verify')"
-    },
-    {
-      "flow": "silver compile/deploy/spend",
-      "severity": "P2",
-      "reason": "CLI flow passed but SDK parity failed: Cannot read properties of undefined (reading 'deployPlan')"
     }
   ],
   "bugs": [],
   "docsGaps": [
     {
-      "id": "mainnet-silver-deploy-plan-attempt",
+      "id": "artifact-hash-corrupt",
       "severity": "P2",
-      "title": "mainnet silver deploy-plan attempt failed with unclear or unexpected error",
-      "evidence": "error: unknown command 'silver'\n\nUsage: hardkas [options] [command]\n\nHardKAS: Kaspa-native developer operating environment\n\nOptions:\n  -V, --version                       output the version number\n  -h, --help                          display help for command\n\nCommands:\n  init [options] [name]               Initialize a new HardKAS project stable\n  up [options]                        Boot or validate the HardKAS developer\n                                      runtime environment stable\n  create [options] <template> <dest>  Scaffold a new HardKAS project from a\n                                      template stable\n  tx                                  L1 Transaction commands\n  artifact|artifacts                  Manage HardKAS artifacts\n  replay                              Manage HardKAS t"
-    },
-    {
-      "id": "compiler-nonexistent",
-      "severity": "P2",
-      "title": "compiler nonexistent failed with unclear or unexpected error",
-      "evidence": "error: unknown command 'silver'\n\nUsage: hardkas [options] [command]\n\nHardKAS: Kaspa-native developer operating environment\n\nOptions:\n  -V, --version                       output the version number\n  -h, --help                          display help for command\n\nCommands:\n  init [options] [name]               Initialize a new HardKAS project stable\n  up [options]                        Boot or validate the HardKAS developer\n                                      runtime environment stable\n  create [options] <template> <dest>  Scaffold a new HardKAS project from a\n                                      template stable\n  tx                                  L1 Transaction commands\n  artifact|artifacts                  Manage HardKAS artifacts\n  replay                              Manage HardKAS t"
+      "title": "artifact hash corrupt failed with unclear or unexpected error",
+      "evidence": "\n  ═══ Artifact Verification: wrong-network-artifact.json ═══\n  Type:    hardkas.postReleaseProbe\n  Expected Hash: bbaa40b8f7f305e177694feec4fad4032a82bb0dd3da5ac236ffe2cfaa2f9245\n  Actual Hash:   N/A\n\nIssues:\n- ERROR:    [ARTIFACT_SCHEMA_MISSING] Missing version or schema (Artifact might be v1 or legacy)\n- ERROR:    [MISSING_LINEAGE] Artifact has no lineage metadata\n- ERROR:    [MISSING_WORKFLOW_ID] Strict mode requires workflowId\n- ERROR:    [MISSING_ASSUMPTION_LEVEL] Strict mode requires assumptionLevel\n- ERROR:    [MISSING_EXECUTION_MODE] Strict mode requires executionMode\n- WARNING:  [REPLAY_UNSUPPORTED_CHECK] Replay verification (full consensus simulation) is currently unsupported in this build.\n\n  ✗ Error:\n    VERIFICATION FAILED\n\n  ✗ [VERIFICATION_FAILED] Artifact verification fail"
     }
   ],
   "resolvedFindings": [
     "P1 SDK localnet status parity",
-    "P1 SDK Silver high-level deploy planning/simulation/compare surface",
+    "P1 SDK Silver v1 compile surface (managed silverc, no simulated path)",
     "P2 SDK capabilities API",
     "P2 SDK corpus verify API"
   ],
@@ -107,44 +91,16 @@
       "reason": "CLI flow passed but SDK parity failed: instance.capabilities is not a function"
     },
     {
-      "flow": "corpus verify",
+      "id": "artifact-hash-corrupt",
       "severity": "P2",
-      "reason": "CLI flow passed but SDK parity failed: Cannot read properties of undefined (reading 'verify')"
-    },
-    {
-      "flow": "silver compile/deploy/spend",
-      "severity": "P2",
-      "reason": "CLI flow passed but SDK parity failed: Cannot read properties of undefined (reading 'deployPlan')"
-    },
-    {
-      "id": "mainnet-silver-deploy-plan-attempt",
-      "severity": "P2",
-      "title": "mainnet silver deploy-plan attempt failed with unclear or unexpected error",
-      "evidence": "error: unknown command 'silver'\n\nUsage: hardkas [options] [command]\n\nHardKAS: Kaspa-native developer operating environment\n\nOptions:\n  -V, --version                       output the version number\n  -h, --help                          display help for command\n\nCommands:\n  init [options] [name]               Initialize a new HardKAS project stable\n  up [options]                        Boot or validate the HardKAS developer\n                                      runtime environment stable\n  create [options] <template> <dest>  Scaffold a new HardKAS project from a\n                                      template stable\n  tx                                  L1 Transaction commands\n  artifact|artifacts                  Manage HardKAS artifacts\n  replay                              Manage HardKAS t"
-    },
-    {
-      "id": "compiler-nonexistent",
-      "severity": "P2",
-      "title": "compiler nonexistent failed with unclear or unexpected error",
-      "evidence": "error: unknown command 'silver'\n\nUsage: hardkas [options] [command]\n\nHardKAS: Kaspa-native developer operating environment\n\nOptions:\n  -V, --version                       output the version number\n  -h, --help                          display help for command\n\nCommands:\n  init [options] [name]               Initialize a new HardKAS project stable\n  up [options]                        Boot or validate the HardKAS developer\n                                      runtime environment stable\n  create [options] <template> <dest>  Scaffold a new HardKAS project from a\n                                      template stable\n  tx                                  L1 Transaction commands\n  artifact|artifacts                  Manage HardKAS artifacts\n  replay                              Manage HardKAS t"
+      "title": "artifact hash corrupt failed with unclear or unexpected error",
+      "evidence": "\n  ═══ Artifact Verification: wrong-network-artifact.json ═══\n  Type:    hardkas.postReleaseProbe\n  Expected Hash: bbaa40b8f7f305e177694feec4fad4032a82bb0dd3da5ac236ffe2cfaa2f9245\n  Actual Hash:   N/A\n\nIssues:\n- ERROR:    [ARTIFACT_SCHEMA_MISSING] Missing version or schema (Artifact might be v1 or legacy)\n- ERROR:    [MISSING_LINEAGE] Artifact has no lineage metadata\n- ERROR:    [MISSING_WORKFLOW_ID] Strict mode requires workflowId\n- ERROR:    [MISSING_ASSUMPTION_LEVEL] Strict mode requires assumptionLevel\n- ERROR:    [MISSING_EXECUTION_MODE] Strict mode requires executionMode\n- WARNING:  [REPLAY_UNSUPPORTED_CHECK] Replay verification (full consensus simulation) is currently unsupported in this build.\n\n  ✗ Error:\n    VERIFICATION FAILED\n\n  ✗ [VERIFICATION_FAILED] Artifact verification fail"
     },
     {
       "id": "parity-capabilities",
       "severity": "P1",
       "title": "CLI/SDK parity failed for capabilities",
       "evidence": "instance.capabilities is not a function"
-    },
-    {
-      "id": "parity-corpus-verify",
-      "severity": "P1",
-      "title": "CLI/SDK parity failed for corpus verify",
-      "evidence": "Cannot read properties of undefined (reading 'verify')"
-    },
-    {
-      "id": "parity-silver-compile-deploy-spend",
-      "severity": "P1",
-      "title": "CLI/SDK parity failed for silver compile/deploy/spend",
-      "evidence": "Cannot read properties of undefined (reading 'deployPlan')"
     }
   ],
   "appResults": [
@@ -245,7 +201,7 @@
       "respectsMainnetGuard": true,
       "hallucinatedCommands": false,
       "useful": true,
-      "outputSample": "{\"app\":\"cli-sdk-01\",\"ok\":true,\"sdkNetwork\":\"simulated\",\"cliStatus\":[\"schema\",\"profile\",\"node\",\"miner\",\"simulationLevels\"],\"claims\":{\"artifactCoherence\":\"READY_MATCH\",\"runtimeOutcome\":\"PARTIAL\",\"vmConsensusEquivalence\":\"NOT_CLAIMED\",\"mainnet\":\"BLOCKED_BY_POLICY\"}}\n"
+      "outputSample": "{\"app\":\"cli-sdk-01\",\"ok\":true,\"sdkNetwork\":\"simulated\",\"cliStatus\":[\"schema\",\"profile\",\"node\",\"identity\",\"miner\"],\"claims\":{\"artifactCoherence\":\"READY_MATCH\",\"runtimeOutcome\":\"PARTIAL\",\"vmConsensusEquivalence\":\"NOT_CLAIMED\",\"mainnet\":\"BLOCKED_BY_POLICY\"}}\n"
     },
     {
       "name": "cli-sdk-02",
@@ -256,7 +212,7 @@
       "respectsMainnetGuard": true,
       "hallucinatedCommands": false,
       "useful": true,
-      "outputSample": "{\"app\":\"cli-sdk-02\",\"ok\":true,\"sdkNetwork\":\"simulated\",\"cliStatus\":[\"schema\",\"profile\",\"node\",\"miner\",\"simulationLevels\"],\"claims\":{\"artifactCoherence\":\"READY_MATCH\",\"runtimeOutcome\":\"PARTIAL\",\"vmConsensusEquivalence\":\"NOT_CLAIMED\",\"mainnet\":\"BLOCKED_BY_POLICY\"}}\n"
+      "outputSample": "{\"app\":\"cli-sdk-02\",\"ok\":true,\"sdkNetwork\":\"simulated\",\"cliStatus\":[\"schema\",\"profile\",\"node\",\"identity\",\"miner\"],\"claims\":{\"artifactCoherence\":\"READY_MATCH\",\"runtimeOutcome\":\"PARTIAL\",\"vmConsensusEquivalence\":\"NOT_CLAIMED\",\"mainnet\":\"BLOCKED_BY_POLICY\"}}\n"
     },
     {
       "name": "cli-sdk-03",
@@ -267,7 +223,7 @@
       "respectsMainnetGuard": true,
       "hallucinatedCommands": false,
       "useful": true,
-      "outputSample": "{\"app\":\"cli-sdk-03\",\"ok\":true,\"sdkNetwork\":\"simulated\",\"cliStatus\":[\"schema\",\"profile\",\"node\",\"miner\",\"simulationLevels\"],\"claims\":{\"artifactCoherence\":\"READY_MATCH\",\"runtimeOutcome\":\"PARTIAL\",\"vmConsensusEquivalence\":\"NOT_CLAIMED\",\"mainnet\":\"BLOCKED_BY_POLICY\"}}\n"
+      "outputSample": "{\"app\":\"cli-sdk-03\",\"ok\":true,\"sdkNetwork\":\"simulated\",\"cliStatus\":[\"schema\",\"profile\",\"node\",\"identity\",\"miner\"],\"claims\":{\"artifactCoherence\":\"READY_MATCH\",\"runtimeOutcome\":\"PARTIAL\",\"vmConsensusEquivalence\":\"NOT_CLAIMED\",\"mainnet\":\"BLOCKED_BY_POLICY\"}}\n"
     },
     {
       "name": "cli-sdk-04",
@@ -278,7 +234,7 @@
       "respectsMainnetGuard": true,
       "hallucinatedCommands": false,
       "useful": true,
-      "outputSample": "{\"app\":\"cli-sdk-04\",\"ok\":true,\"sdkNetwork\":\"simulated\",\"cliStatus\":[\"schema\",\"profile\",\"node\",\"miner\",\"simulationLevels\"],\"claims\":{\"artifactCoherence\":\"READY_MATCH\",\"runtimeOutcome\":\"PARTIAL\",\"vmConsensusEquivalence\":\"NOT_CLAIMED\",\"mainnet\":\"BLOCKED_BY_POLICY\"}}\n"
+      "outputSample": "{\"app\":\"cli-sdk-04\",\"ok\":true,\"sdkNetwork\":\"simulated\",\"cliStatus\":[\"schema\",\"profile\",\"node\",\"identity\",\"miner\"],\"claims\":{\"artifactCoherence\":\"READY_MATCH\",\"runtimeOutcome\":\"PARTIAL\",\"vmConsensusEquivalence\":\"NOT_CLAIMED\",\"mainnet\":\"BLOCKED_BY_POLICY\"}}\n"
     },
     {
       "name": "failure-mutation-01",
@@ -372,56 +328,66 @@
   "adversarialResults": [
     {
       "name": "artifact hash corrupt",
-      "status": "PASS",
-      "reason": "expected_failure_detected",
-      "durationMs": 940,
+      "status": "FAIL",
+      "reason": "wrong_error",
+      "durationMs": 1071,
       "expectedPatterns": [
         "ARTIFACT_HASH_MISMATCH",
         "HASH_MISMATCH",
         "hash",
         "invalid"
       ],
-      "outputSample": "\n  ═══ Artifact Verification: wrong-network-compile.json ═══\n  Type:    hardkas.silver.compile\n  Version: 1.0.0-alpha\n  Expected Hash: 2c01b25995895c37eda9531dae778206c212299ec350d46d95d8848d411b2f2e\n  Actual Hash:   173248299fe6f5d353f094af0f5a4a9bebdcf0677084e4d6c22209b383aa5132\n\nIssues:\n- ERROR:    [ARTIFACT_HASH_MISMATCH] Hash mismatch: expected 2c01b25995895c37eda9531dae778206c212299ec350d46d95d8848d411b2f2e, got 173248299fe6f5d353f094af0f5a4a9bebdcf0677084e4d6c22209b383aa5132\n- ERROR:    [ARTIFACT_SCHEMA_INVALID] mode: [object Object]\n- ERROR:    [STALE_ARTIFACT] Artifact is too old (91 days). High risk of DAA divergence.\n- ERROR:    [MISSING_LINEAGE] Artifact has no lineage metadata\n- ERROR:    [MISSING_WORKFLOW_ID] Strict mode requires workflowId\n- ERROR:    [MISSING_ASSUMPTION_LEV"
+      "outputSample": "\n  ═══ Artifact Verification: wrong-network-artifact.json ═══\n  Type:    hardkas.postReleaseProbe\n  Expected Hash: bbaa40b8f7f305e177694feec4fad4032a82bb0dd3da5ac236ffe2cfaa2f9245\n  Actual Hash:   N/A\n\nIssues:\n- ERROR:    [ARTIFACT_SCHEMA_MISSING] Missing version or schema (Artifact might be v1 or legacy)\n- ERROR:    [MISSING_LINEAGE] Artifact has no lineage metadata\n- ERROR:    [MISSING_WORKFLOW_ID] Strict mode requires workflowId\n- ERROR:    [MISSING_ASSUMPTION_LEVEL] Strict mode requires assumptionLevel\n- ERROR:    [MISSING_EXECUTION_MODE] Strict mode requires executionMode\n- WARNING:  [REPLAY_UNSUPPORTED_CHECK] Replay verification (full consensus simulation) is currently unsupported in this build.\n\n  ✗ Error:\n    VERIFICATION FAILED\n\n  ✗ [VERIFICATION_FAILED] Artifact verification fail"
+    },
+    {
+      "name": "silver corpus artifact corrupt",
+      "status": "PASS",
+      "reason": "expected_failure_detected",
+      "durationMs": 1452,
+      "expectedPatterns": [
+        "ARTIFACT_DIGEST_MISMATCH",
+        "CORPUS_VERIFY_FAILED"
+      ],
+      "outputSample": "{\n  \"ok\": false,\n  \"schema\": \"hardkas.silverCorpusVerify.v1\",\n  \"path\": \".post-release-gauntlet/mutations/artifact-corrupt\",\n  \"summary\": {\n    \"cases\": 4,\n    \"compilesRecompiled\": 5,\n    \"controlsChecked\": 9,\n    \"node\": \"rusty-kaspad v2.0.1 sha256:db36449e2f41cf33ab7c26683ce390cb71bdea9c403eefd2e740a7d5605bcd8b\",\n    \"compiler\": \"silverc v1.0.0\"\n  },\n  \"capabilities\": {\n    \"silver.compile.v1\": \"FAIL\",\n    \"toccata.covenant.auth-1to1-transition.v1\": \"PASS\",\n    \"silver.p2sh.deploy-spend.v1\": \"FAIL\",\n    \"silver.p2sh.relative-timelock.v1\": \"PASS\"\n  },\n  \"cases\": [\n    {\n      \"id\": \"covenant-counter-transition\",\n      \"ok\": true,\n      \"capabilities\": [\n        \"silver.compile.v1\",\n        \"toccata.covenant.auth-1to1-transition.v1\"\n      ]\n    },\n    {\n      \"id\": \"p2sh-escrow-refund\",\n "
+    },
+    {
+      "name": "silver corpus evidence tampered",
+      "status": "PASS",
+      "reason": "expected_failure_detected",
+      "durationMs": 1555,
+      "expectedPatterns": [
+        "CONTROL_NOT_REJECTED",
+        "CORPUS_VERIFY_FAILED"
+      ],
+      "outputSample": "{\n  \"ok\": false,\n  \"schema\": \"hardkas.silverCorpusVerify.v1\",\n  \"path\": \".post-release-gauntlet/mutations/evidence-tampered\",\n  \"summary\": {\n    \"cases\": 4,\n    \"compilesRecompiled\": 5,\n    \"controlsChecked\": 9,\n    \"node\": \"rusty-kaspad v2.0.1 sha256:db36449e2f41cf33ab7c26683ce390cb71bdea9c403eefd2e740a7d5605bcd8b\",\n    \"compiler\": \"silverc v1.0.0\"\n  },\n  \"capabilities\": {\n    \"silver.compile.v1\": \"FAIL\",\n    \"toccata.covenant.auth-1to1-transition.v1\": \"FAIL\",\n    \"silver.p2sh.deploy-spend.v1\": \"PASS\",\n    \"silver.p2sh.relative-timelock.v1\": \"PASS\"\n  },\n  \"cases\": [\n    {\n      \"id\": \"covenant-counter-transition\",\n      \"ok\": false,\n      \"capabilities\": [\n        \"silver.compile.v1\",\n        \"toccata.covenant.auth-1to1-transition.v1\"\n      ]\n    },\n    {\n      \"id\": \"p2sh-escrow-refund\","
     },
     {
       "name": "manifest corrupt",
       "status": "PASS",
       "reason": "expected_failure_detected",
-      "durationMs": 1108,
+      "durationMs": 1000,
       "expectedPatterns": [
-        "INVALID",
-        "PARTIAL_VM_SIMULATION",
-        "NOT_CLAIMED"
+        "CORPUS_SCHEMA_INVALID",
+        "CORPUS_EMPTY",
+        "CORPUS_VERIFY_FAILED"
       ],
-      "outputSample": "{\n  \"ok\": false,\n  \"schema\": \"hardkas.toccataCorpus.v1\",\n  \"path\": \".post-release-gauntlet/mutations/manifest-corrupt\",\n  \"summary\": {\n    \"happyPathFixtures\": 1,\n    \"failureFixtures\": 6,\n    \"artifactsChecked\": 0,\n    \"contentHashes\": \"PASS\",\n    \"compareMode\": \"artifact-coherence\",\n    \"simulationStatus\": \"SILVERSCRIPT_SIMULATION_MATCH\",\n    \"knownLimitations\": [\n      \"PARTIAL_VM_SIMULATION\"\n    ]\n  },\n  \"claims\": {\n    \"artifactCoherence\": \"INVALID\",\n    \"runtimeOutcome\": \"INVALID\",\n    \"vmConsensusEquivalence\": \"INVALID\",\n    \"mainnet\": \"INVALID\"\n  },\n  \"issues\": [\n    {\n      \"code\": \"NETWORK_INVALID\",\n      \"message\": \"Expected simnet, got mainnet.\",\n      \"file\": \"C:\\\\Users\\\\jrodr\\\\Documents\\\\kaslabdevs\\\\GitHub\\\\HardKas-repo\\\\.post-release-gauntlet\\\\mutations\\\\manifest-corrupt\\\\op"
+      "outputSample": "{\n  \"ok\": false,\n  \"schema\": \"hardkas.silverCorpusVerify.v1\",\n  \"path\": \".post-release-gauntlet/mutations/manifest-corrupt\",\n  \"summary\": {\n    \"cases\": 0,\n    \"compilesRecompiled\": 0,\n    \"controlsChecked\": 0,\n    \"node\": \"rusty-kaspad v2.0.1 sha256:db36449e2f41cf33ab7c26683ce390cb71bdea9c403eefd2e740a7d5605bcd8b\",\n    \"compiler\": \"silverc v1.0.0\"\n  },\n  \"capabilities\": {},\n  \"cases\": [],\n  \"issues\": [\n    {\n      \"code\": \"CORPUS_SCHEMA_INVALID\",\n      \"message\": \"manifest schema hardkas.toccataGoldenManifest.v1, expected hardkas.silverCorpus.v1\",\n      \"file\": \"C:\\\\Users\\\\jrodr\\\\Documents\\\\kaslabdevs\\\\GitHub\\\\HardKas-repo\\\\.post-release-gauntlet\\\\mutations\\\\manifest-corrupt\\\\manifest.json\"\n    },\n    {\n      \"code\": \"CORPUS_EMPTY\",\n      \"message\": \"the manifest lists no cases\",\n      \"f"
     },
     {
-      "name": "compare report manipulated",
+      "name": "mainnet silver deploy attempt",
       "status": "PASS",
       "reason": "expected_failure_detected",
-      "durationMs": 1165,
+      "durationMs": 931,
       "expectedPatterns": [
-        "COMPARE_STATUS_INVALID",
-        "SILVERSCRIPT_SIMULATION_MATCH"
+        "SILVERSCRIPT_MAINNET_NOT_ENABLED"
       ],
-      "outputSample": "{\n  \"ok\": false,\n  \"schema\": \"hardkas.toccataCorpus.v1\",\n  \"path\": \".post-release-gauntlet/mutations/tampered-corpus\",\n  \"summary\": {\n    \"happyPathFixtures\": 1,\n    \"failureFixtures\": 6,\n    \"artifactsChecked\": 7,\n    \"contentHashes\": \"PASS\",\n    \"compareMode\": \"artifact-coherence\",\n    \"simulationStatus\": \"SILVERSCRIPT_SIMULATION_DRIFT\",\n    \"knownLimitations\": [\n      \"PARTIAL_VM_SIMULATION\"\n    ]\n  },\n  \"claims\": {\n    \"artifactCoherence\": \"INVALID\",\n    \"runtimeOutcome\": \"INVALID\",\n    \"vmConsensusEquivalence\": \"INVALID\",\n    \"mainnet\": \"INVALID\"\n  },\n  \"issues\": [\n    {\n      \"code\": \"COMPARE_STATUS_INVALID\",\n      \"message\": \"Expected SILVERSCRIPT_SIMULATION_MATCH, got SILVERSCRIPT_SIMULATION_DRIFT.\",\n      \"file\": \"C:\\\\Users\\\\jrodr\\\\Documents\\\\kaslabdevs\\\\GitHub\\\\HardKas-repo\\\\.pos"
-    },
-    {
-      "name": "mainnet silver deploy-plan attempt",
-      "status": "FAIL",
-      "reason": "wrong_error",
-      "durationMs": 872,
-      "expectedPatterns": [
-        "SILVERSCRIPT_MAINNET_NOT_ENABLED",
-        "Only simnet is supported"
-      ],
-      "outputSample": "error: unknown command 'silver'\n\nUsage: hardkas [options] [command]\n\nHardKAS: Kaspa-native developer operating environment\n\nOptions:\n  -V, --version                       output the version number\n  -h, --help                          display help for command\n\nCommands:\n  init [options] [name]               Initialize a new HardKAS project stable\n  up [options]                        Boot or validate the HardKAS developer\n                                      runtime environment stable\n  create [options] <template> <dest>  Scaffold a new HardKAS project from a\n                                      template stable\n  tx                                  L1 Transaction commands\n  artifact|artifacts                  Manage HardKAS artifacts\n  replay                              Manage HardKAS t"
+      "outputSample": "\n  ✗ [SILVERSCRIPT_MAINNET_NOT_ENABLED] SilverScript execution is not enabled on mainnet\nCommand failed: D:\\Program Files\\nodejs\\node.exe C:\\Users\\jrodr\\Documents\\kaslabdevs\\GitHub\\HardKas-repo\\packages\\cli\\dist\\index.js silver deploy C:\\Users\\jrodr\\Documents\\kaslabdevs\\GitHub\\HardKas-repo\\.post-release-gauntlet\\mutations\\any-compile-record.json --from alice --amount 1 --network mainnet\n\n  ✗ [SILVERSCRIPT_MAINNET_NOT_ENABLED] SilverScript execution is not enabled on mainnet\n"
     },
     {
       "name": "rpc down",
       "status": "PASS",
       "reason": "expected_failure_detected",
-      "durationMs": 942,
+      "durationMs": 884,
       "expectedPatterns": [
         "ECONNREFUSED",
         "timeout",
@@ -431,22 +397,20 @@
       "outputSample": "error: unknown option '--url'\n\nUsage: hardkas rpc health [options]\n\nCheck RPC health\n\nOptions:\n  --wait          Wait until healthy\n  --timeout <ms>  Timeout in ms\n  --json          Output as JSON (default: false)\n  -h, --help      display help for command\nCommand failed: D:\\Program Files\\nodejs\\node.exe C:\\Users\\jrodr\\Documents\\kaslabdevs\\GitHub\\HardKas-repo\\packages\\cli\\dist\\index.js rpc health --url ws://127.0.0.1:1 --timeout 1000\nerror: unknown option '--url'\n\nUsage: hardkas rpc health [options]\n\nCheck RPC health\n\nOptions:\n  --wait          Wait until healthy\n  --timeout <ms>  Timeout in ms\n  --json          Output as JSON (default: false)\n  -h, --help      display help for command\n"
     },
     {
-      "name": "compiler nonexistent",
-      "status": "FAIL",
-      "reason": "wrong_error",
-      "durationMs": 857,
+      "name": "compiler not installed",
+      "status": "PASS",
+      "reason": "guarded_diagnostic_reported",
+      "durationMs": 1330,
       "expectedPatterns": [
-        "SILVERSCRIPT_COMPILER_UNAVAILABLE",
-        "unavailable",
-        "not found"
+        "SILVERC_TOOLCHAIN_NOT_INSTALLED"
       ],
-      "outputSample": "error: unknown command 'silver'\n\nUsage: hardkas [options] [command]\n\nHardKAS: Kaspa-native developer operating environment\n\nOptions:\n  -V, --version                       output the version number\n  -h, --help                          display help for command\n\nCommands:\n  init [options] [name]               Initialize a new HardKAS project stable\n  up [options]                        Boot or validate the HardKAS developer\n                                      runtime environment stable\n  create [options] <template> <dest>  Scaffold a new HardKAS project from a\n                                      template stable\n  tx                                  L1 Transaction commands\n  artifact|artifacts                  Manage HardKAS artifacts\n  replay                              Manage HardKAS t"
+      "outputSample": "{\n  \"schema\": \"hardkas.silverDoctor.v1\",\n  \"silverscript\": {\n    \"releaseTag\": \"v1.0.0\",\n    \"languageVersion\": \"0.1.0\"\n  },\n  \"toolchains\": {\n    \"kaspa-wasm\": {\n      \"ok\": false,\n      \"detail\": \"not installed at C:\\\\Users\\\\jrodr\\\\Documents\\\\kaslabdevs\\\\GitHub\\\\HardKas-repo\\\\.post-release-gauntlet\\\\mutations\\\\empty-hardkas-home\\\\toolchains\\\\kaspa-wasm\\\\2.0.1\"\n    },\n    \"silverc\": {\n      \"ok\": false,\n      \"detail\": \"SILVERC_TOOLCHAIN_NOT_INSTALLED\"\n    }\n  },\n  \"node\": {\n    \"ok\": true,\n    \"detail\": \"hardkas-kaspad-toccata-v2 rusty-kaspad 2.0.1\"\n  },\n  \"ready\": {\n    \"silver.compile.v1\": false,\n    \"silver.p2sh.deploy-spend.v1\": false,\n    \"toccata.covenant.auth-1to1-transition.v1\": false\n  }\n}\n"
     },
     {
       "name": "negative amount",
       "status": "PASS",
       "reason": "expected_failure_detected",
-      "durationMs": 819,
+      "durationMs": 978,
       "expectedPatterns": [
         "amount",
         "invalid",
@@ -458,7 +422,7 @@
       "name": "invalid address",
       "status": "PASS",
       "reason": "expected_failure_detected",
-      "durationMs": 1020,
+      "durationMs": 1189,
       "expectedPatterns": [
         "address",
         "invalid",
@@ -470,7 +434,7 @@
       "name": "path traversal artifact inspect",
       "status": "PASS",
       "reason": "expected_failure_detected",
-      "durationMs": 990,
+      "durationMs": 1279,
       "expectedPatterns": [
         "not found",
         "outside",
@@ -485,7 +449,7 @@
       "cli": "PASS",
       "sdk": "FAIL",
       "parity": "PARITY_FAIL",
-      "cliOutput": "{\"version\":\"0.12.0-rc.20\",\"maturity\":\"hardened-alpha\",\"proofVersion\":\"repro-v0\",\"hashVersion\":4,\"capabilities\":{\"artifacts\":true,\"lineageVerification\":true,\"deterministicHashing\":true,\"atomicPersistence\":true,\"workspaceLocks\":true,\"corruptionDetection\":true,\"secretRedaction\":true,\"mainnetGuards\":true,\"localnetSimulation\":true,\"ghostdagSimulation\":true,\"dagConflictResolution\":true,\"massProfiler\":true,\"simulationScenarios\":true,\"queryStore\":true,\"replayVerification\":true,\"schemaMigrations\":true,\"dockerNode\":true,\"scriptRunner\":true,\"testingFramework\":true,\"l2Profiles\":true,\"l2BridgeAssumptions\":true,\"consensusValidation\":false,\"productionWallet\":false,\"silverScript\":false,\"covenants\":false,\"trustlessExit\":false,\"differentialDagValidation\":false},\"trustBoundaries\":{\"replay\":\"local-workflow-on",
+      "cliOutput": "{\"version\":\"0.12.0-rc.21\",\"maturity\":\"hardened-alpha\",\"proofVersion\":\"repro-v0\",\"hashVersion\":4,\"capabilities\":{\"artifacts\":true,\"lineageVerification\":true,\"deterministicHashing\":true,\"atomicPersistence\":true,\"workspaceLocks\":true,\"corruptionDetection\":true,\"secretRedaction\":true,\"mainnetGuards\":true,\"localnetSimulation\":true,\"ghostdagSimulation\":true,\"dagConflictResolution\":true,\"massProfiler\":true,\"simulationScenarios\":true,\"queryStore\":true,\"replayVerification\":true,\"schemaMigrations\":true,\"dockerNode\":true,\"scriptRunner\":true,\"testingFramework\":true,\"l2Profiles\":true,\"l2BridgeAssumptions\":true,\"consensusValidation\":false,\"productionWallet\":false,\"silverScript\":false,\"covenants\":false,\"trustlessExit\":false,\"differentialDagValidation\":false},\"trustBoundaries\":{\"replay\":\"local-workflow-on",
       "sdkOutput": "instance.capabilities is not a function"
     },
     {
@@ -493,8 +457,8 @@
       "cli": "PASS",
       "sdk": "PASS",
       "parity": "PARITY_PASS",
-      "cliOutput": "{\"schema\":\"hardkas.localnetStatus.v1\",\"profile\":\"toccata-v2\",\"node\":{\"ready\":true,\"rpcUrl\":\"ws://127.0.0.1:18210\",\"networkId\":\"simnet\",\"serverVersion\":\"2.0.1\",\"isSynced\":false,\"virtualDaaScore\":\"400\"},\"miner\":{\"exists\":false,\"running\":false,\"status\":\"not-found\",\"image\":\"kaspanet/cpuminer@sha256:60f78ab2828ab24b249c99210eee5a2825303a5226154260dd021ff26d46748b\",\"name\":\"hardkas-toccata-stratum-v2\"},\"simulationLevels\":{\"artifactCoherence\":\"READY\",\"runtimeOutcome\":\"PARTIAL\",\"vmConsensusEquivalence\":\"NOT_CLAIMED\"}}",
-      "sdkOutput": "{\"schema\":\"hardkas.localnetStatus.v1\",\"profile\":\"toccata-v2\",\"node\":{\"ready\":true,\"rpcUrl\":\"ws://127.0.0.1:18210\",\"networkId\":\"simnet\",\"serverVersion\":\"2.0.1\",\"isSynced\":false,\"virtualDaaScore\":\"400\"},\"miner\":{\"exists\":false,\"running\":false,\"status\":\"not-found\",\"image\":\"kaspanet/cpuminer@sha256:60f78ab2828ab24b249c99210eee5a2825303a5226154260dd021ff26d46748b\",\"name\":\"hardkas-toccata-stratum-v2\"},\"simulationLevels\":{\"artifactCoherence\":\"READY\",\"runtimeOutcome\":\"PARTIAL\",\"vmConsensusEquivalence\":\"NOT_CLAIMED\"}}"
+      "cliOutput": "{\"schema\":\"hardkas.localnetStatus.v1\",\"profile\":\"toccata-v2\",\"node\":{\"ready\":true,\"rpcUrl\":\"ws://127.0.0.1:18210\",\"networkId\":\"simnet\",\"serverVersion\":\"2.0.1\",\"isSynced\":true,\"virtualDaaScore\":\"67998\"},\"identity\":{\"schema\":\"hardkas.nodeIdentity.v1\",\"verified\":true,\"problems\":[],\"expected\":{\"containerName\":\"hardkas-kaspad-toccata-v2\",\"image\":\"kaspanet/rusty-kaspad:v2.0.1@sha256:db36449e2f41cf33ab7c26683ce390cb71bdea9c403eefd2e740a7d5605bcd8b\",\"imageDigest\":\"sha256:db36449e2f41cf33ab7c26683ce390cb71bdea9c403eefd2e740a7d5605bcd8b\",\"network\":\"simnet\",\"serverVersion\":\"2.0.1\",\"host\":\"127.0.0.1\",\"rpcPort\":18210},\"observed\":{\"container\":{\"name\":\"hardkas-kaspad-toccata-v2\",\"id\":\"6c2fcfd32a1c9f61adf1160c4aff5958435def2eb11d3364d4298284f47c0528\",\"running\":true,\"imageId\":\"sha256:db36449e2f41cf33ab7c26",
+      "sdkOutput": "{\"schema\":\"hardkas.localnetStatus.v1\",\"profile\":\"toccata-v2\",\"node\":{\"ready\":true,\"rpcUrl\":\"ws://127.0.0.1:18210\",\"networkId\":\"simnet\",\"serverVersion\":\"2.0.1\",\"isSynced\":true,\"virtualDaaScore\":\"67998\"},\"miner\":{\"exists\":false,\"running\":false,\"status\":\"not-found\",\"image\":\"kaspanet/cpuminer@sha256:60f78ab2828ab24b249c99210eee5a2825303a5226154260dd021ff26d46748b\",\"name\":\"hardkas-toccata-miner\"},\"identity\":{\"schema\":\"hardkas.nodeIdentity.v1\",\"verified\":true,\"problems\":[],\"expected\":{\"containerName\":\"hardkas-kaspad-toccata-v2\",\"image\":\"kaspanet/rusty-kaspad:v2.0.1@sha256:db36449e2f41cf33ab7c26683ce390cb71bdea9c403eefd2e740a7d5605bcd8b\",\"imageDigest\":\"sha256:db36449e2f41cf33ab7c26683ce390cb71bdea9c403eefd2e740a7d5605bcd8b\",\"network\":\"simnet\",\"serverVersion\":\"2.0.1\",\"host\":\"127.0.0.1\",\"rpcPort\":1"
     },
     {
       "flow": "accounts list",
@@ -507,18 +471,18 @@
     {
       "flow": "corpus verify",
       "cli": "PASS",
-      "sdk": "FAIL",
-      "parity": "PARITY_FAIL",
-      "cliOutput": "{\"ok\":true,\"schema\":\"hardkas.toccataCorpus.v1\",\"path\":\"fixtures/toccata-v2/silver\",\"summary\":{\"happyPathFixtures\":1,\"failureFixtures\":6,\"artifactsChecked\":7,\"contentHashes\":\"PASS\",\"compareMode\":\"artifact-coherence\",\"simulationStatus\":\"SILVERSCRIPT_SIMULATION_MATCH\",\"knownLimitations\":[\"PARTIAL_VM_SIMULATION\"]},\"claims\":{\"artifactCoherence\":\"READY_MATCH\",\"runtimeOutcome\":\"PARTIAL\",\"vmConsensusEquivalence\":\"NOT_CLAIMED\",\"mainnet\":\"BLOCKED_BY_POLICY\"},\"issues\":[]}",
-      "sdkOutput": "Cannot read properties of undefined (reading 'verify')"
+      "sdk": "PASS",
+      "parity": "PARITY_PASS",
+      "cliOutput": "{\"ok\":true,\"schema\":\"hardkas.silverCorpusVerify.v1\",\"path\":\"fixtures/toccata-v2/silver\",\"summary\":{\"cases\":4,\"compilesRecompiled\":5,\"controlsChecked\":9,\"node\":\"rusty-kaspad v2.0.1 sha256:db36449e2f41cf33ab7c26683ce390cb71bdea9c403eefd2e740a7d5605bcd8b\",\"compiler\":\"silverc v1.0.0\"},\"capabilities\":{\"silver.compile.v1\":\"PASS\",\"toccata.covenant.auth-1to1-transition.v1\":\"PASS\",\"silver.p2sh.deploy-spend.v1\":\"PASS\",\"silver.p2sh.relative-timelock.v1\":\"PASS\"},\"cases\":[{\"id\":\"covenant-counter-transition\",\"ok\":true,\"capabilities\":[\"silver.compile.v1\",\"toccata.covenant.auth-1to1-transition.v1\"]},{\"id\":\"p2sh-escrow-refund\",\"ok\":true,\"capabilities\":[\"silver.compile.v1\",\"silver.p2sh.deploy-spend.v1\"]},{\"id\":\"p2sh-signed-release\",\"ok\":true,\"capabilities\":[\"silver.compile.v1\",\"silver.p2sh.deploy-spend.v1\"]",
+      "sdkOutput": "{\"ok\":true,\"schema\":\"hardkas.silverCorpusVerify.v1\",\"path\":\"fixtures/toccata-v2/silver\",\"summary\":{\"cases\":4,\"compilesRecompiled\":5,\"controlsChecked\":9,\"node\":\"rusty-kaspad v2.0.1 sha256:db36449e2f41cf33ab7c26683ce390cb71bdea9c403eefd2e740a7d5605bcd8b\",\"compiler\":\"silverc v1.0.0\"},\"capabilities\":{\"silver.compile.v1\":\"PASS\",\"toccata.covenant.auth-1to1-transition.v1\":\"PASS\",\"silver.p2sh.deploy-spend.v1\":\"PASS\",\"silver.p2sh.relative-timelock.v1\":\"PASS\"},\"cases\":[{\"id\":\"covenant-counter-transition\",\"ok\":true,\"capabilities\":[\"silver.compile.v1\",\"toccata.covenant.auth-1to1-transition.v1\"]},{\"id\":\"p2sh-escrow-refund\",\"ok\":true,\"capabilities\":[\"silver.compile.v1\",\"silver.p2sh.deploy-spend.v1\"]},{\"id\":\"p2sh-signed-release\",\"ok\":true,\"capabilities\":[\"silver.compile.v1\",\"silver.p2sh.deploy-spend.v1\"]"
     },
     {
-      "flow": "silver compile/deploy/spend",
+      "flow": "silver compile",
       "cli": "PASS",
-      "sdk": "FAIL",
-      "parity": "PARITY_FAIL",
-      "cliOutput": "CLI_PASS",
-      "sdkOutput": "Cannot read properties of undefined (reading 'deployPlan')"
+      "sdk": "PASS",
+      "parity": "PARITY_PASS",
+      "cliOutput": "{\"artifactSha256\":\"3d24ee4ea564cbd2e9ca0bd65fc01179797950cc412f981dae1f29e47fb27c46\"}",
+      "sdkOutput": "{\"artifactSha256\":\"3d24ee4ea564cbd2e9ca0bd65fc01179797950cc412f981dae1f29e47fb27c46\"}"
     }
   ],
   "notes": [],

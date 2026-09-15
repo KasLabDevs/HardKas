@@ -1,19 +1,25 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, beforeAll } from "vitest";
+import { resolveEscrowIntegrationConfig } from "./escrow-integration-config.js";
 
-const BASE_URL = "http://127.0.0.1:3000";
+const BASE_URL = process.env.HARDKAS_DEV_SERVER_URL ?? "http://127.0.0.1:3000";
 const headers = { "Content-Type": "application/json", "X-Hardkas-Request": "true" };
 
 let config = {
-    buyer: { publicKeyHex: "030a5996ccb6b3e80c85c2921c5720bcff27d2c3e1e69da5c50674ed4466b02662" }, 
-    seller: { publicKeyHex: "03a85b9b8b7ed6fc01b7a2d4b8be357e60ea9b02a2491a5e128cc1e9fdf5522731" }, 
-    arbiter: { publicKeyHex: "023ab915359756b5394208bd165b5120ec0be4061a1290380c5ce54460decfb881" }, 
+    buyer: { publicKeyHex: "0a5996ccb6b3e80c85c2921c5720bcff27d2c3e1e69da5c50674ed4466b02662" }, 
+    seller: { publicKeyHex: "a85b9b8b7ed6fc01b7a2d4b8be357e60ea9b02a2491a5e128cc1e9fdf5522731" }, 
+    arbiter: { publicKeyHex: "3ab915359756b5394208bd165b5120ec0be4061a1290380c5ce54460decfb881" }, 
     buyerDestinationSpk: "20f69a597a760c2d3eddb5e6db24e39ee0b3b429188e63cc8d8174f8cfb5e11bbdac",
     sellerDestinationSpk: "208d1f2a36b5ec63251ed7a69b0fa6bb781e6a928421c97a5b3eeef52bc5da8669ac",
     refundAmount: "100000000", 
     releaseAmount: "100000000"
 };
 
-describe("Idempotency Matrix", () => {
+// Conditional integration (opt-in): needs the managed silverc v1.0.0, local dev
+// accounts holding these x-only keys and the canonical simnet node.
+const INTEGRATION = process.env.HARDKAS_ESCROW_INTEGRATION === "1";
+
+describe.runIf(INTEGRATION)("[conditional integration] Idempotency Matrix", () => {
+    beforeAll(async () => { Object.assign(config, await resolveEscrowIntegrationConfig()); }, 30000);
     let id = "";
 
     it("setup idempotent test", async () => {

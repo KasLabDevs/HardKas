@@ -1,6 +1,6 @@
 {
   "name": "@hardkas/localnet",
-  "version": "0.12.0-rc.20",
+  "version": "0.12.0-rc.21",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -23,8 +23,7 @@
     "@hardkas/core": "workspace:*",
     "@hardkas/kaspa-rpc": "workspace:*",
     "@hardkas/simulator": "workspace:*",
-    "@hardkas/tx-builder": "workspace:*",
-    "kaspa-wasm": "0.13.0"
+    "@hardkas/tx-builder": "workspace:*"
   },
   "devDependencies": {
     "fast-check": "^4.8.0",

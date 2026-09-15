@@ -1,0 +1,228 @@
+{
+  "schema": "hardkas.silver.e2eEvidence.v1",
+  "scenario": "M8-B1b TransferWithTimeout (relative DAA lock, this.ageDaa)",
+  "scope": "SilverScript L1/P2SH execution — not evidence of covenant or stateful Toccata semantics",
+  "capabilities": [
+    "silver.compile.v1",
+    "silver.p2sh.deploy-spend.v1",
+    "silver.p2sh.relative-timelock.v1"
+  ],
+  "node": {
+    "schema": "hardkas.nodeIdentity.v1",
+    "verified": true,
+    "problems": [],
+    "expected": {
+      "containerName": "hardkas-kaspad-toccata-v2",
+      "image": "kaspanet/rusty-kaspad:v2.0.1@sha256:db36449e2f41cf33ab7c26683ce390cb71bdea9c403eefd2e740a7d5605bcd8b",
+      "imageDigest": "sha256:db36449e2f41cf33ab7c26683ce390cb71bdea9c403eefd2e740a7d5605bcd8b",
+      "network": "simnet",
+      "serverVersion": "2.0.1",
+      "host": "127.0.0.1",
+      "rpcPort": 18210
+    },
+    "observed": {
+      "container": {
+        "name": "hardkas-kaspad-toccata-v2",
+        "id": "6c2fcfd32a1c9f61adf1160c4aff5958435def2eb11d3364d4298284f47c0528",
+        "running": true,
+        "imageId": "sha256:db36449e2f41cf33ab7c26683ce390cb71bdea9c403eefd2e740a7d5605bcd8b",
+        "repoDigests": [
+          "kaspanet/rusty-kaspad@sha256:db36449e2f41cf33ab7c26683ce390cb71bdea9c403eefd2e740a7d5605bcd8b",
+          "supertypo/rusty-kaspad@sha256:db36449e2f41cf33ab7c26683ce390cb71bdea9c403eefd2e740a7d5605bcd8b"
+        ],
+        "publishedPorts": [
+          {
+            "containerPort": "16210/tcp",
+            "hostIp": "127.0.0.1",
+            "hostPort": 16210
+          },
+          {
+            "containerPort": "17210/tcp",
+            "hostIp": "127.0.0.1",
+            "hostPort": 17210
+          },
+          {
+            "containerPort": "18210/tcp",
+            "hostIp": "127.0.0.1",
+            "hostPort": 18210
+          }
+        ]
+      },
+      "server": {
+        "url": "ws://127.0.0.1:18210",
+        "networkId": "simnet",
+        "serverVersion": "2.0.1",
+        "isSynced": true
+      },
+      "probeErrors": []
+    },
+    "checkedAt": "2026-09-14T11:25:18.409Z"
+  },
+  "compile": {
+    "schema": "hardkas.silver.compileProvenance.v1",
+    "compiler": {
+      "id": "silverc",
+      "repository": "kaspanet/silverscript",
+      "releaseTag": "v1.0.0",
+      "commit": "3ed973335b59269293564805cc2c58a14595ec03",
+      "assetName": "silverc-windows-x86_64.zip",
+      "assetSha256": "3e0d660c15a9e7ac90f3960da24d348b076b1891481bfe758db18accc8a102e1",
+      "binarySha256": "ce1e0ef5f1f415f371d3d2426e788597a388635da8cbe93e72e95a4f754b29af",
+      "languageVersion": "0.1.0"
+    },
+    "sourceSha256": "fabadb59dbcb4b6b5ef577b65cd21a636b9e2de695aa64178d4bff39d30d84f6",
+    "constructorArgsSha256": "b4c4d2899a5b7a1a5066d642a49ed240d149ded39d7f3aacaaa53aeeb16b18e3",
+    "artifactSha256": "9befceb11d7f667bad7bd3c7daa60acfa583808cf1e1ba31d214ab292fca6546",
+    "abiSchemaVersion": 1,
+    "contracts": [
+      {
+        "name": "TransferWithTimeout",
+        "bytecodeSha256": "f19031a6c409376ee017f8764b4456c8da29cf704cad6fa67740753091fe9d16",
+        "templateHash": "a9b4336c95ddd75fd0ce38e8c35d676753d42a07e5dbc6d40a0467db4fe8e08a",
+        "entries": [
+          {
+            "name": "reclaim",
+            "dispatchTag": "35eecca6"
+          },
+          {
+            "name": "transfer",
+            "dispatchTag": "de5ac30f"
+          }
+        ]
+      }
+    ]
+  },
+  "contract": {
+    "name": "TransferWithTimeout",
+    "period": "500",
+    "entries": {
+      "reclaim": "35eecca6",
+      "transfer": "de5ac30f"
+    },
+    "bytecodeSha256": "f19031a6c409376ee017f8764b4456c8da29cf704cad6fa67740753091fe9d16",
+    "lockingScript": {
+      "version": 0,
+      "script": "aa20e3ef75ef165db2360be29f2a42391879d2dbb1fc27855d39ca56180012320c4b87"
+    },
+    "p2shAddress": "kaspasim:pr377a00zewmydstu20j5s3erpua9ka3lsnc2hfeeftpsqqjxgxykqp7ptv9p"
+  },
+  "rule": {
+    "script": "OP_CHECKSEQUENCEVERIFY: period <= (sequence & 0xffffffff), sequence disable bit clear",
+    "consensus": "check_sequence_lock: blockDaaScore + (sequence & 0xffffffff) - 1 < virtualDaaScore",
+    "reclaimValidFrom": "virtualDaaScore >= blockDaaScore + period (sequence = period)"
+  },
+  "deploys": {
+    "transferOutput": {
+      "txId": "d0ccdddb2d3672f9d2f699a364dbf7d4f2ed3d814deb3b207c446ed0b13b5568",
+      "outpoint": {
+        "transactionId": "d0ccdddb2d3672f9d2f699a364dbf7d4f2ed3d814deb3b207c446ed0b13b5568",
+        "index": 0
+      },
+      "blockDaaScore": "64715"
+    },
+    "reclaimOutput": {
+      "txId": "bc2136e75a34173fb0a7edf46461c81f6b2277fd50ea41e61088cd83fac41eb9",
+      "outpoint": {
+        "transactionId": "bc2136e75a34173fb0a7edf46461c81f6b2277fd50ea41e61088cd83fac41eb9",
+        "index": 0
+      },
+      "blockDaaScore": "64739"
+    }
+  },
+  "transferBranch": {
+    "timeoutDaaScore": "65215",
+    "beforeTimeout": {
+      "rejectedWrongKey": {
+        "name": "transfer-signed-by-sender",
+        "rejected": true,
+        "nodeError": "Rejected transaction 5206a9b0ed5aeec8a47f454366ba49a7e83e35204773a6d6561e7edc7dd4090c: failed to verify the signature script: script ran, but verification failed",
+        "virtualDaaScoreBefore": "64754",
+        "virtualDaaScoreAfter": "64754"
+      },
+      "accepted": {
+        "name": "transfer-by-recipient-before-timeout",
+        "accepted": true,
+        "txId": "5206a9b0ed5aeec8a47f454366ba49a7e83e35204773a6d6561e7edc7dd4090c",
+        "virtualDaaScoreBefore": "64754",
+        "virtualDaaScoreAfter": "64754"
+      }
+    },
+    "spend": {
+      "txId": "5206a9b0ed5aeec8a47f454366ba49a7e83e35204773a6d6561e7edc7dd4090c",
+      "entry": "transfer",
+      "sequence": "0",
+      "feeSompi": "182200",
+      "mass": "1822",
+      "signatureScriptSha256": "d8939c2f727bce3f3caa6230ca5f52d3c0d56bd3e39645d545530d2afb82c65d",
+      "confirmedAtBlockDaaScore": "64760"
+    }
+  },
+  "reclaimBranch": {
+    "period": "500",
+    "sequence": "500",
+    "validFromVirtualDaaScore": "65239",
+    "beforeThreshold": {
+      "virtualDaaScore": "64754",
+      "conditionMet": false,
+      "attempts": [
+        {
+          "name": "reclaim-before-period",
+          "rejected": true,
+          "nodeError": "Rejected transaction 7e6ec8e25f722dd46dd4d0ba9523b6749fa223b9afa65b91b7ebf31a3950be37: one of the transaction sequence locks conditions was not met",
+          "virtualDaaScoreBefore": "64754",
+          "virtualDaaScoreAfter": "64754"
+        },
+        {
+          "name": "reclaim-with-sequence-below-period",
+          "rejected": true,
+          "nodeError": "Rejected transaction 93f81bdd402533204c692217bf5236ed5a35b00740d7689d615067d0c92e5687: failed to verify the signature script: Unsatisfied lock time: locktime requirement not satisfied -- locktime is greater than the transaction locktime: 500 > 0",
+          "virtualDaaScoreBefore": "64754",
+          "virtualDaaScoreAfter": "64754"
+        }
+      ]
+    },
+    "advance": {
+      "from": "64754",
+      "reachedWhileMining": "65280",
+      "settled": "65296"
+    },
+    "afterThreshold": {
+      "virtualDaaScore": "65318",
+      "conditionMet": true,
+      "attempts": [
+        {
+          "name": "reclaim-signed-by-recipient-after-period",
+          "rejected": true,
+          "nodeError": "Rejected transaction 462844ee83cb78b68396fa3911643b579a049729d16aa9d289ef3624545aceca: failed to verify the signature script: script ran, but verification failed",
+          "virtualDaaScoreBefore": "65318",
+          "virtualDaaScoreAfter": "65318"
+        },
+        {
+          "name": "reclaim-after-period",
+          "accepted": true,
+          "txId": "7e6ec8e25f722dd46dd4d0ba9523b6749fa223b9afa65b91b7ebf31a3950be37",
+          "virtualDaaScoreBefore": "65318",
+          "virtualDaaScoreAfter": "65318"
+        }
+      ]
+    },
+    "sameTransactionBeforeAndAfter": true,
+    "spend": {
+      "txId": "7e6ec8e25f722dd46dd4d0ba9523b6749fa223b9afa65b91b7ebf31a3950be37",
+      "entry": "reclaim",
+      "sequence": "500",
+      "feeSompi": "182200",
+      "mass": "1822",
+      "signatureScriptSha256": "4759b8695469437c8a75db7cd9314d35829ce0ac7bdb97ade0fcc35a8a95aa70",
+      "confirmedAtBlockDaaScore": "65320"
+    }
+  },
+  "harness": {
+    "minerThrottle": {
+      "environment": "HARDKAS_TOCCATA_MINER_THROTTLE_MS",
+      "valueMs": "5",
+      "purpose": "harness-local rate limit (not a consensus parameter)"
+    }
+  },
+  "result": "PASS"
+}

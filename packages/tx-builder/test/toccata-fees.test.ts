@@ -1,40 +1,34 @@
 import { describe, it, expect } from "vitest";
-import { estimateToccataFee, estimateTransactionMass } from "../src/mass.js";
+import { buildPaymentPlan, createMockUtxo, estimateTransactionMass } from "../src/index.js";
 
-describe("P83: Toccata Fee Model", () => {
-  it("should enforce the fee floor based on compute_mass when compute_mass > 2 * tx_bytes", () => {
-    const txBytes = 500n; // 2 * txBytes = 1000
-    const txMass = 500n;
-    const computeBudget = 10n; // 10 grams * 100 = 1000. computeMass = 500 + 1000 = 1500
-    
-    const fee = estimateToccataFee(computeBudget, txMass, txBytes);
-    
-    // 100 * max(1500, 1000) = 150000
-    expect(fee).toBe(150000n);
+const ALICE = "kaspasim:qr0lr4ml9fn3chekrqmjdkergxl93l4wrk3dankcgvjq776s9wn9jeadh9sjw";
+const BOB = "kaspasim:qzgh3e6qqe6jfevf0dc652uszm0lnhvhzmasga5lka4kcl5udget5065p52eh";
+
+/**
+ * Toccata fees follow the pinned SDK. HardKAS used to charge its own
+ * compute-budget formula (100 * max(txMass + budget * 100, 2 * bytes)), which
+ * rusty-kaspa 2.0.1 does not implement; it is gone.
+ */
+describe("P83: Toccata Fee Model (upstream)", () => {
+  it("does not charge computeBudget: the pinned SDK prices it at zero", () => {
+    const utxos = [createMockUtxo({ address: ALICE, amountSompi: 500_000_000n })];
+    const base = {
+      coinbaseMaturity: 100n,
+      fromAddress: ALICE,
+      availableUtxos: utxos,
+      feeRateSompiPerMass: 100n,
+      outputs: [{ address: BOB, amountSompi: 100_000_000n }],
+      version: 1 as const
+    };
+    const without = buildPaymentPlan(base);
+    const withBudget = buildPaymentPlan({ ...base, computeBudget: 10_000n });
+    expect(withBudget.estimatedFeeSompi).toBe(without.estimatedFeeSompi);
+    expect(withBudget.computeBudget).toBe(10_000n);
   });
 
-  it("should enforce the fee floor based on 2 * tx_bytes when compute_mass < 2 * tx_bytes", () => {
-    const txBytes = 500n; // 2 * txBytes = 1000
-    const txMass = 500n;
-    const computeBudget = 0n; // computeMass = 500 + 0 * 100 = 500
-    
-    const fee = estimateToccataFee(computeBudget, txMass, txBytes);
-    
-    // 100 * max(500, 1000) = 100000
-    expect(fee).toBe(100000n);
-  });
-
-  it("should calculate txBytes as part of mass estimation", () => {
-    const result = estimateTransactionMass({
-      inputCount: 2,
-      outputs: [
-        { address: "kaspatest:qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqx0r8j" }
-      ],
-      hasChange: true
-    });
-    
-    // 102 (base) + 2*1110 (inputs) + 420 (output) + 420 (change) = 3162
-    expect(result.mass).toBe(3162n);
-    expect(result.txBytes).toBe(3162n);
+  it("version 1 inputs carry no sig-op mass (sigOpCount = 0)", () => {
+    const v0 = estimateTransactionMass({ inputCount: 1, outputs: [{ address: BOB }], version: 0 });
+    const v1 = estimateTransactionMass({ inputCount: 1, outputs: [{ address: BOB }], version: 1 });
+    expect(v0.mass - v1.mass).toBe(1000n);
   });
 });

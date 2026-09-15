@@ -672,9 +672,95 @@ export const SilverTestArtifactSchema = BaseArtifactSchema.extend({
 
 export type SilverTestArtifact = z.infer<typeof SilverTestArtifactSchema>;
 
+// SilverScript v1 records (`hardkas silver`): identities and digests only;
+// constructor arguments appear as a digest, signatures never.
+const SilverScriptPublicKeySchema = z.object({ version: z.number(), script: z.string().regex(/^[0-9a-f]+$/) });
+const Hex64 = z.string().regex(/^[0-9a-f]{64}$/);
+const SilverOutpointSchema = z.object({ transactionId: Hex64, index: z.number().int().nonnegative() });
+const SilverRecordRefSchema = z.object({ path: z.string(), contentHash: z.string(), artifactSha256: Hex64.optional() });
+const SilverNodeRefSchema = z.object({
+  verified: z.literal(true),
+  container: z.string().optional(),
+  imageDigest: z.string(),
+  serverVersion: z.string().optional()
+});
+const SilverRecordBaseSchema = BaseArtifactSchema.extend({
+  networkId: z.literal("simnet"),
+  artifactId: z.string(),
+  capability: z.enum(["silver.compile.v1", "silver.p2sh.deploy-spend.v1", "toccata.covenant.auth-1to1-transition.v1"])
+});
+const SilverOnChainSchema = SilverRecordBaseSchema.extend({
+  txId: Hex64,
+  outpoint: SilverOutpointSchema,
+  feeSompi: z.string().regex(/^\d+$/),
+  status: z.enum(["submitted", "confirmed"]),
+  confirmedAtBlockDaaScore: z.string().regex(/^\d+$/).optional(),
+  node: SilverNodeRefSchema
+});
+
+export const SilverCompileV1Schema = SilverRecordBaseSchema.extend({
+  schema: z.literal(HardkasSchemas.SilverCompileV1),
+  source: z.object({ path: z.string(), sha256: Hex64, text: z.string() }),
+  provenance: z
+    .object({
+      schema: z.literal("hardkas.silver.compileProvenance.v1"),
+      compiler: z.object({ id: z.literal("silverc"), releaseTag: z.string(), commit: z.string(), assetSha256: Hex64, binarySha256: Hex64 }).passthrough(),
+      sourceSha256: Hex64,
+      constructorArgsSha256: Hex64,
+      artifactSha256: Hex64
+    })
+    .passthrough(),
+  artifactJson: z.string(),
+  contracts: z.array(z.object({ name: z.string(), lockingScript: SilverScriptPublicKeySchema, address: z.string() }).passthrough())
+});
+
+export const SilverDeployV1Schema = SilverOnChainSchema.extend({
+  schema: z.literal(HardkasSchemas.SilverDeployV1),
+  compileRecord: SilverRecordRefSchema,
+  contract: z.string(),
+  lockingScript: SilverScriptPublicKeySchema,
+  address: z.string(),
+  valueSompi: z.string().regex(/^\d+$/)
+});
+
+export const SilverSpendV1Schema = SilverOnChainSchema.omit({ outpoint: true }).extend({
+  schema: z.literal(HardkasSchemas.SilverSpendV1),
+  deployRecord: SilverRecordRefSchema,
+  contract: z.string(),
+  entry: z.string(),
+  dispatchTag: z.string().optional(),
+  spentOutpoint: SilverOutpointSchema,
+  to: z.string(),
+  outputSompi: z.string().regex(/^\d+$/),
+  sequence: z.string(),
+  sigOpCount: z.number().int().nonnegative(),
+  signatureScriptSha256: Hex64
+});
+
+export const SilverCovenantV1Schema = SilverOnChainSchema.extend({
+  schema: z.literal(HardkasSchemas.SilverCovenantV1),
+  kind: z.enum(["genesis", "transition"]),
+  compileRecord: SilverRecordRefSchema,
+  previous: z.object({ path: z.string(), contentHash: z.string(), outpoint: SilverOutpointSchema }).optional(),
+  contract: z.string(),
+  covenantId: Hex64,
+  covenantIdFromNode: Hex64.optional(),
+  lockingScript: SilverScriptPublicKeySchema,
+  address: z.string(),
+  valueSompi: z.string().regex(/^\d+$/),
+  computeBudget: z.number().int().nonnegative()
+}).passthrough();
+
 export const ProgrammabilityClaimsSchema = z.object({
   artifactCoherence: z.literal("READY_MATCH"),
-  silverScriptBuilder: z.literal("SILVERSCRIPT_BUILDER_READY"),
+  silverCapabilities: z.object({
+    "silver.compile.v1": z.literal("REAL_NODE_EVIDENCE"),
+    "silver.p2sh.deploy-spend.v1": z.literal("REAL_NODE_EVIDENCE"),
+    "silver.p2sh.relative-timelock.v1": z.literal("REAL_NODE_EVIDENCE"),
+    "toccata.covenant.auth-1to1-transition.v1": z.literal("REAL_NODE_EVIDENCE")
+  }),
+  silverCompiler: z.literal("OFFICIAL_SILVERC_V1_0_0_MANAGED"),
+  generalCovenantSupport: z.literal("NOT_CLAIMED"),
   zkCorpusSurface: z.literal("ZK_CORPUS_SURFACE_READY"),
   zkLocalVerification: z.literal("READY_GROTH16_FIXTURE_COHERENCE"),
   risc0InspectSurface: z.literal("RISC0_INSPECT_SURFACE_READY"),
@@ -692,7 +778,7 @@ export const ProgrammabilityCapabilitiesSchema = z.object({
   ok: z.literal(true),
   status: z.literal("PROGRAMMABILITY_SURFACE_READY"),
   surfaces: z.object({
-    silverScript: z.literal("SILVERSCRIPT_BUILDER_READY"),
+    silverScript: z.literal("SILVERSCRIPT_V1_LIFECYCLE"),
     zkCorpus: z.literal("ZK_CORPUS_SURFACE_READY"),
     groth16FixtureCoherence: z.literal("READY_GROTH16_FIXTURE_COHERENCE"),
     risc0Inspect: z.literal("RISC0_INSPECT_SURFACE_READY"),

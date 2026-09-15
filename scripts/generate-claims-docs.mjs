@@ -70,7 +70,9 @@ const LABELS = {
   l2Ready: "L2 readiness",
   bridgeReady: "Bridge readiness",
   artifactCoherence: "Artifact coherence",
-  silverScriptBuilder: "SilverScript builder",
+  silverCapabilities: "SilverScript capabilities (per capability)",
+  silverCompiler: "SilverScript compiler (official silverc, managed)",
+  generalCovenantSupport: "General covenant support",
   zkCorpusSurface: "ZK corpus surface",
   zkLocalVerification: "Groth16 fixture coherence",
   risc0InspectSurface: "RISC0 inspect surface",
@@ -125,11 +127,24 @@ async function buildPayload() {
   };
 }
 
-function table(rows) {
+/** Flattens `silverCapabilities: { "silver.compile.v1": "…" }` to one row per capability. */
+function flattenProgrammability(claims) {
+  const rows = [];
+  for (const [k, v] of Object.entries(claims)) {
+    if (k === "silverCapabilities" && v && typeof v === "object") {
+      for (const [cap, val] of Object.entries(v)) rows.push([`\`${cap}\``, val]);
+    } else {
+      rows.push([label(k), v]);
+    }
+  }
+  return rows;
+}
+
+function table(rows, header = "Claim") {
   return [
-    "| Claim | Value |",
+    `| ${header} | Value |`,
     "| :---- | :---- |",
-    ...rows.map(([k, v]) => `| ${label(k)} | \`${v}\` |`)
+    ...rows.map(([k, v]) => `| ${k.startsWith("`") ? k : label(k)} | \`${v}\` |`)
   ].join("\n");
 }
 
@@ -177,7 +192,7 @@ Source: \`programmabilityClaims()\` in \`packages/sdk/src/programmability.ts\`.
 Each value is pinned by a TypeScript literal type, so it cannot drift without a
 compile error.
 
-${table(Object.entries(p.programmability))}
+${table(flattenProgrammability(p.programmability))}
 
 ## Capability flags
 

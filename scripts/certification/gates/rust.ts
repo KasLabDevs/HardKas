@@ -8,10 +8,10 @@ export class RustGate implements CertificationGate {
     async execute(ctx: CertificationContext): Promise<GateResult> {
         console.log("==> Running Gate: Rust Checks & Tests");
         
+        // SilverScript is never built from source here: the only certified compiler
+        // is the managed silverc release (`hardkas toolchain install silverc`).
         const workspaces = [
-            ".hardkas/silverscript-lab/silverscript",
-            "packages/pskt-native",
-            "examples/builder-labs/bl-002-escrow-multisig/tools/calc-signature"
+            "packages/pskt-native"
         ];
 
         try {

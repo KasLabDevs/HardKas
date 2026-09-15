@@ -724,7 +724,14 @@ export interface SilverSpendSimulationArtifact extends BaseArtifact<"silver.spen
 
 export interface ProgrammabilityClaims {
   artifactCoherence: "READY_MATCH";
-  silverScriptBuilder: "SILVERSCRIPT_BUILDER_READY";
+  silverCapabilities: {
+    "silver.compile.v1": "REAL_NODE_EVIDENCE";
+    "silver.p2sh.deploy-spend.v1": "REAL_NODE_EVIDENCE";
+    "silver.p2sh.relative-timelock.v1": "REAL_NODE_EVIDENCE";
+    "toccata.covenant.auth-1to1-transition.v1": "REAL_NODE_EVIDENCE";
+  };
+  silverCompiler: "OFFICIAL_SILVERC_V1_0_0_MANAGED";
+  generalCovenantSupport: "NOT_CLAIMED";
   zkCorpusSurface: "ZK_CORPUS_SURFACE_READY";
   zkLocalVerification: "READY_GROTH16_FIXTURE_COHERENCE";
   risc0InspectSurface: "RISC0_INSPECT_SURFACE_READY";

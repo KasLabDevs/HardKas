@@ -294,8 +294,8 @@ export async function resolveHardkasAccountAddress(
     // Add runtime address validation, skip for simulated internal accounts
     if (!accountOrAddress.startsWith("kaspa:sim_")) {
       try {
-        // @ts-ignore - Third party lib lacking types
-        const kaspa = await import("kaspa-wasm");
+        const { loadKaspaWasm } = await import("./signer-backend.js");
+        const kaspa = await loadKaspaWasm();
         try {
           if (typeof kaspa.Address === "function" || kaspa.Address) {
             new kaspa.Address(accountOrAddress);
@@ -309,6 +309,7 @@ export async function resolveHardkasAccountAddress(
         }
       } catch (e: unknown) {
         if (e instanceof Error && (e as any).code === "HARDKAS_INVALID_ADDRESS") throw e;
+        if (e instanceof Error && (e as any).code === "WASM_TOOLCHAIN_INTEGRITY_FAILED") throw e;
         if (
           e instanceof Error &&
           ((e as any).code === "ERR_MODULE_NOT_FOUND" ||

@@ -22,7 +22,8 @@ describe("RPC Resilience Refined (P1.2)", () => {
         retry: { maxRetries: 3, baseDelayMs: 1 }
       });
 
-      await expect(client.submitTransaction({})).rejects.toThrow(RpcValidationError);
+      // A transaction must carry its storage mass commitment to reach the node at all.
+      await expect(client.submitTransaction({ storageMass: 0 })).rejects.toThrow(RpcValidationError);
       expect(attempts).toBe(1); // No retry!
     });
 

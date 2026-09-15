@@ -156,49 +156,49 @@ export class WalletService {
 
     /**
      * POST /wallets/:id/send
+     *
+     * Uses the KaspaWalletAdapter (M10) — kaspa-wasm 2.0.1 `Generator` for coin
+     * selection, mass and fee computation. No HardKAS-invented selection.
      */
-    public async send(walletId: string, toAddress: string, amount: number): Promise<any> {
-        // FRICTION:
-        // 1. Fetch all UTXOs (Still missing query store)
-        const utxos: any[] = await this.getUtxos(walletId);
-        
-        // 2. Select UTXOs (RESOLVED with hk.coinSelector)
-        // We use a mock `hk` here to demonstrate how it is used from the SDK.
-        const hkTx = await import('@hardkas/tx-builder');
-        const hkAcc = await import('@hardkas/accounts');
-        const hk = { 
-            coinSelector: { select: hkTx.selectCoins },
-            addressManager: hkAcc.AddressManager,
-            walletManager: hkAcc.WalletManager
-        };
-        
+    public async send(walletId: string, toAddress: string, amount: bigint | number): Promise<any> {
         const wallet = this.wallets.get(walletId);
         if (!wallet) throw new Error("Wallet not found");
 
-        const seedRef = hk.walletManager.getSeedRef(wallet.id);
-        const changeIndex = wallet.nextChangeIndex++;
-        const changeAddr = hk.addressManager.deriveChange({
-            seedRef,
-            accountIndex: 0,
-            addressIndex: changeIndex
-        });
-        
-        const selection = hk.coinSelector.select({
-            utxos,
-            targetSompi: amount,
-            feeRateSompiPerMass: 1n,
-            strategy: "largest-first",
-            changeAddress: changeAddr.address,
-            dustThresholdSompi: 100n
-        });
+        // 1. Fetch UTXOs owned by this wallet. In a real backend, source them from
+        //    UtxoContext.track_addresses(...) (also exposed by the same adapter).
+        const utxos: any[] = await this.getUtxos(walletId);
 
-        // 3. Estimate fees (RESOLVED partially, CoinSelector includes basic estimation)
-        // 4. Build Tx (Maybe HardKAS has tx-builder)
-        // 5. Sign Tx (HardKAS signing)
-        // 6. Broadcast Tx
+        // 2. Resolve the change address. In a real backend, derive it via a
+        //    proper HD wallet (BIP32/BIP39). This template uses the wallet's
+        //    receiving address as a placeholder.
+        const changeAddress = (wallet as any).primaryAddress ?? (utxos[0]?.address);
+        if (!changeAddress) throw new Error("Wallet has no address to receive change");
+
+        // 3. Plan transactions via upstream Generator (no HardKAS-invented selector).
+        const { buildTransactions } = await import('@hardkas/tx-builder');
+        const network = (wallet as any).networkId ?? "simnet";
+
+        // 4. Iterate the Generator; each yielded PendingTransaction can be signed
+        //    with `pt.sign([privateKey])` and submitted with `pt.submit(rpc)`.
+        const plans: any[] = [];
+        for await (const pt of buildTransactions({
+            networkId: network,
+            entries: utxos,
+            outputs: [{ address: toAddress, amount: BigInt(amount) }],
+            changeAddress
+        })) {
+            plans.push({
+                id: pt.id,
+                mass: pt.mass,
+                feeAmount: pt.feeAmount,
+                aggregateInputAmount: pt.aggregateInputAmount,
+                aggregateOutputAmount: pt.aggregateOutputAmount
+            });
+        }
+
         return {
             status: "plan_created",
-            plan: selection
+            transactions: plans
         };
     }
 
@@ -212,24 +212,36 @@ export class WalletService {
 
     /**
      * POST /wallets/:id/estimate-fee
+     *
+     * Uses upstream `Generator.estimate()` (via `estimateTransactionsUpstream`
+     * in `@hardkas/tx-builder`) — no HardKAS-invented +10% padding, no
+     * hardcoded fee-rate default.
      */
-    public async estimateFee(walletId: string, toAddress: string, amount: number): Promise<any> {
-        // FRICTION: (RESOLVED with hk.feeEstimator)
-        // We simulate how it would be called from the SDK
-        const hk = { feeEstimator: { estimate: (await import('@hardkas/tx-builder')).estimateFee } };
-        
-        // In a real scenario we'd use the selected UTXOs count and outputs.
-        // For estimation without full coin selection, we can make assumptions.
-        // Assuming 1 input for simplicity if we don't do full coin selection first.
-        // Or we could run selectCoins first. The prompt implies we use feeEstimator directly here.
-        const estimation = hk.feeEstimator.estimate({
-            inputs: 1, // Assumption for basic estimation endpoint
-            outputs: [{ address: toAddress, amountSompi: amount }],
-            feeRateSompiPerMass: 1n,
-            hasChange: true, // Typically wallets will have change
-            policy: "conservative"
+    public async estimateFee(walletId: string, toAddress: string, amount: bigint | number): Promise<any> {
+        const wallet = this.wallets.get(walletId);
+        if (!wallet) throw new Error("Wallet not found");
+
+        const utxos: any[] = await this.getUtxos(walletId);
+        const changeAddress = (wallet as any).primaryAddress ?? (utxos[0]?.address);
+        if (!changeAddress) throw new Error("Wallet has no address to receive change");
+
+        const { estimateTransactionsUpstream } = await import('@hardkas/tx-builder');
+        const network = (wallet as any).networkId ?? "simnet";
+
+        const summary = await estimateTransactionsUpstream({
+            networkId: network,
+            entries: utxos,
+            outputs: [{ address: toAddress, amount: BigInt(amount) }],
+            changeAddress
         });
 
-        return estimation;
+        return {
+            fees: summary.fees,
+            mass: summary.mass,
+            transactions: summary.transactions,
+            utxos: summary.utxos,
+            finalTransactionId: summary.finalTransactionId,
+            finalAmount: summary.finalAmount
+        };
     }
 }

@@ -1,17 +1,28 @@
 import fs from "node:fs";
 import { execSync } from "node:child_process";
 import path from "node:path";
-import { getDockerNetworkStrategy, waitForFundingConfirmation, getVirtualDaaScoreBestEffort } from "./helpers.mjs";
+import {
+  waitForFundingConfirmation,
+  getVirtualDaaScore,
+  getVirtualDaaScoreBestEffort,
+  coinbaseMaturity,
+  waitForDaaScore
+} from "./helpers.mjs";
+import { CPUMINER_REFERENCE_IMAGE, CANONICAL_LOCALNET, nodeRpcUrl } from "@hardkas/core";
+import { requireNodeIdentity } from "@hardkas/node-runner";
 
-// Upstream Kaspa CPU miner. Do not swap this for a bespoke image: funding must
-// be reproducible from public artifacts on any machine.
-const MINER_IMAGE = process.env.HARDKAS_TOCCATA_MINER_IMAGE || "kaspanet/cpuminer:latest";
-// kaspad's gRPC port, reached inside the node's own network namespace.
-const MINER_GRPC_PORT = process.env.HARDKAS_TOCCATA_KASPAD_PORT || "16210";
+// Upstream Kaspa CPU miner, pinned by digest. Do not swap this for a bespoke
+// image: funding must be reproducible from public artifacts on any machine.
+const MINER_IMAGE = process.env.HARDKAS_TOCCATA_MINER_IMAGE || CPUMINER_REFERENCE_IMAGE;
+// kaspad's gRPC port, reached inside the canonical node's own network namespace.
+const MINER_GRPC_PORT = String(CANONICAL_LOCALNET.ports.rpc);
 // How long to let the DAG settle after mining, before selecting UTXOs.
 const SETTLE_MS = parseInt(process.env.HARDKAS_TOCCATA_SETTLE_MS || "5000", 10);
-// wRPC endpoint the CLI connects to for the simnet target.
-const RPC_URL = process.env.HARDKAS_TOCCATA_RPC_URL || "ws://127.0.0.1:18210";
+// wRPC endpoint of the canonical node (the one requireNodeIdentity verifies).
+const RPC_URL = nodeRpcUrl();
+
+// Written on failure so the gauntlet report keeps the real reason, not just "command failed".
+const FAILURE_FILE = path.join(".hardkas", "real-node-failure.json");
 
 function run(cmd) {
   try {
@@ -20,28 +31,32 @@ function run(cmd) {
   } catch (e) {
     console.error("STDOUT:\n", e.stdout);
     console.error("STDERR:\n", e.stderr);
+    try {
+      fs.mkdirSync(path.dirname(FAILURE_FILE), { recursive: true });
+      fs.writeFileSync(FAILURE_FILE, JSON.stringify({ cmd, stdout: String(e.stdout || ""), stderr: String(e.stderr || "") }, null, 2));
+    } catch {}
     throw new Error(`Command failed: ${cmd}`);
   }
 }
 
-async function ensureFundingConfirmed(minerAddress, targetAccountName, expectedSompi, label) {
+async function ensureFundingConfirmed(minerAddress, targetAccountName, expectedSompi, label, { requireCoinbaseMaturity = false } = {}) {
   console.log(`  Mining confirmation blocks for ${label}...`);
-  const strategy = getDockerNetworkStrategy();
-  console.log(`  [Diagnostic] Docker Strategy: ${strategy.type}`);
-  console.log(`  [Diagnostic] Target Kaspad: ${strategy.kaspadAddress}`);
+  // The canonical node, and only after it proves its identity (never "the first
+  // container whose name looks like kaspad").
+  await requireNodeIdentity();
+  const strategy = {
+    type: "canonical-node",
+    containerName: CANONICAL_LOCALNET.containerName,
+    kaspadAddress: `127.0.0.1:${MINER_GRPC_PORT}`
+  };
+  console.log(`  [Diagnostic] Node: ${strategy.containerName} (identity verified)`);
 
-  const minerName = `hardkas-toccata-miner-${Date.now()}`;
-  let daaStart = await getVirtualDaaScoreBestEffort();
+  const minerName = CANONICAL_LOCALNET.minerContainerName;
+  let daaStart = await getVirtualDaaScoreBestEffort(RPC_URL);
 
   try {
     execSync(`docker image inspect ${MINER_IMAGE}`, { stdio: "ignore" });
-
-    if (!strategy.containerName) {
-      throw new Error(
-        `TOCCATA_NODE_CONTAINER_NOT_FOUND: Could not identify the kaspad container. ` +
-          `Set HARDKAS_TOCCATA_NODE_CONTAINER or start the node before funding.`
-      );
-    }
+    execSync(`docker rm -f ${minerName}`, { stdio: "ignore" });
 
     // Join the node's network namespace. kaspad binds gRPC to loopback inside
     // its own container, so a miner on the bridge network cannot reach it by
@@ -83,11 +98,21 @@ async function ensureFundingConfirmed(minerAddress, targetAccountName, expectedS
       context
     });
 
+    // A visible coinbase balance is not a spendable one: keep the miner running until
+    // the coinbase observed now has matured.
+    if (requireCoinbaseMaturity) {
+      const daaFunded = await getVirtualDaaScore(RPC_URL);
+      const target = daaFunded + coinbaseMaturity() + 20n;
+      console.log(`  Waiting for coinbase maturity: DAA ${daaFunded} -> ${target}...`);
+      const reached = await waitForDaaScore({ rpcUrl: RPC_URL, target });
+      console.log(`  Coinbase matured at DAA ${reached}.`);
+    }
+
     return result;
 
   } catch (err) {
     if (err.message.includes("TOCCATA_FUNDING_CONFIRMATION_TIMEOUT")) {
-      const daaEnd = await getVirtualDaaScoreBestEffort();
+      const daaEnd = await getVirtualDaaScoreBestEffort(RPC_URL);
       try {
         const logs = execSync(`docker logs ${minerName}`, { encoding: "utf8", stdio: "pipe" });
         console.error(`\n=== Miner Logs (${minerName}) ===\n${logs}\n=========================\n`);
@@ -108,7 +133,14 @@ async function ensureFundingConfirmed(minerAddress, targetAccountName, expectedS
 }
 
 async function runRealNodeCert() {
-  console.log("=== Real Node 0.12.0-rc.20 / Toccata Certification ===");
+  console.log("=== Real Node 0.12.0-rc.21 / Toccata Certification ===");
+
+  // Fail before touching anything if the node is not the canonical one.
+  const identity = await requireNodeIdentity();
+  console.log(
+    `  Node identity verified: ${identity.observed.container?.name} ` +
+      `(rusty-kaspad ${identity.observed.server?.serverVersion}, ${identity.expected.imageDigest.slice(0, 19)}...)`
+  );
 
   // Clean state
   if (fs.existsSync(".hardkas")) {
@@ -163,7 +195,7 @@ async function runRealNodeCert() {
   // mature before it is spendable, which is why this mines rather than waits.
   if (/Balance:\s*0(\D|$)/.test(balanceOut)) {
     console.log("  Fixture is empty — mining coinbase to it first...");
-    await ensureFundingConfirmed(fixtureAddress, "fixture", 100000000000n, "coinbase -> fixture");
+    await ensureFundingConfirmed(fixtureAddress, "fixture", 100000000000n, "coinbase -> fixture", { requireCoinbaseMaturity: true });
   }
 
   // [3] Fund Alice from fixture (using mature UTXOs only — coinbase maturity filter is active)

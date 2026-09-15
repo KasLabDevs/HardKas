@@ -4542,6 +4542,79 @@ hardkas test [options] [files...]
 
 ---
 
+## hardkas toolchain
+
+Install and verify the upstream toolchains HardKAS pins (official Kaspa release assets)
+
+### Usage
+
+```bash
+hardkas toolchain [options] [command]
+```
+
+### Options
+
+No options.
+
+### Arguments
+
+No arguments.
+
+### Subcommands
+
+- [hardkas toolchain install](#hardkas-toolchain-install)
+- [hardkas toolchain status](#hardkas-toolchain-status)
+
+---
+
+## hardkas toolchain install
+
+Install a pinned toolchain, verifying the release asset and every file against the pin
+
+### Usage
+
+```bash
+hardkas toolchain install [options] <id>
+```
+
+### Options
+
+| Flag | Description | Default |
+| :--- | :--- | :--- |
+| `--from-file <zip>` | Use a release asset already on disk instead of downloading it |  |
+| `--force` | Reinstall even if a verified install is present | false |
+| `--json` | Output as JSON | false |
+
+### Arguments
+
+| Argument | Description |
+| :--- | :--- |
+| `id` |  |
+
+---
+
+## hardkas toolchain status
+
+Show whether each pinned toolchain is installed and matches its pin
+
+### Usage
+
+```bash
+hardkas toolchain status [options]
+```
+
+### Options
+
+| Flag | Description | Default |
+| :--- | :--- | :--- |
+| `--json` | Output as JSON | false |
+
+### Arguments
+
+No arguments.
+
+---
+
 ## hardkas torture
 
 HardKAS Semantic Torture Testing Suite
@@ -4707,7 +4780,7 @@ Build a transaction plan artifact stable
 ### Usage
 
 ```bash
-hardkas tx plan [options]
+hardkas tx plan [options] [from] [to]
 ```
 
 ### Options
@@ -4732,7 +4805,10 @@ hardkas tx plan [options]
 
 ### Arguments
 
-No arguments.
+| Argument | Description |
+| :--- | :--- |
+| `from` |  |
+| `to` |  |
 
 ---
 

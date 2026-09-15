@@ -1,6 +1,6 @@
 {
   "name": "@hardkas/node-runner",
-  "version": "0.12.0-rc.20",
+  "version": "0.12.0-rc.21",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -10,6 +10,7 @@
     "dev": "tsup src/index.ts --format esm --watch"
   },
   "dependencies": {
+    "@hardkas/core": "workspace:*",
     "@hardkas/kaspa-rpc": "workspace:*",
     "execa": "^9.5.2"
   },

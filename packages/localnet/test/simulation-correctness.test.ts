@@ -133,7 +133,7 @@ describe("Simulation Correctness", () => {
     // This is mostly handled by tx-builder, but we verify rejection if it somehow happens
   });
 
-  it("should warn about dust outputs", () => {
+  it("should refuse dust outputs the node would not relay", () => {
     const initialState = createInitialLocalnetState({
       accounts: 2,
       initialBalanceSompi: parseKasToSompi("100")
@@ -149,8 +149,11 @@ describe("Simulation Correctness", () => {
       systemRuntimeContext
     );
 
-    expect(result.ok).toBe(true);
+    // The simulator plans with the SDK's mass rules: a 100-sompi output's storage
+    // mass (KIP-9) exceeds the standard limit, so it is refused rather than
+    // simulated with a warning.
+    expect(result.ok).toBe(false);
     expect(result.errors.length).toBeGreaterThan(0);
-    expect(result.errors[0]).toContain("dust limit");
+    expect(result.errors[0]).toContain("TX_MASS_ABOVE_STANDARD_LIMIT");
   });
 });

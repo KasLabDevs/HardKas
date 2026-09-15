@@ -1,13 +1,19 @@
 {
   "schema": "hardkas.toccataProgrammabilityCorpus.v1",
-  "version": "0.12.0-rc.20",
+  "version": "0.12.0-rc.21",
   "network": "simnet",
   "profile": "toccata-v2",
   "status": "PROGRAMMABILITY_SURFACE_READY",
   "components": {
     "silver": {
       "path": "silver",
-      "status": "SILVERSCRIPT_BUILDER_READY"
+      "schema": "hardkas.silverCorpus.v1",
+      "capabilities": [
+        "silver.compile.v1",
+        "silver.p2sh.deploy-spend.v1",
+        "silver.p2sh.relative-timelock.v1",
+        "toccata.covenant.auth-1to1-transition.v1"
+      ]
     },
     "zk": {
       "path": "zk",

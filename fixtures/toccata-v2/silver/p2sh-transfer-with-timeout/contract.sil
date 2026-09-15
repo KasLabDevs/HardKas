@@ -1,0 +1,12 @@
+pragma silverscript ^0.1.0;
+
+contract TransferWithTimeout(pubkey sender, pubkey recipient, int period) {
+    entry transfer(sig recipientSig) {
+        require(checkSig(recipientSig, recipient));
+    }
+
+    entry reclaim(sig senderSig) {
+        require(checkSig(senderSig, sender));
+        require(this.ageDaa >= period);
+    }
+}

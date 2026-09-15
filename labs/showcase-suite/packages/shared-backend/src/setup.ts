@@ -1,5 +1,5 @@
 import { SqliteStorage } from '@hardkas/storage-sqlite';
-import { JobsToolkit, PaymentToolkit, WalletToolkit, IndexerToolkit, SnapshotToolkit, SilverToolkit } from '@hardkas/toolkit';
+import { JobsToolkit, PaymentToolkit, WalletToolkit, IndexerToolkit, SnapshotToolkit } from '@hardkas/toolkit';
 import path from 'path';
 import fs from 'fs';
 import os from 'os';

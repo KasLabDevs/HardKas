@@ -2,11 +2,14 @@ import { Command } from "commander";
 import { UI } from "../ui.js";
 import { runSimulatorAccountCreate } from "../runners/simulator-runners.js";
 import { runAccountsFund } from "../runners/accounts-fund-runner.js";
+import { getSimulatorSilverCommand } from "./simulator-silver.js";
 
 export function registerSimulatorCommands(program: Command) {
   const simulatorCmd = program
     .command("simulator")
     .description("HardKAS Simulator management");
+
+  simulatorCmd.addCommand(getSimulatorSilverCommand());
 
   const accountCmd = simulatorCmd.command("account").description("Manage synthetic simulated accounts");
   

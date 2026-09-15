@@ -108,7 +108,10 @@ export async function runUtxoFuzzer(iterations = 50): Promise<FuzzResult> {
       }
     } catch (e: unknown) {
       // Some iterations might fail due to insufficient funds, which is fine
-      if (!((e instanceof Error) ? ((e instanceof Error) ? e.message : String(e)) : String(e)).includes("Insufficient funds")) {
+      // Legitimate refusals: not enough funds, or a payment whose storage mass
+      // (tiny random amounts, KIP-9) exceeds what the node will relay.
+      const message = e instanceof Error ? e.message : String(e);
+      if (!message.includes("Insufficient funds") && !message.includes("TX_MASS_ABOVE_STANDARD_LIMIT")) {
         violations.push(`Iteration ${i}: Unexpected Error: ${((e instanceof Error) ? ((e instanceof Error) ? e.message : String(e)) : String(e))}`);
       }
     }

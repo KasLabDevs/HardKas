@@ -1,0 +1,42 @@
+{
+  "schema": "hardkas.silverCorpus.v1",
+  "network": "simnet",
+  "profile": "toccata-v2",
+  "generatedBy": "packages/cli/test-gauntlet/real-node/run-silver-*.mjs with HARDKAS_SILVER_CORPUS_OUT",
+  "constructorArgsPolicy": "public test values only (x-only public keys, scripts, amounts); never private material",
+  "cases": [
+    {
+      "id": "covenant-counter-transition",
+      "path": "covenant-counter-transition",
+      "capabilities": [
+        "silver.compile.v1",
+        "toccata.covenant.auth-1to1-transition.v1"
+      ]
+    },
+    {
+      "id": "p2sh-escrow-refund",
+      "path": "p2sh-escrow-refund",
+      "capabilities": [
+        "silver.compile.v1",
+        "silver.p2sh.deploy-spend.v1"
+      ]
+    },
+    {
+      "id": "p2sh-signed-release",
+      "path": "p2sh-signed-release",
+      "capabilities": [
+        "silver.compile.v1",
+        "silver.p2sh.deploy-spend.v1"
+      ]
+    },
+    {
+      "id": "p2sh-transfer-with-timeout",
+      "path": "p2sh-transfer-with-timeout",
+      "capabilities": [
+        "silver.compile.v1",
+        "silver.p2sh.deploy-spend.v1",
+        "silver.p2sh.relative-timelock.v1"
+      ]
+    }
+  ]
+}

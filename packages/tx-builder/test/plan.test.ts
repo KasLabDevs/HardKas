@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { buildPaymentPlan, createMockUtxo } from "../src/index";
+import { buildPaymentPlan, createMockUtxo, calculateUpstreamMass } from "../src/index";
 import { SOMPI_PER_KAS } from "@hardkas/core";
 
 describe("tx-builder plan", () => {
@@ -31,12 +31,22 @@ describe("tx-builder plan", () => {
     expect(plan.outputs).toHaveLength(1);
     expect(plan.outputs[0]?.amountSompi).toBe(amountSompi);
 
-    // Estimated mass for 1 input, 2 outputs (1 recipient + 1 change) is 2052
-    // Base(102) + Input(1*1110) + Output(2*420) = 2052
-    expect(plan.estimatedMass).toBe(2052n);
-    expect(plan.estimatedFeeSompi).toBe(2052n);
+    // Mass and minimum fee of this exact transaction (1 input, recipient + change), per the SDK.
+    // A 1 KAS output carries ~10000 grams of storage mass (KIP-9), above the ~2036 compute mass.
+    const upstream = calculateUpstreamMass({
+      networkId: "simnet",
+      inputs: [{ amountSompi: balanceSompi }],
+      outputs: [
+        { amountSompi, address: "kaspa:sim_bob" },
+        { amountSompi: plan.change!.amountSompi, address: "kaspa:sim_alice" }
+      ]
+    });
+    expect(plan.estimatedMass).toBe(upstream.mass);
+    // C/1 KAS = 10^12/10^8 = 10000; the change and input terms (~10 each) cancel.
+    expect(plan.estimatedMass).toBe(10_000n);
+    // Rate 1 is below the node's minimum (100 sompi/gram): the minimum applies.
+    expect(plan.estimatedFeeSompi).toBe(upstream.minimumFeeSompi);
 
-    // Change = 1000 - 1 - 0.00000350 = 998.99999650
     const expectedChange = balanceSompi - amountSompi - plan.estimatedFeeSompi;
     expect(plan.change?.amountSompi).toBe(expectedChange);
     expect(plan.change?.address).toBe("kaspa:sim_alice");

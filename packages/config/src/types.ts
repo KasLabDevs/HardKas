@@ -84,7 +84,7 @@ export interface HardkasConfig {
   };
   experimental?: boolean;
   wasm?: {
-    provider: "npm" | "local" | "release-asset";
+    provider: "managed" | "local" | "release-asset";
     path?: string;
   };
   artifacts?: {

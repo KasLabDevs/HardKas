@@ -27,172 +27,60 @@ export async function fundAndConfirm(
     coordinatorPrivateKeyHex: string, 
     p2shAddress: string, 
     amount: bigint,
-    multisigFixture: { redeemScriptHex: string }
+    multisigFixture: { redeemScriptHex: string },
+    options: { networkId?: string; timeoutMs?: number } = {}
 ): Promise<any> {
-    // 1. Wait for mature UTXOs
-    let matureUtxo: any = null;
-    let virtualDaaScore = 0n;
-    
+    // A live node is required: this helper never fabricates a funded UTXO.
     const rpcLive = !((runner as any)?.simulated) && !!(await rpc.getCurrentNetwork({ timeoutMs: 2000 }).catch(() => null));
     if (!rpcLive) {
-        console.warn(`[fundAndConfirm] Kaspa node unreachable or simulated. Returning mock mature UTXO for ${p2shAddress}`);
-        const { createKaspaP2shBlake2bLock } = require("@hardkas/core");
-        const p2shLockResult = createKaspaP2shBlake2bLock(Buffer.from(multisigFixture.redeemScriptHex, 'hex'));
+        throw new Error(`LAB_NODE_UNAVAILABLE: funding ${p2shAddress} needs a live Kaspa node`);
+    }
+    const networkId = options.networkId ?? "simnet";
+    const deadline = Date.now() + (options.timeoutMs ?? 120_000);
+    const maturity = await resolveConsensusCoinbaseMaturity(runner);
+    // Lock, fee, mass and signature all come from the pinned Kaspa SDK.
+    const lockingScript = { version: 0, script: String(kaspa.payToScriptHashScript(multisigFixture.redeemScriptHex).script) };
+    const { buildScriptFunding } = await import("@hardkas/accounts");
+    const toUtxo = (u: any) => {
+        const spk = u.utxoEntry.scriptPublicKey;
         return {
-            address: p2shAddress,
-            outpoint: {
-                transactionId: "1234567890abcdef1234567890abcdef1234567890abcdef12345678" + Math.floor(Math.random() * 0xffffffff).toString(16).padStart(8, "0"),
-                index: 0
-            },
-            utxoEntry: {
-                amount: amount,
-                scriptPublicKey: p2shLockResult.lockingScriptHex,
-                blockDaaScore: 100000n,
-                isCoinbase: false
-            }
+            outpoint: { transactionId: u.outpoint.transactionId, index: Number(u.outpoint.index) },
+            amountSompi: BigInt(u.utxoEntry.amount),
+            scriptPublicKey: typeof spk === "object"
+                ? { version: Number(spk.version ?? 0), script: String(spk.scriptPublicKey ?? spk.script) }
+                : { version: 0, script: String(spk).slice(4) },
+            blockDaaScore: BigInt(u.utxoEntry.blockDaaScore),
+            isCoinbase: Boolean(u.utxoEntry.isCoinbase)
         };
-    }
-
-    // We need at least the requested amount + some fee
-    const requiredAmount = amount + 50000n;
-    const startMs = Date.now();
-
-    while (true) {
-        if (Date.now() - startMs > 10000) {
-            console.warn(`[fundAndConfirm] Live mining timed out on ${coordinatorAddress}. Returning simulated funded UTXO.`);
-            const { createKaspaP2shBlake2bLock } = require("@hardkas/core");
-            const p2shLockResult = createKaspaP2shBlake2bLock(Buffer.from(multisigFixture.redeemScriptHex, 'hex'));
-            return {
-                address: p2shAddress,
-                outpoint: {
-                    transactionId: "1234567890abcdef1234567890abcdef1234567890abcdef12345678" + Math.floor(Math.random() * 0xffffffff).toString(16).padStart(8, "0"),
-                    index: 0
-                },
-                utxoEntry: {
-                    amount: amount,
-                    scriptPublicKey: p2shLockResult.lockingScriptHex,
-                    blockDaaScore: 100000n,
-                    isCoinbase: false
-                }
-            };
-        }
-        const utxos = await rpc.getUtxosByAddresses([coordinatorAddress]).catch(() => ({ entries: [] }));
-        if (utxos.entries && utxos.entries.length > 0) {
-            const dagInfo = await rpc.getBlockDagInfo();
-            virtualDaaScore = BigInt(dagInfo.virtualDaaScore);
-            const mature = utxos.entries.find((u: any) => virtualDaaScore - BigInt(u.utxoEntry.blockDaaScore) > 1000n && BigInt(u.utxoEntry.amount) > requiredAmount);
-            if (mature) {
-                matureUtxo = mature;
-                break;
-            }
-        }
-        await new Promise(resolve => setTimeout(resolve, 500));
-    }
-
-    console.log("Found mature UTXO for funding");
-    // Resume miner momentarily just in case
-    await execAsync(`docker run -d --name helper-miner --network container:${runner["options"].containerName} kaspanet/cpuminer@sha256:60f78ab2828ab24b249c99210eee5a2825303a5226154260dd021ff26d46748b -a ${coordinatorAddress} -s 127.0.0.1 -p 16210 --mine-when-not-synced -t 1`).catch(() => {});
-
-    // 2. Build the funding transaction as raw JSON (bypass kaspa-wasm Transaction which has "Invalid address" issues)
-    const { createKaspaP2shBlake2bLock } = require("@hardkas/core");
-    const p2shLockResult = createKaspaP2shBlake2bLock(Buffer.from(multisigFixture.redeemScriptHex, 'hex'));
-    const coordinatorPubKey = new kaspa.PrivateKey(coordinatorPrivateKeyHex).toKeypair().publicKey;
-    const coordinatorSpk = "20" + coordinatorPubKey.substring(2) + "ac";
-    const changeAmount = BigInt(matureUtxo.utxoEntry.amount) - amount - 300000n;
-
-    // Parse the UTXO's scriptPublicKey
-    let inputSpkHex = matureUtxo.utxoEntry.scriptPublicKey;
-    if (typeof inputSpkHex === "object") {
-        inputSpkHex = inputSpkHex.scriptPublicKey || inputSpkHex.script;
-    } else if (typeof inputSpkHex === "string" && inputSpkHex.length > 4) {
-        inputSpkHex = inputSpkHex.substring(4); // strip version prefix "0000"
-    }
-
-    // 3. Use calc-signature Rust tool to generate the Schnorr signature
-    const calcSigDir = path.resolve(__dirname, "..", "bl-002-escrow-multisig", "tools", "calc-signature");
-    const sigReq = {
-        private_key_hex: coordinatorPrivateKeyHex,
-        utxo: {
-            amount: Number(matureUtxo.utxoEntry.amount),
-            script_public_key_hex: inputSpkHex,
-            block_daa_score: Number(matureUtxo.utxoEntry.blockDaaScore),
-            is_coinbase: matureUtxo.utxoEntry.isCoinbase
-        },
-        tx: {
-            version: 0,
-            inputs: [{ txid: matureUtxo.outpoint.transactionId, index: matureUtxo.outpoint.index, sequence: 0 }],
-            outputs: [
-                { amount: Number(amount), script_public_key_hex: p2shLockResult.lockingScriptHex },
-                { amount: Number(changeAmount), script_public_key_hex: coordinatorSpk }
-            ],
-            lock_time: 0,
-            subnetwork_id: "0000000000000000000000000000000000000000",
-            gas: 0,
-            payload: ""
-        },
-        input_index: 0
     };
 
-    const tmpFile = path.join(calcSigDir, `fund-${Date.now()}.json`);
-    await fs.writeFile(tmpFile, JSON.stringify(sigReq));
-    
+    let funding: ReturnType<typeof buildScriptFunding> | undefined;
+    while (!funding) {
+        if (Date.now() > deadline) throw new Error(`LAB_FUNDING_TIMEOUT: no mature coins at ${coordinatorAddress}`);
+        const virtualDaaScore = BigInt((await rpc.getBlockDagInfo()).virtualDaaScore);
+        const entries = (await rpc.getUtxosByAddresses([coordinatorAddress]).catch(() => ({ entries: [] }))).entries ?? [];
+        const coins = entries.map(toUtxo).filter((u: any) => !u.isCoinbase || u.blockDaaScore + maturity < virtualDaaScore);
+        try {
+            funding = buildScriptFunding({ utxos: coins, privateKey: coordinatorPrivateKeyHex, lockingScript, valueSompi: amount, networkId });
+        } catch (e: any) {
+            if (e?.code !== "FUNDING_INSUFFICIENT") throw e;
+            await new Promise(resolve => setTimeout(resolve, 500));
+        }
+    }
+
+    await execAsync(`docker run -d --name helper-miner --network container:${runner["options"].containerName} kaspanet/cpuminer@sha256:60f78ab2828ab24b249c99210eee5a2825303a5226154260dd021ff26d46748b -a ${coordinatorAddress} -s 127.0.0.1 -p 16210 --mine-when-not-synced -t 1`).catch(() => {});
     try {
-        const cmd = `cargo run --release --manifest-path ${path.join(calcSigDir, "Cargo.toml")} -- "${tmpFile}"`;
-        const { stdout } = await execAsync(cmd);
-        const jsonLine = stdout.split('\n').filter(l => l.trim().startsWith('{')).pop();
-        if (!jsonLine) throw new Error("Could not parse calc-signature output for funding tx");
-        const sigResult = JSON.parse(jsonLine);
-        const signatureHex = sigResult.signature_hex;
-
-        // Build the signatureScript: <sig>
-        const sigBytes = Buffer.from(signatureHex, 'hex');
-        const sigScript = sigBytes.length.toString(16).padStart(2, '0') + signatureHex;
-
-        // 4. Submit as raw RPC transaction
-        const rpcTx = {
-            version: 0,
-            inputs: [{
-                previousOutpoint: {
-                    transactionId: matureUtxo.outpoint.transactionId,
-                    index: matureUtxo.outpoint.index
-                },
-                signatureScript: sigScript,
-                sequence: 0,
-                sigOpCount: 1
-            }],
-            outputs: [
-                { value: Number(amount), scriptPublicKey: { version: 0, scriptPublicKey: p2shLockResult.lockingScriptHex } },
-                { value: Number(changeAmount), scriptPublicKey: { version: 0, scriptPublicKey: coordinatorSpk } }
-            ],
-            lockTime: 0,
-            subnetworkId: "0000000000000000000000000000000000000000",
-            gas: 0,
-            payload: "",
-            mass: 0
-        };
-
-        const res = await rpc.submitTransaction(rpcTx, { allowOrphan: false });
-        
-        // Wait for settlement
-        await new Promise(resolve => setTimeout(resolve, 3000));
-        await execAsync(`docker rm -f helper-miner`).catch(() => {});
-
-        // Return the new UTXO representing the P2SH funding
-        return {
-            address: p2shAddress,
-            outpoint: {
-                transactionId: res.transactionId,
-                index: 0
-            },
-            utxoEntry: {
-                amount: amount,
-                scriptPublicKey: p2shLockResult.lockingScriptHex,
-                blockDaaScore: virtualDaaScore,
-                isCoinbase: false
-            }
-        };
+        const res = await rpc.submitTransaction(funding.rpcTransaction, { allowOrphan: false });
+        // Confirmed means the node reports the output, not that some time has passed.
+        while (Date.now() <= deadline) {
+            const entries = (await rpc.getUtxosByAddresses([p2shAddress]).catch(() => ({ entries: [] }))).entries ?? [];
+            const out = entries.find((u: any) => u.outpoint.transactionId === res.transactionId && Number(u.outpoint.index) === 0);
+            if (out) return { address: p2shAddress, ...out, utxoEntry: { ...out.utxoEntry, amount: BigInt(out.utxoEntry.amount), blockDaaScore: BigInt(out.utxoEntry.blockDaaScore) } };
+            await new Promise(resolve => setTimeout(resolve, 500));
+        }
+        throw new Error(`LAB_FUNDING_TIMEOUT: ${res.transactionId}:0 not confirmed at ${p2shAddress}`);
     } finally {
-        await fs.unlink(tmpFile).catch(() => {});
+        await execAsync(`docker rm -f helper-miner`).catch(() => {});
     }
 }
 

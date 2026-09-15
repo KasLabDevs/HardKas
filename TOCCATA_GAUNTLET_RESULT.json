@@ -1,14 +1,100 @@
 {
   "schema": "hardkas.toccataGauntlet.v1",
-  "status": "TOCCATA_NORMALIZATION_BLOCKED_RELEASE_ENV",
-  "generatedAt": "2026-09-09T07:24:08.552Z",
-  "partialKnownLimitations": [
-    "PARTIAL_VM_SIMULATION"
-  ],
+  "status": "HARDKAS_TOCCATA_BASELINE_READY",
+  "generatedAt": "2026-09-14T18:27:20.223Z",
+  "nodeIdentity": {
+    "schema": "hardkas.nodeIdentity.v1",
+    "verified": true,
+    "problems": [],
+    "expected": {
+      "containerName": "hardkas-kaspad-toccata-v2",
+      "image": "kaspanet/rusty-kaspad:v2.0.1@sha256:db36449e2f41cf33ab7c26683ce390cb71bdea9c403eefd2e740a7d5605bcd8b",
+      "imageDigest": "sha256:db36449e2f41cf33ab7c26683ce390cb71bdea9c403eefd2e740a7d5605bcd8b",
+      "network": "simnet",
+      "serverVersion": "2.0.1",
+      "host": "127.0.0.1",
+      "rpcPort": 18210
+    },
+    "observed": {
+      "container": {
+        "name": "hardkas-kaspad-toccata-v2",
+        "id": "6c2fcfd32a1c9f61adf1160c4aff5958435def2eb11d3364d4298284f47c0528",
+        "running": true,
+        "imageId": "sha256:db36449e2f41cf33ab7c26683ce390cb71bdea9c403eefd2e740a7d5605bcd8b",
+        "repoDigests": [
+          "kaspanet/rusty-kaspad@sha256:db36449e2f41cf33ab7c26683ce390cb71bdea9c403eefd2e740a7d5605bcd8b",
+          "supertypo/rusty-kaspad@sha256:db36449e2f41cf33ab7c26683ce390cb71bdea9c403eefd2e740a7d5605bcd8b"
+        ],
+        "publishedPorts": [
+          {
+            "containerPort": "16210/tcp",
+            "hostIp": "127.0.0.1",
+            "hostPort": 16210
+          },
+          {
+            "containerPort": "17210/tcp",
+            "hostIp": "127.0.0.1",
+            "hostPort": 17210
+          },
+          {
+            "containerPort": "18210/tcp",
+            "hostIp": "127.0.0.1",
+            "hostPort": 18210
+          }
+        ]
+      },
+      "server": {
+        "url": "ws://127.0.0.1:18210",
+        "networkId": "simnet",
+        "serverVersion": "2.0.1",
+        "isSynced": true
+      },
+      "probeErrors": []
+    },
+    "checkedAt": "2026-09-14T18:26:12.606Z"
+  },
+  "capabilities": {
+    "silver.compile.v1": "PASS",
+    "silver.p2sh.deploy-spend.v1": "PASS",
+    "toccata.covenant.auth-1to1-transition.v1": "PASS"
+  },
+  "harness": {
+    "minerThrottle": {
+      "environment": "HARDKAS_TOCCATA_MINER_THROTTLE_MS",
+      "valueMs": "5",
+      "purpose": "harness-local rate limit (not a consensus parameter)"
+    }
+  },
   "phases": [
     {
       "name": "package/build integrity",
       "status": "PASS"
+    },
+    {
+      "name": "managed toolchains",
+      "status": "PASS",
+      "toolchains": {
+        "kaspa-wasm": {
+          "ok": true,
+          "detail": "2.0.1"
+        },
+        "silverc": {
+          "ok": true,
+          "detail": "silverc-windows-x86_64.zip ce1e0ef5f1f415f371d3d2426e788597a388635da8cbe93e72e95a4f754b29af"
+        }
+      },
+      "silverscript": {
+        "releaseTag": "v1.0.0",
+        "languageVersion": "0.1.0"
+      }
+    },
+    {
+      "name": "node identity",
+      "status": "PASS",
+      "container": "hardkas-kaspad-toccata-v2",
+      "imageDigest": "sha256:db36449e2f41cf33ab7c26683ce390cb71bdea9c403eefd2e740a7d5605bcd8b",
+      "serverVersion": "2.0.1",
+      "network": "simnet"
     },
     {
       "name": "doctor",
@@ -27,11 +113,78 @@
       "status": "PASS"
     },
     {
-      "name": "gauntlet aborted",
-      "status": "FAIL",
-      "message": "Command failed: D:\\Program Files\\nodejs\\node.exe run-real-node.mjs"
+      "name": "standard tx lifecycle",
+      "status": "PASS"
+    },
+    {
+      "name": "silver compile",
+      "status": "PASS",
+      "capability": "silver.compile.v1",
+      "compiler": "silverc v1.0.0 ce1e0ef5f1f415f371d3d2426e788597a388635da8cbe93e72e95a4f754b29af",
+      "artifactSha256": "977f59e8c5a6223118b89de545e47de13c29a29c9846105c54302ec4798d7b9c"
+    },
+    {
+      "name": "silver compile reproduced",
+      "status": "PASS",
+      "artifactSha256": "977f59e8c5a6223118b89de545e47de13c29a29c9846105c54302ec4798d7b9c"
+    },
+    {
+      "name": "mainnet guard",
+      "status": "PASS"
+    },
+    {
+      "name": "silver deploy real",
+      "status": "PASS",
+      "capability": "silver.p2sh.deploy-spend.v1",
+      "txId": "1d8a1d5826c3210d26a094c84dc008e3ee7dc5af503d0bf6fd5fdb72f515f63e",
+      "address": "kaspasim:ppf5rdj4lare545rue4pj6hpt70ylt4utu3cks7afgf424hktrf9wz79yjldc",
+      "confirmedAtBlockDaaScore": "79359"
+    },
+    {
+      "name": "silver spend real",
+      "status": "PASS",
+      "capability": "silver.p2sh.deploy-spend.v1",
+      "txId": "104b13b6cb8da7f2b07976b7c40f34a5d0d32ef9b99c3e0cfe2e19ff14e15f7c",
+      "entry": "release",
+      "dispatchTag": "388ad0b4",
+      "confirmedAtBlockDaaScore": "79757"
+    },
+    {
+      "name": "covenant genesis",
+      "status": "PASS",
+      "capability": "toccata.covenant.auth-1to1-transition.v1",
+      "covenantId": "fcc936e1c058e968e4da659668fa6915736adc66cc684a5b020d6b058ce3dd22",
+      "txId": "cc1b1af3123576c5bf5382870fbfd1a63c35181569f3fc54d93fedb8236ff229",
+      "computeBudget": 10
+    },
+    {
+      "name": "covenant transition",
+      "status": "PASS",
+      "capability": "toccata.covenant.auth-1to1-transition.v1",
+      "covenantId": "fcc936e1c058e968e4da659668fa6915736adc66cc684a5b020d6b058ce3dd22",
+      "txId": "0559ae8d089855e25db6db9c22e59754089516d3c82ea052c0c8e994421f81d8",
+      "entry": "__covenant_entrypoint_auth_bump",
+      "stateGuard": {
+        "templateHash": "12e80a77d386245a8a8db422137333918b3d6bbbb482e39f8e45302244e9bd95",
+        "span": {
+          "offset": 1,
+          "currentLen": 9,
+          "successorLen": 9
+        }
+      }
+    },
+    {
+      "name": "silver golden corpus verify",
+      "status": "PASS",
+      "path": "fixtures/toccata-v2/silver",
+      "cases": 4,
+      "recompiled": 5,
+      "capabilities": {
+        "silver.compile.v1": "PASS",
+        "toccata.covenant.auth-1to1-transition.v1": "PASS",
+        "silver.p2sh.deploy-spend.v1": "PASS",
+        "silver.p2sh.relative-timelock.v1": "PASS"
+      }
     }
-  ],
-  "blocker": "Command failed: D:\\Program Files\\nodejs\\node.exe run-real-node.mjs",
-  "nextRequiredCommand": "pnpm build && pnpm test && pnpm gauntlet:toccata"
+  ]
 }

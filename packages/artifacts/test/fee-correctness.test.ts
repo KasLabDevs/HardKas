@@ -8,19 +8,21 @@ import { createTxPlanArtifact } from "../src/tx-plan.js";
 import { asNetworkId } from "@hardkas/core";
 
 describe("Fee Correctness (Fase 1 Hardening)", () => {
+  // 1 input, recipient + change, relayable amounts: kaspa-wasm 2.0.1 prices this
+  // shape at 2036 grams (the mass rusty-kaspad reported for the rc17 fixture).
   const basePlan = {
     inputs: [
       {
         outpoint: { transactionId: "tx1", index: 0 },
-        amountSompi: 10000n,
+        amountSompi: 100_000_000_000n,
         address: "kaspa:qalice",
         scriptPublicKey: "00".repeat(34)
       }
     ],
-    outputs: [{ address: "kaspa:qbob", amountSompi: 5000n }],
-    change: { address: "kaspa:qalice", amountSompi: 2948n },
-    estimatedFeeSompi: 2052n,
-    estimatedMass: 2052n
+    outputs: [{ address: "kaspa:qbob", amountSompi: 50_000_000_000n }],
+    change: { address: "kaspa:qalice", amountSompi: 100_000_000_000n - 50_000_000_000n - 203_600n },
+    estimatedFeeSompi: 203_600n,
+    estimatedMass: 2036n
   };
 
   it("should recompute correct mass for a standard plan", () => {
@@ -30,12 +32,12 @@ describe("Fee Correctness (Fase 1 Hardening)", () => {
       mode: "simulator",
       from: { input: "alice", address: "kaspa:qalice" },
       to: { input: "bob", address: "kaspa:qbob" },
-      amountSompi: 5000n,
+      amountSompi: 50_000_000_000n,
       plan: basePlan as any
     });
 
     const mass = recomputeMass(artifact);
-    expect(mass).toBe(2052n);
+    expect(mass).toBe(2036n);
   });
 
   it("should pass verification for a valid fee artifact", () => {
@@ -45,7 +47,7 @@ describe("Fee Correctness (Fase 1 Hardening)", () => {
       mode: "simulator",
       from: { input: "alice", address: "kaspa:qalice" },
       to: { input: "bob", address: "kaspa:qbob" },
-      amountSompi: 5000n,
+      amountSompi: 50_000_000_000n,
       plan: basePlan as any
     });
 
@@ -61,13 +63,13 @@ describe("Fee Correctness (Fase 1 Hardening)", () => {
       mode: "simulator",
       from: { input: "alice", address: "kaspa:qalice" },
       to: { input: "bob", address: "kaspa:qbob" },
-      amountSompi: 5000n,
+      amountSompi: 50_000_000_000n,
       plan: { ...basePlan, estimatedMass: 500n } as any
     });
 
     const audit = verifyFeeSemantics(artifact);
     expect(audit.ok).toBe(false);
-    expect(audit.issues).toContain("Mass mismatch: artifact reports 500, recomputed 2052");
+    expect(audit.issues).toContain("Mass mismatch: artifact reports 500, recomputed 2036");
   });
 
   it("should fail on negative fee", () => {
@@ -77,7 +79,7 @@ describe("Fee Correctness (Fase 1 Hardening)", () => {
       mode: "simulator",
       from: { input: "alice", address: "kaspa:qalice" },
       to: { input: "bob", address: "kaspa:qbob" },
-      amountSompi: 5000n,
+      amountSompi: 50_000_000_000n,
       plan: { ...basePlan, estimatedFeeSompi: -10n } as any
     });
 
@@ -87,17 +89,17 @@ describe("Fee Correctness (Fase 1 Hardening)", () => {
   });
 
   it("should fail on input/output imbalance", () => {
-    // Inputs (10000) < Outputs (5000) + Change (6000) + Fee (350) = 11350
+    // Inputs (1000 KAS) < Outputs (500 KAS) + Change (600 KAS) + Fee
     const artifact = createTxPlanArtifact({
       ctx: systemRuntimeContext,
       networkId: asNetworkId("simnet") as any,
       mode: "simulator",
       from: { input: "alice", address: "kaspa:qalice" },
       to: { input: "bob", address: "kaspa:qbob" },
-      amountSompi: 5000n,
+      amountSompi: 50_000_000_000n,
       plan: {
         ...basePlan,
-        change: { address: "kaspa:qalice", amountSompi: 6000n }
+        change: { address: "kaspa:qalice", amountSompi: 60_000_000_000n }
       } as any
     });
 
@@ -115,7 +117,7 @@ describe("Fee Correctness (Fase 1 Hardening)", () => {
       mode: "simulator",
       from: { input: "alice", address: "kaspa:qalice" },
       to: { input: "bob", address: "kaspa:qbob" },
-      amountSompi: 5000n,
+      amountSompi: 50_000_000_000n,
       plan: {
         ...basePlan,
         outputs: [{ address: "kaspa:qbob", amountSompi: 100n }] // 100 < 600

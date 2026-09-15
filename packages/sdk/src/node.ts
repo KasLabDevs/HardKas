@@ -1,6 +1,6 @@
 import { Hardkas } from "./index.js";
-import { HardkasError, getCoinbaseMaturity } from "@hardkas/core";
-import { DockerKaspadRunner, KaspadNodeStatus } from "@hardkas/node-runner";
+import { HardkasError, getCoinbaseMaturity, CPUMINER_REFERENCE_IMAGE, CANONICAL_LOCALNET } from "@hardkas/core";
+import { DockerKaspadRunner, KaspadNodeStatus, minerContainerNameFor, requireNodeIdentity } from "@hardkas/node-runner";
 
 export interface HardkasNodeStartOptions {
   /**
@@ -131,8 +131,15 @@ export class HardkasNodeApi {
     
     const activeNetwork = this.sdk.network;
     const networkConfig = this.sdk.config.config.networks?.[activeNetwork];
-    const defaultMaturity = getCoinbaseMaturity(activeNetwork, networkConfig?.kind === "kaspa-node" || networkConfig?.kind === "kaspa-rpc" || networkConfig?.kind === "simulated" ? networkConfig.consensusParams : undefined);
-    const coinbaseMaturity = options?.coinbaseMaturity ?? defaultMaturity;
+    // Explicit override (from options or networkConfig) beats upstream default.
+    // When no override, coinbase maturity is read from upstream network params
+    // via `filterMatureUtxos` below — no HardKAS-hardcoded per-network constant.
+    const explicitOverride: bigint | undefined =
+      options?.coinbaseMaturity !== undefined
+        ? BigInt(options.coinbaseMaturity)
+        : (networkConfig?.kind === "kaspa-node" || networkConfig?.kind === "kaspa-rpc" || networkConfig?.kind === "simulated") && networkConfig.consensusParams?.coinbaseMaturity !== undefined
+          ? BigInt(networkConfig.consensusParams.coinbaseMaturity)
+          : undefined;
     
     // Resolve alias to address
     let primaryAddress = primaryInput;
@@ -154,19 +161,22 @@ export class HardkasNodeApi {
       // Start it with mining enabled to the first wallet
       await this.start({ mineTo: primaryAddress });
     } else {
-      // Node is already running — ensure a miner sidecar is attached
-      const { exec: execCb } = await import("child_process");
+      // Node is already running: it must prove it is the canonical node before
+      // the (single, canonical) miner joins its network namespace.
+      await requireNodeIdentity();
+      const { execFile } = await import("child_process");
       const util = await import("util");
-      const execAsync = util.promisify(execCb);
-      const minerName = "hardkas-kaspad-simnet-miner";
-      try { await execAsync(`docker rm -f ${minerName}`); } catch {}
+      const execFileAsync = util.promisify(execFile);
+      const minerName = minerContainerNameFor(CANONICAL_LOCALNET.containerName);
+      try { await execFileAsync("docker", ["rm", "-f", minerName]); } catch {}
       try {
-        await execAsync(
-          `docker run -d --name ${minerName} ` +
-          `--network container:hardkas-kaspad-simnet ` +
-          `kaspanet/cpuminer@sha256:60f78ab2828ab24b249c99210eee5a2825303a5226154260dd021ff26d46748b ` +
-          `-a ${primaryAddress} -s 127.0.0.1 -p 16210 --mine-when-not-synced -t 1`
-        );
+        await execFileAsync("docker", [
+          "run", "-d", "--name", minerName,
+          "--network", `container:${CANONICAL_LOCALNET.containerName}`,
+          CPUMINER_REFERENCE_IMAGE,
+          "-a", primaryAddress, "-s", "127.0.0.1", "-p", String(CANONICAL_LOCALNET.ports.rpc),
+          "--mine-when-not-synced", "-t", "1"
+        ]);
       } catch (err: any) {
         throw new HardkasError("MINER_NOT_RUNNING", `Failed to start miner sidecar: ${err.message}`, { cause: err });
       }
@@ -175,18 +185,34 @@ export class HardkasNodeApi {
     // Wait for the RPC to be ready and at least one MATURE UTXO to appear.
     const start = Date.now();
     let funded = false;
+    let lastCoinbaseMaturity: bigint = 0n;
+
+    const { filterMatureUtxos } = await import("@hardkas/tx-builder");
 
     while (Date.now() - start < timeoutMs) {
       try {
         const utxos = await this.sdk.rpc.getUtxosByAddress(primaryAddress);
         const dagInfo = await this.sdk.rpc.getBlockDagInfo();
-        const virtualDaaScore = dagInfo.virtualDaaScore ?? 0n;
-        
-        const matureUtxos = utxos.filter(u =>
-          !u.isCoinbase ||
-          (u.blockDaaScore !== undefined && (virtualDaaScore - BigInt(u.blockDaaScore)) >= coinbaseMaturity)
-        );
-        
+        const virtualDaaScore = BigInt(dagInfo.virtualDaaScore ?? 0);
+
+        const filtered = filterMatureUtxos<any>({
+          networkId: activeNetwork,
+          virtualDaaScore,
+          utxos,
+          readEntry: (u: any) => ({
+            blockDaaScore: u.blockDaaScore === undefined ? 0n : BigInt(u.blockDaaScore),
+            isCoinbase: Boolean(u.isCoinbase) && u.blockDaaScore !== undefined
+          })
+        });
+        lastCoinbaseMaturity = explicitOverride ?? filtered.coinbaseMaturity;
+        const effectiveMaturity = lastCoinbaseMaturity;
+        const matureUtxos = explicitOverride === undefined
+          ? filtered.mature
+          : utxos.filter(u =>
+              !u.isCoinbase ||
+              (u.blockDaaScore !== undefined && (virtualDaaScore - BigInt(u.blockDaaScore)) >= effectiveMaturity)
+            );
+
         if (matureUtxos.length > 0) {
           funded = true;
           break;
@@ -200,7 +226,7 @@ export class HardkasNodeApi {
     if (!funded) {
       throw new Error(
         `MINING_TIMEOUT: Failed to fund dev wallets within ${Math.round(timeoutMs / 1000)} seconds. ` +
-        `Coinbase maturity requires ${coinbaseMaturity} DAA blocks. Miner may need more time.`
+        `Coinbase maturity requires ${lastCoinbaseMaturity} DAA blocks. Miner may need more time.`
       );
     }
   }
@@ -214,7 +240,7 @@ export class HardkasNodeApi {
     const execAsync = util.promisify(exec);
 
     try {
-      await execAsync("docker pause hardkas-kaspad-simnet-miner");
+      await execAsync(`docker pause ${CANONICAL_LOCALNET.minerContainerName}`);
     } catch (e: any) {
       throw new HardkasError("MINER_NOT_RUNNING", `Failed to pause miner: ${e.message}`, { cause: e });
     }
@@ -229,7 +255,7 @@ export class HardkasNodeApi {
     const execAsync = util.promisify(exec);
 
     try {
-      await execAsync("docker unpause hardkas-kaspad-simnet-miner");
+      await execAsync(`docker unpause ${CANONICAL_LOCALNET.minerContainerName}`);
     } catch (e: any) {
       throw new HardkasError("MINER_RESUME_FAILED", `Failed to resume miner: ${e.message}`, { cause: e });
     }

@@ -1,14 +1,15 @@
 import { initializeHardKAS } from '@showcase/shared-backend';
 import { writeEvidence } from '@showcase/shared-testkit';
-import { SilverToolkit } from '@hardkas/toolkit';
+// A showcase mock: no compiler, no script execution (see mock-silver.ts).
+import { MockSilverToolkit } from './mock-silver.js';
 async function run() {
-    console.log('[Silver Playground] Starting Gauntlet Execution...');
+    console.log('[Silver Playground] Starting mock showcase run (no SilverScript compiler, no script execution)...');
     await initializeHardKAS('silver-playground-gauntlet');
     const toolkits = [];
     const operations = 100;
     // Create 10 actors
     for (let i = 0; i < 10; i++) {
-        const st = SilverToolkit.open();
+        const st = MockSilverToolkit.open();
         toolkits.push(st);
     }
     let opsCount = 0;
@@ -38,8 +39,8 @@ async function run() {
             }
             else {
                 const targetBuild = builds[Math.floor(Math.random() * builds.length)];
-                const targetSim = sims.length > 0 ? sims[Math.floor(Math.random() * sims.length)] : { success: true, executionTrace: [], gasConsumed: 0 };
-                await actor.evidence(targetBuild, targetSim);
+                const targetSim = sims.length > 0 ? sims[Math.floor(Math.random() * sims.length)] : { success: true, executionTrace: [], gasConsumed: 0, mock: true };
+                await actor.record(targetBuild, targetSim);
             }
             opsCount++;
         }
@@ -47,7 +48,7 @@ async function run() {
             errors.push(e.message);
         }
     }
-    // Output evidence
+    // Output the showcase report: a mock run, so no domain operation is real.
     writeEvidence('silver-playground', {
         app: 'Silver Playground',
         actors: toolkits.length,
@@ -55,14 +56,14 @@ async function run() {
         visualScenario: true,
         realRpcTouched: true,
         realBroadcast: false,
-        domainOperationReal: true,
+        domainOperationReal: false,
         networkSettlementReal: false,
         fallbackUsed: true,
-        packagesExercised: ['@hardkas/toolkit', '@hardkas/core', '@hardkas/artifacts', '@hardkas/localnet'],
-        publicApisExercised: ['SilverToolkit.open', 'SilverToolkit.templates', 'SilverToolkit.build', 'SilverToolkit.simulate', 'SilverToolkit.artifact', 'SilverToolkit.evidence'],
+        packagesExercised: ['@hardkas/core', '@hardkas/artifacts', '@hardkas/localnet'],
+        publicApisExercised: [],
         errors,
         expectedGuards: [],
-        unsupportedCapabilities: []
+        unsupportedCapabilities: ['silverscript (showcase mock; real SilverScript is `hardkas silver`)']
     });
 }
 run().catch(console.error);

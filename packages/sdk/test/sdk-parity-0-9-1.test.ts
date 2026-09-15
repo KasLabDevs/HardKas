@@ -3,6 +3,7 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { parseSilArtifactValuesJson } from "@hardkas/core";
 import { Hardkas, HardkasCorpus, HardkasSilver } from "../src/index.js";
 
 function repoRoot(): string {
@@ -18,7 +19,7 @@ function readJson(filePath: string): any {
   return JSON.parse(fs.readFileSync(filePath, "utf8"));
 }
 
-describe("0.12.0-rc.20 SDK parity surface", () => {
+describe("0.12.0-rc.21 SDK parity surface", () => {
   let workspaceRoot: string;
 
   beforeEach(() => {
@@ -37,7 +38,7 @@ describe("0.12.0-rc.20 SDK parity surface", () => {
     });
     const capabilities = await sdk.capabilities.get("hardkas-1.0-alpha");
 
-    expect(capabilities.version).toBe("0.12.0-rc.20");
+    expect(capabilities.version).toBe("0.12.0-rc.21");
     expect(capabilities.capabilities.mainnetGuards).toBe(true);
     expect(capabilities.capabilities.consensusValidation).toBe(false);
     expect(capabilities.capabilities.productionWallet).toBe(false);
@@ -69,87 +70,38 @@ describe("0.12.0-rc.20 SDK parity surface", () => {
     const corpus = new HardkasCorpus(sdk);
     const result = await corpus.verify("fixtures/toccata-v2/silver");
 
+    expect(result.issues).toEqual([]);
     expect(result.ok).toBe(true);
-    expect(result.schema).toBe("hardkas.toccataCorpus.v1");
-    expect(result.claims.artifactCoherence).toBe("READY_MATCH");
-    expect(result.claims.runtimeOutcome).toBe("PARTIAL");
-    expect(result.claims.vmConsensusEquivalence).toBe("NOT_CLAIMED");
-    expect(result.claims.mainnet).toBe("BLOCKED_BY_POLICY");
+    expect(result.schema).toBe("hardkas.silverCorpusVerify.v1");
+    expect(result.capabilities["silver.p2sh.deploy-spend.v1"]).toBe("PASS");
+    expect(result.capabilities["toccata.covenant.auth-1to1-transition.v1"]).toBe("PASS");
   });
 
-  it("exposes Silver deploy planning, simulation, and artifact-coherence compare", async () => {
-    const root = repoRoot();
-    const sdk = await Hardkas.create({
-      cwd: workspaceRoot,
-      network: "simulated",
-      autoBootstrap: true
-    });
-    const compileArtifact = readJson(
-      path.join(
-        root,
-        "fixtures",
-        "toccata-v2",
-        "silver",
-        "op-true",
-        "compile-artifact.json"
-      )
-    );
-    const simulatedSpendReceipt = readJson(
-      path.join(
-        root,
-        "fixtures",
-        "toccata-v2",
-        "silver",
-        "op-true",
-        "spend-simulated.json"
-      )
-    );
-    const dockerSpendReceipt = readJson(
-      path.join(
-        root,
-        "fixtures",
-        "toccata-v2",
-        "silver",
-        "op-true",
-        "spend-receipt-real.json"
-      )
-    );
-
+  it("compiles SilverScript with the managed silverc and reproduces a golden case", async () => {
+    const caseDir = path.join(repoRoot(), "fixtures", "toccata-v2", "silver", "p2sh-signed-release");
+    const golden = readJson(path.join(caseDir, "case.json")).compiles[0];
+    const sdk = await Hardkas.create({ cwd: workspaceRoot, network: "simulated", autoBootstrap: true });
     const silver = new HardkasSilver(sdk);
-    const deployPlan = await silver.deployPlan({
-      artifact: compileArtifact,
-      from: "alice",
-      amount: "1",
-      write: false
-    });
-    const simulated = await silver.simulate.deploy(deployPlan.artifact, {
-      write: false
-    });
-    const compare = await silver.compare({
-      simulated: simulatedSpendReceipt,
-      docker: dockerSpendReceipt,
-      mode: "artifact-coherence"
-    });
 
-    expect(deployPlan.artifact.schema).toBe("hardkas.silver.deployPlan");
-    expect(simulated.artifact.status).toBe("SIMULATED_ACCEPTED");
-    expect(compare.expectedKnownLimitations).toEqual(["PARTIAL_VM_SIMULATION"]);
-    expect(compare.status).toBe("SILVERSCRIPT_SIMULATION_MATCH");
+    const compiled = await silver.compile({
+      file: path.join(caseDir, golden.source),
+      constructorArgs: parseSilArtifactValuesJson(fs.readFileSync(path.join(caseDir, golden.constructorArgs), "utf8"))
+    });
+    expect(compiled.provenance.artifactSha256).toBe(golden.provenance.artifactSha256);
+    expect(compiled.provenance.compiler.releaseTag).toBe("v1.0.0");
+    const p2sh = silver.p2sh(compiled);
+    expect(p2sh.lockingScript).toEqual(golden.lockingScript);
+    expect(p2sh.address).toBe(golden.address);
   });
 
-  it("documents unsupported SDK real Silver execution instead of pretending consensus parity", async () => {
-    const sdk = await Hardkas.create({
-      cwd: workspaceRoot,
-      network: "simulated",
-      autoBootstrap: true
-    });
+  it("keeps the SDK Silver surface off mainnet and off the simulator", async () => {
+    const caseDir = path.join(repoRoot(), "fixtures", "toccata-v2", "silver", "p2sh-signed-release");
+    const sdk = await Hardkas.create({ cwd: workspaceRoot, network: "simulated", autoBootstrap: true });
     const silver = new HardkasSilver(sdk);
-    await expect(
-      silver.deploy({
-        artifact: { schema: "hardkas.silver.deployPlan", name: "dummy", byteCode: "00", abi: [] },
-        mode: "rpc",
-        write: false
-      })
-    ).rejects.toThrow("Silver/Toccata simulator only supports local simnet.");
+    const compiled = await silver.compile({ source: fs.readFileSync(path.join(caseDir, "contract.sil"), "utf8"), constructorArgs: parseSilArtifactValuesJson(fs.readFileSync(path.join(caseDir, "contract.constructor-args.json"), "utf8")) });
+
+    expect(() => silver.p2sh(compiled, { network: "mainnet" })).toThrow(/SILVERSCRIPT_MAINNET_NOT_ENABLED/);
+    expect((silver as any).simulate).toBeUndefined();
+    expect((silver as any).compare).toBeUndefined();
   });
 });

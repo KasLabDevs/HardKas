@@ -1,21 +1,15 @@
 import { Hardkas } from "@hardkas/sdk";
-import { createKaspaP2shBlake2bLock, createPushOnlySignatureScript } from "@hardkas/core";
-import { SilverDeployPlanArtifactSchema } from "@hardkas/artifacts";
+import { compileSilverScript, silverP2shLock, silverUnlockScript, verifySilverCorpus } from "@hardkas/core";
 
 async function main() {
   try {
     console.log("Testing @hardkas/sdk import...");
     if (!Hardkas) throw new Error("Hardkas SDK export missing");
 
-    console.log("Testing @hardkas/core imports...");
-    if (typeof createKaspaP2shBlake2bLock !== "function")
-      throw new Error("createKaspaP2shBlake2bLock missing");
-    if (typeof createPushOnlySignatureScript !== "function")
-      throw new Error("createPushOnlySignatureScript missing");
-
-    console.log("Testing @hardkas/artifacts imports...");
-    if (!SilverDeployPlanArtifactSchema)
-      throw new Error("SilverDeployPlanArtifactSchema missing");
+    console.log("Testing @hardkas/core SilverScript v1 imports...");
+    for (const [name, fn] of Object.entries({ compileSilverScript, silverP2shLock, silverUnlockScript, verifySilverCorpus })) {
+      if (typeof fn !== "function") throw new Error(`${name} missing`);
+    }
 
     console.log("Testing CLI load...");
     const { execSync } = await import("child_process");

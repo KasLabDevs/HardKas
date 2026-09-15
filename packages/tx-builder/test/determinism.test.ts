@@ -105,6 +105,11 @@ function shuffle<T>(items: readonly T[]): T[] {
 }
 
 describe("P1.12 Deterministic Transaction Canonicalization", () => {
+  // Relayable amounts: under KIP-9 storage mass, sub-KAS outputs are costly or non-standard.
+  // S scales the shared fixture to 100-KAS UTXOs; T scales Test F's outputs to 10-20 KAS.
+  const S = 10_000n;
+  const T = 1_000_000n;
+
   // Setup standard inputs and outputs
   const mockFrom = "kaspa:alice";
   const mockTo = "kaspa:bob";
@@ -117,7 +122,7 @@ describe("P1.12 Deterministic Transaction Canonicalization", () => {
         index: 1
       },
       address: mockFrom,
-      amountSompi: 1000000n,
+      amountSompi: 1000000n * S,
       scriptPublicKey: "mock-spk"
     },
     {
@@ -126,7 +131,7 @@ describe("P1.12 Deterministic Transaction Canonicalization", () => {
         index: 0
       },
       address: mockFrom,
-      amountSompi: 1000000n, // Equal value to test tie-breaker
+      amountSompi: 1000000n * S, // Equal value to test tie-breaker
       scriptPublicKey: "mock-spk"
     },
     {
@@ -135,7 +140,7 @@ describe("P1.12 Deterministic Transaction Canonicalization", () => {
         index: 0
       },
       address: mockFrom,
-      amountSompi: 1000000n, // Equal value, different index to test tie-breaker
+      amountSompi: 1000000n * S, // Equal value, different index to test tie-breaker
       scriptPublicKey: "mock-spk"
     },
     {
@@ -144,7 +149,7 @@ describe("P1.12 Deterministic Transaction Canonicalization", () => {
         index: 0
       },
       address: mockFrom,
-      amountSompi: 5000000n, // Higher value
+      amountSompi: 5000000n * S, // Higher value
       scriptPublicKey: "mock-spk"
     },
     {
@@ -153,15 +158,15 @@ describe("P1.12 Deterministic Transaction Canonicalization", () => {
         index: 0
       },
       address: mockFrom,
-      amountSompi: 200000n, // Lower value
+      amountSompi: 200000n * S, // Lower value
       scriptPublicKey: "mock-spk"
     }
   ];
 
   // Recipient outputs
   const outputs = [
-    { address: mockTo, amountSompi: 2500000n },
-    { address: "kaspa:charlie", amountSompi: 100000n }
+    { address: mockTo, amountSompi: 2500000n * S },
+    { address: "kaspa:charlie", amountSompi: 100000n * S }
   ];
 
   it("Test A: RPC Order Randomization - shuffles available UTXOs and produces identical plans", () => {
@@ -231,7 +236,7 @@ describe("P1.12 Deterministic Transaction Canonicalization", () => {
     // Create an artifact-like structure
     const baseArtifact = {
       schema: "hardkas.txPlan" as const,
-      hardkasVersion: "0.12.0-rc.20",
+      hardkasVersion: "0.12.0-rc.21",
       version: ARTIFACT_VERSION,
       hashVersion: CURRENT_HASH_VERSION,
       networkId: "simnet" as const,
@@ -328,7 +333,7 @@ describe("P1.12 Deterministic Transaction Canonicalization", () => {
     // Hardcode an exact fixed test artifact
     const fixedArtifact = {
       schema: "hardkas.txPlan" as const,
-      hardkasVersion: "0.12.0-rc.20",
+      hardkasVersion: "0.12.0-rc.21",
       version: "1.0.0-alpha",
       hashVersion: 3,
       networkId: "simnet" as const,
@@ -385,26 +390,26 @@ describe("P1.12 Deterministic Transaction Canonicalization", () => {
       {
         outpoint: { transactionId: "txB", index: 0 },
         address: mockFrom,
-        amountSompi: 1000000n,
+        amountSompi: 1000000n * S,
         scriptPublicKey: "spk"
       },
       {
         outpoint: { transactionId: "txA", index: 1 },
         address: mockFrom,
-        amountSompi: 1000000n,
+        amountSompi: 1000000n * S,
         scriptPublicKey: "spk"
       },
       {
         outpoint: { transactionId: "txA", index: 0 },
         address: mockFrom,
-        amountSompi: 1000000n,
+        amountSompi: 1000000n * S,
         scriptPublicKey: "spk"
       }
     ];
 
     const plan = buildPaymentPlan({ coinbaseMaturity: 100n,
       fromAddress: mockFrom,
-      outputs: [{ address: mockTo, amountSompi: 2500000n }],
+      outputs: [{ address: mockTo, amountSompi: 2500000n * S }],
       availableUtxos: equalUtxos,
       feeRateSompiPerMass: 1n,
       changeAddress: mockFrom
@@ -430,13 +435,13 @@ describe("P1.12 Deterministic Transaction Canonicalization", () => {
   it("Test F: Output Canonicalization + Change Separate Field", () => {
     // Outputs with same values but different addresses, and different values
     const recipientOutputs = [
-      { address: "kaspa:charlie", amountSompi: 2000n },
-      { address: "kaspa:alice", amountSompi: 2000n },
-      { address: "kaspa:bob", amountSompi: 1000n }
+      { address: "kaspa:charlie", amountSompi: 2000n * T },
+      { address: "kaspa:alice", amountSompi: 2000n * T },
+      { address: "kaspa:bob", amountSompi: 1000n * T }
     ];
 
     // Candidate UTXOs
-    const availableUtxos = [createMockUtxo({ address: mockFrom, amountSompi: 10000n })];
+    const availableUtxos = [createMockUtxo({ address: mockFrom, amountSompi: 10000n * T })];
 
     const plan = buildPaymentPlan({ coinbaseMaturity: 100n,
       fromAddress: mockFrom,
@@ -451,15 +456,15 @@ describe("P1.12 Deterministic Transaction Canonicalization", () => {
     // Index 1: kaspa:alice (2000n)
     // Index 2: kaspa:charlie (2000n)
     const output0 = must(plan.outputs[0], "plan.outputs[0]");
-    expect(output0.amountSompi).toBe(1000n);
+    expect(output0.amountSompi).toBe(1000n * T);
     expect(output0.address).toBe("kaspa:bob");
 
     const output1 = must(plan.outputs[1], "plan.outputs[1]");
-    expect(output1.amountSompi).toBe(2000n);
+    expect(output1.amountSompi).toBe(2000n * T);
     expect(output1.address).toBe("kaspa:alice");
 
     const output2 = must(plan.outputs[2], "plan.outputs[2]");
-    expect(output2.amountSompi).toBe(2000n);
+    expect(output2.amountSompi).toBe(2000n * T);
     expect(output2.address).toBe("kaspa:charlie");
 
     // The plan.change should be defined and separate
