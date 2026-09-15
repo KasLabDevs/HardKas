@@ -96,7 +96,7 @@ describe("TxPlanService planner dispatch (M10-B-completion A′)", () => {
       feeRate: 1n
     });
     expect(result.plannerAuthority).toBe("SYNTHETIC_SIMULATOR");
-    expect(result.plannerAuthority).not.toBe("KASPA_WASM_GENERATOR");
+    expect((result.plannerAuthority as string) === "KASPA_WASM_GENERATOR").toBe(false);
   });
 
   it("upstream and synthetic authorities are disjoint (KASPA_WASM_GENERATOR ≠ SYNTHETIC_SIMULATOR)", async () => {
@@ -117,7 +117,7 @@ describe("TxPlanService planner dispatch (M10-B-completion A′)", () => {
         feeRate: 1n
       })
     ]);
-    expect(upstream.plannerAuthority).not.toBe(synthetic.plannerAuthority);
+    expect(upstream.plannerAuthority === synthetic.plannerAuthority).toBe(false);
     expect(new Set([upstream.plannerAuthority, synthetic.plannerAuthority]).size).toBe(2);
   });
 });

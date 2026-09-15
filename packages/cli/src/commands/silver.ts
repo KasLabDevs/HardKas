@@ -514,11 +514,16 @@ export function registerSilverCommand(program: Command) {
       try {
         const coins = (await spendableCoins(rpc, funder.address)).filter((u: any) => u.amountSompi > value);
         if (!coins.length) fail("SILVER_INSUFFICIENT_FUNDS", `${opts.from} has no single spendable output above ${value} sompi`);
+        // noUncheckedIndexedAccess: `coins[N]` is `T | undefined` at the type
+        // level regardless of the length guard above. Non-null assertion is
+        // sound here because `coins.length > 0` is enforced two lines up via
+        // fail-closed; the assertion tells TS what the runtime already knows.
+        const coin: NonNullable<typeof coins[number]> = coins[coins.length - 1]!;
         const genesis = buildCovenantGenesis({
           artifact,
           contractName: name,
           valueSompi: value,
-          funding: [{ ...coins[coins.length - 1], privateKey: funder.privateKey, computeBudget: budget }],
+          funding: [{ ...coin, privateKey: funder.privateKey, computeBudget: budget }],
           changeAddress: funder.address,
           networkId: NETWORK,
           ...(opts.fee !== undefined ? { feeSompi: BigInt(opts.fee) } : {})

@@ -106,7 +106,7 @@ describe("TxPlanService differential (M10-B-completion A′)", () => {
     const target = 1_000_000_000n;
     const { upstream } = await planBoth(utxos, target, { excludeOutpoints: new Set([excluded]) });
     const selectedKeys = upstream.plan.inputs.map((u) => `${u.outpoint.transactionId}:${u.outpoint.index}`);
-    expect(selectedKeys).not.toContain(excluded);
+    expect(selectedKeys.includes(excluded)).toBe(false);
     expect(upstream.utxoSelection.warnings?.[0]).toMatch(/excluded from candidate set/);
   });
 
