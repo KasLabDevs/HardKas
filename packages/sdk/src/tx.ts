@@ -376,14 +376,39 @@ export class HardkasTx {
       }));
     }
 
+    // M10-B-completion (A′): domain-explicit dispatch.
+    //
+    // Real Kaspa execution paths (mainnet, testnet-N, devnet, localnet or
+    // simnet backed by a real node) go to `planTransactionUpstream`, which
+    // delegates coin selection, mass and fee to kaspa-wasm 2.0.1 `Generator`.
+    // The simulated developer harness (kaspa:sim_* accounts, mock scripts)
+    // goes to `planTransactionSynthetic`, an explicitly NON-AUTHORITATIVE
+    // synthetic planner. There is NO automatic fallback from the upstream
+    // path to the synthetic path: an upstream failure surfaces to the caller
+    // rather than being silently downgraded to synthetic. This preserves the
+    // real-network authority claim while keeping the `mode: simulated` DX.
+    const isSimulatedForPlan =
+      activeNetwork === "simulated" ||
+      this.sdk.config.config.networks?.[activeNetwork]?.kind === "simulated";
     const planService = new TxPlanService(utxoProvider, { coinbaseMaturity });
-    const result = await planService.planTransaction({
-      fromAddress: fromAccount.address,
-      toAddress: toAccount.address,
-      amountSompi,
-      feeRate,
-      networkId: activeNetwork
-    });
+    let result;
+    if (isSimulatedForPlan) {
+      result = await planService.planTransactionSynthetic({
+        fromAddress: fromAccount.address,
+        toAddress: toAccount.address,
+        amountSompi,
+        feeRate,
+        networkId: activeNetwork
+      });
+    } else {
+      result = await planService.planTransactionUpstream({
+        fromAddress: fromAccount.address,
+        toAddress: toAccount.address,
+        amountSompi,
+        feeRate,
+        networkId: activeNetwork
+      });
+    }
 
     const builderPlan = result.plan;
 
@@ -419,7 +444,14 @@ export class HardkasTx {
         ...systemRuntimeContext,
         ...(options.workflowId ? { workflowId: options.workflowId } : {}),
         assumptionLevel: resolvedAssumptionLevel,
-        utxoSelection: result.utxoSelection
+        utxoSelection: result.utxoSelection,
+        // M10-B-completion (A′): record which planner produced this artifact,
+        // so downstream verify/lineage tools can distinguish real-network
+        // authority (KASPA_WASM_GENERATOR) from the simulated harness
+        // (SYNTHETIC_SIMULATOR). Real networks must always show
+        // KASPA_WASM_GENERATOR — the dispatch above enforces that.
+        ...(result.plannerAuthority ? { plannerAuthority: result.plannerAuthority } : {}),
+        ...(result.plannerAuthorityDetail ? { plannerAuthorityDetail: result.plannerAuthorityDetail } : {})
       }
     }) as unknown as TxPlanArtifact;
 

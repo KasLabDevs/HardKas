@@ -3,6 +3,13 @@ import { estimateTransactionMass, ConsensusMassInput } from "./mass.js";
 export type FeePolicy = "conservative" | "minimal";
 export type NetworkType = "simulated" | "local-docker-simnet" | string;
 
+/**
+ * @deprecated Since M10-C. A hardcoded default is a HardKAS invention that
+ * happens to match today's simnet floor; on any real network the fee-rate must
+ * come from `networkParamsUpstream(networkId)` or `rpcFeeEstimate(rpc)` (see
+ * `kaspa-wallet-adapter.ts`). Kept for backward compatibility with the
+ * deprecated `estimateFee` path.
+ */
 export const DEFAULT_MINIMUM_RELAY_RATE_SOMPI_PER_MASS = 100n;
 
 export interface FeeEstimationRequest {
@@ -53,7 +60,26 @@ function parseFeeRate(rate?: bigint): bigint {
     : value;
 }
 
+let ESTIMATE_FEE_DEPRECATION_WARNED = false;
+
+/**
+ * @deprecated Since M10-C. `estimateFee` implements a HardKAS "conservative"
+ * `+10%` heuristic over the pinned SDK mass, on top of a hardcoded
+ * `DEFAULT_MINIMUM_RELAY_RATE_SOMPI_PER_MASS = 100n`. Upstream
+ * `Generator.estimate()` (via `estimateTransactionsUpstream` in
+ * `kaspa-wallet-adapter.ts`) is exact — no +10% padding, and it reads the
+ * network params from the SDK. Use that for anything you plan to submit.
+ *
+ * This function will continue to work through M10 for backward compatibility
+ * but SHOULD NOT be used in new code.
+ */
 export function estimateFee(request: FeeEstimationRequest): FeeEstimationResult {
+  if (!ESTIMATE_FEE_DEPRECATION_WARNED) {
+    ESTIMATE_FEE_DEPRECATION_WARNED = true;
+    console.warn(
+      "[HardKAS] tx-builder.estimateFee is deprecated (M10-C). Use estimateTransactionsUpstream from kaspa-wallet-adapter (upstream Generator.estimate)."
+    );
+  }
   const feeRate = parseFeeRate(request.feeRateSompiPerMass);
   const policy = request.policy ?? "minimal";
   const warnings: string[] = [];

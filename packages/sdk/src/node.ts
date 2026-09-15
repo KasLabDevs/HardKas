@@ -131,8 +131,15 @@ export class HardkasNodeApi {
     
     const activeNetwork = this.sdk.network;
     const networkConfig = this.sdk.config.config.networks?.[activeNetwork];
-    const defaultMaturity = getCoinbaseMaturity(activeNetwork, networkConfig?.kind === "kaspa-node" || networkConfig?.kind === "kaspa-rpc" || networkConfig?.kind === "simulated" ? networkConfig.consensusParams : undefined);
-    const coinbaseMaturity = options?.coinbaseMaturity ?? defaultMaturity;
+    // Explicit override (from options or networkConfig) beats upstream default.
+    // When no override, coinbase maturity is read from upstream network params
+    // via `filterMatureUtxos` below — no HardKAS-hardcoded per-network constant.
+    const explicitOverride: bigint | undefined =
+      options?.coinbaseMaturity !== undefined
+        ? BigInt(options.coinbaseMaturity)
+        : (networkConfig?.kind === "kaspa-node" || networkConfig?.kind === "kaspa-rpc" || networkConfig?.kind === "simulated") && networkConfig.consensusParams?.coinbaseMaturity !== undefined
+          ? BigInt(networkConfig.consensusParams.coinbaseMaturity)
+          : undefined;
     
     // Resolve alias to address
     let primaryAddress = primaryInput;
@@ -178,18 +185,34 @@ export class HardkasNodeApi {
     // Wait for the RPC to be ready and at least one MATURE UTXO to appear.
     const start = Date.now();
     let funded = false;
+    let lastCoinbaseMaturity: bigint = 0n;
+
+    const { filterMatureUtxos } = await import("@hardkas/tx-builder");
 
     while (Date.now() - start < timeoutMs) {
       try {
         const utxos = await this.sdk.rpc.getUtxosByAddress(primaryAddress);
         const dagInfo = await this.sdk.rpc.getBlockDagInfo();
-        const virtualDaaScore = dagInfo.virtualDaaScore ?? 0n;
-        
-        const matureUtxos = utxos.filter(u =>
-          !u.isCoinbase ||
-          (u.blockDaaScore !== undefined && (virtualDaaScore - BigInt(u.blockDaaScore)) >= coinbaseMaturity)
-        );
-        
+        const virtualDaaScore = BigInt(dagInfo.virtualDaaScore ?? 0);
+
+        const filtered = filterMatureUtxos<any>({
+          networkId: activeNetwork,
+          virtualDaaScore,
+          utxos,
+          readEntry: (u: any) => ({
+            blockDaaScore: u.blockDaaScore === undefined ? 0n : BigInt(u.blockDaaScore),
+            isCoinbase: Boolean(u.isCoinbase) && u.blockDaaScore !== undefined
+          })
+        });
+        lastCoinbaseMaturity = explicitOverride ?? filtered.coinbaseMaturity;
+        const effectiveMaturity = lastCoinbaseMaturity;
+        const matureUtxos = explicitOverride === undefined
+          ? filtered.mature
+          : utxos.filter(u =>
+              !u.isCoinbase ||
+              (u.blockDaaScore !== undefined && (virtualDaaScore - BigInt(u.blockDaaScore)) >= effectiveMaturity)
+            );
+
         if (matureUtxos.length > 0) {
           funded = true;
           break;
@@ -203,7 +226,7 @@ export class HardkasNodeApi {
     if (!funded) {
       throw new Error(
         `MINING_TIMEOUT: Failed to fund dev wallets within ${Math.round(timeoutMs / 1000)} seconds. ` +
-        `Coinbase maturity requires ${coinbaseMaturity} DAA blocks. Miner may need more time.`
+        `Coinbase maturity requires ${lastCoinbaseMaturity} DAA blocks. Miner may need more time.`
       );
     }
   }

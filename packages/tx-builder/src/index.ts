@@ -6,6 +6,7 @@ export * from "./verify.js";
 export * from "./service.js";
 export * from "./coin-selector.js";
 export * from "./fee-estimator.js";
+export * from "./kaspa-wallet-adapter.js";
 export * from "./kaspa-uri.js";
 export * from "./utxo-mapper.js";
 export * from "./engine.js";

@@ -1,12 +1,11 @@
 import { WalletManagerImpl, WalletStateStoreJson, AddressManager } from '@hardkas/accounts';
 import { WalletQuery, WalletQueryProvider } from '@hardkas/query';
-import { selectCoins, estimateFee, buildPaymentPlan, toTxBuilderUtxo } from '@hardkas/tx-builder';
+import { toTxBuilderUtxo, TxPlanService, type UtxoProvider, type Utxo } from '@hardkas/tx-builder';
 import { WalletUtxoApi } from './utxos.js';
 import { UtxoControlStore } from './stores/utxo-control-store.js';
 import { logger, metrics, tracer } from '@hardkas/observability';
 import { WalletSubscriptionManager, WalletWatchHandler } from './subscriptions.js';
 import { calculateDynamicFeeRate, FeePriority } from './fee-estimator.js';
-import { getCoinbaseMaturity } from '@hardkas/core';
 
 metrics.register({
     name: "wallet_tx_generated_total",
@@ -195,13 +194,11 @@ export class WalletToolkit {
             }
         }
 
-        const plan = buildPaymentPlan({
+        const { plan } = await this.planUpstream({
             fromAddress: addr,
-            outputs: [{ address: opts.to, amountSompi: opts.amount }],
             availableUtxos: availableUtxos as any[],
-            feeRateSompiPerMass: finalFeeRate || 1n,
-            changeAddress: addr,
-            coinbaseMaturity: networkId === "mainnet" ? 1000n : 100n,
+            outputs: [{ address: opts.to, amountSompi: opts.amount }],
+            feeRate: finalFeeRate || 1n,
             ...(virtualDaaScore !== undefined ? { virtualDaaScore } : {}),
             ...(networkId !== undefined ? { networkId } : {})
         });
@@ -310,18 +307,48 @@ export class WalletToolkit {
 
         const builderOutputs = opts.outputs.map(o => ({ address: o.address, amountSompi: o.amount }));
         const mappedUtxos = availableUtxos.map(u => toTxBuilderUtxo(u));
-        const plan = buildPaymentPlan({
+        const { plan } = await this.planUpstream({
             fromAddress: addr,
-            outputs: builderOutputs,
             availableUtxos: mappedUtxos,
-            feeRateSompiPerMass: finalFeeRate || 1n,
-            changeAddress: addr,
-            coinbaseMaturity: networkId === "mainnet" ? 1000n : 100n,
+            outputs: builderOutputs,
+            feeRate: finalFeeRate || 1n,
             ...(virtualDaaScore !== undefined ? { virtualDaaScore } : {}),
             ...(networkId !== undefined ? { networkId } : {})
         });
 
         return this.signAndBroadcast(plan);
+    }
+
+    /**
+     * Upstream-authoritative plan build (M10-B-completion step 7):
+     * delegates coin selection, mass and fee to kaspa-wasm `Generator` via
+     * `TxPlanService.planTransactionUpstream`. Preserves the shape WalletToolkit
+     * downstream consumers expect (`plan.inputs`, `plan.outputs`, `plan.change?`,
+     * `plan.estimatedMass`, `plan.estimatedFeeSompi`).
+     */
+    private async planUpstream(params: {
+        fromAddress: string;
+        availableUtxos: Utxo[];
+        outputs: Array<{ address: string; amountSompi: bigint }>;
+        feeRate: bigint;
+        virtualDaaScore?: bigint;
+        networkId?: string;
+    }) {
+        const provider: UtxoProvider = {
+            async getUtxos() { return params.availableUtxos; },
+            ...(params.virtualDaaScore !== undefined
+                ? { async getVirtualDaaScore() { return params.virtualDaaScore!; } }
+                : {})
+        };
+        const service = new TxPlanService(provider);
+        return service.planTransactionUpstream({
+            fromAddress: params.fromAddress,
+            toAddress: params.outputs[0]!.address,
+            amountSompi: params.outputs[0]!.amountSompi,
+            outputs: params.outputs,
+            feeRate: params.feeRate,
+            ...(params.networkId !== undefined ? { networkId: params.networkId } : {})
+        });
     }
 
     public async sweep(opts: { to: string; priority?: FeePriority; feeRate?: bigint }) {

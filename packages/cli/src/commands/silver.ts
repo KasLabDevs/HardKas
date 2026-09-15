@@ -147,13 +147,19 @@ async function waitForUtxo(rpc: any, address: string, outpoint: { transactionId:
 }
 
 async function spendableCoins(rpc: any, address: string) {
+  // Coinbase maturity comes from upstream network params (kaspa-wasm 2.0.1
+  // getNetworkParams via KaspaWalletAdapter) — no HardKAS-owned per-network
+  // constants. See M10-D2 audit.
   const virt = BigInt((await rpc.getBlockDagInfo()).virtualDaaScore);
-  const { getCoinbaseMaturity } = await import("@hardkas/core");
-  const maturity = BigInt(getCoinbaseMaturity(NETWORK));
-  return (await rpc.getUtxosByAddress(address))
-    .map(contractUtxo)
-    .filter((u: any) => !u.isCoinbase || u.blockDaaScore + maturity < virt)
-    .sort((a: any, b: any) => (a.amountSompi > b.amountSompi ? -1 : 1));
+  const raw = (await rpc.getUtxosByAddress(address)).map(contractUtxo);
+  const { filterMatureUtxos } = await import("@hardkas/tx-builder");
+  const { mature } = filterMatureUtxos<ReturnType<typeof contractUtxo>>({
+    networkId: NETWORK,
+    virtualDaaScore: virt,
+    utxos: raw,
+    readEntry: (u: any) => ({ blockDaaScore: BigInt(u.blockDaaScore), isCoinbase: Boolean(u.isCoinbase) })
+  });
+  return mature.sort((a: any, b: any) => (a.amountSompi > b.amountSompi ? -1 : 1));
 }
 
 async function submit(rpc: any, rpcTransaction: any, label: string): Promise<string> {

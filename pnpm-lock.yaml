@@ -1324,6 +1324,9 @@ importers:
       '@hardkas/sessions':
         specifier: workspace:*
         version: link:../sessions
+      '@hardkas/tx-builder':
+        specifier: workspace:*
+        version: link:../tx-builder
       '@hono/node-server':
         specifier: ^1.13.7
         version: 1.19.17(hono@4.13.0)
@@ -1892,6 +1895,25 @@ importers:
       execa:
         specifier: ^9.5.2
         version: 9.6.1
+      tsup:
+        specifier: ^8.3.5
+        version: 8.5.1(jiti@2.7.0)(postcss@8.5.25)(tsx@4.23.7)(typescript@5.9.3)(yaml@2.9.0)
+      typescript:
+        specifier: ^5.7.2
+        version: 5.9.3
+      vitest:
+        specifier: ^2.1.8
+        version: 2.1.9(@types/node@26.1.2)(jsdom@29.1.1(@noble/hashes@2.2.0))(lightningcss@1.32.0)
+
+  packages/testnet-qualification:
+    dependencies:
+      '@hardkas/core':
+        specifier: workspace:*
+        version: link:../core
+      '@hardkas/tx-builder':
+        specifier: workspace:*
+        version: link:../tx-builder
+    devDependencies:
       tsup:
         specifier: ^8.3.5
         version: 8.5.1(jiti@2.7.0)(postcss@8.5.25)(tsx@4.23.7)(typescript@5.9.3)(yaml@2.9.0)

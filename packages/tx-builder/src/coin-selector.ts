@@ -48,7 +48,27 @@ function parseTargetSompi(target: bigint): bigint {
   return value;
 }
 
+let SELECT_COINS_DEPRECATION_WARNED = false;
+
+/**
+ * @deprecated Since M10-B. `selectCoins` is a HardKAS-invented largest-first
+ * selector that diverges from the upstream `Generator` in `kaspa-wasm` 2.0.1
+ * (M9 audit: PUBLIC RELEASE + TESTNET blocker). Use
+ * {@link buildTransactions} from `kaspa-wallet-adapter.ts` instead, which
+ * yields upstream `PendingTransaction`s with authoritative fee/mass/coin
+ * selection semantics.
+ *
+ * This function will continue to work through M10 for backward compatibility
+ * but SHOULD NOT be used in new code. It is expected to be deleted once every
+ * consumer migrates.
+ */
 export function selectCoins(request: CoinSelectionRequest): CoinSelectionResult {
+  if (!SELECT_COINS_DEPRECATION_WARNED) {
+    SELECT_COINS_DEPRECATION_WARNED = true;
+    console.warn(
+      "[HardKAS] tx-builder.selectCoins is deprecated (M10-B). Use buildTransactions from kaspa-wallet-adapter (upstream Generator)."
+    );
+  }
   const target = parseTargetSompi(request.targetSompi);
   const dustThreshold = request.dustThresholdSompi ?? 600n; // Kaspa canonical dust threshold (DUST_THRESHOLD_SOMPI)
   const warnings: string[] = [];

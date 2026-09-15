@@ -1,7 +1,7 @@
 import type { HardkasConfig } from "@hardkas/config";
 import type { HardkasOptions } from "./index.js";
 import { createHardkasClient } from "./client.js";
-import { selectCoins, estimateFee, buildKaspaUri } from "@hardkas/tx-builder";
+import { selectCoins, estimateFee, buildKaspaUri, buildTransactions, estimateTransactionsUpstream } from "@hardkas/tx-builder";
 import { AddressManager, WalletManager } from "@hardkas/accounts";
 import { getRequiredConfirmations } from "@hardkas/core";
 import { WalletQuery, WalletQueryProvider, WalletHistoryPage, Utxo, checkPaymentStatus } from "@hardkas/query";
@@ -50,14 +50,37 @@ export interface HardkasEnvironment {
    */
   expect: any;
 
-  /** Coin Selector API */
+  /**
+   * Coin Selector API.
+   *
+   * - `select`: DEPRECATED — HardKAS-invented largest/smallest-first selector.
+   *   Diverges from upstream in fragmented-UTXO scenarios (M9 audit).
+   *   Kept for backwards compatibility; will be removed in a future release.
+   * - `buildTransactions`: recommended path — wraps kaspa-wasm 2.0.1 `Generator`
+   *   and yields upstream `PendingTransaction`s (authoritative fee/mass/coin
+   *   selection semantics).
+   */
   coinSelector: {
+    /** @deprecated Use {@link coinSelector.buildTransactions} instead (M10-B). */
     select: typeof selectCoins;
+    buildTransactions: typeof buildTransactions;
+    estimateTransactions: typeof estimateTransactionsUpstream;
   };
 
-  /** Fee Estimator API */
+  /**
+   * Fee Estimator API.
+   *
+   * - `estimate`: DEPRECATED — HardKAS `+10%` conservative padding on top of a
+   *   hardcoded `100n` sompi/gram default. Wrong for any real network (M9).
+   * - `estimateTransactions`: recommended path — upstream `Generator.estimate()`
+   *   with authoritative fee/mass, no invented padding.
+   * - `rpcFeeEstimate`: node's live fee estimate via wasm RpcClient. Prefer this
+   *   over any HardKAS-side default when a wasm RPC is available.
+   */
   feeEstimator: {
+    /** @deprecated Use {@link feeEstimator.estimateTransactions} instead (M10-C). */
     estimate: typeof estimateFee;
+    estimateTransactions: typeof estimateTransactionsUpstream;
   };
 
   /** Address Manager API */
@@ -146,11 +169,14 @@ export function createHardkasEnvironment(options: HardkasEnvironmentOptions): Ha
     },
 
     coinSelector: {
-      select: selectCoins
+      select: selectCoins,
+      buildTransactions,
+      estimateTransactions: estimateTransactionsUpstream
     },
 
     feeEstimator: {
-      estimate: estimateFee
+      estimate: estimateFee,
+      estimateTransactions: estimateTransactionsUpstream
     },
 
     addressManager: AddressManager,

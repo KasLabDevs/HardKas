@@ -162,8 +162,22 @@ escrowRoutes.post("/:id/fund", async (c) => {
     try {
       const utxosRes = await rpc.getUtxosByAddresses([buyerAccount.address]);
       if (!utxosRes.entries || utxosRes.entries.length === 0) throw new Error("Buyer account has no UTXOs.");
+      const rawUtxos = utxosRes.entries.map(toContractUtxo);
+      // Filter immature coinbase UTXOs via upstream network params (M10-D2).
+      // Without this, a buyer whose only UTXOs are unmatured coinbases would
+      // get a node rejection at submitTransaction.
+      const dag = await rpc.getBlockDagInfo();
+      const virtualDaaScore = BigInt(dag.virtualDaaScore);
+      const { filterMatureUtxos } = await import("@hardkas/tx-builder");
+      const { mature } = filterMatureUtxos<any>({
+        networkId: NETWORK_ID,
+        virtualDaaScore,
+        utxos: rawUtxos,
+        readEntry: (u: any) => ({ blockDaaScore: BigInt(u.blockDaaScore ?? 0), isCoinbase: Boolean(u.isCoinbase) })
+      });
+      if (mature.length === 0) throw new Error("Buyer account has no MATURE UTXOs.");
       // Oldest (most mature) first.
-      const utxos = utxosRes.entries.map(toContractUtxo).sort((a: any, b: any) => (a.blockDaaScore < b.blockDaaScore ? -1 : a.blockDaaScore > b.blockDaaScore ? 1 : 0));
+      const utxos = mature.sort((a: any, b: any) => (a.blockDaaScore < b.blockDaaScore ? -1 : a.blockDaaScore > b.blockDaaScore ? 1 : 0));
 
       // Fee, storage mass and signatures from the SDK.
       const { buildScriptFunding } = await import("@hardkas/accounts");

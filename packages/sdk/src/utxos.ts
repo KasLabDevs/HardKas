@@ -67,16 +67,26 @@ export class HardkasUtxos {
 
         const virtualDaaScore = BigInt((infoResult as any).virtualDaaScore || 0);
 
-        const { getCoinbaseMaturity } = await import("@hardkas/core");
-        // defaultNetwork should be populated by the runner/caller that constructed the SDK.
+        // Coinbase maturity from upstream network params (M10-D2). The +10n
+        // safety margin is a HardKAS-level tolerance for DAG merge propagation,
+        // not a semantic override of the protocol threshold.
         const network = this.sdk.config.config.defaultNetwork || "simnet";
-        const maturityThreshold = getCoinbaseMaturity(network);
-
-        const spendableUtxos = utxosResult.filter((u: any) => {
-          if (!u.isCoinbase) return true; // Normal UTXOs are immediately spendable
+        const { filterMatureUtxos } = await import("@hardkas/tx-builder");
+        const filtered = filterMatureUtxos<any>({
+          networkId: network,
+          virtualDaaScore,
+          utxos: utxosResult as any[],
+          readEntry: (u: any) => ({
+            blockDaaScore: u.blockDaaScore === undefined ? 0n : BigInt(u.blockDaaScore),
+            // Treat coinbase with missing blockDaaScore as immature (defensive).
+            isCoinbase: Boolean(u.isCoinbase) || (u.isCoinbase && u.blockDaaScore === undefined)
+          })
+        });
+        // Extra +10 block DAG-merge safety margin over the protocol threshold.
+        const spendableUtxos = filtered.mature.filter((u: any) => {
+          if (!u.isCoinbase) return true;
           if (u.blockDaaScore === undefined) return false;
-          // Add a safety margin to ensure DAG has fully merged the block, preventing "orphan" rejections
-          return virtualDaaScore - BigInt(u.blockDaaScore) >= (maturityThreshold + 10n);
+          return virtualDaaScore - BigInt(u.blockDaaScore) >= (filtered.coinbaseMaturity + 10n);
         });
 
         const total = spendableUtxos.reduce((sum: bigint, u: any) => sum + BigInt(u.amountSompi), 0n);
