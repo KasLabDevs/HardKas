@@ -1,7 +1,70 @@
 {
   "schema": "hardkas.toccataGauntlet.v1",
-  "status": "TOCCATA_NORMALIZATION_BLOCKED_RELEASE_ENV",
-  "generatedAt": "2026-09-16T10:42:09.130Z",
+  "status": "HARDKAS_TOCCATA_BASELINE_READY",
+  "generatedAt": "2026-09-16T10:48:41.026Z",
+  "nodeIdentity": {
+    "schema": "hardkas.nodeIdentity.v1",
+    "verified": true,
+    "problems": [],
+    "expected": {
+      "containerName": "hardkas-kaspad-toccata-v2",
+      "image": "kaspanet/rusty-kaspad:v2.0.1@sha256:db36449e2f41cf33ab7c26683ce390cb71bdea9c403eefd2e740a7d5605bcd8b",
+      "imageDigest": "sha256:db36449e2f41cf33ab7c26683ce390cb71bdea9c403eefd2e740a7d5605bcd8b",
+      "network": "simnet",
+      "serverVersion": "2.0.1",
+      "host": "127.0.0.1",
+      "rpcPort": 18210
+    },
+    "observed": {
+      "container": {
+        "name": "hardkas-kaspad-toccata-v2",
+        "id": "ea5050546f1bb941c99e73d9420d88e80e05e36915132dd2a1e53c860f732347",
+        "running": true,
+        "imageId": "sha256:db36449e2f41cf33ab7c26683ce390cb71bdea9c403eefd2e740a7d5605bcd8b",
+        "repoDigests": [
+          "kaspanet/rusty-kaspad@sha256:db36449e2f41cf33ab7c26683ce390cb71bdea9c403eefd2e740a7d5605bcd8b",
+          "supertypo/rusty-kaspad@sha256:db36449e2f41cf33ab7c26683ce390cb71bdea9c403eefd2e740a7d5605bcd8b"
+        ],
+        "publishedPorts": [
+          {
+            "containerPort": "16210/tcp",
+            "hostIp": "127.0.0.1",
+            "hostPort": 16210
+          },
+          {
+            "containerPort": "17210/tcp",
+            "hostIp": "127.0.0.1",
+            "hostPort": 17210
+          },
+          {
+            "containerPort": "18210/tcp",
+            "hostIp": "127.0.0.1",
+            "hostPort": 18210
+          }
+        ]
+      },
+      "server": {
+        "url": "ws://127.0.0.1:18210",
+        "networkId": "simnet",
+        "serverVersion": "2.0.1",
+        "isSynced": true
+      },
+      "probeErrors": []
+    },
+    "checkedAt": "2026-09-16T10:47:18.086Z"
+  },
+  "capabilities": {
+    "silver.compile.v1": "PASS",
+    "silver.p2sh.deploy-spend.v1": "PASS",
+    "toccata.covenant.auth-1to1-transition.v1": "PASS"
+  },
+  "harness": {
+    "minerThrottle": {
+      "environment": "HARDKAS_TOCCATA_MINER_THROTTLE_MS",
+      "valueMs": "5",
+      "purpose": "harness-local rate limit (not a consensus parameter)"
+    }
+  },
   "phases": [
     {
       "name": "package/build integrity",
@@ -50,72 +113,78 @@
       "status": "PASS"
     },
     {
-      "name": "gauntlet aborted",
-      "status": "FAIL",
-      "message": "Command failed: D:\\Program Files\\nodejs\\node.exe run-real-node.mjs",
-      "failure": {
-        "cmd": "tx send .hardkas/artifacts/1.signed.json --network simnet --provider rpc --yes",
-        "stderrTail": "{\"timestamp\":\"2026-09-16T10:42:09.093Z\",\"level\":\"error\",\"event\":\"wRPC error response\",\"context\":{\"method\":\"submitTransaction\",\"error\":\"Rejected transaction 2cdfec69bf13bffc35b964f207f9e72b5d945ae5ba61a0f442353c40ebfb5a2e: transaction 2cdfec69bf13bffc35b964f207f9e72b5d945ae5ba61a0f442353c40ebfb5a2e is an orphan where orphan is disallowed\"}}\n\n  ✗ Error:\n    Rejected transaction 2cdfec...5a2e [REDACTED]: transaction 2cdfec...5a2e [REDACTED] is an orphan where orphan is disallowed",
-        "stdoutTail": ""
+      "name": "standard tx lifecycle",
+      "status": "PASS"
+    },
+    {
+      "name": "silver compile",
+      "status": "PASS",
+      "capability": "silver.compile.v1",
+      "compiler": "silverc v1.0.0 ce1e0ef5f1f415f371d3d2426e788597a388635da8cbe93e72e95a4f754b29af",
+      "artifactSha256": "ace0b74344f5a32e21eb319019ad15020fa94c41bb372d4c6c207b6808548b19"
+    },
+    {
+      "name": "silver compile reproduced",
+      "status": "PASS",
+      "artifactSha256": "ace0b74344f5a32e21eb319019ad15020fa94c41bb372d4c6c207b6808548b19"
+    },
+    {
+      "name": "mainnet guard",
+      "status": "PASS"
+    },
+    {
+      "name": "silver deploy real",
+      "status": "PASS",
+      "capability": "silver.p2sh.deploy-spend.v1",
+      "txId": "c21afd759d87b213666159ab56df722822ade48e71de8e668dca8905fd4beab8",
+      "address": "kaspasim:pz9rpg4ma44x5f3jzkakj3kz5qnpsddf49ylpqysthft02jpmww5vdcl93qwv",
+      "confirmedAtBlockDaaScore": "49038"
+    },
+    {
+      "name": "silver spend real",
+      "status": "PASS",
+      "capability": "silver.p2sh.deploy-spend.v1",
+      "txId": "10b2cf35b93c5e6bf4ad1eefb3fbfa6420956fb79b0871a1dce2f5ef4d7f6ef9",
+      "entry": "release",
+      "dispatchTag": "388ad0b4",
+      "confirmedAtBlockDaaScore": "49406"
+    },
+    {
+      "name": "covenant genesis",
+      "status": "PASS",
+      "capability": "toccata.covenant.auth-1to1-transition.v1",
+      "covenantId": "2af1fc4cb518447f776b0374ea7008d768e3b425f4ed92ded43f8ca8807778f8",
+      "txId": "3907735cbbf46e1a48560adb9d6016a8092c88ffbc1ac53fcbed2c7e834b6c0d",
+      "computeBudget": 10
+    },
+    {
+      "name": "covenant transition",
+      "status": "PASS",
+      "capability": "toccata.covenant.auth-1to1-transition.v1",
+      "covenantId": "2af1fc4cb518447f776b0374ea7008d768e3b425f4ed92ded43f8ca8807778f8",
+      "txId": "101f476c4ff6a9064cfb0a090e2e8942d18366bd1f62d68d3df3345e302b87e3",
+      "entry": "__covenant_entrypoint_auth_bump",
+      "stateGuard": {
+        "templateHash": "12e80a77d386245a8a8db422137333918b3d6bbbb482e39f8e45302244e9bd95",
+        "span": {
+          "offset": 1,
+          "currentLen": 9,
+          "successorLen": 9
+        }
+      }
+    },
+    {
+      "name": "silver golden corpus verify",
+      "status": "PASS",
+      "path": "fixtures/toccata-v2/silver",
+      "cases": 4,
+      "recompiled": 5,
+      "capabilities": {
+        "silver.compile.v1": "PASS",
+        "toccata.covenant.auth-1to1-transition.v1": "PASS",
+        "silver.p2sh.deploy-spend.v1": "PASS",
+        "silver.p2sh.relative-timelock.v1": "PASS"
       }
     }
-  ],
-  "blocker": "Command failed: D:\\Program Files\\nodejs\\node.exe run-real-node.mjs",
-  "nodeIdentity": {
-    "schema": "hardkas.nodeIdentity.v1",
-    "verified": true,
-    "problems": [],
-    "expected": {
-      "containerName": "hardkas-kaspad-toccata-v2",
-      "image": "kaspanet/rusty-kaspad:v2.0.1@sha256:db36449e2f41cf33ab7c26683ce390cb71bdea9c403eefd2e740a7d5605bcd8b",
-      "imageDigest": "sha256:db36449e2f41cf33ab7c26683ce390cb71bdea9c403eefd2e740a7d5605bcd8b",
-      "network": "simnet",
-      "serverVersion": "2.0.1",
-      "host": "127.0.0.1",
-      "rpcPort": 18210
-    },
-    "observed": {
-      "container": {
-        "name": "hardkas-kaspad-toccata-v2",
-        "id": "0c4c891922abdca4d71a41cab9e2c8d7a8542c82bf2048a9830a2a2fd6e477a8",
-        "running": true,
-        "imageId": "sha256:db36449e2f41cf33ab7c26683ce390cb71bdea9c403eefd2e740a7d5605bcd8b",
-        "repoDigests": [
-          "kaspanet/rusty-kaspad@sha256:db36449e2f41cf33ab7c26683ce390cb71bdea9c403eefd2e740a7d5605bcd8b",
-          "supertypo/rusty-kaspad@sha256:db36449e2f41cf33ab7c26683ce390cb71bdea9c403eefd2e740a7d5605bcd8b"
-        ],
-        "publishedPorts": [
-          {
-            "containerPort": "16210/tcp",
-            "hostIp": "127.0.0.1",
-            "hostPort": 16210
-          },
-          {
-            "containerPort": "17210/tcp",
-            "hostIp": "127.0.0.1",
-            "hostPort": 17210
-          },
-          {
-            "containerPort": "18210/tcp",
-            "hostIp": "127.0.0.1",
-            "hostPort": 18210
-          }
-        ]
-      },
-      "server": {
-        "url": "ws://127.0.0.1:18210",
-        "networkId": "simnet",
-        "serverVersion": "2.0.1",
-        "isSynced": false
-      },
-      "probeErrors": []
-    },
-    "checkedAt": "2026-09-16T10:41:35.211Z"
-  },
-  "failure": {
-    "cmd": "tx send .hardkas/artifacts/1.signed.json --network simnet --provider rpc --yes",
-    "stderrTail": "{\"timestamp\":\"2026-09-16T10:42:09.093Z\",\"level\":\"error\",\"event\":\"wRPC error response\",\"context\":{\"method\":\"submitTransaction\",\"error\":\"Rejected transaction 2cdfec69bf13bffc35b964f207f9e72b5d945ae5ba61a0f442353c40ebfb5a2e: transaction 2cdfec69bf13bffc35b964f207f9e72b5d945ae5ba61a0f442353c40ebfb5a2e is an orphan where orphan is disallowed\"}}\n\n  ✗ Error:\n    Rejected transaction 2cdfec...5a2e [REDACTED]: transaction 2cdfec...5a2e [REDACTED] is an orphan where orphan is disallowed",
-    "stdoutTail": ""
-  },
-  "nextRequiredCommand": "pnpm build && pnpm test && pnpm gauntlet:toccata"
+  ]
 }

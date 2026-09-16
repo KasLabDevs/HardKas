@@ -171,9 +171,11 @@ describe("scaffold-versions — end-to-end via `hardkas init`", () => {
     }
   });
 
-  it("scaffold output HardKAS dep set is deterministic across runs on the same CLI", async () => {
+  it("scaffold output HardKAS dep set is deterministic across runs on the same CLI", { timeout: 20_000 }, async () => {
     // The generated `package.json.name` reflects the positional path arg and
     // differs between runs; the coordinated HardKAS dep set does not.
+    // Timeout bumped: two sequential `execSync` init calls (~2.5-3s each on
+    // Windows) can exceed the 5s default.
     const dirA = await tmpDir();
     const dirB = await tmpDir();
     runHardkasInit(dirA);
