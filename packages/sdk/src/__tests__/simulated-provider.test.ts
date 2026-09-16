@@ -20,6 +20,6 @@ describe("SimulatedProvider Integration", () => {
     expect(balance).toBeDefined();
 
     // Verify 0 wRPC calls
-    expect(wrpcSpy).not.toHaveBeenCalled();
+    expect(wrpcSpy.mock.calls.length).toBe(0);
   });
 });

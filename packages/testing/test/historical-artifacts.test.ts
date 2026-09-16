@@ -1,4 +1,5 @@
 import { describe, it, expect } from "vitest";
+import assert from "node:assert/strict";
 import fs from "node:fs/promises";
 import path from "node:path";
 import { HardkasSchemas } from "@hardkas/artifacts";
@@ -43,7 +44,7 @@ describe("Historical Artifacts (V1/V2)", () => {
     const target = { mode: "simulator", domain: "kaspa-l1", network: "simulated" };
 
     // Should NOT throw an ExecutionModeMismatchError, should just pass silently.
-    expect(() => assertArtifactCompatibleWithTarget(legacyArtifact as any, target as any)).not.toThrow();
+    assert.doesNotThrow(() => assertArtifactCompatibleWithTarget(legacyArtifact as any, target as any));
   });
 
   it("should fail during replay if LEGACY_EXECUTION_CONTEXT is omitted", () => {
@@ -62,6 +63,6 @@ describe("Historical Artifacts (V1/V2)", () => {
     }
 
     expect(() => mockReplay(legacyArtifact, target)).toThrowError(LegacyExecutionContextRequiredError);
-    expect(() => mockReplay(legacyArtifact, target, { legacyContext: "kaspa-l1/localnet/simnet" })).not.toThrow();
+    assert.doesNotThrow(() => mockReplay(legacyArtifact, target, { legacyContext: "kaspa-l1/localnet/simnet" }));
   });
 });

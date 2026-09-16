@@ -1,6 +1,7 @@
 import type { Command } from "commander";
 import { UI, handleError } from "../ui.js";
 import { runUp } from "../runners/up-runner.js";
+import { hardkasScaffoldDependencySpec } from "../lib/scaffold-versions.js";
 
 export function registerInitCommands(program: Command) {
   // --- Init Command ---
@@ -44,8 +45,12 @@ export function registerInitCommands(program: Command) {
               throw new Error(`hardkas.config.ts already exists in ${name || "current directory"}. Use --force to overwrite.`);
             }
 
-            // Create a basic package.json if it doesn't exist
+            // Create a basic package.json if it doesn't exist.
+            // `@hardkas/*` versions are pinned to the CLI's exact version — never
+            // a floating dist-tag — so the scaffold is deterministic per
+            // published CLI. See `scaffold-versions.ts` for the invariant.
             if (!fs.existsSync(pkgFile)) {
+              const hardkasVersion = hardkasScaffoldDependencySpec();
               const pkgTemplate = {
                 name: name || "hardkas-project",
                 version: "1.0.0",
@@ -54,11 +59,11 @@ export function registerInitCommands(program: Command) {
                   test: "vitest run"
                 },
                 dependencies: {
-                  "@hardkas/sdk": "latest",
+                  "@hardkas/sdk": hardkasVersion,
                   "@kaspa/core-lib": "^1.6.5"
                 },
                 devDependencies: {
-                  "@hardkas/testing": "latest",
+                  "@hardkas/testing": hardkasVersion,
                   "vitest": "^2.0.0",
                   "typescript": "^5.0.0"
                 }
@@ -87,7 +92,7 @@ export default defineConfig({
             const template = `import { defineHardkasConfig } from "@hardkas/sdk";
 
 export default defineHardkasConfig({
-  // HardKAS v0.12.0-rc.21 Configuration
+  // HardKAS v0.12.0-rc.22 Configuration
   execution: {
     default: "simulator",
     targets: {
@@ -241,7 +246,7 @@ scenario("payment flow", async ({ hk }) => {
                 `HardKAS project '${name || "current"}' initialized successfully.`
               );
               if (name) UI.info(`Project folder: ${targetDir}`);
-              UI.info(`Created: hardkas.config.ts (0.12.0-rc.21)`);
+              UI.info(`Created: hardkas.config.ts (0.12.0-rc.22)`);
               UI.footer(`Next steps:\n  ` + (name ? `cd ${name}\n  ` : "") + (options.install ? "" : "npm install\n  ") + "npm test");
             }
           }

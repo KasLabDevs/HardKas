@@ -40,7 +40,7 @@ describe("Snapshot Hashing", () => {
     (state.accounts[0] as any).address = "something-else"; // Mutation
     const hash2 = calculateAccountsHash(state.accounts);
 
-    expect(hash1).not.toBe(hash2);
+    expect(hash1 === hash2).toBe(false);
   });
 
   it("should verify a valid snapshot", () => {

@@ -76,7 +76,7 @@ describe("Deterministic Replay Injection", () => {
     mockClock = 2000000000;
     const result3 = applySimulatedPayment(initialState, input, mockCtx);
 
-    expect(result1.receipt!.createdAt).not.toEqual(result3.receipt!.createdAt);
+    expect(result1.receipt!.createdAt === result3.receipt!.createdAt).toBe(false);
     // Despite different timestamps, the semantic content hash must be perfectly identical
     expect(result1.receipt!.contentHash).toEqual(result3.receipt!.contentHash);
   });

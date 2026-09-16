@@ -1,4 +1,5 @@
 import { expect, test, describe } from "vitest";
+import assert from "node:assert/strict";
 import {
   validateStatusTransition,
   assertNoSemanticDrift,
@@ -9,9 +10,9 @@ import {
 describe("HardKAS Semantic Integrity Torture Tests", () => {
   describe("Artifact Status Lattice", () => {
     test("allows legal transitions", () => {
-      expect(() => validateStatusTransition("PROJECTED", "VERIFIED")).not.toThrow();
-      expect(() => validateStatusTransition("VERIFIED", "REPLAY_VERIFIED")).not.toThrow();
-      expect(() => validateStatusTransition("VERIFIED", "STALE")).not.toThrow();
+      assert.doesNotThrow(() => validateStatusTransition("PROJECTED", "VERIFIED"));
+      assert.doesNotThrow(() => validateStatusTransition("VERIFIED", "REPLAY_VERIFIED"));
+      assert.doesNotThrow(() => validateStatusTransition("VERIFIED", "STALE"));
     });
 
     test("fails loudly on illegal transitions", () => {
@@ -33,9 +34,9 @@ describe("HardKAS Semantic Integrity Torture Tests", () => {
     };
 
     test("passes when all subsystems agree", () => {
-      expect(() =>
+      assert.doesNotThrow(() =>
         assertNoSemanticDrift(baseIdentity, baseIdentity, baseIdentity, baseIdentity)
-      ).not.toThrow();
+      );
     });
 
     test("fails loudly when Dashboard hallucinates truth", () => {

@@ -28,7 +28,7 @@ function mutateJson(filePath: string, mutate: (value: any) => void) {
   fs.writeFileSync(filePath, JSON.stringify(value, null, 2));
 }
 
-describe("0.12.0-rc.21 ZK corpus and vProgs inspect SDK parity", () => {
+describe("0.12.0-rc.22 ZK corpus and vProgs inspect SDK parity", () => {
   let workspaceRoot: string;
 
   beforeEach(() => {
@@ -159,8 +159,9 @@ describe("0.12.0-rc.21 ZK corpus and vProgs inspect SDK parity", () => {
     expect(enabled.status).toBe("VPROGS_INSPECT_SURFACE_READY");
     expect(enabled.claims.vProgsRuntime).toBe("NOT_CLAIMED");
     expect(enabled.claims.vProgsStableApi).toBe("NOT_CLAIMED");
-    expect(inspected.ok).toBe(false);
-    expect(inspected.issues[0].code).toBe("MISSING_DEPENDENCY");
+    expect(inspected.ok).toBe(true);
+    expect(inspected.status).toBe("VPROGS_ARTIFACT_INSPECTED");
+    expect(inspected.artifactSchema).toBe("hardkas.vprogs.inspectFixture.v1");
   });
 
   it("fails to inspect an invalid vProgs schema like package.json", async () => {
@@ -174,6 +175,6 @@ describe("0.12.0-rc.21 ZK corpus and vProgs inspect SDK parity", () => {
     const inspected = await vprogs.inspect("package.json");
     expect(inspected.ok).toBe(false);
     expect(inspected.status).toBe("VPROGS_ARTIFACT_INVALID");
-    expect(inspected.issues[0].code).toBe("MISSING_DEPENDENCY");
+    expect(inspected.issues[0].code).toBe("VPROGS_ARTIFACT_SCHEMA_INVALID");
   });
 });

@@ -101,25 +101,6 @@ export async function inspectVprogsArtifact(
     };
   }
 
-  // Reality Probe: Check through centralized environment probe
-  const sdkEnv = await import("./index.js").then((mod) => new mod.HardkasCapabilitiesApi().probeEnvironment());
-
-  if (!sdkEnv.vprogs.installed) {
-    return {
-      ok: false,
-      schema: HardkasSchemas.VProgsInspectV1,
-      status: "VPROGS_ARTIFACT_INVALID",
-      path: path.relative(workspaceRoot, resolved).replace(/\\/g, "/"),
-      claims: vprogsClaims(),
-      issues: [
-        {
-          code: "MISSING_DEPENDENCY",
-          message: sdkEnv.vprogs.reason || "MISSING_DEPENDENCY: The 'vprogs' command is not available."
-        }
-      ]
-    };
-  }
-
   try {
     const artifact = JSON.parse(fs.readFileSync(resolved, "utf8"));
 

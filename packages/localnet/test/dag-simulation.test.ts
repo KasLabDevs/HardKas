@@ -43,7 +43,7 @@ describe("DAG Simulation", () => {
     // 2. Move sink to Block B -> tx2 accepted
     dag = moveSink(dag, "blockB", txProvider);
     expect(dag.acceptedTxIds).toContain("tx2");
-    expect(dag.acceptedTxIds).not.toContain("tx1");
+    expect(dag.acceptedTxIds.includes("tx1")).toBe(false);
 
     // 3. Move sink to Block A -> tx2 displaced, tx1 accepted
     dag = moveSink(dag, "blockA", txProvider);

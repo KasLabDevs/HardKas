@@ -3,6 +3,7 @@ import { UI, handleError } from "../ui.js";
 import path from "node:path";
 import fs from "node:fs";
 import url from "node:url";
+import { coerceHardkasDependencyVersions } from "../lib/scaffold-versions.js";
 
 const __dirname = path.dirname(url.fileURLToPath(import.meta.url));
 
@@ -45,11 +46,16 @@ export function registerCreateCommand(program: Command) {
         // Copy recursively
         fs.cpSync(templateDir, destDir, { recursive: true });
 
-        // Update package.json name
+        // Update package.json name and enforce coordinated HardKAS version
+        // coherence for every `@hardkas/*` dependency. Static templates carry
+        // a scaffold placeholder rather than a real version specifier; this
+        // step normalises them to the CLI's own exact version. See
+        // `scaffold-versions.ts` for the invariant.
         const pkgFile = path.join(destDir, "package.json");
         if (fs.existsSync(pkgFile)) {
           const pkg = JSON.parse(fs.readFileSync(pkgFile, "utf-8"));
           pkg.name = path.basename(destDir);
+          coerceHardkasDependencyVersions(pkg);
           fs.writeFileSync(pkgFile, JSON.stringify(pkg, null, 2), "utf-8");
         }
 
