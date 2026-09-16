@@ -1,4 +1,14 @@
 
+## [0.12.0-rc.22] - 2026-09-16 — Scaffold Version Coherence Remediation
+
+### Fixed
+- Enforced the scaffold release invariant: `CLI release X -> scaffolded @hardkas/* dependencies = exact X`.
+- `hardkas init` and template-based scaffolds now derive `@hardkas/*` dependency versions from the installed `@hardkas/cli` package version instead of emitting mutable npm dist-tags.
+- Static templates now use a non-installable placeholder for `@hardkas/*` dependencies and are normalized by the scaffolder at generation time.
+
+### Preserved Evidence
+- The external-consumer qualification finding for `0.12.0-rc.21` remains historical evidence and is not rewritten as `0.12.0-rc.22`.
+
 ## [0.12.0-rc.21] - 2026-06-29 — The First Local-First Application Runtime
 > **Notice:** `0.11.0-alpha` was published partially due to a registry collision and has been superseded by `0.12.0-rc.21`. `0.12.0-rc.21` is the official release.
 

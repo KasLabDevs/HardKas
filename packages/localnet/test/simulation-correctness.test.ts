@@ -29,8 +29,8 @@ describe("Simulation Correctness", () => {
     expect(result.ok).toBe(true);
     expect(result.state.daaScore).toBe("1");
     expect(result.receipt.preStateHash).toBe(preHash);
-    expect(result.receipt.postStateHash).not.toBe(preHash);
-    expect(result.state).not.toBe(initialState);
+    expect(result.receipt.postStateHash === preHash).toBe(false);
+    expect(result.state === initialState).toBe(false);
   });
 
   it("should rollback (no mutation) on insufficient funds", () => {

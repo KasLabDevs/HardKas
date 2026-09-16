@@ -1,6 +1,6 @@
 ﻿# HardKAS Public API Surface
 
-Generado desde los `dist/**/*.d.ts` publicados de la version `0.12.0-rc.21`.
+Generado desde los `dist/**/*.d.ts` publicados de la version `0.12.0-rc.22`.
 Este fichero es el **inventario** de lo que se exporta, no una promesa de estabilidad:
 las garantias por nivel viven en `EXPERIMENTAL_SURFACE.md` y `DEPRECATED_SURFACE.md`.
 

@@ -1,6 +1,6 @@
 {
   "name": "@hardkas/testnet-qualification",
-  "version": "0.12.0-rc.21",
+  "version": "0.12.0-rc.22",
   "private": true,
   "type": "module",
   "description": "Internal HardKAS testnet qualification runner (TQ-1). Not published; never depended on by production packages.",

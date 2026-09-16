@@ -1,8 +1,17 @@
+import { hardkasScaffoldDependencySpec } from "../lib/scaffold-versions.js";
+
+/**
+ * NOTE: this generator is not currently invoked by any command. It exists as a
+ * template shape for future reintroduction. Any `@hardkas/*` dependency here
+ * MUST use `hardkasScaffoldDependencySpec()` — never a floating dist-tag —
+ * to preserve the scaffold coherence invariant (see `scaffold-versions.ts`).
+ */
 export function generateBasicTemplate(config: {
   name: string;
   network: string;
   accounts: number;
 }): Record<string, string> {
+  const hardkasVersion = hardkasScaffoldDependencySpec();
   return {
     "package.json": JSON.stringify(
       {
@@ -16,10 +25,10 @@ export function generateBasicTemplate(config: {
           balance: "hardkas run scripts/check-balance.ts"
         },
         devDependencies: {
-          "@hardkas/cli": "alpha",
-          "@hardkas/testing": "alpha",
-          "@hardkas/artifacts": "alpha",
-          "@hardkas/core": "alpha",
+          "@hardkas/cli": hardkasVersion,
+          "@hardkas/testing": hardkasVersion,
+          "@hardkas/artifacts": hardkasVersion,
+          "@hardkas/core": hardkasVersion,
           vitest: "^2.0.0"
         }
       },

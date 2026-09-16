@@ -8,11 +8,11 @@
     "transfer": "tsx src/transfer.ts"
   },
   "dependencies": {
-    "@hardkas/sdk": "latest",
-    "@hardkas/core": "latest"
+    "@hardkas/sdk": "0.0.0-scaffold-placeholder-do-not-install-directly",
+    "@hardkas/core": "0.0.0-scaffold-placeholder-do-not-install-directly"
   },
   "devDependencies": {
-    "@hardkas/testing": "latest",
+    "@hardkas/testing": "0.0.0-scaffold-placeholder-do-not-install-directly",
     "tsx": "^4.0.0",
     "typescript": "^5.0.0",
     "vitest": "^2.0.0"

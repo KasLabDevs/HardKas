@@ -1,7 +1,9 @@
 import path from "node:path";
 import fs from "node:fs";
+import { hardkasScaffoldDependencySpec } from "../lib/scaffold-versions.js";
 
 export async function dappReactTemplate(targetDir: string, projectName: string) {
+  const hardkasVersion = hardkasScaffoldDependencySpec();
   const writeFile = (file: string, content: string) => {
     const fullPath = path.join(targetDir, file);
     fs.mkdirSync(path.dirname(fullPath), { recursive: true });
@@ -23,7 +25,7 @@ export async function dappReactTemplate(targetDir: string, projectName: string) 
         dependencies: {
           react: "^18.2.0",
           "react-dom": "^18.2.0",
-          "@hardkas/sdk": "^0.12.0-rc.21" // Placeholder, actual installation will resolve to latest
+          "@hardkas/sdk": hardkasVersion
         },
         devDependencies: {
           "@types/react": "^18.2.66",

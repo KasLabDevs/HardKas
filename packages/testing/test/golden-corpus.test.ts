@@ -1,4 +1,5 @@
 import { describe, it, expect } from "vitest";
+import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
 import {
@@ -18,39 +19,39 @@ function readFixture(name: string) {
 describe("Golden Corpus Validation", () => {
   it("validates local-workflow-basic.json against WorkflowSchema", () => {
     const data = readFixture("local-workflow-basic.json");
-    expect(() => WorkflowSchema.parse(data)).not.toThrow();
+    assert.doesNotThrow(() => WorkflowSchema.parse(data));
     expect(data.schemaVersion).toBe("hardkas.artifact.v1");
   });
 
   it("validates local-workflow-with-warning.json against WorkflowSchema", () => {
     const data = readFixture("local-workflow-with-warning.json");
-    expect(() => WorkflowSchema.parse(data)).not.toThrow();
+    assert.doesNotThrow(() => WorkflowSchema.parse(data));
   });
 
   it("validates receipt-submitted.json against TxReceiptSchema", () => {
     const data = readFixture("receipt-submitted.json");
-    expect(() => TxReceiptSchema.parse(data)).not.toThrow();
+    assert.doesNotThrow(() => TxReceiptSchema.parse(data));
     expect(data.schemaVersion).toBe("hardkas.receipt.v1");
   });
 
   it("validates receipt-unknown.json against TxReceiptSchema", () => {
     const data = readFixture("receipt-unknown.json");
-    expect(() => TxReceiptSchema.parse(data)).not.toThrow();
+    assert.doesNotThrow(() => TxReceiptSchema.parse(data));
   });
 
   it("validates explain-transfer.json against TxPlanSchema", () => {
     const data = readFixture("explain-transfer.json");
-    expect(() => TxPlanSchema.parse(data)).not.toThrow();
+    assert.doesNotThrow(() => TxPlanSchema.parse(data));
   });
 
   it("validates artifact-tx-plan.json against TxPlanSchema", () => {
     const data = readFixture("artifact-tx-plan.json");
-    expect(() => TxPlanSchema.parse(data)).not.toThrow();
+    assert.doesNotThrow(() => TxPlanSchema.parse(data));
   });
 
   it("validates artifact-signed-tx.json against SignedTxSchema", () => {
     const data = readFixture("artifact-signed-tx.json");
-    expect(() => SignedTxSchema.parse(data)).not.toThrow();
+    assert.doesNotThrow(() => SignedTxSchema.parse(data));
     expect(data.schemaVersion).toBe("hardkas.artifact.v1");
   });
 

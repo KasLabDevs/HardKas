@@ -113,6 +113,8 @@ export function buildHardkasProgram(options?: { forDocs?: boolean, loadedConfig?
   registerSandboxCommand(program);
   registerSilverCommand(program);
   registerCorpusCommands(program);
+  registerZkCommands(program);
+  registerVprogsCommands(program);
   registerProgrammabilityCommands(program);
   registerSecurityCommand(program);
   registerEnvCommands(program);

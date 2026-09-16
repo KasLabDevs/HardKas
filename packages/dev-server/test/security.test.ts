@@ -73,8 +73,8 @@ describe("Dev Server Security Hardening", () => {
         },
         body: JSON.stringify({ from: "alice", to: "bob", amount: "10" })
       });
-      expect(res.status).not.toBe(401);
-      expect(res.status).not.toBe(403);
+      expect(res.status === 401).toBe(false);
+      expect(res.status === 403).toBe(false);
     });
 
     // Test 6: hostile Origin rejected (CORS)

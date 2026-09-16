@@ -22,7 +22,7 @@ describe("Dev Server", () => {
       unsubscribe();
       devServerEmitter.emit("test-event", { foo: "bar" });
 
-      expect(listener).not.toHaveBeenCalled();
+      expect(listener.mock.calls.length).toBe(0);
     });
   });
 
@@ -65,9 +65,9 @@ describe("Dev Server", () => {
         }
       });
       const text = await res.text();
-      expect(text).not.toContain("privateKey");
-      expect(text).not.toContain("mnemonic");
-      expect(text).not.toContain("secret");
+      expect(text.includes("privateKey")).toBe(false);
+      expect(text.includes("mnemonic")).toBe(false);
+      expect(text.includes("secret")).toBe(false);
     });
   });
 
