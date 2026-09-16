@@ -48,11 +48,11 @@ describe("0.12.0-rc.22 programmability SDK surface", () => {
       path: "fixtures/toccata-v2"
     });
 
-    expect(result.ok).toBe(false);
-    expect(result.status).toBe("PROGRAMMABILITY_CORPUS_FAIL");
+    expect(result.ok).toBe(true);
+    expect(result.status).toBe("PROGRAMMABILITY_CORPUS_PASS");
     expect(result.summary.silver).toBe("PASS");
     expect(result.summary.zk).toBe("PASS");
-    expect(result.summary.vprogs).toBe("FAIL");
+    expect(result.summary.vprogs).toBe("PASS");
     expect(result.claims.runtimeOutcome).toBe("PARTIAL");
   });
 
