@@ -8,7 +8,7 @@ description: What HardKAS claims, what it explicitly does not claim, and the cap
 
 # Release Claims
 
-HardKAS `0.12.0-rc.22` (`hardened-alpha`, proof `repro-v0`, hash version `4`).
+HardKAS `0.12.0-rc.23` (`hardened-alpha`, proof `repro-v0`, hash version `4`).
 
 This page is generated from the code that enforces these claims. Every value
 below is read from `packages/sdk` at generation time, so prose elsewhere in

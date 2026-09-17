@@ -49,7 +49,7 @@ function fixtureReceipt(overrides: Partial<TestnetQualificationReceipt> = {}): T
     completedAt: "2026-09-15T14:00:05.500Z",
     outcome: "PASS",
     toolchain: {
-      hardkas: { version: "0.12.0-rc.22" },
+      hardkas: { version: "0.12.0-rc.23" },
       kaspaWasm: { version: "2.0.1", digest: "7eaffac9cd920ef2fdf540c6e10f2a2b7761170ebc62ec57dfa0f71c64567a71" },
       silverc: { version: "1.0.0", digest: "3e0d660c15a9e7ac90f3960da24d348b076b1891481bfe758db18accc8a102e1" }
     },
