@@ -20,7 +20,14 @@ export { createFixture } from "./fixtures.js";
 export type { HardKasMatchers } from "./matchers.js";
 
 // ── Signers ──────────────────────────────────────────────────────────────────
-export { HardkasFixtureSigner } from "./fixture-signer.js";
+export {
+  HardkasFixtureSigner,
+  HARDKAS_FIXTURE_DERIVATION_DOMAIN,
+  HARDKAS_FIXTURE_NAMES,
+  HARDKAS_FIXTURE_REGISTRY,
+  getHardkasFixtureKey
+} from "./fixture-signer.js";
+export type { HardkasFixtureName } from "./fixture-signer.js";
 export { SimulatedTxPlanSigner } from "./simulated-tx-plan-signer.js";
 export { hardKasMatchers } from "./matchers.js";
 
