@@ -5,12 +5,34 @@ export interface HardkasAccount {
   readonly balanceSompi: bigint;
 }
 
+// DEF-27 (Wave 4): these are CACHED PUBLIC REPRESENTATIONS of the addresses
+// produced by the CANONICAL deterministic dev-account derivation that lives
+// SOLELY in `packages/accounts/src/dev-accounts.ts` (scheme:
+// sha256("hardkas-deterministic-simnet-seed-v1-<index>") -> PrivateKey ->
+// Keypair -> toAddress("simnet")).
+//
+// This file is NOT a second derivation owner — it only caches the addresses
+// as literals so consumers (resolveAccountAddress, createDeterministicAccounts)
+// don't need to load kaspa-wasm synchronously. The cross-layer regression at
+// `packages/localnet/test/wave4-def27-deterministic-identity.test.ts`
+// mechanically enforces:
+//
+//   DEFAULT_KASPA_ADDRESSES[i] === scheme2Derive(i).address
+//
+// so these constants cannot silently drift from the canonical scheme.
+//
+// Alice's address is preserved byte-for-byte from the historical value
+// because scheme-2 index 0 produces exactly that address; the historical
+// value was originally derived correctly. bob/carol/dave/erin were previously
+// placeholder strings that never went through the real derivation and were
+// rejected by kaspa-wasm 2.0.1's Address parser — Wave 4 aligns them with
+// the canonical scheme.
 const DEFAULT_KASPA_ADDRESSES = [
-  "kaspasim:qqlpk9rs7yag6eqj3lttzqd8vgvssz8l8fxlpdag4h7zx2rjjr8lkkerwkezn", // alice
-  "kaspasim:qqa8l97scc2uavs6yxyh0lcvf0k69uylt3f7h48x8p0vps20y4gscavhsvktd", // bob
-  "kaspasim:qq656ys3h5z523k3275t4j5j5q3zsv6j393j6g0hscf3vshmcc9qqkplmsr9m", // carol
-  "kaspasim:qrufd2w3lpsnklrhl7369uuyq4sl537mngsqpxswh9csq3305y2j5nsw7qskp", // dave
-  "kaspasim:qz6y7z62d0svz5hllqq7nld0a2qskhvlscnsyfln7tmszcvp2yqg2g70v3cv3"  // erin
+  "kaspasim:qqlpk9rs7yag6eqj3lttzqd8vgvssz8l8fxlpdag4h7zx2rjjr8lkkerwkezn", // alice · scheme-2 index 0
+  "kaspasim:qryj23rch0n5rc7klfug58zcrnuc966qljwgzpu3mflqgxu6w2pjg6n575980", // bob   · scheme-2 index 1
+  "kaspasim:qqngk9jxxnkhcxpa8w2np5cnvl5v7ke0nx89g4hvgegmrd4awlyts3wxy0770", // carol · scheme-2 index 2
+  "kaspasim:qq49jccu6feeazyfwqz7sjhkzqcn7f74swvcjcde5khnvtdfn7x2zzzaystaj", // dave  · scheme-2 index 3
+  "kaspasim:qrj0cc3yrdhajhncal833a8rsqv8q758sa647w7dpwnqdfm8696gslkrvdw5l"  // erin  · scheme-2 index 4
 ];
 
 const DEFAULT_EVM_ADDRESSES = [
@@ -52,12 +74,15 @@ export function resolveAccountAddress(input: string): string {
     return input;
   }
 
+  // DEF-27 (Wave 4): keep this alias map in exact sync with
+  // DEFAULT_KASPA_ADDRESSES above. The Wave 4 regression enforces
+  // resolveAccountAddress(name) === DEFAULT_KASPA_ADDRESSES[index].
   const aliases: Record<string, string> = {
-    alice: "kaspasim:qqlpk9rs7yag6eqj3lttzqd8vgvssz8l8fxlpdag4h7zx2rjjr8lkkerwkezn",
-    bob: "kaspasim:qqa8l97scc2uavs6yxyh0lcvf0k69uylt3f7h48x8p0vps20y4gscavhsvktd",
-    carol: "kaspasim:qq656ys3h5z523k3275t4j5j5q3zsv6j393j6g0hscf3vshmcc9qqkplmsr9m",
-    dave: "kaspasim:qrufd2w3lpsnklrhl7369uuyq4sl537mngsqpxswh9csq3305y2j5nsw7qskp",
-    erin: "kaspasim:qz6y7z62d0svz5hllqq7nld0a2qskhvlscnsyfln7tmszcvp2yqg2g70v3cv3"
+    alice: DEFAULT_KASPA_ADDRESSES[0]!,
+    bob: DEFAULT_KASPA_ADDRESSES[1]!,
+    carol: DEFAULT_KASPA_ADDRESSES[2]!,
+    dave: DEFAULT_KASPA_ADDRESSES[3]!,
+    erin: DEFAULT_KASPA_ADDRESSES[4]!
   };
 
   const resolved = aliases[input.toLowerCase()];

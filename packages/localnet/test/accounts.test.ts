@@ -10,7 +10,11 @@ describe("localnet accounts", () => {
     });
 
     it("should resolve bob alias case-insensitive", () => {
-      expect(resolveAccountAddress("BOB")).toBe("kaspasim:qqa8l97scc2uavs6yxyh0lcvf0k69uylt3f7h48x8p0vps20y4gscavhsvktd");
+      // DEF-27 (Wave 4): bob is now the canonical scheme-2 derivation at
+      // index 1. Prior literal was a placeholder that failed
+      // new kaspa.Address() validation. The Wave 4 regression file mechanically
+      // proves this value equals scheme2Derive(1).address.
+      expect(resolveAccountAddress("BOB")).toBe("kaspasim:qryj23rch0n5rc7klfug58zcrnuc966qljwgzpu3mflqgxu6w2pjg6n575980");
     });
 
     it("should return direct kaspa:sim_ addresses as-is", () => {
