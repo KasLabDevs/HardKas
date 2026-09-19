@@ -89,6 +89,17 @@ export default defineConfig({
               if (!options.json) UI.info("Created: vitest.config.ts");
             }
 
+            // DEF-2 (Wave 2): the emitted config intentionally omits an
+            // `accounts: { alice, bob }` declaration. HardKAS deterministic
+            // account resolution owns those identities and adapts them per
+            // execution target (synthetic in simulator, kaspa in real-node).
+            // Pre-declaring them with a fixed kind, as prior versions did,
+            // forced a collision on every real-node lifecycle command. The
+            // 0.11 → 0.12 migration already removed them from
+            // DEFAULT_HARDKAS_CONFIG.accounts; this scaffold aligns with it.
+            // Consumer-authored accounts and the cross-world protection remain
+            // fully authoritative — this only stops the SCAFFOLD from
+            // pre-declaring conflicting entries in fresh workspaces.
             const template = `import { defineHardkasConfig } from "@hardkas/sdk";
 
 export default defineHardkasConfig({
@@ -129,17 +140,6 @@ export default defineHardkasConfig({
       network: "simnet",
       rpcUrl: "ws://127.0.0.1:18210",
       description: "Local Docker kaspad on simnet — requires hardkas node start"
-    }
-  },
-
-  accounts: {
-    alice: {
-      kind: "simulated",
-      address: "kaspa:sim_alice"
-    },
-    bob: {
-      kind: "simulated",
-      address: "kaspa:sim_bob"
     }
   }
 });
