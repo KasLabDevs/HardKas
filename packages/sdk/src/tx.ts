@@ -1154,12 +1154,59 @@ export class HardkasTx {
 
     const normalizedPlan = normalizeSimulatedPlanInput(planArtifact, sourcePlanId);
 
+    // DEF-1c (Wave 1 continuation): produce ONE canonical receipt identity.
+    // The prior implementation built a second `receiptBase` wrapper here with
+    // its own contentHash — that wrapper never landed on disk yet was returned
+    // to callers and emitted in events, causing artifact.created(schema=B) to
+    // report path(A), plugin `receiptArtifact` divergence from the persisted
+    // receipt, and verify PARENT_MISSING (because A's parentArtifactId was a
+    // state hash, not an artifact hash).
+    //
+    // Fix: thread schema-owned lifecycle metadata into `applySimulatedPlan` →
+    // `createSimulatedTxReceipt` so the canonical receipt produced in one
+    // construction contains both execution evidence AND lifecycle metadata,
+    // hashed once, persisted once, returned once, emitted once.
+    //
+    // Determinism: `submittedAt`/`confirmedAt` derive from `systemRuntimeContext.clock`,
+    // matching the ctx used by createSimulatedTxReceipt for `createdAt`, so the
+    // canonical receipt remains deterministic under replay.
+    // `tracePath` is pre-computed from `txId` via the deterministic
+    // `getTracePath` helper — no dependency on the receipt's own persisted
+    // filename, which is written after hashing.
+    const nowIso = new Date(systemRuntimeContext.clock.now()).toISOString();
+    const { getTracePath } = await import("@hardkas/localnet");
+    const precomputedTracePath = getTracePath(txId, this.sdk.workspace.root);
+
+    // Parent artifact for the receipt lineage: the artifact that was actually
+    // executed/submitted. If the caller passed a signed artifact, that is the
+    // predecessor (and its signedId is captured via sourceSignedId per
+    // TxReceiptSchema). Otherwise the plan is the predecessor.
+    const isSignedInput =
+      targetObj &&
+      typeof targetObj === "object" &&
+      (targetObj as any).schema === ARTIFACT_SCHEMAS.SIGNED_TX;
+    const parentArtifactOverride = isSignedInput
+      ? {
+          contentHash: (targetObj as any).contentHash,
+          lineage: (targetObj as any).lineage
+        }
+      : undefined;
 
     const simResult = applySimulatedPlan(
       state,
       normalizedPlan as any,
       systemRuntimeContext,
-      { txId }
+      {
+        txId,
+        receiptExtra: {
+          submittedAt: nowIso,
+          confirmedAt: nowIso,
+          rpcUrl: "simulated://local",
+          tracePath: precomputedTracePath,
+          ...(isSignedInput && signedId !== "unknown" ? { sourceSignedId: signedId } : {}),
+          ...(parentArtifactOverride ? { parentArtifact: parentArtifactOverride } : {})
+        }
+      }
     );
 
     if (!simResult.ok) {
@@ -1174,6 +1221,12 @@ export class HardkasTx {
 
     events.push({ type: "phase.completed", phase: "send", timestamp: Date.now() });
 
+    // The canonical receipt: single identity for the simulator lifecycle.
+    // The `receipt` alias exists purely to keep downstream code paths readable
+    // — it is the SAME object reference `simResult.receipt` returned by
+    // `applySimulatedPlan`; no wrapping, no rehashing, no fork.
+    const receipt = simResult.receipt as any;
+
     let receiptPath: string | undefined;
     if (persist) {
       await saveLocalnetState(
@@ -1181,78 +1234,15 @@ export class HardkasTx {
         getDefaultLocalnetStatePath(this.sdk.workspace.root)
       );
       receiptPath = await saveSimulatedReceipt(
-        simResult.receipt as Parameters<typeof saveSimulatedReceipt>[0],
+        receipt as Parameters<typeof saveSimulatedReceipt>[0],
         { cwd: this.sdk.workspace.root }
       );
     }
 
-    // Pre-determine trace path for immutability and hermetic sealing (VULN-03)
-    const tracePath = receiptPath
-      ? receiptPath.replace(".json", ".trace.json")
-      : undefined;
-    const activeNetwork = this.sdk.config.config.defaultNetwork || "simnet";
-    const isSimulated =
-      activeNetwork === "simulated" ||
-      this.sdk.config.config.networks?.[activeNetwork]?.kind === "simulated";
-    const networkConfig = this.sdk.config.config.networks?.[activeNetwork];
-    const executionMode = isSimulated ? "simulator" : (networkConfig?.kind === "kaspa-node" ? "localnet" : "rpc");
-
-    // Create unified receipt
-    const receiptBase: any = {
-      schema: ARTIFACT_SCHEMAS.TX_RECEIPT,
-      schemaVersion: HardkasSchemas.TxReceiptV1,
-      hardkasVersion: HARDKAS_VERSION,
-      version: ARTIFACT_VERSION,
-      hashVersion: CURRENT_HASH_VERSION,
-      networkId: activeNetwork,
-      mode: executionMode,
-      execution: { mode: executionMode, domain: "kaspa-l1", network: activeNetwork },
-      createdAt: new Date().toISOString(),
-      status: "submitted",
-      txId: simResult.receipt.txId,
-      sourceSignedId: signedId,
-      from: { address: planArtifact.from?.address || "unknown" },
-      to: { address: planArtifact.to?.address || "unknown" },
-      amountSompi: planArtifact.amountSompi || "0",
-      feeSompi: simResult.receipt.feeSompi?.toString() || "0",
-      mass: simResult.receipt.mass?.toString() || "0",
-      changeSompi: simResult.receipt.changeSompi?.toString() || "0",
-      spentUtxoIds: simResult.receipt.spentUtxoIds,
-      createdUtxoIds: simResult.receipt.createdUtxoIds,
-      daaScore: simResult.receipt.daaScore?.toString() || "0",
-      preStateHash: simResult.receipt.preStateHash,
-      postStateHash: simResult.receipt.postStateHash,
-      submittedAt: simResult.receipt.createdAt,
-      confirmedAt: simResult.receipt.createdAt,
-      rpcUrl: "simulated://local",
-      tracePath,
-      ...(planArtifact.workflowId ? { workflowId: planArtifact.workflowId } : {}),
-      ...(planArtifact.assumptionLevel
-        ? { assumptionLevel: planArtifact.assumptionLevel }
-        : {}),
-      ...(planArtifact.policyRefs ? { policyRefs: planArtifact.policyRefs } : {}),
-      ...(planArtifact.networkProfileRef
-        ? { networkProfileRef: planArtifact.networkProfileRef }
-        : {}),
-      ...(planArtifact.assumptionRef
-        ? { assumptionRef: planArtifact.assumptionRef }
-        : {}),
-      lineage: {
-        artifactId: "", // To be computed
-        lineageId:
-          targetObj.lineage?.lineageId || targetObj.contentHash || "0".repeat(64),
-        parentArtifactId: targetObj.contentHash || "0".repeat(64),
-        rootArtifactId: targetObj.lineage?.rootArtifactId || "0".repeat(64),
-        sequence: (targetObj.lineage?.sequence || 1) + 1
-      }
-    };
-    receiptBase.contentHash = calculateContentHash(receiptBase, CURRENT_HASH_VERSION);
-    if (receiptBase.lineage) {
-      receiptBase.lineage.artifactId = receiptBase.contentHash;
-      receiptBase.contentHash = calculateContentHash(receiptBase, CURRENT_HASH_VERSION);
-      receiptBase.lineage.artifactId = receiptBase.contentHash;
-    }
-    const receipt: TxReceiptArtifact = Object.freeze(receiptBase);
+    // Trace path stays consistent with the pre-computed value used inside the
+    // canonical receipt's `tracePath` field. Both point at the deterministic
+    // per-txId location the trace will be written to below.
+    const tracePath = precomputedTracePath;
 
     // Convert events to steps
     const traceSteps = events.map((ev) => ({
@@ -1269,6 +1259,10 @@ export class HardkasTx {
           : undefined
     }));
 
+    // DEF-1a: the trace hangs off the CANONICAL receipt. Now that `receipt`
+    // and the persisted simulator receipt are the same object with the same
+    // contentHash (DEF-1c fix, above), the trace's parent hash unambiguously
+    // resolves in the artifact store after process restart.
     const traceBase: any = {
       schema: ARTIFACT_SCHEMAS.TX_TRACE,
       hardkasVersion: HARDKAS_VERSION,
@@ -1276,11 +1270,25 @@ export class HardkasTx {
       hashVersion: CURRENT_HASH_VERSION,
       createdAt: receipt.createdAt,
       txId: receipt.txId,
-      mode: executionMode,
-      networkId: activeNetwork,
-      steps: traceSteps
+      mode: receipt.mode ?? "simulator",
+      networkId: receipt.networkId,
+      steps: traceSteps,
+      ...(receipt.workflowId ? { workflowId: receipt.workflowId } : {}),
+      ...(receipt.assumptionLevel ? { assumptionLevel: receipt.assumptionLevel } : {}),
+      lineage: {
+        artifactId: "",
+        lineageId: receipt.lineage?.lineageId || receipt.contentHash || "0".repeat(64),
+        parentArtifactId: receipt.contentHash || "0".repeat(64),
+        rootArtifactId: receipt.lineage?.rootArtifactId || receipt.contentHash || "0".repeat(64),
+        sequence: (receipt.lineage?.sequence || 1) + 1
+      }
     };
     traceBase.contentHash = calculateContentHash(traceBase, CURRENT_HASH_VERSION);
+    if (traceBase.lineage) {
+      traceBase.lineage.artifactId = traceBase.contentHash;
+      traceBase.contentHash = calculateContentHash(traceBase, CURRENT_HASH_VERSION);
+      traceBase.lineage.artifactId = traceBase.contentHash;
+    }
 
     if (persist) {
       await saveSimulatedTrace(
@@ -1461,13 +1469,26 @@ export class HardkasTx {
 
     const result = await this.sdk.rpc.submitTransaction(broadcastable.rawTransaction as any);
 
+    // DEF-1b: `mode` describes the EXECUTION SEMANTICS of the lifecycle, fixed
+    // at plan/sign time. It is NOT a property of the transport (URL scheme).
+    // Prior implementations set `mode: isExplicitRpc ? "rpc" : "localnet"` from
+    // the URL, which caused strict verify MODE_MISMATCH when a signed artifact
+    // built with mode:"localnet" was broadcast over a ws:// URL and produced a
+    // receipt tagged mode:"rpc". Inherit `mode` from the signed parent (and its
+    // `execution.mode` if declared). Fall back to the URL-derived heuristic only
+    // when the parent lacks an explicit mode — preserving behavior for legacy
+    // pre-M10 signed artifacts that never carried one.
+    const inheritedMode: any =
+      (signedArtifact as any).mode ||
+      (signedArtifact as any).execution?.mode ||
+      (isExplicitRpc ? "rpc" : "localnet");
     const realReceiptBase: any = {
       schema: ARTIFACT_SCHEMAS.TX_RECEIPT,
       hardkasVersion: HARDKAS_VERSION,
       version: ARTIFACT_VERSION,
       hashVersion: CURRENT_HASH_VERSION,
       networkId: this.sdk.network,
-      mode: isExplicitRpc ? "rpc" : "localnet",
+      mode: inheritedMode,
       createdAt: new Date().toISOString(),
       status: "submitted",
       txId: result.transactionId || "unknown",

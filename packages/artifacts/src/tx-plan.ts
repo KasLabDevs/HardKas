@@ -90,6 +90,17 @@ export function createTxPlanArtifact(options: CreateTxPlanArtifactOptions): TxPl
     assumptionLevel:
       options.ctx.assumptionLevel ||
       (options.mode === "simulator" ? "local-simulated" : "local-dev"),
+    // DEF-7: preserve the planner authority the runtime actually produced.
+    // Do NOT synthesize a value: absence stays absence. The upstream planner
+    // ('KASPA_WASM_GENERATOR' for real Kaspa execution paths, 'SYNTHETIC_SIMULATOR'
+    // for the developer harness) already sets these in the ctx; we only project
+    // what was actually established.
+    ...(options.ctx.plannerAuthority
+      ? { plannerAuthority: options.ctx.plannerAuthority }
+      : {}),
+    ...(options.ctx.plannerAuthorityDetail
+      ? { plannerAuthorityDetail: options.ctx.plannerAuthorityDetail }
+      : {}),
     ...(options.plan.computeBudget !== undefined ? { computeBudget: options.plan.computeBudget.toString() } : {}),
     ...(options.plan.storageMass !== undefined ? { storageMass: options.plan.storageMass.toString() } : {}),
     ...(options.plan.lane !== undefined ? { lane: options.plan.lane } : {}),

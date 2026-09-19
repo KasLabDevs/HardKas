@@ -204,7 +204,16 @@ export const TxPlanSchema = BaseArtifactSchema.extend({
   networkProfileRef: z.string().optional(),
   policyRef: z.string().optional(),
   policyRefs: z.array(z.string()).optional(),
-  assumptionRef: z.string().optional()
+  assumptionRef: z.string().optional(),
+  // M10-B-completion authority projection. The planner that produced this artifact
+  // records itself here so downstream verify/lineage tools can distinguish real-
+  // network authority (`KASPA_WASM_GENERATOR`) from the synthetic developer
+  // harness (`SYNTHETIC_SIMULATOR`). Absence = authority was not established;
+  // NEVER synthesize a value. Historical plan artifacts legitimately omit this
+  // field and remain readable — the fields are optional to preserve backward
+  // compatibility with rc.22-era artifacts.
+  plannerAuthority: z.enum(["KASPA_WASM_GENERATOR", "SYNTHETIC_SIMULATOR"]).optional(),
+  plannerAuthorityDetail: z.string().optional()
 });
 
 export const DagContextSchema = z.object({

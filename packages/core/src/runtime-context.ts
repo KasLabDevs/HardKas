@@ -25,6 +25,15 @@ export interface RuntimeContext {
     selectedUtxos: number;
     selectionStrategy: string;
   };
+  /**
+   * Planner authority carried through from the tx-builder result at plan time.
+   * `KASPA_WASM_GENERATOR` = real Kaspa execution (kaspa-wasm 2.x upstream Generator).
+   * `SYNTHETIC_SIMULATOR` = HardKAS-owned synthetic planner for the developer harness.
+   * Absence = authority not established; NEVER synthesize a value downstream.
+   */
+  plannerAuthority?: "KASPA_WASM_GENERATOR" | "SYNTHETIC_SIMULATOR";
+  /** Human-readable authority detail, e.g. `kaspa-wasm@2.0.1`. Optional. */
+  plannerAuthorityDetail?: string;
 }
 
 /**

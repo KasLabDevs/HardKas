@@ -57,6 +57,23 @@ export function createSimulatedSignedTxArtifact(
 
 /**
  * Creates a canonical simulated receipt.
+ *
+ * DEF-1c (Wave 1 continuation): the receipt's `lineage.parentArtifactId` MUST
+ * be an artifact hash (per the lineage contract). Previously, this function
+ * overrode `parentArtifactId` with `preStateHash` — a state-machine hash from a
+ * DIFFERENT hash space — which caused every persisted simulator receipt to
+ * declare an unresolvable HardKAS parent. `preStateHash` and `postStateHash`
+ * remain first-class execution/state evidence fields on the receipt; they are
+ * never interpreted as artifact IDs.
+ *
+ * The `extra` bag also now accepts schema-owned lifecycle fields (already
+ * declared on `TxReceiptSchema` — `submittedAt`, `confirmedAt`, `rpcUrl`,
+ * `tracePath`, `sourceSignedId`) so callers can populate the single canonical
+ * receipt identity in one construction, rather than building a second wrapper
+ * receipt with its own contentHash. Optional `parentArtifact` overrides the
+ * lineage predecessor when the caller executed/submitted a signed artifact
+ * rather than a plan (the plan remains referenced via `sourceSignedId` →
+ * signed.sourcePlanId indirection preserved by the signed artifact).
  */
 export function createSimulatedTxReceipt(
   plan: TxPlan,
@@ -69,8 +86,19 @@ export function createSimulatedTxReceipt(
     preStateHash?: string;
     postStateHash?: string;
     dagContext?: DagContext;
+    // Schema-owned lifecycle metadata (see TxReceiptSchema):
+    submittedAt?: string;
+    confirmedAt?: string;
+    rpcUrl?: string;
+    tracePath?: string;
+    sourceSignedId?: string;
+    // Lineage predecessor override (used when the caller executed a signed
+    // artifact and the correct DAG parent is the signed, not the plan). The
+    // object must carry contentHash + optional lineage for root propagation.
+    parentArtifact?: { contentHash: string; lineage?: any };
   }
 ): TxReceipt {
+  const lineagePredecessor = extra?.parentArtifact ?? (plan as any);
   const artifact: DraftArtifact<TxReceipt, "contentHash"> = {
     schema: HardkasSchemas.TxReceipt,
     schemaVersion: HardkasSchemas.TxReceiptV1,
@@ -94,24 +122,29 @@ export function createSimulatedTxReceipt(
     preStateHash: extra?.preStateHash,
     postStateHash: extra?.postStateHash,
     dagContext: extra?.dagContext,
-    lineage: createLineageTransition(plan, HardkasSchemas.TxReceipt),
+    lineage: createLineageTransition(lineagePredecessor, HardkasSchemas.TxReceipt),
     execution: plan.execution || { mode: plan.mode as any, domain: "kaspa-l1", network: plan.networkId },
     ...(plan.workflowId ? { workflowId: plan.workflowId } : {}),
-    ...(plan.assumptionLevel ? { assumptionLevel: plan.assumptionLevel } : {})
+    ...(plan.assumptionLevel ? { assumptionLevel: plan.assumptionLevel } : {}),
+    ...(extra?.submittedAt ? { submittedAt: extra.submittedAt } : {}),
+    ...(extra?.confirmedAt ? { confirmedAt: extra.confirmedAt } : {}),
+    ...(extra?.rpcUrl ? { rpcUrl: extra.rpcUrl } : {}),
+    ...(extra?.tracePath ? { tracePath: extra.tracePath } : {}),
+    ...(extra?.sourceSignedId ? { sourceSignedId: extra.sourceSignedId } : {})
   };
 
-  if (artifact.lineage) {
-    artifact.lineage.parentArtifactId =
-      extra?.preStateHash ||
-      txId.replace("simulated-", "").replace("-tx", "").padEnd(64, "0").slice(0, 64);
-  }
   const hash = calculateContentHash(artifact, CURRENT_HASH_VERSION);
   artifact.contentHash = hash;
   if (artifact.lineage) {
     artifact.lineage.artifactId = hash; // receipt uses contentHash as artifactId
   }
 
-  return artifact as TxReceipt;
+  // Preserve VULN-03 immutability contract: the canonical receipt is frozen
+  // at construction so no downstream consumer can silently mutate its
+  // identity after hashing. Freezing here (rather than in the SDK wrapper)
+  // is what keeps DEF-1c's single-identity invariant intact — a mutable
+  // wrapper elsewhere could otherwise re-fork the receipt.
+  return Object.freeze(artifact) as TxReceipt;
 }
 
 /**

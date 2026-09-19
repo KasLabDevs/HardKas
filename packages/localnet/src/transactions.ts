@@ -260,12 +260,30 @@ export function applySimulatedPayment(
 }
 /**
  * Executes a pre-built transaction plan against the simulated state.
+ *
+ * DEF-1c (Wave 1 continuation): `receiptExtra` threads schema-owned lifecycle
+ * metadata (`submittedAt`, `confirmedAt`, `rpcUrl`, `tracePath`, `sourceSignedId`)
+ * and a `parentArtifact` predecessor override into `createSimulatedTxReceipt`,
+ * so the SDK lifecycle owner can produce ONE canonical receipt identity
+ * containing all lifecycle+execution evidence in a single hashable construction.
+ * Threading is pure pass-through — this function does not manufacture, infer,
+ * or transform any of these values.
  */
 export function applySimulatedPlan(
   state: LocalnetState,
   planArtifact: TxPlan,
   ctx: RuntimeContext,
-  options?: { txId?: string }
+  options?: {
+    txId?: string;
+    receiptExtra?: {
+      submittedAt?: string;
+      confirmedAt?: string;
+      rpcUrl?: string;
+      tracePath?: string;
+      sourceSignedId?: string;
+      parentArtifact?: { contentHash: string; lineage?: any };
+    };
+  }
 ): SimulationResult {
   const errors: string[] = [];
   const preStateHash = calculateStateHash(state);
@@ -335,7 +353,13 @@ export function applySimulatedPlan(
       daaScore: nextDaaScore,
       preStateHash,
       postStateHash,
-      dagContext: buildDagContextFromState(state)
+      dagContext: buildDagContextFromState(state),
+      ...(options?.receiptExtra?.submittedAt ? { submittedAt: options.receiptExtra.submittedAt } : {}),
+      ...(options?.receiptExtra?.confirmedAt ? { confirmedAt: options.receiptExtra.confirmedAt } : {}),
+      ...(options?.receiptExtra?.rpcUrl ? { rpcUrl: options.receiptExtra.rpcUrl } : {}),
+      ...(options?.receiptExtra?.tracePath ? { tracePath: options.receiptExtra.tracePath } : {}),
+      ...(options?.receiptExtra?.sourceSignedId ? { sourceSignedId: options.receiptExtra.sourceSignedId } : {}),
+      ...(options?.receiptExtra?.parentArtifact ? { parentArtifact: options.receiptExtra.parentArtifact } : {})
     });
 
     return { ok: true, state: nextState, receipt, planArtifact, errors };
