@@ -10,7 +10,7 @@ export function registerReplayCommands(program: Command) {
   replayCmd
     .command("verify [artifact]")
     .description(
-      `Verify replay invariants for an artifact by exact artifactId or artifact file path ${UI.maturity("stable")}`
+      `Verify deterministic simulator-mode replay for a receipt by exact artifactId or artifact file path. Real-node (kaspa consensus) receipts are not currently supported and will report REPLAY_MODE_UNSUPPORTED. ${UI.maturity("stable")}`
     )
     .option("--json", "Output as JSON", false)
     .option("--workspace <path>", "Override workspace root directory")

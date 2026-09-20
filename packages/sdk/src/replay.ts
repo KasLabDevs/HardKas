@@ -22,7 +22,24 @@ export interface ReplayVerifyResult {
   contamination: "clean" | "contaminated";
   report: any;
   error?: string;
+  /**
+   * Wave 7 · REPLAY-MODE-1: machine-readable classification code populated
+   * when the SDK deliberately declines to execute a replay. Currently used
+   * for `REPLAY_MODE_UNSUPPORTED` (real-node/localnet receipts) — see the
+   * mode guard inside `HardkasReplay.verify`. Absent on ordinary passes /
+   * divergences so existing consumers that only read `passed` and `error`
+   * keep working unchanged.
+   */
+  code?: string;
 }
+
+// Wave 7 · REPLAY-MODE-1: replay execution is implemented for simulator-mode
+// receipts only. Other modes (real-node "localnet", etc.) require consensus
+// replay infrastructure that HardKAS does not currently provide; attempting
+// to run them through `applySimulatedPlan` produces a misleading
+// simulator-vs-real receipt diff rather than any honest signal. The SDK
+// therefore fail-closes at this boundary with `REPLAY_MODE_UNSUPPORTED`.
+const REPLAY_SUPPORTED_MODES = new Set<string>(["simulator"]);
 
 export class HardkasReplay {
   constructor(private sdk: Hardkas) {}
@@ -105,6 +122,35 @@ export class HardkasReplay {
       } catch (err: unknown) {
         verifyErrorMsg = ((err instanceof Error) ? err.message : String(err));
         lineageOk = false;
+      }
+
+      // Wave 7 · REPLAY-MODE-1: after lineage resolution + receipt identity
+      // are established, gate any execution on receipt.mode. Real-node modes
+      // (currently only "localnet") are not supported by the simulator-based
+      // replay engine; return a structured unsupported result BEFORE calling
+      // loadOrCreateLocalnetState / reconstructStateAtDaa / verifyReplay /
+      // applySimulatedPlan. This preserves lineage/integrity signal while
+      // fail-closing on the execution boundary.
+      if (
+        !verifyErrorMsg &&
+        receipt &&
+        typeof receipt.mode === "string" &&
+        !REPLAY_SUPPORTED_MODES.has(receipt.mode)
+      ) {
+        const observedMode = receipt.mode;
+        const supportedModes = Array.from(REPLAY_SUPPORTED_MODES).join(", ");
+        return {
+          passed: false,
+          artifactsScanned: artifactCount,
+          lineage: lineageOk ? "valid" : "invalid",
+          determinism: determinismOk ? "verified" : "failed",
+          contamination: contaminationOk ? "clean" : "contaminated",
+          report: null,
+          error:
+            `Replay execution for receipt mode "${observedMode}" is not ` +
+            `supported; current replay execution supports ${supportedModes}-mode receipts only.`,
+          code: "REPLAY_MODE_UNSUPPORTED"
+        };
       }
 
       if (!verifyErrorMsg && plan && receipt) {

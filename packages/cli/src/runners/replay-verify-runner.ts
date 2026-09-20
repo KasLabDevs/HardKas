@@ -73,6 +73,12 @@ export async function runReplayVerify(options: ReplayVerifyOptions) {
 
   if (result.passed) {
     finalStatus = "passed";
+  } else if (result.code === "REPLAY_MODE_UNSUPPORTED") {
+    // Wave 7 · REPLAY-MODE-1: machine-readable classification from the SDK
+    // takes precedence over the historical string-based fallbacks. Real-node
+    // receipts must never be classified as `diverged` / `non_deterministic`
+    // — the SDK deliberately did not run execution.
+    finalStatus = "unsupported";
   } else if (
     result.error?.includes("unsupported") ||
     result.error?.includes("not a workflow artifact")
@@ -93,23 +99,22 @@ export async function runReplayVerify(options: ReplayVerifyOptions) {
   }
 
   if (options.json) {
-    console.log(
-      JSON.stringify(
-        {
-          schemaVersion: HardkasSchemas.ReplayVerifyV1,
-          workspace: options.path,
-          artifacts: result.artifactsScanned,
-          lineage: result.lineage,
-          determinism: result.determinism,
-          contamination: result.contamination,
-          result: finalStatus,
-          targetTxId: (result.report?.txId as string) || "unknown",
-          deterministic: result.determinism === "verified"
-        },
-        null,
-        2
-      )
-    );
+    // Wave 7 · propagate the SDK's machine-readable code when present so
+    // programmatic consumers can react without regex-scraping the message.
+    const envelope: any = {
+      schemaVersion: HardkasSchemas.ReplayVerifyV1,
+      workspace: options.path,
+      artifacts: result.artifactsScanned,
+      lineage: result.lineage,
+      determinism: result.determinism,
+      contamination: result.contamination,
+      result: finalStatus,
+      targetTxId: (result.report?.txId as string) || "unknown",
+      deterministic: result.determinism === "verified"
+    };
+    if (result.code) envelope.code = result.code;
+    if (result.error && result.code) envelope.message = result.error;
+    console.log(JSON.stringify(envelope, null, 2));
   } else {
     UI.causality(`Replay Verification: ${path.basename(targetDir)}`, {
       "Execution Scope": "local deterministic replay",
@@ -124,6 +129,19 @@ export async function runReplayVerify(options: ReplayVerifyOptions) {
   }
 
   if (!result.passed) {
+    // Wave 7 · REPLAY-MODE-1: preserve the typed unsupported-mode code
+    // through the CLI envelope. The general `result.error → new Error(...)`
+    // path below still wraps into UNKNOWN_ERROR (that is DEF-18, which
+    // remains OPEN); this narrow branch ensures the unsupported-mode
+    // classification specifically is not mangled.
+    if (result.code === "REPLAY_MODE_UNSUPPORTED") {
+      throw new HardkasCliError(
+        "REPLAY_MODE_UNSUPPORTED",
+        result.error ||
+          "Replay execution for this receipt mode is not supported.",
+        { exitCode: 1 }
+      );
+    }
     if (result.error) {
       throw new Error(`Failed to perform replay verification: ${result.error}`);
     }
