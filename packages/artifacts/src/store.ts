@@ -4,6 +4,13 @@ import { TxPlan, SignedTx, TxReceipt } from "./schemas.js";
 import { verifyArtifact } from "./verify.js";
 import { writeFileAtomic } from "@hardkas/core";
 import { assertSafeFileId, codedError as storeError, schemaFilePrefix } from "./file-id.js";
+import { LineageError } from "./lineage-error.js";
+
+// Wave 6 · LINEAGE-1: bounded parent-hop count. Depth is measured as the
+// number of parent lookups (not nodes) — a chain of receipt→signed→plan→ROOT
+// consumes 3 hops (receipt→signed, signed→plan, plan→root-terminator). The
+// resolver terminates on the (MAX + 1)-th hop with LINEAGE_DEPTH_EXCEEDED.
+const MAX_LINEAGE_PARENT_HOPS = 64;
 
 const bigIntReplacer = (_key: string, value: unknown) =>
   typeof value === "bigint" ? value.toString() : value;
@@ -158,29 +165,150 @@ export class ProjectArtifactStore {
     return null;
   }
 
-  async resolveLineage(id: string): Promise<any[]> {
-    const artifact = await this.readArtifact(id);
-    const lineage = [artifact];
-    let current = artifact as any;
-
-    const getParentId = (c: any) => c.lineage?.parentArtifactId || c.parentArtifactId || c.planId || c.sourceSignedId || c.sourcePlanId;
-    let parentId = getParentId(current);
-    while (parentId) {
-      if (parentId === current.planId && current.schema?.includes("TxPlan")) {
-        break; // planId on a plan refers to itself
+  /**
+   * Wave 6 · LINEAGE-1 · canonical parent resolution.
+   *
+   * Precedence:
+   *   1. `lineage.parentArtifactId` is authoritative IF the `lineage` object
+   *      is present AND carries a `parentArtifactId` key. An empty string is
+   *      an EXPLICIT root marker and MUST NOT fall through to legacy fields.
+   *   2. Legacy fallback applies ONLY when the canonical parent field is
+   *      genuinely absent (the artifact predates the Wave-1 lineage block).
+   *      Fallback order: top-level `parentArtifactId`, then `sourceSignedId`,
+   *      then `sourcePlanId`.
+   *   3. Self-identifiers (`planId`, `signedId`, `receiptId`, `txId`) are
+   *      NEVER treated as parents.
+   *
+   * Returns undefined when the artifact has no upward pointer (root).
+   */
+  private static getParentIdCandidate(artifact: any): string | undefined {
+    const lineage = artifact?.lineage;
+    if (lineage && typeof lineage === "object" && "parentArtifactId" in lineage) {
+      const canonical = lineage.parentArtifactId;
+      if (typeof canonical !== "string" || canonical.length === 0) {
+        // Explicit root marker (or non-string). Do NOT fall through.
+        return undefined;
       }
-      if (parentId === current.signedId || parentId === current.txId) {
-         break; // circular reference fallback
-      }
-      try {
-        current = await this.readArtifact(parentId);
-        lineage.unshift(current);
-        parentId = getParentId(current);
-      } catch (e) {
-        // Break if parent not found
-        break;
-      }
+      return canonical;
     }
+    // Canonical field genuinely absent — legacy fallback allowed.
+    if (typeof artifact?.parentArtifactId === "string" && artifact.parentArtifactId.length > 0) {
+      return artifact.parentArtifactId;
+    }
+    if (typeof artifact?.sourceSignedId === "string" && artifact.sourceSignedId.length > 0) {
+      return artifact.sourceSignedId;
+    }
+    if (typeof artifact?.sourcePlanId === "string" && artifact.sourcePlanId.length > 0) {
+      return artifact.sourcePlanId;
+    }
+    return undefined;
+  }
+
+  /**
+   * Wave 6 · LINEAGE-1 · deterministic identity for visited-set membership.
+   *
+   * Prefer `lineage.artifactId` (canonical, content-addressed). If absent,
+   * fall back to the artifact's `contentHash`. If neither is present, use
+   * the resolved absolute filesystem path — supplied by the caller because
+   * legacy artifacts identified only by planId/signedId etc. must not have
+   * their self-identifier promoted to a canonical identity.
+   */
+  private static visitedIdentity(artifact: any, resolvedPath: string): string {
+    const canonical = artifact?.lineage?.artifactId;
+    if (typeof canonical === "string" && canonical.length > 0) {
+      return `id:${canonical}`;
+    }
+    const contentHash = artifact?.contentHash;
+    if (typeof contentHash === "string" && contentHash.length > 0) {
+      return `hash:${contentHash}`;
+    }
+    return `path:${resolvedPath}`;
+  }
+
+  /**
+   * Locate the on-disk path for a resolved artifact so the visited-set can
+   * key on a stable identity even when neither canonical nor contentHash is
+   * present. Uses the same findArtifactPathById lookup as readArtifact but
+   * accepts a "we already have the artifact" shortcut when the input was a
+   * filesystem path.
+   */
+  private async pathOf(idOrPath: string): Promise<string> {
+    const candidate = path.resolve(process.cwd(), idOrPath);
+    try {
+      const stat = await fs.stat(candidate);
+      if (stat.isFile()) return candidate;
+    } catch {}
+    const looksLikePath =
+      path.isAbsolute(idOrPath) ||
+      /[\\/]/.test(idOrPath) ||
+      idOrPath === "." ||
+      idOrPath === "..";
+    if (looksLikePath) return candidate;
+    const found = await this.findArtifactPathById(idOrPath);
+    return found ?? `unresolved:${idOrPath}`;
+  }
+
+  async resolveLineage(id: string): Promise<any[]> {
+    const rootArtifact = await this.readArtifact(id);
+    const rootPath = await this.pathOf(id);
+    const lineage: any[] = [rootArtifact];
+
+    const visited = new Set<string>();
+    visited.add(ProjectArtifactStore.visitedIdentity(rootArtifact, rootPath));
+
+    let current: any = rootArtifact;
+    // hops counts PARENT lookups — a chain of N nodes consumes N parent hops
+    // (the last one returns undefined and terminates the loop). Depth is
+    // exhausted iff we perform more than MAX_LINEAGE_PARENT_HOPS lookups
+    // WITHOUT terminating. That is distinct from a cycle: a cycle would
+    // trigger LINEAGE_CYCLE_DETECTED via the visited set first.
+    for (let hops = 0; hops <= MAX_LINEAGE_PARENT_HOPS; hops++) {
+      const parentId = ProjectArtifactStore.getParentIdCandidate(current);
+      if (parentId === undefined) return lineage;
+
+      if (hops === MAX_LINEAGE_PARENT_HOPS) {
+        throw new LineageError(
+          "LINEAGE_DEPTH_EXCEEDED",
+          `Lineage exceeded ${MAX_LINEAGE_PARENT_HOPS} parent hops without reaching root`,
+          {
+            maxParentHops: String(MAX_LINEAGE_PARENT_HOPS),
+            lastParentId: parentId
+          }
+        );
+      }
+
+      let parent: any;
+      let parentPath: string;
+      try {
+        parent = await this.readArtifact(parentId);
+        parentPath = await this.pathOf(parentId);
+      } catch {
+        // Preserve pre-Wave-6 missing-parent behavior: swallow the read
+        // failure and return the partial lineage. Missing-evidence policy
+        // is intentionally NOT redesigned in this wave (see LINEAGE-1
+        // authorization Section E).
+        return lineage;
+      }
+
+      const parentIdentity = ProjectArtifactStore.visitedIdentity(parent, parentPath);
+      if (visited.has(parentIdentity)) {
+        throw new LineageError(
+          "LINEAGE_CYCLE_DETECTED",
+          `Lineage cycle detected at artifact ${parentIdentity}`,
+          {
+            repeatedIdentity: parentIdentity,
+            parentId
+          }
+        );
+      }
+      visited.add(parentIdentity);
+
+      lineage.unshift(parent);
+      current = parent;
+    }
+
+    // Loop bound was hops <= MAX which returns/throws before falling through.
+    // This return is unreachable in practice but preserves the type contract.
     return lineage;
   }
 

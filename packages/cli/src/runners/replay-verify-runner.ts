@@ -1,6 +1,6 @@
 import { UI } from "../ui.js";
 import path from "node:path";
-import { ReplayVerificationError } from "../cli-errors.js";
+import { HardkasCliError, ReplayVerificationError } from "../cli-errors.js";
 import { Hardkas } from "@hardkas/sdk";
 import { HardkasSchemas } from "@hardkas/artifacts";
 
@@ -20,7 +20,46 @@ export async function runReplayVerify(options: ReplayVerifyOptions) {
 
   const verifyOptions: any = {};
   if (effectivePath) {
-    verifyOptions.path = effectivePath;
+    // Wave 5 · DEF-17: replay verify operates on ONE receipt/artifact
+    // (exact artifactId or artifact file path). Resolve the input through
+    // the canonical façade before entering the SDK. Directory inputs are
+    // rejected here with a typed error rather than being forwarded into
+    // the SDK where they surface as an untyped "not found in store" and
+    // get double-wrapped as UNKNOWN_ERROR (that separate envelope defect
+    // is DEF-18 and remains open).
+    const { resolveArtifactHandle } = await import("@hardkas/artifacts");
+    try {
+      const handle = await resolveArtifactHandle(
+        effectivePath,
+        options.workspaceRoot
+      );
+      // Pass the resolved absolute path to the SDK. The SDK's readArtifact
+      // treats file paths as direct reads, so this bypasses any legacy
+      // substring resolver for the initial lookup while leaving parent
+      // lineage walking (which is an internal store operation) untouched.
+      verifyOptions.path = handle.path;
+    } catch (e: any) {
+      const code = e?.code || "ARTIFACT_INPUT_UNRECOGNIZED";
+      const message = e?.message || `Could not resolve '${effectivePath}'`;
+
+      if (options.json) {
+        const { getOutput } = await import("../output.js");
+        getOutput().writeJson({
+          schemaVersion: HardkasSchemas.ReplayVerifyV1,
+          workspace: options.path,
+          artifacts: 0,
+          lineage: "invalid",
+          determinism: "verified",
+          contamination: "clean",
+          result: "input_rejected",
+          targetTxId: "unknown",
+          deterministic: true,
+          error: { code, message }
+        });
+      }
+
+      throw new HardkasCliError(code, message, { exitCode: 1 });
+    }
   }
   const result = await sdk.replay.verify(verifyOptions);
 

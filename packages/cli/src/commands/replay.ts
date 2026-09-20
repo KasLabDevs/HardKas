@@ -8,9 +8,9 @@ export function registerReplayCommands(program: Command) {
     .description("Manage HardKAS transaction replays");
 
   replayCmd
-    .command("verify [path]")
+    .command("verify [artifact]")
     .description(
-      `Verify replay invariants for a directory of artifacts ${UI.maturity("stable")}`
+      `Verify replay invariants for an artifact by exact artifactId or artifact file path ${UI.maturity("stable")}`
     )
     .option("--json", "Output as JSON", false)
     .option("--workspace <path>", "Override workspace root directory")

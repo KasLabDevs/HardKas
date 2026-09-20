@@ -55,3 +55,5 @@ export type {
 } from "./schemas.js";
 
 export * from "./store.js";
+export * from "./artifact-handle.js";
+export * from "./lineage-error.js";
