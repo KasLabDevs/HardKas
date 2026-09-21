@@ -5,6 +5,16 @@ import { verifyArtifact } from "./verify.js";
 import { writeFileAtomic } from "@hardkas/core";
 import { assertSafeFileId, codedError as storeError, schemaFilePrefix } from "./file-id.js";
 import { LineageError } from "./lineage-error.js";
+import { ReceiptLookupError } from "./receipt-lookup-error.js";
+
+// Wave 10 · RECEIPT-1: schemas recognised by `findReceiptByTxId` as canonical
+// L1 receipt shapes carrying `.txId` with kaspa-consensus / simulator
+// semantics. L2 (Igra) receipts are deliberately excluded — cross-chain
+// txId lookup is a separate contract decision.
+const L1_RECEIPT_SCHEMAS: ReadonlySet<string> = new Set([
+  "hardkas.txReceipt",
+  "hardkas.txReceipt.v1"
+]);
 
 // Wave 6 · LINEAGE-1: bounded parent-hop count. Depth is measured as the
 // number of parent lookups (not nodes) — a chain of receipt→signed→plan→ROOT
@@ -126,8 +136,112 @@ export class ProjectArtifactStore {
     return JSON.parse(content);
   }
 
+  /**
+   * Wave 10 · RECEIPT-1 · exact receipt lookup by `.txId` field.
+   *
+   * The historical implementation delegated to `readArtifact(txId)`, which
+   * ultimately performs a filename-substring search via
+   * `findArtifactPathById`. That resolver keys on the artifact's own
+   * identity token (typically `artifactId` or `contentHash`), NOT the
+   * receipt's Kaspa consensus `.txId` field, so real-node receipts (whose
+   * filenames encode `artifactId`, a different 64-hex string from `txId`)
+   * silently returned `"not found in store"` even though the receipt was
+   * present on disk. A subset of simulator receipts happened to resolve
+   * only because their filename identity coincided with `.txId`.
+   *
+   * The correct algorithm — already proven by
+   * `packages/localnet/src/receipts.ts::loadSimulatedReceipt` — is:
+   *   1. Enumerate every canonical artifact under `.hardkas/artifacts/`.
+   *   2. Retain only those whose declared schema is an L1 receipt schema
+   *      (`hardkas.txReceipt` or `hardkas.txReceipt.v1`) checked against
+   *      BOTH the top-level `.schema` field AND `.schemaVersion` (some
+   *      simulator writers set the latter instead of the former; a valid
+   *      receipt is one that carries the schema string in either slot).
+   *   3. Retain only those whose `.txId` is a non-empty string that
+   *      exactly equals the requested `txId` (byte-for-byte, no
+   *      normalisation — `txId` is contractually `z.string()` and can be
+   *      lowercase 64-hex, a `simtx_failed_*` marker, or any deterministic
+   *      simulator id; imposing a shape here would break legitimate
+   *      lookups).
+   *   4. Zero matches → `RECEIPT_NOT_FOUND` typed error.
+   *   5. Exactly one match → return it.
+   *   6. Multiple matches → collapse ONLY if every match carries a
+   *      non-empty `.contentHash` string AND all values are identical
+   *      (i.e., duplicate copies of the same evidence). Any absent /
+   *      empty `.contentHash`, or any structural disagreement, throws
+   *      `RECEIPT_AMBIGUOUS_CONFLICT` with the observed identities.
+   *      This guard specifically avoids collapsing two distinct artifacts
+   *      that both happen to omit `contentHash` under the accidental
+   *      identity `undefined === undefined`.
+   *
+   * The signature (`(string) => Promise<unknown>`) is preserved so the
+   * existing sole consumer (`packages/cli/src/runners/tx-receipt-runner.ts`)
+   * continues to work unchanged; typed errors now propagate to the CLI's
+   * top-level renderer via Wave 8's owner-of-serialisation model.
+   */
   async findReceiptByTxId(txId: string): Promise<unknown> {
-    return this.readArtifact(txId);
+    const entries = await this.enumerateCanonicalArtifacts();
+
+    const l1ReceiptMatches = entries.filter((entry) => {
+      const artifact: any = entry.artifact;
+      if (!artifact) return false;
+
+      const schemaTag =
+        (typeof artifact.schema === "string" && artifact.schema) ||
+        (typeof artifact.schemaVersion === "string" && artifact.schemaVersion) ||
+        "";
+      if (!L1_RECEIPT_SCHEMAS.has(schemaTag)) return false;
+
+      return typeof artifact.txId === "string" && artifact.txId === txId;
+    });
+
+    if (l1ReceiptMatches.length === 0) {
+      throw new ReceiptLookupError(
+        "RECEIPT_NOT_FOUND",
+        `No L1 receipt artifact with .txId === "${txId}" found in workspace`,
+        { txId, workspaceRoot: this.workspaceRoot }
+      );
+    }
+
+    if (l1ReceiptMatches.length === 1) {
+      return l1ReceiptMatches[0]!.artifact;
+    }
+
+    // Multiple candidates. Collapse only when every match carries the
+    // same non-empty contentHash — that means we have duplicate copies of
+    // the same evidence, not conflicting evidence. Missing/empty
+    // contentHash on ANY match forces the ambiguity path so two genuinely
+    // distinct artifacts can never be collapsed under undefined equality.
+    const contentHashes = l1ReceiptMatches.map((m) => {
+      const v = (m.artifact as any).contentHash;
+      return typeof v === "string" && v.length > 0 ? v : null;
+    });
+    const allHavePopulatedHash = contentHashes.every((h) => h !== null);
+    const allHashesAgree =
+      allHavePopulatedHash &&
+      contentHashes.every((h) => h === contentHashes[0]);
+
+    if (allHavePopulatedHash && allHashesAgree) {
+      return l1ReceiptMatches[0]!.artifact;
+    }
+
+    throw new ReceiptLookupError(
+      "RECEIPT_AMBIGUOUS_CONFLICT",
+      `Multiple L1 receipt artifacts carry .txId === "${txId}" with divergent identities`,
+      {
+        txId,
+        matches: l1ReceiptMatches
+          .map((m) => {
+            const a: any = m.artifact;
+            const ch =
+              typeof a.contentHash === "string" && a.contentHash.length > 0
+                ? a.contentHash
+                : "<absent>";
+            return `${m.path} (contentHash=${ch})`;
+          })
+          .join("; ")
+      }
+    );
   }
 
   private async findArtifactPathById(id: string): Promise<string | null> {

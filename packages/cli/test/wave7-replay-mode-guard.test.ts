@@ -168,17 +168,19 @@ describe("Wave 7 · REPLAY-MODE-1 · CLI mode guard", () => {
     throw new Error(`unterminated JSON in output: ${text.slice(start, start + 200)}`);
   }
 
-  it("hardkas replay verify <realNodeReceiptId> reports unsupported/REPLAY_MODE_UNSUPPORTED", async () => {
+  it("hardkas replay verify <realNodeReceiptId> reports REPLAY_MODE_UNSUPPORTED", async () => {
     const reportsBefore = await countReplayReports();
     expect(reportsBefore).toBe(0);
 
     const r = runHardkas(`replay verify ${RECEIPT_ID} --json`);
     expect(r.code).not.toBe(0);
 
-    const envelope = extractFirstJsonBlock(r.stdout);
-    expect(envelope.result).toBe("unsupported");
+    // Wave 8 · DEF-18: stdout is now the top-level authoritative failure
+    // envelope only. The Wave-7 runner-specific fields (`result`, `lineage`)
+    // are no longer emitted on failure; the typed code is what survives.
+    const envelope = JSON.parse(r.stdout.trim());
+    expect(envelope.ok).toBe(false);
     expect(envelope.code).toBe("REPLAY_MODE_UNSUPPORTED");
-    expect(envelope.lineage).toBe("valid");
   });
 
   it("no `.replay.json` report file is generated for unsupported receipts", async () => {
@@ -186,11 +188,15 @@ describe("Wave 7 · REPLAY-MODE-1 · CLI mode guard", () => {
     expect(reports).toBe(0);
   });
 
-  it("classification is NOT diverged / non_deterministic / missing_dependency", async () => {
+  it("code is NEVER collapsed into UNKNOWN_ERROR", async () => {
     const r = runHardkas(`replay verify ${RECEIPT_ID} --json`);
-    const envelope = extractFirstJsonBlock(r.stdout);
-    expect(envelope.result).not.toBe("diverged");
-    expect(envelope.result).not.toBe("non_deterministic");
-    expect(envelope.result).not.toBe("missing_dependency");
+    const envelope = JSON.parse(r.stdout.trim());
+    expect(envelope.code).not.toBe("UNKNOWN_ERROR");
+    // Pre-Wave-8 the classification was smuggled into the runner-envelope's
+    // `result` field; some values that would have been misleading:
+    //   "diverged", "non_deterministic", "missing_dependency"
+    // are non-goals for a mode-guard rejection. Under Wave 8 those values
+    // simply do not appear because the runner-envelope no longer exists on
+    // failure — the top-level envelope has `code` only.
   });
 });

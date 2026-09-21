@@ -57,3 +57,4 @@ export type {
 export * from "./store.js";
 export * from "./artifact-handle.js";
 export * from "./lineage-error.js";
+export * from "./receipt-lookup-error.js";

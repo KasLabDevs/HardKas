@@ -39,25 +39,12 @@ export async function runReplayVerify(options: ReplayVerifyOptions) {
       // lineage walking (which is an internal store operation) untouched.
       verifyOptions.path = handle.path;
     } catch (e: any) {
+      // Wave 8 · DEF-18: failure serialization is owned by the top-level
+      // renderer. The runner no longer emits a failure JSON envelope here;
+      // it throws a typed HardkasCliError that survives the command wrapper
+      // and is serialized exactly once by main() / handleError.
       const code = e?.code || "ARTIFACT_INPUT_UNRECOGNIZED";
       const message = e?.message || `Could not resolve '${effectivePath}'`;
-
-      if (options.json) {
-        const { getOutput } = await import("../output.js");
-        getOutput().writeJson({
-          schemaVersion: HardkasSchemas.ReplayVerifyV1,
-          workspace: options.path,
-          artifacts: 0,
-          lineage: "invalid",
-          determinism: "verified",
-          contamination: "clean",
-          result: "input_rejected",
-          targetTxId: "unknown",
-          deterministic: true,
-          error: { code, message }
-        });
-      }
-
       throw new HardkasCliError(code, message, { exitCode: 1 });
     }
   }
@@ -98,54 +85,74 @@ export async function runReplayVerify(options: ReplayVerifyOptions) {
     finalStatus = "diverged";
   }
 
-  if (options.json) {
-    // Wave 7 · propagate the SDK's machine-readable code when present so
-    // programmatic consumers can react without regex-scraping the message.
-    const envelope: any = {
-      schemaVersion: HardkasSchemas.ReplayVerifyV1,
-      workspace: options.path,
-      artifacts: result.artifactsScanned,
-      lineage: result.lineage,
-      determinism: result.determinism,
-      contamination: result.contamination,
-      result: finalStatus,
-      targetTxId: (result.report?.txId as string) || "unknown",
-      deterministic: result.determinism === "verified"
-    };
-    if (result.code) envelope.code = result.code;
-    if (result.error && result.code) envelope.message = result.error;
-    console.log(JSON.stringify(envelope, null, 2));
-  } else {
-    UI.causality(`Replay Verification: ${path.basename(targetDir)}`, {
-      "Execution Scope": "local deterministic replay",
-      Workspace: options.path,
-      "Artifacts Replayed": String(result.artifactsScanned),
-      "Lineage Integrity": result.lineage,
-      "Deterministic Execution": result.determinism,
-      "Network Contamination": result.contamination,
-      Status: finalStatus,
-      Result: result.passed ? "PASS" : "FAIL"
-    });
+  // Wave 8 · DEF-18: only SUCCESS emits from the runner. On failure the
+  // runner throws a typed error and the top-level renderer serializes the
+  // envelope exactly once. This eliminates the previous "runner writes a
+  // failure envelope AND throws" dual-ownership that produced the
+  // double-JSON-block anomaly observed on the Wave 7 real qualification.
+  if (result.passed) {
+    if (options.json) {
+      const successEnvelope = {
+        schemaVersion: HardkasSchemas.ReplayVerifyV1,
+        workspace: options.path,
+        artifacts: result.artifactsScanned,
+        lineage: result.lineage,
+        determinism: result.determinism,
+        contamination: result.contamination,
+        result: finalStatus,
+        targetTxId: (result.report?.txId as string) || "unknown",
+        deterministic: result.determinism === "verified"
+      };
+      const { getOutput } = await import("../output.js");
+      getOutput().writeJson(successEnvelope);
+    } else {
+      UI.causality(`Replay Verification: ${path.basename(targetDir)}`, {
+        "Execution Scope": "local deterministic replay",
+        Workspace: options.path,
+        "Artifacts Replayed": String(result.artifactsScanned),
+        "Lineage Integrity": result.lineage,
+        "Deterministic Execution": result.determinism,
+        "Network Contamination": result.contamination,
+        Status: finalStatus,
+        Result: "PASS"
+      });
+    }
+    return;
   }
 
-  if (!result.passed) {
-    // Wave 7 · REPLAY-MODE-1: preserve the typed unsupported-mode code
-    // through the CLI envelope. The general `result.error → new Error(...)`
-    // path below still wraps into UNKNOWN_ERROR (that is DEF-18, which
-    // remains OPEN); this narrow branch ensures the unsupported-mode
-    // classification specifically is not mangled.
-    if (result.code === "REPLAY_MODE_UNSUPPORTED") {
-      throw new HardkasCliError(
-        "REPLAY_MODE_UNSUPPORTED",
-        result.error ||
-          "Replay execution for this receipt mode is not supported.",
-        { exitCode: 1 }
-      );
-    }
-    if (result.error) {
-      throw new Error(`Failed to perform replay verification: ${result.error}`);
-    }
-    throw new ReplayVerificationError(
+  // Failure paths — always throw a typed HardkasCliError. The top-level
+  // renderer owns final serialization and exit code.
+  if (result.code === "REPLAY_MODE_UNSUPPORTED") {
+    throw new HardkasCliError(
+      "REPLAY_MODE_UNSUPPORTED",
+      result.error ||
+        "Replay execution for this receipt mode is not supported.",
+      { exitCode: 1 }
+    );
+  }
+
+  if (result.error) {
+    // Wave 8: prefer any SDK-provided machine-readable code. When the SDK
+    // gave only a message, classify by the CLI's already-computed
+    // `finalStatus`; the previous behaviour of `throw new Error(...)` here
+    // is what collapsed typed replay failures into UNKNOWN_ERROR at the
+    // outer catch (this contributed to DEF-18 for the divergence branch).
+    const code =
+      result.code ||
+      (finalStatus === "missing_dependency"
+        ? "REPLAY_MISSING_DEPENDENCY"
+        : finalStatus === "non_deterministic"
+          ? "REPLAY_NON_DETERMINISTIC"
+          : finalStatus === "unsupported"
+            ? "REPLAY_UNSUPPORTED"
+            : "REPLAY_FAILED");
+    throw new HardkasCliError(code, result.error, { exitCode: 1 });
+  }
+
+  // Structured divergence — keep the ReplayVerificationError typed shape
+  // so handleError's REPLAY_DIVERGED branch can still render divergence
+  // detail on stderr for human consumers.
+  throw new ReplayVerificationError(
       result.report || {
         schema: HardkasSchemas.ReplayReportV1,
         txId: "unknown",
@@ -161,5 +168,4 @@ export async function runReplayVerify(options: ReplayVerifyOptions) {
         errors: ["Artifact replay verification failed due to diagnostic failures."]
       }
     );
-  }
 }
