@@ -16,76 +16,33 @@ export async function runArtifactInspect(options: ArtifactInspectOptions) {
   let targetPath = path.resolve(options.workspaceRoot, options.idOrPath);
   let resolvedById = false;
 
-  const { Hardkas } = await import("@hardkas/sdk");
-
   if (!fs.existsSync(targetPath)) {
-    // Treat as ID and search
-    const sdk = await Hardkas.open({ cwd: options.workspaceRoot });
-    const artifactsDir = sdk.workspace.artifactsDir;
-
-    if (!fs.existsSync(artifactsDir)) {
-      throw new HardkasError(
-        "ARTIFACT_NOT_FOUND",
-        `File not found and workspace artifacts directory missing.`
-      );
-    }
-
-    const allFiles: string[] = [];
-    const scanDir = (dir: string) => {
-      if (!fs.existsSync(dir)) return;
-      for (const f of fs.readdirSync(dir)) {
-        const fp = path.join(dir, f);
-        if (fs.statSync(fp).isDirectory()) {
-          scanDir(fp);
-        } else if (fp.endsWith(".json")) {
-          allFiles.push(fp);
-        }
-      }
-    };
-    scanDir(artifactsDir);
-
-    const matches: string[] = [];
-    for (const f of allFiles) {
-      if (path.basename(f).includes(options.idOrPath)) {
-        matches.push(f);
-      } else {
-        try {
-          const content = fs.readFileSync(f, "utf-8");
-          const json = JSON.parse(content);
-          if (
-            json.txId === options.idOrPath ||
-            json.id === options.idOrPath ||
-            json.workflowId === options.idOrPath ||
-            json.planId === options.idOrPath ||
-            json.signedId === options.idOrPath ||
-            json.contentHash?.includes(options.idOrPath)
-          ) {
-            matches.push(f);
-          }
-        } catch (e) {}
-      }
-    }
-
-    if (matches.length === 0) {
-      throw new HardkasCliError(
-        "INVALID_ARTIFACT",
-        `Artifact not found: Could not resolve '${options.idOrPath}' as a file or artifact ID.`
-      );
-    } else if (matches.length > 1) {
-      matches.sort((a, b) => fs.statSync(b).mtimeMs - fs.statSync(a).mtimeMs);
-      if (!options.json) {
-        console.warn(
-          pc.yellow(
-            `  ⚠️  Multiple artifacts matched ID '${options.idOrPath}'. Inspecting the most recent one.`
-          )
+    // Wave 1.2 · IC-5′.2–.5: an id is only a 64-hex artifactId, resolved by verified
+    // identity (no substring search, no label/txId/workflowId detection, no
+    // "most recent" pick among several matches). Labels need their namespace:
+    // `hardkas why --plan|--signed|--tx|--workflow <id>`.
+    const { resolveArtifactHandle } = await import("@hardkas/artifacts");
+    let handle;
+    try {
+      handle = await resolveArtifactHandle(options.idOrPath, options.workspaceRoot);
+    } catch (e: any) {
+      const code = e?.code || "ARTIFACT_NOT_FOUND";
+      if (code === "NAMESPACE_REQUIRED") {
+        const ns = e?.context?.namespace;
+        throw new HardkasCliError(
+          "NAMESPACE_REQUIRED",
+          `'${options.idOrPath}' is neither a workspace path nor a 64-hex artifactId. ${
+            ns ? `It looks like a ${ns} identifier: run hardkas why --${ns} ${options.idOrPath}` : "Pass an artifactId or a path."
+          }`
         );
       }
-      targetPath = matches[0]!;
-      resolvedById = true;
-    } else {
-      targetPath = matches[0]!;
-      resolvedById = true;
+      throw new HardkasCliError(
+        code === "CANDIDATE_INVALID" ? "CANDIDATE_INVALID" : "INVALID_ARTIFACT",
+        `Artifact not found: could not resolve '${options.idOrPath}' as a file or verified artifactId (${e?.message ?? String(e)}).`
+      );
     }
+    targetPath = handle.path;
+    resolvedById = true;
   }
 
   const content = fs.readFileSync(targetPath, "utf-8");
@@ -96,9 +53,15 @@ export async function runArtifactInspect(options: ArtifactInspectOptions) {
     throw new HardkasError("INVALID_JSON", `File ${targetPath} is not valid JSON.`);
   }
 
-  const { calculateContentHash } = await import("@hardkas/artifacts");
+  const { recomputeDeclaredContentHash } = await import("@hardkas/artifacts");
 
-  const canonicalHash = calculateContentHash(artifact, artifact.hashVersion || 1);
+  // Recompute with the version the artifact declares; never fall back to another one.
+  let canonicalHash: string;
+  try {
+    canonicalHash = recomputeDeclaredContentHash(artifact);
+  } catch (error) {
+    canonicalHash = `HASH_VERSION_INVALID (${error instanceof Error ? error.message : String(error)})`;
+  }
   const type = artifact.schema || artifact.type || "unknown";
   const id =
     artifact.txId ||
@@ -167,8 +130,11 @@ export async function runArtifactInspect(options: ArtifactInspectOptions) {
     const repColor = replayability === "supported" ? pc.green : pc.yellow;
     console.log(`  ${pc.bold("Replayability:")} ${repColor(replayability)}\n`);
 
+    // IC-5′.11: suggest the canonical identity, never a label or file name.
     UI.printNextSteps([
-      `hardkas why ${id || path.basename(targetPath).replace(".json", "")}`
+      /^[0-9a-f]{64}$/.test(canonicalHash)
+        ? `hardkas why ${canonicalHash}`
+        : `hardkas why ${path.relative(options.workspaceRoot, targetPath).replace(/\\/g, "/")}`
     ]);
   }
 }

@@ -27,7 +27,9 @@ function createMockState(
 }
 
 describe("Localnet Snapshot Determinism", () => {
-  it("should generate the same artifactId regardless of array order or timestamp", async () => {
+  // Wave 1.1 · N3 / IC-7: the snapshot producer adds no post-hash `artifactId` copy; the
+  // snapshot's identity is its contentHash.
+  it("should generate the same contentHash regardless of array order or timestamp", async () => {
     const tempDir = await fs.mkdtemp(path.join(os.tmpdir(), "hardkas-test-"));
     const store = new ProjectArtifactStore(tempDir);
     
@@ -70,10 +72,10 @@ describe("Localnet Snapshot Determinism", () => {
     const artifacts = await store.queryArtifacts({ schema: "hardkas.snapshot.v1" });
     
     // There should only be ONE unique artifact because content is identical
-    // But since store.writeArtifact overwrites by artifactId (hash), we should just see 1 artifact!
-    // Or if it writes multiple, they have the exact same artifactId.
-    
-    const uniqueIds = new Set(artifacts.map(a => a.artifactId));
+    // But since store.writeArtifact overwrites by contentHash, we should just see 1 artifact!
+    // Or if it writes multiple, they have the exact same contentHash.
+
+    const uniqueIds = new Set(artifacts.map(a => a.contentHash));
     expect(uniqueIds.size).toBe(1);
 
     // State B (different content)
@@ -90,7 +92,7 @@ describe("Localnet Snapshot Determinism", () => {
     await saveLocalnetState(stateB, targetPathB);
 
     const artifactsAfterB = await store.queryArtifacts({ schema: "hardkas.snapshot.v1" });
-    const uniqueIdsAfterB = new Set(artifactsAfterB.map(a => a.artifactId));
+    const uniqueIdsAfterB = new Set(artifactsAfterB.map(a => a.contentHash));
     
     expect(uniqueIdsAfterB.size).toBe(2);
   });

@@ -25,7 +25,7 @@ title: hardkas why
 - **Reads:** Artifact JSON file, Parent artifacts in lineage
 - **Writes:** 
 - **Produces:** 
-- **Accepted Identifiers:** `explicit filepath`, `exact canonical artifactId`, `planId (legacy compatibility)`
+- **Accepted Identifiers:** `explicit filepath`, `exact canonical artifactId`, `--plan <planId>`, `--signed <signedId>`, `--tx <txId>`, `--workflow <workflowId>`
 - **Evidence Semantics:** Extended causal tracing. Identical constraints to `explain`.
 
 ---

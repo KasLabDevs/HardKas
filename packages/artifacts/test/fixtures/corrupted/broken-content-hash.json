@@ -2,6 +2,7 @@
   "schema": "hardkas.txPlan",
   "hardkasVersion": "0.12.0-rc.23",
   "version": "1.0.0-alpha",
+  "hashVersion": 4,
   "createdAt": "2026-05-08T22:21:40Z",
   "networkId": "simnet",
   "mode": "simulated",

@@ -40,7 +40,9 @@ export class HardkasWorkflow {
       workspaceSchemaVersion: HardkasSchemas.WorkflowV1
     };
 
-    const intentHash = calculateContentHash(intentPayload);
+    // Domain digest of the intent (not an artifact identity). Algorithm pinned to
+    // the legacy v4 canonical form until IC-1′.7 / IC-7.4 fix the single derivation (Wave 1.3).
+    const intentHash = calculateContentHash(intentPayload, 4);
     const workflowId = `wf_${intentHash.slice(0, 16)}`;
 
     const artifactSteps: WorkflowArtifact["steps"] = [];
@@ -55,6 +57,11 @@ export class HardkasWorkflow {
 
     let lastPlan: any = null;
     let lastSigned: any = null;
+    // Wave 1.2 · IC-5′.6/.8: a dry run persists nothing, so the in-memory plan is
+    // handed to simulate/send explicitly; it is accepted only if its recomputed
+    // identity is the signed artifact's authenticated parent.
+    const parentHint = (signed: any): { plan?: any } =>
+      lastPlan && signed?.lineage?.parentArtifactId === lastPlan.contentHash ? { plan: lastPlan } : {};
 
     const stepsResults: Record<string, any> = {};
 
@@ -115,8 +122,8 @@ export class HardkasWorkflow {
                 );
                 const res =
                   this.sdk.network === "simulated"
-                    ? await this.sdk.tx.simulate(signed)
-                    : await this.sdk.tx.send(signed);
+                    ? await this.sdk.tx.simulate(signed, parentHint(signed))
+                    : await this.sdk.tx.send(signed, parentHint(signed));
                 await this.sdk.artifacts.write(res.receipt, {
                   dryRun: options.dryRun ?? false
                 });
@@ -129,7 +136,7 @@ export class HardkasWorkflow {
                 return res;
               },
               simulate: async (signed: any) => {
-                const res = await this.sdk.tx.simulate(signed);
+                const res = await this.sdk.tx.simulate(signed, parentHint(signed));
                 await this.sdk.artifacts.write(res.receipt, {
                   dryRun: options.dryRun ?? false
                 });
@@ -189,7 +196,7 @@ export class HardkasWorkflow {
           if (signedId) producedArtifacts.push(signedId);
 
           if (step.type === "tx.simulate") {
-            const { receipt } = await this.sdk.tx.simulate(lastSigned);
+            const { receipt } = await this.sdk.tx.simulate(lastSigned, parentHint(lastSigned));
             await this.sdk.artifacts.write(receipt, { dryRun: options.dryRun ?? false });
             const receiptRecord = receipt as unknown as Record<string, string>;
             producedArtifactId =
@@ -199,8 +206,8 @@ export class HardkasWorkflow {
           } else {
             const { receipt } =
               this.sdk.network === "simulated"
-                ? await this.sdk.tx.simulate(lastSigned)
-                : await this.sdk.tx.send(lastSigned);
+                ? await this.sdk.tx.simulate(lastSigned, parentHint(lastSigned))
+                : await this.sdk.tx.send(lastSigned, parentHint(lastSigned));
             await this.sdk.artifacts.write(receipt, { dryRun: options.dryRun ?? false });
             const receiptRecord = receipt as unknown as Record<string, string>;
             producedArtifactId =
@@ -252,6 +259,9 @@ export class HardkasWorkflow {
       hardkasVersion: HARDKAS_VERSION,
       networkId: this.sdk.network,
       mode: executionMode,
+      // Workflow artifacts are still hashed with version 1 (N6, Wave 1.3); the
+      // producer declares that truthfully so the writer and verifiers use it.
+      hashVersion: 1,
       createdAt: new Date().toISOString(), // hardkas-determinism-allow: workflow artifact creation timestamp
       workflowId,
       artifactId: workflowId,

@@ -8,7 +8,7 @@
  */
 import fs from "node:fs/promises";
 import path from "node:path";
-import { calculateContentHash } from "@hardkas/artifacts";
+import { recomputeDeclaredContentHash } from "@hardkas/artifacts";
 import type { TxId } from "@hardkas/core";
 import { computeQueryHash } from "../serialize.js";
 import { paginateAndFormatResult } from "../format.js";
@@ -380,7 +380,7 @@ function toSummary(receipt: any, trace: any | null): ReplaySummaryResult {
 
 function computeContentHashSafe(obj: any): string {
   try {
-    return calculateContentHash(obj);
+    return recomputeDeclaredContentHash(obj);
   } catch {
     return "error-computing-hash";
   }

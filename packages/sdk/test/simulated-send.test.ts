@@ -21,8 +21,11 @@ describe("Simulated Send Parity", () => {
     fs.rmSync(tmpDir, { recursive: true, force: true });
   });
 
+  // Wave 1.2 · IC-5′.6/.8: the parent plan is resolved from the store by identity
+  // (no in-memory alias), so the plan is persisted before its signed is sent.
   it("send(signed, { persist: true }) -> artifact exists on disk", async () => {
     const plan = await sdk.tx.plan({ from: "kaspa:sim_alice", to: "kaspa:sim_bob", amount: "5" });
+    await sdk.artifacts.write(plan);
     const signed = await sdk.tx.sign(plan, "kaspa:sim_alice", { persist: false });
 
     const result = await sdk.tx.send(signed, { persist: true });
@@ -41,8 +44,9 @@ describe("Simulated Send Parity", () => {
     expect(fs.existsSync(result.receiptPath!)).toBe(true);
   });
 
-  it("send(signed, { persist: false }) -> no disk write and no crash", async () => {
+  it("send(signed, { persist: false }) -> no receipt on disk and no crash", async () => {
     const plan = await sdk.tx.plan({ from: "kaspa:sim_alice", to: "kaspa:sim_bob", amount: "5" });
+    await sdk.artifacts.write(plan);
     const signed = await sdk.tx.sign(plan, "kaspa:sim_alice", { persist: false });
 
     const result = await sdk.tx.send(signed, { persist: false });

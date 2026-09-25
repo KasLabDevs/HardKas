@@ -1,38 +1,56 @@
 import { describe, it, expect, beforeAll } from "vitest";
+import { createDevServer } from "../src/server.js";
 import { resolveEscrowIntegrationConfig } from "./escrow-integration-config.js";
 
-const BASE_URL = process.env.HARDKAS_DEV_SERVER_URL ?? "http://127.0.0.1:3000";
-const headers = { "Content-Type": "application/json", "X-Hardkas-Request": "true" };
+// T-A05 (AUD-05): this suite used to `fetch` http://127.0.0.1:3000, a server only
+// the retired localnet global setup started, so the canonical gate failed with
+// ECONNREFUSED. It now drives the dev-server in process through the Hono app,
+// like server.test.ts: no port is bound and no external process is needed.
+const PORT = 7423; // Only used for Host/Origin validation; nothing listens.
+const server = createDevServer({ port: PORT, host: "127.0.0.1" });
+const app = server.app;
+const token = (server as any).token as string;
+const headers = {
+  host: `127.0.0.1:${PORT}`,
+  Authorization: `Bearer ${token}`,
+  "Content-Type": "application/json",
+  "X-Hardkas-Request": "true"
+};
 
 let config = {
-    buyer: { publicKeyHex: "0a5996ccb6b3e80c85c2921c5720bcff27d2c3e1e69da5c50674ed4466b02662" }, 
-    seller: { publicKeyHex: "a85b9b8b7ed6fc01b7a2d4b8be357e60ea9b02a2491a5e128cc1e9fdf5522731" }, 
-    arbiter: { publicKeyHex: "3ab915359756b5394208bd165b5120ec0be4061a1290380c5ce54460decfb881" }, 
+    buyer: { publicKeyHex: "0a5996ccb6b3e80c85c2921c5720bcff27d2c3e1e69da5c50674ed4466b02662" },
+    seller: { publicKeyHex: "a85b9b8b7ed6fc01b7a2d4b8be357e60ea9b02a2491a5e128cc1e9fdf5522731" },
+    arbiter: { publicKeyHex: "3ab915359756b5394208bd165b5120ec0be4061a1290380c5ce54460decfb881" },
     buyerDestinationSpk: "20f69a597a760c2d3eddb5e6db24e39ee0b3b429188e63cc8d8174f8cfb5e11bbdac",
     sellerDestinationSpk: "208d1f2a36b5ec63251ed7a69b0fa6bb781e6a928421c97a5b3eeef52bc5da8669ac",
-    refundAmount: "100000000", 
+    refundAmount: "100000000",
     releaseAmount: "100000000"
 };
 
-// Creating an escrow needs a compatible silverc; that case is opt-in integration.
+// Creating an escrow needs a compatible silverc and funded dev accounts; that case is opt-in integration.
 const INTEGRATION = process.env.HARDKAS_ESCROW_INTEGRATION === "1";
 
 describe("Session Recovery Matrix", () => {
-    beforeAll(async () => { Object.assign(config, await resolveEscrowIntegrationConfig()); }, 30000);
+    // Resolving the integration config loads kaspa-wasm and writes dev accounts
+    // under the cwd; only do that when the integration case actually runs.
+    beforeAll(async () => {
+        if (!INTEGRATION) return;
+        Object.assign(config, await resolveEscrowIntegrationConfig());
+    }, 30000);
     let id = "";
 
     it.runIf(INTEGRATION)("[conditional integration] should recover session state via GET cleanly", async () => {
-        const createRes = await fetch(`${BASE_URL}/api/escrows`, { method: "POST", headers, body: JSON.stringify(config) });
+        const createRes = await app.request("/api/escrows", { method: "POST", headers, body: JSON.stringify(config) });
         id = (await createRes.json()).data.id;
-        
-        const getRes = await fetch(`${BASE_URL}/api/escrows/${id}`, { headers });
+
+        const getRes = await app.request(`/api/escrows/${id}`, { headers });
         const data = await getRes.json();
         expect(data.ok).toBe(true);
         expect(data.data.state).toBe("CREATED");
     });
-    
+
     it("should return 404 for unknown session id", async () => {
-        const getRes = await fetch(`${BASE_URL}/api/escrows/unknown-id-123`, { headers });
+        const getRes = await app.request("/api/escrows/unknown-id-123", { headers });
         const data = await getRes.json();
         expect(data.ok).toBe(false);
         expect(getRes.status).toBe(404);

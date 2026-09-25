@@ -70,10 +70,13 @@ export async function runDevLast(options: {
   UI.info(`Targeting latest artifact: ${target.name}`);
 
   const wsSuffix = options.workspaceRoot ? ` --workspace ${options.workspaceRoot}` : "";
+  // Wave 1.2 · IC-5′.11: suggestions name a contained workspace path (a file name
+  // root is neither a path nor an artifactId and is not accepted by the resolver).
+  const whyTarget = path.relative(loaded.cwd, targetPath).replace(/\\/g, "/");
 
   if (options.explain) {
     console.log(`\nTo explain this artifact, run:`);
-    console.log(`hardkas why ${target.name.replace(".json", "")}${wsSuffix}`);
+    console.log(`hardkas why ${whyTarget}${wsSuffix}`);
     return;
   }
 
@@ -81,7 +84,7 @@ export async function runDevLast(options: {
     try {
       const data = fs.readFileSync(targetPath, "utf-8");
       console.log(JSON.stringify(JSON.parse(data), null, 2));
-      UI.printNextSteps([`hardkas why ${target.name.replace(".json", "")}${wsSuffix}`]);
+      UI.printNextSteps([`hardkas why ${whyTarget}${wsSuffix}`]);
     } catch (e) {
       UI.error("Failed to inspect artifact: " + e);
     }
@@ -99,7 +102,7 @@ export async function runDevLast(options: {
       try {
         const result = await runTxReceipt({ txId, cwd: loaded.cwd });
         console.log(result.formatted);
-        UI.printNextSteps([`hardkas why ${txId}${wsSuffix}`]);
+        UI.printNextSteps([`hardkas why --tx ${txId}${wsSuffix}`]);
       } catch (e) {
         UI.error("Replay failed: " + e);
       }
@@ -108,7 +111,7 @@ export async function runDevLast(options: {
       console.log(`\nReplaying transaction semantics for ${target.name}...`);
       try {
         await runTxVerify({ path: targetPath, json: false, workspaceRoot: loaded.cwd });
-        UI.printNextSteps([`hardkas why ${target.name.replace(".json", "")}${wsSuffix}`]);
+        UI.printNextSteps([`hardkas why ${whyTarget}${wsSuffix}`]);
       } catch (e) {
         UI.error("Replay verification failed: " + e);
       }
@@ -120,6 +123,6 @@ export async function runDevLast(options: {
   UI.causality("Latest Workflow Resolved", { Artifact: target.name }, [
     `hardkas dev last --replay${wsSuffix}`,
     `hardkas dev last --inspect${wsSuffix}`,
-    `hardkas why ${target.name.replace(".json", "")}${wsSuffix}`
+    `hardkas why ${whyTarget}${wsSuffix}`
   ]);
 }

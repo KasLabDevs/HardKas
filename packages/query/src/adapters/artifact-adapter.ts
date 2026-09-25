@@ -7,7 +7,7 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import {
-  calculateContentHash,
+  recomputeDeclaredContentHash,
   verifyArtifactIntegrity,
   verifyArtifactSemantics,
   verifyFeeSemantics,
@@ -174,9 +174,14 @@ export class ArtifactQueryAdapter implements QueryAdapter {
     // Integrity
     const integrityResult = await verifyArtifactIntegrity(raw);
     const semanticResult = verifyArtifactSemantics(raw, { strict: true });
-    const hashMatch = raw.contentHash
-      ? calculateContentHash(raw) === raw.contentHash
-      : true;
+    let hashMatch = true;
+    if (raw.contentHash) {
+      try {
+        hashMatch = recomputeDeclaredContentHash(raw) === raw.contentHash;
+      } catch {
+        hashMatch = false; // invalid or missing hashVersion: no identity can be established
+      }
+    }
 
     // Economics (for tx artifacts)
     let economics: ArtifactInspectResult["economics"];

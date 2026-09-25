@@ -1,6 +1,6 @@
 import fs from "node:fs/promises";
 import path from "node:path";
-import { calculateContentHash } from "@hardkas/artifacts";
+import { calculateContentHash, CURRENT_HASH_VERSION } from "@hardkas/artifacts";
 import { systemRuntimeContext } from "@hardkas/core";
 import { UI } from "../ui.js";
 
@@ -39,10 +39,11 @@ export async function runArtifactCreate(options: ArtifactCreateOptions) {
     type: options.type,
     schemaValid,
     payload,
-    createdAt
+    createdAt,
+    hashVersion: CURRENT_HASH_VERSION
   };
 
-  const contentHash = calculateContentHash(artifact);
+  const contentHash = calculateContentHash(artifact, CURRENT_HASH_VERSION);
 
   const finalArtifact = {
     ...artifact,

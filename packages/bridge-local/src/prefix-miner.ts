@@ -36,7 +36,7 @@ export function simulatePrefixMining(
     const payload = { ...payloadBase, nonce };
     const serialized = serializeBridgePayload(payload);
 
-    const hash = calculateContentHash({ payload: serialized });
+    const hash = calculateContentHash({ payload: serialized }, 4); // domain digest, pinned (IC-1′.7 is Wave 1.3)
 
     if (hash.startsWith(prefix)) {
       return { nonce, hash, attempts: attempts + 1 };

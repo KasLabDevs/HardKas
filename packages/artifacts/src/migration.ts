@@ -1,4 +1,4 @@
-import { calculateContentHash, CURRENT_HASH_VERSION } from "./canonical.js";
+import { calculateContentHash, CURRENT_HASH_VERSION, recomputeDeclaredContentHash } from "./canonical.js";
 import { ARTIFACT_VERSION } from "./schemas.js";
 import { sortUtxosByOutpoint } from "./verify.js";
 import { HARDKAS_VERSION } from "./constants.js";
@@ -357,13 +357,12 @@ export function migrateArtifactPayload(
     }
   }
 
-  // Recalculate content hash with current hash version (double-pass)
+  // Seal the identity under the current hash version: one pass. lineage.artifactId
+  // is a self reference excluded by exact path, so it never feeds the hash.
   current.hashVersion = CURRENT_HASH_VERSION;
-  let hash = calculateContentHash(current, CURRENT_HASH_VERSION);
-  // Update lineage.artifactId to match the new contentHash, then recalculate
+  const hash = calculateContentHash(current, CURRENT_HASH_VERSION);
   if (current.lineage && typeof current.lineage === "object") {
     (current.lineage as Record<string, unknown>).artifactId = hash;
-    hash = calculateContentHash(current, CURRENT_HASH_VERSION);
   }
   current.contentHash = hash;
 
@@ -406,12 +405,13 @@ export function generateMigrationReceipt(
   newArtifact: ArtifactPayload,
   migrationId: string
 ): any {
+  // Outside a producer a hash is recomputed with the version the artifact declares.
   const oldHash =
     (oldArtifact.contentHash as string) ||
-    calculateContentHash(oldArtifact, CURRENT_HASH_VERSION);
+    recomputeDeclaredContentHash(oldArtifact);
   const newHash =
     (newArtifact.contentHash as string) ||
-    calculateContentHash(newArtifact, CURRENT_HASH_VERSION);
+    recomputeDeclaredContentHash(newArtifact);
 
   const receipt: any = {
     schema: HardkasSchemas.MigrationReceiptV1,

@@ -41,6 +41,9 @@ describe("Multisig Adversarial Suite", () => {
     const carol = await sdk.accounts.resolve("carol");
 
     const plan = await sdk.tx.plan({ from: "alice", to: "bob", amount: "10" });
+    // Wave 1.2 · IC-5′.6/.8: an append verifies the partial against its parent plan
+    // resolved from the store by identity (no in-memory alias): persist the plan.
+    await sdk.artifacts.write(plan);
 
     // Threshold = 2, Required = Alice, Bob, Carol
     const options = {
@@ -70,6 +73,7 @@ describe("Multisig Adversarial Suite", () => {
     const bob = await sdk.accounts.resolve("bob");
 
     const plan = await sdk.tx.plan({ from: "alice", to: "bob", amount: "5" });
+    await sdk.artifacts.write(plan);
     const sig1 = await sdk.tx.sign(plan, "alice", {
       threshold: 2,
       requiredSigners: [alice.address, bob.address]
@@ -86,6 +90,7 @@ describe("Multisig Adversarial Suite", () => {
     const bob = await sdk.accounts.resolve("bob");
 
     const plan = await sdk.tx.plan({ from: "alice", to: "bob", amount: "5" });
+    await sdk.artifacts.write(plan);
     const sig1 = await sdk.tx.sign(plan, "alice", {
       threshold: 2,
       requiredSigners: [alice.address, bob.address]
@@ -147,6 +152,7 @@ describe("Multisig Adversarial Suite", () => {
     ];
 
     const plan = await sdk.tx.plan({ from: "alice", to: "bob", amount: "10" });
+    await sdk.artifacts.write(plan);
     const options = {
       threshold: 3,
       requiredSigners: [alice.address, bob.address, carol.address]
@@ -177,6 +183,7 @@ describe("Multisig Adversarial Suite", () => {
     const bob = await sdk.accounts.resolve("bob");
 
     const plan = await sdk.tx.plan({ from: "alice", to: "bob", amount: "5" });
+    await sdk.artifacts.write(plan);
     const sig1 = await sdk.tx.sign(plan, "alice", {
       threshold: 2,
       requiredSigners: [alice.address, bob.address]
@@ -201,6 +208,7 @@ describe("Multisig Adversarial Suite", () => {
     const bob = await sdk.accounts.resolve("bob");
 
     const plan = await sdk.tx.plan({ from: "alice", to: "bob", amount: "5" });
+    await sdk.artifacts.write(plan);
     const sig1 = await sdk.tx.sign(plan, "alice", {
       threshold: 2,
       requiredSigners: [alice.address, bob.address]
@@ -222,6 +230,7 @@ describe("Multisig Adversarial Suite", () => {
     const carol = await sdk.accounts.resolve("carol");
 
     const plan = await sdk.tx.plan({ from: "alice", to: "bob", amount: "5" });
+    await sdk.artifacts.write(plan);
     const sig1 = await sdk.tx.sign(plan, "alice", {
       threshold: 2,
       requiredSigners: [alice.address, bob.address]

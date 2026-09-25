@@ -90,7 +90,10 @@ describe("Artifact Property Tests (fast-check)", () => {
     );
   });
 
-  it("should ignore non-semantic fields in hash (contentHash, artifactId, etc)", () => {
+  it("should exclude only the top-level self reference (contentHash) and authenticate artifactId", () => {
+    // Wave 1.1 · IC-1′.1a: `contentHash` is excluded by exact path. A top-level
+    // `artifactId` is no exclusion in hashVersion 5 (IC-7.3 forbids it outright from
+    // Wave 1.3), so adding one must change the hash instead of being ignored.
     fc.assert(
       fc.property(
         fc.record({
@@ -101,14 +104,11 @@ describe("Artifact Property Tests (fast-check)", () => {
         (base) => {
           const hash1 = calculateContentHash(base);
 
-          const withIgnored = {
-            ...base,
-            contentHash: "something-else",
-            artifactId: "another-id"
-          };
-          const hash2 = calculateContentHash(withIgnored);
+          const withSelfReference = { ...base, contentHash: "something-else" };
+          expect(calculateContentHash(withSelfReference)).toBe(hash1);
 
-          expect(hash1).toBe(hash2);
+          const withIdentityCopy = { ...base, artifactId: "another-id" };
+          expect(calculateContentHash(withIdentityCopy)).not.toBe(hash1);
         }
       )
     );

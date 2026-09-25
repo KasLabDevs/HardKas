@@ -1,7 +1,7 @@
 import {
   TxPlan,
   TxReceipt,
-  calculateContentHash,
+  recomputeDeclaredContentHash,
   diffArtifacts
 } from "@hardkas/artifacts";
 import { applySimulatedPlan } from "./transactions.js";
@@ -38,8 +38,13 @@ export function verifyReplay(
   const errors: string[] = [];
   const reportDivergences: any[] = [];
 
-  // 1. Plan Integrity (Deterministic self-check)
-  const currentPlanHash = calculateContentHash(originalPlan);
+  // 1. Plan Integrity (Deterministic self-check, with the version the plan declares)
+  let currentPlanHash: string;
+  try {
+    currentPlanHash = recomputeDeclaredContentHash(originalPlan);
+  } catch (error) {
+    currentPlanHash = `HASH_VERSION_INVALID:${error instanceof Error ? error.message : String(error)}`;
+  }
   let planOk = true;
   if (originalPlan.contentHash && currentPlanHash !== originalPlan.contentHash) {
     planOk = false;

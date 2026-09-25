@@ -50,7 +50,7 @@ export const cliSemantics: Record<string, CliCommandSemantics> = {
     acceptedIdentifiers: ["filepath", "canonical artifactId"],
     sideEffects: ["Submits transaction to network mempool or mutates local simulator state."],
     evidenceMeaning: "Proves submission acceptance by the target environment (mempool inclusion or simulator mutation). DOES NOT prove finality.",
-    limitations: ["CLI-NEXTSTEPS-1: The CLI currently hints `hardkas explain <txId>` upon success, but `explain` does not accept `txId`."],
+    limitations: ["The printed next steps name the receipt's canonical artifactId (`hardkas explain <artifactId>`); the txId is reported as `txId` and is looked up with `--tx`."],
     relatedConcepts: ["/concepts/transactions/submission.md"],
     relatedGuides: ["/guides/transactions/submit-a-transaction.md"]
   },
@@ -75,10 +75,10 @@ export const cliSemantics: Record<string, CliCommandSemantics> = {
     reads: ["Artifact JSON file", "Parent artifacts in lineage"],
     writes: [],
     artifactsProduced: [],
-    acceptedIdentifiers: ["explicit filepath", "exact canonical artifactId", "planId (legacy compatibility)"],
+    acceptedIdentifiers: ["explicit filepath", "exact canonical artifactId", "--plan <planId>", "--signed <signedId>", "--tx <txId>", "--workflow <workflowId>"],
     sideEffects: [],
     evidenceMeaning: "Produces a human-readable trace of the artifact's lineage and assertions.",
-    limitations: ["Does NOT accept `txId` or `contentHash` as generic locators."],
+    limitations: ["A bare label, txId or workflowId is refused with NAMESPACE_REQUIRED; name its namespace flag. The `--tx` namespace returns the submission receipt, never the signed transaction."],
     relatedGuides: ["/how-to/verify-evidence.md"]
   },
   "hardkas why": {
@@ -87,9 +87,10 @@ export const cliSemantics: Record<string, CliCommandSemantics> = {
     reads: ["Artifact JSON file", "Parent artifacts in lineage"],
     writes: [],
     artifactsProduced: [],
-    acceptedIdentifiers: ["explicit filepath", "exact canonical artifactId", "planId (legacy compatibility)"],
+    acceptedIdentifiers: ["explicit filepath", "exact canonical artifactId", "--plan <planId>", "--signed <signedId>", "--tx <txId>", "--workflow <workflowId>"],
     sideEffects: [],
-    evidenceMeaning: "Extended causal tracing. Identical constraints to `explain`."
+    evidenceMeaning: "Extended causal tracing. Identical constraints to `explain`.",
+    limitations: ["A bare label, txId or workflowId is refused with NAMESPACE_REQUIRED; name its namespace flag. The `--tx` namespace returns the submission receipt, never the signed transaction."]
   },
   "hardkas accounts keys": {
     commandPath: "hardkas accounts keys",

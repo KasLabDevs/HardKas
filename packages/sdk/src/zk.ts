@@ -4,6 +4,14 @@ import { calculateContentHash } from "@hardkas/artifacts";
 import type { Hardkas } from "./index.js";
 import { HardkasSchemas } from "@hardkas/artifacts";
 
+/**
+ * ZK corpus digests are domain digests over fixture files, not artifact
+ * identities. Their algorithm is pinned to the legacy v4 canonical form so the
+ * shipped corpus manifests keep verifying while the artifact hash version moves;
+ * the dedicated domain-digest function is IC-1′.7 (Wave 1.3).
+ */
+const ZK_CORPUS_DIGEST_VERSION = 4;
+
 export type ZkProofSystem = "groth16" | "risc0" | "unknown";
 
 export interface ZkIssue {
@@ -177,7 +185,7 @@ export async function inspectZkProof(
     const filePath = path.join(dir, file);
     const value = readJson(filePath, issues);
     if (!value) continue;
-    const actual = calculateContentHash(value);
+    const actual = calculateContentHash(value, ZK_CORPUS_DIGEST_VERSION);
     contentHashes[file] = actual;
     const expected = manifest?.contentHashes?.[key];
     if (typeof expected === "string" && expected !== actual) {
@@ -450,9 +458,9 @@ function verifyGroth16Fixture(dir: string, manifest: any, issues: ZkIssue[]) {
   verifyManifestHash(manifest, "verifierMetadata", metadata, issues, metadataPath);
   verifyManifestHash(manifest, "verifyReport", report, issues, reportPath);
 
-  const publicInputsHash = calculateContentHash(publicInputs);
-  const verificationKeyHash = calculateContentHash(verificationKey);
-  const proofHash = calculateContentHash(proof);
+  const publicInputsHash = calculateContentHash(publicInputs, ZK_CORPUS_DIGEST_VERSION);
+  const verificationKeyHash = calculateContentHash(verificationKey, ZK_CORPUS_DIGEST_VERSION);
+  const proofHash = calculateContentHash(proof, ZK_CORPUS_DIGEST_VERSION);
   expectEqual(
     proof.publicInputsHash,
     publicInputsHash,
@@ -510,7 +518,7 @@ function verifyGroth16Fixture(dir: string, manifest: any, issues: ZkIssue[]) {
     verificationKeyHash,
     statementHash: publicInputs.statementHash,
     verifierAdapter: manifest.verifierAdapter
-  });
+  }, ZK_CORPUS_DIGEST_VERSION);
   expectEqual(
     metadata.coherenceDigest,
     coherenceDigest,
@@ -614,7 +622,7 @@ function verifyManifestHash(
     });
     return;
   }
-  const actual = calculateContentHash(value);
+  const actual = calculateContentHash(value, ZK_CORPUS_DIGEST_VERSION);
   if (actual !== expected) {
     issues.push({
       code: "ZK_CORPUS_HASH_MISMATCH",

@@ -55,6 +55,8 @@ export type {
 } from "./schemas.js";
 
 export * from "./store.js";
+export * from "./resolve.js";
+export * from "./silver-refs.js";
 export * from "./artifact-handle.js";
 export * from "./lineage-error.js";
 export * from "./receipt-lookup-error.js";

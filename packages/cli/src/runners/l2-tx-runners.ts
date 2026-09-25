@@ -26,7 +26,8 @@ import {
   assertValidIgraTxReceiptArtifact,
   listIgraTxReceiptArtifacts,
   loadIgraTxReceiptArtifact,
-  calculateContentHash
+  calculateContentHash,
+  CURRENT_HASH_VERSION
 } from "@hardkas/artifacts";
 import { loadRealAccountStore, resolveRealAccountOrAddress } from "@hardkas/accounts";
 
@@ -127,8 +128,9 @@ export async function runL2TxBuild(options: L2TxBuildOptions): Promise<void> {
     status: "built"
   };
 
-  // Phase 2: Deterministic ID and Hash
-  const hash = calculateContentHash(artifact);
+  // Phase 2: Deterministic ID and Hash (hashVersion declared before hashing, IC-1′.3)
+  artifact.hashVersion = CURRENT_HASH_VERSION;
+  const hash = calculateContentHash(artifact, CURRENT_HASH_VERSION);
   const planId = createIgraPlanId(hash);
   artifact.planId = planId;
   artifact.contentHash = hash;
@@ -297,8 +299,9 @@ export async function runL2TxSign(options: L2TxSignOptions): Promise<void> {
     status: "signed"
   };
 
-  // Phase 2: Deterministic ID and Hash
-  const hash = calculateContentHash(artifact);
+  // Phase 2: Deterministic ID and Hash (hashVersion declared before hashing, IC-1′.3)
+  artifact.hashVersion = CURRENT_HASH_VERSION;
+  const hash = calculateContentHash(artifact, CURRENT_HASH_VERSION);
   const signedId = createIgraSignedId(hash);
   artifact.signedId = signedId;
   artifact.contentHash = hash;

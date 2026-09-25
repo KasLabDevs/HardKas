@@ -24,11 +24,11 @@ title: hardkas explain
 - **Reads:** Artifact JSON file, Parent artifacts in lineage
 - **Writes:** 
 - **Produces:** 
-- **Accepted Identifiers:** `explicit filepath`, `exact canonical artifactId`, `planId (legacy compatibility)`
+- **Accepted Identifiers:** `explicit filepath`, `exact canonical artifactId`, `--plan <planId>`, `--signed <signedId>`, `--tx <txId>`, `--workflow <workflowId>`
 - **Evidence Semantics:** Produces a human-readable trace of the artifact's lineage and assertions.
 
 #### Known Limitations
-- Does NOT accept `txId` or `contentHash` as generic locators.
+- A bare label, txId or workflowId is refused with NAMESPACE_REQUIRED; name its namespace flag. The `--tx` namespace returns the submission receipt, never the signed transaction.
 
 #### Related
 - Guide: /how-to/verify-evidence.md

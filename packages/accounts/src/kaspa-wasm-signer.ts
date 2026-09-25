@@ -1,4 +1,4 @@
-import { TxPlanArtifact, calculateContentHash } from "@hardkas/artifacts";
+import { TxPlanArtifact, recomputeDeclaredContentHash } from "@hardkas/artifacts";
 import {
   HardkasKaspaAccount,
   HardkasTxPlanSigner,
@@ -298,7 +298,7 @@ export class KaspaWasmPrivateKeySigner implements HardkasTxPlanSigner {
         txId: signedTx.id,
         signature: {
           // We use the txid as the signature identifier in the artifact
-          value: signedTx.id || calculateContentHash(plan)
+          value: signedTx.id || plan.contentHash || recomputeDeclaredContentHash(plan)
         }
       };
     } catch (error: any) {

@@ -1,15 +1,12 @@
 import { defineConfig } from "vitest/config";
 import { mkdirSync } from "node:fs";
+import { hardkasWorkspaceSources } from "./vitest.workspace-resolver.js";
 
 // Ensure coverage temp directory exists (vitest v8 provider writes temp files here)
 mkdirSync("./coverage/internal/.tmp", { recursive: true });
 
 export default defineConfig({
-  resolve: {
-    alias: [
-      { find: /^@hardkas\/(.*)$/, replacement: new URL('./packages/$1/src/index.ts', import.meta.url).pathname }
-    ]
-  },
+  plugins: [hardkasWorkspaceSources()],
   test: {
     include: ["packages/*/test/**/*.e2e.test.ts"],
     exclude: ["**/node_modules/**", "**/dist/**"],

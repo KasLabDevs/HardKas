@@ -1,11 +1,14 @@
 import path from "node:path";
 import fs from "node:fs";
 import type { HardkasWorkspace } from "./workspace.js";
-import { writeArtifact } from "@hardkas/artifacts";
-import type { HardkasArtifactBase } from "@hardkas/artifacts";
+import { writeArtifact, checkArtifactIdentity, ARTIFACT_ID_PATTERN } from "@hardkas/artifacts";
+import type { HardkasArtifactBase, LookupInput } from "@hardkas/artifacts";
 import { HardkasError } from "@hardkas/core";
 import type { Hardkas } from "./index.js";
 import { assertPublicNetworkAllowed } from "./policy.js";
+
+/** What `read()` / `verify()` accept: an untyped string (contained path or 64-hex artifactId) or a typed namespace. */
+export type ArtifactLookup = string | LookupInput;
 
 export interface WriteArtifactOptions {
   /**
@@ -46,20 +49,28 @@ export interface WriteArtifactResult {
  * Deterministic Artifact I/O boundary.
  */
 export class HardkasArtifactsManager {
+  /**
+   * Wave 1.2 · IC-5′.8: a memo of the cold resolver, keyed ONLY by artifactId
+   * (the recomputed contentHash) and holding only artifacts that were verified and
+   * that exist in the workspace store. Warm ≡ cold ≡ after restart (S1, S2).
+   */
   private cache = new Map<string, any>();
 
   constructor(private sdk: Hardkas) {}
 
   /**
-   * Caches an in-memory artifact.
+   * Memoises an artifact that exists in the store, under its recomputed identity.
+   * The artifact must hash to the identity it declares; labels and txIds are never keys.
    */
   cacheArtifact(artifact: any): void {
-    const record = artifact as unknown as Record<string, string>;
-    const hash = record.contentHash || "unknown";
-    if (record.planId) this.cache.set(record.planId, artifact);
-    if (record.signedId) this.cache.set(record.signedId, artifact);
-    if (record.txId) this.cache.set(record.txId, artifact);
-    this.cache.set(hash, artifact);
+    const check = checkArtifactIdentity(artifact);
+    if (!check.ok) {
+      throw new HardkasError(
+        "ARTIFACT_HASH_MISMATCH",
+        `Refusing to cache an artifact that does not verify: ${check.issues.map((i) => i.code).join(", ")}`
+      );
+    }
+    this.cache.set(check.artifactId, artifact);
   }
 
   /**
@@ -93,17 +104,29 @@ export class HardkasArtifactsManager {
       await this.sdk.plugins.onBeforeArtifactWrite({ artifact, options });
     }
 
-    // Ensure hashVersion is explicitly written to disk so readers don't fallback to v1
-    if (!record.hashVersion) {
-      const { CURRENT_HASH_VERSION } = await import("@hardkas/artifacts");
-      record.hashVersion = CURRENT_HASH_VERSION;
+    // IC-1′.3–4 / N3: the writer never completes an artifact after it was hashed.
+    // The producer declares hashVersion before hashing; if it is missing or the
+    // body no longer hashes to the declared identity, the write is refused.
+    const { CURRENT_HASH_VERSION, MIN_HASH_VERSION, calculateContentHash, readDeclaredHashVersion } =
+      await import("@hardkas/artifacts");
+    const declaredVersion = readDeclaredHashVersion(record);
+    if (declaredVersion === null) {
+      throw new HardkasError(
+        "HASH_VERSION_MISSING",
+        `Refusing to write ${String(record.schema ?? "artifact")}: hashVersion must be an integer between ${MIN_HASH_VERSION} and ${CURRENT_HASH_VERSION}, written by the producer before hashing (got ${JSON.stringify(record.hashVersion)}).`
+      );
+    }
+    if (typeof record.contentHash === "string" && record.contentHash.length > 0) {
+      const recomputed = calculateContentHash(record, declaredVersion);
+      if (recomputed !== record.contentHash) {
+        throw new HardkasError(
+          "ARTIFACT_HASH_MISMATCH",
+          `Refusing to write ${String(record.schema ?? "artifact")}: body hashes to ${recomputed} under hashVersion ${declaredVersion} but declares ${record.contentHash} (a field changed after hashing).`
+        );
+      }
     }
 
     const hash = record.contentHash || "unknown";
-    if (record.planId) this.cache.set(record.planId, artifact);
-    if (record.signedId) this.cache.set(record.signedId, artifact);
-    if (record.txId) this.cache.set(record.txId, artifact);
-    this.cache.set(hash, artifact);
 
     if (options.dryRun) {
       return {
@@ -129,6 +152,10 @@ export class HardkasArtifactsManager {
       // Canonical store
       const store = new ProjectArtifactStore(this.sdk.workspace.root);
       absolutePath = await store.writeArtifact(artifact);
+      // Now on disk: memoise under its recomputed identity (IC-5′.8).
+      if (typeof record.contentHash === "string" && record.contentHash.length > 0) {
+        this.cache.set(record.contentHash, artifact);
+      }
     }
 
     // Emit the event so localnet and query-store can index it.
@@ -147,7 +174,8 @@ export class HardkasArtifactsManager {
     const wId = options.workflowId || "wf_unknown_standalone";
     const cId = options.correlationId || wId;
     const netId = options.networkId || record.networkId || "unknown";
-    const artifactId = record.artifactId || hash;
+    // IC-5′.11: events carry the canonical identity (the content hash), never a label.
+    const artifactId = hash;
 
     coreEvents.emit(
       createEventEnvelope({
@@ -177,41 +205,96 @@ export class HardkasArtifactsManager {
   }
 
   /**
-   * Retrieves an artifact from the in-memory cache.
+   * Retrieves a memoised artifact by its 64-hex artifactId. Labels and txIds are
+   * never cache keys (IC-5′.8).
    */
-  getCached(id: string): any {
-    return this.cache.get(id);
+  getCached(artifactId: string): any {
+    return typeof artifactId === "string" && ARTIFACT_ID_PATTERN.test(artifactId)
+      ? this.cache.get(artifactId)
+      : undefined;
   }
 
   /**
-   * Reads an artifact by path or ID/hash from the workspace.
+   * Reads an artifact from the workspace store (Wave 1.2 · IC-5′ / Q3-II).
+   *
+   * - `read(string)`: a contained workspace path or a 64-hex artifactId. A label,
+   *   txId or workflowId is refused with `NAMESPACE_REQUIRED` (the error names the
+   *   exact replacement); there is no auto-detection and no fallback chain.
+   * - `read({ artifact })`, `read({ plan })`, `read({ signed })`, `read({ tx })`
+   *   (submissions only, never the signed), `read({ workflow })`.
+   *
+   * Every returned artifact was verified (declared hash version, claimed identity,
+   * derived label) before it was returned; ≥2 distinct candidates are an error.
    */
-  async read(id: string, options?: { expectedSchema?: string }): Promise<any> {
-    const cached = this.cache.get(id);
-    if (cached) {
-      if (options?.expectedSchema && cached.schema !== options.expectedSchema) {
-        throw new Error(`Schema mismatch. Expected ${options.expectedSchema}, got ${cached.schema}`);
+  async read(input: ArtifactLookup, options?: { expectedSchema?: string }): Promise<any> {
+    const { ARTIFACT_ID_PATTERN, ArtifactResolveError, ProjectArtifactStore, looksLikePath, parseUntypedLookup, resolveArtifact } =
+      await import("@hardkas/artifacts");
+
+    const checkSchema = (artifact: any, label: string) => {
+      if (options?.expectedSchema && artifact.schema !== options.expectedSchema) {
+        throw new HardkasError(
+          "ARTIFACT_SCHEMA_MISMATCH",
+          `Artifact ${label} has schema '${artifact.schema}' but expected '${options.expectedSchema}'`
+        );
       }
-      return cached;
-    }
+      return artifact;
+    };
 
-    const { ProjectArtifactStore } = await import("@hardkas/artifacts");
-    const store = new ProjectArtifactStore(this.sdk.workspace.root);
+    try {
+      const lookup: LookupInput = typeof input === "string" ? parseUntypedLookup(input) : input;
 
-    const artifact: any = await store.readArtifact(id);
-    if (options?.expectedSchema && artifact.schema !== options.expectedSchema) {
-      throw new Error(
-        `Artifact ${id} has schema '${artifact.schema}' but expected '${options.expectedSchema}'`
-      );
+      if ("artifact" in lookup) {
+        if (looksLikePath(lookup.artifact)) {
+          // Paths keep the store's boundary contract (PATH_TRAVERSAL) and are verified.
+          const store = new ProjectArtifactStore(this.sdk.workspace.root);
+          const artifact: any = await store.readArtifact(lookup.artifact);
+          if (typeof artifact?.contentHash === "string" && ARTIFACT_ID_PATTERN.test(artifact.contentHash)) {
+            this.cache.set(artifact.contentHash, artifact);
+          }
+          return checkSchema(artifact, lookup.artifact);
+        }
+        const memo = this.cache.get(lookup.artifact);
+        if (memo) return checkSchema(memo, lookup.artifact);
+      }
+
+      const resolved = await resolveArtifact(this.sdk.workspace.root, lookup);
+      this.cache.set(resolved.artifactId, resolved.artifact);
+      return checkSchema(resolved.artifact, resolved.artifactId);
+    } catch (e) {
+      if (e instanceof ArtifactResolveError) {
+        const err = new HardkasError(e.code, e.message);
+        (err as any).context = e.context;
+        throw err;
+      }
+      throw e;
     }
-    return artifact;
   }
 
   /**
    * Alias for read().
    */
-  async get(id: string, options?: { expectedSchema?: string }): Promise<any> {
-    return this.read(id, options);
+  async get(input: ArtifactLookup, options?: { expectedSchema?: string }): Promise<any> {
+    return this.read(input, options);
+  }
+
+  /** Loads a workspace-contained JSON file without verifying it (for `verify(path)`). */
+  private async readRawContainedFile(input: string): Promise<any> {
+    const root = path.resolve(this.sdk.workspace.root);
+    const candidate = path.isAbsolute(input) ? path.resolve(input) : path.resolve(root, input);
+    let real = candidate;
+    try {
+      real = fs.realpathSync(candidate);
+    } catch {}
+    const rel = path.relative(root, real);
+    if (rel === ".." || rel.startsWith(`..${path.sep}`) || path.isAbsolute(rel)) {
+      throw new HardkasError("PATH_TRAVERSAL", `Artifact path is outside the workspace: ${input}`);
+    }
+    if (!fs.existsSync(candidate) || !fs.statSync(candidate).isFile()) {
+      throw new HardkasError("ARTIFACT_NOT_FOUND", `Artifact file does not exist: ${input}`);
+    }
+    let raw = fs.readFileSync(candidate, "utf-8");
+    if (raw.charCodeAt(0) === 0xfeff) raw = raw.slice(1);
+    return JSON.parse(raw);
   }
 
   /**
@@ -249,6 +332,8 @@ export class HardkasArtifactsManager {
       throwOnInvalid?: boolean;
       strict?: boolean;
       enforceMetadata?: boolean;
+      /** An in-memory parent, used only if it IS the artifact's `lineage.parentArtifactId` (identity-checked). */
+      parent?: any;
     } = {}
   ): Promise<any> {
     const throwOnInvalid = options.throwOnInvalid ?? true;
@@ -258,9 +343,14 @@ export class HardkasArtifactsManager {
     let artifact: any;
     let id: string;
 
-    if (typeof target === "string") {
-      id = target;
-      if (!id) {
+    const isLookup =
+      typeof target === "string" ||
+      (target !== null && typeof target === "object" && !("schema" in target) && Object.keys(target).length === 1 &&
+        ["artifact", "plan", "signed", "tx", "workflow"].includes(Object.keys(target)[0]!));
+
+    if (isLookup) {
+      const label = typeof target === "string" ? target : JSON.stringify(target);
+      if (!label) {
         if (throwOnInvalid)
           throw new Error("No artifact target provided for verification.");
         return {
@@ -270,19 +360,29 @@ export class HardkasArtifactsManager {
         };
       }
       try {
-        artifact = await this.read(id);
+        const { looksLikePath } = await import("@hardkas/artifacts");
+        if (typeof target === "string" && looksLikePath(target)) {
+          // An explicit file is loaded raw (contained in the workspace) so that the
+          // verification below reports WHY it fails; only identity lookups pre-verify.
+          artifact = await this.readRawContainedFile(target);
+        } else {
+          artifact = await this.read(target as ArtifactLookup);
+        }
       } catch (e: unknown) {
         if (throwOnInvalid) throw e;
+        const code = (e as any)?.code;
         return {
           valid: false,
-          reason: "missing_artifact",
+          reason: code === "NAMESPACE_REQUIRED" ? "namespace_required" : "missing_artifact",
           message: ((e instanceof Error) ? ((e instanceof Error) ? ((e instanceof Error) ? e.message : String(e)) : String(e)) : String(e)),
-          artifactId: id
+          artifactId: label
         };
       }
+      // IC-7.2: identity is the content hash, never a top-level artifactId.
+      id = (artifact.contentHash || "") as string;
     } else {
       artifact = target;
-      id = (artifact.artifactId || artifact.contentHash || "") as string;
+      id = (artifact.contentHash || "") as string;
     }
 
     const { verifyArtifactIntegrity, verifyArtifactSemantics } =
@@ -290,13 +390,14 @@ export class HardkasArtifactsManager {
 
     const result = await verifyArtifactIntegrity(artifact);
     if (result.ok && strict) {
+      // References resolve from the workspace store only (IC-5′.6–.7); the cache is a
+      // memo of that same store, so it adds nothing here.
       const semResult = verifyArtifactSemantics(artifact, {
         strict: true,
+        workspaceRoot: this.sdk.workspace.root,
         artifactsDir: this.sdk.workspace.artifactsDir,
         enforceMetadata,
-        resolveArtifact: (id: string) => {
-          return this.cache.get(id);
-        }
+        ...(options.parent ? { parent: options.parent } : {})
       });
       if (!semResult.ok) {
         result.ok = false;
@@ -319,8 +420,12 @@ export class HardkasArtifactsManager {
                   ? "reference_hash_mismatch"
                   : result.issues[0]?.code === "POLICY_VIOLATION"
                     ? "policy_violation"
-                    : result.issues[0]?.code === "LEGACY_HASH_VERSION_UNSAFE"
-                      ? "legacy_hash_version_unsafe"
+                    : result.issues[0]?.code === "MIGRATION_REQUIRED" || result.issues[0]?.code === "LEGACY_HASH_VERSION_UNSAFE"
+                      ? "migration_required"
+                      : result.issues[0]?.code === "HASH_VERSION_INVALID"
+                        ? "hash_version_invalid"
+                        : result.issues[0]?.code === "LABEL_MISMATCH"
+                          ? "label_mismatch"
                       : result.issues[0]?.code === "PARENT_MISSING"
                         ? "parent_missing"
                         : "schema_invalid";
@@ -335,6 +440,8 @@ export class HardkasArtifactsManager {
         reason: mappedReason,
         message: result.issues.map((i: any) => i.message).join(", "),
         artifactId: id,
+        authScope: result.authScope,
+        unauthenticatedMaterialFields: result.unauthenticatedMaterialFields,
         expected: result.expectedHash,
         actual: result.actualHash,
         details: result.issues
@@ -342,7 +449,14 @@ export class HardkasArtifactsManager {
     }
 
     if (!throwOnInvalid) {
-      return { valid: true, artifactId: id, details: result };
+      // D-Q21: `valid` means integrity within `authScope`; a LEGACY scope lists what was never authenticated.
+      return {
+        valid: true,
+        artifactId: id,
+        authScope: result.authScope,
+        unauthenticatedMaterialFields: result.unauthenticatedMaterialFields,
+        details: result
+      };
     }
 
     return result;

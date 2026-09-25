@@ -1,7 +1,9 @@
 import {
   HARDKAS_VERSION,
   ARTIFACT_VERSION,
+  CURRENT_HASH_VERSION,
   calculateContentHash,
+  recomputeDeclaredContentHash,
   sortUtxosByOutpoint,
   type Snapshot
 } from "@hardkas/artifacts";
@@ -14,11 +16,19 @@ import type {
 import { deterministicCompare } from "@hardkas/core";
 
 /**
+ * Domain digests (utxoSetHash, accountsHash, stateHash) are NOT artifact
+ * identities. Their algorithm is pinned to the legacy v4 canonical form so their
+ * values do not move with the artifact hash version; the dedicated domain-digest
+ * function with its own algorithm version is IC-1′.7 (Wave 1.3).
+ */
+const DOMAIN_DIGEST_CANONICAL_VERSION = 4;
+
+/**
  * Calculates hash of the UTXO set (sorted by outpoint).
  */
 export function calculateUtxoSetHash(utxos: LocalnetUtxo[]): string {
   const sorted = sortUtxosByOutpoint(utxos);
-  return calculateContentHash(sorted);
+  return calculateContentHash(sorted, DOMAIN_DIGEST_CANONICAL_VERSION);
 }
 
 /**
@@ -28,7 +38,7 @@ export function calculateAccountsHash(accounts: LocalnetAccount[]): string {
   const sorted = [...(accounts || [])].sort((a, b) =>
     deterministicCompare(a.address, b.address)
   );
-  return calculateContentHash(sorted);
+  return calculateContentHash(sorted, DOMAIN_DIGEST_CANONICAL_VERSION);
 }
 
 /**
@@ -38,11 +48,14 @@ export function calculateStateHash(state: LocalnetState): string {
   const accountsHash = calculateAccountsHash(state.accounts);
   const utxoSetHash = calculateUtxoSetHash(state.utxos);
 
-  return calculateContentHash({
-    daaScore: state.daaScore,
-    accountsHash,
-    utxoSetHash
-  });
+  return calculateContentHash(
+    {
+      daaScore: state.daaScore,
+      accountsHash,
+      utxoSetHash
+    },
+    DOMAIN_DIGEST_CANONICAL_VERSION
+  );
 }
 
 /**
@@ -61,6 +74,7 @@ export function createLocalnetSnapshot(
     createdAt: new Date().toISOString(),
     hardkasVersion: HARDKAS_VERSION,
     version: ARTIFACT_VERSION,
+    hashVersion: CURRENT_HASH_VERSION,
     name,
     daaScore: state.daaScore,
     accountsHash,
@@ -74,7 +88,7 @@ export function createLocalnetSnapshot(
 
   const snapshot: Snapshot = {
     ...snapshotDraft,
-    contentHash: calculateContentHash(snapshotDraft)
+    contentHash: calculateContentHash(snapshotDraft, CURRENT_HASH_VERSION)
   };
 
   return {
@@ -89,13 +103,18 @@ export function createLocalnetSnapshot(
 export function verifySnapshot(snapshot: Snapshot): SnapshotVerificationResult {
   const errors: string[] = [];
 
-  // 1. Content Hash Verification
-  const currentContentHash = calculateContentHash(snapshot);
-  const contentMatch = snapshot.contentHash === currentContentHash;
-  if (!contentMatch)
-    errors.push(
-      `Content hash mismatch: expected ${snapshot.contentHash}, got ${currentContentHash}`
-    );
+  // 1. Content Hash Verification (with the version the snapshot declares)
+  let contentMatch = false;
+  try {
+    const currentContentHash = recomputeDeclaredContentHash(snapshot);
+    contentMatch = snapshot.contentHash === currentContentHash;
+    if (!contentMatch)
+      errors.push(
+        `Content hash mismatch: expected ${snapshot.contentHash}, got ${currentContentHash}`
+      );
+  } catch (error) {
+    errors.push(error instanceof Error ? error.message : String(error));
+  }
 
   // 2. Accounts Hash Verification
   const currentAccountsHash = calculateAccountsHash(snapshot.accounts);
@@ -114,11 +133,14 @@ export function verifySnapshot(snapshot: Snapshot): SnapshotVerificationResult {
     );
 
   // 4. State Hash Verification
-  const currentStateHash = calculateContentHash({
-    daaScore: snapshot.daaScore,
-    accountsHash: currentAccountsHash,
-    utxoSetHash: currentUtxoSetHash
-  });
+  const currentStateHash = calculateContentHash(
+    {
+      daaScore: snapshot.daaScore,
+      accountsHash: currentAccountsHash,
+      utxoSetHash: currentUtxoSetHash
+    },
+    DOMAIN_DIGEST_CANONICAL_VERSION
+  );
   const stateMatch = snapshot.stateHash === currentStateHash;
   if (!stateMatch)
     errors.push(
