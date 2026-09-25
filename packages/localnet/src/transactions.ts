@@ -6,7 +6,7 @@ import { getSpendableUtxos } from "./balance.js";
 import {
   createTxPlanArtifact,
   createSimulatedTxReceipt,
-  calculateContentHash,
+  recomputeDeclaredContentHash,
   HARDKAS_VERSION,
   ARTIFACT_VERSION
 } from "@hardkas/artifacts";
@@ -54,7 +54,7 @@ function generateDeterministicTxId(
   preStateHash: string,
   daaScore: string
 ): string {
-  const planHash = planArtifact.contentHash || calculateContentHash(planArtifact);
+  const planHash = planArtifact.contentHash || recomputeDeclaredContentHash(planArtifact);
   const input = `${planHash}:${preStateHash}:${daaScore}`;
   const hash = createHash("sha256").update(input).digest("hex").slice(0, 32);
   return `simtx_${hash}`;

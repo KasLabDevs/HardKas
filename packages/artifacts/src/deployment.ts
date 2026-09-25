@@ -29,6 +29,7 @@ export function createDeploymentRecord(opts: {
     deployedAt: new Date().toISOString(),
     hardkasVersion: HARDKAS_VERSION,
     version: ARTIFACT_VERSION,
+    hashVersion: CURRENT_HASH_VERSION,
     createdAt: new Date().toISOString(),
     mode: "real",
     ...(opts.txId ? { txId: opts.txId } : {}),
@@ -57,6 +58,7 @@ export function updateDeploymentStatus(
 ): DeploymentRecord {
   const updatedDraft: Omit<DeploymentRecord, "contentHash"> = {
     ...record,
+    hashVersion: CURRENT_HASH_VERSION,
     status: newStatus,
     deployedAt: new Date().toISOString(),
     ...(txId ? { txId } : {})

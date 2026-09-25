@@ -1,8 +1,22 @@
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import { Hardkas } from "../src/index.js";
+import { calculateContentHash, CURRENT_HASH_VERSION } from "@hardkas/artifacts";
 import fs from "node:fs";
 import path from "node:path";
 import os from "node:os";
+
+// Wave 1.1 · N3: the writer completes nothing, so fixtures declare hashVersion and
+// carry their real contentHash (a placeholder hash is refused as a post-hash mutation).
+function sealedPlanFixture() {
+  const artifact: any = {
+    schema: "hardkas.txPlan",
+    networkId: "simnet",
+    hashVersion: CURRENT_HASH_VERSION,
+    timestamp: new Date().toISOString()
+  };
+  artifact.contentHash = calculateContentHash(artifact, CURRENT_HASH_VERSION);
+  return artifact;
+}
 
 describe("Workspace Boundary Isolation", () => {
   let tmpDir: string;
@@ -41,12 +55,7 @@ describe("Workspace Boundary Isolation", () => {
     expect(resolved).toBe(path.join(path.resolve(tmpDir), "some", "nested", "file.json"));
 
     // 3. Verify Artifacts I/O creates files in the isolated tmp workspace
-    const dummyArtifact = {
-      schema: "hardkas.txPlan",
-      networkId: "simnet",
-      contentHash: "hash123",
-      timestamp: new Date().toISOString()
-    };
+    const dummyArtifact = sealedPlanFixture();
 
     const result = await sdk.artifacts.write(dummyArtifact as any);
 
@@ -61,7 +70,7 @@ describe("Workspace Boundary Isolation", () => {
       process.cwd(),
       ".hardkas",
       "artifacts",
-      "tx-plan-hash123.json"
+      `tx-plan-${dummyArtifact.contentHash}.json`
     );
     if (process.cwd() !== tmpDir) {
       expect(fs.existsSync(leakCheckPath)).toBe(false);
@@ -71,12 +80,7 @@ describe("Workspace Boundary Isolation", () => {
   it("should strictly respect dryRun without mutating any filesystem", async () => {
     const sdk = await Hardkas.open({ cwd: tmpDir });
 
-    const dummyArtifact = {
-      schema: "hardkas.txPlan",
-      networkId: "simnet",
-      contentHash: "hash-dry-run",
-      timestamp: new Date().toISOString()
-    };
+    const dummyArtifact = sealedPlanFixture();
 
     const result = await sdk.artifacts.write(dummyArtifact as any, { dryRun: true });
 

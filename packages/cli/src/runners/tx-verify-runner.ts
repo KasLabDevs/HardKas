@@ -93,14 +93,19 @@ export async function runTxVerify(options: TxVerifyOptions) {
       getOutput().writeLine("");
     }
 
+    // IC-5′.11: `why` takes the canonical identity; a planId is a label (or use --plan).
+    const whyTarget =
+      typeof artifact.contentHash === "string" && /^[0-9a-f]{64}$/.test(artifact.contentHash)
+        ? artifact.contentHash
+        : `--plan ${artifact.planId}`;
     if (result.ok) {
       UI.success("SEMANTIC VERIFICATION PASSED");
       UI.printNextSteps([
         `hardkas dev tx sign ${artifact.planId}`,
-        `hardkas why ${artifact.planId}`
+        `hardkas why ${whyTarget}`
       ]);
     } else {
-      UI.printNextSteps([`hardkas why ${artifact.planId}`]);
+      UI.printNextSteps([`hardkas why ${whyTarget}`]);
       const { HardkasCliError } = await import("../cli-errors.js");
       throw new HardkasCliError(
         "SEMANTIC_VERIFICATION_FAILED",

@@ -7,6 +7,7 @@ import path from "node:path";
 import os from "node:os";
 import { HardkasIndexer } from "../src/indexer.js";
 import { HardkasStore } from "../src/db.js";
+import { CURRENT_HASH_VERSION } from "@hardkas/artifacts";
 
 describe("HardkasIndexer Corruption Diagnostics", () => {
   let tempDir: string;
@@ -51,6 +52,7 @@ describe("HardkasIndexer Corruption Diagnostics", () => {
     const artifact = {
       schema: "hardkas.txPlan",
       version: "1.0.0-alpha",
+      hashVersion: CURRENT_HASH_VERSION,
       contentHash: "wrong-hash",
       payload: { data: 123 }
     };
@@ -66,6 +68,39 @@ describe("HardkasIndexer Corruption Diagnostics", () => {
         severity: "error"
       })
     );
+  });
+
+  it("should report an artifact without a declared hashVersion as corrupted (IC-4′.2)", async () => {
+    // Wave 1.1: no reader falls back to an implicit hash version. An artifact that
+    // declares none cannot be recomputed, so the indexer never assigns it an identity.
+    const filePath = path.join(hardkasDir, "undeclared.json");
+    const artifact = {
+      schema: "hardkas.txPlan",
+      version: "1.0.0-alpha",
+      contentHash: "0".repeat(64),
+      payload: { data: 123 }
+    };
+    fs.writeFileSync(filePath, JSON.stringify(artifact));
+
+    const indexer = new HardkasIndexer(db, { cwd: tempDir });
+    const result = await indexer.sync();
+
+    expect(result.artifacts.corrupted).toBe(1);
+    expect(result.issues).toContainEqual(
+      expect.objectContaining({
+        code: "HASH_VERSION_INVALID",
+        severity: "error"
+      })
+    );
+    // The row (kept for diagnostics, as for any corrupted file) carries no recomputed
+    // identity: nothing was hashed under a fallback version.
+    const rows = db.prepare("SELECT content_hash, kind FROM artifacts").all() as Array<{
+      content_hash: string;
+      kind: string;
+    }>;
+    expect(rows).toHaveLength(1);
+    expect(rows[0]!.content_hash).toBe("MISMATCH");
+    expect(rows[0]!.kind).toBe("CORRUPTED");
   });
 
   it("should detect and report line-specific event corruption", async () => {

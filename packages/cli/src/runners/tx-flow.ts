@@ -168,7 +168,9 @@ export async function runTxFlow(input: TxFlowInput): Promise<TxFlowResult> {
     workspaceSchemaVersion: HardkasSchemas.WorkflowV1
   };
 
-  const intentHash = calculateContentHash(intentPayload);
+  // Domain digest of the intent (not an artifact identity); pinned to the legacy v4
+  // canonical form until IC-1′.7 / IC-7.4 (Wave 1.3).
+  const intentHash = calculateContentHash(intentPayload, 4);
   const workflowId = asWorkflowId(`wf_${intentHash.slice(0, 16)}`);
   let globalOffset = 0;
 

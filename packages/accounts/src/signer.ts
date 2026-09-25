@@ -4,6 +4,7 @@ import {
   SignedTxArtifact,
   createSimulatedSignedTxArtifact,
   calculateContentHash,
+  CURRENT_HASH_VERSION,
   HARDKAS_VERSION,
   createLineageTransition
 } from "@hardkas/artifacts";
@@ -129,6 +130,7 @@ export async function signTxPlanArtifact(input: {
       schema: "hardkas.signedTx",
       hardkasVersion: HARDKAS_VERSION,
       version: "1.0.0-alpha",
+      hashVersion: CURRENT_HASH_VERSION,
       status: "signed",
       createdAt: new Date().toISOString(),
       txId: result.txId || "", // Ensure txId is present
@@ -155,7 +157,7 @@ export async function signTxPlanArtifact(input: {
       ...(planArtifact.assumptionRef ? { assumptionRef: planArtifact.assumptionRef } : {})
     };
 
-    const contentHash = calculateContentHash(artifact);
+    const contentHash = calculateContentHash(artifact, CURRENT_HASH_VERSION);
     artifact.signedId = `signed-${contentHash.slice(0, 16)}`;
     artifact.contentHash = contentHash;
     if (artifact.lineage) {

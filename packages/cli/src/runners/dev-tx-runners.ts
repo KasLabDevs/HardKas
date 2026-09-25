@@ -35,9 +35,10 @@ export async function runDevTxSend(options: {
   const result = await runTxFlow(flowInput);
 
   const sendResult = result.steps.send;
+  // IC-5′.11: the canonical identity of the receipt; never the txId.
   const artifactId =
+    sendResult?.artifact?.receipt?.contentHash ||
     sendResult?.artifact?.receipt?.lineage?.artifactId ||
-    sendResult?.artifact?.txId ||
     "unknown";
 
   const planId =

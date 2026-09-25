@@ -3,11 +3,15 @@ import { execFileSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
 
+// silverc level (AUD-41): the built CLI recompiles the golden corpus with the
+// pinned silverc installed in HARDKAS_HOME. Preconditions are the built CLI
+// (`pnpm --filter @hardkas/cli build`) and the compiler; a missing precondition
+// is a failure, never a silent pass.
 describe("corpus verify", () => {
   it("verifies the SilverScript golden corpus per capability", () => {
     const distCli = path.resolve(__dirname, "../dist/index.js");
     if (!fs.existsSync(distCli)) {
-      return;
+      throw new Error(`built CLI not found at ${distCli}: run \`pnpm --filter @hardkas/cli build\` before the silverc level`);
     }
 
     const root = path.resolve(__dirname, "../../..");

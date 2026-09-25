@@ -1,4 +1,4 @@
-import { systemRuntimeContext, deterministicCompare, getCoinbaseMaturity } from "@hardkas/core";
+import { systemRuntimeContext, deterministicCompare, getCoinbaseMaturity, HardkasError } from "@hardkas/core";
 import { pollCondition } from "./waiters.js";
 import { Hardkas } from "./index.js";
 import {
@@ -83,6 +83,12 @@ export interface SignTxOptions {
   append?: boolean;
   threshold?: number;
   requiredSigners?: string[];
+  /**
+   * Wave 1.2 · IC-5′.6: when appending to a partially signed artifact whose parent
+   * plan is not persisted, the plan object may be supplied; it is accepted only if
+   * its recomputed identity is the artifact's `lineage.parentArtifactId`.
+   */
+  plan?: TxPlanArtifact;
 }
 
 /**
@@ -455,61 +461,47 @@ export class HardkasTx {
       }
     }) as unknown as TxPlanArtifact;
 
-    // Resolve alias to immutable contentHash
+    // Wave 1.2 · IC-5′.6: persisted references are authenticated artifactIds. The
+    // input is resolved through the namespaced reader (a contained path or a 64-hex
+    // artifactId; a label is NAMESPACE_REQUIRED) and verified; there is no raw
+    // fallback: an unresolvable reference fails the plan.
+    const resolveReference = async (input: string, kind: string): Promise<string> => {
+      try {
+        const artifact = await this.sdk.artifacts.read(input);
+        return artifact.contentHash as string;
+      } catch (e: any) {
+        if (e?.code === "ARTIFACT_NOT_FOUND") {
+          throw new HardkasError("REFERENCE_MISSING", `Referenced ${kind} ${input} not found in workspace`);
+        }
+        throw e;
+      }
+    };
+
     if (options.policy || (options as any).policies) {
-      const inputPolicies =
+      const inputPolicies: string[] =
         (options as any).policies || (options.policy ? [options.policy] : []);
       const resolvedRefs: string[] = [];
       for (const p of inputPolicies) {
-        try {
-          const pol = await this.sdk.artifacts.read(p);
-          resolvedRefs.push(pol.contentHash || pol.artifactId || p);
-        } catch (e) {
-          resolvedRefs.push(p); // Fallback to raw if not found
-        }
+        resolvedRefs.push(await resolveReference(p, "policy"));
       }
       if (resolvedRefs.length > 0) {
         (basePlan as any).policyRefs = resolvedRefs;
-        (basePlan as any).policyRef = resolvedRefs[0]; // Legacy fallback
+        (basePlan as any).policyRef = resolvedRefs[0]; // Legacy field, same artifactId
       }
     }
 
     if (options.networkProfile) {
-      try {
-        const net = await this.sdk.artifacts.read(options.networkProfile);
-        (basePlan as any).networkProfileRef =
-          net.contentHash || net.artifactId || options.networkProfile;
-      } catch (e) {
-        (basePlan as any).networkProfileRef = options.networkProfile;
-      }
+      (basePlan as any).networkProfileRef = await resolveReference(options.networkProfile, "network profile");
     }
 
     if (options.assumption) {
-      try {
-        const asm = await this.sdk.artifacts.read(options.assumption);
-        (basePlan as any).assumptionRef =
-          asm.contentHash || asm.artifactId || options.assumption;
-      } catch (e) {
-        (basePlan as any).assumptionRef = options.assumption;
-      }
+      (basePlan as any).assumptionRef = await resolveReference(options.assumption, "assumption");
     }
 
-    // Re-calculate hash now that references are injected
-    const { CURRENT_HASH_VERSION, calculateContentHash } =
-      await import("@hardkas/artifacts");
-    const newHash = calculateContentHash(basePlan, CURRENT_HASH_VERSION);
-    (basePlan as any).contentHash = newHash;
-    if ((basePlan as any).lineage) {
-      (basePlan as any).lineage.lineageId = newHash;
-      (basePlan as any).lineage.parentArtifactId = ""; // Root plans have no parent
-      (basePlan as any).lineage.rootArtifactId = newHash;
-      const finalHash = calculateContentHash(basePlan, CURRENT_HASH_VERSION);
-      (basePlan as any).contentHash = finalHash;
-      (basePlan as any).lineage.artifactId = finalHash;
-      (basePlan as any).planId = `plan-${finalHash.slice(0, 16)}`;
-    }
-
-    this.sdk.artifacts.cacheArtifact(basePlan);
+    // Seal the identity now that references are injected: one pass, root form (D-Q1.d).
+    const { finalizeTxPlanIdentity } = await import("@hardkas/artifacts");
+    finalizeTxPlanIdentity(basePlan as any);
+    // Not memoised: the plan is not on disk yet (IC-5′.8, the cache mirrors the store).
 
     // Verify policy evaluation at planning time if policies are provided
     if ((basePlan as any).policyRefs && (basePlan as any).policyRefs.length > 0) {
@@ -603,22 +595,9 @@ export class HardkasTx {
       } as any
     }) as unknown as TxPlanArtifact;
 
-    const { CURRENT_HASH_VERSION, calculateContentHash } =
-      await import("@hardkas/artifacts");
-    const newHash = calculateContentHash(basePlan, CURRENT_HASH_VERSION);
-    (basePlan as any).contentHash = newHash;
-    if ((basePlan as any).lineage) {
-      (basePlan as any).lineage.lineageId = newHash;
-      (basePlan as any).lineage.parentArtifactId = "";
-      (basePlan as any).lineage.rootArtifactId = newHash;
-      const finalHash = calculateContentHash(basePlan, CURRENT_HASH_VERSION);
-      (basePlan as any).contentHash = finalHash;
-      (basePlan as any).lineage.artifactId = finalHash;
-      (basePlan as any).planId = `plan-${finalHash.slice(0, 16)}`;
-    }
-
-    this.sdk.artifacts.cacheArtifact(basePlan);
-
+    // createTxPlanArtifact already sealed the identity in root form (D-Q1.d); nothing
+    // was added since, so no second pass is needed or allowed (IC-1′.4). Not memoised:
+    // the plan is not on disk yet (IC-5′.8).
     return basePlan;
   }
 
@@ -767,12 +746,11 @@ export class HardkasTx {
     await this.sdk.plugins.onBeforeTxSign({ planId, account: resolvedAccount?.name || "unknown" });
 
     if (typeof plan === "object" && plan !== null && (plan as any).contentHash) {
-
-
       await this.sdk.artifacts.verify(plan, {
         throwOnInvalid: true,
         strict: true,
-        enforceMetadata: false
+        enforceMetadata: false,
+        ...(actualOptions.plan ? { parent: actualOptions.plan } : {})
       });
     }
 
@@ -784,8 +762,8 @@ export class HardkasTx {
       const { absolutePath } = await this.sdk.artifacts.write(signedArtifact);
       const { coreEvents } = await import("@hardkas/core");
       const signedRecord = signedArtifact as unknown as Record<string, string>;
-      const artifactId =
-        signedRecord.artifactId || signedArtifact.signedId || signedRecord.contentHash;
+      // IC-5′.11: events carry the canonical identity (content hash), never a label.
+      const artifactId = signedRecord.contentHash || signedArtifact.signedId;
 
       coreEvents.normalizeAndEmit({
         kind: "artifact.created",
@@ -985,16 +963,11 @@ export class HardkasTx {
           draft.txId = `simulated-${plan.planId}-tx`;
         }
 
-        let hash = calculateContentHash(draft, CURRENT_HASH_VERSION);
+        // One pass: lineage.artifactId is a self reference excluded by exact path.
+        const hash = calculateContentHash(draft, CURRENT_HASH_VERSION);
         draft.signedId = `signed-${hash.slice(0, 16)}`;
         draft.contentHash = hash;
-        if (draft.lineage) {
-          draft.lineage.artifactId = hash;
-          // Re-hash because lineage is now included in v4
-          hash = calculateContentHash(draft, CURRENT_HASH_VERSION);
-          draft.contentHash = hash;
-          draft.lineage.artifactId = hash;
-        }
+        if (draft.lineage) draft.lineage.artifactId = hash;
 
         signedArtifact = draft;
       } else {
@@ -1020,8 +993,8 @@ export class HardkasTx {
 
     const { coreEvents } = await import("@hardkas/core");
     const signedRecord = signedArtifact as unknown as Record<string, string>;
-    const artifactId =
-      signedRecord.artifactId || signedArtifact.signedId || signedRecord.contentHash;
+    // IC-5′.11: events carry the canonical identity (content hash), never a label.
+    const artifactId = signedRecord.contentHash || signedArtifact.signedId;
 
     coreEvents.normalizeAndEmit({
       kind: "artifact.created",
@@ -1051,16 +1024,60 @@ export class HardkasTx {
    * Simulates a transaction on the local state without broadcasting to a real Kaspa node.
    * Modifies the local deterministic state and outputs receipt/trace artifacts.
    */
+  /**
+   * Wave 1.2 · IC-5′.10 / N5: a previous submission of the SAME executed artifact
+   * (signed or plan) is found by that artifact's identity — a receipt whose
+   * authenticated `lineage.parentArtifactId` is the executed artifact's contentHash —
+   * verified, in FULL authentication scope (its `status` is authenticated), never by
+   * txId and never by a status a legacy hash version did not cover.
+   */
+  private async findExistingSubmission(
+    executedArtifactId: string
+  ): Promise<{ receipt: TxReceiptArtifact; receiptPath: string } | null> {
+    if (typeof executedArtifactId !== "string" || !/^[0-9a-f]{64}$/.test(executedArtifactId)) return null;
+    const { enumerateWorkspaceArtifactsSync, verifyArtifactIntegritySync, TX_NAMESPACE_SCHEMAS } =
+      await import("@hardkas/artifacts");
+    const matches: Array<{ receipt: any; receiptPath: string }> = [];
+    for (const entry of enumerateWorkspaceArtifactsSync(this.sdk.workspace.root)) {
+      const a: any = entry.artifact;
+      if (!TX_NAMESPACE_SCHEMAS.has(typeof a?.schema === "string" ? a.schema : "")) continue;
+      if (a?.lineage?.parentArtifactId !== executedArtifactId) continue;
+      const r = verifyArtifactIntegritySync(structuredClone(a), { strict: false });
+      if (!r.ok || r.authScope !== "FULL") continue; // never decide on an unauthenticated status
+      if (a.status !== "accepted" && a.status !== "confirmed") continue;
+      matches.push({ receipt: a, receiptPath: entry.path });
+    }
+    if (matches.length === 0) return null;
+    matches.sort((x, y) => (x.receiptPath < y.receiptPath ? -1 : x.receiptPath > y.receiptPath ? 1 : 0));
+    return matches[0]!;
+  }
+
   async simulate(
     target: string | Partial<TxPlanArtifact> | SignedTxArtifact,
-    options: { persist?: boolean } = {}
+    options: { persist?: boolean; plan?: TxPlanArtifact } = {}
   ): Promise<{ receipt: TxReceiptArtifact; receiptPath?: string; tracePath?: string }> {
+    const explicitPlan = options.plan;
+    if (explicitPlan && typeof target === "object" && target !== null && (target as any).schema === ARTIFACT_SCHEMAS.SIGNED_TX) {
+      // An explicit plan must BE the signed artifact's authenticated parent (IC-5′.6).
+      const { checkArtifactIdentity } = await import("@hardkas/artifacts");
+      const check = checkArtifactIdentity(explicitPlan);
+      const parentId = (target as any).lineage?.parentArtifactId;
+      if (!check.ok || check.artifactId !== parentId) {
+        throw new HardkasError(
+          "PARENT_PLAN_MISMATCH",
+          `The supplied plan ${check.ok ? check.artifactId : "(unverifiable)"} is not the signed artifact's parent ${String(parentId)}`
+        );
+      }
+    }
     if (typeof target === "object" && target !== null && (target as any).contentHash) {
       try {
+        // Strict: references and lineage. An explicit plan is honoured only if it IS
+        // the target's authenticated parent (identity-checked in the verifier, IC-5′.6).
         await this.sdk.artifacts.verify(target, {
           throwOnInvalid: true,
           strict: true,
-          enforceMetadata: false
+          enforceMetadata: false,
+          ...(explicitPlan ? { parent: explicitPlan } : {})
         });
       } catch (e: unknown) {
         if (((e instanceof Error) ? ((e instanceof Error) ? ((e instanceof Error) ? e.message : String(e)) : String(e)) : String(e)).includes("PARENT_MISSING")) {
@@ -1070,24 +1087,11 @@ export class HardkasTx {
       }
     }
     const persist = options.persist ?? true;
-    if (typeof target === "object" && target !== null) {
-      const checkTxId =
-        (target as any).txId ||
-        ((target as any).schema === ARTIFACT_SCHEMAS.SIGNED_TX
-          ? `simulated-${(target as any).sourcePlanId || "unknown"}-tx`
-          : `simulated-${(target as any).planId || (target as any).id || "unknown"}-tx`);
-      if (checkTxId) {
-        try {
-          const existingReceipt = await this.sdk.artifacts.read(checkTxId, {
-            expectedSchema: ARTIFACT_SCHEMAS.TX_RECEIPT
-          });
-          if (existingReceipt && existingReceipt.schema === ARTIFACT_SCHEMAS.TX_RECEIPT) {
-            const receiptPath = getDefaultReceiptPath(checkTxId, this.sdk.config.cwd);
-            return { receipt: existingReceipt, receiptPath };
-          }
-        } catch (e) {
-          // Proceed with simulation
-        }
+    if (typeof target === "object" && target !== null && typeof (target as any).contentHash === "string") {
+      // Idempotency by the executed artifact's identity (IC-5′.10), never by txId.
+      const existing = await this.findExistingSubmission((target as any).contentHash);
+      if (existing) {
+        return { receipt: existing.receipt, receiptPath: existing.receiptPath };
       }
     }
     const {
@@ -1129,15 +1133,22 @@ export class HardkasTx {
       signedId = targetObj.signedId || targetObj.id || "unknown";
       sourcePlanId = targetObj.sourcePlanId || "unknown";
       txId = targetObj.txId || `simulated-${sourcePlanId}-tx`;
-      planArtifact = this.sdk.artifacts.getCached(sourcePlanId);
-      if (!planArtifact) {
+      // Wave 1.2 · IC-5′.6: the parent plan is the authenticated lineage.parentArtifactId,
+      // resolved from the store by verified identity — never the sourcePlanId label.
+      const parentId: unknown = targetObj.lineage?.parentArtifactId;
+      if (explicitPlan) {
+        // Identity already checked against lineage.parentArtifactId above.
+        planArtifact = explicitPlan;
+      } else {
         try {
-          planArtifact = await this.sdk.artifacts.read(sourcePlanId, {
+          if (typeof parentId !== "string" || !/^[0-9a-f]{64}$/.test(parentId)) {
+            throw new Error("signed artifact carries no authenticated lineage.parentArtifactId");
+          }
+          planArtifact = await this.sdk.artifacts.read({ artifact: parentId }, {
             expectedSchema: ARTIFACT_SCHEMAS.TX_PLAN
           });
         } catch (e) {
-          console.error("[sdk.tx.simulate] parent_plan_unresolved due to error:", e);
-          throw new Error("parent_plan_unresolved");
+          throw new Error(`parent_plan_unresolved: ${(e as Error)?.message ?? String(e)}`);
         }
       }
     } else {
@@ -1273,6 +1284,10 @@ export class HardkasTx {
       mode: receipt.mode ?? "simulator",
       networkId: receipt.networkId,
       steps: traceSteps,
+      // The raw events are part of the evidence and therefore of the hashed body
+      // (under v5 nothing nested is dropped by name); receiptPath is an
+      // operational locator and stays outside the hash by contract.
+      events,
       ...(receipt.workflowId ? { workflowId: receipt.workflowId } : {}),
       ...(receipt.assumptionLevel ? { assumptionLevel: receipt.assumptionLevel } : {}),
       lineage: {
@@ -1283,18 +1298,14 @@ export class HardkasTx {
         sequence: (receipt.lineage?.sequence || 1) + 1
       }
     };
+    // One pass: lineage.artifactId is a self reference excluded by exact path.
     traceBase.contentHash = calculateContentHash(traceBase, CURRENT_HASH_VERSION);
-    if (traceBase.lineage) {
-      traceBase.lineage.artifactId = traceBase.contentHash;
-      traceBase.contentHash = calculateContentHash(traceBase, CURRENT_HASH_VERSION);
-      traceBase.lineage.artifactId = traceBase.contentHash;
-    }
+    if (traceBase.lineage) traceBase.lineage.artifactId = traceBase.contentHash;
 
     if (persist) {
       await saveSimulatedTrace(
         {
           ...traceBase,
-          events,
           receiptPath: receiptPath!
         },
         { cwd: this.sdk.workspace.root }
@@ -1337,7 +1348,7 @@ export class HardkasTx {
    */
   async send(
     signedArtifact: SignedTxArtifact,
-    urlOrOptions?: string | { persist?: boolean }
+    urlOrOptions?: string | { persist?: boolean; plan?: TxPlanArtifact }
   ): Promise<{
     receipt: TxReceiptArtifact;
     receiptPath?: string;
@@ -1391,42 +1402,31 @@ export class HardkasTx {
 
     if (isSimulated) {
       const persistOpt = typeof urlOrOptions === "object" ? urlOrOptions.persist : true;
-      const simOpts = persistOpt !== undefined ? { persist: persistOpt } : {};
+      const explicitPlan = typeof urlOrOptions === "object" ? urlOrOptions.plan : undefined;
+      const simOpts = {
+        ...(persistOpt !== undefined ? { persist: persistOpt } : {}),
+        ...(explicitPlan ? { plan: explicitPlan } : {})
+      };
 
       let simResult: any;
       try {
         simResult = await this.simulate(signedArtifact, simOpts);
       } catch (e: unknown) {
         if (((e instanceof Error) ? ((e instanceof Error) ? ((e instanceof Error) ? e.message : String(e)) : String(e)) : String(e)) && ((e instanceof Error) ? ((e instanceof Error) ? ((e instanceof Error) ? e.message : String(e)) : String(e)) : String(e)).includes("invalid simulated input")) {
-          // P1. Robust Idempotence: The UTXOs are already spent.
-          // Check if they were spent by a previous simulation of this exact same transaction.
-          try {
-            const { loadSimulatedReceipt } =
-              await import("@hardkas/localnet");
-            const txIdToLoad =
-              signedArtifact.txId || `simulated-${signedArtifact.sourcePlanId}-tx`;
-            const existingReceipt = await loadSimulatedReceipt(txIdToLoad, {
-              cwd: this.sdk.workspace.root
-            });
-
-            if (existingReceipt) {
-              if (
-                existingReceipt.schema === ARTIFACT_SCHEMAS.TX_RECEIPT &&
-                (existingReceipt.status === "confirmed" ||
-                  (existingReceipt.status as any) === "accepted")
-              ) {
-                return {
-                  mode: "simulator",
-                  simulated: true,
-                  submitted: false,
-                  txId: existingReceipt.txId,
-                  artifactId: existingReceipt.txId, // simulated receipts use txId as artifactId
-                  receipt: existingReceipt as any
-                };
-              }
-            }
-          } catch (err) {
-            // Silently ignore if receipt not found, re-throw the original error
+          // P1. Robust Idempotence: The UTXOs are already spent. Wave 1.2 · IC-5′.10 / N5:
+          // only a verified receipt whose authenticated parent IS this signed artifact
+          // counts; a receipt merely carrying the expected txId never does.
+          const existing = await this.findExistingSubmission(signedArtifact.contentHash as string);
+          if (existing) {
+            return {
+              mode: "simulator",
+              simulated: true,
+              submitted: false,
+              txId: (existing.receipt as any).txId,
+              artifactId: (existing.receipt as any).contentHash,
+              receipt: existing.receipt as any,
+              receiptPath: existing.receiptPath
+            };
           }
         }
         throw e; // Re-throw if it wasn't an idempotent double-spend
@@ -1437,10 +1437,8 @@ export class HardkasTx {
         simulated: true,
         submitted: false,
         txId: simResult.receipt.txId,
-        artifactId:
-          (simResult.receipt as any).artifactId ??
-          (simResult as any).artifactId ??
-          (simResult.receipt as any).contentHash,
+        // IC-5′.11: artifactId is the canonical identity, never a label or the txId.
+        artifactId: (simResult.receipt as any).contentHash,
         receipt: simResult.receipt
       };
 
@@ -1514,18 +1512,12 @@ export class HardkasTx {
       tracePath: undefined,
       lineage: createLineageTransition(signedArtifact, HardkasSchemas.TxReceipt)
     };
+    // One pass: lineage.artifactId is a self reference excluded by exact path.
     realReceiptBase.contentHash = calculateContentHash(
       realReceiptBase,
       CURRENT_HASH_VERSION
     );
-    if (realReceiptBase.lineage) {
-      realReceiptBase.lineage.artifactId = realReceiptBase.contentHash;
-      realReceiptBase.contentHash = calculateContentHash(
-        realReceiptBase,
-        CURRENT_HASH_VERSION
-      );
-      realReceiptBase.lineage.artifactId = realReceiptBase.contentHash;
-    }
+    if (realReceiptBase.lineage) realReceiptBase.lineage.artifactId = realReceiptBase.contentHash;
     const receipt: TxReceiptArtifact = realReceiptBase;
 
     const { absolutePath } = await this.sdk.artifacts.write(receipt);

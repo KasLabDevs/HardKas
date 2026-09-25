@@ -77,7 +77,6 @@ describe("Artifacts - Determinism and Verification", () => {
       networkId: "simnet",
       mode: "simulator",
       execution: { mode: "simulator", domain: "kaspa-l1", network: "simnet" },
-      planId: "test-plan",
       from: { address: "addr1" },
       to: { address: "addr2" },
       amountSompi: "100",
@@ -87,7 +86,9 @@ describe("Artifacts - Determinism and Verification", () => {
       outputs: []
     };
 
-    artifact.contentHash = calculateContentHash(artifact);
+    artifact.contentHash = calculateContentHash(artifact, CURRENT_HASH_VERSION);
+    // IC-4′.5: planId is a derived label, recomputed by the verifier.
+    artifact.planId = `plan-${artifact.contentHash.slice(0, 16)}`;
     fs.writeFileSync(artifactPath, JSON.stringify(artifact));
 
     const result = await verifyArtifact(artifactPath);

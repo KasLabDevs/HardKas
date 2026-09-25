@@ -4,6 +4,7 @@ import os from "node:os";
 import path from "node:path";
 import { createHash } from "node:crypto";
 import { ProjectArtifactStore } from "../src/store.js";
+import { calculateContentHash } from "../src/canonical.js";
 import * as coreModule from "@hardkas/core";
 
 // Wave 1 · Regression H — persistence failure atomicity across the lifecycle.
@@ -37,72 +38,92 @@ function listAllFiles(dir: string): string[] {
   return out;
 }
 
+function fill64(prefix: string): string {
+  return `${prefix}${"0".repeat(64 - prefix.length)}`;
+}
+
+// Explicit rc.22 legacy fixtures (hashVersion 4, never upgraded to 5 to pass). Since
+// Wave 1.1 the store recomputes the DECLARED version on write (N3), so the identity
+// fields must carry the real v4 hash instead of a placeholder. In v4 the identity and
+// label fields (contentHash, artifactId, planId, signedId) are name-excluded, so they
+// are set after hashing without moving it — exactly what the v4 producers did.
+function sealV4(body: any, label?: "planId" | "signedId"): any {
+  const hash = calculateContentHash(body, 4);
+  body.contentHash = hash;
+  body.lineage.artifactId = hash;
+  if (label === "planId") body.planId = `plan-${hash.slice(0, 16)}`;
+  if (label === "signedId") body.signedId = `signed-${hash.slice(0, 16)}`;
+  return body;
+}
+
 function mkPlanArtifact(idPrefix: string): any {
-  return {
-    schema: "hardkas.txPlan",
-    schemaVersion: "hardkas.artifact.v1",
-    hardkasVersion: "0.0.0-test",
-    version: "1.0.0-alpha",
-    hashVersion: 4,
-    createdAt: "2026-09-18T00:00:00.000Z",
-    networkId: "simnet",
-    mode: "simulator",
-    execution: { mode: "simulator", domain: "kaspa-l1", network: "simnet" },
-    from: { input: "alice", address: "kaspasim:alice-addr" },
-    to: { input: "bob", address: "kaspasim:bob-addr" },
-    amountSompi: "100000",
-    estimatedFeeSompi: "10",
-    estimatedMass: "100",
-    inputs: [],
-    outputs: [{ address: "kaspasim:bob-addr", amountSompi: "100000" }],
-    planId: `plan-${idPrefix}${"0".repeat(16 - idPrefix.length)}`,
-    contentHash: `${idPrefix}${"0".repeat(64 - idPrefix.length)}`,
-    workflowId: `wf_${idPrefix}${"0".repeat(16 - idPrefix.length)}`,
-    assumptionLevel: "local-simulated",
-    lineage: {
-      artifactId: `${idPrefix}${"0".repeat(64 - idPrefix.length)}`,
-      lineageId: `${idPrefix}${"0".repeat(64 - idPrefix.length)}`,
-      parentArtifactId: "",
-      rootArtifactId: `${idPrefix}${"0".repeat(64 - idPrefix.length)}`,
-      sequence: 1
+  return sealV4(
+    {
+      schema: "hardkas.txPlan",
+      schemaVersion: "hardkas.artifact.v1",
+      hardkasVersion: "0.0.0-test",
+      version: "1.0.0-alpha",
+      hashVersion: 4,
+      createdAt: "2026-09-18T00:00:00.000Z",
+      networkId: "simnet",
+      mode: "simulator",
+      execution: { mode: "simulator", domain: "kaspa-l1", network: "simnet" },
+      from: { input: "alice", address: "kaspasim:alice-addr" },
+      to: { input: "bob", address: "kaspasim:bob-addr" },
+      amountSompi: "100000",
+      estimatedFeeSompi: "10",
+      estimatedMass: "100",
+      inputs: [],
+      outputs: [{ address: "kaspasim:bob-addr", amountSompi: "100000" }],
+      workflowId: `wf_${idPrefix}${"0".repeat(16 - idPrefix.length)}`,
+      assumptionLevel: "local-simulated",
+      lineage: {
+        artifactId: "",
+        lineageId: fill64(idPrefix),
+        parentArtifactId: "",
+        rootArtifactId: fill64(idPrefix),
+        sequence: 1
+      },
+      metadata: { schema: "hardkas.artifact.v1" }
     },
-    metadata: { schema: "hardkas.artifact.v1" }
-  };
+    "planId"
+  );
 }
 
 function mkSignedArtifact(idPrefix: string, planContentHash: string): any {
-  return {
-    schema: "hardkas.signedTx",
-    schemaVersion: "hardkas.artifact.v1",
-    hardkasVersion: "0.0.0-test",
-    version: "1.0.0-alpha",
-    hashVersion: 4,
-    createdAt: "2026-09-18T00:00:01.000Z",
-    status: "signed",
-    mode: "simulator",
-    networkId: "simnet",
-    execution: { mode: "simulator", domain: "kaspa-l1", network: "simnet" },
-    signedId: `signed-${idPrefix}${"0".repeat(16 - idPrefix.length)}`,
-    contentHash: `${idPrefix}${"0".repeat(64 - idPrefix.length)}`,
-    sourcePlanId: `plan-${planContentHash.slice(0, 16)}`,
-    from: { address: "kaspasim:alice-addr" },
-    to: { address: "kaspasim:bob-addr" },
-    amountSompi: "100000",
-    signedTransaction: { format: "simulated", payload: "sim-payload" },
-    workflowId: `wf_${planContentHash.slice(0, 16)}`,
-    assumptionLevel: "local-simulated",
-    lineage: {
-      artifactId: `${idPrefix}${"0".repeat(64 - idPrefix.length)}`,
-      lineageId: `${planContentHash}`,
-      parentArtifactId: planContentHash,
-      rootArtifactId: `${planContentHash}`,
-      sequence: 2
-    }
-  };
+  return sealV4(
+    {
+      schema: "hardkas.signedTx",
+      schemaVersion: "hardkas.artifact.v1",
+      hardkasVersion: "0.0.0-test",
+      version: "1.0.0-alpha",
+      hashVersion: 4,
+      createdAt: "2026-09-18T00:00:01.000Z",
+      status: "signed",
+      mode: "simulator",
+      networkId: "simnet",
+      execution: { mode: "simulator", domain: "kaspa-l1", network: "simnet" },
+      sourcePlanId: `plan-${planContentHash.slice(0, 16)}`,
+      from: { address: "kaspasim:alice-addr" },
+      to: { address: "kaspasim:bob-addr" },
+      amountSompi: "100000",
+      signedTransaction: { format: "simulated", payload: `sim-payload-${idPrefix}` },
+      workflowId: `wf_${planContentHash.slice(0, 16)}`,
+      assumptionLevel: "local-simulated",
+      lineage: {
+        artifactId: "",
+        lineageId: `${planContentHash}`,
+        parentArtifactId: planContentHash,
+        rootArtifactId: `${planContentHash}`,
+        sequence: 2
+      }
+    },
+    "signedId"
+  );
 }
 
 function mkReceiptArtifact(idPrefix: string, signedContentHash: string, planContentHash: string): any {
-  return {
+  return sealV4({
     schema: "hardkas.txReceipt",
     schemaVersion: "hardkas.txReceipt.v1",
     hardkasVersion: "0.0.0-test",
@@ -119,17 +140,16 @@ function mkReceiptArtifact(idPrefix: string, signedContentHash: string, planCont
     to: { address: "kaspasim:bob-addr" },
     amountSompi: "100000",
     feeSompi: "10",
-    contentHash: `${idPrefix}${"0".repeat(64 - idPrefix.length)}`,
     workflowId: `wf_${planContentHash.slice(0, 16)}`,
     assumptionLevel: "local-simulated",
     lineage: {
-      artifactId: `${idPrefix}${"0".repeat(64 - idPrefix.length)}`,
+      artifactId: "",
       lineageId: `${planContentHash}`,
       parentArtifactId: signedContentHash,
       rootArtifactId: `${planContentHash}`,
       sequence: 3
     }
-  };
+  });
 }
 
 describe("H · persistence failure atomicity across the lifecycle chain", () => {

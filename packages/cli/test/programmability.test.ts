@@ -36,21 +36,8 @@ describe("programmability CLI", () => {
     expect(json.claims.mainnet).toBe("BLOCKED_BY_POLICY");
   });
 
-  it("verifies the root programmability corpus", () => {
-    const result = runHardkas([
-      "programmability",
-      "corpus",
-      "verify",
-      "fixtures/toccata-v2",
-      "--json"
-    ]);
-    expect(result.status).toBe(0);
-    const json = parseStdout(result);
-    expect(json.status).toBe("PROGRAMMABILITY_CORPUS_PASS");
-    expect(json.summary.silver).toBe("PASS");
-    expect(json.summary.zk).toBe("PASS");
-    expect(json.summary.vprogs).toBe("PASS");
-  });
+  // "verifies the root programmability corpus" recompiles with the pinned silverc:
+  // see programmability-corpus.silverc.test.ts (silverc level).
 
   it("plans an app", () => {
     const result = runHardkas([

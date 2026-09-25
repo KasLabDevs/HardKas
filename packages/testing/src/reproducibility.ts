@@ -8,7 +8,10 @@
 // SQLite WAL durability, or consensus replay validity.
 // It proves ONLY: same code + same inputs = same contentHash everywhere.
 
-import { calculateContentHash, HARDKAS_VERSION } from "@hardkas/artifacts";
+import { calculateContentHash, CURRENT_HASH_VERSION, HARDKAS_VERSION } from "@hardkas/artifacts";
+
+/** Reference digests carry an explicit version: they must not move silently with the default. */
+const digestCurrent = (value: unknown): string => calculateContentHash(value, CURRENT_HASH_VERSION);
 import { createTestHarness } from "./harness.js";
 import { runLinearChain, runWideDag, profileMass } from "@hardkas/simulator";
 
@@ -136,31 +139,31 @@ export function generateReproducibilityReport(): ReproducibilityReport {
     proofVersion: "repro-v0",
     hardkasVersion: HARDKAS_VERSION,
     artifacts: {
-      l1Plan: calculateContentHash(l1Plan),
-      l1Signed: calculateContentHash(l1Signed),
-      igraPlan: calculateContentHash(igraPlan),
-      dagLinearScenario: calculateContentHash({
+      l1Plan: digestCurrent(l1Plan),
+      l1Signed: digestCurrent(l1Signed),
+      igraPlan: digestCurrent(igraPlan),
+      dagLinearScenario: digestCurrent({
         totalBlocks: linearResult.metrics.totalBlocks,
         blueBlocks: linearResult.metrics.blueBlocks,
         redBlocks: linearResult.metrics.redBlocks,
         redRatioPpm: linearRedPpm,
         selectedChainLength: linearResult.metrics.selectedChainLength
       }),
-      dagWideScenario: calculateContentHash({
+      dagWideScenario: digestCurrent({
         totalBlocks: wideResult.metrics.totalBlocks,
         blueBlocks: wideResult.metrics.blueBlocks,
         redBlocks: wideResult.metrics.redBlocks,
         redRatioPpm: wideRedPpm
       }),
-      massProfile: calculateContentHash({
+      massProfile: digestCurrent({
         totalMass: massResult.totalMass.toString(),
         inputMass: massResult.inputMass.toString(),
         outputMass: massResult.outputMass.toString(),
         estimatedFeeSompi: massResult.estimatedFeeSompi.toString()
       }),
-      canonicalNested: calculateContentHash(nestedObj),
+      canonicalNested: digestCurrent(nestedObj),
       simulatedTxReceipt: txResult.ok
-        ? calculateContentHash({
+        ? digestCurrent({
             status: txResult.receipt.status,
             txId: txResult.receipt.txId
           })

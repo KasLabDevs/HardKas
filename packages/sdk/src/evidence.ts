@@ -1,6 +1,6 @@
 import { HardkasSchemas } from "@hardkas/core";
 import type { ScenarioResult, EvidencePackage } from "@hardkas/artifacts";
-import { calculateContentHash } from "@hardkas/artifacts";
+import { recomputeDeclaredContentHash } from "@hardkas/artifacts";
 import path from "node:path";
 import fs from "node:fs";
 
@@ -65,7 +65,7 @@ export class EvidenceManager {
       seenHashes.add(hashKey);
 
       artifacts.push(art);
-      hashes[hashKey] = entry.contentHash || calculateContentHash(art);
+      hashes[hashKey] = entry.contentHash || recomputeDeclaredContentHash(art);
     }
 
     const pkg: EvidencePackage = {
@@ -124,8 +124,17 @@ export class EvidenceManager {
 
     // Verify Hashes
     for (const artifactObj of pkg.artifacts) {
-      const computedHash = calculateContentHash(artifactObj);
-      
+      let computedHash: string;
+      try {
+        computedHash = recomputeDeclaredContentHash(artifactObj);
+      } catch (error) {
+        return {
+          ok: false,
+          status: "EVIDENCE_ARTIFACT_HASH_MISMATCH",
+          details: error instanceof Error ? error.message : String(error)
+        };
+      }
+
       const foundHash = Object.values(pkg.hashes).includes(computedHash);
       if (!foundHash) {
         return { 

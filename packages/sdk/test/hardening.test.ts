@@ -130,6 +130,8 @@ describe("Core Hardening Sprint Regressions", () => {
   it("[VULN-03] should produce an immutable receipt and seal tracePath before hashing", async () => {
     const sdk = await Hardkas.open({ cwd: tmpDir });
 
+    // Wave 1.2 · IC-5′.6: the parent plan is resolved through the authenticated
+    // lineage.parentArtifactId (never the sourcePlanId label); `read` is mocked below.
     const signedArtifact = {
       schema: "hardkas.signedTx",
       signedId: "signed_123",
@@ -139,7 +141,8 @@ describe("Core Hardening Sprint Regressions", () => {
       mode: "simulator",
       from: { address: "kaspa:sim_alice" },
       to: { address: "kaspa:sim_bob" },
-      signedTransaction: { payload: "signed-payload" }
+      signedTransaction: { payload: "signed-payload" },
+      lineage: { artifactId: "b".repeat(64), parentArtifactId: "a".repeat(64), sequence: 2 }
     };
 
     const mockPlan = {

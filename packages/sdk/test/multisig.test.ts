@@ -27,12 +27,15 @@ describe("P1 Multisig & Sequential Signing", () => {
     const bob = await sdk.accounts.resolve("bob");
     const carol = await sdk.accounts.resolve("carol");
 
-    // 2. Create plan
+    // 2. Create plan. Wave 1.2 · IC-5′.6/.8: appending to a partially signed artifact
+    // verifies it against its parent plan resolved from the store by identity, so the
+    // plan is persisted (no in-memory cache alias).
     const plan = await sdk.tx.plan({
       from: "alice",
       to: "bob",
       amount: "10"
     });
+    await sdk.artifacts.write(plan);
 
     // 3. First signature: Alice signs (threshold = 2, required = [alice, bob])
     const sig1 = await sdk.tx.sign(plan, "alice", {
@@ -82,6 +85,7 @@ describe("P1 Multisig & Sequential Signing", () => {
 
     // Sequence A: Alice then Bob
     const planA = await sdk.tx.plan({ from: "alice", to: "bob", amount: "5" });
+    await sdk.artifacts.write(planA);
     const partialA = await sdk.tx.sign(planA, "alice", {
       threshold: 2,
       requiredSigners: [alice.address, bob.address]
@@ -90,6 +94,7 @@ describe("P1 Multisig & Sequential Signing", () => {
 
     // Sequence B: Bob then Alice
     const planB = await sdk.tx.plan({ from: "alice", to: "bob", amount: "5" });
+    await sdk.artifacts.write(planB);
     const partialB = await sdk.tx.sign(planB, "bob", {
       threshold: 2,
       requiredSigners: [alice.address, bob.address]

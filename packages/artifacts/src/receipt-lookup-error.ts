@@ -26,7 +26,9 @@
 
 export type ReceiptLookupErrorCode =
   | "RECEIPT_NOT_FOUND"
-  | "RECEIPT_AMBIGUOUS_CONFLICT";
+  | "RECEIPT_AMBIGUOUS_CONFLICT"
+  // Wave 1.2 · IC-5′.4: a receipt that claims the txId but does not verify fails the lookup.
+  | "CANDIDATE_INVALID";
 
 export class ReceiptLookupError extends Error {
   readonly code: ReceiptLookupErrorCode;

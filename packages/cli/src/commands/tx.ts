@@ -389,6 +389,9 @@ export function registerTxCommands(program: Command) {
                   ...(options.url ? { url: options.url } : {})
                 });
 
+                // Wave 1.2 · CLI-NEXTSTEPS-1 / IC-5′.11: artifactId is the receipt's
+                // canonical identity; the txId is labelled as a txId.
+                const { nextStepsAfterSend, receiptArtifactId, sendExplanation } = await import("../runners/next-steps.js");
                 if (options.json) {
                   UI.writeJson({
                     ok: true,
@@ -398,7 +401,7 @@ export function registerTxCommands(program: Command) {
                       receipt: result.receipt,
                       artifacts: [signedArtifact, result.receipt],
                       warnings: [],
-                      explanation: { available: true, artifactId: result.receipt.txId }
+                      explanation: sendExplanation({ receipt: result.receipt, txId: result.txId })
                     },
                     meta: {
                       network: result.networkName,
@@ -417,7 +420,8 @@ export function registerTxCommands(program: Command) {
                       : "Transaction broadcast successfully",
                     {
                       "Execution ID": result.executionId,
-                      "Artifact ID": result.txId,
+                      "Artifact ID": receiptArtifactId(result.receipt) ?? "unknown",
+                      "Tx ID": result.txId,
                       "Replay ID": result.replayId,
                       Network: result.networkName,
                       "Execution Scope": isSimulated
@@ -430,7 +434,7 @@ export function registerTxCommands(program: Command) {
                         : "network state dependent",
                       "Consensus Validated": isSimulated ? "NO" : "YES"
                     },
-                    ["hardkas dashboard", `hardkas explain ${result.txId}`]
+                    nextStepsAfterSend({ receipt: result.receipt, txId: result.txId })
                   );
                 }
 
@@ -469,6 +473,7 @@ export function registerTxCommands(program: Command) {
                   ...(options.url ? { url: options.url } : {})
                 });
 
+                const { nextStepsAfterSend, receiptArtifactId, sendExplanation } = await import("../runners/next-steps.js");
                 if (options.json) {
                   const sendResult = result.steps.send;
                   UI.writeJson({
@@ -483,10 +488,10 @@ export function registerTxCommands(program: Command) {
                         sendResult?.artifact?.receipt
                       ].filter(Boolean),
                       warnings: [],
-                      explanation: {
-                        available: true,
-                        artifactId: sendResult?.artifact?.receipt?.txId
-                      }
+                      explanation: sendExplanation({
+                        receipt: sendResult?.artifact?.receipt,
+                        txId: sendResult?.artifact?.txId
+                      })
                     },
                     meta: {
                       network: options.network || "simulated",
@@ -507,10 +512,8 @@ export function registerTxCommands(program: Command) {
                       : "Transaction broadcast successfully",
                     {
                       "Execution ID": `exec_${Date.now().toString(36)}`,
-                      "Artifact ID":
-                        sendResult?.artifact?.receipt?.lineage?.artifactId ||
-                        sendResult?.artifact?.txId ||
-                        "unknown",
+                      "Artifact ID": receiptArtifactId(sendResult?.artifact?.receipt) ?? "unknown",
+                      "Tx ID": sendResult?.artifact?.txId ?? "unknown",
                       "Replay ID": `replay_${(sendResult?.artifact?.txId || "unknown").substring(0, 8)}`,
                       Network: options.network || "simulated",
                       "Execution Scope": isSimulated
@@ -525,7 +528,7 @@ export function registerTxCommands(program: Command) {
                       "Consensus Validated": isSimulated ? "NO" : "YES"
                     },
                     [
-                      `hardkas why ${sendResult?.artifact?.receipt?.lineage?.artifactId || sendResult?.artifact?.txId || "unknown"}`,
+                      ...nextStepsAfterSend({ receipt: sendResult?.artifact?.receipt, txId: sendResult?.artifact?.txId }),
                       "hardkas dev last --replay",
                       "hardkas status"
                     ]

@@ -3,7 +3,7 @@ import { Hardkas } from "../src/index.js";
 import fs from "node:fs";
 import path from "node:path";
 import os from "node:os";
-import { HARDKAS_VERSION } from "@hardkas/artifacts";
+import { HARDKAS_VERSION, calculateContentHash, CURRENT_HASH_VERSION } from "@hardkas/artifacts";
 
 describe("Deterministic Workflow Identity", () => {
   let tmpDir: string;
@@ -95,13 +95,17 @@ describe("Deterministic Workflow Identity", () => {
   });
 
   it("standalone artifacts use sentinel value and are not confused with replayable workflows", async () => {
-    // Write an artifact explicitly without a workflow run
-    const result = await sdkDev.artifacts.write({
+    // Write an artifact explicitly without a workflow run. Since Wave 1.1 the writer
+    // completes nothing (N3): the fixture declares hashVersion and seals its own hash.
+    const standalone: any = {
       schema: "artifact",
       networkId: "simnet",
       version: "1.0",
+      hashVersion: CURRENT_HASH_VERSION,
       createdAt: new Date().toISOString()
-    } as any);
+    };
+    standalone.contentHash = calculateContentHash(standalone, CURRENT_HASH_VERSION);
+    const result = await sdkDev.artifacts.write(standalone);
 
     // Read it back
     const fileContent = fs.readFileSync(result.absolutePath!, "utf-8");

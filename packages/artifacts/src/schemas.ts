@@ -13,11 +13,13 @@ export type DraftArtifact<TFinal, THashFields extends keyof TFinal> = Omit<
 > &
   Partial<Pick<TFinal, THashFields>>;
 
+// A version-5 root stores only artifactId (+ sequence); children carry the rest.
+// verifyLineage enforces which form applies (Closure Pack D-Q1.d).
 export const ArtifactLineageSchema = z.object({
   artifactId: z.string(),
-  lineageId: z.string(),
+  lineageId: z.string().optional(),
   parentArtifactId: z.string().optional(),
-  rootArtifactId: z.string(),
+  rootArtifactId: z.string().optional(),
   sequence: z.number().optional()
 });
 

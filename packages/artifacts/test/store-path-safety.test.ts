@@ -5,6 +5,7 @@ import path from "node:path";
 import os from "node:os";
 import { ProjectArtifactStore } from "../src/store.js";
 import { writeArtifact } from "../src/io.js";
+import { calculateContentHash, CURRENT_HASH_VERSION } from "../src/canonical.js";
 
 /**
  * Regression: writeArtifact() built the file name from identifiers taken from
@@ -52,20 +53,28 @@ describe("ProjectArtifactStore: path safety", () => {
     ).rejects.toMatchObject({ code: "ARTIFACT_ID_INVALID" });
   });
 
+  // Wave 1.1 · N3: the store refuses artifacts without a declared hashVersion or whose
+  // body no longer hashes to the declared contentHash, so writable fixtures are sealed.
+  const sealed = (body: Record<string, unknown>) => {
+    const artifact: Record<string, unknown> = { ...body, hashVersion: CURRENT_HASH_VERSION };
+    artifact.contentHash = calculateContentHash(artifact, CURRENT_HASH_VERSION);
+    return artifact as Record<string, unknown> & { contentHash: string };
+  };
+
   it("does not let the schema choose a directory", async () => {
-    const written = await store.writeArtifact({
-      schema: "hardkas.sub/dir.v1",
-      contentHash: "abc123"
-    });
+    const artifact = sealed({ schema: "hardkas.sub/dir.v1" });
+    const written = await store.writeArtifact(artifact);
     expect(path.dirname(written)).toBe(path.join(workspace, ".hardkas", "artifacts", "misc"));
-    expect(path.basename(written)).toBe("artifact-abc123.json");
+    expect(path.basename(written)).toBe(`artifact-${artifact.contentHash}.json`);
   });
 
   it("still writes ordinary identifiers into the canonical subdirectory", async () => {
-    const written = await store.writeArtifact({
-      schema: "hardkas.txReceipt",
-      txId: "6a32bce2df64daa0a52e1d4f5875b5b9efc741fedd2ea9881d6c4492452d1816"
-    });
+    const written = await store.writeArtifact(
+      sealed({
+        schema: "hardkas.txReceipt",
+        txId: "6a32bce2df64daa0a52e1d4f5875b5b9efc741fedd2ea9881d6c4492452d1816"
+      })
+    );
     expect(path.dirname(written)).toBe(path.join(workspace, ".hardkas", "artifacts", "receipts"));
   });
 
@@ -99,7 +108,8 @@ describe("ProjectArtifactStore: path safety", () => {
 
   it("reads a file inside the workspace by path", async () => {
     const file = path.join(workspace, "my-receipt.json");
-    await fs.writeFile(file, JSON.stringify({ schema: "hardkas.txReceipt", txId: "abc" }));
+    // Wave 1.2 · IC-5′.4: a path read is verified too, so the fixture is sealed.
+    await fs.writeFile(file, JSON.stringify(sealed({ schema: "hardkas.txReceipt", txId: "abc" })));
     await expect(store.readArtifact(file)).resolves.toMatchObject({ txId: "abc" });
   });
 });

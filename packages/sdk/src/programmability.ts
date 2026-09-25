@@ -1,6 +1,6 @@
 import fs from "node:fs";
 import path from "node:path";
-import { calculateContentHash, verifyArtifactIntegritySync } from "@hardkas/artifacts";
+import { calculateContentHash, readDeclaredHashVersion, verifyArtifactIntegritySync } from "@hardkas/artifacts";
 import type { Hardkas } from "./index.js";
 import { HardkasSchemas } from "@hardkas/artifacts";
 import { HardkasZk } from "./zk.js";
@@ -449,7 +449,7 @@ function inspectJsonArtifact(
     path: path.relative(workspaceRoot, resolved).replace(/\\/g, "/"),
     ...(artifact?.schema ? { artifactSchema: artifact.schema } : {}),
     ...(artifact
-      ? { contentHash: calculateContentHash(artifact, artifact.hashVersion ?? 4) }
+      ? { contentHash: calculateContentHash(artifact, readDeclaredHashVersion(artifact) ?? 4) }
       : {}),
     claims: programmabilityClaims(),
     issues

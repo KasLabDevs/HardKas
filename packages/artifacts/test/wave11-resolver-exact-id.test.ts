@@ -2,53 +2,68 @@ import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import fs from "node:fs/promises";
 import path from "node:path";
 import os from "node:os";
+import { systemRuntimeContext, asNetworkId } from "@hardkas/core";
 import { ProjectArtifactStore } from "../src/store.js";
 import { ReceiptLookupError } from "../src/receipt-lookup-error.js";
+import { resolveArtifact } from "../src/resolve.js";
+import { createTxPlanArtifact } from "../src/tx-plan.js";
+import { createSimulatedSignedTxArtifact, createSimulatedTxReceipt } from "../src/signed-tx.js";
+import { calculateContentHash, CURRENT_HASH_VERSION } from "../src/canonical.js";
 
 // -----------------------------------------------------------------------------
 // Wave 11 · RESOLVER-1 · content-verified id resolution with STRICT namespace
-// separation.
+// separation — re-based on the rc.23 remediation Wave 1.2 contract
+// (Closure Pack IC-5′ / D-Q3.a, Q3-II):
 //
-// The Wave 11 correction has TWO parts:
-//
-//   (1) close the silent wrong-artifact selection by verifying the queried id
-//       against the artifact's parsed content, not just its filename;
-//
-//   (2) narrow the accepted "generic artifact identity" namespaces to
-//       exactly those with an existing contract:
-//
-//         - `artifact.lineage.artifactId` — canonical (Wave 5).
-//         - `artifact.planId`             — legacy short-ID (proven by
-//                                           store-root-resolution.test.ts).
-//
-//       DELIBERATELY EXCLUDED as generic artifact identity, because previous
-//       waves separated them into their own namespaces:
-//
-//         - `contentHash` — Wave 5: contentHash is NOT guaranteed to equal
-//           artifactId. contentHash-only artifacts (snapshots) are
-//           path-resolvable, never identity-resolvable.
-//         - `txId`        — Wave 10: Kaspa consensus txId lookup lives in
-//           `findReceiptByTxId`. Generic `readArtifact(txId)` must NOT
-//           succeed just because a receipt happens to carry `.txId === input`.
-//         - `signedId`, `receiptId` — no existing contract evidence supports
-//           either as a `readArtifact` / `exists` input.
-//         - Top-level `.artifactId` — Wave 5 recognises only
-//           `lineage.artifactId` as canonical.
-//
-// The invariant Wave 11 locks:
-//
-//     A generic artifact lookup cannot silently cross identity namespaces.
-//     artifactId ≠ txId ≠ contentHash unless the schema explicitly defines
-//     equality, and value coincidence in one artifact does NOT make the
-//     namespaces interchangeable.
+//   (1) a lookup answers only with an artifact whose RECOMPUTED identity is the
+//       queried one (no filename substring, no first match, no "prefer this dir");
+//   (2) generic `readArtifact` / `exists` accept exactly a contained path or a
+//       64-hex artifactId. The Wave 11 "legacy short-ID" exception (`planId`)
+//       is gone: D-Q3.a grants no deprecation period; a label needs its namespace
+//       (`resolveArtifact(root, { plan })`) and is verified against the hash;
+//   (3) `txId` is the `tx` namespace (receipts only), never generic identity;
+//   (4) the recomputed contentHash IS the identity of every artifact, including
+//       snapshots without lineage (the Wave 5/11 "path-only" exclusion is gone).
 // -----------------------------------------------------------------------------
+
+const ctx = { ...systemRuntimeContext, clock: { now: () => 1_700_000_000_000 } };
+
+type SealedPlan = ReturnType<typeof createTxPlanArtifact> & { contentHash: string; planId: string };
+
+function makePlan(amount = 500n): SealedPlan {
+  const plan: any = {
+    inputs: [{ outpoint: { transactionId: "ab".repeat(32), index: 0 }, amountSompi: 1000n, address: "kaspasim:qqalice", scriptPublicKey: "spk" }],
+    outputs: [{ address: "kaspasim:qqbob", amountSompi: amount }],
+    change: { address: "kaspasim:qqalice", amountSompi: 1000n - amount - 10n },
+    estimatedFeeSompi: 10n,
+    estimatedMass: 100n
+  };
+  return createTxPlanArtifact({
+    ctx,
+    networkId: asNetworkId("simnet") as any,
+    mode: "simulator",
+    from: { input: "alice", address: "kaspasim:qqalice", accountName: "alice" },
+    to: { input: "bob", address: "kaspasim:qqbob" },
+    amountSompi: amount,
+    plan
+  }) as SealedPlan;
+}
 
 async function writeJson(p: string, obj: unknown): Promise<void> {
   await fs.mkdir(path.dirname(p), { recursive: true });
   await fs.writeFile(p, JSON.stringify(obj), "utf-8");
 }
 
-describe("Wave 11 · RESOLVER-1 · content-verified findArtifactPathById", () => {
+const codeOf = async (p: Promise<unknown>): Promise<string> => {
+  try {
+    await p;
+    return "OK";
+  } catch (e: any) {
+    return e?.code ?? `ERR:${e?.message}`;
+  }
+};
+
+describe("Wave 11 · RESOLVER-1 · content-verified store lookups (IC-5′ re-base)", () => {
   let ws: string;
   let artifactsDir: string;
   let store: ProjectArtifactStore;
@@ -65,427 +80,196 @@ describe("Wave 11 · RESOLVER-1 · content-verified findArtifactPathById", () =>
   });
 
   // ---------------------------------------------------------------------------
-  // Positive contracts — canonical + legacy identities that DO resolve.
+  // Positive contracts — canonical identity resolves wherever the file lives.
   // ---------------------------------------------------------------------------
 
-  it("1. resolves a plan by full 64-hex canonical artifactId (lineage.artifactId, filename carries only 16-hex short form)", async () => {
-    // Wave 4 / Wave 6 fixture shape: filename embeds 16-hex, canonical
-    // identity lives in `lineage.artifactId`.
-    const fullId =
-      "aaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbccccccccccccccccdddddddddddddddd";
-    const shortForm = fullId.slice(0, 16);
-    await writeJson(
-      path.join(artifactsDir, `2026-01-01-plan-${shortForm}.plan.json`),
-      {
-        schema: "hardkas.txPlan",
-        planId: `plan-${shortForm}`,
-        contentHash: fullId,
-        lineage: { artifactId: fullId, parentArtifactId: "", sequence: 1 }
-      }
-    );
+  it("1. resolves a plan by full 64-hex canonical artifactId when the filename carries only the 16-hex short form", async () => {
+    const plan = makePlan();
+    await writeJson(path.join(artifactsDir, `2026-01-01-plan-${plan.contentHash.slice(0, 16)}.plan.json`), plan);
 
-    await expect(store.exists(fullId)).resolves.toBe(true);
-    const read = (await store.readArtifact(fullId)) as {
-      lineage: { artifactId: string };
-    };
-    expect(read.lineage.artifactId).toBe(fullId);
+    await expect(store.exists(plan.contentHash)).resolves.toBe(true);
+    const read = (await store.readArtifact(plan.contentHash)) as { lineage: { artifactId: string } };
+    expect(read.lineage.artifactId).toBe(plan.contentHash);
   });
 
-  it("3. resolves a plan by its short-form planId — the one legacy short-ID contract", async () => {
-    const planId = "plan-abcdef0123456789";
-    await writeJson(
-      path.join(artifactsDir, "plans", `txPlan-${planId}.json`),
-      {
-        schema: "hardkas.txPlan",
-        planId,
-        contentHash: "hash-abcdef0123456789"
-      }
-    );
+  it("3. a planId is the `plan` namespace: the generic reader refuses it, the typed lookup verifies it", async () => {
+    const plan = makePlan();
+    await writeJson(path.join(artifactsDir, "plans", `txPlan-${plan.planId}.json`), plan);
 
-    await expect(store.exists(planId)).resolves.toBe(true);
-    const read = (await store.readArtifact(planId)) as { planId: string };
-    expect(read.planId).toBe(planId);
+    // Wave 11 kept `readArtifact(planId)` as "the one legacy short-ID contract";
+    // D-Q3.a removes it without a deprecation period (the vulnerability would stay alive).
+    expect(await codeOf(store.exists(plan.planId))).toBe("NAMESPACE_REQUIRED");
+    expect(await codeOf(store.readArtifact(plan.planId))).toBe("NAMESPACE_REQUIRED");
+
+    const r = await resolveArtifact(ws, { plan: plan.planId });
+    expect(r.artifactId).toBe(plan.contentHash);
+    expect(r.artifact.planId).toBe(plan.planId);
   });
 
-  it("10. lineage parent lookup by full canonical artifactId still resolves after Wave 11 narrowing", async () => {
-    // The Wave 6 lineage walker calls readArtifact(parentArtifactId) where
-    // parentArtifactId is the parent's canonical `lineage.artifactId`. That
-    // path must survive the Wave 11 narrowing verbatim.
-    const parentId =
-      "1111222233334444555566667777888899990000aaaabbbbccccddddeeeeffff";
-    const parentShort = parentId.slice(0, 16);
-    await writeJson(
-      path.join(artifactsDir, `2026-02-02-plan-${parentShort}.plan.json`),
-      {
-        schema: "hardkas.txPlan",
-        planId: `plan-${parentShort}`,
-        contentHash: parentId,
-        lineage: { artifactId: parentId, parentArtifactId: "", sequence: 1 }
-      }
-    );
-
-    const parent = (await store.readArtifact(parentId)) as {
-      lineage: { artifactId: string };
-    };
-    expect(parent.lineage.artifactId).toBe(parentId);
+  it("10. lineage parent lookup by full canonical artifactId resolves", async () => {
+    const plan = makePlan();
+    await writeJson(path.join(artifactsDir, `2026-02-02-plan-${plan.contentHash.slice(0, 16)}.plan.json`), plan);
+    const parent = (await store.readArtifact(plan.contentHash)) as { lineage: { artifactId: string } };
+    expect(parent.lineage.artifactId).toBe(plan.contentHash);
   });
 
   // ---------------------------------------------------------------------------
   // Collision closures — filename-substring false positives never win.
   // ---------------------------------------------------------------------------
 
-  it("2. does NOT return artifact Y when Y's filename shares Y's short id with the queried A's first-16-hex — canonical identity is authoritative", async () => {
-    const sharedPrefix = "0123456789abcdef";
-    const idA =
-      sharedPrefix + "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
-    const idY =
-      sharedPrefix + "yyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy";
-    expect(idA.length).toBe(64);
-    expect(idY.length).toBe(64);
+  it("2. does NOT return artifact Y when Y's filename shares the queried A's first-16-hex — canonical identity is authoritative", async () => {
+    const plan = makePlan();
+    const signed = createSimulatedSignedTxArtifact(plan, "payload", ctx);
+    const idY = signed.contentHash as string;
+    const idA = idY.slice(0, 16) + "a".repeat(48);
     expect(idA).not.toBe(idY);
 
-    await writeJson(
-      path.join(
-        artifactsDir,
-        "signed",
-        `signedTx-${sharedPrefix}yyyyyyyyyyyyyyyy.json`
-      ),
-      {
-        schema: "hardkas.signedTx",
-        signedId: `signed-${sharedPrefix}yyyyyyyyyyyyyyyy`,
-        contentHash: idY,
-        lineage: { artifactId: idY, parentArtifactId: "", sequence: 1 }
-      }
-    );
+    await writeJson(path.join(artifactsDir, "signed", `signedTx-${idA}.json`), signed); // filename lies
 
     await expect(store.exists(idA)).resolves.toBe(false);
-    await expect(store.readArtifact(idA)).rejects.toThrow(/not found in store/);
+    expect(await codeOf(store.readArtifact(idA))).toBe("ARTIFACT_NOT_FOUND");
+    expect(((await store.readArtifact(idY)) as any).contentHash).toBe(idY);
   });
 
-  it("does NOT return the wrong artifact when a short id is a prefix of another artifact's planId", async () => {
-    const shortA = "plan-abcd";
-    const longB = "plan-abcdef1234";
-    await writeJson(path.join(artifactsDir, "plans", `txPlan-${longB}.json`), {
-      schema: "hardkas.txPlan",
-      planId: longB,
-      contentHash: "hash-only-for-B"
-    });
+  it("does NOT return the wrong artifact when a short token is a prefix of another artifact's planId", async () => {
+    const plan = makePlan();
+    await writeJson(path.join(artifactsDir, "plans", `txPlan-${plan.planId}.json`), plan);
+    const prefix = plan.planId.slice(0, 9);
 
-    await expect(store.exists(shortA)).resolves.toBe(false);
-    await expect(store.readArtifact(shortA)).rejects.toThrow(
-      /not found in store/
-    );
+    expect(await codeOf(store.readArtifact(prefix))).toBe("NAMESPACE_REQUIRED");
+    expect(await codeOf(resolveArtifact(ws, { plan: prefix }))).toBe("ARTIFACT_NOT_FOUND");
   });
 
-  it("selects the content-verified planId match past a filename-only false-positive impostor", async () => {
-    const targetId = "plan-target1234";
-    const impostorId = "plan-target1234-longer";
+  it("selects the verified label match past a filename-only impostor", async () => {
+    const target = makePlan(500n);
+    const other = makePlan(600n);
+    // The impostor's FILE NAME carries the target's label; its content is another (valid) plan.
+    await writeJson(path.join(artifactsDir, "plans", `aaa-txPlan-${target.planId}-longer.json`), other);
+    await writeJson(path.join(artifactsDir, "plans", `zzz-txPlan-${target.planId}.json`), target);
 
-    await writeJson(
-      path.join(artifactsDir, "plans", `aaa-txPlan-${impostorId}.json`),
-      {
-        schema: "hardkas.txPlan",
-        planId: impostorId,
-        contentHash: "hash-impostor"
-      }
-    );
-    await writeJson(
-      path.join(artifactsDir, "plans", `zzz-txPlan-${targetId}.json`),
-      {
-        schema: "hardkas.txPlan",
-        planId: targetId,
-        contentHash: "hash-target"
-      }
-    );
-
-    const read = (await store.readArtifact(targetId)) as {
-      planId: string;
-      contentHash: string;
-    };
-    expect(read.planId).toBe(targetId);
-    expect(read.contentHash).toBe("hash-target");
+    const r = await resolveArtifact(ws, { plan: target.planId });
+    expect(r.artifactId).toBe(target.contentHash);
+    expect(r.artifact.planId).toBe(target.planId);
   });
 
-  it("keeps preferring a canonical subdirectory over the artifacts root when two files legitimately declare the same planId", async () => {
-    const planId = "plan-duplicate-legit";
-    await writeJson(
-      path.join(artifactsDir, "plans", `txPlan-${planId}.json`),
-      {
-        schema: "hardkas.txPlan",
-        planId,
-        contentHash: "hash-from-plans-dir"
-      }
-    );
-    await writeJson(
-      path.join(artifactsDir, `2020-01-01-${planId}.plan.json`),
-      {
-        schema: "hardkas.txPlan",
-        planId,
-        contentHash: "hash-from-root"
-      }
-    );
+  it("identical copies of one plan in the canonical subdirectory and at the root collapse to one identity", async () => {
+    const plan = makePlan();
+    await writeJson(path.join(artifactsDir, "plans", `txPlan-${plan.planId}.json`), plan);
+    await writeJson(path.join(artifactsDir, `2020-01-01-${plan.planId}.plan.json`), plan);
 
-    const read = (await store.readArtifact(planId)) as { contentHash: string };
-    expect(read.contentHash).toBe("hash-from-plans-dir");
+    const r = await resolveArtifact(ws, { plan: plan.planId });
+    expect(r.artifactId).toBe(plan.contentHash);
+    expect(r.copies).toHaveLength(2);
+    expect(((await store.readArtifact(plan.contentHash)) as any).contentHash).toBe(plan.contentHash);
   });
 
-  it("4. arbitrary partial ID does not resolve (neither prefix nor infix of any canonical/planId slot)", async () => {
-    const canonicalId =
-      "eeeeeeeeeeeeeeeeffffffffffffffff0000000000000000eeeeeeeeeeeeeeee";
-    await writeJson(
-      path.join(
-        artifactsDir,
-        "plans",
-        `txPlan-plan-${canonicalId.slice(0, 16)}.json`
-      ),
-      {
-        schema: "hardkas.txPlan",
-        planId: `plan-${canonicalId.slice(0, 16)}`,
-        contentHash: canonicalId,
-        lineage: { artifactId: canonicalId, parentArtifactId: "", sequence: 1 }
-      }
-    );
+  it("4. arbitrary partial IDs never resolve: they are neither a path nor a 64-hex artifactId", async () => {
+    const plan = makePlan();
+    await writeJson(path.join(artifactsDir, "plans", `txPlan-${plan.planId}.json`), plan);
+    const canonicalId = plan.contentHash as string;
 
-    // Partial forms that are neither the full canonical id nor the exact planId:
-    for (const partial of [
-      canonicalId.slice(0, 16), // 16-hex prefix (also happens to be part of planId text but not the planId itself)
-      canonicalId.slice(0, 32),
-      "plan-eeee", // shorter than the real planId
-      canonicalId + "extra" // longer
-    ]) {
-      await expect(store.exists(partial)).resolves.toBe(false);
-      await expect(store.readArtifact(partial)).rejects.toThrow(
-        /not found in store/
-      );
+    for (const partial of [canonicalId.slice(0, 16), canonicalId.slice(0, 32), "plan-eeee", canonicalId + "extra"]) {
+      expect(await codeOf(store.exists(partial)), partial).toBe("NAMESPACE_REQUIRED");
+      expect(await codeOf(store.readArtifact(partial)), partial).toBe("NAMESPACE_REQUIRED");
     }
   });
 
   // ---------------------------------------------------------------------------
-  // Namespace separation — the invariant Wave 11 locks.
+  // Namespace separation — the invariant Wave 11 locked, kept under IC-5′.
   // ---------------------------------------------------------------------------
 
   it("5. `txId` is NOT generic artifact identity — readArtifact(txId) rejects even when a receipt on disk carries .txId === input", async () => {
-    const receiptTxId =
-      "dc228d614488471f0804f368e8ddee605c9993624bf17b6805688df214ca32aa";
-    const receiptCanonicalArtifactId =
-      "c07596a5ac21ca4a746a1da21589e5e5b88dcb298985fe733b3549184d92f48b";
+    const plan = makePlan();
+    const receiptTxId = "dc228d614488471f0804f368e8ddee605c9993624bf17b6805688df214ca32aa";
+    const receipt = createSimulatedTxReceipt(plan, receiptTxId, ctx, { daaScore: "1" });
+    await writeJson(path.join(artifactsDir, "receipts", `txReceipt-${receipt.contentHash}.json`), receipt);
 
-    await writeJson(
-      path.join(
-        artifactsDir,
-        "receipts",
-        `txReceipt-${receiptCanonicalArtifactId}.json`
-      ),
-      {
-        schema: "hardkas.txReceipt",
-        contentHash: receiptCanonicalArtifactId,
-        txId: receiptTxId,
-        lineage: {
-          artifactId: receiptCanonicalArtifactId,
-          parentArtifactId: "",
-          sequence: 3
-        }
-      }
-    );
-
-    // Generic reader must NOT resolve by txId — that namespace belongs to
-    // findReceiptByTxId.
     await expect(store.exists(receiptTxId)).resolves.toBe(false);
-    await expect(store.readArtifact(receiptTxId)).rejects.toThrow(
-      /not found in store/
-    );
+    expect(await codeOf(store.readArtifact(receiptTxId))).toBe("ARTIFACT_NOT_FOUND");
   });
 
-  it("6. `contentHash` alone is NOT generic artifact identity — readArtifact(contentHash) rejects when no lineage.artifactId matches", async () => {
-    // Snapshot-shaped fixture: contentHash present, but the value we look up
-    // exists ONLY as `contentHash`, not as `lineage.artifactId` and not as
-    // `planId`. Wave 5's façade explicitly documents this as "not
-    // ID-resolvable" (path-resolvable only).
-    const onlyContentHash =
-      "1111111122222222333333334444444455555555666666667777777788888888";
-    await writeJson(
-      path.join(artifactsDir, "misc", `snapshot-${onlyContentHash}.json`),
-      {
-        schema: "hardkas.snapshot.v1",
-        contentHash: onlyContentHash
-        // deliberately: no lineage.artifactId, no planId
-      }
-    );
-
-    await expect(store.exists(onlyContentHash)).resolves.toBe(false);
-    await expect(store.readArtifact(onlyContentHash)).rejects.toThrow(
-      /not found in store/
-    );
-  });
-
-  it("7. snapshot with contentHash but no artifactId is path-resolvable only, not identity-resolvable", async () => {
-    // Same shape as #6, but here we prove the workspace-relative PATH input
-    // still works — so the file itself is accessible, just not through the
-    // id namespace.
-    const snapshotHash =
-      "9999999988888888777777776666666655555555444444443333333322222222";
-    const snapshotPath = path.join(
-      artifactsDir,
-      "misc",
-      `snapshot-${snapshotHash}.json`
-    );
-    await writeJson(snapshotPath, {
+  it("6/7. an artifact without lineage (snapshot) is identity-resolvable by its recomputed contentHash AND path-resolvable", async () => {
+    // Wave 5/11 kept contentHash-only artifacts path-resolvable only. IC-5′.1 (identity
+    // by category, AUD-45) makes the recomputed contentHash the identity of every artifact.
+    const snapshot: any = {
       schema: "hardkas.snapshot.v1",
-      contentHash: snapshotHash
-    });
-
-    // id form rejects
-    await expect(store.readArtifact(snapshotHash)).rejects.toThrow(
-      /not found in store/
-    );
-
-    // path form resolves — readArtifact accepts absolute paths inside the
-    // workspace.
-    const read = (await store.readArtifact(snapshotPath)) as {
-      contentHash: string;
+      hardkasVersion: "0.12.0-rc.23",
+      version: "1.0.0-alpha",
+      hashVersion: CURRENT_HASH_VERSION,
+      networkId: "simnet",
+      mode: "simulator",
+      createdAt: "2026-09-25T00:00:00.000Z",
+      daaScore: "1",
+      accounts: [],
+      utxos: []
     };
-    expect(read.contentHash).toBe(snapshotHash);
+    snapshot.contentHash = calculateContentHash(snapshot, CURRENT_HASH_VERSION);
+    const snapshotPath = path.join(artifactsDir, "misc", `snapshot-${snapshot.contentHash}.json`);
+    await writeJson(snapshotPath, snapshot);
+
+    await expect(store.exists(snapshot.contentHash)).resolves.toBe(true);
+    expect(((await store.readArtifact(snapshot.contentHash)) as any).contentHash).toBe(snapshot.contentHash);
+    expect(((await store.readArtifact(snapshotPath)) as any).contentHash).toBe(snapshot.contentHash);
   });
 
   // ---------------------------------------------------------------------------
-  // Upstream contracts Wave 11 must not have broken.
+  // Upstream contracts kept.
   // ---------------------------------------------------------------------------
 
-  it("8. Wave 10 `findReceiptByTxId(realTxId)` still succeeds — the receipt-specific lookup owns the txId namespace", async () => {
-    const realTxId =
-      "dc228d614488471f0804f368e8ddee605c9993624bf17b6805688df214ca32aa";
-    const receiptCanonicalId =
-      "c07596a5ac21ca4a746a1da21589e5e5b88dcb298985fe733b3549184d92f48b";
+  it("8. `findReceiptByTxId(realTxId)` succeeds — the receipt-specific lookup owns the txId namespace", async () => {
+    const plan = makePlan();
+    const realTxId = "dc228d614488471f0804f368e8ddee605c9993624bf17b6805688df214ca32aa";
+    const receipt = createSimulatedTxReceipt(plan, realTxId, ctx, { daaScore: "1" });
+    await writeJson(path.join(artifactsDir, "receipts", `txReceipt-${receipt.contentHash}.json`), receipt);
 
-    await writeJson(
-      path.join(
-        artifactsDir,
-        "receipts",
-        `txReceipt-${receiptCanonicalId}.json`
-      ),
-      {
-        schema: "hardkas.txReceipt",
-        contentHash: receiptCanonicalId,
-        txId: realTxId,
-        sourceSignedId: "signed-source-token",
-        lineage: {
-          artifactId: receiptCanonicalId,
-          parentArtifactId: "",
-          sequence: 3
-        }
-      }
-    );
-
-    const receipt = (await store.findReceiptByTxId(realTxId)) as {
-      txId: string;
-      contentHash: string;
-    };
-    expect(receipt.txId).toBe(realTxId);
-    expect(receipt.contentHash).toBe(receiptCanonicalId);
+    const found = (await store.findReceiptByTxId(realTxId)) as { txId: string; contentHash: string };
+    expect(found.txId).toBe(realTxId);
+    expect(found.contentHash).toBe(receipt.contentHash);
   });
 
-  it("8b. Wave 10 `findReceiptByTxId(unknownTxId)` still throws typed RECEIPT_NOT_FOUND", async () => {
-    // No receipts on disk; just prove the typed error still propagates.
-    await expect(
-      store.findReceiptByTxId(
-        "0000000000000000000000000000000000000000000000000000000000000000"
-      )
-    ).rejects.toBeInstanceOf(ReceiptLookupError);
+  it("8b. `findReceiptByTxId(unknownTxId)` throws typed RECEIPT_NOT_FOUND", async () => {
+    await expect(store.findReceiptByTxId("0".repeat(64))).rejects.toBeInstanceOf(ReceiptLookupError);
+    expect(await codeOf(store.findReceiptByTxId("0".repeat(64)))).toBe("RECEIPT_NOT_FOUND");
   });
 
-  it("9. `loadSimulatedReceipt`-style speculative `readArtifact(txId)` + enumerate-fallback pattern still finds the receipt", async () => {
-    // Reproduces the exact resilience pattern at
-    // packages/localnet/src/receipts.ts::loadSimulatedReceipt:
-    //
-    //   1. try store.readArtifact(txId) speculatively (may throw post-Wave-11);
-    //   2. if that fails, enumerate receipts via queryArtifacts and pick the
-    //      one whose .txId equals the input.
-    //
-    // Wave 11 makes step 1 fail for a receipt whose only `.txId === input`
-    // link is the txId slot — that is the intentional namespace separation.
-    // The consumer contract is that step 2 (the fallback) succeeds. This
-    // test locks that end-to-end behaviour.
-    const txId =
-      "aaaaaaaa0000000000000000000000000000000000000000000000000000aaaa";
-    const receiptCanonicalId =
-      "bbbbbbbb0000000000000000000000000000000000000000000000000000bbbb";
+  it("9. the tx namespace replaces the speculative `readArtifact(txId)` + enumerate-fallback pattern", async () => {
+    const plan = makePlan();
+    const txId = "aaaaaaaa0000000000000000000000000000000000000000000000000000aaaa";
+    const receipt = createSimulatedTxReceipt(plan, txId, ctx, { daaScore: "1" });
+    await writeJson(path.join(artifactsDir, "receipts", `txReceipt-${receipt.contentHash}.json`), receipt);
 
-    await writeJson(
-      path.join(
-        artifactsDir,
-        "receipts",
-        `txReceipt-${receiptCanonicalId}.json`
-      ),
-      {
-        schema: "hardkas.txReceipt",
-        contentHash: receiptCanonicalId,
-        txId,
-        lineage: {
-          artifactId: receiptCanonicalId,
-          parentArtifactId: "",
-          sequence: 3
-        }
-      }
-    );
-
-    // Step 1 — speculative readArtifact(txId) — must NOT resolve post-Wave-11.
-    let step1Succeeded = false;
-    try {
-      const direct: any = await store.readArtifact(txId);
-      if (direct && direct.txId === txId) step1Succeeded = true;
-    } catch {
-      // expected under Wave 11 namespace separation
-    }
-    expect(step1Succeeded).toBe(false);
-
-    // Step 2 — enumerate + filter, exactly as loadSimulatedReceipt does.
-    const receipts = await store.queryArtifacts({
-      schema: "hardkas.txReceipt"
-    });
-    const found = receipts.find((a: any) => a.txId === txId);
-    expect(found).toBeDefined();
-    expect((found as any).txId).toBe(txId);
-    expect((found as any).contentHash).toBe(receiptCanonicalId);
+    // Generic reader: a 64-hex txId is read as an artifactId and is not found.
+    expect(await codeOf(store.readArtifact(txId))).toBe("ARTIFACT_NOT_FOUND");
+    // Typed namespace: verified receipt.
+    const r = await resolveArtifact(ws, { tx: txId });
+    expect(r.artifact.txId).toBe(txId);
+    expect(r.artifactId).toBe(receipt.contentHash);
   });
 
   // ---------------------------------------------------------------------------
   // Failure-mode surfaces preserved.
   // ---------------------------------------------------------------------------
 
-  it("does not treat corrupt JSON as a match, even when its filename contains the id", async () => {
-    const planId = "plan-corrupt-neighbour";
+  it("does not treat corrupt JSON as a match, even when its filename contains the label", async () => {
+    const plan = makePlan();
     await fs.mkdir(path.join(artifactsDir, "plans"), { recursive: true });
-    await fs.writeFile(
-      path.join(artifactsDir, "plans", `txPlan-${planId}.json`),
-      "{ this is not valid JSON",
-      "utf-8"
-    );
+    await fs.writeFile(path.join(artifactsDir, "plans", `txPlan-${plan.planId}.json`), "{ this is not valid JSON", "utf-8");
 
-    await expect(store.exists(planId)).resolves.toBe(false);
-    await expect(store.readArtifact(planId)).rejects.toThrow();
+    expect(await codeOf(resolveArtifact(ws, { plan: plan.planId }))).toBe("ARTIFACT_NOT_FOUND");
+    expect(await codeOf(store.readArtifact(plan.contentHash))).toBe("ARTIFACT_NOT_FOUND");
   });
 
-  it("does not treat a directory whose name contains the id as an artifact", async () => {
-    const planId = "plan-dir-decoy";
-    await fs.mkdir(path.join(artifactsDir, "plans", `wrap-${planId}-dir`), {
-      recursive: true
-    });
-
-    await expect(store.exists(planId)).resolves.toBe(false);
-    await expect(store.readArtifact(planId)).rejects.toThrow(
-      /not found in store/
-    );
+  it("does not treat a directory whose name contains the label as an artifact", async () => {
+    const plan = makePlan();
+    await fs.mkdir(path.join(artifactsDir, "plans", `wrap-${plan.planId}-dir`), { recursive: true });
+    expect(await codeOf(resolveArtifact(ws, { plan: plan.planId }))).toBe("ARTIFACT_NOT_FOUND");
+    expect(await codeOf(store.readArtifact(plan.contentHash))).toBe("ARTIFACT_NOT_FOUND");
   });
 
-  it("returns not-found for a genuinely missing artifact even when a neighbour's filename contains the queried id", async () => {
-    await writeJson(
-      path.join(artifactsDir, "plans", "txPlan-plan-other.json"),
-      { schema: "hardkas.txPlan", planId: "plan-other", contentHash: "hash-o" }
-    );
-
-    await expect(store.exists("plan-missing")).resolves.toBe(false);
-    await expect(store.readArtifact("plan-missing")).rejects.toThrow(
-      /not found in store/
-    );
+  it("returns not-found for a genuinely missing artifact even when a neighbour's filename contains the queried label", async () => {
+    const other = makePlan();
+    await writeJson(path.join(artifactsDir, "plans", `txPlan-plan-missing-neighbour.json`), other);
+    expect(await codeOf(resolveArtifact(ws, { plan: "plan-missing" }))).toBe("ARTIFACT_NOT_FOUND");
+    expect(await codeOf(store.readArtifact("0".repeat(64)))).toBe("ARTIFACT_NOT_FOUND");
   });
 });

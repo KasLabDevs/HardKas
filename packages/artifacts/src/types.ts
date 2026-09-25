@@ -48,9 +48,11 @@ export interface BaseArtifact<T extends ArtifactType> {
   lineage?:
     | {
         artifactId: ArtifactId;
-        lineageId: LineageId;
+        /** Absent on a version-5 root (it would be a self reference); required on children. */
+        lineageId?: LineageId | undefined;
         parentArtifactId?: ArtifactId | undefined;
-        rootArtifactId: ArtifactId;
+        /** Absent on a version-5 root; on children, the root's real artifactId. */
+        rootArtifactId?: ArtifactId | undefined;
         sequence?: EventSequence | number | undefined;
       }
     | undefined;

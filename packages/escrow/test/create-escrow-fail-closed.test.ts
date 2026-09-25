@@ -2,8 +2,10 @@ import { describe, it, expect } from "vitest";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import { getSilContract, silContractBytecodeHex, silverP2shLock } from "@hardkas/core";
 import { createEscrow, escrowResolution, ESCROW_SOURCE } from "../src/index.js";
+
+// Cases that compile the escrow with the pinned silverc live in
+// create-escrow.silverc.test.ts (silverc level); nothing here needs a compiler.
 
 // x-only Schnorr keys (32 bytes) and P2PK destination scripts.
 const config = {
@@ -17,31 +19,6 @@ const config = {
 };
 
 describe("createEscrow (SilverScript v1, managed silverc)", () => {
-  it("compiles the v1 escrow and derives its P2SH lock from the SDK", async () => {
-    const { artifact, state, provenance } = await createEscrow(config);
-    const { contract } = getSilContract(artifact, "Escrow");
-    expect(Object.keys(contract.entries).sort()).toEqual(["mutualRelease", "refundBuyer", "releaseToSeller"]);
-    expect(state.redeemScriptHex).toBe(silContractBytecodeHex(contract));
-    expect(state.lockingScriptHex).toBe(silverP2shLock(state.redeemScriptHex).script);
-    expect(state.address).toMatch(/^kaspasim:p/);
-
-    expect(provenance.schema).toBe("hardkas.silver.compileProvenance.v1");
-    expect(provenance.compiler.releaseTag).toBe("v1.0.0");
-    expect(provenance.contractName).toBe("Escrow");
-    expect(provenance.lockingScriptHex).toBe(state.lockingScriptHex);
-    // Constructor arguments are evidenced by digest only.
-    const serialized = JSON.stringify(provenance);
-    expect(serialized).not.toContain(config.buyer.publicKeyHex);
-    expect(serialized).not.toContain(config.buyerDestinationSpk);
-  });
-
-  it("is deterministic for the same parties", async () => {
-    const a = await createEscrow(config);
-    const b = await createEscrow(config);
-    expect(a.provenance.artifactSha256).toBe(b.provenance.artifactSha256);
-    expect(a.state.lockingScriptHex).toBe(b.state.lockingScriptHex);
-  });
-
   it("refuses configurations the v1 contract cannot take", async () => {
     const cases = [
       { ...config, buyer: { publicKeyHex: "03" + config.buyer.publicKeyHex } }, // compressed ECDSA key

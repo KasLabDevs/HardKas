@@ -2,23 +2,30 @@ import { Command } from "commander";
 import path from "path";
 import { UI, handleError } from "../ui.js";
 import { HardkasSchemas } from "@hardkas/artifacts";
+import { LookupUsageError, lookupFromArgs, namespaceRequiredHint } from "../runners/lookup-args.js";
+import { describeWhyNode } from "../runners/why-narrative.js";
 
 export function registerWhyCommand(program: Command) {
   program
     .command("why")
     .description(
-      "Explain the causal lineage of an artifact resolved by exact artifactId or artifact file path"
+      "Explain the causal lineage of an artifact resolved by exact artifactId, artifact file path, or a namespaced identifier (--plan, --signed, --tx, --workflow)"
     )
     .argument(
-      "<artifact>",
-      "Exact 64-hex artifactId (lineage.artifactId) or absolute/workspace-relative path to the artifact .json file"
+      "[artifact]",
+      "Exact 64-hex artifactId (the recomputed contentHash) or absolute/workspace-relative path to the artifact .json file"
     )
+    .option("--artifact <id-or-path>", "64-hex artifactId or workspace path (same as the positional)")
+    .option("--plan <planId>", "Resolve a plan by its derived label (verified against its hash)")
+    .option("--signed <signedId>", "Resolve a signed transaction by its derived label (verified)")
+    .option("--tx <txId>", "Resolve the submission receipt for a txId (never the signed)")
+    .option("--workflow <workflowId>", "Resolve a workflow run by its correlation id")
     .option("--json", "Output lineage graph in JSON format")
     .option("--workspace <path>", "Override workspace root directory")
     .action(
       async (
-        artifactInput: string,
-        options: { json?: boolean; workspace?: string }
+        artifactInput: string | undefined,
+        options: { json?: boolean; workspace?: string; artifact?: string; plan?: string; signed?: string; tx?: string; workflow?: string }
       ) => {
         UI.setJsonMode(!!options.json);
         try {
@@ -26,35 +33,49 @@ export function registerWhyCommand(program: Command) {
             ? path.resolve(options.workspace)
             : process.cwd();
 
-          // Wave 5 · DEF-17: single delegation point. See
-          // packages/artifacts/src/artifact-handle.ts for the accepted forms
-          // and typed error contract.
+          // Wave 5 · DEF-17: single delegation point. Wave 1.2 · IC-5′: namespaced,
+          // verified lookups (see packages/artifacts/src/resolve.ts).
           const { resolveArtifactHandle, ProjectArtifactStore } = await import(
             "@hardkas/artifacts"
           );
 
-          const handle = await resolveArtifactHandle(artifactInput, workspaceRoot);
+          let lookup;
+          try {
+            lookup = lookupFromArgs(artifactInput, options);
+          } catch (e: any) {
+            if (e instanceof LookupUsageError) {
+              UI.semanticError("Usage", e.message, "identity contract", "one target per call", "pass an artifactId, a path, or exactly one of --plan/--signed/--tx/--workflow");
+              throw new Error("Command failed");
+            }
+            throw e;
+          }
 
-          // Walk the causal chain from the resolved artifact toward root.
-          //
-          // Do NOT use ProjectArtifactStore.resolveLineage here: it has a
-          // pre-existing case-sensitivity bug in its cycle-break check
-          // (schema.includes("TxPlan") vs actual "hardkas.txPlan") that can
-          // loop forever when a plan's parentArtifactId is empty. That is a
-          // separate defect (recorded as backlog: resolveLineage-cycle-guard)
-          // and per Wave 5 · Section H we do not modify legacy store methods.
-          //
-          // Instead we walk parents inline with a strict visited-set guard
-          // and only through the same public readArtifact + resolveArtifactHandle
-          // primitives.
+          let handle;
+          try {
+            handle = await resolveArtifactHandle(
+              lookup.input,
+              workspaceRoot,
+              lookup.namespace ? { namespace: lookup.namespace } : {}
+            );
+          } catch (e: any) {
+            if (e?.code === "NAMESPACE_REQUIRED" && !options.json) {
+              UI.semanticError(
+                "Namespace Required",
+                e.message,
+                "identity contract",
+                "a label, txId or workflowId is not an artifactId",
+                namespaceRequiredHint("why", e)
+              );
+            }
+            // The typed error (code) reaches the renderer / JSON envelope unchanged.
+            throw e;
+          }
+
+          // Walk the causal chain from the resolved artifact toward root, through the
+          // authenticated lineage.parentArtifactId only (IC-5′.6), with a visited-set guard.
           const store = new ProjectArtifactStore(workspaceRoot);
           const lineage: any[] = [handle.artifact];
-          const visited = new Set<string>();
-          const startId =
-            handle.artifactId || (handle.artifact as any)?.lineage?.artifactId;
-          if (typeof startId === "string" && startId.length > 0) {
-            visited.add(startId);
-          }
+          const visited = new Set<string>([handle.artifactId]);
 
           let current: any = handle.artifact;
           const MAX_LINEAGE_DEPTH = 64;
@@ -93,12 +114,11 @@ export function registerWhyCommand(program: Command) {
                 role = "Replay Verification";
             }
 
+            // IC-5′.11: the canonical identity, never a label.
             const nodeId =
-              artifact.lineage?.artifactId ||
-              artifact.contentHash ||
-              artifact.planId ||
-              artifact.signedId ||
-              "unknown";
+              i === lineage.length - 1
+                ? handle.artifactId
+                : artifact.lineage?.artifactId || artifact.contentHash || "unknown";
 
             const node: any = {
               id: nodeId,
@@ -106,22 +126,12 @@ export function registerWhyCommand(program: Command) {
               role,
               createdAt: artifact.createdAt || artifact.executionTime,
               network: artifact.networkId || "unknown",
+              ...(typeof artifact.txId === "string" ? { txId: artifact.txId } : {}),
               lineage: artifact.lineage || null
             };
 
-            if (
-              artifact.schema?.startsWith(HardkasSchemas.SignedTx) &&
-              artifact.signatures
-            ) {
-              node.details = `Signed by ${Object.keys(artifact.signatures).join(", ")}`;
-            } else if (artifact.schema?.startsWith(HardkasSchemas.TxReceipt)) {
-              node.details = `Included in block ${artifact.blockHash || "unknown"}`;
-            } else if (artifact.schema?.startsWith(HardkasSchemas.TxPlan)) {
-              const outCount = artifact.transaction?.outputs?.length || 0;
-              node.details = `Transfers to ${outCount} outputs`;
-            } else if (artifact.schema?.startsWith(HardkasSchemas.ReplayV1)) {
-              node.details = `Verified: ${artifact.status}`;
-            }
+            const details = describeWhyNode(artifact);
+            if (details) node.details = details;
 
             chain.push(node);
           }
@@ -131,6 +141,7 @@ export function registerWhyCommand(program: Command) {
           if (options.json) {
             UI.writeJson({
               target: targetId,
+              authScope: handle.authScope,
               resolvedBy: handle.resolvedBy,
               resolvedPath: handle.path,
               chain
@@ -155,6 +166,9 @@ export function registerWhyCommand(program: Command) {
               `  ${indent}${prefix} ${isTarget ? "\x1b[32m\x1b[1m" : "\x1b[37m"}${node.role}\x1b[0m`
             );
             UI.raw(`  ${indent}  \x1b[90mID:   ${node.id}\x1b[0m`);
+            if (node.txId) {
+              UI.raw(`  ${indent}  \x1b[90mTxID: ${node.txId}\x1b[0m`);
+            }
             if (node.details) {
               UI.raw(`  ${indent}  \x1b[90mInfo: ${node.details}\x1b[0m`);
             }

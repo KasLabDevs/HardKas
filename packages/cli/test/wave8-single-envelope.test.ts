@@ -4,6 +4,7 @@ import fsp from "node:fs/promises";
 import path from "node:path";
 import os from "node:os";
 import crypto from "node:crypto";
+import { calculateContentHash, CURRENT_HASH_VERSION } from "@hardkas/artifacts";
 
 // -----------------------------------------------------------------------------
 // Wave 8 · DEF-18 · Single-authoritative-failure-envelope regression.
@@ -18,21 +19,29 @@ import crypto from "node:crypto";
 //   user without being collapsed into `UNKNOWN_ERROR`.
 //
 //   No second JSON document may appear on stderr.
+//
+// Wave 1.2 re-base: lookups resolve by verified identity, so the fixture chain
+// is sealed under the current hash version (ids are the real hashes).
 // -----------------------------------------------------------------------------
 
 const cliDist = path.resolve(__dirname, "../dist/index.js");
 
-const PLAN_ID =
-  crypto.createHash("sha256").update("wave8-plan").digest("hex");
-const SIGNED_ID =
-  crypto.createHash("sha256").update("wave8-signed").digest("hex");
-const RECEIPT_ID_LOCALNET =
-  crypto.createHash("sha256").update("wave8-receipt-localnet").digest("hex");
 const KASPA_TX_ID =
   crypto.createHash("sha256").update("wave8-tx").digest("hex");
 
+/** Seals a draft under the current hash version (identity = recomputed hash). */
+function seal(draft: any, label?: "planId" | "signedId"): any {
+  const a: any = { ...draft, hashVersion: CURRENT_HASH_VERSION };
+  a.contentHash = calculateContentHash(a, CURRENT_HASH_VERSION);
+  if (a.lineage) a.lineage.artifactId = a.contentHash;
+  if (label === "planId") a.planId = `plan-${a.contentHash.slice(0, 16)}`;
+  if (label === "signedId") a.signedId = `signed-${a.contentHash.slice(0, 16)}`;
+  return a;
+}
+
 let ws: string;
 let receiptPath: string;
+let RECEIPT_ID_LOCALNET: string;
 
 beforeAll(async () => {
   ws = await fsp.mkdtemp(path.join(os.tmpdir(), "hk-wave8-envelope-"));
@@ -40,47 +49,35 @@ beforeAll(async () => {
   await fsp.mkdir(path.join(art, "signed"), { recursive: true });
   await fsp.mkdir(path.join(art, "receipts"), { recursive: true });
 
-  const ts = new Date().toISOString().replace(/[:.]/g, "-");
-  await fsp.writeFile(
-    path.join(art, `${ts}-plan-${PLAN_ID.slice(0, 16)}.plan.json`),
-    JSON.stringify({
-      schema: "hardkas.txPlan",
-      planId: `plan-${PLAN_ID.slice(0, 16)}`,
-      contentHash: PLAN_ID,
-      networkId: "simnet",
-      mode: "localnet",
-      lineage: { artifactId: PLAN_ID, parentArtifactId: "", sequence: 1 }
-    })
+  const plan = seal(
+    { schema: "hardkas.txPlan", networkId: "simnet", mode: "localnet", lineage: { artifactId: "", sequence: 1 } },
+    "planId"
   );
-  await fsp.writeFile(
-    path.join(art, "signed", `signedTx-${SIGNED_ID}.json`),
-    JSON.stringify({
+  const signed = seal(
+    {
       schema: "hardkas.signedTx",
-      signedId: `signed-${SIGNED_ID.slice(0, 16)}`,
-      contentHash: SIGNED_ID,
       txId: KASPA_TX_ID,
       networkId: "simnet",
       mode: "localnet",
-      lineage: { artifactId: SIGNED_ID, parentArtifactId: PLAN_ID, sequence: 2 }
-    })
+      lineage: { artifactId: "", parentArtifactId: plan.contentHash, lineageId: plan.contentHash, rootArtifactId: plan.contentHash, sequence: 2 }
+    },
+    "signedId"
   );
+  const receipt = seal({
+    schema: "hardkas.txReceipt",
+    txId: KASPA_TX_ID,
+    networkId: "simnet",
+    mode: "localnet",
+    execution: { mode: "localnet", domain: "kaspa-l1", network: "simnet" },
+    lineage: { artifactId: "", parentArtifactId: signed.contentHash, lineageId: plan.contentHash, rootArtifactId: plan.contentHash, sequence: 3 }
+  });
+  RECEIPT_ID_LOCALNET = receipt.contentHash;
+
+  const ts = new Date().toISOString().replace(/[:.]/g, "-");
+  await fsp.writeFile(path.join(art, `${ts}-plan-${plan.contentHash.slice(0, 16)}.plan.json`), JSON.stringify(plan));
+  await fsp.writeFile(path.join(art, "signed", `signedTx-${signed.contentHash}.json`), JSON.stringify(signed));
   receiptPath = path.join(art, "receipts", `txReceipt-${RECEIPT_ID_LOCALNET}.json`);
-  await fsp.writeFile(
-    receiptPath,
-    JSON.stringify({
-      schema: "hardkas.txReceipt",
-      contentHash: RECEIPT_ID_LOCALNET,
-      txId: KASPA_TX_ID,
-      networkId: "simnet",
-      mode: "localnet",
-      execution: { mode: "localnet", domain: "kaspa-l1", network: "simnet" },
-      lineage: {
-        artifactId: RECEIPT_ID_LOCALNET,
-        parentArtifactId: SIGNED_ID,
-        sequence: 3
-      }
-    })
-  );
+  await fsp.writeFile(receiptPath, JSON.stringify(receipt));
 });
 
 afterAll(async () => {

@@ -50,7 +50,8 @@ export async function runArtifactVerify(options: ArtifactVerifyOptions) {
 
   const artifact = JSON.parse(fs.readFileSync(absolutePath, "utf-8"));
   const semanticResult = verifyArtifactSemantics(artifact, {
-    strict: options.strict ?? false
+    strict: options.strict ?? false,
+    workspaceRoot: options.workspaceRoot
   });
 
   // 3. Replay Audit (Honesty Check)
@@ -138,22 +139,20 @@ async function runRecursiveVerify(dir: string, options: ArtifactVerifyOptions) {
 
     // 2. Semantic & Lineage Audit
     const artifact = JSON.parse(fs.readFileSync(file, "utf-8"));
+    // Wave 1.2 · IC-5′.6–.7: references resolve only by verified identity — first
+    // among the files being verified (recursive mode audits a set that may live
+    // outside the store), then in the workspace store. Never by label, txId,
+    // top-level artifactId or file name, never relative to cwd.
+    const { checkArtifactIdentity } = await import("@hardkas/artifacts");
     const semanticResult = verifyArtifactSemantics(artifact, {
       strict: options.strict ?? false,
-      artifactsDir: dir,
+      workspaceRoot: options.workspaceRoot,
       resolveArtifact: (id) => {
         for (const f of files) {
           try {
             const obj = JSON.parse(fs.readFileSync(f, "utf-8"));
-            if (
-              obj.contentHash === id ||
-              obj.artifactId === id ||
-              obj.planId === id ||
-              obj.signedId === id ||
-              obj.txId === id
-            ) {
-              return obj;
-            }
+            const identity = checkArtifactIdentity(obj);
+            if (identity.ok && identity.artifactId === id) return obj;
           } catch {}
         }
         return null;

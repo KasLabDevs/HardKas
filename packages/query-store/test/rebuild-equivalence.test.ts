@@ -8,7 +8,7 @@ import fs from "node:fs";
 import path from "node:path";
 import os from "node:os";
 import { createHash } from "node:crypto";
-import { calculateContentHash } from "@hardkas/artifacts";
+import { calculateContentHash, CURRENT_HASH_VERSION } from "@hardkas/artifacts";
 
 describe("Query Store Rebuild Equivalence", () => {
   let tempDir: string;
@@ -36,12 +36,18 @@ describe("Query Store Rebuild Equivalence", () => {
     const artifact: any = {
       schema,
       version: "1.0.0-alpha",
+      // IC-1′.3: the producer declares the hash version before hashing.
+      hashVersion: CURRENT_HASH_VERSION,
       hardkasVersion: "0.12.0-rc.23",
       networkId: "simnet",
       mode: "rpc",
       artifactId: id,
       createdAt: new Date().toISOString(),
-      // Fields for txReceipt to satisfy Zod
+      // Fields for txReceipt to satisfy Zod. `execution` is required by TxReceiptSchema;
+      // its absence used to be hidden because an artifact without hashVersion was read
+      // as v1 and schema errors were downgraded to warnings for v<4 (Wave 1.1 removed
+      // the implicit-version fallback, so the fixture must be a valid receipt).
+      execution: { mode: "rpc", domain: "kaspa-l1", network: "simnet" },
       txId: `tx-${id}`,
       status: "accepted",
       from: { address: "kaspa:123" },
@@ -52,7 +58,7 @@ describe("Query Store Rebuild Equivalence", () => {
     };
 
     // In HardKAS, contentHash is calculated from the object excluding the contentHash field itself (or with it as empty)
-    artifact.contentHash = calculateContentHash(artifact);
+    artifact.contentHash = calculateContentHash(artifact, CURRENT_HASH_VERSION);
     return JSON.stringify(artifact);
   };
 

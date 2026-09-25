@@ -201,7 +201,7 @@ export async function runKaspaWalletSend(
 
     const planArtifact: TxPlanArtifact = {
       schema: HardkasSchemas.TxPlan,
-      planId: `plan-${calculateContentHash({ from: sender.address, to: targetAddress, amount: amountSompi.toString() }).slice(0, 16)}`,
+      planId: `plan-${calculateContentHash({ from: sender.address, to: targetAddress, amount: amountSompi.toString() }, 4).slice(0, 16)}`,
       hardkasVersion: HARDKAS_VERSION,
       version: "1.0.0-alpha",
       createdAt: new Date().toISOString(),

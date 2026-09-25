@@ -177,7 +177,7 @@ title: hardkas tx
 - **Evidence Semantics:** Proves submission acceptance by the target environment (mempool inclusion or simulator mutation). DOES NOT prove finality.
 
 #### Known Limitations
-- CLI-NEXTSTEPS-1: The CLI currently hints `hardkas explain <txId>` upon success, but `explain` does not accept `txId`.
+- The printed next steps name the receipt's canonical artifactId (`hardkas explain <artifactId>`); the txId is reported as `txId` and is looked up with `--tx`.
 
 #### Related
 - Concept: /concepts/transactions/submission.md

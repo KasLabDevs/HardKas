@@ -131,7 +131,8 @@ export async function inspectVprogsArtifact(
       schema: HardkasSchemas.VProgsInspectV1,
       status: "VPROGS_ARTIFACT_INSPECTED",
       path: path.relative(workspaceRoot, resolved).replace(/\\/g, "/"),
-      artifactHash: calculateContentHash(artifact),
+      // Inspection digest (not an artifact identity); pinned to the legacy v4 canonical form (IC-1′.7 is Wave 1.3).
+      artifactHash: calculateContentHash(artifact, 4),
       artifactSchema: artifact.schema,
       claims: vprogsClaims(),
       issues: []

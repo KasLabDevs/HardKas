@@ -2,7 +2,7 @@ import os from "node:os";
 import path from "node:path";
 import fs from "node:fs/promises";
 import { describe, it, expect, beforeAll, afterAll } from "vitest";
-import { calculateContentHash, CURRENT_HASH_VERSION } from "@hardkas/artifacts";
+import { finalizeTxPlanIdentity } from "@hardkas/artifacts";
 import { Hardkas } from "../src/index.js";
 
 describe("Metadata Propagation and Heritage Tests", () => {
@@ -36,9 +36,9 @@ describe("Metadata Propagation and Heritage Tests", () => {
       workflowId: "wf_metadata_test_01",
       assumptionLevel: "local-rpc"
     } as any;
-    // Recompute hash
-    plan.contentHash = calculateContentHash(plan, CURRENT_HASH_VERSION);
-    if (plan.lineage) plan.lineage.artifactId = plan.contentHash;
+    // Re-seal like the producer: hash, derived planId and lineage.artifactId in one pass
+    // (IC-4′.5 recomputes planId; a stale label fails LABEL_MISMATCH).
+    finalizeTxPlanIdentity(plan);
 
     expect((plan as any).workflowId).toBe("wf_metadata_test_01");
     expect((plan as any).assumptionLevel).toBe("local-rpc");
@@ -80,8 +80,7 @@ describe("Metadata Propagation and Heritage Tests", () => {
       workflowId: "wf_heritage_test_01",
       assumptionLevel: "local-simulated"
     } as any;
-    plan.contentHash = calculateContentHash(plan, CURRENT_HASH_VERSION);
-    if (plan.lineage) plan.lineage.artifactId = plan.contentHash;
+    finalizeTxPlanIdentity(plan);
     await sdk.artifacts.write(plan);
 
     const signed = await sdk.tx.sign(plan, "alice");
@@ -93,9 +92,11 @@ describe("Metadata Propagation and Heritage Tests", () => {
     expect((signed as any).lineage?.sequence).toBe(2);
     expect((receipt as any).lineage?.sequence).toBe(3);
 
-    // Stable properties across the chain
-    const rootId = (plan as any).lineage?.rootArtifactId;
-    expect(rootId).toBeDefined();
+    // Stable properties across the chain. D-Q1.d: the root stores no copy of its own
+    // identity (no lineageId/rootArtifactId); children reference the root's real artifactId.
+    const rootId = (plan as any).lineage?.artifactId;
+    expect(rootId).toBe(plan.contentHash);
+    expect((plan as any).lineage?.rootArtifactId).toBeUndefined();
 
     expect((signed as any).lineage?.rootArtifactId).toBe(rootId);
     expect((receipt as any).lineage?.rootArtifactId).toBe(rootId);

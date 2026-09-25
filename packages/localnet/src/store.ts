@@ -42,6 +42,7 @@ export async function saveLocalnetState(
     const store = new ProjectArtifactStore(workspaceRoot);
     const snapshotArtifact: any = {
       schema: "hardkas.snapshot.v1",
+      hashVersion: CURRENT_HASH_VERSION,
       createdAt: new Date().toISOString(),
       daaScore: state.daaScore,
       accountsHash: (await import("./snapshot.js")).calculateAccountsHash(state.accounts),
@@ -61,8 +62,9 @@ export async function saveLocalnetState(
     const stateHash = (await import("./snapshot.js")).calculateStateHash(state);
     snapshotArtifact.stateHash = stateHash;
 
+    // One pass, nothing added afterwards (IC-1′.4). The snapshot's identity is its
+    // contentHash; no unauthenticated copy is written next to it (IC-7.3).
     const contentHash = calculateContentHash(snapshotArtifact, CURRENT_HASH_VERSION);
-    snapshotArtifact.artifactId = contentHash;
     snapshotArtifact.contentHash = contentHash;
 
     // Write it as an artifact so the resolver can find it via lineage

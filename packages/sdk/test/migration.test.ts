@@ -86,7 +86,10 @@ describe("Network-Agnostic Artifact Layer: Migration", () => {
     expect(artifactLineageOk.ok).toBe(true);
   });
 
-  it("should return LEGACY_VALID info for v3 artifact on normal verify", async () => {
+  it("should verify a v3 artifact under its own rules with authScope LEGACY on normal verify", async () => {
+    // Wave 1.1 · D-Q1.e / IC-4′.3: non-strict verification of v≤4 reports
+    // `authScope: "LEGACY"` plus an info issue (LEGACY_AUTH_SCOPE) naming the material
+    // fields that version never authenticated. The former LEGACY_VALID code is gone.
     const v3Artifact = {
       schema: "hardkas.txPlan",
       version: "1.0.0-alpha",
@@ -102,13 +105,14 @@ describe("Network-Agnostic Artifact Layer: Migration", () => {
     const { verifyArtifactIntegritySync } = await import("@hardkas/artifacts");
     const result = verifyArtifactIntegritySync(v3Artifact);
 
-    // Normal verify passes
-    expect(result.ok).toBe(true);
-    // But logs an info issue
-    expect(result.issues.some((i: any) => i.code === "LEGACY_VALID")).toBe(true);
+    expect(result.issues.some((i: any) => i.code === "ARTIFACT_HASH_MISMATCH")).toBe(false);
+    expect(result.authScope).toBe("LEGACY");
+    expect(result.issues.some((i: any) => i.code === "LEGACY_AUTH_SCOPE" && i.severity === "info")).toBe(true);
   });
 
-  it("should fail strict verify with LEGACY_HASH_VERSION_UNSAFE for v3 artifact", async () => {
+  it("should fail strict verify with MIGRATION_REQUIRED for v3 artifact", async () => {
+    // Wave 1.1 · IC-4′.3: strict requires hashVersion 5; v≤4 → MIGRATION_REQUIRED
+    // (replaces the former LEGACY_HASH_VERSION_UNSAFE, which only flagged v<4).
     const v3Artifact = {
       schema: "hardkas.txPlan",
       version: "1.0.0-alpha",
@@ -126,9 +130,8 @@ describe("Network-Agnostic Artifact Layer: Migration", () => {
 
     // Strict verify fails
     expect(result.ok).toBe(false);
-    expect(result.issues.some((i: any) => i.code === "LEGACY_HASH_VERSION_UNSAFE")).toBe(
-      true
-    );
+    expect(result.authScope).toBe("LEGACY");
+    expect(result.issues.some((i: any) => i.code === "MIGRATION_REQUIRED")).toBe(true);
   });
 
   it("should fail with HASH_MISMATCH when audit metadata is mutated in v4", async () => {

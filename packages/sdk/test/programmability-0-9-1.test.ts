@@ -37,24 +37,8 @@ describe("0.12.0-rc.23 programmability SDK surface", () => {
     expect(result.claims.vmConsensusEquivalence).toBe("NOT_CLAIMED");
   });
 
-  it("verifies the root programmability corpus", async () => {
-    const sdk = await Hardkas.create({
-      cwd: repoRoot(),
-      network: "simulated",
-      autoBootstrap: true
-    });
-    const prog = new HardkasProgrammability(sdk);
-    const result = await prog.corpus.verify({
-      path: "fixtures/toccata-v2"
-    });
-
-    expect(result.ok).toBe(true);
-    expect(result.status).toBe("PROGRAMMABILITY_CORPUS_PASS");
-    expect(result.summary.silver).toBe("PASS");
-    expect(result.summary.zk).toBe("PASS");
-    expect(result.summary.vprogs).toBe("PASS");
-    expect(result.claims.runtimeOutcome).toBe("PARTIAL");
-  });
+  // "verifies the root programmability corpus" recompiles with the pinned silverc:
+  // see programmability-corpus.silverc.test.ts (silverc level).
 
   it("plans builder apps without runtime claims", async () => {
     const sdk = await Hardkas.create({

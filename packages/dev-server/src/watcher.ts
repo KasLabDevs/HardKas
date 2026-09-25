@@ -103,12 +103,14 @@ export function startHardkasWatcher() {
           const content = fs.readFileSync(absolutePath, "utf-8");
           const parsed = JSON.parse(content);
 
-          if (!parsed.artifactId) {
-            parsed.artifactId =
-              parsed.planId ||
-              parsed.signedId ||
-              parsed.txId ||
-              path.basename(absolutePath, ".json");
+          // Wave 1.2 · IC-5′.9/.11: the projection key is the RECOMPUTED artifactId
+          // (declared hash version); never a label, txId or file name. An artifact
+          // without a recomputable identity is announced without one.
+          try {
+            const { recomputeDeclaredContentHash } = require("@hardkas/artifacts");
+            parsed.artifactId = recomputeDeclaredContentHash(parsed);
+          } catch {
+            delete parsed.artifactId;
           }
 
           coreEvents.emit({

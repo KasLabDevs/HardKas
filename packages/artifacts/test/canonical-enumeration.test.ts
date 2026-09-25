@@ -3,6 +3,16 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import os from "node:os";
 import { ProjectArtifactStore } from "../src/store.js";
+import { calculateContentHash, CURRENT_HASH_VERSION } from "../src/canonical.js";
+
+// Wave 1.1 · IC-1′.3–4 / N3: the store refuses artifacts that do not declare hashVersion
+// or whose body does not hash to the identity they claim, so fixtures written through
+// the store are sealed the way producers seal them (real hashes, not placeholders).
+function sealed<T extends Record<string, unknown>>(body: T): T & { hashVersion: number; contentHash: string } {
+  const artifact: Record<string, unknown> = { ...body, hashVersion: CURRENT_HASH_VERSION };
+  artifact.contentHash = calculateContentHash(artifact, CURRENT_HASH_VERSION);
+  return artifact as T & { hashVersion: number; contentHash: string };
+}
 
 describe("QF-008: ProjectArtifactStore Canonical Enumeration & Path Containment Hardening", () => {
   let tmpDir: string;
@@ -18,11 +28,11 @@ describe("QF-008: ProjectArtifactStore Canonical Enumeration & Path Containment 
   });
 
   it("1. Enumerates artifacts across canonical subdirectories (plans, signed, receipts, lineage, misc)", async () => {
-    const plan = { schema: "hardkas.txPlan.v1", planId: "plan-001", contentHash: "hash-plan-001", networkId: "simnet" };
-    const signed = { schema: "hardkas.signedTx.v1", signedId: "signed-002", contentHash: "hash-signed-002", txId: "tx-002" };
-    const receipt = { schema: "hardkas.txReceipt.v1", txId: "tx-003", contentHash: "hash-receipt-003", blockDaaScore: "100" };
-    const lineage = { schema: "hardkas.lineage.v1", lineageId: "lineage-004", contentHash: "hash-lineage-004" };
-    const misc = { schema: "hardkas.misc.v1", artifactId: "misc-005", contentHash: "hash-misc-005" };
+    const plan = sealed({ schema: "hardkas.txPlan.v1", planId: "plan-001", networkId: "simnet" });
+    const signed = sealed({ schema: "hardkas.signedTx.v1", signedId: "signed-002", txId: "tx-002" });
+    const receipt = sealed({ schema: "hardkas.txReceipt.v1", txId: "tx-003", blockDaaScore: "100" });
+    const lineage = sealed({ schema: "hardkas.lineage.v1", lineageId: "lineage-004" });
+    const misc = sealed({ schema: "hardkas.misc.v1", artifactId: "misc-005" });
 
     const pathPlan = await store.writeArtifact(plan);
     const pathSigned = await store.writeArtifact(signed);
@@ -97,8 +107,10 @@ describe("QF-008: ProjectArtifactStore Canonical Enumeration & Path Containment 
   });
 
   it("4. Deduplicates physical real paths cleanly while preserving distinct physical files with same hash", async () => {
-    const planA = { schema: "hardkas.txPlan.v1", planId: "plan-a", contentHash: "shared-hash-123" };
-    const planB = { schema: "hardkas.txPlan.v1", planId: "plan-b", contentHash: "shared-hash-123" };
+    const planA = sealed({ schema: "hardkas.txPlan.v1", planId: "plan-a" });
+    // Same authenticated body under a different display label: planId is a derived label
+    // outside the hash (IC-1′.1c), so planB is a distinct physical file sharing planA's hash.
+    const planB = { ...planA, planId: "plan-b" };
 
     await store.writeArtifact(planA);
 

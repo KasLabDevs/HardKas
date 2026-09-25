@@ -51,8 +51,8 @@ export default async function runReplayFailureRecipe(sandboxRoot: string) {
   console.log(pc.bold(`Next:`));
   if (receiptFile) {
     const txId = receiptFile.replace("receipt_", "").replace(".json", "");
-    console.log(`hardkas why ${txId} --workspace ${sandboxRoot}`);
+    console.log(`hardkas why --tx ${txId} --workspace ${sandboxRoot}`);
     console.log(`hardkas replay verify . --workspace ${sandboxRoot}`);
-    console.log(`hardkas artifact inspect ${txId} --workspace ${sandboxRoot}`);
+    console.log(`hardkas artifact inspect .hardkas/artifacts/${receiptFile} --workspace ${sandboxRoot}`);
   }
 }

@@ -15,7 +15,8 @@ import {
   HARDKAS_VERSION,
   ARTIFACT_SCHEMAS,
   createIgraDeployPlanId,
-  calculateContentHash
+  calculateContentHash,
+  CURRENT_HASH_VERSION
 } from "@hardkas/artifacts";
 
 export interface L2ContractDeployPlanOptions {
@@ -121,8 +122,9 @@ export async function runL2ContractDeployPlan(
     status: "built"
   };
 
-  // Phase 2: Deterministic ID and Hash
-  const hash = calculateContentHash(artifact);
+  // Phase 2: Deterministic ID and Hash (hashVersion declared before hashing, IC-1′.3)
+  artifact.hashVersion = CURRENT_HASH_VERSION;
+  const hash = calculateContentHash(artifact, CURRENT_HASH_VERSION);
   const planId = createIgraDeployPlanId(hash);
   artifact.planId = planId;
   artifact.contentHash = hash;

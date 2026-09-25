@@ -1,25 +1,24 @@
 import { describe, it, expect, beforeAll, afterAll } from "vitest";
 import { execSync } from "node:child_process";
-import fs from "node:fs";
 import fsp from "node:fs/promises";
 import path from "node:path";
 import os from "node:os";
+import { calculateContentHash, CURRENT_HASH_VERSION } from "@hardkas/artifacts";
 
 // -----------------------------------------------------------------------------
-// Wave 5 · DEF-17 · CLI delegation regression
+// Wave 5 · DEF-17 · CLI delegation regression, re-based on the rc.23
+// remediation Wave 1.2 contract (Closure Pack IC-5′ / D-Q3.a).
 //
 // Provisions a canonical plan→signed→receipt triple in the real workspace
 // layout (plan at artifacts/ root, signed under signed/, receipt under
-// receipts/) and asserts that:
+// receipts/), sealed under the current hash version because every lookup is
+// verified by identity, and asserts that:
 //   * why <artifactId>            → resolves subdir-nested artifacts
 //   * why <path>                  → resolves paths
 //   * explain <artifactId>        → resolves subdir-nested artifacts
 //   * explain <path>              → resolves paths
-//   * replay verify <directory>   → typed rejection (NEW behavior)
-//   * why <partial-hex>           → typed rejection (contract tightening)
-//
-// These are exactly the discovery-path failures documented in DISCOVERY-1.
-// They must never regress silently.
+//   * replay verify <directory>   → typed rejection
+//   * why <partial-hex>           → typed rejection (NAMESPACE_REQUIRED)
 // -----------------------------------------------------------------------------
 
 // Use the built CLI (much faster to boot than `npx tsx` on Windows and
@@ -27,19 +26,25 @@ import os from "node:os";
 // requires `pnpm build` in @hardkas/cli before running this file.
 const cliDist = path.resolve(__dirname, "../dist/index.js");
 
-const PLAN_ID =
-  "12819e7ae148ce513616114625135e450ea592f0980f55530e3fc6c56115e131";
-const SIGNED_ID =
-  "b66b90960d165c1026fdb68342b86f72883acd19cd3e2e22f94f57be3d91603c";
-const RECEIPT_ID =
-  "c07596a5ac21ca4a746a1da21589e5e5b88dcb298985fe733b3549184d92f48b";
-const KASPA_TX_ID =
-  "dc228d614488471f0804f368e8ddee605c9993624bf17b6805688df214ca32aa";
+const KASPA_TX_ID = "dc228d614488471f0804f368e8ddee605c9993624bf17b6805688df214ca32aa";
+
+/** Seals a draft under the current hash version (identity = recomputed hash). */
+function seal(draft: any, label?: "planId" | "signedId"): any {
+  const a: any = { ...draft, hashVersion: CURRENT_HASH_VERSION };
+  a.contentHash = calculateContentHash(a, CURRENT_HASH_VERSION);
+  if (a.lineage) a.lineage.artifactId = a.contentHash;
+  if (label === "planId") a.planId = `plan-${a.contentHash.slice(0, 16)}`;
+  if (label === "signedId") a.signedId = `signed-${a.contentHash.slice(0, 16)}`;
+  return a;
+}
 
 let workspaceRoot: string;
 let planPath: string;
 let signedPath: string;
 let receiptPath: string;
+let PLAN_ID: string;
+let SIGNED_ID: string;
+let RECEIPT_ID: string;
 
 beforeAll(async () => {
   workspaceRoot = await fsp.mkdtemp(path.join(os.tmpdir(), "hk-wave5-cli-"));
@@ -47,53 +52,39 @@ beforeAll(async () => {
   await fsp.mkdir(path.join(artifactsDir, "signed"), { recursive: true });
   await fsp.mkdir(path.join(artifactsDir, "receipts"), { recursive: true });
 
-  const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
-  planPath = path.join(
-    artifactsDir,
-    `${timestamp}-plan-${PLAN_ID.slice(0, 16)}.plan.json`
+  const plan = seal(
+    { schema: "hardkas.txPlan", networkId: "simnet", mode: "simulator", lineage: { artifactId: "", sequence: 1 } },
+    "planId"
   );
-  signedPath = path.join(
-    artifactsDir,
-    "signed",
-    `signedTx-${SIGNED_ID}.json`
-  );
-  receiptPath = path.join(
-    artifactsDir,
-    "receipts",
-    `txReceipt-${RECEIPT_ID}.json`
-  );
-
-  await fsp.writeFile(
-    planPath,
-    JSON.stringify({
-      schema: "hardkas.txPlan",
-      planId: `plan-${PLAN_ID.slice(0, 16)}`,
-      contentHash: PLAN_ID,
-      networkId: "simnet",
-      lineage: { artifactId: PLAN_ID, parentArtifactId: "", sequence: 1 }
-    })
-  );
-  await fsp.writeFile(
-    signedPath,
-    JSON.stringify({
+  PLAN_ID = plan.contentHash;
+  const signed = seal(
+    {
       schema: "hardkas.signedTx",
-      signedId: `signed-${SIGNED_ID.slice(0, 16)}`,
-      contentHash: SIGNED_ID,
       txId: KASPA_TX_ID,
       networkId: "simnet",
-      lineage: { artifactId: SIGNED_ID, parentArtifactId: PLAN_ID, sequence: 2 }
-    })
+      mode: "simulator",
+      lineage: { artifactId: "", parentArtifactId: PLAN_ID, lineageId: PLAN_ID, rootArtifactId: PLAN_ID, sequence: 2 }
+    },
+    "signedId"
   );
-  await fsp.writeFile(
-    receiptPath,
-    JSON.stringify({
-      schema: "hardkas.txReceipt",
-      contentHash: RECEIPT_ID,
-      txId: KASPA_TX_ID,
-      networkId: "simnet",
-      lineage: { artifactId: RECEIPT_ID, parentArtifactId: SIGNED_ID, sequence: 3 }
-    })
-  );
+  SIGNED_ID = signed.contentHash;
+  const receipt = seal({
+    schema: "hardkas.txReceipt",
+    txId: KASPA_TX_ID,
+    networkId: "simnet",
+    mode: "simulator",
+    lineage: { artifactId: "", parentArtifactId: SIGNED_ID, lineageId: PLAN_ID, rootArtifactId: PLAN_ID, sequence: 3 }
+  });
+  RECEIPT_ID = receipt.contentHash;
+
+  const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
+  planPath = path.join(artifactsDir, `${timestamp}-plan-${PLAN_ID.slice(0, 16)}.plan.json`);
+  signedPath = path.join(artifactsDir, "signed", `signedTx-${SIGNED_ID}.json`);
+  receiptPath = path.join(artifactsDir, "receipts", `txReceipt-${RECEIPT_ID}.json`);
+
+  await fsp.writeFile(planPath, JSON.stringify(plan));
+  await fsp.writeFile(signedPath, JSON.stringify(signed));
+  await fsp.writeFile(receiptPath, JSON.stringify(receipt));
 });
 
 afterAll(async () => {
@@ -127,6 +118,7 @@ describe("Wave 5 · DEF-17 · CLI discovery delegation", () => {
     const out = JSON.parse(r.stdout);
     expect(out.target).toBe(RECEIPT_ID);
     expect(out.resolvedBy).toBe("artifactId");
+    expect(out.authScope).toBe("FULL");
     // Should walk the full lineage (plan -> signed -> receipt)
     const ids = out.chain.map((n: any) => n.id);
     expect(ids).toContain(RECEIPT_ID);
@@ -144,14 +136,20 @@ describe("Wave 5 · DEF-17 · CLI discovery delegation", () => {
 
   it("hardkas why <partial-artifactId> is rejected (contract tightening)", () => {
     const r = runHardkas(`why ${RECEIPT_ID.slice(0, 16)} --json`);
-    // Wave 5 removes partial-hash silent lookup. The current handleError
-    // path emits a typed JSON envelope but does not propagate a non-zero
-    // exit code (framework-wide behavior; separate from Wave 5). The
-    // Wave 5 guarantee is: no lineage chain is produced, and the typed
-    // rejection reaches the user via the envelope.
+    // No lineage chain is produced, and the typed rejection reaches the user
+    // via the envelope: a partial hash is neither a path nor a 64-hex
+    // artifactId, so it needs a namespace (D-Q3.a).
     expect(r.stdout).not.toContain('"chain"');
     expect(r.stdout).toContain('"ok": false');
-    expect(r.stdout).toContain("ARTIFACT_INPUT_UNRECOGNIZED");
+    expect(r.stdout).toContain("NAMESPACE_REQUIRED");
+  });
+
+  it("hardkas why --tx <txId> resolves the receipt, never the signed (IC-5′.2)", () => {
+    const r = runHardkas(`why --tx ${KASPA_TX_ID} --json`);
+    expect(r.code, r.stderr).toBe(0);
+    const out = JSON.parse(r.stdout);
+    expect(out.target).toBe(RECEIPT_ID);
+    expect(out.resolvedBy).toBe("txId");
   });
 
   it("hardkas explain <artifactId> resolves a signed nested under signed/", () => {
@@ -169,9 +167,7 @@ describe("Wave 5 · DEF-17 · CLI discovery delegation", () => {
   });
 
   it("hardkas replay verify <directory> is rejected with a typed error", () => {
-    const r = runHardkas(
-      `replay verify ".hardkas/artifacts" --json`
-    );
+    const r = runHardkas(`replay verify ".hardkas/artifacts" --json`);
     expect(r.code).not.toBe(0);
     // The runner writes a JSON envelope carrying result:"input_rejected"
     // AND error.code:"ARTIFACT_INPUT_IS_DIRECTORY" before throwing.

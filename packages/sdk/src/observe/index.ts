@@ -190,6 +190,7 @@ export class HardkasObserve {
       mode: snapshot.execution.mode,
       hardkasVersion: "0.12.0-rc.23", // We should import HARDKAS_VERSION ideally
       version: "1.0.0-alpha",
+      hashVersion: CURRENT_HASH_VERSION,
       createdAt: new Date().toISOString()
     };
 

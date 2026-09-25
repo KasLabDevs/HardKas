@@ -140,11 +140,14 @@ export async function runWorkflowInspect(
         );
       if (workflows.length === 0)
         throw new Error("No workflow artifacts found to resolve 'latest'.");
-      targetId = workflows[0].id || workflows[0].workflowId || workflows[0].contentHash;
+      targetId = workflows[0].workflowId || workflows[0].contentHash;
       UI.info(`Resolved 'latest' to workflow: ${targetId}`);
     }
 
-    const artifact = (await sdk.artifacts.read(targetId)) as WorkflowArtifact;
+    // IC-5′.2: a workflowId is the `workflow` namespace; a 64-hex id or a path is the artifact namespace.
+    const artifact = (await sdk.artifacts.read(
+      /^[0-9a-f]{64}$/.test(targetId) || /[\\/]/.test(targetId) ? targetId : { workflow: targetId }
+    )) as WorkflowArtifact;
 
     if (artifact.schema !== HardkasSchemas.WorkflowV1) {
       throw new Error(`Artifact ${id} is not a valid workflow artifact`);
@@ -236,18 +239,20 @@ export async function runWorkflowDiff(
           );
         if (workflows.length === 0)
           throw new Error("No workflow artifacts found to resolve 'latest'.");
-        return workflows[0].id || workflows[0].workflowId || workflows[0].contentHash;
+        return workflows[0].workflowId || workflows[0].contentHash;
       }
       return id;
     };
+    const asLookup = (id: string) =>
+      /^[0-9a-f]{64}$/.test(id) || /[\\/]/.test(id) ? id : { workflow: id };
 
     const targetIdA = await resolveAlias(idA);
     const targetIdB = await resolveAlias(idB);
 
     UI.info(`Comparing Workflow A (${targetIdA}) against Workflow B (${targetIdB})...`);
 
-    const wfA = (await sdk.artifacts.read(targetIdA)) as WorkflowArtifact;
-    const wfB = (await sdk.artifacts.read(targetIdB)) as WorkflowArtifact;
+    const wfA = (await sdk.artifacts.read(asLookup(targetIdA))) as WorkflowArtifact;
+    const wfB = (await sdk.artifacts.read(asLookup(targetIdB))) as WorkflowArtifact;
 
     if (wfA.schema !== HardkasSchemas.WorkflowV1 || wfB.schema !== HardkasSchemas.WorkflowV1) {
       throw new Error("Both artifacts must be workflows");

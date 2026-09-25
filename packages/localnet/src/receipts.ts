@@ -1,13 +1,7 @@
-import fs from "node:fs/promises";
-import path from "node:path";
-import { existsSync } from "node:fs";
-import {
-  HardkasArtifactBase,
-  HARDKAS_VERSION,
-  ARTIFACT_SCHEMAS
-} from "@hardkas/artifacts";
-import { NetworkId, ExecutionMode, HardkasExecutionTarget, writeFileAtomic } from "@hardkas/core";
+import { HardkasArtifactBase, ARTIFACT_SCHEMAS } from "@hardkas/artifacts";
+import { NetworkId, ExecutionMode, HardkasExecutionTarget } from "@hardkas/core";
 import { deterministicCompare } from "@hardkas/core";
+import { ProjectArtifactStore, resolveArtifact } from "@hardkas/artifacts";
 
 export interface StoredSimulatedTxReceipt extends HardkasArtifactBase {
   schema: typeof ARTIFACT_SCHEMAS.TX_RECEIPT;
@@ -28,8 +22,6 @@ export interface StoredSimulatedTxReceipt extends HardkasArtifactBase {
   daaScore: string;
 }
 
-import { ProjectArtifactStore } from "@hardkas/artifacts";
-
 export async function saveSimulatedReceipt(
   receipt: StoredSimulatedTxReceipt,
   options?: { cwd?: string }
@@ -39,26 +31,19 @@ export async function saveSimulatedReceipt(
   return absolutePath;
 }
 
+/**
+ * Wave 1.2 · IC-5′: the `tx` namespace. Every receipt carrying `.txId` is verified
+ * (declared hash version, claimed identity) before it is returned; identical copies
+ * collapse; two distinct receipts for one txId are RECEIPT_AMBIGUOUS_CONFLICT; an
+ * invalid candidate fails the lookup (CANDIDATE_INVALID). Never first-match, never
+ * the signed artifact.
+ */
 export async function loadSimulatedReceipt(
   txId: string,
   options?: { cwd?: string }
 ): Promise<StoredSimulatedTxReceipt> {
-  const store = new ProjectArtifactStore(options?.cwd || process.cwd());
-  // The simulator might have written it with txId as artifactId, or we can find it by txId.
-  // Let's first try direct read in case artifactId === txId (or receipt-txId).
-  try {
-    const direct = await store.readArtifact(txId);
-    if (direct && (direct as any).txId === txId) {
-      return direct as any;
-    }
-  } catch(e) {}
-
-  const artifacts = await store.queryArtifacts({ schema: ARTIFACT_SCHEMAS.TX_RECEIPT });
-  const found = artifacts.find((a: any) => a.txId === txId);
-  if (!found) {
-    throw new Error(`Receipt not found: ${txId}`);
-  }
-  return found as any;
+  const resolved = await resolveArtifact(options?.cwd || process.cwd(), { tx: txId });
+  return resolved.artifact as StoredSimulatedTxReceipt;
 }
 
 export async function listSimulatedReceipts(options?: {

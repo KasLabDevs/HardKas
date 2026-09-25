@@ -57,7 +57,7 @@ async function writeRecord(record: Record<string, unknown>, prefix: string, expl
 }
 
 async function readRecord(file: string, schema: string): Promise<any> {
-  const { calculateContentHash } = await import("@hardkas/artifacts");
+  const { checkArtifactIdentity } = await import("@hardkas/artifacts");
   let record: any;
   try {
     record = JSON.parse(readFileOrFail(file, "record").toString("utf8"));
@@ -66,8 +66,29 @@ async function readRecord(file: string, schema: string): Promise<any> {
     fail("SILVER_RECORD_INVALID", `${file} is not JSON`, HardkasExitCode.USAGE_ERROR);
   }
   if (record?.schema !== schema) fail("SILVER_RECORD_INVALID", `${file} is not a ${schema} record`, HardkasExitCode.USAGE_ERROR);
-  if (calculateContentHash(record, record.hashVersion ?? 4) !== record.contentHash) {
-    fail("SILVER_RECORD_TAMPERED", `${file}: content hash does not match`, HardkasExitCode.CORRUPTION_DETECTED);
+  // Recomputed with the version the record declares (IC-1′.8): no implicit fallback.
+  const identity = checkArtifactIdentity(record);
+  if (!identity.ok) {
+    fail("SILVER_RECORD_TAMPERED", `${file}: ${identity.issues.map((i) => `${i.code}: ${i.message}`).join("; ")}`, HardkasExitCode.CORRUPTION_DETECTED);
+  }
+  return record;
+}
+
+/**
+ * Wave 1.2 · N1 / IC-5′.6: a nested record reference `{ path, contentHash, artifactSha256 }`
+ * is followed by its path hint only; the loaded record must BE the referenced identity
+ * (recomputed under its declared version) and carry the referenced artifact digest.
+ */
+async function readReferencedRecord(ref: { path: string; contentHash: string; artifactSha256?: string }, schema: string, what: string): Promise<any> {
+  const { verifySilverRecordReference } = await import("@hardkas/artifacts");
+  const record = await readRecord(ref.path, schema);
+  const check = verifySilverRecordReference(ref, record);
+  if (!check.ok) {
+    fail(
+      "SILVER_RECORD_TAMPERED",
+      `${what} ${ref.path} is not the record this reference was made for: ${check.issues.map((i) => `${i.code}: ${i.message}`).join("; ")}`,
+      HardkasExitCode.CORRUPTION_DETECTED
+    );
   }
   return record;
 }
@@ -431,8 +452,7 @@ export function registerSilverCommand(program: Command) {
       const { HARDKAS_VERSION } = await import("@hardkas/artifacts");
       const S = await schemas();
       const deploy = await readRecord(file, S.SilverDeployV1);
-      const compileRecord = await readRecord(deploy.compileRecord.path, S.SilverCompileV1);
-      if (compileRecord.contentHash !== deploy.compileRecord.contentHash) fail("SILVER_RECORD_TAMPERED", "the compile record changed since the deploy", HardkasExitCode.CORRUPTION_DETECTED);
+      const compileRecord = await readReferencedRecord(deploy.compileRecord, S.SilverCompileV1, "the compile record");
       const artifact = await loadCompiled(compileRecord);
       const args = await entryArgs(opts.args);
       const { identity, rpc } = await canonicalNode();
@@ -585,8 +605,7 @@ export function registerSilverCommand(program: Command) {
       const { HARDKAS_VERSION } = await import("@hardkas/artifacts");
       const S = await schemas();
       const prev = await readRecord(file, S.SilverCovenantV1);
-      const compileRecord = await readRecord(prev.compileRecord.path, S.SilverCompileV1);
-      if (compileRecord.contentHash !== prev.compileRecord.contentHash) fail("SILVER_RECORD_TAMPERED", "the compile record changed", HardkasExitCode.CORRUPTION_DETECTED);
+      const compileRecord = await readReferencedRecord(prev.compileRecord, S.SilverCompileV1, "the compile record");
       const ctor = await argsFromFile(opts.constructorArgs);
       if (sha256(ctor.canonical) !== compileRecord.provenance.constructorArgsSha256) {
         fail("SILVER_CONSTRUCTOR_ARGS_MISMATCH", "these constructor arguments are not the ones the current state was compiled with", HardkasExitCode.USAGE_ERROR);

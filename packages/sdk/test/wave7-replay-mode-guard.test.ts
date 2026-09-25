@@ -2,37 +2,25 @@ import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import fs from "node:fs/promises";
 import path from "node:path";
 import os from "node:os";
-import crypto from "node:crypto";
-import { Hardkas } from "../src";
+import { Hardkas } from "../src/index.js";
+import { calculateContentHash, CURRENT_HASH_VERSION } from "@hardkas/artifacts";
 
 // -----------------------------------------------------------------------------
-// Wave 7 · REPLAY-MODE-1 · SDK mode guard regression.
+// Wave 7 · REPLAY-MODE-1 · SDK replay mode guard regression.
 //
 // Contract enforced (see packages/sdk/src/replay.ts, `HardkasReplay.verify`):
-//
-//   - When the resolved receipt's `mode` is not in REPLAY_SUPPORTED_MODES
-//     (currently just "simulator"), `verify` returns a structured
-//     `{ passed: false, code: "REPLAY_MODE_UNSUPPORTED", ... }` result
-//     BEFORE entering simulator state reconstruction, `verifyReplay`, or
-//     `applySimulatedPlan`.
-//   - Lineage/integrity signals that were already computed BEFORE the guard
-//     are preserved in the returned result (`lineage: "valid"`,
-//     `determinism: "verified"`, `contamination: "clean"`).
+//   - A receipt whose `mode` is not simulator-executable ("localnet" today)
+//     returns a structured `REPLAY_MODE_UNSUPPORTED` result before any
+//     simulator execution, preserving the lineage/integrity signals
+//     (`lineage: "valid"`, `contamination: "clean"`).
 //   - No simulator replay report file is written under the workspace.
 //   - No misleading `diverged` / `non_deterministic` classification is
 //     produced for real-node receipts.
+//
+// Wave 1.2 re-base: lineage resolves only through verified identity, so the
+// fixture chain is sealed under the current hash version (each child carries
+// its parent's real recomputed identity).
 // -----------------------------------------------------------------------------
-
-const PLAN_ID =
-  crypto.createHash("sha256").update("wave7-plan").digest("hex");
-const SIGNED_ID =
-  crypto.createHash("sha256").update("wave7-signed").digest("hex");
-const RECEIPT_ID_LOCALNET =
-  crypto.createHash("sha256").update("wave7-receipt-localnet").digest("hex");
-const RECEIPT_ID_SIMULATOR =
-  crypto.createHash("sha256").update("wave7-receipt-simulator").digest("hex");
-const KASPA_TX_ID =
-  crypto.createHash("sha256").update("wave7-tx").digest("hex");
 
 async function writeJson(p: string, obj: any) {
   await fs.mkdir(path.dirname(p), { recursive: true });
@@ -46,91 +34,67 @@ async function makeWorkspace(): Promise<string> {
   return ws;
 }
 
-async function seedRealNodeChain(ws: string) {
-  const art = path.join(ws, ".hardkas", "artifacts");
-  const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
-  await writeJson(
-    path.join(art, `${timestamp}-plan-${PLAN_ID.slice(0, 16)}.plan.json`),
-    {
-      schema: "hardkas.txPlan",
-      planId: `plan-${PLAN_ID.slice(0, 16)}`,
-      contentHash: PLAN_ID,
-      networkId: "simnet",
-      mode: "localnet",
-      lineage: {
-        artifactId: PLAN_ID,
-        parentArtifactId: "",
-        sequence: 1
-      }
-    }
-  );
-  await writeJson(
-    path.join(art, "signed", `signedTx-${SIGNED_ID}.json`),
-    {
-      schema: "hardkas.signedTx",
-      signedId: `signed-${SIGNED_ID.slice(0, 16)}`,
-      contentHash: SIGNED_ID,
-      txId: KASPA_TX_ID,
-      networkId: "simnet",
-      mode: "localnet",
-      lineage: {
-        artifactId: SIGNED_ID,
-        parentArtifactId: PLAN_ID,
-        sequence: 2
-      }
-    }
-  );
-  await writeJson(
-    path.join(art, "receipts", `txReceipt-${RECEIPT_ID_LOCALNET}.json`),
-    {
-      schema: "hardkas.txReceipt",
-      contentHash: RECEIPT_ID_LOCALNET,
-      txId: KASPA_TX_ID,
-      networkId: "simnet",
-      mode: "localnet",
-      execution: { mode: "localnet", domain: "kaspa-l1", network: "simnet" },
-      lineage: {
-        artifactId: RECEIPT_ID_LOCALNET,
-        parentArtifactId: SIGNED_ID,
-        sequence: 3
-      }
-    }
-  );
+/** Seals a draft under the current hash version (identity = recomputed hash). */
+function seal(draft: any, label?: "planId" | "signedId"): any {
+  const a: any = { ...draft, hashVersion: CURRENT_HASH_VERSION };
+  a.contentHash = calculateContentHash(a, CURRENT_HASH_VERSION);
+  if (a.lineage) a.lineage.artifactId = a.contentHash;
+  if (label === "planId") a.planId = `plan-${a.contentHash.slice(0, 16)}`;
+  if (label === "signedId") a.signedId = `signed-${a.contentHash.slice(0, 16)}`;
+  return a;
 }
 
-async function seedSimulatorChain(ws: string) {
+async function seedRealNodeChain(ws: string): Promise<{ receiptPath: string; txId: string }> {
   const art = path.join(ws, ".hardkas", "artifacts");
   const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
-  await writeJson(
-    path.join(art, `${timestamp}-plan-sim.plan.json`),
-    {
-      schema: "hardkas.txPlan",
-      planId: "plan-sim",
-      contentHash: "sim-plan-hash-not-checked",
-      mode: "simulator",
-      networkId: "simulated",
-      lineage: {
-        artifactId: "sim-plan-artifact-id",
-        parentArtifactId: "",
-        sequence: 1
-      }
-    }
+  const txId = "dc228d614488471f0804f368e8ddee605c9993624bf17b6805688df214ca32aa";
+  const plan = seal(
+    { schema: "hardkas.txPlan", networkId: "simnet", mode: "localnet", lineage: { artifactId: "", sequence: 1 } },
+    "planId"
   );
-  await writeJson(
-    path.join(art, "receipts", `txReceipt-${RECEIPT_ID_SIMULATOR}.json`),
+  const signed = seal(
     {
-      schema: "hardkas.txReceipt",
-      contentHash: RECEIPT_ID_SIMULATOR,
-      mode: "simulator",
-      networkId: "simulated",
-      execution: { mode: "simulator", domain: "kaspa-l1", network: "simulated" },
-      lineage: {
-        artifactId: RECEIPT_ID_SIMULATOR,
-        parentArtifactId: "sim-plan-artifact-id",
-        sequence: 2
-      }
-    }
+      schema: "hardkas.signedTx",
+      txId,
+      networkId: "simnet",
+      mode: "localnet",
+      lineage: { artifactId: "", parentArtifactId: plan.contentHash, lineageId: plan.contentHash, rootArtifactId: plan.contentHash, sequence: 2 }
+    },
+    "signedId"
   );
+  const receipt = seal({
+    schema: "hardkas.txReceipt",
+    txId,
+    networkId: "simnet",
+    mode: "localnet",
+    execution: { mode: "localnet", domain: "kaspa-l1", network: "simnet" },
+    lineage: { artifactId: "", parentArtifactId: signed.contentHash, lineageId: plan.contentHash, rootArtifactId: plan.contentHash, sequence: 3 }
+  });
+  await writeJson(path.join(art, `${timestamp}-plan-${plan.contentHash.slice(0, 16)}.plan.json`), plan);
+  await writeJson(path.join(art, "signed", `signedTx-${signed.contentHash}.json`), signed);
+  const receiptPath = path.join(art, "receipts", `txReceipt-${receipt.contentHash}.json`);
+  await writeJson(receiptPath, receipt);
+  return { receiptPath, txId };
+}
+
+async function seedSimulatorChain(ws: string): Promise<{ receiptPath: string }> {
+  const art = path.join(ws, ".hardkas", "artifacts");
+  const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
+  const plan = seal(
+    { schema: "hardkas.txPlan", mode: "simulator", networkId: "simulated", lineage: { artifactId: "", sequence: 1 } },
+    "planId"
+  );
+  const receipt = seal({
+    schema: "hardkas.txReceipt",
+    mode: "simulator",
+    networkId: "simulated",
+    execution: { mode: "simulator", domain: "kaspa-l1", network: "simulated" },
+    lineage: { artifactId: "", parentArtifactId: plan.contentHash, lineageId: plan.contentHash, rootArtifactId: plan.contentHash, sequence: 2 }
+  });
+  await writeJson(path.join(art, `${timestamp}-plan-sim.plan.json`), plan);
+  const receiptPath = path.join(art, "receipts", `txReceipt-${receipt.contentHash}.json`);
+  await writeJson(receiptPath, receipt);
+  return { receiptPath };
 }
 
 async function listReplayReports(ws: string): Promise<string[]> {
@@ -168,15 +132,8 @@ describe("Wave 7 · REPLAY-MODE-1 · SDK mode guard", () => {
   });
 
   it("real-node (mode='localnet') receipt returns REPLAY_MODE_UNSUPPORTED", async () => {
-    await seedRealNodeChain(ws);
+    const { receiptPath } = await seedRealNodeChain(ws);
     const sdk = await Hardkas.open({ cwd: ws });
-    const receiptPath = path.join(
-      ws,
-      ".hardkas",
-      "artifacts",
-      "receipts",
-      `txReceipt-${RECEIPT_ID_LOCALNET}.json`
-    );
 
     const result = await sdk.replay.verify({ path: receiptPath });
     expect(result.passed).toBe(false);
@@ -186,15 +143,8 @@ describe("Wave 7 · REPLAY-MODE-1 · SDK mode guard", () => {
   });
 
   it("real-node receipt preserves lineage and integrity signals in the unsupported result", async () => {
-    await seedRealNodeChain(ws);
+    const { receiptPath } = await seedRealNodeChain(ws);
     const sdk = await Hardkas.open({ cwd: ws });
-    const receiptPath = path.join(
-      ws,
-      ".hardkas",
-      "artifacts",
-      "receipts",
-      `txReceipt-${RECEIPT_ID_LOCALNET}.json`
-    );
 
     const result = await sdk.replay.verify({ path: receiptPath });
     // Lineage was resolved successfully — we know the receipt IS reachable.
@@ -208,15 +158,8 @@ describe("Wave 7 · REPLAY-MODE-1 · SDK mode guard", () => {
   });
 
   it("real-node receipt never enters simulator execution (no replay report file emitted)", async () => {
-    await seedRealNodeChain(ws);
+    const { receiptPath } = await seedRealNodeChain(ws);
     const sdk = await Hardkas.open({ cwd: ws });
-    const receiptPath = path.join(
-      ws,
-      ".hardkas",
-      "artifacts",
-      "receipts",
-      `txReceipt-${RECEIPT_ID_LOCALNET}.json`
-    );
 
     const reportsBefore = await listReplayReports(ws);
     expect(reportsBefore).toEqual([]);
@@ -232,15 +175,8 @@ describe("Wave 7 · REPLAY-MODE-1 · SDK mode guard", () => {
   });
 
   it("real-node receipt is NOT classified as diverged or non_deterministic", async () => {
-    await seedRealNodeChain(ws);
+    const { receiptPath } = await seedRealNodeChain(ws);
     const sdk = await Hardkas.open({ cwd: ws });
-    const receiptPath = path.join(
-      ws,
-      ".hardkas",
-      "artifacts",
-      "receipts",
-      `txReceipt-${RECEIPT_ID_LOCALNET}.json`
-    );
 
     const result = await sdk.replay.verify({ path: receiptPath });
     // Pre-Wave-7 this would have been:
@@ -251,22 +187,15 @@ describe("Wave 7 · REPLAY-MODE-1 · SDK mode guard", () => {
   });
 
   it("simulator-mode receipt still reaches the execution path (guard is scoped)", async () => {
-    await seedSimulatorChain(ws);
+    const { receiptPath } = await seedSimulatorChain(ws);
     const sdk = await Hardkas.open({ cwd: ws });
-    const receiptPath = path.join(
-      ws,
-      ".hardkas",
-      "artifacts",
-      "receipts",
-      `txReceipt-${RECEIPT_ID_SIMULATOR}.json`
-    );
 
     const result = await sdk.replay.verify({ path: receiptPath });
     // Guard did NOT fire for simulator receipts.
     expect(result.code).not.toBe("REPLAY_MODE_UNSUPPORTED");
     // Either the run enters simulator execution and produces a report,
-    // or it fails on another cause (e.g. contentHash mismatch on the
-    // synthetic fixture) — but the specific unsupported-mode short-circuit
-    // must NOT be what happened.
+    // or it fails on another cause (e.g. schema gaps on the synthetic
+    // fixture) — but the specific unsupported-mode short-circuit must NOT
+    // be what happened.
   });
 });

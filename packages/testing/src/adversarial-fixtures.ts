@@ -12,23 +12,23 @@ export const AdversarialFixtures = {
    * Circular lineage: A -> B -> A
    */
   circularLineage() {
+    // Legacy (hashVersion 3) artifacts: their lineage was never authenticated, so a
+    // cycle can exist on disk while both artifacts still verify under their own rules.
+    // Since Wave 1.2 a reference resolves only by verified identity, so the ids are
+    // the real recomputed hashes.
+    const bodyA: any = { schema: "hardkas.txPlan", version: ARTIFACT_VERSION, hashVersion: 3, networkId: "simnet", mode: "simulator", nonce: "A" };
+    const bodyB: any = { schema: "hardkas.txPlan", version: ARTIFACT_VERSION, hashVersion: 3, networkId: "simnet", mode: "simulator", nonce: "B" };
+    const hashA = calculateContentHash(bodyA, 3);
+    const hashB = calculateContentHash(bodyB, 3);
     const artifactA: any = {
-      schema: "hardkas.txPlan",
-      version: ARTIFACT_VERSION,
-      artifactId: "art-a",
-      contentHash: "hash-a",
-      networkId: "simnet",
-      mode: "simulator",
-      lineage: { parentArtifactId: "art-b" }
+      ...bodyA,
+      contentHash: hashA,
+      lineage: { artifactId: hashA, lineageId: hashB, parentArtifactId: hashB, rootArtifactId: hashB, sequence: 2 }
     };
     const artifactB: any = {
-      schema: "hardkas.txPlan",
-      version: ARTIFACT_VERSION,
-      artifactId: "art-b",
-      contentHash: "hash-b",
-      networkId: "simnet",
-      mode: "simulator",
-      lineage: { parentArtifactId: "art-a" }
+      ...bodyB,
+      contentHash: hashB,
+      lineage: { artifactId: hashB, lineageId: hashA, parentArtifactId: hashA, rootArtifactId: hashA, sequence: 2 }
     };
     return { artifactA, artifactB };
   },
@@ -62,28 +62,34 @@ export const AdversarialFixtures = {
    * Artifact with a parent from a different network (Security Violation).
    */
   crossNetworkLineage() {
+    // Sealed under the current hash version: the child's authenticated lineage points
+    // at the parent's real identity, which lives on another network.
     const parent: any = {
       schema: "hardkas.txPlan",
       version: ARTIFACT_VERSION,
-      artifactId: "parent-mainnet",
-      contentHash: "hash-mainnet",
+      hashVersion: CURRENT_HASH_VERSION,
       networkId: "mainnet",
-      mode: "l1-rpc"
+      mode: "l1-rpc",
+      lineage: { artifactId: "", sequence: 1 }
     };
+    parent.contentHash = calculateContentHash(parent, CURRENT_HASH_VERSION);
+    parent.lineage.artifactId = parent.contentHash;
     const child: any = {
       schema: "hardkas.signedTx",
       version: ARTIFACT_VERSION,
-      artifactId: "child-simnet",
-      contentHash: "hash-simnet",
+      hashVersion: CURRENT_HASH_VERSION,
       networkId: "simnet",
       mode: "simulator",
       lineage: {
-        artifactId: "hash-simnet",
-        parentArtifactId: "parent-mainnet",
-        lineageId: "b".repeat(64),
-        rootArtifactId: "c".repeat(64)
+        artifactId: "",
+        parentArtifactId: parent.contentHash,
+        lineageId: parent.contentHash,
+        rootArtifactId: parent.contentHash,
+        sequence: 2
       }
     };
+    child.contentHash = calculateContentHash(child, CURRENT_HASH_VERSION);
+    child.lineage.artifactId = child.contentHash;
     return { parent, child };
   },
 
