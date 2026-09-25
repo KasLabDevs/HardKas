@@ -1,0 +1,17 @@
+{
+  "name": "localnet-demo",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@hardkas/artifacts": "file:..\\packages\\artifacts",
+    "@hardkas/core": "file:..\\packages\\core",
+    "@hardkas/sdk": "file:..\\packages\\sdk"
+  }
+}

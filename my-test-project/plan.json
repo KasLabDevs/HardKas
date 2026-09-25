@@ -1,0 +1,63 @@
+{
+  "schema": "hardkas.txPlan",
+  "hardkasVersion": "0.12.0-rc.23",
+  "schemaVersion": "hardkas.artifact.v1",
+  "version": "1.0.0-alpha",
+  "hashVersion": 4,
+  "createdAt": "2026-09-24T16:31:30.023Z",
+  "networkId": "simulated",
+  "mode": "simulator",
+  "execution": {
+    "mode": "simulator",
+    "domain": "kaspa-l1",
+    "network": "simulated"
+  },
+  "from": {
+    "address": "kaspa:sim_alice",
+    "input": "alice"
+  },
+  "to": {
+    "address": "kaspa:sim_bob",
+    "input": "bob"
+  },
+  "amountSompi": "1000000000",
+  "estimatedFeeSompi": "203600",
+  "estimatedMass": "2036",
+  "inputs": [
+    {
+      "outpoint": {
+        "transactionId": "18b20b15966a9302af6b1a03cae7438bb26b6445c2ba66c7aed9a0b0bb7a547d",
+        "index": 0
+      },
+      "amountSompi": "100000000000",
+      "address": "kaspa:sim_alice",
+      "scriptPublicKey": "mock-script"
+    }
+  ],
+  "outputs": [
+    {
+      "address": "kaspa:sim_bob",
+      "amountSompi": "1000000000"
+    }
+  ],
+  "rpcUrl": "simulated://local",
+  "lineage": {
+    "artifactId": "8ec95d8efcc300e4698d8b57198dcf88c69a68d2104df8ff63c02391b8c613f2",
+    "lineageId": "7b33ca6885a07b55e8f978687f45bf47847a102edc4eb1ce1fd2f87ea98fcabd",
+    "parentArtifactId": "",
+    "rootArtifactId": "7b33ca6885a07b55e8f978687f45bf47847a102edc4eb1ce1fd2f87ea98fcabd",
+    "sequence": 1
+  },
+  "metadata": {
+    "schema": "hardkas.artifact.v1"
+  },
+  "assumptionLevel": "local-simulated",
+  "txVersion": 0,
+  "change": {
+    "address": "kaspa:sim_alice",
+    "amountSompi": "98999796400"
+  },
+  "planId": "plan-8ec95d8efcc300e4",
+  "contentHash": "8ec95d8efcc300e4698d8b57198dcf88c69a68d2104df8ff63c02391b8c613f2",
+  "workflowId": "wf_7b33ca6885a07b55"
+}

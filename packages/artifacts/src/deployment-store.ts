@@ -8,7 +8,7 @@ import { DeploymentRecord, DeploymentSummary } from "./deployment.js";
 
 /**
  * Manages deployment records on the filesystem.
- * Storage: .hardkas/deployments/<networkId>/<label>.json
+ * Storage: `.hardkas/deployments/{networkId}/{label}.json`
  */
 
 export async function saveDeployment(

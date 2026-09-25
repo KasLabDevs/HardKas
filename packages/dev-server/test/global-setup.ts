@@ -45,8 +45,8 @@ export async function setup() {
     
     (global as any)._minerInterval = minerInterval;
   } catch (err: any) {
-    console.warn("[GlobalSetup] Simnet node could not be started (Docker unavailable or error):", err.message);
-    console.warn("[GlobalSetup] Proceeding with dev-server without real simnet connectivity.");
+    
+    throw new Error(`[GlobalSetup] FATAL: Simnet node could not be started. Required for localnet tests: ${err.message}`);
   }
 
   const instance = createDevServer({
