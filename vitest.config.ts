@@ -14,7 +14,7 @@ export default defineConfig({
   },
   test: {
     fileParallelism: false,
-    globalSetup: ["./packages/dev-server/test/global-setup.ts"],
+    
     teardownTimeout: 120000,
     hookTimeout: 120000,
     include: ["packages/*/test/**/*.test.ts", "examples/superapp-command-center/tests/backend/**/*.test.ts", "examples/builder-labs/**/*.test.ts"],

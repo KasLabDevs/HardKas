@@ -2814,7 +2814,7 @@
 <h1>Execution-safe development for Kaspa.</h1>
 <p class="hero-desc">
                 HardKAS is a deterministic, local-first developer operating system for
-                Kaspa/Toccata.
+                Kaspa/Toccata. Built upon the <strong>Golden Core Qualification Model</strong>.
               </p>
 <div class="note" style="margin-top: 1rem; border: 1px solid var(--accent); padding: 1rem; border-radius: 4px; background: rgba(var(--accent-rgb), 0.1);">
 <strong>HardKAS has separate execution worlds.</strong><br/>
@@ -2907,6 +2907,13 @@ Account (kind = synthetic)<br/>
 Target (mode = rpc, domain = kaspa-l1, network = mainnet)<br/>
 <strong>✕ DENIED</strong>
 </div>
+<h3>Safety Orchestration</h3>
+<p>The core transaction runner employs <strong>Safety Orchestration</strong> before planning:</p>
+<ul>
+<li><strong>Pending-Spends Protection:</strong> Filters UTXOs pending in the local mempool.</li>
+<li><strong>Maturity Policy:</strong> Enforces DAA score thresholds.</li>
+<li><strong>vBefore / vAfter Integrity:</strong> Retries planning if underlying state changes during the operation.</li>
+</ul>
 </section>
 <section id="artifacts">
 <h2>Artifacts</h2>
@@ -2917,8 +2924,8 @@ Target (mode = rpc, domain = kaspa-l1, network = mainnet)<br/>
 <p>Canonical hashing gives artifacts stable semantic identity independent of non-semantic representation details.</p>
 </div>
 <div class="box">
-<h3>Lineage</h3>
-<p>Artifacts can record <code>parentArtifactId</code> and <code>rootArtifactId</code>, making causal relationships between workflow stages verifiable.</p>
+<h3>Evidence DAG (Lineage)</h3>
+<p>Artifacts cryptographically link their <code>parentArtifactId</code> and <code>rootArtifactId</code>, forming an <strong>Evidence DAG</strong>.</p>
 </div>
 <div class="box">
 <h3>Provenance</h3>
@@ -2957,16 +2964,19 @@ Target (mode = rpc, domain = kaspa-l1, network = mainnet)<br/>
 <p class="layer-subtitle">increasing execution fidelity</p>
 <div class="grid cols-2">
 <div class="box">
-<h3>Coherence Simulator</h3>
-<p>Fast, synthetic coherence testing without a Kaspa node.</p>
+<h3>Coherence Simulator (Synthetic)</h3>
+<p>Fast, synthetic coherence testing without a Kaspa node. It currently uses a <strong>Synthetic Planner</strong> that does not perform strict network validation.</p>
 <ul>
-<li><strong>What it validates:</strong> transaction structure, fees, Tx v0/v1 planning, compute budgets, lightweight DAG behavior.</li>
-<li><strong>What it does NOT claim:</strong> Kaspa VM equivalence, native script execution, native signing, full consensus validation.</li>
+<li><strong>What it validates:</strong> transaction structure, mocked fees, Tx v0/v1 planning, compute budgets, lightweight DAG behavior.</li>
+<li><strong>What it does NOT claim:</strong> Kaspa VM equivalence, native script execution, native signing, full consensus validation, exact mass parity.</li>
 </ul>
 </div>
 <div class="box">
-<h3>Localnet</h3>
-<p>Localnet moves the workflow across the real node, signing, and consensus boundary without requiring a public network.</p>
+<h3>Localnet (Real-node)</h3>
+<p>Localnet executes the workflow across a real `rusty-kaspa` node boundary via RPC. It delegates to the **Upstream Generator (kaspa-wasm)** for actual planning authority.</p>
+<ul>
+<li><strong>Important Status:</strong> Planner authority unification between Simulator (Synthetic) and Localnet (Upstream) is currently <strong>in progress (Candidate B)</strong>.</li>
+</ul>
 </div>
 </div>
 </section>
@@ -2993,8 +3003,10 @@ Target (mode = rpc, domain = kaspa-l1, network = mainnet)<br/>
 <tr><td>Transaction v1 planning</td><td>🟢 SUPPORTED</td></tr>
 <tr><td>Compute budget planning</td><td>🟢 SUPPORTED</td></tr>
 <tr><td>Lane metadata</td><td>🟢 SUPPORTED</td></tr>
-<tr><td>Covenant planning</td><td>🟢 SUPPORTED</td></tr>
+<tr><td>Covenant planning</td><td>🟡 EXPERIMENTAL (False confidence warning)</td></tr>
 <tr><td>Fee estimation</td><td>🟢 SUPPORTED</td></tr>
+<tr><td>Tx Tracing</td><td>❌ DISABLED</td></tr>
+<tr><td>PSKT (Partially Signed)</td><td>🟡 EXPERIMENTAL (Mock-backed)</td></tr>
 <tr><td>Covenant signing</td><td>🔴 BLOCKED_BY_DEPENDENCY</td></tr>
 <tr><td>Covenant execution</td><td>🔴 BLOCKED_BY_DEPENDENCY</td></tr>
 <tr><td>SilverScript tooling</td><td>🟡 EXPERIMENTAL</td></tr>
@@ -3008,16 +3020,24 @@ Target (mode = rpc, domain = kaspa-l1, network = mainnet)<br/>
 <p>HardKAS enforces a strict layer separation to maintain a clean boundary with the underlying node.</p>
 <div class="diagram">
 <div class="box">
-<h3>Level 1 (RPC)</h3>
-<p>Strict 1:1 mapping with the node. Zero business logic.</p>
+<h3>Level 0 (Foundations)</h3>
+<p><code>core</code>, <code>config</code>, <code>observability</code>. Zero external state.</p>
 </div>
 <div class="box">
-<h3>Level 2 (Toolkit)</h3>
-<p>Watchers, subscriptions, and translation of raw mechanics.</p>
+<h3>Level 1 (Core Primitives)</h3>
+<p><code>artifacts</code>, <code>tx-builder</code>, <code>kaspa-rpc</code>, <code>simulator</code>, <code>localnet</code>. Immutable truth.</p>
 </div>
 <div class="box">
-<h3>Level 3 (SDK)</h3>
-<p>High-level developer facade and workflow orchestration.</p>
+<h3>Level 2 (Composition / SDK)</h3>
+<p><code>sdk</code>. Facade unifying primitives into developer workflows.</p>
+</div>
+<div class="box">
+<h3>Level 3 (Extensions)</h3>
+<p><code>query-store</code>, <code>jobs</code>, <code>pskt-native</code>, <code>escrow</code>, <code>testing</code>.</p>
+</div>
+<div class="box">
+<h3>Level 4 (Presentation)</h3>
+<p><code>cli</code>, <code>dev-server</code>, <code>client</code>.</p>
 </div>
 </div>
 </section>
@@ -3025,18 +3045,18 @@ Target (mode = rpc, domain = kaspa-l1, network = mainnet)<br/>
 <h2>Quickstart</h2>
 <p>The first time a developer can explain a previous transaction from its artifacts instead of from logs.</p>
 <div class="codeblock">
-<div class="codebar">execution-safe workflow <button class="copy" data-copy="hardkas localnet start --profile toccata-v2\nhardkas tx plan --from alice --to bob --amount 10 --network simnet --out tx-plan.json\nhardkas tx sign tx-plan.json --account alice --out tx-signed.json\nhardkas tx send tx-signed.json --network simnet --yes\nhardkas replay verify .hardkas/artifacts">Copy</button></div>
-<pre><span class="comment"># 1. Start a local Toccata node</span>
-<span class="cmd">hardkas</span> localnet start <span class="flag">--profile</span> toccata-v2
+<div class="codebar">execution-safe workflow <button class="copy" data-copy="hardkas simulator fund alice --amount 100\nhardkas tx plan --from alice --to bob --amount 10 --network simulated --out tx-plan.json\nhardkas tx sign tx-plan.json --account alice --out tx-signed.json\nhardkas tx send tx-signed.json --network simulated --yes\nhardkas replay verify .hardkas/artifacts">Copy</button></div>
+<pre><span class="comment"># 1. Start with simulated funds (Replay supports simulator only)</span>
+<span class="cmd">hardkas</span> simulator fund alice <span class="flag">--amount</span> 100
 
 <span class="comment"># 2. Create a transaction plan</span>
-<span class="cmd">hardkas</span> tx plan <span class="flag">--from</span> alice <span class="flag">--to</span> bob <span class="flag">--amount</span> 10 <span class="flag">--network</span> simnet <span class="flag">--out</span> tx-plan.json
+<span class="cmd">hardkas</span> tx plan <span class="flag">--from</span> alice <span class="flag">--to</span> bob <span class="flag">--amount</span> 10 <span class="flag">--network</span> simulated <span class="flag">--out</span> tx-plan.json
 
 <span class="comment"># 3. Sign the transaction</span>
 <span class="cmd">hardkas</span> tx sign tx-plan.json <span class="flag">--account</span> alice <span class="flag">--out</span> tx-signed.json
 
-<span class="comment"># 4. Execute the transaction against the network</span>
-<span class="cmd">hardkas</span> tx send tx-signed.json <span class="flag">--network</span> simnet <span class="flag">--yes</span>
+<span class="comment"># 4. Execute the transaction against the simulator</span>
+<span class="cmd">hardkas</span> tx send tx-signed.json <span class="flag">--network</span> simulated <span class="flag">--yes</span>
 <span class="comment"># 5. Verify local replay invariants across the artifact pipeline</span>
 <span class="cmd">hardkas</span> replay verify .hardkas/artifacts</pre>
 </div>
@@ -3140,14 +3160,14 @@ hardkas l2 tx receipt &lt;txHash&gt; --json">
                     query
                     <button class="copy" data-copy="hardkas query store sync --strict --json
 hardkas query artifacts list --sort createdAt:desc --limit 20
-hardkas query artifacts inspect &lt;contentHash&gt; --explain full
+hardkas query artifacts inspect &lt;artifactId&gt; --explain full
 hardkas query lineage chain &lt;artifactId&gt; --why">
                       Copy
                     </button>
 </div>
 <pre><span class="cmd">hardkas</span> query store sync <span class="flag">--strict</span> <span class="flag">--json</span>
 <span class="cmd">hardkas</span> query artifacts list <span class="flag">--sort</span> createdAt:desc <span class="flag">--limit</span> 20
-<span class="cmd">hardkas</span> query artifacts inspect &lt;contentHash&gt; <span class="flag">--explain</span> full
+<span class="cmd">hardkas</span> query artifacts inspect &lt;artifactId&gt; <span class="flag">--explain</span> full
 <span class="cmd">hardkas</span> query lineage chain &lt;artifactId&gt; <span class="flag">--why</span></pre>
 </div>
 <div class="codeblock" style="margin-top: 8px">
@@ -3354,7 +3374,7 @@ hardkas query lineage chain &lt;artifactId&gt; --why">
           </div>
 </section>
 <section id="chaos">
-<h2>Chaos engine</h2>
+<h2>Chaos engine <span style="font-size: 0.5em; background: #eab308; color: black; padding: 2px 6px; border-radius: 4px; vertical-align: middle;">EXPERIMENTAL</span></h2>
 <p>
 <code>hardkas chaos</code> formalizes destructive behavior into deterministic,
             reproducible campaigns. It uses a seeded LCG PRNG (MINSTD) so every campaign

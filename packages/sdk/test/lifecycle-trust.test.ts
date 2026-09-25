@@ -165,8 +165,17 @@ describe("0.12.0-rc.23 Lifecycle Integrity & Trust Boundary Tests", () => {
     // Clear cache so it reads from the tampered disk file
     sdk.artifacts.cache.clear();
 
-    // Verifying policy itself must fail
-    const result = await sdk.artifacts.verify(policy.contentHash, {
+    // Wave 11 · RESOLVER-1: locate the artifact by its explicit path (not by
+    // contentHash-as-generic-identity). The two concerns are independent:
+    //   (1) selection — locate the policy file (path);
+    //   (2) integrity — the persisted content no longer matches the declared
+    //       contentHash inside that file.
+    // The tamper above changed `.decision` but did NOT rewrite `.contentHash`
+    // in the JSON, so `verifyArtifactIntegrity` recomputes the hash over the
+    // tampered content, compares it to the still-declared original hash, and
+    // reports `content_hash_mismatch`. This is the same integrity assertion
+    // as before; only the locator changed.
+    const result = await sdk.artifacts.verify(policyFile, {
       throwOnInvalid: false
     });
     expect(result.valid).toBe(false);

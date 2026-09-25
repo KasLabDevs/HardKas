@@ -1,0 +1,17 @@
+{
+  "name": "my-test-project",
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@hardkas/sdk": "0.12.0-rc.23",
+    "@kaspa/core-lib": "^1.6.5"
+  },
+  "devDependencies": {
+    "@hardkas/testing": "0.12.0-rc.23",
+    "vitest": "^2.0.0",
+    "typescript": "^5.0.0"
+  }
+}

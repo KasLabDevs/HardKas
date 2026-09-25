@@ -244,12 +244,44 @@ export class ProjectArtifactStore {
     );
   }
 
+  // Wave 11 · RESOLVER-1 · verify-on-match hardening.
+  //
+  // Historical failure: `findArtifactPathById` returned the FIRST filename
+  // that contained the queried id as a substring. Two collision classes
+  // followed:
+  //
+  //   (a) short-form collision — id "plan-abcd" matched both
+  //       `txPlan-plan-abcd.json` (planId === "plan-abcd") and
+  //       `txPlan-plan-abcdef.json` (planId === "plan-abcdef"). The wrong
+  //       artifact could be returned depending on scan order.
+  //   (b) 64-hex prefix collision — a full 64-hex query fell through to a
+  //       first-16-hex prefix search. Any file whose filename happened to
+  //       carry a coincident 16-hex would silently match, returning the
+  //       wrong artifact whose actual `artifactId` bore no relation to
+  //       the query.
+  //
+  // Wave 11 keeps the fast filename-substring descriptor as a candidate
+  // filter, but on every candidate the artifact JSON is loaded and its
+  // content-id fields are checked for EXACT equality against `id`. A file
+  // is returned only if its content actually claims that id in one of the
+  // canonical identity slots (STORE_ID_FIELDS ∪ `lineage.artifactId`).
+  //
+  // Semantics preserved:
+  //   - Search order: canonical subdirs before the artifacts root.
+  //   - Directories are ignored (only files match).
+  //   - Legitimate multi-writer layouts (`tx plan --out` at root PLUS a
+  //     canonical copy in `plans/`) still resolve, and subdirs still win
+  //     because we return the first exact-content match encountered.
+  //
+  // Semantics dropped:
+  //   - False-positive filename substrings that don't match the artifact's
+  //     actual id fields.
+  //   - The 64-hex → first-16-hex prefix fallback (subsumed by exact
+  //     content verification).
+  //
+  // Return contract is unchanged (`Promise<string | null>`); callers
+  // (`exists`, `readArtifact`, `pathOf`) require no migration.
   private async findArtifactPathById(id: string): Promise<string | null> {
-    // Canonical subdirectories first, then the artifacts root. Not every writer
-    // goes through writeArtifact(): `tx plan --out` persists the plan at the
-    // root as `<timestamp>-<planId>.plan.json`, and the torture harness writes
-    // there too. Without searching the root, a signed transaction can never
-    // resolve its parent plan.
     const searchDirs = [
       ...["plans", "signed", "receipts", "lineage", "misc"].map((sub) =>
         path.join(this.artifactsDir, sub)
@@ -258,25 +290,103 @@ export class ProjectArtifactStore {
     ];
 
     const lowerId = id.toLowerCase();
+    // A 64-hex canonical id is often persisted at the filename level as its
+    // first-16-hex short form (e.g. `plan-<16-hex>.plan.json`) while the
+    // full 64-hex lives in the artifact's `lineage.artifactId` /
+    // `contentHash`. The short prefix is retained here purely as a coarse
+    // filename filter; content verification is the sole source of truth.
+    const lowerPrefix =
+      id.length === 64 ? lowerId.slice(0, 16) : null;
 
     for (const dirPath of searchDirs) {
+      let entries: import("node:fs").Dirent[];
       try {
-        const entries = await fs.readdir(dirPath, { withFileTypes: true });
-        for (const entry of entries) {
-          if (!entry.isFile()) continue;
-          const lowerFile = entry.name.toLowerCase();
-          if (lowerFile.includes(lowerId)) {
-            return path.join(dirPath, entry.name);
-          }
-          if (id.length === 64 && lowerFile.includes(lowerId.slice(0, 16))) {
-            return path.join(dirPath, entry.name);
-          }
+        entries = await fs.readdir(dirPath, { withFileTypes: true });
+      } catch {
+        continue;
+      }
+      for (const entry of entries) {
+        if (!entry.isFile()) continue;
+        const lowerName = entry.name.toLowerCase();
+        const filenameMatches =
+          lowerName.includes(lowerId) ||
+          (lowerPrefix !== null && lowerName.includes(lowerPrefix));
+        if (!filenameMatches) continue;
+
+        const candidatePath = path.join(dirPath, entry.name);
+        if (await this.artifactClaimsId(candidatePath, id)) {
+          return candidatePath;
         }
-      } catch (e) {
-        // Directory doesn't exist, ignore
       }
     }
     return null;
+  }
+
+  /**
+   * Wave 11 · RESOLVER-1 · content-verification helper.
+   *
+   * Namespaces intentionally SEPARATE from generic artifact identity here:
+   *
+   *   - `contentHash` — Wave 5 explicitly established that contentHash is
+   *     NOT guaranteed to equal artifactId. contentHash-only artifacts
+   *     (e.g. snapshots without lineage.artifactId) are path-resolvable
+   *     only, not identity-resolvable. Do NOT match on `.contentHash`.
+   *
+   *   - `txId` — Wave 10 established that Kaspa consensus txId lookup is
+   *     receipt-specific and lives in `findReceiptByTxId`. Generic
+   *     `readArtifact(txId)` MUST NOT succeed merely because some receipt
+   *     carries `.txId === input`; the intentional API separation is that
+   *     a caller who wants a receipt by txId asks the receipt-lookup
+   *     method, not the generic artifact reader.
+   *
+   *   - `signedId`, `receiptId` — no existing contract evidence
+   *     (searched: tests, docs, callers) supports `readArtifact(signedId)`
+   *     or `readArtifact(receiptId)` as an input form. Not added.
+   *
+   *   - Top-level `.artifactId` — Wave 5's façade explicitly resolves only
+   *     `lineage.artifactId`; a distinct top-level `.artifactId` field is
+   *     NOT recognised as canonical identity there, so recognising it
+   *     here would re-open the namespace-conflation Wave 5 closed.
+   *
+   * Accepted identity slots (this method's contract):
+   *
+   *   1. `artifact.lineage.artifactId` — canonical (Wave 5).
+   *   2. `artifact.planId`             — legacy short-ID contract, proven
+   *      by `store-root-resolution.test.ts` and by the pre-Wave-6 fixture
+   *      shape where the parent-plan lookup traverses by planId.
+   *
+   * Comparison is exact (byte-for-byte, no case-folding, no
+   * normalisation). Returns false on any read / parse / non-object /
+   * missing-field condition so a corrupt file cannot masquerade as a
+   * match. Never throws.
+   */
+  private async artifactClaimsId(filePath: string, id: string): Promise<boolean> {
+    let raw: string;
+    try {
+      raw = await fs.readFile(filePath, "utf-8");
+    } catch {
+      return false;
+    }
+    if (raw.charCodeAt(0) === 0xfeff) raw = raw.slice(1);
+    let artifact: any;
+    try {
+      artifact = JSON.parse(raw);
+    } catch {
+      return false;
+    }
+    if (!artifact || typeof artifact !== "object") return false;
+
+    if (
+      artifact.lineage &&
+      typeof artifact.lineage === "object" &&
+      artifact.lineage.artifactId === id
+    ) {
+      return true;
+    }
+    if (typeof artifact.planId === "string" && artifact.planId === id) {
+      return true;
+    }
+    return false;
   }
 
   /**

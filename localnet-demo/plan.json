@@ -1,0 +1,65 @@
+{
+  "schema": "hardkas.txPlan",
+  "hardkasVersion": "0.12.0-rc.23",
+  "schemaVersion": "hardkas.artifact.v1",
+  "version": "1.0.0-alpha",
+  "hashVersion": 4,
+  "createdAt": "2026-09-24T17:23:32.112Z",
+  "networkId": "simnet",
+  "mode": "localnet",
+  "execution": {
+    "mode": "localnet",
+    "domain": "kaspa-l1",
+    "network": "simnet"
+  },
+  "from": {
+    "address": "kaspasim:qqlpk9rs7yag6eqj3lttzqd8vgvssz8l8fxlpdag4h7zx2rjjr8lkkerwkezn",
+    "input": "alice"
+  },
+  "to": {
+    "address": "kaspasim:qryj23rch0n5rc7klfug58zcrnuc966qljwgzpu3mflqgxu6w2pjg6n575980",
+    "input": "bob"
+  },
+  "amountSompi": "100000000",
+  "estimatedFeeSompi": "1000400",
+  "estimatedMass": "10004",
+  "inputs": [
+    {
+      "outpoint": {
+        "transactionId": "001bd4e94867db425f108a3b58d65c3ebfd3e427f5657aa188c763e87dbdfb9a",
+        "index": 0
+      },
+      "amountSompi": "5000000000",
+      "address": "kaspasim:qqlpk9rs7yag6eqj3lttzqd8vgvssz8l8fxlpdag4h7zx2rjjr8lkkerwkezn",
+      "scriptPublicKey": "0000203e1b1470f13a8d64128fd6b101a762190808ff3a4df0b7a8adfc23287290cffbac",
+      "blockDaaScore": "1051",
+      "isCoinbase": true
+    }
+  ],
+  "outputs": [
+    {
+      "address": "kaspasim:qryj23rch0n5rc7klfug58zcrnuc966qljwgzpu3mflqgxu6w2pjg6n575980",
+      "amountSompi": "100000000"
+    }
+  ],
+  "rpcUrl": "http://127.0.0.1:18210",
+  "lineage": {
+    "artifactId": "ecdbd0ad5a63973287b4b66982eea523cda3ef889507b17a7102587f67b3caab",
+    "lineageId": "f048a15f8748246aaa2b1d2fd9a911ecc09633a3348740718059bb8ad4c556e2",
+    "parentArtifactId": "",
+    "rootArtifactId": "f048a15f8748246aaa2b1d2fd9a911ecc09633a3348740718059bb8ad4c556e2",
+    "sequence": 1
+  },
+  "metadata": {
+    "schema": "hardkas.artifact.v1"
+  },
+  "assumptionLevel": "simnet",
+  "txVersion": 0,
+  "change": {
+    "address": "kaspasim:qqlpk9rs7yag6eqj3lttzqd8vgvssz8l8fxlpdag4h7zx2rjjr8lkkerwkezn",
+    "amountSompi": "4898999600"
+  },
+  "planId": "plan-ecdbd0ad5a639732",
+  "contentHash": "ecdbd0ad5a63973287b4b66982eea523cda3ef889507b17a7102587f67b3caab",
+  "workflowId": "wf_f048a15f8748246a"
+}

@@ -1,0 +1,35 @@
+---
+title: Capability Honesty
+---
+
+import QualificationContext from '@site/src/components/QualificationContext';
+
+HardKAS reports capability state explicitly instead of hiding unavailable or experimental behavior:
+
+Status
+
+Meaning
+
+✅ **SUPPORTED**
+
+HardKAS implements this operation.
+
+🧪 **EXPERIMENTAL**
+
+Available, but API/schema may change.
+
+🚧 **BLOCKED\_BY\_DEPENDENCY**
+
+Architected in HardKAS, but blocked by external dependencies.
+
+❌ **NOT\_CLAIMED**
+
+Explicitly not supported or guaranteed by HardKAS.
+
+## Capabilities
+
+<QualificationContext capabilityId="artifacts" />
+<QualificationContext capabilityId="deterministicHashing" />
+<QualificationContext capabilityId="workspaceLocks" />
+<QualificationContext capabilityId="consensusValidation" />
+<QualificationContext capabilityId="silverScript" />

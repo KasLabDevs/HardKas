@@ -1,0 +1,19 @@
+{
+  "entryPoints": [
+    "../../packages/sdk/src/index.ts",
+    "../../packages/artifacts/src/index.ts",
+    "../../packages/tx-builder/src/index.ts",
+    "../../packages/config/src/index.ts"
+  ],
+  "out": "docs/reference/sdk/generated",
+  "plugin": ["typedoc-plugin-markdown"],
+  "skipErrorChecking": true, "hideGenerator": true,
+  "readme": "none",
+  "githubPages": false,
+  "cleanOutputDir": true,
+  "tsconfig": "tsconfig.typedoc.json",
+  "excludePrivate": true,
+  "excludeProtected": true,
+  "excludeInternal": true,
+  "name": "HardKAS SDK"
+}

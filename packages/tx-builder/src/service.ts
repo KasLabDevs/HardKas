@@ -37,6 +37,25 @@ export interface PlanTransactionRequest {
   genesisCovenantGroups?: Array<{ authorizingInput: number; outputIndices: number[] }>;
   /** Outpoint keys ("txId:index") to exclude from coin selection (e.g. pending-spent UTXOs). */
   excludeOutpoints?: Set<string>;
+  /**
+   * Wave 13 · CHANGEADDR-1 · Explicit change-output destination.
+   *
+   * Optional. When present, the selected planner routes the change output
+   * (if any) to this address instead of `fromAddress`. Semantics are
+   * `effectiveChangeAddress = request.changeAddress ?? request.fromAddress`
+   * — the ONLY fallback. No inference from account aliases, execution mode,
+   * network profile, or any orchestration state.
+   *
+   * Forwarded by:
+   *   - `planTransactionUpstream` → kaspa-wasm `buildTransactions.changeAddress`
+   *   - `planTransaction` / `planTransactionSynthetic` → `buildPaymentPlan.changeAddress`
+   *
+   * Preserves pre-Wave-13 behaviour when omitted: every existing caller
+   * whose object literal does NOT set this field continues to route change
+   * to `fromAddress`. Adding the field is backward-compatible; no existing
+   * call sites require migration.
+   */
+  changeAddress?: string;
 }
 
 export interface ConsolidationRequest {
@@ -247,6 +266,7 @@ export class TxPlanService {
     const build = () =>
       buildPaymentPlan({
         fromAddress: request.fromAddress,
+        changeAddress: request.changeAddress ?? request.fromAddress,
         availableUtxos: builderUtxos,
         outputs: [
           {
@@ -373,7 +393,7 @@ export class TxPlanService {
     }
 
     // 4. Delegate coin selection and fee to upstream Generator. Iterate the first PendingTransaction.
-    const changeAddress = request.fromAddress; // same as legacy — change returns to sender
+    const changeAddress = request.changeAddress ?? request.fromAddress;
     const planOutputSpecs =
       request.outputs && request.outputs.length > 0
         ? request.outputs.map((o) => ({ address: o.address, amountSompi: o.amountSompi }))
