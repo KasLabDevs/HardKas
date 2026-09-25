@@ -4,6 +4,12 @@
 // the same workspace: `artifactId` is always the canonical identity (the receipt's
 // recomputed contentHash) and a txId is labelled as a txId, never passed where an
 // artifactId is expected.
+//
+// Wave 1.3 · R-iii part 1 / IC-2′.8 / IC-4′.4: the OUTCOME of a send is decided
+// from a submission's authenticated submit result, or from a FULL-scope receipt's
+// status. A legacy (hashVersion ≤ 4) or unverifiable status decides nothing.
+
+import { checkArtifactIdentity, CURRENT_HASH_VERSION, HardkasSchemas } from "@hardkas/artifacts";
 
 const ARTIFACT_ID_PATTERN = /^[0-9a-f]{64}$/;
 
@@ -40,4 +46,35 @@ export function sendExplanation(outcome: SendOutcome): { available: boolean; art
     ...(id !== undefined ? { artifactId: id } : {}),
     ...(typeof outcome.txId === "string" ? { txId: outcome.txId } : {})
   };
+}
+
+export type SendArtifactOutcome =
+  | { kind: "submission"; accepted: boolean; decided: boolean; authScope: "FULL" | "LEGACY" | "NONE" }
+  | { kind: "receipt"; accepted: boolean; decided: boolean; authScope: "FULL" | "LEGACY" | "NONE"; status: string | undefined }
+  | { kind: "unknown"; accepted: false; decided: false; authScope: "NONE" };
+
+/**
+ * What the artifact a send produced says about the outcome, and whether that
+ * says anything at all. `decided` is true only when the deciding field is
+ * authenticated: a submission's `submitResult` or a hashVersion-5 receipt's
+ * `status`. `accepted` is false whenever nothing was decided.
+ */
+export function sendOutcome(artifact: any): SendArtifactOutcome {
+  const schema = typeof artifact?.schema === "string" ? artifact.schema : "";
+  const identity = checkArtifactIdentity(artifact);
+  const authScope: "FULL" | "LEGACY" | "NONE" = identity.ok
+    ? artifact.hashVersion === CURRENT_HASH_VERSION
+      ? "FULL"
+      : "LEGACY"
+    : "NONE";
+  const decided = authScope === "FULL";
+  if (schema === HardkasSchemas.TxSubmissionV1) {
+    return { kind: "submission", accepted: decided && artifact?.submitResult?.accepted === true, decided, authScope };
+  }
+  if (schema.startsWith(HardkasSchemas.TxReceipt)) {
+    const status = typeof artifact?.status === "string" ? artifact.status : undefined;
+    const accepted = decided && (status === "accepted" || status === "confirmed" || status === "submitted");
+    return { kind: "receipt", accepted, decided, authScope, status };
+  }
+  return { kind: "unknown", accepted: false, decided: false, authScope: "NONE" };
 }

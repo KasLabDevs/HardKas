@@ -1,16 +1,18 @@
 import fs from "node:fs";
 import path from "node:path";
-import { calculateContentHash } from "@hardkas/artifacts";
+import { legacyDomainDigest } from "@hardkas/artifacts";
 import type { Hardkas } from "./index.js";
 import { HardkasSchemas } from "@hardkas/artifacts";
 
 /**
- * ZK corpus digests are domain digests over fixture files, not artifact
- * identities. Their algorithm is pinned to the legacy v4 canonical form so the
- * shipped corpus manifests keep verifying while the artifact hash version moves;
- * the dedicated domain-digest function is IC-1′.7 (Wave 1.3).
+ * ZK corpus digests are domain digests over the SHIPPED fixture files, not
+ * artifact identities. The corpus manifests store digests computed with the
+ * pre-1.3 algorithm (the canonical-v4 form), so they are verified with the
+ * explicit legacy digest (IC-1′.7: legacy digests only for legacy material).
+ * Re-issuing the corpus under the current domain digest is a corpus change,
+ * not a verifier change.
  */
-const ZK_CORPUS_DIGEST_VERSION = 4;
+const corpusDigest = (value: unknown): string => legacyDomainDigest(value);
 
 export type ZkProofSystem = "groth16" | "risc0" | "unknown";
 
@@ -185,7 +187,7 @@ export async function inspectZkProof(
     const filePath = path.join(dir, file);
     const value = readJson(filePath, issues);
     if (!value) continue;
-    const actual = calculateContentHash(value, ZK_CORPUS_DIGEST_VERSION);
+    const actual = corpusDigest(value);
     contentHashes[file] = actual;
     const expected = manifest?.contentHashes?.[key];
     if (typeof expected === "string" && expected !== actual) {
@@ -458,9 +460,9 @@ function verifyGroth16Fixture(dir: string, manifest: any, issues: ZkIssue[]) {
   verifyManifestHash(manifest, "verifierMetadata", metadata, issues, metadataPath);
   verifyManifestHash(manifest, "verifyReport", report, issues, reportPath);
 
-  const publicInputsHash = calculateContentHash(publicInputs, ZK_CORPUS_DIGEST_VERSION);
-  const verificationKeyHash = calculateContentHash(verificationKey, ZK_CORPUS_DIGEST_VERSION);
-  const proofHash = calculateContentHash(proof, ZK_CORPUS_DIGEST_VERSION);
+  const publicInputsHash = corpusDigest(publicInputs);
+  const verificationKeyHash = corpusDigest(verificationKey);
+  const proofHash = corpusDigest(proof);
   expectEqual(
     proof.publicInputsHash,
     publicInputsHash,
@@ -511,14 +513,14 @@ function verifyGroth16Fixture(dir: string, manifest: any, issues: ZkIssue[]) {
     reportPath
   );
 
-  const coherenceDigest = calculateContentHash({
+  const coherenceDigest = corpusDigest({
     proofSystem: "groth16",
     proofHash,
     publicInputsHash,
     verificationKeyHash,
     statementHash: publicInputs.statementHash,
     verifierAdapter: manifest.verifierAdapter
-  }, ZK_CORPUS_DIGEST_VERSION);
+  });
   expectEqual(
     metadata.coherenceDigest,
     coherenceDigest,
@@ -622,7 +624,7 @@ function verifyManifestHash(
     });
     return;
   }
-  const actual = calculateContentHash(value, ZK_CORPUS_DIGEST_VERSION);
+  const actual = corpusDigest(value);
   if (actual !== expected) {
     issues.push({
       code: "ZK_CORPUS_HASH_MISMATCH",

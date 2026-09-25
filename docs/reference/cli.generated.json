@@ -1,7 +1,7 @@
 {
   "schema": "hardkas.cliReference.v1",
   "generatedAt": "deterministic",
-  "totalCommands": 234,
+  "totalCommands": 235,
   "flatSurface": [
     "hardkas accounts",
     "hardkas accounts balance",
@@ -20,6 +20,7 @@
     "hardkas artifact explain",
     "hardkas artifact inspect",
     "hardkas artifact lineage",
+    "hardkas artifact migrate",
     "hardkas artifact verify",
     "hardkas capabilities",
     "hardkas chaos",
@@ -906,6 +907,50 @@
             {
               "flags": "--json",
               "description": "Output as JSON",
+              "default": false,
+              "required": false,
+              "mandatory": false
+            },
+            {
+              "flags": "--workspace <path>",
+              "description": "Override workspace root directory",
+              "default": null,
+              "required": true,
+              "mandatory": false
+            }
+          ],
+          "subcommands": []
+        },
+        {
+          "path": "hardkas artifact migrate",
+          "name": "migrate",
+          "aliases": [],
+          "description": "Re-issue a legacy artifact as hashVersion 5 plus a MigrationReceipt (never in place) alpha",
+          "usage": "hardkas artifact migrate [options] <path>",
+          "arguments": [
+            {
+              "name": "path",
+              "description": ""
+            }
+          ],
+          "options": [
+            {
+              "flags": "--to <hashVersion>",
+              "description": "Target hash version (only 5 is supported)",
+              "default": null,
+              "required": true,
+              "mandatory": true
+            },
+            {
+              "flags": "--migration-id <id>",
+              "description": "Migration identifier recorded in the receipt",
+              "default": null,
+              "required": true,
+              "mandatory": false
+            },
+            {
+              "flags": "--json",
+              "description": "Output results as JSON",
               "default": false,
               "required": false,
               "mandatory": false
@@ -2041,8 +2086,8 @@
       "path": "hardkas explain",
       "name": "explain",
       "aliases": [],
-      "description": "Provide a narrative causal explanation of an artifact resolved by exact artifactId or artifact file path stable",
-      "usage": "hardkas explain [options] <artifact>",
+      "description": "Provide a narrative causal explanation of an artifact resolved by exact artifactId, artifact file path, or a namespaced identifier (--plan, --signed, --tx, --workflow) stable",
+      "usage": "hardkas explain [options] [artifact]",
       "arguments": [
         {
           "name": "artifact",
@@ -2050,6 +2095,41 @@
         }
       ],
       "options": [
+        {
+          "flags": "--artifact <id-or-path>",
+          "description": "64-hex artifactId or workspace path (same as the positional)",
+          "default": null,
+          "required": true,
+          "mandatory": false
+        },
+        {
+          "flags": "--plan <planId>",
+          "description": "Resolve a plan by its derived label (verified against its hash)",
+          "default": null,
+          "required": true,
+          "mandatory": false
+        },
+        {
+          "flags": "--signed <signedId>",
+          "description": "Resolve a signed transaction by its derived label (verified)",
+          "default": null,
+          "required": true,
+          "mandatory": false
+        },
+        {
+          "flags": "--tx <txId>",
+          "description": "Resolve the submission receipt for a txId (never the signed)",
+          "default": null,
+          "required": true,
+          "mandatory": false
+        },
+        {
+          "flags": "--workflow <workflowId>",
+          "description": "Resolve a workflow run by its correlation id",
+          "default": null,
+          "required": true,
+          "mandatory": false
+        },
         {
           "flags": "--workspace <path>",
           "description": "Override workspace root directory",
@@ -6316,16 +6396,14 @@
       "name": "verify",
       "aliases": [],
       "description": "Verify artifact integrity and lineage continuity across the workspace stable",
-      "usage": "hardkas verify [options]",
-      "arguments": [],
-      "options": [
+      "usage": "hardkas verify [options] [path]",
+      "arguments": [
         {
-          "flags": "--deep",
-          "description": "Perform a deep validation of signatures and causality",
-          "default": false,
-          "required": false,
-          "mandatory": false
-        },
+          "name": "path",
+          "description": "Workspace-contained artifact file or directory to verify (default: .hardkas/artifacts)"
+        }
+      ],
+      "options": [
         {
           "flags": "--json",
           "description": "Output machine-readable JSON",
@@ -6435,15 +6513,50 @@
       "path": "hardkas why",
       "name": "why",
       "aliases": [],
-      "description": "Explain the causal lineage of an artifact resolved by exact artifactId or artifact file path",
-      "usage": "hardkas why [options] <artifact>",
+      "description": "Explain the causal lineage of an artifact resolved by exact artifactId, artifact file path, or a namespaced identifier (--plan, --signed, --tx, --workflow)",
+      "usage": "hardkas why [options] [artifact]",
       "arguments": [
         {
           "name": "artifact",
-          "description": "Exact 64-hex artifactId (lineage.artifactId) or absolute/workspace-relative path to the artifact .json file"
+          "description": "Exact 64-hex artifactId (the recomputed contentHash) or absolute/workspace-relative path to the artifact .json file"
         }
       ],
       "options": [
+        {
+          "flags": "--artifact <id-or-path>",
+          "description": "64-hex artifactId or workspace path (same as the positional)",
+          "default": null,
+          "required": true,
+          "mandatory": false
+        },
+        {
+          "flags": "--plan <planId>",
+          "description": "Resolve a plan by its derived label (verified against its hash)",
+          "default": null,
+          "required": true,
+          "mandatory": false
+        },
+        {
+          "flags": "--signed <signedId>",
+          "description": "Resolve a signed transaction by its derived label (verified)",
+          "default": null,
+          "required": true,
+          "mandatory": false
+        },
+        {
+          "flags": "--tx <txId>",
+          "description": "Resolve the submission receipt for a txId (never the signed)",
+          "default": null,
+          "required": true,
+          "mandatory": false
+        },
+        {
+          "flags": "--workflow <workflowId>",
+          "description": "Resolve a workflow run by its correlation id",
+          "default": null,
+          "required": true,
+          "mandatory": false
+        },
         {
           "flags": "--json",
           "description": "Output lineage graph in JSON format",

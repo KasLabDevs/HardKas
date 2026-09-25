@@ -19,12 +19,14 @@ import {
   NetworkProfileSchema,
   AssumptionSchema,
   MigrationReceiptSchema,
+  TxSubmissionSchema,
+  ReplayReportSchema,
   ARTIFACT_VERSION
 } from "./schemas.js";
 import { NetworkId, type CorruptionCode, type CorruptionSeverity } from "@hardkas/core";
 import { verifyFeeSemantics } from "./feeVerify.js";
 import { verifyLineage } from "./lineage.js";
-import { checkArtifactIdentity, resolveArtifactSync } from "./resolve.js";
+import { checkArtifactIdentity, resolveArtifactSync, enumerateWorkspaceArtifactsSync } from "./resolve.js";
 import {
   SilverCompileArtifactSchema,
   SilverDeployArtifactSchema,
@@ -169,10 +171,9 @@ export function verifyArtifactIntegritySync(
     result.version = v.version as string;
     result.expectedHash = v.contentHash as string;
 
-    if (v.schema === HardkasSchemas.ReplayReportV1) {
-      result.ok = true;
-      return result;
-    }
+    // IC-4′.1 (AUD-08 / P6): no schema skips verification. The former
+    // ReplayReportV1 early return is gone; a replay report is sealed by its
+    // producer and verified like every other artifact.
 
     // 2. Basic Version & Schema Check
     if (!v.version || !v.schema) {
@@ -247,6 +248,15 @@ export function verifyArtifactIntegritySync(
       if (v.schema === HardkasSchemas.SignedTx && v.signedId !== undefined && v.signedId !== `signed-${actualHash.slice(0, 16)}`) {
         addError("LABEL_MISMATCH", `signedId ${String(v.signedId)} does not derive from the artifact's content hash`);
       }
+      // IC-7.3 / IC-4′.5: a version-5 artifact stores no top-level identity copy.
+      // The identity is the recomputed contentHash; a stored `artifactId` is either
+      // redundant or a label posing as an identity (P7 / AUD-10).
+      if (v.artifactId !== undefined) {
+        addError(
+          "FORBIDDEN_IDENTITY_FIELD",
+          `hashVersion ${CURRENT_HASH_VERSION} artifacts must not carry a top-level artifactId (got ${JSON.stringify(v.artifactId)}); the identity is the recomputed contentHash`
+        );
+      }
     }
 
     // 4. Zod Schema Validation
@@ -282,6 +292,12 @@ export function verifyArtifactIntegritySync(
         break;
       case HardkasSchemas.MigrationReceiptV1:
         schema = MigrationReceiptSchema;
+        break;
+      case HardkasSchemas.TxSubmissionV1:
+        schema = TxSubmissionSchema;
+        break;
+      case HardkasSchemas.ReplayReportV1:
+        schema = ReplayReportSchema;
         break;
       case HardkasSchemas.SilverCompile:
         schema = SilverCompileArtifactSchema;
@@ -375,6 +391,36 @@ export async function verifyArtifactIntegrity(
   context: VerificationContext = {}
 ): Promise<ArtifactVerificationResult> {
   return verifyArtifactIntegritySync(artifactOrPath, context);
+}
+
+/**
+ * A FULL-scope MigrationReceipt in the store that certifies `artifact` as the
+ * re-issue of `parentId` (D-Q1.f), or `artifact` itself when it is that receipt.
+ */
+function findMigrationCertificate(
+  workspaceRoot: string,
+  artifact: Record<string, unknown>,
+  parentId: string
+): { kind: "self" | "receipt"; receiptId: string } | undefined {
+  const own = checkArtifactIdentity(artifact);
+  if (!own.ok || own.authScope !== "FULL") return undefined;
+  if (artifact.schema === HardkasSchemas.MigrationReceiptV1 && artifact.oldHash === parentId) {
+    return { kind: "self", receiptId: own.artifactId };
+  }
+  let entries: ReturnType<typeof enumerateWorkspaceArtifactsSync>;
+  try {
+    entries = enumerateWorkspaceArtifactsSync(workspaceRoot);
+  } catch {
+    return undefined;
+  }
+  for (const entry of entries) {
+    const a: any = entry.artifact;
+    if (a?.schema !== HardkasSchemas.MigrationReceiptV1) continue;
+    if (a.oldHash !== parentId || a.newHash !== own.artifactId) continue;
+    const check = checkArtifactIdentity(a);
+    if (check.ok && check.authScope === "FULL") return { kind: "receipt", receiptId: check.artifactId };
+  }
+  return undefined;
 }
 
 /**
@@ -604,11 +650,28 @@ export function verifyArtifactSemantics(
       if (!outcome) outcome = resolveReference(parentId, "parent");
       if ("issue" in outcome) {
         if (outcome.issue.code === "REFERENCE_MISSING") {
-          addIssue({
-            code: "PARENT_MISSING",
-            severity: strict ? "error" : "warning",
-            message: `Parent artifact ${parentId} not found in workspace`
-          });
+          // D-Q1.f: a re-issued (migrated) artifact hangs from its legacy source,
+          // which need not stay in the store. The absence is tolerated ONLY when a
+          // FULL-scope MigrationReceipt in the store certifies exactly this link
+          // (oldHash = the parent, newHash = this artifact), or when THIS artifact
+          // is that receipt. Anything else is a missing parent.
+          const certificate = workspaceRoot ? findMigrationCertificate(workspaceRoot, v, parentId) : undefined;
+          if (certificate) {
+            addIssue({
+              code: certificate.kind === "self" ? "MIGRATION_SOURCE_ABSENT" : "PARENT_MIGRATED",
+              severity: "info",
+              message:
+                certificate.kind === "self"
+                  ? `Migration source ${parentId} is not in the workspace; this receipt certifies its re-issue as ${String(v.newHash)}`
+                  : `Parent ${parentId} is not in the workspace; migration receipt ${certificate.receiptId} certifies this artifact as its re-issue`
+            });
+          } else {
+            addIssue({
+              code: "PARENT_MISSING",
+              severity: strict ? "error" : "warning",
+              message: `Parent artifact ${parentId} not found in workspace`
+            });
+          }
         } else {
           addIssue({ code: "PARENT_CORRUPT", severity: "error", message: outcome.issue.message });
         }
@@ -633,6 +696,34 @@ export function verifyArtifactSemantics(
             message: `Failed to verify parent ${parentId}: ${(e as Error).message}`
           });
         }
+      }
+    }
+  }
+
+  // 1b. R-iii part 1 (IC-2′.2 / IC-5′.6): a submission's authenticated reference to
+  // the signed artifact IS its lineage parent; the two must name one identity.
+  if (v.schema === HardkasSchemas.TxSubmissionV1) {
+    const lineageParent = (v.lineage as any)?.parentArtifactId;
+    if (typeof v.signedArtifactId !== "string" || !/^[0-9a-f]{64}$/.test(v.signedArtifactId)) {
+      addIssue({
+        code: "SUBMISSION_REFERENCE_INVALID",
+        severity: "error",
+        message: `signedArtifactId must be the signed artifact's 64-hex artifactId (got ${JSON.stringify(v.signedArtifactId)})`
+      });
+    } else if (lineageParent !== v.signedArtifactId) {
+      addIssue({
+        code: "SUBMISSION_REFERENCE_MISMATCH",
+        severity: "error",
+        message: `signedArtifactId ${v.signedArtifactId} differs from lineage.parentArtifactId ${String(lineageParent)}`
+      });
+    }
+    for (const forbidden of ["status", "confirmedAt", "dagContext", "acceptingBlockHash", "confirmations", "endpoint"]) {
+      if (v[forbidden] !== undefined) {
+        addIssue({
+          code: "SUBMISSION_STATE_FORBIDDEN",
+          severity: "error",
+          message: `A submission records what HardKAS did; post-send state field "${forbidden}" belongs to an observation (IC-2′.2)`
+        });
       }
     }
   }
@@ -667,17 +758,19 @@ export function verifyArtifactSemantics(
     });
   }
 
-  // 4. Hardening Fields
+  // 4. Hardening Fields. A MigrationReceipt certifies a re-issue: it carries no
+  //    workflow correlation or assumption level of its own (D-Q1.f).
+  const isMigrationReceipt = v.schema === HardkasSchemas.MigrationReceiptV1;
   if (strict) {
     const enforceMetadata = context.enforceMetadata ?? true;
     if (enforceMetadata) {
-      if (!v.workflowId && !isSnapshot)
+      if (!v.workflowId && !isSnapshot && !isMigrationReceipt)
         addIssue({
           code: "MISSING_WORKFLOW_ID",
           severity: "error",
           message: "Strict mode requires workflowId"
         });
-      if (!v.assumptionLevel && v.schema !== HardkasSchemas.WorkflowV1 && !isSnapshot)
+      if (!v.assumptionLevel && v.schema !== HardkasSchemas.WorkflowV1 && !isSnapshot && !isMigrationReceipt)
         addIssue({
           code: "MISSING_ASSUMPTION_LEVEL",
           severity: "error",
@@ -690,13 +783,13 @@ export function verifyArtifactSemantics(
           message: "Strict mode requires executionMode"
         });
     } else {
-      if (!v.workflowId && !isSnapshot)
+      if (!v.workflowId && !isSnapshot && !isMigrationReceipt)
         addIssue({
           code: "MISSING_WORKFLOW_ID",
           severity: "warning",
           message: "Missing workflowId"
         });
-      if (!v.assumptionLevel && v.schema !== HardkasSchemas.WorkflowV1 && !isSnapshot)
+      if (!v.assumptionLevel && v.schema !== HardkasSchemas.WorkflowV1 && !isSnapshot && !isMigrationReceipt)
         addIssue({
           code: "MISSING_ASSUMPTION_LEVEL",
           severity: "warning",
@@ -704,13 +797,13 @@ export function verifyArtifactSemantics(
         });
     }
   } else {
-    if (!v.workflowId && !isSnapshot)
+    if (!v.workflowId && !isSnapshot && !isMigrationReceipt)
       addIssue({
         code: "MISSING_WORKFLOW_ID",
         severity: "warning",
         message: "Missing workflowId"
       });
-    if (!v.assumptionLevel && v.schema !== HardkasSchemas.WorkflowV1 && !isSnapshot)
+    if (!v.assumptionLevel && v.schema !== HardkasSchemas.WorkflowV1 && !isSnapshot && !isMigrationReceipt)
       addIssue({
         code: "MISSING_ASSUMPTION_LEVEL",
         severity: "warning",

@@ -34,26 +34,35 @@ describe("Network-Agnostic Artifact Layer: Migration", () => {
   });
 
   it("should generate a valid migration receipt and link lineage", async () => {
-    const oldArtifact = {
+    // Wave 1.3 re-base (D-Q1.f / IC-4′.7): a migration starts from a VERIFIED legacy
+    // source. The former fixture declared no hashVersion (unverifiable, IC-4′.2) and a
+    // non-hex lineage. This is a v4 legacy plan exactly as rc.22 wrote it (two-pass
+    // root lineage), whose lineage v4 authenticated, so the migrated child carries it.
+    const oldArtifact: any = {
       schema: "hardkas.txPlan.v1",
       version: "0.1.0",
+      hashVersion: 4,
+      hardkasVersion: "0.12.0-rc.22",
       networkId: "simnet",
       mode: "simulator",
       createdAt: new Date().toISOString(),
-      lineage: {
-        artifactId: "unknown",
-        lineageId: "0000000000000000000000000000000000000000000000000000000000000000",
-        rootArtifactId: "unknown"
-      }
+      from: { address: "kaspasim:qqalice" },
+      to: { address: "kaspasim:qqbob" },
+      amountSompi: "100",
+      estimatedFeeSompi: "1",
+      estimatedMass: "1",
+      inputs: [],
+      outputs: [],
+      workflowId: "wf_0000000000000000",
+      assumptionLevel: "local-simulated"
     };
-    (oldArtifact as any).contentHash = calculateContentHash(
-      oldArtifact,
-      CURRENT_HASH_VERSION
-    );
-    (oldArtifact as any).lineage.artifactId = (oldArtifact as any).contentHash;
-    (oldArtifact as any).lineage.rootArtifactId = (oldArtifact as any).contentHash;
+    const firstPass = calculateContentHash(oldArtifact, 4);
+    oldArtifact.lineage = { artifactId: "", lineageId: firstPass, parentArtifactId: "", rootArtifactId: firstPass, sequence: 1 };
+    oldArtifact.contentHash = calculateContentHash(oldArtifact, 4);
+    oldArtifact.lineage.artifactId = oldArtifact.contentHash;
 
     const migratedResult = migrateArtifactPayload(oldArtifact, "1.0.0-alpha");
+    expect(migratedResult.artifact.hashVersion).toBe(CURRENT_HASH_VERSION);
     expect(migratedResult.migrated).toBe(true);
 
     const receipt = generateMigrationReceipt(

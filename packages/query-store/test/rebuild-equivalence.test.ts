@@ -41,7 +41,8 @@ describe("Query Store Rebuild Equivalence", () => {
       hardkasVersion: "0.12.0-rc.23",
       networkId: "simnet",
       mode: "rpc",
-      artifactId: id,
+      // IC-7.3 (Wave 1.3): a version-5 artifact carries no top-level artifactId; the
+      // mock's `id` only distinguishes fixtures through txId.
       createdAt: new Date().toISOString(),
       // Fields for txReceipt to satisfy Zod. `execution` is required by TxReceiptSchema;
       // its absence used to be hidden because an artifact without hashVersion was read

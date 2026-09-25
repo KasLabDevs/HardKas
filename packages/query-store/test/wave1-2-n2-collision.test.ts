@@ -65,13 +65,18 @@ describe("Wave 1.2 · N2 · query-store keys by recomputed identity and never le
     fs.rmSync(tempDir, { recursive: true, force: true });
   });
 
-  it("T-N2 · an impostor with artifactId = victim leaves the victim's row intact and is indexed under its own identity", async () => {
+  it("T-N2 · a LEGACY impostor with artifactId = victim leaves the victim's row intact and is indexed under its own identity", async () => {
+    // Wave 1.3 re-base (IC-7.3): a version-5 artifact may not carry a top-level
+    // artifactId at all (see the next test); the impostor that keeps the original
+    // property is a legacy v4 artifact, where the field was allowed and ignored.
     const victim = receipt();
     fs.writeFileSync(path.join(hkDir, "victim.json"), JSON.stringify(victim));
     const indexer = new HardkasIndexer(db, { cwd: tempDir });
     await indexer.sync();
 
-    const impostor = receipt({ amountSompi: "999999", artifactId: victim.contentHash });
+    const impostor: any = { ...receipt({ amountSompi: "999999" }), hashVersion: 4, artifactId: victim.contentHash };
+    delete impostor.contentHash;
+    impostor.contentHash = calculateContentHash(impostor, 4);
     fs.writeFileSync(path.join(hkDir, "impostor.json"), JSON.stringify(impostor));
     const result = await indexer.sync();
 
@@ -86,6 +91,29 @@ describe("Wave 1.2 · N2 · query-store keys by recomputed identity and never le
     expect(impostorRow!.file_path).toContain("impostor.json");
     expect(rows().filter((r) => r.artifact_id === victim.contentHash)).toHaveLength(1);
     expect(result.issues.some((i) => i.code === "ARTIFACT_ID_COLLISION")).toBe(false);
+  });
+
+  it("T-N2 (v5) · a version-5 impostor with artifactId = victim is CORRUPTED under a path key (FORBIDDEN_IDENTITY_FIELD); the victim's row is intact", async () => {
+    const victim = receipt();
+    fs.writeFileSync(path.join(hkDir, "victim.json"), JSON.stringify(victim));
+    const indexer = new HardkasIndexer(db, { cwd: tempDir });
+    await indexer.sync();
+
+    const impostor = receipt({ amountSompi: "999999", artifactId: victim.contentHash });
+    fs.writeFileSync(path.join(hkDir, "impostor.json"), JSON.stringify(impostor));
+    const result = await indexer.sync();
+
+    const victimRow = rows().find((r) => r.artifact_id === victim.contentHash);
+    expect(victimRow).toBeDefined();
+    expect(JSON.parse(victimRow!.raw_json).amountSompi).toBe("1000");
+    expect(rows().filter((r) => r.artifact_id === victim.contentHash)).toHaveLength(1);
+    expect(result.artifacts.corrupted).toBe(1);
+    expect(result.issues.some((i) => i.code === "FORBIDDEN_IDENTITY_FIELD")).toBe(true);
+    const corruptRow = rows().find((r) => r.file_path.endsWith("impostor.json"));
+    expect(corruptRow).toBeDefined();
+    expect(corruptRow!.kind).toBe("CORRUPTED");
+    expect(corruptRow!.artifact_id).not.toBe(victim.contentHash);
+    expect(corruptRow!.artifact_id).not.toBe(impostor.contentHash);
   });
 
   it("T-N2b · a file that declares the victim's contentHash with a different body is CORRUPTED under a path key, never under the victim's key", async () => {
@@ -128,12 +156,17 @@ describe("Wave 1.2 · N2 · query-store keys by recomputed identity and never le
   });
 
   it("lineage edges use recomputed artifactIds, not a declared top-level artifactId", async () => {
+    // Wave 1.3 re-base (IC-7.3): only a LEGACY (v4) artifact may still carry a
+    // top-level artifactId; the edge must ignore it and use the recomputed identity.
     const parent = receipt();
-    const child = receipt({
-      amountSompi: "5",
+    const child: any = {
+      ...receipt({ amountSompi: "5" }),
+      hashVersion: 4,
       artifactId: "z".repeat(64),
       lineage: { artifactId: "", lineageId: parent.contentHash, parentArtifactId: parent.contentHash, rootArtifactId: parent.contentHash, sequence: 2 }
-    });
+    };
+    delete child.contentHash;
+    child.contentHash = calculateContentHash(child, 4);
     child.lineage.artifactId = child.contentHash;
     fs.writeFileSync(path.join(hkDir, "parent.json"), JSON.stringify(parent));
     fs.writeFileSync(path.join(hkDir, "child.json"), JSON.stringify(child));

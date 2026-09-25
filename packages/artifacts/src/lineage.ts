@@ -174,10 +174,13 @@ export function verifyLineage(
       [HardkasSchemas.TxPlan]: [HardkasSchemas.SignedTx, HardkasSchemas.MigrationReceiptV1],
       [HardkasSchemas.SignedTx]: [
         HardkasSchemas.TxReceipt,
+        HardkasSchemas.TxSubmissionV1,
         HardkasSchemas.SignedTx,
         HardkasSchemas.MigrationReceiptV1
       ],
-      [HardkasSchemas.TxReceipt]: [HardkasSchemas.TxTrace, HardkasSchemas.MigrationReceiptV1]
+      [HardkasSchemas.TxReceipt]: [HardkasSchemas.TxTrace, HardkasSchemas.MigrationReceiptV1],
+      // IC-2′.5: plan → signed → submission; observations reference, they do not descend.
+      [HardkasSchemas.TxSubmissionV1]: [HardkasSchemas.MigrationReceiptV1]
     };
 
     let isValidTransition = false;

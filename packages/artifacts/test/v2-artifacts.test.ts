@@ -132,11 +132,25 @@ describe("Artifacts - Determinism and Verification", () => {
   });
 
   it("should migrate v1 to canonical correctly", () => {
+    // Wave 1.3 re-base (D-Q1.f / IC-4′.2): a migration starts from a VERIFIED legacy
+    // source. The former fixture declared no hashVersion and no contentHash (it could
+    // not be verified, so it cannot be migrated). This is a legacy plan sealed under
+    // hash version 1, with the fields the re-issued plan needs to be a valid plan.
     const v1: any = {
       schema: "hardkas.txPlan.v1",
+      hashVersion: 1,
+      networkId: "simnet",
+      mode: "simulator",
+      from: { address: "kaspasim:qqalice" },
+      to: { address: "kaspasim:qqbob" },
+      amountSompi: "10",
+      estimatedFeeSompi: "1",
+      estimatedMass: "1",
       planId: "p1",
-      selectedUtxos: [{ outpoint: { transactionId: "t1", index: 0 }, amountSompi: "10" }]
+      selectedUtxos: [{ outpoint: { transactionId: "t1", index: 0 }, amountSompi: "10" }],
+      outputs: []
     };
+    v1.contentHash = calculateContentHash(v1, 1);
 
     const canonical = migrateToCanonical(v1);
     expect(canonical.version).toBe(ARTIFACT_VERSION);
@@ -145,5 +159,11 @@ describe("Artifacts - Determinism and Verification", () => {
     expect(canonical.hardkasVersion).toBeDefined();
     expect(canonical.createdAt).toBeDefined();
     expect(canonical.contentHash).toBeDefined();
+    // The re-issued plan is a version-5 artifact whose label derives from its identity.
+    // `planId` was a derived label in version 1 as well (excluded from the hash), so
+    // the legacy "p1" is neither re-issued nor a legacy claim: it is simply recomputed.
+    expect(canonical.hashVersion).toBe(CURRENT_HASH_VERSION);
+    expect(canonical.planId).toBe(`plan-${String(canonical.contentHash).slice(0, 16)}`);
+    expect((canonical as any).legacyClaims?.fields?.planId).toBeUndefined();
   });
 });

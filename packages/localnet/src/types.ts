@@ -91,6 +91,14 @@ export interface ReplayInvariantResult {
 
 export interface ReplayVerificationReport {
   schema: "hardkas.replayReport.v1";
+  /** Sealed by the producer like every artifact (IC-4′.1): base fields, hashVersion, contentHash. */
+  hardkasVersion?: string;
+  version?: string;
+  hashVersion?: number;
+  networkId?: string;
+  mode?: string;
+  createdAt?: string;
+  contentHash?: string;
   txId: string;
   planOk: boolean;
   receiptOk: boolean;

@@ -134,6 +134,13 @@ export const V5_SELF_REFERENCE_PATHS: readonly string[] = ["contentHash", "linea
 export const CURRENT_HASH_VERSION = 5;
 export const MIN_HASH_VERSION = 1;
 
+/**
+ * Internal serializer mode with NO exclusions at any depth (the current string
+ * and bigint rules, every key kept). It is not a hash version an artifact may
+ * declare; it backs the domain-digest function (IC-1′.7) only.
+ */
+const UNEXCLUDED_FORM = Number.MAX_SAFE_INTEGER;
+
 export const STRICT_PATH_KEYS = new Set([
   "file_path",
   "sandboxSnapshotPath",
@@ -193,6 +200,7 @@ function isPlainObject(value: unknown): value is Record<string, unknown> {
  * `depth` 0 is the artifact's own top level; `parentKey` names the enclosing key.
  */
 function isExcluded(key: string, version: number, depth: number, parentKey: string | undefined): boolean {
+  if (version === UNEXCLUDED_FORM) return false;
   if (version >= 5) {
     if (depth === 0) return key === "contentHash" || V5_UNAUTHENTICATED.has(key) || V5_DERIVED_LABELS.has(key);
     if (depth === 1 && parentKey === "lineage") return key === "artifactId";
@@ -292,7 +300,17 @@ export function canonicalStringify(
   keyName?: string,
   isRoot: boolean = true
 ): string {
+  if (version === UNEXCLUDED_FORM) throw new HashVersionInvalidError(version);
   return serialize(obj, version, keyName, isRoot, 0, undefined);
+}
+
+/**
+ * The canonical form of a value with NO exclusions: every key at every depth,
+ * sorted, with the current string/bigint rules. This is the input of the
+ * domain-digest function (IC-1′.7); it is never an artifact's hash form.
+ */
+export function canonicalStringifyUnexcluded(obj: unknown): string {
+  return serialize(obj, UNEXCLUDED_FORM, undefined, true, 0, undefined);
 }
 
 /**

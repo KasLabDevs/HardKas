@@ -101,7 +101,7 @@ export class ProjectArtifactStore {
       const s = artifact.schema.toLowerCase();
       if (s.includes("txplan")) subDir = "plans";
       else if (s.includes("signedtx")) subDir = "signed";
-      else if (s.includes("txreceipt")) subDir = "receipts";
+      else if (s.includes("txreceipt") || s.includes("txsubmission")) subDir = "receipts";
       else if (s.includes("lineage")) subDir = "lineage";
     }
 

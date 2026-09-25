@@ -32,10 +32,10 @@ export async function runArtifactCreate(options: ArtifactCreateOptions) {
   const schemaValid = true;
 
   const createdAt = systemRuntimeContext.clock.now();
-  const artifactId = `art_${createdAt.toString(36)}_${Math.floor(systemRuntimeContext.random.next() * 10000)}`;
 
+  // IC-7.3: the artifact's only identity is its recomputed contentHash; no
+  // random top-level artifactId is written (createdAt is operational, IC-1′.1b).
   const artifact = {
-    artifactId,
     type: options.type,
     schemaValid,
     payload,
@@ -58,7 +58,7 @@ export async function runArtifactCreate(options: ArtifactCreateOptions) {
   if (options.json) {
     console.log(JSON.stringify(finalArtifact, null, 2));
   } else {
-    UI.success(`Artifact created: ${artifactId}`);
+    UI.success(`Artifact created: ${contentHash}`);
     UI.info(`Type: ${options.type}`);
     UI.info(`Hash: ${contentHash}`);
     if (options.out) {

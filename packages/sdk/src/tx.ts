@@ -12,6 +12,7 @@ import {
   calculateContentHash,
   SignedTxArtifact,
   TxReceiptArtifact,
+  TxSubmissionArtifact,
   TxPlanArtifact,
   getDefaultReceiptPath,
   writeArtifact,
@@ -1044,7 +1045,12 @@ export class HardkasTx {
       if (a?.lineage?.parentArtifactId !== executedArtifactId) continue;
       const r = verifyArtifactIntegritySync(structuredClone(a), { strict: false });
       if (!r.ok || r.authScope !== "FULL") continue; // never decide on an unauthenticated status
-      if (a.status !== "accepted" && a.status !== "confirmed") continue;
+      if (a.schema === HardkasSchemas.TxSubmissionV1) {
+        // R-iii: a submission's authenticated submit result, never a status.
+        if (a.submitResult?.accepted !== true) continue;
+      } else if (a.status !== "accepted" && a.status !== "confirmed") {
+        continue;
+      }
       matches.push({ receipt: a, receiptPath: entry.path });
     }
     if (matches.length === 0) return null;
@@ -1350,7 +1356,13 @@ export class HardkasTx {
     signedArtifact: SignedTxArtifact,
     urlOrOptions?: string | { persist?: boolean; plan?: TxPlanArtifact }
   ): Promise<{
-    receipt: TxReceiptArtifact;
+    /**
+     * The artifact this send produced: a simulated `hardkas.txReceipt` in the
+     * simulator, or the immutable `hardkas.txSubmission.v1` for a real broadcast
+     * (R-iii part 1). Read `submission` for the typed real-send record.
+     */
+    receipt: TxReceiptArtifact | TxSubmissionArtifact;
+    submission?: TxSubmissionArtifact;
     receiptPath?: string;
     artifactId?: string;
     mode?: string;
@@ -1451,6 +1463,19 @@ export class HardkasTx {
 
     const url = typeof urlOrOptions === "string" ? urlOrOptions : undefined;
 
+    // R-iii part 1 (IC-2′.2): a submission records what HardKAS did against ONE
+    // identified signed artifact. Without a verifiable identity there is nothing
+    // to record the broadcast against, so nothing is broadcast.
+    const { checkArtifactIdentity } = await import("@hardkas/artifacts");
+    const signedIdentity = checkArtifactIdentity(signedArtifact);
+    if (!signedIdentity.ok) {
+      throw new HardkasError(
+        "SUBMISSION_UNIDENTIFIED_SIGNED",
+        `Refusing to broadcast: the signed artifact has no verifiable identity to record the submission against (${signedIdentity.issues.map((i) => i.code).join(", ")})`
+      );
+    }
+    const signedArtifactId = signedIdentity.artifactId;
+
     const broadcastable = getBroadcastableSignedTransaction(signedArtifact);
 
     // Attempt broadcast
@@ -1458,44 +1483,53 @@ export class HardkasTx {
       string,
       unknown
     >;
-    const txId = (broadcastRecord.id as string) || "unknown";
+    const localTxId = (broadcastRecord.id as string) || "unknown";
     coreEvents.normalizeAndEmit({
       kind: "workflow.submitted",
-      txId,
+      txId: localTxId,
       endpoint: url || "real"
     } as unknown as Parameters<typeof coreEvents.normalizeAndEmit>[0]);
 
-    const result = await this.sdk.rpc.submitTransaction(broadcastable.rawTransaction as any);
+    // The submit call's result is recorded as returned, accepted or not.
+    let submitResult: { accepted: boolean; transactionId?: string; error?: string };
+    try {
+      const answer: any = await this.sdk.rpc.submitTransaction(broadcastable.rawTransaction as any);
+      submitResult = {
+        accepted: answer?.accepted !== false,
+        ...(typeof answer?.transactionId === "string" ? { transactionId: answer.transactionId } : {})
+      };
+    } catch (e: unknown) {
+      submitResult = { accepted: false, error: e instanceof Error ? e.message : String(e) };
+    }
 
     // DEF-1b: `mode` describes the EXECUTION SEMANTICS of the lifecycle, fixed
     // at plan/sign time. It is NOT a property of the transport (URL scheme).
-    // Prior implementations set `mode: isExplicitRpc ? "rpc" : "localnet"` from
-    // the URL, which caused strict verify MODE_MISMATCH when a signed artifact
-    // built with mode:"localnet" was broadcast over a ws:// URL and produced a
-    // receipt tagged mode:"rpc". Inherit `mode` from the signed parent (and its
-    // `execution.mode` if declared). Fall back to the URL-derived heuristic only
-    // when the parent lacks an explicit mode — preserving behavior for legacy
-    // pre-M10 signed artifacts that never carried one.
+    // Inherit `mode` from the signed parent (and its `execution.mode` if
+    // declared); fall back to the URL-derived heuristic only when the parent
+    // lacks an explicit mode (legacy pre-M10 signed artifacts).
     const inheritedMode: any =
       (signedArtifact as any).mode ||
       (signedArtifact as any).execution?.mode ||
       (isExplicitRpc ? "rpc" : "localnet");
-    const realReceiptBase: any = {
-      schema: ARTIFACT_SCHEMAS.TX_RECEIPT,
+    const nowIso = new Date().toISOString();
+    // Authenticated: the signed reference, the txId, the submit result (IC-2′.2).
+    // Unauthenticated: submittedAt and the raw locator `rpcUrl` (IC-1′.1b). The
+    // normalised `endpoint` is ARCHITECTURE_BLOCKED (its normalisation is not
+    // ratified), so no `endpoint` field is written and the endpoint provenance of
+    // a submission is NOT authenticated yet. No post-send state lives here.
+    const submissionBase: any = {
+      schema: HardkasSchemas.TxSubmissionV1,
       hardkasVersion: HARDKAS_VERSION,
       version: ARTIFACT_VERSION,
       hashVersion: CURRENT_HASH_VERSION,
       networkId: this.sdk.network,
       mode: inheritedMode,
-      createdAt: new Date().toISOString(),
-      status: "submitted",
-      txId: result.transactionId || "unknown",
-      sourceSignedId: signedArtifact.signedId,
-      from: { address: signedArtifact.from.address },
-      to: { address: signedArtifact.to.address },
-      amountSompi: signedArtifact.amountSompi,
-      feeSompi: signedArtifact.metadata?.estimatedFeeSompi || "0",
-      submittedAt: new Date().toISOString(),
+      createdAt: nowIso,
+      ...(signedArtifact.execution ? { execution: signedArtifact.execution } : {}),
+      signedArtifactId,
+      txId: submitResult.transactionId || localTxId,
+      submitResult,
+      submittedAt: nowIso,
       ...(url ? { rpcUrl: url } : {}),
       ...(signedArtifact.workflowId ? { workflowId: signedArtifact.workflowId } : {}),
       ...(signedArtifact.assumptionLevel
@@ -1508,31 +1542,27 @@ export class HardkasTx {
       ...(signedArtifact.assumptionRef
         ? { assumptionRef: signedArtifact.assumptionRef }
         : {}),
-      ...(signedArtifact.execution ? { execution: signedArtifact.execution } : {}),
-      tracePath: undefined,
-      lineage: createLineageTransition(signedArtifact, HardkasSchemas.TxReceipt)
+      lineage: createLineageTransition(signedArtifact, HardkasSchemas.TxSubmissionV1)
     };
     // One pass: lineage.artifactId is a self reference excluded by exact path.
-    realReceiptBase.contentHash = calculateContentHash(
-      realReceiptBase,
-      CURRENT_HASH_VERSION
-    );
-    if (realReceiptBase.lineage) realReceiptBase.lineage.artifactId = realReceiptBase.contentHash;
-    const receipt: TxReceiptArtifact = realReceiptBase;
+    submissionBase.contentHash = calculateContentHash(submissionBase, CURRENT_HASH_VERSION);
+    submissionBase.lineage.artifactId = submissionBase.contentHash;
+    const submission: TxSubmissionArtifact = Object.freeze(submissionBase);
 
-    const { absolutePath } = await this.sdk.artifacts.write(receipt);
+    const { absolutePath } = await this.sdk.artifacts.write(submission);
     const receiptPath = absolutePath;
 
     // Reuse the signedTxId from the start of the method
-    await this.sdk.plugins.onTxSent({ signedTxId, receiptArtifact: receipt });
+    await this.sdk.plugins.onTxSent({ signedTxId, receiptArtifact: submission });
 
     return {
-      receipt,
+      receipt: submission,
+      submission,
       ...(receiptPath ? { receiptPath } : {}),
-      ...(receipt.contentHash ? { artifactId: receipt.contentHash } : {}),
+      artifactId: submission.contentHash as string,
       mode: "real",
-      submitted: true,
-      txId: receipt.txId
+      submitted: submitResult.accepted,
+      txId: submission.txId
     };
   }
 

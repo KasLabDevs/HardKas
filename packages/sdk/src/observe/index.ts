@@ -6,7 +6,7 @@ import {
   HardkasObserveWaitOptions,
   HardkasObserveWatchOptions
 } from "./types.js";
-import { ARTIFACT_SCHEMAS, calculateContentHash, CURRENT_HASH_VERSION } from "@hardkas/artifacts";
+import { ARTIFACT_SCHEMAS, calculateContentHash, CURRENT_HASH_VERSION, HARDKAS_VERSION } from "@hardkas/artifacts";
 
 export class HardkasObserve {
   constructor(private sdk: Hardkas) {}
@@ -188,7 +188,7 @@ export class HardkasObserve {
       observedAt: snapshot.observedAt.toISOString(),
       networkId: snapshot.execution.network,
       mode: snapshot.execution.mode,
-      hardkasVersion: "0.12.0-rc.23", // We should import HARDKAS_VERSION ideally
+      hardkasVersion: HARDKAS_VERSION, // N8 / T-VER: the version module is the only source of the product version
       version: "1.0.0-alpha",
       hashVersion: CURRENT_HASH_VERSION,
       createdAt: new Date().toISOString()

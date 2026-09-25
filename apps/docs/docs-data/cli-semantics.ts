@@ -61,11 +61,17 @@ export const cliSemantics: Record<string, CliCommandSemantics> = {
   "hardkas verify": {
     commandPath: "hardkas verify",
     environments: ["Local Workspace"],
-    reads: ["All JSON artifacts in .hardkas/artifacts/"],
+    reads: ["All JSON artifacts in .hardkas/artifacts/", "Or the workspace-contained file/directory given as [path]"],
     writes: [],
     artifactsProduced: [],
     sideEffects: [],
-    evidenceMeaning: "Verifies cryptographic integrity (contentHash), schema compliance, and DAG continuity of all artifacts in the workspace. Will attempt deterministic replay audit only in single-file mode if supported.",
+    acceptedIdentifiers: ["(none) → every artifact under .hardkas/artifacts/", "explicit workspace-contained filepath", "explicit workspace-contained directory"],
+    evidenceMeaning: "Verifies cryptographic integrity (contentHash recomputed under the declared hashVersion), schema compliance, references and DAG continuity, always in strict mode. `ok` in the JSON envelope is the verdict and a failed verdict exits non-zero.",
+    limitations: [
+      "Always strict: an artifact with hashVersion ≤ 4 fails with MIGRATION_REQUIRED; re-issue it with `hardkas artifact migrate <path> --to 5`.",
+      "A [path] outside the workspace is refused (ARTIFACT_PATH_OUTSIDE_WORKSPACE); excess positional arguments are a usage error.",
+      "No consensus replay is performed; the former deep-validation flag was removed because it performed no check."
+    ],
     relatedConcepts: ["/concepts/evidence.md"],
     relatedGuides: ["/how-to/verify-evidence.md"]
   },

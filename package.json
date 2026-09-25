@@ -54,7 +54,7 @@
     "release": "pnpm version:check && pnpm build && pnpm test && pnpm changeset publish",
     "check:docs": "pnpm --filter @hardkas/cli test:docs",
     "check:artifacts": "pnpm artifact:fixtures",
-    "artifact:fixtures": "pnpm hardkas artifact verify ../artifacts/test/fixtures/valid --recursive --strict",
+    "artifact:fixtures": "pnpm hardkas artifact verify packages/artifacts/test/fixtures/valid --recursive --strict",
     "artifact:corruption": "pnpm hardkas artifact verify ../artifacts/test/fixtures/corrupted --recursive --strict",
     "example:hello": "tsx examples/01-hello-kaspa/main.ts",
     "example:transfer": "tsx examples/02-basic-transfer/main.ts",

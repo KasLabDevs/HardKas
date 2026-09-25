@@ -181,9 +181,38 @@ describe("Wave 1.2 · IC-5′ verified, namespaced artifact resolution", () => {
     expect(r.artifactId).toBe(plan.contentHash);
     expect(r.artifact.schema).toBe("hardkas.txPlan");
     expect(r.copies).toHaveLength(1);
-    // The impostor is reachable only by its real identity.
-    const own = await resolveArtifact(ws, { artifact: impostor.contentHash });
-    expect(own.artifact.decision).toBe("ALLOW");
+    // Wave 1.3 (IC-7.3): a version-5 artifact may not carry a top-level artifactId at
+    // all, so the v5 impostor is not reachable even by its own identity (fails closed).
+    let ownError: any;
+    try {
+      await resolveArtifact(ws, { artifact: impostor.contentHash });
+    } catch (e) {
+      ownError = e;
+    }
+    expect(ownError?.code).toBe("CANDIDATE_INVALID");
+    expect(String(ownError?.message)).toContain("FORBIDDEN_IDENTITY_FIELD");
+
+    // A LEGACY (v4) impostor, where the field was allowed, is reachable only by its real identity.
+    const legacyImpostor: any = {
+      schema: "hardkas.policy.v1",
+      hardkasVersion: "0.12.0-rc.22",
+      version: "1.0.0-alpha",
+      hashVersion: 4,
+      networkId: "simnet",
+      mode: "simulator",
+      createdAt: "2026-09-01T00:00:00.000Z",
+      decision: "DENY",
+      rules: [],
+      artifactId: plan.contentHash
+    };
+    legacyImpostor.contentHash = calculateContentHash(legacyImpostor, 4);
+    writeJson(path.join(ws, ".hardkas", "artifacts", `policy.v1-legacy-${plan.contentHash}.json`), legacyImpostor);
+    const again = await resolveArtifact(ws, { artifact: plan.contentHash });
+    expect(again.artifactId).toBe(plan.contentHash);
+    expect(again.artifact.schema).toBe("hardkas.txPlan");
+    const own = await resolveArtifact(ws, { artifact: legacyImpostor.contentHash });
+    expect(own.artifact.decision).toBe("DENY");
+    expect(own.authScope).toBe("LEGACY");
   });
 
   it("CANDIDATE_INVALID · a tampered copy that claims the queried identity fails the lookup instead of being skipped", async () => {

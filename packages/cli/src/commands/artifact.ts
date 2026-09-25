@@ -68,6 +68,33 @@ export function registerArtifactCommands(program: Command) {
     });
 
   artifactCmd
+    .command("migrate <path>")
+    .description(
+      `Re-issue a legacy artifact as hashVersion 5 plus a MigrationReceipt (never in place) ${UI.maturity("alpha")}`
+    )
+    .requiredOption("--to <hashVersion>", "Target hash version (only 5 is supported)")
+    .option("--migration-id <id>", "Migration identifier recorded in the receipt")
+    .option("--json", "Output results as JSON", false)
+    .option("--workspace <path>", "Override workspace root directory")
+    .action(async (targetPath: string, options: any) => {
+      try {
+        const { runArtifactMigrate } = await import("../runners/artifact-migrate-runner.js");
+        const workspaceRoot = options.workspace
+          ? path.resolve(options.workspace)
+          : process.cwd();
+        await runArtifactMigrate({
+          path: targetPath,
+          to: String(options.to),
+          ...(options.migrationId ? { migrationId: options.migrationId } : {}),
+          json: options.json,
+          workspaceRoot
+        });
+      } catch (e) {
+        throw e;
+      }
+    });
+
+  artifactCmd
     .command("explain <path>")
     .description(
       `Provide a human-readable operational summary of an artifact ${UI.maturity("stable")}`

@@ -327,6 +327,51 @@ export const TxReceiptSchema = BaseArtifactSchema.extend({
   metadata: z.any().optional()
 });
 
+/**
+ * R-iii part 1 (Closure Pack IC-2′.2, Wave 1.3): the immutable record of what
+ * HardKAS DID when it broadcast a signed transaction. Authenticated: the signed
+ * artifact by artifactId, the txId the node returned, the submit call's result.
+ * It carries NO post-send state (no status, confirmedAt, dagContext…): that is
+ * observation, Wave 2. The raw RPC locator stays in the unauthenticated `rpcUrl`
+ * (IC-1′.1b); a normalised `endpoint` is ARCHITECTURE_BLOCKED until its
+ * normalisation is ratified, so no `endpoint` field is written.
+ */
+export const TxSubmissionSchema = BaseArtifactSchema.extend({
+  schema: z.literal(HardkasSchemas.TxSubmissionV1),
+  execution: executionTargetSchema.optional(),
+  signedArtifactId: z.string().regex(/^[0-9a-f]{64}$/),
+  txId: z.string(),
+  submitResult: z.object({
+    accepted: z.boolean(),
+    transactionId: z.string().optional(),
+    error: z.string().optional()
+  }),
+  submittedAt: z.string().optional(),
+  rpcUrl: z.string().optional(),
+  policyRefs: z.array(z.string()).optional(),
+  networkProfileRef: z.string().optional(),
+  assumptionRef: z.string().optional()
+});
+
+/**
+ * A replay report is an artifact like any other (IC-4′.1): its producer seals it
+ * and the verifier checks it; no schema skips verification.
+ */
+export const ReplayReportSchema = BaseArtifactSchema.extend({
+  schema: z.literal(HardkasSchemas.ReplayReportV1),
+  txId: z.string(),
+  planOk: z.boolean(),
+  receiptOk: z.boolean(),
+  invariantsOk: z.boolean(),
+  checks: z.object({
+    workflowDeterministic: z.enum(["reproduced", "diverged", "skipped"]),
+    consensusValidation: z.enum(["unimplemented", "partial", "skipped"]),
+    l2BridgeCorrectness: z.enum(["unimplemented", "partial", "skipped"])
+  }),
+  divergences: z.array(z.any()),
+  errors: z.array(z.string())
+});
+
 export const SignatureEntrySchema = z.object({
   signer: z.string(),
   signature: z.string()
@@ -479,6 +524,8 @@ export type Policy = z.infer<typeof PolicySchema>;
 export type NetworkProfile = z.infer<typeof NetworkProfileSchema>;
 export type Assumption = z.infer<typeof AssumptionSchema>;
 export type MigrationReceipt = z.infer<typeof MigrationReceiptSchema>;
+export type TxSubmission = z.infer<typeof TxSubmissionSchema>;
+export type ReplayReport = z.infer<typeof ReplayReportSchema>;
 
 export const RuntimeSessionSchema = BaseArtifactSchema.extend({
   sessionId: z.string(),

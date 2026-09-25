@@ -443,6 +443,24 @@ export interface TxReceiptArtifact extends BaseArtifact<"txReceipt"> {
   metadata?: any | undefined;
 }
 
+/**
+ * R-iii part 1 (Wave 1.3): what HardKAS did when it broadcast a signed
+ * transaction. No post-send state lives here (IC-2′.2).
+ */
+export interface TxSubmissionArtifact extends BaseArtifact<"txSubmission.v1"> {
+  /** Authenticated reference to the signed artifact (equals lineage.parentArtifactId). */
+  signedArtifactId: ArtifactId;
+  /** The txId the node returned (or the local id when the node returned none). */
+  txId: TxId;
+  submitResult: { accepted: boolean; transactionId?: string | undefined; error?: string | undefined };
+  submittedAt?: string | undefined;
+  /** Raw RPC locator, unauthenticated (IC-1′.1b); endpoint normalisation is ARCHITECTURE_BLOCKED. */
+  rpcUrl?: string | undefined;
+  policyRefs?: string[] | undefined;
+  networkProfileRef?: string | undefined;
+  assumptionRef?: string | undefined;
+}
+
 export interface SnapshotArtifact extends BaseArtifact<"snapshot.v1"> {
   name?: string | undefined;
   daaScore: string;

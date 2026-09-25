@@ -391,10 +391,12 @@ export function registerTxCommands(program: Command) {
 
                 // Wave 1.2 · CLI-NEXTSTEPS-1 / IC-5′.11: artifactId is the receipt's
                 // canonical identity; the txId is labelled as a txId.
-                const { nextStepsAfterSend, receiptArtifactId, sendExplanation } = await import("../runners/next-steps.js");
+                // Wave 1.3 · R-iii: the verdict comes from the authenticated outcome.
+                const { nextStepsAfterSend, receiptArtifactId, sendExplanation, sendOutcome } = await import("../runners/next-steps.js");
+                const outcome = sendOutcome(result.receipt);
                 if (options.json) {
                   UI.writeJson({
-                    ok: true,
+                    ok: result.accepted,
                     data: {
                       plan: undefined,
                       signed: signedArtifact,
@@ -438,6 +440,15 @@ export function registerTxCommands(program: Command) {
                   );
                 }
 
+                if (!result.accepted) {
+                  const { HardkasCliError } = await import("../cli-errors.js");
+                  throw new HardkasCliError(
+                    "TX_SUBMISSION_REJECTED",
+                    `The node did not accept the transaction (${(result.receipt as any)?.submitResult?.error ?? "no reason returned"}); the submission was recorded as ${receiptArtifactId(result.receipt) ?? "unknown"}.`,
+                    { exitCode: 1 }
+                  );
+                }
+
                 if (options.track && result.accepted) {
                   const { trackDeploymentInternal } =
                     await import("../runners/deployment-runners.js");
@@ -446,7 +457,8 @@ export function registerTxCommands(program: Command) {
                     network: result.networkName,
                     txId: result.txId,
                     plan: signedArtifact.sourcePlanId,
-                    status: result.receipt.status === "confirmed" ? "confirmed" : "sent",
+                    // Only an authenticated `confirmed` status counts; a submission is "sent".
+                    status: outcome.kind === "receipt" && outcome.decided && outcome.status === "confirmed" ? "confirmed" : "sent",
                     silent: options.json
                   });
                 }
@@ -474,10 +486,13 @@ export function registerTxCommands(program: Command) {
                 });
 
                 const { nextStepsAfterSend, receiptArtifactId, sendExplanation } = await import("../runners/next-steps.js");
+                // R-iii: when the flow broadcast, the verdict is the runner's authenticated outcome.
+                const flowSend = result.steps.send;
+                const flowAccepted = flowSend?.status === "ok" ? flowSend.artifact?.accepted !== false : true;
                 if (options.json) {
                   const sendResult = result.steps.send;
                   UI.writeJson({
-                    ok: true,
+                    ok: flowAccepted,
                     data: {
                       plan: result.steps.plan.artifact,
                       signed: result.steps.sign.artifact,
@@ -509,7 +524,9 @@ export function registerTxCommands(program: Command) {
                   UI.causality(
                     isSimulated
                       ? "Transaction simulated successfully"
-                      : "Transaction broadcast successfully",
+                      : flowAccepted
+                        ? "Transaction broadcast successfully"
+                        : "Transaction broadcast NOT accepted by the node",
                     {
                       "Execution ID": `exec_${Date.now().toString(36)}`,
                       "Artifact ID": receiptArtifactId(sendResult?.artifact?.receipt) ?? "unknown",
@@ -532,6 +549,14 @@ export function registerTxCommands(program: Command) {
                       "hardkas dev last --replay",
                       "hardkas status"
                     ]
+                  );
+                }
+                if (!flowAccepted) {
+                  const { HardkasCliError } = await import("../cli-errors.js");
+                  throw new HardkasCliError(
+                    "TX_SUBMISSION_REJECTED",
+                    `The node did not accept the transaction; the submission was recorded as ${receiptArtifactId(flowSend?.artifact?.receipt) ?? "unknown"}.`,
+                    { exitCode: 1 }
                   );
                 }
               } else {

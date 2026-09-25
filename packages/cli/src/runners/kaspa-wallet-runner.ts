@@ -1,7 +1,7 @@
 import pc from "picocolors";
 import { UI, handleError } from "../ui.js";
 import { loadHardkasConfig } from "@hardkas/config";
-import type { NetworkId, KaspaAddress, ContentHash } from "@hardkas/core";
+import type { NetworkId, KaspaAddress } from "@hardkas/core";
 import type { TxPlanArtifact } from "@hardkas/artifacts";
 import { HardkasSchemas } from "@hardkas/artifacts";
 
@@ -135,7 +135,7 @@ export async function runKaspaWalletSend(
     const { JsonWrpcKaspaClient } = await import("@hardkas/kaspa-rpc");
     const { buildPaymentPlan } = await import("@hardkas/tx-builder");
     const { signTxPlanArtifact } = await import("@hardkas/accounts");
-    const { HARDKAS_VERSION, calculateContentHash } = await import("@hardkas/artifacts");
+    const { HARDKAS_VERSION, finalizeTxPlanIdentity } = await import("@hardkas/artifacts");
     const { parseKasToSompi, formatSompiToKas } = await import("@hardkas/core");
     const configObj = config.config as Record<string, unknown>;
     const networkId =
@@ -199,9 +199,10 @@ export async function runKaspaWalletSend(
     // 2. Sign
     // Map internal plan to Artifact format for the signer
 
-    const planArtifact: TxPlanArtifact = {
+    // The plan handed to the signer is sealed like every plan (IC-1′.1c): its
+    // planId derives from its real identity, never from an ad-hoc digest.
+    const planDraft: any = {
       schema: HardkasSchemas.TxPlan,
-      planId: `plan-${calculateContentHash({ from: sender.address, to: targetAddress, amount: amountSompi.toString() }, 4).slice(0, 16)}`,
       hardkasVersion: HARDKAS_VERSION,
       version: "1.0.0-alpha",
       createdAt: new Date().toISOString(),
@@ -231,9 +232,9 @@ export async function runKaspaWalletSend(
               amountSompi: plan.change.amountSompi.toString()
             }
           }
-        : {}),
-      contentHash: "synthetic-plan-hash" as ContentHash
+        : {})
     };
+    const planArtifact: TxPlanArtifact = finalizeTxPlanIdentity(planDraft) as TxPlanArtifact;
 
     const signedArtifact = await signTxPlanArtifact({
       target: execution as any,

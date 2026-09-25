@@ -463,37 +463,59 @@ export class HardkasArtifactsManager {
   }
 
   /**
-   * Migrates a legacy artifact to v4 using a migration receipt.
+   * Re-issues a legacy (hashVersion ≤ 4) artifact as a version-5 artifact plus
+   * a MigrationReceipt (Closure Pack D-Q1.f / IC-4′.7). The source is verified
+   * under the version it declares and is never rewritten; material fields it
+   * never authenticated are carried only as `legacyClaims`. Both new artifacts
+   * are written to the workspace store.
    */
   async migrate(
-    target: any,
-    migrationId: string
-  ): Promise<{ migrated: any; receipt: any }> {
-    let artifact: any;
-    if (typeof target === "string") {
-      artifact = await this.read(target);
-    } else {
-      artifact = target;
-    }
-
-    const { migrateArtifactPayload, generateMigrationReceipt } =
+    target: ArtifactLookup | Record<string, unknown>,
+    options: { to?: number; migrationId?: string } | string = {}
+  ): Promise<{
+    migrated: any;
+    receipt: any;
+    sourceArtifactId: string;
+    legacyClaims: any;
+    stripped: string[];
+    migratedPath?: string | undefined;
+    receiptPath?: string | undefined;
+  }> {
+    const opts = typeof options === "string" ? { migrationId: options } : options;
+    const { migrateArtifactToHashVersion, MigrationError, CURRENT_HASH_VERSION, looksLikePath } =
       await import("@hardkas/artifacts");
 
-    // Perform in-memory migration
-    const result = migrateArtifactPayload(artifact, undefined, { strictPolicy: false });
-    if (!result.migrated) {
-      throw new Error(
-        `Artifact ${artifact.artifactId || artifact.contentHash} is already at the target version or cannot be migrated.`
-      );
+    let source: any;
+    if (typeof target === "string") {
+      source = looksLikePath(target) ? await this.readRawContainedFile(target) : await this.read(target);
+    } else if (target && typeof target === "object" && !("artifact" in target || "plan" in target || "signed" in target || "tx" in target || "workflow" in target)) {
+      source = target;
+    } else {
+      source = await this.read(target as ArtifactLookup);
     }
 
-    // Generate receipt
-    const receipt = generateMigrationReceipt(artifact, result.artifact, migrationId);
+    let out;
+    try {
+      out = migrateArtifactToHashVersion(source, {
+        to: opts.to ?? CURRENT_HASH_VERSION,
+        ...(opts.migrationId ? { migrationId: opts.migrationId } : {})
+      });
+    } catch (e: unknown) {
+      if (e instanceof MigrationError) throw new HardkasError(e.code, e.message);
+      throw e;
+    }
 
-    // Save both to workspace
-    await this.write(result.artifact as any);
-    await this.write(receipt as any);
+    const migratedWrite = await this.write(out.artifact as any);
+    const receiptWrite = await this.write(out.receipt as any);
 
-    return { migrated: result.artifact, receipt };
+    return {
+      migrated: out.artifact,
+      receipt: out.receipt,
+      sourceArtifactId: out.source.artifactId,
+      legacyClaims: out.legacyClaims,
+      stripped: out.stripped,
+      migratedPath: migratedWrite.absolutePath,
+      receiptPath: receiptWrite.absolutePath
+    };
   }
 }

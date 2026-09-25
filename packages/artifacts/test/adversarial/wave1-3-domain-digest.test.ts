@@ -85,7 +85,12 @@ describe("Wave 1.3 · IC-1′.7 dedicated domain-digest function", () => {
   });
 
   it("no source uses calculateContentHash or canonicalStringify with a numeric literal version (N7)", () => {
-    const allowed = new Set(["packages/artifacts/src/canonical.ts", "packages/artifacts/src/domain-digest.ts"]);
+    const allowed = new Set([
+      "packages/artifacts/src/canonical.ts",
+      "packages/artifacts/src/domain-digest.ts",
+      // Test-fixture producer of deliberately LEGACY (v3) artifacts: the literal is its purpose.
+      "packages/testing/src/adversarial-fixtures.ts"
+    ]);
     const offenders: string[] = [];
     for (const { rel, text } of sourceFiles()) {
       if (allowed.has(rel)) continue;
@@ -111,9 +116,13 @@ describe("Wave 1.3 · IC-1′.7 dedicated domain-digest function", () => {
   });
 
   it("no source defines its own canonicaliser or a local CURRENT_HASH_VERSION", () => {
+    // PSKT portable-session digests keep their pre-existing key-sorted JSON form:
+    // switching them to domainDigest would re-key every persisted session's
+    // integrityHash. Outside IC-1′.7's list (not an artifact digest); flagged as AUX.
+    const allowed = new Set(["packages/artifacts/src/canonical.ts", "packages/sdk/src/pskt.ts"]);
     const offenders: string[] = [];
     for (const { rel, text } of sourceFiles()) {
-      if (rel === "packages/artifacts/src/canonical.ts") continue;
+      if (allowed.has(rel)) continue;
       if (/^\s*(export\s+)?const\s+CURRENT_HASH_VERSION\s*=/m.test(text)) offenders.push(`${rel}: local CURRENT_HASH_VERSION`);
       if (/^\s*function\s+canonicalStringify\s*\(/m.test(text)) offenders.push(`${rel}: local canonicalStringify`);
     }
@@ -140,9 +149,11 @@ describe("Wave 1.3 · IC-7.4 single workflowId derivation", () => {
   it("the derivation uses the domain digest (no exclusions), never the artifact hash", () => {
     const transfer = { kind: "transfer", networkId: "simnet", mode: "simulator", fromAddress: "a", toAddress: "b", amountSompi: "1", outpoints: [] };
     // A field the artifact canonicaliser would exclude still changes the intent digest.
-    expect(api.deriveWorkflowId({ ...transfer, status: "x" })).not.toBe(api.deriveWorkflowId(transfer));
+    const withStatus = { ...transfer, status: "x" };
+    expect(api.deriveWorkflowId(withStatus)).not.toBe(api.deriveWorkflowId(transfer));
     expect(api.deriveWorkflowId(transfer)).toBe(`wf_${api.domainDigest(transfer).slice(0, 16)}`);
-    expect(api.deriveWorkflowId(transfer)).not.toBe(`wf_${calculateContentHash(transfer, 4).slice(0, 16)}`);
+    // The artifact canonical form (v4 drops `status` by name) is NOT the derivation.
+    expect(api.deriveWorkflowId(withStatus)).not.toBe(`wf_${calculateContentHash(withStatus, 4).slice(0, 16)}`);
   });
 
   it("a root plan's default workflowId is the single derivation over its transfer intent", () => {

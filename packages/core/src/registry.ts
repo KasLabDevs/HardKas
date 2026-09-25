@@ -22,6 +22,8 @@ export const HardkasSchemas = {
   TxReceiptV1: "hardkas.txReceipt.v1",
   TxReceiptV2: "hardkas.txReceipt.v2",
   TxReceiptV3: "hardkas.txReceipt.v3",
+  /** R-iii part 1 (Wave 1.3): the immutable record of a broadcast HardKAS performed. */
+  TxSubmissionV1: "hardkas.txSubmission.v1",
   PaymentReceiptV1: "hardkas.paymentReceipt.v1",
   TxTrace: "hardkas.txTrace",
   TxTraceV1: "hardkas.txTrace.v1",

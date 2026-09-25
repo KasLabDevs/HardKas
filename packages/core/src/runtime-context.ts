@@ -10,7 +10,13 @@ export interface DeterministicRandom {
 
 export interface IdProvider {
   execution(): string;
-  workflow(): string;
+  /**
+   * Optional. A `workflowId` has ONE derivation (Closure Pack IC-7.4):
+   * `deriveWorkflowId` in @hardkas/artifacts over a typed intent. No ambient
+   * generator produces one; contexts that still supply this hook do so for
+   * their own correlation only.
+   */
+  workflow?(): string;
 }
 
 export interface RuntimeContext {
@@ -48,8 +54,7 @@ export const systemRuntimeContext: RuntimeContext = {
     next: () => Math.random()
   },
   ids: {
-    execution: () => `exec_${Date.now().toString(36)}`,
-    workflow: () => `wf_${Date.now().toString(36)}`
+    execution: () => `exec_${Date.now().toString(36)}`
   },
   telemetry: globalTelemetry
 };

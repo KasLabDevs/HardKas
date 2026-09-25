@@ -368,6 +368,7 @@ No arguments.
 - [hardkas artifact explain](#hardkas-artifact-explain)
 - [hardkas artifact inspect](#hardkas-artifact-inspect)
 - [hardkas artifact lineage](#hardkas-artifact-lineage)
+- [hardkas artifact migrate](#hardkas-artifact-migrate)
 - [hardkas artifact verify](#hardkas-artifact-verify)
 
 ---
@@ -465,6 +466,33 @@ hardkas artifact lineage [options] <path>
 | Flag | Description | Default |
 | :--- | :--- | :--- |
 | `--json` | Output as JSON | false |
+| `--workspace <path>` | Override workspace root directory |  |
+
+### Arguments
+
+| Argument | Description |
+| :--- | :--- |
+| `path` |  |
+
+---
+
+## hardkas artifact migrate
+
+Re-issue a legacy artifact as hashVersion 5 plus a MigrationReceipt (never in place) alpha
+
+### Usage
+
+```bash
+hardkas artifact migrate [options] <path>
+```
+
+### Options
+
+| Flag | Description | Default |
+| :--- | :--- | :--- |
+| `--to <hashVersion>` | Target hash version (only 5 is supported) |  |
+| `--migration-id <id>` | Migration identifier recorded in the receipt |  |
+| `--json` | Output results as JSON | false |
 | `--workspace <path>` | Override workspace root directory |  |
 
 ### Arguments
@@ -1598,18 +1626,23 @@ hardkas evidence verify [options] <packagePath>
 
 ## hardkas explain
 
-Provide a narrative causal explanation of an artifact resolved by exact artifactId or artifact file path stable
+Provide a narrative causal explanation of an artifact resolved by exact artifactId, artifact file path, or a namespaced identifier (--plan, --signed, --tx, --workflow) stable
 
 ### Usage
 
 ```bash
-hardkas explain [options] <artifact>
+hardkas explain [options] [artifact]
 ```
 
 ### Options
 
 | Flag | Description | Default |
 | :--- | :--- | :--- |
+| `--artifact <id-or-path>` | 64-hex artifactId or workspace path (same as the positional) |  |
+| `--plan <planId>` | Resolve a plan by its derived label (verified against its hash) |  |
+| `--signed <signedId>` | Resolve a signed transaction by its derived label (verified) |  |
+| `--tx <txId>` | Resolve the submission receipt for a txId (never the signed) |  |
+| `--workflow <workflowId>` | Resolve a workflow run by its correlation id |  |
 | `--workspace <path>` | Override workspace root directory |  |
 
 ### Arguments
@@ -5406,19 +5439,20 @@ Verify artifact integrity and lineage continuity across the workspace stable
 ### Usage
 
 ```bash
-hardkas verify [options]
+hardkas verify [options] [path]
 ```
 
 ### Options
 
 | Flag | Description | Default |
 | :--- | :--- | :--- |
-| `--deep` | Perform a deep validation of signatures and causality | false |
 | `--json` | Output machine-readable JSON | false |
 
 ### Arguments
 
-No arguments.
+| Argument | Description |
+| :--- | :--- |
+| `path` | Workspace-contained artifact file or directory to verify (default: .hardkas/artifacts) |
 
 ---
 
@@ -5541,18 +5575,23 @@ No arguments.
 
 ## hardkas why
 
-Explain the causal lineage of an artifact resolved by exact artifactId or artifact file path
+Explain the causal lineage of an artifact resolved by exact artifactId, artifact file path, or a namespaced identifier (--plan, --signed, --tx, --workflow)
 
 ### Usage
 
 ```bash
-hardkas why [options] <artifact>
+hardkas why [options] [artifact]
 ```
 
 ### Options
 
 | Flag | Description | Default |
 | :--- | :--- | :--- |
+| `--artifact <id-or-path>` | 64-hex artifactId or workspace path (same as the positional) |  |
+| `--plan <planId>` | Resolve a plan by its derived label (verified against its hash) |  |
+| `--signed <signedId>` | Resolve a signed transaction by its derived label (verified) |  |
+| `--tx <txId>` | Resolve the submission receipt for a txId (never the signed) |  |
+| `--workflow <workflowId>` | Resolve a workflow run by its correlation id |  |
 | `--json` | Output lineage graph in JSON format |  |
 | `--workspace <path>` | Override workspace root directory |  |
 
@@ -5560,7 +5599,7 @@ hardkas why [options] <artifact>
 
 | Argument | Description |
 | :--- | :--- |
-| `artifact` | Exact 64-hex artifactId (lineage.artifactId) or absolute/workspace-relative path to the artifact .json file |
+| `artifact` | Exact 64-hex artifactId (the recomputed contentHash) or absolute/workspace-relative path to the artifact .json file |
 
 ---
 

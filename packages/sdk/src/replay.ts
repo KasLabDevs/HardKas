@@ -3,7 +3,8 @@ import path from "node:path";
 import {
   verifyArtifactIntegrity,
   writeArtifact,
-  ProjectArtifactStore
+  ProjectArtifactStore,
+  CURRENT_HASH_VERSION
 } from "@hardkas/artifacts";
 import { deterministicCompare } from "@hardkas/core";
 import type { Hardkas } from "./index.js";
@@ -122,6 +123,31 @@ export class HardkasReplay {
       } catch (err: unknown) {
         verifyErrorMsg = ((err instanceof Error) ? err.message : String(err));
         lineageOk = false;
+      }
+
+      // Wave 1.3 · IC-4′.4 / IC-2′.8: a replay verdict is a decision path and
+      // never accepts a LEGACY authentication scope. The receipt's `status`,
+      // `dagContext` and state digests of a hashVersion ≤ 4 receipt were never
+      // authenticated; the receipt can be replayed for evidence (T-N7, legacy
+      // digests) but the SDK reports the scope instead of a pass/fail verdict.
+      if (!verifyErrorMsg && receipt) {
+        const scope = await verifyArtifactIntegrity(receipt, { strict: false });
+        if (scope.ok && scope.authScope !== "FULL") {
+          const declared = String((receipt as any).hashVersion);
+          return {
+            passed: false,
+            artifactsScanned: artifactCount,
+            lineage: lineageOk ? "valid" : "invalid",
+            determinism: determinismOk ? "verified" : "failed",
+            contamination: contaminationOk ? "clean" : "contaminated",
+            report: null,
+            error:
+              `Replay verdict refused: receipt ${String(receipt.contentHash)} declares hashVersion ${declared} ` +
+              `(authScope ${scope.authScope}); no decision path accepts a legacy scope (IC-4′.4). ` +
+              `Re-issue it with 'hardkas artifact migrate <path> --to ${CURRENT_HASH_VERSION}'.`,
+            code: "REPLAY_LEGACY_AUTH_SCOPE"
+          };
+        }
       }
 
       // Wave 7 · REPLAY-MODE-1: after lineage resolution + receipt identity

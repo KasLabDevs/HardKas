@@ -30,7 +30,8 @@ export function getSimulatorSilverCommand() {
       try {
         const result = simulateSilverDeploy(readJson(deployPlanPath));
         saveState(mergeState(loadState(), result.state));
-        const outPath = path.resolve(process.cwd(), `${result.receipt.artifactId}.json`);
+        // IC-7.3: the file label derives from the identity; it is not stored in the artifact.
+        const outPath = path.resolve(process.cwd(), `silverdeploysim-${result.receipt.contentHash.slice(0, 16)}.json`);
         await writeArtifact(outPath, result.receipt);
         report(outPath);
       } catch (error) {
@@ -48,7 +49,7 @@ export function getSimulatorSilverCommand() {
       try {
         const result = simulateSilverSpend(readJson(spendPlanPath), loadState() ?? createSilverSimulationState());
         saveState(result.state);
-        const outPath = path.resolve(process.cwd(), `${result.receipt.artifactId}.json`);
+        const outPath = path.resolve(process.cwd(), `silverspendsim-${result.receipt.contentHash.slice(0, 16)}.json`);
         await writeArtifact(outPath, result.receipt);
         report(outPath);
       } catch (error) {

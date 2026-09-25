@@ -18,6 +18,7 @@
     "lint": "eslint ."
   },
   "dependencies": {
+    "@hardkas/artifacts": "workspace:*",
     "@hardkas/core": "workspace:*",
     "@hardkas/tx-builder": "workspace:*"
   },

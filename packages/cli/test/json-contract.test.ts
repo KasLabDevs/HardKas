@@ -92,9 +92,12 @@ describe("CLI JSON Contract", () => {
   }, 180000);
 
   it("verify --json produces strict parsable JSON", async () => {
+    // Wave 1.3 re-base (AUD-12 / AUD-38): `hardkas verify` is strict, so the workspace
+    // holds the regenerated version-5 valid fixture (the golden plan is legacy and now
+    // correctly fails strict verification with MIGRATION_REQUIRED).
     const goldenPlanPath = path.resolve(
       __dirname,
-      "../../artifacts/test/fixtures/golden/tx-plan.valid.json"
+      "../../artifacts/test/fixtures/valid/tx-plan.valid.json"
     );
     const goldenContent = await fs.readFile(goldenPlanPath, "utf-8");
     const destDir = path.join(tmpDir, ".hardkas", "artifacts");

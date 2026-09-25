@@ -3,6 +3,9 @@ export { HardkasSchemas, ArtifactTypes, isKnownArtifactType, assertKnownArtifact
 export type { HardkasSchema, ArtifactType, SchemaMetadata } from "@hardkas/core";
 export * from "./types.js";
 export * from "./canonical.js";
+export * from "./domain-digest.js";
+export * from "./workflow-id.js";
+export * from "./identity-categories.js";
 export * from "./schemas.js";
 export * from "./verify.js";
 export * from "./payment-receipts.js";

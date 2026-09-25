@@ -18,12 +18,13 @@ export class HardkasWorkflow {
    * Executes a sequence of declarative steps and returns a definitive WorkflowArtifact.
    */
   public async run(options: WorkflowRunOptions): Promise<WorkflowArtifact> {
-    const { calculateContentHash } = await import("@hardkas/artifacts");
+    const { calculateContentHash, CURRENT_HASH_VERSION, deriveWorkflowId } = await import("@hardkas/artifacts");
 
-    const intentPayload = {
-      type: HardkasSchemas.WorkflowIntent,
-      schemaVersion: "v1",
-      workflowSpec: options.steps,
+    // IC-7.4: the single workflowId derivation over the run's typed intent (a
+    // domain digest, IC-1′.7; never the artifact's own hash, IC-1′.5).
+    const workflowId = deriveWorkflowId({
+      kind: "steps",
+      steps: options.steps,
       normalizedInputs: {},
       parentArtifacts: [], // In v1, workflows do not accept explicit parent inputs yet
       policySnapshot: {
@@ -38,12 +39,7 @@ export class HardkasWorkflow {
       },
       runtimeVersion: HARDKAS_VERSION,
       workspaceSchemaVersion: HardkasSchemas.WorkflowV1
-    };
-
-    // Domain digest of the intent (not an artifact identity). Algorithm pinned to
-    // the legacy v4 canonical form until IC-1′.7 / IC-7.4 fix the single derivation (Wave 1.3).
-    const intentHash = calculateContentHash(intentPayload, 4);
-    const workflowId = `wf_${intentHash.slice(0, 16)}`;
+    });
 
     const artifactSteps: WorkflowArtifact["steps"] = [];
     const producedArtifacts: string[] = [];
@@ -259,12 +255,12 @@ export class HardkasWorkflow {
       hardkasVersion: HARDKAS_VERSION,
       networkId: this.sdk.network,
       mode: executionMode,
-      // Workflow artifacts are still hashed with version 1 (N6, Wave 1.3); the
-      // producer declares that truthfully so the writer and verifiers use it.
-      hashVersion: 1,
+      // N6 / IC-7.3–5: a version-5 artifact; its identity is the recomputed
+      // contentHash (resolvable by `{ artifact }`), its workflowId is a
+      // correlation label (resolvable by `{ workflow }`); no artifactId copy.
+      hashVersion: CURRENT_HASH_VERSION,
       createdAt: new Date().toISOString(), // hardkas-determinism-allow: workflow artifact creation timestamp
       workflowId,
-      artifactId: workflowId,
       status,
       steps: artifactSteps,
       parentArtifacts: parentArtifacts.sort(deterministicCompare),
@@ -287,7 +283,7 @@ export class HardkasWorkflow {
       artifact.errorEnvelope = errorEnvelope;
     }
 
-    artifact.contentHash = calculateContentHash(artifact, 1);
+    artifact.contentHash = calculateContentHash(artifact, CURRENT_HASH_VERSION);
 
     if (!options.dryRun) {
       this.sdk.enforcePolicy("mutation", "Workflow Runtime saving artifact");

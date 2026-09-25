@@ -100,7 +100,8 @@ export const ARTIFACT_ID_PATTERN = /^[0-9a-f]{64}$/;
 /** Schemas the `tx` namespace answers with (submissions; observations arrive in Wave 2). */
 export const TX_NAMESPACE_SCHEMAS: ReadonlySet<string> = new Set([
   HardkasSchemas.TxReceipt,
-  HardkasSchemas.TxReceiptV1
+  HardkasSchemas.TxReceiptV1,
+  HardkasSchemas.TxSubmissionV1
 ]);
 
 export const CANONICAL_STORE_SUBDIRS = ["plans", "signed", "receipts", "lineage", "evidences", "misc"] as const;
@@ -265,6 +266,10 @@ export function checkArtifactIdentity(artifact: any): CandidateCheck {
   }
   if (schema.startsWith(HardkasSchemas.SignedTx) && artifact.signedId !== undefined && artifact.signedId !== `signed-${recomputed.slice(0, 16)}`) {
     issues.push(issue("LABEL_MISMATCH", `signedId ${String(artifact.signedId)} does not derive from the artifact's content hash`));
+  }
+  // IC-7.3: a version-5 artifact stores no top-level identity copy.
+  if (version === CURRENT_HASH_VERSION && artifact.artifactId !== undefined) {
+    issues.push(issue("FORBIDDEN_IDENTITY_FIELD", `hashVersion ${CURRENT_HASH_VERSION} artifacts must not carry a top-level artifactId (got ${JSON.stringify(artifact.artifactId)})`));
   }
   if (issues.length > 0) return { ok: false, issues };
   return { ok: true, artifactId: recomputed, authScope: version === CURRENT_HASH_VERSION ? "FULL" : "LEGACY" };

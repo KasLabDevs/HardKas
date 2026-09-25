@@ -20,7 +20,6 @@ import { HardkasCliError, HardkasExitCode } from "../cli-errors.js";
  */
 
 const NETWORK = "simnet";
-const RECORD_DIR = path.join(".hardkas", "artifacts", "silver");
 
 const sha256 = (data: Uint8Array | string) => createHash("sha256").update(data).digest("hex");
 const out = () => getOutput();
@@ -45,15 +44,10 @@ function readFileOrFail(file: string, what: string): Buffer {
   }
 }
 
+/** Wave 1.3 · IC-1′ / IC-7.3: records are version-5 artifacts; the label is derived, not stored. */
 async function writeRecord(record: Record<string, unknown>, prefix: string, explicitOut?: string): Promise<{ path: string; record: any }> {
-  const { calculateContentHash, writeArtifact, ARTIFACT_VERSION } = await import("@hardkas/artifacts");
-  const draft = { ...record, version: ARTIFACT_VERSION, mode: "localnet", hashVersion: 4 };
-  const contentHash = calculateContentHash(draft as any, 4);
-  const full = { ...draft, contentHash, artifactId: `${prefix}-${contentHash.slice(0, 16)}` };
-  const target = explicitOut ? path.resolve(explicitOut) : path.resolve(RECORD_DIR, `${full.artifactId}.json`);
-  fs.mkdirSync(path.dirname(target), { recursive: true });
-  await writeArtifact(target, full);
-  return { path: target, record: full };
+  const { writeSilverRecord } = await import("../runners/silver-records.js");
+  return writeSilverRecord(record, prefix, explicitOut);
 }
 
 async function readRecord(file: string, schema: string): Promise<any> {

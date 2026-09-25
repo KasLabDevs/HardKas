@@ -62,6 +62,7 @@ export const artifactTypeSchema = z.enum([
   "txPlan.v2",
   "signedTx.v2",
   "txReceipt.v2",
+  "txSubmission.v1",
   "txTrace",
   "snapshot.v1",
   "workflow.v1",

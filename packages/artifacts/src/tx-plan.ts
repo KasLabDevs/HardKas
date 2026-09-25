@@ -1,8 +1,8 @@
-import { createHash } from "node:crypto";
 import { TxPlan as TxPlanType } from "@hardkas/tx-builder";
 import { TxPlan, ARTIFACT_VERSION, DraftArtifact } from "./schemas.js";
 import { NetworkId, ExecutionMode } from "@hardkas/core";
-import { calculateContentHash, canonicalStringify, CURRENT_HASH_VERSION } from "./canonical.js";
+import { calculateContentHash, CURRENT_HASH_VERSION } from "./canonical.js";
+import { deriveWorkflowId } from "./workflow-id.js";
 import { HARDKAS_VERSION } from "./constants.js";
 import type { RuntimeContext } from "@hardkas/core";
 import { HardkasSchemas } from "@hardkas/core";
@@ -26,12 +26,10 @@ export interface CreateTxPlanArtifactOptions {
 }
 
 /**
- * Deterministic default `workflowId` for a root plan: a digest of the plan's
- * INTENT (who pays whom, how much, on which network, from which outpoints).
- * It is never derived from the artifact's own hash (IC-1′.5). Domain-digest
- * algorithm pinned to the legacy v4 canonical form until IC-1′.7 introduces the
- * dedicated digest function (Wave 1.3), so its value does not move with the
- * artifact hash version.
+ * Deterministic default `workflowId` for a root plan: the single derivation
+ * (IC-7.4) over the plan's transfer INTENT (who pays whom, how much, on which
+ * network, from which outpoints). Never derived from the artifact's own hash
+ * (IC-1′.5); the digest is the domain digest (IC-1′.7).
  */
 export function deriveIntentWorkflowId(intent: {
   networkId: string;
@@ -41,8 +39,15 @@ export function deriveIntentWorkflowId(intent: {
   amountSompi: string;
   outpoints: Array<{ transactionId: string; index: number }>;
 }): string {
-  const digest = createHash("sha256").update(canonicalStringify(intent, 4)).digest("hex");
-  return `wf_${digest.slice(0, 16)}`;
+  return deriveWorkflowId({
+    kind: "transfer",
+    networkId: intent.networkId,
+    mode: intent.mode,
+    fromAddress: intent.fromAddress,
+    toAddress: intent.toAddress,
+    amountSompi: intent.amountSompi,
+    outpoints: intent.outpoints.map((o) => ({ transactionId: o.transactionId, index: o.index }))
+  });
 }
 
 /**

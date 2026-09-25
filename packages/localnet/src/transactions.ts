@@ -275,6 +275,12 @@ export function applySimulatedPlan(
   ctx: RuntimeContext,
   options?: {
     txId?: string;
+    /**
+     * IC-1′.7: the hashVersion whose domain-digest algorithm the produced state
+     * digests must use. Only a LEGACY replay (of a receipt declaring ≤ 4) passes
+     * a legacy value; producers use the current version.
+     */
+    digestHashVersion?: number;
     receiptExtra?: {
       submittedAt?: string;
       confirmedAt?: string;
@@ -286,7 +292,8 @@ export function applySimulatedPlan(
   }
 ): SimulationResult {
   const errors: string[] = [];
-  const preStateHash = calculateStateHash(state);
+  const digest = options?.digestHashVersion !== undefined ? { hashVersion: options.digestHashVersion } : undefined;
+  const preStateHash = calculateStateHash(state, digest);
 
   try {
     const spentUtxoIds = planArtifact.inputs.map(
@@ -345,7 +352,7 @@ export function applySimulatedPlan(
       daaScore: nextDaaScore,
       utxos: nextUtxos
     };
-    const postStateHash = calculateStateHash(nextState);
+    const postStateHash = calculateStateHash(nextState, digest);
 
     const receipt = createSimulatedTxReceipt(planArtifact, txId, ctx, {
       spentUtxoIds,
