@@ -5176,6 +5176,7 @@ hardkas tx plan [options] [from] [to]
 | `--amount <kas>` | Amount in KAS |  |
 | `--network <name>` | Kaspa network name |  |
 | `--fee-rate <sompiPerMass>` | Fee rate in sompi per mass |  |
+| `--change <accountOrAddress>` | Change destination (account name or address); default: the sender |  |
 | `--provider <type>` | Provider mode (auto, rpc, simulated) | auto |
 | `--url <url>` | RPC URL (optional override) |  |
 | `--out <path>` | Save plan as artifact JSON |  |
@@ -5265,7 +5266,7 @@ hardkas tx send [options] [signedPath]
 | `--fee-rate <sompiPerMass>` | Fee rate in sompi per mass (shortcut mode) |  |
 | `--provider <type>` | Provider mode (auto, rpc, simulated) | auto |
 | `--url <url>` | RPC URL (optional override) |  |
-| `--yes` | Confirm broadcast | false |
+| `--yes` | Confirm broadcast. Required on any non-simulated network: without it the send is refused (NOT EXECUTED, exit 3) and nothing is written | false |
 | `--wait-lock` | Wait for workspace lock if held | false |
 | `--lock-timeout <ms>` | Lock wait timeout in ms | 30000 |
 | `--json` | Output as JSON | false |

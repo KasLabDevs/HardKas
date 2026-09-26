@@ -5955,6 +5955,13 @@
               "mandatory": false
             },
             {
+              "flags": "--change <accountOrAddress>",
+              "description": "Change destination (account name or address); default: the sender",
+              "default": null,
+              "required": true,
+              "mandatory": false
+            },
+            {
               "flags": "--provider <type>",
               "description": "Provider mode (auto, rpc, simulated)",
               "default": "auto",
@@ -6137,7 +6144,7 @@
             },
             {
               "flags": "--yes",
-              "description": "Confirm broadcast",
+              "description": "Confirm broadcast. Required on any non-simulated network: without it the send is refused (NOT EXECUTED, exit 3) and nothing is written",
               "default": false,
               "required": false,
               "mandatory": false

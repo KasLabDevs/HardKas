@@ -1,4 +1,15 @@
 {
   "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    // `test/gate-subpath-exports.test.ts` imports this package by its published name
+    // (T-A04). Under `tsc` that self-reference would resolve through `exports.types`
+    // to `dist/*.d.ts`, i.e. to this package's OWN build output, which `turbo typecheck`
+    // (`dependsOn: ^build`) does not guarantee to exist yet — in CI it raced the build
+    // (TS7016/TS2307). Resolve the self-reference to the sources instead.
+    "paths": {
+      "@hardkas/testing": ["./src/index.ts"],
+      "@hardkas/testing/*": ["./src/*"]
+    }
+  },
   "include": ["src/**/*.ts", "test/**/*.ts"]
 }
