@@ -36,7 +36,8 @@ export default async function runTransferRecipe(sandboxRoot: string) {
   console.log(`hardkas dev last --replay --workspace ${sandboxRoot}`);
   if (signed || receipt) {
     const target = receipt || signed;
+    // IC-5′.11: a receipt is looked up in the tx namespace; a file name root is not an id.
     const txId = target!.replace("receipt_", "").replace(".json", "");
-    console.log(`hardkas why ${txId} --workspace ${sandboxRoot}`);
+    console.log(`hardkas why --tx ${txId} --workspace ${sandboxRoot}`);
   }
 }

@@ -1,12 +1,16 @@
 import { describe, it, expect } from "vitest";
 import { verifyArtifactIntegrity } from "../src/verify.js";
-import { calculateContentHash } from "../src/canonical.js";
+import { calculateContentHash, CURRENT_HASH_VERSION } from "../src/canonical.js";
 
+// Wave 1.1 · IC-1′.3 / IC-4′.2: an artifact declares the hashVersion it was hashed
+// with; without it verification fails closed (HASH_VERSION_INVALID) before any hash
+// comparison, so these fixtures declare it to keep proving the hash properties.
 describe("Artifact Hash Integrity", () => {
   it("should fail validation if contentHash is missing", async () => {
     const artifact = {
       schema: "hardkas.txPlan",
       version: "1.0.0-alpha",
+      hashVersion: CURRENT_HASH_VERSION,
       amountSompi: "100"
       // missing contentHash
     };
@@ -20,6 +24,7 @@ describe("Artifact Hash Integrity", () => {
     const artifact: any = {
       schema: "hardkas.txPlan",
       version: "1.0.0-alpha",
+      hashVersion: CURRENT_HASH_VERSION,
       amountSompi: "100",
       from: { address: "kaspa:sim_alice" },
       to: { address: "kaspa:sim_bob" }
@@ -43,6 +48,7 @@ describe("Artifact Hash Integrity", () => {
     const artifact: any = {
       schema: "hardkas.txPlan",
       version: "1.0.0-alpha",
+      hashVersion: CURRENT_HASH_VERSION,
       amountSompi: "100",
       from: { address: "kaspa:sim_alice" },
       to: { address: "kaspa:sim_bob" }
@@ -55,6 +61,7 @@ describe("Artifact Hash Integrity", () => {
       to: artifact.to,
       from: artifact.from,
       amountSompi: artifact.amountSompi,
+      hashVersion: artifact.hashVersion,
       version: artifact.version,
       schema: artifact.schema,
       contentHash: artifact.contentHash

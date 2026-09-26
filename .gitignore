@@ -19,7 +19,7 @@ test-results/
 !.env.example
 .DS_Store
 Thumbs.db
-*.log
+/*.log
 /*.jsonl
 
 # HardKas local workspaces
@@ -115,7 +115,7 @@ tmp-consumer-hardkas
 tmp-packaging
 
 # logs
-*.log
+/*.log
 stdout.log
 stderr.log
 DEBUG_*.log
@@ -127,7 +127,7 @@ ts-prune.log
 .crash-workspace/
 .fuzz-workspace/
 .post-release-gauntlet/
-.tmp*/
+/.tmp*/
 tmp-audit/
 my-app/
 examples/my-test-project/
@@ -172,9 +172,9 @@ examples/**/TESTNET_SOAK_REPORT.json
 coverage/
 playwright-report/
 test-results/
-*.log
+/*.log
 *.tsbuildinfo
-*.evidence.json
+/*.evidence.json
 coverage-summary.json
 *_REPORT.md
 API_DEAD_ZONE_REPORT.md
@@ -188,9 +188,9 @@ TESTNET_SOAK_REPORT.json
 .crash-workspace*
 .fuzz-workspace*
 .post-release-gauntlet*
-.tmp*
-tmp/
-temp/
+/.tmp*
+/tmp/
+/temp/
 vendor/kaspa-wasm
 
 # Hygiene Audit Reports
@@ -241,3 +241,13 @@ stratum-bridge.exe
 # napi-rs lockfiles
 *.swp
 .napi-rs-*
+
+
+
+# Docusaurus Apps
+.docusaurus/
+apps/docs/build/
+
+# RC and Release artifacts at root
+/.rc*-tarball-manifest.json
+/rc*-manifest.json

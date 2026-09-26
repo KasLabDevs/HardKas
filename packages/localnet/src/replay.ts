@@ -1,8 +1,13 @@
 import {
   TxPlan,
   TxReceipt,
+  recomputeDeclaredContentHash,
+  readDeclaredHashVersion,
+  diffArtifacts,
   calculateContentHash,
-  diffArtifacts
+  CURRENT_HASH_VERSION,
+  HARDKAS_VERSION,
+  ARTIFACT_VERSION
 } from "@hardkas/artifacts";
 import { applySimulatedPlan } from "./transactions.js";
 import { LocalnetState, ReplayVerificationReport } from "./types.js";
@@ -38,8 +43,13 @@ export function verifyReplay(
   const errors: string[] = [];
   const reportDivergences: any[] = [];
 
-  // 1. Plan Integrity (Deterministic self-check)
-  const currentPlanHash = calculateContentHash(originalPlan);
+  // 1. Plan Integrity (Deterministic self-check, with the version the plan declares)
+  let currentPlanHash: string;
+  try {
+    currentPlanHash = recomputeDeclaredContentHash(originalPlan);
+  } catch (error) {
+    currentPlanHash = `HASH_VERSION_INVALID:${error instanceof Error ? error.message : String(error)}`;
+  }
   let planOk = true;
   if (originalPlan.contentHash && currentPlanHash !== originalPlan.contentHash) {
     planOk = false;
@@ -52,12 +62,26 @@ export function verifyReplay(
     });
   }
 
+  // IC-1′.7 / T-N7: state digests are recomputed with the digest algorithm that
+  // belongs to the version the ORIGINAL receipt declares (legacy for ≤ 4). An
+  // undeclared version is reported, never guessed.
+  const receiptHashVersion = readDeclaredHashVersion(originalReceipt);
+  const digestHashVersion = receiptHashVersion ?? CURRENT_HASH_VERSION;
+  if (receiptHashVersion === null) {
+    errors.push(`TxReceipt hashVersion invalid: ${JSON.stringify((originalReceipt as any).hashVersion)}`);
+    reportDivergences.push({
+      path: "receipt.hashVersion",
+      expected: "an integer hash version declared by the receipt",
+      actual: String((originalReceipt as any).hashVersion)
+    });
+  }
+
   // 2. PreStateHash Verification
   //    If the original receipt recorded a preStateHash, the current state
   //    must match it before replay is valid.
   const originalPreState = originalReceipt.preStateHash;
   if (originalPreState) {
-    const currentStateHash = calculateStateHash(state);
+    const currentStateHash = calculateStateHash(state, { hashVersion: digestHashVersion });
     if (currentStateHash !== originalPreState) {
       const errorMsg = `preStateHash mismatch: expected ${originalPreState}, got ${currentStateHash}`;
       errors.push(errorMsg);
@@ -79,7 +103,8 @@ export function verifyReplay(
 
   // 3. Execute Replay in simulated environment
   const result = applySimulatedPlan(state, originalPlan, ctx, {
-    txId: originalReceipt.txId
+    txId: originalReceipt.txId,
+    digestHashVersion
   });
   const replayReceipt = result.receipt;
 
@@ -119,9 +144,16 @@ export function verifyReplay(
     });
   }
 
-  // Construct Honest Report
-  return {
+  // Construct Honest Report. It is an artifact like any other (IC-4′.1): the
+  // producer declares hashVersion and seals it in one pass.
+  const report: ReplayVerificationReport = {
     schema: "hardkas.replayReport.v1",
+    hardkasVersion: HARDKAS_VERSION,
+    version: ARTIFACT_VERSION,
+    hashVersion: CURRENT_HASH_VERSION,
+    networkId: (originalReceipt.networkId as string) || state.networkId || "simnet",
+    mode: (originalReceipt.mode as string) || "simulator",
+    createdAt: new Date(ctx.clock.now()).toISOString(),
     txId: originalReceipt.txId,
     planOk,
     receiptOk: !diff.entries.some((e) => !e.path.startsWith("plan")),
@@ -134,6 +166,8 @@ export function verifyReplay(
     divergences: reportDivergences,
     errors
   };
+  report.contentHash = calculateContentHash(report, CURRENT_HASH_VERSION);
+  return report;
 }
 
 /**

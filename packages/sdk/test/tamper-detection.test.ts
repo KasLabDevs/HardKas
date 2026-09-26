@@ -65,6 +65,8 @@ describe("SDK Tamper Detection & Forensic Regression", () => {
 
   it("should reject tampered receipt during replay verify", async () => {
     const plan = await sdk.tx.plan({ from: "kaspa:sim_alice", to: "kaspa:sim_bob", amount: "10" });
+    // Wave 1.2 · IC-5′.6/.8: the parent plan resolves from the store by identity.
+    await sdk.artifacts.write(plan);
     const signed = await sdk.tx.sign(plan, "kaspa:sim_alice");
     const { receipt } = await sdk.tx.simulate(signed);
 

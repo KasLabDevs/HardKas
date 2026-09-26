@@ -2,7 +2,17 @@ import { describe, it, expect, beforeAll, afterAll } from "vitest";
 import fs from "node:fs/promises";
 import path from "node:path";
 import os from "node:os";
+import { calculateContentHash, CURRENT_HASH_VERSION } from "@hardkas/artifacts";
 import { QueryEngine, createQueryRequest } from "../src/engine.js";
+
+// Wave 1.3 re-base (IC-2′.8 / IC-4′.4): status-based divergences and invariants are
+// judged only for receipts whose hash authenticates the status (hashVersion 5), so
+// the fixtures are sealed under the current version. The properties tested are unchanged.
+const sealed = (body: Record<string, unknown>) => {
+  const a: any = { ...body, hashVersion: CURRENT_HASH_VERSION };
+  a.contentHash = calculateContentHash(a, CURRENT_HASH_VERSION);
+  return JSON.stringify(a);
+};
 
 describe("ReplayQueryAdapter", () => {
   let tmpDir: string;
@@ -18,7 +28,7 @@ describe("ReplayQueryAdapter", () => {
     // Receipt: confirmed tx
     await fs.writeFile(
       path.join(receiptsDir, "tx-abc.json"),
-      JSON.stringify({
+      sealed({
         schema: "hardkas.txReceipt",
         txId: "tx-abc",
         status: "confirmed",
@@ -41,7 +51,7 @@ describe("ReplayQueryAdapter", () => {
     // Receipt: failed tx (with state change — divergence)
     await fs.writeFile(
       path.join(receiptsDir, "tx-fail.json"),
-      JSON.stringify({
+      sealed({
         schema: "hardkas.txReceipt",
         txId: "tx-fail",
         status: "failed",

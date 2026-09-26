@@ -1,0 +1,43 @@
+import { defineHardkasConfig } from "@hardkas/sdk";
+
+export default defineHardkasConfig({
+  // HardKAS v0.12.0-rc.23 Configuration
+  execution: {
+    default: "simulator",
+    targets: {
+      simulator: {
+        mode: "simulator",
+        domain: "kaspa-l1",
+        network: "simulated"
+      },
+      localnet: {
+        mode: "localnet",
+        domain: "kaspa-l1",
+        network: "simnet"
+      }
+    }
+  },
+
+  // Strict execution policy
+  network: {
+    allowPublic: false
+  },
+  artifacts: {
+    deterministic: true
+  },
+  experimental: false,
+
+  networks: {
+    simulated: {
+      kind: "simulated",
+      description: "Pure local simulation — no Docker, no RPC, no node"
+    },
+
+    simnet: {
+      kind: "kaspa-node",
+      network: "simnet",
+      rpcUrl: "ws://127.0.0.1:18210",
+      description: "Local Docker kaspad on simnet — requires hardkas node start"
+    }
+  }
+});

@@ -86,8 +86,9 @@ describe("Root Operational Commands", () => {
     expect(res.status).toBe(2);
   });
 
-  it("hardkas verify --deep --json validates the workspace", () => {
-    const res = run(["verify", "--deep", "--json"]);
+  it("hardkas verify --json validates the workspace", () => {
+    // Wave 1.3 (AUX-01): the no-op `--deep` flag no longer exists.
+    const res = run(["verify", "--json"]);
     if (res.status !== 0) console.error("Verify failed:", res.stdout, res.stderr);
     expect(res.status).toBe(0);
     const parsed = JSON.parse(res.stdout);

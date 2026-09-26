@@ -45,15 +45,15 @@ describe("MempoolRpcClient (Simnet Certification)", () => {
   });
 
   describe("Read-Only Mempool (Capa 1)", () => {
-    it("getMempoolEntries should handle empty mempool", async () => {
-      if (!simnetLive) return;
+    it("getMempoolEntries should handle empty mempool", async (ctx) => {
+      if (!simnetLive) return ctx.skip();
       const res = await client.getMempoolEntries();
       expect(res.entries).toEqual([]);
       CertificationReporter.markPassed("getMempoolEntries", testSuiteName);
     });
 
-    it("getMempoolEntry should return not-found for non-existent tx", async () => {
-      if (!simnetLive) return;
+    it("getMempoolEntry should return not-found for non-existent tx", async (ctx) => {
+      if (!simnetLive) return ctx.skip();
       await expect(client.getMempoolEntry({ transactionId: "dummy123" }))
         .rejects.toThrow(MempoolError);
         
@@ -65,8 +65,8 @@ describe("MempoolRpcClient (Simnet Certification)", () => {
       CertificationReporter.markPassed("getMempoolEntry", testSuiteName);
     });
 
-    it("getMempoolEntriesByAddresses should return empty for unused address", async () => {
-      if (!simnetLive) return;
+    it("getMempoolEntriesByAddresses should return empty for unused address", async (ctx) => {
+      if (!simnetLive) return ctx.skip();
       const res = await client.getMempoolEntriesByAddresses({ addresses: ["simnet:qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqhx0cgpc"] });
       expect(res.entries).toEqual([]);
       CertificationReporter.markPassed("getMempoolEntriesByAddresses", testSuiteName);
@@ -85,8 +85,8 @@ describe("MempoolRpcClient (Simnet Certification)", () => {
       }
     });
 
-    it("submitTransaction should throw mempool-policy or rpc on malformed tx", async () => {
-      if (!simnetLive) return;
+    it("submitTransaction should throw mempool-policy or rpc on malformed tx", async (ctx) => {
+      if (!simnetLive) return ctx.skip();
       // Trying to submit a fundamentally broken transaction
       try {
         await client.submitTransaction({ transaction: { inputs: [], outputs: [] } });
@@ -97,8 +97,8 @@ describe("MempoolRpcClient (Simnet Certification)", () => {
   });
 
   describe("Lifecycle & Positive Paths (Capa 3)", () => {
-    it("submitTransaction should accept valid transaction, be visible, then confirm", async () => {
-      if (!simnetLive) return;
+    it("submitTransaction should accept valid transaction, be visible, then confirm", async (ctx) => {
+      if (!simnetLive) return ctx.skip();
       // Mock valid transaction construction (to be fully realized when transaction builder is implemented)
       // We will pretend we submitted one and it was accepted, or we could submit an empty but structurally valid mock
       // if the node allows it, but usually Kaspa requires a real valid tx. We will simulate the flow if we can't create one yet.

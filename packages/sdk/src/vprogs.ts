@@ -1,6 +1,6 @@
 import fs from "node:fs";
 import path from "node:path";
-import { calculateContentHash } from "@hardkas/artifacts";
+import { domainDigest } from "@hardkas/artifacts";
 import type { Hardkas } from "./index.js";
 import { HardkasSchemas } from "@hardkas/artifacts";
 
@@ -131,7 +131,8 @@ export async function inspectVprogsArtifact(
       schema: HardkasSchemas.VProgsInspectV1,
       status: "VPROGS_ARTIFACT_INSPECTED",
       path: path.relative(workspaceRoot, resolved).replace(/\\/g, "/"),
-      artifactHash: calculateContentHash(artifact),
+      // Inspection digest of the inspected file (not an artifact identity): the domain digest (IC-1′.7).
+      artifactHash: domainDigest(artifact),
       artifactSchema: artifact.schema,
       claims: vprogsClaims(),
       issues: []

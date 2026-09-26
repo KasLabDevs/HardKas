@@ -7,7 +7,8 @@ import { CrossWorldAccountCollisionError, AccountNetworkMismatchError } from "@h
 import {
   loadRealAccountStoreSync,
   getRealDevAccount,
-  listRealDevAccounts
+  listRealDevAccounts,
+  attachInspectRedactor
 } from "./real-accounts.js";
 
 export interface ResolveAccountOptions {
@@ -260,7 +261,6 @@ export function listHardkasAccounts(config?: HardkasConfig, executionTarget?: im
       const existing = accounts.get(name);
       const configKind = (accConfig as any).kind === "simulated" ? "synthetic" : (accConfig as any).kind;
       if (existing && existing.kind !== configKind) {
-        console.error(`COLLISION DETECTED for ${name}. existing:`, existing, `configKind:`, configKind);
         throw new CrossWorldAccountCollisionError({ accountId: name, worlds: [existing.kind, configKind] });
       }
       accounts.set(name, {
@@ -272,7 +272,12 @@ export function listHardkasAccounts(config?: HardkasConfig, executionTarget?: im
     }
   }
 
-  return Array.from(accounts.values());
+  // Defense in depth: every resolved account carries a self-redacting
+  // util.inspect handler. Any accidental `console.log(account)` or default
+  // Node error formatter stringifies with secret-bearing fields masked.
+  const list = Array.from(accounts.values());
+  for (const a of list) attachInspectRedactor(a as unknown as object);
+  return list;
 }
 
 export async function resolveHardkasAccountAddress(

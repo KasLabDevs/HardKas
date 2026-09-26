@@ -9,7 +9,7 @@ export interface HardKasMatchers<R = void> {
   toBeAccepted(): R;
   /** Assert a receipt has status "failed". */
   toBeFailed(): R;
-  /** Assert a receipt contains a valid txId (starts with "simtx_" or is 64-char hex). */
+  /** Assert a receipt contains a valid txId (`synthetic-<64 hex>` or 64-char hex). */
   toHaveValidTxId(): R;
   /** Assert an artifact has a valid contentHash (64-char hex). */
   toHaveValidContentHash(): R;
@@ -59,15 +59,16 @@ export const hardKasMatchers = {
 
   toHaveValidTxId(received: any) {
     const txId = received?.txId || (typeof received === "string" ? received : "");
+    // Wave 1.4 · N4: ONE synthetic txId scheme (`synthetic-<64 hex>`) or a real 64-hex txId.
     const pass =
       typeof txId === "string" &&
-      (txId.startsWith("simtx_") || /^[0-9a-fA-F]{64}$/.test(txId));
+      (/^synthetic-[0-9a-f]{64}$/.test(txId) || /^[0-9a-fA-F]{64}$/.test(txId));
     return {
       pass,
       message: () =>
         pass
           ? `Expected "${txId}" NOT to be a valid txId`
-          : `Expected "${txId}" to be a valid txId (starts with "simtx_" or is 64-char hex)`
+          : `Expected "${txId}" to be a valid txId (synthetic-<64 hex> or 64-char hex)`
     };
   },
 

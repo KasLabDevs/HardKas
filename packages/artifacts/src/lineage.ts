@@ -1,5 +1,6 @@
 import { HardkasSchemas } from "@hardkas/core";
 import { VerificationIssue } from "./verify.js";
+import { readDeclaredHashVersion } from "./canonical.js";
 
 export interface LineageValidationResult {
   ok: boolean;
@@ -34,6 +35,11 @@ export function verifyLineage(
   if (!lineage) {
     const isWorkflow = artifact.schema === HardkasSchemas.WorkflowV1;
     const isSnapshot = artifact.schema === HardkasSchemas.Snapshot || artifact.schema === HardkasSchemas.SnapshotV1;
+    // Wave 2(a) · IC-2′.5: a TxObservation REFERENCES its subject; it is not a lineage link.
+    const isObservation = artifact.schema === HardkasSchemas.TxObservationV1;
+    if (isObservation) {
+      return { ok: true, issues };
+    }
     const severity = options.strict && !isWorkflow && !isSnapshot ? "error" : "warning";
     if (!isWorkflow && !isSnapshot || options.strict) {
       if (severity === "error" || !isSnapshot) {
@@ -47,8 +53,29 @@ export function verifyLineage(
   }
 
   const isHash = (s: any) => typeof s === "string" && /^[0-9a-f]{64}$/i.test(s);
+  // Version 5 lineage (Closure Pack D-Q1.d): a ROOT stores only its own artifactId
+  // (and sequence); a CHILD references its parent and the root's real artifactId.
+  // Legacy versions keep the historical shape where the root copied its own
+  // (first-pass) hash into lineageId/rootArtifactId.
+  const isCurrentForm = (readDeclaredHashVersion(artifact) ?? 0) >= 5;
+  const isRootForm = isCurrentForm && !lineage.parentArtifactId;
 
-  if (!lineage.artifactId || !lineage.lineageId || !lineage.rootArtifactId) {
+  if (isRootForm) {
+    if (!lineage.artifactId) {
+      addIssue("INVALID_LINEAGE_STRUCTURE", "Root lineage block is missing artifactId");
+    } else if (!isHash(lineage.artifactId)) {
+      addIssue("INVALID_LINEAGE_FORMAT", "artifactId must be a 64-char hex string");
+    }
+    // lineageId/rootArtifactId on a root can only ever name the root itself (that is
+    // the two-pass self reference H6 removed); their presence is the defect.
+    for (const field of ["lineageId", "rootArtifactId"] as const) {
+      if (lineage[field] === undefined) continue;
+      addIssue(
+        "LINEAGE_ROOT_SELF_REFERENCE",
+        `Root lineage must not carry ${field} (a self reference, IC-1′.5); children reference the root's artifactId`
+      );
+    }
+  } else if (!lineage.artifactId || !lineage.lineageId || !lineage.rootArtifactId) {
     addIssue(
       "INVALID_LINEAGE_STRUCTURE",
       "Lineage block is missing required fields (artifactId, lineageId, or rootArtifactId)"
@@ -93,18 +120,21 @@ export function verifyLineage(
         );
       }
 
-      // Lineage Stability
-      if (lineage.lineageId !== parentLineage.lineageId) {
+      // Lineage Stability. A version-5 root carries no lineageId/rootArtifactId:
+      // its children reference the root's real artifactId.
+      const expectedLineageId = parentLineage.lineageId ?? parentLineage.artifactId;
+      const expectedRootId = parentLineage.rootArtifactId ?? parentLineage.artifactId;
+      if (lineage.lineageId !== expectedLineageId) {
         addIssue(
           "LINEAGE_ID_MISMATCH",
-          `Lineage ID mismatch: expected ${parentLineage.lineageId}, got ${lineage.lineageId}`
+          `Lineage ID mismatch: expected ${expectedLineageId}, got ${lineage.lineageId}`
         );
       }
 
-      if (lineage.rootArtifactId !== parentLineage.rootArtifactId) {
+      if (lineage.rootArtifactId !== expectedRootId) {
         addIssue(
           "ROOT_ARTIFACT_ID_MISMATCH",
-          `Root Artifact ID mismatch: expected ${parentLineage.rootArtifactId}, got ${lineage.rootArtifactId}`
+          `Root Artifact ID mismatch: expected ${expectedRootId}, got ${lineage.rootArtifactId}`
         );
       }
 
@@ -149,10 +179,13 @@ export function verifyLineage(
       [HardkasSchemas.TxPlan]: [HardkasSchemas.SignedTx, HardkasSchemas.MigrationReceiptV1],
       [HardkasSchemas.SignedTx]: [
         HardkasSchemas.TxReceipt,
+        HardkasSchemas.TxSubmissionV1,
         HardkasSchemas.SignedTx,
         HardkasSchemas.MigrationReceiptV1
       ],
-      [HardkasSchemas.TxReceipt]: [HardkasSchemas.TxTrace, HardkasSchemas.MigrationReceiptV1]
+      [HardkasSchemas.TxReceipt]: [HardkasSchemas.TxTrace, HardkasSchemas.MigrationReceiptV1],
+      // IC-2′.5: plan → signed → submission; observations reference, they do not descend.
+      [HardkasSchemas.TxSubmissionV1]: [HardkasSchemas.MigrationReceiptV1]
     };
 
     let isValidTransition = false;

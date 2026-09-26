@@ -236,7 +236,7 @@ describe("P1.12 Deterministic Transaction Canonicalization", () => {
     // Create an artifact-like structure
     const baseArtifact = {
       schema: "hardkas.txPlan" as const,
-      hardkasVersion: "0.12.0-rc.22",
+      hardkasVersion: "0.12.0-rc.23",
       version: ARTIFACT_VERSION,
       hashVersion: CURRENT_HASH_VERSION,
       networkId: "simnet" as const,
@@ -333,7 +333,7 @@ describe("P1.12 Deterministic Transaction Canonicalization", () => {
     // Hardcode an exact fixed test artifact
     const fixedArtifact = {
       schema: "hardkas.txPlan" as const,
-      hardkasVersion: "0.12.0-rc.22",
+      hardkasVersion: "0.12.0-rc.23",
       version: "1.0.0-alpha",
       hashVersion: 3,
       networkId: "simnet" as const,

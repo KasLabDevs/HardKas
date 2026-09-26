@@ -2,7 +2,7 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import { UI } from "../ui.js";
 import { WORKFLOW_TEMPLATES } from "../templates/workflows.js";
-import { systemRuntimeContext } from "@hardkas/core";
+import { deriveWorkflowId } from "@hardkas/artifacts";
 
 export interface WorkflowCreateOptions {
   name: string;
@@ -20,7 +20,12 @@ export async function runWorkflowCreate(options: WorkflowCreateOptions) {
     );
   }
 
-  const workflowId = `wf_${options.name}_${systemRuntimeContext.clock.now().toString(36)}`;
+  // IC-7.4: the single workflowId derivation, over the definition's intent.
+  const workflowId = deriveWorkflowId({
+    kind: "steps",
+    steps: templateDef.steps as unknown[],
+    normalizedInputs: { name: options.name, template: options.template }
+  });
 
   const workflowDef = {
     workflowId,

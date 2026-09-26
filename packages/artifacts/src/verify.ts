@@ -1,7 +1,13 @@
 import fs from "node:fs";
 import path from "node:path";
 import { HardkasSchemas } from "@hardkas/core";
-import { calculateContentHash } from "./canonical.js";
+import {
+  calculateContentHash,
+  CURRENT_HASH_VERSION,
+  MIN_HASH_VERSION,
+  legacyUnauthenticatedMaterialFields,
+  readDeclaredHashVersion
+} from "./canonical.js";
 import {
   SnapshotSchema,
   TxPlanSchema,
@@ -13,11 +19,18 @@ import {
   NetworkProfileSchema,
   AssumptionSchema,
   MigrationReceiptSchema,
+  TxSubmissionSchema,
+  TxObservationSchema,
+  ReplayReportSchema,
   ARTIFACT_VERSION
 } from "./schemas.js";
 import { NetworkId, type CorruptionCode, type CorruptionSeverity } from "@hardkas/core";
 import { verifyFeeSemantics } from "./feeVerify.js";
 import { verifyLineage } from "./lineage.js";
+import { checkSyntheticAuthorization } from "./signed-tx.js";
+import { checkTxObservationCoherence } from "./tx-observation.js";
+import { checkSubmissionFeeCoherence } from "./submission-fee.js";
+import { checkArtifactIdentity, resolveArtifactSync } from "./resolve.js";
 import {
   SilverCompileArtifactSchema,
   SilverDeployArtifactSchema,
@@ -46,8 +59,12 @@ export interface VerificationContext {
   strict?: boolean;
   networkId?: NetworkId;
   parent?: unknown;
+  /** The workspace whose store resolves persisted references (IC-5′.7). */
+  workspaceRoot?: string;
+  /** Legacy locator of the store (`<workspaceRoot>/.hardkas/artifacts`); the root is derived from it. */
   artifactsDir?: string;
   enforceMetadata?: boolean;
+  /** Optional override returning an already-verified artifact for a 64-hex artifactId, or null. */
   resolveArtifact?: (id: string) => any;
   visitedArtifacts?: Set<string>;
 }
@@ -63,12 +80,23 @@ export type VerificationIssue = {
   artifactId?: string | undefined;
 };
 
+/**
+ * What the content hash actually authenticated (Closure Pack D-Q1.e / D-Q21):
+ * - FULL: current hash version; every field outside the closed operational list.
+ * - LEGACY: a version 1–4 artifact verified under its own rules; the fields in
+ *   `unauthenticatedMaterialFields` were never covered. No decision path may act on them.
+ * - NONE: integrity could not be established (invalid hashVersion, unreadable input).
+ */
+export type AuthScope = "FULL" | "LEGACY" | "NONE";
+
 export type ArtifactVerificationResult = {
   ok: boolean;
   artifactType?: string;
   version?: string;
   expectedHash?: string;
   actualHash?: string;
+  authScope: AuthScope;
+  unauthenticatedMaterialFields: string[];
   errors: string[]; // Legacy support
   issues: VerificationIssue[];
 };
@@ -113,6 +141,8 @@ export function verifyArtifactIntegritySync(
 ): ArtifactVerificationResult {
   const result: ArtifactVerificationResult = {
     ok: false,
+    authScope: "NONE",
+    unauthenticatedMaterialFields: [],
     errors: [],
     issues: []
   };
@@ -145,10 +175,9 @@ export function verifyArtifactIntegritySync(
     result.version = v.version as string;
     result.expectedHash = v.contentHash as string;
 
-    if (v.schema === HardkasSchemas.ReplayReportV1) {
-      result.ok = true;
-      return result;
-    }
+    // IC-4′.1 (AUD-08 / P6): no schema skips verification. The former
+    // ReplayReportV1 early return is gone; a replay report is sealed by its
+    // producer and verified like every other artifact.
 
     // 2. Basic Version & Schema Check
     if (!v.version || !v.schema) {
@@ -170,8 +199,18 @@ export function verifyArtifactIntegritySync(
       return result;
     }
 
-    // 3. Hash Verification
-    const hashVersion = (v.hashVersion as number) || 1;
+    // 3. Hash version gate (IC-4′.2): an integer in range, declared by the artifact.
+    //    Anything else fails closed in every mode; no reader falls back to v1.
+    const hashVersion = readDeclaredHashVersion(v);
+    if (hashVersion === null) {
+      addError(
+        "HASH_VERSION_INVALID",
+        `hashVersion must be an integer between ${MIN_HASH_VERSION} and ${CURRENT_HASH_VERSION} declared by the artifact; got ${JSON.stringify(v.hashVersion)}`
+      );
+      return result;
+    }
+
+    // 4. Hash verification under the DECLARED version.
     const actualHash = calculateContentHash(v, hashVersion);
     result.actualHash = actualHash;
 
@@ -182,19 +221,45 @@ export function verifyArtifactIntegritySync(
         "ARTIFACT_HASH_MISMATCH",
         `Hash mismatch: expected ${v.contentHash}, got ${actualHash}`
       );
-    } else if (hashVersion < 4) {
+    }
+
+    // 5. Authentication scope (IC-4′.3–4, D-Q1.e). Strict requires the current
+    //    version; non-strict verifies a legacy artifact under its own rules and
+    //    names every material field that version never authenticated.
+    if (hashVersion < CURRENT_HASH_VERSION) {
+      result.authScope = "LEGACY";
+      result.unauthenticatedMaterialFields = legacyUnauthenticatedMaterialFields(v, hashVersion);
       if (context.strict) {
         addError(
-          "LEGACY_HASH_VERSION_UNSAFE",
-          `Artifact uses legacy hash version ${hashVersion}. Migration to v4 is required for strict pipelines.`
+          "MIGRATION_REQUIRED",
+          `Artifact declares hashVersion ${hashVersion}; strict verification requires ${CURRENT_HASH_VERSION}. Re-issue it with 'hardkas artifact migrate --to ${CURRENT_HASH_VERSION}'.`
         );
       } else {
-        // Just add an info issue, ok remains true
         result.issues.push({
-          code: "LEGACY_VALID",
+          code: "LEGACY_AUTH_SCOPE",
           severity: "info",
-          message: `Artifact uses legacy hash version ${hashVersion} (valid but unsafe for strict mode).`
+          message:
+            `hashVersion ${hashVersion}: integrity verified under legacy rules; never authenticated: ` +
+            (result.unauthenticatedMaterialFields.length ? result.unauthenticatedMaterialFields.join(", ") : "(none present)")
         });
+      }
+    } else {
+      result.authScope = "FULL";
+      // IC-4′.5: derived labels are outside the hash and must match the recomputed identity.
+      if (v.schema === HardkasSchemas.TxPlan && v.planId !== undefined && v.planId !== `plan-${actualHash.slice(0, 16)}`) {
+        addError("LABEL_MISMATCH", `planId ${String(v.planId)} does not derive from the artifact's content hash`);
+      }
+      if (v.schema === HardkasSchemas.SignedTx && v.signedId !== undefined && v.signedId !== `signed-${actualHash.slice(0, 16)}`) {
+        addError("LABEL_MISMATCH", `signedId ${String(v.signedId)} does not derive from the artifact's content hash`);
+      }
+      // IC-7.3 / IC-4′.5: a version-5 artifact stores no top-level identity copy.
+      // The identity is the recomputed contentHash; a stored `artifactId` is either
+      // redundant or a label posing as an identity (P7 / AUD-10).
+      if (v.artifactId !== undefined) {
+        addError(
+          "FORBIDDEN_IDENTITY_FIELD",
+          `hashVersion ${CURRENT_HASH_VERSION} artifacts must not carry a top-level artifactId (got ${JSON.stringify(v.artifactId)}); the identity is the recomputed contentHash`
+        );
       }
     }
 
@@ -231,6 +296,15 @@ export function verifyArtifactIntegritySync(
         break;
       case HardkasSchemas.MigrationReceiptV1:
         schema = MigrationReceiptSchema;
+        break;
+      case HardkasSchemas.TxSubmissionV1:
+        schema = TxSubmissionSchema;
+        break;
+      case HardkasSchemas.TxObservationV1:
+        schema = TxObservationSchema;
+        break;
+      case HardkasSchemas.ReplayReportV1:
+        schema = ReplayReportSchema;
         break;
       case HardkasSchemas.SilverCompile:
         schema = SilverCompileArtifactSchema;
@@ -273,8 +347,9 @@ export function verifyArtifactIntegritySync(
     if (schema) {
       const validation = schema.safeParse(v);
       if (!validation.success) {
-        // For legacy artifacts (hashVersion < 4), Zod schema mismatches are warnings
-        // since they may not conform to the current schema but are still integrity-valid.
+        // Pre-existing rule, unchanged by Wave 1.1: hashVersion 1–3 verified in
+        // non-strict mode report schema mismatches as warnings. It is NOT widened to
+        // v4 (authScope LEGACY): that would let mutated rc.22 artifacts pass as valid.
         const zodSeverity: VerificationSeverity =
           hashVersion < 4 && !context.strict ? "warning" : "error";
         validation.error.issues.forEach((e) => {
@@ -296,6 +371,24 @@ export function verifyArtifactIntegritySync(
         "ARTIFACT_SCHEMA_INVALID",
         `Unsupported or unknown artifact schema: ${v.schema}`
       );
+    }
+
+    // Wave 1.4 · IC-6′: a signed artifact that carries a synthetic authorization
+    // must be coherent with it (plan reference = lineage parent = txId; format;
+    // signer set). A legacy artifact without one is intact but unbound: that is
+    // the executor's refusal (LEGACY_UNBOUND_SIGNED), not an integrity defect.
+    if (v.schema === HardkasSchemas.SignedTx) {
+      const coherence = checkSyntheticAuthorization(v);
+      if (!coherence.ok && coherence.code !== "LEGACY_UNBOUND_SIGNED") {
+        addError(coherence.code, coherence.message, "authorization");
+      }
+    }
+
+    // Wave 2(a) · Q4: an observation that contradicts itself or the verified upstream
+    // parameters (finality depth, confirmation arithmetic) is not evidence.
+    if (v.schema === HardkasSchemas.TxObservationV1 && schema && schema.safeParse(v).success) {
+      const coherence = checkTxObservationCoherence(v);
+      if (!coherence.ok) addError("OBSERVATION_INCOHERENT", coherence.message, coherence.path);
     }
 
     result.ok = result.issues.every(
@@ -325,52 +418,6 @@ export async function verifyArtifactIntegrity(
   return verifyArtifactIntegritySync(artifactOrPath, context);
 }
 
-function findFileByHash(hash: string, dirs: string[]): string | null {
-  const shortHash =
-    hash.startsWith("plan-") || hash.startsWith("signed-") ? hash : hash.slice(0, 16);
-  const allDirs = [...dirs];
-  for (const dir of dirs) {
-    allDirs.push(path.join(dir, 'plans'), path.join(dir, 'signed'), path.join(dir, 'receipts'), path.join(dir, 'lineage'), path.join(dir, 'misc'));
-  }
-  for (const dir of allDirs) {
-    if (!fs.existsSync(dir)) continue;
-    try {
-      const files = fs.readdirSync(dir);
-      if (files.includes(`${hash}.json`)) {
-        return path.join(dir, `${hash}.json`);
-      }
-      for (const file of files) {
-        if (!file.endsWith(".json")) continue;
-        if (
-          file.includes(hash) ||
-          file.includes(shortHash) ||
-          file.includes(hash.slice(0, 8))
-        ) {
-          const filePath = path.join(dir, file);
-          try {
-            const content = fs.readFileSync(filePath, "utf-8");
-            const obj = JSON.parse(content);
-            if (
-              obj.contentHash === hash ||
-              obj.artifactId === hash ||
-              obj.planId === hash ||
-              obj.signedId === hash ||
-              obj.txId === hash
-            ) {
-              return filePath;
-            }
-          } catch {
-            // ignore
-          }
-        }
-      }
-    } catch {
-      // ignore
-    }
-  }
-  return null;
-}
-
 /**
  * Verifies an artifact's semantic and economic validity.
  */
@@ -380,6 +427,8 @@ export function verifyArtifactSemantics(
 ): ArtifactVerificationResult {
   const result: ArtifactVerificationResult = {
     ok: true,
+    authScope: "NONE", // semantics do not establish integrity; see verifyArtifactIntegritySync
+    unauthenticatedMaterialFields: [],
     errors: [],
     issues: []
   };
@@ -424,18 +473,84 @@ export function verifyArtifactSemantics(
 
 
   // Strict Reference and Policy Evaluation (HardKAS v0.8.4)
+  //
+  // Wave 1.2 · Closure Pack IC-5′.6–.7: persisted references (policyRefs,
+  // networkProfileRef, assumptionRef, lineage.parentArtifactId) are authenticated
+  // artifactIds. They resolve ONLY by verified identity inside the workspace store:
+  // never relative to process.cwd() (AUX-02), never through a top-level
+  // `artifactId` (AUD-10 / P7), never by a label, txId or file name.
   let parentObj: any = null;
 
   if (strict) {
-    const searchDirs = [];
-    if (context.artifactsDir) {
-      searchDirs.push(context.artifactsDir);
-    }
-    searchDirs.push(path.join(process.cwd(), ".hardkas", "artifacts"));
-    searchDirs.push(path.join(process.cwd(), "artifacts"));
+    const workspaceRoot =
+      context.workspaceRoot ??
+      (context.artifactsDir ? path.resolve(context.artifactsDir, "..", "..") : undefined);
+
+    type ReferenceOutcome = { obj: any } | { issue: VerificationIssue };
+    const resolveReference = (ref: unknown, kind: string): ReferenceOutcome => {
+      if (typeof ref !== "string" || !/^[0-9a-f]{64}$/.test(ref)) {
+        return {
+          issue: {
+            code: "REFERENCE_INVALID",
+            severity: "error",
+            message: `Referenced ${kind} ${String(ref)} is not a 64-hex artifactId; a persisted reference is never a label, txId or path`
+          }
+        };
+      }
+      const fromContext = context.resolveArtifact ? context.resolveArtifact(ref) : null;
+      if (fromContext) return { obj: fromContext };
+      if (!workspaceRoot) {
+        return {
+          issue: {
+            code: "REFERENCE_MISSING",
+            severity: "error",
+            message: `Referenced ${kind} ${ref} cannot be resolved: no workspace root was given`
+          }
+        };
+      }
+      try {
+        return { obj: resolveArtifactSync(workspaceRoot, { artifact: ref }).artifact };
+      } catch (e: any) {
+        // CANDIDATE_INVALID: a stored copy claims the referenced identity but does not
+        // hash to it — the reference's content does not match its hash.
+        const code =
+          e?.code === "ARTIFACT_NOT_FOUND"
+            ? "REFERENCE_MISSING"
+            : e?.code === "REFERENCE_AMBIGUOUS"
+              ? "REFERENCE_AMBIGUOUS"
+              : e?.code === "CANDIDATE_INVALID"
+                ? "REFERENCE_HASH_MISMATCH"
+                : "REFERENCE_CORRUPT";
+        return {
+          issue: { code, severity: "error", message: `Referenced ${kind} ${ref}: ${e?.message ?? String(e)}` }
+        };
+      }
+    };
+
+    // The target is verified again under the caller's context and must BE the referenced identity.
+    const checkReference = (ref: string, kind: string, refObj: any): boolean => {
+      const integrity = verifyArtifactIntegritySync(refObj, context);
+      if (!integrity.ok) {
+        addIssue({
+          code: "REFERENCE_HASH_MISMATCH",
+          severity: "error",
+          message: `Referenced ${kind} ${ref} integrity check failed: ${integrity.errors.join(", ")}`
+        });
+        return false;
+      }
+      if (integrity.actualHash !== ref) {
+        addIssue({
+          code: "REFERENCE_HASH_MISMATCH",
+          severity: "error",
+          message: `${kind} reference mismatch: expected ${ref}, got ${integrity.actualHash}`
+        });
+        return false;
+      }
+      return true;
+    };
 
     // Collect policy references
-    const policyRefs: string[] = [];
+    const policyRefs: unknown[] = [];
     if (Array.isArray(v.policyRefs)) {
       policyRefs.push(...v.policyRefs);
     } else if (typeof v.policyRef === "string") {
@@ -444,209 +559,112 @@ export function verifyArtifactSemantics(
 
     // Resolve policies
     for (const ref of policyRefs) {
-      let refObj = context.resolveArtifact ? context.resolveArtifact(ref) : null;
-      if (!refObj) {
-        const refFile = findFileByHash(ref, searchDirs);
-        if (refFile) {
-          try {
-            const content = fs.readFileSync(refFile, "utf-8");
-            refObj = JSON.parse(content);
-          } catch (e: unknown) {
-            addIssue({
-              code: "REFERENCE_CORRUPT",
-              severity: "error",
-              message: `Failed to read policy ${ref}: ${(e as Error).message}`
-            });
-          }
-        }
+      const outcome = resolveReference(ref, "policy");
+      if ("issue" in outcome) {
+        addIssue(outcome.issue);
+        continue;
       }
-
-      if (!refObj) {
-        addIssue({
-          code: "REFERENCE_MISSING",
-          severity: "error",
-          message: `Referenced policy artifact ${ref} not found in workspace`
-        });
-      } else {
-        try {
-          // 1. Verify policy integrity
-          const integrity = verifyArtifactIntegritySync(refObj, context);
-          if (!integrity.ok) {
+      const refObj = outcome.obj;
+      try {
+        if (!checkReference(ref as string, "policy", refObj)) continue;
+        // 2. Minimal Policy Evaluation
+        if (refObj.schema === HardkasSchemas.PolicyV1) {
+          if (refObj.decision === "DENY") {
             addIssue({
-              code: "REFERENCE_HASH_MISMATCH",
+              code: "POLICY_VIOLATION",
               severity: "error",
-              message: `Referenced policy ${ref} integrity check failed: ${integrity.errors.join(", ")}`
+              message: `Policy evaluation rejected: decision is DENY`
             });
-          } else if (refObj.contentHash !== ref && refObj.artifactId !== ref) {
+          } else if (refObj.decision !== "ALLOW") {
             addIssue({
-              code: "REFERENCE_HASH_MISMATCH",
+              code: "POLICY_VIOLATION",
               severity: "error",
-              message: `Policy reference mismatch: expected ${ref}, got ${refObj.contentHash}`
+              message: `Policy evaluation rejected: decision is invalid (${refObj.decision})`
             });
-          } else {
-            // 2. Minimal Policy Evaluation
-            if (refObj.schema === HardkasSchemas.PolicyV1) {
-              if (refObj.decision === "DENY") {
-                addIssue({
-                  code: "POLICY_VIOLATION",
-                  severity: "error",
-                  message: `Policy evaluation rejected: decision is DENY`
-                });
-              } else if (refObj.decision !== "ALLOW") {
-                addIssue({
-                  code: "POLICY_VIOLATION",
-                  severity: "error",
-                  message: `Policy evaluation rejected: decision is invalid (${refObj.decision})`
-                });
-              }
-              const failedRules =
-                refObj.rules?.filter((r: any) => r.result === "FAIL") || [];
-              if (failedRules.length > 0) {
-                addIssue({
-                  code: "POLICY_VIOLATION",
-                  severity: "error",
-                  message: `Policy rules failed: ${failedRules.map((r: any) => r.id).join(", ")}`
-                });
-              }
-            }
           }
-        } catch (e: unknown) {
-          addIssue({
-            code: "REFERENCE_CORRUPT",
-            severity: "error",
-            message: `Failed to read/verify policy ${ref}: ${(e as Error).message}`
-          });
+          const failedRules =
+            refObj.rules?.filter((r: any) => r.result === "FAIL") || [];
+          if (failedRules.length > 0) {
+            addIssue({
+              code: "POLICY_VIOLATION",
+              severity: "error",
+              message: `Policy rules failed: ${failedRules.map((r: any) => r.id).join(", ")}`
+            });
+          }
         }
+      } catch (e: unknown) {
+        addIssue({
+          code: "REFERENCE_CORRUPT",
+          severity: "error",
+          message: `Failed to read/verify policy ${String(ref)}: ${(e as Error).message}`
+        });
       }
     }
 
-    // Resolve networkProfileRef
-    if (typeof v.networkProfileRef === "string") {
-      const ref = v.networkProfileRef;
-      let refObj = context.resolveArtifact ? context.resolveArtifact(ref) : null;
-      if (!refObj) {
-        const refFile = findFileByHash(ref, searchDirs);
-        if (refFile) {
-          try {
-            refObj = JSON.parse(fs.readFileSync(refFile, "utf-8"));
-          } catch {}
-        }
+    // Resolve networkProfileRef / assumptionRef
+    for (const [field, kind] of [
+      ["networkProfileRef", "network profile"],
+      ["assumptionRef", "assumption"]
+    ] as const) {
+      const ref = v[field];
+      if (ref === undefined || ref === null) continue;
+      const outcome = resolveReference(ref, kind);
+      if ("issue" in outcome) {
+        addIssue(outcome.issue);
+        continue;
       }
-      if (!refObj) {
+      try {
+        checkReference(ref as string, kind, outcome.obj);
+      } catch (e: unknown) {
         addIssue({
-          code: "REFERENCE_MISSING",
+          code: "REFERENCE_CORRUPT",
           severity: "error",
-          message: `Referenced network profile ${ref} not found in workspace`
+          message: `Failed to verify ${kind} ${String(ref)}`
         });
-      } else {
-        try {
-          const integrity = verifyArtifactIntegritySync(refObj, context);
-          if (!integrity.ok) {
-            addIssue({
-              code: "REFERENCE_HASH_MISMATCH",
-              severity: "error",
-              message: `Referenced profile ${ref} integrity check failed`
-            });
-          } else if (refObj.contentHash !== ref && refObj.artifactId !== ref) {
-            addIssue({
-              code: "REFERENCE_HASH_MISMATCH",
-              severity: "error",
-              message: `Profile reference mismatch: expected ${ref}, got ${refObj.contentHash}`
-            });
-          }
-        } catch (e: unknown) {
-          addIssue({
-            code: "REFERENCE_CORRUPT",
-            severity: "error",
-            message: `Failed to verify profile ${ref}`
-          });
-        }
       }
     }
 
-    // Resolve assumptionRef
-    if (typeof v.assumptionRef === "string") {
-      const ref = v.assumptionRef;
-      let refObj = context.resolveArtifact ? context.resolveArtifact(ref) : null;
-      if (!refObj) {
-        const refFile = findFileByHash(ref, searchDirs);
-        if (refFile) {
-          try {
-            refObj = JSON.parse(fs.readFileSync(refFile, "utf-8"));
-          } catch {}
-        }
-      }
-      if (!refObj) {
-        addIssue({
-          code: "REFERENCE_MISSING",
-          severity: "error",
-          message: `Referenced assumption ${ref} not found in workspace`
-        });
-      } else {
-        try {
-          const integrity = verifyArtifactIntegritySync(refObj, context);
-          if (!integrity.ok) {
-            addIssue({
-              code: "REFERENCE_HASH_MISMATCH",
-              severity: "error",
-              message: `Referenced assumption ${ref} integrity check failed`
-            });
-          } else if (refObj.contentHash !== ref && refObj.artifactId !== ref) {
-            addIssue({
-              code: "REFERENCE_HASH_MISMATCH",
-              severity: "error",
-              message: `Assumption reference mismatch: expected ${ref}, got ${refObj.contentHash}`
-            });
-          }
-        } catch (e: unknown) {
-          addIssue({
-            code: "REFERENCE_CORRUPT",
-            severity: "error",
-            message: `Failed to verify assumption ${ref}`
-          });
-        }
-      }
-    }
-
-    // Resolve parent artifact for active lineage check
-    let parentId: string | undefined;
+    // Resolve the parent for the active lineage check: only the authenticated
+    // lineage.parentArtifactId; sourcePlanId / sourceSignedId are labels and never resolve.
     const lineage = v.lineage as any;
-    if (lineage?.parentArtifactId && lineage?.parentArtifactId !== lineage?.artifactId) {
-      parentId = lineage?.parentArtifactId as string;
-    } else if (v.schema === HardkasSchemas.SignedTx) {
-      parentId = v.sourcePlanId as string;
-    } else if (v.schema === HardkasSchemas.TxReceipt) {
-      parentId = (v.sourceSignedId || lineage?.parentArtifactId) as string;
-    }
+    const parentId =
+      typeof lineage?.parentArtifactId === "string" &&
+      lineage.parentArtifactId.length > 0 &&
+      lineage.parentArtifactId !== lineage.artifactId
+        ? (lineage.parentArtifactId as string)
+        : undefined;
 
     if (parentId) {
-      parentObj = context.resolveArtifact ? context.resolveArtifact(parentId) : null;
-      if (!parentObj) {
-        const parentFile = findFileByHash(parentId, searchDirs);
-        if (parentFile) {
-          try {
-            parentObj = JSON.parse(fs.readFileSync(parentFile, "utf-8"));
-          } catch (e: unknown) {
-            addIssue({
-              code: "PARENT_CORRUPT",
-              severity: "error",
-              message: `Failed to read parent ${parentId}: ${(e as Error).message}`
-            });
-          }
-        }
+      // An explicit parent object is accepted only if it IS the referenced identity
+      // (recomputed under its declared version); otherwise the store is consulted.
+      let outcome: ReferenceOutcome | undefined;
+      if (context.parent && typeof context.parent === "object") {
+        const explicit = checkArtifactIdentity(context.parent);
+        if (explicit.ok && explicit.artifactId === parentId) outcome = { obj: context.parent };
       }
-
-      if (!parentObj) {
-        addIssue({
-          code: "PARENT_MISSING",
-          severity: strict ? "error" : "warning",
-          message: `Parent artifact ${parentId} not found in workspace`
-        });
+      if (!outcome) outcome = resolveReference(parentId, "parent");
+      if ("issue" in outcome) {
+        if (outcome.issue.code === "REFERENCE_MISSING") {
+          // IC-5′.6: a reference that resolves to nothing is missing, whatever any
+          // other artifact claims about it. A MigrationReceipt confers no authority
+          // here (Wave 1.3 security review B1); a re-issued artifact's legacy source
+          // stays in the store and resolves like any other parent.
+          addIssue({
+            code: "PARENT_MISSING",
+            severity: strict ? "error" : "warning",
+            message: `Parent artifact ${parentId} not found in workspace`
+          });
+        } else {
+          addIssue({ code: "PARENT_CORRUPT", severity: "error", message: outcome.issue.message });
+        }
       } else {
+        parentObj = outcome.obj;
         try {
-          // Recursively verify parent semantic checks
+          // Recursively verify parent semantic checks. The explicit `parent` hint
+          // belongs to THIS artifact only; the parent's own parent resolves from the store.
+          const { parent: _explicitParent, ...inherited } = context;
           const parentSem = verifyArtifactSemantics(parentObj, {
-            ...context,
+            ...inherited,
             strict: true,
             visitedArtifacts: new Set(visitedArtifacts)
           });
@@ -661,6 +679,39 @@ export function verifyArtifactSemantics(
           });
         }
       }
+    }
+  }
+
+  // 1b. R-iii part 1 (IC-2′.2 / IC-5′.6): a submission's authenticated reference to
+  // the signed artifact IS its lineage parent; the two must name one identity.
+  if (v.schema === HardkasSchemas.TxSubmissionV1) {
+    const lineageParent = (v.lineage as any)?.parentArtifactId;
+    if (typeof v.signedArtifactId !== "string" || !/^[0-9a-f]{64}$/.test(v.signedArtifactId)) {
+      addIssue({
+        code: "SUBMISSION_REFERENCE_INVALID",
+        severity: "error",
+        message: `signedArtifactId must be the signed artifact's 64-hex artifactId (got ${JSON.stringify(v.signedArtifactId)})`
+      });
+    } else if (lineageParent !== v.signedArtifactId) {
+      addIssue({
+        code: "SUBMISSION_REFERENCE_MISMATCH",
+        severity: "error",
+        message: `signedArtifactId ${v.signedArtifactId} differs from lineage.parentArtifactId ${String(lineageParent)}`
+      });
+    }
+    for (const forbidden of ["status", "confirmedAt", "dagContext", "acceptingBlockHash", "confirmations", "endpoint"]) {
+      if (v[forbidden] !== undefined) {
+        addIssue({
+          code: "SUBMISSION_STATE_FORBIDDEN",
+          severity: "error",
+          message: `A submission records what HardKAS did; post-send state field "${forbidden}" belongs to an observation (IC-2′.2)`
+        });
+      }
+    }
+    // Wave 2(d) · AUD-18: a recorded fee must be arithmetically what it claims.
+    const feeCoherence = checkSubmissionFeeCoherence(v.fee);
+    if (!feeCoherence.ok) {
+      addIssue({ code: "SUBMISSION_FEE_INCOHERENT", severity: "error", message: feeCoherence.message });
     }
   }
 
@@ -694,17 +745,21 @@ export function verifyArtifactSemantics(
     });
   }
 
-  // 4. Hardening Fields
+  // 4. Hardening Fields. A MigrationReceipt certifies a re-issue: it carries no
+  //    workflow correlation or assumption level of its own (D-Q1.f).
+  //    Wave 2(a): a TxObservation is evidence about a txId, not a workflow step either.
+  const isMigrationReceipt =
+    v.schema === HardkasSchemas.MigrationReceiptV1 || v.schema === HardkasSchemas.TxObservationV1;
   if (strict) {
     const enforceMetadata = context.enforceMetadata ?? true;
     if (enforceMetadata) {
-      if (!v.workflowId && !isSnapshot)
+      if (!v.workflowId && !isSnapshot && !isMigrationReceipt)
         addIssue({
           code: "MISSING_WORKFLOW_ID",
           severity: "error",
           message: "Strict mode requires workflowId"
         });
-      if (!v.assumptionLevel && v.schema !== HardkasSchemas.WorkflowV1 && !isSnapshot)
+      if (!v.assumptionLevel && v.schema !== HardkasSchemas.WorkflowV1 && !isSnapshot && !isMigrationReceipt)
         addIssue({
           code: "MISSING_ASSUMPTION_LEVEL",
           severity: "error",
@@ -717,13 +772,13 @@ export function verifyArtifactSemantics(
           message: "Strict mode requires executionMode"
         });
     } else {
-      if (!v.workflowId && !isSnapshot)
+      if (!v.workflowId && !isSnapshot && !isMigrationReceipt)
         addIssue({
           code: "MISSING_WORKFLOW_ID",
           severity: "warning",
           message: "Missing workflowId"
         });
-      if (!v.assumptionLevel && v.schema !== HardkasSchemas.WorkflowV1 && !isSnapshot)
+      if (!v.assumptionLevel && v.schema !== HardkasSchemas.WorkflowV1 && !isSnapshot && !isMigrationReceipt)
         addIssue({
           code: "MISSING_ASSUMPTION_LEVEL",
           severity: "warning",
@@ -731,13 +786,13 @@ export function verifyArtifactSemantics(
         });
     }
   } else {
-    if (!v.workflowId && !isSnapshot)
+    if (!v.workflowId && !isSnapshot && !isMigrationReceipt)
       addIssue({
         code: "MISSING_WORKFLOW_ID",
         severity: "warning",
         message: "Missing workflowId"
       });
-    if (!v.assumptionLevel && v.schema !== HardkasSchemas.WorkflowV1 && !isSnapshot)
+    if (!v.assumptionLevel && v.schema !== HardkasSchemas.WorkflowV1 && !isSnapshot && !isMigrationReceipt)
       addIssue({
         code: "MISSING_ASSUMPTION_LEVEL",
         severity: "warning",
@@ -795,6 +850,8 @@ export async function verifyArtifactReplay(
 ): Promise<ArtifactVerificationResult> {
   return {
     ok: false,
+    authScope: "NONE",
+    unauthenticatedMaterialFields: [],
     issues: [
       {
         code: "REPLAY_UNSUPPORTED_CHECK",

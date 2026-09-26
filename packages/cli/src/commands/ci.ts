@@ -94,7 +94,15 @@ export function registerCiCommand(program: Command) {
           return;
         }
       } catch (e: unknown) {
-        if (((e as any).name) === "HardkasCliError") throw new Error("Command failed");
+        // Wave 9 · DEF-18 · Gate B pass: let typed HardkasCliError instances
+        // (e.g. the CI_VERIFY_FAILED thrown above at hasErrors) propagate
+        // untouched to the top-level renderer. The previous
+        // `if (name === "HardkasCliError") throw new Error("Command failed")`
+        // branch destroyed the typed code, forcing the user-facing envelope
+        // to `UNKNOWN_ERROR` / `"Command failed"` on both human and JSON paths.
+        // Non-HardkasCliError exceptions are still wrapped into a typed
+        // CI_ERROR below (adjacent behaviour preserved).
+        if (((e as any).name) === "HardkasCliError") throw e;
         const { HardkasCliError, HardkasExitCode } = await import("../cli-errors.js");
         throw new HardkasCliError("CI_ERROR", ((e instanceof Error) ? ((e instanceof Error) ? e.message : String(e)) : String(e)) || String(e), {
           exitCode: HardkasExitCode.RUNTIME_FAILURE

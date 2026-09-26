@@ -1,5 +1,5 @@
 import { Invariant, InvariantContext, InvariantViolation } from "./types.js";
-import { calculateContentHash } from "../canonical.js";
+import { recomputeDeclaredContentHash } from "../canonical.js";
 import { ARTIFACT_SCHEMAS } from "../constants.js";
 
 /**
@@ -18,7 +18,21 @@ export class HashInvariant implements Invariant {
     const contentHash = v.contentHash;
     if (typeof contentHash !== "string") return [];
 
-    const actualHash = calculateContentHash(v);
+    let actualHash: string;
+    try {
+      actualHash = recomputeDeclaredContentHash(v);
+    } catch (error) {
+      return [
+        {
+          code: this.id,
+          severity: "error",
+          message: error instanceof Error ? error.message : String(error),
+          metadata: {
+            artifactId: typeof v.artifactId === "string" ? v.artifactId : undefined
+          }
+        }
+      ];
+    }
     if (actualHash !== contentHash) {
       return [
         {

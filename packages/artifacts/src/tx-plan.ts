@@ -2,6 +2,7 @@ import { TxPlan as TxPlanType } from "@hardkas/tx-builder";
 import { TxPlan, ARTIFACT_VERSION, DraftArtifact } from "./schemas.js";
 import { NetworkId, ExecutionMode } from "@hardkas/core";
 import { calculateContentHash, CURRENT_HASH_VERSION } from "./canonical.js";
+import { deriveWorkflowId } from "./workflow-id.js";
 import { HARDKAS_VERSION } from "./constants.js";
 import type { RuntimeContext } from "@hardkas/core";
 import { HardkasSchemas } from "@hardkas/core";
@@ -25,9 +26,67 @@ export interface CreateTxPlanArtifactOptions {
 }
 
 /**
+ * Deterministic default `workflowId` for a root plan: the single derivation
+ * (IC-7.4) over the plan's transfer INTENT (who pays whom, how much, on which
+ * network, from which outpoints). Never derived from the artifact's own hash
+ * (IC-1′.5); the digest is the domain digest (IC-1′.7).
+ */
+export function deriveIntentWorkflowId(intent: {
+  networkId: string;
+  mode: string;
+  fromAddress: string;
+  toAddress: string;
+  amountSompi: string;
+  outpoints: Array<{ transactionId: string; index: number }>;
+}): string {
+  return deriveWorkflowId({
+    kind: "transfer",
+    networkId: intent.networkId,
+    mode: intent.mode,
+    fromAddress: intent.fromAddress,
+    toAddress: intent.toAddress,
+    amountSompi: intent.amountSompi,
+    outpoints: intent.outpoints.map((o) => ({ transactionId: o.transactionId, index: o.index }))
+  });
+}
+
+/**
+ * Seals a plan's identity after every authenticated field is in place: one
+ * hash, the derived label and the exact-path self reference. Callers that add
+ * fields to a plan (policy references, profiles) call this again on the final
+ * body; nothing may change afterwards (IC-1′.4).
+ */
+export function finalizeTxPlanIdentity<T extends { lineage?: { artifactId: string } | undefined }>(
+  plan: T & { contentHash?: string | undefined; planId?: string | undefined; hashVersion?: number | string | undefined }
+): T & { contentHash: string; planId: string } {
+  plan.hashVersion = CURRENT_HASH_VERSION;
+  const hash = calculateContentHash(plan, CURRENT_HASH_VERSION);
+  plan.contentHash = hash;
+  plan.planId = `plan-${hash.slice(0, 16)}`;
+  if (plan.lineage) plan.lineage.artifactId = hash;
+  return plan as T & { contentHash: string; planId: string };
+}
+
+/**
  * Creates a canonical TxPlan artifact from a TxBuilder plan.
+ *
+ * The plan is a lineage ROOT: its lineage carries only its own artifactId
+ * (excluded from the hash by exact path) and a sequence. It stores no
+ * `lineageId`/`rootArtifactId` copies of itself; children reference the root's
+ * real artifactId instead (Closure Pack D-Q1.d, the two-pass hashing of H6 is gone).
  */
 export function createTxPlanArtifact(options: CreateTxPlanArtifactOptions): TxPlan {
+  const workflowId =
+    options.ctx.workflowId ??
+    deriveIntentWorkflowId({
+      networkId: String(options.networkId),
+      mode: String(options.mode),
+      fromAddress: options.from.address,
+      toAddress: options.to.address,
+      amountSompi: options.amountSompi.toString(),
+      outpoints: options.plan.inputs.map((i) => ({ transactionId: i.outpoint.transactionId, index: i.outpoint.index }))
+    });
+
   const artifact: DraftArtifact<TxPlan, "planId" | "contentHash"> = {
     schema: HardkasSchemas.TxPlan,
     hardkasVersion: HARDKAS_VERSION,
@@ -77,19 +136,29 @@ export function createTxPlanArtifact(options: CreateTxPlanArtifactOptions): TxPl
     rpcUrl: options.rpcUrl,
     lineage: {
       artifactId: "",
-      lineageId: "0".repeat(64), // placeholder, will be replaced if empty
-      parentArtifactId: "",
-      rootArtifactId: "",
       sequence: 1
     },
-    ...(options.ctx.workflowId ? { workflowId: options.ctx.workflowId } : {}),
+    workflowId,
     metadata: {
       schema: HardkasSchemas.ArtifactV1,
-      ...(options.ctx.utxoSelection ? { utxoSelection: options.ctx.utxoSelection } : {})
+      ...(options.ctx.utxoSelection ? { utxoSelection: options.ctx.utxoSelection } : {}),
+      // Wave 2(c) · AUD-19: what the snapshot was filtered against (authenticated with the plan).
+      ...(options.ctx.pendingSpendEvidence ? { pendingSpendEvidence: options.ctx.pendingSpendEvidence } : {})
     },
     assumptionLevel:
       options.ctx.assumptionLevel ||
       (options.mode === "simulator" ? "local-simulated" : "local-dev"),
+    // DEF-7: preserve the planner authority the runtime actually produced.
+    // Do NOT synthesize a value: absence stays absence. The upstream planner
+    // ('KASPA_WASM_GENERATOR' for real Kaspa execution paths, 'SYNTHETIC_SIMULATOR'
+    // for the developer harness) already sets these in the ctx; we only project
+    // what was actually established.
+    ...(options.ctx.plannerAuthority
+      ? { plannerAuthority: options.ctx.plannerAuthority }
+      : {}),
+    ...(options.ctx.plannerAuthorityDetail
+      ? { plannerAuthorityDetail: options.ctx.plannerAuthorityDetail }
+      : {}),
     ...(options.plan.computeBudget !== undefined ? { computeBudget: options.plan.computeBudget.toString() } : {}),
     ...(options.plan.storageMass !== undefined ? { storageMass: options.plan.storageMass.toString() } : {}),
     ...(options.plan.lane !== undefined ? { lane: options.plan.lane } : {}),
@@ -103,33 +172,5 @@ export function createTxPlanArtifact(options: CreateTxPlanArtifactOptions): TxPl
     };
   }
 
-  const hash = calculateContentHash(artifact, CURRENT_HASH_VERSION);
-  artifact.planId = `plan-${hash.slice(0, 16)}`;
-  artifact.contentHash = hash;
-
-  // Deterministic workflowId derived from the intent hash
-  if (!artifact.workflowId) {
-    artifact.workflowId = `wf_${hash.slice(0, 16)}`;
-  }
-
-  if (artifact.lineage) {
-    // For a root plan, rootArtifactId = contentHash (the artifact's own identity).
-    // Since lineage is included in hash computation, we use the contentHash as the
-    // canonical self-reference. Set lineageId/parentArtifactId to empty sentinels
-    // during hashing, then fix them to contentHash.
-    artifact.lineage.lineageId = hash;
-    artifact.lineage.parentArtifactId = ""; // Root plans have no parent
-    artifact.lineage.rootArtifactId = hash;
-    artifact.lineage.artifactId = hash;
-
-    // Recalculate with the first-pass lineage values AND the derived workflowId
-    const finalHash = calculateContentHash(artifact, CURRENT_HASH_VERSION);
-    artifact.planId = `plan-${finalHash.slice(0, 16)}`;
-    artifact.contentHash = finalHash;
-    artifact.lineage.artifactId = finalHash;
-    // rootArtifactId stays as the original `hash` — this is the canonical lineage root.
-    // All children inherit this value via createLineageTransition.
-  }
-
-  return artifact as TxPlan;
+  return finalizeTxPlanIdentity(artifact as any) as TxPlan;
 }

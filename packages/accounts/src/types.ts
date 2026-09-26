@@ -110,7 +110,7 @@ export interface SignTxPlanResult {
   signerAddress: string;
   txId?: string;
   signedTransaction: {
-    format: "hex" | "simulated" | "unknown";
+    format: "hex" | "synthetic-authorization" | "unknown";
     payload: string;
   };
   signature?: {

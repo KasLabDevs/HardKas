@@ -1,7 +1,8 @@
-import { SignedTxArtifact, TxReceiptArtifact } from "@hardkas/artifacts";
+import { SignedTxArtifact, TxReceiptArtifact, TxSubmissionArtifact } from "@hardkas/artifacts";
 import { resolveExecutionTarget, HardkasConfig } from "@hardkas/config";
 import { assertBroadcastNetworkAllowed } from "../broadcast-guard.js";
 import { Hardkas } from "@hardkas/sdk";
+import { sendOutcome } from "./next-steps.js";
 
 export interface TxSendRunnerInput {
   targetName?: string;
@@ -15,14 +16,15 @@ export interface TxSendRunnerInput {
 }
 
 export interface TxSendRunnerResult {
+  /** Decided from an authenticated field only (a submission's result or a FULL-scope receipt's status). */
   accepted: boolean;
   txId: string;
   rpcUrl: string;
   networkName: string;
-  receipt: TxReceiptArtifact;
+  /** A simulated receipt, or the immutable txSubmission.v1 of a real broadcast (R-iii part 1). */
+  receipt: TxReceiptArtifact | TxSubmissionArtifact;
   receiptPath?: string | undefined;
   executionId?: string;
-  replayId?: string;
 }
 
 /**
@@ -103,14 +105,13 @@ export async function runTxSend(input: TxSendRunnerInput): Promise<TxSendRunnerR
     const { receipt, receiptPath } = await sdk.tx.simulate(signedArtifact);
 
     return {
-      accepted: true,
+      accepted: sendOutcome(receipt).accepted,
       txId: receipt.txId,
       rpcUrl: url || "simulated://local",
       networkName: resolvedName,
       receipt,
       receiptPath,
-      executionId: `exec_${Date.now().toString(36)}`,
-      replayId: `replay_${receipt.txId.substring(0, 8)}`
+      executionId: `exec_${Date.now().toString(36)}`
     };
   }
 
@@ -140,16 +141,16 @@ export async function runTxSend(input: TxSendRunnerInput): Promise<TxSendRunnerR
   try {
     const { receipt, receiptPath } = await sdk.tx.send(signedArtifact, rpcUrl);
 
-
+    // R-iii part 1 / IC-2′.8: the outcome comes from the submission's
+    // authenticated submit result, never from a status field.
     return {
-      accepted: receipt.status === "submitted" || receipt.status === "confirmed",
+      accepted: sendOutcome(receipt).accepted,
       txId: receipt.txId,
       rpcUrl,
       networkName: resolvedName,
       receipt,
       receiptPath,
-      executionId: `exec_${Date.now().toString(36)}`,
-      replayId: `replay_${receipt.txId.substring(0, 8)}`
+      executionId: `exec_${Date.now().toString(36)}`
     };
   } finally {
     if (rpcClient) {

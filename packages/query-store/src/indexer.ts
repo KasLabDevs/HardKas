@@ -4,7 +4,7 @@ import { HardkasSchemas } from "@hardkas/artifacts";
 import { createRequire } from "node:module";
 const require = createRequire(import.meta.url);
 const { DatabaseSync } = require("node:sqlite");
-import { calculateContentHash, verifyArtifactIntegrity } from "@hardkas/artifacts";
+import { verifyArtifactIntegrity } from "@hardkas/artifacts";
 import {
   validateEventEnvelope,
   type EventEnvelope,
@@ -421,7 +421,7 @@ export class HardkasIndexer {
       VALUES (?, ?, ?, ?, ?)
     `);
 
-    const artifactsToLink: any[] = [];
+    const artifactsToLink: Array<{ parsed: any; artifactId: string }> = [];
     let skipped = 0;
 
     for (const file of files) {
@@ -468,14 +468,22 @@ export class HardkasIndexer {
         }
 
         const content = fs.readFileSync(file, "utf-8");
+        // Wave 1.2 · N2 / IC-5′.9: the index key is the RECOMPUTED artifactId (the
+        // verifier's actualHash under the declared version). A file that does not
+        // verify is stored as CORRUPTED under a path-derived key, never under the
+        // identity it claims (`artifactId`, `contentHash`), so an impostor can never
+        // reach a victim's row. A key collision with different content is corruption,
+        // never an UPDATE. One file holds one artifact: a rewritten file drops the row
+        // it held under its previous identity.
+        const pathKey = `corrupt:${path.relative(this.hardkasDir, file).replace(/\\/g, "/")}`;
         let parsed: any;
         try {
           parsed = JSON.parse(content);
         } catch (err) {
           // completely invalid JSON
-          const artifactId = path.basename(file, ".json");
+          this.db.prepare("DELETE FROM artifacts WHERE file_path = ? AND artifact_id <> ?").run(file, pathKey);
           upsertArtifact.run(
-            artifactId,
+            pathKey,
             "INVALID_JSON",
             "unknown",
             0,
@@ -492,12 +500,33 @@ export class HardkasIndexer {
           continue;
         }
 
-        // Artifact ID is required for indexing
-        const artifactId =
-          parsed.artifactId || parsed.contentHash || calculateContentHash(parsed);
-        const hash = isCorrupt
-          ? "MISMATCH"
-          : parsed.contentHash || calculateContentHash(parsed);
+        const artifactId = isCorrupt ? pathKey : (verification.actualHash as string);
+        const hash = isCorrupt ? "MISMATCH" : (verification.actualHash as string);
+
+        this.db.prepare("DELETE FROM artifacts WHERE file_path = ? AND artifact_id <> ?").run(file, artifactId);
+        const existing = this.db
+          .prepare("SELECT content_hash, file_path FROM artifacts WHERE artifact_id = ?")
+          .get(artifactId) as { content_hash: string; file_path: string | null } | undefined;
+        if (existing && existing.file_path !== file) {
+          if (existing.content_hash === hash && existing.file_path && fs.existsSync(existing.file_path)) {
+            // An identical copy of an artifact already indexed from another file.
+            result.artifacts.duplicates++;
+            continue;
+          }
+          if (existing.content_hash !== hash) {
+            const corruptionIssue: CorruptionIssue = {
+              code: "ARTIFACT_ID_COLLISION",
+              severity: "error",
+              message: `Artifact identity ${artifactId} is already indexed from ${existing.file_path} with different content; ${file} is not indexed`,
+              path: file
+            };
+            result.artifacts.corrupted++;
+            result.issues.push(corruptionIssue);
+            result.warnings.push(formatCorruptionIssue(corruptionIssue));
+            if (this.strict) throw new Error(`Strict mode: artifact identity collision in ${file}`);
+            continue;
+          }
+        }
 
         upsertArtifact.run(
           artifactId,
@@ -518,7 +547,7 @@ export class HardkasIndexer {
         result.artifacts.indexed++;
 
         if (!isCorrupt && parsed.lineage && parsed.lineage.parentArtifactId) {
-          artifactsToLink.push(parsed);
+          artifactsToLink.push({ parsed, artifactId });
         }
       } catch (e: unknown) {
         result.artifacts.corrupted++;
@@ -536,19 +565,19 @@ export class HardkasIndexer {
       }
     }
 
-    // Pass 2: Lineage Edges (Now all artifact IDs exist)
-    for (const parsed of artifactsToLink) {
+    // Pass 2: Lineage Edges (Now all artifact IDs exist). Edges use artifactIds (IC-5′.9).
+    for (const { parsed, artifactId } of artifactsToLink) {
       try {
         insertEdge.run(
           parsed.lineage.lineageId || "legacy-lineage",
           parsed.lineage.parentArtifactId,
-          parsed.artifactId || parsed.contentHash,
+          artifactId,
           "derived",
           parsed.createdAt || null
         );
       } catch (e: unknown) {
         result.warnings.push(
-          `Failed to link lineage for ${parsed.artifactId}: ${e instanceof Error ? ((e instanceof Error) ? ((e instanceof Error) ? e.message : String(e)) : String(e)) : String(e)}`
+          `Failed to link lineage for ${artifactId}: ${e instanceof Error ? ((e instanceof Error) ? ((e instanceof Error) ? e.message : String(e)) : String(e)) : String(e)}`
         );
       }
     }

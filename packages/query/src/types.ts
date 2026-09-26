@@ -310,7 +310,9 @@ export type DivergenceKind =
   | "utxo-count-mismatch"
   | "status-mismatch"
   | "txid-mismatch"
-  | "ordering-divergence";
+  | "ordering-divergence"
+  /** IC-2′.8 / IC-4′.4: the receipt's status is not authenticated, so no status-based judgement was made. */
+  | "insufficient-evidence";
 
 export interface ReplayDivergence {
   readonly txId: string;
@@ -340,6 +342,8 @@ export interface ReplaySummaryResult {
 
 export interface ReplayInvariantsResult {
   readonly txId: TxId;
+  /** What the receipt's hash authenticated; status-based invariants are evaluated only for FULL. */
+  readonly authScope: "FULL" | "LEGACY" | "NONE";
   readonly planIntegrity: boolean;
   readonly receiptReproducible: boolean;
   readonly stateTransitionValid: boolean;

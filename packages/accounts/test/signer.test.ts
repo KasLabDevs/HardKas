@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from "vitest";
 import { signTxPlanArtifact } from "../src/signer.js";
-import { TxPlanArtifact } from "@hardkas/artifacts";
+import { TxPlanArtifact, calculateContentHash, CURRENT_HASH_VERSION } from "@hardkas/artifacts";
 import { HardkasAccount } from "../src/types.js";
 
 vi.mock("../src/signer-backend.js", () => {
@@ -17,7 +17,7 @@ describe("signTxPlanArtifact", () => {
   const mockSimulatedPlan: any = {
     schema: "hardkas.txPlan",
     version: "1.0.0-alpha",
-    hardkasVersion: "0.12.0-rc.22",
+    hardkasVersion: "0.12.0-rc.23",
     createdAt: new Date().toISOString(),
     networkId: "simnet",
     mode: "simulator",
@@ -31,6 +31,9 @@ describe("signTxPlanArtifact", () => {
     estimatedFeeSompi: "300",
     execution: { mode: "simulator", domain: "kaspa-l1", network: "simnet" }
   };
+  // Wave 1.4 · IC-6′: only a plan with a FULL identity can be authorized.
+  mockSimulatedPlan.hashVersion = CURRENT_HASH_VERSION;
+  mockSimulatedPlan.contentHash = calculateContentHash(mockSimulatedPlan, CURRENT_HASH_VERSION);
 
   const mockRealPlan: any = {
     ...mockSimulatedPlan,
@@ -66,7 +69,10 @@ describe("signTxPlanArtifact", () => {
 
     expect(signed.status).toBe("signed");
     expect(signed.from.address).toBe("kaspa:sim_alice");
-    expect(signed.signedTransaction?.format).toBe("simulated");
+    // Wave 1.4 · IC-6′.4: a synthetic authorization bound to the plan, given by its from.
+    expect(signed.signedTransaction?.format).toBe("synthetic-authorization");
+    expect(signed.authorization).toEqual({ kind: "synthetic", planArtifactId: mockSimulatedPlan.contentHash, signers: ["kaspa:sim_alice"] });
+    expect(signed.txId).toBe(`synthetic-${mockSimulatedPlan.contentHash}`);
   });
 
   it("should throw error when signing real plan with synthetic account", async () => {

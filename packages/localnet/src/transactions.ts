@@ -6,7 +6,8 @@ import { getSpendableUtxos } from "./balance.js";
 import {
   createTxPlanArtifact,
   createSimulatedTxReceipt,
-  calculateContentHash,
+  recomputeDeclaredContentHash,
+  syntheticTxIdFor,
   HARDKAS_VERSION,
   ARTIFACT_VERSION
 } from "@hardkas/artifacts";
@@ -31,8 +32,11 @@ function buildDagContextFromState(state: LocalnetState): DagContext {
 }
 
 /**
- * Generates a deterministic failed transaction ID from error context.
- * No Date.now() or Math.random() — same failure = same ID.
+ * Deterministic id of a FAILED simulated execution (a diagnostic, never a
+ * transaction). Wave 1.4 · N4: the single synthetic shape `synthetic-<64 hex>`,
+ * where the 64 hex digest the failure context — never the plan's identity, so a
+ * failed diagnostic can never collide with the executed transaction's id.
+ * No Date.now() or Math.random() — same failure = same id.
  */
 function generateDeterministicFailedTxId(
   preStateHash: string,
@@ -41,23 +45,19 @@ function generateDeterministicFailedTxId(
 ): string {
   const normalized = errorMessage.replace(/[^a-zA-Z0-9_:. -]/g, "");
   const input = `failed:${preStateHash}:${normalized}:${daaScore}`;
-  const hash = createHash("sha256").update(input).digest("hex").slice(0, 32);
-  return `simtx_failed_${hash}`;
+  const hash = createHash("sha256").update(input).digest("hex");
+  return `synthetic-${hash}`;
 }
 
 /**
- * Generates a deterministic simulated transaction ID from plan and state.
- * Ensures replay invariants: same plan + same state = same txId.
+ * Wave 1.4 · D-Q2.a / N4: the synthetic txId IS the executed plan's identity,
+ * `synthetic-<planArtifactId>` with the 64 hex. Same plan = same txId, which
+ * is the replay invariant; a plan's inputs are spent by its execution, so the
+ * id (and the synthetic outpoints derived from it) cannot be produced twice.
  */
-function generateDeterministicTxId(
-  planArtifact: TxPlan,
-  preStateHash: string,
-  daaScore: string
-): string {
-  const planHash = planArtifact.contentHash || calculateContentHash(planArtifact);
-  const input = `${planHash}:${preStateHash}:${daaScore}`;
-  const hash = createHash("sha256").update(input).digest("hex").slice(0, 32);
-  return `simtx_${hash}`;
+function generateDeterministicTxId(planArtifact: TxPlan): string {
+  const planHash = planArtifact.contentHash || recomputeDeclaredContentHash(planArtifact);
+  return syntheticTxIdFor(planHash);
 }
 
 export interface SimulatedPaymentInput {
@@ -159,7 +159,7 @@ export function applySimulatedPayment(
 
     // 6. State Transition
     const nextDaaScore = (BigInt(state.daaScore) + 1n).toString();
-    const txId = generateDeterministicTxId(planArtifact, preStateHash, nextDaaScore);
+    const txId = generateDeterministicTxId(planArtifact);
 
     // Mark inputs as spent
     const nextUtxos: LocalnetUtxo[] = state.utxos.map((u) => {
@@ -260,15 +260,40 @@ export function applySimulatedPayment(
 }
 /**
  * Executes a pre-built transaction plan against the simulated state.
+ *
+ * DEF-1c (Wave 1 continuation): `receiptExtra` threads schema-owned lifecycle
+ * metadata (`submittedAt`, `confirmedAt`, `rpcUrl`, `tracePath`, `sourceSignedId`)
+ * and a `parentArtifact` predecessor override into `createSimulatedTxReceipt`,
+ * so the SDK lifecycle owner can produce ONE canonical receipt identity
+ * containing all lifecycle+execution evidence in a single hashable construction.
+ * Threading is pure pass-through — this function does not manufacture, infer,
+ * or transform any of these values.
  */
 export function applySimulatedPlan(
   state: LocalnetState,
   planArtifact: TxPlan,
   ctx: RuntimeContext,
-  options?: { txId?: string }
+  options?: {
+    txId?: string;
+    /**
+     * IC-1′.7: the hashVersion whose domain-digest algorithm the produced state
+     * digests must use. Only a LEGACY replay (of a receipt declaring ≤ 4) passes
+     * a legacy value; producers use the current version.
+     */
+    digestHashVersion?: number;
+    receiptExtra?: {
+      submittedAt?: string;
+      confirmedAt?: string;
+      rpcUrl?: string;
+      tracePath?: string;
+      sourceSignedId?: string;
+      parentArtifact?: { contentHash: string; lineage?: any };
+    };
+  }
 ): SimulationResult {
   const errors: string[] = [];
-  const preStateHash = calculateStateHash(state);
+  const digest = options?.digestHashVersion !== undefined ? { hashVersion: options.digestHashVersion } : undefined;
+  const preStateHash = calculateStateHash(state, digest);
 
   try {
     const spentUtxoIds = planArtifact.inputs.map(
@@ -283,9 +308,7 @@ export function applySimulatedPlan(
     }
 
     const nextDaaScore = (BigInt(state.daaScore) + 1n).toString();
-    const txId =
-      options?.txId ||
-      generateDeterministicTxId(planArtifact, preStateHash, nextDaaScore);
+    const txId = options?.txId || generateDeterministicTxId(planArtifact);
 
     const nextUtxos: LocalnetUtxo[] = state.utxos.map((u) => {
       if (spentUtxoIds.includes(u.id)) {
@@ -327,7 +350,7 @@ export function applySimulatedPlan(
       daaScore: nextDaaScore,
       utxos: nextUtxos
     };
-    const postStateHash = calculateStateHash(nextState);
+    const postStateHash = calculateStateHash(nextState, digest);
 
     const receipt = createSimulatedTxReceipt(planArtifact, txId, ctx, {
       spentUtxoIds,
@@ -335,7 +358,13 @@ export function applySimulatedPlan(
       daaScore: nextDaaScore,
       preStateHash,
       postStateHash,
-      dagContext: buildDagContextFromState(state)
+      dagContext: buildDagContextFromState(state),
+      ...(options?.receiptExtra?.submittedAt ? { submittedAt: options.receiptExtra.submittedAt } : {}),
+      ...(options?.receiptExtra?.confirmedAt ? { confirmedAt: options.receiptExtra.confirmedAt } : {}),
+      ...(options?.receiptExtra?.rpcUrl ? { rpcUrl: options.receiptExtra.rpcUrl } : {}),
+      ...(options?.receiptExtra?.tracePath ? { tracePath: options.receiptExtra.tracePath } : {}),
+      ...(options?.receiptExtra?.sourceSignedId ? { sourceSignedId: options.receiptExtra.sourceSignedId } : {}),
+      ...(options?.receiptExtra?.parentArtifact ? { parentArtifact: options.receiptExtra.parentArtifact } : {})
     });
 
     return { ok: true, state: nextState, receipt, planArtifact, errors };

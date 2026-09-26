@@ -40,7 +40,7 @@ function baseDeployPlan(
   const lock = silverP2shLock(BYTECODE);
   return {
     schema: "hardkas.silver.deployPlan",
-    hardkasVersion: "0.12.0-rc.22",
+    hardkasVersion: "0.12.0-rc.23",
     version: "1.0.0-alpha",
     hashVersion: 4,
     networkId: "simnet",
@@ -65,7 +65,7 @@ function baseSpendPlan(
   const args = ENTRY_PUSHES;
   return {
     schema: "hardkas.silver.spendPlan",
-    hardkasVersion: "0.12.0-rc.22",
+    hardkasVersion: "0.12.0-rc.23",
     version: "1.0.0-alpha",
     hashVersion: 4,
     networkId: "simnet",

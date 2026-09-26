@@ -1,9 +1,38 @@
 import { parseKasToSompi, systemRuntimeContext, NetworkId } from "@hardkas/core";
-import { resolveHardkasAccountAddress } from "@hardkas/accounts";
-import { buildPaymentPlan, createMockUtxo } from "@hardkas/tx-builder";
+import {
+  TxPlanService,
+  observePendingSpends,
+  utxoOutpointKey,
+  PendingSpendAllExcludedError,
+  PendingSpendEvidenceUnavailableError,
+  type PendingSpendEvidence,
+  type TxPlanResult,
+  type UtxoProvider
+} from "@hardkas/tx-builder";
 import { createTxPlanArtifact, TxPlanArtifact } from "@hardkas/artifacts";
 import { coreEvents, getCoinbaseMaturity, sha256hex, UtxoVirtualStateUnstableError } from "@hardkas/core";
 import { resolveExecutionTarget, HardkasConfig } from "@hardkas/config";
+
+// Wave 2(b) · AUD-17 (PLANNER-CONVERGENCE-1) / AUD-28 (CHANGEADDR): the CLI plans
+// through the SAME canonical planner as the SDK — `planTransactionUpstream`
+// (kaspa-wasm Generator, `plannerAuthority: KASPA_WASM_GENERATOR`) on a real
+// network, `planTransactionSynthetic` (`SYNTHETIC_SIMULATOR`) in the simulator —
+// and records that authority in the artifact. The CLI's safety layers around the
+// network read (virtual fingerprint before/after, confirmation query of the
+// selected inputs, bounded retries, RPC error classification) are unchanged.
+
+/** A refusal of the canonical upstream planner, kept distinct from transport (RPC) failures. */
+export class UpstreamPlannerError extends Error {
+  readonly code: string;
+  readonly cause: unknown;
+  constructor(cause: unknown) {
+    const message = cause instanceof Error ? cause.message : String(cause);
+    super(`UPSTREAM_PLANNER_ERROR: ${message}`);
+    this.name = "UpstreamPlannerError";
+    this.code = typeof (cause as any)?.code === "string" ? (cause as any).code : "UPSTREAM_PLANNER_ERROR";
+    this.cause = cause;
+  }
+}
 
 export interface TxPlanRunnerInput {
   targetName?: string;
@@ -18,6 +47,8 @@ export interface TxPlanRunnerInput {
   workspaceRoot?: string;
   workflowId?: string;
   assumptionLevel?: string;
+  /** AUD-28: explicit change destination (account name or address); default = the sender. */
+  changeAddress?: string;
 }
 
 /**
@@ -95,6 +126,17 @@ export async function runTxPlan(input: TxPlanRunnerInput): Promise<TxPlanArtifac
   const fromAddress = fromAccount.address as string;
   const toAddress = toAccount.address as string;
 
+  // AUD-28: the change destination is resolved and checked like `to`; it is never inferred.
+  let changeAddressResolved: string | undefined;
+  if (input.changeAddress) {
+    const changeAccount = resolveHardkasAccount({ nameOrAddress: input.changeAddress, config: resolvedConfig, executionTarget: execution });
+    assertAccountCompatible(changeAccount, execution);
+    if (!changeAccount.address) {
+      throw new Error(`CHANGE_ADDRESS_UNRESOLVED: '${input.changeAddress}' resolves to an account without an address.`);
+    }
+    changeAddressResolved = changeAccount.address as string;
+  }
+
   let effectiveNetworkId = networkId;
   if (networkId === "simnet" && resolvedConfig.networks?.simnet?.kind === "simulated") {
     effectiveNetworkId = "simulated";
@@ -132,7 +174,8 @@ export async function runTxPlan(input: TxPlanRunnerInput): Promise<TxPlanArtifac
 
   let availableUtxos: any[] = [];
   let mode: "simulator" | "kaspa-node" | "kaspa-rpc" = "simulator";
-  let plan: ReturnType<typeof buildPaymentPlan> = null as any;
+  let planResult: TxPlanResult | undefined;
+  let pendingSpendEvidence: PendingSpendEvidence | undefined;
   let rpcUrl: string | undefined = providerConfig.endpoint;
 
   const planCoinbaseMaturity = getCoinbaseMaturity(
@@ -181,13 +224,18 @@ export async function runTxPlan(input: TxPlanRunnerInput): Promise<TxPlanArtifac
       actualFeeRate = 1n; // Simulator defaults to 1 sompi/mass
     }
 
-    plan = buildPaymentPlan({
+    // AUD-17 (T-A17c): the simulator plans through the canonical synthetic planner and
+    // is labelled NON-AUTHORITATIVE (`SYNTHETIC_SIMULATOR`), exactly as the SDK does.
+    const simulatorProvider: UtxoProvider = { getUtxos: async () => availableUtxos };
+    const simulatorService = new TxPlanService(simulatorProvider, { coinbaseMaturity: planCoinbaseMaturity });
+    const simulatorChange = changeAddressResolved ?? (stateAddress && stateAddress !== fromAddress ? stateAddress : undefined);
+    planResult = await simulatorService.planTransactionSynthetic({
       fromAddress,
-      outputs: [{ address: toAddress, amountSompi }],
-      availableUtxos,
-      feeRateSompiPerMass: actualFeeRate,
-      coinbaseMaturity: planCoinbaseMaturity,
-      ...(stateAddress && stateAddress !== fromAddress ? { changeAddress: stateAddress } : {})
+      toAddress,
+      amountSompi,
+      feeRate: actualFeeRate,
+      networkId: resolvedNetwork,
+      ...(simulatorChange ? { changeAddress: simulatorChange } : {})
     });
 
     mode = "simulator";
@@ -242,15 +290,22 @@ export async function runTxPlan(input: TxPlanRunnerInput): Promise<TxPlanArtifac
           throw new Error(`No UTXOs found for ${fromAddress} on network '${resolvedNetwork}'.`);
         }
 
-        // --- Pending-Spend Safety (rc.12) ---
-        // Load registry (always stale), reconcile against live mempool + fresh UTXOs,
-        // then filter out pending-spent outpoints before coin selection.
-        let spendableUtxos = matureUtxos;
+        // --- Pending-spend exclusion (Wave 2(c) · AUD-19) ---
+        // ONE mempool observation taken inside the same fingerprint bracket as the UTXO
+        // read: every outpoint a mempool transaction of `fromAddress` is spending is
+        // excluded before coin selection. No evidence ⇒ no plan (fail closed). This is
+        // observer-local protection, never a statement about the network.
+        const observedPending = await observePendingSpends(client, fromAddress, vBefore.virtualDaaScore);
+        const pendingOutpoints = observedPending.outpoints;
+        const spendableUtxos = matureUtxos.filter((u) => !pendingOutpoints.has(utxoOutpointKey(u) ?? ""));
+        if (spendableUtxos.length === 0) {
+          throw new PendingSpendAllExcludedError(observedPending.evidence, matureUtxos.length);
+        }
 
         let actualFeeRate = feeRateSompiPerMass;
         if (actualFeeRate === undefined) {
           // Only the priority rate is taken from here; the plan's mass and fee are
-          // computed by buildPaymentPlan with the SDK over the real transaction. The
+          // computed by the upstream Generator over the real transaction. The
           // shape is therefore a representative one, not every spendable UTXO (which
           // would describe a transaction far above the standard mass limit).
           const { HardkasFees } = await import("@hardkas/sdk");
@@ -265,15 +320,31 @@ export async function runTxPlan(input: TxPlanRunnerInput): Promise<TxPlanArtifac
           actualFeeRate = estimated;
         }
 
-        const candidatePlan = buildPaymentPlan({
-          fromAddress,
-          outputs: [{ address: toAddress, amountSompi }],
-          availableUtxos: spendableUtxos,
-          feeRateSompiPerMass: actualFeeRate,
-          coinbaseMaturity: planCoinbaseMaturity,
-          virtualDaaScore: vBefore.virtualDaaScore,
-          ...(stateAddress && stateAddress !== fromAddress ? { changeAddress: stateAddress } : {})
-        });
+        // AUD-17 (T-A17a/b): coin selection, mass and fee come from the upstream
+        // Generator through the same service the SDK uses; the read snapshot taken
+        // above (`vBefore`, `spendableUtxos`) is what the planner sees.
+        const readSnapshot: UtxoProvider = {
+          getUtxos: async () => spendableUtxos,
+          getVirtualDaaScore: async () => vBefore.virtualDaaScore
+        };
+        const upstreamService = new TxPlanService(readSnapshot, { coinbaseMaturity: planCoinbaseMaturity });
+        let candidate: TxPlanResult;
+        try {
+          candidate = await upstreamService.planTransactionUpstream({
+            fromAddress,
+            toAddress,
+            amountSompi,
+            feeRate: actualFeeRate,
+            networkId: resolvedNetwork,
+            ...(pendingOutpoints.size > 0 ? { excludeOutpoints: pendingOutpoints } : {}),
+            ...(changeAddressResolved ? { changeAddress: changeAddressResolved } : {})
+          });
+        } catch (plannerError: unknown) {
+          // A planner refusal (invalid address, insufficient funds, Generator error) is
+          // not a transport failure: it surfaces as itself, never as an RPC connection error.
+          throw new UpstreamPlannerError(plannerError);
+        }
+        const candidatePlan = candidate.plan;
 
         // Confirmation query
         const confirmUtxos = await client.getUtxosByAddress(fromAddress);
@@ -294,7 +365,8 @@ export async function runTxPlan(input: TxPlanRunnerInput): Promise<TxPlanArtifac
           continue; // retry READ phase
         }
 
-        plan = candidatePlan;
+        planResult = candidate;
+        pendingSpendEvidence = observedPending.evidence;
         planSuccess = true;
         break;
       }
@@ -311,6 +383,8 @@ export async function runTxPlan(input: TxPlanRunnerInput): Promise<TxPlanArtifac
 
     } catch (e: unknown) {
       if (e instanceof UtxoVirtualStateUnstableError) throw e;
+      if (e instanceof UpstreamPlannerError) throw e;
+      if (e instanceof PendingSpendEvidenceUnavailableError || e instanceof PendingSpendAllExcludedError) throw e;
       if (e instanceof Error && (e.message.includes("No UTXOs found") || e.message.includes("Insufficient funds"))) throw e;
 
       const protocol = rpcUrl?.startsWith("ws") ? "WebSocket" : "JSON-RPC";
@@ -351,6 +425,10 @@ export async function runTxPlan(input: TxPlanRunnerInput): Promise<TxPlanArtifac
     }
   }
 
+  if (!planResult) {
+    throw new Error("PLANNER_NO_RESULT: no plan was produced");
+  }
+
   const artifact = createTxPlanArtifact({
     networkId: resolvedNetwork as NetworkId,
     mode: mode === "simulator" ? "simulator" : (mode === "kaspa-rpc" ? "rpc" : "localnet"),
@@ -358,11 +436,16 @@ export async function runTxPlan(input: TxPlanRunnerInput): Promise<TxPlanArtifac
     from: { input: from, address: fromAddress },
     to: { input: to, address: toAddress },
     amountSompi,
-    plan,
+    plan: planResult.plan,
     ctx: {
       ...systemRuntimeContext,
       ...(workflowId ? { workflowId } : {}),
-      assumptionLevel: resolvedAssumptionLevel
+      assumptionLevel: resolvedAssumptionLevel,
+      utxoSelection: planResult.utxoSelection,
+      // AUD-17: the authority the planner actually established, never synthesised.
+      ...(planResult.plannerAuthority ? { plannerAuthority: planResult.plannerAuthority } : {}),
+      ...(planResult.plannerAuthorityDetail ? { plannerAuthorityDetail: planResult.plannerAuthorityDetail } : {}),
+      ...(pendingSpendEvidence ? { pendingSpendEvidence } : {})
     }
   }) as unknown as TxPlanArtifact;
 

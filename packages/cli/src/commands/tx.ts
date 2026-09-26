@@ -10,6 +10,43 @@ import { runTxFlow } from "../runners/tx-flow.js";
 import { runTxReceipt } from "../runners/tx-receipt-runner.js";
 import { HardkasSchemas } from "@hardkas/artifacts";
 
+/**
+ * Wave 2(e) · AUX-11 — `tx send` ends in exactly one of three unambiguous outcomes:
+ * `submitted` (exit 0), `not_executed` (this refusal, exit 3 = POLICY_DENIED) or a failure
+ * (exit ≠ 0). Without `--yes` on a non-simulated network nothing is planned, signed,
+ * broadcast or written, and the result is an explicit refusal — never a dry-run that
+ * reads as success to a human or to automation.
+ */
+export const TX_SEND_CONFIRMATION_REQUIRED = "TX_SEND_CONFIRMATION_REQUIRED";
+
+async function declineUnconfirmedSend(args: {
+  json: boolean;
+  network: string;
+  retry: string;
+}): Promise<never> {
+  const { HardkasCliError, HardkasExitCode } = await import("../cli-errors.js");
+  const message =
+    `NOT EXECUTED: 'tx send' on ${args.network} requires explicit confirmation. ` +
+    `Nothing was planned, signed, broadcast or written. To execute, re-run with --yes.`;
+  if (args.json) {
+    UI.writeJson({
+      ok: false,
+      command: "tx send",
+      mode: "cli",
+      outcome: "not_executed",
+      code: TX_SEND_CONFIRMATION_REQUIRED,
+      network: args.network,
+      message,
+      nextSteps: [args.retry]
+    });
+  }
+  throw new HardkasCliError(TX_SEND_CONFIRMATION_REQUIRED, message, {
+    exitCode: HardkasExitCode.POLICY_DENIED,
+    suggestion: args.retry,
+    context: { network: args.network }
+  });
+}
+
 export function registerTxCommands(program: Command) {
   const tx = program.command("tx").description("L1 Transaction commands");
 
@@ -50,6 +87,7 @@ export function registerTxCommands(program: Command) {
     .option("--amount <kas>", "Amount in KAS")
     .option("--network <name>", "Kaspa network name")
     .option("--fee-rate <sompiPerMass>", "Fee rate in sompi per mass")
+    .option("--change <accountOrAddress>", "Change destination (account name or address); default: the sender")
     .option("--provider <type>", "Provider mode (auto, rpc, simulated)", "auto")
     .option("--url <url>", "RPC URL (optional override)")
     .option("--out <path>", "Save plan as artifact JSON")
@@ -103,6 +141,7 @@ export function registerTxCommands(program: Command) {
                 ...(options.network ? { networkId: options.network } : {}),
                 provider: options.provider || "auto",
                 ...(options.feeRate ? { feeRate: options.feeRate } : {}),
+                ...(options.change ? { changeAddress: options.change } : {}),
                 config: loaded.config,
                 ...(options.workflowId ? { workflowId: options.workflowId } : {}),
                 ...(options.assumptionLevel
@@ -327,7 +366,11 @@ export function registerTxCommands(program: Command) {
     .option("--fee-rate <sompiPerMass>", "Fee rate in sompi per mass (shortcut mode)")
     .option("--provider <type>", "Provider mode (auto, rpc, simulated)", "auto")
     .option("--url <url>", "RPC URL (optional override)")
-    .option("--yes", "Confirm broadcast", false)
+    .option(
+      "--yes",
+      "Confirm broadcast. Required on any non-simulated network: without it the send is refused (NOT EXECUTED, exit 3) and nothing is written",
+      false
+    )
     .option("--wait-lock", "Wait for workspace lock if held", false)
     .option("--lock-timeout <ms>", "Lock wait timeout in ms", "30000")
     .option("--json", "Output as JSON", false)
@@ -375,9 +418,11 @@ export function registerTxCommands(program: Command) {
                   signedArtifact.networkId !== "simulated" &&
                   signedArtifact.networkId !== "simnet"
                 ) {
-                  const { UI } = await import("../ui.js");
-                  UI.dryRun();
-                  return;
+                  await declineUnconfirmedSend({
+                    json: options.json,
+                    network: String(signedArtifact.networkId),
+                    retry: `hardkas tx send ${signedPath} --yes`
+                  });
                 }
 
                 const result = await runTxSend({
@@ -389,16 +434,23 @@ export function registerTxCommands(program: Command) {
                   ...(options.url ? { url: options.url } : {})
                 });
 
+                // Wave 1.2 · CLI-NEXTSTEPS-1 / IC-5′.11: artifactId is the receipt's
+                // canonical identity; the txId is labelled as a txId.
+                // Wave 1.3 · R-iii: the verdict comes from the authenticated outcome.
+                const { nextStepsAfterSend, receiptArtifactId, sendExplanation, sendOutcome } = await import("../runners/next-steps.js");
+                const outcome = sendOutcome(result.receipt);
                 if (options.json) {
                   UI.writeJson({
-                    ok: true,
+                    ok: result.accepted,
+                    // AUX-11: one of three unambiguous outcomes (submitted | rejected | not_executed).
+                    outcome: result.accepted ? "submitted" : "rejected",
                     data: {
                       plan: undefined,
                       signed: signedArtifact,
                       receipt: result.receipt,
                       artifacts: [signedArtifact, result.receipt],
                       warnings: [],
-                      explanation: { available: true, artifactId: result.receipt.txId }
+                      explanation: sendExplanation({ receipt: result.receipt, txId: result.txId })
                     },
                     meta: {
                       network: result.networkName,
@@ -411,26 +463,40 @@ export function registerTxCommands(program: Command) {
                   const isSimulated =
                     result.networkName === "simulated" || result.rpcUrl === "simulated://local";
 
+                  // Wave 1.5 · AUD-14 (simulator part): only computed outcomes are printed.
+                  // The title is the authenticated outcome; no replay ran here, so no
+                  // replay id or replay verdict is printed.
                   UI.causality(
                     isSimulated
                       ? "Transaction simulated successfully"
-                      : "Transaction broadcast successfully",
+                      : result.accepted
+                        ? "Transaction broadcast successfully"
+                        : "Transaction broadcast NOT accepted by the node",
                     {
                       "Execution ID": result.executionId,
-                      "Artifact ID": result.txId,
-                      "Replay ID": result.replayId,
+                      "Artifact ID": receiptArtifactId(result.receipt) ?? "unknown",
+                      "Tx ID": result.txId,
                       Network: result.networkName,
                       "Execution Scope": isSimulated
-                        ? "local deterministic replay"
+                        ? "local simulated execution"
                         : "network broadcast",
                       "Artifact Written": result.receiptPath || ".hardkas/artifacts/...",
-                      "Projection Updated": "SQLite query-store",
+                      Projection: "SQLite query-store (indexed while the dashboard runs)",
                       "Replay Status": isSimulated
-                        ? "deterministic reproducible"
+                        ? "not run (hardkas replay verify <artifactId>)"
                         : "network state dependent",
                       "Consensus Validated": isSimulated ? "NO" : "YES"
                     },
-                    ["hardkas dashboard", `hardkas explain ${result.txId}`]
+                    nextStepsAfterSend({ receipt: result.receipt, txId: result.txId })
+                  );
+                }
+
+                if (!result.accepted) {
+                  const { HardkasCliError } = await import("../cli-errors.js");
+                  throw new HardkasCliError(
+                    "TX_SUBMISSION_REJECTED",
+                    `The node did not accept the transaction (${(result.receipt as any)?.submitResult?.error ?? "no reason returned"}); the submission was recorded as ${receiptArtifactId(result.receipt) ?? "unknown"}.`,
+                    { exitCode: 1 }
                   );
                 }
 
@@ -442,19 +508,24 @@ export function registerTxCommands(program: Command) {
                     network: result.networkName,
                     txId: result.txId,
                     plan: signedArtifact.sourcePlanId,
-                    status: result.receipt.status === "confirmed" ? "confirmed" : "sent",
+                    // Only an authenticated `confirmed` status counts; a submission is "sent".
+                    status: outcome.kind === "receipt" && outcome.decided && outcome.status === "confirmed" ? "confirmed" : "sent",
                     silent: options.json
                   });
                 }
               } else if (options.from && options.to && options.amount) {
-                if (
-                  !options.yes &&
-                  options.network !== "simulated" &&
-                  options.network !== "simnet"
-                ) {
-                  const { UI } = await import("../ui.js");
-                  UI.dryRun();
-                  return;
+                // AUX-11: the confirmation policy of `tx send` — required unless the network is
+                // the simulator or a local simnet. Once it is satisfied the flow is told so
+                // (`yes`); otherwise the flow's own guard blocks its send step and this command
+                // would have nothing to report as a broadcast.
+                const confirmationExempt =
+                  options.network === "simulated" || options.network === "simnet";
+                if (!options.yes && !confirmationExempt) {
+                  await declineUnconfirmedSend({
+                    json: options.json,
+                    network: String(options.network ?? loaded.config.defaultNetwork ?? "unknown"),
+                    retry: `hardkas tx send --from ${options.from} --to ${options.to} --amount ${options.amount}${options.network ? ` --network ${options.network}` : ""} --yes`
+                  });
                 }
 
                 const result = await runTxFlow({
@@ -462,6 +533,7 @@ export function registerTxCommands(program: Command) {
                   from: options.from!,
                   to: options.to!,
                   send: true,
+                  yes: options.yes || confirmationExempt,
                   provider: options.provider,
                   config: loaded.config,
                   ...(options.network ? { network: options.network } : {}),
@@ -469,10 +541,52 @@ export function registerTxCommands(program: Command) {
                   ...(options.url ? { url: options.url } : {})
                 });
 
+                const { nextStepsAfterSend, receiptArtifactId, sendExplanation } = await import("../runners/next-steps.js");
+                // R-iii: when the flow broadcast, the verdict is the runner's authenticated outcome.
+                // AUX-11: only a send step that ran ("ok") can be submitted or rejected. A step the
+                // flow blocked or skipped is NOT executed; a step (or an earlier step) that errored
+                // is a failure. Neither may exit 0 or print anything that reads as a broadcast.
+                const flowSend = result.steps.send;
+                if (flowSend.status !== "ok") {
+                  const { HardkasCliError, HardkasExitCode } = await import("../cli-errors.js");
+                  const stepStatuses = {
+                    plan: result.steps.plan.status,
+                    sign: result.steps.sign.status,
+                    send: flowSend.status
+                  };
+                  const erroredStep = (["plan", "sign", "send"] as const).find(
+                    (k) => result.steps[k].status === "error"
+                  );
+                  const notExecuted = erroredStep === undefined;
+                  const reason = erroredStep
+                    ? `${erroredStep} step failed: ${result.steps[erroredStep].error ?? "no error message"}`
+                    : flowSend.reason ?? "the send step did not run";
+                  const code = notExecuted ? "TX_SEND_NOT_EXECUTED" : "TX_SEND_FAILED";
+                  const message = `${notExecuted ? "NOT EXECUTED" : "FAILED"}: 'tx send' did not broadcast (${reason}).`;
+                  if (options.json) {
+                    UI.writeJson({
+                      ok: false,
+                      command: "tx send",
+                      mode: "cli",
+                      outcome: notExecuted ? "not_executed" : "failed",
+                      code,
+                      message,
+                      network: result.networkId,
+                      steps: stepStatuses
+                    });
+                  }
+                  throw new HardkasCliError(code, message, {
+                    exitCode: notExecuted ? HardkasExitCode.POLICY_DENIED : HardkasExitCode.RUNTIME_FAILURE,
+                    context: { network: result.networkId, ...stepStatuses }
+                  });
+                }
+                const flowAccepted = flowSend.artifact?.accepted !== false;
                 if (options.json) {
                   const sendResult = result.steps.send;
                   UI.writeJson({
-                    ok: true,
+                    ok: flowAccepted,
+                    // AUX-11: one of three unambiguous outcomes (submitted | rejected | not_executed).
+                    outcome: flowAccepted ? "submitted" : "rejected",
                     data: {
                       plan: result.steps.plan.artifact,
                       signed: result.steps.sign.artifact,
@@ -483,10 +597,10 @@ export function registerTxCommands(program: Command) {
                         sendResult?.artifact?.receipt
                       ].filter(Boolean),
                       warnings: [],
-                      explanation: {
-                        available: true,
-                        artifactId: sendResult?.artifact?.receipt?.txId
-                      }
+                      explanation: sendExplanation({
+                        receipt: sendResult?.artifact?.receipt,
+                        txId: sendResult?.artifact?.txId
+                      })
                     },
                     meta: {
                       network: options.network || "simulated",
@@ -504,31 +618,40 @@ export function registerTxCommands(program: Command) {
                   UI.causality(
                     isSimulated
                       ? "Transaction simulated successfully"
-                      : "Transaction broadcast successfully",
+                      : flowAccepted
+                        ? "Transaction broadcast successfully"
+                        : "Transaction broadcast NOT accepted by the node",
                     {
+                      // Wave 1.5 · AUD-14 (simulator part): no replay ran here, so no
+                      // replay id or replay verdict is printed.
                       "Execution ID": `exec_${Date.now().toString(36)}`,
-                      "Artifact ID":
-                        sendResult?.artifact?.receipt?.lineage?.artifactId ||
-                        sendResult?.artifact?.txId ||
-                        "unknown",
-                      "Replay ID": `replay_${(sendResult?.artifact?.txId || "unknown").substring(0, 8)}`,
+                      "Artifact ID": receiptArtifactId(sendResult?.artifact?.receipt) ?? "unknown",
+                      "Tx ID": sendResult?.artifact?.txId ?? "unknown",
                       Network: options.network || "simulated",
                       "Execution Scope": isSimulated
-                        ? "local deterministic replay"
+                        ? "local simulated execution"
                         : "network broadcast",
                       "Artifact Written":
                         sendResult?.artifact?.receiptPath || ".hardkas/artifacts/...",
-                      "Projection Updated": "SQLite query-store",
+                      Projection: "SQLite query-store (indexed while the dashboard runs)",
                       "Replay Status": isSimulated
-                        ? "deterministic reproducible"
+                        ? "not run (hardkas replay verify <artifactId>)"
                         : "network state dependent",
                       "Consensus Validated": isSimulated ? "NO" : "YES"
                     },
                     [
-                      `hardkas why ${sendResult?.artifact?.receipt?.lineage?.artifactId || sendResult?.artifact?.txId || "unknown"}`,
+                      ...nextStepsAfterSend({ receipt: sendResult?.artifact?.receipt, txId: sendResult?.artifact?.txId }),
                       "hardkas dev last --replay",
                       "hardkas status"
                     ]
+                  );
+                }
+                if (!flowAccepted) {
+                  const { HardkasCliError } = await import("../cli-errors.js");
+                  throw new HardkasCliError(
+                    "TX_SUBMISSION_REJECTED",
+                    `The node did not accept the transaction; the submission was recorded as ${receiptArtifactId(flowSend?.artifact?.receipt) ?? "unknown"}.`,
+                    { exitCode: 1 }
                   );
                 }
               } else {

@@ -28,7 +28,10 @@ describe("Deployment artifacts", () => {
     expect(r1.contentHash).toBe(r2.contentHash);
   });
 
-  it("different status produces same hash (status is semantically excluded)", () => {
+  it("different status produces a different hash (status is authenticated in hashVersion 5)", () => {
+    // Wave 1.1 · IC-1′.1: `status` is not in the closed V5_UNAUTHENTICATED list, so a
+    // status flip changes the record's identity. The former expectation (same hash for
+    // "sent" and "confirmed") was the audited defect AUD-11 / P1, not a property to keep.
     const r1 = createDeploymentRecord({
       label: "test",
       networkId: "simnet" as any,
@@ -41,7 +44,7 @@ describe("Deployment artifacts", () => {
       status: "confirmed",
       txId: "simtx_abc" as any
     });
-    expect(r1.contentHash).toBe(r2.contentHash);
+    expect(r1.contentHash).not.toBe(r2.contentHash);
   });
 
   it("deployedAt is excluded from hash (deterministic)", async () => {

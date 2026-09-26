@@ -13,11 +13,13 @@ export type DraftArtifact<TFinal, THashFields extends keyof TFinal> = Omit<
 > &
   Partial<Pick<TFinal, THashFields>>;
 
+// A version-5 root stores only artifactId (+ sequence); children carry the rest.
+// verifyLineage enforces which form applies (Closure Pack D-Q1.d).
 export const ArtifactLineageSchema = z.object({
   artifactId: z.string(),
-  lineageId: z.string(),
+  lineageId: z.string().optional(),
   parentArtifactId: z.string().optional(),
-  rootArtifactId: z.string(),
+  rootArtifactId: z.string().optional(),
   sequence: z.number().optional()
 });
 
@@ -204,7 +206,16 @@ export const TxPlanSchema = BaseArtifactSchema.extend({
   networkProfileRef: z.string().optional(),
   policyRef: z.string().optional(),
   policyRefs: z.array(z.string()).optional(),
-  assumptionRef: z.string().optional()
+  assumptionRef: z.string().optional(),
+  // M10-B-completion authority projection. The planner that produced this artifact
+  // records itself here so downstream verify/lineage tools can distinguish real-
+  // network authority (`KASPA_WASM_GENERATOR`) from the synthetic developer
+  // harness (`SYNTHETIC_SIMULATOR`). Absence = authority was not established;
+  // NEVER synthesize a value. Historical plan artifacts legitimately omit this
+  // field and remain readable — the fields are optional to preserve backward
+  // compatibility with rc.22-era artifacts.
+  plannerAuthority: z.enum(["KASPA_WASM_GENERATOR", "SYNTHETIC_SIMULATOR"]).optional(),
+  plannerAuthorityDetail: z.string().optional()
 });
 
 export const DagContextSchema = z.object({
@@ -316,10 +327,198 @@ export const TxReceiptSchema = BaseArtifactSchema.extend({
   metadata: z.any().optional()
 });
 
-export const SignatureEntrySchema = z.object({
-  signer: z.string(),
-  signature: z.string()
+/**
+ * R-iii part 1 (Closure Pack IC-2′.2, Wave 1.3): the immutable record of what
+ * HardKAS DID when it broadcast a signed transaction. Authenticated: the signed
+ * artifact by artifactId, the txId the node returned, the submit call's result.
+ * It carries NO post-send state (no status, confirmedAt, dagContext…): that is
+ * observation, Wave 2. The raw RPC locator stays in the unauthenticated `rpcUrl`
+ * (IC-1′.1b); a normalised `endpoint` is ARCHITECTURE_BLOCKED until its
+ * normalisation is ratified, so no `endpoint` field is written.
+ */
+export const TxSubmissionSchema = BaseArtifactSchema.extend({
+  schema: z.literal(HardkasSchemas.TxSubmissionV1),
+  execution: executionTargetSchema.optional(),
+  signedArtifactId: z.string().regex(/^[0-9a-f]{64}$/),
+  txId: z.string(),
+  submitResult: z.object({
+    accepted: z.boolean(),
+    transactionId: z.string().optional(),
+    error: z.string().optional()
+  }),
+  submittedAt: z.string().optional(),
+  rpcUrl: z.string().optional(),
+  policyRefs: z.array(z.string()).optional(),
+  networkProfileRef: z.string().optional(),
+  assumptionRef: z.string().optional(),
+  /**
+   * Wave 2(a) · the observer's cursor: where the virtual was when HardKAS submitted
+   * (authenticated; it is a fact about the submit, not a post-send state).
+   */
+  submitPoint: z
+    .object({
+      virtualDaaScore: z.string().regex(/^\d+$/),
+      sinkHash: z.string(),
+      sinkBlueScore: z.string().regex(/^\d+$/)
+    })
+    .optional(),
+  /**
+   * Wave 2(d) · AUD-18: the fee DERIVED from the signed transaction (Σ consumed −
+   * Σ produced) or an explicit statement that the evidence did not allow it.
+   * Never an estimate copied from metadata, never "0" by default.
+   */
+  fee: z
+    .discriminatedUnion("status", [
+      z.object({
+        status: z.literal("derived"),
+        method: z.literal("inputs-minus-outputs"),
+        inputsSompi: z.string().regex(/^\d+$/),
+        outputsSompi: z.string().regex(/^\d+$/),
+        feeSompi: z.string().regex(/^\d+$/),
+        inputCount: z.number().int().positive(),
+        outputCount: z.number().int().positive(),
+        planArtifactId: z.string().regex(/^[0-9a-f]{64}$/)
+      }),
+      z.object({ status: z.literal("insufficient-evidence"), reason: z.string().min(1) })
+    ])
+    .optional()
 });
+
+const decimalString = z.string().regex(/^\d+$/);
+const hex64 = z.string().regex(/^[0-9a-f]{64}$/);
+
+/** Wave 2(a) · IC-2′.3 · where the observer's virtual was when it looked (authenticated). */
+export const TxObservationPointSchema = z.object({
+  virtualDaaScore: decimalString,
+  sinkHash: z.string(),
+  sinkBlueScore: decimalString,
+  pruningPointHash: z.string().optional()
+});
+
+/**
+ * Wave 2(a) · IC-2′.3 · the typed finding of ONE observation. The consensus meaning
+ * of each type is fixed by Q4 (ratified 2026-09-26); an observation is never a
+ * consensus verdict by itself — `deriveTxStatus` turns a set of them into a state.
+ */
+export const TxObservationFindingSchema = z.discriminatedUnion("type", [
+  z.object({ type: z.literal("mempool_entry"), isOrphan: z.boolean(), feeSompi: decimalString.optional() }),
+  z.object({ type: z.literal("mempool_absent") }),
+  z.object({
+    type: z.literal("chain_accepted"),
+    acceptingBlockHash: z.string(),
+    acceptingBlueScore: decimalString,
+    acceptingDaaScore: decimalString.optional(),
+    confirmationsBlue: decimalString,
+    confirmationsDaa: decimalString.optional()
+  }),
+  z.object({ type: z.literal("chain_removed"), acceptingBlockHash: z.string() }),
+  z.object({
+    type: z.literal("finality_reached"),
+    acceptingBlockHash: z.string(),
+    acceptingBlueScore: decimalString,
+    confirmationsBlue: decimalString,
+    finalityDepth: decimalString
+  }),
+  z.object({ type: z.literal("pruned_unobservable"), reason: z.string() }),
+  z.object({
+    type: z.literal("not_found"),
+    scannedFrom: z.string().optional(),
+    /** The last chain block the scan reached: the next observation's cursor. */
+    scannedTo: z.string().optional(),
+    scannedChainBlocks: z.number().int().nonnegative().optional()
+  }),
+  z.object({ type: z.literal("synthetic_executed"), receiptArtifactId: hex64 })
+]);
+
+/**
+ * Wave 2(a) · IC-2′.3 / Q4 · `hardkas.txObservation.v1`: what ONE observer saw about a
+ * txId at ONE point. Everything material is authenticated (v5). It references its
+ * subject; it is not a lineage link (IC-2′.5). "Persist facts; derive states."
+ */
+export const TxObservationSchema = BaseArtifactSchema.extend({
+  schema: z.literal(HardkasSchemas.TxObservationV1),
+  execution: executionTargetSchema.optional(),
+  subject: z.object({
+    txId: z.string(),
+    submissionArtifactId: hex64.optional()
+  }),
+  observer: z.object({
+    /**
+     * Opaque, stable identity of the HardKAS observer INSTANCE (Wave 2(a) security
+     * review): "these observations come from the same logical observer", so that a
+     * temporal history is only ever derived within one observer. It does NOT identify
+     * a node cryptographically (D-Q1.a stays blocked).
+     */
+    observerId: z.string().regex(/^obs_[0-9a-f]{64}$/),
+    kind: z.enum(["rpc", "synthetic"]),
+    networkId: kaspaNetworkIdSchema,
+    serverVersion: z.string().optional(),
+    capabilities: z.object({
+      reorgAware: z.boolean(),
+      prunedBelowBlueScore: decimalString.optional()
+    }),
+    /** Interim until D-Q1.a: describes the observer; it does NOT identify a node cryptographically. */
+    description: z.string()
+  }),
+  point: TxObservationPointSchema,
+  finding: TxObservationFindingSchema,
+  evidence: z.array(
+    z.object({
+      method: z.string(),
+      params: z.any(),
+      responseDigest: hex64
+    })
+  ),
+  observedAt: z.string().datetime(),
+  rpcUrl: z.string().optional()
+});
+
+/**
+ * A replay report is an artifact like any other (IC-4′.1): its producer seals it
+ * and the verifier checks it; no schema skips verification.
+ */
+export const ReplayReportSchema = BaseArtifactSchema.extend({
+  schema: z.literal(HardkasSchemas.ReplayReportV1),
+  txId: z.string(),
+  planOk: z.boolean(),
+  receiptOk: z.boolean(),
+  invariantsOk: z.boolean(),
+  checks: z.object({
+    workflowDeterministic: z.enum(["reproduced", "diverged", "skipped"]),
+    consensusValidation: z.enum(["unimplemented", "partial", "skipped"]),
+    l2BridgeCorrectness: z.enum(["unimplemented", "partial", "skipped"])
+  }),
+  divergences: z.array(z.any()),
+  errors: z.array(z.string())
+});
+
+/**
+ * A multisig entry is EITHER a real signature ({ signer, signature }) OR, in the
+ * simulator's synthetic model (Wave 1.4 · IC-6′.4), a synthetic marker
+ * ({ signer, kind: "synthetic" }) — never presented as a signature.
+ */
+export const SignatureEntrySchema = z
+  .object({
+    signer: z.string(),
+    signature: z.string().optional(),
+    kind: z.literal("synthetic").optional()
+  })
+  .refine((e) => (e.kind === "synthetic" ? e.signature === undefined : typeof e.signature === "string"), {
+    message: "a multisig entry is either { signer, signature } or { signer, kind: \"synthetic\" }"
+  });
+
+/**
+ * Wave 1.4 · IC-6′.1/.3: the authenticated binding of a simulator "signed"
+ * artifact to ONE plan (by artifactId) by the account identities that
+ * authorized it. Lives in the hashed body; never in `signatureMetadata`.
+ */
+export const SyntheticAuthorizationSchema = z
+  .object({
+    kind: z.literal("synthetic"),
+    planArtifactId: z.string().regex(/^[0-9a-f]{64}$/),
+    signers: z.array(z.string().min(1)).min(1)
+  })
+  .strict();
 
 export const SignatureMetadataEntrySchema = z.object({
   signer: z.string(),
@@ -382,6 +581,7 @@ export const SignedTxSchema = BaseArtifactSchema.extend({
     })
     .optional(),
   txId: z.string().optional(),
+  authorization: SyntheticAuthorizationSchema.optional(),
   multisig: z
     .object({
       threshold: z.number(),
@@ -468,6 +668,11 @@ export type Policy = z.infer<typeof PolicySchema>;
 export type NetworkProfile = z.infer<typeof NetworkProfileSchema>;
 export type Assumption = z.infer<typeof AssumptionSchema>;
 export type MigrationReceipt = z.infer<typeof MigrationReceiptSchema>;
+export type TxSubmission = z.infer<typeof TxSubmissionSchema>;
+export type TxObservation = z.infer<typeof TxObservationSchema>;
+export type TxObservationFinding = z.infer<typeof TxObservationFindingSchema>;
+export type TxObservationPoint = z.infer<typeof TxObservationPointSchema>;
+export type ReplayReport = z.infer<typeof ReplayReportSchema>;
 
 export const RuntimeSessionSchema = BaseArtifactSchema.extend({
   sessionId: z.string(),

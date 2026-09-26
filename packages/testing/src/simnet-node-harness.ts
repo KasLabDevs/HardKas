@@ -47,9 +47,113 @@ export interface SimnetNodeHarnessOptions {
   startupTimeoutMs?: number;
 }
 
+/** Environment variable carrying the run id shared by every worker of one test invocation. */
+export const HARDKAS_TEST_RUN_ID_ENV = "HARDKAS_TEST_RUN_ID";
+/** Docker labels stamped on every container the harness starts. */
+export const SIMNET_HARNESS_ROLE_LABEL = "hardkas.role";
+export const SIMNET_HARNESS_ROLE = "simnet-harness";
+export const SIMNET_HARNESS_RUN_LABEL = "hardkas.run";
+
+/**
+ * Identity of the current run: the id the test level fixed in the environment
+ * (vitest.simnet.config.ts global setup), else one derived from this process.
+ * Every container the harness starts is labelled with it, so cleanup can
+ * address exactly this run's containers and nothing else (AUD-06).
+ */
+export function resolveHarnessRunId(env: NodeJS.ProcessEnv = process.env): string {
+  const fromEnv = env[HARDKAS_TEST_RUN_ID_ENV];
+  return fromEnv && fromEnv.trim() !== "" ? fromEnv.trim() : `pid-${process.pid}`;
+}
+
+export interface SimnetDockerRunSpec {
+  readonly containerName: string;
+  readonly rpcPort: number;
+  readonly image: string;
+  readonly runId: string;
+  readonly utxoIndex?: boolean | undefined;
+  readonly txIndex?: boolean | undefined;
+}
+
+/**
+ * The `docker run` invocation for a harness node. Pure, so the properties that
+ * matter for hygiene are unit-testable:
+ *   - the RPC port is published on 127.0.0.1 only (SEC-J: never on every interface);
+ *   - the container carries the harness role and the run id as labels;
+ *   - it is named and auto-removed on exit.
+ * kaspad itself listens on 0.0.0.0 *inside* the container, which is what a
+ * published port needs; the host side of the publication is what limits reach.
+ */
+export function buildSimnetDockerRunArgs(spec: SimnetDockerRunSpec): string[] {
+  const args = [
+    "run",
+    "--rm",
+    "--name",
+    spec.containerName,
+    "--label",
+    `${SIMNET_HARNESS_ROLE_LABEL}=${SIMNET_HARNESS_ROLE}`,
+    "--label",
+    `${SIMNET_HARNESS_RUN_LABEL}=${spec.runId}`,
+    "-p",
+    `127.0.0.1:${spec.rpcPort}:${spec.rpcPort}`,
+    spec.image,
+    "kaspad",
+    "--simnet",
+    `--rpclisten-json=0.0.0.0:${spec.rpcPort}`,
+    "--enable-unsynced-mining",
+    "--reset-db"
+  ];
+  if (spec.utxoIndex) args.push("--utxoindex");
+  if (spec.txIndex) args.push("--txindex");
+  return args;
+}
+
+export interface HarnessSweepResult {
+  /** false when the docker CLI could not be run at all (nothing was swept). */
+  readonly dockerAvailable: boolean;
+  readonly candidates: readonly string[];
+  readonly removed: readonly string[];
+  readonly failed: ReadonlyArray<{ readonly name: string; readonly error: string }>;
+}
+
+/**
+ * Removes every container labelled with `runId`, whatever its state (running,
+ * created, exited). Selection is by label only: containers the harness did
+ * not start for this run are never matched. Results are reported, never
+ * swallowed, so a container that could not be removed fails the caller.
+ */
+export function sweepHarnessContainers(runId: string): HarnessSweepResult {
+  let listing: string;
+  try {
+    listing = execFileSync(
+      "docker",
+      ["ps", "-a", "--filter", `label=${SIMNET_HARNESS_RUN_LABEL}=${runId}`, "--format", "{{.Names}}"],
+      { encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] }
+    );
+  } catch {
+    return { dockerAvailable: false, candidates: [], removed: [], failed: [] };
+  }
+  const candidates = listing
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter((line) => line.length > 0);
+  const removed: string[] = [];
+  const failed: Array<{ name: string; error: string }> = [];
+  for (const name of candidates) {
+    try {
+      execFileSync("docker", ["rm", "-f", name], { stdio: "ignore" });
+      removed.push(name);
+      startedContainers.delete(name);
+    } catch (error: any) {
+      failed.push({ name, error: error?.message ?? String(error) });
+    }
+  }
+  return { dockerAvailable: true, candidates, removed, failed };
+}
+
 // Containers started by this process. Killing the `docker run` client does not stop
 // the container (notably on Windows), so they are removed explicitly on stop/kill
-// and, as a safety net, when the process exits.
+// and, as a safety net, when the process exits. The run-label sweep above is the
+// deterministic cleanup; this set is only the in-process fast path.
 const startedContainers = new Set<string>();
 let exitHookInstalled = false;
 
@@ -131,17 +235,14 @@ export class SimnetNodeHarness {
         rm.on("exit", () => resolve(true));
         rm.on("error", () => resolve(true));
       });
-      const args = [
-        "run", "--rm", "--name", containerName, "-p", `${rpcPort}:${rpcPort}`,
-        dockerImage,
-        "kaspad",
-        "--simnet",
-        "--rpclisten-json=0.0.0.0:" + rpcPort,
-        "--enable-unsynced-mining",
-        "--reset-db"
-      ];
-      if (options.utxoIndex) args.push("--utxoindex");
-      if (options.txIndex) args.push("--txindex");
+      const args = buildSimnetDockerRunArgs({
+        containerName,
+        rpcPort,
+        image: dockerImage,
+        runId: resolveHarnessRunId(),
+        utxoIndex: options.utxoIndex,
+        txIndex: options.txIndex
+      });
       child = spawn("docker", args, { stdio: "ignore" });
       trackContainer(containerName);
     }

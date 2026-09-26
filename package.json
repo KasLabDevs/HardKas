@@ -21,6 +21,9 @@
     "build": "turbo build --concurrency 1",
     "dev": "turbo dev",
     "test": "vitest run && pnpm test:workflows",
+    "test:hermetic": "node scripts/gate-hermetic.mjs",
+    "test:simnet": "vitest run --config vitest.simnet.config.ts",
+    "test:silverc": "vitest run --config vitest.silverc.config.ts",
     "test:localnet": "vitest run --config vitest.localnet.config.ts",
     "test:e2e:docker": "vitest run --config vitest.e2e.config.ts --no-file-parallelism",
     "test:workflows": "vitest run packages/cli/test/workflow-corpus.test.ts",
@@ -51,7 +54,7 @@
     "release": "pnpm version:check && pnpm build && pnpm test && pnpm changeset publish",
     "check:docs": "pnpm --filter @hardkas/cli test:docs",
     "check:artifacts": "pnpm artifact:fixtures",
-    "artifact:fixtures": "pnpm hardkas artifact verify ../artifacts/test/fixtures/valid --recursive --strict",
+    "artifact:fixtures": "pnpm hardkas artifact verify packages/artifacts/test/fixtures/valid --recursive --strict",
     "artifact:corruption": "pnpm hardkas artifact verify ../artifacts/test/fixtures/corrupted --recursive --strict",
     "example:hello": "tsx examples/01-hello-kaspa/main.ts",
     "example:transfer": "tsx examples/02-basic-transfer/main.ts",
@@ -113,7 +116,7 @@
     "vitest": "^2.1.9",
     "ws": "^8.18.0"
   },
-  "version": "0.12.0-rc.22",
+  "version": "0.12.0-rc.23",
   "dependencies": {
     "@kaspa/core-lib": "^1.6.5"
   }

@@ -1,0 +1,4697 @@
+[
+  {
+    "commandPath": "hardkas init",
+    "description": "Initialize a new HardKAS project stable",
+    "arguments": [
+      {
+        "name": "name",
+        "required": false,
+        "description": "Project name or directory"
+      }
+    ],
+    "options": [
+      {
+        "flags": "--force",
+        "description": "Overwrite existing hardkas.config.ts (in-place only)",
+        "defaultValue": false
+      },
+      {
+        "flags": "--template <type>",
+        "description": "Project template for new projects",
+        "defaultValue": "basic"
+      },
+      {
+        "flags": "--network <name>",
+        "description": "Default network for new projects",
+        "defaultValue": "simulated"
+      },
+      {
+        "flags": "--accounts <n>",
+        "description": "Number of simulated accounts for new projects",
+        "defaultValue": "3"
+      },
+      {
+        "flags": "--install",
+        "description": "Run pnpm/npm install automatically after scaffolding",
+        "defaultValue": false
+      },
+      {
+        "flags": "--json",
+        "description": "Output results as JSON",
+        "defaultValue": false
+      }
+    ],
+    "aliases": [],
+    "category": "Init",
+    "status": "REGISTERED"
+  },
+  {
+    "commandPath": "hardkas up",
+    "description": "Boot or validate the HardKAS developer runtime environment stable",
+    "arguments": [],
+    "options": [
+      {
+        "flags": "--json",
+        "description": "Output results as JSON",
+        "defaultValue": false
+      }
+    ],
+    "aliases": [],
+    "category": "Up",
+    "status": "REGISTERED"
+  },
+  {
+    "commandPath": "hardkas create",
+    "description": "Scaffold a new HardKAS project from a template stable",
+    "arguments": [
+      {
+        "name": "template",
+        "required": true,
+        "description": "Name of the template (e.g. payment-app, batch-payments)"
+      },
+      {
+        "name": "dest",
+        "required": true,
+        "description": "Destination directory"
+      }
+    ],
+    "options": [
+      {
+        "flags": "--install",
+        "description": "Run npm install automatically after scaffolding",
+        "defaultValue": false
+      },
+      {
+        "flags": "--json",
+        "description": "Output results as JSON",
+        "defaultValue": false
+      }
+    ],
+    "aliases": [],
+    "category": "Create",
+    "status": "REGISTERED"
+  },
+  {
+    "commandPath": "hardkas tx profile",
+    "description": "Show detailed mass and fee breakdown for a transaction plan stable",
+    "arguments": [
+      {
+        "name": "path",
+        "required": true,
+        "description": ""
+      }
+    ],
+    "options": [
+      {
+        "flags": "--json",
+        "description": "Output as JSON",
+        "defaultValue": false
+      }
+    ],
+    "aliases": [],
+    "category": "Tx",
+    "status": "REGISTERED"
+  },
+  {
+    "commandPath": "hardkas tx batch",
+    "description": "Process a batch of transactions sequentially stable",
+    "arguments": [],
+    "options": [
+      {
+        "flags": "--file <path>",
+        "description": "Path to JSON file containing batch payments"
+      },
+      {
+        "flags": "--network <name>",
+        "description": "Network name"
+      },
+      {
+        "flags": "--workspace <path>",
+        "description": "Override workspace root directory"
+      },
+      {
+        "flags": "--json",
+        "description": "Output as JSON",
+        "defaultValue": false
+      }
+    ],
+    "aliases": [],
+    "category": "Tx",
+    "status": "REGISTERED"
+  },
+  {
+    "commandPath": "hardkas tx plan",
+    "description": "Build a transaction plan artifact stable",
+    "arguments": [
+      {
+        "name": "from",
+        "required": false,
+        "description": ""
+      },
+      {
+        "name": "to",
+        "required": false,
+        "description": ""
+      }
+    ],
+    "options": [
+      {
+        "flags": "--target <name>",
+        "description": "Named execution target from hardkas.config.ts"
+      },
+      {
+        "flags": "--from <accountOrAddress>",
+        "description": "Sender account name or address"
+      },
+      {
+        "flags": "--to <address>",
+        "description": "Recipient address"
+      },
+      {
+        "flags": "--amount <kas>",
+        "description": "Amount in KAS"
+      },
+      {
+        "flags": "--network <name>",
+        "description": "Kaspa network name"
+      },
+      {
+        "flags": "--fee-rate <sompiPerMass>",
+        "description": "Fee rate in sompi per mass"
+      },
+      {
+        "flags": "--provider <type>",
+        "description": "Provider mode (auto, rpc, simulated)",
+        "defaultValue": "auto"
+      },
+      {
+        "flags": "--url <url>",
+        "description": "RPC URL (optional override)"
+      },
+      {
+        "flags": "--out <path>",
+        "description": "Save plan as artifact JSON"
+      },
+      {
+        "flags": "--save <path>",
+        "description": "Alias for --out (Save plan as artifact JSON)"
+      },
+      {
+        "flags": "--workflow-id <id>",
+        "description": "Optional deterministic workflow ID override"
+      },
+      {
+        "flags": "--assumption-level <level>",
+        "description": "Optional assumption level override"
+      },
+      {
+        "flags": "--wait-lock",
+        "description": "Wait for workspace lock if held",
+        "defaultValue": false
+      },
+      {
+        "flags": "--lock-timeout <ms>",
+        "description": "Lock wait timeout in ms",
+        "defaultValue": "30000"
+      },
+      {
+        "flags": "--json",
+        "description": "Output as JSON",
+        "defaultValue": false
+      }
+    ],
+    "aliases": [],
+    "category": "Tx",
+    "status": "REGISTERED"
+  },
+  {
+    "commandPath": "hardkas tx sign",
+    "description": "Sign a transaction plan artifact stable",
+    "arguments": [
+      {
+        "name": "planPath",
+        "required": true,
+        "description": ""
+      }
+    ],
+    "options": [
+      {
+        "flags": "--account <name>",
+        "description": "Account name to sign with"
+      },
+      {
+        "flags": "--out <path>",
+        "description": "Save signed artifact JSON"
+      },
+      {
+        "flags": "--fixture",
+        "description": "Use fixture signer for Docker testing on simnet",
+        "defaultValue": false
+      },
+      {
+        "flags": "--allow-mainnet-signing",
+        "description": "Allow signing for mainnet",
+        "defaultValue": false
+      },
+      {
+        "flags": "--threshold <number>",
+        "description": "Multisig threshold"
+      },
+      {
+        "flags": "--required-signers <list>",
+        "description": "Comma-separated list of required signers"
+      },
+      {
+        "flags": "--append",
+        "description": "Append signature to a partially signed transaction",
+        "defaultValue": false
+      },
+      {
+        "flags": "--target <name>",
+        "description": "Named execution target from hardkas.config.ts"
+      },
+      {
+        "flags": "--wait-lock",
+        "description": "Wait for workspace lock if held",
+        "defaultValue": false
+      },
+      {
+        "flags": "--lock-timeout <ms>",
+        "description": "Lock wait timeout in ms",
+        "defaultValue": "30000"
+      },
+      {
+        "flags": "--json",
+        "description": "Output as JSON",
+        "defaultValue": false
+      }
+    ],
+    "aliases": [],
+    "category": "Tx",
+    "status": "REGISTERED"
+  },
+  {
+    "commandPath": "hardkas tx status",
+    "description": "Show the signature coverage and status of a transaction artifact",
+    "arguments": [
+      {
+        "name": "path",
+        "required": true,
+        "description": ""
+      }
+    ],
+    "options": [
+      {
+        "flags": "--json",
+        "description": "Output as JSON",
+        "defaultValue": false
+      }
+    ],
+    "aliases": [],
+    "category": "Tx",
+    "status": "REGISTERED"
+  },
+  {
+    "commandPath": "hardkas tx send",
+    "description": "Broadcast a signed transaction or send directly stable",
+    "arguments": [
+      {
+        "name": "signedPath",
+        "required": false,
+        "description": ""
+      }
+    ],
+    "options": [
+      {
+        "flags": "--target <name>",
+        "description": "Named execution target from hardkas.config.ts"
+      },
+      {
+        "flags": "--from <accountOrAddress>",
+        "description": "Sender (shortcut mode)"
+      },
+      {
+        "flags": "--to <address>",
+        "description": "Recipient (shortcut mode)"
+      },
+      {
+        "flags": "--amount <kas>",
+        "description": "Amount in KAS (shortcut mode)"
+      },
+      {
+        "flags": "--network <name>",
+        "description": "Network name"
+      },
+      {
+        "flags": "--fee-rate <sompiPerMass>",
+        "description": "Fee rate in sompi per mass (shortcut mode)"
+      },
+      {
+        "flags": "--provider <type>",
+        "description": "Provider mode (auto, rpc, simulated)",
+        "defaultValue": "auto"
+      },
+      {
+        "flags": "--url <url>",
+        "description": "RPC URL (optional override)"
+      },
+      {
+        "flags": "--yes",
+        "description": "Confirm broadcast",
+        "defaultValue": false
+      },
+      {
+        "flags": "--wait-lock",
+        "description": "Wait for workspace lock if held",
+        "defaultValue": false
+      },
+      {
+        "flags": "--lock-timeout <ms>",
+        "description": "Lock wait timeout in ms",
+        "defaultValue": "30000"
+      },
+      {
+        "flags": "--json",
+        "description": "Output as JSON",
+        "defaultValue": false
+      },
+      {
+        "flags": "--track <label>",
+        "description": "Auto-track deployment with this label"
+      }
+    ],
+    "aliases": [],
+    "category": "Tx",
+    "status": "REGISTERED"
+  },
+  {
+    "commandPath": "hardkas tx receipt",
+    "description": "Show transaction receipt stable",
+    "arguments": [
+      {
+        "name": "txId",
+        "required": true,
+        "description": ""
+      }
+    ],
+    "options": [
+      {
+        "flags": "--json",
+        "description": "Output as JSON",
+        "defaultValue": false
+      }
+    ],
+    "aliases": [],
+    "category": "Tx",
+    "status": "REGISTERED"
+  },
+  {
+    "commandPath": "hardkas tx wait",
+    "description": "Wait for transaction to be confirmed stable",
+    "arguments": [
+      {
+        "name": "txId",
+        "required": true,
+        "description": ""
+      }
+    ],
+    "options": [
+      {
+        "flags": "--timeout <seconds>",
+        "description": "Timeout in seconds",
+        "defaultValue": "60"
+      },
+      {
+        "flags": "--url <url>",
+        "description": "Override RPC URL"
+      },
+      {
+        "flags": "-n, --network <network>",
+        "description": "Network to use"
+      },
+      {
+        "flags": "--address <address>",
+        "description": "Recipient address to verify UTXO maturity"
+      }
+    ],
+    "aliases": [],
+    "category": "Tx",
+    "status": "REGISTERED"
+  },
+  {
+    "commandPath": "hardkas tx verify",
+    "description": "Perform deep semantic verification of a transaction plan preview",
+    "arguments": [
+      {
+        "name": "path",
+        "required": true,
+        "description": ""
+      }
+    ],
+    "options": [
+      {
+        "flags": "--json",
+        "description": "Output as JSON",
+        "defaultValue": false
+      }
+    ],
+    "aliases": [],
+    "category": "Tx",
+    "status": "REGISTERED"
+  },
+  {
+    "commandPath": "hardkas tx trace",
+    "description": "Reconstruct the full operational trace of a transaction research",
+    "arguments": [
+      {
+        "name": "txId",
+        "required": true,
+        "description": ""
+      }
+    ],
+    "options": [],
+    "aliases": [],
+    "category": "Tx",
+    "status": "REGISTERED"
+  },
+  {
+    "commandPath": "hardkas tx compare",
+    "description": "Compare simulated vs real receipts for fidelity stable",
+    "arguments": [
+      {
+        "name": "simulatedPath",
+        "required": true,
+        "description": ""
+      },
+      {
+        "name": "realPath",
+        "required": true,
+        "description": ""
+      }
+    ],
+    "options": [],
+    "aliases": [],
+    "category": "Tx",
+    "status": "REGISTERED"
+  },
+  {
+    "commandPath": "hardkas artifact create",
+    "description": "Create a new HardKAS artifact alpha",
+    "arguments": [
+      {
+        "name": "type",
+        "required": true,
+        "description": ""
+      }
+    ],
+    "options": [
+      {
+        "flags": "--input <path>",
+        "description": "Input JSON payload file"
+      },
+      {
+        "flags": "--out <path>",
+        "description": "Output artifact file path"
+      },
+      {
+        "flags": "--json",
+        "description": "Output results as JSON",
+        "defaultValue": false
+      },
+      {
+        "flags": "--workspace <path>",
+        "description": "Override workspace root directory"
+      }
+    ],
+    "aliases": [],
+    "category": "Artifact",
+    "status": "REGISTERED"
+  },
+  {
+    "commandPath": "hardkas artifact inspect",
+    "description": "Deep inspect an artifact by ID or path stable",
+    "arguments": [
+      {
+        "name": "id_or_path",
+        "required": true,
+        "description": ""
+      }
+    ],
+    "options": [
+      {
+        "flags": "--json",
+        "description": "Output results as JSON",
+        "defaultValue": false
+      },
+      {
+        "flags": "--workspace <path>",
+        "description": "Override workspace root directory"
+      }
+    ],
+    "aliases": [],
+    "category": "Artifact",
+    "status": "REGISTERED"
+  },
+  {
+    "commandPath": "hardkas artifact verify",
+    "description": "Verify an artifact's integrity and schema stable",
+    "arguments": [
+      {
+        "name": "path",
+        "required": true,
+        "description": ""
+      }
+    ],
+    "options": [
+      {
+        "flags": "--json",
+        "description": "Output results as JSON",
+        "defaultValue": false
+      },
+      {
+        "flags": "--recursive",
+        "description": "Recursively verify all artifacts in a directory",
+        "defaultValue": false
+      },
+      {
+        "flags": "--strict",
+        "description": "Perform deep semantic and operational safety verification",
+        "defaultValue": false
+      },
+      {
+        "flags": "--workspace <path>",
+        "description": "Override workspace root directory"
+      }
+    ],
+    "aliases": [],
+    "category": "Artifact",
+    "status": "REGISTERED"
+  },
+  {
+    "commandPath": "hardkas artifact explain",
+    "description": "Provide a human-readable operational summary of an artifact stable",
+    "arguments": [
+      {
+        "name": "path",
+        "required": true,
+        "description": ""
+      }
+    ],
+    "options": [
+      {
+        "flags": "--json",
+        "description": "Output as JSON",
+        "defaultValue": false
+      },
+      {
+        "flags": "--strict",
+        "description": "Perform deep semantic and operational safety verification",
+        "defaultValue": false
+      },
+      {
+        "flags": "--workspace <path>",
+        "description": "Override workspace root directory"
+      }
+    ],
+    "aliases": [],
+    "category": "Artifact",
+    "status": "REGISTERED"
+  },
+  {
+    "commandPath": "hardkas artifact lineage",
+    "description": "Show the provenance and operational history of an artifact stable",
+    "arguments": [
+      {
+        "name": "path",
+        "required": true,
+        "description": ""
+      }
+    ],
+    "options": [
+      {
+        "flags": "--json",
+        "description": "Output as JSON",
+        "defaultValue": false
+      },
+      {
+        "flags": "--workspace <path>",
+        "description": "Override workspace root directory"
+      }
+    ],
+    "aliases": [],
+    "category": "Artifact",
+    "status": "REGISTERED"
+  },
+  {
+    "commandPath": "hardkas replay verify",
+    "description": "Verify deterministic simulator-mode replay for a receipt by exact artifactId or artifact file path. Real-node (kaspa consensus) receipts are not currently supported and will report REPLAY_MODE_UNSUPPORTED. stable",
+    "arguments": [
+      {
+        "name": "artifact",
+        "required": false,
+        "description": ""
+      }
+    ],
+    "options": [
+      {
+        "flags": "--json",
+        "description": "Output as JSON",
+        "defaultValue": false
+      },
+      {
+        "flags": "--workspace <path>",
+        "description": "Override workspace root directory"
+      }
+    ],
+    "aliases": [],
+    "category": "Replay",
+    "status": "REGISTERED"
+  },
+  {
+    "commandPath": "hardkas replay diff",
+    "description": "Compare two replay artifacts for deterministic divergence alpha",
+    "arguments": [
+      {
+        "name": "idA",
+        "required": true,
+        "description": ""
+      },
+      {
+        "name": "idB",
+        "required": true,
+        "description": ""
+      }
+    ],
+    "options": [
+      {
+        "flags": "--json",
+        "description": "Output as JSON",
+        "defaultValue": false
+      }
+    ],
+    "aliases": [],
+    "category": "Replay",
+    "status": "REGISTERED"
+  },
+  {
+    "commandPath": "hardkas rpc info",
+    "description": "Show RPC connection info",
+    "arguments": [],
+    "options": [],
+    "aliases": [],
+    "category": "Rpc",
+    "status": "REGISTERED"
+  },
+  {
+    "commandPath": "hardkas rpc health",
+    "description": "Check RPC health",
+    "arguments": [],
+    "options": [
+      {
+        "flags": "--wait",
+        "description": "Wait until healthy"
+      },
+      {
+        "flags": "--timeout <ms>",
+        "description": "Timeout in ms"
+      },
+      {
+        "flags": "--json",
+        "description": "Output as JSON",
+        "defaultValue": false
+      }
+    ],
+    "aliases": [],
+    "category": "Rpc",
+    "status": "REGISTERED"
+  },
+  {
+    "commandPath": "hardkas rpc doctor",
+    "description": "Run comprehensive RPC diagnostics",
+    "arguments": [],
+    "options": [
+      {
+        "flags": "--endpoints <urls...>",
+        "description": "Specific endpoints to audit"
+      }
+    ],
+    "aliases": [],
+    "category": "Rpc",
+    "status": "REGISTERED"
+  },
+  {
+    "commandPath": "hardkas rpc dag",
+    "description": "Show DAG information from node",
+    "arguments": [],
+    "options": [],
+    "aliases": [],
+    "category": "Rpc",
+    "status": "REGISTERED"
+  },
+  {
+    "commandPath": "hardkas rpc utxos",
+    "description": "Show UTXOs for an address from node",
+    "arguments": [
+      {
+        "name": "address",
+        "required": true,
+        "description": ""
+      }
+    ],
+    "options": [],
+    "aliases": [],
+    "category": "Rpc",
+    "status": "REGISTERED"
+  },
+  {
+    "commandPath": "hardkas rpc mempool",
+    "description": "Show mempool status from node",
+    "arguments": [
+      {
+        "name": "txId",
+        "required": false,
+        "description": ""
+      }
+    ],
+    "options": [],
+    "aliases": [],
+    "category": "Rpc",
+    "status": "REGISTERED"
+  },
+  {
+    "commandPath": "hardkas dag status",
+    "description": "View current DAG status",
+    "arguments": [],
+    "options": [],
+    "aliases": [],
+    "category": "Dag",
+    "status": "REGISTERED"
+  },
+  {
+    "commandPath": "hardkas dag simulate-reorg",
+    "description": "Simulate a DAG reorg",
+    "arguments": [],
+    "options": [
+      {
+        "flags": "--depth <n>",
+        "description": "Reorg depth",
+        "defaultValue": "1"
+      }
+    ],
+    "aliases": [],
+    "category": "Dag",
+    "status": "REGISTERED"
+  },
+  {
+    "commandPath": "hardkas accounts list",
+    "description": "List available HardKAS accounts stable",
+    "arguments": [],
+    "options": [
+      {
+        "flags": "--config <path>",
+        "description": "Path to config file"
+      },
+      {
+        "flags": "--json",
+        "description": "Output as JSON",
+        "defaultValue": false
+      }
+    ],
+    "aliases": [],
+    "category": "Accounts",
+    "status": "REGISTERED"
+  },
+  {
+    "commandPath": "hardkas accounts real init",
+    "description": "Initialize real dev account store stable",
+    "arguments": [],
+    "options": [
+      {
+        "flags": "--force",
+        "description": "Overwrite existing store",
+        "defaultValue": false
+      },
+      {
+        "flags": "--wait-lock",
+        "description": "Wait for workspace lock if held",
+        "defaultValue": false
+      },
+      {
+        "flags": "--lock-timeout <ms>",
+        "description": "Lock wait timeout in ms",
+        "defaultValue": "30000"
+      },
+      {
+        "flags": "--json",
+        "description": "Output as JSON",
+        "defaultValue": false
+      }
+    ],
+    "aliases": [],
+    "category": "Accounts",
+    "status": "REGISTERED"
+  },
+  {
+    "commandPath": "hardkas accounts real import",
+    "description": "Import an account into the persistent store stable",
+    "arguments": [],
+    "options": [
+      {
+        "flags": "--name <name>",
+        "description": "Account name"
+      },
+      {
+        "flags": "--address <address>",
+        "description": "Kaspa address"
+      },
+      {
+        "flags": "--private-key <hex>",
+        "description": "Deprecated. Unsafe: may leak through shell history. Prefer --private-key-stdin or --private-key-env."
+      },
+      {
+        "flags": "--private-key-stdin",
+        "description": "Read private key from stdin",
+        "defaultValue": false
+      },
+      {
+        "flags": "--private-key-env <env>",
+        "description": "Read private key from environment variable"
+      },
+      {
+        "flags": "--password-stdin",
+        "description": "Read keystore password from stdin (safe)",
+        "defaultValue": false
+      },
+      {
+        "flags": "--password-env <env>",
+        "description": "Read keystore password from environment variable (safe)"
+      },
+      {
+        "flags": "--unsafe-plaintext",
+        "description": "Store private key in plaintext (legacy/discouraged)",
+        "defaultValue": false
+      },
+      {
+        "flags": "--fixture <name>",
+        "description": "Import deterministic fixture test account"
+      },
+      {
+        "flags": "--yes",
+        "description": "Skip confirmation for unsafe operations",
+        "defaultValue": false
+      },
+      {
+        "flags": "--wait-lock",
+        "description": "Wait for workspace lock if held",
+        "defaultValue": false
+      },
+      {
+        "flags": "--lock-timeout <ms>",
+        "description": "Lock wait timeout in ms",
+        "defaultValue": "30000"
+      },
+      {
+        "flags": "--json",
+        "description": "Output as JSON",
+        "defaultValue": false
+      }
+    ],
+    "aliases": [],
+    "category": "Accounts",
+    "status": "REGISTERED"
+  },
+  {
+    "commandPath": "hardkas accounts real session-open",
+    "description": "Verify keystore access and record signing intent internal",
+    "arguments": [
+      {
+        "name": "name",
+        "required": true,
+        "description": ""
+      }
+    ],
+    "options": [
+      {
+        "flags": "--password-stdin",
+        "description": "Read password from stdin",
+        "defaultValue": false
+      },
+      {
+        "flags": "--password-env <env>",
+        "description": "Read password from environment variable"
+      },
+      {
+        "flags": "--wait-lock",
+        "description": "Wait for workspace lock if held",
+        "defaultValue": false
+      },
+      {
+        "flags": "--lock-timeout <ms>",
+        "description": "Lock wait timeout in ms",
+        "defaultValue": "30000"
+      }
+    ],
+    "aliases": [
+      "unlock"
+    ],
+    "category": "Accounts",
+    "status": "REGISTERED"
+  },
+  {
+    "commandPath": "hardkas accounts real session-close",
+    "description": "Clear the local dev signing session marker internal",
+    "arguments": [
+      {
+        "name": "name",
+        "required": true,
+        "description": ""
+      }
+    ],
+    "options": [],
+    "aliases": [
+      "lock"
+    ],
+    "category": "Accounts",
+    "status": "REGISTERED"
+  },
+  {
+    "commandPath": "hardkas accounts real change-password",
+    "description": "Change password for an encrypted account stable",
+    "arguments": [
+      {
+        "name": "name",
+        "required": true,
+        "description": ""
+      }
+    ],
+    "options": [
+      {
+        "flags": "--wait-lock",
+        "description": "Wait for workspace lock if held",
+        "defaultValue": false
+      },
+      {
+        "flags": "--lock-timeout <ms>",
+        "description": "Lock wait timeout in ms",
+        "defaultValue": "30000"
+      }
+    ],
+    "aliases": [],
+    "category": "Accounts",
+    "status": "REGISTERED"
+  },
+  {
+    "commandPath": "hardkas accounts real generate",
+    "description": "Generate new real dev account(s) using Kaspa SDK stable",
+    "arguments": [],
+    "options": [
+      {
+        "flags": "--name <name>",
+        "description": "Base name for account(s)"
+      },
+      {
+        "flags": "--count <number>",
+        "description": "Number of accounts to generate",
+        "defaultValue": "1"
+      },
+      {
+        "flags": "--network <network>",
+        "description": "Kaspa network (simnet, testnet-10, mainnet)",
+        "defaultValue": "simnet"
+      },
+      {
+        "flags": "--password-stdin",
+        "description": "Read keystore password from stdin",
+        "defaultValue": false
+      },
+      {
+        "flags": "--password-env <env>",
+        "description": "Read password from environment variable"
+      },
+      {
+        "flags": "--unsafe-plaintext",
+        "description": "Generate accounts in plaintext (legacy/discouraged)",
+        "defaultValue": false
+      },
+      {
+        "flags": "--yes",
+        "description": "Skip confirmation for unsafe operations",
+        "defaultValue": false
+      },
+      {
+        "flags": "--wait-lock",
+        "description": "Wait for workspace lock if held",
+        "defaultValue": false
+      },
+      {
+        "flags": "--lock-timeout <ms>",
+        "description": "Lock wait timeout in ms",
+        "defaultValue": "30000"
+      },
+      {
+        "flags": "--json",
+        "description": "Output as JSON",
+        "defaultValue": false
+      }
+    ],
+    "aliases": [],
+    "category": "Accounts",
+    "status": "REGISTERED"
+  },
+  {
+    "commandPath": "hardkas accounts balance",
+    "description": "Show account balance stable",
+    "arguments": [
+      {
+        "name": "identifier",
+        "required": true,
+        "description": ""
+      }
+    ],
+    "options": [
+      {
+        "flags": "--network <name>",
+        "description": "Kaspa network name",
+        "defaultValue": "simnet"
+      },
+      {
+        "flags": "--provider <type>",
+        "description": "Provider mode (auto, rpc, simulated)",
+        "defaultValue": "auto"
+      },
+      {
+        "flags": "--url <url>",
+        "description": "RPC URL (optional override)"
+      },
+      {
+        "flags": "--local",
+        "description": "Query local query-store instead of remote RPC (for simulated networks)",
+        "defaultValue": false
+      },
+      {
+        "flags": "--json",
+        "description": "Output as JSON",
+        "defaultValue": false
+      }
+    ],
+    "aliases": [],
+    "category": "Accounts",
+    "status": "REGISTERED"
+  },
+  {
+    "commandPath": "hardkas accounts fund",
+    "description": "Fund an account (Faucet) - DEPRECATED",
+    "arguments": [
+      {
+        "name": "identifier",
+        "required": true,
+        "description": ""
+      }
+    ],
+    "options": [
+      {
+        "flags": "--amount <kas>",
+        "description": "Amount in KAS to fund",
+        "defaultValue": "1000"
+      }
+    ],
+    "aliases": [],
+    "category": "Accounts",
+    "status": "REGISTERED"
+  },
+  {
+    "commandPath": "hardkas accounts consolidate",
+    "description": "Consolidate dust UTXOs into a single UTXO alpha",
+    "arguments": [
+      {
+        "name": "account",
+        "required": true,
+        "description": ""
+      }
+    ],
+    "options": [
+      {
+        "flags": "--network <name>",
+        "description": "Kaspa network name"
+      },
+      {
+        "flags": "--provider <type>",
+        "description": "Provider mode (auto, rpc, simulated)",
+        "defaultValue": "auto"
+      },
+      {
+        "flags": "--url <url>",
+        "description": "RPC URL (optional override)"
+      },
+      {
+        "flags": "--target-utxos <n>",
+        "description": "Target number of UTXOs to leave behind",
+        "defaultValue": "20"
+      },
+      {
+        "flags": "--batch-size <n>",
+        "description": "Number of UTXOs to consolidate per batch (max 512)",
+        "defaultValue": "256"
+      },
+      {
+        "flags": "--min-utxo <sompi>",
+        "description": "Minimum UTXO size to consolidate in sompi"
+      },
+      {
+        "flags": "--dry-run",
+        "description": "Only estimate batches (default if --execute is not provided)"
+      },
+      {
+        "flags": "--execute",
+        "description": "Execute the consolidation (requires --yes to broadcast)"
+      },
+      {
+        "flags": "--yes",
+        "description": "Confirm broadcast for execution"
+      },
+      {
+        "flags": "--allow-mainnet",
+        "description": "Allow consolidation on mainnet"
+      },
+      {
+        "flags": "--json",
+        "description": "Output as JSON",
+        "defaultValue": false
+      }
+    ],
+    "aliases": [],
+    "category": "Accounts",
+    "status": "REGISTERED"
+  },
+  {
+    "commandPath": "hardkas node start",
+    "description": "Start local node stable",
+    "arguments": [],
+    "options": [
+      {
+        "flags": "--image <image>",
+        "description": "Docker image"
+      },
+      {
+        "flags": "--allow-floating-image",
+        "description": "Allow using a floating tag like 'latest' without warning",
+        "defaultValue": false
+      },
+      {
+        "flags": "--wait-lock",
+        "description": "Wait for workspace lock if held",
+        "defaultValue": false
+      },
+      {
+        "flags": "--lock-timeout <ms>",
+        "description": "Lock wait timeout in ms",
+        "defaultValue": "30000"
+      },
+      {
+        "flags": "--json",
+        "description": "Output results as JSON",
+        "defaultValue": false
+      }
+    ],
+    "aliases": [],
+    "category": "Node",
+    "status": "REGISTERED"
+  },
+  {
+    "commandPath": "hardkas node stop",
+    "description": "Stop local node stable",
+    "arguments": [],
+    "options": [
+      {
+        "flags": "--wait-lock",
+        "description": "Wait for workspace lock if held",
+        "defaultValue": false
+      },
+      {
+        "flags": "--lock-timeout <ms>",
+        "description": "Lock wait timeout in ms",
+        "defaultValue": "30000"
+      },
+      {
+        "flags": "--json",
+        "description": "Output results as JSON",
+        "defaultValue": false
+      }
+    ],
+    "aliases": [],
+    "category": "Node",
+    "status": "REGISTERED"
+  },
+  {
+    "commandPath": "hardkas node restart",
+    "description": "Restart local node stable",
+    "arguments": [],
+    "options": [
+      {
+        "flags": "--wait-lock",
+        "description": "Wait for workspace lock if held",
+        "defaultValue": false
+      },
+      {
+        "flags": "--lock-timeout <ms>",
+        "description": "Lock wait timeout in ms",
+        "defaultValue": "30000"
+      },
+      {
+        "flags": "--json",
+        "description": "Output results as JSON",
+        "defaultValue": false
+      }
+    ],
+    "aliases": [],
+    "category": "Node",
+    "status": "REGISTERED"
+  },
+  {
+    "commandPath": "hardkas node reset",
+    "description": "Stop node and remove all local chain data preview",
+    "arguments": [],
+    "options": [
+      {
+        "flags": "--start",
+        "description": "Restart the node after reset",
+        "defaultValue": false
+      },
+      {
+        "flags": "--yes",
+        "description": "Skip confirmation prompt",
+        "defaultValue": false
+      },
+      {
+        "flags": "--wait-lock",
+        "description": "Wait for workspace lock if held",
+        "defaultValue": false
+      },
+      {
+        "flags": "--lock-timeout <ms>",
+        "description": "Lock wait timeout in ms",
+        "defaultValue": "30000"
+      },
+      {
+        "flags": "--json",
+        "description": "Output results as JSON",
+        "defaultValue": false
+      }
+    ],
+    "aliases": [],
+    "category": "Node",
+    "status": "REGISTERED"
+  },
+  {
+    "commandPath": "hardkas node status",
+    "description": "Check node status",
+    "arguments": [],
+    "options": [
+      {
+        "flags": "--json",
+        "description": "Return status in JSON format",
+        "defaultValue": false
+      }
+    ],
+    "aliases": [],
+    "category": "Node",
+    "status": "REGISTERED"
+  },
+  {
+    "commandPath": "hardkas node logs",
+    "description": "View node logs preview",
+    "arguments": [],
+    "options": [
+      {
+        "flags": "--tail <n>",
+        "description": "Number of lines to show",
+        "defaultValue": "100"
+      },
+      {
+        "flags": "--follow",
+        "description": "Follow log output",
+        "defaultValue": false
+      },
+      {
+        "flags": "--json",
+        "description": "Output results as JSON",
+        "defaultValue": false
+      }
+    ],
+    "aliases": [],
+    "category": "Node",
+    "status": "REGISTERED"
+  },
+  {
+    "commandPath": "hardkas config show",
+    "description": "Show the current HardKAS configuration",
+    "arguments": [],
+    "options": [
+      {
+        "flags": "--config <path>",
+        "description": "Path to config file"
+      },
+      {
+        "flags": "--json",
+        "description": "Output as JSON",
+        "defaultValue": false
+      }
+    ],
+    "aliases": [],
+    "category": "Config",
+    "status": "REGISTERED"
+  },
+  {
+    "commandPath": "hardkas config networks",
+    "description": "List configured networks",
+    "arguments": [],
+    "options": [
+      {
+        "flags": "--json",
+        "description": "Output as JSON",
+        "defaultValue": false
+      }
+    ],
+    "aliases": [],
+    "category": "Config",
+    "status": "REGISTERED"
+  },
+  {
+    "commandPath": "hardkas config init",
+    "description": "Initialize a basic hardkas.config.ts in the current directory",
+    "arguments": [],
+    "options": [
+      {
+        "flags": "--force",
+        "description": "Overwrite existing config",
+        "defaultValue": false
+      },
+      {
+        "flags": "--json",
+        "description": "Output results as JSON",
+        "defaultValue": false
+      }
+    ],
+    "aliases": [],
+    "category": "Config",
+    "status": "REGISTERED"
+  },
+  {
+    "commandPath": "hardkas config repair",
+    "description": "Repair an invalid or missing hardkas.config.ts",
+    "arguments": [],
+    "options": [
+      {
+        "flags": "--json",
+        "description": "Output results as JSON",
+        "defaultValue": false
+      }
+    ],
+    "aliases": [],
+    "category": "Config",
+    "status": "REGISTERED"
+  },
+  {
+    "commandPath": "hardkas query artifacts list",
+    "description": "List artifacts matching filters",
+    "arguments": [],
+    "options": [
+      {
+        "flags": "--schema <schema>",
+        "description": "Filter by artifact schema (e.g. txPlan, signedTx)"
+      },
+      {
+        "flags": "--network <network>",
+        "description": "Filter by network ID"
+      },
+      {
+        "flags": "--mode <mode>",
+        "description": "Filter by mode (simulated/real)"
+      },
+      {
+        "flags": "--from <address>",
+        "description": "Filter by sender address"
+      },
+      {
+        "flags": "--to <address>",
+        "description": "Filter by recipient address"
+      },
+      {
+        "flags": "--sort <field:dir>",
+        "description": "Sort field and direction (e.g. createdAt:desc)"
+      },
+      {
+        "flags": "--limit <n>",
+        "description": "Max results",
+        "defaultValue": "100"
+      },
+      {
+        "flags": "--json",
+        "description": "Output as deterministic JSON",
+        "defaultValue": false
+      },
+      {
+        "flags": "--explain [level]",
+        "description": "Attach explain chains (brief|full)"
+      }
+    ],
+    "aliases": [
+      "ls"
+    ],
+    "category": "Query",
+    "status": "REGISTERED"
+  },
+  {
+    "commandPath": "hardkas query artifacts inspect",
+    "description": "Deep structural analysis of an artifact (path or contentHash)",
+    "arguments": [
+      {
+        "name": "target",
+        "required": true,
+        "description": ""
+      }
+    ],
+    "options": [
+      {
+        "flags": "--json",
+        "description": "Output as JSON",
+        "defaultValue": false
+      },
+      {
+        "flags": "--explain [level]",
+        "description": "Attach explain chains (brief|full)"
+      }
+    ],
+    "aliases": [],
+    "category": "Query",
+    "status": "REGISTERED"
+  },
+  {
+    "commandPath": "hardkas query artifacts diff",
+    "description": "Semantic diff between two artifacts",
+    "arguments": [
+      {
+        "name": "left",
+        "required": true,
+        "description": ""
+      },
+      {
+        "name": "right",
+        "required": true,
+        "description": ""
+      }
+    ],
+    "options": [
+      {
+        "flags": "--json",
+        "description": "Output as JSON",
+        "defaultValue": false
+      }
+    ],
+    "aliases": [],
+    "category": "Query",
+    "status": "REGISTERED"
+  },
+  {
+    "commandPath": "hardkas query store doctor",
+    "description": "Integrity and freshness check of the query store index",
+    "arguments": [],
+    "options": [
+      {
+        "flags": "--migrate",
+        "description": "Apply pending migrations if found",
+        "defaultValue": false
+      },
+      {
+        "flags": "--wait-lock",
+        "description": "Wait for workspace lock if held",
+        "defaultValue": false
+      },
+      {
+        "flags": "--lock-timeout <ms>",
+        "description": "Lock wait timeout in ms",
+        "defaultValue": "30000"
+      }
+    ],
+    "aliases": [],
+    "category": "Query",
+    "status": "REGISTERED"
+  },
+  {
+    "commandPath": "hardkas query store migrate",
+    "description": "Apply pending schema migrations to the query store",
+    "arguments": [],
+    "options": [
+      {
+        "flags": "--wait-lock",
+        "description": "Wait for workspace lock if held",
+        "defaultValue": false
+      },
+      {
+        "flags": "--lock-timeout <ms>",
+        "description": "Lock wait timeout in ms",
+        "defaultValue": "30000"
+      }
+    ],
+    "aliases": [],
+    "category": "Query",
+    "status": "REGISTERED"
+  },
+  {
+    "commandPath": "hardkas query store sync",
+    "description": "Synchronize the filesystem artifacts with the query store index",
+    "arguments": [],
+    "options": [
+      {
+        "flags": "--strict",
+        "description": "Fail on any corrupted data",
+        "defaultValue": false
+      },
+      {
+        "flags": "--wait-lock",
+        "description": "Wait for workspace lock if held",
+        "defaultValue": false
+      },
+      {
+        "flags": "--lock-timeout <ms>",
+        "description": "Lock wait timeout in ms",
+        "defaultValue": "30000"
+      },
+      {
+        "flags": "--json",
+        "description": "Output as JSON",
+        "defaultValue": false
+      }
+    ],
+    "aliases": [
+      "index"
+    ],
+    "category": "Query",
+    "status": "REGISTERED"
+  },
+  {
+    "commandPath": "hardkas query store rebuild",
+    "description": "Force a complete rebuild of the query store index",
+    "arguments": [],
+    "options": [
+      {
+        "flags": "--backend <type>",
+        "description": "Backend to use (sqlite/filesystem)"
+      },
+      {
+        "flags": "--strict",
+        "description": "Fail on any corrupted data",
+        "defaultValue": false
+      },
+      {
+        "flags": "--wait-lock",
+        "description": "Wait for workspace lock if held",
+        "defaultValue": false
+      },
+      {
+        "flags": "--lock-timeout <ms>",
+        "description": "Lock wait timeout in ms",
+        "defaultValue": "30000"
+      },
+      {
+        "flags": "--json",
+        "description": "Output as JSON",
+        "defaultValue": false
+      }
+    ],
+    "aliases": [],
+    "category": "Query",
+    "status": "REGISTERED"
+  },
+  {
+    "commandPath": "hardkas query store sql",
+    "description": "Run a raw SQL query against the query store",
+    "arguments": [
+      {
+        "name": "query",
+        "required": true,
+        "description": ""
+      }
+    ],
+    "options": [
+      {
+        "flags": "--json",
+        "description": "Output as JSON",
+        "defaultValue": false
+      },
+      {
+        "flags": "--unsafe-write",
+        "description": "Allow mutating SQL (DANGEROUS)",
+        "defaultValue": false
+      },
+      {
+        "flags": "--yes",
+        "description": "Confirm mutating SQL (DANGEROUS)",
+        "defaultValue": false
+      }
+    ],
+    "aliases": [],
+    "category": "Query",
+    "status": "REGISTERED"
+  },
+  {
+    "commandPath": "hardkas query store export",
+    "description": "Export logical store state to JSON",
+    "arguments": [],
+    "options": [
+      {
+        "flags": "--output <path>",
+        "description": "Output file path"
+      }
+    ],
+    "aliases": [],
+    "category": "Query",
+    "status": "REGISTERED"
+  },
+  {
+    "commandPath": "hardkas query lineage chain",
+    "description": "Reconstruct lineage chain from an artifact (contentHash or artifactId)",
+    "arguments": [
+      {
+        "name": "anchor",
+        "required": true,
+        "description": ""
+      }
+    ],
+    "options": [
+      {
+        "flags": "--direction <dir>",
+        "description": "Traversal direction: ancestors or descendants",
+        "defaultValue": "ancestors"
+      },
+      {
+        "flags": "--json",
+        "description": "Output as JSON",
+        "defaultValue": false
+      },
+      {
+        "flags": "--explain [level]",
+        "description": "Attach explain chains (brief|full)"
+      },
+      {
+        "flags": "--why",
+        "description": "Shorthand for --explain full"
+      }
+    ],
+    "aliases": [],
+    "category": "Query",
+    "status": "REGISTERED"
+  },
+  {
+    "commandPath": "hardkas query lineage transitions",
+    "description": "List all lineage transitions",
+    "arguments": [],
+    "options": [
+      {
+        "flags": "--root <hash>",
+        "description": "Filter by root artifact ID"
+      },
+      {
+        "flags": "--json",
+        "description": "Output as JSON",
+        "defaultValue": false
+      },
+      {
+        "flags": "--explain [level]",
+        "description": "Attach explain chains (brief|full)"
+      },
+      {
+        "flags": "--why",
+        "description": "Shorthand for --explain full"
+      }
+    ],
+    "aliases": [],
+    "category": "Query",
+    "status": "REGISTERED"
+  },
+  {
+    "commandPath": "hardkas query lineage orphans",
+    "description": "Find artifacts with broken lineage references",
+    "arguments": [],
+    "options": [
+      {
+        "flags": "--json",
+        "description": "Output as JSON",
+        "defaultValue": false
+      },
+      {
+        "flags": "--explain [level]",
+        "description": "Attach explain chains (brief|full)"
+      }
+    ],
+    "aliases": [],
+    "category": "Query",
+    "status": "REGISTERED"
+  },
+  {
+    "commandPath": "hardkas query replay list",
+    "description": "List all stored receipts",
+    "arguments": [],
+    "options": [
+      {
+        "flags": "--status <status>",
+        "description": "Filter by status"
+      },
+      {
+        "flags": "--json",
+        "description": "Output as JSON",
+        "defaultValue": false
+      },
+      {
+        "flags": "--limit <n>",
+        "description": "Max results",
+        "defaultValue": "100"
+      }
+    ],
+    "aliases": [
+      "ls"
+    ],
+    "category": "Query",
+    "status": "REGISTERED"
+  },
+  {
+    "commandPath": "hardkas query replay summary",
+    "description": "Detailed receipt + trace summary for a transaction",
+    "arguments": [
+      {
+        "name": "txId",
+        "required": true,
+        "description": ""
+      }
+    ],
+    "options": [
+      {
+        "flags": "--json",
+        "description": "Output as JSON",
+        "defaultValue": false
+      }
+    ],
+    "aliases": [],
+    "category": "Query",
+    "status": "REGISTERED"
+  },
+  {
+    "commandPath": "hardkas query replay divergences",
+    "description": "Detect receipts with replay divergence indicators",
+    "arguments": [],
+    "options": [
+      {
+        "flags": "--json",
+        "description": "Output as JSON",
+        "defaultValue": false
+      },
+      {
+        "flags": "--explain [level]",
+        "description": "Attach explain chains (brief|full)"
+      }
+    ],
+    "aliases": [],
+    "category": "Query",
+    "status": "REGISTERED"
+  },
+  {
+    "commandPath": "hardkas query replay invariants",
+    "description": "Check replay invariants for a specific transaction",
+    "arguments": [
+      {
+        "name": "txId",
+        "required": true,
+        "description": ""
+      }
+    ],
+    "options": [
+      {
+        "flags": "--json",
+        "description": "Output as JSON",
+        "defaultValue": false
+      },
+      {
+        "flags": "--explain [level]",
+        "description": "Attach explain chains (brief|full)"
+      }
+    ],
+    "aliases": [],
+    "category": "Query",
+    "status": "REGISTERED"
+  },
+  {
+    "commandPath": "hardkas query dag conflicts",
+    "description": "Show double-spend conflict analysis",
+    "arguments": [],
+    "options": [
+      {
+        "flags": "--json",
+        "description": "Output as JSON",
+        "defaultValue": false
+      },
+      {
+        "flags": "--explain [level]",
+        "description": "Attach explain chains (brief|full)"
+      },
+      {
+        "flags": "--why",
+        "description": "Shorthand for --explain full"
+      }
+    ],
+    "aliases": [],
+    "category": "Query",
+    "status": "REGISTERED"
+  },
+  {
+    "commandPath": "hardkas query dag displaced",
+    "description": "Show displaced transactions",
+    "arguments": [],
+    "options": [
+      {
+        "flags": "--json",
+        "description": "Output as JSON",
+        "defaultValue": false
+      },
+      {
+        "flags": "--explain [level]",
+        "description": "Attach explain chains (brief|full)"
+      }
+    ],
+    "aliases": [],
+    "category": "Query",
+    "status": "REGISTERED"
+  },
+  {
+    "commandPath": "hardkas query dag history",
+    "description": "Full lifecycle of a transaction through the DAG",
+    "arguments": [
+      {
+        "name": "txId",
+        "required": true,
+        "description": ""
+      }
+    ],
+    "options": [
+      {
+        "flags": "--json",
+        "description": "Output as JSON",
+        "defaultValue": false
+      },
+      {
+        "flags": "--explain [level]",
+        "description": "Attach explain chains (brief|full)"
+      },
+      {
+        "flags": "--why",
+        "description": "Shorthand for --explain full"
+      }
+    ],
+    "aliases": [],
+    "category": "Query",
+    "status": "REGISTERED"
+  },
+  {
+    "commandPath": "hardkas query dag sink-path",
+    "description": "Show current selected path from genesis to sink",
+    "arguments": [],
+    "options": [
+      {
+        "flags": "--json",
+        "description": "Output as JSON",
+        "defaultValue": false
+      }
+    ],
+    "aliases": [],
+    "category": "Query",
+    "status": "REGISTERED"
+  },
+  {
+    "commandPath": "hardkas query dag anomalies",
+    "description": "Find transactions or blocks in unexpected states",
+    "arguments": [],
+    "options": [
+      {
+        "flags": "--json",
+        "description": "Output as JSON",
+        "defaultValue": false
+      },
+      {
+        "flags": "--explain [level]",
+        "description": "Attach explain chains (brief|full)"
+      }
+    ],
+    "aliases": [],
+    "category": "Query",
+    "status": "REGISTERED"
+  },
+  {
+    "commandPath": "hardkas query events",
+    "description": "Query event log",
+    "arguments": [],
+    "options": [
+      {
+        "flags": "--tx <txId>",
+        "description": "Filter events by transaction ID"
+      },
+      {
+        "flags": "--domain <domain>",
+        "description": "Filter by event domain"
+      },
+      {
+        "flags": "--kind <kind>",
+        "description": "Filter by event kind"
+      },
+      {
+        "flags": "--workflow <workflowId>",
+        "description": "Filter by workflow ID"
+      },
+      {
+        "flags": "--limit <n>",
+        "description": "Max results",
+        "defaultValue": "100"
+      },
+      {
+        "flags": "--json",
+        "description": "Output as deterministic JSON",
+        "defaultValue": false
+      },
+      {
+        "flags": "--explain [level]",
+        "description": "Attach explain metadata (brief|full)"
+      }
+    ],
+    "aliases": [],
+    "category": "Query",
+    "status": "REGISTERED"
+  },
+  {
+    "commandPath": "hardkas query tx",
+    "description": "Aggregate all data for a transaction stable",
+    "arguments": [
+      {
+        "name": "txId",
+        "required": true,
+        "description": ""
+      }
+    ],
+    "options": [
+      {
+        "flags": "--json",
+        "description": "Output as deterministic JSON",
+        "defaultValue": false
+      },
+      {
+        "flags": "--explain [level]",
+        "description": "Attach explain metadata (brief|full)"
+      }
+    ],
+    "aliases": [],
+    "category": "Query",
+    "status": "REGISTERED"
+  },
+  {
+    "commandPath": "hardkas test",
+    "description": "Run HardKAS tests against localnet stable",
+    "arguments": [
+      {
+        "name": "files",
+        "required": false,
+        "description": ""
+      }
+    ],
+    "options": [
+      {
+        "flags": "--network <network>",
+        "description": "Network to test against",
+        "defaultValue": "simnet"
+      },
+      {
+        "flags": "--watch",
+        "description": "Watch for changes",
+        "defaultValue": false
+      },
+      {
+        "flags": "--mass-report",
+        "description": "Show mass/fee report after scenario execution",
+        "defaultValue": false
+      },
+      {
+        "flags": "--mass-snapshot <label>",
+        "description": "Save mass snapshot for regression detection"
+      },
+      {
+        "flags": "--mass-compare <label>",
+        "description": "Compare against saved mass snapshot"
+      },
+      {
+        "flags": "--json",
+        "description": "Output results as JSON",
+        "defaultValue": false
+      },
+      {
+        "flags": "--keep-runs",
+        "description": "Keep temporary scenario workspaces for debugging",
+        "defaultValue": false
+      },
+      {
+        "flags": "--evidence",
+        "description": "Automatically package evidence into .hke.json",
+        "defaultValue": false
+      },
+      {
+        "flags": "--scenario <name>",
+        "description": "Run specific scenario by name"
+      }
+    ],
+    "aliases": [],
+    "category": "Test",
+    "status": "REGISTERED"
+  },
+  {
+    "commandPath": "hardkas doctor",
+    "description": "Perform a full system diagnostic and health report stable",
+    "arguments": [
+      {
+        "name": "module",
+        "required": false,
+        "description": ""
+      }
+    ],
+    "options": [
+      {
+        "flags": "--json",
+        "description": "Output results as stable JSON schema",
+        "defaultValue": false
+      },
+      {
+        "flags": "--capabilities",
+        "description": "Report local node capabilities (RPC, network, DAA)",
+        "defaultValue": false
+      },
+      {
+        "flags": "--consistency",
+        "description": "Run advanced deterministic consistency checks",
+        "defaultValue": false
+      },
+      {
+        "flags": "--strict",
+        "description": "Fail strictly (exit 1) if invariants or consistency checks fail",
+        "defaultValue": false
+      }
+    ],
+    "aliases": [],
+    "category": "Doctor",
+    "status": "REGISTERED"
+  },
+  {
+    "commandPath": "hardkas verify",
+    "description": "Verify artifact integrity and lineage continuity across the workspace stable",
+    "arguments": [],
+    "options": [
+      {
+        "flags": "--deep",
+        "description": "Perform a deep validation of signatures and causality",
+        "defaultValue": false
+      },
+      {
+        "flags": "--json",
+        "description": "Output machine-readable JSON",
+        "defaultValue": false
+      }
+    ],
+    "aliases": [],
+    "category": "Verify",
+    "status": "REGISTERED"
+  },
+  {
+    "commandPath": "hardkas verify-semantics",
+    "description": "Verify semantic truth agreement across all HardKAS subsystems alpha",
+    "arguments": [],
+    "options": [
+      {
+        "flags": "--json",
+        "description": "Output machine-readable JSON",
+        "defaultValue": false
+      },
+      {
+        "flags": "--ci-mode",
+        "description": "Verify semantic truth equivalence across OS boundaries",
+        "defaultValue": false
+      }
+    ],
+    "aliases": [],
+    "category": "Verify-semantics",
+    "status": "REGISTERED"
+  },
+  {
+    "commandPath": "hardkas rebuild",
+    "description": "Reconstruct projections from committed canonical artifacts stable",
+    "arguments": [],
+    "options": [
+      {
+        "flags": "--from-artifacts",
+        "description": "Rebuild the query-store and localnet projection from artifacts",
+        "defaultValue": false
+      },
+      {
+        "flags": "--json",
+        "description": "Output machine-readable JSON",
+        "defaultValue": false
+      }
+    ],
+    "aliases": [],
+    "category": "Rebuild",
+    "status": "REGISTERED"
+  },
+  {
+    "commandPath": "hardkas run",
+    "description": "Execute a TypeScript or JavaScript file with HardKAS SDK injected stable",
+    "arguments": [
+      {
+        "name": "script",
+        "required": true,
+        "description": ""
+      }
+    ],
+    "options": [
+      {
+        "flags": "--network <name>",
+        "description": "Network name",
+        "defaultValue": "simnet"
+      },
+      {
+        "flags": "--accounts <n>",
+        "description": "Number of simulated accounts",
+        "defaultValue": "3"
+      },
+      {
+        "flags": "--balance <sompi>",
+        "description": "Initial balance per account in sompi",
+        "defaultValue": "100000000000"
+      },
+      {
+        "flags": "--no-harness",
+        "description": "Skip automatic harness creation"
+      },
+      {
+        "flags": "--json",
+        "description": "Output results as JSON",
+        "defaultValue": false
+      }
+    ],
+    "aliases": [],
+    "category": "Run",
+    "status": "REGISTERED"
+  },
+  {
+    "commandPath": "hardkas lock list",
+    "description": "List all active workspace locks stable",
+    "arguments": [],
+    "options": [
+      {
+        "flags": "--json",
+        "description": "Output as JSON",
+        "defaultValue": false
+      }
+    ],
+    "aliases": [],
+    "category": "Lock",
+    "status": "REGISTERED"
+  },
+  {
+    "commandPath": "hardkas lock status",
+    "description": "Show status of one or all locks stable",
+    "arguments": [
+      {
+        "name": "name",
+        "required": false,
+        "description": ""
+      }
+    ],
+    "options": [],
+    "aliases": [],
+    "category": "Lock",
+    "status": "REGISTERED"
+  },
+  {
+    "commandPath": "hardkas lock doctor",
+    "description": "Analyze locks and identify stale or corrupted ones stable",
+    "arguments": [],
+    "options": [],
+    "aliases": [],
+    "category": "Lock",
+    "status": "REGISTERED"
+  },
+  {
+    "commandPath": "hardkas lock clear",
+    "description": "Safely or forcibly clear a lock stable",
+    "arguments": [
+      {
+        "name": "name",
+        "required": true,
+        "description": ""
+      }
+    ],
+    "options": [
+      {
+        "flags": "--if-dead",
+        "description": "Only clear if the process is no longer running",
+        "defaultValue": false
+      },
+      {
+        "flags": "--force",
+        "description": "Forcibly clear the lock even if the process is alive",
+        "defaultValue": false
+      },
+      {
+        "flags": "--yes",
+        "description": "Confirm clearing without prompt",
+        "defaultValue": false
+      }
+    ],
+    "aliases": [],
+    "category": "Lock",
+    "status": "REGISTERED"
+  },
+  {
+    "commandPath": "hardkas capabilities",
+    "description": "Show HardKAS capabilities and maturity level",
+    "arguments": [],
+    "options": [
+      {
+        "flags": "--json",
+        "description": "Output as stable JSON schema",
+        "defaultValue": false
+      }
+    ],
+    "aliases": [],
+    "category": "Capabilities",
+    "status": "REGISTERED"
+  },
+  {
+    "commandPath": "hardkas console",
+    "description": "Open an interactive REPL with HardKAS SDK pre-loaded stable",
+    "arguments": [],
+    "options": [
+      {
+        "flags": "--network <name>",
+        "description": "Network name",
+        "defaultValue": "simnet"
+      },
+      {
+        "flags": "--accounts <n>",
+        "description": "Number of simulated accounts",
+        "defaultValue": "3"
+      },
+      {
+        "flags": "--balance <sompi>",
+        "description": "Initial balance per account in sompi",
+        "defaultValue": "100000000000"
+      }
+    ],
+    "aliases": [],
+    "category": "Console",
+    "status": "REGISTERED"
+  },
+  {
+    "commandPath": "hardkas localnet start",
+    "description": "Start localnet profile alpha",
+    "arguments": [],
+    "options": [
+      {
+        "flags": "--profile <name>",
+        "description": "Localnet profile",
+        "defaultValue": "simulated"
+      },
+      {
+        "flags": "--toccata",
+        "description": "Shortcut for --profile toccata-v2",
+        "defaultValue": false
+      },
+      {
+        "flags": "--detached",
+        "description": "Run in background",
+        "defaultValue": false
+      },
+      {
+        "flags": "--json",
+        "description": "Output as JSON",
+        "defaultValue": false
+      }
+    ],
+    "aliases": [],
+    "category": "Localnet",
+    "status": "REGISTERED"
+  },
+  {
+    "commandPath": "hardkas localnet stop",
+    "description": "Stop localnet profile alpha",
+    "arguments": [],
+    "options": [
+      {
+        "flags": "--profile <name>",
+        "description": "Localnet profile",
+        "defaultValue": "simulated"
+      },
+      {
+        "flags": "--toccata",
+        "description": "Shortcut for --profile toccata-v2",
+        "defaultValue": false
+      },
+      {
+        "flags": "--json",
+        "description": "Output as JSON",
+        "defaultValue": false
+      }
+    ],
+    "aliases": [],
+    "category": "Localnet",
+    "status": "REGISTERED"
+  },
+  {
+    "commandPath": "hardkas localnet status",
+    "description": "Show localnet status alpha",
+    "arguments": [],
+    "options": [
+      {
+        "flags": "--json",
+        "description": "Output as JSON",
+        "defaultValue": false
+      }
+    ],
+    "aliases": [],
+    "category": "Localnet",
+    "status": "REGISTERED"
+  },
+  {
+    "commandPath": "hardkas localnet fund",
+    "description": "Fund a local Toccata/simnet account alpha",
+    "arguments": [
+      {
+        "name": "identifier",
+        "required": true,
+        "description": ""
+      }
+    ],
+    "options": [
+      {
+        "flags": "--profile <name>",
+        "description": "Funding profile",
+        "defaultValue": "toccata-v2"
+      },
+      {
+        "flags": "--amount <kas>",
+        "description": "Target mining amount hint in KAS",
+        "defaultValue": "1000"
+      },
+      {
+        "flags": "--timeout <ms>",
+        "description": "Funding/maturity wait timeout in ms",
+        "defaultValue": "300000"
+      },
+      {
+        "flags": "--keep-miner",
+        "description": "Leave the companion miner running",
+        "defaultValue": false
+      },
+      {
+        "flags": "--json",
+        "description": "Output as JSON",
+        "defaultValue": false
+      }
+    ],
+    "aliases": [],
+    "category": "Localnet",
+    "status": "REGISTERED"
+  },
+  {
+    "commandPath": "hardkas localnet account create",
+    "description": "Create a simulated localnet account alpha",
+    "arguments": [
+      {
+        "name": "name",
+        "required": true,
+        "description": ""
+      }
+    ],
+    "options": [
+      {
+        "flags": "--json",
+        "description": "Output as JSON",
+        "defaultValue": false
+      }
+    ],
+    "aliases": [],
+    "category": "Localnet",
+    "status": "REGISTERED"
+  },
+  {
+    "commandPath": "hardkas localnet fork",
+    "description": "Fork state from a real Kaspa network for local simulation preview",
+    "arguments": [],
+    "options": [
+      {
+        "flags": "--network <name>",
+        "description": "Network to fork from"
+      },
+      {
+        "flags": "--addresses <addrs...>",
+        "description": "Only fetch UTXOs for these addresses"
+      },
+      {
+        "flags": "--at-daa-score <score>",
+        "description": "Fork at specific DAA score (implicit latest is forbidden)"
+      },
+      {
+        "flags": "--output <path>",
+        "description": "Save fork snapshot to file"
+      },
+      {
+        "flags": "--json",
+        "description": "Output as JSON",
+        "defaultValue": false
+      }
+    ],
+    "aliases": [],
+    "category": "Localnet",
+    "status": "REGISTERED"
+  },
+  {
+    "commandPath": "hardkas localnet snapshot verify",
+    "description": "Verify the integrity of a snapshot preview",
+    "arguments": [
+      {
+        "name": "idOrName",
+        "required": true,
+        "description": ""
+      }
+    ],
+    "options": [
+      {
+        "flags": "--json",
+        "description": "Output as JSON",
+        "defaultValue": false
+      }
+    ],
+    "aliases": [],
+    "category": "Localnet",
+    "status": "REGISTERED"
+  },
+  {
+    "commandPath": "hardkas localnet snapshot create",
+    "description": "Create a deterministic snapshot of current localnet state alpha",
+    "arguments": [
+      {
+        "name": "name",
+        "required": true,
+        "description": ""
+      }
+    ],
+    "options": [
+      {
+        "flags": "--consensus-validated",
+        "description": "Mark snapshot as validated by consensus (strict)",
+        "defaultValue": false
+      },
+      {
+        "flags": "--json",
+        "description": "Output as JSON",
+        "defaultValue": false
+      }
+    ],
+    "aliases": [],
+    "category": "Localnet",
+    "status": "REGISTERED"
+  },
+  {
+    "commandPath": "hardkas localnet snapshot replay",
+    "description": "Replay and rebuild deterministic state from a snapshot alpha",
+    "arguments": [
+      {
+        "name": "name",
+        "required": true,
+        "description": ""
+      }
+    ],
+    "options": [
+      {
+        "flags": "--json",
+        "description": "Output as JSON",
+        "defaultValue": false
+      }
+    ],
+    "aliases": [],
+    "category": "Localnet",
+    "status": "REGISTERED"
+  },
+  {
+    "commandPath": "hardkas simulator silver deploy",
+    "description": "Simulate a SilverScript deploy plan without a node",
+    "arguments": [
+      {
+        "name": "deploy-plan",
+        "required": true,
+        "description": ""
+      }
+    ],
+    "options": [],
+    "aliases": [],
+    "category": "Simulator",
+    "status": "REGISTERED"
+  },
+  {
+    "commandPath": "hardkas simulator silver spend",
+    "description": "Simulate spending a simulated SilverScript output",
+    "arguments": [
+      {
+        "name": "spend-plan",
+        "required": true,
+        "description": ""
+      }
+    ],
+    "options": [],
+    "aliases": [],
+    "category": "Simulator",
+    "status": "REGISTERED"
+  },
+  {
+    "commandPath": "hardkas simulator account create",
+    "description": "Create a synthetic simulated account stable",
+    "arguments": [
+      {
+        "name": "name",
+        "required": true,
+        "description": ""
+      }
+    ],
+    "options": [
+      {
+        "flags": "--json",
+        "description": "Output as JSON",
+        "defaultValue": false
+      }
+    ],
+    "aliases": [],
+    "category": "Simulator",
+    "status": "REGISTERED"
+  },
+  {
+    "commandPath": "hardkas simulator fund",
+    "description": "Fund a synthetic simulated account stable",
+    "arguments": [
+      {
+        "name": "identifier",
+        "required": true,
+        "description": ""
+      }
+    ],
+    "options": [
+      {
+        "flags": "--amount <kas>",
+        "description": "Amount in KAS to fund",
+        "defaultValue": "1000"
+      },
+      {
+        "flags": "--json",
+        "description": "Output as JSON",
+        "defaultValue": false
+      }
+    ],
+    "aliases": [],
+    "category": "Simulator",
+    "status": "REGISTERED"
+  },
+  {
+    "commandPath": "hardkas deploy init",
+    "description": "Generate deployment profiles (Docker Compose, Dockerfile, .env.example) alpha",
+    "arguments": [],
+    "options": [],
+    "aliases": [],
+    "category": "Deploy",
+    "status": "REGISTERED"
+  },
+  {
+    "commandPath": "hardkas deploy track",
+    "description": "Create a deployment record for a transaction stable",
+    "arguments": [
+      {
+        "name": "label",
+        "required": true,
+        "description": ""
+      }
+    ],
+    "options": [
+      {
+        "flags": "--network <name>",
+        "description": "Network where deployed"
+      },
+      {
+        "flags": "--tx-id <txId>",
+        "description": "Transaction ID"
+      },
+      {
+        "flags": "--plan <artifactId>",
+        "description": "Reference to plan artifact"
+      },
+      {
+        "flags": "--receipt <artifactId>",
+        "description": "Reference to receipt artifact"
+      },
+      {
+        "flags": "--status <status>",
+        "description": "Deployment status",
+        "defaultValue": "sent"
+      },
+      {
+        "flags": "--notes <text>",
+        "description": "Notes about this deployment"
+      },
+      {
+        "flags": "--json",
+        "description": "Output as JSON",
+        "defaultValue": false
+      }
+    ],
+    "aliases": [],
+    "category": "Deploy",
+    "status": "REGISTERED"
+  },
+  {
+    "commandPath": "hardkas deploy list",
+    "description": "List all tracked deployments stable",
+    "arguments": [],
+    "options": [
+      {
+        "flags": "--network <name>",
+        "description": "Filter by network"
+      },
+      {
+        "flags": "--status <status>",
+        "description": "Filter by status"
+      },
+      {
+        "flags": "--json",
+        "description": "Output as JSON",
+        "defaultValue": false
+      }
+    ],
+    "aliases": [],
+    "category": "Deploy",
+    "status": "REGISTERED"
+  },
+  {
+    "commandPath": "hardkas deploy inspect",
+    "description": "Show full details of a deployment stable",
+    "arguments": [
+      {
+        "name": "label",
+        "required": true,
+        "description": ""
+      }
+    ],
+    "options": [
+      {
+        "flags": "--network <name>",
+        "description": "Network"
+      },
+      {
+        "flags": "--json",
+        "description": "Output as JSON",
+        "defaultValue": false
+      }
+    ],
+    "aliases": [],
+    "category": "Deploy",
+    "status": "REGISTERED"
+  },
+  {
+    "commandPath": "hardkas deploy status",
+    "description": "Check deployment status (query RPC if available) stable",
+    "arguments": [
+      {
+        "name": "label",
+        "required": true,
+        "description": ""
+      }
+    ],
+    "options": [
+      {
+        "flags": "--network <name>",
+        "description": "Network"
+      },
+      {
+        "flags": "--verify",
+        "description": "Verify against RPC node",
+        "defaultValue": false
+      },
+      {
+        "flags": "--json",
+        "description": "Output as JSON",
+        "defaultValue": false
+      }
+    ],
+    "aliases": [],
+    "category": "Deploy",
+    "status": "REGISTERED"
+  },
+  {
+    "commandPath": "hardkas deploy history",
+    "description": "Show deployment history across all networks stable",
+    "arguments": [],
+    "options": [
+      {
+        "flags": "--json",
+        "description": "Output as JSON",
+        "defaultValue": false
+      }
+    ],
+    "aliases": [],
+    "category": "Deploy",
+    "status": "REGISTERED"
+  },
+  {
+    "commandPath": "hardkas dev",
+    "description": "Local development and Igra-native environment tools",
+    "arguments": [],
+    "options": [
+      {
+        "flags": "--once",
+        "description": "Initialize dev environment, run health checks, and exit (headless)",
+        "defaultValue": false
+      },
+      {
+        "flags": "--headless",
+        "description": "Run headlessly (no UI open)",
+        "defaultValue": false
+      }
+    ],
+    "aliases": [],
+    "category": "Dev",
+    "status": "REGISTERED"
+  },
+  {
+    "commandPath": "hardkas dev create",
+    "description": "Create a new dApp project from a template stable",
+    "arguments": [
+      {
+        "name": "name",
+        "required": true,
+        "description": ""
+      }
+    ],
+    "options": [],
+    "aliases": [],
+    "category": "Dev",
+    "status": "REGISTERED"
+  },
+  {
+    "commandPath": "hardkas dev init",
+    "description": "Initialize dApp support in the current workspace stable",
+    "arguments": [],
+    "options": [],
+    "aliases": [],
+    "category": "Dev",
+    "status": "REGISTERED"
+  },
+  {
+    "commandPath": "hardkas dev doctor",
+    "description": "Validate local dev environment readiness stable",
+    "arguments": [],
+    "options": [
+      {
+        "flags": "--profile <name>",
+        "description": "L2 network profile name",
+        "defaultValue": "igra"
+      },
+      {
+        "flags": "--rpc-url <url>",
+        "description": "Explicit Igra RPC URL to check"
+      },
+      {
+        "flags": "--account <name>",
+        "description": "Local EVM account name to verify balance"
+      },
+      {
+        "flags": "--timeout <ms>",
+        "description": "RPC timeout in milliseconds",
+        "defaultValue": "3000"
+      },
+      {
+        "flags": "--json",
+        "description": "Output as JSON"
+      },
+      {
+        "flags": "--release",
+        "description": "Run strict release gate checks"
+      }
+    ],
+    "aliases": [],
+    "category": "Dev",
+    "status": "REGISTERED"
+  },
+  {
+    "commandPath": "hardkas dev accounts list",
+    "description": "List dev accounts",
+    "arguments": [],
+    "options": [],
+    "aliases": [],
+    "category": "Dev",
+    "status": "REGISTERED"
+  },
+  {
+    "commandPath": "hardkas dev accounts reveal",
+    "description": "Reveal private key for a dev account (simnet only)",
+    "arguments": [
+      {
+        "name": "alias",
+        "required": true,
+        "description": ""
+      }
+    ],
+    "options": [],
+    "aliases": [],
+    "category": "Dev",
+    "status": "REGISTERED"
+  },
+  {
+    "commandPath": "hardkas dev accounts export",
+    "description": "Export dev account in format suitable for Kasware manual import",
+    "arguments": [
+      {
+        "name": "kasware",
+        "required": true,
+        "description": ""
+      }
+    ],
+    "options": [
+      {
+        "flags": "--alias <alias>",
+        "description": "Alias to export",
+        "defaultValue": "alice"
+      }
+    ],
+    "aliases": [],
+    "category": "Dev",
+    "status": "REGISTERED"
+  },
+  {
+    "commandPath": "hardkas dev tx send",
+    "description": "Quick send transaction",
+    "arguments": [],
+    "options": [
+      {
+        "flags": "--from <accountOrAddress>",
+        "description": "Sender alias"
+      },
+      {
+        "flags": "--to <address>",
+        "description": "Recipient address"
+      },
+      {
+        "flags": "--amount <kas>",
+        "description": "Amount in KAS"
+      },
+      {
+        "flags": "--workspace <path>",
+        "description": "Override workspace root directory"
+      }
+    ],
+    "aliases": [],
+    "category": "Dev",
+    "status": "REGISTERED"
+  },
+  {
+    "commandPath": "hardkas dev tx generate",
+    "description": "Generate simulated load/batch transactions stable",
+    "arguments": [],
+    "options": [
+      {
+        "flags": "--count <number>",
+        "description": "Number of transactions to generate"
+      },
+      {
+        "flags": "--network <name>",
+        "description": "Network name",
+        "defaultValue": "simulated"
+      },
+      {
+        "flags": "--workspace <path>",
+        "description": "Override workspace root directory"
+      },
+      {
+        "flags": "--json",
+        "description": "Output as JSON",
+        "defaultValue": false
+      }
+    ],
+    "aliases": [],
+    "category": "Dev",
+    "status": "REGISTERED"
+  },
+  {
+    "commandPath": "hardkas dev fixture generate",
+    "description": "Generate mock fixtures for testing stable",
+    "arguments": [],
+    "options": [
+      {
+        "flags": "--type <type>",
+        "description": "Type of fixture (marketplace|dao|payroll|random)"
+      },
+      {
+        "flags": "--out <path>",
+        "description": "Save fixture as JSON to this file"
+      },
+      {
+        "flags": "--json",
+        "description": "Output as JSON",
+        "defaultValue": false
+      }
+    ],
+    "aliases": [],
+    "category": "Dev",
+    "status": "REGISTERED"
+  },
+  {
+    "commandPath": "hardkas dev last",
+    "description": "Interact with the latest local workflow",
+    "arguments": [],
+    "options": [
+      {
+        "flags": "--inspect",
+        "description": "Inspect the latest artifact",
+        "defaultValue": false
+      },
+      {
+        "flags": "--replay",
+        "description": "Replay the latest workflow",
+        "defaultValue": false
+      },
+      {
+        "flags": "--explain",
+        "description": "Explain the latest workflow",
+        "defaultValue": false
+      },
+      {
+        "flags": "--workspace <path>",
+        "description": "Override workspace root directory"
+      }
+    ],
+    "aliases": [],
+    "category": "Dev",
+    "status": "REGISTERED"
+  },
+  {
+    "commandPath": "hardkas local wizard",
+    "description": "Guided setup for local development stable",
+    "arguments": [],
+    "options": [
+      {
+        "flags": "--profile <name>",
+        "description": "L2 network profile name",
+        "defaultValue": "igra"
+      },
+      {
+        "flags": "--account <name>",
+        "description": "New or existing EVM account name",
+        "defaultValue": "dev_alice"
+      },
+      {
+        "flags": "--non-interactive",
+        "description": "Skip interactive prompts (will fail if input required)",
+        "defaultValue": false
+      },
+      {
+        "flags": "--json",
+        "description": "Output as JSON",
+        "defaultValue": false
+      }
+    ],
+    "aliases": [],
+    "category": "Local",
+    "status": "REGISTERED"
+  },
+  {
+    "commandPath": "hardkas kaspa wallet create",
+    "description": "Create a new local Kaspa wallet stable",
+    "arguments": [
+      {
+        "name": "name",
+        "required": true,
+        "description": ""
+      }
+    ],
+    "options": [
+      {
+        "flags": "--network <id>",
+        "description": "Kaspa network ID",
+        "defaultValue": "simnet"
+      }
+    ],
+    "aliases": [],
+    "category": "Kaspa",
+    "status": "REGISTERED"
+  },
+  {
+    "commandPath": "hardkas kaspa wallet list",
+    "description": "List local Kaspa wallets stable",
+    "arguments": [],
+    "options": [
+      {
+        "flags": "--json",
+        "description": "Output as JSON",
+        "defaultValue": false
+      }
+    ],
+    "aliases": [],
+    "category": "Kaspa",
+    "status": "REGISTERED"
+  },
+  {
+    "commandPath": "hardkas kaspa wallet address",
+    "description": "Show address of a local Kaspa wallet stable",
+    "arguments": [
+      {
+        "name": "name",
+        "required": true,
+        "description": ""
+      }
+    ],
+    "options": [],
+    "aliases": [],
+    "category": "Kaspa",
+    "status": "REGISTERED"
+  },
+  {
+    "commandPath": "hardkas kaspa wallet balance",
+    "description": "Show balance of a local Kaspa wallet stable",
+    "arguments": [
+      {
+        "name": "name",
+        "required": true,
+        "description": ""
+      }
+    ],
+    "options": [
+      {
+        "flags": "--rpc-url <url>",
+        "description": "Kaspa RPC URL",
+        "defaultValue": "http://127.0.0.1:16110"
+      },
+      {
+        "flags": "--json",
+        "description": "Output as JSON",
+        "defaultValue": false
+      }
+    ],
+    "aliases": [],
+    "category": "Kaspa",
+    "status": "REGISTERED"
+  },
+  {
+    "commandPath": "hardkas kaspa wallet send",
+    "description": "Send Kaspa between local wallets stable",
+    "arguments": [
+      {
+        "name": "from",
+        "required": true,
+        "description": ""
+      },
+      {
+        "name": "to",
+        "required": true,
+        "description": ""
+      }
+    ],
+    "options": [
+      {
+        "flags": "--amount <kas>",
+        "description": "Amount in KAS to send"
+      },
+      {
+        "flags": "--dry-run",
+        "description": "Plan but do not sign or broadcast",
+        "defaultValue": false
+      },
+      {
+        "flags": "--rpc-url <url>",
+        "description": "Kaspa RPC URL",
+        "defaultValue": "http://127.0.0.1:16110"
+      }
+    ],
+    "aliases": [],
+    "category": "Kaspa",
+    "status": "REGISTERED"
+  },
+  {
+    "commandPath": "hardkas kaspa doctor",
+    "description": "Verify local Kaspa L1 environment readiness stable",
+    "arguments": [],
+    "options": [
+      {
+        "flags": "--rpc-url <url>",
+        "description": "Kaspa RPC URL",
+        "defaultValue": "http://127.0.0.1:16110"
+      },
+      {
+        "flags": "--json",
+        "description": "Output as JSON",
+        "defaultValue": false
+      }
+    ],
+    "aliases": [],
+    "category": "Kaspa",
+    "status": "REGISTERED"
+  },
+  {
+    "commandPath": "hardkas session create",
+    "description": "Create a new L1/L2 session linkage alpha",
+    "arguments": [
+      {
+        "name": "name",
+        "required": true,
+        "description": ""
+      }
+    ],
+    "options": [
+      {
+        "flags": "--l1 <wallet>",
+        "description": "Name of the Kaspa L1 wallet"
+      },
+      {
+        "flags": "--l2 <account>",
+        "description": "Name of the Igra L2 account"
+      },
+      {
+        "flags": "--json",
+        "description": "Output results as JSON",
+        "defaultValue": false
+      }
+    ],
+    "aliases": [],
+    "category": "Session",
+    "status": "REGISTERED"
+  },
+  {
+    "commandPath": "hardkas session list",
+    "description": "List all configured sessions alpha",
+    "arguments": [],
+    "options": [
+      {
+        "flags": "--json",
+        "description": "Output results as JSON",
+        "defaultValue": false
+      }
+    ],
+    "aliases": [],
+    "category": "Session",
+    "status": "REGISTERED"
+  },
+  {
+    "commandPath": "hardkas session status",
+    "description": "Show active session linkage alpha",
+    "arguments": [],
+    "options": [
+      {
+        "flags": "--json",
+        "description": "Output results as JSON",
+        "defaultValue": false
+      }
+    ],
+    "aliases": [],
+    "category": "Session",
+    "status": "REGISTERED"
+  },
+  {
+    "commandPath": "hardkas session use",
+    "description": "Set the active session alpha",
+    "arguments": [
+      {
+        "name": "name",
+        "required": true,
+        "description": ""
+      }
+    ],
+    "options": [
+      {
+        "flags": "--json",
+        "description": "Output results as JSON",
+        "defaultValue": false
+      }
+    ],
+    "aliases": [],
+    "category": "Session",
+    "status": "REGISTERED"
+  },
+  {
+    "commandPath": "hardkas pskt capabilities",
+    "description": "Show PSKT adapter capabilities alpha",
+    "arguments": [],
+    "options": [
+      {
+        "flags": "--adapter <adapterId>",
+        "description": "Specific adapter ID to query (default: kaspa-wasm-local)"
+      },
+      {
+        "flags": "--json",
+        "description": "Output results as JSON",
+        "defaultValue": false
+      }
+    ],
+    "aliases": [],
+    "category": "Pskt",
+    "status": "REGISTERED"
+  },
+  {
+    "commandPath": "hardkas pskt inspect",
+    "description": "Inspect a PSKT session payload and metadata alpha",
+    "arguments": [
+      {
+        "name": "sessionPath",
+        "required": true,
+        "description": ""
+      }
+    ],
+    "options": [
+      {
+        "flags": "--json",
+        "description": "Output results as JSON",
+        "defaultValue": false
+      }
+    ],
+    "aliases": [],
+    "category": "Pskt",
+    "status": "REGISTERED"
+  },
+  {
+    "commandPath": "hardkas pskt verify",
+    "description": "Verify integrity and lineage of a PSKT session alpha",
+    "arguments": [
+      {
+        "name": "sessionPath",
+        "required": true,
+        "description": ""
+      }
+    ],
+    "options": [
+      {
+        "flags": "--json",
+        "description": "Output results as JSON",
+        "defaultValue": false
+      }
+    ],
+    "aliases": [],
+    "category": "Pskt",
+    "status": "REGISTERED"
+  },
+  {
+    "commandPath": "hardkas pskt export",
+    "description": "Export a TxPlan as a Portable Signing Session alpha",
+    "arguments": [],
+    "options": [
+      {
+        "flags": "--plan <planPath>",
+        "description": "Path to the TxPlan JSON artifact"
+      },
+      {
+        "flags": "--out <sessionPath>",
+        "description": "Path to write the new PSKT session JSON"
+      },
+      {
+        "flags": "--adapter <adapterId>",
+        "description": "Specific adapter ID to bind to (default: kaspa-wasm-local)"
+      },
+      {
+        "flags": "--force",
+        "description": "Overwrite the output file if it exists",
+        "defaultValue": false
+      },
+      {
+        "flags": "--json",
+        "description": "Output results as JSON",
+        "defaultValue": false
+      }
+    ],
+    "aliases": [],
+    "category": "Pskt",
+    "status": "REGISTERED"
+  },
+  {
+    "commandPath": "hardkas pskt import",
+    "description": "Import a raw payload into a PSKT session alpha",
+    "arguments": [],
+    "options": [
+      {
+        "flags": "--file <sessionPath>",
+        "description": "Path to the PSKT session JSON"
+      },
+      {
+        "flags": "--payload <payloadPath>",
+        "description": "Path to the raw payload file"
+      },
+      {
+        "flags": "--out <outputPath>",
+        "description": "Path to write the updated PSKT session JSON"
+      },
+      {
+        "flags": "--force",
+        "description": "Overwrite the output file if it exists",
+        "defaultValue": false
+      },
+      {
+        "flags": "--json",
+        "description": "Output results as JSON",
+        "defaultValue": false
+      }
+    ],
+    "aliases": [],
+    "category": "Pskt",
+    "status": "REGISTERED"
+  },
+  {
+    "commandPath": "hardkas pskt sign",
+    "description": "Sign a PSKT session payload alpha",
+    "arguments": [
+      {
+        "name": "sessionPath",
+        "required": true,
+        "description": ""
+      }
+    ],
+    "options": [
+      {
+        "flags": "--account <name>",
+        "description": "Name of the HardKAS L1 account to sign with"
+      },
+      {
+        "flags": "--keystore <path>",
+        "description": "Path to a HardKAS keystore JSON file"
+      },
+      {
+        "flags": "--key-stdin",
+        "description": "Read private key from standard input"
+      },
+      {
+        "flags": "--private-key-file <path>",
+        "description": "Path to file containing raw private key (TEST ONLY)"
+      },
+      {
+        "flags": "--out <outputPath>",
+        "description": "Path to write the updated PSKT session JSON"
+      },
+      {
+        "flags": "--force",
+        "description": "Overwrite the output file if it exists",
+        "defaultValue": false
+      },
+      {
+        "flags": "--json",
+        "description": "Output results as JSON",
+        "defaultValue": false
+      }
+    ],
+    "aliases": [],
+    "category": "Pskt",
+    "status": "REGISTERED"
+  },
+  {
+    "commandPath": "hardkas pskt merge",
+    "description": "Merge two PSKT sessions alpha",
+    "arguments": [
+      {
+        "name": "sessionA",
+        "required": true,
+        "description": ""
+      },
+      {
+        "name": "sessionB",
+        "required": true,
+        "description": ""
+      }
+    ],
+    "options": [
+      {
+        "flags": "--out <outputPath>",
+        "description": "Path to write the merged PSKT session JSON"
+      },
+      {
+        "flags": "--force",
+        "description": "Overwrite the output file if it exists",
+        "defaultValue": false
+      },
+      {
+        "flags": "--json",
+        "description": "Output results as JSON",
+        "defaultValue": false
+      }
+    ],
+    "aliases": [],
+    "category": "Pskt",
+    "status": "REGISTERED"
+  },
+  {
+    "commandPath": "hardkas pskt finalize",
+    "description": "Finalize a PSKT session alpha",
+    "arguments": [
+      {
+        "name": "sessionPath",
+        "required": true,
+        "description": ""
+      }
+    ],
+    "options": [
+      {
+        "flags": "--out <outputPath>",
+        "description": "Path to write the finalized PSKT session JSON"
+      },
+      {
+        "flags": "--force",
+        "description": "Overwrite the output file if it exists",
+        "defaultValue": false
+      },
+      {
+        "flags": "--json",
+        "description": "Output results as JSON",
+        "defaultValue": false
+      }
+    ],
+    "aliases": [],
+    "category": "Pskt",
+    "status": "REGISTERED"
+  },
+  {
+    "commandPath": "hardkas pskt extract",
+    "description": "Extract KaspaRpcTransaction from a finalized PSKT session alpha",
+    "arguments": [
+      {
+        "name": "sessionPath",
+        "required": true,
+        "description": ""
+      }
+    ],
+    "options": [
+      {
+        "flags": "--out <outputPath>",
+        "description": "Path to write the Kaspa transaction JSON"
+      },
+      {
+        "flags": "--force",
+        "description": "Overwrite the output file if it exists",
+        "defaultValue": false
+      },
+      {
+        "flags": "--json",
+        "description": "Output results as JSON",
+        "defaultValue": false
+      }
+    ],
+    "aliases": [],
+    "category": "Pskt",
+    "status": "REGISTERED"
+  },
+  {
+    "commandPath": "hardkas explain",
+    "description": "Provide a narrative causal explanation of an artifact resolved by exact artifactId or artifact file path stable",
+    "arguments": [
+      {
+        "name": "artifact",
+        "required": true,
+        "description": ""
+      }
+    ],
+    "options": [
+      {
+        "flags": "--workspace <path>",
+        "description": "Override workspace root directory"
+      }
+    ],
+    "aliases": [],
+    "category": "Explain",
+    "status": "REGISTERED"
+  },
+  {
+    "commandPath": "hardkas torture matrix",
+    "description": "Execute the deterministic chaos-and-mutation torture matrix alpha",
+    "arguments": [],
+    "options": [
+      {
+        "flags": "--iterations <number>",
+        "description": "Number of torture cases to execute",
+        "defaultValue": "300"
+      },
+      {
+        "flags": "--seed <seed>",
+        "description": "Seed value for deterministic inputs or 'random'",
+        "defaultValue": "random"
+      },
+      {
+        "flags": "--report [path]",
+        "description": "Optional custom JSON output filepath for findings report"
+      },
+      {
+        "flags": "--bucket <name>",
+        "description": "Optional target bucket name to execute exclusively"
+      },
+      {
+        "flags": "--profile <name>",
+        "description": "Optional profile name to execute"
+      },
+      {
+        "flags": "--debug-stack",
+        "description": "Print raw stacktraces when cases fail",
+        "defaultValue": false
+      }
+    ],
+    "aliases": [],
+    "category": "Torture",
+    "status": "REGISTERED"
+  },
+  {
+    "commandPath": "hardkas torture replay",
+    "description": "Replay and debug a specific failed case from a torture run alpha",
+    "arguments": [],
+    "options": [
+      {
+        "flags": "--seed <number>",
+        "description": "Original global seed of the failed matrix run"
+      },
+      {
+        "flags": "--case <caseId>",
+        "description": "Failed case ID, e.g. case-001"
+      },
+      {
+        "flags": "--profile <name>",
+        "description": "Original profile filter of the failed matrix run"
+      }
+    ],
+    "aliases": [],
+    "category": "Torture",
+    "status": "REGISTERED"
+  },
+  {
+    "commandPath": "hardkas telemetry inspect",
+    "description": "Deep introspection of the telemetry stream stable",
+    "arguments": [],
+    "options": [
+      {
+        "flags": "--limit <n>",
+        "description": "Number of recent events to display",
+        "defaultValue": "5"
+      }
+    ],
+    "aliases": [],
+    "category": "Telemetry",
+    "status": "REGISTERED"
+  },
+  {
+    "commandPath": "hardkas telemetry verify",
+    "description": "Verify schema integrity conforming to Telemetry Source Contract v1 stable",
+    "arguments": [],
+    "options": [],
+    "aliases": [],
+    "category": "Telemetry",
+    "status": "REGISTERED"
+  },
+  {
+    "commandPath": "hardkas telemetry tail",
+    "description": "Real-time monitor of the telemetry stream stable",
+    "arguments": [],
+    "options": [
+      {
+        "flags": "-f, --follow",
+        "description": "Keep checking for incoming telemetry events",
+        "defaultValue": false
+      },
+      {
+        "flags": "-n, --lines <n>",
+        "description": "Number of initial lines to tail",
+        "defaultValue": "20"
+      }
+    ],
+    "aliases": [],
+    "category": "Telemetry",
+    "status": "REGISTERED"
+  },
+  {
+    "commandPath": "hardkas repair",
+    "description": "Attempt automatic recovery of corrupt projections or append tails beta",
+    "arguments": [],
+    "options": [
+      {
+        "flags": "--json",
+        "description": "Output results as stable JSON schema",
+        "defaultValue": false
+      },
+      {
+        "flags": "--force",
+        "description": "Repair without prompting for confirmation",
+        "defaultValue": false
+      }
+    ],
+    "aliases": [],
+    "category": "Repair",
+    "status": "REGISTERED"
+  },
+  {
+    "commandPath": "hardkas rotate",
+    "description": "Rotate and archive telemetry streams beta",
+    "arguments": [],
+    "options": [
+      {
+        "flags": "--json",
+        "description": "Output results as stable JSON schema",
+        "defaultValue": false
+      },
+      {
+        "flags": "--force",
+        "description": "Force rotation even if file size is below threshold",
+        "defaultValue": false
+      }
+    ],
+    "aliases": [],
+    "category": "Rotate",
+    "status": "REGISTERED"
+  },
+  {
+    "commandPath": "hardkas inspect",
+    "description": "Inspect stream sizes and archive segments beta",
+    "arguments": [],
+    "options": [
+      {
+        "flags": "--json",
+        "description": "Output results as stable JSON schema",
+        "defaultValue": false
+      }
+    ],
+    "aliases": [],
+    "category": "Inspect",
+    "status": "REGISTERED"
+  },
+  {
+    "commandPath": "hardkas chaos",
+    "description": "Run the internal Chaos Engine to stress-test the runtime experimental",
+    "arguments": [],
+    "options": [
+      {
+        "flags": "--runs <number>",
+        "description": "Number of chaos iterations to run",
+        "defaultValue": "300"
+      },
+      {
+        "flags": "--seed <number>",
+        "description": "Deterministic PRNG seed",
+        "defaultValue": "1337"
+      },
+      {
+        "flags": "--profile <smoke|targeted|full>",
+        "description": "Fuzzing distribution profile",
+        "defaultValue": "smoke"
+      },
+      {
+        "flags": "--actor <LockHell|RotBot|DriftHunter|HumanChaos>",
+        "description": "Target a specific chaos actor instead of using a profile"
+      },
+      {
+        "flags": "--isolate",
+        "description": "Run the chaos engine in a dedicated temporary workspace (Default)",
+        "defaultValue": true
+      },
+      {
+        "flags": "--unsafe-current-dir",
+        "description": "Run chaos in the current directory (DANGEROUS)",
+        "defaultValue": false
+      },
+      {
+        "flags": "--force-ci-chaos",
+        "description": "Allow unsafe chaos in CI environments",
+        "defaultValue": false
+      },
+      {
+        "flags": "--force-chaos-destructive",
+        "description": "Bypass workspace protection guards",
+        "defaultValue": false
+      }
+    ],
+    "aliases": [],
+    "category": "Chaos",
+    "status": "REGISTERED"
+  },
+  {
+    "commandPath": "hardkas chaos replay",
+    "description": "Replay a specific chaos run deterministically",
+    "arguments": [],
+    "options": [
+      {
+        "flags": "--run-seed <number>",
+        "description": "The run seed to replay"
+      },
+      {
+        "flags": "--isolate",
+        "description": "Run in isolated workspace",
+        "defaultValue": true
+      }
+    ],
+    "aliases": [],
+    "category": "Chaos",
+    "status": "REGISTERED"
+  },
+  {
+    "commandPath": "hardkas status",
+    "description": "Display the current state of the local HardKAS runtime workspace",
+    "arguments": [],
+    "options": [
+      {
+        "flags": "--workspace <path>",
+        "description": "Override workspace root directory"
+      }
+    ],
+    "aliases": [],
+    "category": "Status",
+    "status": "REGISTERED"
+  },
+  {
+    "commandPath": "hardkas why",
+    "description": "Explain the causal lineage of an artifact resolved by exact artifactId or artifact file path",
+    "arguments": [
+      {
+        "name": "artifact",
+        "required": true,
+        "description": "Exact 64-hex artifactId (lineage.artifactId) or absolute/workspace-relative path to the artifact .json file"
+      }
+    ],
+    "options": [
+      {
+        "flags": "--json",
+        "description": "Output lineage graph in JSON format"
+      },
+      {
+        "flags": "--workspace <path>",
+        "description": "Override workspace root directory"
+      }
+    ],
+    "aliases": [],
+    "category": "Why",
+    "status": "REGISTERED"
+  },
+  {
+    "commandPath": "hardkas ci verify",
+    "description": "Non-interactively verify workspace integrity, artifacts, and projections",
+    "arguments": [],
+    "options": [],
+    "aliases": [],
+    "category": "Ci",
+    "status": "REGISTERED"
+  },
+  {
+    "commandPath": "hardkas sandbox",
+    "description": "Start a temporary, ephemeral HardKAS local experimentation environment",
+    "arguments": [],
+    "options": [
+      {
+        "flags": "--with-node",
+        "description": "Start a simulated Kaspa node in the background with mining"
+      },
+      {
+        "flags": "--recipe <name>",
+        "description": "Run an initial recipe/template inside the sandbox"
+      },
+      {
+        "flags": "-p, --port <port>",
+        "description": "Port for dashboard",
+        "defaultValue": "3000"
+      },
+      {
+        "flags": "-h, --host <host>",
+        "description": "Host for dashboard",
+        "defaultValue": "localhost"
+      }
+    ],
+    "aliases": [],
+    "category": "Sandbox",
+    "status": "REGISTERED"
+  },
+  {
+    "commandPath": "hardkas silver doctor",
+    "description": "Report whether the pinned toolchains and the canonical node are ready",
+    "arguments": [],
+    "options": [
+      {
+        "flags": "--json",
+        "description": "Output as JSON",
+        "defaultValue": false
+      }
+    ],
+    "aliases": [],
+    "category": "Silver",
+    "status": "REGISTERED"
+  },
+  {
+    "commandPath": "hardkas silver compile",
+    "description": "Compile SilverScript with the managed silverc v1.0.0 and record its provenance",
+    "arguments": [
+      {
+        "name": "source",
+        "required": true,
+        "description": ""
+      }
+    ],
+    "options": [
+      {
+        "flags": "--args <file>",
+        "description": "Constructor arguments: JSON list of {kind, value}"
+      },
+      {
+        "flags": "--out <file>",
+        "description": "Record path (default .hardkas/artifacts/silver/)"
+      },
+      {
+        "flags": "--json",
+        "description": "Output as JSON",
+        "defaultValue": false
+      }
+    ],
+    "aliases": [],
+    "category": "Silver",
+    "status": "REGISTERED"
+  },
+  {
+    "commandPath": "hardkas silver inspect",
+    "description": "Show a SilverScript v1 compile record",
+    "arguments": [
+      {
+        "name": "record",
+        "required": true,
+        "description": ""
+      }
+    ],
+    "options": [
+      {
+        "flags": "--json",
+        "description": "Output as JSON",
+        "defaultValue": false
+      }
+    ],
+    "aliases": [],
+    "category": "Silver",
+    "status": "REGISTERED"
+  },
+  {
+    "commandPath": "hardkas silver verify",
+    "description": "Reproduce a compile record with the managed silverc (byte-for-byte)",
+    "arguments": [
+      {
+        "name": "record",
+        "required": true,
+        "description": ""
+      }
+    ],
+    "options": [
+      {
+        "flags": "--args <file>",
+        "description": "The constructor arguments the record was compiled with"
+      },
+      {
+        "flags": "--json",
+        "description": "Output as JSON",
+        "defaultValue": false
+      }
+    ],
+    "aliases": [],
+    "category": "Silver",
+    "status": "REGISTERED"
+  },
+  {
+    "commandPath": "hardkas silver deploy",
+    "description": "Fund a compiled contract's P2SH output on the canonical localnet",
+    "arguments": [
+      {
+        "name": "record",
+        "required": true,
+        "description": ""
+      }
+    ],
+    "options": [
+      {
+        "flags": "--from <account>",
+        "description": "Funding account (local key)"
+      },
+      {
+        "flags": "--amount <kas>",
+        "description": "Value locked in the contract"
+      },
+      {
+        "flags": "--contract <name>",
+        "description": "Contract, when the artifact has several"
+      },
+      {
+        "flags": "--network <network>",
+        "description": "Network",
+        "defaultValue": "simnet"
+      },
+      {
+        "flags": "--wait",
+        "description": "Wait for confirmation",
+        "defaultValue": false
+      },
+      {
+        "flags": "--timeout <seconds>",
+        "description": "Confirmation timeout",
+        "defaultValue": "120"
+      },
+      {
+        "flags": "--json",
+        "description": "Output as JSON",
+        "defaultValue": false
+      }
+    ],
+    "aliases": [],
+    "category": "Silver",
+    "status": "REGISTERED"
+  },
+  {
+    "commandPath": "hardkas silver spend",
+    "description": "Spend a deployed contract output through one of its entries",
+    "arguments": [
+      {
+        "name": "deploy-record",
+        "required": true,
+        "description": ""
+      }
+    ],
+    "options": [
+      {
+        "flags": "--entry <name>",
+        "description": "Entry to call"
+      },
+      {
+        "flags": "--to <address>",
+        "description": "Recipient of the whole value (minus the fee)"
+      },
+      {
+        "flags": "--args <file>",
+        "description": "Entry arguments: JSON list of {kind, value} and {\"kind\":\"signature\",\"account\":\"<name>\"}"
+      },
+      {
+        "flags": "--sequence <n>",
+        "description": "Input sequence (relative locks)"
+      },
+      {
+        "flags": "--sig-op-count <n>",
+        "description": "Declared signature operations (default: the signature arguments, at least 1)"
+      },
+      {
+        "flags": "--wait",
+        "description": "Wait for confirmation",
+        "defaultValue": false
+      },
+      {
+        "flags": "--timeout <seconds>",
+        "description": "Confirmation timeout",
+        "defaultValue": "120"
+      },
+      {
+        "flags": "--json",
+        "description": "Output as JSON",
+        "defaultValue": false
+      }
+    ],
+    "aliases": [],
+    "category": "Silver",
+    "status": "REGISTERED"
+  },
+  {
+    "commandPath": "hardkas silver covenant genesis",
+    "description": "Create a covenant: bind a new output to the covenant id the SDK derives",
+    "arguments": [
+      {
+        "name": "record",
+        "required": true,
+        "description": ""
+      }
+    ],
+    "options": [
+      {
+        "flags": "--from <account>",
+        "description": "Funding account (local key)"
+      },
+      {
+        "flags": "--amount <kas>",
+        "description": "Value locked in the covenant"
+      },
+      {
+        "flags": "--compute-budget <n>",
+        "description": "Compute budget of the funding input (explicit: no estimator exists)"
+      },
+      {
+        "flags": "--fee <sompi>",
+        "description": "Explicit fee (required when --compute-budget > 0: the SDK does not price v1 budgets)"
+      },
+      {
+        "flags": "--contract <name>",
+        "description": "Contract, when the artifact has several"
+      },
+      {
+        "flags": "--wait",
+        "description": "Wait for confirmation and the node's covenant id",
+        "defaultValue": false
+      },
+      {
+        "flags": "--timeout <seconds>",
+        "description": "Confirmation timeout",
+        "defaultValue": "120"
+      },
+      {
+        "flags": "--json",
+        "description": "Output as JSON",
+        "defaultValue": false
+      }
+    ],
+    "aliases": [],
+    "category": "Silver",
+    "status": "REGISTERED"
+  },
+  {
+    "commandPath": "hardkas silver covenant transition",
+    "description": "Advance a 1:1 auth-bound covenant: successor state compiled by silverc, same covenant id",
+    "arguments": [
+      {
+        "name": "covenant-record",
+        "required": true,
+        "description": ""
+      }
+    ],
+    "options": [
+      {
+        "flags": "--policy <name>",
+        "description": "Covenant declaration (policy function) to call"
+      },
+      {
+        "flags": "--constructor-args <file>",
+        "description": "Constructor arguments of the current state (checked against the record)"
+      },
+      {
+        "flags": "--state-map <json>",
+        "description": "State field -> constructor parameter index, e.g. {\"value\":0}"
+      },
+      {
+        "flags": "--next-state <file>",
+        "description": "Successor state: JSON object of {kind, value} per field"
+      },
+      {
+        "flags": "--compute-budget <n>",
+        "description": "Compute budget of the covenant input (explicit: no estimator exists)"
+      },
+      {
+        "flags": "--args <file>",
+        "description": "Entry arguments: JSON list of {kind, value}"
+      },
+      {
+        "flags": "--fee <sompi>",
+        "description": "Explicit fee (required when --compute-budget > 0)"
+      },
+      {
+        "flags": "--emit-args <file>",
+        "description": "Write the successor's constructor arguments here (for the next transition)"
+      },
+      {
+        "flags": "--wait",
+        "description": "Wait for confirmation and check the lineage",
+        "defaultValue": false
+      },
+      {
+        "flags": "--timeout <seconds>",
+        "description": "Confirmation timeout",
+        "defaultValue": "120"
+      },
+      {
+        "flags": "--json",
+        "description": "Output as JSON",
+        "defaultValue": false
+      }
+    ],
+    "aliases": [],
+    "category": "Silver",
+    "status": "REGISTERED"
+  },
+  {
+    "commandPath": "hardkas corpus verify",
+    "description": "Verify a HardKAS golden corpus",
+    "arguments": [
+      {
+        "name": "path",
+        "required": true,
+        "description": ""
+      }
+    ],
+    "options": [
+      {
+        "flags": "--json",
+        "description": "Output results as JSON",
+        "defaultValue": false
+      },
+      {
+        "flags": "--workspace <path>",
+        "description": "Override workspace root directory"
+      }
+    ],
+    "aliases": [],
+    "category": "Corpus",
+    "status": "REGISTERED"
+  },
+  {
+    "commandPath": "hardkas zk capabilities",
+    "description": "Show experimental ZK lab capabilities",
+    "arguments": [],
+    "options": [
+      {
+        "flags": "--json",
+        "description": "Output as JSON",
+        "defaultValue": false
+      }
+    ],
+    "aliases": [],
+    "category": "Zk",
+    "status": "REGISTERED"
+  },
+  {
+    "commandPath": "hardkas zk proof inspect",
+    "description": "Inspect a local proof fixture or artifact",
+    "arguments": [
+      {
+        "name": "path",
+        "required": true,
+        "description": ""
+      }
+    ],
+    "options": [
+      {
+        "flags": "--json",
+        "description": "Output as JSON",
+        "defaultValue": false
+      }
+    ],
+    "aliases": [],
+    "category": "Zk",
+    "status": "REGISTERED"
+  },
+  {
+    "commandPath": "hardkas zk proof verify",
+    "description": "Verify a local proof fixture locally (No on-chain claims) alpha",
+    "arguments": [
+      {
+        "name": "path",
+        "required": true,
+        "description": ""
+      }
+    ],
+    "options": [
+      {
+        "flags": "--json",
+        "description": "Output as JSON",
+        "defaultValue": false
+      }
+    ],
+    "aliases": [
+      "verify-local"
+    ],
+    "category": "Zk",
+    "status": "REGISTERED"
+  },
+  {
+    "commandPath": "hardkas zk corpus verify",
+    "description": "Verify a local ZK corpus",
+    "arguments": [
+      {
+        "name": "path",
+        "required": true,
+        "description": ""
+      }
+    ],
+    "options": [
+      {
+        "flags": "--json",
+        "description": "Output as JSON",
+        "defaultValue": false
+      }
+    ],
+    "aliases": [],
+    "category": "Zk",
+    "status": "REGISTERED"
+  },
+  {
+    "commandPath": "hardkas vprogs capabilities",
+    "description": "Show vProgs inspect capabilities",
+    "arguments": [],
+    "options": [
+      {
+        "flags": "--json",
+        "description": "Output as JSON",
+        "defaultValue": false
+      }
+    ],
+    "aliases": [],
+    "category": "Vprogs",
+    "status": "REGISTERED"
+  },
+  {
+    "commandPath": "hardkas vprogs status",
+    "description": "Show vProgs inspect status",
+    "arguments": [],
+    "options": [
+      {
+        "flags": "--json",
+        "description": "Output as JSON",
+        "defaultValue": false
+      }
+    ],
+    "aliases": [],
+    "category": "Vprogs",
+    "status": "REGISTERED"
+  },
+  {
+    "commandPath": "hardkas vprogs inspect",
+    "description": "Inspect a local vProgs artifact without runtime claims",
+    "arguments": [
+      {
+        "name": "artifact",
+        "required": true,
+        "description": ""
+      }
+    ],
+    "options": [
+      {
+        "flags": "--json",
+        "description": "Output as JSON",
+        "defaultValue": false
+      }
+    ],
+    "aliases": [],
+    "category": "Vprogs",
+    "status": "REGISTERED"
+  },
+  {
+    "commandPath": "hardkas programmability capabilities",
+    "description": "Show local programmability capabilities",
+    "arguments": [],
+    "options": [
+      {
+        "flags": "--json",
+        "description": "Output as JSON",
+        "defaultValue": false
+      }
+    ],
+    "aliases": [],
+    "category": "Programmability",
+    "status": "REGISTERED"
+  },
+  {
+    "commandPath": "hardkas programmability audit",
+    "description": "Audit the boundaries and claims of programmability layers",
+    "arguments": [],
+    "options": [
+      {
+        "flags": "--json",
+        "description": "Output as JSON",
+        "defaultValue": false
+      }
+    ],
+    "aliases": [],
+    "category": "Programmability",
+    "status": "REGISTERED"
+  },
+  {
+    "commandPath": "hardkas programmability inspect",
+    "description": "Inspect a Silver, ZK, or vProgs artifact",
+    "arguments": [
+      {
+        "name": "path",
+        "required": true,
+        "description": ""
+      }
+    ],
+    "options": [
+      {
+        "flags": "--kind <kind>",
+        "description": "Artifact kind: silver, zk, or vprog"
+      },
+      {
+        "flags": "--json",
+        "description": "Output as JSON",
+        "defaultValue": false
+      }
+    ],
+    "aliases": [],
+    "category": "Programmability",
+    "status": "REGISTERED"
+  },
+  {
+    "commandPath": "hardkas programmability verify",
+    "description": "Verify a local programmability artifact",
+    "arguments": [
+      {
+        "name": "path",
+        "required": true,
+        "description": ""
+      }
+    ],
+    "options": [
+      {
+        "flags": "--kind <kind>",
+        "description": "Artifact kind: silver, zk, or vprog"
+      },
+      {
+        "flags": "--json",
+        "description": "Output as JSON",
+        "defaultValue": false
+      }
+    ],
+    "aliases": [],
+    "category": "Programmability",
+    "status": "REGISTERED"
+  },
+  {
+    "commandPath": "hardkas programmability corpus verify",
+    "description": "Verify the root Toccata programmability corpus",
+    "arguments": [
+      {
+        "name": "path",
+        "required": true,
+        "description": ""
+      }
+    ],
+    "options": [
+      {
+        "flags": "--json",
+        "description": "Output as JSON",
+        "defaultValue": false
+      }
+    ],
+    "aliases": [],
+    "category": "Programmability",
+    "status": "REGISTERED"
+  },
+  {
+    "commandPath": "hardkas programmability app plan",
+    "description": "Return a local app plan for a programmable HardKAS app",
+    "arguments": [],
+    "options": [
+      {
+        "flags": "--kind <kind>",
+        "description": "silver, zk, vprog, or full-lab",
+        "defaultValue": "full-lab"
+      },
+      {
+        "flags": "--template <path>",
+        "description": "Template path"
+      },
+      {
+        "flags": "--json",
+        "description": "Output as JSON",
+        "defaultValue": false
+      }
+    ],
+    "aliases": [],
+    "category": "Programmability",
+    "status": "REGISTERED"
+  },
+  {
+    "commandPath": "hardkas security audit",
+    "description": "Audit workspace for DX safety and secret leakage",
+    "arguments": [],
+    "options": [
+      {
+        "flags": "--json",
+        "description": "Output as JSON",
+        "defaultValue": false
+      },
+      {
+        "flags": "--include <path>",
+        "description": "Extra path to include in search"
+      }
+    ],
+    "aliases": [],
+    "category": "Security",
+    "status": "REGISTERED"
+  },
+  {
+    "commandPath": "hardkas env check",
+    "description": "Validate the .env file against known HardKAS production variables",
+    "arguments": [],
+    "options": [],
+    "aliases": [],
+    "category": "Env",
+    "status": "REGISTERED"
+  },
+  {
+    "commandPath": "hardkas toolchain install",
+    "description": "Install a pinned toolchain, verifying the release asset and every file against the pin",
+    "arguments": [
+      {
+        "name": "id",
+        "required": true,
+        "description": ""
+      }
+    ],
+    "options": [
+      {
+        "flags": "--from-file <asset>",
+        "description": "Use a release asset already on disk instead of downloading it"
+      },
+      {
+        "flags": "--force",
+        "description": "Reinstall even if a verified install is present",
+        "defaultValue": false
+      },
+      {
+        "flags": "--json",
+        "description": "Output as JSON",
+        "defaultValue": false
+      }
+    ],
+    "aliases": [],
+    "category": "Toolchain",
+    "status": "REGISTERED"
+  },
+  {
+    "commandPath": "hardkas toolchain status",
+    "description": "Show whether each pinned toolchain is installed and matches its pin",
+    "arguments": [],
+    "options": [
+      {
+        "flags": "--json",
+        "description": "Output as JSON",
+        "defaultValue": false
+      }
+    ],
+    "aliases": [],
+    "category": "Toolchain",
+    "status": "REGISTERED"
+  },
+  {
+    "commandPath": "hardkas task <name>",
+    "description": "Run a task",
+    "arguments": [],
+    "options": [],
+    "aliases": [],
+    "category": "Task",
+    "status": "REGISTERED"
+  },
+  {
+    "commandPath": "hardkas workflow create",
+    "description": "Create a deterministic workflow from a template",
+    "arguments": [
+      {
+        "name": "name",
+        "required": true,
+        "description": ""
+      }
+    ],
+    "options": [
+      {
+        "flags": "--template <name>",
+        "description": "Embedded template name"
+      },
+      {
+        "flags": "--out <path>",
+        "description": "Output artifact file path"
+      },
+      {
+        "flags": "--json",
+        "description": "Output the final workflow artifact as JSON",
+        "defaultValue": false
+      },
+      {
+        "flags": "--workspace <path>",
+        "description": "Override workspace root directory"
+      }
+    ],
+    "aliases": [],
+    "category": "Workflow",
+    "status": "REGISTERED"
+  },
+  {
+    "commandPath": "hardkas workflow run",
+    "description": "Execute a workflow JSON definition in Agent mode",
+    "arguments": [
+      {
+        "name": "file",
+        "required": true,
+        "description": ""
+      }
+    ],
+    "options": [
+      {
+        "flags": "--dry-run",
+        "description": "Simulate the workflow without mutating the filesystem",
+        "defaultValue": false
+      },
+      {
+        "flags": "--network <net>",
+        "description": "Target network (e.g. simulated, testnet-10, mainnet)"
+      },
+      {
+        "flags": "--offline",
+        "description": "Force offline execution (rejects real RPC connections)",
+        "defaultValue": false
+      },
+      {
+        "flags": "--timeout <ms>",
+        "description": "Maximum execution time in milliseconds"
+      },
+      {
+        "flags": "--json",
+        "description": "Output the final workflow artifact as JSON",
+        "defaultValue": false
+      }
+    ],
+    "aliases": [],
+    "category": "Workflow",
+    "status": "REGISTERED"
+  },
+  {
+    "commandPath": "hardkas workflow inspect",
+    "description": "Inspect a completed workflow artifact",
+    "arguments": [
+      {
+        "name": "id",
+        "required": true,
+        "description": ""
+      }
+    ],
+    "options": [
+      {
+        "flags": "--json",
+        "description": "Output full artifact as JSON",
+        "defaultValue": false
+      }
+    ],
+    "aliases": [],
+    "category": "Workflow",
+    "status": "REGISTERED"
+  },
+  {
+    "commandPath": "hardkas workflow replay",
+    "description": "Deterministically replay and verify a workflow's lineage",
+    "arguments": [
+      {
+        "name": "id",
+        "required": true,
+        "description": ""
+      }
+    ],
+    "options": [],
+    "aliases": [],
+    "category": "Workflow",
+    "status": "REGISTERED"
+  },
+  {
+    "commandPath": "hardkas workflow diff",
+    "description": "Compare two workflow artifacts structurally",
+    "arguments": [
+      {
+        "name": "a",
+        "required": true,
+        "description": ""
+      },
+      {
+        "name": "b",
+        "required": true,
+        "description": ""
+      }
+    ],
+    "options": [],
+    "aliases": [],
+    "category": "Workflow",
+    "status": "REGISTERED"
+  },
+  {
+    "commandPath": "hardkas evidence pack",
+    "description": "Pack a scenario result and its artifacts into an evidence package",
+    "arguments": [
+      {
+        "name": "scenarioResultPath",
+        "required": true,
+        "description": ""
+      }
+    ],
+    "options": [
+      {
+        "flags": "--out <path>",
+        "description": "Output package file path"
+      },
+      {
+        "flags": "--workspace <path>",
+        "description": "Override workspace root directory"
+      },
+      {
+        "flags": "--json",
+        "description": "Output results as JSON",
+        "defaultValue": false
+      }
+    ],
+    "aliases": [],
+    "category": "Evidence",
+    "status": "REGISTERED"
+  },
+  {
+    "commandPath": "hardkas evidence verify",
+    "description": "Verify the integrity and policy compliance of an evidence package",
+    "arguments": [
+      {
+        "name": "packagePath",
+        "required": true,
+        "description": ""
+      }
+    ],
+    "options": [
+      {
+        "flags": "--json",
+        "description": "Output results as JSON",
+        "defaultValue": false
+      }
+    ],
+    "aliases": [],
+    "category": "Evidence",
+    "status": "REGISTERED"
+  },
+  {
+    "commandPath": "hardkas evidence explain",
+    "description": "Explain the contents and claims of an evidence package",
+    "arguments": [
+      {
+        "name": "packagePath",
+        "required": true,
+        "description": ""
+      }
+    ],
+    "options": [
+      {
+        "flags": "--json",
+        "description": "Output results as JSON",
+        "defaultValue": false
+      }
+    ],
+    "aliases": [],
+    "category": "Evidence",
+    "status": "REGISTERED"
+  }
+]

@@ -6,7 +6,7 @@ import os from "node:os";
 import { saveSimulatedReceipt } from "../src/receipts";
 import { saveSimulatedTrace } from "../src/traces";
 import { getSimulatedReplaySummary } from "../src/replay";
-import { ARTIFACT_SCHEMAS } from "@hardkas/artifacts";
+import { ARTIFACT_SCHEMAS, calculateContentHash } from "@hardkas/artifacts";
 
 describe("replay summary", () => {
   let tempDir: string;
@@ -23,7 +23,7 @@ describe("replay summary", () => {
     const txId = "simtx_replay_123";
     const receipt: any = {
       schema: ARTIFACT_SCHEMAS.TX_RECEIPT,
-      hardkasVersion: "0.12.0-rc.22",
+      hardkasVersion: "0.12.0-rc.23",
       version: "1.0.0-alpha",
       hashVersion: 1,
       txId,
@@ -39,10 +39,13 @@ describe("replay summary", () => {
       daaScore: "5",
       createdAt: new Date().toISOString()
     };
+    // Wave 1.2 · IC-5′: the receipt is looked up through the verified tx namespace,
+    // so the fixture carries the hash of the version it declares.
+    receipt.contentHash = calculateContentHash(receipt, 1);
 
     const trace: any = {
       schema: ARTIFACT_SCHEMAS.TX_TRACE,
-      hardkasVersion: "0.12.0-rc.22",
+      hardkasVersion: "0.12.0-rc.23",
       version: "1.0.0-alpha",
       txId,
       mode: "simulator" as const,

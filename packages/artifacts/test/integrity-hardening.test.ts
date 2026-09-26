@@ -22,14 +22,13 @@ describe("Artifact Integrity Hardening (P1.1)", () => {
 
   const createValidArtifact = () => ({
     schema: "hardkas.txPlan",
-    hardkasVersion: "0.12.0-rc.22",
+    hardkasVersion: "0.12.0-rc.23",
     version: ARTIFACT_VERSION,
     hashVersion: CURRENT_HASH_VERSION,
     createdAt: new Date().toISOString(),
     networkId: "simnet",
     mode: "simulator",
     execution: { mode: "simulator", domain: "kaspa-l1", network: "simnet" },
-    planId: "test-123",
     from: { address: "kaspa:sim_alice" },
     to: { address: "kaspa:sim_bob" },
     amountSompi: "1000",
@@ -39,9 +38,17 @@ describe("Artifact Integrity Hardening (P1.1)", () => {
     outputs: [{ address: "kaspa:sim_bob", amountSompi: "1000" }]
   });
 
+  // Wave 1.1 · IC-1′.1c / IC-4′.5: planId is a derived label outside the hash and the
+  // verifier recomputes it, so a fixture seals its identity the way a producer does.
+  const sealPlan = (artifact: any) => {
+    artifact.contentHash = calculateContentHash(artifact, CURRENT_HASH_VERSION);
+    artifact.planId = `plan-${artifact.contentHash.slice(0, 16)}`;
+    return artifact;
+  };
+
   it("should verify a valid artifact object", async () => {
     const artifact: any = createValidArtifact();
-    artifact.contentHash = calculateContentHash(artifact);
+    sealPlan(artifact);
 
     const result = await verifyArtifactIntegrity(artifact);
     expect(result.ok).toBe(true);
@@ -49,7 +56,7 @@ describe("Artifact Integrity Hardening (P1.1)", () => {
 
   it("should detect content manipulation", async () => {
     const artifact: any = createValidArtifact();
-    artifact.contentHash = calculateContentHash(artifact);
+    sealPlan(artifact);
 
     // Mutate amount
     artifact.amountSompi = "9999";
@@ -70,7 +77,7 @@ describe("Artifact Integrity Hardening (P1.1)", () => {
   it("should reject incompatible major versions", async () => {
     const artifact: any = createValidArtifact();
     artifact.version = "3.0.0"; // Future incompatible version
-    artifact.contentHash = calculateContentHash(artifact);
+    sealPlan(artifact);
 
     const result = await verifyArtifactIntegrity(artifact);
     expect(result.ok).toBe(false);
@@ -79,7 +86,7 @@ describe("Artifact Integrity Hardening (P1.1)", () => {
 
   it("should be independent of CRLF/LF line endings in file", async () => {
     const artifact: any = createValidArtifact();
-    artifact.contentHash = calculateContentHash(artifact);
+    sealPlan(artifact);
     const json = JSON.stringify(artifact, null, 2);
 
     const lfPath = path.join(testDir, "lf.json");
@@ -98,7 +105,7 @@ describe("Artifact Integrity Hardening (P1.1)", () => {
 
   it("should ignore filesystem path metadata", async () => {
     const artifact: any = createValidArtifact();
-    artifact.contentHash = calculateContentHash(artifact);
+    sealPlan(artifact);
 
     const pathA = path.join(testDir, "artifact_a.json");
     const subDir = path.join(testDir, "sub");

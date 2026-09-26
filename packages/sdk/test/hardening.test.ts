@@ -128,31 +128,13 @@ describe("Core Hardening Sprint Regressions", () => {
 
   // VULN-03: Post-Hash Artifact Mutation
   it("[VULN-03] should produce an immutable receipt and seal tracePath before hashing", async () => {
-    const sdk = await Hardkas.open({ cwd: tmpDir });
-
-    const signedArtifact = {
-      schema: "hardkas.signedTx",
-      signedId: "signed_123",
-      sourcePlanId: "plan_123",
-      amountSompi: "1000",
-      networkId: "simnet",
-      mode: "simulator",
-      from: { address: "kaspa:sim_alice" },
-      to: { address: "kaspa:sim_bob" },
-      signedTransaction: { payload: "signed-payload" }
-    };
-
-    const mockPlan = {
-      planId: "plan_123",
-      networkId: "simnet",
-      mode: "simulator",
-      from: { address: "kaspa:sim_alice" },
-      to: { address: "kaspa:sim_bob" },
-      amountSompi: "1000",
-      inputs: [],
-      outputs: [{ address: "kaspa:sim_bob", amountSompi: "1000" }]
-    };
-    vi.spyOn(sdk.artifacts, "read").mockResolvedValue(mockPlan);
+    // Wave 1.4 · IC-6′: only a synthetic authorization bound to a FULL plan is executable,
+    // so the lifecycle is the real one (plan → authorize → simulate) in a simulated workspace.
+    const ws = fs.mkdtempSync(path.join(os.tmpdir(), "hardkas-hardening-v03-"));
+    const sdk = await Hardkas.create({ cwd: ws, autoBootstrap: true, network: "simulated" });
+    const plan = await sdk.tx.plan({ from: "alice", to: "bob", amount: "10" });
+    await sdk.artifacts.write(plan);
+    const signedArtifact = await sdk.tx.sign(plan, "alice");
 
     const { receipt } = await sdk.tx.simulate(signedArtifact as any);
 
@@ -181,9 +163,13 @@ describe("Core Hardening Sprint Regressions", () => {
       // Missing signedTransaction payload
     };
 
-    await expect(sdk.tx.send(invalidSigned as any)).rejects.toThrow(
+    // Real-broadcast branch (explicit RPC URL): the pre-broadcast semantic check is what
+    // fails closed here. In the simulator branch the Wave 1.4 binding check (IC-6′.5,
+    // LEGACY_UNBOUND_SIGNED) refuses such an artifact even earlier.
+    await expect(sdk.tx.send(invalidSigned as any, "http://127.0.0.1:16110")).rejects.toThrow(
       /Pre-broadcast semantic verification failed/
     );
+    await expect(sdk.tx.send(invalidSigned as any)).rejects.toMatchObject({ code: "LEGACY_UNBOUND_SIGNED" });
   });
 
   it("[VULN-05] should warn PLAN_UNAVAILABLE_FOR_LINEAGE_CHECK if plan is not in the workspace during send", async () => {

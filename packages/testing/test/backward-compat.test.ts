@@ -3,7 +3,8 @@ import { Hardkas } from "@hardkas/sdk";
 import {
   MigrationRequiredError,
   migrateArtifactPayload,
-  verifyLineage
+  verifyLineage,
+  calculateContentHash
 } from "@hardkas/artifacts";
 
 describe("Phase 6B: Backward Compatibility (Vitest Layer 1)", () => {
@@ -46,22 +47,33 @@ describe("Phase 6B: Backward Compatibility (Vitest Layer 1)", () => {
   });
 
   it("should preserve broken lineage tracking across migrationReceipt", () => {
-    const legacyArtifact = {
+    // Wave 1.3 re-base (D-Q1.f / IC-4′.7): a migration starts from a VERIFIED legacy
+    // source (the former fixture carried a fake contentHash). This is a v4 legacy plan
+    // whose lineage v4 authenticated, so its (broken) lineageId/rootArtifactId are
+    // carried by the re-issue and the receipt exactly as the test's name says.
+    const legacyArtifact: any = {
       schema: "hardkas.txPlan.v1",
       hardkasVersion: "0.8.2",
       version: "0.1.0",
+      hashVersion: 4,
+      from: { address: "kaspasim:qqalice" },
+      to: { address: "kaspasim:qqbob" },
+      amountSompi: "10",
+      estimatedFeeSompi: "1",
+      estimatedMass: "1",
       inputs: [],
       outputs: [],
       networkId: "simnet",
       mode: "simulator",
-      contentHash: "a".repeat(64),
       createdAt: new Date().toISOString(),
       lineage: {
-        artifactId: "a".repeat(64),
+        artifactId: "",
         lineageId: "b".repeat(64),
         rootArtifactId: "c".repeat(64)
       }
     };
+    legacyArtifact.contentHash = calculateContentHash(legacyArtifact, 4);
+    legacyArtifact.lineage.artifactId = legacyArtifact.contentHash;
 
     const { generateMigrationReceipt } = require("@hardkas/artifacts");
 

@@ -3,7 +3,8 @@ import path from "node:path";
 import enquirer from "enquirer";
 import {
   KeystoreManager,
-  loadOrCreateRealAccountStore,
+  loadRealAccountStore,
+  createEmptyRealAccountStore,
   saveRealAccountStore,
   importRealDevAccount
 } from "@hardkas/accounts";
@@ -31,11 +32,15 @@ export async function runAccountsKeystoreImport(options: {
   let address = options.address;
 
   if (options.fixture) {
-    const { HardkasFixtureSigner } = await import("@hardkas/testing");
-    const signer = new HardkasFixtureSigner("simnet");
+    const { HardkasFixtureSigner, getHardkasFixtureKey } = await import(
+      "@hardkas/testing"
+    );
+    // DEF-14 fix (Wave 0): fixture identities live in an explicit, auditable
+    // registry — HardKAS does NOT derive private keys from arbitrary user-supplied
+    // strings. Unknown fixture names fail closed with HARDKAS_UNKNOWN_FIXTURE.
+    const signer = new HardkasFixtureSigner("simnet", options.fixture);
     address = await signer.getAddress();
-    options.privateKey =
-      "b7e151628aed2a6abf7158809cf4f3c762e7160f38b4da56a784d9045190cfef";
+    options.privateKey = getHardkasFixtureKey(options.fixture);
     name = options.fixture;
     options.unsafePlaintext = true;
     options.yes = true;
@@ -149,16 +154,21 @@ export async function runAccountsKeystoreImport(options: {
     keystoreRef = `.hardkas/keystore/${name}.json`;
   }
 
-  // Update Metadata Index (accounts.real.json)
-  let store = await loadOrCreateRealAccountStore({ cwd: options.workspaceRoot });
-  store = importRealDevAccount(store, {
+  // DEF-13: transactional store update. Load without side effects, validate via
+  // importRealDevAccount (throws on collision/invalid-name/invalid-address), and
+  // only touch disk after the in-memory transition succeeds. If any step above
+  // fails, the on-disk store is byte-unchanged (or, if it did not exist, remains
+  // absent from disk).
+  const loadedStore = await loadRealAccountStore({ cwd: options.workspaceRoot });
+  const baseStore = loadedStore ?? createEmptyRealAccountStore();
+  const nextStore = importRealDevAccount(baseStore, {
     name,
     address,
     ...(options.unsafePlaintext ? { privateKey: finalKey } : {}),
     ...(options.privateKeyEnv ? { privateKeyEnv: options.privateKeyEnv } : {}),
     ...(keystoreRef ? { keystoreRef } : {})
   });
-  await saveRealAccountStore(store, { cwd: options.workspaceRoot });
+  await saveRealAccountStore(nextStore, { cwd: options.workspaceRoot });
 
   const warnings = [];
   if (privateKeyUsedAsArg) {

@@ -1,4 +1,14 @@
 
+## [0.12.0-rc.23] - 2026-09-17 — Coordinated Release Identity Refresh
+
+### Fixed
+- Promoted the coordinated release-set identity from `0.12.0-rc.22` to `0.12.0-rc.23`.
+- Kept the scaffold invariant intact: `CLI release X -> scaffolded @hardkas/* dependencies = exact X`.
+- Updated programmability corpus expectations now that the experimental vProgs inspect-only surface verifies successfully.
+
+### Preserved Evidence
+- `0.12.0-rc.22` release validation and audit evidence remain historical records and are not rewritten as `0.12.0-rc.23`.
+
 ## [0.12.0-rc.22] - 2026-09-16 — Scaffold Version Coherence Remediation
 
 ### Fixed

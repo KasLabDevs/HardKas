@@ -1,6 +1,13 @@
-import { calculateContentHash, CURRENT_HASH_VERSION } from "./canonical.js";
+import {
+  calculateContentHash,
+  CURRENT_HASH_VERSION,
+  legacyUnauthenticatedMaterialFields,
+  readDeclaredHashVersion,
+  V5_DERIVED_LABELS
+} from "./canonical.js";
 import { ARTIFACT_VERSION } from "./schemas.js";
-import { sortUtxosByOutpoint } from "./verify.js";
+import { sortUtxosByOutpoint, verifyArtifactIntegritySync } from "./verify.js";
+import { checkArtifactIdentity, enumerateWorkspaceArtifactsSync, resolveArtifactSync } from "./resolve.js";
 import { HARDKAS_VERSION } from "./constants.js";
 import { HardkasSchemas } from "@hardkas/core";
 
@@ -62,6 +69,48 @@ export class MigrationRequiredError extends Error {
     this.name = "MigrationRequiredError";
   }
 }
+
+export type MigrationErrorCode =
+  | "MIGRATION_SOURCE_INVALID"
+  | "MIGRATION_NOT_NEEDED"
+  | "MIGRATION_TARGET_UNSUPPORTED"
+  | "MIGRATION_UNVERIFIED_REQUIRED_FIELDS"
+  | "MIGRATION_RESULT_INVALID"
+  | "HASH_VERSION_INVALID";
+
+/** A typed refusal of the migration engine (Closure Pack D-Q1.f / IC-4′.7). */
+export class MigrationError extends Error {
+  readonly code: MigrationErrorCode;
+  readonly fields: string[];
+  readonly issues: Array<{ code: string; message: string }>;
+  constructor(
+    code: MigrationErrorCode,
+    message: string,
+    details: { fields?: string[]; issues?: Array<{ code: string; message: string }> } = {}
+  ) {
+    super(`${code}: ${message}`);
+    this.name = "MigrationError";
+    this.code = code;
+    this.fields = details.fields ?? [];
+    this.issues = details.issues ?? [];
+  }
+}
+
+/**
+ * The block a migrated artifact carries for the material fields its source
+ * version never authenticated (IC-4′.7): recorded as an UNVERIFIED legacy claim,
+ * never re-issued as authenticated content.
+ */
+export interface LegacyClaims {
+  sourceHashVersion: number;
+  sourceArtifactId: string;
+  verified: false;
+  note: string;
+  fields: Record<string, unknown>;
+}
+
+const LEGACY_CLAIMS_NOTE =
+  "Values the source artifact carried in fields its hash version never authenticated. They are recorded as the source's claim, not verified by this artifact.";
 
 // ---------------------------------------------------------------------------
 // Migration Registry
@@ -149,9 +198,17 @@ registerMigrationStep({
       migrated.createdAt = new Date().toISOString();
     }
 
-    // 6. Ensure hashVersion is set to current
-    if (migrated.hashVersion === undefined || migrated.hashVersion === null) {
-      migrated.hashVersion = CURRENT_HASH_VERSION;
+    // 6. Execution identity: a deterministic function of fields the legacy schema
+    //    already carried (mode, networkId); no claim is invented.
+    if (
+      migrated.execution === undefined &&
+      typeof migrated.mode === "string" &&
+      typeof migrated.networkId === "string" &&
+      (migrated.schema === HardkasSchemas.TxPlan || migrated.schema === HardkasSchemas.SignedTx || migrated.schema === HardkasSchemas.TxReceipt)
+    ) {
+      const legacyModes: Record<string, string> = { simulated: "simulator", simulator: "simulator", localnet: "localnet", node: "localnet", rpc: "rpc", real: "rpc", "l2-rpc": "l2-rpc" };
+      const mode = legacyModes[migrated.mode];
+      if (mode) migrated.execution = { mode, domain: "kaspa-l1", network: migrated.networkId };
     }
 
     return migrated;
@@ -257,6 +314,181 @@ export function canMigrate(
 }
 
 // ---------------------------------------------------------------------------
+// Source verification and sealing without whitewash (IC-4′.7)
+// ---------------------------------------------------------------------------
+
+const HEX64 = /^[0-9a-f]{64}$/;
+
+interface VerifiedSource {
+  hashVersion: number;
+  artifactId: string;
+}
+
+/**
+ * A migration starts from a VERIFIED source: its hashVersion must be a valid
+ * declaration and its body must hash to the identity it claims under that
+ * version. Nothing is re-issued from material that does not verify.
+ */
+export function verifyMigrationSource(source: ArtifactPayload): VerifiedSource {
+  const hashVersion = readDeclaredHashVersion(source);
+  if (hashVersion === null) {
+    throw new MigrationError(
+      "HASH_VERSION_INVALID",
+      `the source declares hashVersion ${JSON.stringify(source.hashVersion)}; an artifact that cannot be verified cannot be migrated (IC-4′.2)`
+    );
+  }
+  const recomputed = calculateContentHash(source, hashVersion);
+  if (typeof source.contentHash !== "string" || source.contentHash.length === 0) {
+    throw new MigrationError("MIGRATION_SOURCE_INVALID", "the source carries no contentHash to verify");
+  }
+  if (source.contentHash !== recomputed) {
+    throw new MigrationError(
+      "MIGRATION_SOURCE_INVALID",
+      `the source claims contentHash ${source.contentHash} but its body hashes to ${recomputed} under hashVersion ${hashVersion}`
+    );
+  }
+  const lineageId = (source.lineage as Record<string, unknown> | undefined)?.artifactId;
+  if (typeof lineageId === "string" && lineageId.length > 0 && lineageId !== recomputed) {
+    throw new MigrationError(
+      "MIGRATION_SOURCE_INVALID",
+      `the source's lineage.artifactId ${lineageId} is not its recomputed identity ${recomputed}`
+    );
+  }
+  return { hashVersion, artifactId: recomputed };
+}
+
+/** Parses the dotted/indexed paths produced by legacyUnauthenticatedMaterialFields. */
+function parsePath(pathStr: string): Array<string | number> {
+  const segments: Array<string | number> = [];
+  const re = /([^.[\]]+)|\[(\d+)\]/g;
+  let m: RegExpExecArray | null;
+  while ((m = re.exec(pathStr))) {
+    if (m[1] !== undefined) segments.push(m[1]);
+    else segments.push(Number(m[2]));
+  }
+  return segments;
+}
+
+function getAtPath(root: unknown, segments: Array<string | number>): unknown {
+  let current: any = root;
+  for (const seg of segments) {
+    if (current === null || typeof current !== "object") return undefined;
+    current = current[seg as any];
+  }
+  return current;
+}
+
+function deleteAtPath(root: unknown, segments: Array<string | number>): void {
+  if (segments.length === 0) return;
+  const parent = getAtPath(root, segments.slice(0, -1));
+  if (parent === null || typeof parent !== "object") return;
+  delete (parent as any)[segments[segments.length - 1] as any];
+}
+
+/**
+ * Seals `body` as a NEW version-5 artifact derived from a verified legacy
+ * source, without whitewash (IC-4′.7):
+ *  - every material field the source version never authenticated is REMOVED
+ *    from the body and recorded in `legacyClaims` (an unverified legacy claim);
+ *  - a top-level `artifactId` never enters v5 (IC-7.3);
+ *  - derived labels are recomputed from the new identity (IC-1′.1c);
+ *  - the lineage is rebuilt as a child of the verified source. The source's
+ *    lineageId/rootArtifactId are carried only when the source version
+ *    authenticated its lineage; otherwise the verified source is the root.
+ */
+function sealFromVerifiedSource(
+  body: ArtifactPayload,
+  source: ArtifactPayload,
+  verified: VerifiedSource
+): { artifact: ArtifactPayload; legacyClaims: LegacyClaims | undefined; stripped: string[] } {
+  const current: ArtifactPayload = structuredClone(body);
+  const claims: Record<string, unknown> = {};
+
+  const unauthenticated = legacyUnauthenticatedMaterialFields(source, verified.hashVersion)
+    // longest paths first so nested removals never race their parents
+    .sort((a, b) => b.length - a.length || (a < b ? -1 : a > b ? 1 : 0));
+  for (const p of unauthenticated) {
+    if (p === "hashVersion") continue; // re-declared below, never a claim
+    const segments = parsePath(p);
+    const value = getAtPath(current, segments);
+    if (value === undefined) continue;
+    claims[p] = structuredClone(value);
+    deleteAtPath(current, segments);
+  }
+  if (current.artifactId !== undefined) {
+    if (claims.artifactId === undefined) claims.artifactId = current.artifactId;
+    delete current.artifactId;
+  }
+  for (const label of V5_DERIVED_LABELS) delete current[label];
+  delete current.contentHash;
+  delete current.originalContentHash;
+
+  const sourceLineage = (source.lineage as Record<string, unknown> | undefined) ?? undefined;
+  const lineageAuthenticated = verified.hashVersion >= 4 && sourceLineage !== undefined;
+  const carried = (field: "lineageId" | "rootArtifactId"): string | undefined => {
+    const value = lineageAuthenticated ? sourceLineage?.[field] : undefined;
+    return typeof value === "string" && HEX64.test(value) ? value : undefined;
+  };
+  const rootId = carried("rootArtifactId") ?? verified.artifactId;
+  const previousSequence =
+    typeof sourceLineage?.sequence === "number" && Number.isFinite(sourceLineage.sequence)
+      ? (sourceLineage.sequence as number)
+      : 0;
+  current.lineage = {
+    artifactId: "",
+    lineageId: carried("lineageId") ?? rootId,
+    parentArtifactId: verified.artifactId,
+    rootArtifactId: rootId,
+    sequence: previousSequence + 1
+  };
+
+  const stripped = Object.keys(claims).sort();
+  const legacyClaims: LegacyClaims | undefined =
+    stripped.length > 0
+      ? {
+          sourceHashVersion: verified.hashVersion,
+          sourceArtifactId: verified.artifactId,
+          verified: false,
+          note: LEGACY_CLAIMS_NOTE,
+          fields: Object.fromEntries(stripped.map((k) => [k, claims[k]]))
+        }
+      : undefined;
+  if (legacyClaims) current.legacyClaims = legacyClaims;
+  else delete current.legacyClaims;
+
+  // One pass under the current version; lineage.artifactId is an exact-path self reference.
+  current.hashVersion = CURRENT_HASH_VERSION;
+  const hash = calculateContentHash(current, CURRENT_HASH_VERSION);
+  current.contentHash = hash;
+  (current.lineage as Record<string, unknown>).artifactId = hash;
+  if (current.schema === HardkasSchemas.TxPlan) current.planId = `plan-${hash.slice(0, 16)}`;
+  if (current.schema === HardkasSchemas.SignedTx) current.signedId = `signed-${hash.slice(0, 16)}`;
+
+  // Post-condition: the re-issued artifact verifies strict, or nothing is issued.
+  const check = verifyArtifactIntegritySync(structuredClone(current), { strict: true });
+  if (!check.ok) {
+    const schemaIssues = check.issues.filter((i) => i.code === "ARTIFACT_SCHEMA_INVALID");
+    const missingRequired = schemaIssues
+      .map((i) => i.path ?? "")
+      .filter((p) => p.length > 0 && stripped.some((s) => s === p || s.startsWith(`${p}.`) || s.startsWith(`${p}[`)));
+    if (missingRequired.length > 0 && schemaIssues.length === check.issues.length) {
+      throw new MigrationError(
+        "MIGRATION_UNVERIFIED_REQUIRED_FIELDS",
+        `required field(s) ${[...new Set(missingRequired)].join(", ")} were never authenticated under hashVersion ${verified.hashVersion}; the artifact cannot be re-issued as version ${CURRENT_HASH_VERSION} without asserting unverified claims (IC-4′.7)`,
+        { fields: [...new Set(missingRequired)] }
+      );
+    }
+    throw new MigrationError(
+      "MIGRATION_RESULT_INVALID",
+      `the re-issued artifact does not verify: ${check.issues.map((i) => `${i.code}: ${i.message}`).join("; ")}`,
+      { issues: check.issues.map((i) => ({ code: String(i.code), message: i.message })) }
+    );
+  }
+
+  return { artifact: current, legacyClaims, stripped };
+}
+
+// ---------------------------------------------------------------------------
 // Core Migration Function
 // ---------------------------------------------------------------------------
 
@@ -264,10 +496,12 @@ export function canMigrate(
  * Migrates an artifact payload from its current schema version to the
  * specified target version.
  *
- * **Identity Preservation:**
- * - The original `contentHash` is preserved as `originalContentHash`
- * - The `lineage.rootArtifactId` is NEVER modified
- * - A new `contentHash` is computed after migration using `CURRENT_HASH_VERSION`
+ * **Identity (Closure Pack D-Q1.f / IC-4′.7):**
+ * - The source is verified under the version it declares; a source that does
+ *   not hash to its claimed identity is refused.
+ * - The result is a NEW version-5 artifact whose lineage hangs from the
+ *   verified source. Material fields the source never authenticated are moved
+ *   to `legacyClaims`, never re-issued as authenticated content.
  *
  * **Non-Destructive:**
  * - The input artifact object is never mutated
@@ -277,16 +511,7 @@ export function canMigrate(
  * @param artifact - The artifact payload to migrate
  * @param targetVersion - The desired target version (defaults to ARTIFACT_VERSION)
  * @returns MigrationResult with the migrated artifact and metadata
- * @throws Error if no migration path exists
- *
- * @example
- * ```typescript
- * const result = migrateArtifactPayload(legacyArtifact);
- * if (result.migrated) {
- *   console.log(`Migrated from ${result.appliedSteps[0].fromVersion}`);
- *   console.log(`Original hash preserved: ${result.originalContentHash}`);
- * }
- * ```
+ * @throws Error if no migration path exists; MigrationError on a refusal
  */
 export function migrateArtifactPayload(
   artifact: ArtifactPayload,
@@ -318,9 +543,7 @@ export function migrateArtifactPayload(
     );
   }
 
-  // Preserve original identity
-  const originalContentHash = artifact.contentHash as string | undefined;
-  const originalLineage = artifact.lineage as Record<string, unknown> | undefined;
+  const verified = verifyMigrationSource(artifact);
 
   // Apply each migration step sequentially
   let current: ArtifactPayload = { ...artifact };
@@ -339,40 +562,146 @@ export function migrateArtifactPayload(
     });
   }
 
-  // Preserve original content hash for lineage tracing
-  if (originalContentHash) {
-    current.originalContentHash = originalContentHash;
-  }
-
-  // Preserve lineage root identity — INVARIANT: schema_upgrade_preserves_lineage
-  if (originalLineage && typeof originalLineage === "object") {
-    const migratedLineage = current.lineage as Record<string, unknown> | undefined;
-    if (migratedLineage && typeof migratedLineage === "object") {
-      // Root artifact ID must NEVER change during migration
-      migratedLineage.rootArtifactId = originalLineage.rootArtifactId;
-      // Link back to the original artifact for lineage tracing
-      if (originalContentHash) {
-        migratedLineage.parentArtifactId = originalContentHash;
-      }
-    }
-  }
-
-  // Recalculate content hash with current hash version (double-pass)
-  current.hashVersion = CURRENT_HASH_VERSION;
-  let hash = calculateContentHash(current, CURRENT_HASH_VERSION);
-  // Update lineage.artifactId to match the new contentHash, then recalculate
-  if (current.lineage && typeof current.lineage === "object") {
-    (current.lineage as Record<string, unknown>).artifactId = hash;
-    hash = calculateContentHash(current, CURRENT_HASH_VERSION);
-  }
-  current.contentHash = hash;
+  const sealed = sealFromVerifiedSource(current, artifact, verified);
 
   return {
-    artifact: current,
+    artifact: sealed.artifact,
     migrated: true,
-    originalContentHash,
+    originalContentHash: verified.artifactId,
     appliedSteps
   };
+}
+
+// ---------------------------------------------------------------------------
+// Hash-version migration (D-Q1.f: `artifact migrate --to 5`)
+// ---------------------------------------------------------------------------
+
+export interface HashVersionMigrationOptions {
+  /** The only supported target is the current hash version. */
+  to: number;
+  migrationId?: string;
+}
+
+export interface HashVersionMigrationResult {
+  /** The re-issued version-5 artifact (a NEW identity, child of the source). */
+  artifact: ArtifactPayload;
+  /** The MigrationReceipt linking source and re-issued artifact. */
+  receipt: ArtifactPayload;
+  /** The verified source identity and version. */
+  source: VerifiedSource;
+  /** The legacy-claims block carried by the re-issued artifact, if any field was stripped. */
+  legacyClaims: LegacyClaims | undefined;
+  /** Paths of the source fields that were NOT re-issued as authenticated content. */
+  stripped: string[];
+}
+
+/**
+ * Re-issues a legacy (hashVersion ≤ 4) artifact as a version-5 artifact plus a
+ * MigrationReceipt (Closure Pack D-Q1.f / IC-4′.7). Nothing is rewritten in
+ * place; the caller persists the two new artifacts.
+ */
+export function migrateArtifactToHashVersion(
+  source: ArtifactPayload,
+  options: HashVersionMigrationOptions
+): HashVersionMigrationResult {
+  if (options.to !== CURRENT_HASH_VERSION) {
+    throw new MigrationError(
+      "MIGRATION_TARGET_UNSUPPORTED",
+      `only hashVersion ${CURRENT_HASH_VERSION} is a migration target (got ${JSON.stringify(options.to)})`
+    );
+  }
+  const verified = verifyMigrationSource(source);
+  if (verified.hashVersion >= CURRENT_HASH_VERSION) {
+    throw new MigrationError(
+      "MIGRATION_NOT_NEEDED",
+      `artifact ${verified.artifactId} already declares hashVersion ${verified.hashVersion}`
+    );
+  }
+  const sealed = sealFromVerifiedSource(source, source, verified);
+  const receipt = generateMigrationReceipt(
+    source,
+    sealed.artifact,
+    options.migrationId ?? `migrate-to-${CURRENT_HASH_VERSION}`
+  );
+  return { artifact: sealed.artifact, receipt, source: verified, legacyClaims: sealed.legacyClaims, stripped: sealed.stripped };
+}
+
+// ---------------------------------------------------------------------------
+// Source-side supersession (Wave 1.3 security review B1)
+// ---------------------------------------------------------------------------
+
+export interface SupersedingMigration {
+  /** The FULL MigrationReceipt that links the source to its re-issue. */
+  receiptId: string;
+  /** The re-issued version-5 artifact (present in the store, strictly verified). */
+  newArtifactId: string;
+}
+
+/**
+ * Whether a LEGACY source artifact has been re-issued (D-Q1.f) by a migration
+ * whose result is actually in the workspace store. Every condition is required:
+ *  - the source verifies under its declared version and is LEGACY scope;
+ *  - a MigrationReceipt in the store verifies strict (FULL) with `oldHash` = the
+ *    source's recomputed identity;
+ *  - its `newHash` artifact exists in the store and verifies strict (FULL) under
+ *    exactly that identity;
+ *  - that artifact's authenticated `lineage.parentArtifactId` IS the source;
+ *  - **descent is not re-issue** (Wave 1.3 fix review §1.3): the new artifact is
+ *    a re-issue of the same semantic class — same base schema as the source (a
+ *    `.v1` suffix stripped by the schema-version step is the same class) — and
+ *    the receipt describes exactly the observed schemas (`fromSchema` = the
+ *    source's, `toSchema` = the re-issue's). A legitimate v5 CHILD of the source
+ *    (e.g. a signed tx under a legacy plan) never qualifies, whatever a receipt claims.
+ *
+ * The answer is informative only (store verification may report the source as
+ * SUPERSEDED_BY_MIGRATION instead of MIGRATION_REQUIRED). It never makes a
+ * missing reference resolve and never raises the source's authentication scope:
+ * the source stays LEGACY and every decision path still refuses it.
+ */
+function baseSchemaOf(schema: unknown): string | undefined {
+  return typeof schema === "string" && schema.length > 0 ? schema.replace(/\.v1$/, "") : undefined;
+}
+
+export function findSupersedingMigration(
+  workspaceRoot: string,
+  legacySource: ArtifactPayload
+): SupersedingMigration | undefined {
+  const source = checkArtifactIdentity(legacySource);
+  if (!source.ok || source.authScope !== "LEGACY") return undefined;
+  const legacyId = source.artifactId;
+
+  let entries: ReturnType<typeof enumerateWorkspaceArtifactsSync>;
+  try {
+    entries = enumerateWorkspaceArtifactsSync(workspaceRoot);
+  } catch {
+    return undefined;
+  }
+  for (const entry of entries) {
+    const receipt: any = entry.artifact;
+    if (receipt?.schema !== HardkasSchemas.MigrationReceiptV1 || receipt.oldHash !== legacyId) continue;
+    const receiptCheck = verifyArtifactIntegritySync(structuredClone(receipt), { strict: true });
+    if (!receiptCheck.ok || receiptCheck.authScope !== "FULL" || !receiptCheck.actualHash) continue;
+    if (typeof receipt.newHash !== "string" || !HEX64.test(receipt.newHash)) continue;
+
+    let reissued: any;
+    try {
+      reissued = resolveArtifactSync(workspaceRoot, { artifact: receipt.newHash }).artifact;
+    } catch {
+      continue; // absent, ambiguous or an invalid candidate: nothing is superseded
+    }
+    const reissuedCheck = verifyArtifactIntegritySync(structuredClone(reissued), { strict: true });
+    if (!reissuedCheck.ok || reissuedCheck.authScope !== "FULL" || reissuedCheck.actualHash !== receipt.newHash) continue;
+    if (reissued?.lineage?.parentArtifactId !== legacyId) continue;
+
+    // Descent is not re-issue: same semantic class, and a receipt that tells the truth about it.
+    const sourceBase = baseSchemaOf(legacySource.schema);
+    const reissuedBase = baseSchemaOf(reissued?.schema);
+    if (sourceBase === undefined || reissuedBase === undefined || sourceBase !== reissuedBase) continue;
+    if (receipt.fromSchema !== legacySource.schema || receipt.toSchema !== reissued.schema) continue;
+
+    return { receiptId: receiptCheck.actualHash, newArtifactId: receipt.newHash };
+  }
+  return undefined;
 }
 
 // ---------------------------------------------------------------------------
@@ -400,18 +729,31 @@ export function migrateToCanonical(v1Artifact: ArtifactPayload): ArtifactPayload
 
 /**
  * Generates an explicit MigrationReceipt connecting old artifact to new artifact.
+ * Both hashes are RECOMPUTED under the versions the artifacts declare (never
+ * trusted from a claim); the receipt's lineage is a valid hexadecimal child of
+ * the source (N13).
  */
 export function generateMigrationReceipt(
   oldArtifact: ArtifactPayload,
   newArtifact: ArtifactPayload,
   migrationId: string
 ): any {
-  const oldHash =
-    (oldArtifact.contentHash as string) ||
-    calculateContentHash(oldArtifact, CURRENT_HASH_VERSION);
-  const newHash =
-    (newArtifact.contentHash as string) ||
-    calculateContentHash(newArtifact, CURRENT_HASH_VERSION);
+  const oldVerified = verifyMigrationSource(oldArtifact);
+  const newVerified = verifyMigrationSource(newArtifact);
+  const oldHash = oldVerified.artifactId;
+  const newHash = newVerified.artifactId;
+
+  const oldLineage = (oldArtifact.lineage as Record<string, unknown> | undefined) ?? undefined;
+  const lineageAuthenticated = oldVerified.hashVersion >= 4 && oldLineage !== undefined;
+  const carried = (field: "lineageId" | "rootArtifactId"): string | undefined => {
+    const value = lineageAuthenticated ? oldLineage?.[field] : undefined;
+    return typeof value === "string" && HEX64.test(value) ? value : undefined;
+  };
+  const rootId = carried("rootArtifactId") ?? oldHash;
+  const previousSequence =
+    typeof oldLineage?.sequence === "number" && Number.isFinite(oldLineage.sequence)
+      ? (oldLineage.sequence as number)
+      : 0;
 
   const receipt: any = {
     schema: HardkasSchemas.MigrationReceiptV1,
@@ -428,12 +770,11 @@ export function generateMigrationReceipt(
     migrationId,
     decision: "MIGRATED_WITH_PROOF",
     lineage: {
-      artifactId: "", // Filled after hash
-      lineageId:
-        ((oldArtifact.lineage as any)?.lineageId as string) ||
-        ("migration" + oldHash).padEnd(64, "0").slice(0, 64),
+      artifactId: "", // exact-path self reference, filled after the single hash pass
+      lineageId: carried("lineageId") ?? rootId,
       parentArtifactId: oldHash,
-      rootArtifactId: ((oldArtifact.lineage as any)?.rootArtifactId as string) || oldHash
+      rootArtifactId: rootId,
+      sequence: previousSequence + 1
     }
   };
 

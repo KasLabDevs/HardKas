@@ -274,15 +274,17 @@ export class WalletToolkit {
         };
     }
 
-    public async send(opts: { to: string; amount: bigint; priority?: FeePriority; feeRate?: bigint }) {
+    public async send(opts: { to: string; amount: bigint; priority?: FeePriority; feeRate?: bigint; changeAddress?: string }) {
         return this.payMany({
             outputs: [{ address: opts.to, amount: opts.amount }],
             ...(opts.priority !== undefined ? { priority: opts.priority } : {}),
-            ...(opts.feeRate !== undefined ? { feeRate: opts.feeRate } : {})
+            ...(opts.feeRate !== undefined ? { feeRate: opts.feeRate } : {}),
+            ...(opts.changeAddress !== undefined ? { changeAddress: opts.changeAddress } : {})
         });
     }
 
-    public async payMany(opts: { outputs: { address: string; amount: bigint }[]; priority?: FeePriority; feeRate?: bigint }) {
+    /** AUD-28: `changeAddress` is forwarded to the upstream planner; default = the wallet's receive address. */
+    public async payMany(opts: { outputs: { address: string; amount: bigint }[]; priority?: FeePriority; feeRate?: bigint; changeAddress?: string }) {
         const addr = await this.receive();
         const availableUtxos = await this.utxos.list();
 
@@ -313,7 +315,8 @@ export class WalletToolkit {
             outputs: builderOutputs,
             feeRate: finalFeeRate || 1n,
             ...(virtualDaaScore !== undefined ? { virtualDaaScore } : {}),
-            ...(networkId !== undefined ? { networkId } : {})
+            ...(networkId !== undefined ? { networkId } : {}),
+            ...(opts.changeAddress !== undefined ? { changeAddress: opts.changeAddress } : {})
         });
 
         return this.signAndBroadcast(plan);
@@ -333,6 +336,7 @@ export class WalletToolkit {
         feeRate: bigint;
         virtualDaaScore?: bigint;
         networkId?: string;
+        changeAddress?: string;
     }) {
         const provider: UtxoProvider = {
             async getUtxos() { return params.availableUtxos; },
@@ -347,7 +351,8 @@ export class WalletToolkit {
             amountSompi: params.outputs[0]!.amountSompi,
             outputs: params.outputs,
             feeRate: params.feeRate,
-            ...(params.networkId !== undefined ? { networkId: params.networkId } : {})
+            ...(params.networkId !== undefined ? { networkId: params.networkId } : {}),
+            ...(params.changeAddress !== undefined ? { changeAddress: params.changeAddress } : {})
         });
     }
 

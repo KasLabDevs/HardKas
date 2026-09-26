@@ -37,6 +37,7 @@ export class HardkasQuery {
     address: string;
     excludePending?: boolean;
     excludeOutpoints?: Set<string>;
+    observedAtDaaScore?: bigint;
   }): Promise<QueryResponse<any[]>> {
     return this.toolkit.spendableUtxos(request);
   }

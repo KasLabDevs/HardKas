@@ -1,11 +1,22 @@
 import { createHash } from "node:crypto";
 import { silverP2shLock } from "@hardkas/core";
+import {
+  CURRENT_HASH_VERSION,
+  HARDKAS_VERSION,
+  calculateContentHash,
+  domainDigest,
+  recomputeDeclaredContentHash
+} from "@hardkas/artifacts";
 
 /*
  * EXPERIMENTAL bookkeeping simulator for SilverScript P2SH outputs. It checks
  * structure (the SDK's P2SH lock, a push-only unlock ending in the redeem
  * script, no double spend) and executes no script. SIMULATED_ACCEPTED is never
  * evidence: it satisfies no compile/deploy/spend/verify step and no capability.
+ *
+ * Wave 1.3 (IC-1′ / IC-7.3): its receipts are version-5 artifacts sealed by THE
+ * canonicaliser (no local copy with its own exclusions), with a hexadecimal
+ * lineage and no top-level artifactId; synthetic tx ids are domain digests.
  */
 
 /** The SDK's P2SH lock for a redeem script: OP_BLAKE2B OP_DATA_32 <hash> OP_EQUAL. */
@@ -17,7 +28,6 @@ function sdkP2shLock(redeemScriptHex: string): { lockingScriptHex: string; redee
 export const SILVER_SIMULATOR_FEE_SOMPI = 2000n;
 export const SILVER_SIMULATOR_CREATED_AT = "1970-01-01T00:00:00.000Z";
 export const SILVER_SIMULATOR_VERSION = "1.0.0-alpha";
-const CURRENT_HASH_VERSION = 4;
 
 export type SilverSimulationStatus = "SIMULATED_ACCEPTED";
 
@@ -33,7 +43,8 @@ export type SilverSimulationErrorCode =
   | "SILVERSCRIPT_SCHEMA_INVALID"
   | "SILVERSCRIPT_INVALID_HEX"
   | "SILVERSCRIPT_EXPECTED_OUTPUTS_REQUIRED"
-  | "SILVERSCRIPT_SIGNATURE_SCRIPT_MISMATCH";
+  | "SILVERSCRIPT_SIGNATURE_SCRIPT_MISMATCH"
+  | "SILVERSCRIPT_PLAN_HASH_MISMATCH";
 
 export class SilverSimulationError extends Error {
   readonly code: SilverSimulationErrorCode;
@@ -131,7 +142,6 @@ export interface SilverDeploySimulationReceipt {
     sequence: number;
   };
   contentHash: string;
-  artifactId: string;
 }
 
 export interface SilverSpendSimulationReceipt {
@@ -160,7 +170,6 @@ export interface SilverSpendSimulationReceipt {
     sequence: number;
   };
   contentHash: string;
-  artifactId: string;
 }
 
 export interface SilverSimulatedUtxo {
@@ -201,14 +210,8 @@ export interface SilverSimulationOptions {
   createdAt?: string;
 }
 
-type SilverDeploySimulationDraft = Omit<
-  SilverDeploySimulationReceipt,
-  "contentHash" | "artifactId"
->;
-type SilverSpendSimulationDraft = Omit<
-  SilverSpendSimulationReceipt,
-  "contentHash" | "artifactId"
->;
+type SilverDeploySimulationDraft = Omit<SilverDeploySimulationReceipt, "contentHash">;
+type SilverSpendSimulationDraft = Omit<SilverSpendSimulationReceipt, "contentHash">;
 
 export function createSilverSimulationState(): SilverSimulationState {
   return {
@@ -278,7 +281,7 @@ export function simulateSilverDeploy(
   const draft = {
     schema: "hardkas.silver.deploySimulation" as const,
     hardkasVersion:
-      options.hardkasVersion ?? deployPlanArtifact.hardkasVersion ?? "0.12.0-rc.22",
+      options.hardkasVersion ?? deployPlanArtifact.hardkasVersion ?? HARDKAS_VERSION,
     version: SILVER_SIMULATOR_VERSION,
     hashVersion: CURRENT_HASH_VERSION,
     networkId: "simnet" as const,
@@ -296,15 +299,16 @@ export function simulateSilverDeploy(
     amountSompi: amountSompi.toString(),
     feeSompi: SILVER_SIMULATOR_FEE_SOMPI.toString(),
     status: "SIMULATED_ACCEPTED" as const,
+    // A hexadecimal lineage: the deploy plan's recomputed identity is the root.
     lineage: {
-      artifactId: `deploy-sim-${deployPlanHash.slice(0, 16)}`,
-      lineageId: `silver-lineage-${deployPlanHash.slice(0, 16)}`,
+      artifactId: "", // exact-path self reference, filled after the single hash pass
+      lineageId: deployPlanHash,
       parentArtifactId: deployPlanHash,
       rootArtifactId: deployPlanHash,
       sequence: 1
     }
   } satisfies SilverDeploySimulationDraft;
-  const receipt = finalizeArtifact(draft, "silverdeploysim");
+  const receipt = finalizeArtifact(draft);
 
   const state = createSilverSimulationState();
   state.deployReceipts[receipt.contentHash] = receipt;
@@ -460,7 +464,7 @@ export function simulateSilverSpend(
   const draft = {
     schema: "hardkas.silver.spendSimulation" as const,
     hardkasVersion:
-      options.hardkasVersion ?? spendPlanArtifact.hardkasVersion ?? "0.12.0-rc.22",
+      options.hardkasVersion ?? spendPlanArtifact.hardkasVersion ?? HARDKAS_VERSION,
     version: SILVER_SIMULATOR_VERSION as "1.0.0-alpha",
     hashVersion: CURRENT_HASH_VERSION,
     networkId: "simnet" as const,
@@ -477,14 +481,14 @@ export function simulateSilverSpend(
     feeSompi: SILVER_SIMULATOR_FEE_SOMPI.toString(),
     status: "SIMULATED_ACCEPTED" as const,
     lineage: {
-      artifactId: `spend-sim-${spendPlanHash.slice(0, 16)}`,
+      artifactId: "", // exact-path self reference, filled after the single hash pass
       lineageId: deployReceipt.lineage.lineageId,
       parentArtifactId: spendPlanHash,
       rootArtifactId: deployReceipt.lineage.rootArtifactId,
       sequence: 2
     }
   } satisfies SilverSpendSimulationDraft;
-  const receipt = finalizeArtifact(draft, "silverspendsim");
+  const receipt = finalizeArtifact(draft);
 
   const nextState = cloneState(simulatedState);
   nextState.utxos[key] = {
@@ -580,37 +584,6 @@ function isHex(value: string): boolean {
   );
 }
 
-function calculateContentHash(value: unknown, _version = CURRENT_HASH_VERSION): string {
-  return createHash("sha256").update(canonicalStringify(value)).digest("hex");
-}
-
-function canonicalStringify(value: unknown): string {
-  if (typeof value === "bigint") {
-    return JSON.stringify(`n:${value.toString()}`);
-  }
-  if (value === null || typeof value !== "object") {
-    return JSON.stringify(value);
-  }
-  if (Array.isArray(value)) {
-    return `[${value.map((item) => canonicalStringify(item)).join(",")}]`;
-  }
-
-  const exclusions = new Set([
-    "contentHash",
-    "artifactId",
-    "hashVersion",
-    "createdAt",
-    "hardkasVersion",
-    "status"
-  ]);
-  const record = value as Record<string, unknown>;
-  return `{${Object.keys(record)
-    .filter((key) => !exclusions.has(key) && record[key] !== undefined)
-    .sort()
-    .map((key) => `${JSON.stringify(key)}:${canonicalStringify(record[key])}`)
-    .join(",")}}`;
-}
-
 function parseSompi(value: string): bigint {
   if (!/^[0-9]+$/.test(value)) {
     throw new SilverSimulationError(
@@ -621,23 +594,35 @@ function parseSompi(value: string): bigint {
   return BigInt(value);
 }
 
+/**
+ * The identity of an input plan: recomputed under the version the plan
+ * declares (IC-1′.8). A claimed contentHash is checked, never trusted (P7).
+ */
 function artifactHash(value: { contentHash?: string | undefined }): string {
-  return value.contentHash ?? calculateContentHash(value, CURRENT_HASH_VERSION);
+  const recomputed = recomputeDeclaredContentHash(value);
+  if (value.contentHash !== undefined && value.contentHash !== recomputed) {
+    throw new SilverSimulationError(
+      "SILVERSCRIPT_PLAN_HASH_MISMATCH",
+      `Plan claims contentHash ${value.contentHash} but hashes to ${recomputed} under its declared hashVersion.`
+    );
+  }
+  return recomputed;
 }
 
+/** Synthetic transaction ids are domain digests (IC-1′.7), never artifact identities. */
 function deterministicHex(value: Record<string, unknown>): string {
-  return calculateContentHash(value, CURRENT_HASH_VERSION);
+  return domainDigest(value);
 }
 
-function finalizeArtifact<T extends Record<string, unknown>>(
-  artifact: T,
-  prefix: string
-): T & { contentHash: string; artifactId: string } {
+/** Seals a receipt draft in one pass under the current hash version (IC-1′.4). */
+function finalizeArtifact<T extends { lineage: { artifactId: string } }>(
+  artifact: T
+): T & { contentHash: string } {
   const contentHash = calculateContentHash(artifact, CURRENT_HASH_VERSION);
   return {
     ...artifact,
-    contentHash,
-    artifactId: `${prefix}-${contentHash.slice(0, 16)}`
+    lineage: { ...artifact.lineage, artifactId: contentHash },
+    contentHash
   };
 }
 

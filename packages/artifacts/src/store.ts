@@ -1,9 +1,30 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import { TxPlan, SignedTx, TxReceipt } from "./schemas.js";
-import { verifyArtifact } from "./verify.js";
-import { writeFileAtomic } from "@hardkas/core";
+import { calculateContentHash, CURRENT_HASH_VERSION, MIN_HASH_VERSION, readDeclaredHashVersion } from "./canonical.js";
+import { writeFileAtomic, HardkasSchemas } from "@hardkas/core";
 import { assertSafeFileId, codedError as storeError, schemaFilePrefix } from "./file-id.js";
+import { checkTxObservationCoherence } from "./tx-observation.js";
+import { LineageError } from "./lineage-error.js";
+import { ReceiptLookupError } from "./receipt-lookup-error.js";
+import {
+  ARTIFACT_ID_PATTERN,
+  ArtifactResolveError,
+  checkArtifactIdentity,
+  enumerateWorkspaceArtifactsSync,
+  looksLikePath,
+  parseUntypedLookup,
+  resolveArtifactSync
+} from "./resolve.js";
+
+// Wave 10 · RECEIPT-1 / Wave 1.2 · IC-5′: the txId namespace is answered by the
+// verified resolver (`TX_NAMESPACE_SCHEMAS`); L2 (Igra) receipts stay excluded.
+
+// Wave 6 · LINEAGE-1: bounded parent-hop count. Depth is measured as the
+// number of parent lookups (not nodes) — a chain of receipt→signed→plan→ROOT
+// consumes 3 hops (receipt→signed, signed→plan, plan→root-terminator). The
+// resolver terminates on the (MAX + 1)-th hop with LINEAGE_DEPTH_EXCEEDED.
+const MAX_LINEAGE_PARENT_HOPS = 64;
 
 const bigIntReplacer = (_key: string, value: unknown) =>
   typeof value === "bigint" ? value.toString() : value;
@@ -55,14 +76,35 @@ export class ProjectArtifactStore {
   }
 
   async writeArtifact(artifact: any): Promise<string> {
+    // Identifier safety first (path traversal is refused before anything else).
     const id = resolveStoreId(artifact);
+    // IC-1′.3–4 / N3: the store never completes or reshapes an artifact. It must
+    // declare the hash version it was hashed with, and its body must still hash
+    // to the identity it claims.
+    const declaredVersion = readDeclaredHashVersion(artifact);
+    if (declaredVersion === null) {
+      throw storeError(
+        "HASH_VERSION_MISSING",
+        `Refusing to store ${String(artifact?.schema ?? "artifact")}: hashVersion must be an integer between ${MIN_HASH_VERSION} and ${CURRENT_HASH_VERSION}, written by the producer before hashing (got ${JSON.stringify(artifact?.hashVersion)})`
+      );
+    }
+    if (typeof artifact?.contentHash === "string" && artifact.contentHash.length > 0) {
+      const recomputed = calculateContentHash(artifact, declaredVersion);
+      if (recomputed !== artifact.contentHash) {
+        throw storeError(
+          "ARTIFACT_HASH_MISMATCH",
+          `Refusing to store ${String(artifact.schema ?? "artifact")}: body hashes to ${recomputed} under hashVersion ${declaredVersion} but declares ${artifact.contentHash} (a field changed after hashing)`
+        );
+      }
+    }
     const prefix = schemaFilePrefix(artifact.schema, 1, "artifact");
     let subDir = "misc";
     if (typeof artifact.schema === "string") {
       const s = artifact.schema.toLowerCase();
       if (s.includes("txplan")) subDir = "plans";
       else if (s.includes("signedtx")) subDir = "signed";
-      else if (s.includes("txreceipt")) subDir = "receipts";
+      else if (s.includes("txobservation")) subDir = "observations";
+      else if (s.includes("txreceipt") || s.includes("txsubmission")) subDir = "receipts";
       else if (s.includes("lineage")) subDir = "lineage";
     }
 
@@ -81,106 +123,273 @@ export class ProjectArtifactStore {
     return targetPath;
   }
 
+  /**
+   * True when `id` (a contained path or a 64-hex artifactId) resolves to a verified
+   * artifact. A label needs its namespace and is refused (NAMESPACE_REQUIRED).
+   */
   async exists(id: string): Promise<boolean> {
-    return (await this.findArtifactPathById(id)) !== null;
+    try {
+      await this.readArtifact(id);
+      return true;
+    } catch (e) {
+      if (e instanceof ArtifactResolveError && (e.code === "ARTIFACT_NOT_FOUND" || e.code === "RECEIPT_NOT_FOUND")) return false;
+      if ((e as any)?.code === "PATH_TRAVERSAL") return false;
+      throw e;
+    }
   }
 
+  /**
+   * Wave 1.2 · IC-5′: reads a contained workspace path or a 64-hex artifactId
+   * (the recomputed contentHash). Both are verified before they are returned.
+   * Labels (`planId`, `signedId`), txIds and workflowIds are refused with
+   * NAMESPACE_REQUIRED: use `resolveArtifact(root, { plan | signed | tx | workflow })`.
+   *
+   * Paths are relative to the WORKSPACE ROOT (never process.cwd(), IC-5′.7) and
+   * are checked against the boundary whether or not they exist, so a traversal
+   * attempt is reported as such (PATH_TRAVERSAL) instead of as a missing artifact.
+   */
   async readArtifact(id: string): Promise<unknown> {
-    // Paths are accepted as well as IDs (e.g. `tx receipt ./my-receipt.json`),
-    // but only inside the workspace. Anything that names a path is checked
-    // against the boundary whether or not it exists, so a traversal attempt is
-    // reported as such instead of as a missing artifact.
-    const candidate = path.resolve(process.cwd(), id);
-    let isFile = false;
-    try {
-      isFile = (await fs.stat(candidate)).isFile();
-    } catch (e) {}
-    const looksLikePath = path.isAbsolute(id) || /[\\/]/.test(id) || id === "." || id === "..";
-
-    if (isFile || looksLikePath) {
+    if (looksLikePath(id)) {
+      const candidate = path.isAbsolute(id) ? path.resolve(id) : path.resolve(this.workspaceRoot, id);
       await this.assertInsideWorkspace(id, candidate);
+      return resolveArtifactSync(this.workspaceRoot, { artifact: id }).artifact;
     }
-    if (isFile) {
-      let content = await fs.readFile(candidate, "utf-8");
-      if (content.charCodeAt(0) === 0xfeff) content = content.slice(1);
-      return JSON.parse(content);
-    }
-    if (looksLikePath) {
-      throw new Error(`Artifact with ID ${id} not found in store`);
-    }
+    return resolveArtifactSync(this.workspaceRoot, parseUntypedLookup(id)).artifact;
+  }
 
-    const filePath = await this.findArtifactPathById(id);
-    if (!filePath) {
-      throw new Error(`Artifact with ID ${id} not found in store`);
+  /**
+   * Wave 10 · RECEIPT-1 · exact receipt lookup by `.txId` field.
+   *
+   * The historical implementation delegated to `readArtifact(txId)`, which
+   * ultimately performed a filename-substring search (removed in Wave 1.2 of
+   * the rc.23 remediation). That resolver keyed on the artifact's own
+   * identity token (typically `artifactId` or `contentHash`), NOT the
+   * receipt's Kaspa consensus `.txId` field, so real-node receipts (whose
+   * filenames encode `artifactId`, a different 64-hex string from `txId`)
+   * silently returned `"not found in store"` even though the receipt was
+   * present on disk. A subset of simulator receipts happened to resolve
+   * only because their filename identity coincided with `.txId`.
+   *
+   * The correct algorithm — already proven by
+   * `packages/localnet/src/receipts.ts::loadSimulatedReceipt` — is:
+   *   1. Enumerate every canonical artifact under `.hardkas/artifacts/`.
+   *   2. Retain only those whose declared schema is an L1 receipt schema
+   *      (`hardkas.txReceipt` or `hardkas.txReceipt.v1`) checked against
+   *      BOTH the top-level `.schema` field AND `.schemaVersion` (some
+   *      simulator writers set the latter instead of the former; a valid
+   *      receipt is one that carries the schema string in either slot).
+   *   3. Retain only those whose `.txId` is a non-empty string that
+   *      exactly equals the requested `txId` (byte-for-byte, no
+   *      normalisation — `txId` is contractually `z.string()` and can be
+   *      lowercase 64-hex, a `synthetic-<64 hex>` id, or any deterministic
+   *      simulator id; imposing a shape here would break legitimate
+   *      lookups).
+   *   4. Zero matches → `RECEIPT_NOT_FOUND` typed error.
+   *   5. Exactly one match → return it.
+   *   6. Multiple matches → collapse ONLY if every match carries a
+   *      non-empty `.contentHash` string AND all values are identical
+   *      (i.e., duplicate copies of the same evidence). Any absent /
+   *      empty `.contentHash`, or any structural disagreement, throws
+   *      `RECEIPT_AMBIGUOUS_CONFLICT` with the observed identities.
+   *      This guard specifically avoids collapsing two distinct artifacts
+   *      that both happen to omit `contentHash` under the accidental
+   *      identity `undefined === undefined`.
+   *
+   * The signature (`(string) => Promise<unknown>`) is preserved so the
+   * existing sole consumer (`packages/cli/src/runners/tx-receipt-runner.ts`)
+   * continues to work unchanged; typed errors now propagate to the CLI's
+   * top-level renderer via Wave 8's owner-of-serialisation model.
+   */
+  /**
+   * Wave 2(a) · IC-2′.6: the observations recorded for `txId` — N by design. Every
+   * candidate is verified (strict, FULL) before it counts; the rest are reported,
+   * never silently dropped and never used to decide (IC-2′.8).
+   */
+  listObservationsByTxId(txId: string): {
+    observations: unknown[];
+    rejected: Array<{ path: string; reason: string }>;
+  } {
+    const observations: unknown[] = [];
+    const rejected: Array<{ path: string; reason: string }> = [];
+    for (const entry of enumerateWorkspaceArtifactsSync(this.workspaceRoot)) {
+      const a: any = entry.artifact;
+      if (a?.schema !== HardkasSchemas.TxObservationV1) continue;
+      if (a?.subject?.txId !== txId) continue;
+      // FULL scope: current hash version, identity recomputed, coherent with itself.
+      const declared = readDeclaredHashVersion(a);
+      if (declared !== CURRENT_HASH_VERSION) {
+        rejected.push({ path: entry.path, reason: declared === null ? "HASH_VERSION_INVALID" : `LEGACY hashVersion ${declared}` });
+        continue;
+      }
+      const identity = checkArtifactIdentity(a);
+      if (!identity.ok) {
+        rejected.push({ path: entry.path, reason: identity.issues.map((i) => i.code).join(", ") });
+        continue;
+      }
+      const coherence = checkTxObservationCoherence(a);
+      if (!coherence.ok) {
+        rejected.push({ path: entry.path, reason: `OBSERVATION_INCOHERENT: ${coherence.message}` });
+        continue;
+      }
+      observations.push(a);
     }
-
-    let content = await fs.readFile(filePath, "utf-8");
-    if (content.charCodeAt(0) === 0xfeff) content = content.slice(1);
-    return JSON.parse(content);
+    return { observations, rejected };
   }
 
   async findReceiptByTxId(txId: string): Promise<unknown> {
-    return this.readArtifact(txId);
+    // Wave 1.2 · IC-5′.4–.5: every candidate is verified (declared version,
+    // claimed identity) before it is returned; identical copies collapse;
+    // distinct verified receipts for one txId are a conflict; an invalid
+    // candidate fails the lookup instead of being skipped.
+    try {
+      return resolveArtifactSync(this.workspaceRoot, { tx: txId }).artifact;
+    } catch (e) {
+      if (e instanceof ArtifactResolveError) {
+        const code =
+          e.code === "RECEIPT_AMBIGUOUS_CONFLICT" || e.code === "CANDIDATE_INVALID"
+            ? e.code
+            : "RECEIPT_NOT_FOUND";
+        throw new ReceiptLookupError(code, e.message, {
+          txId,
+          workspaceRoot: this.workspaceRoot,
+          ...(e.context?.paths ? { paths: String((e.context.paths as string[]).join("; ")) } : {})
+        });
+      }
+      throw e;
+    }
   }
 
-  private async findArtifactPathById(id: string): Promise<string | null> {
-    // Canonical subdirectories first, then the artifacts root. Not every writer
-    // goes through writeArtifact(): `tx plan --out` persists the plan at the
-    // root as `<timestamp>-<planId>.plan.json`, and the torture harness writes
-    // there too. Without searching the root, a signed transaction can never
-    // resolve its parent plan.
-    const searchDirs = [
-      ...["plans", "signed", "receipts", "lineage", "misc"].map((sub) =>
-        path.join(this.artifactsDir, sub)
-      ),
-      this.artifactsDir
-    ];
-
-    const lowerId = id.toLowerCase();
-
-    for (const dirPath of searchDirs) {
-      try {
-        const entries = await fs.readdir(dirPath, { withFileTypes: true });
-        for (const entry of entries) {
-          if (!entry.isFile()) continue;
-          const lowerFile = entry.name.toLowerCase();
-          if (lowerFile.includes(lowerId)) {
-            return path.join(dirPath, entry.name);
-          }
-          if (id.length === 64 && lowerFile.includes(lowerId.slice(0, 16))) {
-            return path.join(dirPath, entry.name);
-          }
-        }
-      } catch (e) {
-        // Directory doesn't exist, ignore
+  /**
+   * Wave 6 · LINEAGE-1 · canonical parent resolution.
+   *
+   * Precedence:
+   *   1. `lineage.parentArtifactId` is authoritative IF the `lineage` object
+   *      is present AND carries a `parentArtifactId` key. An empty string is
+   *      an EXPLICIT root marker and MUST NOT fall through to legacy fields.
+   *   2. Legacy fallback applies ONLY when the canonical parent field is
+   *      genuinely absent (the artifact predates the Wave-1 lineage block).
+   *      Fallback order: top-level `parentArtifactId`, then `sourceSignedId`,
+   *      then `sourcePlanId`.
+   *   3. Self-identifiers (`planId`, `signedId`, `receiptId`, `txId`) are
+   *      NEVER treated as parents.
+   *
+   * Returns undefined when the artifact has no upward pointer (root).
+   */
+  private static getParentIdCandidate(artifact: any): string | undefined {
+    // Wave 1.2 · IC-5′.6: a parent is only ever the authenticated
+    // lineage.parentArtifactId. Labels (`sourceSignedId`, `sourcePlanId`) never
+    // resolve a persisted reference; a top-level `parentArtifactId` is accepted only
+    // as a 64-hex artifactId (pre-lineage artifacts).
+    const lineage = artifact?.lineage;
+    if (lineage && typeof lineage === "object" && "parentArtifactId" in lineage) {
+      const canonical = lineage.parentArtifactId;
+      if (typeof canonical !== "string" || canonical.length === 0) {
+        // Explicit root marker (or non-string). Do NOT fall through.
+        return undefined;
       }
+      return canonical;
     }
-    return null;
+    if (typeof artifact?.parentArtifactId === "string" && ARTIFACT_ID_PATTERN.test(artifact.parentArtifactId)) {
+      return artifact.parentArtifactId;
+    }
+    return undefined;
+  }
+
+  /**
+   * Wave 6 · LINEAGE-1 · deterministic identity for visited-set membership.
+   *
+   * Prefer `lineage.artifactId` (canonical, content-addressed). If absent,
+   * fall back to the artifact's `contentHash`. If neither is present, use
+   * the resolved absolute filesystem path — supplied by the caller because
+   * legacy artifacts identified only by planId/signedId etc. must not have
+   * their self-identifier promoted to a canonical identity.
+   */
+  private static visitedIdentity(artifact: any, resolvedPath: string): string {
+    const canonical = artifact?.lineage?.artifactId;
+    if (typeof canonical === "string" && canonical.length > 0) {
+      return `id:${canonical}`;
+    }
+    const contentHash = artifact?.contentHash;
+    if (typeof contentHash === "string" && contentHash.length > 0) {
+      return `hash:${contentHash}`;
+    }
+    return `path:${resolvedPath}`;
+  }
+
+  /**
+   * Locate the on-disk path for a resolved artifact so the visited-set can
+   * key on a stable identity even when neither canonical nor contentHash is
+   * present. Same verified resolver as readArtifact (Wave 1.2).
+   */
+  private async pathOf(idOrPath: string): Promise<string> {
+    try {
+      return resolveArtifactSync(this.workspaceRoot, parseUntypedLookup(idOrPath)).path;
+    } catch {
+      return `unresolved:${idOrPath}`;
+    }
   }
 
   async resolveLineage(id: string): Promise<any[]> {
-    const artifact = await this.readArtifact(id);
-    const lineage = [artifact];
-    let current = artifact as any;
+    const rootArtifact = await this.readArtifact(id);
+    const rootPath = await this.pathOf(id);
+    const lineage: any[] = [rootArtifact];
 
-    const getParentId = (c: any) => c.lineage?.parentArtifactId || c.parentArtifactId || c.planId || c.sourceSignedId || c.sourcePlanId;
-    let parentId = getParentId(current);
-    while (parentId) {
-      if (parentId === current.planId && current.schema?.includes("TxPlan")) {
-        break; // planId on a plan refers to itself
+    const visited = new Set<string>();
+    visited.add(ProjectArtifactStore.visitedIdentity(rootArtifact, rootPath));
+
+    let current: any = rootArtifact;
+    // hops counts PARENT lookups — a chain of N nodes consumes N parent hops
+    // (the last one returns undefined and terminates the loop). Depth is
+    // exhausted iff we perform more than MAX_LINEAGE_PARENT_HOPS lookups
+    // WITHOUT terminating. That is distinct from a cycle: a cycle would
+    // trigger LINEAGE_CYCLE_DETECTED via the visited set first.
+    for (let hops = 0; hops <= MAX_LINEAGE_PARENT_HOPS; hops++) {
+      const parentId = ProjectArtifactStore.getParentIdCandidate(current);
+      if (parentId === undefined) return lineage;
+
+      if (hops === MAX_LINEAGE_PARENT_HOPS) {
+        throw new LineageError(
+          "LINEAGE_DEPTH_EXCEEDED",
+          `Lineage exceeded ${MAX_LINEAGE_PARENT_HOPS} parent hops without reaching root`,
+          {
+            maxParentHops: String(MAX_LINEAGE_PARENT_HOPS),
+            lastParentId: parentId
+          }
+        );
       }
-      if (parentId === current.signedId || parentId === current.txId) {
-         break; // circular reference fallback
-      }
+
+      let parent: any;
+      let parentPath: string;
       try {
-        current = await this.readArtifact(parentId);
-        lineage.unshift(current);
-        parentId = getParentId(current);
-      } catch (e) {
-        // Break if parent not found
-        break;
+        parent = await this.readArtifact(parentId);
+        parentPath = await this.pathOf(parentId);
+      } catch {
+        // Preserve pre-Wave-6 missing-parent behavior: swallow the read
+        // failure and return the partial lineage. Missing-evidence policy
+        // is intentionally NOT redesigned in this wave (see LINEAGE-1
+        // authorization Section E).
+        return lineage;
       }
+
+      const parentIdentity = ProjectArtifactStore.visitedIdentity(parent, parentPath);
+      if (visited.has(parentIdentity)) {
+        throw new LineageError(
+          "LINEAGE_CYCLE_DETECTED",
+          `Lineage cycle detected at artifact ${parentIdentity}`,
+          {
+            repeatedIdentity: parentIdentity,
+            parentId
+          }
+        );
+      }
+      visited.add(parentIdentity);
+
+      lineage.unshift(parent);
+      current = parent;
     }
+
+    // Loop bound was hops <= MAX which returns/throws before falling through.
+    // This return is unreachable in practice but preserves the type contract.
     return lineage;
   }
 
@@ -193,82 +402,27 @@ export class ProjectArtifactStore {
     schema?: string;
     contentHash?: string;
   }>> {
-    const subDirs = ["plans", "signed", "receipts", "lineage", "evidences", "misc"];
-    const entries: Array<{
-      path: string;
-      relativeSubpath: string;
-      subDir: string;
-      artifact: any;
-      id: string;
-      schema?: string;
-      contentHash?: string;
-    }> = [];
-    const seenPaths = new Set<string>();
-
-    let resolvedBase: string;
-    try {
-      resolvedBase = await fs.realpath(this.artifactsDir);
-    } catch (e) {
-      resolvedBase = path.resolve(this.artifactsDir);
-    }
-
-    const scanDirectory = async (dirPath: string, subName: string) => {
-      try {
-        const files = await fs.readdir(dirPath);
-        for (const file of files) {
-          if (!file.endsWith(".json")) continue;
-
-          const filePath = path.join(dirPath, file);
-          let realPath: string;
-          try {
-            realPath = await fs.realpath(filePath);
-          } catch (e) {
-            realPath = path.resolve(filePath);
-          }
-
-          const normalizedReal = path.resolve(realPath);
-
-          // Boundary-based containment check (prevents sibling prefix escape like artifacts-evil while allowing files like ..metadata.json)
-          const rel = path.relative(resolvedBase, normalizedReal);
-          const isContained =
-            rel !== "" &&
-            rel !== ".." &&
-            !rel.startsWith(`..${path.sep}`) &&
-            !path.isAbsolute(rel);
-
-          if (!isContained) continue;
-          if (seenPaths.has(normalizedReal)) continue;
-
-          try {
-            const content = await fs.readFile(normalizedReal, "utf-8");
-            const artifact = JSON.parse(content);
-
-            const id = artifact.artifactId || artifact.contentHash || artifact.planId || artifact.signedId || artifact.txId || file.replace(".json", "");
-            const relPath = rel.replace(/\\/g, "/");
-
-            seenPaths.add(normalizedReal);
-
-            entries.push({
-              path: normalizedReal,
-              relativeSubpath: relPath,
-              subDir: subName,
-              artifact,
-              id,
-              schema: artifact.schema,
-              contentHash: artifact.contentHash
-            });
-          } catch (e) {}
-        }
-      } catch (e) {}
-    };
-
-    await scanDirectory(this.artifactsDir, "root");
-    for (const sub of subDirs) {
-      await scanDirectory(path.join(this.artifactsDir, sub), sub);
-    }
-
-    entries.sort((a, b) => a.relativeSubpath.localeCompare(b.relativeSubpath));
-    return entries;
+    // Wave 1.2: one enumerator shared with the resolver (containment by real path,
+    // canonical subdirectories, deduplication, stable order).
+    return enumerateWorkspaceArtifactsSync(this.workspaceRoot).map((e) => {
+      const artifact: any = e.artifact;
+      const id =
+        artifact.artifactId ||
+        artifact.contentHash ||
+        artifact.planId ||
+        artifact.signedId ||
+        artifact.txId ||
+        path.basename(e.path, ".json");
+      return {
+        path: e.path,
+        relativeSubpath: e.relativeSubpath,
+        subDir: e.subDir,
+        artifact,
+        id,
+        schema: artifact.schema,
+        contentHash: artifact.contentHash
+      };
+    });
   }
 
   async queryArtifacts(query: { schema?: string }): Promise<any[]> {

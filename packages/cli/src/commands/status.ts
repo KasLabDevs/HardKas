@@ -110,7 +110,7 @@ export function registerStatusCommands(program: Command) {
           );
         }
         if (latestWorkflow !== "none") {
-          nextSteps.push(`hardkas why ${latestWorkflow}${wsSuffix}`);
+          nextSteps.push(`hardkas why --workflow ${latestWorkflow}${wsSuffix}`);
           nextSteps.push(`hardkas dev last --replay${wsSuffix}`);
         }
 

@@ -27,12 +27,15 @@ describe("P1 Multisig & Sequential Signing", () => {
     const bob = await sdk.accounts.resolve("bob");
     const carol = await sdk.accounts.resolve("carol");
 
-    // 2. Create plan
+    // 2. Create plan. Wave 1.2 · IC-5′.6/.8: appending to a partially signed artifact
+    // verifies it against its parent plan resolved from the store by identity, so the
+    // plan is persisted (no in-memory cache alias).
     const plan = await sdk.tx.plan({
       from: "alice",
       to: "bob",
       amount: "10"
     });
+    await sdk.artifacts.write(plan);
 
     // 3. First signature: Alice signs (threshold = 2, required = [alice, bob])
     const sig1 = await sdk.tx.sign(plan, "alice", {
@@ -64,9 +67,12 @@ describe("P1 Multisig & Sequential Signing", () => {
 
     expect(sig2.status).toBe("signed");
     expect(sig2.signedTransaction).toBeDefined();
-    expect(sig2.signedTransaction?.format).toBe("simulated");
-    expect(sig2.signedTransaction?.payload).toContain(alice.address);
-    expect(sig2.signedTransaction?.payload).toContain(bob.address);
+    // Wave 1.4 · IC-6′.4: the completed set is a synthetic authorization bound to the plan; the
+    // signer identities live in the authenticated `authorization`, never in a "signature".
+    expect(sig2.signedTransaction?.format).toBe("synthetic-authorization");
+    expect(sig2.signedTransaction?.payload).toBe(plan.contentHash);
+    expect(sig2.txId).toBe(`synthetic-${plan.contentHash}`);
+    expect(sig2.authorization?.signers).toEqual([alice.address, bob.address].sort());
     expect(sig2.multisig?.signatures.length).toBe(2);
     expect(sig2.signatureMetadata?.length).toBe(2);
 
@@ -82,6 +88,7 @@ describe("P1 Multisig & Sequential Signing", () => {
 
     // Sequence A: Alice then Bob
     const planA = await sdk.tx.plan({ from: "alice", to: "bob", amount: "5" });
+    await sdk.artifacts.write(planA);
     const partialA = await sdk.tx.sign(planA, "alice", {
       threshold: 2,
       requiredSigners: [alice.address, bob.address]
@@ -90,6 +97,7 @@ describe("P1 Multisig & Sequential Signing", () => {
 
     // Sequence B: Bob then Alice
     const planB = await sdk.tx.plan({ from: "alice", to: "bob", amount: "5" });
+    await sdk.artifacts.write(planB);
     const partialB = await sdk.tx.sign(planB, "bob", {
       threshold: 2,
       requiredSigners: [alice.address, bob.address]

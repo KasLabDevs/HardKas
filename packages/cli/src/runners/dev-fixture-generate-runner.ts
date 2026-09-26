@@ -1,7 +1,7 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import { UI } from "../ui.js";
-import { calculateContentHash } from "@hardkas/artifacts";
+import { calculateContentHash, CURRENT_HASH_VERSION } from "@hardkas/artifacts";
 
 export async function runDevFixtureGenerate(options: any) {
   const { type, out, json } = options;
@@ -51,7 +51,8 @@ export async function runDevFixtureGenerate(options: any) {
     }
   }
 
-  payload.contentHash = calculateContentHash(payload);
+  payload.hashVersion = CURRENT_HASH_VERSION;
+  payload.contentHash = calculateContentHash(payload, CURRENT_HASH_VERSION);
 
   if (out) {
     const fullPath = path.resolve(process.cwd(), out);

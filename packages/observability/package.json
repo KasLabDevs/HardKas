@@ -1,6 +1,6 @@
 {
   "name": "@hardkas/observability",
-  "version": "0.12.0-rc.22",
+  "version": "0.12.0-rc.23",
   "description": "Zero-dependency telemetry, logging, and metrics for HardKAS",
   "type": "module",
   "main": "./dist/index.js",

@@ -1,7 +1,7 @@
 {
   "schema": "hardkas.cliReference.v1",
   "generatedAt": "deterministic",
-  "totalCommands": 210,
+  "totalCommands": 235,
   "flatSurface": [
     "hardkas accounts",
     "hardkas accounts balance",
@@ -20,6 +20,7 @@
     "hardkas artifact explain",
     "hardkas artifact inspect",
     "hardkas artifact lineage",
+    "hardkas artifact migrate",
     "hardkas artifact verify",
     "hardkas capabilities",
     "hardkas chaos",
@@ -173,10 +174,23 @@
     "hardkas session list",
     "hardkas session status",
     "hardkas session use",
+    "hardkas silver",
+    "hardkas silver compile",
+    "hardkas silver covenant",
+    "hardkas silver covenant genesis",
+    "hardkas silver covenant transition",
+    "hardkas silver deploy",
+    "hardkas silver doctor",
+    "hardkas silver inspect",
+    "hardkas silver spend",
+    "hardkas silver verify",
     "hardkas simulator",
     "hardkas simulator account",
     "hardkas simulator account create",
     "hardkas simulator fund",
+    "hardkas simulator silver",
+    "hardkas simulator silver deploy",
+    "hardkas simulator silver spend",
     "hardkas status",
     "hardkas task",
     "hardkas task <name>",
@@ -206,13 +220,24 @@
     "hardkas up",
     "hardkas verify",
     "hardkas verify-semantics",
+    "hardkas vprogs",
+    "hardkas vprogs capabilities",
+    "hardkas vprogs inspect",
+    "hardkas vprogs status",
     "hardkas why",
     "hardkas workflow",
     "hardkas workflow create",
     "hardkas workflow diff",
     "hardkas workflow inspect",
     "hardkas workflow replay",
-    "hardkas workflow run"
+    "hardkas workflow run",
+    "hardkas zk",
+    "hardkas zk capabilities",
+    "hardkas zk corpus",
+    "hardkas zk corpus verify",
+    "hardkas zk proof",
+    "hardkas zk proof inspect",
+    "hardkas zk proof verify"
   ],
   "commands": [
     {
@@ -882,6 +907,50 @@
             {
               "flags": "--json",
               "description": "Output as JSON",
+              "default": false,
+              "required": false,
+              "mandatory": false
+            },
+            {
+              "flags": "--workspace <path>",
+              "description": "Override workspace root directory",
+              "default": null,
+              "required": true,
+              "mandatory": false
+            }
+          ],
+          "subcommands": []
+        },
+        {
+          "path": "hardkas artifact migrate",
+          "name": "migrate",
+          "aliases": [],
+          "description": "Re-issue a legacy artifact as hashVersion 5 plus a MigrationReceipt (never in place) alpha",
+          "usage": "hardkas artifact migrate [options] <path>",
+          "arguments": [
+            {
+              "name": "path",
+              "description": ""
+            }
+          ],
+          "options": [
+            {
+              "flags": "--to <hashVersion>",
+              "description": "Target hash version (only 5 is supported)",
+              "default": null,
+              "required": true,
+              "mandatory": true
+            },
+            {
+              "flags": "--migration-id <id>",
+              "description": "Migration identifier recorded in the receipt",
+              "default": null,
+              "required": true,
+              "mandatory": false
+            },
+            {
+              "flags": "--json",
+              "description": "Output results as JSON",
               "default": false,
               "required": false,
               "mandatory": false
@@ -2017,15 +2086,58 @@
       "path": "hardkas explain",
       "name": "explain",
       "aliases": [],
-      "description": "Provide a narrative causal explanation of a deterministic artifact, transaction, or replay stable",
-      "usage": "hardkas explain [options] <id_or_path>",
+      "description": "Provide a narrative causal explanation of an artifact resolved by exact artifactId, artifact file path, or a namespaced identifier (--plan, --signed, --tx, --workflow) stable",
+      "usage": "hardkas explain [options] [artifact]",
       "arguments": [
         {
-          "name": "id_or_path",
+          "name": "artifact",
           "description": ""
         }
       ],
-      "options": [],
+      "options": [
+        {
+          "flags": "--artifact <id-or-path>",
+          "description": "64-hex artifactId or workspace path (same as the positional)",
+          "default": null,
+          "required": true,
+          "mandatory": false
+        },
+        {
+          "flags": "--plan <planId>",
+          "description": "Resolve a plan by its derived label (verified against its hash)",
+          "default": null,
+          "required": true,
+          "mandatory": false
+        },
+        {
+          "flags": "--signed <signedId>",
+          "description": "Resolve a signed transaction by its derived label (verified)",
+          "default": null,
+          "required": true,
+          "mandatory": false
+        },
+        {
+          "flags": "--tx <txId>",
+          "description": "Resolve the submission receipt for a txId (never the signed)",
+          "default": null,
+          "required": true,
+          "mandatory": false
+        },
+        {
+          "flags": "--workflow <workflowId>",
+          "description": "Resolve a workflow run by its correlation id",
+          "default": null,
+          "required": true,
+          "mandatory": false
+        },
+        {
+          "flags": "--workspace <path>",
+          "description": "Override workspace root directory",
+          "default": null,
+          "required": true,
+          "mandatory": false
+        }
+      ],
       "subcommands": []
     },
     {
@@ -4427,11 +4539,11 @@
           "path": "hardkas replay verify",
           "name": "verify",
           "aliases": [],
-          "description": "Verify replay invariants for a directory of artifacts stable",
-          "usage": "hardkas replay verify [options] [path]",
+          "description": "Verify deterministic simulator-mode replay for a receipt by exact artifactId or artifact file path. Real-node (kaspa consensus) receipts are not currently supported and will report REPLAY_MODE_UNSUPPORTED. stable",
+          "usage": "hardkas replay verify [options] [artifact]",
           "arguments": [
             {
-              "name": "path",
+              "name": "artifact",
               "description": ""
             }
           ],
@@ -4825,6 +4937,438 @@
       ]
     },
     {
+      "path": "hardkas silver",
+      "name": "silver",
+      "aliases": [],
+      "description": "SilverScript v1: managed silverc v1.0.0, Kaspa SDK scripts, verified canonical node",
+      "usage": "hardkas silver [options] [command]",
+      "arguments": [],
+      "options": [],
+      "subcommands": [
+        {
+          "path": "hardkas silver compile",
+          "name": "compile",
+          "aliases": [],
+          "description": "Compile SilverScript with the managed silverc v1.0.0 and record its provenance",
+          "usage": "hardkas silver compile [options] <source>",
+          "arguments": [
+            {
+              "name": "source",
+              "description": ""
+            }
+          ],
+          "options": [
+            {
+              "flags": "--args <file>",
+              "description": "Constructor arguments: JSON list of {kind, value}",
+              "default": null,
+              "required": true,
+              "mandatory": false
+            },
+            {
+              "flags": "--out <file>",
+              "description": "Record path (default .hardkas/artifacts/silver/)",
+              "default": null,
+              "required": true,
+              "mandatory": false
+            },
+            {
+              "flags": "--json",
+              "description": "Output as JSON",
+              "default": false,
+              "required": false,
+              "mandatory": false
+            }
+          ],
+          "subcommands": []
+        },
+        {
+          "path": "hardkas silver covenant",
+          "name": "covenant",
+          "aliases": [],
+          "description": "Toccata covenants (transaction v1): 1:1 auth-bound transitions",
+          "usage": "hardkas silver covenant [options] [command]",
+          "arguments": [],
+          "options": [],
+          "subcommands": [
+            {
+              "path": "hardkas silver covenant genesis",
+              "name": "genesis",
+              "aliases": [],
+              "description": "Create a covenant: bind a new output to the covenant id the SDK derives",
+              "usage": "hardkas silver covenant genesis [options] <record>",
+              "arguments": [
+                {
+                  "name": "record",
+                  "description": ""
+                }
+              ],
+              "options": [
+                {
+                  "flags": "--from <account>",
+                  "description": "Funding account (local key)",
+                  "default": null,
+                  "required": true,
+                  "mandatory": true
+                },
+                {
+                  "flags": "--amount <kas>",
+                  "description": "Value locked in the covenant",
+                  "default": null,
+                  "required": true,
+                  "mandatory": true
+                },
+                {
+                  "flags": "--compute-budget <n>",
+                  "description": "Compute budget of the funding input (explicit: no estimator exists)",
+                  "default": null,
+                  "required": true,
+                  "mandatory": true
+                },
+                {
+                  "flags": "--fee <sompi>",
+                  "description": "Explicit fee (required when --compute-budget > 0: the SDK does not price v1 budgets)",
+                  "default": null,
+                  "required": true,
+                  "mandatory": false
+                },
+                {
+                  "flags": "--contract <name>",
+                  "description": "Contract, when the artifact has several",
+                  "default": null,
+                  "required": true,
+                  "mandatory": false
+                },
+                {
+                  "flags": "--wait",
+                  "description": "Wait for confirmation and the node's covenant id",
+                  "default": false,
+                  "required": false,
+                  "mandatory": false
+                },
+                {
+                  "flags": "--timeout <seconds>",
+                  "description": "Confirmation timeout",
+                  "default": "120",
+                  "required": true,
+                  "mandatory": false
+                },
+                {
+                  "flags": "--json",
+                  "description": "Output as JSON",
+                  "default": false,
+                  "required": false,
+                  "mandatory": false
+                }
+              ],
+              "subcommands": []
+            },
+            {
+              "path": "hardkas silver covenant transition",
+              "name": "transition",
+              "aliases": [],
+              "description": "Advance a 1:1 auth-bound covenant: successor state compiled by silverc, same covenant id",
+              "usage": "hardkas silver covenant transition [options] <covenant-record>",
+              "arguments": [
+                {
+                  "name": "covenant-record",
+                  "description": ""
+                }
+              ],
+              "options": [
+                {
+                  "flags": "--policy <name>",
+                  "description": "Covenant declaration (policy function) to call",
+                  "default": null,
+                  "required": true,
+                  "mandatory": true
+                },
+                {
+                  "flags": "--constructor-args <file>",
+                  "description": "Constructor arguments of the current state (checked against the record)",
+                  "default": null,
+                  "required": true,
+                  "mandatory": true
+                },
+                {
+                  "flags": "--state-map <json>",
+                  "description": "State field -> constructor parameter index, e.g. {\"value\":0}",
+                  "default": null,
+                  "required": true,
+                  "mandatory": true
+                },
+                {
+                  "flags": "--next-state <file>",
+                  "description": "Successor state: JSON object of {kind, value} per field",
+                  "default": null,
+                  "required": true,
+                  "mandatory": true
+                },
+                {
+                  "flags": "--compute-budget <n>",
+                  "description": "Compute budget of the covenant input (explicit: no estimator exists)",
+                  "default": null,
+                  "required": true,
+                  "mandatory": true
+                },
+                {
+                  "flags": "--args <file>",
+                  "description": "Entry arguments: JSON list of {kind, value}",
+                  "default": null,
+                  "required": true,
+                  "mandatory": false
+                },
+                {
+                  "flags": "--fee <sompi>",
+                  "description": "Explicit fee (required when --compute-budget > 0)",
+                  "default": null,
+                  "required": true,
+                  "mandatory": false
+                },
+                {
+                  "flags": "--emit-args <file>",
+                  "description": "Write the successor's constructor arguments here (for the next transition)",
+                  "default": null,
+                  "required": true,
+                  "mandatory": false
+                },
+                {
+                  "flags": "--wait",
+                  "description": "Wait for confirmation and check the lineage",
+                  "default": false,
+                  "required": false,
+                  "mandatory": false
+                },
+                {
+                  "flags": "--timeout <seconds>",
+                  "description": "Confirmation timeout",
+                  "default": "120",
+                  "required": true,
+                  "mandatory": false
+                },
+                {
+                  "flags": "--json",
+                  "description": "Output as JSON",
+                  "default": false,
+                  "required": false,
+                  "mandatory": false
+                }
+              ],
+              "subcommands": []
+            }
+          ]
+        },
+        {
+          "path": "hardkas silver deploy",
+          "name": "deploy",
+          "aliases": [],
+          "description": "Fund a compiled contract's P2SH output on the canonical localnet",
+          "usage": "hardkas silver deploy [options] <record>",
+          "arguments": [
+            {
+              "name": "record",
+              "description": ""
+            }
+          ],
+          "options": [
+            {
+              "flags": "--from <account>",
+              "description": "Funding account (local key)",
+              "default": null,
+              "required": true,
+              "mandatory": true
+            },
+            {
+              "flags": "--amount <kas>",
+              "description": "Value locked in the contract",
+              "default": null,
+              "required": true,
+              "mandatory": true
+            },
+            {
+              "flags": "--contract <name>",
+              "description": "Contract, when the artifact has several",
+              "default": null,
+              "required": true,
+              "mandatory": false
+            },
+            {
+              "flags": "--network <network>",
+              "description": "Network",
+              "default": "simnet",
+              "required": true,
+              "mandatory": false
+            },
+            {
+              "flags": "--wait",
+              "description": "Wait for confirmation",
+              "default": false,
+              "required": false,
+              "mandatory": false
+            },
+            {
+              "flags": "--timeout <seconds>",
+              "description": "Confirmation timeout",
+              "default": "120",
+              "required": true,
+              "mandatory": false
+            },
+            {
+              "flags": "--json",
+              "description": "Output as JSON",
+              "default": false,
+              "required": false,
+              "mandatory": false
+            }
+          ],
+          "subcommands": []
+        },
+        {
+          "path": "hardkas silver doctor",
+          "name": "doctor",
+          "aliases": [],
+          "description": "Report whether the pinned toolchains and the canonical node are ready",
+          "usage": "hardkas silver doctor [options]",
+          "arguments": [],
+          "options": [
+            {
+              "flags": "--json",
+              "description": "Output as JSON",
+              "default": false,
+              "required": false,
+              "mandatory": false
+            }
+          ],
+          "subcommands": []
+        },
+        {
+          "path": "hardkas silver inspect",
+          "name": "inspect",
+          "aliases": [],
+          "description": "Show a SilverScript v1 compile record",
+          "usage": "hardkas silver inspect [options] <record>",
+          "arguments": [
+            {
+              "name": "record",
+              "description": ""
+            }
+          ],
+          "options": [
+            {
+              "flags": "--json",
+              "description": "Output as JSON",
+              "default": false,
+              "required": false,
+              "mandatory": false
+            }
+          ],
+          "subcommands": []
+        },
+        {
+          "path": "hardkas silver spend",
+          "name": "spend",
+          "aliases": [],
+          "description": "Spend a deployed contract output through one of its entries",
+          "usage": "hardkas silver spend [options] <deploy-record>",
+          "arguments": [
+            {
+              "name": "deploy-record",
+              "description": ""
+            }
+          ],
+          "options": [
+            {
+              "flags": "--entry <name>",
+              "description": "Entry to call",
+              "default": null,
+              "required": true,
+              "mandatory": true
+            },
+            {
+              "flags": "--to <address>",
+              "description": "Recipient of the whole value (minus the fee)",
+              "default": null,
+              "required": true,
+              "mandatory": true
+            },
+            {
+              "flags": "--args <file>",
+              "description": "Entry arguments: JSON list of {kind, value} and {\"kind\":\"signature\",\"account\":\"<name>\"}",
+              "default": null,
+              "required": true,
+              "mandatory": false
+            },
+            {
+              "flags": "--sequence <n>",
+              "description": "Input sequence (relative locks)",
+              "default": null,
+              "required": true,
+              "mandatory": false
+            },
+            {
+              "flags": "--sig-op-count <n>",
+              "description": "Declared signature operations (default: the signature arguments, at least 1)",
+              "default": null,
+              "required": true,
+              "mandatory": false
+            },
+            {
+              "flags": "--wait",
+              "description": "Wait for confirmation",
+              "default": false,
+              "required": false,
+              "mandatory": false
+            },
+            {
+              "flags": "--timeout <seconds>",
+              "description": "Confirmation timeout",
+              "default": "120",
+              "required": true,
+              "mandatory": false
+            },
+            {
+              "flags": "--json",
+              "description": "Output as JSON",
+              "default": false,
+              "required": false,
+              "mandatory": false
+            }
+          ],
+          "subcommands": []
+        },
+        {
+          "path": "hardkas silver verify",
+          "name": "verify",
+          "aliases": [],
+          "description": "Reproduce a compile record with the managed silverc (byte-for-byte)",
+          "usage": "hardkas silver verify [options] <record>",
+          "arguments": [
+            {
+              "name": "record",
+              "description": ""
+            }
+          ],
+          "options": [
+            {
+              "flags": "--args <file>",
+              "description": "The constructor arguments the record was compiled with",
+              "default": null,
+              "required": true,
+              "mandatory": false
+            },
+            {
+              "flags": "--json",
+              "description": "Output as JSON",
+              "default": false,
+              "required": false,
+              "mandatory": false
+            }
+          ],
+          "subcommands": []
+        }
+      ]
+    },
+    {
       "path": "hardkas simulator",
       "name": "simulator",
       "aliases": [],
@@ -4896,6 +5440,47 @@
             }
           ],
           "subcommands": []
+        },
+        {
+          "path": "hardkas simulator silver",
+          "name": "silver",
+          "aliases": [],
+          "description": "SilverScript P2SH bookkeeping simulator experimental (never evidence)",
+          "usage": "hardkas simulator silver [options] [command]",
+          "arguments": [],
+          "options": [],
+          "subcommands": [
+            {
+              "path": "hardkas simulator silver deploy",
+              "name": "deploy",
+              "aliases": [],
+              "description": "Simulate a SilverScript deploy plan without a node",
+              "usage": "hardkas simulator silver deploy [options] <deploy-plan>",
+              "arguments": [
+                {
+                  "name": "deploy-plan",
+                  "description": ""
+                }
+              ],
+              "options": [],
+              "subcommands": []
+            },
+            {
+              "path": "hardkas simulator silver spend",
+              "name": "spend",
+              "aliases": [],
+              "description": "Simulate spending a simulated SilverScript output",
+              "usage": "hardkas simulator silver spend [options] <spend-plan>",
+              "arguments": [
+                {
+                  "name": "spend-plan",
+                  "description": ""
+                }
+              ],
+              "options": [],
+              "subcommands": []
+            }
+          ]
         }
       ]
     },
@@ -5104,7 +5689,7 @@
           ],
           "options": [
             {
-              "flags": "--from-file <zip>",
+              "flags": "--from-file <asset>",
               "description": "Use a release asset already on disk instead of downloading it",
               "default": null,
               "required": true,
@@ -5370,6 +5955,13 @@
               "mandatory": false
             },
             {
+              "flags": "--change <accountOrAddress>",
+              "description": "Change destination (account name or address); default: the sender",
+              "default": null,
+              "required": true,
+              "mandatory": false
+            },
+            {
               "flags": "--provider <type>",
               "description": "Provider mode (auto, rpc, simulated)",
               "default": "auto",
@@ -5552,7 +6144,7 @@
             },
             {
               "flags": "--yes",
-              "description": "Confirm broadcast",
+              "description": "Confirm broadcast. Required on any non-simulated network: without it the send is refused (NOT EXECUTED, exit 3) and nothing is written",
               "default": false,
               "required": false,
               "mandatory": false
@@ -5811,16 +6403,14 @@
       "name": "verify",
       "aliases": [],
       "description": "Verify artifact integrity and lineage continuity across the workspace stable",
-      "usage": "hardkas verify [options]",
-      "arguments": [],
-      "options": [
+      "usage": "hardkas verify [options] [path]",
+      "arguments": [
         {
-          "flags": "--deep",
-          "description": "Perform a deep validation of signatures and causality",
-          "default": false,
-          "required": false,
-          "mandatory": false
-        },
+          "name": "path",
+          "description": "Workspace-contained artifact file or directory to verify (default: .hardkas/artifacts)"
+        }
+      ],
+      "options": [
         {
           "flags": "--json",
           "description": "Output machine-readable JSON",
@@ -5857,18 +6447,123 @@
       "subcommands": []
     },
     {
+      "path": "hardkas vprogs",
+      "name": "vprogs",
+      "aliases": [],
+      "description": "vProgs inspect-only builder surface (Outputs JSON by default)",
+      "usage": "hardkas vprogs [options] [command]",
+      "arguments": [],
+      "options": [],
+      "subcommands": [
+        {
+          "path": "hardkas vprogs capabilities",
+          "name": "capabilities",
+          "aliases": [],
+          "description": "Show vProgs inspect capabilities",
+          "usage": "hardkas vprogs capabilities [options]",
+          "arguments": [],
+          "options": [
+            {
+              "flags": "--json",
+              "description": "Output as JSON",
+              "default": false,
+              "required": false,
+              "mandatory": false
+            }
+          ],
+          "subcommands": []
+        },
+        {
+          "path": "hardkas vprogs inspect",
+          "name": "inspect",
+          "aliases": [],
+          "description": "Inspect a local vProgs artifact without runtime claims",
+          "usage": "hardkas vprogs inspect [options] <artifact>",
+          "arguments": [
+            {
+              "name": "artifact",
+              "description": ""
+            }
+          ],
+          "options": [
+            {
+              "flags": "--json",
+              "description": "Output as JSON",
+              "default": false,
+              "required": false,
+              "mandatory": false
+            }
+          ],
+          "subcommands": []
+        },
+        {
+          "path": "hardkas vprogs status",
+          "name": "status",
+          "aliases": [],
+          "description": "Show vProgs inspect status",
+          "usage": "hardkas vprogs status [options]",
+          "arguments": [],
+          "options": [
+            {
+              "flags": "--json",
+              "description": "Output as JSON",
+              "default": false,
+              "required": false,
+              "mandatory": false
+            }
+          ],
+          "subcommands": []
+        }
+      ]
+    },
+    {
       "path": "hardkas why",
       "name": "why",
       "aliases": [],
-      "description": "Explain the causal lineage of a given artifact ID",
-      "usage": "hardkas why [options] <artifactId>",
+      "description": "Explain the causal lineage of an artifact resolved by exact artifactId, artifact file path, or a namespaced identifier (--plan, --signed, --tx, --workflow)",
+      "usage": "hardkas why [options] [artifact]",
       "arguments": [
         {
-          "name": "artifactId",
-          "description": "The full or partial ID of the artifact"
+          "name": "artifact",
+          "description": "Exact 64-hex artifactId (the recomputed contentHash) or absolute/workspace-relative path to the artifact .json file"
         }
       ],
       "options": [
+        {
+          "flags": "--artifact <id-or-path>",
+          "description": "64-hex artifactId or workspace path (same as the positional)",
+          "default": null,
+          "required": true,
+          "mandatory": false
+        },
+        {
+          "flags": "--plan <planId>",
+          "description": "Resolve a plan by its derived label (verified against its hash)",
+          "default": null,
+          "required": true,
+          "mandatory": false
+        },
+        {
+          "flags": "--signed <signedId>",
+          "description": "Resolve a signed transaction by its derived label (verified)",
+          "default": null,
+          "required": true,
+          "mandatory": false
+        },
+        {
+          "flags": "--tx <txId>",
+          "description": "Resolve the submission receipt for a txId (never the signed)",
+          "default": null,
+          "required": true,
+          "mandatory": false
+        },
+        {
+          "flags": "--workflow <workflowId>",
+          "description": "Resolve a workflow run by its correlation id",
+          "default": null,
+          "required": true,
+          "mandatory": false
+        },
         {
           "flags": "--json",
           "description": "Output lineage graph in JSON format",
@@ -6046,6 +6741,128 @@
             }
           ],
           "subcommands": []
+        }
+      ]
+    },
+    {
+      "path": "hardkas zk",
+      "name": "zk",
+      "aliases": [],
+      "description": "Experimental local-only ZK proof artifact tools (Outputs JSON by default)",
+      "usage": "hardkas zk [options] [command]",
+      "arguments": [],
+      "options": [],
+      "subcommands": [
+        {
+          "path": "hardkas zk capabilities",
+          "name": "capabilities",
+          "aliases": [],
+          "description": "Show experimental ZK lab capabilities",
+          "usage": "hardkas zk capabilities [options]",
+          "arguments": [],
+          "options": [
+            {
+              "flags": "--json",
+              "description": "Output as JSON",
+              "default": false,
+              "required": false,
+              "mandatory": false
+            }
+          ],
+          "subcommands": []
+        },
+        {
+          "path": "hardkas zk corpus",
+          "name": "corpus",
+          "aliases": [],
+          "description": "Verify experimental ZK fixture corpora",
+          "usage": "hardkas zk corpus [options] [command]",
+          "arguments": [],
+          "options": [],
+          "subcommands": [
+            {
+              "path": "hardkas zk corpus verify",
+              "name": "verify",
+              "aliases": [],
+              "description": "Verify a local ZK corpus",
+              "usage": "hardkas zk corpus verify [options] <path>",
+              "arguments": [
+                {
+                  "name": "path",
+                  "description": ""
+                }
+              ],
+              "options": [
+                {
+                  "flags": "--json",
+                  "description": "Output as JSON",
+                  "default": false,
+                  "required": false,
+                  "mandatory": false
+                }
+              ],
+              "subcommands": []
+            }
+          ]
+        },
+        {
+          "path": "hardkas zk proof",
+          "name": "proof",
+          "aliases": [],
+          "description": "Inspect and verify local proof artifacts",
+          "usage": "hardkas zk proof [options] [command]",
+          "arguments": [],
+          "options": [],
+          "subcommands": [
+            {
+              "path": "hardkas zk proof inspect",
+              "name": "inspect",
+              "aliases": [],
+              "description": "Inspect a local proof fixture or artifact",
+              "usage": "hardkas zk proof inspect [options] <path>",
+              "arguments": [
+                {
+                  "name": "path",
+                  "description": ""
+                }
+              ],
+              "options": [
+                {
+                  "flags": "--json",
+                  "description": "Output as JSON",
+                  "default": false,
+                  "required": false,
+                  "mandatory": false
+                }
+              ],
+              "subcommands": []
+            },
+            {
+              "path": "hardkas zk proof verify",
+              "name": "verify",
+              "aliases": [
+                "verify-local"
+              ],
+              "description": "Verify a local proof fixture locally (No on-chain claims) alpha",
+              "usage": "hardkas zk proof verify [options] <path>",
+              "arguments": [
+                {
+                  "name": "path",
+                  "description": ""
+                }
+              ],
+              "options": [
+                {
+                  "flags": "--json",
+                  "description": "Output as JSON",
+                  "default": false,
+                  "required": false,
+                  "mandatory": false
+                }
+              ],
+              "subcommands": []
+            }
+          ]
         }
       ]
     }

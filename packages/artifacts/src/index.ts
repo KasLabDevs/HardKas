@@ -3,6 +3,12 @@ export { HardkasSchemas, ArtifactTypes, isKnownArtifactType, assertKnownArtifact
 export type { HardkasSchema, ArtifactType, SchemaMetadata } from "@hardkas/core";
 export * from "./types.js";
 export * from "./canonical.js";
+export * from "./domain-digest.js";
+export * from "./workflow-id.js";
+export * from "./identity-categories.js";
+export * from "./tx-observation.js";
+export * from "./tx-status.js";
+export * from "./submission-fee.js";
 export * from "./schemas.js";
 export * from "./verify.js";
 export * from "./payment-receipts.js";
@@ -55,3 +61,8 @@ export type {
 } from "./schemas.js";
 
 export * from "./store.js";
+export * from "./resolve.js";
+export * from "./silver-refs.js";
+export * from "./artifact-handle.js";
+export * from "./lineage-error.js";
+export * from "./receipt-lookup-error.js";

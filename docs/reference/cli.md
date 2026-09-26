@@ -368,6 +368,7 @@ No arguments.
 - [hardkas artifact explain](#hardkas-artifact-explain)
 - [hardkas artifact inspect](#hardkas-artifact-inspect)
 - [hardkas artifact lineage](#hardkas-artifact-lineage)
+- [hardkas artifact migrate](#hardkas-artifact-migrate)
 - [hardkas artifact verify](#hardkas-artifact-verify)
 
 ---
@@ -465,6 +466,33 @@ hardkas artifact lineage [options] <path>
 | Flag | Description | Default |
 | :--- | :--- | :--- |
 | `--json` | Output as JSON | false |
+| `--workspace <path>` | Override workspace root directory |  |
+
+### Arguments
+
+| Argument | Description |
+| :--- | :--- |
+| `path` |  |
+
+---
+
+## hardkas artifact migrate
+
+Re-issue a legacy artifact as hashVersion 5 plus a MigrationReceipt (never in place) alpha
+
+### Usage
+
+```bash
+hardkas artifact migrate [options] <path>
+```
+
+### Options
+
+| Flag | Description | Default |
+| :--- | :--- | :--- |
+| `--to <hashVersion>` | Target hash version (only 5 is supported) |  |
+| `--migration-id <id>` | Migration identifier recorded in the receipt |  |
+| `--json` | Output results as JSON | false |
 | `--workspace <path>` | Override workspace root directory |  |
 
 ### Arguments
@@ -1598,23 +1626,30 @@ hardkas evidence verify [options] <packagePath>
 
 ## hardkas explain
 
-Provide a narrative causal explanation of a deterministic artifact, transaction, or replay stable
+Provide a narrative causal explanation of an artifact resolved by exact artifactId, artifact file path, or a namespaced identifier (--plan, --signed, --tx, --workflow) stable
 
 ### Usage
 
 ```bash
-hardkas explain [options] <id_or_path>
+hardkas explain [options] [artifact]
 ```
 
 ### Options
 
-No options.
+| Flag | Description | Default |
+| :--- | :--- | :--- |
+| `--artifact <id-or-path>` | 64-hex artifactId or workspace path (same as the positional) |  |
+| `--plan <planId>` | Resolve a plan by its derived label (verified against its hash) |  |
+| `--signed <signedId>` | Resolve a signed transaction by its derived label (verified) |  |
+| `--tx <txId>` | Resolve the submission receipt for a txId (never the signed) |  |
+| `--workflow <workflowId>` | Resolve a workflow run by its correlation id |  |
+| `--workspace <path>` | Override workspace root directory |  |
 
 ### Arguments
 
 | Argument | Description |
 | :--- | :--- |
-| `id_or_path` |  |
+| `artifact` |  |
 
 ---
 
@@ -3829,12 +3864,12 @@ hardkas replay diff [options] <idA> <idB>
 
 ## hardkas replay verify
 
-Verify replay invariants for a directory of artifacts stable
+Verify deterministic simulator-mode replay for a receipt by exact artifactId or artifact file path. Real-node (kaspa consensus) receipts are not currently supported and will report REPLAY_MODE_UNSUPPORTED. stable
 
 ### Usage
 
 ```bash
-hardkas replay verify [options] [path]
+hardkas replay verify [options] [artifact]
 ```
 
 ### Options
@@ -3848,7 +3883,7 @@ hardkas replay verify [options] [path]
 
 | Argument | Description |
 | :--- | :--- |
-| `path` |  |
+| `artifact` |  |
 
 ---
 
@@ -4255,6 +4290,284 @@ hardkas session use [options] <name>
 
 ---
 
+## hardkas silver
+
+SilverScript v1: managed silverc v1.0.0, Kaspa SDK scripts, verified canonical node
+
+### Usage
+
+```bash
+hardkas silver [options] [command]
+```
+
+### Options
+
+No options.
+
+### Arguments
+
+No arguments.
+
+### Subcommands
+
+- [hardkas silver compile](#hardkas-silver-compile)
+- [hardkas silver covenant](#hardkas-silver-covenant)
+- [hardkas silver deploy](#hardkas-silver-deploy)
+- [hardkas silver doctor](#hardkas-silver-doctor)
+- [hardkas silver inspect](#hardkas-silver-inspect)
+- [hardkas silver spend](#hardkas-silver-spend)
+- [hardkas silver verify](#hardkas-silver-verify)
+
+---
+
+## hardkas silver compile
+
+Compile SilverScript with the managed silverc v1.0.0 and record its provenance
+
+### Usage
+
+```bash
+hardkas silver compile [options] <source>
+```
+
+### Options
+
+| Flag | Description | Default |
+| :--- | :--- | :--- |
+| `--args <file>` | Constructor arguments: JSON list of {kind, value} |  |
+| `--out <file>` | Record path (default .hardkas/artifacts/silver/) |  |
+| `--json` | Output as JSON | false |
+
+### Arguments
+
+| Argument | Description |
+| :--- | :--- |
+| `source` |  |
+
+---
+
+## hardkas silver covenant
+
+Toccata covenants (transaction v1): 1:1 auth-bound transitions
+
+### Usage
+
+```bash
+hardkas silver covenant [options] [command]
+```
+
+### Options
+
+No options.
+
+### Arguments
+
+No arguments.
+
+### Subcommands
+
+- [hardkas silver covenant genesis](#hardkas-silver-covenant-genesis)
+- [hardkas silver covenant transition](#hardkas-silver-covenant-transition)
+
+---
+
+## hardkas silver covenant genesis
+
+Create a covenant: bind a new output to the covenant id the SDK derives
+
+### Usage
+
+```bash
+hardkas silver covenant genesis [options] <record>
+```
+
+### Options
+
+| Flag | Description | Default |
+| :--- | :--- | :--- |
+| `--from <account>` | Funding account (local key) |  |
+| `--amount <kas>` | Value locked in the covenant |  |
+| `--compute-budget <n>` | Compute budget of the funding input (explicit: no estimator exists) |  |
+| `--fee <sompi>` | Explicit fee (required when --compute-budget > 0: the SDK does not price v1 budgets) |  |
+| `--contract <name>` | Contract, when the artifact has several |  |
+| `--wait` | Wait for confirmation and the node's covenant id | false |
+| `--timeout <seconds>` | Confirmation timeout | 120 |
+| `--json` | Output as JSON | false |
+
+### Arguments
+
+| Argument | Description |
+| :--- | :--- |
+| `record` |  |
+
+---
+
+## hardkas silver covenant transition
+
+Advance a 1:1 auth-bound covenant: successor state compiled by silverc, same covenant id
+
+### Usage
+
+```bash
+hardkas silver covenant transition [options] <covenant-record>
+```
+
+### Options
+
+| Flag | Description | Default |
+| :--- | :--- | :--- |
+| `--policy <name>` | Covenant declaration (policy function) to call |  |
+| `--constructor-args <file>` | Constructor arguments of the current state (checked against the record) |  |
+| `--state-map <json>` | State field -> constructor parameter index, e.g. {"value":0} |  |
+| `--next-state <file>` | Successor state: JSON object of {kind, value} per field |  |
+| `--compute-budget <n>` | Compute budget of the covenant input (explicit: no estimator exists) |  |
+| `--args <file>` | Entry arguments: JSON list of {kind, value} |  |
+| `--fee <sompi>` | Explicit fee (required when --compute-budget > 0) |  |
+| `--emit-args <file>` | Write the successor's constructor arguments here (for the next transition) |  |
+| `--wait` | Wait for confirmation and check the lineage | false |
+| `--timeout <seconds>` | Confirmation timeout | 120 |
+| `--json` | Output as JSON | false |
+
+### Arguments
+
+| Argument | Description |
+| :--- | :--- |
+| `covenant-record` |  |
+
+---
+
+## hardkas silver deploy
+
+Fund a compiled contract's P2SH output on the canonical localnet
+
+### Usage
+
+```bash
+hardkas silver deploy [options] <record>
+```
+
+### Options
+
+| Flag | Description | Default |
+| :--- | :--- | :--- |
+| `--from <account>` | Funding account (local key) |  |
+| `--amount <kas>` | Value locked in the contract |  |
+| `--contract <name>` | Contract, when the artifact has several |  |
+| `--network <network>` | Network | simnet |
+| `--wait` | Wait for confirmation | false |
+| `--timeout <seconds>` | Confirmation timeout | 120 |
+| `--json` | Output as JSON | false |
+
+### Arguments
+
+| Argument | Description |
+| :--- | :--- |
+| `record` |  |
+
+---
+
+## hardkas silver doctor
+
+Report whether the pinned toolchains and the canonical node are ready
+
+### Usage
+
+```bash
+hardkas silver doctor [options]
+```
+
+### Options
+
+| Flag | Description | Default |
+| :--- | :--- | :--- |
+| `--json` | Output as JSON | false |
+
+### Arguments
+
+No arguments.
+
+---
+
+## hardkas silver inspect
+
+Show a SilverScript v1 compile record
+
+### Usage
+
+```bash
+hardkas silver inspect [options] <record>
+```
+
+### Options
+
+| Flag | Description | Default |
+| :--- | :--- | :--- |
+| `--json` | Output as JSON | false |
+
+### Arguments
+
+| Argument | Description |
+| :--- | :--- |
+| `record` |  |
+
+---
+
+## hardkas silver spend
+
+Spend a deployed contract output through one of its entries
+
+### Usage
+
+```bash
+hardkas silver spend [options] <deploy-record>
+```
+
+### Options
+
+| Flag | Description | Default |
+| :--- | :--- | :--- |
+| `--entry <name>` | Entry to call |  |
+| `--to <address>` | Recipient of the whole value (minus the fee) |  |
+| `--args <file>` | Entry arguments: JSON list of {kind, value} and {"kind":"signature","account":"<name>"} |  |
+| `--sequence <n>` | Input sequence (relative locks) |  |
+| `--sig-op-count <n>` | Declared signature operations (default: the signature arguments, at least 1) |  |
+| `--wait` | Wait for confirmation | false |
+| `--timeout <seconds>` | Confirmation timeout | 120 |
+| `--json` | Output as JSON | false |
+
+### Arguments
+
+| Argument | Description |
+| :--- | :--- |
+| `deploy-record` |  |
+
+---
+
+## hardkas silver verify
+
+Reproduce a compile record with the managed silverc (byte-for-byte)
+
+### Usage
+
+```bash
+hardkas silver verify [options] <record>
+```
+
+### Options
+
+| Flag | Description | Default |
+| :--- | :--- | :--- |
+| `--args <file>` | The constructor arguments the record was compiled with |  |
+| `--json` | Output as JSON | false |
+
+### Arguments
+
+| Argument | Description |
+| :--- | :--- |
+| `record` |  |
+
+---
+
 ## hardkas simulator
 
 HardKAS Simulator management
@@ -4277,6 +4590,7 @@ No arguments.
 
 - [hardkas simulator account](#hardkas-simulator-account)
 - [hardkas simulator fund](#hardkas-simulator-fund)
+- [hardkas simulator silver](#hardkas-simulator-silver)
 
 ---
 
@@ -4350,6 +4664,75 @@ hardkas simulator fund [options] <identifier>
 | Argument | Description |
 | :--- | :--- |
 | `identifier` |  |
+
+---
+
+## hardkas simulator silver
+
+SilverScript P2SH bookkeeping simulator experimental (never evidence)
+
+### Usage
+
+```bash
+hardkas simulator silver [options] [command]
+```
+
+### Options
+
+No options.
+
+### Arguments
+
+No arguments.
+
+### Subcommands
+
+- [hardkas simulator silver deploy](#hardkas-simulator-silver-deploy)
+- [hardkas simulator silver spend](#hardkas-simulator-silver-spend)
+
+---
+
+## hardkas simulator silver deploy
+
+Simulate a SilverScript deploy plan without a node
+
+### Usage
+
+```bash
+hardkas simulator silver deploy [options] <deploy-plan>
+```
+
+### Options
+
+No options.
+
+### Arguments
+
+| Argument | Description |
+| :--- | :--- |
+| `deploy-plan` |  |
+
+---
+
+## hardkas simulator silver spend
+
+Simulate spending a simulated SilverScript output
+
+### Usage
+
+```bash
+hardkas simulator silver spend [options] <spend-plan>
+```
+
+### Options
+
+No options.
+
+### Arguments
+
+| Argument | Description |
+| :--- | :--- |
+| `spend-plan` |  |
 
 ---
 
@@ -4581,7 +4964,7 @@ hardkas toolchain install [options] <id>
 
 | Flag | Description | Default |
 | :--- | :--- | :--- |
-| `--from-file <zip>` | Use a release asset already on disk instead of downloading it |  |
+| `--from-file <asset>` | Use a release asset already on disk instead of downloading it |  |
 | `--force` | Reinstall even if a verified install is present | false |
 | `--json` | Output as JSON | false |
 
@@ -4793,6 +5176,7 @@ hardkas tx plan [options] [from] [to]
 | `--amount <kas>` | Amount in KAS |  |
 | `--network <name>` | Kaspa network name |  |
 | `--fee-rate <sompiPerMass>` | Fee rate in sompi per mass |  |
+| `--change <accountOrAddress>` | Change destination (account name or address); default: the sender |  |
 | `--provider <type>` | Provider mode (auto, rpc, simulated) | auto |
 | `--url <url>` | RPC URL (optional override) |  |
 | `--out <path>` | Save plan as artifact JSON |  |
@@ -4882,7 +5266,7 @@ hardkas tx send [options] [signedPath]
 | `--fee-rate <sompiPerMass>` | Fee rate in sompi per mass (shortcut mode) |  |
 | `--provider <type>` | Provider mode (auto, rpc, simulated) | auto |
 | `--url <url>` | RPC URL (optional override) |  |
-| `--yes` | Confirm broadcast | false |
+| `--yes` | Confirm broadcast. Required on any non-simulated network: without it the send is refused (NOT EXECUTED, exit 3) and nothing is written | false |
 | `--wait-lock` | Wait for workspace lock if held | false |
 | `--lock-timeout <ms>` | Lock wait timeout in ms | 30000 |
 | `--json` | Output as JSON | false |
@@ -5056,19 +5440,20 @@ Verify artifact integrity and lineage continuity across the workspace stable
 ### Usage
 
 ```bash
-hardkas verify [options]
+hardkas verify [options] [path]
 ```
 
 ### Options
 
 | Flag | Description | Default |
 | :--- | :--- | :--- |
-| `--deep` | Perform a deep validation of signatures and causality | false |
 | `--json` | Output machine-readable JSON | false |
 
 ### Arguments
 
-No arguments.
+| Argument | Description |
+| :--- | :--- |
+| `path` | Workspace-contained artifact file or directory to verify (default: .hardkas/artifacts) |
 
 ---
 
@@ -5095,20 +5480,119 @@ No arguments.
 
 ---
 
-## hardkas why
+## hardkas vprogs
 
-Explain the causal lineage of a given artifact ID
+vProgs inspect-only builder surface (Outputs JSON by default)
 
 ### Usage
 
 ```bash
-hardkas why [options] <artifactId>
+hardkas vprogs [options] [command]
+```
+
+### Options
+
+No options.
+
+### Arguments
+
+No arguments.
+
+### Subcommands
+
+- [hardkas vprogs capabilities](#hardkas-vprogs-capabilities)
+- [hardkas vprogs inspect](#hardkas-vprogs-inspect)
+- [hardkas vprogs status](#hardkas-vprogs-status)
+
+---
+
+## hardkas vprogs capabilities
+
+Show vProgs inspect capabilities
+
+### Usage
+
+```bash
+hardkas vprogs capabilities [options]
 ```
 
 ### Options
 
 | Flag | Description | Default |
 | :--- | :--- | :--- |
+| `--json` | Output as JSON | false |
+
+### Arguments
+
+No arguments.
+
+---
+
+## hardkas vprogs inspect
+
+Inspect a local vProgs artifact without runtime claims
+
+### Usage
+
+```bash
+hardkas vprogs inspect [options] <artifact>
+```
+
+### Options
+
+| Flag | Description | Default |
+| :--- | :--- | :--- |
+| `--json` | Output as JSON | false |
+
+### Arguments
+
+| Argument | Description |
+| :--- | :--- |
+| `artifact` |  |
+
+---
+
+## hardkas vprogs status
+
+Show vProgs inspect status
+
+### Usage
+
+```bash
+hardkas vprogs status [options]
+```
+
+### Options
+
+| Flag | Description | Default |
+| :--- | :--- | :--- |
+| `--json` | Output as JSON | false |
+
+### Arguments
+
+No arguments.
+
+---
+
+## hardkas why
+
+Explain the causal lineage of an artifact resolved by exact artifactId, artifact file path, or a namespaced identifier (--plan, --signed, --tx, --workflow)
+
+### Usage
+
+```bash
+hardkas why [options] [artifact]
+```
+
+### Options
+
+| Flag | Description | Default |
+| :--- | :--- | :--- |
+| `--artifact <id-or-path>` | 64-hex artifactId or workspace path (same as the positional) |  |
+| `--plan <planId>` | Resolve a plan by its derived label (verified against its hash) |  |
+| `--signed <signedId>` | Resolve a signed transaction by its derived label (verified) |  |
+| `--tx <txId>` | Resolve the submission receipt for a txId (never the signed) |  |
+| `--workflow <workflowId>` | Resolve a workflow run by its correlation id |  |
 | `--json` | Output lineage graph in JSON format |  |
 | `--workspace <path>` | Override workspace root directory |  |
 
@@ -5116,7 +5600,7 @@ hardkas why [options] <artifactId>
 
 | Argument | Description |
 | :--- | :--- |
-| `artifactId` | The full or partial ID of the artifact |
+| `artifact` | Exact 64-hex artifactId (the recomputed contentHash) or absolute/workspace-relative path to the artifact .json file |
 
 ---
 
@@ -5269,4 +5753,175 @@ hardkas workflow run [options] <file>
 | Argument | Description |
 | :--- | :--- |
 | `file` |  |
+
+---
+
+## hardkas zk
+
+Experimental local-only ZK proof artifact tools (Outputs JSON by default)
+
+### Usage
+
+```bash
+hardkas zk [options] [command]
+```
+
+### Options
+
+No options.
+
+### Arguments
+
+No arguments.
+
+### Subcommands
+
+- [hardkas zk capabilities](#hardkas-zk-capabilities)
+- [hardkas zk corpus](#hardkas-zk-corpus)
+- [hardkas zk proof](#hardkas-zk-proof)
+
+---
+
+## hardkas zk capabilities
+
+Show experimental ZK lab capabilities
+
+### Usage
+
+```bash
+hardkas zk capabilities [options]
+```
+
+### Options
+
+| Flag | Description | Default |
+| :--- | :--- | :--- |
+| `--json` | Output as JSON | false |
+
+### Arguments
+
+No arguments.
+
+---
+
+## hardkas zk corpus
+
+Verify experimental ZK fixture corpora
+
+### Usage
+
+```bash
+hardkas zk corpus [options] [command]
+```
+
+### Options
+
+No options.
+
+### Arguments
+
+No arguments.
+
+### Subcommands
+
+- [hardkas zk corpus verify](#hardkas-zk-corpus-verify)
+
+---
+
+## hardkas zk corpus verify
+
+Verify a local ZK corpus
+
+### Usage
+
+```bash
+hardkas zk corpus verify [options] <path>
+```
+
+### Options
+
+| Flag | Description | Default |
+| :--- | :--- | :--- |
+| `--json` | Output as JSON | false |
+
+### Arguments
+
+| Argument | Description |
+| :--- | :--- |
+| `path` |  |
+
+---
+
+## hardkas zk proof
+
+Inspect and verify local proof artifacts
+
+### Usage
+
+```bash
+hardkas zk proof [options] [command]
+```
+
+### Options
+
+No options.
+
+### Arguments
+
+No arguments.
+
+### Subcommands
+
+- [hardkas zk proof inspect](#hardkas-zk-proof-inspect)
+- [hardkas zk proof verify](#hardkas-zk-proof-verify)
+
+---
+
+## hardkas zk proof inspect
+
+Inspect a local proof fixture or artifact
+
+### Usage
+
+```bash
+hardkas zk proof inspect [options] <path>
+```
+
+### Options
+
+| Flag | Description | Default |
+| :--- | :--- | :--- |
+| `--json` | Output as JSON | false |
+
+### Arguments
+
+| Argument | Description |
+| :--- | :--- |
+| `path` |  |
+
+---
+
+## hardkas zk proof verify
+
+**Aliases:** verify-local
+
+Verify a local proof fixture locally (No on-chain claims) alpha
+
+### Usage
+
+```bash
+hardkas zk proof verify [options] <path>
+```
+
+### Options
+
+| Flag | Description | Default |
+| :--- | :--- | :--- |
+| `--json` | Output as JSON | false |
+
+### Arguments
+
+| Argument | Description |
+| :--- | :--- |
+| `path` |  |
 

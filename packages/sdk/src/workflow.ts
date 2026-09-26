@@ -18,12 +18,13 @@ export class HardkasWorkflow {
    * Executes a sequence of declarative steps and returns a definitive WorkflowArtifact.
    */
   public async run(options: WorkflowRunOptions): Promise<WorkflowArtifact> {
-    const { calculateContentHash } = await import("@hardkas/artifacts");
+    const { calculateContentHash, CURRENT_HASH_VERSION, deriveWorkflowId } = await import("@hardkas/artifacts");
 
-    const intentPayload = {
-      type: HardkasSchemas.WorkflowIntent,
-      schemaVersion: "v1",
-      workflowSpec: options.steps,
+    // IC-7.4: the single workflowId derivation over the run's typed intent (a
+    // domain digest, IC-1′.7; never the artifact's own hash, IC-1′.5).
+    const workflowId = deriveWorkflowId({
+      kind: "steps",
+      steps: options.steps,
       normalizedInputs: {},
       parentArtifacts: [], // In v1, workflows do not accept explicit parent inputs yet
       policySnapshot: {
@@ -38,10 +39,7 @@ export class HardkasWorkflow {
       },
       runtimeVersion: HARDKAS_VERSION,
       workspaceSchemaVersion: HardkasSchemas.WorkflowV1
-    };
-
-    const intentHash = calculateContentHash(intentPayload);
-    const workflowId = `wf_${intentHash.slice(0, 16)}`;
+    });
 
     const artifactSteps: WorkflowArtifact["steps"] = [];
     const producedArtifacts: string[] = [];
@@ -55,6 +53,27 @@ export class HardkasWorkflow {
 
     let lastPlan: any = null;
     let lastSigned: any = null;
+    // Wave 1.2 · IC-5′.6/.8: a dry run persists nothing, so the in-memory plan is
+    // handed to simulate/send explicitly; it is accepted only if its recomputed
+    // identity is the signed artifact's authenticated parent.
+    const parentHint = (signed: any): { plan?: any } =>
+      lastPlan && signed?.lineage?.parentArtifactId === lastPlan.contentHash ? { plan: lastPlan } : {};
+
+    // Wave 1.3 security review B2: a real `send()` RECORDS a rejected submit
+    // (txSubmission.v1, submitResult.accepted = false) and returns
+    // `submitted: false`; the step must fail, never be recorded as success.
+    // The simulator path of `send()` also reports `submitted: false` (nothing is
+    // broadcast by design) together with `simulated: true`; that is not a rejection.
+    const assertBroadcastAccepted = (res: any): void => {
+      if (res && res.submitted === false && res.simulated !== true) {
+        const submissionId = res.submission?.contentHash ?? res.artifactId ?? "unknown";
+        const reason = res.submission?.submitResult?.error ?? "no reason returned";
+        throw new HardkasError(
+          "TX_SUBMISSION_REJECTED",
+          `The node did not accept the transaction (${reason}); the submission was recorded as ${submissionId}.`
+        );
+      }
+    };
 
     const stepsResults: Record<string, any> = {};
 
@@ -115,8 +134,9 @@ export class HardkasWorkflow {
                 );
                 const res =
                   this.sdk.network === "simulated"
-                    ? await this.sdk.tx.simulate(signed)
-                    : await this.sdk.tx.send(signed);
+                    ? await this.sdk.tx.simulate(signed, parentHint(signed))
+                    : await this.sdk.tx.send(signed, parentHint(signed));
+                assertBroadcastAccepted(res);
                 await this.sdk.artifacts.write(res.receipt, {
                   dryRun: options.dryRun ?? false
                 });
@@ -129,7 +149,7 @@ export class HardkasWorkflow {
                 return res;
               },
               simulate: async (signed: any) => {
-                const res = await this.sdk.tx.simulate(signed);
+                const res = await this.sdk.tx.simulate(signed, parentHint(signed));
                 await this.sdk.artifacts.write(res.receipt, {
                   dryRun: options.dryRun ?? false
                 });
@@ -189,7 +209,7 @@ export class HardkasWorkflow {
           if (signedId) producedArtifacts.push(signedId);
 
           if (step.type === "tx.simulate") {
-            const { receipt } = await this.sdk.tx.simulate(lastSigned);
+            const { receipt } = await this.sdk.tx.simulate(lastSigned, parentHint(lastSigned));
             await this.sdk.artifacts.write(receipt, { dryRun: options.dryRun ?? false });
             const receiptRecord = receipt as unknown as Record<string, string>;
             producedArtifactId =
@@ -197,10 +217,12 @@ export class HardkasWorkflow {
             if (producedArtifactId) producedArtifacts.push(producedArtifactId);
             result = receipt;
           } else {
-            const { receipt } =
+            const sendResult: any =
               this.sdk.network === "simulated"
-                ? await this.sdk.tx.simulate(lastSigned)
-                : await this.sdk.tx.send(lastSigned);
+                ? await this.sdk.tx.simulate(lastSigned, parentHint(lastSigned))
+                : await this.sdk.tx.send(lastSigned, parentHint(lastSigned));
+            assertBroadcastAccepted(sendResult);
+            const receipt = sendResult.receipt;
             await this.sdk.artifacts.write(receipt, { dryRun: options.dryRun ?? false });
             const receiptRecord = receipt as unknown as Record<string, string>;
             producedArtifactId =
@@ -252,9 +274,12 @@ export class HardkasWorkflow {
       hardkasVersion: HARDKAS_VERSION,
       networkId: this.sdk.network,
       mode: executionMode,
+      // N6 / IC-7.3–5: a version-5 artifact; its identity is the recomputed
+      // contentHash (resolvable by `{ artifact }`), its workflowId is a
+      // correlation label (resolvable by `{ workflow }`); no artifactId copy.
+      hashVersion: CURRENT_HASH_VERSION,
       createdAt: new Date().toISOString(), // hardkas-determinism-allow: workflow artifact creation timestamp
       workflowId,
-      artifactId: workflowId,
       status,
       steps: artifactSteps,
       parentArtifacts: parentArtifacts.sort(deterministicCompare),
@@ -277,7 +302,7 @@ export class HardkasWorkflow {
       artifact.errorEnvelope = errorEnvelope;
     }
 
-    artifact.contentHash = calculateContentHash(artifact, 1);
+    artifact.contentHash = calculateContentHash(artifact, CURRENT_HASH_VERSION);
 
     if (!options.dryRun) {
       this.sdk.enforcePolicy("mutation", "Workflow Runtime saving artifact");

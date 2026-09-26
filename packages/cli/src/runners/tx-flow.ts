@@ -5,7 +5,7 @@ import {
   TxPlanArtifact,
   SignedTxArtifact,
   writeArtifact,
-  calculateContentHash,
+  deriveWorkflowId,
   HARDKAS_VERSION
 } from "@hardkas/artifacts";
 import { HardkasConfig } from "@hardkas/config";
@@ -131,10 +131,10 @@ export async function runTxFlow(input: TxFlowInput): Promise<TxFlowResult> {
     mode?: string;
   };
 
-  const intentPayload = {
-    type: HardkasSchemas.WorkflowIntent,
-    schemaVersion: "v1",
-    workflowSpec: [
+  // IC-7.4: the single workflowId derivation over the flow's typed intent.
+  const workflowId = asWorkflowId(deriveWorkflowId({
+    kind: "steps",
+    steps: [
       {
         type: "tx.flow",
         from,
@@ -166,10 +166,7 @@ export async function runTxFlow(input: TxFlowInput): Promise<TxFlowResult> {
     },
     runtimeVersion: HARDKAS_VERSION,
     workspaceSchemaVersion: HardkasSchemas.WorkflowV1
-  };
-
-  const intentHash = calculateContentHash(intentPayload);
-  const workflowId = asWorkflowId(`wf_${intentHash.slice(0, 16)}`);
+  }));
   let globalOffset = 0;
 
   const netId = asNetworkId(resolvedNetwork);
@@ -389,16 +386,19 @@ export async function runTxFlow(input: TxFlowInput): Promise<TxFlowResult> {
             );
             sendResult.receiptPath = receiptPath;
 
-            const receiptId = asArtifactId(sendResult.receipt.txId);
+            // IC-5′.11: events carry the canonical identity, the txId is labelled as such.
+            const receiptId = asArtifactId((sendResult.receipt as any).contentHash ?? sendResult.receipt.txId);
             const receiptNetId = asNetworkId(sendResult.receipt.networkId);
 
-            const statusMap: Record<string, "accepted" | "finalized" | "failed"> = {
-              pending: "accepted",
-              submitted: "accepted",
-              accepted: "accepted",
-              confirmed: "finalized",
-              failed: "failed"
-            };
+            // R-iii / IC-2′.8: the event status is decided from an authenticated
+            // outcome only (a submission's result or a FULL-scope receipt's status).
+            const { sendOutcome } = await import("./next-steps.js");
+            const outcome = sendOutcome(sendResult.receipt);
+            const eventStatus: "accepted" | "finalized" | "failed" = !outcome.decided || !outcome.accepted
+              ? "failed"
+              : outcome.kind === "receipt" && outcome.status === "confirmed"
+                ? "finalized"
+                : "accepted";
 
             coreEvents.emit(
               createEventEnvelope({
@@ -409,7 +409,7 @@ export async function runTxFlow(input: TxFlowInput): Promise<TxFlowResult> {
                 networkId: receiptNetId,
                 payload: {
                   txId: asTxId(sendResult.receipt.txId),
-                  status: statusMap[sendResult.receipt.status] || "failed"
+                  status: eventStatus
                 },
                 sequenceNumber: asEventSequence(6),
                 globalOffset: globalOffset++,

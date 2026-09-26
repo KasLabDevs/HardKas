@@ -1,20 +1,41 @@
 {
-  "schema": "hardkas.snapshot",
-  "hardkasVersion": "0.5.4-alpha",
+  "schema": "hardkas.snapshot.v1",
+  "createdAt": "2026-09-25T12:00:00.000Z",
+  "hardkasVersion": "0.12.0-rc.23",
   "version": "1.0.0-alpha",
+  "hashVersion": 5,
+  "name": "fixture",
+  "daaScore": "0",
+  "accountsHash": "f830b9e47f346509d69918d3dba1b01e6c333f21aef2f4a511f716d3d917da62",
+  "utxoSetHash": "e14c18b86429107dea4a4918f5fa2303e9b9e70b9b93c638c1906e2cbbc360e3",
+  "stateHash": "55580beeb463489232ff68ca57c38628ccbcd35c71d887844eb21aa8e7e87f44",
+  "accounts": [
+    {
+      "name": "alice",
+      "address": "kaspasim:qqlpk9rs7yag6eqj3lttzqd8vgvssz8l8fxlpdag4h7zx2rjjr8lkkerwkezn"
+    },
+    {
+      "name": "bob",
+      "address": "kaspasim:qryj23rch0n5rc7klfug58zcrnuc966qljwgzpu3mflqgxu6w2pjg6n575980"
+    }
+  ],
+  "utxos": [
+    {
+      "id": "18b20b15966a9302af6b1a03cae7438bb26b6445c2ba66c7aed9a0b0bb7a547d:0",
+      "address": "kaspasim:qqlpk9rs7yag6eqj3lttzqd8vgvssz8l8fxlpdag4h7zx2rjjr8lkkerwkezn",
+      "amountSompi": "10000000000",
+      "spent": false,
+      "createdAtDaaScore": "0"
+    },
+    {
+      "id": "7491f3c90dfca3bbc9987ec579343ec79187f969bc3e20c4cfdf3b97bc15cc02:0",
+      "address": "kaspasim:qryj23rch0n5rc7klfug58zcrnuc966qljwgzpu3mflqgxu6w2pjg6n575980",
+      "amountSompi": "10000000000",
+      "spent": false,
+      "createdAtDaaScore": "0"
+    }
+  ],
   "networkId": "simnet",
-  "mode": "simulated",
-  "workflowId": "test-workflow",
-  "assumptionLevel": "pessimistic",
-  "executionMode": "isolated",
-  "createdAt": "2026-05-24T13:09:23.569Z",
-  "daaScore": "1000",
-  "accounts": [],
-  "utxos": [],
-  "lineage": {
-    "artifactId": "56d4612673f613a3efd5387fbbfc97164b04759b0ce2a9fab6a1d3bcceed88cd",
-    "lineageId": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
-    "rootArtifactId": "2b4baed6aab94827f47c19195591a9f619be50882de2c564ca9fa1bd09d57fb5"
-  },
-  "contentHash": "56d4612673f613a3efd5387fbbfc97164b04759b0ce2a9fab6a1d3bcceed88cd"
+  "mode": "simulator",
+  "contentHash": "b77bfe6699da5913f2f0c05f6dd944df5e39ab2e62aea7a275b3c2bccafb3271"
 }

@@ -3,13 +3,14 @@ import { Hardkas } from "../src/index.js";
 import {
   calculateContentHash,
   CURRENT_HASH_VERSION,
-  ARTIFACT_SCHEMAS
+  ARTIFACT_SCHEMAS,
+  finalizeTxPlanIdentity
 } from "@hardkas/artifacts";
 import * as fs from "node:fs";
 import * as path from "node:path";
 import * as os from "node:os";
 
-describe("0.12.0-rc.22 Lifecycle Integrity & Trust Boundary Tests", () => {
+describe("0.12.0-rc.23 Lifecycle Integrity & Trust Boundary Tests", () => {
   let sdk: Hardkas;
   let workspaceRoot: string;
 
@@ -30,8 +31,9 @@ describe("0.12.0-rc.22 Lifecycle Integrity & Trust Boundary Tests", () => {
     // Write a valid policy
     const policy = {
       schema: "hardkas.policy.v1",
-      hardkasVersion: "0.12.0-rc.22",
+      hardkasVersion: "0.12.0-rc.23",
       version: "1.0.0-alpha",
+      hashVersion: CURRENT_HASH_VERSION,
       networkId: "simnet",
       mode: "simulator",
       createdAt: new Date().toISOString(),
@@ -84,8 +86,9 @@ describe("0.12.0-rc.22 Lifecycle Integrity & Trust Boundary Tests", () => {
     // Write a DENY policy
     const policy = {
       schema: "hardkas.policy.v1",
-      hardkasVersion: "0.12.0-rc.22",
+      hardkasVersion: "0.12.0-rc.23",
       version: "1.0.0-alpha",
+      hashVersion: CURRENT_HASH_VERSION,
       networkId: "simnet",
       mode: "simulator",
       createdAt: new Date().toISOString(),
@@ -116,8 +119,9 @@ describe("0.12.0-rc.22 Lifecycle Integrity & Trust Boundary Tests", () => {
     });
     // Injects raw reference
     (plan as any).policyRefs = [fakePolicyId];
-    // Re-calculate plan hash
-    (plan as any).contentHash = calculateContentHash(plan, CURRENT_HASH_VERSION);
+    // Re-seal the identity like the producer (hash, derived planId, lineage.artifactId):
+    // a stale planId would fail LABEL_MISMATCH before the reference check runs.
+    finalizeTxPlanIdentity(plan as any);
 
     const result = await sdk.artifacts.verify(plan, {
       throwOnInvalid: false,
@@ -135,7 +139,7 @@ describe("0.12.0-rc.22 Lifecycle Integrity & Trust Boundary Tests", () => {
       amount: "10"
     });
     (plan as any).policyRefs = [fakePolicyId];
-    (plan as any).contentHash = calculateContentHash(plan, CURRENT_HASH_VERSION);
+    finalizeTxPlanIdentity(plan as any);
 
     // Running artifacts.verify with strict: true must throw REFERENCE_MISSING
     await expect(
@@ -146,8 +150,9 @@ describe("0.12.0-rc.22 Lifecycle Integrity & Trust Boundary Tests", () => {
   it("5. Tampered policy content must fail hash match", async () => {
     const policy = {
       schema: "hardkas.policy.v1",
-      hardkasVersion: "0.12.0-rc.22",
+      hardkasVersion: "0.12.0-rc.23",
       version: "1.0.0-alpha",
+      hashVersion: CURRENT_HASH_VERSION,
       networkId: "simnet",
       mode: "simulator",
       createdAt: new Date().toISOString(),
@@ -165,8 +170,17 @@ describe("0.12.0-rc.22 Lifecycle Integrity & Trust Boundary Tests", () => {
     // Clear cache so it reads from the tampered disk file
     sdk.artifacts.cache.clear();
 
-    // Verifying policy itself must fail
-    const result = await sdk.artifacts.verify(policy.contentHash, {
+    // Wave 11 · RESOLVER-1: locate the artifact by its explicit path (not by
+    // contentHash-as-generic-identity). The two concerns are independent:
+    //   (1) selection — locate the policy file (path);
+    //   (2) integrity — the persisted content no longer matches the declared
+    //       contentHash inside that file.
+    // The tamper above changed `.decision` but did NOT rewrite `.contentHash`
+    // in the JSON, so `verifyArtifactIntegrity` recomputes the hash over the
+    // tampered content, compares it to the still-declared original hash, and
+    // reports `content_hash_mismatch`. This is the same integrity assertion
+    // as before; only the locator changed.
+    const result = await sdk.artifacts.verify(policyFile, {
       throwOnInvalid: false
     });
     expect(result.valid).toBe(false);
@@ -185,9 +199,11 @@ describe("0.12.0-rc.22 Lifecycle Integrity & Trust Boundary Tests", () => {
 
     // Corrupt parent ID
     (signed as any).lineage.parentArtifactId = "c".repeat(64);
+    // One pass (lineage.artifactId is excluded by exact path); signedId is a derived label
+    // that must follow the new hash, otherwise the failure would be LABEL_MISMATCH.
     (signed as any).contentHash = calculateContentHash(signed, CURRENT_HASH_VERSION);
+    (signed as any).signedId = `signed-${(signed as any).contentHash.slice(0, 16)}`;
     (signed as any).lineage.artifactId = (signed as any).contentHash;
-    (signed as any).contentHash = calculateContentHash(signed, CURRENT_HASH_VERSION);
 
     // Parent mismatch or parent missing
     const result = await sdk.artifacts.verify(signed, {
@@ -285,7 +301,7 @@ describe("0.12.0-rc.22 Lifecycle Integrity & Trust Boundary Tests", () => {
     const trace = {
       schema: ARTIFACT_SCHEMAS.TX_TRACE,
       schemaVersion: "hardkas.artifact.v1",
-      hardkasVersion: "0.12.0-rc.22",
+      hardkasVersion: "0.12.0-rc.23",
       version: "1.0.0-alpha",
       hashVersion: CURRENT_HASH_VERSION,
       createdAt: new Date().toISOString(),
@@ -295,9 +311,11 @@ describe("0.12.0-rc.22 Lifecycle Integrity & Trust Boundary Tests", () => {
       steps: [],
       lineage: {
         artifactId: "",
-        lineageId: plan.lineage.lineageId,
+        // D-Q1.d: a root stores no copy of its own identity; children reference the
+        // root's real artifactId.
+        lineageId: plan.lineage.artifactId,
         parentArtifactId: plan.contentHash,
-        rootArtifactId: plan.lineage.rootArtifactId,
+        rootArtifactId: plan.lineage.artifactId,
         sequence: 2
       }
     };

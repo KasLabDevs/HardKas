@@ -8,22 +8,25 @@ export function registerReplayCommands(program: Command) {
     .description("Manage HardKAS transaction replays");
 
   replayCmd
-    .command("verify [path]")
+    .command("verify [artifact]")
     .description(
-      `Verify replay invariants for a directory of artifacts ${UI.maturity("stable")}`
+      `Verify deterministic simulator-mode replay for a receipt by exact artifactId or artifact file path. Real-node (kaspa consensus) receipts are not currently supported and will report REPLAY_MODE_UNSUPPORTED. ${UI.maturity("stable")}`
     )
     .option("--json", "Output as JSON", false)
     .option("--workspace <path>", "Override workspace root directory")
     .action(async (targetPath: string | undefined, options: any) => {
-      try {
-        const { runReplayVerify } = await import("../runners/replay-verify-runner.js");
-        const workspaceRoot = options.workspace
-          ? path.resolve(options.workspace)
-          : process.cwd();
-        await runReplayVerify({ path: targetPath || "", ...options, workspaceRoot });
-      } catch (e: unknown) {
-        throw new Error("Command failed");
-      }
+      // Wave 8 · DEF-18: preserve typed error identity. The previous
+      // `throw new Error("Command failed")` collapsed HardkasCliError into
+      // a generic Error, which the top-level renderer then serialized as
+      // `code: "UNKNOWN_ERROR"` — losing the specific replay classification
+      // (REPLAY_MODE_UNSUPPORTED, REPLAY_DIVERGED, etc.). Letting the
+      // typed error propagate makes the top-level renderer the single
+      // owner of the final failure envelope.
+      const { runReplayVerify } = await import("../runners/replay-verify-runner.js");
+      const workspaceRoot = options.workspace
+        ? path.resolve(options.workspace)
+        : process.cwd();
+      await runReplayVerify({ path: targetPath || "", ...options, workspaceRoot });
     });
   replayCmd
     .command("diff <idA> <idB>")

@@ -8,7 +8,7 @@
  */
 import fs from "node:fs/promises";
 import path from "node:path";
-import { calculateContentHash } from "@hardkas/artifacts";
+import { recomputeDeclaredContentHash, readDeclaredHashVersion, CURRENT_HASH_VERSION } from "@hardkas/artifacts";
 import type { TxId } from "@hardkas/core";
 import { computeQueryHash } from "../serialize.js";
 import { paginateAndFormatResult } from "../format.js";
@@ -169,8 +169,23 @@ export class ReplayQueryAdapter implements QueryAdapter {
         }
       }
 
+      // IC-2′.8 / IC-4′.4 (R-iii part 1): `status` is a decision input only when the
+      // receipt's hash authenticates it (FULL). A legacy or unverifiable receipt gets
+      // an explicit insufficient-evidence entry instead of a status-based verdict.
+      const scope = authScopeOf(receipt);
+      if (scope !== "FULL") {
+        divergences.push({
+          txId: receipt.txId,
+          kind: "insufficient-evidence",
+          field: "status",
+          expected: `status authenticated by hashVersion ${CURRENT_HASH_VERSION}`,
+          actual: describeUnauthenticated(receipt, scope)
+        });
+      }
+
       // 2. Pre/post state hash consistency
       if (
+        scope === "FULL" &&
         receipt.preStateHash &&
         receipt.postStateHash &&
         receipt.preStateHash === receipt.postStateHash &&
@@ -203,7 +218,7 @@ export class ReplayQueryAdapter implements QueryAdapter {
       // 4. UTXO count consistency
       const spentCount = receipt.spentUtxoIds?.length ?? 0;
       const createdCount = receipt.createdUtxoIds?.length ?? 0;
-      if (receipt.status === "confirmed" && spentCount === 0) {
+      if (scope === "FULL" && receipt.status === "confirmed" && spentCount === 0) {
         divergences.push({
           txId: receipt.txId,
           kind: "utxo-count-mismatch",
@@ -215,6 +230,7 @@ export class ReplayQueryAdapter implements QueryAdapter {
 
       // 5. Status/state consistency
       if (
+        scope === "FULL" &&
         receipt.status === "failed" &&
         receipt.postStateHash &&
         receipt.postStateHash !== receipt.preStateHash
@@ -283,41 +299,54 @@ export class ReplayQueryAdapter implements QueryAdapter {
       issues.push("Missing pre/post state hashes — replay comparison not possible");
     }
 
-    // 3. State transition validity
+    // IC-2′.8 / IC-4′.4: status-based invariants are evaluated only when the
+    // receipt's hash authenticates its status. Otherwise they are NOT established
+    // (fail closed) and the reason is stated.
+    const authScope = authScopeOf(receipt);
     let stateTransitionValid = true;
-    if (receipt.status === "confirmed") {
-      if (receipt.preStateHash === receipt.postStateHash) {
-        stateTransitionValid = false;
-        issues.push("Confirmed tx did not change state (pre === post)");
-      }
-    } else if (receipt.status === "failed") {
-      if (
-        receipt.preStateHash &&
-        receipt.postStateHash &&
-        receipt.preStateHash !== receipt.postStateHash
-      ) {
-        stateTransitionValid = false;
-        issues.push("Failed tx changed state (pre !== post)");
-      }
-    }
-
-    // 4. UTXO conservation
-    const spentCount = receipt.spentUtxoIds?.length ?? 0;
-    const createdCount = receipt.createdUtxoIds?.length ?? 0;
     let utxoConservation = true;
-    if (receipt.status === "confirmed") {
-      if (spentCount === 0) {
-        utxoConservation = false;
-        issues.push("Confirmed tx spent 0 UTXOs");
+    if (authScope !== "FULL") {
+      stateTransitionValid = false;
+      utxoConservation = false;
+      issues.push(
+        `Receipt status ${JSON.stringify(receipt.status)} is not authenticated (${describeUnauthenticated(receipt, authScope)}): state transition and UTXO conservation were not evaluated (IC-2′.8)`
+      );
+    } else {
+      // 3. State transition validity
+      if (receipt.status === "confirmed") {
+        if (receipt.preStateHash === receipt.postStateHash) {
+          stateTransitionValid = false;
+          issues.push("Confirmed tx did not change state (pre === post)");
+        }
+      } else if (receipt.status === "failed") {
+        if (
+          receipt.preStateHash &&
+          receipt.postStateHash &&
+          receipt.preStateHash !== receipt.postStateHash
+        ) {
+          stateTransitionValid = false;
+          issues.push("Failed tx changed state (pre !== post)");
+        }
       }
-      if (createdCount === 0) {
-        utxoConservation = false;
-        issues.push("Confirmed tx created 0 UTXOs");
+
+      // 4. UTXO conservation
+      const spentCount = receipt.spentUtxoIds?.length ?? 0;
+      const createdCount = receipt.createdUtxoIds?.length ?? 0;
+      if (receipt.status === "confirmed") {
+        if (spentCount === 0) {
+          utxoConservation = false;
+          issues.push("Confirmed tx spent 0 UTXOs");
+        }
+        if (createdCount === 0) {
+          utxoConservation = false;
+          issues.push("Confirmed tx created 0 UTXOs");
+        }
       }
     }
 
     const result: ReplayInvariantsResult = {
       txId: txId as TxId,
+      authScope,
       planIntegrity,
       receiptReproducible,
       stateTransitionValid,
@@ -380,10 +409,26 @@ function toSummary(receipt: any, trace: any | null): ReplaySummaryResult {
 
 function computeContentHashSafe(obj: any): string {
   try {
-    return calculateContentHash(obj);
+    return recomputeDeclaredContentHash(obj);
   } catch {
     return "error-computing-hash";
   }
+}
+
+/**
+ * What the receipt's content hash authenticated (Closure Pack D-Q1.e):
+ * FULL only for a current-version receipt that hashes to its identity.
+ */
+function authScopeOf(receipt: any): "FULL" | "LEGACY" | "NONE" {
+  const version = readDeclaredHashVersion(receipt);
+  if (version === null) return "NONE";
+  if (typeof receipt.contentHash !== "string" || computeContentHashSafe(receipt) !== receipt.contentHash) return "NONE";
+  return version === CURRENT_HASH_VERSION ? "FULL" : "LEGACY";
+}
+
+function describeUnauthenticated(receipt: any, scope: "LEGACY" | "NONE" | "FULL"): string {
+  if (scope === "LEGACY") return `hashVersion ${String(receipt.hashVersion)}: status not authenticated by that version`;
+  return "identity not established (missing/invalid hashVersion or contentHash): status not authenticated";
 }
 
 // ---------------------------------------------------------------------------
@@ -402,7 +447,9 @@ const DIVERGENCE_RULES: Record<DivergenceKind, string> = {
   "txid-mismatch":
     "Deterministic txId generation: same plan + same state + same daaScore = same txId.",
   "ordering-divergence":
-    "UTXO selection order must be deterministic. Non-deterministic ordering breaks replay invariants."
+    "UTXO selection order must be deterministic. Non-deterministic ordering breaks replay invariants.",
+  "insufficient-evidence":
+    "A status is a decision input only when the receipt's hash authenticates it (hashVersion 5). Legacy or unverifiable receipts yield no status-based verdict (IC-2′.8)."
 };
 
 function explainDivergence(d: ReplayDivergence): WhyBlock {

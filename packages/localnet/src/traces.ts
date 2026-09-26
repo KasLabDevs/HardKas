@@ -43,6 +43,22 @@ export interface StoredSimulatedTxTrace extends HardkasArtifactBase {
   readonly networkId: NetworkId;
   readonly events: readonly StoredTraceEvent[];
   readonly receiptPath?: string | undefined;
+  /**
+   * DEF-1a: strict verify requires `lineage`, `workflowId`, and `assumptionLevel`
+   * on every persisted lifecycle artifact. Older simulator traces omit these; the
+   * fields are optional so historical trace files remain readable per Wave 1
+   * backward-compatibility contract, but new trace writes MUST populate them
+   * from the parent receipt / plan.
+   */
+  readonly lineage?: {
+    readonly artifactId: string;
+    readonly lineageId: string;
+    readonly parentArtifactId: string;
+    readonly rootArtifactId: string;
+    readonly sequence: number;
+  };
+  readonly workflowId?: string;
+  readonly assumptionLevel?: string;
 }
 
 export function getDefaultTracesDir(cwd: string = process.cwd()): string {

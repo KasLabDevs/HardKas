@@ -1,5 +1,5 @@
 import { serializeBridgePayload, BridgeEntryPayload } from "./payload.js";
-import { calculateContentHash } from "@hardkas/artifacts";
+import { domainDigest } from "@hardkas/artifacts";
 
 export interface MiningResult {
   readonly nonce: number;
@@ -36,7 +36,7 @@ export function simulatePrefixMining(
     const payload = { ...payloadBase, nonce };
     const serialized = serializeBridgePayload(payload);
 
-    const hash = calculateContentHash({ payload: serialized });
+    const hash = domainDigest({ payload: serialized }); // a domain digest (IC-1′.7), never an artifact identity
 
     if (hash.startsWith(prefix)) {
       return { nonce, hash, attempts: attempts + 1 };

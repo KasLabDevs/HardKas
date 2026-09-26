@@ -4,6 +4,7 @@ import {
   SignedTxArtifact,
   createSimulatedSignedTxArtifact,
   calculateContentHash,
+  CURRENT_HASH_VERSION,
   HARDKAS_VERSION,
   createLineageTransition
 } from "@hardkas/artifacts";
@@ -76,9 +77,13 @@ export async function signTxPlanArtifact(input: {
   });
 
   if (planArtifact.mode === "simulator") {
+    // Wave 1.4 · IC-6′.2: a synthetic authorization is bound to the plan's identity
+    // and given by the plan's `from`. The account passed (`--account`) is validated
+    // against it (SIGNER_MISMATCH) and recorded in the authenticated body; without
+    // an account the plan's `from` is the authorizing identity.
     return createSimulatedSignedTxArtifact(
       planArtifact as TxPlan,
-      `simulated-signed-tx:${planArtifact.planId}`,
+      account ?? planArtifact.from.address,
       systemRuntimeContext
     ) as SignedTxArtifact;
   }
@@ -129,6 +134,7 @@ export async function signTxPlanArtifact(input: {
       schema: "hardkas.signedTx",
       hardkasVersion: HARDKAS_VERSION,
       version: "1.0.0-alpha",
+      hashVersion: CURRENT_HASH_VERSION,
       status: "signed",
       createdAt: new Date().toISOString(),
       txId: result.txId || "", // Ensure txId is present
@@ -155,7 +161,7 @@ export async function signTxPlanArtifact(input: {
       ...(planArtifact.assumptionRef ? { assumptionRef: planArtifact.assumptionRef } : {})
     };
 
-    const contentHash = calculateContentHash(artifact);
+    const contentHash = calculateContentHash(artifact, CURRENT_HASH_VERSION);
     artifact.signedId = `signed-${contentHash.slice(0, 16)}`;
     artifact.contentHash = contentHash;
     if (artifact.lineage) {

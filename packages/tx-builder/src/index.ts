@@ -10,6 +10,7 @@ export * from "./kaspa-wallet-adapter.js";
 export * from "./kaspa-uri.js";
 export * from "./utxo-mapper.js";
 export * from "./engine.js";
+export * from "./pending-spends.js";
 import { getCoinbaseMaturity } from "@hardkas/core";
 
 export interface CovenantBindingInput {

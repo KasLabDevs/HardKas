@@ -1,5 +1,6 @@
 import fs from "node:fs";
 import path from "node:path";
+import util from "node:util";
 import type { NetworkId } from "@hardkas/core";
 import { writeFileAtomicSync } from "@hardkas/core";
 import {
@@ -8,6 +9,52 @@ import {
   ARTIFACT_SCHEMAS,
   ARTIFACT_VERSION
 } from "@hardkas/artifacts";
+
+/**
+ * Secret-bearing account fields — these must never reach stdout, stderr,
+ * artifacts, receipts, or generic object stringification.
+ * `keystoreRef` and `privateKeyEnv` are pointers to secrets and are also treated as sensitive.
+ */
+const ACCOUNT_SECRET_FIELDS = new Set([
+  "privateKey",
+  "privateKeyEnv",
+  "keystoreRef"
+]);
+
+/**
+ * Returns a shallow clone of an account with secret-bearing fields replaced by "[REDACTED]".
+ * Preserves `name`, `address`, `publicKey`, `createdAt`, and any other non-secret metadata.
+ */
+export function redactAccountForLog<T extends Record<string, unknown>>(a: T): T {
+  const out: Record<string, unknown> = {};
+  for (const k of Object.keys(a)) {
+    out[k] = ACCOUNT_SECRET_FIELDS.has(k) && a[k] !== undefined ? "[REDACTED]" : a[k];
+  }
+  return out as T;
+}
+
+/**
+ * Attaches a self-redacting `util.inspect.custom` handler so `console.log(account)`
+ * and Node's default error formatter never surface secrets. `JSON.stringify` is
+ * NOT affected — the disk-write path in `saveRealAccountStore` still round-trips
+ * the raw store, which is why disk permissions are enforced to 0o600.
+ */
+export function attachInspectRedactor<T extends object>(obj: T): T {
+  try {
+    Object.defineProperty(obj, util.inspect.custom, {
+      value(this: T, _depth: number, _opts: unknown, inspect: (v: unknown, o?: unknown) => string) {
+        return inspect(redactAccountForLog(this as Record<string, unknown>), _opts);
+      },
+      enumerable: false,
+      configurable: true,
+      writable: true
+    });
+  } catch {
+    // Non-fatal: if the property can't be defined (frozen object), redaction still
+    // works via `redactAccountForLog` used explicitly at logging sites.
+  }
+  return obj;
+}
 
 export interface RealAccountStore extends HardkasArtifactBase {
   readonly schema: "hardkas.realAccountStore.v1";
@@ -96,6 +143,13 @@ export function loadRealAccountStoreSync(options?: {
       console.warn(
         `     Recommendation: Re-import these accounts using encrypted keystores.\n`
       );
+    }
+
+    // Defense in depth: every loaded account carries a redactor so any accidental
+    // console.log / stack-trace inspection stringifies with secrets masked. Raw
+    // access via `account.privateKey` still works for internal signing paths.
+    for (const a of store.accounts) {
+      attachInspectRedactor(a as unknown as object);
     }
 
     return store;

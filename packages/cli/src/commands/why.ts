@@ -1,162 +1,195 @@
 import { Command } from "commander";
-import { UI, handleError } from "../ui.js";
-import { readArtifact } from "@hardkas/artifacts";
-import fs from "fs";
 import path from "path";
+import { UI, handleError } from "../ui.js";
 import { HardkasSchemas } from "@hardkas/artifacts";
+import { LookupUsageError, lookupFromArgs, namespaceRequiredHint } from "../runners/lookup-args.js";
+import { describeWhyNode } from "../runners/why-narrative.js";
 
 export function registerWhyCommand(program: Command) {
   program
     .command("why")
-    .description("Explain the causal lineage of a given artifact ID")
-    .argument("<artifactId>", "The full or partial ID of the artifact")
+    .description(
+      "Explain the causal lineage of an artifact resolved by exact artifactId, artifact file path, or a namespaced identifier (--plan, --signed, --tx, --workflow)"
+    )
+    .argument(
+      "[artifact]",
+      "Exact 64-hex artifactId (the recomputed contentHash) or absolute/workspace-relative path to the artifact .json file"
+    )
+    .option("--artifact <id-or-path>", "64-hex artifactId or workspace path (same as the positional)")
+    .option("--plan <planId>", "Resolve a plan by its derived label (verified against its hash)")
+    .option("--signed <signedId>", "Resolve a signed transaction by its derived label (verified)")
+    .option("--tx <txId>", "Resolve the submission receipt for a txId (never the signed)")
+    .option("--workflow <workflowId>", "Resolve a workflow run by its correlation id")
     .option("--json", "Output lineage graph in JSON format")
     .option("--workspace <path>", "Override workspace root directory")
     .action(
-      async (artifactId: string, options: { json?: boolean; workspace?: string }) => {
+      async (
+        artifactInput: string | undefined,
+        options: { json?: boolean; workspace?: string; artifact?: string; plan?: string; signed?: string; tx?: string; workflow?: string }
+      ) => {
         UI.setJsonMode(!!options.json);
         try {
-          const root = options.workspace
+          const workspaceRoot = options.workspace
             ? path.resolve(options.workspace)
             : process.cwd();
-          if (options.workspace && !fs.existsSync(root)) {
-            throw new Error(`Invalid workspace: Directory '${root}' does not exist.`);
-          }
-          const artifactsDir = path.join(root, ".hardkas", "artifacts");
 
-          if (!fs.existsSync(artifactsDir)) {
-            throw new Error(
-              "No artifacts directory found. Run this from a HardKAS workspace."
+          // Wave 5 · DEF-17: single delegation point. Wave 1.2 · IC-5′: namespaced,
+          // verified lookups (see packages/artifacts/src/resolve.ts).
+          const { resolveArtifactHandle, ProjectArtifactStore } = await import(
+            "@hardkas/artifacts"
+          );
+
+          let lookup;
+          try {
+            lookup = lookupFromArgs(artifactInput, options);
+          } catch (e: any) {
+            if (e instanceof LookupUsageError) {
+              UI.semanticError("Usage", e.message, "identity contract", "one target per call", "pass an artifactId, a path, or exactly one of --plan/--signed/--tx/--workflow");
+              throw new Error("Command failed");
+            }
+            throw e;
+          }
+
+          let handle;
+          try {
+            handle = await resolveArtifactHandle(
+              lookup.input,
+              workspaceRoot,
+              lookup.namespace ? { namespace: lookup.namespace } : {}
             );
+          } catch (e: any) {
+            if (e?.code === "NAMESPACE_REQUIRED" && !options.json) {
+              UI.semanticError(
+                "Namespace Required",
+                e.message,
+                "identity contract",
+                "a label, txId or workflowId is not an artifactId",
+                namespaceRequiredHint("why", e)
+              );
+            }
+            // The typed error (code) reaches the renderer / JSON envelope unchanged.
+            throw e;
           }
 
-          // 1. Resolve artifact file
-          const files = fs.readdirSync(artifactsDir).filter((f) => f.endsWith(".json"));
-          const matches = files.filter((f) => f.includes(artifactId));
+          // Walk the causal chain from the resolved artifact toward root, through the
+          // authenticated lineage.parentArtifactId only (IC-5′.6), with a visited-set guard.
+          const store = new ProjectArtifactStore(workspaceRoot);
+          const lineage: any[] = [handle.artifact];
+          const visited = new Set<string>([handle.artifactId]);
 
-          if (matches.length === 0) {
-            throw new Error(`Artifact matching "${artifactId}" not found.`);
-          }
-          if (matches.length > 1) {
-            throw new Error(
-              `Multiple artifacts match "${artifactId}":\n  ${matches.join("\n  ")}`
-            );
-          }
+          let current: any = handle.artifact;
+          const MAX_LINEAGE_DEPTH = 64;
+          for (let depth = 0; depth < MAX_LINEAGE_DEPTH; depth++) {
+            const parentId: string | undefined =
+              current?.lineage?.parentArtifactId;
+            if (typeof parentId !== "string" || parentId.length === 0) break;
+            if (visited.has(parentId)) break;
 
-          const targetFile = matches[0]!;
-          const targetId = targetFile.replace(".json", "");
-
-          // 2. Walk lineage
-          const chain: any[] = [];
-          let currentId: string | undefined = targetId;
-
-          while (currentId) {
-            const currentFile = files.find((f) => f.includes(currentId as string));
-            if (!currentFile) {
-              chain.push({
-                id: currentId,
-                status: "MISSING",
-                error: "Artifact file not found in workspace"
-              });
+            let parent: any;
+            try {
+              parent = await store.readArtifact(parentId);
+            } catch {
               break;
             }
+            visited.add(parentId);
+            lineage.unshift(parent);
+            current = parent;
+          }
 
-            const artifact: any = await readArtifact(
-              path.join(artifactsDir, currentFile)
-            );
+          // Build the chain in target->root order so existing presentation
+          // logic (which reverses to root->target) keeps working unchanged.
+          const chain: any[] = [];
+          for (let i = lineage.length - 1; i >= 0; i--) {
+            const artifact: any = lineage[i];
 
             let role = "Unknown";
-            if (artifact.schema?.startsWith(HardkasSchemas.TxPlan)) role = "Transaction Plan";
-            if (artifact.schema?.startsWith(HardkasSchemas.SignedTx))
-              role = "Signed Transaction";
-            if (artifact.schema?.startsWith(HardkasSchemas.TxReceipt))
-              role = "Transaction Receipt";
-            if (artifact.schema?.startsWith(HardkasSchemas.ReplayV1))
-              role = "Replay Verification";
+            if (typeof artifact.schema === "string") {
+              if (artifact.schema.startsWith(HardkasSchemas.TxPlan))
+                role = "Transaction Plan";
+              if (artifact.schema.startsWith(HardkasSchemas.SignedTx))
+                role = "Signed Transaction";
+              if (artifact.schema.startsWith(HardkasSchemas.TxReceipt))
+                role = "Transaction Receipt";
+              if (artifact.schema.startsWith(HardkasSchemas.ReplayV1))
+                role = "Replay Verification";
+            }
+
+            // IC-5′.11: the canonical identity, never a label.
+            const nodeId =
+              i === lineage.length - 1
+                ? handle.artifactId
+                : artifact.lineage?.artifactId || artifact.contentHash || "unknown";
 
             const node: any = {
-              id: currentFile.replace(".json", ""),
+              id: nodeId,
               schema: artifact.schema,
               role,
               createdAt: artifact.createdAt || artifact.executionTime,
               network: artifact.networkId || "unknown",
+              ...(typeof artifact.txId === "string" ? { txId: artifact.txId } : {}),
               lineage: artifact.lineage || null
             };
 
-            // Extract useful details based on schema
-            if (artifact.schema?.startsWith(HardkasSchemas.SignedTx) && artifact.signatures) {
-              node.details = `Signed by ${Object.keys(artifact.signatures).join(", ")}`;
-            } else if (artifact.schema?.startsWith(HardkasSchemas.TxReceipt)) {
-              node.details = `Included in block ${artifact.blockHash || "unknown"}`;
-            } else if (artifact.schema?.startsWith(HardkasSchemas.TxPlan)) {
-              const outCount = artifact.transaction?.outputs?.length || 0;
-              node.details = `Transfers to ${outCount} outputs`;
-            } else if (artifact.schema?.startsWith(HardkasSchemas.ReplayV1)) {
-              node.details = `Verified: ${artifact.status}`;
-            }
+            const details = describeWhyNode(artifact);
+            if (details) node.details = details;
 
             chain.push(node);
-
-            // Move to parent
-            currentId =
-              artifact.lineage?.parentArtifactId ||
-              (artifact.lineage?.parents ? artifact.lineage.parents[0] : undefined) ||
-              (artifact.parentArtifactIds ? artifact.parentArtifactIds[0] : undefined) ||
-              artifact.sourcePlanId ||
-              artifact.planId ||
-              artifact.sourceSignedTxId ||
-              artifact.signedTxId ||
-              artifact.receiptId;
           }
 
+          const targetId = chain[0]?.id;
+
           if (options.json) {
-            UI.writeJson({ target: targetId, chain });
+            UI.writeJson({
+              target: targetId,
+              authScope: handle.authScope,
+              resolvedBy: handle.resolvedBy,
+              resolvedPath: handle.path,
+              chain
+            });
             return;
           }
 
-          // Human readable output
-          UI.header(`Causal Lineage: ${targetId.substring(0, 8)}...`);
+          UI.header(
+            `Causal Lineage: ${
+              typeof targetId === "string" ? targetId.substring(0, 8) : "unknown"
+            }...`
+          );
 
-          // We collected child to root. Reverse it to print root -> child.
           const reversed = [...chain].reverse();
-
           for (let i = 0; i < reversed.length; i++) {
             const node = reversed[i];
             const isTarget = node.id === targetId;
             const prefix = i === 0 ? "○" : "└─●";
             const indent = "  ".repeat(i);
 
-            if (node.status === "MISSING") {
-              UI.raw(`  ${indent}${prefix} ${node.id} (MISSING FROM WORKSPACE)`);
-              continue;
-            }
-
             UI.raw(
               `  ${indent}${prefix} ${isTarget ? "\x1b[32m\x1b[1m" : "\x1b[37m"}${node.role}\x1b[0m`
             );
             UI.raw(`  ${indent}  \x1b[90mID:   ${node.id}\x1b[0m`);
+            if (node.txId) {
+              UI.raw(`  ${indent}  \x1b[90mTxID: ${node.txId}\x1b[0m`);
+            }
             if (node.details) {
               UI.raw(`  ${indent}  \x1b[90mInfo: ${node.details}\x1b[0m`);
             }
-            UI.raw(`  ${indent}  \x1b[90mTime: ${node.createdAt || "unknown"}\x1b[0m`);
+            UI.raw(
+              `  ${indent}  \x1b[90mTime: ${node.createdAt || "unknown"}\x1b[0m`
+            );
           }
 
           UI.emptyLine();
 
-          // Explain next steps based on the target artifact type
-          const nextSteps = [];
-          const targetNode = chain[0]; // The one requested
-
-          if (targetNode.schema === HardkasSchemas.TxPlanV1) {
+          const nextSteps: string[] = [];
+          const targetNode = chain[0];
+          if (targetNode?.schema === HardkasSchemas.TxPlanV1) {
             nextSteps.push("hardkas dev tx sign " + targetId);
-          } else if (targetNode.schema === HardkasSchemas.SignedTxV1) {
+          } else if (targetNode?.schema === HardkasSchemas.SignedTxV1) {
             nextSteps.push("hardkas dev tx send " + targetId);
-          } else if (targetNode.schema === HardkasSchemas.TxReceiptV1) {
+          } else if (targetNode?.schema === HardkasSchemas.TxReceiptV1) {
             nextSteps.push("hardkas dev last --replay");
-          } else if (targetNode.schema === HardkasSchemas.ReplayV1) {
+          } else if (targetNode?.schema === HardkasSchemas.ReplayV1) {
             nextSteps.push("hardkas status");
           }
-
           UI.printNextSteps(nextSteps);
         } catch (e) {
           handleError(e, "Why Error");

@@ -20,11 +20,19 @@ export async function ensureDevAccounts(workspaceDir: string): Promise<void> {
     await fs.promises.mkdir(devAccountsDir, { recursive: true });
   }
 
-  // Pre-generate alice (0), bob (1), carol (2), dave (3)
+  // Pre-generate alice (0), bob (1), carol (2), dave (3), erin (4).
+  //
+  // DEF-27 (Wave 4): erin was previously advertised as kind:"kaspa" by
+  // createDeterministicAccounts() (in @hardkas/localnet) with a placeholder
+  // address, but never provisioned here. That advertised-without-authority
+  // state violated the deterministic identity invariant. Erin is now
+  // included so all five advertised identities have reproducible signing
+  // authority under the same canonical scheme.
   await getOrCreateDevAccount(workspaceDir, 0, "alice");
   await getOrCreateDevAccount(workspaceDir, 1, "bob");
   await getOrCreateDevAccount(workspaceDir, 2, "carol");
   await getOrCreateDevAccount(workspaceDir, 3, "dave");
+  await getOrCreateDevAccount(workspaceDir, 4, "erin");
 }
 
 export async function getOrCreateDevAccount(

@@ -70,7 +70,10 @@ export function buildHardkasProgram(options?: { forDocs?: boolean, loadedConfig?
     .description("HardKAS: Kaspa-native developer operating environment")
     .version(HARDKAS_VERSION)
     .showHelpAfterError(true)
-    .showSuggestionAfterError(true);
+    .showSuggestionAfterError(true)
+    // AUX-08: excess positional arguments are a usage error for every command
+    // registered below (inherited by subcommands), never silently ignored.
+    .allowExcessArguments(false);
 
   // Register modular command groups
   registerInitCommands(program);
