@@ -21,8 +21,20 @@ import {
   readTxReceiptArtifact,
   HARDKAS_VERSION,
   ARTIFACT_VERSION,
-  getBroadcastableSignedTransaction
+  getBroadcastableSignedTransaction,
+  syntheticTxIdFor,
+  checkSyntheticAuthorization,
+  authorizablePlanIdentity,
+  SYNTHETIC_AUTHORIZATION_FORMAT,
+  deriveSubmissionFee,
+  deriveTxStatus,
+  deriveObserverId,
+  TX_STATUS_POLICY_HARDKAS_DEFAULT_V1,
+  type DerivedTxStatus,
+  type TxStatusPolicy,
+  type TxObservation
 } from "@hardkas/artifacts";
+import { observeTxOnce, rpcObserverFor } from "./tx-observer.js";
 import { coreEvents } from "@hardkas/core";
 import {
   HardkasAccount,
@@ -116,7 +128,96 @@ export class HardkasTx {
   constructor(private sdk: Hardkas) {}
 
   /**
-   * Waits for a transaction to be accepted into the DAG.
+   * Wave 2(a) · Q4 / IC-2′: ONE look at the configured node about `txId`, sealed and
+   * (by default) persisted as `hardkas.txObservation.v1`. The observer's cursor is,
+   * in order: `since`, the latest stored observation's sink, the submission's
+   * `submitPoint.sinkHash`, the node's pruning point. Nothing here decides a state.
+   */
+  async observe(
+    txId: string,
+    options: { since?: string; maxBatches?: number; persist?: boolean; rpcUrl?: string; policy?: TxStatusPolicy } = {}
+  ): Promise<{ observation: TxObservation; observationPath?: string; derived: DerivedTxStatus }> {
+    if (/^synthetic-[0-9a-f]{64}$/.test(txId)) {
+      throw new HardkasError(
+        "OBSERVATION_SYNTHETIC_TXID",
+        `${txId} is a synthetic (simulator) txId: there is no network to observe; its state derives from the simulator receipt`
+      );
+    }
+    const { ProjectArtifactStore } = await import("@hardkas/artifacts");
+    const store = new ProjectArtifactStore(this.sdk.workspace.root);
+    const submission = await this.findSubmissionForTxId(txId);
+    const previous = store.listObservationsByTxId(txId).observations as any[];
+    previous.sort((a, b) => (BigInt(a.point.sinkBlueScore) < BigInt(b.point.sinkBlueScore) ? -1 : 1));
+    const latest = previous[previous.length - 1];
+    // The block currently established as accepting (none after a REORGED derivation).
+    const soFar = deriveTxStatus({ txId, ...(submission ? { submission } : {}), observations: previous });
+    const currentAccepting =
+      soFar.status === "ACCEPTED" || soFar.status === "CONFIRMED" || soFar.status === "FINALIZED" ? soFar.acceptingBlockHash : undefined;
+    // Cursor: an explicit `since`, else where the last scan stopped, else the last
+    // observation point, else the submit point; the observer falls back to the pruning point.
+    const since =
+      options.since ??
+      (latest?.finding?.type === "not_found" && typeof latest.finding.scannedTo === "string" ? (latest.finding.scannedTo as string) : undefined) ??
+      (latest?.point?.sinkHash as string | undefined) ??
+      ((submission as any)?.submitPoint?.sinkHash as string | undefined);
+    const networkId = ((submission as any)?.networkId ?? this.sdk.network) as TxObservation["networkId"];
+    const mode = ((submission as any)?.mode ?? "rpc") as TxObservation["mode"];
+
+    const observation = await observeTxOnce(
+      rpcObserverFor(this.sdk.rpc),
+      {
+        txId,
+        observerId: this.observerId(),
+        ...(submission?.contentHash ? { submissionArtifactId: submission.contentHash as string } : {}),
+        ...(since ? { since } : {}),
+        ...(currentAccepting ? { previousAcceptingBlockHash: currentAccepting } : {}),
+        ...(options.maxBatches !== undefined ? { maxBatches: options.maxBatches } : {}),
+        networkId,
+        mode,
+        ...((submission as any)?.execution ? { execution: (submission as any).execution } : {}),
+        ...(options.rpcUrl ? { rpcUrl: options.rpcUrl } : {}),
+        ...((submission as any)?.workflowId ? { workflowId: (submission as any).workflowId } : {}),
+        ...((submission as any)?.assumptionLevel ? { assumptionLevel: (submission as any).assumptionLevel } : {})
+      },
+      systemRuntimeContext
+    );
+    let observationPath: string | undefined;
+    if (options.persist ?? true) {
+      observationPath = (await this.sdk.artifacts.write(observation as any)).absolutePath;
+    }
+    const derived = deriveTxStatus({
+      txId,
+      ...(submission ? { submission } : {}),
+      observations: [...previous, observation],
+      ...(options.policy ? { policy: options.policy } : {})
+    });
+    return { observation, ...(observationPath ? { observationPath } : {}), derived };
+  }
+
+  /**
+   * The opaque, stable identity of THIS SDK instance's RPC observer: a digest of the
+   * configured target and its raw locator (never exposed). Same configuration ⇒ same
+   * observer ⇒ one history; a different node configuration is a different observer.
+   */
+  observerId(): string {
+    const target = this.sdk.config.config.defaultNetwork || "simnet";
+    const locator = (this.sdk.config.config.networks as any)?.[target]?.rpcUrl;
+    return deriveObserverId({ kind: "rpc", target, ...(typeof locator === "string" ? { locator } : {}) });
+  }
+
+  /** The verified submission (or simulator receipt) recorded for `txId`, if exactly one exists. */
+  private async findSubmissionForTxId(txId: string): Promise<any | undefined> {
+    try {
+      return await this.sdk.artifacts.read({ tx: txId });
+    } catch (e: any) {
+      if (e?.code === "RECEIPT_AMBIGUOUS_CONFLICT" || e?.code === "CANDIDATE_INVALID") throw e;
+      return undefined;
+    }
+  }
+
+  /**
+   * Waits until the derived state is `ACCEPTED` (or deeper): observed acceptance by a
+   * chain block. Each poll persists ONE observation; the state is derived, never stored.
    */
   async waitForAccepted(options: {
     txId: string;
@@ -124,53 +225,23 @@ export class HardkasTx {
     pollIntervalMs?: number | undefined;
     signal?: AbortSignal | undefined;
   }) {
-    // If the node has index enabled, we could query getTransaction.
-    // However, on standard nodes, we must monitor the virtual chain or mempool.
-    // For this primitive, if the tx is not in the mempool, we check if it is in the DAG
-    // by using a recent startHash.
-    
-    // 1. Snapshot a recent tip as our search boundary
-    let startHash = "00";
-    try {
-      const dagInfo = await this.sdk.rpc.getBlockDagInfo();
-      startHash = dagInfo.tipHashes?.[0] || "00";
-    } catch(e) {}
-
     return pollCondition(
       async () => {
-        // Try mempool first to see if it's still pending
-        try {
-          const mempool = await this.sdk.rpc.getMempoolEntry(options.txId);
-          if (mempool) {
-             return { ok: false, lastObservedState: { status: "mempool", txId: options.txId } };
-          }
-        } catch(e) {}
-
-        // Not in mempool, might be accepted. Let's traverse from startHash
-        try {
-          const vchain = await (this.sdk.rpc as any).call("getVirtualChainFromBlockV2", {
-            startHash,
-            includeAcceptedTransactionIds: true
-          });
-          
-          if (vchain && vchain.chainBlockAcceptedTransactions) {
-            for (const entry of vchain.chainBlockAcceptedTransactions) {
-              const txs = entry.acceptedTransactions ?? [];
-              if (txs.some((tx: any) => (tx.transactionId ?? tx.id ?? tx.verboseData?.transactionId) === options.txId)) {
-                // Update our search boundary so we don't re-scan next time if needed
-                startHash = (await this.sdk.rpc.getBlockDagInfo()).tipHashes?.[0] || startHash;
-                return { ok: true, value: { status: "accepted", txId: options.txId, acceptingBlockHash: entry.blockHash }, lastObservedState: { status: "accepted" } };
-              }
-            }
-          }
-          
-          // Update startHash to the tip of this vchain so we don't re-scan the same blocks next tick
-          if (vchain && vchain.addedChainBlocks && vchain.addedChainBlocks.length > 0) {
-             startHash = vchain.addedChainBlocks[vchain.addedChainBlocks.length - 1];
-          }
-        } catch(e) {}
-
-        return { ok: false, lastObservedState: { status: "not_found", txId: options.txId } };
+        const { derived } = await this.observe(options.txId);
+        if (derived.status === "ACCEPTED" || derived.status === "CONFIRMED" || derived.status === "FINALIZED") {
+          return {
+            ok: true,
+            value: {
+              status: "accepted",
+              txId: options.txId,
+              acceptingBlockHash: derived.acceptingBlockHash,
+              confirmations: Number(derived.confirmations?.blue ?? 0),
+              derived
+            },
+            lastObservedState: { status: derived.status }
+          };
+        }
+        return { ok: false, lastObservedState: { status: derived.status, txId: options.txId } };
       },
       "TX_ACCEPTANCE_TIMEOUT",
       "Timeout waiting for transaction acceptance",
@@ -179,7 +250,9 @@ export class HardkasTx {
   }
 
   /**
-   * Waits for a transaction to reach a minimum number of confirmations.
+   * Waits until the observed blue-score depth of the accepting block reaches
+   * `minConfirmations` (Q4 point 3: `sinkBlueScore − acceptingBlueScore`, the node's
+   * own unit). `minConfirmations` is the caller's policy, not a Kaspa parameter.
    */
   async waitForConfirmations(options: {
     txId: string;
@@ -188,51 +261,39 @@ export class HardkasTx {
     pollIntervalMs?: number | undefined;
     signal?: AbortSignal | undefined;
   }) {
-    let acceptingBlockHash: string | undefined;
-    let acceptedAtDaaScore: bigint | undefined;
-    
-    // First wait for it to be accepted
-    const accepted = await this.waitForAccepted({
-      txId: options.txId,
-      timeoutMs: options.timeoutMs,
-      pollIntervalMs: options.pollIntervalMs,
-      signal: options.signal
-    });
-    
-    acceptingBlockHash = (accepted as any).acceptingBlockHash;
-
+    const policy: TxStatusPolicy = {
+      ...TX_STATUS_POLICY_HARDKAS_DEFAULT_V1,
+      policyId: "hardkas.txStatusPolicy.caller",
+      origin: "user",
+      minConfirmations: options.minConfirmations
+    };
     return pollCondition(
       async () => {
-        try {
-          // If we have the accepting block, we can fetch its DAA score
-          if (acceptingBlockHash && !acceptedAtDaaScore) {
-            const blockInfo = await (this.sdk.rpc as any).call("getBlock", { hash: acceptingBlockHash, includeTransactions: false });
-            if (blockInfo && blockInfo.block && blockInfo.block.header) {
-              acceptedAtDaaScore = BigInt(blockInfo.block.header.daaScore);
-            }
-          }
-
-          const dagInfo = await this.sdk.rpc.getBlockDagInfo();
-          const virtualDaaScore = BigInt(dagInfo.virtualDaaScore || 0);
-          
-          if (acceptedAtDaaScore) {
-             const confirmations = Number(virtualDaaScore - acceptedAtDaaScore);
-             if (confirmations >= options.minConfirmations) {
-               return { 
-                 ok: true, 
-                 value: { status: "confirmed", confirmations, acceptingBlockHash, observedAtDaaScore: virtualDaaScore.toString() },
-                 lastObservedState: { status: "confirmed", confirmations, required: options.minConfirmations }
-               };
-             } else {
-               return {
-                 ok: false,
-                 lastObservedState: { status: "accepted", confirmations, required: options.minConfirmations }
-               };
-             }
-          }
-        } catch(e) {}
-
-        return { ok: false, lastObservedState: { status: "checking_confirmations" } };
+        const { derived, observation } = await this.observe(options.txId, { policy });
+        const confirmations = derived.confirmations ? Number(derived.confirmations.blue) : undefined;
+        if (
+          derived.status === "FINALIZED" ||
+          ((derived.status === "CONFIRMED" || derived.status === "ACCEPTED") &&
+            confirmations !== undefined &&
+            BigInt(derived.confirmations!.blue) >= BigInt(policy.minConfirmations))
+        ) {
+          return {
+            ok: true,
+            value: {
+              status: "confirmed",
+              confirmations,
+              confirmationUnit: "blue-score",
+              acceptingBlockHash: derived.acceptingBlockHash,
+              observedAtDaaScore: observation.point.virtualDaaScore,
+              derived
+            },
+            lastObservedState: { status: derived.status, confirmations, required: options.minConfirmations }
+          };
+        }
+        return {
+          ok: false,
+          lastObservedState: { status: derived.status, ...(confirmations !== undefined ? { confirmations } : {}), required: options.minConfirmations }
+        };
       },
       "TX_CONFIRMATION_TIMEOUT",
       "Timeout waiting for transaction confirmations",
@@ -252,6 +313,8 @@ export class HardkasTx {
     policy?: string;
     networkProfile?: string;
     assumption?: string;
+    /** AUD-28: explicit change destination; default = the sender's address. Validated, then forwarded to the planner. */
+    changeAddress?: string;
   }): Promise<TxPlanArtifact> {
     const fromAccount =
       typeof options.from === "string"
@@ -300,9 +363,15 @@ export class HardkasTx {
     // Address Preflight Validation
     validateAddressNetwork(fromAccount.address, activeNetwork, allowMainnet);
     validateAddressNetwork(toAccount.address, activeNetwork, allowMainnet);
-    if ((options as any).changeAddress) {
-      validateAddressNetwork((options as any).changeAddress, activeNetwork, allowMainnet);
+    if (options.changeAddress) {
+      validateAddressNetwork(options.changeAddress, activeNetwork, allowMainnet);
     }
+    // AUD-28: validated above; forwarded to whichever planner runs (never dropped).
+    const changeRequest = options.changeAddress ? { changeAddress: options.changeAddress } : {};
+
+    // Wave 2(c) · AUD-19: the mempool observation the real-network snapshot was
+    // filtered against, recorded in the plan (observer-local evidence).
+    let pendingSpendEvidence: import("@hardkas/tx-builder").PendingSpendEvidence | undefined;
 
     // Create UtxoProvider
     const utxoProvider: UtxoProvider = {
@@ -330,7 +399,19 @@ export class HardkasTx {
             };
           });
         } else {
-          const res = await this.sdk.query.getSpendableUtxos({ address, excludePending: true });
+          let observedAtDaaScore: bigint | undefined;
+          try {
+            const info = await this.sdk.rpc.getBlockDagInfo();
+            observedAtDaaScore = info.virtualDaaScore !== undefined ? BigInt(info.virtualDaaScore) : undefined;
+          } catch {
+            observedAtDaaScore = undefined;
+          }
+          const res = await this.sdk.query.getSpendableUtxos({
+            address,
+            excludePending: true,
+            ...(observedAtDaaScore !== undefined ? { observedAtDaaScore } : {})
+          });
+          pendingSpendEvidence = res.pendingSpendEvidence;
           const rpcUtxos = res.data;
           return rpcUtxos.map((u: any) => {
             const utxo: any = {
@@ -405,7 +486,8 @@ export class HardkasTx {
         toAddress: toAccount.address,
         amountSompi,
         feeRate,
-        networkId: activeNetwork
+        networkId: activeNetwork,
+        ...changeRequest
       });
     } else {
       result = await planService.planTransactionUpstream({
@@ -413,7 +495,8 @@ export class HardkasTx {
         toAddress: toAccount.address,
         amountSompi,
         feeRate,
-        networkId: activeNetwork
+        networkId: activeNetwork,
+        ...changeRequest
       });
     }
 
@@ -458,7 +541,8 @@ export class HardkasTx {
         // (SYNTHETIC_SIMULATOR). Real networks must always show
         // KASPA_WASM_GENERATOR — the dispatch above enforces that.
         ...(result.plannerAuthority ? { plannerAuthority: result.plannerAuthority } : {}),
-        ...(result.plannerAuthorityDetail ? { plannerAuthorityDetail: result.plannerAuthorityDetail } : {})
+        ...(result.plannerAuthorityDetail ? { plannerAuthorityDetail: result.plannerAuthorityDetail } : {}),
+        ...(pendingSpendEvidence ? { pendingSpendEvidence } : {})
       }
     }) as unknown as TxPlanArtifact;
 
@@ -808,6 +892,18 @@ export class HardkasTx {
         );
       }
 
+      // Wave 1.4 · IC-6′.1/.5: the plan reference is the partial's AUTHENTICATED
+      // `authorization.planArtifactId`, carried unchanged through every append. A
+      // partial without one is legacy and unbound: it cannot be completed.
+      const bound = partialTx.authorization;
+      if (bound?.kind !== "synthetic" || typeof bound.planArtifactId !== "string" || !/^[0-9a-f]{64}$/.test(bound.planArtifactId)) {
+        throw new HardkasError(
+          "LEGACY_UNBOUND_SIGNED",
+          "The partially signed artifact carries no authenticated plan reference: it is legacy and not bound to any plan. Re-authorize the plan with `hardkas tx sign` from the first signature."
+        );
+      }
+      const boundPlanArtifactId: string = bound.planArtifactId;
+
       const signerAddress = resolvedAccount?.address;
       if (!signerAddress) {
         throw new Error(`Signer account '${resolvedAccount?.name}' has no address.`);
@@ -829,13 +925,13 @@ export class HardkasTx {
         );
       }
 
-      // Generate signature
+      // IC-6′.4: a synthetic entry is never presented as a signature.
       const signatureEntry = {
         signer: signerAddress,
-        signature: `simulated-signature-of-${signerAddress}`
+        kind: "synthetic" as const
       };
 
-      // Append signature and sort alphabetically by signer address to ensure deterministic hash
+      // Append and sort alphabetically by signer address to ensure deterministic hash
       const newSignatures = [...sigs, signatureEntry].sort((a, b) =>
         deterministicCompare(a.signer, b.signer)
       );
@@ -855,6 +951,12 @@ export class HardkasTx {
       const draft: any = {
         ...partialTx,
         status: finalStatus,
+        // IC-6′.3: the signer set lives in the authenticated body.
+        authorization: {
+          kind: "synthetic",
+          planArtifactId: boundPlanArtifactId,
+          signers: newSignatures.map((s) => s.signer)
+        },
         multisig: {
           ...partialTx.multisig,
           signatures: newSignatures
@@ -864,11 +966,18 @@ export class HardkasTx {
       };
 
       if (thresholdReached) {
+        // IC-6′.2: the plan's `from` must be among the authorizing identities.
+        if (!newSignatures.some((s) => s.signer === partialTx.from?.address)) {
+          throw new HardkasError(
+            "SIGNER_MISMATCH",
+            `The threshold is reached without the plan's from ${String(partialTx.from?.address)}: a plan is authorized only by the account that owns its from`
+          );
+        }
         draft.signedTransaction = {
-          format: "simulated",
-          payload: `simulated-signed-tx:${partialTx.sourcePlanId}-with-${newSignatures.map((s) => s.signer).join(",")}`
+          format: SYNTHETIC_AUTHORIZATION_FORMAT,
+          payload: boundPlanArtifactId
         };
-        draft.txId = `simulated-${partialTx.sourcePlanId}-tx`;
+        draft.txId = syntheticTxIdFor(boundPlanArtifactId);
       } else {
         delete draft.signedTransaction;
         delete draft.txId;
@@ -909,10 +1018,21 @@ export class HardkasTx {
             `Signer '${signerAddress}' is not an authorized signer for this transaction.`
           );
         }
+        // IC-6′.2: a plan can only be authorized by the account that owns its `from`,
+        // so a signer set that can never include it is refused up front.
+        if (!requiredSigners.includes(plan.from.address)) {
+          throw new HardkasError(
+            "SIGNER_MISMATCH",
+            `The required signers ${JSON.stringify(requiredSigners)} do not include the plan's from ${plan.from.address}`
+          );
+        }
+        // IC-6′.1 / IC-4′.4: bind to the plan's FULL identity (never a legacy plan).
+        const planArtifactId = authorizablePlanIdentity(plan);
 
+        // IC-6′.4: a synthetic entry is never presented as a signature.
         const signatureEntry = {
           signer: signerAddress,
-          signature: `simulated-signature-of-${signerAddress}`
+          kind: "synthetic" as const
         };
 
         const signatures = [signatureEntry].sort((a, b) =>
@@ -946,6 +1066,12 @@ export class HardkasTx {
           to: plan.to,
           amountSompi: plan.amountSompi,
           unsignedPayloadHash: plan.contentHash,
+          // IC-6′.1/.3: plan reference and signer set in the authenticated body.
+          authorization: {
+            kind: "synthetic",
+            planArtifactId,
+            signers: signatures.map((s) => s.signer)
+          },
           multisig: {
             threshold,
             requiredSigners,
@@ -958,10 +1084,10 @@ export class HardkasTx {
 
         if (thresholdReached) {
           draft.signedTransaction = {
-            format: "simulated",
-            payload: `simulated-signed-tx:${plan.planId}-with-${signatures.map((s) => s.signer).join(",")}`
+            format: SYNTHETIC_AUTHORIZATION_FORMAT,
+            payload: planArtifactId
           };
-          draft.txId = `simulated-${plan.planId}-tx`;
+          draft.txId = syntheticTxIdFor(planArtifactId);
         }
 
         // One pass: lineage.artifactId is a self reference excluded by exact path.
@@ -1063,15 +1189,25 @@ export class HardkasTx {
     options: { persist?: boolean; plan?: TxPlanArtifact } = {}
   ): Promise<{ receipt: TxReceiptArtifact; receiptPath?: string; tracePath?: string }> {
     const explicitPlan = options.plan;
-    if (explicitPlan && typeof target === "object" && target !== null && (target as any).schema === ARTIFACT_SCHEMAS.SIGNED_TX) {
-      // An explicit plan must BE the signed artifact's authenticated parent (IC-5′.6).
+    const isSignedTarget =
+      typeof target === "object" && target !== null && (target as any).schema === ARTIFACT_SCHEMAS.SIGNED_TX;
+    if (isSignedTarget) {
+      // Wave 1.4 · IC-6′.2/.5: only a coherent synthetic authorization is executable.
+      // A legacy simulated-format artifact is unbound (re-authorize); an
+      // incoherent authorization (plan reference ≠ lineage parent ≠ txId, wrong
+      // format, wrong signer set) is refused before anything is resolved.
+      const binding = checkSyntheticAuthorization(target);
+      if (!binding.ok) throw new HardkasError(binding.code, binding.message);
+    }
+    if (explicitPlan && isSignedTarget) {
+      // An explicit plan must BE the plan the authorization names (IC-6′.1 / IC-5′.6).
       const { checkArtifactIdentity } = await import("@hardkas/artifacts");
       const check = checkArtifactIdentity(explicitPlan);
-      const parentId = (target as any).lineage?.parentArtifactId;
-      if (!check.ok || check.artifactId !== parentId) {
+      const boundId = (target as any).authorization?.planArtifactId ?? (target as any).lineage?.parentArtifactId;
+      if (!check.ok || check.artifactId !== boundId) {
         throw new HardkasError(
           "PARENT_PLAN_MISMATCH",
-          `The supplied plan ${check.ok ? check.artifactId : "(unverifiable)"} is not the signed artifact's parent ${String(parentId)}`
+          `The supplied plan ${check.ok ? check.artifactId : "(unverifiable)"} is not the plan the signed artifact authorizes ${String(boundId)}`
         );
       }
     }
@@ -1120,7 +1256,7 @@ export class HardkasTx {
     let planArtifact: any;
     let signedId = "unknown";
     let sourcePlanId = "unknown";
-    let txId = `simulated-tx-${Date.now()}`;
+    let txId: string;
     let targetObj: any = target;
 
     if (typeof target === "string") {
@@ -1138,35 +1274,44 @@ export class HardkasTx {
     if (targetObj.schema === ARTIFACT_SCHEMAS.SIGNED_TX) {
       signedId = targetObj.signedId || targetObj.id || "unknown";
       sourcePlanId = targetObj.sourcePlanId || "unknown";
-      txId = targetObj.txId || `simulated-${sourcePlanId}-tx`;
-      // Wave 1.2 · IC-5′.6: the parent plan is the authenticated lineage.parentArtifactId,
-      // resolved from the store by verified identity — never the sourcePlanId label.
-      const parentId: unknown = targetObj.lineage?.parentArtifactId;
+      // Wave 1.4 · IC-6′.2: the plan is resolved ONLY by the artifactId the
+      // authorization names (authenticated), from the store by verified identity —
+      // never by the sourcePlanId label, never by the signed's own txId.
+      const structural = checkSyntheticAuthorization(targetObj);
+      if (!structural.ok) throw new HardkasError(structural.code, structural.message);
+      const boundPlanId = structural.planArtifactId;
       if (explicitPlan) {
-        // Identity already checked against lineage.parentArtifactId above.
+        // Identity already checked against authorization.planArtifactId above.
         planArtifact = explicitPlan;
       } else {
         try {
-          if (typeof parentId !== "string" || !/^[0-9a-f]{64}$/.test(parentId)) {
-            throw new Error("signed artifact carries no authenticated lineage.parentArtifactId");
-          }
-          planArtifact = await this.sdk.artifacts.read({ artifact: parentId }, {
+          planArtifact = await this.sdk.artifacts.read({ artifact: boundPlanId }, {
             expectedSchema: ARTIFACT_SCHEMAS.TX_PLAN
           });
         } catch (e) {
           throw new Error(`parent_plan_unresolved: ${(e as Error)?.message ?? String(e)}`);
         }
       }
+      // The binding decided against the resolved plan: FULL identity, signer is the
+      // plan's from, same transfer. Refuse to execute if anything fails.
+      const binding = checkSyntheticAuthorization(targetObj, planArtifact);
+      if (!binding.ok) throw new HardkasError(binding.code, binding.message);
+      txId = binding.txId;
     } else {
       planArtifact = targetObj;
       sourcePlanId = planArtifact.planId || planArtifact.id || "unknown";
-      txId = `simulated-${sourcePlanId}-tx`;
 
       // If persist is true and it's a new in-memory plan (no ID), we write it
       if (persist && !planArtifact.planId) {
         const savedPlanResult = await this.sdk.artifacts.write(planArtifact);
         sourcePlanId = planArtifact.planId || "unknown";
       }
+      // D-Q2.a / N4: the synthetic txId IS the executed plan's identity.
+      const planIdentity =
+        typeof planArtifact.contentHash === "string" && /^[0-9a-f]{64}$/.test(planArtifact.contentHash)
+          ? planArtifact.contentHash
+          : calculateContentHash(planArtifact, CURRENT_HASH_VERSION);
+      txId = syntheticTxIdFor(planIdentity);
     }
 
     const normalizedPlan = normalizeSimulatedPlanInput(planArtifact, sourcePlanId);
@@ -1370,6 +1515,26 @@ export class HardkasTx {
     submitted?: boolean;
     txId?: string;
   }> {
+    const activeNetwork = this.sdk.config.config.defaultNetwork || "simnet";
+    const isExplicitRpc =
+      typeof urlOrOptions === "string" &&
+      (urlOrOptions.startsWith("ws://") ||
+        urlOrOptions.startsWith("http://") ||
+        urlOrOptions.startsWith("wss://") ||
+        urlOrOptions.startsWith("https://"));
+    const isSimulated =
+      !isExplicitRpc &&
+      (activeNetwork === "simulated" ||
+        this.sdk.config.config.networks?.[activeNetwork]?.kind === "simulated");
+
+    if (isSimulated) {
+      // Wave 1.4 · IC-6′.5: in the simulator only a coherent synthetic authorization
+      // is executable; a legacy simulated-format artifact is refused with the
+      // code that says to re-authorize. Decided before anything else is consulted.
+      const binding = checkSyntheticAuthorization(signedArtifact);
+      if (!binding.ok) throw new HardkasError(binding.code, binding.message);
+    }
+
     if (
       typeof signedArtifact === "object" &&
       signedArtifact !== null &&
@@ -1399,18 +1564,6 @@ export class HardkasTx {
 
     const signedTxId = signedArtifact.txId || signedArtifact.signedId || signedArtifact.contentHash || "unknown";
     await this.sdk.plugins.onBeforeTxSend({ signedTxId, from: signedArtifact.from?.accountName || signedArtifact.from?.address || "unknown" });
-
-    const activeNetwork = this.sdk.config.config.defaultNetwork || "simnet";
-    const isExplicitRpc =
-      typeof urlOrOptions === "string" &&
-      (urlOrOptions.startsWith("ws://") ||
-        urlOrOptions.startsWith("http://") ||
-        urlOrOptions.startsWith("wss://") ||
-        urlOrOptions.startsWith("https://"));
-    const isSimulated =
-      !isExplicitRpc &&
-      (activeNetwork === "simulated" ||
-        this.sdk.config.config.networks?.[activeNetwork]?.kind === "simulated");
 
     if (isSimulated) {
       const persistOpt = typeof urlOrOptions === "object" ? urlOrOptions.persist : true;
@@ -1478,6 +1631,51 @@ export class HardkasTx {
 
     const broadcastable = getBroadcastableSignedTransaction(signedArtifact);
 
+    // Wave 2(a): the observer's cursor — where the virtual was when HardKAS submitted.
+    // A fact about the submit (authenticated), never a post-send state. Best effort:
+    // a node that cannot answer leaves it absent, and the observer falls back to the
+    // pruning point.
+    let submitPoint: { virtualDaaScore: string; sinkHash: string; sinkBlueScore: string } | undefined;
+    try {
+      const dag = await this.sdk.rpc.getBlockDagInfo();
+      const sinkRaw: any = await this.sdk.rpc.getSinkBlueScore();
+      const sinkBlueScore = BigInt(sinkRaw?.blueScore ?? sinkRaw);
+      if (typeof dag.sink === "string" && dag.sink.length > 0) {
+        submitPoint = { virtualDaaScore: BigInt(dag.virtualDaaScore ?? 0).toString(), sinkHash: dag.sink, sinkBlueScore: sinkBlueScore.toString() };
+      }
+    } catch {
+      submitPoint = undefined;
+    }
+
+    // Wave 2(d) · AUD-18: the fee is derived from what the signed transaction consumes
+    // (the plan's authenticated inputs, matched by outpoint) minus what it produces
+    // (the signed outputs). Without that evidence the submission says so; it never
+    // copies an estimate and never writes "0".
+    // Before pricing anything, the signed transaction must BE the transaction the plan
+    // authorized (inputs 1:1, outputs in order with amount and destination). A payload
+    // that parses and diverges is refused here — nothing is broadcast and no
+    // submission is written (2(d) security review: SIGNED_PLAN_MISMATCH).
+    let feeEvidence: Extract<ReturnType<typeof deriveSubmissionFee>, { status: "derived" | "insufficient-evidence" }>;
+    {
+      let plan: any;
+      const parentId = (signedArtifact as any).lineage?.parentArtifactId;
+      if (typeof parentId === "string" && /^[0-9a-f]{64}$/.test(parentId)) {
+        try {
+          plan = await this.sdk.artifacts.read({ artifact: parentId }, { expectedSchema: ARTIFACT_SCHEMAS.TX_PLAN });
+        } catch {
+          plan = undefined;
+        }
+      }
+      const derived = deriveSubmissionFee({ signedTransaction: signedArtifact.signedTransaction, plan });
+      if (derived.status === "mismatch") {
+        throw new HardkasError(
+          "SIGNED_PLAN_MISMATCH",
+          `Refusing to broadcast: the signed transaction is not the transaction plan ${String(plan?.contentHash)} authorized (${derived.reason})`
+        );
+      }
+      feeEvidence = derived;
+    }
+
     // Attempt broadcast
     const broadcastRecord = broadcastable.rawTransaction as unknown as Record<
       string,
@@ -1529,6 +1727,8 @@ export class HardkasTx {
       signedArtifactId,
       txId: submitResult.transactionId || localTxId,
       submitResult,
+      ...(submitPoint ? { submitPoint } : {}),
+      fee: feeEvidence,
       submittedAt: nowIso,
       ...(url ? { rpcUrl: url } : {}),
       ...(signedArtifact.workflowId ? { workflowId: signedArtifact.workflowId } : {}),
@@ -1579,14 +1779,23 @@ export class HardkasTx {
   /**
    * Fetches the current status of a transaction by ID.
    */
-  async status(txId: string): Promise<any> {
-    const isLocal = txId.startsWith("simulated-");
-    if (isLocal) {
-      return { status: "simulated_confirmed" }; // Simplify for now
-    }
-    // Real network query
-    const result = await this.sdk.rpc.getTransaction(txId);
-    return result;
+  /**
+   * Wave 2(a) · Q4: the DERIVED state of `txId` from the evidence in this workspace
+   * (the submission or simulator receipt plus every verified observation), under
+   * `policy` (HardKAS product default unless given). No RPC call is made here; use
+   * `observe()` to add evidence.
+   */
+  async status(txId: string, policy?: TxStatusPolicy): Promise<DerivedTxStatus> {
+    const { ProjectArtifactStore } = await import("@hardkas/artifacts");
+    const store = new ProjectArtifactStore(this.sdk.workspace.root);
+    const submission = await this.findSubmissionForTxId(txId);
+    const { observations } = store.listObservationsByTxId(txId);
+    return deriveTxStatus({
+      txId,
+      ...(submission ? { submission } : {}),
+      observations,
+      ...(policy ? { policy } : {})
+    });
   }
 }
 

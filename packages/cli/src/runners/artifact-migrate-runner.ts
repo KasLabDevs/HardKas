@@ -44,6 +44,8 @@ export async function runArtifactMigrate(options: ArtifactMigrateOptions) {
   const rel = (p: string | undefined) => (p ? path.relative(options.workspaceRoot, p).replace(/\\/g, "/") : undefined);
   const result = {
     sourceArtifactId: out.sourceArtifactId,
+    // The legacy source stays in the store: it is the re-issue's parent (review B1).
+    sourcePath: rel(out.sourcePath),
     artifactId: out.migrated.contentHash,
     artifactPath: rel(out.migratedPath),
     receiptArtifactId: out.receipt.contentHash,
@@ -60,7 +62,7 @@ export async function runArtifactMigrate(options: ArtifactMigrateOptions) {
 
   UI.header(`Artifact Migration: ${path.basename(options.path)}`);
   UI.success(`Re-issued as hashVersion ${CURRENT_HASH_VERSION} (a NEW identity; the source was not modified)`);
-  console.log(`  Source:   ${result.sourceArtifactId}`);
+  console.log(`  Source:   ${result.sourceArtifactId} (kept in the store: ${result.sourcePath})`);
   console.log(`  Artifact: ${result.artifactId}`);
   console.log(`            ${result.artifactPath}`);
   console.log(`  Receipt:  ${result.receiptArtifactId}`);

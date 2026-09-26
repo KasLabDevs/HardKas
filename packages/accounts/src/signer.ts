@@ -77,9 +77,13 @@ export async function signTxPlanArtifact(input: {
   });
 
   if (planArtifact.mode === "simulator") {
+    // Wave 1.4 · IC-6′.2: a synthetic authorization is bound to the plan's identity
+    // and given by the plan's `from`. The account passed (`--account`) is validated
+    // against it (SIGNER_MISMATCH) and recorded in the authenticated body; without
+    // an account the plan's `from` is the authorizing identity.
     return createSimulatedSignedTxArtifact(
       planArtifact as TxPlan,
-      `simulated-signed-tx:${planArtifact.planId}`,
+      account ?? planArtifact.from.address,
       systemRuntimeContext
     ) as SignedTxArtifact;
   }

@@ -128,7 +128,7 @@ describe("Wave 1.1 · v5 canonicalisation authenticates material fields (AUD-11)
 
   it("T-P3 / T-R3: flipping status on a schema-valid signed artifact breaks verification in every mode", () => {
     const plan = makePlan();
-    const signed = createSimulatedSignedTxArtifact(plan, "payload", { ...systemRuntimeContext, clock: { now: () => 1_700_000_000_000 } });
+    const signed = createSimulatedSignedTxArtifact(plan, plan.from.address,{ ...systemRuntimeContext, clock: { now: () => 1_700_000_000_000 } });
     expect(verifyArtifactIntegritySync(structuredClone(signed), { strict: true }).ok).toBe(true);
     const tampered: any = structuredClone(signed);
     tampered.status = "partially_signed";
@@ -142,7 +142,7 @@ describe("Wave 1.1 · v5 canonicalisation authenticates material fields (AUD-11)
   it("T-R1 / T-R2: receipt status flip and sourceSignedId re-pointing break verification", () => {
     const ctx = { ...systemRuntimeContext, clock: { now: () => 1_700_000_000_000 } };
     const plan = makePlan();
-    const signed = createSimulatedSignedTxArtifact(plan, "payload", ctx);
+    const signed = createSimulatedSignedTxArtifact(plan, plan.from.address,ctx);
     const receipt = createSimulatedTxReceipt(plan, "simtx_" + "1".repeat(32), ctx, {
       parentArtifact: signed as typeof signed & { contentHash: string },
       sourceSignedId: signed.signedId,

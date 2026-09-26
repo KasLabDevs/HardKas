@@ -23,6 +23,12 @@ export interface ArtifactVerifyOptions {
   containedInWorkspace?: boolean;
   /** The command name echoed in the JSON envelope. */
   command?: string;
+  /**
+   * `hardkas verify` store verification (review B1): a LEGACY source whose re-issue
+   * is certified and present is reported SUPERSEDED_BY_MIGRATION (info) instead of
+   * MIGRATION_REQUIRED. Nothing else changes; no reference resolution is affected.
+   */
+  storeVerification?: boolean;
 }
 
 function realpathOr(p: string): string {
@@ -192,6 +198,32 @@ async function runRecursiveVerify(dir: string, options: ArtifactVerifyOptions & 
 
     // 2. Semantic & Lineage Audit
     const artifact = JSON.parse(fs.readFileSync(file, "utf-8"));
+
+    // Source-side migration tolerance (review B1), store verification only: the
+    // ONLY error may be MIGRATION_REQUIRED, and every supersession condition must
+    // hold (FULL receipt, re-issue present and strictly verified, real lineage link).
+    if (
+      options.storeVerification &&
+      options.strict &&
+      result.issues.some((i) => i.code === "MIGRATION_REQUIRED") &&
+      result.issues.every(
+        (i) => i.code === "MIGRATION_REQUIRED" || (i.severity !== "error" && i.severity !== "critical")
+      )
+    ) {
+      const { findSupersedingMigration } = await import("@hardkas/artifacts");
+      const superseding = findSupersedingMigration(options.workspaceRoot, artifact);
+      if (superseding) {
+        const replaced = new Set(result.issues.filter((i) => i.code === "MIGRATION_REQUIRED").map((i) => i.message));
+        result.issues = result.issues.filter((i) => i.code !== "MIGRATION_REQUIRED");
+        result.errors = result.errors.filter((m) => !replaced.has(m));
+        result.issues.push({
+          code: "SUPERSEDED_BY_MIGRATION",
+          severity: "info",
+          message: `Legacy source (authScope ${result.authScope}) re-issued as ${superseding.newArtifactId} by migration receipt ${superseding.receiptId}; it stays LEGACY and no decision path accepts it`
+        });
+        result.ok = result.issues.every((i) => i.severity !== "error" && i.severity !== "critical");
+      }
+    }
     // Wave 1.2 · IC-5′.6–.7: references resolve only by verified identity — first
     // among the files being verified (recursive mode audits a set that may live
     // outside the store), then in the workspace store. Never by label, txId,

@@ -79,7 +79,7 @@ describe("Wave 1.2 · IC-5′ verified, namespaced artifact resolution", () => {
     ws = fs.mkdtempSync(path.join(os.tmpdir(), "hk-w12-resolve-"));
     store = new ProjectArtifactStore(ws);
     plan = makePlan();
-    signed = createSimulatedSignedTxArtifact(plan, "payload", ctx);
+    signed = createSimulatedSignedTxArtifact(plan, plan.from.address, ctx);
     receipt = createSimulatedTxReceipt(plan, "simtx_" + "1".repeat(32), ctx, {
       parentArtifact: signed as typeof signed & { contentHash: string },
       sourceSignedId: signed.signedId

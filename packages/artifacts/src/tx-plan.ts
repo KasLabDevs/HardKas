@@ -141,7 +141,9 @@ export function createTxPlanArtifact(options: CreateTxPlanArtifactOptions): TxPl
     workflowId,
     metadata: {
       schema: HardkasSchemas.ArtifactV1,
-      ...(options.ctx.utxoSelection ? { utxoSelection: options.ctx.utxoSelection } : {})
+      ...(options.ctx.utxoSelection ? { utxoSelection: options.ctx.utxoSelection } : {}),
+      // Wave 2(c) · AUD-19: what the snapshot was filtered against (authenticated with the plan).
+      ...(options.ctx.pendingSpendEvidence ? { pendingSpendEvidence: options.ctx.pendingSpendEvidence } : {})
     },
     assumptionLevel:
       options.ctx.assumptionLevel ||

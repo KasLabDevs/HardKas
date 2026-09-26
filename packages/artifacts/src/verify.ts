@@ -20,13 +20,17 @@ import {
   AssumptionSchema,
   MigrationReceiptSchema,
   TxSubmissionSchema,
+  TxObservationSchema,
   ReplayReportSchema,
   ARTIFACT_VERSION
 } from "./schemas.js";
 import { NetworkId, type CorruptionCode, type CorruptionSeverity } from "@hardkas/core";
 import { verifyFeeSemantics } from "./feeVerify.js";
 import { verifyLineage } from "./lineage.js";
-import { checkArtifactIdentity, resolveArtifactSync, enumerateWorkspaceArtifactsSync } from "./resolve.js";
+import { checkSyntheticAuthorization } from "./signed-tx.js";
+import { checkTxObservationCoherence } from "./tx-observation.js";
+import { checkSubmissionFeeCoherence } from "./submission-fee.js";
+import { checkArtifactIdentity, resolveArtifactSync } from "./resolve.js";
 import {
   SilverCompileArtifactSchema,
   SilverDeployArtifactSchema,
@@ -296,6 +300,9 @@ export function verifyArtifactIntegritySync(
       case HardkasSchemas.TxSubmissionV1:
         schema = TxSubmissionSchema;
         break;
+      case HardkasSchemas.TxObservationV1:
+        schema = TxObservationSchema;
+        break;
       case HardkasSchemas.ReplayReportV1:
         schema = ReplayReportSchema;
         break;
@@ -366,6 +373,24 @@ export function verifyArtifactIntegritySync(
       );
     }
 
+    // Wave 1.4 · IC-6′: a signed artifact that carries a synthetic authorization
+    // must be coherent with it (plan reference = lineage parent = txId; format;
+    // signer set). A legacy artifact without one is intact but unbound: that is
+    // the executor's refusal (LEGACY_UNBOUND_SIGNED), not an integrity defect.
+    if (v.schema === HardkasSchemas.SignedTx) {
+      const coherence = checkSyntheticAuthorization(v);
+      if (!coherence.ok && coherence.code !== "LEGACY_UNBOUND_SIGNED") {
+        addError(coherence.code, coherence.message, "authorization");
+      }
+    }
+
+    // Wave 2(a) · Q4: an observation that contradicts itself or the verified upstream
+    // parameters (finality depth, confirmation arithmetic) is not evidence.
+    if (v.schema === HardkasSchemas.TxObservationV1 && schema && schema.safeParse(v).success) {
+      const coherence = checkTxObservationCoherence(v);
+      if (!coherence.ok) addError("OBSERVATION_INCOHERENT", coherence.message, coherence.path);
+    }
+
     result.ok = result.issues.every(
       (i) => i.severity !== "error" && i.severity !== "critical"
     );
@@ -391,36 +416,6 @@ export async function verifyArtifactIntegrity(
   context: VerificationContext = {}
 ): Promise<ArtifactVerificationResult> {
   return verifyArtifactIntegritySync(artifactOrPath, context);
-}
-
-/**
- * A FULL-scope MigrationReceipt in the store that certifies `artifact` as the
- * re-issue of `parentId` (D-Q1.f), or `artifact` itself when it is that receipt.
- */
-function findMigrationCertificate(
-  workspaceRoot: string,
-  artifact: Record<string, unknown>,
-  parentId: string
-): { kind: "self" | "receipt"; receiptId: string } | undefined {
-  const own = checkArtifactIdentity(artifact);
-  if (!own.ok || own.authScope !== "FULL") return undefined;
-  if (artifact.schema === HardkasSchemas.MigrationReceiptV1 && artifact.oldHash === parentId) {
-    return { kind: "self", receiptId: own.artifactId };
-  }
-  let entries: ReturnType<typeof enumerateWorkspaceArtifactsSync>;
-  try {
-    entries = enumerateWorkspaceArtifactsSync(workspaceRoot);
-  } catch {
-    return undefined;
-  }
-  for (const entry of entries) {
-    const a: any = entry.artifact;
-    if (a?.schema !== HardkasSchemas.MigrationReceiptV1) continue;
-    if (a.oldHash !== parentId || a.newHash !== own.artifactId) continue;
-    const check = checkArtifactIdentity(a);
-    if (check.ok && check.authScope === "FULL") return { kind: "receipt", receiptId: check.artifactId };
-  }
-  return undefined;
 }
 
 /**
@@ -650,28 +645,15 @@ export function verifyArtifactSemantics(
       if (!outcome) outcome = resolveReference(parentId, "parent");
       if ("issue" in outcome) {
         if (outcome.issue.code === "REFERENCE_MISSING") {
-          // D-Q1.f: a re-issued (migrated) artifact hangs from its legacy source,
-          // which need not stay in the store. The absence is tolerated ONLY when a
-          // FULL-scope MigrationReceipt in the store certifies exactly this link
-          // (oldHash = the parent, newHash = this artifact), or when THIS artifact
-          // is that receipt. Anything else is a missing parent.
-          const certificate = workspaceRoot ? findMigrationCertificate(workspaceRoot, v, parentId) : undefined;
-          if (certificate) {
-            addIssue({
-              code: certificate.kind === "self" ? "MIGRATION_SOURCE_ABSENT" : "PARENT_MIGRATED",
-              severity: "info",
-              message:
-                certificate.kind === "self"
-                  ? `Migration source ${parentId} is not in the workspace; this receipt certifies its re-issue as ${String(v.newHash)}`
-                  : `Parent ${parentId} is not in the workspace; migration receipt ${certificate.receiptId} certifies this artifact as its re-issue`
-            });
-          } else {
-            addIssue({
-              code: "PARENT_MISSING",
-              severity: strict ? "error" : "warning",
-              message: `Parent artifact ${parentId} not found in workspace`
-            });
-          }
+          // IC-5′.6: a reference that resolves to nothing is missing, whatever any
+          // other artifact claims about it. A MigrationReceipt confers no authority
+          // here (Wave 1.3 security review B1); a re-issued artifact's legacy source
+          // stays in the store and resolves like any other parent.
+          addIssue({
+            code: "PARENT_MISSING",
+            severity: strict ? "error" : "warning",
+            message: `Parent artifact ${parentId} not found in workspace`
+          });
         } else {
           addIssue({ code: "PARENT_CORRUPT", severity: "error", message: outcome.issue.message });
         }
@@ -726,6 +708,11 @@ export function verifyArtifactSemantics(
         });
       }
     }
+    // Wave 2(d) · AUD-18: a recorded fee must be arithmetically what it claims.
+    const feeCoherence = checkSubmissionFeeCoherence(v.fee);
+    if (!feeCoherence.ok) {
+      addIssue({ code: "SUBMISSION_FEE_INCOHERENT", severity: "error", message: feeCoherence.message });
+    }
   }
 
   // 2. Staleness Check
@@ -760,7 +747,9 @@ export function verifyArtifactSemantics(
 
   // 4. Hardening Fields. A MigrationReceipt certifies a re-issue: it carries no
   //    workflow correlation or assumption level of its own (D-Q1.f).
-  const isMigrationReceipt = v.schema === HardkasSchemas.MigrationReceiptV1;
+  //    Wave 2(a): a TxObservation is evidence about a txId, not a workflow step either.
+  const isMigrationReceipt =
+    v.schema === HardkasSchemas.MigrationReceiptV1 || v.schema === HardkasSchemas.TxObservationV1;
   if (strict) {
     const enforceMetadata = context.enforceMetadata ?? true;
     if (enforceMetadata) {

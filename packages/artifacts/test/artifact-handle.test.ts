@@ -83,8 +83,12 @@ describe("resolveArtifactHandle · Wave 5 · DEF-17 contract (IC-5′ re-base)",
     await fs.mkdir(path.join(artifactsDir, "misc"), { recursive: true });
 
     plan = makePlan();
-    signed = createSimulatedSignedTxArtifact(plan, "payload", ctx);
-    signed.txId = KASPA_TX_ID_NOT_ARTIFACT_ID; // a real-looking txId on the signed; re-seal
+    signed = createSimulatedSignedTxArtifact(plan, plan.from.address, ctx);
+    // A real-looking txId can only live on a NON-synthetic signed (Wave 1.4 · IC-6′.4: a
+    // synthetic authorization's txId names its plan), so make it one; re-seal.
+    delete signed.authorization;
+    signed.signedTransaction = { format: "hex", payload: "deadbeef" };
+    signed.txId = KASPA_TX_ID_NOT_ARTIFACT_ID;
     signed.contentHash = calculateContentHash(signed, CURRENT_HASH_VERSION);
     signed.signedId = `signed-${signed.contentHash.slice(0, 16)}`;
     signed.lineage.artifactId = signed.contentHash;

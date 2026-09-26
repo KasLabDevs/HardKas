@@ -5,7 +5,8 @@ import {
   validateSignedTxArtifact,
   HARDKAS_VERSION,
   ARTIFACT_SCHEMAS,
-  ARTIFACT_VERSION
+  ARTIFACT_VERSION,
+  CURRENT_HASH_VERSION
 } from "../src/index.js";
 import { asNetworkId, systemRuntimeContext } from "@hardkas/core";
 
@@ -28,6 +29,13 @@ describe("SignedTxArtifact", () => {
     estimatedFeeSompi: "10"
   };
 
+  /** Wave 1.4 · IC-6′: only a plan with a FULL identity can be authorized. */
+  function sealedPlan(): any {
+    const plan: any = { ...mockPlan, hashVersion: CURRENT_HASH_VERSION };
+    plan.contentHash = calculateContentHash(plan, CURRENT_HASH_VERSION);
+    return plan;
+  }
+
   it("should generate a stable hash for the same artifact", () => {
     const hash1 = calculateContentHash(mockPlan as any);
     const hash2 = calculateContentHash(mockPlan as any);
@@ -42,25 +50,21 @@ describe("SignedTxArtifact", () => {
     expect(hash1).not.toBe(hash2);
   });
 
-  it("should create a simulated signed artifact", () => {
-    const signed = createSimulatedSignedTxArtifact(
-      mockPlan as any,
-      "simulated-payload",
-      systemRuntimeContext
-    );
+  it("should create a synthetic authorization of the plan (never a signature)", () => {
+    const plan = sealedPlan();
+    const signed = createSimulatedSignedTxArtifact(plan, plan.from.address, systemRuntimeContext);
 
     expect(signed.schema).toBe(ARTIFACT_SCHEMAS.SIGNED_TX);
     expect(signed.status).toBe("signed");
-    expect(signed.signedTransaction?.payload).toBe("simulated-payload");
+    expect(signed.signedTransaction?.format).toBe("synthetic-authorization");
+    expect(signed.signedTransaction?.payload).toBe(plan.contentHash);
+    expect(signed.txId).toBe(`synthetic-${plan.contentHash}`);
     expect(signed.sourcePlanId).toBe(mockPlan.planId);
   });
 
   it("should validate a correct signed artifact", () => {
-    const signed = createSimulatedSignedTxArtifact(
-      mockPlan as any,
-      "simulated-payload",
-      systemRuntimeContext
-    );
+    const plan = sealedPlan();
+    const signed = createSimulatedSignedTxArtifact(plan, plan.from.address, systemRuntimeContext);
 
     const result = validateSignedTxArtifact(signed);
     if (!result.ok) console.log(result.errors);

@@ -104,7 +104,8 @@ export const TX_NAMESPACE_SCHEMAS: ReadonlySet<string> = new Set([
   HardkasSchemas.TxSubmissionV1
 ]);
 
-export const CANONICAL_STORE_SUBDIRS = ["plans", "signed", "receipts", "lineage", "evidences", "misc"] as const;
+// Wave 2(a): `observations` holds `hardkas.txObservation.v1` (IC-2′.3), N per txId by design.
+export const CANONICAL_STORE_SUBDIRS = ["plans", "signed", "receipts", "observations", "lineage", "evidences", "misc"] as const;
 
 /** Path-shaped tokens contain a separator, start with `.` or `..`, or are absolute. */
 export function looksLikePath(input: string): boolean {

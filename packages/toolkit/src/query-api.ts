@@ -1,4 +1,5 @@
 import { KaspaRpcClient } from "@hardkas/kaspa-rpc";
+import { observePendingSpends, utxoOutpointKey, type PendingSpendEvidence } from "@hardkas/tx-builder";
 import { IndexerToolkit } from "./indexer.js";
 
 export type QueryDataSource = "indexer" | "rpc" | "cache" | "unavailable";
@@ -6,6 +7,8 @@ export type QueryDataSource = "indexer" | "rpc" | "cache" | "unavailable";
 export interface QueryResponse<T> {
   data: T;
   source: QueryDataSource;
+  /** Wave 2(c) · AUD-19: the mempool observation `spendableUtxos` filtered against, when it did. */
+  pendingSpendEvidence?: PendingSpendEvidence;
 }
 
 export class QueryToolkit {
@@ -45,11 +48,19 @@ export class QueryToolkit {
   /**
    * Filters DAG UTXOs against currently observed mempool spends and explicit exclusions.
    * It does not provide cross-process or pre-submit reservations.
+   *
+   * Wave 2(c) · AUD-19: with `excludePending` the mempool observation is mandatory —
+   * a client that cannot ask, or a node that cannot answer, fails the query closed
+   * (`PENDING_SPEND_EVIDENCE_UNAVAILABLE`) instead of returning an unfiltered set.
+   * The observation is returned as `pendingSpendEvidence` (observer-local, never a
+   * network guarantee).
    */
   public async spendableUtxos(request: {
     address: string;
     excludePending?: boolean;
     excludeOutpoints?: Set<string>;
+    /** Recency anchor recorded in the evidence (the caller's virtual DAA score for this snapshot). */
+    observedAtDaaScore?: bigint;
   }): Promise<QueryResponse<any[]>> {
     const { address, excludePending = true, excludeOutpoints } = request;
 
@@ -66,64 +77,21 @@ export class QueryToolkit {
       }
     }
 
-    // 2. Fetch mempool entries if requested
+    // 2. ONE mempool observation, or a fail-closed refusal.
+    let pendingSpendEvidence: PendingSpendEvidence | undefined;
     if (excludePending) {
-      if ("getMempoolEntriesByAddresses" in this.rpc && typeof (this.rpc as any).getMempoolEntriesByAddresses === "function") {
-        try {
-          const mempoolRes = await (this.rpc as any).getMempoolEntriesByAddresses({
-            addresses: [address],
-            includeOrphanPool: false,
-            filterTransactionPool: false
-          });
-
-          if (mempoolRes && mempoolRes.entries) {
-            for (const entry of mempoolRes.entries) {
-                // Only intersect sending transactions to avoid locking on incoming payments
-                if (entry.address === address && entry.sending && entry.sending.length > 0) {
-                  for (const s of entry.sending) {
-                    if (s.transaction && s.transaction.inputs) {
-                      for (const input of s.transaction.inputs) {
-                        if (input.previousOutpoint) {
-                          excluded.add(`${input.previousOutpoint.transactionId}:${input.previousOutpoint.index}`);
-                        }
-                      }
-                    }
-                  }
-                }
-            }
-          }
-        } catch (e) {
-          // If RPC method is missing or fails, we might just continue or throw.
-          // Since it's a safety feature, bubbling it up is safer.
-          throw e;
-        }
-      }
+      const observed = await observePendingSpends(this.rpc as any, address, request.observedAtDaaScore);
+      pendingSpendEvidence = observed.evidence;
+      for (const op of observed.outpoints) excluded.add(op);
     }
 
     // 3. Filter UTXOs
-    if (excluded.size > 0) {
-      const filtered = baseUtxos.filter(u => {
-        let txId = "";
-        let index = -1;
-        // Handle both rpc and localnet object shapes
-        if (u.outpoint) {
-          txId = u.outpoint.transactionId;
-          index = u.outpoint.index;
-        } else if (u.id) {
-          const parts = u.id.split(":");
-          index = Number(parts[parts.length - 1]);
-          txId = parts.slice(0, -1).join(":");
-        } else if (u.transactionId !== undefined && u.outputIndex !== undefined) {
-          txId = u.transactionId;
-          index = u.outputIndex;
-        }
-        const opKey = `${txId}:${index}`;
-        return !excluded.has(opKey);
-      });
-      return { data: filtered, source: utxoRes.source };
-    }
-
-    return utxoRes;
+    const filtered = excluded.size > 0 ? baseUtxos.filter((u) => !excluded.has(utxoOutpointKey(u) ?? "")) : baseUtxos;
+    return {
+      data: filtered,
+      source: utxoRes.source,
+      ...(pendingSpendEvidence ? { pendingSpendEvidence } : {})
+    };
   }
 
   public async history(address: string): Promise<QueryResponse<any[]>> {
@@ -174,8 +142,10 @@ export class QueryToolkit {
     const virtualScoreResp = await this.rpc.getVirtualSelectedParentBlueScore() as any;
     const virtualScore = BigInt(virtualScoreResp.blueScore);
 
+    // Wave 2(a) · Q4 point 3: confirmations = sinkBlueScore − acceptingBlueScore, the node's own
+    // unit (`minConfirmationCount`), without a +1 — one vocabulary across node, SDK and toolkit.
     const txScore = BigInt(tx.acceptingBlockBlueScore);
-    const confirmations = virtualScore > txScore ? Number(virtualScore - txScore) + 1 : 1;
+    const confirmations = virtualScore > txScore ? Number(virtualScore - txScore) : 0;
 
     return { data: confirmations, source: "rpc" };
   }

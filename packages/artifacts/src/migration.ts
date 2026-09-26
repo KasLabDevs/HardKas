@@ -7,6 +7,7 @@ import {
 } from "./canonical.js";
 import { ARTIFACT_VERSION } from "./schemas.js";
 import { sortUtxosByOutpoint, verifyArtifactIntegritySync } from "./verify.js";
+import { checkArtifactIdentity, enumerateWorkspaceArtifactsSync, resolveArtifactSync } from "./resolve.js";
 import { HARDKAS_VERSION } from "./constants.js";
 import { HardkasSchemas } from "@hardkas/core";
 
@@ -623,6 +624,84 @@ export function migrateArtifactToHashVersion(
     options.migrationId ?? `migrate-to-${CURRENT_HASH_VERSION}`
   );
   return { artifact: sealed.artifact, receipt, source: verified, legacyClaims: sealed.legacyClaims, stripped: sealed.stripped };
+}
+
+// ---------------------------------------------------------------------------
+// Source-side supersession (Wave 1.3 security review B1)
+// ---------------------------------------------------------------------------
+
+export interface SupersedingMigration {
+  /** The FULL MigrationReceipt that links the source to its re-issue. */
+  receiptId: string;
+  /** The re-issued version-5 artifact (present in the store, strictly verified). */
+  newArtifactId: string;
+}
+
+/**
+ * Whether a LEGACY source artifact has been re-issued (D-Q1.f) by a migration
+ * whose result is actually in the workspace store. Every condition is required:
+ *  - the source verifies under its declared version and is LEGACY scope;
+ *  - a MigrationReceipt in the store verifies strict (FULL) with `oldHash` = the
+ *    source's recomputed identity;
+ *  - its `newHash` artifact exists in the store and verifies strict (FULL) under
+ *    exactly that identity;
+ *  - that artifact's authenticated `lineage.parentArtifactId` IS the source;
+ *  - **descent is not re-issue** (Wave 1.3 fix review §1.3): the new artifact is
+ *    a re-issue of the same semantic class — same base schema as the source (a
+ *    `.v1` suffix stripped by the schema-version step is the same class) — and
+ *    the receipt describes exactly the observed schemas (`fromSchema` = the
+ *    source's, `toSchema` = the re-issue's). A legitimate v5 CHILD of the source
+ *    (e.g. a signed tx under a legacy plan) never qualifies, whatever a receipt claims.
+ *
+ * The answer is informative only (store verification may report the source as
+ * SUPERSEDED_BY_MIGRATION instead of MIGRATION_REQUIRED). It never makes a
+ * missing reference resolve and never raises the source's authentication scope:
+ * the source stays LEGACY and every decision path still refuses it.
+ */
+function baseSchemaOf(schema: unknown): string | undefined {
+  return typeof schema === "string" && schema.length > 0 ? schema.replace(/\.v1$/, "") : undefined;
+}
+
+export function findSupersedingMigration(
+  workspaceRoot: string,
+  legacySource: ArtifactPayload
+): SupersedingMigration | undefined {
+  const source = checkArtifactIdentity(legacySource);
+  if (!source.ok || source.authScope !== "LEGACY") return undefined;
+  const legacyId = source.artifactId;
+
+  let entries: ReturnType<typeof enumerateWorkspaceArtifactsSync>;
+  try {
+    entries = enumerateWorkspaceArtifactsSync(workspaceRoot);
+  } catch {
+    return undefined;
+  }
+  for (const entry of entries) {
+    const receipt: any = entry.artifact;
+    if (receipt?.schema !== HardkasSchemas.MigrationReceiptV1 || receipt.oldHash !== legacyId) continue;
+    const receiptCheck = verifyArtifactIntegritySync(structuredClone(receipt), { strict: true });
+    if (!receiptCheck.ok || receiptCheck.authScope !== "FULL" || !receiptCheck.actualHash) continue;
+    if (typeof receipt.newHash !== "string" || !HEX64.test(receipt.newHash)) continue;
+
+    let reissued: any;
+    try {
+      reissued = resolveArtifactSync(workspaceRoot, { artifact: receipt.newHash }).artifact;
+    } catch {
+      continue; // absent, ambiguous or an invalid candidate: nothing is superseded
+    }
+    const reissuedCheck = verifyArtifactIntegritySync(structuredClone(reissued), { strict: true });
+    if (!reissuedCheck.ok || reissuedCheck.authScope !== "FULL" || reissuedCheck.actualHash !== receipt.newHash) continue;
+    if (reissued?.lineage?.parentArtifactId !== legacyId) continue;
+
+    // Descent is not re-issue: same semantic class, and a receipt that tells the truth about it.
+    const sourceBase = baseSchemaOf(legacySource.schema);
+    const reissuedBase = baseSchemaOf(reissued?.schema);
+    if (sourceBase === undefined || reissuedBase === undefined || sourceBase !== reissuedBase) continue;
+    if (receipt.fromSchema !== legacySource.schema || receipt.toSchema !== reissued.schema) continue;
+
+    return { receiptId: receiptCheck.actualHash, newArtifactId: receipt.newHash };
+  }
+  return undefined;
 }
 
 // ---------------------------------------------------------------------------

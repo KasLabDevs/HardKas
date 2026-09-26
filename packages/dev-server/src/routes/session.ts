@@ -52,25 +52,30 @@ sessionRoutes.post("/snapshot", async (c) => {
   });
 });
 
+// Wave 1.5 · AUD-14: a verdict is reported only when something computed it. Session-level
+// replay and divergence classification are not implemented, so these routes say so
+// (honest states: passed | diverged | missing_dependency | unsupported | policy_mismatch |
+// non_deterministic) instead of returning a fixed "passed"/"diverged".
 sessionRoutes.post("/replay", async (c) => {
-  // Replays the session context deterministicly
-  // Return honest states: passed | diverged | missing_dependency | unsupported | policy_mismatch | non_deterministic
   return c.json({
     ok: true,
-    data: { status: "passed", differences: 0 },
+    data: {
+      status: "unsupported",
+      reason: "session-level replay is not implemented; replay a receipt with POST /api/artifacts/:id/replay"
+    },
     warnings: [],
     meta: { network: "simulated" }
   });
 });
 
 sessionRoutes.post("/diff-replay/:id", async (c) => {
-  // Computes divergence classifications against a canonical artifact
   return c.json({
     ok: true,
     data: {
-      status: "diverged",
-      divergenceClassifications: ["field_divergence", "timestamp_mismatch"],
-      details: []
+      status: "unsupported",
+      divergenceClassifications: [],
+      details: [],
+      reason: "divergence classification is not implemented; POST /api/artifacts/:id/replay reports the divergences the replay computed"
     },
     warnings: [],
     meta: { network: "simulated" }

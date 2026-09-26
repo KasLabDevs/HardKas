@@ -42,6 +42,7 @@ export const IDENTITY_CATEGORIES: Readonly<Record<string, IdentityCategory>> = O
   deploySimulationHash: "CONTENT",
   planArtifactId: "CONTENT",
   receiptArtifactId: "CONTENT",
+  submissionArtifactId: "CONTENT", // a TxObservation's subject submission (Wave 2(a), IC-2′.3)
   childArtifactId: "CONTENT",
   parentRevisionHash: "CONTENT",
   policyRef: "CONTENT",
@@ -64,6 +65,8 @@ export const IDENTITY_CATEGORIES: Readonly<Record<string, IdentityCategory>> = O
   unsignedTransactionId: "NETWORK",
   blockHash: "NETWORK",
   acceptingBlockHash: "NETWORK",
+  sinkHash: "NETWORK", // observation point: the virtual's selected parent (Wave 2(a))
+  pruningPointHash: "NETWORK", // observation point: the observer's pruning point (Wave 2(a))
   acceptedTxIds: "NETWORK",
   displacedTxIds: "NETWORK",
   spentUtxoIds: "NETWORK",
@@ -85,6 +88,7 @@ export const IDENTITY_CATEGORIES: Readonly<Record<string, IdentityCategory>> = O
   correlationId: "CORRELATION",
   causationId: "CORRELATION",
   migrationId: "CORRELATION",
+  observerId: "CORRELATION", // opaque identity of a HardKAS observer instance (Wave 2(a)); never an artifact
   sessionId: "CORRELATION",
   parentSessionId: "CORRELATION",
   networkProfileId: "CORRELATION", // the profile's own name; the artifact is referenced by networkProfileRef
@@ -135,6 +139,7 @@ export const IDENTITY_CATEGORIES: Readonly<Record<string, IdentityCategory>> = O
   bytecodeHash: "DOMAIN_DIGEST",
   imageDigest: "DOMAIN_DIGEST",
   digest: "DOMAIN_DIGEST",
+  responseDigest: "DOMAIN_DIGEST", // digest of a raw RPC response kept as observation evidence (Wave 2(a))
   fingerprint: "DOMAIN_DIGEST",
   // --- LOCATOR: paths are hints only ---
   path: "LOCATOR",

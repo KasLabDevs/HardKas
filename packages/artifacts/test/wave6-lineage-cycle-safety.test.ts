@@ -108,7 +108,7 @@ describe("Wave 6 · LINEAGE-1 · cycle-safe canonical lineage resolver (IC-5′ 
 
   it("1. receipt → signed → plan → ROOT terminates with exactly 3 nodes", async () => {
     const plan = makePlan();
-    const signed = createSimulatedSignedTxArtifact(plan, "payload", ctx);
+    const signed = createSimulatedSignedTxArtifact(plan, plan.from.address, ctx);
     const receipt = createSimulatedTxReceipt(plan, "simtx_" + "1".repeat(32), ctx, {
       parentArtifact: signed as typeof signed & { contentHash: string },
       sourceSignedId: signed.signedId
@@ -137,7 +137,7 @@ describe("Wave 6 · LINEAGE-1 · cycle-safe canonical lineage resolver (IC-5′ 
 
   it("3. canonical non-empty parent resolves correctly", async () => {
     const plan = makePlan();
-    const signed = createSimulatedSignedTxArtifact(plan, "payload", ctx);
+    const signed = createSimulatedSignedTxArtifact(plan, plan.from.address, ctx);
     await writeJson(path.join(artifactsDir, "plans", `parent-${plan.contentHash}.json`), plan);
     await writeJson(path.join(artifactsDir, "signed", `child-${signed.contentHash}.json`), signed);
     const chain = await store.resolveLineage(signed.contentHash as string);
@@ -187,7 +187,7 @@ describe("Wave 6 · LINEAGE-1 · cycle-safe canonical lineage resolver (IC-5′ 
 
   it("7. a legacy receipt whose only upward pointer is `sourceSignedId` returns a partial lineage (label never resolves)", async () => {
     const plan = makePlan();
-    const signed = createSimulatedSignedTxArtifact(plan, "payload", ctx);
+    const signed = createSimulatedSignedTxArtifact(plan, plan.from.address, ctx);
     await writeJson(path.join(artifactsDir, "signed", `legacy-signed-${signed.contentHash}.json`), signed);
     const receiptPath = path.join(artifactsDir, "receipts", "legacy-receipt.json");
     await writeJson(receiptPath, legacyV3({ schema: "hardkas.txReceipt", nonce: "r7" }, null, { sourceSignedId: signed.signedId }));

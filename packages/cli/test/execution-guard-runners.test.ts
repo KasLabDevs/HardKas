@@ -15,15 +15,23 @@ vi.mock("@hardkas/config", async (importOriginal) => {
   };
 });
 
+// Wave 2(b) · AUD-17: the CLI plans through the upstream Generator, which validates real
+// addresses, so the fixture address is derived with kaspa-wasm itself (a fixed key).
+async function testnetFixtureAddress(actualAccounts: any): Promise<string> {
+  const { PrivateKey } = await actualAccounts.loadKaspaWasm();
+  return (new PrivateKey("11".repeat(32)) as any).toKeypair().toAddress("testnet").toString();
+}
+
 vi.mock("@hardkas/accounts", async (importOriginal) => {
   const actual: any = await importOriginal();
+  const address = await testnetFixtureAddress(actual);
   return {
     ...actual,
-    resolveHardkasAccountAddress: vi.fn(async () => "kaspatest:qmockaddress123"),
+    resolveHardkasAccountAddress: vi.fn(async () => address),
     resolveHardkasAccount: vi.fn(() => ({
       name: "alice",
       kind: "kaspa",
-      address: "kaspatest:qmockaddress123",
+      address,
       network: "testnet-10"
     })),
     assertAccountCompatible: vi.fn((account, target) => {
@@ -75,6 +83,9 @@ describe("Execution Guard - CLI Runners", () => {
       };
     });
 
+    const actualAccounts: any = await vi.importActual("@hardkas/accounts");
+    const fixtureAddress = await testnetFixtureAddress(actualAccounts);
+
     vi.doMock("@hardkas/kaspa-rpc", () => {
       return {
         JsonWrpcKaspaClient: class {
@@ -84,15 +95,23 @@ describe("Execution Guard - CLI Runners", () => {
           async getUtxosByAddress() {
             return [
               {
-                outpoint: { transactionId: "mocktx", index: 0 },
-                address: "kaspatest:qmockaddress123",
+                // Wave 2(b) · AUD-17: the CLI now plans through the upstream Generator, which
+                // validates real inputs — the fixture is a well-formed outpoint, address and script.
+                outpoint: { transactionId: "a".repeat(64), index: 0 },
+                address: fixtureAddress,
                 amountSompi: 200000000000n, // enough sompi
+                scriptPublicKey: "20" + "00".repeat(32) + "ac",
+                blockDaaScore: 1n,
                 isCoinbase: false
               }
             ];
           }
           async checkMempoolPresence() {
             return false;
+          }
+          // Wave 2(c) · AUD-19: the planner requires ONE mempool observation; this node's mempool is empty.
+          async getMempoolEntriesByAddresses() {
+            return { entries: [] };
           }
           async close() {}
         }

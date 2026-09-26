@@ -40,6 +40,20 @@ export interface RuntimeContext {
   plannerAuthority?: "KASPA_WASM_GENERATOR" | "SYNTHETIC_SIMULATOR";
   /** Human-readable authority detail, e.g. `kaspa-wasm@2.0.1`. Optional. */
   plannerAuthorityDetail?: string;
+  /**
+   * Wave 2(c) · AUD-19: the mempool observation the planner's snapshot was filtered
+   * against (observer-local evidence, recorded in the plan). Absence = no pending-spend
+   * exclusion was applied (simulator, or a planner path that does not read a mempool).
+   */
+  pendingSpendEvidence?: {
+    source: "mempool";
+    scope: "observer-local";
+    address: string;
+    observedAtDaaScore?: string;
+    sendingEntries: number;
+    excludedOutpoints: string[];
+    guarantee: string;
+  };
 }
 
 /**

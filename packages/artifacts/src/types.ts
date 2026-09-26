@@ -373,13 +373,22 @@ export interface SignedTxArtifact extends BaseArtifact<"signedTx"> {
       }
     | undefined;
   txId?: TxId | undefined;
+  /** Wave 1.4 · IC-6′: the authenticated binding of a simulator authorization to its plan. */
+  authorization?:
+    | {
+        kind: "synthetic";
+        planArtifactId: string;
+        signers: string[];
+      }
+    | undefined;
   multisig?:
     | {
         threshold: number;
         requiredSigners: string[];
         signatures: Array<{
           signer: string;
-          signature: string;
+          signature?: string | undefined;
+          kind?: "synthetic" | undefined;
         }>;
       }
     | undefined;

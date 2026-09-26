@@ -46,7 +46,7 @@ function expectSelfConsistent(artifact: any, label: string) {
 describe("Wave 1.1 · producers are self-consistent and immutable after hashing", () => {
   it("plan, signed and receipt from @hardkas/artifacts verify as produced, in strict mode", () => {
     const plan = makePlan();
-    const signed = createSimulatedSignedTxArtifact(plan, "payload", ctx);
+    const signed = createSimulatedSignedTxArtifact(plan, plan.from.address, ctx);
     const receipt = createSimulatedTxReceipt(plan, "simtx_" + "1".repeat(32), ctx, { parentArtifact: signed as typeof signed & { contentHash: string }, sourceSignedId: signed.signedId });
     for (const [label, artifact] of Object.entries({ plan, signed, receipt })) {
       expectSelfConsistent(artifact, label);
@@ -56,7 +56,7 @@ describe("Wave 1.1 · producers are self-consistent and immutable after hashing"
 
   it("every authenticated top-level field of plan, signed and receipt is covered by the hash (mutation matrix)", () => {
     const plan = makePlan();
-    const signed = createSimulatedSignedTxArtifact(plan, "payload", ctx);
+    const signed = createSimulatedSignedTxArtifact(plan, plan.from.address, ctx);
     const receipt = createSimulatedTxReceipt(plan, "simtx_" + "1".repeat(32), ctx, { parentArtifact: signed as typeof signed & { contentHash: string }, sourceSignedId: signed.signedId });
     const skip = new Set<string>([...V5_UNAUTHENTICATED, ...V5_DERIVED_LABELS, "contentHash"]);
     for (const [label, artifact] of Object.entries({ plan, signed, receipt })) {
@@ -103,7 +103,7 @@ describe("Wave 1.1 · producers are self-consistent and immutable after hashing"
 
   it("children reference the root's real artifactId (rootArtifactId = lineageId = root.contentHash) and chain strictly", () => {
     const plan: any = makePlan();
-    const signed: any = createSimulatedSignedTxArtifact(plan, "payload", ctx);
+    const signed: any = createSimulatedSignedTxArtifact(plan, plan.from.address, ctx);
     expect(signed.lineage.parentArtifactId).toBe(plan.contentHash);
     expect(signed.lineage.rootArtifactId).toBe(plan.contentHash);
     expect(signed.lineage.lineageId).toBe(plan.contentHash);

@@ -144,7 +144,7 @@ describe("Wave 1.2 · persisted references resolve only by verified identity", (
   });
 
   it("lineage parents resolve only through lineage.parentArtifactId; sourcePlanId (a label) never resolves a parent", () => {
-    const signed: any = createSimulatedSignedTxArtifact(plan, "payload", ctx);
+    const signed: any = createSimulatedSignedTxArtifact(plan, plan.from.address, ctx);
     // Drop the authenticated parent link, keep the label; re-seal so integrity holds.
     delete signed.lineage;
     signed.contentHash = calculateContentHash(signed, CURRENT_HASH_VERSION);

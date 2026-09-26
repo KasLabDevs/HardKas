@@ -119,7 +119,7 @@ describe("Wave 11 · RESOLVER-1 · content-verified store lookups (IC-5′ re-ba
 
   it("2. does NOT return artifact Y when Y's filename shares the queried A's first-16-hex — canonical identity is authoritative", async () => {
     const plan = makePlan();
-    const signed = createSimulatedSignedTxArtifact(plan, "payload", ctx);
+    const signed = createSimulatedSignedTxArtifact(plan, plan.from.address, ctx);
     const idY = signed.contentHash as string;
     const idA = idY.slice(0, 16) + "a".repeat(48);
     expect(idA).not.toBe(idY);

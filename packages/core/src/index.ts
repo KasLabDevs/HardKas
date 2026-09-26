@@ -63,6 +63,7 @@ export const artifactTypeSchema = z.enum([
   "signedTx.v2",
   "txReceipt.v2",
   "txSubmission.v1",
+  "txObservation.v1",
   "txTrace",
   "snapshot.v1",
   "workflow.v1",
@@ -155,6 +156,7 @@ export * from "./append-coordinator.js";
 export * from "./migrations.js";
 
 export * from "./registry.js";
+export * from "./kaspa-params.js";
 export * from "./confirmation-policy.js";
 export * from "./pskt.js";
 export * from "./pskt-adapter.js";

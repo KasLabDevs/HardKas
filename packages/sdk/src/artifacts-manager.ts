@@ -478,12 +478,20 @@ export class HardkasArtifactsManager {
     sourceArtifactId: string;
     legacyClaims: any;
     stripped: string[];
+    /** Where the verified legacy source lives in the store (it is the re-issue's parent). */
+    sourcePath?: string | undefined;
     migratedPath?: string | undefined;
     receiptPath?: string | undefined;
   }> {
     const opts = typeof options === "string" ? { migrationId: options } : options;
-    const { migrateArtifactToHashVersion, MigrationError, CURRENT_HASH_VERSION, looksLikePath } =
-      await import("@hardkas/artifacts");
+    const {
+      migrateArtifactToHashVersion,
+      MigrationError,
+      CURRENT_HASH_VERSION,
+      looksLikePath,
+      resolveArtifactSync,
+      ProjectArtifactStore
+    } = await import("@hardkas/artifacts");
 
     let source: any;
     if (typeof target === "string") {
@@ -505,6 +513,21 @@ export class HardkasArtifactsManager {
       throw e;
     }
 
+    // Wave 1.3 security review B1: the re-issue's parent is the verified legacy
+    // source, and a parent resolves only from the store. The source therefore
+    // stays in (or is copied, byte-for-byte identical, into) the store; it keeps
+    // its identity and its LEGACY scope. Written before the re-issue, so a failure
+    // never leaves a re-issue whose parent is missing.
+    let sourcePath: string;
+    try {
+      sourcePath = resolveArtifactSync(this.sdk.workspace.root, { artifact: out.source.artifactId }).path;
+    } catch (e: any) {
+      if (e?.code !== "ARTIFACT_NOT_FOUND") {
+        throw new HardkasError(typeof e?.code === "string" ? e.code : "MIGRATION_SOURCE_INVALID", e?.message ?? String(e));
+      }
+      sourcePath = await new ProjectArtifactStore(this.sdk.workspace.root).writeArtifact(source);
+    }
+
     const migratedWrite = await this.write(out.artifact as any);
     const receiptWrite = await this.write(out.receipt as any);
 
@@ -514,6 +537,7 @@ export class HardkasArtifactsManager {
       sourceArtifactId: out.source.artifactId,
       legacyClaims: out.legacyClaims,
       stripped: out.stripped,
+      sourcePath,
       migratedPath: migratedWrite.absolutePath,
       receiptPath: receiptWrite.absolutePath
     };

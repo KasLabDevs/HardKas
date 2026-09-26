@@ -25,7 +25,6 @@ export interface TxSendRunnerResult {
   receipt: TxReceiptArtifact | TxSubmissionArtifact;
   receiptPath?: string | undefined;
   executionId?: string;
-  replayId?: string;
 }
 
 /**
@@ -112,8 +111,7 @@ export async function runTxSend(input: TxSendRunnerInput): Promise<TxSendRunnerR
       networkName: resolvedName,
       receipt,
       receiptPath,
-      executionId: `exec_${Date.now().toString(36)}`,
-      replayId: `replay_${receipt.txId.substring(0, 8)}`
+      executionId: `exec_${Date.now().toString(36)}`
     };
   }
 
@@ -152,8 +150,7 @@ export async function runTxSend(input: TxSendRunnerInput): Promise<TxSendRunnerR
       networkName: resolvedName,
       receipt,
       receiptPath,
-      executionId: `exec_${Date.now().toString(36)}`,
-      replayId: `replay_${receipt.txId.substring(0, 8)}`
+      executionId: `exec_${Date.now().toString(36)}`
     };
   } finally {
     if (rpcClient) {

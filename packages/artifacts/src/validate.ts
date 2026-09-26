@@ -68,7 +68,8 @@ export function validateSignedTxArtifact(value: unknown): ArtifactValidationResu
     errors.push("Missing signedTransaction object");
   } else {
     const st = v.signedTransaction as Record<string, unknown>;
-    if (!["kaspa-sdk", "hex", "simulated", "unknown"].includes(st.format as string)) {
+    // "simulated" is recognised only as the legacy (unbound) format; producers write "synthetic-authorization" (Wave 1.4).
+    if (!["kaspa-sdk", "hex", "synthetic-authorization", "simulated", "unknown"].includes(st.format as string)) {
       errors.push("Invalid signedTransaction.format");
     }
   }

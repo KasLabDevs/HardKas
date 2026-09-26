@@ -59,6 +59,22 @@ export class HardkasWorkflow {
     const parentHint = (signed: any): { plan?: any } =>
       lastPlan && signed?.lineage?.parentArtifactId === lastPlan.contentHash ? { plan: lastPlan } : {};
 
+    // Wave 1.3 security review B2: a real `send()` RECORDS a rejected submit
+    // (txSubmission.v1, submitResult.accepted = false) and returns
+    // `submitted: false`; the step must fail, never be recorded as success.
+    // The simulator path of `send()` also reports `submitted: false` (nothing is
+    // broadcast by design) together with `simulated: true`; that is not a rejection.
+    const assertBroadcastAccepted = (res: any): void => {
+      if (res && res.submitted === false && res.simulated !== true) {
+        const submissionId = res.submission?.contentHash ?? res.artifactId ?? "unknown";
+        const reason = res.submission?.submitResult?.error ?? "no reason returned";
+        throw new HardkasError(
+          "TX_SUBMISSION_REJECTED",
+          `The node did not accept the transaction (${reason}); the submission was recorded as ${submissionId}.`
+        );
+      }
+    };
+
     const stepsResults: Record<string, any> = {};
 
     // Real Execution Routing
@@ -120,6 +136,7 @@ export class HardkasWorkflow {
                   this.sdk.network === "simulated"
                     ? await this.sdk.tx.simulate(signed, parentHint(signed))
                     : await this.sdk.tx.send(signed, parentHint(signed));
+                assertBroadcastAccepted(res);
                 await this.sdk.artifacts.write(res.receipt, {
                   dryRun: options.dryRun ?? false
                 });
@@ -200,10 +217,12 @@ export class HardkasWorkflow {
             if (producedArtifactId) producedArtifacts.push(producedArtifactId);
             result = receipt;
           } else {
-            const { receipt } =
+            const sendResult: any =
               this.sdk.network === "simulated"
                 ? await this.sdk.tx.simulate(lastSigned, parentHint(lastSigned))
                 : await this.sdk.tx.send(lastSigned, parentHint(lastSigned));
+            assertBroadcastAccepted(sendResult);
+            const receipt = sendResult.receipt;
             await this.sdk.artifacts.write(receipt, { dryRun: options.dryRun ?? false });
             const receiptRecord = receipt as unknown as Record<string, string>;
             producedArtifactId =

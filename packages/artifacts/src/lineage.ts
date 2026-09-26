@@ -35,6 +35,11 @@ export function verifyLineage(
   if (!lineage) {
     const isWorkflow = artifact.schema === HardkasSchemas.WorkflowV1;
     const isSnapshot = artifact.schema === HardkasSchemas.Snapshot || artifact.schema === HardkasSchemas.SnapshotV1;
+    // Wave 2(a) · IC-2′.5: a TxObservation REFERENCES its subject; it is not a lineage link.
+    const isObservation = artifact.schema === HardkasSchemas.TxObservationV1;
+    if (isObservation) {
+      return { ok: true, issues };
+    }
     const severity = options.strict && !isWorkflow && !isSnapshot ? "error" : "warning";
     if (!isWorkflow && !isSnapshot || options.strict) {
       if (severity === "error" || !isSnapshot) {

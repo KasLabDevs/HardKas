@@ -67,9 +67,12 @@ describe("P1 Multisig & Sequential Signing", () => {
 
     expect(sig2.status).toBe("signed");
     expect(sig2.signedTransaction).toBeDefined();
-    expect(sig2.signedTransaction?.format).toBe("simulated");
-    expect(sig2.signedTransaction?.payload).toContain(alice.address);
-    expect(sig2.signedTransaction?.payload).toContain(bob.address);
+    // Wave 1.4 · IC-6′.4: the completed set is a synthetic authorization bound to the plan; the
+    // signer identities live in the authenticated `authorization`, never in a "signature".
+    expect(sig2.signedTransaction?.format).toBe("synthetic-authorization");
+    expect(sig2.signedTransaction?.payload).toBe(plan.contentHash);
+    expect(sig2.txId).toBe(`synthetic-${plan.contentHash}`);
+    expect(sig2.authorization?.signers).toEqual([alice.address, bob.address].sort());
     expect(sig2.multisig?.signatures.length).toBe(2);
     expect(sig2.signatureMetadata?.length).toBe(2);
 

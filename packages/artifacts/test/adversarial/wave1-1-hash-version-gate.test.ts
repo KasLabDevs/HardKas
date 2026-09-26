@@ -33,6 +33,9 @@ function makePlan() {
   });
 }
 
+/** A synthetic authorization of `p` by its own `from` (Wave 1.4 · IC-6′). */
+const signedOf = (p: any = makePlan()): any => createSimulatedSignedTxArtifact(p, p.from.address, ctx);
+
 /** Re-hashes an artifact under a legacy version so its integrity holds under that version's rules. */
 function asLegacy(artifact: any, version: number): any {
   const legacy = structuredClone(artifact);
@@ -52,7 +55,7 @@ describe("Wave 1.1 · hashVersion gate (IC-4′.2)", () => {
   });
 
   it("T-P5 / T-R5: an invalid or missing hashVersion is HASH_VERSION_INVALID in strict and non-strict, and no legacy rule is applied", () => {
-    const signed: any = createSimulatedSignedTxArtifact(makePlan(), "payload", ctx);
+    const signed: any = signedOf();
     for (const bad of ["x", "4", 4.5, -1, 0, 99, null, "absent"]) {
       const art = structuredClone(signed);
       if (bad === "absent") delete art.hashVersion;
@@ -74,7 +77,7 @@ describe("Wave 1.1 · hashVersion gate (IC-4′.2)", () => {
   });
 
   it("T-R6 (control): a numeric legacy version is verified under its own rules; strict demands migration", () => {
-    const signed: any = createSimulatedSignedTxArtifact(makePlan(), "payload", ctx);
+    const signed: any = signedOf();
     for (const version of [1, 4]) {
       const legacy = asLegacy(signed, version);
       const nonStrict = verifyArtifactIntegritySync(structuredClone(legacy), { strict: false });
@@ -89,7 +92,7 @@ describe("Wave 1.1 · hashVersion gate (IC-4′.2)", () => {
   });
 
   it("a current-version artifact reports authScope FULL with no unauthenticated material fields", () => {
-    const signed = createSimulatedSignedTxArtifact(makePlan(), "payload", ctx);
+    const signed = signedOf();
     for (const strict of [true, false]) {
       const r: any = verifyArtifactIntegritySync(structuredClone(signed), { strict });
       expect(r.ok).toBe(true);
@@ -124,13 +127,17 @@ describe("Wave 1.1 · hashVersion gate (IC-4′.2)", () => {
       expect(r.ok, `strict=${strict}`).toBe(false);
       expect(codes(r)).toContain("LABEL_MISMATCH");
     }
-    const signed: any = createSimulatedSignedTxArtifact(plan, "payload", ctx);
+    const signed: any = signedOf(plan);
     signed.signedId = "signed-0000000000000000";
     expect(codes(verifyArtifactIntegritySync(signed, { strict: false }))).toContain("LABEL_MISMATCH");
   });
 
   it("legacy artifacts keep their historical scope: a v4 status flip is reported as unauthenticated, never as verified", () => {
-    const signed: any = createSimulatedSignedTxArtifact(makePlan(), "payload", ctx);
+    const signed: any = signedOf();
+    // A legacy (rc.22) signed never carried a synthetic binding: the sample under v4 is a
+    // plain unbound signed, so only the historical scope is under test (not IC-6′ coherence).
+    delete signed.authorization;
+    signed.signedTransaction = { format: "hex", payload: "deadbeef" };
     const legacy = asLegacy(signed, 4);
     const flipped = structuredClone(legacy);
     flipped.status = "partially_signed";

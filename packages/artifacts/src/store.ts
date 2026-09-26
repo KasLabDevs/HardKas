@@ -2,13 +2,15 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import { TxPlan, SignedTx, TxReceipt } from "./schemas.js";
 import { calculateContentHash, CURRENT_HASH_VERSION, MIN_HASH_VERSION, readDeclaredHashVersion } from "./canonical.js";
-import { writeFileAtomic } from "@hardkas/core";
+import { writeFileAtomic, HardkasSchemas } from "@hardkas/core";
 import { assertSafeFileId, codedError as storeError, schemaFilePrefix } from "./file-id.js";
+import { checkTxObservationCoherence } from "./tx-observation.js";
 import { LineageError } from "./lineage-error.js";
 import { ReceiptLookupError } from "./receipt-lookup-error.js";
 import {
   ARTIFACT_ID_PATTERN,
   ArtifactResolveError,
+  checkArtifactIdentity,
   enumerateWorkspaceArtifactsSync,
   looksLikePath,
   parseUntypedLookup,
@@ -101,6 +103,7 @@ export class ProjectArtifactStore {
       const s = artifact.schema.toLowerCase();
       if (s.includes("txplan")) subDir = "plans";
       else if (s.includes("signedtx")) subDir = "signed";
+      else if (s.includes("txobservation")) subDir = "observations";
       else if (s.includes("txreceipt") || s.includes("txsubmission")) subDir = "receipts";
       else if (s.includes("lineage")) subDir = "lineage";
     }
@@ -178,7 +181,7 @@ export class ProjectArtifactStore {
    *   3. Retain only those whose `.txId` is a non-empty string that
    *      exactly equals the requested `txId` (byte-for-byte, no
    *      normalisation — `txId` is contractually `z.string()` and can be
-   *      lowercase 64-hex, a `simtx_failed_*` marker, or any deterministic
+   *      lowercase 64-hex, a `synthetic-<64 hex>` id, or any deterministic
    *      simulator id; imposing a shape here would break legitimate
    *      lookups).
    *   4. Zero matches → `RECEIPT_NOT_FOUND` typed error.
@@ -197,6 +200,42 @@ export class ProjectArtifactStore {
    * continues to work unchanged; typed errors now propagate to the CLI's
    * top-level renderer via Wave 8's owner-of-serialisation model.
    */
+  /**
+   * Wave 2(a) · IC-2′.6: the observations recorded for `txId` — N by design. Every
+   * candidate is verified (strict, FULL) before it counts; the rest are reported,
+   * never silently dropped and never used to decide (IC-2′.8).
+   */
+  listObservationsByTxId(txId: string): {
+    observations: unknown[];
+    rejected: Array<{ path: string; reason: string }>;
+  } {
+    const observations: unknown[] = [];
+    const rejected: Array<{ path: string; reason: string }> = [];
+    for (const entry of enumerateWorkspaceArtifactsSync(this.workspaceRoot)) {
+      const a: any = entry.artifact;
+      if (a?.schema !== HardkasSchemas.TxObservationV1) continue;
+      if (a?.subject?.txId !== txId) continue;
+      // FULL scope: current hash version, identity recomputed, coherent with itself.
+      const declared = readDeclaredHashVersion(a);
+      if (declared !== CURRENT_HASH_VERSION) {
+        rejected.push({ path: entry.path, reason: declared === null ? "HASH_VERSION_INVALID" : `LEGACY hashVersion ${declared}` });
+        continue;
+      }
+      const identity = checkArtifactIdentity(a);
+      if (!identity.ok) {
+        rejected.push({ path: entry.path, reason: identity.issues.map((i) => i.code).join(", ") });
+        continue;
+      }
+      const coherence = checkTxObservationCoherence(a);
+      if (!coherence.ok) {
+        rejected.push({ path: entry.path, reason: `OBSERVATION_INCOHERENT: ${coherence.message}` });
+        continue;
+      }
+      observations.push(a);
+    }
+    return { observations, rejected };
+  }
+
   async findReceiptByTxId(txId: string): Promise<unknown> {
     // Wave 1.2 · IC-5′.4–.5: every candidate is verified (declared version,
     // claimed identity) before it is returned; identical copies collapse;

@@ -79,11 +79,14 @@ export function registerExplainCommand(program: Command) {
         console.log(
           pc.white(
             `  This artifact represents a ${pc.cyan(schema)} generated during a ${
-              isSimulated ? "local deterministic replay" : "network interaction"
+              isSimulated ? "local simulated execution" : "network interaction"
             }.\n`
           )
         );
 
+        // Wave 1.5 · AUD-14 (simulator part): `explain` prints only what it computed.
+        // The identity check is computed by the resolver (authScope); no replay runs
+        // here, so no replay result is printed — the command that computes one is named.
         UI.causality("Execution Trace", {
           // IC-5′.11: the canonical identity, labelled as such; a txId is shown as a txId.
           "Artifact ID": handle.artifactId,
@@ -92,9 +95,13 @@ export function registerExplainCommand(program: Command) {
           "Resolved By": handle.resolvedBy,
           "Source Authority": "filesystem artifact",
           "File Path": handle.path,
-          "Projection Layer": "Indexed into SQLite query-store (if dashboard is running)",
-          "Replay Result": isSimulated
-            ? "deterministic reproduction successful"
+          "Projection Layer": "SQLite query-store (indexed while the dashboard runs)",
+          Integrity:
+            handle.authScope === "FULL"
+              ? "verified: the body recomputes to this artifactId (FULL scope)"
+              : `verified within a ${handle.authScope} authentication scope only`,
+          Replay: isSimulated
+            ? `not run by explain; run \`hardkas replay verify ${handle.artifactId}\` to reproduce it`
             : "network state dependent",
           "Consensus Validation": isSimulated
             ? "NOT performed"

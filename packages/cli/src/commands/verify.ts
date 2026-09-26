@@ -47,7 +47,8 @@ export function registerVerifyCommand(program: Command) {
           json: opts.json,
           workspaceRoot,
           containedInWorkspace: true,
-          command: "verify"
+          command: "verify",
+          storeVerification: true
         });
       } catch (err: any) {
         if (!opts.json) {
