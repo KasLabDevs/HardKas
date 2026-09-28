@@ -2189,6 +2189,20 @@
           "mandatory": false
         },
         {
+          "flags": "--skip-toolchain",
+          "description": "Do not install the pinned kaspa-wasm (signing, planning and the generated test need it)",
+          "default": false,
+          "required": false,
+          "mandatory": false
+        },
+        {
+          "flags": "--toolchain-from-file <asset>",
+          "description": "Install the pinned kaspa-wasm from its official release asset already on disk",
+          "default": null,
+          "required": true,
+          "mandatory": false
+        },
+        {
           "flags": "--json",
           "description": "Output results as JSON",
           "default": false,

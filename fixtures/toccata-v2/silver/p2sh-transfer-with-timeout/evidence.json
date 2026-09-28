@@ -13,22 +13,21 @@
     "problems": [],
     "expected": {
       "containerName": "hardkas-kaspad-toccata-v2",
-      "image": "kaspanet/rusty-kaspad:v2.0.1@sha256:db36449e2f41cf33ab7c26683ce390cb71bdea9c403eefd2e740a7d5605bcd8b",
-      "imageDigest": "sha256:db36449e2f41cf33ab7c26683ce390cb71bdea9c403eefd2e740a7d5605bcd8b",
+      "image": "kaspanet/rusty-kaspad:v2.1.0@sha256:f85da74b9514584451f83a2cbea3aa93f700248302fe7e3e0ab17288f93c905b",
+      "imageDigest": "sha256:f85da74b9514584451f83a2cbea3aa93f700248302fe7e3e0ab17288f93c905b",
       "network": "simnet",
-      "serverVersion": "2.0.1",
+      "serverVersion": "2.1.0",
       "host": "127.0.0.1",
       "rpcPort": 18210
     },
     "observed": {
       "container": {
         "name": "hardkas-kaspad-toccata-v2",
-        "id": "6c2fcfd32a1c9f61adf1160c4aff5958435def2eb11d3364d4298284f47c0528",
+        "id": "49d5ecc204698b22afb8a096092bb32580fc0818bfb648a03842fd6090882f01",
         "running": true,
-        "imageId": "sha256:db36449e2f41cf33ab7c26683ce390cb71bdea9c403eefd2e740a7d5605bcd8b",
+        "imageId": "sha256:f85da74b9514584451f83a2cbea3aa93f700248302fe7e3e0ab17288f93c905b",
         "repoDigests": [
-          "kaspanet/rusty-kaspad@sha256:db36449e2f41cf33ab7c26683ce390cb71bdea9c403eefd2e740a7d5605bcd8b",
-          "supertypo/rusty-kaspad@sha256:db36449e2f41cf33ab7c26683ce390cb71bdea9c403eefd2e740a7d5605bcd8b"
+          "kaspanet/rusty-kaspad@sha256:f85da74b9514584451f83a2cbea3aa93f700248302fe7e3e0ab17288f93c905b"
         ],
         "publishedPorts": [
           {
@@ -51,12 +50,12 @@
       "server": {
         "url": "ws://127.0.0.1:18210",
         "networkId": "simnet",
-        "serverVersion": "2.0.1",
+        "serverVersion": "2.1.0",
         "isSynced": true
       },
       "probeErrors": []
     },
-    "checkedAt": "2026-09-14T11:25:18.409Z"
+    "checkedAt": "2026-09-28T19:51:12.233Z"
   },
   "compile": {
     "schema": "hardkas.silver.compileProvenance.v1",
@@ -71,14 +70,14 @@
       "languageVersion": "0.1.0"
     },
     "sourceSha256": "fabadb59dbcb4b6b5ef577b65cd21a636b9e2de695aa64178d4bff39d30d84f6",
-    "constructorArgsSha256": "b4c4d2899a5b7a1a5066d642a49ed240d149ded39d7f3aacaaa53aeeb16b18e3",
-    "artifactSha256": "9befceb11d7f667bad7bd3c7daa60acfa583808cf1e1ba31d214ab292fca6546",
+    "constructorArgsSha256": "50f881606d68744f40634ec42e0ee35167e053d6193b64a4b346aed65dbec847",
+    "artifactSha256": "606ae6c435e30addd71faa425d036a61e46b28d73c08fd1c395d3597059026f8",
     "abiSchemaVersion": 1,
     "contracts": [
       {
         "name": "TransferWithTimeout",
-        "bytecodeSha256": "f19031a6c409376ee017f8764b4456c8da29cf704cad6fa67740753091fe9d16",
-        "templateHash": "a9b4336c95ddd75fd0ce38e8c35d676753d42a07e5dbc6d40a0467db4fe8e08a",
+        "bytecodeSha256": "8db247354548fa5c0be1535d4bdfed3c44abef6adb975eada30e0e743bf352f2",
+        "templateHash": "f5bd257ec7a0297a05502f4e2e8fe14d28df94b9bf7aaa98c0f5756f7e5d328b",
         "entries": [
           {
             "name": "reclaim",
@@ -99,12 +98,12 @@
       "reclaim": "35eecca6",
       "transfer": "de5ac30f"
     },
-    "bytecodeSha256": "f19031a6c409376ee017f8764b4456c8da29cf704cad6fa67740753091fe9d16",
+    "bytecodeSha256": "8db247354548fa5c0be1535d4bdfed3c44abef6adb975eada30e0e743bf352f2",
     "lockingScript": {
       "version": 0,
-      "script": "aa20e3ef75ef165db2360be29f2a42391879d2dbb1fc27855d39ca56180012320c4b87"
+      "script": "aa2009b2d0a90a41efac2e584a412d1d3ab6cadee4b37eb24d245c58c97812fcef6287"
     },
-    "p2shAddress": "kaspasim:pr377a00zewmydstu20j5s3erpua9ka3lsnc2hfeeftpsqqjxgxykqp7ptv9p"
+    "p2shAddress": "kaspasim:pqym959fpfq7ltpwtp9yztga82mv4hhykdltynfyt3vvj7qjlnhkywy0500jf"
   },
   "rule": {
     "script": "OP_CHECKSEQUENCEVERIFY: period <= (sequence & 0xffffffff), sequence disable bit clear",
@@ -113,108 +112,108 @@
   },
   "deploys": {
     "transferOutput": {
-      "txId": "d0ccdddb2d3672f9d2f699a364dbf7d4f2ed3d814deb3b207c446ed0b13b5568",
+      "txId": "b6895fe6944b1fe91da2b2ce9314266cbd93180f7e18079df04451008f1aaa94",
       "outpoint": {
-        "transactionId": "d0ccdddb2d3672f9d2f699a364dbf7d4f2ed3d814deb3b207c446ed0b13b5568",
+        "transactionId": "b6895fe6944b1fe91da2b2ce9314266cbd93180f7e18079df04451008f1aaa94",
         "index": 0
       },
-      "blockDaaScore": "64715"
+      "blockDaaScore": "1472"
     },
     "reclaimOutput": {
-      "txId": "bc2136e75a34173fb0a7edf46461c81f6b2277fd50ea41e61088cd83fac41eb9",
+      "txId": "bd564da0ce7ef5958e5e5fad07b2ee75277f51aaa18d4636b816f110f6a952ea",
       "outpoint": {
-        "transactionId": "bc2136e75a34173fb0a7edf46461c81f6b2277fd50ea41e61088cd83fac41eb9",
+        "transactionId": "bd564da0ce7ef5958e5e5fad07b2ee75277f51aaa18d4636b816f110f6a952ea",
         "index": 0
       },
-      "blockDaaScore": "64739"
+      "blockDaaScore": "1495"
     }
   },
   "transferBranch": {
-    "timeoutDaaScore": "65215",
+    "timeoutDaaScore": "1972",
     "beforeTimeout": {
       "rejectedWrongKey": {
         "name": "transfer-signed-by-sender",
         "rejected": true,
-        "nodeError": "Rejected transaction 5206a9b0ed5aeec8a47f454366ba49a7e83e35204773a6d6561e7edc7dd4090c: failed to verify the signature script: script ran, but verification failed",
-        "virtualDaaScoreBefore": "64754",
-        "virtualDaaScoreAfter": "64754"
+        "nodeError": "Rejected transaction 9bc8db305cd49db90f034f2135b53472e19b8a4046fe5fd0b7b9452862edbc6b: failed to verify the signature script: script ran, but verification failed",
+        "virtualDaaScoreBefore": "1517",
+        "virtualDaaScoreAfter": "1517"
       },
       "accepted": {
         "name": "transfer-by-recipient-before-timeout",
         "accepted": true,
-        "txId": "5206a9b0ed5aeec8a47f454366ba49a7e83e35204773a6d6561e7edc7dd4090c",
-        "virtualDaaScoreBefore": "64754",
-        "virtualDaaScoreAfter": "64754"
+        "txId": "9bc8db305cd49db90f034f2135b53472e19b8a4046fe5fd0b7b9452862edbc6b",
+        "virtualDaaScoreBefore": "1517",
+        "virtualDaaScoreAfter": "1517"
       }
     },
     "spend": {
-      "txId": "5206a9b0ed5aeec8a47f454366ba49a7e83e35204773a6d6561e7edc7dd4090c",
+      "txId": "9bc8db305cd49db90f034f2135b53472e19b8a4046fe5fd0b7b9452862edbc6b",
       "entry": "transfer",
       "sequence": "0",
       "feeSompi": "182200",
       "mass": "1822",
-      "signatureScriptSha256": "d8939c2f727bce3f3caa6230ca5f52d3c0d56bd3e39645d545530d2afb82c65d",
-      "confirmedAtBlockDaaScore": "64760"
+      "signatureScriptSha256": "4e916f35698b0603681d0f31280313384c356d01893bd28aa25a868f50c8adfb",
+      "confirmedAtBlockDaaScore": "1528"
     }
   },
   "reclaimBranch": {
     "period": "500",
     "sequence": "500",
-    "validFromVirtualDaaScore": "65239",
+    "validFromVirtualDaaScore": "1995",
     "beforeThreshold": {
-      "virtualDaaScore": "64754",
+      "virtualDaaScore": "1517",
       "conditionMet": false,
       "attempts": [
         {
           "name": "reclaim-before-period",
           "rejected": true,
-          "nodeError": "Rejected transaction 7e6ec8e25f722dd46dd4d0ba9523b6749fa223b9afa65b91b7ebf31a3950be37: one of the transaction sequence locks conditions was not met",
-          "virtualDaaScoreBefore": "64754",
-          "virtualDaaScoreAfter": "64754"
+          "nodeError": "Rejected transaction 85a22feaa06165c69e242350055b50e8f730c36e9cbdf79dd99b35a5d4d31597: one of the transaction sequence locks conditions was not met",
+          "virtualDaaScoreBefore": "1517",
+          "virtualDaaScoreAfter": "1517"
         },
         {
           "name": "reclaim-with-sequence-below-period",
           "rejected": true,
-          "nodeError": "Rejected transaction 93f81bdd402533204c692217bf5236ed5a35b00740d7689d615067d0c92e5687: failed to verify the signature script: Unsatisfied lock time: locktime requirement not satisfied -- locktime is greater than the transaction locktime: 500 > 0",
-          "virtualDaaScoreBefore": "64754",
-          "virtualDaaScoreAfter": "64754"
+          "nodeError": "Rejected transaction cd93d3c40a2aa934d677dd7e7ce07bf2d3855466c20376fca802b78f051dae00: failed to verify the signature script: Unsatisfied lock time: locktime requirement not satisfied -- locktime is greater than the transaction locktime: 500 > 0",
+          "virtualDaaScoreBefore": "1517",
+          "virtualDaaScoreAfter": "1517"
         }
       ]
     },
     "advance": {
-      "from": "64754",
-      "reachedWhileMining": "65280",
-      "settled": "65296"
+      "from": "1517",
+      "reachedWhileMining": "2016",
+      "settled": "2016"
     },
     "afterThreshold": {
-      "virtualDaaScore": "65318",
+      "virtualDaaScore": "2053",
       "conditionMet": true,
       "attempts": [
         {
           "name": "reclaim-signed-by-recipient-after-period",
           "rejected": true,
-          "nodeError": "Rejected transaction 462844ee83cb78b68396fa3911643b579a049729d16aa9d289ef3624545aceca: failed to verify the signature script: script ran, but verification failed",
-          "virtualDaaScoreBefore": "65318",
-          "virtualDaaScoreAfter": "65318"
+          "nodeError": "Rejected transaction b13fe6f97b64a3f205a2e3a6b9c794cde41cd63b671760d18b47710f918da42e: failed to verify the signature script: script ran, but verification failed",
+          "virtualDaaScoreBefore": "2053",
+          "virtualDaaScoreAfter": "2053"
         },
         {
           "name": "reclaim-after-period",
           "accepted": true,
-          "txId": "7e6ec8e25f722dd46dd4d0ba9523b6749fa223b9afa65b91b7ebf31a3950be37",
-          "virtualDaaScoreBefore": "65318",
-          "virtualDaaScoreAfter": "65318"
+          "txId": "85a22feaa06165c69e242350055b50e8f730c36e9cbdf79dd99b35a5d4d31597",
+          "virtualDaaScoreBefore": "2053",
+          "virtualDaaScoreAfter": "2053"
         }
       ]
     },
     "sameTransactionBeforeAndAfter": true,
     "spend": {
-      "txId": "7e6ec8e25f722dd46dd4d0ba9523b6749fa223b9afa65b91b7ebf31a3950be37",
+      "txId": "85a22feaa06165c69e242350055b50e8f730c36e9cbdf79dd99b35a5d4d31597",
       "entry": "reclaim",
       "sequence": "500",
       "feeSompi": "182200",
       "mass": "1822",
-      "signatureScriptSha256": "4759b8695469437c8a75db7cd9314d35829ce0ac7bdb97ade0fcc35a8a95aa70",
-      "confirmedAtBlockDaaScore": "65320"
+      "signatureScriptSha256": "28c77e26e7f6cc594e9eed8bc1e0602b55ede71f05858e810eb0d1aa8b0fa960",
+      "confirmedAtBlockDaaScore": "2062"
     }
   },
   "harness": {

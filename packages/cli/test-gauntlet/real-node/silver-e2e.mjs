@@ -308,14 +308,16 @@ export async function deployToP2sh(ws, { p2shAddress, amountKas, label }) {
   const signedPath = path.join(artifactsDir, `${label}.signed.json`);
   ws.hardkas(["tx", "sign", path.join(artifactsDir, plan), "--account", "fixture", "--out", signedPath]);
 
-  const receiptsBefore = new Set(listJson(path.join(ws.dir, ".hardkas")));
+  const artifactsBefore = new Set(listJson(path.join(ws.dir, ".hardkas")));
   ws.hardkas(["tx", "send", signedPath, "--network", "simnet", "--provider", "rpc", "--yes"]);
-  const receipt = listJson(path.join(ws.dir, ".hardkas"))
-    .filter((f) => !receiptsBefore.has(f))
+  // A send to a real node records a hardkas.txSubmission.v1 (its state is derived later from
+  // observations); earlier CLIs wrote a receipt. Only the txId is used here.
+  const submission = listJson(path.join(ws.dir, ".hardkas"))
+    .filter((f) => !artifactsBefore.has(f))
     .map((f) => JSON.parse(fs.readFileSync(f, "utf8")))
-    .find((a) => /receipt/i.test(String(a.schema)) && a.txId);
-  if (!receipt) throw new Error(`no receipt for ${label}`);
-  const txId = receipt.txId;
+    .find((a) => /txSubmission|receipt/i.test(String(a.schema)) && a.txId);
+  if (!submission) throw new Error(`no submission or receipt for ${label}`);
+  const txId = submission.txId;
   log(`  ${label}: submitted ${txId}`);
 
   const found = await mineUntil(p2shAddress, (us) => {

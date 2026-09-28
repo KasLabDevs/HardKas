@@ -28,14 +28,14 @@
           "languageVersion": "0.1.0"
         },
         "sourceSha256": "3e499912ad084aaf0eece3bdea7e6c51f4e3ce6c0f7fd25b1c0a07676f85aaad",
-        "constructorArgsSha256": "68a443e505aa136aa4cfa7674b6cfa3990bddaf9a7da7e66885025d7316c1ccc",
-        "artifactSha256": "bea47214c98de797b3d9c0804a9fc16d4203002814bfd957926ad3e342b8d29f",
+        "constructorArgsSha256": "a2347aea830fd32e778ef4099b66e360e9f0f7cfe2798c9eaa8823112e52eabe",
+        "artifactSha256": "54e3a6e2e23250d0cbb3e367300c33f405cd684ee1c55227a95c2c210d90dffa",
         "abiSchemaVersion": 1,
         "contracts": [
           {
             "name": "Escrow",
-            "bytecodeSha256": "d9941e3d301d1acd1ae2cd7c86ac2af2510024bcef892cdc39c5ca27f8a0dc0d",
-            "templateHash": "5400aa29ba85183f9e66c30c4992aef91334119d4cea8c46b4ce642cc081de2a",
+            "bytecodeSha256": "51097b7b9314c5407ebd67018e07bbbf82f531f53372100ac04c7bf17fcac10e",
+            "templateHash": "111f7f33b0ff87c0401e2870edc36b6deb7ff30efa1c4cfc2c09afff2ed58172",
             "entries": [
               {
                 "name": "mutualRelease",
@@ -53,13 +53,13 @@
           }
         ],
         "contractName": "Escrow",
-        "lockingScriptHex": "aa20fac79ff256fe9e5a9e55f007e5b0cfc3eef0bfcd58c94582333fd5db4197dbe287"
+        "lockingScriptHex": "aa206a6466e0dc7437922f4acd354286b9962c5ec604d820b9c34b62c6e1b8742c2687"
       },
       "lockingScript": {
         "version": 0,
-        "script": "aa20fac79ff256fe9e5a9e55f007e5b0cfc3eef0bfcd58c94582333fd5db4197dbe287"
+        "script": "aa206a6466e0dc7437922f4acd354286b9962c5ec604d820b9c34b62c6e1b8742c2687"
       },
-      "address": "kaspasim:prav08lj2mlfuk572hcq0edselp7au9le4vvj3vzxvlatk6pjld7yzupp0u9u"
+      "address": "kaspasim:pp4xgehqm36r0y30ftxn2s5xhxtzchkxqnvzpwwrfd3vdcdcwskzv3f0mcxyr"
     }
   ],
   "evidence": "evidence.json"

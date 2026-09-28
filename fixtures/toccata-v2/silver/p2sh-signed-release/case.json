@@ -28,14 +28,14 @@
           "languageVersion": "0.1.0"
         },
         "sourceSha256": "b0ea5f3e9452c72f9369d25512c4bcf9ff885c48b84b61377d1a70905fb7dc0a",
-        "constructorArgsSha256": "cea2a7a04b1dc33eb463aed31286de618522c8af9aba5e50c81e4f810b4a4641",
-        "artifactSha256": "3d24ee4ea564cbd2e9ca0bd65fc01179797950cc412f981dae1f29e47fb27c46",
+        "constructorArgsSha256": "58e05c38df830ec909f5a5938ba3fede105465b3b1e60f775fbaeb330a60be7a",
+        "artifactSha256": "ef00fdb34b0a3d197c12938f0dc9565fa17ad83eb9d100a9e387f52ee7130b36",
         "abiSchemaVersion": 1,
         "contracts": [
           {
             "name": "SignedRelease",
-            "bytecodeSha256": "99657145901ea9711a058615729a5da9d1d862556773cb7fd4094803a126b172",
-            "templateHash": "13a61e36a15fe81498ef7335b83db1215632fc9190b35de76b5df750ca66687c",
+            "bytecodeSha256": "da8524a8a19eb6f866da2ac7600dc201e18774a75b89f491d405d7269e9a81f6",
+            "templateHash": "baec843f3560d0225306efbfeaf3eb12f3148847e6833a6109d66c84109834ce",
             "entries": [
               {
                 "name": "release",
@@ -47,9 +47,9 @@
       },
       "lockingScript": {
         "version": 0,
-        "script": "aa209ca5df6e9e9c699cbbb2995cfaad950d2ccb15a5ac11cea4dbb6bde02175288487"
+        "script": "aa201954019e610f813266e464af29595d1ea976f4acaa5601cd6b97af68f1a2069a87"
       },
-      "address": "kaspasim:pzw2thmwn6wxn89mk2v4e74dj5xjejc45kkprn4ymwmtmcppw55gg0uv38za9"
+      "address": "kaspasim:pqv4gqv7vy8czvnxu3j2722et502jah54j49vqwddwt676835grf5c8k4e0yk"
     }
   ],
   "evidence": "evidence.json"

@@ -42,7 +42,7 @@ Allowed surface claims:
 - SilverScript: HardKAS orchestrates the official SilverScript v1.0.0 compiler and the
   Kaspa SDK, and has reproducible real-node evidence for SilverScript P2SH execution
   (including a relative timelock) and a Toccata tx-v1 1:1 auth-bound covenant
-  transition against a verified rusty-kaspad 2.0.1. Not claimed: general covenant
+  transition against a verified rusty-kaspad 2.1.0. Not claimed: general covenant
   support (leader/cov-bound, N:M, derived state mappings, signed covenant metering),
   production or audited contracts.
 - ZK corpus: ZK_CORPUS_SURFACE_READY
@@ -67,7 +67,7 @@ node packages/cli/dist/index.js capabilities --json
 
 ## Certified Baseline
 
-- Docker `rusty-kaspad` v2.0.1 simnet local node, identity verified (container, image digest, endpoint, network, version).
+- Docker `rusty-kaspad` v2.1.0 simnet local node, identity verified (container, image digest, endpoint, network, version).
 - Upstream `kaspanet/cpuminer` miner, joined to the node's network namespace.
 - Managed toolchains: pinned Kaspa WASM SDK and pinned silverc v1.0.0 release, verified file by file.
 - Local funding fixture.
