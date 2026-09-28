@@ -56,15 +56,19 @@ export async function runAccountsBalance(
   const isSimulated = options.local || provider.mode === "simulator";
 
   if (isSimulated) {
-    const { loadOrCreateLocalnetState, getSpendableUtxos } =
+    const { loadOrCreateLocalnetState, getSpendableUtxos, resolveMatchAddress } =
       await import("@hardkas/localnet");
     const localState = await loadOrCreateLocalnetState({ cwd: process.cwd() });
     const utxos = getSpendableUtxos(localState, address);
     const balanceSompi = utxos.reduce((acc, u) => acc + BigInt(u.amountSompi), 0n);
+    // Demo-ready · E26: report the identity the query used — the simulator state's account and
+    // the address its UTXOs are read from — not the raw input ("Account: Unknown / Address: alice").
+    const queried = resolveMatchAddress(localState, address);
+    const stateAccount = localState.accounts?.find((a) => a.address === queried);
 
     return {
-      name,
-      address,
+      name: stateAccount?.name ?? name,
+      address: queried,
       balanceSompi,
       utxoCount: utxos.length,
       network: "simulated"

@@ -58,6 +58,15 @@ describe("Demo-cut · AUD-21 · no secret in JSON output", () => {
     ]);
   });
 
+  it("Demo-ready · the human output of generate --unsafe-plaintext masks the key too (stdout and stderr)", () => {
+    const r = run(["accounts", "real", "generate", "--name", "dora", "--unsafe-plaintext", "--yes"], ws);
+    expect(r.status, r.all).toBe(0);
+    const secret = String(storedAccount(ws, "dora").privateKey).toLowerCase();
+    expect(secret).toMatch(/^[0-9a-f]{64}$/);
+    expect(r.all.toLowerCase()).not.toContain(secret);
+    expect(r.stdout).toMatch(/Private:\s+yes \(masked\)/);
+  });
+
   it("the same key never leaks through `accounts list --json` either", () => {
     expect(run(["accounts", "real", "generate", "--name", "ben", "--unsafe-plaintext", "--yes"], ws).status).toBe(0);
     const secret = String(storedAccount(ws, "ben").privateKey).toLowerCase();

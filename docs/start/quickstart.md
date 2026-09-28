@@ -41,8 +41,10 @@ npx hardkas tx send tx-signed.json --network simulated --yes
 ## 4. SDK Workflow
 
 The SDK is published as ES modules. Run this from an ES module: a project with
-`"type": "module"` in its `package.json` (`hardkas init` sets it), or a `.mjs`
-file. In a CommonJS project (the `npm init -y` default) the import fails.
+`"type": "module"` in its `package.json`, or a `.mjs` file. `hardkas init` sets
+`"type": "module"` only when it creates the `package.json`; in step 1 above
+`npm install` already created one, so add the field yourself. In a CommonJS
+project (the `npm init -y` default) the import fails.
 
 ```typescript
 import { Hardkas } from "@hardkas/sdk";

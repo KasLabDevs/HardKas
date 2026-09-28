@@ -28,8 +28,10 @@ If a UTXO is a coinbase output, HardKAS enforces maturity limits. The protocol r
 ### 2. Pending-Spend Protection
 HardKAS tracks UTXOs that have been signed and submitted to the mempool but are not yet reflected in the DAG (`excludeOutpoints`). It automatically excludes these outpoints from discovery to prevent frustrating double-spend errors during local testing.
 
-### 3. Virtual State Fingerprinting
-When pulling UTXOs from a real Kaspa node via RPC, HardKAS takes a fingerprint of the `virtualDaaScore` before and after discovery. If the DAG state changes during the read phase, HardKAS throws a `UtxoVirtualStateUnstableError` or retries the operation, ensuring the planner always operates on a stable state snapshot.
+### 3. Selected-Input Re-validation
+Planning validity is UTXO-scoped, not virtual-state-scoped. On a live network blocks keep arriving while a plan is built, and that alone never invalidates it. At the end of each planning attempt the CLI re-reads the node: every selected input must still be in the address UTXO set, and the node's mempool must not show a transaction spending it. Otherwise the attempt is retried; after the bounded retries it fails with `SELECTED_UTXO_INVALIDATED`. The virtual state fingerprints taken before and after are recorded in the plan (`metadata.planningWindow`) as evidence only.
+
+This check is local to the node that was read. An input missing from that node's mempool may still be spent elsewhere on the network, and a competing spend can still appear before the transaction is submitted; the node then refuses the transaction.
 
 ## Important Semantic Distinction
 

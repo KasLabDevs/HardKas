@@ -663,6 +663,7 @@ La columna *Ejercitado* cuenta si el identificador aparece en el corpus de prueb
 - [ ] `RuntimeNoiseDiff`
 - [ ] `SchemaMetadata`
 - [ ] `SchemaVersion`
+- [ ] `SelectedUtxoInvalidatedError`
 - [ ] `SemanticDriftReport`
 - [x] `SemanticIdentity`
 - [ ] `SessionAttestation`

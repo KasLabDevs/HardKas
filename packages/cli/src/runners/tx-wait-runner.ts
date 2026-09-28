@@ -8,11 +8,31 @@
 //   confirmed → `isConfirmed(derived)`: blue-score depth ≥ the policy, or FINALIZED
 // A rejected submission or conflicting observations end the wait as a failure; the
 // timeout ends it as a failure that names the last derived state. Nothing is assumed.
+//
+// Demo-ready · post-confirmation view: once the derived state reaches the target, the wait
+// continues — inside the same --timeout — until the same node's UTXO view reflects the
+// transaction: an output of it is listed for every address the plan pays, and the inputs it
+// spent are no longer listed for the sender. The node's UTXO index can trail acceptance by
+// seconds, so balances read right after CONFIRMED could otherwise be stale. This is a view
+// condition, not a transaction state: the derived state stays what the observations say.
 
 import { isConfirmed, type DerivedTxStatus } from "@hardkas/artifacts";
 import { SYNTHETIC_TXID, openSdkForTx, stateHeadline } from "./tx-status-runner.js";
 
 export type TxWaitTarget = "accepted" | "confirmed";
+
+export interface TxWaitUtxoView {
+  /** False when the workspace holds no verifiable plan for the txId (nothing to compare with). */
+  checked: boolean;
+  converged: boolean;
+  reason?: string;
+  /** Addresses the plan pays (recipients and change) whose view must list an output of the tx. */
+  addresses: string[];
+  missingOutputsFor: string[];
+  /** Outpoints (`txId:index`) the tx spends that the sender's view still listed at the last look. */
+  inputsStillListed: string[];
+  looks: number;
+}
 
 export interface TxWaitRunnerInput {
   txId: string;
@@ -39,6 +59,81 @@ export interface TxWaitRunnerResult {
   elapsedMs: number;
   /** The observation persisted by the last look (absent for a simulator txId). */
   lastObservationArtifactId?: string;
+  /** The node's UTXO view after the target was reached (absent for a simulator txId). */
+  utxoView?: TxWaitUtxoView;
+}
+
+const outpointKey = (o: { transactionId: string; index: number | string }) => `${o.transactionId}:${Number(o.index)}`;
+
+/**
+ * Waits, bounded by `deadline`, until the node's UTXO view reflects `txId` for the plan the
+ * workspace recorded for it. Always takes at least one look. RPC errors count as "not yet".
+ */
+async function waitForUtxoView(args: {
+  sdk: any;
+  txId: string;
+  deadline: number;
+  intervalMs: number;
+  sleep: (ms: number) => Promise<void>;
+  now: () => number;
+}): Promise<TxWaitUtxoView> {
+  const { sdk, txId } = args;
+  let plan: any;
+  try {
+    const submission: any = await sdk.artifacts.read({ tx: txId });
+    const planId = submission?.fee?.planArtifactId ?? submission?.lineage?.rootArtifactId;
+    if (typeof planId !== "string") throw Object.assign(new Error("the recorded submission names no plan"), { code: "PLAN_UNKNOWN" });
+    plan = await sdk.artifacts.read({ artifact: planId });
+  } catch (e: any) {
+    return {
+      checked: false,
+      converged: false,
+      reason: `no verifiable plan for this transaction in the workspace (${e?.code ?? e?.message ?? String(e)}), so there is nothing to compare the node's UTXO view with`,
+      addresses: [],
+      missingOutputsFor: [],
+      inputsStillListed: [],
+      looks: 0
+    };
+  }
+  const paid = [
+    ...(Array.isArray(plan?.outputs) ? plan.outputs : []),
+    ...(plan?.change ? [plan.change] : [])
+  ].filter((o: any) => typeof o?.address === "string" && BigInt(o.amountSompi ?? 0) > 0n);
+  const addresses = [...new Set<string>(paid.map((o: any) => o.address))];
+  const sender: string | undefined = typeof plan?.from?.address === "string" ? plan.from.address : undefined;
+  const spent: string[] = (Array.isArray(plan?.inputs) ? plan.inputs : []).map((i: any) => outpointKey(i.outpoint));
+
+  let looks = 0;
+  let missing = addresses;
+  let still = spent;
+  let lastError: string | undefined;
+  for (;;) {
+    looks++;
+    try {
+      const views = new Map<string, any[]>();
+      for (const a of new Set([...addresses, ...(sender ? [sender] : [])])) views.set(a, (await sdk.rpc.getUtxosByAddress(a)) ?? []);
+      missing = addresses.filter((a) => !(views.get(a) ?? []).some((u: any) => u?.outpoint?.transactionId === txId));
+      const listed = new Set((sender ? views.get(sender) ?? [] : []).map((u: any) => outpointKey(u.outpoint)));
+      still = spent.filter((k) => listed.has(k));
+      lastError = undefined;
+      if (missing.length === 0 && still.length === 0) {
+        return { checked: true, converged: true, addresses, missingOutputsFor: [], inputsStillListed: [], looks };
+      }
+    } catch (e: any) {
+      lastError = `${e?.code ? `[${e.code}] ` : ""}${e?.message ?? String(e)}`;
+    }
+    if (args.now() >= args.deadline) break;
+    await args.sleep(args.intervalMs);
+  }
+  return {
+    checked: true,
+    converged: false,
+    ...(lastError ? { reason: `the UTXO view could not be read: ${lastError}` } : {}),
+    addresses,
+    missingOutputsFor: missing,
+    inputsStillListed: still,
+    looks
+  };
 }
 
 export function targetReached(derived: DerivedTxStatus, until: TxWaitTarget): boolean {
@@ -83,7 +178,32 @@ export async function runTxWait(input: TxWaitRunnerInput): Promise<TxWaitRunnerR
         input.onUpdate?.(headline, last);
       }
       if (targetReached(last, input.until)) {
-        return { txId: input.txId, network, outcome: "reached", until: input.until, derived: last, looks, elapsedMs: now() - start, ...(lastObservationArtifactId ? { lastObservationArtifactId } : {}) };
+        const reached = last;
+        const utxoView = await waitForUtxoView({ sdk, txId: input.txId, deadline: start + input.timeoutMs, intervalMs: input.intervalMs, sleep, now });
+        if (utxoView.checked && !utxoView.converged) {
+          const gaps = [
+            utxoView.missingOutputsFor.length > 0 ? `no output of the transaction is listed for ${utxoView.missingOutputsFor.join(", ")}` : undefined,
+            utxoView.inputsStillListed.length > 0 ? `${utxoView.inputsStillListed.length} input(s) it spent are still listed for the sender` : undefined,
+            utxoView.reason
+          ].filter(Boolean);
+          throw new HardkasCliError(
+            "TX_WAIT_UTXO_VIEW_STALE",
+            `${input.txId} is ${stateHeadline(reached)} according to the recorded observations, but after ${Math.round((now() - start) / 1000)}s the node's UTXO view still does not reflect it (${gaps.join("; ")}). ` +
+              `Balances read from this node now would be stale; wait again, with a larger --timeout if needed.`,
+            { exitCode: HardkasExitCode.RUNTIME_FAILURE }
+          );
+        }
+        return {
+          txId: input.txId,
+          network,
+          outcome: "reached",
+          until: input.until,
+          derived: reached,
+          looks,
+          elapsedMs: now() - start,
+          ...(lastObservationArtifactId ? { lastObservationArtifactId } : {}),
+          utxoView
+        };
       }
       if (last.status === "REJECTED_BY_NODE" || last.status === "CONFLICTING_OBSERVATIONS") {
         throw new HardkasCliError(

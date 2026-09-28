@@ -143,7 +143,9 @@ export function createTxPlanArtifact(options: CreateTxPlanArtifactOptions): TxPl
       schema: HardkasSchemas.ArtifactV1,
       ...(options.ctx.utxoSelection ? { utxoSelection: options.ctx.utxoSelection } : {}),
       // Wave 2(c) · AUD-19: what the snapshot was filtered against (authenticated with the plan).
-      ...(options.ctx.pendingSpendEvidence ? { pendingSpendEvidence: options.ctx.pendingSpendEvidence } : {})
+      ...(options.ctx.pendingSpendEvidence ? { pendingSpendEvidence: options.ctx.pendingSpendEvidence } : {}),
+      // Demo-ready · E02: the read window the plan was built in (evidence, never an acceptance condition).
+      ...(options.ctx.planningWindow ? { planningWindow: options.ctx.planningWindow } : {})
     },
     assumptionLevel:
       options.ctx.assumptionLevel ||

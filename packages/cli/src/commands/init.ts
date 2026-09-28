@@ -181,7 +181,8 @@ scenario("payment flow", async ({ hk }) => {
 `;
             if (!fs.existsSync(testFile)) {
               writeFileAtomicSync(testFile, testTemplate, { encoding: "utf-8" });
-              if (!options.json) UI.info("Created: test/payment.scenario.ts");
+              // Demo-ready · E27: announce the file actually written (it used to say payment.scenario.ts).
+              if (!options.json) UI.info(`Created: ${path.relative(targetDir, testFile).split(path.sep).join("/")}`);
             }
 
             // Hardened .gitignore

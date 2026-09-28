@@ -5388,7 +5388,7 @@ hardkas tx verify [options] <path>
 
 ## hardkas tx wait
 
-Wait until the derived state of a txId reaches ACCEPTED or CONFIRMED (blue-score depth ≥ the HardKAS policy), observing the configured node stable
+Wait until the derived state of a txId reaches ACCEPTED or CONFIRMED (blue-score depth ≥ the HardKAS policy), observing the configured node, then until that node's UTXO view reflects it stable
 
 ### Usage
 

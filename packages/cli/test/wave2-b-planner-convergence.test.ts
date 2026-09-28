@@ -9,7 +9,8 @@ import { WalletToolkit } from "@hardkas/toolkit";
 // Wave 2(b) · AUD-17 (PLANNER-CONVERGENCE-1) + AUD-28 (CHANGEADDR)
 //   T-A17a  the CLI on a real network plans through the upstream Generator and records
 //           `plannerAuthority: KASPA_WASM_GENERATOR`; the CLI safety layers stay
-//           (fingerprint before/after, confirmation query, bounded retries);
+//           (re-validation of the selected inputs, bounded retries; since the demo-ready block (E02) the
+//           fingerprint before/after is evidence, not a condition — see demo-ready-e02-*.test.ts);
 //   T-A17b  the same intention through the CLI and the SDK gives the same inputs, fee and mass;
 //   T-A17c  the simulator plans through the canonical synthetic planner, labelled SYNTHETIC_SIMULATOR;
 //   T-A28   an explicit change destination reaches the plan through the SDK, the CLI and the toolkit.
@@ -28,7 +29,8 @@ const node = {
   virtualDaaScore: 1_000_000n,
   unstable: false,
   dropSelectedOnConfirm: false,
-  reads: 0
+  reads: 0,
+  utxoReads: 0
 };
 
 vi.mock("@hardkas/kaspa-rpc", async () => {
@@ -40,7 +42,11 @@ vi.mock("@hardkas/kaspa-rpc", async () => {
       return { networkId: "simnet", virtualDaaScore: node.virtualDaaScore + BigInt(tick), virtualParentHashes: [`p${tick}`], sink: `s${tick}`, tipHashes: [`s${tick}`] };
     }
     async getUtxosByAddress() {
-      if (node.dropSelectedOnConfirm && node.reads >= 1 && node.reads % 2 === 1) return []; // confirmation read loses the inputs
+      node.utxoReads += 1;
+      // Every attempt reads the UTXO set twice: to select, then to re-validate the selection.
+      // (Keyed on the DAG-read count, as before the demo-ready block, this returned [] on the FIRST read and
+      // the case below failed with "No UTXOs found" without ever reaching the re-validation.)
+      if (node.dropSelectedOnConfirm && node.utxoReads % 2 === 0) return []; // re-validation read loses the inputs
       return node.utxos.map((u) => ({ ...u }));
     }
     // Wave 2(c) · AUD-19: the planner requires ONE mempool observation; this node's mempool is empty.
@@ -117,20 +123,25 @@ describe("Wave 2(b) · canonical planner in the CLI (AUD-17) and explicit change
     expect(BigInt(artifact.estimatedMass)).toBeGreaterThan(0n);
     expect(artifact.change?.address).toBe(FROM);
 
-    // Safety layer 1: an unstable virtual fingerprint exhausts the retries instead of planning on a moving read.
+    // Demo-ready · E02 (re-baselined): a virtual state that moves on every read no longer exhausts
+    // the retries. Before the demo-ready block this case asserted UtxoVirtualStateUnstable — the E02 defect that
+    // made `tx plan` fail whenever blocks kept arriving (every live network). Planning validity
+    // is UTXO-scoped; the moving fingerprints are recorded as evidence.
     node.unstable = true;
-    await expect(
-      runTxPlan({ from: FROM, to: TO, amount: "3", networkId: "simnet", provider: "auto", url: "ws://127.0.0.1:1", feeRate: "1000", config, workspaceRoot: ws })
-    ).rejects.toMatchObject({ name: expect.stringMatching(/UtxoVirtualStateUnstable/) });
+    const moving: any = await runTxPlan({ from: FROM, to: TO, amount: "3", networkId: "simnet", provider: "auto", url: "ws://127.0.0.1:1", feeRate: "1000", config, workspaceRoot: ws });
+    expect(moving.plannerAuthority).toBe("KASPA_WASM_GENERATOR");
+    expect(moving.metadata.planningWindow).toMatchObject({ validity: "utxo-scoped", attempts: 1 });
     node.unstable = false;
-    // Safety layer 2: inputs that vanish between the read and the confirmation query are never planned.
+    // Safety layer: inputs that vanish between the read and the re-validation are never planned.
     node.reads = 0;
+    node.utxoReads = 0;
     node.dropSelectedOnConfirm = true;
     await expect(
       runTxPlan({ from: FROM, to: TO, amount: "3", networkId: "simnet", provider: "auto", url: "ws://127.0.0.1:1", feeRate: "1000", config, workspaceRoot: ws })
-    ).rejects.toThrow();
+    ).rejects.toMatchObject({ code: "SELECTED_UTXO_INVALIDATED", attempts: 3 });
     node.dropSelectedOnConfirm = false;
     node.reads = 0;
+    node.utxoReads = 0;
   });
 
   it("T-A17b · the same intention through the CLI and the SDK yields the same inputs, fee and mass", async () => {

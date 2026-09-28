@@ -30,6 +30,46 @@ export class UtxoSetNotStableError extends Error {
   }
 }
 
+/**
+ * Demo-ready · E02: planning validity is UTXO-scoped, not virtual-state-scoped. Every planning
+ * attempt re-reads the node at its end; an attempt whose selected inputs are no longer in
+ * the address UTXO set, or are being spent by a transaction in the observed mempool, is
+ * discarded and retried. This error means the bounded retries ran out. The DAG advancing
+ * while a plan is built is never a reason for it.
+ */
+export class SelectedUtxoInvalidatedError extends Error {
+  readonly code = "SELECTED_UTXO_INVALIDATED";
+  readonly address: string;
+  readonly attempts: number;
+  /** Selected outpoints (`txId:index`) of the last attempt missing from the re-read UTXO set. */
+  readonly missing: string[];
+  /** Selected outpoints of the last attempt that the observed mempool showed being spent. */
+  readonly pending: string[];
+  readonly virtualDaaScore: string;
+
+  constructor(opts: {
+    address: string;
+    attempts: number;
+    missing: string[];
+    pending: string[];
+    virtualDaaScore: string;
+  }) {
+    const list = (xs: string[]) => (xs.length > 0 ? xs.join(", ") : "none");
+    super(
+      `SELECTED_UTXO_INVALIDATED: the inputs selected for ${opts.address} did not survive re-validation in ${opts.attempts} attempts ` +
+      `(missing from the UTXO set: ${list(opts.missing)}; being spent in the observed mempool: ${list(opts.pending)}; ` +
+      `last read at virtualDaaScore=${opts.virtualDaaScore}). ` +
+      `They were spent or are being spent by another transaction: plan again once it is accepted or dropped.`
+    );
+    this.name = "SelectedUtxoInvalidatedError";
+    this.address = opts.address;
+    this.attempts = opts.attempts;
+    this.missing = opts.missing;
+    this.pending = opts.pending;
+    this.virtualDaaScore = opts.virtualDaaScore;
+  }
+}
+
 export class UtxoVirtualStateUnstableError extends Error {
   readonly code = "UTXO_VIRTUAL_STATE_UNSTABLE";
   readonly address: string;

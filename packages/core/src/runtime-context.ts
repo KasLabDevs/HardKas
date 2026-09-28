@@ -54,6 +54,24 @@ export interface RuntimeContext {
     excludedOutpoints: string[];
     guarantee: string;
   };
+  /**
+   * Demo-ready · E02: the node read window a plan was built in — evidence, never an acceptance
+   * condition. Planning validity is UTXO-scoped: the DAG advancing between `before` and
+   * `after` does not invalidate the plan; the selected inputs were re-read at the end of
+   * the attempt (still in the address UTXO set, not spent in the observed mempool).
+   */
+  planningWindow?: {
+    validity: "utxo-scoped";
+    attempts: number;
+    before: { virtualDaaScore: string; virtualStateFingerprint: string };
+    after: { virtualDaaScore: string; virtualStateFingerprint: string };
+    revalidation: {
+      scope: "observer-local";
+      selectedInputs: number;
+      presentInUtxoSet: number;
+      pendingInObservedMempool: number;
+    };
+  };
 }
 
 /**

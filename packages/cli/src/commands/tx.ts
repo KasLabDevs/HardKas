@@ -178,6 +178,7 @@ export function registerTxCommands(program: Command) {
                 "artifacts"
               );
               const fsNode = await import("node:fs");
+              let persistedPlanPath: string | undefined;
               if (
                 fsNode.existsSync(
                   (await import("node:path")).join(process.cwd(), ".hardkas")
@@ -192,6 +193,7 @@ export function registerTxCommands(program: Command) {
                   `${timestamp}-${planId}.plan.json`
                 );
                 await writeArtifact(latticeFile, artifact);
+                persistedPlanPath = latticeFile;
               }
 
               if (options.json) {
@@ -199,6 +201,18 @@ export function registerTxCommands(program: Command) {
               } else {
                 getOutput().writeLine(formatTxPlanArtifact(artifact));
                 if (outPath) getOutput().writeLine(`\nArtifact saved to: ${outPath}`);
+                // Demo-ready · E21: say where the plan was persisted (the path actually written),
+                // so `tx sign` can be given it without searching .hardkas/artifacts/.
+                if (persistedPlanPath) {
+                  const shown = (await import("node:path")).relative(process.cwd(), persistedPlanPath);
+                  getOutput().writeLine(`${outPath ? "" : "\n"}Plan saved to: ${shown}`);
+                  const signer = options.from || positionalFrom;
+                  if (!outPath && signer && !String(signer).includes(":")) {
+                    getOutput().writeLine(`Next: hardkas tx sign ${shown} --account ${signer}`);
+                  }
+                } else if (!outPath) {
+                  getOutput().writeLine(`\nPlan not saved (no .hardkas workspace here); use --out <file> to keep it.`);
+                }
               }
             }
           );
@@ -752,7 +766,7 @@ export function registerTxCommands(program: Command) {
 
   tx.command("wait <txId>")
     .description(
-      `Wait until the derived state of a txId reaches ACCEPTED or CONFIRMED (blue-score depth ≥ the HardKAS policy), observing the configured node ${UI.maturity("stable")}`
+      `Wait until the derived state of a txId reaches ACCEPTED or CONFIRMED (blue-score depth ≥ the HardKAS policy), observing the configured node, then until that node's UTXO view reflects it ${UI.maturity("stable")}`
     )
     .option("--until <target>", "accepted or confirmed", "confirmed")
     .option("--timeout <seconds>", "Timeout in seconds", "60")
@@ -794,22 +808,30 @@ export function registerTxCommands(program: Command) {
           state: r.derived.status,
           ...(r.derived.confirmations ? { confirmations: r.derived.confirmations } : {}),
           looks: r.looks,
+          ...(r.utxoView ? { utxoView: r.utxoView } : {}),
           derived: r.derived
         });
         return;
+      }
+      const rows: Record<string, string | undefined> = renderTxStatusRows({
+        txId: r.txId,
+        network: r.network,
+        derived: r.derived,
+        look: r.lastObservationArtifactId
+          ? { taken: true, artifactId: r.lastObservationArtifactId }
+          : { taken: false, reason: "a simulator txId: there is no network to observe" }
+      });
+      // Demo-ready: the node's UTXO view after the target was reached (a view, not a state).
+      if (r.utxoView) {
+        rows["UTXO View"] = r.utxoView.checked
+          ? `reflects this transaction: an output of it is listed for ${r.utxoView.addresses.length} address(es) and the inputs it spent are no longer listed (${r.utxoView.looks} look(s))`
+          : `not checked: ${r.utxoView.reason}`;
       }
       UI.causality(
         r.outcome === "synthetic"
           ? `${r.derived.status}: executed by the HardKAS simulator; there is no network to wait for`
           : `Reached ${r.until.toUpperCase()}: ${stateHeadline(r.derived)}`,
-        renderTxStatusRows({
-          txId: r.txId,
-          network: r.network,
-          derived: r.derived,
-          look: r.lastObservationArtifactId
-            ? { taken: true, artifactId: r.lastObservationArtifactId }
-            : { taken: false, reason: "a simulator txId: there is no network to observe" }
-        }),
+        rows,
         undefined,
         r.outcome === "synthetic" ? "info" : "ok"
       );

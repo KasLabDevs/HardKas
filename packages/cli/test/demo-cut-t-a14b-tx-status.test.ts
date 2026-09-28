@@ -25,6 +25,15 @@ class FakeNode {
   mempool = new Map<string, { isOrphan: boolean; fee: string }>();
   chain: Array<{ hash: string; blueScore: bigint; daaScore: bigint; accepted: string[] }> = [{ hash: H(1), blueScore: 1n, daaScore: 1n, accepted: [] }];
   removed: string[] = [];
+  /** Demo-ready: whether the node's UTXO index already reflects TX (it can trail acceptance). */
+  viewIndexed = true;
+  utxoViewReads = 0;
+  /** What getUtxosByAddress answers: once indexed, an output of TX for the address asked. */
+  utxosByAddress(address: string) {
+    this.utxoViewReads += 1;
+    if (!this.viewIndexed) return [];
+    return [{ outpoint: { transactionId: TX, index: 0 }, address, amountSompi: 100_000_000n, scriptPublicKey: "20" + "00".repeat(32) + "ac", blockDaaScore: 5000n, isCoinbase: false }];
+  }
   get sink() {
     return this.chain[this.chain.length - 1]!.hash;
   }
@@ -91,6 +100,8 @@ describe("Demo-cut · T-A14b · tx status / tx wait present the derived Q4 state
     vi.spyOn(sdk.rpc, "getSinkBlueScore").mockImplementation(async () => ({ blueScore: node.sinkBlueScore.toString() }) as any);
     vi.spyOn(sdk.rpc, "getServerInfo").mockImplementation(async () => ({ networkId: "simnet", serverVersion: "2.0.1" }) as any);
     vi.spyOn(sdk.rpc, "call").mockImplementation(async (method: string, params: any) => node.call(method, params));
+    // Demo-ready: `tx wait` also reads the node's UTXO view once the target state is reached.
+    vi.spyOn(sdk.rpc, "getUtxosByAddress").mockImplementation(async (address: string) => node.utxosByAddress(address) as any);
   });
 
   afterEach(() => {
@@ -295,6 +306,70 @@ describe("Demo-cut · T-A14b · tx status / tx wait present the derived Q4 state
     expect(err.code).toBe("TX_WAIT_TIMEOUT");
     expect(err.message).toMatch(/last derived state: ACCEPTED \(1 blue-score confirmations; CONFIRMED at 100\)/);
     expect(err.message).not.toMatch(FORBIDDEN);
+  });
+
+  // Demo-ready · post-confirmation view: after the derived state reaches the target, `tx wait`
+  // keeps going (bounded by --timeout) until the same node's UTXO view reflects the transaction
+  // — an output of it listed for every address the plan pays, its spent inputs no longer listed
+  // for the sender — so balances read afterwards are current. It is not a transaction state.
+  it("`tx wait --until confirmed` returns only once the node's UTXO view reflects the transaction (a trailing view is waited out)", async () => {
+    await realSend();
+    node.advance(1n);
+    node.addChainBlock(H(2), [TX]);
+    node.advance(120n);
+    node.viewIndexed = false;
+    const script = [() => undefined, () => void (node.viewIndexed = true)];
+    const r: any = await runTxWait({ txId: TX, sdk, until: "confirmed", timeoutMs: 60_000, intervalMs: 1, sleep: async () => void script.shift()?.() });
+    expect(r.outcome).toBe("reached");
+    expect(r.derived.status).toBe("CONFIRMED");
+    expect(r.utxoView).toMatchObject({ checked: true, converged: true, looks: 3, missingOutputsFor: [], inputsStillListed: [] });
+    expect(r.utxoView.addresses.length).toBeGreaterThan(0);
+  });
+
+  it("a UTXO view that never reflects the transaction fails explicitly and bounded, naming what is missing; the state stays CONFIRMED", async () => {
+    await realSend();
+    node.advance(1n);
+    node.addChainBlock(H(2), [TX]);
+    node.advance(120n);
+    node.viewIndexed = false;
+    let t = 0;
+    const err: any = await runTxWait({
+      txId: TX,
+      sdk,
+      until: "confirmed",
+      timeoutMs: 3_000,
+      intervalMs: 1_000,
+      now: () => t,
+      sleep: async (ms) => void (t += ms)
+    }).catch((e) => e);
+    expect(err.code).toBe("TX_WAIT_UTXO_VIEW_STALE");
+    expect(err.exitCode).toBe(1);
+    expect(err.message).toMatch(/CONFIRMED \(\d+ blue-score confirmations ≥ 100\) according to the recorded observations/);
+    expect(err.message).toMatch(/UTXO view/);
+    expect(err.message).toMatch(/no output of the transaction is listed for/);
+    expect(err.message).not.toMatch(FORBIDDEN);
+    expect(err.message).not.toMatch(/FINALIZED/);
+    expect(t).toBeGreaterThanOrEqual(3_000); // bounded by --timeout, not open-ended
+  });
+
+  it("without a verifiable plan for the txId in this workspace the view is not checked, and the wait says so", async () => {
+    await realSend();
+    node.advance(1n);
+    node.addChainBlock(H(2), [TX]);
+    node.advance(120n);
+    // The recorded submission names a plan this workspace does not hold (e.g. planned elsewhere).
+    // (Deleting the plan file is not enough here: this SDK instance memoised the plan it wrote.)
+    const absent = "f".repeat(64);
+    await resealSubmission((s) => {
+      s.fee = { ...(s.fee ?? {}), planArtifactId: absent };
+      if (s.lineage) s.lineage.rootArtifactId = absent;
+    });
+    const reads = node.utxoViewReads;
+    const r: any = await runTxWait({ txId: TX, sdk, until: "confirmed", timeoutMs: 5_000, intervalMs: 1, sleep: async () => undefined });
+    expect(r.derived.status).toBe("CONFIRMED");
+    expect(r.utxoView).toMatchObject({ checked: false, converged: false });
+    expect(r.utxoView.reason).toMatch(/no verifiable plan/);
+    expect(node.utxoViewReads).toBe(reads);
   });
 
   it("a simulator txId is SYNTHETIC_EXECUTED: status and wait say there is no network, and take no observation", async () => {

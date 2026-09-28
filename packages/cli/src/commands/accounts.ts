@@ -259,11 +259,14 @@ export function registerAccountsCommands(program: Command) {
             timeoutMs: parseInt(options.lockTimeout)
           },
           async () => {
+            // Demo-ready · E20: the raw commander options go first, so the parsed count (a
+            // number) is what the runner sees; commander's string "1" used to win and a
+            // single `--name ana` became `ana1`.
             const result = await runAccountsRealGenerate({
+              ...options,
               ...(options.name ? { name: options.name } : {}),
               count: parseInt(options.count, 10),
               networkId: options.network as any,
-              ...options,
               workspaceRoot: process.cwd()
             });
             if (options.json) {

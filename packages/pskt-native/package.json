@@ -19,7 +19,6 @@
     "artifacts": "napi artifacts",
     "build": "napi build --platform --release",
     "build:debug": "napi build --platform",
-    "prepublishOnly": "napi prepublish -t npm --skip-optional-publish",
     "test": "vitest run",
     "typecheck": "echo \"No typecheck needed for napi auto-gen\""
   },
@@ -37,8 +36,5 @@
     "index.js",
     "index.d.ts",
     "*.node"
-  ],
-  "optionalDependencies": {
-    "@hardkas/pskt-native-win32-x64-msvc": "0.12.0-rc.23"
-  }
+  ]
 }
