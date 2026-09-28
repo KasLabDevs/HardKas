@@ -56,7 +56,7 @@ export interface HardkasEnvironment {
    * - `select`: DEPRECATED — HardKAS-invented largest/smallest-first selector.
    *   Diverges from upstream in fragmented-UTXO scenarios (M9 audit).
    *   Kept for backwards compatibility; will be removed in a future release.
-   * - `buildTransactions`: recommended path — wraps kaspa-wasm 2.0.1 `Generator`
+   * - `buildTransactions`: recommended path — wraps the pinned kaspa-wasm `Generator`
    *   and yields upstream `PendingTransaction`s (authoritative fee/mass/coin
    *   selection semantics).
    */

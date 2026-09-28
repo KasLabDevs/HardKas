@@ -70,7 +70,7 @@ describe("Wave 1.2 · localnet identity lookups", () => {
   it("T-A45 · a snapshot without lineage resolves by its recomputed contentHash, through the resolver and the CLI façade", async () => {
     const state: any = {
       schema: "hardkas.localnetState.v1",
-      hardkasVersion: "0.12.0-rc.24",
+      hardkasVersion: "0.12.0-rc.25",
       version: "1.0.0-alpha",
       networkId: asNetworkId("simnet"),
       mode: "simulator",

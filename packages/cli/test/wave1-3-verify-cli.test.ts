@@ -213,7 +213,7 @@ describe("Wave 1.3 · hardkas verify / artifact verify / artifact migrate", () =
       };
       const signed = seal({
         schema: "hardkas.signedTx",
-        hardkasVersion: "0.12.0-rc.24",
+        hardkasVersion: "0.12.0-rc.25",
         version: "1.0.0-alpha",
         networkId: "simnet",
         mode: "simulator",
@@ -232,7 +232,7 @@ describe("Wave 1.3 · hardkas verify / artifact verify / artifact migrate", () =
       signed.signedId = `signed-${signed.contentHash.slice(0, 16)}`;
       const receipt = seal({
         schema: "hardkas.migrationReceipt.v1",
-        hardkasVersion: "0.12.0-rc.24",
+        hardkasVersion: "0.12.0-rc.25",
         version: "1.0.0-alpha",
         networkId: "simnet",
         mode: "simulator",
@@ -282,7 +282,7 @@ describe("Wave 1.3 · hardkas verify / artifact verify / artifact migrate", () =
       // descendant is sealed by hand as an intact, non-synthetic (unbound) v5 signed.
       const child: any = {
         schema: "hardkas.signedTx",
-        hardkasVersion: "0.12.0-rc.24",
+        hardkasVersion: "0.12.0-rc.25",
         version: "1.0.0-alpha",
         hashVersion: CURRENT_HASH_VERSION,
         networkId: legacy.networkId,
@@ -306,7 +306,7 @@ describe("Wave 1.3 · hardkas verify / artifact verify / artifact migrate", () =
       await store.writeArtifact(child);
       const receipt: any = {
         schema: "hardkas.migrationReceipt.v1",
-        hardkasVersion: "0.12.0-rc.24",
+        hardkasVersion: "0.12.0-rc.25",
         version: "1.0.0-alpha",
         hashVersion: CURRENT_HASH_VERSION,
         networkId: "simnet",

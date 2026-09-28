@@ -1,4 +1,4 @@
-# HardKAS 0.12.0-rc.24 — Docs Editorial 13: Operations & Failure Contract
+# HardKAS 0.12.0-rc.25 — Docs Editorial 13: Operations & Failure Contract
 
 ## Status: PASS
 

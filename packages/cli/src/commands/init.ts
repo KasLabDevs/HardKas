@@ -3,6 +3,56 @@ import { UI, handleError } from "../ui.js";
 import { runUp } from "../runners/up-runner.js";
 import { hardkasScaffoldDependencySpec } from "../lib/scaffold-versions.js";
 
+/**
+ * E39 · The generated test, signing and planning load the kaspa-wasm this
+ * release pins from the HardKAS home, and a fresh machine has none. init leaves
+ * that exact pin installed and verified: a verified install of the same pin is
+ * reused, anything else comes from the official release asset checked against
+ * the pinned SHA-256. Failing to install is an error, never a fallback to
+ * another version.
+ */
+async function bootstrapKaspaWasm(options: { json?: boolean; skipToolchain?: boolean; toolchainFromFile?: string }) {
+  const { KASPA_WASM_REFERENCE: ref, verifyManagedToolchain } = await import("@hardkas/core");
+  const say = (line: string) => {
+    if (!options.json) UI.info(line);
+  };
+
+  if (options.skipToolchain) {
+    const present = await verifyManagedToolchain(ref);
+    say(
+      present.ok
+        ? `kaspa-wasm ${ref.version} already installed and verified at ${present.dir}`
+        : `Skipped (--skip-toolchain): kaspa-wasm ${ref.version} is not installed. ` +
+            `Signing, planning and the generated test need it: hardkas toolchain install kaspa-wasm`
+    );
+    return { id: ref.id, version: ref.version, status: present.ok ? "already-installed" : "skipped", dir: present.dir };
+  }
+
+  const { ensureManagedToolchain } = await import("../toolchain-install.js");
+  try {
+    const result = await ensureManagedToolchain(ref, {
+      fromFile: options.toolchainFromFile,
+      onFetch: (source) =>
+        say(`Installing kaspa-wasm ${ref.version}, the Kaspa WASM SDK this release pins, from ${source.location} ...`)
+    });
+    say(
+      result.status === "installed"
+        ? `Installed: kaspa-wasm ${ref.version} at ${result.dir} (SHA-256 checked against the pin)`
+        : `kaspa-wasm ${ref.version} already installed and verified at ${result.dir}`
+    );
+    return { id: ref.id, version: ref.version, status: result.status, dir: result.dir };
+  } catch (e: any) {
+    const { HardkasCliError, HardkasExitCode } = await import("../cli-errors.js");
+    throw new HardkasCliError(
+      e?.code ?? "TOOLCHAIN_INSTALL_FAILED",
+      `The project files were created, but kaspa-wasm ${ref.version} could not be installed: ${e?.message ?? String(e)}\n` +
+        `  Signing, planning and the generated test need it. Retry with: hardkas toolchain install kaspa-wasm` +
+        ` (offline: add --from-file <${ref.assetName}>)`,
+      { exitCode: e?.exitCode ?? HardkasExitCode.RUNTIME_FAILURE, cause: e }
+    );
+  }
+}
+
 export function registerInitCommands(program: Command) {
   // --- Init Command ---
   program
@@ -14,6 +64,8 @@ export function registerInitCommands(program: Command) {
     .option("--network <name>", "Default network for new projects", "simulated")
     .option("--accounts <n>", "Number of simulated accounts for new projects", "3")
     .option("--install", "Run pnpm/npm install automatically after scaffolding", false)
+    .option("--skip-toolchain", "Do not install the pinned kaspa-wasm (signing, planning and the generated test need it)", false)
+    .option("--toolchain-from-file <asset>", "Install the pinned kaspa-wasm from its official release asset already on disk")
     .option("--json", "Output results as JSON", false)
     .action(async (name: string | undefined, options: any) => {
       let targetDir = process.cwd();
@@ -103,7 +155,7 @@ export default defineConfig({
             const template = `import { defineHardkasConfig } from "@hardkas/sdk";
 
 export default defineHardkasConfig({
-  // HardKAS v0.12.0-rc.24 Configuration
+  // HardKAS v0.12.0-rc.25 Configuration
   execution: {
     default: "simulator",
     targets: {
@@ -222,6 +274,8 @@ scenario("payment flow", async ({ hk }) => {
               }
             }
 
+            const toolchain = await bootstrapKaspaWasm(options);
+
             if (options.install) {
               if (!options.json) UI.info("Running npm install...");
               const { execSync } = await import("node:child_process");
@@ -235,6 +289,7 @@ scenario("payment flow", async ({ hk }) => {
                 command: "init",
                 mode: "cli",
                 result: {
+                  toolchain,
                   nextSteps: [
                     ...(name ? [`cd ${name}`] : []),
                     ...(options.install ? [] : ["npm install"]),
@@ -247,12 +302,15 @@ scenario("payment flow", async ({ hk }) => {
                 `HardKAS project '${name || "current"}' initialized successfully.`
               );
               if (name) UI.info(`Project folder: ${targetDir}`);
-              UI.info(`Created: hardkas.config.ts (0.12.0-rc.24)`);
+              UI.info(`Created: hardkas.config.ts (0.12.0-rc.25)`);
               UI.footer(`Next steps:\n  ` + (name ? `cd ${name}\n  ` : "") + (options.install ? "" : "npm install\n  ") + "npm test");
             }
           }
         );
       } catch (e) {
+        // A structured error (E39: the toolchain step) goes to the top-level
+        // handler, which prints it, writes the JSON envelope and uses its exit code.
+        if ((e as any)?.name === "HardkasCliError") throw e;
         handleError(e, "Init failed");
         process.exit(1);
       }

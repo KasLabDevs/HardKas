@@ -467,7 +467,7 @@ export class HardkasTx {
     //
     // Real Kaspa execution paths (mainnet, testnet-N, devnet, localnet or
     // simnet backed by a real node) go to `planTransactionUpstream`, which
-    // delegates coin selection, mass and fee to kaspa-wasm 2.0.1 `Generator`.
+    // delegates coin selection, mass and fee to the pinned kaspa-wasm `Generator`.
     // The simulated developer harness (kaspa:sim_* accounts, mock scripts)
     // goes to `planTransactionSynthetic`, an explicitly NON-AUTHORITATIVE
     // synthetic planner. There is NO automatic fallback from the upstream

@@ -162,7 +162,7 @@ async function waitForUtxo(rpc: any, address: string, outpoint: { transactionId:
 }
 
 async function spendableCoins(rpc: any, address: string) {
-  // Coinbase maturity comes from upstream network params (kaspa-wasm 2.0.1
+  // Coinbase maturity comes from upstream network params (pinned kaspa-wasm
   // getNetworkParams via KaspaWalletAdapter) — no HardKAS-owned per-network
   // constants. See M10-D2 audit.
   const virt = BigInt((await rpc.getBlockDagInfo()).virtualDaaScore);

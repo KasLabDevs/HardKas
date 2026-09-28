@@ -5,14 +5,15 @@
 
 export const KASPA_CONSENSUS_PARAMS_PROVENANCE = Object.freeze({
   source: "kaspanet/rusty-kaspa",
-  refs: ["master@2026-09-26", "v2.0.1"],
+  // v2.1.0 re-checked 2026-09-28 against the same four files: every value below is unchanged.
+  refs: ["master@2026-09-26", "v2.0.1", "v2.1.0"],
   files: [
     "consensus/core/src/config/constants.rs",
     "consensus/core/src/config/bps.rs",
     "consensus/core/src/config/params.rs",
     "wallet/core/src/utxo/settings.rs"
   ],
-  verifiedAt: "2026-09-26",
+  verifiedAt: "2026-09-28",
   notes: [
     "FINALITY_DURATION = 43_200 s (12 h); finality_depth = BPS × FINALITY_DURATION",
     "PRUNING_DURATION = 108_000 s (30 h)",

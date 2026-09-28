@@ -13,7 +13,7 @@ const BOB = "kaspasim:qzgh3e6qqe6jfevf0dc652uszm0lnhvhzmasga5lka4kcl5udget5065p5
 
 describe("Mass Estimation (shape only, computed by the pinned SDK)", () => {
   it("names the SDK as the authority", () => {
-    expect(MASS_AUTHORITY).toBe("kaspa-wasm 2.0.1");
+    expect(MASS_AUTHORITY).toBe("kaspa-wasm 2.1.0");
     const result = estimateTransactionMass({ inputCount: 1, outputs: [{ address: BOB }] });
     expect(result.assumptions[0]).toMatch(/kaspa-wasm 2\.0\.1/);
   });

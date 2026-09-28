@@ -16,7 +16,9 @@ npm install --save-dev @hardkas/cli@rc
 
 `init` writes a `package.json` (an ES module project, with `@hardkas/sdk` and `@hardkas/testing` pinned to this CLI's version), `hardkas.config.ts`, a first test in `test/payment.test.ts` and a local simulator whose accounts (`alice`, `bob`, …) start with 1000 KAS each. Installing `@hardkas/cli` in the project makes `npx hardkas` run this CLI.
 
-Install with the `rc` tag or an exact version: the `latest` tag still points to an old 0.1.0 release.
+`init` also installs the Kaspa WASM SDK this release pins, `kaspa-wasm` 2.1.0 from the official rusty-kaspa release, into `~/.hardkas/toolchains/` (or `$HARDKAS_HOME`), and checks it against its pinned SHA-256. Signing, planning and the generated test use it. If that step fails, `init` stops with an error. `npx hardkas toolchain install kaspa-wasm` installs it by hand (add `--from-file <asset>` without a network connection), and `npx hardkas toolchain status` shows what is installed.
+
+Install with the `rc` tag or an exact version.
 
 ## Quickstart
 

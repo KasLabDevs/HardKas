@@ -52,7 +52,7 @@ let SELECT_COINS_DEPRECATION_WARNED = false;
 
 /**
  * @deprecated Since M10-B. `selectCoins` is a HardKAS-invented largest-first
- * selector that diverges from the upstream `Generator` in `kaspa-wasm` 2.0.1
+ * selector that diverges from the upstream `Generator` in the pinned `kaspa-wasm`
  * (M9 audit: PUBLIC RELEASE + TESTNET blocker). Use
  * {@link buildTransactions} from `kaspa-wallet-adapter.ts` instead, which
  * yields upstream `PendingTransaction`s with authoritative fee/mass/coin

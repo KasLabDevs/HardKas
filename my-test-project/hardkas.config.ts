@@ -1,7 +1,7 @@
 import { defineHardkasConfig } from "@hardkas/sdk";
 
 export default defineHardkasConfig({
-  // HardKAS v0.12.0-rc.24 Configuration
+  // HardKAS v0.12.0-rc.25 Configuration
   execution: {
     default: "simulator",
     targets: {

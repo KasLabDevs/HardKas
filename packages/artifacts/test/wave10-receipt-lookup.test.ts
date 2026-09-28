@@ -191,7 +191,7 @@ describe("Wave 10 · RECEIPT-1 · findReceiptByTxId exact lookup (IC-5′ re-bas
   it("11. exact Wave 4 real-node receipt shape (hashVersion 4) resolves in bounded time with LEGACY scope", async () => {
     const receipt: any = {
       schema: "hardkas.txReceipt",
-      hardkasVersion: "0.12.0-rc.24",
+      hardkasVersion: "0.12.0-rc.25",
       version: "1.0.0-alpha",
       hashVersion: 4,
       networkId: "simnet",

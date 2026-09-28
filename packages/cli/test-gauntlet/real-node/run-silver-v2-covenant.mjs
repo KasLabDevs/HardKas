@@ -16,6 +16,7 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import {
+  KASPA_WASM_REFERENCE,
   compileSilverSuccessor,
   getSilContract,
   isSingletonAuthTransition,
@@ -234,7 +235,7 @@ async function main() {
     },
     controls,
     upstreamGaps: [
-      "kaspa-wasm 2.0.1 mass calculator ignores v1 compute budgets (wallet/core/src/tx/mass.rs TODO): fees for inputs with computeBudget > 0 are explicit",
+      `kaspa-wasm ${KASPA_WASM_REFERENCE.version} mass calculator ignores v1 compute budgets (wallet/core/src/tx/mass.rs TODO): fees for inputs with computeBudget > 0 are explicit`,
       "no compute-budget estimator in the SDK: budgets here are certified by the node, not estimated by HardKAS"
     ],
     harness: { minerThrottle: HARNESS_MINER_THROTTLE },

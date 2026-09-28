@@ -7,7 +7,7 @@ import path from "node:path";
 import { createHash } from "node:crypto";
 import { execFileSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
-import { CANONICAL_LOCALNET, CPUMINER_REFERENCE_IMAGE, nodeRpcUrl } from "@hardkas/core";
+import { CANONICAL_LOCALNET, CPUMINER_REFERENCE_IMAGE, KASPAD_REFERENCE_VERSION, nodeRpcUrl } from "@hardkas/core";
 import { JsonWrpcKaspaClient } from "@hardkas/kaspa-rpc";
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
@@ -24,7 +24,7 @@ export const P2SH_SCOPE = "SilverScript L1/P2SH execution — not evidence of co
 
 /** The scope M8-B2 proves, and what it does not. */
 export const COVENANT_SCOPE =
-  "Toccata tx-v1 covenant/state-transition execution (1:1 auth-bound singleton transition) against verified rusty-kaspad 2.0.1 — " +
+  `Toccata tx-v1 covenant/state-transition execution (1:1 auth-bound singleton transition) against verified rusty-kaspad ${KASPAD_REFERENCE_VERSION.replace(/^v/, "")} — ` +
   "not vProgs, L2, EVM, multi-input/leader covenants, or production/audited contracts";
 
 /**

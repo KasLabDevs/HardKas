@@ -7,8 +7,8 @@ Get up and running with HardKAS in a local simulated environment.
 Install the SDK and CLI in your project:
 
 ```bash
-npm install @hardkas/sdk@0.12.0-rc.24
-npm install -D @hardkas/cli@0.12.0-rc.24
+npm install @hardkas/sdk@0.12.0-rc.25
+npm install -D @hardkas/cli@0.12.0-rc.25
 ```
 
 ## 2. Initialize The Workspace
@@ -18,7 +18,11 @@ npx hardkas init .
 ```
 
 This creates the local `.hardkas/` workspace and a `hardkas.config.ts` whose
-default network is `simulated`.
+default network is `simulated`. It also installs the Kaspa WASM SDK this release
+pins (`kaspa-wasm`, from the official rusty-kaspa release) into
+`~/.hardkas/toolchains/` and checks it against its pinned SHA-256; signing and
+planning use it. If that step fails, `init` stops with an error and
+`npx hardkas toolchain install kaspa-wasm` installs it by hand.
 
 ## 3. CLI Workflow
 

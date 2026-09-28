@@ -48,7 +48,7 @@ function makePlan() {
 function makeSnapshot() {
   const s: any = {
     schema: "hardkas.snapshot.v1",
-    hardkasVersion: "0.12.0-rc.24",
+    hardkasVersion: "0.12.0-rc.25",
     version: "1.0.0-alpha",
     hashVersion: CURRENT_HASH_VERSION,
     networkId: "simnet",

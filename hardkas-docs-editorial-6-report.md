@@ -1,4 +1,4 @@
-# HardKAS 0.12.0-rc.24 — Docs Editorial 6: SDK Reference & Public API Contract
+# HardKAS 0.12.0-rc.25 — Docs Editorial 6: SDK Reference & Public API Contract
 
 ## 0. CLI Semantic Microcheck: `explain <planId>`
 * **Status:** `CORRECTED`
