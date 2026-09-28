@@ -18,7 +18,7 @@ Evidence of capability does not equal a certification of production readiness.
 
 ## Production Qualification: NOT ESTABLISHED
 
-> **Global Qualification:** HardKAS 0.12.0-rc.23 is currently in `NOT_ESTABLISHED` status for Mainnet Production deployment of Covenants and Based Applications.
+> **Global Qualification:** HardKAS 0.12.0-rc.24 is currently in `NOT_ESTABLISHED` status for Mainnet Production deployment of Covenants and Based Applications.
 
 **Why?**
 1. **Network Policy:** HardKAS by default blocks interaction with Mainnet for experimental features (e.g., vProgs) unless strict overrides are used.

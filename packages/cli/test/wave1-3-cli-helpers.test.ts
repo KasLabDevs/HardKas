@@ -28,7 +28,7 @@ const seal = (body: Record<string, unknown>, hashVersion = CURRENT_HASH_VERSION)
 const submission = (extra: Record<string, unknown> = {}) =>
   seal({
     schema: "hardkas.txSubmission.v1",
-    hardkasVersion: "0.12.0-rc.23",
+    hardkasVersion: "0.12.0-rc.24",
     version: "1.0.0-alpha",
     networkId: "simnet",
     mode: "localnet",
@@ -45,7 +45,7 @@ const receipt = (status: string, hashVersion = CURRENT_HASH_VERSION) =>
   seal(
     {
       schema: "hardkas.txReceipt",
-      hardkasVersion: "0.12.0-rc.23",
+      hardkasVersion: "0.12.0-rc.24",
       version: "1.0.0-alpha",
       networkId: "simnet",
       mode: "simulator",

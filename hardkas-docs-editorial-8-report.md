@@ -1,4 +1,4 @@
-# HardKAS 0.12.0-rc.23 — Docs Editorial 8: Testing & Qualification
+# HardKAS 0.12.0-rc.24 — Docs Editorial 8: Testing & Qualification
 
 ## Status: PASS
 

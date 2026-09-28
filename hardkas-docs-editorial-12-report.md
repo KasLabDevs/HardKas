@@ -1,4 +1,4 @@
-# HardKAS 0.12.0-rc.23 — Docs Editorial 12: vProgs, Based ZK Apps & L2 Boundaries
+# HardKAS 0.12.0-rc.24 — Docs Editorial 12: vProgs, Based ZK Apps & L2 Boundaries
 
 ## Status: PASS
 

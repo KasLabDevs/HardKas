@@ -17,7 +17,7 @@ function repoRoot(): string {
   throw new Error("repo root not found");
 }
 
-describe("0.12.0-rc.23 programmability SDK surface (silverc installed)", () => {
+describe("0.12.0-rc.24 programmability SDK surface (silverc installed)", () => {
   it("verifies the root programmability corpus", async () => {
     const sdk = await Hardkas.create({
       cwd: repoRoot(),

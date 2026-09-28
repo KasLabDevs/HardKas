@@ -1,4 +1,4 @@
-# HardKAS 0.12.0-rc.23 — Docs Editorial 7: Execution Environments
+# HardKAS 0.12.0-rc.24 — Docs Editorial 7: Execution Environments
 
 ## Status: PASS
 

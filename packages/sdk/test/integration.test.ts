@@ -20,7 +20,7 @@ describe.skip("[known gap: TxPlan with policy refs fails the integrity check -> 
     // Create a mock policy
     const policy = {
       schema: "hardkas.policy.v1",
-      hardkasVersion: "0.12.0-rc.23",
+      hardkasVersion: "0.12.0-rc.24",
       version: "1.0.0-alpha",
       networkId: "simnet",
       mode: "simulator",
