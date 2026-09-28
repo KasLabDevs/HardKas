@@ -117,23 +117,18 @@ export const scenario = isVitest ? vitestTest.extend<{ hk: HardkasEnvironment }>
 
       const safeScenarioName = task.name.replace(/[^a-z0-9]/gi, '_').toLowerCase();
 
-      const scenarioResult = {
-        schema: (HardkasSchemas as any).ScenarioResultV1 || "hardkas.scenarioResult.v1",
-        hardkasVersion: "0.12.0-rc.23",
-        version: "1.0.0-alpha",
-        networkId: hardkas.network || "simnet",
-        mode: "agent",
-        createdAt: new Date().toISOString(),
+      // First contact · E07: a sealed v5 `hardkas.scenarioResult.v1` (hashVersion +
+      // contentHash, a real execution mode), not ad-hoc JSON the verifier rejects.
+      const { createScenarioResultArtifact, scenarioModeForNetwork } = await import("@hardkas/artifacts");
+      const network = hardkas.network || "simnet";
+      const scenarioResult = createScenarioResultArtifact({
         scenarioName: task.name,
         status,
+        networkId: network,
+        mode: scenarioModeForNetwork(network),
         artifactsGenerated: Array.from(generatedArtifacts).filter(id => id !== safeScenarioName),
-        error: errorObj,
-        claims: {
-          mainnet: false,
-          testnet: false,
-          production: false
-        }
-      };
+        ...(errorObj ? { error: errorObj } : {})
+      });
 
       fs.writeFileSync(
         path.join(runsDir, "scenario-result.json"), 

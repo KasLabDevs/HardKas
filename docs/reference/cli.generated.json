@@ -6277,15 +6277,29 @@
           "path": "hardkas tx status",
           "name": "status",
           "aliases": [],
-          "description": "Show the signature coverage and status of a transaction artifact",
-          "usage": "hardkas tx status [options] <path>",
+          "description": "Show the derived state of a txId (SUBMITTED, MEMPOOL_ACCEPTED, ACCEPTED, CONFIRMED, FINALIZED, REORGED, …) from the workspace evidence plus one new observation, or the signature coverage of a plan/signed artifact path",
+          "usage": "hardkas tx status [options] <txIdOrPath>",
           "arguments": [
             {
-              "name": "path",
+              "name": "txIdOrPath",
               "description": ""
             }
           ],
           "options": [
+            {
+              "flags": "--no-observe",
+              "description": "Derive from the evidence already in the workspace; take no new observation",
+              "default": null,
+              "required": false,
+              "mandatory": false
+            },
+            {
+              "flags": "-n, --network <network>",
+              "description": "Network whose configured node observes (default: the network of the recorded submission)",
+              "default": null,
+              "required": true,
+              "mandatory": false
+            },
             {
               "flags": "--json",
               "description": "Output as JSON",
@@ -6338,7 +6352,7 @@
           "path": "hardkas tx wait",
           "name": "wait",
           "aliases": [],
-          "description": "Wait for transaction to be confirmed stable",
+          "description": "Wait until the derived state of a txId reaches ACCEPTED or CONFIRMED (blue-score depth ≥ the HardKAS policy), observing the configured node stable",
           "usage": "hardkas tx wait [options] <txId>",
           "arguments": [
             {
@@ -6348,6 +6362,13 @@
           ],
           "options": [
             {
+              "flags": "--until <target>",
+              "description": "accepted or confirmed",
+              "default": "confirmed",
+              "required": true,
+              "mandatory": false
+            },
+            {
               "flags": "--timeout <seconds>",
               "description": "Timeout in seconds",
               "default": "60",
@@ -6355,24 +6376,24 @@
               "mandatory": false
             },
             {
-              "flags": "--url <url>",
-              "description": "Override RPC URL",
-              "default": null,
+              "flags": "--interval <seconds>",
+              "description": "Seconds between observations",
+              "default": "2",
               "required": true,
               "mandatory": false
             },
             {
               "flags": "-n, --network <network>",
-              "description": "Network to use",
+              "description": "Network whose configured node observes (default: the network of the recorded submission)",
               "default": null,
               "required": true,
               "mandatory": false
             },
             {
-              "flags": "--address <address>",
-              "description": "Recipient address to verify UTXO maturity",
-              "default": null,
-              "required": true,
+              "flags": "--json",
+              "description": "Output as JSON",
+              "default": false,
+              "required": false,
               "mandatory": false
             }
           ],

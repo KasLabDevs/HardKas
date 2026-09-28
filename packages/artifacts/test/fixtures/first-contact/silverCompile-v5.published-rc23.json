@@ -1,0 +1,60 @@
+{
+  "schema": "hardkas.silverCompile.v1",
+  "hardkasVersion": "0.12.0-rc.23",
+  "createdAt": "2026-09-26T17:20:00.730Z",
+  "networkId": "simnet",
+  "capability": "silver.compile.v1",
+  "source": {
+    "path": "covenant.sil",
+    "sha256": "4d0c55669d9df0808960fd3d1c7acd08602d4890b4a03a79dfc8023b0d9a052e",
+    "text": "pragma silverscript ^0.1.0;\n\n// Fixed-destination P2SH contract: the first output must pay one recipient.\n// (A covenant in the classic sense; not a Toccata covenant declaration.)\ncontract SimpleCovenant() {\n    entry spend() {\n        // Recipient pubkey of the private key 2222...2222 (x-only).\n        pubkey recipient = pubkey(0x466d7fcae563e5cb09a0d1870bb580344804617879a14949cf22285f1bae3f27);\n        byte[] recipientScriptPubKey = byte[](new ScriptPubKeyP2PK(recipient));\n\n        // Ensure that the first output sends to the recipient\n        require(tx.outputs[0].scriptPubKey == recipientScriptPubKey);\n    }\n}"
+  },
+  "provenance": {
+    "schema": "hardkas.silver.compileProvenance.v1",
+    "compiler": {
+      "id": "silverc",
+      "repository": "kaspanet/silverscript",
+      "releaseTag": "v1.0.0",
+      "commit": "3ed973335b59269293564805cc2c58a14595ec03",
+      "assetName": "silverc-windows-x86_64.zip",
+      "assetSha256": "3e0d660c15a9e7ac90f3960da24d348b076b1891481bfe758db18accc8a102e1",
+      "binarySha256": "ce1e0ef5f1f415f371d3d2426e788597a388635da8cbe93e72e95a4f754b29af",
+      "languageVersion": "0.1.0"
+    },
+    "sourceSha256": "4d0c55669d9df0808960fd3d1c7acd08602d4890b4a03a79dfc8023b0d9a052e",
+    "constructorArgsSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+    "artifactSha256": "22253edb6c001345b7cad56c0b2263b2edce5fae3d653f34a6e34f85e18735d7",
+    "abiSchemaVersion": 1,
+    "contracts": [
+      {
+        "name": "SimpleCovenant",
+        "bytecodeSha256": "4dadad70a865eac0b8c90540cc38d3238fb29b2bf5adff08012b58a08d05bb75",
+        "templateHash": "098ac23b2677bec93b1cb85922c62bc5909887fc62a6055971a089a1928f5e4a",
+        "entries": [
+          {
+            "name": "spend",
+            "dispatchTag": "18fef14c"
+          }
+        ]
+      }
+    ]
+  },
+  "artifactJson": "{\n  \"schema_version\": 1,\n  \"compiler_version\": \"0.1.0\",\n  \"structs\": {},\n  \"contracts\": {\n    \"SimpleCovenant\": {\n      \"source_path\": \"sil/SimpleCovenant.sil\",\n      \"runtime_state\": {\n        \"source\": \"State\",\n        \"fields\": []\n      },\n      \"entries\": {\n        \"spend\": {\n          \"dispatch_tag\": \"18fef14c\",\n          \"params\": []\n        }\n      },\n      \"compiled\": {\n        \"bytecode\": [118, 4, 24, 254, 241, 76, 135, 99, 117, 32, 70, 109, 127, 202, 229, 99, 229, 203, 9, 160, 209, 135, 11, 181, 128, 52, 72, 4, 97, 120, 121, 161, 73, 73, 207, 34, 40, 95, 27, 174, 63, 39, 3, 0, 0, 32, 120, 126, 1, 172, 126, 0, 195, 120, 135, 105, 117, 117, 81, 103, 106, 104],\n        \"template_hash\": [9, 138, 194, 59, 38, 119, 190, 201, 59, 28, 184, 89, 34, 198, 43, 197, 144, 152, 135, 252, 98, 166, 5, 89, 113, 160, 137, 161, 146, 143, 94, 74],\n        \"state_span\": {\n          \"offset\": 0,\n          \"len\": 0\n        }\n      }\n    }\n  }\n}",
+  "contracts": [
+    {
+      "name": "SimpleCovenant",
+      "entries": {
+        "spend": "18fef14c"
+      },
+      "lockingScript": {
+        "version": 0,
+        "script": "aa208c978c0ecdf13c80f99fda5d183e5166d7b8e95671e749053c42a8fd178bbebb87"
+      },
+      "address": "kaspasim:pzxf0rqwehcneq8enld96xp729nd0w8f2ec7wjg983p23lgh3wltklve9rpp4"
+    }
+  ],
+  "version": "1.0.0-alpha",
+  "mode": "localnet",
+  "hashVersion": 5,
+  "contentHash": "a198565413a8939e618774f24023f80fa5ec6c26d9f6f2c26753a5bcb94415cb"
+}

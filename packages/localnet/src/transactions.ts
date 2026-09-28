@@ -319,11 +319,12 @@ export function applySimulatedPlan(
 
     const createdUtxoIds: string[] = [];
 
-    // Create outputs
+    // Create outputs. E04: written under the account's one identity in this state
+    // (inputs were selected through the same function), never under the plan's alias.
     planArtifact.outputs.forEach((o: any, idx: number) => {
       const utxo: LocalnetUtxo = {
         id: `${txId}:${idx}`,
-        address: o.address,
+        address: resolveAccountAddressFromState(state, o.address),
         amountSompi: o.amountSompi.toString(),
         spent: false,
         createdAtDaaScore: nextDaaScore
@@ -336,7 +337,7 @@ export function applySimulatedPlan(
     if (planArtifact.change) {
       const changeUtxo: LocalnetUtxo = {
         id: `${txId}:${planArtifact.outputs.length}`,
-        address: planArtifact.change.address,
+        address: resolveAccountAddressFromState(state, planArtifact.change.address),
         amountSompi: planArtifact.change.amountSompi.toString(),
         spent: false,
         createdAtDaaScore: nextDaaScore

@@ -112,7 +112,7 @@ export async function runAccountsRealGenerate(
   await saveRealAccountStore(store);
 
   const lines = [
-    `Generated ${count} real dev account(s, { cwd })`,
+    `Generated ${count} real dev account(s)`,
     "",
     "WARNING: Development keys only. Do not use on mainnet.",
     ""

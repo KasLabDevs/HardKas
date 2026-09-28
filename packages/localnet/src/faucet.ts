@@ -1,4 +1,5 @@
 import type { LocalnetState, LocalnetUtxo } from "./types";
+import { resolveAccountAddressFromState } from "./state";
 
 export interface FundAddressInput {
   address: string;
@@ -17,7 +18,8 @@ export function fundAddress(
 
   const newUtxo: LocalnetUtxo = {
     id: `faucet:${input.address.slice(-8)}:${nextDaaScore}:0`,
-    address: input.address,
+    // E04: the account's one identity in this state, whatever spelling was given.
+    address: resolveAccountAddressFromState(state, input.address),
     amountSompi: input.amountSompi.toString(),
     spent: false,
     createdAtDaaScore: nextDaaScore

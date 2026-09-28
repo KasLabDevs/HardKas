@@ -47,6 +47,24 @@ async function declineUnconfirmedSend(args: {
   });
 }
 
+/**
+ * Demo-cut step 2 · T-A14b — what a network send may say about the transaction:
+ * the state DERIVED from the evidence just recorded (the submission, plus any
+ * observation already in the workspace), through `sdk.tx.status`. Right after a send
+ * that is SUBMITTED (submitTransaction succeeded at that instant on the responding
+ * node) or REJECTED_BY_NODE — never a claim of consensus validation.
+ */
+async function networkSendState(txId: string | undefined, network: string): Promise<string> {
+  if (!txId || !/^[0-9a-f]{64}$/.test(txId)) return "not derivable: the node returned no txId";
+  try {
+    const { runTxStatus, stateHeadline } = await import("../runners/tx-status-runner.js");
+    const r = await runTxStatus({ txId, observe: false, network, workspaceRoot: process.cwd() });
+    return `${stateHeadline(r.derived)} — ${r.derived.reasons.join(" · ")}`;
+  } catch (e: any) {
+    return `not derivable here (${e?.message ?? String(e)}); run \`hardkas tx status ${txId}\``;
+  }
+}
+
 export function registerTxCommands(program: Command) {
   const tx = program.command("tx").description("L1 Transaction commands");
 
@@ -289,12 +307,36 @@ export function registerTxCommands(program: Command) {
       }
     );
 
-  tx.command("status <path>")
-    .description("Show the signature coverage and status of a transaction artifact")
+  tx.command("status <txIdOrPath>")
+    .description(
+      "Show the derived state of a txId (SUBMITTED, MEMPOOL_ACCEPTED, ACCEPTED, CONFIRMED, FINALIZED, REORGED, …) from the workspace evidence plus one new observation, or the signature coverage of a plan/signed artifact path"
+    )
+    .option("--no-observe", "Derive from the evidence already in the workspace; take no new observation")
+    .option("-n, --network <network>", "Network whose configured node observes (default: the network of the recorded submission)")
     .option("--json", "Output as JSON", false)
-    .action(async (artifactPath: string, options: { json: boolean }) => {
+    .action(async (artifactPath: string, options: { json: boolean; observe: boolean; network?: string }) => {
       try {
         if (options.json) UI.setJsonMode(true);
+        // Demo-cut step 2 · T-A14b: a txId shows the Q4 derived state (the same
+        // `sdk.tx.status` the SDK exposes); a path keeps the signature-coverage view.
+        const fsMod = await import("node:fs");
+        const { isTxIdentifier, runTxStatus, renderTxStatusRows, txStatusJson, stateHeadline } = await import("../runners/tx-status-runner.js");
+        if (isTxIdentifier(artifactPath) && !fsMod.existsSync(artifactPath)) {
+          const r = await runTxStatus({
+            txId: artifactPath,
+            observe: options.observe !== false,
+            ...(options.network ? { network: options.network } : {}),
+            workspaceRoot: process.cwd()
+          });
+          if (options.json) {
+            UI.writeJson(txStatusJson(r));
+          } else {
+            UI.causality(`Transaction state: ${stateHeadline(r.derived)}`, renderTxStatusRows(r), [
+              `hardkas tx wait ${r.txId} --until confirmed`
+            ], "info");
+          }
+          return;
+        }
         const { readArtifact } = await import("@hardkas/artifacts");
         const raw = (await readArtifact(artifactPath)) as any;
         if (
@@ -466,28 +508,41 @@ export function registerTxCommands(program: Command) {
                   // Wave 1.5 · AUD-14 (simulator part): only computed outcomes are printed.
                   // The title is the authenticated outcome; no replay ran here, so no
                   // replay id or replay verdict is printed.
+                  // Demo-cut · T-A14b (network part): a network send states the DERIVED state
+                  // (SUBMITTED / REJECTED_BY_NODE), never "Consensus Validated: YES".
+                  const txIdShown = result.txId && /^[0-9a-f]{64}$/.test(result.txId) ? result.txId : (signedArtifact as any).txId;
+                  const networkRows: Record<string, string | undefined> = isSimulated
+                    ? {
+                        "Replay Status": "not run (hardkas replay verify <artifactId>)",
+                        "Consensus Validated": "NO"
+                      }
+                    : {
+                        State: await networkSendState(txIdShown, String(result.networkName)),
+                        "Replay Status": "not supported for network submissions"
+                      };
                   UI.causality(
                     isSimulated
                       ? "Transaction simulated successfully"
                       : result.accepted
-                        ? "Transaction broadcast successfully"
-                        : "Transaction broadcast NOT accepted by the node",
+                        ? "Transaction submitted to the node"
+                        : "Transaction NOT accepted by the node",
                     {
                       "Execution ID": result.executionId,
                       "Artifact ID": receiptArtifactId(result.receipt) ?? "unknown",
-                      "Tx ID": result.txId,
+                      [txIdShown === result.txId ? "Tx ID" : "Tx ID (as signed)"]: txIdShown ?? "unknown",
                       Network: result.networkName,
                       "Execution Scope": isSimulated
                         ? "local simulated execution"
-                        : "network broadcast",
+                        : "network submission",
                       "Artifact Written": result.receiptPath || ".hardkas/artifacts/...",
                       Projection: "SQLite query-store (indexed while the dashboard runs)",
-                      "Replay Status": isSimulated
-                        ? "not run (hardkas replay verify <artifactId>)"
-                        : "network state dependent",
-                      "Consensus Validated": isSimulated ? "NO" : "YES"
+                      ...networkRows
                     },
-                    nextStepsAfterSend({ receipt: result.receipt, txId: result.txId })
+                    [
+                      ...nextStepsAfterSend({ receipt: result.receipt, txId: result.txId }),
+                      ...(!isSimulated && txIdShown ? [`hardkas tx status ${txIdShown}`] : [])
+                    ],
+                    !isSimulated && !result.accepted ? "fail" : "ok"
                   );
                 }
 
@@ -614,36 +669,47 @@ export function registerTxCommands(program: Command) {
                   const isSimulated =
                     sendResult?.artifact?.rpcUrl === "simulated://local" ||
                     options.network === "simulated";
+                  // Demo-cut · T-A14b: the network state is derived, never asserted.
+                  const flowTxId = sendResult?.artifact?.txId;
+                  const txIdShown = flowTxId && /^[0-9a-f]{64}$/.test(flowTxId) ? flowTxId : (result.steps.sign.artifact as any)?.txId;
+                  const networkRows: Record<string, string | undefined> = isSimulated
+                    ? {
+                        "Replay Status": "not run (hardkas replay verify <artifactId>)",
+                        "Consensus Validated": "NO"
+                      }
+                    : {
+                        State: await networkSendState(txIdShown, String(result.networkId)),
+                        "Replay Status": "not supported for network submissions"
+                      };
 
                   UI.causality(
                     isSimulated
                       ? "Transaction simulated successfully"
                       : flowAccepted
-                        ? "Transaction broadcast successfully"
-                        : "Transaction broadcast NOT accepted by the node",
+                        ? "Transaction submitted to the node"
+                        : "Transaction NOT accepted by the node",
                     {
                       // Wave 1.5 · AUD-14 (simulator part): no replay ran here, so no
                       // replay id or replay verdict is printed.
                       "Execution ID": `exec_${Date.now().toString(36)}`,
                       "Artifact ID": receiptArtifactId(sendResult?.artifact?.receipt) ?? "unknown",
-                      "Tx ID": sendResult?.artifact?.txId ?? "unknown",
+                      [txIdShown === flowTxId ? "Tx ID" : "Tx ID (as signed)"]: txIdShown ?? "unknown",
                       Network: options.network || "simulated",
                       "Execution Scope": isSimulated
                         ? "local simulated execution"
-                        : "network broadcast",
+                        : "network submission",
                       "Artifact Written":
                         sendResult?.artifact?.receiptPath || ".hardkas/artifacts/...",
                       Projection: "SQLite query-store (indexed while the dashboard runs)",
-                      "Replay Status": isSimulated
-                        ? "not run (hardkas replay verify <artifactId>)"
-                        : "network state dependent",
-                      "Consensus Validated": isSimulated ? "NO" : "YES"
+                      ...networkRows
                     },
                     [
                       ...nextStepsAfterSend({ receipt: sendResult?.artifact?.receipt, txId: sendResult?.artifact?.txId }),
+                      ...(!isSimulated && txIdShown ? [`hardkas tx status ${txIdShown}`] : []),
                       "hardkas dev last --replay",
                       "hardkas status"
-                    ]
+                    ],
+                    !isSimulated && !flowAccepted ? "fail" : "ok"
                   );
                 }
                 if (!flowAccepted) {
@@ -685,27 +751,68 @@ export function registerTxCommands(program: Command) {
     });
 
   tx.command("wait <txId>")
-    .description(`Wait for transaction to be confirmed ${UI.maturity("stable")}`)
+    .description(
+      `Wait until the derived state of a txId reaches ACCEPTED or CONFIRMED (blue-score depth ≥ the HardKAS policy), observing the configured node ${UI.maturity("stable")}`
+    )
+    .option("--until <target>", "accepted or confirmed", "confirmed")
     .option("--timeout <seconds>", "Timeout in seconds", "60")
-    .option("--url <url>", "Override RPC URL")
-    .option("-n, --network <network>", "Network to use")
-    .option("--address <address>", "Recipient address to verify UTXO maturity")
-    .action(async (txId, options) => {
-      try {
-        const { loadHardkasConfig } = await import("@hardkas/config");
-        const config = await loadHardkasConfig();
-        const { runTxWait } = await import("../runners/tx-wait-runner.js");
-        await runTxWait({
-          txId,
-          config: config.config,
-          url: options.url,
-          network: options.network,
-          timeoutMs: parseInt(options.timeout) * 1000,
-          address: options.address
+    .option("--interval <seconds>", "Seconds between observations", "2")
+    .option("-n, --network <network>", "Network whose configured node observes (default: the network of the recorded submission)")
+    .option("--json", "Output as JSON", false)
+    .action(async (txId: string, options: { until: string; timeout: string; interval: string; network?: string; json: boolean }) => {
+      if (options.json) UI.setJsonMode(true);
+      const { HardkasCliError, HardkasExitCode } = await import("../cli-errors.js");
+      if (options.until !== "accepted" && options.until !== "confirmed") {
+        throw new HardkasCliError("TX_WAIT_TARGET_INVALID", `--until must be "accepted" or "confirmed" (got "${options.until}")`, {
+          exitCode: HardkasExitCode.USAGE_ERROR
         });
-      } catch (e) {
-        throw e;
       }
+      // Demo-cut step 2 · T-A14b: the wait follows the Q4 derived state; it never
+      // assumes confirmation and never prints "Settlement Proof".
+      const { runTxWait } = await import("../runners/tx-wait-runner.js");
+      const { renderTxStatusRows, stateHeadline } = await import("../runners/tx-status-runner.js");
+      const r = await runTxWait({
+        txId,
+        until: options.until,
+        timeoutMs: Math.max(0, Number(options.timeout)) * 1000,
+        intervalMs: Math.max(0.2, Number(options.interval)) * 1000,
+        ...(options.network ? { network: options.network } : {}),
+        workspaceRoot: process.cwd(),
+        onUpdate: (line) => {
+          if (!options.json) UI.logHuman(`  • ${line}`);
+        }
+      });
+      if (options.json) {
+        UI.writeJson({
+          ok: true,
+          command: "tx wait",
+          mode: "cli",
+          txId: r.txId,
+          network: r.network,
+          outcome: r.outcome,
+          until: r.until,
+          state: r.derived.status,
+          ...(r.derived.confirmations ? { confirmations: r.derived.confirmations } : {}),
+          looks: r.looks,
+          derived: r.derived
+        });
+        return;
+      }
+      UI.causality(
+        r.outcome === "synthetic"
+          ? `${r.derived.status}: executed by the HardKAS simulator; there is no network to wait for`
+          : `Reached ${r.until.toUpperCase()}: ${stateHeadline(r.derived)}`,
+        renderTxStatusRows({
+          txId: r.txId,
+          network: r.network,
+          derived: r.derived,
+          look: r.lastObservationArtifactId
+            ? { taken: true, artifactId: r.lastObservationArtifactId }
+            : { taken: false, reason: "a simulator txId: there is no network to observe" }
+        }),
+        undefined,
+        r.outcome === "synthetic" ? "info" : "ok"
+      );
     });
 
   tx.command("verify <path>")

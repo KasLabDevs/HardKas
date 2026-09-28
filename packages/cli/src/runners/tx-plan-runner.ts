@@ -185,9 +185,8 @@ export async function runTxPlan(input: TxPlanRunnerInput): Promise<TxPlanArtifac
       : undefined
   );
 
-  let stateAddress: string | undefined;
   if (backend === "simulator") {
-    const { loadOrCreateLocalnetState, getSpendableUtxos, resolveAccountAddressFromState } = await import(
+    const { loadOrCreateLocalnetState, getSpendableUtxos } = await import(
       "@hardkas/localnet"
     );
     const localState = await loadOrCreateLocalnetState({
@@ -198,7 +197,6 @@ export async function runTxPlan(input: TxPlanRunnerInput): Promise<TxPlanArtifac
     if (fromAddress.startsWith("kaspasim:") && from !== fromAddress && !from.startsWith("kaspa")) {
       queryAddress = from;
     }
-    stateAddress = resolveAccountAddressFromState(localState, queryAddress);
     const unspent = getSpendableUtxos(localState, queryAddress);
 
     availableUtxos = unspent.map((u) => {
@@ -228,7 +226,10 @@ export async function runTxPlan(input: TxPlanRunnerInput): Promise<TxPlanArtifac
     // is labelled NON-AUTHORITATIVE (`SYNTHETIC_SIMULATOR`), exactly as the SDK does.
     const simulatorProvider: UtxoProvider = { getUtxos: async () => availableUtxos };
     const simulatorService = new TxPlanService(simulatorProvider, { coinbaseMaturity: planCoinbaseMaturity });
-    const simulatorChange = changeAddressResolved ?? (stateAddress && stateAddress !== fromAddress ? stateAddress : undefined);
+    // E04: the simulator state maps the plan's synthetic identities to each account's
+    // one address when it executes (outputs AND change), so the plan keeps the sender's
+    // own identity as its change destination unless the caller named another one.
+    const simulatorChange = changeAddressResolved;
     planResult = await simulatorService.planTransactionSynthetic({
       fromAddress,
       toAddress,

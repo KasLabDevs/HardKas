@@ -386,7 +386,6 @@ export class HardkasTx {
             cwd: this.sdk.workspace.root
           });
           const unspent = getSpendableUtxos(localState, address);
-          console.log("DEBUG SDK TX PLAN: address=", address, "unspent=", unspent);
           return unspent.map((u) => {
             const parts = u.id.split(":");
             const index = Number(parts[parts.length - 1]);
@@ -844,6 +843,7 @@ export class HardkasTx {
         plan as TxPlanArtifact
       );
 
+      await this.persistAuthorizedPlan(plan);
       const { absolutePath } = await this.sdk.artifacts.write(signedArtifact);
       const { coreEvents } = await import("@hardkas/core");
       const signedRecord = signedArtifact as unknown as Record<string, string>;
@@ -1115,7 +1115,8 @@ export class HardkasTx {
       throw new Error(`Unsupported artifact schema for signing: ${(plan as any).schema}`);
     }
 
-    // Persist and emit events
+    // Persist and emit events. E01: the authorized plan first, then the signed.
+    await this.persistAuthorizedPlan(plan);
     const { absolutePath } = await this.sdk.artifacts.write(signedArtifact);
 
     const { coreEvents } = await import("@hardkas/core");
@@ -1158,6 +1159,28 @@ export class HardkasTx {
    * verified, in FULL authentication scope (its `status` is authenticated), never by
    * txId and never by a status a legacy hash version did not cover.
    */
+  /**
+   * First contact · E01: a signed artifact authorizes ONE plan by its artifactId
+   * (IC-6′.1), and the executor resolves that plan only from the store (IC-6′.2).
+   * `sign()` persists the signed artifact, so it persists its subject too: the plan
+   * goes into the store under its own verified identity if it is not there yet.
+   * A stored copy that does not verify under that identity is never overwritten —
+   * the resolver's error propagates and nothing is signed (tamper evidence stays).
+   */
+  private async persistAuthorizedPlan(plan: any): Promise<void> {
+    if (plan?.schema !== HardkasSchemas.TxPlan && plan?.schema !== HardkasSchemas.TxPlanV1) return;
+    const planId = plan?.contentHash;
+    if (typeof planId !== "string" || !/^[0-9a-f]{64}$/.test(planId)) return;
+    const { resolveArtifactSync } = await import("@hardkas/artifacts");
+    try {
+      resolveArtifactSync(this.sdk.workspace.root, { artifact: planId });
+      return; // already stored and verified under this identity
+    } catch (e: any) {
+      if (e?.code !== "ARTIFACT_NOT_FOUND") throw e;
+    }
+    await this.sdk.artifacts.write(plan);
+  }
+
   private async findExistingSubmission(
     executedArtifactId: string
   ): Promise<{ receipt: TxReceiptArtifact; receiptPath: string } | null> {

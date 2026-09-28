@@ -112,25 +112,26 @@ export function registerTaskCommands(program: Command, loadedConfig?: LoadedHard
           throw new HardkasCliError("TASK_FAILED", `Task '${name}' failed: ${e.message}`, { exitCode: 1 });
         }
 
-        // Always write a TaskResult artifact (shaped compatibly for EvidenceManager)
-        const writeResult = await hk.artifacts.write({
-          type: "TaskResult",
+        // First contact · E03: the task run is recorded as a sealed v5
+        // `hardkas.scenarioResult.v1` (the shape EvidenceManager packs). The previous
+        // ad-hoc body had no hashVersion, so the writer refused it (N3) and every
+        // task failed after its action had already run.
+        const { createScenarioResultArtifact, scenarioModeForNetwork } = await import("@hardkas/artifacts");
+        const taskNetwork = String(hk.network ?? "simulated");
+        const taskResult = createScenarioResultArtifact({
           scenarioName: name,
-          status: "PASSED",
-          networkId: hk.network,
-          mode: "simulator",
-          artifactsGenerated: [],
+          status: "passed",
+          networkId: taskNetwork,
+          mode: scenarioModeForNetwork(taskNetwork),
           metadata: {
+            kind: "task",
             taskName: name,
+            runId,
             args: typedArgs,
-            timestamp: new Date().toISOString()
-          },
-          payload: {
-             result: resultData
+            ...(resultData !== undefined ? { result: resultData } : {})
           }
-        } as any, {
-          fileName: `task-results/${runId}.task-result.json`
         });
+        const writeResult = await hk.artifacts.write(taskResult as any);
         const taskResultPath = writeResult.absolutePath;
 
         UI.success(`Task '${name}' completed successfully.`);

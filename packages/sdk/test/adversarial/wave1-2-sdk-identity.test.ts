@@ -164,6 +164,10 @@ describe("Wave 1.2 · SDK identity resolution", () => {
     const plan = await sdk.tx.plan({ from: "alice", to: "bob", amount: "10" });
     const signed = await sdk.tx.sign(plan, "alice");
     (sdk.artifacts as any).cache.clear();
+    // First contact · E01: sign() persists the plan it authorizes; remove it from the
+    // store to recreate "not persisted".
+    const { resolveArtifactSync } = await import("@hardkas/artifacts");
+    fs.unlinkSync(resolveArtifactSync(ws, { artifact: plan.contentHash }).path);
     // Not persisted, not passed: unresolved.
     expect(await codeOf(sdk.tx.simulate(signed))).toMatch(/parent_plan_unresolved/);
     // Passed explicitly with a different identity: refused.

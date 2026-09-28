@@ -40,6 +40,10 @@ npx hardkas tx send tx-signed.json --network simulated --yes
 
 ## 4. SDK Workflow
 
+The SDK is published as ES modules. Run this from an ES module: a project with
+`"type": "module"` in its `package.json` (`hardkas init` sets it), or a `.mjs`
+file. In a CommonJS project (the `npm init -y` default) the import fails.
+
 ```typescript
 import { Hardkas } from "@hardkas/sdk";
 
@@ -62,7 +66,10 @@ async function run() {
   console.log("Simulation receipt:", receipt.txId);
 }
 
-run().catch(console.error);
+run().catch((error) => {
+  console.error(error);
+  process.exitCode = 1;
+});
 ```
 
 Use `simulate()` for the local loop. Move to `simnet` or testnet only when the

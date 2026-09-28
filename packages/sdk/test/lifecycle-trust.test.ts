@@ -275,15 +275,18 @@ describe("0.12.0-rc.23 Lifecycle Integrity & Trust Boundary Tests", () => {
     // Clear memory cache to ensure it's not resolved from cache
     (sdk.artifacts as any).cache.clear();
 
-    // Clear disk of plan files
-    if (fs.existsSync(sdk.workspace.artifactsDir)) {
-      const files = fs.readdirSync(sdk.workspace.artifactsDir);
-      for (const f of files) {
-        if (f.includes("plan-")) {
-          fs.unlinkSync(path.join(sdk.workspace.artifactsDir, f));
-        }
+    // Clear disk of plan files. First contact · E01: sign() now persists the plan it
+    // authorizes under the store's `plans/` subdirectory, so the plan is removed
+    // from wherever the store put it; the property (no plan ⇒ no execution) is unchanged.
+    const removePlans = (dir: string) => {
+      if (!fs.existsSync(dir)) return;
+      for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+        const p = path.join(dir, entry.name);
+        if (entry.isDirectory()) removePlans(p);
+        else if (/plan-/i.test(entry.name)) fs.unlinkSync(p);
       }
-    }
+    };
+    removePlans(sdk.workspace.artifactsDir);
 
     // Simulate must fail with parent_plan_unresolved
     await expect(sdk.tx.simulate(signed)).rejects.toThrow("parent_plan_unresolved");
