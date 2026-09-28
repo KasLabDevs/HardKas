@@ -140,7 +140,7 @@ describe("Wave 1.3 · IC-7.4 single workflowId derivation", () => {
     expect(id1).toMatch(/^wf_[0-9a-f]{16}$/);
     expect(api.deriveWorkflowId(structuredClone(transfer))).toBe(id1);
     expect(api.deriveWorkflowId({ ...transfer, amountSompi: "2" })).not.toBe(id1);
-    const steps = { kind: "steps", steps: [{ type: "tx.plan" }], normalizedInputs: {}, parentArtifacts: [], policySnapshot: {}, capabilitySnapshot: {}, runtimeVersion: "0.12.0-rc.23", workspaceSchemaVersion: "hardkas.workflow.v1" };
+    const steps = { kind: "steps", steps: [{ type: "tx.plan" }], normalizedInputs: {}, parentArtifacts: [], policySnapshot: {}, capabilitySnapshot: {}, runtimeVersion: "0.12.0-rc.24", workspaceSchemaVersion: "hardkas.workflow.v1" };
     expect(api.deriveWorkflowId(steps)).toMatch(/^wf_[0-9a-f]{16}$/);
     expect(api.deriveWorkflowId(steps)).not.toBe(id1);
     expect(() => api.deriveWorkflowId({ networkId: "simnet" })).toThrow(/WORKFLOW_INTENT_INVALID/);

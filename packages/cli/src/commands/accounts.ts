@@ -32,10 +32,18 @@ export function registerAccountsCommands(program: Command) {
         getOutput().writeLine("HardKAS accounts");
         getOutput().writeLine("");
         for (const acc of accounts) {
-          const encrypted =
-            acc.kind === "kaspa" && !acc.privateKeyEnv ? " (encrypted)" : "";
+          // First contact: say how the key is actually stored. Only an encrypted
+          // keystore is "encrypted"; a plaintext key is labelled as such.
+          const storage =
+            acc.kind !== "kaspa"
+              ? ""
+              : acc.keystorePath
+                ? " (encrypted)"
+                : acc.privateKey
+                  ? " (plaintext key)"
+                  : "";
           getOutput().writeLine(
-            `${acc.name.padEnd(12)} ${acc.address?.padEnd(24)} (${acc.kind})${encrypted}`
+            `${acc.name.padEnd(12)} ${acc.address?.padEnd(24)} (${acc.kind})${storage}`
           );
         }
       } catch (e) {
@@ -251,15 +259,33 @@ export function registerAccountsCommands(program: Command) {
             timeoutMs: parseInt(options.lockTimeout)
           },
           async () => {
+            // Demo-ready · E20: the raw commander options go first, so the parsed count (a
+            // number) is what the runner sees; commander's string "1" used to win and a
+            // single `--name ana` became `ana1`.
             const result = await runAccountsRealGenerate({
+              ...options,
               ...(options.name ? { name: options.name } : {}),
               count: parseInt(options.count, 10),
               networkId: options.network as any,
-              ...options,
               workspaceRoot: process.cwd()
             });
-            if (options.json) getOutput().writeJson(result.accounts);
-            else getOutput().writeLine(result.formatted);
+            if (options.json) {
+              // Demo-cut · AUD-21: the machine-readable result says how and where each
+              // key is stored, never the key. Plaintext storage stays an explicit,
+              // dangerous opt-in; printing the secret to stdout is not part of it.
+              getOutput().writeJson(
+                result.accounts.map((a) => ({
+                  name: a.name,
+                  address: a.address,
+                  network: options.network ?? "simnet",
+                  storage: a.keystoreRef ? "encrypted-keystore" : a.privateKey ? "plaintext" : "none",
+                  unsafePlaintext: Boolean(a.privateKey) && !a.keystoreRef,
+                  store: ".hardkas/accounts.real.json",
+                  ...(a.keystoreRef ? { keystore: a.keystoreRef } : {}),
+                  ...(a.publicKey ? { publicKey: a.publicKey } : {})
+                }))
+              );
+            } else getOutput().writeLine(result.formatted);
           }
         );
       } catch (e) {

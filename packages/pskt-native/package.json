@@ -1,6 +1,6 @@
 {
   "name": "@hardkas/pskt-native",
-  "version": "0.12.0-rc.23",
+  "version": "0.12.0-rc.24",
   "type": "module",
   "main": "index.js",
   "types": "index.d.ts",
@@ -19,7 +19,6 @@
     "artifacts": "napi artifacts",
     "build": "napi build --platform --release",
     "build:debug": "napi build --platform",
-    "prepublishOnly": "napi prepublish -t npm --skip-optional-publish",
     "test": "vitest run",
     "typecheck": "echo \"No typecheck needed for napi auto-gen\""
   },

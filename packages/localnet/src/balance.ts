@@ -10,8 +10,11 @@ import { resolveAccountAddressFromState } from "./state";
  *
  * When a `kaspasim:` bech32 address or `kaspatest:` address is queried and no
  * UTXOs match directly, we fall through to `resolveAccountAddressFromState`.
+ *
+ * Exported (demo-ready · E26) so callers can report the address a query actually read
+ * instead of echoing their input.
  */
-function resolveMatchAddress(state: LocalnetState, address: string): string {
+export function resolveMatchAddress(state: LocalnetState, address: string): string {
   // First try: exact match (handles kaspa:sim_* and any address stored directly)
   const directMatch = state.utxos.some((u) => u.address === address && !u.spent);
   if (directMatch) return address;

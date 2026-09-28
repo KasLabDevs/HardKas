@@ -891,7 +891,9 @@ const SilverNodeRefSchema = z.object({
 });
 const SilverRecordBaseSchema = BaseArtifactSchema.extend({
   networkId: z.literal("simnet"),
-  artifactId: z.string(),
+  // v4 records carry `artifactId`; v5 records must not (IC-7.3, FORBIDDEN_IDENTITY_FIELD),
+  // so requiring it rejected every record `hardkas silver` produces (first contact · E07).
+  artifactId: z.string().optional(),
   capability: z.enum(["silver.compile.v1", "silver.p2sh.deploy-spend.v1", "toccata.covenant.auth-1to1-transition.v1"])
 });
 const SilverOnChainSchema = SilverRecordBaseSchema.extend({

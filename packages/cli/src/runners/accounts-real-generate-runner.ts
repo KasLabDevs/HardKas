@@ -37,6 +37,28 @@ export async function runAccountsRealGenerate(
   let store = await loadOrCreateRealAccountStore({ cwd });
   const generatedAccounts: RealDevAccount[] = [];
 
+  // Demo-ready · E20: one requested account gets exactly the requested name; several are numbered.
+  const names = Array.from({ length: count }, (_, i) =>
+    count === 1 && options.name ? options.name : options.name ? `${options.name}${i + 1}` : `account${i}`
+  );
+  // A taken name is refused before anything is prompted for or written: in encrypted mode
+  // the keystore file used to be written first, overwriting the existing account's keystore,
+  // and only then did the store refuse the duplicate name (the account kept pointing at a
+  // keystore holding another key).
+  const taken = names.filter(
+    (n) =>
+      store.accounts.some((a) => a.name.toLowerCase() === n.toLowerCase()) ||
+      (!options.unsafePlaintext && fs.existsSync(path.join(cwd, ".hardkas", "keystore", `${n}.json`)))
+  );
+  if (taken.length > 0) {
+    const { HardkasCliError, HardkasExitCode } = await import("../cli-errors.js");
+    throw new HardkasCliError(
+      "ACCOUNT_NAME_TAKEN",
+      `An account named ${taken.map((n) => `'${n}'`).join(", ")} already exists in this workspace (.hardkas/accounts.real.json or .hardkas/keystore/). Nothing was generated; choose another --name.`,
+      { exitCode: HardkasExitCode.USAGE_ERROR }
+    );
+  }
+
   let password = "";
   if (!options.unsafePlaintext) {
     password = await acquirePassword({
@@ -56,12 +78,7 @@ export async function runAccountsRealGenerate(
   }
 
   for (let i = 0; i < count; i++) {
-    const name =
-      count === 1 && options.name
-        ? options.name
-        : options.name
-          ? `${options.name}${i + 1}`
-          : `account${i}`;
+    const name = names[i]!;
 
     // Attempt generation
     const generated = await generator.generateAccount(
@@ -112,7 +129,7 @@ export async function runAccountsRealGenerate(
   await saveRealAccountStore(store);
 
   const lines = [
-    `Generated ${count} real dev account(s, { cwd })`,
+    `Generated ${count} real dev account(s)`,
     "",
     "WARNING: Development keys only. Do not use on mainnet.",
     ""

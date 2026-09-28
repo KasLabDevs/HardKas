@@ -53,11 +53,26 @@ export function createInitialLocalnetState(
   };
 }
 
+/**
+ * Demo-cut · E04 — the ONE identity function of the simulator state. Every
+ * spelling of a simulator account — its name, its synthetic identity
+ * `kaspa:sim_<name>` (what the account layer and plans use), or the address the
+ * state records for it — resolves to the address the state records. Reads (UTXO
+ * selection, balances) and writes (outputs, change, faucet) go through this same
+ * function, so an account never has two addresses. Anything that is not a state
+ * account is returned unchanged.
+ */
 export function resolveAccountAddressFromState(
   state: LocalnetState,
   nameOrAddress: string
 ): string {
-  // If it looks like a kaspa address, return it
+  const synthetic = /^kaspa:sim_(.+)$/.exec(nameOrAddress);
+  if (synthetic) {
+    const account = state.accounts?.find((a) => a.name === synthetic[1]);
+    return account ? account.address : nameOrAddress;
+  }
+
+  // Any other kaspa address is used as-is.
   if (nameOrAddress.startsWith("kaspa:")) {
     return nameOrAddress;
   }

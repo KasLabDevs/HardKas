@@ -21,6 +21,7 @@ import {
   MigrationReceiptSchema,
   TxSubmissionSchema,
   TxObservationSchema,
+  ScenarioResultSchema,
   ReplayReportSchema,
   ARTIFACT_VERSION
 } from "./schemas.js";
@@ -302,6 +303,10 @@ export function verifyArtifactIntegritySync(
         break;
       case HardkasSchemas.TxObservationV1:
         schema = TxObservationSchema;
+        break;
+      case HardkasSchemas.ScenarioResultV1:
+        // First contact · E07: scenario runs and task runs are sealed artifacts.
+        schema = ScenarioResultSchema;
         break;
       case HardkasSchemas.ReplayReportV1:
         schema = ReplayReportSchema;

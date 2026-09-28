@@ -139,9 +139,12 @@ export const UI = {
   causality(
     title: string,
     details: Record<string, string | undefined>,
-    nextSteps?: string[]
+    nextSteps?: string[],
+    // Demo-cut · T-A14b: the icon follows the outcome — a rejection is never shown with ✔.
+    tone: "ok" | "fail" | "info" = "ok"
   ) {
-    this.logHuman(`\n  ${pc.green("✔")} ${pc.bold(title)}\n`);
+    const icon = tone === "fail" ? pc.red("✗") : tone === "info" ? pc.cyan("ℹ") : pc.green("✔");
+    this.logHuman(`\n  ${icon} ${pc.bold(title)}\n`);
     for (const [key, value] of Object.entries(details)) {
       if (value) {
         this.logHuman(`  ${pc.dim(key)}`);

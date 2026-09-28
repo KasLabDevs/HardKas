@@ -50,7 +50,7 @@ function sealV4(body: Record<string, unknown>): any {
 describe("Wave 1.3 · IC-4′.1 no schema skips verification (AUD-08 / T-P6)", () => {
   const replayReportBody = {
     schema: "hardkas.replayReport.v1",
-    hardkasVersion: "0.12.0-rc.23",
+    hardkasVersion: "0.12.0-rc.24",
     version: "1.0.0-alpha",
     networkId: "simnet",
     mode: "simulator",
@@ -126,7 +126,7 @@ describe("Wave 1.3 · IC-7.3 / IC-4′.5 no top-level artifactId on version-5 ar
   it("a v5 artifact with a top-level artifactId that is a label (not the hash) is refused for the same reason", () => {
     const record = sealV5({
       schema: "hardkas.policy.v1",
-      hardkasVersion: "0.12.0-rc.23",
+      hardkasVersion: "0.12.0-rc.24",
       version: "1.0.0-alpha",
       networkId: "simnet",
       mode: "simulator",

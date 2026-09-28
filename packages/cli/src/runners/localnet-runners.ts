@@ -545,9 +545,22 @@ async function detectToccataNode(quiet = false) {
 
 
 
-async function restartToccataMiner(address: string) {
-  await execa("docker", ["rm", "-f", TOCCATA_MINER_CONTAINER]).catch(() => {});
-  await execa("docker", [
+/**
+ * `docker run` arguments of the companion miner.
+ *
+ * Demo-ready: the miner is rate-limited with the upstream cpuminer's own `--throttle` ("for
+ * development testing"), exactly as the repo's real-node harnesses already run it
+ * (scripts/toccata-gauntlet.mjs, test-gauntlet/real-node/silver-e2e.mjs). Unthrottled, one
+ * CPU thread on simnet outruns the node: consecutive reads of the mining address return
+ * different coinbase outpoints, and a plan built on one of them can be refused as an orphan
+ * seconds later (seen with `localnet fund --keep-miner`). HARNESS-LOCAL knob
+ * (`HARDKAS_TOCCATA_MINER_THROTTLE_MS`, default 5 ms, "0" disables): not a Kaspa or Toccata
+ * parameter, not evidence of anything about consensus, and not part of any capability claim.
+ */
+export function toccataMinerArgs(address: string, env: NodeJS.ProcessEnv = process.env): string[] {
+  const requested = env.HARDKAS_TOCCATA_MINER_THROTTLE_MS;
+  const throttle = requested !== undefined && /^\d+$/.test(requested) ? requested : "5";
+  return [
     "run",
     "-d",
     "--name",
@@ -563,8 +576,14 @@ async function restartToccataMiner(address: string) {
     String(CANONICAL_LOCALNET.ports.rpc),
     "--mine-when-not-synced",
     "-t",
-    "1"
-  ]);
+    "1",
+    ...(throttle !== "0" ? ["--throttle", throttle] : [])
+  ];
+}
+
+async function restartToccataMiner(address: string) {
+  await execa("docker", ["rm", "-f", TOCCATA_MINER_CONTAINER]).catch(() => {});
+  await execa("docker", toccataMinerArgs(address));
 }
 
 async function stopToccataMiner() {

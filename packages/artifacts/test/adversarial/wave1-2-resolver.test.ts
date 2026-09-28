@@ -165,7 +165,7 @@ describe("Wave 1.2 · IC-5′ verified, namespaced artifact resolution", () => {
   it("T-P7 · a top-level artifactId is not an identity claim: an impostor never shadows the artifact it names", async () => {
     const impostor = sealed({
       schema: "hardkas.policy.v1",
-      hardkasVersion: "0.12.0-rc.23",
+      hardkasVersion: "0.12.0-rc.24",
       version: "1.0.0-alpha",
       networkId: "simnet",
       mode: "simulator",

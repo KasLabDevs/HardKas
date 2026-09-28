@@ -1,4 +1,14 @@
 
+## [0.12.0-rc.24] - 2026-09-28 - Coordinated Release Identity Refresh
+
+### Fixed
+- Promoted the coordinated release-set identity from `0.12.0-rc.23` to `0.12.0-rc.24`.
+- Kept the scaffold invariant intact: `CLI release X -> scaffolded @hardkas/* dependencies = exact X`.
+- Preserved historical rc.23 release validation and audit evidence while creating rc.24 release validation surfaces.
+
+### Preserved Evidence
+- `0.12.0-rc.23` release validation and audit evidence remain historical records and are not rewritten as `0.12.0-rc.24`.
+
 ## [0.12.0-rc.23] - 2026-09-17 — Coordinated Release Identity Refresh
 
 ### Fixed

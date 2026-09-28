@@ -5316,25 +5316,27 @@ hardkas tx sign [options] <planPath>
 
 ## hardkas tx status
 
-Show the signature coverage and status of a transaction artifact
+Show the derived state of a txId (SUBMITTED, MEMPOOL_ACCEPTED, ACCEPTED, CONFIRMED, FINALIZED, REORGED, …) from the workspace evidence plus one new observation, or the signature coverage of a plan/signed artifact path
 
 ### Usage
 
 ```bash
-hardkas tx status [options] <path>
+hardkas tx status [options] <txIdOrPath>
 ```
 
 ### Options
 
 | Flag | Description | Default |
 | :--- | :--- | :--- |
+| `--no-observe` | Derive from the evidence already in the workspace; take no new observation |  |
+| `-n, --network <network>` | Network whose configured node observes (default: the network of the recorded submission) |  |
 | `--json` | Output as JSON | false |
 
 ### Arguments
 
 | Argument | Description |
 | :--- | :--- |
-| `path` |  |
+| `txIdOrPath` |  |
 
 ---
 
@@ -5386,7 +5388,7 @@ hardkas tx verify [options] <path>
 
 ## hardkas tx wait
 
-Wait for transaction to be confirmed stable
+Wait until the derived state of a txId reaches ACCEPTED or CONFIRMED (blue-score depth ≥ the HardKAS policy), observing the configured node, then until that node's UTXO view reflects it stable
 
 ### Usage
 
@@ -5398,10 +5400,11 @@ hardkas tx wait [options] <txId>
 
 | Flag | Description | Default |
 | :--- | :--- | :--- |
+| `--until <target>` | accepted or confirmed | confirmed |
 | `--timeout <seconds>` | Timeout in seconds | 60 |
-| `--url <url>` | Override RPC URL |  |
-| `-n, --network <network>` | Network to use |  |
-| `--address <address>` | Recipient address to verify UTXO maturity |  |
+| `--interval <seconds>` | Seconds between observations | 2 |
+| `-n, --network <network>` | Network whose configured node observes (default: the network of the recorded submission) |  |
+| `--json` | Output as JSON | false |
 
 ### Arguments
 

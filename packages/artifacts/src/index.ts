@@ -9,6 +9,7 @@ export * from "./identity-categories.js";
 export * from "./tx-observation.js";
 export * from "./tx-status.js";
 export * from "./submission-fee.js";
+export * from "./scenario-result.js";
 export * from "./schemas.js";
 export * from "./verify.js";
 export * from "./payment-receipts.js";

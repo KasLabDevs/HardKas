@@ -881,7 +881,14 @@ export class HardkasIndexer {
           file === ".git" ||
           file === "keystore" ||
           file === "dev-accounts" ||
-          file === "snapshots"
+          file === "snapshots" ||
+          // First contact · E07: operational output, never canonical artifacts —
+          // test-run bookkeeping, torture/chaos reports, deployment tracking records
+          // and the managed node's data directory.
+          file === "runs" ||
+          file === "reports" ||
+          file === "deployments" ||
+          file === "kaspad"
         )
           continue;
         results = results.concat(this.walk(filePath, visited));

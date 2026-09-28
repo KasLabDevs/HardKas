@@ -10,7 +10,8 @@ import {
   type UtxoProvider
 } from "@hardkas/tx-builder";
 import { createTxPlanArtifact, TxPlanArtifact } from "@hardkas/artifacts";
-import { coreEvents, getCoinbaseMaturity, sha256hex, UtxoVirtualStateUnstableError } from "@hardkas/core";
+import { coreEvents, getCoinbaseMaturity, sha256hex, SelectedUtxoInvalidatedError } from "@hardkas/core";
+import type { RuntimeContext } from "@hardkas/core";
 import { resolveExecutionTarget, HardkasConfig } from "@hardkas/config";
 
 // Wave 2(b) · AUD-17 (PLANNER-CONVERGENCE-1) / AUD-28 (CHANGEADDR): the CLI plans
@@ -18,8 +19,9 @@ import { resolveExecutionTarget, HardkasConfig } from "@hardkas/config";
 // (kaspa-wasm Generator, `plannerAuthority: KASPA_WASM_GENERATOR`) on a real
 // network, `planTransactionSynthetic` (`SYNTHETIC_SIMULATOR`) in the simulator —
 // and records that authority in the artifact. The CLI's safety layers around the
-// network read (virtual fingerprint before/after, confirmation query of the
-// selected inputs, bounded retries, RPC error classification) are unchanged.
+// network read (re-validation of the selected inputs, bounded retries, RPC error
+// classification) stay; since the demo-ready block (E02) the virtual fingerprint before/after is
+// recorded as evidence and no longer decides whether a plan is valid.
 
 /** A refusal of the canonical upstream planner, kept distinct from transport (RPC) failures. */
 export class UpstreamPlannerError extends Error {
@@ -176,6 +178,7 @@ export async function runTxPlan(input: TxPlanRunnerInput): Promise<TxPlanArtifac
   let mode: "simulator" | "kaspa-node" | "kaspa-rpc" = "simulator";
   let planResult: TxPlanResult | undefined;
   let pendingSpendEvidence: PendingSpendEvidence | undefined;
+  let planningWindow: RuntimeContext["planningWindow"];
   let rpcUrl: string | undefined = providerConfig.endpoint;
 
   const planCoinbaseMaturity = getCoinbaseMaturity(
@@ -185,9 +188,8 @@ export async function runTxPlan(input: TxPlanRunnerInput): Promise<TxPlanArtifac
       : undefined
   );
 
-  let stateAddress: string | undefined;
   if (backend === "simulator") {
-    const { loadOrCreateLocalnetState, getSpendableUtxos, resolveAccountAddressFromState } = await import(
+    const { loadOrCreateLocalnetState, getSpendableUtxos } = await import(
       "@hardkas/localnet"
     );
     const localState = await loadOrCreateLocalnetState({
@@ -198,7 +200,6 @@ export async function runTxPlan(input: TxPlanRunnerInput): Promise<TxPlanArtifac
     if (fromAddress.startsWith("kaspasim:") && from !== fromAddress && !from.startsWith("kaspa")) {
       queryAddress = from;
     }
-    stateAddress = resolveAccountAddressFromState(localState, queryAddress);
     const unspent = getSpendableUtxos(localState, queryAddress);
 
     availableUtxos = unspent.map((u) => {
@@ -228,7 +229,10 @@ export async function runTxPlan(input: TxPlanRunnerInput): Promise<TxPlanArtifac
     // is labelled NON-AUTHORITATIVE (`SYNTHETIC_SIMULATOR`), exactly as the SDK does.
     const simulatorProvider: UtxoProvider = { getUtxos: async () => availableUtxos };
     const simulatorService = new TxPlanService(simulatorProvider, { coinbaseMaturity: planCoinbaseMaturity });
-    const simulatorChange = changeAddressResolved ?? (stateAddress && stateAddress !== fromAddress ? stateAddress : undefined);
+    // E04: the simulator state maps the plan's synthetic identities to each account's
+    // one address when it executes (outputs AND change), so the plan keeps the sender's
+    // own identity as its change destination unless the caller named another one.
+    const simulatorChange = changeAddressResolved;
     planResult = await simulatorService.planTransactionSynthetic({
       fromAddress,
       toAddress,
@@ -268,6 +272,9 @@ export async function runTxPlan(input: TxPlanRunnerInput): Promise<TxPlanArtifac
           hash: sha256hex(JSON.stringify({ virtualDaaScore: virtualDaaScore.toString(), virtualParentHashes, sink }))
         };
       };
+
+      // Demo-ready · E02: what the last invalidated attempt saw, for the error once retries run out.
+      let lastInvalidation: { missing: string[]; pending: string[]; virtualDaaScore: bigint } | undefined;
 
       for (let attempt = 0; attempt < MAX_PLAN_RETRIES; attempt++) {
         const vBefore = await getVirtualFingerprint(client);
@@ -346,27 +353,45 @@ export async function runTxPlan(input: TxPlanRunnerInput): Promise<TxPlanArtifac
         }
         const candidatePlan = candidate.plan;
 
-        // Confirmation query
+        // Demo-ready · E02 — planning validity is UTXO-scoped, not virtual-state-scoped.
+        // Blocks arriving while the plan was built (a newer DAA score, virtual parents or
+        // sink) do not invalidate it: the fingerprints before/after are evidence only.
+        // What decides is the selected inputs, re-read at the end of the attempt: each must
+        // still be in the address UTXO set, and the observed mempool of this same node must
+        // not show a transaction spending it (maturity was established on the snapshot and
+        // a later virtual state cannot undo it). Absence from this mempool does not prove
+        // that nobody on the network is spending an input, and the race up to
+        // submitTransaction remains: a competing spend after this check is refused by the
+        // node, fail-closed. An invalidated attempt is retried; when the bounded retries run
+        // out, SELECTED_UTXO_INVALIDATED.
         const confirmUtxos = await client.getUtxosByAddress(fromAddress);
+        const observedPendingAfter = await observePendingSpends(client, fromAddress);
         const vAfter = await getVirtualFingerprint(client);
 
-        if (vBefore.hash !== vAfter.hash) {
-          continue; // retry READ phase
-        }
+        const confirmSet = new Set(confirmUtxos.map((u) => utxoOutpointKey(u) ?? ""));
+        const selected = candidatePlan.inputs.map((inp) => utxoOutpointKey(inp) ?? "");
+        const missing = selected.filter((k) => !confirmSet.has(k));
+        const pending = selected.filter((k) => observedPendingAfter.outpoints.has(k));
 
-        const confirmSet = new Set(
-          confirmUtxos.map(u => `${u.outpoint.transactionId}:${u.outpoint.index}`)
-        );
-        const allPresent = candidatePlan.inputs.every(inp =>
-          confirmSet.has(`${inp.outpoint.transactionId}:${inp.outpoint.index}`)
-        );
-
-        if (!allPresent) {
+        if (missing.length > 0 || pending.length > 0) {
+          lastInvalidation = { missing, pending, virtualDaaScore: vAfter.virtualDaaScore };
           continue; // retry READ phase
         }
 
         planResult = candidate;
         pendingSpendEvidence = observedPending.evidence;
+        planningWindow = {
+          validity: "utxo-scoped",
+          attempts: attempt + 1,
+          before: { virtualDaaScore: vBefore.virtualDaaScore.toString(), virtualStateFingerprint: vBefore.hash },
+          after: { virtualDaaScore: vAfter.virtualDaaScore.toString(), virtualStateFingerprint: vAfter.hash },
+          revalidation: {
+            scope: "observer-local",
+            selectedInputs: selected.length,
+            presentInUtxoSet: selected.length - missing.length,
+            pendingInObservedMempool: pending.length
+          }
+        };
         planSuccess = true;
         break;
       }
@@ -374,15 +399,17 @@ export async function runTxPlan(input: TxPlanRunnerInput): Promise<TxPlanArtifac
       await client.close();
 
       if (!planSuccess) {
-        throw new UtxoVirtualStateUnstableError({
+        throw new SelectedUtxoInvalidatedError({
           address: fromAddress,
           attempts: MAX_PLAN_RETRIES,
-          virtualDaaScore: "unknown" // In loop, we could pass vAfter.virtualDaaScore, but it threw before
+          missing: lastInvalidation?.missing ?? [],
+          pending: lastInvalidation?.pending ?? [],
+          virtualDaaScore: lastInvalidation ? lastInvalidation.virtualDaaScore.toString() : "unknown"
         });
       }
 
     } catch (e: unknown) {
-      if (e instanceof UtxoVirtualStateUnstableError) throw e;
+      if (e instanceof SelectedUtxoInvalidatedError) throw e;
       if (e instanceof UpstreamPlannerError) throw e;
       if (e instanceof PendingSpendEvidenceUnavailableError || e instanceof PendingSpendAllExcludedError) throw e;
       if (e instanceof Error && (e.message.includes("No UTXOs found") || e.message.includes("Insufficient funds"))) throw e;
@@ -445,7 +472,8 @@ export async function runTxPlan(input: TxPlanRunnerInput): Promise<TxPlanArtifac
       // AUD-17: the authority the planner actually established, never synthesised.
       ...(planResult.plannerAuthority ? { plannerAuthority: planResult.plannerAuthority } : {}),
       ...(planResult.plannerAuthorityDetail ? { plannerAuthorityDetail: planResult.plannerAuthorityDetail } : {}),
-      ...(pendingSpendEvidence ? { pendingSpendEvidence } : {})
+      ...(pendingSpendEvidence ? { pendingSpendEvidence } : {}),
+      ...(planningWindow ? { planningWindow } : {})
     }
   }) as unknown as TxPlanArtifact;
 

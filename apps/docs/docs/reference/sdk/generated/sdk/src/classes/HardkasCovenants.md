@@ -17,7 +17,7 @@ enforced at the consensus layer (KIP-17, KIP-20).
 This is NOT experimental — covenants are live on Kaspa mainnet since
 DAA score 474,165,565 (June 30, 2026).
 
-**Current limitations (0.12.0-rc.23):**
+**Current limitations (0.12.0-rc.24):**
 - TX V1 signing requires kaspa-wasm V1 support (see P82)
 - Plan/sign/send pipeline for covenants will be implemented in P84
 - For now, capability checks and inspection are available

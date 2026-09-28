@@ -1,4 +1,6 @@
+import { hardkasScaffoldDependencySpec } from "../lib/scaffold-versions.js";
 export function generateBasicTemplate(config) {
+    const hardkasVersion = hardkasScaffoldDependencySpec();
     return {
         "package.json": JSON.stringify({
             name: config.name,
@@ -11,10 +13,10 @@ export function generateBasicTemplate(config) {
                 balance: "hardkas run scripts/check-balance.ts"
             },
             devDependencies: {
-                "@hardkas/cli": "alpha",
-                "@hardkas/testing": "alpha",
-                "@hardkas/artifacts": "alpha",
-                "@hardkas/core": "alpha",
+                "@hardkas/cli": hardkasVersion,
+                "@hardkas/testing": hardkasVersion,
+                "@hardkas/artifacts": hardkasVersion,
+                "@hardkas/core": hardkasVersion,
                 vitest: "^2.0.0"
             }
         }, null, 2),

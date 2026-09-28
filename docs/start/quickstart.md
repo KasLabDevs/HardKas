@@ -7,8 +7,8 @@ Get up and running with HardKAS in a local simulated environment.
 Install the SDK and CLI in your project:
 
 ```bash
-npm install @hardkas/sdk@0.12.0-rc.23
-npm install -D @hardkas/cli@0.12.0-rc.23
+npm install @hardkas/sdk@0.12.0-rc.24
+npm install -D @hardkas/cli@0.12.0-rc.24
 ```
 
 ## 2. Initialize The Workspace
@@ -40,6 +40,12 @@ npx hardkas tx send tx-signed.json --network simulated --yes
 
 ## 4. SDK Workflow
 
+The SDK is published as ES modules. Run this from an ES module: a project with
+`"type": "module"` in its `package.json`, or a `.mjs` file. `hardkas init` sets
+`"type": "module"` only when it creates the `package.json`; in step 1 above
+`npm install` already created one, so add the field yourself. In a CommonJS
+project (the `npm init -y` default) the import fails.
+
 ```typescript
 import { Hardkas } from "@hardkas/sdk";
 
@@ -62,7 +68,10 @@ async function run() {
   console.log("Simulation receipt:", receipt.txId);
 }
 
-run().catch(console.error);
+run().catch((error) => {
+  console.error(error);
+  process.exitCode = 1;
+});
 ```
 
 Use `simulate()` for the local loop. Move to `simnet` or testnet only when the
