@@ -12,22 +12,21 @@
     "problems": [],
     "expected": {
       "containerName": "hardkas-kaspad-toccata-v2",
-      "image": "kaspanet/rusty-kaspad:v2.0.1@sha256:db36449e2f41cf33ab7c26683ce390cb71bdea9c403eefd2e740a7d5605bcd8b",
-      "imageDigest": "sha256:db36449e2f41cf33ab7c26683ce390cb71bdea9c403eefd2e740a7d5605bcd8b",
+      "image": "kaspanet/rusty-kaspad:v2.1.0@sha256:f85da74b9514584451f83a2cbea3aa93f700248302fe7e3e0ab17288f93c905b",
+      "imageDigest": "sha256:f85da74b9514584451f83a2cbea3aa93f700248302fe7e3e0ab17288f93c905b",
       "network": "simnet",
-      "serverVersion": "2.0.1",
+      "serverVersion": "2.1.0",
       "host": "127.0.0.1",
       "rpcPort": 18210
     },
     "observed": {
       "container": {
         "name": "hardkas-kaspad-toccata-v2",
-        "id": "6c2fcfd32a1c9f61adf1160c4aff5958435def2eb11d3364d4298284f47c0528",
+        "id": "49d5ecc204698b22afb8a096092bb32580fc0818bfb648a03842fd6090882f01",
         "running": true,
-        "imageId": "sha256:db36449e2f41cf33ab7c26683ce390cb71bdea9c403eefd2e740a7d5605bcd8b",
+        "imageId": "sha256:f85da74b9514584451f83a2cbea3aa93f700248302fe7e3e0ab17288f93c905b",
         "repoDigests": [
-          "kaspanet/rusty-kaspad@sha256:db36449e2f41cf33ab7c26683ce390cb71bdea9c403eefd2e740a7d5605bcd8b",
-          "supertypo/rusty-kaspad@sha256:db36449e2f41cf33ab7c26683ce390cb71bdea9c403eefd2e740a7d5605bcd8b"
+          "kaspanet/rusty-kaspad@sha256:f85da74b9514584451f83a2cbea3aa93f700248302fe7e3e0ab17288f93c905b"
         ],
         "publishedPorts": [
           {
@@ -50,12 +49,12 @@
       "server": {
         "url": "ws://127.0.0.1:18210",
         "networkId": "simnet",
-        "serverVersion": "2.0.1",
+        "serverVersion": "2.1.0",
         "isSynced": true
       },
       "probeErrors": []
     },
-    "checkedAt": "2026-09-14T11:25:59.625Z"
+    "checkedAt": "2026-09-28T19:49:32.414Z"
   },
   "compile": {
     "schema": "hardkas.silver.compileProvenance.v1",
@@ -70,14 +69,14 @@
       "languageVersion": "0.1.0"
     },
     "sourceSha256": "3e499912ad084aaf0eece3bdea7e6c51f4e3ce6c0f7fd25b1c0a07676f85aaad",
-    "constructorArgsSha256": "68a443e505aa136aa4cfa7674b6cfa3990bddaf9a7da7e66885025d7316c1ccc",
-    "artifactSha256": "bea47214c98de797b3d9c0804a9fc16d4203002814bfd957926ad3e342b8d29f",
+    "constructorArgsSha256": "a2347aea830fd32e778ef4099b66e360e9f0f7cfe2798c9eaa8823112e52eabe",
+    "artifactSha256": "54e3a6e2e23250d0cbb3e367300c33f405cd684ee1c55227a95c2c210d90dffa",
     "abiSchemaVersion": 1,
     "contracts": [
       {
         "name": "Escrow",
-        "bytecodeSha256": "d9941e3d301d1acd1ae2cd7c86ac2af2510024bcef892cdc39c5ca27f8a0dc0d",
-        "templateHash": "5400aa29ba85183f9e66c30c4992aef91334119d4cea8c46b4ce642cc081de2a",
+        "bytecodeSha256": "51097b7b9314c5407ebd67018e07bbbf82f531f53372100ac04c7bf17fcac10e",
+        "templateHash": "111f7f33b0ff87c0401e2870edc36b6deb7ff30efa1c4cfc2c09afff2ed58172",
         "entries": [
           {
             "name": "mutualRelease",
@@ -95,19 +94,19 @@
       }
     ],
     "contractName": "Escrow",
-    "lockingScriptHex": "aa20fac79ff256fe9e5a9e55f007e5b0cfc3eef0bfcd58c94582333fd5db4197dbe287"
+    "lockingScriptHex": "aa206a6466e0dc7437922f4acd354286b9962c5ec604d820b9c34b62c6e1b8742c2687"
   },
   "escrow": {
-    "address": "kaspasim:prav08lj2mlfuk572hcq0edselp7au9le4vvj3vzxvlatk6pjld7yzupp0u9u",
-    "lockingScript": "aa20fac79ff256fe9e5a9e55f007e5b0cfc3eef0bfcd58c94582333fd5db4197dbe287",
+    "address": "kaspasim:pp4xgehqm36r0y30ftxn2s5xhxtzchkxqnvzpwwrfd3vdcdcwskzv3f0mcxyr",
+    "lockingScript": "aa206a6466e0dc7437922f4acd354286b9962c5ec604d820b9c34b62c6e1b8742c2687",
     "refundAmount": "1000000000",
     "releaseAmount": "1500000000"
   },
   "funding": {
-    "txId": "e642eb49be9caadb6fc21b919bffc95da5b8562646201f0d3f02f15bb8891f08",
+    "txId": "371fc20bee5c02c7f35f6e8c6e907575c0dda1b6d249ac5acb24a6137e312f2e",
     "valueSompi": "1001000000",
     "feeSompi": "204700",
-    "confirmedAtBlockDaaScore": "65341"
+    "confirmedAtBlockDaaScore": "1307"
   },
   "resolution": {
     "branch": "refundBuyer",
@@ -115,18 +114,18 @@
       "buyer",
       "arbiter"
     ],
-    "txId": "49aca3d4141230420af73ec1b6d103febe0d9ab576df02a988facbbee0e189e6",
+    "txId": "28f17359dfa7abfc50d51ede76a4723d6197b302c2d6db7929f6a05515f61b5c",
     "feeSompi": "1000000",
-    "signatureScriptSha256": "f656dd6336add4c681a4c593f74267842e761666604e9b2e3fb839bc7bb2e072",
+    "signatureScriptSha256": "4b69ce822e8b8ae072257226aaaab2db793d25e0120b3d7ba4f3b977afb90e20",
     "refundedSompi": "1000000000",
-    "confirmedAtBlockDaaScore": "65365"
+    "confirmedAtBlockDaaScore": "1324"
   },
   "controls": {
     "wrongSecondSigner": {
       "name": "refund-signed-by-buyer-and-seller",
       "accepted": false,
       "rejectionClass": "script-verify",
-      "nodeError": "Rejected transaction 49aca3d4141230420af73ec1b6d103febe0d9ab576df02a988facbbee0e189e6: failed to verify the signature script: script ran, but verification failed",
+      "nodeError": "Rejected transaction 28f17359dfa7abfc50d51ede76a4723d6197b302c2d6db7929f6a05515f61b5c: failed to verify the signature script: script ran, but verification failed",
       "expectedClass": "script-verify",
       "note": "the seller's valid signature in the arbiter's slot; distinguished by constructed mutation"
     },
@@ -134,7 +133,7 @@
       "name": "refund-of-a-different-amount",
       "accepted": false,
       "rejectionClass": "script-verify",
-      "nodeError": "Rejected transaction 30611348fee8b5f14c7f6c1c691cbfc7f1576fcb7d4f6c95bd4defd00517c53b: failed to verify the signature script: script ran, but verification failed",
+      "nodeError": "Rejected transaction 49e3c286e400e8dc8ab78f9099dfd4fa97fc5b9632f9cb4d3c933f6fbab78860: failed to verify the signature script: script ran, but verification failed",
       "expectedClass": "script-verify",
       "note": "refund of refundAmount-1, validly signed; distinguished by constructed mutation"
     }

@@ -12,7 +12,7 @@ export type ProgrammabilityKind = "silver" | "zk" | "vprog" | "full-lab";
  * SilverScript claims mirror the exact capability IDs used across the corpus,
  * evidence records and `hardkas corpus verify`. Each REAL_NODE_EVIDENCE value
  * is backed by fixtures/toccata-v2/silver (recompiled by the managed silverc,
- * re-derived by the Kaspa SDK, evidenced by a verified rusty-kaspad 2.0.1).
+ * re-derived by the Kaspa SDK, evidenced by the verified reference rusty-kaspad).
  * Covenant support is exactly the 1:1 auth-bound transition; leader/cov-bound,
  * N:M, derived state mappings and signed covenant metering are not claimed.
  */

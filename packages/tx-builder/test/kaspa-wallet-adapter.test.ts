@@ -14,8 +14,8 @@ const FIXTURE_KEY = "b7e151628aed2a6abf7158809cf4f3c762e7160f38b4da56a784d904519
 const FIXTURE_ADDRESS = "kaspasim:qr0lr4ml9fn3chekrqmjdkergxl93l4wrk3dankcgvjq776s9wn9jeadh9sjw";
 
 describe("KaspaWalletAdapter — adapterAuthority", () => {
-  it("declares kaspa-wasm 2.0.1 as the wrapped SDK", () => {
-    expect(adapterAuthority()).toEqual({ sdk: "kaspa-wasm", version: "2.0.1" });
+  it("declares the pinned kaspa-wasm (2.1.0) as the wrapped SDK", () => {
+    expect(adapterAuthority()).toEqual({ sdk: "kaspa-wasm", version: "2.1.0" });
   });
 });
 

@@ -2,7 +2,7 @@
   "schema": "hardkas.silverCorpusCase.v1",
   "id": "covenant-counter-transition",
   "scenario": "M8-B2-B Counter: 1:1 auth-bound covenant transition (Toccata tx v1)",
-  "scope": "Toccata tx-v1 covenant/state-transition execution (1:1 auth-bound singleton transition) against verified rusty-kaspad 2.0.1 — not vProgs, L2, EVM, multi-input/leader covenants, or production/audited contracts",
+  "scope": "Toccata tx-v1 covenant/state-transition execution (1:1 auth-bound singleton transition) against verified rusty-kaspad 2.1.0 — not vProgs, L2, EVM, multi-input/leader covenants, or production/audited contracts",
   "capabilities": [
     "silver.compile.v1",
     "toccata.covenant.auth-1to1-transition.v1"
@@ -98,12 +98,12 @@
     "compile": "current",
     "successorCompile": "successor",
     "genesisOutpoint": {
-      "transactionId": "e642eb49be9caadb6fc21b919bffc95da5b8562646201f0d3f02f15bb8891f08",
+      "transactionId": "7294c339a1b6c5a0e0e9e2a31cbeae4bbeeeca0520f100f9029b75d8d5de4d09",
       "index": 1
     },
     "genesisValueSompi": "1000000000",
-    "covenantId": "0e70fe2d400e373bd38ebc0c5c1608dff7e035d0a902be1608273e762f5def95",
-    "successorCovenantId": "0e70fe2d400e373bd38ebc0c5c1608dff7e035d0a902be1608273e762f5def95"
+    "covenantId": "c6ba323da0a2c82abe3a4a61155e4daebdec0a1b681311a0ba21029ddc3b19fd",
+    "successorCovenantId": "c6ba323da0a2c82abe3a4a61155e4daebdec0a1b681311a0ba21029ddc3b19fd"
   },
   "evidence": "evidence.json"
 }

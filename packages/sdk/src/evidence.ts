@@ -72,7 +72,7 @@ export class EvidenceManager {
       version: "1.0.0-alpha",
       schema: HardkasSchemas.EvidencePackageV1 as any,
       name: scenarioResult.scenarioName,
-      hardkasVersion: "0.12.0-rc.24",
+      hardkasVersion: "0.12.0-rc.25",
       networkId: scenarioResult.networkId,
       mode: scenarioResult.mode,
       createdAt: new Date().toISOString(),

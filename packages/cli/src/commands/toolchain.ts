@@ -1,13 +1,8 @@
 import { Command } from "commander";
-import { createHash } from "node:crypto";
-import fs from "node:fs/promises";
-import path from "node:path";
 import pc from "picocolors";
 import { getOutput } from "../output.js";
 import { HardkasCliError, HardkasExitCode } from "../cli-errors.js";
-import { extractPinnedFiles } from "../toolchain-archive.js";
-
-const MAX_ASSET_BYTES = 256 * 1024 * 1024;
+import { ensureManagedToolchain } from "../toolchain-install.js";
 
 async function getManagedToolchains() {
   const { KASPA_WASM_REFERENCE, SILVERC_REFERENCES } = await import("@hardkas/core");
@@ -16,22 +11,6 @@ async function getManagedToolchains() {
   const silverc = SILVERC_REFERENCES[`${process.platform}-${process.arch}`];
   if (silverc) refs[silverc.id] = silverc;
   return refs;
-}
-
-async function fetchAsset(url: string): Promise<Uint8Array> {
-  const response = await fetch(url, { redirect: "follow", signal: AbortSignal.timeout(10 * 60 * 1000) });
-  if (!response.ok) {
-    throw new HardkasCliError("TOOLCHAIN_DOWNLOAD_FAILED", `GET ${url} returned HTTP ${response.status}`, {
-      exitCode: HardkasExitCode.RUNTIME_FAILURE
-    });
-  }
-  const declared = Number(response.headers.get("content-length") ?? "0");
-  if (declared > MAX_ASSET_BYTES) {
-    throw new HardkasCliError("TOOLCHAIN_DOWNLOAD_FAILED", `${url} is larger than ${MAX_ASSET_BYTES} bytes`, {
-      exitCode: HardkasExitCode.RUNTIME_FAILURE
-    });
-  }
-  return new Uint8Array(await response.arrayBuffer());
 }
 
 export function registerToolchainCommands(program: Command) {
@@ -57,66 +36,26 @@ export function registerToolchainCommands(program: Command) {
         );
       }
 
-      const { verifyManagedToolchain, installManagedToolchain, getToolchainInstallDir } = await import("@hardkas/core");
-      const { HARDKAS_VERSION } = await import("@hardkas/artifacts");
+      const result = await ensureManagedToolchain(ref, {
+        fromFile: opts.fromFile,
+        force: opts.force,
+        onFetch: (source) => {
+          if (source.kind === "download") out.writeLine(`Downloading ${ref.assetName} from ${ref.url} ...`);
+        }
+      });
 
-      const existing = await verifyManagedToolchain(ref);
-      if (existing.ok && !opts.force) {
-        if (opts.json) out.writeJson({ status: "TOOLCHAIN_ALREADY_INSTALLED", id: ref.id, version: ref.version, dir: existing.dir });
-        else out.writeLine(`${pc.green("✔")} ${ref.id} ${ref.version} already installed and verified at ${existing.dir}`);
+      if (result.status === "already-installed") {
+        if (opts.json) out.writeJson({ status: "TOOLCHAIN_ALREADY_INSTALLED", id: ref.id, version: ref.version, dir: result.dir });
+        else out.writeLine(`${pc.green("✔")} ${ref.id} ${ref.version} already installed and verified at ${result.dir}`);
         return;
       }
 
-      // 1. Obtain the release asset.
-      let asset: Uint8Array;
-      let source: { kind: "download" | "file"; location: string };
-      if (opts.fromFile) {
-        const file = path.resolve(opts.fromFile);
-        asset = new Uint8Array(await fs.readFile(file));
-        source = { kind: "file", location: file };
-      } else {
-        out.writeLine(`Downloading ${ref.assetName} from ${ref.url} ...`);
-        asset = await fetchAsset(ref.url);
-        source = { kind: "download", location: ref.url };
-      }
-
-      // 2. The asset must be exactly the pinned release before anything is extracted.
-      const assetSha256 = createHash("sha256").update(asset).digest("hex");
-      if (assetSha256 !== ref.assetSha256) {
-        throw new HardkasCliError(
-          "TOOLCHAIN_ASSET_DIGEST_MISMATCH",
-          `${ref.assetName}: sha256 ${assetSha256}, expected ${ref.assetSha256}. Nothing was installed.`,
-          { exitCode: HardkasExitCode.CORRUPTION_DETECTED }
-        );
-      }
-
-      // 3. Extract only the pinned file names. Entry names are matched exactly and
-      //    files are written under our own names, so an entry cannot choose its path.
-      const files = await extractPinnedFiles(ref, asset);
-
-      // 4-6. Content check against the pin, atomic install, provenance record (in core).
-      const { dir, record } = await installManagedToolchain(ref, {
-        assetSha256,
-        files,
-        source,
-        installer: `hardkas ${HARDKAS_VERSION}`
-      });
-
-      const verified = await verifyManagedToolchain(ref, dir);
-      if (!verified.ok) {
-        throw new HardkasCliError(
-          "TOOLCHAIN_VERIFY_FAILED",
-          `Installed toolchain at ${getToolchainInstallDir(ref)} failed verification: ${verified.problems.join("; ")}`,
-          { exitCode: HardkasExitCode.CORRUPTION_DETECTED }
-        );
-      }
-
       if (opts.json) {
-        out.writeJson({ status: "TOOLCHAIN_INSTALLED", dir, record });
+        out.writeJson({ status: "TOOLCHAIN_INSTALLED", dir: result.dir, record: result.record });
       } else {
-        out.writeLine(`${pc.green("✔")} Installed ${ref.id} ${ref.version} at ${dir}`);
-        out.writeLine(`  asset   ${ref.assetName} sha256 ${assetSha256}`);
-        out.writeLine(`  source  ${source.location}`);
+        out.writeLine(`${pc.green("✔")} Installed ${ref.id} ${ref.version} at ${result.dir}`);
+        out.writeLine(`  asset   ${ref.assetName} sha256 ${result.assetSha256}`);
+        out.writeLine(`  source  ${result.source?.location}`);
       }
     });
 

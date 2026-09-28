@@ -186,7 +186,7 @@ export async function runStandardL1Scenario(
         stage: "plan-and-sign",
         code: toCode(err, "PLAN_AND_SIGN_FAILED"),
         message: `Existing HardKAS product path could not produce a signed L1 tx: ${toMessage(err)}`,
-        expectedUpstream: "kaspa-wasm@2.0.1 Generator + HardKAS signer (via @hardkas/sdk)"
+        expectedUpstream: "pinned kaspa-wasm Generator + HardKAS signer (via @hardkas/sdk)"
       }
     };
   }

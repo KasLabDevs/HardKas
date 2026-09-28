@@ -1672,6 +1672,8 @@ hardkas init [options] [name]
 | `--network <name>` | Default network for new projects | simulated |
 | `--accounts <n>` | Number of simulated accounts for new projects | 3 |
 | `--install` | Run pnpm/npm install automatically after scaffolding | false |
+| `--skip-toolchain` | Do not install the pinned kaspa-wasm (signing, planning and the generated test need it) | false |
+| `--toolchain-from-file <asset>` | Install the pinned kaspa-wasm from its official release asset already on disk |  |
 | `--json` | Output results as JSON | false |
 
 ### Arguments

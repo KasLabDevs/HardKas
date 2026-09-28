@@ -26,10 +26,14 @@ export class KaspaSdkKeyGenerator implements KaspaKeyGenerator {
     this.sdkLoader = async () => {
       try {
         return await rawLoader();
-      } catch (e) {
+      } catch (e: any) {
+        // E39: a missing or altered managed SDK already names the exact command
+        // that fixes it; pass it through instead of hiding it behind another code.
+        if (e?.code === "WASM_TOOLCHAIN_NOT_INSTALLED" || e?.code === "WASM_TOOLCHAIN_INTEGRITY_FAILED") throw e;
         const err = new Error(
-          "WALLET_BACKEND_UNAVAILABLE: Kaspa cryptography adapter missing. Real account generation requires WASM execution.\n" +
-            "Use 'hardkas accounts real import' to add a test fixture manually for now."
+          "WALLET_BACKEND_UNAVAILABLE: the Kaspa WASM SDK could not be loaded, so real accounts cannot be generated" +
+            ` (${e?.message ?? String(e)}).\n` +
+            "Check it with: hardkas toolchain status"
         );
         (err as any).code = "WALLET_BACKEND_UNAVAILABLE";
         throw err;

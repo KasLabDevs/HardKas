@@ -7,7 +7,7 @@ import path from "node:path";
 import { createHash } from "node:crypto";
 import { execFileSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
-import { CANONICAL_LOCALNET, CPUMINER_REFERENCE_IMAGE, nodeRpcUrl } from "@hardkas/core";
+import { CANONICAL_LOCALNET, CPUMINER_REFERENCE_IMAGE, KASPAD_REFERENCE_VERSION, nodeRpcUrl } from "@hardkas/core";
 import { JsonWrpcKaspaClient } from "@hardkas/kaspa-rpc";
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
@@ -24,7 +24,7 @@ export const P2SH_SCOPE = "SilverScript L1/P2SH execution — not evidence of co
 
 /** The scope M8-B2 proves, and what it does not. */
 export const COVENANT_SCOPE =
-  "Toccata tx-v1 covenant/state-transition execution (1:1 auth-bound singleton transition) against verified rusty-kaspad 2.0.1 — " +
+  `Toccata tx-v1 covenant/state-transition execution (1:1 auth-bound singleton transition) against verified rusty-kaspad ${KASPAD_REFERENCE_VERSION.replace(/^v/, "")} — ` +
   "not vProgs, L2, EVM, multi-input/leader covenants, or production/audited contracts";
 
 /**
@@ -308,14 +308,16 @@ export async function deployToP2sh(ws, { p2shAddress, amountKas, label }) {
   const signedPath = path.join(artifactsDir, `${label}.signed.json`);
   ws.hardkas(["tx", "sign", path.join(artifactsDir, plan), "--account", "fixture", "--out", signedPath]);
 
-  const receiptsBefore = new Set(listJson(path.join(ws.dir, ".hardkas")));
+  const artifactsBefore = new Set(listJson(path.join(ws.dir, ".hardkas")));
   ws.hardkas(["tx", "send", signedPath, "--network", "simnet", "--provider", "rpc", "--yes"]);
-  const receipt = listJson(path.join(ws.dir, ".hardkas"))
-    .filter((f) => !receiptsBefore.has(f))
+  // A send to a real node records a hardkas.txSubmission.v1 (its state is derived later from
+  // observations); earlier CLIs wrote a receipt. Only the txId is used here.
+  const submission = listJson(path.join(ws.dir, ".hardkas"))
+    .filter((f) => !artifactsBefore.has(f))
     .map((f) => JSON.parse(fs.readFileSync(f, "utf8")))
-    .find((a) => /receipt/i.test(String(a.schema)) && a.txId);
-  if (!receipt) throw new Error(`no receipt for ${label}`);
-  const txId = receipt.txId;
+    .find((a) => /txSubmission|receipt/i.test(String(a.schema)) && a.txId);
+  if (!submission) throw new Error(`no submission or receipt for ${label}`);
+  const txId = submission.txId;
   log(`  ${label}: submitted ${txId}`);
 
   const found = await mineUntil(p2shAddress, (us) => {

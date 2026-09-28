@@ -40,19 +40,19 @@ export interface ManagedToolchainReference {
 /** Official rusty-kaspa WASM SDK, Node.js build, matching KASPAD_REFERENCE_VERSION. */
 export const KASPA_WASM_REFERENCE: ManagedToolchainReference = {
   id: "kaspa-wasm",
-  version: "2.0.1",
-  releaseTag: "v2.0.1",
-  assetName: "kaspa-wasm32-sdk-v2.0.1.zip",
-  url: "https://github.com/kaspanet/rusty-kaspa/releases/download/v2.0.1/kaspa-wasm32-sdk-v2.0.1.zip",
-  assetSha256: "7eaffac9cd920ef2fdf540c6e10f2a2b7761170ebc62ec57dfa0f71c64567a71",
+  version: "2.1.0",
+  releaseTag: "v2.1.0",
+  assetName: "kaspa-wasm32-sdk-v2.1.0.zip",
+  url: "https://github.com/kaspanet/rusty-kaspa/releases/download/v2.1.0/kaspa-wasm32-sdk-v2.1.0.zip",
+  assetSha256: "ba674e109ff5dd8bedc4dc2ee8a5ecdf4b600b1178a541d77888ec58310b6124",
   archive: "zip",
   assetSubdir: "kaspa-wasm32-sdk/nodejs/kaspa/",
   entry: "kaspa.js",
   files: {
-    "kaspa.js": { sha256: "1e0ad892861bf3e0a63ba8ed51366efc2b812c5a34c6895385ee2f9d026d2fc1", size: 539663 },
-    "kaspa_bg.wasm": { sha256: "9427733cb0cb1c78cc3f2cc9f77f4153426636925ced0256c5c30e4edc199eaa", size: 11516828 },
-    "kaspa.d.ts": { sha256: "419603c791100bb19eeacbbfb49e3dc734d832a0bffc0d11582c73af6c30e704", size: 221917 },
-    "package.json": { sha256: "f200a3dcc702735e41a70b72af2f6cc99dd970579d198cc9f1fdb2e532d0c479", size: 372 },
+    "kaspa.js": { sha256: "6d92cb305d0cc2eb26de9e305b7f7a8c17daa130ad478f0b340b50490557dbcf", size: 560116 },
+    "kaspa_bg.wasm": { sha256: "c9657568610ae1d305bc2e1cf85208ceba0d1a7893c4057b38caa8add2ffb0f5", size: 11463668 },
+    "kaspa.d.ts": { sha256: "0034215eb938b5649baddeda2670889ca461ab3644d01943331151bc4dc0d3dc", size: 229011 },
+    "package.json": { sha256: "8b61fefaba842c41b805291d95b2f9e81778ec590813a6c34eddcd316659b8d0", size: 372 },
     "LICENSE": { sha256: "fb06b99a835c4cdade7f2f180fd87c0198d552cf1e0cd14c34716411b009a92f", size: 749 }
   }
 };

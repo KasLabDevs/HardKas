@@ -31,7 +31,7 @@ const codeOf = async (p: Promise<unknown>): Promise<string> => {
 function sealedPolicy(decision: "ALLOW" | "DENY") {
   const p: any = {
     schema: "hardkas.policy.v1",
-    hardkasVersion: "0.12.0-rc.24",
+    hardkasVersion: "0.12.0-rc.25",
     version: "1.0.0-alpha",
     hashVersion: CURRENT_HASH_VERSION,
     networkId: "simnet",

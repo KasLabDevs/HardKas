@@ -157,7 +157,7 @@ export class WalletService {
     /**
      * POST /wallets/:id/send
      *
-     * Uses the KaspaWalletAdapter (M10) — kaspa-wasm 2.0.1 `Generator` for coin
+     * Uses the KaspaWalletAdapter (M10) — the pinned kaspa-wasm `Generator` for coin
      * selection, mass and fee computation. No HardKAS-invented selection.
      */
     public async send(walletId: string, toAddress: string, amount: bigint | number): Promise<any> {

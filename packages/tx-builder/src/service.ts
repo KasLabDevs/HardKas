@@ -312,7 +312,7 @@ export class TxPlanService {
   }
 
   /**
-   * Upstream-authoritative planner (M10-B-completion). Uses kaspa-wasm 2.0.1
+   * Upstream-authoritative planner (M10-B-completion). Uses the pinned kaspa-wasm
    * `Generator` for coin selection, mass and fee. Adapts the resulting
    * `PendingTransaction` into HardKAS `TxPlan` shape without inventing
    * semantics.

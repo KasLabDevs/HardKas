@@ -29,14 +29,14 @@
           "languageVersion": "0.1.0"
         },
         "sourceSha256": "fabadb59dbcb4b6b5ef577b65cd21a636b9e2de695aa64178d4bff39d30d84f6",
-        "constructorArgsSha256": "b4c4d2899a5b7a1a5066d642a49ed240d149ded39d7f3aacaaa53aeeb16b18e3",
-        "artifactSha256": "9befceb11d7f667bad7bd3c7daa60acfa583808cf1e1ba31d214ab292fca6546",
+        "constructorArgsSha256": "50f881606d68744f40634ec42e0ee35167e053d6193b64a4b346aed65dbec847",
+        "artifactSha256": "606ae6c435e30addd71faa425d036a61e46b28d73c08fd1c395d3597059026f8",
         "abiSchemaVersion": 1,
         "contracts": [
           {
             "name": "TransferWithTimeout",
-            "bytecodeSha256": "f19031a6c409376ee017f8764b4456c8da29cf704cad6fa67740753091fe9d16",
-            "templateHash": "a9b4336c95ddd75fd0ce38e8c35d676753d42a07e5dbc6d40a0467db4fe8e08a",
+            "bytecodeSha256": "8db247354548fa5c0be1535d4bdfed3c44abef6adb975eada30e0e743bf352f2",
+            "templateHash": "f5bd257ec7a0297a05502f4e2e8fe14d28df94b9bf7aaa98c0f5756f7e5d328b",
             "entries": [
               {
                 "name": "reclaim",
@@ -52,9 +52,9 @@
       },
       "lockingScript": {
         "version": 0,
-        "script": "aa20e3ef75ef165db2360be29f2a42391879d2dbb1fc27855d39ca56180012320c4b87"
+        "script": "aa2009b2d0a90a41efac2e584a412d1d3ab6cadee4b37eb24d245c58c97812fcef6287"
       },
-      "address": "kaspasim:pr377a00zewmydstu20j5s3erpua9ka3lsnc2hfeeftpsqqjxgxykqp7ptv9p"
+      "address": "kaspasim:pqym959fpfq7ltpwtp9yztga82mv4hhykdltynfyt3vvj7qjlnhkywy0500jf"
     }
   ],
   "evidence": "evidence.json"

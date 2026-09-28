@@ -1,7 +1,7 @@
 /**
  * KaspaWalletAdapter (M10-A scaffolding)
  *
- * Thin adapter over the managed kaspa-wasm SDK (v2.0.1). Purpose: give the rest
+ * Thin adapter over the managed kaspa-wasm SDK (the pinned KASPA_WASM_REFERENCE). Purpose: give the rest
  * of HardKAS a place to consume upstream wallet/tx semantics (Generator,
  * UtxoContext, UtxoProcessor, estimateTransactions, getNetworkParams, RPC fee
  * estimate) WITHOUT adopting the managed `Wallet` lifecycle.
@@ -16,9 +16,9 @@
  * - Introducing HardKAS artifacts here (this module returns upstream types
  *   directly; artifact wrapping happens in @hardkas/accounts and @hardkas/sdk).
  *
- * Authority order: wallet-core (rusty-kaspa) > kaspa-wasm 2.0.1 (managed) > here.
+ * Authority order: wallet-core (rusty-kaspa) > pinned kaspa-wasm (managed) > here.
  */
-import { loadManagedKaspaWasmSync } from "@hardkas/core";
+import { KASPA_WASM_REFERENCE, loadManagedKaspaWasmSync } from "@hardkas/core";
 
 /** The managed WASM SDK, opaque to HardKAS callers. */
 type KaspaWasm = ReturnType<typeof loadManagedKaspaWasmSync>;
@@ -273,5 +273,5 @@ export function filterMatureUtxos<T = any>(input: FilterMatureUtxosInput): Filte
 
 /** The pinned WASM SDK version this adapter binds to, for evidence/provenance. */
 export function adapterAuthority(): { sdk: string; version: string } {
-  return { sdk: "kaspa-wasm", version: "2.0.1" };
+  return { sdk: "kaspa-wasm", version: KASPA_WASM_REFERENCE.version };
 }

@@ -12,22 +12,21 @@
     "problems": [],
     "expected": {
       "containerName": "hardkas-kaspad-toccata-v2",
-      "image": "kaspanet/rusty-kaspad:v2.0.1@sha256:db36449e2f41cf33ab7c26683ce390cb71bdea9c403eefd2e740a7d5605bcd8b",
-      "imageDigest": "sha256:db36449e2f41cf33ab7c26683ce390cb71bdea9c403eefd2e740a7d5605bcd8b",
+      "image": "kaspanet/rusty-kaspad:v2.1.0@sha256:f85da74b9514584451f83a2cbea3aa93f700248302fe7e3e0ab17288f93c905b",
+      "imageDigest": "sha256:f85da74b9514584451f83a2cbea3aa93f700248302fe7e3e0ab17288f93c905b",
       "network": "simnet",
-      "serverVersion": "2.0.1",
+      "serverVersion": "2.1.0",
       "host": "127.0.0.1",
       "rpcPort": 18210
     },
     "observed": {
       "container": {
         "name": "hardkas-kaspad-toccata-v2",
-        "id": "6c2fcfd32a1c9f61adf1160c4aff5958435def2eb11d3364d4298284f47c0528",
+        "id": "49d5ecc204698b22afb8a096092bb32580fc0818bfb648a03842fd6090882f01",
         "running": true,
-        "imageId": "sha256:db36449e2f41cf33ab7c26683ce390cb71bdea9c403eefd2e740a7d5605bcd8b",
+        "imageId": "sha256:f85da74b9514584451f83a2cbea3aa93f700248302fe7e3e0ab17288f93c905b",
         "repoDigests": [
-          "kaspanet/rusty-kaspad@sha256:db36449e2f41cf33ab7c26683ce390cb71bdea9c403eefd2e740a7d5605bcd8b",
-          "supertypo/rusty-kaspad@sha256:db36449e2f41cf33ab7c26683ce390cb71bdea9c403eefd2e740a7d5605bcd8b"
+          "kaspanet/rusty-kaspad@sha256:f85da74b9514584451f83a2cbea3aa93f700248302fe7e3e0ab17288f93c905b"
         ],
         "publishedPorts": [
           {
@@ -50,12 +49,12 @@
       "server": {
         "url": "ws://127.0.0.1:18210",
         "networkId": "simnet",
-        "serverVersion": "2.0.1",
+        "serverVersion": "2.1.0",
         "isSynced": true
       },
       "probeErrors": []
     },
-    "checkedAt": "2026-09-14T11:24:54.253Z"
+    "checkedAt": "2026-09-28T19:50:56.551Z"
   },
   "compile": {
     "schema": "hardkas.silver.compileProvenance.v1",
@@ -70,14 +69,14 @@
       "languageVersion": "0.1.0"
     },
     "sourceSha256": "b0ea5f3e9452c72f9369d25512c4bcf9ff885c48b84b61377d1a70905fb7dc0a",
-    "constructorArgsSha256": "cea2a7a04b1dc33eb463aed31286de618522c8af9aba5e50c81e4f810b4a4641",
-    "artifactSha256": "3d24ee4ea564cbd2e9ca0bd65fc01179797950cc412f981dae1f29e47fb27c46",
+    "constructorArgsSha256": "58e05c38df830ec909f5a5938ba3fede105465b3b1e60f775fbaeb330a60be7a",
+    "artifactSha256": "ef00fdb34b0a3d197c12938f0dc9565fa17ad83eb9d100a9e387f52ee7130b36",
     "abiSchemaVersion": 1,
     "contracts": [
       {
         "name": "SignedRelease",
-        "bytecodeSha256": "99657145901ea9711a058615729a5da9d1d862556773cb7fd4094803a126b172",
-        "templateHash": "13a61e36a15fe81498ef7335b83db1215632fc9190b35de76b5df750ca66687c",
+        "bytecodeSha256": "da8524a8a19eb6f866da2ac7600dc201e18774a75b89f491d405d7269e9a81f6",
+        "templateHash": "baec843f3560d0225306efbfeaf3eb12f3148847e6833a6109d66c84109834ce",
         "entries": [
           {
             "name": "release",
@@ -91,44 +90,44 @@
     "name": "SignedRelease",
     "entry": "release",
     "dispatchTag": "388ad0b4",
-    "bytecodeSha256": "99657145901ea9711a058615729a5da9d1d862556773cb7fd4094803a126b172",
+    "bytecodeSha256": "da8524a8a19eb6f866da2ac7600dc201e18774a75b89f491d405d7269e9a81f6",
     "lockingScript": {
       "version": 0,
-      "script": "aa209ca5df6e9e9c699cbbb2995cfaad950d2ccb15a5ac11cea4dbb6bde02175288487"
+      "script": "aa201954019e610f813266e464af29595d1ea976f4acaa5601cd6b97af68f1a2069a87"
     },
-    "p2shAddress": "kaspasim:pzw2thmwn6wxn89mk2v4e74dj5xjejc45kkprn4ymwmtmcppw55gg0uv38za9"
+    "p2shAddress": "kaspasim:pqv4gqv7vy8czvnxu3j2722et502jah54j49vqwddwt676835grf5c8k4e0yk"
   },
   "deploy": {
-    "txId": "fc89dec7e42099c45be118f2c720d2ac69a0a2d69af8a0ddf6a40ec7206dc22d",
+    "txId": "121025fa0c70188ae5f01131f0f156b378b90813740cacc2300bcba1480ce948",
     "outpoint": {
-      "transactionId": "fc89dec7e42099c45be118f2c720d2ac69a0a2d69af8a0ddf6a40ec7206dc22d",
+      "transactionId": "121025fa0c70188ae5f01131f0f156b378b90813740cacc2300bcba1480ce948",
       "index": 0
     },
     "amountSompi": "1000000000",
-    "confirmedAtDaaScore": "64548",
+    "confirmedAtDaaScore": "1418",
     "via": "hardkas tx plan/sign/send"
   },
   "negativeControls": [
     {
       "name": "legacy-unlock-without-dispatch-tag",
       "rejected": true,
-      "nodeError": "Rejected transaction 1ad9231fc23ac4e4b22e4da359e625b592e02c8e60e057b90e3ed983f4ed8b86: failed to verify the signature script: script returned early"
+      "nodeError": "Rejected transaction 2846af8c57758974a67dde8f619ddd1f133fbe6ef01ad32e71a8b310e9efdd53: failed to verify the signature script: script returned early"
     },
     {
       "name": "signature-by-non-owner",
       "rejected": true,
-      "nodeError": "Rejected transaction 1ad9231fc23ac4e4b22e4da359e625b592e02c8e60e057b90e3ed983f4ed8b86: failed to verify the signature script: script ran, but verification failed"
+      "nodeError": "Rejected transaction 2846af8c57758974a67dde8f619ddd1f133fbe6ef01ad32e71a8b310e9efdd53: failed to verify the signature script: script ran, but verification failed"
     }
   ],
   "spend": {
-    "txId": "1ad9231fc23ac4e4b22e4da359e625b592e02c8e60e057b90e3ed983f4ed8b86",
+    "txId": "2846af8c57758974a67dde8f619ddd1f133fbe6ef01ad32e71a8b310e9efdd53",
     "entry": "release",
     "feeSompi": "175200",
     "mass": "1752",
     "storageMass": "0",
-    "signatureScriptSha256": "17273f6a8f4c75ea0ba4d1ef996c1ecd4e0b3651a443687f5b2abd944f6a9fb8",
+    "signatureScriptSha256": "31aa716d8f6b702383fbc05b7bcd15e697f6e8a4f345813cd269854564f7c90b",
     "outputSompi": "999824800",
-    "confirmedAtDaaScore": "64574",
+    "confirmedAtDaaScore": "1450",
     "assumptions": [
       "signature scripts measured at their final length; the SDK adds one signature allowance per input on top",
       "sigOpCount 1"

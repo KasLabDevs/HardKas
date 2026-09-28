@@ -1,7 +1,7 @@
 {
   "schema": "hardkas.silver.e2eEvidence.v1",
   "scenario": "M8-B2-B Counter: 1:1 auth-bound covenant transition (Toccata tx v1)",
-  "scope": "Toccata tx-v1 covenant/state-transition execution (1:1 auth-bound singleton transition) against verified rusty-kaspad 2.0.1 — not vProgs, L2, EVM, multi-input/leader covenants, or production/audited contracts",
+  "scope": "Toccata tx-v1 covenant/state-transition execution (1:1 auth-bound singleton transition) against verified rusty-kaspad 2.1.0 — not vProgs, L2, EVM, multi-input/leader covenants, or production/audited contracts",
   "capabilities": [
     "silver.compile.v1",
     "toccata.covenant.auth-1to1-transition.v1"
@@ -12,22 +12,21 @@
     "problems": [],
     "expected": {
       "containerName": "hardkas-kaspad-toccata-v2",
-      "image": "kaspanet/rusty-kaspad:v2.0.1@sha256:db36449e2f41cf33ab7c26683ce390cb71bdea9c403eefd2e740a7d5605bcd8b",
-      "imageDigest": "sha256:db36449e2f41cf33ab7c26683ce390cb71bdea9c403eefd2e740a7d5605bcd8b",
+      "image": "kaspanet/rusty-kaspad:v2.1.0@sha256:f85da74b9514584451f83a2cbea3aa93f700248302fe7e3e0ab17288f93c905b",
+      "imageDigest": "sha256:f85da74b9514584451f83a2cbea3aa93f700248302fe7e3e0ab17288f93c905b",
       "network": "simnet",
-      "serverVersion": "2.0.1",
+      "serverVersion": "2.1.0",
       "host": "127.0.0.1",
       "rpcPort": 18210
     },
     "observed": {
       "container": {
         "name": "hardkas-kaspad-toccata-v2",
-        "id": "6c2fcfd32a1c9f61adf1160c4aff5958435def2eb11d3364d4298284f47c0528",
+        "id": "49d5ecc204698b22afb8a096092bb32580fc0818bfb648a03842fd6090882f01",
         "running": true,
-        "imageId": "sha256:db36449e2f41cf33ab7c26683ce390cb71bdea9c403eefd2e740a7d5605bcd8b",
+        "imageId": "sha256:f85da74b9514584451f83a2cbea3aa93f700248302fe7e3e0ab17288f93c905b",
         "repoDigests": [
-          "kaspanet/rusty-kaspad@sha256:db36449e2f41cf33ab7c26683ce390cb71bdea9c403eefd2e740a7d5605bcd8b",
-          "supertypo/rusty-kaspad@sha256:db36449e2f41cf33ab7c26683ce390cb71bdea9c403eefd2e740a7d5605bcd8b"
+          "kaspanet/rusty-kaspad@sha256:f85da74b9514584451f83a2cbea3aa93f700248302fe7e3e0ab17288f93c905b"
         ],
         "publishedPorts": [
           {
@@ -50,12 +49,12 @@
       "server": {
         "url": "ws://127.0.0.1:18210",
         "networkId": "simnet",
-        "serverVersion": "2.0.1",
+        "serverVersion": "2.1.0",
         "isSynced": true
       },
       "probeErrors": []
     },
-    "checkedAt": "2026-09-14T11:26:09.582Z"
+    "checkedAt": "2026-09-28T19:49:41.593Z"
   },
   "compile": {
     "current": {
@@ -151,13 +150,13 @@
     }
   },
   "genesis": {
-    "txId": "cc2fe7bfc30d4bc9a3d31c2dda66eb7b04fddc40116eb851f1a4326f59d85a6f",
+    "txId": "3b93691ca6ea47a6601e12559b6195a8c38bb1821b596cc6cd2ad4d3e2f6b917",
     "version": 1,
-    "covenantIdComputedBySdk": "0e70fe2d400e373bd38ebc0c5c1608dff7e035d0a902be1608273e762f5def95",
-    "covenantIdObservedFromNode": "0e70fe2d400e373bd38ebc0c5c1608dff7e035d0a902be1608273e762f5def95",
+    "covenantIdComputedBySdk": "c6ba323da0a2c82abe3a4a61155e4daebdec0a1b681311a0ba21029ddc3b19fd",
+    "covenantIdObservedFromNode": "c6ba323da0a2c82abe3a4a61155e4daebdec0a1b681311a0ba21029ddc3b19fd",
     "authorizingInput": 0,
     "fundingOutpoint": {
-      "transactionId": "e642eb49be9caadb6fc21b919bffc95da5b8562646201f0d3f02f15bb8891f08",
+      "transactionId": "7294c339a1b6c5a0e0e9e2a31cbeae4bbeeeca0520f100f9029b75d8d5de4d09",
       "index": 1
     },
     "lockingScript": {
@@ -166,85 +165,85 @@
     },
     "address": "kaspasim:pqt8xhg7hqt0a6qa4ke6f599dtdse8g02jaca3syhncp0m2akhu8737p5jrg8",
     "valueSompi": "1000000000",
-    "feeSompi": "408400",
-    "storageMass": "1084",
-    "confirmedAtBlockDaaScore": "65379",
+    "feeSompi": "408300",
+    "storageMass": "1083",
+    "confirmedAtBlockDaaScore": "1343",
     "computeBudgetCertification": {
       "certifiedBudget": 10,
       "attempts": [
         {
           "budget": 0,
-          "feeSompi": "408400",
+          "feeSompi": "408300",
           "accepted": false,
           "rejectionClass": "compute-budget-exceeded",
-          "nodeError": "Rejected transaction cc2fe7bfc30d4bc9a3d31c2dda66eb7b04fddc40116eb851f1a4326f59d85a6f: failed to verify the signature script: script units exceeded the amount committed in the input: used=100000, limit=9999"
+          "nodeError": "Rejected transaction 3b93691ca6ea47a6601e12559b6195a8c38bb1821b596cc6cd2ad4d3e2f6b917: failed to verify the signature script: script units exceeded the amount committed in the input: used=100000, limit=9999"
         },
         {
           "budget": 1,
-          "feeSompi": "408400",
+          "feeSompi": "408300",
           "accepted": false,
           "rejectionClass": "compute-budget-exceeded",
-          "nodeError": "Rejected transaction cc2fe7bfc30d4bc9a3d31c2dda66eb7b04fddc40116eb851f1a4326f59d85a6f: failed to verify the signature script: script units exceeded the amount committed in the input: used=100000, limit=19999"
+          "nodeError": "Rejected transaction 3b93691ca6ea47a6601e12559b6195a8c38bb1821b596cc6cd2ad4d3e2f6b917: failed to verify the signature script: script units exceeded the amount committed in the input: used=100000, limit=19999"
         },
         {
           "budget": 2,
-          "feeSompi": "408400",
+          "feeSompi": "408300",
           "accepted": false,
           "rejectionClass": "compute-budget-exceeded",
-          "nodeError": "Rejected transaction cc2fe7bfc30d4bc9a3d31c2dda66eb7b04fddc40116eb851f1a4326f59d85a6f: failed to verify the signature script: script units exceeded the amount committed in the input: used=100000, limit=29999"
+          "nodeError": "Rejected transaction 3b93691ca6ea47a6601e12559b6195a8c38bb1821b596cc6cd2ad4d3e2f6b917: failed to verify the signature script: script units exceeded the amount committed in the input: used=100000, limit=29999"
         },
         {
           "budget": 3,
-          "feeSompi": "408400",
+          "feeSompi": "408300",
           "accepted": false,
           "rejectionClass": "compute-budget-exceeded",
-          "nodeError": "Rejected transaction cc2fe7bfc30d4bc9a3d31c2dda66eb7b04fddc40116eb851f1a4326f59d85a6f: failed to verify the signature script: script units exceeded the amount committed in the input: used=100000, limit=39999"
+          "nodeError": "Rejected transaction 3b93691ca6ea47a6601e12559b6195a8c38bb1821b596cc6cd2ad4d3e2f6b917: failed to verify the signature script: script units exceeded the amount committed in the input: used=100000, limit=39999"
         },
         {
           "budget": 4,
-          "feeSompi": "408400",
+          "feeSompi": "408300",
           "accepted": false,
           "rejectionClass": "compute-budget-exceeded",
-          "nodeError": "Rejected transaction cc2fe7bfc30d4bc9a3d31c2dda66eb7b04fddc40116eb851f1a4326f59d85a6f: failed to verify the signature script: script units exceeded the amount committed in the input: used=100000, limit=49999"
+          "nodeError": "Rejected transaction 3b93691ca6ea47a6601e12559b6195a8c38bb1821b596cc6cd2ad4d3e2f6b917: failed to verify the signature script: script units exceeded the amount committed in the input: used=100000, limit=49999"
         },
         {
           "budget": 5,
-          "feeSompi": "408400",
+          "feeSompi": "408300",
           "accepted": false,
           "rejectionClass": "compute-budget-exceeded",
-          "nodeError": "Rejected transaction cc2fe7bfc30d4bc9a3d31c2dda66eb7b04fddc40116eb851f1a4326f59d85a6f: failed to verify the signature script: script units exceeded the amount committed in the input: used=100000, limit=59999"
+          "nodeError": "Rejected transaction 3b93691ca6ea47a6601e12559b6195a8c38bb1821b596cc6cd2ad4d3e2f6b917: failed to verify the signature script: script units exceeded the amount committed in the input: used=100000, limit=59999"
         },
         {
           "budget": 6,
-          "feeSompi": "408400",
+          "feeSompi": "408300",
           "accepted": false,
           "rejectionClass": "compute-budget-exceeded",
-          "nodeError": "Rejected transaction cc2fe7bfc30d4bc9a3d31c2dda66eb7b04fddc40116eb851f1a4326f59d85a6f: failed to verify the signature script: script units exceeded the amount committed in the input: used=100000, limit=69999"
+          "nodeError": "Rejected transaction 3b93691ca6ea47a6601e12559b6195a8c38bb1821b596cc6cd2ad4d3e2f6b917: failed to verify the signature script: script units exceeded the amount committed in the input: used=100000, limit=69999"
         },
         {
           "budget": 7,
-          "feeSompi": "408400",
+          "feeSompi": "408300",
           "accepted": false,
           "rejectionClass": "compute-budget-exceeded",
-          "nodeError": "Rejected transaction cc2fe7bfc30d4bc9a3d31c2dda66eb7b04fddc40116eb851f1a4326f59d85a6f: failed to verify the signature script: script units exceeded the amount committed in the input: used=100000, limit=79999"
+          "nodeError": "Rejected transaction 3b93691ca6ea47a6601e12559b6195a8c38bb1821b596cc6cd2ad4d3e2f6b917: failed to verify the signature script: script units exceeded the amount committed in the input: used=100000, limit=79999"
         },
         {
           "budget": 8,
-          "feeSompi": "408400",
+          "feeSompi": "408300",
           "accepted": false,
           "rejectionClass": "compute-budget-exceeded",
-          "nodeError": "Rejected transaction cc2fe7bfc30d4bc9a3d31c2dda66eb7b04fddc40116eb851f1a4326f59d85a6f: failed to verify the signature script: script units exceeded the amount committed in the input: used=100000, limit=89999"
+          "nodeError": "Rejected transaction 3b93691ca6ea47a6601e12559b6195a8c38bb1821b596cc6cd2ad4d3e2f6b917: failed to verify the signature script: script units exceeded the amount committed in the input: used=100000, limit=89999"
         },
         {
           "budget": 9,
-          "feeSompi": "408400",
+          "feeSompi": "408300",
           "accepted": false,
           "rejectionClass": "compute-budget-exceeded",
-          "nodeError": "Rejected transaction cc2fe7bfc30d4bc9a3d31c2dda66eb7b04fddc40116eb851f1a4326f59d85a6f: failed to verify the signature script: script units exceeded the amount committed in the input: used=100000, limit=99999"
+          "nodeError": "Rejected transaction 3b93691ca6ea47a6601e12559b6195a8c38bb1821b596cc6cd2ad4d3e2f6b917: failed to verify the signature script: script units exceeded the amount committed in the input: used=100000, limit=99999"
         },
         {
           "budget": 10,
-          "feeSompi": "408400",
+          "feeSompi": "408300",
           "accepted": true
         }
       ],
@@ -252,7 +251,7 @@
     }
   },
   "transition": {
-    "txId": "4d46055d809fb92e0371275fde3e806df9fa46a998dd8000f0694e144c14da73",
+    "txId": "611cd372b448fbce17b3683e710be193dbd78380bde8845fa5ededfaec75ac54",
     "version": 1,
     "entry": "__covenant_entrypoint_auth_bump",
     "args": {
@@ -266,7 +265,7 @@
           "feeSompi": "300100",
           "accepted": false,
           "rejectionClass": "script-verify",
-          "nodeError": "Rejected transaction 0cf1b5ad267043040c6c531ce1e7217dfd092c9464246239cc0d9252afe4c07b: failed to verify the signature script: script ran, but verification failed"
+          "nodeError": "Rejected transaction d6fca570873f29a0ca8f1e863fcf8c6c065b4c94f0539dee7f00f9955f5c5eeb: failed to verify the signature script: script ran, but verification failed"
         }
       ],
       "attempts": [
@@ -282,7 +281,7 @@
     "signatureScriptSha256": "d03f34c3a0a33d8c5470fa08c492809c198dfa9187f505218a4ea99a28d5ed20",
     "successor": {
       "outpoint": {
-        "transactionId": "4d46055d809fb92e0371275fde3e806df9fa46a998dd8000f0694e144c14da73",
+        "transactionId": "611cd372b448fbce17b3683e710be193dbd78380bde8845fa5ededfaec75ac54",
         "index": 0
       },
       "lockingScript": {
@@ -291,12 +290,12 @@
       },
       "address": "kaspasim:pzdzrdpjj4yt94nlv22z6e0txt0ay5386l0h4lxt8f0fhwfzugdvg7qze9dl5",
       "valueSompi": "999699900",
-      "covenantIdObservedFromNode": "0e70fe2d400e373bd38ebc0c5c1608dff7e035d0a902be1608273e762f5def95",
-      "confirmedAtBlockDaaScore": "65403"
+      "covenantIdObservedFromNode": "c6ba323da0a2c82abe3a4a61155e4daebdec0a1b681311a0ba21029ddc3b19fd",
+      "confirmedAtBlockDaaScore": "1397"
     },
     "lineage": {
-      "genesisCovenantId": "0e70fe2d400e373bd38ebc0c5c1608dff7e035d0a902be1608273e762f5def95",
-      "successorCovenantId": "0e70fe2d400e373bd38ebc0c5c1608dff7e035d0a902be1608273e762f5def95",
+      "genesisCovenantId": "c6ba323da0a2c82abe3a4a61155e4daebdec0a1b681311a0ba21029ddc3b19fd",
+      "successorCovenantId": "c6ba323da0a2c82abe3a4a61155e4daebdec0a1b681311a0ba21029ddc3b19fd",
       "preserved": true,
       "genesisOutputConsumed": true
     }
@@ -306,24 +305,24 @@
       "name": "covenant-binding-in-tx-v0",
       "accepted": false,
       "rejectionClass": "tx-version-rule",
-      "nodeError": "Rejected transaction 40014ee3b2e0f9c9550e378bebd94b4792d14be614ca84e13a46c0d9738563dc: transaction output #0 has covenant field but transaction version is 0",
+      "nodeError": "Rejected transaction 0fd8d422cddaf08231816cf68e7e492a137cd025c56d4d7bb5f0f06faf95029d: transaction output #0 has covenant field but transaction version is 0",
       "expectedClass": "tx-version-rule"
     },
     "insufficientComputeBudget": {
       "name": "genesis-funding-input-under-budget",
       "expectedClass": "compute-budget-exceeded",
       "budget": 9,
-      "feeSompi": "408400",
+      "feeSompi": "408300",
       "accepted": false,
       "rejectionClass": "compute-budget-exceeded",
-      "nodeError": "Rejected transaction cc2fe7bfc30d4bc9a3d31c2dda66eb7b04fddc40116eb851f1a4326f59d85a6f: failed to verify the signature script: script units exceeded the amount committed in the input: used=100000, limit=99999",
+      "nodeError": "Rejected transaction 3b93691ca6ea47a6601e12559b6195a8c38bb1821b596cc6cd2ad4d3e2f6b917: failed to verify the signature script: script units exceeded the amount committed in the input: used=100000, limit=99999",
       "note": "on the genesis P2PK input (the Counter covenant input needs no budget); a signed covenant (B2-C) would meter the covenant input itself"
     },
     "successorWithoutBinding": {
       "name": "successor-without-covenant-binding",
       "accepted": false,
       "rejectionClass": "script-verify",
-      "nodeError": "Rejected transaction 67309804809c41e79508195b40fe81683b72b5aaaf6dfc30ed1e027f595c4b79: failed to verify the signature script: script ran, but verification failed",
+      "nodeError": "Rejected transaction 5adf1c037376ace672c72796217edb60ca4d4c758b4627ba185b067d4e9bef0d: failed to verify the signature script: script ran, but verification failed",
       "expectedClass": "script-verify",
       "note": "distinguished by constructed mutation (the accepted transaction minus the binding), not by a distinct node diagnostic"
     },
@@ -331,20 +330,20 @@
       "name": "successor-bound-to-another-covenant-id",
       "accepted": false,
       "rejectionClass": "covenant-rule",
-      "nodeError": "Rejected transaction 21e99a1e432d04991708fb809b630f4154adbff11b1e1b18bcb4fa78fded7ec1: covenants error: input #0 and outputs with covenant id 4a378c1e0d70e8e29fee9d8e6205bfa8b51261064decfdd4fd6f843894377043 do not correspond to the expected genesis hashing",
+      "nodeError": "Rejected transaction 1e4179933e0027644ca901eca8c85e9946ca7f62050d6e190392b5ac70e7a04b: covenants error: input #0 and outputs with covenant id 4a378c1e0d70e8e29fee9d8e6205bfa8b51261064decfdd4fd6f843894377043 do not correspond to the expected genesis hashing",
       "expectedClass": "covenant-rule"
     },
     "wrongState": {
       "name": "successor-with-wrong-state",
       "accepted": false,
       "rejectionClass": "script-verify",
-      "nodeError": "Rejected transaction 0cf1b5ad267043040c6c531ce1e7217dfd092c9464246239cc0d9252afe4c07b: failed to verify the signature script: script ran, but verification failed",
+      "nodeError": "Rejected transaction d6fca570873f29a0ca8f1e863fcf8c6c065b4c94f0539dee7f00f9955f5c5eeb: failed to verify the signature script: script ran, but verification failed",
       "expectedClass": "script-verify",
       "note": "distinguished by constructed mutation (successor state value+delta-1), not by a distinct node diagnostic"
     }
   },
   "upstreamGaps": [
-    "kaspa-wasm 2.0.1 mass calculator ignores v1 compute budgets (wallet/core/src/tx/mass.rs TODO): fees for inputs with computeBudget > 0 are explicit",
+    "kaspa-wasm 2.1.0 mass calculator ignores v1 compute budgets (wallet/core/src/tx/mass.rs TODO): fees for inputs with computeBudget > 0 are explicit",
     "no compute-budget estimator in the SDK: budgets here are certified by the node, not estimated by HardKAS"
   ],
   "harness": {
