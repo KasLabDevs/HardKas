@@ -82,8 +82,8 @@ const fullToken = versionShape ? new RegExp(`\\b${escape(line)}-${tag}\\.(\\d+)\
 const bareToken = versionShape ? new RegExp(`\\b${tag}\\.?(\\d+)\\b`, "gi") : null;
 
 const SKIP_DIRS = new Set(["node_modules", "dist", "dist-release", "coverage", "target", "build"]);
-// Hidden directories are tool state, except the two that can carry version references.
-const SCANNED_HIDDEN_DIRS = new Set([".github", ".changeset"]);
+// Hidden directories are tool state, except .github, which can carry version references.
+const SCANNED_HIDDEN_DIRS = new Set([".github"]);
 const TEXT_EXT = new Set([".ts", ".tsx", ".js", ".mjs", ".cjs", ".json", ".md", ".mdx", ".yml", ".yaml", ".txt", ".html"]);
 
 function* walk(dir) {

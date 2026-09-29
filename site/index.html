@@ -2821,10 +2821,10 @@
                 Synthetic simulation and Kaspa simnet are not the same environment.
               </div>
 <p>
-                Kaspa and Igra workflows. It gives developers a reproducible CLI, local
-                runtime, dashboard, artifact engine, RPC diagnostics, wallet adapters and
-                L1/L2 simulation tools without pretending to be a production wallet,
-                consensus client or trustless bridge.
+                Kaspa L1 and Toccata workflows. It gives developers a reproducible CLI, a
+                managed localnet, an artifact and evidence engine, RPC diagnostics and
+                transaction planning on the upstream Kaspa SDK Generator, without pretending
+                to be a production wallet, consensus client or trustless bridge.
               </p>
 <div class="actions">
 <a class="button primary" href="#quickstart">Get Started</a>
@@ -2835,7 +2835,7 @@
 <div class="meta">
 <span class="badge accent"><span class="version-string">0.12.0-rc.26</span></span>
 <span class="badge">Kaspa Native</span>
-<span class="badge">Igra-aware</span>
+<span class="badge">Toccata-aware</span>
 <span class="badge">Local-first</span>
 <span class="badge">Artifact-first</span>
 <span class="badge">Deterministic tooling</span>
@@ -3074,14 +3074,14 @@ Target (mode = rpc, domain = kaspa-l1, network = mainnet)<br/>
                     diagnostics
                     <button class="copy" data-copy="hardkas doctor --json
 hardkas capabilities --json
-hardkas networks --json
+hardkas config networks --json
 hardkas config show --json">
                       Copy
                     </button>
 </div>
 <pre><span class="cmd">hardkas</span> doctor <span class="flag">--json</span>
 <span class="cmd">hardkas</span> capabilities <span class="flag">--json</span>
-<span class="cmd">hardkas</span> networks <span class="flag">--json</span>
+<span class="cmd">hardkas</span> config networks <span class="flag">--json</span>
 <span class="cmd">hardkas</span> config show <span class="flag">--json</span></pre>
 </div>
 <div class="codeblock" style="margin-top: 8px">
@@ -3112,43 +3112,6 @@ hardkas config show --json">
     <span class="str">"silverScript"</span>: <span style="color:#f85149">false</span>
   }
 }</pre>
-</div>
-</div>
-</details>
-<details>
-<summary>Create and inspect an L2 transaction plan</summary>
-<div class="details-body">
-<div class="codeblock">
-<div class="codebar">
-                    l2 tx
-                    <button class="copy" data-copy="hardkas l2 tx build --network igra --from 0x... --to 0x... --value 0 --data 0x --json
-hardkas l2 tx sign ./artifacts/l2-plan.json --account bob --json
-hardkas l2 tx send ./artifacts/l2-signed.json --yes --json
-hardkas l2 tx receipt &lt;txHash&gt; --json">
-                      Copy
-                    </button>
-</div>
-<pre><span class="cmd">hardkas</span> l2 tx build <span class="flag">--network</span> igra <span class="flag">--from</span> 0x... <span class="flag">--to</span> 0x... <span class="flag">--value</span> 0 <span class="flag">--data</span> 0x <span class="flag">--json</span>
-<span class="cmd">hardkas</span> l2 tx sign ./artifacts/l2-plan.json <span class="flag">--account</span> bob <span class="flag">--json</span>
-<span class="cmd">hardkas</span> l2 tx send ./artifacts/l2-signed.json <span class="flag">--yes</span> <span class="flag">--json</span>
-<span class="cmd">hardkas</span> l2 tx receipt &lt;txHash&gt; <span class="flag">--json</span></pre>
-</div>
-<div class="codeblock" style="margin-top: 8px">
-<div class="codebar">sample output</div>
-<pre><span class="comment">L2 transaction plan:</span>
-  Network: igra
-  From:    0xbob...
-  To:      0xreceiver...
-  Value:   0
-  Status:  <span style="color:#72f2c3">planned</span>
-
-<span class="comment">Signed artifact:</span>
-  Artifact: l2-signed-tx
-  Hash:     sha256:8f2c...
-
-<span class="comment">Send result:</span>
-  Status: <span style="color:#72f2c3">accepted</span>
-  TxHash: 0xa1b2c3d4e5f6...</pre>
 </div>
 </div>
 </details>
@@ -3491,8 +3454,8 @@ hardkas chaos replay --run-seed 42">
                   architectural class.
                 </td>
 <td>
-                  HardKAS provides profiles, RPC health, balance/nonce queries, tx
-                  build/sign/send/status and contract deploy planning.
+                  Not part of the current HardKAS CLI: L2 transaction, RPC and bridge
+                  commands are not shipped. Experimental Igra work lives in Labs.
                 </td>
 </tr>
 <tr>
@@ -3511,27 +3474,12 @@ hardkas chaos replay --run-seed 42">
           </div>
 </section>
 <section id="bridge">
-<h2>Bridge local simulation</h2>
+<h2>Bridge assumptions</h2>
 <p>
-            Bridge local commands model developer bridge-entry flows. They are
-            deterministic local simulation utilities, not a production bridge
-            implementation.
+            The earlier bridge-local commands are not part of the current HardKAS CLI;
+            bridge experimentation lives in Labs. The assumption model they reported is
+            kept below as architectural context, not as a CLI surface.
           </p>
-<div class="codeblock">
-<div class="codebar">
-              bridge local
-              <button class="copy" data-copy="hardkas bridge local plan --session dev --amount 10 --json
-hardkas bridge local simulate --session dev --amount 10 --prefix abc --json
-hardkas bridge local inspect &lt;txid&gt; --json
-hardkas l2 bridge assumptions --json">
-                Copy
-              </button>
-</div>
-<pre><span class="cmd">hardkas</span> bridge local plan <span class="flag">--session</span> dev <span class="flag">--amount</span> 10 <span class="flag">--json</span>
-<span class="cmd">hardkas</span> bridge local simulate <span class="flag">--session</span> dev <span class="flag">--amount</span> 10 <span class="flag">--prefix</span> abc <span class="flag">--json</span>
-<span class="cmd">hardkas</span> bridge local inspect &lt;txid&gt; <span class="flag">--json</span>
-<span class="cmd">hardkas</span> l2 bridge assumptions <span class="flag">--json</span></pre>
-</div>
 <table>
 <thead>
 <tr>
@@ -3558,7 +3506,7 @@ hardkas l2 bridge assumptions --json">
 <section id="rpc">
 <h2>RPC diagnostics</h2>
 <p>
-            HardKAS includes L1 and L2 RPC diagnostics so tools and agents can inspect
+            HardKAS includes Kaspa L1 RPC diagnostics so tools and agents can inspect
             runtime readiness instead of guessing.
           </p>
 <div class="command-grid">
@@ -3579,12 +3527,6 @@ hardkas l2 bridge assumptions --json">
 </div>
 <div class="command">
 <code>hardkas rpc utxos &lt;address&gt;</code><span>Query UTXOs for an address.</span>
-</div>
-<div class="command">
-<code>hardkas l2 rpc health --network igra --json</code><span>Check Igra RPC health.</span>
-</div>
-<div class="command">
-<code>hardkas l2 profile validate igra --json</code><span>Validate L2 profile configuration.</span>
 </div>
 </div>
 </section>
@@ -3644,7 +3586,7 @@ hardkas l2 bridge assumptions --json">
 <code>hardkas config show --json</code><span>Show resolved configuration.</span>
 </div>
 <div class="command">
-<code>hardkas networks</code><span>List configured networks.</span>
+<code>hardkas config networks</code><span>List configured networks.</span>
 <table class="flags">
 <tr>
 <td><code>--json</code></td>
@@ -3659,30 +3601,6 @@ hardkas l2 bridge assumptions --json">
 <div class="details-body command-grid">
 <div class="command">
 <code>hardkas dev doctor --profile igra --json</code><span>Validate Igra/local dev readiness.</span>
-</div>
-<div class="command">
-<code>hardkas dev server</code><span>Start local dev server and dashboard.</span>
-<table class="flags">
-<tr>
-<td><code>--port &lt;n&gt;</code></td>
-<td>Server port (default: 7420)</td>
-</tr>
-<tr>
-<td><code>--host &lt;host&gt;</code></td>
-<td>Bind host (default: localhost)</td>
-</tr>
-<tr>
-<td><code>--open</code></td>
-<td>Open dashboard in browser</td>
-</tr>
-<tr>
-<td><code>--unsafe-external</code></td>
-<td>Allow non-localhost connections</td>
-</tr>
-</table>
-</div>
-<div class="command">
-<code>hardkas dashboard --start-server</code><span>Open dashboard, starting server when needed.</span>
 </div>
 <div class="command">
 <code>hardkas local wizard --profile igra</code><span>Guided local setup.</span>
@@ -3781,9 +3699,6 @@ hardkas l2 bridge assumptions --json">
 <div class="command">
 <code>hardkas kaspa wallet create &lt;name&gt;</code><span>Create local Kaspa wallet.</span>
 </div>
-<div class="command">
-<code>hardkas metamask network --profile igra</code><span>Show MetaMask local Igra network settings.</span>
-</div>
 </div>
 </details>
 <details>
@@ -3806,35 +3721,6 @@ hardkas l2 bridge assumptions --json">
 </div>
 <div class="command">
 <code>hardkas localnet fork --network testnet-10 --json</code><span>Fork UTXO state into local simulation preview.</span>
-</div>
-</div>
-</details>
-<details>
-<summary>Igra L2</summary>
-<div class="details-body command-grid">
-<div class="command">
-<code>hardkas l2 networks --json</code><span>List L2 profiles.</span>
-</div>
-<div class="command">
-<code>hardkas l2 profile show igra --json</code><span>Show Igra profile details.</span>
-</div>
-<div class="command">
-<code>hardkas l2 balance &lt;address&gt; --network igra --json</code><span>Check L2 balance.</span>
-</div>
-<div class="command">
-<code>hardkas l2 nonce &lt;address&gt; --network igra --json</code><span>Check L2 nonce.</span>
-</div>
-<div class="command">
-<code>hardkas l2 tx build --from ... --to ... --value 0 --json</code><span>Build L2 transaction plan.</span>
-</div>
-<div class="command">
-<code>hardkas l2 tx sign plan.json --account bob</code><span>Sign L2 plan.</span>
-</div>
-<div class="command">
-<code>hardkas l2 tx send signed.json --yes</code><span>Submit signed L2 transaction.</span>
-</div>
-<div class="command">
-<code>hardkas l2 contract deploy-plan --bytecode 0x...</code><span>Build L2 contract deployment plan.</span>
 </div>
 </div>
 </details>
@@ -3892,18 +3778,18 @@ hardkas l2 bridge assumptions --json">
 <div class="codeblock">
 <div class="codebar">
                     localnet
-                    <button class="copy" data-copy="hardkas localnet fork --network testnet-10\nhardkas tx plan --to qz... --amount 1000\nhardkas tx sign ./artifacts/plan.json --account dev\nhardkas verify --strict">
+                    <button class="copy" data-copy="hardkas localnet fork --network testnet-10\nhardkas tx plan --to qz... --amount 1000\nhardkas tx sign ./artifacts/plan.json --account dev\nhardkas verify">
                       Copy
                     </button>
 </div>
 <pre><span class="cmd">hardkas</span> localnet fork <span class="flag">--network</span> testnet-10
 <span class="cmd">hardkas</span> tx plan <span class="flag">--to</span> qz... <span class="flag">--amount</span> 1000
 <span class="cmd">hardkas</span> tx sign ./artifacts/plan.json <span class="flag">--account</span> dev
-<span class="cmd">hardkas</span> verify <span class="flag">--strict</span></pre>
+<span class="cmd">hardkas</span> verify</pre>
 </div>
 <div class="codeblock" style="margin-top: 8px">
 <div class="codebar">sample output</div>
-<pre><span class="comment">Strict verification:</span>
+<pre><span class="comment">Verification:</span>
   Sorting:     <span style="color:#72f2c3">byte-level deterministic</span>
   Boundaries:  <span style="color:#72f2c3">enforced (.hardkas/ context)</span>
   Hash match:  <span style="color:#72f2c3">passed</span></pre>
@@ -3916,12 +3802,12 @@ hardkas l2 bridge assumptions --json">
 <div class="codeblock">
 <div class="codebar">
                     replay
-                    <button class="copy" data-copy="hardkas doctor --json\nhardkas repair --dry-run\nhardkas rebuild --from-artifacts\nhardkas replay verify path --json">
+                    <button class="copy" data-copy="hardkas doctor --json\nhardkas repair\nhardkas rebuild --from-artifacts\nhardkas replay verify path --json">
                       Copy
                     </button>
 </div>
 <pre><span class="cmd">hardkas</span> doctor <span class="flag">--json</span>
-<span class="cmd">hardkas</span> repair <span class="flag">--dry-run</span>
+<span class="cmd">hardkas</span> repair
 <span class="cmd">hardkas</span> rebuild <span class="flag">--from-artifacts</span>
 <span class="cmd">hardkas</span> replay verify path <span class="flag">--json</span></pre>
 </div>

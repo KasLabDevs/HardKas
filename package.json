@@ -50,8 +50,6 @@
     "check": "pnpm typecheck && pnpm build && pnpm version:check && pnpm docs:check-cli && pnpm docs:check-claims && pnpm check:docs && pnpm test",
     "test:repro": "pnpm --filter @hardkas/testing test",
     "version:check": "node scripts/check-versions.mjs",
-    "release:dry-run": "pnpm version:check && pnpm build && pnpm test && pnpm changeset status",
-    "release": "pnpm version:check && pnpm build && pnpm test && pnpm changeset publish",
     "check:docs": "pnpm --filter @hardkas/cli test:docs",
     "check:artifacts": "pnpm artifact:fixtures",
     "artifact:fixtures": "tsx packages/cli/src/index.ts artifact verify packages/artifacts/test/fixtures/valid --recursive --strict",
@@ -79,7 +77,6 @@
     "qualification:public-npm": "tsx scripts/qualification/public-npm-torture.ts"
   },
   "devDependencies": {
-    "@changesets/cli": "^2.31.0",
     "@eslint/js": "^10.0.1",
     "@hardkas/cli": "workspace:*",
     "@hardkas/config": "workspace:*",
