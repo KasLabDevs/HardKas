@@ -187,6 +187,8 @@ export class Hardkas {
         rpc: this.rpc,
         signer: this.signer,
         coinbaseMaturity,
+        // watch() needs the node endpoint; only a node client has one (the simulator does not).
+        ...(this.rpc instanceof JsonWrpcKaspaClient ? { rpcUrl: this.resolveRpcUrl() } : {}),
         ...opts
       });
     }

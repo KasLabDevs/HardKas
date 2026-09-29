@@ -1,5 +1,9 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { WalletToolkit } from '../src/wallet.js';
+import { WalletSubscriptionManager } from '../src/subscriptions.js';
+
+// WalletSubscriptionManager (a kaspa-rpc subscription, no state recovery after a reconnect) is
+// no longer what WalletToolkit.watch() uses since Surface Cut 3b (see
+// wallet-watch-utxocontext.test.ts). The class stays exported, with these tests, until 3c.
 
 class FakeJsonRpcClient {
     private subs = new Set<(data: any) => void>();
@@ -51,11 +55,10 @@ describe('Wallet Subscription Subsystem', () => {
 
     it('should deduplicate raw events into 1 wallet event', async () => {
         const fakeRpc = new FakeJsonRpcClient({});
-        const wallet = WalletToolkit.open("test-dedupe", { rpc: fakeRpc, storePath: "mem://test1" });
-        vi.spyOn(wallet, 'receive').mockResolvedValue('kaspatest:qdummy');
+        const manager = new WalletSubscriptionManager(fakeRpc as any, async () => 'kaspatest:qdummy');
 
         const handler = vi.fn();
-        const { unwatch } = await wallet.watch(handler);
+        const { unwatch } = await manager.watch(handler);
 
         // Simulate duplicate events with same txid
         const eventData = {
@@ -76,11 +79,10 @@ describe('Wallet Subscription Subsystem', () => {
 
     it('should stop receiving callbacks after unwatch', async () => {
         const fakeRpc = new FakeJsonRpcClient({});
-        const wallet = WalletToolkit.open("test-unwatch", { rpc: fakeRpc, storePath: "mem://test3" });
-        vi.spyOn(wallet, 'receive').mockResolvedValue('kaspatest:qdummy');
+        const manager = new WalletSubscriptionManager(fakeRpc as any, async () => 'kaspatest:qdummy');
 
         const handler = vi.fn();
-        const { unwatch } = await wallet.watch(handler);
+        const { unwatch } = await manager.watch(handler);
 
         fakeRpc.simulateEvent("utxos-changed", { added: [{ outpoint: { transactionId: "tx-111" } }] });
         expect(handler).toHaveBeenCalledTimes(1);
@@ -93,8 +95,7 @@ describe('Wallet Subscription Subsystem', () => {
 
     it('should survive if callback throws', async () => {
         const fakeRpc = new FakeJsonRpcClient({});
-        const wallet = WalletToolkit.open("test-throw", { rpc: fakeRpc, storePath: "mem://test4" });
-        vi.spyOn(wallet, 'receive').mockResolvedValue('kaspatest:qdummy');
+        const manager = new WalletSubscriptionManager(fakeRpc as any, async () => 'kaspatest:qdummy');
 
         let calls = 0;
         const handler = vi.fn((event) => {
@@ -102,7 +103,7 @@ describe('Wallet Subscription Subsystem', () => {
             if (calls === 1) throw new Error("Boom");
         });
 
-        const { unwatch } = await wallet.watch(handler);
+        const { unwatch } = await manager.watch(handler);
 
         fakeRpc.simulateEvent("utxos-changed", { added: [{ outpoint: { transactionId: "tx-aaa" } }] });
         expect(calls).toBe(1);

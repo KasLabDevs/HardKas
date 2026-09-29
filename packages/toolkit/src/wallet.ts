@@ -4,7 +4,7 @@ import { toTxBuilderUtxo, TxPlanService, type UtxoProvider, type Utxo } from '@h
 import { WalletUtxoApi } from './utxos.js';
 import { UtxoControlStore } from './stores/utxo-control-store.js';
 import { logger, metrics, tracer } from '@hardkas/observability';
-import { WalletSubscriptionManager, WalletWatchHandler } from './subscriptions.js';
+import { UtxoWatchEngine, type WalletWatchHandle, type WalletWatchListener } from './watch.js';
 import { calculateDynamicFeeRate, FeePriority } from './fee-estimator.js';
 
 metrics.register({
@@ -30,6 +30,8 @@ export interface WalletToolkitOptions {
     rpc?: any; // To support subscriptions
     signer?: any; // HardkasTxPlanSigner instance
     coinbaseMaturity?: bigint;
+    /** The node's wRPC endpoint for watch(). Supplied by the caller (the SDK passes its node's); the toolkit does not resolve configuration. */
+    rpcUrl?: string;
 }
 
 export class WalletToolkit {
@@ -38,7 +40,7 @@ export class WalletToolkit {
     private walletQuery: WalletQuery;
 
     private _utxosApi: WalletUtxoApi;
-    private _subscriptionManager?: WalletSubscriptionManager;
+    private _watch: { engine: UtxoWatchEngine; started: Promise<void> } | undefined;
 
     private constructor(
         public readonly name: string,
@@ -151,19 +153,40 @@ export class WalletToolkit {
         return items;
     }
 
-    public async watch(cb: WalletWatchHandler): Promise<{ unwatch: () => void }> {
-        if (!this.options.rpc || !this.options.rpc.subscribeToUtxosChanged) {
-            throw new Error("RPC client with subscription support is required for watch()");
-        }
-
-        if (!this._subscriptionManager) {
-            this._subscriptionManager = new WalletSubscriptionManager(
-                this.options.rpc,
-                async () => this.receive()
+    /**
+     * Observes the wallet's receive address on a Kaspa node through kaspa-wasm's UtxoContext.
+     * `transaction` events are live activity; after a reconnect one `resync` event carries what
+     * changed while disconnected; the handle's utxos() is the observed state. Watchers of one
+     * wallet share one engine, stopped when the last one unwatches.
+     */
+    public async watch(cb: WalletWatchListener): Promise<WalletWatchHandle> {
+        if (!this.options.rpcUrl) {
+            const err = new Error(
+                "WALLET_WATCH_REQUIRES_NODE: watch() observes a Kaspa node and no node endpoint (rpcUrl) was given. The simulator cannot be watched."
             );
+            (err as any).code = "WALLET_WATCH_REQUIRES_NODE";
+            throw err;
         }
-
-        return this._subscriptionManager.watch(cb);
+        if (!this._watch) {
+            const engine = new UtxoWatchEngine(this.options.rpcUrl, async () => this.receive());
+            const watch = { engine, started: engine.start() };
+            this._watch = watch;
+            watch.started.catch(() => {
+                if (this._watch === watch) this._watch = undefined;
+            });
+        }
+        const watch = this._watch;
+        await watch.started;
+        watch.engine.add(cb);
+        return {
+            unwatch: async () => {
+                if (watch.engine.remove(cb) > 0) return;
+                if (this._watch === watch) this._watch = undefined;
+                await watch.engine.stop();
+            },
+            utxos: () => watch.engine.utxos(),
+            balance: () => watch.engine.balance()
+        };
     }
 
     public async estimateFee(opts: { to: string; amount: bigint; priority?: FeePriority; feeRate?: bigint }): Promise<{ fee: bigint; feeRate: bigint; estimatedMass: bigint; estimatedFee: bigint; totalOut: bigint; plan: any; evidence: "dynamic" | "heuristic"; mempoolSize?: number }> {

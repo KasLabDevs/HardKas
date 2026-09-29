@@ -114,10 +114,19 @@ export async function rpcFeeEstimate(wasmRpc: any): Promise<any> {
  *
  * Requires an already-connected wasm `RpcClient` (obtain it from your own
  * caller code; this adapter does not open connections).
+ *
+ * Reconnects: kaspa-wasm's `UtxoContext.clear()` must be called when the node connection
+ * comes back, followed by re-registering the addresses, or the context keeps a stale view
+ * (Surface Cut 3b: resubscribing alone kept the inputs spent while disconnected and missed
+ * the change). The handle does that on every reconnect: `clear()` → `trackAddresses()` on
+ * the tracked addresses, one re-snapshot at a time; reconnects that arrive meanwhile are
+ * merged into one more pass, and after `stop()` nothing is registered again.
  */
 export interface UtxoContextHandle {
   readonly context: any;
   readonly processor: any;
+  /** True while a post-reconnect re-snapshot is running; the context is not a complete view then. */
+  readonly resyncing: boolean;
   trackAddresses(addresses: readonly (string | any)[]): Promise<void>;
   unregisterAddresses(addresses: readonly (string | any)[]): Promise<void>;
   matureRange(from: number, to: number): any[];
@@ -125,6 +134,10 @@ export interface UtxoContextHandle {
   balance(): any | undefined;
   matureLength(): number;
   clear(): Promise<void>;
+  /** Called once after a completed re-snapshot (merged reconnects give one call). Returns an unsubscribe. */
+  onResync(listener: () => void): () => void;
+  /** Called when a re-snapshot fails; the next reconnect re-snapshots again. Returns an unsubscribe. */
+  onError(listener: (error: unknown) => void): () => void;
   stop(): Promise<void>;
 }
 
@@ -151,21 +164,90 @@ export async function createUtxoContext(input: CreateUtxoContextInput): Promise<
   const processor = new k.UtxoProcessor({ rpc: input.wasmRpc, networkId: input.networkId });
   await processor.start();
   const context = new k.UtxoContext({ processor, ...(input.id ? { id: input.id } : {}) });
-  if (input.addresses && input.addresses.length > 0) {
-    await context.trackAddresses([...input.addresses]);
+  const tracked = new Map<string, string | any>();
+  for (const a of input.addresses ?? []) tracked.set(String(a), a);
+  if (tracked.size > 0) {
+    await context.trackAddresses([...tracked.values()]);
   }
+
+  const resyncListeners = new Set<() => void>();
+  const errorListeners = new Set<(error: unknown) => void>();
+  const notify = <A extends unknown[]>(listeners: Set<(...a: A) => void>, ...args: A) => {
+    for (const l of [...listeners]) {
+      try {
+        l(...args);
+      } catch {
+        // A listener's failure is its own; the re-snapshot already happened.
+      }
+    }
+  };
+  let closed = false;
+  let requested = false;
+  let running: Promise<void> | null = null;
+  const resnapshot = (): void => {
+    if (running || closed) return;
+    running = (async () => {
+      let completed = false;
+      try {
+        while (requested && !closed) {
+          requested = false;
+          await context.clear();
+          if (closed) return;
+          if (tracked.size > 0) await context.trackAddresses([...tracked.values()]);
+          if (closed) return;
+          completed = true;
+        }
+      } catch (error) {
+        completed = false;
+        if (!closed) notify(errorListeners, error);
+      } finally {
+        running = null;
+      }
+      if (completed && !closed) notify(resyncListeners);
+      // A reconnect that arrived after the last pass started needs one more.
+      if (requested && !closed) resnapshot();
+    })();
+  };
+  // Attached after the first registration: only reconnects re-snapshot.
+  processor.addEventListener((event: any) => {
+    if (event?.type !== "connect" || closed) return;
+    requested = true;
+    resnapshot();
+  });
 
   return {
     context,
     processor,
-    trackAddresses: (addresses) => context.trackAddresses([...addresses]),
-    unregisterAddresses: (addresses) => context.unregisterAddresses([...addresses]),
+    get resyncing() {
+      return running !== null;
+    },
+    trackAddresses: async (addresses) => {
+      for (const a of addresses) tracked.set(String(a), a);
+      await context.trackAddresses([...addresses]);
+    },
+    unregisterAddresses: async (addresses) => {
+      for (const a of addresses) tracked.delete(String(a));
+      await context.unregisterAddresses([...addresses]);
+    },
     matureRange: (from, to) => context.getMatureRange(from, to),
     pending: () => context.getPending(),
     balance: () => context.balance,
     matureLength: () => context.matureLength,
     clear: () => context.clear(),
+    onResync: (listener) => {
+      resyncListeners.add(listener);
+      return () => resyncListeners.delete(listener);
+    },
+    onError: (listener) => {
+      errorListeners.add(listener);
+      return () => errorListeners.delete(listener);
+    },
     stop: async () => {
+      closed = true;
+      resyncListeners.clear();
+      errorListeners.clear();
+      // A re-snapshot in flight finishes its current await and then stops (it checks `closed`).
+      if (running) await running;
       try {
         await context.clear();
       } catch {}
