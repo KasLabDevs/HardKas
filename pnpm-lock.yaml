@@ -1683,19 +1683,6 @@ importers:
         specifier: ^2.1.8
         version: 2.1.9(@types/node@26.1.2)(jsdom@29.1.1(@noble/hashes@2.2.0))(lightningcss@1.32.0)(terser@5.51.2)
 
-  packages/rpc-events:
-    dependencies:
-      '@hardkas/core':
-        specifier: workspace:*
-        version: link:../core
-    devDependencies:
-      typescript:
-        specifier: ^5.5.4
-        version: 5.9.3
-      vitest:
-        specifier: ^2.1.9
-        version: 2.1.9(@types/node@26.1.2)(jsdom@29.1.1(@noble/hashes@2.2.0))(lightningcss@1.32.0)(terser@5.51.2)
-
   packages/sdk:
     dependencies:
       '@hardkas/accounts':
@@ -1728,9 +1715,6 @@ importers:
       '@hardkas/query-store':
         specifier: workspace:*
         version: link:../query-store
-      '@hardkas/rpc-events':
-        specifier: workspace:*
-        version: link:../rpc-events
       '@hardkas/simulator':
         specifier: workspace:*
         version: link:../simulator

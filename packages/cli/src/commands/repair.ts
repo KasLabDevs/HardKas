@@ -10,10 +10,10 @@ export function registerRepairCommand(program: Command) {
   program
     .command("repair")
     .description(
-      `Attempt automatic recovery of corrupt projections or append tails ${UI.maturity("beta")}`
+      `Report an outdated workspace, lock files in .hardkas/, torn JSONL tails and a corrupt query store; --force repairs them ${UI.maturity("beta")}`
     )
     .option("--json", "Output results as stable JSON schema", false)
-    .option("--force", "Repair without prompting for confirmation", false)
+    .option("--force", "Apply the repairs (without it, repair only reports). Removes lock files without checking whether their process is alive", false)
     .action(async (opts) => {
       try {
         await runRepair(opts);

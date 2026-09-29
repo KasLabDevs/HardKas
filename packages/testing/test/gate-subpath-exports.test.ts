@@ -36,7 +36,7 @@ describe("T-A04: workspace subpath exports resolve in the gate", () => {
 
   it("resolves packages without an exports map through main", () => {
     expect(rel(resolveWorkspaceSource("@hardkas/pskt-native"))).toBe("packages/pskt-native/index.js");
-    expect(rel(resolveWorkspaceSource("@hardkas/rpc-events"))).toBe("packages/rpc-events/src/index.ts");
+    expect(rel(resolveWorkspaceSource("@hardkas/jobs"))).toBe("packages/jobs/src/index.ts");
   });
 
   it("refuses subpaths a package does not declare instead of inventing a file", () => {

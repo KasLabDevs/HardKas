@@ -81,7 +81,7 @@ export function registerLockCommands(program: Command) {
   lockCmd
     .command("doctor")
     .description(
-      `Analyze locks and identify stale or corrupted ones ${UI.maturity("stable")}`
+      `Report stale locks (process no longer running on this host) in .hardkas/locks ${UI.maturity("stable")}`
     )
     .action(async () => {
       try {

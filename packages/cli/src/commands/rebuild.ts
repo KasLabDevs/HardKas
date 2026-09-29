@@ -6,11 +6,11 @@ export function registerRebuildCommand(program: Command) {
   program
     .command("rebuild")
     .description(
-      `Reconstruct projections from committed canonical artifacts ${UI.maturity("stable")}`
+      `Wipe and rebuild the SQLite query store from the committed artifacts ${UI.maturity("stable")}`
     )
     .option(
       "--from-artifacts",
-      "Rebuild the query-store and localnet projection from artifacts",
+      "Required: rebuild the query store from the artifacts (the localnet state is not rebuilt)",
       false
     )
     .option("--json", "Output machine-readable JSON", false)

@@ -43,8 +43,7 @@
     "@hardkas/simulator": "workspace:*",
     "@hardkas/tx-builder": "workspace:*",
     "@hardkas/toolkit": "workspace:*",
-    "@hardkas/node-runner": "workspace:*",
-    "@hardkas/rpc-events": "workspace:*"
+    "@hardkas/node-runner": "workspace:*"
   },
   "optionalDependencies": {
     "@hardkas/pskt-native": "workspace:*"

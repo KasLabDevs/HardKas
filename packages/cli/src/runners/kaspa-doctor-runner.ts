@@ -148,7 +148,7 @@ export async function runKaspaDoctor(options: { rpcUrl: string; json: boolean })
       console.log(`\n${pc.red("Fix recommendations:")}`);
       if (checks.some((c) => c.name === "RPC Reachability" && c.status === "error")) {
         console.log(`  - Ensure kaspad is running with ${pc.white("--rpclisten-json")}.`);
-        console.log(`  - Check if the port ${pc.white("16110")} is open.`);
+        console.log(`  - Check that the node answers at ${pc.white(options.rpcUrl)}.`);
       }
       if (checks.some((c) => c.name === "UTXO Index" && c.status === "error")) {
         console.log(`  - Start kaspad with ${pc.white("--utxoindex")}.`);

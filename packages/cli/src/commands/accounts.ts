@@ -97,7 +97,7 @@ export function registerAccountsCommands(program: Command) {
   realAccountsCmd
     .command("import")
     .description(`Import an account into the persistent store ${UI.maturity("stable")}`)
-    .option("--name <name>", "Account name")
+    .option("--name <name>", "Account name: letters, digits, _ and - (default: default)")
     .option("--address <address>", "Kaspa address")
     .option(
       "--private-key <hex>",
@@ -151,7 +151,7 @@ export function registerAccountsCommands(program: Command) {
     .command("session-open <name>")
     .alias("unlock")
     .description(
-      `Verify keystore access and record signing intent ${UI.maturity("internal")}`
+      `Check that an account's encrypted keystore opens with its password; nothing is recorded ${UI.maturity("internal")}`
     )
     .option("--password-stdin", "Read password from stdin", false)
     .option("--password-env <env>", "Read password from environment variable")
@@ -301,7 +301,7 @@ export function registerAccountsCommands(program: Command) {
     .option("--url <url>", "RPC URL (optional override)")
     .option(
       "--local",
-      "Query local query-store instead of remote RPC (for simulated networks)",
+      "Read the simulator state file (.hardkas/localnet.json) instead of a node",
       false
     )
     .option("--json", "Output as JSON", false)
