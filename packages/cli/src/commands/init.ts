@@ -111,8 +111,7 @@ export function registerInitCommands(program: Command) {
                   test: "vitest run"
                 },
                 dependencies: {
-                  "@hardkas/sdk": hardkasVersion,
-                  "@kaspa/core-lib": "^1.6.5"
+                  "@hardkas/sdk": hardkasVersion
                 },
                 devDependencies: {
                   "@hardkas/testing": hardkasVersion,

@@ -59,7 +59,6 @@
     "@hardkas/simulator": "workspace:*",
     "@hardkas/testing": "workspace:*",
     "@hardkas/tx-builder": "workspace:*",
-    "@kaspa/core-lib": "^1.6.5",
     "commander": "^12.1.0",
     "enquirer": "^2.4.1",
     "execa": "^9.5.2",

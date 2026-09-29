@@ -14,17 +14,6 @@ export async function runUp() {
     const loaded = await loadHardkasConfig();
     const networkId = loaded.config.defaultNetwork || "simulated";
 
-    // Dependency Checks
-    try {
-      const { createRequire } = await import("node:module");
-      const req = createRequire(path.join(loaded.cwd, "package.json"));
-      req.resolve("@kaspa/core-lib");
-    } catch (e: unknown) {
-      UI.warning("Optional dependency @kaspa/core-lib is not installed.");
-      UI.info(
-        "Advanced cryptographic features may be unavailable. Run 'npm install @kaspa/core-lib' to enable."
-      );
-    }
     UI.info(
       `\x1b[1mNetwork Mode:\x1b[0m ${networkId} (${loaded.config.networks?.[networkId]?.kind || "default"})`
     );

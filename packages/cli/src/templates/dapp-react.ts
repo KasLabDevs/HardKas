@@ -101,7 +101,7 @@ export default defineConfig({
     rollupOptions: {
       external: [
         'fs', 'path', 'crypto', 'os', 'fs/promises',
-        'kaspa', '@kaspa/core-lib',
+        'kaspa',
         'node:fs', 'node:path', 'node:crypto', 'node:os', 'node:fs/promises',
         'async_hooks', 'node:async_hooks', 'child_process', 'node:child_process'
       ]
