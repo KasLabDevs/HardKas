@@ -1,4 +1,4 @@
-# HardKAS 0.12.0-rc.25 — Docs Editorial 9: Accounts, Wallets, Keys & Signing Authority
+# HardKAS 0.12.0-rc.26 — Docs Editorial 9: Accounts, Wallets, Keys & Signing Authority
 
 ## Status: PASS
 

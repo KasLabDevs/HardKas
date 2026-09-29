@@ -39,7 +39,7 @@ function deployPlan(overrides: Partial<SilverDeployPlanArtifactLike> = {}): Silv
   const lock = silverP2shLock(BYTECODE);
   return {
     schema: "hardkas.silver.deployPlan",
-    hardkasVersion: "0.12.0-rc.25",
+    hardkasVersion: "0.12.0-rc.26",
     version: "1.0.0-alpha",
     hashVersion: CURRENT_HASH_VERSION,
     networkId: "simnet",
@@ -60,7 +60,7 @@ function deployPlan(overrides: Partial<SilverDeployPlanArtifactLike> = {}): Silv
 function spendPlan(deployed: ReturnType<typeof simulateSilverDeploy>): SilverSpendPlanArtifactLike {
   return {
     schema: "hardkas.silver.spendPlan",
-    hardkasVersion: "0.12.0-rc.25",
+    hardkasVersion: "0.12.0-rc.26",
     version: "1.0.0-alpha",
     hashVersion: CURRENT_HASH_VERSION,
     networkId: "simnet",

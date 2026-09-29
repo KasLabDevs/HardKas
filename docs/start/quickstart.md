@@ -7,8 +7,8 @@ Get up and running with HardKAS in a local simulated environment.
 Install the SDK and CLI in your project:
 
 ```bash
-npm install @hardkas/sdk@0.12.0-rc.25
-npm install -D @hardkas/cli@0.12.0-rc.25
+npm install @hardkas/sdk@0.12.0-rc.26
+npm install -D @hardkas/cli@0.12.0-rc.26
 ```
 
 ## 2. Initialize The Workspace

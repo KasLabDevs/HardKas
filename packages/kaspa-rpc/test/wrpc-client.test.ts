@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { KaspaWrpcClient } from "../src/wrpc-client.js";
+import { fakeOfficialRpc, nodeError } from "./helpers/fake-official-rpc.js";
 
 describe("KaspaWrpcClient", () => {
   it("normalizes http:// to ws://", () => {
@@ -36,35 +37,25 @@ describe("KaspaWrpcClient", () => {
     }
   });
 
-  it("handles error response with code but no message", async () => {
+  it("refuses a request before connect()", async () => {
     const client = new KaspaWrpcClient("ws://127.0.0.1:18210");
-    const mockPending = {
-      resolve: () => {},
-      reject: (err: Error) => {
-        expect(((err instanceof Error) ? ((err instanceof Error) ? err.message : String(err)) : String(err))).toContain("wRPC error code 500");
-      },
-      timer: setTimeout(() => {}, 1000)
-    };
+    await expect(client.request("getServerInfo")).rejects.toThrow("WebSocket not connected. Call connect() first.");
+  });
 
-    // Inject to pending map directly to test response logic
-    (client as any).pending.set(999, mockPending);
+  it("requests by method name through the official client, with the node's error text", async () => {
+    const rpc = fakeOfficialRpc({
+      getServerInfo: () => ({ serverVersion: "2.1.0", virtualDaaScore: 12n }),
+      getBlockDagInfo: () => {
+        throw nodeError("internal error");
+      }
+    });
+    const client = new KaspaWrpcClient("http://127.0.0.1:18210", { rpcFactory: rpc.factory });
+    await client.connect(200);
 
-    // Simulate incoming message parsing
-    const messageHandler = (client as any).ws?.on || (() => {});
-    const simulatedResponse = { id: 999, error: { code: 500 } };
-
-    // Manually trigger the response resolver/rejecter inside KaspaWrpcClient
-    const pendingObj = (client as any).pending.get(999);
-    expect(pendingObj).toBeDefined();
-
-    if (simulatedResponse.error) {
-      const errMsg =
-        simulatedResponse.error.message ||
-        `wRPC error code ${simulatedResponse.error.code || "unknown"}`;
-      pendingObj.reject(new Error(errMsg));
-    }
-
-    clearTimeout(mockPending.timer);
+    expect(rpc.urls).toEqual(["ws://127.0.0.1:18210"]);
+    expect(await client.request("getServerInfoRequest")).toEqual({ serverVersion: "2.1.0", virtualDaaScore: 12 });
+    await expect(client.getBlockDagInfo()).rejects.toThrow(/^internal error$/);
+    expect(await client.ping()).toBe(true);
     client.disconnect();
   });
 });

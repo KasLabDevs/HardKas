@@ -1,4 +1,4 @@
-# HardKAS 0.12.0-rc.25 — Docs Editorial 10: PSKT, Offline Signing & Multi-party Authority
+# HardKAS 0.12.0-rc.26 — Docs Editorial 10: PSKT, Offline Signing & Multi-party Authority
 
 ## Status: PASS
 

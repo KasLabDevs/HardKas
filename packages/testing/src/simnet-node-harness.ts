@@ -10,7 +10,6 @@ import {
 import { verifyNodeIdentity } from "@hardkas/node-runner";
 import net from "net";
 import { SimnetMiningDriver, SimnetMiningDriverImpl } from "./simnet-mining-driver.js";
-import { JsonWrpcTransport } from "../../kaspa-rpc/src/transport/json-wrpc-transport.js";
 
 export interface SimnetNodeHandle {
   readonly rpcUrl: string;

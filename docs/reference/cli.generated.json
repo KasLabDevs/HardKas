@@ -4619,10 +4619,25 @@
           "path": "hardkas rpc dag",
           "name": "dag",
           "aliases": [],
-          "description": "Show DAG information from node",
+          "description": "Show the node's DAG: network, virtual DAA score, sink and tips",
           "usage": "hardkas rpc dag [options]",
           "arguments": [],
-          "options": [],
+          "options": [
+            {
+              "flags": "--url <url>",
+              "description": "Node wRPC endpoint (default: the canonical localnet, ws://127.0.0.1:18210)",
+              "default": null,
+              "required": true,
+              "mandatory": false
+            },
+            {
+              "flags": "--json",
+              "description": "Output as JSON",
+              "default": false,
+              "required": false,
+              "mandatory": false
+            }
+          ],
           "subcommands": []
         },
         {
@@ -4679,17 +4694,32 @@
           "path": "hardkas rpc info",
           "name": "info",
           "aliases": [],
-          "description": "Show RPC connection info",
+          "description": "Show the node's network, version, sync state and UTXO index",
           "usage": "hardkas rpc info [options]",
           "arguments": [],
-          "options": [],
+          "options": [
+            {
+              "flags": "--url <url>",
+              "description": "Node wRPC endpoint (default: the canonical localnet, ws://127.0.0.1:18210)",
+              "default": null,
+              "required": true,
+              "mandatory": false
+            },
+            {
+              "flags": "--json",
+              "description": "Output as JSON",
+              "default": false,
+              "required": false,
+              "mandatory": false
+            }
+          ],
           "subcommands": []
         },
         {
           "path": "hardkas rpc mempool",
           "name": "mempool",
           "aliases": [],
-          "description": "Show mempool status from node",
+          "description": "Look up a transaction in the node's mempool, or list what the mempool holds",
           "usage": "hardkas rpc mempool [options] [txId]",
           "arguments": [
             {
@@ -4697,14 +4727,29 @@
               "description": ""
             }
           ],
-          "options": [],
+          "options": [
+            {
+              "flags": "--url <url>",
+              "description": "Node wRPC endpoint (default: the canonical localnet, ws://127.0.0.1:18210)",
+              "default": null,
+              "required": true,
+              "mandatory": false
+            },
+            {
+              "flags": "--json",
+              "description": "Output as JSON",
+              "default": false,
+              "required": false,
+              "mandatory": false
+            }
+          ],
           "subcommands": []
         },
         {
           "path": "hardkas rpc utxos",
           "name": "utxos",
           "aliases": [],
-          "description": "Show UTXOs for an address from node",
+          "description": "Show the UTXOs the node holds for an address",
           "usage": "hardkas rpc utxos [options] <address>",
           "arguments": [
             {
@@ -4712,7 +4757,22 @@
               "description": ""
             }
           ],
-          "options": [],
+          "options": [
+            {
+              "flags": "--url <url>",
+              "description": "Node wRPC endpoint (default: the canonical localnet, ws://127.0.0.1:18210)",
+              "default": null,
+              "required": true,
+              "mandatory": false
+            },
+            {
+              "flags": "--json",
+              "description": "Output as JSON",
+              "default": false,
+              "required": false,
+              "mandatory": false
+            }
+          ],
           "subcommands": []
         }
       ]

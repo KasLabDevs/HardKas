@@ -1,48 +1,40 @@
-import { KaspaJsonRpcClient, ServerInfo } from "@hardkas/kaspa-rpc";
+import { JsonWrpcKaspaClient, ServerInfo } from "@hardkas/kaspa-rpc";
+import { nodeRpcUrl } from "@hardkas/core";
 
 export interface RpcInfoOptions {
-  url?: string;
+  /** Node wRPC endpoint; defaults to the canonical localnet. */
+  url?: string | undefined;
 }
 
-export async function runRpcInfo(options: RpcInfoOptions = {}): Promise<{
-  info?: ServerInfo;
+export interface RpcInfoResult {
   url: string;
+  info?: ServerInfo;
+  error?: string;
   formatted: string;
-}> {
-  const url = options.url || "http://127.0.0.1:18210";
-  const protocol = url.startsWith("ws") ? "WebSocket" : "JSON-RPC";
+}
 
+export async function runRpcInfo(options: RpcInfoOptions = {}): Promise<RpcInfoResult> {
+  const url = options.url || nodeRpcUrl();
+  const client = new JsonWrpcKaspaClient({ rpcUrl: url, timeoutMs: 10000 });
   try {
-    const client = new KaspaJsonRpcClient({ url });
     const info = await client.getServerInfo();
-
+    const yesNo = (v: boolean | undefined) => (v === undefined ? "unknown" : v ? "yes" : "no");
     const lines = [
       "Kaspa RPC info",
       "",
-      `URL:      ${url}`,
-      `Protocol: ${protocol}`,
-      `Network:  ${info.networkId}`,
-      `Synced:   ${info.isSynced ? "yes" : "no"}`,
-      `Version:  ${info.serverVersion || "unknown"}`
+      `URL:          ${url}`,
+      `Network:      ${info.networkId}`,
+      `Version:      ${info.serverVersion || "unknown"}`,
+      `Synced:       ${yesNo(info.isSynced)}`,
+      `UTXO index:   ${yesNo(info.hasUtxoIndex)}`,
+      `Virtual DAA:  ${info.virtualDaaScore?.toString() ?? "unknown"}`
     ];
-
-    return {
-      info,
-      url,
-      formatted: lines.join("\n")
-    };
+    return { url, info, formatted: lines.join("\n") };
   } catch (e: unknown) {
-    const lines = [
-      "Kaspa RPC info",
-      "",
-      `URL:      ${url}`,
-      `Protocol: ${protocol}`,
-      `Status:   unreachable`,
-      `Error:    ${((e instanceof Error) ? ((e instanceof Error) ? e.message : String(e)) : String(e))}`
-    ];
-    return {
-      url,
-      formatted: lines.join("\n")
-    };
+    const error = e instanceof Error ? e.message : String(e);
+    const lines = ["Kaspa RPC info", "", `URL:      ${url}`, `Status:   unreachable`, `Error:    ${error}`];
+    return { url, error, formatted: lines.join("\n") };
+  } finally {
+    await client.close();
   }
 }

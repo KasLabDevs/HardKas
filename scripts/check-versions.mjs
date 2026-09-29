@@ -76,7 +76,7 @@ if (!versionShape) {
 const [, major, minor, patch, tag, currentNumber] = versionShape ?? [];
 const line = versionShape ? `${major}.${minor}.${patch}` : null;
 const escape = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-// Full tokens of the product line, e.g. 0.12.0-rc.25
+// Full tokens of the product line, e.g. 0.12.0-rc.26
 const fullToken = versionShape ? new RegExp(`\\b${escape(line)}-${tag}\\.(\\d+)\\b`, "g") : null;
 // Bare pre-release mentions, e.g. rc.24 / rc24 (docs and prose)
 const bareToken = versionShape ? new RegExp(`\\b${tag}\\.?(\\d+)\\b`, "gi") : null;

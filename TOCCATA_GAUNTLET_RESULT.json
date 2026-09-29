@@ -1,7 +1,7 @@
 {
   "schema": "hardkas.toccataGauntlet.v1",
   "status": "HARDKAS_TOCCATA_BASELINE_READY",
-  "generatedAt": "2026-09-28T20:05:56.144Z",
+  "generatedAt": "2026-09-28T22:51:43.814Z",
   "nodeIdentity": {
     "schema": "hardkas.nodeIdentity.v1",
     "verified": true,
@@ -18,7 +18,7 @@
     "observed": {
       "container": {
         "name": "hardkas-kaspad-toccata-v2",
-        "id": "366d1d1de53c571d257883dfb51302e40027d84453c36874f66f12c29bdeee99",
+        "id": "83c5607d143b6c9326068c66ad255ff8e019a8d0ab1c7ce6161a792e1caffa4c",
         "running": true,
         "imageId": "sha256:f85da74b9514584451f83a2cbea3aa93f700248302fe7e3e0ab17288f93c905b",
         "repoDigests": [
@@ -46,11 +46,11 @@
         "url": "ws://127.0.0.1:18210",
         "networkId": "simnet",
         "serverVersion": "2.1.0",
-        "isSynced": true
+        "isSynced": false
       },
       "probeErrors": []
     },
-    "checkedAt": "2026-09-28T20:04:39.117Z"
+    "checkedAt": "2026-09-28T22:50:43.145Z"
   },
   "capabilities": {
     "silver.compile.v1": "PASS",
@@ -120,12 +120,12 @@
       "status": "PASS",
       "capability": "silver.compile.v1",
       "compiler": "silverc v1.0.0 ce1e0ef5f1f415f371d3d2426e788597a388635da8cbe93e72e95a4f754b29af",
-      "artifactSha256": "6c418e160ed34cf885abcd0ab0912787a11831b6e66896732d986baa27a1159f"
+      "artifactSha256": "2e27081b05371ef779002ebaa4504bff444556350dd472eb294b1e409ae45846"
     },
     {
       "name": "silver compile reproduced",
       "status": "PASS",
-      "artifactSha256": "6c418e160ed34cf885abcd0ab0912787a11831b6e66896732d986baa27a1159f"
+      "artifactSha256": "2e27081b05371ef779002ebaa4504bff444556350dd472eb294b1e409ae45846"
     },
     {
       "name": "mainnet guard",
@@ -135,33 +135,33 @@
       "name": "silver deploy real",
       "status": "PASS",
       "capability": "silver.p2sh.deploy-spend.v1",
-      "txId": "26903a76c973189809fdec390b3e4644b72077239be1766eda70dcb5a026bec4",
-      "address": "kaspasim:pzdp3gt7ydyhuexpp6htc9usmzemsvq0uz8avn5dj4jpxeu3llwx52vvg9pta",
-      "confirmedAtBlockDaaScore": "2060"
+      "txId": "8ee0081ef45a22808938d6fd216a0958ddf25b11b256eaefa969b7d07fcf3508",
+      "address": "kaspasim:pzvy660fusfv9k7eg84k7fxhsrvuja3357y4qs63lv3nx73p04gjqdyrzr534",
+      "confirmedAtBlockDaaScore": "6421"
     },
     {
       "name": "silver spend real",
       "status": "PASS",
       "capability": "silver.p2sh.deploy-spend.v1",
-      "txId": "7ccfe168a3bcff9dabb09ca0ef1efde92f3f36883f9c84e7030da1b6ddedc7dd",
+      "txId": "4d94214a01cb9dab777b88d11134395b0c98924a88816919d92d575bcf5163be",
       "entry": "release",
       "dispatchTag": "388ad0b4",
-      "confirmedAtBlockDaaScore": "2425"
+      "confirmedAtBlockDaaScore": "6748"
     },
     {
       "name": "covenant genesis",
       "status": "PASS",
       "capability": "toccata.covenant.auth-1to1-transition.v1",
-      "covenantId": "00f7bfd16465e418524a7d1e9131ac04bb0b3d0ebff0b1cc45e12f8cc9a9d14e",
-      "txId": "61dca8f400edd2abf5f9cec9ee4e30e4ecd0a7a03c1004dce864ca6234b2731e",
+      "covenantId": "78d8f01acc47a47070824861c619d1cab231c702dcb2ba165caa027a03931e78",
+      "txId": "d54217eb18098fce898c4ee4f65cbd9628ceced76084181ba89fcc5e89b7e4a0",
       "computeBudget": 10
     },
     {
       "name": "covenant transition",
       "status": "PASS",
       "capability": "toccata.covenant.auth-1to1-transition.v1",
-      "covenantId": "00f7bfd16465e418524a7d1e9131ac04bb0b3d0ebff0b1cc45e12f8cc9a9d14e",
-      "txId": "43080e4bb2be5235af9f6c8a046fc89fb4a5be04b68c119f4979dfff01017368",
+      "covenantId": "78d8f01acc47a47070824861c619d1cab231c702dcb2ba165caa027a03931e78",
+      "txId": "1baf3832ab16baee47def1c710585c566629238e2d0ba20082fb3b6e8a9ee298",
       "entry": "__covenant_entrypoint_auth_bump",
       "stateGuard": {
         "templateHash": "12e80a77d386245a8a8db422137333918b3d6bbbb482e39f8e45302244e9bd95",

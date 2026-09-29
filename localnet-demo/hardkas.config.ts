@@ -1,7 +1,7 @@
 import { defineHardkasConfig } from "@hardkas/sdk";
 
 export default defineHardkasConfig({
-  // HardKAS v0.12.0-rc.25 Configuration
+  // HardKAS v0.12.0-rc.26 Configuration
   execution: {
     default: "localnet",
     targets: {

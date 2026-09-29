@@ -1,4 +1,4 @@
-# HardKAS 0.12.0-rc.25 — Docs Editorial 11: Toccata, Covenants & SilverScript
+# HardKAS 0.12.0-rc.26 — Docs Editorial 11: Toccata, Covenants & SilverScript
 
 ## Status: PASS
 

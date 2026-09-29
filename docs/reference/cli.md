@@ -3943,7 +3943,7 @@ No arguments.
 
 ## hardkas rpc dag
 
-Show DAG information from node
+Show the node's DAG: network, virtual DAA score, sink and tips
 
 ### Usage
 
@@ -3953,7 +3953,10 @@ hardkas rpc dag [options]
 
 ### Options
 
-No options.
+| Flag | Description | Default |
+| :--- | :--- | :--- |
+| `--url <url>` | Node wRPC endpoint (default: the canonical localnet, ws://127.0.0.1:18210) |  |
+| `--json` | Output as JSON | false |
 
 ### Arguments
 
@@ -4009,7 +4012,7 @@ No arguments.
 
 ## hardkas rpc info
 
-Show RPC connection info
+Show the node's network, version, sync state and UTXO index
 
 ### Usage
 
@@ -4019,7 +4022,10 @@ hardkas rpc info [options]
 
 ### Options
 
-No options.
+| Flag | Description | Default |
+| :--- | :--- | :--- |
+| `--url <url>` | Node wRPC endpoint (default: the canonical localnet, ws://127.0.0.1:18210) |  |
+| `--json` | Output as JSON | false |
 
 ### Arguments
 
@@ -4029,7 +4035,7 @@ No arguments.
 
 ## hardkas rpc mempool
 
-Show mempool status from node
+Look up a transaction in the node's mempool, or list what the mempool holds
 
 ### Usage
 
@@ -4039,7 +4045,10 @@ hardkas rpc mempool [options] [txId]
 
 ### Options
 
-No options.
+| Flag | Description | Default |
+| :--- | :--- | :--- |
+| `--url <url>` | Node wRPC endpoint (default: the canonical localnet, ws://127.0.0.1:18210) |  |
+| `--json` | Output as JSON | false |
 
 ### Arguments
 
@@ -4051,7 +4060,7 @@ No options.
 
 ## hardkas rpc utxos
 
-Show UTXOs for an address from node
+Show the UTXOs the node holds for an address
 
 ### Usage
 
@@ -4061,7 +4070,10 @@ hardkas rpc utxos [options] <address>
 
 ### Options
 
-No options.
+| Flag | Description | Default |
+| :--- | :--- | :--- |
+| `--url <url>` | Node wRPC endpoint (default: the canonical localnet, ws://127.0.0.1:18210) |  |
+| `--json` | Output as JSON | false |
 
 ### Arguments
 

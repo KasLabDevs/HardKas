@@ -26,7 +26,7 @@ const codes = (r: { issues: Array<{ code: string }> }) => r.issues.map((i) => i.
 function submission(accepted: boolean, txId = TX): any {
   const s: any = {
     schema: "hardkas.txSubmission.v1",
-    hardkasVersion: "0.12.0-rc.25",
+    hardkasVersion: "0.12.0-rc.26",
     version: "1.0.0-alpha",
     hashVersion: CURRENT_HASH_VERSION,
     networkId: "simnet",
