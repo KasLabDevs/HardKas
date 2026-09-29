@@ -1,17 +1,18 @@
 import { describe, it, expect, beforeAll, afterAll } from "vitest";
-import { resolve } from "node:path";
+import { join, resolve } from "node:path";
+import { tmpdir } from "node:os";
 import { execSync } from "node:child_process";
-import { existsSync, rmSync, writeFileSync, mkdirSync } from "node:fs";
-import { randomBytes } from "node:crypto";
+import { existsSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 
 describe("hardkas pskt CLI flow", () => {
   const cliPath = resolve(__dirname, "../src/index.ts");
   const tsxBin = resolve(__dirname, "../../../node_modules/.bin/tsx");
   const actualTsx = existsSync(tsxBin) ? tsxBin : "npx tsx";
-  const tempDir = resolve(__dirname, `temp_pskt_${randomBytes(4).toString("hex")}`);
+  // Outside the repository: a run that dies before cleanup must not leave files a commit can pick up.
+  let tempDir: string;
 
   beforeAll(() => {
-    mkdirSync(tempDir, { recursive: true });
+    tempDir = mkdtempSync(join(tmpdir(), "hardkas-pskt-cli-"));
     // Write a dummy TxPlan
     writeFileSync(resolve(tempDir, "plan.json"), JSON.stringify({
       kind: "hardkas-tx-plan",
@@ -24,7 +25,7 @@ describe("hardkas pskt CLI flow", () => {
   });
 
   afterAll(() => {
-    if (existsSync(tempDir)) {
+    if (tempDir) {
       rmSync(tempDir, { recursive: true, force: true });
     }
   });
