@@ -725,7 +725,7 @@ summary:hover { color: var(--accent); }
                 Synthetic simulation and Kaspa simnet are not the same environment.
               </div>
 <p>
-                Kaspa L1 and Toccata workflows. It gives developers a reproducible CLI, a
+                HardKAS focuses on Kaspa L1 and Toccata workflows. It gives developers a reproducible CLI, a
                 managed localnet, an artifact and evidence engine, RPC diagnostics and
                 transaction planning on the upstream Kaspa SDK Generator, without pretending
                 to be a production wallet, consensus client or trustless bridge.
@@ -754,9 +754,14 @@ summary:hover { color: var(--accent); }
                     first run
                     
 </div>
-<pre><span class="cmd">hardkas</span> localnet start <span class="flag">--profile</span> toccata-v2
-<span class="cmd">hardkas</span> tx plan <span class="flag">--from</span> alice <span class="flag">--to</span> bob <span class="flag">--amount</span> 10
-<span class="cmd">hardkas</span> verify</pre>
+<pre><span class="cmd">hardkas</span> localnet start <span class="flag">--toccata</span>
+<span class="cmd">hardkas</span> accounts real generate <span class="flag">--name</span> miner <span class="flag">--unsafe-plaintext</span> <span class="flag">--yes</span>
+<span class="cmd">hardkas</span> accounts real generate <span class="flag">--name</span> ana <span class="flag">--unsafe-plaintext</span> <span class="flag">--yes</span>
+<span class="cmd">hardkas</span> localnet fund miner <span class="flag">--keep-miner</span>
+<span class="cmd">hardkas</span> tx plan <span class="flag">--from</span> miner <span class="flag">--to</span> ana <span class="flag">--amount</span> 10 <span class="flag">--network</span> simnet <span class="flag">--out</span> plan.json
+<span class="cmd">hardkas</span> tx sign plan.json <span class="flag">--account</span> miner <span class="flag">--out</span> signed.json
+<span class="cmd">hardkas</span> tx send signed.json <span class="flag">--network</span> simnet <span class="flag">--yes</span>
+<span class="cmd">hardkas</span> verify signed.json</pre>
 </div>
 <div class="runbook-foot">
 <span>CLI</span>
@@ -949,8 +954,11 @@ Target (mode = rpc, domain = kaspa-l1, network = mainnet)<br/>
 <h2>Quickstart</h2>
 <p>The first time a developer can explain a previous transaction from its artifacts instead of from logs.</p>
 <div class="codeblock">
-<div class="codebar">execution-safe workflow <button class="copy" data-copy="hardkas simulator fund alice --amount 100\nhardkas tx plan --from alice --to bob --amount 10 --network simulated --out tx-plan.json\nhardkas tx sign tx-plan.json --account alice --out tx-signed.json\nhardkas tx send tx-signed.json --network simulated --yes\nhardkas replay verify .hardkas/artifacts">Copy</button></div>
-<pre><span class="comment"># 1. Start with simulated funds (Replay supports simulator only)</span>
+<div class="codebar">execution-safe workflow <button class="copy" data-copy="hardkas init\nhardkas simulator fund alice --amount 100\nhardkas tx plan --from alice --to bob --amount 10 --network simulated --out tx-plan.json\nhardkas tx sign tx-plan.json --account alice --out tx-signed.json\nhardkas tx send tx-signed.json --network simulated --yes\nhardkas replay verify &lt;receiptArtifactId&gt;">Copy</button></div>
+<pre><span class="comment"># 0. Create the project and install the pinned kaspa-wasm</span>
+<span class="cmd">hardkas</span> init
+
+<span class="comment"># 1. Start with simulated funds (Replay supports simulator only)</span>
 <span class="cmd">hardkas</span> simulator fund alice <span class="flag">--amount</span> 100
 
 <span class="comment"># 2. Create a transaction plan</span>
@@ -961,8 +969,8 @@ Target (mode = rpc, domain = kaspa-l1, network = mainnet)<br/>
 
 <span class="comment"># 4. Execute the transaction against the simulator</span>
 <span class="cmd">hardkas</span> tx send tx-signed.json <span class="flag">--network</span> simulated <span class="flag">--yes</span>
-<span class="comment"># 5. Verify local replay invariants across the artifact pipeline</span>
-<span class="cmd">hardkas</span> replay verify .hardkas/artifacts</pre>
+<span class="comment"># 5. Replay the receipt printed by tx send and verify its lineage</span>
+<span class="cmd">hardkas</span> replay verify &lt;receiptArtifactId&gt;</pre>
 </div>
 </section>
 <section id="examples">
@@ -1060,13 +1068,13 @@ hardkas query lineage chain &lt;artifactId&gt; --why">
 <div class="codeblock">
 <div class="codebar">
                     query store
-                    <button class="copy" data-copy="hardkas query store doctor --migrate\nhardkas query events --domain tx --limit 10\nhardkas query tx 0xa1b2... --explain full">
+                    <button class="copy" data-copy="hardkas query store doctor --migrate\nhardkas query events --domain workflow --limit 10\nhardkas query tx &lt;txId&gt; --explain full">
                       Copy
                     </button>
 </div>
 <pre><span class="cmd">hardkas</span> query store doctor <span class="flag">--migrate</span>
-<span class="cmd">hardkas</span> query events <span class="flag">--domain</span> tx <span class="flag">--limit</span> 10
-<span class="cmd">hardkas</span> query tx 0xa1b2... <span class="flag">--explain</span> full</pre>
+<span class="cmd">hardkas</span> query events <span class="flag">--domain</span> workflow <span class="flag">--limit</span> 10
+<span class="cmd">hardkas</span> query tx &lt;txId&gt; <span class="flag">--explain</span> full</pre>
 </div>
 <div class="codeblock" style="margin-top: 8px">
 <div class="codebar">sample output</div>
@@ -1173,8 +1181,10 @@ hardkas query lineage chain &lt;artifactId&gt; --why">
 <div class="box">
 <h4><code>hardkas repair</code></h4>
 <p>
-                Recover JSONL tails, clear stale locks, rebuild SQLite, quarantine
-                malformed files. Use <code>--dry-run</code> first.
+                Detects an unterminated JSONL tail and a corrupt query store. Without
+                <code>--force</code> it only reports; with it, it truncates the tail and removes the
+                store (rebuild it with <code>hardkas rebuild --from-artifacts</code>). For locks, use
+                <code>hardkas lock doctor</code> and <code>hardkas lock clear &lt;name&gt; --if-dead</code>.
               </p>
 </div>
 <div class="box">
@@ -1358,8 +1368,8 @@ hardkas chaos replay --run-seed 42">
                   architectural class.
                 </td>
 <td>
-                  Not part of the current HardKAS CLI: L2 transaction, RPC and bridge
-                  commands are not shipped. Experimental Igra work lives in Labs.
+                  Not part of the current HardKAS CLI: the L2 transaction, RPC and bridge
+                  commands are not registered. Moving this code to Labs is planned.
                 </td>
 </tr>
 <tr>
@@ -1380,9 +1390,9 @@ hardkas chaos replay --run-seed 42">
 <section id="bridge">
 <h2>Bridge assumptions</h2>
 <p>
-            The earlier bridge-local commands are not part of the current HardKAS CLI;
-            bridge experimentation lives in Labs. The assumption model they reported is
-            kept below as architectural context, not as a CLI surface.
+            The bridge-local commands are not registered in the current HardKAS CLI;
+            moving this code to Labs is planned. The assumption model below is kept as
+            architectural context, not as a CLI surface.
           </p>
 <table>
 <thead>
@@ -1421,7 +1431,7 @@ hardkas chaos replay --run-seed 42">
 <code>hardkas rpc info</code><span>Show RPC connection information.</span>
 </div>
 <div class="command">
-<code>hardkas rpc doctor --endpoints a,b</code><span>Run endpoint diagnostics.</span>
+<code>hardkas rpc doctor --endpoints &lt;url&gt; &lt;url&gt;</code><span>Run endpoint diagnostics.</span>
 </div>
 <div class="command">
 <code>hardkas rpc dag</code><span>Show DAG information from node.</span>
@@ -1474,15 +1484,15 @@ hardkas chaos replay --run-seed 42">
 </tr>
 <tr>
 <td><code>--network &lt;name&gt;</code></td>
-<td>Default network (default: simnet)</td>
+<td>Default network (default: simulated)</td>
 </tr>
 <tr>
 <td><code>--accounts &lt;n&gt;</code></td>
 <td>Number of Synthetic accounts (default: 3)</td>
 </tr>
 <tr>
-<td><code>--skip-install</code></td>
-<td>Skip pnpm install</td>
+<td><code>--install</code></td>
+<td>Run pnpm/npm install after scaffolding (default: off)</td>
 </tr>
 </table>
 </div>
@@ -1570,7 +1580,7 @@ hardkas chaos replay --run-seed 42">
 <summary>Accounts and wallets</summary>
 <div class="details-body command-grid">
 <div class="command">
-<code>hardkas session create &lt;name&gt;</code><span>Create a local developer session binding L1/L2 identities.</span>
+<code>hardkas session create &lt;name&gt; --l1 &lt;wallet&gt; --l2 &lt;account&gt;</code><span>Create a local developer session binding L1/L2 identities.</span>
 <table class="flags">
 <tr>
 <td><code>--l1 &lt;wallet&gt;</code></td>
@@ -1609,7 +1619,7 @@ hardkas chaos replay --run-seed 42">
 <summary>Kaspa L1 and node</summary>
 <div class="details-body command-grid">
 <div class="command">
-<code>hardkas localnet start</code><span>Start Docker Kaspa node.</span>
+<code>hardkas localnet start --toccata</code><span>Start Docker Kaspa node.</span>
 </div>
 <div class="command">
 <code>hardkas localnet status --json</code><span>Check node status.</span>
@@ -1624,7 +1634,7 @@ hardkas chaos replay --run-seed 42">
 <code>hardkas localnet fund &lt;identifier&gt; --amount 1000</code><span>Local-only funding helper.</span>
 </div>
 <div class="command">
-<code>hardkas localnet fork --network testnet-10 --json</code><span>Fork UTXO state into local simulation preview.</span>
+<code>hardkas localnet fork --network testnet-10 --at-daa-score &lt;score&gt; --addresses &lt;address&gt;</code><span>Fork the UTXOs of the given addresses into a local simulation preview.</span>
 </div>
 </div>
 </details>
@@ -1632,7 +1642,7 @@ hardkas chaos replay --run-seed 42">
 <summary>Artifacts, query and replay</summary>
 <div class="details-body command-grid">
 <div class="command">
-<code>hardkas deploy track &lt;label&gt;</code><span>Track deployment status and link it to artifacts.</span>
+<code>hardkas deploy track &lt;label&gt; --network &lt;name&gt;</code><span>Track deployment status and link it to artifacts.</span>
 <table class="flags">
 <tr>
 <td><code>--network &lt;name&gt;</code></td>
@@ -1673,30 +1683,6 @@ hardkas chaos replay --run-seed 42">
 </div>
 <div class="command">
 <code>hardkas replay verify path --json</code><span>Verify local replay invariants.</span>
-</div>
-</div>
-</details>
-<details>
-<summary>Fork state and test deterministic hashing</summary>
-<div class="details-body">
-<div class="codeblock">
-<div class="codebar">
-                    localnet
-                    <button class="copy" data-copy="hardkas localnet fork --network testnet-10\nhardkas tx plan --to qz... --amount 1000\nhardkas tx sign ./artifacts/plan.json --account dev\nhardkas verify">
-                      Copy
-                    </button>
-</div>
-<pre><span class="cmd">hardkas</span> localnet fork <span class="flag">--network</span> testnet-10
-<span class="cmd">hardkas</span> tx plan <span class="flag">--to</span> qz... <span class="flag">--amount</span> 1000
-<span class="cmd">hardkas</span> tx sign ./artifacts/plan.json <span class="flag">--account</span> dev
-<span class="cmd">hardkas</span> verify</pre>
-</div>
-<div class="codeblock" style="margin-top: 8px">
-<div class="codebar">sample output</div>
-<pre><span class="comment">Verification:</span>
-  Sorting:     <span style="color:#72f2c3">byte-level deterministic</span>
-  Boundaries:  <span style="color:#72f2c3">enforced (.hardkas/ context)</span>
-  Hash match:  <span style="color:#72f2c3">passed</span></pre>
 </div>
 </div>
 </details>
