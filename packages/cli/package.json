@@ -60,13 +60,11 @@
     "@hardkas/testing": "workspace:*",
     "@hardkas/tx-builder": "workspace:*",
     "@kaspa/core-lib": "^1.6.5",
-    "@noble/hashes": "^2.2.0",
     "commander": "^12.1.0",
     "enquirer": "^2.4.1",
     "execa": "^9.5.2",
     "express": "^5.2.1",
     "fflate": "^0.8.3",
-    "open": "^10.1.0",
     "picocolors": "^1.1.1",
     "viem": "^2.21.32",
     "zod": "^3.23.8"

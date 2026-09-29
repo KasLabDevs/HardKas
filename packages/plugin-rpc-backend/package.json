@@ -21,7 +21,6 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@hardkas/core": "workspace:*",
     "@hardkas/kaspa-rpc": "workspace:*",
     "@hardkas/observability": "workspace:*",
     "@hardkas/toolkit": "workspace:*"

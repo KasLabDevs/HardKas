@@ -30,7 +30,6 @@
   "dependencies": {
     "@hardkas/core": "workspace:*",
     "@hardkas/observability": "workspace:*",
-    "@hardkas/tx-builder": "workspace:*",
     "ws": "^8.18.0"
   },
   "devDependencies": {

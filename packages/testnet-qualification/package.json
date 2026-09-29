@@ -18,10 +18,7 @@
     "test": "vitest run",
     "typecheck": "tsc --noEmit"
   },
-  "dependencies": {
-    "@hardkas/core": "workspace:*",
-    "@hardkas/tx-builder": "workspace:*"
-  },
+  "dependencies": {},
   "devDependencies": {
     "tsup": "^8.3.5",
     "typescript": "^5.7.2",

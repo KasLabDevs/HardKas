@@ -21,8 +21,6 @@
   },
   "dependencies": {
     "@hardkas/core": "workspace:*",
-    "@noble/hashes": "^2.2.0",
-    "pino": "^9.5.0",
     "zod": "^3.24.1"
   },
   "devDependencies": {
