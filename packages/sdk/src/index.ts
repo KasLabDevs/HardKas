@@ -101,7 +101,7 @@ export type {
 export type { SilverCompileOptions, SilverP2sh } from "./silver.js";
 export { defineHardkasConfig } from "@hardkas/config";
 export { defineTask, type TaskContext, type TaskArgs } from "./tasks.js";
-export { buildPaymentPlan } from "@hardkas/tx-builder";
+export { planPaymentWithGenerator } from "@hardkas/tx-builder";
 export { signTxPlanArtifact } from "@hardkas/accounts";
 export {
   writeArtifact,

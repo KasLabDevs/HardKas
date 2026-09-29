@@ -41,7 +41,7 @@ export async function runBridgeLocalPlan(options: {
     ]);
     const utxos = await rpc.getUtxosByAddress(ctx.l1.address);
 
-    const plan = planBridgeEntry({
+    const plan = await planBridgeEntry({
       fromAddress: ctx.l1.address,
       targetEvmAddress: ctx.l2.address,
       amountSompi,
@@ -163,7 +163,7 @@ export async function runBridgeLocalSimulate(options: {
     ]);
     const utxos = await rpc.getUtxosByAddress(ctx.l1.address);
 
-    const plan = planBridgeEntry({
+    const plan = await planBridgeEntry({
       fromAddress: ctx.l1.address,
       targetEvmAddress: ctx.l2.address,
       amountSompi,

@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { loadManagedKaspaWasmSync } from "@hardkas/core";
-import { buildPaymentPlan, calculateUpstreamMass, planSingleOutputSpend, verifyTxPlanSemantics, type Utxo } from "../src/index.js";
+import { buildPaymentPlan, calculateUpstreamMass, verifyTxPlanSemantics, type Utxo } from "../src/index.js";
 
 /**
  * M4: mass and minimum fee come from the pinned kaspa-wasm SDK, never from
@@ -190,18 +190,5 @@ describe("M4: mass/fee authority is the pinned SDK", () => {
     const codes = verifyTxPlanSemantics(underpaid as any).issues.map((i) => i.code);
     expect(codes).toContain("MASS_MISMATCH");
     expect(codes).toContain("FEE_BELOW_NETWORK_MINIMUM");
-  });
-
-  it("settles a single-output spend against the SDK", () => {
-    const spend = planSingleOutputSpend({ inputs: gauntletUtxos, toAddress: RECIPIENT, feeRateSompiPerMass: 100n, networkId: "simnet" });
-    const total = gauntletUtxos.reduce((s, u) => s + u.amountSompi, 0n);
-    expect(spend.sendSompi + spend.feeSompi).toBe(total);
-    const check = calculateUpstreamMass({
-      networkId: "simnet",
-      inputs: gauntletUtxos.map((u) => ({ amountSompi: u.amountSompi, scriptPublicKey: u.scriptPublicKey })),
-      outputs: [{ amountSompi: spend.sendSompi, address: RECIPIENT }]
-    });
-    expect(spend.feeSompi >= check.minimumFeeSompi).toBe(true);
-    expect(spend.mass).toBe(check.mass);
   });
 });

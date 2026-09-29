@@ -11,8 +11,9 @@ const artifactsDist = path.join(root, "packages", "artifacts", "dist", "index.js
 const workspaceRoot = path.join(root, ".post-release-gauntlet");
 const appsRoot = path.join(workspaceRoot, "apps");
 const mutationsRoot = path.join(workspaceRoot, "mutations");
-const resultPath = path.join(root, "POST_RELEASE_BREAK_GAUNTLET_RESULT.json");
-const findingsPath = path.join(root, "POST_RELEASE_FINDINGS_0_9_1.md");
+const reportDir = path.join(root, "docs", "internal", "audit", "gauntlet");
+const resultPath = path.join(reportDir, "POST_RELEASE_BREAK_GAUNTLET_RESULT.json");
+const findingsPath = path.join(reportDir, "POST_RELEASE_FINDINGS.md");
 
 const baseline = [];
 const appResults = [];

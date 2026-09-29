@@ -1,0 +1,189 @@
+{
+  "schema": "hardkas.toccataGauntlet.v1",
+  "status": "HARDKAS_TOCCATA_BASELINE_READY",
+  "generatedAt": "2026-09-29T01:56:52.036Z",
+  "nodeIdentity": {
+    "schema": "hardkas.nodeIdentity.v1",
+    "verified": true,
+    "problems": [],
+    "expected": {
+      "containerName": "hardkas-kaspad-toccata-v2",
+      "image": "kaspanet/rusty-kaspad:v2.1.0@sha256:f85da74b9514584451f83a2cbea3aa93f700248302fe7e3e0ab17288f93c905b",
+      "imageDigest": "sha256:f85da74b9514584451f83a2cbea3aa93f700248302fe7e3e0ab17288f93c905b",
+      "network": "simnet",
+      "serverVersion": "2.1.0",
+      "host": "127.0.0.1",
+      "rpcPort": 18210
+    },
+    "observed": {
+      "container": {
+        "name": "hardkas-kaspad-toccata-v2",
+        "id": "845c4ed85f09c37c0255d5d409f3b9a2e0430d83d1f3c1e55947c0ca160b3f12",
+        "running": true,
+        "imageId": "sha256:f85da74b9514584451f83a2cbea3aa93f700248302fe7e3e0ab17288f93c905b",
+        "repoDigests": [
+          "kaspanet/rusty-kaspad@sha256:f85da74b9514584451f83a2cbea3aa93f700248302fe7e3e0ab17288f93c905b"
+        ],
+        "publishedPorts": [
+          {
+            "containerPort": "16210/tcp",
+            "hostIp": "127.0.0.1",
+            "hostPort": 16210
+          },
+          {
+            "containerPort": "17210/tcp",
+            "hostIp": "127.0.0.1",
+            "hostPort": 17210
+          },
+          {
+            "containerPort": "18210/tcp",
+            "hostIp": "127.0.0.1",
+            "hostPort": 18210
+          }
+        ]
+      },
+      "server": {
+        "url": "ws://127.0.0.1:18210",
+        "networkId": "simnet",
+        "serverVersion": "2.1.0",
+        "isSynced": false
+      },
+      "probeErrors": []
+    },
+    "checkedAt": "2026-09-29T01:55:48.214Z"
+  },
+  "capabilities": {
+    "silver.compile.v1": "PASS",
+    "silver.p2sh.deploy-spend.v1": "PASS",
+    "toccata.covenant.auth-1to1-transition.v1": "PASS"
+  },
+  "harness": {
+    "minerThrottle": {
+      "environment": "HARDKAS_TOCCATA_MINER_THROTTLE_MS",
+      "valueMs": "5",
+      "purpose": "harness-local rate limit (not a consensus parameter)"
+    }
+  },
+  "phases": [
+    {
+      "name": "package/build integrity",
+      "status": "PASS"
+    },
+    {
+      "name": "managed toolchains",
+      "status": "PASS",
+      "toolchains": {
+        "kaspa-wasm": {
+          "ok": true,
+          "detail": "2.1.0"
+        },
+        "silverc": {
+          "ok": true,
+          "detail": "silverc-windows-x86_64.zip ce1e0ef5f1f415f371d3d2426e788597a388635da8cbe93e72e95a4f754b29af"
+        }
+      },
+      "silverscript": {
+        "releaseTag": "v1.0.0",
+        "languageVersion": "0.1.0"
+      }
+    },
+    {
+      "name": "node identity",
+      "status": "PASS",
+      "container": "hardkas-kaspad-toccata-v2",
+      "imageDigest": "sha256:f85da74b9514584451f83a2cbea3aa93f700248302fe7e3e0ab17288f93c905b",
+      "serverVersion": "2.1.0",
+      "network": "simnet"
+    },
+    {
+      "name": "doctor",
+      "status": "PASS"
+    },
+    {
+      "name": "capabilities",
+      "status": "PASS"
+    },
+    {
+      "name": "localnet status",
+      "status": "PASS"
+    },
+    {
+      "name": "docker rpc health",
+      "status": "PASS"
+    },
+    {
+      "name": "standard tx lifecycle",
+      "status": "PASS"
+    },
+    {
+      "name": "silver compile",
+      "status": "PASS",
+      "capability": "silver.compile.v1",
+      "compiler": "silverc v1.0.0 ce1e0ef5f1f415f371d3d2426e788597a388635da8cbe93e72e95a4f754b29af",
+      "artifactSha256": "66610f5c887b33df589b87efcfa00fd7f9846e1ecfaf4b2e514b1ad6337e7b08"
+    },
+    {
+      "name": "silver compile reproduced",
+      "status": "PASS",
+      "artifactSha256": "66610f5c887b33df589b87efcfa00fd7f9846e1ecfaf4b2e514b1ad6337e7b08"
+    },
+    {
+      "name": "mainnet guard",
+      "status": "PASS"
+    },
+    {
+      "name": "silver deploy real",
+      "status": "PASS",
+      "capability": "silver.p2sh.deploy-spend.v1",
+      "txId": "c0611e44609b8cfdd65bd79d1dba0e95b3f51953a97c2e8f2c2fa934c934b27f",
+      "address": "kaspasim:pqjv86vwz3xevtvs3xjthxtsqmvz0d2qm50qfa6h44l2nadtatyxj8q02vcg3",
+      "confirmedAtBlockDaaScore": "16669"
+    },
+    {
+      "name": "silver spend real",
+      "status": "PASS",
+      "capability": "silver.p2sh.deploy-spend.v1",
+      "txId": "294b149728fd600ed16ded1a5ab56fc1874d51d22f364c357032ba43fa528cd5",
+      "entry": "release",
+      "dispatchTag": "388ad0b4",
+      "confirmedAtBlockDaaScore": "17028"
+    },
+    {
+      "name": "covenant genesis",
+      "status": "PASS",
+      "capability": "toccata.covenant.auth-1to1-transition.v1",
+      "covenantId": "43276da3eb263529f1896c8c03cc0a44e79e09c2784cb19f59f88eefc4b891f6",
+      "txId": "8f99abb528a3243503a8959bee33feced547a57dc205643f0fcfaafba1e42adc",
+      "computeBudget": 10
+    },
+    {
+      "name": "covenant transition",
+      "status": "PASS",
+      "capability": "toccata.covenant.auth-1to1-transition.v1",
+      "covenantId": "43276da3eb263529f1896c8c03cc0a44e79e09c2784cb19f59f88eefc4b891f6",
+      "txId": "b55f94dadbe220261bd21765d914723521d224ed92f5b9d517347f6dbfedb4b0",
+      "entry": "__covenant_entrypoint_auth_bump",
+      "stateGuard": {
+        "templateHash": "12e80a77d386245a8a8db422137333918b3d6bbbb482e39f8e45302244e9bd95",
+        "span": {
+          "offset": 1,
+          "currentLen": 9,
+          "successorLen": 9
+        }
+      }
+    },
+    {
+      "name": "silver golden corpus verify",
+      "status": "PASS",
+      "path": "fixtures/toccata-v2/silver",
+      "cases": 4,
+      "recompiled": 5,
+      "capabilities": {
+        "silver.compile.v1": "PASS",
+        "toccata.covenant.auth-1to1-transition.v1": "PASS",
+        "silver.p2sh.deploy-spend.v1": "PASS",
+        "silver.p2sh.relative-timelock.v1": "PASS"
+      }
+    }
+  ]
+}

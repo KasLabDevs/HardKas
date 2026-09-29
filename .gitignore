@@ -131,6 +131,7 @@ ts-prune.log
 tmp-audit/
 my-app/
 examples/my-test-project/
+/my-test-project/
 
 # generated test outputs
 *.js.map

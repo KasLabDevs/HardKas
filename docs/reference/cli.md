@@ -4330,6 +4330,7 @@ No arguments.
 - [hardkas silver doctor](#hardkas-silver-doctor)
 - [hardkas silver inspect](#hardkas-silver-inspect)
 - [hardkas silver spend](#hardkas-silver-spend)
+- [hardkas silver test](#hardkas-silver-test)
 - [hardkas silver verify](#hardkas-silver-verify)
 
 ---
@@ -4557,6 +4558,35 @@ hardkas silver spend [options] <deploy-record>
 
 ---
 
+## hardkas silver test
+
+Run a compiled contract's tests on the official SilverScript runner experimental (script engine on scenario transactions; not transaction validity)
+
+### Usage
+
+```bash
+hardkas silver test [options] <record>
+```
+
+### Options
+
+| Flag | Description | Default |
+| :--- | :--- | :--- |
+| `--tests <file>` | Runner test file (.test.json); a sig argument may be {"signature":"<account>"} |  |
+| `--args <file>` | The constructor arguments the record was compiled with |  |
+| `--contract <name>` | Contract, when the artifact has several |  |
+| `--runner <path>` | SilverScript runner (cli-debugger) binary (default: $HARDKAS_SILVER_RUNNER) |  |
+| `--out <file>` | Record path (default .hardkas/artifacts/silver-vm/) |  |
+| `--json` | Output as JSON | false |
+
+### Arguments
+
+| Argument | Description |
+| :--- | :--- |
+| `record` |  |
+
+---
+
 ## hardkas silver verify
 
 Reproduce a compile record with the managed silverc (byte-for-byte)
@@ -4604,7 +4634,6 @@ No arguments.
 
 - [hardkas simulator account](#hardkas-simulator-account)
 - [hardkas simulator fund](#hardkas-simulator-fund)
-- [hardkas simulator silver](#hardkas-simulator-silver)
 
 ---
 
@@ -4678,75 +4707,6 @@ hardkas simulator fund [options] <identifier>
 | Argument | Description |
 | :--- | :--- |
 | `identifier` |  |
-
----
-
-## hardkas simulator silver
-
-SilverScript P2SH bookkeeping simulator experimental (never evidence)
-
-### Usage
-
-```bash
-hardkas simulator silver [options] [command]
-```
-
-### Options
-
-No options.
-
-### Arguments
-
-No arguments.
-
-### Subcommands
-
-- [hardkas simulator silver deploy](#hardkas-simulator-silver-deploy)
-- [hardkas simulator silver spend](#hardkas-simulator-silver-spend)
-
----
-
-## hardkas simulator silver deploy
-
-Simulate a SilverScript deploy plan without a node
-
-### Usage
-
-```bash
-hardkas simulator silver deploy [options] <deploy-plan>
-```
-
-### Options
-
-No options.
-
-### Arguments
-
-| Argument | Description |
-| :--- | :--- |
-| `deploy-plan` |  |
-
----
-
-## hardkas simulator silver spend
-
-Simulate spending a simulated SilverScript output
-
-### Usage
-
-```bash
-hardkas simulator silver spend [options] <spend-plan>
-```
-
-### Options
-
-No options.
-
-### Arguments
-
-| Argument | Description |
-| :--- | :--- |
-| `spend-plan` |  |
 
 ---
 

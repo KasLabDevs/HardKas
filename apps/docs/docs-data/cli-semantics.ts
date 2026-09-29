@@ -23,9 +23,9 @@ export const cliSemantics: Record<string, CliCommandSemantics> = {
     artifactsProduced: ["TxPlanArtifact"],
     acceptedIdentifiers: [],
     sideEffects: [],
-    plannerPath: "CLI Real Node uses `buildPaymentPlan` (Legacy), CLI Simulator uses `buildPaymentPlan`.",
+    plannerPath: "The kaspa-wasm Generator on every path: a real node (`KASPA_WASM_GENERATOR`) and the simulator (`SYNTHETIC_SIMULATOR`, over its identities).",
     evidenceMeaning: "Proves that a geometrically valid, fee-paying transaction was possible using available UTXOs at a specific virtualDaaScore.",
-    limitations: ["Candidate B (upstream unification) is not yet wired to the CLI."],
+    limitations: ["A payment that needs more than one transaction is refused (`MULTI_TRANSACTION_PLAN_REQUIRED`): consolidate the UTXOs first."],
     relatedConcepts: ["/concepts/transactions/planning.md", "/concepts/transactions/utxos.md"],
     relatedGuides: ["/guides/transactions/create-a-transaction.md"]
   },

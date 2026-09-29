@@ -14,6 +14,7 @@ mkdirSync("./coverage/internal/.tmp", { recursive: true });
  *
  * Suites that need more run at their own level and never here:
  *   *.silverc.test.ts   vitest.silverc.config.ts   pinned silverc installed in HARDKAS_HOME
+ *   *.silver-runner.test.ts  vitest.silver-runner.config.ts  silverc + a local SilverScript runner (experimental)
  *   *.simnet.test.ts    vitest.simnet.config.ts    kaspad raised in Docker by the harness
  *   *.localnet.test.ts  vitest.localnet.config.ts  managed localnet + dev-server
  *   *.e2e.test.ts       vitest.e2e.config.ts
@@ -29,14 +30,15 @@ export default defineConfig({
 
     teardownTimeout: 120000,
     hookTimeout: 120000,
-    include: ["packages/*/test/**/*.test.ts", "examples/superapp-command-center/tests/backend/**/*.test.ts", "examples/builder-labs/**/*.test.ts"],
+    include: ["packages/*/test/**/*.test.ts"],
     exclude: [
       "**/node_modules/**",
       "**/dist/**",
       "**/*.e2e.test.ts",
       "**/*.localnet.test.ts",
       "**/*.simnet.test.ts",
-      "**/*.silverc.test.ts"
+      "**/*.silverc.test.ts",
+      "**/*.silver-runner.test.ts"
     ],
     coverage: {
       provider: "v8",

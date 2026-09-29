@@ -67,6 +67,45 @@ title: hardkas silver
 
 ---
 
+## `hardkas silver test`
+
+### Synopsis (Generated)
+
+**Purpose:** Run a compiled contract's tests on the official SilverScript runner experimental (script engine on scenario transactions; not transaction validity)
+
+#### Arguments
+
+- `&lt;record&gt;` (Required): 
+
+#### Options
+
+- `--tests &lt;file&gt;`: Runner test file (.test.json); a sig argument may be &#123;"signature":"&lt;account&gt;"&#125;
+- `--args &lt;file&gt;`: The constructor arguments the record was compiled with
+- `--contract &lt;name&gt;`: Contract, when the artifact has several
+- `--runner &lt;path&gt;`: SilverScript runner (cli-debugger) binary (default: $HARDKAS_SILVER_RUNNER)
+- `--out &lt;file&gt;`: Record path (default .hardkas/artifacts/silver-vm/)
+- `--json` (Default: `false`): Output as JSON
+
+### What it runs
+
+The tests run on the official SilverScript runner (`cli-debugger` of kaspanet/silverscript), which executes the Kaspa script engine against a synthetic scenario transaction. The test file is the runner's own `.test.json` format. HardKAS adds three things:
+
+- **The contract under test is the compile record's.** Its source and constructor arguments (checked against the record with `--args`) go to every test; a test file may not set its own `constructor_args`.
+- **Signatures from local accounts.** Where an entry takes a `sig`, an argument `{"signature": "<account>"}` is signed by that account over the scenario transaction the runner builds. Plain P2SH scenarios only: covenant or state scenarios are refused.
+- **A record.** `.hardkas/artifacts/silver-vm/silverVmTest-*.json`, mode `vm`, linked to the compile record. It holds the verdicts and digests; never the runner's output, which can print argument values.
+
+Each test runs in its own runner process; its verdict is the runner's (exit status and PASS line). `expect: "fail"` means the script fails when it runs: an error before the script runs, such as bad arguments or a covenant rule on the scenario, is a FAIL either way. The command exits 1 if any test fails.
+
+### What it does not prove
+
+A runner verdict is contract execution with the runner's own compilation and argument encoding. The runner never executes an input's signature script and makes no P2SH check, so HardKAS does not pass unlock scripts to it, and it says nothing about fees, mass, UTXO state or chain-time locks. Transaction validity comes only from the node: `hardkas silver deploy` and `hardkas silver spend` on the canonical localnet. A `silverVmTest` record is never node evidence and never satisfies a capability.
+
+### The runner (experimental)
+
+Upstream publishes no runner binary yet. Build `cli-debugger` from the pinned release (kaspanet/silverscript v1.0.0: `cargo build --release -p cli-debugger`) and set `HARDKAS_SILVER_RUNNER` to it, or pass `--runner`. HardKAS records the binary's SHA-256 but cannot verify what it was built from. Nothing else in HardKAS needs the runner or a Rust toolchain; `hardkas silver doctor` shows whether one is configured.
+
+---
+
 ## `hardkas silver deploy`
 
 ### Synopsis (Generated)

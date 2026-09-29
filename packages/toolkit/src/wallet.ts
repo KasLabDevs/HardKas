@@ -356,6 +356,34 @@ export class WalletToolkit {
         });
     }
 
+    /**
+     * A sweep: every given UTXO into one output at `toAddress`, planned and priced by
+     * the kaspa-wasm `Generator` (`TxPlanService.planConsolidation`).
+     */
+    private async planSweep(params: {
+        fromAddress: string;
+        utxos: any[];
+        toAddress: string;
+        feeRate: bigint;
+        networkId: string | undefined;
+        insufficient: string;
+    }) {
+        const service = new TxPlanService({ async getUtxos() { return []; } });
+        try {
+            const { plan } = await service.planConsolidation({
+                fromAddress: params.fromAddress,
+                selectedUtxos: params.utxos.map((u) => toTxBuilderUtxo(u)),
+                toAddress: params.toAddress,
+                feeRate: params.feeRate,
+                ...(params.networkId !== undefined ? { networkId: params.networkId } : {})
+            });
+            return plan;
+        } catch (e: any) {
+            if (e?.code === "INSUFFICIENT_FUNDS_UPSTREAM") throw new Error(params.insufficient);
+            throw e;
+        }
+    }
+
     public async sweep(opts: { to: string; priority?: FeePriority; feeRate?: bigint }) {
         const addr = await this.receive();
         let availableUtxos = await this.utxos.list();
@@ -368,9 +396,11 @@ export class WalletToolkit {
         }
 
         // Filter immature coinbase UTXOs
+        let networkId: string | undefined;
         if (this.options.rpc?.getBlockDagInfo) {
             try {
                 const dagInfo = await this.options.rpc.getBlockDagInfo();
+                networkId = dagInfo.networkId;
                 const virtualDaaScore = dagInfo.virtualDaaScore;
                 if (virtualDaaScore !== undefined) {
                     if (this.options.coinbaseMaturity === undefined) {
@@ -392,25 +422,15 @@ export class WalletToolkit {
             }
         }
 
-        // Mass and minimum fee from the pinned SDK for the sweep as built.
-        const { planSingleOutputSpend } = await import("@hardkas/tx-builder");
-        let spend;
-        try {
-            spend = planSingleOutputSpend({ inputs: availableUtxos, toAddress: opts.to, feeRateSompiPerMass: finalFeeRate || 1n });
-        } catch (e: any) {
-            if (e?.message?.startsWith("Insufficient funds")) throw new Error("Insufficient funds to cover sweep fee");
-            throw e;
-        }
-        const massRes = { mass: spend.mass };
-        const fee = spend.feeSompi;
-        const sendValue = spend.sendSompi;
-
-        const plan = {
-            inputs: availableUtxos,
-            outputs: [{ address: opts.to, amountSompi: sendValue }],
-            estimatedMass: massRes.mass,
-            estimatedFeeSompi: fee
-        };
+        // The Generator spends every UTXO into one output (a sweep) and prices it.
+        const plan = await this.planSweep({
+            fromAddress: addr,
+            utxos: availableUtxos,
+            toAddress: opts.to,
+            feeRate: finalFeeRate || 1n,
+            networkId,
+            insufficient: "Insufficient funds to cover sweep fee"
+        });
 
         return this.signAndBroadcast(plan);
     }
@@ -439,25 +459,23 @@ export class WalletToolkit {
             finalFeeRate = dynamic.feeRate;
         }
 
-        // Mass and minimum fee from the pinned SDK for the consolidation as built.
-        const { planSingleOutputSpend } = await import("@hardkas/tx-builder");
-        let spend;
-        try {
-            spend = planSingleOutputSpend({ inputs: selectedUtxos, toAddress, feeRateSompiPerMass: finalFeeRate || 1n });
-        } catch (e: any) {
-            if (e?.message?.startsWith("Insufficient funds")) throw new Error("Insufficient funds to cover consolidate fee");
-            throw e;
+        let networkId: string | undefined;
+        if (this.options.rpc?.getBlockDagInfo) {
+            try {
+                networkId = (await this.options.rpc.getBlockDagInfo()).networkId;
+            } catch {
+                // Without DAG info the plan is priced as simnet.
+            }
         }
-        const massRes = { mass: spend.mass };
-        const fee = spend.feeSompi;
-        const sendValue = spend.sendSompi;
 
-        const plan = {
-            inputs: selectedUtxos,
-            outputs: [{ address: toAddress, amountSompi: sendValue }],
-            estimatedMass: massRes.mass,
-            estimatedFeeSompi: fee
-        };
+        const plan = await this.planSweep({
+            fromAddress: addr,
+            utxos: selectedUtxos,
+            toAddress,
+            feeRate: finalFeeRate || 1n,
+            networkId,
+            insufficient: "Insufficient funds to cover consolidate fee"
+        });
 
         return this.signAndBroadcast(plan);
     }

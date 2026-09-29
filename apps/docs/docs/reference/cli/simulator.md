@@ -4,30 +4,6 @@ title: hardkas simulator
 
 # `hardkas simulator`
 
-## `hardkas simulator silver deploy`
-
-### Synopsis (Generated)
-
-**Purpose:** Simulate a SilverScript deploy plan without a node
-
-#### Arguments
-
-- `&lt;deploy-plan&gt;` (Required): 
-
----
-
-## `hardkas simulator silver spend`
-
-### Synopsis (Generated)
-
-**Purpose:** Simulate spending a simulated SilverScript output
-
-#### Arguments
-
-- `&lt;spend-plan&gt;` (Required): 
-
----
-
 ## `hardkas simulator account create`
 
 ### Synopsis (Generated)

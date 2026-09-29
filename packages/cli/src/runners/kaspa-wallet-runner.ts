@@ -133,7 +133,7 @@ export async function runKaspaWalletSend(
     const { resolveHardkasAccount, resolveHardkasAccountAddress } =
       await import("@hardkas/accounts");
     const { JsonWrpcKaspaClient } = await import("@hardkas/kaspa-rpc");
-    const { buildPaymentPlan } = await import("@hardkas/tx-builder");
+    const { planPaymentWithGenerator } = await import("@hardkas/tx-builder");
     const { signTxPlanArtifact } = await import("@hardkas/accounts");
     const { HARDKAS_VERSION, finalizeTxPlanIdentity } = await import("@hardkas/artifacts");
     const { parseKasToSompi, formatSompiToKas } = await import("@hardkas/core");
@@ -158,17 +158,19 @@ export async function runKaspaWalletSend(
     const client = new JsonWrpcKaspaClient({ rpcUrl: options.rpcUrl });
     const utxos = await client.getUtxosByAddress(sender.address!);
 
-    // 1. Build Plan
-    const plan = buildPaymentPlan({
-      fromAddress: sender.address!,
-      outputs: [{ address: targetAddress, amountSompi }],
-      availableUtxos: utxos.map((u) => ({
+    // 1. Build Plan: the kaspa-wasm Generator selects the inputs, prices the
+    //    transaction (network minimum rate) and makes the change.
+    const plan = await planPaymentWithGenerator({
+      networkId,
+      utxos: utxos.map((u) => ({
         outpoint: u.outpoint,
         address: u.address,
         amountSompi: u.amountSompi,
-        scriptPublicKey: u.scriptPublicKey || ""
+        scriptPublicKey: u.scriptPublicKey || "",
+        ...(u.blockDaaScore !== undefined ? { blockDaaScore: BigInt(u.blockDaaScore) } : {}),
+        ...(u.isCoinbase !== undefined ? { isCoinbase: u.isCoinbase } : {})
       })),
-      feeRateSompiPerMass: 1n, // Default 1 sompi/mass
+      outputs: [{ address: targetAddress, amountSompi }],
       changeAddress: sender.address!
     });
 

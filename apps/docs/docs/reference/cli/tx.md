@@ -72,10 +72,10 @@ title: hardkas tx
 - **Produces:** TxPlanArtifact
 - **Accepted Identifiers:** 
 - **Evidence Semantics:** Proves that a geometrically valid, fee-paying transaction was possible using available UTXOs at a specific virtualDaaScore.
-- **Planner Path:** CLI Real Node uses `buildPaymentPlan` (Legacy), CLI Simulator uses `buildPaymentPlan`.
+- **Planner Path:** The kaspa-wasm Generator on every path: a real node (`KASPA_WASM_GENERATOR`) and the simulator (`SYNTHETIC_SIMULATOR`, over its identities).
 
 #### Known Limitations
-- Candidate B (upstream unification) is not yet wired to the CLI.
+- A payment that needs more than one transaction is refused (`MULTI_TRANSACTION_PLAN_REQUIRED`): consolidate the UTXOs first.
 
 #### Related
 - Concept: /concepts/transactions/planning.md

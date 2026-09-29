@@ -2545,36 +2545,6 @@
     "status": "REGISTERED"
   },
   {
-    "commandPath": "hardkas simulator silver deploy",
-    "description": "Simulate a SilverScript deploy plan without a node",
-    "arguments": [
-      {
-        "name": "deploy-plan",
-        "required": true,
-        "description": ""
-      }
-    ],
-    "options": [],
-    "aliases": [],
-    "category": "Simulator",
-    "status": "REGISTERED"
-  },
-  {
-    "commandPath": "hardkas simulator silver spend",
-    "description": "Simulate spending a simulated SilverScript output",
-    "arguments": [
-      {
-        "name": "spend-plan",
-        "required": true,
-        "description": ""
-      }
-    ],
-    "options": [],
-    "aliases": [],
-    "category": "Simulator",
-    "status": "REGISTERED"
-  },
-  {
     "commandPath": "hardkas simulator account create",
     "description": "Create a synthetic simulated account stable",
     "arguments": [
@@ -3908,6 +3878,47 @@
       {
         "flags": "--args <file>",
         "description": "The constructor arguments the record was compiled with"
+      },
+      {
+        "flags": "--json",
+        "description": "Output as JSON",
+        "defaultValue": false
+      }
+    ],
+    "aliases": [],
+    "category": "Silver",
+    "status": "REGISTERED"
+  },
+  {
+    "commandPath": "hardkas silver test",
+    "description": "Run a compiled contract's tests on the official SilverScript runner experimental (script engine on scenario transactions; not transaction validity)",
+    "arguments": [
+      {
+        "name": "record",
+        "required": true,
+        "description": ""
+      }
+    ],
+    "options": [
+      {
+        "flags": "--tests <file>",
+        "description": "Runner test file (.test.json); a sig argument may be {\"signature\":\"<account>\"}"
+      },
+      {
+        "flags": "--args <file>",
+        "description": "The constructor arguments the record was compiled with"
+      },
+      {
+        "flags": "--contract <name>",
+        "description": "Contract, when the artifact has several"
+      },
+      {
+        "flags": "--runner <path>",
+        "description": "SilverScript runner (cli-debugger) binary (default: $HARDKAS_SILVER_RUNNER)"
+      },
+      {
+        "flags": "--out <file>",
+        "description": "Record path (default .hardkas/artifacts/silver-vm/)"
       },
       {
         "flags": "--json",

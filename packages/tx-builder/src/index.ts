@@ -4,12 +4,10 @@ import { DUST_THRESHOLD_SOMPI } from "./verify.js";
 export * from "./mass.js";
 export * from "./verify.js";
 export * from "./service.js";
-export * from "./coin-selector.js";
-export * from "./fee-estimator.js";
+export * from "./generator-plan.js";
 export * from "./kaspa-wallet-adapter.js";
 export * from "./kaspa-uri.js";
 export * from "./utxo-mapper.js";
-export * from "./engine.js";
 export * from "./pending-spends.js";
 import { getCoinbaseMaturity } from "@hardkas/core";
 
@@ -85,6 +83,12 @@ export interface TxPlan {
   readonly lane?: string;
 }
 
+/**
+ * @deprecated COMPATIBILITY SHIM, not a planner. Plans come from the kaspa-wasm
+ * Generator (`planPaymentWithGenerator`, `TxPlanService`). This synchronous selection
+ * survives only behind the simulator's synchronous harness (`applySimulatedPayment`,
+ * `harness.send()`) until that API migrates; no new consumers (a test enforces it).
+ */
 export function buildPaymentPlan(request: TxBuildRequest): TxPlan {
   if (request.outputs.length === 0) {
     throw new Error("At least one transaction output is required.");
@@ -266,44 +270,6 @@ export function buildPaymentPlan(request: TxBuildRequest): TxPlan {
 
   if (lastAttemptNonStandard && nonStandard) throw nonStandard;
   throw new Error("Insufficient funds for transaction amount plus estimated fee.");
-}
-
-/**
- * Fee for spending `inputs` entirely into one output (sweep/consolidation):
- * the output is the inputs minus the fee, and its amount feeds storage mass,
- * so the fee is settled against the SDK for the transaction as built.
- */
-export function planSingleOutputSpend(input: {
-  readonly networkId?: string | undefined;
-  readonly inputs: readonly { readonly amountSompi: bigint | string; readonly outpoint?: Outpoint; readonly scriptPublicKey?: unknown }[];
-  readonly toAddress: string;
-  readonly feeRateSompiPerMass: bigint;
-}): { mass: bigint; feeSompi: bigint; sendSompi: bigint } {
-  const inputs = input.inputs.map((u) => ({
-    amountSompi: BigInt(u.amountSompi),
-    outpoint: u.outpoint,
-    scriptPublicKey: u.scriptPublicKey
-  }));
-  const total = inputs.reduce((sum, u) => sum + u.amountSompi, 0n);
-  const feeAt = (send: bigint) => {
-    const upstream = calculateUpstreamMass({
-      networkId: input.networkId,
-      inputs,
-      outputs: [{ amountSompi: send, address: input.toAddress }]
-    });
-    const atRate = upstream.mass * input.feeRateSompiPerMass;
-    return { mass: upstream.mass, fee: atRate > upstream.minimumFeeSompi ? atRate : upstream.minimumFeeSompi };
-  };
-
-  let fee = feeAt(total).fee;
-  for (let pass = 0; pass < 8; pass++) {
-    const send = total - fee;
-    if (send <= 0n) break;
-    const required = feeAt(send);
-    if (required.fee <= fee) return { mass: required.mass, feeSompi: fee, sendSompi: send };
-    fee = required.fee;
-  }
-  throw new Error("Insufficient funds to cover the network fee for this spend.");
 }
 
 // Legacy support or internal use

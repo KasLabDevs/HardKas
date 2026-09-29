@@ -3,7 +3,7 @@
 This guide deeply explains the canonical four-step flow.
 
 ### 1. Planning (`tx plan`)
-The Planner queries the active provider (simulated or real). It performs largest-first UTXO selection, calculates standard network fees, and commits this into a `txPlan` JSON artifact. No private keys are needed here.
+The Planner queries the active provider (simulated or real). The official `kaspa-wasm` Generator selects the UTXOs and calculates mass and network fees, and HardKAS commits the result into a `txPlan` JSON artifact. No private keys are needed here.
 
 ### 2. Inspection (`artifact inspect`)
 Before you sign, you must trust what you are signing. This command decodes the deterministic payload so a human or automated CI gate can assert the destination address and amount.

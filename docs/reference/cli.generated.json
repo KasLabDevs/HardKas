@@ -1,7 +1,7 @@
 {
   "schema": "hardkas.cliReference.v1",
   "generatedAt": "deterministic",
-  "totalCommands": 235,
+  "totalCommands": 233,
   "flatSurface": [
     "hardkas accounts",
     "hardkas accounts balance",
@@ -183,14 +183,12 @@
     "hardkas silver doctor",
     "hardkas silver inspect",
     "hardkas silver spend",
+    "hardkas silver test",
     "hardkas silver verify",
     "hardkas simulator",
     "hardkas simulator account",
     "hardkas simulator account create",
     "hardkas simulator fund",
-    "hardkas simulator silver",
-    "hardkas simulator silver deploy",
-    "hardkas simulator silver spend",
     "hardkas status",
     "hardkas task",
     "hardkas task <name>",
@@ -5411,6 +5409,64 @@
           "subcommands": []
         },
         {
+          "path": "hardkas silver test",
+          "name": "test",
+          "aliases": [],
+          "description": "Run a compiled contract's tests on the official SilverScript runner experimental (script engine on scenario transactions; not transaction validity)",
+          "usage": "hardkas silver test [options] <record>",
+          "arguments": [
+            {
+              "name": "record",
+              "description": ""
+            }
+          ],
+          "options": [
+            {
+              "flags": "--tests <file>",
+              "description": "Runner test file (.test.json); a sig argument may be {\"signature\":\"<account>\"}",
+              "default": null,
+              "required": true,
+              "mandatory": true
+            },
+            {
+              "flags": "--args <file>",
+              "description": "The constructor arguments the record was compiled with",
+              "default": null,
+              "required": true,
+              "mandatory": false
+            },
+            {
+              "flags": "--contract <name>",
+              "description": "Contract, when the artifact has several",
+              "default": null,
+              "required": true,
+              "mandatory": false
+            },
+            {
+              "flags": "--runner <path>",
+              "description": "SilverScript runner (cli-debugger) binary (default: $HARDKAS_SILVER_RUNNER)",
+              "default": null,
+              "required": true,
+              "mandatory": false
+            },
+            {
+              "flags": "--out <file>",
+              "description": "Record path (default .hardkas/artifacts/silver-vm/)",
+              "default": null,
+              "required": true,
+              "mandatory": false
+            },
+            {
+              "flags": "--json",
+              "description": "Output as JSON",
+              "default": false,
+              "required": false,
+              "mandatory": false
+            }
+          ],
+          "subcommands": []
+        },
+        {
           "path": "hardkas silver verify",
           "name": "verify",
           "aliases": [],
@@ -5514,47 +5570,6 @@
             }
           ],
           "subcommands": []
-        },
-        {
-          "path": "hardkas simulator silver",
-          "name": "silver",
-          "aliases": [],
-          "description": "SilverScript P2SH bookkeeping simulator experimental (never evidence)",
-          "usage": "hardkas simulator silver [options] [command]",
-          "arguments": [],
-          "options": [],
-          "subcommands": [
-            {
-              "path": "hardkas simulator silver deploy",
-              "name": "deploy",
-              "aliases": [],
-              "description": "Simulate a SilverScript deploy plan without a node",
-              "usage": "hardkas simulator silver deploy [options] <deploy-plan>",
-              "arguments": [
-                {
-                  "name": "deploy-plan",
-                  "description": ""
-                }
-              ],
-              "options": [],
-              "subcommands": []
-            },
-            {
-              "path": "hardkas simulator silver spend",
-              "name": "spend",
-              "aliases": [],
-              "description": "Simulate spending a simulated SilverScript output",
-              "usage": "hardkas simulator silver spend [options] <spend-plan>",
-              "arguments": [
-                {
-                  "name": "spend-plan",
-                  "description": ""
-                }
-              ],
-              "options": [],
-              "subcommands": []
-            }
-          ]
         }
       ]
     },

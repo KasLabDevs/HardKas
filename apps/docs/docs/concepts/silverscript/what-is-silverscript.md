@@ -34,6 +34,7 @@ HardKAS provides the following orchestration capabilities:
 * `hardkas silver verify`: Reproduces a compilation byte-for-byte to ensure artifact integrity.
 * `hardkas silver deploy`: Constructs a funding transaction for a P2SH compiled contract.
 * `hardkas silver spend`: Constructs a spending transaction satisfying the compiled script.
+* `hardkas silver test` (experimental): Runs contract tests on the official SilverScript runner, with signatures from local accounts. It checks contract logic on scenario transactions, not transaction validity, and needs a locally built runner.
 
 *Note: HardKAS pins specific versions of `silverc` in its SDK. While upstream may release newer versions, HardKAS strictly controls the toolchain version used to build your artifacts to guarantee reproducibility.*
 

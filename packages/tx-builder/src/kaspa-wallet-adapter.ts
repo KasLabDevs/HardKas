@@ -10,11 +10,9 @@
  * lifecycle/evidence on top; this module is the single point where HardKAS
  * touches wallet-core semantics.
  *
- * Non-goals (out of scope for M10-A):
- * - Replacing existing coin-selector.ts / fee-estimator.ts / send-transfer
- *   pipeline (those migrations are M10-B/C/D).
- * - Introducing HardKAS artifacts here (this module returns upstream types
- *   directly; artifact wrapping happens in @hardkas/accounts and @hardkas/sdk).
+ * Non-goal: introducing HardKAS artifacts here (this module returns upstream
+ * types directly; plans are adapted in generator-plan.ts, artifacts wrapped in
+ * @hardkas/accounts and @hardkas/sdk).
  *
  * Authority order: wallet-core (rusty-kaspa) > pinned kaspa-wasm (managed) > here.
  */
@@ -33,9 +31,13 @@ type KaspaWasm = ReturnType<typeof loadManagedKaspaWasmSync>;
 export interface GeneratorSettingsInput {
   readonly networkId: string;
   readonly entries: unknown;
-  readonly outputs: unknown;
+  /** Payment outputs. Omit them (an empty list is refused) for a sweep: everything goes to `changeAddress`. */
+  readonly outputs?: unknown;
   readonly changeAddress: string;
-  readonly priorityFee?: bigint | number | { amount: bigint } | { rate: bigint };
+  /** Absolute extra fee in sompi (sender pays). Set it, even to 0, when there are outputs; leave it unset for a compound. */
+  readonly priorityFee?: bigint | number | { amount: bigint };
+  /** Fee rate in sompi per gram, applied by the Generator to every transaction it builds (never below the network minimum). */
+  readonly feeRate?: number;
   readonly payload?: string | Uint8Array;
   readonly sigOpCount?: number;
   readonly minimumSignatures?: number;
@@ -45,10 +47,11 @@ function toWasmSettings(input: GeneratorSettingsInput): Record<string, unknown> 
   const s: Record<string, unknown> = {
     networkId: input.networkId,
     entries: input.entries,
-    outputs: input.outputs,
     changeAddress: input.changeAddress
   };
+  if (input.outputs !== undefined) s.outputs = input.outputs;
   if (input.priorityFee !== undefined) s.priorityFee = input.priorityFee;
+  if (input.feeRate !== undefined) s.feeRate = input.feeRate;
   if (input.payload !== undefined) s.payload = input.payload;
   if (input.sigOpCount !== undefined) s.sigOpCount = input.sigOpCount;
   if (input.minimumSignatures !== undefined) s.minimumSignatures = input.minimumSignatures;
@@ -201,9 +204,7 @@ export async function discoverUtxos(input: DiscoverUtxosInput): Promise<Discover
     (err as any).code = "KASPA_WALLET_ADAPTER_INVALID_RPC";
     throw err;
   }
-  const k: KaspaWasm = loadManagedKaspaWasmSync();
-  const params = k.getNetworkParams(input.networkId);
-  const maturity: bigint = BigInt(params.coinbaseTransactionMaturityPeriod ?? params.coinbaseMaturity ?? 1000);
+  const maturity = coinbaseMaturityOf(input.networkId);
   const dag = await input.wasmRpc.getBlockDagInfo();
   const virtualDaaScore = BigInt(dag.virtualDaaScore);
   const utxosResp = await input.wasmRpc.getUtxosByAddresses({ addresses: [input.address] });
@@ -224,8 +225,8 @@ export async function discoverUtxos(input: DiscoverUtxosInput): Promise<Discover
 
 /**
  * Pure filter over an already-fetched UTXO list, using **upstream** coinbase
- * maturity (`k.getNetworkParams(networkId).coinbaseTransactionMaturityPeriod`
- * or equivalent). Callers can supply UTXOs from any RPC client (@hardkas/kaspa-rpc,
+ * maturity (`k.getNetworkParams(networkId).coinbaseTransactionMaturityPeriodDaa`).
+ * Callers can supply UTXOs from any RPC client (@hardkas/kaspa-rpc,
  * wasm RpcClient, or a mock) — this function only classifies.
  *
  * Replaces the HardKAS pattern `!u.isCoinbase || u.blockDaaScore + N < virt`
@@ -253,10 +254,20 @@ function defaultReadEntry(u: any): { blockDaaScore: bigint; isCoinbase: boolean 
   };
 }
 
-export function filterMatureUtxos<T = any>(input: FilterMatureUtxosInput): FilterMatureUtxosResult<T> {
+/** Coinbase maturity in DAA blocks, from the SDK's network parameters (no HardKAS default). */
+function coinbaseMaturityOf(networkId: string): bigint {
   const k: KaspaWasm = loadManagedKaspaWasmSync();
-  const params = k.getNetworkParams(input.networkId);
-  const maturity: bigint = BigInt(params.coinbaseTransactionMaturityPeriod ?? params.coinbaseMaturity ?? 1000);
+  const period = k.getNetworkParams(networkId)?.coinbaseTransactionMaturityPeriodDaa;
+  if (period === undefined || period === null) {
+    const err = new Error(`KASPA_WALLET_ADAPTER_NO_MATURITY: the SDK gives no coinbase maturity for network '${networkId}'`);
+    (err as any).code = "KASPA_WALLET_ADAPTER_NO_MATURITY";
+    throw err;
+  }
+  return BigInt(period);
+}
+
+export function filterMatureUtxos<T = any>(input: FilterMatureUtxosInput): FilterMatureUtxosResult<T> {
+  const maturity = coinbaseMaturityOf(input.networkId);
   const read = input.readEntry ?? defaultReadEntry;
   const mature: T[] = [];
   const immature: T[] = [];

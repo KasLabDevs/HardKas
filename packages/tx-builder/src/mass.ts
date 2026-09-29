@@ -69,7 +69,12 @@ export interface UpstreamMassInput {
 export interface UpstreamMassResult {
   /** Mass as the node computes it (compute or storage mass, whichever binds). */
   readonly mass: bigint;
-  /** Minimum fee the node requires for this transaction (meaningless when `standard` is false). */
+  /**
+   * The SDK's `calculateTransactionFee`: the network's minimum rate over the overall
+   * mass (meaningless when `standard` is false). When storage mass binds it is above
+   * what the node requires (see {@link measureRelayFee}); a fee that pays it is always
+   * relayed.
+   */
   readonly minimumFeeSompi: bigint;
   /** False when the mass exceeds the maximum standard transaction mass: the node will not relay it. */
   readonly standard: boolean;
@@ -251,6 +256,24 @@ export function calculateUpstreamMass(input: UpstreamMassInput): UpstreamMassRes
  * that storage mass is negligible, so the result is the shape's compute mass.
  */
 const SHAPE_ONLY_AMOUNT = 100_000_000_000_000n;
+
+/**
+ * The fee the node relays this transaction at: the network's minimum rate per gram
+ * of COMPUTE mass, priced by the SDK on the same transaction with amounts so large
+ * that storage mass vanishes. rusty-kaspad 2.1.0 rejects below it ("…required amount
+ * of N for compute mass M") and relayed storage-bound transactions paying only this
+ * when measured on 2026-09-29; the Generator never pays less. Storage mass still
+ * bounds standardness ({@link measureUpstreamMass}'s `standard`).
+ */
+export function measureRelayFee(input: UpstreamMassInput): { computeMass: bigint; relayFeeSompi: bigint } {
+  const outputAmount = (SHAPE_ONLY_AMOUNT * BigInt(input.inputs.length)) / BigInt(input.outputs.length + 1);
+  const shape = measureUpstreamMass({
+    ...input,
+    inputs: input.inputs.map((i) => ({ ...i, amountSompi: SHAPE_ONLY_AMOUNT })),
+    outputs: input.outputs.map((o) => ({ ...o, amountSompi: outputAmount }))
+  });
+  return { computeMass: shape.mass, relayFeeSompi: shape.minimumFeeSompi };
+}
 
 function shapeMass(
   inputCount: number,
